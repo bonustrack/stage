@@ -237,6 +237,94 @@ server.registerTool(
   },
 );
 
+// ----- streaming notify -----
+// Lets the agent send a long reply as a sequence of real chunks, each one
+// editing the same Telegram message in place. The user sees the message grow
+// in real time. NO fake reveal — every chunk is text the agent actually
+// generated and decided to send. Best for long answers; short answers should
+// just use metro-notify.
+const TG_MAX_LEN = 4000; // safety margin under Telegram's 4096-char per-message cap
+const STREAM_TTL_MS = 10 * 60 * 1000;
+
+type StreamState = { messageId: number; text: string; lastActivity: number };
+const streams = new Map<string, StreamState>();
+
+function gcStreams() {
+  const now = Date.now();
+  for (const [id, s] of streams) {
+    if (now - s.lastActivity > STREAM_TTL_MS) streams.delete(id);
+  }
+}
+
+server.registerTool(
+  "metro-notify-stream",
+  {
+    description:
+      "Stream a long reply to the user one chunk at a time. Pass the same `streamId` for every chunk of the same logical message; the Telegram message edits in place as you append. Set `final: true` on the last chunk. Prefer this over metro-notify when the reply is long enough that visible progress matters; for short replies just use metro-notify.",
+    inputSchema: {
+      streamId: z
+        .string()
+        .describe("Stable identifier reused across every chunk of the same message (e.g. a uuid)."),
+      chunk: z.string().describe("Real text to append to the running Telegram message."),
+      final: z
+        .boolean()
+        .optional()
+        .describe("Set true on the last chunk so the server can release stream state."),
+    },
+  },
+  async ({ streamId, chunk, final }) => {
+    gcStreams();
+    let state = streams.get(streamId);
+
+    if (!state) {
+      const messageId = await sendMessage(chunk);
+      state = { messageId, text: chunk, lastActivity: Date.now() };
+      streams.set(streamId, state);
+    } else {
+      const merged = state.text + chunk;
+      if (merged.length > TG_MAX_LEN) {
+        // Overflow Telegram's per-message cap — freeze the current message and
+        // start a new one for the remainder.
+        try {
+          await tg("editMessageText", {
+            chat_id: CHAT_ID,
+            message_id: state.messageId,
+            text: merged.slice(0, TG_MAX_LEN),
+          });
+        } catch (err: any) {
+          if (!String(err?.message ?? "").includes("not modified")) {
+            // swallow — state stays consistent
+          }
+        }
+        const remainder = merged.slice(TG_MAX_LEN);
+        const newMessageId = await sendMessage(remainder);
+        state = { messageId: newMessageId, text: remainder, lastActivity: Date.now() };
+        streams.set(streamId, state);
+      } else {
+        state.text = merged;
+        state.lastActivity = Date.now();
+        try {
+          await tg("editMessageText", {
+            chat_id: CHAT_ID,
+            message_id: state.messageId,
+            text: state.text,
+          });
+        } catch (err: any) {
+          if (!String(err?.message ?? "").includes("not modified")) {
+            // swallow
+          }
+        }
+      }
+    }
+
+    if (final) streams.delete(streamId);
+
+    return {
+      content: [{ type: "text", text: final ? "stream finalized" : "chunk appended" }],
+    };
+  },
+);
+
 server.registerTool(
   "metro-ask",
   {
