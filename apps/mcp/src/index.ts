@@ -265,9 +265,8 @@ if (HTTP_PORT) {
       if (url.pathname === "/health") {
         return withCors(new Response("ok"));
       }
-      if (url.pathname !== "/mcp") {
-        return withCors(new Response("not found", { status: 404 }));
-      }
+      // Route every other path through the MCP transport so clients that
+      // post to "/", "/mcp", "/sse", etc. all work. Only /health is reserved.
       if (AUTH_TOKEN) {
         const got = req.headers.get("authorization");
         if (got !== `Bearer ${AUTH_TOKEN}`) {
