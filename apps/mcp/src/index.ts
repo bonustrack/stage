@@ -28,11 +28,25 @@ if (!BOT_TOKEN || !CHAT_ID) {
 
 const API = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
-async function tg<T = any>(method: string, body: unknown): Promise<T> {
-  const res = await fetch(`${API}/${method}`, {
+// Wraps fetch with an AbortController so a hung connection can't pin a
+// waiter forever. Default timeout is 30 s; long-poll calls override.
+async function fetchT(url: string, init: RequestInit & { timeoutMs?: number } = {}) {
+  const { timeoutMs = 30_000, ...rest } = init;
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...rest, signal: ctrl.signal });
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+async function tg<T = any>(method: string, body: unknown, timeoutMs = 30_000): Promise<T> {
+  const res = await fetchT(`${API}/${method}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
+    timeoutMs,
   });
   const json = (await res.json()) as { ok: boolean; description?: string; result?: T };
   if (!json.ok) throw new Error(`telegram ${method}: ${json.description ?? "unknown error"}`);
@@ -49,7 +63,9 @@ async function sendMessage(text: string): Promise<number> {
 
 async function downloadTelegramFile(fileId: string): Promise<Blob> {
   const file = await tg<{ file_path: string }>("getFile", { file_id: fileId });
-  const res = await fetch(`https://api.telegram.org/file/bot${BOT_TOKEN}/${file.file_path}`);
+  const res = await fetchT(`https://api.telegram.org/file/bot${BOT_TOKEN}/${file.file_path}`, {
+    timeoutMs: 30_000,
+  });
   if (!res.ok) throw new Error(`download failed: ${res.status} ${res.statusText}`);
   return res.blob();
 }
@@ -63,10 +79,11 @@ async function transcribe(blob: Blob, filename: string): Promise<string> {
   const form = new FormData();
   form.append("file", blob, filename);
   form.append("model", model);
-  const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+  const res = await fetchT("https://api.openai.com/v1/audio/transcriptions", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}` },
     body: form,
+    timeoutMs: 60_000,
   });
   if (!res.ok) throw new Error(`whisper: ${res.status} ${await res.text()}`);
   const json = (await res.json()) as { text: string };
@@ -147,10 +164,13 @@ async function startPolling() {
   void (async () => {
     while (true) {
       try {
+        // Telegram-side long-poll holds the connection up to 50 s; give the
+        // fetch a slightly larger client-side timeout so it never aborts
+        // mid long-poll.
         const updates = await tg<Array<any>>("getUpdates", {
           offset: pollingOffset,
           timeout: 50,
-        });
+        }, 60_000);
         for (const u of updates) {
           pollingOffset = u.update_id + 1;
           const m = u.message;
