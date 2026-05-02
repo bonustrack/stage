@@ -257,8 +257,12 @@ const HTTP_PORT = process.env.MCP_HTTP_PORT || process.env.PORT;
 const AUTH_TOKEN = process.env.MCP_AUTH_TOKEN;
 
 if (HTTP_PORT) {
+  // Stateless mode: no sessionIdGenerator. Each POST is independent,
+  // which is what claude.ai's connector probe and most remote MCP clients
+  // expect. Stateful mode keeps a single global "initialized" flag on the
+  // transport, so once any client has initialized, every subsequent
+  // initialize errors out with "Server already initialized".
   const transport = new WebStandardStreamableHTTPServerTransport({
-    sessionIdGenerator: () => crypto.randomUUID(),
     enableJsonResponse: true,
   });
   await server.connect(transport);
