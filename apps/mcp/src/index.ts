@@ -265,8 +265,15 @@ function buildServer(): McpServer {
           params: { level: "info", logger: "metro-ask", data: text },
         }).catch(() => {});
       };
-      const content = await ask(question, notify);
-      return { content };
+      // Heartbeat: the Anthropic proxy drops idle SSE streams, so emit a tick
+      // every 20 s while waiting for the user. Cleared on resolve.
+      const heartbeat = setInterval(() => notify("still waiting for reply…"), 20_000);
+      try {
+        const content = await ask(question, notify);
+        return { content };
+      } finally {
+        clearInterval(heartbeat);
+      }
     },
   );
 
