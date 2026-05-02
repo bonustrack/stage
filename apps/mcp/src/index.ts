@@ -220,34 +220,38 @@ async function ask(question: string): Promise<ContentBlock[]> {
   return new Promise<ContentBlock[]>(resolve => waiters.set(messageId, resolve));
 }
 
-const server = new McpServer({
-  name: "@metro-labs/mcp",
-  version: "0.1.0",
-});
+function buildServer(): McpServer {
+  const s = new McpServer({
+    name: "@metro-labs/mcp",
+    version: "0.1.0",
+  });
 
-server.registerTool(
-  "metro-notify",
-  {
-    description: "Send a one-way message to the user via Telegram (no reply expected).",
-    inputSchema: { message: z.string().describe("Plain text to send to the user.") },
-  },
-  async ({ message }) => {
-    await sendMessage(message);
-    return { content: [{ type: "text", text: "sent" }] };
-  },
-);
+  s.registerTool(
+    "metro-notify",
+    {
+      description: "Send a one-way message to the user via Telegram (no reply expected).",
+      inputSchema: { message: z.string().describe("Plain text to send to the user.") },
+    },
+    async ({ message }) => {
+      await sendMessage(message);
+      return { content: [{ type: "text", text: "sent" }] };
+    },
+  );
 
-server.registerTool(
-  "metro-ask",
-  {
-    description: "Send a question to the user via Telegram and wait for their reply. The reply may be text, a transcribed voice note, or an image (with optional caption). Returns the user's reply as MCP content blocks.",
-    inputSchema: { question: z.string().describe("The question to ask the user.") },
-  },
-  async ({ question }) => {
-    const content = await ask(question);
-    return { content };
-  },
-);
+  s.registerTool(
+    "metro-ask",
+    {
+      description: "Send a question to the user via Telegram and wait for their reply. The reply may be text, a transcribed voice note, or an image (with optional caption). Returns the user's reply as MCP content blocks.",
+      inputSchema: { question: z.string().describe("The question to ask the user.") },
+    },
+    async ({ question }) => {
+      const content = await ask(question);
+      return { content };
+    },
+  );
+
+  return s;
+}
 
 // ----- transport selection -----
 // If PORT (or MCP_HTTP_PORT) is set, expose the server over Streamable HTTP
@@ -257,16 +261,6 @@ const HTTP_PORT = process.env.MCP_HTTP_PORT || process.env.PORT;
 const AUTH_TOKEN = process.env.MCP_AUTH_TOKEN;
 
 if (HTTP_PORT) {
-  // Stateless mode: no sessionIdGenerator. Each POST is independent,
-  // which is what claude.ai's connector probe and most remote MCP clients
-  // expect. Stateful mode keeps a single global "initialized" flag on the
-  // transport, so once any client has initialized, every subsequent
-  // initialize errors out with "Server already initialized".
-  const transport = new WebStandardStreamableHTTPServerTransport({
-    enableJsonResponse: true,
-  });
-  await server.connect(transport);
-
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
@@ -297,6 +291,16 @@ if (HTTP_PORT) {
           return withCors(new Response("unauthorized", { status: 401 }));
         }
       }
+      // Stateless mode requires a fresh transport+server per request — the
+      // SDK enforces this since reusing one would cause message-id collisions
+      // between concurrent clients. Tool handlers still close over the
+      // shared polling/waiters state, so per-request server creation only
+      // costs an in-memory tool-registration pass (sub-ms).
+      const transport = new WebStandardStreamableHTTPServerTransport({
+        enableJsonResponse: true,
+      });
+      const reqServer = buildServer();
+      await reqServer.connect(transport);
       return withCors(await transport.handleRequest(req));
     },
   });
@@ -305,5 +309,6 @@ if (HTTP_PORT) {
     (AUTH_TOKEN ? " (bearer-token protected)" : " (open — no MCP_AUTH_TOKEN set)"),
   );
 } else {
-  await server.connect(new StdioServerTransport());
+  const stdioServer = buildServer();
+  await stdioServer.connect(new StdioServerTransport());
 }
