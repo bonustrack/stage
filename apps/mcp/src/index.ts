@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { z } from "zod";
 
 // Load .env from the package root (next to package.json) so the server works
@@ -228,4 +229,40 @@ server.registerTool(
   },
 );
 
-await server.connect(new StdioServerTransport());
+// ----- transport selection -----
+// If PORT (or MCP_HTTP_PORT) is set, expose the server over Streamable HTTP
+// at /mcp so it can be used as a remote MCP from claude.ai / chatgpt.com.
+// Otherwise fall back to stdio for local Claude Desktop spawning.
+const HTTP_PORT = process.env.MCP_HTTP_PORT || process.env.PORT;
+const AUTH_TOKEN = process.env.MCP_AUTH_TOKEN;
+
+if (HTTP_PORT) {
+  const transport = new WebStandardStreamableHTTPServerTransport({
+    enableJsonResponse: true,
+  });
+  await server.connect(transport);
+
+  Bun.serve({
+    port: Number(HTTP_PORT),
+    async fetch(req) {
+      const url = new URL(req.url);
+      if (url.pathname === "/health") return new Response("ok");
+      if (url.pathname !== "/mcp") {
+        return new Response("not found", { status: 404 });
+      }
+      if (AUTH_TOKEN) {
+        const got = req.headers.get("authorization");
+        if (got !== `Bearer ${AUTH_TOKEN}`) {
+          return new Response("unauthorized", { status: 401 });
+        }
+      }
+      return transport.handleRequest(req);
+    },
+  });
+  console.error(
+    `metro-mcp: HTTP transport listening on :${HTTP_PORT}` +
+    (AUTH_TOKEN ? " (bearer-token protected)" : " (NO AUTH — set MCP_AUTH_TOKEN)"),
+  );
+} else {
+  await server.connect(new StdioServerTransport());
+}
