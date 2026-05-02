@@ -1,0 +1,23 @@
+{
+  "name": "@metro-labs/metro",
+  "version": "0.1.0",
+  "description": "TUI that proxies a chat session to OpenAI Codex with real streaming.",
+  "type": "module",
+  "bin": {
+    "metro": "./metro.tsx"
+  },
+  "scripts": {
+    "dev": "bun metro.tsx",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "ink": "^7.0.1",
+    "ink-text-input": "^6.0.0",
+    "react": "^19.2.5"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.13",
+    "@types/react": "^19.2.14",
+    "typescript": "^5"
+  }
+}

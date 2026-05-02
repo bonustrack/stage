@@ -1,0 +1,9 @@
+node_modules
+.turbo
+dist
+*.log
+
+# Env files — keep .env.example committed, ignore everything else
+.env
+.env.*
+!.env.example
