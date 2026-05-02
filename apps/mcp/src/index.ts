@@ -238,30 +238,48 @@ const AUTH_TOKEN = process.env.MCP_AUTH_TOKEN;
 
 if (HTTP_PORT) {
   const transport = new WebStandardStreamableHTTPServerTransport({
+    sessionIdGenerator: () => crypto.randomUUID(),
     enableJsonResponse: true,
   });
   await server.connect(transport);
 
+  const corsHeaders = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, Mcp-Session-Id, mcp-protocol-version",
+    "Access-Control-Expose-Headers": "Mcp-Session-Id",
+    "Access-Control-Max-Age": "86400",
+  };
+  const withCors = (res: Response) => {
+    for (const [k, v] of Object.entries(corsHeaders)) res.headers.set(k, v);
+    return res;
+  };
+
   Bun.serve({
     port: Number(HTTP_PORT),
     async fetch(req) {
+      if (req.method === "OPTIONS") {
+        return new Response(null, { status: 204, headers: corsHeaders });
+      }
       const url = new URL(req.url);
-      if (url.pathname === "/health") return new Response("ok");
+      if (url.pathname === "/health") {
+        return withCors(new Response("ok"));
+      }
       if (url.pathname !== "/mcp") {
-        return new Response("not found", { status: 404 });
+        return withCors(new Response("not found", { status: 404 }));
       }
       if (AUTH_TOKEN) {
         const got = req.headers.get("authorization");
         if (got !== `Bearer ${AUTH_TOKEN}`) {
-          return new Response("unauthorized", { status: 401 });
+          return withCors(new Response("unauthorized", { status: 401 }));
         }
       }
-      return transport.handleRequest(req);
+      return withCors(await transport.handleRequest(req));
     },
   });
   console.error(
     `metro-mcp: HTTP transport listening on :${HTTP_PORT}` +
-    (AUTH_TOKEN ? " (bearer-token protected)" : " (NO AUTH — set MCP_AUTH_TOKEN)"),
+    (AUTH_TOKEN ? " (bearer-token protected)" : " (open — no MCP_AUTH_TOKEN set)"),
   );
 } else {
   await server.connect(new StdioServerTransport());
