@@ -53,11 +53,36 @@ async function tg<T = any>(method: string, body: unknown, timeoutMs = 30_000): P
   return json.result as T;
 }
 
-async function sendMessage(text: string): Promise<number> {
-  const msg = await tg<{ message_id: number }>("sendMessage", {
-    chat_id: CHAT_ID,
-    text,
-  });
+type UrlButton = { text: string; url: string };
+type CallbackButton = { text: string; callbackData: string };
+type InlineButton = UrlButton | CallbackButton;
+
+type SendOptions = {
+  parseMode?: "HTML" | "MarkdownV2";
+  disableLinkPreview?: boolean;
+  buttons?: InlineButton[][];
+};
+
+function buildSendBody(text: string, opts: SendOptions): Record<string, unknown> {
+  const body: Record<string, unknown> = { chat_id: CHAT_ID, text };
+  if (opts.parseMode) body.parse_mode = opts.parseMode;
+  if (opts.disableLinkPreview) body.link_preview_options = { is_disabled: true };
+  if (opts.buttons?.length) {
+    body.reply_markup = {
+      inline_keyboard: opts.buttons.map(row =>
+        row.map(b =>
+          "url" in b
+            ? { text: b.text, url: b.url }
+            : { text: b.text, callback_data: b.callbackData },
+        ),
+      ),
+    };
+  }
+  return body;
+}
+
+async function sendMessage(text: string, opts: SendOptions = {}): Promise<number> {
+  const msg = await tg<{ message_id: number }>("sendMessage", buildSendBody(text, opts));
   return msg.message_id;
 }
 
@@ -181,6 +206,22 @@ async function startPolling() {
         }, 60_000);
         for (const u of updates) {
           pollingOffset = u.update_id + 1;
+
+          // Inline-keyboard tap on a question we're waiting on. Acknowledge
+          // the callback so Telegram clears the spinner on the button, then
+          // resolve the waiter with the button's callback_data as text.
+          const cbq = u.callback_query;
+          if (cbq && String(cbq.message?.chat?.id) === String(CHAT_ID)) {
+            void tg("answerCallbackQuery", { callback_query_id: cbq.id }).catch(() => {});
+            const messageId: number | undefined = cbq.message?.message_id;
+            if (messageId !== undefined && waiters.has(messageId)) {
+              const w = waiters.get(messageId)!;
+              waiters.delete(messageId);
+              w.resolve([{ type: "text", text: cbq.data ?? "" }]);
+            }
+            continue;
+          }
+
           const m = u.message;
           if (!m || String(m.chat?.id) !== String(CHAT_ID)) continue;
 
@@ -224,9 +265,9 @@ async function startPolling() {
   })();
 }
 
-async function ask(question: string, notify: Notify): Promise<ContentBlock[]> {
+async function ask(question: string, opts: SendOptions, notify: Notify): Promise<ContentBlock[]> {
   await startPolling();
-  const messageId = await sendMessage(question);
+  const messageId = await sendMessage(question, opts);
   notify("message delivered to user — waiting for reply");
   return new Promise<ContentBlock[]>(resolve => waiters.set(messageId, { resolve, notify }));
 }
@@ -237,14 +278,55 @@ function buildServer(): McpServer {
     { capabilities: { logging: {} } },
   );
 
+  // Rich-content options shared by notify and ask. Telegram parse modes:
+  //   - HTML        : <b> <i> <u> <s> <a href> <code> <pre> <blockquote> <tg-spoiler>
+  //   - MarkdownV2  : *bold* _italic_ __underline__ ~strike~ ||spoiler|| `code` ```pre``` [text](url)
+  //                   (special chars _ * [ ] ( ) ~ ` > # + - = | { } . ! must be backslash-escaped)
+  const parseModeSchema = z
+    .enum(["HTML", "MarkdownV2"])
+    .optional()
+    .describe(
+      "Telegram parse mode. Use 'HTML' for tags like <b>/<i>/<a href>/<code>/<pre>/<blockquote>/<tg-spoiler>, " +
+      "or 'MarkdownV2' for *bold*/_italic_/`code`/[text](url)/||spoiler|| (escape _ * [ ] ( ) ~ ` > # + - = | { } . ! with \\). " +
+      "Omit for plain text.",
+    );
+  const disableLinkPreviewSchema = z
+    .boolean()
+    .optional()
+    .describe("Suppress the auto link preview Telegram appends when the message contains a URL.");
+  const urlButtonSchema = z.object({
+    text: z.string().describe("Label shown on the button."),
+    url: z.string().describe("URL to open when the user taps the button."),
+  });
+  const callbackButtonSchema = z.object({
+    text: z.string().describe("Label shown on the button."),
+    callbackData: z
+      .string()
+      .max(64)
+      .describe("String returned as the user's reply when the button is tapped (max 64 bytes)."),
+  });
+
   s.registerTool(
     "metro-notify",
     {
-      description: "Send a one-way message to the user via Telegram (no reply expected).",
-      inputSchema: { message: z.string().describe("Plain text to send to the user.") },
+      description:
+        "Send a one-way message to the user via Telegram (no reply expected). " +
+        "Supports HTML/MarkdownV2 formatting and inline URL buttons.",
+      inputSchema: {
+        message: z.string().describe("Message body. Format depends on parseMode."),
+        parseMode: parseModeSchema,
+        disableLinkPreview: disableLinkPreviewSchema,
+        buttons: z
+          .array(z.array(urlButtonSchema))
+          .optional()
+          .describe(
+            "Inline keyboard rendered under the message. Outer array = rows, inner array = buttons in that row. " +
+            "Notify only supports URL buttons since there's no reply channel for callbacks.",
+          ),
+      },
     },
-    async ({ message }) => {
-      await sendMessage(message);
+    async ({ message, parseMode, disableLinkPreview, buttons }) => {
+      await sendMessage(message, { parseMode, disableLinkPreview, buttons });
       return { content: [{ type: "text", text: "sent" }] };
     },
   );
@@ -252,10 +334,27 @@ function buildServer(): McpServer {
   s.registerTool(
     "metro-ask",
     {
-      description: "Send a question to the user via Telegram and wait for their reply. The reply may be text, a transcribed voice note, or an image (with optional caption). Returns the user's reply as MCP content blocks.",
-      inputSchema: { question: z.string().describe("The question to ask the user.") },
+      description:
+        "Send a question to the user via Telegram and wait for their reply. " +
+        "The reply may be text, a transcribed voice note, an image (with optional caption), " +
+        "or — if you provide inline callback buttons — the callbackData of the button the user tapped. " +
+        "Supports HTML/MarkdownV2 formatting and inline URL + callback buttons. " +
+        "Returns the user's reply as MCP content blocks.",
+      inputSchema: {
+        question: z.string().describe("Question body. Format depends on parseMode."),
+        parseMode: parseModeSchema,
+        disableLinkPreview: disableLinkPreviewSchema,
+        buttons: z
+          .array(z.array(z.union([urlButtonSchema, callbackButtonSchema])))
+          .optional()
+          .describe(
+            "Inline keyboard rendered under the question. Outer array = rows, inner array = buttons in that row. " +
+            "Mix URL buttons (open links) and callback buttons (tap returns callbackData as the reply). " +
+            "The user can still reply with free-form text/voice/image even when buttons are present.",
+          ),
+      },
     },
-    async ({ question }, extra) => {
+    async ({ question, parseMode, disableLinkPreview, buttons }, extra) => {
       // Stream milestone log lines back to the client so the long wait isn't a
       // silent black box. Swallow errors: if the client disconnected mid-call
       // we still want the waiter to resolve when the Telegram reply arrives.
@@ -265,7 +364,7 @@ function buildServer(): McpServer {
           params: { level: "info", logger: "metro-ask", data: text },
         }).catch(() => {});
       };
-      const content = await ask(question, notify);
+      const content = await ask(question, { parseMode, disableLinkPreview, buttons }, notify);
       return { content };
     },
   );
