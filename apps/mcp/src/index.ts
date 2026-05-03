@@ -364,8 +364,21 @@ function buildServer(): McpServer {
           params: { level: "info", logger: "metro-ask", data: text },
         }).catch(() => {});
       };
-      const content = await ask(question, { parseMode, disableLinkPreview, buttons }, notify);
-      return { content };
+      // The Anthropic proxy drops idle SSE streams in ~10 s, so push a
+      // debug-level notification every 5 s. The bytes keep the stream alive
+      // at the HTTP layer; debug level keeps clients from rendering them.
+      const heartbeat = setInterval(() => {
+        void extra.sendNotification({
+          method: "notifications/message",
+          params: { level: "debug", logger: "metro-ask", data: "ping" },
+        }).catch(() => {});
+      }, 5_000);
+      try {
+        const content = await ask(question, { parseMode, disableLinkPreview, buttons }, notify);
+        return { content };
+      } finally {
+        clearInterval(heartbeat);
+      }
     },
   );
 
