@@ -1,10 +1,8 @@
 #!/usr/bin/env bun
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
-import { z } from "zod";
 
 // Load .env from the package root (next to package.json) so the server works
 // regardless of the cwd it was spawned with. Real env vars take precedence.
@@ -18,392 +16,44 @@ if (existsSync(envPath)) {
   }
 }
 
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+// Modules read TELEGRAM_BOT_TOKEN at import time, so wait until after env load.
+const { getMe, startPolling } = await import("./telegram.js");
+const { handleOAuth, lookupToken } = await import("./oauth.js");
+const { buildServer, runWithUser } = await import("./mcp.js");
 
-if (!BOT_TOKEN || !CHAT_ID) {
-  console.error("metro-mcp: TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID env vars are required");
-  process.exit(1);
-}
-
-const API = `https://api.telegram.org/bot${BOT_TOKEN}`;
-
-// Wraps fetch with an AbortController so a hung connection can't pin a
-// waiter forever. Default timeout is 30 s; long-poll calls override.
-async function fetchT(url: string, init: RequestInit & { timeoutMs?: number } = {}) {
-  const { timeoutMs = 30_000, ...rest } = init;
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), timeoutMs);
-  try {
-    return await fetch(url, { ...rest, signal: ctrl.signal });
-  } finally {
-    clearTimeout(t);
-  }
-}
-
-async function tg<T = any>(method: string, body: unknown, timeoutMs = 30_000): Promise<T> {
-  const res = await fetchT(`${API}/${method}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-    timeoutMs,
-  });
-  const json = (await res.json()) as { ok: boolean; description?: string; result?: T };
-  if (!json.ok) throw new Error(`telegram ${method}: ${json.description ?? "unknown error"}`);
-  return json.result as T;
-}
-
-type UrlButton = { text: string; url: string };
-type CallbackButton = { text: string; callbackData: string };
-type InlineButton = UrlButton | CallbackButton;
-
-type SendOptions = {
-  parseMode?: "HTML" | "MarkdownV2";
-  disableLinkPreview?: boolean;
-  buttons?: InlineButton[][];
-};
-
-function buildSendBody(text: string, opts: SendOptions): Record<string, unknown> {
-  const body: Record<string, unknown> = { chat_id: CHAT_ID, text };
-  if (opts.parseMode) body.parse_mode = opts.parseMode;
-  if (opts.disableLinkPreview) body.link_preview_options = { is_disabled: true };
-  if (opts.buttons?.length) {
-    body.reply_markup = {
-      inline_keyboard: opts.buttons.map(row =>
-        row.map(b =>
-          "url" in b
-            ? { text: b.text, url: b.url }
-            : { text: b.text, callback_data: b.callbackData },
-        ),
-      ),
-    };
-  }
-  return body;
-}
-
-async function sendMessage(text: string, opts: SendOptions = {}): Promise<number> {
-  const msg = await tg<{ message_id: number }>("sendMessage", buildSendBody(text, opts));
-  return msg.message_id;
-}
-
-async function downloadTelegramFile(fileId: string): Promise<Blob> {
-  const file = await tg<{ file_path: string }>("getFile", { file_id: fileId });
-  const res = await fetchT(`https://api.telegram.org/file/bot${BOT_TOKEN}/${file.file_path}`, {
-    timeoutMs: 30_000,
-  });
-  if (!res.ok) throw new Error(`download failed: ${res.status} ${res.statusText}`);
-  return res.blob();
-}
-
-async function transcribe(blob: Blob, filename: string): Promise<string> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    throw new Error("OPENAI_API_KEY is required to transcribe voice messages");
-  }
-  const model = process.env.OPENAI_TRANSCRIBE_MODEL || "gpt-4o-mini-transcribe";
-  const form = new FormData();
-  form.append("file", blob, filename);
-  form.append("model", model);
-  const res = await fetchT("https://api.openai.com/v1/audio/transcriptions", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}` },
-    body: form,
-    timeoutMs: 60_000,
-  });
-  if (!res.ok) throw new Error(`whisper: ${res.status} ${await res.text()}`);
-  const json = (await res.json()) as { text: string };
-  return json.text;
-}
-
-type ContentBlock =
-  | { type: "text"; text: string }
-  | { type: "image"; data: string; mimeType: string };
-
-async function blobToBase64Block(blob: Blob, mimeType: string): Promise<ContentBlock> {
-  const data = Buffer.from(await blob.arrayBuffer()).toString("base64");
-  return { type: "image", data, mimeType };
-}
-
-// Resolve a Telegram message to MCP content blocks. Photos and image-typed
-// documents pass through as image blocks (Claude reads them natively). Voice
-// and audio get transcribed via OpenAI to text. Captions become text blocks
-// alongside images. Returns `null` for unsupported message types.
-// `notify` streams milestone log messages back to the MCP client before each
-// blocking operation (download, transcription).
-async function messageToContent(m: any, notify: Notify = () => {}): Promise<ContentBlock[] | null> {
-  const blocks: ContentBlock[] = [];
-
-  if (m.caption) blocks.push({ type: "text", text: m.caption });
-
-  if (m.text) {
-    return [{ type: "text", text: m.text }];
-  }
-
-  if (Array.isArray(m.photo) && m.photo.length > 0) {
-    notify("downloading image…");
-    // Telegram returns multiple sizes; the last entry is the largest.
-    const photo = m.photo[m.photo.length - 1];
-    const blob = await downloadTelegramFile(photo.file_id);
-    blocks.push(await blobToBase64Block(blob, "image/jpeg"));
-    return blocks;
-  }
-
-  if (m.document?.mime_type?.startsWith("image/")) {
-    notify("downloading image…");
-    const blob = await downloadTelegramFile(m.document.file_id);
-    blocks.push(await blobToBase64Block(blob, m.document.mime_type));
-    return blocks;
-  }
-
-  if (m.voice) {
-    notify("transcribing voice note…");
-    const blob = await downloadTelegramFile(m.voice.file_id);
-    const text = await transcribe(blob, "voice.ogg");
-    await sendMessage(`📝 ${text}`);
-    blocks.push({ type: "text", text });
-    return blocks;
-  }
-
-  if (m.audio) {
-    notify("transcribing audio…");
-    const ext = (m.audio.mime_type ?? "audio/mpeg").split("/")[1] ?? "mp3";
-    const blob = await downloadTelegramFile(m.audio.file_id);
-    const text = await transcribe(blob, `audio.${ext}`);
-    await sendMessage(`📝 ${text}`);
-    blocks.push({ type: "text", text });
-    return blocks;
-  }
-
-  return blocks.length ? blocks : null;
-}
-
-// Telegram only allows one consumer of getUpdates at a time, so all Ask calls
-// share a single polling loop and matching is done by reply_to_message_id.
-type Notify = (text: string) => void;
-type Waiter = { resolve: (content: ContentBlock[]) => void; notify: Notify };
-let pollingOffset = 0;
-let pollingStarted = false;
-const waiters = new Map<number, Waiter>();
-
-async function startPolling() {
-  if (pollingStarted) return;
-  pollingStarted = true;
-
-  // Drain any pending updates so we start from "now".
-  const initial = await tg<Array<{ update_id: number }>>("getUpdates", { timeout: 0 });
-  if (initial.length) pollingOffset = initial[initial.length - 1].update_id + 1;
-
-  // Long-poll forever.
-  void (async () => {
-    while (true) {
-      try {
-        // Telegram-side long-poll holds the connection up to 50 s; give the
-        // fetch a slightly larger client-side timeout so it never aborts
-        // mid long-poll.
-        const updates = await tg<Array<any>>("getUpdates", {
-          offset: pollingOffset,
-          timeout: 50,
-        }, 60_000);
-        for (const u of updates) {
-          pollingOffset = u.update_id + 1;
-
-          // Inline-keyboard tap on a question we're waiting on. Acknowledge
-          // the callback so Telegram clears the spinner on the button, then
-          // resolve the waiter with the button's callback_data as text.
-          const cbq = u.callback_query;
-          if (cbq && String(cbq.message?.chat?.id) === String(CHAT_ID)) {
-            void tg("answerCallbackQuery", { callback_query_id: cbq.id }).catch(() => {});
-            const messageId: number | undefined = cbq.message?.message_id;
-            if (messageId !== undefined && waiters.has(messageId)) {
-              const w = waiters.get(messageId)!;
-              waiters.delete(messageId);
-              w.resolve([{ type: "text", text: cbq.data ?? "" }]);
-            }
-            continue;
-          }
-
-          const m = u.message;
-          if (!m || String(m.chat?.id) !== String(CHAT_ID)) continue;
-
-          // Prefer matching the reply_to id; fall back to delivering to the
-          // oldest waiter so plain (non-reply) Telegram messages still resolve.
-          const replyTo: number | undefined = m.reply_to_message?.message_id;
-          let waiterId: number | undefined;
-          if (replyTo !== undefined && waiters.has(replyTo)) {
-            waiterId = replyTo;
-          } else if (waiters.size > 0) {
-            waiterId = waiters.keys().next().value;
-          }
-          if (waiterId === undefined) continue;
-
-          // Resolve text/voice/audio/image asynchronously so download +
-          // transcription don't block the polling loop.
-          const id = waiterId;
-          const waiter = waiters.get(id)!;
-          waiter.notify("reply received — processing…");
-          void (async () => {
-            let content: ContentBlock[];
-            try {
-              const c = await messageToContent(m, waiter.notify);
-              if (c === null) return; // unsupported type — leave waiter pending
-              content = c;
-            } catch (err: any) {
-              content = [{ type: "text", text: `[reply processing failed: ${err?.message ?? err}]` }];
-            }
-            const w = waiters.get(id);
-            if (w) {
-              waiters.delete(id);
-              w.resolve(content);
-            }
-          })();
-        }
-      } catch (err) {
-        // Network blip — back off briefly and keep going.
-        await new Promise(r => setTimeout(r, 1000));
-      }
-    }
-  })();
-}
-
-async function ask(question: string, opts: SendOptions, notify: Notify): Promise<ContentBlock[]> {
-  await startPolling();
-  const messageId = await sendMessage(question, opts);
-  notify("message delivered to user — waiting for reply");
-  return new Promise<ContentBlock[]>(resolve => waiters.set(messageId, { resolve, notify }));
-}
-
-function buildServer(): McpServer {
-  const s = new McpServer(
-    { name: "@metro-labs/mcp", version: "0.1.0" },
-    { capabilities: { logging: {} } },
-  );
-
-  // Rich-content options shared by notify and ask. Telegram parse modes:
-  //   - HTML        : <b> <i> <u> <s> <a href> <code> <pre> <blockquote> <tg-spoiler>
-  //   - MarkdownV2  : *bold* _italic_ __underline__ ~strike~ ||spoiler|| `code` ```pre``` [text](url)
-  //                   (special chars _ * [ ] ( ) ~ ` > # + - = | { } . ! must be backslash-escaped)
-  const parseModeSchema = z
-    .enum(["HTML", "MarkdownV2"])
-    .optional()
-    .describe(
-      "Telegram parse mode. Use 'HTML' for tags like <b>/<i>/<a href>/<code>/<pre>/<blockquote>/<tg-spoiler>, " +
-      "or 'MarkdownV2' for *bold*/_italic_/`code`/[text](url)/||spoiler|| (escape _ * [ ] ( ) ~ ` > # + - = | { } . ! with \\). " +
-      "Omit for plain text.",
-    );
-  const disableLinkPreviewSchema = z
-    .boolean()
-    .optional()
-    .describe("Suppress the auto link preview Telegram appends when the message contains a URL.");
-  const urlButtonSchema = z.object({
-    text: z.string().describe("Label shown on the button."),
-    url: z.string().describe("URL to open when the user taps the button."),
-  });
-  const callbackButtonSchema = z.object({
-    text: z.string().describe("Label shown on the button."),
-    callbackData: z
-      .string()
-      .max(64)
-      .describe("String returned as the user's reply when the button is tapped (max 64 bytes)."),
-  });
-
-  s.registerTool(
-    "metro-notify",
-    {
-      description:
-        "Send a one-way message to the user via Telegram (no reply expected). " +
-        "Supports HTML/MarkdownV2 formatting and inline URL buttons.",
-      inputSchema: {
-        message: z.string().describe("Message body. Format depends on parseMode."),
-        parseMode: parseModeSchema,
-        disableLinkPreview: disableLinkPreviewSchema,
-        buttons: z
-          .array(z.array(urlButtonSchema))
-          .optional()
-          .describe(
-            "Inline keyboard rendered under the message. Outer array = rows, inner array = buttons in that row. " +
-            "Notify only supports URL buttons since there's no reply channel for callbacks.",
-          ),
-      },
-    },
-    async ({ message, parseMode, disableLinkPreview, buttons }) => {
-      await sendMessage(message, { parseMode, disableLinkPreview, buttons });
-      return { content: [{ type: "text", text: "sent" }] };
-    },
-  );
-
-  s.registerTool(
-    "metro-ask",
-    {
-      description:
-        "Send a question to the user via Telegram and wait for their reply. " +
-        "The reply may be text, a transcribed voice note, an image (with optional caption), " +
-        "or — if you provide inline callback buttons — the callbackData of the button the user tapped. " +
-        "Supports HTML/MarkdownV2 formatting and inline URL + callback buttons. " +
-        "Returns the user's reply as MCP content blocks.",
-      inputSchema: {
-        question: z.string().describe("Question body. Format depends on parseMode."),
-        parseMode: parseModeSchema,
-        disableLinkPreview: disableLinkPreviewSchema,
-        buttons: z
-          .array(z.array(z.union([urlButtonSchema, callbackButtonSchema])))
-          .optional()
-          .describe(
-            "Inline keyboard rendered under the question. Outer array = rows, inner array = buttons in that row. " +
-            "Mix URL buttons (open links) and callback buttons (tap returns callbackData as the reply). " +
-            "The user can still reply with free-form text/voice/image even when buttons are present.",
-          ),
-      },
-    },
-    async ({ question, parseMode, disableLinkPreview, buttons }, extra) => {
-      // Stream milestone log lines back to the client so the long wait isn't a
-      // silent black box. Swallow errors: if the client disconnected mid-call
-      // we still want the waiter to resolve when the Telegram reply arrives.
-      const notify: Notify = (text) => {
-        void extra.sendNotification({
-          method: "notifications/message",
-          params: { level: "info", logger: "metro-ask", data: text },
-        }).catch(() => {});
-      };
-      // The Anthropic proxy drops idle SSE streams in ~10 s, so push a
-      // debug-level notification every 5 s. The bytes keep the stream alive
-      // at the HTTP layer; debug level keeps clients from rendering them.
-      const heartbeat = setInterval(() => {
-        void extra.sendNotification({
-          method: "notifications/message",
-          params: { level: "debug", logger: "metro-ask", data: "ping" },
-        }).catch(() => {});
-      }, 5_000);
-      try {
-        const content = await ask(question, { parseMode, disableLinkPreview, buttons }, notify);
-        return { content };
-      } finally {
-        clearInterval(heartbeat);
-      }
-    },
-  );
-
-  return s;
-}
-
-// ----- transport selection -----
-// If PORT (or MCP_HTTP_PORT) is set, expose the server over Streamable HTTP
-// at /mcp so it can be used as a remote MCP from claude.ai / chatgpt.com.
-// Otherwise fall back to stdio for local Claude Desktop spawning.
 const HTTP_PORT = process.env.MCP_HTTP_PORT || process.env.PORT;
-const AUTH_TOKEN = process.env.MCP_AUTH_TOKEN;
 
 if (HTTP_PORT) {
+  // ----- HTTP transport: multi-tenant, OAuth-protected -----
+  const me = await getMe();
+  const botUsername = me.username;
+  if (!botUsername) {
+    console.error("metro-mcp: bot has no username — set one in @BotFather before running in HTTP mode");
+    process.exit(1);
+  }
+  await startPolling();
+
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization, Mcp-Session-Id, mcp-protocol-version",
-    "Access-Control-Expose-Headers": "Mcp-Session-Id",
+    "Access-Control-Expose-Headers": "Mcp-Session-Id, WWW-Authenticate",
     "Access-Control-Max-Age": "86400",
   };
   const withCors = (res: Response) => {
     for (const [k, v] of Object.entries(corsHeaders)) res.headers.set(k, v);
     return res;
   };
+
+  // OAuth metadata `issuer` must be stable, so prefer METRO_BASE_URL. Fall
+  // back to per-request Host derivation, which works behind most proxies.
+  function baseUrlFor(req: Request): string {
+    if (process.env.METRO_BASE_URL) return process.env.METRO_BASE_URL.replace(/\/$/, "");
+    const url = new URL(req.url);
+    const proto = req.headers.get("x-forwarded-proto") ?? url.protocol.replace(":", "");
+    const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? url.host;
+    return `${proto}://${host}`;
+  }
 
   Bun.serve({
     port: Number(HTTP_PORT),
@@ -412,35 +62,60 @@ if (HTTP_PORT) {
         return new Response(null, { status: 204, headers: corsHeaders });
       }
       const url = new URL(req.url);
+
       if (url.pathname === "/health") {
         return withCors(new Response("ok"));
       }
-      // Route every other path through the MCP transport so clients that
-      // post to "/", "/mcp", "/sse", etc. all work. Only /health is reserved.
-      if (AUTH_TOKEN) {
-        const got = req.headers.get("authorization");
-        if (got !== `Bearer ${AUTH_TOKEN}`) {
-          return withCors(new Response("unauthorized", { status: 401 }));
-        }
+
+      // OAuth routes (metadata, /register, /authorize, /oauth/status, /token).
+      const baseUrl = baseUrlFor(req);
+      const oauthResp = await handleOAuth(req, baseUrl, botUsername);
+      if (oauthResp) return withCors(oauthResp);
+
+      // Everything else is the MCP transport — gated by bearer token.
+      const auth = req.headers.get("authorization") ?? "";
+      const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+      const record = token ? lookupToken(token) : null;
+      if (!record) {
+        const wwwAuth = `Bearer realm="metro", resource_metadata="${baseUrl}/.well-known/oauth-protected-resource"`;
+        return withCors(
+          new Response(
+            JSON.stringify({
+              jsonrpc: "2.0",
+              error: { code: -32001, message: "unauthorized" },
+              id: null,
+            }),
+            {
+              status: 401,
+              headers: { "Content-Type": "application/json", "WWW-Authenticate": wwwAuth },
+            },
+          ),
+        );
       }
-      // Stateless mode requires a fresh transport+server per request — the
-      // SDK enforces this since reusing one would cause message-id collisions
-      // between concurrent clients. Tool handlers still close over the
-      // shared polling/waiters state, so per-request server creation only
-      // costs an in-memory tool-registration pass (sub-ms).
-      // SDK default is SSE (enableJsonResponse: false); we want SSE so
-      // metro-ask can stream progress notifications during the wait.
-      const transport = new WebStandardStreamableHTTPServerTransport({});
-      const reqServer = buildServer();
-      await reqServer.connect(transport);
-      return withCors(await transport.handleRequest(req));
+
+      // Stateless: a fresh transport+server per request. Tool handlers close
+      // over the shared polling/waiters state, so this only costs an in-memory
+      // tool-registration pass (sub-ms).
+      return await runWithUser({ chat_id: record.chat_id, user_name: record.user_name }, async () => {
+        const transport = new WebStandardStreamableHTTPServerTransport({});
+        const reqServer = buildServer();
+        await reqServer.connect(transport);
+        return withCors(await transport.handleRequest(req));
+      });
     },
   });
   console.error(
-    `metro-mcp: HTTP transport listening on :${HTTP_PORT}` +
-    (AUTH_TOKEN ? " (bearer-token protected)" : " (open — no MCP_AUTH_TOKEN set)"),
+    `metro-mcp: HTTP transport listening on :${HTTP_PORT} as @${botUsername} (OAuth 2.1 required)`,
   );
 } else {
+  // ----- stdio transport: single-tenant, env-configured -----
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+  if (!chatId) {
+    console.error("metro-mcp: TELEGRAM_CHAT_ID env var is required for stdio mode");
+    process.exit(1);
+  }
   const stdioServer = buildServer();
-  await stdioServer.connect(new StdioServerTransport());
+  await runWithUser({ chat_id: chatId, user_name: "user" }, () =>
+    stdioServer.connect(new StdioServerTransport()),
+  );
 }
