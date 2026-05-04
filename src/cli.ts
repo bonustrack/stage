@@ -13,28 +13,23 @@
 //                 + Monitor) so messages surface at the next agent decision
 //                 boundary without polling.
 //
-// Config (env): METRO_BASE_URL (required). METRO_TOKEN (required for inbox).
+// Config (env): METRO_BASE_URL defaults to the hosted instance; override
+// for a self-hosted server. METRO_TOKEN is required for `metro inbox` —
+// run `metro login` to mint one.
 
 export {};
+
+const DEFAULT_BASE_URL = "https://mcp.bonustrack.co";
+const BASE_URL = (process.env.METRO_BASE_URL || DEFAULT_BASE_URL).replace(/\/$/, "");
 
 const argv = process.argv.slice(2);
 const cmd = argv[0];
 
-const BASE_URL = (process.env.METRO_BASE_URL ?? "").replace(/\/$/, "");
-
-function requireBaseUrl(): string {
-  if (!BASE_URL) {
-    console.error("metro: METRO_BASE_URL is required");
-    process.exit(1);
-  }
-  return BASE_URL;
-}
-
 if (cmd === "login") {
-  await runLogin(requireBaseUrl());
+  await runLogin(BASE_URL);
   process.exit(0);
 } else if (cmd === "inbox") {
-  await runInbox(requireBaseUrl());
+  await runInbox(BASE_URL);
 } else {
   console.error("usage: metro <login|inbox>");
   process.exit(cmd ? 1 : 0);
