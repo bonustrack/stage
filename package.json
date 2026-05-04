@@ -8,6 +8,7 @@
     "metro": "./src/cli.ts"
   },
   "scripts": {
+    "build": "tsc --noEmit",
     "start": "bun src/index.ts",
     "dev": "bun src/index.ts",
     "typecheck": "tsc --noEmit"
