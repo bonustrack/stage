@@ -1,4 +1,0 @@
-[install]
-# Hoist workspace package deps to the repo-root node_modules so a single
-# `bun install` produces a flat tree the DigitalOcean buildpack can ship.
-linker = "hoisted"

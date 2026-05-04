@@ -1,7 +1,6 @@
 // MCP server: tools that read the per-request Telegram chat from
 // AsyncLocalStorage. The HTTP handler runs each request inside a context
-// populated from the bearer token; stdio mode populates it once at boot
-// from TELEGRAM_CHAT_ID.
+// populated from the bearer token.
 
 import { AsyncLocalStorage } from "node:async_hooks";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";

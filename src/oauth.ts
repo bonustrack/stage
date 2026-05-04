@@ -184,18 +184,27 @@ export async function handleOAuth(
     const code_challenge_method = url.searchParams.get("code_challenge_method") ?? "S256";
     const response_type = url.searchParams.get("response_type") ?? "";
     const scope = url.searchParams.get("scope") ?? undefined;
+    // CLIs and other headless clients send Accept: application/json. Browsers
+    // get the interactive HTML page; everyone else gets {id, deep_link} so
+    // they can show the link themselves and poll /oauth/status.
+    const wantsJson = (req.headers.get("accept") ?? "").includes("application/json");
+
+    const fail = (error: string, description: string) =>
+      wantsJson
+        ? Response.json({ error, error_description: description }, { status: 400 })
+        : errorPage(error, description);
 
     if (response_type !== "code") {
-      return errorPage("unsupported_response_type", "Only response_type=code is supported.");
+      return fail("unsupported_response_type", "Only response_type=code is supported.");
     }
     const client = clients.get(client_id);
-    if (!client) return errorPage("invalid_client", "Unknown client_id.");
+    if (!client) return fail("invalid_client", "Unknown client_id.");
     if (!client.redirect_uris.includes(redirect_uri)) {
-      return errorPage("invalid_redirect_uri", "redirect_uri is not registered for this client.");
+      return fail("invalid_redirect_uri", "redirect_uri is not registered for this client.");
     }
-    if (!code_challenge) return errorPage("invalid_request", "PKCE code_challenge is required.");
+    if (!code_challenge) return fail("invalid_request", "PKCE code_challenge is required.");
     if (code_challenge_method !== "S256") {
-      return errorPage("invalid_request", "Only S256 PKCE method is supported.");
+      return fail("invalid_request", "Only S256 PKCE method is supported.");
     }
 
     const id = newId();
@@ -212,6 +221,13 @@ export async function handleOAuth(
     });
 
     const deepLink = `https://t.me/${botUsername}?start=${encodeURIComponent(id)}`;
+    if (wantsJson) {
+      return Response.json({
+        id,
+        deep_link: deepLink,
+        expires_at: Math.floor((Date.now() + AUTH_REQUEST_TTL_MS) / 1000),
+      });
+    }
     return new Response(authorizePage(deepLink, id, client.client_name), {
       headers: { "Content-Type": "text/html; charset=utf-8" },
     });

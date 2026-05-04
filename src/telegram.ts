@@ -186,6 +186,76 @@ function chatWaiters(chatId: ChatId): Map<number, Waiter> {
   return m;
 }
 
+// Inbox listeners: receive messages that arrive when no metro-ask waiter is
+// pending on the chat. Used by the /inbox SSE endpoint to push unsolicited
+// messages to clients (e.g. a long-running daemon feeding Claude Code).
+export type InboxMessage = {
+  message_id: number;
+  date: number; // unix seconds (Telegram message date)
+  content: ContentBlock[];
+};
+export type InboxListener = (msg: InboxMessage) => void;
+
+const inboxListeners = new Map<string, Set<InboxListener>>();
+
+export function subscribeInbox(chatId: ChatId, listener: InboxListener): () => void {
+  const k = String(chatId);
+  let set = inboxListeners.get(k);
+  if (!set) {
+    set = new Set();
+    inboxListeners.set(k, set);
+  }
+  set.add(listener);
+  return () => {
+    const s = inboxListeners.get(k);
+    if (!s) return;
+    s.delete(listener);
+    if (s.size === 0) inboxListeners.delete(k);
+  };
+}
+
+function hasInboxListener(chatId: ChatId): boolean {
+  return (inboxListeners.get(String(chatId))?.size ?? 0) > 0;
+}
+
+function broadcastInbox(chatId: ChatId, msg: InboxMessage): void {
+  const set = inboxListeners.get(String(chatId));
+  if (!set) return;
+  for (const l of set) {
+    try {
+      l(msg);
+    } catch {
+      // listener errors should not break delivery to others
+    }
+  }
+}
+
+// Resolve content (download images, transcribe voice) and fan out to
+// inbox listeners. Called only when no metro-ask waiter is consuming the
+// message. Cheap no-op when no listeners are subscribed.
+function deliverToInbox(m: any, chatId: ChatId): void {
+  if (!hasInboxListener(chatId)) return;
+  const messageId: number | undefined = m.message_id;
+  if (messageId === undefined) return;
+  void (async () => {
+    try {
+      const content = await messageToContent(m, chatId, () => {});
+      if (!content) return; // unsupported type — drop
+      broadcastInbox(chatId, {
+        message_id: messageId,
+        date: typeof m.date === "number" ? m.date : Math.floor(Date.now() / 1000),
+        content,
+      });
+    } catch (err: any) {
+      broadcastInbox(chatId, {
+        message_id: messageId,
+        date: typeof m.date === "number" ? m.date : Math.floor(Date.now() / 1000),
+        content: [{ type: "text", text: `[inbox processing failed: ${err?.message ?? err}]` }],
+      });
+    }
+  })();
+}
+
 let pollingOffset = 0;
 let pollingStarted = false;
 
@@ -257,9 +327,13 @@ function dispatchUpdate(u: any): void {
     }
   }
 
-  // Plain reply — route to the matching waiter on this chat.
+  // Plain reply — route to the matching waiter on this chat. If no waiter
+  // exists, fall through to inbox listeners (the daemon-watch path).
   const cw = waiters.get(String(chatId));
-  if (!cw || cw.size === 0) return;
+  if (!cw || cw.size === 0) {
+    deliverToInbox(m, chatId);
+    return;
+  }
 
   const replyTo: number | undefined = m.reply_to_message?.message_id;
   let waiterId: number | undefined;
@@ -268,7 +342,10 @@ function dispatchUpdate(u: any): void {
   } else {
     waiterId = cw.keys().next().value;
   }
-  if (waiterId === undefined) return;
+  if (waiterId === undefined) {
+    deliverToInbox(m, chatId);
+    return;
+  }
 
   const id = waiterId;
   const waiter = cw.get(id)!;
