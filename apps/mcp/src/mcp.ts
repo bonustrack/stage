@@ -43,6 +43,15 @@ export function buildServer(): McpServer {
     .boolean()
     .optional()
     .describe("Suppress the auto link preview Telegram appends when the message contains a URL.");
+  const userSchema = z
+    .union([z.string(), z.number()])
+    .optional()
+    .describe(
+      "Override the recipient. Numeric Telegram chat id (private user, e.g. 123456789, or group, e.g. -100123…) " +
+        "or '@username' for a public user/channel. Defaults to the authenticated user's chat. " +
+        "The bot must already have access to the target chat (the user must have started the bot, " +
+        "or the bot must be a member of the group).",
+    );
   const urlButtonSchema = z.object({
     text: z.string().describe("Label shown on the button."),
     url: z.string().describe("URL to open when the user taps the button."),
@@ -63,6 +72,7 @@ export function buildServer(): McpServer {
         "Supports HTML/MarkdownV2 formatting and inline URL buttons.",
       inputSchema: {
         message: z.string().describe("Message body. Format depends on parseMode."),
+        user: userSchema,
         parseMode: parseModeSchema,
         disableLinkPreview: disableLinkPreviewSchema,
         buttons: z
@@ -74,8 +84,8 @@ export function buildServer(): McpServer {
           ),
       },
     },
-    async ({ message, parseMode, disableLinkPreview, buttons }) => {
-      const { chat_id } = currentUser();
+    async ({ message, user, parseMode, disableLinkPreview, buttons }) => {
+      const chat_id = user ?? currentUser().chat_id;
       await sendMessage(chat_id, message, { parseMode, disableLinkPreview, buttons });
       return { content: [{ type: "text", text: "sent" }] };
     },
@@ -92,6 +102,7 @@ export function buildServer(): McpServer {
         "Returns the user's reply as MCP content blocks.",
       inputSchema: {
         question: z.string().describe("Question body. Format depends on parseMode."),
+        user: userSchema,
         parseMode: parseModeSchema,
         disableLinkPreview: disableLinkPreviewSchema,
         buttons: z
@@ -104,8 +115,8 @@ export function buildServer(): McpServer {
           ),
       },
     },
-    async ({ question, parseMode, disableLinkPreview, buttons }, extra) => {
-      const { chat_id } = currentUser();
+    async ({ question, user, parseMode, disableLinkPreview, buttons }, extra) => {
+      const chat_id = user ?? currentUser().chat_id;
       const notify: Notify = (text) => {
         void extra
           .sendNotification({
