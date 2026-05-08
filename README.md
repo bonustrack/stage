@@ -1,65 +1,70 @@
-# Metro MCP
+# Metro
 
-OAuth-protected MCP server that bridges Claude / Cursor / ChatGPT-style agents to a Telegram bot. Lets the model `notify` and `ask` you on Telegram, and exposes an `/inbox` SSE channel for live unsolicited replies.
+Telegram channel for Claude Code, mirroring the design of Anthropic's official Discord and Telegram plugins. Inbound messages stream into your live session via the `--channels` flag; the agent responds with `reply` / `react` / `edit-message`. One local stdio MCP, no hosted infra.
 
-Two binaries ship from this package:
-
-- `metro-mcp` — the HTTP MCP server.
-- `metro` — a small CLI with three subcommands: `login`, `inbox`, `watch`.
-
-## Setup
+## Install
 
 ```bash
-cp .env.example .env   # fill in TELEGRAM_BOT_TOKEN, optionally OPENAI_API_KEY
-bun install
-bun link               # exposes `metro` and `metro-mcp` on $PATH (needs ~/.bun/bin in PATH)
+# 1. Add this repo as a marketplace (clones it locally on first install).
+/plugin marketplace add bonustrack/metro
+
+# 2. Install the plugin.
+/plugin install metro@metro
+
+# 3. Create a bot via @BotFather on Telegram, copy its token.
+# 4. Configure the plugin (replace the placeholders):
+/metro:configure <BOT_TOKEN>
+
+# 5. Restart with the channel enabled.
+exit
+claude --dangerously-load-development-channels plugin:metro@metro
+
+# 6. DM your bot once. The plugin logs `chat_id` to stderr; pass it back:
+/metro:configure <BOT_TOKEN> <CHAT_ID>
+exit
+claude --dangerously-load-development-channels plugin:metro@metro
 ```
 
-## Mint an access token
+After the second restart, every message you send the bot appears in the live session. The agent replies via the `reply` tool, threading under your message.
 
-```bash
-export METRO_BASE_URL=https://your-metro     # defaults to https://mcp.bonustrack.co
-export METRO_TOKEN=$(metro login)            # opens a Telegram deep link, prints the token
-```
+## Tools
 
-## Stream live replies into an agent (`/inbox` daemon)
+| Tool | Purpose |
+|---|---|
+| `reply` | Quote-reply to a specific Telegram `message_id`. Supports HTML / MarkdownV2 / URL buttons. |
+| `react` | Set or clear an emoji reaction (Telegram's whitelisted set). |
+| `edit-message` | Edit a message the bot previously sent. |
 
-```bash
-metro inbox
-# {"message_id":42,"date":1730000000,"text":"hi"}
-```
+There is no `notify`/`ask`. The channel model assumes the user initiates and the agent reacts.
 
-Each Telegram message you send arrives as one JSON line. Spawn this as a background process inside an agent (Claude Code: `Bash run_in_background=true` + `Monitor`) for sub-second push to the model.
+## Slash commands
 
-## Bridge Telegram into another Claude Code session (`metro watch`)
+- `/metro:configure <BOT_TOKEN> [CHAT_ID]` — write credentials to `~/.claude/channels/metro/.env`.
+- `/metro:status` — show the configured bot, mask the token, verify reachability.
 
-If you want a *different* Claude Code session — running in another repo, with no MCP tools wired in — to receive your Telegram messages live, use `metro watch`. It long-polls the bot directly and emits a human-readable log line per message:
+## Config
 
-```bash
-TELEGRAM_BOT_TOKEN=… TELEGRAM_CHAT_ID=… metro watch >> /tmp/metro-watch.log 2>&1
-```
-
-Output:
+Plugin reads `~/.claude/channels/metro/.env`:
 
 ```
-[2026-05-04T15:30:00.000Z] Alice hello world
-[2026-05-04T15:30:08.000Z] Alice line one\nline two
-[2026-05-04T15:30:15.000Z] Alice <image: AgACAgEAAxkBAAIB…>
-[2026-05-04T15:30:22.000Z] Alice <button: confirm>
+TELEGRAM_BOT_TOKEN=123456:ABC…
+TELEGRAM_CHAT_ID=987654321
+OPENAI_API_KEY=sk-…           # optional, enables voice/audio transcription
 ```
 
-Then in the other Claude Code session:
+## Architecture
 
-> Run `tail -F /tmp/metro-watch.log` in the background and Monitor it.
-
-Claude will start `tail` as a backgrounded `Bash` and attach `Monitor` to its stdout. Each line you send on Telegram arrives at the next agent decision boundary, and the other session can react without ever calling an MCP tool.
-
-**Conflict caveat.** Telegram only allows one active `getUpdates` poller per bot. If `metro-mcp` is polling on the same `TELEGRAM_BOT_TOKEN`, watch will see `409 Conflict: terminated by other getUpdates request` on every poll and the two will thrash. Run watch on a separate bot, or take down the MCP poller while watch is up. The hosted `mcp.bonustrack.co` runs against its own bot, so local `metro watch` against a different bot is fine.
-
-## Self-hosting the MCP server
-
-```bash
-PORT=8080 METRO_BASE_URL=https://your-public-url bun src/index.ts
+```
+Telegram  ─poll(getUpdates)─▶  src/server.ts  ─stdio MCP─▶  Claude Code
+                                   │
+                                   ▼
+                          notifications/claude/channel
+                          (rendered in-session as <channel> tags)
 ```
 
-OAuth 2.1 / PKCE protects everything except `/health` and the OAuth metadata endpoints. Each user binds their Telegram chat by tapping a bot deep link during `/authorize`.
+Single process. The bot token is local; there is no hosted server, no OAuth, no SSE bridge.
+
+## Caveats
+
+- **Single-poller.** Telegram allows only one `getUpdates` poller per token at a time. If two Claude Code sessions enable `--channels plugin:metro@metro` simultaneously, they will fight over the slot. Use one session per bot, or mint a separate bot for each session.
+- **Pairing not implemented.** v0.3 has no allowlist; whoever has the bot's `@username` can DM it and their messages will appear in your session. For sensitive setups, keep the bot username private or run the plugin against a bot scoped to a private group.

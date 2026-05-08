@@ -1,0 +1,16 @@
+{
+  "name": "metro",
+  "version": "0.3.0",
+  "description": "Telegram channel for Claude Code: receive messages live in-session and reply/react/edit-message back.",
+  "author": {
+    "name": "Metro Labs",
+    "url": "https://github.com/bonustrack/metro"
+  },
+  "homepage": "https://github.com/bonustrack/metro",
+  "mcpServers": {
+    "metro": {
+      "command": "bun",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/src/server.ts"]
+    }
+  }
+}

@@ -1,16 +1,11 @@
 {
   "name": "@metro-labs/mcp",
-  "version": "0.2.0",
-  "description": "MCP server with Notify, Ask, and an OAuth-protected /inbox SSE daemon that streams unsolicited Telegram replies for live agent prompts.",
+  "version": "0.3.0",
+  "description": "Claude Code plugin: Telegram channel that surfaces inbound messages live in-session and lets the agent reply, react, and edit-message.",
   "type": "module",
-  "bin": {
-    "metro-mcp": "./src/index.ts",
-    "metro": "./src/cli.ts"
-  },
   "scripts": {
     "build": "tsc --noEmit",
-    "start": "bun src/index.ts",
-    "dev": "bun src/index.ts",
+    "start": "bun plugins/metro/src/server.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

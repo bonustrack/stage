@@ -1,0 +1,19 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "metro",
+  "description": "Local-stdio Telegram channel plugin for Claude Code.",
+  "owner": {
+    "name": "Metro Labs",
+    "url": "https://github.com/bonustrack/metro"
+  },
+  "plugins": [
+    {
+      "name": "metro",
+      "source": "./plugins/metro",
+      "description": "Telegram channel: surfaces inbound messages live in-session and lets the agent reply, react, and edit-message.",
+      "version": "0.3.0",
+      "category": "channels",
+      "keywords": ["telegram", "channel", "notifications"]
+    }
+  ]
+}
