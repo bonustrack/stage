@@ -3,7 +3,5 @@ node_modules
 dist
 *.log
 
-# Env files — keep .env.example committed, ignore everything else
 .env
 .env.*
-!.env.example

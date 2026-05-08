@@ -38,7 +38,7 @@ export function buildServer(platforms: Platforms): McpServer {
     .join(" + ");
 
   const s = new McpServer(
-    { name: "metro", version: "0.6.0" },
+    { name: "metro", version: "0.6.1" },
     {
       capabilities: { tools: {}, experimental: { "claude/channel": {} } },
       instructions:

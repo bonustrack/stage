@@ -6,11 +6,14 @@
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 
-function loadEnv(path: string): void {
-  if (!existsSync(path)) return;
-  for (const line of readFileSync(path, "utf8").split("\n")) {
+// Load env from ~/.claude/channels/metro/.env (override with METRO_CHANNEL_HOME).
+const ENV_FILE = join(
+  process.env.METRO_CHANNEL_HOME ?? join(homedir(), ".claude", "channels", "metro"),
+  ".env",
+);
+if (existsSync(ENV_FILE)) {
+  for (const line of readFileSync(ENV_FILE, "utf8").split("\n")) {
     const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/);
     if (!m || m[1].startsWith("#")) continue;
     if (process.env[m[1]] === undefined) {
@@ -18,11 +21,6 @@ function loadEnv(path: string): void {
     }
   }
 }
-
-// Channel home first, then a repo-local .env for development.
-const CHANNEL_HOME = process.env.METRO_CHANNEL_HOME ?? join(homedir(), ".claude", "channels", "metro");
-loadEnv(join(CHANNEL_HOME, ".env"));
-loadEnv(fileURLToPath(new URL("../.env", import.meta.url)));
 
 const { StdioServerTransport } = await import("@modelcontextprotocol/sdk/server/stdio.js");
 const { log } = await import("./log.js");
