@@ -13,5 +13,5 @@
     "esModuleInterop": true,
     "verbatimModuleSyntax": false
   },
-  "include": ["plugins/metro/src/**/*"]
+  "include": ["src/**/*"]
 }
