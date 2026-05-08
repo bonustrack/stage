@@ -4,8 +4,6 @@ Telegram + Discord channel for Claude Code and Codex. Sub-second inbound deliver
 
 ## Install
 
-Configure tokens once:
-
 ```bash
 mkdir -p ~/.claude/channels/metro
 cat > ~/.claude/channels/metro/.env <<'EOF'
@@ -20,24 +18,19 @@ chmod 600 ~/.claude/channels/metro/.env
 ## Claude Code
 
 ```bash
-# Register the outbound tools (reply, react, edit-message, download, fetch).
 claude mcp add metro -- bun run --cwd /path/to/metro --silent start
-
-# Plain claude — no --channels flag needed.
-claude
+claude   # plain — no --channels flag needed
 ```
 
 In your session, prompt the agent:
 
 > Run `bun /path/to/metro/src/tail.ts` in the background and Monitor its stdout. Each line is a JSON inbound message — when one arrives, echo `[telegram chat_id=X] <content>` (or `[discord channel_id=X] <content>`) in your reply, then call the matching `*-reply` tool.
 
-DM either bot. Sub-second delivery. The agent reacts at the next tool-call boundary.
-
-A CLAUDE.md line can make this automatic on every session:
+DM either bot. Sub-second delivery. A CLAUDE.md line can make this automatic on every session:
 
 ```md
-On session start, run `bun /path/to/metro/src/tail.ts` in
-the background and Monitor its stdout for Telegram/Discord messages.
+On session start, run `bun /path/to/metro/src/tail.ts` in the background and
+Monitor its stdout for Telegram/Discord messages.
 ```
 
 ## Codex
@@ -46,36 +39,31 @@ Same MCP registration, same tail pattern:
 
 ```bash
 codex mcp add metro -- bun run --cwd /path/to/metro --silent start
-
-# Plain codex.
 codex
 ```
 
-Same prompt. Codex uses `unified_exec` + `write_stdin` polling under the hood — sub-second when messages arrive (server-side long-poll, only ~1 round-trip per actual message), ~5s yield when idle.
+Same prompt. Codex uses `unified_exec` + `write_stdin` polling under the hood — sub-second when messages arrive (server-side long-poll, ~1 round-trip per actual message), ~5s yield when idle.
 
 ## Tools
-
-Tools are namespaced per platform; only the families you've configured get registered.
 
 | Platform | Tools |
 |---|---|
 | Telegram | `telegram-reply`, `telegram-react`, `telegram-edit-message`, `telegram-download-attachment` |
 | Discord  | `discord-reply`, `discord-react`, `discord-edit-message`, `discord-download-attachment`, `discord-fetch-messages` |
 
-`*-download-attachment` returns image content blocks for image attachments. Telegram persists recent `file_id`s in `~/.claude/channels/metro/telegram-attachments.json` so they survive a restart; Discord works on any reachable message. Voice/audio messages surface as `[voice]` / `[audio]` placeholders. `discord-fetch-messages` is Discord-only since Discord exposes no search API for bots.
+`*-download-attachment` returns image content blocks. Telegram persists recent `file_id`s on disk at `~/.claude/channels/metro/telegram-attachments.json` so the writer (`tail.ts`) and the reader (`server.ts`) share state. Voice/audio surface as opaque `[voice]` / `[audio]` placeholders. `discord-fetch-messages` is Discord-only — Discord exposes no search API for bots.
 
 ## Config
 
-Plugin reads `~/.claude/channels/metro/.env` (canonical), with a `<repo-root>/.env` fallback for development. First reader wins per key.
+Reads `~/.claude/channels/metro/.env` (canonical), with `<repo-root>/.env` as a dev fallback. First reader wins per key.
 
 ```
 TELEGRAM_BOT_TOKEN=123456:ABC…
 DISCORD_BOT_TOKEN=MTIz…
 ```
 
-`METRO_LOG_LEVEL` (trace|debug|info|warn|error|fatal) controls verbosity; default `info`. Logs go to stderr (Claude Code captures them in `~/Library/Caches/claude-cli-nodejs/.../mcp-logs-plugin-metro-metro/*.jsonl`).
-
-`METRO_ACK_EMOJI` controls the auto-acknowledgement reaction `tail.ts` fires on every inbound message — default `👀`, set empty to disable. Telegram restricts the bot reaction set; pick one from the [allowed list](https://core.telegram.org/bots/api#reactiontypeemoji).
+- `METRO_LOG_LEVEL` (trace|debug|info|warn|error|fatal) — log verbosity, default `info`. Logs go to stderr (captured by Claude Code under `~/Library/Caches/claude-cli-nodejs/…/mcp-logs-plugin-metro-metro/*.jsonl`).
+- `METRO_ACK_EMOJI` — auto-react emoji `tail.ts` fires on every inbound, default `👀`. Empty disables. Telegram restricts the [bot reaction set](https://core.telegram.org/bots/api#reactiontypeemoji).
 
 ## Architecture
 
@@ -84,15 +72,15 @@ Telegram ─poll(getUpdates)──┐
                             ├─▶  src/tail.ts  ─stdout JSON lines─▶  agent (Monitor / unified_exec)
 Discord  ─gateway WS────────┘
                                       │
-                                      └─▶  src/server.ts (MCP) ◀─ tool calls (reply / react / edit / …)
+                                      └─▶  src/server.ts (MCP) ◀─ tool calls
 ```
 
-Two scripts: `tail.ts` is the inbound stream (the agent runs it in the background and observes its stdout), `server.ts` is the outbound MCP server (registered once with `claude mcp add` / `codex mcp add`). Both runtimes use the same approach.
+Two scripts: `tail.ts` is the inbound stream (agent runs it in the background, observes stdout), `server.ts` is the outbound MCP server (registered once with `claude mcp add` / `codex mcp add`). Both runtimes use the same approach.
 
 ## Caveats
 
 - **Discord Message Content Intent** required (privileged) — see install gotcha above.
-- **Telegram single-poller.** Two Metro runtimes on the same Telegram token will fight for the `getUpdates` slot; Discord allows multiple gateway connections.
-- **No pairing/allowlist.** For Telegram, anyone with the bot's `@username` can DM your session. For Discord, the bot only forwards DMs and `@mention` messages — but anyone in those channels can talk to your session. Run against bots you own.
-- **UI visibility.** Claude Code's `Monitor` collapses stdout into a "Monitor event" card by default; Codex renders MCP tool args in dim/wrapped lines. The agent's MCP `instructions` direct it to echo each inbound message in its visible reply (`[telegram chat_id=X] <content>`) so you can see what arrived without expanding cards.
-- **Mid-task latency.** When the agent is mid-tool-call, new messages surface at the next decision boundary — typically sub-second on Claude Code (lots of small tool calls), longer on Codex turns. Neither runtime supports interrupting an in-progress LLM generation.
+- **Telegram single-poller.** Two Metro instances on the same token will fight for the `getUpdates` slot; Discord allows multiple gateway connections.
+- **No pairing/allowlist.** Anyone who can DM your bot or @-mention it in a channel can talk to your session. Run against bots you own.
+- **UI visibility.** Claude Code's `Monitor` collapses stdout into a card; Codex dims MCP tool args. The MCP `instructions` direct the agent to echo each inbound message in its visible reply so you can see what arrived without expanding cards.
+- **Mid-task latency.** When the agent is mid-tool-call, new messages surface at the next decision boundary — typically sub-second on Claude Code, longer on Codex turns. Neither runtime can interrupt an in-progress LLM generation.

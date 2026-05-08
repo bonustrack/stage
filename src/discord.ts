@@ -1,15 +1,4 @@
-// Discord gateway adapter. DMs forward unconditionally; guild messages
-// forward only when the bot is mentioned. Requires the **Message Content
-// Intent** privilege in the Developer Portal — without it `messageCreate`
-// arrives with an empty `content`.
-
-import {
-  Client,
-  Events,
-  GatewayIntentBits,
-  Partials,
-  type Message,
-} from "discord.js";
+import { Client, Events, GatewayIntentBits, Partials, type Message } from "discord.js";
 import { log } from "./log.js";
 
 let client: Client | null = null;
@@ -30,6 +19,14 @@ function getClient(): Client {
   return client;
 }
 
+async function fetchMessage(channelId: string, messageId: string): Promise<Message> {
+  const channel = await getClient().channels.fetch(channelId);
+  if (!channel?.isTextBased() || !("messages" in channel)) {
+    throw new Error(`discord: channel ${channelId} is not text-capable`);
+  }
+  return channel.messages.fetch(messageId);
+}
+
 export type InboundMessage = { channel_id: string; message_id: string; text: string };
 
 let onInboundHandler: (msg: InboundMessage) => void = () => {};
@@ -37,24 +34,22 @@ export function onInbound(handler: (msg: InboundMessage) => void): void {
   onInboundHandler = handler;
 }
 
-function describeAttachments(m: Message): string {
-  return [...m.attachments.values()]
-    .map(a => {
-      if (a.contentType?.startsWith("image/")) return "[image]";
-      if (a.contentType?.startsWith("audio/")) return `[audio: ${a.name}]`;
-      return `[file: ${a.name}]`;
-    })
-    .join(" ");
-}
-
 export async function startGateway(): Promise<void> {
   const c = getClient();
 
   c.on(Events.MessageCreate, m => {
     if (m.author.bot) return;
+    // Guild messages: only forward when the bot is mentioned. DMs always pass.
     if (m.guildId && c.user && !m.mentions.has(c.user.id)) return;
 
-    const text = [m.content, describeAttachments(m)].filter(Boolean).join(" ").trim();
+    const tags = [...m.attachments.values()]
+      .map(a => {
+        if (a.contentType?.startsWith("image/")) return "[image]";
+        if (a.contentType?.startsWith("audio/")) return `[audio: ${a.name}]`;
+        return `[file: ${a.name}]`;
+      })
+      .join(" ");
+    const text = [m.content, tags].filter(Boolean).join(" ").trim();
     if (!text) return;
     onInboundHandler({ channel_id: m.channelId, message_id: m.id, text });
   });
@@ -68,14 +63,6 @@ export async function getMe(): Promise<{ username: string }> {
   const c = getClient();
   if (!c.user) throw new Error("discord: gateway not ready");
   return { username: c.user.username };
-}
-
-async function fetchMessage(channelId: string, messageId: string): Promise<Message> {
-  const channel = await getClient().channels.fetch(channelId);
-  if (!channel?.isTextBased() || !("messages" in channel)) {
-    throw new Error(`discord: channel ${channelId} is not text-capable`);
-  }
-  return channel.messages.fetch(messageId);
 }
 
 export async function replyToMessage(channelId: string, messageId: string, text: string): Promise<void> {
@@ -92,7 +79,7 @@ export async function setReaction(channelId: string, messageId: string, emoji: s
     await target.react(emoji);
     return;
   }
-  // Clear: only the bot's own reactions, matching Telegram's clear semantics.
+  // Clear only the bot's own reactions (matches Telegram's clear semantics).
   const me = getClient().user;
   if (!me) return;
   for (const r of target.reactions.cache.values()) {
@@ -110,10 +97,7 @@ export async function fetchAttachments(
     if (!a.contentType?.startsWith("image/")) continue;
     const res = await fetch(a.url);
     if (!res.ok) throw new Error(`discord: download ${a.url}: ${res.status}`);
-    out.push({
-      data: Buffer.from(await res.arrayBuffer()).toString("base64"),
-      mime: a.contentType,
-    });
+    out.push({ data: Buffer.from(await res.arrayBuffer()).toString("base64"), mime: a.contentType });
   }
   return out;
 }
@@ -127,7 +111,7 @@ export async function fetchRecentMessages(
     throw new Error(`discord: channel ${channelId} is not text-capable`);
   }
   const msgs = await channel.messages.fetch({ limit: Math.min(Math.max(limit, 1), 100) });
-  // Discord returns newest-first; flip for chronological.
+  // Discord returns newest-first; reverse for chronological.
   return [...msgs.values()].reverse().map(m => ({
     message_id: m.id,
     author: m.author.username,

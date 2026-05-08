@@ -1,61 +1,55 @@
 #!/usr/bin/env bun
 // Standalone inbound stream. Polls Telegram + connects to Discord, prints
 // one JSON line per inbound message on stdout. Designed to be launched by
-// an agent and observed via Claude Code's `Bash run_in_background=true` +
-// `Monitor`, or Codex's `unified_exec` + `write_stdin` polling.
+// an agent and observed via Bash+Monitor (Claude Code) or unified_exec
+// polling (Codex).
 //
-// Each line shape:
-//   {"platform":"telegram","chat_id":"…","message_id":42,"text":"…"}
-//   {"platform":"discord","channel_id":"…","message_id":"…","text":"…"}
-//
-// On every inbound, the server fires a 👀 emoji reaction so the user sees
-// immediate acknowledgement on the original platform — no agent involvement.
-// Override with METRO_ACK_EMOJI; set to empty string to disable.
-//
-// stderr carries pino-formatted operational logs; stdout is reserved for
-// JSON inbound messages so observers can parse it as JSONL.
+// Each inbound also fires a 👀 reaction on the source platform — instant
+// server-side acknowledgement, independent of the agent. Override with
+// METRO_ACK_EMOJI; set empty to disable.
 
-import { configuredPlatforms, loadMetroEnv, requireConfiguredPlatform, startPlatforms } from "./config.js";
+import { configuredPlatforms, loadMetroEnv, requireConfiguredPlatform } from "./config.js";
 import * as discord from "./discord.js";
 import { log } from "./log.js";
+import * as telegram from "./telegram.js";
 import { tg } from "./telegram.js";
 
 loadMetroEnv();
 const platforms = configuredPlatforms();
 requireConfiguredPlatform(platforms);
 
-const ACK_EMOJI = process.env.METRO_ACK_EMOJI ?? "👀";
+const ACK = process.env.METRO_ACK_EMOJI ?? "👀";
+const emit = (line: Record<string, unknown>) => process.stdout.write(`${JSON.stringify(line)}\n`);
 
-function emit(line: Record<string, unknown>): void {
-  process.stdout.write(`${JSON.stringify(line)}\n`);
-}
-
-function ackTelegram(chatId: string | number, messageId: number): void {
-  if (!ACK_EMOJI) return;
-  void tg("setMessageReaction", {
-    chat_id: chatId,
-    message_id: messageId,
-    reaction: [{ type: "emoji", emoji: ACK_EMOJI }],
-  }).catch(err => log.warn({ err: err?.message ?? err }, "telegram auto-react failed"));
-}
-
-function ackDiscord(channelId: string, messageId: string): void {
-  if (!ACK_EMOJI) return;
-  void discord
-    .setReaction(channelId, messageId, ACK_EMOJI)
-    .catch(err => log.warn({ err: err?.message ?? err }, "discord auto-react failed"));
-}
-
-await startPlatforms(platforms, {
-  telegram: m => {
-    ackTelegram(m.chat_id, m.message_id);
+if (platforms.telegram) {
+  const me = await telegram.getMe();
+  log.info({ bot: `@${me.username}` }, "telegram ready");
+  telegram.onInbound(m => {
+    if (ACK) {
+      void tg("setMessageReaction", {
+        chat_id: m.chat_id,
+        message_id: m.message_id,
+        reaction: [{ type: "emoji", emoji: ACK }],
+      }).catch(err => log.warn({ err: err?.message ?? err }, "telegram auto-react failed"));
+    }
     emit({ platform: "telegram", chat_id: String(m.chat_id), message_id: m.message_id, text: m.text });
-  },
-  discord: m => {
-    ackDiscord(m.channel_id, m.message_id);
+  });
+  void telegram.startPolling();
+}
+
+if (platforms.discord) {
+  await discord.startGateway();
+  const me = await discord.getMe();
+  log.info({ bot: me.username }, "discord ready");
+  discord.onInbound(m => {
+    if (ACK) {
+      void discord
+        .setReaction(m.channel_id, m.message_id, ACK)
+        .catch(err => log.warn({ err: err?.message ?? err }, "discord auto-react failed"));
+    }
     emit({ platform: "discord", channel_id: m.channel_id, message_id: m.message_id, text: m.text });
-  },
-});
+  });
+}
 
 process.stdin.on("end", () => process.exit(0));
 process.stdin.on("close", () => process.exit(0));

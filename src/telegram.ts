@@ -1,6 +1,3 @@
-// Telegram Bot API wrapper + single-user polling. Token read lazily so a
-// Discord-only configuration loads cleanly.
-
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { metroHome } from "./config.js";
@@ -14,17 +11,12 @@ function token(): string {
   return t;
 }
 
-async function fetchT(url: string, init: RequestInit & { timeoutMs?: number } = {}) {
-  const { timeoutMs = 30_000, ...rest } = init;
-  return fetch(url, { ...rest, signal: AbortSignal.timeout(timeoutMs) });
-}
-
 export async function tg<T = any>(method: string, body: unknown, timeoutMs = 30_000): Promise<T> {
-  const res = await fetchT(`${API_BASE}/bot${token()}/${method}`, {
+  const res = await fetch(`${API_BASE}/bot${token()}/${method}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
-    timeoutMs,
+    signal: AbortSignal.timeout(timeoutMs),
   });
   const json = (await res.json()) as { ok: boolean; description?: string; result?: T };
   if (!json.ok) throw new Error(`telegram ${method}: ${json.description ?? "unknown error"}`);
@@ -51,12 +43,50 @@ export async function getMe(): Promise<{ username: string }> {
   return tg("getMe", {});
 }
 
-// Resolve an inbound Telegram message to a string. Image file_ids are cached
-// for download_attachment lookup; voice/audio are opaque placeholders since
-// Claude Code can't ingest MCP audio blocks.
+// FIFO-bounded disk cache, shared between tail.ts (writer) and server.ts (reader).
+type Attachment = { file_id: string; mime: string };
+const CACHE_MAX = 200;
+const cacheFile = join(metroHome(), "telegram-attachments.json");
+
+function readCache(): Record<string, Attachment[]> {
+  try {
+    return existsSync(cacheFile) ? JSON.parse(readFileSync(cacheFile, "utf8")) : {};
+  } catch (err: any) {
+    log.warn({ err: err?.message ?? err }, "telegram attachment cache read failed");
+    return {};
+  }
+}
+
+function cacheAttachment(chatId: ChatId, messageId: number, att: Attachment): void {
+  try {
+    mkdirSync(metroHome(), { recursive: true });
+    const data = readCache();
+    const key = `${chatId}:${messageId}`;
+    data[key] = [...(data[key] ?? []), att];
+    const keys = Object.keys(data);
+    for (const stale of keys.slice(0, Math.max(0, keys.length - CACHE_MAX))) delete data[stale];
+    writeFileSync(cacheFile, JSON.stringify(data, null, 2));
+  } catch (err: any) {
+    log.warn({ err: err?.message ?? err }, "telegram attachment cache write failed");
+  }
+}
+
+export function getCachedAttachments(chatId: ChatId, messageId: number): Attachment[] {
+  return readCache()[`${chatId}:${messageId}`] ?? [];
+}
+
+export async function downloadAttachment(fileId: string, mime: string): Promise<{ data: string; mime: string }> {
+  const file = await tg<{ file_path: string }>("getFile", { file_id: fileId });
+  const res = await fetch(`${API_BASE}/file/bot${token()}/${file.file_path}`, {
+    signal: AbortSignal.timeout(30_000),
+  });
+  if (!res.ok) throw new Error(`download failed: ${res.status}`);
+  const blob = await res.blob();
+  return { data: Buffer.from(await blob.arrayBuffer()).toString("base64"), mime: blob.type || mime };
+}
+
 async function messageToText(m: any, chatId: ChatId): Promise<string | null> {
   if (m.text) return m.text;
-
   const caption: string = m.caption ?? "";
 
   if (m.photo?.length) {
@@ -75,74 +105,6 @@ async function messageToText(m: any, chatId: ChatId): Promise<string | null> {
   return caption || null;
 }
 
-async function downloadFile(fileId: string): Promise<Blob> {
-  const file = await tg<{ file_path: string }>("getFile", { file_id: fileId });
-  const res = await fetchT(`${API_BASE}/file/bot${token()}/${file.file_path}`);
-  if (!res.ok) throw new Error(`download failed: ${res.status}`);
-  return res.blob();
-}
-
-// FIFO-bounded per-process cache so download_attachment can resolve a
-// message_id back to the underlying file_id without re-polling.
-type CachedAttachment = { file_id: string; mime: string };
-const ATTACHMENT_CACHE_MAX = 200;
-const attachmentCache = new Map<string, CachedAttachment[]>();
-const attachmentCacheFile = join(metroHome(), "telegram-attachments.json");
-
-function cacheAttachment(chatId: ChatId, messageId: number, att: CachedAttachment): void {
-  const key = `${chatId}:${messageId}`;
-  const list = attachmentCache.get(key) ?? [];
-  list.push(att);
-  attachmentCache.set(key, list);
-  persistCachedAttachments(key, list);
-  if (attachmentCache.size > ATTACHMENT_CACHE_MAX) {
-    const first = attachmentCache.keys().next().value;
-    if (first !== undefined) attachmentCache.delete(first);
-  }
-}
-
-export function getCachedAttachments(chatId: ChatId, messageId: number): CachedAttachment[] {
-  const key = `${chatId}:${messageId}`;
-  const cached = attachmentCache.get(key);
-  if (cached) return cached;
-
-  const persisted = readPersistentAttachmentCache()[key] ?? [];
-  if (persisted.length) attachmentCache.set(key, persisted);
-  return persisted;
-}
-
-export async function downloadAttachment(fileId: string, mime: string): Promise<{ data: string; mime: string }> {
-  const blob = await downloadFile(fileId);
-  const data = Buffer.from(await blob.arrayBuffer()).toString("base64");
-  return { data, mime: blob.type || mime };
-}
-
-function readPersistentAttachmentCache(): Record<string, CachedAttachment[]> {
-  try {
-    if (!existsSync(attachmentCacheFile)) return {};
-    return JSON.parse(readFileSync(attachmentCacheFile, "utf8")) as Record<string, CachedAttachment[]>;
-  } catch (err: any) {
-    log.warn({ err: err?.message ?? err }, "telegram attachment cache read failed");
-    return {};
-  }
-}
-
-function persistCachedAttachments(key: string, list: CachedAttachment[]): void {
-  try {
-    mkdirSync(metroHome(), { recursive: true });
-    const data = readPersistentAttachmentCache();
-    data[key] = list;
-    const keys = Object.keys(data);
-    for (const oldKey of keys.slice(0, Math.max(0, keys.length - ATTACHMENT_CACHE_MAX))) {
-      delete data[oldKey];
-    }
-    writeFileSync(attachmentCacheFile, JSON.stringify(data, null, 2));
-  } catch (err: any) {
-    log.warn({ err: err?.message ?? err }, "telegram attachment cache write failed");
-  }
-}
-
-// ----- polling -----
 export type InboundMessage = { chat_id: ChatId; message_id: number; text: string };
 
 let onInboundHandler: (msg: InboundMessage) => void = () => {};
