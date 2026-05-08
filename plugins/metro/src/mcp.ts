@@ -4,6 +4,7 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import pkg from "../package.json" with { type: "json" };
 import * as discord from "./discord.js";
 import * as telegram from "./telegram.js";
 import { buildSendBody, type ChatId, tg } from "./telegram.js";
@@ -38,7 +39,7 @@ export function buildServer(platforms: Platforms): McpServer {
     .join(" + ");
 
   const s = new McpServer(
-    { name: "metro", version: "0.6.1" },
+    { name: "metro", version: pkg.version },
     {
       capabilities: { tools: {}, experimental: { "claude/channel": {} } },
       instructions:
