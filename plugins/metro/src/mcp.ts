@@ -1,7 +1,6 @@
-// MCP tool registration. Tools are namespaced per-platform (telegram-* /
-// discord-*) and registered only when their platform is enabled. The agent
-// reads the `platform` attribute on inbound <channel> tags and picks the
-// matching tool.
+// MCP tool registration. Tools are namespaced per-platform and registered
+// only when their platform is enabled. The agent reads the `platform`
+// attribute on inbound <channel> tags to pick the matching tool family.
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
@@ -18,53 +17,50 @@ const TG_DEFAULT_CHAT: ChatId | undefined = (() => {
 const DC_DEFAULT_CHANNEL = process.env.DISCORD_CHANNEL_ID;
 
 function tgChat(user: ChatId | undefined): ChatId {
-  const chat = user ?? TG_DEFAULT_CHAT;
-  if (chat === undefined) throw new Error("no Telegram chat — pass `user` or set TELEGRAM_CHAT_ID");
-  return chat;
+  const c = user ?? TG_DEFAULT_CHAT;
+  if (c === undefined) throw new Error("no Telegram chat — pass `user` or set TELEGRAM_CHAT_ID");
+  return c;
 }
+
 function dcChannel(channel: string | undefined): string {
   const c = channel ?? DC_DEFAULT_CHANNEL;
   if (!c) throw new Error("no Discord channel — pass `channelId` or set DISCORD_CHANNEL_ID");
   return c;
 }
 
+const ok = (text: string) => ({ content: [{ type: "text" as const, text }] });
+
 export type Platforms = { telegram: boolean; discord: boolean };
 
 export function buildServer(platforms: Platforms): McpServer {
-  const enabled = [
-    platforms.telegram && "Telegram",
-    platforms.discord && "Discord",
-  ].filter(Boolean).join(" + ");
+  const enabled = [platforms.telegram && "Telegram", platforms.discord && "Discord"]
+    .filter(Boolean)
+    .join(" + ");
 
   const s = new McpServer(
-    { name: "metro", version: "0.5.2" },
+    { name: "metro", version: "0.6.0" },
     {
       capabilities: { tools: {}, experimental: { "claude/channel": {} } },
       instructions:
-        `${enabled} channel. Each <channel> tag is a message from the user. ` +
-        "The `platform` attribute identifies the source — use the matching tool family. " +
-        "Pass `message_id` (and Discord's `channel_id`) verbatim from the tag's attributes. " +
-        "Default: call reply for questions, react with 👍 for quick acks, edit-message to " +
-        "update something you already sent. " +
-        "If the message body contains `[image]`, call `*-download-attachment` with the " +
-        "message_id to actually see what the user sent. Voice/audio messages arrive as " +
-        "`[voice]` / `[audio]` placeholders and the bot can't transcribe them — ask the user " +
-        "to retype if it matters. Use `discord-fetch-messages` to read earlier context from a " +
-        "Discord channel — Discord has no search API for bots.",
+        `${enabled} channel. Each <channel> tag is a message from the user; the ` +
+        "`platform` attribute selects which tool family to call. Pass `message_id` " +
+        "(and Discord's `channel_id`) verbatim from the tag's attributes. Default: " +
+        "reply for questions, react with 👍 for quick acks, edit-message to update " +
+        "what you already sent. For `[image]` markers call `*-download-attachment`. " +
+        "Voice/audio arrive as opaque `[voice]`/`[audio]` placeholders. Use " +
+        "`discord-fetch-messages` for prior context — Discord has no search API for bots.",
     },
   );
 
   if (platforms.telegram) registerTelegramTools(s);
   if (platforms.discord) registerDiscordTools(s);
-
   return s;
 }
 
-// ----- Telegram tools -----
-// Telegram parse modes:
-//   HTML        : <b> <i> <u> <s> <a href> <code> <pre> <blockquote> <tg-spoiler>
-//   MarkdownV2  : *bold* _italic_ __underline__ ~strike~ ||spoiler|| `code` ```pre``` [text](url)
-//                 (escape _ * [ ] ( ) ~ ` > # + - = | { } . ! with \)
+// ----- Telegram -----
+// Parse modes: HTML supports <b><i><u><s><a><code><pre><blockquote><tg-spoiler>;
+// MarkdownV2 supports *bold* _italic_ __underline__ ~strike~ ||spoiler|| `code`
+// ```pre``` [text](url) (escape _*[]()~`>#+-=|{}.! with \).
 
 function registerTelegramTools(s: McpServer): void {
   const parseMode = z.enum(["HTML", "MarkdownV2"]).optional();
@@ -73,20 +69,21 @@ function registerTelegramTools(s: McpServer): void {
   const buttons = z
     .array(z.array(z.object({ text: z.string(), url: z.string() })))
     .optional()
-    .describe("Inline URL buttons. Outer array = rows, inner array = buttons in that row.");
+    .describe("Inline URL buttons. Outer = rows, inner = buttons in row.");
   const messageId = z.number().int().describe("Telegram message_id from the inbound tag.");
+  const sendInputs = { messageId, text: z.string(), user, parseMode, disableLinkPreview, buttons };
 
   s.registerTool(
     "telegram-reply",
     {
       description: "Quote-reply to a Telegram message. Threads under the user's original.",
-      inputSchema: { messageId, text: z.string(), user, parseMode, disableLinkPreview, buttons },
+      inputSchema: sendInputs,
     },
     async ({ messageId, text, user, parseMode, disableLinkPreview, buttons }) => {
       const body = buildSendBody(tgChat(user), text, { parseMode, disableLinkPreview, buttons });
       body.reply_parameters = { message_id: messageId, allow_sending_without_reply: true };
       await tg("sendMessage", body);
-      return { content: [{ type: "text", text: "sent" }] };
+      return ok("sent");
     },
   );
 
@@ -94,14 +91,14 @@ function registerTelegramTools(s: McpServer): void {
     "telegram-react",
     {
       description:
-        "Set or clear an emoji reaction on a Telegram message. Pass '' to clear. Telegram " +
-        "restricts private bots to a fixed whitelist (👍 ❤️ 🔥 🥰 👏 😁 🤔 🎉 🙏 👌 💯 🤣 …).",
+        "Set or clear an emoji reaction. Pass '' to clear. Telegram restricts private bots " +
+        "to a fixed whitelist (👍 ❤️ 🔥 🥰 👏 😁 🤔 🎉 🙏 👌 💯 🤣 …).",
       inputSchema: { messageId, emoji: z.string(), user },
     },
     async ({ messageId, emoji, user }) => {
       const reaction = emoji ? [{ type: "emoji", emoji }] : [];
       await tg("setMessageReaction", { chat_id: tgChat(user), message_id: messageId, reaction });
-      return { content: [{ type: "text", text: emoji ? "reacted" : "cleared" }] };
+      return ok(emoji ? "reacted" : "cleared");
     },
   );
 
@@ -109,13 +106,13 @@ function registerTelegramTools(s: McpServer): void {
     "telegram-edit-message",
     {
       description: "Edit a Telegram message the bot previously sent.",
-      inputSchema: { messageId, text: z.string(), user, parseMode, disableLinkPreview, buttons },
+      inputSchema: sendInputs,
     },
     async ({ messageId, text, user, parseMode, disableLinkPreview, buttons }) => {
       const body = buildSendBody(tgChat(user), text, { parseMode, disableLinkPreview, buttons });
       body.message_id = messageId;
       await tg("editMessageText", body);
-      return { content: [{ type: "text", text: "edited" }] };
+      return ok("edited");
     },
   );
 
@@ -123,22 +120,13 @@ function registerTelegramTools(s: McpServer): void {
     "telegram-download-attachment",
     {
       description:
-        "Download image attachments from an inbound Telegram message and return them as " +
-        "image content blocks the agent can see. Only resolves messages received during the " +
-        "current plugin session (file_ids cached in memory). Voice/audio is auto-transcribed " +
-        "on receipt — call this only for images.",
+        "Download image attachments from a Telegram message and return them as image content " +
+        "blocks. Resolves only messages received during the current session (in-memory cache).",
       inputSchema: { messageId, user },
     },
     async ({ messageId, user }) => {
       const atts = telegram.getCachedAttachments(tgChat(user), messageId);
-      if (atts.length === 0) {
-        return {
-          content: [{
-            type: "text",
-            text: "no cached attachments for this message — it may pre-date this plugin session, or be text-only",
-          }],
-        };
-      }
+      if (atts.length === 0) return ok("no cached attachments — message may pre-date this session");
       const blocks = await Promise.all(
         atts.map(async a => {
           const { data, mime } = await telegram.downloadAttachment(a.file_id, a.mime);
@@ -150,7 +138,7 @@ function registerTelegramTools(s: McpServer): void {
   );
 }
 
-// ----- Discord tools -----
+// ----- Discord -----
 function registerDiscordTools(s: McpServer): void {
   const channelId = z
     .string()
@@ -161,12 +149,12 @@ function registerDiscordTools(s: McpServer): void {
   s.registerTool(
     "discord-reply",
     {
-      description: "Reply to a Discord message. The reply is threaded under the original.",
+      description: "Reply to a Discord message. Threads under the original.",
       inputSchema: { messageId, text: z.string(), channelId },
     },
     async ({ messageId, text, channelId }) => {
       await discord.replyToMessage(dcChannel(channelId), messageId, text);
-      return { content: [{ type: "text", text: "sent" }] };
+      return ok("sent");
     },
   );
 
@@ -174,13 +162,13 @@ function registerDiscordTools(s: McpServer): void {
     "discord-react",
     {
       description:
-        "Add or clear an emoji reaction on a Discord message. Pass '' to remove the bot's " +
-        "reactions. `emoji` accepts a unicode character (👍) or a custom emoji ID.",
+        "Set or clear an emoji reaction on a Discord message. Pass '' to clear the bot's " +
+        "reactions. `emoji` accepts a unicode character or a custom emoji ID.",
       inputSchema: { messageId, emoji: z.string(), channelId },
     },
     async ({ messageId, emoji, channelId }) => {
       await discord.setReaction(dcChannel(channelId), messageId, emoji);
-      return { content: [{ type: "text", text: emoji ? "reacted" : "cleared" }] };
+      return ok(emoji ? "reacted" : "cleared");
     },
   );
 
@@ -192,7 +180,7 @@ function registerDiscordTools(s: McpServer): void {
     },
     async ({ messageId, text, channelId }) => {
       await discord.editMessage(dcChannel(channelId), messageId, text);
-      return { content: [{ type: "text", text: "edited" }] };
+      return ok("edited");
     },
   );
 
@@ -200,14 +188,13 @@ function registerDiscordTools(s: McpServer): void {
     "discord-download-attachment",
     {
       description:
-        "Download image attachments from a Discord message and return them as image content " +
-        "blocks the agent can see. Works on any reachable message, not just ones received this " +
-        "session. Non-image attachments are skipped.",
+        "Download image attachments from a Discord message as image content blocks. Works on " +
+        "any reachable message. Non-image attachments are skipped.",
       inputSchema: { messageId, channelId },
     },
     async ({ messageId, channelId }) => {
       const atts = await discord.fetchAttachments(dcChannel(channelId), messageId);
-      if (atts.length === 0) return { content: [{ type: "text", text: "no image attachments on this message" }] };
+      if (atts.length === 0) return ok("no image attachments on this message");
       return {
         content: atts.map(a => ({ type: "image" as const, data: a.data, mimeType: a.mime })),
       };
@@ -219,20 +206,18 @@ function registerDiscordTools(s: McpServer): void {
     {
       description:
         "Fetch recent messages from a Discord channel for context. Returns up to `limit` " +
-        "messages in chronological order. Use this when the agent needs to look back at the " +
-        "conversation — Discord has no search API for bots, so this is the only lookback path.",
+        "messages in chronological order — Discord exposes no search API for bots.",
       inputSchema: {
         channelId,
-        limit: z.number().int().min(1).max(100).optional()
-          .describe("Number of messages to fetch (1-100, default 10)."),
+        limit: z.number().int().min(1).max(100).optional().describe("1–100, default 10."),
       },
     },
     async ({ channelId, limit }) => {
       const msgs = await discord.fetchRecentMessages(dcChannel(channelId), limit ?? 10);
-      const formatted = msgs
+      const text = msgs
         .map(m => `[message_id=${m.message_id} ${m.timestamp}] ${m.author}: ${m.text}`)
         .join("\n");
-      return { content: [{ type: "text", text: formatted || "(channel is empty)" }] };
+      return ok(text || "(channel is empty)");
     },
   );
 }

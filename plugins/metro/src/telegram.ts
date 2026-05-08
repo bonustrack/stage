@@ -1,6 +1,7 @@
-// Telegram Bot API wrapper + single-user polling loop. Activated only when
-// TELEGRAM_BOT_TOKEN is set; otherwise the module loads silently and any call
-// throws. server.ts checks the env var before importing handlers.
+// Telegram Bot API wrapper + single-user polling. Token read lazily so a
+// Discord-only configuration loads cleanly.
+
+import { log } from "./log.js";
 
 const API_BASE = "https://api.telegram.org";
 
@@ -35,8 +36,6 @@ export type SendOptions = {
   buttons?: UrlButton[][];
 };
 
-// Compose a sendMessage / editMessageText body. Tool handlers add
-// method-specific extras (reply_parameters, message_id) before calling tg().
 export function buildSendBody(chatId: ChatId, text: string, opts: SendOptions): Record<string, unknown> {
   const body: Record<string, unknown> = { chat_id: chatId, text };
   if (opts.parseMode) body.parse_mode = opts.parseMode;
@@ -49,11 +48,9 @@ export async function getMe(): Promise<{ username: string }> {
   return tg("getMe", {});
 }
 
-// Resolve an inbound Telegram message to a single string. Image file_ids are
-// cached so the agent can call `telegram-download-attachment` later with
-// just the message_id. Voice/audio messages surface as `[voice]` / `[audio]`
-// placeholders — Claude Code v2.1.133 can't ingest MCP audio content blocks,
-// so the agent has no way to actually hear them.
+// Resolve an inbound Telegram message to a string. Image file_ids are cached
+// for download_attachment lookup; voice/audio are opaque placeholders since
+// Claude Code can't ingest MCP audio blocks.
 async function messageToText(m: any, chatId: ChatId): Promise<string | null> {
   if (m.text) return m.text;
 
@@ -82,9 +79,8 @@ async function downloadFile(fileId: string): Promise<Blob> {
   return res.blob();
 }
 
-// In-memory cache of inbound message → attachments. Lets `download_attachment`
-// resolve a message_id back to the underlying file_id without re-polling.
-// FIFO bound; the cache is per-process and dies on plugin restart.
+// FIFO-bounded per-process cache so download_attachment can resolve a
+// message_id back to the underlying file_id without re-polling.
 type CachedAttachment = { file_id: string; mime: string };
 const ATTACHMENT_CACHE_MAX = 200;
 const attachmentCache = new Map<string, CachedAttachment[]>();
@@ -119,8 +115,7 @@ export function onInbound(handler: (msg: InboundMessage) => void): void {
 }
 
 export async function startPolling(): Promise<void> {
-  // A registered webhook short-circuits getUpdates — clear it defensively so
-  // the user doesn't have to know about that gotcha.
+  // A registered webhook short-circuits getUpdates — clear it defensively.
   await tg("deleteWebhook", { drop_pending_updates: false }).catch(() => {});
 
   let offset = 0;
@@ -135,7 +130,7 @@ export async function startPolling(): Promise<void> {
         void dispatchUpdate(u);
       }
     } catch (err: any) {
-      console.error(`metro: telegram poll error: ${err?.message ?? err}`);
+      log.error({ err: err?.message ?? err }, "telegram poll error");
       await new Promise(r => setTimeout(r, 1000));
     }
   }
@@ -144,15 +139,12 @@ export async function startPolling(): Promise<void> {
 async function dispatchUpdate(u: any): Promise<void> {
   const m = u.message;
   if (!m?.chat?.id || typeof m.message_id !== "number") return;
+  const base = { chat_id: m.chat.id, message_id: m.message_id };
   try {
     const text = await messageToText(m, m.chat.id);
     if (text === null) return;
-    onInboundHandler({ chat_id: m.chat.id, message_id: m.message_id, text });
+    onInboundHandler({ ...base, text });
   } catch (err: any) {
-    onInboundHandler({
-      chat_id: m.chat.id,
-      message_id: m.message_id,
-      text: `[message processing failed: ${err?.message ?? err}]`,
-    });
+    onInboundHandler({ ...base, text: `[message processing failed: ${err?.message ?? err}]` });
   }
 }

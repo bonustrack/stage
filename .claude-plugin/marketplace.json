@@ -11,7 +11,7 @@
       "name": "metro",
       "source": "./plugins/metro",
       "description": "Telegram + Discord channel: surfaces inbound messages live in-session and lets the agent reply, react, and edit-message.",
-      "version": "0.5.2",
+      "version": "0.6.0",
       "category": "channels",
       "keywords": ["telegram", "discord", "channel", "notifications"]
     }
