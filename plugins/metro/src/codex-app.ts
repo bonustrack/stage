@@ -167,6 +167,9 @@ class CodexAppServerClient {
   }
 
   async startTurn(threadId: string, text: string): Promise<void> {
+    // `responsesapiClientMetadata` is intentionally lowercase `api` — that's
+    // how Codex's app-server protocol names the field. See:
+    // codex-rs/app-server-protocol/src/protocol/v2/turn.rs
     await this.request("turn/start", {
       threadId,
       input: [{ type: "text", text, text_elements: [] }],

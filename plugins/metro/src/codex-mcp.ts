@@ -15,6 +15,11 @@ requireConfiguredPlatform(platforms);
 startBridgeSidecar();
 
 if (platforms.discord) {
+  // Discord client needs an active gateway connection for REST calls (channel
+  // fetch, message fetch) used by reply/react/edit/download tools. The bridge
+  // sidecar opens its own gateway for inbound delivery — Discord allows
+  // multiple bot connections, so this duplication is intentional and safe as
+  // long as we don't wire `onInbound` here (only the bridge handles inbound).
   const dc = await import("./discord.js");
   await dc.startGateway();
   const me = await dc.getMe();
