@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import type * as Discord from "./discord.js";
 import { log } from "./log.js";
 import type * as Telegram from "./telegram.js";
@@ -16,19 +17,29 @@ export function metroHome(): string {
   return process.env.METRO_CHANNEL_HOME ?? join(homedir(), ".claude", "channels", "metro");
 }
 
+// Load env from the canonical home, falling back to in-repo .env files for
+// development. First reader wins per key — so the home file takes precedence
+// when both are present, and existing process.env is never overwritten.
 export function loadMetroEnv(): string {
-  const envFile = join(metroHome(), ".env");
-  if (!existsSync(envFile)) return envFile;
+  const homeEnv = join(metroHome(), ".env");
+  const pluginRootEnv = fileURLToPath(new URL("../.env", import.meta.url));
+  const repoRootEnv = fileURLToPath(new URL("../../../.env", import.meta.url));
 
-  for (const line of readFileSync(envFile, "utf8").split("\n")) {
+  for (const path of [homeEnv, pluginRootEnv, repoRootEnv]) {
+    loadEnvFile(path);
+  }
+  return homeEnv;
+}
+
+function loadEnvFile(path: string): void {
+  if (!existsSync(path)) return;
+  for (const line of readFileSync(path, "utf8").split("\n")) {
     const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/);
     if (!m || m[1].startsWith("#")) continue;
     if (process.env[m[1]] === undefined) {
       process.env[m[1]] = m[2].replace(/^(['"])(.*)\1$/, "$2");
     }
   }
-
-  return envFile;
 }
 
 export function configuredPlatforms(): Platforms {

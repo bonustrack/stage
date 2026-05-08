@@ -82,7 +82,7 @@ Each `<channel>` notification carries a `platform` attribute so the agent picks 
 
 ## Config
 
-Plugin reads `~/.claude/channels/metro/.env`:
+Plugin reads `~/.claude/channels/metro/.env` (canonical), with two dev fallbacks: `<repo-root>/.env` and `plugins/metro/.env`. First reader wins per key, so the home file always takes precedence when present.
 
 ```
 TELEGRAM_BOT_TOKEN=123456:ABC…
