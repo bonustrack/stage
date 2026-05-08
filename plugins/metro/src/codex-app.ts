@@ -1,5 +1,4 @@
-import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
-import { createInterface, type Interface } from "node:readline";
+import { spawn } from "node:child_process";
 import pkg from "../package.json" with { type: "json" };
 import { log } from "./log.js";
 
@@ -71,48 +70,18 @@ async function deliverWithDebugCli(text: string): Promise<void> {
 }
 
 class CodexAppServerClient {
-  private child: ChildProcessWithoutNullStreams | null = null;
   private ws: WebSocket | null = null;
-  private lines: Interface | null = null;
   private nextId = 1;
   private pending = new Map<JsonRpcId, PendingRequest>();
 
   async connect(): Promise<void> {
     const url = process.env.METRO_CODEX_APP_SERVER_URL;
-    if (url) {
-      await this.connectWebSocket(url);
-    } else {
-      await this.connectProxy();
+    if (!url) {
+      throw new Error(
+        "METRO_CODEX_APP_SERVER_URL is required — start `codex app-server --listen ws://…` and point Metro at it",
+      );
     }
 
-    await this.request("initialize", {
-      clientInfo: { name: "metro", title: "Metro", version: pkg.version },
-      capabilities: { experimentalApi: true },
-    });
-    this.notify("initialized");
-  }
-
-  private async connectProxy(): Promise<void> {
-    const bin = process.env.METRO_CODEX_BIN ?? "codex";
-    const args = ["app-server", "proxy"];
-    const sock = process.env.METRO_CODEX_PROXY_SOCK;
-    if (sock) args.push("--sock", sock);
-
-    const child = spawn(bin, args, { stdio: ["pipe", "pipe", "pipe"] });
-    this.child = child;
-
-    child.stderr.on("data", chunk => {
-      const text = String(chunk).trim();
-      if (text) log.debug({ text }, "codex app-server proxy stderr");
-    });
-    child.on("error", err => this.rejectAll(err));
-    child.on("close", code => this.rejectAll(new Error(`codex app-server proxy closed with code ${code}`)));
-
-    this.lines = createInterface({ input: child.stdout });
-    this.lines.on("line", line => this.handleLine(line));
-  }
-
-  private async connectWebSocket(url: string): Promise<void> {
     const ws = new WebSocket(url);
     this.ws = ws;
 
@@ -136,6 +105,12 @@ class CodexAppServerClient {
     });
     ws.addEventListener("close", () => this.rejectAll(new Error("codex app-server websocket closed")));
     ws.addEventListener("error", () => this.rejectAll(new Error("codex app-server websocket error")));
+
+    await this.request("initialize", {
+      clientInfo: { name: "metro", title: "Metro", version: pkg.version },
+      capabilities: { experimentalApi: true },
+    });
+    this.notify("initialized");
   }
 
   async resolveThreadId(): Promise<string> {
@@ -173,18 +148,12 @@ class CodexAppServerClient {
     await this.request("turn/start", {
       threadId,
       input: [{ type: "text", text, text_elements: [] }],
-      responsesapiClientMetadata: {
-        source: "metro",
-      },
+      responsesapiClientMetadata: { source: "metro" },
     });
   }
 
   close(): void {
-    this.lines?.close();
-    this.child?.stdin.end();
-    this.child?.kill();
     this.ws?.close();
-    this.child = null;
     this.ws = null;
   }
 
@@ -207,17 +176,10 @@ class CodexAppServerClient {
   }
 
   private send(payload: unknown): void {
-    const line = `${JSON.stringify(payload)}\n`;
-    if (this.ws) {
-      if (this.ws.readyState !== WebSocket.OPEN) throw new Error("codex app-server websocket is not connected");
-      this.ws.send(line);
-      return;
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      throw new Error("codex app-server websocket is not connected");
     }
-    if (this.child) {
-      this.child.stdin.write(line);
-      return;
-    }
-    throw new Error("codex app-server is not connected");
+    this.ws.send(`${JSON.stringify(payload)}\n`);
   }
 
   private handleLine(line: string): void {

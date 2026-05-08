@@ -3,14 +3,14 @@
 // Discord and pushes inbound messages into the live Claude Code session.
 // Spawned by `claude --channels plugin:metro@metro`.
 
-const { StdioServerTransport } = await import("@modelcontextprotocol/sdk/server/stdio.js");
-const { configuredPlatforms, loadMetroEnv, requireConfiguredPlatform } = await import("./config.js");
-const { log } = await import("./log.js");
-const { buildServer } = await import("./mcp.js");
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { configuredPlatforms, loadMetroEnv, requireConfiguredPlatform, startPlatforms } from "./config.js";
+import { buildServer } from "./mcp.js";
 
 loadMetroEnv();
 const platforms = configuredPlatforms();
 requireConfiguredPlatform(platforms);
+
 const server = buildServer(platforms).server;
 await server.connect(new StdioServerTransport());
 
@@ -23,24 +23,11 @@ function emit(platform: "telegram" | "discord", chat_id: string, message_id: str
     .catch(() => {});
 }
 
-if (platforms.telegram) {
-  const tg = await import("./telegram.js");
-  const me = await tg.getMe();
-  log.info({ bot: `@${me.username}` }, "telegram ready");
-  tg.onInbound(m => emit("telegram", String(m.chat_id), String(m.message_id), m.text));
-  void tg.startPolling();
-}
-
-if (platforms.discord) {
-  const dc = await import("./discord.js");
-  await dc.startGateway();
-  const me = await dc.getMe();
-  log.info({ bot: me.username }, "discord ready");
-  dc.onInbound(m => emit("discord", m.channel_id, m.message_id, m.text));
-}
+await startPlatforms(platforms, {
+  telegram: m => emit("telegram", String(m.chat_id), String(m.message_id), m.text),
+  discord: m => emit("discord", m.channel_id, m.message_id, m.text),
+});
 
 // Exit on stdin close so we don't linger and fight for the Telegram poller slot.
 process.stdin.on("end", () => process.exit(0));
 process.stdin.on("close", () => process.exit(0));
-
-export {};

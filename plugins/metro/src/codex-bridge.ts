@@ -4,7 +4,7 @@
 
 import { closeSync, existsSync, mkdirSync, openSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { configuredPlatforms, loadMetroEnv, metroHome, requireConfiguredPlatform } from "./config.js";
+import { configuredPlatforms, loadMetroEnv, metroHome, requireConfiguredPlatform, startPlatforms } from "./config.js";
 import { deliverToCodex, formatChannelMessage, type CodexInboundMessage } from "./codex-app.js";
 import { log } from "./log.js";
 
@@ -45,35 +45,26 @@ async function deliverWithRetry(text: string, message: CodexInboundMessage): Pro
   throw lastError instanceof Error ? lastError : new Error(String(lastError));
 }
 
-if (platforms.telegram) {
-  const tg = await import("./telegram.js");
-  const me = await tg.getMe();
-  log.info({ bot: `@${me.username}` }, "telegram bridge ready");
-  tg.onInbound(m =>
-    enqueue({
-      platform: "telegram",
-      chatId: String(m.chat_id),
-      messageId: String(m.message_id),
-      text: m.text,
-    }),
-  );
-  void tg.startPolling();
-}
-
-if (platforms.discord) {
-  const dc = await import("./discord.js");
-  await dc.startGateway();
-  const me = await dc.getMe();
-  log.info({ bot: me.username }, "discord bridge ready");
-  dc.onInbound(m =>
-    enqueue({
-      platform: "discord",
-      channelId: m.channel_id,
-      messageId: m.message_id,
-      text: m.text,
-    }),
-  );
-}
+await startPlatforms(
+  platforms,
+  {
+    telegram: m =>
+      enqueue({
+        platform: "telegram",
+        chatId: String(m.chat_id),
+        messageId: String(m.message_id),
+        text: m.text,
+      }),
+    discord: m =>
+      enqueue({
+        platform: "discord",
+        channelId: m.channel_id,
+        messageId: m.message_id,
+        text: m.text,
+      }),
+  },
+  "bridge ready",
+);
 
 process.on("SIGINT", () => {
   releaseLock();
