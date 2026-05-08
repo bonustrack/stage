@@ -24,14 +24,28 @@ export function buildServer(platforms: Platforms): McpServer {
     {
       capabilities: { tools: {}, experimental: { "claude/channel": {} } },
       instructions:
-        `${enabled} channel. Each <channel> tag is a Metro message from the user; the ` +
-        "`platform` attribute selects which tool family to call. Pass Telegram `chat_id` " +
-        "and `message_id`, or Discord `channel_id` and `message_id`, verbatim from the " +
-        "tag attributes. Default: reply for questions, react with 👍 for quick acks, " +
-        "edit-message to update what you already sent. For `[image]` markers call " +
-        "`*-download-attachment`. Voice/audio arrive as opaque `[voice]`/`[audio]` " +
-        "placeholders. Use `discord-fetch-messages` for prior context — Discord has no " +
-        "search API for bots.",
+        `Metro: ${enabled} channel.\n` +
+        "\n" +
+        "Inbound messages arrive in one of two shapes:\n" +
+        "  • <channel platform=\"…\" chat_id=\"…\" message_id=\"…\">text</channel> tags " +
+        "(Claude Code --channels)\n" +
+        "  • JSON lines on stdout of `bun src/tail.ts` running in the background " +
+        "(observed via Bash+Monitor on Claude Code, or unified_exec on Codex)\n" +
+        "\n" +
+        "CRITICAL — visibility: when you handle an inbound message, your FIRST line of " +
+        "visible response MUST echo the content so the user sees what arrived. Format:\n" +
+        "  [telegram chat_id=<id>] <content>\n" +
+        "  [discord channel_id=<id>] <content>\n" +
+        "Otherwise the user sees a collapsed Monitor event or a tool call without payload " +
+        "and has no idea what message you're handling.\n" +
+        "\n" +
+        "Then call the matching tool — `telegram-*` for telegram, `discord-*` for discord. " +
+        "Pass `chat_id` / `channel_id` and `message_id` verbatim from the inbound.\n" +
+        "\n" +
+        "Defaults: `reply` for questions, `react` with 👍 for quick acks, `edit-message` " +
+        "to update what you already sent, `*-download-attachment` for `[image]` markers " +
+        "(voice/audio arrive as opaque `[voice]`/`[audio]`), `discord-fetch-messages` for " +
+        "prior context — Discord has no search API for bots.",
     },
   );
 

@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc --noEmit",
     "start": "bun install --no-summary && bun src/server.ts",
+    "tail": "bun install --no-summary && bun src/tail.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
