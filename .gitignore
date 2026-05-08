@@ -4,6 +4,7 @@ dist
 *.log
 .env
 .env.*
+!.env.example
 telegram-attachments.json
 .typing-stop/
 .tail-lock

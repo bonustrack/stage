@@ -9,11 +9,9 @@ git clone https://github.com/bonustrack/metro && cd metro
 bun install
 bun link             # exposes `metro` on PATH (~/.bun/bin/metro)
 
-cat > .env <<'EOF'
-TELEGRAM_BOT_TOKEN=…   # from @BotFather
-DISCORD_BOT_TOKEN=…    # from discord.com/developers/applications
-EOF
+cp .env.example .env
 chmod 600 .env
+$EDITOR .env          # fill in TELEGRAM_BOT_TOKEN and/or DISCORD_BOT_TOKEN
 ```
 
 **Discord gotcha**: enable **Message Content Intent** in the Developer Portal → Bot → Privileged Gateway Intents.
