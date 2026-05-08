@@ -22,15 +22,14 @@ export function buildServer(platforms: Platforms): McpServer {
   const s = new McpServer(
     { name: "metro", version: pkg.version },
     {
-      capabilities: { tools: {}, experimental: { "claude/channel": {} } },
+      capabilities: { tools: {} },
       instructions:
         `Metro: ${enabled} channel.\n` +
         "\n" +
-        "Inbound messages arrive in one of two shapes:\n" +
-        "  • <channel platform=\"…\" chat_id=\"…\" message_id=\"…\">text</channel> tags " +
-        "(Claude Code --channels)\n" +
-        "  • JSON lines on stdout of `bun src/tail.ts` running in the background " +
-        "(observed via Bash+Monitor on Claude Code, or unified_exec on Codex)\n" +
+        "Inbound messages arrive as JSON lines on stdout of `bun src/tail.ts` running in " +
+        "the background — observed via Bash+Monitor on Claude Code, or unified_exec on " +
+        "Codex. Each line: " +
+        '`{"platform":"telegram"|"discord","chat_id"|"channel_id":"…","message_id":…,"text":"…"}`.\n' +
         "\n" +
         "CRITICAL — visibility: when you handle an inbound message, your FIRST line of " +
         "visible response MUST echo the content so the user sees what arrived. Format:\n" +
