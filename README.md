@@ -13,20 +13,15 @@ You (Telegram) ─────────────────────�
 
 ## Quickstart
 
-Requires [Bun](https://bun.sh) at runtime. Use any package manager you prefer to install + link:
+Requires [Bun](https://bun.sh) at runtime.
 
 ```bash
 git clone https://github.com/bonustrack/metro && cd metro
-
-# pick one:
-bun install   && bun link              #
-npm install   && npm link              #  → exposes `metro` on PATH
-pnpm install  && pnpm link --global    #
-yarn install  && yarn link             #
-
+bun install && bun link
 cp .env.example .env && chmod 600 .env
-$EDITOR .env   # paste TELEGRAM_BOT_TOKEN and/or DISCORD_BOT_TOKEN
 ```
+
+Edit `.env` and paste your `TELEGRAM_BOT_TOKEN` and/or `DISCORD_BOT_TOKEN`. (npm / pnpm / yarn work fine in place of `bun install && bun link` — substitute the equivalent `install` and `link` commands.)
 
 Register with whichever agent(s) you use:
 
