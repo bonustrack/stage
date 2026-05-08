@@ -8,7 +8,7 @@
 // starts a typing indicator that refreshes until the agent replies (signaled
 // by server.ts touching .typing-stop/<key>) or the 60s safety cap is hit.
 
-import { existsSync, mkdirSync, unlinkSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import * as discord from './channels/discord.js';
 import * as telegram from './channels/telegram.js';
@@ -19,6 +19,34 @@ import { errMsg, log } from './log.js';
 loadMetroEnv();
 const platforms = configuredPlatforms();
 requireConfiguredPlatform(platforms);
+
+// Telegram allows only one getUpdates poller per bot token. If another
+// tail.ts is already running, exit cleanly instead of fighting (409 spam).
+// Stale lockfiles (PID dead) are reclaimed.
+const LOCK_FILE = join(REPO_ROOT, '.tail-lock');
+
+function processIsAlive(pid: number): boolean {
+  try { process.kill(pid, 0); return true; } catch { return false; }
+}
+
+if (existsSync(LOCK_FILE)) {
+  const pid = Number(readFileSync(LOCK_FILE, 'utf8').trim());
+  if (Number.isInteger(pid) && pid > 0 && processIsAlive(pid)) {
+    log.info({ pid }, 'another tail.ts is already polling; exiting');
+    process.exit(0);
+  }
+  try { unlinkSync(LOCK_FILE); } catch { /* benign race */ }
+}
+writeFileSync(LOCK_FILE, String(process.pid));
+
+function releaseLock(): void {
+  try {
+    if (existsSync(LOCK_FILE) && readFileSync(LOCK_FILE, 'utf8').trim() === String(process.pid)) {
+      unlinkSync(LOCK_FILE);
+    }
+  } catch { /* benign */ }
+}
+process.on('exit', releaseLock);
 
 const ACK = process.env.METRO_ACK_EMOJI ?? '👀';
 const TYPING_DIR = join(REPO_ROOT, '.typing-stop');
@@ -106,7 +134,7 @@ if (platforms.discord) {
   });
 }
 
-process.stdin.on('end', () => process.exit(0));
-process.stdin.on('close', () => process.exit(0));
-process.on('SIGINT', () => process.exit(0));
-process.on('SIGTERM', () => process.exit(0));
+process.stdin.on('end', () => { releaseLock(); process.exit(0); });
+process.stdin.on('close', () => { releaseLock(); process.exit(0); });
+process.on('SIGINT', () => { releaseLock(); process.exit(0); });
+process.on('SIGTERM', () => { releaseLock(); process.exit(0); });

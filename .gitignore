@@ -6,3 +6,4 @@ dist
 .env.*
 telegram-attachments.json
 .typing-stop/
+.tail-lock
