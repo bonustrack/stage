@@ -126,11 +126,12 @@ export async function fetchAttachments(channelId: string, messageId: string): Pr
   const target = await fetchMessage(channelId, messageId);
   const out: Array<{ data: string; mime: string }> = [];
   for (const a of target.attachments.values()) {
-    if (!a.contentType?.startsWith("image/")) continue;
+    const mime = a.contentType ?? "";
+    if (!mime.startsWith("image/") && !mime.startsWith("audio/")) continue;
     const res = await fetch(a.url);
     if (!res.ok) throw new Error(`discord: download ${a.url}: ${res.status}`);
     const data = Buffer.from(await res.arrayBuffer()).toString("base64");
-    out.push({ data, mime: a.contentType });
+    out.push({ data, mime });
   }
   return out;
 }

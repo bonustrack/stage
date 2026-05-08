@@ -11,7 +11,6 @@
 //   TELEGRAM_CHAT_ID    numeric chat id of the bot owner (default reply target)
 //   DISCORD_BOT_TOKEN   bot token from the Discord Developer Portal
 //   DISCORD_CHANNEL_ID  snowflake of the default Discord channel (optional)
-//   OPENAI_API_KEY      optional; required for Telegram voice/audio transcription
 //
 // At least one of TELEGRAM_BOT_TOKEN or DISCORD_BOT_TOKEN must be set.
 

@@ -39,7 +39,7 @@ Tools are namespaced per platform; only the families you've configured get regis
 
 Each `<channel>` notification carries a `platform` attribute so the agent picks the right family.
 
-`*-download-attachment` lets the agent see images the user sent (Telegram caches `file_id`s in memory only — restart of the plugin loses them). `discord-fetch-messages` is Discord-only, since Discord exposes no search API for bots.
+`*-download-attachment` lets the agent see images and hear voice/audio the user sent — Claude reads the bytes natively (no transcription service required). Telegram caches `file_id`s in memory only, so a plugin restart drops them. `discord-fetch-messages` is Discord-only, since Discord exposes no search API for bots.
 
 ## Slash commands
 
@@ -59,9 +59,6 @@ TELEGRAM_CHAT_ID=987654321
 # Discord
 DISCORD_BOT_TOKEN=MTIz…
 DISCORD_CHANNEL_ID=11223344…
-
-# Optional, enables Telegram voice/audio transcription
-OPENAI_API_KEY=sk-…
 ```
 
 ## Architecture
@@ -81,4 +78,4 @@ Single process. Each platform is started only if its token is set; both run in t
 
 - **Discord Message Content Intent.** Required and privileged — see install gotcha above.
 - **Telegram single-poller.** Telegram allows only one `getUpdates` poller per token at a time. Two Claude Code sessions on the same TG token will fight; Discord is fine because the gateway accepts multiple connections.
-- **Pairing not implemented.** v0.4 has no allowlist on either platform. For Telegram, anyone with the bot's `@username` can DM it. For Discord, the bot only forwards DMs and guild messages where it's @mentioned — but anyone in those contexts can talk to your session. Run against bots you own and don't share publicly.
+- **Pairing not implemented.** v0.5 has no allowlist on either platform. For Telegram, anyone with the bot's `@username` can DM it. For Discord, the bot only forwards DMs and guild messages where it's @mentioned — but anyone in those contexts can talk to your session. Run against bots you own and don't share publicly.

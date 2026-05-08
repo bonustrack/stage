@@ -45,18 +45,14 @@ export function buildSendBody(chatId: ChatId, text: string, opts: SendOptions): 
   return body;
 }
 
-async function sendMessage(chatId: ChatId, text: string): Promise<void> {
-  await tg("sendMessage", { chat_id: chatId, text });
-}
-
 export async function getMe(): Promise<{ username: string }> {
   return tg("getMe", {});
 }
 
-// Resolve an inbound Telegram message to a single string. Voice/audio gets
-// transcribed via OpenAI; images become a `[image]` placeholder. Image
+// Resolve an inbound Telegram message to a single string. Image and audio
 // file_ids are cached so the agent can call `telegram-download-attachment`
-// later with just the message_id.
+// later with just the message_id, getting back image/audio content blocks
+// Claude can read directly.
 async function messageToText(m: any, chatId: ChatId): Promise<string | null> {
   if (m.text) return m.text;
 
@@ -74,11 +70,9 @@ async function messageToText(m: any, chatId: ChatId): Promise<string | null> {
 
   const audio = m.voice ?? m.audio;
   if (audio) {
-    const blob = await downloadFile(audio.file_id);
-    const ext = (audio.mime_type ?? "audio/ogg").split("/")[1] ?? "ogg";
-    const text = await transcribe(blob, `audio.${ext}`);
-    await sendMessage(chatId, `📝 ${text}`);
-    return [caption, text].filter(Boolean).join(" ");
+    const mime = audio.mime_type ?? "audio/ogg";
+    cacheAttachment(chatId, m.message_id, { file_id: audio.file_id, mime });
+    return [caption, m.voice ? "[voice]" : "[audio]"].filter(Boolean).join(" ");
   }
 
   return caption || null;
@@ -117,23 +111,6 @@ export async function downloadAttachment(fileId: string, mime: string): Promise<
   const blob = await downloadFile(fileId);
   const data = Buffer.from(await blob.arrayBuffer()).toString("base64");
   return { data, mime: blob.type || mime };
-}
-
-async function transcribe(blob: Blob, filename: string): Promise<string> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) throw new Error("OPENAI_API_KEY required for voice/audio transcription");
-  const form = new FormData();
-  form.append("file", blob, filename);
-  form.append("model", process.env.OPENAI_TRANSCRIBE_MODEL || "gpt-4o-mini-transcribe");
-  const res = await fetchT("https://api.openai.com/v1/audio/transcriptions", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}` },
-    body: form,
-    timeoutMs: 60_000,
-  });
-  if (!res.ok) throw new Error(`whisper: ${res.status} ${await res.text()}`);
-  const json = (await res.json()) as { text: string };
-  return json.text;
 }
 
 // ----- polling -----

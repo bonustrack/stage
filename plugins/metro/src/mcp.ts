@@ -37,7 +37,7 @@ export function buildServer(platforms: Platforms): McpServer {
   ].filter(Boolean).join(" + ");
 
   const s = new McpServer(
-    { name: "metro", version: "0.4.1" },
+    { name: "metro", version: "0.5.0" },
     {
       capabilities: { tools: {}, experimental: { "claude/channel": {} } },
       instructions:
@@ -46,9 +46,10 @@ export function buildServer(platforms: Platforms): McpServer {
         "Pass `message_id` (and Discord's `channel_id`) verbatim from the tag's attributes. " +
         "Default: call reply for questions, react with 👍 for quick acks, edit-message to " +
         "update something you already sent. " +
-        "If the message body contains `[image]`, call `*-download-attachment` with the " +
-        "message_id to actually see what the user sent. Use `discord-fetch-messages` to read " +
-        "earlier context from a Discord channel (Discord has no search API for bots).",
+        "If the message body contains `[image]`, `[voice]`, or `[audio]`, call " +
+        "`*-download-attachment` with the message_id to actually see/hear what the user sent " +
+        "(returns native image/audio content blocks). Use `discord-fetch-messages` to read " +
+        "earlier context from a Discord channel — Discord has no search API for bots.",
     },
   );
 
@@ -121,9 +122,9 @@ function registerTelegramTools(s: McpServer): void {
     "telegram-download-attachment",
     {
       description:
-        "Download image attachments from an inbound Telegram message and return them as " +
-        "image content blocks the agent can see. Only resolves messages received during the " +
-        "current plugin session (file_ids cached in memory).",
+        "Download image / voice / audio attachments from an inbound Telegram message and " +
+        "return them as native content blocks Claude can read directly. Only resolves messages " +
+        "received during the current plugin session (file_ids cached in memory).",
       inputSchema: { messageId, user },
     },
     async ({ messageId, user }) => {
@@ -139,7 +140,9 @@ function registerTelegramTools(s: McpServer): void {
       const blocks = await Promise.all(
         atts.map(async a => {
           const { data, mime } = await telegram.downloadAttachment(a.file_id, a.mime);
-          return { type: "image" as const, data, mimeType: mime };
+          return mime.startsWith("audio/")
+            ? { type: "audio" as const, data, mimeType: mime }
+            : { type: "image" as const, data, mimeType: mime };
         }),
       );
       return { content: blocks };
@@ -197,16 +200,20 @@ function registerDiscordTools(s: McpServer): void {
     "discord-download-attachment",
     {
       description:
-        "Download image attachments from a Discord message and return them as image content " +
-        "blocks the agent can see. Works on any reachable message, not just ones received this " +
-        "session. Non-image attachments are skipped.",
+        "Download image / audio attachments from a Discord message and return them as native " +
+        "content blocks Claude can read directly. Works on any reachable message, not just ones " +
+        "received this session. Other file types are skipped.",
       inputSchema: { messageId, channelId },
     },
     async ({ messageId, channelId }) => {
       const atts = await discord.fetchAttachments(dcChannel(channelId), messageId);
-      if (atts.length === 0) return { content: [{ type: "text", text: "no image attachments on this message" }] };
+      if (atts.length === 0) return { content: [{ type: "text", text: "no image or audio attachments on this message" }] };
       return {
-        content: atts.map(a => ({ type: "image" as const, data: a.data, mimeType: a.mime })),
+        content: atts.map(a =>
+          a.mime.startsWith("audio/")
+            ? { type: "audio" as const, data: a.data, mimeType: a.mime }
+            : { type: "image" as const, data: a.data, mimeType: a.mime },
+        ),
       };
     },
   );
