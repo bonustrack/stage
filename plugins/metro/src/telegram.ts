@@ -1,6 +1,9 @@
 // Telegram Bot API wrapper + single-user polling. Token read lazily so a
 // Discord-only configuration loads cleanly.
 
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { metroHome } from "./config.js";
 import { log } from "./log.js";
 
 const API_BASE = "https://api.telegram.org";
@@ -84,12 +87,14 @@ async function downloadFile(fileId: string): Promise<Blob> {
 type CachedAttachment = { file_id: string; mime: string };
 const ATTACHMENT_CACHE_MAX = 200;
 const attachmentCache = new Map<string, CachedAttachment[]>();
+const attachmentCacheFile = join(metroHome(), "telegram-attachments.json");
 
 function cacheAttachment(chatId: ChatId, messageId: number, att: CachedAttachment): void {
   const key = `${chatId}:${messageId}`;
   const list = attachmentCache.get(key) ?? [];
   list.push(att);
   attachmentCache.set(key, list);
+  persistCachedAttachments(key, list);
   if (attachmentCache.size > ATTACHMENT_CACHE_MAX) {
     const first = attachmentCache.keys().next().value;
     if (first !== undefined) attachmentCache.delete(first);
@@ -97,13 +102,44 @@ function cacheAttachment(chatId: ChatId, messageId: number, att: CachedAttachmen
 }
 
 export function getCachedAttachments(chatId: ChatId, messageId: number): CachedAttachment[] {
-  return attachmentCache.get(`${chatId}:${messageId}`) ?? [];
+  const key = `${chatId}:${messageId}`;
+  const cached = attachmentCache.get(key);
+  if (cached) return cached;
+
+  const persisted = readPersistentAttachmentCache()[key] ?? [];
+  if (persisted.length) attachmentCache.set(key, persisted);
+  return persisted;
 }
 
 export async function downloadAttachment(fileId: string, mime: string): Promise<{ data: string; mime: string }> {
   const blob = await downloadFile(fileId);
   const data = Buffer.from(await blob.arrayBuffer()).toString("base64");
   return { data, mime: blob.type || mime };
+}
+
+function readPersistentAttachmentCache(): Record<string, CachedAttachment[]> {
+  try {
+    if (!existsSync(attachmentCacheFile)) return {};
+    return JSON.parse(readFileSync(attachmentCacheFile, "utf8")) as Record<string, CachedAttachment[]>;
+  } catch (err: any) {
+    log.warn({ err: err?.message ?? err }, "telegram attachment cache read failed");
+    return {};
+  }
+}
+
+function persistCachedAttachments(key: string, list: CachedAttachment[]): void {
+  try {
+    mkdirSync(metroHome(), { recursive: true });
+    const data = readPersistentAttachmentCache();
+    data[key] = list;
+    const keys = Object.keys(data);
+    for (const oldKey of keys.slice(0, Math.max(0, keys.length - ATTACHMENT_CACHE_MAX))) {
+      delete data[oldKey];
+    }
+    writeFileSync(attachmentCacheFile, JSON.stringify(data, null, 2));
+  } catch (err: any) {
+    log.warn({ err: err?.message ?? err }, "telegram attachment cache write failed");
+  }
 }
 
 // ----- polling -----

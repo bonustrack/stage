@@ -1,11 +1,13 @@
 {
   "name": "@metro-labs/mcp",
   "version": "0.7.0",
-  "description": "Claude Code plugin: Telegram + Discord channel that surfaces inbound messages live in-session and lets the agent reply, react, and edit-message.",
+  "description": "Claude Code and Codex plugin: Telegram + Discord channel that surfaces inbound messages live in-session and lets the agent reply, react, and edit-message.",
   "type": "module",
   "scripts": {
     "build": "tsc --noEmit",
     "start": "bun install --no-summary && bun src/server.ts",
+    "start:codex-bridge": "bun install --no-summary && bun src/codex-bridge.ts",
+    "start:codex-mcp": "bun install --no-summary && bun src/codex-mcp.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

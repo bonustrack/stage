@@ -1,6 +1,6 @@
 // MCP tool registration. Tools are namespaced per-platform and registered
 // only when their platform is enabled. The agent reads the `platform`,
-// `chat_id`, and `channel_id` attributes from the inbound <channel> tag and
+// `chat_id`, and `channel_id` attributes from inbound <channel> tags and
 // passes them back as tool arguments.
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -24,10 +24,10 @@ export function buildServer(platforms: Platforms): McpServer {
     {
       capabilities: { tools: {}, experimental: { "claude/channel": {} } },
       instructions:
-        `${enabled} channel. Each <channel> tag is a message from the user; the ` +
-        "`platform` attribute selects which tool family to call. Pass `chat_id` and " +
-        "`message_id` (or Discord's `channel_id` and `message_id`) verbatim from the " +
-        "tag's attributes. Default: reply for questions, react with 👍 for quick acks, " +
+        `${enabled} channel. Each <channel> tag is a Metro message from the user; the ` +
+        "`platform` attribute selects which tool family to call. Pass Telegram `chat_id` " +
+        "and `message_id`, or Discord `channel_id` and `message_id`, verbatim from the " +
+        "tag attributes. Default: reply for questions, react with 👍 for quick acks, " +
         "edit-message to update what you already sent. For `[image]` markers call " +
         "`*-download-attachment`. Voice/audio arrive as opaque `[voice]`/`[audio]` " +
         "placeholders. Use `discord-fetch-messages` for prior context — Discord has no " +
@@ -106,7 +106,7 @@ function registerTelegramTools(s: McpServer): void {
     {
       description:
         "Download image attachments from a Telegram message and return them as image content " +
-        "blocks. Resolves only messages received during the current session (in-memory cache).",
+        "blocks. Resolves recently received messages from Metro's local attachment cache.",
       inputSchema: { chatId, messageId },
     },
     async ({ chatId, messageId }) => {

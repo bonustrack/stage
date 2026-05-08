@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "metro": {
+      "command": "bun",
+      "args": ["run", "--silent", "start:codex-mcp"],
+      "env": {
+        "METRO_RUNTIME": "codex",
+        "METRO_CODEX_APP_SERVER_URL": "ws://127.0.0.1:17633"
+      }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "metro",
+  "interface": {
+    "displayName": "Metro"
+  },
+  "plugins": [
+    {
+      "name": "metro",
+      "source": {
+        "source": "local",
+        "path": "./plugins/metro"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

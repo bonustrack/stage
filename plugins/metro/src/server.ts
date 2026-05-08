@@ -3,38 +3,14 @@
 // Discord and pushes inbound messages into the live Claude Code session.
 // Spawned by `claude --channels plugin:metro@metro`.
 
-import { existsSync, readFileSync } from "node:fs";
-import { homedir } from "node:os";
-import { join } from "node:path";
-
-// Load env from ~/.claude/channels/metro/.env (override with METRO_CHANNEL_HOME).
-const ENV_FILE = join(
-  process.env.METRO_CHANNEL_HOME ?? join(homedir(), ".claude", "channels", "metro"),
-  ".env",
-);
-if (existsSync(ENV_FILE)) {
-  for (const line of readFileSync(ENV_FILE, "utf8").split("\n")) {
-    const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/);
-    if (!m || m[1].startsWith("#")) continue;
-    if (process.env[m[1]] === undefined) {
-      process.env[m[1]] = m[2].replace(/^(['"])(.*)\1$/, "$2");
-    }
-  }
-}
-
 const { StdioServerTransport } = await import("@modelcontextprotocol/sdk/server/stdio.js");
+const { configuredPlatforms, loadMetroEnv, requireConfiguredPlatform } = await import("./config.js");
 const { log } = await import("./log.js");
 const { buildServer } = await import("./mcp.js");
 
-const platforms = {
-  telegram: !!process.env.TELEGRAM_BOT_TOKEN,
-  discord: !!process.env.DISCORD_BOT_TOKEN,
-};
-if (!platforms.telegram && !platforms.discord) {
-  log.fatal("configure TELEGRAM_BOT_TOKEN and/or DISCORD_BOT_TOKEN in ~/.claude/channels/metro/.env");
-  process.exit(1);
-}
-
+loadMetroEnv();
+const platforms = configuredPlatforms();
+requireConfiguredPlatform(platforms);
 const server = buildServer(platforms).server;
 await server.connect(new StdioServerTransport());
 
@@ -66,3 +42,5 @@ if (platforms.discord) {
 // Exit on stdin close so we don't linger and fight for the Telegram poller slot.
 process.stdin.on("end", () => process.exit(0));
 process.stdin.on("close", () => process.exit(0));
+
+export {};
