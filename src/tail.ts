@@ -9,10 +9,10 @@
 // METRO_ACK_EMOJI; set empty to disable.
 
 import { configuredPlatforms, loadMetroEnv, requireConfiguredPlatform } from './config.js';
-import * as discord from './discord.js';
+import * as discord from './channels/discord.js';
+import * as telegram from './channels/telegram.js';
+import { tg } from './channels/telegram.js';
 import { errMsg, log } from './log.js';
-import * as telegram from './telegram.js';
-import { tg } from './telegram.js';
 
 loadMetroEnv();
 const platforms = configuredPlatforms();

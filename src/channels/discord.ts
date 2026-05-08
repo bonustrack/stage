@@ -1,5 +1,5 @@
 import { Client, Events, GatewayIntentBits, Partials, type Message } from 'discord.js';
-import { errMsg, log } from './log.js';
+import { errMsg, log } from '../log.js';
 
 let client: Client | null = null;
 

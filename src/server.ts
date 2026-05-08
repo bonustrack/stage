@@ -4,9 +4,9 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod';
 import pkg from '../package.json' with { type: 'json' };
 import { configuredPlatforms, loadMetroEnv, requireConfiguredPlatform } from './config.js';
-import * as discord from './discord.js';
-import * as telegram from './telegram.js';
-import { buildSendBody, tg } from './telegram.js';
+import * as discord from './channels/discord.js';
+import * as telegram from './channels/telegram.js';
+import { buildSendBody, tg } from './channels/telegram.js';
 
 loadMetroEnv();
 const platforms = configuredPlatforms();

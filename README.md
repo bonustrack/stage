@@ -5,12 +5,13 @@ Telegram + Discord channel for Claude Code and Codex. Sub-second inbound deliver
 ## Install
 
 ```bash
-mkdir -p ~/.claude/channels/metro
-cat > ~/.claude/channels/metro/.env <<'EOF'
+git clone https://github.com/bonustrack/metro && cd metro
+bun install
+cat > .env <<'EOF'
 TELEGRAM_BOT_TOKEN=…   # from @BotFather
 DISCORD_BOT_TOKEN=…    # from discord.com/developers/applications
 EOF
-chmod 600 ~/.claude/channels/metro/.env
+chmod 600 .env
 ```
 
 **Discord gotcha**: enable **Message Content Intent** in the Developer Portal → Bot → Privileged Gateway Intents.
@@ -18,13 +19,13 @@ chmod 600 ~/.claude/channels/metro/.env
 ## Claude Code
 
 ```bash
-claude mcp add metro -- bun run --cwd /path/to/metro --silent start
-claude   # plain — no --channels flag needed
+claude mcp add metro -- bun run --cwd $(pwd) --silent start
+claude
 ```
 
 In your session, prompt the agent:
 
-> Run `bun /path/to/metro/src/tail.ts` in the background and Monitor its stdout. Each line is a JSON inbound message — when one arrives, echo `[telegram chat_id=X] <content>` (or `[discord channel_id=X] <content>`) in your reply, then call the matching `*-reply` tool.
+> Run `bun $(pwd)/src/tail.ts` in the background and Monitor its stdout. Each line is a JSON inbound message — when one arrives, echo `[telegram chat_id=X] <content>` (or `[discord channel_id=X] <content>`) in your reply, then call the matching `*-reply` tool.
 
 DM either bot. Sub-second delivery. A CLAUDE.md line can make this automatic on every session:
 
@@ -38,7 +39,7 @@ Monitor its stdout for Telegram/Discord messages.
 Same MCP registration, same tail pattern:
 
 ```bash
-codex mcp add metro -- bun run --cwd /path/to/metro --silent start
+codex mcp add metro -- bun run --cwd $(pwd) --silent start
 codex
 ```
 
@@ -51,11 +52,11 @@ Same prompt. Codex uses `unified_exec` + `write_stdin` polling under the hood �
 | Telegram | `telegram-reply`, `telegram-react`, `telegram-edit-message`, `telegram-download-attachment` |
 | Discord  | `discord-reply`, `discord-react`, `discord-edit-message`, `discord-download-attachment`, `discord-fetch-messages` |
 
-`*-download-attachment` returns image content blocks. Telegram persists recent `file_id`s on disk at `~/.claude/channels/metro/telegram-attachments.json` so the writer (`tail.ts`) and the reader (`server.ts`) share state. Voice/audio surface as opaque `[voice]` / `[audio]` placeholders. `discord-fetch-messages` is Discord-only — Discord exposes no search API for bots.
+`*-download-attachment` returns image content blocks. Telegram persists recent `file_id`s on disk at `<repo-root>/telegram-attachments.json` so the writer (`tail.ts`) and the reader (`server.ts`) share state. Voice/audio surface as opaque `[voice]` / `[audio]` placeholders. `discord-fetch-messages` is Discord-only — Discord exposes no search API for bots.
 
 ## Config
 
-Reads `~/.claude/channels/metro/.env` (canonical), with `<repo-root>/.env` as a dev fallback. First reader wins per key.
+`<repo-root>/.env`:
 
 ```
 TELEGRAM_BOT_TOKEN=123456:ABC…

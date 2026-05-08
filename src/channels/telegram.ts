@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { metroHome } from './config.js';
-import { errMsg, log } from './log.js';
+import { REPO_ROOT } from '../config.js';
+import { errMsg, log } from '../log.js';
 
 const API_BASE = 'https://api.telegram.org';
 
@@ -46,7 +46,7 @@ export async function getMe(): Promise<{ username: string }> {
 // FIFO-bounded disk cache, shared between tail.ts (writer) and server.ts (reader).
 type Attachment = { file_id: string; mime: string };
 const CACHE_MAX = 200;
-const cacheFile = join(metroHome(), 'telegram-attachments.json');
+const cacheFile = join(REPO_ROOT, 'telegram-attachments.json');
 
 function readCache(): Record<string, Attachment[]> {
   try {
@@ -59,7 +59,7 @@ function readCache(): Record<string, Attachment[]> {
 
 function cacheAttachment(chatId: ChatId, messageId: number, att: Attachment): void {
   try {
-    mkdirSync(metroHome(), { recursive: true });
+    mkdirSync(REPO_ROOT, { recursive: true });
     const data = readCache();
     const key = `${chatId}:${messageId}`;
     data[key] = [...(data[key] ?? []), att];
