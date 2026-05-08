@@ -24,23 +24,21 @@ DM either bot. The notification carries `chat_id` (TG) or `channel_id` (DC) in t
 
 ## Codex
 
-Metro also ships a Codex MCP server. Codex does not have Claude Code's
-`notifications/claude/channel` primitive, so Metro uses two local processes:
+Metro runs as a single MCP server in both runtimes. The same `server.ts`
+script handles tool calls and pushes inbound messages — for Claude Code via
+MCP `notifications/claude/channel`, for Codex via a parallel WebSocket to
+the Codex app-server (Codex doesn't surface stdio MCP notifications).
 
-- a Codex MCP server for `telegram-*` / `discord-*` reply tools.
-- a Codex bridge daemon that receives Telegram/Discord events and injects
-  `<channel>` messages into the live Codex thread through Codex app-server.
-
-Codex uses the same config file as the Claude plugin by default:
+Codex uses the same config file as Claude Code:
 
 ```
 ~/.claude/channels/metro/.env
 ```
 
-Override it for either runtime with `METRO_CHANNEL_HOME=/path/to/metro-config`.
+Override with `METRO_CHANNEL_HOME=/path/to/metro-config`.
 
-For live messages to appear in the Codex UI, run Codex against the same
-app-server URL that Metro uses:
+For live delivery you need a running app-server attached to the visible Codex
+UI:
 
 ```bash
 # Terminal 1: shared Codex app-server.
@@ -50,19 +48,18 @@ codex app-server --listen ws://127.0.0.1:17633
 codex --remote ws://127.0.0.1:17633 -C /path/to/metro
 ```
 
-Then register the MCP server:
+Register the MCP server with Codex:
 
 ```bash
 codex mcp add metro \
+  --env METRO_RUNTIME=codex \
   --env METRO_CODEX_APP_SERVER_URL=ws://127.0.0.1:17633 \
-  -- bun run --cwd /path/to/metro/plugins/metro --silent start:codex-mcp
+  -- bun run --cwd /path/to/metro/plugins/metro --silent start
 ```
 
-When `start:codex-mcp` starts, it also launches the Codex bridge sidecar. A
-plain `codex` session is separate from this websocket app-server, so use
-`--remote` for visible live delivery. The bridge targets the single loaded Codex
-thread. If multiple Codex threads are loaded, set
-`METRO_CODEX_THREAD_ID=<thread-id>`.
+`METRO_RUNTIME=codex` flips the push path from MCP notifications to
+app-server `turn/start`. If multiple Codex threads are loaded, set
+`METRO_CODEX_THREAD_ID=<thread-id>` to disambiguate.
 
 ## Tools
 
@@ -75,7 +72,7 @@ Tools are namespaced per platform; only the families you've configured get regis
 
 Each `<channel>` notification carries a `platform` attribute so the agent picks the right family.
 
-`*-download-attachment` returns image content blocks for image attachments. Telegram persists recent `file_id`s in `~/.claude/channels/metro/telegram-attachments.json` so the Codex bridge and MCP tool process can share them; Discord works on any reachable message. Voice/audio messages surface as `[voice]` / `[audio]` placeholders — Claude Code can't yet ingest MCP audio content blocks. `discord-fetch-messages` is Discord-only since Discord exposes no search API for bots.
+`*-download-attachment` returns image content blocks for image attachments. Telegram persists recent `file_id`s in `~/.claude/channels/metro/telegram-attachments.json` so they survive a plugin restart; Discord works on any reachable message. Voice/audio messages surface as `[voice]` / `[audio]` placeholders — Claude Code can't yet ingest MCP audio content blocks. `discord-fetch-messages` is Discord-only since Discord exposes no search API for bots.
 
 ## Slash commands
 
@@ -107,14 +104,17 @@ Discord  ─gateway WS────────┘         │
 
 Each platform is started only if its token is set; both run in the same MCP server, sharing the notification dispatcher.
 
-Codex uses the same platform adapters, split across two processes:
+In Codex mode the same `server.ts` opens a side-channel WebSocket to the Codex
+app-server and uses `turn/start` for inbound delivery (Codex drops stdio MCP
+notifications, so the side-channel is required):
 
 ```
-Telegram / Discord ─▶ src/codex-bridge.ts ─Codex app-server─▶ live Codex thread
-Telegram / Discord ◀─ src/codex-mcp.ts     ─stdio MCP tools─▶ Codex tool calls
+Telegram / Discord ─▶ src/server.ts ┬─ stdio MCP ─▶ tool calls
+                                    └─ ws app-server (turn/start) ─▶ live Codex thread
 ```
 
-`src/codex-bridge.ts` uses a local lock file so only one bridge owns Telegram polling at a time.
+Polling lives only while the agent session is open — no detached daemon, no
+lockfile.
 
 ## Caveats
 

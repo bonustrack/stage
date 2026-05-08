@@ -1,4 +1,9 @@
-import { spawn } from "node:child_process";
+// Codex app-server delivery: WebSocket JSON-RPC client + queue/retry wrapper.
+// Used only when METRO_RUNTIME=codex. Claude Code reads MCP notifications
+// directly off the stdio pipe — Codex doesn't, so for Codex we open a
+// parallel WebSocket to its app-server and inject inbound messages as new
+// turns via `turn/start`.
+
 import pkg from "../package.json" with { type: "json" };
 import { log } from "./log.js";
 
@@ -31,16 +36,48 @@ function escapeText(value: string): string {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;");
 }
 
-export async function deliverToCodex(text: string): Promise<void> {
-  const mode = process.env.METRO_CODEX_DELIVERY ?? "app-server";
-  if (mode === "debug-cli") {
-    await deliverWithDebugCli(text);
-    return;
-  }
-  if (mode !== "app-server") {
-    throw new Error(`unsupported METRO_CODEX_DELIVERY=${mode}`);
+// Public emit signature — same shape as the Claude Code path so server.ts can
+// pick a `deliver` function at runtime and not branch per-message.
+export type CodexEmit = (message: CodexInboundMessage) => void;
+
+// Returns an emit function that serializes inbound messages through a queue
+// and retries delivery against the Codex app-server. The first call to emit
+// triggers the lazy connection.
+export function startCodexDelivery(): CodexEmit {
+  let queue: Promise<unknown> = Promise.resolve();
+  return function emit(message: CodexInboundMessage): void {
+    queue = queue
+      .then(() => deliverWithRetry(message))
+      .catch(err => log.error({ err: err?.message ?? err }, "codex delivery failed"));
+  };
+}
+
+async function deliverWithRetry(message: CodexInboundMessage): Promise<void> {
+  const text = formatChannelMessage(message);
+  const attempts = Number(process.env.METRO_CODEX_DELIVERY_ATTEMPTS ?? 90);
+  const delayMs = Number(process.env.METRO_CODEX_DELIVERY_RETRY_MS ?? 2_000);
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      await deliverOnce(text);
+      log.info({ platform: message.platform, messageId: message.messageId }, "delivered to codex");
+      return;
+    } catch (err) {
+      lastError = err;
+      if (attempt === attempts) break;
+      log.warn(
+        { err: err instanceof Error ? err.message : String(err), attempt, attempts },
+        "codex delivery failed; retrying",
+      );
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
   }
 
+  throw lastError instanceof Error ? lastError : new Error(String(lastError));
+}
+
+async function deliverOnce(text: string): Promise<void> {
   const client = new CodexAppServerClient();
   try {
     await client.connect();
@@ -49,24 +86,6 @@ export async function deliverToCodex(text: string): Promise<void> {
   } finally {
     client.close();
   }
-}
-
-async function deliverWithDebugCli(text: string): Promise<void> {
-  const bin = process.env.METRO_CODEX_BIN ?? "codex";
-  await new Promise<void>((resolve, reject) => {
-    const child = spawn(bin, ["debug", "app-server", "send-message-v2", text], {
-      stdio: ["ignore", "ignore", "pipe"],
-    });
-    let stderr = "";
-    child.stderr.on("data", chunk => {
-      stderr += String(chunk);
-    });
-    child.on("error", reject);
-    child.on("close", code => {
-      if (code === 0) resolve();
-      else reject(new Error(`codex debug app-server send-message-v2 exited ${code}: ${stderr.trim()}`));
-    });
-  });
 }
 
 class CodexAppServerClient {

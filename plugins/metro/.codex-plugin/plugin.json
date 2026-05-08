@@ -1,6 +1,6 @@
 {
   "name": "metro",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "description": "Telegram + Discord channel for Codex: receive messages live in-session and reply/react/edit-message back.",
   "author": {
     "name": "Metro Labs",
