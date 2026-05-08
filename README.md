@@ -39,7 +39,7 @@ Tools are namespaced per platform; only the families you've configured get regis
 
 Each `<channel>` notification carries a `platform` attribute so the agent picks the right family.
 
-`*-download-attachment` lets the agent see images the user sent. Telegram caches `file_id`s in memory only, so a plugin restart drops them. Voice notes / audio messages on Telegram are auto-transcribed via OpenAI Whisper on receipt (set `OPENAI_API_KEY`); Claude Code can't yet ingest MCP audio content blocks directly. `discord-fetch-messages` is Discord-only, since Discord exposes no search API for bots.
+`*-download-attachment` lets the agent see images the user sent. Telegram caches `file_id`s in memory only, so a plugin restart drops them. Voice notes / audio messages surface as `[voice]` / `[audio]` placeholders — Claude Code can't yet ingest MCP audio content blocks, and we don't ship a transcription service. `discord-fetch-messages` is Discord-only, since Discord exposes no search API for bots.
 
 ## Slash commands
 
@@ -59,9 +59,6 @@ TELEGRAM_CHAT_ID=987654321
 # Discord
 DISCORD_BOT_TOKEN=MTIz…
 DISCORD_CHANNEL_ID=11223344…
-
-# Optional, enables Telegram voice/audio transcription via OpenAI Whisper
-OPENAI_API_KEY=sk-…
 ```
 
 ## Architecture

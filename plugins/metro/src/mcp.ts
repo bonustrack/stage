@@ -37,7 +37,7 @@ export function buildServer(platforms: Platforms): McpServer {
   ].filter(Boolean).join(" + ");
 
   const s = new McpServer(
-    { name: "metro", version: "0.5.1" },
+    { name: "metro", version: "0.5.2" },
     {
       capabilities: { tools: {}, experimental: { "claude/channel": {} } },
       instructions:
@@ -47,9 +47,10 @@ export function buildServer(platforms: Platforms): McpServer {
         "Default: call reply for questions, react with 👍 for quick acks, edit-message to " +
         "update something you already sent. " +
         "If the message body contains `[image]`, call `*-download-attachment` with the " +
-        "message_id to actually see what the user sent. Voice/audio messages are transcribed " +
-        "on receipt and arrive as plain text. Use `discord-fetch-messages` to read earlier " +
-        "context from a Discord channel — Discord has no search API for bots.",
+        "message_id to actually see what the user sent. Voice/audio messages arrive as " +
+        "`[voice]` / `[audio]` placeholders and the bot can't transcribe them — ask the user " +
+        "to retype if it matters. Use `discord-fetch-messages` to read earlier context from a " +
+        "Discord channel — Discord has no search API for bots.",
     },
   );
 

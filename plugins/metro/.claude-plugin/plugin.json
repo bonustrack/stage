@@ -1,6 +1,6 @@
 {
   "name": "metro",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Telegram + Discord channel for Claude Code: receive messages live in-session and reply/react/edit-message back.",
   "author": {
     "name": "Metro Labs",

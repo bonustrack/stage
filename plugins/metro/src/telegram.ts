@@ -49,11 +49,11 @@ export async function getMe(): Promise<{ username: string }> {
   return tg("getMe", {});
 }
 
-// Resolve an inbound Telegram message to a single string. Voice/audio gets
-// transcribed via OpenAI Whisper (Claude Code v2.1.133 cannot ingest MCP
-// audio content blocks yet, so native-audio doesn't work end-to-end).
-// Image file_ids are cached so the agent can call
-// `telegram-download-attachment` later with just the message_id.
+// Resolve an inbound Telegram message to a single string. Image file_ids are
+// cached so the agent can call `telegram-download-attachment` later with
+// just the message_id. Voice/audio messages surface as `[voice]` / `[audio]`
+// placeholders — Claude Code v2.1.133 can't ingest MCP audio content blocks,
+// so the agent has no way to actually hear them.
 async function messageToText(m: any, chatId: ChatId): Promise<string | null> {
   if (m.text) return m.text;
 
@@ -69,13 +69,8 @@ async function messageToText(m: any, chatId: ChatId): Promise<string | null> {
     return [caption, "[image]"].filter(Boolean).join(" ");
   }
 
-  const audio = m.voice ?? m.audio;
-  if (audio) {
-    const blob = await downloadFile(audio.file_id);
-    const ext = (audio.mime_type ?? "audio/ogg").split("/")[1] ?? "ogg";
-    const text = await transcribe(blob, `audio.${ext}`);
-    return [caption, text].filter(Boolean).join(" ");
-  }
+  if (m.voice) return [caption, "[voice]"].filter(Boolean).join(" ");
+  if (m.audio) return [caption, "[audio]"].filter(Boolean).join(" ");
 
   return caption || null;
 }
@@ -113,23 +108,6 @@ export async function downloadAttachment(fileId: string, mime: string): Promise<
   const blob = await downloadFile(fileId);
   const data = Buffer.from(await blob.arrayBuffer()).toString("base64");
   return { data, mime: blob.type || mime };
-}
-
-async function transcribe(blob: Blob, filename: string): Promise<string> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) throw new Error("OPENAI_API_KEY required for voice/audio transcription");
-  const form = new FormData();
-  form.append("file", blob, filename);
-  form.append("model", process.env.OPENAI_TRANSCRIBE_MODEL || "gpt-4o-mini-transcribe");
-  const res = await fetchT("https://api.openai.com/v1/audio/transcriptions", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}` },
-    body: form,
-    timeoutMs: 60_000,
-  });
-  if (!res.ok) throw new Error(`whisper: ${res.status} ${await res.text()}`);
-  const json = (await res.json()) as { text: string };
-  return json.text;
 }
 
 // ----- polling -----
