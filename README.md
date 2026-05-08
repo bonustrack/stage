@@ -1,70 +1,82 @@
 # Metro
 
-Telegram channel for Claude Code, mirroring the design of Anthropic's official Discord and Telegram plugins. Inbound messages stream into your live session via the `--channels` flag; the agent responds with `reply` / `react` / `edit-message`. One local stdio MCP, no hosted infra.
+Telegram + Discord channel for Claude Code, mirroring the design of Anthropic's official Discord and Telegram plugins. Inbound messages stream into your live session via the `--channels` flag; the agent responds with `reply` / `react` / `edit-message` tools per platform. One local stdio MCP, no hosted infra. Configure either platform, both, or one without the other.
 
 ## Install
 
 ```bash
-# 1. Add this repo as a marketplace (clones it locally on first install).
+# 1. Add this repo as a marketplace.
 /plugin marketplace add bonustrack/metro
 
 # 2. Install the plugin.
 /plugin install metro@metro
 
-# 3. Create a bot via @BotFather on Telegram, copy its token.
-# 4. Configure the plugin (replace the placeholders):
-/metro:configure <BOT_TOKEN>
+# 3. Configure at least one platform.
+/metro:configure telegram <TELEGRAM_BOT_TOKEN>     # from @BotFather
+# and/or
+/metro:configure discord  <DISCORD_BOT_TOKEN>      # from discord.com/developers/applications
 
-# 5. Restart with the channel enabled.
+# 4. Restart with the channel enabled.
 exit
 claude --dangerously-load-development-channels plugin:metro@metro
 
-# 6. DM your bot once. The plugin logs `chat_id` to stderr; pass it back:
-/metro:configure <BOT_TOKEN> <CHAT_ID>
-exit
-claude --dangerously-load-development-channels plugin:metro@metro
+# 5. DM either bot. The notification carries `chat_id` (TG) or `channel_id` (DC) —
+# pass it back in the next configure call to set a default reply target:
+/metro:configure telegram <TOKEN> <CHAT_ID>
+/metro:configure discord  <TOKEN> <CHANNEL_ID>
 ```
 
-After the second restart, every message you send the bot appears in the live session. The agent replies via the `reply` tool, threading under your message.
+**Discord setup gotcha.** In the Discord Developer Portal, under **Bot → Privileged Gateway Intents**, enable **Message Content Intent**. Without it, `messageCreate` events arrive with empty `content` and the bot will see nothing.
 
 ## Tools
 
-| Tool | Purpose |
-|---|---|
-| `reply` | Quote-reply to a specific Telegram `message_id`. Supports HTML / MarkdownV2 / URL buttons. |
-| `react` | Set or clear an emoji reaction (Telegram's whitelisted set). |
-| `edit-message` | Edit a message the bot previously sent. |
+Tools are namespaced per platform; only the families you've configured get registered.
 
-There is no `notify`/`ask`. The channel model assumes the user initiates and the agent reacts.
+| Platform | Tools |
+|---|---|
+| Telegram | `telegram-reply`, `telegram-react`, `telegram-edit-message` |
+| Discord  | `discord-reply`,  `discord-react`,  `discord-edit-message` |
+
+Each `<channel>` notification carries a `platform` attribute so the agent picks the right family.
 
 ## Slash commands
 
-- `/metro:configure <BOT_TOKEN> [CHAT_ID]` — write credentials to `~/.claude/channels/metro/.env`.
-- `/metro:status` — show the configured bot, mask the token, verify reachability.
+- `/metro:configure telegram <TOKEN> [CHAT_ID]`
+- `/metro:configure discord <TOKEN> [CHANNEL_ID]`
+- `/metro:status` — show configured platforms, mask tokens, verify reachability.
 
 ## Config
 
 Plugin reads `~/.claude/channels/metro/.env`:
 
 ```
+# Telegram
 TELEGRAM_BOT_TOKEN=123456:ABC…
 TELEGRAM_CHAT_ID=987654321
-OPENAI_API_KEY=sk-…           # optional, enables voice/audio transcription
+
+# Discord
+DISCORD_BOT_TOKEN=MTIz…
+DISCORD_CHANNEL_ID=11223344…
+
+# Optional, enables Telegram voice/audio transcription
+OPENAI_API_KEY=sk-…
 ```
 
 ## Architecture
 
 ```
-Telegram  ─poll(getUpdates)─▶  src/server.ts  ─stdio MCP─▶  Claude Code
-                                   │
-                                   ▼
+Telegram ─poll(getUpdates)──┐
+                            ├─▶  src/server.ts  ─stdio MCP─▶  Claude Code
+Discord  ─gateway WS────────┘         │
+                                      ▼
                           notifications/claude/channel
-                          (rendered in-session as <channel> tags)
+                          (rendered in-session as <channel platform="..."> tags)
 ```
 
-Single process. The bot token is local; there is no hosted server, no OAuth, no SSE bridge.
+Single process. Each platform is started only if its token is set; both run in the same MCP server, sharing the notification dispatcher.
 
 ## Caveats
 
-- **Single-poller.** Telegram allows only one `getUpdates` poller per token at a time. If two Claude Code sessions enable `--channels plugin:metro@metro` simultaneously, they will fight over the slot. Use one session per bot, or mint a separate bot for each session.
-- **Pairing not implemented.** v0.3 has no allowlist; whoever has the bot's `@username` can DM it and their messages will appear in your session. For sensitive setups, keep the bot username private or run the plugin against a bot scoped to a private group.
+- **Discord Message Content Intent.** Required and privileged — see install gotcha above.
+- **Telegram single-poller.** Telegram allows only one `getUpdates` poller per token at a time. Two Claude Code sessions on the same TG token will fight; Discord is fine because the gateway accepts multiple connections.
+- **Pairing not implemented.** v0.4 has no allowlist on either platform. For Telegram, anyone with the bot's `@username` can DM it. For Discord, the bot only forwards DMs and guild messages where it's @mentioned — but anyone in those contexts can talk to your session. Run against bots you own and don't share publicly.

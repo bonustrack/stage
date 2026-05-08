@@ -1,14 +1,19 @@
 #!/usr/bin/env bun
-// Metro plugin entry: stdio MCP server that polls Telegram and forwards
-// inbound messages into the live Claude Code session as channel events.
+// Metro plugin entry: stdio MCP server that polls Telegram and/or connects
+// to Discord, forwarding inbound messages into the live Claude Code session
+// as channel events.
 //
 // Spawned by Claude Code via `.claude-plugin/plugin.json` when the user runs
 //   claude --dangerously-load-development-channels plugin:metro@metro
 //
-// Config (loaded from ~/.claude/channels/metro/.env, then ../.env as fallback):
+// Config (loaded from ~/.claude/channels/metro/.env):
 //   TELEGRAM_BOT_TOKEN  bot token from @BotFather
 //   TELEGRAM_CHAT_ID    numeric chat id of the bot owner (default reply target)
-//   OPENAI_API_KEY      optional; required for voice/audio transcription
+//   DISCORD_BOT_TOKEN   bot token from the Discord Developer Portal
+//   DISCORD_CHANNEL_ID  snowflake of the default Discord channel (optional)
+//   OPENAI_API_KEY      optional; required for Telegram voice/audio transcription
+//
+// At least one of TELEGRAM_BOT_TOKEN or DISCORD_BOT_TOKEN must be set.
 
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
@@ -25,35 +30,51 @@ function loadEnvFile(path: string): void {
   }
 }
 
-// Load env before importing modules that read process.env at module load.
+// Load env before importing modules.
 loadEnvFile(join(process.env.METRO_CHANNEL_HOME || join(homedir(), ".claude", "channels", "metro"), ".env"));
 loadEnvFile(fileURLToPath(new URL("../.env", import.meta.url)));
 
-const { getMe, onInbound, startPolling } = await import("./telegram.js");
+const platforms = {
+  telegram: !!process.env.TELEGRAM_BOT_TOKEN,
+  discord: !!process.env.DISCORD_BOT_TOKEN,
+};
+if (!platforms.telegram && !platforms.discord) {
+  console.error("metro: configure TELEGRAM_BOT_TOKEN and/or DISCORD_BOT_TOKEN in ~/.claude/channels/metro/.env");
+  process.exit(1);
+}
+
 const { buildServer } = await import("./mcp.js");
 const { StdioServerTransport } = await import("@modelcontextprotocol/sdk/server/stdio.js");
 
-const me = await getMe();
-console.error(`metro: bot @${me.username} ready`);
+const server = buildServer(platforms).server;
+await server.connect(new StdioServerTransport());
 
-const server = buildServer().server;
-
-onInbound(msg => {
+function emit(platform: "telegram" | "discord", chat_id: string, message_id: string, text: string): void {
   void server
     .notification({
       method: "notifications/claude/channel",
-      params: {
-        content: msg.text,
-        meta: { chat_id: String(msg.chat_id), message_id: String(msg.message_id) },
-      },
+      params: { content: text, meta: { platform, chat_id, message_id } },
     })
     .catch(() => {});
-});
+}
 
-await server.connect(new StdioServerTransport());
-void startPolling();
+if (platforms.telegram) {
+  const tg = await import("./telegram.js");
+  const me = await tg.getMe();
+  console.error(`metro: telegram bot @${me.username} ready`);
+  tg.onInbound(m => emit("telegram", String(m.chat_id), String(m.message_id), m.text));
+  void tg.startPolling();
+}
+
+if (platforms.discord) {
+  const dc = await import("./discord.js");
+  await dc.startGateway();
+  const me = await dc.getMe();
+  console.error(`metro: discord bot ${me.username} ready`);
+  dc.onInbound(m => emit("discord", m.channel_id, m.message_id, m.text));
+}
 
 // Exit when Claude Code closes our stdin so we don't linger and fight for
-// Telegram's single-poller slot.
+// platform poller/gateway slots.
 process.stdin.on("end", () => process.exit(0));
 process.stdin.on("close", () => process.exit(0));

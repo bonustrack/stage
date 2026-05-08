@@ -1,12 +1,14 @@
-// Telegram Bot API wrapper + single-user polling loop.
+// Telegram Bot API wrapper + single-user polling loop. Activated only when
+// TELEGRAM_BOT_TOKEN is set; otherwise the module loads silently and any call
+// throws. server.ts checks the env var before importing handlers.
 
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-if (!BOT_TOKEN) {
-  console.error("metro: TELEGRAM_BOT_TOKEN env var is required");
-  process.exit(1);
+const API_BASE = "https://api.telegram.org";
+
+function token(): string {
+  const t = process.env.TELEGRAM_BOT_TOKEN;
+  if (!t) throw new Error("TELEGRAM_BOT_TOKEN is not set");
+  return t;
 }
-
-const API = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
 async function fetchT(url: string, init: RequestInit & { timeoutMs?: number } = {}) {
   const { timeoutMs = 30_000, ...rest } = init;
@@ -14,7 +16,7 @@ async function fetchT(url: string, init: RequestInit & { timeoutMs?: number } = 
 }
 
 export async function tg<T = any>(method: string, body: unknown, timeoutMs = 30_000): Promise<T> {
-  const res = await fetchT(`${API}/${method}`, {
+  const res = await fetchT(`${API_BASE}/bot${token()}/${method}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -39,15 +41,12 @@ export function buildSendBody(chatId: ChatId, text: string, opts: SendOptions): 
   const body: Record<string, unknown> = { chat_id: chatId, text };
   if (opts.parseMode) body.parse_mode = opts.parseMode;
   if (opts.disableLinkPreview) body.link_preview_options = { is_disabled: true };
-  if (opts.buttons?.length) {
-    body.reply_markup = { inline_keyboard: opts.buttons };
-  }
+  if (opts.buttons?.length) body.reply_markup = { inline_keyboard: opts.buttons };
   return body;
 }
 
-export async function sendMessage(chatId: ChatId, text: string, opts: SendOptions = {}): Promise<number> {
-  const msg = await tg<{ message_id: number }>("sendMessage", buildSendBody(chatId, text, opts));
-  return msg.message_id;
+async function sendMessage(chatId: ChatId, text: string): Promise<void> {
+  await tg("sendMessage", { chat_id: chatId, text });
 }
 
 export async function getMe(): Promise<{ username: string }> {
@@ -55,9 +54,7 @@ export async function getMe(): Promise<{ username: string }> {
 }
 
 // Resolve an inbound Telegram message to a single string. Voice/audio gets
-// transcribed via OpenAI; images become a `[image]` placeholder (channel
-// notifications carry strings, not blobs). Returns null for unsupported
-// types so the caller can drop the update.
+// transcribed via OpenAI; images become a `[image]` placeholder.
 async function messageToText(m: any, chatId: ChatId): Promise<string | null> {
   if (m.text) return m.text;
 
@@ -81,7 +78,7 @@ async function messageToText(m: any, chatId: ChatId): Promise<string | null> {
 
 async function downloadFile(fileId: string): Promise<Blob> {
   const file = await tg<{ file_path: string }>("getFile", { file_id: fileId });
-  const res = await fetchT(`https://api.telegram.org/file/bot${BOT_TOKEN}/${file.file_path}`);
+  const res = await fetchT(`${API_BASE}/file/bot${token()}/${file.file_path}`);
   if (!res.ok) throw new Error(`download failed: ${res.status}`);
   return res.blob();
 }
@@ -124,7 +121,7 @@ export async function startPolling(): Promise<void> {
         void dispatchUpdate(u);
       }
     } catch (err: any) {
-      console.error(`metro: poll error: ${err?.message ?? err}`);
+      console.error(`metro: telegram poll error: ${err?.message ?? err}`);
       await new Promise(r => setTimeout(r, 1000));
     }
   }

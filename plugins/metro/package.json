@@ -1,7 +1,7 @@
 {
   "name": "@metro-labs/mcp",
-  "version": "0.3.1",
-  "description": "Claude Code plugin: Telegram channel that surfaces inbound messages live in-session and lets the agent reply, react, and edit-message.",
+  "version": "0.4.0",
+  "description": "Claude Code plugin: Telegram + Discord channel that surfaces inbound messages live in-session and lets the agent reply, react, and edit-message.",
   "type": "module",
   "scripts": {
     "build": "tsc --noEmit",
@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
+    "discord.js": "^14.14.0",
     "zod": "^3.23.0"
   },
   "devDependencies": {

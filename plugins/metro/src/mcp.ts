@@ -1,42 +1,68 @@
-// MCP tool registrations: reply / react / edit-message. All target the user's
-// Telegram chat — the bot owner's by default, overridable per-call via `user`.
+// MCP tool registration. Tools are namespaced per-platform (telegram-* /
+// discord-*) and registered only when their platform is enabled. The agent
+// reads the `platform` attribute on inbound <channel> tags and picks the
+// matching tool.
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import * as discord from "./discord.js";
 import { buildSendBody, type ChatId, tg } from "./telegram.js";
 
-const DEFAULT_CHAT_ID: ChatId | undefined = (() => {
+const TG_DEFAULT_CHAT: ChatId | undefined = (() => {
   const raw = process.env.TELEGRAM_CHAT_ID;
   if (!raw) return undefined;
   const n = Number(raw);
   return Number.isFinite(n) && String(n) === raw ? n : raw;
 })();
+const DC_DEFAULT_CHANNEL = process.env.DISCORD_CHANNEL_ID;
 
-function resolveChat(user: ChatId | undefined): ChatId {
-  const chat = user ?? DEFAULT_CHAT_ID;
-  if (chat === undefined) {
-    throw new Error("no Telegram chat configured — pass `user` or set TELEGRAM_CHAT_ID");
-  }
+function tgChat(user: ChatId | undefined): ChatId {
+  const chat = user ?? TG_DEFAULT_CHAT;
+  if (chat === undefined) throw new Error("no Telegram chat — pass `user` or set TELEGRAM_CHAT_ID");
   return chat;
 }
+function dcChannel(channel: string | undefined): string {
+  const c = channel ?? DC_DEFAULT_CHANNEL;
+  if (!c) throw new Error("no Discord channel — pass `channelId` or set DISCORD_CHANNEL_ID");
+  return c;
+}
 
-export function buildServer(): McpServer {
+export type Platforms = { telegram: boolean; discord: boolean };
+
+export function buildServer(platforms: Platforms): McpServer {
+  const enabled = [
+    platforms.telegram && "Telegram",
+    platforms.discord && "Discord",
+  ].filter(Boolean).join(" + ");
+
   const s = new McpServer(
-    { name: "metro", version: "0.3.0" },
+    { name: "metro", version: "0.4.0" },
     {
       capabilities: { tools: {}, experimental: { "claude/channel": {} } },
       instructions:
-        "Telegram channel. Each <channel> tag is a Telegram message from the user. " +
-        "Pass the `message_id` attribute as `messageId` to `reply` / `react` / `edit-message`. " +
-        "Default: call `reply` for questions, `react` with 👍 for quick acks, `edit-message` to " +
+        `${enabled} channel. Each <channel> tag is a message from the user. ` +
+        "The `platform` attribute identifies the source — use the matching tool family: " +
+        "`telegram-reply` / `telegram-react` / `telegram-edit-message` for platform=telegram, " +
+        "`discord-reply` / `discord-react` / `discord-edit-message` for platform=discord. " +
+        "Pass `message_id` (and Discord's `channel_id`) verbatim from the tag's attributes. " +
+        "Default: call reply for questions, react with 👍 for quick acks, edit-message to " +
         "update something you already sent.",
     },
   );
 
-  // Telegram parse modes:
-  //   HTML        : <b> <i> <u> <s> <a href> <code> <pre> <blockquote> <tg-spoiler>
-  //   MarkdownV2  : *bold* _italic_ __underline__ ~strike~ ||spoiler|| `code` ```pre``` [text](url)
-  //                 (escape _ * [ ] ( ) ~ ` > # + - = | { } . ! with \)
+  if (platforms.telegram) registerTelegramTools(s);
+  if (platforms.discord) registerDiscordTools(s);
+
+  return s;
+}
+
+// ----- Telegram tools -----
+// Telegram parse modes:
+//   HTML        : <b> <i> <u> <s> <a href> <code> <pre> <blockquote> <tg-spoiler>
+//   MarkdownV2  : *bold* _italic_ __underline__ ~strike~ ||spoiler|| `code` ```pre``` [text](url)
+//                 (escape _ * [ ] ( ) ~ ` > # + - = | { } . ! with \)
+
+function registerTelegramTools(s: McpServer): void {
   const parseMode = z.enum(["HTML", "MarkdownV2"]).optional();
   const disableLinkPreview = z.boolean().optional();
   const user = z.union([z.string(), z.number()]).optional();
@@ -44,26 +70,16 @@ export function buildServer(): McpServer {
     .array(z.array(z.object({ text: z.string(), url: z.string() })))
     .optional()
     .describe("Inline URL buttons. Outer array = rows, inner array = buttons in that row.");
-  const messageId = z
-    .number()
-    .int()
-    .describe("Telegram message_id from the inbound <channel> tag's attribute.");
+  const messageId = z.number().int().describe("Telegram message_id from the inbound tag.");
 
   s.registerTool(
-    "reply",
+    "telegram-reply",
     {
       description: "Quote-reply to a Telegram message. Threads under the user's original.",
-      inputSchema: {
-        messageId,
-        text: z.string(),
-        user,
-        parseMode,
-        disableLinkPreview,
-        buttons,
-      },
+      inputSchema: { messageId, text: z.string(), user, parseMode, disableLinkPreview, buttons },
     },
     async ({ messageId, text, user, parseMode, disableLinkPreview, buttons }) => {
-      const body = buildSendBody(resolveChat(user), text, { parseMode, disableLinkPreview, buttons });
+      const body = buildSendBody(tgChat(user), text, { parseMode, disableLinkPreview, buttons });
       body.reply_parameters = { message_id: messageId, allow_sending_without_reply: true };
       await tg("sendMessage", body);
       return { content: [{ type: "text", text: "sent" }] };
@@ -71,40 +87,78 @@ export function buildServer(): McpServer {
   );
 
   s.registerTool(
-    "react",
+    "telegram-react",
     {
       description:
-        "Set or clear an emoji reaction. Pass '' to clear. Telegram restricts private bots to a " +
-        "fixed whitelist (👍 ❤️ 🔥 🥰 👏 😁 🤔 🎉 🙏 👌 🤝 💯 🤣 🙈 🤷 …).",
+        "Set or clear an emoji reaction on a Telegram message. Pass '' to clear. Telegram " +
+        "restricts private bots to a fixed whitelist (👍 ❤️ 🔥 🥰 👏 😁 🤔 🎉 🙏 👌 💯 🤣 …).",
       inputSchema: { messageId, emoji: z.string(), user },
     },
     async ({ messageId, emoji, user }) => {
       const reaction = emoji ? [{ type: "emoji", emoji }] : [];
-      await tg("setMessageReaction", { chat_id: resolveChat(user), message_id: messageId, reaction });
+      await tg("setMessageReaction", { chat_id: tgChat(user), message_id: messageId, reaction });
       return { content: [{ type: "text", text: emoji ? "reacted" : "cleared" }] };
     },
   );
 
   s.registerTool(
-    "edit-message",
+    "telegram-edit-message",
     {
-      description: "Edit a message the bot previously sent. Errors if the new text matches the old.",
-      inputSchema: {
-        messageId,
-        text: z.string(),
-        user,
-        parseMode,
-        disableLinkPreview,
-        buttons,
-      },
+      description: "Edit a Telegram message the bot previously sent.",
+      inputSchema: { messageId, text: z.string(), user, parseMode, disableLinkPreview, buttons },
     },
     async ({ messageId, text, user, parseMode, disableLinkPreview, buttons }) => {
-      const body = buildSendBody(resolveChat(user), text, { parseMode, disableLinkPreview, buttons });
+      const body = buildSendBody(tgChat(user), text, { parseMode, disableLinkPreview, buttons });
       body.message_id = messageId;
       await tg("editMessageText", body);
       return { content: [{ type: "text", text: "edited" }] };
     },
   );
+}
 
-  return s;
+// ----- Discord tools -----
+function registerDiscordTools(s: McpServer): void {
+  const channelId = z
+    .string()
+    .optional()
+    .describe("Discord channel snowflake. Defaults to DISCORD_CHANNEL_ID.");
+  const messageId = z.string().describe("Discord message snowflake from the inbound tag.");
+
+  s.registerTool(
+    "discord-reply",
+    {
+      description: "Reply to a Discord message. The reply is threaded under the original.",
+      inputSchema: { messageId, text: z.string(), channelId },
+    },
+    async ({ messageId, text, channelId }) => {
+      await discord.replyToMessage(dcChannel(channelId), messageId, text);
+      return { content: [{ type: "text", text: "sent" }] };
+    },
+  );
+
+  s.registerTool(
+    "discord-react",
+    {
+      description:
+        "Add or clear an emoji reaction on a Discord message. Pass '' to remove the bot's " +
+        "reactions. `emoji` accepts a unicode character (👍) or a custom emoji ID.",
+      inputSchema: { messageId, emoji: z.string(), channelId },
+    },
+    async ({ messageId, emoji, channelId }) => {
+      await discord.setReaction(dcChannel(channelId), messageId, emoji);
+      return { content: [{ type: "text", text: emoji ? "reacted" : "cleared" }] };
+    },
+  );
+
+  s.registerTool(
+    "discord-edit-message",
+    {
+      description: "Edit a Discord message the bot previously sent.",
+      inputSchema: { messageId, text: z.string(), channelId },
+    },
+    async ({ messageId, text, channelId }) => {
+      await discord.editMessage(dcChannel(channelId), messageId, text);
+      return { content: [{ type: "text", text: "edited" }] };
+    },
+  );
 }
