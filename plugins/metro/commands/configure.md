@@ -1,23 +1,23 @@
 ---
-description: Configure Metro's Telegram and/or Discord credentials.
+description: Configure Metro's Telegram and/or Discord bot tokens.
 allowed-tools: Bash
-argument-hint: telegram <BOT_TOKEN> [CHAT_ID] | discord <BOT_TOKEN> [CHANNEL_ID]
+argument-hint: telegram <BOT_TOKEN> | discord <BOT_TOKEN>
 ---
 
-Persist platform credentials to `~/.claude/channels/metro/.env` so the plugin's stdio server picks them up on next launch. At least one platform must be set; configure the other later by re-running this command with different first arg.
+Persist a platform's bot token to `~/.claude/channels/metro/.env` so the plugin's stdio server picks it up on next launch. At least one platform must be set; configure the other later by re-running with a different first arg.
 
 ## Inputs
 
 `$ARGUMENTS`:
 
-- `telegram <BOT_TOKEN> [CHAT_ID]` → writes `TELEGRAM_BOT_TOKEN` (and optionally `TELEGRAM_CHAT_ID`).
-- `discord <BOT_TOKEN> [CHANNEL_ID]` → writes `DISCORD_BOT_TOKEN` (and optionally `DISCORD_CHANNEL_ID`).
+- `telegram <BOT_TOKEN>` → writes `TELEGRAM_BOT_TOKEN`.
+- `discord <BOT_TOKEN>` → writes `DISCORD_BOT_TOKEN`.
 
 ## Steps
 
 1. Parse `$ARGUMENTS`. Reject anything other than the two forms above.
 
-2. Read the existing env file if present, mutate only the keys for the requested platform, write back. Preserve any unrelated lines (e.g. `OPENAI_API_KEY`, the *other* platform's keys).
+2. Read the existing env file if present, mutate only the requested platform's token, write back. Preserve any unrelated lines (e.g. the *other* platform's token).
 
    ```bash
    mkdir -p ~/.claude/channels/metro

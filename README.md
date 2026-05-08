@@ -18,7 +18,7 @@ exit
 claude --dangerously-load-development-channels plugin:metro@metro
 ```
 
-DM either bot. The notification carries `chat_id` (TG) or `channel_id` (DC) — pass it back in a second `/metro:configure` call to set a default reply target so the agent doesn't have to thread the ID every call.
+DM either bot. The notification carries `chat_id` (TG) or `channel_id` (DC) in the `<channel>` tag — the agent reads them straight off the inbound message and threads them through `reply` / `react` / `edit-message` automatically.
 
 **Discord setup gotcha.** In the Discord Developer Portal, under **Bot → Privileged Gateway Intents**, enable **Message Content Intent**. Without it `messageCreate` events arrive with empty `content`.
 
@@ -37,8 +37,8 @@ Each `<channel>` notification carries a `platform` attribute so the agent picks 
 
 ## Slash commands
 
-- `/metro:configure telegram <TOKEN> [CHAT_ID]`
-- `/metro:configure discord <TOKEN> [CHANNEL_ID]`
+- `/metro:configure telegram <TOKEN>`
+- `/metro:configure discord <TOKEN>`
 - `/metro:status` — show configured platforms, mask tokens, verify reachability.
 
 ## Config
@@ -47,9 +47,7 @@ Plugin reads `~/.claude/channels/metro/.env`:
 
 ```
 TELEGRAM_BOT_TOKEN=123456:ABC…
-TELEGRAM_CHAT_ID=987654321
 DISCORD_BOT_TOKEN=MTIz…
-DISCORD_CHANNEL_ID=11223344…
 ```
 
 `METRO_LOG_LEVEL` (trace|debug|info|warn|error|fatal) controls plugin log verbosity; default `info`. Logs go to stderr (Claude Code captures them in `~/Library/Caches/claude-cli-nodejs/.../mcp-logs-plugin-metro-metro/*.jsonl`).

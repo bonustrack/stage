@@ -13,6 +13,4 @@ Report on the plugin's local config and verify any configured tokens actually wo
 
 3. If `DISCORD_BOT_TOKEN` is set, hit `https://discord.com/api/v10/users/@me` with header `Authorization: Bot <TOKEN>` and report the bot's `username`.
 
-4. Report whether `TELEGRAM_CHAT_ID`, `DISCORD_CHANNEL_ID`, and `OPENAI_API_KEY` are set (don't print values).
-
-5. If neither platform is configured, point at `/metro:configure`.
+4. If neither platform is configured, point at `/metro:configure`.

@@ -1,6 +1,6 @@
 {
   "name": "@metro-labs/mcp",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "description": "Claude Code plugin: Telegram + Discord channel that surfaces inbound messages live in-session and lets the agent reply, react, and edit-message.",
   "type": "module",
   "scripts": {
