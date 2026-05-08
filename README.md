@@ -16,7 +16,7 @@ You (Telegram) ─────────────────────�
 ```bash
 git clone https://github.com/bonustrack/metro && cd metro
 
-bun install && bun link    # or:  npm install && npm link
+npm install && npm link    # or:  bun install && bun link
 
 cp .env.example .env && chmod 600 .env
 ```
