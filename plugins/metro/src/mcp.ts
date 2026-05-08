@@ -6,6 +6,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import * as discord from "./discord.js";
+import * as telegram from "./telegram.js";
 import { buildSendBody, type ChatId, tg } from "./telegram.js";
 
 const TG_DEFAULT_CHAT: ChatId | undefined = (() => {
@@ -36,17 +37,18 @@ export function buildServer(platforms: Platforms): McpServer {
   ].filter(Boolean).join(" + ");
 
   const s = new McpServer(
-    { name: "metro", version: "0.4.0" },
+    { name: "metro", version: "0.4.1" },
     {
       capabilities: { tools: {}, experimental: { "claude/channel": {} } },
       instructions:
         `${enabled} channel. Each <channel> tag is a message from the user. ` +
-        "The `platform` attribute identifies the source — use the matching tool family: " +
-        "`telegram-reply` / `telegram-react` / `telegram-edit-message` for platform=telegram, " +
-        "`discord-reply` / `discord-react` / `discord-edit-message` for platform=discord. " +
+        "The `platform` attribute identifies the source — use the matching tool family. " +
         "Pass `message_id` (and Discord's `channel_id`) verbatim from the tag's attributes. " +
         "Default: call reply for questions, react with 👍 for quick acks, edit-message to " +
-        "update something you already sent.",
+        "update something you already sent. " +
+        "If the message body contains `[image]`, call `*-download-attachment` with the " +
+        "message_id to actually see what the user sent. Use `discord-fetch-messages` to read " +
+        "earlier context from a Discord channel (Discord has no search API for bots).",
     },
   );
 
@@ -114,6 +116,35 @@ function registerTelegramTools(s: McpServer): void {
       return { content: [{ type: "text", text: "edited" }] };
     },
   );
+
+  s.registerTool(
+    "telegram-download-attachment",
+    {
+      description:
+        "Download image attachments from an inbound Telegram message and return them as " +
+        "image content blocks the agent can see. Only resolves messages received during the " +
+        "current plugin session (file_ids cached in memory).",
+      inputSchema: { messageId, user },
+    },
+    async ({ messageId, user }) => {
+      const atts = telegram.getCachedAttachments(tgChat(user), messageId);
+      if (atts.length === 0) {
+        return {
+          content: [{
+            type: "text",
+            text: "no cached attachments for this message — it may pre-date this plugin session, or be text-only",
+          }],
+        };
+      }
+      const blocks = await Promise.all(
+        atts.map(async a => {
+          const { data, mime } = await telegram.downloadAttachment(a.file_id, a.mime);
+          return { type: "image" as const, data, mimeType: mime };
+        }),
+      );
+      return { content: blocks };
+    },
+  );
 }
 
 // ----- Discord tools -----
@@ -159,6 +190,46 @@ function registerDiscordTools(s: McpServer): void {
     async ({ messageId, text, channelId }) => {
       await discord.editMessage(dcChannel(channelId), messageId, text);
       return { content: [{ type: "text", text: "edited" }] };
+    },
+  );
+
+  s.registerTool(
+    "discord-download-attachment",
+    {
+      description:
+        "Download image attachments from a Discord message and return them as image content " +
+        "blocks the agent can see. Works on any reachable message, not just ones received this " +
+        "session. Non-image attachments are skipped.",
+      inputSchema: { messageId, channelId },
+    },
+    async ({ messageId, channelId }) => {
+      const atts = await discord.fetchAttachments(dcChannel(channelId), messageId);
+      if (atts.length === 0) return { content: [{ type: "text", text: "no image attachments on this message" }] };
+      return {
+        content: atts.map(a => ({ type: "image" as const, data: a.data, mimeType: a.mime })),
+      };
+    },
+  );
+
+  s.registerTool(
+    "discord-fetch-messages",
+    {
+      description:
+        "Fetch recent messages from a Discord channel for context. Returns up to `limit` " +
+        "messages in chronological order. Use this when the agent needs to look back at the " +
+        "conversation — Discord has no search API for bots, so this is the only lookback path.",
+      inputSchema: {
+        channelId,
+        limit: z.number().int().min(1).max(100).optional()
+          .describe("Number of messages to fetch (1-100, default 10)."),
+      },
+    },
+    async ({ channelId, limit }) => {
+      const msgs = await discord.fetchRecentMessages(dcChannel(channelId), limit ?? 10);
+      const formatted = msgs
+        .map(m => `[message_id=${m.message_id} ${m.timestamp}] ${m.author}: ${m.text}`)
+        .join("\n");
+      return { content: [{ type: "text", text: formatted || "(channel is empty)" }] };
     },
   );
 }

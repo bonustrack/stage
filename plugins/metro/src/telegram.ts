@@ -54,13 +54,21 @@ export async function getMe(): Promise<{ username: string }> {
 }
 
 // Resolve an inbound Telegram message to a single string. Voice/audio gets
-// transcribed via OpenAI; images become a `[image]` placeholder.
+// transcribed via OpenAI; images become a `[image]` placeholder. Image
+// file_ids are cached so the agent can call `telegram-download-attachment`
+// later with just the message_id.
 async function messageToText(m: any, chatId: ChatId): Promise<string | null> {
   if (m.text) return m.text;
 
   const caption: string = m.caption ?? "";
 
-  if (m.photo?.length || m.document?.mime_type?.startsWith("image/")) {
+  if (m.photo?.length) {
+    const photo = m.photo[m.photo.length - 1];
+    cacheAttachment(chatId, m.message_id, { file_id: photo.file_id, mime: "image/jpeg" });
+    return [caption, "[image]"].filter(Boolean).join(" ");
+  }
+  if (m.document?.mime_type?.startsWith("image/")) {
+    cacheAttachment(chatId, m.message_id, { file_id: m.document.file_id, mime: m.document.mime_type });
     return [caption, "[image]"].filter(Boolean).join(" ");
   }
 
@@ -81,6 +89,34 @@ async function downloadFile(fileId: string): Promise<Blob> {
   const res = await fetchT(`${API_BASE}/file/bot${token()}/${file.file_path}`);
   if (!res.ok) throw new Error(`download failed: ${res.status}`);
   return res.blob();
+}
+
+// In-memory cache of inbound message → attachments. Lets `download_attachment`
+// resolve a message_id back to the underlying file_id without re-polling.
+// FIFO bound; the cache is per-process and dies on plugin restart.
+type CachedAttachment = { file_id: string; mime: string };
+const ATTACHMENT_CACHE_MAX = 200;
+const attachmentCache = new Map<string, CachedAttachment[]>();
+
+function cacheAttachment(chatId: ChatId, messageId: number, att: CachedAttachment): void {
+  const key = `${chatId}:${messageId}`;
+  const list = attachmentCache.get(key) ?? [];
+  list.push(att);
+  attachmentCache.set(key, list);
+  if (attachmentCache.size > ATTACHMENT_CACHE_MAX) {
+    const first = attachmentCache.keys().next().value;
+    if (first !== undefined) attachmentCache.delete(first);
+  }
+}
+
+export function getCachedAttachments(chatId: ChatId, messageId: number): CachedAttachment[] {
+  return attachmentCache.get(`${chatId}:${messageId}`) ?? [];
+}
+
+export async function downloadAttachment(fileId: string, mime: string): Promise<{ data: string; mime: string }> {
+  const blob = await downloadFile(fileId);
+  const data = Buffer.from(await blob.arrayBuffer()).toString("base64");
+  return { data, mime: blob.type || mime };
 }
 
 async function transcribe(blob: Blob, filename: string): Promise<string> {

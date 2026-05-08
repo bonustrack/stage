@@ -34,10 +34,12 @@ Tools are namespaced per platform; only the families you've configured get regis
 
 | Platform | Tools |
 |---|---|
-| Telegram | `telegram-reply`, `telegram-react`, `telegram-edit-message` |
-| Discord  | `discord-reply`,  `discord-react`,  `discord-edit-message` |
+| Telegram | `telegram-reply`, `telegram-react`, `telegram-edit-message`, `telegram-download-attachment` |
+| Discord  | `discord-reply`, `discord-react`, `discord-edit-message`, `discord-download-attachment`, `discord-fetch-messages` |
 
 Each `<channel>` notification carries a `platform` attribute so the agent picks the right family.
+
+`*-download-attachment` lets the agent see images the user sent (Telegram caches `file_id`s in memory only — restart of the plugin loses them). `discord-fetch-messages` is Discord-only, since Discord exposes no search API for bots.
 
 ## Slash commands
 

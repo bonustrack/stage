@@ -121,3 +121,36 @@ export async function setReaction(channelId: string, messageId: string, emoji: s
     }
   }
 }
+
+export async function fetchAttachments(channelId: string, messageId: string): Promise<Array<{ data: string; mime: string }>> {
+  const target = await fetchMessage(channelId, messageId);
+  const out: Array<{ data: string; mime: string }> = [];
+  for (const a of target.attachments.values()) {
+    if (!a.contentType?.startsWith("image/")) continue;
+    const res = await fetch(a.url);
+    if (!res.ok) throw new Error(`discord: download ${a.url}: ${res.status}`);
+    const data = Buffer.from(await res.arrayBuffer()).toString("base64");
+    out.push({ data, mime: a.contentType });
+  }
+  return out;
+}
+
+export async function fetchRecentMessages(
+  channelId: string,
+  limit: number,
+): Promise<Array<{ message_id: string; author: string; text: string; timestamp: string }>> {
+  const c = getClient();
+  const channel = await c.channels.fetch(channelId);
+  if (!channel?.isTextBased() || !("messages" in channel)) {
+    throw new Error(`discord: channel ${channelId} is not text-capable`);
+  }
+  const msgs = await channel.messages.fetch({ limit: Math.min(Math.max(limit, 1), 100) });
+  return [...msgs.values()]
+    .map(m => ({
+      message_id: m.id,
+      author: m.author.username,
+      text: m.content,
+      timestamp: m.createdAt.toISOString(),
+    }))
+    .reverse(); // chronological (Discord returns newest-first)
+}
