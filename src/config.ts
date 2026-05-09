@@ -1,20 +1,23 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { log } from './log.js';
 
 export type Platforms = { telegram: boolean; discord: boolean };
 
-// Repo root — where .env, package.json, and runtime state files live.
-export const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url));
+// Lockfiles, typing-stop signals, and the attachment cache live here.
+// Override with METRO_STATE_DIR.
+export const STATE_DIR = process.env.METRO_STATE_DIR ?? join(homedir(), '.cache', 'metro');
+mkdirSync(STATE_DIR, { recursive: true });
 
+// Optional .env in cwd — convenience for local development. In production,
+// env vars come from the MCP server's `env` block.
 export function loadMetroEnv(): void {
-  const envFile = join(REPO_ROOT, '.env');
+  const envFile = join(process.cwd(), '.env');
   if (!existsSync(envFile)) return;
   for (const line of readFileSync(envFile, 'utf8').split('\n')) {
-    const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/);
-    if (!m || m[1].startsWith('#')) continue;
-    if (process.env[m[1]] === undefined) {
+    const m = line.match(/^\s*([A-Za-z_]\w*)\s*=\s*(.*?)\s*$/);
+    if (m && process.env[m[1]] === undefined) {
       process.env[m[1]] = m[2].replace(/^(['"])(.*)\1$/, '$2');
     }
   }
@@ -29,6 +32,6 @@ export function configuredPlatforms(): Platforms {
 
 export function requireConfiguredPlatform(p: Platforms): void {
   if (p.telegram || p.discord) return;
-  log.fatal(`configure TELEGRAM_BOT_TOKEN and/or DISCORD_BOT_TOKEN in ${join(REPO_ROOT, '.env')}`);
+  log.fatal('set TELEGRAM_BOT_TOKEN and/or DISCORD_BOT_TOKEN — pass via the MCP server `env` block, or in ./.env for local dev');
   process.exit(1);
 }

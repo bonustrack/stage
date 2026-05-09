@@ -1,6 +1,7 @@
 node_modules
 .claude
 dist
+*.tgz
 *.log
 .env
 .env.*

@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 const cmd = process.argv[2];
 if (cmd === 'tail') {
   await import('./tail.js');

@@ -1,0 +1,44 @@
+name: Publish
+
+on:
+  push:
+    branches: [main]
+    paths: ['package.json']
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org/
+      - run: npm install --no-audit --no-fund
+
+      - id: meta
+        run: |
+          NAME=$(jq -r .name package.json)
+          VERSION=$(jq -r .version package.json)
+          if npm view "$NAME@$VERSION" version 2>/dev/null | grep -q .; then
+            echo "Already published: $NAME@$VERSION"
+            exit 0
+          fi
+          echo "publish=true" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          [[ "$VERSION" == *-* ]] && echo "tag=beta" >> "$GITHUB_OUTPUT" || echo "tag=latest" >> "$GITHUB_OUTPUT"
+
+      - if: steps.meta.outputs.publish == 'true'
+        run: npm publish --access public --tag ${{ steps.meta.outputs.tag }} --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - if: steps.meta.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PRERELEASE: ${{ steps.meta.outputs.tag == 'beta' && '--prerelease' || '' }}
+        run: gh release create "v${{ steps.meta.outputs.version }}" --generate-notes $PRERELEASE

@@ -19,12 +19,16 @@ function getClient(): Client {
   return client;
 }
 
-async function fetchMessage(channelId: string, messageId: string): Promise<Message> {
+async function getTextChannel(channelId: string) {
   const channel = await getClient().channels.fetch(channelId);
   if (!channel?.isTextBased() || !('messages' in channel)) {
     throw new Error(`discord: channel ${channelId} is not text-capable`);
   }
-  return channel.messages.fetch(messageId);
+  return channel;
+}
+
+async function fetchMessage(channelId: string, messageId: string): Promise<Message> {
+  return (await getTextChannel(channelId)).messages.fetch(messageId);
 }
 
 export type InboundMessage = { channel_id: string; message_id: string; text: string };
@@ -112,10 +116,7 @@ export async function fetchRecentMessages(
   channelId: string,
   limit: number,
 ): Promise<Array<{ message_id: string; author: string; text: string; timestamp: string }>> {
-  const channel = await getClient().channels.fetch(channelId);
-  if (!channel?.isTextBased() || !('messages' in channel)) {
-    throw new Error(`discord: channel ${channelId} is not text-capable`);
-  }
+  const channel = await getTextChannel(channelId);
   const msgs = await channel.messages.fetch({ limit: Math.min(Math.max(limit, 1), 100) });
   // Discord returns newest-first; reverse for chronological.
   return [...msgs.values()].reverse().map(m => ({

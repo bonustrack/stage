@@ -1,13 +1,32 @@
 {
-  "name": "@metro-labs/mcp",
-  "version": "0.14.1",
-  "description": "Claude Code and Codex plugin: Telegram + Discord channel that surfaces inbound messages live in-session and lets the agent reply, react, and edit-message.",
+  "name": "@stage-labs/metro",
+  "version": "0.1.0-beta.0",
+  "description": "Chat with your Claude Code or Codex agent over Telegram and Discord. Ultra-lightweight: ~700 lines of TypeScript, one stdio MCP, no hosted infra.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bonustrack/metro.git"
+  },
+  "homepage": "https://github.com/bonustrack/metro#readme",
+  "bugs": "https://github.com/bonustrack/metro/issues",
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "bin": {
-    "metro": "./src/cli.ts"
+    "metro": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
-    "build": "tsc --noEmit",
+    "build": "tsc",
+    "prepublishOnly": "tsc",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "typecheck": "tsc --noEmit"
@@ -19,7 +38,7 @@
     "zod": "^3.23.0"
   },
   "devDependencies": {
-    "@types/bun": "^1.3.13",
+    "@types/node": "^22.10.0",
     "eslint": "^10.3.0",
     "typescript": "^5",
     "typescript-eslint": "^8.59.2"

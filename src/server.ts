@@ -1,4 +1,3 @@
-#!/usr/bin/env bun
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -8,7 +7,7 @@ import pkg from '../package.json' with { type: 'json' };
 import * as discord from './channels/discord.js';
 import * as telegram from './channels/telegram.js';
 import { buildSendBody, tg } from './channels/telegram.js';
-import { configuredPlatforms, loadMetroEnv, REPO_ROOT, requireConfiguredPlatform } from './config.js';
+import { configuredPlatforms, loadMetroEnv, STATE_DIR, requireConfiguredPlatform } from './config.js';
 import { errMsg, log } from './log.js';
 
 loadMetroEnv();
@@ -16,7 +15,7 @@ const platforms = configuredPlatforms();
 requireConfiguredPlatform(platforms);
 
 // Tell tail.ts to stop refreshing typing for this chat (the agent has replied).
-const TYPING_DIR = join(REPO_ROOT, '.typing-stop');
+const TYPING_DIR = join(STATE_DIR, '.typing-stop');
 function signalReplyComplete(platform: 'telegram' | 'discord', chat: string): void {
   try {
     mkdirSync(TYPING_DIR, { recursive: true });
@@ -26,8 +25,12 @@ function signalReplyComplete(platform: 'telegram' | 'discord', chat: string): vo
   }
 }
 
-// Discord tools need a logged-in client for REST calls; pre-warm the gateway.
-if (platforms.discord) await discord.startGateway();
+// Discord tools need a logged-in client for REST calls; warm the gateway in
+// the background so MCP stdio binds before discord.js's slow handshake. Tool
+// handlers below await `discordReady` before touching the client.
+const discordReady: Promise<unknown> = platforms.discord
+  ? discord.startGateway().catch(err => log.warn({ err: errMsg(err) }, 'discord gateway warmup failed'))
+  : Promise.resolve();
 
 const ok = (text: string) => ({ content: [{ type: 'text' as const, text }] });
 const enabled = [platforms.telegram && 'Telegram', platforms.discord && 'Discord']
@@ -40,7 +43,7 @@ const server = new McpServer(
     capabilities: { tools: {} },
     instructions:
       `Metro: ${enabled} channel.\n\n` +
-      'Inbound messages arrive as JSON lines on stdout of `bun src/tail.ts` running in ' +
+      'Inbound messages arrive as JSON lines on stdout of `metro tail` running in ' +
       'the background (Bash+Monitor on Claude Code, unified_exec on Codex). Each line: ' +
       '`{"platform":"telegram"|"discord","chat_id"|"channel_id":"…","message_id":…,"text":"…"}`.\n\n' +
       'VISIBILITY: when handling an inbound message, your FIRST visible line MUST echo ' +
@@ -140,6 +143,7 @@ if (platforms.discord) {
       inputSchema: { channelId, messageId, text: z.string() },
     },
     async ({ channelId, messageId, text }) => {
+      await discordReady;
       await discord.replyToMessage(channelId, messageId, text);
       signalReplyComplete('discord', channelId);
       // Clear the auto-acknowledgement emoji on the specific message we replied to.
@@ -157,6 +161,7 @@ if (platforms.discord) {
       inputSchema: { channelId, messageId, emoji: z.string() },
     },
     async ({ channelId, messageId, emoji }) => {
+      await discordReady;
       await discord.setReaction(channelId, messageId, emoji);
       return ok(emoji ? 'reacted' : 'cleared');
     },
@@ -169,6 +174,7 @@ if (platforms.discord) {
       inputSchema: { channelId, messageId, text: z.string() },
     },
     async ({ channelId, messageId, text }) => {
+      await discordReady;
       await discord.editMessage(channelId, messageId, text);
       return ok('edited');
     },
@@ -181,6 +187,7 @@ if (platforms.discord) {
       inputSchema: { channelId, messageId },
     },
     async ({ channelId, messageId }) => {
+      await discordReady;
       const atts = await discord.fetchAttachments(channelId, messageId);
       if (atts.length === 0) return ok('no image attachments on this message');
       return { content: atts.map(a => ({ type: 'image' as const, data: a.data, mimeType: a.mime })) };
@@ -197,6 +204,7 @@ if (platforms.discord) {
       },
     },
     async ({ channelId, limit }) => {
+      await discordReady;
       const msgs = await discord.fetchRecentMessages(channelId, limit ?? 10);
       const text = msgs
         .map(m => `[message_id=${m.message_id} ${m.timestamp}] ${m.author}: ${m.text}`)
@@ -207,5 +215,4 @@ if (platforms.discord) {
 }
 
 await server.server.connect(new StdioServerTransport());
-process.stdin.on('end', () => process.exit(0));
-process.stdin.on('close', () => process.exit(0));
+process.stdin.on('end', () => process.exit(0)).on('close', () => process.exit(0));
