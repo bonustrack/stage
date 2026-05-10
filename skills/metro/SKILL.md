@@ -34,9 +34,26 @@ codex --remote ws://127.0.0.1:8421                  # TUI (this session — term
 
 If `metro` exits immediately or the daemon isn't on 8421, ask the user. (`codex remote-control` is stdio-only and doesn't work for this flow.)
 
+### Per-session scoping (multi-session, opt-in)
+
+If the user wants multiple agent sessions to share one bot, scope each metro to its own Discord thread and/or Telegram forum topic:
+
+```
+METRO_DISCORD_THREAD=<thread_channel_id> metro          # Discord-scoped
+METRO_TELEGRAM_TOPIC=<chat_id>:<topic_id> metro         # Telegram-scoped
+```
+
+Inbounds outside the scope are dropped silently — only messages in the configured thread/topic reach this session. Outbound `metro reply / edit / send` calls automatically thread back into the same Telegram topic, so replies land where the user expects.
+
+If you launch metro on the user's behalf and they've asked for scoped behavior, prepend the env var to the shell command. Example for a Codex session in a Telegram topic:
+
+```
+shell(command: "METRO_CODEX_RC=ws://127.0.0.1:8421 METRO_TELEGRAM_TOPIC=-1001234567890:42 metro", run_in_background: true)
+```
+
 ### Diagnostics
 
-If something seems off, run `metro doctor`. Common causes: missing tokens (`metro setup telegram <token>` / `metro setup discord <token>`), Discord Message Content Intent not toggled, stale lockfile. On Codex, also: app-server not listening on the expected URL, or the TUI not attached via `--remote`.
+If something seems off, run `metro doctor`. Common causes: missing tokens (`metro setup telegram <token>` / `metro setup discord <token>`), Discord Message Content Intent not toggled, stale lockfile. On Codex, also: app-server not listening on the expected URL, or the TUI not attached via `--remote`. If scope filters are set, also check that the user's actual messages match the configured thread/topic id (`metro` logs `inbound rejected by … filter` at debug level).
 
 ## Inbound shape
 

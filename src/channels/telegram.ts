@@ -29,6 +29,12 @@ export type SendOptions = {
   parseMode?: 'HTML' | 'MarkdownV2';
   disableLinkPreview?: boolean;
   buttons?: UrlButton[][];
+  /**
+   * Forum-topic id. Set when sending into a topic-enabled supergroup so
+   * the message lands in the right topic and not the supergroup's
+   * main General thread.
+   */
+  messageThreadId?: number;
 };
 
 export function buildSendBody(chatId: ChatId, text: string, opts: SendOptions): Record<string, unknown> {
@@ -36,6 +42,7 @@ export function buildSendBody(chatId: ChatId, text: string, opts: SendOptions): 
   if (opts.parseMode) body.parse_mode = opts.parseMode;
   if (opts.disableLinkPreview) body.link_preview_options = { is_disabled: true };
   if (opts.buttons?.length) body.reply_markup = { inline_keyboard: opts.buttons };
+  if (opts.messageThreadId !== undefined) body.message_thread_id = opts.messageThreadId;
   return body;
 }
 
@@ -93,6 +100,7 @@ type Photo = { file_id: string };
 type FileWithMime = { file_id: string; mime_type?: string };
 type RawMessage = {
   message_id: number;
+  message_thread_id?: number;
   chat?: { id: number };
   text?: string;
   caption?: string;
@@ -123,7 +131,17 @@ async function messageToText(m: RawMessage, chatId: ChatId): Promise<string | nu
   return caption || null;
 }
 
-export type InboundMessage = { chat_id: ChatId; message_id: number; text: string };
+export type InboundMessage = {
+  chat_id: ChatId;
+  message_id: number;
+  text: string;
+  /**
+   * Telegram forum-topic id when the message was posted in a topic-enabled
+   * supergroup. Absent for DMs and non-topic groups. Used by metro's
+   * per-session topic filtering.
+   */
+  message_thread_id?: number;
+};
 
 let onInboundHandler: (msg: InboundMessage) => void = () => {};
 export function onInbound(handler: (msg: InboundMessage) => void): void {
@@ -155,7 +173,11 @@ export async function startPolling(): Promise<void> {
 async function dispatchUpdate(u: RawUpdate): Promise<void> {
   const m = u.message;
   if (!m?.chat?.id || typeof m.message_id !== 'number') return;
-  const base = { chat_id: m.chat.id, message_id: m.message_id };
+  const base = {
+    chat_id: m.chat.id,
+    message_id: m.message_id,
+    message_thread_id: m.message_thread_id,
+  };
   try {
     const text = await messageToText(m, m.chat.id);
     if (text === null) return;

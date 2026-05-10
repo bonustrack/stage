@@ -46,6 +46,42 @@ Bare `codex` (no `--remote`) can't work with metro — the agent has no daemon t
 
 `METRO_CODEX_RC` accepts `ws://host:port` (required for use with the codex TUI) or `unix:///abs/path` (headless only — the daemon supports UDS but the TUI doesn't).
 
+## Multi-session — one bot, multiple agent sessions
+
+Run several agent sessions concurrently against a single bot by giving each session its own scope: a **Discord thread** (in a parent channel the bot can post in) or a **Telegram forum topic** (in a supergroup with Topics enabled). Each metro instance is told which scope it owns; inbounds outside the scope are dropped silently, and outbound replies auto-thread back into the same scope.
+
+### Discord
+
+```bash
+# In Discord, create a thread under a channel the bot is in. Right-click the
+# thread → Copy Link → grab the trailing snowflake (the thread's channel id).
+
+METRO_DISCORD_THREAD=<thread_channel_id> metro
+```
+
+### Telegram
+
+```bash
+# In a supergroup with Topics enabled, create a topic. The topic id is
+# `message_thread_id` from any message in it (visible via the Bot API; or
+# send any message in the topic and read it back via getUpdates).
+
+METRO_TELEGRAM_TOPIC=<chat_id>:<topic_id> metro
+```
+
+### Mixing platforms
+
+A single metro can scope both:
+```bash
+METRO_DISCORD_THREAD=<thread_id> METRO_TELEGRAM_TOPIC=<chat_id>:<topic_id> metro
+```
+
+### Caveats
+
+- **Telegram polling exclusivity.** Only one metro can call `getUpdates` per bot token, so on Telegram only one scoped metro runs per bot today. Multi-session against one bot needs the upcoming hub multiplexer (planned). Discord is unaffected — multiple scoped metros each handle their own thread.
+- **Topic-aware outbound.** When `METRO_TELEGRAM_TOPIC` is set and the agent replies/sends to a chat matching the configured chat_id, metro automatically threads the message into that topic. The `<chat>:<topic>` mapping is global per metro instance.
+- **Unscoped inbounds.** Without these env vars, metro emits everything (today's behavior). The scope filters are strictly additive and opt-in.
+
 ## Config
 
 | Variable | Default | Description |
@@ -54,7 +90,9 @@ Bare `codex` (no `--remote`) can't work with metro — the agent has no daemon t
 | `METRO_CONFIG_DIR` | `~/.config/metro` | Where the global `.env` lives. |
 | `METRO_STATE_DIR` | `~/.cache/metro` | Lockfile, attachment cache, default download dir. |
 | `METRO_LOG_LEVEL` | `info` | `trace` / `debug` / `info` / `warn` / `error` / `fatal`. |
-| `METRO_CODEX_RC` | — | Codex app-server URL (e.g. `ws://127.0.0.1:8421`). When set, metro pushes each inbound into the agent's history via JSON-RPC `turn/start` — the Codex equivalent of Claude Code's Monitor. Accepts `ws://host:port` (required for use with the codex TUI) or `unix:///abs/path` (headless only). See [Codex setup](#codex-setup). |
+| `METRO_CODEX_RC` | — | Codex app-server URL (e.g. `ws://127.0.0.1:8421`). When set, metro pushes each inbound into the agent's history via JSON-RPC `turn/start` — the Codex equivalent of Claude Code's Monitor. Accepts `ws://host:port` (required for use with the codex TUI) or `unix:///abs/path` (headless only). See [Codex setup](#run-with-codex). |
+| `METRO_DISCORD_THREAD` | — | Discord thread id (channel id). When set, metro only emits/responds to inbounds in that thread. See [Multi-session](#multi-session--one-bot-multiple-agent-sessions). |
+| `METRO_TELEGRAM_TOPIC` | — | Forum topic scope as `<chat_id>:<topic_id>`. When set, metro only emits/responds to inbounds in that topic and auto-threads outbound messages back into it. See [Multi-session](#multi-session--one-bot-multiple-agent-sessions). |
 
 Token precedence: process env → `./.env` → `$METRO_CONFIG_DIR/.env`. Logs to stderr.
 

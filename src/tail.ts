@@ -66,6 +66,26 @@ mkdirSync(TYPING_DIR, { recursive: true });
 const codexRC = process.env.METRO_CODEX_RC ? new CodexRC(process.env.METRO_CODEX_RC, pkg.version) : null;
 codexRC?.start();
 
+// Per-session scope filters. When set, metro only emits / reacts to
+// inbounds matching the configured Discord thread (a thread is just a
+// channel from Discord's API perspective) or Telegram forum topic. Lets
+// you run multiple metros against the same bot, each scoped to its own
+// agent session. METRO_TELEGRAM_TOPIC format: `<chat_id>:<topic_id>`.
+const DISCORD_FILTER = process.env.METRO_DISCORD_THREAD ?? null;
+const TELEGRAM_FILTER = (() => {
+  const raw = process.env.METRO_TELEGRAM_TOPIC;
+  if (!raw) return null;
+  const [chat, topic] = raw.split(':');
+  const topicId = Number(topic);
+  if (!chat || !Number.isInteger(topicId)) {
+    log.warn({ value: raw }, 'METRO_TELEGRAM_TOPIC must be `<chat_id>:<topic_id>`; ignoring');
+    return null;
+  }
+  return { chatId: chat, topicId };
+})();
+if (DISCORD_FILTER) log.info({ thread: DISCORD_FILTER }, 'discord scope filter active');
+if (TELEGRAM_FILTER) log.info(TELEGRAM_FILTER, 'telegram scope filter active');
+
 const emit = (line: Record<string, unknown>) => {
   const json = JSON.stringify(line);
   process.stdout.write(`${json}\n`);
@@ -78,7 +98,11 @@ const typingKey = (platform: Platform, chat: string) => `${platform}_${chat}`;
 
 function fireTyping(platform: Platform, chat: string): void {
   if (platform === 'telegram') {
-    void tg('sendChatAction', { chat_id: chat, action: 'typing' }).catch(err =>
+    const params: Record<string, unknown> = { chat_id: chat, action: 'typing' };
+    if (TELEGRAM_FILTER && chat === TELEGRAM_FILTER.chatId) {
+      params.message_thread_id = TELEGRAM_FILTER.topicId;
+    }
+    void tg('sendChatAction', params).catch(err =>
       log.warn({ err: errMsg(err) }, 'telegram typing failed'),
     );
   } else {
@@ -118,6 +142,10 @@ if (platforms.telegram) {
   const me = await telegram.getMe();
   log.info({ bot: `@${me.username}` }, 'telegram ready');
   telegram.onInbound(m => {
+    if (TELEGRAM_FILTER && (String(m.chat_id) !== TELEGRAM_FILTER.chatId || m.message_thread_id !== TELEGRAM_FILTER.topicId)) {
+      log.debug({ chat: m.chat_id, topic: m.message_thread_id }, 'telegram inbound rejected by topic filter');
+      return;
+    }
     void tg('setMessageReaction', {
       chat_id: m.chat_id,
       message_id: m.message_id,
@@ -135,6 +163,10 @@ if (platforms.discord) {
   const me = await discord.getMe();
   log.info({ bot: me.username }, 'discord ready');
   discord.onInbound(m => {
+    if (DISCORD_FILTER && m.channel_id !== DISCORD_FILTER) {
+      log.debug({ channel: m.channel_id }, 'discord inbound rejected by thread filter');
+      return;
+    }
     void discord
       .setReaction(m.channel_id, m.message_id, '👀')
       .catch(err => log.warn({ err: errMsg(err) }, 'discord auto-react failed'));

@@ -73,6 +73,17 @@ Codex push (opt-in):
     codex app-server --listen ws://127.0.0.1:8421       # daemon
     METRO_CODEX_RC=ws://127.0.0.1:8421 metro            # bridge
     codex --remote ws://127.0.0.1:8421                  # TUI
+
+Per-session scope (multi-session, opt-in):
+  Run multiple metros against the same bot, each scoped to its own agent
+  session via a Discord thread or Telegram forum topic.
+
+    METRO_DISCORD_THREAD=<channel_id>           Discord: only the matching thread
+    METRO_TELEGRAM_TOPIC=<chat_id>:<topic_id>   Telegram: only the matching topic
+
+  Inbounds outside the scope are dropped silently. Outbound replies/edits/
+  sends auto-thread back into the same topic (Telegram's General thread is
+  bypassed) so the user sees the agent's reply where they expected it.
 `;
 
 // ---------------- shared types & helpers -----------------------------------
@@ -153,9 +164,9 @@ async function resolveText(flags: Flags): Promise<string> {
   return stdin;
 }
 
-type SendOpts = { parseMode?: 'HTML' | 'MarkdownV2'; disableLinkPreview?: boolean; buttons?: { text: string; url: string }[][] };
+type SendOpts = { parseMode?: 'HTML' | 'MarkdownV2'; disableLinkPreview?: boolean; buttons?: { text: string; url: string }[][]; messageThreadId?: number };
 
-function readTelegramOpts(flags: Flags): SendOpts {
+function readTelegramOpts(flags: Flags, chatId: string | number): SendOpts {
   const opts: SendOpts = {};
   if (flags['parse-mode']) {
     const v = String(flags['parse-mode']);
@@ -164,7 +175,24 @@ function readTelegramOpts(flags: Flags): SendOpts {
   }
   if (flags['no-link-preview']) opts.disableLinkPreview = true;
   if (flags['buttons-json']) opts.buttons = JSON.parse(String(flags['buttons-json']));
+  // Auto-thread into the forum topic this metro instance is scoped to
+  // (METRO_TELEGRAM_TOPIC=`<chat_id>:<topic_id>`). Without this, replies
+  // into a supergroup land in the General thread instead of the user's
+  // topic. Only applies when the target chat matches the env-configured
+  // chat id.
+  const topic = telegramTopicForChat(chatId);
+  if (topic !== undefined) opts.messageThreadId = topic;
   return opts;
+}
+
+function telegramTopicForChat(chatId: string | number): number | undefined {
+  const raw = process.env.METRO_TELEGRAM_TOPIC;
+  if (!raw) return undefined;
+  const [chat, topic] = raw.split(':');
+  const topicId = Number(topic);
+  if (!chat || !Number.isInteger(topicId)) return undefined;
+  if (String(chatId) !== chat) return undefined;
+  return topicId;
 }
 
 function maskToken(token: string): string {
@@ -472,7 +500,7 @@ async function cmdSend(flags: Flags): Promise<void> {
   const addr = resolveAddr(flags, false);
   const text = await resolveText(flags);
   const sentMessageId = addr.platform === 'telegram'
-    ? String((await tg<{ message_id: number }>('sendMessage', buildSendBody(addr.chat, text, readTelegramOpts(flags)))).message_id)
+    ? String((await tg<{ message_id: number }>('sendMessage', buildSendBody(addr.chat, text, readTelegramOpts(flags, addr.chat)))).message_id)
     : await discord.sendMessage(addr.chat, text);
   emitResult(flags, 'sent', { ok: true, platform: addr.platform, to: String(flags.to), sent_message_id: sentMessageId });
 }
@@ -482,7 +510,7 @@ async function cmdReply(flags: Flags): Promise<void> {
   const text = await resolveText(flags);
   let sentMessageId: string;
   if (addr.platform === 'telegram') {
-    const body = buildSendBody(addr.chat, text, readTelegramOpts(flags));
+    const body = buildSendBody(addr.chat, text, readTelegramOpts(flags, addr.chat));
     body.reply_parameters = { message_id: tgMessageId(addr), allow_sending_without_reply: true };
     sentMessageId = String((await tg<{ message_id: number }>('sendMessage', body)).message_id);
   } else {
@@ -508,7 +536,7 @@ async function cmdEdit(flags: Flags): Promise<void> {
   const addr = resolveAddr(flags, true);
   const text = await resolveText(flags);
   if (addr.platform === 'telegram') {
-    const body = buildSendBody(addr.chat, text, readTelegramOpts(flags));
+    const body = buildSendBody(addr.chat, text, readTelegramOpts(flags, addr.chat));
     body.message_id = tgMessageId(addr);
     await tg('editMessageText', body);
   } else {
