@@ -226,13 +226,13 @@ export class CodexAgent {
 
 function summarizeItem(item: ThreadItem): string {
   if (item.type === 'commandExecution' && 'command' in item) {
-    return `running: ${truncate(item.command ?? '', 60)}`;
+    return `Running: ${truncate(item.command ?? '', 60)}`;
   }
   if (item.type === 'fileChange' && 'changes' in item) {
     const n = item.changes?.length ?? 0;
-    return n > 0 ? `editing ${n} file${n === 1 ? '' : 's'}` : 'editing files';
+    return n > 0 ? `Editing ${n} file${n === 1 ? '' : 's'}` : 'Editing files';
   }
-  if (item.type === 'reasoning') return 'thinking…';
+  if (item.type === 'reasoning') return 'Thinking…';
   if (item.type === 'agentMessage') return ''; // text deltas handled separately
   return item.type;
 }

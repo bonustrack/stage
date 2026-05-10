@@ -82,7 +82,6 @@ export class StreamingMessage {
   constructor(
     private adapter: StreamAdapter,
     private scheduler: StreamScheduler,
-    private placeholder = '…',
   ) {}
 
   appendDelta(delta: string): void {
@@ -181,8 +180,11 @@ export class StreamingMessage {
   }
 
   private render(s: Segment, isLast: boolean): string {
-    const body = s.text || (isLast ? this.placeholder : '');
-    if (isLast && this.statusLine) return `${body}\n\n_${this.statusLine}_`;
+    const body = s.text;
+    const showStatus = isLast && !!this.statusLine;
+    if (!body && !showStatus) return ''; // nothing to show yet — skip the flush
+    if (!body) return this.statusLine!;
+    if (showStatus) return `${body}\n\n${this.statusLine}`;
     return body;
   }
 }
