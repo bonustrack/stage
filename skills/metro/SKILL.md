@@ -18,15 +18,21 @@ When the user asks to run/start/launch metro (or "start the bridge"), the launch
 
 ### Codex
 
-Codex has no Monitor equivalent — `unified_exec` is poll-only and can't push stdout between turns. So metro instead pushes events into the agent's history over JSON-RPC against the `codex remote-control` daemon. Setup is two commands:
+Codex has no Monitor equivalent — `unified_exec` is poll-only. Metro instead pushes events into the agent's history via JSON-RPC against a codex app-server daemon. Three commands sharing one URL (codex's TUI `--remote` flag only accepts `ws://`):
 
-1. The user must run `codex remote-control` once per machine — this enables the managed app-server daemon listening on a default UDS (`$CODEX_HOME/app-server-control/app-server-control.sock`). If they're not running it, ask them to.
-2. `metro` auto-detects that socket and connects. No env var needed in the common case. If they have a non-standard setup, `METRO_CODEX_RC` overrides the URL.
-3. Each inbound triggers a `turn/start` on the active codex thread — the JSON line lands as user input on the agent's next turn. Process and respond normally.
+```
+codex app-server --listen ws://127.0.0.1:8421       # daemon (terminal 1)
+METRO_CODEX_RC=ws://127.0.0.1:8421 metro            # bridge (terminal 2; agent backgrounds this)
+codex --remote ws://127.0.0.1:8421                  # TUI (this session)
+```
+
+Each inbound triggers a `turn/start` on the active codex thread — the JSON line lands as user input on the agent's next turn. Process and respond normally.
+
+> Note: `codex remote-control` is misleadingly named — it's stdio-only, no network listener. Use `codex app-server --listen ws://…` instead.
 
 ### Either runtime
 
-If `metro` exits immediately or no inbounds arrive within a minute of a known DM, run `metro doctor` to diagnose. Common causes: missing tokens (`metro setup telegram <token>` / `metro setup discord <token>`), Discord Message Content Intent not toggled, stale lockfile from a previous session. On Codex, also: `METRO_CODEX_RC` not set, app-server not running, or no active thread on the daemon.
+If `metro` exits immediately or no inbounds arrive within a minute of a known DM, run `metro doctor` to diagnose. Common causes: missing tokens (`metro setup telegram <token>` / `metro setup discord <token>`), Discord Message Content Intent not toggled, stale lockfile. On Codex, also: `METRO_CODEX_RC` not set, app-server not listening on that URL, or the TUI not attached via `--remote`.
 
 ## Inbound shape
 

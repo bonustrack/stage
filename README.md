@@ -26,19 +26,22 @@ DM your bot. The agent picks up the next inbound and replies — the bundled ski
 
 ### Codex setup
 
-Codex doesn't have an equivalent of Claude Code's `Monitor` — its `unified_exec` is poll-only ([issue #4751](https://github.com/openai/codex/issues/4751)). Metro instead pushes each inbound into the agent's history via JSON-RPC over the `codex remote-control` socket:
+Codex doesn't have an equivalent of Claude Code's `Monitor` — its `unified_exec` is poll-only ([issue #4751](https://github.com/openai/codex/issues/4751)). Metro instead pushes each inbound into the agent's history via JSON-RPC against a codex app-server daemon. Three commands share one URL — the codex TUI's `--remote` flag only accepts `ws://`, so all three sides must use the same TCP WebSocket:
 
 ```bash
-codex remote-control     # one-time per machine — starts the managed daemon
-metro                    # auto-detects the daemon's UDS at $CODEX_HOME/app-server-control/app-server-control.sock
-codex                    # the TUI; talks to the same daemon
+# Terminal 1 — daemon
+codex app-server --listen ws://127.0.0.1:8421
+
+# Terminal 2 — metro bridge (or have the agent run this)
+METRO_CODEX_RC=ws://127.0.0.1:8421 metro
+
+# Terminal 3 — TUI, attached to the same daemon
+codex --remote ws://127.0.0.1:8421
 ```
 
-No env var, no port, no flags. Each metro inbound triggers a `turn/start` on the active codex thread — sub-second reaction, no polling.
+Each metro inbound triggers a `turn/start` on the active codex thread — sub-second reaction, no polling. `codex remote-control` exists but is stdio-only (no network listener), so don't use it for this flow.
 
-For non-default setups (TCP, custom socket path, etc.), set `METRO_CODEX_RC` to one of:
-- `unix:///absolute/path/to/socket` — UDS at a non-default location
-- `ws://host:port` — TCP WebSocket (e.g. `codex app-server --listen ws://127.0.0.1:8421`)
+`METRO_CODEX_RC` accepts `ws://host:port` (recommended; the form codex's TUI requires) or `unix:///abs/path` (UDS WebSocket — the daemon supports it but the TUI does not, so reserve UDS for headless setups where you only drive the agent through DMs).
 
 ## Config
 
@@ -48,7 +51,7 @@ For non-default setups (TCP, custom socket path, etc.), set `METRO_CODEX_RC` to 
 | `METRO_CONFIG_DIR` | `~/.config/metro` | Where the global `.env` lives. |
 | `METRO_STATE_DIR` | `~/.cache/metro` | Lockfile, attachment cache, default download dir. |
 | `METRO_LOG_LEVEL` | `info` | `trace` / `debug` / `info` / `warn` / `error` / `fatal`. |
-| `METRO_CODEX_RC` | auto-detected from `$CODEX_HOME/app-server-control/...` | Override the codex-rc URL. Accepts `unix:///abs/path` (UDS, default) or `ws://host:port` (TCP). When unset and `codex remote-control` is running, metro auto-connects. See [Codex setup](#codex-setup). |
+| `METRO_CODEX_RC` | — | Codex app-server URL (e.g. `ws://127.0.0.1:8421`). When set, metro pushes each inbound into the agent's history via JSON-RPC `turn/start` — the Codex equivalent of Claude Code's Monitor. Accepts `ws://host:port` (required for use with the codex TUI) or `unix:///abs/path` (headless only). See [Codex setup](#codex-setup). |
 
 Token precedence: process env → `./.env` → `$METRO_CONFIG_DIR/.env`. Logs to stderr.
 

@@ -62,15 +62,17 @@ Exit codes:
   2  configuration error (no tokens — run \`metro setup\`)
   3  upstream error (rate limit, auth, network — retry once, then surface)
 
-Codex push (auto-detected):
-  When \`codex remote-control\` is running, metro auto-detects its UDS at
-  \$CODEX_HOME/app-server-control/app-server-control.sock and pushes each
-  inbound into the agent's history via JSON-RPC \`turn/start\` — the Codex
-  equivalent of Claude Code's Monitor. No env var needed.
+Codex push (opt-in):
+  Set METRO_CODEX_RC to the codex app-server URL — metro will push each
+  inbound into the agent's history via JSON-RPC \`turn/start\`, the Codex
+  equivalent of Claude Code's Monitor.
 
-  Override with METRO_CODEX_RC if needed:
-    unix:///abs/path  → UDS WebSocket (default form for managed daemons)
-    ws://host:port    → TCP WebSocket (e.g. \`codex app-server --listen ws://…\`)
+  Three terminals share the same URL (codex 0.130's TUI --remote only
+  accepts ws://):
+
+    codex app-server --listen ws://127.0.0.1:8421       # daemon
+    METRO_CODEX_RC=ws://127.0.0.1:8421 metro            # bridge
+    codex --remote ws://127.0.0.1:8421                  # TUI
 `;
 
 // ---------------- shared types & helpers -----------------------------------
