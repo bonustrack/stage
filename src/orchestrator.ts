@@ -15,7 +15,7 @@ import pkg from '../package.json' with { type: 'json' };
 import * as discord from './channels/discord.js';
 import { CodexAgent, type AgentTurnCallbacks } from './agents/codex.js';
 import { discordScopeKey, getCodexThread, setCodexThread } from './lib/scope-cache.js';
-import { StreamingMessage } from './lib/streaming.js';
+import { StreamingMessage, StreamScheduler } from './lib/streaming.js';
 import { errMsg, log } from './log.js';
 import { configuredPlatforms, loadMetroEnv, STATE_DIR, requireConfiguredPlatform } from './paths.js';
 
@@ -53,6 +53,10 @@ const inFlight = new Set<string>();
 const bootstrapping = new Set<string>();
 
 const codex = new CodexAgent(pkg.version);
+
+// One scheduler per bot — coalesces streamed edits across every active
+// thread so concurrent turns don't compound the bot's edit cadence.
+const discordScheduler = new StreamScheduler();
 
 async function main(): Promise<void> {
   await codex.start();
@@ -138,10 +142,13 @@ async function handleTurn(
     log.warn({ err: errMsg(err) }, 'discord 👀 failed'),
   );
 
-  const stream = new StreamingMessage({
-    send: t => discord.sendMessage(channelId, t),
-    edit: async (id, t) => { await discord.editMessage(channelId, id, t); },
-  });
+  const stream = new StreamingMessage(
+    {
+      send: t => discord.sendMessage(channelId, t),
+      edit: async (id, t) => { await discord.editMessage(channelId, id, t); },
+    },
+    discordScheduler,
+  );
 
   const callbacks: AgentTurnCallbacks = {
     onDelta: d => stream.appendDelta(d),
