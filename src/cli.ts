@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import pkg from '../package.json' with { type: 'json' };
 import * as discord from './channels/discord.js';
 import * as telegram from './channels/telegram.js';
 import { buildSendBody, tg } from './channels/telegram.js';
@@ -41,9 +42,39 @@ Address format:
   discord:<channel_id>/<message_id>    e.g. discord:1234567890/9876543210
   discord:<channel_id>                 fetch only (no message id)
 
+Common flags:
+  --version, -v       print the metro version and exit
+  --help, -h          print this help and exit
+
 Tokens (env or ./.env): TELEGRAM_BOT_TOKEN, DISCORD_BOT_TOKEN.
 Configure at least one.
 `;
+
+function tailStatus(): string {
+  const lockFile = join(STATE_DIR, '.tail-lock');
+  if (!existsSync(lockFile)) return 'not running';
+  const pid = Number(readFileSync(lockFile, 'utf8').trim());
+  if (!Number.isInteger(pid) || pid <= 0) return 'not running (stale lockfile)';
+  try {
+    process.kill(pid, 0);
+    return `running (pid ${pid})`;
+  } catch {
+    return 'not running (stale lockfile)';
+  }
+}
+
+function printStatus(): void {
+  loadMetroEnv();
+  const cfg = configuredPlatforms();
+  const platforms = [cfg.telegram && 'telegram', cfg.discord && 'discord'].filter(Boolean).join(', ') || 'none';
+  process.stdout.write(
+    `metro ${pkg.version} — Telegram + Discord bridge for your agent\n\n` +
+      `configured:  ${platforms}\n` +
+      `tail:        ${tailStatus()}\n` +
+      `state dir:   ${STATE_DIR}\n\n` +
+      'Run `metro tail` to start the inbound stream, or `metro --help` for all commands.\n',
+  );
+}
 
 function parseArgs(argv: string[]): { positional: string[]; flags: Record<string, string | boolean> } {
   const positional: string[] = [];
@@ -250,9 +281,17 @@ async function cmdFetch(flags: Record<string, string | boolean>): Promise<void> 
 
 async function main(): Promise<void> {
   const cmd = process.argv[2];
-  if (!cmd || cmd === '--help' || cmd === '-h') {
+  if (cmd === '--version' || cmd === '-v') {
+    process.stdout.write(`${pkg.version}\n`);
+    return;
+  }
+  if (cmd === '--help' || cmd === '-h') {
     process.stdout.write(USAGE);
-    process.exit(cmd ? 0 : 1);
+    return;
+  }
+  if (!cmd) {
+    printStatus();
+    return;
   }
 
   if (cmd === 'tail') {
