@@ -114,8 +114,20 @@ export class CodexAgent {
   }
 
   private async connect(): Promise<void> {
+    // perMessageDeflate disabled: codex 0.130's WS upgrade handler closes
+    // the connection if a client offers `Sec-WebSocket-Extensions:
+    // permessage-deflate` (the `ws` library's default). Disabling it makes
+    // the upgrade succeed cleanly. Compression is irrelevant over a UDS.
     const ws = new WebSocket('ws://localhost/', {
-      createConnection: () => createConnection({ path: SOCKET_PATH }),
+      perMessageDeflate: false,
+      createConnection: () => {
+        const sock = createConnection({ path: SOCKET_PATH });
+        // Swallow socket-level errors so a transport hiccup during the HTTP
+        // upgrade doesn't surface as an uncaught error on the http_client
+        // request (Node's http.ClientRequest re-emits this).
+        sock.on('error', err => log.warn({ err: errMsg(err) }, 'codex agent: socket error'));
+        return sock;
+      },
     });
     this.ws = ws;
     ws.on('error', err => log.warn({ err: errMsg(err) }, 'codex agent: websocket error'));
