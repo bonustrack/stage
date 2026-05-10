@@ -1,15 +1,15 @@
 ---
 name: metro
-description: Handle inbound Telegram and Discord messages from `metro tail` running in the background. Use whenever you see JSON lines on stdout shaped `{"platform":..., "to":..., "text":...}`, or when the user asks you to reply/react/edit/download/fetch on a chat message.
+description: Handle inbound Telegram and Discord messages from `metro` running in the background. Use whenever you see JSON lines on stdout shaped `{"platform":..., "to":..., "text":...}`, or when the user asks you to reply/react/edit/download/fetch on a chat message.
 ---
 
 # Metro — handling inbound Telegram & Discord messages
 
-Metro is a CLI bridge between your agent session and Telegram/Discord. The user runs `metro` (alias for `metro tail`) in the background; one JSON line lands on stdout for every inbound message. You react, decide, and act with `metro <subcommand>`.
+Metro is a CLI bridge between your agent session and Telegram/Discord. The user runs `metro` in the background; one JSON line lands on stdout for every inbound message. You react, decide, and act with `metro <subcommand>`.
 
 ## Inbound shape
 
-Each `metro tail` line on stdout:
+Each `metro` line on stdout:
 
 ```json
 {"platform":"telegram"|"discord","to":"<platform>:<chat>/<message_id>","text":"…"}
@@ -41,7 +41,7 @@ Each `metro tail` line on stdout:
 
 ## When to use `send` vs `reply`
 
-- **`reply`** — responding to a specific inbound message. Threads under it. This is the default when handling a `metro tail` line.
+- **`reply`** — responding to a specific inbound message. Threads under it. This is the default when handling a `metro` inbound line.
 - **`send`** — initiating without a triggering message: a long task you kicked off finished, a scheduled job fired, a follow-up the user asked you to deliver later. The chat/channel id you target must be one the bot can reach (existing DM, joined guild channel).
 
 ## Address format

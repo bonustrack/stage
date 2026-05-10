@@ -21,8 +21,8 @@ const platforms = configuredPlatforms();
 requireConfiguredPlatform(platforms);
 
 // Telegram allows only one getUpdates poller per bot token. If another
-// `metro tail` is already running, exit cleanly instead of fighting (409
-// spam). Stale lockfiles (PID dead) are reclaimed.
+// `metro` instance is already running, exit cleanly instead of fighting
+// (409 spam). Stale lockfiles (PID dead) are reclaimed.
 const LOCK_FILE = join(STATE_DIR, '.tail-lock');
 
 function processIsAlive(pid: number): boolean {
@@ -32,7 +32,7 @@ function processIsAlive(pid: number): boolean {
 if (existsSync(LOCK_FILE)) {
   const pid = Number(readFileSync(LOCK_FILE, 'utf8').trim());
   if (Number.isInteger(pid) && pid > 0 && processIsAlive(pid)) {
-    log.info({ pid }, 'another `metro tail` is already polling; exiting');
+    log.info({ pid }, 'another `metro` instance is already polling; exiting');
     process.exit(0);
   }
   try { unlinkSync(LOCK_FILE); } catch {}

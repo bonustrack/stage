@@ -24,7 +24,7 @@ import {
 const USAGE = `metro — Telegram + Discord bridge for your agent
 
 Usage:
-  metro [tail]                                Inbound stream (bare \`metro\` is an alias for tail).
+  metro                                       Inbound stream (long-running; run in the background).
   metro setup […]                             Manage tokens and the agent skill (see below).
   metro doctor                                Health check across tokens, gateways, and skills.
   metro reply    --to=<addr> [--text=<t>]     Quote-reply, threading under the original. Clears 👀.
@@ -567,9 +567,10 @@ async function main(): Promise<void> {
   if (cmd === '--version' || cmd === '-v') { process.stdout.write(`${pkg.version}\n`); return; }
   if (cmd === '--help' || cmd === '-h') { process.stdout.write(USAGE); return; }
 
-  // Bare `metro` is an alias for `metro tail` — the inbound stream is the
-  // primary action; one-shot subcommands are the secondary surface.
-  if (!cmd || cmd === 'tail') { await import('./tail.js'); return; }
+  // Bare `metro` runs the inbound stream — the primary action; one-shot
+  // subcommands are the secondary surface (matches claude / redis-server /
+  // nginx convention where the daemon's the default).
+  if (!cmd) { await import('./tail.js'); return; }
 
   const handler = COMMANDS[cmd];
   if (!handler) {

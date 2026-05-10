@@ -1,6 +1,6 @@
-// Pino → stderr. Stdout is reserved for command output (`metro tail`'s JSON
-// lines, subcommand results, --json) — any stray write there breaks parsing.
-// Override level with METRO_LOG_LEVEL.
+// Pino → stderr. Stdout is reserved for command output (`metro`'s inbound
+// JSON lines, subcommand results, --json) — any stray write there breaks
+// parsing. Override level with METRO_LOG_LEVEL.
 
 import pino from 'pino';
 

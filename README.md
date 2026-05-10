@@ -24,7 +24,7 @@ DM your bot. The agent reacts on its next decision boundary (see Caveats for lat
 
 ## How it works
 
-- **`metro`** (alias for `metro tail`) — long-running inbound stream. Polls Telegram and connects to Discord's gateway, then prints one JSON line per inbound message on stdout: `{"platform": "telegram"|"discord", "to": "<platform>:<chat>/<message_id>", "text": "…"}`. The agent watches stdout (Bash+Monitor in Claude Code, `unified_exec` in Codex) and acts on each line at its next decision boundary.
+- **`metro`** — long-running inbound stream. Polls Telegram and connects to Discord's gateway, then prints one JSON line per inbound message on stdout: `{"platform": "telegram"|"discord", "to": "<platform>:<chat>/<message_id>", "text": "…"}`. The agent watches stdout (Bash+Monitor in Claude Code, `unified_exec` in Codex) and acts on each line at its next decision boundary.
 - **`metro <reply|react|edit|download|fetch>`** — one-shot subcommands the agent invokes via Bash to act on those inbounds. They all take a single `--to=<platform>:<chat>/<message_id>` address that the agent copies verbatim from the inbound line.
 - **`metro setup skill`** — drops a SKILL.md into the agent's skill directory so the agent knows the flow without needing a pasted prompt.
 
@@ -34,7 +34,7 @@ While the agent is working on a reply, both platforms show a typing indicator; w
 
 | Command | Purpose |
 |---|---|
-| `metro` (alias `metro tail`) | Long-running inbound stream. Run in the background. |
+| `metro` | Long-running inbound stream. Run in the background. |
 | `metro setup` | Status: tokens, skills, what's next. |
 | `metro setup telegram\|discord <token>` | Save a bot token to `$METRO_CONFIG_DIR/.env`. Validates the token via `getMe` before writing; `--no-validate` skips. |
 | `metro setup clear [telegram\|discord\|all]` | Remove tokens. |
