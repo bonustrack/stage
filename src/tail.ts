@@ -15,7 +15,7 @@ import * as telegram from './channels/telegram.js';
 import { tg } from './channels/telegram.js';
 import type { Platform } from './lib/address.js';
 import { CodexRC } from './lib/codex-rc.js';
-import { configuredPlatforms, loadMetroEnv, STATE_DIR, requireConfiguredPlatform } from './paths.js';
+import { configuredPlatforms, DEFAULT_CODEX_SOCKET, loadMetroEnv, STATE_DIR, requireConfiguredPlatform } from './paths.js';
 import { errMsg, log } from './log.js';
 
 loadMetroEnv();
@@ -56,12 +56,15 @@ const TYPING_MAX_MS = 60_000;
 
 mkdirSync(TYPING_DIR, { recursive: true });
 
-// Optional Codex push channel — set METRO_CODEX_RC=ws://… (running
-// `codex app-server --listen ws://…` or `codex remote-control`) to inject
-// each metro inbound directly into the agent's history via JSON-RPC. If
-// unset or unreachable, metro behaves exactly as before; stdout always
-// fires first so Claude Code Monitor users are unaffected.
-const codexRC = process.env.METRO_CODEX_RC ? new CodexRC(process.env.METRO_CODEX_RC, pkg.version) : null;
+// Codex push channel. By default, looks for the standard `codex
+// remote-control` socket at $CODEX_HOME/app-server-control/...; if it
+// exists, we connect and push every inbound into the agent's history
+// via JSON-RPC `turn/start` — no env var needed. Set METRO_CODEX_RC to
+// an explicit ws:// or unix:// URL to override (e.g. for `codex
+// app-server --listen ws://…` setups). stdout emit always runs first
+// so Claude Code Monitor users are unaffected if codex isn't installed.
+const codexUrl = process.env.METRO_CODEX_RC ?? (existsSync(DEFAULT_CODEX_SOCKET) ? `unix://${DEFAULT_CODEX_SOCKET}` : null);
+const codexRC = codexUrl ? new CodexRC(codexUrl, pkg.version) : null;
 codexRC?.start();
 
 const emit = (line: Record<string, unknown>) => {

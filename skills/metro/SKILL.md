@@ -18,11 +18,11 @@ When the user asks to run/start/launch metro (or "start the bridge"), the launch
 
 ### Codex
 
-Codex has no Monitor equivalent; it can't push stdout between turns. So metro instead pushes events into the agent's history over JSON-RPC. Setup:
+Codex has no Monitor equivalent — `unified_exec` is poll-only and can't push stdout between turns. So metro instead pushes events into the agent's history over JSON-RPC against the `codex remote-control` daemon. Setup is two commands:
 
-1. The user must launch the Codex app-server: `codex app-server --listen ws://127.0.0.1:8421` (or `codex remote-control`, equivalent shorter form). This is a one-time per-session step — if they're not running it, ask them to.
-2. Metro must be started with `METRO_CODEX_RC=ws://127.0.0.1:8421 metro` so it knows where to push. Tell the user to set this env var before running `metro`.
-3. Once metro is running and connected, each inbound message triggers a `turn/start` on the active codex thread. The agent receives the JSON line as user input on its next turn — same as if the user typed it. Process and respond as normal.
+1. The user must run `codex remote-control` once per machine — this enables the managed app-server daemon listening on a default UDS (`$CODEX_HOME/app-server-control/app-server-control.sock`). If they're not running it, ask them to.
+2. `metro` auto-detects that socket and connects. No env var needed in the common case. If they have a non-standard setup, `METRO_CODEX_RC` overrides the URL.
+3. Each inbound triggers a `turn/start` on the active codex thread — the JSON line lands as user input on the agent's next turn. Process and respond normally.
 
 ### Either runtime
 

@@ -7,9 +7,11 @@
       "dependencies": {
         "discord.js": "^14.14.0",
         "pino": "^9.5.0",
+        "ws": "^8.20.0",
       },
       "devDependencies": {
         "@types/node": "^22.10.0",
+        "@types/ws": "^8.18.1",
         "eslint": "^10.3.0",
         "typescript": "^5",
         "typescript-eslint": "^8.59.2",

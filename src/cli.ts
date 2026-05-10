@@ -62,12 +62,15 @@ Exit codes:
   2  configuration error (no tokens — run \`metro setup\`)
   3  upstream error (rate limit, auth, network — retry once, then surface)
 
-Codex push (optional):
-  Set METRO_CODEX_RC=ws://127.0.0.1:8421 to push each inbound straight into a
-  running \`codex app-server --listen ws://127.0.0.1:8421\` (or \`codex
-  remote-control\`). Metro injects via JSON-RPC \`turn/start\` so the agent
-  reacts without polling. Claude Code users keep using stdout + Monitor as
-  today; the env var is independent.
+Codex push (auto-detected):
+  When \`codex remote-control\` is running, metro auto-detects its UDS at
+  \$CODEX_HOME/app-server-control/app-server-control.sock and pushes each
+  inbound into the agent's history via JSON-RPC \`turn/start\` — the Codex
+  equivalent of Claude Code's Monitor. No env var needed.
+
+  Override with METRO_CODEX_RC if needed:
+    unix:///abs/path  → UDS WebSocket (default form for managed daemons)
+    ws://host:port    → TCP WebSocket (e.g. \`codex app-server --listen ws://…\`)
 `;
 
 // ---------------- shared types & helpers -----------------------------------

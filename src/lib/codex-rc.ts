@@ -1,33 +1,66 @@
-// JSON-RPC over WebSocket client for the Codex app-server (`codex
-// app-server --listen ws://…` or `codex remote-control`). Mirrors what
-// Claude Code's `Monitor` does for stdout — pushes each metro inbound into
-// the agent's history and triggers a turn — so the Codex agent reacts
-// without polling.
+// JSON-RPC over WebSocket client for the Codex app-server. By default
+// connects over the Unix domain socket exposed by `codex remote-control`
+// (see paths.DEFAULT_CODEX_SOCKET). On every metro inbound it calls
+// `turn/start`, which lands the JSON line in the agent's history as a
+// user message and wakes the agent — the Codex equivalent of Claude
+// Code's `Monitor`.
 //
 // Wire format: standard JSON-RPC 2.0 over WebSocket. Methods we use:
-//   - initialize                → handshake, declares clientInfo.
-//   - thread/list               → discover existing threads on connect.
-//   - thread/started            → notification; track new threads as they appear.
-//   - turn/completed            → notification; drain queued inbounds.
-//   - turn/start                → push a user message and wake the agent.
+//   - initialize      → handshake, declares clientInfo.
+//   - thread/list     → discover existing threads on connect.
+//   - thread/started  → notification; track new threads as they appear.
+//   - turn/started    → notification; mark a turn in flight.
+//   - turn/completed  → notification; drain queued inbounds.
+//   - turn/start      → push a user message and wake the agent.
 //
-// If no thread exists yet, inbounds queue in memory; they fire as soon as
-// a thread is started or learned. If the connection drops, reconnect with
-// linear backoff and replay the queue. Connection failures don't break
-// metro — stdout emit always runs first, so Claude Code Monitor users keep
-// working regardless.
+// If no thread exists yet, inbounds queue in memory; they fire as soon
+// as a thread is started or learned. If the connection drops, reconnect
+// with linear backoff and replay the queue. Connection failures don't
+// break metro — stdout emit always runs first, so Claude Code Monitor
+// users keep working regardless.
 
+import { createConnection } from 'node:net';
+import { WebSocket, type RawData } from 'ws';
 import { errMsg, log } from '../log.js';
 
-type Pending = {
-  resolve: (result: unknown) => void;
-  reject: (err: Error) => void;
-};
-
+type Pending = { resolve: (result: unknown) => void; reject: (err: Error) => void };
 type Inbound = string;
 
 const RECONNECT_DELAY_MS = 2_000;
 const MAX_QUEUE = 100;
+
+type Endpoint = { kind: 'tcp'; url: string } | { kind: 'unix'; path: string };
+
+/**
+ * Accept any of these forms for METRO_CODEX_RC:
+ *   ws://host:port/    TCP WebSocket.
+ *   wss://host/        TCP WebSocket over TLS.
+ *   unix:///abs/path   UDS WebSocket (the default for `codex remote-control`).
+ *   /abs/path          shorthand for unix:///abs/path.
+ */
+export function parseCodexUrl(input: string): Endpoint {
+  if (input.startsWith('ws://') || input.startsWith('wss://')) {
+    return { kind: 'tcp', url: input };
+  }
+  if (input.startsWith('unix://')) {
+    return { kind: 'unix', path: input.replace(/^unix:\/+/, '/') };
+  }
+  if (input.startsWith('/')) {
+    return { kind: 'unix', path: input };
+  }
+  throw new Error(`unsupported METRO_CODEX_RC: ${input} (expected ws://…, wss://…, unix://…, or absolute path)`);
+}
+
+function openSocket(endpoint: Endpoint): WebSocket {
+  if (endpoint.kind === 'tcp') return new WebSocket(endpoint.url);
+  // UDS WebSocket: ws library upgrades any duplex stream, so we feed it a
+  // unix-socket Net connection via `createConnection`. The `ws://localhost/`
+  // URL is a placeholder — only the framing matters at this point; the
+  // bytes flow over the UDS we just opened.
+  return new WebSocket('ws://localhost/', {
+    createConnection: () => createConnection({ path: endpoint.path }),
+  });
+}
 
 export class CodexRC {
   private ws: WebSocket | null = null;
@@ -39,8 +72,13 @@ export class CodexRC {
   private connecting = false;
   private turnInFlight = false;
   private closed = false;
+  private endpoint: Endpoint;
+  private displayUrl: string;
 
-  constructor(private url: string, private clientVersion: string) {}
+  constructor(url: string, private clientVersion: string) {
+    this.endpoint = parseCodexUrl(url);
+    this.displayUrl = url;
+  }
 
   start(): void {
     void this.connect();
@@ -58,7 +96,7 @@ export class CodexRC {
    */
   push(line: Inbound): void {
     if (this.queue.length >= MAX_QUEUE) {
-      log.warn({ url: this.url }, 'codex-rc queue full, dropping oldest inbound');
+      log.warn({ url: this.displayUrl }, 'codex-rc queue full, dropping oldest inbound');
       this.queue.shift();
     }
     this.queue.push(line);
@@ -69,14 +107,20 @@ export class CodexRC {
     if (this.closed || this.connected || this.connecting) return;
     this.connecting = true;
     try {
-      const ws = new WebSocket(this.url);
+      const ws = openSocket(this.endpoint);
       this.ws = ws;
+      // Register the persistent error handler BEFORE awaiting open — without
+      // it, an error fired during the upgrade (UDS missing, daemon down,
+      // bad URL) is "unhandled" and crashes the process under Bun. The
+      // once('error') below covers the connect-time rejection; this on()
+      // covers later errors and the rare double-emit.
+      ws.on('error', err => log.warn({ err: errMsg(err) }, 'codex-rc websocket error'));
       await new Promise<void>((resolve, reject) => {
-        ws.addEventListener('open', () => resolve(), { once: true });
-        ws.addEventListener('error', () => reject(new Error('websocket error')), { once: true });
+        ws.once('open', resolve);
+        ws.once('error', err => reject(err));
       });
-      ws.addEventListener('message', e => this.onMessage(e));
-      ws.addEventListener('close', () => this.onClose());
+      ws.on('message', data => this.onMessage(data));
+      ws.on('close', () => this.onClose());
 
       await this.call('initialize', {
         clientInfo: { name: 'metro', version: this.clientVersion, title: null },
@@ -91,20 +135,20 @@ export class CodexRC {
       }
 
       this.connected = true;
-      log.info({ url: this.url, thread: this.threadId ?? '(none yet)' }, 'codex-rc connected');
+      log.info({ url: this.displayUrl, thread: this.threadId ?? '(none yet)' }, 'codex-rc connected');
       void this.drainQueue();
     } catch (err) {
-      log.warn({ err: errMsg(err), url: this.url }, 'codex-rc connect failed; retrying');
+      log.warn({ err: errMsg(err), url: this.displayUrl }, 'codex-rc connect failed; retrying');
       this.scheduleReconnect();
     } finally {
       this.connecting = false;
     }
   }
 
-  private onMessage(event: MessageEvent): void {
+  private onMessage(raw: RawData): void {
     let msg: { id?: number; method?: string; params?: unknown; result?: unknown; error?: { message?: string } };
     try {
-      msg = JSON.parse(typeof event.data === 'string' ? event.data : Buffer.from(event.data as ArrayBuffer).toString('utf8'));
+      msg = JSON.parse(raw.toString());
     } catch (err) {
       log.warn({ err: errMsg(err) }, 'codex-rc malformed message');
       return;
@@ -162,9 +206,6 @@ export class CodexRC {
     } catch (err) {
       log.warn({ err: errMsg(err) }, 'codex-rc turn/start failed; will retry');
       this.turnInFlight = false;
-      // Don't shift — leave at head for retry. If the error is permanent
-      // (e.g. thread closed), `turn/completed` won't fire and the queue
-      // will sit until reconnect or new thread/started.
     }
   }
 

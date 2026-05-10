@@ -26,22 +26,19 @@ DM your bot. The agent picks up the next inbound and replies — the bundled ski
 
 ### Codex setup
 
-Codex doesn't have an equivalent of Claude Code's `Monitor` — its `unified_exec` is poll-only and can't push stdout between turns ([issue #4751](https://github.com/openai/codex/issues/4751)). Metro instead pushes each inbound straight into the agent's history via JSON-RPC. Two extra steps:
+Codex doesn't have an equivalent of Claude Code's `Monitor` — its `unified_exec` is poll-only ([issue #4751](https://github.com/openai/codex/issues/4751)). Metro instead pushes each inbound into the agent's history via JSON-RPC over the `codex remote-control` socket:
 
 ```bash
-# Terminal 1 — start the codex daemon (headless, exposes JSON-RPC over WebSocket):
-codex app-server --listen ws://127.0.0.1:8421
-# (or: `codex remote-control`, equivalent shorter form)
-
-# Terminal 2 — point metro at the daemon, then run as usual:
-export METRO_CODEX_RC=ws://127.0.0.1:8421
-metro
-
-# Terminal 3 — Codex TUI client (optional; the user-facing prompt). Connects to the same daemon.
-codex
+codex remote-control     # one-time per machine — starts the managed daemon
+metro                    # auto-detects the daemon's UDS at $CODEX_HOME/app-server-control/app-server-control.sock
+codex                    # the TUI; talks to the same daemon
 ```
 
-Now each metro inbound triggers a `turn/start` on the active codex thread, just as if the user had typed the inbound JSON themselves. Sub-second reaction time, no polling.
+No env var, no port, no flags. Each metro inbound triggers a `turn/start` on the active codex thread — sub-second reaction, no polling.
+
+For non-default setups (TCP, custom socket path, etc.), set `METRO_CODEX_RC` to one of:
+- `unix:///absolute/path/to/socket` — UDS at a non-default location
+- `ws://host:port` — TCP WebSocket (e.g. `codex app-server --listen ws://127.0.0.1:8421`)
 
 ## Config
 
@@ -51,7 +48,7 @@ Now each metro inbound triggers a `turn/start` on the active codex thread, just 
 | `METRO_CONFIG_DIR` | `~/.config/metro` | Where the global `.env` lives. |
 | `METRO_STATE_DIR` | `~/.cache/metro` | Lockfile, attachment cache, default download dir. |
 | `METRO_LOG_LEVEL` | `info` | `trace` / `debug` / `info` / `warn` / `error` / `fatal`. |
-| `METRO_CODEX_RC` | — | Codex app-server WebSocket URL (e.g. `ws://127.0.0.1:8421`). When set, metro pushes each inbound into the agent via `turn/start` JSON-RPC — the Codex equivalent of Claude Code's Monitor. See [Codex setup](#codex-setup). |
+| `METRO_CODEX_RC` | auto-detected from `$CODEX_HOME/app-server-control/...` | Override the codex-rc URL. Accepts `unix:///abs/path` (UDS, default) or `ws://host:port` (TCP). When unset and `codex remote-control` is running, metro auto-connects. See [Codex setup](#codex-setup). |
 
 Token precedence: process env → `./.env` → `$METRO_CONFIG_DIR/.env`. Logs to stderr.
 
