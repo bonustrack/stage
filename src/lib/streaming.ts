@@ -18,9 +18,12 @@
 
 import { errMsg, log } from '../log.js';
 
-// 1500ms keeps us comfortably under Discord's ~5/5s per-channel edit cap
-// even after the underlying transport adds its own retry-on-429 jitter.
+// Steady-state cadence: 1500ms keeps us comfortably under Discord's ~5/5s
+// per-channel edit cap even after the transport adds its own retry-on-429
+// jitter. After a quiet period, the next flush is leading-edge (LEADING_MS)
+// so short responses don't appear as one final dump.
 const DEFAULT_DEBOUNCE_MS = 1500;
+const LEADING_MS = 500;
 
 // Discord's bot content cap is 2000 by default (4000 for boosted/Nitro).
 // 1900 is universally safe and leaves headroom for the status suffix.
@@ -43,20 +46,30 @@ export interface StreamAdapter {
 export class StreamScheduler {
   private dirty = new Set<StreamingMessage>();
   private timer: ReturnType<typeof setTimeout> | null = null;
+  private lastFlushAt = 0;
 
-  constructor(private debounceMs = DEFAULT_DEBOUNCE_MS) {}
+  constructor(
+    private debounceMs = DEFAULT_DEBOUNCE_MS,
+    private leadingMs = LEADING_MS,
+  ) {}
 
   request(stream: StreamingMessage): void {
     this.dirty.add(stream);
     if (this.timer) return;
+    // Leading-edge: if we haven't flushed recently, fire fast so the first
+    // visible content lands within `leadingMs` of the agent's first delta.
+    // Otherwise stay at the steady-state cadence to respect rate limits.
+    const sinceLast = Date.now() - this.lastFlushAt;
+    const delay = sinceLast >= this.debounceMs ? this.leadingMs : this.debounceMs - sinceLast;
     this.timer = setTimeout(() => {
       this.timer = null;
+      this.lastFlushAt = Date.now();
       const batch = [...this.dirty];
       this.dirty.clear();
       // Fire all in parallel — distinct channels are in distinct rate-limit
       // buckets, so they don't queue behind each other.
       for (const s of batch) void s._flushFromScheduler();
-    }, this.debounceMs);
+    }, delay);
   }
 
   /** Drop a stream from the queue (called when it finalizes). */

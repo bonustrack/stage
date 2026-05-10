@@ -104,22 +104,37 @@ export class ClaudeAgent implements Agent {
 // tracking so block_stop events can fire onToolEnd correctly.
 class TurnSession {
   done = false;
+  // Show "Thinking…" until the first real text/tool event lands. Claude
+  // Code doesn't emit a separate reasoning event the way codex does, so
+  // without this the user sees nothing while the agent is still on its
+  // initial API call — feels like the bot's frozen.
+  private thinking = true;
   // Track which content-block indexes belong to tool_use vs text so
   // block_stop fires onToolEnd only for tool blocks.
   private tools = new Map<number, string>();
 
-  constructor(private cb: AgentTurnCallbacks) {}
+  constructor(private cb: AgentTurnCallbacks) {
+    cb.onToolStart('thinking', 'Thinking…');
+  }
 
   fireComplete(): void {
     if (this.done) return;
     this.done = true;
+    this.clearThinking();
     this.cb.onComplete();
   }
 
   fireError(err: Error): void {
     if (this.done) return;
     this.done = true;
+    this.clearThinking();
     this.cb.onError(err);
+  }
+
+  private clearThinking(): void {
+    if (!this.thinking) return;
+    this.thinking = false;
+    this.cb.onToolEnd('thinking');
   }
 
   handle(ev: ClaudeEvent): void {
@@ -131,12 +146,14 @@ class TurnSession {
     if (ev.type !== 'stream_event' || !ev.event) return;
     const e = ev.event;
     if (e.type === 'content_block_start' && e.content_block?.type === 'tool_use') {
+      this.clearThinking();
       this.tools.set(e.index ?? -1, e.content_block.name ?? 'tool');
       this.cb.onToolStart(
         e.content_block.name ?? 'tool',
         summarizeTool(e.content_block.name, e.content_block.input),
       );
     } else if (e.type === 'content_block_delta' && e.delta?.type === 'text_delta') {
+      this.clearThinking();
       this.cb.onDelta(e.delta.text ?? '');
     } else if (e.type === 'content_block_stop') {
       const kind = this.tools.get(e.index ?? -1);
