@@ -85,6 +85,18 @@ ps aux | grep metro | grep -v grep         # verify `metro` is running
 rm -rf ~/.cache/metro/                     # clean stuck state — or whatever METRO_STATE_DIR points at
 ```
 
+## Uninstall
+
+```bash
+metro setup clear                         # remove tokens
+metro setup skill --clear                 # remove the user-scope skill
+metro setup skill --project --clear       # repeat in any repo where you ran `--project`
+rm -rf ~/.cache/metro/                    # remove state (lockfile, attachment cache)
+npm uninstall -g @stage-labs/metro        # or: bun remove -g, pnpm remove -g
+```
+
+(No dedicated `metro uninstall` — Claude Code, npm, and most node CLIs leave package removal to the package manager. The four data paths above are the only state metro creates; clearing them is opt-in and reversible.)
+
 ## Caveats
 
 - **Discord Message Content Intent** is privileged — toggle it in the Developer Portal. See above.
