@@ -48,9 +48,10 @@ process.on('exit', () => { try { if (readFileSync(LOCK_FILE, 'utf8').trim() === 
 // Track which Discord threads we're actively serving a turn in, so we
 // don't fire-and-forget overlapping requests on the same thread.
 const inFlight = new Set<string>();
-// Track threads we just bootstrapped, to suppress double-bootstrap if the
-// user @-mentions twice quickly.
-const bootstrapping = new Set<string>();
+// De-dupe the *same* gateway delivery (e.g. on reconnect replay). Keyed
+// on message_id so two distinct @-mentions in the same parent channel
+// each still get their own thread.
+const bootstrapped = new Set<string>();
 
 const codex = new CodexAgent(pkg.version);
 
@@ -91,25 +92,21 @@ async function onDiscordInbound(m: discord.InboundMessage): Promise<void> {
     log.debug({ channel: m.channel_id }, 'discord guild msg dropped: no scope, no @-mention');
     return;
   }
-  if (bootstrapping.has(m.channel_id)) return;
-  bootstrapping.add(m.channel_id);
-  try {
-    const sessionName = `metro-${new Date().toISOString().slice(0, 10)}-${m.message_id.slice(-4)}`;
-    log.info({ parent: m.channel_id, sessionName }, 'discord: bootstrapping new scope from @-mention');
-    const threadId = await discord.createThreadFromMessage(m.channel_id, m.message_id, sessionName);
-    const codexThreadId = await codex.createThread();
-    setCodexThread(discordScopeKey(threadId), codexThreadId);
-    log.info({ discord: threadId, codex: codexThreadId }, 'scope created');
+  if (bootstrapped.has(m.message_id)) return;
+  bootstrapped.add(m.message_id);
+  const sessionName = `metro-${new Date().toISOString().slice(0, 10)}-${m.message_id.slice(-4)}`;
+  log.info({ parent: m.channel_id, sessionName }, 'discord: bootstrapping new scope from @-mention');
+  const threadId = await discord.createThreadFromMessage(m.channel_id, m.message_id, sessionName);
+  const codexThreadId = await codex.createThread();
+  setCodexThread(discordScopeKey(threadId), codexThreadId);
+  log.info({ discord: threadId, codex: codexThreadId }, 'scope created');
 
-    // Quote the user's request in the thread so the agent's reply
-    // (anchored to the bot's quote) lands in the thread cleanly. The
-    // original @-mention lives in the parent channel and can't be
-    // addressed via the thread's API path.
-    const quoteId = await discord.sendMessage(threadId, `> ${m.text}`);
-    await handleTurn(threadId, m.message_id, m.text, codexThreadId, quoteId);
-  } finally {
-    bootstrapping.delete(m.channel_id);
-  }
+  // Quote the user's request in the thread so the agent's reply
+  // (anchored to the bot's quote) lands in the thread cleanly. The
+  // original @-mention lives in the parent channel and can't be
+  // addressed via the thread's API path.
+  const quoteId = await discord.sendMessage(threadId, `> ${m.text}`);
+  await handleTurn(threadId, m.message_id, m.text, codexThreadId, quoteId);
 }
 
 /**
