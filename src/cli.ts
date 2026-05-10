@@ -39,7 +39,7 @@ Usage:
 setup verbs:
   metro setup                                 Status: tokens, skills, what's next.
   metro setup telegram <token>                Save TELEGRAM_BOT_TOKEN (validated via getMe; --no-validate skips).
-  metro setup discord  <token>                Save DISCORD_BOT_TOKEN (validated via getMe; --no-validate skips).
+  metro setup discord <token>                 Save DISCORD_BOT_TOKEN (validated via getMe; --no-validate skips).
   metro setup clear [telegram|discord|all]    Remove tokens.
   metro setup skill [--project] [--clear]     Install (or remove) the agent skill.
 
@@ -291,8 +291,8 @@ async function cmdSetupStatus(flags: Flags): Promise<void> {
   if (!tg && !dc) {
     process.stdout.write(
       'Get started:\n' +
-        '  1. metro setup telegram <token>     # https://t.me/BotFather\n' +
-        '     metro setup discord  <token>    # https://discord.com/developers/applications\n' +
+        '  1. metro setup telegram <token>    # https://t.me/BotFather\n' +
+        '     metro setup discord <token>     # https://discord.com/developers/applications\n' +
         '  2. metro setup skill                # auto-onboard your agent (writes to both runtimes)\n' +
         '  3. metro doctor                     # verify everything works\n' +
         '  4. metro                            # start the inbound stream\n',

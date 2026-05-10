@@ -9,8 +9,8 @@ In your shell:
 ```bash
 npm install -g @stage-labs/metro@beta    # or: bun add -g @stage-labs/metro@beta
 
-metro setup telegram <token>             # https://t.me/BotFather
-metro setup discord  <token>             # https://discord.com/developers/applications
+metro setup telegram <token>    # https://t.me/BotFather
+metro setup discord <token>     # https://discord.com/developers/applications
 
 metro setup skill                        # writes SKILL.md so Claude Code + Codex auto-onboard
 metro doctor                             # verify
