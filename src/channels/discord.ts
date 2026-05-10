@@ -1,9 +1,9 @@
 import { Client, Events, GatewayIntentBits, Partials } from 'discord.js';
 import { errMsg, log } from '../log.js';
 
-// Receive path: discord.js gateway, used by tail.ts only.
+// Receive path: discord.js gateway, owned by the orchestrator.
 // Send path: raw REST against discord.com/api — no gateway login required,
-// so cli.ts subcommands stay one-shot and fast.
+// so callers outside the orchestrator (e.g. cli.ts validation) stay one-shot.
 
 const API_BASE = 'https://discord.com/api/v10';
 

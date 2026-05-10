@@ -43,7 +43,8 @@ export async function getMe(): Promise<{ username: string }> {
   return tg('getMe', {});
 }
 
-// FIFO-bounded disk cache, shared between tail.ts (writer) and cli.ts (reader).
+// FIFO-bounded disk cache for inbound attachments. Wired for Telegram routing
+// which lands in a follow-up PR; the orchestrator doesn't write to it yet.
 type Attachment = { file_id: string; mime: string };
 const CACHE_MAX = 200;
 const cacheFile = join(STATE_DIR, 'telegram-attachments.json');

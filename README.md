@@ -2,6 +2,12 @@
 
 Run a long-lived daemon that bridges Discord (and soon Telegram) to your Codex / Claude Code agent. Each chat thread gets its own agent session with streaming responses and live tool-call status.
 
+## Prereqs
+
+- **Node ≥ 22** (or Bun ≥ 1.3).
+- **Codex CLI** installed and authenticated — metro spawns `codex app-server` and inherits your auth (subscription or API key). Run `codex` once to log in if you haven't.
+- **Discord bot** with **Message Content Intent** enabled (Developer Portal → Bot → Privileged Gateway Intents).
+
 ## Quickstart
 
 ```bash
@@ -21,8 +27,6 @@ In Discord, **@-mention the bot** in a channel. Metro:
 3. streams the agent's reply back into the thread (with tool-call status, e.g. `running: rg foo`).
 
 Subsequent messages in that thread go straight to the same Codex session — no @-mention needed.
-
-> **Discord setup:** toggle **Message Content Intent** in Developer Portal → Bot → Privileged Gateway Intents.
 
 ## How it works
 
@@ -49,10 +53,20 @@ Discord gateway ──▶ metro orchestrator ──▶ codex app-server (subproc
 
 Token precedence: process env → `./.env` → `$METRO_CONFIG_DIR/.env`. Logs to stderr.
 
+## Develop locally
+
+```bash
+git clone https://github.com/bonustrack/metro && cd metro
+bun install && bun run build
+bun link                                 # makes `metro` resolve to this checkout
+METRO_LOG_LEVEL=debug metro
+```
+
 ## Reference
 
 - `metro --help` — command surface
 - `metro doctor` — health check (tokens + gateway reachability + orchestrator status)
+- State: `~/.cache/metro/scopes.json` (thread map), `~/.cache/metro/.tail-lock` (pid), `~/.cache/metro/codex-app-server.sock` (UDS)
 
 ## Uninstall
 
