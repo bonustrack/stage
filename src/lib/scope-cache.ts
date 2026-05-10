@@ -12,7 +12,17 @@ import { join } from 'node:path';
 import { errMsg, log } from '../log.js';
 import { STATE_DIR } from '../paths.js';
 
-type Entry = { codexThreadId: string; createdAt: string };
+type Entry = {
+  codexThreadId: string;
+  createdAt: string;
+  /**
+   * Watermark for catchup-on-restart: the id of the most recent human
+   * message metro has processed in this scope. After a restart, REST is
+   * used to fetch anything newer than this and replay it through the
+   * orchestrator.
+   */
+  lastSeenMessageId?: string;
+};
 type Cache = Record<string, Entry>;
 
 const cacheFile = join(STATE_DIR, 'scopes.json');
@@ -45,6 +55,21 @@ export function setCodexThread(scopeKey: string, codexThreadId: string): void {
   write(cache);
 }
 
+export function setLastSeen(scopeKey: string, messageId: string): void {
+  const cache = read();
+  if (!cache[scopeKey]) return;
+  cache[scopeKey].lastSeenMessageId = messageId;
+  write(cache);
+}
+
+export function listScopes(): Array<{ scopeKey: string; entry: Entry }> {
+  return Object.entries(read()).map(([scopeKey, entry]) => ({ scopeKey, entry }));
+}
+
 export function discordScopeKey(threadChannelId: string): string {
   return `discord:${threadChannelId}`;
+}
+
+export function discordChannelFromScopeKey(scopeKey: string): string | null {
+  return scopeKey.startsWith('discord:') ? scopeKey.slice('discord:'.length) : null;
 }

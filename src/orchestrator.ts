@@ -16,7 +16,14 @@ import * as discord from './channels/discord.js';
 import { CodexAgent } from './agents/codex.js';
 import { ClaudeAgent } from './agents/claude.js';
 import type { Agent, AgentTurnCallbacks } from './agents/types.js';
-import { discordScopeKey, getCodexThread, setCodexThread } from './lib/scope-cache.js';
+import {
+  discordChannelFromScopeKey,
+  discordScopeKey,
+  getCodexThread,
+  listScopes,
+  setCodexThread,
+  setLastSeen,
+} from './lib/scope-cache.js';
 import { StreamingMessage, StreamScheduler } from './lib/streaming.js';
 import { errMsg, log } from './log.js';
 import { configuredPlatforms, loadMetroEnv, STATE_DIR, requireConfiguredPlatform } from './paths.js';
@@ -82,9 +89,40 @@ async function main(): Promise<void> {
     const me = await discord.getMe();
     log.info({ bot: me.username }, 'discord ready');
     discord.onInbound(m => void onDiscordInbound(m).catch(err => log.warn({ err: errMsg(err) }, 'discord inbound failed')));
+    // Replay anything the user sent while metro was down. Runs in the
+    // background so we don't block 'orchestrator ready' for what might be
+    // a long REST pass.
+    void catchupDiscord().catch(err => log.warn({ err: errMsg(err) }, 'discord catchup failed'));
   }
 
   log.info('orchestrator ready');
+}
+
+async function catchupDiscord(): Promise<void> {
+  const scopes = listScopes();
+  for (const { scopeKey, entry } of scopes) {
+    const channelId = discordChannelFromScopeKey(scopeKey);
+    if (!channelId || !entry.lastSeenMessageId) continue;
+    try {
+      const missed = await discord.fetchMessagesSince(channelId, entry.lastSeenMessageId);
+      const humanMissed = missed.filter(m => !m.author_is_bot && m.text);
+      if (humanMissed.length === 0) continue;
+      log.info({ channel: channelId, count: humanMissed.length }, 'discord catchup: replaying missed messages');
+      for (const m of humanMissed) {
+        // Dispatch through the normal inbound path; the orchestrator's
+        // queueing collapses bursts into one combined turn.
+        await onDiscordInbound({
+          channel_id: channelId,
+          message_id: m.message_id,
+          text: m.text,
+          in_guild: true,
+          mentions_bot: false,
+        });
+      }
+    } catch (err) {
+      log.warn({ err: errMsg(err), channel: channelId }, 'discord catchup: channel skipped');
+    }
+  }
 }
 
 async function onDiscordInbound(m: discord.InboundMessage): Promise<void> {
@@ -98,6 +136,8 @@ async function onDiscordInbound(m: discord.InboundMessage): Promise<void> {
   const cachedScope = discordScopeKey(m.channel_id);
   const cachedAgentThread = getCodexThread(cachedScope);
   if (cachedAgentThread) {
+    // Watermark so catchup-on-restart knows where to pick up from.
+    setLastSeen(cachedScope, m.message_id);
     await handleTurn(m.channel_id, m.text, cachedAgentThread);
     return;
   }

@@ -199,6 +199,30 @@ export async function fetchAttachments(
   return out;
 }
 
+/**
+ * Fetch all messages newer than `afterMessageId` in a channel. Used for
+ * catchup-on-restart so messages sent while metro was down still get a
+ * reply once it comes back. Caps at 100 messages — anything older than
+ * that during downtime is dropped on the floor.
+ */
+export async function fetchMessagesSince(
+  channelId: string,
+  afterMessageId: string,
+): Promise<Array<{ message_id: string; text: string; author_id: string; author_is_bot: boolean }>> {
+  const msgs = await rest<Array<RawMessage & { author: { id: string; username: string; bot?: boolean } }>>(
+    'GET',
+    `/channels/${channelId}/messages?after=${afterMessageId}&limit=100`,
+  );
+  // Discord returns newest-first; flip to chronological so replay order
+  // matches what the user actually typed.
+  return [...msgs].reverse().map(m => ({
+    message_id: m.id,
+    text: m.content,
+    author_id: m.author.id,
+    author_is_bot: !!m.author.bot,
+  }));
+}
+
 export async function fetchRecentMessages(
   channelId: string,
   limit: number,
