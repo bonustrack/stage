@@ -45,9 +45,14 @@ mkdirSync(STATE_DIR, { recursive: true });
 writeFileSync(LOCK_FILE, String(process.pid));
 process.on('exit', () => { try { if (readFileSync(LOCK_FILE, 'utf8').trim() === String(process.pid)) unlinkSync(LOCK_FILE); } catch { /* ignore */ } });
 
-// Track which Discord threads we're actively serving a turn in, so we
-// don't fire-and-forget overlapping requests on the same thread.
+// Track which codex threads we're actively serving a turn in, so we
+// don't send overlapping turn/start requests on the same thread.
 const inFlight = new Set<string>();
+// Per-thread queue of follow-up messages that arrived while a turn was
+// already running. Coalesced into one combined turn on completion so the
+// agent can address the whole batch in one reply.
+type Queued = { channelId: string; texts: string[] };
+const queued = new Map<string, Queued>();
 // De-dupe the *same* gateway delivery (e.g. on reconnect replay). Keyed
 // on message_id so two distinct @-mentions in the same parent channel
 // each still get their own thread.
@@ -109,7 +114,9 @@ async function onDiscordInbound(m: discord.InboundMessage): Promise<void> {
 
 /**
  * Run one agent turn against a known codex thread, streaming the response
- * back to the given Discord channel.
+ * back to the given Discord channel. If a turn is already in flight for
+ * this thread, append the text to the per-thread queue instead — it'll
+ * be picked up as the next combined turn when the current one finishes.
  */
 async function handleTurn(
   channelId: string,
@@ -117,7 +124,10 @@ async function handleTurn(
   codexThreadId: string,
 ): Promise<void> {
   if (inFlight.has(codexThreadId)) {
-    log.warn({ codex: codexThreadId }, 'turn already in flight for this thread; ignoring (no queueing yet)');
+    const q = queued.get(codexThreadId);
+    if (q) q.texts.push(text);
+    else queued.set(codexThreadId, { channelId, texts: [text] });
+    log.debug({ codex: codexThreadId, queueDepth: queued.get(codexThreadId)!.texts.length }, 'queued follow-up turn');
     return;
   }
   inFlight.add(codexThreadId);
@@ -130,22 +140,31 @@ async function handleTurn(
     discordScheduler,
   );
 
+  // Called from both onComplete and onError. Drains any queued follow-ups
+  // into a single combined next turn so the agent answers the whole batch
+  // in one reply (matches chat semantics where you read all new messages
+  // before responding).
+  const finishAndDrain = async (): Promise<void> => {
+    await stream.finalize();
+    inFlight.delete(codexThreadId);
+    const q = queued.get(codexThreadId);
+    if (!q || q.texts.length === 0) return;
+    queued.delete(codexThreadId);
+    const combined = q.texts.join('\n\n');
+    log.debug({ codex: codexThreadId, batched: q.texts.length }, 'draining queued follow-ups');
+    await handleTurn(q.channelId, combined, codexThreadId).catch(err =>
+      log.warn({ err: errMsg(err) }, 'queued turn failed'),
+    );
+  };
+
   const callbacks: AgentTurnCallbacks = {
     onDelta: d => stream.appendDelta(d),
     onToolStart: (_kind, summary) => stream.setStatus(summary),
     onToolEnd: () => stream.setStatus(null),
-    onComplete: () => {
-      void (async () => {
-        await stream.finalize();
-        inFlight.delete(codexThreadId);
-      })();
-    },
+    onComplete: () => { void finishAndDrain(); },
     onError: err => {
       log.warn({ err: errMsg(err) }, 'agent turn failed');
-      void (async () => {
-        await stream.finalize();
-        inFlight.delete(codexThreadId);
-      })();
+      void finishAndDrain();
     },
   };
 
