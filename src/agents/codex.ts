@@ -56,8 +56,11 @@ export class CodexAgent {
     this.daemon = spawn('codex', ['app-server', '--listen', `unix://${SOCKET_PATH}`], {
       stdio: ['ignore', 'pipe', 'pipe'],
     });
-    this.daemon.stdout?.on('data', d => log.debug({ src: 'codex-stdout' }, String(d).trim()));
-    this.daemon.stderr?.on('data', d => log.debug({ src: 'codex-stderr' }, String(d).trim()));
+    // Codex's own tracing goes to stderr (incl. its own ERROR-level lines for
+    // MCP config issues etc). It's not metro's signal — keep it at trace so
+    // `metro doctor` / debug log views aren't drowned in unrelated noise.
+    this.daemon.stdout?.on('data', d => log.trace({ src: 'codex-stdout' }, String(d).trim()));
+    this.daemon.stderr?.on('data', d => log.trace({ src: 'codex-stderr' }, String(d).trim()));
     this.daemon.on('exit', code => log.warn({ code }, 'codex daemon exited'));
 
     await this.waitForSocket();

@@ -18,6 +18,7 @@ async function rest<T = unknown>(
   path: string,
   body?: unknown,
   timeoutMs = 30_000,
+  retriesLeft = 2,
 ): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     method,
@@ -29,6 +30,15 @@ async function rest<T = unknown>(
     body: body !== undefined ? JSON.stringify(body) : undefined,
     signal: AbortSignal.timeout(timeoutMs),
   });
+  // 429: honor Discord's retry_after (seconds) and try again, up to a few
+  // hops. Common during streaming edits when the agent emits deltas faster
+  // than the per-channel edit cap.
+  if (res.status === 429 && retriesLeft > 0) {
+    const retryAfter = Number(res.headers.get('retry-after')) || 1;
+    log.debug({ path, retryAfter }, 'discord 429; backing off');
+    await new Promise(r => setTimeout(r, Math.max(retryAfter * 1000, 250)));
+    return rest<T>(method, path, body, timeoutMs, retriesLeft - 1);
+  }
   if (!res.ok) {
     const text = await res.text().catch(() => '');
     throw new Error(`discord ${method} ${path}: ${res.status} ${text}`);

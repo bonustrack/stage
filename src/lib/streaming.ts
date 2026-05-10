@@ -13,7 +13,9 @@
 
 import { errMsg, log } from '../log.js';
 
-const DEBOUNCE_MS = 500;
+// 1500ms keeps us comfortably under Discord's ~5/5s per-channel edit cap
+// even after the underlying transport adds its own retry-on-429 jitter.
+const DEBOUNCE_MS = 1500;
 
 export interface StreamAdapter {
   /** Send a fresh message; returns the new message id. */
