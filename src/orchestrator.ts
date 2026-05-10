@@ -7,13 +7,15 @@
 //   New: metro runs the agent (codex app-server) as a subprocess and
 //        routes each Discord/Telegram thread to its own codex session.
 //
-// PR 1 scope: Discord + codex. Telegram and Claude Code follow.
+// PR 1 scope: Discord, with codex or Claude Code as the agent. Telegram follows.
 
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import pkg from '../package.json' with { type: 'json' };
 import * as discord from './channels/discord.js';
-import { CodexAgent, type AgentTurnCallbacks } from './agents/codex.js';
+import { CodexAgent } from './agents/codex.js';
+import { ClaudeAgent } from './agents/claude.js';
+import type { Agent, AgentTurnCallbacks } from './agents/types.js';
 import { discordScopeKey, getCodexThread, setCodexThread } from './lib/scope-cache.js';
 import { StreamingMessage, StreamScheduler } from './lib/streaming.js';
 import { errMsg, log } from './log.js';
@@ -58,14 +60,22 @@ const queued = new Map<string, Queued>();
 // each still get their own thread.
 const bootstrapped = new Set<string>();
 
-const codex = new CodexAgent(pkg.version);
+// Which agent backs the bot. `METRO_AGENT=claude` switches to Claude Code;
+// anything else (default: codex) uses the codex app-server. Choice is
+// process-wide for now — per-channel routing can come later if needed.
+const agentKind = (process.env.METRO_AGENT ?? 'codex').toLowerCase();
+const agent: Agent =
+  agentKind === 'claude'
+    ? new ClaudeAgent()
+    : new CodexAgent(pkg.version);
+log.info({ agent: agentKind }, 'orchestrator: agent selected');
 
 // One scheduler per bot — coalesces streamed edits across every active
 // thread so concurrent turns don't compound the bot's edit cadence.
 const discordScheduler = new StreamScheduler();
 
 async function main(): Promise<void> {
-  await codex.start();
+  await agent.start();
 
   if (platforms.discord) {
     await discord.startGateway();
@@ -84,11 +94,11 @@ async function onDiscordInbound(m: discord.InboundMessage): Promise<void> {
     return;
   }
 
-  // Already inside a known thread? Route directly to its codex session.
+  // Already inside a known thread? Route directly to its agent session.
   const cachedScope = discordScopeKey(m.channel_id);
-  const cachedCodex = getCodexThread(cachedScope);
-  if (cachedCodex) {
-    await handleTurn(m.channel_id, m.text, cachedCodex);
+  const cachedAgentThread = getCodexThread(cachedScope);
+  if (cachedAgentThread) {
+    await handleTurn(m.channel_id, m.text, cachedAgentThread);
     return;
   }
 
@@ -99,21 +109,21 @@ async function onDiscordInbound(m: discord.InboundMessage): Promise<void> {
   }
   if (bootstrapped.has(m.message_id)) return;
   bootstrapped.add(m.message_id);
-  // Create the codex thread first so its id can name the Discord thread.
-  // Lets you cross-reference scopes.json / logs from the Discord UI at a
+  // Create the agent thread first so its id can name the Discord thread —
+  // lets you cross-reference scopes.json / logs from the Discord UI at a
   // glance instead of decoding our own naming convention.
-  const codexThreadId = await codex.createThread();
-  const threadName = codexThreadId.length <= 100 ? codexThreadId : codexThreadId.slice(0, 100);
-  log.info({ parent: m.channel_id, codex: codexThreadId }, 'discord: bootstrapping new scope from @-mention');
+  const agentThreadId = await agent.createThread();
+  const threadName = agentThreadId.length <= 100 ? agentThreadId : agentThreadId.slice(0, 100);
+  log.info({ parent: m.channel_id, agent: agentThreadId }, 'discord: bootstrapping new scope from @-mention');
   const threadId = await discord.createThreadFromMessage(m.channel_id, m.message_id, threadName);
-  setCodexThread(discordScopeKey(threadId), codexThreadId);
-  log.info({ discord: threadId, codex: codexThreadId }, 'scope created');
+  setCodexThread(discordScopeKey(threadId), agentThreadId);
+  log.info({ discord: threadId, agent: agentThreadId }, 'scope created');
 
-  await handleTurn(threadId, m.text, codexThreadId);
+  await handleTurn(threadId, m.text, agentThreadId);
 }
 
 /**
- * Run one agent turn against a known codex thread, streaming the response
+ * Run one agent turn against a known agent thread, streaming the response
  * back to the given Discord channel. If a turn is already in flight for
  * this thread, append the text to the per-thread queue instead — it'll
  * be picked up as the next combined turn when the current one finishes.
@@ -121,16 +131,16 @@ async function onDiscordInbound(m: discord.InboundMessage): Promise<void> {
 async function handleTurn(
   channelId: string,
   text: string,
-  codexThreadId: string,
+  agentThreadId: string,
 ): Promise<void> {
-  if (inFlight.has(codexThreadId)) {
-    const q = queued.get(codexThreadId);
+  if (inFlight.has(agentThreadId)) {
+    const q = queued.get(agentThreadId);
     if (q) q.texts.push(text);
-    else queued.set(codexThreadId, { channelId, texts: [text] });
-    log.debug({ codex: codexThreadId, queueDepth: queued.get(codexThreadId)!.texts.length }, 'queued follow-up turn');
+    else queued.set(agentThreadId, { channelId, texts: [text] });
+    log.debug({ agent: agentThreadId, queueDepth: queued.get(agentThreadId)!.texts.length }, 'queued follow-up turn');
     return;
   }
-  inFlight.add(codexThreadId);
+  inFlight.add(agentThreadId);
 
   const stream = new StreamingMessage(
     {
@@ -146,13 +156,13 @@ async function handleTurn(
   // before responding).
   const finishAndDrain = async (): Promise<void> => {
     await stream.finalize();
-    inFlight.delete(codexThreadId);
-    const q = queued.get(codexThreadId);
+    inFlight.delete(agentThreadId);
+    const q = queued.get(agentThreadId);
     if (!q || q.texts.length === 0) return;
-    queued.delete(codexThreadId);
+    queued.delete(agentThreadId);
     const combined = q.texts.join('\n\n');
-    log.debug({ codex: codexThreadId, batched: q.texts.length }, 'draining queued follow-ups');
-    await handleTurn(q.channelId, combined, codexThreadId).catch(err =>
+    log.debug({ agent: agentThreadId, batched: q.texts.length }, 'draining queued follow-ups');
+    await handleTurn(q.channelId, combined, agentThreadId).catch(err =>
       log.warn({ err: errMsg(err) }, 'queued turn failed'),
     );
   };
@@ -168,17 +178,18 @@ async function handleTurn(
     },
   };
 
-  await codex.sendTurn(codexThreadId, text, callbacks);
+  await agent.sendTurn(agentThreadId, text, callbacks);
 }
 
-// Graceful shutdown — let codex tear down its daemon cleanly so its file
-// state syncs to disk and the bot shows offline immediately.
+// Graceful shutdown — let the agent tear down cleanly (codex's daemon
+// syncs state to disk; claude kills any in-flight subprocesses) and the
+// bot shows offline immediately.
 let shuttingDown = false;
 async function shutdown(): Promise<void> {
   if (shuttingDown) return;
   shuttingDown = true;
   log.info('orchestrator shutting down');
-  await codex.stop().catch(err => log.warn({ err: errMsg(err) }, 'codex shutdown failed'));
+  await agent.stop().catch(err => log.warn({ err: errMsg(err) }, 'agent shutdown failed'));
   if (platforms.discord) await discord.shutdownGateway().catch(err => log.warn({ err: errMsg(err) }, 'discord shutdown failed'));
   process.exit(0);
 }

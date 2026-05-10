@@ -13,25 +13,15 @@ import { join } from 'node:path';
 import { WebSocket, type RawData } from 'ws';
 import { errMsg, log } from '../log.js';
 import { STATE_DIR } from '../paths.js';
+import type { Agent, AgentTurnCallbacks } from './types.js';
+
+export type { AgentTurnCallbacks };
 
 const SOCKET_PATH = join(STATE_DIR, 'codex-app-server.sock');
 const READY_TIMEOUT_MS = 15_000;
 const READY_POLL_MS = 100;
 
 type Pending = { resolve: (r: unknown) => void; reject: (e: Error) => void };
-
-export interface AgentTurnCallbacks {
-  /** Streaming text delta from the agent's response. */
-  onDelta(text: string): void;
-  /** Tool call started; show a status line (e.g. "running: ls"). */
-  onToolStart(kind: string, summary: string): void;
-  /** Tool call ended; clear the status line if it matches. */
-  onToolEnd(kind: string): void;
-  /** Turn fully complete. */
-  onComplete(): void;
-  /** Transport / RPC error. */
-  onError(err: Error): void;
-}
 
 type ThreadItem =
   | { type: 'agentMessage'; id: string; text: string }
@@ -40,7 +30,7 @@ type ThreadItem =
   | { type: 'reasoning'; id: string }
   | { type: string; id: string }; // catch-all
 
-export class CodexAgent {
+export class CodexAgent implements Agent {
   private ws: WebSocket | null = null;
   private daemon: ChildProcess | null = null;
   private nextId = 1;
