@@ -95,9 +95,12 @@ export class CodexAgent {
   async sendTurn(threadId: string, text: string, callbacks: AgentTurnCallbacks): Promise<void> {
     this.turnCallbacks.set(threadId, callbacks);
     try {
+      // Wire format per codex's generated TS bindings: `text_elements`
+      // (snake_case), not camelCase. Sending camelCase silently degrades
+      // — accepted by the server but doesn't echo back in items.
       await this.call('turn/start', {
         threadId,
-        input: [{ type: 'text', text, textElements: [] }],
+        input: [{ type: 'text', text, text_elements: [] }],
       });
     } catch (err) {
       this.turnCallbacks.delete(threadId);
@@ -166,8 +169,9 @@ export class CodexAgent {
       return;
     }
 
-    // Notifications: route to the matching thread's callbacks
+    // Notifications.
     if (!msg.method) return;
+    log.trace({ method: msg.method }, 'codex agent: notification');
     const params = msg.params as { threadId?: string } | undefined;
     const threadId = params?.threadId;
     if (!threadId) return;
@@ -180,15 +184,32 @@ export class CodexAgent {
     } else if (msg.method === 'item/started') {
       const p = msg.params as { item: ThreadItem };
       const summary = summarizeItem(p.item);
-      if (summary && p.item.type !== 'agentMessage') {
+      if (summary && p.item.type !== 'agentMessage' && p.item.type !== 'userMessage') {
         cb.onToolStart(p.item.type, summary);
       }
     } else if (msg.method === 'item/completed') {
       const p = msg.params as { item: ThreadItem };
-      if (p.item.type !== 'agentMessage') cb.onToolEnd(p.item.type);
+      if (p.item.type !== 'agentMessage' && p.item.type !== 'userMessage') cb.onToolEnd(p.item.type);
+    } else if (msg.method === 'thread/status/changed') {
+      // Codex 0.130 doesn't reliably emit `turn/completed` — `thread/status`
+      // returning to `idle` is the dependable completion signal. The same
+      // notification fires on `active` when a turn starts; ignore those.
+      const p = msg.params as { status: { type: string } };
+      if (p.status?.type === 'idle') {
+        this.turnCallbacks.delete(threadId);
+        cb.onComplete();
+      } else if (p.status?.type === 'systemError') {
+        this.turnCallbacks.delete(threadId);
+        cb.onError(new Error('codex thread entered systemError'));
+      }
     } else if (msg.method === 'turn/completed') {
+      // Belt-and-braces: if codex does emit it, take it.
       this.turnCallbacks.delete(threadId);
       cb.onComplete();
+    } else if (msg.method === 'error') {
+      const p = msg.params as { error?: { message?: string } };
+      this.turnCallbacks.delete(threadId);
+      cb.onError(new Error(p.error?.message ?? 'codex error notification'));
     }
   }
 

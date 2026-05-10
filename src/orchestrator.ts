@@ -165,8 +165,13 @@ async function handleTurn(
     },
     onError: err => {
       log.warn({ err: errMsg(err) }, 'agent turn failed');
-      void stream.finalize();
-      inFlight.delete(codexThreadId);
+      void (async () => {
+        await stream.finalize();
+        await discord
+          .setReaction(channelId, reactTargetId, '')
+          .catch(e => log.warn({ err: errMsg(e) }, 'discord 👀 clear failed'));
+        inFlight.delete(codexThreadId);
+      })();
     },
   };
 
