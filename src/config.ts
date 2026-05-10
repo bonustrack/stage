@@ -10,17 +10,29 @@ export type Platforms = { telegram: boolean; discord: boolean };
 export const STATE_DIR = process.env.METRO_STATE_DIR ?? join(homedir(), '.cache', 'metro');
 mkdirSync(STATE_DIR, { recursive: true });
 
-// Optional .env in cwd — convenience for local development. In production,
-// env vars come from the agent's process environment (e.g. shell rc, systemd unit).
-export function loadMetroEnv(): void {
-  const envFile = join(process.cwd(), '.env');
-  if (!existsSync(envFile)) return;
-  for (const line of readFileSync(envFile, 'utf8').split('\n')) {
+// Where `metro setup` writes the global .env. Override with METRO_CONFIG_DIR
+// or the standard $XDG_CONFIG_HOME.
+export const CONFIG_DIR =
+  process.env.METRO_CONFIG_DIR ??
+  join(process.env.XDG_CONFIG_HOME || join(homedir(), '.config'), 'metro');
+export const CONFIG_ENV_FILE = join(CONFIG_DIR, '.env');
+
+function loadEnvFile(path: string): void {
+  if (!existsSync(path)) return;
+  for (const line of readFileSync(path, 'utf8').split('\n')) {
     const m = line.match(/^\s*([A-Za-z_]\w*)\s*=\s*(.*?)\s*$/);
     if (m && process.env[m[1]] === undefined) {
       process.env[m[1]] = m[2].replace(/^(['"])(.*)\1$/, '$2');
     }
   }
+}
+
+// Precedence: process.env (already set) > cwd/.env > <CONFIG_DIR>/.env.
+// `loadEnvFile` only sets vars that aren't already populated, so the first
+// call that defines a key wins.
+export function loadMetroEnv(): void {
+  loadEnvFile(join(process.cwd(), '.env'));
+  loadEnvFile(CONFIG_ENV_FILE);
 }
 
 export function configuredPlatforms(): Platforms {

@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 import { spawn } from 'node:child_process';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import pkg from '../package.json' with { type: 'json' };
 import * as discord from './channels/discord.js';
 import * as telegram from './channels/telegram.js';
 import { buildSendBody, tg } from './channels/telegram.js';
-import { configuredPlatforms, loadMetroEnv, STATE_DIR } from './config.js';
+import { CONFIG_DIR, CONFIG_ENV_FILE, configuredPlatforms, loadMetroEnv, STATE_DIR } from './config.js';
 import { errMsg, log } from './log.js';
 
 const USAGE = `metro — Telegram + Discord bridge for your agent
@@ -39,6 +39,12 @@ Usage:
       Recent-message lookback. Discord only — pass channel-only
       \`discord:<channel_id>\`. 1 ≤ N ≤ 100, default 10.
 
+  metro setup [telegram|discord <token> | clear [telegram|discord|all]]
+      No args: print which tokens are configured (masked) and where the
+      .env lives. With \`telegram <token>\` or \`discord <token>\`: write the
+      token to \`$METRO_CONFIG_DIR/.env\` (chmod 0600). With \`clear …\`:
+      remove tokens from that file.
+
   metro update
       Check the npm registry for a newer release and run the matching
       global-install command (npm / bun / pnpm — auto-detected from the
@@ -56,6 +62,86 @@ Common flags:
 Tokens (env or ./.env): TELEGRAM_BOT_TOKEN, DISCORD_BOT_TOKEN.
 Configure at least one.
 `;
+
+function readDotenv(path: string): Record<string, string> {
+  if (!existsSync(path)) return {};
+  const out: Record<string, string> = {};
+  for (const line of readFileSync(path, 'utf8').split('\n')) {
+    const m = line.match(/^\s*([A-Za-z_]\w*)\s*=\s*(.*?)\s*$/);
+    if (m) out[m[1]] = m[2].replace(/^(['"])(.*)\1$/, '$2');
+  }
+  return out;
+}
+
+function writeDotenv(path: string, env: Record<string, string>): void {
+  mkdirSync(CONFIG_DIR, { recursive: true });
+  const body = Object.entries(env).map(([k, v]) => `${k}=${v}`).join('\n') + '\n';
+  writeFileSync(path, body);
+  chmodSync(path, 0o600);
+}
+
+function maskToken(token: string): string {
+  if (!token) return '';
+  if (token.length <= 8) return '••••';
+  return `${token.slice(0, 6)}…${token.slice(-2)}`;
+}
+
+async function cmdSetup(positional: string[]): Promise<void> {
+  const [sub, value] = positional;
+  const tokenKeys: Record<'telegram' | 'discord', string> = {
+    telegram: 'TELEGRAM_BOT_TOKEN',
+    discord: 'DISCORD_BOT_TOKEN',
+  };
+
+  if (!sub) {
+    loadMetroEnv();
+    const tg = process.env.TELEGRAM_BOT_TOKEN ?? '';
+    const dc = process.env.DISCORD_BOT_TOKEN ?? '';
+    process.stdout.write(
+      `metro ${pkg.version}\n\n` +
+        `config:  ${CONFIG_ENV_FILE}${existsSync(CONFIG_ENV_FILE) ? '' : ' (not yet written)'}\n\n` +
+        `  TELEGRAM_BOT_TOKEN  ${tg ? `set (${maskToken(tg)})` : 'not set'}\n` +
+        `  DISCORD_BOT_TOKEN   ${dc ? `set (${maskToken(dc)})` : 'not set'}\n\n`,
+    );
+    if (!tg && !dc) {
+      process.stdout.write(
+        'Save a token with one of:\n' +
+          '  metro setup telegram <token>     # from https://t.me/BotFather\n' +
+          '  metro setup discord <token>      # from https://discord.com/developers/applications\n',
+      );
+    } else {
+      process.stdout.write('Run `metro` to start the inbound stream.\n');
+    }
+    return;
+  }
+
+  if (sub === 'telegram' || sub === 'discord') {
+    if (!value) throw new Error(`metro setup ${sub} <token> — token is required`);
+    const env = readDotenv(CONFIG_ENV_FILE);
+    env[tokenKeys[sub]] = value.trim();
+    writeDotenv(CONFIG_ENV_FILE, env);
+    process.stdout.write(`saved ${tokenKeys[sub]} to ${CONFIG_ENV_FILE} (chmod 0600)\n`);
+    return;
+  }
+
+  if (sub === 'clear') {
+    const target = value ?? 'all';
+    const env = readDotenv(CONFIG_ENV_FILE);
+    if (target === 'all') {
+      delete env.TELEGRAM_BOT_TOKEN;
+      delete env.DISCORD_BOT_TOKEN;
+    } else if (target === 'telegram' || target === 'discord') {
+      delete env[tokenKeys[target]];
+    } else {
+      throw new Error(`metro setup clear <telegram|discord|all> — got '${target}'`);
+    }
+    writeDotenv(CONFIG_ENV_FILE, env);
+    process.stdout.write(`cleared ${target === 'all' ? 'all metro tokens' : tokenKeys[target as 'telegram' | 'discord']} from ${CONFIG_ENV_FILE}\n`);
+    return;
+  }
+
+  throw new Error(`unknown setup subcommand '${sub}' (try: telegram, discord, clear)`);
+}
 
 async function cmdUpdate(): Promise<void> {
   // While metro is in prerelease, the @beta dist-tag is what we publish.
@@ -313,18 +399,13 @@ async function main(): Promise<void> {
     return;
   }
 
-  if (cmd === 'update') {
-    try {
-      return await cmdUpdate();
-    } catch (err) {
-      process.stderr.write(`error: ${errMsg(err)}\n`);
-      process.exit(1);
-    }
-  }
-
-  loadMetroEnv();
-  const { flags } = parseArgs(process.argv.slice(3));
+  const { positional, flags } = parseArgs(process.argv.slice(3));
   try {
+    // setup is special: it manages tokens, so it doesn't need them loaded.
+    if (cmd === 'setup') return await cmdSetup(positional);
+    if (cmd === 'update') return await cmdUpdate();
+
+    loadMetroEnv();
     if (cmd === 'reply') return await cmdReply(flags);
     if (cmd === 'react') return await cmdReact(flags);
     if (cmd === 'edit') return await cmdEdit(flags);
