@@ -224,23 +224,21 @@ async function onDiscordInbound(m: discord.InboundMessage): Promise<void> {
 }
 
 async function onTelegramInbound(m: telegram.InboundMessage): Promise<void> {
-  // Only handle DMs and forum-topic messages. Non-topic group chats are
-  // skipped — there's no thread boundary, so per-scope routing would be
-  // ambiguous.
-  if (!m.is_private && !m.is_forum_topic) {
-    log.debug({ chat: m.chat_id }, 'telegram: non-private/non-topic chat ignored');
+  // Allow DMs and any chat in a forum supergroup (custom topics + General).
+  // Plain (non-forum) groups are skipped — no thread boundary, so per-scope
+  // routing would lump every conversation together.
+  if (!m.is_private && !m.in_forum) {
+    log.debug({ chat: m.chat_id }, 'telegram: dropped — non-private, non-forum chat');
     return;
   }
 
   const scopeKey = telegramScopeKey(m.chat_id, m.message_thread_id);
   const cachedHasAnyAgent = !!(getAgentThread(scopeKey, 'codex') ?? getAgentThread(scopeKey, 'claude'));
 
-  // Existing scope: route directly. New scope: bootstrap on this message
-  // (no separate thread-creation step like Discord — the chat/topic IS
-  // the thread).
+  // No scope yet, not a DM, and no @-mention → drop. (DMs implicitly count
+  // as mentions, so they always bootstrap.)
   if (!cachedHasAnyAgent && !m.is_private && !m.mentions_bot) {
-    // In a group/topic with no scope, require an @-mention to bootstrap.
-    log.debug({ chat: m.chat_id }, 'telegram: dropped — no scope, no @-mention');
+    log.debug({ chat: m.chat_id, topic: m.message_thread_id }, 'telegram: dropped — no scope, no @-mention');
     return;
   }
 

@@ -70,11 +70,14 @@ type RawUpdate = { update_id: number; message?: RawMessage };
 export type InboundMessage = {
   chat_id: number;
   message_id: number;
-  /** Forum-topic id (undefined for non-forum / DM messages). */
+  /** Forum-topic id (undefined for DMs and forum General). */
   message_thread_id?: number;
   text: string;
   is_private: boolean;
+  /** Belongs to a non-General forum topic (has message_thread_id). */
   is_forum_topic: boolean;
+  /** Chat is a forum supergroup (any topic, including General). */
+  in_forum: boolean;
   mentions_bot: boolean;
 };
 
@@ -153,21 +156,40 @@ export async function shutdownPolling(): Promise<void> {
 
 async function dispatchUpdate(u: RawUpdate): Promise<void> {
   const m = u.message;
-  if (!m?.chat?.id || typeof m.message_id !== 'number') return;
-  if (m.from?.is_bot) return; // skip other bots, incl. ourselves
+  if (!m?.chat?.id || typeof m.message_id !== 'number') {
+    log.trace({ update_id: u.update_id }, 'telegram: non-message update');
+    return;
+  }
+  if (m.from?.is_bot) {
+    log.trace({ chat: m.chat.id }, 'telegram: skipping bot author');
+    return;
+  }
 
   const text = await messageToText(m);
-  if (!text) return;
+  if (!text) {
+    log.trace({ chat: m.chat.id }, 'telegram: no text/caption');
+    return;
+  }
 
-  onInboundHandler({
+  const msg: InboundMessage = {
     chat_id: m.chat.id,
     message_id: m.message_id,
     message_thread_id: m.is_topic_message ? m.message_thread_id : undefined,
     text,
     is_private: m.chat.type === 'private',
     is_forum_topic: !!m.is_topic_message,
+    in_forum: !!m.chat.is_forum,
     mentions_bot: detectMentionsBot(m),
-  });
+  };
+  log.debug({
+    chat: msg.chat_id,
+    topic: msg.message_thread_id,
+    is_private: msg.is_private,
+    is_forum_topic: msg.is_forum_topic,
+    in_forum: msg.in_forum,
+    mentions_bot: msg.mentions_bot,
+  }, 'telegram: inbound');
+  onInboundHandler(msg);
 }
 
 function detectMentionsBot(m: RawMessage): boolean {
