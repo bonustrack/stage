@@ -48,39 +48,43 @@ Bare `codex` (no `--remote`) can't work with metro — the agent has no daemon t
 
 ## Multi-session — one bot, multiple agent sessions
 
-Run several agent sessions concurrently against a single bot by giving each session its own scope: a **Discord thread** (in a parent channel the bot can post in) or a **Telegram forum topic** (in a supergroup with Topics enabled). Each metro instance is told which scope it owns; inbounds outside the scope are dropped silently, and outbound replies auto-thread back into the same scope.
+Run several agent sessions concurrently against a single bot by giving each session its own scope: a **Discord thread** in a parent channel, or a **Telegram forum topic** in a Topics-enabled supergroup. Metro auto-creates the thread/topic on first launch and reuses it on subsequent launches with the same session name.
 
-### Discord
+### One-time bot setup
+
+- **Discord:** invite the bot to a server with `Manage Threads` + `Send Messages` on a parent text channel.
+- **Telegram:** add the bot to a supergroup, enable Topics in group settings, promote the bot to admin with `Manage Topics`.
+
+### Per-session usage
+
+Set a session name and tell metro where to create the scope. Each unique `METRO_SESSION_NAME` maps to its own thread/topic, persisted in `$METRO_STATE_DIR/scopes.json`.
 
 ```bash
-# In Discord, create a thread under a channel the bot is in. Right-click the
-# thread → Copy Link → grab the trailing snowflake (the thread's channel id).
+# Example: a "frontend" session
+METRO_SESSION_NAME=frontend \
+METRO_DISCORD_PARENT_CHANNEL=<channel_id> \
+METRO_TELEGRAM_PARENT_CHAT=<supergroup_id> \
+metro
+```
 
+First run: metro creates `#frontend` thread in the Discord channel and a `frontend` topic in the Telegram supergroup, caches the ids, and starts streaming. Re-running with the same `METRO_SESSION_NAME` reuses the same thread/topic. Two different session names → two separate scopes.
+
+You can also opt into just one platform — set only the parent variable for the platform you care about; the other platform stays unfiltered.
+
+### Manual scoping (skip auto-create)
+
+If you already have a thread/topic and want metro to attach to it directly, skip `METRO_SESSION_NAME` and use the explicit ids:
+
+```bash
 METRO_DISCORD_THREAD=<thread_channel_id> metro
-```
-
-### Telegram
-
-```bash
-# In a supergroup with Topics enabled, create a topic. The topic id is
-# `message_thread_id` from any message in it (visible via the Bot API; or
-# send any message in the topic and read it back via getUpdates).
-
 METRO_TELEGRAM_TOPIC=<chat_id>:<topic_id> metro
-```
-
-### Mixing platforms
-
-A single metro can scope both:
-```bash
-METRO_DISCORD_THREAD=<thread_id> METRO_TELEGRAM_TOPIC=<chat_id>:<topic_id> metro
 ```
 
 ### Caveats
 
 - **Telegram polling exclusivity.** Only one metro can call `getUpdates` per bot token, so on Telegram only one scoped metro runs per bot today. Multi-session against one bot needs the upcoming hub multiplexer (planned). Discord is unaffected — multiple scoped metros each handle their own thread.
-- **Topic-aware outbound.** When `METRO_TELEGRAM_TOPIC` is set and the agent replies/sends to a chat matching the configured chat_id, metro automatically threads the message into that topic. The `<chat>:<topic>` mapping is global per metro instance.
-- **Unscoped inbounds.** Without these env vars, metro emits everything (today's behavior). The scope filters are strictly additive and opt-in.
+- **Cache cleanup.** If you delete a thread/topic in the platform UI, the cached id at `$METRO_STATE_DIR/scopes.json` will 404 on next launch. Remove the entry by hand (or `rm` the file to start fresh).
+- **Unscoped inbounds.** Without these env vars, metro emits everything (today's behavior). Scoping is strictly opt-in.
 
 ## Config
 
@@ -91,8 +95,11 @@ METRO_DISCORD_THREAD=<thread_id> METRO_TELEGRAM_TOPIC=<chat_id>:<topic_id> metro
 | `METRO_STATE_DIR` | `~/.cache/metro` | Lockfile, attachment cache, default download dir. |
 | `METRO_LOG_LEVEL` | `info` | `trace` / `debug` / `info` / `warn` / `error` / `fatal`. |
 | `METRO_CODEX_RC` | — | Codex app-server URL (e.g. `ws://127.0.0.1:8421`). When set, metro pushes each inbound into the agent's history via JSON-RPC `turn/start` — the Codex equivalent of Claude Code's Monitor. Accepts `ws://host:port` (required for use with the codex TUI) or `unix:///abs/path` (headless only). See [Codex setup](#run-with-codex). |
-| `METRO_DISCORD_THREAD` | — | Discord thread id (channel id). When set, metro only emits/responds to inbounds in that thread. See [Multi-session](#multi-session--one-bot-multiple-agent-sessions). |
-| `METRO_TELEGRAM_TOPIC` | — | Forum topic scope as `<chat_id>:<topic_id>`. When set, metro only emits/responds to inbounds in that topic and auto-threads outbound messages back into it. See [Multi-session](#multi-session--one-bot-multiple-agent-sessions). |
+| `METRO_SESSION_NAME` | — | Names a scope; with the parent vars below, metro auto-creates a thread/topic on first launch and reuses it after (cached at `$METRO_STATE_DIR/scopes.json`). See [Multi-session](#multi-session--one-bot-multiple-agent-sessions). |
+| `METRO_DISCORD_PARENT_CHANNEL` | — | Discord channel id where the bot creates this session's thread. Required for auto-create on Discord. |
+| `METRO_TELEGRAM_PARENT_CHAT` | — | Topics-enabled supergroup id where the bot creates this session's topic. Required for auto-create on Telegram. |
+| `METRO_DISCORD_THREAD` | — | Pre-existing thread channel id. Skips auto-create — metro just attaches. |
+| `METRO_TELEGRAM_TOPIC` | — | Pre-existing topic as `<chat_id>:<topic_id>`. Skips auto-create. |
 
 Token precedence: process env → `./.env` → `$METRO_CONFIG_DIR/.env`. Logs to stderr.
 

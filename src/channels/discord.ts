@@ -120,6 +120,21 @@ export async function sendMessage(channelId: string, text: string): Promise<stri
   return sent.id;
 }
 
+/**
+ * Create a public thread under the given parent text channel. Returns the
+ * new thread's channel id (Discord models threads as channels). Used by
+ * `metro session`-style scoping so each agent session lands in its own
+ * conversation. The bot needs CREATE_PUBLIC_THREADS on the parent.
+ */
+export async function createThread(parentChannelId: string, name: string): Promise<string> {
+  const created = await rest<{ id: string }>('POST', `/channels/${parentChannelId}/threads`, {
+    name,
+    type: 11, // public thread
+    auto_archive_duration: 1440, // 24h; thread isn't deleted, just collapses in UI
+  });
+  return created.id;
+}
+
 export async function replyToMessage(channelId: string, messageId: string, text: string): Promise<string> {
   const sent = await rest<{ id: string }>('POST', `/channels/${channelId}/messages`, {
     content: text,

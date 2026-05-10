@@ -50,6 +50,16 @@ export async function getMe(): Promise<{ username: string }> {
   return tg('getMe', {});
 }
 
+/**
+ * Create a forum topic in a Topics-enabled supergroup. Returns the
+ * topic's `message_thread_id`. The bot must be an admin with the
+ * `manage_topics` permission. Used by `metro session`-style scoping.
+ */
+export async function createForumTopic(chatId: ChatId, name: string): Promise<number> {
+  const result = await tg<{ message_thread_id: number }>('createForumTopic', { chat_id: chatId, name });
+  return result.message_thread_id;
+}
+
 // FIFO-bounded disk cache, shared between tail.ts (writer) and cli.ts (reader).
 type Attachment = { file_id: string; mime: string };
 const CACHE_MAX = 200;

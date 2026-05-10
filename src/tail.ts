@@ -15,6 +15,7 @@ import * as telegram from './channels/telegram.js';
 import { tg } from './channels/telegram.js';
 import type { Platform } from './lib/address.js';
 import { CodexRC } from './lib/codex-rc.js';
+import { resolveDiscordScope, resolveTelegramScope } from './lib/scope-cache.js';
 import { configuredPlatforms, loadMetroEnv, STATE_DIR, requireConfiguredPlatform } from './paths.js';
 import { errMsg, log } from './log.js';
 
@@ -68,11 +69,15 @@ codexRC?.start();
 
 // Per-session scope filters. When set, metro only emits / reacts to
 // inbounds matching the configured Discord thread (a thread is just a
-// channel from Discord's API perspective) or Telegram forum topic. Lets
-// you run multiple metros against the same bot, each scoped to its own
-// agent session. METRO_TELEGRAM_TOPIC format: `<chat_id>:<topic_id>`.
-const DISCORD_FILTER = process.env.METRO_DISCORD_THREAD ?? null;
-const TELEGRAM_FILTER = (() => {
+// channel from Discord's API perspective) or Telegram forum topic.
+//
+// Decision tree per platform:
+//   1. METRO_DISCORD_THREAD / METRO_TELEGRAM_TOPIC explicit  → use as-is
+//   2. METRO_SESSION_NAME + METRO_*_PARENT_*                 → auto-create
+//      (cached at $STATE_DIR/scopes.json, reused across runs)
+//   3. neither                                                → no scope filter
+let DISCORD_FILTER = process.env.METRO_DISCORD_THREAD ?? null;
+let TELEGRAM_FILTER = (() => {
   const raw = process.env.METRO_TELEGRAM_TOPIC;
   if (!raw) return null;
   const [chat, topic] = raw.split(':');
@@ -83,6 +88,26 @@ const TELEGRAM_FILTER = (() => {
   }
   return { chatId: chat, topicId };
 })();
+
+const sessionName = process.env.METRO_SESSION_NAME;
+if (sessionName) {
+  if (!DISCORD_FILTER && process.env.METRO_DISCORD_PARENT_CHANNEL) {
+    DISCORD_FILTER = await resolveDiscordScope(sessionName, process.env.METRO_DISCORD_PARENT_CHANNEL, discord.createThread);
+  }
+  if (!TELEGRAM_FILTER && process.env.METRO_TELEGRAM_PARENT_CHAT) {
+    const scope = await resolveTelegramScope(
+      sessionName,
+      process.env.METRO_TELEGRAM_PARENT_CHAT,
+      (chat, name) => telegram.createForumTopic(chat, name),
+    );
+    TELEGRAM_FILTER = { chatId: scope.chat, topicId: scope.topic };
+    // Mirror into env so cli.ts outbounds (`metro reply`, etc.) auto-thread
+    // into the same topic without each agent invocation needing the
+    // METRO_TELEGRAM_TOPIC env var set explicitly.
+    process.env.METRO_TELEGRAM_TOPIC = `${scope.chat}:${scope.topic}`;
+  }
+}
+
 if (DISCORD_FILTER) log.info({ thread: DISCORD_FILTER }, 'discord scope filter active');
 if (TELEGRAM_FILTER) log.info(TELEGRAM_FILTER, 'telegram scope filter active');
 

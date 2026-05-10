@@ -36,19 +36,30 @@ If `metro` exits immediately or the daemon isn't on 8421, ask the user. (`codex 
 
 ### Per-session scoping (multi-session, opt-in)
 
-If the user wants multiple agent sessions to share one bot, scope each metro to its own Discord thread and/or Telegram forum topic:
+If the user wants multiple agent sessions to share one bot, scope each metro to its own Discord thread and/or Telegram forum topic. Metro can auto-create the thread/topic on first launch — preferred over the user copy-pasting ids manually.
+
+**Auto-create (recommended).** Pick a stable session name and tell metro where to create:
 
 ```
-METRO_DISCORD_THREAD=<thread_channel_id> metro          # Discord-scoped
-METRO_TELEGRAM_TOPIC=<chat_id>:<topic_id> metro         # Telegram-scoped
+METRO_SESSION_NAME=<name> \
+METRO_DISCORD_PARENT_CHANNEL=<channel_id> \
+METRO_TELEGRAM_PARENT_CHAT=<supergroup_id> \
+metro
 ```
 
-Inbounds outside the scope are dropped silently — only messages in the configured thread/topic reach this session. Outbound `metro reply / edit / send` calls automatically thread back into the same Telegram topic, so replies land where the user expects.
+First run creates the thread/topic; subsequent runs with the same `METRO_SESSION_NAME` reuse it (cached at `$METRO_STATE_DIR/scopes.json`). The agent's `metro reply / edit / send` outbounds automatically thread back into the same Telegram topic.
 
-If you launch metro on the user's behalf and they've asked for scoped behavior, prepend the env var to the shell command. Example for a Codex session in a Telegram topic:
+**Manual (if user already created the thread/topic).** Use the explicit ids and skip auto-create:
 
 ```
-shell(command: "METRO_CODEX_RC=ws://127.0.0.1:8421 METRO_TELEGRAM_TOPIC=-1001234567890:42 metro", run_in_background: true)
+METRO_DISCORD_THREAD=<thread_channel_id> metro
+METRO_TELEGRAM_TOPIC=<chat_id>:<topic_id> metro
+```
+
+When you launch metro on the user's behalf, prepend whichever env vars they've asked for. Example for a Codex session that auto-creates per-session scopes:
+
+```
+shell(command: "METRO_CODEX_RC=ws://127.0.0.1:8421 METRO_SESSION_NAME=frontend METRO_DISCORD_PARENT_CHANNEL=… METRO_TELEGRAM_PARENT_CHAT=… metro", run_in_background: true)
 ```
 
 ### Diagnostics

@@ -76,14 +76,20 @@ Codex push (opt-in):
 
 Per-session scope (multi-session, opt-in):
   Run multiple metros against the same bot, each scoped to its own agent
-  session via a Discord thread or Telegram forum topic.
+  session via a Discord thread or Telegram forum topic. Inbounds outside
+  the scope are dropped silently; outbound replies auto-thread back into
+  the same topic so the user sees the agent's reply where they expected it.
 
-    METRO_DISCORD_THREAD=<channel_id>           Discord: only the matching thread
-    METRO_TELEGRAM_TOPIC=<chat_id>:<topic_id>   Telegram: only the matching topic
+  Auto-create (recommended):
+    METRO_SESSION_NAME=<name>                  Names the scope; cached so
+                                               re-running reuses the same
+                                               thread/topic.
+    METRO_DISCORD_PARENT_CHANNEL=<channel_id>  Where the bot creates the thread.
+    METRO_TELEGRAM_PARENT_CHAT=<chat_id>       Topics-enabled supergroup id.
 
-  Inbounds outside the scope are dropped silently. Outbound replies/edits/
-  sends auto-thread back into the same topic (Telegram's General thread is
-  bypassed) so the user sees the agent's reply where they expected it.
+  Manual (use existing thread/topic ids):
+    METRO_DISCORD_THREAD=<channel_id>          Use this thread, skip auto-create.
+    METRO_TELEGRAM_TOPIC=<chat_id>:<topic_id>  Use this topic, skip auto-create.
 `;
 
 // ---------------- shared types & helpers -----------------------------------
