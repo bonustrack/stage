@@ -66,7 +66,7 @@ METRO_TELEGRAM_PARENT_CHAT=<supergroup_id> \
 metro
 ```
 
-**Discord:** with `METRO_SESSION_NAME` set, metro waits for you to @-mention the bot in any channel of your server. First mention becomes the trigger — metro creates a thread anchored to that message, posts *"Session 'frontend' ready — message me here"*, and locks the scope. Type in the thread; agent responds.
+**Discord:** with `METRO_SESSION_NAME` set, metro waits for you to @-mention the bot in any channel of your server. First mention becomes the trigger — metro creates a thread anchored to that message, posts *"Session 'frontend' ready — message me here"*, and locks the scope. Once the thread exists, messages inside it flow without needing an @-mention; the conversation is already addressed to the bot.
 
 **Telegram:** on first launch metro calls `createForumTopic` in the parent supergroup, named after the session. Subsequent launches with the same name reuse the same topic.
 

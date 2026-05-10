@@ -212,7 +212,9 @@ if (platforms.discord) {
   };
 
   discord.onInbound(async m => {
-    // If we already have a scope, filter strictly to it.
+    // Scoped: messages inside the scoped thread pass without needing an
+    // @-mention (you're already in the conversation). Everything else
+    // outside the scope is dropped silently.
     if (DISCORD_FILTER) {
       if (m.channel_id !== DISCORD_FILTER) {
         log.debug({ channel: m.channel_id }, 'discord inbound rejected by thread filter');
@@ -222,10 +224,9 @@ if (platforms.discord) {
       return;
     }
 
-    // No scope yet. If we're awaiting an @-mention bootstrap, this guild
-    // mention is the trigger: create a thread anchored to it, cache the
-    // id, post a "ready" message in the thread, and lock the scope.
-    if (awaitingDiscordMention && sessionName && m.in_guild && !bootstrappingDiscord) {
+    // No scope yet. An @-mention in a guild is the trigger to bootstrap
+    // a thread anchored to that message (if we have a session name).
+    if (awaitingDiscordMention && sessionName && m.in_guild && m.mentions_bot && !bootstrappingDiscord) {
       bootstrappingDiscord = true;
       try {
         const threadId = await discord.createThreadFromMessage(m.channel_id, m.message_id, sessionName);
@@ -247,7 +248,14 @@ if (platforms.discord) {
       return;
     }
 
-    // No session config and no scope → emit unfiltered (today's behavior).
+    // No session config and no scope. Preserve the pre-multi-session
+    // gateway gate: in guilds, only forward messages where the bot is
+    // @-mentioned (so the bot doesn't echo every guild message). DMs
+    // always pass.
+    if (m.in_guild && !m.mentions_bot) {
+      log.debug({ channel: m.channel_id }, 'discord guild inbound dropped — no scope, no @-mention');
+      return;
+    }
     processInbound(m);
   });
 }

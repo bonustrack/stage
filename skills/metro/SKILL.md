@@ -80,7 +80,7 @@ Each `metro` line on stdout:
 
 `text` may include placeholders for non-text content: `[image]`, `[voice]`, `[audio]`, `[file: <name>]`. Voice/audio are opaque markers — you can't download them.
 
-Discord guild messages preserve the user's raw mention markup, including the bot's own `<@bot_id>` (the gate that made the message visible). Treat the bot's own mention as metadata; other users' mentions (`<@some_other_id>`) can be addressee context. Reply normally — the message is addressed to you regardless of where the mention sits.
+Discord guild messages preserve the user's raw mention markup, e.g. `<@bot_id>`. When the message is inside the session's scoped thread, no @-mention is required — the conversation is already addressed to you, so plain text flows through. Outside the scoped thread (or before one is established), an @-mention of the bot is required to wake it up. Treat the bot's own mention as metadata when present; other users' mentions (`<@some_other_id>`) can be addressee context.
 
 ## Required flow on every inbound
 

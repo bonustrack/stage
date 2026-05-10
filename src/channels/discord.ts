@@ -63,6 +63,8 @@ export type InboundMessage = {
   text: string;
   /** True when the message is in a guild text channel or thread. False for DMs. */
   in_guild: boolean;
+  /** True when the bot user was @-mentioned in this message. */
+  mentions_bot: boolean;
 };
 
 let onInboundHandler: (msg: InboundMessage) => void = () => {};
@@ -81,13 +83,10 @@ export async function startGateway(): Promise<void> {
 
   c.on(Events.MessageCreate, m => {
     if (m.author.bot) return;
-    // Guild messages: only forward when the bot is mentioned. DMs always pass.
-    // The bot's own @-mention is preserved in `m.content` — stripping it would
-    // lose mid-sentence position ("Wdyt @Metro is this good?" → "Wdyt is this
-    // good?") and silently drop bare-mention pings. The agent recognizes
-    // `<@bot_id>` and acts on the request as a whole.
-    if (m.guildId && c.user && !m.mentions.has(c.user.id)) return;
-
+    // Forward every human message; the routing decision (DM vs guild,
+    // @-mention vs not, scoped-thread vs not) lives in tail.ts where the
+    // scope state is. The bot's own @-mention is preserved in `m.content`
+    // so the agent can see it as addressee context.
     const tags = [...m.attachments.values()]
       .map(a => {
         if (a.contentType?.startsWith('image/')) return '[image]';
@@ -97,7 +96,13 @@ export async function startGateway(): Promise<void> {
       .join(' ');
     const text = [m.content, tags].filter(Boolean).join(' ').trim();
     if (!text) return;
-    onInboundHandler({ channel_id: m.channelId, message_id: m.id, text, in_guild: !!m.guildId });
+    onInboundHandler({
+      channel_id: m.channelId,
+      message_id: m.id,
+      text,
+      in_guild: !!m.guildId,
+      mentions_bot: c.user ? m.mentions.has(c.user.id) : false,
+    });
   });
   c.on(Events.Error, err => log.error({ err: errMsg(err) }, 'discord error'));
 
