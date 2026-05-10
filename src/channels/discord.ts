@@ -1,11 +1,49 @@
-import { Client, Events, GatewayIntentBits, Partials, type Message } from 'discord.js';
+import { Client, Events, GatewayIntentBits, Partials } from 'discord.js';
 import { errMsg, log } from '../log.js';
+
+// Receive path: discord.js gateway, used by tail.ts only.
+// Send path: raw REST against discord.com/api — no gateway login required,
+// so cli.ts subcommands stay one-shot and fast.
+
+const API_BASE = 'https://discord.com/api/v10';
+
+function token(): string {
+  const t = process.env.DISCORD_BOT_TOKEN;
+  if (!t) throw new Error('DISCORD_BOT_TOKEN is not set');
+  return t;
+}
+
+async function rest<T = unknown>(
+  method: string,
+  path: string,
+  body?: unknown,
+  timeoutMs = 30_000,
+): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method,
+    headers: {
+      'Authorization': `Bot ${token()}`,
+      'User-Agent': 'metro (https://github.com/bonustrack/metro, dev)',
+      ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+    },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`discord ${method} ${path}: ${res.status} ${text}`);
+  }
+  // 204 No Content for typing/reactions/clear.
+  if (res.status === 204) return undefined as T;
+  return (await res.json()) as T;
+}
+
+// ---------- Receive path (gateway, discord.js) -----------------------------
 
 let client: Client | null = null;
 
 function getClient(): Client {
   if (client) return client;
-  if (!process.env.DISCORD_BOT_TOKEN) throw new Error('DISCORD_BOT_TOKEN is not set');
   client = new Client({
     intents: [
       GatewayIntentBits.DirectMessages,
@@ -19,23 +57,17 @@ function getClient(): Client {
   return client;
 }
 
-async function getTextChannel(channelId: string) {
-  const channel = await getClient().channels.fetch(channelId);
-  if (!channel?.isTextBased() || !('messages' in channel)) {
-    throw new Error(`discord: channel ${channelId} is not text-capable`);
-  }
-  return channel;
-}
-
-async function fetchMessage(channelId: string, messageId: string): Promise<Message> {
-  return (await getTextChannel(channelId)).messages.fetch(messageId);
-}
-
 export type InboundMessage = { channel_id: string; message_id: string; text: string };
 
 let onInboundHandler: (msg: InboundMessage) => void = () => {};
 export function onInbound(handler: (msg: InboundMessage) => void): void {
   onInboundHandler = handler;
+}
+
+export async function shutdownGateway(): Promise<void> {
+  if (!client) return;
+  await client.destroy();
+  client = null;
 }
 
 export async function startGateway(): Promise<void> {
@@ -44,6 +76,10 @@ export async function startGateway(): Promise<void> {
   c.on(Events.MessageCreate, m => {
     if (m.author.bot) return;
     // Guild messages: only forward when the bot is mentioned. DMs always pass.
+    // The bot's own @-mention is preserved in `m.content` — stripping it would
+    // lose mid-sentence position ("Wdyt @Metro is this good?" → "Wdyt is this
+    // good?") and silently drop bare-mention pings. The agent recognizes
+    // `<@bot_id>` and acts on the request as a whole.
     if (m.guildId && c.user && !m.mentions.has(c.user.id)) return;
 
     const tags = [...m.attachments.values()]
@@ -64,36 +100,53 @@ export async function startGateway(): Promise<void> {
 }
 
 export async function getMe(): Promise<{ username: string }> {
-  const c = getClient();
-  if (!c.user) throw new Error('discord: gateway not ready');
-  return { username: c.user.username };
+  const me = await rest<{ username: string }>('GET', '/users/@me');
+  return { username: me.username };
 }
 
-export async function replyToMessage(channelId: string, messageId: string, text: string): Promise<void> {
-  await (await fetchMessage(channelId, messageId)).reply(text);
+// ---------- Send path (REST, no gateway) -----------------------------------
+
+type RawMessage = {
+  id: string;
+  content: string;
+  author: { username: string };
+  timestamp: string;
+  attachments: Array<{ url: string; content_type?: string }>;
+  reactions?: Array<{ emoji: { name: string | null; id: string | null }; me: boolean }>;
+};
+
+export async function sendMessage(channelId: string, text: string): Promise<string> {
+  const sent = await rest<{ id: string }>('POST', `/channels/${channelId}/messages`, { content: text });
+  return sent.id;
 }
 
-export async function editMessage(channelId: string, messageId: string, text: string): Promise<void> {
-  await (await fetchMessage(channelId, messageId)).edit(text);
+export async function replyToMessage(channelId: string, messageId: string, text: string): Promise<string> {
+  const sent = await rest<{ id: string }>('POST', `/channels/${channelId}/messages`, {
+    content: text,
+    message_reference: { message_id: messageId, fail_if_not_exists: false },
+  });
+  return sent.id;
+}
+
+export async function editMessage(channelId: string, messageId: string, text: string): Promise<string> {
+  const sent = await rest<{ id: string }>('PATCH', `/channels/${channelId}/messages/${messageId}`, { content: text });
+  return sent.id;
 }
 
 export async function sendTyping(channelId: string): Promise<void> {
-  const channel = await getClient().channels.fetch(channelId);
-  if (!channel?.isTextBased() || !('sendTyping' in channel)) return;
-  await channel.sendTyping();
+  await rest('POST', `/channels/${channelId}/typing`);
 }
 
 export async function setReaction(channelId: string, messageId: string, emoji: string): Promise<void> {
-  const target = await fetchMessage(channelId, messageId);
   if (emoji) {
-    await target.react(emoji);
+    await rest('PUT', `/channels/${channelId}/messages/${messageId}/reactions/${encodeURIComponent(emoji)}/@me`);
     return;
   }
   // Clear only the bot's own reactions (matches Telegram's clear semantics).
-  const me = getClient().user;
-  if (!me) return;
-  for (const r of target.reactions.cache.values()) {
-    if (r.users.cache.has(me.id)) await r.users.remove(me.id);
+  const msg = await rest<RawMessage>('GET', `/channels/${channelId}/messages/${messageId}`);
+  for (const r of msg.reactions ?? []) {
+    if (!r.me || !r.emoji.name) continue;
+    await rest('DELETE', `/channels/${channelId}/messages/${messageId}/reactions/${encodeURIComponent(r.emoji.name)}/@me`);
   }
 }
 
@@ -101,13 +154,13 @@ export async function fetchAttachments(
   channelId: string,
   messageId: string,
 ): Promise<Array<{ data: string; mime: string }>> {
-  const target = await fetchMessage(channelId, messageId);
+  const msg = await rest<RawMessage>('GET', `/channels/${channelId}/messages/${messageId}`);
   const out: Array<{ data: string; mime: string }> = [];
-  for (const a of target.attachments.values()) {
-    if (!a.contentType?.startsWith('image/')) continue;
-    const res = await fetch(a.url);
+  for (const a of msg.attachments) {
+    if (!a.content_type?.startsWith('image/')) continue;
+    const res = await fetch(a.url, { signal: AbortSignal.timeout(30_000) });
     if (!res.ok) throw new Error(`discord: download ${a.url}: ${res.status}`);
-    out.push({ data: Buffer.from(await res.arrayBuffer()).toString('base64'), mime: a.contentType });
+    out.push({ data: Buffer.from(await res.arrayBuffer()).toString('base64'), mime: a.content_type });
   }
   return out;
 }
@@ -116,13 +169,13 @@ export async function fetchRecentMessages(
   channelId: string,
   limit: number,
 ): Promise<Array<{ message_id: string; author: string; text: string; timestamp: string }>> {
-  const channel = await getTextChannel(channelId);
-  const msgs = await channel.messages.fetch({ limit: Math.min(Math.max(limit, 1), 100) });
+  const n = Math.min(Math.max(limit, 1), 100);
+  const msgs = await rest<RawMessage[]>('GET', `/channels/${channelId}/messages?limit=${n}`);
   // Discord returns newest-first; reverse for chronological.
-  return [...msgs.values()].reverse().map(m => ({
+  return [...msgs].reverse().map(m => ({
     message_id: m.id,
     author: m.author.username,
     text: m.content,
-    timestamp: m.createdAt.toISOString(),
+    timestamp: m.timestamp,
   }));
 }
