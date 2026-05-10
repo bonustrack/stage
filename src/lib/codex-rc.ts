@@ -28,6 +28,10 @@ type Inbound = string;
 
 const RECONNECT_DELAY_MS = 2_000;
 const MAX_QUEUE = 100;
+// Backstop: if `turn/completed` never arrives (the daemon doesn't broadcast
+// it to all clients, or we miss it for any reason), unstick after this long.
+// Generous enough that any normal turn finishes well within it.
+const TURN_TIMEOUT_MS = 120_000;
 
 type Endpoint = { kind: 'tcp'; url: string } | { kind: 'unix'; path: string };
 
@@ -71,6 +75,7 @@ export class CodexRC {
   private connected = false;
   private connecting = false;
   private turnInFlight = false;
+  private turnTimeout: ReturnType<typeof setTimeout> | null = null;
   private closed = false;
   private endpoint: Endpoint;
   private displayUrl: string;
@@ -154,6 +159,8 @@ export class CodexRC {
       return;
     }
 
+    log.debug({ id: msg.id, method: msg.method, hasError: !!msg.error }, 'codex-rc ← message');
+
     if (msg.id !== undefined && this.pending.has(msg.id)) {
       const p = this.pending.get(msg.id)!;
       this.pending.delete(msg.id);
@@ -170,10 +177,16 @@ export class CodexRC {
         void this.drainQueue();
       }
     } else if (msg.method === 'turn/completed') {
+      log.debug({ thread: this.threadId, queue: this.queue.length }, 'codex-rc turn/completed; draining');
+      this.clearTurnTimeout();
       this.turnInFlight = false;
       void this.drainQueue();
     } else if (msg.method === 'turn/started') {
+      log.debug({ thread: this.threadId }, 'codex-rc turn/started');
       this.turnInFlight = true;
+    } else if (msg.method === 'thread/closed' || msg.method === 'thread/archived') {
+      log.warn({ method: msg.method, params: msg.params }, 'codex-rc thread closed/archived; clearing thread reference');
+      this.threadId = null;
     }
   }
 
@@ -197,6 +210,8 @@ export class CodexRC {
     if (this.queue.length === 0) return;
     const line = this.queue[0];
     this.turnInFlight = true;
+    this.armTurnTimeout();
+    log.debug({ thread: this.threadId, queue: this.queue.length }, 'codex-rc → turn/start');
     try {
       await this.call('turn/start', {
         threadId: this.threadId,
@@ -205,7 +220,29 @@ export class CodexRC {
       this.queue.shift();
     } catch (err) {
       log.warn({ err: errMsg(err) }, 'codex-rc turn/start failed; will retry');
+      this.clearTurnTimeout();
       this.turnInFlight = false;
+      setTimeout(() => void this.drainQueue(), 1_000);
+    }
+  }
+
+  // If `turn/completed` never arrives (the daemon doesn't broadcast it to
+  // metro's connection, or we miss it for any reason), unstick after the
+  // backstop so subsequent inbounds don't queue forever.
+  private armTurnTimeout(): void {
+    this.clearTurnTimeout();
+    this.turnTimeout = setTimeout(() => {
+      log.warn({ thread: this.threadId, queue: this.queue.length }, `codex-rc turn/completed not received within ${TURN_TIMEOUT_MS}ms; force-clearing single-flight gate`);
+      this.turnInFlight = false;
+      this.turnTimeout = null;
+      void this.drainQueue();
+    }, TURN_TIMEOUT_MS);
+  }
+
+  private clearTurnTimeout(): void {
+    if (this.turnTimeout) {
+      clearTimeout(this.turnTimeout);
+      this.turnTimeout = null;
     }
   }
 
