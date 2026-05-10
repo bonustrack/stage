@@ -17,6 +17,15 @@ const CONFIG_DIR =
   join(process.env.XDG_CONFIG_HOME || join(homedir(), '.config'), 'metro');
 export const CONFIG_ENV_FILE = join(CONFIG_DIR, '.env');
 
+// Default codex app-server WebSocket. The TUI's `--remote <ADDR>` flag
+// only accepts ws:// (no UDS), so this is the canonical URL we recommend
+// users align on across the daemon, the TUI, and metro:
+//   codex app-server --listen ws://127.0.0.1:8421
+//   codex --remote ws://127.0.0.1:8421
+//   METRO_CODEX_RC=ws://127.0.0.1:8421 metro
+// Override via METRO_CODEX_RC if a different port/host is needed.
+export const DEFAULT_CODEX_RC_URL = 'ws://127.0.0.1:8421';
+
 // Skill install destinations. Same SKILL.md content lands in both — the
 // agent that's actually running picks up the file from its conventional
 // path. Claude Code: ~/.claude/skills/metro/. Codex: ~/.agents/skills/metro/.

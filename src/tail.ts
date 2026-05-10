@@ -9,10 +9,12 @@
 
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import pkg from '../package.json' with { type: 'json' };
 import * as discord from './channels/discord.js';
 import * as telegram from './channels/telegram.js';
 import { tg } from './channels/telegram.js';
 import type { Platform } from './lib/address.js';
+import { CodexRC } from './lib/codex-rc.js';
 import { configuredPlatforms, loadMetroEnv, STATE_DIR, requireConfiguredPlatform } from './paths.js';
 import { errMsg, log } from './log.js';
 
@@ -54,7 +56,21 @@ const TYPING_MAX_MS = 60_000;
 
 mkdirSync(TYPING_DIR, { recursive: true });
 
-const emit = (line: Record<string, unknown>) => process.stdout.write(`${JSON.stringify(line)}\n`);
+// Codex push channel. Set METRO_CODEX_RC to the codex app-server URL
+// (typically `ws://127.0.0.1:8421` matching `codex app-server --listen
+// ws://127.0.0.1:8421`) to inject each inbound into the agent's history
+// via JSON-RPC `turn/start`. Codex's TUI `--remote` flag only accepts
+// ws://, so the daemon, the TUI, and metro must all share the same URL.
+// Unset → metro behaves exactly as before; stdout emit always runs first
+// so Claude Code Monitor users are unaffected.
+const codexRC = process.env.METRO_CODEX_RC ? new CodexRC(process.env.METRO_CODEX_RC, pkg.version) : null;
+codexRC?.start();
+
+const emit = (line: Record<string, unknown>) => {
+  const json = JSON.stringify(line);
+  process.stdout.write(`${json}\n`);
+  codexRC?.push(json);
+};
 
 type TypingEntry = { platform: Platform; chat: string; started: number };
 const typingActive = new Map<string, TypingEntry>();
@@ -136,6 +152,7 @@ let shuttingDown = false;
 async function shutdown(): Promise<void> {
   if (shuttingDown) return;
   shuttingDown = true;
+  codexRC?.stop();
   if (platforms.discord) {
     await discord.shutdownGateway().catch(err => log.warn({ err: errMsg(err) }, 'discord shutdown failed'));
   }

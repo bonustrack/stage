@@ -39,7 +39,7 @@ Usage:
 setup verbs:
   metro setup                                 Status: tokens, skills, what's next.
   metro setup telegram <token>                Save TELEGRAM_BOT_TOKEN (validated via getMe; --no-validate skips).
-  metro setup discord  <token>                Save DISCORD_BOT_TOKEN (validated via getMe; --no-validate skips).
+  metro setup discord <token>                 Save DISCORD_BOT_TOKEN (validated via getMe; --no-validate skips).
   metro setup clear [telegram|discord|all]    Remove tokens.
   metro setup skill [--project] [--clear]     Install (or remove) the agent skill.
 
@@ -61,6 +61,18 @@ Exit codes:
   1  usage error (bad flags, unknown subcommand)
   2  configuration error (no tokens — run \`metro setup\`)
   3  upstream error (rate limit, auth, network — retry once, then surface)
+
+Codex push (opt-in):
+  Set METRO_CODEX_RC to the codex app-server URL — metro will push each
+  inbound into the agent's history via JSON-RPC \`turn/start\`, the Codex
+  equivalent of Claude Code's Monitor.
+
+  Three terminals share the same URL (codex 0.130's TUI --remote only
+  accepts ws://):
+
+    codex app-server --listen ws://127.0.0.1:8421       # daemon
+    METRO_CODEX_RC=ws://127.0.0.1:8421 metro            # bridge
+    codex --remote ws://127.0.0.1:8421                  # TUI
 `;
 
 // ---------------- shared types & helpers -----------------------------------
@@ -279,8 +291,8 @@ async function cmdSetupStatus(flags: Flags): Promise<void> {
   if (!tg && !dc) {
     process.stdout.write(
       'Get started:\n' +
-        '  1. metro setup telegram <token>     # https://t.me/BotFather\n' +
-        '     metro setup discord  <token>    # https://discord.com/developers/applications\n' +
+        '  1. metro setup telegram <token>    # https://t.me/BotFather\n' +
+        '     metro setup discord <token>     # https://discord.com/developers/applications\n' +
         '  2. metro setup skill                # auto-onboard your agent (writes to both runtimes)\n' +
         '  3. metro doctor                     # verify everything works\n' +
         '  4. metro                            # start the inbound stream\n',
