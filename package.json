@@ -1,7 +1,7 @@
 {
   "name": "@stage-labs/metro",
   "version": "0.1.0-beta.3",
-  "description": "Chat with your Claude Code or Codex agent over Telegram and Discord. Ultra-lightweight: ~1.2K lines of TypeScript, pure CLI, no hosted infra.",
+  "description": "Chat with your Claude Code or Codex agent over Telegram and Discord. ~1.8K lines of TypeScript, pure CLI, no hosted infra.",
   "license": "MIT",
   "repository": {
     "type": "git",

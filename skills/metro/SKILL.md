@@ -5,7 +5,7 @@ description: Handle Telegram/Discord messages from `metro` for this agent sessio
 
 # Metro — handling the Telegram & Discord bridge
 
-Metro is a CLI bridge between this agent session and Telegram/Discord. Each inbound message arrives as a JSON line; you act on it via `metro <subcommand>`. The launch mechanics differ between Claude Code (you launch metro via shell) and Codex (the user launches metro outside the agent and the daemon pushes turns to you).
+Metro is a CLI bridge between this agent session and Telegram/Discord. Each inbound message arrives as a JSON line; you act on it via `metro <subcommand>`. On both Claude Code and Codex you launch metro yourself via the shell tool — the difference is the transport: Claude Code attaches `Monitor` to metro's stdout, Codex receives pushed turns over a JSON-RPC daemon (so stdout-watching isn't needed).
 
 ## Starting the bridge
 
@@ -47,7 +47,7 @@ metro
 ```
 
 - **Telegram:** on first launch metro creates a forum topic in the supergroup, named after the session.
-- **Discord:** metro waits for the user to @-mention the bot in any channel. First mention triggers thread creation anchored to that message. The bot replies "Session ready — message me here" in the new thread, and the user continues the conversation there. (No `METRO_DISCORD_PARENT_CHANNEL` to configure — the user picks the channel by @-mentioning.)
+- **Discord:** metro waits for the user to @-mention the bot in any channel. First mention triggers thread creation anchored to that message; the bot replies "Session ready — message me here" in the new thread, and the user continues the conversation there. The user picks the channel by where they @-mention — no parent-channel config needed.
 
 Subsequent runs with the same `METRO_SESSION_NAME` reuse the cached thread/topic (at `$METRO_STATE_DIR/scopes.json`). The agent's `metro reply / edit / send` outbounds automatically thread back into the same Telegram topic.
 

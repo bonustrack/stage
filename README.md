@@ -72,7 +72,7 @@ metro
 
 Re-running with the same session name reuses the cached scope on both platforms. Two different session names → two separate scopes.
 
-You can opt into just one platform — set only `METRO_TELEGRAM_PARENT_CHAT` for Telegram-only, or set neither for Discord-only (the @-mention path is automatic when `METRO_SESSION_NAME` is set).
+You can scope just one platform — `METRO_SESSION_NAME` alone is enough for Discord-only (the @-mention path is automatic). Add `METRO_TELEGRAM_PARENT_CHAT` to also scope Telegram.
 
 ### Manual scoping (skip auto-create)
 
