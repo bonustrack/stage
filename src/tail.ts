@@ -224,8 +224,17 @@ if (platforms.discord) {
       return;
     }
 
-    // No scope yet. An @-mention in a guild is the trigger to bootstrap
-    // a thread anchored to that message (if we have a session name).
+    // No scope yet. An @-mention in a guild is the trigger: anchor a
+    // thread to that message and process the user's question as the
+    // first inbound so the agent's reply IS the answer (not a separate
+    // "session ready" placeholder followed by a re-typed question).
+    //
+    // Mechanic: the @-mention message lives in the parent channel, so
+    // it isn't directly addressable via the thread's API path for
+    // reactions/replies. We post a quote of the user's text inside the
+    // new thread (`> <user text>`), and use *that* bot-authored quote
+    // as the inbound's anchor. The agent reacts/replies against it
+    // normally, all inside the thread.
     if (awaitingDiscordMention && sessionName && m.in_guild && m.mentions_bot && !bootstrappingDiscord) {
       bootstrappingDiscord = true;
       try {
@@ -234,17 +243,13 @@ if (platforms.discord) {
         awaitingDiscordMention = false;
         setDiscordScope(sessionName, threadId);
         log.info({ thread: threadId, session: sessionName }, 'discord thread created from @-mention');
-        await discord
-          .sendMessage(threadId, `Session "${sessionName}" ready — message me here.`)
-          .catch(err => log.warn({ err: errMsg(err) }, 'discord welcome message failed'));
+        const botQuoteId = await discord.sendMessage(threadId, `> ${m.text}`);
+        processInbound({ channel_id: threadId, message_id: botQuoteId, text: m.text });
       } catch (err) {
         log.warn({ err: errMsg(err) }, 'discord thread bootstrap failed; staying unscoped');
       } finally {
         bootstrappingDiscord = false;
       }
-      // Don't forward the @-mention itself as an inbound — it's a
-      // wake-up signal, not the conversation. The user follows up in
-      // the new thread.
       return;
     }
 

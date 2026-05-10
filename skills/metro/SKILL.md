@@ -47,7 +47,7 @@ metro
 ```
 
 - **Telegram:** on first launch metro creates a forum topic in the supergroup, named after the session.
-- **Discord:** metro waits for the user to @-mention the bot in any channel. First mention triggers thread creation anchored to that message; the bot replies "Session ready — message me here" in the new thread, and the user continues the conversation there. The user picks the channel by where they @-mention — no parent-channel config needed.
+- **Discord:** metro waits for the user to @-mention the bot in any channel. The first @-mention is the user's actual first question — metro creates a thread anchored to it, quotes the user's text in the thread, and forwards the question as your first inbound. Reply normally; your response IS the answer. (Subsequent messages in the thread don't need @-mentions.) The user picks the channel by where they @-mention — no parent-channel config needed.
 
 Subsequent runs with the same `METRO_SESSION_NAME` reuse the cached thread/topic (at `$METRO_STATE_DIR/scopes.json`). The agent's `metro reply / edit / send` outbounds automatically thread back into the same Telegram topic.
 
