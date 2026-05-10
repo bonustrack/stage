@@ -29,20 +29,20 @@ Then DM your bot. The bundled skill auto-triggers — the agent launches metro v
 
 ### Run with Codex
 
-Codex's `unified_exec` is poll-only ([#4751](https://github.com/openai/codex/issues/4751)) — there's no Monitor equivalent. Metro instead pushes each inbound into the agent's history via JSON-RPC. Three terminals share one URL (the TUI's `--remote` flag only accepts `ws://`):
+Codex's `unified_exec` is poll-only ([#4751](https://github.com/openai/codex/issues/4751)) — there's no Monitor equivalent. Metro instead pushes each inbound into the agent's history via JSON-RPC. Two terminals plus a prompt — the TUI's `--remote` flag only accepts `ws://`, so daemon and TUI share one URL:
 
 ```bash
-# Terminal 1 — daemon
+# Terminal 1 — daemon (must be running first)
 codex app-server --listen ws://127.0.0.1:8421
 
-# Terminal 2 — metro (the user runs this; the codex agent can't watch stdout itself)
-METRO_CODEX_RC=ws://127.0.0.1:8421 metro
-
-# Terminal 3 — TUI attached to the daemon
+# Terminal 2 — TUI attached to the daemon
 codex --remote ws://127.0.0.1:8421
+> Run metro in the background.
 ```
 
-Then DM your bot. Each inbound triggers a `turn/start` on the codex thread — the agent in terminal 3 reacts on its next turn. `codex remote-control` is stdio-only (no listener), so don't use it for this flow.
+The agent launches `metro` (with `METRO_CODEX_RC=ws://127.0.0.1:8421` set) via its shell tool. Metro connects to the daemon and pushes each inbound as a `turn/start` on the active thread — the agent in terminal 2 reacts on its next turn. `codex remote-control` is stdio-only (no listener), so don't use it for this flow.
+
+Bare `codex` (no `--remote`) can't work with metro — the agent has no daemon to push to. The TUI must be attached to a running app-server.
 
 `METRO_CODEX_RC` accepts `ws://host:port` (required for use with the codex TUI) or `unix:///abs/path` (headless only — the daemon supports UDS but the TUI doesn't).
 

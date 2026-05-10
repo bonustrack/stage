@@ -9,30 +9,34 @@ Metro is a CLI bridge between this agent session and Telegram/Discord. Each inbo
 
 ## Starting the bridge
 
+When the user asks to run/start/launch metro, you launch it as a backgrounded shell command. The exact invocation depends on the runtime:
+
 ### Claude Code
 
-When the user asks to run/start/launch metro:
+```
+Bash(command: "metro", run_in_background: true)
+```
 
-1. Launch `metro` as a backgrounded Bash command (`run_in_background: true`).
-2. Attach `Monitor` to its stdout. Each stdout line is one inbound JSON event.
+Then attach `Monitor` to its stdout. Each stdout line is one inbound JSON event you act on directly.
 
 ### Codex
 
-You don't launch metro — the user starts it outside this session. By the time you're seeing this skill load, metro is already running and pushing inbounds via JSON-RPC `turn/start`, which appear in your context as user input on the next turn.
-
-For reference, the user has these three terminals running:
-
 ```
-codex app-server --listen ws://127.0.0.1:8421       # daemon
-METRO_CODEX_RC=ws://127.0.0.1:8421 metro            # bridge
-codex --remote ws://127.0.0.1:8421                  # this TUI
+shell(command: "METRO_CODEX_RC=ws://127.0.0.1:8421 metro", run_in_background: true)
 ```
 
-If inbounds aren't arriving, ask the user to confirm all three are up (`codex remote-control` is stdio-only and doesn't work for this flow — they must use `codex app-server --listen ws://…`).
+Don't watch its stdout — Codex has no Monitor equivalent. Instead, metro pushes each inbound into your thread via JSON-RPC `turn/start`, so events arrive as user input on your next turn. The user must have a daemon and the TUI running for this to work — refer them to:
 
-### Either runtime — diagnostics
+```
+codex app-server --listen ws://127.0.0.1:8421       # daemon (terminal 1)
+codex --remote ws://127.0.0.1:8421                  # TUI (this session — terminal 2)
+```
 
-If something seems off, run `metro doctor`. Common causes: missing tokens (`metro setup telegram <token>` / `metro setup discord <token>`), Discord Message Content Intent not toggled, stale lockfile. On Codex, also: `METRO_CODEX_RC` not set, app-server not listening on that URL, or the TUI not attached via `--remote`.
+If `metro` exits immediately or the daemon isn't on 8421, ask the user. (`codex remote-control` is stdio-only and doesn't work for this flow.)
+
+### Diagnostics
+
+If something seems off, run `metro doctor`. Common causes: missing tokens (`metro setup telegram <token>` / `metro setup discord <token>`), Discord Message Content Intent not toggled, stale lockfile. On Codex, also: app-server not listening on the expected URL, or the TUI not attached via `--remote`.
 
 ## Inbound shape
 
