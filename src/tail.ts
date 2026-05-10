@@ -127,9 +127,21 @@ if (platforms.discord) {
   });
 }
 
-// process.on('exit', releaseLock) above runs whenever process.exit is called.
-const exit = () => process.exit(0);
-process.stdin.on('end', exit);
-process.stdin.on('close', exit);
-process.on('SIGINT', exit);
-process.on('SIGTERM', exit);
+// `process.on('exit', releaseLock)` above runs whenever process.exit is
+// called. We also `await discord.shutdownGateway()` here so the bot flips
+// offline immediately on SIGTERM / SIGINT instead of waiting ~45s for the
+// gateway's missed-heartbeat timeout. SIGKILL bypasses this (nothing we can
+// do); the lockfile auto-reclaims on the next start either way.
+let shuttingDown = false;
+async function shutdown(): Promise<void> {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  if (platforms.discord) {
+    await discord.shutdownGateway().catch(err => log.warn({ err: errMsg(err) }, 'discord shutdown failed'));
+  }
+  process.exit(0);
+}
+process.stdin.on('end', shutdown);
+process.stdin.on('close', shutdown);
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);

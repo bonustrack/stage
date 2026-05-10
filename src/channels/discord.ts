@@ -64,6 +64,12 @@ export function onInbound(handler: (msg: InboundMessage) => void): void {
   onInboundHandler = handler;
 }
 
+export async function shutdownGateway(): Promise<void> {
+  if (!client) return;
+  await client.destroy();
+  client = null;
+}
+
 export async function startGateway(): Promise<void> {
   const c = getClient();
 
