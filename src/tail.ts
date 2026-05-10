@@ -9,10 +9,12 @@
 
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import pkg from '../package.json' with { type: 'json' };
 import * as discord from './channels/discord.js';
 import * as telegram from './channels/telegram.js';
 import { tg } from './channels/telegram.js';
 import type { Platform } from './lib/address.js';
+import { CodexRC } from './lib/codex-rc.js';
 import { configuredPlatforms, loadMetroEnv, STATE_DIR, requireConfiguredPlatform } from './paths.js';
 import { errMsg, log } from './log.js';
 
@@ -54,7 +56,19 @@ const TYPING_MAX_MS = 60_000;
 
 mkdirSync(TYPING_DIR, { recursive: true });
 
-const emit = (line: Record<string, unknown>) => process.stdout.write(`${JSON.stringify(line)}\n`);
+// Optional Codex push channel — set METRO_CODEX_RC=ws://… (running
+// `codex app-server --listen ws://…` or `codex remote-control`) to inject
+// each metro inbound directly into the agent's history via JSON-RPC. If
+// unset or unreachable, metro behaves exactly as before; stdout always
+// fires first so Claude Code Monitor users are unaffected.
+const codexRC = process.env.METRO_CODEX_RC ? new CodexRC(process.env.METRO_CODEX_RC, pkg.version) : null;
+codexRC?.start();
+
+const emit = (line: Record<string, unknown>) => {
+  const json = JSON.stringify(line);
+  process.stdout.write(`${json}\n`);
+  codexRC?.push(json);
+};
 
 type TypingEntry = { platform: Platform; chat: string; started: number };
 const typingActive = new Map<string, TypingEntry>();
@@ -136,6 +150,7 @@ let shuttingDown = false;
 async function shutdown(): Promise<void> {
   if (shuttingDown) return;
   shuttingDown = true;
+  codexRC?.stop();
   if (platforms.discord) {
     await discord.shutdownGateway().catch(err => log.warn({ err: errMsg(err) }, 'discord shutdown failed'));
   }

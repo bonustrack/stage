@@ -9,11 +9,24 @@ Metro is a CLI bridge between this agent session and Telegram/Discord. You launc
 
 ## Starting the bridge
 
-When the user asks to run/start/launch metro (or "start the bridge"):
+When the user asks to run/start/launch metro (or "start the bridge"), the launch flow depends on which agent runtime you're in:
 
-1. Launch `metro` as a backgrounded Bash command (Claude Code: `run_in_background: true`; Codex: equivalent background spawn). Don't block on it.
-2. Attach a stdout watcher: `Monitor` on Claude Code, `unified_exec` polling on Codex. Each stdout line is one inbound JSON. Stderr is logs — don't act on it.
-3. If `metro` exits immediately or no inbounds arrive within a minute of a known DM, run `metro doctor` to diagnose. Common causes: missing tokens (tell the user to run `metro setup telegram <token>` and/or `metro setup discord <token>` in their shell), Discord Message Content Intent not toggled, or a stale lockfile from a previous session.
+### Claude Code
+
+1. Launch `metro` as a backgrounded Bash command (`run_in_background: true`).
+2. Attach `Monitor` to its stdout. Each stdout line is one inbound JSON event.
+
+### Codex
+
+Codex has no Monitor equivalent; it can't push stdout between turns. So metro instead pushes events into the agent's history over JSON-RPC. Setup:
+
+1. The user must launch the Codex app-server: `codex app-server --listen ws://127.0.0.1:8421` (or `codex remote-control`, equivalent shorter form). This is a one-time per-session step — if they're not running it, ask them to.
+2. Metro must be started with `METRO_CODEX_RC=ws://127.0.0.1:8421 metro` so it knows where to push. Tell the user to set this env var before running `metro`.
+3. Once metro is running and connected, each inbound message triggers a `turn/start` on the active codex thread. The agent receives the JSON line as user input on its next turn — same as if the user typed it. Process and respond as normal.
+
+### Either runtime
+
+If `metro` exits immediately or no inbounds arrive within a minute of a known DM, run `metro doctor` to diagnose. Common causes: missing tokens (`metro setup telegram <token>` / `metro setup discord <token>`), Discord Message Content Intent not toggled, stale lockfile from a previous session. On Codex, also: `METRO_CODEX_RC` not set, app-server not running, or no active thread on the daemon.
 
 ## Inbound shape
 

@@ -61,6 +61,13 @@ Exit codes:
   1  usage error (bad flags, unknown subcommand)
   2  configuration error (no tokens — run \`metro setup\`)
   3  upstream error (rate limit, auth, network — retry once, then surface)
+
+Codex push (optional):
+  Set METRO_CODEX_RC=ws://127.0.0.1:8421 to push each inbound straight into a
+  running \`codex app-server --listen ws://127.0.0.1:8421\` (or \`codex
+  remote-control\`). Metro injects via JSON-RPC \`turn/start\` so the agent
+  reacts without polling. Claude Code users keep using stdout + Monitor as
+  today; the env var is independent.
 `;
 
 // ---------------- shared types & helpers -----------------------------------
