@@ -176,7 +176,28 @@ export class CodexRC {
         log.info({ thread: this.threadId }, 'codex-rc thread started');
         void this.drainQueue();
       }
+    } else if (msg.method === 'thread/status/changed') {
+      // Codex 0.130 doesn't emit turn/started or turn/completed to a non-
+      // owner connection (the TUI gets them; metro doesn't). Instead the
+      // daemon broadcasts thread/status/changed transitions: status is
+      // either a string (`"idle"` / `"notLoaded"` / `"systemError"`) or an
+      // object (`{"active": {...}}`) per the v2 protocol enum. Treat
+      // anything other than `active` as ready-for-next-turn.
+      const params = msg.params as { threadId?: string; status?: string | { active?: unknown } } | undefined;
+      if (params?.threadId === this.threadId) {
+        const isActive = typeof params.status === 'object' && params.status !== null && 'active' in params.status;
+        log.debug({ thread: this.threadId, isActive, status: params.status }, 'codex-rc thread status changed');
+        if (isActive) {
+          this.turnInFlight = true;
+        } else {
+          this.clearTurnTimeout();
+          this.turnInFlight = false;
+          void this.drainQueue();
+        }
+      }
     } else if (msg.method === 'turn/completed') {
+      // Backstop in case some codex version does emit turn lifecycle
+      // notifications on the metro connection.
       log.debug({ thread: this.threadId, queue: this.queue.length }, 'codex-rc turn/completed; draining');
       this.clearTurnTimeout();
       this.turnInFlight = false;
