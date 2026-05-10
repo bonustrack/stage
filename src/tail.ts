@@ -15,7 +15,7 @@ import * as telegram from './channels/telegram.js';
 import { tg } from './channels/telegram.js';
 import type { Platform } from './lib/address.js';
 import { CodexRC } from './lib/codex-rc.js';
-import { resolveDiscordScope, resolveTelegramScope } from './lib/scope-cache.js';
+import { getDiscordScope, resolveTelegramScope, setDiscordScope } from './lib/scope-cache.js';
 import { configuredPlatforms, loadMetroEnv, STATE_DIR, requireConfiguredPlatform } from './paths.js';
 import { errMsg, log } from './log.js';
 
@@ -90,10 +90,24 @@ let TELEGRAM_FILTER = (() => {
 })();
 
 const sessionName = process.env.METRO_SESSION_NAME;
+// `awaitingDiscordMention`: when true, the next @-mention in any guild
+// channel will bootstrap a thread there and set DISCORD_FILTER. Used when
+// the user wants to pick the Discord conversation location interactively
+// rather than configuring it upfront.
+let awaitingDiscordMention = false;
 if (sessionName) {
-  if (!DISCORD_FILTER && process.env.METRO_DISCORD_PARENT_CHANNEL) {
-    DISCORD_FILTER = await resolveDiscordScope(sessionName, process.env.METRO_DISCORD_PARENT_CHANNEL, discord.createThread);
+  // Discord: check cache; if not yet bound, defer to first @-mention.
+  if (!DISCORD_FILTER) {
+    const cached = getDiscordScope(sessionName);
+    if (cached) {
+      DISCORD_FILTER = cached;
+      log.debug({ name: sessionName, thread: cached }, 'discord scope restored from cache');
+    } else {
+      awaitingDiscordMention = true;
+      log.info({ name: sessionName }, 'awaiting discord @-mention to bootstrap session thread');
+    }
   }
+  // Telegram: still parent-channel-driven (no @-mention equivalent in supergroups).
   if (!TELEGRAM_FILTER && process.env.METRO_TELEGRAM_PARENT_CHAT) {
     const scope = await resolveTelegramScope(
       sessionName,
@@ -187,16 +201,54 @@ if (platforms.discord) {
   await discord.startGateway();
   const me = await discord.getMe();
   log.info({ bot: me.username }, 'discord ready');
-  discord.onInbound(m => {
-    if (DISCORD_FILTER && m.channel_id !== DISCORD_FILTER) {
-      log.debug({ channel: m.channel_id }, 'discord inbound rejected by thread filter');
-      return;
-    }
+
+  let bootstrappingDiscord = false;
+  const processInbound = (m: { channel_id: string; message_id: string; text: string }): void => {
     void discord
       .setReaction(m.channel_id, m.message_id, '👀')
       .catch(err => log.warn({ err: errMsg(err) }, 'discord auto-react failed'));
     startTyping('discord', m.channel_id);
     emit({ platform: 'discord', to: `discord:${m.channel_id}/${m.message_id}`, text: m.text });
+  };
+
+  discord.onInbound(async m => {
+    // If we already have a scope, filter strictly to it.
+    if (DISCORD_FILTER) {
+      if (m.channel_id !== DISCORD_FILTER) {
+        log.debug({ channel: m.channel_id }, 'discord inbound rejected by thread filter');
+        return;
+      }
+      processInbound(m);
+      return;
+    }
+
+    // No scope yet. If we're awaiting an @-mention bootstrap, this guild
+    // mention is the trigger: create a thread anchored to it, cache the
+    // id, post a "ready" message in the thread, and lock the scope.
+    if (awaitingDiscordMention && sessionName && m.in_guild && !bootstrappingDiscord) {
+      bootstrappingDiscord = true;
+      try {
+        const threadId = await discord.createThreadFromMessage(m.channel_id, m.message_id, sessionName);
+        DISCORD_FILTER = threadId;
+        awaitingDiscordMention = false;
+        setDiscordScope(sessionName, threadId);
+        log.info({ thread: threadId, session: sessionName }, 'discord thread created from @-mention');
+        await discord
+          .sendMessage(threadId, `Session "${sessionName}" ready — message me here.`)
+          .catch(err => log.warn({ err: errMsg(err) }, 'discord welcome message failed'));
+      } catch (err) {
+        log.warn({ err: errMsg(err) }, 'discord thread bootstrap failed; staying unscoped');
+      } finally {
+        bootstrappingDiscord = false;
+      }
+      // Don't forward the @-mention itself as an inbound — it's a
+      // wake-up signal, not the conversation. The user follows up in
+      // the new thread.
+      return;
+    }
+
+    // No session config and no scope → emit unfiltered (today's behavior).
+    processInbound(m);
   });
 }
 

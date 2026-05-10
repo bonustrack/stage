@@ -12,16 +12,18 @@ import { join } from 'node:path';
 import { errMsg, log } from '../log.js';
 import { STATE_DIR } from '../paths.js';
 
+type DiscordScope = string; // thread channel id
+type TelegramScope = { chat: string; topic: number };
 type Scope = {
-  discord?: string;                                   // thread channel id
-  telegram?: { chat: string; topic: number };        // chat id + message_thread_id
+  discord?: DiscordScope;
+  telegram?: TelegramScope;
   created_at?: string;
 };
 type Cache = Record<string, Scope>;
 
 const cacheFile = join(STATE_DIR, 'scopes.json');
 
-function readCache(): Cache {
+function read(): Cache {
   if (!existsSync(cacheFile)) return {};
   try {
     return JSON.parse(readFileSync(cacheFile, 'utf8')) as Cache;
@@ -31,7 +33,7 @@ function readCache(): Cache {
   }
 }
 
-function writeCache(cache: Cache): void {
+function write(cache: Cache): void {
   try {
     writeFileSync(cacheFile, JSON.stringify(cache, null, 2));
   } catch (err) {
@@ -39,32 +41,37 @@ function writeCache(cache: Cache): void {
   }
 }
 
-export async function resolveDiscordScope(
-  name: string,
-  parentChannelId: string,
-  create: (parentChannelId: string, name: string) => Promise<string>,
-): Promise<string> {
-  const cache = readCache();
-  const cached = cache[name]?.discord;
-  if (cached) {
-    log.debug({ name, thread: cached }, 'discord scope cached; reusing');
-    return cached;
-  }
-  log.info({ name, parent: parentChannelId }, 'creating discord thread for session');
-  const id = await create(parentChannelId, name);
-  cache[name] = { ...cache[name], discord: id, created_at: cache[name]?.created_at ?? new Date().toISOString() };
-  writeCache(cache);
-  log.info({ name, thread: id }, 'discord scope cached');
-  return id;
+export function getDiscordScope(name: string): DiscordScope | undefined {
+  return read()[name]?.discord;
 }
 
+export function getTelegramScope(name: string): TelegramScope | undefined {
+  return read()[name]?.telegram;
+}
+
+export function setDiscordScope(name: string, threadId: string): void {
+  const cache = read();
+  cache[name] = { ...cache[name], discord: threadId, created_at: cache[name]?.created_at ?? new Date().toISOString() };
+  write(cache);
+}
+
+export function setTelegramScope(name: string, scope: TelegramScope): void {
+  const cache = read();
+  cache[name] = { ...cache[name], telegram: scope, created_at: cache[name]?.created_at ?? new Date().toISOString() };
+  write(cache);
+}
+
+/**
+ * Resolve a Telegram scope: cached if present, otherwise create via the
+ * provided callback and cache. Telegram scoping requires a parent
+ * supergroup id supplied in advance.
+ */
 export async function resolveTelegramScope(
   name: string,
   parentChatId: string,
   create: (parentChatId: string, name: string) => Promise<number>,
-): Promise<{ chat: string; topic: number }> {
-  const cache = readCache();
-  const cached = cache[name]?.telegram;
+): Promise<TelegramScope> {
+  const cached = getTelegramScope(name);
   if (cached) {
     log.debug({ name, ...cached }, 'telegram scope cached; reusing');
     return cached;
@@ -72,8 +79,7 @@ export async function resolveTelegramScope(
   log.info({ name, parent: parentChatId }, 'creating telegram topic for session');
   const topic = await create(parentChatId, name);
   const scope = { chat: parentChatId, topic };
-  cache[name] = { ...cache[name], telegram: scope, created_at: cache[name]?.created_at ?? new Date().toISOString() };
-  writeCache(cache);
+  setTelegramScope(name, scope);
   log.info({ name, ...scope }, 'telegram scope cached');
   return scope;
 }

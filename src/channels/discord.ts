@@ -57,7 +57,13 @@ function getClient(): Client {
   return client;
 }
 
-export type InboundMessage = { channel_id: string; message_id: string; text: string };
+export type InboundMessage = {
+  channel_id: string;
+  message_id: string;
+  text: string;
+  /** True when the message is in a guild text channel or thread. False for DMs. */
+  in_guild: boolean;
+};
 
 let onInboundHandler: (msg: InboundMessage) => void = () => {};
 export function onInbound(handler: (msg: InboundMessage) => void): void {
@@ -91,7 +97,7 @@ export async function startGateway(): Promise<void> {
       .join(' ');
     const text = [m.content, tags].filter(Boolean).join(' ').trim();
     if (!text) return;
-    onInboundHandler({ channel_id: m.channelId, message_id: m.id, text });
+    onInboundHandler({ channel_id: m.channelId, message_id: m.id, text, in_guild: !!m.guildId });
   });
   c.on(Events.Error, err => log.error({ err: errMsg(err) }, 'discord error'));
 
@@ -121,15 +127,14 @@ export async function sendMessage(channelId: string, text: string): Promise<stri
 }
 
 /**
- * Create a public thread under the given parent text channel. Returns the
- * new thread's channel id (Discord models threads as channels). Used by
- * `metro session`-style scoping so each agent session lands in its own
- * conversation. The bot needs CREATE_PUBLIC_THREADS on the parent.
+ * Create a public thread anchored to an existing message. The user's
+ * @-mention message becomes the thread's starter, so the conversation
+ * thread is visually attached to the request that opened it. Returns the
+ * new thread's channel id (Discord models threads as channels).
  */
-export async function createThread(parentChannelId: string, name: string): Promise<string> {
-  const created = await rest<{ id: string }>('POST', `/channels/${parentChannelId}/threads`, {
+export async function createThreadFromMessage(channelId: string, messageId: string, name: string): Promise<string> {
+  const created = await rest<{ id: string }>('POST', `/channels/${channelId}/messages/${messageId}/threads`, {
     name,
-    type: 11, // public thread
     auto_archive_duration: 1440, // 24h; thread isn't deleted, just collapses in UI
   });
   return created.id;

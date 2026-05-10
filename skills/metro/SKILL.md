@@ -38,16 +38,18 @@ If `metro` exits immediately or the daemon isn't on 8421, ask the user. (`codex 
 
 If the user wants multiple agent sessions to share one bot, scope each metro to its own Discord thread and/or Telegram forum topic. Metro can auto-create the thread/topic on first launch — preferred over the user copy-pasting ids manually.
 
-**Auto-create (recommended).** Pick a stable session name and tell metro where to create:
+**Auto-create (recommended).** Pick a stable session name; metro figures out where to create:
 
 ```
 METRO_SESSION_NAME=<name> \
-METRO_DISCORD_PARENT_CHANNEL=<channel_id> \
 METRO_TELEGRAM_PARENT_CHAT=<supergroup_id> \
 metro
 ```
 
-First run creates the thread/topic; subsequent runs with the same `METRO_SESSION_NAME` reuse it (cached at `$METRO_STATE_DIR/scopes.json`). The agent's `metro reply / edit / send` outbounds automatically thread back into the same Telegram topic.
+- **Telegram:** on first launch metro creates a forum topic in the supergroup, named after the session.
+- **Discord:** metro waits for the user to @-mention the bot in any channel. First mention triggers thread creation anchored to that message. The bot replies "Session ready — message me here" in the new thread, and the user continues the conversation there. (No `METRO_DISCORD_PARENT_CHANNEL` to configure — the user picks the channel by @-mentioning.)
+
+Subsequent runs with the same `METRO_SESSION_NAME` reuse the cached thread/topic (at `$METRO_STATE_DIR/scopes.json`). The agent's `metro reply / edit / send` outbounds automatically thread back into the same Telegram topic.
 
 **Manual (if user already created the thread/topic).** Use the explicit ids and skip auto-create:
 
@@ -59,8 +61,10 @@ METRO_TELEGRAM_TOPIC=<chat_id>:<topic_id> metro
 When you launch metro on the user's behalf, prepend whichever env vars they've asked for. Example for a Codex session that auto-creates per-session scopes:
 
 ```
-shell(command: "METRO_CODEX_RC=ws://127.0.0.1:8421 METRO_SESSION_NAME=frontend METRO_DISCORD_PARENT_CHANNEL=… METRO_TELEGRAM_PARENT_CHAT=… metro", run_in_background: true)
+shell(command: "METRO_CODEX_RC=ws://127.0.0.1:8421 METRO_SESSION_NAME=frontend METRO_TELEGRAM_PARENT_CHAT=… metro", run_in_background: true)
 ```
+
+Then tell the user to @-mention the bot in whichever Discord channel they want the conversation to live in.
 
 ### Diagnostics
 

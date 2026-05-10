@@ -80,16 +80,24 @@ Per-session scope (multi-session, opt-in):
   the scope are dropped silently; outbound replies auto-thread back into
   the same topic so the user sees the agent's reply where they expected it.
 
-  Auto-create (recommended):
+  Auto-create:
     METRO_SESSION_NAME=<name>                  Names the scope; cached so
                                                re-running reuses the same
                                                thread/topic.
-    METRO_DISCORD_PARENT_CHANNEL=<channel_id>  Where the bot creates the thread.
     METRO_TELEGRAM_PARENT_CHAT=<chat_id>       Topics-enabled supergroup id.
+                                               (Telegram-only; on first run
+                                               metro creates the topic in this
+                                               supergroup.)
 
-  Manual (use existing thread/topic ids):
-    METRO_DISCORD_THREAD=<channel_id>          Use this thread, skip auto-create.
-    METRO_TELEGRAM_TOPIC=<chat_id>:<topic_id>  Use this topic, skip auto-create.
+  Discord auto-create is @-mention-driven: with METRO_SESSION_NAME set,
+  metro waits for you to @-mention the bot in any channel. First mention
+  becomes the parent — metro creates a thread anchored to that message,
+  posts a "Session ready" reply, and locks the scope to that thread.
+  Re-running with the same session name reuses the cached thread.
+
+  Manual (use existing thread/topic ids — skip auto-create entirely):
+    METRO_DISCORD_THREAD=<channel_id>          Use this thread.
+    METRO_TELEGRAM_TOPIC=<chat_id>:<topic_id>  Use this topic.
 `;
 
 // ---------------- shared types & helpers -----------------------------------
