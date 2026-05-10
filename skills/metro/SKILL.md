@@ -25,6 +25,8 @@ Each `metro` line on stdout:
 
 `text` may include placeholders for non-text content: `[image]`, `[voice]`, `[audio]`, `[file: <name>]`. Voice/audio are opaque markers — you can't download them.
 
+Discord guild messages preserve the user's raw mention markup, including the bot's own `<@bot_id>` (the gate that made the message visible). Treat the bot's own mention as metadata; other users' mentions (`<@some_other_id>`) can be addressee context. Reply normally — the message is addressed to you regardless of where the mention sits.
+
 ## Required flow on every inbound
 
 1. **Echo to the visible reply.** Write `[<to>] <text>` on its own line in your visible output. Both Claude Code's Monitor and Codex dim/collapse tool output, so this echo is the only way the user sees what arrived without expanding cards.

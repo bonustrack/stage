@@ -70,15 +70,11 @@ export async function startGateway(): Promise<void> {
   c.on(Events.MessageCreate, m => {
     if (m.author.bot) return;
     // Guild messages: only forward when the bot is mentioned. DMs always pass.
+    // The bot's own @-mention is preserved in `m.content` — stripping it would
+    // lose mid-sentence position ("Wdyt @Metro is this good?" → "Wdyt is this
+    // good?") and silently drop bare-mention pings. The agent recognizes
+    // `<@bot_id>` and acts on the request as a whole.
     if (m.guildId && c.user && !m.mentions.has(c.user.id)) return;
-
-    // Strip the bot's own @-mention from the content. In guilds it's metadata
-    // (the gate that made the message visible), not real content. Other users'
-    // mentions are kept since those can be addressee context.
-    const botMentionRe = c.user ? new RegExp(`<@!?${c.user.id}>`, 'g') : null;
-    const cleanContent = botMentionRe
-      ? m.content.replace(botMentionRe, '').replace(/\s+/g, ' ').trim()
-      : m.content;
 
     const tags = [...m.attachments.values()]
       .map(a => {
@@ -87,7 +83,7 @@ export async function startGateway(): Promise<void> {
         return `[file: ${a.name}]`;
       })
       .join(' ');
-    const text = [cleanContent, tags].filter(Boolean).join(' ').trim();
+    const text = [m.content, tags].filter(Boolean).join(' ').trim();
     if (!text) return;
     onInboundHandler({ channel_id: m.channelId, message_id: m.id, text });
   });
