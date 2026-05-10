@@ -18,30 +18,33 @@ metro doctor                             # verify
 
 > **Discord setup:** toggle **Message Content Intent** in Developer Portal → Bot → Privileged Gateway Intents.
 
-Open Claude Code (`claude`) or Codex (with one extra setup step — see below), and tell it:
+### Run with Claude Code
 
-> Run `metro` in the background.
+```bash
+claude
+> Run metro in the background.
+```
 
-DM your bot. The agent picks up the next inbound and replies — the bundled skill handles launching, stdout watching, reactions, and replies.
+Then DM your bot. The bundled skill auto-triggers — the agent launches metro via Bash + Monitor, watches stdout, and replies.
 
-### Codex setup
+### Run with Codex
 
-Codex doesn't have an equivalent of Claude Code's `Monitor` — its `unified_exec` is poll-only ([issue #4751](https://github.com/openai/codex/issues/4751)). Metro instead pushes each inbound into the agent's history via JSON-RPC against a codex app-server daemon. Three commands share one URL — the codex TUI's `--remote` flag only accepts `ws://`, so all three sides must use the same TCP WebSocket:
+Codex's `unified_exec` is poll-only ([#4751](https://github.com/openai/codex/issues/4751)) — there's no Monitor equivalent. Metro instead pushes each inbound into the agent's history via JSON-RPC. Three terminals share one URL (the TUI's `--remote` flag only accepts `ws://`):
 
 ```bash
 # Terminal 1 — daemon
 codex app-server --listen ws://127.0.0.1:8421
 
-# Terminal 2 — metro bridge (or have the agent run this)
+# Terminal 2 — metro (the user runs this; the codex agent can't watch stdout itself)
 METRO_CODEX_RC=ws://127.0.0.1:8421 metro
 
-# Terminal 3 — TUI, attached to the same daemon
+# Terminal 3 — TUI attached to the daemon
 codex --remote ws://127.0.0.1:8421
 ```
 
-Each metro inbound triggers a `turn/start` on the active codex thread — sub-second reaction, no polling. `codex remote-control` exists but is stdio-only (no network listener), so don't use it for this flow.
+Then DM your bot. Each inbound triggers a `turn/start` on the codex thread — the agent in terminal 3 reacts on its next turn. `codex remote-control` is stdio-only (no listener), so don't use it for this flow.
 
-`METRO_CODEX_RC` accepts `ws://host:port` (recommended; the form codex's TUI requires) or `unix:///abs/path` (UDS WebSocket — the daemon supports it but the TUI does not, so reserve UDS for headless setups where you only drive the agent through DMs).
+`METRO_CODEX_RC` accepts `ws://host:port` (required for use with the codex TUI) or `unix:///abs/path` (headless only — the daemon supports UDS but the TUI doesn't).
 
 ## Config
 

@@ -1,38 +1,38 @@
 ---
 name: metro
-description: Run the metro Telegram/Discord bridge in this session — launch `metro` in the background, watch its stdout for inbound JSON lines, and act on each. Use when the user asks to start/run/launch metro, when you see JSON lines on stdout shaped `{"platform":..., "to":..., "text":...}`, or when handling a chat reply/react/edit/send/download/fetch.
+description: Handle Telegram/Discord messages from `metro` for this agent session. Use when the user asks to start/run/launch metro, when you see JSON lines on stdout or as user input shaped `{"platform":..., "to":..., "text":...}`, or when handling chat reply/react/edit/send/download/fetch.
 ---
 
-# Metro — running the Telegram & Discord bridge
+# Metro — handling the Telegram & Discord bridge
 
-Metro is a CLI bridge between this agent session and Telegram/Discord. You launch `metro` once when the user asks, then act on each inbound JSON line via `metro <subcommand>`.
+Metro is a CLI bridge between this agent session and Telegram/Discord. Each inbound message arrives as a JSON line; you act on it via `metro <subcommand>`. The launch mechanics differ between Claude Code (you launch metro via shell) and Codex (the user launches metro outside the agent and the daemon pushes turns to you).
 
 ## Starting the bridge
 
-When the user asks to run/start/launch metro (or "start the bridge"), the launch flow depends on which agent runtime you're in:
-
 ### Claude Code
+
+When the user asks to run/start/launch metro:
 
 1. Launch `metro` as a backgrounded Bash command (`run_in_background: true`).
 2. Attach `Monitor` to its stdout. Each stdout line is one inbound JSON event.
 
 ### Codex
 
-Codex has no Monitor equivalent — `unified_exec` is poll-only. Metro instead pushes events into the agent's history via JSON-RPC against a codex app-server daemon. Three commands sharing one URL (codex's TUI `--remote` flag only accepts `ws://`):
+You don't launch metro — the user starts it outside this session. By the time you're seeing this skill load, metro is already running and pushing inbounds via JSON-RPC `turn/start`, which appear in your context as user input on the next turn.
+
+For reference, the user has these three terminals running:
 
 ```
-codex app-server --listen ws://127.0.0.1:8421       # daemon (terminal 1)
-METRO_CODEX_RC=ws://127.0.0.1:8421 metro            # bridge (terminal 2; agent backgrounds this)
-codex --remote ws://127.0.0.1:8421                  # TUI (this session)
+codex app-server --listen ws://127.0.0.1:8421       # daemon
+METRO_CODEX_RC=ws://127.0.0.1:8421 metro            # bridge
+codex --remote ws://127.0.0.1:8421                  # this TUI
 ```
 
-Each inbound triggers a `turn/start` on the active codex thread — the JSON line lands as user input on the agent's next turn. Process and respond normally.
+If inbounds aren't arriving, ask the user to confirm all three are up (`codex remote-control` is stdio-only and doesn't work for this flow — they must use `codex app-server --listen ws://…`).
 
-> Note: `codex remote-control` is misleadingly named — it's stdio-only, no network listener. Use `codex app-server --listen ws://…` instead.
+### Either runtime — diagnostics
 
-### Either runtime
-
-If `metro` exits immediately or no inbounds arrive within a minute of a known DM, run `metro doctor` to diagnose. Common causes: missing tokens (`metro setup telegram <token>` / `metro setup discord <token>`), Discord Message Content Intent not toggled, stale lockfile. On Codex, also: `METRO_CODEX_RC` not set, app-server not listening on that URL, or the TUI not attached via `--remote`.
+If something seems off, run `metro doctor`. Common causes: missing tokens (`metro setup telegram <token>` / `metro setup discord <token>`), Discord Message Content Intent not toggled, stale lockfile. On Codex, also: `METRO_CODEX_RC` not set, app-server not listening on that URL, or the TUI not attached via `--remote`.
 
 ## Inbound shape
 
