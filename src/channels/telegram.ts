@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { STATE_DIR } from '../config.js';
+import { STATE_DIR } from '../paths.js';
 import { errMsg, log } from '../log.js';
 
 const API_BASE = 'https://api.telegram.org';

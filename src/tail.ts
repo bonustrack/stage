@@ -12,7 +12,8 @@ import { join } from 'node:path';
 import * as discord from './channels/discord.js';
 import * as telegram from './channels/telegram.js';
 import { tg } from './channels/telegram.js';
-import { configuredPlatforms, loadMetroEnv, STATE_DIR, requireConfiguredPlatform } from './config.js';
+import { formatAddress } from './lib/address.js';
+import { configuredPlatforms, loadMetroEnv, STATE_DIR, requireConfiguredPlatform } from './paths.js';
 import { errMsg, log } from './log.js';
 
 loadMetroEnv();
@@ -107,10 +108,11 @@ if (platforms.telegram) {
       message_id: m.message_id,
       reaction: [{ type: 'emoji', emoji: '👀' }],
     }).catch(err => log.warn({ err: errMsg(err) }, 'telegram auto-react failed'));
-    startTyping('telegram', String(m.chat_id));
+    const chat = String(m.chat_id);
+    startTyping('telegram', chat);
     emit({
       platform: 'telegram',
-      to: `telegram:${m.chat_id}/${m.message_id}`,
+      to: formatAddress({ platform: 'telegram', chat, messageId: String(m.message_id) }),
       text: m.text,
     });
   });
@@ -128,7 +130,7 @@ if (platforms.discord) {
     startTyping('discord', m.channel_id);
     emit({
       platform: 'discord',
-      to: `discord:${m.channel_id}/${m.message_id}`,
+      to: formatAddress({ platform: 'discord', chat: m.channel_id, messageId: m.message_id }),
       text: m.text,
     });
   });

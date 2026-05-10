@@ -105,15 +105,17 @@ type RawMessage = {
   reactions?: Array<{ emoji: { name: string | null; id: string | null }; me: boolean }>;
 };
 
-export async function replyToMessage(channelId: string, messageId: string, text: string): Promise<void> {
-  await rest('POST', `/channels/${channelId}/messages`, {
+export async function replyToMessage(channelId: string, messageId: string, text: string): Promise<string> {
+  const sent = await rest<{ id: string }>('POST', `/channels/${channelId}/messages`, {
     content: text,
     message_reference: { message_id: messageId, fail_if_not_exists: false },
   });
+  return sent.id;
 }
 
-export async function editMessage(channelId: string, messageId: string, text: string): Promise<void> {
-  await rest('PATCH', `/channels/${channelId}/messages/${messageId}`, { content: text });
+export async function editMessage(channelId: string, messageId: string, text: string): Promise<string> {
+  const sent = await rest<{ id: string }>('PATCH', `/channels/${channelId}/messages/${messageId}`, { content: text });
+  return sent.id;
 }
 
 export async function sendTyping(channelId: string): Promise<void> {
