@@ -63,51 +63,43 @@ Exit codes:
   3  upstream error (rate limit, auth, network — retry once, then surface)
 `;
 
-// ---------------- arg parser & --json helper -------------------------------
+// ---------------- shared types & helpers -----------------------------------
 
-function parseArgs(argv: string[]): { positional: string[]; flags: Record<string, string | boolean> } {
+type Flags = Record<string, string | boolean>;
+type ExitErr = Error & { code?: number };
+
+function exitErr(message: string, code: number): ExitErr {
+  return Object.assign(new Error(message), { code });
+}
+
+function parseArgs(argv: string[]): { positional: string[]; flags: Flags } {
   const positional: string[] = [];
-  const flags: Record<string, string | boolean> = {};
+  const flags: Flags = {};
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
-    if (a.startsWith('--')) {
-      const eq = a.indexOf('=');
-      if (eq !== -1) {
-        flags[a.slice(2, eq)] = a.slice(eq + 1);
-        continue;
-      }
-      const key = a.slice(2);
-      const next = argv[i + 1];
-      if (next !== undefined && !next.startsWith('--')) {
-        flags[key] = next;
-        i++;
-      } else {
-        flags[key] = true;
-      }
-    } else {
-      positional.push(a);
-    }
+    if (!a.startsWith('--')) { positional.push(a); continue; }
+    const eq = a.indexOf('=');
+    if (eq !== -1) { flags[a.slice(2, eq)] = a.slice(eq + 1); continue; }
+    const key = a.slice(2);
+    const next = argv[i + 1];
+    if (next !== undefined && !next.startsWith('--')) { flags[key] = next; i++; }
+    else flags[key] = true;
   }
   return { positional, flags };
 }
 
-function isJson(flags: Record<string, string | boolean>): boolean {
-  return flags.json === true;
-}
+const isJson = (flags: Flags): boolean => flags.json === true;
 
-function emitResult(flags: Record<string, string | boolean>, human: string, structured: unknown): void {
+function emitResult(flags: Flags, human: string, structured: unknown): void {
   process.stdout.write(isJson(flags) ? JSON.stringify(structured) + '\n' : human + '\n');
 }
 
-// ---------------- shared helpers -------------------------------------------
-
-function requirePlatform(platform: Platform): void {
-  const cfg = configuredPlatforms();
-  if (!cfg[platform]) {
-    const err = new Error(`platform '${platform}' is not configured (missing token)`);
-    (err as Error & { code?: number }).code = 2;
-    throw err;
+function resolveAddr(flags: Flags, requireMessage: boolean): Address {
+  const addr = parseAddress(String(flags.to), requireMessage);
+  if (!configuredPlatforms()[addr.platform]) {
+    throw exitErr(`platform '${addr.platform}' is not configured (missing token)`, 2);
   }
+  return addr;
 }
 
 function tgMessageId(addr: Address): number {
@@ -127,6 +119,14 @@ function signalReplyComplete(platform: Platform, chat: string): void {
   }
 }
 
+async function clearReaction(addr: Address): Promise<void> {
+  if (addr.platform === 'telegram') {
+    await tg('setMessageReaction', { chat_id: addr.chat, message_id: tgMessageId(addr), reaction: [] });
+  } else {
+    await discord.setReaction(addr.chat, addr.messageId!, '');
+  }
+}
+
 async function readStdinText(): Promise<string> {
   if (process.stdin.isTTY) return '';
   const chunks: Buffer[] = [];
@@ -134,9 +134,8 @@ async function readStdinText(): Promise<string> {
   return Buffer.concat(chunks).toString('utf8');
 }
 
-async function resolveText(flags: Record<string, string | boolean>): Promise<string> {
-  const t = flags.text;
-  if (typeof t === 'string') return t;
+async function resolveText(flags: Flags): Promise<string> {
+  if (typeof flags.text === 'string') return flags.text;
   const stdin = (await readStdinText()).replace(/\n$/, '');
   if (!stdin) throw new Error('--text is required (or pipe text on stdin)');
   return stdin;
@@ -144,7 +143,7 @@ async function resolveText(flags: Record<string, string | boolean>): Promise<str
 
 type SendOpts = { parseMode?: 'HTML' | 'MarkdownV2'; disableLinkPreview?: boolean; buttons?: { text: string; url: string }[][] };
 
-function readTelegramOpts(flags: Record<string, string | boolean>): SendOpts {
+function readTelegramOpts(flags: Flags): SendOpts {
   const opts: SendOpts = {};
   if (flags['parse-mode']) {
     const v = String(flags['parse-mode']);
@@ -172,51 +171,43 @@ const EXT_FROM_MIME: Record<string, string> = {
 // Path to the SKILL.md bundled with the npm package. dist/cli.js → ../skills/metro/SKILL.md.
 const BUNDLED_SKILL = join(dirname(fileURLToPath(import.meta.url)), '..', 'skills', 'metro', 'SKILL.md');
 const SKILL_RUNTIMES: SkillRuntime[] = ['claude-code', 'codex'];
+const SKILL_SCOPES = ['user', 'project'] as const;
+type SkillScope = typeof SKILL_SCOPES[number];
+const skillFile = (runtime: SkillRuntime, scope: SkillScope): string => join(skillDir(runtime, scope), 'SKILL.md');
 
 // ---------------- setup ----------------------------------------------------
 
-async function cmdSetup(positional: string[], flags: Record<string, string | boolean>): Promise<void> {
-  const [sub, value] = positional;
-  const tokenKeys: Record<'telegram' | 'discord', string> = {
-    telegram: 'TELEGRAM_BOT_TOKEN',
-    discord: 'DISCORD_BOT_TOKEN',
-  };
+const TOKEN_KEYS = { telegram: 'TELEGRAM_BOT_TOKEN', discord: 'DISCORD_BOT_TOKEN' } as const;
 
-  if (!sub) {
-    return cmdSetupStatus(flags);
-  }
+async function cmdSetup(positional: string[], flags: Flags): Promise<void> {
+  const [sub, value] = positional;
+
+  if (!sub) return cmdSetupStatus(flags);
 
   if (sub === 'telegram' || sub === 'discord') {
     if (!value) throw new Error(`metro setup ${sub} <token> — token is required`);
     const trimmed = value.trim();
     let identity: string | undefined;
     if (!flags['no-validate']) {
-      // Validate the token against the platform before persisting — catches
-      // typos / wrong-token-from-portal / rotated tokens at the earliest moment.
-      process.env[tokenKeys[sub]] = trimmed;
+      // Validate against the platform before persisting — catches typos /
+      // wrong-token-from-portal / rotated tokens at the earliest moment.
+      process.env[TOKEN_KEYS[sub]] = trimmed;
       try {
         identity = sub === 'telegram'
           ? `@${(await telegram.getMe()).username}`
           : (await discord.getMe()).username;
       } catch (err) {
-        delete process.env[tokenKeys[sub]];
-        const e = new Error(`token rejected by ${sub}: ${errMsg(err)} (re-run with --no-validate to save anyway)`);
-        (e as Error & { code?: number }).code = 3;
-        throw e;
+        delete process.env[TOKEN_KEYS[sub]];
+        throw exitErr(`token rejected by ${sub}: ${errMsg(err)} (re-run with --no-validate to save anyway)`, 3);
       }
     }
     const env = readDotenv(CONFIG_ENV_FILE);
-    env[tokenKeys[sub]] = trimmed;
+    env[TOKEN_KEYS[sub]] = trimmed;
     writeDotenv(CONFIG_ENV_FILE, env);
     const human = identity
-      ? `saved ${tokenKeys[sub]} (verified as ${identity}) to ${CONFIG_ENV_FILE} (chmod 0600)`
-      : `saved ${tokenKeys[sub]} to ${CONFIG_ENV_FILE} (chmod 0600)`;
-    emitResult(flags, human, {
-      ok: true,
-      saved: tokenKeys[sub],
-      path: CONFIG_ENV_FILE,
-      verified_as: identity ?? null,
-    });
+      ? `saved ${TOKEN_KEYS[sub]} (verified as ${identity}) to ${CONFIG_ENV_FILE} (chmod 0600)`
+      : `saved ${TOKEN_KEYS[sub]} to ${CONFIG_ENV_FILE} (chmod 0600)`;
+    emitResult(flags, human, { ok: true, saved: TOKEN_KEYS[sub], path: CONFIG_ENV_FILE, verified_as: identity ?? null });
     return;
   }
 
@@ -227,31 +218,35 @@ async function cmdSetup(positional: string[], flags: Record<string, string | boo
       delete env.TELEGRAM_BOT_TOKEN;
       delete env.DISCORD_BOT_TOKEN;
     } else if (target === 'telegram' || target === 'discord') {
-      delete env[tokenKeys[target]];
+      delete env[TOKEN_KEYS[target]];
     } else {
       throw new Error(`metro setup clear <telegram|discord|all> — got '${target}'`);
     }
     writeDotenv(CONFIG_ENV_FILE, env);
-    const human = `cleared ${target === 'all' ? 'all metro tokens' : tokenKeys[target as 'telegram' | 'discord']} from ${CONFIG_ENV_FILE}`;
+    const human = `cleared ${target === 'all' ? 'all metro tokens' : TOKEN_KEYS[target as 'telegram' | 'discord']} from ${CONFIG_ENV_FILE}`;
     emitResult(flags, human, { ok: true, cleared: target, path: CONFIG_ENV_FILE });
     return;
   }
 
-  if (sub === 'skill') {
-    return cmdSetupSkill(flags);
-  }
+  if (sub === 'skill') return cmdSetupSkill(flags);
 
   throw new Error(`unknown setup subcommand '${sub}' (try: telegram, discord, clear, skill)`);
 }
 
-async function cmdSetupStatus(flags: Record<string, string | boolean>): Promise<void> {
+type SkillState = Record<SkillRuntime, Record<SkillScope, boolean>>;
+
+function readSkillState(): SkillState {
+  return Object.fromEntries(
+    SKILL_RUNTIMES.map(r => [r, Object.fromEntries(SKILL_SCOPES.map(s => [s, existsSync(skillFile(r, s))]))]),
+  ) as SkillState;
+}
+
+async function cmdSetupStatus(flags: Flags): Promise<void> {
   loadMetroEnv();
   const tg = process.env.TELEGRAM_BOT_TOKEN ?? '';
   const dc = process.env.DISCORD_BOT_TOKEN ?? '';
-  const skills: Record<SkillRuntime, { user: boolean; project: boolean }> = {
-    'claude-code': { user: skillExistsAt(skillDir('claude-code', 'user')), project: skillExistsAt(skillDir('claude-code', 'project')) },
-    codex: { user: skillExistsAt(skillDir('codex', 'user')), project: skillExistsAt(skillDir('codex', 'project')) },
-  };
+  const skills = readSkillState();
+  const anySkill = SKILL_RUNTIMES.some(r => SKILL_SCOPES.some(s => skills[r][s]));
 
   if (isJson(flags)) {
     process.stdout.write(JSON.stringify({
@@ -266,11 +261,9 @@ async function cmdSetupStatus(flags: Record<string, string | boolean>): Promise<
     return;
   }
 
-  const fmtSkill = (s: { user: boolean; project: boolean }): string => {
-    if (s.user && s.project) return 'installed (user + project)';
-    if (s.user) return 'installed (user)';
-    if (s.project) return 'installed (project)';
-    return 'not installed';
+  const fmtSkill = (s: Record<SkillScope, boolean>): string => {
+    const set = SKILL_SCOPES.filter(k => s[k]);
+    return set.length ? `installed (${set.join(' + ')})` : 'not installed';
   };
 
   process.stdout.write(
@@ -292,32 +285,15 @@ async function cmdSetupStatus(flags: Record<string, string | boolean>): Promise<
         '  3. metro doctor                     # verify everything works\n' +
         '  4. metro                            # start the inbound stream\n',
     );
-  } else if (!skills['claude-code'].user && !skills['claude-code'].project && !skills.codex.user && !skills.codex.project) {
+  } else if (!anySkill) {
     process.stdout.write('Next: `metro setup skill` to auto-onboard your agent. Then `metro doctor`, then `metro`.\n');
   } else {
     process.stdout.write('Run `metro` to start the inbound stream, or `metro doctor` to verify.\n');
   }
 }
 
-function skillExistsAt(dir: string): boolean {
-  return existsSync(join(dir, 'SKILL.md'));
-}
-
-type InstalledSkill = { scope: 'user' | 'project'; path: string; fresh: boolean };
-
-function installedSkills(runtime: SkillRuntime): InstalledSkill[] {
-  const out: InstalledSkill[] = [];
-  for (const scope of ['user', 'project'] as const) {
-    const path = join(skillDir(runtime, scope), 'SKILL.md');
-    if (!existsSync(path)) continue;
-    const fresh = existsSync(BUNDLED_SKILL) && readFileSync(path).equals(readFileSync(BUNDLED_SKILL));
-    out.push({ scope, path, fresh });
-  }
-  return out;
-}
-
-async function cmdSetupSkill(flags: Record<string, string | boolean>): Promise<void> {
-  const scope: 'user' | 'project' = flags.project ? 'project' : 'user';
+async function cmdSetupSkill(flags: Flags): Promise<void> {
+  const scope: SkillScope = flags.project ? 'project' : 'user';
   if (flags.clear) {
     const removed: string[] = [];
     for (const runtime of SKILL_RUNTIMES) {
@@ -327,24 +303,16 @@ async function cmdSetupSkill(flags: Record<string, string | boolean>): Promise<v
         removed.push(dir);
       }
     }
-    emitResult(flags, removed.length ? `removed:\n  ${removed.join('\n  ')}` : '(no skills installed at this scope)', {
-      ok: true,
-      cleared: removed,
-    });
+    emitResult(flags, removed.length ? `removed:\n  ${removed.join('\n  ')}` : '(no skills installed at this scope)', { ok: true, cleared: removed });
     return;
   }
-
-  if (!existsSync(BUNDLED_SKILL)) {
-    throw new Error(`bundled SKILL.md missing at ${BUNDLED_SKILL} (broken install?)`);
-  }
-  const written: string[] = [];
-  for (const runtime of SKILL_RUNTIMES) {
-    const dir = skillDir(runtime, scope);
-    mkdirSync(dir, { recursive: true });
-    const dest = join(dir, 'SKILL.md');
+  if (!existsSync(BUNDLED_SKILL)) throw new Error(`bundled SKILL.md missing at ${BUNDLED_SKILL} (broken install?)`);
+  const written = SKILL_RUNTIMES.map(r => {
+    const dest = skillFile(r, scope);
+    mkdirSync(dirname(dest), { recursive: true });
     copyFileSync(BUNDLED_SKILL, dest);
-    written.push(dest);
-  }
+    return dest;
+  });
   emitResult(
     flags,
     `wrote skill (${scope}) to:\n  ${written.join('\n  ')}\n\nThe agent will pick it up on its next session start.`,
@@ -356,7 +324,7 @@ async function cmdSetupSkill(flags: Record<string, string | boolean>): Promise<v
 
 type DoctorCheck = { name: string; ok: boolean | null; detail: string };
 
-async function cmdDoctor(flags: Record<string, string | boolean>): Promise<void> {
+async function cmdDoctor(flags: Flags): Promise<void> {
   loadMetroEnv();
   const checks: DoctorCheck[] = [];
 
@@ -371,55 +339,50 @@ async function cmdDoctor(flags: Record<string, string | boolean>): Promise<void>
   });
 
   // gateway / API healthcheck per configured platform
-  if (cfg.telegram) {
-    try {
-      const me = await telegram.getMe();
-      checks.push({ name: 'telegram', ok: true, detail: `getMe → @${me.username}` });
-    } catch (err) {
-      checks.push({ name: 'telegram', ok: false, detail: errMsg(err) });
+  for (const [platform, getMe] of [['telegram', telegram.getMe], ['discord', discord.getMe]] as const) {
+    if (!cfg[platform]) {
+      checks.push({ name: platform, ok: null, detail: 'not configured' });
+      continue;
     }
-  } else {
-    checks.push({ name: 'telegram', ok: null, detail: 'not configured' });
-  }
-  if (cfg.discord) {
     try {
-      const me = await discord.getMe();
-      checks.push({ name: 'discord', ok: true, detail: `getMe → ${me.username}` });
+      const me = await getMe();
+      checks.push({ name: platform, ok: true, detail: `getMe → ${platform === 'telegram' ? '@' : ''}${me.username}` });
     } catch (err) {
-      checks.push({ name: 'discord', ok: false, detail: errMsg(err) });
+      checks.push({ name: platform, ok: false, detail: errMsg(err) });
     }
-  } else {
-    checks.push({ name: 'discord', ok: null, detail: 'not configured' });
   }
 
   // tail process state
-  checks.push(tailStateCheck());
+  const lockFile = join(STATE_DIR, '.tail-lock');
+  if (!existsSync(lockFile)) {
+    checks.push({ name: 'tail', ok: null, detail: 'not running' });
+  } else {
+    try {
+      const pid = Number(readFileSync(lockFile, 'utf8').trim());
+      if (!Number.isInteger(pid) || pid <= 0) throw new Error('invalid pid');
+      process.kill(pid, 0);
+      checks.push({ name: 'tail', ok: true, detail: `running (pid ${pid})` });
+    } catch {
+      checks.push({ name: 'tail', ok: false, detail: 'stale lockfile (process gone)' });
+    }
+  }
 
   // skill install + freshness vs bundled
   for (const runtime of SKILL_RUNTIMES) {
-    const installed = installedSkills(runtime);
-    if (installed.length === 0) {
-      checks.push({
-        name: `skill: ${runtime}`,
-        ok: null,
-        detail: 'not installed — run `metro setup skill` (writes both runtimes)',
-      });
+    const present = SKILL_SCOPES.filter(s => existsSync(skillFile(runtime, s)));
+    if (present.length === 0) {
+      checks.push({ name: `skill: ${runtime}`, ok: null, detail: 'not installed — run `metro setup skill` (writes both runtimes)' });
       continue;
     }
-    const stale = installed.filter(s => !s.fresh).map(s => s.scope);
-    if (stale.length === 0) {
-      checks.push({
-        name: `skill: ${runtime}`,
-        ok: true,
-        detail: installed.map(s => s.scope).join(' + '),
-      });
-    } else {
-      checks.push({
-        name: `skill: ${runtime}`,
-        ok: false,
-        detail: `stale at ${stale.join(' + ')} — re-run \`metro setup skill${stale.includes('project') ? ' --project' : ''}\``,
-      });
-    }
+    const bundled = existsSync(BUNDLED_SKILL) ? readFileSync(BUNDLED_SKILL) : null;
+    const stale = bundled
+      ? present.filter(s => !readFileSync(skillFile(runtime, s)).equals(bundled))
+      : [];
+    checks.push(
+      stale.length === 0
+        ? { name: `skill: ${runtime}`, ok: true, detail: present.join(' + ') }
+        : { name: `skill: ${runtime}`, ok: false, detail: `stale at ${stale.join(' + ')} — re-run \`metro setup skill${stale.includes('project') ? ' --project' : ''}\`` },
+    );
   }
 
   if (isJson(flags)) {
@@ -433,35 +396,16 @@ async function cmdDoctor(flags: Record<string, string | boolean>): Promise<void>
     process.stdout.write('\n');
   }
 
-  if (checks.some(c => c.ok === false)) {
-    const err = new Error('one or more checks failed');
-    (err as Error & { code?: number }).code = 3;
-    throw err;
-  }
-}
-
-function tailStateCheck(): DoctorCheck {
-  const lockFile = join(STATE_DIR, '.tail-lock');
-  if (!existsSync(lockFile)) return { name: 'tail', ok: null, detail: 'not running' };
-  try {
-    const pid = Number(readFileSync(lockFile, 'utf8').trim());
-    if (!Number.isInteger(pid) || pid <= 0) return { name: 'tail', ok: false, detail: 'stale lockfile' };
-    process.kill(pid, 0);
-    return { name: 'tail', ok: true, detail: `running (pid ${pid})` };
-  } catch {
-    return { name: 'tail', ok: false, detail: 'stale lockfile (process gone)' };
-  }
+  if (checks.some(c => c.ok === false)) throw exitErr('one or more checks failed', 3);
 }
 
 // ---------------- update ---------------------------------------------------
 
-async function cmdUpdate(flags: Record<string, string | boolean>): Promise<void> {
+async function cmdUpdate(flags: Flags): Promise<void> {
   // While metro is in prerelease, the @beta dist-tag is what we publish.
   // After GA, swap to 'latest' (or auto-pick from current version's prerelease tag).
   const tag = pkg.version.includes('-') ? 'beta' : 'latest';
-  const res = await fetch('https://registry.npmjs.org/@stage-labs/metro', {
-    signal: AbortSignal.timeout(15_000),
-  });
+  const res = await fetch('https://registry.npmjs.org/@stage-labs/metro', { signal: AbortSignal.timeout(15_000) });
   if (!res.ok) throw new Error(`npm registry: ${res.status}`);
   const data = (await res.json()) as { 'dist-tags'?: Record<string, string> };
   const latest = data['dist-tags']?.[tag];
@@ -473,10 +417,9 @@ async function cmdUpdate(flags: Record<string, string | boolean>): Promise<void>
 
   const argv1 = process.argv[1] ?? '';
   const spec = `@stage-labs/metro@${tag}`;
-  let argv: string[];
-  if (argv1.includes('/.bun/') || argv1.includes('\\bun\\')) argv = ['bun', 'add', '-g', spec];
-  else if (argv1.includes('/pnpm/') || argv1.includes('\\pnpm\\')) argv = ['pnpm', 'add', '-g', spec];
-  else argv = ['npm', 'install', '-g', spec];
+  const argv = argv1.includes('/.bun/') || argv1.includes('\\bun\\') ? ['bun', 'add', '-g', spec]
+    : argv1.includes('/pnpm/') || argv1.includes('\\pnpm\\') ? ['pnpm', 'add', '-g', spec]
+    : ['npm', 'install', '-g', spec];
 
   if (isJson(flags)) {
     process.stdout.write(JSON.stringify({ ok: true, current: pkg.version, latest, command: argv.join(' '), upgraded: 'pending' }) + '\n');
@@ -488,12 +431,9 @@ async function cmdUpdate(flags: Record<string, string | boolean>): Promise<void>
   // manager replaces our binary — after the spawn, BUNDLED_SKILL on disk
   // points at the new content (npm install -g overwrites in place), so a
   // fresh copyFileSync picks it up automatically.
-  const refreshTargets: Array<{ runtime: SkillRuntime; scope: 'user' | 'project' }> = [];
-  for (const runtime of SKILL_RUNTIMES) {
-    for (const scope of ['user', 'project'] as const) {
-      if (skillExistsAt(skillDir(runtime, scope))) refreshTargets.push({ runtime, scope });
-    }
-  }
+  const refreshTargets = SKILL_RUNTIMES.flatMap(r =>
+    SKILL_SCOPES.filter(s => existsSync(skillFile(r, s))).map(s => skillFile(r, s)),
+  );
 
   await new Promise<void>((resolve, reject) => {
     const child = spawn(argv[0], argv.slice(1), { stdio: isJson(flags) ? 'ignore' : 'inherit' });
@@ -502,100 +442,61 @@ async function cmdUpdate(flags: Record<string, string | boolean>): Promise<void>
   });
 
   // Refresh installed skills from the (now-updated) bundled SKILL.md.
-  const refreshed: string[] = [];
   if (existsSync(BUNDLED_SKILL)) {
-    for (const { runtime, scope } of refreshTargets) {
-      const dir = skillDir(runtime, scope);
-      mkdirSync(dir, { recursive: true });
-      const dest = join(dir, 'SKILL.md');
+    for (const dest of refreshTargets) {
+      mkdirSync(dirname(dest), { recursive: true });
       copyFileSync(BUNDLED_SKILL, dest);
-      refreshed.push(dest);
     }
-  }
-  if (refreshed.length > 0 && !isJson(flags)) {
-    process.stdout.write(`\nrefreshed installed skills:\n  ${refreshed.join('\n  ')}\n`);
+    if (refreshTargets.length > 0 && !isJson(flags)) {
+      process.stdout.write(`\nrefreshed installed skills:\n  ${refreshTargets.join('\n  ')}\n`);
+    }
   }
 }
 
 // ---------------- inbound action commands ----------------------------------
 
-async function cmdSend(flags: Record<string, string | boolean>): Promise<void> {
-  const addr = parseAddress(String(flags.to), false);
-  requirePlatform(addr.platform);
+async function cmdSend(flags: Flags): Promise<void> {
+  const addr = resolveAddr(flags, false);
   const text = await resolveText(flags);
-  let sentMessageId: string;
-  if (addr.platform === 'telegram') {
-    const body = buildSendBody(addr.chat, text, readTelegramOpts(flags));
-    const sent = await tg<{ message_id: number }>('sendMessage', body);
-    sentMessageId = String(sent.message_id);
-  } else {
-    sentMessageId = await discord.sendMessage(addr.chat, text);
-  }
-  emitResult(flags, 'sent', {
-    ok: true,
-    platform: addr.platform,
-    to: String(flags.to),
-    sent_message_id: sentMessageId,
-  });
+  const sentMessageId = addr.platform === 'telegram'
+    ? String((await tg<{ message_id: number }>('sendMessage', buildSendBody(addr.chat, text, readTelegramOpts(flags)))).message_id)
+    : await discord.sendMessage(addr.chat, text);
+  emitResult(flags, 'sent', { ok: true, platform: addr.platform, to: String(flags.to), sent_message_id: sentMessageId });
 }
 
-async function cmdReply(flags: Record<string, string | boolean>): Promise<void> {
-  const addr = parseAddress(String(flags.to), true);
-  requirePlatform(addr.platform);
+async function cmdReply(flags: Flags): Promise<void> {
+  const addr = resolveAddr(flags, true);
   const text = await resolveText(flags);
   let sentMessageId: string;
   if (addr.platform === 'telegram') {
-    const messageId = tgMessageId(addr);
     const body = buildSendBody(addr.chat, text, readTelegramOpts(flags));
-    body.reply_parameters = { message_id: messageId, allow_sending_without_reply: true };
-    const sent = await tg<{ message_id: number }>('sendMessage', body);
-    sentMessageId = String(sent.message_id);
-    signalReplyComplete('telegram', addr.chat);
-    await tg('setMessageReaction', { chat_id: addr.chat, message_id: messageId, reaction: [] }).catch(err =>
-      log.warn({ err: errMsg(err) }, 'telegram clear-reaction failed'),
-    );
+    body.reply_parameters = { message_id: tgMessageId(addr), allow_sending_without_reply: true };
+    sentMessageId = String((await tg<{ message_id: number }>('sendMessage', body)).message_id);
   } else {
     sentMessageId = await discord.replyToMessage(addr.chat, addr.messageId!, text);
-    signalReplyComplete('discord', addr.chat);
-    await discord
-      .setReaction(addr.chat, addr.messageId!, '')
-      .catch(err => log.warn({ err: errMsg(err) }, 'discord clear-reaction failed'));
   }
-  emitResult(flags, 'sent', {
-    ok: true,
-    platform: addr.platform,
-    to: String(flags.to),
-    sent_message_id: sentMessageId,
-  });
+  signalReplyComplete(addr.platform, addr.chat);
+  await clearReaction(addr).catch(err => log.warn({ err: errMsg(err) }, 'clear-reaction failed'));
+  emitResult(flags, 'sent', { ok: true, platform: addr.platform, to: String(flags.to), sent_message_id: sentMessageId });
 }
 
-async function cmdReact(flags: Record<string, string | boolean>): Promise<void> {
-  const addr = parseAddress(String(flags.to), true);
-  requirePlatform(addr.platform);
+async function cmdReact(flags: Flags): Promise<void> {
+  const addr = resolveAddr(flags, true);
   const emoji = typeof flags.emoji === 'string' ? flags.emoji : '';
   if (addr.platform === 'telegram') {
-    const messageId = tgMessageId(addr);
-    const reaction = emoji ? [{ type: 'emoji', emoji }] : [];
-    await tg('setMessageReaction', { chat_id: addr.chat, message_id: messageId, reaction });
+    await tg('setMessageReaction', { chat_id: addr.chat, message_id: tgMessageId(addr), reaction: emoji ? [{ type: 'emoji', emoji }] : [] });
   } else {
     await discord.setReaction(addr.chat, addr.messageId!, emoji);
   }
-  emitResult(flags, emoji ? 'reacted' : 'cleared', {
-    ok: true,
-    to: String(flags.to),
-    emoji,
-    action: emoji ? 'reacted' : 'cleared',
-  });
+  emitResult(flags, emoji ? 'reacted' : 'cleared', { ok: true, to: String(flags.to), emoji, action: emoji ? 'reacted' : 'cleared' });
 }
 
-async function cmdEdit(flags: Record<string, string | boolean>): Promise<void> {
-  const addr = parseAddress(String(flags.to), true);
-  requirePlatform(addr.platform);
+async function cmdEdit(flags: Flags): Promise<void> {
+  const addr = resolveAddr(flags, true);
   const text = await resolveText(flags);
   if (addr.platform === 'telegram') {
-    const messageId = tgMessageId(addr);
     const body = buildSendBody(addr.chat, text, readTelegramOpts(flags));
-    body.message_id = messageId;
+    body.message_id = tgMessageId(addr);
     await tg('editMessageText', body);
   } else {
     await discord.editMessage(addr.chat, addr.messageId!, text);
@@ -603,48 +504,35 @@ async function cmdEdit(flags: Record<string, string | boolean>): Promise<void> {
   emitResult(flags, 'edited', { ok: true, to: String(flags.to) });
 }
 
-async function cmdDownload(flags: Record<string, string | boolean>): Promise<void> {
-  const addr = parseAddress(String(flags.to), true);
-  requirePlatform(addr.platform);
+async function cmdDownload(flags: Flags): Promise<void> {
+  const addr = resolveAddr(flags, true);
   const outDir = typeof flags.out === 'string' ? flags.out : join(STATE_DIR, 'attachments');
   mkdirSync(outDir, { recursive: true });
 
-  let images: Array<{ data: string; mime: string }> = [];
-  if (addr.platform === 'telegram') {
-    const messageId = tgMessageId(addr);
-    const cached = telegram.getCachedAttachments(addr.chat, messageId);
-    images = await Promise.all(cached.map(a => telegram.downloadAttachment(a.file_id, a.mime)));
-  } else {
-    images = await discord.fetchAttachments(addr.chat, addr.messageId!);
-  }
+  const images = addr.platform === 'telegram'
+    ? await Promise.all(telegram.getCachedAttachments(addr.chat, tgMessageId(addr)).map(a => telegram.downloadAttachment(a.file_id, a.mime)))
+    : await discord.fetchAttachments(addr.chat, addr.messageId!);
+
   if (images.length === 0) {
-    if (isJson(flags)) {
-      process.stdout.write(JSON.stringify({ ok: true, images: [] }) + '\n');
-    } else {
-      process.stderr.write('no image attachments found\n');
-    }
+    if (isJson(flags)) process.stdout.write(JSON.stringify({ ok: true, images: [] }) + '\n');
+    else process.stderr.write('no image attachments found\n');
     return;
   }
 
   const safeChat = addr.chat.replace(/[^\w-]/g, '_');
   const safeMsg = (addr.messageId ?? '').replace(/[^\w-]/g, '_');
-  const out: Array<{ path: string; mime: string }> = [];
-  for (let i = 0; i < images.length; i++) {
-    const ext = EXT_FROM_MIME[images[i].mime] ?? 'bin';
+  const out = images.map((img, i) => {
+    const ext = EXT_FROM_MIME[img.mime] ?? 'bin';
     const path = join(outDir, `${addr.platform}_${safeChat}_${safeMsg}_${i}.${ext}`);
-    writeFileSync(path, Buffer.from(images[i].data, 'base64'));
-    out.push({ path, mime: images[i].mime });
-  }
-  if (isJson(flags)) {
-    process.stdout.write(JSON.stringify({ ok: true, images: out }) + '\n');
-  } else {
-    process.stdout.write(out.map(o => o.path).join('\n') + '\n');
-  }
+    writeFileSync(path, Buffer.from(img.data, 'base64'));
+    return { path, mime: img.mime };
+  });
+  if (isJson(flags)) process.stdout.write(JSON.stringify({ ok: true, images: out }) + '\n');
+  else process.stdout.write(out.map(o => o.path).join('\n') + '\n');
 }
 
-async function cmdFetch(flags: Record<string, string | boolean>): Promise<void> {
-  const addr = parseAddress(String(flags.to), false);
-  requirePlatform(addr.platform);
+async function cmdFetch(flags: Flags): Promise<void> {
+  const addr = resolveAddr(flags, false);
   if (addr.platform !== 'discord') {
     throw new Error('metro fetch is Discord-only — Telegram has no recent-messages API for bots');
   }
@@ -654,50 +542,47 @@ async function cmdFetch(flags: Record<string, string | boolean>): Promise<void> 
   if (isJson(flags)) {
     process.stdout.write(JSON.stringify(msgs) + '\n');
   } else {
-    const text = msgs
-      .map(m => `[message_id=${m.message_id} ${m.timestamp}] ${m.author}: ${m.text}`)
-      .join('\n');
+    const text = msgs.map(m => `[message_id=${m.message_id} ${m.timestamp}] ${m.author}: ${m.text}`).join('\n');
     process.stdout.write((text || '(channel is empty)') + '\n');
   }
 }
 
 // ---------------- main dispatcher ------------------------------------------
 
+const COMMANDS: Record<string, (positional: string[], flags: Flags) => Promise<void>> = {
+  setup: (positional, flags) => cmdSetup(positional, flags),
+  doctor: (_, flags) => cmdDoctor(flags),
+  update: (_, flags) => cmdUpdate(flags),
+  reply: (_, flags) => cmdReply(flags),
+  react: (_, flags) => cmdReact(flags),
+  edit: (_, flags) => cmdEdit(flags),
+  send: (_, flags) => cmdSend(flags),
+  download: (_, flags) => cmdDownload(flags),
+  fetch: (_, flags) => cmdFetch(flags),
+};
+const NEEDS_ENV = new Set(['doctor', 'reply', 'react', 'edit', 'send', 'download', 'fetch']);
+
 async function main(): Promise<void> {
   const cmd = process.argv[2];
-  if (cmd === '--version' || cmd === '-v') {
-    process.stdout.write(`${pkg.version}\n`);
-    return;
-  }
-  if (cmd === '--help' || cmd === '-h') {
-    process.stdout.write(USAGE);
-    return;
-  }
+  if (cmd === '--version' || cmd === '-v') { process.stdout.write(`${pkg.version}\n`); return; }
+  if (cmd === '--help' || cmd === '-h') { process.stdout.write(USAGE); return; }
 
   // Bare `metro` is an alias for `metro tail` — the inbound stream is the
   // primary action; one-shot subcommands are the secondary surface.
-  if (!cmd || cmd === 'tail') {
-    await import('./tail.js');
-    return;
+  if (!cmd || cmd === 'tail') { await import('./tail.js'); return; }
+
+  const handler = COMMANDS[cmd];
+  if (!handler) {
+    process.stderr.write(`unknown command '${cmd}'\n\n${USAGE}`);
+    process.exit(1);
   }
 
   const { positional, flags } = parseArgs(process.argv.slice(3));
+  if (NEEDS_ENV.has(cmd)) loadMetroEnv();
   try {
-    if (cmd === 'setup') return await cmdSetup(positional, flags);
-    if (cmd === 'doctor') return await cmdDoctor(flags);
-    if (cmd === 'update') return await cmdUpdate(flags);
-
-    loadMetroEnv();
-    if (cmd === 'reply') return await cmdReply(flags);
-    if (cmd === 'react') return await cmdReact(flags);
-    if (cmd === 'edit') return await cmdEdit(flags);
-    if (cmd === 'send') return await cmdSend(flags);
-    if (cmd === 'download') return await cmdDownload(flags);
-    if (cmd === 'fetch') return await cmdFetch(flags);
-    process.stderr.write(`unknown command '${cmd}'\n\n${USAGE}`);
-    process.exit(1);
+    await handler(positional, flags);
   } catch (err) {
-    const code = (err as Error & { code?: number }).code;
+    const code = (err as ExitErr).code;
     if (isJson(flags)) {
       process.stdout.write(JSON.stringify({ ok: false, error: errMsg(err), code: code ?? 1 }) + '\n');
     } else {

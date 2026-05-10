@@ -27,7 +27,6 @@ export function writeDotenv(path: string, env: Record<string, string>): void {
 // set — first definer wins, so callers control precedence by the order they
 // invoke this.
 export function loadDotenvIntoProcess(path: string): void {
-  if (!existsSync(path)) return;
   for (const [k, v] of Object.entries(readDotenv(path))) {
     if (process.env[k] === undefined) process.env[k] = v;
   }

@@ -1,5 +1,6 @@
-// Pino → stderr. Stdout is reserved for MCP JSON-RPC; any stray write there
-// breaks the protocol. Override level with METRO_LOG_LEVEL.
+// Pino → stderr. Stdout is reserved for command output (`metro tail`'s JSON
+// lines, subcommand results, --json) — any stray write there breaks parsing.
+// Override level with METRO_LOG_LEVEL.
 
 import pino from 'pino';
 

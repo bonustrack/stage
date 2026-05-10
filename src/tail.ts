@@ -12,7 +12,7 @@ import { join } from 'node:path';
 import * as discord from './channels/discord.js';
 import * as telegram from './channels/telegram.js';
 import { tg } from './channels/telegram.js';
-import { formatAddress } from './lib/address.js';
+import type { Platform } from './lib/address.js';
 import { configuredPlatforms, loadMetroEnv, STATE_DIR, requireConfiguredPlatform } from './paths.js';
 import { errMsg, log } from './log.js';
 
@@ -21,8 +21,8 @@ const platforms = configuredPlatforms();
 requireConfiguredPlatform(platforms);
 
 // Telegram allows only one getUpdates poller per bot token. If another
-// tail.ts is already running, exit cleanly instead of fighting (409 spam).
-// Stale lockfiles (PID dead) are reclaimed.
+// `metro tail` is already running, exit cleanly instead of fighting (409
+// spam). Stale lockfiles (PID dead) are reclaimed.
 const LOCK_FILE = join(STATE_DIR, '.tail-lock');
 
 function processIsAlive(pid: number): boolean {
@@ -32,7 +32,7 @@ function processIsAlive(pid: number): boolean {
 if (existsSync(LOCK_FILE)) {
   const pid = Number(readFileSync(LOCK_FILE, 'utf8').trim());
   if (Number.isInteger(pid) && pid > 0 && processIsAlive(pid)) {
-    log.info({ pid }, 'another tail.ts is already polling; exiting');
+    log.info({ pid }, 'another `metro tail` is already polling; exiting');
     process.exit(0);
   }
   try { unlinkSync(LOCK_FILE); } catch {}
@@ -56,7 +56,6 @@ mkdirSync(TYPING_DIR, { recursive: true });
 
 const emit = (line: Record<string, unknown>) => process.stdout.write(`${JSON.stringify(line)}\n`);
 
-type Platform = 'telegram' | 'discord';
 type TypingEntry = { platform: Platform; chat: string; started: number };
 const typingActive = new Map<string, TypingEntry>();
 const typingKey = (platform: Platform, chat: string) => `${platform}_${chat}`;
@@ -110,11 +109,7 @@ if (platforms.telegram) {
     }).catch(err => log.warn({ err: errMsg(err) }, 'telegram auto-react failed'));
     const chat = String(m.chat_id);
     startTyping('telegram', chat);
-    emit({
-      platform: 'telegram',
-      to: formatAddress({ platform: 'telegram', chat, messageId: String(m.message_id) }),
-      text: m.text,
-    });
+    emit({ platform: 'telegram', to: `telegram:${chat}/${m.message_id}`, text: m.text });
   });
   void telegram.startPolling();
 }
@@ -128,11 +123,7 @@ if (platforms.discord) {
       .setReaction(m.channel_id, m.message_id, '👀')
       .catch(err => log.warn({ err: errMsg(err) }, 'discord auto-react failed'));
     startTyping('discord', m.channel_id);
-    emit({
-      platform: 'discord',
-      to: formatAddress({ platform: 'discord', chat: m.channel_id, messageId: m.message_id }),
-      text: m.text,
-    });
+    emit({ platform: 'discord', to: `discord:${m.channel_id}/${m.message_id}`, text: m.text });
   });
 }
 

@@ -4,12 +4,6 @@
 export type Platform = 'telegram' | 'discord';
 export type Address = { platform: Platform; chat: string; messageId?: string };
 
-export function formatAddress(addr: Address): string {
-  return addr.messageId === undefined
-    ? `${addr.platform}:${addr.chat}`
-    : `${addr.platform}:${addr.chat}/${addr.messageId}`;
-}
-
 export function parseAddress(to: string, requireMessage: boolean): Address {
   const colon = to.indexOf(':');
   if (colon === -1) {

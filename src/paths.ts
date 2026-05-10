@@ -12,20 +12,19 @@ mkdirSync(STATE_DIR, { recursive: true });
 
 // Where `metro setup` writes the global .env. Override with METRO_CONFIG_DIR
 // or the standard $XDG_CONFIG_HOME.
-export const CONFIG_DIR =
+const CONFIG_DIR =
   process.env.METRO_CONFIG_DIR ??
   join(process.env.XDG_CONFIG_HOME || join(homedir(), '.config'), 'metro');
 export const CONFIG_ENV_FILE = join(CONFIG_DIR, '.env');
 
 // Skill install destinations. Same SKILL.md content lands in both — the
 // agent that's actually running picks up the file from its conventional
-// path. Claude Code: ~/.claude/skills/<name>/. Codex: ~/.agents/skills/<name>/.
+// path. Claude Code: ~/.claude/skills/metro/. Codex: ~/.agents/skills/metro/.
 export type SkillRuntime = 'claude-code' | 'codex';
-export const SKILL_NAME = 'metro';
 export function skillDir(runtime: SkillRuntime, scope: 'user' | 'project'): string {
   const base = scope === 'user' ? homedir() : process.cwd();
   const root = runtime === 'claude-code' ? '.claude' : '.agents';
-  return join(base, root, 'skills', SKILL_NAME);
+  return join(base, root, 'skills', 'metro');
 }
 
 // Precedence: process.env (already set) > cwd/.env > <CONFIG_DIR>/.env.
