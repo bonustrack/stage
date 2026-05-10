@@ -7,7 +7,7 @@
 // `ensureThread(scopeKey)` and `sendTurn(threadId, text, callbacks)`.
 
 import { spawn, type ChildProcess } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, unlinkSync } from 'node:fs';
 import { createConnection } from 'node:net';
 import { join } from 'node:path';
 import { WebSocket, type RawData } from 'ws';
@@ -40,22 +40,62 @@ export class CodexAgent implements Agent {
   constructor(private clientVersion: string) {}
 
   async start(): Promise<void> {
+    // Fail loud at boot if codex isn't installed, rather than 15s later
+    // via a "socket didn't appear" timeout.
+    await this.checkCodexInstalled();
+
+    // Stale socket file from a previous run would let us connect to nothing
+    // (no listener) — wipe before spawning so codex binds fresh.
+    try { unlinkSync(SOCKET_PATH); } catch { /* missing is fine */ }
+
     log.info({ socket: SOCKET_PATH }, 'codex agent: starting app-server');
     // Spawn the daemon listening on our UDS. Inherits CODEX_HOME so it picks
     // up the user's auth, settings, MCPs, etc.
     this.daemon = spawn('codex', ['app-server', '--listen', `unix://${SOCKET_PATH}`], {
       stdio: ['ignore', 'pipe', 'pipe'],
     });
-    // Codex's own tracing goes to stderr (incl. its own ERROR-level lines for
-    // MCP config issues etc). It's not metro's signal — keep it at trace so
-    // `metro doctor` / debug log views aren't drowned in unrelated noise.
-    this.daemon.stdout?.on('data', d => log.trace({ src: 'codex-stdout' }, String(d).trim()));
-    this.daemon.stderr?.on('data', d => log.trace({ src: 'codex-stderr' }, String(d).trim()));
-    this.daemon.on('exit', code => log.warn({ code }, 'codex daemon exited'));
 
-    await this.waitForSocket();
-    await this.connect();
+    // Capture daemon stderr so a startup failure surfaces with the actual
+    // error message, not just a generic timeout. Once the daemon is ready,
+    // stderr goes back to trace (its own tracing is noisy).
+    let bootStderr = '';
+    let daemonExited = false;
+    let daemonExitCode: number | null = null;
+    const onBootStderr = (d: Buffer): void => {
+      bootStderr += String(d);
+      log.trace({ src: 'codex-stderr' }, String(d).trim());
+    };
+    this.daemon.stdout?.on('data', d => log.trace({ src: 'codex-stdout' }, String(d).trim()));
+    this.daemon.stderr?.on('data', onBootStderr);
+    this.daemon.on('exit', code => {
+      daemonExited = true;
+      daemonExitCode = code;
+      log.warn({ code }, 'codex daemon exited');
+    });
+
+    try {
+      await this.waitForSocket(() => daemonExited, () => bootStderr.trim() || `exit code ${daemonExitCode}`);
+      await this.connect();
+    } catch (err) {
+      // Make the failure self-explanatory in the orchestrator's catch log.
+      const detail = bootStderr.trim() ? ` (codex stderr: ${bootStderr.trim().slice(0, 200)})` : '';
+      throw new Error(`${errMsg(err)}${detail}`);
+    }
     log.info('codex agent: ready');
+  }
+
+  private async checkCodexInstalled(): Promise<void> {
+    await new Promise<void>((resolve, reject) => {
+      const c = spawn('codex', ['--version'], { stdio: ['ignore', 'ignore', 'pipe'] });
+      let stderr = '';
+      c.stderr?.on('data', d => { stderr += String(d); });
+      c.on('error', err => reject(new Error(`codex CLI not found on PATH: ${errMsg(err)}`)));
+      c.on('exit', code =>
+        code === 0
+          ? resolve()
+          : reject(new Error(`codex --version exited ${code}: ${stderr.trim()}`)),
+      );
+    });
   }
 
   async stop(): Promise<void> {
@@ -100,9 +140,10 @@ export class CodexAgent implements Agent {
 
   // --- transport ---
 
-  private async waitForSocket(): Promise<void> {
+  private async waitForSocket(exited: () => boolean, exitReason: () => string): Promise<void> {
     const deadline = Date.now() + READY_TIMEOUT_MS;
     while (Date.now() < deadline) {
+      if (exited()) throw new Error(`codex app-server exited before listening: ${exitReason()}`);
       if (existsSync(SOCKET_PATH)) return;
       await new Promise(r => setTimeout(r, READY_POLL_MS));
     }
