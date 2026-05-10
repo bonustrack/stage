@@ -36,13 +36,14 @@ While the agent is working on a reply, both platforms show a typing indicator; w
 |---|---|
 | `metro` (alias `metro tail`) | Long-running inbound stream. Run in the background. |
 | `metro setup` | Status: tokens, skills, what's next. |
-| `metro setup telegram\|discord <token>` | Save a bot token to `$METRO_CONFIG_DIR/.env`. |
+| `metro setup telegram\|discord <token>` | Save a bot token to `$METRO_CONFIG_DIR/.env`. Validates the token via `getMe` before writing; `--no-validate` skips. |
 | `metro setup clear [telegram\|discord\|all]` | Remove tokens. |
 | `metro setup skill [--project] [--clear]` | Install (or remove) the agent skill in both Claude Code (`~/.claude/skills/metro/`) and Codex (`~/.agents/skills/metro/`). `--project` writes to the cwd instead of `$HOME`. |
 | `metro doctor` | Health check: tokens, gateway reachability, tail process, skill install state. |
 | `metro reply --to=<addr> --text=<t>` | Quote-reply. Clears 👀. |
 | `metro react --to=<addr> --emoji=<e>` | Set or clear (`''`) a reaction. |
 | `metro edit --to=<addr> --text=<t>` | Edit a message the bot previously sent. |
+| `metro send --to=<addr> --text=<t>` | Send a proactive message (no reply context). `<addr>` is channel-only: `<platform>:<chat_id>`. |
 | `metro download --to=<addr> [--out=<dir>]` | Pull image attachments to disk; prints absolute paths so the agent can `Read` them. |
 | `metro fetch --to=<addr> [--limit=N]` | Recent-message lookback. Discord only — pass channel-only `discord:<channel_id>`. |
 | `metro update` | Check npm and upgrade in place (npm/bun/pnpm auto-detected). |

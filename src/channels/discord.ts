@@ -105,6 +105,11 @@ type RawMessage = {
   reactions?: Array<{ emoji: { name: string | null; id: string | null }; me: boolean }>;
 };
 
+export async function sendMessage(channelId: string, text: string): Promise<string> {
+  const sent = await rest<{ id: string }>('POST', `/channels/${channelId}/messages`, { content: text });
+  return sent.id;
+}
+
 export async function replyToMessage(channelId: string, messageId: string, text: string): Promise<string> {
   const sent = await rest<{ id: string }>('POST', `/channels/${channelId}/messages`, {
     content: text,

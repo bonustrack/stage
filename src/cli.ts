@@ -30,14 +30,16 @@ Usage:
   metro reply    --to=<addr> [--text=<t>]     Quote-reply, threading under the original. Clears 👀.
   metro react    --to=<addr> --emoji=<e>      Set or clear ('') a reaction.
   metro edit     --to=<addr> [--text=<t>]     Edit a message the bot previously sent.
+  metro send     --to=<addr> [--text=<t>]     Send a proactive message (no reply context).
+                                                <addr> is channel-only: <platform>:<chat_id> (no /message_id).
   metro download --to=<addr> [--out=<dir>]    Download image attachments to disk.
   metro fetch    --to=<addr> [--limit=N]      Recent-message lookback (Discord only).
   metro update                                Upgrade in place (npm/bun/pnpm auto-detected).
 
 setup verbs:
   metro setup                                 Status: tokens, skills, what's next.
-  metro setup telegram <token>                Save TELEGRAM_BOT_TOKEN.
-  metro setup discord  <token>                Save DISCORD_BOT_TOKEN.
+  metro setup telegram <token>                Save TELEGRAM_BOT_TOKEN (validated via getMe; --no-validate skips).
+  metro setup discord  <token>                Save DISCORD_BOT_TOKEN (validated via getMe; --no-validate skips).
   metro setup clear [telegram|discord|all]    Remove tokens.
   metro setup skill [--project] [--clear]     Install (or remove) the agent skill.
 
@@ -186,13 +188,34 @@ async function cmdSetup(positional: string[], flags: Record<string, string | boo
 
   if (sub === 'telegram' || sub === 'discord') {
     if (!value) throw new Error(`metro setup ${sub} <token> — token is required`);
+    const trimmed = value.trim();
+    let identity: string | undefined;
+    if (!flags['no-validate']) {
+      // Validate the token against the platform before persisting — catches
+      // typos / wrong-token-from-portal / rotated tokens at the earliest moment.
+      process.env[tokenKeys[sub]] = trimmed;
+      try {
+        identity = sub === 'telegram'
+          ? `@${(await telegram.getMe()).username}`
+          : (await discord.getMe()).username;
+      } catch (err) {
+        delete process.env[tokenKeys[sub]];
+        const e = new Error(`token rejected by ${sub}: ${errMsg(err)} (re-run with --no-validate to save anyway)`);
+        (e as Error & { code?: number }).code = 3;
+        throw e;
+      }
+    }
     const env = readDotenv(CONFIG_ENV_FILE);
-    env[tokenKeys[sub]] = value.trim();
+    env[tokenKeys[sub]] = trimmed;
     writeDotenv(CONFIG_ENV_FILE, env);
-    emitResult(flags, `saved ${tokenKeys[sub]} to ${CONFIG_ENV_FILE} (chmod 0600)`, {
+    const human = identity
+      ? `saved ${tokenKeys[sub]} (verified as ${identity}) to ${CONFIG_ENV_FILE} (chmod 0600)`
+      : `saved ${tokenKeys[sub]} to ${CONFIG_ENV_FILE} (chmod 0600)`;
+    emitResult(flags, human, {
       ok: true,
       saved: tokenKeys[sub],
       path: CONFIG_ENV_FILE,
+      verified_as: identity ?? null,
     });
     return;
   }
@@ -280,6 +303,19 @@ function skillExistsAt(dir: string): boolean {
   return existsSync(join(dir, 'SKILL.md'));
 }
 
+type InstalledSkill = { scope: 'user' | 'project'; path: string; fresh: boolean };
+
+function installedSkills(runtime: SkillRuntime): InstalledSkill[] {
+  const out: InstalledSkill[] = [];
+  for (const scope of ['user', 'project'] as const) {
+    const path = join(skillDir(runtime, scope), 'SKILL.md');
+    if (!existsSync(path)) continue;
+    const fresh = existsSync(BUNDLED_SKILL) && readFileSync(path).equals(readFileSync(BUNDLED_SKILL));
+    out.push({ scope, path, fresh });
+  }
+  return out;
+}
+
 async function cmdSetupSkill(flags: Record<string, string | boolean>): Promise<void> {
   const scope: 'user' | 'project' = flags.project ? 'project' : 'user';
   if (flags.clear) {
@@ -359,17 +395,31 @@ async function cmdDoctor(flags: Record<string, string | boolean>): Promise<void>
   // tail process state
   checks.push(tailStateCheck());
 
-  // skill install
+  // skill install + freshness vs bundled
   for (const runtime of SKILL_RUNTIMES) {
-    const user = skillExistsAt(skillDir(runtime, 'user'));
-    const project = skillExistsAt(skillDir(runtime, 'project'));
-    checks.push({
-      name: `skill: ${runtime}`,
-      ok: user || project ? true : null,
-      detail: user || project
-        ? [user && 'user', project && 'project'].filter(Boolean).join(' + ')
-        : `not installed — run \`metro setup skill${runtime === 'codex' ? '  # writes both runtimes' : ''}\``,
-    });
+    const installed = installedSkills(runtime);
+    if (installed.length === 0) {
+      checks.push({
+        name: `skill: ${runtime}`,
+        ok: null,
+        detail: 'not installed — run `metro setup skill` (writes both runtimes)',
+      });
+      continue;
+    }
+    const stale = installed.filter(s => !s.fresh).map(s => s.scope);
+    if (stale.length === 0) {
+      checks.push({
+        name: `skill: ${runtime}`,
+        ok: true,
+        detail: installed.map(s => s.scope).join(' + '),
+      });
+    } else {
+      checks.push({
+        name: `skill: ${runtime}`,
+        ok: false,
+        detail: `stale at ${stale.join(' + ')} — re-run \`metro setup skill${stale.includes('project') ? ' --project' : ''}\``,
+      });
+    }
   }
 
   if (isJson(flags)) {
@@ -434,14 +484,60 @@ async function cmdUpdate(flags: Record<string, string | boolean>): Promise<void>
     process.stdout.write(`metro ${pkg.version} → ${latest}\n$ ${argv.join(' ')}\n`);
   }
 
+  // Snapshot which skill destinations are installed BEFORE the package
+  // manager replaces our binary — after the spawn, BUNDLED_SKILL on disk
+  // points at the new content (npm install -g overwrites in place), so a
+  // fresh copyFileSync picks it up automatically.
+  const refreshTargets: Array<{ runtime: SkillRuntime; scope: 'user' | 'project' }> = [];
+  for (const runtime of SKILL_RUNTIMES) {
+    for (const scope of ['user', 'project'] as const) {
+      if (skillExistsAt(skillDir(runtime, scope))) refreshTargets.push({ runtime, scope });
+    }
+  }
+
   await new Promise<void>((resolve, reject) => {
     const child = spawn(argv[0], argv.slice(1), { stdio: isJson(flags) ? 'ignore' : 'inherit' });
     child.on('exit', code => (code === 0 ? resolve() : reject(new Error(`${argv[0]} exited with code ${code}`))));
     child.on('error', reject);
   });
+
+  // Refresh installed skills from the (now-updated) bundled SKILL.md.
+  const refreshed: string[] = [];
+  if (existsSync(BUNDLED_SKILL)) {
+    for (const { runtime, scope } of refreshTargets) {
+      const dir = skillDir(runtime, scope);
+      mkdirSync(dir, { recursive: true });
+      const dest = join(dir, 'SKILL.md');
+      copyFileSync(BUNDLED_SKILL, dest);
+      refreshed.push(dest);
+    }
+  }
+  if (refreshed.length > 0 && !isJson(flags)) {
+    process.stdout.write(`\nrefreshed installed skills:\n  ${refreshed.join('\n  ')}\n`);
+  }
 }
 
 // ---------------- inbound action commands ----------------------------------
+
+async function cmdSend(flags: Record<string, string | boolean>): Promise<void> {
+  const addr = parseAddress(String(flags.to), false);
+  requirePlatform(addr.platform);
+  const text = await resolveText(flags);
+  let sentMessageId: string;
+  if (addr.platform === 'telegram') {
+    const body = buildSendBody(addr.chat, text, readTelegramOpts(flags));
+    const sent = await tg<{ message_id: number }>('sendMessage', body);
+    sentMessageId = String(sent.message_id);
+  } else {
+    sentMessageId = await discord.sendMessage(addr.chat, text);
+  }
+  emitResult(flags, 'sent', {
+    ok: true,
+    platform: addr.platform,
+    to: String(flags.to),
+    sent_message_id: sentMessageId,
+  });
+}
 
 async function cmdReply(flags: Record<string, string | boolean>): Promise<void> {
   const addr = parseAddress(String(flags.to), true);
@@ -595,6 +691,7 @@ async function main(): Promise<void> {
     if (cmd === 'reply') return await cmdReply(flags);
     if (cmd === 'react') return await cmdReact(flags);
     if (cmd === 'edit') return await cmdEdit(flags);
+    if (cmd === 'send') return await cmdSend(flags);
     if (cmd === 'download') return await cmdDownload(flags);
     if (cmd === 'fetch') return await cmdFetch(flags);
     process.stderr.write(`unknown command '${cmd}'\n\n${USAGE}`);
