@@ -80,12 +80,10 @@ async function onDiscordInbound(m: discord.InboundMessage): Promise<void> {
   }
 
   // Already inside a known thread? Route directly to its codex session.
-  // The user's message lives in the same channel (the thread), so the 👀
-  // anchor is right there.
   const cachedScope = discordScopeKey(m.channel_id);
   const cachedCodex = getCodexThread(cachedScope);
   if (cachedCodex) {
-    await handleTurn(m.channel_id, m.text, cachedCodex, { channelId: m.channel_id, messageId: m.message_id });
+    await handleTurn(m.channel_id, m.text, cachedCodex);
     return;
   }
 
@@ -106,38 +104,23 @@ async function onDiscordInbound(m: discord.InboundMessage): Promise<void> {
   setCodexThread(discordScopeKey(threadId), codexThreadId);
   log.info({ discord: threadId, codex: codexThreadId }, 'scope created');
 
-  // No quote in the thread — Discord shows the user's original mention
-  // as the thread starter. Anchor 👀 to that parent-channel message.
-  await handleTurn(threadId, m.text, codexThreadId, { channelId: m.channel_id, messageId: m.message_id });
+  await handleTurn(threadId, m.text, codexThreadId);
 }
-
-type ReactAnchor = { channelId: string; messageId: string };
 
 /**
  * Run one agent turn against a known codex thread, streaming the response
  * back to the given Discord channel.
- * @param channelId       Discord channel/thread to post the reply into
- * @param text            the user's message text
- * @param codexThreadId   the codex thread to send the turn to
- * @param reactAnchor     where to show 👀 progress (may live in a different
- *                        channel than the reply, e.g. the parent for the
- *                        bootstrap case)
  */
 async function handleTurn(
   channelId: string,
   text: string,
   codexThreadId: string,
-  reactAnchor: ReactAnchor,
 ): Promise<void> {
   if (inFlight.has(codexThreadId)) {
     log.warn({ codex: codexThreadId }, 'turn already in flight for this thread; ignoring (no queueing yet)');
     return;
   }
   inFlight.add(codexThreadId);
-
-  void discord.setReaction(reactAnchor.channelId, reactAnchor.messageId, '👀').catch(err =>
-    log.warn({ err: errMsg(err) }, 'discord 👀 failed'),
-  );
 
   const stream = new StreamingMessage(
     {
@@ -147,11 +130,6 @@ async function handleTurn(
     discordScheduler,
   );
 
-  const clearReaction = (): Promise<void> =>
-    discord
-      .setReaction(reactAnchor.channelId, reactAnchor.messageId, '')
-      .catch(err => log.warn({ err: errMsg(err) }, 'discord 👀 clear failed'));
-
   const callbacks: AgentTurnCallbacks = {
     onDelta: d => stream.appendDelta(d),
     onToolStart: (_kind, summary) => stream.setStatus(summary),
@@ -159,7 +137,6 @@ async function handleTurn(
     onComplete: () => {
       void (async () => {
         await stream.finalize();
-        await clearReaction();
         inFlight.delete(codexThreadId);
       })();
     },
@@ -167,7 +144,6 @@ async function handleTurn(
       log.warn({ err: errMsg(err) }, 'agent turn failed');
       void (async () => {
         await stream.finalize();
-        await clearReaction();
         inFlight.delete(codexThreadId);
       })();
     },
