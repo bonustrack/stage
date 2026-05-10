@@ -10,6 +10,7 @@ import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from '
 import { join } from 'node:path';
 import pkg from '../package.json' with { type: 'json' };
 import * as discord from './channels/discord.js';
+import * as telegram from './channels/telegram.js';
 import { CodexAgent } from './agents/codex.js';
 import { ClaudeAgent } from './agents/claude.js';
 import type { Agent, AgentTurnCallbacks } from './agents/types.js';
@@ -23,8 +24,9 @@ import {
   setAgentThread,
   setLastAgent,
   setLastSeen,
+  telegramScopeKey,
 } from './lib/scope-cache.js';
-import { StreamingMessage, StreamScheduler } from './lib/streaming.js';
+import { StreamingMessage, StreamScheduler, type StreamAdapter } from './lib/streaming.js';
 import { errMsg, log } from './log.js';
 import { configuredPlatforms, loadMetroEnv, STATE_DIR, requireConfiguredPlatform } from './paths.js';
 
@@ -58,8 +60,9 @@ process.on('exit', () => { try { if (readFileSync(LOCK_FILE, 'utf8').trim() === 
 // send overlapping turn/start requests on the same thread.
 const inFlight = new Set<string>();
 // Per-thread queue of follow-up messages that arrived while a turn was
-// already running. Coalesced into one combined turn on completion.
-type Queued = { channelId: string; texts: string[]; kind: AgentKind };
+// already running. Each entry remembers how to dispatch the next turn so
+// the drain reuses the right platform adapter.
+type Queued = { texts: string[]; dispatch: (text: string) => Promise<void> };
 const queued = new Map<string, Queued>();
 // De-dupe the *same* gateway delivery (e.g. on reconnect replay).
 const bootstrapped = new Set<string>();
@@ -73,6 +76,7 @@ const available: Partial<Record<AgentKind, Agent>> = {};
 // One scheduler per bot — coalesces streamed edits across every active
 // thread so concurrent turns don't compound the bot's edit cadence.
 const discordScheduler = new StreamScheduler();
+const telegramScheduler = new StreamScheduler();
 
 async function startAgents(): Promise<void> {
   await Promise.allSettled([
@@ -97,6 +101,15 @@ async function main(): Promise<void> {
     log.info({ bot: me.username }, 'discord ready');
     discord.onInbound(m => void onDiscordInbound(m).catch(err => log.warn({ err: errMsg(err) }, 'discord inbound failed')));
     void catchupDiscord().catch(err => log.warn({ err: errMsg(err) }, 'discord catchup failed'));
+  }
+
+  if (platforms.telegram) {
+    // Identity needed for @-mention detection in groups; populated as a
+    // side-effect on the channel module.
+    const me = await telegram.getMe();
+    log.info({ bot: `@${me.username}` }, 'telegram ready');
+    telegram.onInbound(m => void onTelegramInbound(m).catch(err => log.warn({ err: errMsg(err) }, 'telegram inbound failed')));
+    await telegram.startPolling();
   }
 
   log.info('orchestrator ready');
@@ -181,7 +194,7 @@ async function onDiscordInbound(m: discord.InboundMessage): Promise<void> {
     } else {
       setLastAgent(cachedScope, choice.kind);
     }
-    await handleTurn(m.channel_id, parsed.cleanText, choice.kind, agentThreadId);
+    await handleTurn(parsed.cleanText, choice.kind, agentThreadId, discordAdapter(m.channel_id), discordScheduler);
     return;
   }
 
@@ -207,7 +220,62 @@ async function onDiscordInbound(m: discord.InboundMessage): Promise<void> {
   setAgentThread(discordScopeKey(threadId), choice.kind, agentThreadId);
   log.info({ discord: threadId, agent: choice.kind, thread: agentThreadId }, 'scope created');
 
-  await handleTurn(threadId, parsed.cleanText, choice.kind, agentThreadId);
+  await handleTurn(parsed.cleanText, choice.kind, agentThreadId, discordAdapter(threadId), discordScheduler);
+}
+
+async function onTelegramInbound(m: telegram.InboundMessage): Promise<void> {
+  // Only handle DMs and forum-topic messages. Non-topic group chats are
+  // skipped — there's no thread boundary, so per-scope routing would be
+  // ambiguous.
+  if (!m.is_private && !m.is_forum_topic) {
+    log.debug({ chat: m.chat_id }, 'telegram: non-private/non-topic chat ignored');
+    return;
+  }
+
+  const scopeKey = telegramScopeKey(m.chat_id, m.message_thread_id);
+  const cachedHasAnyAgent = !!(getAgentThread(scopeKey, 'codex') ?? getAgentThread(scopeKey, 'claude'));
+
+  // Existing scope: route directly. New scope: bootstrap on this message
+  // (no separate thread-creation step like Discord — the chat/topic IS
+  // the thread).
+  if (!cachedHasAnyAgent && !m.is_private && !m.mentions_bot) {
+    // In a group/topic with no scope, require an @-mention to bootstrap.
+    log.debug({ chat: m.chat_id }, 'telegram: dropped — no scope, no @-mention');
+    return;
+  }
+
+  const parsed = parseAgentSuffix(m.text);
+  const choice = pickAgent(cachedHasAnyAgent ? scopeKey : null, parsed.kind);
+  if ('error' in choice) {
+    await postTelegramError(m.chat_id, m.message_thread_id, choice.error);
+    return;
+  }
+
+  setLastSeen(scopeKey, String(m.message_id));
+  let agentThreadId = getAgentThread(scopeKey, choice.kind);
+  if (!agentThreadId) {
+    agentThreadId = await available[choice.kind]!.createThread();
+    setAgentThread(scopeKey, choice.kind, agentThreadId);
+    log.info({ scope: scopeKey, agent: choice.kind, thread: agentThreadId }, 'telegram: allocated agent session');
+  } else {
+    setLastAgent(scopeKey, choice.kind);
+  }
+
+  await handleTurn(
+    parsed.cleanText,
+    choice.kind,
+    agentThreadId,
+    telegramAdapter(m.chat_id, m.message_thread_id),
+    telegramScheduler,
+  );
+}
+
+async function postTelegramError(chatId: number, threadId: number | undefined, message: string): Promise<void> {
+  try {
+    await telegram.sendMessage(chatId, threadId, `⚠️ ${message}`);
+  } catch (err) {
+    log.warn({ err: errMsg(err) }, 'failed to post telegram error');
+  }
 }
 
 async function postErrorMessage(channelId: string, message: string): Promise<void> {
@@ -235,37 +303,37 @@ function makeThreadName(rawText: string, fallback: string): string {
 
 /**
  * Run one agent turn against a known agent thread, streaming the response
- * back to the given Discord channel. If a turn is already in flight for
- * this thread, append the text to the per-thread queue instead.
+ * through the provided platform adapter. If a turn is already in flight
+ * for this thread, append to the per-thread queue and let the current
+ * turn's drain pick it up.
  */
 async function handleTurn(
-  channelId: string,
   text: string,
   kind: AgentKind,
   agentThreadId: string,
+  adapter: StreamAdapter,
+  scheduler: StreamScheduler,
 ): Promise<void> {
   const agent = available[kind];
   if (!agent) {
-    await postErrorMessage(channelId, `${kind} is not available on this metro instance`);
+    // Shouldn't happen — the caller's pickAgent() already filters this —
+    // but log defensively so it's not silent.
+    log.warn({ kind, agent: agentThreadId }, 'handleTurn called for unavailable agent');
     return;
   }
+
+  const dispatch = (t: string): Promise<void> => handleTurn(t, kind, agentThreadId, adapter, scheduler);
 
   if (inFlight.has(agentThreadId)) {
     const q = queued.get(agentThreadId);
     if (q) q.texts.push(text);
-    else queued.set(agentThreadId, { channelId, texts: [text], kind });
+    else queued.set(agentThreadId, { texts: [text], dispatch });
     log.debug({ agent: agentThreadId, queueDepth: queued.get(agentThreadId)!.texts.length }, 'queued follow-up turn');
     return;
   }
   inFlight.add(agentThreadId);
 
-  const stream = new StreamingMessage(
-    {
-      send: t => discord.sendMessage(channelId, t),
-      edit: async (id, t) => { await discord.editMessage(channelId, id, t); },
-    },
-    discordScheduler,
-  );
+  const stream = new StreamingMessage(adapter, scheduler);
 
   const finishAndDrain = async (): Promise<void> => {
     await stream.finalize();
@@ -275,9 +343,7 @@ async function handleTurn(
     queued.delete(agentThreadId);
     const combined = q.texts.join('\n\n');
     log.debug({ agent: agentThreadId, batched: q.texts.length }, 'draining queued follow-ups');
-    await handleTurn(q.channelId, combined, q.kind, agentThreadId).catch(err =>
-      log.warn({ err: errMsg(err) }, 'queued turn failed'),
-    );
+    await q.dispatch(combined).catch(err => log.warn({ err: errMsg(err) }, 'queued turn failed'));
   };
 
   const callbacks: AgentTurnCallbacks = {
@@ -295,6 +361,20 @@ async function handleTurn(
   await agent.sendTurn(agentThreadId, text, callbacks);
 }
 
+function discordAdapter(channelId: string): StreamAdapter {
+  return {
+    send: t => discord.sendMessage(channelId, t),
+    edit: async (id, t) => { await discord.editMessage(channelId, id, t); },
+  };
+}
+
+function telegramAdapter(chatId: number, topicId: number | undefined): StreamAdapter {
+  return {
+    send: async t => String(await telegram.sendMessage(chatId, topicId, t)),
+    edit: async (id, t) => { await telegram.editMessageText(chatId, Number(id), t); },
+  };
+}
+
 let shuttingDown = false;
 async function shutdown(): Promise<void> {
   if (shuttingDown) return;
@@ -305,6 +385,7 @@ async function shutdown(): Promise<void> {
     available.claude?.stop().catch(err => log.warn({ err: errMsg(err) }, 'claude shutdown failed')),
   ]);
   if (platforms.discord) await discord.shutdownGateway().catch(err => log.warn({ err: errMsg(err) }, 'discord shutdown failed'));
+  if (platforms.telegram) await telegram.shutdownPolling().catch(err => log.warn({ err: errMsg(err) }, 'telegram shutdown failed'));
   process.exit(0);
 }
 process.stdin.on('end', shutdown);

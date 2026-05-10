@@ -102,3 +102,9 @@ export function discordScopeKey(threadChannelId: string): string {
 export function discordChannelFromScopeKey(scopeKey: string): string | null {
   return scopeKey.startsWith('discord:') ? scopeKey.slice('discord:'.length) : null;
 }
+
+// Telegram scope: chat + optional forum-topic id. Use a sentinel ('main')
+// for non-topic chats so the key shape stays predictable.
+export function telegramScopeKey(chatId: number | string, topicId: number | undefined): string {
+  return `telegram:${chatId}:${topicId ?? 'main'}`;
+}

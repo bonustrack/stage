@@ -16,21 +16,25 @@ Run a long-lived daemon that bridges Discord (and soon Telegram) to your Codex /
 npm install -g @stage-labs/metro@beta    # or: bun add -g @stage-labs/metro@beta
 
 metro setup discord <token>              # https://discord.com/developers/applications
-metro setup telegram <token>             # https://t.me/BotFather  (Telegram routing lands in a follow-up)
+metro setup telegram <token>             # https://t.me/BotFather
 
 metro doctor                             # verify
 metro                                    # run the orchestrator
 ```
 
-Metro starts both agents (codex + Claude Code) at boot. Each Discord thread defaults to **Claude** for the first turn; once you've used an agent there, follow-up messages stick with it. To switch on a per-message basis, suffix your message with `with claude` or `with codex` (any casing):
+Metro starts both agents (codex + Claude Code) at boot and listens on whichever platforms are configured. Each scoped conversation defaults to **Claude** for the first turn; once you've used an agent there, follow-up messages stick with it. To switch on a per-message basis, suffix with `with claude` or `with codex` (any casing):
 
 ```
 @Metro draft a release note
-   → uses Claude (default for a new thread)
+   → uses Claude (default for a new scope)
 
 How would Codex have done this? with codex
-   → routes this turn to Codex instead, in the same Discord thread
+   → routes this turn to Codex instead, in the same scope
 ```
+
+**Discord:** @-mention the bot in a channel to spawn a new thread; in-thread messages route automatically.
+
+**Telegram:** DM the bot directly, or @-mention it in a supergroup forum-topic. Each chat/topic is its own scope. Regular (non-topic) group chats are not routed — they have no thread boundary.
 
 In Discord, **@-mention the bot** in a channel. Metro:
 
@@ -43,19 +47,22 @@ Subsequent messages in that thread go straight to the same Codex session — no 
 ## How it works
 
 ```
-Discord gateway ──▶ metro orchestrator ──┬─▶ codex app-server  (long-lived subprocess)
-                       │                 └─▶ claude -p ...      (per-turn subprocess)
-                       └──── thread map ──────────┘
-                            (scopes.json)
+Discord gateway ──┐                       ┌─▶ codex app-server  (long-lived subprocess)
+                  ├─▶ metro orchestrator ─┤
+Telegram polling ─┘                       └─▶ claude -p ...      (per-turn subprocess)
+                            │
+                            └──── scope map (scopes.json)
 ```
 
 - **One metro = one daemon.** Lockfile at `$METRO_STATE_DIR/.tail-lock` keeps things singleton.
-- **Both agents run side-by-side.** A Discord thread can have up to one session per agent — they're independent histories. Routing is per-message: explicit `with claude` / `with codex` suffix, otherwise the thread's last-used agent, otherwise Claude.
+- **Both agents run side-by-side.** A scope can have up to one session per agent — independent histories. Routing is per-message: explicit `with claude` / `with codex` suffix, otherwise the scope's last-used agent, otherwise Claude.
 - **Codex** runs as a long-lived `codex app-server` over a UDS, JSON-RPC.
 - **Claude Code** has no daemon mode — metro shells out to `claude -p --session-id <uuid> ...` for the first turn and `--resume <uuid>` after.
-- **Streaming.** Replies edit a single Discord message every ~1500 ms while deltas stream in (with a leading-edge first flush for fast feedback). Tool calls show as a status line (`Running: <command>`, `Editing N files`, …). Messages are auto-split past 1900 chars.
+- **Discord** uses the gateway for inbound, REST for send/edit; threads are scopes.
+- **Telegram** long-polls `getUpdates`, REST for send/edit; DMs and forum topics are scopes. The poll offset is persisted at `$METRO_STATE_DIR/telegram-offset.json` so missed messages come back through telegram's own queue on restart.
+- **Streaming.** Replies edit one message every ~1500 ms while deltas stream in (with a leading-edge first flush for fast feedback). Tool calls show as a status line (`Running: <command>`, `Editing N files`, …). Messages are auto-split past 1900 chars.
 - **Queueing.** Follow-ups that arrive while a turn is running are queued and answered together in the next reply.
-- **Catchup-on-restart.** Metro persists a per-scope watermark and replays anything you sent in known threads while it was down.
+- **Catchup-on-restart.** Discord uses a per-scope `lastSeenMessageId` watermark + REST replay; Telegram leans on its own update-id queue.
 
 ## Config
 
@@ -93,7 +100,7 @@ npm uninstall -g @stage-labs/metro
 
 ## Caveats
 
-- **Discord-only for now.** Telegram orchestration lands in a follow-up PR; setup is wired so you can save the token today.
-- **No allowlist.** Anyone who can @-mention your bot can spawn an agent session. Run against bots you own.
-- **Per-agent histories are separate.** Switching with `with codex` mid-thread spins up a fresh Codex session — it has no idea what you discussed with Claude in the same Discord thread. Each agent only sees what was sent to it.
+- **No allowlist.** Anyone who can DM/@-mention your bot can spawn an agent session. Run against bots you own.
+- **Per-agent histories are separate.** Switching with `with codex` mid-scope spins up a fresh Codex session — it has no idea what you discussed with Claude in the same scope. Each agent only sees what was sent to it.
 - **One agent missing is OK.** If only `claude` or only `codex` is installed/authenticated, metro still starts; messages asking for the missing one surface an error in chat.
+- **Telegram non-topic groups are skipped.** Without a per-topic thread boundary the routing model breaks down. DMs and forum topics work normally.
