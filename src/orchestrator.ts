@@ -174,6 +174,8 @@ async function handleTurn(
     onComplete: () => { void finishAndDrain(); },
     onError: err => {
       log.warn({ err: errMsg(err) }, 'agent turn failed');
+      // Surface in chat so the user isn't left staring at "Thinking…".
+      stream.appendError(errMsg(err) || 'agent turn failed');
       void finishAndDrain();
     },
   };

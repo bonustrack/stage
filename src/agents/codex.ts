@@ -135,6 +135,10 @@ export class CodexAgent implements Agent {
     ws.on('close', () => {
       log.warn('codex agent: websocket closed');
       this.ws = null;
+      // Drain stranded turns + RPC promises so the orchestrator can
+      // release its in-flight gate and the user sees an error rather
+      // than a permanent "Thinking…".
+      this.drainPending('codex websocket closed');
     });
     await this.call('initialize', {
       clientInfo: { name: 'metro', version: this.clientVersion, title: null },
@@ -211,6 +215,17 @@ export class CodexAgent implements Agent {
       this.pending.set(id, { resolve: resolve as (r: unknown) => void, reject });
       ws.send(JSON.stringify({ jsonrpc: '2.0', id, method, params }));
     });
+  }
+
+  /** Fail every in-flight turn + RPC. Used when the transport dies. */
+  private drainPending(reason: string): void {
+    const err = new Error(reason);
+    for (const cb of this.turnCallbacks.values()) {
+      try { cb.onError(err); } catch (e) { log.warn({ err: errMsg(e) }, 'codex agent: drain callback threw'); }
+    }
+    this.turnCallbacks.clear();
+    for (const p of this.pending.values()) p.reject(err);
+    this.pending.clear();
   }
 }
 

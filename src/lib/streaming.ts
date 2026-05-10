@@ -110,6 +110,21 @@ export class StreamingMessage {
     this.scheduler.request(this);
   }
 
+  /**
+   * Append an error notice to the visible message. Renders as `⚠️ <msg>`
+   * either on its own (no prior text) or after a blank line (preserves
+   * whatever streamed before the failure). Clears any pending status
+   * line since 'Thinking…' is meaningless after an error.
+   */
+  appendError(message: string): void {
+    if (this.finalized) return;
+    const last = this.segments[this.segments.length - 1];
+    const sep = last.text ? '\n\n' : '';
+    this.statusLine = null;
+    this.appendToLast(`${sep}⚠️ ${message}`);
+    this.scheduler.request(this);
+  }
+
   async finalize(): Promise<void> {
     if (this.finalized) return;
     this.finalized = true;
