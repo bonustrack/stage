@@ -80,8 +80,12 @@ export async function downloadAttachment(fileId: string, mime: string): Promise<
     signal: AbortSignal.timeout(30_000),
   });
   if (!res.ok) throw new Error(`download failed: ${res.status}`);
-  const blob = await res.blob();
-  return { data: Buffer.from(await blob.arrayBuffer()).toString('base64'), mime: blob.type || mime };
+  const buf = Buffer.from(await res.arrayBuffer());
+  // Trust the cached mime — it's the authoritative one from the message
+  // metadata (`image/jpeg` for photos, the document's mime_type for files).
+  // The Telegram CDN often returns `application/octet-stream` as Content-Type,
+  // which would otherwise wipe out our extension classification downstream.
+  return { data: buf.toString('base64'), mime };
 }
 
 // Structural subset of a Telegram Message we actually look at.

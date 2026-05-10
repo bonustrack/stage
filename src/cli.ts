@@ -352,7 +352,8 @@ async function cmdDoctor(flags: Flags): Promise<void> {
     }
   }
 
-  // tail process state
+  // tail process state. A stale lockfile (process gone) is informational —
+  // the next `metro` start auto-reclaims it, so we don't fail the doctor on it.
   const lockFile = join(STATE_DIR, '.tail-lock');
   if (!existsSync(lockFile)) {
     checks.push({ name: 'stream', ok: null, detail: 'not running' });
@@ -363,7 +364,7 @@ async function cmdDoctor(flags: Flags): Promise<void> {
       process.kill(pid, 0);
       checks.push({ name: 'stream', ok: true, detail: `running (pid ${pid})` });
     } catch {
-      checks.push({ name: 'stream', ok: false, detail: 'stale lockfile (process gone)' });
+      checks.push({ name: 'stream', ok: null, detail: 'stale lockfile (will auto-reclaim on next start)' });
     }
   }
 
