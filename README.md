@@ -19,8 +19,17 @@ metro setup discord <token>              # https://discord.com/developers/applic
 metro setup telegram <token>             # https://t.me/BotFather  (Telegram routing lands in a follow-up)
 
 metro doctor                             # verify
-metro                                    # run the orchestrator with codex (default)
-METRO_AGENT=claude metro                 # run with Claude Code instead
+metro                                    # run the orchestrator
+```
+
+Metro starts both agents (codex + Claude Code) at boot. Each Discord thread defaults to **Claude** for the first turn; once you've used an agent there, follow-up messages stick with it. To switch on a per-message basis, suffix your message with `with claude` or `with codex` (any casing):
+
+```
+@Metro draft a release note
+   → uses Claude (default for a new thread)
+
+How would Codex have done this? with codex
+   → routes this turn to Codex instead, in the same Discord thread
 ```
 
 In Discord, **@-mention the bot** in a channel. Metro:
@@ -34,25 +43,25 @@ Subsequent messages in that thread go straight to the same Codex session — no 
 ## How it works
 
 ```
-Discord gateway ──▶ metro orchestrator ──▶ codex app-server  (METRO_AGENT=codex, default)
-                       │                   claude -p ...     (METRO_AGENT=claude, per-turn)
+Discord gateway ──▶ metro orchestrator ──┬─▶ codex app-server  (long-lived subprocess)
+                       │                 └─▶ claude -p ...      (per-turn subprocess)
                        └──── thread map ──────────┘
                             (scopes.json)
 ```
 
 - **One metro = one daemon.** Lockfile at `$METRO_STATE_DIR/.tail-lock` keeps things singleton.
-- **One Discord thread ↔ one agent thread.** The map persists in `$METRO_STATE_DIR/scopes.json`, so restarting metro rejoins existing conversations.
-- **Codex (default)** runs as a long-lived subprocess. Metro spawns `codex app-server` over a Unix domain socket and talks to it via JSON-RPC.
-- **Claude Code** has no daemon mode — metro shells out to `claude -p --session-id <uuid> ...` for the first turn and `--resume <uuid>` for every subsequent one. Streams via `--output-format stream-json --include-partial-messages`.
-- **Streaming.** Replies edit a single Discord message every ~1500 ms while deltas stream in. Tool calls show as a status line (`Running: <command>`, `Editing N files`, …) and clear on completion. Messages are auto-split past 1900 chars.
-- **Queueing.** Follow-up messages that arrive while a turn is running are queued and answered together in the next reply.
+- **Both agents run side-by-side.** A Discord thread can have up to one session per agent — they're independent histories. Routing is per-message: explicit `with claude` / `with codex` suffix, otherwise the thread's last-used agent, otherwise Claude.
+- **Codex** runs as a long-lived `codex app-server` over a UDS, JSON-RPC.
+- **Claude Code** has no daemon mode — metro shells out to `claude -p --session-id <uuid> ...` for the first turn and `--resume <uuid>` after.
+- **Streaming.** Replies edit a single Discord message every ~1500 ms while deltas stream in (with a leading-edge first flush for fast feedback). Tool calls show as a status line (`Running: <command>`, `Editing N files`, …). Messages are auto-split past 1900 chars.
+- **Queueing.** Follow-ups that arrive while a turn is running are queued and answered together in the next reply.
+- **Catchup-on-restart.** Metro persists a per-scope watermark and replays anything you sent in known threads while it was down.
 
 ## Config
 
 | Variable | Default | Description |
 |---|---|---|
 | `TELEGRAM_BOT_TOKEN`, `DISCORD_BOT_TOKEN` | — | Bot tokens. `metro setup` writes them here. |
-| `METRO_AGENT` | `codex` | Which agent backs the bot. `codex` or `claude`. |
 | `METRO_CONFIG_DIR` | `~/.config/metro` | Where the global `.env` lives. |
 | `METRO_STATE_DIR` | `~/.cache/metro` | Lockfile, scope cache, codex socket. |
 | `METRO_LOG_LEVEL` | `info` | `trace` / `debug` / `info` / `warn` / `error` / `fatal`. |
@@ -86,4 +95,5 @@ npm uninstall -g @stage-labs/metro
 
 - **Discord-only for now.** Telegram orchestration lands in a follow-up PR; setup is wired so you can save the token today.
 - **No allowlist.** Anyone who can @-mention your bot can spawn an agent session. Run against bots you own.
-- **Switching agents mid-stream.** `scopes.json` stores agent thread ids; if you change `METRO_AGENT`, existing thread mappings won't resolve in the new agent. Wipe `~/.cache/metro/scopes.json` to start fresh.
+- **Per-agent histories are separate.** Switching with `with codex` mid-thread spins up a fresh Codex session — it has no idea what you discussed with Claude in the same Discord thread. Each agent only sees what was sent to it.
+- **One agent missing is OK.** If only `claude` or only `codex` is installed/authenticated, metro still starts; messages asking for the missing one surface an error in chat.

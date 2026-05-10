@@ -1,13 +1,10 @@
 // Metro orchestrator — long-running daemon. Owns the Discord gateway,
-// manages one codex thread per Discord conversation thread, and streams
-// per-turn responses back to chat (with tool-call status visible).
+// spawns both codex and claude as on-demand backends, and streams per-turn
+// responses back to chat with tool-call status visible.
 //
-// Architecture diff from the previous metro:
-//   Old: agent runs metro as a tool; metro just streams inbound JSON.
-//   New: metro runs the agent (codex app-server) as a subprocess and
-//        routes each Discord/Telegram thread to its own codex session.
-//
-// PR 1 scope: Discord, with codex or Claude Code as the agent. Telegram follows.
+// Per-message agent routing: a message ending in "with claude" / "with
+// codex" (any casing) targets that agent. Otherwise, the scope's last-used
+// agent answers; for brand-new scopes, the default is Claude.
 
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -17,11 +14,14 @@ import { CodexAgent } from './agents/codex.js';
 import { ClaudeAgent } from './agents/claude.js';
 import type { Agent, AgentTurnCallbacks } from './agents/types.js';
 import {
+  type AgentKind,
   discordChannelFromScopeKey,
   discordScopeKey,
-  getCodexThread,
+  getAgentThread,
+  getLastAgent,
   listScopes,
-  setCodexThread,
+  setAgentThread,
+  setLastAgent,
   setLastSeen,
 } from './lib/scope-cache.js';
 import { StreamingMessage, StreamScheduler } from './lib/streaming.js';
@@ -54,44 +54,48 @@ mkdirSync(STATE_DIR, { recursive: true });
 writeFileSync(LOCK_FILE, String(process.pid));
 process.on('exit', () => { try { if (readFileSync(LOCK_FILE, 'utf8').trim() === String(process.pid)) unlinkSync(LOCK_FILE); } catch { /* ignore */ } });
 
-// Track which codex threads we're actively serving a turn in, so we
-// don't send overlapping turn/start requests on the same thread.
+// Track which agent threads we're actively serving a turn in, so we don't
+// send overlapping turn/start requests on the same thread.
 const inFlight = new Set<string>();
 // Per-thread queue of follow-up messages that arrived while a turn was
-// already running. Coalesced into one combined turn on completion so the
-// agent can address the whole batch in one reply.
-type Queued = { channelId: string; texts: string[] };
+// already running. Coalesced into one combined turn on completion.
+type Queued = { channelId: string; texts: string[]; kind: AgentKind };
 const queued = new Map<string, Queued>();
-// De-dupe the *same* gateway delivery (e.g. on reconnect replay). Keyed
-// on message_id so two distinct @-mentions in the same parent channel
-// each still get their own thread.
+// De-dupe the *same* gateway delivery (e.g. on reconnect replay).
 const bootstrapped = new Set<string>();
 
-// Which agent backs the bot. `METRO_AGENT=claude` switches to Claude Code;
-// anything else (default: codex) uses the codex app-server. Choice is
-// process-wide for now — per-channel routing can come later if needed.
-const agentKind = (process.env.METRO_AGENT ?? 'codex').toLowerCase();
-const agent: Agent =
-  agentKind === 'claude'
-    ? new ClaudeAgent()
-    : new CodexAgent(pkg.version);
-log.info({ agent: agentKind }, 'orchestrator: agent selected');
+// Both agents are instantiated; either can fail start() and be left
+// unavailable. Routing falls back gracefully when an agent isn't usable.
+const codexAgent = new CodexAgent(pkg.version);
+const claudeAgent = new ClaudeAgent();
+const available: Partial<Record<AgentKind, Agent>> = {};
 
 // One scheduler per bot — coalesces streamed edits across every active
 // thread so concurrent turns don't compound the bot's edit cadence.
 const discordScheduler = new StreamScheduler();
 
+async function startAgents(): Promise<void> {
+  await Promise.allSettled([
+    codexAgent.start().then(() => { available.codex = codexAgent; })
+      .catch(err => log.warn({ err: errMsg(err) }, "codex unavailable — 'with codex' will fail")),
+    claudeAgent.start().then(() => { available.claude = claudeAgent; })
+      .catch(err => log.warn({ err: errMsg(err) }, "claude unavailable — 'with claude' will fail")),
+  ]);
+  if (Object.keys(available).length === 0) {
+    log.fatal('no agents available — install codex or claude and authenticate');
+    process.exit(2);
+  }
+  log.info({ agents: Object.keys(available) }, 'orchestrator: agents ready');
+}
+
 async function main(): Promise<void> {
-  await agent.start();
+  await startAgents();
 
   if (platforms.discord) {
     await discord.startGateway();
     const me = await discord.getMe();
     log.info({ bot: me.username }, 'discord ready');
     discord.onInbound(m => void onDiscordInbound(m).catch(err => log.warn({ err: errMsg(err) }, 'discord inbound failed')));
-    // Replay anything the user sent while metro was down. Runs in the
-    // background so we don't block 'orchestrator ready' for what might be
-    // a long REST pass.
     void catchupDiscord().catch(err => log.warn({ err: errMsg(err) }, 'discord catchup failed'));
   }
 
@@ -109,8 +113,6 @@ async function catchupDiscord(): Promise<void> {
       if (humanMissed.length === 0) continue;
       log.info({ channel: channelId, count: humanMissed.length }, 'discord catchup: replaying missed messages');
       for (const m of humanMissed) {
-        // Dispatch through the normal inbound path; the orchestrator's
-        // queueing collapses bursts into one combined turn.
         await onDiscordInbound({
           channel_id: channelId,
           message_id: m.message_id,
@@ -125,41 +127,95 @@ async function catchupDiscord(): Promise<void> {
   }
 }
 
+// "with claude" / "with codex" suffix (any casing). Captures the kind and
+// returns the message without the suffix. If no suffix, returns null.
+const SUFFIX_RE = /(?:^|\s)with\s+(claude|codex)\s*$/i;
+function parseAgentSuffix(text: string): { kind: AgentKind | null; cleanText: string } {
+  const trimmed = text.trimEnd();
+  const m = SUFFIX_RE.exec(trimmed);
+  if (!m) return { kind: null, cleanText: text };
+  const kind = m[1].toLowerCase() as AgentKind;
+  return { kind, cleanText: trimmed.slice(0, m.index).trimEnd() };
+}
+
+// Effective agent for this turn: explicit suffix beats lastAgent beats the
+// default (Claude). If the requested kind is unavailable, returns null so
+// the caller can surface an error to the user.
+function pickAgent(scopeKey: string | null, requestedKind: AgentKind | null): { kind: AgentKind; explicit: boolean } | { error: string } {
+  if (requestedKind) {
+    if (!available[requestedKind]) return { error: `${requestedKind} is not available on this metro instance` };
+    return { kind: requestedKind, explicit: true };
+  }
+  const last = scopeKey ? getLastAgent(scopeKey) : undefined;
+  if (last && available[last]) return { kind: last, explicit: false };
+  if (available.claude) return { kind: 'claude', explicit: false };
+  if (available.codex) return { kind: 'codex', explicit: false };
+  return { error: 'no agents available' };
+}
+
 async function onDiscordInbound(m: discord.InboundMessage): Promise<void> {
-  // DMs aren't routed in PR 1 — focus on guild thread orchestration.
   if (!m.in_guild) {
     log.debug({ channel: m.channel_id }, 'discord DM ignored (not supported yet)');
     return;
   }
 
-  // Already inside a known thread? Route directly to its agent session.
   const cachedScope = discordScopeKey(m.channel_id);
-  const cachedAgentThread = getCodexThread(cachedScope);
-  if (cachedAgentThread) {
-    // Watermark so catchup-on-restart knows where to pick up from.
+  const cachedHasAnyAgent = !!(getAgentThread(cachedScope, 'codex') ?? getAgentThread(cachedScope, 'claude'));
+
+  // Existing scope (in-thread message): route to the requested or last-used agent.
+  if (cachedHasAnyAgent) {
+    const parsed = parseAgentSuffix(m.text);
+    const choice = pickAgent(cachedScope, parsed.kind);
+    if ('error' in choice) {
+      await postErrorMessage(m.channel_id, choice.error);
+      return;
+    }
     setLastSeen(cachedScope, m.message_id);
-    await handleTurn(m.channel_id, m.text, cachedAgentThread);
+    let agentThreadId = getAgentThread(cachedScope, choice.kind);
+    if (!agentThreadId) {
+      // First time using this agent in this scope — fresh session, no prior
+      // history shared with the other agent.
+      agentThreadId = await available[choice.kind]!.createThread();
+      setAgentThread(cachedScope, choice.kind, agentThreadId);
+      log.info({ scope: cachedScope, agent: choice.kind, thread: agentThreadId }, 'allocated new agent session for existing scope');
+    } else {
+      setLastAgent(cachedScope, choice.kind);
+    }
+    await handleTurn(m.channel_id, parsed.cleanText, choice.kind, agentThreadId);
     return;
   }
 
-  // Not in a known thread. An @-mention bootstraps a new one.
+  // No scope yet — only @-mentions bootstrap a new thread.
   if (!m.mentions_bot) {
     log.debug({ channel: m.channel_id }, 'discord guild msg dropped: no scope, no @-mention');
     return;
   }
   if (bootstrapped.has(m.message_id)) return;
   bootstrapped.add(m.message_id);
-  const agentThreadId = await agent.createThread();
-  // Thread name is the user's message itself — easier to scan in the
-  // Discord sidebar than the raw session id. Falls back to the agent
-  // thread id if the message has no usable text (image-only, etc.).
-  const threadName = makeThreadName(m.text, agentThreadId);
-  log.info({ parent: m.channel_id, agent: agentThreadId, threadName }, 'discord: bootstrapping new scope from @-mention');
-  const threadId = await discord.createThreadFromMessage(m.channel_id, m.message_id, threadName);
-  setCodexThread(discordScopeKey(threadId), agentThreadId);
-  log.info({ discord: threadId, agent: agentThreadId }, 'scope created');
 
-  await handleTurn(threadId, m.text, agentThreadId);
+  const parsed = parseAgentSuffix(m.text);
+  const choice = pickAgent(null, parsed.kind);
+  if ('error' in choice) {
+    await postErrorMessage(m.channel_id, choice.error);
+    return;
+  }
+  const agentForBootstrap = available[choice.kind]!;
+  const agentThreadId = await agentForBootstrap.createThread();
+  const threadName = makeThreadName(parsed.cleanText, agentThreadId);
+  log.info({ parent: m.channel_id, agent: choice.kind, thread: agentThreadId, threadName }, 'discord: bootstrapping new scope from @-mention');
+  const threadId = await discord.createThreadFromMessage(m.channel_id, m.message_id, threadName);
+  setAgentThread(discordScopeKey(threadId), choice.kind, agentThreadId);
+  log.info({ discord: threadId, agent: choice.kind, thread: agentThreadId }, 'scope created');
+
+  await handleTurn(threadId, parsed.cleanText, choice.kind, agentThreadId);
+}
+
+async function postErrorMessage(channelId: string, message: string): Promise<void> {
+  try {
+    await discord.sendMessage(channelId, `⚠️ ${message}`);
+  } catch (err) {
+    log.warn({ err: errMsg(err) }, 'failed to post error message');
+  }
 }
 
 // Discord thread names: 1-100 chars, no newlines. Strip <@id>, <@&id>,
@@ -180,18 +236,24 @@ function makeThreadName(rawText: string, fallback: string): string {
 /**
  * Run one agent turn against a known agent thread, streaming the response
  * back to the given Discord channel. If a turn is already in flight for
- * this thread, append the text to the per-thread queue instead — it'll
- * be picked up as the next combined turn when the current one finishes.
+ * this thread, append the text to the per-thread queue instead.
  */
 async function handleTurn(
   channelId: string,
   text: string,
+  kind: AgentKind,
   agentThreadId: string,
 ): Promise<void> {
+  const agent = available[kind];
+  if (!agent) {
+    await postErrorMessage(channelId, `${kind} is not available on this metro instance`);
+    return;
+  }
+
   if (inFlight.has(agentThreadId)) {
     const q = queued.get(agentThreadId);
     if (q) q.texts.push(text);
-    else queued.set(agentThreadId, { channelId, texts: [text] });
+    else queued.set(agentThreadId, { channelId, texts: [text], kind });
     log.debug({ agent: agentThreadId, queueDepth: queued.get(agentThreadId)!.texts.length }, 'queued follow-up turn');
     return;
   }
@@ -205,10 +267,6 @@ async function handleTurn(
     discordScheduler,
   );
 
-  // Called from both onComplete and onError. Drains any queued follow-ups
-  // into a single combined next turn so the agent answers the whole batch
-  // in one reply (matches chat semantics where you read all new messages
-  // before responding).
   const finishAndDrain = async (): Promise<void> => {
     await stream.finalize();
     inFlight.delete(agentThreadId);
@@ -217,7 +275,7 @@ async function handleTurn(
     queued.delete(agentThreadId);
     const combined = q.texts.join('\n\n');
     log.debug({ agent: agentThreadId, batched: q.texts.length }, 'draining queued follow-ups');
-    await handleTurn(q.channelId, combined, agentThreadId).catch(err =>
+    await handleTurn(q.channelId, combined, q.kind, agentThreadId).catch(err =>
       log.warn({ err: errMsg(err) }, 'queued turn failed'),
     );
   };
@@ -229,7 +287,6 @@ async function handleTurn(
     onComplete: () => { void finishAndDrain(); },
     onError: err => {
       log.warn({ err: errMsg(err) }, 'agent turn failed');
-      // Surface in chat so the user isn't left staring at "Thinking…".
       stream.appendError(errMsg(err) || 'agent turn failed');
       void finishAndDrain();
     },
@@ -238,15 +295,15 @@ async function handleTurn(
   await agent.sendTurn(agentThreadId, text, callbacks);
 }
 
-// Graceful shutdown — let the agent tear down cleanly (codex's daemon
-// syncs state to disk; claude kills any in-flight subprocesses) and the
-// bot shows offline immediately.
 let shuttingDown = false;
 async function shutdown(): Promise<void> {
   if (shuttingDown) return;
   shuttingDown = true;
   log.info('orchestrator shutting down');
-  await agent.stop().catch(err => log.warn({ err: errMsg(err) }, 'agent shutdown failed'));
+  await Promise.allSettled([
+    available.codex?.stop().catch(err => log.warn({ err: errMsg(err) }, 'codex shutdown failed')),
+    available.claude?.stop().catch(err => log.warn({ err: errMsg(err) }, 'claude shutdown failed')),
+  ]);
   if (platforms.discord) await discord.shutdownGateway().catch(err => log.warn({ err: errMsg(err) }, 'discord shutdown failed'));
   process.exit(0);
 }

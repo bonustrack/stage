@@ -1,6 +1,11 @@
-// Per-machine cache of `scope_key → codex thread id`. Lets orchestrator
-// restarts rejoin the same codex conversation in the same Discord thread
-// instead of starting from scratch. JSON file at $STATE_DIR/scopes.json.
+// Per-machine cache of `scope_key → { agent thread ids, last-used }`.
+// Lets orchestrator restarts rejoin the same agent conversation in the
+// same Discord thread instead of starting from scratch. JSON file at
+// $STATE_DIR/scopes.json.
+//
+// One Discord thread can have up to one session per agent kind — when a
+// user explicitly switches via "with claude" / "with codex", a fresh
+// session is allocated for the new kind and stored alongside.
 //
 // Scope keys are platform-prefixed so the same store handles Discord and
 // Telegram without collisions:
@@ -12,8 +17,9 @@ import { join } from 'node:path';
 import { errMsg, log } from '../log.js';
 import { STATE_DIR } from '../paths.js';
 
+export type AgentKind = 'codex' | 'claude';
+
 type Entry = {
-  codexThreadId: string;
   createdAt: string;
   /**
    * Watermark for catchup-on-restart: the id of the most recent human
@@ -22,6 +28,10 @@ type Entry = {
    * orchestrator.
    */
   lastSeenMessageId?: string;
+  /** Per-agent session ids. A scope can have one of each. */
+  agents: Partial<Record<AgentKind, string>>;
+  /** Which agent answered most recently — the default for the next turn. */
+  lastAgent?: AgentKind;
 };
 type Cache = Record<string, Entry>;
 
@@ -45,13 +55,32 @@ function write(cache: Cache): void {
   }
 }
 
-export function getCodexThread(scopeKey: string): string | undefined {
-  return read()[scopeKey]?.codexThreadId;
+function ensure(cache: Cache, scopeKey: string): Entry {
+  if (!cache[scopeKey]) cache[scopeKey] = { createdAt: new Date().toISOString(), agents: {} };
+  if (!cache[scopeKey].agents) cache[scopeKey].agents = {};
+  return cache[scopeKey];
 }
 
-export function setCodexThread(scopeKey: string, codexThreadId: string): void {
+export function getAgentThread(scopeKey: string, kind: AgentKind): string | undefined {
+  return read()[scopeKey]?.agents?.[kind];
+}
+
+export function setAgentThread(scopeKey: string, kind: AgentKind, threadId: string): void {
   const cache = read();
-  cache[scopeKey] = { codexThreadId, createdAt: new Date().toISOString() };
+  const entry = ensure(cache, scopeKey);
+  entry.agents[kind] = threadId;
+  entry.lastAgent = kind;
+  write(cache);
+}
+
+export function getLastAgent(scopeKey: string): AgentKind | undefined {
+  return read()[scopeKey]?.lastAgent;
+}
+
+export function setLastAgent(scopeKey: string, kind: AgentKind): void {
+  const cache = read();
+  if (!cache[scopeKey]) return;
+  cache[scopeKey].lastAgent = kind;
   write(cache);
 }
 
