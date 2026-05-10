@@ -149,17 +149,32 @@ async function onDiscordInbound(m: discord.InboundMessage): Promise<void> {
   }
   if (bootstrapped.has(m.message_id)) return;
   bootstrapped.add(m.message_id);
-  // Create the agent thread first so its id can name the Discord thread —
-  // lets you cross-reference scopes.json / logs from the Discord UI at a
-  // glance instead of decoding our own naming convention.
   const agentThreadId = await agent.createThread();
-  const threadName = agentThreadId.length <= 100 ? agentThreadId : agentThreadId.slice(0, 100);
-  log.info({ parent: m.channel_id, agent: agentThreadId }, 'discord: bootstrapping new scope from @-mention');
+  // Thread name is the user's message itself — easier to scan in the
+  // Discord sidebar than the raw session id. Falls back to the agent
+  // thread id if the message has no usable text (image-only, etc.).
+  const threadName = makeThreadName(m.text, agentThreadId);
+  log.info({ parent: m.channel_id, agent: agentThreadId, threadName }, 'discord: bootstrapping new scope from @-mention');
   const threadId = await discord.createThreadFromMessage(m.channel_id, m.message_id, threadName);
   setCodexThread(discordScopeKey(threadId), agentThreadId);
   log.info({ discord: threadId, agent: agentThreadId }, 'scope created');
 
   await handleTurn(threadId, m.text, agentThreadId);
+}
+
+// Discord thread names: 1-100 chars, no newlines. Strip <@id>, <@&id>,
+// <#id>, custom emoji syntax, then normalize whitespace. Falls back to
+// the agent thread id if nothing usable is left.
+function makeThreadName(rawText: string, fallback: string): string {
+  const cleaned = rawText
+    .replace(/<@!?\d+>/g, '')
+    .replace(/<@&\d+>/g, '')
+    .replace(/<#\d+>/g, '')
+    .replace(/<a?:[^:]+:\d+>/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!cleaned) return fallback.slice(0, 100);
+  return cleaned.length <= 100 ? cleaned : cleaned.slice(0, 99) + '…';
 }
 
 /**
