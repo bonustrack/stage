@@ -38,7 +38,7 @@ How would Codex have done this? with codex
 @-mention the bot in any channel:
 1. Metro creates a thread anchored on your message (named after the message).
 2. Spins up an agent session for that thread.
-3. Streams the agent's reply with tool-call status (`Running: <command>`, `Editing 3 files`, `Thinking…`).
+3. Streams the agent's reply with tool calls inlined (`▸ Running: <command>`, `▸ Editing 3 files`) so the full sequence stays visible in scroll-back. Transient `Thinking…` shows as a status line that clears once content streams.
 
 Follow-ups in the thread route automatically — no @-mention needed.
 
@@ -62,7 +62,7 @@ Telegram poller ──┘                       └─▶ claude -p ...      (pe
 
 - **One metro = one daemon.** Lockfile at `$METRO_STATE_DIR/.tail-lock` keeps things singleton.
 - **Both agents side-by-side.** A scope can have up to one session per agent — independent histories. Routing is per-message: explicit `with claude` / `with codex` suffix, otherwise the scope's last-used agent, otherwise Claude.
-- **Streaming.** Replies edit one message every ~1500 ms while deltas stream in (leading-edge first flush for fast initial feedback). Tool calls show as a status line; long replies split past ~1900 chars onto a follow-up message.
+- **Streaming.** Replies edit one message every ~1500 ms while deltas stream in (leading-edge first flush for fast initial feedback). Tool calls are inlined into the body (`▸ Running: ls`) as they happen, so the user sees the full sequence of agent actions in scroll-back. Transient `Thinking…` / `Reasoning…` show as a status line that clears once real content arrives. Long replies split past ~1900 chars onto a follow-up message.
 - **Queueing.** Messages that arrive while a turn is running are buffered per-scope and answered together in the next reply.
 - **Catchup-on-restart.** Discord uses a per-scope `lastSeenMessageId` watermark and REST-fetches anything newer when metro comes back up. Telegram leans on its own update-id queue (persisted offset in `telegram-offset.json`).
 

@@ -59,6 +59,11 @@ mkdirSync(STATE_DIR, { recursive: true });
 writeFileSync(LOCK_FILE, String(process.pid));
 process.on('exit', () => { try { if (readFileSync(LOCK_FILE, 'utf8').trim() === String(process.pid)) unlinkSync(LOCK_FILE); } catch { /* ignore */ } });
 
+// Tool-call kinds that represent transient activity ("agent is thinking
+// before producing content") rather than a discrete action worth keeping
+// in the transcript. Claude emits 'thinking', codex emits 'reasoning'.
+const TRANSIENT_TOOL_KINDS = new Set(['thinking', 'reasoning']);
+
 // Track which agent threads we're actively serving a turn in, so we don't
 // send overlapping turn/start requests on the same thread.
 const inFlight = new Set<string>();
@@ -402,8 +407,17 @@ async function handleTurn(
 
   const callbacks: AgentTurnCallbacks = {
     onDelta: d => stream.appendDelta(d),
-    onToolStart: (_kind, summary) => stream.setStatus(summary),
-    onToolEnd: () => stream.setStatus(null),
+    onToolStart: (kind, summary) => {
+      // Meta "thinking"/"reasoning" indicators are transient (they get
+      // cleared the moment real content arrives) — keep them as a status
+      // line. Real tool calls (Bash, Edit, fileChange, …) get persisted
+      // inline so the user sees the full sequence of what the agent did.
+      if (TRANSIENT_TOOL_KINDS.has(kind)) stream.setStatus(summary);
+      else stream.appendToolCall(summary);
+    },
+    onToolEnd: kind => {
+      if (TRANSIENT_TOOL_KINDS.has(kind)) stream.setStatus(null);
+    },
     onComplete: () => { void finishAndDrain(); },
     onError: err => {
       log.warn({ err: errMsg(err) }, 'agent turn failed');

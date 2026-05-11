@@ -85,12 +85,24 @@ type Segment = {
   dirty: boolean;
 };
 
+// Inline marker prefixed to persisted tool-call notes. Distinguishes them
+// from agent prose without depending on platform markdown (Telegram doesn't
+// render markdown in plain sendMessage; Discord does, so anything we use
+// must read OK either way).
+const TOOL_PREFIX = '▸ ';
+
+type Block = 'empty' | 'text' | 'tool';
+
 export class StreamingMessage {
   private segments: Segment[] = [{ id: null, text: '', dirty: false }];
   private statusLine: string | null = null;
   private flushing = false;
   private flushAgain = false;
   private finalized = false;
+  // Tracks what kind of content was last appended to the body, so the next
+  // append knows whether to insert a blank line (between text↔tool blocks),
+  // a single newline (between consecutive tool notes), or nothing (start).
+  private prevBlock: Block = 'empty';
 
   constructor(
     private adapter: StreamAdapter,
@@ -99,7 +111,25 @@ export class StreamingMessage {
 
   appendDelta(delta: string): void {
     if (this.finalized || !delta) return;
-    this.appendToLast(delta);
+    const sep = this.prevBlock === 'tool' ? '\n\n' : '';
+    this.appendToLast(sep + delta);
+    this.prevBlock = 'text';
+    this.scheduler.request(this);
+  }
+
+  /**
+   * Persist a tool-call note inline in the body. Unlike `setStatus`, this
+   * stays in the message after the tool ends — so the rendered transcript
+   * shows the agent's actions in scroll-back, not just a transient line
+   * that vanishes once the tool completes.
+   */
+  appendToolCall(summary: string): void {
+    if (this.finalized) return;
+    const trimmed = summary.trim();
+    if (!trimmed) return;
+    const sep = this.prevBlock === 'text' ? '\n\n' : this.prevBlock === 'tool' ? '\n' : '';
+    this.appendToLast(`${sep}${TOOL_PREFIX}${trimmed}`);
+    this.prevBlock = 'tool';
     this.scheduler.request(this);
   }
 
@@ -118,10 +148,10 @@ export class StreamingMessage {
    */
   appendError(message: string): void {
     if (this.finalized) return;
-    const last = this.segments[this.segments.length - 1];
-    const sep = last.text ? '\n\n' : '';
+    const sep = this.prevBlock === 'empty' ? '' : '\n\n';
     this.statusLine = null;
     this.appendToLast(`${sep}⚠️ ${message}`);
+    this.prevBlock = 'text';
     this.scheduler.request(this);
   }
 
