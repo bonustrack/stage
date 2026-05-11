@@ -88,6 +88,8 @@ class TurnSession {
   private thinking = true;
   /** tool_use_id → kind; survives until the matching tool_result lands. */
   private byUseId = new Map<string, string>();
+  /** Pending tool_use blocks: input JSON streams in over multiple `input_json_delta` events before the input is complete. */
+  private pendingTools = new Map<number, { id: string; kind: string; toolName: string | undefined; inputJson: string }>();
 
   constructor(private cb: AgentTurnCallbacks) {
     cb.onToolStart({ id: 'thinking', kind: 'thinking', name: 'Thinking…', transient: true });
@@ -95,7 +97,7 @@ class TurnSession {
 
   fireComplete(): void { if (this.done) return; this.done = true; this.clearThinking(); this.cb.onComplete(); }
   fireError(err: Error): void { if (this.done) return; this.done = true; this.clearThinking(); this.cb.onError(err); }
-  private clearThinking(): void { if (!this.thinking) return; this.thinking = false; this.cb.onToolEnd('thinking'); /* id matches the onToolStart above */ }
+  private clearThinking(): void { if (!this.thinking) return; this.thinking = false; this.cb.onToolEnd('thinking'); }
 
   handle(ev: ClaudeEvent): void {
     if (ev.type === 'result') {
@@ -108,14 +110,26 @@ class TurnSession {
     const e = ev.event;
     if (e.type === 'content_block_start' && e.content_block?.type === 'tool_use') {
       this.clearThinking();
+      const idx = e.index ?? -1;
       const kind = e.content_block.name ?? 'tool';
-      const id = e.content_block.id ?? `${kind}:${e.index ?? -1}`;
+      const id = e.content_block.id ?? `${kind}:${idx}`;
       this.byUseId.set(id, kind);
-      const { name, detail } = summarizeTool(e.content_block.name, e.content_block.input);
-      this.cb.onToolStart({ id, kind, name, detail });
+      this.pendingTools.set(idx, { id, kind, toolName: e.content_block.name, inputJson: '' });
+    } else if (e.type === 'content_block_delta' && e.delta?.type === 'input_json_delta') {
+      const tool = this.pendingTools.get(e.index ?? -1);
+      if (tool) tool.inputJson += e.delta.partial_json ?? '';
     } else if (e.type === 'content_block_delta' && e.delta?.type === 'text_delta') {
       this.clearThinking();
       this.cb.onDelta(e.delta.text ?? '');
+    } else if (e.type === 'content_block_stop') {
+      const tool = this.pendingTools.get(e.index ?? -1);
+      if (!tool) return;
+      this.pendingTools.delete(e.index ?? -1);
+      let input: Record<string, unknown> | undefined;
+      try { input = tool.inputJson ? JSON.parse(tool.inputJson) as Record<string, unknown> : undefined; }
+      catch { /* malformed mid-stream — show name only */ }
+      const { name, detail } = summarizeTool(tool.toolName, input);
+      this.cb.onToolStart({ id: tool.id, kind: tool.kind, name, detail });
     }
   }
 
@@ -140,7 +154,7 @@ type ClaudeEvent = {
     type: string;
     index?: number;
     content_block?: { type: string; name?: string; id?: string; input?: Record<string, unknown> };
-    delta?: { type: string; text?: string };
+    delta?: { type: string; text?: string; partial_json?: string };
   };
 };
 
