@@ -165,16 +165,16 @@ const isParseError = (err: unknown): boolean => errMsg(err).includes("can't pars
 
 const NO_PREVIEW = { link_preview_options: { is_disabled: true } };
 
-/** Inline keyboard with one Stop button keyed by `callback_data=stopId`; undefined removes any keyboard. */
-/** Always returns an object — `inline_keyboard: []` is required to *clear* an existing keyboard; `undefined` keeps it. */
-const stopKeyboard = (stopId: string | null): { inline_keyboard: { text: string; callback_data: string }[][] } =>
-  ({ inline_keyboard: stopId ? [[{ text: '⏹', callback_data: stopId }]] : [] });
+/** Send attaches `reply_markup` only when stopId is set; edit always attaches it (empty array clears). */
+const stopButtonMarkup = (stopId: string): { inline_keyboard: { text: string; callback_data: string }[][] } =>
+  ({ inline_keyboard: [[{ text: '⏹', callback_data: stopId }]] });
 
 /** Send agent-style markdown as Telegram HTML, falling back to plain text on parse errors. */
 export async function sendMessage(chatId: ChatId, threadId: number | undefined, text: string, replyToMessageId?: number, stopId: string | null = null): Promise<number> {
-  const base: Record<string, unknown> = { chat_id: chatId, ...NO_PREVIEW, reply_markup: stopKeyboard(stopId) };
+  const base: Record<string, unknown> = { chat_id: chatId, ...NO_PREVIEW };
   if (threadId !== undefined) base.message_thread_id = threadId;
   if (replyToMessageId !== undefined) base.reply_parameters = { message_id: replyToMessageId };
+  if (stopId) base.reply_markup = stopButtonMarkup(stopId);
   try {
     return (await tg<{ message_id: number }>('sendMessage', { ...base, text: mdToTelegramHtml(text), parse_mode: 'HTML' })).message_id;
   } catch (err) {
@@ -185,7 +185,7 @@ export async function sendMessage(chatId: ChatId, threadId: number | undefined, 
 }
 
 export async function editMessageText(chatId: ChatId, messageId: number, text: string, stopId: string | null = null): Promise<void> {
-  const base = { chat_id: chatId, message_id: messageId, ...NO_PREVIEW, reply_markup: stopKeyboard(stopId) };
+  const base = { chat_id: chatId, message_id: messageId, ...NO_PREVIEW, reply_markup: stopId ? stopButtonMarkup(stopId) : { inline_keyboard: [] } };
   const skipNoop = (err: unknown): boolean => errMsg(err).includes('message is not modified');
   try { await tg('editMessageText', { ...base, text: mdToTelegramHtml(text), parse_mode: 'HTML' }); }
   catch (err) {
