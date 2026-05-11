@@ -92,6 +92,7 @@ async function handleMessage(m: import('discord.js').Message, c: Client): Promis
   }
   const text = [m.content, ...tags].filter(Boolean).join(' ').trim();
   if (!text && !attachments.length) return;
+  log.info({ from: m.author.username, bot: c.user?.username, channel: m.channelId, text: text.slice(0, 80) }, 'discord: inbound');
   onInboundHandler({
     channel_id: m.channelId,
     message_id: m.id,

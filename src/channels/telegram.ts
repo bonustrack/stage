@@ -55,7 +55,7 @@ type RawMessage = {
   document?: FileWithMime;
   voice?: FileWithMime;
   audio?: FileWithMime;
-  from?: { is_bot?: boolean };
+  from?: { is_bot?: boolean; username?: string; first_name?: string };
 };
 type RawUpdate = { update_id: number; message?: RawMessage };
 
@@ -123,6 +123,7 @@ async function dispatchUpdate(u: RawUpdate): Promise<void> {
   const attachments = await fetchAttachments(m, token(), (method, body) => tg(method, body));
   const text = messageToText(m, attachments.length > 0);
   if (!text && !attachments.length) return;
+  log.info({ from: m.from?.username ? `@${m.from.username}` : m.from?.first_name, bot: botUsername ? `@${botUsername}` : undefined, chat: m.chat.id, topic: m.message_thread_id, text: text.slice(0, 80) }, 'telegram: inbound');
   onInboundHandler({
     chat_id: m.chat.id,
     message_id: m.message_id,
