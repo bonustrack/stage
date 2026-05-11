@@ -50,6 +50,24 @@ Follow-ups in the thread route automatically — no @-mention needed.
 
 Regular (non-forum) groups are not routed — they have no thread boundary.
 
+### GitHub mentions (optional)
+
+Mention the bot's configured GitHub user in an **issue body, issue comment, PR body, or PR comment** in any repo that points its webhook at metro — metro spawns a Discord thread tied to that issue/PR and the agent picks it up there.
+
+Set up:
+1. Pick a GitHub user the bot will listen for (a real account or a bot account).
+2. Set env vars:
+   ```
+   GITHUB_WEBHOOK_SECRET=...           # any strong random string
+   GITHUB_BOT_USERNAME=metrobot        # the @-handle metro should react to
+   GITHUB_BRIDGE_DISCORD=123456789     # Discord channel id where new threads are spawned
+   METRO_GITHUB_PORT=4321              # optional, default 4321
+   ```
+3. In your repo's *Settings → Webhooks*: payload URL pointing at your public endpoint + `/webhook`, content type `application/json`, the same secret, events: **Issues**, **Issue comments**.
+4. For local dev, tunnel the webhook in: `npx smee-client --target http://localhost:4321/webhook --url <your-smee-url>` (use the smee URL as the payload URL in step 3).
+
+Mentions on the same issue/PR land in the same Discord thread (continuity persists in `$METRO_STATE_DIR/github-bridges.json`). The agent's replies stay in chat for now — there's no auto-post back to GitHub.
+
 ## How it works
 
 ```
@@ -79,6 +97,7 @@ Telegram poller ──┘                       └─▶ claude -p ...      (pe
 | `METRO_CONFIG_DIR` | `~/.config/metro` | Where the global `.env` lives. |
 | `METRO_STATE_DIR` | `~/.cache/metro` | Lockfile, scope cache, codex socket, telegram offset, claude session set. |
 | `METRO_LOG_LEVEL` | `info` | `trace` / `debug` / `info` / `warn` / `error` / `fatal`. |
+| `GITHUB_WEBHOOK_SECRET` + `GITHUB_BOT_USERNAME` + `GITHUB_BRIDGE_DISCORD` | — | Enable GitHub mention bridge (see GitHub section). Webhook listens on `METRO_GITHUB_PORT` (default `4321`). |
 
 Token precedence: process env → `./.env` → `$METRO_CONFIG_DIR/.env`. Logs to stderr.
 

@@ -3,6 +3,7 @@
 import { join } from 'node:path';
 import pkg from '../package.json' with { type: 'json' };
 import * as discord from './channels/discord.js';
+import * as github from './channels/github.js';
 import * as telegram from './channels/telegram.js';
 import { CodexAgent } from './agents/codex.js';
 import { ClaudeAgent } from './agents/claude.js';
@@ -12,6 +13,7 @@ import {
   getLastAgent, listScopes, setAgentThread, setLastAgent, setLastSeen, telegramScopeKey,
 } from './helpers/scope-cache.js';
 import { StreamScheduler, type StreamAdapter } from './helpers/streaming.js';
+import { startGithubBridge } from './helpers/github-router.js';
 import { runTurn, triggerStop } from './helpers/turn.js';
 import { errMsg, log } from './log.js';
 import { acquireLock, configuredPlatforms, loadMetroEnv, STATE_DIR, requireConfiguredPlatform } from './paths.js';
@@ -57,11 +59,8 @@ function pickAgent(scopeKey: string | null, req: AgentKind | null): { kind: Agen
 async function dispatch(scopeKey: string, text: string, attachments: Attachment[], kind: AgentKind, messageId: string, adapter: StreamAdapter, scheduler: StreamScheduler): Promise<void> {
   setLastSeen(scopeKey, messageId);
   let threadId = getAgentThread(scopeKey, kind);
-  if (!threadId) {
-    threadId = await available[kind]!.createThread();
-    setAgentThread(scopeKey, kind, threadId);
-    log.info({ scope: scopeKey, agent: kind, thread: threadId }, 'allocated agent session');
-  } else setLastAgent(scopeKey, kind);
+  if (threadId) setLastAgent(scopeKey, kind);
+  else { threadId = await available[kind]!.createThread(); setAgentThread(scopeKey, kind, threadId); log.info({ scope: scopeKey, agent: kind, thread: threadId }, 'allocated agent session'); }
   await runTurn(available[kind]!, threadId, text, attachments, adapter, scheduler);
 }
 
@@ -73,9 +72,8 @@ async function onDiscordInbound(m: discord.InboundMessage): Promise<void> {
   const postErr = (msg: string): Promise<void> => discord.sendMessage(m.channel_id, `⚠️ ${msg}`).then(() => {}).catch(err => log.warn({ err: errMsg(err) }, 'discord error post failed'));
 
   if (hasAgent) {
-    const choice = pickAgent(scope, req);
-    if ('error' in choice) return postErr(choice.error);
-    return dispatch(scope, cleanText, m.attachments, choice.kind, m.message_id, discordAdapter(m.channel_id), discordScheduler);
+    const c = pickAgent(scope, req);
+    return 'error' in c ? postErr(c.error) : dispatch(scope, cleanText, m.attachments, c.kind, m.message_id, discordAdapter(m.channel_id), discordScheduler);
   }
   if (!m.mentions_bot || bootstrapped.has(m.message_id)) return;
   bootstrapped.add(m.message_id);
@@ -84,7 +82,6 @@ async function onDiscordInbound(m: discord.InboundMessage): Promise<void> {
   const threadId = await available[choice.kind]!.createThread();
   const ch = await discord.createThreadFromMessage(m.channel_id, m.message_id, makeThreadName(cleanText, threadId));
   setAgentThread(discordScopeKey(ch), choice.kind, threadId);
-  log.info({ discord: ch, agent: choice.kind, thread: threadId }, 'scope created');
   await runTurn(available[choice.kind]!, threadId, cleanText, m.attachments, discordAdapter(ch), discordScheduler);
 }
 
@@ -106,14 +103,13 @@ async function bootstrapForumTopic(m: telegram.InboundMessage): Promise<void> {
   const { kind: req, cleanText } = parseAgentSuffix(m.text);
   const choice = pickAgent(null, req);
   if ('error' in choice) return postTelegramError(m.chat_id, undefined, choice.error);
-  let topicId: number;
   const topicName = makeThreadName(cleanText, 'metro');
+  let topicId: number;
   try { topicId = await telegram.createForumTopic(m.chat_id, topicName); }
   catch (err) { return postTelegramError(m.chat_id, undefined, `couldn't create topic — bot needs Manage Topics admin permission. (${errMsg(err)})`); }
   const threadId = await available[choice.kind]!.createThread();
   const scope = telegramScopeKey(m.chat_id, topicId);
-  setAgentThread(scope, choice.kind, threadId);
-  setLastSeen(scope, String(m.message_id));
+  setAgentThread(scope, choice.kind, threadId); setLastSeen(scope, String(m.message_id));
   log.info({ scope, agent: choice.kind, thread: threadId }, 'telegram: scope created');
   /** Post a deep link back in General as a reply to the @-mention so it threads visually. */
   await telegram.sendMessage(m.chat_id, undefined, `→ [${topicName}](${telegram.topicLink(m.chat_id, topicId)})`, m.message_id)
@@ -129,8 +125,8 @@ async function postTelegramError(chatId: number, threadId: number | undefined, m
 /** Strip mention syntax + normalize whitespace; cap at 100 chars (Discord limit). */
 function makeThreadName(rawText: string, fallback: string): string {
   const cleaned = rawText.replace(/<@!?\d+>|<@&\d+>|<#\d+>|<a?:[^:]+:\d+>|@\w+/g, '').replace(/\s+/g, ' ').trim();
-  if (!cleaned) return fallback.slice(0, 100);
-  return cleaned.length <= 100 ? cleaned : cleaned.slice(0, 99) + '…';
+  const out = cleaned || fallback;
+  return out.length <= 100 ? out : out.slice(0, 99) + '…';
 }
 
 function discordAdapter(channelId: string): StreamAdapter {
@@ -160,6 +156,12 @@ async function catchupDiscord(): Promise<void> {
   }
 }
 
+/** github router calls back into the existing dispatch path; picks the scope's last-used agent (default claude). */
+const githubDispatch = (s: string, t: string, m: string, c: string): Promise<void> => {
+  const choice = pickAgent(s, null); const kind = 'error' in choice ? 'claude' : choice.kind;
+  return dispatch(s, t, [], kind, m, discordAdapter(c), discordScheduler);
+};
+
 async function main(): Promise<void> {
   await startAgents();
   if (platforms.discord) {
@@ -175,6 +177,7 @@ async function main(): Promise<void> {
     telegram.onStop(triggerStop);
     await telegram.startPolling();
   }
+  await startGithubBridge(platforms.discord, { dispatch: githubDispatch });
   log.info('orchestrator ready');
 }
 
@@ -186,6 +189,7 @@ async function shutdown(): Promise<void> {
   await Promise.allSettled([available.codex?.stop(), available.claude?.stop()]);
   if (platforms.discord) await discord.shutdownGateway().catch(() => {});
   if (platforms.telegram) await telegram.shutdownPolling().catch(() => {});
+  await github.stop().catch(() => {});
   process.exit(0);
 }
 process.stdin.on('end', shutdown);
