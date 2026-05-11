@@ -115,8 +115,8 @@ async function bootstrapForumTopic(m: telegram.InboundMessage): Promise<void> {
   setAgentThread(scope, choice.kind, threadId);
   setLastSeen(scope, String(m.message_id));
   log.info({ scope, agent: choice.kind, thread: threadId }, 'telegram: scope created');
-  /** Post a deep link back in General so the new topic is one tap away. */
-  await telegram.sendMessage(m.chat_id, undefined, `→ [${topicName}](${telegram.topicLink(m.chat_id, topicId)})`)
+  /** Post a deep link back in General as a reply to the @-mention so it threads visually. */
+  await telegram.sendMessage(m.chat_id, undefined, `→ [${topicName}](${telegram.topicLink(m.chat_id, topicId)})`, m.message_id)
     .catch(err => log.warn({ err: errMsg(err) }, 'telegram: failed to post topic link in General'));
   await runTurn(available[choice.kind]!, threadId, cleanText, telegramAdapter(m.chat_id, topicId), telegramScheduler);
 }

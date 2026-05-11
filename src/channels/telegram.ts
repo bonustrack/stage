@@ -173,17 +173,16 @@ export function topicLink(chatId: number, topicId: number): string {
 const isParseError = (err: unknown): boolean => errMsg(err).includes("can't parse entities");
 
 /** Send agent-style markdown as Telegram HTML, falling back to plain text on parse errors. */
-export async function sendMessage(chatId: ChatId, threadId: number | undefined, text: string): Promise<number> {
-  const body: Record<string, unknown> = { chat_id: chatId, text: mdToTelegramHtml(text), parse_mode: 'HTML' };
-  if (threadId !== undefined) body.message_thread_id = threadId;
+export async function sendMessage(chatId: ChatId, threadId: number | undefined, text: string, replyToMessageId?: number): Promise<number> {
+  const base: Record<string, unknown> = { chat_id: chatId };
+  if (threadId !== undefined) base.message_thread_id = threadId;
+  if (replyToMessageId !== undefined) base.reply_parameters = { message_id: replyToMessageId };
   try {
-    return (await tg<{ message_id: number }>('sendMessage', body)).message_id;
+    return (await tg<{ message_id: number }>('sendMessage', { ...base, text: mdToTelegramHtml(text), parse_mode: 'HTML' })).message_id;
   } catch (err) {
     if (!isParseError(err)) throw err;
     log.warn({ err: errMsg(err) }, 'telegram: HTML rejected, sending plain');
-    const plain: Record<string, unknown> = { chat_id: chatId, text };
-    if (threadId !== undefined) plain.message_thread_id = threadId;
-    return (await tg<{ message_id: number }>('sendMessage', plain)).message_id;
+    return (await tg<{ message_id: number }>('sendMessage', { ...base, text })).message_id;
   }
 }
 
