@@ -13,6 +13,8 @@ type Entry = {
   createdAt: string;
   /** Watermark of most-recent processed human message; used for catchup-on-restart. */
   lastSeenMessageId?: string;
+  /** ISO timestamp of most-recent activity; used by `metro lines` to sort by recency. */
+  lastSeenAt?: string;
   agents: Partial<Record<AgentKind, string>>;
   /** Most-recent answering agent; default for the next turn. */
   lastAgent?: AgentKind;
@@ -55,7 +57,9 @@ export function setLastAgent(line: Line, kind: AgentKind): void {
 
 export function setLastSeen(line: Line, messageId: string): void {
   const cache = read(); if (!cache[line]) return;
-  cache[line].lastSeenMessageId = messageId; write(cache);
+  cache[line].lastSeenMessageId = messageId;
+  cache[line].lastSeenAt = new Date().toISOString();
+  write(cache);
 }
 
 export const listLines = (): Array<{ line: Line; entry: Entry }> =>

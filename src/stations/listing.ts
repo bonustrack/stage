@@ -1,9 +1,9 @@
 /** Inventory of known stations + their config status, formatted for `metro stations`. */
 
-import { CAPABILITIES as claudeCaps } from './claude/index.js';
-import { CAPABILITIES as codexCaps } from './codex/index.js';
-import { CAPABILITIES as discordCaps } from './discord/index.js';
-import { CAPABILITIES as githubCaps } from './github/index.js';
+import { CAPABILITIES as claudeCaps } from './claude.js';
+import { CAPABILITIES as codexCaps } from './codex.js';
+import { CAPABILITIES as discordCaps } from './discord.js';
+import { CAPABILITIES as githubCaps } from './github.js';
 import { CAPABILITIES as telegramCaps } from './telegram/index.js';
 import type { Capabilities } from './types.js';
 

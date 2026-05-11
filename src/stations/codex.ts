@@ -5,10 +5,10 @@ import { existsSync, unlinkSync } from 'node:fs';
 import { createConnection } from 'node:net';
 import { join } from 'node:path';
 import { WebSocket, type RawData } from 'ws';
-import { AsyncQueue } from '../../helpers/async-queue.js';
-import { errMsg, log } from '../../log.js';
-import { STATE_DIR } from '../../paths.js';
-import type { AgentStation, Capabilities, ToolActivity, TurnEvent, TurnRequest } from '../types.js';
+import { AsyncQueue } from '../helpers/async-queue.js';
+import { errMsg, log } from '../log.js';
+import { STATE_DIR } from '../paths.js';
+import type { AgentStation, Capabilities, ToolActivity, TurnEvent, TurnRequest } from './types.js';
 
 const SOCKET_PATH = join(STATE_DIR, 'codex-app-server.sock');
 const READY_TIMEOUT_MS = 15_000;

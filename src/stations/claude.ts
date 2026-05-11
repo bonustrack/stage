@@ -4,10 +4,10 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { AsyncQueue } from '../../helpers/async-queue.js';
-import { errMsg, log } from '../../log.js';
-import { STATE_DIR } from '../../paths.js';
-import type { AgentStation, Capabilities, TurnEvent, TurnRequest } from '../types.js';
+import { AsyncQueue } from '../helpers/async-queue.js';
+import { errMsg, log } from '../log.js';
+import { STATE_DIR } from '../paths.js';
+import type { AgentStation, Capabilities, TurnEvent, TurnRequest } from './types.js';
 
 const STARTED_FILE = join(STATE_DIR, 'claude-sessions.json');
 

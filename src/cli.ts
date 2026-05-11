@@ -2,8 +2,9 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import pkg from '../package.json' with { type: 'json' };
-import { cmdUpdate } from './cli/update.js';
-import { DiscordStation } from './stations/discord/index.js';
+import { cmdLines } from './cli-lines.js';
+import { cmdUpdate } from './cli-update.js';
+import { DiscordStation } from './stations/discord.js';
 import { TelegramStation } from './stations/telegram/index.js';
 import { fmtCapabilities, listStations } from './stations/listing.js';
 import { sendToLine } from './stations/send.js';
@@ -18,6 +19,7 @@ Usage:
   metro setup clear [telegram|discord|all]    Remove tokens.
   metro doctor                                Health check.
   metro stations                              List stations + capabilities.
+  metro lines                                 List active conversations (sorted by recency).
   metro send <line> <text>                    Post a message to a metro:// line.
   metro update                                Upgrade in place.
   metro --version | --help
@@ -167,6 +169,7 @@ const COMMANDS: Record<string, (positional: string[], flags: Flags) => Promise<v
   setup: cmdSetup,
   doctor: (_, f) => cmdDoctor(f),
   stations: (_, f) => cmdStations(f),
+  lines: (_, f) => cmdLines(isJson(f)),
   send: cmdSend,
   update: (_, f) => cmdUpdate(isJson(f)),
 };

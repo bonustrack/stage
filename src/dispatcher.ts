@@ -1,11 +1,13 @@
 /** Dispatcher: owns chat stations + agent stations; routes inbounds (suffix "with X" overrides line default). */
 
-import { join } from 'node:path';
+import { copyFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import pkg from '../package.json' with { type: 'json' };
-import { ClaudeStation } from './stations/claude/index.js';
-import { CodexStation } from './stations/codex/index.js';
-import { DiscordStation, type DiscordMeta } from './stations/discord/index.js';
-import { GitHubStation, type GitHubMeta } from './stations/github/index.js';
+import { ClaudeStation } from './stations/claude.js';
+import { CodexStation } from './stations/codex.js';
+import { DiscordStation, type DiscordMeta } from './stations/discord.js';
+import { GitHubStation, type GitHubMeta } from './stations/github.js';
 import { TelegramStation, type TelegramMeta } from './stations/telegram/index.js';
 import type { AgentStation, ChatStation, InboundMessage, Line as LineT } from './stations/types.js';
 import {
@@ -21,6 +23,11 @@ loadMetroEnv();
 const platforms = configuredPlatforms();
 requireConfiguredPlatform(platforms);
 acquireLock(join(STATE_DIR, '.tail-lock'));
+
+/** Install AGENTS.md skill into state dir so the agent has a stable path to consult. Refreshed every start so upgrades land. */
+const AGENTS_MD = join(STATE_DIR, 'AGENTS.md');
+try { copyFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'docs', 'agents.md'), AGENTS_MD); }
+catch (err) { log.warn({ err: errMsg(err) }, 'failed to install agent skill'); }
 
 const bootstrapped = new Set<string>();
 const codex = new CodexStation(pkg.version);
@@ -62,8 +69,12 @@ async function dispatch(line: LineT, text: string, attachments: InboundMessage['
   let threadId = getAgentThread(line, kind);
   if (threadId) setLastAgent(line, kind);
   else { threadId = await available[kind]!.createThread(); setAgentThread(line, kind, threadId); log.info({ line, agent: kind, thread: threadId }, 'allocated agent session'); }
-  await runTurn(available[kind]!, threadId, text, attachments, adapter, scheduler);
+  await runTurn(available[kind]!, threadId, withContext(line, text), attachments, adapter, scheduler);
 }
+
+/** Tell the agent its own line + how to discover/post to others. Full guide at AGENTS_MD. */
+const withContext = (line: LineT, text: string): string =>
+  `[metro: on ${line}. CLI: metro lines, metro send <line> <text>, metro stations. Guide: ${AGENTS_MD}]\n\n${text}`;
 
 const adapterFor = <TMeta>(station: ChatStation<TMeta>, line: LineT): StreamAdapter => ({
   send: (t, stopId) => station.send(line, t, { stopId }),

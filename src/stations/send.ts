@@ -1,7 +1,7 @@
 /** One-shot post to any metro line. Caller needs the relevant env token; no daemon required. */
 
-import { DiscordStation } from './discord/index.js';
-import { GitHubStation } from './github/index.js';
+import { DiscordStation } from './discord.js';
+import { GitHubStation } from './github.js';
 import { TelegramStation } from './telegram/index.js';
 import * as Line from './line.js';
 import { asLine, type Line as LineT } from './types.js';

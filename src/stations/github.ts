@@ -2,9 +2,9 @@
 
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { createServer, type IncomingMessage, type Server } from 'node:http';
-import { errMsg, log } from '../../log.js';
-import * as Line from '../line.js';
-import type { Capabilities, ChatStation, InboundMessage, Line as LineT, SendOpts } from '../types.js';
+import { errMsg, log } from '../log.js';
+import * as Line from './line.js';
+import type { Capabilities, ChatStation, InboundMessage, Line as LineT, SendOpts } from './types.js';
 
 const MAX_PAYLOAD = 5 * 1024 * 1024;
 const API_BASE = 'https://api.github.com';

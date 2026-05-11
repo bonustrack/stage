@@ -189,6 +189,7 @@ metro setup [telegram|discord <token>]      Save token, or show status.
 metro setup clear [telegram|discord|all]    Remove tokens.
 metro doctor                                Health check.
 metro stations                              List stations + capabilities.
+metro lines                                 List active conversations (sorted by recency).
 metro send <line> <text>                    Post to any metro:// line.
 metro update                                Upgrade in place.
 ```
@@ -197,6 +198,7 @@ All commands accept `--json` for machine-readable output.
 
 **State files** in `$METRO_STATE_DIR`:
 - `scopes.json` — Line → agent-session map
+- `AGENTS.md` — skill doc copied from the package on every dispatcher start; surfaced into each agent's per-turn context so it knows about `metro lines` / `metro send` / `metro stations`
 - `.tail-lock` — dispatcher pid
 - `codex-app-server.sock` — codex Unix socket
 - `telegram-offset.json` — last processed update id
