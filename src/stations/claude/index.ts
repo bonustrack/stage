@@ -17,12 +17,14 @@ function loadStarted(): Set<string> {
   catch (err) { log.warn({ err: errMsg(err), path: STARTED_FILE }, 'claude: started cache read failed'); return new Set(); }
 }
 
+export const CAPABILITIES: Capabilities = {
+  in: ['text', 'image'], out: ['text'],
+  features: ['stream', 'tools', 'cancel', 'attachments'],
+};
+
 export class ClaudeStation implements AgentStation {
   readonly name = 'claude';
-  readonly capabilities: Capabilities = {
-    in: ['text', 'image'], out: ['text'],
-    features: ['stream', 'tools', 'cancel', 'attachments'],
-  };
+  readonly capabilities = CAPABILITIES;
 
   private started = loadStarted();
   private children = new Set<ChildProcess>();

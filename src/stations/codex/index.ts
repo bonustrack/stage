@@ -24,12 +24,11 @@ type ThreadItem =
 
 type ActiveTurn = { queue: AsyncQueue<TurnEvent>; turnId?: string; cancelled: boolean };
 
+export const CAPABILITIES: Capabilities = { in: ['text', 'image'], out: ['text'], features: ['stream', 'tools', 'cancel', 'attachments'] };
+
 export class CodexStation implements AgentStation {
   readonly name = 'codex';
-  readonly capabilities: Capabilities = {
-    in: ['text', 'image'], out: ['text'],
-    features: ['stream', 'tools', 'cancel', 'attachments'],
-  };
+  readonly capabilities = CAPABILITIES;
 
   private ws: WebSocket | null = null;
   private daemon: ChildProcess | null = null;

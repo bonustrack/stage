@@ -10,7 +10,7 @@ Run a long-lived daemon that bridges Discord, Telegram, and GitHub mentions to y
   - **Codex** — run `codex` once interactively to log in. Metro spawns `codex app-server` and inherits your auth, MCPs, sandboxing.
 - **Discord bot** (optional) with **Message Content Intent** enabled (Developer Portal → Bot → Privileged Gateway Intents).
 - **Telegram bot** (optional). In supergroup forums, the bot also needs the **Manage Topics** admin permission so it can auto-create topics on @-mention.
-- **GitHub mention bridge** (optional). Requires a public URL for the webhook (smee.io / cloudflared / ngrok for local dev) and a Discord bot — GitHub mentions spawn Discord threads.
+- **GitHub mention bridge** (optional). Requires a public URL for the webhook (smee.io / cloudflared / ngrok for local dev) and a GitHub token with `issues:write` so the bot can reply on the issue/PR.
 
 ## Quickstart
 
@@ -54,22 +54,19 @@ Regular (non-forum) groups are not routed — they have no thread boundary.
 
 ### GitHub mentions (optional)
 
-Mention the bot's configured GitHub user in an **issue body, issue comment, PR body, or PR comment** in any repo that points its webhook at metro — metro spawns a Discord thread tied to that issue/PR and the agent picks it up there.
+Mention the bot's configured GitHub user in an **issue body, issue comment, PR body, or PR comment** in any repo that points its webhook at metro — the agent answers as a comment on the same issue/PR, with full turn streaming via comment edits. Each issue/PR gets its own agent session that persists across follow-up mentions.
 
 Set up:
-1. Pick a GitHub user the bot will listen for (a real account or a bot account).
+1. Pick a GitHub user the bot will listen for (a real account or a bot account) and generate a token for it with `issues:write` (and `pull_requests:write` for PR comments).
 2. Set env vars:
    ```
    GITHUB_WEBHOOK_SECRET=...           # any strong random string
    GITHUB_BOT_USERNAME=metrobot        # the @-handle metro should react to
-   GITHUB_BRIDGE_DISCORD=123456789     # Discord channel id where new threads are spawned
-   GITHUB_TOKEN=ghp_...                # optional, lets the bot post comments back to GitHub
+   GITHUB_TOKEN=ghp_...                # the bot's PAT / fine-grained token
    METRO_GITHUB_PORT=4321              # optional, default 4321
    ```
 3. In your repo's *Settings → Webhooks*: payload URL pointing at your public endpoint + `/webhook`, content type `application/json`, the same secret, events: **Issues**, **Issue comments**.
 4. For local dev, tunnel the webhook in: `npx smee-client --target http://localhost:4321/webhook --url <your-smee-url>` (use the smee URL as the payload URL in step 3).
-
-Mentions on the same issue/PR land in the same Discord thread (continuity persists in `$METRO_STATE_DIR/github-bridges.json`). Posting back to GitHub is available via the GitHub Station API once `GITHUB_TOKEN` is set; the default route still mirrors to Discord.
 
 ## Architecture
 
@@ -85,7 +82,7 @@ Discord gateway ──┐
 Telegram poller ──┤                          ┌─▶ codex station   (long-lived `codex app-server`, UDS JSON-RPC)
 GitHub webhook ───┼─▶ metro dispatcher ──────┤
                   │                          └─▶ claude station  (per-turn `claude -p`, stream-json)
-                  └─── Line→thread map (scopes.json) + github↔chat bridges (github-bridges.json)
+                  └─── Line→thread map (scopes.json)
 ```
 
 Adding a new chat backend (Slack, Matrix, SMS, …) is `class XStation implements ChatStation` plus a `Line.x(...)` helper — the dispatcher picks it up polymorphically.
@@ -100,7 +97,7 @@ Adding a new chat backend (Slack, Matrix, SMS, …) is `class XStation implement
 - **Telegram formatting.** Agent markdown (`**bold**`, `*italic*`, `` `code` ``, fenced blocks, `[link](url)`, blockquotes) is converted to Telegram's HTML parse mode on the way out, so it renders as formatted text instead of literal characters.
 - **No link previews.** Outgoing messages set `link_preview_options.is_disabled` on Telegram and the `SUPPRESS_EMBEDS` flag on Discord, so URLs in agent replies don't unfurl into giant auto-embeds.
 - **Stop button.** While an agent turn is in flight, the streamed message carries an `⏹ Stop` button (Discord component / Telegram inline keyboard). Tapping it triggers the turn's `AbortSignal` — Claude via SIGTERM on the `claude -p` subprocess; Codex via `turn/interrupt` on app-server — and removes the button on the next flush.
-- **GitHub mention bridge.** When the bot's configured GitHub user is `@`-mentioned in an issue/PR body or comment, the HMAC-verified webhook spawns a Discord thread anchored on that issue and the agent answers there. Follow-up mentions on the same issue reuse the same thread (mapping persists in `github-bridges.json`). Direct posting back to GitHub is supported via the station's `send`/`edit` (requires `GITHUB_TOKEN`).
+- **GitHub mentions.** When the bot's configured GitHub user is `@`-mentioned in an issue/PR body or comment, the HMAC-verified webhook allocates a per-issue agent session and the agent replies as a GitHub comment, streaming via `PATCH /issues/comments`. Follow-up mentions on the same issue continue the same session.
 - **Queueing.** Messages that arrive while a turn is running are buffered per-line and answered together in the next reply.
 - **Catchup-on-restart.** Discord uses a per-line `lastSeenMessageId` watermark and REST-fetches anything newer when metro comes back up. Telegram leans on its own update-id queue (persisted offset in `telegram-offset.json`).
 
@@ -112,8 +109,7 @@ Adding a new chat backend (Slack, Matrix, SMS, …) is `class XStation implement
 | `METRO_CONFIG_DIR` | `~/.config/metro` | Where the global `.env` lives. |
 | `METRO_STATE_DIR` | `~/.cache/metro` | Lockfile, line cache, codex socket, telegram offset, claude session set. |
 | `METRO_LOG_LEVEL` | `info` | `trace` / `debug` / `info` / `warn` / `error` / `fatal`. |
-| `GITHUB_WEBHOOK_SECRET` + `GITHUB_BOT_USERNAME` + `GITHUB_BRIDGE_DISCORD` | — | Enable GitHub mention bridge (see GitHub section). Webhook listens on `METRO_GITHUB_PORT` (default `4321`). |
-| `GITHUB_TOKEN` | — | Personal access token / fine-grained token with `issues:write`. Required to post or edit comments back to GitHub via the GitHub Station. |
+| `GITHUB_WEBHOOK_SECRET` + `GITHUB_BOT_USERNAME` + `GITHUB_TOKEN` | — | Enable GitHub mention support (see GitHub section). Webhook listens on `METRO_GITHUB_PORT` (default `4321`). The token needs `issues:write` (+ `pull_requests:write` for PR comments). |
 
 Token precedence: process env → `./.env` → `$METRO_CONFIG_DIR/.env`. Logs to stderr.
 
@@ -135,7 +131,6 @@ Architecture docs: [`docs/uri-scheme.md`](docs/uri-scheme.md). Add a new chat ba
 - `metro stations` — list known stations with their capability matrix and config status
 - State files (`$METRO_STATE_DIR`, defaults to `~/.cache/metro/`):
   - `scopes.json` — `Line → agent-session` map (keys are `metro://<station>/<path>` URIs)
-  - `github-bridges.json` — GitHub Line → chat-station Line map (only when the GitHub bridge is configured)
   - `.tail-lock` — dispatcher pid
   - `codex-app-server.sock` — codex's UDS
   - `telegram-offset.json` — last processed update id (used for catchup on restart)

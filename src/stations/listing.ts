@@ -1,12 +1,11 @@
 /** Inventory of known stations + their config status, formatted for `metro stations`. */
 
-import pkg from '../../package.json' with { type: 'json' };
-import { ClaudeStation } from './claude/index.js';
-import { CodexStation } from './codex/index.js';
-import { DiscordStation } from './discord/index.js';
-import { GitHubStation } from './github/index.js';
-import { TelegramStation } from './telegram/index.js';
-import type { Capabilities, Station } from './types.js';
+import { CAPABILITIES as claudeCaps } from './claude/index.js';
+import { CAPABILITIES as codexCaps } from './codex/index.js';
+import { CAPABILITIES as discordCaps } from './discord/index.js';
+import { CAPABILITIES as githubCaps } from './github/index.js';
+import { CAPABILITIES as telegramCaps } from './telegram/index.js';
+import type { Capabilities } from './types.js';
 
 export type StationRow = {
   name: string; kind: 'agent' | 'chat';
@@ -14,19 +13,16 @@ export type StationRow = {
   capabilities: Capabilities;
 };
 
-const row = (s: Station, kind: 'agent' | 'chat', detail: string, configured: boolean | null): StationRow =>
-  ({ name: s.name, kind, configured, detail, capabilities: s.capabilities });
+const env = (k: string): boolean => !!process.env[k];
 
-export function listStations(): StationRow[] {
-  return [
-    row(new ClaudeStation(), 'agent', 'requires `claude` on PATH', null),
-    row(new CodexStation(pkg.version), 'agent', 'requires `codex` on PATH', null),
-    row(new DiscordStation(), 'chat', 'DISCORD_BOT_TOKEN', !!process.env.DISCORD_BOT_TOKEN),
-    row(new TelegramStation(), 'chat', 'TELEGRAM_BOT_TOKEN', !!process.env.TELEGRAM_BOT_TOKEN),
-    row(new GitHubStation(), 'chat', 'GITHUB_WEBHOOK_SECRET + GITHUB_BOT_USERNAME (+ GITHUB_TOKEN to post)',
-      !!(process.env.GITHUB_WEBHOOK_SECRET && process.env.GITHUB_BOT_USERNAME)),
-  ];
-}
+export const listStations = (): StationRow[] => [
+  { name: 'claude', kind: 'agent', configured: null, detail: 'requires `claude` on PATH', capabilities: claudeCaps },
+  { name: 'codex', kind: 'agent', configured: null, detail: 'requires `codex` on PATH', capabilities: codexCaps },
+  { name: 'discord', kind: 'chat', configured: env('DISCORD_BOT_TOKEN'), detail: 'DISCORD_BOT_TOKEN', capabilities: discordCaps },
+  { name: 'telegram', kind: 'chat', configured: env('TELEGRAM_BOT_TOKEN'), detail: 'TELEGRAM_BOT_TOKEN', capabilities: telegramCaps },
+  { name: 'github', kind: 'chat', configured: env('GITHUB_WEBHOOK_SECRET') && env('GITHUB_BOT_USERNAME') && env('GITHUB_TOKEN'),
+    detail: 'GITHUB_WEBHOOK_SECRET + GITHUB_BOT_USERNAME + GITHUB_TOKEN', capabilities: githubCaps },
+];
 
 export const fmtCapabilities = (c: Capabilities): string =>
   `in: ${c.in.join('+') || '–'} · out: ${c.out.join('+') || '–'} · features: ${c.features.join(', ') || '–'}`;

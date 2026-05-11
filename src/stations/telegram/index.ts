@@ -50,12 +50,11 @@ const targetOf = (line: LineT): { chatId: number; topicId?: number } => {
   return t;
 };
 
+export const CAPABILITIES: Capabilities = { in: ['text', 'image'], out: ['text'], features: ['stream', 'edit', 'attachments'] };
+
 export class TelegramStation implements ChatStation<TelegramMeta> {
   readonly name = 'telegram';
-  readonly capabilities: Capabilities = {
-    in: ['text', 'image'], out: ['text'],
-    features: ['stream', 'edit', 'attachments'],
-  };
+  readonly capabilities = CAPABILITIES;
 
   private botUsername: string | null = null;
   private botUserId: number | null = null;

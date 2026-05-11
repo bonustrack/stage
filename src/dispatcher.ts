@@ -1,19 +1,18 @@
-/** Dispatcher: owns chat stations + agent stations; routes inbounds (suffix "with X" overrides scope default). */
+/** Dispatcher: owns chat stations + agent stations; routes inbounds (suffix "with X" overrides line default). */
 
 import { join } from 'node:path';
 import pkg from '../package.json' with { type: 'json' };
 import { ClaudeStation } from './stations/claude/index.js';
 import { CodexStation } from './stations/codex/index.js';
 import { DiscordStation, type DiscordMeta } from './stations/discord/index.js';
-import { GitHubStation } from './stations/github/index.js';
+import { GitHubStation, type GitHubMeta } from './stations/github/index.js';
 import { TelegramStation, type TelegramMeta } from './stations/telegram/index.js';
-import type { AgentStation, Attachment, ChatStation, InboundMessage, Line as LineT } from './stations/types.js';
+import type { AgentStation, ChatStation, InboundMessage, Line as LineT } from './stations/types.js';
 import {
   type AgentKind, getAgentThread, getLastAgent, linesForStation,
   setAgentThread, setLastAgent, setLastSeen,
 } from './helpers/scope-cache.js';
 import { StreamScheduler, type StreamAdapter } from './helpers/streaming.js';
-import { startGithubBridge } from './stations/github/router.js';
 import { runTurn, triggerStop } from './helpers/turn.js';
 import { errMsg, log } from './log.js';
 import { acquireLock, configuredPlatforms, loadMetroEnv, STATE_DIR, requireConfiguredPlatform } from './paths.js';
@@ -30,8 +29,7 @@ const discord = new DiscordStation();
 const telegram = new TelegramStation();
 const github = new GitHubStation();
 const available: Partial<Record<AgentKind, AgentStation>> = {};
-const discordScheduler = new StreamScheduler();
-const telegramScheduler = new StreamScheduler();
+const scheduler = new StreamScheduler();
 
 async function startAgents(): Promise<void> {
   await Promise.allSettled([
@@ -59,7 +57,7 @@ function pickAgent(line: LineT | null, req: AgentKind | null): { kind: AgentKind
 }
 
 /** Resolve agent session for `line`, allocating if new, then run the turn. */
-async function dispatch(line: LineT, text: string, attachments: Attachment[], kind: AgentKind, messageId: string, adapter: StreamAdapter, scheduler: StreamScheduler): Promise<void> {
+async function dispatch(line: LineT, text: string, attachments: InboundMessage['attachments'], kind: AgentKind, messageId: string, adapter: StreamAdapter): Promise<void> {
   setLastSeen(line, messageId);
   let threadId = getAgentThread(line, kind);
   if (threadId) setLastAgent(line, kind);
@@ -67,74 +65,66 @@ async function dispatch(line: LineT, text: string, attachments: Attachment[], ki
   await runTurn(available[kind]!, threadId, text, attachments, adapter, scheduler);
 }
 
-function adapterFor(station: ChatStation, line: LineT): StreamAdapter {
-  return {
-    send: (t, stopId) => station.send(line, t, { stopId }),
-    edit: async (id, t, stopId) => { await station.edit!(line, id, t, { stopId }); },
-  };
-}
+const adapterFor = <TMeta>(station: ChatStation<TMeta>, line: LineT): StreamAdapter => ({
+  send: (t, stopId) => station.send(line, t, { stopId }),
+  edit: async (id, t, stopId) => { await station.edit!(line, id, t, { stopId }); },
+});
 
-async function onDiscordInbound(m: InboundMessage<DiscordMeta>): Promise<void> {
-  if (!m.meta.inGuild) return;
+/** Bootstrap returns a fresh `Line` for the new conversation (e.g. a new Discord thread or Telegram topic). */
+type Bootstrap<TMeta> = (m: InboundMessage<TMeta>, cleanText: string) => Promise<LineT | null>;
+
+/** Dispatch into an existing agent on `m.line`, or (on `@`-mention) allocate a new session, optionally via station-specific bootstrap. */
+async function routeInbound<TMeta>(m: InboundMessage<TMeta>, station: ChatStation<TMeta>, bootstrap: Bootstrap<TMeta> | null): Promise<void> {
   const hasAgent = !!(getAgentThread(m.line, 'codex') ?? getAgentThread(m.line, 'claude'));
   const { kind: req, cleanText } = parseAgentSuffix(m.text);
-  const postErr = (msg: string): Promise<void> => discord.send(m.line, `⚠️ ${msg}`).then(() => {}).catch(err => log.warn({ err: errMsg(err) }, 'discord error post failed'));
+  const postErr = (msg: string): Promise<void> => station.send(m.line, `⚠️ ${msg}`).then(() => {}).catch(err => log.warn({ err: errMsg(err), station: station.name }, 'error post failed'));
 
   if (hasAgent) {
     const c = pickAgent(m.line, req);
-    return 'error' in c ? postErr(c.error) : dispatch(m.line, cleanText, m.attachments, c.kind, m.messageId, adapterFor(discord, m.line), discordScheduler);
+    return 'error' in c ? postErr(c.error) : dispatch(m.line, cleanText, m.attachments, c.kind, m.messageId, adapterFor(station, m.line));
   }
   if (!m.mentionsBot || bootstrapped.has(m.messageId)) return;
   bootstrapped.add(m.messageId);
   const choice = pickAgent(null, req);
   if ('error' in choice) return postErr(choice.error);
-  const threadId = await available[choice.kind]!.createThread();
-  const threadLine = await discord.createThreadFromMessage(m.line, m.messageId, makeThreadName(cleanText, threadId));
-  setAgentThread(threadLine, choice.kind, threadId);
-  await runTurn(available[choice.kind]!, threadId, cleanText, m.attachments, adapterFor(discord, threadLine), discordScheduler);
+  const line = bootstrap ? await bootstrap(m, cleanText).catch(err => { log.warn({ err: errMsg(err), station: station.name }, 'bootstrap failed'); return null; }) : m.line;
+  if (!line) return;
+  await dispatch(line, cleanText, m.attachments, choice.kind, m.messageId, adapterFor(station, line));
 }
 
-async function onTelegramInbound(m: InboundMessage<TelegramMeta>): Promise<void> {
-  if (!m.meta.isPrivate && !m.meta.inForum) return;
-  if (m.meta.inForum && !m.meta.isForumTopic) return bootstrapForumTopic(m);
-  const hasAgent = !!(getAgentThread(m.line, 'codex') ?? getAgentThread(m.line, 'claude'));
-  if (!hasAgent && !m.meta.isPrivate && !m.mentionsBot) return;
-  const { kind: req, cleanText } = parseAgentSuffix(m.text);
-  const choice = pickAgent(hasAgent ? m.line : null, req);
-  if ('error' in choice) return postTelegramError(m.line, choice.error);
-  await dispatch(m.line, cleanText, m.attachments, choice.kind, m.messageId, adapterFor(telegram, m.line), telegramScheduler);
-}
+const onDiscordInbound = (m: InboundMessage<DiscordMeta>): Promise<void> => {
+  if (!m.meta.inGuild) return Promise.resolve();
+  return routeInbound(m, discord, (m, cleanText) => discord.createThreadFromMessage(m.line, m.messageId, makeThreadName(cleanText)));
+};
 
-async function bootstrapForumTopic(m: InboundMessage<TelegramMeta>): Promise<void> {
-  if (!m.mentionsBot || bootstrapped.has(m.messageId)) return;
-  bootstrapped.add(m.messageId);
-  const { kind: req, cleanText } = parseAgentSuffix(m.text);
-  const choice = pickAgent(null, req);
-  if ('error' in choice) return postTelegramError(m.line, choice.error);
-  const topicName = makeThreadName(cleanText, 'metro');
+const onTelegramInbound = (m: InboundMessage<TelegramMeta>): Promise<void> => {
+  if (!m.meta.isPrivate && !m.meta.inForum) return Promise.resolve();
+  /** Forum General → bootstrap a new topic; private/topic → route into `m.line`. */
+  if (m.meta.inForum && !m.meta.isForumTopic) return routeInbound(m, telegram, telegramTopicBootstrap);
+  return routeInbound(m, telegram, null);
+};
+
+const telegramTopicBootstrap: Bootstrap<TelegramMeta> = async (m, cleanText) => {
+  const topicName = makeThreadName(cleanText);
   let topicLine: LineT;
   try { topicLine = await telegram.createForumTopic(m.line, topicName); }
-  catch (err) { return postTelegramError(m.line, `couldn't create topic — bot needs Manage Topics admin permission. (${errMsg(err)})`); }
-  const threadId = await available[choice.kind]!.createThread();
-  setAgentThread(topicLine, choice.kind, threadId); setLastSeen(topicLine, m.messageId);
-  log.info({ line: topicLine, agent: choice.kind, thread: threadId }, 'telegram: line created');
+  catch (err) { await telegram.send(m.line, `⚠️ couldn't create topic — bot needs Manage Topics admin permission. (${errMsg(err)})`).catch(() => {}); return null; }
   /** Post a deep link back in General as a reply to the @-mention so it threads visually. */
   const link = telegram.topicLink(topicLine);
-  if (link) await telegram.send(m.line, `→ [${topicName}](${link})`, { replyTo: m.messageId })
-    .catch(err => log.warn({ err: errMsg(err) }, 'telegram: failed to post topic link in General'));
-  await runTurn(available[choice.kind]!, threadId, cleanText, m.attachments, adapterFor(telegram, topicLine), telegramScheduler);
-}
+  if (link) await telegram.send(m.line, `→ [${topicName}](${link})`, { replyTo: m.messageId }).catch(err => log.warn({ err: errMsg(err) }, 'telegram: failed to post topic link in General'));
+  return topicLine;
+};
 
-async function postTelegramError(line: LineT, message: string): Promise<void> {
-  try { await telegram.send(line, `⚠️ ${message}`); }
-  catch (err) { log.warn({ err: errMsg(err) }, 'failed to post telegram error'); }
-}
+const onGithubInbound = (m: InboundMessage<GitHubMeta>): Promise<void> => {
+  /** Prepend issue/PR context so the agent has it without us bridging to a different chat. */
+  const header = `**@${m.meta.authorUsername}** on GitHub ${m.meta.isPR ? 'PR' : 'issue'} ${m.meta.repoFullName}#${m.meta.issueNumber} (<${m.meta.url}>):`;
+  return routeInbound({ ...m, text: `${header}\n\n${m.text}` }, github, null);
+};
 
 /** Strip mention syntax + normalize whitespace; cap at 100 chars (Discord limit). */
-function makeThreadName(rawText: string, fallback: string): string {
-  const cleaned = rawText.replace(/<@!?\d+>|<@&\d+>|<#\d+>|<a?:[^:]+:\d+>|@\w+/g, '').replace(/\s+/g, ' ').trim();
-  const out = cleaned || fallback;
-  return out.length <= 100 ? out : out.slice(0, 99) + '…';
+function makeThreadName(rawText: string): string {
+  const cleaned = rawText.replace(/<@!?\d+>|<@&\d+>|<#\d+>|<a?:[^:]+:\d+>|@\w+/g, '').replace(/\s+/g, ' ').trim() || 'metro';
+  return cleaned.length <= 100 ? cleaned : cleaned.slice(0, 99) + '…';
 }
 
 async function catchupDiscord(): Promise<void> {
@@ -148,12 +138,6 @@ async function catchupDiscord(): Promise<void> {
     } catch (err) { log.warn({ err: errMsg(err), line }, 'discord catchup skipped'); }
   }
 }
-
-/** github router calls back into the existing dispatch path; picks the line's last-used agent (default claude). */
-const githubDispatch = (line: LineT, text: string, messageId: string, station: ChatStation): Promise<void> => {
-  const choice = pickAgent(line, null); const kind = 'error' in choice ? 'claude' : choice.kind;
-  return dispatch(line, text, [], kind, messageId, adapterFor(station, line), discordScheduler);
-};
 
 async function main(): Promise<void> {
   await startAgents();
@@ -170,7 +154,10 @@ async function main(): Promise<void> {
     telegram.onStop(triggerStop);
     await telegram.start();
   }
-  await startGithubBridge(github, platforms.discord ? discord : null, githubDispatch);
+  if (github.isConfigured()) {
+    await github.start();
+    github.onMessage(m => void onGithubInbound(m).catch(err => log.warn({ err: errMsg(err) }, 'github inbound failed')));
+  }
   log.info('dispatcher ready');
 }
 

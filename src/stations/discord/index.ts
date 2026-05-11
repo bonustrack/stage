@@ -52,12 +52,11 @@ const channelOf = (line: LineT): string => {
   return id;
 };
 
+export const CAPABILITIES: Capabilities = { in: ['text', 'image'], out: ['text'], features: ['stream', 'edit', 'attachments'] };
+
 export class DiscordStation implements ChatStation<DiscordMeta> {
   readonly name = 'discord';
-  readonly capabilities: Capabilities = {
-    in: ['text', 'image'], out: ['text'],
-    features: ['stream', 'edit', 'attachments'],
-  };
+  readonly capabilities = CAPABILITIES;
 
   private client: Client | null = null;
   private messageHandler: (m: InboundMessage<DiscordMeta>) => void = () => {};

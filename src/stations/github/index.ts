@@ -10,7 +10,6 @@ const MAX_PAYLOAD = 5 * 1024 * 1024;
 const API_BASE = 'https://api.github.com';
 
 export type GitHubMeta = {
-  isBootstrap: boolean;
   isPR: boolean;
   title: string;
   url: string;
@@ -18,6 +17,8 @@ export type GitHubMeta = {
   repoFullName: string;
   issueNumber: number;
 };
+
+export const CAPABILITIES: Capabilities = { in: ['text'], out: ['text'], features: ['edit'] };
 
 type Config = { port: number; secret: string; botUsername: string };
 
@@ -48,10 +49,7 @@ async function gh<T = unknown>(method: string, path: string, body?: unknown): Pr
 
 export class GitHubStation implements ChatStation<GitHubMeta> {
   readonly name = 'github';
-  readonly capabilities: Capabilities = {
-    in: ['text'], out: ['text'],
-    features: ['edit'],
-  };
+  readonly capabilities = CAPABILITIES;
 
   private server: Server | null = null;
   private messageHandler: (m: InboundMessage<GitHubMeta>) => void = () => {};
@@ -133,17 +131,13 @@ type GitHubPayload = { action?: string; sender?: Sender; repository?: Repo; issu
 /** Issues + issue_comment events cover both Issues and PR top-level comments — PRs are issues under the hood. */
 function extract(event: string, p: GitHubPayload, bot: string): InboundMessage<GitHubMeta> | null {
   const sender = p.sender?.login;
-  if (!sender || sender === bot) return null;
-  if (event === 'issues' && p.action === 'opened' && p.issue && p.repository) {
-    return fromBody(p.issue.body, p.issue, p.repository, sender, bot, true, p.issue.html_url);
-  }
-  if (event === 'issue_comment' && p.action === 'created' && p.issue && p.repository && p.comment) {
-    return fromBody(p.comment.body, p.issue, p.repository, sender, bot, false, p.comment.html_url);
-  }
+  if (!sender || sender === bot || !p.issue || !p.repository) return null;
+  if (event === 'issues' && p.action === 'opened') return fromBody(p.issue.body, p.issue, p.repository, sender, bot, p.issue.html_url);
+  if (event === 'issue_comment' && p.action === 'created' && p.comment) return fromBody(p.comment.body, p.issue, p.repository, sender, bot, p.comment.html_url);
   return null;
 }
 
-function fromBody(body: string | null, issue: Issue, repo: Repo, author: string, bot: string, isBootstrap: boolean, url: string): InboundMessage<GitHubMeta> | null {
+function fromBody(body: string | null, issue: Issue, repo: Repo, author: string, bot: string, url: string): InboundMessage<GitHubMeta> | null {
   if (!body || !new RegExp(`@${escapeRe(bot)}\\b`, 'i').test(body)) return null;
   const text = body.replace(new RegExp(`@${escapeRe(bot)}\\b`, 'gi'), '').trim();
   if (!text) return null;
@@ -151,7 +145,7 @@ function fromBody(body: string | null, issue: Issue, repo: Repo, author: string,
   return {
     station: 'github', line: Line.github(owner, repoName, issue.number),
     messageId: url, text, attachments: [], mentionsBot: true,
-    meta: { isBootstrap, isPR: !!issue.pull_request, title: issue.title, url, authorUsername: author, repoFullName: repo.full_name, issueNumber: issue.number },
+    meta: { isPR: !!issue.pull_request, title: issue.title, url, authorUsername: author, repoFullName: repo.full_name, issueNumber: issue.number },
   };
 }
 
