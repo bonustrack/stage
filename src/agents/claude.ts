@@ -6,7 +6,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { errMsg, log } from '../log.js';
 import { STATE_DIR } from '../paths.js';
-import type { Agent, AgentTurnCallbacks } from './types.js';
+import type { Agent, AgentTurnCallbacks, Attachment } from './types.js';
 
 const STARTED_FILE = join(STATE_DIR, 'claude-sessions.json');
 
@@ -49,13 +49,22 @@ export class ClaudeAgent implements Agent {
     return id;
   }
 
-  async sendTurn(threadId: string, text: string, callbacks: AgentTurnCallbacks): Promise<void> {
-    const args = ['-p', '--output-format', 'stream-json', '--include-partial-messages', '--verbose'];
-    args.push(this.started.has(threadId) ? '--resume' : '--session-id', threadId, text);
+  async sendTurn(threadId: string, text: string, attachments: Attachment[], callbacks: AgentTurnCallbacks): Promise<void> {
+    const args = ['-p', '--output-format', 'stream-json', '--input-format', 'stream-json', '--include-partial-messages', '--verbose'];
+    args.push(this.started.has(threadId) ? '--resume' : '--session-id', threadId);
 
-    const child = spawn('claude', args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn('claude', args, { stdio: ['pipe', 'pipe', 'pipe'] });
     this.children.add(child);
-    log.debug({ thread: threadId }, 'claude agent: turn started');
+    log.debug({ thread: threadId, attachments: attachments.length }, 'claude agent: turn started');
+
+    const content: unknown[] = [];
+    if (text) content.push({ type: 'text', text });
+    for (const a of attachments) {
+      content.push({ type: 'image', source: { type: 'base64', media_type: a.mediaType, data: a.data.toString('base64') } });
+    }
+    if (!content.length) content.push({ type: 'text', text: '' });
+    child.stdin?.write(JSON.stringify({ type: 'user', message: { role: 'user', content } }) + '\n');
+    child.stdin?.end();
 
     const session = new TurnSession(callbacks);
     let buffer = '';

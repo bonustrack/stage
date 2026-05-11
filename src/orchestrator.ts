@@ -6,7 +6,7 @@ import * as discord from './channels/discord.js';
 import * as telegram from './channels/telegram.js';
 import { CodexAgent } from './agents/codex.js';
 import { ClaudeAgent } from './agents/claude.js';
-import type { Agent } from './agents/types.js';
+import type { Agent, Attachment } from './agents/types.js';
 import {
   type AgentKind, discordChannelFromScopeKey, discordScopeKey, getAgentThread,
   getLastAgent, listScopes, setAgentThread, setLastAgent, setLastSeen, telegramScopeKey,
@@ -54,7 +54,7 @@ function pickAgent(scopeKey: string | null, req: AgentKind | null): { kind: Agen
 }
 
 /** Resolve agent session for `scopeKey`, allocating if new, then run the turn. */
-async function dispatch(scopeKey: string, text: string, kind: AgentKind, messageId: string, adapter: StreamAdapter, scheduler: StreamScheduler): Promise<void> {
+async function dispatch(scopeKey: string, text: string, attachments: Attachment[], kind: AgentKind, messageId: string, adapter: StreamAdapter, scheduler: StreamScheduler): Promise<void> {
   setLastSeen(scopeKey, messageId);
   let threadId = getAgentThread(scopeKey, kind);
   if (!threadId) {
@@ -62,7 +62,7 @@ async function dispatch(scopeKey: string, text: string, kind: AgentKind, message
     setAgentThread(scopeKey, kind, threadId);
     log.info({ scope: scopeKey, agent: kind, thread: threadId }, 'allocated agent session');
   } else setLastAgent(scopeKey, kind);
-  await runTurn(available[kind]!, threadId, text, adapter, scheduler);
+  await runTurn(available[kind]!, threadId, text, attachments, adapter, scheduler);
 }
 
 async function onDiscordInbound(m: discord.InboundMessage): Promise<void> {
@@ -75,7 +75,7 @@ async function onDiscordInbound(m: discord.InboundMessage): Promise<void> {
   if (hasAgent) {
     const choice = pickAgent(scope, req);
     if ('error' in choice) return postErr(choice.error);
-    return dispatch(scope, cleanText, choice.kind, m.message_id, discordAdapter(m.channel_id), discordScheduler);
+    return dispatch(scope, cleanText, m.attachments, choice.kind, m.message_id, discordAdapter(m.channel_id), discordScheduler);
   }
   if (!m.mentions_bot || bootstrapped.has(m.message_id)) return;
   bootstrapped.add(m.message_id);
@@ -85,7 +85,7 @@ async function onDiscordInbound(m: discord.InboundMessage): Promise<void> {
   const ch = await discord.createThreadFromMessage(m.channel_id, m.message_id, makeThreadName(cleanText, threadId));
   setAgentThread(discordScopeKey(ch), choice.kind, threadId);
   log.info({ discord: ch, agent: choice.kind, thread: threadId }, 'scope created');
-  await runTurn(available[choice.kind]!, threadId, cleanText, discordAdapter(ch), discordScheduler);
+  await runTurn(available[choice.kind]!, threadId, cleanText, m.attachments, discordAdapter(ch), discordScheduler);
 }
 
 async function onTelegramInbound(m: telegram.InboundMessage): Promise<void> {
@@ -97,7 +97,7 @@ async function onTelegramInbound(m: telegram.InboundMessage): Promise<void> {
   const { kind: req, cleanText } = parseAgentSuffix(m.text);
   const choice = pickAgent(hasAgent ? scope : null, req);
   if ('error' in choice) return postTelegramError(m.chat_id, m.message_thread_id, choice.error);
-  await dispatch(scope, cleanText, choice.kind, String(m.message_id), telegramAdapter(m.chat_id, m.message_thread_id), telegramScheduler);
+  await dispatch(scope, cleanText, m.attachments, choice.kind, String(m.message_id), telegramAdapter(m.chat_id, m.message_thread_id), telegramScheduler);
 }
 
 async function bootstrapForumTopic(m: telegram.InboundMessage): Promise<void> {
@@ -118,7 +118,7 @@ async function bootstrapForumTopic(m: telegram.InboundMessage): Promise<void> {
   /** Post a deep link back in General as a reply to the @-mention so it threads visually. */
   await telegram.sendMessage(m.chat_id, undefined, `→ [${topicName}](${telegram.topicLink(m.chat_id, topicId)})`, m.message_id)
     .catch(err => log.warn({ err: errMsg(err) }, 'telegram: failed to post topic link in General'));
-  await runTurn(available[choice.kind]!, threadId, cleanText, telegramAdapter(m.chat_id, topicId), telegramScheduler);
+  await runTurn(available[choice.kind]!, threadId, cleanText, m.attachments, telegramAdapter(m.chat_id, topicId), telegramScheduler);
 }
 
 async function postTelegramError(chatId: number, threadId: number | undefined, message: string): Promise<void> {
@@ -155,7 +155,7 @@ async function catchupDiscord(): Promise<void> {
       const missed = (await discord.fetchMessagesSince(channelId, entry.lastSeenMessageId)).filter(m => !m.author_is_bot && m.text);
       if (!missed.length) continue;
       log.info({ channel: channelId, count: missed.length }, 'discord catchup');
-      for (const m of missed) await onDiscordInbound({ channel_id: channelId, message_id: m.message_id, text: m.text, in_guild: true, mentions_bot: false });
+      for (const m of missed) await onDiscordInbound({ channel_id: channelId, message_id: m.message_id, text: m.text, attachments: [], in_guild: true, mentions_bot: false });
     } catch (err) { log.warn({ err: errMsg(err), channel: channelId }, 'discord catchup skipped'); }
   }
 }

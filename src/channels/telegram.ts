@@ -1,8 +1,10 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import type { Attachment } from '../agents/types.js';
 import { STATE_DIR } from '../paths.js';
 import { errMsg, log } from '../log.js';
 import { mdToTelegramHtml } from '../helpers/telegram-format.js';
+import { fetchAttachments } from '../helpers/telegram-files.js';
 
 const API_BASE = 'https://api.telegram.org';
 
@@ -62,6 +64,7 @@ export type InboundMessage = {
   message_id: number;
   message_thread_id?: number;
   text: string;
+  attachments: Attachment[];
   is_private: boolean;
   is_forum_topic: boolean;
   in_forum: boolean;
@@ -75,29 +78,24 @@ const offsetFile = join(STATE_DIR, 'telegram-offset.json');
 let pollOffset = 0;
 let pollAbort: AbortController | null = null;
 
-function loadOffset(): number {
-  try { return existsSync(offsetFile) ? Number(readFileSync(offsetFile, 'utf8').trim()) || 0 : 0; }
-  catch { return 0; }
-}
-
-function saveOffset(o: number): void {
-  try { writeFileSync(offsetFile, String(o)); }
-  catch (err) { log.warn({ err: errMsg(err) }, 'telegram offset save failed'); }
-}
+const loadOffset = (): number => {
+  try { return existsSync(offsetFile) ? Number(readFileSync(offsetFile, 'utf8').trim()) || 0 : 0; } catch { return 0; }
+};
+const saveOffset = (o: number): void => {
+  try { writeFileSync(offsetFile, String(o)); } catch (err) { log.warn({ err: errMsg(err) }, 'telegram offset save failed'); }
+};
 
 export async function startPolling(): Promise<void> {
   await tg('deleteWebhook', { drop_pending_updates: false }).catch(() => {});
   const persisted = loadOffset();
-  if (persisted > 0) {
-    pollOffset = persisted;
-    log.info({ offset: pollOffset }, 'telegram polling: resuming from persisted offset');
-  } else {
+  if (persisted > 0) pollOffset = persisted;
+  else {
     /** First run: anchor on latest update id (-1 returns most recent without consuming). */
     const initial = await tg<RawUpdate[]>('getUpdates', { offset: -1, timeout: 0 });
     pollOffset = initial.length ? initial[0].update_id + 1 : 0;
     saveOffset(pollOffset);
-    log.info({ offset: pollOffset }, 'telegram polling: starting fresh');
   }
+  log.info({ offset: pollOffset }, 'telegram polling: started');
   pollAbort = new AbortController();
   void pollLoop();
 }
@@ -115,7 +113,6 @@ async function pollLoop(): Promise<void> {
       await new Promise(r => setTimeout(r, 2000));
     }
   }
-  log.info('telegram polling stopped');
 }
 
 export async function shutdownPolling(): Promise<void> { pollAbort?.abort(); pollAbort = null; }
@@ -123,13 +120,15 @@ export async function shutdownPolling(): Promise<void> { pollAbort?.abort(); pol
 async function dispatchUpdate(u: RawUpdate): Promise<void> {
   const m = u.message;
   if (!m?.chat?.id || typeof m.message_id !== 'number' || m.from?.is_bot) return;
-  const text = messageToText(m);
-  if (!text) return;
+  const attachments = await fetchAttachments(m, token(), (method, body) => tg(method, body));
+  const text = messageToText(m, attachments.length > 0);
+  if (!text && !attachments.length) return;
   onInboundHandler({
     chat_id: m.chat.id,
     message_id: m.message_id,
     message_thread_id: m.is_topic_message ? m.message_thread_id : undefined,
     text,
+    attachments,
     is_private: m.chat.type === 'private',
     is_forum_topic: !!m.is_topic_message,
     in_forum: !!m.chat.is_forum,
@@ -148,13 +147,13 @@ function detectMentionsBot(m: RawMessage): boolean {
   return false;
 }
 
-function messageToText(m: RawMessage): string | null {
+/** Caption + a `[image|voice|audio]` placeholder when no real attachment was fetched. */
+function messageToText(m: RawMessage, gotImage: boolean): string {
   if (m.text) return m.text;
   const caption = m.caption ?? '';
-  if (m.photo?.length || m.document?.mime_type?.startsWith('image/')) return [caption, '[image]'].filter(Boolean).join(' ');
-  if (m.voice) return [caption, '[voice]'].filter(Boolean).join(' ');
-  if (m.audio) return [caption, '[audio]'].filter(Boolean).join(' ');
-  return caption || null;
+  const isImage = m.photo?.length || m.document?.mime_type?.startsWith('image/');
+  const tag = isImage && !gotImage ? '[image]' : m.voice ? '[voice]' : m.audio ? '[audio]' : '';
+  return [caption, tag].filter(Boolean).join(' ');
 }
 
 /** Create a forum topic; requires `can_manage_topics` admin permission. */

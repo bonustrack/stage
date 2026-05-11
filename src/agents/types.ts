@@ -9,6 +9,12 @@ export interface ToolActivity {
   transient?: boolean;
 }
 
+/** Binary attachment from a chat platform (image today; audio/other later). */
+export interface Attachment {
+  mediaType: string;
+  data: Buffer;
+}
+
 export interface AgentTurnCallbacks {
   onDelta(text: string): void;
   onToolStart(activity: ToolActivity): void;
@@ -22,5 +28,5 @@ export interface Agent {
   start(): Promise<void>;
   stop(): Promise<void>;
   createThread(): Promise<string>;
-  sendTurn(threadId: string, text: string, callbacks: AgentTurnCallbacks): Promise<void>;
+  sendTurn(threadId: string, text: string, attachments: Attachment[], callbacks: AgentTurnCallbacks): Promise<void>;
 }

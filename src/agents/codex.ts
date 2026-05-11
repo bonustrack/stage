@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { WebSocket, type RawData } from 'ws';
 import { errMsg, log } from '../log.js';
 import { STATE_DIR } from '../paths.js';
-import type { Agent, AgentTurnCallbacks, ToolActivity } from './types.js';
+import type { Agent, AgentTurnCallbacks, Attachment, ToolActivity } from './types.js';
 
 export type { AgentTurnCallbacks };
 
@@ -78,11 +78,13 @@ export class CodexAgent implements Agent {
     return result.thread.id;
   }
 
-  async sendTurn(threadId: string, text: string, callbacks: AgentTurnCallbacks): Promise<void> {
+  async sendTurn(threadId: string, text: string, attachments: Attachment[], callbacks: AgentTurnCallbacks): Promise<void> {
     this.turnCallbacks.set(threadId, callbacks);
     try {
-      /** `text_elements` is snake_case per codex's generated bindings. */
-      await this.call('turn/start', { threadId, input: [{ type: 'text', text, text_elements: [] }] });
+      /** `text_elements` is snake_case per codex's generated bindings; images go as `image_url` data URIs. */
+      const input: unknown[] = [{ type: 'text', text, text_elements: [] }];
+      for (const a of attachments) input.push({ type: 'image', image_url: `data:${a.mediaType};base64,${a.data.toString('base64')}` });
+      await this.call('turn/start', { threadId, input });
     } catch (err) {
       this.turnCallbacks.delete(threadId);
       callbacks.onError(err instanceof Error ? err : new Error(String(err)));

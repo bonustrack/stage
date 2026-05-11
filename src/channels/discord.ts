@@ -1,4 +1,5 @@
 import { Client, Events, GatewayIntentBits, Partials } from 'discord.js';
+import type { Attachment } from '../agents/types.js';
 import { errMsg, log } from '../log.js';
 
 /** Receive: discord.js gateway. Send: raw REST so non-orchestrator callers stay one-shot. */
@@ -53,6 +54,7 @@ export type InboundMessage = {
   channel_id: string;
   message_id: string;
   text: string;
+  attachments: Attachment[];
   in_guild: boolean;
   mentions_bot: boolean;
 };
@@ -66,26 +68,43 @@ export async function shutdownGateway(): Promise<void> {
   client = null;
 }
 
+/** Fetch an attachment by URL into a Buffer, capped at 20 MB to keep us under agent token limits. */
+async function fetchAttachment(url: string, mediaType: string): Promise<Attachment | null> {
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(30_000) });
+    if (!res.ok) throw new Error(`status ${res.status}`);
+    const buf = Buffer.from(await res.arrayBuffer());
+    if (buf.byteLength > 20 * 1024 * 1024) { log.warn({ url, size: buf.byteLength }, 'discord: attachment too large; skipped'); return null; }
+    return { mediaType, data: buf };
+  } catch (err) { log.warn({ err: errMsg(err), url }, 'discord: attachment fetch failed'); return null; }
+}
+
+async function handleMessage(m: import('discord.js').Message, c: Client): Promise<void> {
+  if (m.author.bot) return;
+  const attachments: Attachment[] = [];
+  const tags: string[] = [];
+  for (const a of m.attachments.values()) {
+    if (a.contentType?.startsWith('image/')) {
+      const fetched = await fetchAttachment(a.url, a.contentType);
+      if (fetched) attachments.push(fetched);
+      else tags.push('[image]');
+    } else tags.push(a.contentType?.startsWith('audio/') ? `[audio: ${a.name}]` : `[file: ${a.name}]`);
+  }
+  const text = [m.content, ...tags].filter(Boolean).join(' ').trim();
+  if (!text && !attachments.length) return;
+  onInboundHandler({
+    channel_id: m.channelId,
+    message_id: m.id,
+    text,
+    attachments,
+    in_guild: !!m.guildId,
+    mentions_bot: c.user ? m.mentions.has(c.user.id) : false,
+  });
+}
+
 export async function startGateway(): Promise<void> {
   const c = getClient();
-  c.on(Events.MessageCreate, m => {
-    if (m.author.bot) return;
-    /** Forward every human message; orchestrator decides routing. @-mention stays in content. */
-    const tags = [...m.attachments.values()].map(a =>
-      a.contentType?.startsWith('image/') ? '[image]'
-      : a.contentType?.startsWith('audio/') ? `[audio: ${a.name}]`
-      : `[file: ${a.name}]`,
-    ).join(' ');
-    const text = [m.content, tags].filter(Boolean).join(' ').trim();
-    if (!text) return;
-    onInboundHandler({
-      channel_id: m.channelId,
-      message_id: m.id,
-      text,
-      in_guild: !!m.guildId,
-      mentions_bot: c.user ? m.mentions.has(c.user.id) : false,
-    });
-  });
+  c.on(Events.MessageCreate, m => { void handleMessage(m, c); });
   c.on(Events.Error, err => log.error({ err: errMsg(err) }, 'discord error'));
   await c.login(process.env.DISCORD_BOT_TOKEN);
   await new Promise<void>(r => c.once(Events.ClientReady, () => r()));

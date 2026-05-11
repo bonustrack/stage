@@ -1,6 +1,6 @@
 /** Run a turn; stream response via adapter. In-flight follow-ups queue and drain as one combined turn. */
 
-import type { Agent, AgentTurnCallbacks } from '../agents/types.js';
+import type { Agent, AgentTurnCallbacks, Attachment } from '../agents/types.js';
 import { errMsg, log } from '../log.js';
 import { StreamingMessage, type StreamAdapter, type StreamScheduler } from './streaming.js';
 
@@ -12,10 +12,12 @@ export async function runTurn(
   agent: Agent,
   threadId: string,
   text: string,
+  attachments: Attachment[],
   adapter: StreamAdapter,
   scheduler: StreamScheduler,
 ): Promise<void> {
-  const dispatch = (t: string): Promise<void> => runTurn(agent, threadId, t, adapter, scheduler);
+  /** Queued follow-ups carry only text (next turn re-fetches its own attachments). */
+  const dispatch = (t: string): Promise<void> => runTurn(agent, threadId, t, [], adapter, scheduler);
 
   if (inFlight.has(threadId)) {
     const q = queued.get(threadId);
@@ -48,5 +50,5 @@ export async function runTurn(
     },
   };
 
-  await agent.sendTurn(threadId, text, callbacks);
+  await agent.sendTurn(threadId, text, attachments, callbacks);
 }
