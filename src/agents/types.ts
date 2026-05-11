@@ -29,4 +29,6 @@ export interface Agent {
   stop(): Promise<void>;
   createThread(): Promise<string>;
   sendTurn(threadId: string, text: string, attachments: Attachment[], callbacks: AgentTurnCallbacks): Promise<void>;
+  /** Cancel an in-flight turn on `threadId`. No-op if nothing's running. */
+  cancelTurn(threadId: string): Promise<void>;
 }

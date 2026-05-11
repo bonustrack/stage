@@ -29,6 +29,8 @@ export class CodexAgent implements Agent {
   private nextId = 1;
   private pending = new Map<number, Pending>();
   private turnCallbacks = new Map<string, AgentTurnCallbacks>();
+  /** threadId → active turnId, captured from `turn/start`, used by `cancelTurn` → `turn/interrupt`. */
+  private turnByThread = new Map<string, string>();
 
   constructor(private clientVersion: string) {}
 
@@ -45,10 +47,8 @@ export class CodexAgent implements Agent {
     this.daemon.stderr?.on('data', (d: Buffer) => { bootStderr += String(d); log.trace({ src: 'codex-stderr' }, String(d).trim()); });
     this.daemon.on('exit', code => { daemonExited = true; daemonExitCode = code; log.warn({ code }, 'codex daemon exited'); });
 
-    try {
-      await this.waitForSocket(() => daemonExited, () => bootStderr.trim() || `exit code ${daemonExitCode}`);
-      await this.connect();
-    } catch (err) {
+    try { await this.waitForSocket(() => daemonExited, () => bootStderr.trim() || `exit code ${daemonExitCode}`); await this.connect(); }
+    catch (err) {
       const detail = bootStderr.trim() ? ` (codex stderr: ${bootStderr.trim().slice(0, 200)})` : '';
       throw new Error(`${errMsg(err)}${detail}`);
     }
@@ -84,11 +84,19 @@ export class CodexAgent implements Agent {
       /** `text_elements` is snake_case per codex's generated bindings; images go as `image_url` data URIs. */
       const input: unknown[] = [{ type: 'text', text, text_elements: [] }];
       for (const a of attachments) input.push({ type: 'image', image_url: `data:${a.mediaType};base64,${a.data.toString('base64')}` });
-      await this.call('turn/start', { threadId, input });
+      const result = await this.call<{ turn: { id: string } }>('turn/start', { threadId, input });
+      if (result?.turn?.id) this.turnByThread.set(threadId, result.turn.id);
     } catch (err) {
       this.turnCallbacks.delete(threadId);
       callbacks.onError(err instanceof Error ? err : new Error(String(err)));
     }
+  }
+
+  async cancelTurn(threadId: string): Promise<void> {
+    const turnId = this.turnByThread.get(threadId);
+    if (!turnId) return;
+    this.turnByThread.delete(threadId);
+    await this.call('turn/interrupt', { threadId, turnId }).catch(err => log.warn({ err: errMsg(err) }, 'codex agent: turn/interrupt failed'));
   }
 
   private async waitForSocket(exited: () => boolean, exitReason: () => string): Promise<void> {
@@ -103,14 +111,11 @@ export class CodexAgent implements Agent {
 
   /** perMessageDeflate disabled: codex 0.130 closes connections offering it. */
   private async connect(): Promise<void> {
-    const ws = new WebSocket('ws://localhost/', {
-      perMessageDeflate: false,
-      createConnection: () => {
-        const sock = createConnection({ path: SOCKET_PATH });
-        sock.on('error', err => log.warn({ err: errMsg(err) }, 'codex agent: socket error'));
-        return sock;
-      },
-    });
+    const ws = new WebSocket('ws://localhost/', { perMessageDeflate: false, createConnection: () => {
+      const sock = createConnection({ path: SOCKET_PATH });
+      sock.on('error', err => log.warn({ err: errMsg(err) }, 'codex agent: socket error'));
+      return sock;
+    } });
     this.ws = ws;
     ws.on('error', err => log.warn({ err: errMsg(err) }, 'codex agent: websocket error'));
     await new Promise<void>((resolve, reject) => { ws.once('open', () => resolve()); ws.once('error', reject); });
@@ -127,8 +132,7 @@ export class CodexAgent implements Agent {
     if (msg.id !== undefined && this.pending.has(msg.id)) {
       const p = this.pending.get(msg.id)!;
       this.pending.delete(msg.id);
-      if (msg.error) p.reject(new Error(msg.error.message ?? 'rpc error'));
-      else p.resolve(msg.result);
+      if (msg.error) p.reject(new Error(msg.error.message ?? 'rpc error')); else p.resolve(msg.result);
       return;
     }
 
@@ -139,27 +143,21 @@ export class CodexAgent implements Agent {
     const cb = this.turnCallbacks.get(threadId);
     if (!cb) return;
 
-    if (msg.method === 'item/agentMessage/delta') {
-      cb.onDelta((msg.params as { delta: string }).delta);
-    } else if (msg.method === 'item/started') {
-      const a = summarizeItem((msg.params as { item: ThreadItem }).item);
-      if (a) cb.onToolStart(a);
-    } else if (msg.method === 'item/completed') {
+    if (msg.method === 'item/agentMessage/delta') cb.onDelta((msg.params as { delta: string }).delta);
+    else if (msg.method === 'item/started') { const a = summarizeItem((msg.params as { item: ThreadItem }).item); if (a) cb.onToolStart(a); }
+    else if (msg.method === 'item/completed') {
       const item = (msg.params as { item: ThreadItem }).item;
       if (item.type !== 'agentMessage' && item.type !== 'userMessage') cb.onToolEnd(item.id, itemOutput(item));
     } else if (msg.method === 'thread/status/changed') {
       /** codex 0.130: `thread/status=idle` is the dependable completion signal. */
       const status = (msg.params as { status: { type: string } }).status?.type;
-      if (status === 'idle') { this.turnCallbacks.delete(threadId); cb.onComplete(); }
-      else if (status === 'systemError') { this.turnCallbacks.delete(threadId); cb.onError(new Error('codex thread entered systemError')); }
-    } else if (msg.method === 'turn/completed') {
-      this.turnCallbacks.delete(threadId);
-      cb.onComplete();
-    } else if (msg.method === 'error') {
-      this.turnCallbacks.delete(threadId);
-      cb.onError(new Error((msg.params as { error?: { message?: string } }).error?.message ?? 'codex error notification'));
-    }
+      if (status === 'idle') { this.endTurn(threadId); cb.onComplete(); }
+      else if (status === 'systemError') { this.endTurn(threadId); cb.onError(new Error('codex thread entered systemError')); }
+    } else if (msg.method === 'turn/completed') { this.endTurn(threadId); cb.onComplete(); }
+    else if (msg.method === 'error') { this.endTurn(threadId); cb.onError(new Error((msg.params as { error?: { message?: string } }).error?.message ?? 'codex error notification')); }
   }
+
+  private endTurn = (threadId: string): void => { this.turnCallbacks.delete(threadId); this.turnByThread.delete(threadId); };
 
   private call<T = unknown>(method: string, params: unknown): Promise<T> {
     if (!this.ws) return Promise.reject(new Error('codex agent: not connected'));
@@ -177,6 +175,7 @@ export class CodexAgent implements Agent {
       try { cb.onError(err); } catch (e) { log.warn({ err: errMsg(e) }, 'codex agent: drain callback threw'); }
     }
     this.turnCallbacks.clear();
+    this.turnByThread.clear();
     for (const p of this.pending.values()) p.reject(err);
     this.pending.clear();
   }

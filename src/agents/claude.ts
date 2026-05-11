@@ -19,6 +19,8 @@ function loadStarted(): Set<string> {
 export class ClaudeAgent implements Agent {
   private started = loadStarted();
   private children = new Set<ChildProcess>();
+  /** threadId → active child, so cancelTurn can SIGTERM the right subprocess. */
+  private byThread = new Map<string, ChildProcess>();
 
   private persistStarted(): void {
     try { writeFileSync(STARTED_FILE, JSON.stringify([...this.started])); }
@@ -41,6 +43,11 @@ export class ClaudeAgent implements Agent {
   async stop(): Promise<void> {
     for (const c of this.children) { try { c.kill('SIGTERM'); } catch { /* ignore */ } }
     this.children.clear();
+    this.byThread.clear();
+  }
+
+  async cancelTurn(threadId: string): Promise<void> {
+    try { this.byThread.get(threadId)?.kill('SIGTERM'); } catch { /* already exited */ }
   }
 
   async createThread(): Promise<string> {
@@ -55,13 +62,12 @@ export class ClaudeAgent implements Agent {
 
     const child = spawn('claude', args, { stdio: ['pipe', 'pipe', 'pipe'] });
     this.children.add(child);
+    this.byThread.set(threadId, child);
     log.debug({ thread: threadId, attachments: attachments.length }, 'claude agent: turn started');
 
     const content: unknown[] = [];
     if (text) content.push({ type: 'text', text });
-    for (const a of attachments) {
-      content.push({ type: 'image', source: { type: 'base64', media_type: a.mediaType, data: a.data.toString('base64') } });
-    }
+    for (const a of attachments) content.push({ type: 'image', source: { type: 'base64', media_type: a.mediaType, data: a.data.toString('base64') } });
     if (!content.length) content.push({ type: 'text', text: '' });
     child.stdin?.write(JSON.stringify({ type: 'user', message: { role: 'user', content } }) + '\n');
     child.stdin?.end();
@@ -82,6 +88,7 @@ export class ClaudeAgent implements Agent {
     child.stderr?.on('data', d => log.trace({ src: 'claude-stderr' }, String(d).trim()));
     child.on('exit', code => {
       this.children.delete(child);
+      if (this.byThread.get(threadId) === child) this.byThread.delete(threadId);
       if (!this.started.has(threadId)) { this.started.add(threadId); this.persistStarted(); }
       if (!session.done) {
         if (code === 0) session.fireComplete();

@@ -13,8 +13,9 @@ const MAX_RESULT_LINES = 50;
 const MAX_RESULT_CHARS = 1500;
 
 export interface StreamAdapter {
-  send(text: string): Promise<string>;
-  edit(messageId: string, text: string): Promise<void>;
+  /** `stopId`, when set, renders a "Stop" button (Discord component / Telegram inline keyboard). */
+  send(text: string, stopId: string | null): Promise<string>;
+  edit(messageId: string, text: string, stopId: string | null): Promise<void>;
 }
 
 /** One per bot. Coalesces edits so concurrent threads don't compound rate limits. */
@@ -31,10 +32,8 @@ export class StreamScheduler {
     const sinceLast = Date.now() - this.lastFlushAt;
     const delay = sinceLast >= this.debounceMs ? this.leadingMs : this.debounceMs - sinceLast;
     this.timer = setTimeout(() => {
-      this.timer = null;
-      this.lastFlushAt = Date.now();
-      const batch = [...this.dirty];
-      this.dirty.clear();
+      this.timer = null; this.lastFlushAt = Date.now();
+      const batch = [...this.dirty]; this.dirty.clear();
       for (const s of batch) void s._flushFromScheduler();
     }, delay);
   }
@@ -45,15 +44,14 @@ export class StreamScheduler {
 /** Break embedded triple backticks so they can't close our fenced block early. */
 const escapeFence = (s: string): string => s.replace(/```/g, '`​`​`');
 
-/** Cap output by lines + chars; return `body` to embed and a `_(N more …)_` overflow note (or ''). */
+/** Cap output by lines + chars; returns the truncated body and an `_(N more …)_` overflow note (or ''). */
 function truncateResult(s: string): { body: string; overflow: string } {
   const lines = s.split('\n');
   let body = lines.slice(0, MAX_RESULT_LINES).join('\n');
-  const droppedLines = Math.max(0, lines.length - MAX_RESULT_LINES);
+  const dropped = Math.max(0, lines.length - MAX_RESULT_LINES);
   if (body.length > MAX_RESULT_CHARS) body = body.slice(0, MAX_RESULT_CHARS) + '…';
-  if (droppedLines === 0 && body === s) return { body: s, overflow: '' };
-  const noun = droppedLines > 0 ? `${droppedLines} more line${droppedLines === 1 ? '' : 's'}` : 'output truncated';
-  return { body, overflow: `_(${noun})_` };
+  if (dropped === 0 && body === s) return { body: s, overflow: '' };
+  return { body, overflow: `_(${dropped > 0 ? `${dropped} more line${dropped === 1 ? '' : 's'}` : 'output truncated'})_` };
 }
 
 type TextBlock = { kind: 'text'; text: string };
@@ -68,21 +66,28 @@ export class StreamingMessage {
   private flushing = false;
   private flushAgain = false;
   private finalized = false;
+  /** Non-null while a stop button should be shown on the last segment. */
+  private stopId: string | null = null;
 
   constructor(private adapter: StreamAdapter, private scheduler: StreamScheduler) {}
 
   appendDelta(delta: string): void {
     if (this.finalized || !delta) return;
     const last = this.blocks.at(-1);
-    if (last?.kind === 'text') last.text += delta;
-    else this.blocks.push({ kind: 'text', text: delta });
+    if (last?.kind === 'text') last.text += delta; else this.blocks.push({ kind: 'text', text: delta });
     this.scheduler.request(this);
   }
 
   setStatus(status: string | null): void {
     if (this.finalized) return;
-    this.statusLine = status;
-    this.scheduler.request(this);
+    this.statusLine = status; this.scheduler.request(this);
+  }
+
+  /** Set/clear the stop-button id rendered on the last segment by the adapter. */
+  setStopId(id: string | null): void {
+    if (this.finalized || this.stopId === id) return;
+    this.stopId = id;
+    this.segments[this.segments.length - 1].dirty = true; this.scheduler.request(this);
   }
 
   /** Add a tool block keyed by `id`; rendered immediately as a header, output filled in via appendToolResult. */
@@ -96,22 +101,18 @@ export class StreamingMessage {
   appendToolResult(id: string, result: string): void {
     if (this.finalized || !result) return;
     const tool = this.blocks.find((b): b is ToolBlock => b.kind === 'tool' && b.id === id);
-    if (tool) tool.result = result;
-    this.scheduler.request(this);
+    if (tool) tool.result = result; this.scheduler.request(this);
   }
 
   appendError(message: string): void {
     if (this.finalized) return;
     this.statusLine = null;
-    this.blocks.push({ kind: 'text', text: `⚠️ ${message}` });
-    this.scheduler.request(this);
+    this.blocks.push({ kind: 'text', text: `⚠️ ${message}` }); this.scheduler.request(this);
   }
 
   async finalize(): Promise<void> {
     if (this.finalized) return;
-    this.finalized = true;
-    this.scheduler.forget(this);
-    this.statusLine = null;
+    this.finalized = true; this.scheduler.forget(this); this.statusLine = null;
     await this.flush();
   }
 
@@ -122,7 +123,7 @@ export class StreamingMessage {
     return this.blocks.map(b => b.kind === 'text' ? b.text : this.renderToolBlock(b)).join('\n\n').trim();
   }
 
-  /** Plain header + fenced input block + fenced output block. Each fence is fully visible (no collapse). */
+  /** Plain header + fenced input block + fenced output block (each fully visible — no collapse). */
   private renderToolBlock(b: ToolBlock): string {
     const parts: string[] = [`🛠 **${b.name}**`];
     if (b.detail) parts.push('```\n' + escapeFence(b.detail) + '\n```');
@@ -134,18 +135,14 @@ export class StreamingMessage {
     return parts.join('\n');
   }
 
+
   /** Redistribute the rendered body across segments, keeping existing segment ids stable. */
   private redistribute(): void {
-    const fullBody = this.renderBody();
-    const chunks = this.chunkify(fullBody, MAX_BODY_LEN - STATUS_RESERVE);
+    const chunks = this.chunkify(this.renderBody(), MAX_BODY_LEN - STATUS_RESERVE);
     if (!chunks.length) chunks.push('');
     for (let i = 0; i < chunks.length; i++) {
-      if (i >= this.segments.length) {
-        this.segments.push({ id: null, text: chunks[i], dirty: true });
-      } else if (this.segments[i].text !== chunks[i]) {
-        this.segments[i].text = chunks[i];
-        this.segments[i].dirty = true;
-      }
+      if (i >= this.segments.length) this.segments.push({ id: null, text: chunks[i], dirty: true });
+      else if (this.segments[i].text !== chunks[i]) { this.segments[i].text = chunks[i]; this.segments[i].dirty = true; }
     }
   }
 
@@ -180,11 +177,14 @@ export class StreamingMessage {
         this.redistribute();
         for (let i = 0; i < this.segments.length; i++) {
           const s = this.segments[i];
-          const body = this.render(s, i === this.segments.length - 1);
+          const isLast = i === this.segments.length - 1;
+          const body = this.render(s, isLast);
           if (!body) continue;
+          /** Stop button only lives on the final segment; frozen segments never carry it. */
+          const stopId = isLast ? this.stopId : null;
           try {
-            if (s.id === null) s.id = await this.adapter.send(body);
-            else if (s.dirty) await this.adapter.edit(s.id, body);
+            if (s.id === null) s.id = await this.adapter.send(body, stopId);
+            else if (s.dirty) await this.adapter.edit(s.id, body, stopId);
             s.dirty = false;
           } catch (err) { log.warn({ err: errMsg(err) }, 'streaming edit failed'); }
         }

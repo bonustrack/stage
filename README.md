@@ -67,6 +67,7 @@ Telegram poller ──┘                       └─▶ claude -p ...      (pe
 - **Image attachments.** Discord and Telegram image uploads are downloaded and forwarded to the agent as a vision-input content block (Anthropic-format `image/base64` for Claude; `image_url` data URI for Codex). 20 MB cap per file; non-image attachments still surface as `[file: name]` text.
 - **Telegram formatting.** Agent markdown (`**bold**`, `*italic*`, `` `code` ``, fenced blocks, `[link](url)`, blockquotes) is converted to Telegram's HTML parse mode on the way out, so it renders as formatted text instead of literal characters.
 - **No link previews.** Outgoing messages set `link_preview_options.is_disabled` on Telegram and the `SUPPRESS_EMBEDS` flag on Discord, so URLs in agent replies don't unfurl into giant auto-embeds.
+- **Stop button.** While an agent turn is in flight, the streamed message carries an `⏹ Stop` button (Discord component / Telegram inline keyboard). Tapping it kills the underlying turn — Claude via SIGTERM on the `claude -p` subprocess; Codex via `turn/interrupt` on app-server — and removes the button on the next flush.
 - **Queueing.** Messages that arrive while a turn is running are buffered per-scope and answered together in the next reply.
 - **Catchup-on-restart.** Discord uses a per-scope `lastSeenMessageId` watermark and REST-fetches anything newer when metro comes back up. Telegram leans on its own update-id queue (persisted offset in `telegram-offset.json`).
 

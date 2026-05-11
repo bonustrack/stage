@@ -12,7 +12,7 @@ import {
   getLastAgent, listScopes, setAgentThread, setLastAgent, setLastSeen, telegramScopeKey,
 } from './helpers/scope-cache.js';
 import { StreamScheduler, type StreamAdapter } from './helpers/streaming.js';
-import { runTurn } from './helpers/turn.js';
+import { runTurn, triggerStop } from './helpers/turn.js';
 import { errMsg, log } from './log.js';
 import { acquireLock, configuredPlatforms, loadMetroEnv, STATE_DIR, requireConfiguredPlatform } from './paths.js';
 
@@ -135,15 +135,15 @@ function makeThreadName(rawText: string, fallback: string): string {
 
 function discordAdapter(channelId: string): StreamAdapter {
   return {
-    send: t => discord.sendMessage(channelId, t),
-    edit: async (id, t) => { await discord.editMessage(channelId, id, t); },
+    send: (t, stopId) => discord.sendMessage(channelId, t, stopId),
+    edit: async (id, t, stopId) => { await discord.editMessage(channelId, id, t, stopId); },
   };
 }
 
 function telegramAdapter(chatId: number, topicId: number | undefined): StreamAdapter {
   return {
-    send: async t => String(await telegram.sendMessage(chatId, topicId, t)),
-    edit: async (id, t) => { await telegram.editMessageText(chatId, Number(id), t); },
+    send: async (t, stopId) => String(await telegram.sendMessage(chatId, topicId, t, undefined, stopId)),
+    edit: async (id, t, stopId) => { await telegram.editMessageText(chatId, Number(id), t, stopId); },
   };
 }
 
@@ -166,11 +166,13 @@ async function main(): Promise<void> {
     await discord.startGateway();
     log.info({ bot: (await discord.getMe()).username }, 'discord ready');
     discord.onInbound(m => void onDiscordInbound(m).catch(err => log.warn({ err: errMsg(err) }, 'discord inbound failed')));
+    discord.onStop(triggerStop);
     void catchupDiscord().catch(err => log.warn({ err: errMsg(err) }, 'discord catchup failed'));
   }
   if (platforms.telegram) {
     log.info({ bot: `@${(await telegram.getMe()).username}` }, 'telegram ready');
     telegram.onInbound(m => void onTelegramInbound(m).catch(err => log.warn({ err: errMsg(err) }, 'telegram inbound failed')));
+    telegram.onStop(triggerStop);
     await telegram.startPolling();
   }
   log.info('orchestrator ready');

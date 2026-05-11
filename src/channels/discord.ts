@@ -62,6 +62,9 @@ export type InboundMessage = {
 let onInboundHandler: (msg: InboundMessage) => void = () => {};
 export const onInbound = (handler: (msg: InboundMessage) => void): void => { onInboundHandler = handler; };
 
+let onStopHandler: (stopId: string) => Promise<boolean> = async () => false;
+export const onStop = (handler: (stopId: string) => Promise<boolean>): void => { onStopHandler = handler; };
+
 export async function shutdownGateway(): Promise<void> {
   if (!client) return;
   await client.destroy();
@@ -105,9 +108,20 @@ async function handleMessage(m: import('discord.js').Message, c: Client): Promis
 export async function startGateway(): Promise<void> {
   const c = getClient();
   c.on(Events.MessageCreate, m => { void handleMessage(m, c); });
+  c.on(Events.InteractionCreate, i => { void handleInteraction(i); });
   c.on(Events.Error, err => log.error({ err: errMsg(err) }, 'discord error'));
   await c.login(process.env.DISCORD_BOT_TOKEN);
   await new Promise<void>(r => c.once(Events.ClientReady, () => r()));
+}
+
+/** Route button clicks (custom_id starts with `stop-`) to the orchestrator's stop handler. */
+async function handleInteraction(i: import('discord.js').Interaction): Promise<void> {
+  if (!i.isButton()) return;
+  const stopId = i.customId;
+  if (!stopId.startsWith('stop-')) return;
+  await i.deferUpdate().catch(err => log.warn({ err: errMsg(err) }, 'discord: deferUpdate failed'));
+  const ok = await onStopHandler(stopId).catch(err => { log.warn({ err: errMsg(err) }, 'discord stop handler threw'); return false; });
+  log.debug({ stopId, ok }, 'discord: stop button fired');
 }
 
 export async function getMe(): Promise<{ username: string }> {
@@ -125,8 +139,12 @@ type RawMessage = {
 /** SUPPRESS_EMBEDS (1 << 2) — strip link unfurls from every bot message. */
 const SUPPRESS_EMBEDS = 1 << 2;
 
-export async function sendMessage(channelId: string, text: string): Promise<string> {
-  const sent = await rest<{ id: string }>('POST', `/channels/${channelId}/messages`, { content: text, flags: SUPPRESS_EMBEDS });
+/** ActionRow + danger-style Button keyed by `custom_id=stopId`; empty array when stopId is null. */
+const stopComponents = (stopId: string | null): unknown[] =>
+  stopId ? [{ type: 1, components: [{ type: 2, style: 4, label: '⏹ Stop', custom_id: stopId }] }] : [];
+
+export async function sendMessage(channelId: string, text: string, stopId: string | null = null): Promise<string> {
+  const sent = await rest<{ id: string }>('POST', `/channels/${channelId}/messages`, { content: text, flags: SUPPRESS_EMBEDS, components: stopComponents(stopId) });
   return sent.id;
 }
 
@@ -136,8 +154,8 @@ export async function createThreadFromMessage(channelId: string, messageId: stri
   return created.id;
 }
 
-export async function editMessage(channelId: string, messageId: string, text: string): Promise<string> {
-  const sent = await rest<{ id: string }>('PATCH', `/channels/${channelId}/messages/${messageId}`, { content: text, flags: SUPPRESS_EMBEDS });
+export async function editMessage(channelId: string, messageId: string, text: string, stopId: string | null = null): Promise<string> {
+  const sent = await rest<{ id: string }>('PATCH', `/channels/${channelId}/messages/${messageId}`, { content: text, flags: SUPPRESS_EMBEDS, components: stopComponents(stopId) });
   return sent.id;
 }
 
