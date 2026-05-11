@@ -62,7 +62,8 @@ Telegram poller ──┘                       └─▶ claude -p ...      (pe
 
 - **One metro = one daemon.** Lockfile at `$METRO_STATE_DIR/.tail-lock` keeps things singleton.
 - **Both agents side-by-side.** A scope can have up to one session per agent — independent histories. Routing is per-message: explicit `with claude` / `with codex` suffix, otherwise the scope's last-used agent, otherwise Claude.
-- **Streaming.** Replies edit one message every ~1500 ms while deltas stream in (leading-edge first flush for fast initial feedback). Tool calls land inline as quoted bullets (`> 🛠 **<tool>** \`<arg>\``) so the full agent trail stays in scroll-back; long replies split past ~1900 chars onto a follow-up message.
+- **Streaming.** Replies edit one message every ~1500 ms while deltas stream in (leading-edge first flush for fast initial feedback). Long replies split past ~1900 chars onto a follow-up message.
+- **Tool-call visibility.** Each tool call lands inline as `> 🛠 **<tool>** \`<arg>\`` and its output is folded into the same blockquote (capped at 10 lines + overflow note). On Telegram the blockquote is rendered as `<blockquote expandable>` so it stays one-line in scroll-back; Discord shows the truncated output inline.
 - **Telegram formatting.** Agent markdown (`**bold**`, `*italic*`, `` `code` ``, fenced blocks, `[link](url)`, blockquotes) is converted to Telegram's HTML parse mode on the way out, so it renders as formatted text instead of literal characters.
 - **Queueing.** Messages that arrive while a turn is running are buffered per-scope and answered together in the next reply.
 - **Catchup-on-restart.** Discord uses a per-scope `lastSeenMessageId` watermark and REST-fetches anything newer when metro comes back up. Telegram leans on its own update-id queue (persisted offset in `telegram-offset.json`).
