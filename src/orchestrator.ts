@@ -107,13 +107,17 @@ async function bootstrapForumTopic(m: telegram.InboundMessage): Promise<void> {
   const choice = pickAgent(null, req);
   if ('error' in choice) return postTelegramError(m.chat_id, undefined, choice.error);
   let topicId: number;
-  try { topicId = await telegram.createForumTopic(m.chat_id, makeThreadName(cleanText, 'metro')); }
+  const topicName = makeThreadName(cleanText, 'metro');
+  try { topicId = await telegram.createForumTopic(m.chat_id, topicName); }
   catch (err) { return postTelegramError(m.chat_id, undefined, `couldn't create topic — bot needs Manage Topics admin permission. (${errMsg(err)})`); }
   const threadId = await available[choice.kind]!.createThread();
   const scope = telegramScopeKey(m.chat_id, topicId);
   setAgentThread(scope, choice.kind, threadId);
   setLastSeen(scope, String(m.message_id));
   log.info({ scope, agent: choice.kind, thread: threadId }, 'telegram: scope created');
+  /** Post a deep link back in General so the new topic is one tap away. */
+  await telegram.sendMessage(m.chat_id, undefined, `→ [${topicName}](${telegram.topicLink(m.chat_id, topicId)})`)
+    .catch(err => log.warn({ err: errMsg(err) }, 'telegram: failed to post topic link in General'));
   await runTurn(available[choice.kind]!, threadId, cleanText, telegramAdapter(m.chat_id, topicId), telegramScheduler);
 }
 

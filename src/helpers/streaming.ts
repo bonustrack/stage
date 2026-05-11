@@ -8,6 +8,8 @@ const LEADING_MS = 500;
 /** Discord cap is 2000; 1900 leaves headroom for status suffix. */
 const MAX_BODY_LEN = 1900;
 const STATUS_RESERVE = 80;
+/** Cap result preview so a 1000-line file dump doesn't blow the message budget. */
+const MAX_RESULT_LINES = 10;
 
 export interface StreamAdapter {
   send(text: string): Promise<string>;
@@ -77,6 +79,18 @@ export class StreamingMessage {
     const body = detail ? `**${name}** \`${escapeBackticks(detail)}\`` : `**${name}**`;
     this.appendToLast(`${lead}> 🛠 ${body}`);
     this.lastBlock = 'tool';
+    this.scheduler.request(this);
+  }
+
+  /** Append tool output into the current `> 🛠` blockquote (Telegram makes the block expandable). */
+  appendToolResult(result: string): void {
+    if (this.finalized || this.lastBlock !== 'tool' || !result) return;
+    const lines = result.split('\n');
+    const head = lines.slice(0, MAX_RESULT_LINES);
+    const more = lines.length - head.length;
+    const rendered = head.map(l => `> ${l ? escapeBackticks(l) : '​'}`).join('\n');
+    const overflow = more > 0 ? `\n> _(${more} more line${more === 1 ? '' : 's'})_` : '';
+    this.appendToLast(`\n${rendered}${overflow}`);
     this.scheduler.request(this);
   }
 

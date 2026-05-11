@@ -38,14 +38,14 @@ How would Codex have done this? with codex
 @-mention the bot in any channel:
 1. Metro creates a thread anchored on your message (named after the message).
 2. Spins up an agent session for that thread.
-3. Streams the agent's reply with each tool call kept inline (`> 🛠 **Read** `src/foo.ts``, `> 🛠 **Bash** `ls -la``, …). `Thinking…` shows as a transient status that vanishes once real content arrives.
+3. Streams the agent's reply with each tool call kept inline (`> 🛠 **Read** `src/foo.ts``, `> 🛠 **Bash** `ls -la``, …) — the tool's output is folded into the same blockquote (collapsible `<blockquote expandable>` on Telegram; truncated inline on Discord). `Thinking…` shows as a transient status that vanishes once real content arrives.
 
 Follow-ups in the thread route automatically — no @-mention needed.
 
 ### Telegram
 
 - **DM the bot** — every message is implicitly addressed to it; one scope per chat.
-- **@-mention the bot in a forum supergroup's General topic** — metro auto-creates a new topic for the conversation (Discord-style "thread from message"). Subsequent messages in that topic route automatically.
+- **@-mention the bot in a forum supergroup's General topic** — metro auto-creates a new topic for the conversation (Discord-style "thread from message") and posts a deep link back in General so the new topic is one tap away. Subsequent messages in that topic route automatically.
 - **Inside an existing custom topic** — routes to that topic's scope on every message.
 
 Regular (non-forum) groups are not routed — they have no thread boundary.

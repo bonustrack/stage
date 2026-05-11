@@ -86,7 +86,8 @@ export class ClaudeAgent implements Agent {
 class TurnSession {
   done = false;
   private thinking = true;
-  private tools = new Map<number, string>();
+  /** tool_use_id → kind; survives until the matching tool_result lands. */
+  private byUseId = new Map<string, string>();
 
   constructor(private cb: AgentTurnCallbacks) {
     cb.onToolStart({ kind: 'thinking', name: 'Thinking…', transient: true });
@@ -102,35 +103,53 @@ class TurnSession {
       else this.fireComplete();
       return;
     }
+    if (ev.type === 'user') { this.handleToolResults(ev); return; }
     if (ev.type !== 'stream_event' || !ev.event) return;
     const e = ev.event;
     if (e.type === 'content_block_start' && e.content_block?.type === 'tool_use') {
       this.clearThinking();
       const kind = e.content_block.name ?? 'tool';
-      this.tools.set(e.index ?? -1, kind);
+      if (e.content_block.id) this.byUseId.set(e.content_block.id, kind);
       const { name, detail } = summarizeTool(e.content_block.name, e.content_block.input);
       this.cb.onToolStart({ kind, name, detail });
     } else if (e.type === 'content_block_delta' && e.delta?.type === 'text_delta') {
       this.clearThinking();
       this.cb.onDelta(e.delta.text ?? '');
-    } else if (e.type === 'content_block_stop') {
-      const kind = this.tools.get(e.index ?? -1);
-      if (kind !== undefined) { this.tools.delete(e.index ?? -1); this.cb.onToolEnd(kind); }
+    }
+  }
+
+  /** Claude emits `tool_result` blocks inside a follow-up `user` message after the tool runs. */
+  private handleToolResults(ev: ClaudeEvent): void {
+    for (const block of ev.message?.content ?? []) {
+      if (block.type !== 'tool_result' || !block.tool_use_id) continue;
+      const kind = this.byUseId.get(block.tool_use_id);
+      if (!kind) continue;
+      this.byUseId.delete(block.tool_use_id);
+      this.cb.onToolEnd(kind, extractResultText(block.content));
     }
   }
 }
 
+type ResultBlock = { type: string; text?: string };
 type ClaudeEvent = {
   type: string;
   is_error?: boolean;
   result?: unknown;
+  message?: { content?: Array<{ type: string; tool_use_id?: string; content?: unknown }> };
   event?: {
     type: string;
     index?: number;
-    content_block?: { type: string; name?: string; input?: Record<string, unknown> };
+    content_block?: { type: string; name?: string; id?: string; input?: Record<string, unknown> };
     delta?: { type: string; text?: string };
   };
 };
+
+function extractResultText(content: unknown): string | undefined {
+  if (typeof content === 'string') return content.trim() || undefined;
+  if (!Array.isArray(content)) return undefined;
+  const text = (content as ResultBlock[]).filter(b => b?.type === 'text').map(b => b.text ?? '').join('\n').trim();
+  return text || undefined;
+}
 
 function summarizeTool(name: string | undefined, input: Record<string, unknown> | undefined): { name: string; detail?: string } {
   const display = (name ?? 'Tool')[0].toUpperCase() + (name ?? 'Tool').slice(1);

@@ -64,7 +64,6 @@ export type InboundMessage = {
   message_thread_id?: number;
   text: string;
   is_private: boolean;
-  /** non-General forum topic. */
   is_forum_topic: boolean;
   in_forum: boolean;
   mentions_bot: boolean;
@@ -163,6 +162,12 @@ function messageToText(m: RawMessage): string | null {
 export async function createForumTopic(chatId: ChatId, name: string): Promise<number> {
   const r = await tg<{ message_thread_id: number }>('createForumTopic', { chat_id: chatId, name: name.slice(0, 128) || 'metro' });
   return r.message_thread_id;
+}
+
+/** Deep link `t.me/c/<id>/<topic>`; strips supergroup's `-100` prefix from chat id. */
+export function topicLink(chatId: number, topicId: number): string {
+  const id = String(Math.abs(chatId)).replace(/^100/, '');
+  return `https://t.me/c/${id}/${topicId}`;
 }
 
 const isParseError = (err: unknown): boolean => errMsg(err).includes("can't parse entities");

@@ -18,7 +18,7 @@ const READY_POLL_MS = 100;
 type Pending = { resolve: (r: unknown) => void; reject: (e: Error) => void };
 type ThreadItem =
   | { type: 'agentMessage'; id: string; text: string }
-  | { type: 'commandExecution'; id: string; command: string }
+  | { type: 'commandExecution'; id: string; command: string; output?: string; exitCode?: number }
   | { type: 'fileChange'; id: string; changes: { path?: string }[] }
   | { type: 'reasoning'; id: string }
   | { type: string; id: string };
@@ -144,7 +144,7 @@ export class CodexAgent implements Agent {
       if (a) cb.onToolStart(a);
     } else if (msg.method === 'item/completed') {
       const item = (msg.params as { item: ThreadItem }).item;
-      if (item.type !== 'agentMessage' && item.type !== 'userMessage') cb.onToolEnd(item.type);
+      if (item.type !== 'agentMessage' && item.type !== 'userMessage') cb.onToolEnd(item.type, itemOutput(item));
     } else if (msg.method === 'thread/status/changed') {
       /** codex 0.130: `thread/status=idle` is the dependable completion signal. */
       const status = (msg.params as { status: { type: string } }).status?.type;
@@ -193,4 +193,6 @@ function summarizeItem(item: ThreadItem): ToolActivity | null {
   return { kind: item.type, name: item.type };
 }
 
+const itemOutput = (item: ThreadItem): string | undefined =>
+  item.type === 'commandExecution' && 'output' in item ? item.output?.trim() || undefined : undefined;
 const truncate = (s: string, n: number): string => s.length > n ? s.slice(0, n - 1) + '…' : s;

@@ -11,7 +11,8 @@ export interface ToolActivity {
 export interface AgentTurnCallbacks {
   onDelta(text: string): void;
   onToolStart(activity: ToolActivity): void;
-  onToolEnd(kind: string): void;
+  /** `result` is the tool's output text when available (Bash stdout, Read body, …). */
+  onToolEnd(kind: string, result?: string): void;
   onComplete(): void;
   onError(err: Error): void;
 }
