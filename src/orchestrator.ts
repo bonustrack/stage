@@ -1,10 +1,15 @@
-// Metro orchestrator — long-running daemon. Owns the Discord gateway,
-// spawns both codex and claude as on-demand backends, and streams per-turn
-// responses back to chat with tool-call status visible.
+// Metro orchestrator — long-running daemon. Owns the Discord gateway and
+// Telegram poller, runs both codex and claude as agent backends, streams
+// per-turn responses back to chat with tool-call status visible.
 //
 // Per-message agent routing: a message ending in "with claude" / "with
 // codex" (any casing) targets that agent. Otherwise, the scope's last-used
 // agent answers; for brand-new scopes, the default is Claude.
+//
+// Scopes:
+//   Discord — one per thread (auto-created from an @-mention).
+//   Telegram — one per DM, one per forum-topic (auto-created when a user
+//              @-mentions in General).
 
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -35,9 +40,7 @@ const platforms = configuredPlatforms();
 requireConfiguredPlatform(platforms);
 
 // Singleton lockfile. The orchestrator owns the Discord gateway / Telegram
-// poller, so only one instance can run per machine. Same shape as the
-// previous tail.ts lockfile so we don't break $STATE_DIR/.tail-lock — keep
-// the name for continuity.
+// poller, so only one instance can run per machine.
 const LOCK_FILE = join(STATE_DIR, '.tail-lock');
 
 function processIsAlive(pid: number): boolean {

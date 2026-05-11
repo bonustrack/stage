@@ -6,8 +6,8 @@ import { log } from './log.js';
 
 export type Platforms = { telegram: boolean; discord: boolean };
 
-// Lockfile, attachment cache, scope cache, codex app-server socket.
-// Override with METRO_STATE_DIR.
+// Lockfile, scope cache, codex app-server socket, telegram poll offset,
+// claude session set. Override with METRO_STATE_DIR.
 export const STATE_DIR = process.env.METRO_STATE_DIR ?? join(homedir(), '.cache', 'metro');
 mkdirSync(STATE_DIR, { recursive: true });
 

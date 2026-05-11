@@ -130,10 +130,8 @@ export async function getMe(): Promise<{ username: string }> {
 type RawMessage = {
   id: string;
   content: string;
-  author: { username: string };
+  author: { id: string; username: string; bot?: boolean };
   timestamp: string;
-  attachments: Array<{ url: string; content_type?: string }>;
-  reactions?: Array<{ emoji: { name: string | null; id: string | null }; me: boolean }>;
 };
 
 export async function sendMessage(channelId: string, text: string): Promise<string> {
@@ -154,49 +152,9 @@ export async function createThreadFromMessage(channelId: string, messageId: stri
   return created.id;
 }
 
-export async function replyToMessage(channelId: string, messageId: string, text: string): Promise<string> {
-  const sent = await rest<{ id: string }>('POST', `/channels/${channelId}/messages`, {
-    content: text,
-    message_reference: { message_id: messageId, fail_if_not_exists: false },
-  });
-  return sent.id;
-}
-
 export async function editMessage(channelId: string, messageId: string, text: string): Promise<string> {
   const sent = await rest<{ id: string }>('PATCH', `/channels/${channelId}/messages/${messageId}`, { content: text });
   return sent.id;
-}
-
-export async function sendTyping(channelId: string): Promise<void> {
-  await rest('POST', `/channels/${channelId}/typing`);
-}
-
-export async function setReaction(channelId: string, messageId: string, emoji: string): Promise<void> {
-  if (emoji) {
-    await rest('PUT', `/channels/${channelId}/messages/${messageId}/reactions/${encodeURIComponent(emoji)}/@me`);
-    return;
-  }
-  // Clear only the bot's own reactions (matches Telegram's clear semantics).
-  const msg = await rest<RawMessage>('GET', `/channels/${channelId}/messages/${messageId}`);
-  for (const r of msg.reactions ?? []) {
-    if (!r.me || !r.emoji.name) continue;
-    await rest('DELETE', `/channels/${channelId}/messages/${messageId}/reactions/${encodeURIComponent(r.emoji.name)}/@me`);
-  }
-}
-
-export async function fetchAttachments(
-  channelId: string,
-  messageId: string,
-): Promise<Array<{ data: string; mime: string }>> {
-  const msg = await rest<RawMessage>('GET', `/channels/${channelId}/messages/${messageId}`);
-  const out: Array<{ data: string; mime: string }> = [];
-  for (const a of msg.attachments) {
-    if (!a.content_type?.startsWith('image/')) continue;
-    const res = await fetch(a.url, { signal: AbortSignal.timeout(30_000) });
-    if (!res.ok) throw new Error(`discord: download ${a.url}: ${res.status}`);
-    out.push({ data: Buffer.from(await res.arrayBuffer()).toString('base64'), mime: a.content_type });
-  }
-  return out;
 }
 
 /**
@@ -209,7 +167,7 @@ export async function fetchMessagesSince(
   channelId: string,
   afterMessageId: string,
 ): Promise<Array<{ message_id: string; text: string; author_id: string; author_is_bot: boolean }>> {
-  const msgs = await rest<Array<RawMessage & { author: { id: string; username: string; bot?: boolean } }>>(
+  const msgs = await rest<RawMessage[]>(
     'GET',
     `/channels/${channelId}/messages?after=${afterMessageId}&limit=100`,
   );
@@ -220,20 +178,5 @@ export async function fetchMessagesSince(
     text: m.content,
     author_id: m.author.id,
     author_is_bot: !!m.author.bot,
-  }));
-}
-
-export async function fetchRecentMessages(
-  channelId: string,
-  limit: number,
-): Promise<Array<{ message_id: string; author: string; text: string; timestamp: string }>> {
-  const n = Math.min(Math.max(limit, 1), 100);
-  const msgs = await rest<RawMessage[]>('GET', `/channels/${channelId}/messages?limit=${n}`);
-  // Discord returns newest-first; reverse for chronological.
-  return [...msgs].reverse().map(m => ({
-    message_id: m.id,
-    author: m.author.username,
-    text: m.content,
-    timestamp: m.timestamp,
   }));
 }
