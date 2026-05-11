@@ -129,6 +129,7 @@ Architecture docs: [`docs/uri-scheme.md`](docs/uri-scheme.md). Add a new chat ba
 - `metro --help` — command surface
 - `metro doctor` — health check (tokens + gateway/poller reachability + dispatcher status)
 - `metro stations` — list known stations with their capability matrix and config status
+- `metro send <line> <text>` — one-shot post to any metro line (`metro://telegram/CHAT[/TOPIC]`, `metro://discord/CHANNEL`, `metro://github/OWNER/REPO/N`). Uses the same env tokens as the dispatcher; daemon doesn't need to be running. Useful for agents that want to relay messages between stations.
 - State files (`$METRO_STATE_DIR`, defaults to `~/.cache/metro/`):
   - `scopes.json` — `Line → agent-session` map (keys are `metro://<station>/<path>` URIs)
   - `.tail-lock` — dispatcher pid

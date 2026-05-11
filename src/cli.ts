@@ -1,11 +1,12 @@
 #!/usr/bin/env node
-import { spawn } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import pkg from '../package.json' with { type: 'json' };
+import { cmdUpdate } from './cli/update.js';
 import { DiscordStation } from './stations/discord/index.js';
 import { TelegramStation } from './stations/telegram/index.js';
 import { fmtCapabilities, listStations } from './stations/listing.js';
+import { sendToLine } from './stations/send.js';
 import { errMsg } from './log.js';
 import { CONFIG_ENV_FILE, configuredPlatforms, loadMetroEnv, readDotenv, STATE_DIR, writeDotenv } from './paths.js';
 
@@ -17,6 +18,7 @@ Usage:
   metro setup clear [telegram|discord|all]    Remove tokens.
   metro doctor                                Health check.
   metro stations                              List stations + capabilities.
+  metro send <line> <text>                    Post a message to a metro:// line.
   metro update                                Upgrade in place.
   metro --version | --help
 Exit codes: 0 success · 1 usage · 2 config · 3 upstream
@@ -141,24 +143,12 @@ function dispatcherCheck(): DoctorCheck {
   } catch { return { name: 'dispatcher', ok: null, detail: 'stale lockfile (will auto-reclaim on next start)' }; }
 }
 
-async function cmdUpdate(flags: Flags): Promise<void> {
-  const tag = pkg.version.includes('-') ? 'beta' : 'latest';
-  const res = await fetch('https://registry.npmjs.org/@stage-labs/metro', { signal: AbortSignal.timeout(15_000) });
-  if (!res.ok) throw new Error(`npm registry: ${res.status}`);
-  const latest = ((await res.json()) as { 'dist-tags'?: Record<string, string> })['dist-tags']?.[tag];
-  if (!latest) throw new Error(`no '${tag}' dist-tag for @stage-labs/metro`);
-  if (latest === pkg.version) return emit(flags, `already on ${pkg.version} (latest ${tag})`, { ok: true, current: pkg.version, latest, upgraded: false });
-
-  const argv1 = process.argv[1] ?? '', spec = `@stage-labs/metro@${tag}`;
-  const argv = argv1.includes('/.bun/') || argv1.includes('\\bun\\') ? ['bun', 'add', '-g', spec]
-    : argv1.includes('/pnpm/') || argv1.includes('\\pnpm\\') ? ['pnpm', 'add', '-g', spec]
-    : ['npm', 'install', '-g', spec];
-  emit(flags, `metro ${pkg.version} → ${latest}\n$ ${argv.join(' ')}`, { ok: true, current: pkg.version, latest, command: argv.join(' ') });
-  await new Promise<void>((resolve, reject) => {
-    const child = spawn(argv[0], argv.slice(1), { stdio: isJson(flags) ? 'ignore' : 'inherit' });
-    child.on('exit', code => code === 0 ? resolve() : reject(new Error(`${argv[0]} exited ${code}`)));
-    child.on('error', reject);
-  });
+async function cmdSend(positional: string[], flags: Flags): Promise<void> {
+  const [to, ...rest] = positional;
+  if (!to || !rest.length) throw exitErr('usage: metro send <line> <text>', 1);
+  loadMetroEnv();
+  const { line, messageId } = await sendToLine(to, rest.join(' '));
+  emit(flags, `sent ${messageId} to ${line}`, { ok: true, line, messageId });
 }
 
 async function cmdStations(flags: Flags): Promise<void> {
@@ -177,7 +167,8 @@ const COMMANDS: Record<string, (positional: string[], flags: Flags) => Promise<v
   setup: cmdSetup,
   doctor: (_, f) => cmdDoctor(f),
   stations: (_, f) => cmdStations(f),
-  update: (_, f) => cmdUpdate(f),
+  send: cmdSend,
+  update: (_, f) => cmdUpdate(isJson(f)),
 };
 
 async function main(): Promise<void> {
