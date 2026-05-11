@@ -1,10 +1,4 @@
-// Codex agent adapter. Spawns `codex app-server --listen unix://…` as a
-// child process, talks to it over WebSocket-over-UDS, manages one codex
-// thread per scope, and streams per-turn events back to the orchestrator
-// (text deltas, tool-call lifecycle, completion).
-//
-// The orchestrator never speaks codex directly — it asks this adapter to
-// `ensureThread(scopeKey)` and `sendTurn(threadId, text, callbacks)`.
+/** Codex adapter: spawns `codex app-server` over UDS WebSocket; one thread/scope, streams turn events. */
 
 import { spawn, type ChildProcess } from 'node:child_process';
 import { existsSync, unlinkSync } from 'node:fs';
@@ -13,7 +7,7 @@ import { join } from 'node:path';
 import { WebSocket, type RawData } from 'ws';
 import { errMsg, log } from '../log.js';
 import { STATE_DIR } from '../paths.js';
-import type { Agent, AgentTurnCallbacks } from './types.js';
+import type { Agent, AgentTurnCallbacks, ToolActivity } from './types.js';
 
 export type { AgentTurnCallbacks };
 
@@ -22,62 +16,39 @@ const READY_TIMEOUT_MS = 15_000;
 const READY_POLL_MS = 100;
 
 type Pending = { resolve: (r: unknown) => void; reject: (e: Error) => void };
-
 type ThreadItem =
   | { type: 'agentMessage'; id: string; text: string }
-  | { type: 'commandExecution'; id: string; command: string }
+  | { type: 'commandExecution'; id: string; command: string; output?: string; exitCode?: number }
   | { type: 'fileChange'; id: string; changes: { path?: string }[] }
   | { type: 'reasoning'; id: string }
-  | { type: string; id: string }; // catch-all
+  | { type: string; id: string };
 
 export class CodexAgent implements Agent {
   private ws: WebSocket | null = null;
   private daemon: ChildProcess | null = null;
   private nextId = 1;
   private pending = new Map<number, Pending>();
-  private turnCallbacks = new Map<string, AgentTurnCallbacks>(); // keyed by thread_id
+  private turnCallbacks = new Map<string, AgentTurnCallbacks>();
 
   constructor(private clientVersion: string) {}
 
   async start(): Promise<void> {
-    // Fail loud at boot if codex isn't installed, rather than 15s later
-    // via a "socket didn't appear" timeout.
     await this.checkCodexInstalled();
-
-    // Stale socket file from a previous run would let us connect to nothing
-    // (no listener) — wipe before spawning so codex binds fresh.
     try { unlinkSync(SOCKET_PATH); } catch { /* missing is fine */ }
-
     log.info({ socket: SOCKET_PATH }, 'codex agent: starting app-server');
-    // Spawn the daemon listening on our UDS. Inherits CODEX_HOME so it picks
-    // up the user's auth, settings, MCPs, etc.
-    this.daemon = spawn('codex', ['app-server', '--listen', `unix://${SOCKET_PATH}`], {
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
+    this.daemon = spawn('codex', ['app-server', '--listen', `unix://${SOCKET_PATH}`], { stdio: ['ignore', 'pipe', 'pipe'] });
 
-    // Capture daemon stderr so a startup failure surfaces with the actual
-    // error message, not just a generic timeout. Once the daemon is ready,
-    // stderr goes back to trace (its own tracing is noisy).
     let bootStderr = '';
     let daemonExited = false;
     let daemonExitCode: number | null = null;
-    const onBootStderr = (d: Buffer): void => {
-      bootStderr += String(d);
-      log.trace({ src: 'codex-stderr' }, String(d).trim());
-    };
     this.daemon.stdout?.on('data', d => log.trace({ src: 'codex-stdout' }, String(d).trim()));
-    this.daemon.stderr?.on('data', onBootStderr);
-    this.daemon.on('exit', code => {
-      daemonExited = true;
-      daemonExitCode = code;
-      log.warn({ code }, 'codex daemon exited');
-    });
+    this.daemon.stderr?.on('data', (d: Buffer) => { bootStderr += String(d); log.trace({ src: 'codex-stderr' }, String(d).trim()); });
+    this.daemon.on('exit', code => { daemonExited = true; daemonExitCode = code; log.warn({ code }, 'codex daemon exited'); });
 
     try {
       await this.waitForSocket(() => daemonExited, () => bootStderr.trim() || `exit code ${daemonExitCode}`);
       await this.connect();
     } catch (err) {
-      // Make the failure self-explanatory in the orchestrator's catch log.
       const detail = bootStderr.trim() ? ` (codex stderr: ${bootStderr.trim().slice(0, 200)})` : '';
       throw new Error(`${errMsg(err)}${detail}`);
     }
@@ -90,11 +61,7 @@ export class CodexAgent implements Agent {
       let stderr = '';
       c.stderr?.on('data', d => { stderr += String(d); });
       c.on('error', err => reject(new Error(`codex CLI not found on PATH: ${errMsg(err)}`)));
-      c.on('exit', code =>
-        code === 0
-          ? resolve()
-          : reject(new Error(`codex --version exited ${code}: ${stderr.trim()}`)),
-      );
+      c.on('exit', code => code === 0 ? resolve() : reject(new Error(`codex --version exited ${code}: ${stderr.trim()}`)));
     });
   }
 
@@ -105,40 +72,22 @@ export class CodexAgent implements Agent {
     this.daemon = null;
   }
 
-  /**
-   * Create a new codex thread and return its id. The caller is responsible
-   * for caching the mapping `scopeKey → threadId` and only calling this
-   * once per scope (subsequent inbounds reuse the thread via `sendTurn`).
-   */
   async createThread(): Promise<string> {
     const result = await this.call<{ thread: { id: string } }>('thread/start', {});
     log.info({ thread: result.thread.id }, 'codex agent: thread created');
     return result.thread.id;
   }
 
-  /**
-   * Send a user message to a thread and stream the agent's response via
-   * the provided callbacks. Resolves immediately after `turn/start`
-   * acknowledges; callbacks fire as notifications arrive and conclude
-   * with `onComplete` or `onError`.
-   */
   async sendTurn(threadId: string, text: string, callbacks: AgentTurnCallbacks): Promise<void> {
     this.turnCallbacks.set(threadId, callbacks);
     try {
-      // Wire format per codex's generated TS bindings: `text_elements`
-      // (snake_case), not camelCase. Sending camelCase silently degrades
-      // — accepted by the server but doesn't echo back in items.
-      await this.call('turn/start', {
-        threadId,
-        input: [{ type: 'text', text, text_elements: [] }],
-      });
+      /** `text_elements` is snake_case per codex's generated bindings. */
+      await this.call('turn/start', { threadId, input: [{ type: 'text', text, text_elements: [] }] });
     } catch (err) {
       this.turnCallbacks.delete(threadId);
       callbacks.onError(err instanceof Error ? err : new Error(String(err)));
     }
   }
-
-  // --- transport ---
 
   private async waitForSocket(exited: () => boolean, exitReason: () => string): Promise<void> {
     const deadline = Date.now() + READY_TIMEOUT_MS;
@@ -150,52 +99,29 @@ export class CodexAgent implements Agent {
     throw new Error(`codex app-server didn't appear at ${SOCKET_PATH} within ${READY_TIMEOUT_MS}ms`);
   }
 
+  /** perMessageDeflate disabled: codex 0.130 closes connections offering it. */
   private async connect(): Promise<void> {
-    // perMessageDeflate disabled: codex 0.130's WS upgrade handler closes
-    // the connection if a client offers `Sec-WebSocket-Extensions:
-    // permessage-deflate` (the `ws` library's default). Disabling it makes
-    // the upgrade succeed cleanly. Compression is irrelevant over a UDS.
     const ws = new WebSocket('ws://localhost/', {
       perMessageDeflate: false,
       createConnection: () => {
         const sock = createConnection({ path: SOCKET_PATH });
-        // Swallow socket-level errors so a transport hiccup during the HTTP
-        // upgrade doesn't surface as an uncaught error on the http_client
-        // request (Node's http.ClientRequest re-emits this).
         sock.on('error', err => log.warn({ err: errMsg(err) }, 'codex agent: socket error'));
         return sock;
       },
     });
     this.ws = ws;
     ws.on('error', err => log.warn({ err: errMsg(err) }, 'codex agent: websocket error'));
-    await new Promise<void>((resolve, reject) => {
-      ws.once('open', () => resolve());
-      ws.once('error', err => reject(err));
-    });
+    await new Promise<void>((resolve, reject) => { ws.once('open', () => resolve()); ws.once('error', reject); });
     ws.on('message', data => this.onMessage(data));
-    ws.on('close', () => {
-      log.warn('codex agent: websocket closed');
-      this.ws = null;
-      // Drain stranded turns + RPC promises so the orchestrator can
-      // release its in-flight gate and the user sees an error rather
-      // than a permanent "Thinking…".
-      this.drainPending('codex websocket closed');
-    });
-    await this.call('initialize', {
-      clientInfo: { name: 'metro', version: this.clientVersion, title: null },
-    });
+    ws.on('close', () => { log.warn('codex agent: websocket closed'); this.ws = null; this.drainPending('codex websocket closed'); });
+    await this.call('initialize', { clientInfo: { name: 'metro', version: this.clientVersion, title: null } });
   }
 
   private onMessage(raw: RawData): void {
     let msg: { id?: number; method?: string; params?: unknown; result?: unknown; error?: { message?: string } };
-    try {
-      msg = JSON.parse(raw.toString());
-    } catch (err) {
-      log.warn({ err: errMsg(err) }, 'codex agent: malformed message');
-      return;
-    }
+    try { msg = JSON.parse(raw.toString()); }
+    catch (err) { log.warn({ err: errMsg(err) }, 'codex agent: malformed message'); return; }
 
-    // RPC response
     if (msg.id !== undefined && this.pending.has(msg.id)) {
       const p = this.pending.get(msg.id)!;
       this.pending.delete(msg.id);
@@ -204,47 +130,32 @@ export class CodexAgent implements Agent {
       return;
     }
 
-    // Notifications.
     if (!msg.method) return;
     log.trace({ method: msg.method }, 'codex agent: notification');
-    const params = msg.params as { threadId?: string } | undefined;
-    const threadId = params?.threadId;
+    const threadId = (msg.params as { threadId?: string } | undefined)?.threadId;
     if (!threadId) return;
     const cb = this.turnCallbacks.get(threadId);
-    if (!cb) return; // no active turn for this thread (yet or anymore)
+    if (!cb) return;
 
     if (msg.method === 'item/agentMessage/delta') {
-      const p = msg.params as { delta: string };
-      cb.onDelta(p.delta);
+      cb.onDelta((msg.params as { delta: string }).delta);
     } else if (msg.method === 'item/started') {
-      const p = msg.params as { item: ThreadItem };
-      const summary = summarizeItem(p.item);
-      if (summary && p.item.type !== 'agentMessage' && p.item.type !== 'userMessage') {
-        cb.onToolStart(p.item.type, summary);
-      }
+      const a = summarizeItem((msg.params as { item: ThreadItem }).item);
+      if (a) cb.onToolStart(a);
     } else if (msg.method === 'item/completed') {
-      const p = msg.params as { item: ThreadItem };
-      if (p.item.type !== 'agentMessage' && p.item.type !== 'userMessage') cb.onToolEnd(p.item.type);
+      const item = (msg.params as { item: ThreadItem }).item;
+      if (item.type !== 'agentMessage' && item.type !== 'userMessage') cb.onToolEnd(item.id, itemOutput(item));
     } else if (msg.method === 'thread/status/changed') {
-      // Codex 0.130 doesn't reliably emit `turn/completed` — `thread/status`
-      // returning to `idle` is the dependable completion signal. The same
-      // notification fires on `active` when a turn starts; ignore those.
-      const p = msg.params as { status: { type: string } };
-      if (p.status?.type === 'idle') {
-        this.turnCallbacks.delete(threadId);
-        cb.onComplete();
-      } else if (p.status?.type === 'systemError') {
-        this.turnCallbacks.delete(threadId);
-        cb.onError(new Error('codex thread entered systemError'));
-      }
+      /** codex 0.130: `thread/status=idle` is the dependable completion signal. */
+      const status = (msg.params as { status: { type: string } }).status?.type;
+      if (status === 'idle') { this.turnCallbacks.delete(threadId); cb.onComplete(); }
+      else if (status === 'systemError') { this.turnCallbacks.delete(threadId); cb.onError(new Error('codex thread entered systemError')); }
     } else if (msg.method === 'turn/completed') {
-      // Belt-and-braces: if codex does emit it, take it.
       this.turnCallbacks.delete(threadId);
       cb.onComplete();
     } else if (msg.method === 'error') {
-      const p = msg.params as { error?: { message?: string } };
       this.turnCallbacks.delete(threadId);
-      cb.onError(new Error(p.error?.message ?? 'codex error notification'));
+      cb.onError(new Error((msg.params as { error?: { message?: string } }).error?.message ?? 'codex error notification'));
     }
   }
 
@@ -258,7 +169,6 @@ export class CodexAgent implements Agent {
     });
   }
 
-  /** Fail every in-flight turn + RPC. Used when the transport dies. */
   private drainPending(reason: string): void {
     const err = new Error(reason);
     for (const cb of this.turnCallbacks.values()) {
@@ -270,19 +180,19 @@ export class CodexAgent implements Agent {
   }
 }
 
-function summarizeItem(item: ThreadItem): string {
+function summarizeItem(item: ThreadItem): ToolActivity | null {
+  const id = item.id;
   if (item.type === 'commandExecution' && 'command' in item) {
-    return `Running: ${truncate(item.command ?? '', 60)}`;
+    return { id, kind: 'commandExecution', name: 'Bash', detail: item.command || undefined };
   }
   if (item.type === 'fileChange' && 'changes' in item) {
-    const n = item.changes?.length ?? 0;
-    return n > 0 ? `Editing ${n} file${n === 1 ? '' : 's'}` : 'Editing files';
+    const paths = (item.changes ?? []).map(c => c.path).filter((p): p is string => !!p);
+    return { id, kind: 'fileChange', name: 'Edit', detail: paths.length === 1 ? paths[0] : paths.length ? `${paths.length} files` : undefined };
   }
-  if (item.type === 'reasoning') return 'Thinking…';
-  if (item.type === 'agentMessage') return ''; // text deltas handled separately
-  return item.type;
+  if (item.type === 'reasoning') return { id, kind: 'reasoning', name: 'Thinking…', transient: true };
+  if (item.type === 'agentMessage' || item.type === 'userMessage') return null;
+  return { id, kind: item.type, name: item.type };
 }
 
-function truncate(s: string, n: number): string {
-  return s.length > n ? s.slice(0, n - 1) + '…' : s;
-}
+const itemOutput = (item: ThreadItem): string | undefined =>
+  item.type === 'commandExecution' && 'output' in item ? item.output?.trim() || undefined : undefined;
