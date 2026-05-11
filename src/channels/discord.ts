@@ -103,8 +103,11 @@ type RawMessage = {
   timestamp: string;
 };
 
+/** SUPPRESS_EMBEDS (1 << 2) — strip link unfurls from every bot message. */
+const SUPPRESS_EMBEDS = 1 << 2;
+
 export async function sendMessage(channelId: string, text: string): Promise<string> {
-  const sent = await rest<{ id: string }>('POST', `/channels/${channelId}/messages`, { content: text });
+  const sent = await rest<{ id: string }>('POST', `/channels/${channelId}/messages`, { content: text, flags: SUPPRESS_EMBEDS });
   return sent.id;
 }
 
@@ -115,7 +118,7 @@ export async function createThreadFromMessage(channelId: string, messageId: stri
 }
 
 export async function editMessage(channelId: string, messageId: string, text: string): Promise<string> {
-  const sent = await rest<{ id: string }>('PATCH', `/channels/${channelId}/messages/${messageId}`, { content: text });
+  const sent = await rest<{ id: string }>('PATCH', `/channels/${channelId}/messages/${messageId}`, { content: text, flags: SUPPRESS_EMBEDS });
   return sent.id;
 }
 

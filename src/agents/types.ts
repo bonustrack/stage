@@ -1,7 +1,8 @@
 /** Shared interface across agent backends (Codex, Claude Code). */
 
-/** Tool activity. `transient: true` flags Thinking…/Reasoning… placeholders that vanish on real content. */
+/** Tool activity. `id` pairs start/end uniquely; `transient: true` flags Thinking…/Reasoning… placeholders. */
 export interface ToolActivity {
+  id: string;
   kind: string;
   name: string;
   detail?: string;
@@ -11,8 +12,8 @@ export interface ToolActivity {
 export interface AgentTurnCallbacks {
   onDelta(text: string): void;
   onToolStart(activity: ToolActivity): void;
-  /** `result` is the tool's output text when available (Bash stdout, Read body, …). */
-  onToolEnd(kind: string, result?: string): void;
+  /** `id` matches the start; `result` is the tool's output when available. */
+  onToolEnd(id: string, result?: string): void;
   onComplete(): void;
   onError(err: Error): void;
 }

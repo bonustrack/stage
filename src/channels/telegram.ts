@@ -60,7 +60,6 @@ type RawUpdate = { update_id: number; message?: RawMessage };
 export type InboundMessage = {
   chat_id: number;
   message_id: number;
-  /** undefined for DMs and forum General. */
   message_thread_id?: number;
   text: string;
   is_private: boolean;
@@ -172,9 +171,11 @@ export function topicLink(chatId: number, topicId: number): string {
 
 const isParseError = (err: unknown): boolean => errMsg(err).includes("can't parse entities");
 
+const NO_PREVIEW = { link_preview_options: { is_disabled: true } };
+
 /** Send agent-style markdown as Telegram HTML, falling back to plain text on parse errors. */
 export async function sendMessage(chatId: ChatId, threadId: number | undefined, text: string, replyToMessageId?: number): Promise<number> {
-  const base: Record<string, unknown> = { chat_id: chatId };
+  const base: Record<string, unknown> = { chat_id: chatId, ...NO_PREVIEW };
   if (threadId !== undefined) base.message_thread_id = threadId;
   if (replyToMessageId !== undefined) base.reply_parameters = { message_id: replyToMessageId };
   try {
@@ -187,13 +188,13 @@ export async function sendMessage(chatId: ChatId, threadId: number | undefined, 
 }
 
 export async function editMessageText(chatId: ChatId, messageId: number, text: string): Promise<void> {
-  try {
-    await tg('editMessageText', { chat_id: chatId, message_id: messageId, text: mdToTelegramHtml(text), parse_mode: 'HTML' });
-  } catch (err) {
+  const base = { chat_id: chatId, message_id: messageId, ...NO_PREVIEW };
+  const swallow = (err: unknown): void => { if (!errMsg(err).includes('message is not modified')) throw err; };
+  try { await tg('editMessageText', { ...base, text: mdToTelegramHtml(text), parse_mode: 'HTML' }); }
+  catch (err) {
     if (errMsg(err).includes('message is not modified')) return;
     if (!isParseError(err)) throw err;
     log.warn({ err: errMsg(err) }, 'telegram: HTML edit rejected, retrying plain');
-    try { await tg('editMessageText', { chat_id: chatId, message_id: messageId, text }); }
-    catch (err2) { if (!errMsg(err2).includes('message is not modified')) throw err2; }
+    try { await tg('editMessageText', { ...base, text }); } catch (e) { swallow(e); }
   }
 }

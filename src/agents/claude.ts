@@ -90,12 +90,12 @@ class TurnSession {
   private byUseId = new Map<string, string>();
 
   constructor(private cb: AgentTurnCallbacks) {
-    cb.onToolStart({ kind: 'thinking', name: 'Thinking…', transient: true });
+    cb.onToolStart({ id: 'thinking', kind: 'thinking', name: 'Thinking…', transient: true });
   }
 
   fireComplete(): void { if (this.done) return; this.done = true; this.clearThinking(); this.cb.onComplete(); }
   fireError(err: Error): void { if (this.done) return; this.done = true; this.clearThinking(); this.cb.onError(err); }
-  private clearThinking(): void { if (!this.thinking) return; this.thinking = false; this.cb.onToolEnd('thinking'); }
+  private clearThinking(): void { if (!this.thinking) return; this.thinking = false; this.cb.onToolEnd('thinking'); /* id matches the onToolStart above */ }
 
   handle(ev: ClaudeEvent): void {
     if (ev.type === 'result') {
@@ -109,9 +109,10 @@ class TurnSession {
     if (e.type === 'content_block_start' && e.content_block?.type === 'tool_use') {
       this.clearThinking();
       const kind = e.content_block.name ?? 'tool';
-      if (e.content_block.id) this.byUseId.set(e.content_block.id, kind);
+      const id = e.content_block.id ?? `${kind}:${e.index ?? -1}`;
+      this.byUseId.set(id, kind);
       const { name, detail } = summarizeTool(e.content_block.name, e.content_block.input);
-      this.cb.onToolStart({ kind, name, detail });
+      this.cb.onToolStart({ id, kind, name, detail });
     } else if (e.type === 'content_block_delta' && e.delta?.type === 'text_delta') {
       this.clearThinking();
       this.cb.onDelta(e.delta.text ?? '');
@@ -122,10 +123,9 @@ class TurnSession {
   private handleToolResults(ev: ClaudeEvent): void {
     for (const block of ev.message?.content ?? []) {
       if (block.type !== 'tool_result' || !block.tool_use_id) continue;
-      const kind = this.byUseId.get(block.tool_use_id);
-      if (!kind) continue;
+      if (!this.byUseId.has(block.tool_use_id)) continue;
       this.byUseId.delete(block.tool_use_id);
-      this.cb.onToolEnd(kind, extractResultText(block.content));
+      this.cb.onToolEnd(block.tool_use_id, extractResultText(block.content));
     }
   }
 }

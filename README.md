@@ -38,7 +38,7 @@ How would Codex have done this? with codex
 @-mention the bot in any channel:
 1. Metro creates a thread anchored on your message (named after the message).
 2. Spins up an agent session for that thread.
-3. Streams the agent's reply with each tool call kept inline (`> 🛠 **Read** `src/foo.ts``, `> 🛠 **Bash** `ls -la``, …) — the tool's output is folded into the same blockquote (collapsible `<blockquote expandable>` on Telegram; truncated inline on Discord). `Thinking…` shows as a transient status that vanishes once real content arrives.
+3. Streams the agent's reply with each tool call as its own block: header `🛠 **Read** `src/foo.ts`` followed by the truncated output below (10 lines + overflow). On Telegram each tool is wrapped in `<blockquote expandable>` so it's tap-to-expand; Discord shows it inline. `Thinking…` shows as a transient status that vanishes once real content arrives.
 
 Follow-ups in the thread route automatically — no @-mention needed.
 
@@ -63,8 +63,9 @@ Telegram poller ──┘                       └─▶ claude -p ...      (pe
 - **One metro = one daemon.** Lockfile at `$METRO_STATE_DIR/.tail-lock` keeps things singleton.
 - **Both agents side-by-side.** A scope can have up to one session per agent — independent histories. Routing is per-message: explicit `with claude` / `with codex` suffix, otherwise the scope's last-used agent, otherwise Claude.
 - **Streaming.** Replies edit one message every ~1500 ms while deltas stream in (leading-edge first flush for fast initial feedback). Long replies split past ~1900 chars onto a follow-up message.
-- **Tool-call visibility.** Each tool call lands inline as `> 🛠 **<tool>** \`<arg>\`` and its output is folded into the same blockquote (capped at 10 lines + overflow note). On Telegram the blockquote is rendered as `<blockquote expandable>` so it stays one-line in scroll-back; Discord shows the truncated output inline.
+- **Tool-call visibility.** Each tool call is rendered as its own paragraph (`🛠 **<tool>** \`<arg>\`` + truncated output below, paired by tool id so parallel calls don't collapse together). On Telegram each is wrapped in `<blockquote expandable>` so it's tap-to-expand; Discord shows inline.
 - **Telegram formatting.** Agent markdown (`**bold**`, `*italic*`, `` `code` ``, fenced blocks, `[link](url)`, blockquotes) is converted to Telegram's HTML parse mode on the way out, so it renders as formatted text instead of literal characters.
+- **No link previews.** Outgoing messages set `link_preview_options.is_disabled` on Telegram and the `SUPPRESS_EMBEDS` flag on Discord, so URLs in agent replies don't unfurl into giant auto-embeds.
 - **Queueing.** Messages that arrive while a turn is running are buffered per-scope and answered together in the next reply.
 - **Catchup-on-restart.** Discord uses a per-scope `lastSeenMessageId` watermark and REST-fetches anything newer when metro comes back up. Telegram leans on its own update-id queue (persisted offset in `telegram-offset.json`).
 

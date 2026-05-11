@@ -42,12 +42,15 @@ export function mdToTelegramHtml(md: string): string {
   /** Headings → bold (Telegram has no heading element). */
   work = work.replace(/^#{1,6}\s+(.+?)\s*$/gm, '<b>$1</b>');
 
-  /** Collapse consecutive `> ` lines into one <blockquote>; 🛠-prefixed blocks become expandable. */
+  /** Collapse consecutive `> ` lines into one <blockquote>. */
   work = work.replace(/(^|\n)((?:&gt;\s?[^\n]*\n?)+)/g, (_m, lead: string, block: string) => {
     const inner = block.replace(/^&gt;\s?/gm, '').replace(/\n+$/, '');
-    const tag = inner.trimStart().startsWith('🛠') ? '<blockquote expandable>' : '<blockquote>';
-    return `${lead}${tag}${inner}</blockquote>${block.endsWith('\n') ? '\n' : ''}`;
+    return `${lead}<blockquote>${inner}</blockquote>${block.endsWith('\n') ? '\n' : ''}`;
   });
+
+  /** Wrap 🛠-prefixed paragraphs in <blockquote expandable> so each tool call is its own collapse. */
+  work = work.replace(/(^|\n\n)(🛠[\s\S]*?)(?=\n\n|$)/g, (_m, lead: string, para: string) =>
+    `${lead}<blockquote expandable>${para}</blockquote>`);
 
   return work.replace(new RegExp(`${SENT}(\\d+)${SENT}`, 'g'), (_m, idx: string) => slots[Number(idx)]);
 }

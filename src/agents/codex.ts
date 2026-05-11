@@ -144,7 +144,7 @@ export class CodexAgent implements Agent {
       if (a) cb.onToolStart(a);
     } else if (msg.method === 'item/completed') {
       const item = (msg.params as { item: ThreadItem }).item;
-      if (item.type !== 'agentMessage' && item.type !== 'userMessage') cb.onToolEnd(item.type, itemOutput(item));
+      if (item.type !== 'agentMessage' && item.type !== 'userMessage') cb.onToolEnd(item.id, itemOutput(item));
     } else if (msg.method === 'thread/status/changed') {
       /** codex 0.130: `thread/status=idle` is the dependable completion signal. */
       const status = (msg.params as { status: { type: string } }).status?.type;
@@ -181,16 +181,17 @@ export class CodexAgent implements Agent {
 }
 
 function summarizeItem(item: ThreadItem): ToolActivity | null {
+  const id = item.id;
   if (item.type === 'commandExecution' && 'command' in item) {
-    return { kind: 'commandExecution', name: 'Bash', detail: item.command ? truncate(item.command, 80) : undefined };
+    return { id, kind: 'commandExecution', name: 'Bash', detail: item.command ? truncate(item.command, 80) : undefined };
   }
   if (item.type === 'fileChange' && 'changes' in item) {
     const paths = (item.changes ?? []).map(c => c.path).filter((p): p is string => !!p);
-    return { kind: 'fileChange', name: 'Edit', detail: paths.length === 1 ? paths[0] : paths.length ? `${paths.length} files` : undefined };
+    return { id, kind: 'fileChange', name: 'Edit', detail: paths.length === 1 ? paths[0] : paths.length ? `${paths.length} files` : undefined };
   }
-  if (item.type === 'reasoning') return { kind: 'reasoning', name: 'Thinking…', transient: true };
+  if (item.type === 'reasoning') return { id, kind: 'reasoning', name: 'Thinking…', transient: true };
   if (item.type === 'agentMessage' || item.type === 'userMessage') return null;
-  return { kind: item.type, name: item.type };
+  return { id, kind: item.type, name: item.type };
 }
 
 const itemOutput = (item: ThreadItem): string | undefined =>

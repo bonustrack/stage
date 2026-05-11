@@ -38,8 +38,8 @@ export async function runTurn(
 
   const callbacks: AgentTurnCallbacks = {
     onDelta: d => stream.appendDelta(d),
-    onToolStart: a => a.transient ? stream.setStatus(a.name) : stream.appendToolCall(a.name, a.detail),
-    onToolEnd: (_kind, result) => { if (result) stream.appendToolResult(result); stream.setStatus(null); },
+    onToolStart: a => a.transient ? stream.setStatus(a.name) : stream.appendToolCall(a.id, a.name, a.detail),
+    onToolEnd: (id, result) => { if (result) stream.appendToolResult(id, result); stream.setStatus(null); },
     onComplete: () => { void finishAndDrain(); },
     onError: err => {
       log.warn({ err: errMsg(err) }, 'agent turn failed');
