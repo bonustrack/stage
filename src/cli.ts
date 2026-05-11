@@ -46,6 +46,21 @@ function parseArgs(argv: string[]): { positional: string[]; flags: Flags } {
   return { positional, flags };
 }
 
+/** Apply a token across CONFIG_ENV_FILE (always set/cleared) AND cwd/.env (only if it exists). Returns paths touched. */
+function applyTokenToAllEnvs(key: string, value: string | null): string[] {
+  const out: string[] = [];
+  for (const path of [CONFIG_ENV_FILE, join(process.cwd(), '.env')]) {
+    const isCanonical = path === CONFIG_ENV_FILE;
+    if (!isCanonical && !existsSync(path)) continue;
+    const env = readDotenv(path);
+    if (value === null) { if (!(key in env)) continue; delete env[key]; }
+    else env[key] = value;
+    writeDotenv(path, env);
+    out.push(path);
+  }
+  return out;
+}
+
 async function cmdSetup(positional: string[], flags: Flags): Promise<void> {
   const [sub, value] = positional;
   if (!sub) return cmdSetupStatus(flags);
@@ -59,22 +74,19 @@ async function cmdSetup(positional: string[], flags: Flags): Promise<void> {
       try { identity = sub === 'telegram' ? `@${(await telegram.getMe()).username}` : (await discord.getMe()).username; }
       catch (err) { delete process.env[TOKEN_KEYS[sub]]; throw exitErr(`token rejected by ${sub}: ${errMsg(err)} (use --no-validate to save anyway)`, 3); }
     }
-    const env = readDotenv(CONFIG_ENV_FILE);
-    env[TOKEN_KEYS[sub]] = trimmed;
-    writeDotenv(CONFIG_ENV_FILE, env);
-    const human = `saved ${TOKEN_KEYS[sub]}${identity ? ` (verified as ${identity})` : ''} to ${CONFIG_ENV_FILE} (chmod 0600)`;
-    emit(flags, human, { ok: true, saved: TOKEN_KEYS[sub], verified_as: identity ?? null });
+    const paths = applyTokenToAllEnvs(TOKEN_KEYS[sub], trimmed);
+    emit(flags, `saved ${TOKEN_KEYS[sub]}${identity ? ` (verified as ${identity})` : ''} to ${paths.join(', ')}\nrestart metro for the new token to take effect.`, { ok: true, saved: TOKEN_KEYS[sub], paths, verified_as: identity ?? null });
     return;
   }
 
   if (sub === 'clear') {
     const target = value ?? 'all';
-    const env = readDotenv(CONFIG_ENV_FILE);
-    if (target === 'all') { delete env.TELEGRAM_BOT_TOKEN; delete env.DISCORD_BOT_TOKEN; }
-    else if (target === 'telegram' || target === 'discord') delete env[TOKEN_KEYS[target]];
-    else throw new Error(`metro setup clear <telegram|discord|all> — got '${target}'`);
-    writeDotenv(CONFIG_ENV_FILE, env);
-    emit(flags, `cleared ${target === 'all' ? 'all metro tokens' : TOKEN_KEYS[target as 'telegram' | 'discord']}`, { ok: true, cleared: target });
+    if (target !== 'all' && target !== 'telegram' && target !== 'discord') throw new Error(`metro setup clear <telegram|discord|all> — got '${target}'`);
+    const keys = target === 'all' ? ['TELEGRAM_BOT_TOKEN', 'DISCORD_BOT_TOKEN'] : [TOKEN_KEYS[target]];
+    const paths = new Set<string>();
+    for (const k of keys) for (const p of applyTokenToAllEnvs(k, null)) paths.add(p);
+    const label = target === 'all' ? 'all metro tokens' : TOKEN_KEYS[target];
+    emit(flags, `cleared ${label} from ${[...paths].join(', ') || '(no files had it)'}\nrestart metro for changes to take effect.`, { ok: true, cleared: target, paths: [...paths] });
     return;
   }
 
