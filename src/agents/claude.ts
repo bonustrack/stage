@@ -1,19 +1,29 @@
-// Claude Code agent adapter. Spawns `claude -p --output-format stream-json
-// --include-partial-messages --verbose` per turn, parses the line-delimited
-// JSON event stream, and exposes the same `Agent` surface as codex.ts.
+// Claude Code agent adapter. Spawns `claude -p --input-format stream-json
+// --output-format stream-json --include-partial-messages --verbose` per turn,
+// writes one user message to stdin (text + image content blocks), parses the
+// line-delimited JSON event stream, and exposes the same `Agent` surface as
+// codex.ts.
 //
 // Unlike codex (long-running app-server daemon), Claude Code has no daemon
 // mode — each turn is a fresh subprocess. Session continuity is achieved
 // by passing the same uuid via `--session-id` for the first turn and
 // `--resume` for every subsequent turn.
+//
+// Multimodal: images ride as Anthropic-style content blocks
+// (`{ type: 'image', source: { type: 'base64', media_type, data } }`)
+// alongside the text block. The CLI surfaces this only via stream-json
+// input, which is why we use stdin instead of the positional prompt arg.
+// Audio isn't a supported Claude content type — we append the on-disk path
+// as a text note so the agent can reach for a transcription tool itself.
 
 import { spawn, type ChildProcess } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { errMsg, log } from '../log.js';
 import { STATE_DIR } from '../paths.js';
-import type { Agent, AgentTurnCallbacks } from './types.js';
+import type { Agent, AgentTurnCallbacks, Attachment } from './types.js';
 
 // Persisted across metro restarts. Without this, the first message after
 // a restart would call `claude -p --session-id <uuid>` on an existing
@@ -80,20 +90,42 @@ export class ClaudeAgent implements Agent {
     return id;
   }
 
-  async sendTurn(threadId: string, text: string, callbacks: AgentTurnCallbacks): Promise<void> {
+  async sendTurn(threadId: string, text: string, attachments: Attachment[], callbacks: AgentTurnCallbacks): Promise<void> {
+    const message = await buildUserMessage(text, attachments);
+
     const args = [
       '-p',
+      '--input-format', 'stream-json',
       '--output-format', 'stream-json',
       '--include-partial-messages',
       '--verbose',
     ];
     if (this.started.has(threadId)) args.push('--resume', threadId);
     else args.push('--session-id', threadId);
-    args.push(text);
 
-    const child = spawn('claude', args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn('claude', args, { stdio: ['pipe', 'pipe', 'pipe'] });
     this.children.add(child);
-    log.debug({ thread: threadId, args: args.slice(0, -1) }, 'claude agent: turn started');
+    // Mark this thread as started the moment we spawn — not on child exit.
+    // The orchestrator can call sendTurn again as soon as it sees a result
+    // event, which fires before the subprocess has actually exited, so an
+    // exit-time write would let a back-to-back turn re-use `--session-id`
+    // and fail with "session already exists".
+    if (!this.started.has(threadId)) {
+      this.started.add(threadId);
+      this.persistStarted();
+    }
+    log.debug({ thread: threadId, args, attachments: attachments.length }, 'claude agent: turn started');
+
+    // Handle stdin errors silently — they crop up when claude exits before
+    // we've finished writing (rate limit hit instantly, auth error on
+    // launch, etc.). The exit handler below converts the underlying failure
+    // into an onError call; an unhandled stdin EPIPE would crash the daemon.
+    child.stdin?.on('error', err => log.debug({ err: errMsg(err) }, 'claude agent: stdin write failed (child likely exited)'));
+    // One JSON line + EOF closes the input stream so claude knows the turn
+    // is complete (stream-json input allows multiple user messages — we just
+    // send one per subprocess).
+    child.stdin?.write(JSON.stringify(message) + '\n');
+    child.stdin?.end();
 
     const session = new TurnSession(callbacks);
     let buffer = '';
@@ -114,10 +146,6 @@ export class ClaudeAgent implements Agent {
     child.stderr?.on('data', d => log.trace({ src: 'claude-stderr' }, String(d).trim()));
     child.on('exit', code => {
       this.children.delete(child);
-      if (!this.started.has(threadId)) {
-        this.started.add(threadId);
-        this.persistStarted();
-      }
       // If the subprocess exits without a `result` event (crash, OOM, kill),
       // surface that as an error so the orchestrator unsticks the thread.
       if (!session.done) {
@@ -130,6 +158,50 @@ export class ClaudeAgent implements Agent {
       if (!session.done) session.fireError(err);
     });
   }
+}
+
+// Anthropic content-block shapes — kept loose so we don't have to vendor the
+// SDK types just for one wire format.
+type ContentBlock =
+  | { type: 'text'; text: string }
+  | { type: 'image'; source: { type: 'base64'; media_type: string; data: string } };
+
+type UserMessage = {
+  type: 'user';
+  message: { role: 'user'; content: ContentBlock[] };
+};
+
+async function buildUserMessage(text: string, attachments: Attachment[]): Promise<UserMessage> {
+  const content: ContentBlock[] = [];
+  const audioNotes: string[] = [];
+
+  for (const a of attachments) {
+    if (a.kind === 'image') {
+      try {
+        const data = (await readFile(a.path)).toString('base64');
+        content.push({
+          type: 'image',
+          source: { type: 'base64', media_type: a.mimeType, data },
+        });
+      } catch (err) {
+        log.warn({ err: errMsg(err), path: a.path }, 'claude agent: image read failed; skipping');
+      }
+    } else if (a.kind === 'audio') {
+      // Claude doesn't ingest audio. Pass the on-disk path so the agent can
+      // reach for a transcription tool (ffmpeg + whisper via Bash, an MCP
+      // audio server, etc.) if one is configured. Naming the file helps
+      // the agent surface the user's intent in tool calls.
+      audioNotes.push(`[audio attached at ${a.path}${a.name ? ` (${a.name})` : ''}]`);
+    }
+  }
+
+  const parts = [text.trim(), ...audioNotes].filter(Boolean);
+  // Stream-json requires at least one content block. Fall back to a single
+  // space if there's no text and no image (e.g. audio-only with read fail).
+  const textBlock = parts.join('\n\n') || (content.length === 0 ? '(no content)' : '');
+  if (textBlock) content.push({ type: 'text', text: textBlock });
+
+  return { type: 'user', message: { role: 'user', content } };
 }
 
 // Owns the once-only firing of onComplete/onError and the per-index tool

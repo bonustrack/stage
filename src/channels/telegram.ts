@@ -2,6 +2,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { STATE_DIR } from '../paths.js';
 import { errMsg, log } from '../log.js';
+import { mdToTelegramHtml } from '../lib/telegram-format.js';
 
 const API_BASE = 'https://api.telegram.org';
 
@@ -48,8 +49,8 @@ export async function getMe(): Promise<{ id: number; username: string }> {
 // ---------- Inbound (long-polling) -----------------------------------------
 
 type Entity = { type: string; offset: number; length: number; user?: { id: number } };
-type Photo = { file_id: string };
-type FileWithMime = { file_id: string; mime_type?: string };
+type Photo = { file_id: string; width?: number; height?: number; file_size?: number };
+type FileWithMime = { file_id: string; mime_type?: string; file_name?: string };
 type RawMessage = {
   message_id: number;
   chat?: { id: number; type?: string; is_forum?: boolean };
@@ -67,6 +68,23 @@ type RawMessage = {
 };
 type RawUpdate = { update_id: number; message?: RawMessage };
 
+/**
+ * Reference to a media attachment on a Telegram message. `file_id` is the
+ * opaque Telegram handle — resolve to bytes via `downloadFile`. Voice notes,
+ * audio files, and photos all flow through this; the channel layer tags the
+ * kind so the orchestrator knows whether to label it as image vs audio when
+ * routing to an agent that only natively handles one of them.
+ */
+export type AttachmentRef = {
+  kind: 'image' | 'audio';
+  file_id: string;
+  /** Best-known MIME — Telegram provides it on `document`/`audio`/`voice`,
+   * not on `photo` (photos are always JPEG, set explicitly). */
+  mimeType: string;
+  /** Original filename if Telegram exposes one (documents/audio). */
+  name?: string;
+};
+
 export type InboundMessage = {
   chat_id: number;
   message_id: number;
@@ -79,6 +97,7 @@ export type InboundMessage = {
   /** Chat is a forum supergroup (any topic, including General). */
   in_forum: boolean;
   mentions_bot: boolean;
+  attachments: AttachmentRef[];
 };
 
 let onInboundHandler: (msg: InboundMessage) => void = () => {};
@@ -165,9 +184,9 @@ async function dispatchUpdate(u: RawUpdate): Promise<void> {
     return;
   }
 
-  const text = await messageToText(m);
-  if (!text) {
-    log.trace({ chat: m.chat.id }, 'telegram: no text/caption');
+  const { text, attachments } = extractMedia(m);
+  if (!text && attachments.length === 0) {
+    log.trace({ chat: m.chat.id }, 'telegram: no text/caption/media');
     return;
   }
 
@@ -180,6 +199,7 @@ async function dispatchUpdate(u: RawUpdate): Promise<void> {
     is_forum_topic: !!m.is_topic_message,
     in_forum: !!m.chat.is_forum,
     mentions_bot: detectMentionsBot(m),
+    attachments,
   };
   log.debug({
     chat: msg.chat_id,
@@ -208,14 +228,63 @@ function detectMentionsBot(m: RawMessage): boolean {
   return false;
 }
 
-async function messageToText(m: RawMessage): Promise<string | null> {
-  if (m.text) return m.text;
+/**
+ * Pull both text (caption + body, falling back gracefully) and media refs out
+ * of a raw Telegram message. The orchestrator downloads the refs to a temp
+ * dir and hands them to the agent; the caller still sees a non-empty text
+ * even for media-only messages so per-scope routing rules keep working.
+ */
+function extractMedia(m: RawMessage): { text: string; attachments: AttachmentRef[] } {
   const caption: string = m.caption ?? '';
-  if (m.photo?.length) return [caption, '[image]'].filter(Boolean).join(' ');
-  if (m.document?.mime_type?.startsWith('image/')) return [caption, '[image]'].filter(Boolean).join(' ');
-  if (m.voice) return [caption, '[voice]'].filter(Boolean).join(' ');
-  if (m.audio) return [caption, '[audio]'].filter(Boolean).join(' ');
-  return caption || null;
+  const body: string = m.text ?? caption;
+  const attachments: AttachmentRef[] = [];
+
+  if (m.photo?.length) {
+    // Telegram delivers a tower of size variants; the largest is last. Use
+    // it so the agent sees the best-quality version (Claude/Codex tolerate
+    // multi-MB images; resizing here would lose detail unnecessarily).
+    const largest = m.photo[m.photo.length - 1];
+    attachments.push({ kind: 'image', file_id: largest.file_id, mimeType: 'image/jpeg' });
+  }
+  if (m.document?.mime_type?.startsWith('image/')) {
+    attachments.push({
+      kind: 'image',
+      file_id: m.document.file_id,
+      mimeType: m.document.mime_type,
+      name: m.document.file_name,
+    });
+  }
+  if (m.voice) {
+    // Voice notes are OGG Opus when sent from the Telegram client.
+    attachments.push({
+      kind: 'audio',
+      file_id: m.voice.file_id,
+      mimeType: m.voice.mime_type ?? 'audio/ogg',
+    });
+  }
+  if (m.audio) {
+    attachments.push({
+      kind: 'audio',
+      file_id: m.audio.file_id,
+      mimeType: m.audio.mime_type ?? 'audio/mpeg',
+      name: m.audio.file_name,
+    });
+  }
+  return { text: body, attachments };
+}
+
+/**
+ * Resolve a Telegram `file_id` to bytes. Two-step: `getFile` returns a path
+ * inside Telegram's file CDN, then we GET it through the bot's file root.
+ * The returned URL is short-lived (~1h) and shouldn't be persisted.
+ */
+export async function downloadFile(fileId: string, timeoutMs = 30_000): Promise<Buffer> {
+  const file = await tg<{ file_path?: string }>('getFile', { file_id: fileId });
+  if (!file.file_path) throw new Error(`telegram getFile: no file_path for ${fileId}`);
+  const url = `${API_BASE}/file/bot${token()}/${file.file_path}`;
+  const res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+  if (!res.ok) throw new Error(`telegram file download ${file.file_path}: ${res.status}`);
+  return Buffer.from(await res.arrayBuffer());
 }
 
 // ---------- Outbound (REST) ------------------------------------------------
@@ -236,19 +305,53 @@ export async function createForumTopic(chatId: ChatId, name: string): Promise<nu
 }
 
 export async function sendMessage(chatId: ChatId, threadId: number | undefined, text: string): Promise<number> {
-  const body: Record<string, unknown> = { chat_id: chatId, text };
+  const body: Record<string, unknown> = {
+    chat_id: chatId,
+    text: mdToTelegramHtml(text),
+    parse_mode: 'HTML',
+  };
   if (threadId !== undefined) body.message_thread_id = threadId;
-  const r = await tg<{ message_id: number }>('sendMessage', body);
-  return r.message_id;
+  try {
+    const r = await tg<{ message_id: number }>('sendMessage', body);
+    return r.message_id;
+  } catch (err) {
+    if (!isParseError(err)) throw err;
+    // Bad HTML shouldn't block delivery — agents emit unusual markdown
+    // shapes and a single malformed conversion isn't worth surfacing.
+    log.warn({ err: errMsg(err) }, 'telegram HTML parse failed; sending plain');
+    body.text = text;
+    delete body.parse_mode;
+    const r = await tg<{ message_id: number }>('sendMessage', body);
+    return r.message_id;
+  }
 }
 
 export async function editMessageText(chatId: ChatId, messageId: number, text: string): Promise<void> {
+  const body: Record<string, unknown> = {
+    chat_id: chatId,
+    message_id: messageId,
+    text: mdToTelegramHtml(text),
+    parse_mode: 'HTML',
+  };
   try {
-    await tg('editMessageText', { chat_id: chatId, message_id: messageId, text });
+    await tg('editMessageText', body);
   } catch (err) {
     // Telegram rejects edits that match the existing content — ignore that
     // specific case so debounced no-op flushes don't surface as errors.
     if (errMsg(err).includes('message is not modified')) return;
-    throw err;
+    if (!isParseError(err)) throw err;
+    log.warn({ err: errMsg(err) }, 'telegram HTML parse failed; sending plain');
+    body.text = text;
+    delete body.parse_mode;
+    try {
+      await tg('editMessageText', body);
+    } catch (err2) {
+      if (errMsg(err2).includes('message is not modified')) return;
+      throw err2;
+    }
   }
+}
+
+function isParseError(err: unknown): boolean {
+  return errMsg(err).toLowerCase().includes("can't parse entities");
 }

@@ -50,6 +50,12 @@ Follow-ups in the thread route automatically — no @-mention needed.
 
 Regular (non-forum) groups are not routed — they have no thread boundary.
 
+### Images and audio
+
+Drop an image into Discord or Telegram and the agent sees it natively — Claude gets the image as a stream-json content block, Codex gets it as a `localImage` input. Mix text and one or more images in the same message; both flow into the same turn.
+
+Audio (Telegram voice notes, audio files, Discord audio uploads) isn't a native input type for either agent today. Metro downloads the file anyway and tells the agent where it landed on disk (`[audio attached at /tmp/metro-att-…]`), so the agent can reach for `ffmpeg` + a transcription tool via its Bash tool if one is configured. Files larger than 25 MB are skipped with a log line rather than holding up the turn.
+
 ## How it works
 
 ```

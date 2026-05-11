@@ -12,13 +12,15 @@
 //              @-mentions in General).
 
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { extname, join } from 'node:path';
 import pkg from '../package.json' with { type: 'json' };
 import * as discord from './channels/discord.js';
 import * as telegram from './channels/telegram.js';
 import { CodexAgent } from './agents/codex.js';
 import { ClaudeAgent } from './agents/claude.js';
-import type { Agent, AgentTurnCallbacks } from './agents/types.js';
+import type { Agent, AgentTurnCallbacks, Attachment } from './agents/types.js';
 import {
   type AgentKind,
   discordChannelFromScopeKey,
@@ -69,8 +71,10 @@ const TRANSIENT_TOOL_KINDS = new Set(['thinking', 'reasoning']);
 const inFlight = new Set<string>();
 // Per-thread queue of follow-up messages that arrived while a turn was
 // already running. Each entry remembers how to dispatch the next turn so
-// the drain reuses the right platform adapter.
-type Queued = { texts: string[]; dispatch: (text: string) => Promise<void> };
+// the drain reuses the right platform adapter. Attachments queue alongside
+// the text — concatenating texts collapses multiple buffered messages into
+// one prompt, and the agent sees the merged attachment list at once.
+type Queued = { texts: string[]; attachments: Attachment[]; dispatch: (text: string, attachments: Attachment[]) => Promise<void> };
 const queued = new Map<string, Queued>();
 // De-dupe the *same* gateway delivery (e.g. on reconnect replay).
 const bootstrapped = new Set<string>();
@@ -134,12 +138,18 @@ async function catchupDiscord(): Promise<void> {
       if (humanMissed.length === 0) continue;
       log.info({ channel: channelId, count: humanMissed.length }, 'discord catchup: replaying missed messages');
       for (const m of humanMissed) {
+        // Catchup uses the REST history endpoint, which doesn't expose
+        // attachment refs the way the gateway event does. We could fetch
+        // them per-message, but the user can re-upload if anything important
+        // was missed — drop attachments on the floor here rather than block
+        // the (text-heavy) common case on extra REST calls.
         await onDiscordInbound({
           channel_id: channelId,
           message_id: m.message_id,
           text: m.text,
           in_guild: true,
           mentions_bot: false,
+          attachments: [],
         });
       }
     } catch (err) {
@@ -202,7 +212,8 @@ async function onDiscordInbound(m: discord.InboundMessage): Promise<void> {
     } else {
       setLastAgent(cachedScope, choice.kind);
     }
-    await handleTurn(parsed.cleanText, choice.kind, agentThreadId, discordAdapter(m.channel_id), discordScheduler);
+    const attachments = await downloadDiscordAttachments(m.attachments);
+    await handleTurn(parsed.cleanText, attachments, choice.kind, agentThreadId, discordAdapter(m.channel_id), discordScheduler);
     return;
   }
 
@@ -228,7 +239,8 @@ async function onDiscordInbound(m: discord.InboundMessage): Promise<void> {
   setAgentThread(discordScopeKey(threadId), choice.kind, agentThreadId);
   log.info({ discord: threadId, agent: choice.kind, thread: agentThreadId }, 'scope created');
 
-  await handleTurn(parsed.cleanText, choice.kind, agentThreadId, discordAdapter(threadId), discordScheduler);
+  const attachments = await downloadDiscordAttachments(m.attachments);
+  await handleTurn(parsed.cleanText, attachments, choice.kind, agentThreadId, discordAdapter(threadId), discordScheduler);
 }
 
 async function onTelegramInbound(m: telegram.InboundMessage): Promise<void> {
@@ -274,8 +286,10 @@ async function onTelegramInbound(m: telegram.InboundMessage): Promise<void> {
     setLastAgent(scopeKey, choice.kind);
   }
 
+  const attachments = await downloadTelegramAttachments(m.attachments);
   await handleTurn(
     parsed.cleanText,
+    attachments,
     choice.kind,
     agentThreadId,
     telegramAdapter(m.chat_id, m.message_thread_id),
@@ -318,8 +332,10 @@ async function bootstrapForumTopic(m: telegram.InboundMessage): Promise<void> {
   setLastSeen(newScopeKey, String(m.message_id));
   log.info({ scope: newScopeKey, agent: choice.kind, thread: agentThreadId }, 'telegram: scope created');
 
+  const attachments = await downloadTelegramAttachments(m.attachments);
   await handleTurn(
     parsed.cleanText,
+    attachments,
     choice.kind,
     agentThreadId,
     telegramAdapter(m.chat_id, newTopicId),
@@ -368,6 +384,7 @@ function makeThreadName(rawText: string, fallback: string): string {
  */
 async function handleTurn(
   text: string,
+  attachments: Attachment[],
   kind: AgentKind,
   agentThreadId: string,
   adapter: StreamAdapter,
@@ -378,15 +395,21 @@ async function handleTurn(
     // Shouldn't happen — the caller's pickAgent() already filters this —
     // but log defensively so it's not silent.
     log.warn({ kind, agent: agentThreadId }, 'handleTurn called for unavailable agent');
+    void cleanupAttachments(attachments);
     return;
   }
 
-  const dispatch = (t: string): Promise<void> => handleTurn(t, kind, agentThreadId, adapter, scheduler);
+  const dispatch = (t: string, a: Attachment[]): Promise<void> =>
+    handleTurn(t, a, kind, agentThreadId, adapter, scheduler);
 
   if (inFlight.has(agentThreadId)) {
     const q = queued.get(agentThreadId);
-    if (q) q.texts.push(text);
-    else queued.set(agentThreadId, { texts: [text], dispatch });
+    if (q) {
+      q.texts.push(text);
+      q.attachments.push(...attachments);
+    } else {
+      queued.set(agentThreadId, { texts: [text], attachments: [...attachments], dispatch });
+    }
     log.debug({ agent: agentThreadId, queueDepth: queued.get(agentThreadId)!.texts.length }, 'queued follow-up turn');
     return;
   }
@@ -397,12 +420,20 @@ async function handleTurn(
   const finishAndDrain = async (): Promise<void> => {
     await stream.finalize();
     inFlight.delete(agentThreadId);
+    // Attachments for *this* turn are safe to remove now — the agent has
+    // either consumed them (Claude reads them to base64; Codex copies them
+    // into its own store) or already failed. Queued follow-ups own their
+    // own attachments and clean up on their own turn.
+    void cleanupAttachments(attachments);
     const q = queued.get(agentThreadId);
-    if (!q || q.texts.length === 0) return;
+    if (!q || (q.texts.length === 0 && q.attachments.length === 0)) return;
     queued.delete(agentThreadId);
     const combined = q.texts.join('\n\n');
-    log.debug({ agent: agentThreadId, batched: q.texts.length }, 'draining queued follow-ups');
-    await q.dispatch(combined).catch(err => log.warn({ err: errMsg(err) }, 'queued turn failed'));
+    log.debug(
+      { agent: agentThreadId, batched: q.texts.length, attachments: q.attachments.length },
+      'draining queued follow-ups',
+    );
+    await q.dispatch(combined, q.attachments).catch(err => log.warn({ err: errMsg(err) }, 'queued turn failed'));
   };
 
   const callbacks: AgentTurnCallbacks = {
@@ -426,7 +457,7 @@ async function handleTurn(
     },
   };
 
-  await agent.sendTurn(agentThreadId, text, callbacks);
+  await agent.sendTurn(agentThreadId, text, attachments, callbacks);
 }
 
 function discordAdapter(channelId: string): StreamAdapter {
@@ -441,6 +472,115 @@ function telegramAdapter(chatId: number, topicId: number | undefined): StreamAda
     send: async t => String(await telegram.sendMessage(chatId, topicId, t)),
     edit: async (id, t) => { await telegram.editMessageText(chatId, Number(id), t); },
   };
+}
+
+// --- Attachment downloads -------------------------------------------------
+//
+// Both channels deliver opaque pointers (Discord CDN URL / Telegram file_id)
+// to media the user uploaded. We materialize them to a per-turn temp dir so
+// agent adapters can hand a real on-disk path to their CLI (Codex's
+// `localImage`) or read bytes to base64 (Claude's stream-json input). The
+// temp dir is deleted once the turn finishes.
+
+// Modest cap: large enough for typical chat uploads (Discord image cap is
+// 25MB for non-Nitro users; Telegram photos top out around 10MB compressed),
+// small enough that a runaway gateway event can't OOM the daemon. Files
+// over this cap are skipped with a warning — better than blocking the turn.
+const MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024;
+
+async function downloadDiscordAttachments(refs: discord.AttachmentRef[]): Promise<Attachment[]> {
+  const usable = refs.filter(r => discord.isImage(r.contentType) || discord.isAudio(r.contentType));
+  if (usable.length === 0) return [];
+  const dir = await mkdtemp(join(tmpdir(), 'metro-att-'));
+  const out: Attachment[] = [];
+  for (const ref of usable) {
+    if (ref.size > MAX_ATTACHMENT_BYTES) {
+      log.warn({ name: ref.name, size: ref.size, cap: MAX_ATTACHMENT_BYTES }, 'discord attachment exceeds cap; skipping');
+      continue;
+    }
+    try {
+      const buf = await discord.downloadAttachment(ref.url);
+      const path = join(dir, safeName(ref.name, ref.contentType));
+      await writeFile(path, buf);
+      out.push({
+        kind: discord.isImage(ref.contentType) ? 'image' : 'audio',
+        path,
+        mimeType: ref.contentType ?? 'application/octet-stream',
+        name: ref.name,
+      });
+    } catch (err) {
+      log.warn({ err: errMsg(err), name: ref.name }, 'discord attachment download failed; skipping');
+    }
+  }
+  // If every download failed we leave an empty dir behind on purpose so
+  // logs have a breadcrumb; it'll get garbage-collected by the OS later.
+  if (out.length === 0) void rm(dir, { recursive: true, force: true });
+  return out;
+}
+
+async function downloadTelegramAttachments(refs: telegram.AttachmentRef[]): Promise<Attachment[]> {
+  if (refs.length === 0) return [];
+  const dir = await mkdtemp(join(tmpdir(), 'metro-att-'));
+  const out: Attachment[] = [];
+  for (let i = 0; i < refs.length; i++) {
+    const ref = refs[i];
+    try {
+      const buf = await telegram.downloadFile(ref.file_id);
+      if (buf.byteLength > MAX_ATTACHMENT_BYTES) {
+        log.warn({ file_id: ref.file_id, size: buf.byteLength, cap: MAX_ATTACHMENT_BYTES }, 'telegram attachment exceeds cap; skipping');
+        continue;
+      }
+      const path = join(dir, safeName(ref.name ?? `${ref.kind}-${i}`, ref.mimeType));
+      await writeFile(path, buf);
+      out.push({ kind: ref.kind, path, mimeType: ref.mimeType, name: ref.name });
+    } catch (err) {
+      log.warn({ err: errMsg(err), file_id: ref.file_id }, 'telegram attachment download failed; skipping');
+    }
+  }
+  if (out.length === 0) void rm(dir, { recursive: true, force: true });
+  return out;
+}
+
+async function cleanupAttachments(attachments: Attachment[]): Promise<void> {
+  if (attachments.length === 0) return;
+  // Each batch shares one temp directory (mkdtemp prefix). Removing the
+  // dir is cheaper and safer than unlinking files individually — no risk
+  // of orphaning siblings if one unlink fails midway.
+  const dirs = new Set(attachments.map(a => a.path.replace(/\/[^/]+$/, '')));
+  for (const dir of dirs) {
+    await rm(dir, { recursive: true, force: true }).catch(err =>
+      log.warn({ err: errMsg(err), dir }, 'attachment cleanup failed'),
+    );
+  }
+}
+
+// Pick a filename safe to write under our temp dir. We avoid trusting the
+// platform-supplied name as-is because it might contain `/` or `..` from a
+// hostile client; the contentType extension is a stable fallback.
+function safeName(rawName: string | undefined, contentType: string | null | undefined): string {
+  const ext = mimeExtension(contentType) ?? (rawName ? extname(rawName) : '') ?? '';
+  const base = (rawName ?? 'attachment').replace(/[^A-Za-z0-9._-]/g, '_').slice(0, 60);
+  if (ext && !base.toLowerCase().endsWith(ext.toLowerCase())) return `${base}${ext}`;
+  return base || `attachment${ext}`;
+}
+
+function mimeExtension(mime: string | null | undefined): string | null {
+  if (!mime) return null;
+  // Just the cases we actually hand to agents — anything else falls back to
+  // whatever extension the original filename carried.
+  const map: Record<string, string> = {
+    'image/png': '.png',
+    'image/jpeg': '.jpg',
+    'image/jpg': '.jpg',
+    'image/gif': '.gif',
+    'image/webp': '.webp',
+    'audio/ogg': '.ogg',
+    'audio/mpeg': '.mp3',
+    'audio/mp4': '.m4a',
+    'audio/wav': '.wav',
+    'audio/x-wav': '.wav',
+  };
+  return map[mime.toLowerCase()] ?? null;
 }
 
 let shuttingDown = false;

@@ -13,9 +13,17 @@ import { join } from 'node:path';
 import { WebSocket, type RawData } from 'ws';
 import { errMsg, log } from '../log.js';
 import { STATE_DIR } from '../paths.js';
-import type { Agent, AgentTurnCallbacks } from './types.js';
+import type { Agent, AgentTurnCallbacks, Attachment } from './types.js';
 
 export type { AgentTurnCallbacks };
+
+// Mirrors codex-rs/app-server-protocol/schema/typescript/v2/UserInput.ts.
+// `text_elements` is snake_case in the wire format despite being camelCase
+// elsewhere — using camelCase here causes the server to accept the message
+// silently and then echo it back malformed in items.
+type UserInputItem =
+  | { type: 'text'; text: string; text_elements: never[] }
+  | { type: 'localImage'; path: string };
 
 const SOCKET_PATH = join(STATE_DIR, 'codex-app-server.sock');
 const READY_TIMEOUT_MS = 15_000;
@@ -122,15 +130,12 @@ export class CodexAgent implements Agent {
    * acknowledges; callbacks fire as notifications arrive and conclude
    * with `onComplete` or `onError`.
    */
-  async sendTurn(threadId: string, text: string, callbacks: AgentTurnCallbacks): Promise<void> {
+  async sendTurn(threadId: string, text: string, attachments: Attachment[], callbacks: AgentTurnCallbacks): Promise<void> {
     this.turnCallbacks.set(threadId, callbacks);
     try {
-      // Wire format per codex's generated TS bindings: `text_elements`
-      // (snake_case), not camelCase. Sending camelCase silently degrades
-      // — accepted by the server but doesn't echo back in items.
       await this.call('turn/start', {
         threadId,
-        input: [{ type: 'text', text, text_elements: [] }],
+        input: buildInput(text, attachments),
       });
     } catch (err) {
       this.turnCallbacks.delete(threadId);
@@ -268,6 +273,31 @@ export class CodexAgent implements Agent {
     for (const p of this.pending.values()) p.reject(err);
     this.pending.clear();
   }
+}
+
+/**
+ * Build the `input` array for `turn/start`. Images ride as `localImage`
+ * items (codex resolves the path itself, so we just hand it the absolute
+ * location of the temp file). Audio isn't a Codex-native input type — we
+ * append the path to the text so the agent can shell out to a transcription
+ * tool if one is configured. The text item always comes first so the agent
+ * sees the user's question framed correctly.
+ */
+function buildInput(text: string, attachments: Attachment[]): UserInputItem[] {
+  const images: Attachment[] = [];
+  const audioNotes: string[] = [];
+  for (const a of attachments) {
+    if (a.kind === 'image') images.push(a);
+    else if (a.kind === 'audio') audioNotes.push(`[audio attached at ${a.path}${a.name ? ` (${a.name})` : ''}]`);
+  }
+  const fullText = [text.trim(), ...audioNotes].filter(Boolean).join('\n\n');
+  const items: UserInputItem[] = [];
+  if (fullText) items.push({ type: 'text', text: fullText, text_elements: [] });
+  for (const img of images) items.push({ type: 'localImage', path: img.path });
+  // Codex rejects empty `input`; fall back to a single-space text item if
+  // somehow nothing landed (e.g. audio-only with name-only attachments).
+  if (items.length === 0) items.push({ type: 'text', text: ' ', text_elements: [] });
+  return items;
 }
 
 function summarizeItem(item: ThreadItem): string {

@@ -67,6 +67,19 @@ function getClient(): Client {
   return client;
 }
 
+/**
+ * Reference to a Discord attachment the user posted alongside their message.
+ * URL points to Discord's CDN; the orchestrator downloads it to disk before
+ * passing the path to an agent. Discord-attached URLs are signed and expire
+ * within ~24h, so don't store these — fetch on receipt.
+ */
+export type AttachmentRef = {
+  url: string;
+  name: string;
+  contentType: string | null;
+  size: number;
+};
+
 export type InboundMessage = {
   channel_id: string;
   message_id: string;
@@ -75,6 +88,8 @@ export type InboundMessage = {
   in_guild: boolean;
   /** True when the bot user was @-mentioned in this message. */
   mentions_bot: boolean;
+  /** Any files the user uploaded with the message (images, audio, etc). */
+  attachments: AttachmentRef[];
 };
 
 let onInboundHandler: (msg: InboundMessage) => void = () => {};
@@ -97,21 +112,28 @@ export async function startGateway(): Promise<void> {
     // where (scoped thread vs new bootstrap mention vs ignore). The bot's
     // own @-mention is preserved in `m.content` so the orchestrator can
     // make that decision from the same payload.
-    const tags = [...m.attachments.values()]
-      .map(a => {
-        if (a.contentType?.startsWith('image/')) return '[image]';
-        if (a.contentType?.startsWith('audio/')) return `[audio: ${a.name}]`;
-        return `[file: ${a.name}]`;
-      })
+    const attachments: AttachmentRef[] = [...m.attachments.values()].map(a => ({
+      url: a.url,
+      name: a.name,
+      contentType: a.contentType,
+      size: a.size,
+    }));
+    // Non-image/audio attachments still flow through as text markers; the
+    // agent has no way to ingest a binary it can't open, but it should at
+    // least know the user uploaded something.
+    const fileTags = attachments
+      .filter(a => !isImage(a.contentType) && !isAudio(a.contentType))
+      .map(a => `[file: ${a.name}]`)
       .join(' ');
-    const text = [m.content, tags].filter(Boolean).join(' ').trim();
-    if (!text) return;
+    const text = [m.content, fileTags].filter(Boolean).join(' ').trim();
+    if (!text && attachments.length === 0) return;
     onInboundHandler({
       channel_id: m.channelId,
       message_id: m.id,
       text,
       in_guild: !!m.guildId,
       mentions_bot: c.user ? m.mentions.has(c.user.id) : false,
+      attachments,
     });
   });
   c.on(Events.Error, err => log.error({ err: errMsg(err) }, 'discord error'));
@@ -123,6 +145,25 @@ export async function startGateway(): Promise<void> {
 export async function getMe(): Promise<{ username: string }> {
   const me = await rest<{ username: string }>('GET', '/users/@me');
   return { username: me.username };
+}
+
+export function isImage(contentType: string | null | undefined): boolean {
+  return !!contentType && contentType.startsWith('image/');
+}
+
+export function isAudio(contentType: string | null | undefined): boolean {
+  return !!contentType && contentType.startsWith('audio/');
+}
+
+/**
+ * Download a Discord attachment to a Buffer. The URL is the signed CDN URL
+ * Discord delivered on the gateway event — valid for ~24h, so the caller
+ * should fetch on receipt rather than persist the URL.
+ */
+export async function downloadAttachment(url: string, timeoutMs = 30_000): Promise<Buffer> {
+  const res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+  if (!res.ok) throw new Error(`discord download ${url}: ${res.status}`);
+  return Buffer.from(await res.arrayBuffer());
 }
 
 // ---------- Send path (REST, no gateway) -----------------------------------
