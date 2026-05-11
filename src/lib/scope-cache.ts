@@ -1,16 +1,4 @@
-// Per-machine cache of `scope_key → { agent thread ids, last-used }`.
-// Lets orchestrator restarts rejoin the same agent conversation in the
-// same Discord thread instead of starting from scratch. JSON file at
-// $STATE_DIR/scopes.json.
-//
-// One Discord thread can have up to one session per agent kind — when a
-// user explicitly switches via "with claude" / "with codex", a fresh
-// session is allocated for the new kind and stored alongside.
-//
-// Scope keys are platform-prefixed so the same store handles Discord and
-// Telegram without collisions:
-//   discord:<thread_channel_id>
-//   telegram:<chat_id>:<topic_id>
+/** Per-machine scope→{thread ids,last-used} cache. Keys: `discord:<id>` / `telegram:<chat>:<topic>`. */
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -21,16 +9,10 @@ export type AgentKind = 'codex' | 'claude';
 
 type Entry = {
   createdAt: string;
-  /**
-   * Watermark for catchup-on-restart: the id of the most recent human
-   * message metro has processed in this scope. After a restart, REST is
-   * used to fetch anything newer than this and replay it through the
-   * orchestrator.
-   */
+  /** Watermark of most-recent processed human message; used for catchup-on-restart. */
   lastSeenMessageId?: string;
-  /** Per-agent session ids. A scope can have one of each. */
   agents: Partial<Record<AgentKind, string>>;
-  /** Which agent answered most recently — the default for the next turn. */
+  /** Most-recent answering agent; default for the next turn. */
   lastAgent?: AgentKind;
 };
 type Cache = Record<string, Entry>;
@@ -39,20 +21,13 @@ const cacheFile = join(STATE_DIR, 'scopes.json');
 
 function read(): Cache {
   if (!existsSync(cacheFile)) return {};
-  try {
-    return JSON.parse(readFileSync(cacheFile, 'utf8')) as Cache;
-  } catch (err) {
-    log.warn({ err: errMsg(err), path: cacheFile }, 'scope cache read failed; treating as empty');
-    return {};
-  }
+  try { return JSON.parse(readFileSync(cacheFile, 'utf8')) as Cache; }
+  catch (err) { log.warn({ err: errMsg(err), path: cacheFile }, 'scope cache read failed; treating as empty'); return {}; }
 }
 
 function write(cache: Cache): void {
-  try {
-    writeFileSync(cacheFile, JSON.stringify(cache, null, 2));
-  } catch (err) {
-    log.warn({ err: errMsg(err), path: cacheFile }, 'scope cache write failed');
-  }
+  try { writeFileSync(cacheFile, JSON.stringify(cache, null, 2)); }
+  catch (err) { log.warn({ err: errMsg(err), path: cacheFile }, 'scope cache write failed'); }
 }
 
 function ensure(cache: Cache, scopeKey: string): Entry {
@@ -95,16 +70,8 @@ export function listScopes(): Array<{ scopeKey: string; entry: Entry }> {
   return Object.entries(read()).map(([scopeKey, entry]) => ({ scopeKey, entry }));
 }
 
-export function discordScopeKey(threadChannelId: string): string {
-  return `discord:${threadChannelId}`;
-}
-
-export function discordChannelFromScopeKey(scopeKey: string): string | null {
-  return scopeKey.startsWith('discord:') ? scopeKey.slice('discord:'.length) : null;
-}
-
-// Telegram scope: chat + optional forum-topic id. Use a sentinel ('main')
-// for non-topic chats so the key shape stays predictable.
-export function telegramScopeKey(chatId: number | string, topicId: number | undefined): string {
-  return `telegram:${chatId}:${topicId ?? 'main'}`;
-}
+export const discordScopeKey = (threadChannelId: string): string => `discord:${threadChannelId}`;
+export const discordChannelFromScopeKey = (scopeKey: string): string | null =>
+  scopeKey.startsWith('discord:') ? scopeKey.slice('discord:'.length) : null;
+export const telegramScopeKey = (chatId: number | string, topicId: number | undefined): string =>
+  `telegram:${chatId}:${topicId ?? 'main'}`;

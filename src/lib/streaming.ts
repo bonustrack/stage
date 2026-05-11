@@ -1,64 +1,30 @@
-// Accumulates streaming response deltas + tool-call status lines from a
-// running agent turn and pushes them to a chat platform (Discord / Telegram)
-// via debounced message edits. Smooth visible progress without hammering
-// rate limits.
-//
-// The debounce is owned by a per-bot `StreamScheduler`, not by individual
-// streams. One tick (e.g. every 1500ms) flushes every dirty stream the bot
-// has accumulated, so two concurrent threads don't compound into 2× the
-// edit rate on the same bot token.
-//
-// When the agent's response grows past the platform's per-message content
-// cap, the body is split across multiple messages: the prior segment is
-// frozen at its final text, and a fresh message holds the continuation
-// (with the live status line, which always anchors to the latest segment).
-//
-// On agent turn completion, call finalize() to flush a final edit with the
-// status cleared.
+/** Streams agent deltas + tool calls to chat via debounced edits; splits past MAX_BODY_LEN. */
 
 import { errMsg, log } from '../log.js';
 
-// Steady-state cadence: 1500ms keeps us comfortably under Discord's ~5/5s
-// per-channel edit cap even after the transport adds its own retry-on-429
-// jitter. After a quiet period, the next flush is leading-edge (LEADING_MS)
-// so short responses don't appear as one final dump.
+/** 1500ms keeps us under Discord's ~5/5s per-channel edit cap; leading-edge 500ms for first delta. */
 const DEFAULT_DEBOUNCE_MS = 1500;
 const LEADING_MS = 500;
-
-// Discord's bot content cap is 2000 by default (4000 for boosted/Nitro).
-// 1900 is universally safe and leaves headroom for the status suffix.
+/** Discord cap is 2000; 1900 leaves headroom for status suffix. */
 const MAX_BODY_LEN = 1900;
-// Reserve for "\n\n_<status>_" + a continuation hint.
 const STATUS_RESERVE = 80;
 
 export interface StreamAdapter {
-  /** Send a fresh message; returns the new message id. */
   send(text: string): Promise<string>;
-  /** Edit a previously-sent message. */
   edit(messageId: string, text: string): Promise<void>;
 }
 
-/**
- * One scheduler per bot. Coalesces edits across every active stream the
- * bot is serving — Discord's per-channel rate limit doesn't compound when
- * we run multiple threads concurrently this way.
- */
+/** One per bot. Coalesces edits so concurrent threads don't compound rate limits. */
 export class StreamScheduler {
   private dirty = new Set<StreamingMessage>();
   private timer: ReturnType<typeof setTimeout> | null = null;
   private lastFlushAt = 0;
 
-  constructor(
-    private debounceMs = DEFAULT_DEBOUNCE_MS,
-    private leadingMs = LEADING_MS,
-  ) {}
+  constructor(private debounceMs = DEFAULT_DEBOUNCE_MS, private leadingMs = LEADING_MS) {}
 
   request(stream: StreamingMessage): void {
     this.dirty.add(stream);
     if (this.timer) return;
-    // Leading-edge: if we haven't flushed recently, fire fast so the first
-    // visible content lands within `leadingMs` of the agent's first delta.
-    // Otherwise stay at the steady-state cadence to respect rate limits.
     const sinceLast = Date.now() - this.lastFlushAt;
     const delay = sinceLast >= this.debounceMs ? this.leadingMs : this.debounceMs - sinceLast;
     this.timer = setTimeout(() => {
@@ -66,36 +32,17 @@ export class StreamScheduler {
       this.lastFlushAt = Date.now();
       const batch = [...this.dirty];
       this.dirty.clear();
-      // Fire all in parallel — distinct channels are in distinct rate-limit
-      // buckets, so they don't queue behind each other.
       for (const s of batch) void s._flushFromScheduler();
     }, delay);
   }
 
-  /** Drop a stream from the queue (called when it finalizes). */
-  forget(stream: StreamingMessage): void {
-    this.dirty.delete(stream);
-  }
+  forget(stream: StreamingMessage): void { this.dirty.delete(stream); }
 }
 
-// Backticks inside a detail string (e.g. an embedded shell quote) would
-// terminate the surrounding inline-code span. Replace each one with a
-// look-alike grave-accent variant so it survives the round-trip without
-// ever escaping the code span.
-function escapeBackticks(s: string): string {
-  return s.replace(/`/g, 'ˋ');
-}
+/** Replace backticks in tool detail with U+02CB so they can't escape inline-code spans. */
+const escapeBackticks = (s: string): string => s.replace(/`/g, 'ˋ');
 
-type Segment = {
-  id: string | null;
-  text: string;
-  /** Pending changes that haven't been flushed yet. */
-  dirty: boolean;
-};
-
-// Tracks what was last appended to the body so tool-call lines land with
-// correct spacing: blank line between prose↔tools, single newline between
-// consecutive tools.
+type Segment = { id: string | null; text: string; dirty: boolean };
 type LastBlock = 'empty' | 'text' | 'tool';
 
 export class StreamingMessage {
@@ -106,18 +53,11 @@ export class StreamingMessage {
   private finalized = false;
   private lastBlock: LastBlock = 'empty';
 
-  constructor(
-    private adapter: StreamAdapter,
-    private scheduler: StreamScheduler,
-  ) {}
+  constructor(private adapter: StreamAdapter, private scheduler: StreamScheduler) {}
 
   appendDelta(delta: string): void {
     if (this.finalized || !delta) return;
-    // If a tool just landed and prose follows, leave a blank line between
-    // them so the resumed prose doesn't visually crash into the tool note.
-    if (this.lastBlock === 'tool') {
-      this.appendToLast('\n\n');
-    }
+    if (this.lastBlock === 'tool') this.appendToLast('\n\n');
     this.appendToLast(delta);
     this.lastBlock = 'text';
     this.scheduler.request(this);
@@ -130,33 +70,17 @@ export class StreamingMessage {
     this.scheduler.request(this);
   }
 
-  /**
-   * Persist a tool-call entry inline in the message body. Renders as
-   * `> 🛠 **<name>** \`<detail>\`` on its own blockquote line, which Discord
-   * styles as a quoted line and Telegram (via mdToHtml) turns into a
-   * `<blockquote>`. The user keeps seeing the full sequence of agent
-   * actions in chat scroll-back rather than a status that flickers and
-   * vanishes.
-   */
+  /** Persist a tool call as `> 🛠 **<name>** \`<detail>\`` (Discord blockquote / Telegram <blockquote>). */
   appendToolCall(name: string, detail?: string): void {
     if (this.finalized) return;
     const lead = this.lastBlock === 'empty' ? '' : this.lastBlock === 'text' ? '\n\n' : '\n';
-    // Detail (path/command) sits inside backticks so Discord and Telegram
-    // both render it as monospace — important because file paths, shell
-    // commands, and grep patterns get mangled by autoformatting otherwise.
-    const safeDetail = detail ? escapeBackticks(detail) : '';
-    const body = detail ? `**${name}** \`${safeDetail}\`` : `**${name}**`;
+    const body = detail ? `**${name}** \`${escapeBackticks(detail)}\`` : `**${name}**`;
     this.appendToLast(`${lead}> 🛠 ${body}`);
     this.lastBlock = 'tool';
     this.scheduler.request(this);
   }
 
-  /**
-   * Append an error notice to the visible message. Renders as `⚠️ <msg>`
-   * either on its own (no prior text) or after a blank line (preserves
-   * whatever streamed before the failure). Clears any pending status
-   * line since 'Thinking…' is meaningless after an error.
-   */
+  /** Append `⚠️ <msg>` on its own line; preserves any prose/tools already streamed. */
   appendError(message: string): void {
     if (this.finalized) return;
     const sep = this.lastBlock === 'empty' ? '' : '\n\n';
@@ -175,10 +99,7 @@ export class StreamingMessage {
     await this.flush();
   }
 
-  /** Internal — called by the scheduler tick. */
-  async _flushFromScheduler(): Promise<void> {
-    await this.flush();
-  }
+  async _flushFromScheduler(): Promise<void> { await this.flush(); }
 
   private appendToLast(delta: string): void {
     const cap = MAX_BODY_LEN - STATUS_RESERVE;
@@ -187,7 +108,6 @@ export class StreamingMessage {
       let last = this.segments[this.segments.length - 1];
       const room = cap - last.text.length;
       if (room <= 0) {
-        // Previous last loses status anchor — re-edit without it.
         last.dirty = true;
         last = { id: null, text: '', dirty: false };
         this.segments.push(last);
@@ -200,23 +120,18 @@ export class StreamingMessage {
     }
   }
 
-  // Prefer splitting at the last newline / space / sentence end within the
-  // allowed slice, so continuation messages don't cut words in half. Falls
-  // back to a hard slice if no boundary is in reach.
+  /** Split at the last paragraph/line/sentence/word break in range; hard slice otherwise. */
   private sliceAtBoundary(s: string, room: number): string {
     if (s.length <= room) return s;
     const candidate = s.slice(0, room);
-    const breakers = ['\n\n', '\n', '. ', ' '];
-    for (const b of breakers) {
+    for (const b of ['\n\n', '\n', '. ', ' ']) {
       const i = candidate.lastIndexOf(b);
       if (i > room * 0.5) return candidate.slice(0, i + b.length);
     }
     return candidate;
   }
 
-  private markLastDirty(): void {
-    this.segments[this.segments.length - 1].dirty = true;
-  }
+  private markLastDirty(): void { this.segments[this.segments.length - 1].dirty = true; }
 
   private async flush(): Promise<void> {
     if (this.flushing) { this.flushAgain = true; return; }
@@ -226,32 +141,21 @@ export class StreamingMessage {
         this.flushAgain = false;
         for (let i = 0; i < this.segments.length; i++) {
           const s = this.segments[i];
-          const isLast = i === this.segments.length - 1;
-          const body = this.render(s, isLast);
+          const body = this.render(s, i === this.segments.length - 1);
           if (!body) continue;
           try {
-            if (s.id === null) {
-              s.id = await this.adapter.send(body);
-              s.dirty = false;
-            } else if (s.dirty) {
-              await this.adapter.edit(s.id, body);
-              s.dirty = false;
-            }
-          } catch (err) {
-            log.warn({ err: errMsg(err) }, 'streaming edit failed');
-            // Leave dirty=true so the next tick retries.
-          }
+            if (s.id === null) { s.id = await this.adapter.send(body); s.dirty = false; }
+            else if (s.dirty) { await this.adapter.edit(s.id, body); s.dirty = false; }
+          } catch (err) { log.warn({ err: errMsg(err) }, 'streaming edit failed'); }
         }
       } while (this.flushAgain);
-    } finally {
-      this.flushing = false;
-    }
+    } finally { this.flushing = false; }
   }
 
   private render(s: Segment, isLast: boolean): string {
     const body = s.text;
     const showStatus = isLast && !!this.statusLine;
-    if (!body && !showStatus) return ''; // nothing to show yet — skip the flush
+    if (!body && !showStatus) return '';
     if (!body) return this.statusLine!;
     if (showStatus) return `${body}\n\n${this.statusLine}`;
     return body;
