@@ -8,8 +8,9 @@ const LEADING_MS = 500;
 /** Discord cap is 2000; 1900 leaves headroom for status suffix. */
 const MAX_BODY_LEN = 1900;
 const STATUS_RESERVE = 80;
-/** Cap result preview so a 1000-line file dump doesn't blow the message budget. */
-const MAX_RESULT_LINES = 10;
+/** Cap result so a 1000-line file dump doesn't blow the per-message char budget. */
+const MAX_RESULT_LINES = 50;
+const MAX_RESULT_CHARS = 1500;
 
 export interface StreamAdapter {
   send(text: string): Promise<string>;
@@ -41,7 +42,19 @@ export class StreamScheduler {
   forget(stream: StreamingMessage): void { this.dirty.delete(stream); }
 }
 
-const escapeBackticks = (s: string): string => s.replace(/`/g, 'ˋ');
+/** Break embedded triple backticks so they can't close our fenced block early. */
+const escapeFence = (s: string): string => s.replace(/```/g, '`​`​`');
+
+/** Cap output by lines + chars; return `body` to embed and a `_(N more …)_` overflow note (or ''). */
+function truncateResult(s: string): { body: string; overflow: string } {
+  const lines = s.split('\n');
+  let body = lines.slice(0, MAX_RESULT_LINES).join('\n');
+  const droppedLines = Math.max(0, lines.length - MAX_RESULT_LINES);
+  if (body.length > MAX_RESULT_CHARS) body = body.slice(0, MAX_RESULT_CHARS) + '…';
+  if (droppedLines === 0 && body === s) return { body: s, overflow: '' };
+  const noun = droppedLines > 0 ? `${droppedLines} more line${droppedLines === 1 ? '' : 's'}` : 'output truncated';
+  return { body, overflow: `_(${noun})_` };
+}
 
 type TextBlock = { kind: 'text'; text: string };
 type ToolBlock = { kind: 'tool'; id: string; name: string; detail?: string; result?: string };
@@ -109,16 +122,16 @@ export class StreamingMessage {
     return this.blocks.map(b => b.kind === 'text' ? b.text : this.renderToolBlock(b)).join('\n\n').trim();
   }
 
-  /** A tool block is its own paragraph: header line + truncated result lines below (no `>` prefix). */
+  /** Plain header + fenced input block + fenced output block. Each fence is fully visible (no collapse). */
   private renderToolBlock(b: ToolBlock): string {
-    const detail = b.detail ? ` \`${escapeBackticks(b.detail)}\`` : '';
-    const header = `🛠 **${b.name}**${detail}`;
-    if (!b.result) return header;
-    const lines = b.result.split('\n');
-    const head = lines.slice(0, MAX_RESULT_LINES);
-    const more = lines.length - head.length;
-    const overflow = more > 0 ? `\n_(${more} more line${more === 1 ? '' : 's'})_` : '';
-    return `${header}\n${head.join('\n')}${overflow}`;
+    const parts: string[] = [`🛠 **${b.name}**`];
+    if (b.detail) parts.push('```\n' + escapeFence(b.detail) + '\n```');
+    if (b.result) {
+      const { body, overflow } = truncateResult(b.result);
+      parts.push('```\n' + escapeFence(body) + '\n```');
+      if (overflow) parts.push(overflow);
+    }
+    return parts.join('\n');
   }
 
   /** Redistribute the rendered body across segments, keeping existing segment ids stable. */
@@ -139,13 +152,11 @@ export class StreamingMessage {
   private chunkify(s: string, cap: number): string[] {
     if (s.length <= cap) return [s];
     const out: string[] = [];
-    let remaining = s;
-    while (remaining.length > cap) {
-      const take = this.sliceAtBoundary(remaining, cap);
+    for (let r = s; r.length > 0; ) {
+      const take = r.length > cap ? this.sliceAtBoundary(r, cap) : r;
       out.push(take);
-      remaining = remaining.slice(take.length);
+      r = r.slice(take.length);
     }
-    if (remaining) out.push(remaining);
     return out;
   }
 
@@ -172,8 +183,9 @@ export class StreamingMessage {
           const body = this.render(s, i === this.segments.length - 1);
           if (!body) continue;
           try {
-            if (s.id === null) { s.id = await this.adapter.send(body); s.dirty = false; }
-            else if (s.dirty) { await this.adapter.edit(s.id, body); s.dirty = false; }
+            if (s.id === null) s.id = await this.adapter.send(body);
+            else if (s.dirty) await this.adapter.edit(s.id, body);
+            s.dirty = false;
           } catch (err) { log.warn({ err: errMsg(err) }, 'streaming edit failed'); }
         }
       } while (this.flushAgain);
@@ -182,8 +194,7 @@ export class StreamingMessage {
 
   private render(s: Segment, isLast: boolean): string {
     const showStatus = isLast && !!this.statusLine;
-    if (!s.text && !showStatus) return '';
-    if (!s.text) return this.statusLine!;
+    if (!s.text) return showStatus ? this.statusLine! : '';
     return showStatus ? `${s.text}\n\n${this.statusLine}` : s.text;
   }
 }

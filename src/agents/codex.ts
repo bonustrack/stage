@@ -183,7 +183,7 @@ export class CodexAgent implements Agent {
 function summarizeItem(item: ThreadItem): ToolActivity | null {
   const id = item.id;
   if (item.type === 'commandExecution' && 'command' in item) {
-    return { id, kind: 'commandExecution', name: 'Bash', detail: item.command ? truncate(item.command, 80) : undefined };
+    return { id, kind: 'commandExecution', name: 'Bash', detail: item.command || undefined };
   }
   if (item.type === 'fileChange' && 'changes' in item) {
     const paths = (item.changes ?? []).map(c => c.path).filter((p): p is string => !!p);
@@ -196,4 +196,3 @@ function summarizeItem(item: ThreadItem): ToolActivity | null {
 
 const itemOutput = (item: ThreadItem): string | undefined =>
   item.type === 'commandExecution' && 'output' in item ? item.output?.trim() || undefined : undefined;
-const truncate = (s: string, n: number): string => s.length > n ? s.slice(0, n - 1) + '…' : s;

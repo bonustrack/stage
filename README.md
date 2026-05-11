@@ -38,7 +38,7 @@ How would Codex have done this? with codex
 @-mention the bot in any channel:
 1. Metro creates a thread anchored on your message (named after the message).
 2. Spins up an agent session for that thread.
-3. Streams the agent's reply with each tool call as its own block: header `🛠 **Read** `src/foo.ts`` followed by the truncated output below (10 lines + overflow). On Telegram each tool is wrapped in `<blockquote expandable>` so it's tap-to-expand; Discord shows it inline. `Thinking…` shows as a transient status that vanishes once real content arrives.
+3. Streams the agent's reply with each tool call as its own block: plain header `🛠 **Read**` followed by two fenced code blocks — input (`src/foo.ts`) above, output (file contents) below. Outputs are capped at 50 lines / 1500 chars per tool with a `_(N more lines)_` note if truncated. `Thinking…` shows as a transient status that vanishes once real content arrives.
 
 Follow-ups in the thread route automatically — no @-mention needed.
 
@@ -63,7 +63,7 @@ Telegram poller ──┘                       └─▶ claude -p ...      (pe
 - **One metro = one daemon.** Lockfile at `$METRO_STATE_DIR/.tail-lock` keeps things singleton.
 - **Both agents side-by-side.** A scope can have up to one session per agent — independent histories. Routing is per-message: explicit `with claude` / `with codex` suffix, otherwise the scope's last-used agent, otherwise Claude.
 - **Streaming.** Replies edit one message every ~1500 ms while deltas stream in (leading-edge first flush for fast initial feedback). Long replies split past ~1900 chars onto a follow-up message.
-- **Tool-call visibility.** Each tool call is rendered as its own paragraph (`🛠 **<tool>** \`<arg>\`` + truncated output below, paired by tool id so parallel calls don't collapse together). On Telegram each is wrapped in `<blockquote expandable>` so it's tap-to-expand; Discord shows inline.
+- **Tool-call visibility.** Each tool call is rendered as a plain `🛠 **<tool>**` header plus two fenced code blocks — input then output — paired by tool id so parallel calls don't collide. Both blocks are fully visible (no collapse). Outputs are capped at 50 lines / 1500 chars per tool.
 - **Telegram formatting.** Agent markdown (`**bold**`, `*italic*`, `` `code` ``, fenced blocks, `[link](url)`, blockquotes) is converted to Telegram's HTML parse mode on the way out, so it renders as formatted text instead of literal characters.
 - **No link previews.** Outgoing messages set `link_preview_options.is_disabled` on Telegram and the `SUPPRESS_EMBEDS` flag on Discord, so URLs in agent replies don't unfurl into giant auto-embeds.
 - **Queueing.** Messages that arrive while a turn is running are buffered per-scope and answered together in the next reply.

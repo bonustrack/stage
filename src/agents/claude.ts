@@ -172,15 +172,13 @@ function summarizeTool(name: string | undefined, input: Record<string, unknown> 
   const cmd = input.command as string | undefined;
   const pattern = input.pattern as string | undefined;
   switch (name) {
-    case 'Bash': return { name: 'Bash', detail: cmd ? truncate(cmd, 80) : undefined };
+    case 'Bash': return { name: 'Bash', detail: cmd };
     case 'Edit': case 'Write': case 'NotebookEdit': return { name: display, detail: path };
     case 'Read': return { name: 'Read', detail: path };
-    case 'Grep': case 'Glob': return { name: display, detail: pattern ? truncate(pattern, 80) : undefined };
+    case 'Grep': case 'Glob': return { name: display, detail: pattern };
     case 'WebFetch': return { name: 'WebFetch', detail: input.url as string | undefined };
     case 'WebSearch': return { name: 'WebSearch', detail: input.query as string | undefined };
     case 'Task': return { name: 'Task', detail: (input.description ?? input.subagent_type) as string | undefined };
     default: return { name: display };
   }
 }
-
-const truncate = (s: string, n: number): string => s.length > n ? s.slice(0, n - 1) + '…' : s;
