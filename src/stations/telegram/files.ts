@@ -1,7 +1,7 @@
 /** Telegram file download helpers — getFile + fetch into a Buffer for image attachments. */
 
-import type { Attachment } from '../agents/types.js';
-import { errMsg, log } from '../log.js';
+import type { Attachment } from '../types.js';
+import { errMsg, log } from '../../log.js';
 
 const API_BASE = 'https://api.telegram.org';
 const MAX_BYTES = 20 * 1024 * 1024;

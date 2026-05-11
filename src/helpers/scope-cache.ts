@@ -1,9 +1,11 @@
-/** Per-machine scope→{thread ids,last-used} cache. Keys: `discord:<id>` / `telegram:<chat>:<topic>`. */
+/** Per-machine Line → {agent threads, last-used} cache. Keys are URI lines (see docs/uri-scheme.md). */
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { errMsg, log } from '../log.js';
 import { STATE_DIR } from '../paths.js';
+import { station as stationOf } from '../stations/line.js';
+import type { Line } from '../stations/types.js';
 
 export type AgentKind = 'codex' | 'claude';
 
@@ -30,48 +32,34 @@ function write(cache: Cache): void {
   catch (err) { log.warn({ err: errMsg(err), path: cacheFile }, 'scope cache write failed'); }
 }
 
-function ensure(cache: Cache, scopeKey: string): Entry {
-  if (!cache[scopeKey]) cache[scopeKey] = { createdAt: new Date().toISOString(), agents: {} };
-  if (!cache[scopeKey].agents) cache[scopeKey].agents = {};
-  return cache[scopeKey];
+function ensure(cache: Cache, line: Line): Entry {
+  if (!cache[line]) cache[line] = { createdAt: new Date().toISOString(), agents: {} };
+  if (!cache[line].agents) cache[line].agents = {};
+  return cache[line];
 }
 
-export function getAgentThread(scopeKey: string, kind: AgentKind): string | undefined {
-  return read()[scopeKey]?.agents?.[kind];
-}
+export const getAgentThread = (line: Line, kind: AgentKind): string | undefined => read()[line]?.agents?.[kind];
 
-export function setAgentThread(scopeKey: string, kind: AgentKind, threadId: string): void {
-  const cache = read();
-  const entry = ensure(cache, scopeKey);
-  entry.agents[kind] = threadId;
-  entry.lastAgent = kind;
+export function setAgentThread(line: Line, kind: AgentKind, threadId: string): void {
+  const cache = read(); const entry = ensure(cache, line);
+  entry.agents[kind] = threadId; entry.lastAgent = kind;
   write(cache);
 }
 
-export function getLastAgent(scopeKey: string): AgentKind | undefined {
-  return read()[scopeKey]?.lastAgent;
+export const getLastAgent = (line: Line): AgentKind | undefined => read()[line]?.lastAgent;
+
+export function setLastAgent(line: Line, kind: AgentKind): void {
+  const cache = read(); if (!cache[line]) return;
+  cache[line].lastAgent = kind; write(cache);
 }
 
-export function setLastAgent(scopeKey: string, kind: AgentKind): void {
-  const cache = read();
-  if (!cache[scopeKey]) return;
-  cache[scopeKey].lastAgent = kind;
-  write(cache);
+export function setLastSeen(line: Line, messageId: string): void {
+  const cache = read(); if (!cache[line]) return;
+  cache[line].lastSeenMessageId = messageId; write(cache);
 }
 
-export function setLastSeen(scopeKey: string, messageId: string): void {
-  const cache = read();
-  if (!cache[scopeKey]) return;
-  cache[scopeKey].lastSeenMessageId = messageId;
-  write(cache);
-}
+export const listLines = (): Array<{ line: Line; entry: Entry }> =>
+  Object.entries(read()).map(([line, entry]) => ({ line: line as Line, entry }));
 
-export function listScopes(): Array<{ scopeKey: string; entry: Entry }> {
-  return Object.entries(read()).map(([scopeKey, entry]) => ({ scopeKey, entry }));
-}
-
-export const discordScopeKey = (threadChannelId: string): string => `discord:${threadChannelId}`;
-export const discordChannelFromScopeKey = (scopeKey: string): string | null =>
-  scopeKey.startsWith('discord:') ? scopeKey.slice('discord:'.length) : null;
-export const telegramScopeKey = (chatId: number | string, topicId: number | undefined): string =>
-  `telegram:${chatId}:${topicId ?? 'main'}`;
+export const linesForStation = (name: string): Array<{ line: Line; entry: Entry }> =>
+  listLines().filter(({ line }) => stationOf(line) === name);
