@@ -220,6 +220,21 @@ async function messageToText(m: RawMessage): Promise<string | null> {
 
 // ---------- Outbound (REST) ------------------------------------------------
 
+/**
+ * Create a new forum topic in a supergroup. Returns the topic's
+ * message_thread_id. Requires the bot to be an admin with the
+ * `can_manage_topics` privilege.
+ */
+export async function createForumTopic(chatId: ChatId, name: string): Promise<number> {
+  // Telegram caps topic names at 128 chars.
+  const trimmedName = name.slice(0, 128) || 'metro';
+  const r = await tg<{ message_thread_id: number }>('createForumTopic', {
+    chat_id: chatId,
+    name: trimmedName,
+  });
+  return r.message_thread_id;
+}
+
 export async function sendMessage(chatId: ChatId, threadId: number | undefined, text: string): Promise<number> {
   const body: Record<string, unknown> = { chat_id: chatId, text };
   if (threadId !== undefined) body.message_thread_id = threadId;

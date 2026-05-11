@@ -232,7 +232,8 @@ async function onTelegramInbound(m: telegram.InboundMessage): Promise<void> {
     return;
   }
 
-  const scopeKey = telegramScopeKey(m.chat_id, m.message_thread_id);
+  let replyTopicId = m.message_thread_id;
+  let scopeKey = telegramScopeKey(m.chat_id, replyTopicId);
   const cachedHasAnyAgent = !!(getAgentThread(scopeKey, 'codex') ?? getAgentThread(scopeKey, 'claude'));
 
   // No scope yet, not a DM, and no @-mention → drop. (DMs implicitly count
@@ -243,9 +244,31 @@ async function onTelegramInbound(m: telegram.InboundMessage): Promise<void> {
   }
 
   const parsed = parseAgentSuffix(m.text);
+
+  // Bootstrap in General topic of a forum: spin up a fresh topic and run
+  // the conversation there. Mirrors Discord's "thread from message" flow.
+  if (!cachedHasAnyAgent && m.in_forum && !m.is_forum_topic) {
+    const topicName = makeThreadName(parsed.cleanText, 'metro');
+    try {
+      replyTopicId = await telegram.createForumTopic(m.chat_id, topicName);
+      scopeKey = telegramScopeKey(m.chat_id, replyTopicId);
+      log.info({ chat: m.chat_id, topic: replyTopicId, name: topicName }, 'telegram: created forum topic for bootstrap');
+    } catch (err) {
+      // Most common cause: bot lacks `can_manage_topics`. Tell the user
+      // in General so they can fix the perm rather than wondering why
+      // nothing happened.
+      await postTelegramError(
+        m.chat_id,
+        m.message_thread_id,
+        `couldn't create a new topic — make the bot a forum admin with "Manage Topics" permission. (${errMsg(err)})`,
+      );
+      return;
+    }
+  }
+
   const choice = pickAgent(cachedHasAnyAgent ? scopeKey : null, parsed.kind);
   if ('error' in choice) {
-    await postTelegramError(m.chat_id, m.message_thread_id, choice.error);
+    await postTelegramError(m.chat_id, replyTopicId, choice.error);
     return;
   }
 
@@ -263,7 +286,7 @@ async function onTelegramInbound(m: telegram.InboundMessage): Promise<void> {
     parsed.cleanText,
     choice.kind,
     agentThreadId,
-    telegramAdapter(m.chat_id, m.message_thread_id),
+    telegramAdapter(m.chat_id, replyTopicId),
     telegramScheduler,
   );
 }
@@ -284,15 +307,17 @@ async function postErrorMessage(channelId: string, message: string): Promise<voi
   }
 }
 
-// Discord thread names: 1-100 chars, no newlines. Strip <@id>, <@&id>,
-// <#id>, custom emoji syntax, then normalize whitespace. Falls back to
-// the agent thread id if nothing usable is left.
+// Thread/topic names. Strip platform mention syntax (discord <@id>, custom
+// emoji; telegram @username), normalize whitespace, fall back to the given
+// default if nothing usable is left. Telegram caps topic names at 128;
+// Discord at 100 — use 100 so the same value works for both.
 function makeThreadName(rawText: string, fallback: string): string {
   const cleaned = rawText
     .replace(/<@!?\d+>/g, '')
     .replace(/<@&\d+>/g, '')
     .replace(/<#\d+>/g, '')
     .replace(/<a?:[^:]+:\d+>/g, '')
+    .replace(/@\w+/g, '') // telegram @username
     .replace(/\s+/g, ' ')
     .trim();
   if (!cleaned) return fallback.slice(0, 100);
