@@ -143,7 +143,7 @@ function fromBody(body: string | null, issue: Issue, repo: Repo, author: string,
   if (!text) return null;
   const [owner, repoName] = repo.full_name.split('/');
   return {
-    station: 'github', line: Line.github(owner, repoName, issue.number),
+    station: 'github', line: Line.github(owner, repoName, !!issue.pull_request, issue.number),
     messageId: url, text, attachments: [], mentionsBot: true,
     meta: { isPR: !!issue.pull_request, title: issue.title, url, authorUsername: author, repoFullName: repo.full_name, issueNumber: issue.number },
   };

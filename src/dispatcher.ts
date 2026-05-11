@@ -93,7 +93,8 @@ async function routeInbound<TMeta>(m: InboundMessage<TMeta>, station: ChatStatio
 }
 
 const onDiscordInbound = (m: InboundMessage<DiscordMeta>): Promise<void> => {
-  if (!m.meta.inGuild) return Promise.resolve();
+  /** DM: the channel IS the conversation, no thread to create. Guild: bootstrap a thread on @-mention. */
+  if (!m.meta.inGuild) return routeInbound(m, discord, null);
   return routeInbound(m, discord, (m, cleanText) => discord.createThreadFromMessage(m.line, m.messageId, makeThreadName(cleanText)));
 };
 

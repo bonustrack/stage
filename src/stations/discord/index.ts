@@ -142,7 +142,8 @@ export class DiscordStation implements ChatStation<DiscordMeta> {
     log.info({ from: m.author.username, bot: c.user?.username, channel: m.channelId, text: text.slice(0, 80) }, 'discord: inbound');
     this.messageHandler({
       station: 'discord', line: Line.discord(m.channelId), messageId: m.id, text, attachments,
-      mentionsBot: c.user ? m.mentions.has(c.user.id) : false,
+      /** DMs are implicitly addressed to the bot — no @-mention required. */
+      mentionsBot: !m.guildId || (c.user ? m.mentions.has(c.user.id) : false),
       meta: { inGuild: !!m.guildId },
     });
   }

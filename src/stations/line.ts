@@ -28,8 +28,8 @@ export const codex = (threadId: string): Line => build('codex', threadId);
 export const discord = (channelId: string): Line => build('discord', channelId);
 export const telegram = (chatId: number | string, topicId?: number): Line =>
   topicId !== undefined ? build('telegram', chatId, topicId) : build('telegram', chatId);
-export const github = (owner: string, repo: string, number: number): Line =>
-  build('github', owner, repo, number);
+export const github = (owner: string, repo: string, isPR: boolean, number: number): Line =>
+  build('github', owner, repo, isPR ? 'pull' : 'issues', number);
 
 /** Parse a Discord line; returns the channel id or null. */
 export const parseDiscord = (line: Line): string | null => {
@@ -45,9 +45,10 @@ export const parseTelegram = (line: Line): { chatId: number; topicId?: number } 
   return { chatId, topicId };
 };
 
-/** Parse a GitHub line; returns `{ owner, repo, number }` or null. */
-export const parseGithub = (line: Line): { owner: string; repo: string; number: number } | null => {
-  const p = parse(line); if (p?.station !== 'github' || p.path.length !== 3) return null;
-  const number = Number(p.path[2]); if (!Number.isFinite(number)) return null;
-  return { owner: p.path[0], repo: p.path[1], number };
+/** Parse a GitHub line; returns `{ owner, repo, isPR, number }` or null. */
+export const parseGithub = (line: Line): { owner: string; repo: string; isPR: boolean; number: number } | null => {
+  const p = parse(line); if (p?.station !== 'github' || p.path.length !== 4) return null;
+  const kind = p.path[2]; if (kind !== 'issues' && kind !== 'pull') return null;
+  const number = Number(p.path[3]); if (!Number.isFinite(number)) return null;
+  return { owner: p.path[0], repo: p.path[1], isPR: kind === 'pull', number };
 };

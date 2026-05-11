@@ -37,12 +37,10 @@ How would Codex have done this? with codex
 
 ### Discord
 
-@-mention the bot in any channel:
-1. Metro creates a thread anchored on your message (named after the message).
-2. Spins up an agent session for that thread.
-3. Streams the agent's reply with each tool call as its own block: plain header `🛠 **Read**` followed by two fenced code blocks — input (`src/foo.ts`) above, output (file contents) below. Outputs are capped at 50 lines / 1500 chars per tool with a `_(N more lines)_` note if truncated. `Thinking…` shows as a transient status that vanishes once real content arrives.
+- **DM the bot** — every message is implicitly addressed to it; one line per DM channel.
+- **@-mention the bot in any guild channel** — metro creates a thread anchored on your message (named after the message), spins up an agent session for that thread, and streams the reply. Each tool call renders as its own block: plain header `🛠 **Read**` followed by two fenced code blocks — input (`src/foo.ts`) above, output (file contents) below. Outputs are capped at 50 lines / 1500 chars per tool with a `_(N more lines)_` note if truncated. `Thinking…` shows as a transient status that vanishes once real content arrives.
 
-Follow-ups in the thread route automatically — no @-mention needed.
+Follow-ups in the same thread (or DM) route automatically — no @-mention needed.
 
 ### Telegram
 
@@ -129,7 +127,7 @@ Architecture docs: [`docs/uri-scheme.md`](docs/uri-scheme.md). Add a new chat ba
 - `metro --help` — command surface
 - `metro doctor` — health check (tokens + gateway/poller reachability + dispatcher status)
 - `metro stations` — list known stations with their capability matrix and config status
-- `metro send <line> <text>` — one-shot post to any metro line (`metro://telegram/CHAT[/TOPIC]`, `metro://discord/CHANNEL`, `metro://github/OWNER/REPO/N`). Uses the same env tokens as the dispatcher; daemon doesn't need to be running. Useful for agents that want to relay messages between stations.
+- `metro send <line> <text>` — one-shot post to any metro line (`metro://telegram/CHAT[/TOPIC]`, `metro://discord/CHANNEL`, `metro://github/OWNER/REPO/{issues|pull}/N`). Uses the same env tokens as the dispatcher; daemon doesn't need to be running. Useful for agents that want to relay messages between stations.
 - State files (`$METRO_STATE_DIR`, defaults to `~/.cache/metro/`):
   - `scopes.json` — `Line → agent-session` map (keys are `metro://<station>/<path>` URIs)
   - `.tail-lock` — dispatcher pid

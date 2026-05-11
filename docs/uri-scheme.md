@@ -28,9 +28,9 @@ The URI parses cleanly with the WHATWG `URL` parser: `new URL(line)` gives `prot
 | `codex`    | `metro://codex/<thread-id>`                   | `metro://codex/thread_01HXYZ...`                 |
 | `discord`  | `metro://discord/<channel-id>`                | `metro://discord/1234567890123456789`            |
 | `telegram` | `metro://telegram/<chat-id>[/<topic-id>]`     | `metro://telegram/-1001234567890/42`             |
-| `github`   | `metro://github/<owner>/<repo>/<number>`      | `metro://github/bonustrack/metro/123`            |
+| `github`   | `metro://github/<owner>/<repo>/issues/<n>` (issue)<br>`metro://github/<owner>/<repo>/pull/<n>` (PR) | `metro://github/bonustrack/metro/issues/123`<br>`metro://github/bonustrack/metro/pull/456` |
 
-Telegram's optional topic-id distinguishes a forum topic from the main chat; absence means main chat / DM.
+Telegram's optional topic-id distinguishes a forum topic from the main chat; absence means main chat / DM. GitHub mirrors GitHub's own URL structure (`/issues/<n>` vs `/pull/<n>`) so the type is visible from the URI alone — the underlying API endpoint is the same `/repos/{owner}/{repo}/issues/{n}/comments` regardless.
 
 ## API
 
