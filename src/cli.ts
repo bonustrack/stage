@@ -17,7 +17,6 @@ Usage:
   metro doctor                                Health check.
   metro update                                Upgrade in place.
   metro --version | --help
-
 Exit codes: 0 success · 1 usage · 2 config · 3 upstream
 `;
 
@@ -95,22 +94,14 @@ async function cmdSetup(positional: string[], flags: Flags): Promise<void> {
 
 async function cmdSetupStatus(flags: Flags): Promise<void> {
   loadMetroEnv();
-  const tg = process.env.TELEGRAM_BOT_TOKEN ?? '';
-  const dc = process.env.DISCORD_BOT_TOKEN ?? '';
+  const tg = process.env.TELEGRAM_BOT_TOKEN ?? '', dc = process.env.DISCORD_BOT_TOKEN ?? '';
   if (isJson(flags)) {
-    process.stdout.write(JSON.stringify({
-      version: pkg.version,
-      config_env_file: CONFIG_ENV_FILE,
-      tokens: { telegram: { set: !!tg, masked: maskToken(tg) }, discord: { set: !!dc, masked: maskToken(dc) } },
-    }) + '\n');
+    process.stdout.write(JSON.stringify({ version: pkg.version, config_env_file: CONFIG_ENV_FILE,
+      tokens: { telegram: { set: !!tg, masked: maskToken(tg) }, discord: { set: !!dc, masked: maskToken(dc) } } }) + '\n');
     return;
   }
   const cfgState = existsSync(CONFIG_ENV_FILE) ? '' : ' (not yet written)';
-  process.stdout.write(
-    `metro ${pkg.version}\n\nconfig:  ${CONFIG_ENV_FILE}${cfgState}\n\n` +
-    `  TELEGRAM_BOT_TOKEN  ${tg ? `set (${maskToken(tg)})` : 'not set'}\n` +
-    `  DISCORD_BOT_TOKEN   ${dc ? `set (${maskToken(dc)})` : 'not set'}\n\n`,
-  );
+  process.stdout.write(`metro ${pkg.version}\n\nconfig:  ${CONFIG_ENV_FILE}${cfgState}\n\n  TELEGRAM_BOT_TOKEN  ${tg ? `set (${maskToken(tg)})` : 'not set'}\n  DISCORD_BOT_TOKEN   ${dc ? `set (${maskToken(dc)})` : 'not set'}\n\n`);
   process.stdout.write(!tg && !dc
     ? 'Get started:\n  1. metro setup telegram <token>   # https://t.me/BotFather\n     metro setup discord <token>     # https://discord.com/developers/applications\n  2. metro doctor\n  3. metro\n'
     : 'Run `metro` to start the orchestrator, or `metro doctor` to verify.\n');
@@ -118,13 +109,22 @@ async function cmdSetupStatus(flags: Flags): Promise<void> {
 
 type DoctorCheck = { name: string; ok: boolean | null; detail: string };
 
+/** Find which file (or process env) supplied the currently-loaded token, so doctor can name the real source. */
+function tokenSource(key: string): string {
+  const val = process.env[key];
+  if (!val) return '';
+  for (const path of [join(process.cwd(), '.env'), CONFIG_ENV_FILE]) {
+    if (existsSync(path) && readDotenv(path)[key] === val) return path;
+  }
+  return 'process env';
+}
+
 async function cmdDoctor(flags: Flags): Promise<void> {
   loadMetroEnv();
   const cfg = configuredPlatforms();
-  const checks: DoctorCheck[] = [{
-    name: 'tokens',
-    ok: cfg.telegram || cfg.discord,
-    detail: cfg.telegram || cfg.discord ? `loaded from ${existsSync(CONFIG_ENV_FILE) ? CONFIG_ENV_FILE : 'process env'}` : 'no platform configured — run `metro setup telegram|discord <token>`',
+  const sources = ([['telegram', 'TELEGRAM_BOT_TOKEN'], ['discord', 'DISCORD_BOT_TOKEN']] as const).filter(([p]) => cfg[p]).map(([p, k]) => `${p}←${tokenSource(k)}`).join(', ');
+  const checks: DoctorCheck[] = [{ name: 'tokens', ok: cfg.telegram || cfg.discord,
+    detail: cfg.telegram || cfg.discord ? sources : 'no platform configured — run `metro setup telegram|discord <token>`',
   }];
 
   for (const [p, getMe] of [['telegram', telegram.getMe], ['discord', discord.getMe]] as const) {
@@ -138,8 +138,7 @@ async function cmdDoctor(flags: Flags): Promise<void> {
   else try {
     const pid = Number(readFileSync(lockFile, 'utf8').trim());
     if (!Number.isInteger(pid) || pid <= 0) throw new Error('invalid pid');
-    process.kill(pid, 0);
-    checks.push({ name: 'orchestrator', ok: true, detail: `running (pid ${pid})` });
+    process.kill(pid, 0); checks.push({ name: 'orchestrator', ok: true, detail: `running (pid ${pid})` });
   } catch { checks.push({ name: 'orchestrator', ok: null, detail: 'stale lockfile (will auto-reclaim on next start)' }); }
 
   if (isJson(flags)) process.stdout.write(JSON.stringify({ checks }) + '\n');
@@ -159,8 +158,7 @@ async function cmdUpdate(flags: Flags): Promise<void> {
   if (!latest) throw new Error(`no '${tag}' dist-tag for @stage-labs/metro`);
   if (latest === pkg.version) return emit(flags, `already on ${pkg.version} (latest ${tag})`, { ok: true, current: pkg.version, latest, upgraded: false });
 
-  const argv1 = process.argv[1] ?? '';
-  const spec = `@stage-labs/metro@${tag}`;
+  const argv1 = process.argv[1] ?? '', spec = `@stage-labs/metro@${tag}`;
   const argv = argv1.includes('/.bun/') || argv1.includes('\\bun\\') ? ['bun', 'add', '-g', spec]
     : argv1.includes('/pnpm/') || argv1.includes('\\pnpm\\') ? ['pnpm', 'add', '-g', spec]
     : ['npm', 'install', '-g', spec];
