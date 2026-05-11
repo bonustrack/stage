@@ -1,7 +1,7 @@
 {
   "name": "@stage-labs/metro",
   "version": "0.1.0-beta.4",
-  "description": "Orchestrator daemon that bridges Codex / Claude Code agent sessions with Telegram and Discord. Each chat thread gets its own agent session, with streaming responses and tool-call visibility.",
+  "description": "Orchestrator daemon that bridges Codex / Claude Code agent sessions with Telegram, Discord, and GitHub mentions. Each chat thread / topic / issue gets its own agent session, with streaming responses and tool-call visibility.",
   "license": "MIT",
   "repository": {
     "type": "git",

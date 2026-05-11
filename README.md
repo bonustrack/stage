@@ -1,6 +1,6 @@
 # Metro
 
-Run a long-lived daemon that bridges Discord and Telegram to your Codex + Claude Code agents. Each chat thread/topic gets its own agent session with streaming responses and inline, persistent tool-call traces. Both agents run side-by-side — pick per-message with a `with claude` / `with codex` suffix.
+Run a long-lived daemon that bridges Discord, Telegram, and GitHub mentions to your Codex + Claude Code agents. Each chat thread / topic / issue gets its own agent session with streaming responses and inline, persistent tool-call traces. Both agents run side-by-side — pick per-message with a `with claude` / `with codex` suffix.
 
 ## Prereqs
 
@@ -10,6 +10,7 @@ Run a long-lived daemon that bridges Discord and Telegram to your Codex + Claude
   - **Codex** — run `codex` once interactively to log in. Metro spawns `codex app-server` and inherits your auth, MCPs, sandboxing.
 - **Discord bot** (optional) with **Message Content Intent** enabled (Developer Portal → Bot → Privileged Gateway Intents).
 - **Telegram bot** (optional). In supergroup forums, the bot also needs the **Manage Topics** admin permission so it can auto-create topics on @-mention.
+- **GitHub mention bridge** (optional). Requires a public URL for the webhook (smee.io / cloudflared / ngrok for local dev) and a Discord bot — GitHub mentions spawn Discord threads.
 
 ## Quickstart
 
@@ -71,11 +72,11 @@ Mentions on the same issue/PR land in the same Discord thread (continuity persis
 ## How it works
 
 ```
-Discord gateway ──┐                       ┌─▶ codex app-server   (long-lived subprocess, UDS JSON-RPC)
-                  ├─▶ metro orchestrator ─┤
-Telegram poller ──┘                       └─▶ claude -p ...      (per-turn subprocess, stream-json)
-                            │
-                            └──── scope map (scopes.json)
+Discord gateway ──┐
+Telegram poller ──┤                          ┌─▶ codex app-server   (long-lived subprocess, UDS JSON-RPC)
+GitHub webhook ───┼─▶ metro orchestrator ────┤
+(HMAC-verified)   │                          └─▶ claude -p ...      (per-turn subprocess, stream-json)
+                  └──── scope map (scopes.json) + github bridges (github-bridges.json)
 ```
 
 - **One metro = one daemon.** Lockfile at `$METRO_STATE_DIR/.tail-lock` keeps things singleton.
@@ -86,6 +87,7 @@ Telegram poller ──┘                       └─▶ claude -p ...      (pe
 - **Telegram formatting.** Agent markdown (`**bold**`, `*italic*`, `` `code` ``, fenced blocks, `[link](url)`, blockquotes) is converted to Telegram's HTML parse mode on the way out, so it renders as formatted text instead of literal characters.
 - **No link previews.** Outgoing messages set `link_preview_options.is_disabled` on Telegram and the `SUPPRESS_EMBEDS` flag on Discord, so URLs in agent replies don't unfurl into giant auto-embeds.
 - **Stop button.** While an agent turn is in flight, the streamed message carries an `⏹ Stop` button (Discord component / Telegram inline keyboard). Tapping it kills the underlying turn — Claude via SIGTERM on the `claude -p` subprocess; Codex via `turn/interrupt` on app-server — and removes the button on the next flush.
+- **GitHub mention bridge.** When the bot's configured GitHub user is `@`-mentioned in an issue/PR body or comment, the HMAC-verified webhook spawns a Discord thread anchored on that issue and the agent answers there. Follow-up mentions on the same issue reuse the same thread (mapping persists in `github-bridges.json`). Reply-back-to-GitHub is intentionally out of scope — chat is the working transcript.
 - **Queueing.** Messages that arrive while a turn is running are buffered per-scope and answered together in the next reply.
 - **Catchup-on-restart.** Discord uses a per-scope `lastSeenMessageId` watermark and REST-fetches anything newer when metro comes back up. Telegram leans on its own update-id queue (persisted offset in `telegram-offset.json`).
 
@@ -116,6 +118,7 @@ METRO_LOG_LEVEL=debug metro
 - `metro doctor` — health check (tokens + gateway/poller reachability + orchestrator status)
 - State files (`$METRO_STATE_DIR`, defaults to `~/.cache/metro/`):
   - `scopes.json` — Discord-thread / Telegram-topic ↔ agent-session map
+  - `github-bridges.json` — GitHub issue/PR ↔ Discord thread map (only when the GitHub bridge is configured)
   - `.tail-lock` — orchestrator pid
   - `codex-app-server.sock` — codex's UDS
   - `telegram-offset.json` — last processed update id (used for catchup on restart)
@@ -136,3 +139,4 @@ npm uninstall -g @stage-labs/metro
 - **One agent missing is OK.** If only `claude` or only `codex` is installed/authenticated, metro still starts; messages asking for the missing one surface an error in chat.
 - **Telegram non-forum groups are skipped.** Without a per-topic thread boundary the routing model breaks down. DMs and forum topics (incl. auto-created ones from General) work normally.
 - **Telegram bot privacy.** Default Telegram bot privacy is *enabled*, which can block group messages even with @-mentions. Disable in [@BotFather](https://t.me/BotFather) → Bot Settings → Group Privacy → Turn off, then kick + re-invite the bot.
+- **GitHub bridge needs a public URL.** The webhook receiver listens locally; GitHub posts to it from the public internet. Use smee.io / cloudflared / ngrok for dev. Every request is HMAC-verified, so a leaked URL only lets attackers spam rejected POSTs (cheap to ignore), but make sure `GITHUB_WEBHOOK_SECRET` is high-entropy.
