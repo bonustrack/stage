@@ -23,8 +23,6 @@ export const station = (line: Line | string): string | null => parse(line)?.stat
 const build = (station: string, ...segments: (string | number)[]): Line =>
   asLine(`${PREFIX}${station}/${segments.map(String).join('/')}`);
 
-export const claude = (threadId: string): Line => build('claude', threadId);
-export const codex = (threadId: string): Line => build('codex', threadId);
 export const discord = (channelId: string): Line => build('discord', channelId);
 export const telegram = (chatId: number | string, topicId?: number): Line =>
   topicId !== undefined ? build('telegram', chatId, topicId) : build('telegram', chatId);

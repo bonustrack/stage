@@ -65,10 +65,9 @@ metro://telegram/-1001234567890                 # main chat / DM
 metro://telegram/-1001234567890/42              # forum topic 42
 metro://github/bonustrack/metro/issues/123      # GitHub issue
 metro://github/bonustrack/metro/pull/456        # GitHub PR
-metro://claude/01933f7a-12b4-7c01-...           # agent thread (internal)
 ```
 
-Lines are the unit of routing: the line maps 1:1 to an agent session in `scopes.json`. Anyone can post to a line via [`metro send`](#cli) — daemon optional. Full grammar in [`docs/uri-scheme.md`](docs/uri-scheme.md).
+Lines map 1:1 to agent sessions in `scopes.json`. Anyone can post to a line via [`metro send`](#cli) — daemon optional. Full grammar in [`docs/uri-scheme.md`](docs/uri-scheme.md).
 
 ---
 
@@ -189,7 +188,7 @@ metro setup [telegram|discord <token>]      Save token, or show status.
 metro setup clear [telegram|discord|all]    Remove tokens.
 metro doctor                                Health check.
 metro stations                              List stations + capabilities.
-metro lines                                 List active conversations (sorted by recency).
+metro lines                                 List active conversations (sorted by recency, with names).
 metro send <line> <text>                    Post to any metro:// line.
 metro update                                Upgrade in place.
 ```
