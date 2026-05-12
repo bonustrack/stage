@@ -1,9 +1,9 @@
 /** Discord station: receive via discord.js gateway; send via raw REST (one-shot, no event loop dependency). */
 
 import { Client, Events, GatewayIntentBits, Partials } from 'discord.js';
-import { errMsg, log } from '../log.js';
-import * as Line from './line.js';
-import type { Attachment, Capabilities, ChatStation, InboundMessage, Line as LineT, SendOpts } from './types.js';
+import { errMsg, log } from '../../log.js';
+import * as Line from '../line.js';
+import type { Attachment, Capabilities, ChatStation, InboundMessage, Line as LineT, SendOpts } from '../types.js';
 
 const API_BASE = 'https://discord.com/api/v10';
 

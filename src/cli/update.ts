@@ -1,7 +1,7 @@
 /** `metro update` — npm registry lookup + in-place global install. */
 
 import { spawn } from 'node:child_process';
-import pkg from '../package.json' with { type: 'json' };
+import pkg from '../../package.json' with { type: 'json' };
 
 export type UpdateFlags = { json: boolean };
 

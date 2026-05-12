@@ -14,7 +14,7 @@
     "node": ">=22"
   },
   "bin": {
-    "metro": "./dist/cli.js"
+    "metro": "./dist/cli/index.js"
   },
   "files": [
     "dist",

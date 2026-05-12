@@ -4,10 +4,10 @@ import { copyFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pkg from '../package.json' with { type: 'json' };
-import { ClaudeStation } from './stations/claude.js';
-import { CodexStation } from './stations/codex.js';
-import { DiscordStation, type DiscordMeta } from './stations/discord.js';
-import { GitHubStation, type GitHubMeta } from './stations/github.js';
+import { ClaudeStation } from './stations/claude/index.js';
+import { CodexStation } from './stations/codex/index.js';
+import { DiscordStation, type DiscordMeta } from './stations/discord/index.js';
+import { GitHubStation, type GitHubMeta } from './stations/github/index.js';
 import { TelegramStation, type TelegramMeta } from './stations/telegram/index.js';
 import type { AgentStation, ChatStation, InboundMessage, Line as LineT } from './stations/types.js';
 import {

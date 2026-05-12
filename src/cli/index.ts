@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import pkg from '../package.json' with { type: 'json' };
-import { cmdLines } from './cli-lines.js';
-import { cmdUpdate } from './cli-update.js';
-import { DiscordStation } from './stations/discord.js';
-import { TelegramStation } from './stations/telegram/index.js';
-import { fmtCapabilities, listStations } from './stations/listing.js';
-import { sendToLine } from './stations/send.js';
-import { errMsg } from './log.js';
-import { CONFIG_ENV_FILE, configuredPlatforms, loadMetroEnv, readDotenv, STATE_DIR, writeDotenv } from './paths.js';
+import pkg from '../../package.json' with { type: 'json' };
+import { cmdLines } from './lines.js';
+import { cmdUpdate } from './update.js';
+import { DiscordStation } from '../stations/discord/index.js';
+import { TelegramStation } from '../stations/telegram/index.js';
+import { fmtCapabilities, listStations } from '../stations/listing.js';
+import { sendToLine } from '../stations/send.js';
+import { errMsg } from '../log.js';
+import { CONFIG_ENV_FILE, configuredPlatforms, loadMetroEnv, readDotenv, STATE_DIR, writeDotenv } from '../paths.js';
 
 const USAGE = `metro — Telegram + Discord bridge for your Claude Code / Codex agent
 
@@ -178,7 +178,7 @@ async function main(): Promise<void> {
   const cmd = process.argv[2];
   if (cmd === '--version' || cmd === '-v') return void process.stdout.write(`${pkg.version}\n`);
   if (cmd === '--help' || cmd === '-h') return void process.stdout.write(USAGE);
-  if (!cmd) { await import('./dispatcher.js'); return; }
+  if (!cmd) { await import('../dispatcher.js'); return; }
 
   const handler = COMMANDS[cmd];
   if (!handler) { process.stderr.write(`unknown command '${cmd}'\n\n${USAGE}`); process.exit(1); }

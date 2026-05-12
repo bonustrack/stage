@@ -1,7 +1,7 @@
 /** `metro lines` — list active lines from scopes.json, sorted by recency. */
 
-import { listLines } from './helpers/scope-cache.js';
-import { loadMetroEnv } from './paths.js';
+import { listLines } from '../helpers/scope-cache.js';
+import { loadMetroEnv } from '../paths.js';
 
 type Row = { line: string; name: string | null; lastSeenAt: string | null; lastAgent: string | null; agents: string[] };
 
