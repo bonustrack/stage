@@ -234,10 +234,10 @@ CI runs typecheck + lint + build on every PR via [`.github/workflows/ci.yml`](.g
 1. **Generate a PAT** (the bot acts as this user; for testing your own account is fine):
    - **Fine-grained** at `github.com/settings/tokens?type=beta` — scoped to a test repo with **Issues: Read & write** (+ **Pull requests: Read & write**). Works for *your* repos; for org repos the org admin must enable fine-grained PATs.
    - **Classic** at `github.com/settings/tokens?type=classic` with the `repo` scope. Works for any repo you have access to, no org opt-in needed.
-2. **Set env vars** in `~/.config/metro/.env`:
+2. **Set env vars** in `~/.config/metro/.env`. Pick a `GITHUB_BOT_USERNAME` — it doesn't have to be a real GitHub user, just the literal string people will type to summon the bot. See the [solo-testing note](#solo-testing) below for why you may want it to differ from your own username.
    ```bash
    export METRO_TOKEN="$(openssl rand -hex 32)"
-   export GITHUB_BOT_USERNAME="metrobot"   # see solo-testing note below
+   export GITHUB_BOT_USERNAME="<your-bot-handle>"   # e.g. my-coding-bot
    export GITHUB_TOKEN="ghp_..."
    ```
 3. **Get a public URL** for the daemon. Easiest, free, single command:
@@ -246,14 +246,15 @@ CI runs typecheck + lint + build on every PR via [`.github/workflows/ci.yml`](.g
    # → https://<random>.trycloudflare.com
    ```
    Or use ngrok / smee — anything that exposes port `4321`.
-4. **Drop the workflow** into your test repo at `.github/workflows/metro.yml` (copy [`docs/github-action.yml`](docs/github-action.yml) — replace `metrobot` in the `if:` filter with your `GITHUB_BOT_USERNAME`).
+4. **Drop the workflow** into your test repo at `.github/workflows/metro.yml` (copy [`docs/github-action.yml`](docs/github-action.yml) — replace `<your-bot-handle>` in the `if:` filter with the value you chose for `GITHUB_BOT_USERNAME`).
 5. **Add two repo secrets** (*Settings → Secrets and variables → Actions*):
    - `METRO_URL` — the cloudflared/ngrok URL from step 3
    - `METRO_TOKEN` — the same value you set in `.env`
 6. **Run metro**: `METRO_LOG_LEVEL=debug metro` — look for `github station: listening for /dispatch`.
-7. **Open an issue** with body `@metrobot what does this repo do?` — within ~10s the bot comments back (as the token's owner).
+7. **Open an issue** with body `@<your-bot-handle> what does this repo do?` — within ~10s the bot comments back (as the token's owner).
 
-**Solo testing note.** Metro filters self-mentions (`sender === bot`) to prevent reply loops. If `GITHUB_BOT_USERNAME` equals your own username and you `@yourself`, the filter drops the event — you can't trigger the bot alone. Workaround: use a pseudo-name like `metrobot` (doesn't need to be a real GitHub user — it's just the string the regex matches in issue bodies). The bot still replies as the token owner.
+<a id="solo-testing"></a>
+**Solo testing note.** Metro filters self-mentions (`sender === bot`) to prevent reply loops. If `GITHUB_BOT_USERNAME` equals *your own* GitHub username and you `@yourself`, the filter drops the event — you can't trigger the bot alone. Workaround: set `GITHUB_BOT_USERNAME` to a pseudo-handle that doesn't match your username. It doesn't need to be a real GitHub user — it's just the literal string the regex looks for in issue bodies. The bot still replies as the token owner.
 
 **Common gotchas:**
 - Action run fails with `401 bad token` → `METRO_TOKEN` mismatch between repo secret and `.env`.

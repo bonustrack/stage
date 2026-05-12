@@ -5,7 +5,9 @@
 #   METRO_URL    — public URL of your daemon, e.g. https://<id>.trycloudflare.com
 #   METRO_TOKEN  — shared secret; must match METRO_TOKEN in your daemon's .env
 #
-# Replace `metrobot` below with your `GITHUB_BOT_USERNAME`.
+# REQUIRED: replace `<your-bot-handle>` below with your `GITHUB_BOT_USERNAME`
+# value from the daemon's .env. It's a literal string match against issue
+# and PR bodies — doesn't have to be a real GitHub user.
 
 name: metro
 
@@ -18,7 +20,7 @@ jobs:
   forward:
     runs-on: ubuntu-latest
     # Skip runner spin-up when there's no mention.
-    if: contains(toJSON(github.event), '@metrobot')
+    if: contains(toJSON(github.event), '@<your-bot-handle>')
     steps:
       - run: |
           curl -sS -X POST "$METRO_URL/dispatch" \
