@@ -15,6 +15,8 @@ type Entry = {
   lastSeenMessageId?: string;
   /** ISO timestamp of most-recent activity; used by `metro lines` to sort by recency. */
   lastSeenAt?: string;
+  /** Human-readable hint (channel name, chat title, issue title) populated opportunistically. */
+  name?: string;
   agents: Partial<Record<AgentKind, string>>;
   /** Most-recent answering agent; default for the next turn. */
   lastAgent?: AgentKind;
@@ -60,6 +62,12 @@ export function setLastSeen(line: Line, messageId: string): void {
   cache[line].lastSeenMessageId = messageId;
   cache[line].lastSeenAt = new Date().toISOString();
   write(cache);
+}
+
+export function setName(line: Line, name: string): void {
+  const cache = read(); const entry = ensure(cache, line);
+  if (entry.name === name) return;
+  entry.name = name; write(cache);
 }
 
 export const listLines = (): Array<{ line: Line; entry: Entry }> =>

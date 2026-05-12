@@ -140,8 +140,9 @@ export class DiscordStation implements ChatStation<DiscordMeta> {
     const text = [m.content, ...tags].filter(Boolean).join(' ').trim();
     if (!text && !attachments.length) return;
     log.info({ from: m.author.username, bot: c.user?.username, channel: m.channelId, text: text.slice(0, 80) }, 'discord: inbound');
+    const lineName = m.channel && 'name' in m.channel ? (m.channel as { name: string | null }).name ?? undefined : undefined;
     this.messageHandler({
-      station: 'discord', line: Line.discord(m.channelId), messageId: m.id, text, attachments,
+      station: 'discord', line: Line.discord(m.channelId), lineName, messageId: m.id, text, attachments,
       /** DMs are implicitly addressed to the bot — no @-mention required. */
       mentionsBot: !m.guildId || (c.user ? m.mentions.has(c.user.id) : false),
       meta: { inGuild: !!m.guildId },

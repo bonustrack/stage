@@ -31,7 +31,7 @@ export type TelegramMeta = { isPrivate: boolean; inForum: boolean; isForumTopic:
 type Entity = { type: string; offset: number; length: number; user?: { id: number } };
 type FileWithMime = { file_id: string; mime_type?: string };
 type RawMessage = {
-  message_id: number; chat?: { id: number; type?: string; is_forum?: boolean };
+  message_id: number; chat?: { id: number; type?: string; is_forum?: boolean; title?: string; first_name?: string };
   message_thread_id?: number; is_topic_message?: boolean;
   text?: string; caption?: string; entities?: Entity[]; caption_entities?: Entity[];
   photo?: { file_id: string }[]; document?: FileWithMime; voice?: FileWithMime; audio?: FileWithMime;
@@ -166,8 +166,10 @@ export class TelegramStation implements ChatStation<TelegramMeta> {
     if (!text && !attachments.length) return;
     const topicId = m.is_topic_message ? m.message_thread_id : undefined;
     log.info({ from: m.from?.username ? `@${m.from.username}` : m.from?.first_name, bot: this.botUsername ? `@${this.botUsername}` : undefined, chat: m.chat.id, topic: topicId, text: text.slice(0, 80) }, 'telegram: inbound');
+    /** Topic name isn't in normal updates; only set chat title for non-topic lines. */
     this.messageHandler({
       station: 'telegram', line: Line.telegram(m.chat.id, topicId), messageId: String(m.message_id),
+      lineName: topicId === undefined ? (m.chat.title ?? m.chat.first_name ?? undefined) : undefined,
       text, attachments, mentionsBot: this.detectMentionsBot(m),
       meta: { isPrivate: m.chat.type === 'private', inForum: !!m.chat.is_forum, isForumTopic: !!m.is_topic_message },
     });

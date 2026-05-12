@@ -40,6 +40,8 @@ export const asLine = (s: string): Line => s as Line;
 export interface InboundMessage<TMeta = Record<string, unknown>> {
   station: string;
   line: Line;
+  /** Human-readable hint (channel name, chat title, issue title) if the platform exposes one. */
+  lineName?: string;
   messageId: string;
   text: string;
   attachments: Attachment[];

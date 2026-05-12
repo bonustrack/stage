@@ -12,7 +12,7 @@ import { TelegramStation, type TelegramMeta } from './stations/telegram/index.js
 import type { AgentStation, ChatStation, InboundMessage, Line as LineT } from './stations/types.js';
 import {
   type AgentKind, getAgentThread, getLastAgent, linesForStation,
-  setAgentThread, setLastAgent, setLastSeen,
+  setAgentThread, setLastAgent, setLastSeen, setName,
 } from './helpers/scope-cache.js';
 import { StreamScheduler, type StreamAdapter } from './helpers/streaming.js';
 import { runTurn, triggerStop } from './helpers/turn.js';
@@ -64,11 +64,12 @@ function pickAgent(line: LineT | null, req: AgentKind | null): { kind: AgentKind
 }
 
 /** Resolve agent session for `line`, allocating if new, then run the turn. */
-async function dispatch(line: LineT, text: string, attachments: InboundMessage['attachments'], kind: AgentKind, messageId: string, adapter: StreamAdapter): Promise<void> {
+async function dispatch(line: LineT, text: string, attachments: InboundMessage['attachments'], kind: AgentKind, messageId: string, adapter: StreamAdapter, lineName?: string): Promise<void> {
   setLastSeen(line, messageId);
   let threadId = getAgentThread(line, kind);
   if (threadId) setLastAgent(line, kind);
   else { threadId = await available[kind]!.createThread(); setAgentThread(line, kind, threadId); log.info({ line, agent: kind, thread: threadId }, 'allocated agent session'); }
+  if (lineName) setName(line, lineName);
   await runTurn(available[kind]!, threadId, withContext(line, text), attachments, adapter, scheduler);
 }
 
@@ -92,15 +93,16 @@ async function routeInbound<TMeta>(m: InboundMessage<TMeta>, station: ChatStatio
 
   if (hasAgent) {
     const c = pickAgent(m.line, req);
-    return 'error' in c ? postErr(c.error) : dispatch(m.line, cleanText, m.attachments, c.kind, m.messageId, adapterFor(station, m.line));
+    return 'error' in c ? postErr(c.error) : dispatch(m.line, cleanText, m.attachments, c.kind, m.messageId, adapterFor(station, m.line), m.lineName);
   }
   if (!m.mentionsBot || bootstrapped.has(m.messageId)) return;
   bootstrapped.add(m.messageId);
   const choice = pickAgent(null, req);
   if ('error' in choice) return postErr(choice.error);
+  /** Bootstrap creates a new chat-side scope (Discord thread / Telegram topic) — we know its name from `cleanText`. */
   const line = bootstrap ? await bootstrap(m, cleanText).catch(err => { log.warn({ err: errMsg(err), station: station.name }, 'bootstrap failed'); return null; }) : m.line;
   if (!line) return;
-  await dispatch(line, cleanText, m.attachments, choice.kind, m.messageId, adapterFor(station, line));
+  await dispatch(line, cleanText, m.attachments, choice.kind, m.messageId, adapterFor(station, line), bootstrap ? makeThreadName(cleanText) : m.lineName);
 }
 
 const onDiscordInbound = (m: InboundMessage<DiscordMeta>): Promise<void> => {
