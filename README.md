@@ -217,17 +217,27 @@ bun run typecheck                        # ts
 bun run lint                             # eslint
 ```
 
-Source map: [`src/dispatcher.ts`](src/dispatcher.ts) is the entry; [`src/stations/`](src/stations/) holds each station's folder; [`src/helpers/`](src/helpers/) has the streaming/turn/scope-cache utilities; [`docs/uri-scheme.md`](docs/uri-scheme.md) specs the Line format.
+Source map:
+
+- [`src/cli/`](src/cli/) — the `metro` binary entry ([`cli/index.ts`](src/cli/index.ts)) plus subcommand handlers (`lines.ts`, `update.ts`).
+- [`src/dispatcher.ts`](src/dispatcher.ts) — the daemon: wires stations together, routes inbounds, installs `AGENTS.md` into state on each start.
+- [`src/stations/`](src/stations/) — one folder per station (`claude/`, `codex/`, `discord/`, `github/`, `telegram/`) plus the shared `types.ts`, `line.ts`, `listing.ts`, `send.ts`.
+- [`src/helpers/`](src/helpers/) — `streaming.ts`, `turn.ts`, `scope-cache.ts`, `async-queue.ts`.
+- [`docs/uri-scheme.md`](docs/uri-scheme.md) specs the Line format; [`docs/agents.md`](docs/agents.md) is the in-context skill copied to `$METRO_STATE_DIR/AGENTS.md`.
+
+CI runs typecheck + lint + build on every PR via [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 
 ---
 
 ## Testing GitHub
 
-1. **Pick a GitHub user** the bot acts as (your own account works) and generate a fine-grained PAT scoped to a test repo with **Issues: Read & write** (+ **Pull requests: Read & write** for PR comments).
+1. **Pick a GitHub user** the bot acts as (your own account works for testing) and generate a token. Two options:
+   - **Fine-grained PAT** at `github.com/settings/tokens?type=beta` — scoped to a test repo with **Issues: Read & write** (+ **Pull requests: Read & write** for PR comments). Works for *your* repos. For org repos, an org admin must enable fine-grained PATs in *Organization settings → Personal access tokens*.
+   - **Classic PAT** at `github.com/settings/tokens?type=classic` — pick the `repo` scope. Works for any repo you have access to, no org opt-in needed.
 2. **Set env vars**:
    ```bash
    export GITHUB_WEBHOOK_SECRET="$(openssl rand -hex 32)"
-   export GITHUB_BOT_USERNAME="your-github-user"
+   export GITHUB_BOT_USERNAME="metrobot"   # see solo-testing note below
    export GITHUB_TOKEN="ghp_..."
    ```
 3. **Tunnel** your local webhook port to the internet:
@@ -236,12 +246,14 @@ Source map: [`src/dispatcher.ts`](src/dispatcher.ts) is the entry; [`src/station
    ```
 4. **Add a webhook** on the test repo (*Settings → Webhooks*): payload URL = the smee channel, content type `application/json`, the same secret, events **Issues** + **Issue comments**.
 5. **Run metro**: `METRO_LOG_LEVEL=debug metro` — you should see `github station: listening`.
-6. **Open an issue** with body `@<bot-user> hello, what's this repo?` — the bot comments back.
+6. **Open an issue** with body `@metrobot hello, what's this repo?` — the bot comments back (as the token's owner).
+
+**Solo testing note.** Metro filters out self-mentions (`sender === bot`) to prevent reply loops. If you set `GITHUB_BOT_USERNAME` to your *own* username and then try to `@<yourself>` on an issue, the filter drops it — you can't trigger the bot alone. Workaround: use a pseudo-name like `metrobot` (doesn't need to be a real GitHub user — it's just a string match). The bot still replies as the token owner, but the filter passes because `your-username ≠ metrobot`.
 
 **Common gotchas:**
-- Webhook 401 → secret mismatch.
-- Webhook 200 but no reply → token lacks `issues:write`, or `GITHUB_BOT_USERNAME` ≠ the user whose token you're using.
-- Bot replies to its own comments → `GITHUB_BOT_USERNAME` must exactly match the commenting user (`sender === bot` is what stops the loop).
+- Webhook 401 → secret mismatch between `.env` and the webhook config.
+- Webhook 200 but no reply → token lacks `issues:write`, or `GITHUB_BOT_USERNAME` doesn't appear in the body verbatim (case-sensitive).
+- Bot replies in a loop → the bot's own comment somehow includes `@<bot-username>`; rare with the default prompt, but check `AGENTS.md` if it happens.
 
 ---
 
