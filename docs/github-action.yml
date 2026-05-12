@@ -1,0 +1,31 @@
+# Drop this into `.github/workflows/metro.yml` in any repo where you want
+# metro to handle @-mentions.
+#
+# Required repository secrets:
+#   METRO_URL    — public URL of your daemon, e.g. https://<id>.trycloudflare.com
+#   METRO_TOKEN  — shared secret; must match METRO_TOKEN in your daemon's .env
+#
+# Replace `metrobot` below with your `GITHUB_BOT_USERNAME`.
+
+name: metro
+
+on:
+  issues:        { types: [opened] }
+  issue_comment: { types: [created] }
+  pull_request:  { types: [opened] }
+
+jobs:
+  forward:
+    runs-on: ubuntu-latest
+    # Skip runner spin-up when there's no mention.
+    if: contains(toJSON(github.event), '@metrobot')
+    steps:
+      - run: |
+          curl -sS -X POST "$METRO_URL/dispatch" \
+            -H "X-Metro-Token: $METRO_TOKEN" \
+            -H "X-GitHub-Event: $GITHUB_EVENT_NAME" \
+            --data-binary "@$GITHUB_EVENT_PATH"
+        env:
+          METRO_URL:   ${{ secrets.METRO_URL }}
+          METRO_TOKEN: ${{ secrets.METRO_TOKEN }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}

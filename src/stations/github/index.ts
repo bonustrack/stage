@@ -1,6 +1,6 @@
-/** GitHub station: HMAC-verified webhook receiver + REST poster for issue/PR comments. */
+/** GitHub station: receives event dispatches from a GitHub Action workflow; replies via REST. */
 
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { timingSafeEqual } from 'node:crypto';
 import { createServer, type IncomingMessage, type Server } from 'node:http';
 import { errMsg, log } from '../../log.js';
 import * as Line from '../line.js';
@@ -20,7 +20,7 @@ export type GitHubMeta = {
 
 export const CAPABILITIES: Capabilities = { in: ['text'], out: ['text'], features: ['edit'] };
 
-type Config = { port: number; secret: string; botUsername: string };
+type Config = { port: number; token: string; botUsername: string };
 
 const targetOf = (line: LineT): { owner: string; repo: string; number: number } => {
   const t = Line.parseGithub(line);
@@ -62,13 +62,13 @@ export class GitHubStation implements ChatStation<GitHubMeta> {
 
   async start(): Promise<void> {
     const cfg = this.loadConfig();
-    if (!cfg) { log.info('github station: not configured (set GITHUB_WEBHOOK_SECRET + GITHUB_BOT_USERNAME)'); return; }
+    if (!cfg) { log.info('github station: not configured (set METRO_TOKEN + GITHUB_BOT_USERNAME + GITHUB_TOKEN)'); return; }
     this.server = createServer((req, res) => {
       void this.handle(req, cfg).then(({ status, body }) => { res.writeHead(status, { 'Content-Type': 'text/plain' }); res.end(body); })
         .catch(err => { log.warn({ err: errMsg(err) }, 'github: handler threw'); res.writeHead(500); res.end(); });
     });
     await new Promise<void>(r => { this.server!.listen(cfg.port, () => r()); });
-    log.info({ port: cfg.port, bot: `@${cfg.botUsername}` }, 'github station: listening');
+    log.info({ port: cfg.port, bot: `@${cfg.botUsername}` }, 'github station: listening for /dispatch');
   }
 
   async stop(): Promise<void> {
@@ -89,25 +89,24 @@ export class GitHubStation implements ChatStation<GitHubMeta> {
   }
 
   private loadConfig(): Config | null {
-    const secret = process.env.GITHUB_WEBHOOK_SECRET, botUsername = process.env.GITHUB_BOT_USERNAME;
-    if (!secret || !botUsername) return null;
-    return { port: Number(process.env.METRO_GITHUB_PORT ?? 4321), secret, botUsername };
+    const token = process.env.METRO_TOKEN, botUsername = process.env.GITHUB_BOT_USERNAME;
+    if (!token || !botUsername) return null;
+    return { port: Number(process.env.METRO_PORT ?? 4321), token, botUsername };
   }
 
   private async handle(req: IncomingMessage, cfg: Config): Promise<{ status: number; body: string }> {
-    if (req.method !== 'POST' || req.url !== '/webhook') return { status: 404, body: 'not found' };
-    const sig = req.headers['x-hub-signature-256'];
+    if (req.method !== 'POST' || req.url !== '/dispatch') return { status: 404, body: 'not found' };
+    const token = req.headers['x-metro-token'];
     const event = req.headers['x-github-event'];
-    if (typeof sig !== 'string' || typeof event !== 'string') return { status: 400, body: 'missing headers' };
+    if (typeof token !== 'string' || typeof event !== 'string') return { status: 400, body: 'missing headers' };
+    const given = Buffer.from(token), expected = Buffer.from(cfg.token);
+    if (given.length !== expected.length || !timingSafeEqual(given, expected)) return { status: 401, body: 'bad token' };
 
     let raw = Buffer.alloc(0);
     for await (const chunk of req) {
       raw = Buffer.concat([raw, chunk as Buffer]);
       if (raw.byteLength > MAX_PAYLOAD) return { status: 413, body: 'too large' };
     }
-
-    const expected = 'sha256=' + createHmac('sha256', cfg.secret).update(raw).digest('hex');
-    if (sig.length !== expected.length || !timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return { status: 401, body: 'bad signature' };
 
     let payload: GitHubPayload;
     try { payload = JSON.parse(raw.toString('utf8')) as GitHubPayload; }
@@ -123,30 +122,39 @@ export class GitHubStation implements ChatStation<GitHubMeta> {
 }
 
 type Repo = { full_name: string };
-type Issue = { number: number; title: string; body: string | null; html_url: string; pull_request?: unknown };
-type Comment = { body: string | null; html_url: string };
-type Sender = { login: string };
-type GitHubPayload = { action?: string; sender?: Sender; repository?: Repo; issue?: Issue; comment?: Comment };
+type IssueLike = { number: number; title: string; body: string | null; html_url: string };
+type GitHubPayload = {
+  action?: string; sender?: { login: string }; repository?: Repo;
+  issue?: IssueLike & { pull_request?: unknown };
+  pull_request?: IssueLike;
+  comment?: { body: string | null; html_url: string };
+};
 
-/** Issues + issue_comment events cover both Issues and PR top-level comments — PRs are issues under the hood. */
+/** Maps an event payload to `(body, url, issue-or-pr metadata)`. Returns null for unhandled events / non-mentions. */
 function extract(event: string, p: GitHubPayload, bot: string): InboundMessage<GitHubMeta> | null {
   const sender = p.sender?.login;
-  if (!sender || sender === bot || !p.issue || !p.repository) return null;
-  if (event === 'issues' && p.action === 'opened') return fromBody(p.issue.body, p.issue, p.repository, sender, bot, p.issue.html_url);
-  if (event === 'issue_comment' && p.action === 'created' && p.comment) return fromBody(p.comment.body, p.issue, p.repository, sender, bot, p.comment.html_url);
-  return null;
+  if (!sender || sender === bot || !p.repository) return null;
+  const r = pickSource(event, p);
+  if (!r) return null;
+  if (!r.body || !new RegExp(`@${escapeRe(bot)}\\b`, 'i').test(r.body)) return null;
+  const text = r.body.replace(new RegExp(`@${escapeRe(bot)}\\b`, 'gi'), '').trim();
+  if (!text) return null;
+  const [owner, repoName] = p.repository.full_name.split('/');
+  return {
+    station: 'github', line: Line.github(owner, repoName, r.isPR, r.number),
+    lineName: r.title, messageId: r.url, text, attachments: [], mentionsBot: true,
+    meta: { isPR: r.isPR, title: r.title, url: r.url, authorUsername: sender, repoFullName: p.repository.full_name, issueNumber: r.number },
+  };
 }
 
-function fromBody(body: string | null, issue: Issue, repo: Repo, author: string, bot: string, url: string): InboundMessage<GitHubMeta> | null {
-  if (!body || !new RegExp(`@${escapeRe(bot)}\\b`, 'i').test(body)) return null;
-  const text = body.replace(new RegExp(`@${escapeRe(bot)}\\b`, 'gi'), '').trim();
-  if (!text) return null;
-  const [owner, repoName] = repo.full_name.split('/');
-  return {
-    station: 'github', line: Line.github(owner, repoName, !!issue.pull_request, issue.number),
-    lineName: issue.title, messageId: url, text, attachments: [], mentionsBot: true,
-    meta: { isPR: !!issue.pull_request, title: issue.title, url, authorUsername: author, repoFullName: repo.full_name, issueNumber: issue.number },
-  };
+function pickSource(event: string, p: GitHubPayload): { body: string | null; url: string; number: number; title: string; isPR: boolean } | null {
+  if (event === 'issues' && p.action === 'opened' && p.issue)
+    return { body: p.issue.body, url: p.issue.html_url, number: p.issue.number, title: p.issue.title, isPR: false };
+  if (event === 'issue_comment' && p.action === 'created' && p.issue && p.comment)
+    return { body: p.comment.body, url: p.comment.html_url, number: p.issue.number, title: p.issue.title, isPR: !!p.issue.pull_request };
+  if (event === 'pull_request' && p.action === 'opened' && p.pull_request)
+    return { body: p.pull_request.body, url: p.pull_request.html_url, number: p.pull_request.number, title: p.pull_request.title, isPR: true };
+  return null;
 }
 
 const escapeRe = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

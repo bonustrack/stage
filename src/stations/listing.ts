@@ -20,8 +20,8 @@ export const listStations = (): StationRow[] => [
   { name: 'codex', kind: 'agent', configured: null, detail: 'requires `codex` on PATH', capabilities: codexCaps },
   { name: 'discord', kind: 'chat', configured: env('DISCORD_BOT_TOKEN'), detail: 'DISCORD_BOT_TOKEN', capabilities: discordCaps },
   { name: 'telegram', kind: 'chat', configured: env('TELEGRAM_BOT_TOKEN'), detail: 'TELEGRAM_BOT_TOKEN', capabilities: telegramCaps },
-  { name: 'github', kind: 'chat', configured: env('GITHUB_WEBHOOK_SECRET') && env('GITHUB_BOT_USERNAME') && env('GITHUB_TOKEN'),
-    detail: 'GITHUB_WEBHOOK_SECRET + GITHUB_BOT_USERNAME + GITHUB_TOKEN', capabilities: githubCaps },
+  { name: 'github', kind: 'chat', configured: env('METRO_TOKEN') && env('GITHUB_BOT_USERNAME') && env('GITHUB_TOKEN'),
+    detail: 'METRO_TOKEN + GITHUB_BOT_USERNAME + GITHUB_TOKEN', capabilities: githubCaps },
 ];
 
 export const fmtCapabilities = (c: Capabilities): string =>

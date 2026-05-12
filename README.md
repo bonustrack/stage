@@ -47,7 +47,7 @@ Everything in metro is a **station** with declared capabilities:
 | `codex`    | agent | text + image  | stream, tools, cancel, attachments  | `codex` CLI on PATH, logged in                                    |
 | `discord`  | chat  | text + image  | stream, edit, attachments           | `DISCORD_BOT_TOKEN` + Message Content Intent                      |
 | `telegram` | chat  | text + image  | stream, edit, attachments           | `TELEGRAM_BOT_TOKEN` + Manage Topics admin (for forums)           |
-| `github`   | chat  | text          | edit                                | `GITHUB_WEBHOOK_SECRET` + `GITHUB_BOT_USERNAME` + `GITHUB_TOKEN`  |
+| `github`   | chat  | text          | edit                                | `METRO_TOKEN` + `GITHUB_BOT_USERNAME` + `GITHUB_TOKEN` + Action  |
 
 Run `metro stations` to see the same matrix with live config status (`✓` configured, `✗` not).
 
@@ -94,18 +94,18 @@ Regular (non-forum) groups are skipped — without a per-thread boundary the rou
 
 `@<bot-user>` in an **issue body, issue comment, PR body, or PR comment** allocates a per-issue agent session and the bot replies as a comment on the same issue/PR. Streaming is simulated via `PATCH /issues/comments` edits to the bot's own comment. Each issue/PR holds its own session across follow-ups.
 
-Setup:
+GitHub events reach metro via a **GitHub Action** in the target repo — no webhook configuration, no HMAC secret. The Action forwards the event payload over HTTP to your running daemon. See [Testing GitHub](#testing-github) for the end-to-end recipe; the workflow template is at [`docs/github-action.yml`](docs/github-action.yml).
+
+Required env on the daemon:
 
 ```
-GITHUB_WEBHOOK_SECRET=<random>     # any high-entropy string
+METRO_TOKEN=<random>               # shared secret with the Action
 GITHUB_BOT_USERNAME=<github user>  # whose @-mentions trigger the bot
 GITHUB_TOKEN=<PAT>                 # issues:write (+ pull_requests:write for PRs)
-METRO_GITHUB_PORT=4321             # optional, default 4321
+METRO_PORT=4321                    # optional, default 4321
 ```
 
-In your repo's *Settings → Webhooks*: payload URL `https://<your-public-url>/webhook`, content type `application/json`, the secret matches `GITHUB_WEBHOOK_SECRET`, events: **Issues** + **Issue comments**. For local development tunnel with [smee.io](https://smee.io), [cloudflared](https://github.com/cloudflare/cloudflared), or [ngrok](https://ngrok.com).
-
-End-to-end recipe: [Testing GitHub](#testing-github).
+The daemon needs a public URL (cloudflared / ngrok / smee) so the Action can reach it.
 
 ---
 
@@ -171,7 +171,7 @@ Behaviors worth knowing:
 | Variable | Default | Description |
 |---|---|---|
 | `TELEGRAM_BOT_TOKEN`, `DISCORD_BOT_TOKEN` | — | Bot tokens. `metro setup` writes them here. |
-| `GITHUB_WEBHOOK_SECRET`, `GITHUB_BOT_USERNAME`, `GITHUB_TOKEN` | — | Enables GitHub. Token needs `issues:write` (+ `pull_requests:write` for PR comments). Webhook listens on `METRO_GITHUB_PORT` (default `4321`). |
+| `METRO_TOKEN`, `GITHUB_BOT_USERNAME`, `GITHUB_TOKEN` | — | Enables GitHub. `METRO_TOKEN` is the shared secret with the Action workflow. `GITHUB_TOKEN` needs `issues:write` (+ `pull_requests:write` for PR comments). Daemon listens on `METRO_PORT` (default `4321`). |
 | `METRO_CONFIG_DIR` | `~/.config/metro` | Where the global `.env` lives. |
 | `METRO_STATE_DIR` | `~/.cache/metro` | Lockfile, line cache, codex socket, telegram offset, claude session set. |
 | `METRO_LOG_LEVEL` | `info` | `trace` / `debug` / `info` / `warn` / `error` / `fatal`. |
@@ -231,29 +231,35 @@ CI runs typecheck + lint + build on every PR via [`.github/workflows/ci.yml`](.g
 
 ## Testing GitHub
 
-1. **Pick a GitHub user** the bot acts as (your own account works for testing) and generate a token. Two options:
-   - **Fine-grained PAT** at `github.com/settings/tokens?type=beta` — scoped to a test repo with **Issues: Read & write** (+ **Pull requests: Read & write** for PR comments). Works for *your* repos. For org repos, an org admin must enable fine-grained PATs in *Organization settings → Personal access tokens*.
-   - **Classic PAT** at `github.com/settings/tokens?type=classic` — pick the `repo` scope. Works for any repo you have access to, no org opt-in needed.
-2. **Set env vars**:
+1. **Generate a PAT** (the bot acts as this user; for testing your own account is fine):
+   - **Fine-grained** at `github.com/settings/tokens?type=beta` — scoped to a test repo with **Issues: Read & write** (+ **Pull requests: Read & write**). Works for *your* repos; for org repos the org admin must enable fine-grained PATs.
+   - **Classic** at `github.com/settings/tokens?type=classic` with the `repo` scope. Works for any repo you have access to, no org opt-in needed.
+2. **Set env vars** in `~/.config/metro/.env`:
    ```bash
-   export GITHUB_WEBHOOK_SECRET="$(openssl rand -hex 32)"
+   export METRO_TOKEN="$(openssl rand -hex 32)"
    export GITHUB_BOT_USERNAME="metrobot"   # see solo-testing note below
    export GITHUB_TOKEN="ghp_..."
    ```
-3. **Tunnel** your local webhook port to the internet:
+3. **Get a public URL** for the daemon. Easiest, free, single command:
    ```bash
-   npx smee-client --target http://localhost:4321/webhook --url <https://smee.io/your-channel>
+   cloudflared tunnel --url http://localhost:4321
+   # → https://<random>.trycloudflare.com
    ```
-4. **Add a webhook** on the test repo (*Settings → Webhooks*): payload URL = the smee channel, content type `application/json`, the same secret, events **Issues** + **Issue comments**.
-5. **Run metro**: `METRO_LOG_LEVEL=debug metro` — you should see `github station: listening`.
-6. **Open an issue** with body `@metrobot hello, what's this repo?` — the bot comments back (as the token's owner).
+   Or use ngrok / smee — anything that exposes port `4321`.
+4. **Drop the workflow** into your test repo at `.github/workflows/metro.yml` (copy [`docs/github-action.yml`](docs/github-action.yml) — replace `metrobot` in the `if:` filter with your `GITHUB_BOT_USERNAME`).
+5. **Add two repo secrets** (*Settings → Secrets and variables → Actions*):
+   - `METRO_URL` — the cloudflared/ngrok URL from step 3
+   - `METRO_TOKEN` — the same value you set in `.env`
+6. **Run metro**: `METRO_LOG_LEVEL=debug metro` — look for `github station: listening for /dispatch`.
+7. **Open an issue** with body `@metrobot what does this repo do?` — within ~10s the bot comments back (as the token's owner).
 
-**Solo testing note.** Metro filters out self-mentions (`sender === bot`) to prevent reply loops. If you set `GITHUB_BOT_USERNAME` to your *own* username and then try to `@<yourself>` on an issue, the filter drops it — you can't trigger the bot alone. Workaround: use a pseudo-name like `metrobot` (doesn't need to be a real GitHub user — it's just a string match). The bot still replies as the token owner, but the filter passes because `your-username ≠ metrobot`.
+**Solo testing note.** Metro filters self-mentions (`sender === bot`) to prevent reply loops. If `GITHUB_BOT_USERNAME` equals your own username and you `@yourself`, the filter drops the event — you can't trigger the bot alone. Workaround: use a pseudo-name like `metrobot` (doesn't need to be a real GitHub user — it's just the string the regex matches in issue bodies). The bot still replies as the token owner.
 
 **Common gotchas:**
-- Webhook 401 → secret mismatch between `.env` and the webhook config.
-- Webhook 200 but no reply → token lacks `issues:write`, or `GITHUB_BOT_USERNAME` doesn't appear in the body verbatim (case-sensitive).
-- Bot replies in a loop → the bot's own comment somehow includes `@<bot-username>`; rare with the default prompt, but check `AGENTS.md` if it happens.
+- Action run fails with `401 bad token` → `METRO_TOKEN` mismatch between repo secret and `.env`.
+- Action run succeeds, daemon logs nothing → `GITHUB_BOT_USERNAME` doesn't appear in the body verbatim (case-sensitive); or the workflow `if:` filter is screening it out.
+- Action run fails to reach the daemon → tunnel down, or `METRO_URL` secret has a trailing slash / path; should be the bare origin, metro appends `/dispatch`.
+- Bot replies but token rejected when posting → `GITHUB_TOKEN` lacks `issues:write`; regenerate with `repo` (classic) or full Issues/PRs write (fine-grained).
 
 ---
 
@@ -263,7 +269,7 @@ CI runs typecheck + lint + build on every PR via [`.github/workflows/ci.yml`](.g
 - **Per-agent histories are separate.** `with codex` mid-line starts a fresh Codex session; it doesn't see what Claude saw, and vice versa.
 - **Telegram non-forum groups are skipped.** No thread boundary to scope on. DMs and forum topics work normally.
 - **Telegram bot privacy is on by default**, which can block `@`-mentions in groups. Disable via [@BotFather](https://t.me/BotFather) → Bot Settings → Group Privacy, then kick + re-invite.
-- **GitHub needs a public URL.** Webhooks are HMAC-verified, so a leaked URL only lets attackers spam rejected POSTs — but use a high-entropy `GITHUB_WEBHOOK_SECRET`.
+- **GitHub needs a public URL.** The Action posts events to your daemon over the internet. Authentication is a shared bearer token (`METRO_TOKEN`) — use a high-entropy value, since a leak would let anyone synthesize fake events.
 - **Pre-1.0 line URIs aren't migrated.** Older `discord:ID` / `telegram:CHAT:TOPIC` keys in `scopes.json` are ignored after upgrade.
 
 ---
