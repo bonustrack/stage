@@ -109,8 +109,7 @@ export class TelegramStation implements ChatStation<TelegramMeta> {
 
   async edit(line: LineT, messageId: string, text: string, opts?: SendOpts): Promise<void> {
     const { chatId } = targetOf(line);
-    const base = { chat_id: chatId, message_id: Number(messageId), ...NO_PREVIEW,
-      reply_markup: opts?.stopId ? stopButtonMarkup(opts.stopId) : { inline_keyboard: [] } };
+    const base = { chat_id: chatId, message_id: Number(messageId), ...NO_PREVIEW, reply_markup: opts?.stopId ? stopButtonMarkup(opts.stopId) : { inline_keyboard: [] } };
     const skipNoop = (err: unknown): boolean => errMsg(err).includes('message is not modified');
     try { await tg('editMessageText', { ...base, text: mdToTelegramHtml(text), parse_mode: 'HTML' }); }
     catch (err) {
