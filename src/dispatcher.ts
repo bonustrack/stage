@@ -46,7 +46,7 @@ function emit(event: Event): void {
     appendHistory({
       id: event.id, ts: event.ts, kind: 'inbound', station: event.station, line: event.line,
       from: event.from, fromName: event.fromName, to: agentSelf(), text: event.text,
-      platformMessageId: event.messageId,
+      platformMessageId: event.messageId, payload: event.payload,
     });
   } else if (event.type === 'notification') {
     appendHistory({

@@ -25,6 +25,8 @@ export interface HistoryEntry {
   emoji?: string;
   platformMessageId?: string;
   replyTo?: string;
+  /** Station-native raw message — only set on inbound. Shape matches `InboundMessage.payload`. */
+  payload?: unknown;
 }
 
 const FILE = join(STATE_DIR, 'history.jsonl');
