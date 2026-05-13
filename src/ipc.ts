@@ -22,7 +22,8 @@ type Handler = (req: IpcRequest) => Promise<IpcResponse> | IpcResponse;
 
 export function startIpcServer(handler: Handler): Server {
   if (existsSync(SOCKET_PATH)) { try { unlinkSync(SOCKET_PATH); } catch { /* ignore */ } }
-  const server = createServer(socket => handleConnection(socket, handler));
+  /** allowHalfOpen: any `await` in the handler races Node's auto-end-on-client-FIN, dropping the response. */
+  const server = createServer({ allowHalfOpen: true }, s => handleConnection(s, handler));
   server.on('error', err => log.warn({ err: errMsg(err) }, 'ipc server error'));
   server.listen(SOCKET_PATH, () => log.debug({ path: SOCKET_PATH }, 'ipc socket listening'));
   return server;
