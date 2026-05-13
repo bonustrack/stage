@@ -60,19 +60,19 @@ Every line on stdout is one JSON object. Each event carries:
 
 ### `payload` by station
 
-`payload` is the raw platform message. Narrow on `event.station`:
+`payload` is the platform's native message shape. Narrow on `event.station`:
 
-- **`discord`** — raw API `Message`, with `referenced_message` inline (auto-fetched on replies).
-- **`telegram`** — raw Bot API `Message`, with `reply_to_message` inline.
+- **`discord`** — discord.js `Message.toJSON()`: camelCase fields (`channelId`, `guildId`, `content`, `author`, `mentions: { users[], roles[], everyone }`, `attachments[]`, `reference`, …). Collections come back as **arrays of IDs**. `referencedMessage` is added inline on replies (auto-fetched).
+- **`telegram`** — raw Bot API `Message` (snake_case): `{ message_id, chat, from, text, caption, entities[], photo[], document, voice, audio, reply_to_message, … }`. `reply_to_message` is inline on replies.
 
-Use it for anything the envelope doesn't surface — mentions, reply chains, embeds, entities.
+Use `payload` for anything the envelope doesn't surface — mentions, reply chains, embeds, entities.
 
 ## Detecting "is this for me?"
 
-Derive from `payload`. Bot id per station lives in `$METRO_STATE_DIR/bot-ids.json`.
+Derive from `payload`. Bot id per station is cached in `$METRO_STATE_DIR/bot-ids.json` (`{discord:"<userId>", telegram:"<userId>"}`, written by the daemon on start).
 
-- **discord** — DM when `payload.guild_id == null`; otherwise pinged when any `payload.mentions[].id` is the bot id.
-- **telegram** — DM when `payload.chat.type === 'private'`; otherwise pinged when an entity in `payload.entities` is `{type:"mention"}` matching `@<bot-username>` or `{type:"text_mention", user:{id:<bot-id>}}`.
+- **discord** — DM when `payload.guildId == null`; otherwise pinged when `payload.mentions.users.includes(<bot-id>)`.
+- **telegram** — DM when `payload.chat.type === 'private'`; otherwise pinged when any entity in `payload.entities` (or `caption_entities`) is `{type:"mention"}` matching `@<bot-username>` or `{type:"text_mention", user:{id:<bot-id>}}`.
 
 Default: only reply on DM or ping; otherwise stay silent or `metro react` to ack.
 

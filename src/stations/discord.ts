@@ -12,8 +12,8 @@ import {
   type InboundMessage, type Line as LineT, type SendOpts,
 } from './index.js';
 
-/** Raw Discord API message via discord.js `toJSON()` + auto-fetched `referenced_message`. */
-export type DiscordPayload = Record<string, unknown> & { referenced_message?: unknown };
+/** discord.js `Message.toJSON()` output + auto-fetched `referencedMessage` on replies. */
+export type DiscordPayload = Record<string, unknown> & { referencedMessage?: unknown };
 
 const API_BASE = 'https://discord.com/api/v10';
 const SUPPRESS_EMBEDS = 1 << 2;
@@ -210,8 +210,8 @@ export class DiscordStation implements ChatStation<DiscordPayload> {
     const lineName = m.channel && 'name' in m.channel
       ? (m.channel as { name: string | null }).name ?? undefined : undefined;
     const payload = m.toJSON() as DiscordPayload;
-    if (!payload.referenced_message && m.reference?.messageId) {
-      try { payload.referenced_message = (await m.fetchReference()).toJSON(); }
+    if (m.reference?.messageId) {
+      try { payload.referencedMessage = (await m.fetchReference()).toJSON(); }
       catch (err) { log.debug({ err: errMsg(err) }, 'discord: fetchReference failed'); }
     }
     this.messageHandler({

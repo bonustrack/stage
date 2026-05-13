@@ -12,7 +12,8 @@ $ Monitor( … metro's stdout … )
 
 >>> {"type":"inbound","station":"discord","line":"metro://discord/123…","messageId":"9876",
      "text":"@bot we got a 5xx spike from /v1/sync. Look?",
-     "payload":{"content":"<@…> we got a 5xx spike from /v1/sync. Look?","mentions":{"users":[{"id":"<bot-id>","username":"bot"}],…},"referencedMessage":null,…}}
+     "payload":{"channelId":"123…","guildId":"456…","content":"<@…> we got a 5xx spike…",
+                "mentions":{"users":["<bot-id>"],"roles":[],"everyone":false},…}}
 
   [I'd run git log + read services/sync.ts, then…]
   Bash: metro reply metro://discord/123… 9876 "three deploys in the last 24h…"
