@@ -55,10 +55,6 @@ export interface ChatStation<TMeta = Record<string, unknown>> {
 
 export type FetchedMessage = { messageId: string; author: string; text: string; timestamp: string };
 
-export type Event =
-  | (InboundMessage<unknown> & { type: 'inbound' })
-  | { type: 'notification'; id: string; ts: string; line: Line; from?: Line; text: string };
-
 const PREFIX = 'metro://';
 const build = (station: string, ...seg: (string | number)[]): Line =>
   asLine(`${PREFIX}${station}/${seg.map(String).join('/')}`);

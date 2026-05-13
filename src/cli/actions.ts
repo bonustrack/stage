@@ -45,7 +45,7 @@ function richOpts(f: Flags): RichOpts {
 /** Append an outbound action to history.jsonl; pass `to` = the original sender when replying/reacting. */
 function logOutbound(
   f: Flags, kind: HistoryKind, line: LineT, text: string | undefined,
-  platformMessageId: string, replyTo?: string, _opts?: RichOpts, emoji?: string, to?: LineT,
+  messageId: string, replyTo?: string, _opts?: RichOpts, emoji?: string, to?: LineT,
 ): string {
   const id = mintId();
   const station = Line.station(line) ?? '?';
@@ -53,7 +53,7 @@ function logOutbound(
   const from = fromOverride ? asLine(fromOverride) : agentSelf();
   appendHistory({
     id, ts: new Date().toISOString(), kind, station, line, from, to: to ?? line,
-    text, platformMessageId, replyTo, emoji,
+    text, messageId, replyTo, emoji,
   });
   return id;
 }

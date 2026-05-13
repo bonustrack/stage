@@ -15,6 +15,8 @@ export interface HistoryEntry {
   kind: HistoryKind;
   station: string;
   line: Line;
+  /** Optional channel/topic display name (e.g. "infra"). */
+  lineName?: string;
   /** Universal participant URI of the sender. */
   from: Line;
   /** Display name (`@alice` / `bonustrack_`) — optional, human-readable. */
@@ -23,7 +25,8 @@ export interface HistoryEntry {
   to: Line;
   text?: string;
   emoji?: string;
-  platformMessageId?: string;
+  /** Platform-side message id (Discord snowflake, Telegram int). Distinct from universal `id`. */
+  messageId?: string;
   replyTo?: string;
   /** Station-native raw message — only set on inbound. Shape matches `InboundMessage.payload`. */
   payload?: unknown;
@@ -81,14 +84,14 @@ function matches(e: HistoryEntry, f: HistoryFilter): boolean {
 /** Find an entry by universal id OR platform message id. */
 export function lookupEntry(id: string): HistoryEntry | undefined {
   const entries = readHistory({ limit: 5_000 });
-  return entries.find(e => e.id === id || e.platformMessageId === id);
+  return entries.find(e => e.id === id || e.messageId === id);
 }
 
 /** Look up the platform messageId for a universal `msg_*` id; returns the input unchanged otherwise. */
 export function resolvePlatformId(id: string): string {
   if (!id.startsWith('msg_')) return id;
   const hit = lookupEntry(id);
-  if (hit?.platformMessageId) return hit.platformMessageId;
+  if (hit?.messageId) return hit.messageId;
   throw new Error(`unknown universal id: ${id} (run \`metro history --limit=50\` to see recent ids)`);
 }
 

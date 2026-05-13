@@ -31,14 +31,14 @@ Run `metro doctor` if anything seems off.
 
 ## Event shape
 
-Every event carries `id` (`msg_…`), `ts`, `from` (a universal participant URI), `fromName` (display name), `line` (conversation = `to`), and `messageId` (the platform-side id). `text` is a universal projection that includes `[image]` / `[file: …]` / `[voice]` / `[audio]` tags inline. `payload` carries the raw platform-native message object — shape varies per `station`.
+Every event is a **history entry** — the same record that's appended to `history.jsonl`. Fields: `kind` (`inbound`/`notification`/`outbound`/`edit`/`react`), `id` (`msg_…`), `ts`, `station`, `line` (conversation), `lineName?`, `from` (participant URI), `fromName?`, `to`, `text`, `messageId?` (platform-side id; inbound/outbound only), `payload?` (raw platform message; inbound only).
 
 ```json
-{"type":"inbound","id":"msg_aB3xY7zP","ts":"2026-05-14T12:00:00Z","station":"telegram","line":"metro://telegram/-100…/247","from":"metro://telegram/user/12345","fromName":"@alice","messageId":"4567","text":"hello [image]","lineName":"infra","payload":{"message_id":4567,"chat":{"id":-100,"type":"supergroup","is_forum":true},"from":{"id":12345,"username":"alice"},"text":"hello","entities":[{"type":"mention","offset":0,"length":6}],"photo":[{"file_id":"…"}],"reply_to_message":{"message_id":4500,"text":"earlier message","from":{"id":99,"username":"bob"}}}}
+{"kind":"inbound","id":"msg_aB3xY7zP","ts":"2026-05-14T12:00:00Z","station":"telegram","line":"metro://telegram/-100…/247","lineName":"infra","from":"metro://telegram/user/12345","fromName":"@alice","to":"metro://claude/agent","messageId":"4567","text":"hello [image]","payload":{"message_id":4567,"chat":{"id":-100,"type":"supergroup","is_forum":true},"from":{"id":12345,"username":"alice"},"text":"hello","entities":[{"type":"mention","offset":0,"length":6}],"photo":[{"file_id":"…"}],"reply_to_message":{"message_id":4500,"text":"earlier","from":{"id":99,"username":"bob"}}}}
 ```
 
 ```json
-{"type":"notification","id":"msg_pQ4r5sT0","ts":"…","line":"metro://claude/deploys","from":"metro://codex/ci","text":"deploy succeeded"}
+{"kind":"notification","id":"msg_pQ4r5sT0","ts":"…","station":"claude","line":"metro://claude/deploys","from":"metro://codex/ci","to":"metro://claude/deploys","text":"deploy succeeded"}
 ```
 
 ### `payload` by station
@@ -54,8 +54,8 @@ Both `from` and `to` are **participant URIs** (the conversation lives in `line`)
 
 When **you** call `metro send`/`reply`/`edit`/`react`, metro auto-stamps `from` to your runtime — `metro://claude/agent` (from `$CLAUDECODE`) or `metro://codex/agent` (from `$METRO_CODEX_RC`/`$CODEX_HOME`). Override with `--from=<uri>` or `$METRO_FROM`. When replying/reacting, `to` is auto-set to the original sender (history lookup).
 
-- `type: "inbound"` — a human (or another bot) posted on a chat platform.
-- `type: "notification"` — another agent called `metro notify`/`metro send` against your agent line. This is how Codex pings Claude Code and vice versa.
+- `kind: "inbound"` — a human (or another bot) posted on a chat platform.
+- `kind: "notification"` — another agent called `metro notify`/`metro send` against your agent line. This is how Codex pings Claude Code and vice versa.
 
 `text` may include `[image]` / `[voice]` / `[audio]` / `[file: <name>]` placeholders alongside the real text — non-image attachments are opaque markers, images can be materialized via `metro download`.
 

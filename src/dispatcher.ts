@@ -8,10 +8,10 @@ import { fileURLToPath } from 'node:url';
 import pkg from '../package.json' with { type: 'json' };
 import { DiscordStation } from './stations/discord.js';
 import { TelegramStation } from './stations/telegram.js';
-import { asLine, type Event, type InboundMessage } from './stations/index.js';
+import { asLine, Line, type InboundMessage } from './stations/index.js';
 import { CodexRC } from './codex-rc.js';
 import { startIpcServer, stopIpcServer } from './ipc.js';
-import { agentSelf, appendHistory, mintId } from './history.js';
+import { agentSelf, appendHistory, mintId, type HistoryEntry } from './history.js';
 import { noteSeen, saveBotId } from './cache.js';
 import { errMsg, log } from './log.js';
 import { acquireLock, configuredPlatforms, loadMetroEnv, STATE_DIR, requireConfiguredPlatform } from './paths.js';
@@ -36,36 +36,23 @@ codexRc?.start();
 const discord = new DiscordStation();
 const telegram = new TelegramStation();
 
-function emit(event: Event): void {
-  const json = JSON.stringify(event);
+function emit(entry: HistoryEntry): void {
+  const json = JSON.stringify(entry);
   process.stdout.write(json + '\n');
   codexRc?.push(json);
-  if ('lineName' in event) noteSeen(event.line, event.lineName);
-  else noteSeen(event.line);
-  if (event.type === 'inbound') {
-    appendHistory({
-      id: event.id, ts: event.ts, kind: 'inbound', station: event.station, line: event.line,
-      from: event.from, fromName: event.fromName, to: agentSelf(), text: event.text,
-      platformMessageId: event.messageId, payload: event.payload,
-    });
-  } else if (event.type === 'notification') {
-    appendHistory({
-      id: event.id, ts: event.ts, kind: 'notification',
-      station: event.line.replace(/^metro:\/\/([^/]+)\/.*$/, '$1'),
-      line: event.line, from: event.from ?? agentSelf(),
-      to: event.line, text: event.text,
-    });
-  }
+  noteSeen(entry.line, entry.lineName);
+  appendHistory(entry);
 }
 
-const onInbound = (m: InboundMessage): void => emit({ type: 'inbound', ...m, to: agentSelf() });
+const onInbound = (m: InboundMessage): void => emit({ ...m, kind: 'inbound', to: agentSelf() });
 
 const ipc = startIpcServer(async req => {
   if (req.op === 'notify') {
+    const line = asLine(req.line);
     emit({
-      type: 'notification', id: mintId(), ts: new Date().toISOString(),
-      line: asLine(req.line),
-      from: req.from ? asLine(req.from) : agentSelf(), text: req.text,
+      id: mintId(), ts: new Date().toISOString(), kind: 'notification',
+      station: Line.station(line) ?? '?', line,
+      from: req.from ? asLine(req.from) : agentSelf(), to: line, text: req.text,
     });
     return { ok: true };
   }

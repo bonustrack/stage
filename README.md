@@ -10,7 +10,7 @@ Metro is a small daemon you launch from inside your agent. It connects to Discor
 $ metro &                              # backgrounded
 $ Monitor( … metro's stdout … )
 
->>> {"type":"inbound","station":"discord","line":"metro://discord/123…","messageId":"9876",
+>>> {"kind":"inbound","station":"discord","line":"metro://discord/123…","messageId":"9876",
      "text":"@bot we got a 5xx spike from /v1/sync. Look?",
      "payload":{"channelId":"123…","guildId":"456…","content":"<@…> we got a 5xx spike…",
                 "mentions":{"users":["<bot-id>"],"roles":[],"everyone":false},…}}
