@@ -47,14 +47,32 @@ Every line on stdout is one JSON object. Each event carries:
 - `fromName` — optional human-readable display name (`@alice`, `bonustrack_`)
 - `line` — the conversation URI (also the implicit `to`)
 - `messageId` — the platform-side id (Discord snowflake, Telegram int, …)
+- `text` — universal display projection. Includes `[image]`/`[file: …]`/`[voice]`/`[audio]` tags inline.
+- `payload` — raw platform-native message object. Shape varies per `station`.
 
 ```json
-{"type":"inbound","id":"msg_aB3xY7zP","ts":"2026-05-14T12:00:00Z","station":"telegram","line":"metro://telegram/-100…/247","from":"metro://telegram/user/12345","fromName":"@alice","messageId":"4567","text":"hi","attachmentNames":["[image]"],"mentionsBot":true,"meta":{"isPrivate":false,"inForum":true,"isForumTopic":true},"lineName":"infra"}
+{"type":"inbound","id":"msg_aB3xY7zP","ts":"2026-05-14T12:00:00Z","station":"telegram","line":"metro://telegram/-100…/247","from":"metro://telegram/user/12345","fromName":"@alice","messageId":"4567","text":"hi [image]","lineName":"infra","payload":{"message_id":4567,"chat":{"id":-100,"type":"supergroup","is_forum":true},"from":{"id":12345,"username":"alice"},"text":"hi","photo":[{"file_id":"…"}],"reply_to_message":{"message_id":4500,"text":"earlier","from":{"id":99,"username":"bob"}}}}
 ```
 
 ```json
 {"type":"notification","id":"msg_pQ4r5sT0","ts":"…","line":"metro://claude/deploys","from":"metro://codex/ci","text":"deploy green"}
 ```
+
+### `payload` by station
+
+- **`discord`** — projected discord.js `Message`: `{ id, channelId, guildId, content, author, attachments[], mentions: { everyone, users[], roles[] }, messageReference, referencedMessage }`. `referencedMessage` is auto-fetched on replies.
+- **`telegram`** — raw Bot API `Message`: `{ message_id, chat, from, text, caption, entities[], photo[], document, voice, audio, reply_to_message, … }`. `reply_to_message` is inline when the user replied to an older message.
+
+Narrow on `event.station` before reading `payload`. Use it for mentions, reply chains, custom embeds — anything the universal envelope doesn't carry.
+
+## Detecting "is this for me?"
+
+There is no `mentionsBot` field — derive it from `payload`. The bot's identity per station is cached in `$METRO_STATE_DIR/bot-ids.json` (written by the daemon on start: `{discord: "<userId>", telegram: "<userId>"}`).
+
+- **discord** — DM when `payload.guildId === null`; otherwise pinged when `payload.mentions.users` contains the bot id.
+- **telegram** — DM when `payload.chat.type === 'private'`; otherwise pinged when any entity in `payload.entities` (or `caption_entities`) is `{type:"mention"}` matching `@<bot-username>`, or `{type:"text_mention", user:{id:<bot-id>}}`.
+
+Default: only reply on DM or ping; otherwise stay silent or `metro react` to acknowledge.
 
 Both `from` and `to` are **participant URIs** (the conversation context lives in `line`):
 - `metro://<station>/user/<id>` — a person on a chat platform

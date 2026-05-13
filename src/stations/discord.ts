@@ -11,6 +11,7 @@ import {
   Line, type Button, type Capabilities, type ChatStation, type EditOpts, type FetchedMessage,
   type InboundMessage, type Line as LineT, type SendOpts,
 } from './index.js';
+import { buildDiscordPayload, type DiscordPayload } from './discord-payload.js';
 
 const API_BASE = 'https://discord.com/api/v10';
 const SUPPRESS_EMBEDS = 1 << 2;
@@ -82,8 +83,6 @@ const discordButtons = (rows: Button[][]): unknown[] => rows.map(row => ({
   type: 1, components: row.map(b => ({ type: 2, style: 5, label: b.text, url: b.url })),
 }));
 
-export type DiscordMeta = { inGuild: boolean };
-
 type RawAttachment = { id: string; filename: string; content_type?: string; url: string; size: number };
 type RawMessage = {
   id: string; content: string; timestamp: string;
@@ -102,14 +101,14 @@ const CAPS: Capabilities = {
   features: ['reply', 'send', 'edit', 'react', 'download', 'fetch'],
 };
 
-export class DiscordStation implements ChatStation<DiscordMeta> {
+export class DiscordStation implements ChatStation<DiscordPayload> {
   readonly name = 'discord';
   readonly capabilities = CAPS;
 
   private client: Client | null = null;
-  private messageHandler: (m: InboundMessage<DiscordMeta>) => void = () => {};
+  private messageHandler: (m: InboundMessage<DiscordPayload>) => void = () => {};
 
-  onMessage(handler: (m: InboundMessage<DiscordMeta>) => void): void {
+  onMessage(handler: (m: InboundMessage<DiscordPayload>) => void): void {
     this.messageHandler = handler;
   }
 
@@ -125,7 +124,7 @@ export class DiscordStation implements ChatStation<DiscordMeta> {
 
   async start(): Promise<void> {
     const c = this.getClient();
-    c.on(Events.MessageCreate, m => { void this.handleMessage(m, c); });
+    c.on(Events.MessageCreate, m => { void this.handleMessage(m); });
     c.on(Events.Error, err => log.error({ err: errMsg(err) }, 'discord error'));
     await c.login(process.env.DISCORD_BOT_TOKEN);
     await new Promise<void>(r => c.once(Events.ClientReady, () => r()));
@@ -195,28 +194,28 @@ export class DiscordStation implements ChatStation<DiscordMeta> {
     }));
   }
 
-  private async handleMessage(m: import('discord.js').Message, c: Client): Promise<void> {
+  private async handleMessage(m: import('discord.js').Message): Promise<void> {
     if (m.author.bot) return;
-    const attachmentNames: string[] = [];
+    const attachmentTags: string[] = [];
     for (const a of m.attachments.values()) {
-      if (a.contentType?.startsWith('image/')) attachmentNames.push('[image]');
-      else attachmentNames.push(a.contentType?.startsWith('audio/') ? `[audio: ${a.name}]` : `[file: ${a.name}]`);
+      if (a.contentType?.startsWith('image/')) attachmentTags.push('[image]');
+      else attachmentTags.push(a.contentType?.startsWith('audio/') ? `[audio: ${a.name}]` : `[file: ${a.name}]`);
     }
-    const text = m.content.trim();
-    if (!text && !attachmentNames.length) return;
+    const body = m.content.trim();
+    if (!body && !attachmentTags.length) return;
+    const text = [body, ...attachmentTags].filter(Boolean).join(' ');
     log.info(
-      { from: m.author.username, bot: c.user?.username, channel: m.channelId, text: text.slice(0, 80) },
+      { from: m.author.username, channel: m.channelId, text: text.slice(0, 80) },
       'discord: inbound',
     );
     const lineName = m.channel && 'name' in m.channel
       ? (m.channel as { name: string | null }).name ?? undefined : undefined;
+    const payload = await buildDiscordPayload(m);
     this.messageHandler({
       id: mintId(), ts: new Date(m.createdTimestamp).toISOString(),
       station: 'discord', line: Line.discord(m.channelId), lineName,
       from: Line.user('discord', m.author.id), fromName: m.author.username,
-      messageId: m.id, text, attachmentNames,
-      mentionsBot: !m.guildId || (c.user ? m.mentions.has(c.user.id) : false),
-      meta: { inGuild: !!m.guildId },
+      messageId: m.id, text, payload,
     });
   }
 }

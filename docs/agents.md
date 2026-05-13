@@ -31,15 +31,22 @@ Run `metro doctor` if anything seems off.
 
 ## Event shape
 
-Every event carries `id` (`msg_…`), `ts`, `from` (a universal participant URI), `fromName` (display name), `line` (conversation = `to`), and `messageId` (the platform-side id).
+Every event carries `id` (`msg_…`), `ts`, `from` (a universal participant URI), `fromName` (display name), `line` (conversation = `to`), and `messageId` (the platform-side id). `text` is a universal projection that includes `[image]` / `[file: …]` / `[voice]` / `[audio]` tags inline. `payload` carries the raw platform-native message object — shape varies per `station`.
 
 ```json
-{"type":"inbound","id":"msg_aB3xY7zP","ts":"2026-05-14T12:00:00Z","station":"telegram","line":"metro://telegram/-100…/247","from":"metro://telegram/user/12345","fromName":"@alice","messageId":"4567","text":"hello","attachmentNames":["[image]"],"mentionsBot":true,"meta":{"isPrivate":false,"inForum":true,"isForumTopic":true},"lineName":"infra"}
+{"type":"inbound","id":"msg_aB3xY7zP","ts":"2026-05-14T12:00:00Z","station":"telegram","line":"metro://telegram/-100…/247","from":"metro://telegram/user/12345","fromName":"@alice","messageId":"4567","text":"hello [image]","lineName":"infra","payload":{"message_id":4567,"chat":{"id":-100,"type":"supergroup","is_forum":true},"from":{"id":12345,"username":"alice"},"text":"hello","entities":[{"type":"mention","offset":0,"length":6}],"photo":[{"file_id":"…"}],"reply_to_message":{"message_id":4500,"text":"earlier message","from":{"id":99,"username":"bob"}}}}
 ```
 
 ```json
 {"type":"notification","id":"msg_pQ4r5sT0","ts":"…","line":"metro://claude/deploys","from":"metro://codex/ci","text":"deploy succeeded"}
 ```
+
+### `payload` by station
+
+- **`discord`** — projected discord.js `Message`: `{ id, channelId, guildId, content, author, attachments[], mentions: { everyone, users[], roles[] }, messageReference, referencedMessage }`. `referencedMessage` is auto-fetched on replies, so you see the message being replied to.
+- **`telegram`** — raw Bot API `Message`: `{ message_id, chat, from, text, caption, entities[], photo[], document, voice, audio, reply_to_message, … }`. `reply_to_message` is included inline when the user replied to an older message.
+
+Use `payload` to read fields the universal envelope doesn't carry (mentions, reply chains, custom embeds, sticker IDs, …). Narrow on `event.station` to type-discriminate.
 
 Both `from` and `to` are **participant URIs** (the conversation lives in `line`): `metro://<station>/user/<id>` for a person, `metro://claude/<topic>` / `metro://codex/<topic>` for an agent, `metro://<station>/<channelId>` as a fallback `to` when sending to a group with no single recipient.
 
@@ -54,6 +61,15 @@ When **you** call `metro send`/`reply`/`edit`/`react`, metro auto-stamps `from` 
 
 1. **Echo the event** to your visible output: `[<line>#<messageId>] <text>`. Both Monitor and Codex collapse tool output, so this echo is the only thing the user sees without expanding cards.
 2. **Decide and act** using the subcommands below.
+
+## Detecting "is this for me?"
+
+The envelope no longer carries `mentionsBot` — you derive it from `payload`. The bot's identity for each station is in `$METRO_STATE_DIR/bot-ids.json` (written by the daemon on start). Pattern per station:
+
+- **`discord`** — DM if `payload.guildId === null`; otherwise pinged if `payload.mentions.users` contains the bot id.
+- **`telegram`** — DM if `payload.chat.type === 'private'`; otherwise pinged if any entity in `payload.entities` (or `caption_entities`) is `{type:"mention"}` with text matching `@<bot-username>`, or `{type:"text_mention", user:{id:<bot-id>}}`.
+
+Default behavior: only reply on a DM or a ping; otherwise stay silent or `metro react` to acknowledge.
 
 ## Subcommands
 

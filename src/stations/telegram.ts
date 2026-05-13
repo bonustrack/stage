@@ -37,19 +37,20 @@ async function tg<T = unknown>(
   return json.result as T;
 }
 
-export type TelegramMeta = { isPrivate: boolean; inForum: boolean; isForumTopic: boolean };
-
 type Entity = { type: string; offset: number; length: number; user?: { id: number } };
 type Photo = { file_id: string };
 type Doc = { file_id: string; mime_type?: string; file_name?: string };
-type RawMessage = {
+/** Station-native `payload` for Telegram — the raw bot-API Message, passed through verbatim. */
+export type TelegramPayload = {
   message_id: number; date?: number;
   chat?: { id: number; type?: string; is_forum?: boolean; title?: string; first_name?: string };
   message_thread_id?: number; is_topic_message?: boolean;
   text?: string; caption?: string; entities?: Entity[]; caption_entities?: Entity[];
   photo?: Photo[]; document?: Doc; voice?: Doc; audio?: Doc;
   from?: { id?: number; is_bot?: boolean; username?: string; first_name?: string };
+  reply_to_message?: TelegramPayload;
 };
+type RawMessage = TelegramPayload;
 type RawUpdate = { update_id: number; message?: RawMessage };
 
 const isParseError = (err: unknown): boolean => errMsg(err).includes("can't parse entities");
@@ -76,20 +77,18 @@ const CAPS: Capabilities = {
   features: ['reply', 'send', 'edit', 'react', 'download', 'fetch'],
 };
 
-export class TelegramStation implements ChatStation<TelegramMeta> {
+export class TelegramStation implements ChatStation<TelegramPayload> {
   readonly name = 'telegram';
   readonly capabilities = CAPS;
 
-  private botUsername: string | null = null;
-  private botUserId: number | null = null;
   private pollOffset = 0;
   private pollAbort: AbortController | null = null;
-  private messageHandler: (m: InboundMessage<TelegramMeta>) => void = () => {};
+  private messageHandler: (m: InboundMessage<TelegramPayload>) => void = () => {};
   private offsetFile = join(STATE_DIR, 'telegram-offset.json');
   /** Snapshot recent inbounds in memory so `metro download <line> <id>` can resolve them. */
   private recent = new Map<string, RawMessage>();
 
-  onMessage(handler: (m: InboundMessage<TelegramMeta>) => void): void { this.messageHandler = handler; }
+  onMessage(handler: (m: InboundMessage<TelegramPayload>) => void): void { this.messageHandler = handler; }
 
   async start(): Promise<void> {
     await tg('deleteWebhook', { drop_pending_updates: false }).catch(() => {});
@@ -109,9 +108,7 @@ export class TelegramStation implements ChatStation<TelegramMeta> {
   async stop(): Promise<void> { this.pollAbort?.abort(); this.pollAbort = null; }
 
   async getMe(): Promise<{ id: number; username: string }> {
-    const me = await tg<{ id: number; username: string }>('getMe', {});
-    this.botUsername = me.username; this.botUserId = me.id;
-    return me;
+    return tg<{ id: number; username: string }>('getMe', {});
   }
 
   async send(line: LineT, text: string, opts?: SendOpts): Promise<string> {
@@ -195,33 +192,21 @@ export class TelegramStation implements ChatStation<TelegramMeta> {
   private dispatchUpdate(u: RawUpdate): void {
     const m = u.message;
     if (!m?.chat?.id || typeof m.message_id !== 'number' || m.from?.is_bot) return;
-    const attachmentNames = attachmentTags(m);
-    const text = m.text ?? m.caption ?? '';
-    if (!text && !attachmentNames.length) return;
+    const tags = attachmentTags(m);
+    const body = m.text ?? m.caption ?? '';
+    if (!body && !tags.length) return;
+    const text = [body, ...tags].filter(Boolean).join(' ');
     const topicId = m.is_topic_message ? m.message_thread_id : undefined;
     const fromName = m.from?.username ? `@${m.from.username}` : m.from?.first_name;
     const fromUri = Line.user('telegram', m.from?.id ?? 'unknown');
-    const bot = this.botUsername ? `@${this.botUsername}` : undefined;
-    log.info({ from: fromName, bot, chat: m.chat.id, topic: topicId, text: text.slice(0, 80) }, 'telegram: inbound');
+    log.info({ from: fromName, chat: m.chat.id, topic: topicId, text: text.slice(0, 80) }, 'telegram: inbound');
     if (this.recent.size >= 50) { const first = this.recent.keys().next().value; if (first) this.recent.delete(first); }
     this.recent.set(`${m.chat.id}:${m.message_id}`, m);
     this.messageHandler({
       id: mintId(), ts: new Date((m.date ?? Math.floor(Date.now() / 1000)) * 1000).toISOString(),
       station: 'telegram', line: Line.telegram(m.chat.id, topicId), messageId: String(m.message_id),
       lineName: topicId === undefined ? (m.chat.title ?? m.chat.first_name ?? undefined) : undefined,
-      from: fromUri, fromName, text, attachmentNames, mentionsBot: this.detectMentionsBot(m),
-      meta: { isPrivate: m.chat.type === 'private', inForum: !!m.chat.is_forum, isForumTopic: !!m.is_topic_message },
+      from: fromUri, fromName, text, payload: m,
     });
-  }
-
-  private detectMentionsBot(m: RawMessage): boolean {
-    if (m.chat?.type === 'private') return true;
-    const text = m.text ?? m.caption ?? '';
-    for (const e of m.entities ?? m.caption_entities ?? []) {
-      if (e.type === 'mention' && this.botUsername
-        && text.substring(e.offset, e.offset + e.length).toLowerCase() === `@${this.botUsername.toLowerCase()}`) return true;
-      if (e.type === 'text_mention' && e.user?.id === this.botUserId) return true;
-    }
-    return false;
   }
 }

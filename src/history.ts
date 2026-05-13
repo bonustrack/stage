@@ -25,8 +25,6 @@ export interface HistoryEntry {
   emoji?: string;
   platformMessageId?: string;
   replyTo?: string;
-  attachments?: string[];
-  meta?: Record<string, unknown>;
 }
 
 const FILE = join(STATE_DIR, 'history.jsonl');

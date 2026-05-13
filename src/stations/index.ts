@@ -7,7 +7,7 @@ export interface Capabilities { in: Modality[]; out: Modality[]; features: Featu
 export type Line = string & { readonly __line: unique symbol };
 export const asLine = (s: string): Line => s as Line;
 
-export interface InboundMessage<TMeta = Record<string, unknown>> {
+export interface InboundMessage<TPayload = unknown> {
   /** Universal metro ID (`msg_…`). Minted by the dispatcher on every inbound. */
   id: string;
   /** ISO timestamp from the platform (or `new Date().toISOString()` if unavailable). */
@@ -24,10 +24,10 @@ export interface InboundMessage<TMeta = Record<string, unknown>> {
   to?: Line;
   /** Platform-side message id (Discord snowflake, Telegram int, etc.). */
   messageId: string;
+  /** Universal display projection. Includes `[image]`/`[file: …]` tags inline. */
   text: string;
-  attachmentNames: string[];
-  mentionsBot: boolean;
-  meta: TMeta;
+  /** Station-native message object. Shape is per-station; consumers narrow on `station`. */
+  payload: TPayload;
 }
 
 export type Button = { text: string; url: string };
