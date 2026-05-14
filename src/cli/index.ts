@@ -12,6 +12,7 @@ import { cmdDoctor, cmdSetup, cmdUpdate } from './config.js';
 import {
   cmdDownload, cmdEdit, cmdFetch, cmdReact, cmdReply, cmdSend,
 } from './actions.js';
+import { cmdTunnel, cmdWebhook } from './webhook.js';
 import {
   flagOne, isJson, parseArgs, writeJson, type ExitErr, type Flags,
 } from './util.js';
@@ -38,6 +39,10 @@ Usage:
   metro fetch <line> [--limit=N]              Recent-message lookback (Discord only).
   metro history [--limit=N] [--line=…] [--station=…] [--kind=…] [--from=…] [--text=…] [--since=…]
                                               Read the universal message log (newest first).
+  metro webhook add <label> [--secret=…]      Register an HTTP receive endpoint (GitHub, Intercom, …).
+  metro webhook list | remove <id>            List or remove webhook endpoints.
+  metro tunnel setup <name> <hostname>        Configure a Cloudflare named tunnel (run cloudflared tunnel login first).
+  metro tunnel status                         Show current tunnel config.
   metro update                                Upgrade in place.
   metro --version | --help
 
@@ -138,6 +143,7 @@ const COMMANDS: Record<string, (positional: string[], flags: Flags) => Promise<v
   setup: cmdSetup, doctor: cmdDoctor, stations: cmdStations, lines: cmdLines,
   send: cmdSend, reply: cmdReply, edit: cmdEdit, react: cmdReact,
   download: cmdDownload, fetch: cmdFetch,
+  webhook: cmdWebhook, tunnel: cmdTunnel,
   history: cmdHistory, update: cmdUpdate,
 };
 

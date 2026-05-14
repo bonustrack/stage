@@ -66,6 +66,7 @@ Every line on stdout is one **history entry** — the same record appended to `h
 
 - **`discord`** — discord.js `Message.toJSON()`: camelCase fields (`channelId`, `guildId`, `content`, `author`, `mentions: { users[], roles[], everyone }`, `attachments[]`, `reference`, …). Collections come back as **arrays of IDs**. `referencedMessage` is added inline on replies (auto-fetched).
 - **`telegram`** — raw Bot API `Message` (snake_case): `{ message_id, chat, from, text, caption, entities[], photo[], document, voice, audio, reply_to_message, … }`. `reply_to_message` is inline on replies.
+- **`webhook`** — `{ headers, body }`. The provider lives in `headers['x-github-event']`, `headers['x-intercom-topic']`, etc. Full event payload is `body` (parsed JSON when possible). `text` is a short summary; always narrow on `body` for real routing.
 
 Use `payload` for anything the envelope doesn't surface — mentions, reply chains, embeds, entities.
 
@@ -155,6 +156,7 @@ Limits / quirks:
 | `telegram` | `metro://telegram/<chat-id>[/<topic-id>]` | `metro://telegram/-1001234567890/42` |
 | `claude`   | `metro://claude/<agent-id>/<session-id>`  | `metro://claude/9bfc7af0-…/50b00d11-…` |
 | `codex`    | `metro://codex/<agent-id>/<session-id>`   | `metro://codex/8119ecb1-…/01997d4b-…`  |
+| `webhook`  | `metro://webhook/<endpoint-id>`           | `metro://webhook/fwaCgTKJuLAjS2K0`     |
 
 The `messageId` is **not** part of the URI — it's a separate positional arg for `reply` / `edit` / `react` / `download`.
 

@@ -14,12 +14,13 @@ The URI parses cleanly with the WHATWG `URL` parser: `new URL(line)` gives `prot
 
 ## Registered stations
 
-| Station    | Kind  | Pattern                                      | Example                                                                |
-|------------|-------|----------------------------------------------|------------------------------------------------------------------------|
-| `discord`  | chat  | `metro://discord/<channel-id>`               | `metro://discord/1234567890123456789`                                  |
-| `telegram` | chat  | `metro://telegram/<chat-id>[/<topic-id>]`    | `metro://telegram/-1001234567890/42`                                   |
-| `claude`   | agent | `metro://claude/<agent-id>/<session-id>`     | `metro://claude/9bfc7af0-…/50b00d11-…`                                 |
-| `codex`    | agent | `metro://codex/<agent-id>/<session-id>`      | `metro://codex/8119ecb1-…/01997d4b-…`                                  |
+| Station    | Kind    | Pattern                                      | Example                                                                |
+|------------|---------|----------------------------------------------|------------------------------------------------------------------------|
+| `discord`  | chat    | `metro://discord/<channel-id>`               | `metro://discord/1234567890123456789`                                  |
+| `telegram` | chat    | `metro://telegram/<chat-id>[/<topic-id>]`    | `metro://telegram/-1001234567890/42`                                   |
+| `claude`   | agent   | `metro://claude/<agent-id>/<session-id>`     | `metro://claude/9bfc7af0-…/50b00d11-…`                                 |
+| `codex`    | agent   | `metro://codex/<agent-id>/<session-id>`      | `metro://codex/8119ecb1-…/01997d4b-…`                                  |
+| `webhook`  | service | `metro://webhook/<endpoint-id>`              | `metro://webhook/fwaCgTKJuLAjS2K0`                                     |
 
 Agent lines mirror the `<root>/<sub>` structure of `metro://telegram/<chat-id>/<topic-id>`: `<agent-id>` (the user's stable account id — same across devices) plays the role of `<chat-id>`, and `<session-id>` (one conversation) plays the role of `<topic-id>`. Both segments are derived per station (see [participants](#participants) below).
 
@@ -57,6 +58,29 @@ Override either segment with `METRO_AGENT_ID` / `METRO_AGENT_SESSION_ID` env var
 ### Agent registry
 
 The daemon persists every `(station, agent-id, session)` tuple it sees to `$METRO_STATE_DIR/agent-registry.json`. `metro stations` prints the count of seen agents and sessions per station. Run it to discover what's reachable rather than guessing topic names.
+
+## Webhook station
+
+The `webhook` station is a **receive-only HTTP endpoint** for third-party services (GitHub, Intercom, Fireflies, etc.). Each registered endpoint is one `metro://webhook/<endpoint-id>` line:
+
+- `metro webhook add <label> [--secret=<shared-secret>]` mints an id and prints the URL.
+- The dispatcher binds `127.0.0.1:8420` (override with `METRO_WEBHOOK_PORT`) and routes `POST /wh/<endpoint-id>` to an inbound event with `payload: { headers, body }`. `body` is parsed JSON when the request is JSON, raw string otherwise.
+- `messageId` falls back to `X-GitHub-Delivery` / `X-Request-ID` for idempotency tracking.
+- `text` is synthesized from `X-GitHub-Event` / `X-Intercom-Topic` plus method + path for at-a-glance routing; the agent narrows on `payload.body` for full event details.
+- If a `secret` was set on `metro webhook add`, requests must include a matching `X-Hub-Signature-256: sha256=<hex>` HMAC (GitHub/Intercom format) or they're rejected with 401.
+- Public reachability is provided by a Cloudflare named tunnel — see [Tunneling](#tunneling) below.
+
+## Tunneling
+
+Webhook providers need a public URL. Metro integrates with **Cloudflare named tunnels** (free, stable, account-scoped):
+
+```bash
+cloudflared tunnel login                                   # one-time OAuth (browser)
+metro tunnel setup metro webhook.yourdomain.com            # creates the tunnel + DNS route
+metro                                                      # daemon spawns `cloudflared tunnel run`
+```
+
+After setup, `metro webhook list` prints `https://webhook.yourdomain.com/wh/<id>` for each endpoint. The URL is stable across restarts (bound to the tunnel UUID in `~/.cloudflared/<uuid>.json`, not the cloudflared process). Tunnel config persists at `$METRO_STATE_DIR/tunnel.json`. Without setup, endpoints fall back to `http://127.0.0.1:8420/wh/<id>` (local-only, useful for curl testing).
 
 ## Message addressing
 

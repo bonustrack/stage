@@ -47,6 +47,7 @@ Every event is a **history entry** — the same record that's appended to `histo
 
 - **`discord`** — discord.js `Message.toJSON()`: camelCase fields (`channelId`, `guildId`, `content`, `author`, `mentions: { users[], roles[], everyone }`, `attachments[]`, `reference`, …). Collections come back as **arrays of IDs**. `referencedMessage` (also `toJSON()`-shaped) is added inline on replies (auto-fetched).
 - **`telegram`** — raw Bot API `Message` (snake_case): `{ message_id, chat, from, text, caption, entities[], photo[], document, voice, audio, reply_to_message, … }`. `reply_to_message` is inline on replies.
+- **`webhook`** — `{ headers: Record<string,string>, body: <parsed JSON | raw string> }`. Narrow further on the provider — GitHub sets `headers['x-github-event']` (`push`, `pull_request`, `issues`, …) and includes a `repository`/`sender` in body; Intercom sets `x-intercom-topic` etc. `text` is a short summary; full event is always in `payload.body`.
 
 Use `payload` for anything the envelope doesn't surface — mentions, reply chains, embeds, stickers, entities.
 
@@ -54,7 +55,7 @@ Both `from` and `to` are **participant URIs** (the conversation lives in `line`)
 
 When **you** call `metro send`/`reply`/`edit`/`react`, metro auto-stamps `from` to your runtime — `metro://claude/user/<orgId>` (when `$CLAUDECODE` is set; orgId comes from `claude auth status --json`) or `metro://codex/user/<accountId>` (when `$METRO_CODEX_RC`/`$CODEX_HOME` is set; accountId comes from `$CODEX_HOME/auth.json`, `tokens.account_id`). Both identities are account-scoped, not install-scoped: switch accounts with `claude auth login` / `codex login` and the next event uses the new id (within ~5 s for the daemon, immediately for one-shot CLI calls). Override with `--from=<uri>` or `$METRO_FROM`. When replying/reacting, `to` is auto-set to the original sender (history lookup).
 
-- `kind: "inbound"` — a human (or another bot) posted on a chat platform.
+- `kind: "inbound"` — a human (or another bot) posted on a chat platform **or a third-party service POSTed to a registered webhook endpoint** (`station: "webhook"`, `payload: { headers, body }`).
 - `kind: "notification"` — another agent called `metro send` against your agent line. This is how Codex pings Claude Code and vice versa.
 
 `text` may include `[image]` / `[voice]` / `[audio]` / `[file: <name>]` placeholders alongside the real text — non-image attachments are opaque markers, images can be materialized via `metro download`.

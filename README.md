@@ -68,8 +68,9 @@ Each endpoint is a **station** with declared capabilities:
 |------------|-------|---------------|-------------------------------------------------------|-------------------------------------------------------------|
 | `discord`  | chat  | text + image  | reply, send, edit, react, download, fetch             | `DISCORD_BOT_TOKEN` + Message Content Intent                |
 | `telegram` | chat  | text + image  | reply, send, edit, react, download                    | `TELEGRAM_BOT_TOKEN`                                        |
-| `claude`   | agent | text          | send, notify                                          | watches metro stdout via Claude Code's `Monitor`            |
-| `codex`    | agent | text          | send, notify                                          | set `METRO_CODEX_RC=ws://…` to push                         |
+| `claude`   | agent   | text          | send, notify                                          | watches metro stdout via Claude Code's `Monitor`            |
+| `codex`    | agent   | text          | send, notify                                          | set `METRO_CODEX_RC=ws://…` to push                         |
+| `webhook`  | service | text          | (receive-only)                                        | `metro webhook add <label>` + `metro tunnel setup` (CF)     |
 
 Run `metro stations` to see live config status (`✓` configured, `✗` not, `·` informational).
 
@@ -92,6 +93,7 @@ metro://telegram/-1001234567890                 # main chat / DM
 metro://telegram/-1001234567890/42              # forum topic 42
 metro://claude/9bfc7af0-…/50b00d11-…            # claude agent session
 metro://codex/8119ecb1-…/01997d4b-…             # codex agent session
+metro://webhook/fwaCgTKJuLAjS2K0                # HTTP webhook endpoint
 ```
 
 Anyone can post to a line via [`metro send`](#cli) — daemon required only for agent lines. Full grammar in [`docs/uri-scheme.md`](docs/uri-scheme.md).
@@ -119,6 +121,10 @@ metro download <line> <message_id> [--out=<dir>]
 metro fetch <line> [--limit=N]              Recent-message lookback (Discord only).
 metro history [--limit=N] [--line=…] [--station=…] [--kind=…] [--from=…] [--text=…] [--since=…]
                                             Universal message log (every inbound + outbound), newest first.
+metro webhook add <label> [--secret=…]      Register an HTTP receive endpoint (GitHub, Intercom, …).
+metro webhook list | remove <id>            List or remove webhook endpoints.
+metro tunnel setup <name> <hostname>        Configure a Cloudflare named tunnel for public webhook URLs.
+metro tunnel status                         Show current tunnel config.
 metro update                                Upgrade in place.
 ```
 
@@ -131,6 +137,8 @@ All commands accept `--json`. `reply` / `send` / `edit` read multi-line `<text>`
 - `lines.json` — line → last-seen / name cache (read by `metro lines`)
 - `agent-registry.json` — every `(station, agent-id, sessions[])` tuple metro has seen; surfaced under each agent row in `metro stations`
 - `stations/codex/session-id` — current codex-rc thread id (daemon writes on handshake; CLI processes read for `metro://codex/<agent-id>/<session>`)
+- `webhooks.json` — registered HTTP receive endpoints (id, label, optional shared secret)
+- `tunnel.json` — Cloudflare named-tunnel config (`{name, hostname}`); when present, the daemon spawns `cloudflared tunnel run`
 - `.tail-lock` — dispatcher pid
 - `metro.sock` — daemon IPC socket
 - `telegram-offset.json` — last processed update id
@@ -143,6 +151,7 @@ All commands accept `--json`. `reply` / `send` / `edit` read multi-line `<text>`
 |---|---|---|
 | `TELEGRAM_BOT_TOKEN`, `DISCORD_BOT_TOKEN` | — | Bot tokens. `metro setup` writes them here. |
 | `METRO_CODEX_RC` | — | Codex app-server URL (`ws://…`, `wss://…`, `unix:///…`). When set, the daemon pushes each event via JSON-RPC `turn/start`. |
+| `METRO_WEBHOOK_PORT` | `8420` | Local port the HTTP webhook listener binds to (always `127.0.0.1`; expose publicly via Cloudflare tunnel). |
 | `METRO_CONFIG_DIR` | `~/.config/metro` | Where the global `.env` lives. |
 | `METRO_STATE_DIR` | `~/.cache/metro` | Lockfile, line cache, IPC socket, telegram offset. |
 | `METRO_LOG_LEVEL` | `info` | `trace` / `debug` / `info` / `warn` / `error` / `fatal`. |
