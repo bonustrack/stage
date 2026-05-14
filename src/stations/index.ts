@@ -2,7 +2,7 @@
 
 import { tryClaudeAccountId } from './claude.js';
 import { tryCodexAccountId } from './codex.js';
-import { listAgents } from '../registry.js';
+import { listUsers } from '../registry.js';
 import { listEndpoints, webhookPort } from '../webhooks.js';
 import { loadTunnelConfig } from '../tunnel.js';
 
@@ -26,7 +26,7 @@ export interface InboundMessage<TPayload = unknown> {
   from: Line;
   /** Display name (`@alice`, `bonustrack_`) — for humans. Optional. */
   fromName?: string;
-  /** Universal participant URI of the recipient — the agent consuming metro. */
+  /** Universal participant URI of the recipient — the user consuming metro. */
   to?: Line;
   /** Platform-side message id (Discord snowflake, Telegram int, etc.). */
   messageId: string;
@@ -84,11 +84,11 @@ const PREFIX = 'metro://';
 const build = (station: string, ...seg: (string | number)[]): Line =>
   asLine(`${PREFIX}${station}/${seg.map(String).join('/')}`);
 
-/** Shared parser for `metro://{claude,codex}/<agentId>/<sessionId>`. Skips the `/user/…` participant URI. */
-function parseAgent(line: Line | string, station: 'claude' | 'codex'): { agentId: string; sessionId: string } | null {
+/** Shared parser for `metro://{claude,codex}/<userId>/<sessionId>`. Skips the `/user/…` participant URI. */
+function parseLocalSession(line: Line | string, station: 'claude' | 'codex'): { userId: string; sessionId: string } | null {
   const p = Line.parse(line);
   if (p?.station !== station || p.path[0] === 'user' || p.path.length < 2) return null;
-  return { agentId: p.path[0], sessionId: p.path[1] };
+  return { userId: p.path[0], sessionId: p.path[1] };
 }
 
 /** URI helpers. Lives on a const that doubles as the `Line` type's value-side namespace. */
@@ -127,40 +127,30 @@ export const Line = {
     const topicId = Number(p.path[1]);
     return Number.isFinite(topicId) ? { chatId, topicId } : null;
   },
-  parseClaude: (line: Line | string) => parseAgent(line, 'claude'),
-  parseCodex: (line: Line | string) => parseAgent(line, 'codex'),
+  parseClaude: (line: Line | string) => parseLocalSession(line, 'claude'),
+  parseCodex: (line: Line | string) => parseLocalSession(line, 'codex'),
   parseWebhook(line: Line | string): string | null {
     const p = Line.parse(line);
     return p?.station === 'webhook' && p.path.length === 1 ? p.path[0] : null;
   },
-  isAgent: (line: Line | string): boolean => {
+  isLocal: (line: Line | string): boolean => {
     const s = Line.station(line);
     return s === 'claude' || s === 'codex';
   },
 };
 
-/** `out: ['text']` + `send` reflects the IPC notify path (`metro send metro://<station>/...` re-emits on stdout). */
-const AGENT_CAPS: Capabilities = { in: ['text'], out: ['text'], features: ['send', 'notify'] };
-const CHAT_CAPS: Capabilities = {
-  in: ['text', 'image'],
-  out: ['text'],
-  features: ['reply', 'send', 'edit', 'react', 'download', 'fetch'],
-};
-const WEBHOOK_CAPS: Capabilities = { in: ['text'], out: [], features: [] };
-
 export type StationRow = {
   name: string;
-  kind: 'agent' | 'chat' | 'service';
   configured: boolean | null;
   detail: string;
   capabilities: Capabilities;
 };
 
 function seenSummary(station: 'claude' | 'codex'): string {
-  const agents = listAgents(station);
-  if (!agents.length) return '';
-  const sessions = agents.reduce((n, a) => n + a.sessions.length, 0);
-  return ` · seen ${agents.length} agent${agents.length === 1 ? '' : 's'}, ${sessions} session${sessions === 1 ? '' : 's'}`;
+  const users = listUsers(station);
+  if (!users.length) return '';
+  const sessions = users.reduce((n, u) => n + u.sessions.length, 0);
+  return ` · seen ${users.length} user${users.length === 1 ? '' : 's'}, ${sessions} session${sessions === 1 ? '' : 's'}`;
 }
 
 function claudeStationDetail(): string {
@@ -183,25 +173,30 @@ function codexStationDetail(): string {
 
 export const listStations = (): StationRow[] => [
   {
-    name: 'discord', kind: 'chat', capabilities: CHAT_CAPS,
+    name: 'discord',
+    capabilities: { in: ['text', 'image'], out: ['text'], features: ['reply', 'send', 'edit', 'react', 'download', 'fetch'] },
     configured: !!process.env.DISCORD_BOT_TOKEN, detail: 'DISCORD_BOT_TOKEN',
   },
   {
-    name: 'telegram', kind: 'chat', capabilities: CHAT_CAPS,
+    name: 'telegram',
+    capabilities: { in: ['text', 'image'], out: ['text'], features: ['reply', 'send', 'edit', 'react', 'download', 'fetch'] },
     configured: !!process.env.TELEGRAM_BOT_TOKEN, detail: 'TELEGRAM_BOT_TOKEN',
   },
   {
-    name: 'claude', kind: 'agent', capabilities: AGENT_CAPS,
+    name: 'claude',
+    capabilities: { in: ['text'], out: ['text'], features: ['send', 'notify'] },
     configured: !!process.env.CLAUDECODE,
     detail: claudeStationDetail(),
   },
   {
-    name: 'codex', kind: 'agent', capabilities: AGENT_CAPS,
+    name: 'codex',
+    capabilities: { in: ['text'], out: ['text'], features: ['send', 'notify'] },
     configured: !!(process.env.METRO_CODEX_RC || process.env.CODEX_HOME),
     detail: codexStationDetail(),
   },
   {
-    name: 'webhook', kind: 'service', capabilities: WEBHOOK_CAPS,
+    name: 'webhook',
+    capabilities: { in: ['text'], out: [], features: [] },
     configured: listEndpoints().length > 0,
     detail: webhookStationDetail(),
   },

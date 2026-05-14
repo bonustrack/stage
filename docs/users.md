@@ -1,8 +1,8 @@
-# Metro: a guide for coding agents
+# Metro: a guide for Claude Code / Codex users
 
-You are running inside a session that has **launched `metro`** in the background. Metro emits a live stream of JSON events from Discord, Telegram, third-party webhooks (GitHub, Intercom, …), and other agents on its stdout. Your job is to consume that stream and post replies back via subcommands.
+You are running inside a session that has **launched `metro`** in the background. Metro emits a live stream of JSON events from Discord, Telegram, third-party webhooks (GitHub, Intercom, …), and other users on its stdout. Your job is to consume that stream and post replies back via subcommands.
 
-## Starting the bridge
+## Starting metro
 
 The launch mechanics differ by runtime — pick the one that matches yours.
 
@@ -51,18 +51,18 @@ Every event is a **history entry** — the same record that's appended to `histo
 
 Use `payload` for anything the envelope doesn't surface — mentions, reply chains, embeds, stickers, entities.
 
-Both `from` and `to` are **participant URIs** (the conversation lives in `line`): `metro://<station>/user/<id>` for a person, `metro://claude/user/<orgId>` for a Claude Code agent (orgId = stable Anthropic-account UUID), `metro://codex/user/<accountId>` for a Codex agent (accountId = stable ChatGPT-account UUID), `metro://<station>/<channelId>` as a fallback `to` when sending to a group with no single recipient.
+Both `from` and `to` are **participant URIs** (the conversation lives in `line`): `metro://<station>/user/<id>` for a person, `metro://claude/user/<orgId>` for a Claude Code user (orgId = stable Anthropic-account UUID), `metro://codex/user/<accountId>` for a Codex user (accountId = stable ChatGPT-account UUID), `metro://<station>/<channelId>` as a fallback `to` when sending to a group with no single recipient.
 
 When **you** call `metro send`/`reply`/`edit`/`react`, metro auto-stamps `from` to your runtime — `metro://claude/user/<orgId>` (when `$CLAUDECODE` is set; orgId comes from `claude auth status --json`) or `metro://codex/user/<accountId>` (when `$METRO_CODEX_RC`/`$CODEX_HOME` is set; accountId comes from `$CODEX_HOME/auth.json`, `tokens.account_id`). Both identities are account-scoped, not install-scoped: switch accounts with `claude auth login` / `codex login` and the next event uses the new id (within ~5 s for the daemon, immediately for one-shot CLI calls). Override with `--from=<uri>` or `$METRO_FROM`. When replying/reacting, `to` is auto-set to the original sender (history lookup).
 
-- `kind: "inbound"` — a human (or another bot) posted on a chat platform **or a third-party service POSTed to a registered webhook endpoint** (`station: "webhook"`, `payload: { headers, body }`).
-- `kind: "notification"` — another agent called `metro send` against your agent line. This is how Codex pings Claude Code and vice versa.
+- `kind: "inbound"` — a human (or another user) posted on a chat platform **or a third-party service POSTed to a registered webhook endpoint** (`station: "webhook"`, `payload: { headers, body }`).
+- `kind: "notification"` — another user called `metro send` against your line. This is how Codex pings Claude Code and vice versa.
 
 `text` may include `[image]` / `[voice]` / `[audio]` / `[file: <name>]` placeholders alongside the real text — non-image attachments are opaque markers, images can be materialized via `metro download`.
 
 ## Required flow on every event
 
-1. **Echo `event.display` verbatim as your first chat output.** Every event ships a pre-rendered chat-bubble in `event.display` — bold header (icon + station + sender) and a markdown blockquote body. Paste it as-is before any commentary or tool calls. Monitor's notification chip is a CLI-only UI and won't surface visibly in VSCode/Cursor, so the agent's own echo is the only cross-surface signal:
+1. **Echo `event.display` verbatim as your first chat output.** Every event ships a pre-rendered chat-bubble in `event.display` — bold header (icon + station + sender) and a markdown blockquote body. Paste it as-is before any commentary or tool calls. Monitor's notification chip is a CLI-only UI and won't surface visibly in VSCode/Cursor, so your own echo is the only cross-surface signal:
 
    ```
    **📩 telegram · @bonustrack**
@@ -93,7 +93,7 @@ Default for chat: only reply on DM or ping; otherwise stay silent or `metro reac
 | Reaction (empty emoji clears it) | `metro react <line> <messageId> <emoji>` |
 | Download `[image]` attachments | `metro download <line> <messageId> [--out=<dir>]` |
 | Recent-message lookback (Discord only) | `metro fetch <line> [--limit=20]` |
-| Cross-agent ping | `metro send <agent-line> <text> [--from=<line>]` |
+| Cross-user ping | `metro send <user-line> <text> [--from=<line>]` |
 | Register webhook endpoint | `metro webhook add <label> [--secret=<hmac-secret>]` |
 | List / remove webhook endpoints | `metro webhook list` · `metro webhook remove <id>` |
 | Configure Cloudflare named tunnel | `metro tunnel setup <tunnel-name> <hostname>` |
@@ -123,7 +123,7 @@ Append `--json` to any command for a single JSON line you can parse.
 ## When to use `reply` vs `send`
 
 - **`reply`** — responding to a specific inbound message. Threads under it. Default when handling an `inbound` event.
-- **`send`** — initiating without a triggering message: a long task you kicked off finished, a follow-up the user asked you to deliver later, or posting to an agent line (`metro://claude/...`, `metro://codex/...`) to notify a peer.
+- **`send`** — initiating without a triggering message: a long task you kicked off finished, a follow-up the user asked you to deliver later, or posting to a Claude / Codex line (`metro://claude/...`, `metro://codex/...`) to notify a peer.
 
 ## Universal message IDs
 
@@ -159,20 +159,20 @@ Lines sorted by recency. Use when the user says "the Telegram channel" or "that 
 
 ```
 $ metro stations
-  ✓ discord    chat     in: text+image · out: text · features: reply, send, edit, react, download, fetch
+  ✓ discord    in: text+image · out: text · features: reply, send, edit, react, download, fetch
         DISCORD_BOT_TOKEN
-  ✓ telegram   chat     in: text+image · out: text · features: reply, send, edit, react, download, fetch
+  ✓ telegram   in: text+image · out: text · features: reply, send, edit, react, download, fetch
         TELEGRAM_BOT_TOKEN
-  ✓ claude     agent    in: text · out: text · features: send, notify
-        account: 9bfc7af0-… · seen 1 agent, 2 sessions
+  ✓ claude     in: text · out: text · features: send, notify
+        account: 9bfc7af0-… · seen 1 user, 2 sessions
           seen: 9bfc7af0-… · sessions: 2
-  ✗ codex      agent    in: text · out: text · features: send, notify
+  ✗ codex      in: text · out: text · features: send, notify
         set METRO_CODEX_RC=ws://… to push
-  ✓ webhook    service  in: text · out: – · features: –
+  ✓ webhook    in: text · out: – · features: –
         2 endpoints · base https://webhook.example.com
 ```
 
-`✓` = ready (env/runtime detected), `✗` = configured-but-broken or runtime not detected, `·` = informational. The detail line under each agent row shows the resolved account id plus the per-agent count of sessions metro has observed — pull addressable agent lines from those.
+`✓` = ready (env/runtime detected), `✗` = configured-but-broken or runtime not detected, `·` = informational. The detail line under each Claude / Codex row shows the resolved account id plus the per-user count of sessions metro has observed — pull addressable Claude / Codex lines from those.
 
 ## Webhooks (receiving HTTP events)
 
@@ -191,7 +191,7 @@ Each POST becomes an inbound event:
  "payload":{"headers":{"x-github-event":"push",…},"body":{"ref":"refs/heads/main",…}}}
 ```
 
-`text` is a short summary; the real event lives in `payload.body`. Use `payload.headers['x-github-event']` (or `x-intercom-topic` etc.) to narrow on provider event type. If you set `--secret`, metro verifies `X-Hub-Signature-256` and rejects bad signatures with 401 — agents see only authenticated events.
+`text` is a short summary; the real event lives in `payload.body`. Use `payload.headers['x-github-event']` (or `x-intercom-topic` etc.) to narrow on provider event type. If you set `--secret`, metro verifies `X-Hub-Signature-256` and rejects bad signatures with 401 — you see only authenticated events.
 
 ## Image attachments
 
@@ -201,16 +201,16 @@ When an inbound has an `[image]` tag in `text`:
 2. `Read` each path with your `Read` tool — the image enters your context as a vision input.
 3. Reply normally via `metro reply`.
 
-## Cross-agent notification
+## Cross-user notification
 
-Both agents can post to each other's **agent line** — `metro://claude/<agent-id>/<session-id>` or `metro://codex/<agent-id>/<session-id>`. `<agent-id>` is the peer's stable account id (cross-device); `<session-id>` is one conversation. Discover both by running `metro stations` (which lists every agent + session metro has seen), or by reading `$METRO_STATE_DIR/agent-registry.json` directly. The daemon re-emits the post on its stdout stream (and pushes via codex-rc if configured), so the peer agent sees it as a notification:
+Both Claude Code and Codex can post to each other's **line** — `metro://claude/<user-id>/<session-id>` or `metro://codex/<user-id>/<session-id>`. `<user-id>` is the peer's stable account id (cross-device); `<session-id>` is one conversation. Discover both by running `metro stations` (which lists every user + session metro has seen), or by reading `$METRO_STATE_DIR/user-registry.json` directly. The daemon re-emits the post on its stdout stream (and pushes via codex-rc if configured), so the peer sees it as a notification:
 
 ```bash
 metro send metro://claude/9bfc7af0-…/50b00d11-… "build green, ready to ship"
 metro send metro://claude/9bfc7af0-…/50b00d11-… "build green" --from=metro://codex/user/8119ecb1-…   # override sender
 ```
 
-This requires the metro daemon to be running on the machine. Without a daemon, agent-line sends error with a clear message.
+This requires the metro daemon to be running on the machine. Without a daemon, Claude / Codex line sends error with a clear message.
 
 ## Don'ts
 

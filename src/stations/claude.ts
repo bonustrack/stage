@@ -1,4 +1,4 @@
-/** Resolve the Claude Code agent identity (account id + session id). */
+/** Resolve the Claude Code user identity (account id + session id). */
 
 import { execFileSync } from 'node:child_process';
 
@@ -29,12 +29,12 @@ export function tryClaudeAccountId(): string | null {
   try { return claudeAccountId(); } catch { return null; }
 }
 
-/** Agent-id for the line URI: `METRO_AGENT_ID` override, else the account id. */
-export function claudeAgentId(): string {
-  return process.env.METRO_AGENT_ID || claudeAccountId();
+/** User-id for the line URI: `METRO_USER_ID` override, else the account id. */
+export function claudeUserId(): string {
+  return process.env.METRO_USER_ID || claudeAccountId();
 }
 
-/** Session: `CLAUDE_CODE_SESSION_ID` (stable across `--resume`). Override: `METRO_AGENT_SESSION_ID`. */
+/** Session: `CLAUDE_CODE_SESSION_ID` (stable across `--resume`). Override: `METRO_USER_SESSION_ID`. */
 export function claudeSessionId(): string | null {
-  return process.env.METRO_AGENT_SESSION_ID || process.env.CLAUDE_CODE_SESSION_ID || null;
+  return process.env.METRO_USER_SESSION_ID || process.env.CLAUDE_CODE_SESSION_ID || null;
 }

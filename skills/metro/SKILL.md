@@ -1,13 +1,13 @@
 ---
 name: metro
-description: Run the metro Telegram/Discord/webhook bridge in this session — launch `metro` in the background, watch its stdout for inbound JSON events, and act on each. Use when the user asks to start/run/launch metro, when you see JSON lines on stdout shaped `{"kind":"inbound","station":...,"line":"metro://...","messageId":...,"text":...}`, or when handling a chat/webhook reply/edit/react/send/download/fetch/notify.
+description: Run the metro Telegram/Discord/webhook relay in this session — launch `metro` in the background, watch its stdout for inbound JSON events, and act on each. Use when the user asks to start/run/launch metro, when you see JSON lines on stdout shaped `{"kind":"inbound","station":...,"line":"metro://...","messageId":...,"text":...}`, or when handling a chat/webhook reply/edit/react/send/download/fetch/notify.
 ---
 
-# Metro — running the Telegram / Discord / webhook bridge
+# Metro — running the Telegram / Discord / webhook relay
 
-Metro is a CLI bridge between this agent session and external sources: Telegram, Discord, and HTTP webhooks from third parties (GitHub, Intercom, Fireflies, …). You launch `metro` once when the user asks, then act on each inbound JSON line via `metro <subcommand>`.
+Metro is a CLI that relays between this session and external sources: Telegram, Discord, and HTTP webhooks from third parties (GitHub, Intercom, Fireflies, …). You launch `metro` once when the user asks, then act on each inbound JSON line via `metro <subcommand>`.
 
-## Starting the bridge
+## Starting metro
 
 When the user asks to run/start/launch metro:
 
@@ -47,7 +47,7 @@ Every line on stdout is one **history entry** — the same record appended to `h
 - `station` — `"discord"`, `"telegram"`, `"claude"`, `"codex"`, `"webhook"`
 - `line` — conversation URI; `lineName?` is the channel/topic display name (for webhooks: the label you gave it)
 - `from` / `fromName?` — sender participant URI + optional display name
-- `to` — recipient participant URI (agent for inbound, line for notification, original sender for replies/reacts)
+- `to` — recipient participant URI (local user for inbound, line for notification, original sender for replies/reacts)
 - `text` — universal display projection. Includes `[image]`/`[file: …]`/`[voice]`/`[audio]` tags inline.
 - `messageId?` — platform-side id (Discord snowflake, Telegram int). Set on inbound/outbound.
 - `payload?` — raw platform-native message object. Set on inbound only. Shape varies per `station`.
@@ -82,8 +82,8 @@ Default for chat: only reply on DM or ping; otherwise stay silent or `metro reac
 
 Both `from` and `to` are **participant URIs** (the conversation context lives in `line`):
 - `metro://<station>/user/<id>` — a person on a chat platform
-- `metro://claude/user/<orgId>` — a Claude Code agent (orgId = stable Anthropic-account UUID, same across devices for the same account)
-- `metro://codex/user/<accountId>` — a Codex agent (accountId = stable ChatGPT-account UUID, same across devices)
+- `metro://claude/user/<orgId>` — a Claude Code user (orgId = stable Anthropic-account UUID, same across devices for the same account)
+- `metro://codex/user/<accountId>` — a Codex user (accountId = stable ChatGPT-account UUID, same across devices)
 - `metro://webhook/<endpoint-id>` — a webhook endpoint (line + `from` are the same — no HTTP-side user identity)
 - `metro://<station>/<channelId>` — a channel (used as `to` for fresh sends to a group, where no single recipient)
 
@@ -91,8 +91,8 @@ When **you** send via `metro send`/`reply`/`edit`/`react`, metro auto-stamps `fr
 
 The `id` is the **canonical handle** for that message across all stations — store it if you want to refer back to it later.
 
-- `kind: "inbound"` — a human (or another bot) posted on a chat platform.
-- `kind: "notification"` — another agent called `metro send` against your agent line. This is how Codex pings Claude Code and vice versa.
+- `kind: "inbound"` — a human (or another user) posted on a chat platform.
+- `kind: "notification"` — another user called `metro send` against your line. This is how Codex pings Claude Code and vice versa.
 
 `text` may contain `[image]`, `[voice]`, `[audio]`, or `[file: <name>]` placeholders alongside the real text — non-image attachments are opaque markers; images can be materialized via `metro download`.
 
@@ -123,7 +123,7 @@ All take positional args (no `--to=`/`--text=` flags). Append `--json` to any fo
 | Reaction (empty emoji clears) | `metro react <line> <messageId> <emoji>` |
 | Download `[image]` attachments → paths | `metro download <line> <messageId> [--out=<dir>]` |
 | Recent channel history (Discord only) | `metro fetch <line> [--limit=20]` |
-| Ping another agent (cross-agent line) | `metro send metro://claude/<agent-id>/<session-id> <text> [--from=<line>]` |
+| Ping another user (cross-user line) | `metro send metro://claude/<user-id>/<session-id> <text> [--from=<line>]` |
 | Register webhook endpoint | `metro webhook add <label> [--secret=<hmac-secret>]` |
 | List / remove webhook endpoints | `metro webhook list` · `metro webhook remove <id>` |
 | Configure Cloudflare named tunnel | `metro tunnel setup <tunnel-name> <hostname>` |
@@ -151,13 +151,13 @@ metro edit <line> <id> "still working…" --buttons='[]'    # clears buttons
 Limits / quirks:
 - 20 MB per file (both platforms).
 - Telegram albums are single-type (all photos OR all documents in one album). Mixing kinds in one send still works — metro splits into two album messages and returns the first id.
-- Telegram drops `--buttons` when multiple attachments are sent (the bot API doesn't allow `reply_markup` on media groups).
+- Telegram drops `--buttons` when multiple attachments are sent (the Bot API doesn't allow `reply_markup` on media groups).
 - URL buttons only (no callback / interactive components yet).
 
 ## When to use `reply` vs `send`
 
 - **`reply`** — responding to a specific inbound message. Threads under it. Default for handling an `inbound` event.
-- **`send`** — initiating without a triggering message: a long task finished, a follow-up the user asked you to deliver later, or posting to an agent line (`metro://claude/...`, `metro://codex/...`) to notify a peer.
+- **`send`** — initiating without a triggering message: a long task finished, a follow-up the user asked you to deliver later, or posting to a Claude / Codex line (`metro://claude/...`, `metro://codex/...`) to notify a peer.
 
 ## Line URI scheme
 
@@ -167,8 +167,8 @@ Limits / quirks:
 |------------|-------------------------------------------|--------------------------------------|
 | `discord`  | `metro://discord/<channel-id>`            | `metro://discord/1234567890`         |
 | `telegram` | `metro://telegram/<chat-id>[/<topic-id>]` | `metro://telegram/-1001234567890/42` |
-| `claude`   | `metro://claude/<agent-id>/<session-id>`  | `metro://claude/9bfc7af0-…/50b00d11-…` |
-| `codex`    | `metro://codex/<agent-id>/<session-id>`   | `metro://codex/8119ecb1-…/01997d4b-…`  |
+| `claude`   | `metro://claude/<user-id>/<session-id>`   | `metro://claude/9bfc7af0-…/50b00d11-…` |
+| `codex`    | `metro://codex/<user-id>/<session-id>`    | `metro://codex/8119ecb1-…/01997d4b-…`  |
 | `webhook`  | `metro://webhook/<endpoint-id>`           | `metro://webhook/fwaCgTKJuLAjS2K0`     |
 
 The `messageId` is **not** part of the URI — it's a separate positional arg for `reply` / `edit` / `react` / `download`.
@@ -185,16 +185,16 @@ When an event's `text` contains `[image]`:
 
 `[voice]`, `[audio]`, and `[file: <name>]` are opaque — `metro download` only handles images. Acknowledge in text or ask the user to resend as a regular file.
 
-## Cross-agent notification
+## Cross-user notification
 
-Both agents can post to each other's "agent line":
+Both Claude Code and Codex can post to each other's line:
 
 ```bash
 metro send metro://claude/9bfc7af0-…/50b00d11-… "build green, ready to ship"
 metro send metro://codex/8119ecb1-…/01997d4b-… "build green" --from=metro://claude/user/9bfc7af0-…   # override sender
 ```
 
-The daemon re-emits the post on its stdout stream (and pushes via codex-rc if configured), so the peer agent sees a `{"kind":"notification",...}` event. Requires the metro daemon to be running on the machine — agent-line sends error with `metro daemon is not running` otherwise.
+The daemon re-emits the post on its stdout stream (and pushes via codex-rc if configured), so the peer sees a `{"kind":"notification",...}` event. Requires the metro daemon to be running on the machine — Claude / Codex line sends error with `metro daemon is not running` otherwise.
 
 ## Discoverability
 

@@ -3,7 +3,7 @@
 const ENTITY_MAP: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;' };
 const esc = (s: string): string => s.replace(/[&<>]/g, c => ENTITY_MAP[c]);
 
-/** SOH — invalid in Telegram text + never in agent output, so collisions are impossible. */
+/** SOH — invalid in Telegram text + never in user output, so collisions are impossible. */
 const SENT = '\x01';
 
 export function mdToTelegramHtml(md: string): string {

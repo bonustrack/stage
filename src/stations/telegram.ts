@@ -1,4 +1,4 @@
-/** Telegram station: long-poll bot API; sends agent-style markdown as HTML with plain-text fallback. */
+/** Telegram station: long-poll Bot API; sends markdown as HTML with plain-text fallback. */
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
