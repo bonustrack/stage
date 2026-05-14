@@ -36,6 +36,20 @@ export interface InboundMessage<TPayload = unknown> {
   payload: TPayload;
 }
 
+/** Someone added an emoji reaction to a message on a chat platform. */
+export interface InboundReaction {
+  id: string;
+  ts: string;
+  station: string;
+  line: Line;
+  lineName?: string;
+  from: Line;
+  fromName?: string;
+  /** Platform-side id of the message that got reacted to. */
+  messageId: string;
+  emoji: string;
+}
+
 export type Button = { text: string; url: string };
 export type SendOpts = {
   replyTo?: string;
@@ -52,6 +66,7 @@ export interface ChatStation<TMeta = Record<string, unknown>> {
   start(): Promise<void>;
   stop(): Promise<void>;
   onMessage(handler: (m: InboundMessage<TMeta>) => void): void;
+  onReaction(handler: (r: InboundReaction) => void): void;
   send(line: Line, text: string, opts?: SendOpts): Promise<string>;
   edit(line: Line, messageId: string, text: string, opts?: EditOpts): Promise<void>;
   react(line: Line, messageId: string, emoji: string): Promise<void>;

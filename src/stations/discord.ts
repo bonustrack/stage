@@ -9,7 +9,7 @@ import { errMsg, log } from '../log.js';
 import { mintId } from '../history.js';
 import {
   Line, type Button, type Capabilities, type ChatStation, type EditOpts, type FetchedMessage,
-  type InboundMessage, type SendOpts,
+  type InboundMessage, type InboundReaction, type SendOpts,
 } from './index.js';
 
 /** discord.js `Message.toJSON()` output + auto-fetched `referencedMessage` on replies. */
@@ -109,24 +109,28 @@ export class DiscordStation implements ChatStation<DiscordPayload> {
 
   private client: Client | null = null;
   private messageHandler: (m: InboundMessage<DiscordPayload>) => void = () => {};
+  private reactionHandler: (r: InboundReaction) => void = () => {};
 
   onMessage(handler: (m: InboundMessage<DiscordPayload>) => void): void {
     this.messageHandler = handler;
   }
+  onReaction(handler: (r: InboundReaction) => void): void { this.reactionHandler = handler; }
 
   private getClient(): Client {
     return this.client ??= new Client({
       intents: [
         GatewayIntentBits.DirectMessages, GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildMessageReactions, GatewayIntentBits.DirectMessageReactions,
       ],
-      partials: [Partials.Channel],
+      partials: [Partials.Channel, Partials.Message, Partials.Reaction],
     });
   }
 
   async start(): Promise<void> {
     const c = this.getClient();
     c.on(Events.MessageCreate, m => { void this.handleMessage(m); });
+    c.on(Events.MessageReactionAdd, (r, u) => { void this.handleReaction(r, u); });
     c.on(Events.Error, err => log.error({ err: errMsg(err) }, 'discord error'));
     await c.login(process.env.DISCORD_BOT_TOKEN);
     await new Promise<void>(r => c.once(Events.ClientReady, () => r()));
@@ -194,6 +198,25 @@ export class DiscordStation implements ChatStation<DiscordPayload> {
     return [...msgs].reverse().map(m => ({
       messageId: m.id, author: m.author.username, text: m.content, timestamp: m.timestamp,
     }));
+  }
+
+  private async handleReaction(
+    r: import('discord.js').MessageReaction | import('discord.js').PartialMessageReaction,
+    u: import('discord.js').User | import('discord.js').PartialUser,
+  ): Promise<void> {
+    if (u.bot) return;
+    const emoji = r.emoji.name;
+    if (!emoji) return;
+    const channelId = r.message.channelId;
+    const messageId = r.message.id;
+    const username = 'username' in u && u.username ? u.username : undefined;
+    log.info({ from: username, channel: channelId, emoji, messageId }, 'discord: reaction');
+    this.reactionHandler({
+      id: mintId(), ts: new Date().toISOString(),
+      station: 'discord', line: Line.discord(channelId),
+      from: Line.user('discord', u.id), fromName: username,
+      messageId, emoji,
+    });
   }
 
   private async handleMessage(m: import('discord.js').Message): Promise<void> {

@@ -9,7 +9,7 @@ import pkg from '../package.json' with { type: 'json' };
 import { DiscordStation } from './stations/discord.js';
 import { TelegramStation } from './stations/telegram.js';
 import { WebhookStation } from './stations/webhook.js';
-import { asLine, Line, type InboundMessage } from './stations/index.js';
+import { asLine, Line, type InboundMessage, type InboundReaction } from './stations/index.js';
 import { CodexRC } from './codex-rc.js';
 import { startIpcServer, stopIpcServer } from './ipc.js';
 import { agentSelf, appendHistory, formatDisplay, mintId, selfLine, type HistoryEntry } from './history.js';
@@ -64,6 +64,7 @@ function emit(entry: HistoryEntry): void {
 }
 
 const onInbound = (m: InboundMessage): void => emit({ ...m, kind: 'inbound', to: agentSelf() });
+const onReaction = (r: InboundReaction): void => emit({ ...r, kind: 'react', to: agentSelf() });
 
 const ipc = startIpcServer(async req => {
   if (req.op === 'notify') {
@@ -87,12 +88,14 @@ const ipc = startIpcServer(async req => {
 async function main(): Promise<void> {
   if (platforms.discord) {
     discord.onMessage(onInbound);
+    discord.onReaction(onReaction);
     const [, me] = await Promise.all([discord.start(), discord.getMe()]);
     saveBotId('discord', me.id);
     log.info({ bot: me.username }, 'discord ready');
   }
   if (platforms.telegram) {
     telegram.onMessage(onInbound);
+    telegram.onReaction(onReaction);
     const [me] = await Promise.all([telegram.getMe(), telegram.start()]);
     saveBotId('telegram', String(me.id));
     log.info({ bot: `@${me.username}` }, 'telegram ready');
