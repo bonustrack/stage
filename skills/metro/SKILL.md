@@ -98,7 +98,24 @@ The `id` is the **canonical handle** for that message across all stations — st
 
 ## Required flow on every event
 
-1. **Echo to your visible output**: `[<line>#<messageId>] <text>` on its own line. Both Claude Code's Monitor and Codex collapse tool output, so this echo is the only way the user sees what arrived without expanding cards.
+1. **Echo to your visible output as a chat-bubble-style line.** The Monitor notification chip is a CLI-only render — in VSCode/Cursor/web it doesn't surface visibly at all. The agent's own chat output is the **only** UI signal the user can rely on across surfaces, so it has to be the first thing you produce on every inbound. Use this format (raw markdown — renders the same on every CC surface):
+
+   ```
+   **<icon> <station> · <sender-or-context>**
+   > <text>
+   ```
+
+   - **chat inbound** — `📩 telegram · @bonustrack` (or `… · #infra · @alice` for groups)
+   - **webhook inbound** — `🪝 webhook · github · push` (icon + `<station>` + `<x-github-event header>`); for the body, use a tight one-line summary from `payload.body` (e.g. `> refs/heads/main · 3 commits` for a push, `> #42 opened by @alice` for a PR)
+   - **cross-agent notification** — `🔔 notification · codex · <agent-id>`
+
+   Example for the Telegram DM `"Hey"` you just received:
+
+   ```
+   **📩 telegram · @bonustrack**
+   > Hey
+   ```
+
 2. **Decide and act** using the subcommands below.
 
 No server-side auto-reaction — don't expect 👀 to be on the user's message; add one yourself with `metro react` if you want to ack quickly.

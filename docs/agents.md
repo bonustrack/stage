@@ -62,7 +62,24 @@ When **you** call `metro send`/`reply`/`edit`/`react`, metro auto-stamps `from` 
 
 ## Required flow on every event
 
-1. **Echo the event** to your visible output: `[<line>#<messageId>] <text>`. Both Monitor and Codex collapse tool output, so this echo is the only thing the user sees without expanding cards.
+1. **Echo to your visible output as a chat-bubble-style line.** The Monitor notification chip is a CLI-only rendering — in VSCode/Cursor/web Claude Code surfaces it doesn't appear visibly at all. The agent's own chat output is the **only** UI signal the user can rely on across surfaces, so it has to be the first thing you produce on every inbound. Use this format (raw markdown — renders the same on every CC surface):
+
+   ```
+   **<icon> <station> · <sender-or-context>**
+   > <text>
+   ```
+
+   - **chat inbound** — `📩 telegram · @bonustrack` (or `… · #infra · @alice` for groups)
+   - **webhook inbound** — `🪝 webhook · github · push`; for the body, use a tight one-line summary derived from `payload.body` (e.g. `> refs/heads/main · 3 commits` for a push, `> #42 opened by @alice` for a PR)
+   - **cross-agent notification** — `🔔 notification · codex · <agent-id>`
+
+   Example for a Telegram DM `"Hey"` from `@bonustrack`:
+
+   ```
+   **📩 telegram · @bonustrack**
+   > Hey
+   ```
+
 2. **Decide and act** using the subcommands below.
 
 ## Detecting "is this for me?"
