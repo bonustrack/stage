@@ -174,7 +174,7 @@ All commands accept `--json`. `reply` / `send` / `edit` read multi-line `<text>`
 - `agent-registry.json` — every `(station, agent-id, sessions[])` tuple metro has seen; surfaced under each agent row in `metro stations`
 - `stations/codex/session-id` — current codex-rc thread id (daemon writes on handshake; CLI processes read for `metro://codex/<agent-id>/<session>`)
 - `webhooks.json` — registered HTTP receive endpoints (id, label, optional shared secret)
-- `tunnel.json` — Cloudflare named-tunnel config (`{name, hostname}`); when present, the daemon spawns `cloudflared tunnel run`
+- `tunnel.json` — Cloudflare named-tunnel config (`{name, hostname}`); when present, the daemon spawns `cloudflared tunnel run`. The token is resolved via `cloudflared tunnel token <name>` and passed through as `TUNNEL_TOKEN`, so the per-tunnel credentials JSON at `~/.cloudflared/<id>.json` is not required (the named-form spawn is the fallback when the token call fails)
 - `.tail-lock` — dispatcher pid
 - `metro.sock` — daemon IPC socket
 - `telegram-offset.json` — last processed update id
