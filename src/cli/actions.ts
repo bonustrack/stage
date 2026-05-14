@@ -42,24 +42,19 @@ function richOpts(f: Flags): RichOpts {
   return opts;
 }
 
-/** Append an outbound action to history.jsonl; pass `to` = the original sender when replying/reacting. */
+/** Append an outbound action to history.jsonl; `to` = the original sender when replying/reacting. */
 function logOutbound(
-  f: Flags, kind: HistoryKind, line: LineT, text: string | undefined,
-  messageId: string, replyTo?: string, _opts?: RichOpts, emoji?: string, to?: LineT,
+  f: Flags,
+  e: { kind: HistoryKind; line: LineT; messageId: string; text?: string; replyTo?: string; emoji?: string; to?: LineT },
 ): string {
   const id = mintId();
-  const station = Line.station(line) ?? '?';
   const fromOverride = flagOne(f, 'from');
-  const from = fromOverride ? asLine(fromOverride) : agentSelf();
   appendHistory({
-    id, ts: new Date().toISOString(), kind, station, line, from, to: to ?? line,
-    text, messageId, replyTo, emoji,
+    id, ts: new Date().toISOString(), station: Line.station(e.line) ?? '?',
+    from: fromOverride ? asLine(fromOverride) : agentSelf(), to: e.to ?? e.line, ...e,
   });
   return id;
 }
-
-/** When replying/reacting/editing, the recipient is the original message's sender (if we have it). */
-const recipientFor = (idOrPlatform: string): LineT | undefined => lookupEntry(idOrPlatform)?.from;
 
 export async function cmdSend(p: string[], f: Flags): Promise<void> {
   need(p, 1, 'metro send <line> <text> [--image=<path>]… [--document=<path>]… [--voice=<path>] [--buttons=<json>]');
@@ -71,9 +66,8 @@ export async function cmdSend(p: string[], f: Flags): Promise<void> {
     if (!resp.ok) throw new Error(resp.error);
     return emit(f, `notified ${line}`, { ok: true, line, id: null, messageId: null });
   }
-  const opts = richOpts(f);
-  const messageId = await chatStationOf(line).send(line, text, opts);
-  const id = logOutbound(f, 'outbound', line, text, messageId, undefined, opts);
+  const messageId = await chatStationOf(line).send(line, text, richOpts(f));
+  const id = logOutbound(f, { kind: 'outbound', line, text, messageId });
   emit(f, `sent ${id} (${messageId}) to ${line}`, { ok: true, line, id, messageId });
 }
 
@@ -82,9 +76,9 @@ export async function cmdReply(p: string[], f: Flags): Promise<void> {
   loadMetroEnv();
   const [to, replyToArg] = p, text = await resolveText(p, 2), line = asLine(to);
   const replyTo = resolvePlatformId(replyToArg);
-  const opts = richOpts(f);
-  const messageId = await chatStationOf(line).send(line, text, { ...opts, replyTo });
-  const id = logOutbound(f, 'outbound', line, text, messageId, replyToArg, opts, undefined, recipientFor(replyToArg));
+  const messageId = await chatStationOf(line).send(line, text, { ...richOpts(f), replyTo });
+  const id = logOutbound(f,
+    { kind: 'outbound', line, text, messageId, replyTo: replyToArg, to: lookupEntry(replyToArg)?.from });
   emit(f, `replied ${id} (${messageId}) to ${line}#${replyTo}`,
     { ok: true, line, id, replyTo: replyToArg, messageId });
 }
@@ -97,8 +91,8 @@ export async function cmdEdit(p: string[], f: Flags): Promise<void> {
   const buttons = parseButtons(f);
   await chatStationOf(line).edit(line, platformId, text, buttons ? { buttons } : undefined);
   /** Carry forward the original recipient if we have a row for this message. */
-  const original = lookupEntry(msgArg);
-  const id = logOutbound(f, 'edit', line, text, platformId, msgArg, undefined, undefined, original?.to);
+  const id = logOutbound(f,
+    { kind: 'edit', line, text, messageId: platformId, replyTo: msgArg, to: lookupEntry(msgArg)?.to });
   emit(f, `edited ${line}#${platformId} (${id})`, { ok: true, line, id, messageId: platformId });
 }
 
@@ -107,7 +101,8 @@ export async function cmdReact(p: string[], f: Flags): Promise<void> {
   const [to, msgArg, emoji = ''] = p, line = asLine(to);
   const platformId = resolvePlatformId(msgArg);
   await chatStationOf(line).react(line, platformId, emoji);
-  const id = logOutbound(f, 'react', line, undefined, platformId, undefined, undefined, emoji, recipientFor(msgArg));
+  const id = logOutbound(f,
+    { kind: 'react', line, messageId: platformId, emoji, to: lookupEntry(msgArg)?.from });
   const human = emoji ? `reacted ${emoji} on ${line}#${platformId}` : `cleared reaction on ${line}#${platformId}`;
   emit(f, human, { ok: true, line, id, messageId: platformId, emoji });
 }

@@ -195,7 +195,6 @@ export class TelegramStation implements ChatStation<TelegramPayload> {
     if (!text) return;
     const topicId = m.is_topic_message ? m.message_thread_id : undefined;
     const fromName = m.from?.username ? `@${m.from.username}` : m.from?.first_name;
-    const fromUri = Line.user('telegram', m.from?.id ?? 'unknown');
     log.info({ from: fromName, chat: m.chat.id, topic: topicId, text: text.slice(0, 80) }, 'telegram: inbound');
     if (this.recent.size >= 50) { const first = this.recent.keys().next().value; if (first) this.recent.delete(first); }
     this.recent.set(`${m.chat.id}:${m.message_id}`, m);
@@ -203,7 +202,7 @@ export class TelegramStation implements ChatStation<TelegramPayload> {
       id: mintId(), ts: new Date((m.date ?? Math.floor(Date.now() / 1000)) * 1000).toISOString(),
       station: 'telegram', line: Line.telegram(m.chat.id, topicId), messageId: String(m.message_id),
       lineName: topicId === undefined ? (m.chat.title ?? m.chat.first_name ?? undefined) : undefined,
-      from: fromUri, fromName, text, payload: m,
+      from: Line.user('telegram', m.from?.id ?? 'unknown'), fromName, text, payload: m,
     });
   }
 }

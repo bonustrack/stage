@@ -65,9 +65,7 @@ async function cmdLines(_: string[], f: Flags): Promise<void> {
     .map(({ line, entry }) => ({ line, name: entry.name ?? null, lastSeenAt: entry.lastSeenAt ?? null }))
     .sort((a, b) => (b.lastSeenAt ?? '').localeCompare(a.lastSeenAt ?? ''));
   if (isJson(f)) return writeJson({ lines: rows });
-  if (!rows.length) {
-    process.stdout.write('metro lines\n\n  (none yet — start the dispatcher and send a message)\n\n'); return;
-  }
+  if (!rows.length) return void process.stdout.write('metro lines\n\n  (none yet — start the dispatcher and send a message)\n\n');
   const widest = Math.max(...rows.map(r => r.line.length));
   process.stdout.write('metro lines\n\n');
   for (const r of rows) {

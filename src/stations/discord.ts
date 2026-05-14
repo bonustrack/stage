@@ -203,10 +203,7 @@ export class DiscordStation implements ChatStation<DiscordPayload> {
         : a.contentType?.startsWith('audio/') ? `[audio: ${a.name}]` : `[file: ${a.name}]`);
     const text = [m.content.trim(), ...tags].filter(Boolean).join(' ');
     if (!text) return;
-    log.info(
-      { from: m.author.username, channel: m.channelId, text: text.slice(0, 80) },
-      'discord: inbound',
-    );
+    log.info({ from: m.author.username, channel: m.channelId, text: text.slice(0, 80) }, 'discord: inbound');
     const lineName = m.channel && 'name' in m.channel
       ? (m.channel as { name: string | null }).name ?? undefined : undefined;
     const payload = m.toJSON() as DiscordPayload;

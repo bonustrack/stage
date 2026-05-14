@@ -92,9 +92,7 @@ async function shutdown(): Promise<void> {
   if (platforms.telegram) await telegram.stop().catch(() => {});
   process.exit(0);
 }
-process.stdin.on('end', shutdown);
-process.stdin.on('close', shutdown);
-process.on('SIGINT', shutdown);
-process.on('SIGTERM', shutdown);
+process.stdin.on('end', shutdown).on('close', shutdown);
+for (const sig of ['SIGINT', 'SIGTERM'] as const) process.on(sig, shutdown);
 
 await main();
