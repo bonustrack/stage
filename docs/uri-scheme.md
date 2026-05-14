@@ -6,7 +6,7 @@ Universal identifier for every conversational scope and notification sink in met
 
 ```
 line       = "metro://" station "/" path
-station    = lowercase identifier (claude | codex | discord | telegram | …)
+station    = lowercase identifier (claude | codex | discord | telegram | webhook | …)
 path       = station-specific, "/"-separated segments
 ```
 
@@ -60,20 +60,15 @@ Override either segment with `METRO_AGENT_ID` / `METRO_AGENT_SESSION_ID` env var
 
 The daemon persists every `(station, agent-id, session)` tuple it sees to `$METRO_STATE_DIR/agent-registry.json`. `metro stations` prints the count of seen agents and sessions per station. Run it to discover what's reachable rather than guessing topic names.
 
-### Webhook endpoints
-
-`metro webhook add <label>` mints a 16-char endpoint id (96 bits of entropy, persisted to `$METRO_STATE_DIR/webhooks.json`) and prints the receiving URL. The dispatcher opens an HTTP listener on `127.0.0.1:8420` (override with `$METRO_WEBHOOK_PORT`) when ≥1 endpoint is registered. Each `POST /wh/<id>` becomes an inbound event with `station: "webhook"`, `payload: { headers, body }`. With `metro tunnel setup`, the URL is exposed via a Cloudflare named tunnel so third parties (GitHub, Intercom, …) can reach it from the public internet — the daemon spawns and supervises `cloudflared tunnel run`.
-
 ## Webhook station
 
-The `webhook` station is a **receive-only HTTP endpoint** for third-party services (GitHub, Intercom, Fireflies, etc.). Each registered endpoint is one `metro://webhook/<endpoint-id>` line:
+Receive-only HTTP endpoint for third-party services (GitHub, Intercom, Fireflies, …). Each registered endpoint is one `metro://webhook/<endpoint-id>` line.
 
-- `metro webhook add <label> [--secret=<shared-secret>]` mints an id and prints the URL.
-- The dispatcher binds `127.0.0.1:8420` (override with `METRO_WEBHOOK_PORT`) and routes `POST /wh/<endpoint-id>` to an inbound event with `payload: { headers, body }`. `body` is parsed JSON when the request is JSON, raw string otherwise.
-- `messageId` falls back to `X-GitHub-Delivery` / `X-Request-ID` for idempotency tracking.
-- `text` is synthesized from `X-GitHub-Event` / `X-Intercom-Topic` plus method + path for at-a-glance routing; the agent narrows on `payload.body` for full event details.
-- If a `secret` was set on `metro webhook add`, requests must include a matching `X-Hub-Signature-256: sha256=<hex>` HMAC (GitHub/Intercom format) or they're rejected with 401.
-- Public reachability is provided by a Cloudflare named tunnel — see [Tunneling](#tunneling) below.
+- **Register:** `metro webhook add <label> [--secret=<shared-secret>]` mints a 16-char endpoint id (96 bits of entropy, persisted to `$METRO_STATE_DIR/webhooks.json`) and prints the receiving URL. `metro webhook list` / `remove <id>` for the obvious.
+- **Listener:** the dispatcher binds `127.0.0.1:8420` (override with `METRO_WEBHOOK_PORT`) when ≥1 endpoint is registered. Routes `POST /wh/<endpoint-id>` to an inbound event with `payload: { headers, body }` — `body` is parsed JSON when the request `Content-Type` is JSON, raw string otherwise. `GET /wh/<endpoint-id>` returns 200 (for provider ping checks).
+- **Envelope:** `messageId` falls back to `X-GitHub-Delivery` / `X-Request-ID` / a generated UUID for idempotency tracking. `text` is synthesized from `X-GitHub-Event` / `X-Intercom-Topic` plus method + path for at-a-glance routing; agents narrow on `payload.body` for full event details.
+- **HMAC verification:** if `--secret` was set on `metro webhook add`, requests must include a matching `X-Hub-Signature-256: sha256=<hex>` (GitHub/Intercom format) — mismatches are rejected with 401 before reaching the stream.
+- **Public reachability:** provided by a Cloudflare named tunnel — see [Tunneling](#tunneling) below. Without one, the listener stays loopback-only (useful for `curl` testing).
 
 ## Tunneling
 
@@ -117,7 +112,9 @@ Line.codex(accountId, threadId);                 // metro://codex/<accountId>/<t
 Line.parseClaude(l);                             // { agentId, sessionId } | null
 Line.parseCodex(l);                              // { agentId, sessionId } | null
 Line.webhook(endpointId);                        // metro://webhook/<endpointId>
-Line.parseWebhook(l);                            // string | null
+Line.parseWebhook(l);                            // string | null  (the endpoint id)
+Line.user(station, id);                          // metro://<station>/user/<id>
+Line.bot(station, id);                           // metro://<station>/bot/<id>
 Line.isAgent(l);                                 // true for any metro://{claude,codex}/...
 ```
 

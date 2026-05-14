@@ -1,8 +1,8 @@
 # Metro
 
-> **A live JSON stream of Telegram + Discord messages for your local Claude Code / Codex session.**
+> **A live JSON stream of Telegram, Discord, webhooks, and cross-agent messages for your local Claude Code / Codex session.**
 
-Metro is a small daemon you launch from inside your agent. It connects to Discord and Telegram, emits each inbound as one JSON line on stdout (which Claude Code's `Monitor` consumes natively, and Codex picks up via an app-server WebSocket push), and exposes a tiny CLI — `metro reply`, `metro send`, `metro edit`, `metro react`, `metro download`, `metro fetch` — for posting back. Cross-agent: any agent can ping any other via `metro send metro://claude/<agent-id>/<session-id>` and the daemon re-emits it on the stream.
+Metro is a small daemon you launch from inside your agent. It connects to Discord, Telegram, and any third-party service that can POST a webhook (GitHub, Intercom, Fireflies, …), emits each inbound as one JSON line on stdout (which Claude Code's `Monitor` consumes natively, and Codex picks up via an app-server WebSocket push), and exposes a tiny CLI — `metro reply`, `metro send`, `metro edit`, `metro react`, `metro download`, `metro fetch` — for posting back. Cross-agent: any agent can ping any other via `metro send metro://claude/<agent-id>/<session-id>` and the daemon re-emits it on the stream.
 
 ```
 [Claude Code session]
@@ -43,20 +43,23 @@ In **Discord**: DM the bot, or `@<bot>` in any channel. In **Telegram**: DM, or 
 ## Architecture
 
 ```
-Discord gateway ──┐
-Telegram poller ──┤
-                  │
-                  ├─▶ metro daemon ───▶ stdout (JSON events; Claude Code's Monitor reads here)
-                  │                ───▶ codex-rc WebSocket (Codex turn/start; opt-in)
-                  │                ◀── IPC Unix socket  (metro send to agent lines)
-                  │
-agent CLI calls ──┴── REST → Discord / Telegram   (metro reply / send / edit / react / download / fetch)
+Discord gateway     ──┐
+Telegram poller     ──┤
+Cloudflare tunnel   ──┤ ── HTTP webhooks (GitHub, Intercom, …)
+                      │
+                      ├─▶ metro daemon ───▶ stdout (JSON events; Claude Code's Monitor reads here)
+                      │                ───▶ codex-rc WebSocket (Codex turn/start; opt-in)
+                      │                ◀── IPC Unix socket  (metro send to agent lines)
+                      │
+agent CLI calls   ────┴── REST → Discord / Telegram   (metro reply / send / edit / react / download / fetch)
 ```
 
 - **Inversion of control.** The agent (Claude Code, Codex) launches `metro`, not the other way around. Metro never spawns an agent process.
 - **Single daemon per machine.** Lockfile at `$METRO_STATE_DIR/.tail-lock` enforces singleton.
+- **Account-tied identity.** `to` on inbound and `from` on outbound resolve to a stable account-scoped URI per runtime: `metro://claude/user/<orgId>` (from `claude auth status --json`) or `metro://codex/user/<accountId>` (from `$CODEX_HOME/auth.json`). Same on any device for the same logged-in account.
 - **Codex push (opt-in).** Set `METRO_CODEX_RC=ws://127.0.0.1:8421` and metro pushes each event via JSON-RPC `turn/start` to the Codex app-server. Codex's TUI must be attached with `--remote` to the same URL.
 - **Cross-agent notification.** `metro send metro://claude/<agent-id>/<session-id>` (or `metro://codex/<agent-id>/<session-id>`) routes through the daemon's IPC socket; the daemon re-emits on its stdout (and pushes to codex-rc), so the peer agent sees it. Discover reachable agents/sessions via `metro stations` or `$METRO_STATE_DIR/agent-registry.json`.
+- **Webhooks (opt-in).** `metro webhook add <label>` registers an HTTP receive endpoint; the daemon binds `127.0.0.1:8420` (override with `$METRO_WEBHOOK_PORT`). If you've run `metro tunnel setup`, a Cloudflare named tunnel exposes it publicly. Each POST is re-emitted on stdout as an inbound event.
 
 ---
 
@@ -64,13 +67,13 @@ agent CLI calls ──┴── REST → Discord / Telegram   (metro reply / sen
 
 Each endpoint is a **station** with declared capabilities:
 
-| Station    | Kind  | Modalities    | Features                                              | Config                                                      |
-|------------|-------|---------------|-------------------------------------------------------|-------------------------------------------------------------|
-| `discord`  | chat  | text + image  | reply, send, edit, react, download, fetch             | `DISCORD_BOT_TOKEN` + Message Content Intent                |
-| `telegram` | chat  | text + image  | reply, send, edit, react, download                    | `TELEGRAM_BOT_TOKEN`                                        |
-| `claude`   | agent   | text          | send, notify                                          | watches metro stdout via Claude Code's `Monitor`            |
-| `codex`    | agent   | text          | send, notify                                          | set `METRO_CODEX_RC=ws://…` to push                         |
-| `webhook`  | service | text          | (receive-only)                                        | `metro webhook add <label>` + `metro tunnel setup` (CF)     |
+| Station    | Kind    | Modalities    | Features                                              | Config                                                                                  |
+|------------|---------|---------------|-------------------------------------------------------|-----------------------------------------------------------------------------------------|
+| `discord`  | chat    | text + image  | reply, send, edit, react, download, fetch             | `DISCORD_BOT_TOKEN` + Message Content Intent                                            |
+| `telegram` | chat    | text + image  | reply, send, edit, react, download                    | `TELEGRAM_BOT_TOKEN`                                                                    |
+| `claude`   | agent   | text          | send, notify                                          | auto-detected from `$CLAUDECODE`; identity via `claude auth status --json`              |
+| `codex`    | agent   | text          | send, notify                                          | auto-detected from `$METRO_CODEX_RC` / `$CODEX_HOME`; identity via `$CODEX_HOME/auth.json` |
+| `webhook`  | service | text          | (receive-only; optional HMAC verify)                  | `metro webhook add <label>` + `metro tunnel setup` (Cloudflare named tunnel)            |
 
 Run `metro stations` to see live config status (`✓` configured, `✗` not, `·` informational).
 
@@ -80,6 +83,7 @@ Behaviors worth knowing:
 - **Image attachments inbound** — `[image]` placeholders surface inline in `text`; the agent calls `metro download` to materialize them. 20 MB cap.
 - **Rich content outbound.** `metro send` / `reply` accept `--image=<path>` (repeatable: albums of up to 10), `--document=<path>` (repeatable), `--voice=<path>` (single voice message — Telegram renders the voice bubble), and `--buttons='[[{"text":"…","url":"…"}]]'` for inline URL-button keyboards. `metro edit` accepts `--buttons` (pass `'[]'` to clear). 20 MB / file. URL buttons only for now — no callback/interactive components.
 - **Telegram non-forum groups are skipped.** No thread boundary to scope on.
+- **Webhook signature verification.** Pass `--secret=<shared-secret>` to `metro webhook add` and the daemon verifies `X-Hub-Signature-256` (GitHub/Intercom format) on every POST. Mismatches return 401 and never reach the stream.
 
 ---
 
@@ -178,8 +182,11 @@ All commands accept `--json`. `reply` / `send` / `edit` read multi-line `<text>`
 | `TELEGRAM_BOT_TOKEN`, `DISCORD_BOT_TOKEN` | — | Bot tokens. `metro setup` writes them here. |
 | `METRO_CODEX_RC` | — | Codex app-server URL (`ws://…`, `wss://…`, `unix:///…`). When set, the daemon pushes each event via JSON-RPC `turn/start`. |
 | `METRO_WEBHOOK_PORT` | `8420` | Local port the HTTP webhook listener binds to (always `127.0.0.1`; expose publicly via Cloudflare tunnel). |
+| `METRO_AGENT_ID` | — | Override the resolved agent id (orgId / accountId) used in `metro://<station>/user/<id>` and `metro://<station>/<id>/<session>`. Useful for testing. |
+| `METRO_AGENT_SESSION_ID` | — | Override the resolved session id (Claude session / Codex thread). |
+| `METRO_FROM` | — | Pin a custom `from` URI for all writes (overrides runtime detection). |
 | `METRO_CONFIG_DIR` | `~/.config/metro` | Where the global `.env` lives. |
-| `METRO_STATE_DIR` | `~/.cache/metro` | Lockfile, line cache, IPC socket, telegram offset. |
+| `METRO_STATE_DIR` | `~/.cache/metro` | Lockfile, line cache, IPC socket, telegram offset, registries, tunnel config. |
 | `METRO_LOG_LEVEL` | `info` | `trace` / `debug` / `info` / `warn` / `error` / `fatal`. |
 
 Precedence: process env → `./.env` → `$METRO_CONFIG_DIR/.env`. Logs go to stderr.
@@ -200,12 +207,16 @@ bun run lint                             # eslint
 
 Source map:
 
-- [`src/cli/`](src/cli/) — `metro` binary entry ([`index.ts`](src/cli/index.ts)) + admin commands ([`config.ts`](src/cli/config.ts): setup/doctor/update) + shared CLI primitives ([`util.ts`](src/cli/util.ts)).
-- [`src/dispatcher.ts`](src/dispatcher.ts) — the daemon: starts each chat station, emits events on stdout, listens on the IPC socket, optionally pushes to codex-rc.
-- [`src/stations/`](src/stations/) — Line URI scheme + ChatStation interface + listing ([`index.ts`](src/stations/index.ts)), the two chat-station impls (`discord.ts`, `telegram.ts`), plus the Telegram markdown→HTML helper ([`telegram-md.ts`](src/stations/telegram-md.ts)). Agent stations have no impl — they're notification sinks expressed only as URI prefixes.
-- [`src/codex-rc.ts`](src/codex-rc.ts) — Codex app-server WebSocket push client.
+- [`src/cli/`](src/cli/) — `metro` binary entry ([`index.ts`](src/cli/index.ts)) + admin commands ([`config.ts`](src/cli/config.ts): setup/doctor/update), action handlers ([`actions.ts`](src/cli/actions.ts): send/reply/edit/react/download/fetch), webhook + tunnel commands ([`webhook.ts`](src/cli/webhook.ts)), and shared CLI primitives ([`util.ts`](src/cli/util.ts)).
+- [`src/dispatcher.ts`](src/dispatcher.ts) — the daemon: starts each station, emits events on stdout, listens on the IPC socket, optionally pushes to codex-rc, supervises the Cloudflare tunnel.
+- [`src/stations/`](src/stations/) — Line URI scheme + ChatStation interface + listing ([`index.ts`](src/stations/index.ts)). Chat impls: [`discord.ts`](src/stations/discord.ts), [`telegram.ts`](src/stations/telegram.ts) (+ [`telegram-md.ts`](src/stations/telegram-md.ts) markdown helper). Agent identity resolvers: [`claude.ts`](src/stations/claude.ts) (orgId via `claude auth status --json`), [`codex.ts`](src/stations/codex.ts) (account_id via `auth.json`). HTTP receive: [`webhook.ts`](src/stations/webhook.ts).
+- [`src/codex-rc.ts`](src/codex-rc.ts) — Codex app-server WebSocket push client (also exposes the rc thread id used as Codex session-id).
+- [`src/tunnel.ts`](src/tunnel.ts) — Cloudflared named-tunnel supervisor.
+- [`src/webhooks.ts`](src/webhooks.ts) — webhook endpoint store (`webhooks.json` CRUD).
+- [`src/registry.ts`](src/registry.ts) — agent registry: `(station, agent-id, sessions[])` tracking.
+- [`src/history.ts`](src/history.ts) — universal message log + `agentSelf()` / `selfLine()` identity helpers.
 - [`src/ipc.ts`](src/ipc.ts) — Unix-socket IPC between the daemon and one-shot CLI commands.
-- [`src/cache.ts`](src/cache.ts) — in-memory line cache with debounced flush to `lines.json`.
+- [`src/cache.ts`](src/cache.ts) — in-memory line cache with debounced flush to `lines.json`, plus bot-id cache.
 - [`docs/uri-scheme.md`](docs/uri-scheme.md) specs the Line format; [`docs/agents.md`](docs/agents.md) is the in-context skill for agents.
 
 CI runs typecheck + lint + build on every PR via [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
@@ -214,10 +225,12 @@ CI runs typecheck + lint + build on every PR via [`.github/workflows/ci.yml`](.g
 
 ## Caveats
 
-- **No allowlist.** Anyone who can DM/`@`-mention your bot can produce events. Run against bots you own.
+- **No allowlist on chat stations.** Anyone who can DM/`@`-mention your bot can produce events. Run against bots you own.
+- **Webhook secrets are optional but recommended.** Without `--secret`, anyone who learns the endpoint URL can POST events. With it, metro verifies `X-Hub-Signature-256` and rejects mismatches.
 - **Telegram bot privacy is on by default**, which can block `@`-mentions in groups. Disable via [@BotFather](https://t.me/BotFather) → Bot Settings → Group Privacy, then kick + re-invite.
 - **Telegram non-forum groups are skipped.** No thread boundary to scope on. DMs and forum topics work normally.
 - **Telegram fetch isn't supported** (bot API doesn't expose history); `metro fetch` returns `[]` on Telegram lines.
+- **Cloudflared is your responsibility.** `metro tunnel setup` records the named tunnel; you still install `cloudflared` (`brew install cloudflared`) and run `cloudflared tunnel login` once.
 
 ---
 

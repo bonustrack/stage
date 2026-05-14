@@ -1,11 +1,11 @@
 ---
 name: metro
-description: Run the metro Telegram/Discord bridge in this session — launch `metro` in the background, watch its stdout for inbound JSON events, and act on each. Use when the user asks to start/run/launch metro, when you see JSON lines on stdout shaped `{"kind":"inbound","station":...,"line":"metro://...","messageId":...,"text":...}`, or when handling a chat reply/edit/react/send/download/fetch/notify.
+description: Run the metro Telegram/Discord/webhook bridge in this session — launch `metro` in the background, watch its stdout for inbound JSON events, and act on each. Use when the user asks to start/run/launch metro, when you see JSON lines on stdout shaped `{"kind":"inbound","station":...,"line":"metro://...","messageId":...,"text":...}`, or when handling a chat/webhook reply/edit/react/send/download/fetch/notify.
 ---
 
-# Metro — running the Telegram & Discord bridge
+# Metro — running the Telegram / Discord / webhook bridge
 
-Metro is a CLI bridge between this agent session and Telegram/Discord. You launch `metro` once when the user asks, then act on each inbound JSON line via `metro <subcommand>`.
+Metro is a CLI bridge between this agent session and external sources: Telegram, Discord, and HTTP webhooks from third parties (GitHub, Intercom, Fireflies, …). You launch `metro` once when the user asks, then act on each inbound JSON line via `metro <subcommand>`.
 
 ## Starting the bridge
 
@@ -44,8 +44,8 @@ Every line on stdout is one **history entry** — the same record appended to `h
 - `kind` — `"inbound"`, `"notification"`, `"outbound"`, `"edit"`, or `"react"`
 - `id` (`msg_…`) — universal message ID minted by metro
 - `ts` — ISO timestamp
-- `station` — `"discord"`, `"telegram"`, `"claude"`, `"codex"`
-- `line` — conversation URI; `lineName?` is the channel/topic display name
+- `station` — `"discord"`, `"telegram"`, `"claude"`, `"codex"`, `"webhook"`
+- `line` — conversation URI; `lineName?` is the channel/topic display name (for webhooks: the label you gave it)
 - `from` / `fromName?` — sender participant URI + optional display name
 - `to` — recipient participant URI (agent for inbound, line for notification, original sender for replies/reacts)
 - `text` — universal display projection. Includes `[image]`/`[file: …]`/`[voice]`/`[audio]` tags inline.
@@ -76,13 +76,15 @@ Derive from `payload`. Bot id per station is cached in `$METRO_STATE_DIR/bot-ids
 
 - **discord** — DM when `payload.guildId == null`; otherwise pinged when `payload.mentions.users.includes(<bot-id>)`.
 - **telegram** — DM when `payload.chat.type === 'private'`; otherwise pinged when any entity in `payload.entities` (or `caption_entities`) is `{type:"mention"}` matching `@<bot-username>` or `{type:"text_mention", user:{id:<bot-id>}}`.
+- **webhook** — every POST is "for you" by design (it's an endpoint you registered). Route on `payload.headers['x-github-event']` / `x-intercom-topic` etc. to decide which provider event you're handling.
 
-Default: only reply on DM or ping; otherwise stay silent or `metro react` to ack.
+Default for chat: only reply on DM or ping; otherwise stay silent or `metro react` to ack. Webhooks have no "ack" mechanism — just consume the event.
 
 Both `from` and `to` are **participant URIs** (the conversation context lives in `line`):
 - `metro://<station>/user/<id>` — a person on a chat platform
 - `metro://claude/user/<orgId>` — a Claude Code agent (orgId = stable Anthropic-account UUID, same across devices for the same account)
 - `metro://codex/user/<accountId>` — a Codex agent (accountId = stable ChatGPT-account UUID, same across devices)
+- `metro://webhook/<endpoint-id>` — a webhook endpoint (line + `from` are the same — no HTTP-side user identity)
 - `metro://<station>/<channelId>` — a channel (used as `to` for fresh sends to a group, where no single recipient)
 
 When **you** send via `metro send`/`reply`/`edit`/`react`, metro auto-stamps `from = metro://claude/user/<orgId>` (when `$CLAUDECODE` is set; resolved from `claude auth status --json`) or `metro://codex/user/<accountId>` (from `$METRO_CODEX_RC` / `$CODEX_HOME`; resolved from `$CODEX_HOME/auth.json`). Switching accounts via `claude auth login` / `codex login` flips the id on the next event (within ~5 s for the daemon). Override with `--from=<uri>` or `$METRO_FROM`. When replying/reacting, `to` is automatically the original sender (looked up via the universal id).
@@ -193,7 +195,7 @@ The daemon re-emits the post on its stdout stream (and pushes via codex-rc if co
 - `metro history` — universal message log (every inbound + outbound + notification across all stations). Newest first. Filters:
   - `--limit=N` (default 50)
   - `--line=<metro://…>` — only this conversation
-  - `--station=<discord|telegram|claude|codex>`
+  - `--station=<discord|telegram|claude|codex|webhook>`
   - `--kind=<inbound|outbound|edit|react|notification>`
   - `--from=<sender>`
   - `--text=<substring>`

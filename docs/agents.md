@@ -1,6 +1,6 @@
 # Metro: a guide for coding agents
 
-You are running inside a session that has **launched `metro`** in the background. Metro emits a live stream of JSON events from Discord, Telegram, and other agents on its stdout. Your job is to consume that stream and post replies back via subcommands.
+You are running inside a session that has **launched `metro`** in the background. Metro emits a live stream of JSON events from Discord, Telegram, third-party webhooks (GitHub, Intercom, …), and other agents on its stdout. Your job is to consume that stream and post replies back via subcommands.
 
 ## Starting the bridge
 
@@ -71,8 +71,9 @@ Derive from `payload`. Bot id per station is in `$METRO_STATE_DIR/bot-ids.json` 
 
 - **`discord`** — DM if `payload.guildId == null`; otherwise pinged if `payload.mentions.users.includes(<bot-id>)`.
 - **`telegram`** — DM if `payload.chat.type === 'private'`; otherwise pinged if any entity in `payload.entities` (or `caption_entities`) is `{type:"mention"}` matching `@<bot-username>`, or `{type:"text_mention", user:{id:<bot-id>}}`.
+- **`webhook`** — every POST is for you (you registered the endpoint). Route on `payload.headers['x-github-event']` / `x-intercom-topic` etc. to know which provider event it is.
 
-Default: only reply on DM or ping; otherwise stay silent or `metro react` to ack.
+Default for chat: only reply on DM or ping; otherwise stay silent or `metro react` to ack. Webhooks just consume — no ack mechanism.
 
 ## Subcommands
 
@@ -85,8 +86,11 @@ Default: only reply on DM or ping; otherwise stay silent or `metro react` to ack
 | Download `[image]` attachments | `metro download <line> <messageId> [--out=<dir>]` |
 | Recent-message lookback (Discord only) | `metro fetch <line> [--limit=20]` |
 | Cross-agent ping | `metro send <agent-line> <text> [--from=<line>]` |
+| Register webhook endpoint | `metro webhook add <label> [--secret=<hmac-secret>]` |
+| List / remove webhook endpoints | `metro webhook list` · `metro webhook remove <id>` |
+| Configure Cloudflare named tunnel | `metro tunnel setup <tunnel-name> <hostname>` |
 
-`reply` / `send` / `edit` accept multi-line text via stdin (heredoc).
+`reply` / `send` / `edit` accept multi-line text via stdin (heredoc). Webhooks are receive-only — there's no `reply` for them, just consume the event.
 
 ### Rich content flags
 
@@ -147,18 +151,39 @@ Lines sorted by recency. Use when the user says "the Telegram channel" or "that 
 
 ```
 $ metro stations
-  ✓ discord    chat   in: text+image · out: text · features: reply, send, edit, react, download, fetch
+  ✓ discord    chat     in: text+image · out: text · features: reply, send, edit, react, download, fetch
         DISCORD_BOT_TOKEN
-  ✓ telegram   chat   in: text+image · out: text · features: reply, send, edit, react, download, fetch
+  ✓ telegram   chat     in: text+image · out: text · features: reply, send, edit, react, download, fetch
         TELEGRAM_BOT_TOKEN
-  ✓ claude     agent  in: text · out: text · features: send, notify
+  ✓ claude     agent    in: text · out: text · features: send, notify
         account: 9bfc7af0-… · seen 1 agent, 2 sessions
           seen: 9bfc7af0-… · sessions: 2
-  ✗ codex      agent  in: text · out: text · features: send, notify
+  ✗ codex      agent    in: text · out: text · features: send, notify
         set METRO_CODEX_RC=ws://… to push
+  ✓ webhook    service  in: text · out: – · features: –
+        2 endpoints · base https://webhook.example.com
 ```
 
 `✓` = ready (env/runtime detected), `✗` = configured-but-broken or runtime not detected, `·` = informational. The detail line under each agent row shows the resolved account id plus the per-agent count of sessions metro has observed — pull addressable agent lines from those.
+
+## Webhooks (receiving HTTP events)
+
+When the user wants metro to receive events from a third-party service (GitHub PRs, Intercom conversations, Fireflies meetings, …):
+
+1. **One-time tunnel setup** (only needed once per machine): `metro tunnel setup <tunnel-name> <hostname>`. Requires `cloudflared` on PATH (`brew install cloudflared`) and a Cloudflare account + domain on Cloudflare DNS. Run `cloudflared tunnel login` first if you haven't.
+2. **Register an endpoint**: `metro webhook add <label> [--secret=<shared-secret>]`. Prints the public URL — paste it into the provider's webhook settings.
+3. **Run the daemon**: `metro`. With at least one endpoint registered, metro auto-binds the HTTP listener (port 8420, override `METRO_WEBHOOK_PORT`) and spawns `cloudflared tunnel run` if `tunnel.json` exists.
+
+Each POST becomes an inbound event:
+
+```json
+{"kind":"inbound","station":"webhook","line":"metro://webhook/<id>","lineName":"github",
+ "from":"metro://webhook/<id>","to":"metro://claude/user/<orgId>",
+ "messageId":"<x-github-delivery>","text":"push POST /wh/<id>",
+ "payload":{"headers":{"x-github-event":"push",…},"body":{"ref":"refs/heads/main",…}}}
+```
+
+`text` is a short summary; the real event lives in `payload.body`. Use `payload.headers['x-github-event']` (or `x-intercom-topic` etc.) to narrow on provider event type. If you set `--secret`, metro verifies `X-Hub-Signature-256` and rejects bad signatures with 401 — agents see only authenticated events.
 
 ## Image attachments
 
