@@ -17,7 +17,13 @@ When the user asks to run/start/launch metro:
 Bash(command: "metro", run_in_background: true)
 ```
 
-Then attach `Monitor` to its stdout. Each line is one JSON event. Stderr is pino logs — don't act on it.
+Then attach `Monitor` to the daemon's output file with a `jq` filter that turns each raw JSON event into a one-line summary — otherwise the Monitor notifications just show a generic label and the user has to expand every event:
+
+```
+Monitor(command: "tail -F <bash-output-file> | jq -rc --unbuffered 'select(.kind != null) | [(.kind | .[0:3]), \"\\(.station)/\\(.lineName // (.line | sub(\"metro://[^/]+/\"; \"\")))\", (.payload.headers[\"x-github-event\"] // .fromName // null), (.text // .emoji // null)] | map(select(. != null)) | join(\" · \")'", persistent: true)
+```
+
+Each notification then reads like `inb · webhook/github · push · push POST /wh/abc` or `not · claude/9bfc/sess · deploy green`. Full JSON payloads are still in `$METRO_STATE_DIR/history.jsonl` — read with `metro history --line=<line>` (or `cat | jq`) when you need fields the summary line dropped (e.g. `payload.body` for a webhook). Stderr is pino logs — don't act on it.
 
 ### Codex
 

@@ -12,7 +12,13 @@ The launch mechanics differ by runtime — pick the one that matches yours.
 Bash(command: "metro", run_in_background: true)
 ```
 
-Then attach `Monitor` to its stdout. Each line is one JSON event you act on.
+Then attach `Monitor` to the daemon's output file with a `jq` filter that converts each raw JSON event into a one-line summary — otherwise notifications just show a generic label and the user has to expand each event:
+
+```
+Monitor(command: "tail -F <bash-output-file> | jq -rc --unbuffered 'select(.kind != null) | [(.kind | .[0:3]), \"\\(.station)/\\(.lineName // (.line | sub(\"metro://[^/]+/\"; \"\")))\", (.payload.headers[\"x-github-event\"] // .fromName // null), (.text // .emoji // null)] | map(select(. != null)) | join(\" · \")'", persistent: true)
+```
+
+Each notification reads like `inb · webhook/github · push · push POST /wh/abc` or `not · claude/9bfc/sess · deploy green`. Full JSON payloads are still in `$METRO_STATE_DIR/history.jsonl` — `metro history --line=<line>` (or raw `cat | jq`) when you need fields the summary dropped (e.g. `payload.body` for a webhook).
 
 ### Codex
 
