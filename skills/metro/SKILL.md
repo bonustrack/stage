@@ -17,7 +17,13 @@ When the user asks to run/start/launch metro:
 Bash(command: "metro", run_in_background: true)
 ```
 
-Then attach `Monitor` to its stdout. Each line is one JSON event. Stderr is pino logs — don't act on it.
+Then attach `Monitor` to its stdout with `tail -F -n 0` (the `-n 0` is critical — without it, the first time Monitor starts it replays the last 10 lines of the file and floods you with stale events). Filter to event lines only:
+
+```
+Monitor(command: "tail -F -n 0 <bash-output-file> | grep --line-buffered '\"kind\":\"inbound\"\\|\"kind\":\"notification\"'", persistent: true)
+```
+
+Each line is one JSON event. The notification body is truncated at ~500 chars by the Claude Code harness — fine for envelope routing (`kind`, `station`, `fromName`, `text`), but for deep payloads (large webhook bodies, full Discord mentions) read the untruncated record from `$METRO_STATE_DIR/history.jsonl` via `metro history --line=<line> --limit=1` or `jq` on the file. Stderr is pino logs — don't act on it.
 
 ### Codex
 

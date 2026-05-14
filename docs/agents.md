@@ -12,7 +12,13 @@ The launch mechanics differ by runtime — pick the one that matches yours.
 Bash(command: "metro", run_in_background: true)
 ```
 
-Then attach `Monitor` to its stdout. Each line is one JSON event you act on.
+Then attach `Monitor` to its stdout with `tail -F -n 0` (the `-n 0` skips the last-10-lines replay that `tail` does by default — otherwise Monitor floods you with stale events the moment it starts). Filter to event lines only:
+
+```
+Monitor(command: "tail -F -n 0 <bash-output-file> | grep --line-buffered '\"kind\":\"inbound\"\\|\"kind\":\"notification\"'", persistent: true)
+```
+
+Each line is one JSON event you act on. Note: Claude Code truncates the Monitor notification body at ~500 chars — fine for routing on envelope fields (`kind`, `station`, `fromName`, `text`), but for deep payload (large webhook bodies, full Discord mentions, attachment metadata) re-read the untruncated record from `$METRO_STATE_DIR/history.jsonl` via `metro history --line=<line> --limit=1`.
 
 ### Codex
 
