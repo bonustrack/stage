@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import pkg from '../package.json' with { type: 'json' };
 import { DiscordStation } from './stations/discord.js';
 import { TelegramStation } from './stations/telegram.js';
+import { WebhookStation } from './stations/webhook.js';
 import { asLine, Line, type InboundMessage } from './stations/index.js';
 import { CodexRC } from './codex-rc.js';
 import { startIpcServer, stopIpcServer } from './ipc.js';
@@ -17,10 +18,13 @@ import { errMsg, log } from './log.js';
 import { acquireLock, configuredPlatforms, loadMetroEnv, STATE_DIR, requireConfiguredPlatform } from './paths.js';
 import { setCodexSessionId } from './stations/codex.js';
 import { noteAgentFromLine } from './registry.js';
+import { listEndpoints } from './webhooks.js';
+import { loadTunnelConfig, Tunnel } from './tunnel.js';
 
 loadMetroEnv();
 const platforms = configuredPlatforms();
-requireConfiguredPlatform(platforms);
+const endpoints = listEndpoints();
+requireConfiguredPlatform(platforms, endpoints.length > 0);
 acquireLock(join(STATE_DIR, '.tail-lock'));
 
 // Fail fast if launched from Claude Code without a logged-in account.
@@ -44,6 +48,9 @@ codexRc?.start();
 
 const discord = new DiscordStation();
 const telegram = new TelegramStation();
+const webhook = new WebhookStation();
+const tunnelCfg = loadTunnelConfig();
+const tunnel = tunnelCfg ? new Tunnel(tunnelCfg, webhook.port()) : null;
 
 function emit(entry: HistoryEntry): void {
   const json = JSON.stringify(entry);
@@ -88,7 +95,13 @@ async function main(): Promise<void> {
     saveBotId('telegram', String(me.id));
     log.info({ bot: `@${me.username}` }, 'telegram ready');
   }
-  log.info({ codexRc: !!codexRc }, 'dispatcher ready');
+  /** Start the HTTP receiver only when ≥1 endpoint is registered — no point binding a port nobody listens to. */
+  if (endpoints.length) {
+    webhook.onMessage(onInbound);
+    await webhook.start();
+    tunnel?.start();
+  }
+  log.info({ codexRc: !!codexRc, tunnel: !!tunnel }, 'dispatcher ready');
 }
 
 let shuttingDown = false;
@@ -97,7 +110,9 @@ async function shutdown(): Promise<void> {
   shuttingDown = true;
   log.info('dispatcher shutting down');
   codexRc?.stop();
+  tunnel?.stop();
   await stopIpcServer(ipc).catch(() => {});
+  await webhook.stop().catch(() => {});
   if (platforms.discord) await discord.stop().catch(() => {});
   if (platforms.telegram) await telegram.stop().catch(() => {});
   process.exit(0);

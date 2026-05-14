@@ -3,6 +3,8 @@
 import { tryClaudeAccountId } from './claude.js';
 import { tryCodexAccountId } from './codex.js';
 import { listAgents } from '../registry.js';
+import { listEndpoints } from '../webhooks.js';
+import { loadTunnelConfig } from '../tunnel.js';
 
 export type Modality = 'text' | 'image';
 export type Feature = 'reply' | 'send' | 'edit' | 'react' | 'download' | 'fetch' | 'notify';
@@ -79,6 +81,8 @@ export const Line = {
   claude: (orgId: string, sessionId: string): Line => build('claude', orgId, sessionId),
   /** `metro://codex/<accountId>/<threadId>` — accountId from auth.json, thread from codex-rc handshake. */
   codex: (accountId: string, threadId: string): Line => build('codex', accountId, threadId),
+  /** `metro://webhook/<endpoint-id>` — one HTTP receive endpoint, registered via `metro webhook add`. */
+  webhook: (endpointId: string): Line => build('webhook', endpointId),
   /** Participant URIs — `metro://<station>/user/<id>` and `metro://<station>/bot/<id>`. */
   user: (station: string, id: string | number): Line => build(station, 'user', id),
   bot: (station: string, id: string | number): Line => build(station, 'bot', id),
@@ -107,6 +111,10 @@ export const Line = {
   },
   parseClaude: (line: Line | string) => parseAgent(line, 'claude'),
   parseCodex: (line: Line | string) => parseAgent(line, 'codex'),
+  parseWebhook(line: Line | string): string | null {
+    const p = Line.parse(line);
+    return p?.station === 'webhook' && p.path.length === 1 ? p.path[0] : null;
+  },
   isAgent: (line: Line | string): boolean => {
     const s = Line.station(line);
     return s === 'claude' || s === 'codex';
@@ -120,10 +128,11 @@ const CHAT_CAPS: Capabilities = {
   out: ['text'],
   features: ['reply', 'send', 'edit', 'react', 'download', 'fetch'],
 };
+const WEBHOOK_CAPS: Capabilities = { in: ['text'], out: [], features: [] };
 
 export type StationRow = {
   name: string;
-  kind: 'agent' | 'chat';
+  kind: 'agent' | 'chat' | 'service';
   configured: boolean | null;
   detail: string;
   capabilities: Capabilities;
@@ -173,7 +182,20 @@ export const listStations = (): StationRow[] => [
     configured: !!(process.env.METRO_CODEX_RC || process.env.CODEX_HOME),
     detail: codexStationDetail(),
   },
+  {
+    name: 'webhook', kind: 'service', capabilities: WEBHOOK_CAPS,
+    configured: listEndpoints().length > 0,
+    detail: webhookStationDetail(),
+  },
 ];
+
+function webhookStationDetail(): string {
+  const eps = listEndpoints();
+  const t = loadTunnelConfig();
+  const base = t ? `https://${t.hostname}` : `http://127.0.0.1:${Number(process.env.METRO_WEBHOOK_PORT) || 8420}`;
+  if (!eps.length) return `no endpoints (run \`metro webhook add <label>\`)${t ? ` · tunnel → ${t.hostname}` : ''}`;
+  return `${eps.length} endpoint${eps.length === 1 ? '' : 's'} · base ${base}${t ? '' : ' (no tunnel — run `metro tunnel setup`)'}`;
+}
 
 export const fmtCapabilities = (c: Capabilities): string =>
   `in: ${c.in.join('+') || '–'} · out: ${c.out.join('+') || '–'} · features: ${c.features.join(', ') || '–'}`;
