@@ -47,8 +47,9 @@ export function formatDisplay(e: HistoryEntry): string {
       ?.headers?.['x-intercom-topic'];
     return `${headerFor('🪝', ['webhook', e.lineName, ev])}\n> ${body}`;
   }
-  if (e.kind === 'inbound') {
-    return `${headerFor('📩', [e.station, e.fromName ?? e.from, e.lineName])}\n> ${body}`;
+  if (e.kind === 'inbound' || (e.kind === 'react' && !Line.isAgent(e.from))) {
+    const reactBody = e.kind === 'react' ? `reacted ${e.emoji ?? ''}`.trim() : body;
+    return `${headerFor('📩', [e.station, e.fromName ?? e.from, e.lineName])}\n> ${reactBody}`;
   }
   if (e.kind === 'notification') {
     return `${headerFor('🔔', ['notification', e.station, e.fromName ?? e.from])}\n> ${body}`;

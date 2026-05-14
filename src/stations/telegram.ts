@@ -9,7 +9,7 @@ import { mdToTelegramHtml } from './telegram-md.js';
 import { inlineKeyboard, tgSendRich } from './telegram-upload.js';
 import {
   Line, type Capabilities, type ChatStation, type EditOpts,
-  type InboundMessage, type SendOpts,
+  type InboundMessage, type InboundReaction, type SendOpts,
 } from './index.js';
 import { STATE_DIR } from '../paths.js';
 
@@ -50,7 +50,16 @@ export type TelegramPayload = {
   from?: { id?: number; is_bot?: boolean; username?: string; first_name?: string };
   reply_to_message?: TelegramPayload;
 };
-type RawUpdate = { update_id: number; message?: TelegramPayload };
+type ReactionType = { type: 'emoji'; emoji: string } | { type: 'custom_emoji'; custom_emoji_id: string };
+type MessageReactionUpdated = {
+  chat: { id: number; title?: string; first_name?: string };
+  message_id: number;
+  user?: { id: number; username?: string; first_name?: string; is_bot?: boolean };
+  date?: number;
+  old_reaction: ReactionType[];
+  new_reaction: ReactionType[];
+};
+type RawUpdate = { update_id: number; message?: TelegramPayload; message_reaction?: MessageReactionUpdated };
 
 const isParseError = (err: unknown): boolean => errMsg(err).includes("can't parse entities");
 const isNoopEdit = (err: unknown): boolean => errMsg(err).includes('message is not modified');
@@ -83,11 +92,13 @@ export class TelegramStation implements ChatStation<TelegramPayload> {
   private pollOffset = 0;
   private pollAbort: AbortController | null = null;
   private messageHandler: (m: InboundMessage<TelegramPayload>) => void = () => {};
+  private reactionHandler: (r: InboundReaction) => void = () => {};
   private offsetFile = join(STATE_DIR, 'telegram-offset.json');
   /** Snapshot recent inbounds in memory so `metro download <line> <id>` can resolve them. */
   private recent = new Map<string, TelegramPayload>();
 
   onMessage(handler: (m: InboundMessage<TelegramPayload>) => void): void { this.messageHandler = handler; }
+  onReaction(handler: (r: InboundReaction) => void): void { this.reactionHandler = handler; }
 
   async start(): Promise<void> {
     await tg('deleteWebhook', { drop_pending_updates: false }).catch(() => {});
@@ -171,9 +182,27 @@ export class TelegramStation implements ChatStation<TelegramPayload> {
     catch (err) { log.warn({ err: errMsg(err) }, 'telegram offset save failed'); }
   }
 
+  private dispatchReaction(r: MessageReactionUpdated): void {
+    if (!r.user || r.user.is_bot) return;
+    const emojis = (xs: ReactionType[]): string[] =>
+      xs.filter((x): x is { type: 'emoji'; emoji: string } => x.type === 'emoji').map(x => x.emoji);
+    const had = new Set(emojis(r.old_reaction));
+    const added = emojis(r.new_reaction).filter(e => !had.has(e));
+    if (!added.length) return;
+    const fromName = r.user.username ? `@${r.user.username}` : r.user.first_name;
+    log.info({ from: fromName, chat: r.chat.id, emojis: added }, 'telegram: reaction');
+    const ts = new Date((r.date ?? Math.floor(Date.now() / 1000)) * 1000).toISOString();
+    for (const emoji of added) this.reactionHandler({
+      id: mintId(), ts, station: 'telegram', line: Line.telegram(r.chat.id),
+      lineName: r.chat.title ?? r.chat.first_name ?? undefined,
+      from: Line.user('telegram', r.user.id), fromName,
+      messageId: String(r.message_id), emoji,
+    });
+  }
+
   private async pollLoop(): Promise<void> {
     const signal = this.pollAbort?.signal;
-    const body = { timeout: 25, allowed_updates: ['message'] };
+    const body = { timeout: 25, allowed_updates: ['message', 'message_reaction'] };
     while (this.pollAbort && !this.pollAbort.signal.aborted) {
       try {
         const updates = await tg<RawUpdate[]>('getUpdates', { offset: this.pollOffset, ...body },
@@ -189,6 +218,7 @@ export class TelegramStation implements ChatStation<TelegramPayload> {
   }
 
   private dispatchUpdate(u: RawUpdate): void {
+    if (u.message_reaction) { this.dispatchReaction(u.message_reaction); return; }
     const m = u.message;
     if (!m?.chat?.id || typeof m.message_id !== 'number' || m.from?.is_bot) return;
     const text = [m.text ?? m.caption, ...attachmentTags(m)].filter(Boolean).join(' ');

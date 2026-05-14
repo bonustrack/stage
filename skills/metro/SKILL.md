@@ -41,7 +41,7 @@ If something seems off, run `metro doctor`. Common causes: missing tokens (`metr
 ## Event shape
 
 Every line on stdout is one **history entry** — the same record appended to `history.jsonl`. Fields:
-- `kind` — `"inbound"`, `"notification"`, `"outbound"`, `"edit"`, or `"react"`
+- `kind` — `"inbound"`, `"notification"`, `"outbound"`, `"edit"`, or `"react"`. Inbound `react` events fire when a human adds an emoji reaction in Discord/Telegram — `emoji` is set, `text` is omitted, `messageId` is the message that got reacted to.
 - `id` (`msg_…`) — universal message ID minted by metro
 - `ts` — ISO timestamp
 - `station` — `"discord"`, `"telegram"`, `"claude"`, `"codex"`, `"webhook"`
