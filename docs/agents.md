@@ -62,7 +62,15 @@ When **you** call `metro send`/`reply`/`edit`/`react`, metro auto-stamps `from` 
 
 ## Required flow on every event
 
-1. **Echo the event** to your visible output: `[<line>#<messageId>] <text>`. Both Monitor and Codex collapse tool output, so this echo is the only thing the user sees without expanding cards.
+1. **Echo `event.display` verbatim as your first chat output.** Every event ships a pre-rendered chat-bubble in `event.display` — bold header (icon + station + sender) and a markdown blockquote body. Paste it as-is before any commentary or tool calls. Monitor's notification chip is a CLI-only UI and won't surface visibly in VSCode/Cursor, so the agent's own echo is the only cross-surface signal:
+
+   ```
+   **📩 telegram · @bonustrack**
+   > Hey
+   ```
+
+   The format is centralized in metro's dispatcher (`formatDisplay()` in `src/history.ts`) — don't compose your own.
+
 2. **Decide and act** using the subcommands below.
 
 ## Detecting "is this for me?"

@@ -28,8 +28,8 @@ function fetchTunnelToken(name: string): string | null {
 export class Tunnel {
   private child: ChildProcess | null = null;
   private closed = false;
-  private token: string | null = null;
-  private tokenResolved = false;
+  /** `undefined` = unresolved; `null` = resolved but unavailable (CLI missing / not logged in / no tunnel). */
+  private token: string | null | undefined = undefined;
 
   constructor(private cfg: TunnelConfig, private port: number) {}
 
@@ -37,10 +37,7 @@ export class Tunnel {
 
   start(): void {
     if (this.closed) return;
-    if (!this.tokenResolved) {
-      this.token = fetchTunnelToken(this.cfg.name);
-      this.tokenResolved = true;
-    }
+    if (this.token === undefined) this.token = fetchTunnelToken(this.cfg.name);
     const mode = this.token ? 'token' : 'named';
     log.info({ name: this.cfg.name, hostname: this.cfg.hostname, port: this.port, mode }, 'cloudflared tunnel starting');
     /** `--no-autoupdate` is a global cloudflared flag — must come before the `tunnel` subcommand. */

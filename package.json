@@ -1,6 +1,6 @@
 {
   "name": "@stage-labs/metro",
-  "version": "0.1.0-beta.9",
+  "version": "0.1.0-beta.10",
   "description": "Live JSON stream of Telegram + Discord messages for your local Claude Code / Codex session. The agent launches metro; metro emits inbounds on stdout and accepts replies via CLI subcommands.",
   "license": "MIT",
   "repository": {

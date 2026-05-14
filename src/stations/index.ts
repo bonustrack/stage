@@ -3,7 +3,7 @@
 import { tryClaudeAccountId } from './claude.js';
 import { tryCodexAccountId } from './codex.js';
 import { listAgents } from '../registry.js';
-import { listEndpoints } from '../webhooks.js';
+import { listEndpoints, webhookPort } from '../webhooks.js';
 import { loadTunnelConfig } from '../tunnel.js';
 
 export type Modality = 'text' | 'image';
@@ -192,7 +192,7 @@ export const listStations = (): StationRow[] => [
 function webhookStationDetail(): string {
   const eps = listEndpoints();
   const t = loadTunnelConfig();
-  const base = t ? `https://${t.hostname}` : `http://127.0.0.1:${Number(process.env.METRO_WEBHOOK_PORT) || 8420}`;
+  const base = t ? `https://${t.hostname}` : `http://127.0.0.1:${webhookPort()}`;
   if (!eps.length) return `no endpoints (run \`metro webhook add <label>\`)${t ? ` · tunnel → ${t.hostname}` : ''}`;
   return `${eps.length} endpoint${eps.length === 1 ? '' : 's'} · base ${base}${t ? '' : ' (no tunnel — run `metro tunnel setup`)'}`;
 }

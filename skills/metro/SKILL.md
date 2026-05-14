@@ -98,7 +98,15 @@ The `id` is the **canonical handle** for that message across all stations — st
 
 ## Required flow on every event
 
-1. **Echo to your visible output**: `[<line>#<messageId>] <text>` on its own line. Both Claude Code's Monitor and Codex collapse tool output, so this echo is the only way the user sees what arrived without expanding cards.
+1. **Echo `event.display` verbatim as your first chat output.** Every event ships a pre-rendered chat-bubble in `event.display` — bold header (icon + station + sender) and a markdown blockquote body. Render this string as-is, before any commentary or tool calls. Monitor's notification chip is a CLI-only UI and won't surface visibly in VSCode/Cursor, so this echo is the only cross-surface signal the user has. Example:
+
+   ```
+   **📩 telegram · @bonustrack**
+   > Hey
+   ```
+
+   Don't compose your own bubble — the format is centralized in metro's dispatcher; just paste the string.
+
 2. **Decide and act** using the subcommands below.
 
 No server-side auto-reaction — don't expect 👀 to be on the user's message; add one yourself with `metro react` if you want to ack quickly.

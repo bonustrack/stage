@@ -4,12 +4,10 @@ import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { errMsg, log } from '../log.js';
 import { mintId } from '../history.js';
-import { findEndpoint, listEndpoints } from '../webhooks.js';
+import { findEndpoint, listEndpoints, webhookPort } from '../webhooks.js';
 import { Line, type InboundMessage } from './index.js';
 
 export type WebhookPayload = { headers: Record<string, string>; body: unknown };
-
-const DEFAULT_PORT = 8420;
 
 /** Synthesize an `event` tag from common provider-specific headers (GitHub, Intercom). */
 function pickEvent(headers: Record<string, string>): string {
@@ -35,19 +33,18 @@ export class WebhookStation {
   private server: Server | null = null;
   private handler: ((m: InboundMessage<WebhookPayload>) => void) | null = null;
 
-  port(): number { return Number(process.env.METRO_WEBHOOK_PORT) || DEFAULT_PORT; }
-
   onMessage(h: (m: InboundMessage<WebhookPayload>) => void): void { this.handler = h; }
 
   start(): Promise<void> {
+    const port = webhookPort();
     return new Promise((resolve, reject) => {
       this.server = createServer((req, res) => this.handle(req, res).catch(err => {
         log.warn({ err: errMsg(err) }, 'webhook handler error');
         if (!res.headersSent) res.writeHead(500).end();
       }));
       this.server.on('error', reject);
-      this.server.listen(this.port(), '127.0.0.1', () => {
-        log.info({ port: this.port(), endpoints: listEndpoints().length }, 'webhook station ready');
+      this.server.listen(port, '127.0.0.1', () => {
+        log.info({ port, endpoints: listEndpoints().length }, 'webhook station ready');
         resolve();
       });
     });

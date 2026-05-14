@@ -32,6 +32,28 @@ export interface HistoryEntry {
   replyTo?: string;
   /** Station-native raw message — only set on inbound. Shape matches `InboundMessage.payload`. */
   payload?: unknown;
+  /** Pre-rendered chat-bubble markdown — the agent's first chat output should be this string verbatim. */
+  display?: string;
+}
+
+/** Pre-render a chat-bubble line — the agent echoes `event.display` verbatim instead of composing markdown itself. */
+export function formatDisplay(e: HistoryEntry): string {
+  const headerFor = (icon: string, parts: (string | undefined)[]): string =>
+    `**${icon} ${parts.filter(Boolean).join(' · ')}**`;
+  const body = e.text ?? (e.emoji ? `[react ${e.emoji}]` : '');
+  if (e.kind === 'inbound' && e.station === 'webhook') {
+    const ev = (e.payload as { headers?: Record<string, string> } | undefined)
+      ?.headers?.['x-github-event'] ?? (e.payload as { headers?: Record<string, string> } | undefined)
+      ?.headers?.['x-intercom-topic'];
+    return `${headerFor('🪝', ['webhook', e.lineName, ev])}\n> ${body}`;
+  }
+  if (e.kind === 'inbound') {
+    return `${headerFor('📩', [e.station, e.fromName ?? e.from, e.lineName])}\n> ${body}`;
+  }
+  if (e.kind === 'notification') {
+    return `${headerFor('🔔', ['notification', e.station, e.fromName ?? e.from])}\n> ${body}`;
+  }
+  return `${headerFor('📤', [e.station, '→', e.fromName ?? e.to])}\n> ${body}`;
 }
 
 const FILE = join(STATE_DIR, 'history.jsonl');

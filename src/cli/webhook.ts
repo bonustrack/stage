@@ -1,16 +1,13 @@
 /** CLI subcommands: `metro webhook add|list|remove` + `metro tunnel setup`. */
 
 import { spawnSync } from 'node:child_process';
-import { addEndpoint, listEndpoints, removeEndpoint } from '../webhooks.js';
+import { addEndpoint, listEndpoints, removeEndpoint, webhookPort } from '../webhooks.js';
 import { loadTunnelConfig, saveTunnelConfig } from '../tunnel.js';
 import { emit, exitErr, flagOne, isJson, need, writeJson, type Flags } from './util.js';
 
-const DEFAULT_PORT = 8420;
-const port = (): number => Number(process.env.METRO_WEBHOOK_PORT) || DEFAULT_PORT;
-
 function urlFor(endpointId: string): string {
   const t = loadTunnelConfig();
-  return t ? `https://${t.hostname}/wh/${endpointId}` : `http://127.0.0.1:${port()}/wh/${endpointId}`;
+  return t ? `https://${t.hostname}/wh/${endpointId}` : `http://127.0.0.1:${webhookPort()}/wh/${endpointId}`;
 }
 
 export async function cmdWebhook(p: string[], f: Flags): Promise<void> {

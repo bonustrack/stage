@@ -12,13 +12,13 @@ import { WebhookStation } from './stations/webhook.js';
 import { asLine, Line, type InboundMessage } from './stations/index.js';
 import { CodexRC } from './codex-rc.js';
 import { startIpcServer, stopIpcServer } from './ipc.js';
-import { agentSelf, appendHistory, mintId, selfLine, type HistoryEntry } from './history.js';
+import { agentSelf, appendHistory, formatDisplay, mintId, selfLine, type HistoryEntry } from './history.js';
 import { noteSeen, saveBotId } from './cache.js';
 import { errMsg, log } from './log.js';
 import { acquireLock, configuredPlatforms, loadMetroEnv, STATE_DIR, requireConfiguredPlatform } from './paths.js';
 import { setCodexSessionId } from './stations/codex.js';
 import { noteAgentFromLine } from './registry.js';
-import { listEndpoints } from './webhooks.js';
+import { listEndpoints, webhookPort } from './webhooks.js';
 import { loadTunnelConfig, Tunnel } from './tunnel.js';
 
 loadMetroEnv();
@@ -50,15 +50,17 @@ const discord = new DiscordStation();
 const telegram = new TelegramStation();
 const webhook = new WebhookStation();
 const tunnelCfg = loadTunnelConfig();
-const tunnel = tunnelCfg ? new Tunnel(tunnelCfg, webhook.port()) : null;
+const tunnel = tunnelCfg ? new Tunnel(tunnelCfg, webhookPort()) : null;
 
 function emit(entry: HistoryEntry): void {
-  const json = JSON.stringify(entry);
+  /** `display` first so it survives Monitor's ~500-char body truncation — the agent must see it to echo it. */
+  const enriched: HistoryEntry = { display: formatDisplay(entry), ...entry };
+  const json = JSON.stringify(enriched);
   process.stdout.write(json + '\n');
   codexRc?.push(json);
   noteSeen(entry.line, entry.lineName);
   for (const l of [entry.line, entry.from, entry.to]) if (l) noteAgentFromLine(l);
-  appendHistory(entry);
+  appendHistory(enriched);
 }
 
 const onInbound = (m: InboundMessage): void => emit({ ...m, kind: 'inbound', to: agentSelf() });
