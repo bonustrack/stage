@@ -1,4 +1,4 @@
-/** CLI action handlers: send/reply/edit/react/download/fetch/notify + helpers. */
+/** CLI action handlers: send/reply/edit/react/download/fetch + helpers. */
 
 import { mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -66,7 +66,8 @@ export async function cmdSend(p: string[], f: Flags): Promise<void> {
   loadMetroEnv();
   const text = await resolveText(p, 1), line = asLine(p[0]);
   if (Line.isAgent(line)) {
-    const resp = await ipcCall({ op: 'notify', line, text });
+    const from = flagOne(f, 'from');
+    const resp = await ipcCall({ op: 'notify', line, from, text });
     if (!resp.ok) throw new Error(resp.error);
     return emit(f, `notified ${line}`, { ok: true, line, id: null, messageId: null });
   }
@@ -140,11 +141,3 @@ export async function cmdFetch(p: string[], f: Flags): Promise<void> {
   for (const m of messages) process.stdout.write(`${m.timestamp}  ${m.author}: ${m.text}\n`);
 }
 
-export async function cmdNotify(p: string[], f: Flags): Promise<void> {
-  need(p, 1, 'metro notify <line> <text> [--from=<line>]'); loadMetroEnv();
-  const text = await resolveText(p, 1), line = asLine(p[0]);
-  const from = flagOne(f, 'from');
-  const resp = await ipcCall({ op: 'notify', line, from, text });
-  if (!resp.ok) throw new Error(resp.error);
-  emit(f, `notified ${line}`, { ok: true, line });
-}

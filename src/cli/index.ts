@@ -9,7 +9,7 @@ import { loadMetroEnv } from '../paths.js';
 import { readHistory, type HistoryKind } from '../history.js';
 import { cmdDoctor, cmdSetup, cmdUpdate } from './config.js';
 import {
-  cmdDownload, cmdEdit, cmdFetch, cmdNotify, cmdReact, cmdReply, cmdSend,
+  cmdDownload, cmdEdit, cmdFetch, cmdReact, cmdReply, cmdSend,
 } from './actions.js';
 import {
   flagOne, isJson, parseArgs, writeJson, type ExitErr, type Flags,
@@ -35,7 +35,6 @@ Usage:
   metro download <line> <message_id> [--out=<dir>]
                                               Download image attachments to disk.
   metro fetch <line> [--limit=N]              Recent-message lookback (Discord only).
-  metro notify <line> <text> [--from=<line>]  Emit a notification on the daemon's stream.
   metro history [--limit=N] [--line=…] [--station=…] [--kind=…] [--from=…] [--text=…] [--since=…]
                                               Read the universal message log (newest first).
   metro update                                Upgrade in place.
@@ -128,7 +127,7 @@ const pad = (s: string, n: number): string => (s.length > n ? `${s.slice(0, n - 
 const COMMANDS: Record<string, (positional: string[], flags: Flags) => Promise<void>> = {
   setup: cmdSetup, doctor: cmdDoctor, stations: cmdStations, lines: cmdLines,
   send: cmdSend, reply: cmdReply, edit: cmdEdit, react: cmdReact,
-  download: cmdDownload, fetch: cmdFetch, notify: cmdNotify,
+  download: cmdDownload, fetch: cmdFetch,
   history: cmdHistory, update: cmdUpdate,
 };
 

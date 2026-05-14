@@ -55,7 +55,7 @@ Both `from` and `to` are **participant URIs** (the conversation lives in `line`)
 When **you** call `metro send`/`reply`/`edit`/`react`, metro auto-stamps `from` to your runtime — `metro://claude/agent` (from `$CLAUDECODE`) or `metro://codex/agent` (from `$METRO_CODEX_RC`/`$CODEX_HOME`). Override with `--from=<uri>` or `$METRO_FROM`. When replying/reacting, `to` is auto-set to the original sender (history lookup).
 
 - `kind: "inbound"` — a human (or another bot) posted on a chat platform.
-- `kind: "notification"` — another agent called `metro notify`/`metro send` against your agent line. This is how Codex pings Claude Code and vice versa.
+- `kind: "notification"` — another agent called `metro send` against your agent line. This is how Codex pings Claude Code and vice versa.
 
 `text` may include `[image]` / `[voice]` / `[audio]` / `[file: <name>]` placeholders alongside the real text — non-image attachments are opaque markers, images can be materialized via `metro download`.
 
@@ -83,7 +83,7 @@ Default: only reply on DM or ping; otherwise stay silent or `metro react` to ack
 | Reaction (empty emoji clears it) | `metro react <line> <messageId> <emoji>` |
 | Download `[image]` attachments | `metro download <line> <messageId> [--out=<dir>]` |
 | Recent-message lookback (Discord only) | `metro fetch <line> [--limit=20]` |
-| Cross-agent ping | `metro notify <line> <text> [--from=<line>]` |
+| Cross-agent ping | `metro send <agent-line> <text> [--from=<line>]` |
 
 `reply` / `send` / `edit` accept multi-line text via stdin (heredoc).
 
@@ -168,8 +168,7 @@ Both agents can post to each other's "agent line" — a logical channel under `m
 
 ```bash
 metro send metro://claude/deploys "build green, ready to ship"
-# or equivalently:
-metro notify metro://claude/deploys "build green, ready to ship" --from=metro://codex/ci
+metro send metro://claude/deploys "build green" --from=metro://codex/ci   # override sender
 ```
 
 This requires the metro daemon to be running on the machine. Without a daemon, agent-line sends error with a clear message.

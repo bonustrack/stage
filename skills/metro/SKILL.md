@@ -88,7 +88,7 @@ When **you** send via `metro send`/`reply`/`edit`/`react`, metro auto-stamps `fr
 The `id` is the **canonical handle** for that message across all stations — store it if you want to refer back to it later.
 
 - `kind: "inbound"` — a human (or another bot) posted on a chat platform.
-- `kind: "notification"` — another agent called `metro notify` / `metro send` against your agent line. This is how Codex pings Claude Code and vice versa.
+- `kind: "notification"` — another agent called `metro send` against your agent line. This is how Codex pings Claude Code and vice versa.
 
 `text` may contain `[image]`, `[voice]`, `[audio]`, or `[file: <name>]` placeholders alongside the real text — non-image attachments are opaque markers; images can be materialized via `metro download`.
 
@@ -111,7 +111,7 @@ All take positional args (no `--to=`/`--text=` flags). Append `--json` to any fo
 | Reaction (empty emoji clears) | `metro react <line> <messageId> <emoji>` |
 | Download `[image]` attachments → paths | `metro download <line> <messageId> [--out=<dir>]` |
 | Recent channel history (Discord only) | `metro fetch <line> [--limit=20]` |
-| Ping another agent (cross-agent line) | `metro send metro://claude/<topic> <text>` or `metro notify <line> <text> [--from=<line>]` |
+| Ping another agent (cross-agent line) | `metro send metro://claude/<topic> <text> [--from=<line>]` |
 
 `reply` / `send` / `edit` accept multi-line text via stdin (heredoc).
 
@@ -175,8 +175,7 @@ Both agents can post to each other's "agent line":
 
 ```bash
 metro send metro://claude/deploys "build green, ready to ship"
-# or
-metro notify metro://codex/ci "build green" --from=metro://claude/deploys
+metro send metro://codex/ci "build green" --from=metro://claude/deploys   # override sender
 ```
 
 The daemon re-emits the post on its stdout stream (and pushes via codex-rc if configured), so the peer agent sees a `{"kind":"notification",...}` event. Requires the metro daemon to be running on the machine — agent-line sends error with `metro daemon is not running` otherwise.
