@@ -5,12 +5,14 @@ import pkg from '../../package.json' with { type: 'json' };
 import { errMsg } from '../log.js';
 import { listLines } from '../cache.js';
 import { fmtCapabilities, listStations } from '../stations/index.js';
+import { listAgents } from '../registry.js';
 import { loadMetroEnv } from '../paths.js';
 import { readHistory, type HistoryKind } from '../history.js';
 import { cmdDoctor, cmdSetup, cmdUpdate } from './config.js';
 import {
   cmdDownload, cmdEdit, cmdFetch, cmdReact, cmdReply, cmdSend,
 } from './actions.js';
+import { cmdTunnel, cmdWebhook } from './webhook.js';
 import {
   flagOne, isJson, parseArgs, writeJson, type ExitErr, type Flags,
 } from './util.js';
@@ -37,6 +39,10 @@ Usage:
   metro fetch <line> [--limit=N]              Recent-message lookback (Discord only).
   metro history [--limit=N] [--line=…] [--station=…] [--kind=…] [--from=…] [--text=…] [--since=…]
                                               Read the universal message log (newest first).
+  metro webhook add <label> [--secret=…]      Register an HTTP receive endpoint (GitHub, Intercom, …).
+  metro webhook list | remove <id>            List or remove webhook endpoints.
+  metro tunnel setup <name> <hostname>        Configure a Cloudflare named tunnel (run cloudflared tunnel login first).
+  metro tunnel status                         Show current tunnel config.
   metro update                                Upgrade in place.
   metro --version | --help
 
@@ -48,13 +54,24 @@ Exit codes: 0 success · 1 usage · 2 config · 3 upstream
 async function cmdStations(_: string[], f: Flags): Promise<void> {
   loadMetroEnv();
   const rows = listStations();
-  if (isJson(f)) return writeJson({ stations: rows });
+  const agentsByStation = {
+    claude: listAgents('claude'),
+    codex: listAgents('codex'),
+  };
+  if (isJson(f)) return writeJson({ stations: rows, agents: agentsByStation });
   process.stdout.write('metro stations\n\n');
   for (const s of rows) {
     const mark = s.configured === true ? '✓' : s.configured === false ? '✗' : '·';
     process.stdout.write(
       `  ${mark} ${s.name.padEnd(10)} ${s.kind.padEnd(6)} ${fmtCapabilities(s.capabilities)}\n        ${s.detail}\n`,
     );
+    if (s.kind === 'agent') {
+      const seen = agentsByStation[s.name as 'claude' | 'codex'] ?? [];
+      for (const inst of seen) {
+        const sessionsTxt = inst.sessions.length ? ` · sessions: ${inst.sessions.length}` : '';
+        process.stdout.write(`          seen: ${inst.agentId}${sessionsTxt}\n`);
+      }
+    }
   }
   process.stdout.write('\n');
 }
@@ -126,6 +143,7 @@ const COMMANDS: Record<string, (positional: string[], flags: Flags) => Promise<v
   setup: cmdSetup, doctor: cmdDoctor, stations: cmdStations, lines: cmdLines,
   send: cmdSend, reply: cmdReply, edit: cmdEdit, react: cmdReact,
   download: cmdDownload, fetch: cmdFetch,
+  webhook: cmdWebhook, tunnel: cmdTunnel,
   history: cmdHistory, update: cmdUpdate,
 };
 

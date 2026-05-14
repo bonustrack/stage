@@ -34,6 +34,7 @@ export class CodexRC {
   private nextId = 1;
   private pending = new Map<number, Pending>();
   private threadId: string | null = null;
+  private threadListener: ((id: string | null) => void) | null = null;
   private queue: string[] = [];
   private connected = false;
   private connecting = false;
@@ -47,6 +48,14 @@ export class CodexRC {
   }
 
   start(): void { void this.connect(); }
+
+  getThreadId(): string | null { return this.threadId; }
+  onThread(listener: (id: string | null) => void): void { this.threadListener = listener; }
+  private setThreadId(id: string | null): void {
+    if (this.threadId === id) return;
+    this.threadId = id;
+    this.threadListener?.(id);
+  }
   stop(): void {
     this.closed = true;
     this.clearTurnTimeout();
@@ -79,7 +88,7 @@ export class CodexRC {
 
       const clientInfo = { name: 'metro', version: this.clientVersion, title: null };
       await this.call('initialize', { clientInfo });
-      this.threadId = await this.pickOrCreateThread();
+      this.setThreadId(await this.pickOrCreateThread());
 
       this.connected = true;
       log.info({ url: this.url, thread: this.threadId ?? '(none yet)' }, 'codex-rc connected');
@@ -106,7 +115,7 @@ export class CodexRC {
     switch (msg.method) {
       case 'thread/started': {
         const id = (msg.params as { thread?: { id: string } } | undefined)?.thread?.id;
-        if (id) { this.threadId = id; log.info({ thread: id }, 'codex-rc thread started'); void this.drainQueue(); }
+        if (id) { this.setThreadId(id); log.info({ thread: id }, 'codex-rc thread started'); void this.drainQueue(); }
         break;
       }
       case 'thread/status/changed': {
@@ -125,7 +134,7 @@ export class CodexRC {
       case 'thread/closed':
       case 'thread/archived':
         log.warn({ method: msg.method }, 'codex-rc thread closed/archived');
-        this.threadId = null;
+        this.setThreadId(null);
         break;
     }
   }
@@ -159,7 +168,7 @@ export class CodexRC {
 
   private async drainQueue(): Promise<void> {
     if (!this.connected || this.turnInFlight || !this.queue.length) return;
-    if (!this.threadId) { this.threadId = await this.pickOrCreateThread(); if (!this.threadId) return; }
+    if (!this.threadId) { this.setThreadId(await this.pickOrCreateThread()); if (!this.threadId) return; }
     const line = this.queue[0];
     this.turnInFlight = true;
     this.armTurnTimeout();
@@ -171,7 +180,7 @@ export class CodexRC {
       const dead = errMsg(err).includes('thread not found');
       log.warn({ err: errMsg(err) }, dead ? 'codex-rc thread gone; will create a new one' : 'codex-rc turn/start failed; will retry');
       this.clearTurnTimeout(); this.turnInFlight = false;
-      if (dead) this.threadId = null;
+      if (dead) this.setThreadId(null);
       setTimeout(() => void this.drainQueue(), 1_000);
     }
   }

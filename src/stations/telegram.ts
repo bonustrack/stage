@@ -9,7 +9,7 @@ import { mdToTelegramHtml } from './telegram-md.js';
 import { inlineKeyboard, tgSendRich } from './telegram-upload.js';
 import {
   Line, type Capabilities, type ChatStation, type EditOpts,
-  type InboundMessage, type Line as LineT, type SendOpts,
+  type InboundMessage, type SendOpts,
 } from './index.js';
 import { STATE_DIR } from '../paths.js';
 
@@ -55,7 +55,7 @@ type RawUpdate = { update_id: number; message?: TelegramPayload };
 const isParseError = (err: unknown): boolean => errMsg(err).includes("can't parse entities");
 const isNoopEdit = (err: unknown): boolean => errMsg(err).includes('message is not modified');
 
-const targetOf = (line: LineT): { chatId: number; topicId?: number } => {
+const targetOf = (line: Line): { chatId: number; topicId?: number } => {
   const t = Line.parseTelegram(line);
   if (!t) throw new Error(`not a telegram line: ${line}`);
   return t;
@@ -110,7 +110,7 @@ export class TelegramStation implements ChatStation<TelegramPayload> {
     return tg<{ id: number; username: string }>('getMe', {});
   }
 
-  async send(line: LineT, text: string, opts?: SendOpts): Promise<string> {
+  async send(line: Line, text: string, opts?: SendOpts): Promise<string> {
     const { chatId, topicId } = targetOf(line);
     const base: Record<string, unknown> = { chat_id: chatId };
     if (topicId !== undefined) base.message_thread_id = topicId;
@@ -118,7 +118,7 @@ export class TelegramStation implements ChatStation<TelegramPayload> {
     return tgSendRich(token(), tg, base, text, opts);
   }
 
-  async edit(line: LineT, messageId: string, text: string, opts?: EditOpts): Promise<void> {
+  async edit(line: Line, messageId: string, text: string, opts?: EditOpts): Promise<void> {
     const { chatId } = targetOf(line);
     const base: Record<string, unknown> = { chat_id: chatId, message_id: Number(messageId), ...NO_PREVIEW };
     if (opts?.buttons) base.reply_markup = opts.buttons.length ? inlineKeyboard(opts.buttons) : { inline_keyboard: [] };
@@ -132,14 +132,14 @@ export class TelegramStation implements ChatStation<TelegramPayload> {
     }
   }
 
-  async react(line: LineT, messageId: string, emoji: string): Promise<void> {
+  async react(line: Line, messageId: string, emoji: string): Promise<void> {
     await tg('setMessageReaction', {
       chat_id: targetOf(line).chatId, message_id: Number(messageId),
       reaction: emoji ? [{ type: 'emoji', emoji }] : [],
     });
   }
 
-  async download(line: LineT, messageId: string, outDir: string): Promise<{ path: string; mediaType: string }[]> {
+  async download(line: Line, messageId: string, outDir: string): Promise<{ path: string; mediaType: string }[]> {
     /* Telegram has no "get message by id" — resolve from the in-memory snapshot. */
     const { chatId } = targetOf(line);
     const m = this.recent.get(`${chatId}:${messageId}`);

@@ -1,5 +1,11 @@
 /** Line URI scheme + ChatStation interface + station listing. The whole station surface. */
 
+import { tryClaudeAccountId } from './claude.js';
+import { tryCodexAccountId } from './codex.js';
+import { listAgents } from '../registry.js';
+import { listEndpoints } from '../webhooks.js';
+import { loadTunnelConfig } from '../tunnel.js';
+
 export type Modality = 'text' | 'image';
 export type Feature = 'reply' | 'send' | 'edit' | 'react' | 'download' | 'fetch' | 'notify';
 export interface Capabilities { in: Modality[]; out: Modality[]; features: Feature[] }
@@ -59,13 +65,24 @@ const PREFIX = 'metro://';
 const build = (station: string, ...seg: (string | number)[]): Line =>
   asLine(`${PREFIX}${station}/${seg.map(String).join('/')}`);
 
+/** Shared parser for `metro://{claude,codex}/<agentId>/<sessionId>`. Skips participant URIs (`/user/…`, `/bot/…`). */
+function parseAgent(line: Line | string, station: 'claude' | 'codex'): { agentId: string; sessionId: string } | null {
+  const p = Line.parse(line);
+  if (p?.station !== station || p.path[0] === 'user' || p.path[0] === 'bot' || p.path.length < 2) return null;
+  return { agentId: p.path[0], sessionId: p.path[1] };
+}
+
 /** URI helpers. Lives on a const that doubles as the `Line` type's value-side namespace. */
 export const Line = {
   discord: (channelId: string): Line => build('discord', channelId),
   telegram: (chatId: number | string, topicId?: number): Line =>
     topicId !== undefined ? build('telegram', chatId, topicId) : build('telegram', chatId),
-  claude: (topic: string): Line => build('claude', topic),
-  codex: (topic: string): Line => build('codex', topic),
+  /** `metro://claude/<orgId>/<sessionId>` — orgId from `claude auth status`, session from `CLAUDE_CODE_SESSION_ID`. */
+  claude: (orgId: string, sessionId: string): Line => build('claude', orgId, sessionId),
+  /** `metro://codex/<accountId>/<threadId>` — accountId from auth.json, thread from codex-rc handshake. */
+  codex: (accountId: string, threadId: string): Line => build('codex', accountId, threadId),
+  /** `metro://webhook/<endpoint-id>` — one HTTP receive endpoint, registered via `metro webhook add`. */
+  webhook: (endpointId: string): Line => build('webhook', endpointId),
   /** Participant URIs — `metro://<station>/user/<id>` and `metro://<station>/bot/<id>`. */
   user: (station: string, id: string | number): Line => build(station, 'user', id),
   bot: (station: string, id: string | number): Line => build(station, 'bot', id),
@@ -92,26 +109,59 @@ export const Line = {
     const topicId = Number(p.path[1]);
     return Number.isFinite(topicId) ? { chatId, topicId } : null;
   },
+  parseClaude: (line: Line | string) => parseAgent(line, 'claude'),
+  parseCodex: (line: Line | string) => parseAgent(line, 'codex'),
+  parseWebhook(line: Line | string): string | null {
+    const p = Line.parse(line);
+    return p?.station === 'webhook' && p.path.length === 1 ? p.path[0] : null;
+  },
   isAgent: (line: Line | string): boolean => {
     const s = Line.station(line);
     return s === 'claude' || s === 'codex';
   },
 };
 
-const AGENT_CAPS: Capabilities = { in: ['text'], out: [], features: ['notify'] };
+/** `out: ['text']` + `send` reflects the IPC notify path (`metro send metro://<station>/...` re-emits on stdout). */
+const AGENT_CAPS: Capabilities = { in: ['text'], out: ['text'], features: ['send', 'notify'] };
 const CHAT_CAPS: Capabilities = {
   in: ['text', 'image'],
   out: ['text'],
   features: ['reply', 'send', 'edit', 'react', 'download', 'fetch'],
 };
+const WEBHOOK_CAPS: Capabilities = { in: ['text'], out: [], features: [] };
 
 export type StationRow = {
   name: string;
-  kind: 'agent' | 'chat';
+  kind: 'agent' | 'chat' | 'service';
   configured: boolean | null;
   detail: string;
   capabilities: Capabilities;
 };
+
+function seenSummary(station: 'claude' | 'codex'): string {
+  const agents = listAgents(station);
+  if (!agents.length) return '';
+  const sessions = agents.reduce((n, a) => n + a.sessions.length, 0);
+  return ` · seen ${agents.length} agent${agents.length === 1 ? '' : 's'}, ${sessions} session${sessions === 1 ? '' : 's'}`;
+}
+
+function claudeStationDetail(): string {
+  const seen = seenSummary('claude');
+  if (!process.env.CLAUDECODE) return `launch metro from inside a Claude Code session${seen}`;
+  const orgId = tryClaudeAccountId();
+  return `${orgId ? `account: ${orgId}` : 'logged out — run `claude auth login`'}${seen}`;
+}
+
+function codexStationDetail(): string {
+  const rc = process.env.METRO_CODEX_RC;
+  const accountId = tryCodexAccountId();
+  const seen = seenSummary('codex');
+  const parts = [
+    accountId ? `account: ${accountId}` : (rc ? '(no Codex account — run `codex login`)' : null),
+    rc ? `push → ${rc}` : (!accountId ? 'set METRO_CODEX_RC=ws://… to push' : null),
+  ].filter(Boolean);
+  return `${parts.join(' · ')}${seen}`;
+}
 
 export const listStations = (): StationRow[] => [
   {
@@ -124,16 +174,28 @@ export const listStations = (): StationRow[] => [
   },
   {
     name: 'claude', kind: 'agent', capabilities: AGENT_CAPS,
-    configured: null, detail: 'stdout stream (watch via Claude Code Monitor)',
+    configured: !!process.env.CLAUDECODE,
+    detail: claudeStationDetail(),
   },
   {
     name: 'codex', kind: 'agent', capabilities: AGENT_CAPS,
-    configured: process.env.METRO_CODEX_RC ? true : null,
-    detail: process.env.METRO_CODEX_RC
-      ? `push → ${process.env.METRO_CODEX_RC}`
-      : 'set METRO_CODEX_RC=ws://… to push',
+    configured: !!(process.env.METRO_CODEX_RC || process.env.CODEX_HOME),
+    detail: codexStationDetail(),
+  },
+  {
+    name: 'webhook', kind: 'service', capabilities: WEBHOOK_CAPS,
+    configured: listEndpoints().length > 0,
+    detail: webhookStationDetail(),
   },
 ];
+
+function webhookStationDetail(): string {
+  const eps = listEndpoints();
+  const t = loadTunnelConfig();
+  const base = t ? `https://${t.hostname}` : `http://127.0.0.1:${Number(process.env.METRO_WEBHOOK_PORT) || 8420}`;
+  if (!eps.length) return `no endpoints (run \`metro webhook add <label>\`)${t ? ` · tunnel → ${t.hostname}` : ''}`;
+  return `${eps.length} endpoint${eps.length === 1 ? '' : 's'} · base ${base}${t ? '' : ' (no tunnel — run `metro tunnel setup`)'}`;
+}
 
 export const fmtCapabilities = (c: Capabilities): string =>
   `in: ${c.in.join('+') || '–'} · out: ${c.out.join('+') || '–'} · features: ${c.features.join(', ') || '–'}`;

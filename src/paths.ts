@@ -43,9 +43,9 @@ export function configuredPlatforms(): Platforms {
   return { telegram: !!process.env.TELEGRAM_BOT_TOKEN, discord: !!process.env.DISCORD_BOT_TOKEN };
 }
 
-export function requireConfiguredPlatform(p: Platforms): void {
-  if (p.telegram || p.discord) return;
-  log.fatal('no platforms configured — run `metro setup telegram <token>` or `metro setup discord <token>`');
+export function requireConfiguredPlatform(p: Platforms, hasWebhooks: boolean): void {
+  if (p.telegram || p.discord || hasWebhooks) return;
+  log.fatal('no inputs configured — run `metro setup telegram <token>`, `metro setup discord <token>`, or `metro webhook add <label>`');
   process.exit(2);
 }
 

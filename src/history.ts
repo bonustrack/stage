@@ -5,7 +5,9 @@ import { appendFileSync, existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { errMsg, log } from './log.js';
 import { STATE_DIR } from './paths.js';
-import type { Line } from './stations/index.js';
+import { Line } from './stations/index.js';
+import { claudeAgentId, claudeSessionId } from './stations/claude.js';
+import { codexAgentId, codexSessionId } from './stations/codex.js';
 
 export type HistoryKind = 'inbound' | 'outbound' | 'edit' | 'react' | 'notification';
 
@@ -95,11 +97,24 @@ export function resolvePlatformId(id: string): string {
   throw new Error(`unknown universal id: ${id} (run \`metro history --limit=50\` to see recent ids)`);
 }
 
-/** Resolve the current agent's identity URI. Precedence: METRO_FROM > runtime env > generic. */
+/** The current agent's **participant** URI for `from`/`to`. Precedence: METRO_FROM > runtime env > generic. */
 export function agentSelf(): Line {
   const explicit = process.env.METRO_FROM;
   if (explicit) return explicit as Line;
-  if (process.env.CLAUDECODE) return 'metro://claude/agent' as Line;
-  if (process.env.METRO_CODEX_RC || process.env.CODEX_HOME) return 'metro://codex/agent' as Line;
+  if (process.env.CLAUDECODE) return Line.user('claude', claudeAgentId());
+  if (process.env.METRO_CODEX_RC || process.env.CODEX_HOME) return Line.user('codex', codexAgentId());
   return 'metro://agent' as Line;
+}
+
+/** The current agent's **line** URI `<agent-id>/<session>`. Null until session is known (rc thread pending). */
+export function selfLine(): Line | null {
+  if (process.env.CLAUDECODE) {
+    const s = claudeSessionId();
+    return s ? Line.claude(claudeAgentId(), s) : null;
+  }
+  if (process.env.METRO_CODEX_RC || process.env.CODEX_HOME) {
+    const s = codexSessionId();
+    return s ? Line.codex(codexAgentId(), s) : null;
+  }
+  return null;
 }
