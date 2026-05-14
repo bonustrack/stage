@@ -2,7 +2,7 @@
 
 > **A live JSON stream of Telegram + Discord messages for your local Claude Code / Codex session.**
 
-Metro is a small daemon you launch from inside your agent. It connects to Discord and Telegram, emits each inbound as one JSON line on stdout (which Claude Code's `Monitor` consumes natively, and Codex picks up via an app-server WebSocket push), and exposes a tiny CLI — `metro reply`, `metro send`, `metro edit`, `metro react`, `metro download`, `metro fetch`, `metro notify` — for posting back. Cross-agent: any agent can ping any other via `metro send metro://claude/<topic>` and the daemon re-emits it on the stream.
+Metro is a small daemon you launch from inside your agent. It connects to Discord and Telegram, emits each inbound as one JSON line on stdout (which Claude Code's `Monitor` consumes natively, and Codex picks up via an app-server WebSocket push), and exposes a tiny CLI — `metro reply`, `metro send`, `metro edit`, `metro react`, `metro download`, `metro fetch` — for posting back. Cross-agent: any agent can ping any other via `metro send metro://claude/<topic>` and the daemon re-emits it on the stream.
 
 ```
 [Claude Code session]
@@ -10,8 +10,10 @@ Metro is a small daemon you launch from inside your agent. It connects to Discor
 $ metro &                              # backgrounded
 $ Monitor( … metro's stdout … )
 
->>> {"type":"inbound","station":"discord","line":"metro://discord/123…","messageId":"9876",
-     "text":"@bot we got a 5xx spike from /v1/sync. Look?","mentionsBot":true,…}
+>>> {"kind":"inbound","station":"discord","line":"metro://discord/123…","messageId":"9876",
+     "text":"@bot we got a 5xx spike from /v1/sync. Look?",
+     "payload":{"channelId":"123…","guildId":"456…","content":"<@…> we got a 5xx spike…",
+                "mentions":{"users":["<bot-id>"],"roles":[],"everyone":false},…}}
 
   [I'd run git log + read services/sync.ts, then…]
   Bash: metro reply metro://discord/123… 9876 "three deploys in the last 24h…"
@@ -46,7 +48,7 @@ Telegram poller ──┤
                   │
                   ├─▶ metro daemon ───▶ stdout (JSON events; Claude Code's Monitor reads here)
                   │                ───▶ codex-rc WebSocket (Codex turn/start; opt-in)
-                  │                ◀── IPC Unix socket  (metro notify / metro send to agent lines)
+                  │                ◀── IPC Unix socket  (metro send to agent lines)
                   │
 agent CLI calls ──┴── REST → Discord / Telegram   (metro reply / send / edit / react / download / fetch)
 ```
@@ -54,7 +56,7 @@ agent CLI calls ──┴── REST → Discord / Telegram   (metro reply / sen
 - **Inversion of control.** The agent (Claude Code, Codex) launches `metro`, not the other way around. Metro never spawns an agent process.
 - **Single daemon per machine.** Lockfile at `$METRO_STATE_DIR/.tail-lock` enforces singleton.
 - **Codex push (opt-in).** Set `METRO_CODEX_RC=ws://127.0.0.1:8421` and metro pushes each event via JSON-RPC `turn/start` to the Codex app-server. Codex's TUI must be attached with `--remote` to the same URL.
-- **Cross-agent notification.** `metro send metro://claude/<topic>` or `metro notify metro://codex/<topic>` routes through the daemon's IPC socket; the daemon re-emits on its stdout (and pushes to codex-rc), so the peer agent sees it.
+- **Cross-agent notification.** `metro send metro://claude/<topic>` (or `metro://codex/<topic>`) routes through the daemon's IPC socket; the daemon re-emits on its stdout (and pushes to codex-rc), so the peer agent sees it.
 
 ---
 
@@ -115,7 +117,6 @@ metro react <line> <message_id> <emoji>     Set or clear ('') a reaction.
 metro download <line> <message_id> [--out=<dir>]
                                             Download image attachments to disk.
 metro fetch <line> [--limit=N]              Recent-message lookback (Discord only).
-metro notify <line> <text> [--from=<line>]  Emit a notification on the daemon's stream.
 metro history [--limit=N] [--line=…] [--station=…] [--kind=…] [--from=…] [--text=…] [--since=…]
                                             Universal message log (every inbound + outbound), newest first.
 metro update                                Upgrade in place.

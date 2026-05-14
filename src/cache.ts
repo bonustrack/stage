@@ -51,9 +51,13 @@ export const listLines = (): Array<{ line: LineT; entry: Entry }> =>
 const botIdsFile = join(STATE_DIR, 'bot-ids.json');
 type BotIds = Record<string, string>;
 
+const readBotIds = (): BotIds => {
+  try { return existsSync(botIdsFile) ? JSON.parse(readFileSync(botIdsFile, 'utf8')) as BotIds : {}; }
+  catch { return {}; }
+};
+
 export function saveBotId(station: string, id: string): void {
-  const cur: BotIds = existsSync(botIdsFile)
-    ? (JSON.parse(readFileSync(botIdsFile, 'utf8')) as BotIds) : {};
+  const cur = readBotIds();
   if (cur[station] === id) return;
   cur[station] = id;
   try { writeFileSync(botIdsFile, JSON.stringify(cur, null, 2)); }
@@ -62,9 +66,6 @@ export function saveBotId(station: string, id: string): void {
 
 /** Resolve the bot's URI for a station. Returns `metro://<station>/bot/<id>` or the placeholder. */
 export function botLine(station: string): LineT {
-  try {
-    const ids = existsSync(botIdsFile)
-      ? (JSON.parse(readFileSync(botIdsFile, 'utf8')) as BotIds) : {};
-    return ids[station] ? Line.bot(station, ids[station]) : (`metro://${station}/bot` as LineT);
-  } catch { return `metro://${station}/bot` as LineT; }
+  const id = readBotIds()[station];
+  return id ? Line.bot(station, id) : `metro://${station}/bot` as LineT;
 }

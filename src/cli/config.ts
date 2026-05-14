@@ -14,6 +14,8 @@ import { emit, exitErr, isJson, writeJson, type Flags } from './util.js';
 import { cmdSetupSkill, skillStatus } from './skill.js';
 
 const TOKEN_KEYS = { telegram: 'TELEGRAM_BOT_TOKEN', discord: 'DISCORD_BOT_TOKEN' } as const;
+type Platform = keyof typeof TOKEN_KEYS;
+const stationFor = (p: Platform) => p === 'telegram' ? new TelegramStation() : new DiscordStation();
 const maskToken = (t: string): string =>
   !t ? '' : t.length <= 8 ? '••••' : `${t.slice(0, 6)}…${t.slice(-2)}`;
 
@@ -59,7 +61,7 @@ export async function cmdSetup(p: string[], f: Flags): Promise<void> {
     if (!f['no-validate']) {
       process.env[TOKEN_KEYS[sub]] = trimmed;
       try {
-        const me = await (sub === 'telegram' ? new TelegramStation() : new DiscordStation()).getMe();
+        const me = await stationFor(sub).getMe();
         identity = sub === 'telegram' ? `@${me.username}` : me.username;
       } catch (err) {
         delete process.env[TOKEN_KEYS[sub]];
@@ -99,23 +101,21 @@ function tokenSource(key: string): string {
 export async function cmdDoctor(_: string[], f: Flags): Promise<void> {
   loadMetroEnv();
   const cfg = configuredPlatforms();
-  const sources = ([['telegram', 'TELEGRAM_BOT_TOKEN'], ['discord', 'DISCORD_BOT_TOKEN']] as const)
-    .filter(([p]) => cfg[p]).map(([p, k]) => `${p}←${tokenSource(k)}`).join(', ');
-
   type Check = { name: string; ok: boolean | null; detail: string };
-  const checks: Check[] = [{
-    name: 'tokens', ok: cfg.telegram || cfg.discord,
-    detail: cfg.telegram || cfg.discord ? sources
-      : 'no platform configured — run `metro setup telegram|discord <token>`',
-  }];
-
+  const checks: Check[] = [];
+  const sources: string[] = [];
   for (const p of ['telegram', 'discord'] as const) {
     if (!cfg[p]) { checks.push({ name: p, ok: null, detail: 'not configured' }); continue; }
+    sources.push(`${p}←${tokenSource(TOKEN_KEYS[p])}`);
     try {
-      const me = await (p === 'telegram' ? new TelegramStation() : new DiscordStation()).getMe();
+      const me = await stationFor(p).getMe();
       checks.push({ name: p, ok: true, detail: `getMe → ${p === 'telegram' ? '@' : ''}${me.username}` });
     } catch (err) { checks.push({ name: p, ok: false, detail: errMsg(err) }); }
   }
+  checks.unshift({
+    name: 'tokens', ok: cfg.telegram || cfg.discord,
+    detail: sources.length ? sources.join(', ') : 'no platform configured — run `metro setup telegram|discord <token>`',
+  });
 
   const lockFile = join(STATE_DIR, '.tail-lock');
   if (!existsSync(lockFile)) checks.push({ name: 'dispatcher', ok: null, detail: 'not running' });

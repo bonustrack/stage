@@ -12,6 +12,9 @@ import {
   type InboundMessage, type Line as LineT, type SendOpts,
 } from './index.js';
 
+/** discord.js `Message.toJSON()` output + auto-fetched `referencedMessage` on replies. */
+export type DiscordPayload = Record<string, unknown> & { referencedMessage?: unknown };
+
 const API_BASE = 'https://discord.com/api/v10';
 const SUPPRESS_EMBEDS = 1 << 2;
 const MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024;
@@ -82,8 +85,6 @@ const discordButtons = (rows: Button[][]): unknown[] => rows.map(row => ({
   type: 1, components: row.map(b => ({ type: 2, style: 5, label: b.text, url: b.url })),
 }));
 
-export type DiscordMeta = { inGuild: boolean };
-
 type RawAttachment = { id: string; filename: string; content_type?: string; url: string; size: number };
 type RawMessage = {
   id: string; content: string; timestamp: string;
@@ -102,14 +103,14 @@ const CAPS: Capabilities = {
   features: ['reply', 'send', 'edit', 'react', 'download', 'fetch'],
 };
 
-export class DiscordStation implements ChatStation<DiscordMeta> {
+export class DiscordStation implements ChatStation<DiscordPayload> {
   readonly name = 'discord';
   readonly capabilities = CAPS;
 
   private client: Client | null = null;
-  private messageHandler: (m: InboundMessage<DiscordMeta>) => void = () => {};
+  private messageHandler: (m: InboundMessage<DiscordPayload>) => void = () => {};
 
-  onMessage(handler: (m: InboundMessage<DiscordMeta>) => void): void {
+  onMessage(handler: (m: InboundMessage<DiscordPayload>) => void): void {
     this.messageHandler = handler;
   }
 
@@ -125,7 +126,7 @@ export class DiscordStation implements ChatStation<DiscordMeta> {
 
   async start(): Promise<void> {
     const c = this.getClient();
-    c.on(Events.MessageCreate, m => { void this.handleMessage(m, c); });
+    c.on(Events.MessageCreate, m => { void this.handleMessage(m); });
     c.on(Events.Error, err => log.error({ err: errMsg(err) }, 'discord error'));
     await c.login(process.env.DISCORD_BOT_TOKEN);
     await new Promise<void>(r => c.once(Events.ClientReady, () => r()));
@@ -195,28 +196,26 @@ export class DiscordStation implements ChatStation<DiscordMeta> {
     }));
   }
 
-  private async handleMessage(m: import('discord.js').Message, c: Client): Promise<void> {
+  private async handleMessage(m: import('discord.js').Message): Promise<void> {
     if (m.author.bot) return;
-    const attachmentNames: string[] = [];
-    for (const a of m.attachments.values()) {
-      if (a.contentType?.startsWith('image/')) attachmentNames.push('[image]');
-      else attachmentNames.push(a.contentType?.startsWith('audio/') ? `[audio: ${a.name}]` : `[file: ${a.name}]`);
-    }
-    const text = m.content.trim();
-    if (!text && !attachmentNames.length) return;
-    log.info(
-      { from: m.author.username, bot: c.user?.username, channel: m.channelId, text: text.slice(0, 80) },
-      'discord: inbound',
-    );
+    const tags = [...m.attachments.values()].map(a =>
+      a.contentType?.startsWith('image/') ? '[image]'
+        : a.contentType?.startsWith('audio/') ? `[audio: ${a.name}]` : `[file: ${a.name}]`);
+    const text = [m.content.trim(), ...tags].filter(Boolean).join(' ');
+    if (!text) return;
+    log.info({ from: m.author.username, channel: m.channelId, text: text.slice(0, 80) }, 'discord: inbound');
     const lineName = m.channel && 'name' in m.channel
       ? (m.channel as { name: string | null }).name ?? undefined : undefined;
+    const payload = m.toJSON() as DiscordPayload;
+    if (m.reference?.messageId) {
+      try { payload.referencedMessage = (await m.fetchReference()).toJSON(); }
+      catch (err) { log.debug({ err: errMsg(err) }, 'discord: fetchReference failed'); }
+    }
     this.messageHandler({
       id: mintId(), ts: new Date(m.createdTimestamp).toISOString(),
       station: 'discord', line: Line.discord(m.channelId), lineName,
       from: Line.user('discord', m.author.id), fromName: m.author.username,
-      messageId: m.id, text, attachmentNames,
-      mentionsBot: !m.guildId || (c.user ? m.mentions.has(c.user.id) : false),
-      meta: { inGuild: !!m.guildId },
+      messageId: m.id, text, payload,
     });
   }
 }
