@@ -48,12 +48,12 @@ Every line on stdout is one **history entry** — the same record appended to `h
 - `line` — conversation URI; `lineName?` is the channel/topic display name
 - `from` / `fromName?` — sender participant URI + optional display name
 - `to` — recipient participant URI (agent for inbound, line for notification, original sender for replies/reacts)
-- `text` — universal display projection. Includes `[image]`/`[file: …]`/`[voice]`/`[audio]` tags inline.
+- `text` — the literal text content (Telegram `text`/`caption`, Discord `content`). May be empty for attachment-only messages — inspect `payload` for everything else.
 - `messageId?` — platform-side id (Discord snowflake, Telegram int). Set on inbound/outbound.
 - `payload?` — raw platform-native message object. Set on inbound only. Shape varies per `station`.
 
 ```json
-{"kind":"inbound","id":"msg_aB3xY7zP","ts":"2026-05-14T12:00:00Z","station":"telegram","line":"metro://telegram/-100…/247","lineName":"infra","from":"metro://telegram/user/12345","fromName":"@alice","to":"metro://claude/agent","messageId":"4567","text":"hi [image]","payload":{"message_id":4567,"chat":{"id":-100,"type":"supergroup","is_forum":true},"from":{"id":12345,"username":"alice"},"text":"hi","photo":[{"file_id":"…"}],"reply_to_message":{"message_id":4500,"text":"earlier","from":{"id":99,"username":"bob"}}}}
+{"kind":"inbound","id":"msg_aB3xY7zP","ts":"2026-05-14T12:00:00Z","station":"telegram","line":"metro://telegram/-100…/247","lineName":"infra","from":"metro://telegram/user/12345","fromName":"@alice","to":"metro://claude/agent","messageId":"4567","text":"hi","payload":{"message_id":4567,"chat":{"id":-100,"type":"supergroup","is_forum":true},"from":{"id":12345,"username":"alice"},"text":"hi","photo":[{"file_id":"…"}],"reply_to_message":{"message_id":4500,"text":"earlier","from":{"id":99,"username":"bob"}}}}
 ```
 
 ```json
@@ -90,7 +90,7 @@ The `id` is the **canonical handle** for that message across all stations — st
 - `kind: "inbound"` — a human (or another bot) posted on a chat platform.
 - `kind: "notification"` — another agent called `metro send` against your agent line. This is how Codex pings Claude Code and vice versa.
 
-`text` may contain `[image]`, `[voice]`, `[audio]`, or `[file: <name>]` placeholders alongside the real text — non-image attachments are opaque markers; images can be materialized via `metro download`.
+Attachments live on `payload`, not in `text`. Telegram shows `photo[]`, `document`, `voice`, `audio`; Discord shows `attachments[]` (with `contentType`). Use `metro download` to materialize images to disk.
 
 ## Required flow on every event
 
@@ -109,7 +109,7 @@ All take positional args (no `--to=`/`--text=` flags). Append `--json` to any fo
 | Send a fresh message (no reply context) | `metro send <line> <text>` |
 | Edit a message you previously sent | `metro edit <line> <messageId> <text>` |
 | Reaction (empty emoji clears) | `metro react <line> <messageId> <emoji>` |
-| Download `[image]` attachments → paths | `metro download <line> <messageId> [--out=<dir>]` |
+| Download image attachments → paths | `metro download <line> <messageId> [--out=<dir>]` |
 | Recent channel history (Discord only) | `metro fetch <line> [--limit=20]` |
 | Ping another agent (cross-agent line) | `metro send metro://claude/<topic> <text> [--from=<line>]` |
 
@@ -159,15 +159,13 @@ The `messageId` is **not** part of the URI — it's a separate positional arg fo
 
 ## Image attachments
 
-When an event's `text` contains `[image]`:
+When `payload.photo` (Telegram) or `payload.attachments[].contentType?.startsWith('image/')` (Discord) is present:
 
 1. `metro download <line> <messageId>` — writes images to disk and prints absolute paths.
 2. `Read` each path with your Read tool — the image enters your context as a vision input.
 3. Reply normally with `metro reply`.
 
-## Opaque attachment markers
-
-`[voice]`, `[audio]`, and `[file: <name>]` are opaque — `metro download` only handles images. Acknowledge in text or ask the user to resend as a regular file.
+Non-image attachments (voice, audio, documents) are not materialized by `metro download` — inspect `payload` for the file metadata and ask the user to resend as a regular file if you need the bytes.
 
 ## Cross-agent notification
 

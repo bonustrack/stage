@@ -34,7 +34,7 @@ Run `metro doctor` if anything seems off.
 Every event is a **history entry** — the same record that's appended to `history.jsonl`. Fields: `kind` (`inbound`/`notification`/`outbound`/`edit`/`react`), `id` (`msg_…`), `ts`, `station`, `line` (conversation), `lineName?`, `from` (participant URI), `fromName?`, `to`, `text`, `messageId?` (platform-side id; inbound/outbound only), `payload?` (raw platform message; inbound only).
 
 ```json
-{"kind":"inbound","id":"msg_aB3xY7zP","ts":"2026-05-14T12:00:00Z","station":"telegram","line":"metro://telegram/-100…/247","lineName":"infra","from":"metro://telegram/user/12345","fromName":"@alice","to":"metro://claude/agent","messageId":"4567","text":"hello [image]","payload":{"message_id":4567,"chat":{"id":-100,"type":"supergroup","is_forum":true},"from":{"id":12345,"username":"alice"},"text":"hello","entities":[{"type":"mention","offset":0,"length":6}],"photo":[{"file_id":"…"}],"reply_to_message":{"message_id":4500,"text":"earlier","from":{"id":99,"username":"bob"}}}}
+{"kind":"inbound","id":"msg_aB3xY7zP","ts":"2026-05-14T12:00:00Z","station":"telegram","line":"metro://telegram/-100…/247","lineName":"infra","from":"metro://telegram/user/12345","fromName":"@alice","to":"metro://claude/agent","messageId":"4567","text":"hello","payload":{"message_id":4567,"chat":{"id":-100,"type":"supergroup","is_forum":true},"from":{"id":12345,"username":"alice"},"text":"hello","entities":[{"type":"mention","offset":0,"length":6}],"photo":[{"file_id":"…"}],"reply_to_message":{"message_id":4500,"text":"earlier","from":{"id":99,"username":"bob"}}}}
 ```
 
 ```json
@@ -57,7 +57,7 @@ When **you** call `metro send`/`reply`/`edit`/`react`, metro auto-stamps `from` 
 - `kind: "inbound"` — a human (or another bot) posted on a chat platform.
 - `kind: "notification"` — another agent called `metro send` against your agent line. This is how Codex pings Claude Code and vice versa.
 
-`text` may include `[image]` / `[voice]` / `[audio]` / `[file: <name>]` placeholders alongside the real text — non-image attachments are opaque markers, images can be materialized via `metro download`.
+`text` is the literal text content (Telegram `text`/`caption`, Discord `content`). It may be empty for attachment-only messages — inspect `payload` to detect images, voice, audio, documents, etc. Images can be materialized via `metro download`.
 
 ## Required flow on every event
 
@@ -81,7 +81,7 @@ Default: only reply on DM or ping; otherwise stay silent or `metro react` to ack
 | Send a fresh message (no reply context) | `metro send <line> <text>` |
 | Edit a message you previously sent | `metro edit <line> <messageId> <text>` |
 | Reaction (empty emoji clears it) | `metro react <line> <messageId> <emoji>` |
-| Download `[image]` attachments | `metro download <line> <messageId> [--out=<dir>]` |
+| Download image attachments | `metro download <line> <messageId> [--out=<dir>]` |
 | Recent-message lookback (Discord only) | `metro fetch <line> [--limit=20]` |
 | Cross-agent ping | `metro send <agent-line> <text> [--from=<line>]` |
 
@@ -156,7 +156,7 @@ $ metro stations
 
 ## Image attachments
 
-When an inbound has an `[image]` tag in `text`:
+When an inbound has `payload.photo` (Telegram) or a `payload.attachments[]` entry with `contentType` starting with `image/` (Discord):
 
 1. `metro download <line> <messageId>` → prints absolute paths.
 2. `Read` each path with your `Read` tool — the image enters your context as a vision input.

@@ -198,11 +198,7 @@ export class DiscordStation implements ChatStation<DiscordPayload> {
 
   private async handleMessage(m: import('discord.js').Message): Promise<void> {
     if (m.author.bot) return;
-    const tags = [...m.attachments.values()].map(a =>
-      a.contentType?.startsWith('image/') ? '[image]'
-        : a.contentType?.startsWith('audio/') ? `[audio: ${a.name}]` : `[file: ${a.name}]`);
-    const text = [m.content.trim(), ...tags].filter(Boolean).join(' ');
-    if (!text) return;
+    const text = m.content.trim();
     log.info({ from: m.author.username, channel: m.channelId, text: text.slice(0, 80) }, 'discord: inbound');
     const lineName = m.channel && 'name' in m.channel
       ? (m.channel as { name: string | null }).name ?? undefined : undefined;

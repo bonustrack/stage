@@ -76,7 +76,7 @@ Run `metro stations` to see live config status (`✓` configured, `✗` not, `·
 Behaviors worth knowing:
 - **No streaming / no edit machinery in metro.** The agent runs the show; metro is one-shot REST.
 - **No link previews.** Outgoing messages set `link_preview_options.is_disabled` on Telegram and `SUPPRESS_EMBEDS` on Discord.
-- **Image attachments inbound** — `[image]` placeholders surface inline in `text`; the agent calls `metro download` to materialize them. 20 MB cap.
+- **Image attachments inbound** — surfaced as raw platform fields on `payload` (Telegram `photo[]`, Discord `attachments[]`); the agent calls `metro download` to materialize them. 20 MB cap.
 - **Rich content outbound.** `metro send` / `reply` accept `--image=<path>` (repeatable: albums of up to 10), `--document=<path>` (repeatable), `--voice=<path>` (single voice message — Telegram renders the voice bubble), and `--buttons='[[{"text":"…","url":"…"}]]'` for inline URL-button keyboards. `metro edit` accepts `--buttons` (pass `'[]'` to clear). 20 MB / file. URL buttons only for now — no callback/interactive components.
 - **Telegram non-forum groups are skipped.** No thread boundary to scope on.
 

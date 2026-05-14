@@ -24,7 +24,7 @@ export interface InboundMessage<TPayload = unknown> {
   to?: Line;
   /** Platform-side message id (Discord snowflake, Telegram int, etc.). */
   messageId: string;
-  /** Universal display projection. Includes `[image]`/`[file: …]` tags inline. */
+  /** Literal text content. Empty for attachment-only messages — see `payload`. */
   text: string;
   /** Station-native message object. Shape is per-station; consumers narrow on `station`. */
   payload: TPayload;
