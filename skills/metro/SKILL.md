@@ -114,6 +114,9 @@ All take positional args (no `--to=`/`--text=` flags). Append `--json` to any fo
 | Download `[image]` attachments → paths | `metro download <line> <messageId> [--out=<dir>]` |
 | Recent channel history (Discord only) | `metro fetch <line> [--limit=20]` |
 | Ping another agent (cross-agent line) | `metro send metro://claude/<agent-id>/<session-id> <text> [--from=<line>]` |
+| Register webhook endpoint | `metro webhook add <label> [--secret=<hmac-secret>]` |
+| List / remove webhook endpoints | `metro webhook list` · `metro webhook remove <id>` |
+| Configure Cloudflare named tunnel | `metro tunnel setup <tunnel-name> <hostname>` |
 
 `reply` / `send` / `edit` accept multi-line text via stdin (heredoc).
 

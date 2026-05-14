@@ -30,9 +30,10 @@ Every chat station also exposes participant URIs — used as `from` on inbound/o
 
 | Kind   | Pattern                          | Example                                                       |
 |--------|----------------------------------|---------------------------------------------------------------|
-| user   | `metro://<station>/user/<id>`    | `metro://discord/user/87654321`                               |
-| claude | `metro://claude/user/<orgId>`    | `metro://claude/user/9bfc7af0-2117-44c5-baf2-d22ba382d065`    |
-| codex  | `metro://codex/user/<accountId>` | `metro://codex/user/8119ecb1-b05e-48db-aa80-434584439df9`     |
+| user    | `metro://<station>/user/<id>`    | `metro://discord/user/87654321`                               |
+| claude  | `metro://claude/user/<orgId>`    | `metro://claude/user/9bfc7af0-2117-44c5-baf2-d22ba382d065`    |
+| codex   | `metro://codex/user/<accountId>` | `metro://codex/user/8119ecb1-b05e-48db-aa80-434584439df9`     |
+| webhook | `metro://webhook/<endpointId>`   | `metro://webhook/fwaCgTKJuLAjS2K0` (line + `from` are the same — no HTTP-side user identity) |
 
 `from` and `to` on history entries are always participant URIs. Discord/Telegram inbounds set `from` to the user URI; the daemon sets `to` to the agent identity:
 
@@ -58,6 +59,10 @@ Override either segment with `METRO_AGENT_ID` / `METRO_AGENT_SESSION_ID` env var
 ### Agent registry
 
 The daemon persists every `(station, agent-id, session)` tuple it sees to `$METRO_STATE_DIR/agent-registry.json`. `metro stations` prints the count of seen agents and sessions per station. Run it to discover what's reachable rather than guessing topic names.
+
+### Webhook endpoints
+
+`metro webhook add <label>` mints a 16-char endpoint id (96 bits of entropy, persisted to `$METRO_STATE_DIR/webhooks.json`) and prints the receiving URL. The dispatcher opens an HTTP listener on `127.0.0.1:8420` (override with `$METRO_WEBHOOK_PORT`) when ≥1 endpoint is registered. Each `POST /wh/<id>` becomes an inbound event with `station: "webhook"`, `payload: { headers, body }`. With `metro tunnel setup`, the URL is exposed via a Cloudflare named tunnel so third parties (GitHub, Intercom, …) can reach it from the public internet — the daemon spawns and supervises `cloudflared tunnel run`.
 
 ## Webhook station
 
@@ -111,6 +116,8 @@ Line.claude(orgId, sessionId);                   // metro://claude/<orgId>/<sess
 Line.codex(accountId, threadId);                 // metro://codex/<accountId>/<threadId>
 Line.parseClaude(l);                             // { agentId, sessionId } | null
 Line.parseCodex(l);                              // { agentId, sessionId } | null
+Line.webhook(endpointId);                        // metro://webhook/<endpointId>
+Line.parseWebhook(l);                            // string | null
 Line.isAgent(l);                                 // true for any metro://{claude,codex}/...
 ```
 

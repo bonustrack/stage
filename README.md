@@ -83,6 +83,32 @@ Behaviors worth knowing:
 
 ---
 
+## Webhooks
+
+Receive HTTP events from third parties (GitHub, Intercom, Fireflies, anything that POSTs) as standard metro inbound events. Each registered endpoint is one Line.
+
+```bash
+metro tunnel setup metro webhook.example.com    # one-time: requires `cloudflared` + your CF account/domain
+metro webhook add github --secret=$(openssl rand -hex 32)
+# → http://127.0.0.1:8420/wh/<id>     (local)  or
+# → https://webhook.example.com/wh/<id>  (with tunnel)
+metro                                            # daemon spawns cloudflared automatically
+```
+
+Paste the URL into the provider's webhook settings. Every POST becomes an inbound event with `station: "webhook"`, `line: metro://webhook/<id>`, `payload: { headers, body }`. If you set `--secret`, metro verifies the `X-Hub-Signature-256` header (GitHub/Intercom format) and rejects mismatches with 401.
+
+| Action | Command |
+|---|---|
+| Register an endpoint | `metro webhook add <label> [--secret=<shared-secret>]` |
+| List endpoints + URLs | `metro webhook list` |
+| Remove an endpoint | `metro webhook remove <id>` |
+| One-time tunnel setup | `metro tunnel setup <tunnel-name> <hostname>` |
+| Tunnel status | `metro tunnel status` |
+
+The tunnel is optional — without it the listener binds `127.0.0.1:8420` only (good for local testing or your own loopback tools). With Cloudflare named tunnels, the URL stays stable across daemon restarts and machines. See [docs/uri-scheme.md](docs/uri-scheme.md) and [docs/agents.md](docs/agents.md) for the full event shape.
+
+---
+
 ## Lines
 
 Every conversational scope is identified by a **Line** — a URI in the form `metro://<station>/<path>`:
