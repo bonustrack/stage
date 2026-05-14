@@ -215,7 +215,7 @@ export class DiscordStation implements ChatStation<DiscordPayload> {
       id: mintId(), ts: new Date().toISOString(),
       station: 'discord', line: Line.discord(channelId),
       from: Line.user('discord', u.id), fromName: username,
-      messageId, emoji,
+      messageId, emoji, isPrivate: r.message.guildId === null,
     });
   }
 
@@ -238,7 +238,7 @@ export class DiscordStation implements ChatStation<DiscordPayload> {
       id: mintId(), ts: new Date(m.createdTimestamp).toISOString(),
       station: 'discord', line: Line.discord(m.channelId), lineName,
       from: Line.user('discord', m.author.id), fromName: m.author.username,
-      messageId: m.id, text, payload,
+      messageId: m.id, text, payload, isPrivate: m.guildId === null,
     });
   }
 }
