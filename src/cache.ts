@@ -4,7 +4,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { errMsg, log } from './log.js';
 import { STATE_DIR } from './paths.js';
-import { Line } from './stations/index.js';
+import type { Line } from './stations/index.js';
 
 type Entry = { createdAt: string; lastSeenAt?: string; name?: string };
 type Cache = Record<string, Entry>;
@@ -62,10 +62,4 @@ export function saveBotId(station: string, id: string): void {
   cur[station] = id;
   try { writeFileSync(botIdsFile, JSON.stringify(cur, null, 2)); }
   catch (err) { log.warn({ err: errMsg(err) }, 'bot-ids cache write failed'); }
-}
-
-/** Resolve the bot's URI for a station. Returns `metro://<station>/bot/<id>` or the placeholder. */
-export function botLine(station: string): Line {
-  const id = readBotIds()[station];
-  return id ? Line.bot(station, id) : `metro://${station}/bot` as Line;
 }

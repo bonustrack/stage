@@ -126,13 +126,12 @@ async function cmdHistory(_: string[], f: Flags): Promise<void> {
   }
 }
 
-/** Compact display: fromName if known; else `station:@<id>` (user), `station:bot`, or `station:<id>`. */
+/** Compact display: fromName if known; else `station:@<id>` (user) or `station:<id>`. */
 function fmtActor(uri: string, name?: string): string {
   if (name) return name;
-  const m = uri.match(/^metro:\/\/([^/]+)(?:\/(?:(user|bot)\/)?(.*))?$/);
+  const m = uri.match(/^metro:\/\/([^/]+)(?:\/(?:(user)\/)?(.*))?$/);
   if (!m) return uri;
   const [, station, kind, rest] = m;
-  if (kind === 'bot') return `${station}:bot`;
   if (kind === 'user') return `${station}:@${shortId(rest ?? '')}`;
   return rest ? `${station}:${shortId(rest)}` : station;
 }

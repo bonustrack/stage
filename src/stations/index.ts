@@ -84,10 +84,10 @@ const PREFIX = 'metro://';
 const build = (station: string, ...seg: (string | number)[]): Line =>
   asLine(`${PREFIX}${station}/${seg.map(String).join('/')}`);
 
-/** Shared parser for `metro://{claude,codex}/<agentId>/<sessionId>`. Skips participant URIs (`/user/…`, `/bot/…`). */
+/** Shared parser for `metro://{claude,codex}/<agentId>/<sessionId>`. Skips the `/user/…` participant URI. */
 function parseAgent(line: Line | string, station: 'claude' | 'codex'): { agentId: string; sessionId: string } | null {
   const p = Line.parse(line);
-  if (p?.station !== station || p.path[0] === 'user' || p.path[0] === 'bot' || p.path.length < 2) return null;
+  if (p?.station !== station || p.path[0] === 'user' || p.path.length < 2) return null;
   return { agentId: p.path[0], sessionId: p.path[1] };
 }
 
@@ -102,9 +102,8 @@ export const Line = {
   codex: (accountId: string, threadId: string): Line => build('codex', accountId, threadId),
   /** `metro://webhook/<endpoint-id>` — one HTTP receive endpoint, registered via `metro webhook add`. */
   webhook: (endpointId: string): Line => build('webhook', endpointId),
-  /** Participant URIs — `metro://<station>/user/<id>` and `metro://<station>/bot/<id>`. */
+  /** Participant URI — `metro://<station>/user/<id>`. */
   user: (station: string, id: string | number): Line => build(station, 'user', id),
-  bot: (station: string, id: string | number): Line => build(station, 'bot', id),
 
   parse(line: Line | string): { station: string; path: string[] } | null {
     if (!line.startsWith(PREFIX)) return null;

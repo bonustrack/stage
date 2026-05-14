@@ -114,7 +114,6 @@ Line.parseCodex(l);                              // { agentId, sessionId } | nul
 Line.webhook(endpointId);                        // metro://webhook/<endpointId>
 Line.parseWebhook(l);                            // string | null  (the endpoint id)
 Line.user(station, id);                          // metro://<station>/user/<id>
-Line.bot(station, id);                           // metro://<station>/bot/<id>
 Line.isAgent(l);                                 // true for any metro://{claude,codex}/...
 ```
 
