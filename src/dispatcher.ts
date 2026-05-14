@@ -63,8 +63,10 @@ function emit(entry: HistoryEntry): void {
   appendHistory(enriched);
 }
 
-const onInbound = (m: InboundMessage): void => emit({ ...m, kind: 'inbound', to: agentSelf() });
-const onReaction = (r: InboundReaction): void => emit({ ...r, kind: 'react', to: agentSelf() });
+const destinationFor = (m: { line: Line; isPrivate?: boolean }): Line =>
+  m.isPrivate ? agentSelf() : m.line;
+const onInbound = (m: InboundMessage): void => emit({ ...m, kind: 'inbound', to: destinationFor(m) });
+const onReaction = (r: InboundReaction): void => emit({ ...r, kind: 'react', to: destinationFor(r) });
 
 const ipc = startIpcServer(async req => {
   if (req.op === 'notify') {

@@ -52,7 +52,7 @@ export type TelegramPayload = {
 };
 type ReactionType = { type: 'emoji'; emoji: string } | { type: 'custom_emoji'; custom_emoji_id: string };
 type MessageReactionUpdated = {
-  chat: { id: number; title?: string; first_name?: string };
+  chat: { id: number; type?: string; title?: string; first_name?: string };
   message_id: number;
   user?: { id: number; username?: string; first_name?: string; is_bot?: boolean };
   date?: number;
@@ -196,7 +196,7 @@ export class TelegramStation implements ChatStation<TelegramPayload> {
       id: mintId(), ts, station: 'telegram', line: Line.telegram(r.chat.id),
       lineName: r.chat.title ?? r.chat.first_name ?? undefined,
       from: Line.user('telegram', r.user.id), fromName,
-      messageId: String(r.message_id), emoji,
+      messageId: String(r.message_id), emoji, isPrivate: r.chat.type === 'private',
     });
   }
 
@@ -233,6 +233,7 @@ export class TelegramStation implements ChatStation<TelegramPayload> {
       station: 'telegram', line: Line.telegram(m.chat.id, topicId), messageId: String(m.message_id),
       lineName: topicId === undefined ? (m.chat.title ?? m.chat.first_name ?? undefined) : undefined,
       from: Line.user('telegram', m.from?.id ?? 'unknown'), fromName, text, payload: m,
+      isPrivate: m.chat.type === 'private',
     });
   }
 }

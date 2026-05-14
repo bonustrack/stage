@@ -8,7 +8,7 @@ import { DiscordStation } from '../stations/discord.js';
 import { TelegramStation } from '../stations/telegram.js';
 import { ipcCall } from '../ipc.js';
 import {
-  agentSelf, appendHistory, lookupEntry, mintId, resolvePlatformId, type HistoryKind,
+  agentSelf, appendHistory, lookupEntry, mintId, readHistory, resolvePlatformId, type HistoryKind,
 } from '../history.js';
 import { asLine, Line, type Button, type ChatStation } from '../stations/index.js';
 import { loadMetroEnv } from '../paths.js';
@@ -42,7 +42,13 @@ function richOpts(f: Flags): RichOpts {
   return opts;
 }
 
-/** Append an outbound action to history.jsonl; `to` = the original sender when replying/reacting. */
+/** Mirror the original entry's destination: group → `line`; DM → the other-party user URI. */
+function destinationFor(orig: ReturnType<typeof lookupEntry>, line: Line): Line {
+  if (!orig || !orig.to || orig.to === orig.line) return line;
+  return orig.from;
+}
+
+/** Append an outbound action to history.jsonl; `to` mirrors the destination per `destinationFor`. */
 function logOutbound(
   f: Flags,
   e: { kind: HistoryKind; line: Line; messageId: string; text?: string; replyTo?: string; emoji?: string; to?: Line },
@@ -67,7 +73,9 @@ export async function cmdSend(p: string[], f: Flags): Promise<void> {
     return emit(f, `notified ${line}`, { ok: true, line, id: null, messageId: null });
   }
   const messageId = await chatStationOf(line).send(line, text, richOpts(f));
-  const id = logOutbound(f, { kind: 'outbound', line, text, messageId });
+  /** Inherit destination from the most recent inbound on this line so DM sends address the user. */
+  const to = destinationFor(readHistory({ line, kind: 'inbound', limit: 1 })[0], line);
+  const id = logOutbound(f, { kind: 'outbound', line, text, messageId, to });
   emit(f, `sent ${id} (${messageId}) to ${line}`, { ok: true, line, id, messageId });
 }
 
@@ -78,7 +86,7 @@ export async function cmdReply(p: string[], f: Flags): Promise<void> {
   const replyTo = resolvePlatformId(replyToArg);
   const messageId = await chatStationOf(line).send(line, text, { ...richOpts(f), replyTo });
   const id = logOutbound(f,
-    { kind: 'outbound', line, text, messageId, replyTo: replyToArg, to: lookupEntry(replyToArg)?.from });
+    { kind: 'outbound', line, text, messageId, replyTo: replyToArg, to: destinationFor(lookupEntry(replyToArg), line) });
   emit(f, `replied ${id} (${messageId}) to ${line}#${replyTo}`,
     { ok: true, line, id, replyTo: replyToArg, messageId });
 }
@@ -102,7 +110,7 @@ export async function cmdReact(p: string[], f: Flags): Promise<void> {
   const platformId = resolvePlatformId(msgArg);
   await chatStationOf(line).react(line, platformId, emoji);
   const id = logOutbound(f,
-    { kind: 'react', line, messageId: platformId, emoji, to: lookupEntry(msgArg)?.from });
+    { kind: 'react', line, messageId: platformId, emoji, to: destinationFor(lookupEntry(msgArg), line) });
   const human = emoji ? `reacted ${emoji} on ${line}#${platformId}` : `cleared reaction on ${line}#${platformId}`;
   emit(f, human, { ok: true, line, id, messageId: platformId, emoji });
 }

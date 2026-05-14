@@ -32,6 +32,8 @@ export interface InboundMessage<TPayload = unknown> {
   messageId: string;
   /** Universal display projection. Includes `[image]`/`[file: …]` tags inline. */
   text: string;
+  /** True when the conversation has a single human counterpart (DM / private chat). */
+  isPrivate?: boolean;
   /** Station-native message object. Shape is per-station; consumers narrow on `station`. */
   payload: TPayload;
 }
@@ -48,6 +50,8 @@ export interface InboundReaction {
   /** Platform-side id of the message that got reacted to. */
   messageId: string;
   emoji: string;
+  /** True when the conversation has a single human counterpart (DM / private chat). */
+  isPrivate?: boolean;
 }
 
 export type Button = { text: string; url: string };
