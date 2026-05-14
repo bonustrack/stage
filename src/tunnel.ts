@@ -28,8 +28,10 @@ export class Tunnel {
   start(): void {
     if (this.closed) return;
     log.info({ name: this.cfg.name, hostname: this.cfg.hostname, port: this.port }, 'cloudflared tunnel starting');
+    /** `--no-autoupdate` is a global cloudflared flag — must come before the `tunnel` subcommand. */
     this.child = spawn('cloudflared', [
-      'tunnel', 'run', '--no-autoupdate',
+      '--no-autoupdate',
+      'tunnel', 'run',
       '--url', `http://127.0.0.1:${this.port}`,
       this.cfg.name,
     ], { stdio: ['ignore', 'pipe', 'pipe'] });

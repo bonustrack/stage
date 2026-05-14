@@ -92,14 +92,20 @@ Behaviors worth knowing:
 Receive HTTP events from third parties (GitHub, Intercom, Fireflies, anything that POSTs) as standard metro inbound events. Each registered endpoint is one Line.
 
 ```bash
-metro tunnel setup metro webhook.example.com    # one-time: requires `cloudflared` + your CF account/domain
+# One-time per machine — bring your own Cloudflare domain (free Registrar at-cost):
+brew install cloudflared
+cloudflared tunnel login                       # browser OAuth, pick your domain
+metro tunnel setup metro webhook.example.com   # creates tunnel + DNS CNAME
+
+# Per endpoint — repeat for each provider:
 metro webhook add github --secret=$(openssl rand -hex 32)
-# → http://127.0.0.1:8420/wh/<id>     (local)  or
-# → https://webhook.example.com/wh/<id>  (with tunnel)
-metro                                            # daemon spawns cloudflared automatically
+# → https://webhook.example.com/wh/<id>
+# (without `metro tunnel setup`, falls back to http://127.0.0.1:8420/wh/<id> — local-only)
+
+metro                                          # daemon binds 8420 + spawns cloudflared automatically
 ```
 
-Paste the URL into the provider's webhook settings. Every POST becomes an inbound event with `station: "webhook"`, `line: metro://webhook/<id>`, `payload: { headers, body }`. If you set `--secret`, metro verifies the `X-Hub-Signature-256` header (GitHub/Intercom format) and rejects mismatches with 401.
+Paste the URL into the provider's webhook settings (for GitHub: **Content type must be `application/json`** — form-encoded won't parse). Every POST becomes an inbound event with `station: "webhook"`, `line: metro://webhook/<id>`, `payload: { headers, body }`. If you set `--secret`, metro verifies the `X-Hub-Signature-256` header (GitHub/Intercom format) and rejects mismatches with 401.
 
 | Action | Command |
 |---|---|

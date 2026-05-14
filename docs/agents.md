@@ -171,7 +171,7 @@ $ metro stations
 When the user wants metro to receive events from a third-party service (GitHub PRs, Intercom conversations, Fireflies meetings, …):
 
 1. **One-time tunnel setup** (only needed once per machine): `metro tunnel setup <tunnel-name> <hostname>`. Requires `cloudflared` on PATH (`brew install cloudflared`) and a Cloudflare account + domain on Cloudflare DNS. Run `cloudflared tunnel login` first if you haven't.
-2. **Register an endpoint**: `metro webhook add <label> [--secret=<shared-secret>]`. Prints the public URL — paste it into the provider's webhook settings.
+2. **Register an endpoint**: `metro webhook add <label> [--secret=<shared-secret>]`. Prints the public URL — paste it into the provider's webhook settings. For GitHub specifically, set **Content type: `application/json`** (form-encoded won't parse into `payload.body`).
 3. **Run the daemon**: `metro`. With at least one endpoint registered, metro auto-binds the HTTP listener (port 8420, override `METRO_WEBHOOK_PORT`) and spawns `cloudflared tunnel run` if `tunnel.json` exists.
 
 Each POST becomes an inbound event:
