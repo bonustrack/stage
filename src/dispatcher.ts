@@ -11,15 +11,23 @@ import { TelegramStation } from './stations/telegram.js';
 import { asLine, Line, type InboundMessage } from './stations/index.js';
 import { CodexRC } from './codex-rc.js';
 import { startIpcServer, stopIpcServer } from './ipc.js';
-import { agentSelf, appendHistory, mintId, type HistoryEntry } from './history.js';
+import { agentSelf, appendHistory, mintId, selfLine, type HistoryEntry } from './history.js';
 import { noteSeen, saveBotId } from './cache.js';
 import { errMsg, log } from './log.js';
 import { acquireLock, configuredPlatforms, loadMetroEnv, STATE_DIR, requireConfiguredPlatform } from './paths.js';
+import { setCodexSessionId } from './stations/codex.js';
+import { noteAgentFromLine } from './registry.js';
 
 loadMetroEnv();
 const platforms = configuredPlatforms();
 requireConfiguredPlatform(platforms);
 acquireLock(join(STATE_DIR, '.tail-lock'));
+
+// Fail fast if launched from Claude Code without a logged-in account.
+const self = agentSelf();
+log.info({ self, line: selfLine() }, 'agent identity');
+const seedSelf = (): void => { const l = selfLine(); if (l) noteAgentFromLine(l); };
+seedSelf();
 
 const AGENTS_MD = join(STATE_DIR, 'AGENTS.md');
 try { copyFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'docs', 'agents.md'), AGENTS_MD); }
@@ -31,6 +39,7 @@ process.stdout.on('error', err => {
 });
 
 const codexRc = process.env.METRO_CODEX_RC ? new CodexRC(process.env.METRO_CODEX_RC, pkg.version) : null;
+codexRc?.onThread(id => { setCodexSessionId(id); seedSelf(); });
 codexRc?.start();
 
 const discord = new DiscordStation();
@@ -41,6 +50,7 @@ function emit(entry: HistoryEntry): void {
   process.stdout.write(json + '\n');
   codexRc?.push(json);
   noteSeen(entry.line, entry.lineName);
+  for (const l of [entry.line, entry.from, entry.to]) if (l) noteAgentFromLine(l);
   appendHistory(entry);
 }
 

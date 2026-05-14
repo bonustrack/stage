@@ -14,27 +14,49 @@ The URI parses cleanly with the WHATWG `URL` parser: `new URL(line)` gives `prot
 
 ## Registered stations
 
-| Station    | Kind  | Pattern                                   | Example                               |
-|------------|-------|-------------------------------------------|---------------------------------------|
-| `discord`  | chat  | `metro://discord/<channel-id>`            | `metro://discord/1234567890123456789` |
-| `telegram` | chat  | `metro://telegram/<chat-id>[/<topic-id>]` | `metro://telegram/-1001234567890/42`  |
-| `claude`   | agent | `metro://claude/<topic>`                  | `metro://claude/deploys`              |
-| `codex`    | agent | `metro://codex/<topic>`                   | `metro://codex/ci`                    |
+| Station    | Kind  | Pattern                                      | Example                                                                |
+|------------|-------|----------------------------------------------|------------------------------------------------------------------------|
+| `discord`  | chat  | `metro://discord/<channel-id>`               | `metro://discord/1234567890123456789`                                  |
+| `telegram` | chat  | `metro://telegram/<chat-id>[/<topic-id>]`    | `metro://telegram/-1001234567890/42`                                   |
+| `claude`   | agent | `metro://claude/<agent-id>/<session-id>`     | `metro://claude/9bfc7af0-…/50b00d11-…`                                 |
+| `codex`    | agent | `metro://codex/<agent-id>/<session-id>`      | `metro://codex/8119ecb1-…/01997d4b-…`                                  |
+
+Agent lines mirror the `<root>/<sub>` structure of `metro://telegram/<chat-id>/<topic-id>`: `<agent-id>` (the user's stable account id — same across devices) plays the role of `<chat-id>`, and `<session-id>` (one conversation) plays the role of `<topic-id>`. Both segments are derived per station (see [participants](#participants) below).
 
 ## Participants
 
 Every chat station also exposes participant URIs — used as `from` on inbound/outbound events and history rows.
 
-| Kind  | Pattern                                  | Example                          |
-|-------|------------------------------------------|----------------------------------|
-| user  | `metro://<station>/user/<id>`            | `metro://discord/user/87654321`  |
-| agent | `metro://{claude,codex}/<topic>`         | `metro://claude/agent`           |
+| Kind   | Pattern                          | Example                                                       |
+|--------|----------------------------------|---------------------------------------------------------------|
+| user   | `metro://<station>/user/<id>`    | `metro://discord/user/87654321`                               |
+| claude | `metro://claude/user/<orgId>`    | `metro://claude/user/9bfc7af0-2117-44c5-baf2-d22ba382d065`    |
+| codex  | `metro://codex/user/<accountId>` | `metro://codex/user/8119ecb1-b05e-48db-aa80-434584439df9`     |
 
-`from` and `to` on history entries are always participant URIs. Discord/Telegram inbounds set `from` to the user URI; the daemon sets `to` to the agent identity (`metro://claude/agent` if `$CLAUDECODE` is detected, `metro://codex/agent` if `$METRO_CODEX_RC`/`$CODEX_HOME` is set, else `metro://agent`). On outbound, `from` = the same agent identity; `to` = the original sender for replies/reacts (looked up from history), or the channel `line` for fresh group sends. A `fromName` field carries the display name (`@alice`, `bonustrack_`).
+`from` and `to` on history entries are always participant URIs. Discord/Telegram inbounds set `from` to the user URI; the daemon sets `to` to the agent identity:
+
+- **Claude Code** (`$CLAUDECODE` set) — `metro://claude/user/<orgId>`. `<orgId>` is the stable Anthropic-account UUID, resolved by shelling out to `claude auth status --json`.
+- **Codex** (`$METRO_CODEX_RC` or `$CODEX_HOME` set) — `metro://codex/user/<accountId>`. `<accountId>` is the ChatGPT-account UUID, read from `$CODEX_HOME/auth.json` (default `~/.codex/auth.json`) at the `tokens.account_id` field. Requires `auth_mode=chatgpt`; API-key-only Codex sessions have no account id and metro will error.
+- **Neither** — `to` is the generic `metro://agent`.
+
+Same account on any machine yields the same URI. Switching accounts via `claude auth login` / `codex login` flips the URI within ~5 s for the long-lived daemon (5 s TTL cache); one-shot CLI invocations re-resolve every run. On outbound, `from` = the same agent identity; `to` = the original sender for replies/reacts (looked up from history), or the channel `line` for fresh group sends. A `fromName` field carries the display name (`@alice`, `bonustrack_`).
 
 Override with `--from=<uri>` on any write command, or set `$METRO_FROM` to pin a custom identity for the whole session.
 
-Chat lines identify a Discord channel / Telegram chat (with optional forum topic). Agent lines are notification sinks — posting to one re-emits the message on the daemon's stdout stream and (if configured) pushes it to the Codex app-server. They have no inherent "messages"; only events.
+Chat lines identify a Discord channel / Telegram chat (with optional forum topic). Agent lines now identify a *specific session* of a specific agent (`<agent-id>/<session-id>`) — posting to one re-emits the message on the daemon's stdout stream and (if configured) pushes it to the Codex app-server. They have no inherent "messages"; only events.
+
+### Session derivation per station
+
+| Station  | `<agent-id>`               | `<session-id>`                                                  |
+|----------|----------------------------|-----------------------------------------------------------------|
+| `claude` | `orgId` from `claude auth status --json` | `$CLAUDE_CODE_SESSION_ID` (set by Claude Code; stable across `--resume`)|
+| `codex`  | `tokens.account_id` from `$CODEX_HOME/auth.json` | codex-rc thread id from the JSON-RPC handshake (`thread/loaded/list` → `thread/start`) |
+
+Override either segment with `METRO_AGENT_ID` / `METRO_AGENT_SESSION_ID` env vars.
+
+### Agent registry
+
+The daemon persists every `(station, agent-id, session)` tuple it sees to `$METRO_STATE_DIR/agent-registry.json`. `metro stations` prints the count of seen agents and sessions per station. Run it to discover what's reachable rather than guessing topic names.
 
 ## Message addressing
 
@@ -61,7 +83,11 @@ import { Line } from './stations/index.js';            // value namespace + type
 const l: Line = Line.discord('1234567890');     // typed Line
 Line.parse(l);                                   // { station: 'discord', path: ['1234567890'] } | null
 Line.station(l);                                 // 'discord'
-Line.isAgent(Line.claude('deploys'));            // true
+Line.claude(orgId, sessionId);                   // metro://claude/<orgId>/<sessionId>
+Line.codex(accountId, threadId);                 // metro://codex/<accountId>/<threadId>
+Line.parseClaude(l);                             // { agentId, sessionId } | null
+Line.parseCodex(l);                              // { agentId, sessionId } | null
+Line.isAgent(l);                                 // true for any metro://{claude,codex}/...
 ```
 
 ## Adding a new station

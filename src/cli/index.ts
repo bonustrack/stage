@@ -5,6 +5,7 @@ import pkg from '../../package.json' with { type: 'json' };
 import { errMsg } from '../log.js';
 import { listLines } from '../cache.js';
 import { fmtCapabilities, listStations } from '../stations/index.js';
+import { listAgents } from '../registry.js';
 import { loadMetroEnv } from '../paths.js';
 import { readHistory, type HistoryKind } from '../history.js';
 import { cmdDoctor, cmdSetup, cmdUpdate } from './config.js';
@@ -48,13 +49,24 @@ Exit codes: 0 success · 1 usage · 2 config · 3 upstream
 async function cmdStations(_: string[], f: Flags): Promise<void> {
   loadMetroEnv();
   const rows = listStations();
-  if (isJson(f)) return writeJson({ stations: rows });
+  const agentsByStation = {
+    claude: listAgents('claude'),
+    codex: listAgents('codex'),
+  };
+  if (isJson(f)) return writeJson({ stations: rows, agents: agentsByStation });
   process.stdout.write('metro stations\n\n');
   for (const s of rows) {
     const mark = s.configured === true ? '✓' : s.configured === false ? '✗' : '·';
     process.stdout.write(
       `  ${mark} ${s.name.padEnd(10)} ${s.kind.padEnd(6)} ${fmtCapabilities(s.capabilities)}\n        ${s.detail}\n`,
     );
+    if (s.kind === 'agent') {
+      const seen = agentsByStation[s.name as 'claude' | 'codex'] ?? [];
+      for (const inst of seen) {
+        const sessionsTxt = inst.sessions.length ? ` · sessions: ${inst.sessions.length}` : '';
+        process.stdout.write(`          seen: ${inst.agentId}${sessionsTxt}\n`);
+      }
+    }
   }
   process.stdout.write('\n');
 }

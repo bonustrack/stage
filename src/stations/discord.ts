@@ -9,7 +9,7 @@ import { errMsg, log } from '../log.js';
 import { mintId } from '../history.js';
 import {
   Line, type Button, type Capabilities, type ChatStation, type EditOpts, type FetchedMessage,
-  type InboundMessage, type Line as LineT, type SendOpts,
+  type InboundMessage, type SendOpts,
 } from './index.js';
 
 /** discord.js `Message.toJSON()` output + auto-fetched `referencedMessage` on replies. */
@@ -92,7 +92,7 @@ type RawMessage = {
   attachments?: RawAttachment[];
 };
 
-const channelOf = (line: LineT): string => {
+const channelOf = (line: Line): string => {
   const id = Line.parseDiscord(line);
   if (!id) throw new Error(`not a discord line: ${line}`);
   return id;
@@ -142,7 +142,7 @@ export class DiscordStation implements ChatStation<DiscordPayload> {
     return rest<{ id: string; username: string }>('GET', '/users/@me');
   }
 
-  async send(line: LineT, text: string, opts?: SendOpts): Promise<string> {
+  async send(line: Line, text: string, opts?: SendOpts): Promise<string> {
     const payload: Record<string, unknown> = { content: text, flags: SUPPRESS_EMBEDS };
     if (opts?.replyTo) payload.message_reference = { message_id: opts.replyTo };
     if (opts?.buttons?.length) payload.components = discordButtons(opts.buttons);
@@ -154,19 +154,19 @@ export class DiscordStation implements ChatStation<DiscordPayload> {
     return sent.id;
   }
 
-  async edit(line: LineT, messageId: string, text: string, opts?: EditOpts): Promise<void> {
+  async edit(line: Line, messageId: string, text: string, opts?: EditOpts): Promise<void> {
     const payload: Record<string, unknown> = { content: text, flags: SUPPRESS_EMBEDS };
     payload.components = opts?.buttons?.length ? discordButtons(opts.buttons) : [];
     await rest('PATCH', `/channels/${channelOf(line)}/messages/${messageId}`, payload);
   }
 
-  async react(line: LineT, messageId: string, emoji: string): Promise<void> {
+  async react(line: Line, messageId: string, emoji: string): Promise<void> {
     const ch = channelOf(line);
     if (!emoji) { await rest('DELETE', `/channels/${ch}/messages/${messageId}/reactions/@me`); return; }
     await rest('PUT', `/channels/${ch}/messages/${messageId}/reactions/${encodeURIComponent(emoji)}/@me`);
   }
 
-  async download(line: LineT, messageId: string, outDir: string): Promise<{ path: string; mediaType: string }[]> {
+  async download(line: Line, messageId: string, outDir: string): Promise<{ path: string; mediaType: string }[]> {
     const ch = channelOf(line);
     const msg = await rest<RawMessage>('GET', `/channels/${ch}/messages/${messageId}`);
     const out: { path: string; mediaType: string }[] = [];
@@ -188,7 +188,7 @@ export class DiscordStation implements ChatStation<DiscordPayload> {
     return out;
   }
 
-  async fetch(line: LineT, limit: number): Promise<FetchedMessage[]> {
+  async fetch(line: Line, limit: number): Promise<FetchedMessage[]> {
     const capped = Math.max(1, Math.min(100, limit | 0));
     const msgs = await rest<RawMessage[]>('GET', `/channels/${channelOf(line)}/messages?limit=${capped}`);
     return [...msgs].reverse().map(m => ({

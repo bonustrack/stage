@@ -2,7 +2,7 @@
 
 > **A live JSON stream of Telegram + Discord messages for your local Claude Code / Codex session.**
 
-Metro is a small daemon you launch from inside your agent. It connects to Discord and Telegram, emits each inbound as one JSON line on stdout (which Claude Code's `Monitor` consumes natively, and Codex picks up via an app-server WebSocket push), and exposes a tiny CLI — `metro reply`, `metro send`, `metro edit`, `metro react`, `metro download`, `metro fetch` — for posting back. Cross-agent: any agent can ping any other via `metro send metro://claude/<topic>` and the daemon re-emits it on the stream.
+Metro is a small daemon you launch from inside your agent. It connects to Discord and Telegram, emits each inbound as one JSON line on stdout (which Claude Code's `Monitor` consumes natively, and Codex picks up via an app-server WebSocket push), and exposes a tiny CLI — `metro reply`, `metro send`, `metro edit`, `metro react`, `metro download`, `metro fetch` — for posting back. Cross-agent: any agent can ping any other via `metro send metro://claude/<agent-id>/<session-id>` and the daemon re-emits it on the stream.
 
 ```
 [Claude Code session]
@@ -56,7 +56,7 @@ agent CLI calls ──┴── REST → Discord / Telegram   (metro reply / sen
 - **Inversion of control.** The agent (Claude Code, Codex) launches `metro`, not the other way around. Metro never spawns an agent process.
 - **Single daemon per machine.** Lockfile at `$METRO_STATE_DIR/.tail-lock` enforces singleton.
 - **Codex push (opt-in).** Set `METRO_CODEX_RC=ws://127.0.0.1:8421` and metro pushes each event via JSON-RPC `turn/start` to the Codex app-server. Codex's TUI must be attached with `--remote` to the same URL.
-- **Cross-agent notification.** `metro send metro://claude/<topic>` (or `metro://codex/<topic>`) routes through the daemon's IPC socket; the daemon re-emits on its stdout (and pushes to codex-rc), so the peer agent sees it.
+- **Cross-agent notification.** `metro send metro://claude/<agent-id>/<session-id>` (or `metro://codex/<agent-id>/<session-id>`) routes through the daemon's IPC socket; the daemon re-emits on its stdout (and pushes to codex-rc), so the peer agent sees it. Discover reachable agents/sessions via `metro stations` or `$METRO_STATE_DIR/agent-registry.json`.
 
 ---
 
@@ -68,8 +68,8 @@ Each endpoint is a **station** with declared capabilities:
 |------------|-------|---------------|-------------------------------------------------------|-------------------------------------------------------------|
 | `discord`  | chat  | text + image  | reply, send, edit, react, download, fetch             | `DISCORD_BOT_TOKEN` + Message Content Intent                |
 | `telegram` | chat  | text + image  | reply, send, edit, react, download                    | `TELEGRAM_BOT_TOKEN`                                        |
-| `claude`   | agent | text          | notify                                                | watches metro stdout via Claude Code's `Monitor`            |
-| `codex`    | agent | text          | notify                                                | set `METRO_CODEX_RC=ws://…` to push                         |
+| `claude`   | agent | text          | send, notify                                          | watches metro stdout via Claude Code's `Monitor`            |
+| `codex`    | agent | text          | send, notify                                          | set `METRO_CODEX_RC=ws://…` to push                         |
 
 Run `metro stations` to see live config status (`✓` configured, `✗` not, `·` informational).
 
@@ -90,8 +90,8 @@ Every conversational scope is identified by a **Line** — a URI in the form `me
 metro://discord/1234567890123456789
 metro://telegram/-1001234567890                 # main chat / DM
 metro://telegram/-1001234567890/42              # forum topic 42
-metro://claude/deploys                          # agent notification sink
-metro://codex/ci
+metro://claude/9bfc7af0-…/50b00d11-…            # claude agent session
+metro://codex/8119ecb1-…/01997d4b-…             # codex agent session
 ```
 
 Anyone can post to a line via [`metro send`](#cli) — daemon required only for agent lines. Full grammar in [`docs/uri-scheme.md`](docs/uri-scheme.md).
@@ -126,9 +126,11 @@ All commands accept `--json`. `reply` / `send` / `edit` read multi-line `<text>`
 
 **State files** in `$METRO_STATE_DIR` (default `~/.cache/metro`):
 - `AGENTS.md` — agent skill copied from the package on every start (so the path is stable across upgrades)
-- `history.jsonl` — universal message log (one JSON object per line; append-only). Read with `metro history`. Each entry carries `from` and `to` as universal participant URIs (`metro://<station>/user/<id>`, `metro://claude/<topic>`, `metro://codex/<topic>`) plus a `fromName` display field. The dispatcher auto-detects the consuming agent for `to` on inbound (`$CLAUDECODE` → `metro://claude/agent`; `$METRO_CODEX_RC`/`$CODEX_HOME` → `metro://codex/agent`).
+- `history.jsonl` — universal message log (one JSON object per line; append-only). Read with `metro history`. Each entry carries `from` and `to` as universal participant URIs (`metro://<station>/user/<id>`, `metro://claude/user/<orgId>`, `metro://codex/user/<accountId>`) plus a `fromName` display field. The dispatcher auto-detects the consuming agent for `to` on inbound (`$CLAUDECODE` → `metro://claude/user/<orgId>` from `claude auth status --json`; `$METRO_CODEX_RC`/`$CODEX_HOME` → `metro://codex/user/<accountId>` from `$CODEX_HOME/auth.json`).
 - `bot-ids.json` — `{discord: "<botUserId>", telegram: "<botUserId>"}` written by the daemon on startup (cached for the few historical lookups that still need a bot identity).
 - `lines.json` — line → last-seen / name cache (read by `metro lines`)
+- `agent-registry.json` — every `(station, agent-id, sessions[])` tuple metro has seen; surfaced under each agent row in `metro stations`
+- `stations/codex/session-id` — current codex-rc thread id (daemon writes on handshake; CLI processes read for `metro://codex/<agent-id>/<session>`)
 - `.tail-lock` — dispatcher pid
 - `metro.sock` — daemon IPC socket
 - `telegram-offset.json` — last processed update id

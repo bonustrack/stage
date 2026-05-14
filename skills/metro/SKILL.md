@@ -53,11 +53,11 @@ Every line on stdout is one **history entry** — the same record appended to `h
 - `payload?` — raw platform-native message object. Set on inbound only. Shape varies per `station`.
 
 ```json
-{"kind":"inbound","id":"msg_aB3xY7zP","ts":"2026-05-14T12:00:00Z","station":"telegram","line":"metro://telegram/-100…/247","lineName":"infra","from":"metro://telegram/user/12345","fromName":"@alice","to":"metro://claude/agent","messageId":"4567","text":"hi [image]","payload":{"message_id":4567,"chat":{"id":-100,"type":"supergroup","is_forum":true},"from":{"id":12345,"username":"alice"},"text":"hi","photo":[{"file_id":"…"}],"reply_to_message":{"message_id":4500,"text":"earlier","from":{"id":99,"username":"bob"}}}}
+{"kind":"inbound","id":"msg_aB3xY7zP","ts":"2026-05-14T12:00:00Z","station":"telegram","line":"metro://telegram/-100…/247","lineName":"infra","from":"metro://telegram/user/12345","fromName":"@alice","to":"metro://claude/user/9bfc7af0-…","messageId":"4567","text":"hi [image]","payload":{"message_id":4567,"chat":{"id":-100,"type":"supergroup","is_forum":true},"from":{"id":12345,"username":"alice"},"text":"hi","photo":[{"file_id":"…"}],"reply_to_message":{"message_id":4500,"text":"earlier","from":{"id":99,"username":"bob"}}}}
 ```
 
 ```json
-{"kind":"notification","id":"msg_pQ4r5sT0","ts":"…","station":"claude","line":"metro://claude/deploys","from":"metro://codex/ci","to":"metro://claude/deploys","text":"deploy green"}
+{"kind":"notification","id":"msg_pQ4r5sT0","ts":"…","station":"claude","line":"metro://claude/9bfc7af0-…/50b00d11-…","from":"metro://codex/user/8119ecb1-…","to":"metro://claude/9bfc7af0-…/50b00d11-…","text":"deploy green"}
 ```
 
 ### `payload` by station
@@ -80,10 +80,11 @@ Default: only reply on DM or ping; otherwise stay silent or `metro react` to ack
 
 Both `from` and `to` are **participant URIs** (the conversation context lives in `line`):
 - `metro://<station>/user/<id>` — a person on a chat platform
-- `metro://claude/<topic>` / `metro://codex/<topic>` — an agent
+- `metro://claude/user/<orgId>` — a Claude Code agent (orgId = stable Anthropic-account UUID, same across devices for the same account)
+- `metro://codex/user/<accountId>` — a Codex agent (accountId = stable ChatGPT-account UUID, same across devices)
 - `metro://<station>/<channelId>` — a channel (used as `to` for fresh sends to a group, where no single recipient)
 
-When **you** send via `metro send`/`reply`/`edit`/`react`, metro auto-stamps `from = metro://claude/agent` (from `$CLAUDECODE`) or `metro://codex/agent` (from `$METRO_CODEX_RC` / `$CODEX_HOME`). Override with `--from=<uri>` or `$METRO_FROM`. When replying/reacting, `to` is automatically the original sender (looked up via the universal id).
+When **you** send via `metro send`/`reply`/`edit`/`react`, metro auto-stamps `from = metro://claude/user/<orgId>` (when `$CLAUDECODE` is set; resolved from `claude auth status --json`) or `metro://codex/user/<accountId>` (from `$METRO_CODEX_RC` / `$CODEX_HOME`; resolved from `$CODEX_HOME/auth.json`). Switching accounts via `claude auth login` / `codex login` flips the id on the next event (within ~5 s for the daemon). Override with `--from=<uri>` or `$METRO_FROM`. When replying/reacting, `to` is automatically the original sender (looked up via the universal id).
 
 The `id` is the **canonical handle** for that message across all stations — store it if you want to refer back to it later.
 
@@ -111,7 +112,7 @@ All take positional args (no `--to=`/`--text=` flags). Append `--json` to any fo
 | Reaction (empty emoji clears) | `metro react <line> <messageId> <emoji>` |
 | Download `[image]` attachments → paths | `metro download <line> <messageId> [--out=<dir>]` |
 | Recent channel history (Discord only) | `metro fetch <line> [--limit=20]` |
-| Ping another agent (cross-agent line) | `metro send metro://claude/<topic> <text> [--from=<line>]` |
+| Ping another agent (cross-agent line) | `metro send metro://claude/<agent-id>/<session-id> <text> [--from=<line>]` |
 
 `reply` / `send` / `edit` accept multi-line text via stdin (heredoc).
 
@@ -152,8 +153,8 @@ Limits / quirks:
 |------------|-------------------------------------------|--------------------------------------|
 | `discord`  | `metro://discord/<channel-id>`            | `metro://discord/1234567890`         |
 | `telegram` | `metro://telegram/<chat-id>[/<topic-id>]` | `metro://telegram/-1001234567890/42` |
-| `claude`   | `metro://claude/<topic>`                  | `metro://claude/deploys`             |
-| `codex`    | `metro://codex/<topic>`                   | `metro://codex/ci`                   |
+| `claude`   | `metro://claude/<agent-id>/<session-id>`  | `metro://claude/9bfc7af0-…/50b00d11-…` |
+| `codex`    | `metro://codex/<agent-id>/<session-id>`   | `metro://codex/8119ecb1-…/01997d4b-…`  |
 
 The `messageId` is **not** part of the URI — it's a separate positional arg for `reply` / `edit` / `react` / `download`.
 
@@ -174,8 +175,8 @@ When an event's `text` contains `[image]`:
 Both agents can post to each other's "agent line":
 
 ```bash
-metro send metro://claude/deploys "build green, ready to ship"
-metro send metro://codex/ci "build green" --from=metro://claude/deploys   # override sender
+metro send metro://claude/9bfc7af0-…/50b00d11-… "build green, ready to ship"
+metro send metro://codex/8119ecb1-…/01997d4b-… "build green" --from=metro://claude/user/9bfc7af0-…   # override sender
 ```
 
 The daemon re-emits the post on its stdout stream (and pushes via codex-rc if configured), so the peer agent sees a `{"kind":"notification",...}` event. Requires the metro daemon to be running on the machine — agent-line sends error with `metro daemon is not running` otherwise.

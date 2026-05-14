@@ -10,7 +10,7 @@ import { ipcCall } from '../ipc.js';
 import {
   agentSelf, appendHistory, lookupEntry, mintId, resolvePlatformId, type HistoryKind,
 } from '../history.js';
-import { asLine, Line, type Button, type ChatStation, type Line as LineT } from '../stations/index.js';
+import { asLine, Line, type Button, type ChatStation } from '../stations/index.js';
 import { loadMetroEnv } from '../paths.js';
 import {
   emit, flagList, flagOne, isJson, need, resolveText, writeJson, type Flags,
@@ -18,7 +18,7 @@ import {
 
 type AnyChat = ChatStation<Record<string, unknown>>;
 
-export function chatStationOf(line: LineT): AnyChat {
+export function chatStationOf(line: Line): AnyChat {
   const s = Line.station(line);
   if (s === 'discord') return new DiscordStation() as unknown as AnyChat;
   if (s === 'telegram') return new TelegramStation() as unknown as AnyChat;
@@ -45,7 +45,7 @@ function richOpts(f: Flags): RichOpts {
 /** Append an outbound action to history.jsonl; `to` = the original sender when replying/reacting. */
 function logOutbound(
   f: Flags,
-  e: { kind: HistoryKind; line: LineT; messageId: string; text?: string; replyTo?: string; emoji?: string; to?: LineT },
+  e: { kind: HistoryKind; line: Line; messageId: string; text?: string; replyTo?: string; emoji?: string; to?: Line },
 ): string {
   const id = mintId();
   const fromOverride = flagOne(f, 'from');

@@ -4,7 +4,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { errMsg, log } from './log.js';
 import { STATE_DIR } from './paths.js';
-import { Line, type Line as LineT } from './stations/index.js';
+import { Line } from './stations/index.js';
 
 type Entry = { createdAt: string; lastSeenAt?: string; name?: string };
 type Cache = Record<string, Entry>;
@@ -35,7 +35,7 @@ function flush(): void {
 
 process.on('exit', flush);
 
-export function noteSeen(line: LineT, name?: string): void {
+export function noteSeen(line: Line, name?: string): void {
   const c = read();
   const entry = c[line] ??= { createdAt: new Date().toISOString() };
   entry.lastSeenAt = new Date().toISOString();
@@ -44,8 +44,8 @@ export function noteSeen(line: LineT, name?: string): void {
   if (!flushTimer) flushTimer = setTimeout(() => { flushTimer = null; flush(); }, FLUSH_DELAY_MS);
 }
 
-export const listLines = (): Array<{ line: LineT; entry: Entry }> =>
-  Object.entries(read()).map(([line, entry]) => ({ line: line as LineT, entry }));
+export const listLines = (): Array<{ line: Line; entry: Entry }> =>
+  Object.entries(read()).map(([line, entry]) => ({ line: line as Line, entry }));
 
 /** Bot identity cache: `{discord: "<userId>", telegram: "<userId>"}`. Daemon writes after getMe(). */
 const botIdsFile = join(STATE_DIR, 'bot-ids.json');
@@ -65,7 +65,7 @@ export function saveBotId(station: string, id: string): void {
 }
 
 /** Resolve the bot's URI for a station. Returns `metro://<station>/bot/<id>` or the placeholder. */
-export function botLine(station: string): LineT {
+export function botLine(station: string): Line {
   const id = readBotIds()[station];
-  return id ? Line.bot(station, id) : `metro://${station}/bot` as LineT;
+  return id ? Line.bot(station, id) : `metro://${station}/bot` as Line;
 }
