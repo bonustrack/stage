@@ -31,7 +31,8 @@
     "prepublishOnly": "tsc",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "bun test test/"
   },
   "dependencies": {
     "discord.js": "^14.14.0",

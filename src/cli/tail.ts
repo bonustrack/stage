@@ -55,6 +55,7 @@ export async function cmdTail(_: string[], f: Flags): Promise<void> {
   const limit = Number(flagOne(f, 'limit')) || 0;
   const startOffset = resolveStartOffset(f, self);
   const json = isJson(f);
+  const includeWebhooks = f['include-webhooks'] === true;
 
   let emitted = 0;
   let offset = startOffset;
@@ -66,7 +67,7 @@ export async function cmdTail(_: string[], f: Flags): Promise<void> {
       offset = next;
       if (chatFilter && entry.line !== chatFilter) continue;
       if (stationFilter && entry.station !== stationFilter) continue;
-      if (!passesMode(entry, mode, self, claims)) continue;
+      if (!passesMode(entry, mode, self, claims, { includeWebhooks })) continue;
       if (json) process.stdout.write(JSON.stringify(entry) + '\n');
       else process.stdout.write(fmtRow(entry) + '\n');
       if (self) writeCursor(self, offset);

@@ -12,6 +12,7 @@ import {
 } from '../history.js';
 import { asLine, Line, type Button, type ChatStation } from '../stations/index.js';
 import { loadMetroEnv } from '../paths.js';
+import { tryAutoClaim } from '../broker.js';
 import {
   emit, flagList, flagOne, isJson, need, resolveText, writeJson, type Flags,
 } from './util.js';
@@ -55,11 +56,25 @@ function logOutbound(
 ): string {
   const id = mintId();
   const fromOverride = flagOne(f, 'from');
+  const from = fromOverride ? asLine(fromOverride) : userSelf();
   appendHistory({
     id, ts: new Date().toISOString(), station: Line.station(e.line) ?? '?',
-    from: fromOverride ? asLine(fromOverride) : userSelf(), to: e.to ?? e.line, ...e,
+    from, to: e.to ?? e.line, ...e,
   });
+  maybeAutoClaim(f, e.line, from);
   return id;
+}
+
+/** Auto-claim on outbound — skips when --no-claim or METRO_NO_AUTO_CLAIM=1; never overwrites a foreign owner. */
+function maybeAutoClaim(f: Flags, line: Line, owner: Line): void {
+  if (f['no-claim'] === true) return;
+  if (process.env.METRO_NO_AUTO_CLAIM === '1') return;
+  const result = tryAutoClaim(line, owner);
+  if (result.status === 'skipped') {
+    process.stderr.write(`auto-claim skipped: line owned by ${result.existing}\n`);
+  } else if (result.status === 'error') {
+    process.stderr.write(`auto-claim failed: ${result.error}\n`);
+  }
 }
 
 export async function cmdSend(p: string[], f: Flags): Promise<void> {
@@ -67,9 +82,11 @@ export async function cmdSend(p: string[], f: Flags): Promise<void> {
   loadMetroEnv();
   const text = await resolveText(p, 1), line = asLine(p[0]);
   if (Line.isLocal(line)) {
-    const from = flagOne(f, 'from');
-    const resp = await ipcCall({ op: 'notify', line, from, text });
+    const fromFlag = flagOne(f, 'from');
+    const resp = await ipcCall({ op: 'notify', line, from: fromFlag, text });
     if (!resp.ok) throw new Error(resp.error);
+    /** cross-user notify still counts as the sender taking the line: auto-claim if unclaimed */
+    maybeAutoClaim(f, line, fromFlag ? asLine(fromFlag) : userSelf());
     return emit(f, `notified ${line}`, { ok: true, line, id: null, messageId: null });
   }
   const messageId = await chatStationOf(line).send(line, text, richOpts(f));

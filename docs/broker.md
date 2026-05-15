@@ -48,13 +48,20 @@ There is no separate concept for "subscription" or "fan-out mode" — claims and
 
 ```bash
 # Tail the event log. --follow streams new entries via fs.watch.
-metro tail [--as <user-id>] [--follow] [--strict | --unclaimed | --all]
+metro tail [--as <user-id>] [--follow] [--strict | --unclaimed | --all] [--include-webhooks]
            [--chat <line>] [--station <name>] [--since <offset|tail>] [--limit <n>]
 
 # Claims: assert/release exclusive ownership of a line. Updates claims.json.
 metro claim   <line> [--as <user-id>]      # add/overwrite — last writer wins
 metro release <line>                       # remove (line returns to broadcast)
 metro claims                               # print current claims.json
+
+# Outbound actions auto-claim the line on first contact (so subsequent inbounds route to you).
+metro send  <line> <text>          [--no-claim]    # skip auto-claim for this call
+metro reply <line> <msg-id> <text> [--no-claim]
+metro edit  <line> <msg-id> <text> [--no-claim]
+metro react <line> <msg-id> <emoji> [--no-claim]
+# Or disable globally: METRO_NO_AUTO_CLAIM=1
 
 # Lease/ack — optional, v2. When enabled, an event is "in flight" with the
 # claimant; if no ack in N seconds the cursor isn't advanced and the next
@@ -68,12 +75,14 @@ metro ack <event-id> --as <user-id>
 
 The same `metro tail` command serves four distinct callers — a working user, a strict worker, a router, and a human observer. Each maps to one mutually-exclusive flag controlling the claim-aware filter:
 
-| Mode               | Flag                       | Predicate                                       | Who uses it                                                |
-|--------------------|----------------------------|-------------------------------------------------|------------------------------------------------------------|
-| **Mine + free**     | `--as <id>` (default)      | `claims[line] == <id> ∨ line ∉ claims`          | Default working user. Zero-config single-user setup.       |
-| **Mine only**       | `--as <id> --strict`        | `claims[line] == <id>`                          | Disciplined worker that won't race on unclaimed events.    |
-| **Unclaimed only**  | `--unclaimed`              | `line ∉ claims`                                 | Router/first-responder user that finds work to claim.      |
-| **All**             | (no `--as`) or `--all`     | `true`                                          | Operator/auditor/debugger; never takes ownership.          |
+| Mode               | Flag                       | Predicate                                                                       | Who uses it                                                |
+|--------------------|----------------------------|---------------------------------------------------------------------------------|------------------------------------------------------------|
+| **Mine + free**     | `--as <id>` (default)      | `(claims[line] == <id> ∨ line ∉ claims) ∧ station ≠ 'webhook'`                  | Default working user. Zero-config single-user setup.       |
+| **Mine only**       | `--as <id> --strict`        | `claims[line] == <id> ∧ station ≠ 'webhook'`                                    | Disciplined worker that won't race on unclaimed events.    |
+| **Unclaimed only**  | `--unclaimed`              | `line ∉ claims`                                                                 | Router/first-responder user that finds work to claim.      |
+| **All**             | (no `--as`) or `--all`     | `true`                                                                          | Operator/auditor/debugger; never takes ownership.          |
+
+Webhooks (`station == 'webhook'`) are excluded from the personal modes by default — they're broadcast traffic (GitHub pushes, Intercom pings, etc.) that should flow to the *router* (`--unclaimed`) or *operator* (`--all`) feed, not firehose into every `--as <id>` tail. Opt back in with `metro tail --as <id> --include-webhooks` when you genuinely want a worker to see them.
 
 Two UX defaults worth being explicit about:
 
@@ -83,6 +92,16 @@ Two UX defaults worth being explicit about:
 `--unclaimed` is the genuinely new primitive: it enables a "router" user pattern where one process watches for ownerless events and either responds directly or claims and delegates. It works with or without `--as` — with `--as`, outbound replies are still attributed correctly.
 
 Direct messages between users (`event.to == user-line`) always pass the filter regardless of mode — they're inherently 1:1 and can't be "claimed" by someone else.
+
+### Auto-claim on outbound
+
+`metro send`, `reply`, `edit`, and `react` claim the target `<line>` for the actor (`userSelf()`) the first time they touch it, atomically — same lockfile as `metro claim`. The intent: when a user picks up a conversation by replying, subsequent inbound events on that line route to them without any explicit `metro claim` call.
+
+- If the line is already claimed by **someone else**, the action still proceeds (sending doesn't require ownership) but the claim is **not overwritten**. A single-line stderr note (`auto-claim skipped: line owned by <other-id>`) signals the no-op.
+- Opt-out per command with `--no-claim`, or globally with the env var `METRO_NO_AUTO_CLAIM=1`.
+- Cross-user sends (`metro send metro://claude/... ...` from a different user) auto-claim the target line too — the sender is taking ownership of the conversation.
+
+This is why webhooks are excluded from personal modes (above): a webhook flowing into `--as <id>` mode that triggered a reply would auto-claim the webhook line for the responder, silently locking out other workers from future events on that endpoint. Keeping webhooks in `--unclaimed`/`--all` only ensures the router pattern explicitly decides who picks up each event.
 
 ### `metro tail` mechanics
 

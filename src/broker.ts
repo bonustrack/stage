@@ -64,6 +64,28 @@ export function releaseLine(line: Line): { released: boolean; claims: ClaimsMap 
   });
 }
 
+/**
+ * Claim `line` for `owner` iff unclaimed. Statuses: claimed | kept | skipped | error.
+ */
+export type AutoClaimResult =
+  | { status: 'claimed' | 'kept'; owner: Line }
+  | { status: 'skipped'; existing: Line }
+  | { status: 'error'; error: string };
+
+export function tryAutoClaim(line: Line, owner: Line): AutoClaimResult {
+  try {
+    return withClaimsLock(m => {
+      const existing = m[line];
+      if (existing && existing !== owner) return { status: 'skipped', existing } as const;
+      if (existing === owner) return { status: 'kept', owner } as const;
+      m[line] = owner;
+      return { status: 'claimed', owner } as const;
+    });
+  } catch (err) {
+    return { status: 'error', error: (err as Error).message };
+  }
+}
+
 /** Filename-safe slug for a participant URI. `metro://claude/user/9bfc…` → `claude-user-9bfc…`. */
 export function userSlug(uri: Line): string {
   return uri.replace(/^metro:\/+/, '').replace(/[^A-Za-z0-9_.-]/g, '-');
@@ -125,12 +147,23 @@ export function* readEntriesFrom(offset: number): Generator<{ entry: HistoryEntr
   }
 }
 
-/** Claim-aware filter. `self` is the viewer (null = mode='all'). DMs to self always pass. */
-export function passesMode(event: HistoryEntry, mode: Mode, self: Line | null, claims: ClaimsMap): boolean {
+/**
+ * Claim-aware filter. Webhooks excluded from personal modes unless `includeWebhooks`.
+ */
+export function passesMode(
+  event: HistoryEntry,
+  mode: Mode,
+  self: Line | null,
+  claims: ClaimsMap,
+  opts: { includeWebhooks?: boolean } = {},
+): boolean {
   if (self && event.to === self) return true;
   if (mode === 'all') return true;
+  const isWebhook = event.station === 'webhook';
+  if (mode === 'unclaimed') return !claims[event.line];
+  /** webhooks are filtered out of personal modes unless opted in */
+  if (isWebhook && !opts.includeWebhooks) return false;
   const owner = claims[event.line];
-  if (mode === 'unclaimed') return !owner;
   if (mode === 'mine-only') return owner === self;
   /** mode === 'mine-or-unclaimed' */
   return !owner || owner === self;
