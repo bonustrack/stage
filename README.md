@@ -1,5 +1,8 @@
 # Metro
 
+[![npm](https://img.shields.io/npm/v/@stage-labs/metro?label=npm&color=cb3837)](https://www.npmjs.com/package/@stage-labs/metro)
+[![lines of code](https://tokei.rs/b1/github/bonustrack/metro?category=code)](https://github.com/bonustrack/metro)
+
 > **A live JSON stream of Telegram, Discord, webhooks, and cross-user messages for your local Claude Code / Codex session.**
 
 Metro is a small daemon you launch from inside your session. It connects to Discord, Telegram, and any third-party service that can POST a webhook (GitHub, Intercom, Fireflies, …), emits each inbound as one JSON line on stdout (which Claude Code's `Monitor` consumes natively, and Codex picks up via an app-server WebSocket push), and exposes a tiny CLI — `metro reply`, `metro send`, `metro edit`, `metro react`, `metro download`, `metro fetch` — for posting back. Cross-user: any user can ping any other via `metro send metro://claude/<user-id>/<session-id>` and the daemon re-emits it on the stream.
