@@ -1,4 +1,4 @@
-/** Resolve the Codex agent identity (account id + session id). */
+/** Resolve the Codex user identity (account id + session id). */
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -34,16 +34,16 @@ export function tryCodexAccountId(): string | null {
   try { return codexAccountId(); } catch { return null; }
 }
 
-/** Agent-id for the line URI: `METRO_AGENT_ID` override, else the account id. */
-export function codexAgentId(): string {
-  return process.env.METRO_AGENT_ID || codexAccountId();
+/** User-id for the line URI: `METRO_USER_ID` override, else the account id. */
+export function codexUserId(): string {
+  return process.env.METRO_USER_ID || codexAccountId();
 }
 
 const SESSION_FILE = join(STATE_DIR, 'stations', 'codex', 'session-id');
 
-/** Session: codex-rc thread id (daemon persists; CLIs read state file). Override: `METRO_AGENT_SESSION_ID`. */
+/** Session: codex-rc thread id (daemon persists; CLIs read state file). Override: `METRO_USER_SESSION_ID`. */
 export function codexSessionId(): string | null {
-  if (process.env.METRO_AGENT_SESSION_ID) return process.env.METRO_AGENT_SESSION_ID;
+  if (process.env.METRO_USER_SESSION_ID) return process.env.METRO_USER_SESSION_ID;
   try { return readFileSync(SESSION_FILE, 'utf8').trim() || null; }
   catch { return null; }
 }

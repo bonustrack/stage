@@ -6,8 +6,8 @@ import { join } from 'node:path';
 import { errMsg, log } from './log.js';
 import { STATE_DIR } from './paths.js';
 import { Line } from './stations/index.js';
-import { claudeAgentId, claudeSessionId } from './stations/claude.js';
-import { codexAgentId, codexSessionId } from './stations/codex.js';
+import { claudeUserId, claudeSessionId } from './stations/claude.js';
+import { codexUserId, codexSessionId } from './stations/codex.js';
 
 export type HistoryKind = 'inbound' | 'outbound' | 'edit' | 'react' | 'notification';
 
@@ -32,11 +32,11 @@ export interface HistoryEntry {
   replyTo?: string;
   /** Station-native raw message — only set on inbound. Shape matches `InboundMessage.payload`. */
   payload?: unknown;
-  /** Pre-rendered chat-bubble markdown — the agent's first chat output should be this string verbatim. */
+  /** Pre-rendered chat-bubble markdown — the user's first chat output should be this string verbatim. */
   display?: string;
 }
 
-/** Pre-render a chat-bubble line — the agent echoes `event.display` verbatim instead of composing markdown itself. */
+/** Pre-render a chat-bubble line — the user echoes `event.display` verbatim instead of composing markdown itself. */
 export function formatDisplay(e: HistoryEntry): string {
   const headerFor = (icon: string, parts: (string | undefined)[]): string =>
     `**${icon} ${parts.filter(Boolean).join(' · ')}**`;
@@ -47,7 +47,7 @@ export function formatDisplay(e: HistoryEntry): string {
       ?.headers?.['x-intercom-topic'];
     return `${headerFor('🪝', ['webhook', e.lineName, ev])}\n> ${body}`;
   }
-  if (e.kind === 'inbound' || (e.kind === 'react' && !Line.isAgent(e.from))) {
+  if (e.kind === 'inbound' || (e.kind === 'react' && !Line.isLocal(e.from))) {
     const reactBody = e.kind === 'react' ? `reacted ${e.emoji ?? ''}`.trim() : body;
     return `${headerFor('📩', [e.station, e.fromName ?? e.from, e.lineName])}\n> ${reactBody}`;
   }
@@ -120,24 +120,24 @@ export function resolvePlatformId(id: string): string {
   throw new Error(`unknown universal id: ${id} (run \`metro history --limit=50\` to see recent ids)`);
 }
 
-/** The current agent's **participant** URI for `from`/`to`. Precedence: METRO_FROM > runtime env > generic. */
-export function agentSelf(): Line {
+/** The current user's **participant** URI for `from`/`to`. Precedence: METRO_FROM > runtime env > generic. */
+export function userSelf(): Line {
   const explicit = process.env.METRO_FROM;
   if (explicit) return explicit as Line;
-  if (process.env.CLAUDECODE) return Line.user('claude', claudeAgentId());
-  if (process.env.METRO_CODEX_RC || process.env.CODEX_HOME) return Line.user('codex', codexAgentId());
-  return 'metro://agent' as Line;
+  if (process.env.CLAUDECODE) return Line.user('claude', claudeUserId());
+  if (process.env.METRO_CODEX_RC || process.env.CODEX_HOME) return Line.user('codex', codexUserId());
+  return 'metro://user' as Line;
 }
 
-/** The current agent's **line** URI `<agent-id>/<session>`. Null until session is known (rc thread pending). */
+/** The current user's **line** URI `<user-id>/<session>`. Null until session is known (rc thread pending). */
 export function selfLine(): Line | null {
   if (process.env.CLAUDECODE) {
     const s = claudeSessionId();
-    return s ? Line.claude(claudeAgentId(), s) : null;
+    return s ? Line.claude(claudeUserId(), s) : null;
   }
   if (process.env.METRO_CODEX_RC || process.env.CODEX_HOME) {
     const s = codexSessionId();
-    return s ? Line.codex(codexAgentId(), s) : null;
+    return s ? Line.codex(codexUserId(), s) : null;
   }
   return null;
 }

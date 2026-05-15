@@ -8,7 +8,7 @@ import { DiscordStation } from '../stations/discord.js';
 import { TelegramStation } from '../stations/telegram.js';
 import { ipcCall } from '../ipc.js';
 import {
-  agentSelf, appendHistory, lookupEntry, mintId, readHistory, resolvePlatformId, type HistoryKind,
+  userSelf, appendHistory, lookupEntry, mintId, readHistory, resolvePlatformId, type HistoryKind,
 } from '../history.js';
 import { asLine, Line, type Button, type ChatStation } from '../stations/index.js';
 import { loadMetroEnv } from '../paths.js';
@@ -57,7 +57,7 @@ function logOutbound(
   const fromOverride = flagOne(f, 'from');
   appendHistory({
     id, ts: new Date().toISOString(), station: Line.station(e.line) ?? '?',
-    from: fromOverride ? asLine(fromOverride) : agentSelf(), to: e.to ?? e.line, ...e,
+    from: fromOverride ? asLine(fromOverride) : userSelf(), to: e.to ?? e.line, ...e,
   });
   return id;
 }
@@ -66,7 +66,7 @@ export async function cmdSend(p: string[], f: Flags): Promise<void> {
   need(p, 1, 'metro send <line> <text> [--image=<path>]… [--document=<path>]… [--voice=<path>] [--buttons=<json>]');
   loadMetroEnv();
   const text = await resolveText(p, 1), line = asLine(p[0]);
-  if (Line.isAgent(line)) {
+  if (Line.isLocal(line)) {
     const from = flagOne(f, 'from');
     const resp = await ipcCall({ op: 'notify', line, from, text });
     if (!resp.ok) throw new Error(resp.error);

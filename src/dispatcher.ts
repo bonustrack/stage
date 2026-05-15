@@ -1,5 +1,5 @@
 /**
- * Daemon: chat inbound → JSON on stdout; optional codex-rc push; cross-agent `notify` over Unix socket.
+ * Daemon: chat inbound → JSON on stdout; optional codex-rc push; cross-user `notify` over Unix socket.
  */
 
 import { copyFileSync } from 'node:fs';
@@ -12,12 +12,12 @@ import { WebhookStation } from './stations/webhook.js';
 import { asLine, Line, type InboundMessage, type InboundReaction } from './stations/index.js';
 import { CodexRC } from './codex-rc.js';
 import { startIpcServer, stopIpcServer } from './ipc.js';
-import { agentSelf, appendHistory, formatDisplay, mintId, selfLine, type HistoryEntry } from './history.js';
+import { userSelf, appendHistory, formatDisplay, mintId, selfLine, type HistoryEntry } from './history.js';
 import { noteSeen, saveBotId } from './cache.js';
 import { errMsg, log } from './log.js';
 import { acquireLock, configuredPlatforms, loadMetroEnv, STATE_DIR, requireConfiguredPlatform } from './paths.js';
 import { setCodexSessionId } from './stations/codex.js';
-import { noteAgentFromLine } from './registry.js';
+import { noteUserFromLine } from './registry.js';
 import { listEndpoints, webhookPort } from './webhooks.js';
 import { loadTunnelConfig, Tunnel } from './tunnel.js';
 
@@ -28,16 +28,16 @@ requireConfiguredPlatform(platforms, endpoints.length > 0);
 acquireLock(join(STATE_DIR, '.tail-lock'));
 
 // Fail fast if launched from Claude Code without a logged-in account.
-const self = agentSelf();
-log.info({ self, line: selfLine() }, 'agent identity');
-const seedSelf = (): void => { const l = selfLine(); if (l) noteAgentFromLine(l); };
+const self = userSelf();
+log.info({ self, line: selfLine() }, 'user identity');
+const seedSelf = (): void => { const l = selfLine(); if (l) noteUserFromLine(l); };
 seedSelf();
 
-const AGENTS_MD = join(STATE_DIR, 'AGENTS.md');
-try { copyFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'docs', 'agents.md'), AGENTS_MD); }
-catch (err) { log.warn({ err: errMsg(err), path: AGENTS_MD }, 'failed to install agent skill'); }
+const USERS_MD = join(STATE_DIR, 'USERS.md');
+try { copyFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'docs', 'users.md'), USERS_MD); }
+catch (err) { log.warn({ err: errMsg(err), path: USERS_MD }, 'failed to install user skill'); }
 
-/** Suppress EPIPE so the daemon survives the agent (Monitor reader) restarting / dying. */
+/** Suppress EPIPE so the daemon survives the user (Monitor reader) restarting / dying. */
 process.stdout.on('error', err => {
   if ((err as NodeJS.ErrnoException).code !== 'EPIPE') log.warn({ err: errMsg(err) }, 'stdout error');
 });
@@ -53,18 +53,18 @@ const tunnelCfg = loadTunnelConfig();
 const tunnel = tunnelCfg ? new Tunnel(tunnelCfg, webhookPort()) : null;
 
 function emit(entry: HistoryEntry): void {
-  /** `display` first so it survives Monitor's ~500-char body truncation — the agent must see it to echo it. */
+  /** `display` first so it survives Monitor's ~500-char body truncation — the user must see it to echo it. */
   const enriched: HistoryEntry = { display: formatDisplay(entry), ...entry };
   const json = JSON.stringify(enriched);
   process.stdout.write(json + '\n');
   codexRc?.push(json);
   noteSeen(entry.line, entry.lineName);
-  for (const l of [entry.line, entry.from, entry.to]) if (l) noteAgentFromLine(l);
+  for (const l of [entry.line, entry.from, entry.to]) if (l) noteUserFromLine(l);
   appendHistory(enriched);
 }
 
 const destinationFor = (m: { line: Line; isPrivate?: boolean }): Line =>
-  m.isPrivate ? agentSelf() : m.line;
+  m.isPrivate ? userSelf() : m.line;
 const onInbound = (m: InboundMessage): void => emit({ ...m, kind: 'inbound', to: destinationFor(m) });
 const onReaction = (r: InboundReaction): void => emit({ ...r, kind: 'react', to: destinationFor(r) });
 
@@ -74,7 +74,7 @@ const ipc = startIpcServer(async req => {
     emit({
       id: mintId(), ts: new Date().toISOString(), kind: 'notification',
       station: Line.station(line) ?? '?', line,
-      from: req.from ? asLine(req.from) : agentSelf(), to: line, text: req.text,
+      from: req.from ? asLine(req.from) : userSelf(), to: line, text: req.text,
     });
     return { ok: true };
   }

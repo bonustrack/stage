@@ -1,4 +1,4 @@
-/** `metro setup skill` — install the bundled SKILL.md into each detected agent runtime. */
+/** `metro setup skill` — install the bundled SKILL.md into each detected user runtime. */
 
 import { copyFileSync, existsSync, mkdirSync, unlinkSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -44,7 +44,7 @@ function install(f: Flags): void {
     } catch (err) { throw exitErr(`failed to install skill for ${r}: ${errMsg(err)}`, 2); }
   }
   if (!installed.length) {
-    throw exitErr('no agent runtime detected (~/.claude or ~/.codex). Install one and rerun.', 2);
+    throw exitErr('no user runtime detected (~/.claude or ~/.codex). Install one and rerun.', 2);
   }
   emit(f, `installed metro skill → ${installed.join(', ')}`, { ok: true, installed });
 }
