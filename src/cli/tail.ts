@@ -5,7 +5,7 @@ import {
   CLAIMS_FILE, HISTORY_FILE, claimLine, historySize, passesMode, readClaims, readCursor,
   readEntriesFrom, releaseLine, writeCursor, type Mode,
 } from '../broker.js';
-import { userSelf } from '../history.js';
+import { userSelf, type HistoryEntry } from '../history.js';
 import { asLine, Line } from '../stations/index.js';
 import { loadMetroEnv } from '../paths.js';
 import { emit, exitErr, flagOne, isJson, need, writeJson, type Flags } from './util.js';
@@ -24,14 +24,12 @@ function resolveMode(f: Flags, self: Line | null): Mode {
   return 'mine-or-unclaimed';
 }
 
-/** Generic fallback returned by `userSelf()` when there's no Claude/Codex env — treat as "no identity". */
-const GENERIC_USER: Line = 'metro://user' as Line;
-
 function resolveSelf(f: Flags): Line | null {
   const raw = flagOne(f, 'as');
   if (raw !== undefined) return asLine(raw);
+  /** userSelf() returns `metro://user` when no Claude/Codex env — treat as "no identity". */
   const auto = userSelf();
-  return auto === GENERIC_USER ? null : auto;
+  return auto === 'metro://user' ? null : auto;
 }
 
 function resolveStartOffset(f: Flags, self: Line | null): number {
@@ -77,40 +75,26 @@ export async function cmdTail(_: string[], f: Flags): Promise<void> {
     return false;
   };
 
-  if (drain() && !follow) return;
-  if (!follow) return;
+  if (drain() || !follow) return;
 
   /** fs.watch on macOS sometimes coalesces or drops events — poll every 500ms as a backstop. */
   await new Promise<void>(resolve => {
-    let watcher: ReturnType<typeof watch> | null = null;
     const trigger = (): void => { if (drain()) cleanup(); };
-    const cleanup = (): void => {
-      if (watcher) { try { watcher.close(); } catch { /* ignore */ } watcher = null; }
-      clearInterval(poll);
-      resolve();
-    };
+    const watcher = existsSync(HISTORY_FILE) ? watch(HISTORY_FILE, trigger) : null;
     const poll = setInterval(trigger, 500);
-    const startWatcher = (): void => {
-      if (!existsSync(HISTORY_FILE)) return;
-      try { watcher = watch(HISTORY_FILE, () => trigger()); } catch { /* ignore — poll will catch */ }
-    };
-    startWatcher();
+    const cleanup = (): void => { watcher?.close(); clearInterval(poll); resolve(); };
     process.on('SIGINT', cleanup);
     process.on('SIGTERM', cleanup);
     process.stdin.on('end', cleanup).on('close', cleanup);
   });
 }
 
-type RowFields = {
-  ts: string; id: string; kind: string; line: Line; from: Line; fromName?: string; text?: string; emoji?: string;
-};
-function fmtRow(e: RowFields): string {
-  const ts = e.ts.slice(11, 19);
+function fmtRow(e: HistoryEntry): string {
   const body = e.text ?? (e.emoji ? `[react ${e.emoji}]` : '');
   const text = body.length > 80 ? body.slice(0, 79) + '…' : body;
   const who = (e.fromName ?? e.from).padEnd(28).slice(0, 28);
   const where = e.line.padEnd(40).slice(0, 40);
-  return `${ts}  ${e.id.padEnd(12)}  ${e.kind.padEnd(8)}  ${who}  ${where}  ${text}`;
+  return `${e.ts.slice(11, 19)}  ${e.id.padEnd(12)}  ${e.kind.padEnd(8)}  ${who}  ${where}  ${text}`;
 }
 
 export async function cmdClaim(p: string[], f: Flags): Promise<void> {

@@ -1,11 +1,10 @@
 /** Broker primitives: claims map + per-user byte-offset cursors over history.jsonl. */
 
 import {
-  closeSync, existsSync, openSync, readFileSync, readSync, renameSync, unlinkSync, writeFileSync,
+  closeSync, existsSync, mkdirSync, openSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync,
 } from 'node:fs';
-import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { errMsg, log } from './log.js';
+import { log } from './log.js';
 import { STATE_DIR } from './paths.js';
 import { Line } from './stations/index.js';
 import type { HistoryEntry } from './history.js';
@@ -18,12 +17,11 @@ export const HISTORY_FILE = join(STATE_DIR, 'history.jsonl');
 export type ClaimsMap = Record<string, Line>;
 export type Mode = 'all' | 'mine-or-unclaimed' | 'mine-only' | 'unclaimed';
 
-/** Read claims.json. Returns empty map if missing or malformed (retries once on race). */
+/** Read claims.json. Empty map on missing or malformed; one retry covers a write race. */
 export function readClaims(): ClaimsMap {
   if (!existsSync(CLAIMS_FILE)) return {};
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try { return JSON.parse(readFileSync(CLAIMS_FILE, 'utf8')) as ClaimsMap; }
-    catch { /* race with writer — retry once */ }
+  for (let i = 0; i < 2; i++) {
+    try { return JSON.parse(readFileSync(CLAIMS_FILE, 'utf8')) as ClaimsMap; } catch { /* retry on race */ }
   }
   log.warn({ path: CLAIMS_FILE }, 'claims: malformed, treating as empty');
   return {};
@@ -86,12 +84,9 @@ export function tryAutoClaim(line: Line, owner: Line): AutoClaimResult {
   }
 }
 
-/** Filename-safe slug for a participant URI. `metro://claude/user/9bfc…` → `claude-user-9bfc…`. */
-export function userSlug(uri: Line): string {
-  return uri.replace(/^metro:\/+/, '').replace(/[^A-Za-z0-9_.-]/g, '-');
-}
-
-const cursorPath = (uri: Line): string => join(CURSORS_DIR, userSlug(uri));
+/** Filename-safe path for a participant URI's cursor. `metro://claude/user/9bfc…` → `<dir>/claude-user-9bfc…`. */
+const cursorPath = (uri: Line): string =>
+  join(CURSORS_DIR, uri.replace(/^metro:\/+/, '').replace(/[^A-Za-z0-9_.-]/g, '-'));
 
 export function readCursor(uri: Line): number {
   const p = cursorPath(uri);
@@ -110,46 +105,26 @@ export function writeCursor(uri: Line, offset: number): void {
 
 /** Byte size of history.jsonl right now (for `--since=tail`). */
 export function historySize(): number {
-  if (!existsSync(HISTORY_FILE)) return 0;
-  try { return readFileSync(HISTORY_FILE).length; }
-  catch { return 0; }
+  return existsSync(HISTORY_FILE) ? statSync(HISTORY_FILE).size : 0;
 }
 
-/** Yield each complete JSONL line from `offset` to EOF; the returned offset is the position right after the `\n`. */
+/** Yield each complete JSONL entry from `offset` to EOF, with the byte offset right after each `\n`. */
 export function* readEntriesFrom(offset: number): Generator<{ entry: HistoryEntry; offset: number }> {
   if (!existsSync(HISTORY_FILE)) return;
-  const fd = openSync(HISTORY_FILE, 'r');
-  try {
-    const chunk = Buffer.alloc(64 * 1024);
-    let pending = Buffer.alloc(0);
-    let pos = offset;
-    while (true) {
-      const n = readSync(fd, chunk, 0, chunk.length, pos);
-      if (n === 0) break;
-      pending = Buffer.concat([pending, chunk.subarray(0, n)]);
-      pos += n;
-      let nl;
-      while ((nl = pending.indexOf(0x0a)) !== -1) {
-        const raw = pending.subarray(0, nl).toString('utf8').trim();
-        pending = pending.subarray(nl + 1);
-        if (!raw) continue;
-        try {
-          const entry = JSON.parse(raw) as HistoryEntry;
-          /** offsetAfter = read-cursor in file - bytes still in pending buffer */
-          yield { entry, offset: pos - pending.length };
-        } catch (err) {
-          log.warn({ err: errMsg(err) }, 'broker: skipped malformed history line');
-        }
-      }
-    }
-  } finally {
-    closeSync(fd);
+  const buf = readFileSync(HISTORY_FILE);
+  let pos = offset;
+  while (pos < buf.length) {
+    const nl = buf.indexOf(0x0a, pos);
+    const end = nl === -1 ? buf.length : nl;
+    const raw = buf.subarray(pos, end).toString('utf8').trim();
+    pos = end + 1;
+    if (!raw) continue;
+    try { yield { entry: JSON.parse(raw) as HistoryEntry, offset: pos }; }
+    catch { log.warn('broker: skipped malformed history line'); }
   }
 }
 
-/**
- * Claim-aware filter. Webhooks excluded from personal modes unless `includeWebhooks`.
- */
+/** Claim-aware filter. Webhooks excluded from personal modes unless `includeWebhooks`. */
 export function passesMode(
   event: HistoryEntry,
   mode: Mode,
@@ -159,12 +134,9 @@ export function passesMode(
 ): boolean {
   if (self && event.to === self) return true;
   if (mode === 'all') return true;
-  const isWebhook = event.station === 'webhook';
   if (mode === 'unclaimed') return !claims[event.line];
-  /** webhooks are filtered out of personal modes unless opted in */
-  if (isWebhook && !opts.includeWebhooks) return false;
+  if (event.station === 'webhook' && !opts.includeWebhooks) return false;
   const owner = claims[event.line];
   if (mode === 'mine-only') return owner === self;
-  /** mode === 'mine-or-unclaimed' */
   return !owner || owner === self;
 }

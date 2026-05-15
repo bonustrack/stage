@@ -67,14 +67,10 @@ function logOutbound(
 
 /** Auto-claim on outbound — skips when --no-claim or METRO_NO_AUTO_CLAIM=1; never overwrites a foreign owner. */
 function maybeAutoClaim(f: Flags, line: Line, owner: Line): void {
-  if (f['no-claim'] === true) return;
-  if (process.env.METRO_NO_AUTO_CLAIM === '1') return;
-  const result = tryAutoClaim(line, owner);
-  if (result.status === 'skipped') {
-    process.stderr.write(`auto-claim skipped: line owned by ${result.existing}\n`);
-  } else if (result.status === 'error') {
-    process.stderr.write(`auto-claim failed: ${result.error}\n`);
-  }
+  if (f['no-claim'] === true || process.env.METRO_NO_AUTO_CLAIM === '1') return;
+  const r = tryAutoClaim(line, owner);
+  if (r.status === 'skipped') process.stderr.write(`auto-claim skipped: line owned by ${r.existing}\n`);
+  else if (r.status === 'error') process.stderr.write(`auto-claim failed: ${r.error}\n`);
 }
 
 export async function cmdSend(p: string[], f: Flags): Promise<void> {

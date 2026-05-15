@@ -7,10 +7,17 @@
  */
 
 import { describe, expect, test, beforeEach, afterAll } from 'bun:test';
-import { mkdtempSync, rmSync, readFileSync, existsSync, writeFileSync, appendFileSync, mkdirSync } from 'node:fs';
+import {
+  appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import {
+  CLAIMS_FILE, passesMode, readClaims as brokerReadClaims, tryAutoClaim,
+} from '../src/broker.ts';
+import { asLine } from '../src/stations/index.ts';
+import type { HistoryEntry } from '../src/history.ts';
 
 const ROOT = new URL('..', import.meta.url).pathname;
 const CLI = join(ROOT, 'dist', 'cli', 'index.js');
@@ -71,28 +78,7 @@ const WORKER_B = 'metro://user/worker-b';
 const CHAT_LINE = 'metro://discord/g/123/c/456';
 const WEBHOOK_LINE = 'metro://webhook/gh-main';
 
-/** Bypass real station IO by stubbing the action with an in-process script — the CLI here exercises
- *  the auto-claim code path through `cmdReact` against a station that errors, which is *before* the
- *  log/claim step. Instead we use a dedicated test harness command. */
-
-// --- Auto-claim helper: drive via broker.tryAutoClaim directly via a small embedded harness ---
-import {
-  tryAutoClaim,
-  passesMode,
-  readClaims as brokerReadClaims,
-} from '../src/broker.ts';
-import { asLine } from '../src/stations/index.ts';
-import type { HistoryEntry } from '../src/history.ts';
-
-/**
- * In-process tryAutoClaim tests. The broker module reads `STATE_DIR` ONCE at import time, so
- * we exercise each scenario against the SAME shared state dir (cleared between tests via the file
- * deletions below). This mirrors how a long-lived daemon would behave: STATE_DIR is fixed; claims
- * come and go.
- */
-import { unlinkSync } from 'node:fs';
-import { CLAIMS_FILE } from '../src/broker.ts';
-
+/** tryAutoClaim reads STATE_DIR once at import — share + reset between tests. */
 function resetBrokerClaims(): void {
   try { unlinkSync(CLAIMS_FILE); } catch { /* not there yet */ }
 }
