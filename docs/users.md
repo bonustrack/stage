@@ -31,14 +31,14 @@ Run `metro doctor` if anything seems off.
 
 ## Event shape
 
-Every event is a **history entry** — the same record that's appended to `history.jsonl`. Fields: `kind` (`inbound`/`notification`/`outbound`/`edit`/`react`), `id` (`msg_…`), `ts`, `station`, `line` (conversation), `lineName?`, `from` (participant URI), `fromName?`, `to`, `text`, `messageId?` (platform-side id; inbound/outbound only), `payload?` (raw platform message; inbound only).
+Every event is a **history entry** — the same record that's appended to `history.jsonl`. Fields: `kind` (`inbound`/`outbound`/`edit`/`react`), `id` (`msg_…`), `ts`, `station`, `line` (conversation), `lineName?`, `from` (participant URI), `fromName?`, `to`, `text`, `messageId?` (platform-side id; inbound/outbound only), `payload?` (raw platform message; inbound only).
 
 ```json
 {"kind":"inbound","id":"msg_aB3xY7zP","ts":"2026-05-14T12:00:00Z","station":"telegram","line":"metro://telegram/-100…/247","lineName":"infra","from":"metro://telegram/user/12345","fromName":"@alice","to":"metro://claude/user/9bfc7af0-…","messageId":"4567","text":"hello [image]","payload":{"message_id":4567,"chat":{"id":-100,"type":"supergroup","is_forum":true},"from":{"id":12345,"username":"alice"},"text":"hello","entities":[{"type":"mention","offset":0,"length":6}],"photo":[{"file_id":"…"}],"reply_to_message":{"message_id":4500,"text":"earlier","from":{"id":99,"username":"bob"}}}}
 ```
 
 ```json
-{"kind":"notification","id":"msg_pQ4r5sT0","ts":"…","station":"claude","line":"metro://claude/9bfc7af0-…/50b00d11-…","from":"metro://codex/user/8119ecb1-…","to":"metro://claude/9bfc7af0-…/50b00d11-…","text":"deploy succeeded"}
+{"kind":"inbound","id":"msg_pQ4r5sT0","ts":"…","station":"claude","line":"metro://claude/9bfc7af0-…/50b00d11-…","from":"metro://codex/user/8119ecb1-…","to":"metro://claude/9bfc7af0-…/50b00d11-…","text":"deploy succeeded"}
 ```
 
 ### `payload` by station
@@ -55,8 +55,10 @@ Both `from` and `to` are **participant URIs** (the conversation lives in `line`)
 
 When **you** call `metro send`/`reply`/`edit`/`react`, metro auto-stamps `from` to your runtime — `metro://claude/user/<orgId>` (when `$CLAUDECODE` is set; orgId comes from `claude auth status --json`) or `metro://codex/user/<accountId>` (when `$METRO_CODEX_RC`/`$CODEX_HOME` is set; accountId comes from `$CODEX_HOME/auth.json`, `tokens.account_id`). Both identities are account-scoped, not install-scoped: switch accounts with `claude auth login` / `codex login` and the next event uses the new id (within ~5 s for the daemon, immediately for one-shot CLI calls). Override with `--from=<uri>` or `$METRO_FROM`. When replying/reacting, `to` is auto-set to the original sender (history lookup).
 
-- `kind: "inbound"` — a human (or another user) posted on a chat platform **or a third-party service POSTed to a registered webhook endpoint** (`station: "webhook"`, `payload: { headers, body }`).
-- `kind: "notification"` — another user called `metro send` against your line. This is how Codex pings Claude Code and vice versa.
+- `kind: "inbound"` — a message arrived. Source can be:
+  - a human on a chat platform (Discord/Telegram),
+  - a third-party service POSTing to a registered webhook endpoint (`station: "webhook"`, `payload: { headers, body }`),
+  - another Claude / Codex user posting cross-process via `metro send` against your line.
 
 `text` may include `[image]` / `[voice]` / `[audio]` / `[file: <name>]` placeholders alongside the real text — non-image attachments are opaque markers, images can be materialized via `metro download`.
 
@@ -131,7 +133,7 @@ The `id` field on every event and `metro history` row is metro's **universal ID*
 
 ## `metro history` — read the universal message log
 
-Every inbound, outbound, edit, react, and notification is appended to `$METRO_STATE_DIR/history.jsonl` automatically.
+Every inbound, outbound, edit, and react is appended to `$METRO_STATE_DIR/history.jsonl` automatically.
 
 ```bash
 metro history --limit=20                              # recent 20, newest first
@@ -141,7 +143,7 @@ metro history --station=telegram --text=deploy        # all Telegram entries con
 metro history --from='@alice' --json                  # everything from alice, JSON
 ```
 
-Filters: `--limit` (default 50), `--line`, `--station`, `--kind` (`inbound`/`outbound`/`edit`/`react`/`notification`), `--from`, `--text`, `--since` (ISO), `--json`.
+Filters: `--limit` (default 50), `--line`, `--station`, `--kind` (`inbound`/`outbound`/`edit`/`react`), `--from`, `--text`, `--since` (ISO), `--json`.
 
 ## Discovery
 
@@ -163,10 +165,10 @@ $ metro stations
         DISCORD_BOT_TOKEN
   ✓ telegram   in: text+image · out: text · features: reply, send, edit, react, download, fetch
         TELEGRAM_BOT_TOKEN
-  ✓ claude     in: text · out: text · features: send, notify
+  ✓ claude     in: text · out: text · features: send
         account: 9bfc7af0-… · seen 1 user, 2 sessions
           seen: 9bfc7af0-… · sessions: 2
-  ✗ codex      in: text · out: text · features: send, notify
+  ✗ codex      in: text · out: text · features: send
         set METRO_CODEX_RC=ws://… to push
   ✓ webhook    in: text · out: – · features: –
         2 endpoints · base https://webhook.example.com
@@ -203,7 +205,7 @@ When an inbound has an `[image]` tag in `text`:
 
 ## Cross-user notification
 
-Both Claude Code and Codex can post to each other's **line** — `metro://claude/<user-id>/<session-id>` or `metro://codex/<user-id>/<session-id>`. `<user-id>` is the peer's stable account id (cross-device); `<session-id>` is one conversation. Discover both by running `metro stations` (which lists every user + session metro has seen), or by reading `$METRO_STATE_DIR/user-registry.json` directly. The daemon re-emits the post on its stdout stream (and pushes via codex-rc if configured), so the peer sees it as a notification:
+Both Claude Code and Codex can post to each other's **line** — `metro://claude/<user-id>/<session-id>` or `metro://codex/<user-id>/<session-id>`. `<user-id>` is the peer's stable account id (cross-device); `<session-id>` is one conversation. Discover both by running `metro stations` (which lists every user + session metro has seen), or by reading `$METRO_STATE_DIR/user-registry.json` directly. The daemon re-emits the post on its stdout stream (and pushes via codex-rc if configured), so the peer sees it as an inbound event:
 
 ```bash
 metro send metro://claude/9bfc7af0-…/50b00d11-… "build green, ready to ship"

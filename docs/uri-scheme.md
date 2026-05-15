@@ -1,6 +1,6 @@
 # Metro URI scheme
 
-Universal identifier for every conversational scope and notification sink in metro. Lines pass around as opaque strings; only the owning station parses its own paths.
+Universal identifier for every conversational scope in metro. Lines pass around as opaque strings; only the owning station parses its own paths.
 
 ## Grammar
 

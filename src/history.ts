@@ -9,7 +9,7 @@ import { Line } from './stations/index.js';
 import { claudeUserId, claudeSessionId } from './stations/claude.js';
 import { codexUserId, codexSessionId } from './stations/codex.js';
 
-export type HistoryKind = 'inbound' | 'outbound' | 'edit' | 'react' | 'notification';
+export type HistoryKind = 'inbound' | 'outbound' | 'edit' | 'react';
 
 export interface HistoryEntry {
   id: string;
@@ -50,9 +50,6 @@ export function formatDisplay(e: HistoryEntry): string {
   if (e.kind === 'inbound' || (e.kind === 'react' && !Line.isLocal(e.from))) {
     const reactBody = e.kind === 'react' ? `reacted ${e.emoji ?? ''}`.trim() : body;
     return `${headerFor('📩', [e.station, e.fromName ?? e.from, e.lineName])}\n> ${reactBody}`;
-  }
-  if (e.kind === 'notification') {
-    return `${headerFor('🔔', ['notification', e.station, e.fromName ?? e.from])}\n> ${body}`;
   }
   return `${headerFor('📤', [e.station, '→', e.fromName ?? e.to])}\n> ${body}`;
 }
