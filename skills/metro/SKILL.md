@@ -209,7 +209,7 @@ The daemon re-emits the post on its stdout stream (and pushes via codex-rc if co
   - `--since=<iso>` — e.g. `--since=2026-05-14T00:00:00Z`
   - `--json` — machine-parseable
 
-Every action you take is logged automatically — `metro send`/`reply`/`edit`/`react` append outbound entries, daemon-side inbounds + notifications append on arrival. Stored at `$METRO_STATE_DIR/history.jsonl`.
+Every action you take is logged automatically — `metro send`/`reply`/`edit`/`react` append outbound entries, daemon-side inbounds append on arrival. Stored at `$METRO_STATE_DIR/history.jsonl`.
 
 ## Universal message IDs
 
