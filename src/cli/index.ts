@@ -12,6 +12,7 @@ import { cmdDoctor, cmdSetup, cmdUpdate } from './config.js';
 import {
   cmdDownload, cmdEdit, cmdFetch, cmdReact, cmdReply, cmdSend,
 } from './actions.js';
+import { cmdClaim, cmdClaims, cmdRelease, cmdTail } from './tail.js';
 import { cmdTunnel, cmdWebhook } from './webhook.js';
 import {
   flagOne, isJson, parseArgs, writeJson, type ExitErr, type Flags,
@@ -39,6 +40,12 @@ Usage:
   metro fetch <line> [--limit=N]              Recent-message lookback (Discord only).
   metro history [--limit=N] [--line=…] [--station=…] [--kind=…] [--from=…] [--text=…] [--since=…]
                                               Read the universal message log (newest first).
+  metro tail [--as=<user-uri>] [--follow] [--strict | --unclaimed | --all]
+             [--chat=<line>] [--station=…] [--since=<offset|tail>] [--limit=N]
+                                              Subscribe to the event log; claim-aware by default. See docs/broker.md.
+  metro claim <line> [--as=<user-uri>]        Take exclusive ownership of a line (so only you receive its events).
+  metro release <line>                        Release a line (it returns to broadcast).
+  metro claims                                Print the current claims map.
   metro webhook add <label> [--secret=…]      Register an HTTP receive endpoint (GitHub, Intercom, …).
   metro webhook list | remove <id>            List or remove webhook endpoints.
   metro tunnel setup <name> <hostname>        Configure a Cloudflare named tunnel (run cloudflared tunnel login first).
@@ -141,7 +148,9 @@ const COMMANDS: Record<string, (positional: string[], flags: Flags) => Promise<v
   send: cmdSend, reply: cmdReply, edit: cmdEdit, react: cmdReact,
   download: cmdDownload, fetch: cmdFetch,
   webhook: cmdWebhook, tunnel: cmdTunnel,
-  history: cmdHistory, update: cmdUpdate,
+  history: cmdHistory, tail: cmdTail,
+  claim: cmdClaim, release: cmdRelease, claims: cmdClaims,
+  update: cmdUpdate,
 };
 
 async function main(): Promise<void> {
