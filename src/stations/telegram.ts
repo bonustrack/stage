@@ -8,7 +8,7 @@ import { mintId } from '../history.js';
 import { mdToTelegramHtml } from './telegram-md.js';
 import { inlineKeyboard, tgSendRich } from './telegram-upload.js';
 import {
-  Line, type Capabilities, type ChatStation, type EditOpts,
+  Line, type ChatStation, type EditOpts,
   type InboundMessage, type InboundReaction, type SendOpts,
 } from './index.js';
 import { STATE_DIR } from '../paths.js';
@@ -80,14 +80,8 @@ function attachmentTags(m: TelegramPayload): string[] {
   return out;
 }
 
-const CAPS: Capabilities = {
-  in: ['text', 'image'], out: ['text'],
-  features: ['reply', 'send', 'edit', 'react', 'download', 'fetch'],
-};
-
 export class TelegramStation implements ChatStation<TelegramPayload> {
   readonly name = 'telegram';
-  readonly capabilities = CAPS;
 
   private pollOffset = 0;
   private pollAbort: AbortController | null = null;

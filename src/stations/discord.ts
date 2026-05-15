@@ -8,7 +8,7 @@ import { basename } from 'node:path';
 import { errMsg, log } from '../log.js';
 import { mintId } from '../history.js';
 import {
-  Line, type Button, type Capabilities, type ChatStation, type EditOpts, type FetchedMessage,
+  Line, type Button, type ChatStation, type EditOpts, type FetchedMessage,
   type InboundMessage, type InboundReaction, type SendOpts,
 } from './index.js';
 
@@ -98,14 +98,8 @@ const channelOf = (line: Line): string => {
   return id;
 };
 
-const CAPS: Capabilities = {
-  in: ['text', 'image'], out: ['text'],
-  features: ['reply', 'send', 'edit', 'react', 'download', 'fetch'],
-};
-
 export class DiscordStation implements ChatStation<DiscordPayload> {
   readonly name = 'discord';
-  readonly capabilities = CAPS;
 
   private client: Client | null = null;
   private messageHandler: (m: InboundMessage<DiscordPayload>) => void = () => {};

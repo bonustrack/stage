@@ -72,7 +72,7 @@ const ipc = startIpcServer(async req => {
   if (req.op === 'notify') {
     const line = asLine(req.line);
     emit({
-      id: mintId(), ts: new Date().toISOString(), kind: 'notification',
+      id: mintId(), ts: new Date().toISOString(), kind: 'inbound',
       station: Line.station(line) ?? '?', line,
       from: req.from ? asLine(req.from) : userSelf(), to: line, text: req.text,
     });

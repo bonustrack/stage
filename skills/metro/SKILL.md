@@ -1,6 +1,6 @@
 ---
 name: metro
-description: Run the metro Telegram/Discord/webhook relay in this session — launch `metro` in the background, watch its stdout for inbound JSON events, and act on each. Use when the user asks to start/run/launch metro, when you see JSON lines on stdout shaped `{"kind":"inbound","station":...,"line":"metro://...","messageId":...,"text":...}`, or when handling a chat/webhook reply/edit/react/send/download/fetch/notify.
+description: Run the metro Telegram/Discord/webhook relay in this session — launch `metro` in the background, watch its stdout for inbound JSON events, and act on each. Use when the user asks to start/run/launch metro, when you see JSON lines on stdout shaped `{"kind":"inbound","station":...,"line":"metro://...","messageId":...,"text":...}`, or when handling a chat/webhook reply/edit/react/send/download/fetch.
 ---
 
 # Metro — running the Telegram / Discord / webhook relay
@@ -41,13 +41,13 @@ If something seems off, run `metro doctor`. Common causes: missing tokens (`metr
 ## Event shape
 
 Every line on stdout is one **history entry** — the same record appended to `history.jsonl`. Fields:
-- `kind` — `"inbound"`, `"notification"`, `"outbound"`, `"edit"`, or `"react"`. Inbound `react` events fire when a human adds an emoji reaction in Discord/Telegram — `emoji` is set, `text` is omitted, `messageId` is the message that got reacted to.
+- `kind` — `"inbound"`, `"outbound"`, `"edit"`, or `"react"`. Inbound `react` events fire when a human adds an emoji reaction in Discord/Telegram — `emoji` is set, `text` is omitted, `messageId` is the message that got reacted to.
 - `id` (`msg_…`) — universal message ID minted by metro
 - `ts` — ISO timestamp
 - `station` — `"discord"`, `"telegram"`, `"claude"`, `"codex"`, `"webhook"`
 - `line` — conversation URI; `lineName?` is the channel/topic display name (for webhooks: the label you gave it)
 - `from` / `fromName?` — sender participant URI + optional display name
-- `to` — recipient participant URI (local user for inbound, line for notification, original sender for replies/reacts)
+- `to` — recipient participant URI (local user for DMs, conversation `line` for groups, original sender for replies/reacts)
 - `text` — universal display projection. Includes `[image]`/`[file: …]`/`[voice]`/`[audio]` tags inline.
 - `messageId?` — platform-side id (Discord snowflake, Telegram int). Set on inbound/outbound.
 - `payload?` — raw platform-native message object. Set on inbound only. Shape varies per `station`.
@@ -57,7 +57,7 @@ Every line on stdout is one **history entry** — the same record appended to `h
 ```
 
 ```json
-{"kind":"notification","id":"msg_pQ4r5sT0","ts":"…","station":"claude","line":"metro://claude/9bfc7af0-…/50b00d11-…","from":"metro://codex/user/8119ecb1-…","to":"metro://claude/9bfc7af0-…/50b00d11-…","text":"deploy green"}
+{"kind":"inbound","id":"msg_pQ4r5sT0","ts":"…","station":"claude","line":"metro://claude/9bfc7af0-…/50b00d11-…","from":"metro://codex/user/8119ecb1-…","to":"metro://claude/9bfc7af0-…/50b00d11-…","text":"deploy green"}
 ```
 
 ### `payload` by station
@@ -91,8 +91,7 @@ When **you** send via `metro send`/`reply`/`edit`/`react`, metro auto-stamps `fr
 
 The `id` is the **canonical handle** for that message across all stations — store it if you want to refer back to it later.
 
-- `kind: "inbound"` — a human (or another user) posted on a chat platform.
-- `kind: "notification"` — another user called `metro send` against your line. This is how Codex pings Claude Code and vice versa.
+- `kind: "inbound"` — a message arrived. Source can be a human on Discord/Telegram, a webhook POST, or another Claude / Codex user posting to your line via `metro send` (cross-process).
 
 `text` may contain `[image]`, `[voice]`, `[audio]`, or `[file: <name>]` placeholders alongside the real text — non-image attachments are opaque markers; images can be materialized via `metro download`.
 
@@ -194,17 +193,17 @@ metro send metro://claude/9bfc7af0-…/50b00d11-… "build green, ready to ship"
 metro send metro://codex/8119ecb1-…/01997d4b-… "build green" --from=metro://claude/user/9bfc7af0-…   # override sender
 ```
 
-The daemon re-emits the post on its stdout stream (and pushes via codex-rc if configured), so the peer sees a `{"kind":"notification",...}` event. Requires the metro daemon to be running on the machine — Claude / Codex line sends error with `metro daemon is not running` otherwise.
+The daemon re-emits the post on its stdout stream (and pushes via codex-rc if configured), so the peer sees an `{"kind":"inbound",...}` event. Requires the metro daemon to be running on the machine — Claude / Codex line sends error with `metro daemon is not running` otherwise.
 
 ## Discoverability
 
 - `metro lines` — list recently-seen conversations (sorted by recency).
 - `metro stations` — list stations + capability matrix.
-- `metro history` — universal message log (every inbound + outbound + notification across all stations). Newest first. Filters:
+- `metro history` — universal message log (every inbound + outbound + edit + react across all stations). Newest first. Filters:
   - `--limit=N` (default 50)
   - `--line=<metro://…>` — only this conversation
   - `--station=<discord|telegram|claude|codex|webhook>`
-  - `--kind=<inbound|outbound|edit|react|notification>`
+  - `--kind=<inbound|outbound|edit|react>`
   - `--from=<sender>`
   - `--text=<substring>`
   - `--since=<iso>` — e.g. `--since=2026-05-14T00:00:00Z`

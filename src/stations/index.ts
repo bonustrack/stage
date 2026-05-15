@@ -7,7 +7,7 @@ import { listEndpoints, webhookPort } from '../webhooks.js';
 import { loadTunnelConfig } from '../tunnel.js';
 
 export type Modality = 'text' | 'image';
-export type Feature = 'reply' | 'send' | 'edit' | 'react' | 'download' | 'fetch' | 'notify';
+export type Feature = 'reply' | 'send' | 'edit' | 'react' | 'download' | 'fetch';
 export interface Capabilities { in: Modality[]; out: Modality[]; features: Feature[] }
 
 export type Line = string & { readonly __line: unique symbol };
@@ -66,7 +66,6 @@ export type EditOpts = { buttons?: Button[][] };
 
 export interface ChatStation<TMeta = Record<string, unknown>> {
   readonly name: string;
-  readonly capabilities: Capabilities;
   start(): Promise<void>;
   stop(): Promise<void>;
   onMessage(handler: (m: InboundMessage<TMeta>) => void): void;
@@ -184,13 +183,13 @@ export const listStations = (): StationRow[] => [
   },
   {
     name: 'claude',
-    capabilities: { in: ['text'], out: ['text'], features: ['send', 'notify'] },
+    capabilities: { in: ['text'], out: ['text'], features: ['send'] },
     configured: !!process.env.CLAUDECODE,
     detail: claudeStationDetail(),
   },
   {
     name: 'codex',
-    capabilities: { in: ['text'], out: ['text'], features: ['send', 'notify'] },
+    capabilities: { in: ['text'], out: ['text'], features: ['send'] },
     configured: !!(process.env.METRO_CODEX_RC || process.env.CODEX_HOME),
     detail: codexStationDetail(),
   },

@@ -71,8 +71,8 @@ Each endpoint is a **station** with declared capabilities:
 |------------|---------------|-------------------------------------------------------|-----------------------------------------------------------------------------------------|
 | `discord`  | text + image  | reply, send, edit, react, download, fetch             | `DISCORD_BOT_TOKEN` + Message Content Intent                                            |
 | `telegram` | text + image  | reply, send, edit, react, download                    | `TELEGRAM_BOT_TOKEN`                                                                    |
-| `claude`   | text          | send, notify                                          | auto-detected from `$CLAUDECODE`; identity via `claude auth status --json`              |
-| `codex`    | text          | send, notify                                          | auto-detected from `$METRO_CODEX_RC` / `$CODEX_HOME`; identity via `$CODEX_HOME/auth.json` |
+| `claude`   | text          | send                                                  | auto-detected from `$CLAUDECODE`; identity via `claude auth status --json`              |
+| `codex`    | text          | send                                                  | auto-detected from `$METRO_CODEX_RC` / `$CODEX_HOME`; identity via `$CODEX_HOME/auth.json` |
 | `webhook`  | text          | (receive-only; optional HMAC verify)                  | `metro webhook add <label>` + `metro tunnel setup` (Cloudflare named tunnel)            |
 
 Run `metro stations` to see live config status (`✓` configured, `✗` not, `·` informational).
