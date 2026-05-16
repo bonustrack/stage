@@ -21,7 +21,21 @@ One concept — a **claim** — and three on-disk files you can `cat`:
 |----------------------|-----------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
 | Event log            | `$METRO_STATE_DIR/history.jsonl`        | Append-only JSONL — every inbound/outbound/edit/react. Already exists. The single source of truth.                                |
 | Claims               | `$METRO_STATE_DIR/claims.json`          | `{ <line>: <user-id> }` — flat map. A line in here is *exclusively* owned by that user. Absence = broadcast. New.                 |
-| Per-user cursor      | `$METRO_STATE_DIR/cursors/<user-id>`    | Byte offset into `history.jsonl` — last-emitted position for one user. New. Updated atomically after each emit.                   |
+| Per-mode cursor      | `$METRO_STATE_DIR/cursors/<key>`        | Byte offset into `history.jsonl` — last-emitted position for one tail mode. New. Updated atomically after each emit.              |
+
+Cursor keys are derived from the *effective mode* (not from `userSelf()`), so `--all` and `--unclaimed` don't collide with a personal `--as=<id>` tail:
+
+| Tail invocation                  | Cursor key                         |
+|----------------------------------|------------------------------------|
+| `metro tail --as=<id>`           | `<userSlug(id)>`                   |
+| `metro tail --as=<id> --strict`  | `<userSlug(id)>--strict`           |
+| `metro tail --as=<id> --include-webhooks` | `<userSlug(id)>--with-webhooks` (or `…--strict--with-webhooks`) |
+| `metro tail --unclaimed`         | `_unclaimed`                       |
+| `metro tail --all`               | `_all`                             |
+
+The `_` prefix on the mode-keys can't collide with a real `userSelf()` slug (which always contains a station name like `claude-user-…`). Switching modes mid-stream keeps each cursor independent — a `tail --all` from a `CLAUDECODE=1` shell does **not** advance the personal `--as=<me>` cursor.
+
+`--chat=<line>` and `--station=<name>` are post-filters applied **after** cursor advancement, so they don't need their own cursor keys.
 
 Subscribers do not register with the daemon. They tail the log; the broker semantics emerge from one filtering rule applied at read time:
 
@@ -56,11 +70,12 @@ metro claim   <line> [--as <user-id>]      # add/overwrite — last writer wins
 metro release <line>                       # remove (line returns to broadcast)
 metro claims                               # print current claims.json
 
-# Outbound actions auto-claim the line on first contact (so subsequent inbounds route to you).
-metro send  <line> <text>          [--no-claim]    # skip auto-claim for this call
-metro reply <line> <msg-id> <text> [--no-claim]
-metro edit  <line> <msg-id> <text> [--no-claim]
-metro react <line> <msg-id> <emoji> [--no-claim]
+# Outbound actions auto-claim the line on first contact when topology is 1:1 (DM, claude/codex line).
+# Group / public / webhook lines are skipped by default — pass --claim to force.
+metro send  <line> <text>          [--no-claim] [--claim]
+metro reply <line> <msg-id> <text> [--no-claim] [--claim]
+metro edit  <line> <msg-id> <text> [--no-claim] [--claim]
+metro react <line> <msg-id> <emoji> [--no-claim] [--claim]
 # Or disable globally: METRO_NO_AUTO_CLAIM=1
 
 # Lease/ack — optional, v2. When enabled, an event is "in flight" with the
@@ -97,11 +112,25 @@ Direct messages between users (`event.to == user-line`) always pass the filter r
 
 `metro send`, `reply`, `edit`, and `react` claim the target `<line>` for the actor (`userSelf()`) the first time they touch it, atomically — same lockfile as `metro claim`. The intent: when a user picks up a conversation by replying, subsequent inbound events on that line route to them without any explicit `metro claim` call.
 
-- If the line is already claimed by **someone else**, the action still proceeds (sending doesn't require ownership) but the claim is **not overwritten**. A single-line stderr note (`auto-claim skipped: line owned by <other-id>`) signals the no-op.
+Auto-claim only fires when **the line topology is 1:1** (DM, or a Claude/Codex cross-user line). Shared lines — group chats, public channels, webhook streams — would lock out other workers, so they're skipped by default:
+
+| Line                                            | Classification | Auto-claim default? | How                                                          |
+|-------------------------------------------------|----------------|---------------------|--------------------------------------------------------------|
+| `metro://telegram/<positive-id>` (incl. topics) | DM             | Yes                 | Telegram chat-id > 0 ⇒ private chat                          |
+| `metro://telegram/<negative-id>` / `-100…`      | group          | **No**              | Telegram chat-id < 0 ⇒ group/supergroup                      |
+| `metro://discord/<channel-id>` (no guild)       | DM             | Yes                 | Recent inbound payload `guildId == null`                     |
+| `metro://discord/<channel-id>` (in guild)       | group          | **No**              | Recent inbound payload `guildId != null`                     |
+| `metro://discord/<channel-id>` (no inbound)     | unknown        | Yes (conservative)  | No metadata cached — treat as DM-eligible until proven group |
+| `metro://claude/...` / `metro://codex/...`      | 1:1            | Yes                 | Cross-user notify is inherently 1:1 by construction          |
+| `metro://webhook/<id>`                          | broadcast      | **Never**           | Webhook lines are conceptually a stream, not a conversation  |
+
+- If the line is already claimed by **someone else** (and topology check passed), the action still proceeds (sending doesn't require ownership) but the claim is **not overwritten**. A single-line stderr note (`auto-claim skipped: line owned by <other-id>`) signals the no-op.
+- On a group-line skip you'll see `auto-claim skipped: <line> is a group/public line; pass --claim to take it explicitly` on stderr.
 - Opt-out per command with `--no-claim`, or globally with the env var `METRO_NO_AUTO_CLAIM=1`.
+- Opt-IN for groups: `--claim` forces auto-claim even on a group/public line (operator explicitly takes responsibility).
 - Cross-user sends (`metro send metro://claude/... ...` from a different user) auto-claim the target line too — the sender is taking ownership of the conversation.
 
-This is why webhooks are excluded from personal modes (above): a webhook flowing into `--as <id>` mode that triggered a reply would auto-claim the webhook line for the responder, silently locking out other workers from future events on that endpoint. Keeping webhooks in `--unclaimed`/`--all` only ensures the router pattern explicitly decides who picks up each event.
+This default plus the webhook-exclusion above means: a webhook or a busy group channel flowing through the daemon won't auto-claim under any worker, so the router pattern (`--unclaimed`) can still see them.
 
 ### `metro tail` mechanics
 
@@ -139,6 +168,18 @@ No new sockets. No fan-out bookkeeping. No coupling between subscriber count and
 Multiple processes already write `history.jsonl` today: the daemon's `emit()` and every short-lived CLI invocation (`metro send`/`reply`/`react` — see [actions.ts](../src/cli/actions.ts)). It works because `appendFileSync` opens with `O_APPEND`, and POSIX guarantees that `O_APPEND` writes atomically seek-to-end-and-write in one operation — concurrent writers produce whole lines in some order, never interleaved halves. Node issues one `write(2)` per `appendFileSync` call, and our entries (even fat webhook payloads) stay well under per-syscall atomicity limits on both Linux (~2GB) and macOS (`INT_MAX`). The broker model adds **only readers**, so the existing safety property is preserved.
 
 `claims.json` is read on every event by every tail, but writes are infrequent (`metro claim`/`release`). An `O_EXCL` lockfile around writes is enough; tails do an unlocked read with a malformed-JSON retry (one read can race with one write; the retry resolves it).
+
+## Isolation
+
+`METRO_STATE_DIR` isolates state-dir-scoped artifacts (`history.jsonl`, `claims.json`, `cursors/`, `lines.json`, `bot-ids.json`, the daemon socket, the webhook port). It does **not** isolate platform credentials: `metro send`, `reply`, `edit`, and `react` always read bot tokens from `$XDG_CONFIG_HOME/metro/.env` (defaulting to `~/.config/metro/.env`) and post directly to Discord/Telegram regardless of where `METRO_STATE_DIR` points.
+
+This means a test invocation with `METRO_STATE_DIR=/tmp/metro-test metro send …` will hit the **production** Discord/Telegram bot with production tokens. To avoid leaking real messages from a test/sandbox:
+
+- Use lines whose channel/chat IDs you know don't exist (the platform will 4xx before any side-effect).
+- Or unset/move `~/.config/metro/.env` for the test process — `metro send` will fail fast with a missing-token error.
+- Or use `metro tail` + manual `history.jsonl` seeding to exercise the read path without any platform contact.
+
+The auto-claim write happens **after** platform-API success, so a failed `metro send` never writes to `claims.json`. (Tests can rely on this: a failing send leaves the test state dir unchanged apart from the `history.jsonl` line the daemon would emit, if one were running.)
 
 ## Failure modes & guardrails
 

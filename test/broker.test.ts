@@ -79,10 +79,12 @@ const WEBHOOK_LINE = 'metro://webhook/gh-main';
 import {
   tryAutoClaim,
   passesMode,
+  cursorKey,
   readClaims as brokerReadClaims,
 } from '../src/broker.ts';
 import { asLine } from '../src/stations/index.ts';
 import type { HistoryEntry } from '../src/history.ts';
+import { classifyLine } from '../src/cli/actions.ts';
 
 /**
  * In-process tryAutoClaim tests. The broker module reads `STATE_DIR` ONCE at import time, so
@@ -91,10 +93,20 @@ import type { HistoryEntry } from '../src/history.ts';
  * come and go.
  */
 import { unlinkSync } from 'node:fs';
-import { CLAIMS_FILE } from '../src/broker.ts';
+import { CLAIMS_FILE, HISTORY_FILE } from '../src/broker.ts';
 
 function resetBrokerClaims(): void {
   try { unlinkSync(CLAIMS_FILE); } catch { /* not there yet */ }
+}
+
+function resetBrokerHistory(): void {
+  try { unlinkSync(HISTORY_FILE); } catch { /* not there yet */ }
+}
+
+/** Append directly to the broker's resolved history path so in-process tests can read what they write. */
+function appendToBrokerHistory(entry: Record<string, unknown>): void {
+  mkdirSync(require('node:path').dirname(HISTORY_FILE), { recursive: true });
+  appendFileSync(HISTORY_FILE, JSON.stringify(entry) + '\n');
 }
 
 describe('tryAutoClaim (broker primitive used by outbound actions)', () => {
@@ -119,6 +131,125 @@ describe('tryAutoClaim (broker primitive used by outbound actions)', () => {
     expect(r.status).toBe('skipped');
     if (r.status === 'skipped') expect(r.existing).toBe(WORKER_A);
     expect(brokerReadClaims()[CHAT_LINE]).toBe(WORKER_A);
+  });
+
+  test('skips group-classified line (issue #34)', () => {
+    resetBrokerClaims();
+    const r = tryAutoClaim(asLine(CHAT_LINE), asLine(WORKER_A), { lineKind: 'group' });
+    expect(r.status).toBe('group');
+    expect(brokerReadClaims()[CHAT_LINE]).toBeUndefined();
+  });
+
+  test('--claim (force) bypasses group-skip', () => {
+    resetBrokerClaims();
+    const r = tryAutoClaim(asLine(CHAT_LINE), asLine(WORKER_A), { lineKind: 'group', force: true });
+    expect(r.status).toBe('claimed');
+    expect(brokerReadClaims()[CHAT_LINE]).toBe(WORKER_A);
+  });
+
+  test('skips webhook lines outright regardless of kind', () => {
+    resetBrokerClaims();
+    const r = tryAutoClaim(asLine('metro://webhook/gh-main'), asLine(WORKER_A), { lineKind: 'dm' });
+    expect(r.status).toBe('webhook');
+    expect(brokerReadClaims()['metro://webhook/gh-main']).toBeUndefined();
+  });
+
+  test('claude/codex lines always claim regardless of kind', () => {
+    resetBrokerClaims();
+    const r = tryAutoClaim(asLine('metro://claude/user/abc/sess1'), asLine(WORKER_A), { lineKind: 'group' });
+    expect(r.status).toBe('claimed');
+    expect(brokerReadClaims()['metro://claude/user/abc/sess1']).toBe(WORKER_A);
+  });
+});
+
+describe('classifyLine (issue #34: DM vs group detection)', () => {
+  test('telegram positive chat id ⇒ dm', () => {
+    expect(classifyLine(asLine('metro://telegram/25220238'))).toBe('dm');
+  });
+
+  test('telegram negative chat id ⇒ group', () => {
+    expect(classifyLine(asLine('metro://telegram/-1003950444088'))).toBe('group');
+  });
+
+  test('telegram negative chat id with topic ⇒ group', () => {
+    expect(classifyLine(asLine('metro://telegram/-1003950444088/42'))).toBe('group');
+  });
+
+  test('claude/codex lines ⇒ dm', () => {
+    expect(classifyLine(asLine('metro://claude/user/abc/sess1'))).toBe('dm');
+    expect(classifyLine(asLine('metro://codex/user/xyz/thread1'))).toBe('dm');
+  });
+
+  test('webhook line ⇒ group (broker also short-circuits via webhook rule)', () => {
+    expect(classifyLine(asLine('metro://webhook/gh-main'))).toBe('group');
+  });
+
+  test('discord with no inbound history ⇒ unknown', () => {
+    /** No history seeded → unknown → broker treats as claim-eligible (conservative). */
+    expect(classifyLine(asLine('metro://discord/9999999'))).toBe('unknown');
+  });
+
+  test('discord inbound payload.guildId == null ⇒ dm', () => {
+    resetBrokerHistory();
+    const dmLine = 'metro://discord/dm-channel-id';
+    appendToBrokerHistory({
+      id: 'msg_dm', ts: '2026-05-16T00:00:00Z', kind: 'inbound', station: 'discord',
+      line: dmLine, from: 'metro://discord/u/alice', to: 'metro://discord/u/me',
+      text: 'hi', payload: { guildId: null },
+    });
+    expect(classifyLine(asLine(dmLine))).toBe('dm');
+  });
+
+  test('discord inbound payload.guildId != null ⇒ group', () => {
+    resetBrokerHistory();
+    const guildLine = 'metro://discord/guild-channel-id';
+    appendToBrokerHistory({
+      id: 'msg_g', ts: '2026-05-16T00:00:00Z', kind: 'inbound', station: 'discord',
+      line: guildLine, from: 'metro://discord/u/alice', to: guildLine,
+      text: 'hi', payload: { guildId: '123456' },
+    });
+    expect(classifyLine(asLine(guildLine))).toBe('group');
+  });
+});
+
+describe('cursorKey (issue #34: mode-derived cursor key)', () => {
+  test('--as=<id> mine-or-unclaimed → userSlug(id)', () => {
+    expect(cursorKey('mine-or-unclaimed', asLine('metro://claude/user/abc')))
+      .toBe('claude-user-abc');
+  });
+
+  test('--as=<id> --strict adds suffix', () => {
+    expect(cursorKey('mine-only', asLine('metro://claude/user/abc')))
+      .toBe('claude-user-abc--strict');
+  });
+
+  test('--as=<id> --include-webhooks adds suffix', () => {
+    expect(cursorKey('mine-or-unclaimed', asLine('metro://claude/user/abc'), { includeWebhooks: true }))
+      .toBe('claude-user-abc--with-webhooks');
+  });
+
+  test('--unclaimed → _unclaimed', () => {
+    expect(cursorKey('unclaimed', null)).toBe('_unclaimed');
+    /** even with self set, mode trumps */
+    expect(cursorKey('unclaimed', asLine('metro://claude/user/abc'))).toBe('_unclaimed');
+  });
+
+  test('--all → _all', () => {
+    expect(cursorKey('all', null)).toBe('_all');
+    expect(cursorKey('all', asLine('metro://claude/user/abc'))).toBe('_all');
+  });
+
+  test('no mode, no self → null (no cursor)', () => {
+    /** mine-only without self can't be constructed; this matches "no self" path */
+    expect(cursorKey('mine-or-unclaimed', null)).toBe(null);
+  });
+
+  test('_-prefixed mode keys never collide with a real userSlug', () => {
+    /** userSlug always contains a station prefix (claude-…, codex-…, discord-…); none start with `_`. */
+    const k = cursorKey('all', asLine('metro://claude/user/abc'));
+    expect(k?.startsWith('_')).toBe(true);
+    const u = cursorKey('mine-or-unclaimed', asLine('metro://claude/user/abc'));
+    expect(u?.startsWith('_')).toBe(false);
   });
 });
 
@@ -220,6 +351,79 @@ describe('metro tail --as <id> end-to-end', () => {
     const r = runCli(['tail', '--as', WORKER_A, '--limit', '10', '--json']);
     const ids = r.stdout.trim().split('\n').filter(Boolean).map(l => JSON.parse(l).id);
     expect(ids).not.toContain('msg_1');
+  });
+});
+
+describe('metro tail cursor independence (issue #34)', () => {
+  function seedHistory(): void {
+    appendHistoryLine({
+      id: 'msg_1', ts: '2026-05-16T00:00:00Z', kind: 'inbound', station: 'discord',
+      line: CHAT_LINE, from: 'metro://discord/u/alice', to: CHAT_LINE, text: 'hello',
+    });
+    appendHistoryLine({
+      id: 'msg_2', ts: '2026-05-16T00:00:01Z', kind: 'inbound', station: 'webhook',
+      line: WEBHOOK_LINE, from: WEBHOOK_LINE, to: WEBHOOK_LINE, text: 'gh push',
+    });
+    appendHistoryLine({
+      id: 'msg_3', ts: '2026-05-16T00:00:02Z', kind: 'inbound', station: 'telegram',
+      line: 'metro://telegram/-100/1', from: 'metro://telegram/u/bob',
+      to: 'metro://telegram/-100/1', text: 'tg-msg',
+    });
+  }
+
+  test('--all writes cursors/_all, not cursors/<userSelf>', () => {
+    seedHistory();
+    const r = runCli(['tail', '--all', '--json'], { env: { CLAUDECODE: '1' } });
+    expect(r.status).toBe(0);
+    expect(existsSync(join(STATE_DIR, 'cursors', '_all'))).toBe(true);
+    /** No per-user cursor should be written by an --all tail. */
+    const cursorsDir = join(STATE_DIR, 'cursors');
+    const files = require('node:fs').readdirSync(cursorsDir) as string[];
+    expect(files).toContain('_all');
+    expect(files.some(f => f.startsWith('claude-user-'))).toBe(false);
+  });
+
+  test('--unclaimed writes cursors/_unclaimed', () => {
+    seedHistory();
+    const r = runCli(['tail', '--unclaimed', '--json'], { env: { CLAUDECODE: '1' } });
+    expect(r.status).toBe(0);
+    expect(existsSync(join(STATE_DIR, 'cursors', '_unclaimed'))).toBe(true);
+  });
+
+  test('--as=<me> writes cursors/<userSlug>', () => {
+    seedHistory();
+    const r = runCli(['tail', '--as', WORKER_A, '--json']);
+    expect(r.status).toBe(0);
+    /** userSlug('metro://user/worker-a') == 'user-worker-a' */
+    expect(existsSync(join(STATE_DIR, 'cursors', 'user-worker-a'))).toBe(true);
+  });
+
+  test('--all then --as=<me> emit independently (the regression fix)', () => {
+    seedHistory();
+    /** First: --all consumes everything, writes _all. */
+    const allRun = runCli(['tail', '--all', '--json'], { env: { CLAUDECODE: '1' } });
+    expect(allRun.status).toBe(0);
+    const allIds = allRun.stdout.trim().split('\n').filter(Boolean).map(l => JSON.parse(l).id);
+    expect(allIds).toEqual(['msg_1', 'msg_2', 'msg_3']);
+
+    /** Then: --as=<me> should still see fresh personal events (its cursor is independent). */
+    const asRun = runCli(['tail', '--as', WORKER_A, '--json']);
+    expect(asRun.status).toBe(0);
+    const asIds = asRun.stdout.trim().split('\n').filter(Boolean).map(l => JSON.parse(l).id);
+    /** Worker-A in mine-or-unclaimed: chat + telegram visible, webhook hidden. */
+    expect(asIds).toContain('msg_1');
+    expect(asIds).toContain('msg_3');
+    expect(asIds).not.toContain('msg_2');
+  });
+
+  test('--include-webhooks gets a separate cursor from --as alone', () => {
+    seedHistory();
+    runCli(['tail', '--as', WORKER_A, '--json']);
+    runCli(['tail', '--as', WORKER_A, '--include-webhooks', '--json']);
+    const cursorsDir = join(STATE_DIR, 'cursors');
+    const files = require('node:fs').readdirSync(cursorsDir) as string[];
+    expect(files).toContain('user-worker-a');
+    expect(files).toContain('user-worker-a--with-webhooks');
   });
 });
 

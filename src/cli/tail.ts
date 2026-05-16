@@ -2,7 +2,7 @@
 
 import { existsSync, watch } from 'node:fs';
 import {
-  CLAIMS_FILE, HISTORY_FILE, claimLine, historySize, passesMode, readClaims, readCursor,
+  CLAIMS_FILE, HISTORY_FILE, claimLine, cursorKey, historySize, passesMode, readClaims, readCursor,
   readEntriesFrom, releaseLine, writeCursor, type Mode,
 } from '../broker.js';
 import { userSelf } from '../history.js';
@@ -34,7 +34,7 @@ function resolveSelf(f: Flags): Line | null {
   return auto === GENERIC_USER ? null : auto;
 }
 
-function resolveStartOffset(f: Flags, self: Line | null): number {
+function resolveStartOffset(f: Flags, key: string | null): number {
   const since = flagOne(f, 'since');
   if (since === 'tail') return historySize();
   if (since !== undefined) {
@@ -42,7 +42,7 @@ function resolveStartOffset(f: Flags, self: Line | null): number {
     if (!Number.isFinite(n) || n < 0) throw exitErr(`--since must be a byte offset or 'tail' (got '${since}')`, 1);
     return n;
   }
-  return self ? readCursor(self) : 0;
+  return key ? readCursor(key) : 0;
 }
 
 export async function cmdTail(_: string[], f: Flags): Promise<void> {
@@ -53,9 +53,12 @@ export async function cmdTail(_: string[], f: Flags): Promise<void> {
   const chatFilter = flagOne(f, 'chat');
   const stationFilter = flagOne(f, 'station');
   const limit = Number(flagOne(f, 'limit')) || 0;
-  const startOffset = resolveStartOffset(f, self);
   const json = isJson(f);
   const includeWebhooks = f['include-webhooks'] === true;
+  /** Cursor key derives from the effective mode (not userSelf), so `--all` / `--unclaimed` */
+  /** don't trample the personal `--as=<me>` cursor in a CLAUDECODE shell. */
+  const key = cursorKey(mode, self, { includeWebhooks });
+  const startOffset = resolveStartOffset(f, key);
 
   let emitted = 0;
   let offset = startOffset;
@@ -70,7 +73,7 @@ export async function cmdTail(_: string[], f: Flags): Promise<void> {
       if (!passesMode(entry, mode, self, claims, { includeWebhooks })) continue;
       if (json) process.stdout.write(JSON.stringify(entry) + '\n');
       else process.stdout.write(fmtRow(entry) + '\n');
-      if (self) writeCursor(self, offset);
+      if (key) writeCursor(key, offset);
       emitted++;
       if (limit && emitted >= limit) return true;
     }

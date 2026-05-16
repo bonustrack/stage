@@ -28,14 +28,17 @@ Usage:
   metro doctor                                Health check.
   metro stations                              List stations + capabilities.
   metro lines                                 List recently-seen conversations.
-  metro send <line> <text> [--image=<path>]… [--document=<path>]… [--voice=<path>] [--buttons=<json>] [--no-claim]
+  metro send <line> <text> [--image=<path>]… [--document=<path>]… [--voice=<path>] [--buttons=<json>] [--no-claim] [--claim]
                                               Post a fresh message; repeat --image/--document for multi-file albums.
-                                              First outbound auto-claims the line; --no-claim or METRO_NO_AUTO_CLAIM=1 opts out.
-  metro reply <line> <message_id> <text> [--image=… --document=… --voice=… --buttons=…] [--no-claim]
+                                              First outbound on a DM auto-claims; --no-claim or METRO_NO_AUTO_CLAIM=1 opts out;
+                                              --claim forces auto-claim even on group/public lines.
+                                              Note: send/reply/edit/react read bot tokens from ~/.config/metro/.env and post
+                                              directly to the platform — METRO_STATE_DIR isolates claims/history but NOT creds.
+  metro reply <line> <message_id> <text> [--image=… --document=… --voice=… --buttons=…] [--no-claim] [--claim]
                                               Threaded reply (same flags as send).
-  metro edit <line> <message_id> <text> [--buttons=<json>] [--no-claim]
+  metro edit <line> <message_id> <text> [--buttons=<json>] [--no-claim] [--claim]
                                               Edit a previously-sent message (text + buttons).
-  metro react <line> <message_id> <emoji> [--no-claim]
+  metro react <line> <message_id> <emoji> [--no-claim] [--claim]
                                               Set or clear ('') a reaction.
   metro download <line> <message_id> [--out=<dir>]
                                               Download image attachments to disk.

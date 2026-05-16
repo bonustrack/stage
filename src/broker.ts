@@ -64,15 +64,47 @@ export function releaseLine(line: Line): { released: boolean; claims: ClaimsMap 
   });
 }
 
-/**
- * Claim `line` for `owner` iff unclaimed. Statuses: claimed | kept | skipped | error.
- */
+/** Claim `line` for `owner` iff unclaimed. `group`/`webhook` are *protective skips* (the line is */
+/** shared, claiming would lock out other workers); `skipped` is the existing-owner case. Callers */
+/** should print a stderr note for `group` so the operator knows `--claim` would have claimed. */
 export type AutoClaimResult =
   | { status: 'claimed' | 'kept'; owner: Line }
   | { status: 'skipped'; existing: Line }
+  | { status: 'group'; line: Line }
+  | { status: 'webhook'; line: Line }
   | { status: 'error'; error: string };
 
-export function tryAutoClaim(line: Line, owner: Line): AutoClaimResult {
+/** Coarse classification of a chat line's topology — DM (1:1) vs group (shared). */
+export type LineKind = 'dm' | 'group' | 'unknown';
+
+/** Per-line decision: should auto-claim run on a successful outbound? */
+function shouldAutoClaim(line: Line, kind: LineKind): { ok: true } | { ok: false; reason: 'group' | 'webhook' } {
+  const station = stationOf(line);
+  /** Webhook lines are conceptually a broadcast stream — claiming a single webhook line is a footgun. */
+  if (station === 'webhook') return { ok: false, reason: 'webhook' };
+  /** Claude/Codex cross-user lines are 1:1 by construction — always safe to auto-claim. */
+  if (station === 'claude' || station === 'codex') return { ok: true };
+  /** For chat stations: explicit group → skip. dm + unknown → claim (preserves prior behavior). */
+  if (kind === 'group') return { ok: false, reason: 'group' };
+  return { ok: true };
+}
+
+/** Local copy of `Line.station(...)` to avoid a circular import on stations/index. */
+function stationOf(line: Line): string | null {
+  const s = (line as string).replace(/^metro:\/+/, '');
+  const slash = s.indexOf('/');
+  return slash <= 0 ? null : s.slice(0, slash);
+}
+
+export function tryAutoClaim(
+  line: Line,
+  owner: Line,
+  opts: { lineKind?: LineKind; force?: boolean } = {},
+): AutoClaimResult {
+  if (!opts.force) {
+    const decision = shouldAutoClaim(line, opts.lineKind ?? 'unknown');
+    if (!decision.ok) return { status: decision.reason, line };
+  }
   try {
     return withClaimsLock(m => {
       const existing = m[line];
@@ -91,18 +123,37 @@ export function userSlug(uri: Line): string {
   return uri.replace(/^metro:\/+/, '').replace(/[^A-Za-z0-9_.-]/g, '-');
 }
 
-const cursorPath = (uri: Line): string => join(CURSORS_DIR, userSlug(uri));
+/** Cursor key for a tail invocation. Derived from the *effective mode*, NOT from `userSelf()`. */
+/** Keeps `--all` / `--unclaimed` from trampling a `--as=<id>` cursor in a CLAUDECODE shell. */
+/** Keys: `--as=<id>`→slug(id); `+--strict`→slug+`--strict`; `--unclaimed`→`_unclaimed`; `--all`→`_all`. */
+/** The `_` prefix can't collide with a userSlug (always has a station prefix like `claude-user-…`). */
+/** `--include-webhooks` adds `--with-webhooks` so toggling mid-stream doesn't re-emit/skip events. */
+export function cursorKey(
+  mode: Mode,
+  self: Line | null,
+  opts: { includeWebhooks?: boolean } = {},
+): string | null {
+  if (mode === 'all') return '_all';
+  if (mode === 'unclaimed') return '_unclaimed';
+  if (!self) return null;
+  const base = userSlug(self);
+  const suffix = mode === 'mine-only' ? '--strict' : '';
+  const webhooks = opts.includeWebhooks ? '--with-webhooks' : '';
+  return `${base}${suffix}${webhooks}`;
+}
 
-export function readCursor(uri: Line): number {
-  const p = cursorPath(uri);
+const cursorPath = (key: string): string => join(CURSORS_DIR, key);
+
+export function readCursor(key: string): number {
+  const p = cursorPath(key);
   if (!existsSync(p)) return 0;
   const n = Number(readFileSync(p, 'utf8').trim());
   return Number.isFinite(n) && n >= 0 ? n : 0;
 }
 
-export function writeCursor(uri: Line, offset: number): void {
+export function writeCursor(key: string, offset: number): void {
   mkdirSync(CURSORS_DIR, { recursive: true });
-  const p = cursorPath(uri);
+  const p = cursorPath(key);
   const tmp = `${p}.tmp.${process.pid}`;
   writeFileSync(tmp, String(offset));
   renameSync(tmp, p);
