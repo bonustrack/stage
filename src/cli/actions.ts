@@ -12,7 +12,7 @@ import {
 } from '../history.js';
 import { asLine, Line, type Button, type ChatStation } from '../stations/index.js';
 import { loadMetroEnv } from '../paths.js';
-import { tryAutoClaim } from '../broker.js';
+import { tryAutoClaim, type LineKind } from '../broker.js';
 import {
   emit, flagList, flagOne, isJson, need, resolveText, writeJson, type Flags,
 } from './util.js';
@@ -49,6 +49,33 @@ function destinationFor(orig: ReturnType<typeof lookupEntry>, line: Line): Line 
   return orig.from;
 }
 
+/** Classify a chat line as DM/group/unknown for the auto-claim group-skip rule. */
+/** Telegram: chat-id sign is authoritative (id < 0 ⇒ group). Discord: peek payload.guildId on */
+/** the most-recent inbound (null ⇒ DM, set ⇒ group, none seen ⇒ unknown). Claude/Codex ⇒ dm. */
+export function classifyLine(line: Line): LineKind {
+  const station = Line.station(line);
+  if (station === 'telegram') {
+    const parsed = Line.parseTelegram(line);
+    if (!parsed) return 'unknown';
+    return parsed.chatId < 0 ? 'group' : 'dm';
+  }
+  if (station === 'claude' || station === 'codex') return 'dm';
+  if (station === 'webhook') return 'group';
+  if (station === 'discord') {
+    /** Look at the most recent inbound on this line; the daemon stored the raw message in `payload`. */
+    const recent = readHistory({ line, kind: 'inbound', limit: 1 })[0];
+    if (!recent) return 'unknown';
+    const payload = recent.payload as { guildId?: string | null } | undefined;
+    if (!payload || !('guildId' in payload)) {
+      /** Older entries may not have a guildId — fall back to the `to` field: DMs route to a user URI. */
+      if (recent.to && recent.to !== recent.line) return 'dm';
+      return 'unknown';
+    }
+    return payload.guildId == null ? 'dm' : 'group';
+  }
+  return 'unknown';
+}
+
 /** Append an outbound action to history.jsonl; `to` mirrors the destination per `destinationFor`. */
 function logOutbound(
   f: Flags,
@@ -65,13 +92,22 @@ function logOutbound(
   return id;
 }
 
-/** Auto-claim on outbound — skips when --no-claim or METRO_NO_AUTO_CLAIM=1; never overwrites a foreign owner. */
+/** Auto-claim on outbound — skips when `--no-claim` / `METRO_NO_AUTO_CLAIM=1`, when the line is */
+/** a group/webhook, or when already owned by someone else. `--claim` forces a group-line claim. */
 function maybeAutoClaim(f: Flags, line: Line, owner: Line): void {
   if (f['no-claim'] === true) return;
   if (process.env.METRO_NO_AUTO_CLAIM === '1') return;
-  const result = tryAutoClaim(line, owner);
+  const force = f['claim'] === true;
+  const lineKind = classifyLine(line);
+  const result = tryAutoClaim(line, owner, { lineKind, force });
   if (result.status === 'skipped') {
     process.stderr.write(`auto-claim skipped: line owned by ${result.existing}\n`);
+  } else if (result.status === 'group') {
+    process.stderr.write(
+      `auto-claim skipped: ${line} is a group/public line; pass --claim to take it explicitly\n`,
+    );
+  } else if (result.status === 'webhook') {
+    process.stderr.write(`auto-claim skipped: ${line} is a webhook line (broadcast stream)\n`);
   } else if (result.status === 'error') {
     process.stderr.write(`auto-claim failed: ${result.error}\n`);
   }
