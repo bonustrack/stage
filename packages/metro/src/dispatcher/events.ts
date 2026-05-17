@@ -7,8 +7,8 @@ import { noteUserFromLine } from '../registry.js';
 import {
   appendHistory, formatDisplay, mintId, userSelf, type HistoryEntry,
 } from '../history.js';
-import type { TrainEvent } from '../trains.js';
-import type { CodexRC } from '../codex-rc.js';
+import type { TrainEvent } from '../trains/protocol.js';
+import type { CodexRC } from '../codex-rc/client.js';
 
 export function makeEmit(codexRc: CodexRC | null): (entry: HistoryEntry) => void {
   return function emit(entry: HistoryEntry): void {

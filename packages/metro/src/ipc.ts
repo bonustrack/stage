@@ -6,7 +6,8 @@ import { existsSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { errMsg, log } from './log.js';
 import { STATE_DIR } from './paths.js';
-import type { TrainCallResponse, TrainInfo } from './trains.js';
+import type { TrainCallResponse } from './trains/protocol.js';
+import type { TrainInfo } from './trains/supervisor.js';
 
 const SOCKET_PATH = join(STATE_DIR, 'metro.sock');
 

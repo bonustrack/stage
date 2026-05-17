@@ -83,15 +83,14 @@ const WEBHOOK_LINE = 'metro://webhook/gh-main';
 /** that we reset between cases via the file deletions below. */
 import {
   tryAutoClaim,
-  passesMode,
-  cursorKey,
   classifyLine,
   readClaims as brokerReadClaims,
-} from '../src/broker.ts';
+  CLAIMS_FILE, HISTORY_FILE,
+} from '../src/broker/claims.ts';
+import { passesMode, cursorKey } from '../src/broker/history-stream.ts';
 import { asLine } from '../src/lines.ts';
 import type { HistoryEntry } from '../src/history.ts';
 import { unlinkSync } from 'node:fs';
-import { CLAIMS_FILE, HISTORY_FILE } from '../src/broker.ts';
 
 function resetBrokerClaims(): void {
   try { unlinkSync(CLAIMS_FILE); } catch { /* not there yet */ }

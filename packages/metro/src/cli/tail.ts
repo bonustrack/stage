@@ -2,9 +2,11 @@
 
 import { existsSync, watch } from 'node:fs';
 import {
-  CLAIMS_FILE, HISTORY_FILE, claimLine, cursorKey, historySize, passesMode, readClaims, readCursor,
-  readEntriesFrom, releaseLine, writeCursor, type Mode,
-} from '../broker.js';
+  CLAIMS_FILE, HISTORY_FILE, claimLine, readClaims, releaseLine,
+} from '../broker/claims.js';
+import {
+  cursorKey, historySize, passesMode, readCursor, readEntriesFrom, writeCursor, type Mode,
+} from '../broker/history-stream.js';
 import { userSelf } from '../history.js';
 import { asLine, Line } from '../lines.js';
 import { loadMetroEnv } from '../paths.js';

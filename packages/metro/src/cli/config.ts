@@ -8,7 +8,7 @@ import pkg from '../../package.json' with { type: 'json' };
 import {
   CONFIG_ENV_FILE, loadMetroEnv, STATE_DIR,
 } from '../paths.js';
-import { TRAINS_DIR } from '../trains.js';
+import { TRAINS_DIR } from '../trains/supervisor.js';
 import { emit, exitErr, isJson, writeJson, type Flags } from './util.js';
 import { cmdSetupSkill, skillStatus } from './skill.js';
 

@@ -6,9 +6,10 @@ import { watch } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import pkg from '../package.json' with { type: 'json' };
 import { errMsg, log } from './log.js';
+import { HISTORY_FILE, readClaims } from './broker/claims.js';
 import {
-  HISTORY_FILE, historySize, passesMode, readClaims, readEntriesFrom, type Mode,
-} from './broker.js';
+  historySize, passesMode, readEntriesFrom, type Mode,
+} from './broker/history-stream.js';
 import { readBotIds } from './cache.js';
 import { readHistory } from './history.js';
 import { asLine, type Line } from './lines.js';
