@@ -7,7 +7,9 @@ export type Line = string & { readonly __line: unique symbol };
 export const asLine = (s: string): Line => s as Line;
 
 /** Outbound action handler. Each station declares its own action set. */
-export type ActionFn<TArgs = unknown, TResult = unknown> = (args: TArgs) => Promise<TResult>;
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export type ActionFn = (args?: any) => Promise<any>;
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 /** Station shape. One file per integration. `actions` is open — names are station-defined. */
 export interface Station {

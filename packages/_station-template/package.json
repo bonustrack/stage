@@ -1,0 +1,20 @@
+{
+  "name": "@stage-labs/_station-template",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "metroStation": false,
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo '(template — lint skipped)'"
+  },
+  "dependencies": {
+    "@stage-labs/metro": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5"
+  }
+}

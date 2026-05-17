@@ -1,0 +1,23 @@
+{
+  "name": "@stage-labs/claude-station",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "metroStation": true,
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint index.ts"
+  },
+  "dependencies": {
+    "@stage-labs/metro": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "eslint": "^10.3.0",
+    "typescript": "^5",
+    "typescript-eslint": "^8.59.2"
+  }
+}
