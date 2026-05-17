@@ -79,21 +79,13 @@ export type LineKind = 'dm' | 'group' | 'unknown';
 
 /** Per-line decision: should auto-claim run on a successful outbound? */
 function shouldAutoClaim(line: Line, kind: LineKind): { ok: true } | { ok: false; reason: 'group' | 'webhook' } {
-  const station = stationOf(line);
-  /** Webhook lines are conceptually a broadcast stream — claiming a single webhook line is a footgun. */
+  const station = Line.station(line);
+  /** Webhook lines are a broadcast stream — claiming one is a footgun. */
   if (station === 'webhook') return { ok: false, reason: 'webhook' };
-  /** Claude/Codex cross-user lines are 1:1 by construction — always safe to auto-claim. */
+  /** Claude/Codex cross-user lines are 1:1 by construction — always safe. */
   if (station === 'claude' || station === 'codex') return { ok: true };
-  /** For chat stations: explicit group → skip. dm + unknown → claim (preserves prior behavior). */
   if (kind === 'group') return { ok: false, reason: 'group' };
   return { ok: true };
-}
-
-/** Local copy of `Line.station(...)` to avoid a circular import on stations/index. */
-function stationOf(line: Line): string | null {
-  const s = (line as string).replace(/^metro:\/+/, '');
-  const slash = s.indexOf('/');
-  return slash <= 0 ? null : s.slice(0, slash);
 }
 
 export function tryAutoClaim(

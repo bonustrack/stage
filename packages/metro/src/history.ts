@@ -73,13 +73,17 @@ export interface HistoryFilter {
   textContains?: string;
   since?: Date;
   limit?: number;
+  /** Skip N most-recent matching entries (pagination: page 2 = skip=20). */
+  skip?: number;
 }
 
-/** Read JSONL, parse, filter (most-recent-first), apply `limit`. Empty array if file is missing. */
+/** Read JSONL, parse, filter (most-recent-first), apply `skip` then `limit`. Empty array if file is missing. */
 export function readHistory(filter: HistoryFilter = {}): HistoryEntry[] {
   if (!existsSync(FILE)) return [];
   const lines = readFileSync(FILE, 'utf8').split('\n');
   const out: HistoryEntry[] = [];
+  const skip = filter.skip ?? 0;
+  let skipped = 0;
   /** Walk backwards so `limit` clamps without scanning the whole file body twice. */
   for (let i = lines.length - 1; i >= 0; i--) {
     const raw = lines[i].trim();
@@ -87,6 +91,7 @@ export function readHistory(filter: HistoryFilter = {}): HistoryEntry[] {
     let e: HistoryEntry;
     try { e = JSON.parse(raw) as HistoryEntry; } catch { continue; }
     if (!matches(e, filter)) continue;
+    if (skipped < skip) { skipped++; continue; }
     out.push(e);
     if (filter.limit && out.length >= filter.limit) break;
   }
