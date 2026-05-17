@@ -11,7 +11,6 @@ import { appendHistory, formatDisplay, type HistoryEntry } from './history.js';
 import { noteSeen, saveBotId } from './cache.js';
 import { errMsg, log } from './log.js';
 import { acquireLock, loadMetroEnv, STATE_DIR } from './paths.js';
-import { Line } from './lines.js';
 import { noteUserFromLine } from './registry.js';
 import { loadTunnelConfig, Tunnel } from './tunnel.js';
 import { webhookPort } from './webhooks.js';
@@ -108,5 +107,3 @@ process.stdin.on('end', shutdown).on('close', shutdown);
 for (const sig of ['SIGINT', 'SIGTERM'] as const) process.on(sig, shutdown);
 
 await main();
-
-void Line;
