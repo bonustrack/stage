@@ -1,5 +1,7 @@
 # Metro app
 
+[![lines of code](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.codetabs.com%2Fv1%2Floc%2F%3Fgithub%3Dbonustrack%2Fmetro%26ignored%3Dpackages&query=%24%5B0%5D.linesOfCode&label=lines%20of%20TypeScript&color=blue)](https://github.com/bonustrack/metro/tree/main/apps/app)
+
 Read-only mobile companion for the Metro daemon. View your live activity feed and
 claimed lines from anywhere — same data the `metro tail` CLI produces, surfaced over
 the daemon's monitor endpoints (`/api/state`, `/api/tail` SSE).
