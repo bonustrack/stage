@@ -1,7 +1,8 @@
 /** Inline filter sheet — multi-select chips + free-text fields. Session-only state. */
 
 import { Modal, Pressable, ScrollView, Text, TextInput, View, useColorScheme } from 'react-native';
-import type { HistoryKind } from '../lib/types';
+import type { HistoryEntry, HistoryKind } from '../lib/types';
+import { Chip, ChipRow, Section, inputStyle } from './FilterSheetParts';
 
 export type StationKey = 'discord' | 'telegram' | 'webhook' | 'claude' | 'codex';
 export const ALL_KINDS: HistoryKind[] = ['inbound', 'outbound', 'edit', 'react'];
@@ -32,6 +33,20 @@ export function filtersAreEmpty(f: Filters): boolean {
     && f.to === ''
     && f.line === ''
     && f.includeWebhooks;
+}
+
+/** Predicate used by the activity feed to apply a Filters set to a single event. */
+export function matchesFilters(e: HistoryEntry, f: Filters): boolean {
+  if (!f.includeWebhooks && e.station === 'webhook') return false;
+  if (f.kinds.size > 0 && !f.kinds.has(e.kind)) return false;
+  if (f.stations.size > 0 && !f.stations.has(e.station as StationKey)) return false;
+  if (f.from) {
+    const hay = (e.fromName ?? e.from).toLowerCase();
+    if (!hay.includes(f.from.toLowerCase())) return false;
+  }
+  if (f.to && !e.to.toLowerCase().includes(f.to.toLowerCase())) return false;
+  if (f.line && !e.line.toLowerCase().includes(f.line.toLowerCase())) return false;
+  return true;
 }
 
 export function FilterSheet({
@@ -91,10 +106,7 @@ export function FilterSheet({
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 }}>
             <Text style={{ fontSize: 17, fontWeight: '700', color: colors.fg, flex: 1 }}>Filter events</Text>
-            <Pressable
-              onPress={() => onChange(emptyFilters())}
-              hitSlop={8}
-            >
+            <Pressable onPress={() => onChange(emptyFilters())} hitSlop={8}>
               <Text style={{ color: colors.accent, fontSize: 13, fontWeight: '600' }}>Reset</Text>
             </Pressable>
             <Pressable onPress={onClose} hitSlop={8}>
@@ -105,26 +117,14 @@ export function FilterSheet({
             <Section label="Kind" colors={colors}>
               <ChipRow>
                 {ALL_KINDS.map(k => (
-                  <Chip
-                    key={k}
-                    label={k}
-                    on={filters.kinds.has(k)}
-                    onPress={() => toggleKind(k)}
-                    colors={colors}
-                  />
+                  <Chip key={k} label={k} on={filters.kinds.has(k)} onPress={() => toggleKind(k)} colors={colors} />
                 ))}
               </ChipRow>
             </Section>
             <Section label="Station" colors={colors}>
               <ChipRow>
                 {ALL_STATIONS.map(s => (
-                  <Chip
-                    key={s}
-                    label={s}
-                    on={filters.stations.has(s)}
-                    onPress={() => toggleStation(s)}
-                    colors={colors}
-                  />
+                  <Chip key={s} label={s} on={filters.stations.has(s)} onPress={() => toggleStation(s)} colors={colors} />
                 ))}
               </ChipRow>
             </Section>
@@ -176,76 +176,4 @@ export function FilterSheet({
       </Pressable>
     </Modal>
   );
-}
-
-function Section({
-  label, colors, children,
-}: {
-  label: string;
-  colors: { sub: string };
-  children: React.ReactNode;
-}): React.ReactElement {
-  return (
-    <View style={{ gap: 8 }}>
-      <Text style={{ fontSize: 12, fontWeight: '600', color: colors.sub, textTransform: 'uppercase' }}>
-        {label}
-      </Text>
-      {children}
-    </View>
-  );
-}
-
-function ChipRow({ children }: { children: React.ReactNode }): React.ReactElement {
-  return <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{children}</View>;
-}
-
-function Chip({
-  label, on, onPress, colors,
-}: {
-  label: string;
-  on: boolean;
-  onPress: () => void;
-  colors: { chipBg: string; chipBgOn: string; chipFg: string; chipFgOn: string; border: string };
-}): React.ReactElement {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={{
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 14,
-        backgroundColor: on ? colors.chipBgOn : colors.chipBg,
-        borderWidth: 1,
-        borderColor: on ? colors.chipBgOn : colors.border,
-      }}
-    >
-      <Text style={{ color: on ? colors.chipFgOn : colors.chipFg, fontSize: 13, fontWeight: '600' }}>
-        {label}
-      </Text>
-    </Pressable>
-  );
-}
-
-function inputStyle(colors: {
-  inputBg: string; fg: string; border: string;
-}): {
-  backgroundColor: string;
-  color: string;
-  borderRadius: number;
-  paddingHorizontal: number;
-  paddingVertical: number;
-  borderWidth: number;
-  borderColor: string;
-  fontSize: number;
-} {
-  return {
-    backgroundColor: colors.inputBg,
-    color: colors.fg,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-    fontSize: 14,
-  };
 }
