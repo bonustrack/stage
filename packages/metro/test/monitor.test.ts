@@ -2,9 +2,9 @@
  * Tests for the read-only monitor HTTP endpoints (`/api/state`, `/api/tail`).
  *
  * Each test runs in a fresh subprocess so `METRO_STATE_DIR` is resolved cleanly
- * (the broker/monitor modules capture STATE_DIR at import time). The subprocess
- * imports `monitor.ts`, mounts it on an ephemeral port, prints the port, then
- * keeps running until killed.
+ * (the broker + monitor modules capture STATE_DIR at import time). The subprocess
+ * imports `handleMonitorRequest` from `src/cli/tail.ts`, mounts it on an
+ * ephemeral port, prints the port, then keeps running until killed.
  */
 
 import { describe, expect, test, beforeEach, afterEach } from 'bun:test';

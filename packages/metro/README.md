@@ -34,15 +34,20 @@ You own streaming, tool calls, and reply timing. Metro is the wire.
 ```bash
 npm install -g @stage-labs/metro@beta    # or: bun add -g @stage-labs/metro@beta
 
-# One-time train setup
+# One-time train setup (Telegram — no npm deps needed; uses native fetch)
 mkdir -p ~/.metro && cd ~/.metro && bun init -y
-bun add discord.js                          # for the discord example train
-cp $(npm root -g)/@stage-labs/metro/examples/discord.ts ~/.metro/trains/
-echo 'DISCORD_BOT_TOKEN=your-token' >> ~/.metro/.env
+cp $(npm root -g)/@stage-labs/metro/examples/telegram.ts ~/.metro/trains/
+echo 'TELEGRAM_BOT_TOKEN=your-token' >> ~/.metro/.env
 
 metro doctor                                # verify
 metro                                       # run the daemon
 ```
+
+For Discord, copy the same `telegram.ts` and port it — swap the API base for
+`https://discord.com/api/v10` with `Authorization: Bot $TOKEN`, install
+`discord.js` for the gateway (`cd ~/.metro && bun add discord.js`), and keep
+the same envelope + `op:"call"` ↔ `op:"response"` protocol. See
+[`examples/README.md`](./examples/README.md) for the wire-format reference.
 
 Requires **Bun ≥ 1.3** (trains run under `bun run`). Metro core itself works under Node ≥ 22.
 
@@ -88,7 +93,7 @@ Train responds on stdout:
 {"op":"response","id":"req_abc","result":{"messageId":"999"}}
 ```
 
-See [`examples/`](./examples/) for two reference trains (Discord + Telegram) and the full protocol doc.
+See [`examples/telegram.ts`](./examples/telegram.ts) (a self-contained ~110 LOC reference train) and [`examples/README.md`](./examples/README.md) for the full protocol + Discord port notes.
 
 ---
 
@@ -96,10 +101,10 @@ See [`examples/`](./examples/) for two reference trains (Discord + Telegram) and
 
 ```
 metro                                    # start the daemon (foreground)
-metro trains [list]                      # supervised trains + state
+metro trains list                        # supervised trains + state
 metro call <train> <action> <args>       # forward an action call; args = JSON / @file / - / string
-metro tail --as=<user-uri> [--follow]    # subscribe to the event log; claim-aware
-metro history --limit=50                 # recent history (newest first)
+metro tail [--as=<user-uri>] [--follow]  # subscribe to the event log; claim-aware
+metro history [--limit=50] [--line=…]    # recent history (newest first), filterable
 metro lines                              # recently-seen conversations
 metro claim <line>                       # take exclusive ownership of a line
 metro release <line>                     # release
@@ -107,10 +112,14 @@ metro claims                             # print the claims map
 metro webhook add <label> [--secret=…]   # add an HTTP receive endpoint
 metro webhook list | remove <id>         # manage endpoints
 metro tunnel setup <name> <hostname>     # configure a Cloudflare named tunnel
-metro setup [skill [clear]]              # install/remove the metro skill into ~/.claude / ~/.codex
+metro tunnel status                      # show current tunnel config
+metro setup [skill [clear]]              # status; or install/remove the skill into ~/.claude / ~/.codex
 metro doctor                             # health check
 metro update                             # upgrade in place
 ```
+
+No more `metro send / reply / edit / react / download / fetch` — outbound is always
+`metro call <train> <action> <args>`, with action names defined by the train.
 
 ---
 

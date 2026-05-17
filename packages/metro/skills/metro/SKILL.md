@@ -42,27 +42,33 @@ metro call telegram react '{"line":"metro://telegram/-100/1","messageId":"42","e
 metro call discord edit  '{"line":"metro://discord/123","messageId":"999","text":"new"}'
 ```
 
-`[args]` can be JSON, `@path/to/args.json`, `-` (stdin), or a bare string. Action names are whatever the train exposes — metro core knows nothing about them. The example trains (`discord.ts`, `telegram.ts`) expose `send`, `edit`, `react`.
+`[args]` can be JSON, `@path/to/args.json`, `-` (stdin), or a bare string. Action names are whatever the train exposes — metro core knows nothing about them. The shipped example train (`telegram.ts`) exposes `send` and `react`; trains you write can expose anything.
 
 ## Writing a new train
 
-1. Start from `node_modules/@stage-labs/metro/examples/<platform>.ts`.
+1. Start from `node_modules/@stage-labs/metro/examples/telegram.ts` (the only shipped example — pattern is platform-independent).
 2. Copy → `~/.metro/trains/<name>.ts` and edit. Keep the inbound shape and the `op:"call"` → `op:"response"` protocol.
-3. Deps: `cd ~/.metro && bun add <pkg>`. Credentials: `echo 'FOO_TOKEN=…' >> ~/.metro/.env`.
+3. Deps (if needed): `cd ~/.metro && bun add <pkg>`. Credentials: `echo 'FOO_TOKEN=…' >> ~/.metro/.env`.
 4. Restart the metro daemon to pick up the new train.
 
 Trains are throwaway — if the user asks for new functionality, rewrite the train rather than adding glue in core.
 
 ## First-run setup (once per machine)
 
+Telegram (no npm deps — uses native fetch + long polling):
+
 ```
 mkdir -p ~/.metro && cd ~/.metro && bun init -y
-bun add discord.js
-cp node_modules/@stage-labs/metro/examples/discord.ts ~/.metro/trains/
-echo 'DISCORD_BOT_TOKEN=…' >> ~/.metro/.env
-metro setup skill    # optional
+cp node_modules/@stage-labs/metro/examples/telegram.ts ~/.metro/trains/
+echo 'TELEGRAM_BOT_TOKEN=…' >> ~/.metro/.env
+metro setup skill    # optional — installs this SKILL.md into ~/.claude / ~/.codex
 metro
 ```
+
+Discord port: copy `telegram.ts` to `~/.metro/trains/discord.ts`, swap the API
+base for `https://discord.com/api/v10` with `Authorization: Bot $TOKEN`,
+`bun add discord.js` for the gateway, and keep the envelope + call/response
+protocol unchanged.
 
 ## Detecting "is this for me?"
 

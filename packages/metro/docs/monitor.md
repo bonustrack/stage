@@ -5,7 +5,10 @@ dashboard, a curl one-liner) to view live daemon state without touching the JSON
 directly.
 
 These endpoints mount on the **existing** webhook HTTP server (default port `8420`).
-There is no separate daemon, no separate port, no extra process to launch.
+There is no separate daemon, no separate port, no extra process to launch. The
+implementation lives in [`src/cli/tail.ts`](../src/cli/tail.ts) (the same module that
+backs the `metro tail` CLI) and is wired into the HTTP server in
+[`src/dispatcher/server.ts`](../src/dispatcher/server.ts) via `handleMonitorRequest`.
 
 ## Routes
 
@@ -47,7 +50,8 @@ Returns a one-shot JSON snapshot:
     "metro://telegram/-100…"
   ],
   "recent_history": [/* most-recent-first, up to 100 HistoryEntry objects */],
-  "bot_ids": { "discord": "1234567890", "telegram": "987654321" }
+  "bot_ids": { "discord": "1234567890", "telegram": "987654321" },
+  "version": "x.y.z"
 }
 ```
 
@@ -55,6 +59,19 @@ Returns a one-shot JSON snapshot:
 - `lines` — the set of conversation URIs seen across recent history and current claims (good-enough proxy for "what lines exist right now"). Subject to refinement; not authoritative.
 - `recent_history` — same shape as `HistoryEntry` in `src/history.ts`, ordered most-recent-first, capped at 100 entries.
 - `bot_ids` — verbatim contents of `bot-ids.json`.
+- `version` — the daemon's package version (handy for clients gating on capabilities).
+
+### Pagination
+
+For backlog scrolling, pass `?before=<N>&limit=<M>` (both non-negative integers, `limit` clamped to 500):
+
+```bash
+curl -H "Authorization: Bearer $METRO_MONITOR_TOKEN" \
+  "https://monitor.metro.box/api/state?before=200&limit=100" | jq .recent_history
+```
+
+When `before` is set, only `recent_history` is returned (the older slice). Without
+`before`, the full snapshot above is returned.
 
 ### Example
 

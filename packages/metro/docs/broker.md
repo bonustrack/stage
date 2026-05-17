@@ -87,7 +87,7 @@ mode — they're inherently 1:1 and can't be "claimed" by someone else.
 
 ### Auto-claim on outbound
 
-Trains can call `tryAutoClaim` ([broker.ts](../src/broker.ts)) to claim the target `<line>`
+Outbound paths call `tryAutoClaim` ([broker/claims.ts](../src/broker/claims.ts)) to claim the target `<line>`
 for the actor (`userSelf()`) the first time it's touched, atomically — same lockfile as
 `metro claim`. Auto-claim only fires when **the line topology is 1:1** (DM, or a
 Claude/Codex cross-user line). Shared lines are skipped:

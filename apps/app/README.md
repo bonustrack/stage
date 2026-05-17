@@ -6,8 +6,8 @@ Read-only mobile companion for the Metro daemon. View your live activity feed an
 claimed lines from anywhere — same data the `metro tail` CLI produces, surfaced over
 the daemon's monitor endpoints (`/api/state`, `/api/tail` SSE).
 
-This is **v1, read-only**. No replying, editing, or reacting from the app yet —
-that's Phase 3.
+Read-only by design: no replying, editing, or reacting from the app — outbound stays
+on the host running `metro call <train> <action>`.
 
 ## Stack
 
@@ -95,9 +95,9 @@ apps/app/
     types.ts           ← shapes mirroring packages/metro/src/history.ts
 ```
 
-## What's not here (yet)
+## What's not here
 
-- Push notifications for inbounds (Phase 3 — needs the daemon to mint Expo push tokens).
-- Reply / react / edit / send (Phase 3 — needs auth-scoped action endpoints).
-- Multi-account / multi-daemon (Phase 3 — single config slot today).
+- Push notifications for inbounds — would need the daemon to mint Expo push tokens.
+- Reply / react / edit / send — outbound stays on the CLI host (`metro call <train> <action>`).
+- Multi-account / multi-daemon — single config slot today.
 - App Store / Play Store builds — Expo Go runnable only.
