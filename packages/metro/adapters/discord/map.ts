@@ -1,14 +1,9 @@
 /**
- * Discord adapter — projects a raw event into the universal envelope.
- *
- * `raw.payload` shape:
- *  - `kind: 'message'`  — discord.js `Message.toJSON()` (camelCase): `channelId`, `guildId`,
- *    `content`, `author: { id, username, bot }`, `attachments[]`, `reference`, `mentions`,
- *    `channelName?` (set by the transport), `referencedMessage?` (auto-fetched on replies).
- *  - `kind: 'reaction'` — `{ channelId, guildId, messageId, userId, username, bot, emoji: { name, id } }`.
- *
- * Return `null` to drop the event (bot self-messages, empty payloads, …). The daemon hot-reloads
- * this file on save, so you can edit projection without restarting metro.
+ * Discord adapter — project a raw event into the universal envelope.
+ * `raw.payload`:
+ *  - `kind:'message'`  → discord.js `Message.toJSON()` (camelCase).
+ *  - `kind:'reaction'` → `{ channelId, guildId, messageId, userId, username, bot, emoji: { name, id } }`.
+ * Return `null` to drop (bot self, empty body). Hot-reloaded on save.
  */
 
 export function map(raw, _metro) {
@@ -21,13 +16,10 @@ export function map(raw, _metro) {
 function mapMessage(m) {
   if (!m || m.author?.bot) return null;
   const tags = (m.attachments ?? []).map(a =>
-    a.contentType?.startsWith('image/') ? '[image]'
-      : a.contentType?.startsWith('audio/') ? `[audio: ${a.name}]`
-        : `[file: ${a.name}]`);
+    a.contentType?.startsWith('image/') ? '[image]' : `[file: ${a.name}]`);
   const text = [String(m.content ?? '').trim(), ...tags].filter(Boolean).join(' ');
   if (!text) return null;
   return {
-    kind: 'inbound',
     line: `metro://discord/${m.channelId}`,
     lineName: m.channelName ?? undefined,
     from: `metro://discord/user/${m.author.id}`,
@@ -39,16 +31,14 @@ function mapMessage(m) {
 }
 
 function mapReaction(r) {
-  if (!r || r.bot) return null;
-  const emoji = r.emoji?.name;
-  if (!emoji) return null;
+  if (!r || r.bot || !r.emoji?.name) return null;
   return {
     kind: 'react',
     line: `metro://discord/${r.channelId}`,
     from: `metro://discord/user/${r.userId}`,
     fromName: r.username,
     messageId: r.messageId,
-    emoji,
+    emoji: r.emoji.name,
     isPrivate: r.guildId == null,
   };
 }
