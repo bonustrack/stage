@@ -44,6 +44,13 @@ function runCli(args: string[], opts: RunOpts = {}): { stdout: string; stderr: s
     CLAUDECODE: '',
     METRO_CODEX_RC: '',
     CODEX_HOME: '',
+    /**
+     * Short-circuit claudeUserId() — without these, CLAUDECODE=1 in test
+     * env triggers `claude auth status --json` which fails in CI (no claude
+     * CLI installed) and the CLI exits 1.
+     */
+    METRO_USER_ID: 'test-user',
+    METRO_USER_SESSION_ID: 'test-session',
     ...(opts.env ?? {}),
   };
   const r = spawnSync('node', [CLI, ...args], { env, encoding: 'utf8' });
