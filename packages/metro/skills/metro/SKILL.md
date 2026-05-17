@@ -87,7 +87,7 @@ Both `from` and `to` are **participant URIs** (the conversation context lives in
 - `metro://webhook/<endpoint-id>` — a webhook endpoint (line + `from` are the same — no HTTP-side user identity)
 - `metro://<station>/<channelId>` — a channel (used as `to` for fresh sends to a group, where no single recipient)
 
-When **you** send via `metro send`/`reply`/`edit`/`react`, metro auto-stamps `from = metro://claude/user/<orgId>` (when `$CLAUDECODE` is set; resolved from `claude auth status --json`) or `metro://codex/user/<accountId>` (from `$METRO_CODEX_RC` / `$CODEX_HOME`; resolved from `$CODEX_HOME/auth.json`). Switching accounts via `claude auth login` / `codex login` flips the id on the next event (within ~5 s for the daemon). Override with `--from=<uri>` or `$METRO_FROM`. When replying/reacting, `to` is automatically the original sender (looked up via the universal id).
+When **you** send via `metro <station> reply|send|…`, metro auto-stamps `from = metro://claude/user/<orgId>` (when `$CLAUDECODE` is set; resolved from `claude auth status --json`) or `metro://codex/user/<accountId>` (from `$METRO_CODEX_RC` / `$CODEX_HOME`; resolved from `$CODEX_HOME/auth.json`). Switching accounts via `claude auth login` / `codex login` flips the id on the next event (within ~5 s for the daemon). Override via `$METRO_FROM`. When replying/reacting, `to` is automatically the original sender (looked up via the universal id).
 
 The `id` is the **canonical handle** for that message across all stations — store it if you want to refer back to it later.
 
@@ -112,39 +112,71 @@ No server-side auto-reaction — don't expect 👀 to be on the user's message; 
 
 ## Subcommands
 
-All take positional args (no `--to=`/`--text=` flags). Append `--json` to any for a parseable single-line result.
+Every outbound action goes through the generic dispatch:
 
-| Action | Command |
-|---|---|
-| Quote-reply (threads under original) | `metro reply <line> <messageId> <text>` |
-| Send a fresh message (no reply context) | `metro send <line> <text>` |
-| Edit a message you previously sent | `metro edit <line> <messageId> <text>` |
-| Reaction (empty emoji clears) | `metro react <line> <messageId> <emoji>` |
-| Download `[image]` attachments → paths | `metro download <line> <messageId> [--out=<dir>]` |
-| Recent channel history (Discord only) | `metro fetch <line> [--limit=20]` |
-| Ping another user (cross-user line) | `metro send metro://claude/<user-id>/<session-id> <text> [--from=<line>]` |
-| Register webhook endpoint | `metro webhook add <label> [--secret=<hmac-secret>]` |
-| List / remove webhook endpoints | `metro webhook list` · `metro webhook remove <id>` |
-| Configure Cloudflare named tunnel | `metro tunnel setup <tunnel-name> <hostname>` |
+```
+metro <station> <action> <args>      # args = JSON string | @path/to/file | -  (stdin)
+```
 
-`reply` / `send` / `edit` accept multi-line text via stdin (heredoc).
+`metro stations` lists the loaded stations and the actions each one exposes.
+Append `--json` to any subcommand for parseable output.
 
-### Rich content flags
+### Discord + Telegram action menu
 
-`send` and `reply` accept these extra flags; `edit` accepts `--buttons` only.
-
-- `--image=<path>` — upload a local image. **Repeatable** for albums: `--image=a.png --image=b.png`. Comma-separated also works: `--image='a.png,b.png'`. Up to 10 / message. Text becomes the caption (on the first image for albums).
-- `--document=<path>` — upload any local file (PDF, log, csv, …). Same repeat/comma syntax.
-- `--voice=<path>` — single voice message (`.ogg` Opus or `.mp3`). On Telegram renders as a voice bubble via `sendVoice`; on Discord uploaded as an audio attachment.
-- `--buttons='[[{"text":"…","url":"https://…"}]]'` — attach an inline URL-button keyboard. 2D array: outer = rows, inner = buttons on that row.
+Both stations expose the same surface: `reply`, `send`, `react`, `edit`,
+`download`, `fetch`, `getMe`.
 
 ```bash
-metro send <line> "screenshot"                     --image=/tmp/build.png
-metro send <line> "before/after"                   --image=/tmp/before.png --image=/tmp/after.png
-metro reply <line> <id> "log + transcript"          --document=/tmp/run.log --document=/tmp/transcript.txt
-metro send <line> "have a listen"                  --voice=/tmp/note.ogg
-metro send <line> "approve?" --buttons='[[{"text":"Open PR","url":"https://github.com/x/y/pull/1"}]]'
-metro edit <line> <id> "still working…" --buttons='[]'    # clears buttons
+metro discord reply '{"line":"metro://discord/123","messageId":"456","text":"ack"}'
+metro telegram send '{"line":"metro://telegram/-100…","text":"build green"}'
+metro discord react '{"line":"metro://discord/123","messageId":"456","emoji":"👀"}'
+metro telegram edit '{"line":"metro://telegram/-100…","messageId":"42","text":"still working…"}'
+metro discord download '{"line":"metro://discord/123","messageId":"456","outDir":"/tmp/dl"}'
+metro discord fetch '{"line":"metro://discord/123","limit":10}'
+```
+
+Stdin args also work for long bodies:
+
+```bash
+metro discord reply @/tmp/args.json
+echo '{"line":"…","messageId":"…","text":"long body"}' | metro discord reply -
+```
+
+### Rich content (send/reply)
+
+Both stations accept the same args object:
+
+```json
+{ "line": "…",
+  "text": "caption",
+  "replyTo": "456",            (send only — reply takes messageId at top level)
+  "images":    ["/tmp/a.png","/tmp/b.png"],
+  "documents": ["/tmp/run.log"],
+  "voice":     "/tmp/note.ogg",
+  "buttons":   [[{"text":"Open PR","url":"https://github.com/x/y/pull/1"}]] }
+```
+
+Limits / quirks:
+- 20 MB per file (both platforms).
+- Telegram albums are single-type (all photos OR all documents).
+- Telegram drops `buttons` when multiple attachments are sent.
+
+### Cross-user notify
+
+```bash
+metro claude notify '{"line":"metro://claude/9bfc7af0-…/50b00d11-…","text":"build green"}'
+metro codex  notify '{"line":"metro://codex/8119ecb1-…/01997d4b-…","text":"build green"}'
+```
+
+The daemon re-emits these on its stdout (and pushes via codex-rc if
+configured). Requires `metro` to be running — the action throws otherwise.
+
+### Webhook + tunnel
+
+```bash
+metro webhook add <label> [--secret=<hmac-secret>]
+metro webhook list | remove <id>
+metro tunnel setup <name> <hostname>
 ```
 
 Limits / quirks:
@@ -156,7 +188,7 @@ Limits / quirks:
 ## When to use `reply` vs `send`
 
 - **`reply`** — responding to a specific inbound message. Threads under it. Default for handling an `inbound` event.
-- **`send`** — initiating without a triggering message: a long task finished, a follow-up the user asked you to deliver later, or posting to a Claude / Codex line (`metro://claude/...`, `metro://codex/...`) to notify a peer.
+- **`send`** — initiating without a triggering message: a long task finished, a follow-up the user asked you to deliver later, or posting to a Claude / Codex line (use `claude notify` / `codex notify`) to nudge a peer.
 
 ## Line URI scheme
 
@@ -176,9 +208,9 @@ The `messageId` is **not** part of the URI — it's a separate positional arg fo
 
 When an event's `text` contains `[image]`:
 
-1. `metro download <line> <messageId>` — writes images to disk and prints absolute paths.
+1. `metro <station> download '{"line":"…","messageId":"…","outDir":"/tmp/dl"}'` — writes images to disk and prints absolute paths.
 2. `Read` each path with your Read tool — the image enters your context as a vision input.
-3. Reply normally with `metro reply`.
+3. Reply normally with `metro <station> reply '{…}'`.
 
 ## Opaque attachment markers
 
@@ -186,14 +218,14 @@ When an event's `text` contains `[image]`:
 
 ## Cross-user notification
 
-Both Claude Code and Codex can post to each other's line:
+Both Claude Code and Codex can post to each other's line via the `notify` action:
 
 ```bash
-metro send metro://claude/9bfc7af0-…/50b00d11-… "build green, ready to ship"
-metro send metro://codex/8119ecb1-…/01997d4b-… "build green" --from=metro://claude/user/9bfc7af0-…   # override sender
+metro claude notify '{"line":"metro://claude/9bfc7af0-…/50b00d11-…","text":"build green"}'
+metro codex  notify '{"line":"metro://codex/8119ecb1-…/01997d4b-…","text":"build green"}'
 ```
 
-The daemon re-emits the post on its stdout stream (and pushes via codex-rc if configured), so the peer sees an `{"kind":"inbound",...}` event. Requires the metro daemon to be running on the machine — Claude / Codex line sends error with `metro daemon is not running` otherwise.
+The daemon re-emits the post on its stdout (and pushes via codex-rc if configured), so the peer sees an `{"kind":"inbound",...}` event. Requires the metro daemon to be running — these actions throw otherwise.
 
 ## Discoverability
 
@@ -209,17 +241,15 @@ The daemon re-emits the post on its stdout stream (and pushes via codex-rc if co
   - `--since=<iso>` — e.g. `--since=2026-05-14T00:00:00Z`
   - `--json` — machine-parseable
 
-Every action you take is logged automatically — `metro send`/`reply`/`edit`/`react` append outbound entries, daemon-side inbounds append on arrival. Stored at `$METRO_STATE_DIR/history.jsonl`.
+Daemon-side inbounds append on arrival. Outbound action results are NOT
+auto-appended in this rewrite — track them yourself if you need them.
+Stored at `$METRO_STATE_DIR/history.jsonl`.
 
 ## Universal message IDs
 
-The `id` from `metro history` or an event JSON works **anywhere a `<message_id>` argument is expected**:
-
-```bash
-# Either form works for reply/edit/react/download:
-metro reply <line> 4567                "ack"     # platform messageId (Telegram int)
-metro reply <line> msg_aB3xY7zP        "ack"     # universal — resolves via history
-```
+Per-station actions accept platform ids only (`"messageId":"4567"` Telegram,
+or the Discord snowflake). Universal `msg_*` ids no longer resolve via the
+CLI dispatch — look them up with `metro history` first.
 
 Use universal IDs when chaining commands or referring back to a specific message across stations.
 
@@ -234,20 +264,16 @@ Use universal IDs when chaining commands or referring back to a specific message
 
 ## --json output
 
-Every command supports `--json` for stable parseable output:
+Append `--json` to any subcommand for parseable output. The catch-all
+`metro <station> <action>` always prints the action's raw return value when
+`--json` is set.
 
 ```bash
-metro reply <line> <messageId> "ack" --json
-# {"ok":true,"line":"metro://discord/...","replyTo":"...","messageId":"..."}
-
-metro fetch metro://discord/1234 --limit=10 --json
-# {"ok":true,"line":"...","messages":[{"messageId":"...","author":"...","text":"...","timestamp":"..."},...]}
-
-metro download <line> <messageId> --json
-# {"ok":true,"line":"...","files":[{"path":"/abs/...png","mediaType":"image/png"}]}
+metro discord reply '{"line":"…","messageId":"…","text":"ack"}' --json
+# {"messageId":"…"}
 ```
 
-Use `--json` when you need to chain calls or capture the new `messageId` for a later edit.
+Use this when you need to capture the new `messageId` for a later edit.
 
 ## Don'ts
 
