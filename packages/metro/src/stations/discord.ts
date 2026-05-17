@@ -1,79 +1,22 @@
 /** Discord station: receive via discord.js gateway; send/edit/react/download/fetch via REST. */
 
-import { writeFile } from 'node:fs/promises';
+import { writeFile, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Client, Events, GatewayIntentBits, Partials } from 'discord.js';
-import { readFile } from 'node:fs/promises';
-import { basename } from 'node:path';
 import { errMsg, log } from '../log.js';
 import { mintId } from '../history.js';
+import { rest, restMultipart } from './discord-rest.js';
+import { synthDiscordText } from './discord-synth.js';
 import {
   Line, type Button, type ChatStation, type EditOpts, type FetchedMessage,
-  type InboundMessage, type InboundReaction, type SendOpts,
+  type InboundEdit, type InboundMessage, type InboundReaction, type SendOpts,
 } from './index.js';
 
 /** discord.js `Message.toJSON()` output + auto-fetched `referencedMessage` on replies. */
 export type DiscordPayload = Record<string, unknown> & { referencedMessage?: unknown };
 
-const API_BASE = 'https://discord.com/api/v10';
 const SUPPRESS_EMBEDS = 1 << 2;
 const MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024;
-
-const token = (): string => {
-  const t = process.env.DISCORD_BOT_TOKEN;
-  if (!t) throw new Error('DISCORD_BOT_TOKEN is not set');
-  return t;
-};
-
-async function rest<T = unknown>(
-  method: string, path: string, body?: unknown, timeoutMs = 30_000, retriesLeft = 2,
-): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    method,
-    headers: {
-      'Authorization': `Bot ${token()}`,
-      'User-Agent': 'metro (https://github.com/bonustrack/metro, dev)',
-      ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
-    },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-    signal: AbortSignal.timeout(timeoutMs),
-  });
-  if (res.status === 429 && retriesLeft > 0) {
-    const retryAfter = Number(res.headers.get('retry-after')) || 1;
-    log.debug({ path, retryAfter }, 'discord 429; backing off');
-    await new Promise(r => setTimeout(r, Math.max(retryAfter * 1000, 250)));
-    return rest<T>(method, path, body, timeoutMs, retriesLeft - 1);
-  }
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`discord ${method} ${path}: ${res.status} ${text}`);
-  }
-  return res.status === 204 ? (undefined as T) : ((await res.json()) as T);
-}
-
-/** Multipart upload (payload_json + files[N]). Same retry semantics as `rest`. */
-async function restMultipart<T = unknown>(
-  method: string, path: string, payload: unknown, files: { path: string; data: Buffer }[],
-): Promise<T> {
-  const form = new FormData();
-  form.append('payload_json', JSON.stringify(payload));
-  for (const [i, f] of files.entries()) {
-    form.append(`files[${i}]`, new Blob([new Uint8Array(f.data)]), basename(f.path));
-  }
-  const res = await fetch(`${API_BASE}${path}`, {
-    method,
-    headers: {
-      'Authorization': `Bot ${token()}`,
-      'User-Agent': 'metro (https://github.com/bonustrack/metro, dev)',
-    },
-    body: form, signal: AbortSignal.timeout(60_000),
-  });
-  if (!res.ok) {
-    const t = await res.text().catch(() => '');
-    throw new Error(`discord ${method} ${path}: ${res.status} ${t}`);
-  }
-  return (await res.json()) as T;
-}
 
 const collectFiles = async (opts?: SendOpts): Promise<{ path: string; data: Buffer }[]> => {
   const paths = [...(opts?.images ?? []), ...(opts?.documents ?? []), ...(opts?.voice ? [opts.voice] : [])];
@@ -104,11 +47,13 @@ export class DiscordStation implements ChatStation<DiscordPayload> {
   private client: Client | null = null;
   private messageHandler: (m: InboundMessage<DiscordPayload>) => void = () => {};
   private reactionHandler: (r: InboundReaction) => void = () => {};
+  private editHandler: (e: InboundEdit<DiscordPayload>) => void = () => {};
 
   onMessage(handler: (m: InboundMessage<DiscordPayload>) => void): void {
     this.messageHandler = handler;
   }
   onReaction(handler: (r: InboundReaction) => void): void { this.reactionHandler = handler; }
+  onEdit(handler: (e: InboundEdit<DiscordPayload>) => void): void { this.editHandler = handler; }
 
   private getClient(): Client {
     return this.client ??= new Client({
@@ -124,7 +69,10 @@ export class DiscordStation implements ChatStation<DiscordPayload> {
   async start(): Promise<void> {
     const c = this.getClient();
     c.on(Events.MessageCreate, m => { void this.handleMessage(m); });
-    c.on(Events.MessageReactionAdd, (r, u) => { void this.handleReaction(r, u); });
+    c.on(Events.MessageReactionAdd, (r, u) => { void this.handleReaction(r, u, '+'); });
+    c.on(Events.MessageReactionRemove, (r, u) => { void this.handleReaction(r, u, '-'); });
+    c.on(Events.MessageUpdate, (_o, n) => { void this.handleEdit(n, false); });
+    c.on(Events.MessageDelete, m => { void this.handleEdit(m, true); });
     c.on(Events.Error, err => log.error({ err: errMsg(err) }, 'discord error'));
     await c.login(process.env.DISCORD_BOT_TOKEN);
     await new Promise<void>(r => c.once(Events.ClientReady, () => r()));
@@ -197,14 +145,16 @@ export class DiscordStation implements ChatStation<DiscordPayload> {
   private async handleReaction(
     r: import('discord.js').MessageReaction | import('discord.js').PartialMessageReaction,
     u: import('discord.js').User | import('discord.js').PartialUser,
+    sign: '+' | '-',
   ): Promise<void> {
     if (u.bot) return;
-    const emoji = r.emoji.name;
-    if (!emoji) return;
+    const emojiName = r.emoji.name;
+    if (!emojiName) return;
+    const emoji = sign === '-' ? '' : emojiName;
     const channelId = r.message.channelId;
     const messageId = r.message.id;
     const username = 'username' in u && u.username ? u.username : undefined;
-    log.info({ from: username, channel: channelId, emoji, messageId }, 'discord: reaction');
+    log.info({ from: username, channel: channelId, emoji: emojiName, sign, messageId }, 'discord: reaction');
     this.reactionHandler({
       id: mintId(), ts: new Date().toISOString(),
       station: 'discord', line: Line.discord(channelId),
@@ -213,13 +163,27 @@ export class DiscordStation implements ChatStation<DiscordPayload> {
     });
   }
 
+  private async handleEdit(
+    m: import('discord.js').Message | import('discord.js').PartialMessage, deleted: boolean,
+  ): Promise<void> {
+    if (m.author?.bot) return;
+    const channelId = m.channelId;
+    if (!channelId) return;
+    const text = deleted ? '' : (m.partial ? '' : synthDiscordText(m as import('discord.js').Message));
+    const payload = (m.partial ? { id: m.id } : (m as import('discord.js').Message).toJSON()) as DiscordPayload;
+    log.info({ channel: channelId, messageId: m.id, deleted, text: text.slice(0, 80) }, 'discord: edit');
+    this.editHandler({
+      id: mintId(), ts: new Date().toISOString(),
+      station: 'discord', line: Line.discord(channelId),
+      from: m.author ? Line.user('discord', m.author.id) : Line.user('discord', 'unknown'),
+      fromName: m.author?.username, messageId: m.id,
+      text, payload, isPrivate: m.guildId === null, deleted,
+    });
+  }
+
   private async handleMessage(m: import('discord.js').Message): Promise<void> {
     if (m.author.bot) return;
-    const tags = [...m.attachments.values()].map(a =>
-      a.contentType?.startsWith('image/') ? '[image]'
-        : a.contentType?.startsWith('audio/') ? `[audio: ${a.name}]` : `[file: ${a.name}]`);
-    const text = [m.content.trim(), ...tags].filter(Boolean).join(' ');
-    if (!text) return;
+    const text = synthDiscordText(m);
     log.info({ from: m.author.username, channel: m.channelId, text: text.slice(0, 80) }, 'discord: inbound');
     const lineName = m.channel && 'name' in m.channel
       ? (m.channel as { name: string | null }).name ?? undefined : undefined;

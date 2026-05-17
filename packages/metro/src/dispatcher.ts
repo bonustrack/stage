@@ -9,7 +9,7 @@ import pkg from '../package.json' with { type: 'json' };
 import { DiscordStation } from './stations/discord.js';
 import { TelegramStation } from './stations/telegram.js';
 import { WebhookStation } from './stations/webhook.js';
-import { asLine, Line, type InboundMessage, type InboundReaction } from './stations/index.js';
+import { asLine, Line, type InboundEdit, type InboundMessage, type InboundReaction } from './stations/index.js';
 import { CodexRC } from './codex-rc.js';
 import { startIpcServer, stopIpcServer } from './ipc.js';
 import { userSelf, appendHistory, formatDisplay, mintId, selfLine, type HistoryEntry } from './history.js';
@@ -67,6 +67,7 @@ const destinationFor = (m: { line: Line; isPrivate?: boolean }): Line =>
   m.isPrivate ? userSelf() : m.line;
 const onInbound = (m: InboundMessage): void => emit({ ...m, kind: 'inbound', to: destinationFor(m) });
 const onReaction = (r: InboundReaction): void => emit({ ...r, kind: 'react', to: destinationFor(r) });
+const onEdit = (e: InboundEdit): void => emit({ ...e, kind: 'edit', to: destinationFor(e) });
 
 const ipc = startIpcServer(async req => {
   if (req.op === 'notify') {
@@ -91,6 +92,7 @@ async function main(): Promise<void> {
   if (platforms.discord) {
     discord.onMessage(onInbound);
     discord.onReaction(onReaction);
+    discord.onEdit?.(onEdit);
     const [, me] = await Promise.all([discord.start(), discord.getMe()]);
     saveBotId('discord', me.id);
     log.info({ bot: me.username }, 'discord ready');
