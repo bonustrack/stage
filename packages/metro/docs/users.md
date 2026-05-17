@@ -1,6 +1,6 @@
 # Metro: a guide for Claude Code / Codex users
 
-You are running inside a session that has **launched `metro`** in the background. Metro emits a live stream of JSON events from Discord, Telegram, third-party webhooks (GitHub, Intercom, …), and other users on its stdout. Your job is to consume that stream and post replies back via subcommands.
+You are running inside a session that has **launched `metro`** in the background. Metro emits a live stream of JSON events from Discord, Telegram, third-party webhooks (GitHub, Intercom, …), and other users on its stdout. Your job is to consume that stream and post replies back via `metro call`.
 
 ## Starting metro
 
@@ -31,196 +31,198 @@ Run `metro doctor` if anything seems off.
 
 ## Event shape
 
-Every event is a **history entry** — the same record that's appended to `history.jsonl`. Fields: `kind` (`inbound`/`outbound`/`edit`/`react`), `id` (`msg_…`), `ts`, `station`, `line` (conversation), `lineName?`, `from` (participant URI), `fromName?`, `to`, `text`, `messageId?` (platform-side id; inbound/outbound only), `payload?` (raw platform message; inbound only).
+Every event is a **history entry** — same record appended to `history.jsonl`. Fields: `kind` (`inbound`/`outbound`/`edit`/`react`), `id` (`msg_…`), `ts`, `station`, `line` (conversation), `lineName?`, `from` (participant URI), `fromName?`, `to`, `text`, `messageId?` (platform-side id), `payload?` (raw platform message; inbound only), `display?` (pre-rendered chat-bubble markdown).
 
 ```json
-{"kind":"inbound","id":"msg_aB3xY7zP","ts":"2026-05-14T12:00:00Z","station":"telegram","line":"metro://telegram/-100…/247","lineName":"infra","from":"metro://telegram/user/12345","fromName":"@alice","to":"metro://claude/user/9bfc7af0-…","messageId":"4567","text":"hello [image]","payload":{"message_id":4567,"chat":{"id":-100,"type":"supergroup","is_forum":true},"from":{"id":12345,"username":"alice"},"text":"hello","entities":[{"type":"mention","offset":0,"length":6}],"photo":[{"file_id":"…"}],"reply_to_message":{"message_id":4500,"text":"earlier","from":{"id":99,"username":"bob"}}}}
-```
-
-```json
-{"kind":"inbound","id":"msg_pQ4r5sT0","ts":"…","station":"claude","line":"metro://claude/9bfc7af0-…/50b00d11-…","from":"metro://codex/user/8119ecb1-…","to":"metro://claude/9bfc7af0-…/50b00d11-…","text":"deploy succeeded"}
+{"kind":"inbound","id":"msg_aB3xY7zP","ts":"2026-05-17T12:00:00Z","station":"telegram","line":"metro://telegram/-100…/247","lineName":"infra","from":"metro://telegram/user/12345","fromName":"@alice","to":"metro://claude/user/9bfc7af0-…","messageId":"4567","text":"hello [image]","payload":{"message_id":4567,"chat":{"id":-100,"type":"supergroup","is_forum":true},"from":{"id":12345,"username":"alice"},"text":"hello","entities":[{"type":"mention","offset":0,"length":6}],"photo":[{"file_id":"…"}],"reply_to_message":{"message_id":4500,"text":"earlier","from":{"id":99,"username":"bob"}}}}
 ```
 
 ### `payload` by station
 
 `payload` is the platform's native message shape. Narrow on `event.station`:
 
-- **`discord`** — discord.js `Message.toJSON()`: camelCase fields (`channelId`, `guildId`, `content`, `author`, `mentions: { users[], roles[], everyone }`, `attachments[]`, `reference`, …). Collections come back as **arrays of IDs**. `referencedMessage` (also `toJSON()`-shaped) is added inline on replies (auto-fetched).
-- **`telegram`** — raw Bot API `Message` (snake_case): `{ message_id, chat, from, text, caption, entities[], photo[], document, voice, audio, reply_to_message, … }`. `reply_to_message` is inline on replies.
-- **`webhook`** — `{ headers: Record<string,string>, body: <parsed JSON | raw string> }`. Narrow further on the provider — GitHub sets `headers['x-github-event']` (`push`, `pull_request`, `issues`, …) and includes a `repository`/`sender` in body; Intercom sets `x-intercom-topic` etc. `text` is a short summary; full event is always in `payload.body`.
+- **`discord`** — discord.js `Message.toJSON()`: camelCase (`channelId`, `guildId`, `content`, `author`, `mentions`, `attachments[]`, `reference`, `channelName?`, `referencedMessage?` on replies).
+- **`telegram`** — raw Bot API `Message` (snake_case): `{ message_id, chat, from, text, caption, entities[], photo[], document, voice, audio, reply_to_message, message_thread_id, is_topic_message, … }`. `reply_to_message` is inline on replies.
+- **`webhook`** — `{ endpointId, label, method, url, headers, body }`. Provider lives in `headers['x-github-event']` / `x-intercom-topic`; full event is `body` (parsed JSON when possible).
 
-Use `payload` for anything the envelope doesn't surface — mentions, reply chains, embeds, stickers, entities.
+Both `from` and `to` are **participant URIs** (the conversation lives in `line`): `metro://<station>/user/<id>` for a person, `metro://claude/user/<orgId>` for a Claude Code user, `metro://codex/user/<accountId>` for a Codex user.
 
-Both `from` and `to` are **participant URIs** (the conversation lives in `line`): `metro://<station>/user/<id>` for a person, `metro://claude/user/<orgId>` for a Claude Code user (orgId = stable Anthropic-account UUID), `metro://codex/user/<accountId>` for a Codex user (accountId = stable ChatGPT-account UUID), `metro://<station>/<channelId>` as a fallback `to` when sending to a group with no single recipient.
-
-When **you** call `metro send`/`reply`/`edit`/`react`, metro auto-stamps `from` to your runtime — `metro://claude/user/<orgId>` (when `$CLAUDECODE` is set; orgId comes from `claude auth status --json`) or `metro://codex/user/<accountId>` (when `$METRO_CODEX_RC`/`$CODEX_HOME` is set; accountId comes from `$CODEX_HOME/auth.json`, `tokens.account_id`). Both identities are account-scoped, not install-scoped: switch accounts with `claude auth login` / `codex login` and the next event uses the new id (within ~5 s for the daemon, immediately for one-shot CLI calls). Override with `--from=<uri>` or `$METRO_FROM`. When replying/reacting, `to` is auto-set to the original sender (history lookup).
-
-- `kind: "inbound"` — a message arrived. Source can be:
-  - a human on a chat platform (Discord/Telegram),
-  - a third-party service POSTing to a registered webhook endpoint (`station: "webhook"`, `payload: { headers, body }`),
-  - another Claude / Codex user posting cross-process via `metro send` against your line.
-
-`text` may include `[image]` / `[voice]` / `[audio]` / `[file: <name>]` placeholders alongside the real text — non-image attachments are opaque markers, images can be materialized via `metro download`.
+`text` may include `[image]` / `[voice]` / `[audio]` / `[file: <name>]` placeholders alongside the real text — non-image attachments are opaque markers; images can be fetched from the platform directly (see below).
 
 ## Required flow on every event
 
-1. **Echo `event.display` verbatim as your first chat output.** Every event ships a pre-rendered chat-bubble in `event.display` — bold header (icon + station + sender) and a markdown blockquote body. Paste it as-is before any commentary or tool calls. Monitor's notification chip is a CLI-only UI and won't surface visibly in VSCode/Cursor, so your own echo is the only cross-surface signal:
+1. **Echo `event.display` verbatim as your first chat output.** Every event ships a pre-rendered chat-bubble in `event.display` — bold header (icon + station + sender) and a markdown blockquote body. Paste it as-is before any commentary or tool calls:
 
    ```
    **📩 telegram · @bonustrack**
    > Hey
    ```
 
-   The format is centralized in metro's dispatcher (`formatDisplay()` in `src/history.ts`) — don't compose your own.
+   Don't compose your own bubble — the format is centralized in metro's dispatcher (`formatDisplay()` in `src/history.ts`).
 
-2. **Decide and act** using the subcommands below.
+2. **Decide and act** using `metro call` below.
 
 ## Detecting "is this for me?"
 
 Derive from `payload`. Bot id per station is in `$METRO_STATE_DIR/bot-ids.json` (`{discord:"<userId>", telegram:"<userId>"}`).
 
-- **`discord`** — DM if `payload.guildId == null`; otherwise pinged if `payload.mentions.users.includes(<bot-id>)`.
-- **`telegram`** — DM if `payload.chat.type === 'private'`; otherwise pinged if any entity in `payload.entities` (or `caption_entities`) is `{type:"mention"}` matching `@<bot-username>`, or `{type:"text_mention", user:{id:<bot-id>}}`.
+- **`discord`** — DM if `payload.guildId == null`; otherwise pinged if `payload.mentions.users` contains the bot id, or `payload.mentions.everyone === true`.
+- **`telegram`** — DM if `payload.chat.type === 'private'`; otherwise pinged if any entity in `payload.entities` (or `caption_entities`) is `{type:"mention"}` matching `@<bot-username>` or `{type:"text_mention", user:{id:<bot-id>}}`.
 - **`webhook`** — every POST is for you (you registered the endpoint). Route on `payload.headers['x-github-event']` / `x-intercom-topic` etc. to know which provider event it is.
 
-Default for chat: only reply on DM or ping; otherwise stay silent or `metro react` to ack. Webhooks just consume — no ack mechanism.
+Default for chat: only reply on DM or ping; otherwise stay silent or react to ack. Webhooks just consume — no ack mechanism.
 
-## Subcommands
+## The `metro call` contract
 
-| Action | Command |
-|---|---|
-| Quote-reply (threads under original) | `metro reply <line> <messageId> <text>` |
-| Send a fresh message (no reply context) | `metro send <line> <text>` |
-| Edit a message you previously sent | `metro edit <line> <messageId> <text>` |
-| Reaction (empty emoji clears it) | `metro react <line> <messageId> <emoji>` |
-| Download `[image]` attachments | `metro download <line> <messageId> [--out=<dir>]` |
-| Recent-message lookback (Discord only) | `metro fetch <line> [--limit=20]` |
-| Cross-user ping | `metro send <user-line> <text> [--from=<line>]` |
-| Register webhook endpoint | `metro webhook add <label> [--secret=<hmac-secret>]` |
-| List / remove webhook endpoints | `metro webhook list` · `metro webhook remove <id>` |
-| Configure Cloudflare named tunnel | `metro tunnel setup <tunnel-name> <hostname>` |
+```
+metro call <station> <METHOD> <path> [body-json | @file | -]
+```
 
-`reply` / `send` / `edit` accept multi-line text via stdin (heredoc). Webhooks are receive-only — there's no `reply` for them, just consume the event.
+`station` = `discord` | `telegram`. `path` is the platform-native path. `body` is JSON: a literal, `@/path/to/file.json`, or `-` for stdin (heredoc). The CLI applies the per-station base URL + auth automatically.
 
-### Rich content flags
-
-`send` and `reply` accept these flags; `edit` accepts `--buttons` only.
-
-- `--image=<path>` — local image. **Repeatable** for albums: `--image=a.png --image=b.png` (or comma-separated). Up to 10 / message. Text becomes the caption (on the first image for albums).
-- `--document=<path>` — local file (PDF, log, csv, …). Same repeat/comma syntax.
-- `--voice=<path>` — single voice message (`.ogg` Opus or `.mp3`). On Telegram renders as a voice bubble; on Discord uploaded as audio attachment.
-- `--buttons='[[{"text":"…","url":"…"}]]'` — inline URL-button keyboard (2D rows × buttons). Pass `'[]'` to `edit` to clear.
+### Discord recipes
 
 ```bash
-metro send <line> "screenshot" --image=/tmp/build.png
-metro send <line> "before/after" --image=/tmp/before.png --image=/tmp/after.png
-metro reply <line> <id> "voice note" --voice=/tmp/note.ogg
-metro send <line> "approve?" --buttons='[[{"text":"Open PR","url":"https://github.com/x/y/pull/1"}]]'
+# Reply (threaded)
+metro call discord POST /channels/<channelId>/messages '{
+  "content":"ack",
+  "message_reference":{"message_id":"<messageId>"}
+}'
+
+# Fresh send
+metro call discord POST /channels/<channelId>/messages '{"content":"build green"}'
+
+# Edit
+metro call discord PATCH /channels/<channelId>/messages/<messageId> '{"content":"updated"}'
+
+# React (emoji URL-encoded; 👀 = %F0%9F%91%80)
+metro call discord PUT '/channels/<channelId>/messages/<messageId>/reactions/%F0%9F%91%80/@me'
+
+# URL buttons
+metro call discord POST /channels/<channelId>/messages '{
+  "content":"approve?",
+  "components":[{"type":1,"components":[
+    {"type":2,"style":5,"label":"Open PR","url":"https://github.com/x/y/pull/1"}]}]
+}'
 ```
 
-Limits: 20 MB / file. Telegram albums are single-type (photos OR documents per album); mixing kinds still works — metro splits into two messages. Buttons are dropped on multi-attachment Telegram sends. URL buttons only for now.
-
-Append `--json` to any command for a single JSON line you can parse.
-
-## When to use `reply` vs `send`
-
-- **`reply`** — responding to a specific inbound message. Threads under it. Default when handling an `inbound` event.
-- **`send`** — initiating without a triggering message: a long task you kicked off finished, a follow-up the user asked you to deliver later, or posting to a Claude / Codex line (`metro://claude/...`, `metro://codex/...`) to notify a peer.
-
-## Universal message IDs
-
-The `id` field on every event and `metro history` row is metro's **universal ID** (`msg_<8 chars>`). It works anywhere a `<message_id>` is expected — `metro reply`, `edit`, `react`, `download` — and resolves to the platform's own id via the history file. Use it for chaining commands or referring back across stations.
-
-## `metro history` — read the universal message log
-
-Every inbound, outbound, edit, and react is appended to `$METRO_STATE_DIR/history.jsonl` automatically.
+### Telegram recipes
 
 ```bash
-metro history --limit=20                              # recent 20, newest first
-metro history --line=metro://discord/123              # only this conversation
-metro history --kind=inbound --since=2026-05-14       # inbounds since that day
-metro history --station=telegram --text=deploy        # all Telegram entries containing "deploy"
-metro history --from='@alice' --json                  # everything from alice, JSON
+# Send
+metro call telegram POST /sendMessage '{"chat_id":-100…,"text":"build green"}'
+
+# Reply
+metro call telegram POST /sendMessage '{
+  "chat_id":-100…,"text":"ack",
+  "reply_parameters":{"message_id":4567}
+}'
+
+# Edit
+metro call telegram POST /editMessageText '{
+  "chat_id":-100…,"message_id":4567,"text":"updated"
+}'
+
+# React
+metro call telegram POST /setMessageReaction '{
+  "chat_id":-100…,"message_id":4567,
+  "reaction":[{"type":"emoji","emoji":"👀"}]
+}'
+
+# Forum topic (include message_thread_id from the line)
+metro call telegram POST /sendMessage '{
+  "chat_id":-100…,"message_thread_id":247,"text":"in-topic"
+}'
 ```
 
-Filters: `--limit` (default 50), `--line`, `--station`, `--kind` (`inbound`/`outbound`/`edit`/`react`), `--from`, `--text`, `--since` (ISO), `--json`.
+### File uploads
 
-## Discovery
+`metro call` is JSON-only. For images / documents / voice, build a multipart `curl` directly:
 
-### `metro lines`
+```bash
+# Telegram
+curl -fsS https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendPhoto \
+  -F chat_id=-100… -F photo=@/tmp/build.png -F caption='build green'
 
-```
-$ metro lines
-2m ago    metro://discord/1234567890           infra
-5m ago    metro://telegram/-100123/42          design-review
-```
-
-Lines sorted by recency. Use when the user says "the Telegram channel" or "that PR thread."
-
-### `metro stations`
-
-```
-$ metro stations
-  ✓ discord    in: text+image · out: text · features: reply, send, edit, react, download, fetch
-        DISCORD_BOT_TOKEN
-  ✓ telegram   in: text+image · out: text · features: reply, send, edit, react, download, fetch
-        TELEGRAM_BOT_TOKEN
-  ✓ claude     in: text · out: text · features: send
-        account: 9bfc7af0-… · seen 1 user, 2 sessions
-          seen: 9bfc7af0-… · sessions: 2
-  ✗ codex      in: text · out: text · features: send
-        set METRO_CODEX_RC=ws://… to push
-  ✓ webhook    in: text · out: – · features: –
-        2 endpoints · base https://webhook.example.com
+# Discord
+curl -fsS -X POST https://discord.com/api/v10/channels/<channelId>/messages \
+  -H "Authorization: Bot $DISCORD_BOT_TOKEN" \
+  -F payload_json='{"content":"screenshot"}' \
+  -F files[0]=@/tmp/build.png
 ```
 
-`✓` = ready (env/runtime detected), `✗` = configured-but-broken or runtime not detected, `·` = informational. The detail line under each Claude / Codex row shows the resolved account id plus the per-user count of sessions metro has observed — pull addressable Claude / Codex lines from those.
+### Downloading inbound images
 
-## Webhooks (receiving HTTP events)
+- **Discord** — `payload.attachments[0].url` is a direct CDN link; `curl -fsSL -o /tmp/img.png "$URL"`.
+- **Telegram** — two-step:
 
-When the user wants metro to receive events from a third-party service (GitHub PRs, Intercom conversations, Fireflies meetings, …):
+  ```bash
+  metro call telegram POST /getFile '{"file_id":"<file_id>"}'
+  # → { "file_path":"photos/file_42.jpg", ... }
+  curl -fsSL -o /tmp/img.jpg \
+    "https://api.telegram.org/file/bot$TELEGRAM_BOT_TOKEN/photos/file_42.jpg"
+  ```
 
-1. **One-time tunnel setup** (only needed once per machine): `metro tunnel setup <tunnel-name> <hostname>`. Requires `cloudflared` on PATH (`brew install cloudflared`) and a Cloudflare account + domain on Cloudflare DNS. Run `cloudflared tunnel login` first if you haven't.
-2. **Register an endpoint**: `metro webhook add <label> [--secret=<shared-secret>]`. Prints the public URL — paste it into the provider's webhook settings. For GitHub specifically, set **Content type: `application/json`** (form-encoded won't parse into `payload.body`).
-3. **Run the daemon**: `metro`. With at least one endpoint registered, metro auto-binds the HTTP listener (port 8420, override `METRO_WEBHOOK_PORT`) and spawns `cloudflared tunnel run` if `tunnel.json` exists.
-
-Each POST becomes an inbound event:
-
-```json
-{"kind":"inbound","station":"webhook","line":"metro://webhook/<id>","lineName":"github",
- "from":"metro://webhook/<id>","to":"metro://claude/user/<orgId>",
- "messageId":"<x-github-delivery>","text":"push POST /wh/<id>",
- "payload":{"headers":{"x-github-event":"push",…},"body":{"ref":"refs/heads/main",…}}}
-```
-
-`text` is a short summary; the real event lives in `payload.body`. Use `payload.headers['x-github-event']` (or `x-intercom-topic` etc.) to narrow on provider event type. If you set `--secret`, metro verifies `X-Hub-Signature-256` and rejects bad signatures with 401 — you see only authenticated events.
-
-## Image attachments
-
-When an inbound has an `[image]` tag in `text`:
-
-1. `metro download <line> <messageId>` → prints absolute paths.
-2. `Read` each path with your `Read` tool — the image enters your context as a vision input.
-3. Reply normally via `metro reply`.
+Then `Read` the file to bring it into context.
 
 ## Cross-user notification
 
-Both Claude Code and Codex can post to each other's **line** — `metro://claude/<user-id>/<session-id>` or `metro://codex/<user-id>/<session-id>`. `<user-id>` is the peer's stable account id (cross-device); `<session-id>` is one conversation. Discover both by running `metro stations` (which lists every user + session metro has seen), or by reading `$METRO_STATE_DIR/user-registry.json` directly. The daemon re-emits the post on its stdout stream (and pushes via codex-rc if configured), so the peer sees it as an inbound event:
+Both Claude Code and Codex can post to each other's **line** — `metro://claude/<user-id>/<session-id>` or `metro://codex/<user-id>/<session-id>`. `<user-id>` is the peer's stable account id (cross-device); `<session-id>` is one conversation. Discover both via `metro stations` or `$METRO_STATE_DIR/user-registry.json`.
 
-```bash
-metro send metro://claude/9bfc7af0-…/50b00d11-… "build green, ready to ship"
-metro send metro://claude/9bfc7af0-…/50b00d11-… "build green" --from=metro://codex/user/8119ecb1-…   # override sender
+This goes through the daemon's IPC socket, not `metro call`. Send a JSON request to `$METRO_STATE_DIR/metro.sock` of the form `{"op":"notify","line":"metro://claude/…","text":"…"}` — or wait for a future `metro notify` shorthand. The daemon re-emits the post on its stdout stream (and pushes via codex-rc if configured), so the peer sees it as an inbound event.
+
+## Editing the adapter
+
+Each station projection lives at `~/.metro/adapters/<station>/map.ts`:
+
+```js
+export function map(raw, _metro) {
+  if (raw.kind === 'message') return mapMessage(raw.payload);
+  if (raw.kind === 'reaction') return mapReaction(raw.payload);
+  return null;          // ← null drops the event (quarantined under $STATE_DIR/unmatched)
+}
 ```
 
-This requires the metro daemon to be running on the machine. Without a daemon, Claude / Codex line sends error with a clear message.
+The daemon hot-reloads on save. Edit freely to surface new fields, drop noise, or route platform variants — most cases need no code outside the adapter.
+
+## `metro history`
+
+Every inbound, outbound, edit, react is in `$METRO_STATE_DIR/history.jsonl`.
+
+```bash
+metro history --limit=20                              # recent 20
+metro history --line=metro://discord/123              # only this conversation
+metro history --kind=inbound --since=2026-05-14
+metro history --station=telegram --text=deploy
+metro history --from='@alice' --json
+```
+
+Filters: `--limit` (default 50), `--line`, `--station`, `--kind`, `--from`, `--text`, `--since` (ISO), `--json`.
+
+## Discovery
+
+- `metro lines` — recent conversations sorted by recency.
+- `metro stations` — configured stations + seen users.
+- `metro adapters list` — which `map.ts` files are installed.
+- `metro adapters install` — copy missing templates to `~/.metro/adapters/`.
+
+## Webhooks (receiving HTTP events)
+
+1. **One-time tunnel setup**: `metro tunnel setup <tunnel-name> <hostname>`. Requires `cloudflared` (`brew install cloudflared`) + a Cloudflare-hosted domain.
+2. **Register an endpoint**: `metro webhook add <label> [--secret=<shared-secret>]`. Prints the public URL — paste it into the provider's webhook settings. For GitHub: **Content type: `application/json`**.
+3. **Run `metro`**. The daemon binds 127.0.0.1:8420 (override `METRO_WEBHOOK_PORT`) and spawns `cloudflared tunnel run` if `tunnel.json` exists.
+
+Each POST becomes an inbound event. `text` is a short summary; the real payload is `payload.body`. With `--secret`, metro verifies `X-Hub-Signature-256` and rejects mismatches with 401.
 
 ## Don'ts
 
-- ❌ Spawning a second metro daemon — there's one per machine (lockfile-enforced).
-- ❌ `metro send` to a line that isn't in `metro lines` unless the user gave it to you explicitly.
-- ❌ Narrating the tool ("I'll now use metro reply to…"). The tool call is already visible.
+- Don't spawn a second metro daemon — there's one per machine (lockfile-enforced).
+- Don't `metro call` to a line that isn't in `metro lines` unless the user gave it to you explicitly.
+- Don't narrate the tool ("I'll now use metro call to…"). The tool call is already visible.
+- Don't edit `~/.metro/adapters/<station>/map.ts` to add CLI verbs — keep `map()` pure (project events only). Outbound goes through `metro call`.
 
 ## Further reading
 
 - URI scheme: [`uri-scheme.md`](uri-scheme.md)
+- Skill (the canonical reference, kept in sync with this file): `skills/metro/SKILL.md` inside the package
 - Source: https://github.com/bonustrack/metro

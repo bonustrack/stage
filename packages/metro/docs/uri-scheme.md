@@ -84,12 +84,14 @@ After setup, `metro webhook list` prints `https://webhook.yourdomain.com/wh/<id>
 
 ## Message addressing
 
-Messages on chat lines are referenced by **line + message id** (two args), not as part of the URI. So:
+Messages on chat lines are referenced by **line + message id** (two values), not as part of the URI. The CLI uses platform-native paths, so the line's channel/chat-id appears in the URL:
 
 ```bash
-metro reply  metro://discord/123…  4567  "ack"
-metro edit   metro://discord/123…  9876  "fixed typo"
-metro react  metro://telegram/-100…/42  4567  👍
+metro call discord POST /channels/123…/messages \
+  '{"content":"ack","message_reference":{"message_id":"4567"}}'
+metro call discord PATCH /channels/123…/messages/9876 '{"content":"fixed typo"}'
+metro call telegram POST /setMessageReaction \
+  '{"chat_id":-100…,"message_id":4567,"reaction":[{"type":"emoji","emoji":"👍"}]}'
 ```
 
 ## Properties
