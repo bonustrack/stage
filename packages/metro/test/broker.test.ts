@@ -71,11 +71,9 @@ const WORKER_B = 'metro://user/worker-b';
 const CHAT_LINE = 'metro://discord/g/123/c/456';
 const WEBHOOK_LINE = 'metro://webhook/gh-main';
 
-/** Bypass real station IO by stubbing the action with an in-process script — the CLI here exercises
- *  the auto-claim code path through `cmdReact` against a station that errors, which is *before* the
- *  log/claim step. Instead we use a dedicated test harness command. */
-
-// --- Auto-claim helper: drive via broker.tryAutoClaim directly via a small embedded harness ---
+/** In-process tests — drive the broker primitive directly. Real station IO is bypassed. */
+/** The broker module reads `STATE_DIR` ONCE at import time, so all tests share one dir */
+/** that we reset between cases via the file deletions below. */
 import {
   tryAutoClaim,
   passesMode,
@@ -85,13 +83,6 @@ import {
 import { asLine } from '../src/stations/index.ts';
 import type { HistoryEntry } from '../src/history.ts';
 import { classifyLine } from '../src/cli/actions.ts';
-
-/**
- * In-process tryAutoClaim tests. The broker module reads `STATE_DIR` ONCE at import time, so
- * we exercise each scenario against the SAME shared state dir (cleared between tests via the file
- * deletions below). This mirrors how a long-lived daemon would behave: STATE_DIR is fixed; claims
- * come and go.
- */
 import { unlinkSync } from 'node:fs';
 import { CLAIMS_FILE, HISTORY_FILE } from '../src/broker.ts';
 

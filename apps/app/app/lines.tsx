@@ -1,7 +1,4 @@
-/**
- * Lines screen — one-shot `/api/state` call, lists every line seen recently with
- * its owner (if claimed). Tap a row to drill into a filtered Activity view.
- */
+/** Lines screen — one-shot `/api/state` snapshot. Tap a row to filter the Activity feed. */
 
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, Text, View, useColorScheme } from 'react-native';

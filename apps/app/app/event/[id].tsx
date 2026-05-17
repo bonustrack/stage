@@ -1,8 +1,4 @@
-/**
- * Event detail — full-text view of one HistoryEntry. Receives the entry as a
- * stringified `data` query param (passed by the activity feed onPress).
- * Read-only; no actions.
- */
+/** Event detail — receives the entry as a stringified `data` query param. Read-only. */
 
 import { ScrollView, Text, View, useColorScheme } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';

@@ -1,9 +1,4 @@
-/**
- * Persisted config — daemon URL, bearer token, self URI.
- *
- * Stored in `expo-secure-store` (Keychain/Keystore) on native; falls back to
- * an in-memory map on web (Secure Store isn't supported on web).
- */
+/** Persisted config — daemon URL, bearer token, self URI. Keychain/Keystore on native; in-memory on web. */
 
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
@@ -54,7 +49,7 @@ export async function saveConfig(cfg: Config): Promise<void> {
   ]);
 }
 
-/** True iff all three required fields are set — the auth-guard uses this. */
+/** True when daemon URL + token are set — the auth-guard uses this (userId is optional). */
 export function isConfigured(cfg: Config): boolean {
   return !!cfg.daemonUrl && !!cfg.token;
 }

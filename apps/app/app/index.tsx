@@ -1,9 +1,4 @@
-/**
- * Activity feed — live SSE tail of `/api/tail`. Newest at the top.
- *
- * On mount: load config; if unconfigured, point the user at /settings. Once
- * configured, open the SSE stream and accumulate events into a FlatList.
- */
+/** Activity feed — live SSE tail of `/api/tail`. Newest at the top. */
 
 import { useCallback, useMemo, useState } from 'react';
 import {

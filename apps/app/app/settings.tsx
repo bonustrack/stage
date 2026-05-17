@@ -1,9 +1,4 @@
-/**
- * Settings — daemon URL, bearer token, self URI. Persisted via expo-secure-store.
- *
- * Includes a "Test connection" button that calls `/api/state` once and reports
- * the result inline — lets the user verify the token before leaving the screen.
- */
+/** Settings — daemon URL, bearer token, self URI. "Test connection" hits /api/state. */
 
 import { useEffect, useState } from 'react';
 import {

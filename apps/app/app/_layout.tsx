@@ -3,10 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import { ActivityIndicator, Text, TextInput, useColorScheme, View } from 'react-native';
 
-/**
- * Set Calibre-Medium as the app-wide default for Text + TextInput.
- * RN doesn't have a global font; this is the standard workaround.
- */
+/** Set Calibre-Medium as the app-wide default for Text + TextInput (RN has no global font setting). */
 function applyDefaultFont(): void {
   const TextAny = Text as unknown as { defaultProps?: Record<string, unknown> };
   TextAny.defaultProps = TextAny.defaultProps || {};

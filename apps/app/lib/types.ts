@@ -1,7 +1,4 @@
-/**
- * Event/state shapes — mirror the daemon's `HistoryEntry` (see
- * `packages/metro/src/history.ts`). Kept in sync by hand; no codegen.
- */
+/** Event/state shapes — mirror the daemon's `HistoryEntry`. Kept in sync by hand. */
 
 export type HistoryKind = 'inbound' | 'outbound' | 'edit' | 'react';
 
