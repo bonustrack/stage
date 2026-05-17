@@ -1,16 +1,18 @@
-# Example trains
+# Example train
 
-`discord.ts` and `telegram.ts` are starting points, not runtime code. Copy to
+`telegram.ts` is a starting point, not runtime code. Copy to
 `~/.metro/trains/<name>.ts`, edit, save, restart the daemon:
 
 ```
-cp discord.ts  ~/.metro/trains/discord.ts
-echo 'DISCORD_BOT_TOKEN=…' >> ~/.metro/.env
-cd ~/.metro && bun add discord.js
+cp telegram.ts ~/.metro/trains/telegram.ts
+echo 'TELEGRAM_BOT_TOKEN=…' >> ~/.metro/.env
 metro
 ```
 
-Rewrite freely — action names and payload shapes are entirely up to you.
+For a Discord port: swap the API base + auth header (`Bot $TOKEN`), install
+`discord.js` for the gateway, and emit the same envelope shape — the
+stdin/stdout protocol below is platform-independent. Action names and payload
+shapes are entirely up to you.
 
 ## Protocol (JSON lines over stdio)
 

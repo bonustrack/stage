@@ -1,6 +1,5 @@
 /** Resolve the local user identity for Claude Code / Codex hosts — used to mint */
-/** `metro://claude/<orgId>/<sessionId>` and `metro://codex/<accountId>/<threadId>` URIs */
-/** for the local user. Not "stations" — these are the runtimes metro runs inside. */
+/** `metro://claude/<orgId>/<sessionId>` and `metro://codex/<accountId>/<threadId>` URIs. */
 
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -9,60 +8,45 @@ import { dirname, join } from 'node:path';
 import { STATE_DIR } from './paths.js';
 
 const TTL_MS = 5_000;
-let claudeCache: { id: string; at: number } | null = null;
+type Cache = { id: string; at: number } | null;
 
-function claudeAccountId(): string {
-  if (claudeCache && Date.now() - claudeCache.at < TTL_MS) return claudeCache.id;
+/** Memoize an account-id resolver for TTL_MS to avoid hammering `claude auth` / re-reading auth.json. */
+function memo(loader: () => string): () => string {
+  let cache: Cache = null;
+  return () => {
+    if (cache && Date.now() - cache.at < TTL_MS) return cache.id;
+    const id = loader();
+    cache = { id, at: Date.now() };
+    return id;
+  };
+}
+
+const claudeAccountId = memo(() => {
   let raw: string;
-  try {
-    raw = execFileSync('claude', ['auth', 'status', '--json'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
-  } catch (e) {
-    throw new Error(`metro: failed to run 'claude auth status --json' — is Claude Code installed and on PATH? (${(e as Error).message})`);
-  }
-  let parsed: { loggedIn?: boolean; orgId?: string };
-  try { parsed = JSON.parse(raw); }
-  catch { throw new Error(`metro: 'claude auth status --json' returned non-JSON: ${raw.slice(0, 200)}`); }
-  if (!parsed.loggedIn || !parsed.orgId) {
-    throw new Error('metro: Claude Code is not logged in — run \'claude auth login\'');
-  }
-  claudeCache = { id: parsed.orgId, at: Date.now() };
-  return parsed.orgId;
-}
+  try { raw = execFileSync('claude', ['auth', 'status', '--json'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }); }
+  catch (e) { throw new Error(`metro: failed to run 'claude auth status --json' — is Claude Code installed? (${(e as Error).message})`); }
+  let p: { loggedIn?: boolean; orgId?: string };
+  try { p = JSON.parse(raw); } catch { throw new Error(`metro: 'claude auth status --json' returned non-JSON: ${raw.slice(0, 200)}`); }
+  if (!p.loggedIn || !p.orgId) throw new Error('metro: Claude Code is not logged in — run \'claude auth login\'');
+  return p.orgId;
+});
 
-export function claudeUserId(): string {
-  return process.env.METRO_USER_ID || claudeAccountId();
-}
-
-export function claudeSessionId(): string | null {
-  return process.env.METRO_USER_SESSION_ID || process.env.CLAUDE_CODE_SESSION_ID || null;
-}
-
-let codexCache: { id: string; at: number } | null = null;
-
-function codexAuthPath(): string {
-  return join(process.env.CODEX_HOME || join(homedir(), '.codex'), 'auth.json');
-}
-
-function codexAccountId(): string {
-  if (codexCache && Date.now() - codexCache.at < TTL_MS) return codexCache.id;
-  const path = codexAuthPath();
+const codexAccountId = memo(() => {
+  const path = join(process.env.CODEX_HOME || join(homedir(), '.codex'), 'auth.json');
   let raw: string;
   try { raw = readFileSync(path, 'utf8'); }
   catch (e) { throw new Error(`metro: failed to read ${path} — is Codex logged in? (${(e as Error).message})`); }
-  let parsed: { tokens?: { account_id?: string }; auth_mode?: string };
-  try { parsed = JSON.parse(raw); }
-  catch { throw new Error(`metro: ${path} is not valid JSON`); }
-  const id = parsed.tokens?.account_id;
-  if (!id) {
-    throw new Error(`metro: no Codex account_id in ${path} (auth_mode=${parsed.auth_mode ?? 'unknown'}) — sign in with 'codex login' (ChatGPT mode required)`);
-  }
-  codexCache = { id, at: Date.now() };
+  let p: { tokens?: { account_id?: string }; auth_mode?: string };
+  try { p = JSON.parse(raw); } catch { throw new Error(`metro: ${path} is not valid JSON`); }
+  const id = p.tokens?.account_id;
+  if (!id) throw new Error(`metro: no Codex account_id in ${path} (auth_mode=${p.auth_mode ?? 'unknown'}) — sign in with 'codex login' (ChatGPT mode required)`);
   return id;
-}
+});
 
-export function codexUserId(): string {
-  return process.env.METRO_USER_ID || codexAccountId();
-}
+export const claudeUserId = (): string => process.env.METRO_USER_ID || claudeAccountId();
+export const codexUserId = (): string => process.env.METRO_USER_ID || codexAccountId();
+export const claudeSessionId = (): string | null =>
+  process.env.METRO_USER_SESSION_ID || process.env.CLAUDE_CODE_SESSION_ID || null;
 
 const CODEX_SESSION_FILE = join(STATE_DIR, 'codex-session-id');
 
