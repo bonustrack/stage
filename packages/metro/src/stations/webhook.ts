@@ -4,6 +4,7 @@ import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { errMsg, log } from '../log.js';
 import { mintId } from '../history.js';
+import { handleMonitorRequest } from '../monitor.js';
 import { findEndpoint, listEndpoints, webhookPort } from '../webhooks.js';
 import { Line, type InboundMessage } from './index.js';
 
@@ -58,6 +59,8 @@ export class WebhookStation {
   }
 
   private async handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
+    /** Read-only monitor endpoints (`/api/state`, `/api/tail`) share this port. */
+    if (handleMonitorRequest(req, res)) return;
     const m = req.url?.match(/^\/wh\/([A-Za-z0-9_-]+)/);
     if (!m) { res.writeHead(404).end(); return; }
     const endpointId = m[1];

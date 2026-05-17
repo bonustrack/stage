@@ -51,7 +51,7 @@ export const listLines = (): Array<{ line: Line; entry: Entry }> =>
 const botIdsFile = join(STATE_DIR, 'bot-ids.json');
 type BotIds = Record<string, string>;
 
-const readBotIds = (): BotIds => {
+export const readBotIds = (): BotIds => {
   try { return existsSync(botIdsFile) ? JSON.parse(readFileSync(botIdsFile, 'utf8')) as BotIds : {}; }
   catch { return {}; }
 };

@@ -33,7 +33,7 @@
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "typecheck": "tsc --noEmit",
-    "test": "bun test test/"
+    "test": "METRO_STATE_DIR=\"$(mktemp -d /tmp/metro-test.XXXXXX)\" bun test test/"
   },
   "dependencies": {
     "discord.js": "^14.14.0",
