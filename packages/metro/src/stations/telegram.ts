@@ -7,7 +7,6 @@ import { errMsg, log } from '../log.js';
 import { mintId } from '../history.js';
 import { mdToTelegramHtml } from './telegram-md.js';
 import { inlineKeyboard, tgSendRich } from './telegram-upload.js';
-import { synthTelegramText } from './telegram-synth.js';
 import type {
   MessageReactionUpdated, RawUpdate, ReactionType, TelegramPayload,
 } from './telegram-types.js';
@@ -202,11 +201,11 @@ export class TelegramStation implements ChatStation<TelegramPayload> {
 
   private dispatchMessageOrEdit(m: TelegramPayload, kind: 'inbound' | 'edit'): void {
     if (!m.chat?.id || typeof m.message_id !== 'number' || m.from?.is_bot) return;
-    const text = synthTelegramText(m);
+    const text = m.text ?? m.caption ?? '';
     const topicId = m.is_topic_message ? m.message_thread_id : undefined;
     const fromName = m.from?.username ? `@${m.from.username}` : m.from?.first_name;
     const tsSecs = kind === 'edit' ? (m.edit_date ?? m.date) : m.date;
-    log.info({ from: fromName, chat: m.chat.id, kind, text: text.slice(0, 80) }, `telegram: ${kind}`);
+    log.info({ from: fromName, chat: m.chat.id, kind }, `telegram: ${kind}`);
     const event: InboundMessage<TelegramPayload> = {
       id: mintId(), ts: new Date((tsSecs ?? Math.floor(Date.now() / 1000)) * 1000).toISOString(),
       station: 'telegram', line: Line.telegram(m.chat.id, topicId), messageId: String(m.message_id),

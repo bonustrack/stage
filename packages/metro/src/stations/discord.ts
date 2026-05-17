@@ -6,7 +6,6 @@ import { Client, Events, GatewayIntentBits, Partials } from 'discord.js';
 import { errMsg, log } from '../log.js';
 import { mintId } from '../history.js';
 import { rest, restMultipart } from './discord-rest.js';
-import { synthDiscordText } from './discord-synth.js';
 import {
   Line, type Button, type ChatStation, type EditOpts, type FetchedMessage,
   type InboundEdit, type InboundMessage, type InboundReaction, type SendOpts,
@@ -169,9 +168,9 @@ export class DiscordStation implements ChatStation<DiscordPayload> {
     if (m.author?.bot) return;
     const channelId = m.channelId;
     if (!channelId) return;
-    const text = deleted ? '' : (m.partial ? '' : synthDiscordText(m as import('discord.js').Message));
+    const text = deleted || m.partial ? '' : (m as import('discord.js').Message).content ?? '';
     const payload = (m.partial ? { id: m.id } : (m as import('discord.js').Message).toJSON()) as DiscordPayload;
-    log.info({ channel: channelId, messageId: m.id, deleted, text: text.slice(0, 80) }, 'discord: edit');
+    log.info({ channel: channelId, messageId: m.id, deleted }, 'discord: edit');
     this.editHandler({
       id: mintId(), ts: new Date().toISOString(),
       station: 'discord', line: Line.discord(channelId),
@@ -183,8 +182,7 @@ export class DiscordStation implements ChatStation<DiscordPayload> {
 
   private async handleMessage(m: import('discord.js').Message): Promise<void> {
     if (m.author.bot) return;
-    const text = synthDiscordText(m);
-    log.info({ from: m.author.username, channel: m.channelId, text: text.slice(0, 80) }, 'discord: inbound');
+    log.info({ from: m.author.username, channel: m.channelId }, 'discord: inbound');
     const lineName = m.channel && 'name' in m.channel
       ? (m.channel as { name: string | null }).name ?? undefined : undefined;
     const payload = m.toJSON() as DiscordPayload;
@@ -196,7 +194,7 @@ export class DiscordStation implements ChatStation<DiscordPayload> {
       id: mintId(), ts: new Date(m.createdTimestamp).toISOString(),
       station: 'discord', line: Line.discord(m.channelId), lineName,
       from: Line.user('discord', m.author.id), fromName: m.author.username,
-      messageId: m.id, text, payload, isPrivate: m.guildId === null,
+      messageId: m.id, text: m.content ?? '', payload, isPrivate: m.guildId === null,
     });
   }
 }
