@@ -1,6 +1,6 @@
-/** Dynamic-import `~/.metro/adapters/<station>/map.ts`. Hot-reload on fs.watch + cache-bust via `?v=<mtime>`. */
+/** Dynamic-import `~/.metro/adapters/<station>/map.ts`. Re-imports on mtime change (cache-bust via `?v=<mtime>`). */
 
-import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync, watch, type FSWatcher } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -31,8 +31,8 @@ export type Envelope = {
 
 export type MapFn = (raw: RawEvent, m: Metro) => Envelope | null | Promise<Envelope | null>;
 
-type Slot = { promise: Promise<MapFn>; watcher: FSWatcher | null };
-const cache = new Map<string, Slot>();
+type CacheEntry = { mtimeMs: number; fn: MapFn };
+const cache = new Map<string, CacheEntry>();
 
 /** Repo-side templates dir — `<package-root>/adapters/`, resolved relative to compiled `dist/cli/`. */
 function templatesDir(): string {
@@ -64,50 +64,19 @@ function mapFile(station: string): string {
   return join(ADAPTERS_DIR, station, 'map.ts');
 }
 
-async function importMap(station: string): Promise<MapFn> {
+/** Load `map` for `station`. Re-imports when the file's mtime changes — hot-reload without watchers. */
+export async function loadAdapter(station: string): Promise<MapFn> {
   const path = mapFile(station);
-  if (!existsSync(path)) {
-    throw new Error(`missing adapter ${path} — run \`metro adapters install\``);
-  }
-  /** Cache-bust each load so edits to map.ts take effect without restarting the daemon. Bun honours `?v=`. */
-  const url = `${pathToFileURL(path).href}?v=${Date.now()}`;
+  if (!existsSync(path)) throw new Error(`missing adapter ${path}`);
+  const mtimeMs = statSync(path).mtimeMs;
+  const hit = cache.get(station);
+  if (hit && hit.mtimeMs === mtimeMs) return hit.fn;
+  const url = `${pathToFileURL(path).href}?v=${mtimeMs}`;
   const mod = await import(url) as { map?: unknown };
   if (typeof mod.map !== 'function') {
     throw new Error(`${path} must export a \`map\` function`);
   }
-  return mod.map as MapFn;
-}
-
-/** Load (and cache) the `map` function for `station`. Watches the directory; reloads on change. */
-export function loadAdapter(station: string): Promise<MapFn> {
-  const hit = cache.get(station);
-  if (hit) return hit.promise;
-  const promise = importMap(station);
-  const slot: Slot = { promise, watcher: null };
-  cache.set(station, slot);
-  const dir = join(ADAPTERS_DIR, station);
-  if (existsSync(dir)) {
-    try {
-      slot.watcher = watch(dir, { persistent: false }, () => {
-        log.info({ station }, 'adapter changed; reloading on next event');
-        slot.watcher?.close();
-        cache.delete(station);
-      });
-    } catch (err) { log.warn({ err: errMsg(err), dir }, 'adapter watch failed'); }
-  }
-  return promise;
-}
-
-/** Drop the cached adapter for `station`. Used by tests + `metro adapters reload`. */
-export function invalidateAdapter(station: string): void {
-  const s = cache.get(station);
-  s?.watcher?.close();
-  cache.delete(station);
-}
-
-export function listAdapters(): { station: string; map: boolean; path: string }[] {
-  if (!existsSync(ADAPTERS_DIR)) return [];
-  return readdirSync(ADAPTERS_DIR)
-    .filter(d => { try { return statSync(join(ADAPTERS_DIR, d)).isDirectory(); } catch { return false; } })
-    .map(station => ({ station, map: existsSync(mapFile(station)), path: mapFile(station) }));
+  const fn = mod.map as MapFn;
+  cache.set(station, { mtimeMs, fn });
+  return fn;
 }
