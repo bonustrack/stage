@@ -10,8 +10,9 @@ export type Modality = 'text' | 'image';
 export type Feature = 'reply' | 'send' | 'edit' | 'react' | 'download' | 'fetch';
 export interface Capabilities { in: Modality[]; out: Modality[]; features: Feature[] }
 
-export type Line = string & { readonly __line: unique symbol };
-export const asLine = (s: string): Line => s as Line;
+export { asLine } from '../types.js';
+import { asLine, type Line as LineBrand } from '../types.js';
+export type Line = LineBrand;
 
 export interface InboundMessage<TPayload = unknown> {
   /** Universal metro ID (`msg_…`). Minted by the dispatcher on every inbound. */
