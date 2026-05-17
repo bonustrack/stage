@@ -13,34 +13,31 @@ const STDOUT_LINE_MAX = 4 * 1024 * 1024; // 4 MiB safeguard per line
 
 export const TRAINS_DIR = process.env.METRO_TRAINS_DIR ?? join(homedir(), '.metro', 'trains');
 
-export type TrainEvent = Record<string, unknown>;
+/** Train stdout event line (snake_case wire); dispatcher translates to camelCase HistoryEntry. */
+export type TrainEvent = {
+  station?: string; kind?: string; line?: string; line_name?: string;
+  from?: string; from_name?: string; to?: string;
+  message_id?: string; reply_to?: string; is_private?: boolean;
+  text?: string; emoji?: string; payload?: unknown; ts?: string; id?: string;
+} & Record<string, unknown>;
+
 export type TrainCallResponse = { result?: unknown; error?: string };
 
 type Pending = {
-  resolve: (r: TrainCallResponse) => void;
-  reject: (err: Error) => void;
+  resolve: (r: TrainCallResponse) => void; reject: (err: Error) => void;
   timer: ReturnType<typeof setTimeout>;
 };
 
 type TrainState = {
-  name: string;
-  path: string;
-  proc: ReturnType<typeof Bun.spawn> | null;
-  pending: Map<string, Pending>;
-  buf: string;
-  failCount: number;
+  name: string; path: string; proc: ReturnType<typeof Bun.spawn> | null;
+  pending: Map<string, Pending>; buf: string; failCount: number;
   restartTimer: ReturnType<typeof setTimeout> | null;
-  startedAt: string | null;
-  stopped: boolean;
+  startedAt: string | null; stopped: boolean;
 };
 
 export type TrainInfo = {
-  name: string;
-  path: string;
-  running: boolean;
-  pid: number | null;
-  startedAt: string | null;
-  failCount: number;
+  name: string; path: string; running: boolean; pid: number | null;
+  startedAt: string | null; failCount: number;
 };
 
 export class TrainSupervisor {

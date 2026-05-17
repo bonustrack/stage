@@ -1,6 +1,6 @@
 ---
 name: metro
-description: Run the metro train-supervisor in this session — launch `metro` in the background, watch its stdout for inbound JSON events, and act on each. Use when the user asks to start/run/launch metro, when you see JSON lines on stdout shaped `{"kind":"inbound","station":...,"line":"metro://...","messageId":...,"text":...}`, or when handling a chat/webhook reply/edit/react/send via `metro call`.
+description: Run the metro train-supervisor in this session — launch `metro` in the background, watch its stdout for inbound JSON events, and act on each. Use when the user asks to start/run/launch metro, when you see JSON lines on stdout shaped `{"kind":"inbound","station":...,"line":"metro://...","message_id":...,"text":...}`, or when handling a chat/webhook reply/edit/react/send via `metro call`.
 ---
 
 # Metro — event-interception wire
@@ -29,10 +29,10 @@ replace on demand.
 **Inbound (train → metro stdout)** — one JSON line per event:
 
 ```json
-{"kind":"inbound","station":"discord","line":"metro://discord/123","from":"metro://discord/user/456","fromName":"alice","messageId":"789","text":"hi","isPrivate":false,"ts":"2026-05-17T18:00:00Z","payload":{...}}
+{"kind":"inbound","station":"discord","line":"metro://discord/123","from":"metro://discord/user/456","from_name":"alice","message_id":"789","text":"hi","is_private":false,"ts":"2026-05-17T18:00:00Z","payload":{...}}
 ```
 
-Trains supply `line`, `from`, `fromName`, `text`, `isPrivate`. Metro mints `id` + `display` if missing and appends to `history.jsonl`. Event kinds: `inbound`, `outbound`, `edit`, `react`. `payload` is the platform's native message shape — use it for mentions, replies, embeds.
+Wire fields are `snake_case` on the train protocol: `from_name`, `message_id`, `line_name`, `is_private`, `reply_to`. The dispatcher translates these to camelCase for `history.jsonl` and the broker. Trains supply `line`, `from`, `from_name`, `text`, `is_private`. Metro mints `id` + `display` if missing and appends to `history.jsonl`. Event kinds: `inbound`, `outbound`, `edit`, `react`. `payload` is the platform's native message shape — use it for mentions, replies, embeds.
 
 **Outbound (`metro call <train> <action> <args>`)**:
 
@@ -66,7 +66,7 @@ metro
 
 ## Detecting "is this for me?"
 
-Trains should set `isPrivate: true` for DMs. For groups, narrow on `payload`:
+Trains should set `is_private: true` for DMs. For groups, narrow on `payload`:
 
 - **discord** — DM when `payload.guildId == null`; otherwise look at `payload.mentions.users`.
 - **telegram** — DM when `payload.chat.type === 'private'`; otherwise look at `payload.entities` mentions.

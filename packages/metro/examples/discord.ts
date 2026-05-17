@@ -47,12 +47,12 @@ function envelope(m: Message): Record<string, unknown> {
     ts: new Date(m.createdTimestamp).toISOString(),
     station: 'discord',
     line: `metro://discord/${m.channelId}`,
-    lineName: 'name' in (m.channel ?? {}) ? (m.channel as { name?: string | null }).name ?? undefined : undefined,
+    line_name: 'name' in (m.channel ?? {}) ? (m.channel as { name?: string | null }).name ?? undefined : undefined,
     from: `metro://discord/user/${m.author.id}`,
-    fromName: m.author.username,
-    messageId: m.id,
+    from_name: m.author.username,
+    message_id: m.id,
     text,
-    isPrivate: m.guildId === null,
+    is_private: m.guildId === null,
     payload: m.toJSON(),
   };
 }
@@ -68,10 +68,10 @@ client.on(Events.MessageReactionAdd, (r, u) => {
     station: 'discord',
     line: `metro://discord/${r.message.channelId}`,
     from: `metro://discord/user/${u.id}`,
-    fromName: 'username' in u ? u.username : undefined,
-    messageId: r.message.id,
+    from_name: 'username' in u ? u.username : undefined,
+    message_id: r.message.id,
     emoji: r.emoji.name,
-    isPrivate: r.message.guildId === null,
+    is_private: r.message.guildId === null,
   });
 });
 

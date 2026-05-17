@@ -54,10 +54,10 @@ function envelope(m: TgMsg): Record<string, unknown> {
     kind: 'inbound', id: mintId(),
     ts: new Date(m.date * 1000).toISOString(),
     station: 'telegram', line,
-    lineName: topicId === undefined ? (m.chat.title ?? m.chat.first_name ?? undefined) : undefined,
+    line_name: topicId === undefined ? (m.chat.title ?? m.chat.first_name ?? undefined) : undefined,
     from: `metro://telegram/user/${m.from?.id ?? 'unknown'}`,
-    fromName, messageId: String(m.message_id),
-    text, payload: m, isPrivate: m.chat.type === 'private',
+    from_name: fromName, message_id: String(m.message_id),
+    text, payload: m, is_private: m.chat.type === 'private',
   };
 }
 

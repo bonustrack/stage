@@ -19,7 +19,7 @@ metro  ─── stdin (one JSON line per action call) ──>  train
        <── stdout (one JSON line per event OR response) ── train
 ```
 
-- **Inbound event** (train → metro): `{ kind, station, line, from, fromName?, messageId?, text?, isPrivate?, payload? }`. Metro mints `id` + `display` if absent. Full shape: `HistoryEntry` in `src/history.ts`.
+- **Inbound event** (train → metro): `{ kind, station, line, from, from_name?, message_id?, line_name?, reply_to?, text?, is_private?, payload? }` — snake_case on the wire. Metro mints `id` + `display` if absent and translates to camelCase for `history.jsonl` / the broker (`HistoryEntry` in `src/history.ts`).
 - **Call** (metro → train): `{ "op": "call", "id": "req_abc", "action": "send", "args": {...} }`.
 - **Response** (train → metro): `{ "op": "response", "id": "req_abc", "result": {...} }` or `{ ..., "error": "..." }`.
 

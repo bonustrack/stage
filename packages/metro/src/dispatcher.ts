@@ -18,7 +18,7 @@ import { noteUserFromLine } from './registry.js';
 import { listEndpoints, webhookPort, findEndpoint } from './webhooks.js';
 import { loadTunnelConfig, Tunnel } from './tunnel.js';
 import { handleMonitorRequest } from './monitor.js';
-import { TrainSupervisor, TRAINS_DIR } from './trains.js';
+import { TrainSupervisor, TRAINS_DIR, type TrainEvent } from './trains.js';
 import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 
@@ -52,37 +52,38 @@ function emit(entry: HistoryEntry): void {
   appendHistory(enriched);
 }
 
-/** Promote a train-emitted envelope to a full `HistoryEntry`. Trains can omit `id`/`station`/`to`. */
-function envelopeToEntry(env: Record<string, unknown>, trainName: string): HistoryEntry | null {
-  const line = env.line as string | undefined;
+/** Translate the snake_case train wire envelope to a camelCase `HistoryEntry`. */
+/** Trains can omit `id`/`station`/`to`; metro fills sensible defaults. */
+function trainEventToHistoryEntry(env: TrainEvent, trainName: string): HistoryEntry | null {
+  const line = env.line;
   if (typeof line !== 'string') {
     log.warn({ train: trainName }, 'train: dropped event without `line`');
     return null;
   }
-  const station = (env.station as string | undefined) ?? Line.station(line) ?? trainName;
+  const station = env.station ?? Line.station(line) ?? trainName;
   const kind = (env.kind as HistoryEntry['kind'] | undefined) ?? 'inbound';
-  const id = (env.id as string | undefined) ?? mintId();
-  const ts = (env.ts as string | undefined) ?? new Date().toISOString();
-  const from = (env.from as string | undefined) ?? `metro://${station}` ;
-  const isPrivate = env.isPrivate === true;
-  const to = (env.to as string | undefined) ?? (isPrivate ? userSelf() : line);
+  const id = env.id ?? mintId();
+  const ts = env.ts ?? new Date().toISOString();
+  const from = env.from ?? `metro://${station}`;
+  const isPrivate = env.is_private === true;
+  const to = env.to ?? (isPrivate ? userSelf() : line);
   return {
     id, ts, kind, station,
     line: line as HistoryEntry['line'],
-    lineName: env.lineName as string | undefined,
+    lineName: env.line_name,
     from: from as HistoryEntry['from'],
-    fromName: env.fromName as string | undefined,
+    fromName: env.from_name,
     to: to as HistoryEntry['to'],
-    text: env.text as string | undefined,
-    emoji: env.emoji as string | undefined,
-    messageId: env.messageId as string | undefined,
-    replyTo: env.replyTo as string | undefined,
+    text: env.text,
+    emoji: env.emoji,
+    messageId: env.message_id,
+    replyTo: env.reply_to,
     payload: env.payload,
   };
 }
 
 supervisor.onTrainEvent((env, train) => {
-  const entry = envelopeToEntry(env, train);
+  const entry = trainEventToHistoryEntry(env, train);
   if (entry) emit(entry);
 });
 
