@@ -1,6 +1,7 @@
-/** Cloudflared tunnel manager. Prefers token-from-env so a missing local credentials JSON does not block startup. */
+/** Cloudflared tunnel manager + webhook endpoint registry. Both persist tiny JSON files in STATE_DIR. */
 
 import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { STATE_DIR } from './paths.js';
@@ -63,4 +64,46 @@ export class Tunnel {
     this.child?.kill();
     this.child = null;
   }
+}
+
+/* ──────────── webhook endpoint registry (id, label, optional secret) ──────────── */
+
+const WEBHOOKS_FILE = join(STATE_DIR, 'webhooks.json');
+
+export type Endpoint = { id: string; label: string; secret?: string; createdAt: string };
+type Store = { endpoints: Endpoint[] };
+
+/** Local listener port — `127.0.0.1` only; expose publicly via Cloudflare tunnel. */
+export const webhookPort = (): number => Number(process.env.METRO_WEBHOOK_PORT) || 8420;
+
+function readWebhooks(): Store {
+  if (!existsSync(WEBHOOKS_FILE)) return { endpoints: [] };
+  try { return JSON.parse(readFileSync(WEBHOOKS_FILE, 'utf8')) as Store; }
+  catch { return { endpoints: [] }; }
+}
+const writeWebhooks = (s: Store): void => writeFileSync(WEBHOOKS_FILE, JSON.stringify(s, null, 2));
+
+export const listEndpoints = (): Endpoint[] => readWebhooks().endpoints;
+export const findEndpoint = (id: string): Endpoint | undefined =>
+  readWebhooks().endpoints.find(e => e.id === id);
+
+export function addEndpoint(label: string, secret?: string): Endpoint {
+  const s = readWebhooks();
+  /** 16-char URL-safe id (~96 bits — collision-proof for any reasonable count). */
+  const ep: Endpoint = {
+    id: randomBytes(12).toString('base64url'), label, createdAt: new Date().toISOString(),
+    ...(secret ? { secret } : {}),
+  };
+  s.endpoints.push(ep);
+  writeWebhooks(s);
+  return ep;
+}
+
+export function removeEndpoint(id: string): boolean {
+  const s = readWebhooks();
+  const before = s.endpoints.length;
+  s.endpoints = s.endpoints.filter(e => e.id !== id);
+  if (s.endpoints.length === before) return false;
+  writeWebhooks(s);
+  return true;
 }

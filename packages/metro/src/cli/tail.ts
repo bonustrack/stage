@@ -9,11 +9,10 @@ import {
   cursorKey, drainTail, followTail, historySize, readCursor, writeCursor,
   type Mode, type TailOpts,
 } from '../broker/history-stream.js';
-import { readBotIds } from '../cache.js';
 import { readHistory, userSelf, type HistoryEntry } from '../history.js';
 import { asLine, Line } from '../lines.js';
 import { errMsg, log } from '../log.js';
-import { loadMetroEnv } from '../paths.js';
+import { loadMetroEnv, readBotIds } from '../paths.js';
 import { emit, exitErr, flagOne, isJson, need, writeJson, type Flags } from './util.js';
 
 /* ──────────── CLI: metro tail / claim / release / claims ──────────── */

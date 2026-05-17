@@ -5,10 +5,9 @@ import { mkdirSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { errMsg, log } from '../log.js';
-import { failAllPending, mintCallId, sendCall, type Pending } from './calls.js';
 import {
-  drainLines, listTrainFiles, parseTrainLine,
-  type TrainCallResponse, type TrainEvent,
+  drainLines, failAllPending, listTrainFiles, mintCallId, parseTrainLine, sendCall,
+  type Pending, type TrainCallResponse, type TrainEvent,
 } from './protocol.js';
 
 const RESTART_BACKOFFS_MS = [1_000, 5_000, 30_000] as const;

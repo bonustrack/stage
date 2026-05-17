@@ -3,13 +3,11 @@
 
 import pkg from '../../package.json' with { type: 'json' };
 import { errMsg } from '../log.js';
-import { listLines } from '../cache.js';
-import { loadMetroEnv } from '../paths.js';
+import { listLines, loadMetroEnv } from '../paths.js';
 import { readHistory, type HistoryKind } from '../history.js';
 import { cmdDoctor, cmdSetup, cmdUpdate } from './config.js';
 import { cmdClaim, cmdClaims, cmdRelease, cmdTail } from './tail.js';
-import { cmdTunnel, cmdWebhook } from './webhook.js';
-import { cmdCall, cmdTrains } from './call.js';
+import { cmdCall, cmdTrains, cmdTunnel, cmdWebhook } from './webhook.js';
 import {
   flagOne, isJson, parseArgs, writeJson, type ExitErr, type Flags,
 } from './util.js';
