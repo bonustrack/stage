@@ -5,7 +5,13 @@
 
 > **A live JSON stream of Telegram, Discord, webhooks, and cross-user messages for your local Claude Code / Codex session.**
 
-Metro is a small daemon you launch from inside your session. It connects to Discord, Telegram, and any third-party service that can POST a webhook (GitHub, Intercom, Fireflies, …), emits each inbound as one JSON line on stdout (which Claude Code's `Monitor` consumes natively, and Codex picks up via an app-server WebSocket push), and exposes a tiny CLI — `metro reply`, `metro send`, `metro edit`, `metro react`, `metro download`, `metro fetch` — for posting back. Cross-user: any user can ping any other via `metro send metro://claude/<user-id>/<session-id>` and the daemon re-emits it on the stream.
+Metro is (a) a Bun monorepo of station packages (one per integration), (b) a Client SDK that loads them, (c) a CLI that thinly wraps the SDK. You launch the daemon from inside your session; metro emits one JSON line per inbound on stdout (Claude Code's `Monitor` consumes it natively; Codex picks it up via an app-server WebSocket push). Outbound goes through one generic call:
+
+```bash
+metro <station> <action> <args.json|@file|->
+```
+
+The core knows nothing about the action set — each station declares its own.
 
 ```
 [Claude Code session]
@@ -19,7 +25,7 @@ $ Monitor( … metro's stdout … )
                 "mentions":{"users":["<bot-id>"],"roles":[],"everyone":false},…}}
 
   [I'd run git log + read services/sync.ts, then…]
-  Bash: metro reply metro://discord/123… 9876 "three deploys in the last 24h…"
+  Bash: metro discord reply '{"line":"metro://discord/123…","messageId":"9876","text":"three deploys in the last 24h…"}'
 ```
 
 You own your own streaming, tool calls, and reply timing. Metro is the wire.
@@ -46,45 +52,64 @@ In **Discord**: DM the bot, or `@<bot>` in any channel. In **Telegram**: DM, or 
 ## Architecture
 
 ```
-Discord gateway     ──┐
-Telegram poller     ──┤
-Cloudflare tunnel   ──┤ ── HTTP webhooks (GitHub, Intercom, …)
-                      │
-                      ├─▶ metro daemon ───▶ stdout (JSON events; Claude Code's Monitor reads here)
-                      │                ───▶ codex-rc WebSocket (Codex turn/start; opt-in)
-                      │                ◀── IPC Unix socket  (metro send to Claude / Codex lines)
-                      │
-local CLI calls   ────┴── REST → Discord / Telegram   (metro reply / send / edit / react / download / fetch)
+packages/*-station/     (one per integration — discord, telegram, webhook, claude, codex, …)
+     │
+     ▼  default-export Station
+@stage-labs/metro Client    (workspace discovery + start/stop + .call(station, action, args))
+     │
+     ▼  envelope on EventEmitter
+metro daemon ───▶ stdout (JSON envelopes; Claude Code's Monitor reads here)
+             ───▶ codex-rc WebSocket (Codex turn/start; opt-in)
+             ◀── IPC Unix socket  (metro <station> <action> from another process)
 ```
 
 - **Inversion of control.** Claude Code / Codex launches `metro`, not the other way around. Metro never spawns a Claude / Codex process.
 - **Single daemon per machine.** Lockfile at `$METRO_STATE_DIR/.tail-lock` enforces singleton.
 - **Account-tied identity.** `to` on inbound and `from` on outbound resolve to a stable account-scoped URI per runtime: `metro://claude/user/<orgId>` (from `claude auth status --json`) or `metro://codex/user/<accountId>` (from `$CODEX_HOME/auth.json`). Same on any device for the same logged-in account.
 - **Codex push (opt-in).** Set `METRO_CODEX_RC=ws://127.0.0.1:8421` and metro pushes each event via JSON-RPC `turn/start` to the Codex app-server. Codex's TUI must be attached with `--remote` to the same URL.
-- **Cross-user notification.** `metro send metro://claude/<user-id>/<session-id>` (or `metro://codex/<user-id>/<session-id>`) routes through the daemon's IPC socket; the daemon re-emits on its stdout (and pushes to codex-rc), so the peer sees it. Discover reachable users/sessions via `metro stations` or `$METRO_STATE_DIR/user-registry.json`.
+- **Cross-user notification.** `metro claude notify '{"line":"metro://claude/…","text":"…"}'` (or `metro codex notify`) routes through the daemon's IPC socket; the daemon re-emits on its stdout (and pushes to codex-rc), so the peer sees it. Discover reachable users/sessions via `metro stations` or `$METRO_STATE_DIR/user-registry.json`.
 - **Webhooks (opt-in).** `metro webhook add <label>` registers an HTTP receive endpoint; the daemon binds `127.0.0.1:8420` (override with `$METRO_WEBHOOK_PORT`). If you've run `metro tunnel setup`, a Cloudflare named tunnel exposes it publicly. Each POST is re-emitted on stdout as an inbound event.
 
 ---
 
 ## Stations
 
-Each endpoint is a **station** with declared capabilities:
+Each integration is its own workspace package under `packages/<name>-station/`,
+default-exporting a `Station` object (`name`, `configured()`, `start(emit)`,
+`stop()`, `actions: {…}`). The Client scans `packages/*-station/` at startup,
+loads the ones flagged `"metroStation": true`, and starts the configured ones.
 
-| Station    | Modalities    | Features                                              | Config                                                                                  |
-|------------|---------------|-------------------------------------------------------|-----------------------------------------------------------------------------------------|
-| `discord`  | text + image  | reply, send, edit, react, download, fetch             | `DISCORD_BOT_TOKEN` + Message Content Intent                                            |
-| `telegram` | text + image  | reply, send, edit, react, download                    | `TELEGRAM_BOT_TOKEN`                                                                    |
-| `claude`   | text          | send                                                  | auto-detected from `$CLAUDECODE`; identity via `claude auth status --json`              |
-| `codex`    | text          | send                                                  | auto-detected from `$METRO_CODEX_RC` / `$CODEX_HOME`; identity via `$CODEX_HOME/auth.json` |
-| `webhook`  | text          | (receive-only; optional HMAC verify)                  | `metro webhook add <label>` + `metro tunnel setup` (Cloudflare named tunnel)            |
+| Package              | Actions                                              | Config                                                                                  |
+|----------------------|------------------------------------------------------|-----------------------------------------------------------------------------------------|
+| `discord-station`    | reply · send · react · edit · download · fetch · getMe | `DISCORD_BOT_TOKEN` + Message Content Intent                                            |
+| `telegram-station`   | reply · send · react · edit · download · fetch · getMe | `TELEGRAM_BOT_TOKEN`                                                                    |
+| `claude-station`     | notify · whoami                                       | auto-detected from `$CLAUDECODE`; identity via `claude auth status --json`              |
+| `codex-station`      | notify · whoami                                       | auto-detected from `$METRO_CODEX_RC` / `$CODEX_HOME`; identity via `$CODEX_HOME/auth.json` |
+| `webhook-station`    | (receive-only; optional HMAC verify)                 | `metro webhook add <label>` + `metro tunnel setup` (Cloudflare named tunnel)            |
 
-Run `metro stations` to see live config status (`✓` configured, `✗` not, `·` informational).
+Run `metro stations` to see what loaded + which actions each station exposes.
+
+### Adding a new station
+
+```
+cp -r packages/_station-template packages/<name>-station
+```
+
+Then in the new folder:
+
+1. `package.json` — rename, flip `"metroStation": true`, declare any deps.
+2. `index.ts` — fill in `name`, `configured()`, `start(emit)`, `stop()`, and
+   the `actions` object. Each action is `async ({...}) => result`. There is
+   no "outbound primitive" the core requires — declare whatever your platform
+   exposes.
+
+That's the whole contract. Five functions.
 
 Behaviors worth knowing:
 - **No streaming / no edit machinery in metro.** The local CLI runs the show; metro is one-shot REST.
 - **No link previews.** Outgoing messages set `link_preview_options.is_disabled` on Telegram and `SUPPRESS_EMBEDS` on Discord.
-- **Image attachments inbound** — `[image]` placeholders surface inline in `text`; the user calls `metro download` to materialize them. 20 MB cap.
-- **Rich content outbound.** `metro send` / `reply` accept `--image=<path>` (repeatable: albums of up to 10), `--document=<path>` (repeatable), `--voice=<path>` (single voice message — Telegram renders the voice bubble), and `--buttons='[[{"text":"…","url":"…"}]]'` for inline URL-button keyboards. `metro edit` accepts `--buttons` (pass `'[]'` to clear). 20 MB / file. URL buttons only for now — no callback/interactive components.
+- **Image attachments inbound** — `[image]` placeholders surface inline in `text`; the user calls `metro <station> download '{"line":"…","messageId":"…","outDir":"/tmp/dl"}'` to materialize them. 20 MB cap.
+- **Rich content outbound.** Discord + Telegram `send`/`reply` accept `images`/`documents`/`voice`/`buttons` inside the args JSON. `edit` accepts `buttons`. 20 MB / file. URL buttons only for now — no callback/interactive components.
 - **Telegram non-forum groups are skipped.** No thread boundary to scope on.
 - **Webhook signature verification.** Pass `--secret=<shared-secret>` to `metro webhook add` and the daemon verifies `X-Hub-Signature-256` (GitHub/Intercom format) on every POST. Mismatches return 401 and never reach the stream.
 
@@ -135,39 +160,40 @@ metro://codex/8119ecb1-…/01997d4b-…             # codex user session
 metro://webhook/fwaCgTKJuLAjS2K0                # HTTP webhook endpoint
 ```
 
-Anyone can post to a line via [`metro send`](#cli) — daemon required only for Claude / Codex lines. Full grammar in [`docs/uri-scheme.md`](docs/uri-scheme.md).
+Anyone can post to a line via the station's send/notify action — see the [CLI](#cli) section. Daemon required only for Claude / Codex lines. Full grammar in [`docs/uri-scheme.md`](docs/uri-scheme.md).
 
 ---
 
 ## CLI
 
 ```
-metro                                       Run the daemon (emits JSON events on stdout).
+metro                                       Run the daemon (emits JSON envelopes on stdout).
+metro <station> <action> <args>             Generic dispatch. args = JSON | @file | -.
+                                            e.g. metro discord reply '{"line":"…","messageId":"…","text":"hi"}'
+                                            e.g. metro gmail send '{"to":"a@b.c","subject":"…","body":"…"}'
+                                            e.g. metro github comment '{"repo":"x/y","issue":42,"body":"…"}'
 metro setup [telegram|discord <token>]      Save token, or show status.
 metro setup clear [telegram|discord|all]    Remove tokens.
 metro doctor                                Health check.
-metro stations                              List stations + capabilities.
+metro stations                              List discovered stations + actions.
 metro lines                                 List recently-seen conversations.
-metro send <line> <text> [--image=…]… [--document=…]… [--voice=…] [--buttons=…]
-                                            Post a fresh message; --image/--document repeat for albums.
-metro reply <line> <message_id> <text> [--image|--document|--voice|--buttons]
-                                            Threaded reply (same flags as send).
-metro edit <line> <message_id> <text> [--buttons=<json>]
-                                            Edit a previously-sent message (text + URL-button keyboard).
-metro react <line> <message_id> <emoji>     Set or clear ('') a reaction.
-metro download <line> <message_id> [--out=<dir>]
-                                            Download image attachments to disk.
-metro fetch <line> [--limit=N]              Recent-message lookback (Discord only).
 metro history [--limit=N] [--line=…] [--station=…] [--kind=…] [--from=…] [--text=…] [--since=…]
-                                            Universal message log (every inbound + outbound), newest first.
-metro webhook add <label> [--secret=…]      Register an HTTP receive endpoint (GitHub, Intercom, …).
+                                            Universal message log, newest first.
+metro tail [--as=<user-uri>] [--follow] [--strict | --unclaimed | --all] [--include-webhooks]
+           [--chat=<line>] [--station=…] [--since=<offset|tail>] [--limit=N]
+                                            Subscribe to the event log.
+metro claim <line> [--as=<user-uri>]        Take exclusive ownership.
+metro release <line>                        Release a line.
+metro claims                                Print the current claims map.
+metro webhook add <label> [--secret=…]      Register an HTTP receive endpoint.
 metro webhook list | remove <id>            List or remove webhook endpoints.
 metro tunnel setup <name> <hostname>        Configure a Cloudflare named tunnel for public webhook URLs.
 metro tunnel status                         Show current tunnel config.
 metro update                                Upgrade in place.
 ```
 
-All commands accept `--json`. `reply` / `send` / `edit` read multi-line `<text>` from stdin if no positional is given.
+`<args>` is a JSON object string, `@path/to/file`, or `-` (read from stdin).
+Append `--json` to any subcommand for parseable output.
 
 **State files** in `$METRO_STATE_DIR` (default `~/.cache/metro`):
 - `USERS.md` — user skill copied from the package on every start (so the path is stable across upgrades)
@@ -181,6 +207,32 @@ All commands accept `--json`. `reply` / `send` / `edit` read multi-line `<text>`
 - `.tail-lock` — dispatcher pid
 - `metro.sock` — daemon IPC socket
 - `telegram-offset.json` — last processed update id
+
+---
+
+## SDK
+
+`@stage-labs/metro` also exposes a `Client` class — useful if you want to drive
+stations from your own code instead of through the CLI:
+
+```ts
+import { Client } from '@stage-labs/metro';
+
+const metro = new Client();
+metro.on('event', e => console.log(e.kind, e.station, e.text));
+metro.on('error', (err, station) => console.warn(`${station}:`, err.message));
+await metro.start();
+
+await metro.call('discord', 'reply', { line: '…', messageId: '…', text: 'hi' });
+await metro.call('gmail',   'send',  { to: 'a@b.c', subject: '…', body: '…' });
+await metro.call('github',  'comment', { repo: 'x/y', issue: 42, body: '…' });
+
+await metro.stop();
+```
+
+`.call(station, action, args)` is the only outbound primitive. The Client discovers
+stations from `packages/*-station/` in the surrounding workspace (or from an
+explicit `{ stations: [...] }` opt).
 
 ---
 
@@ -238,7 +290,7 @@ CI runs typecheck + lint + build on every PR via [`.github/workflows/ci.yml`](.g
 - **Webhook secrets are optional but recommended.** Without `--secret`, anyone who learns the endpoint URL can POST events. With it, metro verifies `X-Hub-Signature-256` and rejects mismatches.
 - **Telegram bot privacy is on by default**, which can block `@`-mentions in groups. Disable via [@BotFather](https://t.me/BotFather) → Bot Settings → Group Privacy, then kick + re-invite.
 - **Telegram non-forum groups are skipped.** No thread boundary to scope on. DMs and forum topics work normally.
-- **Telegram fetch isn't supported** (bot API doesn't expose history); `metro fetch` returns `[]` on Telegram lines.
+- **Telegram fetch isn't supported** (bot API doesn't expose history); `metro telegram fetch` returns `[]` on Telegram lines.
 - **Cloudflared is your responsibility.** `metro tunnel setup` records the named tunnel; you still install `cloudflared` (`brew install cloudflared`) and run `cloudflared tunnel login` once.
 
 ---
