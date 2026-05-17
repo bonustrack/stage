@@ -7,7 +7,7 @@ import {
 import { errMsg, log } from '../log.js';
 import { Line } from '../lines.js';
 import { mintId, type HistoryEntry } from '../history.js';
-import { handleMonitorRequest } from '../monitor.js';
+import { handleMonitorRequest } from '../cli/tail.js';
 import { findEndpoint, listEndpoints, webhookPort } from '../webhooks.js';
 
 type Emit = (entry: HistoryEntry) => void;

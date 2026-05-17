@@ -6,7 +6,7 @@
  */
 
 import { createServer } from 'node:http';
-import { handleMonitorRequest } from '../src/monitor.ts';
+import { handleMonitorRequest } from '../src/cli/tail.ts';
 
 const server = createServer((req, res) => {
   if (!handleMonitorRequest(req, res)) {

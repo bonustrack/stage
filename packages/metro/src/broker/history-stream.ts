@@ -1,14 +1,14 @@
 /** Per-user byte-offset cursors over history.jsonl + claim-aware mode filter. */
 
 import {
-  closeSync, existsSync, mkdirSync, openSync, readFileSync, readSync, renameSync, writeFileSync,
+  closeSync, existsSync, mkdirSync, openSync, readFileSync, readSync, renameSync, watch, writeFileSync,
 } from 'node:fs';
 import { join } from 'node:path';
 import { errMsg, log } from '../log.js';
 import { STATE_DIR } from '../paths.js';
 import { Line } from '../lines.js';
 import type { HistoryEntry } from '../history.js';
-import { HISTORY_FILE, type ClaimsMap } from './claims.js';
+import { HISTORY_FILE, readClaims, type ClaimsMap } from './claims.js';
 
 const CURSORS_DIR = join(STATE_DIR, 'cursors');
 
@@ -113,4 +113,41 @@ export function passesMode(
   const owner = claims[event.line];
   if (mode === 'mine-only') return owner === self;
   return !owner || owner === self;  /** mode === 'mine-or-unclaimed' */
+}
+
+export type TailOpts = {
+  mode: Mode; self: Line | null;
+  chatFilter?: string; stationFilter?: string; includeWebhooks?: boolean;
+};
+
+/** Drain matching entries from `offset` to EOF, returning the new offset. */
+/** Caller `onEntry` may return `true` to stop draining early (e.g. tail --limit). */
+export function drainTail(
+  offset: number, opts: TailOpts, onEntry: (e: HistoryEntry) => void | boolean,
+): number {
+  const claims = readClaims();
+  for (const { entry, offset: next } of readEntriesFrom(offset)) {
+    offset = next;
+    if (opts.chatFilter && entry.line !== opts.chatFilter) continue;
+    if (opts.stationFilter && entry.station !== opts.stationFilter) continue;
+    if (!passesMode(entry, opts.mode, opts.self, claims, { includeWebhooks: opts.includeWebhooks })) continue;
+    if (onEntry(entry) === true) return offset;
+  }
+  return offset;
+}
+
+/** Follow history.jsonl: drain on change + poll backstop (macOS fs.watch coalesces). */
+/** Caller invokes the returned `stop()` to clean up the watcher/timer. */
+export function followTail(
+  startOffset: number, opts: TailOpts, onEntry: (e: HistoryEntry) => void, pollMs: number,
+): () => void {
+  let offset = startOffset;
+  const tick = (): void => { offset = drainTail(offset, opts, onEntry); };
+  let watcher: ReturnType<typeof watch> | null = null;
+  try { watcher = watch(HISTORY_FILE, () => tick()); } catch { /* file may not exist yet */ }
+  const poll = setInterval(tick, pollMs);
+  return () => {
+    clearInterval(poll);
+    if (watcher) { try { watcher.close(); } catch { /* ignore */ } }
+  };
 }
