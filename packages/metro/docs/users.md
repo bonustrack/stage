@@ -203,8 +203,6 @@ Filters: `--limit` (default 50), `--line`, `--station`, `--kind`, `--from`, `--t
 
 - `metro lines` — recent conversations sorted by recency.
 - `metro stations` — configured stations + seen users.
-- `metro adapters list` — which `map.ts` files are installed.
-- `metro adapters install` — copy missing templates to `~/.metro/adapters/`.
 
 ## Webhooks (receiving HTTP events)
 

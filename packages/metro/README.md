@@ -151,8 +151,6 @@ metro stations                                 List configured stations.
 metro lines                                    List recently-seen conversations.
 metro call <station> <METHOD> <path> [body]    Raw platform REST shim. `body` = JSON literal, @file, or -
                                                (stdin). The CLI applies the per-station base URL + auth.
-metro adapters [list | install]                Manage ~/.metro/adapters/<station>/map.ts (the projection
-                                               function that turns raw transport events into envelopes).
 metro history [--limit=N] [--line=…] [--station=…] [--kind=…] [--from=…] [--text=…] [--since=…]
                                                Universal message log (every inbound + outbound), newest first.
 metro webhook add <label> [--secret=…]         Register an HTTP receive endpoint (GitHub, Intercom, …).
@@ -211,7 +209,7 @@ bun run lint                             # eslint
 
 Source map:
 
-- [`src/cli/`](src/cli/) — `metro` binary entry ([`index.ts`](src/cli/index.ts)) + admin commands ([`config.ts`](src/cli/config.ts): setup/doctor/update), `metro call` REST shim ([`call.ts`](src/cli/call.ts)), `metro adapters` ([`adapters.ts`](src/cli/adapters.ts)), webhook + tunnel ([`webhook.ts`](src/cli/webhook.ts)), tail/claim ([`tail.ts`](src/cli/tail.ts)), shared primitives ([`util.ts`](src/cli/util.ts)).
+- [`src/cli/`](src/cli/) — `metro` binary entry ([`index.ts`](src/cli/index.ts)) + admin commands ([`config.ts`](src/cli/config.ts): setup/doctor/update), `metro call` REST shim ([`call.ts`](src/cli/call.ts)), webhook + tunnel ([`webhook.ts`](src/cli/webhook.ts)), tail/claim ([`tail.ts`](src/cli/tail.ts)), shared primitives ([`util.ts`](src/cli/util.ts)).
 - [`src/dispatcher.ts`](src/dispatcher.ts) — the daemon: starts each transport, runs raw events through the adapter's `map()`, emits envelopes on stdout, listens on the IPC socket, optionally pushes to codex-rc, supervises the Cloudflare tunnel. Unmatched events quarantine to `$STATE_DIR/unmatched/<station>/`.
 - [`src/transports/`](src/transports/) — connect + emit raw events. `discord.ts` wraps discord.js, `telegram.ts` long-polls `getUpdates`, `webhook.ts` is the HTTP server. No projection — adapters do that.
 - [`src/adapters.ts`](src/adapters.ts) — dynamic-import `~/.metro/adapters/<station>/map.ts`, watch + hot-reload. [`adapters/`](adapters/) holds the repo-side templates (`discord/map.ts`, `telegram/map.ts`, `webhook/map.ts`).

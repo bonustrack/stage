@@ -12,7 +12,6 @@ import { cmdDoctor, cmdSetup, cmdUpdate } from './config.js';
 import { cmdClaim, cmdClaims, cmdRelease, cmdTail } from './tail.js';
 import { cmdTunnel, cmdWebhook } from './webhook.js';
 import { cmdCall } from './call.js';
-import { cmdAdapters } from './adapters.js';
 import {
   flagOne, isJson, parseArgs, writeJson, type ExitErr, type Flags,
 } from './util.js';
@@ -31,7 +30,6 @@ Usage:
                                                  Examples:
                                                    metro call discord POST /channels/<id>/messages '{"content":"hi"}'
                                                    metro call telegram POST /sendMessage '{"chat_id":...,"text":"hi"}'
-  metro adapters [list|install]                  Manage ~/.metro/adapters/<station>/map.ts.
   metro history [--limit=N] [--line=…] [--station=…] [--kind=…] [--from=…] [--text=…] [--since=…]
                                                  Read the universal message log (newest first).
   metro tail [--as=<user-uri>] [--follow] [--strict | --unclaimed | --all] [--include-webhooks]
@@ -137,7 +135,7 @@ const pad = (s: string, n: number): string => (s.length > n ? `${s.slice(0, n - 
 
 const COMMANDS: Record<string, (positional: string[], flags: Flags) => Promise<void>> = {
   setup: cmdSetup, doctor: cmdDoctor, stations: cmdStations, lines: cmdLines,
-  call: cmdCall, adapters: cmdAdapters,
+  call: cmdCall,
   webhook: cmdWebhook, tunnel: cmdTunnel,
   history: cmdHistory, tail: cmdTail,
   claim: cmdClaim, release: cmdRelease, claims: cmdClaims,
