@@ -7,11 +7,17 @@ import { errMsg, log } from '../log.js';
 import { mintId } from '../history.js';
 import { mdToTelegramHtml } from './telegram-md.js';
 import { inlineKeyboard, tgSendRich } from './telegram-upload.js';
+import { synthTelegramText } from './telegram-synth.js';
+import type {
+  MessageReactionUpdated, RawUpdate, ReactionType, TelegramPayload,
+} from './telegram-types.js';
 import {
   Line, type ChatStation, type EditOpts,
-  type InboundMessage, type InboundReaction, type SendOpts,
+  type InboundEdit, type InboundMessage, type InboundReaction, type SendOpts,
 } from './index.js';
 import { STATE_DIR } from '../paths.js';
+
+export type { TelegramPayload } from './telegram-types.js';
 
 const API_BASE = 'https://api.telegram.org';
 const NO_PREVIEW = { link_preview_options: { is_disabled: true } };
@@ -37,29 +43,6 @@ async function tg<T = unknown>(
   return json.result as T;
 }
 
-type Entity = { type: string; offset: number; length: number; user?: { id: number } };
-type Photo = { file_id: string };
-type Doc = { file_id: string; mime_type?: string; file_name?: string };
-/** Station-native `payload` for Telegram — the raw bot-API Message, passed through verbatim. */
-export type TelegramPayload = {
-  message_id: number; date?: number;
-  chat?: { id: number; type?: string; is_forum?: boolean; title?: string; first_name?: string };
-  message_thread_id?: number; is_topic_message?: boolean;
-  text?: string; caption?: string; entities?: Entity[]; caption_entities?: Entity[];
-  photo?: Photo[]; document?: Doc; voice?: Doc; audio?: Doc;
-  from?: { id?: number; is_bot?: boolean; username?: string; first_name?: string };
-  reply_to_message?: TelegramPayload;
-};
-type ReactionType = { type: 'emoji'; emoji: string } | { type: 'custom_emoji'; custom_emoji_id: string };
-type MessageReactionUpdated = {
-  chat: { id: number; type?: string; title?: string; first_name?: string };
-  message_id: number;
-  user?: { id: number; username?: string; first_name?: string; is_bot?: boolean };
-  date?: number;
-  old_reaction: ReactionType[];
-  new_reaction: ReactionType[];
-};
-type RawUpdate = { update_id: number; message?: TelegramPayload; message_reaction?: MessageReactionUpdated };
 
 const isParseError = (err: unknown): boolean => errMsg(err).includes("can't parse entities");
 const isNoopEdit = (err: unknown): boolean => errMsg(err).includes('message is not modified');
@@ -70,16 +53,6 @@ const targetOf = (line: Line): { chatId: number; topicId?: number } => {
   return t;
 };
 
-function attachmentTags(m: TelegramPayload): string[] {
-  const out: string[] = [];
-  if (m.photo?.length) out.push('[image]');
-  if (m.document?.mime_type?.startsWith('image/')) out.push('[image]');
-  else if (m.document) out.push(`[file: ${m.document.file_name ?? m.document.file_id}]`);
-  if (m.voice) out.push('[voice]');
-  if (m.audio) out.push('[audio]');
-  return out;
-}
-
 export class TelegramStation implements ChatStation<TelegramPayload> {
   readonly name = 'telegram';
 
@@ -87,12 +60,14 @@ export class TelegramStation implements ChatStation<TelegramPayload> {
   private pollAbort: AbortController | null = null;
   private messageHandler: (m: InboundMessage<TelegramPayload>) => void = () => {};
   private reactionHandler: (r: InboundReaction) => void = () => {};
+  private editHandler: (e: InboundEdit<TelegramPayload>) => void = () => {};
   private offsetFile = join(STATE_DIR, 'telegram-offset.json');
   /** Snapshot recent inbounds in memory so `metro download <line> <id>` can resolve them. */
   private recent = new Map<string, TelegramPayload>();
 
   onMessage(handler: (m: InboundMessage<TelegramPayload>) => void): void { this.messageHandler = handler; }
   onReaction(handler: (r: InboundReaction) => void): void { this.reactionHandler = handler; }
+  onEdit(handler: (e: InboundEdit<TelegramPayload>) => void): void { this.editHandler = handler; }
 
   async start(): Promise<void> {
     await tg('deleteWebhook', { drop_pending_updates: false }).catch(() => {});
@@ -196,7 +171,13 @@ export class TelegramStation implements ChatStation<TelegramPayload> {
 
   private async pollLoop(): Promise<void> {
     const signal = this.pollAbort?.signal;
-    const body = { timeout: 25, allowed_updates: ['message', 'message_reaction'] };
+    /* Explicit allow-list — default subset omits reactions; passing `[]` would too. */
+    const body = {
+      timeout: 25,
+      allowed_updates: [
+        'message', 'edited_message', 'channel_post', 'edited_channel_post', 'message_reaction',
+      ],
+    };
     while (this.pollAbort && !this.pollAbort.signal.aborted) {
       try {
         const updates = await tg<RawUpdate[]>('getUpdates', { offset: this.pollOffset, ...body },
@@ -213,21 +194,29 @@ export class TelegramStation implements ChatStation<TelegramPayload> {
 
   private dispatchUpdate(u: RawUpdate): void {
     if (u.message_reaction) { this.dispatchReaction(u.message_reaction); return; }
-    const m = u.message;
-    if (!m?.chat?.id || typeof m.message_id !== 'number' || m.from?.is_bot) return;
-    const text = [m.text ?? m.caption, ...attachmentTags(m)].filter(Boolean).join(' ');
-    if (!text) return;
+    const edited = u.edited_message ?? u.edited_channel_post;
+    if (edited) { this.dispatchMessageOrEdit(edited, 'edit'); return; }
+    const m = u.message ?? u.channel_post;
+    if (m) this.dispatchMessageOrEdit(m, 'inbound');
+  }
+
+  private dispatchMessageOrEdit(m: TelegramPayload, kind: 'inbound' | 'edit'): void {
+    if (!m.chat?.id || typeof m.message_id !== 'number' || m.from?.is_bot) return;
+    const text = synthTelegramText(m);
     const topicId = m.is_topic_message ? m.message_thread_id : undefined;
     const fromName = m.from?.username ? `@${m.from.username}` : m.from?.first_name;
-    log.info({ from: fromName, chat: m.chat.id, topic: topicId, text: text.slice(0, 80) }, 'telegram: inbound');
-    if (this.recent.size >= 50) { const first = this.recent.keys().next().value; if (first) this.recent.delete(first); }
-    this.recent.set(`${m.chat.id}:${m.message_id}`, m);
-    this.messageHandler({
-      id: mintId(), ts: new Date((m.date ?? Math.floor(Date.now() / 1000)) * 1000).toISOString(),
+    const tsSecs = kind === 'edit' ? (m.edit_date ?? m.date) : m.date;
+    log.info({ from: fromName, chat: m.chat.id, kind, text: text.slice(0, 80) }, `telegram: ${kind}`);
+    const event: InboundMessage<TelegramPayload> = {
+      id: mintId(), ts: new Date((tsSecs ?? Math.floor(Date.now() / 1000)) * 1000).toISOString(),
       station: 'telegram', line: Line.telegram(m.chat.id, topicId), messageId: String(m.message_id),
       lineName: topicId === undefined ? (m.chat.title ?? m.chat.first_name ?? undefined) : undefined,
       from: Line.user('telegram', m.from?.id ?? 'unknown'), fromName, text, payload: m,
       isPrivate: m.chat.type === 'private',
-    });
+    };
+    if (kind === 'edit') { this.editHandler(event); return; }
+    if (this.recent.size >= 50) { const first = this.recent.keys().next().value; if (first) this.recent.delete(first); }
+    this.recent.set(`${m.chat.id}:${m.message_id}`, m);
+    this.messageHandler(event);
   }
 }

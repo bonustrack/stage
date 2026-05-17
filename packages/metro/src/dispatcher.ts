@@ -100,6 +100,7 @@ async function main(): Promise<void> {
   if (platforms.telegram) {
     telegram.onMessage(onInbound);
     telegram.onReaction(onReaction);
+    telegram.onEdit?.(onEdit);
     const [me] = await Promise.all([telegram.getMe(), telegram.start()]);
     saveBotId('telegram', String(me.id));
     log.info({ bot: `@${me.username}` }, 'telegram ready');
