@@ -6,7 +6,7 @@ export type { HistoryEntry, HistoryKind } from './history.js';
 export { mintId } from './history.js';
 
 /** URI helpers — namespace const + `Line` type. Stations build/parse `metro://<name>/...` lines through this. */
-export { Line } from './stations/index.js';
+export { Line } from './lines.js';
 
 /** Webhook-station consumes these; nothing else should. */
 export { handleMonitorRequest } from './monitor.js';

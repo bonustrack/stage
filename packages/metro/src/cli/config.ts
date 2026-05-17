@@ -4,8 +4,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import { join } from 'node:path';
 import pkg from '../../package.json' with { type: 'json' };
-import { DiscordStation } from '../stations/discord.js';
-import { TelegramStation } from '../stations/telegram.js';
+import { Client } from '../client.js';
 import { errMsg } from '../log.js';
 import {
   CONFIG_ENV_FILE, configuredPlatforms, loadMetroEnv, readDotenv, STATE_DIR, writeDotenv,
@@ -15,7 +14,15 @@ import { cmdSetupSkill, skillStatus } from './skill.js';
 
 const TOKEN_KEYS = { telegram: 'TELEGRAM_BOT_TOKEN', discord: 'DISCORD_BOT_TOKEN' } as const;
 type Platform = keyof typeof TOKEN_KEYS;
-const stationFor = (p: Platform) => p === 'telegram' ? new TelegramStation() : new DiscordStation();
+
+/** One-shot getMe via Client.call — used by setup + doctor to verify a token works. */
+async function getMe(p: Platform): Promise<{ id: string | number; username: string }> {
+  const client = new Client();
+  try {
+    await client.start();
+    return await client.call<{ id: string | number; username: string }>(p, 'getMe');
+  } finally { await client.stop().catch(() => {}); }
+}
 const maskToken = (t: string): string =>
   !t ? '' : t.length <= 8 ? '••••' : `${t.slice(0, 6)}…${t.slice(-2)}`;
 
@@ -61,7 +68,7 @@ export async function cmdSetup(p: string[], f: Flags): Promise<void> {
     if (!f['no-validate']) {
       process.env[TOKEN_KEYS[sub]] = trimmed;
       try {
-        const me = await stationFor(sub).getMe();
+        const me = await getMe(sub);
         identity = sub === 'telegram' ? `@${me.username}` : me.username;
       } catch (err) {
         delete process.env[TOKEN_KEYS[sub]];
@@ -108,7 +115,7 @@ export async function cmdDoctor(_: string[], f: Flags): Promise<void> {
     if (!cfg[p]) { checks.push({ name: p, ok: null, detail: 'not configured' }); continue; }
     sources.push(`${p}←${tokenSource(TOKEN_KEYS[p])}`);
     try {
-      const me = await stationFor(p).getMe();
+      const me = await getMe(p);
       checks.push({ name: p, ok: true, detail: `getMe → ${p === 'telegram' ? '@' : ''}${me.username}` });
     } catch (err) { checks.push({ name: p, ok: false, detail: errMsg(err) }); }
   }

@@ -30,9 +30,9 @@ export class Client extends EventEmitter {
     this.opts = opts;
   }
 
-  /** Discover (or accept) stations, start the configured ones, emit `ready`. */
-  async start(): Promise<void> {
-    if (this.started) return;
+  /** Discover (or accept) stations without starting any upstream. Cheap; safe for introspection. */
+  async load(): Promise<void> {
+    if (this.loaded.size) return;
     const stations = await this.resolveStations();
     for (const s of stations) {
       if (this.loaded.has(s.name)) {
@@ -41,6 +41,12 @@ export class Client extends EventEmitter {
       }
       this.loaded.set(s.name, s);
     }
+  }
+
+  /** Discover stations, start the configured ones, emit `ready`. */
+  async start(): Promise<void> {
+    if (this.started) return;
+    await this.load();
     for (const s of this.loaded.values()) {
       if (!s.configured()) { log.debug({ station: s.name }, 'client: station not configured — skipping start'); continue; }
       try { await s.start(e => this.dispatch(s, e)); log.info({ station: s.name }, 'client: station started'); }

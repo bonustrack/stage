@@ -3,7 +3,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { STATE_DIR } from './paths.js';
-import { Line } from './stations/index.js';
+import { Line } from './lines.js';
 import { errMsg, log } from './log.js';
 
 const REGISTRY_FILE = join(STATE_DIR, 'user-registry.json');

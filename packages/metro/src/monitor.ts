@@ -11,7 +11,7 @@ import {
 } from './broker.js';
 import { readBotIds } from './cache.js';
 import { readHistory } from './history.js';
-import { asLine, type Line } from './stations/index.js';
+import { asLine, type Line } from './lines.js';
 
 const HISTORY_LIMIT = 100;
 

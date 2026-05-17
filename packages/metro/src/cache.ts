@@ -4,7 +4,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { errMsg, log } from './log.js';
 import { STATE_DIR } from './paths.js';
-import type { Line } from './stations/index.js';
+import type { Line } from './lines.js';
 
 type Entry = { createdAt: string; lastSeenAt?: string; name?: string };
 type Cache = Record<string, Entry>;

@@ -6,7 +6,7 @@ import {
   readEntriesFrom, releaseLine, writeCursor, type Mode,
 } from '../broker.js';
 import { userSelf } from '../history.js';
-import { asLine, Line } from '../stations/index.js';
+import { asLine, Line } from '../lines.js';
 import { loadMetroEnv } from '../paths.js';
 import { emit, exitErr, flagOne, isJson, need, writeJson, type Flags } from './util.js';
 

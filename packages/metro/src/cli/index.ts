@@ -1,83 +1,67 @@
 #!/usr/bin/env node
-/** Metro CLI entry: parses argv, dispatches to subcommands, owns action + info commands. */
+/** CLI entry: known subcommands + the generic `metro <station> <action> <args>` catch-all. */
 
 import pkg from '../../package.json' with { type: 'json' };
+import { Client } from '../client.js';
 import { errMsg } from '../log.js';
 import { listLines } from '../cache.js';
-import { fmtCapabilities, listStations } from '../stations/index.js';
 import { listUsers } from '../registry.js';
 import { loadMetroEnv } from '../paths.js';
 import { readHistory, type HistoryKind } from '../history.js';
 import { cmdDoctor, cmdSetup, cmdUpdate } from './config.js';
-import {
-  cmdDownload, cmdEdit, cmdFetch, cmdReact, cmdReply, cmdSend,
-} from './actions.js';
+import { cmdCall } from './call.js';
 import { cmdClaim, cmdClaims, cmdRelease, cmdTail } from './tail.js';
 import { cmdTunnel, cmdWebhook } from './webhook.js';
 import {
   flagOne, isJson, parseArgs, writeJson, type ExitErr, type Flags,
 } from './util.js';
 
-const USAGE = `metro — Telegram + Discord stream for your Claude Code / Codex user
+const USAGE = `metro — pluggable bridge between chat/webhook platforms and your local Claude/Codex session
 
 Usage:
-  metro                                       Run the dispatcher (emits JSON events on stdout).
-  metro setup [telegram|discord <token>]      Save token, or show status with no args.
+  metro                                       Run the dispatcher (emits JSON envelopes on stdout).
+  metro <station> <action> [args]             Invoke any station action. args = JSON | @file | -.
+                                              e.g. metro discord reply '{"line":"…","messageId":"…","text":"hi"}'
+                                              e.g. metro gmail send '{"to":"a@b","subject":"…","body":"…"}'
+                                              e.g. metro github comment '{"repo":"x/y","issue":42,"body":"…"}'
+  metro stations                              List discovered stations + actions.
+  metro setup [telegram|discord <token>]      Save token, or show status.
   metro setup clear [telegram|discord|all]    Remove tokens.
   metro setup skill [clear]                   Install the metro skill into ~/.claude / ~/.codex.
   metro doctor                                Health check.
-  metro stations                              List stations + capabilities.
   metro lines                                 List recently-seen conversations.
-  metro send <line> <text> [--image=<path>]… [--document=<path>]… [--voice=<path>] [--buttons=<json>] [--no-claim] [--claim]
-                                              Post a fresh message; repeat --image/--document for multi-file albums.
-                                              First outbound on a DM auto-claims; --no-claim or METRO_NO_AUTO_CLAIM=1 opts out;
-                                              --claim forces auto-claim even on group/public lines.
-                                              Note: send/reply/edit/react read bot tokens from ~/.config/metro/.env and post
-                                              directly to the platform — METRO_STATE_DIR isolates claims/history but NOT creds.
-  metro reply <line> <message_id> <text> [--image=… --document=… --voice=… --buttons=…] [--no-claim] [--claim]
-                                              Threaded reply (same flags as send).
-  metro edit <line> <message_id> <text> [--buttons=<json>] [--no-claim] [--claim]
-                                              Edit a previously-sent message (text + buttons).
-  metro react <line> <message_id> <emoji> [--no-claim] [--claim]
-                                              Set or clear ('') a reaction.
-  metro download <line> <message_id> [--out=<dir>]
-                                              Download image attachments to disk.
-  metro fetch <line> [--limit=N]              Recent-message lookback (Discord only).
   metro history [--limit=N] [--line=…] [--station=…] [--kind=…] [--from=…] [--text=…] [--since=…]
                                               Read the universal message log (newest first).
   metro tail [--as=<user-uri>] [--follow] [--strict | --unclaimed | --all] [--include-webhooks]
              [--chat=<line>] [--station=…] [--since=<offset|tail>] [--limit=N]
-                                              Subscribe to the event log; claim-aware by default. See docs/broker.md.
-                                              Webhooks are hidden in personal modes unless --include-webhooks is set.
-  metro claim <line> [--as=<user-uri>]        Take exclusive ownership of a line (so only you receive its events).
-  metro release <line>                        Release a line (it returns to broadcast).
+                                              Subscribe to the event log.
+  metro claim <line> [--as=<user-uri>]        Take exclusive ownership.
+  metro release <line>                        Release a line.
   metro claims                                Print the current claims map.
-  metro webhook add <label> [--secret=…]      Register an HTTP receive endpoint (GitHub, Intercom, …).
+  metro webhook add <label> [--secret=…]      Register an HTTP receive endpoint.
   metro webhook list | remove <id>            List or remove webhook endpoints.
-  metro tunnel setup <name> <hostname>        Configure a Cloudflare named tunnel (run cloudflared tunnel login first).
+  metro tunnel setup <name> <hostname>        Configure a Cloudflare named tunnel.
   metro tunnel status                         Show current tunnel config.
   metro update                                Upgrade in place.
   metro --version | --help
 
 Lines: metro://<station>/<path>. See docs/uri-scheme.md.
-Multi-line --text: pipe on stdin in place of the positional arg.
+Args: JSON object string, @path/to/file, or - (stdin).
 Exit codes: 0 success · 1 usage · 2 config · 3 upstream
 `;
 
 async function cmdStations(_: string[], f: Flags): Promise<void> {
   loadMetroEnv();
-  const rows = listStations();
-  const usersByStation = {
-    claude: listUsers('claude'),
-    codex: listUsers('codex'),
-  };
+  const client = new Client();
+  await client.load();
+  const rows = client.stations();
+  const usersByStation = { claude: listUsers('claude'), codex: listUsers('codex') };
   if (isJson(f)) return writeJson({ stations: rows, users: usersByStation });
   process.stdout.write('metro stations\n\n');
   for (const s of rows) {
-    const mark = s.configured === true ? '✓' : s.configured === false ? '✗' : '·';
-    process.stdout.write(
-      `  ${mark} ${s.name.padEnd(10)} ${fmtCapabilities(s.capabilities)}\n        ${s.detail}\n`,
-    );
+    const mark = s.configured ? '✓' : '·';
+    const actions = s.actions.length ? `  · actions: ${s.actions.join(', ')}` : '  · (receive-only)';
+    process.stdout.write(`  ${mark} ${s.name.padEnd(12)}${actions}\n`);
     const seen = (usersByStation as Record<string, typeof usersByStation.claude>)[s.name] ?? [];
     for (const inst of seen) {
       const sessionsTxt = inst.sessions.length ? ` · sessions: ${inst.sessions.length}` : '';
@@ -93,7 +77,7 @@ async function cmdLines(_: string[], f: Flags): Promise<void> {
     .map(({ line, entry }) => ({ line, name: entry.name ?? null, lastSeenAt: entry.lastSeenAt ?? null }))
     .sort((a, b) => (b.lastSeenAt ?? '').localeCompare(a.lastSeenAt ?? ''));
   if (isJson(f)) return writeJson({ lines: rows });
-  if (!rows.length) return void process.stdout.write('metro lines\n\n  (none yet — start the dispatcher and send a message)\n\n');
+  if (!rows.length) return void process.stdout.write('metro lines\n\n  (none yet — start the dispatcher)\n\n');
   const widest = Math.max(...rows.map(r => r.line.length));
   process.stdout.write('metro lines\n\n');
   for (const r of rows) {
@@ -116,11 +100,9 @@ async function cmdHistory(_: string[], f: Flags): Promise<void> {
   loadMetroEnv();
   const since = flagOne(f, 'since');
   const entries = readHistory({
-    line: flagOne(f, 'line'),
-    station: flagOne(f, 'station'),
+    line: flagOne(f, 'line'), station: flagOne(f, 'station'),
     kind: flagOne(f, 'kind') as HistoryKind | undefined,
-    from: flagOne(f, 'from'),
-    textContains: flagOne(f, 'text'),
+    from: flagOne(f, 'from'), textContains: flagOne(f, 'text'),
     since: since ? new Date(since) : undefined,
     limit: Number(flagOne(f, 'limit')) || 50,
   });
@@ -137,7 +119,6 @@ async function cmdHistory(_: string[], f: Flags): Promise<void> {
   }
 }
 
-/** Compact display: fromName if known; else `station:@<id>` (user) or `station:<id>`. */
 function fmtActor(uri: string, name?: string): string {
   if (name) return name;
   const m = uri.match(/^metro:\/\/([^/]+)(?:\/(?:(user)\/)?(.*))?$/);
@@ -151,8 +132,6 @@ const pad = (s: string, n: number): string => (s.length > n ? `${s.slice(0, n - 
 
 const COMMANDS: Record<string, (positional: string[], flags: Flags) => Promise<void>> = {
   setup: cmdSetup, doctor: cmdDoctor, stations: cmdStations, lines: cmdLines,
-  send: cmdSend, reply: cmdReply, edit: cmdEdit, react: cmdReact,
-  download: cmdDownload, fetch: cmdFetch,
   webhook: cmdWebhook, tunnel: cmdTunnel,
   history: cmdHistory, tail: cmdTail,
   claim: cmdClaim, release: cmdRelease, claims: cmdClaims,
@@ -166,9 +145,23 @@ async function main(): Promise<void> {
   if (!cmd) { await import('../dispatcher.js'); return; }
 
   const handler = COMMANDS[cmd];
-  if (!handler) { process.stderr.write(`unknown command '${cmd}'\n\n${USAGE}`); process.exit(1); }
-  const { positional, flags } = parseArgs(process.argv.slice(3));
-  try { await handler(positional, flags); }
+  if (handler) {
+    const { positional, flags } = parseArgs(process.argv.slice(3));
+    try { await handler(positional, flags); }
+    catch (err) {
+      const code = (err as ExitErr).code;
+      if (isJson(flags)) writeJson({ ok: false, error: errMsg(err), code: code ?? 1 });
+      else process.stderr.write(`error: ${errMsg(err)}\n`);
+      process.exit(typeof code === 'number' ? code : 1);
+    }
+    return;
+  }
+
+  /** Catch-all: `metro <station> <action> [args]`. */
+  const action = process.argv[3];
+  if (!action) { process.stderr.write(`unknown command '${cmd}'\n\n${USAGE}`); process.exit(1); }
+  const { positional, flags } = parseArgs(process.argv.slice(4));
+  try { await cmdCall(cmd, action, positional, flags); }
   catch (err) {
     const code = (err as ExitErr).code;
     if (isJson(flags)) writeJson({ ok: false, error: errMsg(err), code: code ?? 1 });

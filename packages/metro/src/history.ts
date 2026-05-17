@@ -1,13 +1,13 @@
 /** Append-only JSONL history of every message that flows through metro (inbound + outbound). */
 
 import { randomBytes } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { appendFileSync, existsSync, readFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { errMsg, log } from './log.js';
 import { STATE_DIR } from './paths.js';
-import { Line } from './stations/index.js';
-import { claudeUserId, claudeSessionId } from './stations/claude.js';
-import { codexUserId, codexSessionId } from './stations/codex.js';
+import { Line } from './lines.js';
 
 export type HistoryKind = 'inbound' | 'outbound' | 'edit' | 'react';
 
@@ -126,20 +126,48 @@ export function resolvePlatformId(id: string): string {
 export function userSelf(): Line {
   const explicit = process.env.METRO_FROM;
   if (explicit) return explicit as Line;
-  if (process.env.CLAUDECODE) return Line.user('claude', claudeUserId());
-  if (process.env.METRO_CODEX_RC || process.env.CODEX_HOME) return Line.user('codex', codexUserId());
+  if (process.env.CLAUDECODE) { try { return Line.user('claude', claudeUserId()); } catch { /* fall through */ } }
+  if (process.env.METRO_CODEX_RC || process.env.CODEX_HOME) {
+    try { return Line.user('codex', codexUserId()); } catch { /* fall through */ }
+  }
   return 'metro://user' as Line;
 }
 
-/** The current user's **line** URI `<user-id>/<session>`. Null until session is known (rc thread pending). */
+/** The current user's **line** URI `<user-id>/<session>`. Null until session is known. */
 export function selfLine(): Line | null {
   if (process.env.CLAUDECODE) {
-    const s = claudeSessionId();
-    return s ? Line.claude(claudeUserId(), s) : null;
+    try { const s = claudeSessionId(); return s ? Line.claude(claudeUserId(), s) : null; } catch { return null; }
   }
   if (process.env.METRO_CODEX_RC || process.env.CODEX_HOME) {
-    const s = codexSessionId();
-    return s ? Line.codex(codexUserId(), s) : null;
+    try { const s = codexSessionId(); return s ? Line.codex(codexUserId(), s) : null; } catch { return null; }
   }
   return null;
+}
+
+function claudeUserId(): string {
+  if (process.env.METRO_USER_ID) return process.env.METRO_USER_ID;
+  const raw = execFileSync('claude', ['auth', 'status', '--json'],
+    { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  const parsed = JSON.parse(raw) as { loggedIn?: boolean; orgId?: string };
+  if (!parsed.loggedIn || !parsed.orgId) throw new Error('claude not logged in');
+  return parsed.orgId;
+}
+
+function claudeSessionId(): string | null {
+  return process.env.METRO_USER_SESSION_ID || process.env.CLAUDE_CODE_SESSION_ID || null;
+}
+
+function codexUserId(): string {
+  if (process.env.METRO_USER_ID) return process.env.METRO_USER_ID;
+  const path = join(process.env.CODEX_HOME || join(homedir(), '.codex'), 'auth.json');
+  const parsed = JSON.parse(readFileSync(path, 'utf8')) as { tokens?: { account_id?: string } };
+  const id = parsed.tokens?.account_id;
+  if (!id) throw new Error('codex not logged in');
+  return id;
+}
+
+function codexSessionId(): string | null {
+  if (process.env.METRO_USER_SESSION_ID) return process.env.METRO_USER_SESSION_ID;
+  const sessionFile = join(STATE_DIR, 'stations', 'codex', 'session-id');
+  try { return readFileSync(sessionFile, 'utf8').trim() || null; } catch { return null; }
 }

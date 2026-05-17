@@ -7,8 +7,8 @@ import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { errMsg, log } from './log.js';
 import { STATE_DIR } from './paths.js';
-import { Line } from './stations/index.js';
-import type { HistoryEntry } from './history.js';
+import { Line } from './lines.js';
+import { readHistory, type HistoryEntry } from './history.js';
 
 export const CLAIMS_FILE = join(STATE_DIR, 'claims.json');
 const CLAIMS_LOCK = join(STATE_DIR, 'claims.json.lock');
@@ -76,6 +76,29 @@ export type AutoClaimResult =
 
 /** Coarse classification of a chat line's topology — DM (1:1) vs group (shared). */
 export type LineKind = 'dm' | 'group' | 'unknown';
+
+/** Telegram chat-id sign decides DM vs group; Discord peeks the most-recent inbound payload. */
+export function classifyLine(line: Line): LineKind {
+  const station = Line.station(line);
+  if (station === 'telegram') {
+    const parsed = Line.parseTelegram(line);
+    if (!parsed) return 'unknown';
+    return parsed.chatId < 0 ? 'group' : 'dm';
+  }
+  if (station === 'claude' || station === 'codex') return 'dm';
+  if (station === 'webhook') return 'group';
+  if (station === 'discord') {
+    const recent = readHistory({ line, kind: 'inbound', limit: 1 })[0];
+    if (!recent) return 'unknown';
+    const payload = recent.payload as { guildId?: string | null } | undefined;
+    if (!payload || !('guildId' in payload)) {
+      if (recent.to && recent.to !== recent.line) return 'dm';
+      return 'unknown';
+    }
+    return payload.guildId == null ? 'dm' : 'group';
+  }
+  return 'unknown';
+}
 
 /** Per-line decision: should auto-claim run on a successful outbound? */
 function shouldAutoClaim(line: Line, kind: LineKind): { ok: true } | { ok: false; reason: 'group' | 'webhook' } {

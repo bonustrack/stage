@@ -9,13 +9,10 @@ import { STATE_DIR } from './paths.js';
 const SOCKET_PATH = join(STATE_DIR, 'metro.sock');
 
 export type IpcRequest =
-  | { op: 'notify'; line: string; from?: string; text: string }
-  | { op: 'download'; line: string; messageId: string; outDir: string };
+  | { op: 'call'; station: string; action: string; args?: unknown };
 
-export type DownloadedFile = { path: string; mediaType: string };
 export type IpcResponse =
-  | { ok: true }
-  | { ok: true; files: DownloadedFile[] }
+  | { ok: true; result?: unknown }
   | { ok: false; error: string };
 
 type Handler = (req: IpcRequest) => Promise<IpcResponse> | IpcResponse;
@@ -48,6 +45,8 @@ async function handleConnection(socket: Socket, handler: Handler): Promise<void>
   });
   socket.on('error', err => log.debug({ err: errMsg(err) }, 'ipc connection error'));
 }
+
+export const isIpcDaemonRunning = (): boolean => existsSync(SOCKET_PATH);
 
 /** CLI-side: send one request, get one response. Throws if the daemon isn't running. */
 export function ipcCall(req: IpcRequest, timeoutMs = 30_000): Promise<IpcResponse> {
