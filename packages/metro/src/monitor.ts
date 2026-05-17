@@ -59,7 +59,7 @@ export function handleMonitorRequest(req: IncomingMessage, res: ServerResponse):
   const query = new URLSearchParams(queryString);
 
   if (pathOnly === '/api/state') {
-    handleState(res);
+    handleState(res, query);
     return true;
   }
   if (pathOnly === '/api/tail') {
@@ -75,9 +75,27 @@ export function handleMonitorRequest(req: IncomingMessage, res: ServerResponse):
   return true;
 }
 
-function handleState(res: ServerResponse): void {
+function parseNonNegInt(raw: string | null): number | null {
+  if (raw === null) return null;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < 0 || !Number.isInteger(n)) return null;
+  return n;
+}
+
+function handleState(res: ServerResponse, query: URLSearchParams): void {
+  const before = parseNonNegInt(query.get('before'));
+  const limitRaw = parseNonNegInt(query.get('limit'));
+  /** Page mode: skip `before` newest entries, return next `limit` (default HISTORY_LIMIT, capped at 500). */
+  if (before !== null) {
+    const limit = Math.min(limitRaw ?? HISTORY_LIMIT, 500);
+    const page = readHistory({ limit, skip: before });
+    res.writeHead(200, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ recent_history: page }));
+    return;
+  }
   /** `readHistory` is newest-first — what the activity feed expects. */
-  const recent = readHistory({ limit: HISTORY_LIMIT });
+  const limit = Math.min(limitRaw ?? HISTORY_LIMIT, 500);
+  const recent = readHistory({ limit });
   const claims = readClaims();
   const linesSet = new Set<string>();
   for (const e of recent) linesSet.add(e.line);

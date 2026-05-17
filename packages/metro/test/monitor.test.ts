@@ -160,6 +160,47 @@ describe('GET /api/state', () => {
     expect(body.bot_ids).toEqual({ discord: '999', telegram: '888' });
   });
 
+  test('?before=N&limit=M returns the next page (newest-first, slice [N..N+M))', async () => {
+    const stateDir = freshStateDir();
+    /** Seed 5 entries — oldest first in the file (newest-first when read). */
+    seedHistory(stateDir, [0, 1, 2, 3, 4].map(i => ({
+      id: `msg_${i}`,
+      ts: `2026-05-17T00:00:0${i}.000Z`,
+      kind: 'inbound',
+      station: 'discord',
+      line: 'metro://discord/1',
+      from: 'metro://discord/user/x',
+      to: 'metro://discord/1',
+      text: `e${i}`,
+    })));
+    server = await startServer({ METRO_STATE_DIR: stateDir, METRO_MONITOR_TOKEN: TOKEN });
+
+    /** Page 2: skip 2 newest, return next 2 → msg_2, msg_1. */
+    const r = await fetch(`${server.url}/api/state?before=2&limit=2`, {
+      headers: { authorization: `Bearer ${TOKEN}` },
+    });
+    expect(r.status).toBe(200);
+    const body = await r.json() as { recent_history: Array<{ id: string }>; claims?: unknown };
+    expect(body.recent_history.map(e => e.id)).toEqual(['msg_2', 'msg_1']);
+    /** Pagination response is history-only — no claims/lines/bot_ids. */
+    expect(body.claims).toBeUndefined();
+  });
+
+  test('?before past end returns empty page', async () => {
+    const stateDir = freshStateDir();
+    seedHistory(stateDir, [{
+      id: 'msg_only', ts: '2026-05-17T00:00:00.000Z', kind: 'inbound', station: 'discord',
+      line: 'metro://discord/1', from: 'metro://discord/user/x', to: 'metro://discord/1', text: 'x',
+    }]);
+    server = await startServer({ METRO_STATE_DIR: stateDir, METRO_MONITOR_TOKEN: TOKEN });
+    const r = await fetch(`${server.url}/api/state?before=99&limit=20`, {
+      headers: { authorization: `Bearer ${TOKEN}` },
+    });
+    expect(r.status).toBe(200);
+    const body = await r.json() as { recent_history: unknown[] };
+    expect(body.recent_history).toEqual([]);
+  });
+
   test('empty state — 200 with empty maps', async () => {
     const stateDir = freshStateDir();
     server = await startServer({ METRO_STATE_DIR: stateDir, METRO_MONITOR_TOKEN: TOKEN });
