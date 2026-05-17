@@ -5,11 +5,11 @@
  * configured, open the SSE stream and accumulate events into a FlatList.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View, useColorScheme,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { EventRow } from '../components/EventRow';
 import { loadConfig, isConfigured, type Config } from '../lib/config';
 import { useTail } from '../lib/sse';
@@ -28,7 +28,7 @@ export default function Activity(): React.ReactElement {
     accent: '#5aa9ff',
   };
 
-  useEffect(() => { void loadConfig().then(setCfg); }, []);
+  useFocusEffect(useCallback(() => { void loadConfig().then(setCfg); }, []));
 
   const tailOpts = useMemo(() => ({
     daemonUrl: cfg?.daemonUrl ?? '',
