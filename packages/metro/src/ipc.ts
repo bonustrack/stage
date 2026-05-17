@@ -39,16 +39,22 @@ export async function stopIpcServer(server: Server): Promise<void> {
 }
 
 async function handleConnection(socket: Socket, handler: Handler): Promise<void> {
+  /** Newline-delimited request/response. Avoids races between `end()` writes and FIN under Bun. */
   let buf = '';
   socket.setEncoding('utf8');
-  socket.on('data', chunk => { buf += chunk; });
-  socket.on('end', async () => {
+  socket.on('data', async chunk => {
+    buf += chunk;
+    const nl = buf.indexOf('\n');
+    if (nl === -1) return;
+    const line = buf.slice(0, nl).trim();
+    buf = buf.slice(nl + 1);
     let resp: IpcResponse;
     try {
-      const req = JSON.parse(buf.trim()) as IpcRequest;
+      const req = JSON.parse(line) as IpcRequest;
       resp = await handler(req);
     } catch (err) { resp = { ok: false, error: errMsg(err) }; }
-    socket.end(JSON.stringify(resp) + '\n');
+    socket.write(JSON.stringify(resp) + '\n');
+    socket.end();
   });
   socket.on('error', err => log.debug({ err: errMsg(err) }, 'ipc connection error'));
 }
@@ -66,12 +72,20 @@ export function ipcCall(req: IpcRequest, timeoutMs = 60_000): Promise<IpcRespons
       socket.destroy();
       reject(new Error(`ipc timeout after ${timeoutMs}ms`));
     }, timeoutMs);
-    socket.on('connect', () => { socket.end(JSON.stringify(req)); });
-    socket.on('data', chunk => { buf += chunk.toString('utf8'); });
+    socket.on('connect', () => { socket.write(JSON.stringify(req) + '\n'); });
+    socket.on('data', chunk => {
+      buf += chunk.toString('utf8');
+      const nl = buf.indexOf('\n');
+      if (nl === -1) return;
+      clearTimeout(timer);
+      const line = buf.slice(0, nl).trim();
+      socket.end();
+      try { resolve(JSON.parse(line) as IpcResponse); }
+      catch (err) { reject(new Error(`ipc bad response: ${errMsg(err)}`)); }
+    });
     socket.on('end', () => {
       clearTimeout(timer);
-      try { resolve(JSON.parse(buf.trim()) as IpcResponse); }
-      catch (err) { reject(new Error(`ipc bad response: ${errMsg(err)}`)); }
+      if (!buf) reject(new Error('ipc connection closed without response'));
     });
     socket.on('error', err => { clearTimeout(timer); reject(err); });
   });

@@ -1,5 +1,5 @@
-#!/usr/bin/env node
-/** Metro CLI: parses argv, dispatches to subcommands. */
+#!/usr/bin/env bun
+/** Metro CLI: parses argv, dispatches to subcommands. Bun runtime required (uses Bun.spawn for trains). */
 
 import pkg from '../../package.json' with { type: 'json' };
 import { errMsg } from '../log.js';
