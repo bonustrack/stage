@@ -16,8 +16,6 @@ export interface HistoryEntry {
   emoji?: string;
   messageId?: string;
   replyTo?: string;
-  /** Pre-rendered chat-bubble markdown. */
-  display?: string;
 }
 
 /** Shape returned by `GET /api/state`. */

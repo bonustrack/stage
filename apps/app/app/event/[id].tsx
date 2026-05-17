@@ -58,17 +58,6 @@ export default function EventDetail(): React.ReactElement {
           <Text style={{ color: colors.fg, fontSize: 13, fontFamily: 'monospace' }} selectable>{v}</Text>
         </View>
       ))}
-
-      {entry.display ? (
-        <View style={{ marginTop: 12 }}>
-          <Text style={{ color: colors.sub, fontSize: 11, marginBottom: 4 }}>display</Text>
-          <View style={{ backgroundColor: colors.code, padding: 10, borderRadius: 6 }}>
-            <Text style={{ color: colors.fg, fontSize: 12, fontFamily: 'monospace' }} selectable>
-              {entry.display}
-            </Text>
-          </View>
-        </View>
-      ) : null}
     </ScrollView>
   );
 }

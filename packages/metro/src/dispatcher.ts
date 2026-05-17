@@ -12,7 +12,7 @@ import { WebhookStation } from './stations/webhook.js';
 import { asLine, Line, type InboundEdit, type InboundMessage, type InboundReaction } from './stations/index.js';
 import { CodexRC } from './codex-rc.js';
 import { startIpcServer, stopIpcServer } from './ipc.js';
-import { userSelf, appendHistory, formatDisplay, mintId, selfLine, type HistoryEntry } from './history.js';
+import { userSelf, appendHistory, mintId, selfLine, type HistoryEntry } from './history.js';
 import { noteSeen, saveBotId } from './cache.js';
 import { errMsg, log } from './log.js';
 import { acquireLock, configuredPlatforms, loadMetroEnv, STATE_DIR, requireConfiguredPlatform } from './paths.js';
@@ -53,14 +53,12 @@ const tunnelCfg = loadTunnelConfig();
 const tunnel = tunnelCfg ? new Tunnel(tunnelCfg, webhookPort()) : null;
 
 function emit(entry: HistoryEntry): void {
-  /** `display` first so it survives Monitor's ~500-char body truncation — the user must see it to echo it. */
-  const enriched: HistoryEntry = { display: formatDisplay(entry), ...entry };
-  const json = JSON.stringify(enriched);
+  const json = JSON.stringify(entry);
   process.stdout.write(json + '\n');
   codexRc?.push(json);
   noteSeen(entry.line, entry.lineName);
   for (const l of [entry.line, entry.from, entry.to]) if (l) noteUserFromLine(l);
-  appendHistory(enriched);
+  appendHistory(entry);
 }
 
 const destinationFor = (m: { line: Line; isPrivate?: boolean }): Line =>
