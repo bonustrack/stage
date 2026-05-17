@@ -6,7 +6,7 @@
  * directly — no EventSource polyfill, no extra deps. Reconnects are caller-driven.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { HistoryEntry } from './types';
 
 type SseEvent = { id?: string; event?: string; data?: string };
@@ -59,7 +59,6 @@ export function useTail(opts: TailOptions, enabled: boolean): {
   const [status, setStatus] = useState<'idle' | 'connecting' | 'open' | 'error' | 'closed'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
-  const abortRef = useRef<AbortController | null>(null);
 
   const reconnect = useCallback(() => {
     setEvents([]);
@@ -72,10 +71,31 @@ export function useTail(opts: TailOptions, enabled: boolean): {
       return;
     }
 
-    const ctrl = new AbortController();
-    abortRef.current = ctrl;
     setStatus('connecting');
     setError(null);
+
+    /**
+     * Seed from /api/state so the user sees recent history immediately on open.
+     * /api/tail defaults to `since=tail` (EOF) so it only emits NEW events.
+     */
+    void fetchState(opts.daemonUrl, opts.token).then(r => {
+      if (!r.ok) return;
+      const data = r.data as { recent_history?: HistoryEntry[] };
+      const seed = data.recent_history ?? [];
+      if (seed.length === 0) return;
+      const filtered = seed.filter(e => {
+        if (opts.chat && e.line !== opts.chat) return false;
+        if (opts.station && e.station !== opts.station) return false;
+        if (!opts.includeWebhooks && e.station === 'webhook') return false;
+        return true;
+      });
+      /** Seed is already newest-first; merge in front (de-dup by id with the live stream). */
+      setEvents(prev => {
+        const seen = new Set(prev.map(e => e.id));
+        const fresh = filtered.filter(e => !seen.has(e.id));
+        return [...fresh, ...prev].slice(0, 500);
+      });
+    });
 
     const params = new URLSearchParams();
     if (opts.as) params.set('as', opts.as);
@@ -85,54 +105,66 @@ export function useTail(opts: TailOptions, enabled: boolean): {
     const qs = params.toString();
     const url = `${opts.daemonUrl.replace(/\/$/, '')}/api/tail${qs ? `?${qs}` : ''}`;
 
-    (async (): Promise<void> => {
-      try {
-        const res = await fetch(url, {
-          headers: { authorization: `Bearer ${opts.token}` },
-          signal: ctrl.signal,
-        });
-        if (!res.ok) {
-          setStatus('error');
-          setError(`HTTP ${res.status}`);
-          return;
-        }
-        if (!res.body) {
-          setStatus('error');
-          setError('no response body');
-          return;
-        }
-        setStatus('open');
-        const reader = res.body.getReader();
-        const dec = new TextDecoder();
-        let buf = '';
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          buf += dec.decode(value, { stream: true });
-          const { events: parsed, rest } = parseFrames(buf);
-          buf = rest;
-          if (parsed.length > 0) {
-            const entries: HistoryEntry[] = [];
-            for (const e of parsed) {
-              if (e.event !== 'history' || !e.data) continue;
-              try { entries.push(JSON.parse(e.data) as HistoryEntry); }
-              catch { /* skip malformed */ }
-            }
-            if (entries.length > 0) {
-              /** Newest-first, capped at 500 to keep the list bounded. */
-              setEvents(prev => [...entries.reverse(), ...prev].slice(0, 500));
-            }
-          }
-        }
-        setStatus('closed');
-      } catch (err) {
-        if (ctrl.signal.aborted) return;
-        setStatus('error');
-        setError(err instanceof Error ? err.message : String(err));
-      }
-    })();
+    /**
+     * Uses XMLHttpRequest with `responseType: 'text'` and progress events —
+     * RN/Expo-Go fetch streaming is broken on Android (rejects HTTP/2 from CF
+     * with "Network request failed"). XHR is the reliable primitive on RN.
+     */
+    const xhr = new XMLHttpRequest();
+    let lastIndex = 0;
+    let buf = '';
+    let aborted = false;
 
-    return (): void => { ctrl.abort(); };
+    xhr.open('GET', url);
+    xhr.setRequestHeader('Authorization', `Bearer ${opts.token}`);
+    xhr.responseType = 'text';
+
+    xhr.onreadystatechange = (): void => {
+      if (aborted) return;
+      if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED) {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          setStatus('open');
+        } else {
+          setStatus('error');
+          setError(`HTTP ${xhr.status}`);
+        }
+      }
+    };
+    xhr.onprogress = (): void => {
+      if (aborted) return;
+      const chunk = xhr.responseText.slice(lastIndex);
+      lastIndex = xhr.responseText.length;
+      buf += chunk;
+      const { events: parsed, rest } = parseFrames(buf);
+      buf = rest;
+      if (parsed.length > 0) {
+        const entries: HistoryEntry[] = [];
+        for (const e of parsed) {
+          if (e.event !== 'history' || !e.data) continue;
+          try { entries.push(JSON.parse(e.data) as HistoryEntry); }
+          catch { /* skip malformed */ }
+        }
+        if (entries.length > 0) {
+          /** Newest-first, capped at 500 to keep the list bounded. */
+          setEvents(prev => [...entries.reverse(), ...prev].slice(0, 500));
+        }
+      }
+    };
+    xhr.onerror = (): void => {
+      if (aborted) return;
+      setStatus('error');
+      setError('XHR network error');
+    };
+    xhr.onload = (): void => {
+      if (aborted) return;
+      setStatus('closed');
+    };
+    xhr.send();
+
+    return (): void => {
+      aborted = true;
+      try { xhr.abort(); } catch { /* ignore */ }
+    };
   }, [enabled, opts.daemonUrl, opts.token, opts.as, opts.chat, opts.station, opts.includeWebhooks, tick]);
 
   return { events, status, error, reconnect };
@@ -143,13 +175,26 @@ export async function fetchState(
   daemonUrl: string,
   token: string,
 ): Promise<{ ok: true; data: unknown } | { ok: false; status: number; error: string }> {
-  try {
-    const res = await fetch(`${daemonUrl.replace(/\/$/, '')}/api/state`, {
-      headers: { authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) return { ok: false, status: res.status, error: `HTTP ${res.status}` };
-    return { ok: true, data: await res.json() };
-  } catch (err) {
-    return { ok: false, status: 0, error: err instanceof Error ? err.message : String(err) };
-  }
+  /**
+   * Uses XMLHttpRequest instead of fetch — RN/Expo-Go's `fetch` on Android
+   * intermittently rejects HTTP/2 responses through Cloudflare with a generic
+   * "Network request failed". XHR is the underlying primitive and is reliable.
+   */
+  return new Promise((resolve) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', `${daemonUrl.replace(/\/$/, '')}/api/state`);
+    xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    xhr.onload = (): void => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try { resolve({ ok: true, data: JSON.parse(xhr.responseText) }); }
+        catch (e) { resolve({ ok: false, status: 0, error: e instanceof Error ? e.message : String(e) }); }
+      } else {
+        resolve({ ok: false, status: xhr.status, error: `HTTP ${xhr.status}` });
+      }
+    };
+    xhr.onerror = (): void => { resolve({ ok: false, status: 0, error: 'XHR error (network)' }); };
+    xhr.ontimeout = (): void => { resolve({ ok: false, status: 0, error: 'XHR timeout' }); };
+    xhr.timeout = 15000;
+    xhr.send();
+  });
 }

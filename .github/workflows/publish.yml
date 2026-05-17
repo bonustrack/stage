@@ -12,18 +12,23 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: packages/metro
     steps:
       - uses: actions/checkout@v6
+
+      # Use bun for install (matches CI + the root bun.lock + workspaces).
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.9
+      - run: bun install --frozen-lockfile
+
+      # Use Node + npm for publish (npm registry + `--provenance` need npm CLI).
       - uses: actions/setup-node@v6
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org/
-      - run: npm install --no-audit --no-fund
 
       - id: meta
+        working-directory: packages/metro
         run: |
           NAME=$(jq -r .name package.json)
           VERSION=$(jq -r .version package.json)
@@ -35,13 +40,17 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           [[ "$VERSION" == *-* ]] && echo "tag=beta" >> "$GITHUB_OUTPUT" || echo "tag=latest" >> "$GITHUB_OUTPUT"
 
+      # Build the metro package's dist/ before publishing.
       - if: steps.meta.outputs.publish == 'true'
+        run: bun run --filter @stage-labs/metro build
+
+      - if: steps.meta.outputs.publish == 'true'
+        working-directory: packages/metro
         run: npm publish --access public --tag ${{ steps.meta.outputs.tag }} --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - if: steps.meta.outputs.publish == 'true'
-        working-directory: ${{ github.workspace }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PRERELEASE: ${{ steps.meta.outputs.tag == 'beta' && '--prerelease' || '' }}

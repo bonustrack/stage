@@ -31,9 +31,29 @@ function authorized(req: IncomingMessage): { ok: true } | { ok: false; status: 4
 }
 
 /** Return `true` iff this request was handled (status written + response ended). */
+/**
+ * Hostnames allowed to serve monitor endpoints. `webhook.metro.box` is
+ * intentionally NOT in this list — webhooks and monitor split by host so the
+ * webhook URL stays narrow-scope (anyone with the path can POST events) while
+ * the monitor URL is the only one exposing app state.
+ */
+const MONITOR_HOSTS = new Set<string>([
+  'monitor.metro.box',
+  'localhost',
+  '127.0.0.1',
+]);
+
+function monitorHostAllowed(req: IncomingMessage): boolean {
+  const raw = (req.headers[':authority' as keyof typeof req.headers] as string | undefined) ?? req.headers.host;
+  if (!raw) return true; // no host header (rare) — fall through to auth check
+  const host = raw.split(':')[0].toLowerCase();
+  return MONITOR_HOSTS.has(host);
+}
+
 export function handleMonitorRequest(req: IncomingMessage, res: ServerResponse): boolean {
   const url = req.url ?? '';
   if (!url.startsWith('/api/')) return false;
+  if (!monitorHostAllowed(req)) return false; // let outer router 404 it
   const [pathOnly, queryString = ''] = url.split('?', 2);
 
   if (req.method !== 'GET') {
@@ -120,8 +140,13 @@ async function handleTail(req: IncomingMessage, res: ServerResponse, query: URLS
     if (Number.isFinite(n) && n >= 0) offset = n;
   }
 
-  /** Initial comment so curl/EventSource see *something* before the first event. */
-  res.write(`: metro monitor tail (mode=${mode}${self ? `, as=${self}` : ''})\n\n`);
+  /**
+   * Initial comment so curl/EventSource see *something* before the first event.
+   * Padded to ~4 KiB so Cloudflare's HTTP/2 SSE buffer flushes — without this,
+   * free-tier CF can hold the first bytes for 30+ seconds.
+   */
+  res.write(`: metro monitor tail (mode=${mode}${self ? `, as=${self}` : ''})\n`);
+  res.write(`: ${'-'.repeat(4096)}\n\n`);
 
   const drain = (): void => {
     const claims = readClaims();
