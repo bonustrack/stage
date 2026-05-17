@@ -9,10 +9,9 @@ const GLYPH: Record<KnownStation, string> = {
   codex: 'CX',
 };
 
-/** Tiny two-letter pill used as a station marker in the activity feed. */
+/** Two-letter pill used as a station marker in the activity feed. */
 export function StationIcon({ station }: { station: string }): React.ReactElement {
-  const known = (Object.keys(GLYPH) as KnownStation[]).find(k => k === station);
-  const label = known ? GLYPH[known] : station.slice(0, 2).toUpperCase();
+  const label = GLYPH[station as KnownStation] ?? station.slice(0, 2).toUpperCase();
   return (
     <Text
       style={{

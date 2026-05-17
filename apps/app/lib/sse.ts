@@ -1,10 +1,4 @@
-/**
- * Tiny SSE reader.
- *
- * React Native's `fetch` returns a streamed response body via `.body` (a
- * web-style ReadableStream) on iOS/Android since RN 0.74. We use that
- * directly — no EventSource polyfill, no extra deps. Reconnects are caller-driven.
- */
+/** SSE reader for RN. Uses XHR (fetch streaming on Android via Cloudflare is broken). */
 
 import { useCallback, useEffect, useState } from 'react';
 import type { HistoryEntry } from './types';
@@ -45,10 +39,7 @@ export type TailOptions = {
   includeWebhooks?: boolean;
 };
 
-/**
- * React hook — opens an SSE stream to `/api/tail`, accumulates events newest-first,
- * exposes status + the list. Caller owns lifecycle via the `enabled` flag.
- */
+/** Hook: open SSE to `/api/tail`, accumulate events newest-first. Caller toggles `enabled`. */
 export function useTail(opts: TailOptions, enabled: boolean): {
   events: HistoryEntry[];
   status: 'idle' | 'connecting' | 'open' | 'error' | 'closed';
@@ -74,14 +65,10 @@ export function useTail(opts: TailOptions, enabled: boolean): {
     setStatus('connecting');
     setError(null);
 
-    /**
-     * Seed from /api/state so the user sees recent history immediately on open.
-     * /api/tail defaults to `since=tail` (EOF) so it only emits NEW events.
-     */
+    /** Seed from /api/state — /api/tail defaults to since=tail so only NEW events stream. */
     void fetchState(opts.daemonUrl, opts.token).then(r => {
       if (!r.ok) return;
-      const data = r.data as { recent_history?: HistoryEntry[] };
-      const seed = data.recent_history ?? [];
+      const seed = (r.data as { recent_history?: HistoryEntry[] }).recent_history ?? [];
       if (seed.length === 0) return;
       const filtered = seed.filter(e => {
         if (opts.chat && e.line !== opts.chat) return false;
@@ -89,7 +76,6 @@ export function useTail(opts: TailOptions, enabled: boolean): {
         if (!opts.includeWebhooks && e.station === 'webhook') return false;
         return true;
       });
-      /** Seed is already newest-first; merge in front (de-dup by id with the live stream). */
       setEvents(prev => {
         const seen = new Set(prev.map(e => e.id));
         const fresh = filtered.filter(e => !seen.has(e.id));
@@ -105,11 +91,7 @@ export function useTail(opts: TailOptions, enabled: boolean): {
     const qs = params.toString();
     const url = `${opts.daemonUrl.replace(/\/$/, '')}/api/tail${qs ? `?${qs}` : ''}`;
 
-    /**
-     * Uses XMLHttpRequest with `responseType: 'text'` and progress events —
-     * RN/Expo-Go fetch streaming is broken on Android (rejects HTTP/2 from CF
-     * with "Network request failed"). XHR is the reliable primitive on RN.
-     */
+    /** XHR + progress events — RN/Expo-Go fetch streaming fails on Android through Cloudflare. */
     const xhr = new XMLHttpRequest();
     let lastIndex = 0;
     let buf = '';
@@ -145,7 +127,6 @@ export function useTail(opts: TailOptions, enabled: boolean): {
           catch { /* skip malformed */ }
         }
         if (entries.length > 0) {
-          /** Newest-first, capped at 500 to keep the list bounded. */
           setEvents(prev => [...entries.reverse(), ...prev].slice(0, 500));
         }
       }
@@ -170,16 +151,11 @@ export function useTail(opts: TailOptions, enabled: boolean): {
   return { events, status, error, reconnect };
 }
 
-/** One-shot GET helper for `/api/state` (no SSE). */
+/** One-shot GET for `/api/state`. XHR for the same Android-fetch reliability reason as above. */
 export async function fetchState(
   daemonUrl: string,
   token: string,
 ): Promise<{ ok: true; data: unknown } | { ok: false; status: number; error: string }> {
-  /**
-   * Uses XMLHttpRequest instead of fetch — RN/Expo-Go's `fetch` on Android
-   * intermittently rejects HTTP/2 responses through Cloudflare with a generic
-   * "Network request failed". XHR is the underlying primitive and is reliable.
-   */
   return new Promise((resolve) => {
     const xhr = new XMLHttpRequest();
     xhr.open('GET', `${daemonUrl.replace(/\/$/, '')}/api/state`);

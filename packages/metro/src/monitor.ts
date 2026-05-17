@@ -1,6 +1,5 @@
-/** Read-only HTTP monitor endpoints — `/api/state` (snapshot) and `/api/tail` (SSE follow). */
-/** Mounted alongside `/wh/*` on the existing webhook server; bearer-token auth via */
-/** `METRO_MONITOR_TOKEN` (503 when unset — never anonymous). Routes don't mutate state. */
+/** Read-only HTTP monitor endpoints. `/api/state` (snapshot) + `/api/tail` (SSE). */
+/** Mounted on the webhook server. Bearer auth via METRO_MONITOR_TOKEN (503 when unset). */
 
 import { timingSafeEqual } from 'node:crypto';
 import { watch } from 'node:fs';
@@ -15,7 +14,6 @@ import { asLine, type Line } from './stations/index.js';
 
 const HISTORY_LIMIT = 100;
 
-/** `true` if the request matches `Authorization: Bearer <METRO_MONITOR_TOKEN>` (timing-safe). */
 function authorized(req: IncomingMessage): { ok: true } | { ok: false; status: 401 | 503; msg: string } {
   const token = process.env.METRO_MONITOR_TOKEN;
   if (!token) return { ok: false, status: 503, msg: 'monitor endpoints not configured (METRO_MONITOR_TOKEN unset)' };
@@ -30,18 +28,13 @@ function authorized(req: IncomingMessage): { ok: true } | { ok: false; status: 4
   return { ok: true };
 }
 
-/** Hosts that serve `/api/*`. webhook.metro.box excluded so it stays scoped to /wh/*. */
-const MONITOR_HOSTS = new Set<string>([
-  'monitor.metro.box',
-  'localhost',
-  '127.0.0.1',
-]);
+/** Hosts that serve `/api/*`. webhook.metro.box stays scoped to /wh/*. */
+const MONITOR_HOSTS = new Set<string>(['monitor.metro.box', 'localhost', '127.0.0.1']);
 
 function monitorHostAllowed(req: IncomingMessage): boolean {
   const raw = (req.headers[':authority' as keyof typeof req.headers] as string | undefined) ?? req.headers.host;
-  if (!raw) return true; // no host header (rare) — fall through to auth check
-  const host = raw.split(':')[0].toLowerCase();
-  return MONITOR_HOSTS.has(host);
+  if (!raw) return true;
+  return MONITOR_HOSTS.has(raw.split(':')[0].toLowerCase());
 }
 
 export function handleMonitorRequest(req: IncomingMessage, res: ServerResponse): boolean {
@@ -83,20 +76,17 @@ export function handleMonitorRequest(req: IncomingMessage, res: ServerResponse):
 }
 
 function handleState(res: ServerResponse): void {
-  /** `readHistory` returns most-recent-first — exactly what the app's activity feed wants. */
+  /** `readHistory` is newest-first — what the activity feed expects. */
   const recent = readHistory({ limit: HISTORY_LIMIT });
   const claims = readClaims();
-  /** lines = the set of conversation URIs we've seen recently (good-enough proxy for "available lines"). */
   const linesSet = new Set<string>();
   for (const e of recent) linesSet.add(e.line);
   for (const line of Object.keys(claims)) linesSet.add(line);
-  const lines = [...linesSet];
-  const botIds = readBotIds();
   res.writeHead(200, { 'content-type': 'application/json' });
-  res.end(JSON.stringify({ claims, lines, recent_history: recent, bot_ids: botIds }));
+  res.end(JSON.stringify({ claims, lines: [...linesSet], recent_history: recent, bot_ids: readBotIds() }));
 }
 
-/** Mirrors `cli/tail.ts:resolveMode`, but operates on URLSearchParams. Always read-only. */
+/** Mirrors `cli/tail.ts:resolveMode` but operates on URLSearchParams. */
 function resolveQueryMode(query: URLSearchParams, self: Line | null): Mode {
   const strict = query.get('strict') === 'true' || query.get('mode') === 'strict';
   const unclaimed = query.get('unclaimed') === 'true' || query.get('mode') === 'unclaimed';
@@ -120,9 +110,9 @@ async function handleTail(req: IncomingMessage, res: ServerResponse, query: URLS
     'content-type': 'text/event-stream',
     'cache-control': 'no-cache, no-transform',
     'connection': 'keep-alive',
-    /** Permissive CORS — same security model as the bearer token already gating us. */
+    /** Bearer auth already gates us; CORS can be permissive. */
     'access-control-allow-origin': '*',
-    /** Cloudflare/proxies sometimes buffer SSE without this hint. */
+    /** Cloudflare/proxies buffer SSE without this hint. */
     'x-accel-buffering': 'no',
   });
 
@@ -134,7 +124,7 @@ async function handleTail(req: IncomingMessage, res: ServerResponse, query: URLS
     if (Number.isFinite(n) && n >= 0) offset = n;
   }
 
-  /** Initial comment + 4 KiB padding so Cloudflare's HTTP/2 buffer flushes (else holds 30+ s on free tier). */
+  /** 4 KiB padding so Cloudflare's HTTP/2 buffer flushes (else holds 30+ s on free tier). */
   res.write(`: metro monitor tail (mode=${mode}${self ? `, as=${self}` : ''})\n`);
   res.write(`: ${'-'.repeat(4096)}\n\n`);
 
@@ -153,7 +143,7 @@ async function handleTail(req: IncomingMessage, res: ServerResponse, query: URLS
 
   drain();
 
-  /** fs.watch can drop/coalesce on macOS — poll every 1s as a backstop, plus a keep-alive comment. */
+  /** fs.watch coalesces on macOS — poll every 1s as a backstop. */
   let watcher: ReturnType<typeof watch> | null = null;
   try { watcher = watch(HISTORY_FILE, () => drain()); } catch { /* file may not exist yet */ }
   const poll = setInterval(drain, 1_000);
