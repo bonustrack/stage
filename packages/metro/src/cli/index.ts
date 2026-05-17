@@ -9,22 +9,22 @@ import { readHistory, type HistoryKind } from '../history.js';
 import { cmdDoctor, cmdSetup, cmdUpdate } from './config.js';
 import { cmdClaim, cmdClaims, cmdRelease, cmdTail } from './tail.js';
 import { cmdTunnel, cmdWebhook } from './webhook.js';
-import { cmdCall, cmdWorkers } from './call.js';
+import { cmdCall, cmdTrains } from './call.js';
 import {
   flagOne, isJson, parseArgs, writeJson, type ExitErr, type Flags,
 } from './util.js';
 
-const USAGE = `metro — event-interception wire. Workers in ~/.metro/workers/ produce events;
+const USAGE = `metro — event-interception wire. Trains in ~/.metro/trains/ produce events;
 metro multiplexes them onto stdout. Outbound action calls flow back via \`metro call\`.
 
 Usage:
   metro                                       Run the dispatcher (emits JSON events on stdout).
-  metro setup                                 Print config status (tokens are owned by workers now).
+  metro setup                                 Print config status (credentials are owned by trains).
   metro setup skill [clear]                   Install/remove the metro skill into ~/.claude / ~/.codex.
   metro doctor                                Health check.
   metro lines                                 List recently-seen conversations.
-  metro workers [list]                        List supervised workers (running, pid, fail count).
-  metro call <worker> <action> [args]         Forward an action call to a worker via its stdin.
+  metro trains [list]                         List supervised trains (running, pid, fail count).
+  metro call <train> <action> [args]          Forward an action call to a train via its stdin.
                                               [args] is JSON, '@file', '-' (stdin), or a bare string.
   metro history [--limit=N] [--line=…] [--station=…] [--kind=…] [--from=…] [--text=…] [--since=…]
                                               Read the universal message log (newest first).
@@ -41,7 +41,7 @@ Usage:
   metro update                                Upgrade in place.
   metro --version | --help
 
-Workers: place \`<name>.ts\` files in ~/.metro/workers/. See \`@stage-labs/metro/examples\`.
+Trains: place \`<name>.ts\` files in ~/.metro/trains/. See \`@stage-labs/metro/examples\`.
 Lines: metro://<station>/<path>. Multi-line args: pipe on stdin where supported.
 Exit codes: 0 success · 1 usage · 2 config · 3 upstream
 `;
@@ -110,7 +110,7 @@ const pad = (s: string, n: number): string => (s.length > n ? `${s.slice(0, n - 
 
 const COMMANDS: Record<string, (positional: string[], flags: Flags) => Promise<void>> = {
   setup: cmdSetup, doctor: cmdDoctor, lines: cmdLines,
-  call: cmdCall, workers: cmdWorkers,
+  call: cmdCall, trains: cmdTrains,
   webhook: cmdWebhook, tunnel: cmdTunnel,
   history: cmdHistory, tail: cmdTail,
   claim: cmdClaim, release: cmdRelease, claims: cmdClaims,

@@ -1,5 +1,5 @@
-/** Daemon: supervises ~/.metro/workers/*, multiplexes their stdout to one JSON event stream, */
-/** routes outbound `forward-call` IPC back to workers' stdin. Two builtin event sources stay */
+/** Daemon: supervises ~/.metro/trains/*, multiplexes their stdout to one JSON event stream, */
+/** routes outbound `forward-call` IPC back to trains' stdin. Two builtin event sources stay */
 /** in core: the HTTP webhook receiver + cross-user `notify` IPC. */
 
 import { join } from 'node:path';
@@ -18,7 +18,7 @@ import { noteUserFromLine } from './registry.js';
 import { listEndpoints, webhookPort, findEndpoint } from './webhooks.js';
 import { loadTunnelConfig, Tunnel } from './tunnel.js';
 import { handleMonitorRequest } from './monitor.js';
-import { WorkerSupervisor, WORKERS_DIR } from './workers.js';
+import { TrainSupervisor, TRAINS_DIR } from './trains.js';
 import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 
@@ -39,7 +39,7 @@ const codexRc = process.env.METRO_CODEX_RC ? new CodexRC(process.env.METRO_CODEX
 codexRc?.onThread(id => { setCodexSessionId(id); seedSelf(); });
 codexRc?.start();
 
-const supervisor = new WorkerSupervisor();
+const supervisor = new TrainSupervisor();
 
 function emit(entry: HistoryEntry): void {
   /** `display` first so it survives Monitor's body truncation — the user must see it to echo it. */
@@ -52,14 +52,14 @@ function emit(entry: HistoryEntry): void {
   appendHistory(enriched);
 }
 
-/** Promote a worker-emitted envelope to a full `HistoryEntry`. Workers can omit `id`/`station`/`to`. */
-function envelopeToEntry(env: Record<string, unknown>, workerName: string): HistoryEntry | null {
+/** Promote a train-emitted envelope to a full `HistoryEntry`. Trains can omit `id`/`station`/`to`. */
+function envelopeToEntry(env: Record<string, unknown>, trainName: string): HistoryEntry | null {
   const line = env.line as string | undefined;
   if (typeof line !== 'string') {
-    log.warn({ worker: workerName }, 'worker: dropped event without `line`');
+    log.warn({ train: trainName }, 'train: dropped event without `line`');
     return null;
   }
-  const station = (env.station as string | undefined) ?? Line.station(line) ?? workerName;
+  const station = (env.station as string | undefined) ?? Line.station(line) ?? trainName;
   const kind = (env.kind as HistoryEntry['kind'] | undefined) ?? 'inbound';
   const id = (env.id as string | undefined) ?? mintId();
   const ts = (env.ts as string | undefined) ?? new Date().toISOString();
@@ -81,8 +81,8 @@ function envelopeToEntry(env: Record<string, unknown>, workerName: string): Hist
   };
 }
 
-supervisor.onWorkerEvent((env, worker) => {
-  const entry = envelopeToEntry(env, worker);
+supervisor.onTrainEvent((env, train) => {
+  const entry = envelopeToEntry(env, train);
   if (entry) emit(entry);
 });
 
@@ -168,12 +168,12 @@ const ipc = startIpcServer(async (req: IpcRequest): Promise<IpcResponse> => {
   }
   if (req.op === 'forward-call') {
     try {
-      const r = await supervisor.call(req.worker, req.action, req.args);
+      const r = await supervisor.call(req.train, req.action, req.args);
       return { ok: true, response: r };
     } catch (err) { return { ok: false, error: errMsg(err) }; }
   }
-  if (req.op === 'workers-list') {
-    return { ok: true, workers: supervisor.list() };
+  if (req.op === 'trains-list') {
+    return { ok: true, trains: supervisor.list() };
   }
   return { ok: false, error: `unknown op: ${(req as { op?: string }).op ?? '(none)'}` };
 });
@@ -182,7 +182,7 @@ async function main(): Promise<void> {
   supervisor.start();
   await startWebhookServer();
   tunnel?.start();
-  log.info({ codexRc: !!codexRc, tunnel: !!tunnel, workersDir: WORKERS_DIR }, 'dispatcher ready');
+  log.info({ codexRc: !!codexRc, tunnel: !!tunnel, trainsDir: TRAINS_DIR }, 'dispatcher ready');
 }
 
 let shuttingDown = false;

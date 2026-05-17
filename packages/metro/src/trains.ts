@@ -1,4 +1,4 @@
-/** Worker supervisor: spawn `~/.metro/workers/*.{ts,js,mjs}` under `bun run`, multiplex their */
+/** Train supervisor: spawn `~/.metro/trains/*.{ts,js,mjs}` under `bun run`, multiplex their */
 /** stdout (events + call-responses), route outbound calls to their stdin. Pure transport. */
 
 import { mkdirSync, readdirSync, statSync } from 'node:fs';
@@ -11,18 +11,18 @@ const MAX_CONSECUTIVE_FAILS = 5;
 const CALL_TIMEOUT_MS = 60_000;
 const STDOUT_LINE_MAX = 4 * 1024 * 1024; // 4 MiB safeguard per line
 
-export const WORKERS_DIR = process.env.METRO_WORKERS_DIR ?? join(homedir(), '.metro', 'workers');
+export const TRAINS_DIR = process.env.METRO_TRAINS_DIR ?? join(homedir(), '.metro', 'trains');
 
-export type WorkerEvent = Record<string, unknown>;
-export type WorkerCallResponse = { result?: unknown; error?: string };
+export type TrainEvent = Record<string, unknown>;
+export type TrainCallResponse = { result?: unknown; error?: string };
 
 type Pending = {
-  resolve: (r: WorkerCallResponse) => void;
+  resolve: (r: TrainCallResponse) => void;
   reject: (err: Error) => void;
   timer: ReturnType<typeof setTimeout>;
 };
 
-type WorkerState = {
+type TrainState = {
   name: string;
   path: string;
   proc: ReturnType<typeof Bun.spawn> | null;
@@ -34,7 +34,7 @@ type WorkerState = {
   stopped: boolean;
 };
 
-export type WorkerInfo = {
+export type TrainInfo = {
   name: string;
   path: string;
   running: boolean;
@@ -43,116 +43,116 @@ export type WorkerInfo = {
   failCount: number;
 };
 
-export class WorkerSupervisor {
-  private workers = new Map<string, WorkerState>();
-  private onEvent: ((event: WorkerEvent, worker: string) => void) | null = null;
+export class TrainSupervisor {
+  private trains = new Map<string, TrainState>();
+  private onEvent: ((event: TrainEvent, train: string) => void) | null = null;
   private nextCallId = 1;
 
-  constructor(private dir: string = WORKERS_DIR) {}
+  constructor(private dir: string = TRAINS_DIR) {}
 
-  onWorkerEvent(handler: (event: WorkerEvent, worker: string) => void): void {
+  onTrainEvent(handler: (event: TrainEvent, train: string) => void): void {
     this.onEvent = handler;
   }
 
-  /** Discover workers under `dir` and spawn one subprocess per file. Creates the dir if missing. */
+  /** Discover trains under `dir` and spawn one subprocess per file. Creates the dir if missing. */
   start(): void {
     mkdirSync(this.dir, { recursive: true });
-    const files = readdirSync(this.dir).filter(isWorkerFile)
+    const files = readdirSync(this.dir).filter(isTrainFile)
       .map(f => ({ name: parsePath(f).name, path: join(this.dir, f) }))
-      .filter(w => { try { return statSync(w.path).isFile(); } catch { return false; } });
-    for (const w of files) this.startWorker(w.name, w.path);
-    log.info({ dir: this.dir, count: this.workers.size }, 'worker supervisor: started');
+      .filter(t => { try { return statSync(t.path).isFile(); } catch { return false; } });
+    for (const t of files) this.startTrain(t.name, t.path);
+    log.info({ dir: this.dir, count: this.trains.size }, 'train supervisor: started');
   }
 
   /** Shut everything down (graceful: send SIGTERM, then SIGKILL after grace period). */
   async stop(): Promise<void> {
     const tasks: Promise<unknown>[] = [];
-    for (const w of this.workers.values()) {
-      w.stopped = true;
-      if (w.restartTimer) { clearTimeout(w.restartTimer); w.restartTimer = null; }
-      for (const p of w.pending.values()) {
+    for (const t of this.trains.values()) {
+      t.stopped = true;
+      if (t.restartTimer) { clearTimeout(t.restartTimer); t.restartTimer = null; }
+      for (const p of t.pending.values()) {
         clearTimeout(p.timer);
-        p.reject(new Error('worker shutting down'));
+        p.reject(new Error('train shutting down'));
       }
-      w.pending.clear();
-      if (w.proc && w.proc.exitCode === null) {
-        try { w.proc.kill('SIGTERM'); } catch { /* ignore */ }
-        const grace = setTimeout(() => { try { w.proc?.kill('SIGKILL'); } catch { /* ignore */ } }, 2_000);
-        tasks.push(w.proc.exited.finally(() => clearTimeout(grace)));
+      t.pending.clear();
+      if (t.proc && t.proc.exitCode === null) {
+        try { t.proc.kill('SIGTERM'); } catch { /* ignore */ }
+        const grace = setTimeout(() => { try { t.proc?.kill('SIGKILL'); } catch { /* ignore */ } }, 2_000);
+        tasks.push(t.proc.exited.finally(() => clearTimeout(grace)));
       }
     }
     await Promise.all(tasks);
   }
 
-  list(): WorkerInfo[] {
-    return [...this.workers.values()].map(w => ({
-      name: w.name, path: w.path,
-      running: !!(w.proc && w.proc.exitCode === null),
-      pid: w.proc?.pid ?? null,
-      startedAt: w.startedAt,
-      failCount: w.failCount,
+  list(): TrainInfo[] {
+    return [...this.trains.values()].map(t => ({
+      name: t.name, path: t.path,
+      running: !!(t.proc && t.proc.exitCode === null),
+      pid: t.proc?.pid ?? null,
+      startedAt: t.startedAt,
+      failCount: t.failCount,
     }));
   }
 
-  /** Send a call to a named worker and await the matching response. */
-  async call(name: string, action: string, args: unknown): Promise<WorkerCallResponse> {
-    const w = this.workers.get(name);
-    if (!w) throw new Error(`no worker named '${name}' (have: ${[...this.workers.keys()].join(', ') || '(none)'})`);
-    if (!w.proc || w.proc.exitCode !== null) throw new Error(`worker '${name}' is not running`);
+  /** Send a call to a named train and await the matching response. */
+  async call(name: string, action: string, args: unknown): Promise<TrainCallResponse> {
+    const t = this.trains.get(name);
+    if (!t) throw new Error(`no train named '${name}' (have: ${[...this.trains.keys()].join(', ') || '(none)'})`);
+    if (!t.proc || t.proc.exitCode !== null) throw new Error(`train '${name}' is not running`);
     const id = `req_${this.nextCallId++}_${Math.random().toString(36).slice(2, 8)}`;
     const payload = JSON.stringify({ op: 'call', id, action, args }) + '\n';
-    return new Promise<WorkerCallResponse>((resolve, reject) => {
+    return new Promise<TrainCallResponse>((resolve, reject) => {
       const timer = setTimeout(() => {
-        w.pending.delete(id);
-        reject(new Error(`worker '${name}' call '${action}' timed out after ${CALL_TIMEOUT_MS}ms`));
+        t.pending.delete(id);
+        reject(new Error(`train '${name}' call '${action}' timed out after ${CALL_TIMEOUT_MS}ms`));
       }, CALL_TIMEOUT_MS);
-      w.pending.set(id, { resolve, reject, timer });
+      t.pending.set(id, { resolve, reject, timer });
       try {
-        const stdin = w.proc!.stdin;
+        const stdin = t.proc!.stdin;
         if (!stdin || typeof stdin === 'number') throw new Error('stdin not piped');
         stdin.write(payload);
         stdin.flush();
       } catch (err) {
         clearTimeout(timer);
-        w.pending.delete(id);
-        reject(new Error(`worker '${name}' stdin write failed: ${errMsg(err)}`));
+        t.pending.delete(id);
+        reject(new Error(`train '${name}' stdin write failed: ${errMsg(err)}`));
       }
     });
   }
 
-  private startWorker(name: string, path: string): void {
-    if (this.workers.has(name)) {
-      log.warn({ name }, 'worker supervisor: duplicate name, skipping');
+  private startTrain(name: string, path: string): void {
+    if (this.trains.has(name)) {
+      log.warn({ name }, 'train supervisor: duplicate name, skipping');
       return;
     }
-    const state: WorkerState = {
+    const state: TrainState = {
       name, path, proc: null, pending: new Map(), buf: '',
       failCount: 0, restartTimer: null, startedAt: null, stopped: false,
     };
-    this.workers.set(name, state);
+    this.trains.set(name, state);
     this.spawn(state);
   }
 
-  private spawn(state: WorkerState): void {
+  private spawn(state: TrainState): void {
     if (state.stopped) return;
     try {
       const proc = Bun.spawn(['bun', 'run', state.path], {
         stdin: 'pipe', stdout: 'pipe', stderr: 'inherit',
-        env: { ...process.env, METRO_WORKER_NAME: state.name },
+        env: { ...process.env, METRO_TRAIN_NAME: state.name },
       });
       state.proc = proc;
       state.startedAt = new Date().toISOString();
       state.buf = '';
-      log.info({ name: state.name, pid: proc.pid }, 'worker: spawned');
+      log.info({ name: state.name, pid: proc.pid }, 'train: spawned');
       void this.pumpStdout(state);
       void proc.exited.then(code => this.onExit(state, code ?? 0));
     } catch (err) {
-      log.warn({ name: state.name, err: errMsg(err) }, 'worker: spawn failed');
+      log.warn({ name: state.name, err: errMsg(err) }, 'train: spawn failed');
       this.scheduleRestart(state);
     }
   }
 
-  private async pumpStdout(state: WorkerState): Promise<void> {
+  private async pumpStdout(state: TrainState): Promise<void> {
     const proc = state.proc;
     if (!proc || !proc.stdout) return;
     const reader = (proc.stdout as ReadableStream<Uint8Array>).getReader();
@@ -163,7 +163,7 @@ export class WorkerSupervisor {
         if (done) break;
         state.buf += dec.decode(value, { stream: true });
         if (state.buf.length > STDOUT_LINE_MAX && !state.buf.includes('\n')) {
-          log.warn({ name: state.name, bytes: state.buf.length }, 'worker: dropping oversized stdout line');
+          log.warn({ name: state.name, bytes: state.buf.length }, 'train: dropping oversized stdout line');
           state.buf = '';
         }
         let nl;
@@ -175,15 +175,15 @@ export class WorkerSupervisor {
         }
       }
     } catch (err) {
-      log.debug({ name: state.name, err: errMsg(err) }, 'worker: stdout pump ended');
+      log.debug({ name: state.name, err: errMsg(err) }, 'train: stdout pump ended');
     }
   }
 
-  private handleLine(state: WorkerState, line: string): void {
+  private handleLine(state: TrainState, line: string): void {
     let msg: { op?: string; id?: string; result?: unknown; error?: string } & Record<string, unknown>;
     try { msg = JSON.parse(line); }
     catch (err) {
-      log.warn({ name: state.name, err: errMsg(err), line: line.slice(0, 200) }, 'worker: bad JSON');
+      log.warn({ name: state.name, err: errMsg(err), line: line.slice(0, 200) }, 'train: bad JSON');
       return;
     }
     if (msg.op === 'response') {
@@ -191,7 +191,7 @@ export class WorkerSupervisor {
       if (typeof id !== 'string') return;
       const pending = state.pending.get(id);
       if (!pending) {
-        log.debug({ name: state.name, id }, 'worker: response for unknown id (timed out?)');
+        log.debug({ name: state.name, id }, 'train: response for unknown id (timed out?)');
         return;
       }
       state.pending.delete(id);
@@ -200,38 +200,38 @@ export class WorkerSupervisor {
       return;
     }
     if (msg.op === 'log') {
-      log.info({ name: state.name, msg: msg.text }, 'worker log');
+      log.info({ name: state.name, msg: msg.text }, 'train log');
       return;
     }
     /** Anything without an `op` (or with `op:"event"`) is an inbound event. */
-    this.onEvent?.(msg as WorkerEvent, state.name);
+    this.onEvent?.(msg as TrainEvent, state.name);
   }
 
-  private onExit(state: WorkerState, code: number): void {
-    log.warn({ name: state.name, code }, 'worker: exited');
+  private onExit(state: TrainState, code: number): void {
+    log.warn({ name: state.name, code }, 'train: exited');
     state.proc = null;
     state.startedAt = null;
     /** fail pending calls */
     for (const p of state.pending.values()) {
       clearTimeout(p.timer);
-      p.reject(new Error(`worker '${state.name}' exited (code=${code}) before responding`));
+      p.reject(new Error(`train '${state.name}' exited (code=${code}) before responding`));
     }
     state.pending.clear();
     if (state.stopped) return;
     state.failCount++;
     if (state.failCount >= MAX_CONSECUTIVE_FAILS) {
       log.error({ name: state.name, fails: state.failCount },
-        'worker: too many consecutive failures, giving up (restart metro to retry)');
+        'train: too many consecutive failures, giving up (restart metro to retry)');
       return;
     }
     this.scheduleRestart(state);
   }
 
-  private scheduleRestart(state: WorkerState): void {
+  private scheduleRestart(state: TrainState): void {
     if (state.stopped) return;
     const idx = Math.min(state.failCount, RESTART_BACKOFFS_MS.length - 1);
     const delay = RESTART_BACKOFFS_MS[idx];
-    log.info({ name: state.name, delay, attempt: state.failCount }, 'worker: restart scheduled');
+    log.info({ name: state.name, delay, attempt: state.failCount }, 'train: restart scheduled');
     state.restartTimer = setTimeout(() => {
       state.restartTimer = null;
       /** Any subprocess that survives 30s resets its consecutive-fail counter. */
@@ -241,6 +241,6 @@ export class WorkerSupervisor {
   }
 }
 
-function isWorkerFile(name: string): boolean {
+function isTrainFile(name: string): boolean {
   return /\.(ts|js|mjs)$/.test(name) && !name.startsWith('_') && !name.startsWith('.');
 }

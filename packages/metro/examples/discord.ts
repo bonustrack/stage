@@ -1,10 +1,10 @@
 /**
- * Discord worker. Subscribes to one bot account via discord.js, projects every inbound message
+ * Discord train. Subscribes to one bot account via discord.js, projects every inbound message
  * (and reaction) to a metro envelope on stdout. Reads action calls on stdin: send/edit/react.
  *
  * Setup:
  *   cd ~/.metro && bun init -y && bun add discord.js
- *   cp <this-file> ~/.metro/workers/discord.ts
+ *   cp <this-file> ~/.metro/trains/discord.ts
  *   echo 'DISCORD_BOT_TOKEN=your-token' >> ~/.metro/.env
  *
  * Edit freely. Metro does not load this file — it spawns it. Action names and payload shapes
@@ -81,7 +81,7 @@ async function rest<T>(method: string, path: string, body?: unknown): Promise<T>
     method,
     headers: {
       'Authorization': `Bot ${TOKEN}`,
-      'User-Agent': 'metro-worker',
+      'User-Agent': 'metro-train',
       ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
     },
     body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -144,4 +144,4 @@ process.stdin.on('data', chunk => {
 });
 
 await client.login(TOKEN);
-process.stderr.write(`discord worker ready (bot ${client.user?.username})\n`);
+process.stderr.write(`discord train ready (bot ${client.user?.username})\n`);

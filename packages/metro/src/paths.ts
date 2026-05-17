@@ -9,8 +9,8 @@ mkdirSync(STATE_DIR, { recursive: true });
 const CONFIG_DIR = process.env.METRO_CONFIG_DIR ?? join(process.env.XDG_CONFIG_HOME || join(homedir(), '.config'), 'metro');
 export const CONFIG_ENV_FILE = join(CONFIG_DIR, '.env');
 
-/** Worker-owned env file. Workers read their tokens from here (passed through via process.env). */
-export const WORKERS_ENV_FILE = join(homedir(), '.metro', '.env');
+/** Train-owned env file. Trains read their tokens from here (passed through via process.env). */
+const TRAINS_ENV_FILE = join(homedir(), '.metro', '.env');
 
 const LINE_RE = /^\s*([A-Za-z_]\w*)\s*=\s*(.*?)\s*$/;
 const QUOTED_RE = /^(['"])(.*)\1$/;
@@ -32,9 +32,9 @@ export function writeDotenv(path: string, env: Record<string, string>): void {
 }
 
 /** Precedence: process.env > cwd/.env > ~/.metro/.env > $METRO_CONFIG_DIR/.env. First-set wins. */
-/** ~/.metro/.env is the canonical location for worker credentials. */
+/** ~/.metro/.env is the canonical location for train credentials. */
 export function loadMetroEnv(): void {
-  for (const path of [join(process.cwd(), '.env'), WORKERS_ENV_FILE, CONFIG_ENV_FILE]) {
+  for (const path of [join(process.cwd(), '.env'), TRAINS_ENV_FILE, CONFIG_ENV_FILE]) {
     for (const [k, v] of Object.entries(readDotenv(path))) {
       if (process.env[k] === undefined) process.env[k] = v;
     }

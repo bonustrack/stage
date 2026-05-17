@@ -1,24 +1,24 @@
-/** Unix-socket IPC: `notify` re-emits a cross-user message, `forward-call` reaches a worker's */
-/** stdin and awaits its response, `workers-list` snapshots supervisor state. */
+/** Unix-socket IPC: `notify` re-emits a cross-user message, `forward-call` reaches a train's */
+/** stdin and awaits its response, `trains-list` snapshots supervisor state. */
 
 import { createConnection, createServer, type Server, type Socket } from 'node:net';
 import { existsSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { errMsg, log } from './log.js';
 import { STATE_DIR } from './paths.js';
-import type { WorkerCallResponse, WorkerInfo } from './workers.js';
+import type { TrainCallResponse, TrainInfo } from './trains.js';
 
 const SOCKET_PATH = join(STATE_DIR, 'metro.sock');
 
 export type IpcRequest =
   | { op: 'notify'; line: string; from?: string; text: string }
-  | { op: 'forward-call'; worker: string; action: string; args: unknown }
-  | { op: 'workers-list' };
+  | { op: 'forward-call'; train: string; action: string; args: unknown }
+  | { op: 'trains-list' };
 
 export type IpcResponse =
   | { ok: true }
-  | { ok: true; response: WorkerCallResponse }
-  | { ok: true; workers: WorkerInfo[] }
+  | { ok: true; response: TrainCallResponse }
+  | { ok: true; trains: TrainInfo[] }
   | { ok: false; error: string };
 
 type Handler = (req: IpcRequest) => Promise<IpcResponse> | IpcResponse;

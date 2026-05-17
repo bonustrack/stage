@@ -65,7 +65,7 @@ export function releaseLine(line: Line): { released: boolean; claims: ClaimsMap 
 }
 
 /** Claim `line` for `owner` iff unclaimed. `group`/`webhook` are *protective skips* (the line is */
-/** shared, claiming would lock out other workers); `skipped` is the existing-owner case. Callers */
+/** shared, claiming would lock out other claimants); `skipped` is the existing-owner case. Callers */
 /** should print a stderr note for `group` so the operator knows `--claim` would have claimed. */
 export type AutoClaimResult =
   | { status: 'claimed' | 'kept'; owner: Line }

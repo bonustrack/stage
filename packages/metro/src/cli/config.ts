@@ -8,27 +8,27 @@ import pkg from '../../package.json' with { type: 'json' };
 import {
   CONFIG_ENV_FILE, loadMetroEnv, STATE_DIR,
 } from '../paths.js';
-import { WORKERS_DIR } from '../workers.js';
+import { TRAINS_DIR } from '../trains.js';
 import { emit, exitErr, isJson, writeJson, type Flags } from './util.js';
 import { cmdSetupSkill, skillStatus } from './skill.js';
 
 async function cmdSetupStatus(f: Flags): Promise<void> {
   loadMetroEnv();
   const cfgExists = existsSync(CONFIG_ENV_FILE);
-  const workersExists = existsSync(WORKERS_DIR);
+  const trainsExists = existsSync(TRAINS_DIR);
   if (isJson(f)) return writeJson({
     version: pkg.version,
     config_env_file: CONFIG_ENV_FILE, config_env_exists: cfgExists,
-    workers_dir: WORKERS_DIR, workers_dir_exists: workersExists,
+    trains_dir: TRAINS_DIR, trains_dir_exists: trainsExists,
   });
   process.stdout.write(`metro ${pkg.version}\n\n`
-    + `config dir:   ${CONFIG_ENV_FILE}${cfgExists ? '' : ' (not yet written)'}\n`
-    + `workers dir:  ${WORKERS_DIR}${workersExists ? '' : ' (will be created on first run)'}\n\n`
+    + `config dir:  ${CONFIG_ENV_FILE}${cfgExists ? '' : ' (not yet written)'}\n`
+    + `trains dir:  ${TRAINS_DIR}${trainsExists ? '' : ' (will be created on first run)'}\n\n`
     + 'Get started:\n'
     + '  1. mkdir -p ~/.metro && cd ~/.metro && bun init -y\n'
-    + '  2. Copy example workers from @stage-labs/metro/examples into ~/.metro/workers/\n'
-    + '  3. cd ~/.metro && bun add <whatever the workers need>  (e.g. discord.js)\n'
-    + '  4. Set credentials in ~/.metro/.env (workers read this)\n'
+    + '  2. Copy example trains from @stage-labs/metro/examples into ~/.metro/trains/\n'
+    + '  3. cd ~/.metro && bun add <whatever the trains need>  (e.g. discord.js)\n'
+    + '  4. Set credentials in ~/.metro/.env (trains read this)\n'
     + '  5. metro\n');
 }
 
@@ -44,19 +44,19 @@ export async function cmdDoctor(_: string[], f: Flags): Promise<void> {
   type Check = { name: string; ok: boolean | null; detail: string };
   const checks: Check[] = [];
 
-  const workersDir = WORKERS_DIR;
-  if (!existsSync(workersDir)) {
-    checks.push({ name: 'workers', ok: null, detail: `${workersDir} (not created — \`mkdir -p\` it and drop in worker files)` });
+  const trainsDir = TRAINS_DIR;
+  if (!existsSync(trainsDir)) {
+    checks.push({ name: 'trains', ok: null, detail: `${trainsDir} (not created — \`mkdir -p\` it and drop in train files)` });
   } else {
     const { readdirSync } = await import('node:fs');
-    const files = readdirSync(workersDir).filter(n => /\.(ts|js|mjs)$/.test(n) && !n.startsWith('_') && !n.startsWith('.'));
-    checks.push({ name: 'workers', ok: files.length > 0,
-      detail: files.length ? `${files.length} worker${files.length === 1 ? '' : 's'}: ${files.join(', ')}` : '(empty — no workers configured)' });
+    const files = readdirSync(trainsDir).filter(n => /\.(ts|js|mjs)$/.test(n) && !n.startsWith('_') && !n.startsWith('.'));
+    checks.push({ name: 'trains', ok: files.length > 0,
+      detail: files.length ? `${files.length} train${files.length === 1 ? '' : 's'}: ${files.join(', ')}` : '(empty — no trains configured)' });
   }
 
   const metroPkg = join(homedir(), '.metro', 'package.json');
-  checks.push({ name: 'workers-pkg', ok: existsSync(metroPkg) ? true : null,
-    detail: existsSync(metroPkg) ? metroPkg : `${metroPkg} not found (run \`cd ~/.metro && bun init\` if any worker needs deps)` });
+  checks.push({ name: 'trains-pkg', ok: existsSync(metroPkg) ? true : null,
+    detail: existsSync(metroPkg) ? metroPkg : `${metroPkg} not found (run \`cd ~/.metro && bun init\` if any train needs deps)` });
 
   const lockFile = join(STATE_DIR, '.tail-lock');
   if (!existsSync(lockFile)) checks.push({ name: 'dispatcher', ok: null, detail: 'not running' });

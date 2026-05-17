@@ -1,9 +1,9 @@
 /**
- * Telegram worker. Long-polls the Bot API, projects each inbound message to a metro envelope.
+ * Telegram train. Long-polls the Bot API, projects each inbound message to a metro envelope.
  * Reads action calls on stdin: send, edit, react.
  *
  * Setup:
- *   cp <this-file> ~/.metro/workers/telegram.ts
+ *   cp <this-file> ~/.metro/trains/telegram.ts
  *   echo 'TELEGRAM_BOT_TOKEN=your-token' >> ~/.metro/.env
  *
  * No npm deps required — uses native fetch.
@@ -134,5 +134,5 @@ process.stdin.on('data', chunk => {
   }
 });
 
-process.stderr.write('telegram worker ready\n');
+process.stderr.write('telegram train ready\n');
 await pollLoop();
