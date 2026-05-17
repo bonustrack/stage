@@ -18,6 +18,7 @@
     "metro": "./dist/cli/index.js"
   },
   "files": [
+    "adapters",
     "dist",
     "docs",
     "skills",
