@@ -6,8 +6,11 @@ import {
   useColorScheme,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import Constants from 'expo-constants';
 import { loadConfig, saveConfig, type Config } from '../lib/config';
 import { fetchState } from '../lib/sse';
+
+const APP_VERSION = (Constants.expoConfig?.version ?? '0.0.0') as string;
 
 export default function Settings(): React.ReactElement {
   const router = useRouter();
@@ -26,9 +29,19 @@ export default function Settings(): React.ReactElement {
   const [loading, setLoading] = useState(true);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<string>('');
+  const [daemonVersion, setDaemonVersion] = useState<string | null>(null);
 
   useEffect(() => {
-    void loadConfig().then(c => { setCfg(c); setLoading(false); });
+    void loadConfig().then(c => {
+      setCfg(c);
+      setLoading(false);
+      /** Fire-and-forget: fetch daemon version for the footer. */
+      if (c.daemonUrl && c.token) {
+        void fetchState(c.daemonUrl, c.token).then(r => {
+          if (r.ok) setDaemonVersion((r.data as { version?: string }).version ?? null);
+        });
+      }
+    });
   }, []);
 
   if (loading) {
@@ -51,10 +64,11 @@ export default function Settings(): React.ReactElement {
     const r = await fetchState(cfg.daemonUrl, cfg.token);
     setTesting(false);
     if (r.ok) {
-      const data = r.data as { recent_history?: unknown[]; claims?: Record<string, unknown> };
+      const data = r.data as { recent_history?: unknown[]; claims?: Record<string, unknown>; version?: string };
       const events = data.recent_history?.length ?? 0;
       const claims = Object.keys(data.claims ?? {}).length;
       setTestResult(`ok — ${events} recent events, ${claims} claims`);
+      if (data.version) setDaemonVersion(data.version);
     } else {
       setTestResult(`failed (${r.status || 'network'}): ${r.error}`);
     }
@@ -135,6 +149,10 @@ export default function Settings(): React.ReactElement {
           Tokens are stored in your device&apos;s secure store (Keychain on iOS, Keystore on Android).
           They never leave your phone except as the {`\`Authorization: Bearer\``} header on requests
           to the daemon URL above.
+        </Text>
+
+        <Text style={{ color: colors.sub, fontSize: 11, marginTop: 16, textAlign: 'center' }}>
+          app v{APP_VERSION} · daemon {daemonVersion ? `v${daemonVersion}` : '(unknown — test connection)'}
         </Text>
       </ScrollView>
     </KeyboardAvoidingView>

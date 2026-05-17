@@ -4,6 +4,7 @@
 import { timingSafeEqual } from 'node:crypto';
 import { watch } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import pkg from '../package.json' with { type: 'json' };
 import { errMsg, log } from './log.js';
 import {
   HISTORY_FILE, historySize, passesMode, readClaims, readEntriesFrom, type Mode,
@@ -101,7 +102,13 @@ function handleState(res: ServerResponse, query: URLSearchParams): void {
   for (const e of recent) linesSet.add(e.line);
   for (const line of Object.keys(claims)) linesSet.add(line);
   res.writeHead(200, { 'content-type': 'application/json' });
-  res.end(JSON.stringify({ claims, lines: [...linesSet], recent_history: recent, bot_ids: readBotIds() }));
+  res.end(JSON.stringify({
+    claims,
+    lines: [...linesSet],
+    recent_history: recent,
+    bot_ids: readBotIds(),
+    version: pkg.version,
+  }));
 }
 
 /** Mirrors `cli/tail.ts:resolveMode` but operates on URLSearchParams. */
