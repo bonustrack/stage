@@ -47,6 +47,11 @@ export function parseTrainLine(name: string, line: string): TrainMessage | null 
   }
   if (msg.op === 'log') return { op: 'log', text: msg.text };
   /** Anything without an `op` (or with `op:"event"`) is an inbound event. */
+  /** Defensive shape check: every event needs `line` (string). Log + drop if missing. */
+  if (typeof msg.line !== 'string') {
+    log.warn({ name, line: line.slice(0, 200) }, 'train: event missing `line` (string) — dropped');
+    return { op: 'ignore' };
+  }
   return { op: 'event', event: msg as TrainEvent };
 }
 

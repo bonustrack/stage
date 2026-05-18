@@ -14,7 +14,8 @@ const SOCKET_PATH = join(STATE_DIR, 'metro.sock');
 export type IpcRequest =
   | { op: 'notify'; line: string; from?: string; text: string }
   | { op: 'forward-call'; train: string; action: string; args: unknown }
-  | { op: 'trains-list' };
+  | { op: 'trains-list' }
+  | { op: 'train-restart'; name: string };
 
 export type IpcResponse =
   | { ok: true }

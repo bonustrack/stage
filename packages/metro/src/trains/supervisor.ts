@@ -17,7 +17,7 @@ export const TRAINS_DIR = process.env.METRO_TRAINS_DIR ?? join(homedir(), '.metr
 
 type TrainState = {
   name: string; path: string; proc: ReturnType<typeof Bun.spawn> | null;
-  pending: Map<string, Pending>; buf: string; failCount: number;
+  pending: Map<string, Pending>; buf: string; errBuf: string; failCount: number;
   restartTimer: ReturnType<typeof setTimeout> | null;
   startedAt: string | null; stopped: boolean;
 };
@@ -34,9 +34,7 @@ export class TrainSupervisor {
 
   constructor(private dir: string = TRAINS_DIR) {}
 
-  onTrainEvent(handler: (event: TrainEvent, train: string) => void): void {
-    this.onEvent = handler;
-  }
+  onTrainEvent(handler: (event: TrainEvent, train: string) => void): void { this.onEvent = handler; }
 
   /** Discover trains under `dir` and spawn one subprocess per file. Creates the dir if missing. */
   start(): void {
@@ -52,23 +50,30 @@ export class TrainSupervisor {
       t.stopped = true;
       if (t.restartTimer) { clearTimeout(t.restartTimer); t.restartTimer = null; }
       failAllPending(t.pending, 'train shutting down');
-      if (t.proc && t.proc.exitCode === null) {
-        try { t.proc.kill('SIGTERM'); } catch { /* ignore */ }
-        const grace = setTimeout(() => { try { t.proc?.kill('SIGKILL'); } catch { /* ignore */ } }, 2_000);
-        tasks.push(t.proc.exited.finally(() => clearTimeout(grace)));
-      }
+      const wait = killGracefully(t.proc);
+      if (wait) tasks.push(wait);
     }
     await Promise.all(tasks);
   }
 
   list(): TrainInfo[] {
     return [...this.trains.values()].map(t => ({
-      name: t.name, path: t.path,
-      running: !!(t.proc && t.proc.exitCode === null),
-      pid: t.proc?.pid ?? null,
-      startedAt: t.startedAt,
-      failCount: t.failCount,
+      name: t.name, path: t.path, running: !!(t.proc && t.proc.exitCode === null),
+      pid: t.proc?.pid ?? null, startedAt: t.startedAt, failCount: t.failCount,
     }));
+  }
+
+  /** Kill + respawn a named train; resets fail counter so backoff starts fresh. */
+  async restart(name: string): Promise<void> {
+    const t = this.trains.get(name);
+    if (!t) throw new Error(`no train named '${name}'`);
+    if (t.restartTimer) { clearTimeout(t.restartTimer); t.restartTimer = null; }
+    failAllPending(t.pending, `train '${name}' restarting`);
+    t.stopped = true;
+    const wait = killGracefully(t.proc);
+    if (wait) await wait;
+    t.stopped = false; t.failCount = 0; t.proc = null;
+    this.spawn(t);
   }
 
   /** Send a call to a named train and await the matching response. */
@@ -80,12 +85,9 @@ export class TrainSupervisor {
   }
 
   private startTrain(name: string, path: string): void {
-    if (this.trains.has(name)) {
-      log.warn({ name }, 'train supervisor: duplicate name, skipping');
-      return;
-    }
+    if (this.trains.has(name)) { log.warn({ name }, 'train supervisor: duplicate name, skipping'); return; }
     const state: TrainState = {
-      name, path, proc: null, pending: new Map(), buf: '',
+      name, path, proc: null, pending: new Map(), buf: '', errBuf: '',
       failCount: 0, restartTimer: null, startedAt: null, stopped: false,
     };
     this.trains.set(name, state);
@@ -96,14 +98,13 @@ export class TrainSupervisor {
     if (state.stopped) return;
     try {
       const proc = Bun.spawn(['bun', 'run', state.path], {
-        stdin: 'pipe', stdout: 'pipe', stderr: 'inherit',
+        stdin: 'pipe', stdout: 'pipe', stderr: 'pipe',
         env: { ...process.env, METRO_TRAIN_NAME: state.name },
       });
-      state.proc = proc;
-      state.startedAt = new Date().toISOString();
-      state.buf = '';
+      state.proc = proc; state.startedAt = new Date().toISOString();
+      state.buf = ''; state.errBuf = '';
       log.info({ name: state.name, pid: proc.pid }, 'train: spawned');
-      void this.pumpStdout(state);
+      void this.pumpStdout(state); void this.pumpStderr(state);
       void proc.exited.then(code => this.onExit(state, code ?? 0));
     } catch (err) {
       log.warn({ name: state.name, err: errMsg(err) }, 'train: spawn failed');
@@ -111,21 +112,24 @@ export class TrainSupervisor {
     }
   }
 
-  private async pumpStdout(state: TrainState): Promise<void> {
-    const proc = state.proc;
-    if (!proc || !proc.stdout) return;
-    const reader = (proc.stdout as ReadableStream<Uint8Array>).getReader();
-    const dec = new TextDecoder();
-    try {
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        state.buf += dec.decode(value, { stream: true });
-        state.buf = drainLines(state.name, state.buf, line => this.handleLine(state, line));
+  private pumpStdout(state: TrainState): Promise<void> {
+    return pumpStream(state.proc?.stdout, state.name, 'stdout', chunk => {
+      state.buf += chunk;
+      state.buf = drainLines(state.name, state.buf, line => this.handleLine(state, line));
+    });
+  }
+
+  /** Stream train stderr line-by-line into the daemon's logger so users see crashes/warnings. */
+  private pumpStderr(state: TrainState): Promise<void> {
+    return pumpStream(state.proc?.stderr, state.name, 'stderr', chunk => {
+      state.errBuf += chunk;
+      let nl;
+      while ((nl = state.errBuf.indexOf('\n')) !== -1) {
+        const line = state.errBuf.slice(0, nl).trimEnd();
+        state.errBuf = state.errBuf.slice(nl + 1);
+        if (line) log.warn({ train: state.name }, line);
       }
-    } catch (err) {
-      log.debug({ name: state.name, err: errMsg(err) }, 'train: stdout pump ended');
-    }
+    });
   }
 
   private handleLine(state: TrainState, line: string): void {
@@ -170,4 +174,26 @@ export class TrainSupervisor {
       setTimeout(() => { if (state.proc && state.proc.exitCode === null) state.failCount = 0; }, 30_000);
     }, delay);
   }
+}
+
+function killGracefully(proc: ReturnType<typeof Bun.spawn> | null): Promise<unknown> | null {
+  if (!proc || proc.exitCode !== null) return null;
+  try { proc.kill('SIGTERM'); } catch { /* ignore */ }
+  const grace = setTimeout(() => { try { proc.kill('SIGKILL'); } catch { /* ignore */ } }, 2_000);
+  return proc.exited.finally(() => clearTimeout(grace));
+}
+
+async function pumpStream(
+  stream: unknown, name: string, kind: 'stdout' | 'stderr', onChunk: (s: string) => void,
+): Promise<void> {
+  if (!stream || typeof stream === 'number') return;
+  const reader = (stream as ReadableStream<Uint8Array>).getReader();
+  const dec = new TextDecoder();
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      onChunk(dec.decode(value, { stream: true }));
+    }
+  } catch (err) { log.debug({ name, err: errMsg(err) }, `train: ${kind} pump ended`); }
 }

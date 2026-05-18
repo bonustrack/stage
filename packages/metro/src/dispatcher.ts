@@ -64,6 +64,10 @@ const ipc = startIpcServer(async (req: IpcRequest): Promise<IpcResponse> => {
   if (req.op === 'trains-list') {
     return { ok: true, trains: supervisor.list() };
   }
+  if (req.op === 'train-restart') {
+    try { await supervisor.restart(req.name); return { ok: true }; }
+    catch (err) { return { ok: false, error: errMsg(err) }; }
+  }
   return { ok: false, error: `unknown op: ${(req as { op?: string }).op ?? '(none)'}` };
 });
 
