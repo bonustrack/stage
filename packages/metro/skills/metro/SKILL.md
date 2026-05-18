@@ -32,7 +32,9 @@ replace on demand.
 {"kind":"inbound","station":"discord","line":"metro://discord/123","from":"metro://discord/user/456","from_name":"alice","message_id":"789","text":"hi","is_private":false,"ts":"2026-05-17T18:00:00Z","payload":{...}}
 ```
 
-Wire fields are `snake_case` on the train protocol: `from_name`, `message_id`, `line_name`, `is_private`, `reply_to`. The dispatcher translates these to camelCase for `history.jsonl` and the broker. Trains supply `line`, `from`, `from_name`, `text`, `is_private`. Metro mints `id` + `display` if missing and appends to `history.jsonl`. Event kinds: `inbound`, `outbound`, `edit`, `react`. `payload` is the platform's native message shape — use it for mentions, replies, embeds.
+Wire fields are `snake_case` on the train protocol: `from_name`, `message_id`, `line_name`, `is_private`, `reply_to`. The dispatcher translates these to camelCase for `history.jsonl` and the broker. Trains supply `line`, `from`, `from_name`, `text`, `is_private`. Metro mints `id` + `display` if missing and appends to `history.jsonl`. `payload` is the platform's native message shape — use it for mentions, replies, embeds.
+
+**Canonical `kind` enum**: `inbound | outbound | edit | react`. The dispatcher normalizes legacy aliases (`message` → `inbound`, `reaction` → `react`), but new trains should emit the canonical values directly. Anything else is passed through unchanged.
 
 **Outbound (`metro call <train> <action> <args>`)**:
 
@@ -83,12 +85,14 @@ Trains should set `is_private: true` for DMs. For groups, narrow on `payload`:
 ```
 metro                                    # start the daemon
 metro trains list                        # list trains + state
+metro trains new <name>                  # scaffold ~/.metro/trains/<name>.ts from the example
+metro trains restart <name>              # kill + respawn a train (resets backoff)
 metro call <train> <action> <args>       # forward an action call
 metro tail --as=<user-uri> [--follow]    # subscribe to the event log
 metro history --limit=50                 # recent history (newest first)
 metro webhook add <label>                # register an HTTP receive endpoint
 metro tunnel setup <name> <hostname>     # configure a Cloudflare named tunnel
-metro doctor                             # health check
+metro doctor                             # health check (trains, deps, tunnel, webhooks, env vars)
 ```
 
 ## Webhooks (builtin source)

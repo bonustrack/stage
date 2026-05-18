@@ -7,7 +7,8 @@
  *
  * Discord-flavoured port: swap the API base + `tg()` helper for `https://discord.com/api/v10`
  * with `Authorization: Bot $TOKEN`, install `discord.js` for the gateway, and emit the same
- * envelope shape. The stdin/stdout protocol is platform-independent.
+ * envelope shape. The stdin/stdout protocol is platform-independent. Discord adds `sticker_ids`
+ * support on `sendMessage` payloads — preserve those in `payload` so downstream tooling sees them.
  */
 
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN;

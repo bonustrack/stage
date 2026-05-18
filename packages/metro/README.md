@@ -102,6 +102,8 @@ See [`examples/telegram.ts`](./examples/telegram.ts) (a self-contained ~110 LOC 
 ```
 metro                                    # start the daemon (foreground)
 metro trains list                        # supervised trains + state
+metro trains new <name>                  # scaffold ~/.metro/trains/<name>.ts from the example
+metro trains restart <name>              # kill + respawn a train (resets backoff)
 metro call <train> <action> <args>       # forward an action call; args = JSON / @file / - / string
 metro tail [--as=<user-uri>] [--follow]  # subscribe to the event log; claim-aware
 metro history [--limit=50] [--line=…]    # recent history (newest first), filterable
@@ -114,7 +116,7 @@ metro webhook list | remove <id>         # manage endpoints
 metro tunnel setup <name> <hostname>     # configure a Cloudflare named tunnel
 metro tunnel status                      # show current tunnel config
 metro setup [skill [clear]]              # status; or install/remove the skill into ~/.claude / ~/.codex
-metro doctor                             # health check
+metro doctor                             # health check (trains, deps, tunnel, webhooks, env vars)
 metro update                             # upgrade in place
 ```
 
