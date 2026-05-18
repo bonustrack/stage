@@ -19,6 +19,12 @@ const emit = (e: unknown): void => void process.stdout.write(JSON.stringify(e) +
 const respond = (id: string, body: { result?: unknown; error?: string }): void =>
   void process.stdout.write(JSON.stringify({ op: 'response', id, ...body }) + '\n');
 const mintId = (): string => `msg_${Math.random().toString(36).slice(2, 10)}`;
+/** Self URI for outbound emissions. Set by the supervisor; trains echo their own sends so mobile + tail see them. */
+const SELF_URI = process.env.METRO_SELF_URI ?? '';
+const emitOutbound = (line: string, messageId: string, text: string, replyTo?: string): void => emit({
+  kind: 'outbound', id: mintId(), ts: new Date().toISOString(),
+  station: 'telegram', line, from: SELF_URI, to: line, message_id: messageId, text, reply_to: replyTo,
+});
 
 async function tg<T>(method: string, body: unknown, timeoutMs = 30_000): Promise<T> {
   const res = await fetch(`${API}/${method}`, {
@@ -70,7 +76,9 @@ async function handleCall({ id, action, args }: CallMsg): Promise<void> {
       if (topicId !== undefined) body.message_thread_id = topicId;
       if (replyTo) body.reply_parameters = { message_id: Number(replyTo) };
       const sent = await tg<{ message_id: number }>('sendMessage', body);
-      respond(id, { result: { messageId: String(sent.message_id) } });
+      const sentId = String(sent.message_id);
+      emitOutbound(line, sentId, text, replyTo);
+      respond(id, { result: { messageId: sentId } });
     } else if (action === 'react') {
       const { line, messageId, emoji } = args as { line: string; messageId: string; emoji: string };
       await tg('setMessageReaction', {

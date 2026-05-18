@@ -5,6 +5,7 @@ import { mkdirSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { errMsg, log } from '../log.js';
+import { userSelf } from '../history.js';
 import {
   drainLines, failAllPending, listTrainFiles, mintCallId, parseTrainLine, sendCall,
   type Pending, type TrainCallResponse, type TrainEvent,
@@ -99,7 +100,7 @@ export class TrainSupervisor {
     try {
       const proc = Bun.spawn(['bun', 'run', state.path], {
         stdin: 'pipe', stdout: 'pipe', stderr: 'pipe',
-        env: { ...process.env, METRO_TRAIN_NAME: state.name },
+        env: { ...process.env, METRO_TRAIN_NAME: state.name, METRO_SELF_URI: userSelf() },
       });
       state.proc = proc; state.startedAt = new Date().toISOString();
       state.buf = ''; state.errBuf = '';
