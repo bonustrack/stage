@@ -1,10 +1,4 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
-import AppHeader from '../components/AppHeader.vue';
-import { isConfigured, loadConfig } from '../lib/config';
-import { fetchState } from '../lib/api';
-
 interface Row { line: string; owner: string | null }
 
 const rows = ref<Row[] | null>(null);

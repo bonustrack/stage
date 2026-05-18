@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import StationIcon from './StationIcon.vue';
 import { stationLabel } from '@shared/icons/stations';
 import type { HistoryKind } from '../lib/types';
 

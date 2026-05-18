@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import { sendCall } from '../lib/api';
-
 const props = defineProps<{ daemonUrl: string; token: string; line: string }>();
 
 const text = ref('');

@@ -1,9 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
-import AppHeader from '../components/AppHeader.vue';
-import { loadConfig, saveConfig, type Config } from '../lib/config';
-import { fetchState } from '../lib/api';
+import type { Config } from '../lib/config';
 
 const cfg = ref<Config>({ daemonUrl: '', token: '', userId: '' });
 const testing = ref(false);

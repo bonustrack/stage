@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { RouterLink } from 'vue-router';
-
 defineProps<{
   status?: string;
   errorMsg?: string | null;

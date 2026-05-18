@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useRouter } from 'vue-router';
-import StationIcon from './StationIcon.vue';
 import type { HistoryEntry } from '../lib/types';
 
 const props = defineProps<{ entry: HistoryEntry }>();

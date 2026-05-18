@@ -11,5 +11,5 @@
       "@shared/*": ["../_shared/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.vue", "../_shared/**/*.ts"]
+  "include": ["src/**/*.ts", "src/**/*.vue", "src/**/*.d.ts", "../_shared/**/*.ts"]
 }

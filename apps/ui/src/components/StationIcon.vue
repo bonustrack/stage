@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { getStationIcon, stationLabel } from '@shared/icons/stations';
 
 const props = defineProps<{ station: string; withLabel?: boolean }>();

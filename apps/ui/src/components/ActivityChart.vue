@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { bucketByHour, type BucketEvent } from '@shared/charts/activity-buckets';
 import { getStationIcon } from '@shared/icons/stations';
 

@@ -1,15 +1,6 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import ActivityChart from '../components/ActivityChart.vue';
-import AppHeader from '../components/AppHeader.vue';
-import Composer from '../components/Composer.vue';
-import EventRow from '../components/EventRow.vue';
-import FilterSheet, { type Filters } from '../components/FilterSheet.vue';
-import SearchBar from '../components/SearchBar.vue';
-import { isConfigured, loadConfig, type Config } from '../lib/config';
-import { matchesSearch } from '../lib/search';
-import { useTail } from '../lib/useTail';
+import { type Filters } from '../components/FilterSheet.vue';
+import { type Config } from '../lib/config';
 import type { HistoryEntry } from '../lib/types';
 
 const route = useRoute();
