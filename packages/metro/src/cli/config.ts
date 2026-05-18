@@ -9,6 +9,7 @@ import pkg from '../../package.json' with { type: 'json' };
 import { errMsg } from '../log.js';
 import { CONFIG_ENV_FILE, loadMetroEnv, STATE_DIR } from '../paths.js';
 import { TRAINS_DIR } from '../trains/supervisor.js';
+import { listEndpoints, loadTunnelConfig, webhookPort } from '../tunnel.js';
 import { emit, exitErr, isJson, writeJson, type Flags } from './util.js';
 
 /* ──────────── setup skill: install/clear SKILL.md into ~/.claude or ~/.codex ──────────── */
@@ -52,6 +53,29 @@ async function cmdSetupSkill(p: string[], f: Flags): Promise<void> {
   emit(f, `installed metro skill → ${installed.join(', ')}`, { ok: true, installed });
 }
 
+/* ──────────── doctor: env-var discovery ──────────── */
+
+type Check = { name: string; ok: boolean | null; detail: string };
+
+/** Scan ~/.metro/trains/*.{ts,js,mjs} for `process.env.<NAME>` refs; report set/unset status. */
+function envCheck(): Check[] {
+  if (!existsSync(TRAINS_DIR)) return [];
+  const names = new Set<string>();
+  for (const f of readdirSync(TRAINS_DIR).filter(n => /\.(ts|js|mjs)$/.test(n) && !/^[._]/.test(n))) {
+    try {
+      const src = readFileSync(join(TRAINS_DIR, f), 'utf8');
+      for (const m of src.matchAll(/process\.env\.([A-Z][A-Z0-9_]*)/g)) names.add(m[1]);
+    } catch { /* ignore */ }
+  }
+  /** METRO_* are internal — don't surface them as "missing credentials". */
+  const interesting = [...names].filter(n => !n.startsWith('METRO_')).sort();
+  if (!interesting.length) return [];
+  const set = interesting.filter(n => process.env[n]);
+  const missing = interesting.filter(n => !process.env[n]);
+  return [{ name: 'env-vars', ok: missing.length ? false : true,
+    detail: `set: ${set.join(', ') || '(none)'}${missing.length ? ` · missing: ${missing.join(', ')}` : ''}` }];
+}
+
 /* ──────────── setup / doctor / update ──────────── */
 
 export async function cmdSetup(p: string[], f: Flags): Promise<void> {
@@ -73,7 +97,6 @@ export async function cmdSetup(p: string[], f: Flags): Promise<void> {
 
 export async function cmdDoctor(_: string[], f: Flags): Promise<void> {
   loadMetroEnv();
-  type Check = { name: string; ok: boolean | null; detail: string };
   const checks: Check[] = [];
   if (!existsSync(TRAINS_DIR)) {
     checks.push({ name: 'trains', ok: null, detail: `${TRAINS_DIR} (not created — \`mkdir -p\` it and drop in train files)` });
@@ -96,6 +119,15 @@ export async function cmdDoctor(_: string[], f: Flags): Promise<void> {
   checks.push({ name: 'codex-rc', ok: null,
     detail: process.env.METRO_CODEX_RC ? `push enabled → ${process.env.METRO_CODEX_RC}`
       : 'not configured (set METRO_CODEX_RC=ws://… to enable Codex push)' });
+  const tunnel = loadTunnelConfig();
+  checks.push({ name: 'tunnel', ok: tunnel ? true : null,
+    detail: tunnel ? `${tunnel.hostname} → 127.0.0.1:${webhookPort()}`
+      : 'not configured (run `metro tunnel setup <name> <hostname>`)' });
+  const eps = listEndpoints();
+  checks.push({ name: 'webhooks', ok: eps.length ? true : null,
+    detail: eps.length ? `${eps.length} endpoint${eps.length === 1 ? '' : 's'}: ${eps.map(e => e.label).join(', ')}`
+      : 'none (run `metro webhook add <label>`)' });
+  for (const c of envCheck()) checks.push(c);
   const installed = Object.entries(skillStatus()).filter(([, ok]) => ok).map(([r]) => r);
   checks.push({ name: 'skill', ok: installed.length ? true : null,
     detail: installed.length ? `installed for ${installed.join(', ')}` : 'not installed (run `metro setup skill`)' });

@@ -22,6 +22,8 @@ Usage:
   metro doctor                                Health check.
   metro lines                                 List recently-seen conversations.
   metro trains [list]                         List supervised trains (running, pid, fail count).
+  metro trains restart <name>                 Kill + respawn a train (resets backoff).
+  metro trains new <name>                     Scaffold ~/.metro/trains/<name>.ts from the example.
   metro call <train> <action> [args]          Forward an action call to a train via its stdin.
                                               [args] is JSON, '@file', '-' (stdin), or a bare string.
   metro history [--limit=N] [--line=…] [--station=…] [--kind=…] [--from=…] [--text=…] [--since=…]
