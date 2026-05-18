@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import ActivityChart from '../components/ActivityChart.vue';
 import AppHeader from '../components/AppHeader.vue';
 import Composer from '../components/Composer.vue';
 import EventRow from '../components/EventRow.vue';
@@ -71,6 +72,7 @@ function clearChat(): void { void router.push({ name: 'activity' }); }
       </div>
     </template>
     <template v-else>
+      <ActivityChart :events="visible" />
       <SearchBar v-model="search" />
       <div class="flex-1 overflow-y-auto">
         <EventRow v-for="e in visible" :key="e.id" :entry="e" />
