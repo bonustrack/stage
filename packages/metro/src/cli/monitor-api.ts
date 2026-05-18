@@ -18,13 +18,12 @@ const MONITOR_HOSTS = new Set(
   (process.env.METRO_MONITOR_HOSTS ?? 'monitor.metro.box,localhost,127.0.0.1')
     .toLowerCase().split(',').map(s => s.trim()).filter(Boolean),
 );
-const JSON_CT = { 'content-type': 'application/json' };
+const CALL_BODY_MAX = 256 * 1024;
 
-/** Reflect the request Origin so browsers (Netlify, custom domains, file://) can call cross-origin. */
+/** Reflect request Origin so browsers (Netlify, custom domains, file://) can call cross-origin. */
 function cors(req: IncomingMessage): Record<string, string> {
-  const origin = (req.headers.origin as string | undefined) ?? '*';
   return {
-    'access-control-allow-origin': origin,
+    'access-control-allow-origin': (req.headers.origin as string | undefined) ?? '*',
     'access-control-allow-methods': 'GET, POST, OPTIONS',
     'access-control-allow-headers': 'Authorization, Content-Type',
     'access-control-max-age': '86400',
@@ -32,8 +31,8 @@ function cors(req: IncomingMessage): Record<string, string> {
   };
 }
 
-function jsonRes(res: ServerResponse, status: number, body: unknown, req?: IncomingMessage): void {
-  res.writeHead(status, { ...JSON_CT, ...(req ? cors(req) : {}) });
+function send(res: ServerResponse, req: IncomingMessage, status: number, body: unknown): void {
+  res.writeHead(status, { 'content-type': 'application/json', ...cors(req) });
   res.end(JSON.stringify(body));
 }
 
@@ -69,10 +68,10 @@ export function handleMonitorRequest(req: IncomingMessage, res: ServerResponse):
   /** CORS preflight — short-circuit before auth so browsers can OPTIONS without a token. */
   if (req.method === 'OPTIONS') { res.writeHead(204, cors(req)); res.end(); return true; }
   const auth = authorized(req);
-  if (auth) { jsonRes(res, auth.status, { error: auth.msg }, req); return true; }
+  if (auth) { send(res, req, auth.status, { error: auth.msg }); return true; }
   const [path, qs = ''] = url.split('?', 2);
   const q = new URLSearchParams(qs);
-  if (req.method === 'GET' && path === '/api/state') { handleState(res, q, req); return true; }
+  if (req.method === 'GET' && path === '/api/state') { handleState(res, req, q); return true; }
   if (req.method === 'GET' && path === '/api/tail') {
     handleTail(req, res, q).catch(err => {
       log.warn({ err: errMsg(err) }, 'monitor: tail handler error');
@@ -83,19 +82,19 @@ export function handleMonitorRequest(req: IncomingMessage, res: ServerResponse):
   /** POST /api/call/<train>/<action> — JSON body {args} forwarded to train via IPC forward-call. */
   const callMatch = path.match(/^\/api\/call\/([^/]+)\/([^/]+)$/);
   if (callMatch) {
-    if (req.method !== 'POST') { jsonRes(res, 405, { error: 'method not allowed' }, req); return true; }
+    if (req.method !== 'POST') { send(res, req, 405, { error: 'method not allowed' }); return true; }
     handleCall(req, res, callMatch[1], callMatch[2]).catch(err => {
       log.warn({ err: errMsg(err) }, 'monitor: call handler error');
-      try { jsonRes(res, 500, { error: errMsg(err) }, req); } catch { /* ignore */ }
+      try { send(res, req, 500, { error: errMsg(err) }); } catch { /* ignore */ }
     });
     return true;
   }
   /** GET-only paths reject other verbs with 405. Anything else → 404. */
   if (req.method !== 'GET' && (path === '/api/state' || path === '/api/tail')) {
-    jsonRes(res, 405, { error: 'method not allowed' }, req);
+    send(res, req, 405, { error: 'method not allowed' });
     return true;
   }
-  jsonRes(res, 404, { error: 'not found' }, req);
+  send(res, req, 404, { error: 'not found' });
   return true;
 }
 
@@ -104,15 +103,15 @@ function nonNegInt(raw: string | null): number | null {
   return Number.isInteger(n) && n >= 0 ? n : null;
 }
 
-function handleState(res: ServerResponse, q: URLSearchParams, req: IncomingMessage): void {
+function handleState(res: ServerResponse, req: IncomingMessage, q: URLSearchParams): void {
   const before = nonNegInt(q.get('before'));
   const limit = Math.min(nonNegInt(q.get('limit')) ?? 100, 500);
-  if (before !== null) return jsonRes(res, 200, { recent_history: readHistory({ limit, skip: before }) }, req);
+  if (before !== null) return send(res, req, 200, { recent_history: readHistory({ limit, skip: before }) });
   const recent = readHistory({ limit }), claims = readClaims();
   const lines = new Set<string>([...recent.map(e => e.line), ...Object.keys(claims)]);
-  jsonRes(res, 200, {
+  send(res, req, 200, {
     claims, lines: [...lines], recent_history: recent, bot_ids: readBotIds(), version: pkg.version,
-  }, req);
+  });
 }
 
 async function handleTail(req: IncomingMessage, res: ServerResponse, q: URLSearchParams): Promise<void> {
@@ -147,9 +146,7 @@ async function handleTail(req: IncomingMessage, res: ServerResponse, q: URLSearc
   req.on('close', cleanup); req.on('error', cleanup);
 }
 
-const CALL_BODY_MAX = 256 * 1024;
-
-async function readBody(req: IncomingMessage): Promise<string> {
+async function handleCall(req: IncomingMessage, res: ServerResponse, train: string, action: string): Promise<void> {
   const chunks: Buffer[] = [];
   let total = 0;
   for await (const chunk of req) {
@@ -158,21 +155,17 @@ async function readBody(req: IncomingMessage): Promise<string> {
     if (total > CALL_BODY_MAX) throw new Error(`request body exceeds ${CALL_BODY_MAX} bytes`);
     chunks.push(buf);
   }
-  return Buffer.concat(chunks).toString('utf8');
-}
-
-async function handleCall(req: IncomingMessage, res: ServerResponse, train: string, action: string): Promise<void> {
+  const raw = Buffer.concat(chunks).toString('utf8').trim();
   let args: unknown = {};
-  const raw = (await readBody(req)).trim();
   if (raw) {
     try {
       const parsed = JSON.parse(raw) as { args?: unknown };
       args = parsed && typeof parsed === 'object' && 'args' in parsed ? parsed.args : parsed;
-    } catch (err) { return jsonRes(res, 400, { error: `bad JSON body: ${errMsg(err)}` }, req); }
+    } catch (err) { return send(res, req, 400, { error: `bad JSON body: ${errMsg(err)}` }); }
   }
   const resp = await ipcCall({ op: 'forward-call', train, action, args });
-  if (!resp.ok) return jsonRes(res, 502, { error: resp.error }, req);
-  if (!('response' in resp)) return jsonRes(res, 502, { error: 'malformed daemon response' }, req);
-  if (resp.response.error) return jsonRes(res, 502, { error: resp.response.error }, req);
-  jsonRes(res, 200, { result: resp.response.result ?? null }, req);
+  if (!resp.ok) return send(res, req, 502, { error: resp.error });
+  if (!('response' in resp)) return send(res, req, 502, { error: 'malformed daemon response' });
+  if (resp.response.error) return send(res, req, 502, { error: resp.response.error });
+  send(res, req, 200, { result: resp.response.result ?? null });
 }
