@@ -111,7 +111,8 @@ export async function cmdClaims(_: string[], f: Flags): Promise<void> {
 
 /* ──────────── HTTP: /api/state + /api/tail (mounted on webhook server) ──────────── */
 
-/** No host allowlist — bearer-token check below is the security boundary; supports any tunnel hostname. */
+/** Monitor endpoints answer only on dedicated hostnames so webhook tunnel can't double-serve them. */
+const MONITOR_HOSTS = new Set((process.env.METRO_MONITOR_HOSTS ?? 'monitor.metro.box,localhost,127.0.0.1').toLowerCase().split(',').map(s => s.trim()).filter(Boolean));
 const JSON_CT = { 'content-type': 'application/json' };
 
 function jsonRes(res: ServerResponse, status: number, body: unknown): void {
@@ -131,6 +132,8 @@ function authorized(req: IncomingMessage): { status: number; msg: string } | nul
 export function handleMonitorRequest(req: IncomingMessage, res: ServerResponse): boolean {
   const url = req.url ?? '';
   if (!url.startsWith('/api/')) return false;
+  const host = (req.headers[':authority' as keyof typeof req.headers] as string | undefined) ?? req.headers.host;
+  if (host && !MONITOR_HOSTS.has(host.split(':')[0].toLowerCase())) return false;
   if (req.method !== 'GET') { jsonRes(res, 405, { error: 'method not allowed' }); return true; }
   const auth = authorized(req);
   if (auth) { jsonRes(res, auth.status, { error: auth.msg }); return true; }
