@@ -27,6 +27,3 @@ export interface StateSnapshot {
   recent_history: HistoryEntry[];
   bot_ids: Record<string, string>;
 }
-
-/** Stations we know how to icon-render. Anything else falls back to a generic glyph. */
-export type KnownStation = 'discord' | 'telegram' | 'webhook' | 'claude' | 'codex';

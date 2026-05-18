@@ -18,11 +18,3 @@ export interface HistoryEntry {
   replyTo?: string;
   display?: string;
 }
-
-export interface StateSnapshot {
-  claims: Record<string, string>;
-  lines: string[];
-  recent_history: HistoryEntry[];
-  bot_ids: Record<string, string>;
-  version?: string;
-}
