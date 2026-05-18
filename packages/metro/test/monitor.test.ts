@@ -12,6 +12,7 @@ import { mkdtempSync, rmSync, appendFileSync, writeFileSync, mkdirSync } from 'n
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
+import { createServer as createNetServer, type Server as NetServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
 
 const HARNESS = fileURLToPath(new URL('./monitor-harness.mjs', import.meta.url));
@@ -74,9 +75,44 @@ function seedBotIds(stateDir: string, botIds: Record<string, string>): void {
 
 const TOKEN = 'test-token-abc';
 let server: Server | null = null;
+let ipcServer: NetServer | null = null;
+
+/** Mock daemon IPC: listens on STATE_DIR/metro.sock and replies to forward-call. */
+function startMockIpc(
+  stateDir: string,
+  reply: (req: { op: string; train?: string; action?: string; args?: unknown }) => object,
+): Promise<NetServer> {
+  const path = join(stateDir, 'metro.sock');
+  return new Promise((resolve, reject) => {
+    const srv = createNetServer({ allowHalfOpen: true }, sock => {
+      let buf = '';
+      sock.setEncoding('utf8');
+      sock.on('data', chunk => {
+        buf += chunk;
+        const nl = buf.indexOf('\n');
+        if (nl === -1) return;
+        const line = buf.slice(0, nl).trim();
+        buf = buf.slice(nl + 1);
+        try {
+          const req = JSON.parse(line);
+          sock.write(JSON.stringify(reply(req)) + '\n');
+        } catch (err) {
+          sock.write(JSON.stringify({ ok: false, error: String(err) }) + '\n');
+        }
+        sock.end();
+      });
+    });
+    srv.on('error', reject);
+    srv.listen(path, () => resolve(srv));
+  });
+}
 
 afterEach(async () => {
   if (server) { await stopServer(server); server = null; }
+  if (ipcServer) {
+    await new Promise<void>(r => ipcServer!.close(() => r()));
+    ipcServer = null;
+  }
   for (const d of tempRoots.splice(0)) {
     try { rmSync(d, { recursive: true, force: true }); } catch { /* ignore */ }
   }
@@ -317,5 +353,109 @@ describe('GET /api/* misc', () => {
       headers: { authorization: `Bearer ${TOKEN}` },
     });
     expect(r.status).toBe(405);
+  });
+});
+
+describe('POST /api/call/<train>/<action>', () => {
+  test('200 — forwards args to IPC, returns result', async () => {
+    const stateDir = freshStateDir();
+    const seen: Array<{ train?: string; action?: string; args?: unknown }> = [];
+    ipcServer = await startMockIpc(stateDir, req => {
+      seen.push({ train: req.train, action: req.action, args: req.args });
+      return { ok: true, response: { result: { delivered: true, echo: req.args } } };
+    });
+    server = await startServer({ METRO_STATE_DIR: stateDir, METRO_MONITOR_TOKEN: TOKEN });
+
+    const r = await fetch(`${server.url}/api/call/discord/send`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${TOKEN}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ args: { line: 'metro://discord/1', text: 'hi' } }),
+    });
+    expect(r.status).toBe(200);
+    const j = await r.json() as { result: { delivered: boolean; echo: { text: string } } };
+    expect(j.result.delivered).toBe(true);
+    expect(j.result.echo.text).toBe('hi');
+    expect(seen[0].train).toBe('discord');
+    expect(seen[0].action).toBe('send');
+    expect((seen[0].args as { text: string }).text).toBe('hi');
+  });
+
+  test('200 — body without `args` wrapper is forwarded as-is', async () => {
+    const stateDir = freshStateDir();
+    ipcServer = await startMockIpc(stateDir, req => ({
+      ok: true, response: { result: req.args },
+    }));
+    server = await startServer({ METRO_STATE_DIR: stateDir, METRO_MONITOR_TOKEN: TOKEN });
+
+    const r = await fetch(`${server.url}/api/call/telegram/send`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${TOKEN}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ text: 'raw' }),
+    });
+    expect(r.status).toBe(200);
+    const j = await r.json() as { result: { text: string } };
+    expect(j.result.text).toBe('raw');
+  });
+
+  test('400 — bad JSON', async () => {
+    const stateDir = freshStateDir();
+    ipcServer = await startMockIpc(stateDir, () => ({ ok: true, response: {} }));
+    server = await startServer({ METRO_STATE_DIR: stateDir, METRO_MONITOR_TOKEN: TOKEN });
+
+    const r = await fetch(`${server.url}/api/call/discord/send`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${TOKEN}`, 'content-type': 'application/json' },
+      body: '{not json',
+    });
+    expect(r.status).toBe(400);
+  });
+
+  test('502 — train returned error', async () => {
+    const stateDir = freshStateDir();
+    ipcServer = await startMockIpc(stateDir, () => ({
+      ok: true, response: { error: 'train said no' },
+    }));
+    server = await startServer({ METRO_STATE_DIR: stateDir, METRO_MONITOR_TOKEN: TOKEN });
+
+    const r = await fetch(`${server.url}/api/call/discord/send`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${TOKEN}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ args: {} }),
+    });
+    expect(r.status).toBe(502);
+    const j = await r.json() as { error: string };
+    expect(j.error).toContain('train said no');
+  });
+
+  test('405 — GET on /api/call/* path', async () => {
+    const stateDir = freshStateDir();
+    server = await startServer({ METRO_STATE_DIR: stateDir, METRO_MONITOR_TOKEN: TOKEN });
+    const r = await fetch(`${server.url}/api/call/discord/send`, {
+      headers: { authorization: `Bearer ${TOKEN}` },
+    });
+    expect(r.status).toBe(405);
+  });
+
+  test('401 — no bearer token', async () => {
+    const stateDir = freshStateDir();
+    server = await startServer({ METRO_STATE_DIR: stateDir, METRO_MONITOR_TOKEN: TOKEN });
+    const r = await fetch(`${server.url}/api/call/discord/send`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    expect(r.status).toBe(401);
+  });
+
+  test('502 — daemon IPC unavailable', async () => {
+    const stateDir = freshStateDir();
+    /** No mock IPC server — ipcCall should fail with "daemon is not running". */
+    server = await startServer({ METRO_STATE_DIR: stateDir, METRO_MONITOR_TOKEN: TOKEN });
+    const r = await fetch(`${server.url}/api/call/discord/send`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${TOKEN}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ args: {} }),
+    });
+    expect(r.status).toBe(500);
   });
 });

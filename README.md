@@ -11,19 +11,24 @@ code lives in train scripts outside this repo, written on demand by the user or 
 packages/
   metro/        # @stage-labs/metro — the daemon + CLI (see packages/metro/README.md)
 apps/
-  app/          # @stage-labs/metro-app — read-only mobile activity monitor (Expo + RN)
+  app/          # @stage-labs/metro-app — mobile activity monitor + composer (Expo + RN)
+  ui/           # @stage-labs/metro-ui — web activity monitor + composer (Vue 3 + Vite)
+  _shared/      # shared assets (e.g. station-icon SVG defs) imported by both apps
 ```
 
 ## Packages
 
-- [`@stage-labs/metro`](packages/metro/README.md) — install with `npm i -g @stage-labs/metro`. Run `metro` to multiplex train events onto stdout, forward action calls via `metro call <train> <action> <args>`.
-- [`@stage-labs/metro-app`](apps/app/README.md) — Expo / React Native companion. View live activity + claimed lines from your phone over the daemon's bearer-token-gated monitor endpoints. Start with `bun --cwd apps/app start`.
+- [`@stage-labs/metro`](packages/metro/README.md) — install with `npm i -g @stage-labs/metro`. Run `metro` to multiplex train events onto stdout, forward action calls via `metro call <train> <action> <args>` or `POST /api/call/<train>/<action>`.
+- [`@stage-labs/metro-app`](apps/app/README.md) — Expo / React Native companion. View live activity, filter lines, send replies from your phone via the daemon's bearer-token-gated monitor endpoints. Start with `bun --cwd apps/app start`.
+- `@stage-labs/metro-ui` — Vue 3 web companion with the same surface. `bun --cwd apps/ui dev` opens the dev server on `localhost:5173`; `bun --cwd apps/ui build` emits a static bundle in `apps/ui/dist/`.
 
-The monitor endpoints (`/api/state`, `/api/tail` SSE) are documented in
-[`packages/metro/docs/monitor.md`](packages/metro/docs/monitor.md); enable them by setting
-`METRO_MONITOR_TOKEN` in `~/.config/metro/.env`. Broker semantics (claims, multi-user
-fan-out) are in [`packages/metro/docs/broker.md`](packages/metro/docs/broker.md); the
-`metro://` URI scheme is in [`packages/metro/docs/uri-scheme.md`](packages/metro/docs/uri-scheme.md).
+The monitor endpoints (`/api/state`, `/api/tail` SSE, `/api/call/<train>/<action>`) are
+documented in [`packages/metro/docs/monitor.md`](packages/metro/docs/monitor.md); enable
+them by setting `METRO_MONITOR_TOKEN` in `~/.config/metro/.env`. Broker semantics
+(claims, multi-user fan-out) are in
+[`packages/metro/docs/broker.md`](packages/metro/docs/broker.md); the `metro://` URI
+scheme is in
+[`packages/metro/docs/uri-scheme.md`](packages/metro/docs/uri-scheme.md).
 
 ## Development
 

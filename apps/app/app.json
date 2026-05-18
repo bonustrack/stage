@@ -33,6 +33,13 @@
       "expo-router",
       "expo-secure-store",
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "1707f2db-c2b8-4c91-9341-27b1d57d355f"
+      }
+    },
+    "owner": "bonustrack"
   }
 }

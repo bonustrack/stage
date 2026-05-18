@@ -14,16 +14,12 @@ const APP_VERSION = (Constants.expoConfig?.version ?? '0.0.0') as string;
 
 export default function Settings(): React.ReactElement {
   const router = useRouter();
-  const scheme = useColorScheme();
-  const dark = scheme === 'dark';
-  const colors = {
-    fg: dark ? '#e8ecf2' : '#1a1f29',
-    sub: dark ? '#8a94a6' : '#5a6477',
-    bg: dark ? '#0f1115' : '#ffffff',
-    field: dark ? '#161a22' : '#fafbfd',
-    border: dark ? '#262c38' : '#e3e7ef',
-    accent: '#5aa9ff',
-  };
+  const dark = useColorScheme() === 'dark';
+  const fg = dark ? '#e8ecf2' : '#1a1f29';
+  const sub = dark ? '#8a94a6' : '#5a6477';
+  const bg = dark ? '#0f1115' : '#ffffff';
+  const field = dark ? '#161a22' : '#fafbfd';
+  const border = dark ? '#262c38' : '#e3e7ef';
 
   const [cfg, setCfg] = useState<Config>({ daemonUrl: '', token: '', userId: '' });
   const [loading, setLoading] = useState(true);
@@ -46,93 +42,72 @@ export default function Settings(): React.ReactElement {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg }}>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: bg }}>
         <ActivityIndicator />
       </View>
     );
   }
 
-  const save = async (then: 'back' | 'stay'): Promise<void> => {
-    await saveConfig(cfg);
-    if (then === 'back') router.back();
-  };
-
   const test = async (): Promise<void> => {
-    setTesting(true);
-    setTestResult('');
+    setTesting(true); setTestResult('');
     /** Always test against the freshly-typed values, not the persisted ones. */
     const r = await fetchState(cfg.daemonUrl, cfg.token);
     setTesting(false);
-    if (r.ok) {
-      const data = r.data as { recent_history?: unknown[]; claims?: Record<string, unknown>; version?: string };
-      const events = data.recent_history?.length ?? 0;
-      const claims = Object.keys(data.claims ?? {}).length;
-      setTestResult(`ok — ${events} recent events, ${claims} claims`);
-      if (data.version) setDaemonVersion(data.version);
-    } else {
-      setTestResult(`failed (${r.status || 'network'}): ${r.error}`);
-    }
+    if (!r.ok) { setTestResult(`failed (${r.status || 'network'}): ${r.error}`); return; }
+    const d = r.data as { recent_history?: unknown[]; claims?: Record<string, unknown>; version?: string };
+    setTestResult(`ok — ${d.recent_history?.length ?? 0} recent events, ${Object.keys(d.claims ?? {}).length} claims`);
+    if (d.version) setDaemonVersion(d.version);
   };
+
+  const fieldStyle = {
+    backgroundColor: field, borderWidth: 1, borderColor: border, borderRadius: 8,
+    paddingHorizontal: 12, paddingVertical: 10, color: fg, fontSize: 15,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+  };
+  const renderField = (
+    label: string, hint: string, value: string, set: (v: string) => void,
+    extra: Partial<React.ComponentProps<typeof TextInput>> = {},
+  ): React.ReactElement => (
+    <View style={{ gap: 4 }}>
+      <Text style={{ color: fg, fontWeight: '600', fontSize: 13 }}>{label}</Text>
+      <TextInput
+        value={value} onChangeText={set} placeholderTextColor={sub} style={fieldStyle} {...extra}
+      />
+      <Text style={{ color: sub, fontSize: 11 }}>{hint}</Text>
+    </View>
+  );
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={{ flex: 1, backgroundColor: colors.bg }}
+      style={{ flex: 1, backgroundColor: bg }}
     >
       <ScrollView contentContainerStyle={{ padding: 18, gap: 16 }}>
-        <Field
-          label="Daemon URL"
-          hint="e.g. https://monitor.metro.box"
-          value={cfg.daemonUrl}
-          onChangeText={(v: string) => setCfg({ ...cfg, daemonUrl: v })}
-          autoCapitalize="none"
-          keyboardType="url"
-          colors={colors}
-        />
-        <Field
-          label="Bearer token"
-          hint="value of METRO_MONITOR_TOKEN on the daemon"
-          value={cfg.token}
-          onChangeText={(v: string) => setCfg({ ...cfg, token: v })}
-          secureTextEntry
-          colors={colors}
-        />
-        <Field
-          label="Self URI (optional)"
-          hint="e.g. metro://claude/user/<id> — enables 'mine + free' filtering"
-          value={cfg.userId}
-          onChangeText={(v: string) => setCfg({ ...cfg, userId: v })}
-          autoCapitalize="none"
-          colors={colors}
-        />
+        {renderField('Daemon URL', 'e.g. https://monitor.metro.box', cfg.daemonUrl,
+          v => setCfg({ ...cfg, daemonUrl: v }), { autoCapitalize: 'none', keyboardType: 'url' })}
+        {renderField('Bearer token', 'value of METRO_MONITOR_TOKEN on the daemon', cfg.token,
+          v => setCfg({ ...cfg, token: v }), { secureTextEntry: true })}
+        {renderField('Self URI (optional)', "e.g. metro://claude/user/<id> — enables 'mine + free' filtering",
+          cfg.userId, v => setCfg({ ...cfg, userId: v }), { autoCapitalize: 'none' })}
 
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <Pressable
             onPress={test}
             disabled={testing || !cfg.daemonUrl || !cfg.token}
             style={({ pressed }) => ({
-              flex: 1,
-              backgroundColor: pressed ? colors.border : colors.field,
-              borderWidth: 1,
-              borderColor: colors.border,
-              paddingVertical: 12,
-              borderRadius: 8,
-              alignItems: 'center',
+              flex: 1, backgroundColor: pressed ? border : field,
+              borderWidth: 1, borderColor: border,
+              paddingVertical: 12, borderRadius: 8, alignItems: 'center',
               opacity: !cfg.daemonUrl || !cfg.token ? 0.5 : 1,
             })}
           >
-            <Text style={{ color: colors.fg, fontWeight: '600' }}>
-              {testing ? 'Testing…' : 'Test connection'}
-            </Text>
+            <Text style={{ color: fg, fontWeight: '600' }}>{testing ? 'Testing…' : 'Test connection'}</Text>
           </Pressable>
           <Pressable
-            onPress={() => void save('back')}
+            onPress={() => void saveConfig(cfg).then(() => router.back())}
             style={({ pressed }) => ({
-              flex: 1,
-              backgroundColor: pressed ? '#4a8fdf' : colors.accent,
-              paddingVertical: 12,
-              borderRadius: 8,
-              alignItems: 'center',
+              flex: 1, backgroundColor: pressed ? '#4a8fdf' : '#5aa9ff',
+              paddingVertical: 12, borderRadius: 8, alignItems: 'center',
             })}
           >
             <Text style={{ color: '#fff', fontWeight: '700' }}>Save</Text>
@@ -145,54 +120,15 @@ export default function Settings(): React.ReactElement {
           </Text>
         ) : null}
 
-        <Text style={{ color: colors.sub, fontSize: 12, marginTop: 12, lineHeight: 18 }}>
+        <Text style={{ color: sub, fontSize: 12, marginTop: 12, lineHeight: 18 }}>
           Tokens are stored in your device&apos;s secure store (Keychain on iOS, Keystore on Android).
           They never leave your phone except as the {`\`Authorization: Bearer\``} header on requests
           to the daemon URL above.
         </Text>
-
-        <Text style={{ color: colors.sub, fontSize: 11, marginTop: 16, textAlign: 'center' }}>
+        <Text style={{ color: sub, fontSize: 11, marginTop: 16, textAlign: 'center' }}>
           app v{APP_VERSION} · daemon {daemonVersion ? `v${daemonVersion}` : '(unknown — test connection)'}
         </Text>
       </ScrollView>
     </KeyboardAvoidingView>
-  );
-}
-
-type FieldColors = {
-  fg: string; sub: string; field: string; border: string;
-};
-
-function Field(props: {
-  label: string;
-  hint?: string;
-  value: string;
-  onChangeText: (v: string) => void;
-  secureTextEntry?: boolean;
-  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
-  keyboardType?: 'default' | 'url' | 'email-address';
-  colors: FieldColors;
-}): React.ReactElement {
-  const { label, hint, colors, ...input } = props;
-  return (
-    <View style={{ gap: 4 }}>
-      <Text style={{ color: colors.fg, fontWeight: '600', fontSize: 13 }}>{label}</Text>
-      <TextInput
-        {...input}
-        placeholderTextColor={colors.sub}
-        style={{
-          backgroundColor: colors.field,
-          borderWidth: 1,
-          borderColor: colors.border,
-          borderRadius: 8,
-          paddingHorizontal: 12,
-          paddingVertical: 10,
-          color: colors.fg,
-          fontSize: 15,
-          fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-        }}
-      />
-      {hint ? <Text style={{ color: colors.sub, fontSize: 11 }}>{hint}</Text> : null}
-    </View>
   );
 }

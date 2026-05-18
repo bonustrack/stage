@@ -9,36 +9,26 @@ const KEYS = {
   userId: 'metro_user_id',
 } as const;
 
-export type Config = {
-  daemonUrl: string;
-  token: string;
-  userId: string;
-};
+export type Config = { daemonUrl: string; token: string; userId: string };
 
 const memWeb: Record<string, string> = {};
+const isWeb = Platform.OS === 'web';
 
 async function getItem(key: string): Promise<string | null> {
-  if (Platform.OS === 'web') return memWeb[key] ?? null;
-  try { return await SecureStore.getItemAsync(key); }
-  catch { return null; }
+  if (isWeb) return memWeb[key] ?? null;
+  try { return await SecureStore.getItemAsync(key); } catch { return null; }
 }
 
 async function setItem(key: string, value: string): Promise<void> {
-  if (Platform.OS === 'web') { memWeb[key] = value; return; }
+  if (isWeb) { memWeb[key] = value; return; }
   await SecureStore.setItemAsync(key, value);
 }
 
 export async function loadConfig(): Promise<Config> {
-  const [daemonUrl, token, userId] = await Promise.all([
-    getItem(KEYS.daemonUrl),
-    getItem(KEYS.token),
-    getItem(KEYS.userId),
-  ]);
-  return {
-    daemonUrl: daemonUrl ?? '',
-    token: token ?? '',
-    userId: userId ?? '',
-  };
+  const [daemonUrl, token, userId] = await Promise.all(
+    (Object.values(KEYS) as string[]).map(getItem),
+  );
+  return { daemonUrl: daemonUrl ?? '', token: token ?? '', userId: userId ?? '' };
 }
 
 export async function saveConfig(cfg: Config): Promise<void> {

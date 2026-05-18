@@ -6,20 +6,22 @@ directly.
 
 These endpoints mount on the **existing** webhook HTTP server (default port `8420`).
 There is no separate daemon, no separate port, no extra process to launch. The
-implementation lives in [`src/cli/tail.ts`](../src/cli/tail.ts) (the same module that
-backs the `metro tail` CLI) and is wired into the HTTP server in
+implementation lives in [`src/cli/monitor-api.ts`](../src/cli/monitor-api.ts) (re-exported
+by `src/cli/tail.ts` for backwards compatibility) and is wired into the HTTP server in
 [`src/dispatcher/server.ts`](../src/dispatcher/server.ts) via `handleMonitorRequest`.
 
 ## Routes
 
-| Method | Path         | Returns                                                                                  |
-|--------|--------------|------------------------------------------------------------------------------------------|
-| GET    | `/api/state` | JSON snapshot — `{ claims, lines, recent_history (last 100), bot_ids }`.                 |
-| GET    | `/api/tail`  | Server-Sent Events stream — `history.jsonl` entries, claim-aware filtered.                |
+| Method | Path                          | Returns                                                                                  |
+|--------|-------------------------------|------------------------------------------------------------------------------------------|
+| GET    | `/api/state`                  | JSON snapshot — `{ claims, lines, recent_history (last 100), bot_ids }`.                 |
+| GET    | `/api/tail`                   | Server-Sent Events stream — `history.jsonl` entries, claim-aware filtered.                |
+| POST   | `/api/call/<train>/<action>`  | Forward an action call to a train via `forward-call` IPC; returns `{result}`.            |
 
-Both routes are **read-only**. The daemon never mutates state on receipt. The handlers
-read the same files the broker reads (`history.jsonl`, `claims.json`, `bot-ids.json`)
-under whatever `METRO_STATE_DIR` resolves to.
+`/api/state` and `/api/tail` are read-only. `/api/call/<train>/<action>` is the single
+write endpoint — it never touches the on-disk history; the train running on the daemon
+emits its own outbound event after delivering the message, which then flows through the
+normal SSE stream like any other entry.
 
 ## Authentication
 
@@ -133,6 +135,61 @@ curl -N \
   -H "Authorization: Bearer $METRO_MONITOR_TOKEN" \
   "https://monitor.metro.box/api/tail?since=0"
 ```
+
+## `POST /api/call/<train>/<action>`
+
+Forwards an action call to a train (same as `metro call <train> <action> <args>` on the
+command line) via the daemon's existing `forward-call` IPC. Use this from the mobile or
+web app to send a message, react, edit, etc. without needing shell access.
+
+### Request
+
+```http
+POST /api/call/discord/send HTTP/1.1
+Host: monitor.metro.box
+Authorization: Bearer <METRO_MONITOR_TOKEN>
+Content-Type: application/json
+
+{"args": {"line": "metro://discord/123", "text": "hello from the web"}}
+```
+
+The body is one of:
+
+- `{"args": <object|array|string>}` — explicit `args` wrapper (recommended).
+- `<object>` — any other JSON object is forwarded as the args verbatim (useful for terse
+  clients).
+- Empty body — forwarded as `{}`.
+
+`<train>` must match a train running under `~/.metro/trains/`; `<action>` is whatever
+that train expects (`send`, `react`, `edit`, …).
+
+### Response
+
+| Status | Body                                                | Meaning                                                  |
+|--------|-----------------------------------------------------|----------------------------------------------------------|
+| 200    | `{"result": <whatever the train returned>}`         | Train accepted the call and returned a result.           |
+| 400    | `{"error": "bad JSON body: …"}`                      | Body was not valid JSON.                                 |
+| 401    | `{"error": "unauthorized"}`                          | Missing / wrong bearer token.                            |
+| 405    | `{"error": "method not allowed"}`                    | Wrong verb (only `POST` is accepted on this path).       |
+| 500    | `{"error": "…"}`                                     | Daemon IPC unavailable (e.g. socket missing).            |
+| 502    | `{"error": "…"}`                                     | Train returned an error or the IPC handshake malformed.  |
+
+Request bodies larger than 256 KiB are rejected with HTTP 500.
+
+### Example: send a message
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer $METRO_MONITOR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"args":{"line":"metro://discord/123","text":"hi"}}' \
+  https://monitor.metro.box/api/call/discord/send
+```
+
+Because the daemon's `send` adapter writes an outbound `history.jsonl` entry once the
+message lands, an active `/api/tail` subscriber will receive the corresponding
+`kind:"outbound"` event a moment later. UIs typically clear the input on HTTP 200 and
+let the SSE replay show the sent message.
 
 ## Exposing publicly via Cloudflare tunnel
 

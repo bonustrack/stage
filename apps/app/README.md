@@ -2,12 +2,14 @@
 
 [![lines of code](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.codetabs.com%2Fv1%2Floc%2F%3Fgithub%3Dbonustrack%2Fmetro%26ignored%3Dpackages&query=%24%5B0%5D.linesOfCode&label=lines%20of%20TypeScript&color=blue)](https://github.com/bonustrack/metro/tree/main/apps/app)
 
-Read-only mobile companion for the Metro daemon. View your live activity feed and
+Mobile companion for the Metro daemon. View your live activity feed and
 claimed lines from anywhere — same data the `metro tail` CLI produces, surfaced over
-the daemon's monitor endpoints (`/api/state`, `/api/tail` SSE).
+the daemon's monitor endpoints (`/api/state`, `/api/tail` SSE,
+`/api/call/<train>/<action>` for sends).
 
-Read-only by design: no replying, editing, or reacting from the app — outbound stays
-on the host running `metro call <train> <action>`.
+Supports search (substring on text / fromName / lineName) and sending replies when a
+chat filter is active. The compose box derives the train name from the line's
+`metro://<station>/` prefix and POSTs to `/api/call/<train>/send`.
 
 ## Stack
 
@@ -81,23 +83,31 @@ the full endpoint spec.
 ```
 apps/app/
   app/
-    _layout.tsx        ← stack navigator (light/dark auto)
-    index.tsx          ← Activity feed (SSE tail, newest first)
-    lines.tsx          ← Lines list (claims overview, tap to filter)
-    settings.tsx       ← Daemon URL + token + self URI
-    event/[id].tsx     ← Event detail (full text + metadata)
+    _layout.tsx          ← stack navigator (light/dark auto)
+    index.tsx            ← Activity feed (SSE tail, search, compose)
+    lines.tsx            ← Lines list (claims overview, tap to filter)
+    settings.tsx         ← Daemon URL + token + self URI
+    event/[id].tsx       ← Event detail (full text + metadata)
   components/
-    EventRow.tsx       ← one history entry row
-    StationIcon.tsx    ← two-letter station pill
+    ActivityHeader.tsx   ← top bar: status, filter / lines / settings actions
+    Composer.tsx         ← chat-bound send box, POSTs /api/call/<train>/send
+    EventRow.tsx         ← one history entry row (brand-coloured station pill)
+    FilterSheet.tsx      ← bottom-sheet kind/station/from/to filter
+    FilterSheetParts.tsx ← Section / Chip / StationChip building blocks
+    SearchBar.tsx        ← case-insensitive substring search
+    StationIcon.tsx      ← two-letter brand-coloured pill
   lib/
-    config.ts          ← persisted config (expo-secure-store)
-    sse.ts             ← SSE reader + useTail hook + fetchState
-    types.ts           ← shapes mirroring packages/metro/src/history.ts
+    config.ts            ← persisted config (expo-secure-store)
+    sse.ts               ← SSE reader + useTail hook + fetchState
+    types.ts             ← shapes mirroring packages/metro/src/history.ts
 ```
+
+Brand colours + glyphs come from `apps/_shared/icons/stations.ts` so the
+mobile + web shells stay in sync.
 
 ## What's not here
 
 - Push notifications for inbounds — would need the daemon to mint Expo push tokens.
-- Reply / react / edit / send — outbound stays on the CLI host (`metro call <train> <action>`).
+- React / edit — only send is wired into the composer.
 - Multi-account / multi-daemon — single config slot today.
 - App Store / Play Store builds — Expo Go runnable only.

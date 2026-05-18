@@ -1,4 +1,4 @@
-/** Event/state shapes — mirror the daemon's `HistoryEntry`. Kept in sync by hand. */
+/** Event/state shapes — mirror the daemon's HistoryEntry. Synced by hand with apps/app/lib/types.ts. */
 
 export type HistoryKind = 'inbound' | 'outbound' | 'edit' | 'react';
 
@@ -16,14 +16,5 @@ export interface HistoryEntry {
   emoji?: string;
   messageId?: string;
   replyTo?: string;
-  /** Pre-rendered chat-bubble markdown. */
   display?: string;
-}
-
-/** Shape returned by `GET /api/state`. */
-export interface StateSnapshot {
-  claims: Record<string, string>;
-  lines: string[];
-  recent_history: HistoryEntry[];
-  bot_ids: Record<string, string>;
 }
