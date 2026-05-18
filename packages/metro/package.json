@@ -1,6 +1,6 @@
 {
   "name": "@stage-labs/metro",
-  "version": "0.1.0-beta.13",
+  "version": "0.1.0-beta.14",
   "private": false,
   "description": "Event-interception wire. Supervises train subprocesses in ~/.metro/trains/, multiplexes their JSON event stream onto stdout, and routes outbound action calls back via stdin. Per-platform code is written by the agent (or user) as train scripts — metro core is pure transport.",
   "license": "MIT",
