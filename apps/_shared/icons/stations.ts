@@ -33,9 +33,11 @@ const WEBHOOK_PATH = 'M10.46 19c-.79 1.76-2.55 3-4.6 3a5 5 0 0 1 0-10c.36 0 .71.
   + '2.99 0 0 0 8.86 19h1.6Zm1.54-5.46l3.21 5.99a5 5 0 1 0 4.79-7.5l-.99 2.04a2.99 2.99 0 1 1-2.59 4.55l-3.21'
   + '-5.99-1.21.91Zm-3.93-3.78a5 5 0 1 1 9.39 2.39l-1.04 2.04A2.99 2.99 0 1 0 10.94 11l-3.21 5.99-1.66-2Z';
 
-const CLAUDE_PATH = 'M4.5 15l4-12h2.5l-3 9h4l1-3h2.5l1 3h4l-3-9H20l4 12H4.5z';
+/** Anthropic-style 8-point asterisk: thick arms on the cardinal axes, thin on the diagonals. */
+const CLAUDE_PATH = 'M12 2.5L13.05 9.5L18.5 5.05L15.6 11.05L21.5 12L15.6 12.95L18.5 18.95L13.05 14.5L12 21.5L10.95 14.5L5.5 18.95L8.4 12.95L2.5 12L8.4 11.05L5.5 5.05L10.95 9.5Z';
 
-const CODEX_PATH = 'M12 2 4 6v8l8 4 8-4V6l-8-4zm0 2.2L18 7v6l-6 3-6-3V7l6-2.8zM8 9v4l4 2 4-2V9l-4-2-4 2z';
+/** OpenAI-style knot: six interlocked petals around a central void. Approximated with 6 ellipses. */
+const CODEX_PATH = 'M12 4.5a5 5 0 0 1 4.33 7.5a5 5 0 0 1-4.33 2.5a5 5 0 0 1-4.33-2.5A5 5 0 0 1 12 4.5zm0 2a3 3 0 0 0-2.6 4.5L12 12l2.6-1A3 3 0 0 0 12 6.5zm-5.2 9a5 5 0 0 1 0-5l2.6 1.5v3L6.8 15.5zm10.4 0L14.6 14v-3L17.2 10a5 5 0 0 1 0 5zm-5.2 4a5 5 0 0 1-4.33-2.5l2.6-1.5L12 17.5l2.93-1.5l2.6 1.5A5 5 0 0 1 12 19.5z';
 
 export const STATIONS: Record<StationKey, StationIconDef> = {
   discord: {
