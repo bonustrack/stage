@@ -1,4 +1,4 @@
-/** HTTP monitor endpoints: GET /api/state, GET /api/tail (SSE). Mounted on the webhook server. */
+/** HTTP monitor endpoints: GET /api/state, GET /api/tail (SSE), POST /api/call/<train>/<action>. */
 
 import { timingSafeEqual } from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
@@ -8,6 +8,7 @@ import {
   drainTail, followTail, historySize, type Mode, type TailOpts,
 } from '../broker/history-stream.js';
 import { readHistory, type HistoryEntry } from '../history.js';
+import { ipcCall } from '../ipc.js';
 import { asLine, Line } from '../lines.js';
 import { errMsg, log } from '../log.js';
 import { readBotIds } from '../paths.js';
@@ -61,6 +62,16 @@ export function handleMonitorRequest(req: IncomingMessage, res: ServerResponse):
     handleTail(req, res, q).catch(err => {
       log.warn({ err: errMsg(err) }, 'monitor: tail handler error');
       try { if (!res.headersSent) res.writeHead(500).end(); else res.end(); } catch { /* ignore */ }
+    });
+    return true;
+  }
+  /** POST /api/call/<train>/<action> — JSON body {args} forwarded to train via IPC forward-call. */
+  const callMatch = path.match(/^\/api\/call\/([^/]+)\/([^/]+)$/);
+  if (callMatch) {
+    if (req.method !== 'POST') { jsonRes(res, 405, { error: 'method not allowed' }); return true; }
+    handleCall(req, res, callMatch[1], callMatch[2]).catch(err => {
+      log.warn({ err: errMsg(err) }, 'monitor: call handler error');
+      try { jsonRes(res, 500, { error: errMsg(err) }); } catch { /* ignore */ }
     });
     return true;
   }
@@ -119,4 +130,34 @@ async function handleTail(req: IncomingMessage, res: ServerResponse, q: URLSearc
   const keepalive = setInterval(() => res.write(': keepalive\n\n'), 25_000);
   const cleanup = (): void => { stop(); clearInterval(keepalive); try { res.end(); } catch { /* ignore */ } };
   req.on('close', cleanup); req.on('error', cleanup);
+}
+
+const CALL_BODY_MAX = 256 * 1024;
+
+async function readBody(req: IncomingMessage): Promise<string> {
+  const chunks: Buffer[] = [];
+  let total = 0;
+  for await (const chunk of req) {
+    const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as string);
+    total += buf.length;
+    if (total > CALL_BODY_MAX) throw new Error(`request body exceeds ${CALL_BODY_MAX} bytes`);
+    chunks.push(buf);
+  }
+  return Buffer.concat(chunks).toString('utf8');
+}
+
+async function handleCall(req: IncomingMessage, res: ServerResponse, train: string, action: string): Promise<void> {
+  let args: unknown = {};
+  const raw = (await readBody(req)).trim();
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw) as { args?: unknown };
+      args = parsed && typeof parsed === 'object' && 'args' in parsed ? parsed.args : parsed;
+    } catch (err) { return jsonRes(res, 400, { error: `bad JSON body: ${errMsg(err)}` }); }
+  }
+  const resp = await ipcCall({ op: 'forward-call', train, action, args });
+  if (!resp.ok) return jsonRes(res, 502, { error: resp.error });
+  if (!('response' in resp)) return jsonRes(res, 502, { error: 'malformed daemon response' });
+  if (resp.response.error) return jsonRes(res, 502, { error: resp.response.error });
+  jsonRes(res, 200, { result: resp.response.result ?? null });
 }
