@@ -1,8 +1,47 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useRoute } from 'vue-router';
+import AppHeader from '../components/AppHeader.vue';
+import type { HistoryEntry } from '../lib/types';
+
+const route = useRoute();
+const entry = computed<HistoryEntry | null>(() => {
+  const raw = route.query.data as string | undefined;
+  if (!raw) return null;
+  try { return JSON.parse(raw) as HistoryEntry; } catch { return null; }
+});
+
+const rows = computed<[string, string][]>(() => {
+  if (!entry.value) return [];
+  const e = entry.value;
+  return [
+    ['id', e.id], ['ts', e.ts], ['kind', e.kind], ['station', e.station],
+    ['line', e.line], ['lineName', e.lineName ?? ''],
+    ['from', e.from], ['fromName', e.fromName ?? ''],
+    ['to', e.to],
+    ['messageId', e.messageId ?? ''], ['replyTo', e.replyTo ?? ''],
+    ['emoji', e.emoji ?? ''],
+  ];
+});
 </script>
 
 <template>
-  <div class="p-6">
-    <h1 class="text-xl font-bold">Event</h1>
+  <div class="flex flex-col h-screen">
+    <AppHeader />
+    <div v-if="!entry" class="p-6 text-metro-sub-light dark:text-metro-sub-dark">Event data unavailable.</div>
+    <div v-else class="flex-1 overflow-y-auto p-4 space-y-4 max-w-3xl w-full mx-auto">
+      <section v-if="entry.text">
+        <div class="text-xs text-metro-sub-light dark:text-metro-sub-dark mb-1">text</div>
+        <div class="text-sm whitespace-pre-wrap">{{ entry.text }}</div>
+      </section>
+      <section v-for="[k, v] in rows.filter(([, val]) => val)" :key="k">
+        <div class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark">{{ k }}</div>
+        <div class="font-mono text-xs select-text break-all">{{ v }}</div>
+      </section>
+      <section v-if="entry.display">
+        <div class="text-xs text-metro-sub-light dark:text-metro-sub-dark mb-1">display</div>
+        <pre class="bg-metro-surface-light dark:bg-metro-surface-dark p-3 rounded text-xs font-mono whitespace-pre-wrap">{{ entry.display }}</pre>
+      </section>
+    </div>
   </div>
 </template>
