@@ -1,7 +1,7 @@
-import { Text } from 'react-native';
-import type { KnownStation } from '../lib/types';
+import { Text, View } from 'react-native';
+import { getStationIcon } from '../../_shared/icons/stations';
 
-const GLYPH: Record<KnownStation, string> = {
+const GLYPHS: Record<string, string> = {
   discord: 'DC',
   telegram: 'TG',
   webhook: 'WH',
@@ -9,23 +9,36 @@ const GLYPH: Record<KnownStation, string> = {
   codex: 'CX',
 };
 
-/** Two-letter pill used as a station marker in the activity feed. */
-export function StationIcon({ station }: { station: string }): React.ReactElement {
-  const label = GLYPH[station as KnownStation] ?? station.slice(0, 2).toUpperCase();
+/** Brand-coloured pill used as a station marker. */
+/** Pulls colour from apps/_shared/icons; falls back to a generic gray pill. */
+export function StationIcon({ station, withLabel = false }: {
+  station: string; withLabel?: boolean;
+}): React.ReactElement {
+  const def = getStationIcon(station);
+  const glyph = GLYPHS[station] ?? station.slice(0, 2).toUpperCase();
+  if (!withLabel) {
+    return (
+      <Text
+        style={{
+          fontSize: 10, fontWeight: '700', color: def.fg, backgroundColor: def.color,
+          paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, overflow: 'hidden',
+        }}
+      >
+        {glyph}
+      </Text>
+    );
+  }
   return (
-    <Text
-      style={{
-        fontSize: 10,
-        fontWeight: '700',
-        color: '#0f1115',
-        backgroundColor: '#a3b8d8',
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 4,
-        overflow: 'hidden',
-      }}
-    >
-      {label}
-    </Text>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+      <Text
+        style={{
+          fontSize: 10, fontWeight: '700', color: def.fg, backgroundColor: def.color,
+          paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, overflow: 'hidden',
+        }}
+      >
+        {glyph}
+      </Text>
+      <Text style={{ fontSize: 13, fontWeight: '600' }}>{def.label}</Text>
+    </View>
   );
 }

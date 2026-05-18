@@ -2,7 +2,7 @@
 
 import { Modal, Pressable, ScrollView, Text, TextInput, View, useColorScheme } from 'react-native';
 import type { HistoryEntry, HistoryKind } from '../lib/types';
-import { Chip, ChipRow, Section, inputStyle } from './FilterSheetParts';
+import { Chip, ChipRow, Section, StationChip, inputStyle } from './FilterSheetParts';
 
 export type StationKey = 'discord' | 'telegram' | 'webhook' | 'claude' | 'codex';
 export const ALL_KINDS: HistoryKind[] = ['inbound', 'outbound', 'edit', 'react'];
@@ -124,7 +124,7 @@ export function FilterSheet({
             <Section label="Station" colors={colors}>
               <ChipRow>
                 {ALL_STATIONS.map(s => (
-                  <Chip key={s} label={s} on={filters.stations.has(s)} onPress={() => toggleStation(s)} colors={colors} />
+                  <StationChip key={s} station={s} on={filters.stations.has(s)} onPress={() => toggleStation(s)} colors={colors} />
                 ))}
               </ChipRow>
             </Section>

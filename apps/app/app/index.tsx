@@ -6,10 +6,12 @@ import {
 } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityHeader } from '../components/ActivityHeader';
+import { Composer } from '../components/Composer';
 import { EventRow } from '../components/EventRow';
 import {
   FilterSheet, emptyFilters, filtersAreEmpty, matchesFilters, type Filters,
 } from '../components/FilterSheet';
+import { SearchBar, matchesSearch } from '../components/SearchBar';
 import { loadConfig, isConfigured, type Config } from '../lib/config';
 import { fetchHistoryPage, useTail } from '../lib/sse';
 import type { HistoryEntry } from '../lib/types';
@@ -24,6 +26,7 @@ export default function Activity(): React.ReactElement {
   const [cfg, setCfg] = useState<Config | null>(null);
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [search, setSearch] = useState('');
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [older, setOlder] = useState<HistoryEntry[]>([]);
   const [olderExhausted, setOlderExhausted] = useState(false);
@@ -62,8 +65,8 @@ export default function Activity(): React.ReactElement {
   }, [events, older]);
 
   const filtered = useMemo(
-    () => allEvents.filter(e => matchesFilters(e, filters)),
-    [allEvents, filters],
+    () => allEvents.filter(e => matchesFilters(e, filters) && matchesSearch(e, search)),
+    [allEvents, filters, search],
   );
   const visible = filtered.slice(0, visibleCount);
 
@@ -135,6 +138,7 @@ export default function Activity(): React.ReactElement {
         onLines={() => router.push('/lines')}
         onFilter={() => setFilterOpen(true)}
       />
+      <SearchBar value={search} onChange={(v) => { setSearch(v); setVisibleCount(PAGE_SIZE); }} />
       <FlatList
         data={visible}
         keyExtractor={(e: HistoryEntry) => e.id}
@@ -183,6 +187,9 @@ export default function Activity(): React.ReactElement {
         onChange={(next) => { setFilters(next); setVisibleCount(PAGE_SIZE); }}
         onClose={() => setFilterOpen(false)}
       />
+      {chat ? (
+        <Composer daemonUrl={cfg.daemonUrl} token={cfg.token} line={chat} />
+      ) : null}
     </View>
   );
 }

@@ -1,6 +1,8 @@
-/** FilterSheet building blocks — Section / ChipRow / Chip / inputStyle. */
+/** FilterSheet building blocks — Section / ChipRow / Chip / StationChip / inputStyle. */
 
 import { Pressable, Text, View } from 'react-native';
+import { StationIcon } from './StationIcon';
+import { stationLabel } from '../../_shared/icons/stations';
 
 export function Section({
   label, colors, children,
@@ -45,6 +47,38 @@ export function Chip({
     >
       <Text style={{ color: on ? colors.chipFgOn : colors.chipFg, fontSize: 13, fontWeight: '600' }}>
         {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+/** Station chip = colored icon + label. Used by the FilterSheet station picker. */
+export function StationChip({
+  station, on, onPress, colors,
+}: {
+  station: string;
+  on: boolean;
+  onPress: () => void;
+  colors: { chipBg: string; chipBgOn: string; chipFg: string; chipFgOn: string; border: string };
+}): React.ReactElement {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={{
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 14,
+        backgroundColor: on ? colors.chipBgOn : colors.chipBg,
+        borderWidth: 1,
+        borderColor: on ? colors.chipBgOn : colors.border,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+      }}
+    >
+      <StationIcon station={station} />
+      <Text style={{ color: on ? colors.chipFgOn : colors.chipFg, fontSize: 13, fontWeight: '600' }}>
+        {stationLabel(station)}
       </Text>
     </Pressable>
   );
