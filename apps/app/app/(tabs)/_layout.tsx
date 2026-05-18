@@ -2,10 +2,12 @@
 
 import { Tabs } from 'expo-router';
 import { useColorScheme } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { HeroIcon, type HeroIconName } from '../../components/HeroIcon';
 
 export default function TabsLayout(): React.ReactElement {
   const dark = useColorScheme() === 'dark';
+  const insets = useSafeAreaInsets();
   const bg = dark ? '#0f1115' : '#ffffff';
   const border = dark ? '#1f2630' : '#e5e9f0';
   const active = '#4f8cff';
@@ -18,7 +20,13 @@ export default function TabsLayout(): React.ReactElement {
         headerTintColor: dark ? '#e8ecf2' : '#1a1f29',
         headerTitleStyle: { fontFamily: 'Calibre-Semibold' },
         sceneStyle: { backgroundColor: bg },
-        tabBarStyle: { backgroundColor: bg, borderTopColor: border, height: 60, paddingTop: 6 },
+        tabBarStyle: {
+          backgroundColor: bg,
+          borderTopColor: border,
+          height: 60 + insets.bottom,
+          paddingTop: 6,
+          paddingBottom: insets.bottom,
+        },
         tabBarActiveTintColor: active,
         tabBarInactiveTintColor: inactive,
         tabBarLabelStyle: { fontFamily: 'Calibre-Semibold', fontSize: 11 },
