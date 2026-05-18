@@ -5,17 +5,17 @@ import {
   ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View, useColorScheme,
 } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { ActivityChart } from '../components/ActivityChart';
-import { ActivityHeader } from '../components/ActivityHeader';
-import { Composer } from '../components/Composer';
-import { EventRow } from '../components/EventRow';
+import { ActivityChart } from '../../components/ActivityChart';
+import { ActivityHeader } from '../../components/ActivityHeader';
+import { Composer } from '../../components/Composer';
+import { EventRow } from '../../components/EventRow';
 import {
   FilterSheet, emptyFilters, filtersAreEmpty, matchesFilters, type Filters,
-} from '../components/FilterSheet';
-import { SearchBar, matchesSearch } from '../components/SearchBar';
-import { loadConfig, isConfigured, type Config } from '../lib/config';
-import { fetchHistoryPage, useTail } from '../lib/sse';
-import type { HistoryEntry } from '../lib/types';
+} from '../../components/FilterSheet';
+import { SearchBar, matchesSearch } from '../../components/SearchBar';
+import { loadConfig, isConfigured, type Config } from '../../lib/config';
+import { fetchHistoryPage, useTail } from '../../lib/sse';
+import type { HistoryEntry } from '../../lib/types';
 
 const PAGE_SIZE = 20;
 

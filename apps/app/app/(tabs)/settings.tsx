@@ -7,8 +7,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
-import { loadConfig, saveConfig, type Config } from '../lib/config';
-import { fetchState } from '../lib/sse';
+import { loadConfig, saveConfig, type Config } from '../../lib/config';
+import { fetchState } from '../../lib/sse';
 
 const APP_VERSION = (Constants.expoConfig?.version ?? '0.0.0') as string;
 

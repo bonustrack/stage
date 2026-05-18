@@ -44,9 +44,8 @@ export default function RootLayout(): React.ReactElement {
           contentStyle: { backgroundColor: dark ? '#0f1115' : '#ffffff' },
         }}
       >
-        <Stack.Screen name="index" options={{ title: 'Metro' }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="lines" options={{ title: 'Lines' }} />
-        <Stack.Screen name="settings" options={{ title: 'Settings' }} />
         <Stack.Screen name="event/[id]" options={{ title: 'Event' }} />
       </Stack>
     </>
