@@ -31,55 +31,40 @@ function parseFrames(buf: string): { events: SseEvent[]; rest: string } {
 }
 
 export type TailOptions = {
-  daemonUrl: string;
-  token: string;
-  as?: string;
-  chat?: string;
-  station?: string;
-  includeWebhooks?: boolean;
+  daemonUrl: string; token: string; as?: string; chat?: string;
+  station?: string; includeWebhooks?: boolean;
 };
+
+type Status = 'idle' | 'connecting' | 'open' | 'error' | 'closed';
 
 /** Hook: open SSE to `/api/tail`, accumulate events newest-first. Caller toggles `enabled`. */
 export function useTail(opts: TailOptions, enabled: boolean): {
-  events: HistoryEntry[];
-  status: 'idle' | 'connecting' | 'open' | 'error' | 'closed';
-  error: string | null;
-  reconnect: () => void;
+  events: HistoryEntry[]; status: Status; error: string | null; reconnect: () => void;
 } {
   const [events, setEvents] = useState<HistoryEntry[]>([]);
-  const [status, setStatus] = useState<'idle' | 'connecting' | 'open' | 'error' | 'closed'>('idle');
+  const [status, setStatus] = useState<Status>('idle');
   const [error, setError] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
 
-  const reconnect = useCallback(() => {
-    setEvents([]);
-    setTick(t => t + 1);
-  }, []);
+  const reconnect = useCallback(() => { setEvents([]); setTick(t => t + 1); }, []);
 
   useEffect(() => {
-    if (!enabled || !opts.daemonUrl || !opts.token) {
-      setStatus('idle');
-      return;
-    }
-
-    setStatus('connecting');
-    setError(null);
+    if (!enabled || !opts.daemonUrl || !opts.token) { setStatus('idle'); return; }
+    setStatus('connecting'); setError(null);
 
     /** Seed from /api/state — /api/tail defaults to since=tail so only NEW events stream. */
     void fetchState(opts.daemonUrl, opts.token).then(r => {
       if (!r.ok) return;
       const seed = (r.data as { recent_history?: HistoryEntry[] }).recent_history ?? [];
-      if (seed.length === 0) return;
-      const filtered = seed.filter(e => {
-        if (opts.chat && e.line !== opts.chat) return false;
-        if (opts.station && e.station !== opts.station) return false;
-        if (!opts.includeWebhooks && e.station === 'webhook') return false;
-        return true;
-      });
+      const filtered = seed.filter(e =>
+        !(opts.chat && e.line !== opts.chat)
+        && !(opts.station && e.station !== opts.station)
+        && !(!opts.includeWebhooks && e.station === 'webhook'),
+      );
+      if (!filtered.length) return;
       setEvents(prev => {
         const seen = new Set(prev.map(e => e.id));
-        const fresh = filtered.filter(e => !seen.has(e.id));
-        return [...fresh, ...prev].slice(0, 500);
+        return [...filtered.filter(e => !seen.has(e.id)), ...prev].slice(0, 500);
       });
     });
 
@@ -103,82 +88,38 @@ export function useTail(opts: TailOptions, enabled: boolean): {
 
     xhr.onreadystatechange = (): void => {
       if (aborted) return;
-      if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED) {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          setStatus('open');
-        } else {
-          setStatus('error');
-          setError(`HTTP ${xhr.status}`);
-        }
-      }
+      if (xhr.readyState !== XMLHttpRequest.HEADERS_RECEIVED) return;
+      if (xhr.status >= 200 && xhr.status < 300) setStatus('open');
+      else { setStatus('error'); setError(`HTTP ${xhr.status}`); }
     };
     xhr.onprogress = (): void => {
       if (aborted) return;
-      const chunk = xhr.responseText.slice(lastIndex);
+      buf += xhr.responseText.slice(lastIndex);
       lastIndex = xhr.responseText.length;
-      buf += chunk;
       const { events: parsed, rest } = parseFrames(buf);
       buf = rest;
-      if (parsed.length > 0) {
-        const entries: HistoryEntry[] = [];
-        for (const e of parsed) {
-          if (e.event !== 'history' || !e.data) continue;
-          try { entries.push(JSON.parse(e.data) as HistoryEntry); }
-          catch { /* skip malformed */ }
-        }
-        if (entries.length > 0) {
-          setEvents(prev => [...entries.reverse(), ...prev].slice(0, 500));
-        }
+      const entries: HistoryEntry[] = [];
+      for (const e of parsed) {
+        if (e.event !== 'history' || !e.data) continue;
+        try { entries.push(JSON.parse(e.data) as HistoryEntry); } catch { /* skip malformed */ }
       }
+      if (entries.length) setEvents(prev => [...entries.reverse(), ...prev].slice(0, 500));
     };
-    xhr.onerror = (): void => {
-      if (aborted) return;
-      setStatus('error');
-      setError('XHR network error');
-    };
-    xhr.onload = (): void => {
-      if (aborted) return;
-      setStatus('closed');
-    };
+    xhr.onerror = (): void => { if (!aborted) { setStatus('error'); setError('XHR network error'); } };
+    xhr.onload = (): void => { if (!aborted) setStatus('closed'); };
     xhr.send();
 
-    return (): void => {
-      aborted = true;
-      try { xhr.abort(); } catch { /* ignore */ }
-    };
+    return (): void => { aborted = true; try { xhr.abort(); } catch { /* ignore */ } };
   }, [enabled, opts.daemonUrl, opts.token, opts.as, opts.chat, opts.station, opts.includeWebhooks, tick]);
 
   return { events, status, error, reconnect };
 }
 
-/** One-shot GET for `/api/state`. XHR for the same Android-fetch reliability reason as above. */
-export async function fetchState(
-  daemonUrl: string,
-  token: string,
-): Promise<{ ok: true; data: unknown } | { ok: false; status: number; error: string }> {
-  return getJson(`${daemonUrl.replace(/\/$/, '')}/api/state`, token);
-}
-
-/** Fetch an older page of history via `/api/state?before=N&limit=M`. Newest-first. */
-export async function fetchHistoryPage(
-  daemonUrl: string,
-  token: string,
-  before: number,
-  limit: number,
-): Promise<{ ok: true; entries: HistoryEntry[] } | { ok: false; status: number; error: string }> {
-  const url = `${daemonUrl.replace(/\/$/, '')}/api/state?before=${before}&limit=${limit}`;
-  const r = await getJson(url, token);
-  if (!r.ok) return r;
-  const entries = (r.data as { recent_history?: HistoryEntry[] }).recent_history ?? [];
-  return { ok: true, entries };
-}
+type JsonResult = { ok: true; data: unknown } | { ok: false; status: number; error: string };
 
 /** Bearer-authed GET → JSON. XHR for RN/Expo-Go Android reliability. */
-function getJson(
-  url: string,
-  token: string,
-): Promise<{ ok: true; data: unknown } | { ok: false; status: number; error: string }> {
-  return new Promise((resolve) => {
+function getJson(url: string, token: string): Promise<JsonResult> {
+  return new Promise(resolve => {
     const xhr = new XMLHttpRequest();
     xhr.open('GET', url);
     xhr.setRequestHeader('Authorization', `Bearer ${token}`);
@@ -186,13 +127,25 @@ function getJson(
       if (xhr.status >= 200 && xhr.status < 300) {
         try { resolve({ ok: true, data: JSON.parse(xhr.responseText) }); }
         catch (e) { resolve({ ok: false, status: 0, error: e instanceof Error ? e.message : String(e) }); }
-      } else {
-        resolve({ ok: false, status: xhr.status, error: `HTTP ${xhr.status}` });
-      }
+      } else resolve({ ok: false, status: xhr.status, error: `HTTP ${xhr.status}` });
     };
-    xhr.onerror = (): void => { resolve({ ok: false, status: 0, error: 'XHR error (network)' }); };
-    xhr.ontimeout = (): void => { resolve({ ok: false, status: 0, error: 'XHR timeout' }); };
+    xhr.onerror = (): void => resolve({ ok: false, status: 0, error: 'XHR error (network)' });
+    xhr.ontimeout = (): void => resolve({ ok: false, status: 0, error: 'XHR timeout' });
     xhr.timeout = 15000;
     xhr.send();
   });
+}
+
+/** One-shot GET for `/api/state`. */
+export function fetchState(daemonUrl: string, token: string): Promise<JsonResult> {
+  return getJson(`${daemonUrl.replace(/\/$/, '')}/api/state`, token);
+}
+
+/** Fetch an older page of history via `/api/state?before=N&limit=M`. Newest-first. */
+export async function fetchHistoryPage(
+  daemonUrl: string, token: string, before: number, limit: number,
+): Promise<{ ok: true; entries: HistoryEntry[] } | { ok: false; status: number; error: string }> {
+  const r = await getJson(`${daemonUrl.replace(/\/$/, '')}/api/state?before=${before}&limit=${limit}`, token);
+  if (!r.ok) return r;
+  return { ok: true, entries: (r.data as { recent_history?: HistoryEntry[] }).recent_history ?? [] };
 }

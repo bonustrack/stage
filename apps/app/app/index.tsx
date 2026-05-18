@@ -22,8 +22,10 @@ const PAGE_SIZE = 20;
 export default function Activity(): React.ReactElement {
   const router = useRouter();
   const { chat } = useLocalSearchParams<{ chat?: string }>();
-  const scheme = useColorScheme();
-  const dark = scheme === 'dark';
+  const dark = useColorScheme() === 'dark';
+  const fg = dark ? '#e8ecf2' : '#1a1f29';
+  const sub = dark ? '#8a94a6' : '#5a6477';
+  const bg = dark ? '#0f1115' : '#ffffff';
   const [cfg, setCfg] = useState<Config | null>(null);
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [filterOpen, setFilterOpen] = useState(false);
@@ -32,27 +34,16 @@ export default function Activity(): React.ReactElement {
   const [older, setOlder] = useState<HistoryEntry[]>([]);
   const [olderExhausted, setOlderExhausted] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
-  const colors = {
-    fg: dark ? '#e8ecf2' : '#1a1f29',
-    sub: dark ? '#8a94a6' : '#5a6477',
-    bg: dark ? '#0f1115' : '#ffffff',
-    accent: '#5aa9ff',
-  };
 
   useFocusEffect(useCallback(() => { void loadConfig().then(setCfg); }, []));
 
   /** Server-side station filter only when exactly one is selected — saves bandwidth. */
-  const serverStation = filters.stations.size === 1
-    ? [...filters.stations][0]
-    : undefined;
+  const serverStation = filters.stations.size === 1 ? [...filters.stations][0] : undefined;
 
   const tailOpts = useMemo(() => ({
-    daemonUrl: cfg?.daemonUrl ?? '',
-    token: cfg?.token ?? '',
-    as: cfg?.userId || undefined,
-    chat: chat || undefined,
-    station: serverStation,
-    includeWebhooks: filters.includeWebhooks,
+    daemonUrl: cfg?.daemonUrl ?? '', token: cfg?.token ?? '',
+    as: cfg?.userId || undefined, chat: chat || undefined,
+    station: serverStation, includeWebhooks: filters.includeWebhooks,
   }), [cfg, chat, serverStation, filters.includeWebhooks]);
 
   const enabled = !!cfg && isConfigured(cfg);
@@ -80,15 +71,12 @@ export default function Activity(): React.ReactElement {
     if (olderExhausted || loadingOlder || !cfg) return;
     setLoadingOlder(true);
     /** `before` = count of newest entries the server should skip = entries we already have. */
-    const before = events.length + older.length;
-    void fetchHistoryPage(cfg.daemonUrl, cfg.token, before, PAGE_SIZE).then(r => {
+    void fetchHistoryPage(cfg.daemonUrl, cfg.token, events.length + older.length, PAGE_SIZE).then(r => {
       setLoadingOlder(false);
-      if (!r.ok) { setOlderExhausted(true); return; }
-      if (r.entries.length === 0) { setOlderExhausted(true); return; }
+      if (!r.ok || r.entries.length === 0) { setOlderExhausted(true); return; }
       setOlder(prev => {
         const seen = new Set([...events, ...prev].map(e => e.id));
-        const fresh = r.entries.filter(e => !seen.has(e.id));
-        return [...prev, ...fresh];
+        return [...prev, ...r.entries.filter(e => !seen.has(e.id))];
       });
       setVisibleCount(c => c + PAGE_SIZE);
     });
@@ -96,7 +84,7 @@ export default function Activity(): React.ReactElement {
 
   if (!cfg) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg }}>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: bg }}>
         <ActivityIndicator />
       </View>
     );
@@ -104,18 +92,16 @@ export default function Activity(): React.ReactElement {
 
   if (!isConfigured(cfg)) {
     return (
-      <View style={{ flex: 1, padding: 24, gap: 16, justifyContent: 'center', backgroundColor: colors.bg }}>
-        <Text style={{ fontSize: 22, fontWeight: '700', color: colors.fg }}>Welcome to Metro</Text>
-        <Text style={{ fontSize: 15, color: colors.sub, lineHeight: 22 }}>
+      <View style={{ flex: 1, padding: 24, gap: 16, justifyContent: 'center', backgroundColor: bg }}>
+        <Text style={{ fontSize: 22, fontWeight: '700', color: fg }}>Welcome to Metro</Text>
+        <Text style={{ fontSize: 15, color: sub, lineHeight: 22 }}>
           Set the daemon URL + bearer token to start streaming your activity feed.
         </Text>
         <Pressable
           onPress={() => router.push('/settings')}
           style={({ pressed }) => ({
-            backgroundColor: pressed ? '#4a8fdf' : colors.accent,
-            paddingVertical: 14,
-            borderRadius: 8,
-            alignItems: 'center',
+            backgroundColor: pressed ? '#4a8fdf' : '#5aa9ff',
+            paddingVertical: 14, borderRadius: 8, alignItems: 'center',
           })}
         >
           <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Open Settings</Text>
@@ -127,12 +113,9 @@ export default function Activity(): React.ReactElement {
   const filterActive = !filtersAreEmpty(filters);
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: bg }}>
       <ActivityHeader
-        status={status}
-        error={error}
-        count={filtered.length}
-        chat={chat}
+        status={status} error={error} count={filtered.length} chat={chat}
         filterActive={filterActive}
         onClearChat={() => router.setParams({ chat: undefined })}
         onSettings={() => router.push('/settings')}
@@ -140,7 +123,7 @@ export default function Activity(): React.ReactElement {
         onFilter={() => setFilterOpen(true)}
       />
       <ActivityChart events={filtered} />
-      <SearchBar value={search} onChange={(v) => { setSearch(v); setVisibleCount(PAGE_SIZE); }} />
+      <SearchBar value={search} onChange={v => { setSearch(v); setVisibleCount(PAGE_SIZE); }} />
       <FlatList
         data={visible}
         keyExtractor={(e: HistoryEntry) => e.id}
@@ -152,7 +135,7 @@ export default function Activity(): React.ReactElement {
         )}
         ListEmptyComponent={
           <View style={{ padding: 32, alignItems: 'center' }}>
-            <Text style={{ color: colors.sub }}>
+            <Text style={{ color: sub }}>
               {filterActive ? 'No events match the active filters.' : 'Waiting for events…'}
             </Text>
           </View>
@@ -160,11 +143,11 @@ export default function Activity(): React.ReactElement {
         ListFooterComponent={
           loadingOlder ? (
             <View style={{ paddingVertical: 16, alignItems: 'center' }}>
-              <ActivityIndicator color={colors.sub} />
+              <ActivityIndicator color={sub} />
             </View>
           ) : olderExhausted && visibleCount >= filtered.length ? (
             <View style={{ paddingVertical: 16, alignItems: 'center' }}>
-              <Text style={{ color: colors.sub, fontSize: 11 }}>— end of history —</Text>
+              <Text style={{ color: sub, fontSize: 11 }}>— end of history —</Text>
             </View>
           ) : null
         }
@@ -174,24 +157,19 @@ export default function Activity(): React.ReactElement {
           <RefreshControl
             refreshing={status === 'connecting'}
             onRefresh={() => {
-              setOlder([]);
-              setOlderExhausted(false);
-              setVisibleCount(PAGE_SIZE);
-              reconnect();
+              setOlder([]); setOlderExhausted(false); setVisibleCount(PAGE_SIZE); reconnect();
             }}
-            tintColor={colors.sub}
+            tintColor={sub}
           />
         }
       />
       <FilterSheet
         visible={filterOpen}
         filters={filters}
-        onChange={(next) => { setFilters(next); setVisibleCount(PAGE_SIZE); }}
+        onChange={next => { setFilters(next); setVisibleCount(PAGE_SIZE); }}
         onClose={() => setFilterOpen(false)}
       />
-      {chat ? (
-        <Composer daemonUrl={cfg.daemonUrl} token={cfg.token} line={chat} />
-      ) : null}
+      {chat ? <Composer daemonUrl={cfg.daemonUrl} token={cfg.token} line={chat} /> : null}
     </View>
   );
 }
