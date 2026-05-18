@@ -1,77 +1,47 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AppHeader from '../components/AppHeader.vue';
+import Composer from '../components/Composer.vue';
 import EventRow from '../components/EventRow.vue';
+import FilterSheet, { type Filters } from '../components/FilterSheet.vue';
+import SearchBar from '../components/SearchBar.vue';
 import { isConfigured, loadConfig, type Config } from '../lib/config';
-import { fetchHistoryPage, fetchState, openTail } from '../lib/api';
+import { matchesSearch } from '../lib/search';
+import { useTail } from '../lib/useTail';
 import type { HistoryEntry } from '../lib/types';
 
 const route = useRoute();
 const router = useRouter();
 const cfg = ref<Config>(loadConfig());
-const events = ref<HistoryEntry[]>([]);
-const older = ref<HistoryEntry[]>([]);
-const olderDone = ref(false);
-const loadingOlder = ref(false);
-const status = ref<'idle' | 'connecting' | 'open' | 'error' | 'closed'>('idle');
-const errMsg = ref<string | null>(null);
-let abort: AbortController | null = null;
-
 const chat = computed(() => (route.query.chat as string | undefined) ?? undefined);
-const allEvents = computed(() => {
-  const seen = new Set(events.value.map(e => e.id));
-  return [...events.value, ...older.value.filter(e => !seen.has(e.id))];
-});
+const search = ref('');
+const filterOpen = ref(false);
+const filters = ref<Filters>({ kinds: new Set(), stations: new Set(), includeWebhooks: true });
 
-function connect(): void {
-  if (abort) abort.abort();
-  events.value = [];
-  older.value = [];
-  olderDone.value = false;
-  errMsg.value = null;
-  if (!isConfigured(cfg.value)) { status.value = 'idle'; return; }
-  status.value = 'connecting';
-  void fetchState(cfg.value.daemonUrl, cfg.value.token).then(r => {
-    if (!r.ok) return;
-    const seed = (r.data as { recent_history?: HistoryEntry[] }).recent_history ?? [];
-    const filtered = chat.value ? seed.filter(e => e.line === chat.value) : seed;
-    events.value = filtered.slice(0, 500);
-  });
-  abort = new AbortController();
-  void openTail({
-    daemonUrl: cfg.value.daemonUrl,
-    token: cfg.value.token,
-    as: cfg.value.userId || undefined,
-    chat: chat.value,
-    includeWebhooks: true,
-    signal: abort.signal,
-    onOpen: () => { status.value = 'open'; },
-    onEntry: e => {
-      events.value = [e, ...events.value.filter(x => x.id !== e.id)].slice(0, 500);
-    },
-    onError: m => { status.value = 'error'; errMsg.value = m; },
-    onClose: () => { status.value = 'closed'; },
-  });
+const tail = useTail(cfg, chat);
+
+function matchesFilters(e: HistoryEntry): boolean {
+  if (!filters.value.includeWebhooks && e.station === 'webhook') return false;
+  if (filters.value.kinds.size > 0 && !filters.value.kinds.has(e.kind)) return false;
+  if (filters.value.stations.size > 0 && !filters.value.stations.has(e.station)) return false;
+  return true;
 }
 
-async function loadOlder(): Promise<void> {
-  if (olderDone.value || loadingOlder.value) return;
-  loadingOlder.value = true;
-  const before = events.value.length + older.value.length;
-  const r = await fetchHistoryPage(cfg.value.daemonUrl, cfg.value.token, before, 20);
-  loadingOlder.value = false;
-  if (!r.ok || r.entries.length === 0) { olderDone.value = true; return; }
-  const seen = new Set([...events.value, ...older.value].map(e => e.id));
-  older.value = [...older.value, ...r.entries.filter(e => !seen.has(e.id))];
-}
-
-onMounted(() => {
-  cfg.value = loadConfig();
-  connect();
+const visible = computed(() => {
+  const seen = new Set(tail.events.value.map(e => e.id));
+  return [
+    ...tail.events.value,
+    ...tail.older.value.filter(e => !seen.has(e.id)),
+  ].filter(e => matchesFilters(e) && matchesSearch(e, search.value));
 });
-onBeforeUnmount(() => abort?.abort());
-watch(() => route.query.chat, connect);
+
+const filterActive = computed(() =>
+  filters.value.kinds.size > 0 || filters.value.stations.size > 0 || !filters.value.includeWebhooks,
+);
+
+onMounted(() => { cfg.value = loadConfig(); tail.reconnect(); });
+onBeforeUnmount(() => tail.stop());
 
 function clearChat(): void { void router.push({ name: 'activity' }); }
 </script>
@@ -79,11 +49,13 @@ function clearChat(): void { void router.push({ name: 'activity' }); }
 <template>
   <div class="flex flex-col h-screen">
     <AppHeader
-      :status="status"
-      :errorMsg="errMsg"
-      :count="allEvents.length"
+      :status="tail.status.value"
+      :errorMsg="tail.errMsg.value"
+      :count="visible.length"
       :chat="chat"
+      :filterActive="filterActive"
       @clearChat="clearChat"
+      @filter="filterOpen = true"
     />
     <template v-if="!isConfigured(cfg)">
       <div class="flex-1 flex flex-col items-center justify-center gap-4 p-6">
@@ -99,22 +71,26 @@ function clearChat(): void { void router.push({ name: 'activity' }); }
       </div>
     </template>
     <template v-else>
+      <SearchBar v-model="search" />
       <div class="flex-1 overflow-y-auto">
-        <EventRow v-for="e in allEvents" :key="e.id" :entry="e" />
-        <div v-if="allEvents.length === 0" class="p-8 text-center text-metro-sub-light dark:text-metro-sub-dark">
-          Waiting for events…
+        <EventRow v-for="e in visible" :key="e.id" :entry="e" />
+        <div v-if="visible.length === 0" class="p-8 text-center text-metro-sub-light dark:text-metro-sub-dark">
+          <template v-if="search || filterActive">No events match the active filters.</template>
+          <template v-else>Waiting for events…</template>
         </div>
-        <div v-if="allEvents.length > 0" class="p-4 text-center">
+        <div v-if="visible.length > 0" class="p-4 text-center">
           <button
-            v-if="!olderDone"
+            v-if="!tail.olderDone.value"
             type="button"
-            class="text-sm text-metro-accent hover:underline"
-            :disabled="loadingOlder"
-            @click="loadOlder"
-          >{{ loadingOlder ? 'Loading…' : 'Load older' }}</button>
+            class="text-sm text-metro-accent hover:underline disabled:opacity-50"
+            :disabled="tail.loadingOlder.value"
+            @click="tail.loadOlder()"
+          >{{ tail.loadingOlder.value ? 'Loading…' : 'Load older' }}</button>
           <span v-else class="text-xs text-metro-sub-light dark:text-metro-sub-dark">— end of history —</span>
         </div>
       </div>
+      <Composer v-if="chat" :daemonUrl="cfg.daemonUrl" :token="cfg.token" :line="chat" />
+      <FilterSheet :open="filterOpen" :filters="filters" @close="filterOpen = false" @update="filters = $event" />
     </template>
   </div>
 </template>
