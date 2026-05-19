@@ -79,3 +79,18 @@ export function isReaction(e: HistoryLike): boolean {
   const p = e.payload as { reactTo?: string } | undefined;
   return Boolean(p?.reactTo);
 }
+
+export function isTranscript(e: HistoryLike): boolean {
+  const p = e.payload as { transcribeFor?: string } | undefined;
+  return Boolean(p?.transcribeFor);
+}
+
+/** Map of msgId → transcript text, from `{transcribeFor, transcript}` events. */
+export function transcriptsByMessage(events: HistoryLike[]): Map<string, string> {
+  const out = new Map<string, string>();
+  for (const e of events) {
+    const p = e.payload as { transcribeFor?: string; transcript?: string } | undefined;
+    if (p?.transcribeFor && p.transcript) out.set(p.transcribeFor, p.transcript);
+  }
+  return out;
+}

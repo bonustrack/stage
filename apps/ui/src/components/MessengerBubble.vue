@@ -11,6 +11,7 @@ const REACT_PRESETS = ['👍', '❤️', '😂', '😮', '🔥', '🎉'];
 const props = defineProps<{
   entry: HistoryEntry; daemonUrl: string; token: string;
   reactions?: Map<string, number>;
+  transcript?: string;
 }>();
 const emit = defineEmits<{ (e: 'react', emoji: string): void }>();
 const pickerOpen = ref(false);
@@ -99,6 +100,7 @@ function fmtSize(n: number): string {
         </a>
       </template>
       <div v-if="html" class="messenger-md" v-html="html"></div>
+      <div v-if="props.transcript" class="text-[13px] italic opacity-75">“{{ props.transcript }}”</div>
       <div
         class="text-[10px]"
         :class="mine ? 'text-right opacity-60' : 'text-left text-metro-sub-light dark:text-metro-sub-dark'"

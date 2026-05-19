@@ -2,12 +2,15 @@
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { mintId, readHistory, userSelf, type HistoryEntry } from '../history.js';
 import { Line } from '../lines.js';
 import { errMsg, log } from '../log.js';
 import { STATE_DIR } from '../paths.js';
 import { handleMessengerFile, handleMessengerUpload } from './messenger-uploads.js';
+import { transcribeAudio } from './messenger-transcribe.js';
+
+const UPLOADS_DIR = join(STATE_DIR, 'messenger-uploads');
 
 const MESSENGER_LINE = 'metro://messenger/owner' as Line;
 const MESSENGER_USER = 'metro://messenger/user/owner' as Line;
@@ -111,6 +114,20 @@ export async function handleMessengerSend(
   if (fromAgent) {
     const summary = text || `[${attachments[0]?.kind ?? 'attachment'}]`;
     void pushExpo(readPushTokens(), 'Metro', summary.slice(0, 200));
+  }
+  /** Fire-and-forget: transcribe any audio attachments and emit a follow-up event. */
+  for (const att of attachments) {
+    if (att.kind !== 'audio') continue;
+    const filename = basename(att.url);
+    void transcribeAudio(join(UPLOADS_DIR, filename)).then(transcript => {
+      if (!transcript) return;
+      emit({
+        id: mintId(), ts: new Date().toISOString(),
+        station: 'messenger', line: MESSENGER_LINE,
+        from: entry.from, to: entry.to,
+        payload: { transcribeFor: entry.id, transcript },
+      });
+    });
   }
   send(res, req, 200, { id: entry.id, line: entry.line });
 }

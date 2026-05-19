@@ -67,10 +67,13 @@ function markdownStyles(fg: string, dark: boolean): Record<string, object> {
   };
 }
 
-export function MessengerBubble({ entry, dark, unread, onPress, onReact, reactions, daemonUrl, token }: {
+export function MessengerBubble({
+  entry, dark, unread, onPress, onReact, reactions, transcript, daemonUrl, token,
+}: {
   entry: HistoryEntry; dark: boolean; unread: boolean; onPress: () => void;
   onReact?: (emoji: string) => void;
   reactions?: Map<string, number>;
+  transcript?: string;
   daemonUrl: string; token: string;
 }): React.ReactElement {
   const mine = entry.from === MESSENGER_USER;
@@ -120,6 +123,11 @@ export function MessengerBubble({ entry, dark, unread, onPress, onReact, reactio
           <View style={{ alignSelf: 'stretch' }}>
             <Markdown {...markdownProps}>{entry.text}</Markdown>
           </View>
+        ) : null}
+        {transcript ? (
+          <Text style={{ color: mine ? fg : sub, opacity: 0.75, fontSize: 13, fontStyle: 'italic', marginTop: atts.length ? 4 : 0 }}>
+            “{transcript}”
+          </Text>
         ) : null}
         <View style={{
           alignSelf: 'stretch',

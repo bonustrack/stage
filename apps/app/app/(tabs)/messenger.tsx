@@ -6,7 +6,9 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { MessengerBubble } from '../../components/MessengerBubble';
 import { MessengerComposer } from '../../components/MessengerComposer';
 import { loadConfig, isConfigured, type Config } from '../../lib/config';
-import { isReaction, reactMessenger, reactionsByMessage } from '../../lib/messenger';
+import {
+  isReaction, isTranscript, reactMessenger, reactionsByMessage, transcriptsByMessage,
+} from '../../lib/messenger';
 import { getMessengerLastRead, markMessengerRead } from '../../lib/messenger-unread';
 import { registerForPush } from '../../lib/push';
 import { useTail } from '../../lib/sse';
@@ -50,9 +52,13 @@ export default function Messenger(): React.ReactElement {
     setTimeout(() => setRefreshing(false), 600);
   }, [reconnect]);
 
-  /** Reaction events shouldn't render as their own bubbles — they decorate their target. */
+  /** Reaction + transcript events decorate their target msg — don't render as their own bubbles. */
   const reactions = useMemo(() => reactionsByMessage(events), [events]);
-  const bubbleEvents = useMemo(() => events.filter(e => !isReaction(e)), [events]);
+  const transcripts = useMemo(() => transcriptsByMessage(events), [events]);
+  const bubbleEvents = useMemo(
+    () => events.filter(e => !isReaction(e) && !isTranscript(e)),
+    [events],
+  );
   const onReact = useCallback((messageId: string, emoji: string) => {
     if (!cfg) return;
     void reactMessenger(cfg.daemonUrl, cfg.token, messageId, emoji)
@@ -93,6 +99,7 @@ export default function Messenger(): React.ReactElement {
             daemonUrl={cfg?.daemonUrl ?? ''}
             token={cfg?.token ?? ''}
             reactions={reactions.get(item.id)}
+            transcript={transcripts.get(item.id)}
             onReact={(emoji) => onReact(item.id, emoji)}
             onPress={() => router.push({ pathname: '/event/[id]', params: { id: item.id, data: JSON.stringify(item) } })}
           />

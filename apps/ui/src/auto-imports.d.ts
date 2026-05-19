@@ -27,6 +27,7 @@ declare global {
   const isReadonly: typeof import('vue').isReadonly
   const isRef: typeof import('vue').isRef
   const isShallow: typeof import('vue').isShallow
+  const isTranscript: typeof import('./lib/messenger').isTranscript
   const loadConfig: typeof import('./lib/config').loadConfig
   const markRaw: typeof import('vue').markRaw
   const matchesSearch: typeof import('./lib/search').matchesSearch
@@ -66,6 +67,7 @@ declare global {
   const toRef: typeof import('vue').toRef
   const toRefs: typeof import('vue').toRefs
   const toValue: typeof import('vue').toValue
+  const transcriptsByMessage: typeof import('./lib/messenger').transcriptsByMessage
   const triggerRef: typeof import('vue').triggerRef
   const unref: typeof import('vue').unref
   const uploadAttachment: typeof import('./lib/messenger').uploadAttachment
@@ -133,6 +135,7 @@ declare module 'vue' {
     readonly isReadonly: UnwrapRef<typeof import('vue')['isReadonly']>
     readonly isRef: UnwrapRef<typeof import('vue')['isRef']>
     readonly isShallow: UnwrapRef<typeof import('vue')['isShallow']>
+    readonly isTranscript: UnwrapRef<typeof import('./lib/messenger')['isTranscript']>
     readonly loadConfig: UnwrapRef<typeof import('./lib/config')['loadConfig']>
     readonly markRaw: UnwrapRef<typeof import('vue')['markRaw']>
     readonly matchesSearch: UnwrapRef<typeof import('./lib/search')['matchesSearch']>
@@ -171,6 +174,7 @@ declare module 'vue' {
     readonly toRef: UnwrapRef<typeof import('vue')['toRef']>
     readonly toRefs: UnwrapRef<typeof import('vue')['toRefs']>
     readonly toValue: UnwrapRef<typeof import('vue')['toValue']>
+    readonly transcriptsByMessage: UnwrapRef<typeof import('./lib/messenger')['transcriptsByMessage']>
     readonly triggerRef: UnwrapRef<typeof import('vue')['triggerRef']>
     readonly unref: UnwrapRef<typeof import('vue')['unref']>
     readonly uploadAttachment: UnwrapRef<typeof import('./lib/messenger')['uploadAttachment']>

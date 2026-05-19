@@ -3,7 +3,8 @@
 
 import type { Config } from '../lib/config';
 import {
-  isReaction, reactMessenger, reactionsByMessage, sendMessenger, uploadAttachment, type Attachment,
+  isReaction, isTranscript, reactMessenger, reactionsByMessage, sendMessenger,
+  transcriptsByMessage, uploadAttachment, type Attachment,
 } from '../lib/messenger';
 
 const MESSENGER_LINE = 'metro://messenger/owner';
@@ -19,8 +20,10 @@ const imageInput = ref<HTMLInputElement | null>(null);
 const attachMenuOpen = ref(false);
 
 const tail = useTail(cfg, chat);
-const bubbles = computed(() => [...tail.events.value].reverse().filter(e => !isReaction(e)));
+const bubbles = computed(() =>
+  [...tail.events.value].reverse().filter(e => !isReaction(e) && !isTranscript(e)));
 const reactions = computed(() => reactionsByMessage(tail.events.value));
+const transcripts = computed(() => transcriptsByMessage(tail.events.value));
 
 function chipImageUrl(a: Attachment): string {
   return `${cfg.value.daemonUrl.replace(/\/$/, '')}${a.url}?token=${encodeURIComponent(cfg.value.token)}`;
@@ -93,14 +96,10 @@ onBeforeUnmount(() => { tail.stop(); stopRecording(); });
 
 <template>
   <div class="flex flex-col min-h-screen pb-[140px]">
-    <div
-      v-if="tail.status.value !== 'open' && tail.status.value !== 'idle'"
-      class="fixed top-2 left-1/2 -translate-x-1/2 z-20 px-2.5 py-1 rounded-full
-        flex items-center gap-1.5 text-[11px]
-        bg-metro-surface-light dark:bg-metro-surface-dark
-        text-metro-sub-light dark:text-metro-sub-dark
-        border border-metro-border-light dark:border-metro-border-dark"
-    >
+    <div v-if="tail.status.value !== 'open' && tail.status.value !== 'idle'"
+      class="fixed top-2 left-1/2 -translate-x-1/2 z-20 px-2.5 py-1 rounded-full flex items-center gap-1.5 text-[11px]
+        bg-metro-surface-light dark:bg-metro-surface-dark text-metro-sub-light dark:text-metro-sub-dark
+        border border-metro-border-light dark:border-metro-border-dark">
       <span class="w-1.5 h-1.5 rounded-full"
         :class="tail.status.value === 'connecting' ? 'bg-metro-warn' : 'bg-metro-err'"></span>
       <span>{{ tail.status.value === 'connecting' ? 'Connecting…' : tail.status.value === 'error' ? 'Reconnecting…' : 'Offline' }}</span>
@@ -113,6 +112,7 @@ onBeforeUnmount(() => { tail.stop(); stopRecording(); });
         :daemonUrl="cfg.daemonUrl"
         :token="cfg.token"
         :reactions="reactions.get(e.id)"
+        :transcript="transcripts.get(e.id)"
         @react="(emoji) => onReact(e.id, emoji)"
       />
       <div v-if="bubbles.length === 0" class="p-8 text-center text-metro-sub-light dark:text-metro-sub-dark">
