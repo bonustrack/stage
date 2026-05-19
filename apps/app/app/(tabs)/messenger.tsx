@@ -1,8 +1,8 @@
 /** Messenger — direct chat with the assistant via `POST /api/messenger/send`. */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
-  ActivityIndicator, FlatList, Keyboard, Pressable, Text, TextInput, View,
+  ActivityIndicator, FlatList, Pressable, Text, TextInput, View,
   useColorScheme,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -45,18 +45,8 @@ export default function Messenger(): React.ReactElement {
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  /** Manual keyboard tracking — KeyboardAvoidingView is unreliable with Android adjustResize + tabs. */
-  const [kbd, setKbd] = useState(0);
 
   useFocusEffect(useCallback(() => { void loadConfig().then(setCfg); }, []));
-
-  useEffect(() => {
-    const onShow = (e: { endCoordinates: { height: number } }): void => setKbd(e.endCoordinates.height);
-    const onHide = (): void => setKbd(0);
-    const sub1 = Keyboard.addListener('keyboardDidShow', onShow);
-    const sub2 = Keyboard.addListener('keyboardDidHide', onHide);
-    return (): void => { sub1.remove(); sub2.remove(); };
-  }, []);
 
   const tailOpts = useMemo(() => ({
     daemonUrl: cfg?.daemonUrl ?? '', token: cfg?.token ?? '',
@@ -96,7 +86,7 @@ export default function Messenger(): React.ReactElement {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: bg, paddingBottom: kbd }}>
+    <View style={{ flex: 1, backgroundColor: bg }}>
       <FlatList
         data={events}
         keyExtractor={e => e.id}
