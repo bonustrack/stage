@@ -51,13 +51,15 @@ function AttachmentView({ att, fullUrl, fg }: {
 
 function markdownStyles(fg: string, dark: boolean): Record<string, object> {
   const codeBg = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+  /** react-native-markdown-display creates its own <Text> elements that bypass Text.defaultProps —
+   *  so we have to pin Calibre on the markdown body explicitly or it falls back to system. */
   return {
-    body: { color: fg, fontSize: 15, lineHeight: 21 },
+    body: { color: fg, fontSize: 15, lineHeight: 21, fontFamily: 'Calibre-Medium' },
     paragraph: { marginTop: 0, marginBottom: 0 },
-    heading1: { color: fg, fontSize: 20, fontWeight: '700', marginTop: 4, marginBottom: 2 },
-    heading2: { color: fg, fontSize: 18, fontWeight: '700', marginTop: 4, marginBottom: 2 },
-    heading3: { color: fg, fontSize: 16, fontWeight: '700', marginTop: 4, marginBottom: 2 },
-    strong: { fontWeight: '700' },
+    heading1: { color: fg, fontSize: 20, fontFamily: 'Calibre-Semibold', marginTop: 4, marginBottom: 2 },
+    heading2: { color: fg, fontSize: 18, fontFamily: 'Calibre-Semibold', marginTop: 4, marginBottom: 2 },
+    heading3: { color: fg, fontSize: 16, fontFamily: 'Calibre-Semibold', marginTop: 4, marginBottom: 2 },
+    strong: { fontFamily: 'Calibre-Semibold' },
     em: { fontStyle: 'italic' },
     link: { color: fg, textDecorationLine: 'underline' },
     code_inline: { backgroundColor: codeBg, paddingHorizontal: 4, borderRadius: 4, fontFamily: 'Menlo' },
@@ -95,7 +97,6 @@ export function MessengerBubble({ entry, dark, unread, onPress, onReact, reactio
     }}>
       <Pressable
         onPress={onPress}
-        onLongPress={() => onReact && setPickerOpen(true)}
         style={({ pressed }) => ({
           maxWidth: mine ? '78%' : '100%',
           backgroundColor: bubbleBg,
@@ -117,10 +118,16 @@ export function MessengerBubble({ entry, dark, unread, onPress, onReact, reactio
           />
         ))}
         {entry.text ? <Markdown {...markdownProps}>{entry.text}</Markdown> : null}
-        <Text style={{
-          color: mine ? fg : sub, opacity: mine ? 0.55 : 1, fontSize: 10, marginTop: 3,
-          textAlign: mine ? 'right' : 'left',
-        }}>{fmtTs(entry.ts)}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: mine ? 'flex-end' : 'flex-start', gap: 6, marginTop: 3 }}>
+          {onReact ? (
+            <Pressable onPress={() => setPickerOpen(o => !o)} hitSlop={6}>
+              <Text style={{ color: mine ? fg : sub, opacity: 0.55, fontSize: 12 }}>☺</Text>
+            </Pressable>
+          ) : null}
+          <Text style={{
+            color: mine ? fg : sub, opacity: mine ? 0.55 : 1, fontSize: 10,
+          }}>{fmtTs(entry.ts)}</Text>
+        </View>
       </Pressable>
       {reactions && reactions.size > 0 ? (
         <View style={{ flexDirection: 'row', gap: 4, marginTop: 4 }}>
