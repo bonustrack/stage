@@ -54,8 +54,9 @@ export default function Messenger(): React.ReactElement {
   }), [cfg]);
 
   const enabled = !!cfg && isConfigured(cfg);
-  const { events } = useTail(tailOpts, enabled);
-  /** Newest at the bottom for a chat UX; the FlatList is inverted so we render newest-first. */
+  const { events, reconnect } = useTail(tailOpts, enabled);
+  /** Re-fetch the seed every time the tab regains focus so stale events get refreshed. */
+  useFocusEffect(useCallback(() => { if (enabled) reconnect(); }, [enabled, reconnect]));
 
   if (cfg && !isConfigured(cfg)) {
     return (
