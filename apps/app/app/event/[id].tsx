@@ -53,6 +53,14 @@ export default function EventDetail(): React.ReactElement {
           </View>
         </View>
       ) : null}
+      <View style={{ marginTop: 12 }}>
+        <Text style={{ color: sub, fontSize: 11, marginBottom: 4 }}>raw</Text>
+        <View style={{ backgroundColor: dark ? '#161a22' : '#f3f5f9', padding: 10, borderRadius: 6 }}>
+          <Text style={{ color: fg, fontSize: 12, fontFamily: 'monospace' }} selectable>
+            {JSON.stringify(entry, null, 2)}
+          </Text>
+        </View>
+      </View>
     </ScrollView>
   );
 }
