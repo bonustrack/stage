@@ -39,7 +39,7 @@ export default function Messenger(): React.ReactElement {
   }), [cfg]);
 
   const enabled = !!cfg && isConfigured(cfg);
-  const { events, reconnect } = useTail(tailOpts, enabled);
+  const { events, reconnect, status } = useTail(tailOpts, enabled);
   /** Re-fetch the seed every time the tab regains focus so stale events get refreshed. */
   useFocusEffect(useCallback(() => { if (enabled) reconnect(); }, [enabled, reconnect]));
   const [refreshing, setRefreshing] = useState(false);
@@ -105,6 +105,22 @@ export default function Messenger(): React.ReactElement {
         keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={sub} />}
       />
+      {status !== 'open' && enabled ? (
+        <View style={{
+          position: 'absolute', top: 8, alignSelf: 'center',
+          flexDirection: 'row', alignItems: 'center', gap: 6,
+          paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999,
+          backgroundColor: dark ? 'rgba(40,46,58,0.92)' : 'rgba(238,241,247,0.95)',
+        }}>
+          <View style={{
+            width: 6, height: 6, borderRadius: 999,
+            backgroundColor: status === 'connecting' ? '#c0a06e' : '#d96868',
+          }} />
+          <Text style={{ color: sub, fontSize: 11 }}>
+            {status === 'connecting' ? 'Connecting…' : status === 'error' ? 'Reconnecting…' : 'Offline'}
+          </Text>
+        </View>
+      ) : null}
       {cfg ? (
         /** Absolute-positioned so messages flow under it (Claude-mobile style). */
         <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }} pointerEvents="box-none">
