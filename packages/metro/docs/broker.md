@@ -10,7 +10,7 @@ One concept — a **claim** — and three on-disk files you can `cat`:
 
 | Concern              | File                                    | Role                                                                                                              |
 |----------------------|-----------------------------------------|-------------------------------------------------------------------------------------------------------------------|
-| Event log            | `$METRO_STATE_DIR/history.jsonl`        | Append-only JSONL — every inbound/outbound/edit/react. Single source of truth.                                    |
+| Event log            | `$METRO_STATE_DIR/history.jsonl`        | Append-only JSONL — every event (chat message, webhook, react, edit). Single source of truth.                     |
 | Claims               | `$METRO_STATE_DIR/claims.json`          | `{ <line>: <user-id> }` — flat map. A line in here is *exclusively* owned by that user. Absence = broadcast.      |
 | Per-mode cursor      | `$METRO_STATE_DIR/cursors/<key>`        | Byte offset into `history.jsonl` — last-emitted position for one tail mode. Updated atomically after each emit.   |
 

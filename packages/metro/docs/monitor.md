@@ -186,10 +186,10 @@ curl -X POST \
   https://monitor.metro.box/api/call/discord/send
 ```
 
-Because the daemon's `send` adapter writes an outbound `history.jsonl` entry once the
-message lands, an active `/api/tail` subscriber will receive the corresponding
-`kind:"outbound"` event a moment later. UIs typically clear the input on HTTP 200 and
-let the SSE replay show the sent message.
+Because the daemon's `send` adapter writes a history entry once the message lands, an
+active `/api/tail` subscriber will receive the corresponding event a moment later
+(`from` = local user). UIs typically clear the input on HTTP 200 and let the SSE replay
+show the sent message.
 
 ## Exposing publicly via Cloudflare tunnel
 

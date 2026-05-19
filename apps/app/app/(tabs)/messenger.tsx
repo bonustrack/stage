@@ -47,28 +47,16 @@ export default function Messenger(): React.ReactElement {
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [pushStatus, setPushStatus] = useState<string>('not registered');
   /** Captured once on mount → entries newer than this render with the unread style. */
   const [unreadCutoff] = useState(() => getMessengerLastRead());
-
-  const tryRegister = useCallback(async (c: Config): Promise<void> => {
-    setPushStatus('registering…');
-    try {
-      const r = await registerForPush(c.daemonUrl, c.token);
-      if ('error' in r) setPushStatus(`error: ${r.error}`);
-      else setPushStatus(`registered: ${r.pushToken.slice(0, 30)}…`);
-    } catch (e) {
-      setPushStatus(`threw: ${(e as Error).message}`);
-    }
-  }, []);
 
   useFocusEffect(useCallback(() => {
     void loadConfig().then(c => {
       setCfg(c);
-      if (c && isConfigured(c)) void tryRegister(c);
+      if (c && isConfigured(c)) void registerForPush(c.daemonUrl, c.token).catch(() => { /* ignore */ });
     });
     void markMessengerRead();
-  }, [tryRegister]));
+  }, []));
 
   const tailOpts = useMemo(() => ({
     daemonUrl: cfg?.daemonUrl ?? '', token: cfg?.token ?? '',
@@ -133,12 +121,6 @@ export default function Messenger(): React.ReactElement {
           send failed: {err}
         </Text>
       ) : null}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingTop: 4 }}>
-        <Text style={{ color: sub, fontSize: 11, flex: 1 }} numberOfLines={1}>push: {pushStatus}</Text>
-        <Pressable onPress={() => cfg && void tryRegister(cfg)} hitSlop={8}>
-          <Text style={{ color: '#ffffff', fontSize: 11, fontWeight: '600' }}>retry</Text>
-        </Pressable>
-      </View>
       <View style={{
         flexDirection: 'row', gap: 8, padding: 10, paddingBottom: 24, alignItems: 'flex-end',
         borderTopWidth: 1, borderTopColor: border,
