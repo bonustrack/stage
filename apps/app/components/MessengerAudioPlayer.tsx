@@ -13,12 +13,15 @@ function fmt(ms: number | undefined): string {
   return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 }
 
+const RATES = [1, 1.5, 2] as const;
+
 export function MessengerAudioPlayer({ uri, fg, sub }: Props): React.ReactElement {
   const soundRef = useRef<Audio.Sound | null>(null);
   const [playing, setPlaying] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const [barWidth, setBarWidth] = useState(0);
+  const [rate, setRate] = useState<number>(1);
 
   useEffect(() => () => { void soundRef.current?.unloadAsync().catch(() => undefined); }, []);
 
@@ -54,6 +57,12 @@ export function MessengerAudioPlayer({ uri, fg, sub }: Props): React.ReactElemen
     void soundRef.current.setPositionAsync(Math.floor(fraction * duration));
   };
 
+  const cycleRate = (): void => {
+    const next = RATES[(RATES.indexOf(rate as typeof RATES[number]) + 1) % RATES.length];
+    setRate(next);
+    void soundRef.current?.setRateAsync(next, true).catch(() => undefined);
+  };
+
   /** Progress as a 0..1 fraction; falls back to 0 until first status callback. */
   const progress = duration > 0 ? Math.min(position / duration, 1) : 0;
 
@@ -74,6 +83,12 @@ export function MessengerAudioPlayer({ uri, fg, sub }: Props): React.ReactElemen
         <View style={{ height: 3, backgroundColor: sub, opacity: 0.4, borderRadius: 2 }}>
           <View style={{ height: 3, width: `${progress * 100}%`, backgroundColor: fg, borderRadius: 2 }} />
         </View>
+      </Pressable>
+      <Pressable onPress={cycleRate} hitSlop={6}>
+        <Text style={{
+          color: fg, opacity: rate === 1 ? 0.55 : 0.9, fontSize: 10, fontWeight: '600',
+          paddingHorizontal: 4,
+        }}>{rate}x</Text>
       </Pressable>
       <Text style={{ color: fg, fontSize: 11, opacity: 0.6, minWidth: 36, textAlign: 'right' }}>
         {playing ? fmt(position) : fmt(duration || position)}
