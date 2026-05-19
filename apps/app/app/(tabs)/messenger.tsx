@@ -109,6 +109,8 @@ export default function Messenger(): React.ReactElement {
             entry={item}
             dark={dark}
             unread={item.from !== MESSENGER_USER && item.station === 'messenger' && item.ts > unreadCutoff}
+            daemonUrl={cfg?.daemonUrl ?? ''}
+            token={cfg?.token ?? ''}
             onPress={() => router.push({ pathname: '/event/[id]', params: { id: item.id, data: JSON.stringify(item) } })}
           />
         )}

@@ -12,7 +12,7 @@ import { ipcCall } from '../ipc.js';
 import { asLine, Line } from '../lines.js';
 import { errMsg, log } from '../log.js';
 import { readBotIds } from '../paths.js';
-import { handleMessengerRegister, handleMessengerSend } from './messenger-api.js';
+import { routeMessenger } from './messenger-api.js';
 
 /** Monitor endpoints answer only on dedicated hostnames so webhook tunnel can't double-serve them. */
 const MONITOR_HOSTS = new Set(
@@ -37,14 +37,20 @@ function send(res: ServerResponse, req: IncomingMessage, status: number, body: u
   res.end(JSON.stringify(body));
 }
 
-function authorized(req: IncomingMessage): { status: number; msg: string } | null {
+function tokenEq(given: string, want: string): boolean {
+  const g = Buffer.from(given), w = Buffer.from(want);
+  return g.length === w.length && timingSafeEqual(g, w);
+}
+
+function authorized(req: IncomingMessage, q?: URLSearchParams): { status: number; msg: string } | null {
   const token = process.env.METRO_MONITOR_TOKEN;
   if (!token) return { status: 503, msg: 'monitor endpoints not configured (METRO_MONITOR_TOKEN unset)' };
-  const value = ([] as string[]).concat(req.headers['authorization'] ?? [])[0];
-  if (!value?.startsWith('Bearer ')) return { status: 401, msg: 'unauthorized' };
-  const given = Buffer.from(value.slice(7)), want = Buffer.from(token);
-  if (given.length !== want.length || !timingSafeEqual(given, want)) return { status: 401, msg: 'unauthorized' };
-  return null;
+  const header = ([] as string[]).concat(req.headers['authorization'] ?? [])[0];
+  if (header?.startsWith('Bearer ') && tokenEq(header.slice(7), token)) return null;
+  /** Query-token path is for media tags (img/audio) that can't send Authorization headers. */
+  const qt = q?.get('token');
+  if (qt && tokenEq(qt, token)) return null;
+  return { status: 401, msg: 'unauthorized' };
 }
 
 /** Mode picker — shared with CLI tail. Conflict/strict-no-self routed through `onErr`. */
@@ -72,10 +78,10 @@ export function handleMonitorRequest(
   if (host && !MONITOR_HOSTS.has(host.split(':')[0].toLowerCase())) return false;
   /** CORS preflight — short-circuit before auth so browsers can OPTIONS without a token. */
   if (req.method === 'OPTIONS') { res.writeHead(204, cors(req)); res.end(); return true; }
-  const auth = authorized(req);
-  if (auth) { send(res, req, auth.status, { error: auth.msg }); return true; }
   const [path, qs = ''] = url.split('?', 2);
   const q = new URLSearchParams(qs);
+  const auth = authorized(req, q);
+  if (auth) { send(res, req, auth.status, { error: auth.msg }); return true; }
   if (req.method === 'GET' && path === '/api/state') { handleState(res, req, q); return true; }
   if (req.method === 'GET' && path === '/api/tail') {
     handleTail(req, res, q).catch(err => {
@@ -94,25 +100,8 @@ export function handleMonitorRequest(
     });
     return true;
   }
-  /** POST /api/messenger/send — in-daemon chat with the assistant. `as=user` (default) or `as=agent`. */
-  if (path === '/api/messenger/send') {
-    if (req.method !== 'POST') { send(res, req, 405, { error: 'method not allowed' }); return true; }
-    if (!emit) { send(res, req, 500, { error: 'emit not wired through to monitor handler' }); return true; }
-    handleMessengerSend(req, res, emit, send).catch(err => {
-      log.warn({ err: errMsg(err) }, 'monitor: messenger handler error');
-      try { send(res, req, 500, { error: errMsg(err) }); } catch { /* ignore */ }
-    });
-    return true;
-  }
-  /** POST /api/messenger/register — store an Expo push token so agent replies push to the phone. */
-  if (path === '/api/messenger/register') {
-    if (req.method !== 'POST') { send(res, req, 405, { error: 'method not allowed' }); return true; }
-    handleMessengerRegister(req, res, send).catch(err => {
-      log.warn({ err: errMsg(err) }, 'monitor: messenger-register handler error');
-      try { send(res, req, 500, { error: errMsg(err) }); } catch { /* ignore */ }
-    });
-    return true;
-  }
+  /** /api/messenger/* — send, register, upload, files/:name. */
+  if (path.startsWith('/api/messenger/') && routeMessenger(req, res, path, emit, send)) return true;
   /** GET-only paths reject other verbs with 405. Anything else → 404. */
   if (req.method !== 'GET' && (path === '/api/state' || path === '/api/tail')) {
     send(res, req, 405, { error: 'method not allowed' });
