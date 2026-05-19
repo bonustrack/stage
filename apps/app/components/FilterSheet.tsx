@@ -64,7 +64,7 @@ export function FilterSheet({ visible, filters, onChange, onClose }: {
       }}
     >
       {station ? <StationIcon station={station} /> : null}
-      <Text style={{ color: on ? '#fff' : fg, fontSize: 13, fontWeight: '600' }}>{label}</Text>
+      <Text style={{ color: on ? '#ffffff' : fg, fontSize: 13, fontWeight: '600' }}>{label}</Text>
     </Pressable>
   );
 

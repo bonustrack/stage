@@ -10,9 +10,9 @@ const MESSENGER_USER = 'metro://messenger/user/owner';
 let lastReadIso: string = new Date(0).toISOString();
 const listeners = new Set<(iso: string) => void>();
 
-void SecureStore.getItemAsync(KEY).then(v => {
-  if (v) { lastReadIso = v; listeners.forEach(l => l(lastReadIso)); }
-});
+void SecureStore.getItemAsync(KEY)
+  .then(v => { if (v) { lastReadIso = v; listeners.forEach(l => l(lastReadIso)); } })
+  .catch(() => { /** First-launch / missing-key — keep the epoch fallback. */ });
 
 export async function markMessengerRead(): Promise<void> {
   lastReadIso = new Date().toISOString();

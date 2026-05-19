@@ -33,9 +33,9 @@ export default function Settings(): React.ReactElement {
       setLoading(false);
       /** Fire-and-forget: fetch daemon version for the footer. */
       if (c.daemonUrl && c.token) {
-        void fetchState(c.daemonUrl, c.token).then(r => {
-          if (r.ok) setDaemonVersion((r.data as { version?: string }).version ?? null);
-        });
+        void fetchState(c.daemonUrl, c.token)
+          .then(r => { if (r.ok) setDaemonVersion((r.data as { version?: string }).version ?? null); })
+          .catch(() => { /* footer just falls back to "unknown" */ });
       }
     });
   }, []);

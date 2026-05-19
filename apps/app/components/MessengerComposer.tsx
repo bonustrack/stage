@@ -105,7 +105,7 @@ export function MessengerComposer({ daemonUrl, token, dark, replyingTo, onClearR
         backgroundColor: active ? '#d96868' : (pressed ? chipBg : 'transparent'),
       })}
     >
-      <HeroIcon name={icon} size={22} color={active ? '#fff' : fg} />
+      <HeroIcon name={icon} size={22} color={active ? '#ffffff' : fg} />
     </Pressable>
   );
 

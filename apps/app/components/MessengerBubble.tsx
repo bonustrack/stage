@@ -116,7 +116,7 @@ export function MessengerBubble({
             alignSelf: 'stretch', borderLeftWidth: 2, borderLeftColor: mine ? fg : sub,
             paddingLeft: 6, marginBottom: 4, opacity: 0.7,
           }}>
-            <Text style={{ color: mine ? fg : fg, fontSize: 12, fontStyle: 'italic' }} numberOfLines={2}>
+            <Text style={{ color: fg, fontSize: 12, fontStyle: 'italic' }} numberOfLines={2}>
               {replyPreview}
             </Text>
           </View>
