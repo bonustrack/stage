@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Image, Linking, Pressable, Text, View } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import { HeroIcon } from './HeroIcon';
+import { MessengerAudioPlayer } from './MessengerAudioPlayer';
 import type { HistoryEntry } from '../lib/types';
 
 const MESSENGER_USER = 'metro://messenger/user/owner';
@@ -21,8 +22,8 @@ function attachmentsOf(entry: HistoryEntry): Attachment[] {
   return Array.isArray(p?.attachments) ? p.attachments : [];
 }
 
-function AttachmentView({ att, fullUrl, fg }: {
-  att: Attachment; fullUrl: string; fg: string;
+function AttachmentView({ att, fullUrl, fg, sub }: {
+  att: Attachment; fullUrl: string; fg: string; sub: string;
 }): React.ReactElement {
   if (att.kind === 'image') {
     return (
@@ -32,6 +33,9 @@ function AttachmentView({ att, fullUrl, fg }: {
         resizeMode="cover"
       />
     );
+  }
+  if (att.kind === 'audio') {
+    return <MessengerAudioPlayer uri={fullUrl} fg={fg} sub={sub} />;
   }
   const label = att.name ?? `${att.kind} attachment`;
   return (
@@ -43,7 +47,7 @@ function AttachmentView({ att, fullUrl, fg }: {
         backgroundColor: 'rgba(0,0,0,0.12)', marginBottom: 6,
       }}
     >
-      <HeroIcon name={att.kind === 'audio' ? 'microphone' : 'paperClip'} size={16} color={fg} />
+      <HeroIcon name="paperClip" size={16} color={fg} />
       <Text style={{ color: fg, fontSize: 13, flexShrink: 1 }} numberOfLines={1}>{label}</Text>
     </Pressable>
   );
@@ -114,6 +118,7 @@ export function MessengerBubble({ entry, dark, unread, onPress, onReact, reactio
             key={a.id}
             att={a}
             fg={fg}
+            sub={sub}
             fullUrl={`${daemonUrl.replace(/\/$/, '')}${a.url}?token=${encodeURIComponent(token)}`}
           />
         ))}

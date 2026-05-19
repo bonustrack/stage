@@ -29,6 +29,10 @@ const PATHS: Record<string, string> = {
   x: 'M6 18L18 6M6 6l12 12',
   // plus — attachment menu trigger
   plus: 'M12 4v16m8-8H4',
+  // play — audio playback trigger (heroicons v1 outline, in-circle variant)
+  play: 'M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664zM21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+  // pause — audio playback toggle
+  pause: 'M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z',
 };
 
 export type HeroIconName = keyof typeof PATHS;

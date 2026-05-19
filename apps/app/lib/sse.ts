@@ -1,6 +1,7 @@
 /** SSE reader for RN. Uses XHR (fetch streaming on Android via Cloudflare is broken). */
 
 import { useCallback, useEffect, useState } from 'react';
+import { AppState } from 'react-native';
 import type { HistoryEntry } from './types';
 
 type SseEvent = { id?: string; event?: string; data?: string };
@@ -105,11 +106,40 @@ export function useTail(opts: TailOptions, enabled: boolean): {
       }
       if (entries.length) setEvents(prev => [...entries.reverse(), ...prev].slice(0, 500));
     };
-    xhr.onerror = (): void => { if (!aborted) { setStatus('error'); setError('XHR network error'); } };
-    xhr.onload = (): void => { if (!aborted) setStatus('closed'); };
+    /** Cloudflare's free tier closes idle SSE streams after a couple of minutes; reconnect with
+     *  a short backoff so the user sees a fresh stream within ~1s of any drop. */
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    const scheduleReconnect = (delayMs: number): void => {
+      if (aborted || reconnectTimer) return;
+      reconnectTimer = setTimeout(() => { reconnectTimer = null; if (!aborted) setTick(t => t + 1); }, delayMs);
+    };
+
+    xhr.onerror = (): void => {
+      if (aborted) return;
+      setStatus('error'); setError('XHR network error');
+      scheduleReconnect(2000);
+    };
+    xhr.onload = (): void => {
+      if (aborted) return;
+      setStatus('closed');
+      scheduleReconnect(1000);
+    };
     xhr.send();
 
-    return (): void => { aborted = true; try { xhr.abort(); } catch { /* ignore */ } };
+    /** Foregrounding the app is a strong "you might have missed messages" signal — force-reconnect. */
+    const appSub = AppState.addEventListener('change', state => {
+      if (state === 'active' && !aborted) {
+        try { xhr.abort(); } catch { /* ignore */ }
+        scheduleReconnect(50);
+      }
+    });
+
+    return (): void => {
+      aborted = true;
+      try { xhr.abort(); } catch { /* ignore */ }
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      appSub.remove();
+    };
   }, [enabled, opts.daemonUrl, opts.token, opts.as, opts.chat, opts.station, opts.includeWebhooks, tick]);
 
   return { events, status, error, reconnect };
