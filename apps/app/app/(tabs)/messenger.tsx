@@ -98,7 +98,6 @@ export default function Messenger(): React.ReactElement {
   return (
     <View style={{ flex: 1, backgroundColor: bg, paddingBottom: kbd }}>
       <FlatList
-        inverted
         data={events}
         keyExtractor={e => e.id}
         renderItem={({ item }) => (
@@ -112,7 +111,7 @@ export default function Messenger(): React.ReactElement {
             <Text style={{ color: sub }}>Type a message below to start chatting.</Text>
           </View>
         }
-        contentContainerStyle={events.length === 0 ? { flexGrow: 1, justifyContent: 'center' } : undefined}
+        keyboardShouldPersistTaps="handled"
       />
       {err ? (
         <Text style={{ color: '#d96868', fontSize: 12, paddingHorizontal: 14, paddingTop: 8 }}>
