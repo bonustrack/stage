@@ -75,7 +75,8 @@ export default function Messenger(): React.ReactElement {
         data={bubbleEvents}
         inverted
         keyExtractor={e => e.id}
-        contentContainerStyle={{ paddingVertical: 6 }}
+        /** Inverted list: paddingTop is visually the BOTTOM — leave room for the floating composer. */
+        contentContainerStyle={{ paddingTop: 110, paddingBottom: 6 }}
         renderItem={({ item }) => (
           <MessengerBubble
             entry={item}
@@ -96,7 +97,10 @@ export default function Messenger(): React.ReactElement {
         keyboardShouldPersistTaps="handled"
       />
       {cfg ? (
-        <MessengerComposer daemonUrl={cfg.daemonUrl} token={cfg.token} dark={dark} />
+        /** Absolute-positioned so messages flow under it (Claude-mobile style). */
+        <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }} pointerEvents="box-none">
+          <MessengerComposer daemonUrl={cfg.daemonUrl} token={cfg.token} dark={dark} />
+        </View>
       ) : null}
     </View>
   );
