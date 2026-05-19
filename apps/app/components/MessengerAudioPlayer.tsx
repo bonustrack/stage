@@ -18,6 +18,7 @@ export function MessengerAudioPlayer({ uri, fg, sub }: Props): React.ReactElemen
   const [playing, setPlaying] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [barWidth, setBarWidth] = useState(0);
 
   useEffect(() => () => { void soundRef.current?.unloadAsync().catch(() => undefined); }, []);
 
@@ -45,6 +46,12 @@ export function MessengerAudioPlayer({ uri, fg, sub }: Props): React.ReactElemen
     soundRef.current = sound;
   };
 
+  const seekTo = (locationX: number): void => {
+    if (!soundRef.current || duration <= 0 || barWidth <= 0) return;
+    const fraction = Math.max(0, Math.min(1, locationX / barWidth));
+    void soundRef.current.setPositionAsync(Math.floor(fraction * duration));
+  };
+
   /** Progress as a 0..1 fraction; falls back to 0 until first status callback. */
   const progress = duration > 0 ? Math.min(position / duration, 1) : 0;
 
@@ -57,11 +64,15 @@ export function MessengerAudioPlayer({ uri, fg, sub }: Props): React.ReactElemen
       <Pressable onPress={() => void toggle()} hitSlop={8}>
         <HeroIcon name={playing ? 'pause' : 'play'} size={24} color={fg} />
       </Pressable>
-      <View style={{ flex: 1 }}>
+      <Pressable
+        style={{ flex: 1, paddingVertical: 10 }}
+        onLayout={(ev) => setBarWidth(ev.nativeEvent.layout.width)}
+        onPress={(ev) => seekTo(ev.nativeEvent.locationX)}
+      >
         <View style={{ height: 3, backgroundColor: sub, opacity: 0.4, borderRadius: 2 }}>
           <View style={{ height: 3, width: `${progress * 100}%`, backgroundColor: fg, borderRadius: 2 }} />
         </View>
-      </View>
+      </Pressable>
       <Text style={{ color: fg, fontSize: 11, opacity: 0.6, minWidth: 36, textAlign: 'right' }}>
         {playing ? fmt(position) : fmt(duration || position)}
       </Text>
