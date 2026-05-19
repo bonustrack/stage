@@ -17,7 +17,6 @@ export function MessengerComposer({ daemonUrl, token, dark }: Props): React.Reac
   const sub = dark ? '#8a94a6' : '#5a6477';
   const inputBg = dark ? '#16191f' : '#f3f5f9';
   const chipBg = dark ? '#1d2230' : '#eef1f7';
-  const border = dark ? '#262c38' : '#e3e7ef';
 
   const [text, setText] = useState('');
   const [pending, setPending] = useState<Attachment[]>([]);
@@ -146,7 +145,6 @@ export function MessengerComposer({ daemonUrl, token, dark }: Props): React.Reac
       {err ? <Text style={{ color: '#d96868', fontSize: 12, paddingHorizontal: 14, paddingBottom: 4 }}>{err}</Text> : null}
       <View style={{
         backgroundColor: inputBg, borderRadius: 14, padding: 10,
-        borderWidth: 1, borderColor: border,
       }}>
         <TextInput
           value={text}
