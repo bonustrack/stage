@@ -1,6 +1,7 @@
 /** Messenger — direct chat with the assistant via `POST /api/messenger/send`. */
 
 import { useCallback, useMemo, useState } from 'react';
+import { useRef } from 'react';
 import { FlatList, Pressable, RefreshControl, Text, View, useColorScheme } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MessengerBubble } from '../../components/MessengerBubble';
@@ -12,6 +13,7 @@ import {
 import { getMessengerLastRead, markMessengerRead } from '../../lib/messenger-unread';
 import { registerForPush } from '../../lib/push';
 import { useTail } from '../../lib/sse';
+import type { HistoryEntry } from '../../lib/types';
 
 const MESSENGER_LINE = 'metro://messenger/owner';
 const MESSENGER_USER = 'metro://messenger/user/owner';
@@ -45,6 +47,8 @@ export default function Messenger(): React.ReactElement {
   /** Re-fetch the seed every time the tab regains focus so stale events get refreshed. */
   useFocusEffect(useCallback(() => { if (enabled) reconnect(); }, [enabled, reconnect]));
   const [refreshing, setRefreshing] = useState(false);
+  const [showJump, setShowJump] = useState(false);
+  const listRef = useRef<FlatList<HistoryEntry>>(null);
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     reconnect();
@@ -85,12 +89,15 @@ export default function Messenger(): React.ReactElement {
   return (
     <View style={{ flex: 1, backgroundColor: bg }}>
       <FlatList
+        ref={listRef}
         data={bubbleEvents}
         inverted
         keyExtractor={e => e.id}
         /** Inverted list: paddingTop is visually the BOTTOM — leave room for the floating composer
          *  plus a comfortable gap so the latest message doesn't hug the composer card. */
         contentContainerStyle={{ paddingTop: 140, paddingBottom: 6 }}
+        onScroll={(ev) => { setShowJump(ev.nativeEvent.contentOffset.y > 200); }}
+        scrollEventThrottle={32}
         renderItem={({ item }) => (
           <MessengerBubble
             entry={item}
@@ -127,6 +134,20 @@ export default function Messenger(): React.ReactElement {
             {status === 'connecting' ? 'Connecting…' : status === 'error' ? 'Reconnecting…' : 'Offline'}
           </Text>
         </View>
+      ) : null}
+      {showJump ? (
+        <Pressable
+          onPress={() => listRef.current?.scrollToOffset({ offset: 0, animated: true })}
+          style={{
+            position: 'absolute', right: 14, bottom: 150,
+            width: 36, height: 36, borderRadius: 999,
+            backgroundColor: dark ? '#1d2230' : '#ffffff',
+            alignItems: 'center', justifyContent: 'center',
+            shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 6, elevation: 4,
+          }}
+        >
+          <Text style={{ color: fg, fontSize: 18 }}>↓</Text>
+        </Pressable>
       ) : null}
       {cfg ? (
         /** Absolute-positioned so messages flow under it (Claude-mobile style). */
