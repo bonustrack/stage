@@ -7,6 +7,7 @@ import {
 import { Audio } from 'expo-av';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
+import { HeroIcon, type HeroIconName } from './HeroIcon';
 import { sendMessenger, uploadAttachment, type Attachment } from '../lib/messenger';
 
 interface Props { daemonUrl: string; token: string; dark: boolean }
@@ -80,7 +81,7 @@ export function MessengerComposer({ daemonUrl, token, dark }: Props): React.Reac
     finally { setSending(false); }
   };
 
-  const Btn = ({ glyph, onPress, active }: { glyph: string; onPress: () => void; active?: boolean }): React.ReactElement => (
+  const Btn = ({ icon, onPress, active }: { icon: HeroIconName; onPress: () => void; active?: boolean }): React.ReactElement => (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => ({
@@ -88,8 +89,12 @@ export function MessengerComposer({ daemonUrl, token, dark }: Props): React.Reac
         backgroundColor: active ? '#d96868' : (pressed ? chipBg : 'transparent'),
       })}
     >
-      <Text style={{ fontSize: 18, color: active ? '#fff' : fg }}>{glyph}</Text>
+      <HeroIcon name={icon} size={22} color={active ? '#fff' : fg} />
     </Pressable>
+  );
+
+  const kindIcon = (kind: string): HeroIconName => (
+    kind === 'image' ? 'photo' : kind === 'audio' ? 'microphone' : 'paperClip'
   );
 
   return (
@@ -101,10 +106,10 @@ export function MessengerComposer({ daemonUrl, token, dark }: Props): React.Reac
               flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 8, paddingVertical: 4,
               borderRadius: 999, backgroundColor: chipBg,
             }}>
-              <Text style={{ color: fg, fontSize: 12 }}>{a.kind === 'image' ? '🖼' : a.kind === 'audio' ? '🎤' : '📎'}</Text>
+              <HeroIcon name={kindIcon(a.kind)} size={14} color={fg} />
               <Text style={{ color: fg, fontSize: 12, maxWidth: 140 }} numberOfLines={1}>{a.name ?? a.id}</Text>
               <Pressable onPress={() => setPending(prev => prev.filter((_, j) => j !== i))}>
-                <Text style={{ color: sub, fontSize: 12 }}>✕</Text>
+                <HeroIcon name="x" size={14} color={sub} />
               </Pressable>
             </View>
           ))}
@@ -117,9 +122,9 @@ export function MessengerComposer({ daemonUrl, token, dark }: Props): React.Reac
       <View style={{
         flexDirection: 'row', gap: 4, padding: 10, paddingBottom: 24, alignItems: 'flex-end',
       }}>
-        <Btn glyph="🖼" onPress={() => void pickImage()} />
-        <Btn glyph="📎" onPress={() => void pickFile()} />
-        <Btn glyph={recording ? '⏹' : '🎤'} onPress={() => void (recording ? stopRec() : startRec())} active={recording} />
+        <Btn icon="photo" onPress={() => void pickImage()} />
+        <Btn icon="paperClip" onPress={() => void pickFile()} />
+        <Btn icon={recording ? 'stop' : 'microphone'} onPress={() => void (recording ? stopRec() : startRec())} active={recording} />
         <TextInput
           value={text}
           onChangeText={setText}

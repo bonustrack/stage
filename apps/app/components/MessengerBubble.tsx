@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Image, Linking, Pressable, Text, View } from 'react-native';
 import Markdown from 'react-native-markdown-display';
+import { HeroIcon } from './HeroIcon';
 import type { HistoryEntry } from '../lib/types';
 
 const MESSENGER_USER = 'metro://messenger/user/owner';
@@ -32,7 +33,6 @@ function AttachmentView({ att, fullUrl, fg }: {
       />
     );
   }
-  const icon = att.kind === 'audio' ? '🎤' : '📎';
   const label = att.name ?? `${att.kind} attachment`;
   return (
     <Pressable
@@ -43,7 +43,7 @@ function AttachmentView({ att, fullUrl, fg }: {
         backgroundColor: 'rgba(0,0,0,0.12)', marginBottom: 6,
       }}
     >
-      <Text style={{ color: fg, fontSize: 14 }}>{icon}</Text>
+      <HeroIcon name={att.kind === 'audio' ? 'microphone' : 'paperClip'} size={16} color={fg} />
       <Text style={{ color: fg, fontSize: 13, flexShrink: 1 }} numberOfLines={1}>{label}</Text>
     </Pressable>
   );
@@ -120,8 +120,8 @@ export function MessengerBubble({ entry, dark, unread, onPress, onReact, reactio
         {entry.text ? <Markdown {...markdownProps}>{entry.text}</Markdown> : null}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: mine ? 'flex-end' : 'flex-start', gap: 6, marginTop: 3 }}>
           {onReact ? (
-            <Pressable onPress={() => setPickerOpen(o => !o)} hitSlop={6}>
-              <Text style={{ color: mine ? fg : sub, opacity: 0.55, fontSize: 12 }}>☺</Text>
+            <Pressable onPress={() => setPickerOpen(o => !o)} hitSlop={8}>
+              <HeroIcon name="faceSmile" size={14} color={mine ? fg : sub} />
             </Pressable>
           ) : null}
           <Text style={{
