@@ -116,7 +116,6 @@ export default function Activity(): React.ReactElement {
         status={status} error={error} count={filtered.length} chat={chat}
         filterActive={filterActive}
         onClearChat={() => router.setParams({ chat: undefined })}
-        onLines={() => router.push('/lines')}
         onFilter={() => setFilterOpen(true)}
       />
       <ActivityChart events={filtered} />

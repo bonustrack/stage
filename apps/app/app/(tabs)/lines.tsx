@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, Text, View, useColorScheme } from 'react-native';
 import { useRouter } from 'expo-router';
-import { loadConfig, isConfigured } from '../lib/config';
-import { fetchState } from '../lib/sse';
-import type { StateSnapshot } from '../lib/types';
+import { loadConfig, isConfigured } from '../../lib/config';
+import { fetchState } from '../../lib/sse';
+import type { StateSnapshot } from '../../lib/types';
 
 type Row = { line: string; owner: string | null };
 

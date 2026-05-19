@@ -45,7 +45,6 @@ export default function RootLayout(): React.ReactElement {
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="lines" options={{ title: 'Lines' }} />
         <Stack.Screen name="event/[id]" options={{ title: 'Event' }} />
       </Stack>
     </>

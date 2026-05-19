@@ -6,11 +6,11 @@ const LINK = { color: '#5aa9ff', fontSize: 13, fontWeight: '600' as const };
 
 export function ActivityHeader({
   status, error, count, chat, filterActive,
-  onClearChat, onLines, onFilter,
+  onClearChat, onFilter,
 }: {
   status: string; error: string | null; count: number;
   chat?: string; filterActive: boolean;
-  onClearChat: () => void; onLines: () => void; onFilter: () => void;
+  onClearChat: () => void; onFilter: () => void;
 }): React.ReactElement {
   const dark = useColorScheme() === 'dark';
   const sub = dark ? '#8a94a6' : '#5a6477';
@@ -32,7 +32,6 @@ export function ActivityHeader({
             fontWeight: filterActive ? '700' : '600',
           }}>Filter{filterActive ? ' •' : ''}</Text>
         </Pressable>
-        <Pressable onPress={onLines} hitSlop={8}><Text style={LINK}>Lines</Text></Pressable>
       </View>
       {chat ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>

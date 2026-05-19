@@ -36,6 +36,7 @@ export default function TabsLayout(): React.ReactElement {
         [
           ['index', 'Home', 'home'],
           ['search', 'Search', 'search'],
+          ['lines', 'Lines', 'chat'],
           ['settings', 'Settings', 'cog'],
         ] as const satisfies ReadonlyArray<readonly [string, string, HeroIconName]>
       ).map(([name, title, icon]) => (
@@ -45,7 +46,7 @@ export default function TabsLayout(): React.ReactElement {
           options={{
             title,
             tabBarIcon: ({ color, focused }) => (
-              <HeroIcon name={icon} size={26} color={color} filled={focused} />
+              <HeroIcon name={icon} size={26} color={color} focused={focused} />
             ),
           }}
         />
