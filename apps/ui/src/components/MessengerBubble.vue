@@ -12,8 +12,9 @@ const props = defineProps<{
   entry: HistoryEntry; daemonUrl: string; token: string;
   reactions?: Map<string, number>;
   transcript?: string;
+  replyPreview?: string;
 }>();
-const emit = defineEmits<{ (e: 'react', emoji: string): void }>();
+const emit = defineEmits<{ (e: 'react', emoji: string): void; (e: 'reply'): void }>();
 const pickerOpen = ref(false);
 
 const MESSENGER_USER = 'metro://messenger/user/owner';
@@ -59,14 +60,21 @@ function fmtSize(n: number): string {
         ? 'max-w-[78%] px-3.5 py-2 rounded-2xl rounded-br-md bg-metro-fg-light dark:bg-white text-white dark:text-black'
         : 'w-full px-0 py-0 text-metro-fg-light dark:text-metro-fg-dark'"
     >
-      <button
-        type="button"
-        title="Add reaction"
-        class="absolute -top-3 right-1 w-7 h-7 rounded-full opacity-0 group-hover/bubble:opacity-100 transition
-          bg-metro-surface-light dark:bg-metro-surface-dark border border-metro-border-light dark:border-metro-border-dark
-          text-metro-fg-light dark:text-metro-fg-dark text-sm shadow"
-        @click.stop="pickerOpen = !pickerOpen"
-      >☺</button>
+      <div class="absolute -top-3 right-1 flex gap-1 opacity-0 group-hover/bubble:opacity-100 transition">
+        <button type="button" title="Reply"
+          class="w-7 h-7 rounded-full bg-metro-surface-light dark:bg-metro-surface-dark
+            border border-metro-border-light dark:border-metro-border-dark
+            text-metro-fg-light dark:text-metro-fg-dark text-sm shadow"
+          @click.stop="emit('reply')">↩</button>
+        <button type="button" title="Add reaction"
+          class="w-7 h-7 rounded-full bg-metro-surface-light dark:bg-metro-surface-dark
+            border border-metro-border-light dark:border-metro-border-dark
+            text-metro-fg-light dark:text-metro-fg-dark text-sm shadow"
+          @click.stop="pickerOpen = !pickerOpen">☺</button>
+      </div>
+      <div v-if="props.replyPreview"
+        class="border-l-2 border-current opacity-60 pl-2 text-[12px] italic truncate"
+      >{{ props.replyPreview }}</div>
       <template v-for="att in attachments" :key="att.id">
         <img
           v-if="att.kind === 'image'"

@@ -19,6 +19,13 @@ const pending = ref<Attachment[]>([]);
 const fileInput = ref<HTMLInputElement | null>(null);
 const imageInput = ref<HTMLInputElement | null>(null);
 const attachMenuOpen = ref(false);
+const replyingTo = ref<{ id: string; preview: string } | null>(null);
+
+function previewOf(e: { text?: string; payload?: unknown }): string {
+  if (e.text) return e.text.slice(0, 80);
+  const p = e.payload as { attachments?: { kind: string }[] } | undefined;
+  return `[${p?.attachments?.[0]?.kind ?? 'attachment'}]`;
+}
 
 const tail = useTail(cfg, chat);
 const bubbles = computed(() =>
@@ -67,8 +74,8 @@ async function send(): Promise<void> {
   if (!body && pending.value.length === 0) return;
   sending.value = true; err.value = null;
   try {
-    await sendMessenger(cfg.value.daemonUrl, cfg.value.token, body, pending.value);
-    text.value = ''; pending.value = [];
+    await sendMessenger(cfg.value.daemonUrl, cfg.value.token, body, pending.value, replyingTo.value?.id);
+    text.value = ''; pending.value = []; replyingTo.value = null;
   } catch (e) { err.value = (e as Error).message; }
   finally { sending.value = false; }
 }
@@ -99,7 +106,9 @@ onBeforeUnmount(() => { tail.stop(); stopRecording(); });
         :token="cfg.token"
         :reactions="reactions.get(e.id)"
         :transcript="transcripts.get(e.id)"
+        :replyPreview="e.replyTo ? previewOf(tail.events.value.find(x => x.id === e.replyTo) ?? e) : undefined"
         @react="(emoji) => onReact(e.id, emoji)"
+        @reply="replyingTo = { id: e.id, preview: previewOf(e) }"
       />
       <div v-if="bubbles.length === 0" class="p-8 text-center text-metro-sub-light dark:text-metro-sub-dark">
         Type a message below to start chatting.
@@ -109,6 +118,14 @@ onBeforeUnmount(() => { tail.stop(); stopRecording(); });
     <input ref="imageInput" type="file" accept="image/*" class="hidden" @change="pickAndUpload(imageInput)" />
     <input ref="fileInput" type="file" class="hidden" @change="pickAndUpload(fileInput)" />
     <div class="fixed bottom-[60px] left-0 right-0 z-10 px-3 pb-3 pt-1.5">
+      <div v-if="replyingTo" class="flex items-center gap-2 pb-1.5">
+        <div class="flex-1 border-l-2 border-metro-sub-light dark:border-metro-sub-dark pl-2">
+          <div class="text-[10px] text-metro-sub-light dark:text-metro-sub-dark">Replying to</div>
+          <div class="text-xs truncate text-metro-fg-light dark:text-metro-fg-dark">{{ replyingTo.preview }}</div>
+        </div>
+        <button type="button" class="text-metro-sub-light dark:text-metro-sub-dark"
+          @click="replyingTo = null"><HeroIcon name="x" :size="14" /></button>
+      </div>
       <div v-if="pending.length" class="flex flex-wrap gap-1.5 pb-1.5">
         <div v-for="(a, i) in pending" :key="a.id"
           class="flex items-center gap-1.5 rounded-xl text-xs

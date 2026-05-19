@@ -48,6 +48,7 @@ export default function Messenger(): React.ReactElement {
   useFocusEffect(useCallback(() => { if (enabled) reconnect(); }, [enabled, reconnect]));
   const [refreshing, setRefreshing] = useState(false);
   const [showJump, setShowJump] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<{ id: string; preview: string } | null>(null);
   const listRef = useRef<FlatList<HistoryEntry>>(null);
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -63,6 +64,8 @@ export default function Messenger(): React.ReactElement {
     () => events.filter(e => !isReaction(e) && !isTranscript(e)),
     [events],
   );
+  const previewOf = (e: HistoryEntry): string =>
+    e.text?.slice(0, 80) || `[${(e.payload as { attachments?: { kind: string }[] } | undefined)?.attachments?.[0]?.kind ?? 'attachment'}]`;
   const onReact = useCallback((messageId: string, emoji: string) => {
     if (!cfg) return;
     void reactMessenger(cfg.daemonUrl, cfg.token, messageId, emoji)
@@ -107,7 +110,9 @@ export default function Messenger(): React.ReactElement {
             token={cfg?.token ?? ''}
             reactions={reactions.get(item.id)}
             transcript={transcripts.get(item.id)}
+            replyPreview={item.replyTo ? previewOf(events.find(e => e.id === item.replyTo) ?? item) : undefined}
             onReact={(emoji) => onReact(item.id, emoji)}
+            onReply={() => setReplyingTo({ id: item.id, preview: previewOf(item) })}
             onPress={() => router.push({ pathname: '/event/[id]', params: { id: item.id, data: JSON.stringify(item) } })}
           />
         )}
@@ -152,7 +157,11 @@ export default function Messenger(): React.ReactElement {
       {cfg ? (
         /** Absolute-positioned so messages flow under it (Claude-mobile style). */
         <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }} pointerEvents="box-none">
-          <MessengerComposer daemonUrl={cfg.daemonUrl} token={cfg.token} dark={dark} />
+          <MessengerComposer
+            daemonUrl={cfg.daemonUrl} token={cfg.token} dark={dark}
+            replyingTo={replyingTo ?? undefined}
+            onClearReply={() => setReplyingTo(null)}
+          />
         </View>
       ) : null}
     </View>

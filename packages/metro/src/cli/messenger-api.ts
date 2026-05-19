@@ -92,13 +92,16 @@ export function routeMessenger(
 export async function handleMessengerSend(
   req: IncomingMessage, res: ServerResponse, emit: Emit, send: Send,
 ): Promise<void> {
-  const body = await readJsonBody<{ text?: string; as?: string; attachments?: Attachment[] }>(req);
+  const body = await readJsonBody<{
+    text?: string; as?: string; attachments?: Attachment[]; replyTo?: string;
+  }>(req);
   if ('__error' in body) return send(res, req, 400, { error: body.__error });
   const text = (body.text ?? '').trim();
   const attachments = Array.isArray(body.attachments) ? body.attachments : [];
   if (!text && attachments.length === 0) return send(res, req, 400, { error: 'text or attachments required' });
   const fromAgent = body.as === 'agent';
   const agent = userSelf();
+  const replyTo = typeof body.replyTo === 'string' && body.replyTo ? body.replyTo : undefined;
   const entry: HistoryEntry = {
     id: mintId(),
     ts: new Date().toISOString(),
@@ -107,6 +110,7 @@ export async function handleMessengerSend(
     from: fromAgent ? agent : MESSENGER_USER,
     to: fromAgent ? MESSENGER_USER : agent,
     text: text || undefined,
+    ...(replyTo ? { replyTo } : {}),
     ...(attachments.length > 0 ? { payload: { attachments } } : {}),
   };
   emit(entry);

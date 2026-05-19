@@ -10,13 +10,17 @@ import * as ImagePicker from 'expo-image-picker';
 import { HeroIcon, type HeroIconName } from './HeroIcon';
 import { sendMessenger, uploadAttachment, type Attachment } from '../lib/messenger';
 
-interface Props { daemonUrl: string; token: string; dark: boolean }
+interface Props {
+  daemonUrl: string; token: string; dark: boolean;
+  replyingTo?: { id: string; preview: string };
+  onClearReply?: () => void;
+}
 
 function chipImageUrl(daemonUrl: string, token: string, url: string): string {
   return `${daemonUrl.replace(/\/$/, '')}${url}?token=${encodeURIComponent(token)}`;
 }
 
-export function MessengerComposer({ daemonUrl, token, dark }: Props): React.ReactElement {
+export function MessengerComposer({ daemonUrl, token, dark, replyingTo, onClearReply }: Props): React.ReactElement {
   const fg = dark ? '#e8ecf2' : '#1a1f29';
   const sub = dark ? '#8a94a6' : '#5a6477';
   const inputBg = dark ? '#16191f' : '#f3f5f9';
@@ -87,8 +91,8 @@ export function MessengerComposer({ daemonUrl, token, dark }: Props): React.Reac
     if (!body && pending.length === 0) return;
     setSending(true); setErr(null);
     try {
-      await sendMessenger(daemonUrl, token, body, pending);
-      setText(''); setPending([]);
+      await sendMessenger(daemonUrl, token, body, pending, replyingTo?.id);
+      setText(''); setPending([]); onClearReply?.();
     } catch (e) { setErr((e as Error).message); }
     finally { setSending(false); }
   };
@@ -111,6 +115,15 @@ export function MessengerComposer({ daemonUrl, token, dark }: Props): React.Reac
 
   return (
     <View style={{ paddingHorizontal: 10, paddingTop: 6, paddingBottom: 18 }}>
+      {replyingTo ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingBottom: 6 }}>
+          <View style={{ flex: 1, borderLeftWidth: 2, borderLeftColor: sub, paddingLeft: 8 }}>
+            <Text style={{ color: sub, fontSize: 10 }}>Replying to</Text>
+            <Text style={{ color: fg, fontSize: 12 }} numberOfLines={1}>{replyingTo.preview}</Text>
+          </View>
+          <Pressable onPress={onClearReply} hitSlop={6}><HeroIcon name="x" size={16} color={sub} /></Pressable>
+        </View>
+      ) : null}
       {pending.length > 0 ? (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingHorizontal: 6, paddingBottom: 6 }}>
           {pending.map((a, i) => (
@@ -159,35 +172,20 @@ export function MessengerComposer({ daemonUrl, token, dark }: Props): React.Reac
             : 'Uploading…')}
         </Text>
       ) : null}
-      <View style={{
-        backgroundColor: inputBg, borderRadius: 14, padding: 10,
-      }}>
+      <View style={{ backgroundColor: inputBg, borderRadius: 14, padding: 10 }}>
         <TextInput
-          value={text}
-          onChangeText={setText}
-          placeholder="Message the assistant…"
-          placeholderTextColor={sub}
-          multiline
-          style={{
-            color: fg, fontSize: 15, minHeight: 22, maxHeight: 140,
-            paddingHorizontal: 8, paddingTop: 4, paddingBottom: 8,
-            textAlignVertical: 'top',
-          }}
+          value={text} onChangeText={setText} placeholder="Message the assistant…" placeholderTextColor={sub} multiline
+          style={{ color: fg, fontSize: 15, minHeight: 22, maxHeight: 140, paddingHorizontal: 8, paddingTop: 4, paddingBottom: 8, textAlignVertical: 'top' }}
         />
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
           <Btn icon={attachMenuOpen ? 'x' : 'plus'} onPress={() => setAttachMenuOpen(o => !o)} />
           <View style={{ flex: 1 }} />
           <Btn icon={recording ? 'stop' : 'microphone'} onPress={() => void (recording ? stopRec() : startRec())} active={recording} />
-          <Pressable
-            onPress={() => void send()}
-            disabled={!canSend}
+          <Pressable onPress={() => void send()} disabled={!canSend}
             style={({ pressed }) => ({
-              backgroundColor: pressed ? '#cccccc' : '#ffffff',
-              opacity: canSend ? 1 : 0.45,
-              width: 38, height: 38, borderRadius: 999,
-              alignItems: 'center', justifyContent: 'center',
-            })}
-          >
+              backgroundColor: pressed ? '#cccccc' : '#ffffff', opacity: canSend ? 1 : 0.45,
+              width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
+            })}>
             {sending ? <ActivityIndicator color="#000" /> : <HeroIcon name="send" size={20} color="#000" />}
           </Pressable>
         </View>

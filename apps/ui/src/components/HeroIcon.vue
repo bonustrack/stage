@@ -15,6 +15,7 @@ const PATHS: Record<string, string> = {
   stop: 'M5 5h14v14H5z',
   x: 'M6 18L18 6M6 6l12 12',
   plus: 'M12 4v16m8-8H4',
+  reply: 'M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6',
 };
 
 const props = defineProps<{ name: keyof typeof PATHS; size?: number; focused?: boolean }>();

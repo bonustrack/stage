@@ -23,12 +23,13 @@ export async function uploadAttachment(
 }
 
 export async function sendMessenger(
-  daemonUrl: string, token: string, text: string, attachments: Attachment[] = [],
+  daemonUrl: string, token: string, text: string,
+  attachments: Attachment[] = [], replyTo?: string,
 ): Promise<void> {
   const res = await fetch(`${daemonUrl.replace(/\/$/, '')}/api/messenger/send`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text, as: 'user', attachments }),
+    body: JSON.stringify({ text, as: 'user', attachments, ...(replyTo ? { replyTo } : {}) }),
   });
   if (!res.ok) {
     const j = (await res.json().catch(() => ({}))) as { error?: string };

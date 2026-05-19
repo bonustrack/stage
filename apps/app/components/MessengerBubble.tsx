@@ -68,10 +68,12 @@ function markdownStyles(fg: string, dark: boolean): Record<string, object> {
 }
 
 export function MessengerBubble({
-  entry, dark, unread, onPress, onReact, reactions, transcript, daemonUrl, token,
+  entry, dark, unread, onPress, onReact, onReply, replyPreview, reactions, transcript, daemonUrl, token,
 }: {
   entry: HistoryEntry; dark: boolean; unread: boolean; onPress: () => void;
   onReact?: (emoji: string) => void;
+  onReply?: () => void;
+  replyPreview?: string;
   reactions?: Map<string, number>;
   transcript?: string;
   daemonUrl: string; token: string;
@@ -109,6 +111,16 @@ export function MessengerBubble({
           borderColor: unread ? (dark ? '#ffffff' : '#1a1f29') : 'transparent',
         })}
       >
+        {replyPreview ? (
+          <View style={{
+            alignSelf: 'stretch', borderLeftWidth: 2, borderLeftColor: mine ? fg : sub,
+            paddingLeft: 6, marginBottom: 4, opacity: 0.7,
+          }}>
+            <Text style={{ color: mine ? fg : fg, fontSize: 12, fontStyle: 'italic' }} numberOfLines={2}>
+              {replyPreview}
+            </Text>
+          </View>
+        ) : null}
         {atts.length > 0 ? <View style={{ alignSelf: 'stretch' }}>{atts.map(a => (
           <AttachmentView
             key={a.id}
@@ -138,6 +150,11 @@ export function MessengerBubble({
           {onReact ? (
             <Pressable onPress={() => setPickerOpen(o => !o)} hitSlop={8}>
               <HeroIcon name="faceSmile" size={14} color={mine ? fg : sub} />
+            </Pressable>
+          ) : null}
+          {onReply ? (
+            <Pressable onPress={onReply} hitSlop={8}>
+              <HeroIcon name="reply" size={14} color={mine ? fg : sub} />
             </Pressable>
           ) : null}
           <Text style={{

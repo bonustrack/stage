@@ -33,6 +33,8 @@ const PATHS: Record<string, string> = {
   play: 'M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664zM21 12a9 9 0 11-18 0 9 9 0 0118 0z',
   // pause — audio playback toggle
   pause: 'M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z',
+  // reply — quote a message in the composer (heroicons v1 "reply")
+  reply: 'M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6',
 };
 
 export type HeroIconName = keyof typeof PATHS;
