@@ -75,8 +75,9 @@ export default function Messenger(): React.ReactElement {
         data={bubbleEvents}
         inverted
         keyExtractor={e => e.id}
-        /** Inverted list: paddingTop is visually the BOTTOM — leave room for the floating composer. */
-        contentContainerStyle={{ paddingTop: 110, paddingBottom: 6 }}
+        /** Inverted list: paddingTop is visually the BOTTOM — leave room for the floating composer
+         *  plus a comfortable gap so the latest message doesn't hug the composer card. */
+        contentContainerStyle={{ paddingTop: 140, paddingBottom: 6 }}
         renderItem={({ item }) => (
           <MessengerBubble
             entry={item}
