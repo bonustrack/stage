@@ -1,7 +1,7 @@
 /** Messenger — direct chat with the assistant via `POST /api/messenger/send`. */
 
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, Text, View, useColorScheme } from 'react-native';
+import { FlatList, Pressable, RefreshControl, Text, View, useColorScheme } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MessengerBubble } from '../../components/MessengerBubble';
 import { MessengerComposer } from '../../components/MessengerComposer';
@@ -42,6 +42,13 @@ export default function Messenger(): React.ReactElement {
   const { events, reconnect } = useTail(tailOpts, enabled);
   /** Re-fetch the seed every time the tab regains focus so stale events get refreshed. */
   useFocusEffect(useCallback(() => { if (enabled) reconnect(); }, [enabled, reconnect]));
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    reconnect();
+    /** useTail.reconnect is sync; brief spinner pretends until the next render delivers seed. */
+    setTimeout(() => setRefreshing(false), 600);
+  }, [reconnect]);
 
   /** Reaction events shouldn't render as their own bubbles — they decorate their target. */
   const reactions = useMemo(() => reactionsByMessage(events), [events]);
@@ -96,6 +103,7 @@ export default function Messenger(): React.ReactElement {
           </View>
         }
         keyboardShouldPersistTaps="handled"
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={sub} />}
       />
       {cfg ? (
         /** Absolute-positioned so messages flow under it (Claude-mobile style). */
