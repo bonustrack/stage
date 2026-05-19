@@ -28,6 +28,12 @@ export function useMessengerUnread(events: HistoryEntry[]): number {
     listeners.add(setLastRead);
     return (): void => { listeners.delete(setLastRead); };
   }, []);
-  /** Messages from the other side (not the local user), on the messenger line, newer than last read. */
-  return events.filter(e => e.from !== MESSENGER_USER && e.station === 'messenger' && e.ts > lastRead).length;
+  /** Messages from the other side (not the local user), on the messenger line, newer than last read.
+   *  Skip reactions + transcripts — they decorate other messages, not stand-alone unread items. */
+  return events.filter(e => {
+    if (e.from === MESSENGER_USER || e.station !== 'messenger' || e.ts <= lastRead) return false;
+    const p = e.payload as { reactTo?: string; transcribeFor?: string } | undefined;
+    if (p?.reactTo || p?.transcribeFor) return false;
+    return true;
+  }).length;
 }
