@@ -22,11 +22,11 @@ export default function EventDetail(): React.ReactElement {
   }
 
   const rows: [string, string][] = [
-    ['id', entry.id], ['ts', entry.ts], ['kind', entry.kind], ['station', entry.station],
+    ['id', entry.id], ['ts', entry.ts], ['station', entry.station],
     ['line', entry.line], ['lineName', entry.lineName ?? ''],
     ['from', entry.from], ['fromName', entry.fromName ?? ''],
     ['to', entry.to],
-    ['messageId', entry.messageId ?? ''], ['replyTo', entry.replyTo ?? ''], ['emoji', entry.emoji ?? ''],
+    ['messageId', entry.messageId ?? ''], ['replyTo', entry.replyTo ?? ''],
   ];
 
   return (

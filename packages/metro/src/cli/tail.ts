@@ -53,11 +53,11 @@ export async function cmdTail(_: string[], f: Flags): Promise<void> {
 }
 
 function fmtRow(e: HistoryEntry): string {
-  const body = e.text ?? (e.emoji ? `[react ${e.emoji}]` : '');
+  const body = e.text ?? '';
   const text = body.length > 80 ? body.slice(0, 79) + '…' : body;
   const who = (e.fromName ?? e.from).padEnd(28).slice(0, 28);
   const where = e.line.padEnd(40).slice(0, 40);
-  return `${e.ts.slice(11, 19)}  ${e.id.padEnd(12)}  ${e.kind.padEnd(8)}  ${who}  ${where}  ${text}`;
+  return `${e.ts.slice(11, 19)}  ${e.id.padEnd(12)}  ${who}  ${where}  ${text}`;
 }
 
 export async function cmdClaim(p: string[], f: Flags): Promise<void> {

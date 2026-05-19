@@ -1,11 +1,12 @@
 /** Tiny unread-counter for the Messenger tab. Stores `lastReadAt` in SecureStore,
- * counts outbound messenger entries newer than it. Subscribers re-render when it changes. */
+ * counts messenger entries from the other side newer than it. Subscribers re-render on change. */
 
 import { useEffect, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import type { HistoryEntry } from './types';
 
 const KEY = 'messenger-last-read-iso';
+const MESSENGER_USER = 'metro://messenger/user/owner';
 let lastReadIso: string = new Date(0).toISOString();
 const listeners = new Set<(iso: string) => void>();
 
@@ -27,5 +28,6 @@ export function useMessengerUnread(events: HistoryEntry[]): number {
     listeners.add(setLastRead);
     return (): void => { listeners.delete(setLastRead); };
   }, []);
-  return events.filter(e => e.kind === 'outbound' && e.station === 'messenger' && e.ts > lastRead).length;
+  /** Messages from the other side (not the local user), on the messenger line, newer than last read. */
+  return events.filter(e => e.from !== MESSENGER_USER && e.station === 'messenger' && e.ts > lastRead).length;
 }

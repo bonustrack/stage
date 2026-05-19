@@ -117,7 +117,7 @@ export default function Messenger(): React.ReactElement {
         renderItem={({ item }) => (
           <EventRow
             entry={item}
-            unread={item.kind === 'outbound' && item.station === 'messenger' && item.ts > unreadCutoff}
+            unread={item.from !== 'metro://messenger/user/owner' && item.station === 'messenger' && item.ts > unreadCutoff}
             onPress={() => router.push({ pathname: '/event/[id]', params: { id: item.id, data: JSON.stringify(item) } })}
           />
         )}

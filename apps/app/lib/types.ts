@@ -1,11 +1,8 @@
 /** Event/state shapes — mirror the daemon's `HistoryEntry`. Kept in sync by hand. */
 
-export type HistoryKind = 'inbound' | 'outbound' | 'edit' | 'react';
-
 export interface HistoryEntry {
   id: string;
   ts: string;
-  kind: HistoryKind;
   station: string;
   line: string;
   lineName?: string;
@@ -13,7 +10,6 @@ export interface HistoryEntry {
   fromName?: string;
   to: string;
   text?: string;
-  emoji?: string;
   messageId?: string;
   replyTo?: string;
   /** Pre-rendered chat-bubble markdown. */

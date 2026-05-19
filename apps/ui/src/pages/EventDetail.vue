@@ -12,12 +12,11 @@ const rows = computed<[string, string][]>(() => {
   if (!entry.value) return [];
   const e = entry.value;
   return [
-    ['id', e.id], ['ts', e.ts], ['kind', e.kind], ['station', e.station],
+    ['id', e.id], ['ts', e.ts], ['station', e.station],
     ['line', e.line], ['lineName', e.lineName ?? ''],
     ['from', e.from], ['fromName', e.fromName ?? ''],
     ['to', e.to],
     ['messageId', e.messageId ?? ''], ['replyTo', e.replyTo ?? ''],
-    ['emoji', e.emoji ?? ''],
   ];
 });
 </script>

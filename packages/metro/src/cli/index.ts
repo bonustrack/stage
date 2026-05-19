@@ -4,7 +4,7 @@
 import pkg from '../../package.json' with { type: 'json' };
 import { errMsg } from '../log.js';
 import { listLines, loadMetroEnv } from '../paths.js';
-import { readHistory, type HistoryKind } from '../history.js';
+import { readHistory } from '../history.js';
 import { cmdDoctor, cmdSetup, cmdUpdate } from './config.js';
 import { cmdClaim, cmdClaims, cmdRelease, cmdTail } from './tail.js';
 import { cmdCall, cmdTrains, cmdTunnel, cmdWebhook } from './webhook.js';
@@ -26,7 +26,7 @@ Usage:
   metro trains new <name>                     Scaffold ~/.metro/trains/<name>.ts from the example.
   metro call <train> <action> [args]          Forward an action call to a train via its stdin.
                                               [args] is JSON, '@file', '-' (stdin), or a bare string.
-  metro history [--limit=N] [--line=…] [--station=…] [--kind=…] [--from=…] [--text=…] [--since=…]
+  metro history [--limit=N] [--line=…] [--station=…] [--from=…] [--text=…] [--since=…]
                                               Read the universal message log (newest first).
   metro tail [--as=<user-uri>] [--follow] [--strict | --unclaimed | --all] [--include-webhooks]
              [--chat=<line>] [--station=…] [--since=<offset|tail>] [--limit=N]
@@ -77,7 +77,6 @@ async function cmdHistory(_: string[], f: Flags): Promise<void> {
   const entries = readHistory({
     line: flagOne(f, 'line'),
     station: flagOne(f, 'station'),
-    kind: flagOne(f, 'kind') as HistoryKind | undefined,
     from: flagOne(f, 'from'),
     textContains: flagOne(f, 'text'),
     since: since ? new Date(since) : undefined,
@@ -85,14 +84,14 @@ async function cmdHistory(_: string[], f: Flags): Promise<void> {
   });
   if (isJson(f)) return writeJson({ entries });
   if (!entries.length) { process.stdout.write('(no matching history entries)\n'); return; }
-  process.stdout.write('time      id            kind          from                      → to                        body\n');
+  process.stdout.write('time      id            from                      → to                        body\n');
   for (const e of entries.reverse()) {
     const ts = e.ts.slice(11, 19);
     const from = pad(fmtActor(e.from, e.fromName), 24);
     const to = pad(fmtActor(e.to), 24);
-    const body = e.text ?? (e.emoji ? `[react ${e.emoji}]` : '');
+    const body = e.text ?? '';
     const text = body.length > 60 ? body.slice(0, 59) + '…' : body;
-    process.stdout.write(`${ts}  ${e.id.padEnd(12)}  ${e.kind.padEnd(12)}  ${from} → ${to}  ${text}\n`);
+    process.stdout.write(`${ts}  ${e.id.padEnd(12)}  ${from} → ${to}  ${text}\n`);
   }
 }
 

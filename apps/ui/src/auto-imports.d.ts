@@ -91,7 +91,7 @@ declare global {
   export type { Config } from './lib/config'
   import('./lib/config')
   // @ts-ignore
-  export type { HistoryKind, HistoryEntry } from './lib/types'
+  export type { HistoryEntry } from './lib/types'
   import('./lib/types')
   // @ts-ignore
   export type { UseTailHandle } from './lib/useTail'

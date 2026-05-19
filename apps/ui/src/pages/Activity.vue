@@ -8,13 +8,12 @@ const router = useRouter();
 const cfg = ref<Config>(loadConfig());
 const chat = computed(() => (route.query.chat as string | undefined) ?? undefined);
 const filterOpen = ref(false);
-const filters = ref<Filters>({ kinds: new Set(), stations: new Set(), includeWebhooks: true });
+const filters = ref<Filters>({ stations: new Set(), includeWebhooks: true });
 
 const tail = useTail(cfg, chat);
 
 function matchesFilters(e: HistoryEntry): boolean {
   if (!filters.value.includeWebhooks && e.station === 'webhook') return false;
-  if (filters.value.kinds.size > 0 && !filters.value.kinds.has(e.kind)) return false;
   if (filters.value.stations.size > 0 && !filters.value.stations.has(e.station)) return false;
   return true;
 }
@@ -28,7 +27,7 @@ const visible = computed(() => {
 });
 
 const filterActive = computed(() =>
-  filters.value.kinds.size > 0 || filters.value.stations.size > 0 || !filters.value.includeWebhooks,
+  filters.value.stations.size > 0 || !filters.value.includeWebhooks,
 );
 
 onMounted(() => { cfg.value = loadConfig(); tail.reconnect(); });

@@ -3,33 +3,30 @@
 import { Modal, Pressable, ScrollView, Text, TextInput, View, useColorScheme } from 'react-native';
 import { StationIcon } from './StationIcon';
 import { stationLabel } from '../../_shared/icons/stations';
-import type { HistoryEntry, HistoryKind } from '../lib/types';
+import type { HistoryEntry } from '../lib/types';
 
-export type StationKey = 'discord' | 'telegram' | 'webhook' | 'claude' | 'codex';
-const KINDS: HistoryKind[] = ['inbound', 'outbound', 'edit', 'react'];
-const STATIONS: StationKey[] = ['discord', 'telegram', 'webhook', 'claude', 'codex'];
+export type StationKey = 'discord' | 'telegram' | 'webhook' | 'claude' | 'codex' | 'messenger';
+const STATIONS: StationKey[] = ['discord', 'telegram', 'webhook', 'claude', 'codex', 'messenger'];
 
 export interface Filters {
-  kinds: Set<HistoryKind>;
   stations: Set<StationKey>;
   from: string; to: string; line: string;
   includeWebhooks: boolean;
 }
 
 export const emptyFilters = (): Filters => ({
-  kinds: new Set(), stations: new Set(),
+  stations: new Set(),
   from: '', to: '', line: '', includeWebhooks: true,
 });
 
 export function filtersAreEmpty(f: Filters): boolean {
-  return f.kinds.size === 0 && f.stations.size === 0
+  return f.stations.size === 0
     && f.from === '' && f.to === '' && f.line === '' && f.includeWebhooks;
 }
 
 /** Predicate used by the activity feed to apply a Filters set to a single event. */
 export function matchesFilters(e: HistoryEntry, f: Filters): boolean {
   if (!f.includeWebhooks && e.station === 'webhook') return false;
-  if (f.kinds.size > 0 && !f.kinds.has(e.kind)) return false;
   if (f.stations.size > 0 && !f.stations.has(e.station as StationKey)) return false;
   if (f.from && !(e.fromName ?? e.from).toLowerCase().includes(f.from.toLowerCase())) return false;
   if (f.to && !e.to.toLowerCase().includes(f.to.toLowerCase())) return false;
@@ -49,10 +46,10 @@ export function FilterSheet({ visible, filters, onChange, onClose }: {
   const inputBg = dark ? '#000000' : '#ffffff';
   const accent = '#ffffff';
 
-  const toggle = <K extends 'kinds' | 'stations'>(key: K, v: K extends 'kinds' ? HistoryKind : StationKey): void => {
-    const next = new Set(filters[key]) as Filters[K];
-    if (next.has(v as never)) next.delete(v as never); else next.add(v as never);
-    onChange({ ...filters, [key]: next });
+  const toggle = (v: StationKey): void => {
+    const next = new Set(filters.stations);
+    if (next.has(v)) next.delete(v); else next.add(v);
+    onChange({ ...filters, stations: next });
   };
 
   const chip = (label: string, on: boolean, onPress: () => void, station?: string): React.ReactElement => (
@@ -115,14 +112,9 @@ export function FilterSheet({ visible, filters, onChange, onClose }: {
             </Pressable>
           </View>
           <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16, gap: 16 }}>
-            {section('Kind', (
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                {KINDS.map(k => chip(k, filters.kinds.has(k), () => toggle('kinds', k)))}
-              </View>
-            ))}
             {section('Station', (
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                {STATIONS.map(s => chip(stationLabel(s), filters.stations.has(s), () => toggle('stations', s), s))}
+                {STATIONS.map(s => chip(stationLabel(s), filters.stations.has(s), () => toggle(s), s))}
               </View>
             ))}
             {textField('From contains', 'from', 'alice, @bot, metro://…')}

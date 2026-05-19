@@ -15,9 +15,8 @@ export function EventRow({ entry, onPress, unread = false }: {
 }): React.ReactElement {
   const dark = useColorScheme() === 'dark';
   const sub = dark ? '#8a94a6' : '#5a6477';
-  const body = entry.text ?? (entry.emoji ? `[react ${entry.emoji}]` : '(no text)');
+  const body = entry.text ?? '(no text)';
   const trunc = body.length > MAX_BODY ? body.slice(0, MAX_BODY - 1) + '…' : body;
-  const kindColor = entry.kind === 'inbound' ? '#5aa9ff' : entry.kind === 'outbound' ? '#83c989' : '#c0a06e';
   const sender = (entry.fromName ?? entry.from).replace(/^metro:\/\//, '');
 
   return (
@@ -33,7 +32,6 @@ export function EventRow({ entry, onPress, unread = false }: {
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
         <StationIcon station={entry.station} />
-        <Text style={{ fontSize: 11, fontWeight: '600', color: kindColor }}>{entry.kind}</Text>
         <Text style={{ fontSize: 11, color: sub, flex: 1 }} numberOfLines={1}>{sender}</Text>
         <Text style={{ fontSize: 11, color: sub }}>{fmtTs(entry.ts)}</Text>
       </View>

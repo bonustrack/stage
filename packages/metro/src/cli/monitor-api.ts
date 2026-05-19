@@ -3,43 +3,16 @@
 import { timingSafeEqual } from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import pkg from '../../package.json' with { type: 'json' };
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { readClaims } from '../broker/claims.js';
 import {
   drainTail, followTail, historySize, type Mode, type TailOpts,
 } from '../broker/history-stream.js';
-import { mintId, readHistory, userSelf, type HistoryEntry } from '../history.js';
+import { readHistory, type HistoryEntry } from '../history.js';
 import { ipcCall } from '../ipc.js';
 import { asLine, Line } from '../lines.js';
 import { errMsg, log } from '../log.js';
-import { readBotIds, STATE_DIR } from '../paths.js';
-
-const MESSENGER_LINE = 'metro://messenger/owner' as Line;
-const MESSENGER_USER = 'metro://messenger/user/owner' as Line;
-const PUSH_TOKENS_FILE = join(STATE_DIR, 'push-tokens.json');
-
-function readPushTokens(): string[] {
-  try { return existsSync(PUSH_TOKENS_FILE) ? JSON.parse(readFileSync(PUSH_TOKENS_FILE, 'utf8')) as string[] : []; }
-  catch { return []; }
-}
-
-function writePushTokens(tokens: string[]): void {
-  writeFileSync(PUSH_TOKENS_FILE, JSON.stringify([...new Set(tokens)]));
-}
-
-async function pushExpo(tokens: string[], title: string, body: string): Promise<void> {
-  if (tokens.length === 0) return;
-  const messages = tokens.map(to => ({ to, title, body, sound: 'default' }));
-  try {
-    await fetch('https://exp.host/--/api/v2/push/send', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept-Encoding': 'gzip, deflate' },
-      body: JSON.stringify(messages),
-      signal: AbortSignal.timeout(10_000),
-    });
-  } catch (err) { log.warn({ err: errMsg(err) }, 'expo push failed'); }
-}
+import { readBotIds } from '../paths.js';
+import { handleMessengerRegister, handleMessengerSend } from './messenger-api.js';
 
 /** Monitor endpoints answer only on dedicated hostnames so webhook tunnel can't double-serve them. */
 const MONITOR_HOSTS = new Set(
@@ -125,7 +98,7 @@ export function handleMonitorRequest(
   if (path === '/api/messenger/send') {
     if (req.method !== 'POST') { send(res, req, 405, { error: 'method not allowed' }); return true; }
     if (!emit) { send(res, req, 500, { error: 'emit not wired through to monitor handler' }); return true; }
-    handleMessengerSend(req, res, emit).catch(err => {
+    handleMessengerSend(req, res, emit, send).catch(err => {
       log.warn({ err: errMsg(err) }, 'monitor: messenger handler error');
       try { send(res, req, 500, { error: errMsg(err) }); } catch { /* ignore */ }
     });
@@ -134,7 +107,7 @@ export function handleMonitorRequest(
   /** POST /api/messenger/register — store an Expo push token so agent replies push to the phone. */
   if (path === '/api/messenger/register') {
     if (req.method !== 'POST') { send(res, req, 405, { error: 'method not allowed' }); return true; }
-    handleMessengerRegister(req, res).catch(err => {
+    handleMessengerRegister(req, res, send).catch(err => {
       log.warn({ err: errMsg(err) }, 'monitor: messenger-register handler error');
       try { send(res, req, 500, { error: errMsg(err) }); } catch { /* ignore */ }
     });
@@ -219,53 +192,4 @@ async function handleCall(req: IncomingMessage, res: ServerResponse, train: stri
   if (!('response' in resp)) return send(res, req, 502, { error: 'malformed daemon response' });
   if (resp.response.error) return send(res, req, 502, { error: resp.response.error });
   send(res, req, 200, { result: resp.response.result ?? null });
-}
-
-async function handleMessengerSend(
-  req: IncomingMessage,
-  res: ServerResponse,
-  emit: (entry: HistoryEntry) => void,
-): Promise<void> {
-  const chunks: Buffer[] = [];
-  for await (const chunk of req) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as string));
-  const raw = Buffer.concat(chunks).toString('utf8').trim();
-  let body: { text?: string; as?: string } = {};
-  if (raw) {
-    try { body = JSON.parse(raw); }
-    catch (err) { return send(res, req, 400, { error: `bad JSON body: ${errMsg(err)}` }); }
-  }
-  const text = (body.text ?? '').trim();
-  if (!text) return send(res, req, 400, { error: 'text is required' });
-  const agent = userSelf();
-  const fromAgent = body.as === 'agent';
-  const entry: HistoryEntry = {
-    id: mintId(),
-    ts: new Date().toISOString(),
-    kind: fromAgent ? 'outbound' : 'inbound',
-    station: 'messenger',
-    line: MESSENGER_LINE,
-    from: fromAgent ? agent : MESSENGER_USER,
-    to: fromAgent ? MESSENGER_USER : agent,
-    text,
-  };
-  emit(entry);
-  /** Agent → user: push to registered tokens. User → agent: skip (it's their own message). */
-  if (fromAgent) void pushExpo(readPushTokens(), 'Metro', text.slice(0, 200));
-  send(res, req, 200, { id: entry.id, line: entry.line });
-}
-
-async function handleMessengerRegister(req: IncomingMessage, res: ServerResponse): Promise<void> {
-  const chunks: Buffer[] = [];
-  for await (const chunk of req) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as string));
-  const raw = Buffer.concat(chunks).toString('utf8').trim();
-  let body: { pushToken?: string } = {};
-  if (raw) {
-    try { body = JSON.parse(raw); }
-    catch (err) { return send(res, req, 400, { error: `bad JSON body: ${errMsg(err)}` }); }
-  }
-  const token = (body.pushToken ?? '').trim();
-  if (!token) return send(res, req, 400, { error: 'pushToken is required' });
-  const tokens = readPushTokens();
-  if (!tokens.includes(token)) writePushTokens([...tokens, token]);
-  send(res, req, 200, { ok: true, count: tokens.includes(token) ? tokens.length : tokens.length + 1 });
 }
