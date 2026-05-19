@@ -104,7 +104,7 @@ function fmtSize(n: number): string {
         :class="mine ? 'text-right opacity-60' : 'text-left text-metro-sub-light dark:text-metro-sub-dark'"
       >{{ fmtTs(entry.ts) }}</div>
     </div>
-    <div v-if="reactions && reactions.size" class="flex gap-1 mt-1">
+    <div v-if="reactions && reactions.size" class="flex flex-wrap gap-1 mt-1 max-w-[78%]">
       <span
         v-for="[emoji, count] in [...reactions.entries()]"
         :key="emoji"

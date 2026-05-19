@@ -138,7 +138,7 @@ export function MessengerBubble({ entry, dark, unread, onPress, onReact, reactio
         </View>
       </Pressable>
       {reactions && reactions.size > 0 ? (
-        <View style={{ flexDirection: 'row', gap: 4, marginTop: 4 }}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 4, maxWidth: '78%' }}>
           {[...reactions.entries()].map(([emoji, count]) => (
             <View key={emoji} style={{
               flexDirection: 'row', alignItems: 'center', gap: 4,
