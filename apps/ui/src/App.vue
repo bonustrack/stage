@@ -5,10 +5,9 @@ const showTabs = computed(() => route.name !== 'event');
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col bg-metro-bg-light dark:bg-metro-bg-dark text-metro-fg-light dark:text-metro-fg-dark">
-    <div class="flex-1 min-h-0">
-      <RouterView />
-    </div>
-    <TabBar v-if="showTabs" />
+  <div class="min-h-screen bg-metro-bg-light dark:bg-metro-bg-dark text-metro-fg-light dark:text-metro-fg-dark"
+    :class="showTabs ? 'pb-[60px]' : ''">
+    <RouterView />
+    <TabBar v-if="showTabs" class="fixed bottom-0 left-0 right-0 z-20" />
   </div>
 </template>

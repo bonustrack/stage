@@ -38,7 +38,7 @@ function clearChat(): void { void router.push({ name: 'activity' }); }
 </script>
 
 <template>
-  <div class="flex flex-col h-screen">
+  <div class="flex flex-col min-h-screen">
     <AppHeader
       :status="tail.status.value"
       :errorMsg="tail.errMsg.value"
@@ -63,7 +63,7 @@ function clearChat(): void { void router.push({ name: 'activity' }); }
     </template>
     <template v-else>
       <ActivityChart :events="visible" />
-      <div class="flex-1 overflow-y-auto">
+      <div class="flex-1">
         <EventRow v-for="e in visible" :key="e.id" :entry="e" />
         <div v-if="visible.length === 0" class="p-8 text-center text-metro-sub-light dark:text-metro-sub-dark">
           <template v-if="filterActive">No events match the active filters.</template>

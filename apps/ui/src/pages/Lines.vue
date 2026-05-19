@@ -24,7 +24,7 @@ function stationOf(uri: string): string { return uri.match(/^metro:\/\/([^/]+)/)
 </script>
 
 <template>
-  <div class="flex flex-col h-screen">
+  <div class="flex flex-col min-h-screen">
     <AppHeader />
     <div v-if="errMsg" class="flex-1 flex items-center justify-center p-6">
       <span>{{ errMsg }}</span>
@@ -35,7 +35,7 @@ function stationOf(uri: string): string { return uri.match(/^metro:\/\/([^/]+)/)
     <div v-else-if="rows.length === 0" class="flex-1 flex items-center justify-center p-6 text-metro-sub-light dark:text-metro-sub-dark">
       No lines seen yet.
     </div>
-    <ul v-else class="flex-1 overflow-y-auto">
+    <ul v-else class="flex-1">
       <li
         v-for="r in rows"
         :key="r.line"

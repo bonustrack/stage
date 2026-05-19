@@ -41,20 +41,21 @@ onBeforeUnmount(() => tail.stop());
 </script>
 
 <template>
-  <div class="flex flex-col h-screen">
+  <div class="flex flex-col min-h-screen pb-[64px]">
     <AppHeader
       :status="tail.status.value"
       :errorMsg="tail.errMsg.value"
       :count="tail.events.value.length"
     />
-    <div class="flex-1 overflow-y-auto flex flex-col-reverse">
+    <div class="flex-1">
+      <EventRow v-for="e in tail.events.value" :key="e.id" :entry="e" />
       <div v-if="tail.events.value.length === 0" class="p-8 text-center text-metro-sub-light dark:text-metro-sub-dark">
         Type a message below to start chatting.
       </div>
-      <EventRow v-for="e in tail.events.value" :key="e.id" :entry="e" />
     </div>
-    <div v-if="err" class="px-4 pt-2 text-xs text-metro-err">send failed: {{ err }}</div>
-    <div class="border-t border-metro-border-light dark:border-metro-border-dark
+    <div v-if="err" class="px-4 pt-2 text-xs text-metro-err fixed bottom-[124px] left-0 right-0">send failed: {{ err }}</div>
+    <div class="fixed bottom-[60px] left-0 right-0 z-10
+      border-t border-metro-border-light dark:border-metro-border-dark
       bg-metro-surface-light dark:bg-metro-surface-dark
       flex items-end gap-2 p-3">
       <textarea

@@ -19,14 +19,14 @@ onBeforeUnmount(() => tail.stop());
 </script>
 
 <template>
-  <div class="flex flex-col h-screen">
+  <div class="flex flex-col min-h-screen">
     <AppHeader
       :status="tail.status.value"
       :errorMsg="tail.errMsg.value"
       :count="results.length"
     />
     <SearchBar v-model="query" />
-    <div class="flex-1 overflow-y-auto">
+    <div class="flex-1">
       <EventRow v-for="e in results" :key="e.id" :entry="e" />
       <div v-if="results.length === 0" class="p-8 text-center text-metro-sub-light dark:text-metro-sub-dark">
         {{ query ? 'No matches.' : 'Type to search the live event stream…' }}

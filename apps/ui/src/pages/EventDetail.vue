@@ -23,7 +23,7 @@ const rows = computed<[string, string][]>(() => {
 </script>
 
 <template>
-  <div class="flex flex-col h-screen">
+  <div class="flex flex-col min-h-screen">
     <AppHeader />
     <div v-if="!entry" class="p-6 text-metro-sub-light dark:text-metro-sub-dark">Event data unavailable.</div>
     <div v-else class="flex-1 overflow-y-auto p-4 space-y-4 max-w-3xl w-full mx-auto">

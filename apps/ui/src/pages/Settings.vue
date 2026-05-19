@@ -33,7 +33,7 @@ const inputClass = 'w-full font-mono text-sm bg-metro-surface-light dark:bg-metr
 </script>
 
 <template>
-  <div class="flex flex-col h-screen">
+  <div class="flex flex-col min-h-screen">
     <AppHeader />
     <div class="flex-1 overflow-y-auto p-4 max-w-xl w-full mx-auto space-y-4">
       <div>
