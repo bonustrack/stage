@@ -40,6 +40,19 @@
         {
           "color": "#ffffff"
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Metro to choose images to send in the messenger.",
+          "cameraPermission": "Allow Metro to take photos to send in the messenger."
+        }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow Metro to record voice messages."
+        }
       ]
     ],
     "notification": {

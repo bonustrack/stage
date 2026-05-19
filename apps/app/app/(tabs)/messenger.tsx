@@ -1,12 +1,10 @@
 /** Messenger — direct chat with the assistant via `POST /api/messenger/send`. */
 
 import { useCallback, useMemo, useState } from 'react';
-import {
-  ActivityIndicator, FlatList, Pressable, Text, TextInput, View,
-  useColorScheme,
-} from 'react-native';
+import { FlatList, Pressable, Text, View, useColorScheme } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MessengerBubble } from '../../components/MessengerBubble';
+import { MessengerComposer } from '../../components/MessengerComposer';
 import { loadConfig, isConfigured, type Config } from '../../lib/config';
 import { isReaction, reactMessenger, reactionsByMessage } from '../../lib/messenger';
 import { getMessengerLastRead, markMessengerRead } from '../../lib/messenger-unread';
@@ -16,39 +14,14 @@ import { useTail } from '../../lib/sse';
 const MESSENGER_LINE = 'metro://messenger/owner';
 const MESSENGER_USER = 'metro://messenger/user/owner';
 
-async function postMessenger(daemonUrl: string, token: string, text: string):
-  Promise<{ ok: true } | { ok: false; error: string }>
-{
-  return new Promise(resolve => {
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', `${daemonUrl.replace(/\/$/, '')}/api/messenger/send`);
-    xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.onload = (): void => {
-      if (xhr.status >= 200 && xhr.status < 300) return resolve({ ok: true });
-      let msg = `HTTP ${xhr.status}`;
-      try { msg = (JSON.parse(xhr.responseText) as { error?: string }).error ?? msg; } catch { /* */ }
-      resolve({ ok: false, error: msg });
-    };
-    xhr.onerror = (): void => resolve({ ok: false, error: 'network error' });
-    xhr.ontimeout = (): void => resolve({ ok: false, error: 'timeout' });
-    xhr.timeout = 15_000;
-    xhr.send(JSON.stringify({ text, as: 'user' }));
-  });
-}
-
 export default function Messenger(): React.ReactElement {
   const router = useRouter();
   const dark = useColorScheme() === 'dark';
   const fg = dark ? '#e8ecf2' : '#1a1f29';
   const sub = dark ? '#8a94a6' : '#5a6477';
   const bg = dark ? '#000000' : '#ffffff';
-  const border = dark ? '#262c38' : '#e3e7ef';
 
   const [cfg, setCfg] = useState<Config | null>(null);
-  const [text, setText] = useState('');
-  const [sending, setSending] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
   /** Captured once on mount → entries newer than this render with the unread style. */
   const [unreadCutoff] = useState(() => getMessengerLastRead());
 
@@ -96,17 +69,6 @@ export default function Messenger(): React.ReactElement {
     );
   }
 
-  const canSend = !sending && !!text.trim();
-  const send = async (): Promise<void> => {
-    const body = text.trim();
-    if (!body || !cfg) return;
-    setSending(true); setErr(null);
-    const r = await postMessenger(cfg.daemonUrl, cfg.token, body);
-    setSending(false);
-    if (r.ok) { setText(''); return; }
-    setErr(r.error);
-  };
-
   return (
     <View style={{ flex: 1, backgroundColor: bg }}>
       <FlatList
@@ -133,44 +95,9 @@ export default function Messenger(): React.ReactElement {
         }
         keyboardShouldPersistTaps="handled"
       />
-      {err ? (
-        <Text style={{ color: '#d96868', fontSize: 12, paddingHorizontal: 14, paddingTop: 8 }}>
-          send failed: {err}
-        </Text>
+      {cfg ? (
+        <MessengerComposer daemonUrl={cfg.daemonUrl} token={cfg.token} dark={dark} />
       ) : null}
-      <View style={{
-        flexDirection: 'row', gap: 8, padding: 10, paddingBottom: 24, alignItems: 'flex-end',
-        borderTopWidth: 1, borderTopColor: border,
-      }}>
-        <TextInput
-          value={text}
-          onChangeText={setText}
-          placeholder="Message the assistant…"
-          placeholderTextColor={sub}
-          multiline
-          style={{
-            flex: 1,
-            backgroundColor: dark ? '#16191f' : '#f3f5f9',
-            color: fg, borderRadius: 18,
-            paddingHorizontal: 14, paddingTop: 10, paddingBottom: 10,
-            fontSize: 15, maxHeight: 120,
-          }}
-        />
-        <Pressable
-          onPress={() => void send()}
-          disabled={!canSend}
-          style={({ pressed }) => ({
-            backgroundColor: pressed ? '#cccccc' : '#ffffff',
-            opacity: canSend ? 1 : 0.5,
-            paddingHorizontal: 16, paddingVertical: 10, borderRadius: 999,
-            alignItems: 'center', justifyContent: 'center', minWidth: 60,
-          })}
-        >
-          {sending ? <ActivityIndicator color="#000" /> : (
-            <Text style={{ color: '#000', fontWeight: '700' }}>Send</Text>
-          )}
-        </Pressable>
-      </View>
     </View>
   );
 }
