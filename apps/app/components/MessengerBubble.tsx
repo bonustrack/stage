@@ -1,10 +1,11 @@
 /** ChatGPT-dark-style messenger row: user gets a bubble (right), assistant is bubble-less (left). */
 
 import { useState } from 'react';
-import { Image, Linking, Modal, Pressable, Text, View } from 'react-native';
+import { Linking, Pressable, Text, View } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import { HeroIcon } from './HeroIcon';
 import { MessengerAudioPlayer } from './MessengerAudioPlayer';
+import { MessengerImageAttachment } from './MessengerImageAttachment';
 import type { HistoryEntry } from '../lib/types';
 
 const MESSENGER_USER = 'metro://messenger/user/owner';
@@ -22,40 +23,10 @@ function attachmentsOf(entry: HistoryEntry): Attachment[] {
   return Array.isArray(p?.attachments) ? p.attachments : [];
 }
 
-function ImageAttachment({ uri }: { uri: string }): React.ReactElement {
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <Pressable onPress={() => setOpen(true)}>
-        <Image
-          source={{ uri }}
-          style={{ width: 220, height: 220, borderRadius: 10, marginBottom: 6 }}
-          resizeMode="cover"
-        />
-      </Pressable>
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-        <Pressable
-          onPress={() => setOpen(false)}
-          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', alignItems: 'center', justifyContent: 'center' }}
-        >
-          <Image source={{ uri }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
-          <Pressable
-            onPress={() => setOpen(false)}
-            style={{ position: 'absolute', top: 40, right: 20, padding: 10 }}
-            hitSlop={10}
-          >
-            <HeroIcon name="x" size={28} color="#ffffff" />
-          </Pressable>
-        </Pressable>
-      </Modal>
-    </>
-  );
-}
-
 function AttachmentView({ att, fullUrl, fg, sub }: {
   att: Attachment; fullUrl: string; fg: string; sub: string;
 }): React.ReactElement {
-  if (att.kind === 'image') return <ImageAttachment uri={fullUrl} />;
+  if (att.kind === 'image') return <MessengerImageAttachment uri={fullUrl} />;
   if (att.kind === 'audio') {
     return <MessengerAudioPlayer uri={fullUrl} fg={fg} sub={sub} />;
   }
@@ -135,7 +106,7 @@ export function MessengerBubble({ entry, dark, unread, onPress, onReact, reactio
           borderColor: unread ? (dark ? '#ffffff' : '#1a1f29') : 'transparent',
         })}
       >
-        {atts.map(a => (
+        {atts.length > 0 ? <View style={{ alignSelf: 'stretch' }}>{atts.map(a => (
           <AttachmentView
             key={a.id}
             att={a}
@@ -143,9 +114,19 @@ export function MessengerBubble({ entry, dark, unread, onPress, onReact, reactio
             sub={sub}
             fullUrl={`${daemonUrl.replace(/\/$/, '')}${a.url}?token=${encodeURIComponent(token)}`}
           />
-        ))}
-        {entry.text ? <Markdown {...markdownProps}>{entry.text}</Markdown> : null}
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: mine ? 'flex-end' : 'flex-start', gap: 6, marginTop: 3 }}>
+        ))}</View> : null}
+        {/** Markdown wrapped so the lib's internal layout can't bleed into the timestamp row below. */}
+        {entry.text ? (
+          <View style={{ alignSelf: 'stretch' }}>
+            <Markdown {...markdownProps}>{entry.text}</Markdown>
+          </View>
+        ) : null}
+        <View style={{
+          alignSelf: 'stretch',
+          flexDirection: 'row', alignItems: 'center',
+          justifyContent: mine ? 'flex-end' : 'flex-start',
+          gap: 6, marginTop: 3,
+        }}>
           {onReact ? (
             <Pressable onPress={() => setPickerOpen(o => !o)} hitSlop={8}>
               <HeroIcon name="faceSmile" size={14} color={mine ? fg : sub} />
