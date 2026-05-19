@@ -16,9 +16,11 @@ declare module 'vue' {
     Composer: typeof import('./components/Composer.vue')['default']
     EventRow: typeof import('./components/EventRow.vue')['default']
     FilterSheet: typeof import('./components/FilterSheet.vue')['default']
+    HeroIcon: typeof import('./components/HeroIcon.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SearchBar: typeof import('./components/SearchBar.vue')['default']
     StationIcon: typeof import('./components/StationIcon.vue')['default']
+    TabBar: typeof import('./components/TabBar.vue')['default']
   }
 }

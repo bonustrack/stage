@@ -2,10 +2,11 @@
 /** Bottom tab bar — Home / Search / Lines / Settings. Mirrors apps/app/(tabs)/_layout.tsx. */
 
 const TABS = [
-  { to: '/',         label: 'Home',     icon: 'home' as const   },
-  { to: '/search',   label: 'Search',   icon: 'search' as const },
-  { to: '/lines',    label: 'Lines',    icon: 'chat' as const   },
-  { to: '/settings', label: 'Settings', icon: 'cog' as const    },
+  { to: '/',          label: 'Home',      icon: 'home' as const   },
+  { to: '/messenger', label: 'Messenger', icon: 'send' as const   },
+  { to: '/search',    label: 'Search',    icon: 'search' as const },
+  { to: '/lines',     label: 'Lines',     icon: 'chat' as const   },
+  { to: '/settings',  label: 'Settings',  icon: 'cog' as const    },
 ];
 </script>
 

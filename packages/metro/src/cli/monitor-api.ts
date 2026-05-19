@@ -7,11 +7,14 @@ import { readClaims } from '../broker/claims.js';
 import {
   drainTail, followTail, historySize, type Mode, type TailOpts,
 } from '../broker/history-stream.js';
-import { readHistory, type HistoryEntry } from '../history.js';
+import { mintId, readHistory, userSelf, type HistoryEntry } from '../history.js';
 import { ipcCall } from '../ipc.js';
 import { asLine, Line } from '../lines.js';
 import { errMsg, log } from '../log.js';
 import { readBotIds } from '../paths.js';
+
+const MESSENGER_LINE = 'metro://messenger/owner' as Line;
+const MESSENGER_USER = 'metro://messenger/user/owner' as Line;
 
 /** Monitor endpoints answer only on dedicated hostnames so webhook tunnel can't double-serve them. */
 const MONITOR_HOSTS = new Set(
@@ -60,7 +63,11 @@ export function pickMode(
   return 'mine-or-unclaimed';
 }
 
-export function handleMonitorRequest(req: IncomingMessage, res: ServerResponse): boolean {
+export function handleMonitorRequest(
+  req: IncomingMessage,
+  res: ServerResponse,
+  emit?: (entry: HistoryEntry) => void,
+): boolean {
   const url = req.url ?? '';
   if (!url.startsWith('/api/')) return false;
   const host = (req.headers[':authority' as keyof typeof req.headers] as string | undefined) ?? req.headers.host;
@@ -85,6 +92,16 @@ export function handleMonitorRequest(req: IncomingMessage, res: ServerResponse):
     if (req.method !== 'POST') { send(res, req, 405, { error: 'method not allowed' }); return true; }
     handleCall(req, res, callMatch[1], callMatch[2]).catch(err => {
       log.warn({ err: errMsg(err) }, 'monitor: call handler error');
+      try { send(res, req, 500, { error: errMsg(err) }); } catch { /* ignore */ }
+    });
+    return true;
+  }
+  /** POST /api/messenger/send — in-daemon chat with the assistant. `as=user` (default) or `as=agent`. */
+  if (path === '/api/messenger/send') {
+    if (req.method !== 'POST') { send(res, req, 405, { error: 'method not allowed' }); return true; }
+    if (!emit) { send(res, req, 500, { error: 'emit not wired through to monitor handler' }); return true; }
+    handleMessengerSend(req, res, emit).catch(err => {
+      log.warn({ err: errMsg(err) }, 'monitor: messenger handler error');
       try { send(res, req, 500, { error: errMsg(err) }); } catch { /* ignore */ }
     });
     return true;
@@ -168,4 +185,35 @@ async function handleCall(req: IncomingMessage, res: ServerResponse, train: stri
   if (!('response' in resp)) return send(res, req, 502, { error: 'malformed daemon response' });
   if (resp.response.error) return send(res, req, 502, { error: resp.response.error });
   send(res, req, 200, { result: resp.response.result ?? null });
+}
+
+async function handleMessengerSend(
+  req: IncomingMessage,
+  res: ServerResponse,
+  emit: (entry: HistoryEntry) => void,
+): Promise<void> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of req) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as string));
+  const raw = Buffer.concat(chunks).toString('utf8').trim();
+  let body: { text?: string; as?: string } = {};
+  if (raw) {
+    try { body = JSON.parse(raw); }
+    catch (err) { return send(res, req, 400, { error: `bad JSON body: ${errMsg(err)}` }); }
+  }
+  const text = (body.text ?? '').trim();
+  if (!text) return send(res, req, 400, { error: 'text is required' });
+  const agent = userSelf();
+  const fromAgent = body.as === 'agent';
+  const entry: HistoryEntry = {
+    id: mintId(),
+    ts: new Date().toISOString(),
+    kind: fromAgent ? 'outbound' : 'inbound',
+    station: 'messenger',
+    line: MESSENGER_LINE,
+    from: fromAgent ? agent : MESSENGER_USER,
+    to: fromAgent ? MESSENGER_USER : agent,
+    text,
+  };
+  emit(entry);
+  send(res, req, 200, { id: entry.id, line: entry.line });
 }
