@@ -25,18 +25,23 @@ export function MessengerComposer({ daemonUrl, token, dark }: Props): React.Reac
   const [text, setText] = useState('');
   const [pending, setPending] = useState<Attachment[]>([]);
   const [sending, setSending] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [recording, setRecording] = useState(false);
+  const [recordSecs, setRecordSecs] = useState(0);
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
   const recRef = useRef<Audio.Recording | null>(null);
+  const recTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const canSend = !sending && (text.trim().length > 0 || pending.length > 0);
 
   const upload = async (uri: string, mime: string, name?: string): Promise<void> => {
+    setUploading(true);
     try {
       const att = await uploadAttachment(daemonUrl, token, uri, mime, name);
       setPending(prev => [...prev, att]);
     } catch (e) { setErr((e as Error).message); }
+    finally { setUploading(false); }
   };
 
   const pickImage = async (): Promise<void> => {
@@ -64,11 +69,14 @@ export function MessengerComposer({ daemonUrl, token, dark }: Props): React.Reac
     await rec.startAsync();
     recRef.current = rec;
     setRecording(true);
+    setRecordSecs(0);
+    recTimerRef.current = setInterval(() => { setRecordSecs(s => s + 1); }, 1000);
   };
 
   const stopRec = async (): Promise<void> => {
     const rec = recRef.current; if (!rec) return;
     setRecording(false); recRef.current = null;
+    if (recTimerRef.current) { clearInterval(recTimerRef.current); recTimerRef.current = null; }
     await rec.stopAndUnloadAsync();
     const uri = rec.getURI(); if (!uri) return;
     await upload(uri, 'audio/m4a', `voice-${Date.now()}.m4a`);
@@ -107,18 +115,13 @@ export function MessengerComposer({ daemonUrl, token, dark }: Props): React.Reac
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingHorizontal: 6, paddingBottom: 6 }}>
           {pending.map((a, i) => (
             <View key={a.id} style={{
-              flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: a.kind === 'image' ? 4 : 8, paddingVertical: a.kind === 'image' ? 4 : 4,
+              flexDirection: 'row', alignItems: 'center', gap: 6,
+              paddingHorizontal: a.kind === 'image' ? 4 : 8, paddingVertical: 4,
               borderRadius: 12, backgroundColor: chipBg,
             }}>
-              {a.kind === 'image' ? (
-                <Image
-                  source={{ uri: chipImageUrl(daemonUrl, token, a.url) }}
-                  style={{ width: 28, height: 28, borderRadius: 6 }}
-                  resizeMode="cover"
-                />
-              ) : (
-                <HeroIcon name={kindIcon(a.kind)} size={14} color={fg} />
-              )}
+              {a.kind === 'image'
+                ? <Image source={{ uri: chipImageUrl(daemonUrl, token, a.url) }} style={{ width: 28, height: 28, borderRadius: 6 }} resizeMode="cover" />
+                : <HeroIcon name={kindIcon(a.kind)} size={14} color={fg} />}
               <Text style={{ color: fg, fontSize: 12, maxWidth: 140 }} numberOfLines={1}>{a.name ?? a.id}</Text>
               <Pressable onPress={() => setPending(prev => prev.filter((_, j) => j !== i))} hitSlop={6}>
                 <HeroIcon name="x" size={14} color={sub} />
@@ -129,32 +132,33 @@ export function MessengerComposer({ daemonUrl, token, dark }: Props): React.Reac
       ) : null}
       {attachMenuOpen ? (
         <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 6, paddingBottom: 6 }}>
-          <Pressable
-            onPress={() => { setAttachMenuOpen(false); void pickImage(); }}
-            style={{
-              flexDirection: 'row', alignItems: 'center', gap: 6,
-              paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: chipBg,
-            }}
-          >
-            <HeroIcon name="photo" size={16} color={fg} />
-            <Text style={{ color: fg, fontSize: 13 }}>Image</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => { setAttachMenuOpen(false); void pickFile(); }}
-            style={{
-              flexDirection: 'row', alignItems: 'center', gap: 6,
-              paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: chipBg,
-            }}
-          >
-            <HeroIcon name="paperClip" size={16} color={fg} />
-            <Text style={{ color: fg, fontSize: 13 }}>File</Text>
-          </Pressable>
+          {(
+            [['photo', 'Image', pickImage], ['paperClip', 'File', pickFile]] as const
+          ).map(([icon, label, action]) => (
+            <Pressable
+              key={label}
+              onPress={() => { setAttachMenuOpen(false); void action(); }}
+              style={{
+                flexDirection: 'row', alignItems: 'center', gap: 6,
+                paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: chipBg,
+              }}
+            >
+              <HeroIcon name={icon} size={16} color={fg} />
+              <Text style={{ color: fg, fontSize: 13 }}>{label}</Text>
+            </Pressable>
+          ))}
         </View>
       ) : null}
-      {recording ? (
-        <Text style={{ color: '#d96868', fontSize: 12, paddingHorizontal: 14, paddingBottom: 4 }}>● Recording…</Text>
+      {recording || uploading || err ? (
+        <Text style={{
+          color: err ? '#d96868' : recording ? '#d96868' : sub,
+          fontSize: 12, paddingHorizontal: 14, paddingBottom: 4,
+        }}>
+          {err ?? (recording
+            ? `● Recording… ${Math.floor(recordSecs / 60)}:${(recordSecs % 60).toString().padStart(2, '0')}`
+            : 'Uploading…')}
+        </Text>
       ) : null}
-      {err ? <Text style={{ color: '#d96868', fontSize: 12, paddingHorizontal: 14, paddingBottom: 4 }}>{err}</Text> : null}
       <View style={{
         backgroundColor: inputBg, borderRadius: 14, padding: 10,
       }}>
