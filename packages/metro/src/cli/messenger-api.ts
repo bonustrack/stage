@@ -3,7 +3,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { join } from 'node:path';
-import { mintId, userSelf, type HistoryEntry } from '../history.js';
+import { mintId, readHistory, userSelf, type HistoryEntry } from '../history.js';
 import { Line } from '../lines.js';
 import { errMsg, log } from '../log.js';
 import { STATE_DIR } from '../paths.js';
@@ -115,7 +115,7 @@ export async function handleMessengerSend(
   send(res, req, 200, { id: entry.id, line: entry.line });
 }
 
-/** Emit a reaction event: payload.reactTo + payload.emoji, no text. */
+/** Toggle a reaction; if already-active, emit `{removed: true}` so the client folds pairs. */
 export async function handleMessengerReact(
   req: IncomingMessage, res: ServerResponse, emit: Emit, send: Send,
 ): Promise<void> {
@@ -126,17 +126,28 @@ export async function handleMessengerReact(
   if (!messageId || !emoji) return send(res, req, 400, { error: 'messageId + emoji required' });
   const fromAgent = body.as === 'agent';
   const agent = userSelf();
+  const sender = fromAgent ? agent : MESSENGER_USER;
+  /** Scan recent messenger history for an already-active reaction from this sender. */
+  /** readHistory returns newest-first; break on first match so we get the latest event's state. */
+  const recent = readHistory({ limit: 500, station: 'messenger' });
+  let active = false;
+  for (const e of recent) {
+    const p = e.payload as { reactTo?: string; emoji?: string; removed?: boolean } | undefined;
+    if (!p?.reactTo || p.reactTo !== messageId || p.emoji !== emoji || e.from !== sender) continue;
+    active = !p.removed;
+    break;
+  }
   const entry: HistoryEntry = {
     id: mintId(),
     ts: new Date().toISOString(),
     station: 'messenger',
     line: MESSENGER_LINE,
-    from: fromAgent ? agent : MESSENGER_USER,
+    from: sender,
     to: fromAgent ? MESSENGER_USER : agent,
-    payload: { reactTo: messageId, emoji },
+    payload: { reactTo: messageId, emoji, ...(active ? { removed: true } : {}) },
   };
   emit(entry);
-  send(res, req, 200, { id: entry.id });
+  send(res, req, 200, { id: entry.id, removed: active });
 }
 
 export async function handleMessengerRegister(

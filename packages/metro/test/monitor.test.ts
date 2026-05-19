@@ -499,6 +499,25 @@ describe('messenger endpoints', () => {
     expect(j.id).toMatch(/^msg_/);
   });
 
+  test('POST /api/messenger/react toggles add/remove on the second call', async () => {
+    const stateDir = freshStateDir();
+    server = await startServer({ METRO_STATE_DIR: stateDir, METRO_MONITOR_TOKEN: TOKEN });
+    const post = async (): Promise<{ id: string; removed: boolean }> => {
+      const r = await fetch(`${server!.url}/api/messenger/react`, {
+        method: 'POST',
+        headers: { authorization: `Bearer ${TOKEN}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ messageId: 'msg_target', emoji: '👍' }),
+      });
+      return await r.json() as { id: string; removed: boolean };
+    };
+    const a = await post();
+    expect(a.removed).toBe(false);
+    const b = await post();
+    expect(b.removed).toBe(true);
+    const c = await post();
+    expect(c.removed).toBe(false);
+  });
+
   test('POST /api/messenger/react 400 without messageId / emoji', async () => {
     const stateDir = freshStateDir();
     server = await startServer({ METRO_STATE_DIR: stateDir, METRO_MONITOR_TOKEN: TOKEN });
