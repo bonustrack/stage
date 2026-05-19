@@ -7,10 +7,29 @@ defineProps<{
   filterActive?: boolean;
 }>();
 defineEmits<{ (e: 'clearChat'): void; (e: 'filter'): void }>();
+
+/** Twitter-style hide-on-scroll, mirrors App.vue's TabBar logic. */
+const visible = ref(true);
+let lastY = 0;
+function onScroll(): void {
+  const y = window.scrollY;
+  if (y < 4) { visible.value = true; lastY = y; return; }
+  const delta = y - lastY;
+  if (Math.abs(delta) < 6) return;
+  visible.value = delta < 0;
+  lastY = y;
+}
+onMounted(() => window.addEventListener('scroll', onScroll, { passive: true }));
+onBeforeUnmount(() => window.removeEventListener('scroll', onScroll));
 </script>
 
 <template>
-  <header class="border-b border-metro-border-light dark:border-metro-border-dark">
+  <header
+    class="sticky top-0 z-20 transition-transform duration-200
+      bg-metro-bg-light dark:bg-metro-bg-dark
+      border-b border-metro-border-light dark:border-metro-border-dark"
+    :class="visible ? 'translate-y-0' : '-translate-y-full'"
+  >
     <div class="flex items-center gap-3 px-4 py-2">
       <span
         class="inline-block w-2 h-2 rounded-full"
