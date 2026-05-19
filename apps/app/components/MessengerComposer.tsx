@@ -1,4 +1,4 @@
-/** Composer row: [+ menu (image / file)] [text input] [🎤 mic] [Send]. */
+/** Floating two-line composer (Claude-mobile-style): textarea on top, [+ / mic / send] below. */
 
 import { useRef, useState } from 'react';
 import {
@@ -99,9 +99,9 @@ export function MessengerComposer({ daemonUrl, token, dark }: Props): React.Reac
   );
 
   return (
-    <View style={{ borderTopWidth: 1, borderTopColor: border }}>
+    <View style={{ paddingHorizontal: 10, paddingTop: 6, paddingBottom: 18 }}>
       {pending.length > 0 ? (
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingHorizontal: 12, paddingTop: 6 }}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingHorizontal: 6, paddingBottom: 6 }}>
           {pending.map((a, i) => (
             <View key={a.id} style={{
               flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 8, paddingVertical: 4,
@@ -116,14 +116,8 @@ export function MessengerComposer({ daemonUrl, token, dark }: Props): React.Reac
           ))}
         </View>
       ) : null}
-      {recording ? (
-        <Text style={{ color: '#d96868', fontSize: 12, paddingHorizontal: 14, paddingTop: 6 }}>● Recording…</Text>
-      ) : null}
-      {err ? <Text style={{ color: '#d96868', fontSize: 12, paddingHorizontal: 14, paddingTop: 6 }}>{err}</Text> : null}
       {attachMenuOpen ? (
-        <View style={{
-          flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingTop: 6,
-        }}>
+        <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 6, paddingBottom: 6 }}>
           <Pressable
             onPress={() => { setAttachMenuOpen(false); void pickImage(); }}
             style={{
@@ -146,10 +140,14 @@ export function MessengerComposer({ daemonUrl, token, dark }: Props): React.Reac
           </Pressable>
         </View>
       ) : null}
+      {recording ? (
+        <Text style={{ color: '#d96868', fontSize: 12, paddingHorizontal: 14, paddingBottom: 4 }}>● Recording…</Text>
+      ) : null}
+      {err ? <Text style={{ color: '#d96868', fontSize: 12, paddingHorizontal: 14, paddingBottom: 4 }}>{err}</Text> : null}
       <View style={{
-        flexDirection: 'row', gap: 4, padding: 10, paddingBottom: 24, alignItems: 'flex-end',
+        backgroundColor: inputBg, borderRadius: 24, padding: 10,
+        borderWidth: 1, borderColor: border,
       }}>
-        <Btn icon={attachMenuOpen ? 'x' : 'plus'} onPress={() => setAttachMenuOpen(o => !o)} />
         <TextInput
           value={text}
           onChangeText={setText}
@@ -157,23 +155,28 @@ export function MessengerComposer({ daemonUrl, token, dark }: Props): React.Reac
           placeholderTextColor={sub}
           multiline
           style={{
-            flex: 1, backgroundColor: inputBg, color: fg, borderRadius: 18,
-            paddingHorizontal: 14, paddingTop: 10, paddingBottom: 10, fontSize: 15, maxHeight: 120,
+            color: fg, fontSize: 15, minHeight: 22, maxHeight: 140,
+            paddingHorizontal: 8, paddingTop: 4, paddingBottom: 8,
+            textAlignVertical: 'top',
           }}
         />
-        <Btn icon={recording ? 'stop' : 'microphone'} onPress={() => void (recording ? stopRec() : startRec())} active={recording} />
-        <Pressable
-          onPress={() => void send()}
-          disabled={!canSend}
-          style={({ pressed }) => ({
-            backgroundColor: pressed ? '#cccccc' : '#ffffff',
-            opacity: canSend ? 1 : 0.5,
-            paddingHorizontal: 14, paddingVertical: 10, borderRadius: 999,
-            alignItems: 'center', justifyContent: 'center', minWidth: 54,
-          })}
-        >
-          {sending ? <ActivityIndicator color="#000" /> : <Text style={{ color: '#000', fontWeight: '700' }}>Send</Text>}
-        </Pressable>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+          <Btn icon={attachMenuOpen ? 'x' : 'plus'} onPress={() => setAttachMenuOpen(o => !o)} />
+          <View style={{ flex: 1 }} />
+          <Btn icon={recording ? 'stop' : 'microphone'} onPress={() => void (recording ? stopRec() : startRec())} active={recording} />
+          <Pressable
+            onPress={() => void send()}
+            disabled={!canSend}
+            style={({ pressed }) => ({
+              backgroundColor: pressed ? '#cccccc' : '#ffffff',
+              opacity: canSend ? 1 : 0.45,
+              width: 38, height: 38, borderRadius: 999,
+              alignItems: 'center', justifyContent: 'center',
+            })}
+          >
+            {sending ? <ActivityIndicator color="#000" /> : <HeroIcon name="send" size={20} color="#000" />}
+          </Pressable>
+        </View>
       </View>
     </View>
   );
