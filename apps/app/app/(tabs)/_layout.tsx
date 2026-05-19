@@ -8,9 +8,9 @@ import { HeroIcon, type HeroIconName } from '../../components/HeroIcon';
 export default function TabsLayout(): React.ReactElement {
   const dark = useColorScheme() === 'dark';
   const insets = useSafeAreaInsets();
-  const bg = dark ? '#0f1115' : '#ffffff';
+  const bg = dark ? '#000000' : '#ffffff';
   const border = dark ? '#1f2630' : '#e5e9f0';
-  const active = '#4f8cff';
+  const active = '#ffffff';
   const inactive = dark ? '#8a94a6' : '#5a6477';
 
   return (

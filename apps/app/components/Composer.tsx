@@ -65,7 +65,7 @@ export function Composer({ daemonUrl, token, line }: {
           send failed: {err}
         </Text>
       ) : null}
-      <View style={{ flexDirection: 'row', gap: 8, padding: 10, alignItems: 'flex-end' }}>
+      <View style={{ flexDirection: 'row', gap: 8, padding: 10, paddingBottom: 14, alignItems: 'flex-end' }}>
         <TextInput
           value={text}
           onChangeText={setText}
@@ -74,7 +74,7 @@ export function Composer({ daemonUrl, token, line }: {
           multiline
           style={{
             flex: 1,
-            backgroundColor: dark ? '#0f1115' : '#ffffff',
+            backgroundColor: dark ? '#000000' : '#ffffff',
             color: dark ? '#e8ecf2' : '#1a1f29',
             borderWidth: 1, borderColor: border, borderRadius: 18,
             paddingHorizontal: 14, paddingTop: 10, paddingBottom: 10,
@@ -85,14 +85,14 @@ export function Composer({ daemonUrl, token, line }: {
           onPress={() => void send()}
           disabled={!canSend}
           style={({ pressed }) => ({
-            backgroundColor: pressed ? '#4a8fdf' : '#5aa9ff',
+            backgroundColor: pressed ? '#cccccc' : '#ffffff',
             opacity: canSend ? 1 : 0.5,
-            paddingHorizontal: 16, paddingVertical: 10, borderRadius: 18,
+            paddingHorizontal: 16, paddingVertical: 10, borderRadius: 999,
             alignItems: 'center', justifyContent: 'center', minWidth: 60,
           })}
         >
-          {sending ? <ActivityIndicator color="#fff" /> : (
-            <Text style={{ color: '#fff', fontWeight: '700' }}>Send</Text>
+          {sending ? <ActivityIndicator color="#000" /> : (
+            <Text style={{ color: '#000', fontWeight: '700' }}>Send</Text>
           )}
         </Pressable>
       </View>

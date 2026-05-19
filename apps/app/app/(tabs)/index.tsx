@@ -24,7 +24,7 @@ export default function Activity(): React.ReactElement {
   const dark = useColorScheme() === 'dark';
   const fg = dark ? '#e8ecf2' : '#1a1f29';
   const sub = dark ? '#8a94a6' : '#5a6477';
-  const bg = dark ? '#0f1115' : '#ffffff';
+  const bg = dark ? '#000000' : '#ffffff';
   const [cfg, setCfg] = useState<Config | null>(null);
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [filterOpen, setFilterOpen] = useState(false);
@@ -98,11 +98,11 @@ export default function Activity(): React.ReactElement {
         <Pressable
           onPress={() => router.push('/settings')}
           style={({ pressed }) => ({
-            backgroundColor: pressed ? '#4a8fdf' : '#5aa9ff',
-            paddingVertical: 14, borderRadius: 8, alignItems: 'center',
+            backgroundColor: pressed ? '#cccccc' : '#ffffff',
+            paddingVertical: 14, borderRadius: 999, alignItems: 'center',
           })}
         >
-          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Open Settings</Text>
+          <Text style={{ color: '#000', fontWeight: '700', fontSize: 16 }}>Open Settings</Text>
         </Pressable>
       </View>
     );

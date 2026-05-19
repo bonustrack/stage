@@ -38,7 +38,7 @@ export default function Messenger(): React.ReactElement {
   const dark = useColorScheme() === 'dark';
   const fg = dark ? '#e8ecf2' : '#1a1f29';
   const sub = dark ? '#8a94a6' : '#5a6477';
-  const bg = dark ? '#0f1115' : '#ffffff';
+  const bg = dark ? '#000000' : '#ffffff';
   const border = dark ? '#262c38' : '#e3e7ef';
 
   const [cfg, setCfg] = useState<Config | null>(null);
@@ -66,9 +66,9 @@ export default function Messenger(): React.ReactElement {
         </Text>
         <Pressable
           onPress={() => router.push('/settings')}
-          style={{ backgroundColor: '#5aa9ff', paddingVertical: 12, borderRadius: 8, alignItems: 'center' }}
+          style={{ backgroundColor: '#ffffff', paddingVertical: 12, borderRadius: 999, alignItems: 'center' }}
         >
-          <Text style={{ color: '#fff', fontWeight: '700' }}>Open Settings</Text>
+          <Text style={{ color: '#000', fontWeight: '700' }}>Open Settings</Text>
         </Pressable>
       </View>
     );
@@ -109,7 +109,7 @@ export default function Messenger(): React.ReactElement {
         </Text>
       ) : null}
       <View style={{
-        flexDirection: 'row', gap: 8, padding: 10, alignItems: 'flex-end',
+        flexDirection: 'row', gap: 8, padding: 10, paddingBottom: 14, alignItems: 'flex-end',
         borderTopWidth: 1, borderTopColor: border,
       }}>
         <TextInput
@@ -130,14 +130,14 @@ export default function Messenger(): React.ReactElement {
           onPress={() => void send()}
           disabled={!canSend}
           style={({ pressed }) => ({
-            backgroundColor: pressed ? '#4a8fdf' : '#5aa9ff',
+            backgroundColor: pressed ? '#cccccc' : '#ffffff',
             opacity: canSend ? 1 : 0.5,
-            paddingHorizontal: 16, paddingVertical: 10, borderRadius: 18,
+            paddingHorizontal: 16, paddingVertical: 10, borderRadius: 999,
             alignItems: 'center', justifyContent: 'center', minWidth: 60,
           })}
         >
-          {sending ? <ActivityIndicator color="#fff" /> : (
-            <Text style={{ color: '#fff', fontWeight: '700' }}>Send</Text>
+          {sending ? <ActivityIndicator color="#000" /> : (
+            <Text style={{ color: '#000', fontWeight: '700' }}>Send</Text>
           )}
         </Pressable>
       </View>

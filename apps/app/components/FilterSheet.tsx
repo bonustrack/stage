@@ -46,8 +46,8 @@ export function FilterSheet({ visible, filters, onChange, onClose }: {
   const sub = dark ? '#8a94a6' : '#5a6477';
   const border = dark ? '#262c38' : '#e3e7ef';
   const chipBg = dark ? '#1d2230' : '#eef1f7';
-  const inputBg = dark ? '#0f1115' : '#ffffff';
-  const accent = '#5aa9ff';
+  const inputBg = dark ? '#000000' : '#ffffff';
+  const accent = '#ffffff';
 
   const toggle = <K extends 'kinds' | 'stations'>(key: K, v: K extends 'kinds' ? HistoryKind : StationKey): void => {
     const next = new Set(filters[key]) as Filters[K];

@@ -21,7 +21,7 @@ function toggle<K extends 'kinds' | 'stations'>(key: K, v: K extends 'kinds' ? H
 }
 
 const chipClass = (on: boolean): string => on
-  ? 'bg-metro-accent border-metro-accent text-white'
+  ? 'bg-metro-accent border-metro-accent text-black'
   : 'bg-metro-hover-light dark:bg-metro-hover-dark border-metro-border-light dark:border-metro-border-dark';
 </script>
 

@@ -19,7 +19,7 @@ export function ActivityChart({ events }: { events: ReadonlyArray<BucketEvent> }
   return (
     <View style={{
       paddingHorizontal: 14, paddingVertical: 8,
-      backgroundColor: dark ? '#0f1115' : '#ffffff',
+      backgroundColor: dark ? '#000000' : '#ffffff',
       borderBottomWidth: 1, borderBottomColor: dark ? '#262c38' : '#e3e7ef',
     }}>
       <View style={{

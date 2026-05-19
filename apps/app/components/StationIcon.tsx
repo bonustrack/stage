@@ -18,7 +18,7 @@ export function StationIcon({ station, withLabel = false, size = 18 }: {
     >
       <Svg width={size} height={size} viewBox="0 0 24 24">
         {def.path === null
-          ? <Circle cx="12" cy="12" r="6" fill="#0f1115" />
+          ? <Circle cx="12" cy="12" r="6" fill="#000000" />
           : <Path d={def.path} fill="#ffffff" />}
       </Svg>
     </View>

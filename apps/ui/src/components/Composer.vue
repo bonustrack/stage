@@ -34,7 +34,7 @@ async function send(): Promise<void> {
       <button
         type="button"
         :disabled="sending || !text.trim()"
-        class="bg-metro-accent hover:bg-metro-accent-hover text-white font-bold px-5 py-2 rounded-2xl
+        class="bg-metro-accent hover:bg-metro-accent-hover text-black font-bold px-5 py-2 rounded-full
           disabled:opacity-50 min-w-[68px]"
         @click="send"
       >{{ sending ? '…' : 'Send' }}</button>

@@ -61,7 +61,7 @@ const inputClass = 'w-full font-mono text-sm bg-metro-surface-light dark:bg-metr
         >{{ testing ? 'Testing…' : 'Test connection' }}</button>
         <button
           type="button"
-          class="flex-1 px-4 py-2 rounded-md bg-metro-accent hover:bg-metro-accent-hover text-white font-bold"
+          class="flex-1 px-4 py-2 rounded-full bg-metro-accent hover:bg-metro-accent-hover text-black font-bold"
           @click="save"
         >Save</button>
       </div>

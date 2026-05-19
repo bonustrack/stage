@@ -12,7 +12,7 @@ export default function Search(): React.ReactElement {
   const router = useRouter();
   const dark = useColorScheme() === 'dark';
   const sub = dark ? '#8a94a6' : '#5a6477';
-  const bg = dark ? '#0f1115' : '#ffffff';
+  const bg = dark ? '#000000' : '#ffffff';
 
   const [cfg, setCfg] = useState<Config | null>(null);
   const [query, setQuery] = useState('');

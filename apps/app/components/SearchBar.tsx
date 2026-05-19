@@ -39,7 +39,7 @@ export function SearchBar({ value, onChange }: {
       />
       {value ? (
         <Pressable onPress={() => onChange('')} hitSlop={8}>
-          <Text style={{ color: '#5aa9ff', fontSize: 13, fontWeight: '600' }}>Clear</Text>
+          <Text style={{ color: '#ffffff', fontSize: 13, fontWeight: '600' }}>Clear</Text>
         </Pressable>
       ) : null}
     </View>

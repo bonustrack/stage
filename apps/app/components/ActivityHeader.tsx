@@ -2,7 +2,7 @@
 
 import { Pressable, Text, View, useColorScheme } from 'react-native';
 
-const LINK = { color: '#5aa9ff', fontSize: 13, fontWeight: '600' as const };
+const LINK = { color: '#ffffff', fontSize: 13, fontWeight: '600' as const };
 
 export function ActivityHeader({
   status, error, count, chat, filterActive,

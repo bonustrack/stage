@@ -17,7 +17,7 @@ export default function Lines(): React.ReactElement {
   const dark = useColorScheme() === 'dark';
   const fg = dark ? '#e8ecf2' : '#1a1f29';
   const sub = dark ? '#8a94a6' : '#5a6477';
-  const bg = dark ? '#0f1115' : '#ffffff';
+  const bg = dark ? '#000000' : '#ffffff';
   const border = dark ? '#262c38' : '#e3e7ef';
   const rowBg = dark ? '#161a22' : '#fafbfd';
   const [rows, setRows] = useState<Row[] | null>(null);

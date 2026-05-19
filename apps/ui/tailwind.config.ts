@@ -10,7 +10,7 @@ const config: Config = {
       colors: {
         metro: {
           /** Backgrounds */
-          'bg-dark': '#0f1115',
+          'bg-dark': '#000000',
           'bg-light': '#ffffff',
           'surface-dark': '#161a22',
           'surface-light': '#fafbfd',
@@ -25,8 +25,8 @@ const config: Config = {
           'border-dark': '#262c38',
           'border-light': '#e3e7ef',
           /** Accents */
-          accent: '#5aa9ff',
-          'accent-hover': '#4a8fdf',
+          accent: '#ffffff',
+          'accent-hover': '#cccccc',
           ok: '#83c989',
           warn: '#c0a06e',
           err: '#d96868',

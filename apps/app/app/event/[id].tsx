@@ -9,7 +9,7 @@ export default function EventDetail(): React.ReactElement {
   const dark = useColorScheme() === 'dark';
   const fg = dark ? '#e8ecf2' : '#1a1f29';
   const sub = dark ? '#8a94a6' : '#5a6477';
-  const bg = dark ? '#0f1115' : '#ffffff';
+  const bg = dark ? '#000000' : '#ffffff';
 
   let entry: HistoryEntry | null = null;
   if (data) { try { entry = JSON.parse(data) as HistoryEntry; } catch { /* leave null */ } }

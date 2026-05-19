@@ -56,7 +56,7 @@ function clearChat(): void { void router.push({ name: 'activity' }); }
         </p>
         <button
           type="button"
-          class="bg-metro-accent hover:bg-metro-accent-hover text-white font-bold px-6 py-3 rounded"
+          class="bg-metro-accent hover:bg-metro-accent-hover text-black font-bold px-6 py-3 rounded-full"
           @click="router.push('/settings')"
         >Open Settings</button>
       </div>

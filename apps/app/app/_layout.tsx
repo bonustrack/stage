@@ -27,7 +27,7 @@ export default function RootLayout(): React.ReactElement {
 
   if (!loaded) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: dark ? '#0f1115' : '#ffffff' }}>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: dark ? '#000000' : '#ffffff' }}>
         <ActivityIndicator />
       </View>
     );
@@ -38,10 +38,10 @@ export default function RootLayout(): React.ReactElement {
       <StatusBar style={dark ? 'light' : 'dark'} />
       <Stack
         screenOptions={{
-          headerStyle: { backgroundColor: dark ? '#0f1115' : '#ffffff' },
+          headerStyle: { backgroundColor: dark ? '#000000' : '#ffffff' },
           headerTintColor: dark ? '#e8ecf2' : '#1a1f29',
           headerTitleStyle: { fontFamily: 'Calibre-Semibold' },
-          contentStyle: { backgroundColor: dark ? '#0f1115' : '#ffffff' },
+          contentStyle: { backgroundColor: dark ? '#000000' : '#ffffff' },
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

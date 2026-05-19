@@ -17,7 +17,7 @@ export default function Settings(): React.ReactElement {
   const dark = useColorScheme() === 'dark';
   const fg = dark ? '#e8ecf2' : '#1a1f29';
   const sub = dark ? '#8a94a6' : '#5a6477';
-  const bg = dark ? '#0f1115' : '#ffffff';
+  const bg = dark ? '#000000' : '#ffffff';
   const field = dark ? '#161a22' : '#fafbfd';
   const border = dark ? '#262c38' : '#e3e7ef';
 
@@ -97,7 +97,7 @@ export default function Settings(): React.ReactElement {
             style={({ pressed }) => ({
               flex: 1, backgroundColor: pressed ? border : field,
               borderWidth: 1, borderColor: border,
-              paddingVertical: 12, borderRadius: 8, alignItems: 'center',
+              paddingVertical: 12, borderRadius: 999, alignItems: 'center',
               opacity: !cfg.daemonUrl || !cfg.token ? 0.5 : 1,
             })}
           >
@@ -106,11 +106,11 @@ export default function Settings(): React.ReactElement {
           <Pressable
             onPress={() => void saveConfig(cfg).then(() => router.back())}
             style={({ pressed }) => ({
-              flex: 1, backgroundColor: pressed ? '#4a8fdf' : '#5aa9ff',
-              paddingVertical: 12, borderRadius: 8, alignItems: 'center',
+              flex: 1, backgroundColor: pressed ? '#cccccc' : '#ffffff',
+              paddingVertical: 12, borderRadius: 999, alignItems: 'center',
             })}
           >
-            <Text style={{ color: '#fff', fontWeight: '700' }}>Save</Text>
+            <Text style={{ color: '#000', fontWeight: '700' }}>Save</Text>
           </Pressable>
         </View>
 
