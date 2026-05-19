@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import {
-  ActivityIndicator, Alert, Pressable, Text, TextInput, View,
+  ActivityIndicator, Alert, Image, Pressable, Text, TextInput, View,
 } from 'react-native';
 import { Audio } from 'expo-av';
 import * as DocumentPicker from 'expo-document-picker';
@@ -11,6 +11,10 @@ import { HeroIcon, type HeroIconName } from './HeroIcon';
 import { sendMessenger, uploadAttachment, type Attachment } from '../lib/messenger';
 
 interface Props { daemonUrl: string; token: string; dark: boolean }
+
+function chipImageUrl(daemonUrl: string, token: string, url: string): string {
+  return `${daemonUrl.replace(/\/$/, '')}${url}?token=${encodeURIComponent(token)}`;
+}
 
 export function MessengerComposer({ daemonUrl, token, dark }: Props): React.ReactElement {
   const fg = dark ? '#e8ecf2' : '#1a1f29';
@@ -103,12 +107,20 @@ export function MessengerComposer({ daemonUrl, token, dark }: Props): React.Reac
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingHorizontal: 6, paddingBottom: 6 }}>
           {pending.map((a, i) => (
             <View key={a.id} style={{
-              flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 8, paddingVertical: 4,
-              borderRadius: 999, backgroundColor: chipBg,
+              flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: a.kind === 'image' ? 4 : 8, paddingVertical: a.kind === 'image' ? 4 : 4,
+              borderRadius: 12, backgroundColor: chipBg,
             }}>
-              <HeroIcon name={kindIcon(a.kind)} size={14} color={fg} />
+              {a.kind === 'image' ? (
+                <Image
+                  source={{ uri: chipImageUrl(daemonUrl, token, a.url) }}
+                  style={{ width: 28, height: 28, borderRadius: 6 }}
+                  resizeMode="cover"
+                />
+              ) : (
+                <HeroIcon name={kindIcon(a.kind)} size={14} color={fg} />
+              )}
               <Text style={{ color: fg, fontSize: 12, maxWidth: 140 }} numberOfLines={1}>{a.name ?? a.id}</Text>
-              <Pressable onPress={() => setPending(prev => prev.filter((_, j) => j !== i))}>
+              <Pressable onPress={() => setPending(prev => prev.filter((_, j) => j !== i))} hitSlop={6}>
                 <HeroIcon name="x" size={14} color={sub} />
               </Pressable>
             </View>
