@@ -31,8 +31,6 @@ defineEmits<{ (e: 'clearChat'): void; (e: 'filter'): void }>();
         :class="filterActive ? 'text-metro-ok font-bold' : ''"
         @click="$emit('filter')"
       >Filter{{ filterActive ? ' •' : '' }}</button>
-      <RouterLink to="/lines" class="text-sm font-semibold text-metro-accent hover:underline">Lines</RouterLink>
-      <RouterLink to="/settings" class="text-sm font-semibold text-metro-accent hover:underline">Settings</RouterLink>
     </div>
     <div v-if="chat" class="flex items-center gap-2 px-4 pb-2 text-xs text-metro-sub-light dark:text-metro-sub-dark">
       <span class="truncate">filter: {{ chat.replace(/^metro:\/\//, '') }}</span>

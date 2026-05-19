@@ -20,6 +20,7 @@ function open(line: string): void {
   void router.push({ name: 'activity', query: { chat: line } });
 }
 function short(s: string): string { return s.replace(/^metro:\/\//, ''); }
+function stationOf(uri: string): string { return uri.match(/^metro:\/\/([^/]+)/)?.[1] ?? 'webhook'; }
 </script>
 
 <template>
@@ -43,9 +44,14 @@ function short(s: string): string { return s.replace(/^metro:\/\//, ''); }
           cursor-pointer"
         @click="open(r.line)"
       >
-        <div class="font-mono text-sm truncate">{{ short(r.line) }}</div>
-        <div :class="r.owner ? 'text-metro-ok' : 'text-metro-sub-light dark:text-metro-sub-dark'" class="text-xs mt-1">
-          {{ r.owner ? `claimed by ${short(r.owner)}` : 'unclaimed' }}
+        <div class="flex items-center gap-2.5">
+          <StationIcon :station="stationOf(r.line)" />
+          <div class="min-w-0 flex-1">
+            <div class="font-mono text-sm truncate">{{ short(r.line) }}</div>
+            <div :class="r.owner ? 'text-metro-ok' : 'text-metro-sub-light dark:text-metro-sub-dark'" class="text-xs mt-0.5">
+              {{ r.owner ? `claimed by ${short(r.owner)}` : 'unclaimed' }}
+            </div>
+          </div>
         </div>
       </li>
     </ul>

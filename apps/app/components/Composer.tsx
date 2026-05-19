@@ -27,6 +27,9 @@ async function sendCall(
   });
 }
 
+/** Stations with an actual outbound REST train. `claude`/`codex`/`webhook` are pseudo-lines. */
+const CHAT_TRAINS = new Set(['discord', 'telegram']);
+
 export function Composer({ daemonUrl, token, line }: {
   daemonUrl: string;
   token: string;
@@ -37,7 +40,7 @@ export function Composer({ daemonUrl, token, line }: {
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  if (!train) return null;
+  if (!train || !CHAT_TRAINS.has(train)) return null;
 
   const sub = dark ? '#8a94a6' : '#5a6477';
   const border = dark ? '#262c38' : '#e3e7ef';
@@ -54,7 +57,7 @@ export function Composer({ daemonUrl, token, line }: {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={{ borderTopWidth: 1, borderTopColor: border, backgroundColor: dark ? '#161a22' : '#fafbfd' }}
     >
       {err ? (

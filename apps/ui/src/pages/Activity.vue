@@ -7,7 +7,6 @@ const route = useRoute();
 const router = useRouter();
 const cfg = ref<Config>(loadConfig());
 const chat = computed(() => (route.query.chat as string | undefined) ?? undefined);
-const search = ref('');
 const filterOpen = ref(false);
 const filters = ref<Filters>({ kinds: new Set(), stations: new Set(), includeWebhooks: true });
 
@@ -25,7 +24,7 @@ const visible = computed(() => {
   return [
     ...tail.events.value,
     ...tail.older.value.filter(e => !seen.has(e.id)),
-  ].filter(e => matchesFilters(e) && matchesSearch(e, search.value));
+  ].filter(e => matchesFilters(e));
 });
 
 const filterActive = computed(() =>
@@ -64,11 +63,10 @@ function clearChat(): void { void router.push({ name: 'activity' }); }
     </template>
     <template v-else>
       <ActivityChart :events="visible" />
-      <SearchBar v-model="search" />
       <div class="flex-1 overflow-y-auto">
         <EventRow v-for="e in visible" :key="e.id" :entry="e" />
         <div v-if="visible.length === 0" class="p-8 text-center text-metro-sub-light dark:text-metro-sub-dark">
-          <template v-if="search || filterActive">No events match the active filters.</template>
+          <template v-if="filterActive">No events match the active filters.</template>
           <template v-else>Waiting for events…</template>
         </div>
         <div v-if="visible.length > 0" class="p-4 text-center">
