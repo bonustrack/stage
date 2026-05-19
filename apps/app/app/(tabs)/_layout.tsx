@@ -30,7 +30,6 @@ export default function TabsLayout(): React.ReactElement {
         tabBarActiveTintColor: active,
         tabBarInactiveTintColor: inactive,
         tabBarLabelStyle: { fontFamily: 'Calibre-Semibold', fontSize: 11 },
-        tabBarHideOnKeyboard: true,
       }}
     >
       {(
