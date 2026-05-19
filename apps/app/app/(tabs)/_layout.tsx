@@ -62,6 +62,8 @@ export default function TabsLayout(): React.ReactElement {
           name={name}
           options={{
             title,
+            /** Messenger has its own chat UI — the title bar wastes space and looks out of place. */
+            headerShown: name !== 'messenger',
             tabBarIcon: ({ color, focused }) => (
               <HeroIcon name={icon} size={26} color={color} focused={focused} />
             ),

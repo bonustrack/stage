@@ -27,6 +27,8 @@ const PATHS: Record<string, string> = {
   stop: 'M5 5h14v14H5z',
   // x — close / dismiss
   x: 'M6 18L18 6M6 6l12 12',
+  // plus — attachment menu trigger
+  plus: 'M12 4v16m8-8H4',
 };
 
 export type HeroIconName = keyof typeof PATHS;

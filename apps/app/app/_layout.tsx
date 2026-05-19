@@ -4,10 +4,12 @@ import { useFonts } from 'expo-font';
 import { ActivityIndicator, Text, TextInput, useColorScheme, View } from 'react-native';
 
 /** Set Calibre-Medium as the app-wide default for Text + TextInput (RN has no global font setting). */
+/** Also makes every Text selectable so users can copy any rendered string (incl. markdown bodies). */
 function applyDefaultFont(): void {
   const TextAny = Text as unknown as { defaultProps?: Record<string, unknown> };
   TextAny.defaultProps = TextAny.defaultProps || {};
   TextAny.defaultProps.style = [{ fontFamily: 'Calibre-Medium' }, TextAny.defaultProps.style];
+  TextAny.defaultProps.selectable = true;
   const TextInputAny = TextInput as unknown as { defaultProps?: Record<string, unknown> };
   TextInputAny.defaultProps = TextInputAny.defaultProps || {};
   TextInputAny.defaultProps.style = [{ fontFamily: 'Calibre-Medium' }, TextInputAny.defaultProps.style];

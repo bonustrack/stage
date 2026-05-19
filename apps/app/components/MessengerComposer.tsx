@@ -1,4 +1,4 @@
-/** Composer row for the messenger: text + image / file / audio buttons. */
+/** Composer row: [+ menu (image / file)] [text input] [🎤 mic] [Send]. */
 
 import { useRef, useState } from 'react';
 import {
@@ -24,6 +24,7 @@ export function MessengerComposer({ daemonUrl, token, dark }: Props): React.Reac
   const [sending, setSending] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [recording, setRecording] = useState(false);
+  const [attachMenuOpen, setAttachMenuOpen] = useState(false);
   const recRef = useRef<Audio.Recording | null>(null);
 
   const canSend = !sending && (text.trim().length > 0 || pending.length > 0);
@@ -119,12 +120,36 @@ export function MessengerComposer({ daemonUrl, token, dark }: Props): React.Reac
         <Text style={{ color: '#d96868', fontSize: 12, paddingHorizontal: 14, paddingTop: 6 }}>● Recording…</Text>
       ) : null}
       {err ? <Text style={{ color: '#d96868', fontSize: 12, paddingHorizontal: 14, paddingTop: 6 }}>{err}</Text> : null}
+      {attachMenuOpen ? (
+        <View style={{
+          flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingTop: 6,
+        }}>
+          <Pressable
+            onPress={() => { setAttachMenuOpen(false); void pickImage(); }}
+            style={{
+              flexDirection: 'row', alignItems: 'center', gap: 6,
+              paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: chipBg,
+            }}
+          >
+            <HeroIcon name="photo" size={16} color={fg} />
+            <Text style={{ color: fg, fontSize: 13 }}>Image</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => { setAttachMenuOpen(false); void pickFile(); }}
+            style={{
+              flexDirection: 'row', alignItems: 'center', gap: 6,
+              paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: chipBg,
+            }}
+          >
+            <HeroIcon name="paperClip" size={16} color={fg} />
+            <Text style={{ color: fg, fontSize: 13 }}>File</Text>
+          </Pressable>
+        </View>
+      ) : null}
       <View style={{
         flexDirection: 'row', gap: 4, padding: 10, paddingBottom: 24, alignItems: 'flex-end',
       }}>
-        <Btn icon="photo" onPress={() => void pickImage()} />
-        <Btn icon="paperClip" onPress={() => void pickFile()} />
-        <Btn icon={recording ? 'stop' : 'microphone'} onPress={() => void (recording ? stopRec() : startRec())} active={recording} />
+        <Btn icon={attachMenuOpen ? 'x' : 'plus'} onPress={() => setAttachMenuOpen(o => !o)} />
         <TextInput
           value={text}
           onChangeText={setText}
@@ -136,6 +161,7 @@ export function MessengerComposer({ daemonUrl, token, dark }: Props): React.Reac
             paddingHorizontal: 14, paddingTop: 10, paddingBottom: 10, fontSize: 15, maxHeight: 120,
           }}
         />
+        <Btn icon={recording ? 'stop' : 'microphone'} onPress={() => void (recording ? stopRec() : startRec())} active={recording} />
         <Pressable
           onPress={() => void send()}
           disabled={!canSend}
