@@ -6,6 +6,7 @@ import {
   isReaction, isTranscript, reactMessenger, reactionsByMessage, sendMessenger,
   transcriptsByMessage, uploadAttachment, type Attachment,
 } from '../lib/messenger';
+import { useRecorder } from '../lib/useRecorder';
 
 const MESSENGER_LINE = 'metro://messenger/owner';
 
@@ -34,50 +35,32 @@ function onReact(messageId: string, emoji: string): void {
     .catch(e => { err.value = (e as Error).message; });
 }
 
-const recording = ref(false);
-const recordSecs = ref(0);
-let recorder: MediaRecorder | null = null;
-let recordChunks: Blob[] = [];
-let recordTimer: ReturnType<typeof setInterval> | null = null;
-
-async function pickAndUpload(input: HTMLInputElement | null): Promise<void> {
-  attachMenuOpen.value = false;
-  const file = input?.files?.[0];
-  if (!file) return;
+async function uploadFile(file: File): Promise<void> {
   try {
     const att = await uploadAttachment(cfg.value.daemonUrl, cfg.value.token, file, file.name);
     pending.value = [...pending.value, att];
   } catch (e) { err.value = (e as Error).message; }
-  finally { if (input) input.value = ''; }
+}
+async function pickAndUpload(input: HTMLInputElement | null): Promise<void> {
+  attachMenuOpen.value = false;
+  const file = input?.files?.[0];
+  if (file) await uploadFile(file);
+  if (input) input.value = '';
+}
+function onDrop(ev: DragEvent): void {
+  ev.preventDefault();
+  for (const f of ev.dataTransfer?.files ?? []) void uploadFile(f);
+}
+function onPaste(ev: ClipboardEvent): void {
+  for (const item of ev.clipboardData?.items ?? []) {
+    if (item.kind === 'file') { const f = item.getAsFile(); if (f) void uploadFile(f); }
+  }
 }
 
-async function startRecording(): Promise<void> {
-  err.value = null;
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    recordChunks = [];
-    recorder = new MediaRecorder(stream);
-    recorder.ondataavailable = (e): void => { if (e.data.size > 0) recordChunks.push(e.data); };
-    recorder.onstop = (): void => {
-      stream.getTracks().forEach(t => t.stop());
-      const blob = new Blob(recordChunks, { type: recorder?.mimeType ?? 'audio/webm' });
-      void uploadAttachment(cfg.value.daemonUrl, cfg.value.token, blob, `voice-${Date.now()}.webm`)
-        .then(att => { pending.value = [...pending.value, att]; })
-        .catch(e => { err.value = (e as Error).message; });
-    };
-    recorder.start();
-    recording.value = true;
-    recordSecs.value = 0;
-    recordTimer = setInterval(() => { recordSecs.value += 1; }, 1000);
-  } catch (e) { err.value = (e as Error).message; }
-}
-
-function stopRecording(): void {
-  if (!recorder || recorder.state === 'inactive') return;
-  recorder.stop();
-  recording.value = false;
-  if (recordTimer) { clearInterval(recordTimer); recordTimer = null; }
-}
+const { recording, recordSecs, start: startRecording, stop: stopRecording } = useRecorder(
+  blob => void uploadFile(new File([blob], `voice-${Date.now()}.webm`, { type: blob.type })),
+  msg => { err.value = msg; },
+);
 
 async function send(): Promise<void> {
   const body = text.value.trim();
@@ -95,7 +78,10 @@ onBeforeUnmount(() => { tail.stop(); stopRecording(); });
 </script>
 
 <template>
-  <div class="flex flex-col min-h-screen pb-[140px]">
+  <div class="flex flex-col min-h-screen pb-[140px]"
+    @dragover.prevent
+    @drop="onDrop"
+    @paste="onPaste">
     <div v-if="tail.status.value !== 'open' && tail.status.value !== 'idle'"
       class="fixed top-2 left-1/2 -translate-x-1/2 z-20 px-2.5 py-1 rounded-full flex items-center gap-1.5 text-[11px]
         bg-metro-surface-light dark:bg-metro-surface-dark text-metro-sub-light dark:text-metro-sub-dark
