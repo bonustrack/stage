@@ -18,6 +18,8 @@ export interface HistoryEntry {
   replyTo?: string;
   /** Pre-rendered chat-bubble markdown. */
   display?: string;
+  /** Raw platform-native payload (Discord message, GitHub webhook body, etc). Shape varies per station. */
+  payload?: unknown;
 }
 
 /** Shape returned by `GET /api/state`. */

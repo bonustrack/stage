@@ -48,7 +48,7 @@ onBeforeUnmount(() => tail.stop());
       :count="tail.events.value.length"
     />
     <div class="flex-1">
-      <EventRow v-for="e in tail.events.value" :key="e.id" :entry="e" />
+      <EventRow v-for="e in [...tail.events.value].reverse()" :key="e.id" :entry="e" />
       <div v-if="tail.events.value.length === 0" class="p-8 text-center text-metro-sub-light dark:text-metro-sub-dark">
         Type a message below to start chatting.
       </div>

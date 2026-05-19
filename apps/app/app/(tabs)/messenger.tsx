@@ -90,6 +90,7 @@ export default function Messenger(): React.ReactElement {
     <View style={{ flex: 1, backgroundColor: bg }}>
       <FlatList
         data={events}
+        inverted
         keyExtractor={e => e.id}
         renderItem={({ item }) => (
           <EventRow

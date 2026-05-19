@@ -17,4 +17,5 @@ export interface HistoryEntry {
   messageId?: string;
   replyTo?: string;
   display?: string;
+  payload?: unknown;
 }

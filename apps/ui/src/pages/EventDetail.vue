@@ -39,6 +39,10 @@ const rows = computed<[string, string][]>(() => {
         <div class="text-xs text-metro-sub-light dark:text-metro-sub-dark mb-1">display</div>
         <pre class="bg-metro-surface-light dark:bg-metro-surface-dark p-3 rounded text-xs font-mono whitespace-pre-wrap">{{ entry.display }}</pre>
       </section>
+      <section v-if="entry.payload">
+        <div class="text-xs text-metro-sub-light dark:text-metro-sub-dark mb-1">payload</div>
+        <pre class="bg-metro-surface-light dark:bg-metro-surface-dark p-3 rounded text-xs font-mono whitespace-pre-wrap overflow-x-auto">{{ JSON.stringify(entry.payload, null, 2) }}</pre>
+      </section>
       <section>
         <div class="text-xs text-metro-sub-light dark:text-metro-sub-dark mb-1">raw</div>
         <pre class="bg-metro-surface-light dark:bg-metro-surface-dark p-3 rounded text-xs font-mono whitespace-pre-wrap overflow-x-auto">{{ JSON.stringify(entry, null, 2) }}</pre>
