@@ -35,15 +35,17 @@ export function MessengerAudioPlayer({ uri, fg, sub }: Props): React.ReactElemen
   };
 
   const toggle = async (): Promise<void> => {
-    if (soundRef.current) {
-      const s = soundRef.current;
-      const st = await s.getStatusAsync();
-      if (st.isLoaded && st.isPlaying) await s.pauseAsync();
-      else await s.playAsync();
-      return;
-    }
-    const { sound } = await Audio.Sound.createAsync({ uri }, { shouldPlay: true }, onStatus);
-    soundRef.current = sound;
+    try {
+      if (soundRef.current) {
+        const s = soundRef.current;
+        const st = await s.getStatusAsync();
+        if (st.isLoaded && st.isPlaying) await s.pauseAsync();
+        else await s.playAsync();
+        return;
+      }
+      const { sound } = await Audio.Sound.createAsync({ uri }, { shouldPlay: true }, onStatus);
+      soundRef.current = sound;
+    } catch { /** Network / decode error — leave UI in idle state; tap again to retry. */ }
   };
 
   const seekTo = (locationX: number): void => {
