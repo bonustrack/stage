@@ -1,7 +1,7 @@
-/** ChatGPT-dark-style chat bubble — right for owner, left for everyone else. */
+/** ChatGPT-dark-style messenger row: user gets a bubble (right), assistant is bubble-less (left). */
 
 import { Image, Linking, Pressable, Text, View } from 'react-native';
-import { parseRichText } from '../lib/rich-text';
+import Markdown from 'react-native-markdown-display';
 import type { HistoryEntry } from '../lib/types';
 
 const MESSENGER_USER = 'metro://messenger/user/owner';
@@ -47,31 +47,57 @@ function AttachmentView({ att, fullUrl, fg }: {
   );
 }
 
+function markdownStyles(fg: string, dark: boolean): Record<string, object> {
+  const codeBg = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+  return {
+    body: { color: fg, fontSize: 15, lineHeight: 21 },
+    paragraph: { marginTop: 0, marginBottom: 0 },
+    heading1: { color: fg, fontSize: 20, fontWeight: '700', marginTop: 4, marginBottom: 2 },
+    heading2: { color: fg, fontSize: 18, fontWeight: '700', marginTop: 4, marginBottom: 2 },
+    heading3: { color: fg, fontSize: 16, fontWeight: '700', marginTop: 4, marginBottom: 2 },
+    strong: { fontWeight: '700' },
+    em: { fontStyle: 'italic' },
+    link: { color: fg, textDecorationLine: 'underline' },
+    code_inline: { backgroundColor: codeBg, paddingHorizontal: 4, borderRadius: 4, fontFamily: 'Menlo' },
+    fence: { backgroundColor: codeBg, padding: 8, borderRadius: 6, fontFamily: 'Menlo', fontSize: 13 },
+    bullet_list: { marginTop: 2, marginBottom: 2 },
+    ordered_list: { marginTop: 2, marginBottom: 2 },
+    blockquote: { borderLeftWidth: 3, borderLeftColor: codeBg, paddingLeft: 8, marginVertical: 4 },
+  };
+}
+
 export function MessengerBubble({ entry, dark, unread, onPress, daemonUrl, token }: {
   entry: HistoryEntry; dark: boolean; unread: boolean; onPress: () => void;
   daemonUrl: string; token: string;
 }): React.ReactElement {
   const mine = entry.from === MESSENGER_USER;
-  const bg = mine ? (dark ? '#ffffff' : '#1a1f29') : (dark ? '#2a2d33' : '#eef1f7');
-  const fg = mine ? (dark ? '#000000' : '#ffffff') : (dark ? '#e8ecf2' : '#1a1f29');
   const atts = attachmentsOf(entry);
+  const bubbleBg = mine ? (dark ? '#ffffff' : '#1a1f29') : 'transparent';
+  const fg = mine
+    ? (dark ? '#000000' : '#ffffff')
+    : (dark ? '#e8ecf2' : '#1a1f29');
+  const sub = dark ? '#8a94a6' : '#5a6477';
+  const markdownProps = {
+    onLinkPress: (url: string): boolean => { void Linking.openURL(url); return false; },
+    style: markdownStyles(fg, dark),
+  };
   return (
     <View style={{
       flexDirection: 'row',
       justifyContent: mine ? 'flex-end' : 'flex-start',
-      paddingHorizontal: 12, paddingVertical: 3,
+      paddingHorizontal: 12, paddingVertical: mine ? 3 : 6,
     }}>
       <Pressable
-        onPress={onPress}
+        onLongPress={onPress}
         style={({ pressed }) => ({
-          maxWidth: '78%',
-          backgroundColor: bg,
+          maxWidth: mine ? '78%' : '100%',
+          backgroundColor: bubbleBg,
           opacity: pressed ? 0.85 : 1,
-          paddingHorizontal: 14, paddingVertical: 9,
+          paddingHorizontal: mine ? 14 : 0, paddingVertical: mine ? 9 : 0,
           borderTopLeftRadius: 20, borderTopRightRadius: 20,
-          borderBottomLeftRadius: mine ? 20 : 6,
-          borderBottomRightRadius: mine ? 6 : 20,
-          borderWidth: unread ? 1.5 : 0,
+          borderBottomLeftRadius: mine ? 20 : 0,
+          borderBottomRightRadius: mine ? 6 : 0,
+          borderWidth: unread && mine ? 1.5 : 0,
           borderColor: unread ? (dark ? '#ffffff' : '#1a1f29') : 'transparent',
         })}
       >
@@ -83,19 +109,9 @@ export function MessengerBubble({ entry, dark, unread, onPress, daemonUrl, token
             fullUrl={`${daemonUrl.replace(/\/$/, '')}${a.url}?token=${encodeURIComponent(token)}`}
           />
         ))}
-        {entry.text ? (
-          <Text selectable style={{ color: fg, fontSize: 15, lineHeight: 20 }}>
-            {parseRichText(entry.text).map((p, i) => p.kind === 'link' ? (
-              <Text
-                key={i}
-                style={{ textDecorationLine: 'underline' }}
-                onPress={() => void Linking.openURL(p.href)}
-              >{p.label}</Text>
-            ) : <Text key={i}>{p.value}</Text>)}
-          </Text>
-        ) : null}
+        {entry.text ? <Markdown {...markdownProps}>{entry.text}</Markdown> : null}
         <Text style={{
-          color: fg, opacity: 0.55, fontSize: 10, marginTop: 3,
+          color: mine ? fg : sub, opacity: mine ? 0.55 : 1, fontSize: 10, marginTop: 3,
           textAlign: mine ? 'right' : 'left',
         }}>{fmtTs(entry.ts)}</Text>
       </Pressable>

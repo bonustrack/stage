@@ -1,6 +1,7 @@
 <script setup lang="ts">
-/** ChatGPT-dark-inspired bubble with inline attachment rendering. */
-import { parseRichText } from '../lib/rich-text';
+/** ChatGPT-dark-inspired messenger row: user gets a bubble (right), assistant is bubble-less (left). */
+
+import MarkdownIt from 'markdown-it';
 import type { HistoryEntry } from '../lib/types';
 
 interface Attachment { id: string; url: string; kind: string; mime: string; size: number; name?: string }
@@ -13,7 +14,16 @@ const attachments = computed<Attachment[]>(() => {
   const p = props.entry.payload as { attachments?: Attachment[] } | undefined;
   return Array.isArray(p?.attachments) ? p!.attachments : [];
 });
-const parts = computed(() => props.entry.text ? parseRichText(props.entry.text) : []);
+
+const md = new MarkdownIt({ linkify: true, breaks: true, html: false });
+const defaultLinkOpen = md.renderer.rules.link_open ?? ((tokens, idx, options, _, self) => self.renderToken(tokens, idx, options));
+md.renderer.rules.link_open = (tokens, idx, opts, env, self) => {
+  const t = tokens[idx];
+  t.attrSet('target', '_blank');
+  t.attrSet('rel', 'noopener');
+  return defaultLinkOpen(tokens, idx, opts, env, self);
+};
+const html = computed(() => props.entry.text ? md.render(props.entry.text) : '');
 
 function fullUrl(att: Attachment): string {
   return `${props.daemonUrl.replace(/\/$/, '')}${att.url}?token=${encodeURIComponent(props.token)}`;
@@ -34,10 +44,10 @@ function fmtSize(n: number): string {
 <template>
   <div class="flex" :class="mine ? 'justify-end' : 'justify-start'">
     <div
-      class="max-w-[78%] px-3.5 py-2 leading-snug text-[15px] rounded-2xl flex flex-col gap-1.5"
+      class="leading-snug text-[15px] flex flex-col gap-1.5 select-text break-words"
       :class="mine
-        ? 'bg-metro-fg-light dark:bg-white text-white dark:text-black rounded-br-md'
-        : 'bg-metro-hover-light dark:bg-[#2a2d33] text-metro-fg-light dark:text-metro-fg-dark rounded-bl-md'"
+        ? 'max-w-[78%] px-3.5 py-2 rounded-2xl rounded-br-md bg-metro-fg-light dark:bg-white text-white dark:text-black'
+        : 'w-full px-0 py-0 text-metro-fg-light dark:text-metro-fg-dark'"
     >
       <template v-for="att in attachments" :key="att.id">
         <img
@@ -70,22 +80,32 @@ function fmtSize(n: number): string {
           <span class="text-[11px] opacity-60">{{ fmtSize(att.size) }}</span>
         </a>
       </template>
-      <div v-if="parts.length" class="select-text break-words whitespace-pre-wrap">
-        <template v-for="(p, i) in parts" :key="i">
-          <a
-            v-if="p.kind === 'link'"
-            :href="p.href"
-            target="_blank"
-            rel="noopener"
-            class="underline text-current"
-          >{{ p.label }}</a>
-          <template v-else>{{ p.value }}</template>
-        </template>
-      </div>
+      <div v-if="html" class="messenger-md" v-html="html"></div>
       <div
-        class="text-[10px] opacity-60"
-        :class="mine ? 'text-right' : 'text-left'"
+        class="text-[10px]"
+        :class="mine ? 'text-right opacity-60' : 'text-left text-metro-sub-light dark:text-metro-sub-dark'"
       >{{ fmtTs(entry.ts) }}</div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.messenger-md :deep(p) { margin: 0; }
+.messenger-md :deep(p + p),
+.messenger-md :deep(p + ul),
+.messenger-md :deep(p + ol),
+.messenger-md :deep(p + pre),
+.messenger-md :deep(p + h1),
+.messenger-md :deep(p + h2),
+.messenger-md :deep(p + h3) { margin-top: 0.4em; }
+.messenger-md :deep(h1) { font-size: 1.25em; font-weight: 700; }
+.messenger-md :deep(h2) { font-size: 1.15em; font-weight: 700; }
+.messenger-md :deep(h3) { font-size: 1.05em; font-weight: 700; }
+.messenger-md :deep(a) { text-decoration: underline; color: currentColor; }
+.messenger-md :deep(code) { background: rgba(127,127,127,0.15); padding: 0 4px; border-radius: 3px; font-family: Menlo, ui-monospace, monospace; font-size: 0.95em; }
+.messenger-md :deep(pre) { background: rgba(127,127,127,0.15); padding: 8px; border-radius: 6px; overflow-x: auto; }
+.messenger-md :deep(pre code) { background: transparent; padding: 0; }
+.messenger-md :deep(ul) { padding-left: 1.4em; list-style: disc; }
+.messenger-md :deep(ol) { padding-left: 1.4em; list-style: decimal; }
+.messenger-md :deep(blockquote) { border-left: 3px solid rgba(127,127,127,0.3); padding-left: 0.6em; opacity: 0.85; }
+</style>

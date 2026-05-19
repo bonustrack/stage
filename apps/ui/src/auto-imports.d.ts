@@ -97,9 +97,6 @@ declare global {
   export type { Attachment } from './lib/messenger'
   import('./lib/messenger')
   // @ts-ignore
-  export type { TextPart, LinkPart, Part } from './lib/rich-text'
-  import('./lib/rich-text')
-  // @ts-ignore
   export type { HistoryEntry } from './lib/types'
   import('./lib/types')
   // @ts-ignore
@@ -153,7 +150,6 @@ declare module 'vue' {
     readonly onUpdated: UnwrapRef<typeof import('vue')['onUpdated']>
     readonly onWatcherCleanup: UnwrapRef<typeof import('vue')['onWatcherCleanup']>
     readonly openTail: UnwrapRef<typeof import('./lib/api')['openTail']>
-    readonly parseRichText: UnwrapRef<typeof import('./lib/rich-text')['parseRichText']>
     readonly provide: UnwrapRef<typeof import('vue')['provide']>
     readonly reactive: UnwrapRef<typeof import('vue')['reactive']>
     readonly readonly: UnwrapRef<typeof import('vue')['readonly']>
