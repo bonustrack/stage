@@ -22,6 +22,8 @@ const attachments = computed<Attachment[]>(() => {
   return Array.isArray(p?.attachments) ? p!.attachments : [];
 });
 
+const lightboxUrl = ref<string | null>(null);
+
 const md = new MarkdownIt({ linkify: true, breaks: true, html: false });
 const defaultLinkOpen = md.renderer.rules.link_open ?? ((tokens, idx, options, _, self) => self.renderToken(tokens, idx, options));
 md.renderer.rules.link_open = (tokens, idx, opts, env, self) => {
@@ -68,8 +70,9 @@ function fmtSize(n: number): string {
         <img
           v-if="att.kind === 'image'"
           :src="fullUrl(att)"
-          class="max-w-full max-h-[280px] rounded-lg object-cover"
+          class="max-w-full max-h-[280px] rounded-lg object-cover cursor-zoom-in"
           loading="lazy"
+          @click="lightboxUrl = fullUrl(att)"
         />
         <audio
           v-else-if="att.kind === 'audio'"
@@ -124,6 +127,20 @@ function fmtSize(n: number): string {
       <button type="button" class="text-metro-sub-light dark:text-metro-sub-dark text-sm px-1"
         @click="pickerOpen = false">✕</button>
     </div>
+    <Teleport to="body">
+      <div
+        v-if="lightboxUrl"
+        class="fixed inset-0 z-50 bg-black/95 flex items-center justify-center cursor-zoom-out"
+        @click="lightboxUrl = null"
+      >
+        <img :src="lightboxUrl" class="max-w-[95vw] max-h-[95vh] object-contain" @click.stop />
+        <button
+          type="button"
+          class="absolute top-4 right-4 text-white text-2xl w-10 h-10 rounded-full bg-black/40 flex items-center justify-center"
+          @click="lightboxUrl = null"
+        >✕</button>
+      </div>
+    </Teleport>
   </div>
 </template>
 
