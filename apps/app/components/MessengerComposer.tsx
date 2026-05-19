@@ -145,7 +145,7 @@ export function MessengerComposer({ daemonUrl, token, dark }: Props): React.Reac
       ) : null}
       {err ? <Text style={{ color: '#d96868', fontSize: 12, paddingHorizontal: 14, paddingBottom: 4 }}>{err}</Text> : null}
       <View style={{
-        backgroundColor: inputBg, borderRadius: 24, padding: 10,
+        backgroundColor: inputBg, borderRadius: 14, padding: 10,
         borderWidth: 1, borderColor: border,
       }}>
         <TextInput
