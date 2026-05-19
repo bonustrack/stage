@@ -95,7 +95,15 @@ Webhooks stay in core because they're shared HTTP infra (one Cloudflare tunnel r
 
 ## Messenger (builtin source)
 
-`POST /api/messenger/send` with `{"text":"…","as":"user"|"agent"}` emits a regular envelope on the messenger line. Used by the mobile/web companion app for direct chat with the agent. `POST /api/messenger/register` stores Expo push tokens so agent replies push to the device.
+Direct chat between the agent and the device. Five endpoints — all under the same bearer-token guard as `/api/state`:
+
+- `POST /api/messenger/send {text?, attachments?, as?}` — emit an envelope on `metro://messenger/owner`. Either text or attachments required.
+- `POST /api/messenger/react {messageId, emoji, as?}` — emit a slim `payload.reactTo` envelope. If the sender already has an active reaction with this emoji on this target, emits `{removed: true}` instead — reactions are toggleable.
+- `POST /api/messenger/upload` — raw binary upload (≤ 25 MiB, body = file bytes, `Content-Type` + optional `X-Filename` headers). Returns `{id, url, kind, mime, size, name?}`; files land in `$METRO_STATE_DIR/messenger-uploads/`.
+- `GET /api/messenger/files/<name>` — stream a stored upload. Accepts `Authorization: Bearer …` header *or* `?token=…` query (for `<img>` / `<audio>` tags). Content-Type derived from extension.
+- `POST /api/messenger/register {pushToken}` — store an Expo push token so agent replies push to the device.
+
+The mobile + web companion apps use these for chat with the agent. The envelope is the standard slim shape — no `kind` / `emoji` fields, direction derived from `Line.isLocal(from)`.
 
 ## Crashes
 
