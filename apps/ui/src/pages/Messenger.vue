@@ -4,6 +4,7 @@
 import type { Config } from '../lib/config';
 
 const MESSENGER_LINE = 'metro://messenger/owner';
+const MESSENGER_USER = 'metro://messenger/user/owner';
 
 const cfg = ref<Config>(loadConfig());
 const chat = ref<string | undefined>(MESSENGER_LINE);
@@ -12,6 +13,13 @@ const sending = ref(false);
 const err = ref<string | null>(null);
 
 const tail = useTail(cfg, chat);
+
+const bubbles = computed(() => [...tail.events.value].reverse());
+
+function fmtTs(ts: string): string {
+  try { return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }); }
+  catch { return ts.slice(11, 16); }
+}
 
 async function sendMessenger(): Promise<void> {
   const body = text.value.trim();
@@ -41,15 +49,33 @@ onBeforeUnmount(() => tail.stop());
 </script>
 
 <template>
-  <div class="flex flex-col min-h-screen pb-[64px]">
+  <div class="flex flex-col min-h-screen pb-[124px]">
     <AppHeader
       :status="tail.status.value"
       :errorMsg="tail.errMsg.value"
       :count="tail.events.value.length"
     />
-    <div class="flex-1">
-      <EventRow v-for="e in [...tail.events.value].reverse()" :key="e.id" :entry="e" />
-      <div v-if="tail.events.value.length === 0" class="p-8 text-center text-metro-sub-light dark:text-metro-sub-dark">
+    <div class="flex-1 px-3 py-3 flex flex-col gap-1.5">
+      <div
+        v-for="e in bubbles"
+        :key="e.id"
+        class="flex"
+        :class="e.from === MESSENGER_USER ? 'justify-end' : 'justify-start'"
+      >
+        <div
+          class="max-w-[78%] px-3.5 py-2 leading-snug text-[15px] rounded-2xl"
+          :class="e.from === MESSENGER_USER
+            ? 'bg-metro-fg-light dark:bg-white text-white dark:text-black rounded-br-md'
+            : 'bg-metro-hover-light dark:bg-[#2a2d33] text-metro-fg-light dark:text-metro-fg-dark rounded-bl-md'"
+        >
+          <div>{{ e.text ?? '(no text)' }}</div>
+          <div
+            class="text-[10px] opacity-60 mt-0.5"
+            :class="e.from === MESSENGER_USER ? 'text-right' : 'text-left'"
+          >{{ fmtTs(e.ts) }}</div>
+        </div>
+      </div>
+      <div v-if="bubbles.length === 0" class="p-8 text-center text-metro-sub-light dark:text-metro-sub-dark">
         Type a message below to start chatting.
       </div>
     </div>

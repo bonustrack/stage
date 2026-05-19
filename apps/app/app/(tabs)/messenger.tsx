@@ -6,13 +6,14 @@ import {
   useColorScheme,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { EventRow } from '../../components/EventRow';
+import { MessengerBubble } from '../../components/MessengerBubble';
 import { loadConfig, isConfigured, type Config } from '../../lib/config';
 import { getMessengerLastRead, markMessengerRead } from '../../lib/messenger-unread';
 import { registerForPush } from '../../lib/push';
 import { useTail } from '../../lib/sse';
 
 const MESSENGER_LINE = 'metro://messenger/owner';
+const MESSENGER_USER = 'metro://messenger/user/owner';
 
 async function postMessenger(daemonUrl: string, token: string, text: string):
   Promise<{ ok: true } | { ok: false; error: string }>
@@ -102,10 +103,12 @@ export default function Messenger(): React.ReactElement {
         data={events}
         inverted
         keyExtractor={e => e.id}
+        contentContainerStyle={{ paddingVertical: 6 }}
         renderItem={({ item }) => (
-          <EventRow
+          <MessengerBubble
             entry={item}
-            unread={item.from !== 'metro://messenger/user/owner' && item.station === 'messenger' && item.ts > unreadCutoff}
+            dark={dark}
+            unread={item.from !== MESSENGER_USER && item.station === 'messenger' && item.ts > unreadCutoff}
             onPress={() => router.push({ pathname: '/event/[id]', params: { id: item.id, data: JSON.stringify(item) } })}
           />
         )}
