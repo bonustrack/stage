@@ -136,11 +136,11 @@ export function MessengerBubble({
             <Markdown {...markdownProps}>{entry.text}</Markdown>
           </View>
         ) : null}
-        {transcript ? (
-          <Text style={{ color: mine ? fg : sub, opacity: 0.75, fontSize: 13, fontStyle: 'italic', marginTop: atts.length ? 4 : 0 }}>
-            “{transcript}”
-          </Text>
-        ) : null}
+        {transcript
+          ? <Text style={{ color: mine ? fg : sub, opacity: 0.75, fontSize: 13, fontStyle: 'italic', marginTop: atts.length ? 4 : 0 }}>“{transcript}”</Text>
+          : atts.some(a => a.kind === 'audio') && Date.now() - new Date(entry.ts).getTime() < 30_000
+            ? <Text style={{ color: sub, opacity: 0.6, fontSize: 12, fontStyle: 'italic', marginTop: 4 }}>transcribing…</Text>
+            : null}
         <View style={{
           alignSelf: 'stretch',
           flexDirection: 'row', alignItems: 'center',

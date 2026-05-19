@@ -35,6 +35,8 @@ md.renderer.rules.link_open = (tokens, idx, opts, env, self) => {
   return defaultLinkOpen(tokens, idx, opts, env, self);
 };
 const html = computed(() => props.entry.text ? md.render(props.entry.text) : '');
+const hasAudioAttachment = computed(() => attachments.value.some(a => a.kind === 'audio'));
+const transcribingFresh = computed(() => Date.now() - new Date(props.entry.ts).getTime() < 30_000);
 
 function fullUrl(att: Attachment): string {
   return `${props.daemonUrl.replace(/\/$/, '')}${att.url}?token=${encodeURIComponent(props.token)}`;
@@ -109,6 +111,8 @@ function fmtSize(n: number): string {
       </template>
       <div v-if="html" class="messenger-md" v-html="html"></div>
       <div v-if="props.transcript" class="text-[13px] italic opacity-75">“{{ props.transcript }}”</div>
+      <div v-else-if="hasAudioAttachment && transcribingFresh"
+        class="text-[12px] italic opacity-60">transcribing…</div>
       <div
         class="text-[10px]"
         :class="mine ? 'text-right opacity-60' : 'text-left text-metro-sub-light dark:text-metro-sub-dark'"
