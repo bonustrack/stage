@@ -22,18 +22,25 @@ export function kindFromMime(mime: string): 'image' | 'audio' | 'video' | 'file'
   return 'file';
 }
 
+const MIME_TO_EXT: Record<string, string> = {
+  'image/png': '.png', 'image/jpeg': '.jpg', 'image/jpg': '.jpg',
+  'image/webp': '.webp', 'image/gif': '.gif', 'image/heic': '.heic',
+  'audio/mp4': '.m4a', 'audio/m4a': '.m4a', 'audio/aac': '.aac',
+  'audio/mpeg': '.mp3', 'audio/ogg': '.ogg', 'audio/webm': '.webm', 'audio/wav': '.wav',
+  'video/mp4': '.mp4', 'video/webm': '.webm', 'video/quicktime': '.mov',
+  'application/pdf': '.pdf', 'application/zip': '.zip',
+  'text/plain': '.txt', 'text/markdown': '.md',
+};
+
 /** mime → file extension. Best-effort, falls back to '.bin'. */
 function extFromMime(mime: string): string {
-  const map: Record<string, string> = {
-    'image/png': '.png', 'image/jpeg': '.jpg', 'image/jpg': '.jpg',
-    'image/webp': '.webp', 'image/gif': '.gif', 'image/heic': '.heic',
-    'audio/mp4': '.m4a', 'audio/m4a': '.m4a', 'audio/aac': '.aac',
-    'audio/mpeg': '.mp3', 'audio/ogg': '.ogg', 'audio/webm': '.webm', 'audio/wav': '.wav',
-    'video/mp4': '.mp4', 'video/webm': '.webm', 'video/quicktime': '.mov',
-    'application/pdf': '.pdf', 'application/zip': '.zip',
-    'text/plain': '.txt', 'text/markdown': '.md',
-  };
-  return map[mime.toLowerCase().split(';')[0]] ?? '.bin';
+  return MIME_TO_EXT[mime.toLowerCase().split(';')[0]] ?? '.bin';
+}
+
+/** ext → mime, used when serving uploads so browsers / image tags interpret them correctly. */
+function mimeFromExt(ext: string): string {
+  const reverse = Object.entries(MIME_TO_EXT).find(([, e]) => e === ext.toLowerCase());
+  return reverse ? reverse[0] : 'application/octet-stream';
 }
 
 /** Raw binary upload: body = file bytes, headers `Content-Type` and `X-Filename` (optional). */
@@ -73,7 +80,10 @@ export function handleMessengerFile(
   const path = join(UPLOADS_DIR, filename);
   if (!existsSync(path)) return send(res, req, 404, { error: 'not found' });
   const stat = statSync(path);
+  const dot = filename.lastIndexOf('.');
+  const ext = dot >= 0 ? filename.slice(dot) : '';
   res.writeHead(200, {
+    'content-type': mimeFromExt(ext),
     'content-length': stat.size.toString(),
     'cache-control': 'private, max-age=31536000',
   });

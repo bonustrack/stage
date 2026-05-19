@@ -459,3 +459,100 @@ describe('POST /api/call/<train>/<action>', () => {
     expect(r.status).toBe(500);
   });
 });
+
+describe('messenger endpoints', () => {
+  test('POST /api/messenger/send writes a history entry', async () => {
+    const stateDir = freshStateDir();
+    server = await startServer({ METRO_STATE_DIR: stateDir, METRO_MONITOR_TOKEN: TOKEN });
+    const r = await fetch(`${server.url}/api/messenger/send`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${TOKEN}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ text: 'hello', as: 'user' }),
+    });
+    expect(r.status).toBe(200);
+    const j = await r.json() as { id: string; line: string };
+    expect(j.id).toMatch(/^msg_/);
+    expect(j.line).toBe('metro://messenger/owner');
+  });
+
+  test('POST /api/messenger/send 400 without text or attachments', async () => {
+    const stateDir = freshStateDir();
+    server = await startServer({ METRO_STATE_DIR: stateDir, METRO_MONITOR_TOKEN: TOKEN });
+    const r = await fetch(`${server.url}/api/messenger/send`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${TOKEN}`, 'content-type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    expect(r.status).toBe(400);
+  });
+
+  test('POST /api/messenger/react emits a payload.reactTo entry', async () => {
+    const stateDir = freshStateDir();
+    server = await startServer({ METRO_STATE_DIR: stateDir, METRO_MONITOR_TOKEN: TOKEN });
+    const r = await fetch(`${server.url}/api/messenger/react`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${TOKEN}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ messageId: 'msg_xyz', emoji: '👍' }),
+    });
+    expect(r.status).toBe(200);
+    const j = await r.json() as { id: string };
+    expect(j.id).toMatch(/^msg_/);
+  });
+
+  test('POST /api/messenger/react 400 without messageId / emoji', async () => {
+    const stateDir = freshStateDir();
+    server = await startServer({ METRO_STATE_DIR: stateDir, METRO_MONITOR_TOKEN: TOKEN });
+    const r = await fetch(`${server.url}/api/messenger/react`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${TOKEN}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ emoji: '👍' }),
+    });
+    expect(r.status).toBe(400);
+  });
+
+  test('POST /api/messenger/upload + GET /files/<id> round-trip', async () => {
+    const stateDir = freshStateDir();
+    server = await startServer({ METRO_STATE_DIR: stateDir, METRO_MONITOR_TOKEN: TOKEN });
+    const payload = Buffer.from('hello-from-test');
+    const up = await fetch(`${server.url}/api/messenger/upload`, {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${TOKEN}`,
+        'content-type': 'text/plain',
+        'x-filename': 'hi.txt',
+      },
+      body: payload,
+    });
+    expect(up.status).toBe(200);
+    const meta = await up.json() as { id: string; url: string; mime: string; size: number };
+    expect(meta.size).toBe(payload.length);
+    expect(meta.url).toMatch(/^\/api\/messenger\/files\//);
+    /** Bearer header path. */
+    const dl = await fetch(`${server.url}${meta.url}`, {
+      headers: { authorization: `Bearer ${TOKEN}` },
+    });
+    expect(dl.status).toBe(200);
+    expect(await dl.text()).toBe(payload.toString());
+    /** Query-token path (for <img> / <audio>). */
+    const dl2 = await fetch(`${server.url}${meta.url}?token=${TOKEN}`);
+    expect(dl2.status).toBe(200);
+  });
+
+  test('GET /api/messenger/files/.. 400 for traversal attempts', async () => {
+    const stateDir = freshStateDir();
+    server = await startServer({ METRO_STATE_DIR: stateDir, METRO_MONITOR_TOKEN: TOKEN });
+    const r = await fetch(`${server.url}/api/messenger/files/..${encodeURIComponent('/')}etc${encodeURIComponent('/')}passwd`, {
+      headers: { authorization: `Bearer ${TOKEN}` },
+    });
+    expect([400, 404]).toContain(r.status);
+  });
+
+  test('GET /api/messenger/files/<missing> → 404', async () => {
+    const stateDir = freshStateDir();
+    server = await startServer({ METRO_STATE_DIR: stateDir, METRO_MONITOR_TOKEN: TOKEN });
+    const r = await fetch(`${server.url}/api/messenger/files/msg_doesnotexist.bin`, {
+      headers: { authorization: `Bearer ${TOKEN}` },
+    });
+    expect(r.status).toBe(404);
+  });
+});

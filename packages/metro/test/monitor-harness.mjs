@@ -7,10 +7,21 @@
  */
 
 import { createServer } from 'node:http';
+import { appendFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { handleMonitorRequest } from '../src/cli/tail.ts';
 
+const HISTORY_PATH = process.env.METRO_STATE_DIR
+  ? join(process.env.METRO_STATE_DIR, 'history.jsonl')
+  : null;
+
+/** Stub emit so /api/messenger/{send,react} can complete during tests. */
+function emit(entry) {
+  if (HISTORY_PATH) appendFileSync(HISTORY_PATH, JSON.stringify(entry) + '\n');
+}
+
 const server = createServer((req, res) => {
-  if (!handleMonitorRequest(req, res)) {
+  if (!handleMonitorRequest(req, res, emit)) {
     res.writeHead(404).end();
   }
 });
