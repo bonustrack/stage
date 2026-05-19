@@ -2,7 +2,9 @@
 /** Messenger — direct chat with the assistant, with image/audio/file attachments. */
 
 import type { Config } from '../lib/config';
-import { sendMessenger, uploadAttachment, type Attachment } from '../lib/messenger';
+import {
+  isReaction, reactMessenger, reactionsByMessage, sendMessenger, uploadAttachment, type Attachment,
+} from '../lib/messenger';
 
 const MESSENGER_LINE = 'metro://messenger/owner';
 
@@ -16,7 +18,13 @@ const fileInput = ref<HTMLInputElement | null>(null);
 const imageInput = ref<HTMLInputElement | null>(null);
 
 const tail = useTail(cfg, chat);
-const bubbles = computed(() => [...tail.events.value].reverse());
+const bubbles = computed(() => [...tail.events.value].reverse().filter(e => !isReaction(e)));
+const reactions = computed(() => reactionsByMessage(tail.events.value));
+
+function onReact(messageId: string, emoji: string): void {
+  void reactMessenger(cfg.value.daemonUrl, cfg.value.token, messageId, emoji)
+    .catch(e => { err.value = (e as Error).message; });
+}
 
 /** MediaRecorder state for press-and-hold voice notes. */
 const recording = ref(false);
@@ -92,6 +100,8 @@ onBeforeUnmount(() => { tail.stop(); stopRecording(); });
         :entry="e"
         :daemonUrl="cfg.daemonUrl"
         :token="cfg.token"
+        :reactions="reactions.get(e.id)"
+        @react="(emoji) => onReact(e.id, emoji)"
       />
       <div v-if="bubbles.length === 0" class="p-8 text-center text-metro-sub-light dark:text-metro-sub-dark">
         Type a message below to start chatting.

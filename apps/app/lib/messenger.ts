@@ -1,19 +1,22 @@
-/** Upload + send helpers for the messenger station. */
+/** Upload + send helpers for the messenger station. Mirrors apps/ui/src/lib/messenger.ts. */
 
 export interface Attachment {
   id: string; url: string; kind: string; mime: string; size: number; name?: string;
 }
 
+/** RN-compatible: file:// URI → fetch → blob → POST raw binary. */
 export async function uploadAttachment(
-  daemonUrl: string, token: string, file: Blob, name?: string,
+  daemonUrl: string, token: string, uri: string, mime: string, name?: string,
 ): Promise<Attachment> {
+  const fileRes = await fetch(uri);
+  const blob = await fileRes.blob();
   const headers: Record<string, string> = {
     Authorization: `Bearer ${token}`,
-    'Content-Type': file.type || 'application/octet-stream',
+    'Content-Type': mime || 'application/octet-stream',
   };
   if (name) headers['X-Filename'] = name;
   const res = await fetch(`${daemonUrl.replace(/\/$/, '')}/api/messenger/upload`, {
-    method: 'POST', headers, body: file,
+    method: 'POST', headers, body: blob,
   });
   if (!res.ok) {
     const j = (await res.json().catch(() => ({}))) as { error?: string };
@@ -50,7 +53,6 @@ export async function reactMessenger(
   }
 }
 
-/** Group reaction events (payload.reactTo) by target msg id and emoji. */
 export interface HistoryLike { id: string; from: string; payload?: unknown }
 export function reactionsByMessage(events: HistoryLike[]): Map<string, Map<string, number>> {
   const out = new Map<string, Map<string, number>>();

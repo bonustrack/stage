@@ -6,7 +6,14 @@ import type { HistoryEntry } from '../lib/types';
 
 interface Attachment { id: string; url: string; kind: string; mime: string; size: number; name?: string }
 
-const props = defineProps<{ entry: HistoryEntry; daemonUrl: string; token: string }>();
+const REACT_PRESETS = ['👍', '❤️', '😂', '😮', '🔥', '🎉'];
+
+const props = defineProps<{
+  entry: HistoryEntry; daemonUrl: string; token: string;
+  reactions?: Map<string, number>;
+}>();
+const emit = defineEmits<{ (e: 'react', emoji: string): void }>();
+const pickerOpen = ref(false);
 
 const MESSENGER_USER = 'metro://messenger/user/owner';
 const mine = computed(() => props.entry.from === MESSENGER_USER);
@@ -42,13 +49,21 @@ function fmtSize(n: number): string {
 </script>
 
 <template>
-  <div class="flex" :class="mine ? 'justify-end' : 'justify-start'">
+  <div class="flex flex-col" :class="mine ? 'items-end' : 'items-start'">
     <div
-      class="leading-snug text-[15px] flex flex-col gap-1.5 select-text break-words"
+      class="leading-snug text-[15px] flex flex-col gap-1.5 select-text break-words group/bubble relative"
       :class="mine
         ? 'max-w-[78%] px-3.5 py-2 rounded-2xl rounded-br-md bg-metro-fg-light dark:bg-white text-white dark:text-black'
         : 'w-full px-0 py-0 text-metro-fg-light dark:text-metro-fg-dark'"
     >
+      <button
+        type="button"
+        title="Add reaction"
+        class="absolute -top-3 right-1 w-7 h-7 rounded-full opacity-0 group-hover/bubble:opacity-100 transition
+          bg-metro-surface-light dark:bg-metro-surface-dark border border-metro-border-light dark:border-metro-border-dark
+          text-metro-fg-light dark:text-metro-fg-dark text-sm shadow"
+        @click.stop="pickerOpen = !pickerOpen"
+      >☺</button>
       <template v-for="att in attachments" :key="att.id">
         <img
           v-if="att.kind === 'image'"
@@ -85,6 +100,29 @@ function fmtSize(n: number): string {
         class="text-[10px]"
         :class="mine ? 'text-right opacity-60' : 'text-left text-metro-sub-light dark:text-metro-sub-dark'"
       >{{ fmtTs(entry.ts) }}</div>
+    </div>
+    <div v-if="reactions && reactions.size" class="flex gap-1 mt-1">
+      <span
+        v-for="[emoji, count] in [...reactions.entries()]"
+        :key="emoji"
+        class="flex items-center gap-1 px-2 py-0.5 rounded-full text-[12px]
+          bg-metro-hover-light dark:bg-metro-hover-dark text-metro-fg-light dark:text-metro-fg-dark"
+      >
+        <span>{{ emoji }}</span>
+        <span class="text-metro-sub-light dark:text-metro-sub-dark text-[11px]">{{ count }}</span>
+      </span>
+    </div>
+    <div v-if="pickerOpen" class="flex gap-2 mt-1 px-2 py-1 rounded-full shadow
+      bg-metro-surface-light dark:bg-metro-surface-dark border border-metro-border-light dark:border-metro-border-dark">
+      <button
+        v-for="e in REACT_PRESETS"
+        :key="e"
+        type="button"
+        class="text-lg hover:scale-125 transition-transform"
+        @click="emit('react', e); pickerOpen = false"
+      >{{ e }}</button>
+      <button type="button" class="text-metro-sub-light dark:text-metro-sub-dark text-sm px-1"
+        @click="pickerOpen = false">✕</button>
     </div>
   </div>
 </template>

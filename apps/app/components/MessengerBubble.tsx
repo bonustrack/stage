@@ -1,10 +1,12 @@
 /** ChatGPT-dark-style messenger row: user gets a bubble (right), assistant is bubble-less (left). */
 
+import { useState } from 'react';
 import { Image, Linking, Pressable, Text, View } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import type { HistoryEntry } from '../lib/types';
 
 const MESSENGER_USER = 'metro://messenger/user/owner';
+const REACT_PRESETS = ['👍', '❤️', '😂', '😮', '🔥', '🎉'];
 
 interface Attachment { id: string; url: string; kind: string; mime: string; size: number; name?: string }
 
@@ -66,8 +68,10 @@ function markdownStyles(fg: string, dark: boolean): Record<string, object> {
   };
 }
 
-export function MessengerBubble({ entry, dark, unread, onPress, daemonUrl, token }: {
+export function MessengerBubble({ entry, dark, unread, onPress, onReact, reactions, daemonUrl, token }: {
   entry: HistoryEntry; dark: boolean; unread: boolean; onPress: () => void;
+  onReact?: (emoji: string) => void;
+  reactions?: Map<string, number>;
   daemonUrl: string; token: string;
 }): React.ReactElement {
   const mine = entry.from === MESSENGER_USER;
@@ -77,18 +81,21 @@ export function MessengerBubble({ entry, dark, unread, onPress, daemonUrl, token
     ? (dark ? '#000000' : '#ffffff')
     : (dark ? '#e8ecf2' : '#1a1f29');
   const sub = dark ? '#8a94a6' : '#5a6477';
+  const pillBg = dark ? '#1d2230' : '#eef1f7';
+  const [pickerOpen, setPickerOpen] = useState(false);
   const markdownProps = {
     onLinkPress: (url: string): boolean => { void Linking.openURL(url); return false; },
     style: markdownStyles(fg, dark),
   };
   return (
     <View style={{
-      flexDirection: 'row',
-      justifyContent: mine ? 'flex-end' : 'flex-start',
+      flexDirection: 'column',
+      alignItems: mine ? 'flex-end' : 'flex-start',
       paddingHorizontal: 12, paddingVertical: mine ? 3 : 6,
     }}>
       <Pressable
-        onLongPress={onPress}
+        onPress={onPress}
+        onLongPress={() => onReact && setPickerOpen(true)}
         style={({ pressed }) => ({
           maxWidth: mine ? '78%' : '100%',
           backgroundColor: bubbleBg,
@@ -115,6 +122,36 @@ export function MessengerBubble({ entry, dark, unread, onPress, daemonUrl, token
           textAlign: mine ? 'right' : 'left',
         }}>{fmtTs(entry.ts)}</Text>
       </Pressable>
+      {reactions && reactions.size > 0 ? (
+        <View style={{ flexDirection: 'row', gap: 4, marginTop: 4 }}>
+          {[...reactions.entries()].map(([emoji, count]) => (
+            <View key={emoji} style={{
+              flexDirection: 'row', alignItems: 'center', gap: 4,
+              paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, backgroundColor: pillBg,
+            }}>
+              <Text style={{ fontSize: 13 }}>{emoji}</Text>
+              <Text style={{ fontSize: 11, color: sub }}>{count}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
+      {pickerOpen ? (
+        <View style={{
+          flexDirection: 'row', gap: 8, marginTop: 6, paddingHorizontal: 10, paddingVertical: 6,
+          borderRadius: 999, backgroundColor: dark ? '#1d2230' : '#ffffff',
+          shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 8, elevation: 4,
+        }}>
+          {REACT_PRESETS.map(e => (
+            <Pressable
+              key={e}
+              onPress={() => { onReact?.(e); setPickerOpen(false); }}
+            ><Text style={{ fontSize: 22 }}>{e}</Text></Pressable>
+          ))}
+          <Pressable onPress={() => setPickerOpen(false)}>
+            <Text style={{ fontSize: 16, color: sub, paddingHorizontal: 4 }}>✕</Text>
+          </Pressable>
+        </View>
+      ) : null}
     </View>
   );
 }

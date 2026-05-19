@@ -1,43 +1,17 @@
-/** Messenger endpoints: send + register + upload/serve, plus Expo push delivery. */
+/** Messenger endpoints: send + react + register, plus Expo push delivery. Upload/serve in messenger-uploads.ts. */
 
-import { createReadStream, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { extname, join } from 'node:path';
-import { pipeline } from 'node:stream/promises';
-import { createWriteStream } from 'node:fs';
+import { join } from 'node:path';
 import { mintId, userSelf, type HistoryEntry } from '../history.js';
 import { Line } from '../lines.js';
 import { errMsg, log } from '../log.js';
 import { STATE_DIR } from '../paths.js';
+import { handleMessengerFile, handleMessengerUpload } from './messenger-uploads.js';
 
 const MESSENGER_LINE = 'metro://messenger/owner' as Line;
 const MESSENGER_USER = 'metro://messenger/user/owner' as Line;
 const PUSH_TOKENS_FILE = join(STATE_DIR, 'push-tokens.json');
-const UPLOADS_DIR = join(STATE_DIR, 'messenger-uploads');
-const UPLOAD_MAX = 25 * 1024 * 1024;
-mkdirSync(UPLOADS_DIR, { recursive: true });
-
-/** Map MIME prefix → attachment kind. Anything we can't render gets the generic "file" treatment. */
-function kindFromMime(mime: string): 'image' | 'audio' | 'video' | 'file' {
-  if (mime.startsWith('image/')) return 'image';
-  if (mime.startsWith('audio/')) return 'audio';
-  if (mime.startsWith('video/')) return 'video';
-  return 'file';
-}
-
-/** mime → file extension. Best-effort, falls back to '.bin'. */
-function extFromMime(mime: string): string {
-  const map: Record<string, string> = {
-    'image/png': '.png', 'image/jpeg': '.jpg', 'image/jpg': '.jpg',
-    'image/webp': '.webp', 'image/gif': '.gif', 'image/heic': '.heic',
-    'audio/mp4': '.m4a', 'audio/m4a': '.m4a', 'audio/aac': '.aac',
-    'audio/mpeg': '.mp3', 'audio/ogg': '.ogg', 'audio/webm': '.webm', 'audio/wav': '.wav',
-    'video/mp4': '.mp4', 'video/webm': '.webm', 'video/quicktime': '.mov',
-    'application/pdf': '.pdf', 'application/zip': '.zip',
-    'text/plain': '.txt', 'text/markdown': '.md',
-  };
-  return map[mime.toLowerCase().split(';')[0]] ?? '.bin';
-}
 
 function readPushTokens(): string[] {
   try { return existsSync(PUSH_TOKENS_FILE) ? JSON.parse(readFileSync(PUSH_TOKENS_FILE, 'utf8')) as string[] : []; }
@@ -93,6 +67,10 @@ export function routeMessenger(
     if (!emit) { send(res, req, 500, { error: 'emit not wired' }); return true; }
     return guard(() => handleMessengerSend(req, res, emit, send), 'messenger-send', req.method === 'POST');
   }
+  if (path === '/api/messenger/react') {
+    if (!emit) { send(res, req, 500, { error: 'emit not wired' }); return true; }
+    return guard(() => handleMessengerReact(req, res, emit, send), 'messenger-react', req.method === 'POST');
+  }
   if (path === '/api/messenger/register') {
     return guard(() => handleMessengerRegister(req, res, send), 'messenger-register', req.method === 'POST');
   }
@@ -137,51 +115,28 @@ export async function handleMessengerSend(
   send(res, req, 200, { id: entry.id, line: entry.line });
 }
 
-/** Raw binary upload: body = file bytes, headers `Content-Type` and `X-Filename` (optional). */
-export async function handleMessengerUpload(
-  req: IncomingMessage, res: ServerResponse, send: Send,
+/** Emit a reaction event: payload.reactTo + payload.emoji, no text. */
+export async function handleMessengerReact(
+  req: IncomingMessage, res: ServerResponse, emit: Emit, send: Send,
 ): Promise<void> {
-  const mime = (req.headers['content-type'] ?? 'application/octet-stream').toString().split(';')[0].trim();
-  const declared = Number(req.headers['content-length'] ?? '0');
-  if (declared > UPLOAD_MAX) return send(res, req, 413, { error: `upload exceeds ${UPLOAD_MAX} bytes` });
-  const name = (req.headers['x-filename'] as string | undefined)?.toString().slice(0, 256);
-  const id = mintId();
-  const ext = name ? extname(name) || extFromMime(mime) : extFromMime(mime);
-  const filename = `${id}${ext}`;
-  const dest = join(UPLOADS_DIR, filename);
-  let total = 0;
-  const out = createWriteStream(dest);
-  req.on('data', (chunk: Buffer) => {
-    total += chunk.length;
-    if (total > UPLOAD_MAX) { req.destroy(new Error('upload too large')); out.destroy(); }
-  });
-  try {
-    await pipeline(req, out);
-  } catch (err) {
-    try { send(res, req, 413, { error: errMsg(err) }); } catch { /* ignore */ }
-    return;
-  }
-  /** Path-only URL; the client adds host + token. Stable, host-independent across tunnels. */
-  const url = `/api/messenger/files/${filename}`;
-  send(res, req, 200, { id, url, kind: kindFromMime(mime), mime, size: total, name });
-}
-
-/** GET /api/messenger/files/:filename — stream a previously uploaded file back. */
-export function handleMessengerFile(
-  req: IncomingMessage, res: ServerResponse, filename: string, send: Send,
-): void {
-  /** Guard path traversal — only basenames allowed. */
-  if (filename.includes('/') || filename.includes('..') || !filename) {
-    return send(res, req, 400, { error: 'bad filename' });
-  }
-  const path = join(UPLOADS_DIR, filename);
-  if (!existsSync(path)) return send(res, req, 404, { error: 'not found' });
-  const stat = statSync(path);
-  res.writeHead(200, {
-    'content-length': stat.size.toString(),
-    'cache-control': 'private, max-age=31536000',
-  });
-  createReadStream(path).pipe(res);
+  const body = await readJsonBody<{ messageId?: string; emoji?: string; as?: string }>(req);
+  if ('__error' in body) return send(res, req, 400, { error: body.__error });
+  const messageId = (body.messageId ?? '').trim();
+  const emoji = (body.emoji ?? '').trim();
+  if (!messageId || !emoji) return send(res, req, 400, { error: 'messageId + emoji required' });
+  const fromAgent = body.as === 'agent';
+  const agent = userSelf();
+  const entry: HistoryEntry = {
+    id: mintId(),
+    ts: new Date().toISOString(),
+    station: 'messenger',
+    line: MESSENGER_LINE,
+    from: fromAgent ? agent : MESSENGER_USER,
+    to: fromAgent ? MESSENGER_USER : agent,
+    payload: { reactTo: messageId, emoji },
+  };
+  emit(entry);
+  send(res, req, 200, { id: entry.id });
 }
 
 export async function handleMessengerRegister(

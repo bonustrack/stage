@@ -22,6 +22,7 @@ declare global {
   const inject: typeof import('vue').inject
   const isConfigured: typeof import('./lib/config').isConfigured
   const isProxy: typeof import('vue').isProxy
+  const isReaction: typeof import('./lib/messenger').isReaction
   const isReactive: typeof import('vue').isReactive
   const isReadonly: typeof import('vue').isReadonly
   const isRef: typeof import('vue').isRef
@@ -49,6 +50,8 @@ declare global {
   const openTail: typeof import('./lib/api').openTail
   const parseRichText: typeof import('./lib/rich-text').parseRichText
   const provide: typeof import('vue').provide
+  const reactMessenger: typeof import('./lib/messenger').reactMessenger
+  const reactionsByMessage: typeof import('./lib/messenger').reactionsByMessage
   const reactive: typeof import('vue').reactive
   const readonly: typeof import('vue').readonly
   const ref: typeof import('vue').ref
@@ -94,7 +97,7 @@ declare global {
   export type { Config } from './lib/config'
   import('./lib/config')
   // @ts-ignore
-  export type { Attachment } from './lib/messenger'
+  export type { Attachment, HistoryLike } from './lib/messenger'
   import('./lib/messenger')
   // @ts-ignore
   export type { HistoryEntry } from './lib/types'
@@ -125,6 +128,7 @@ declare module 'vue' {
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
     readonly isConfigured: UnwrapRef<typeof import('./lib/config')['isConfigured']>
     readonly isProxy: UnwrapRef<typeof import('vue')['isProxy']>
+    readonly isReaction: UnwrapRef<typeof import('./lib/messenger')['isReaction']>
     readonly isReactive: UnwrapRef<typeof import('vue')['isReactive']>
     readonly isReadonly: UnwrapRef<typeof import('vue')['isReadonly']>
     readonly isRef: UnwrapRef<typeof import('vue')['isRef']>
@@ -151,6 +155,8 @@ declare module 'vue' {
     readonly onWatcherCleanup: UnwrapRef<typeof import('vue')['onWatcherCleanup']>
     readonly openTail: UnwrapRef<typeof import('./lib/api')['openTail']>
     readonly provide: UnwrapRef<typeof import('vue')['provide']>
+    readonly reactMessenger: UnwrapRef<typeof import('./lib/messenger')['reactMessenger']>
+    readonly reactionsByMessage: UnwrapRef<typeof import('./lib/messenger')['reactionsByMessage']>
     readonly reactive: UnwrapRef<typeof import('vue')['reactive']>
     readonly readonly: UnwrapRef<typeof import('vue')['readonly']>
     readonly ref: UnwrapRef<typeof import('vue')['ref']>

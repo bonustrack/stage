@@ -8,6 +8,7 @@ import {
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MessengerBubble } from '../../components/MessengerBubble';
 import { loadConfig, isConfigured, type Config } from '../../lib/config';
+import { isReaction, reactMessenger, reactionsByMessage } from '../../lib/messenger';
 import { getMessengerLastRead, markMessengerRead } from '../../lib/messenger-unread';
 import { registerForPush } from '../../lib/push';
 import { useTail } from '../../lib/sse';
@@ -69,6 +70,15 @@ export default function Messenger(): React.ReactElement {
   /** Re-fetch the seed every time the tab regains focus so stale events get refreshed. */
   useFocusEffect(useCallback(() => { if (enabled) reconnect(); }, [enabled, reconnect]));
 
+  /** Reaction events shouldn't render as their own bubbles — they decorate their target. */
+  const reactions = useMemo(() => reactionsByMessage(events), [events]);
+  const bubbleEvents = useMemo(() => events.filter(e => !isReaction(e)), [events]);
+  const onReact = useCallback((messageId: string, emoji: string) => {
+    if (!cfg) return;
+    void reactMessenger(cfg.daemonUrl, cfg.token, messageId, emoji)
+      .catch((e: unknown) => { console.warn('react failed', e); });
+  }, [cfg]);
+
   if (cfg && !isConfigured(cfg)) {
     return (
       <View style={{ flex: 1, padding: 24, gap: 12, justifyContent: 'center', backgroundColor: bg }}>
@@ -100,7 +110,7 @@ export default function Messenger(): React.ReactElement {
   return (
     <View style={{ flex: 1, backgroundColor: bg }}>
       <FlatList
-        data={events}
+        data={bubbleEvents}
         inverted
         keyExtractor={e => e.id}
         contentContainerStyle={{ paddingVertical: 6 }}
@@ -111,6 +121,8 @@ export default function Messenger(): React.ReactElement {
             unread={item.from !== MESSENGER_USER && item.station === 'messenger' && item.ts > unreadCutoff}
             daemonUrl={cfg?.daemonUrl ?? ''}
             token={cfg?.token ?? ''}
+            reactions={reactions.get(item.id)}
+            onReact={(emoji) => onReact(item.id, emoji)}
             onPress={() => router.push({ pathname: '/event/[id]', params: { id: item.id, data: JSON.stringify(item) } })}
           />
         )}
