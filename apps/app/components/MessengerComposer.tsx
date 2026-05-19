@@ -50,7 +50,7 @@ export function MessengerComposer({ daemonUrl, token, dark, replyingTo, onClearR
 
   const pickImage = async (): Promise<void> => {
     const r = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.85,
+      mediaTypes: 'images', quality: 0.85,
     });
     const a = r.assets?.[0]; if (!a) return;
     await upload(a.uri, a.mimeType ?? 'image/jpeg', a.fileName ?? undefined);
