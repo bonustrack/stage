@@ -93,6 +93,18 @@ onBeforeUnmount(() => { tail.stop(); stopRecording(); });
 
 <template>
   <div class="flex flex-col min-h-screen pb-[140px]">
+    <div
+      v-if="tail.status.value !== 'open' && tail.status.value !== 'idle'"
+      class="fixed top-2 left-1/2 -translate-x-1/2 z-20 px-2.5 py-1 rounded-full
+        flex items-center gap-1.5 text-[11px]
+        bg-metro-surface-light dark:bg-metro-surface-dark
+        text-metro-sub-light dark:text-metro-sub-dark
+        border border-metro-border-light dark:border-metro-border-dark"
+    >
+      <span class="w-1.5 h-1.5 rounded-full"
+        :class="tail.status.value === 'connecting' ? 'bg-metro-warn' : 'bg-metro-err'"></span>
+      <span>{{ tail.status.value === 'connecting' ? 'Connecting…' : tail.status.value === 'error' ? 'Reconnecting…' : 'Offline' }}</span>
+    </div>
     <div class="flex-1 px-3 pt-3 flex flex-col gap-1.5">
       <MessengerBubble
         v-for="e in bubbles"
