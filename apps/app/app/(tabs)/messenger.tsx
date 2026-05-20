@@ -1,7 +1,7 @@
 /** Messenger — direct chat with the assistant via `POST /api/messenger/send`. */
 
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { FlatList, KeyboardAvoidingView, Platform, Pressable, RefreshControl, Text, View, useColorScheme } from 'react-native';
+import { FlatList, Pressable, RefreshControl, Text, View, useColorScheme } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MessengerBubble } from '../../components/MessengerBubble';
 import { MessengerComposer } from '../../components/MessengerComposer';
@@ -97,9 +97,9 @@ export default function Messenger(): React.ReactElement {
         data={bubbleEvents}
         inverted
         keyExtractor={e => e.id}
-        /** Inverted list: paddingTop is visually the BOTTOM — leave room for the floating composer
-         *  plus a comfortable gap so the latest message doesn't hug the composer card. */
-        contentContainerStyle={{ paddingTop: 140, paddingBottom: 6 }}
+        /** Inverted list: paddingTop is visually the BOTTOM — small gap so the latest message
+         *  doesn't hug the composer card. */
+        contentContainerStyle={{ paddingTop: 12, paddingBottom: 6 }}
         onScroll={(ev) => { setShowJump(ev.nativeEvent.contentOffset.y > 200); }}
         scrollEventThrottle={32}
         renderItem={({ item }) => (
@@ -157,19 +157,11 @@ export default function Messenger(): React.ReactElement {
         </Pressable>
       ) : null}
       {cfg ? (
-        /** Absolute-positioned so messages flow under it (Claude-mobile style). KeyboardAvoidingView
-         *  lifts it above the soft keyboard on iOS; Android uses softwareKeyboardLayoutMode='pan'. */
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}
-          pointerEvents="box-none"
-        >
-          <MessengerComposer
-            daemonUrl={cfg.daemonUrl} token={cfg.token} dark={dark}
-            replyingTo={replyingTo ?? undefined}
-            onClearReply={() => setReplyingTo(null)}
-          />
-        </KeyboardAvoidingView>
+        <MessengerComposer
+          daemonUrl={cfg.daemonUrl} token={cfg.token} dark={dark}
+          replyingTo={replyingTo ?? undefined}
+          onClearReply={() => setReplyingTo(null)}
+        />
       ) : null}
     </View>
   );
