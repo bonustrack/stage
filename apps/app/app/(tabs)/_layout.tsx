@@ -1,8 +1,8 @@
 /** Bottom tab bar — Home / Messenger / Search / Lines / Settings. */
 
 import { useEffect, useMemo, useState } from 'react';
-import { Tabs } from 'expo-router';
-import { useColorScheme } from 'react-native';
+import { Tabs, useRouter } from 'expo-router';
+import { Pressable, useColorScheme } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { HeroIcon, type HeroIconName } from '../../components/HeroIcon';
 import { loadConfig, isConfigured, type Config } from '../../lib/config';
@@ -14,6 +14,7 @@ const MESSENGER_LINE = 'metro://messenger/owner';
 export default function TabsLayout(): React.ReactElement {
   const dark = useColorScheme() === 'dark';
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const bg = dark ? '#000000' : '#ffffff';
   const border = dark ? '#1f2630' : '#e5e9f0';
   const active = '#ffffff';
@@ -64,11 +65,16 @@ export default function TabsLayout(): React.ReactElement {
           key={name}
           name={name}
           options={{
-            title,
-            /** Messenger has its own chat UI — the title bar wastes space and looks out of place. */
-            headerShown: name !== 'messenger',
+            title: name === 'messenger' ? '' : title,
             /** Hide the tab bar on messenger so the composer sits directly above the keyboard. */
             tabBarStyle: name === 'messenger' ? { ...tabBarStyle, display: 'none' } : tabBarStyle,
+            /** Messenger keeps a minimal header — just a back button so the user can leave the tab. */
+            headerLeft: name === 'messenger' ? () => (
+              <Pressable onPress={() => router.push('/(tabs)')} hitSlop={10} style={{ paddingHorizontal: 16 }}>
+                <HeroIcon name="home" size={22} color={dark ? '#e8ecf2' : '#1a1f29'} />
+              </Pressable>
+            ) : undefined,
+            headerShadowVisible: false,
             tabBarIcon: ({ color, focused }) => (
               <HeroIcon name={icon} size={26} color={color} focused={focused} />
             ),

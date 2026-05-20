@@ -93,7 +93,7 @@ export default function Messenger(): React.ReactElement {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: bg }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <FlatList
         ref={listRef}
