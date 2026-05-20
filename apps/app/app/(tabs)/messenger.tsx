@@ -5,6 +5,7 @@ import { FlatList, KeyboardAvoidingView, Platform, Pressable, RefreshControl, Te
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MessengerBubble } from '../../components/MessengerBubble';
 import { MessengerComposer } from '../../components/MessengerComposer';
+import { ComposerGradient } from '../../components/ComposerGradient';
 import { HeroIcon } from '../../components/HeroIcon';
 import { loadConfig, isConfigured, type Config } from '../../lib/config';
 import {
@@ -139,6 +140,8 @@ export default function Messenger(): React.ReactElement {
           </Text>
         </View>
       ) : null}
+      {/** Top fade so messages don't visually crash into the status-bar icons. */}
+      <ComposerGradient bg={bg} direction="up" top={0} height={40} />
       {showJump ? (
         <Pressable
           onPress={() => listRef.current?.scrollToOffset({ offset: 0, animated: true })}
