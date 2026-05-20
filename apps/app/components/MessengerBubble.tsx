@@ -100,7 +100,9 @@ export function MessengerBubble({
       <Pressable
         onPress={onPress}
         style={({ pressed }) => ({
+          flexDirection: 'column',
           maxWidth: mine ? '78%' : '100%',
+          width: mine ? undefined : '100%',
           backgroundColor: bubbleBg,
           opacity: pressed ? 0.85 : 1,
           paddingHorizontal: mine ? 14 : 0, paddingVertical: mine ? 9 : 0,
