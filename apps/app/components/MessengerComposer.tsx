@@ -51,10 +51,12 @@ export function MessengerComposer({ daemonUrl, token, dark, replyingTo, onClearR
 
   const pickImage = async (): Promise<void> => {
     const r = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: 'images', quality: 0.85,
+      mediaTypes: 'images', quality: 0.85, allowsMultipleSelection: true, selectionLimit: 10,
     });
-    const a = r.assets?.[0]; if (!a) return;
-    await upload(a.uri, a.mimeType ?? 'image/jpeg', a.fileName ?? undefined);
+    if (r.canceled || !r.assets?.length) return;
+    for (const a of r.assets) {
+      await upload(a.uri, a.mimeType ?? 'image/jpeg', a.fileName ?? undefined);
+    }
   };
 
   const pickFile = async (): Promise<void> => {
