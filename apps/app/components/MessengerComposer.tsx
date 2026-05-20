@@ -7,6 +7,7 @@ import {
 import { Audio } from 'expo-av';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
+import { ComposerGradient } from './ComposerGradient';
 import { HeroIcon, type HeroIconName } from './HeroIcon';
 import { sendMessenger, uploadAttachment, type Attachment } from '../lib/messenger';
 
@@ -108,15 +109,10 @@ export function MessengerComposer({ daemonUrl, token, dark, replyingTo, onClearR
   const kindIcon = (kind: string): HeroIconName => (
     kind === 'image' ? 'photo' : kind === 'audio' ? 'microphone' : 'paperClip'
   );
-  /** Stacked-alpha fake gradient — avoids expo-linear-gradient (native dep) for now. */
   const bg = dark ? '#000000' : '#ffffff';
   return (
     <View style={{ paddingHorizontal: 10, paddingTop: 6, paddingBottom: 18, backgroundColor: bg }}>
-      <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: -40, height: 40 }}>
-        {[0.1, 0.3, 0.6, 1.0].map((o, i) => (
-          <View key={i} style={{ position: 'absolute', left: 0, right: 0, top: i * 10, height: 10, backgroundColor: bg, opacity: o }} />
-        ))}
-      </View>
+      <ComposerGradient bg={bg} />
       {replyingTo ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingBottom: 6 }}>
           <View style={{ flex: 1, borderLeftWidth: 2, borderLeftColor: sub, paddingLeft: 8 }}>
