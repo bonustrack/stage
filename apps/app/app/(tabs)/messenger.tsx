@@ -1,7 +1,7 @@
 /** Messenger — direct chat with the assistant via `POST /api/messenger/send`. */
 
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, Text, View, useColorScheme } from 'react-native';
+import { FlatList, KeyboardAvoidingView, Platform, Pressable, RefreshControl, Text, View, useColorScheme } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MessengerBubble } from '../../components/MessengerBubble';
 import { MessengerComposer } from '../../components/MessengerComposer';
@@ -91,7 +91,10 @@ export default function Messenger(): React.ReactElement {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: bg }}>
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: bg }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
       <FlatList
         ref={listRef}
         data={bubbleEvents}
@@ -163,6 +166,6 @@ export default function Messenger(): React.ReactElement {
           onClearReply={() => setReplyingTo(null)}
         />
       ) : null}
-    </View>
+    </KeyboardAvoidingView>
   );
 }
