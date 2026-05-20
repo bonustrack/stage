@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, Keyboard, Pressable, RefreshControl, Text, View, useColorScheme } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MessengerBubble } from '../../components/MessengerBubble';
 import { MessengerComposer } from '../../components/MessengerComposer';
@@ -26,7 +25,6 @@ export default function Messenger(): React.ReactElement {
   const fg = dark ? '#e8ecf2' : '#1a1f29';
   const sub = dark ? '#8a94a6' : '#5a6477';
   const bg = dark ? '#000000' : '#ffffff';
-  const insets = useSafeAreaInsets();
   /** Track keyboard height manually — edge-to-edge + adjustResize together don't shrink the
    *  view, so we pad the bottom by the keyboard height ourselves. */
   const [kbHeight, setKbHeight] = useState(0);
