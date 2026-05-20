@@ -64,6 +64,8 @@ export default function TabsLayout(): React.ReactElement {
             title,
             /** Messenger has its own chat UI — the title bar wastes space and looks out of place. */
             headerShown: name !== 'messenger',
+            /** Hide the tab bar on messenger so the composer sits directly above the keyboard. */
+            tabBarStyle: name === 'messenger' ? { display: 'none' } : undefined,
             tabBarIcon: ({ color, focused }) => (
               <HeroIcon name={icon} size={26} color={color} focused={focused} />
             ),
