@@ -68,14 +68,11 @@ function markdownStyles(fg: string, dark: boolean): Record<string, object> {
 }
 
 export function MessengerBubble({
-  entry, dark, unread, onPress, onReact, onReply, replyPreview, reactions, transcript, daemonUrl, token,
+  entry, dark, unread, onReact, onReply, replyPreview, reactions, transcript, daemonUrl, token,
 }: {
-  entry: HistoryEntry; dark: boolean; unread: boolean; onPress: () => void;
-  onReact?: (emoji: string) => void;
-  onReply?: () => void;
-  replyPreview?: string;
-  reactions?: Map<string, number>;
-  transcript?: string;
+  entry: HistoryEntry; dark: boolean; unread: boolean;
+  onReact?: (emoji: string) => void; onReply?: () => void;
+  replyPreview?: string; reactions?: Map<string, number>; transcript?: string;
   daemonUrl: string; token: string;
 }): React.ReactElement {
   const mine = entry.from === MESSENGER_USER;
@@ -97,22 +94,15 @@ export function MessengerBubble({
       alignItems: mine ? 'flex-end' : 'flex-start',
       paddingHorizontal: 12, paddingVertical: mine ? 3 : 6,
     }}>
-      <Pressable
-        onPress={onPress}
-        style={({ pressed }) => ({
-          flexDirection: 'column',
-          maxWidth: mine ? '78%' : '100%',
-          width: mine ? undefined : '100%',
-          backgroundColor: bubbleBg,
-          opacity: pressed ? 0.85 : 1,
-          paddingHorizontal: mine ? 14 : 0, paddingVertical: mine ? 9 : 0,
-          borderTopLeftRadius: 20, borderTopRightRadius: 20,
-          borderBottomLeftRadius: mine ? 20 : 0,
-          borderBottomRightRadius: mine ? 6 : 0,
-          borderWidth: unread && mine ? 1.5 : 0,
-          borderColor: unread ? (dark ? '#ffffff' : '#1a1f29') : 'transparent',
-        })}
-      >
+      {/** View not Pressable: an outer onPress would steal link taps inside markdown. */}
+      <View style={{
+        flexDirection: 'column', maxWidth: mine ? '78%' : '100%', width: mine ? undefined : '100%',
+        backgroundColor: bubbleBg, paddingHorizontal: mine ? 14 : 0, paddingVertical: mine ? 9 : 0,
+        borderTopLeftRadius: 20, borderTopRightRadius: 20,
+        borderBottomLeftRadius: mine ? 20 : 0, borderBottomRightRadius: mine ? 6 : 0,
+        borderWidth: unread && mine ? 1.5 : 0,
+        borderColor: unread ? (dark ? '#ffffff' : '#1a1f29') : 'transparent',
+      }}>
         {replyPreview ? (
           <View style={{
             alignSelf: 'stretch', borderLeftWidth: 2, borderLeftColor: mine ? fg : sub,
@@ -163,7 +153,7 @@ export function MessengerBubble({
             color: mine ? fg : sub, opacity: mine ? 0.55 : 1, fontSize: 10,
           }}>{fmtTs(entry.ts)}</Text>
         </View>
-      </Pressable>
+      </View>
       {reactions && reactions.size > 0 ? (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 4, maxWidth: '78%' }}>
           {[...reactions.entries()].map(([emoji, count]) => (

@@ -1,10 +1,11 @@
 /** Messenger — direct chat with the assistant via `POST /api/messenger/send`. */
 
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, Text, View, useColorScheme } from 'react-native';
+import { FlatList, KeyboardAvoidingView, Platform, Pressable, RefreshControl, Text, View, useColorScheme } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MessengerBubble } from '../../components/MessengerBubble';
 import { MessengerComposer } from '../../components/MessengerComposer';
+import { HeroIcon } from '../../components/HeroIcon';
 import { loadConfig, isConfigured, type Config } from '../../lib/config';
 import {
   isReaction, isTranscript, reactMessenger, reactionsByMessage, transcriptsByMessage,
@@ -112,7 +113,6 @@ export default function Messenger(): React.ReactElement {
             replyPreview={item.replyTo ? previewOf(events.find(e => e.id === item.replyTo) ?? item) : undefined}
             onReact={(emoji) => onReact(item.id, emoji)}
             onReply={() => setReplyingTo({ id: item.id, preview: previewOf(item) })}
-            onPress={() => router.push({ pathname: '/event/[id]', params: { id: item.id, data: JSON.stringify(item) } })}
           />
         )}
         ListEmptyComponent={
@@ -143,25 +143,30 @@ export default function Messenger(): React.ReactElement {
         <Pressable
           onPress={() => listRef.current?.scrollToOffset({ offset: 0, animated: true })}
           style={{
-            position: 'absolute', right: 14, bottom: 150,
+            position: 'absolute', alignSelf: 'center', bottom: 150,
             width: 36, height: 36, borderRadius: 999,
             backgroundColor: dark ? '#1d2230' : '#ffffff',
             alignItems: 'center', justifyContent: 'center',
             shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 6, elevation: 4,
           }}
         >
-          <Text style={{ color: fg, fontSize: 18 }}>↓</Text>
+          <HeroIcon name="arrowDown" size={18} color={fg} />
         </Pressable>
       ) : null}
       {cfg ? (
-        /** Absolute-positioned so messages flow under it (Claude-mobile style). */
-        <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }} pointerEvents="box-none">
+        /** Absolute-positioned so messages flow under it (Claude-mobile style). KeyboardAvoidingView
+         *  lifts it above the soft keyboard on iOS; Android uses softwareKeyboardLayoutMode='pan'. */
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}
+          pointerEvents="box-none"
+        >
           <MessengerComposer
             daemonUrl={cfg.daemonUrl} token={cfg.token} dark={dark}
             replyingTo={replyingTo ?? undefined}
             onClearReply={() => setReplyingTo(null)}
           />
-        </View>
+        </KeyboardAvoidingView>
       ) : null}
     </View>
   );

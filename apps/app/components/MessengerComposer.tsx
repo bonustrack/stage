@@ -7,6 +7,7 @@ import {
 import { Audio } from 'expo-av';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from 'expo-linear-gradient';
 import { HeroIcon, type HeroIconName } from './HeroIcon';
 import { sendMessenger, uploadAttachment, type Attachment } from '../lib/messenger';
 
@@ -98,23 +99,24 @@ export function MessengerComposer({ daemonUrl, token, dark, replyingTo, onClearR
   };
 
   const Btn = ({ icon, onPress, active }: { icon: HeroIconName; onPress: () => void; active?: boolean }): React.ReactElement => (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
-        backgroundColor: active ? '#d96868' : (pressed ? chipBg : 'transparent'),
-      })}
-    >
+    <Pressable onPress={onPress} style={({ pressed }) => ({
+      width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
+      backgroundColor: active ? '#d96868' : (pressed ? chipBg : 'transparent'),
+    })}>
       <HeroIcon name={icon} size={22} color={active ? '#ffffff' : fg} />
     </Pressable>
   );
-
   const kindIcon = (kind: string): HeroIconName => (
     kind === 'image' ? 'photo' : kind === 'audio' ? 'microphone' : 'paperClip'
   );
-
+  /** Gradient fades the message list into the composer's solid bg, mimicking iMessage. */
+  const grad: [string, string] = dark
+    ? ['rgba(0,0,0,0)', 'rgba(0,0,0,1)']
+    : ['rgba(255,255,255,0)', 'rgba(255,255,255,1)'];
   return (
-    <View style={{ paddingHorizontal: 10, paddingTop: 6, paddingBottom: 18 }}>
+    <View style={{ paddingHorizontal: 10, paddingTop: 6, paddingBottom: 18, backgroundColor: grad[1] }}>
+      <LinearGradient colors={grad} pointerEvents="none"
+        style={{ position: 'absolute', left: 0, right: 0, top: -40, height: 40 }} />
       {replyingTo ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingBottom: 6 }}>
           <View style={{ flex: 1, borderLeftWidth: 2, borderLeftColor: sub, paddingLeft: 8 }}>

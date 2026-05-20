@@ -35,6 +35,8 @@ const PATHS: Record<string, string> = {
   pause: 'M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z',
   // reply — quote a message in the composer (heroicons v1 "reply")
   reply: 'M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6',
+  // arrow-down — scroll-to-bottom jump button
+  arrowDown: 'M19 14l-7 7m0 0l-7-7m7 7V3',
 };
 
 export type HeroIconName = keyof typeof PATHS;
