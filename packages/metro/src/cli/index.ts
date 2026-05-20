@@ -1,9 +1,11 @@
 #!/usr/bin/env bun
 /** Metro CLI: parses argv, dispatches to subcommands. Bun runtime required (uses Bun.spawn for trains). */
 
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import pkg from '../../package.json' with { type: 'json' };
-import { errMsg } from '../log.js';
-import { listLines, loadMetroEnv } from '../paths.js';
+import { errMsg, log } from '../log.js';
+import { listLines, loadMetroEnv, STATE_DIR } from '../paths.js';
 import { readHistory } from '../history.js';
 import { cmdDoctor, cmdSetup, cmdUpdate } from './config.js';
 import { cmdClaim, cmdClaims, cmdRelease, cmdTail } from './tail.js';
@@ -11,6 +13,16 @@ import { cmdCall, cmdTrains, cmdTunnel, cmdWebhook } from './webhook.js';
 import {
   flagOne, isJson, parseArgs, writeJson, type ExitErr, type Flags,
 } from './util.js';
+
+/** True if another live process owns the dispatcher lockfile. Mirrors paths.acquireLock'
+ *  s detection but as a peek — no claim, no exit. */
+function anotherDispatcherRunning(): boolean {
+  const lockFile = join(STATE_DIR, '.tail-lock');
+  if (!existsSync(lockFile)) return false;
+  const pid = Number(readFileSync(lockFile, 'utf8').trim());
+  if (!Number.isInteger(pid) || pid <= 0) return false;
+  try { process.kill(pid, 0); return true; } catch { return false; }
+}
 
 const USAGE = `metro — event-interception wire. Trains in ~/.metro/trains/ produce events;
 metro multiplexes them onto stdout. Outbound action calls flow back via \`metro call\`.
@@ -120,7 +132,17 @@ async function main(): Promise<void> {
   const cmd = process.argv[2];
   if (cmd === '--version' || cmd === '-v') return void process.stdout.write(`${pkg.version}\n`);
   if (cmd === '--help' || cmd === '-h') return void process.stdout.write(USAGE);
-  if (!cmd) { await import('../dispatcher.js'); return; }
+  if (!cmd) {
+    /** Multi-agent: another `metro` already owns the dispatcher → drop into tail mode so
+     *  a second agent (e.g. Codex while Claude is running) still gets the event stream. */
+    if (anotherDispatcherRunning()) {
+      log.info({}, 'dispatcher already running; subscribing as tail (--follow --json --since=tail)');
+      await cmdTail([], { follow: true, json: true, since: 'tail' });
+      return;
+    }
+    await import('../dispatcher.js');
+    return;
+  }
 
   const handler = COMMANDS[cmd];
   if (!handler) { process.stderr.write(`unknown command '${cmd}'\n\n${USAGE}`); process.exit(1); }
