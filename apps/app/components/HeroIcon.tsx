@@ -37,6 +37,8 @@ const PATHS: Record<string, string> = {
   reply: 'M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6',
   // arrow-down — scroll-to-bottom jump button
   arrowDown: 'M19 14l-7 7m0 0l-7-7m7 7V3',
+  // arrow-left — back navigation in headers
+  arrowLeft: 'M10 19l-7-7m0 0l7-7m-7 7h18',
 };
 
 export type HeroIconName = keyof typeof PATHS;

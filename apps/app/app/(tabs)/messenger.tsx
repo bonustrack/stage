@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FlatList, Keyboard, Pressable, RefreshControl, Text, View, useColorScheme,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MessengerBubble } from '../../components/MessengerBubble';
 import { MessengerComposer } from '../../components/MessengerComposer';
@@ -52,15 +53,18 @@ export default function Messenger(): React.ReactElement {
   const [refreshing, setRefreshing] = useState(false);
   const [showJump, setShowJump] = useState(false);
   const [replyingTo, setReplyingTo] = useState<{ id: string; preview: string } | null>(null);
-  /** Manual keyboard-height tracking — softwareKeyboardLayoutMode: "resize" doesn't shrink
+  /** Manual keyboard-overlap tracking — softwareKeyboardLayoutMode: "resize" doesn't shrink
    *  the window when edgeToEdgeEnabled is on, so the composer would sit under the keyboard.
-   *  Applying paddingBottom = keyboardHeight pushes it back into the visible area. */
+   *  `endCoordinates.height` underreports on Samsung (gesture-nav inset isn't rolled in),
+   *  so add the bottom safe-area inset back to get the full visual overlap. */
+  const insets = useSafeAreaInsets();
   const [kbHeight, setKbHeight] = useState(0);
   useEffect(() => {
     const show = Keyboard.addListener('keyboardDidShow', e => setKbHeight(e.endCoordinates.height));
     const hide = Keyboard.addListener('keyboardDidHide', () => setKbHeight(0));
     return () => { show.remove(); hide.remove(); };
   }, []);
+  const kbOverlap = kbHeight > 0 ? kbHeight + insets.bottom : 0;
   const listRef = useRef<FlatList<HistoryEntry>>(null);
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -102,7 +106,7 @@ export default function Messenger(): React.ReactElement {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: bg, paddingBottom: kbHeight }}>
+    <View style={{ flex: 1, backgroundColor: bg, paddingBottom: kbOverlap }}>
       <FlatList
         ref={listRef}
         data={bubbleEvents}

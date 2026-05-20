@@ -71,7 +71,7 @@ export default function TabsLayout(): React.ReactElement {
             /** Messenger keeps a minimal header — just a back button so the user can leave the tab. */
             headerLeft: name === 'messenger' ? () => (
               <Pressable onPress={() => router.push('/(tabs)')} hitSlop={10} style={{ paddingHorizontal: 16 }}>
-                <HeroIcon name="home" size={22} color={dark ? '#e8ecf2' : '#1a1f29'} />
+                <HeroIcon name="arrowLeft" size={22} color={dark ? '#e8ecf2' : '#1a1f29'} />
               </Pressable>
             ) : undefined,
             headerShadowVisible: false,
