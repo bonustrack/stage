@@ -17,7 +17,7 @@ export default function TabsLayout(): React.ReactElement {
   const router = useRouter();
   const bg = dark ? '#000000' : '#ffffff';
   const border = dark ? '#1f2630' : '#e5e9f0';
-  const active = '#ffffff';
+  const active = dark ? '#ffffff' : '#1a1f29';
   const inactive = dark ? '#8a94a6' : '#5a6477';
 
   /** Tiny shared tail subscription scoped to the messenger line — purely to drive the unread badge. */
