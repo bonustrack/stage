@@ -139,6 +139,13 @@ export default function Messenger(): React.ReactElement {
         keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={sub} />}
       />
+      <Pressable
+        onPress={() => router.push('/(tabs)')}
+        hitSlop={10}
+        style={{ position: 'absolute', top: 8, left: 14, padding: 6, zIndex: 2 }}
+      >
+        <HeroIcon name="arrowLeft" size={22} color={fg} />
+      </Pressable>
       {status !== 'open' && enabled ? (
         <View style={{
           position: 'absolute', top: 8, alignSelf: 'center',

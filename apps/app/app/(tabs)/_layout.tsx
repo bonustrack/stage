@@ -1,8 +1,8 @@
 /** Bottom tab bar — Home / Messenger / Search / Lines / Settings. */
 
 import { useEffect, useMemo, useState } from 'react';
-import { Tabs, useRouter } from 'expo-router';
-import { Pressable, useColorScheme } from 'react-native';
+import { Tabs } from 'expo-router';
+import { useColorScheme } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { HeroIcon, type HeroIconName } from '../../components/HeroIcon';
 import { loadConfig, isConfigured, type Config } from '../../lib/config';
@@ -14,7 +14,6 @@ const MESSENGER_LINE = 'metro://messenger/owner';
 export default function TabsLayout(): React.ReactElement {
   const dark = useColorScheme() === 'dark';
   const insets = useSafeAreaInsets();
-  const router = useRouter();
   const bg = dark ? '#000000' : '#ffffff';
   const border = dark ? '#1f2630' : '#e5e9f0';
   const active = dark ? '#ffffff' : '#1a1f29';
@@ -42,10 +41,9 @@ export default function TabsLayout(): React.ReactElement {
   return (
     <Tabs
       screenOptions={{
-        headerStyle: { backgroundColor: bg },
-        headerTintColor: dark ? '#e8ecf2' : '#1a1f29',
-        headerTitleStyle: { fontFamily: 'Calibre-Semibold' },
-        sceneStyle: { backgroundColor: bg },
+        headerShown: false,
+        /** No nav header → reserve status-bar space here so screens don't need to. */
+        sceneStyle: { backgroundColor: bg, paddingTop: insets.top },
         tabBarStyle,
         tabBarActiveTintColor: active,
         tabBarInactiveTintColor: inactive,
@@ -54,27 +52,19 @@ export default function TabsLayout(): React.ReactElement {
     >
       {(
         [
-          ['index', 'Home', 'home', 0],
-          ['messenger', 'Messenger', 'send', unread],
-          ['search', 'Search', 'search', 0],
-          ['lines', 'Lines', 'list', 0],
-          ['settings', 'Settings', 'cog', 0],
-        ] as const satisfies ReadonlyArray<readonly [string, string, HeroIconName, number]>
-      ).map(([name, title, icon, badge]) => (
+          ['index', 'home', 0],
+          ['messenger', 'send', unread],
+          ['search', 'search', 0],
+          ['lines', 'list', 0],
+          ['settings', 'cog', 0],
+        ] as const satisfies ReadonlyArray<readonly [string, HeroIconName, number]>
+      ).map(([name, icon, badge]) => (
         <Tabs.Screen
           key={name}
           name={name}
           options={{
-            title: name === 'messenger' ? '' : title,
             /** Hide the tab bar on messenger so the composer sits directly above the keyboard. */
             tabBarStyle: name === 'messenger' ? { ...tabBarStyle, display: 'none' } : tabBarStyle,
-            /** Messenger keeps a minimal header — just a back button so the user can leave the tab. */
-            headerLeft: name === 'messenger' ? () => (
-              <Pressable onPress={() => router.push('/(tabs)')} hitSlop={10} style={{ paddingHorizontal: 16 }}>
-                <HeroIcon name="arrowLeft" size={22} color={dark ? '#e8ecf2' : '#1a1f29'} />
-              </Pressable>
-            ) : undefined,
-            headerShadowVisible: false,
             tabBarIcon: ({ color, focused }) => (
               <HeroIcon name={icon} size={26} color={color} focused={focused} />
             ),
