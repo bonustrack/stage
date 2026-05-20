@@ -64,7 +64,9 @@ export default function Messenger(): React.ReactElement {
     const hide = Keyboard.addListener('keyboardDidHide', () => setKbHeight(0));
     return () => { show.remove(); hide.remove(); };
   }, []);
-  const kbOverlap = kbHeight > 0 ? kbHeight + insets.bottom : 0;
+  /** Always include insets.bottom so the composer clears the gesture-nav bar even when
+   *  the keyboard is closed (the tab bar is hidden on this screen). */
+  const kbOverlap = kbHeight + insets.bottom;
   const listRef = useRef<FlatList<HistoryEntry>>(null);
   const onRefresh = useCallback(() => {
     setRefreshing(true);
