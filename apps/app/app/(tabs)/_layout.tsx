@@ -29,6 +29,15 @@ export default function TabsLayout(): React.ReactElement {
   const { events } = useTail(tailOpts, !!cfg && isConfigured(cfg));
   const unread = useMessengerUnread(events);
 
+  /** Hoisted so per-screen overrides can merge instead of replace. */
+  const tabBarStyle = {
+    backgroundColor: bg,
+    borderTopColor: border,
+    height: 60 + insets.bottom,
+    paddingTop: 6,
+    paddingBottom: insets.bottom,
+  };
+
   return (
     <Tabs
       screenOptions={{
@@ -36,13 +45,7 @@ export default function TabsLayout(): React.ReactElement {
         headerTintColor: dark ? '#e8ecf2' : '#1a1f29',
         headerTitleStyle: { fontFamily: 'Calibre-Semibold' },
         sceneStyle: { backgroundColor: bg },
-        tabBarStyle: {
-          backgroundColor: bg,
-          borderTopColor: border,
-          height: 60 + insets.bottom,
-          paddingTop: 6,
-          paddingBottom: insets.bottom,
-        },
+        tabBarStyle,
         tabBarActiveTintColor: active,
         tabBarInactiveTintColor: inactive,
         tabBarShowLabel: false,
@@ -65,7 +68,7 @@ export default function TabsLayout(): React.ReactElement {
             /** Messenger has its own chat UI — the title bar wastes space and looks out of place. */
             headerShown: name !== 'messenger',
             /** Hide the tab bar on messenger so the composer sits directly above the keyboard. */
-            tabBarStyle: name === 'messenger' ? { display: 'none' } : undefined,
+            tabBarStyle: name === 'messenger' ? { ...tabBarStyle, display: 'none' } : tabBarStyle,
             tabBarIcon: ({ color, focused }) => (
               <HeroIcon name={icon} size={26} color={color} focused={focused} />
             ),
