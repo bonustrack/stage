@@ -1,7 +1,7 @@
 /** Messenger — direct chat with the assistant via `POST /api/messenger/send`. */
 
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { FlatList, KeyboardAvoidingView, Platform, Pressable, RefreshControl, Text, View, useColorScheme } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FlatList, Keyboard, Pressable, RefreshControl, Text, View, useColorScheme } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MessengerBubble } from '../../components/MessengerBubble';
@@ -27,6 +27,14 @@ export default function Messenger(): React.ReactElement {
   const sub = dark ? '#8a94a6' : '#5a6477';
   const bg = dark ? '#000000' : '#ffffff';
   const insets = useSafeAreaInsets();
+  /** Track keyboard height manually — edge-to-edge + adjustResize together don't shrink the
+   *  view, so we pad the bottom by the keyboard height ourselves. */
+  const [kbHeight, setKbHeight] = useState(0);
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', e => setKbHeight(e.endCoordinates.height));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKbHeight(0));
+    return (): void => { show.remove(); hide.remove(); };
+  }, []);
 
   const [cfg, setCfg] = useState<Config | null>(null);
   /** Captured once on mount → entries newer than this render with the unread style. */
@@ -93,11 +101,7 @@ export default function Messenger(): React.ReactElement {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: bg, paddingBottom: insets.bottom }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
-      keyboardVerticalOffset={insets.top + 56}
-    >
+    <View style={{ flex: 1, backgroundColor: bg, paddingBottom: kbHeight }}>
       <FlatList
         ref={listRef}
         data={bubbleEvents}
@@ -169,6 +173,6 @@ export default function Messenger(): React.ReactElement {
           onClearReply={() => setReplyingTo(null)}
         />
       ) : null}
-    </KeyboardAvoidingView>
+    </View>
   );
 }
