@@ -5,8 +5,7 @@ import {
   FlatList, Modal, Pressable, RefreshControl, Text, View, useColorScheme,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { useAnimatedStyle } from 'react-native-reanimated';
-import { useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
+import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useFocusEffect, useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { MessengerBubble } from '../../components/MessengerBubble';
@@ -60,17 +59,11 @@ export default function Messenger(): React.ReactElement {
   /** Optimistic outbound entries — rendered immediately on send, dedupe on text+freshness when the
    *  real event arrives via SSE. */
   const [optimistic, setOptimistic] = useState<HistoryEntry[]>([]);
-  /** react-native-keyboard-controller drives a Reanimated SharedValue (`height`) frame-by-
-   *  frame in lockstep with Android's WindowInsetsAnimation — no lag, no LayoutAnimation
-   *  guesses. We mirror that into paddingBottom + always add insets.bottom so the composer
-   *  clears the gesture-nav bar even when the keyboard is closed. */
+  /** keyboard-controller drives both the composer and the FlatList via KeyboardStickyView →
+   *  same native-driver translateY, no JS-thread lag, no React re-renders. The list shifts
+   *  up by exactly the keyboard height, so wherever the user was scrolled stays put relative
+   *  to the keyboard top. */
   const insets = useSafeAreaInsets();
-  const { height: kbAnim } = useReanimatedKeyboardAnimation();
-  const wrapperStyle = useAnimatedStyle(() => ({
-    /** When the keyboard is up it already covers the gesture-nav inset → take the
-     *  larger of the two, not both stacked (which left an ~insets.bottom-sized gap). */
-    paddingBottom: Math.max(-kbAnim.value, insets.bottom),
-  }));
   const listRef = useRef<FlatList<HistoryEntry>>(null);
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -122,14 +115,13 @@ export default function Messenger(): React.ReactElement {
   }
 
   return (
-    <Animated.View style={[{ flex: 1, backgroundColor: bg }, wrapperStyle]}>
+    <View style={{ flex: 1, backgroundColor: bg, paddingBottom: insets.bottom }}>
+      <KeyboardStickyView style={{ flex: 1 }} offset={{ opened: insets.bottom }}>
       <FlatList
         ref={listRef}
         data={allBubbles}
         inverted
         keyExtractor={e => e.id}
-        /** Inverted list: paddingTop is visually the BOTTOM — small gap so the latest message
-         *  doesn't hug the composer card. */
         contentContainerStyle={{ paddingTop: 12, paddingBottom: 6 }}
         onScroll={(ev) => { setShowJump(ev.nativeEvent.contentOffset.y > 200); }}
         scrollEventThrottle={32}
@@ -157,6 +149,7 @@ export default function Messenger(): React.ReactElement {
         keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={sub} />}
       />
+      </KeyboardStickyView>
       {/** Top nav: solid bg strip with back arrow + status pill, mirrors the composer footer.
        *  Sits absolute over the FlatList so the inverted list doesn't reserve space for it. */}
       <View style={{
@@ -191,19 +184,23 @@ export default function Messenger(): React.ReactElement {
       <ComposerGradient bg={bg} direction="up" top={44} height={10} />
       {showJump ? (
         <Pressable
-          onPress={() => listRef.current?.scrollToOffset({ offset: 0, animated: true })}
+          onPress={() => {
+            listRef.current?.scrollToOffset({ offset: 0, animated: true });
+            setShowJump(false);
+          }}
           style={{
             position: 'absolute', alignSelf: 'center', bottom: 170, zIndex: 3,
             width: 36, height: 36, borderRadius: 999,
-            backgroundColor: dark ? '#1d2230' : '#ffffff',
+            backgroundColor: '#ffffff',
             alignItems: 'center', justifyContent: 'center',
             shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 6, elevation: 4,
           }}
         >
-          <HeroIcon name="arrowDown" size={18} color={fg} />
+          <HeroIcon name="arrowDown" size={18} color="#000000" />
         </Pressable>
       ) : null}
       {cfg ? (
+        <KeyboardStickyView offset={{ opened: insets.bottom }}>
         <MessengerComposer
           daemonUrl={cfg.daemonUrl} token={cfg.token} dark={dark}
           replyingTo={replyingTo ?? undefined}
@@ -219,6 +216,7 @@ export default function Messenger(): React.ReactElement {
             } as HistoryEntry, ...prev]);
           }}
         />
+        </KeyboardStickyView>
       ) : null}
       <BubbleActionMenu
         target={menuFor}
@@ -234,7 +232,7 @@ export default function Messenger(): React.ReactElement {
           setMenuFor(null);
         }}
       />
-    </Animated.View>
+    </View>
   );
 }
 
