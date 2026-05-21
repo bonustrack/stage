@@ -68,9 +68,9 @@ function markdownStyles(fg: string, dark: boolean): Record<string, object> {
 }
 
 export function MessengerBubble({
-  entry, dark, unread, onReact, onReply, onLongPress, replyPreview, reactions, transcript, daemonUrl, token,
+  entry, dark, unread, pending, onReact, onReply, onLongPress, replyPreview, reactions, transcript, daemonUrl, token,
 }: {
-  entry: HistoryEntry; dark: boolean; unread: boolean;
+  entry: HistoryEntry; dark: boolean; unread: boolean; pending?: boolean;
   onReact?: (emoji: string) => void; onReply?: () => void; onLongPress?: () => void;
   replyPreview?: string; reactions?: Map<string, number>; transcript?: string;
   daemonUrl: string; token: string;
@@ -117,6 +117,7 @@ export function MessengerBubble({
         alignItems: mine ? 'flex-end' : 'flex-start',
         paddingHorizontal: 12, paddingVertical: mine ? 3 : 6,
         transform: [{ translateX: swipeX }],
+        opacity: pending ? 0.5 : 1,
       }}
     >
       {/** Pressable handles onLongPress; the outer Animated.View'​s PanResponder steals horizontal drags. */}

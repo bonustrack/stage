@@ -15,13 +15,15 @@ interface Props {
   daemonUrl: string; token: string; dark: boolean;
   replyingTo?: { id: string; preview: string };
   onClearReply?: () => void;
+  /** Optimistic-render hook: invoked the moment the user taps send, before the API call. */
+  onOptimistic?: (entry: { localId: string; text: string; attachments: Attachment[]; replyTo?: string }) => void;
 }
 
 function chipImageUrl(daemonUrl: string, token: string, url: string): string {
   return `${daemonUrl.replace(/\/$/, '')}${url}?token=${encodeURIComponent(token)}`;
 }
 
-export function MessengerComposer({ daemonUrl, token, dark, replyingTo, onClearReply }: Props): React.ReactElement {
+export function MessengerComposer({ daemonUrl, token, dark, replyingTo, onClearReply, onOptimistic }: Props): React.ReactElement {
   const fg = dark ? '#e8ecf2' : '#1a1f29';
   const sub = dark ? '#8a94a6' : '#5a6477';
   const inputBg = dark ? '#16191f' : '#f3f5f9';
@@ -92,10 +94,15 @@ export function MessengerComposer({ daemonUrl, token, dark, replyingTo, onClearR
   const send = async (): Promise<void> => {
     const body = text.trim();
     if (!body && pending.length === 0) return;
+    /** Fire the optimistic-render hook first so the bubble shows up instantly while the
+     *  API call is still in flight. The SSE event for the real message will dedupe by text. */
+    const localId = `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    onOptimistic?.({ localId, text: body, attachments: pending, replyTo: replyingTo?.id });
+    /** Clear the composer immediately — the bubble already shows the user's input. */
+    setText(''); setPending([]); onClearReply?.();
     setSending(true); setErr(null);
     try {
       await sendMessenger(daemonUrl, token, body, pending, replyingTo?.id);
-      setText(''); setPending([]); onClearReply?.();
     } catch (e) { setErr((e as Error).message); }
     finally { setSending(false); }
   };

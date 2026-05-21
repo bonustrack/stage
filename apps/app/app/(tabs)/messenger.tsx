@@ -1,6 +1,6 @@
 /** Messenger — direct chat with the assistant via `POST /api/messenger/send`. */
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FlatList, Modal, Pressable, RefreshControl, Text, View, useColorScheme,
 } from 'react-native';
@@ -57,6 +57,9 @@ export default function Messenger(): React.ReactElement {
   const [showJump, setShowJump] = useState(false);
   const [replyingTo, setReplyingTo] = useState<{ id: string; preview: string } | null>(null);
   const [menuFor, setMenuFor] = useState<HistoryEntry | null>(null);
+  /** Optimistic outbound entries — rendered immediately on send, dedupe on text+freshness when the
+   *  real event arrives via SSE. */
+  const [optimistic, setOptimistic] = useState<HistoryEntry[]>([]);
   /** react-native-keyboard-controller drives a Reanimated SharedValue (`height`) frame-by-
    *  frame in lockstep with Android's WindowInsetsAnimation — no lag, no LayoutAnimation
    *  guesses. We mirror that into paddingBottom + always add insets.bottom so the composer
@@ -83,6 +86,16 @@ export default function Messenger(): React.ReactElement {
     () => events.filter(e => !isReaction(e) && !isTranscript(e)),
     [events],
   );
+  /** Drop optimistic entries that a real SSE event now covers (same text + sent within 30s). */
+  useEffect(() => {
+    if (!optimistic.length) return;
+    setOptimistic(prev => prev.filter(o =>
+      !bubbleEvents.some(e => e.from === MESSENGER_USER && e.text === o.text
+        && Math.abs(new Date(e.ts).getTime() - new Date(o.ts).getTime()) < 30_000),
+    ));
+  }, [bubbleEvents, optimistic.length]);
+  /** Inverted FlatList expects newest-first → put optimistic at the top. */
+  const allBubbles = useMemo(() => [...optimistic, ...bubbleEvents], [bubbleEvents, optimistic]);
   const previewOf = (e: HistoryEntry): string =>
     e.text?.slice(0, 80) || `[${(e.payload as { attachments?: { kind: string }[] } | undefined)?.attachments?.[0]?.kind ?? 'attachment'}]`;
   const onReact = useCallback((messageId: string, emoji: string) => {
@@ -112,7 +125,7 @@ export default function Messenger(): React.ReactElement {
     <Animated.View style={[{ flex: 1, backgroundColor: bg }, wrapperStyle]}>
       <FlatList
         ref={listRef}
-        data={bubbleEvents}
+        data={allBubbles}
         inverted
         keyExtractor={e => e.id}
         /** Inverted list: paddingTop is visually the BOTTOM — small gap so the latest message
@@ -125,6 +138,7 @@ export default function Messenger(): React.ReactElement {
             entry={item}
             dark={dark}
             unread={item.from !== MESSENGER_USER && item.station === 'messenger' && item.ts > unreadCutoff}
+            pending={item.id.startsWith('tmp_')}
             daemonUrl={cfg?.daemonUrl ?? ''}
             token={cfg?.token ?? ''}
             reactions={reactions.get(item.id)}
@@ -194,6 +208,16 @@ export default function Messenger(): React.ReactElement {
           daemonUrl={cfg.daemonUrl} token={cfg.token} dark={dark}
           replyingTo={replyingTo ?? undefined}
           onClearReply={() => setReplyingTo(null)}
+          onOptimistic={({ localId, text, attachments, replyTo }) => {
+            setOptimistic(prev => [{
+              id: localId, ts: new Date().toISOString(),
+              station: 'messenger', line: MESSENGER_LINE,
+              from: MESSENGER_USER, to: MESSENGER_LINE,
+              text: text || undefined,
+              ...(replyTo ? { replyTo } : {}),
+              ...(attachments.length ? { payload: { attachments } } : {}),
+            } as HistoryEntry, ...prev]);
+          }}
         />
       ) : null}
       <BubbleActionMenu
