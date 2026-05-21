@@ -17,6 +17,7 @@ declare module 'vue' {
     EventRow: typeof import('./components/EventRow.vue')['default']
     FilterSheet: typeof import('./components/FilterSheet.vue')['default']
     HeroIcon: typeof import('./components/HeroIcon.vue')['default']
+    MessengerBubble: typeof import('./components/MessengerBubble.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SearchBar: typeof import('./components/SearchBar.vue')['default']

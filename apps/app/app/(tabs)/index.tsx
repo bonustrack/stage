@@ -69,15 +69,17 @@ export default function Activity(): React.ReactElement {
     if (olderExhausted || loadingOlder || !cfg) return;
     setLoadingOlder(true);
     /** `before` = count of newest entries the server should skip = entries we already have. */
-    void fetchHistoryPage(cfg.daemonUrl, cfg.token, events.length + older.length, PAGE_SIZE).then(r => {
-      setLoadingOlder(false);
-      if (!r.ok || r.entries.length === 0) { setOlderExhausted(true); return; }
-      setOlder(prev => {
-        const seen = new Set([...events, ...prev].map(e => e.id));
-        return [...prev, ...r.entries.filter(e => !seen.has(e.id))];
-      });
-      setVisibleCount(c => c + PAGE_SIZE);
-    });
+    void fetchHistoryPage(cfg.daemonUrl, cfg.token, events.length + older.length, PAGE_SIZE)
+      .then(r => {
+        setLoadingOlder(false);
+        if (!r.ok || r.entries.length === 0) { setOlderExhausted(true); return; }
+        setOlder(prev => {
+          const seen = new Set([...events, ...prev].map(e => e.id));
+          return [...prev, ...r.entries.filter(e => !seen.has(e.id))];
+        });
+        setVisibleCount(c => c + PAGE_SIZE);
+      })
+      .catch(() => { setLoadingOlder(false); });
   }, [visibleCount, filtered.length, olderExhausted, loadingOlder, cfg, events, older]);
 
   if (!cfg) {

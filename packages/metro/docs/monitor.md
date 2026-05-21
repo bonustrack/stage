@@ -12,11 +12,15 @@ by `src/cli/tail.ts` for backwards compatibility) and is wired into the HTTP ser
 
 ## Routes
 
-| Method | Path                          | Returns                                                                                  |
-|--------|-------------------------------|------------------------------------------------------------------------------------------|
-| GET    | `/api/state`                  | JSON snapshot — `{ claims, lines, recent_history (last 100), bot_ids }`.                 |
-| GET    | `/api/tail`                   | Server-Sent Events stream — `history.jsonl` entries, claim-aware filtered.                |
-| POST   | `/api/call/<train>/<action>`  | Forward an action call to a train via `forward-call` IPC; returns `{result}`.            |
+| Method | Path                            | Returns                                                                                  |
+|--------|---------------------------------|------------------------------------------------------------------------------------------|
+| GET    | `/api/state`                    | JSON snapshot — `{ claims, lines, recent_history (last 100), bot_ids }`.                 |
+| GET    | `/api/tail`                     | Server-Sent Events stream — `history.jsonl` entries, claim-aware filtered.                |
+| POST   | `/api/call/<train>/<action>`    | Forward an action call to a train via `forward-call` IPC; returns `{result}`.            |
+| POST   | `/api/messenger/send`           | In-daemon chat: emits a history entry on `metro://messenger/owner`. Accepts `{text?, attachments?[], as?}`. |
+| POST   | `/api/messenger/register`       | Store an Expo push token so agent replies push to the phone.                              |
+| POST   | `/api/messenger/upload`         | Raw binary upload (up to 25 MiB). Body = file bytes; headers `Content-Type`, optional `X-Filename`. Returns `{id, url, kind, mime, size, name?}`. |
+| GET    | `/api/messenger/files/<name>`   | Stream a previously uploaded attachment. Accepts `?token=…` as an alternative to the bearer header for `<img>` / `<audio>` tags. |
 
 `/api/state` and `/api/tail` are read-only. `/api/call/<train>/<action>` is the single
 write endpoint — it never touches the on-disk history; the train running on the daemon
@@ -186,10 +190,10 @@ curl -X POST \
   https://monitor.metro.box/api/call/discord/send
 ```
 
-Because the daemon's `send` adapter writes an outbound `history.jsonl` entry once the
-message lands, an active `/api/tail` subscriber will receive the corresponding
-`kind:"outbound"` event a moment later. UIs typically clear the input on HTTP 200 and
-let the SSE replay show the sent message.
+Because the daemon's `send` adapter writes a history entry once the message lands, an
+active `/api/tail` subscriber will receive the corresponding event a moment later
+(`from` = local user). UIs typically clear the input on HTTP 200 and let the SSE replay
+show the sent message.
 
 ## Exposing publicly via Cloudflare tunnel
 

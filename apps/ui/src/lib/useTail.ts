@@ -40,14 +40,23 @@ export function useTail(cfg: Ref<Config>, chat: Ref<string | undefined>): UseTai
       events.value = (chat.value ? seed.filter(e => e.line === chat.value) : seed).slice(0, 500);
     });
     abort = new AbortController();
+    /** Cloudflare drops idle SSE after a couple of minutes — reconnect with a short backoff so
+     *  the user sees a continuous stream even when the upstream connection blips. */
+    const ac = abort;
     void openTail({
       daemonUrl: cfg.value.daemonUrl, token: cfg.value.token,
       as: cfg.value.userId || undefined, chat: chat.value, includeWebhooks: true,
-      signal: abort.signal,
+      signal: ac.signal,
       onOpen: () => { status.value = 'open'; },
       onEntry: e => { events.value = [e, ...events.value.filter(x => x.id !== e.id)].slice(0, 500); },
-      onError: m => { status.value = 'error'; errMsg.value = m; },
-      onClose: () => { status.value = 'closed'; },
+      onError: m => {
+        status.value = 'error'; errMsg.value = m;
+        if (!ac.signal.aborted) setTimeout(reconnect, 2000);
+      },
+      onClose: () => {
+        status.value = 'closed';
+        if (!ac.signal.aborted) setTimeout(reconnect, 1000);
+      },
     });
   };
 

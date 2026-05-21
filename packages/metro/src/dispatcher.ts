@@ -49,7 +49,7 @@ const ipc = startIpcServer(async (req: IpcRequest): Promise<IpcResponse> => {
   if (req.op === 'notify') {
     const line = req.line as HistoryEntry['line'];
     emit({
-      id: mintId(), ts: new Date().toISOString(), kind: 'inbound',
+      id: mintId(), ts: new Date().toISOString(),
       station: Line.station(line) ?? '?', line,
       from: (req.from ?? userSelf()) as HistoryEntry['from'], to: line, text: req.text,
     });

@@ -6,7 +6,7 @@ const router = useRouter();
 const MAX_BODY = 140;
 
 const text = computed(() => {
-  const b = props.entry.text ?? (props.entry.emoji ? `[react ${props.entry.emoji}]` : '(no text)');
+  const b = props.entry.text ?? '(no text)';
   return b.length > MAX_BODY ? b.slice(0, MAX_BODY - 1) + '…' : b;
 });
 const sender = computed(() => (props.entry.fromName ?? props.entry.from).replace(/^metro:\/\//, ''));
@@ -15,11 +15,6 @@ const ts = computed(() => {
   try { return new Date(props.entry.ts).toLocaleTimeString([], { hour12: false }); }
   catch { return props.entry.ts.slice(11, 19); }
 });
-const kindColor = computed(() =>
-  props.entry.kind === 'inbound' ? 'text-metro-accent'
-    : props.entry.kind === 'outbound' ? 'text-metro-ok'
-      : 'text-metro-warn',
-);
 
 function open(): void {
   void router.push({
@@ -38,7 +33,6 @@ function open(): void {
   >
     <div class="flex items-center gap-2 mb-1">
       <StationIcon :station="entry.station" />
-      <span class="text-[11px] font-semibold uppercase" :class="kindColor">{{ entry.kind }}</span>
       <span class="text-xs text-metro-sub-light dark:text-metro-sub-dark truncate flex-1">{{ sender }}</span>
       <span class="text-xs text-metro-sub-light dark:text-metro-sub-dark">{{ ts }}</span>
     </div>

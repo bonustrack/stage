@@ -32,13 +32,6 @@ export function makeEmit(codexRc: CodexRC | null): Emit {
 
 /** Translate the snake_case train wire envelope to a camelCase `HistoryEntry`. */
 /** Trains can omit `id`/`station`/`to`; metro fills sensible defaults. */
-/** Forgive trains that use platform-flavored kinds (`message`, `reaction`) — map to the canonical enum. */
-function normalizeKind(k: unknown): HistoryEntry['kind'] {
-  if (k === 'message' || k === undefined || k === null) return 'inbound';
-  if (k === 'reaction') return 'react';
-  return k as HistoryEntry['kind'];
-}
-
 export function trainEventToHistoryEntry(env: TrainEvent, trainName: string): HistoryEntry | null {
   const line = env.line;
   if (typeof line !== 'string') {
@@ -47,18 +40,18 @@ export function trainEventToHistoryEntry(env: TrainEvent, trainName: string): Hi
   }
   const station = env.station ?? Line.station(line) ?? trainName;
   const isPrivate = env.is_private === true;
+  /** Trains may still emit `emoji` for reactions — fold it into text so the new envelope stays minimal. */
+  const text = env.text ?? (env.emoji ? `[react ${env.emoji}]` : undefined);
   return {
     id: env.id ?? mintId(),
     ts: env.ts ?? new Date().toISOString(),
-    kind: normalizeKind(env.kind),
     station,
     line: line as HistoryEntry['line'],
     lineName: env.line_name,
     from: (env.from ?? `metro://${station}`) as HistoryEntry['from'],
     fromName: env.from_name,
     to: (env.to ?? (isPrivate ? userSelf() : line)) as HistoryEntry['to'],
-    text: env.text,
-    emoji: env.emoji,
+    text,
     messageId: env.message_id,
     replyTo: env.reply_to,
     payload: env.payload,
@@ -109,7 +102,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse, emit: Em
 
   const line = Line.webhook(endpointId);
   emit({
-    id: mintId(), ts: new Date().toISOString(), kind: 'inbound', station: 'webhook',
+    id: mintId(), ts: new Date().toISOString(), station: 'webhook',
     line, lineName: endpoint.label, from: line, to: line,
     messageId: headers['x-github-delivery'] || headers['x-request-id'] || randomUUID(),
     text: `${headers['x-github-event'] ?? headers['x-intercom-topic'] ?? 'event'} ${req.method} ${req.url}`,

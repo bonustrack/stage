@@ -8,12 +8,9 @@ import { STATE_DIR } from './paths.js';
 import { Line } from './lines.js';
 import { claudeUserId, claudeSessionId, codexUserId, codexSessionId } from './local-identity.js';
 
-export type HistoryKind = 'inbound' | 'outbound' | 'edit' | 'react';
-
 export interface HistoryEntry {
   id: string;
   ts: string;
-  kind: HistoryKind;
   station: string;
   line: Line;
   /** Optional channel/topic display name (e.g. "infra"). */
@@ -25,32 +22,30 @@ export interface HistoryEntry {
   /** Universal recipient URI — almost always the conversation `line`. */
   to: Line;
   text?: string;
-  emoji?: string;
   /** Platform-side message id (Discord snowflake, Telegram int). Distinct from universal `id`. */
   messageId?: string;
   replyTo?: string;
-  /** Station-native raw message — only set on inbound. Shape matches `InboundMessage.payload`. */
+  /** Station-native raw message — shape varies per station. Reactions/edits live here too. */
   payload?: unknown;
   /** Pre-rendered chat-bubble markdown — the user's first chat output should be this string verbatim. */
   display?: string;
 }
 
-/** Pre-render a chat-bubble line — the user echoes `event.display` verbatim instead of composing markdown itself. */
+/** Pre-render a chat-bubble line. Direction is derived: from === local agent → outbound (📤), else inbound (📩). */
 export function formatDisplay(e: HistoryEntry): string {
   const headerFor = (icon: string, parts: (string | undefined)[]): string =>
     `**${icon} ${parts.filter(Boolean).join(' · ')}**`;
-  const body = e.text ?? (e.emoji ? `[react ${e.emoji}]` : '');
-  if (e.kind === 'inbound' && e.station === 'webhook') {
+  const body = e.text ?? '';
+  if (e.station === 'webhook' && !Line.isLocal(e.from)) {
     const ev = (e.payload as { headers?: Record<string, string> } | undefined)
       ?.headers?.['x-github-event'] ?? (e.payload as { headers?: Record<string, string> } | undefined)
       ?.headers?.['x-intercom-topic'];
     return `${headerFor('🪝', ['webhook', e.lineName, ev])}\n> ${body}`;
   }
-  if (e.kind === 'inbound' || (e.kind === 'react' && !Line.isLocal(e.from))) {
-    const reactBody = e.kind === 'react' ? `reacted ${e.emoji ?? ''}`.trim() : body;
-    return `${headerFor('📩', [e.station, e.fromName ?? e.from, e.lineName])}\n> ${reactBody}`;
+  if (Line.isLocal(e.from)) {
+    return `${headerFor('📤', [e.station, '→', e.fromName ?? e.to])}\n> ${body}`;
   }
-  return `${headerFor('📤', [e.station, '→', e.fromName ?? e.to])}\n> ${body}`;
+  return `${headerFor('📩', [e.station, e.fromName ?? e.from, e.lineName])}\n> ${body}`;
 }
 
 const FILE = join(STATE_DIR, 'history.jsonl');
@@ -67,7 +62,6 @@ export function appendHistory(entry: HistoryEntry): void {
 export interface HistoryFilter {
   line?: string;
   station?: string;
-  kind?: HistoryKind;
   from?: string;
   textContains?: string;
   since?: Date;
@@ -100,7 +94,6 @@ export function readHistory(filter: HistoryFilter = {}): HistoryEntry[] {
 function matches(e: HistoryEntry, f: HistoryFilter): boolean {
   if (f.line && e.line !== f.line) return false;
   if (f.station && e.station !== f.station) return false;
-  if (f.kind && e.kind !== f.kind) return false;
   if (f.from && e.from !== f.from) return false;
   if (f.textContains && !(e.text ?? '').toLowerCase().includes(f.textContains.toLowerCase())) return false;
   if (f.since && new Date(e.ts) < f.since) return false;

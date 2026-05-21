@@ -25,8 +25,9 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "softwareKeyboardLayoutMode": "pan",
-      "googleServicesFile": "./google-services.json"
+      "softwareKeyboardLayoutMode": "resize",
+      "googleServicesFile": "./google-services.json",
+      "allowBackup": false
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -38,12 +39,26 @@
       [
         "expo-notifications",
         {
+          "icon": "./assets/notification-icon.png",
           "color": "#ffffff"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Metro to choose images to send in the messenger.",
+          "cameraPermission": "Allow Metro to take photos to send in the messenger."
+        }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow Metro to record voice messages."
         }
       ]
     ],
     "notification": {
-      "icon": "./assets/icon.png",
+      "icon": "./assets/notification-icon.png",
       "color": "#ffffff",
       "iosDisplayInForeground": true,
       "androidMode": "default"

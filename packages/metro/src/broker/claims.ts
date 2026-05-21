@@ -100,14 +100,16 @@ export function classifyLine(line: Line): LineKind {
   return 'unknown';
 }
 
-/** Most-recent inbound on `line`. Walks `history.jsonl` from the tail; returns undefined if missing. */
+/** Most-recent inbound (from-someone-else) on `line`. Walks `history.jsonl` from the tail. */
 function readRecentInbound(line: Line): HistoryEntry | undefined {
   if (!existsSync(HISTORY_FILE)) return undefined;
   const lines = readFileSync(HISTORY_FILE, 'utf8').split('\n');
   for (let i = lines.length - 1; i >= 0; i--) {
     if (!lines[i].trim()) continue;
-    try { const e = JSON.parse(lines[i]) as HistoryEntry; if (e.line === line && e.kind === 'inbound') return e; }
-    catch { /* skip */ }
+    try {
+      const e = JSON.parse(lines[i]) as HistoryEntry;
+      if (e.line === line && !Line.isLocal(e.from)) return e;
+    } catch { /* skip */ }
   }
   return undefined;
 }

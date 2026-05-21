@@ -3,43 +3,16 @@
 import { timingSafeEqual } from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import pkg from '../../package.json' with { type: 'json' };
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { readClaims } from '../broker/claims.js';
 import {
   drainTail, followTail, historySize, type Mode, type TailOpts,
 } from '../broker/history-stream.js';
-import { mintId, readHistory, userSelf, type HistoryEntry } from '../history.js';
+import { readHistory, type HistoryEntry } from '../history.js';
 import { ipcCall } from '../ipc.js';
 import { asLine, Line } from '../lines.js';
 import { errMsg, log } from '../log.js';
-import { readBotIds, STATE_DIR } from '../paths.js';
-
-const MESSENGER_LINE = 'metro://messenger/owner' as Line;
-const MESSENGER_USER = 'metro://messenger/user/owner' as Line;
-const PUSH_TOKENS_FILE = join(STATE_DIR, 'push-tokens.json');
-
-function readPushTokens(): string[] {
-  try { return existsSync(PUSH_TOKENS_FILE) ? JSON.parse(readFileSync(PUSH_TOKENS_FILE, 'utf8')) as string[] : []; }
-  catch { return []; }
-}
-
-function writePushTokens(tokens: string[]): void {
-  writeFileSync(PUSH_TOKENS_FILE, JSON.stringify([...new Set(tokens)]));
-}
-
-async function pushExpo(tokens: string[], title: string, body: string): Promise<void> {
-  if (tokens.length === 0) return;
-  const messages = tokens.map(to => ({ to, title, body, sound: 'default' }));
-  try {
-    await fetch('https://exp.host/--/api/v2/push/send', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept-Encoding': 'gzip, deflate' },
-      body: JSON.stringify(messages),
-      signal: AbortSignal.timeout(10_000),
-    });
-  } catch (err) { log.warn({ err: errMsg(err) }, 'expo push failed'); }
-}
+import { readBotIds } from '../paths.js';
+import { routeMessenger } from './messenger-api.js';
 
 /** Monitor endpoints answer only on dedicated hostnames so webhook tunnel can't double-serve them. */
 const MONITOR_HOSTS = new Set(
@@ -64,14 +37,20 @@ function send(res: ServerResponse, req: IncomingMessage, status: number, body: u
   res.end(JSON.stringify(body));
 }
 
-function authorized(req: IncomingMessage): { status: number; msg: string } | null {
+function tokenEq(given: string, want: string): boolean {
+  const g = Buffer.from(given), w = Buffer.from(want);
+  return g.length === w.length && timingSafeEqual(g, w);
+}
+
+function authorized(req: IncomingMessage, q?: URLSearchParams): { status: number; msg: string } | null {
   const token = process.env.METRO_MONITOR_TOKEN;
   if (!token) return { status: 503, msg: 'monitor endpoints not configured (METRO_MONITOR_TOKEN unset)' };
-  const value = ([] as string[]).concat(req.headers['authorization'] ?? [])[0];
-  if (!value?.startsWith('Bearer ')) return { status: 401, msg: 'unauthorized' };
-  const given = Buffer.from(value.slice(7)), want = Buffer.from(token);
-  if (given.length !== want.length || !timingSafeEqual(given, want)) return { status: 401, msg: 'unauthorized' };
-  return null;
+  const header = ([] as string[]).concat(req.headers['authorization'] ?? [])[0];
+  if (header?.startsWith('Bearer ') && tokenEq(header.slice(7), token)) return null;
+  /** Query-token path is for media tags (img/audio) that can't send Authorization headers. */
+  const qt = q?.get('token');
+  if (qt && tokenEq(qt, token)) return null;
+  return { status: 401, msg: 'unauthorized' };
 }
 
 /** Mode picker — shared with CLI tail. Conflict/strict-no-self routed through `onErr`. */
@@ -99,10 +78,10 @@ export function handleMonitorRequest(
   if (host && !MONITOR_HOSTS.has(host.split(':')[0].toLowerCase())) return false;
   /** CORS preflight — short-circuit before auth so browsers can OPTIONS without a token. */
   if (req.method === 'OPTIONS') { res.writeHead(204, cors(req)); res.end(); return true; }
-  const auth = authorized(req);
-  if (auth) { send(res, req, auth.status, { error: auth.msg }); return true; }
   const [path, qs = ''] = url.split('?', 2);
   const q = new URLSearchParams(qs);
+  const auth = authorized(req, q);
+  if (auth) { send(res, req, auth.status, { error: auth.msg }); return true; }
   if (req.method === 'GET' && path === '/api/state') { handleState(res, req, q); return true; }
   if (req.method === 'GET' && path === '/api/tail') {
     handleTail(req, res, q).catch(err => {
@@ -121,25 +100,8 @@ export function handleMonitorRequest(
     });
     return true;
   }
-  /** POST /api/messenger/send — in-daemon chat with the assistant. `as=user` (default) or `as=agent`. */
-  if (path === '/api/messenger/send') {
-    if (req.method !== 'POST') { send(res, req, 405, { error: 'method not allowed' }); return true; }
-    if (!emit) { send(res, req, 500, { error: 'emit not wired through to monitor handler' }); return true; }
-    handleMessengerSend(req, res, emit).catch(err => {
-      log.warn({ err: errMsg(err) }, 'monitor: messenger handler error');
-      try { send(res, req, 500, { error: errMsg(err) }); } catch { /* ignore */ }
-    });
-    return true;
-  }
-  /** POST /api/messenger/register — store an Expo push token so agent replies push to the phone. */
-  if (path === '/api/messenger/register') {
-    if (req.method !== 'POST') { send(res, req, 405, { error: 'method not allowed' }); return true; }
-    handleMessengerRegister(req, res).catch(err => {
-      log.warn({ err: errMsg(err) }, 'monitor: messenger-register handler error');
-      try { send(res, req, 500, { error: errMsg(err) }); } catch { /* ignore */ }
-    });
-    return true;
-  }
+  /** /api/messenger/* — send, register, upload, files/:name. */
+  if (path.startsWith('/api/messenger/') && routeMessenger(req, res, path, emit, send)) return true;
   /** GET-only paths reject other verbs with 405. Anything else → 404. */
   if (req.method !== 'GET' && (path === '/api/state' || path === '/api/tail')) {
     send(res, req, 405, { error: 'method not allowed' });
@@ -219,53 +181,4 @@ async function handleCall(req: IncomingMessage, res: ServerResponse, train: stri
   if (!('response' in resp)) return send(res, req, 502, { error: 'malformed daemon response' });
   if (resp.response.error) return send(res, req, 502, { error: resp.response.error });
   send(res, req, 200, { result: resp.response.result ?? null });
-}
-
-async function handleMessengerSend(
-  req: IncomingMessage,
-  res: ServerResponse,
-  emit: (entry: HistoryEntry) => void,
-): Promise<void> {
-  const chunks: Buffer[] = [];
-  for await (const chunk of req) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as string));
-  const raw = Buffer.concat(chunks).toString('utf8').trim();
-  let body: { text?: string; as?: string } = {};
-  if (raw) {
-    try { body = JSON.parse(raw); }
-    catch (err) { return send(res, req, 400, { error: `bad JSON body: ${errMsg(err)}` }); }
-  }
-  const text = (body.text ?? '').trim();
-  if (!text) return send(res, req, 400, { error: 'text is required' });
-  const agent = userSelf();
-  const fromAgent = body.as === 'agent';
-  const entry: HistoryEntry = {
-    id: mintId(),
-    ts: new Date().toISOString(),
-    kind: fromAgent ? 'outbound' : 'inbound',
-    station: 'messenger',
-    line: MESSENGER_LINE,
-    from: fromAgent ? agent : MESSENGER_USER,
-    to: fromAgent ? MESSENGER_USER : agent,
-    text,
-  };
-  emit(entry);
-  /** Agent → user: push to registered tokens. User → agent: skip (it's their own message). */
-  if (fromAgent) void pushExpo(readPushTokens(), 'Metro', text.slice(0, 200));
-  send(res, req, 200, { id: entry.id, line: entry.line });
-}
-
-async function handleMessengerRegister(req: IncomingMessage, res: ServerResponse): Promise<void> {
-  const chunks: Buffer[] = [];
-  for await (const chunk of req) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as string));
-  const raw = Buffer.concat(chunks).toString('utf8').trim();
-  let body: { pushToken?: string } = {};
-  if (raw) {
-    try { body = JSON.parse(raw); }
-    catch (err) { return send(res, req, 400, { error: `bad JSON body: ${errMsg(err)}` }); }
-  }
-  const token = (body.pushToken ?? '').trim();
-  if (!token) return send(res, req, 400, { error: 'pushToken is required' });
-  const tokens = readPushTokens();
-  if (!tokens.includes(token)) writePushTokens([...tokens, token]);
-  send(res, req, 200, { ok: true, count: tokens.includes(token) ? tokens.length : tokens.length + 1 });
 }

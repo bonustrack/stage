@@ -22,10 +22,11 @@ apps/
 - [`@stage-labs/metro-app`](apps/app/README.md) — Expo / React Native companion. View live activity, filter lines, send replies from your phone via the daemon's bearer-token-gated monitor endpoints. Start with `bun --cwd apps/app start`.
 - `@stage-labs/metro-ui` — Vue 3 web companion with the same surface. `bun --cwd apps/ui dev` opens the dev server on `localhost:5173`; `bun --cwd apps/ui build` emits a static bundle in `apps/ui/dist/`.
 
-The monitor endpoints (`/api/state`, `/api/tail` SSE, `/api/call/<train>/<action>`) are
-documented in [`packages/metro/docs/monitor.md`](packages/metro/docs/monitor.md); enable
-them by setting `METRO_MONITOR_TOKEN` in `~/.config/metro/.env`. Broker semantics
-(claims, multi-user fan-out) are in
+The monitor endpoints (`/api/state`, `/api/tail` SSE, `/api/call/<train>/<action>`,
+`/api/messenger/send`, `/api/messenger/register`) are documented in
+[`packages/metro/docs/monitor.md`](packages/metro/docs/monitor.md); enable them by
+setting `METRO_MONITOR_TOKEN` in `~/.config/metro/.env`. Broker semantics (claims,
+multi-user fan-out) are in
 [`packages/metro/docs/broker.md`](packages/metro/docs/broker.md); the `metro://` URI
 scheme is in
 [`packages/metro/docs/uri-scheme.md`](packages/metro/docs/uri-scheme.md).
