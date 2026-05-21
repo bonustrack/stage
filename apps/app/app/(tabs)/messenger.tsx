@@ -170,7 +170,7 @@ export default function Messenger(): React.ReactElement {
         <Pressable
           onPress={() => listRef.current?.scrollToOffset({ offset: 0, animated: true })}
           style={{
-            position: 'absolute', alignSelf: 'center', bottom: 150,
+            position: 'absolute', alignSelf: 'center', bottom: 170, zIndex: 3,
             width: 36, height: 36, borderRadius: 999,
             backgroundColor: dark ? '#1d2230' : '#ffffff',
             alignItems: 'center', justifyContent: 'center',
