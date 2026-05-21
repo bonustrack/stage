@@ -5,6 +5,7 @@ import { useFonts } from 'expo-font';
 import * as Notifications from 'expo-notifications';
 import { ActivityIndicator, Text, TextInput, useColorScheme, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 /** Set Calibre-Medium as the app-wide default for Text + TextInput (RN has no global font setting). */
 /** Also makes every Text selectable so users can copy any rendered string (incl. markdown bodies). */
@@ -49,6 +50,7 @@ export default function RootLayout(): React.ReactElement {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      <KeyboardProvider>
       <StatusBar style={dark ? 'light' : 'dark'} />
       <Stack
         screenOptions={{
@@ -61,6 +63,7 @@ export default function RootLayout(): React.ReactElement {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="event/[id]" options={{ title: 'Event' }} />
       </Stack>
+      </KeyboardProvider>
     </GestureHandlerRootView>
   );
 }

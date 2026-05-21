@@ -1,10 +1,12 @@
 /** Messenger — direct chat with the assistant via `POST /api/messenger/send`. */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
-  FlatList, Keyboard, Modal, Pressable, RefreshControl, Text, View, useColorScheme,
+  FlatList, Modal, Pressable, RefreshControl, Text, View, useColorScheme,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
+import { useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
 import { useFocusEffect, useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { MessengerBubble } from '../../components/MessengerBubble';
@@ -55,20 +57,17 @@ export default function Messenger(): React.ReactElement {
   const [showJump, setShowJump] = useState(false);
   const [replyingTo, setReplyingTo] = useState<{ id: string; preview: string } | null>(null);
   const [menuFor, setMenuFor] = useState<HistoryEntry | null>(null);
-  /** Manual keyboard-overlap tracking — softwareKeyboardLayoutMode: "resize" doesn't shrink
-   *  the window when edgeToEdgeEnabled is on, so the composer would sit under the keyboard.
-   *  `endCoordinates.height` underreports on Samsung (gesture-nav inset isn't rolled in),
-   *  so add the bottom safe-area inset back to get the full visual overlap. */
+  /** react-native-keyboard-controller drives a Reanimated SharedValue (`height`) frame-by-
+   *  frame in lockstep with Android's WindowInsetsAnimation — no lag, no LayoutAnimation
+   *  guesses. We mirror that into paddingBottom + always add insets.bottom so the composer
+   *  clears the gesture-nav bar even when the keyboard is closed. */
   const insets = useSafeAreaInsets();
-  const [kbHeight, setKbHeight] = useState(0);
-  useEffect(() => {
-    const show = Keyboard.addListener('keyboardDidShow', e => setKbHeight(e.endCoordinates.height));
-    const hide = Keyboard.addListener('keyboardDidHide', () => setKbHeight(0));
-    return () => { show.remove(); hide.remove(); };
-  }, []);
-  /** Always include insets.bottom so the composer clears the gesture-nav bar even when
-   *  the keyboard is closed (the tab bar is hidden on this screen). */
-  const kbOverlap = kbHeight + insets.bottom;
+  const { height: kbAnim } = useReanimatedKeyboardAnimation();
+  const wrapperStyle = useAnimatedStyle(() => ({
+    /** When the keyboard is up it already covers the gesture-nav inset → take the
+     *  larger of the two, not both stacked (which left an ~insets.bottom-sized gap). */
+    paddingBottom: Math.max(-kbAnim.value, insets.bottom),
+  }));
   const listRef = useRef<FlatList<HistoryEntry>>(null);
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -110,7 +109,7 @@ export default function Messenger(): React.ReactElement {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: bg, paddingBottom: kbOverlap }}>
+    <Animated.View style={[{ flex: 1, backgroundColor: bg }, wrapperStyle]}>
       <FlatList
         ref={listRef}
         data={bubbleEvents}
@@ -211,7 +210,7 @@ export default function Messenger(): React.ReactElement {
           setMenuFor(null);
         }}
       />
-    </View>
+    </Animated.View>
   );
 }
 
