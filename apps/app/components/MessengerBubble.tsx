@@ -68,9 +68,9 @@ function markdownStyles(fg: string, dark: boolean): Record<string, object> {
 }
 
 export function MessengerBubble({
-  entry, dark, unread, pending, onReact, onReply, onLongPress, replyPreview, reactions, transcript, daemonUrl, token,
+  entry, dark, unread, pending, replyTarget, onReact, onReply, onLongPress, replyPreview, reactions, transcript, daemonUrl, token,
 }: {
-  entry: HistoryEntry; dark: boolean; unread: boolean; pending?: boolean;
+  entry: HistoryEntry; dark: boolean; unread: boolean; pending?: boolean; replyTarget?: boolean;
   onReact?: (emoji: string) => void; onReply?: () => void; onLongPress?: () => void;
   replyPreview?: string; reactions?: Map<string, number>; transcript?: string;
   daemonUrl: string; token: string;
@@ -129,8 +129,9 @@ export function MessengerBubble({
           backgroundColor: bubbleBg, paddingHorizontal: mine ? 14 : 0, paddingVertical: mine ? 9 : 0,
           borderTopLeftRadius: 20, borderTopRightRadius: 20,
           borderBottomLeftRadius: mine ? 20 : 0, borderBottomRightRadius: mine ? 6 : 0,
-          borderWidth: unread && mine ? 1.5 : 0,
-          borderColor: unread ? (dark ? '#ffffff' : '#1a1f29') : 'transparent',
+          /** Reply-target highlight wins over the unread border (yellow-ish accent ring). */
+          borderWidth: replyTarget ? 1.5 : (unread && mine ? 1.5 : 0),
+          borderColor: replyTarget ? '#c0a06e' : (unread ? (dark ? '#ffffff' : '#1a1f29') : 'transparent'),
         }}
       >
         {replyPreview ? (
@@ -158,11 +159,19 @@ export function MessengerBubble({
             <Markdown {...markdownProps}>{entry.text}</Markdown>
           </View>
         ) : null}
-        {transcript
-          ? <Text style={{ color: mine ? fg : sub, opacity: 0.75, fontSize: 13, fontStyle: 'italic', marginTop: atts.length ? 4 : 0 }}>“{transcript}”</Text>
-          : atts.some(a => a.kind === 'audio') && Date.now() - new Date(entry.ts).getTime() < 30_000
-            ? <Text style={{ color: sub, opacity: 0.6, fontSize: 12, fontStyle: 'italic', marginTop: 4 }}>transcribing…</Text>
-            : null}
+        {transcript ? (
+          <Text style={{
+            color: mine ? fg : sub, opacity: 0.75, fontSize: 13, fontStyle: 'italic',
+            marginTop: atts.length ? 4 : 0,
+          }}>“{transcript}”</Text>
+        ) : atts.some(a => a.kind === 'audio') && Date.now() - new Date(entry.ts).getTime() < 30_000 ? (
+          /** Fresh audio bubble + transcription still running. Old audio without a transcript
+           *  (predates the pipeline or its event was dropped) gets nothing rather than
+           *  a forever "transcribing…" placeholder. */
+          <Text style={{ color: sub, opacity: 0.6, fontSize: 13, fontStyle: 'italic', marginTop: 4 }}>
+            transcribing…
+          </Text>
+        ) : null}
         <View style={{
           alignSelf: 'stretch',
           flexDirection: 'row', alignItems: 'center',

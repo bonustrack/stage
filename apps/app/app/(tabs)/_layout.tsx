@@ -53,10 +53,10 @@ export default function TabsLayout(): React.ReactElement {
       {(
         [
           ['index', 'home', 0],
-          ['messenger', 'send', unread],
           ['search', 'search', 0],
           ['lines', 'list', 0],
           ['settings', 'cog', 0],
+          ['messenger', 'send', unread],
         ] as const satisfies ReadonlyArray<readonly [string, HeroIconName, number]>
       ).map(([name, icon, badge]) => (
         <Tabs.Screen

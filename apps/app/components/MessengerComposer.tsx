@@ -132,21 +132,48 @@ export function MessengerComposer({ daemonUrl, token, dark, replyingTo, onClearR
         </View>
       ) : null}
       {pending.length > 0 ? (
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingHorizontal: 6, paddingBottom: 6 }}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 6, paddingBottom: 6 }}>
           {pending.map((a, i) => (
-            <View key={a.id} style={{
-              flexDirection: 'row', alignItems: 'center', gap: 6,
-              paddingHorizontal: a.kind === 'image' ? 4 : 8, paddingVertical: 4,
-              borderRadius: 12, backgroundColor: chipBg,
-            }}>
-              {a.kind === 'image'
-                ? <Image source={{ uri: chipImageUrl(daemonUrl, token, a.url) }} style={{ width: 28, height: 28, borderRadius: 6 }} resizeMode="cover" />
-                : <HeroIcon name={kindIcon(a.kind)} size={14} color={fg} />}
-              <Text style={{ color: fg, fontSize: 12, maxWidth: 140 }} numberOfLines={1}>{a.name ?? a.id}</Text>
-              <Pressable onPress={() => setPending(prev => prev.filter((_, j) => j !== i))} hitSlop={6}>
-                <HeroIcon name="x" size={14} color={sub} />
-              </Pressable>
-            </View>
+            a.kind === 'image' ? (
+              /** Image attachments: 72px square with the filename label beneath, x-to-remove
+               *  pinned to the top-right corner of the thumbnail. */
+              <View key={a.id} style={{ width: 72, alignItems: 'center', gap: 4 }}>
+                <View>
+                  <Image
+                    source={{ uri: chipImageUrl(daemonUrl, token, a.url) }}
+                    style={{ width: 72, height: 72, borderRadius: 8 }}
+                    resizeMode="cover"
+                  />
+                  <Pressable
+                    onPress={() => setPending(prev => prev.filter((_, j) => j !== i))}
+                    hitSlop={6}
+                    style={{
+                      position: 'absolute', top: -4, right: -4,
+                      backgroundColor: '#000', borderRadius: 999, padding: 2,
+                    }}
+                  >
+                    <HeroIcon name="x" size={12} color="#ffffff" />
+                  </Pressable>
+                </View>
+                <Text style={{ color: fg, fontSize: 11, width: 72, textAlign: 'center' }} numberOfLines={1}>
+                  {a.name ?? a.id}
+                </Text>
+              </View>
+            ) : (
+              /** Non-image attachments keep the inline chip layout — files/audio don'​t benefit
+               *  from a thumbnail and look fine as a row. */
+              <View key={a.id} style={{
+                flexDirection: 'row', alignItems: 'center', gap: 6,
+                paddingHorizontal: 8, paddingVertical: 4,
+                borderRadius: 12, backgroundColor: chipBg,
+              }}>
+                <HeroIcon name={kindIcon(a.kind)} size={14} color={fg} />
+                <Text style={{ color: fg, fontSize: 12, maxWidth: 140 }} numberOfLines={1}>{a.name ?? a.id}</Text>
+                <Pressable onPress={() => setPending(prev => prev.filter((_, j) => j !== i))} hitSlop={6}>
+                  <HeroIcon name="x" size={14} color={sub} />
+                </Pressable>
+              </View>
+            )
           ))}
         </View>
       ) : null}

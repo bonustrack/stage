@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  FlatList, Keyboard, Modal, Pressable, RefreshControl, Text, View, useColorScheme,
+  Animated as RNAnimated,
+  FlatList, Keyboard, Modal, PanResponder, Pressable, RefreshControl, Text, View, useColorScheme,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
@@ -16,6 +17,7 @@ import { loadConfig, isConfigured, type Config } from '../../lib/config';
 import {
   isReaction, isTranscript, reactMessenger, reactionsByMessage, transcriptsByMessage,
 } from '../../lib/messenger';
+import { saveBubbleCache, useCachedBubbles } from '../../lib/messenger-cache';
 import { getMessengerLastRead, markMessengerRead } from '../../lib/messenger-unread';
 import { registerForPush } from '../../lib/push';
 import { useTail } from '../../lib/sse';
@@ -65,6 +67,21 @@ export default function Messenger(): React.ReactElement {
    *  bumping contentContainerStyle.paddingTop via state on keyboardDidShow/Hide; the
    *  resulting JS-thread lag is the trade-off. */
   const insets = useSafeAreaInsets();
+  /** Swipe left→right on the screen → back to the Home tab, with the messenger sliding
+   *  with the finger. Past 60px on release → navigate back; otherwise spring home.
+   *  The bubble'​s pan only claims left-going drags so right-going ones fall through. */
+  const swipeBackX = useRef(new RNAnimated.Value(0)).current;
+  const backPan = useMemo(() => PanResponder.create({
+    onMoveShouldSetPanResponder: (_, g) => g.dx > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
+    onPanResponderMove: (_, g) => { swipeBackX.setValue(Math.max(0, g.dx)); },
+    onPanResponderRelease: (_, g) => {
+      if (g.dx >= 60) router.push('/(tabs)');
+      RNAnimated.spring(swipeBackX, { toValue: 0, useNativeDriver: true, speed: 18, bounciness: 6 }).start();
+    },
+    onPanResponderTerminate: () => {
+      RNAnimated.spring(swipeBackX, { toValue: 0, useNativeDriver: true, speed: 18, bounciness: 6 }).start();
+    },
+  }), [router, swipeBackX]);
   const [kbHeight, setKbHeight] = useState(0);
   useEffect(() => {
     const show = Keyboard.addListener('keyboardDidShow', e => setKbHeight(e.endCoordinates.height));
@@ -82,10 +99,15 @@ export default function Messenger(): React.ReactElement {
   /** Reaction + transcript events decorate their target msg — don't render as their own bubbles. */
   const reactions = useMemo(() => reactionsByMessage(events), [events]);
   const transcripts = useMemo(() => transcriptsByMessage(events), [events]);
-  const bubbleEvents = useMemo(
+  const cachedBubbles = useCachedBubbles();
+  const liveBubbles = useMemo(
     () => events.filter(e => !isReaction(e) && !isTranscript(e)),
     [events],
   );
+  /** Show cached bubbles on cold open so the feed isn'​t empty for a frame while SSE
+   *  seeds. Once live events arrive, they take over and the cache gets refreshed. */
+  const bubbleEvents = liveBubbles.length > 0 ? liveBubbles : cachedBubbles;
+  useEffect(() => { if (liveBubbles.length > 0) saveBubbleCache(liveBubbles); }, [liveBubbles]);
   /** Drop optimistic entries that a real SSE event now covers (same text + sent within 30s). */
   useEffect(() => {
     if (!optimistic.length) return;
@@ -122,13 +144,29 @@ export default function Messenger(): React.ReactElement {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: bg, paddingBottom: insets.bottom }}>
+    <RNAnimated.View
+      {...backPan.panHandlers}
+      style={{
+        flex: 1, backgroundColor: bg, paddingBottom: insets.bottom,
+        transform: [{ translateX: swipeBackX }],
+      }}
+    >
       <FlatList
         ref={listRef}
         data={allBubbles}
         inverted
+        showsVerticalScrollIndicator={false}
+        /** Anchor the bottom-visible item (= newest on inverted) so as new bubbles or the
+         *  initial seed lands, scroll stays pinned to the latest message. */
+        maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
         keyExtractor={e => e.id}
-        contentContainerStyle={{ paddingTop: 12 + kbHeight, paddingBottom: 6 }}
+        /** Lift the FlatList'​s bottom edge by kbHeight when the keyboard is open so the
+         *  newest message stays above the keyboard (rather than getting clipped behind it). */
+        style={{ marginBottom: kbHeight }}
+        /** Inverted: paddingTop = visual BOTTOM (composer side), paddingBottom = visual TOP
+         *  (nav side). Bump the top so the oldest message clears the absolute top-nav strip
+         *  when the user scrolls all the way up. */
+        contentContainerStyle={{ paddingTop: 12, paddingBottom: insets.top + 44 + 8 }}
         onScroll={(ev) => { setShowJump(ev.nativeEvent.contentOffset.y > 200); }}
         scrollEventThrottle={32}
         renderItem={({ item }) => (
@@ -137,6 +175,7 @@ export default function Messenger(): React.ReactElement {
             dark={dark}
             unread={item.from !== MESSENGER_USER && item.station === 'messenger' && item.ts > unreadCutoff}
             pending={item.id.startsWith('tmp_')}
+            replyTarget={replyingTo?.id === item.id}
             daemonUrl={cfg?.daemonUrl ?? ''}
             token={cfg?.token ?? ''}
             reactions={reactions.get(item.id)}
@@ -224,6 +263,9 @@ export default function Messenger(): React.ReactElement {
               ...(replyTo ? { replyTo } : {}),
               ...(attachments.length ? { payload: { attachments } } : {}),
             } as HistoryEntry, ...prev]);
+            /** Snap back to the bottom so the user sees their bubble appear (try/catch
+             *  because the scroll API can throw on this device — see commit history). */
+            try { listRef.current?.scrollToOffset({ offset: 0, animated: true }); } catch { /* ignore */ }
           }}
         />
         </KeyboardStickyView>
@@ -242,7 +284,7 @@ export default function Messenger(): React.ReactElement {
           setMenuFor(null);
         }}
       />
-    </View>
+    </RNAnimated.View>
   );
 }
 
