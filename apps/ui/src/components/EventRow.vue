@@ -27,16 +27,20 @@ function open(): void {
 <template>
   <button
     type="button"
-    class="w-full text-left px-4 py-3 border-b border-metro-border-light dark:border-metro-border-dark
-      bg-metro-surface-light dark:bg-metro-surface-dark hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark transition-colors"
+    class="w-full text-left px-3 py-1.5 hover:opacity-80 transition-opacity flex items-start gap-2.5"
     @click="open"
   >
-    <div class="flex items-center gap-2 mb-1">
-      <StationIcon :station="entry.station" />
-      <span class="text-xs text-metro-sub-light dark:text-metro-sub-dark truncate flex-1">{{ sender }}</span>
-      <span class="text-xs text-metro-sub-light dark:text-metro-sub-dark">{{ ts }}</span>
+    <div class="pt-1"><StationIcon :station="entry.station" /></div>
+    <div class="flex-1 min-w-0 flex flex-col gap-0.5">
+      <div class="flex items-baseline gap-1.5">
+        <span class="text-[13px] font-semibold text-metro-fg-light dark:text-metro-fg-dark truncate">{{ sender }}</span>
+        <span class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark">{{ ts }}</span>
+      </div>
+      <div class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark truncate">{{ lineLabel }}</div>
+      <!-- Messenger-style bubble for the body. -->
+      <div class="mt-1 px-3 py-2 rounded-2xl rounded-tl-sm bg-metro-surface-light dark:bg-metro-surface-dark">
+        <div class="text-[15px] leading-snug text-metro-fg-light dark:text-metro-fg-dark whitespace-pre-wrap line-clamp-4">{{ text }}</div>
+      </div>
     </div>
-    <div class="text-xs text-metro-sub-light dark:text-metro-sub-dark truncate">{{ lineLabel }}</div>
-    <div class="text-sm text-metro-fg-light dark:text-metro-fg-dark whitespace-pre-wrap line-clamp-3">{{ text }}</div>
   </button>
 </template>

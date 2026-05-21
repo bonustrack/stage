@@ -2,6 +2,7 @@
 /** Messenger — direct chat with the assistant. Mirrors the mobile composer (floating, 2-line, heroicons). */
 
 import type { Config } from '../lib/config';
+import type { HistoryEntry } from '../lib/types';
 import {
   isReaction, isTranscript, reactMessenger, reactionsByMessage, sendMessenger,
   transcriptsByMessage, uploadAttachment, type Attachment,
@@ -9,6 +10,7 @@ import {
 import { useRecorder } from '../lib/useRecorder';
 
 const MESSENGER_LINE = 'metro://messenger/owner';
+const MESSENGER_USER = 'metro://messenger/user/owner';
 
 const cfg = ref<Config>(loadConfig());
 const chat = ref<string | undefined>(MESSENGER_LINE);
@@ -28,8 +30,19 @@ function previewOf(e: { text?: string; payload?: unknown }): string {
 }
 
 const tail = useTail(cfg, chat);
-const bubbles = computed(() =>
+/** Optimistic outbound entries — rendered immediately on send, dedupe by text + freshness when
+ *  the real SSE event lands. */
+const optimistic = ref<HistoryEntry[]>([]);
+const liveBubbles = computed(() =>
   [...tail.events.value].reverse().filter(e => !isReaction(e) && !isTranscript(e)));
+watch(liveBubbles, current => {
+  if (!optimistic.value.length) return;
+  optimistic.value = optimistic.value.filter(o =>
+    !current.some(e => e.from === MESSENGER_USER && e.text === o.text
+      && Math.abs(new Date(e.ts).getTime() - new Date(o.ts).getTime()) < 30_000));
+});
+/** Optimistic entries are stored newest-first; live bubbles already are. */
+const bubbles = computed(() => [...optimistic.value, ...liveBubbles.value]);
 const reactions = computed(() => reactionsByMessage(tail.events.value));
 const transcripts = computed(() => transcriptsByMessage(tail.events.value));
 
@@ -72,10 +85,25 @@ const { recording, recordSecs, start: startRecording, stop: stopRecording } = us
 async function send(): Promise<void> {
   const body = text.value.trim();
   if (!body && pending.value.length === 0) return;
+  /** Build the optimistic entry first → bubble appears at 50% opacity instantly. */
+  const localId = `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const ts = new Date().toISOString();
+  const replyTo = replyingTo.value?.id;
+  const atts = pending.value;
+  optimistic.value = [{
+    id: localId, ts,
+    station: 'messenger', line: MESSENGER_LINE,
+    from: MESSENGER_USER, to: MESSENGER_LINE,
+    text: body || undefined,
+    ...(replyTo ? { replyTo } : {}),
+    ...(atts.length ? { payload: { attachments: atts } } : {}),
+  } as HistoryEntry, ...optimistic.value];
+  /** Clear the composer immediately — the bubble carries the user'​s input now. */
+  const sentBody = body; const sentAtts = atts;
+  text.value = ''; pending.value = []; replyingTo.value = null;
   sending.value = true; err.value = null;
   try {
-    await sendMessenger(cfg.value.daemonUrl, cfg.value.token, body, pending.value, replyingTo.value?.id);
-    text.value = ''; pending.value = []; replyingTo.value = null;
+    await sendMessenger(cfg.value.daemonUrl, cfg.value.token, sentBody, sentAtts, replyTo);
   } catch (e) { err.value = (e as Error).message; }
   finally { sending.value = false; }
 }
@@ -104,6 +132,8 @@ onBeforeUnmount(() => { tail.stop(); stopRecording(); });
         :entry="e"
         :daemonUrl="cfg.daemonUrl"
         :token="cfg.token"
+        :pending="e.id.startsWith('tmp_')"
+        :replyTarget="replyingTo?.id === e.id"
         :reactions="reactions.get(e.id)"
         :transcript="transcripts.get(e.id)"
         :replyPreview="e.replyTo ? previewOf(tail.events.value.find(x => x.id === e.replyTo) ?? e) : undefined"
@@ -126,18 +156,31 @@ onBeforeUnmount(() => { tail.stop(); stopRecording(); });
         <button type="button" class="text-metro-sub-light dark:text-metro-sub-dark"
           @click="replyingTo = null"><HeroIcon name="x" :size="14" /></button>
       </div>
-      <div v-if="pending.length" class="flex flex-wrap gap-1.5 pb-1.5">
-        <div v-for="(a, i) in pending" :key="a.id"
-          class="flex items-center gap-1.5 rounded-xl text-xs
-            bg-metro-hover-light dark:bg-metro-hover-dark text-metro-fg-light dark:text-metro-fg-dark"
-          :class="a.kind === 'image' ? 'pl-1 pr-2 py-1' : 'px-2 py-1'">
-          <img v-if="a.kind === 'image'" :src="chipImageUrl(a)" class="w-7 h-7 rounded object-cover" />
-          <HeroIcon v-else :name="a.kind === 'audio' ? 'microphone' : 'paperClip'" :size="14" />
-          <span class="max-w-[140px] truncate">{{ a.name ?? a.id }}</span>
-          <button class="opacity-60 hover:opacity-100" @click="pending = pending.filter((_, j) => j !== i)">
-            <HeroIcon name="x" :size="14" />
-          </button>
-        </div>
+      <div v-if="pending.length" class="flex flex-wrap gap-2 pb-1.5">
+        <template v-for="(a, i) in pending" :key="a.id">
+          <!-- Image attachment: 72×72 thumbnail with filename underneath + x in the top-right -->
+          <div v-if="a.kind === 'image'" class="w-[72px] flex flex-col items-center gap-1">
+            <div class="relative">
+              <img :src="chipImageUrl(a)" class="w-[72px] h-[72px] rounded-lg object-cover" />
+              <button
+                class="absolute -top-1 -right-1 bg-black rounded-full p-0.5 text-white"
+                @click="pending = pending.filter((_, j) => j !== i)"
+              ><HeroIcon name="x" :size="12" /></button>
+            </div>
+            <span class="text-[11px] w-[72px] text-center truncate text-metro-fg-light dark:text-metro-fg-dark">{{ a.name ?? a.id }}</span>
+          </div>
+          <!-- Non-image: inline chip -->
+          <div v-else
+            class="flex items-center gap-1.5 rounded-xl text-xs px-2 py-1
+              bg-metro-hover-light dark:bg-metro-hover-dark text-metro-fg-light dark:text-metro-fg-dark"
+          >
+            <HeroIcon :name="a.kind === 'audio' ? 'microphone' : 'paperClip'" :size="14" />
+            <span class="max-w-[140px] truncate">{{ a.name ?? a.id }}</span>
+            <button class="opacity-60 hover:opacity-100" @click="pending = pending.filter((_, j) => j !== i)">
+              <HeroIcon name="x" :size="14" />
+            </button>
+          </div>
+        </template>
       </div>
       <div v-if="attachMenuOpen" class="flex gap-2 pb-1.5">
         <button type="button"
