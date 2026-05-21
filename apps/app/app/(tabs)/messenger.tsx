@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  FlatList, Keyboard, Pressable, RefreshControl, Text, View, useColorScheme,
+  FlatList, Keyboard, Modal, Pressable, RefreshControl, Text, View, useColorScheme,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
+import * as Clipboard from 'expo-clipboard';
 import { MessengerBubble } from '../../components/MessengerBubble';
 import { MessengerComposer } from '../../components/MessengerComposer';
 import { ComposerGradient } from '../../components/ComposerGradient';
@@ -53,6 +54,7 @@ export default function Messenger(): React.ReactElement {
   const [refreshing, setRefreshing] = useState(false);
   const [showJump, setShowJump] = useState(false);
   const [replyingTo, setReplyingTo] = useState<{ id: string; preview: string } | null>(null);
+  const [menuFor, setMenuFor] = useState<HistoryEntry | null>(null);
   /** Manual keyboard-overlap tracking — softwareKeyboardLayoutMode: "resize" doesn't shrink
    *  the window when edgeToEdgeEnabled is on, so the composer would sit under the keyboard.
    *  `endCoordinates.height` underreports on Samsung (gesture-nav inset isn't rolled in),
@@ -131,6 +133,7 @@ export default function Messenger(): React.ReactElement {
             replyPreview={item.replyTo ? previewOf(events.find(e => e.id === item.replyTo) ?? item) : undefined}
             onReact={(emoji) => onReact(item.id, emoji)}
             onReply={() => setReplyingTo({ id: item.id, preview: previewOf(item) })}
+            onLongPress={() => setMenuFor(item)}
           />
         )}
         ListEmptyComponent={
@@ -141,31 +144,38 @@ export default function Messenger(): React.ReactElement {
         keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={sub} />}
       />
-      <Pressable
-        onPress={() => router.push('/(tabs)')}
-        hitSlop={10}
-        style={{ position: 'absolute', top: 8, left: 14, padding: 6, zIndex: 2 }}
-      >
-        <HeroIcon name="arrowLeft" size={22} color={fg} />
-      </Pressable>
-      {status !== 'open' && enabled ? (
-        <View style={{
-          position: 'absolute', top: 8, alignSelf: 'center',
-          flexDirection: 'row', alignItems: 'center', gap: 6,
-          paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999,
-          backgroundColor: dark ? 'rgba(40,46,58,0.92)' : 'rgba(238,241,247,0.95)',
-        }}>
+      {/** Top nav: solid bg strip with back arrow + status pill, mirrors the composer footer.
+       *  Sits absolute over the FlatList so the inverted list doesn't reserve space for it. */}
+      <View style={{
+        position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
+        height: 44, paddingHorizontal: 14, backgroundColor: bg,
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <Pressable
+          onPress={() => router.push('/(tabs)')}
+          hitSlop={10}
+          style={{ position: 'absolute', left: 14, padding: 6 }}
+        >
+          <HeroIcon name="arrowLeft" size={22} color={fg} />
+        </Pressable>
+        {status !== 'open' && enabled ? (
           <View style={{
-            width: 6, height: 6, borderRadius: 999,
-            backgroundColor: status === 'connecting' ? '#c0a06e' : '#d96868',
-          }} />
-          <Text style={{ color: sub, fontSize: 11 }}>
-            {status === 'connecting' ? 'Connecting…' : status === 'error' ? 'Reconnecting…' : 'Offline'}
-          </Text>
-        </View>
-      ) : null}
-      {/** Top fade so messages don't visually crash into the status-bar icons. */}
-      <ComposerGradient bg={bg} direction="up" top={0} height={40} />
+            flexDirection: 'row', alignItems: 'center', gap: 6,
+            paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999,
+            backgroundColor: dark ? 'rgba(40,46,58,0.92)' : 'rgba(238,241,247,0.95)',
+          }}>
+            <View style={{
+              width: 6, height: 6, borderRadius: 999,
+              backgroundColor: status === 'connecting' ? '#c0a06e' : '#d96868',
+            }} />
+            <Text style={{ color: sub, fontSize: 11 }}>
+              {status === 'connecting' ? 'Connecting…' : status === 'error' ? 'Reconnecting…' : 'Offline'}
+            </Text>
+          </View>
+        ) : null}
+      </View>
+      {/** Fade strip below the top nav — mirrors the composer'​s top fade. */}
+      <ComposerGradient bg={bg} direction="up" top={44} height={10} />
       {showJump ? (
         <Pressable
           onPress={() => listRef.current?.scrollToOffset({ offset: 0, animated: true })}
@@ -187,6 +197,63 @@ export default function Messenger(): React.ReactElement {
           onClearReply={() => setReplyingTo(null)}
         />
       ) : null}
+      <BubbleActionMenu
+        target={menuFor}
+        dark={dark}
+        onClose={() => setMenuFor(null)}
+        onReact={emoji => { if (menuFor) onReact(menuFor.id, emoji); setMenuFor(null); }}
+        onReply={() => {
+          if (menuFor) setReplyingTo({ id: menuFor.id, preview: previewOf(menuFor) });
+          setMenuFor(null);
+        }}
+        onCopy={() => {
+          if (menuFor?.text) void Clipboard.setStringAsync(menuFor.text);
+          setMenuFor(null);
+        }}
+      />
     </View>
+  );
+}
+
+const ACTION_EMOJIS = ['👍', '❤️', '😂', '😮', '🔥', '🎉'] as const;
+function BubbleActionMenu({
+  target, dark, onClose, onReact, onReply, onCopy,
+}: {
+  target: HistoryEntry | null; dark: boolean; onClose: () => void;
+  onReact: (emoji: string) => void; onReply: () => void; onCopy: () => void;
+}): React.ReactElement {
+  const sheetBg = dark ? '#1d2230' : '#ffffff';
+  const fg = dark ? '#e8ecf2' : '#1a1f29';
+  const sub = dark ? '#8a94a6' : '#5a6477';
+  return (
+    <Modal visible={!!target} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>
+        <Pressable onPress={e => e.stopPropagation()} style={{
+          backgroundColor: sheetBg, borderTopLeftRadius: 16, borderTopRightRadius: 16,
+          padding: 16, paddingBottom: 24, gap: 10,
+        }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-around', paddingBottom: 8 }}>
+            {ACTION_EMOJIS.map(e => (
+              <Pressable key={e} onPress={() => onReact(e)} hitSlop={8}>
+                <Text style={{ fontSize: 28 }}>{e}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <Pressable onPress={onReply} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}>
+            <HeroIcon name="reply" size={20} color={fg} />
+            <Text style={{ color: fg, fontSize: 16 }}>Reply</Text>
+          </Pressable>
+          {target?.text ? (
+            <Pressable onPress={onCopy} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}>
+              <HeroIcon name="copy" size={20} color={fg} />
+              <Text style={{ color: fg, fontSize: 16 }}>Copy text</Text>
+            </Pressable>
+          ) : null}
+          <Pressable onPress={onClose} style={{ paddingVertical: 10, alignItems: 'center' }}>
+            <Text style={{ color: sub, fontSize: 14 }}>Cancel</Text>
+          </Pressable>
+        </Pressable>
+      </Pressable>
+    </Modal>
   );
 }

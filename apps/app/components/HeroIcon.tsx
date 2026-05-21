@@ -39,6 +39,8 @@ const PATHS: Record<string, string> = {
   arrowDown: 'M19 14l-7 7m0 0l-7-7m7 7V3',
   // arrow-left — back navigation in headers
   arrowLeft: 'M10 19l-7-7m0 0l7-7m-7 7h18',
+  // duplicate / copy — clipboard "copy text" action in the bubble menu
+  copy: 'M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z',
 };
 
 export type HeroIconName = keyof typeof PATHS;

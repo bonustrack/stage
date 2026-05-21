@@ -1,7 +1,7 @@
 /** ChatGPT-dark-style messenger row: user gets a bubble (right), assistant is bubble-less (left). */
 
-import { useState } from 'react';
-import { Linking, Pressable, Text, View } from 'react-native';
+import { useMemo, useRef, useState } from 'react';
+import { Animated, Linking, PanResponder, Pressable, Text, View } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import { HeroIcon } from './HeroIcon';
 import { MessengerAudioPlayer } from './MessengerAudioPlayer';
@@ -68,10 +68,10 @@ function markdownStyles(fg: string, dark: boolean): Record<string, object> {
 }
 
 export function MessengerBubble({
-  entry, dark, unread, onReact, onReply, replyPreview, reactions, transcript, daemonUrl, token,
+  entry, dark, unread, onReact, onReply, onLongPress, replyPreview, reactions, transcript, daemonUrl, token,
 }: {
   entry: HistoryEntry; dark: boolean; unread: boolean;
-  onReact?: (emoji: string) => void; onReply?: () => void;
+  onReact?: (emoji: string) => void; onReply?: () => void; onLongPress?: () => void;
   replyPreview?: string; reactions?: Map<string, number>; transcript?: string;
   daemonUrl: string; token: string;
 }): React.ReactElement {
@@ -88,21 +88,50 @@ export function MessengerBubble({
     onLinkPress: (url: string): boolean => { void Linking.openURL(url); return false; },
     style: markdownStyles(fg, dark),
   };
+  /** Swipe-to-reply (right→left, Telegram-style): claim once dx is left-leaning + dominates dy,
+   *  drag the bubble with the finger up to ~80px, snap back on release, fire onReply if dx<=-60. */
+  const swipeX = useRef(new Animated.Value(0)).current;
+  const panResponder = useMemo(() => PanResponder.create({
+    onMoveShouldSetPanResponderCapture: (_, g) => {
+      const ax = Math.abs(g.dx), ay = Math.abs(g.dy);
+      return g.dx < -10 && ax > ay * 1.5;
+    },
+    onPanResponderMove: (_, g) => {
+      swipeX.setValue(Math.max(-80, Math.min(0, g.dx)));
+    },
+    onPanResponderRelease: (_, g) => {
+      const triggered = g.dx <= -60;
+      Animated.spring(swipeX, { toValue: 0, useNativeDriver: true, speed: 18, bounciness: 6 }).start();
+      if (triggered) onReply?.();
+    },
+    onPanResponderTerminate: () => {
+      Animated.spring(swipeX, { toValue: 0, useNativeDriver: true, speed: 18, bounciness: 6 }).start();
+    },
+    onPanResponderTerminationRequest: () => false,
+  }), [onReply, swipeX]);
   return (
-    <View style={{
-      flexDirection: 'column',
-      alignItems: mine ? 'flex-end' : 'flex-start',
-      paddingHorizontal: 12, paddingVertical: mine ? 3 : 6,
-    }}>
-      {/** View not Pressable: an outer onPress would steal link taps inside markdown. */}
-      <View style={{
-        flexDirection: 'column', maxWidth: mine ? '78%' : '100%', width: mine ? undefined : '100%',
-        backgroundColor: bubbleBg, paddingHorizontal: mine ? 14 : 0, paddingVertical: mine ? 9 : 0,
-        borderTopLeftRadius: 20, borderTopRightRadius: 20,
-        borderBottomLeftRadius: mine ? 20 : 0, borderBottomRightRadius: mine ? 6 : 0,
-        borderWidth: unread && mine ? 1.5 : 0,
-        borderColor: unread ? (dark ? '#ffffff' : '#1a1f29') : 'transparent',
-      }}>
+    <Animated.View
+      {...panResponder.panHandlers}
+      style={{
+        flexDirection: 'column',
+        alignItems: mine ? 'flex-end' : 'flex-start',
+        paddingHorizontal: 12, paddingVertical: mine ? 3 : 6,
+        transform: [{ translateX: swipeX }],
+      }}
+    >
+      {/** Pressable handles onLongPress; the outer Animated.View'​s PanResponder steals horizontal drags. */}
+      <Pressable
+        onLongPress={onLongPress}
+        delayLongPress={300}
+        style={{
+          flexDirection: 'column', maxWidth: mine ? '78%' : '100%', width: mine ? undefined : '100%',
+          backgroundColor: bubbleBg, paddingHorizontal: mine ? 14 : 0, paddingVertical: mine ? 9 : 0,
+          borderTopLeftRadius: 20, borderTopRightRadius: 20,
+          borderBottomLeftRadius: mine ? 20 : 0, borderBottomRightRadius: mine ? 6 : 0,
+          borderWidth: unread && mine ? 1.5 : 0,
+          borderColor: unread ? (dark ? '#ffffff' : '#1a1f29') : 'transparent',
+        }}
+      >
         {replyPreview ? (
           <View style={{
             alignSelf: 'stretch', borderLeftWidth: 2, borderLeftColor: mine ? fg : sub,
@@ -153,7 +182,7 @@ export function MessengerBubble({
             color: mine ? fg : sub, opacity: mine ? 0.55 : 1, fontSize: 10,
           }}>{fmtTs(entry.ts)}</Text>
         </View>
-      </View>
+      </Pressable>
       {reactions && reactions.size > 0 ? (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 4, maxWidth: '78%' }}>
           {[...reactions.entries()].map(([emoji, count]) => (
@@ -184,6 +213,6 @@ export function MessengerBubble({
           </Pressable>
         </View>
       ) : null}
-    </View>
+    </Animated.View>
   );
 }
