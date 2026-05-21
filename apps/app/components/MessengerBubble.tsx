@@ -51,7 +51,7 @@ function markdownStyles(fg: string, dark: boolean): Record<string, object> {
   /** react-native-markdown-display creates its own <Text> elements that bypass Text.defaultProps —
    *  so we have to pin Calibre on the markdown body explicitly or it falls back to system. */
   return {
-    body: { color: fg, fontSize: 15, lineHeight: 21, fontFamily: 'Calibre-Medium' },
+    body: { color: fg, fontSize: 17, lineHeight: 23, fontFamily: 'Calibre-Medium' },
     paragraph: { marginTop: 0, marginBottom: 0 },
     heading1: { color: fg, fontSize: 20, fontFamily: 'Calibre-Semibold', marginTop: 4, marginBottom: 2 },
     heading2: { color: fg, fontSize: 18, fontFamily: 'Calibre-Semibold', marginTop: 4, marginBottom: 2 },

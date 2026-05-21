@@ -7,9 +7,12 @@ import { ActivityIndicator, Text, TextInput, useColorScheme, View } from 'react-
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 
-/** Set Calibre-Medium as the app-wide default for Text + TextInput (RN has no global font setting). */
-/** Also makes every Text selectable so users can copy any rendered string (incl. markdown bodies). */
-function applyDefaultFont(): void {
+/** Set Calibre-Medium as the app-wide default for Text + TextInput via defaultProps.
+ *  This is a fallback — call-site `style={{…}}` overrides — but it'​s the safest path:
+ *  monkey-patching the forwardRef render fn upstream broke FlatList.scrollToOffset on
+ *  some Android versions (see git for details). Individual screens that want guaranteed
+ *  Calibre should pin fontFamily explicitly. */
+(function applyDefaultFont(): void {
   const TextAny = Text as unknown as { defaultProps?: Record<string, unknown> };
   TextAny.defaultProps = TextAny.defaultProps || {};
   TextAny.defaultProps.style = [{ fontFamily: 'Calibre-Medium' }, TextAny.defaultProps.style];
@@ -17,7 +20,7 @@ function applyDefaultFont(): void {
   const TextInputAny = TextInput as unknown as { defaultProps?: Record<string, unknown> };
   TextInputAny.defaultProps = TextInputAny.defaultProps || {};
   TextInputAny.defaultProps.style = [{ fontFamily: 'Calibre-Medium' }, TextInputAny.defaultProps.style];
-}
+})();
 
 export default function RootLayout(): React.ReactElement {
   const scheme = useColorScheme();
@@ -32,13 +35,13 @@ export default function RootLayout(): React.ReactElement {
     return (): void => sub.remove();
   }, [router]);
 
-  /** Calibre — matches sx-monorepo's typography. Two weights: medium (default) + semibold (headers/buttons). */
+  /** Calibre — matches sx-monorepo's typography. Two weights: medium (default) + semibold (headers/buttons).
+   *  TTF (not WOFF2) so Android'​s native Typeface loader can pick it up — expo-font's WOFF2
+   *  support is web-only. */
   const [loaded] = useFonts({
-    'Calibre-Medium': require('../assets/fonts/Calibre-Medium-Custom.woff2'),
-    'Calibre-Semibold': require('../assets/fonts/Calibre-Semibold-Custom.woff2'),
+    'Calibre-Medium': require('../assets/fonts/Calibre-Medium-Custom.ttf'),
+    'Calibre-Semibold': require('../assets/fonts/Calibre-Semibold-Custom.ttf'),
   });
-
-  if (loaded) applyDefaultFont();
 
   if (!loaded) {
     return (

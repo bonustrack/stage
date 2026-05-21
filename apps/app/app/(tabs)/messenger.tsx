@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  FlatList, Modal, Pressable, RefreshControl, Text, View, useColorScheme,
+  FlatList, Keyboard, Modal, Pressable, RefreshControl, Text, View, useColorScheme,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
@@ -59,11 +59,18 @@ export default function Messenger(): React.ReactElement {
   /** Optimistic outbound entries — rendered immediately on send, dedupe on text+freshness when the
    *  real event arrives via SSE. */
   const [optimistic, setOptimistic] = useState<HistoryEntry[]>([]);
-  /** keyboard-controller drives both the composer and the FlatList via KeyboardStickyView →
-   *  same native-driver translateY, no JS-thread lag, no React re-renders. The list shifts
-   *  up by exactly the keyboard height, so wherever the user was scrolled stays put relative
-   *  to the keyboard top. */
+  /** Composer rides on KeyboardStickyView for smooth native-driver translateY. The FlatList
+   *  can'​t use the same wrapper — wrapping its scrollView in Animated.View breaks
+   *  scrollToOffset (`property is not writable` from inside RN internals). Fall back to
+   *  bumping contentContainerStyle.paddingTop via state on keyboardDidShow/Hide; the
+   *  resulting JS-thread lag is the trade-off. */
   const insets = useSafeAreaInsets();
+  const [kbHeight, setKbHeight] = useState(0);
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', e => setKbHeight(e.endCoordinates.height));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKbHeight(0));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
   const listRef = useRef<FlatList<HistoryEntry>>(null);
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -116,13 +123,12 @@ export default function Messenger(): React.ReactElement {
 
   return (
     <View style={{ flex: 1, backgroundColor: bg, paddingBottom: insets.bottom }}>
-      <KeyboardStickyView style={{ flex: 1 }} offset={{ opened: insets.bottom }}>
       <FlatList
         ref={listRef}
         data={allBubbles}
         inverted
         keyExtractor={e => e.id}
-        contentContainerStyle={{ paddingTop: 12, paddingBottom: 6 }}
+        contentContainerStyle={{ paddingTop: 12 + kbHeight, paddingBottom: 6 }}
         onScroll={(ev) => { setShowJump(ev.nativeEvent.contentOffset.y > 200); }}
         scrollEventThrottle={32}
         renderItem={({ item }) => (
@@ -149,18 +155,18 @@ export default function Messenger(): React.ReactElement {
         keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={sub} />}
       />
-      </KeyboardStickyView>
-      {/** Top nav: solid bg strip with back arrow + status pill, mirrors the composer footer.
-       *  Sits absolute over the FlatList so the inverted list doesn't reserve space for it. */}
+      {/** Top nav: solid bg strip mirrors the composer footer + extends UP to cover the
+       *  status-bar area, so content sliding up under the keyboard doesn'​t show through
+       *  behind the system icons. */}
       <View style={{
-        position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
-        height: 44, paddingHorizontal: 14, backgroundColor: bg,
+        position: 'absolute', top: -insets.top, left: 0, right: 0, zIndex: 2,
+        height: 44 + insets.top, paddingTop: insets.top, paddingHorizontal: 14, backgroundColor: bg,
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
       }}>
         <Pressable
           onPress={() => router.push('/(tabs)')}
           hitSlop={10}
-          style={{ position: 'absolute', left: 14, padding: 6 }}
+          style={{ position: 'absolute', left: 14, top: insets.top + 4, padding: 6 }}
         >
           <HeroIcon name="arrowLeft" size={22} color={fg} />
         </Pressable>
@@ -185,7 +191,11 @@ export default function Messenger(): React.ReactElement {
       {showJump ? (
         <Pressable
           onPress={() => {
-            listRef.current?.scrollToOffset({ offset: 0, animated: true });
+            /** scrollToOffset throws on this device (Reanimated freezes a FlatList slot);
+             *  swallow so the press at least hides the button cleanly. See
+             *  react-native-reanimated #3670 for the upstream story. */
+            try { listRef.current?.scrollToOffset({ offset: 0, animated: true }); }
+            catch { /* ignore */ }
             setShowJump(false);
           }}
           style={{
