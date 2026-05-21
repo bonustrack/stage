@@ -26,7 +26,8 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "softwareKeyboardLayoutMode": "resize",
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services.json",
+      "allowBackup": false
     },
     "web": {
       "favicon": "./assets/favicon.png"
