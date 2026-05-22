@@ -59,14 +59,10 @@ export default function Messenger(): React.ReactElement {
    *  `getNativeScrollRef`) trips reanimated #3670 "property is not writable" on devices
    *  with Reduce Motion. Remount lands at the inverted list's default offset = bottom. */
   const [listEpoch, setListEpoch] = useState(0);
-  /** Re-fetch the seed every time the tab regains focus so stale events get refreshed.
-   *  Bump listEpoch too — without a remount the FlatList preserves its scroll position
-   *  from the prior visit, so a user who returns to the tab lands wherever they left off
-   *  instead of pinned to the newest message. */
-  useFocusEffect(useCallback(() => {
-    if (enabled) reconnect();
-    setListEpoch(e => e + 1);
-  }, [enabled, reconnect]));
+  /** Don't reconnect or remount on focus — SSE keeps streaming in the background while
+   *  another tab is open, so we don't miss events. Letting the FlatList persist its
+   *  state across tab switches preserves the user's scroll position (Less prefers
+   *  this over snap-to-bottom on return; explicit jump button is right there). */
   const [replyingTo, setReplyingTo] = useState<{ id: string; preview: string } | null>(null);
   const [menuFor, setMenuFor] = useState<HistoryEntry | null>(null);
   /** Optimistic outbound entries — rendered immediately on send, dedupe on text+freshness when the
