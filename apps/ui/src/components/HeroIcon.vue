@@ -16,6 +16,9 @@ const PATHS: Record<string, string> = {
   x: 'M6 18L18 6M6 6l12 12',
   plus: 'M12 4v16m8-8H4',
   reply: 'M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6',
+  arrowDown: 'M19 14l-7 7m0 0l-7-7m7 7V3',
+  arrowLeft: 'M10 19l-7-7m0 0l7-7m-7 7h18',
+  filter: 'M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z',
 };
 
 const props = defineProps<{ name: keyof typeof PATHS; size?: number; focused?: boolean }>();

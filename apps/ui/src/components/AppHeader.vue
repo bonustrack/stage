@@ -46,10 +46,17 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll));
       <button
         v-if="filterActive !== undefined"
         type="button"
-        class="text-sm font-semibold text-metro-accent hover:underline"
-        :class="filterActive ? 'text-metro-ok font-bold' : ''"
+        title="Filter"
+        class="relative text-metro-fg-light dark:text-metro-fg-dark"
+        :class="filterActive ? 'text-metro-ok' : ''"
         @click="$emit('filter')"
-      >Filter{{ filterActive ? ' •' : '' }}</button>
+      >
+        <HeroIcon name="filter" :size="20" />
+        <span
+          v-if="filterActive"
+          class="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-metro-ok"
+        />
+      </button>
     </div>
     <div v-if="chat" class="flex items-center gap-2 px-4 pb-2 text-xs text-metro-sub-light dark:text-metro-sub-dark">
       <span class="truncate">filter: {{ chat.replace(/^metro:\/\//, '') }}</span>

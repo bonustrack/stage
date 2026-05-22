@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from 'react';
 import { Animated, Linking, PanResponder, Pressable, Text, View } from 'react-native';
-import Markdown from 'react-native-markdown-display';
+import Markdown, { MarkdownIt } from 'react-native-markdown-display';
 import { HeroIcon } from './HeroIcon';
 import { MessengerAudioPlayer } from './MessengerAudioPlayer';
 import { MessengerImageAttachment } from './MessengerImageAttachment';
@@ -10,6 +10,10 @@ import type { HistoryEntry } from '../lib/types';
 
 const MESSENGER_USER = 'metro://messenger/user/owner';
 const REACT_PRESETS = ['👍', '❤️', '😂', '😮', '🔥', '🎉'];
+/** `linkify` + `breaks` turn bare URLs into tappable links and treat `\n` as a line
+ *  break, matching the markdown-it config on the web side. Constructed once at
+ *  module scope — the lib re-parses input each render anyway. */
+const mdParser = MarkdownIt({ typographer: false, linkify: true, breaks: true });
 
 interface Attachment { id: string; url: string; kind: string; mime: string; size: number; name?: string }
 
@@ -85,6 +89,7 @@ export function MessengerBubble({
   const pillBg = dark ? '#1d2230' : '#eef1f7';
   const [pickerOpen, setPickerOpen] = useState(false);
   const markdownProps = {
+    markdownit: mdParser,
     onLinkPress: (url: string): boolean => { void Linking.openURL(url); return false; },
     style: markdownStyles(fg, dark),
   };

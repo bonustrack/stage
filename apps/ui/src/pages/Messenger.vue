@@ -153,18 +153,37 @@ onBeforeUnmount(() => { tail.stop(); stopRecording(); });
 </script>
 
 <template>
-  <div class="flex flex-col h-[calc(100vh-60px)]"
+  <div class="flex flex-col h-[calc(100vh-60px)] relative"
     @dragover.prevent
     @drop="onDrop"
     @paste="onPaste">
-    <div v-if="tail.status.value !== 'open' && tail.status.value !== 'idle'"
-      class="fixed top-2 left-1/2 -translate-x-1/2 z-20 px-2.5 py-1 rounded-full flex items-center gap-1.5 text-[11px]
-        bg-metro-surface-light dark:bg-metro-surface-dark text-metro-sub-light dark:text-metro-sub-dark
-        border border-metro-border-light dark:border-metro-border-dark">
-      <span class="w-1.5 h-1.5 rounded-full"
-        :class="tail.status.value === 'connecting' ? 'bg-metro-warn' : 'bg-metro-err'"></span>
-      <span>{{ tail.status.value === 'connecting' ? 'Connecting…' : tail.status.value === 'error' ? 'Reconnecting…' : 'Offline' }}</span>
-    </div>
+    <!-- Top header: back arrow + (only when connection is bad) status pill. Mirrors
+         the mobile messenger's top nav strip. Solid bg so scrolled bubbles don't
+         leak through behind the system area on iOS. -->
+    <header class="relative z-20 h-11 flex items-center px-3
+      bg-metro-bg-light dark:bg-metro-bg-dark">
+      <button type="button" title="Back" class="p-1.5 -ml-1.5
+        text-metro-fg-light dark:text-metro-fg-dark hover:opacity-80"
+        @click="$router.push('/')">
+        <HeroIcon name="arrowLeft" :size="22" />
+      </button>
+      <div class="flex-1 flex items-center justify-center">
+        <div v-if="tail.status.value !== 'open' && tail.status.value !== 'idle'"
+          class="px-2.5 py-1 rounded-full flex items-center gap-1.5 text-[11px]
+            bg-metro-surface-light dark:bg-metro-surface-dark
+            text-metro-sub-light dark:text-metro-sub-dark">
+          <span class="w-1.5 h-1.5 rounded-full"
+            :class="tail.status.value === 'connecting' ? 'bg-metro-warn' : 'bg-metro-err'"></span>
+          <span>{{ tail.status.value === 'connecting' ? 'Connecting…' : tail.status.value === 'error' ? 'Reconnecting…' : 'Offline' }}</span>
+        </div>
+      </div>
+      <!-- Symmetric placeholder so the offline pill is truly centered. -->
+      <div class="w-[34px]" aria-hidden="true" />
+    </header>
+    <!-- Fade strip below the header: solid bg at top → transparent at bottom, so
+         scrolled bubbles disappear gracefully under the header instead of cutting off. -->
+    <div class="pointer-events-none absolute left-0 right-0 top-11 h-3 z-10
+      bg-gradient-to-b from-metro-bg-light dark:from-metro-bg-dark to-transparent" />
     <!-- Bubble scroll area: contained (not window-scrolled) so the composer can stick
          to the bottom and we can pin scroll position to newest on new messages. -->
     <div ref="scrollContainer" class="flex-1 overflow-y-auto px-3 pt-3" @scroll="onScroll">
@@ -200,9 +219,14 @@ onBeforeUnmount(() => { tail.stop(); stopRecording(); });
     <div v-if="err" class="px-4 py-1 text-xs text-metro-err">send failed: {{ err }}</div>
     <input ref="imageInput" type="file" accept="image/*" class="hidden" @change="pickAndUpload(imageInput)" />
     <input ref="fileInput" type="file" class="hidden" @change="pickAndUpload(fileInput)" />
-    <!-- Composer: regular flex child pinned to the bottom of the column, not fixed —
-         the contained scroll area handles the gap above it cleanly. -->
-    <div class="px-3 pb-3 pt-1.5 border-t border-metro-border-light dark:border-metro-border-dark
+    <!-- Fade strip above the composer: transparent at top → solid bg at bottom, so
+         scrolled bubbles fade out gracefully before they hit the composer area
+         instead of getting clipped by a hard border. Mirrors mobile's ComposerGradient. -->
+    <div class="pointer-events-none relative h-3 -mb-3 z-10
+      bg-gradient-to-b from-transparent to-metro-bg-light dark:to-metro-bg-dark" />
+    <!-- Composer: regular flex child pinned to the bottom of the column, no border —
+         the fade above handles the visual separation. -->
+    <div class="relative px-3 pb-3 pt-1.5 z-10
       bg-metro-bg-light dark:bg-metro-bg-dark">
       <div v-if="replyingTo" class="flex items-center gap-2 pb-1.5">
         <div class="flex-1 border-l-2 border-metro-sub-light dark:border-metro-sub-dark pl-2">
