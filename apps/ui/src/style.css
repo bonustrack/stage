@@ -2,7 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
+/** Calibre is the brand font — same WOFF2s as the mobile app's TTFs. Tailwind config
+ *  references `Calibre-Medium` / `Calibre-Semibold` for the `sans` / `head` stacks. */
+@font-face {
+  font-family: 'Calibre-Medium';
+  src: url('/fonts/Calibre-Medium-Custom.woff2') format('woff2');
+  font-weight: 400 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Calibre-Semibold';
+  src: url('/fonts/Calibre-Semibold-Custom.woff2') format('woff2');
+  font-weight: 600 800;
+  font-style: normal;
+  font-display: swap;
+}
+
 @layer base {
   html { color-scheme: light dark; }
-  body { -webkit-font-smoothing: antialiased; }
+  body {
+    -webkit-font-smoothing: antialiased;
+    font-family: 'Calibre-Medium', system-ui, sans-serif;
+  }
 }

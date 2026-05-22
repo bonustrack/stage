@@ -52,15 +52,21 @@ export default function Messenger(): React.ReactElement {
 
   const enabled = !!cfg && isConfigured(cfg);
   const { events, reconnect, status } = useTail(tailOpts, enabled);
-  /** Re-fetch the seed every time the tab regains focus so stale events get refreshed. */
-  useFocusEffect(useCallback(() => { if (enabled) reconnect(); }, [enabled, reconnect]));
   const [refreshing, setRefreshing] = useState(false);
   const [showJump, setShowJump] = useState(false);
-  /** Bump to force-remount the FlatList. Used by jump-to-bottom because every variant of
-   *  the scroll API (`scrollToOffset`, `scrollToIndex`, `getScrollResponder`,
+  /** Bump to force-remount the FlatList. Used by jump-to-bottom and on focus because every
+   *  variant of the scroll API (`scrollToOffset`, `scrollToIndex`, `getScrollResponder`,
    *  `getNativeScrollRef`) trips reanimated #3670 "property is not writable" on devices
    *  with Reduce Motion. Remount lands at the inverted list's default offset = bottom. */
   const [listEpoch, setListEpoch] = useState(0);
+  /** Re-fetch the seed every time the tab regains focus so stale events get refreshed.
+   *  Bump listEpoch too — without a remount the FlatList preserves its scroll position
+   *  from the prior visit, so a user who returns to the tab lands wherever they left off
+   *  instead of pinned to the newest message. */
+  useFocusEffect(useCallback(() => {
+    if (enabled) reconnect();
+    setListEpoch(e => e + 1);
+  }, [enabled, reconnect]));
   const [replyingTo, setReplyingTo] = useState<{ id: string; preview: string } | null>(null);
   const [menuFor, setMenuFor] = useState<HistoryEntry | null>(null);
   /** Optimistic outbound entries — rendered immediately on send, dedupe on text+freshness when the

@@ -1,12 +1,13 @@
 <script setup lang="ts">
 /** Bottom tab bar — Home / Search / Lines / Settings. Mirrors apps/app/(tabs)/_layout.tsx. */
 
+/** Order matches apps/app/(tabs)/_layout.tsx — Messenger ships last. */
 const TABS = [
   { to: '/',          label: 'Home',      icon: 'home' as const   },
-  { to: '/messenger', label: 'Messenger', icon: 'send' as const   },
   { to: '/search',    label: 'Search',    icon: 'search' as const },
   { to: '/lines',     label: 'Lines',     icon: 'list' as const   },
   { to: '/settings',  label: 'Settings',  icon: 'cog' as const    },
+  { to: '/messenger', label: 'Messenger', icon: 'send' as const   },
 ];
 </script>
 
