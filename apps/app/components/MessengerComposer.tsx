@@ -15,13 +15,15 @@ interface Props {
   daemonUrl: string; token: string; dark: boolean;
   replyingTo?: { id: string; preview: string };
   onClearReply?: () => void;
+  /** Optimistic-render hook: invoked the moment the user taps send, before the API call. */
+  onOptimistic?: (entry: { localId: string; text: string; attachments: Attachment[]; replyTo?: string }) => void;
 }
 
 function chipImageUrl(daemonUrl: string, token: string, url: string): string {
   return `${daemonUrl.replace(/\/$/, '')}${url}?token=${encodeURIComponent(token)}`;
 }
 
-export function MessengerComposer({ daemonUrl, token, dark, replyingTo, onClearReply }: Props): React.ReactElement {
+export function MessengerComposer({ daemonUrl, token, dark, replyingTo, onClearReply, onOptimistic }: Props): React.ReactElement {
   const fg = dark ? '#e8ecf2' : '#1a1f29';
   const sub = dark ? '#8a94a6' : '#5a6477';
   const inputBg = dark ? '#16191f' : '#f3f5f9';
@@ -92,10 +94,15 @@ export function MessengerComposer({ daemonUrl, token, dark, replyingTo, onClearR
   const send = async (): Promise<void> => {
     const body = text.trim();
     if (!body && pending.length === 0) return;
+    /** Fire the optimistic-render hook first so the bubble shows up instantly while the
+     *  API call is still in flight. The SSE event for the real message will dedupe by text. */
+    const localId = `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    onOptimistic?.({ localId, text: body, attachments: pending, replyTo: replyingTo?.id });
+    /** Clear the composer immediately — the bubble already shows the user's input. */
+    setText(''); setPending([]); onClearReply?.();
     setSending(true); setErr(null);
     try {
       await sendMessenger(daemonUrl, token, body, pending, replyingTo?.id);
-      setText(''); setPending([]); onClearReply?.();
     } catch (e) { setErr((e as Error).message); }
     finally { setSending(false); }
   };
@@ -125,21 +132,48 @@ export function MessengerComposer({ daemonUrl, token, dark, replyingTo, onClearR
         </View>
       ) : null}
       {pending.length > 0 ? (
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingHorizontal: 6, paddingBottom: 6 }}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 6, paddingBottom: 6 }}>
           {pending.map((a, i) => (
-            <View key={a.id} style={{
-              flexDirection: 'row', alignItems: 'center', gap: 6,
-              paddingHorizontal: a.kind === 'image' ? 4 : 8, paddingVertical: 4,
-              borderRadius: 12, backgroundColor: chipBg,
-            }}>
-              {a.kind === 'image'
-                ? <Image source={{ uri: chipImageUrl(daemonUrl, token, a.url) }} style={{ width: 28, height: 28, borderRadius: 6 }} resizeMode="cover" />
-                : <HeroIcon name={kindIcon(a.kind)} size={14} color={fg} />}
-              <Text style={{ color: fg, fontSize: 12, maxWidth: 140 }} numberOfLines={1}>{a.name ?? a.id}</Text>
-              <Pressable onPress={() => setPending(prev => prev.filter((_, j) => j !== i))} hitSlop={6}>
-                <HeroIcon name="x" size={14} color={sub} />
-              </Pressable>
-            </View>
+            a.kind === 'image' ? (
+              /** Image attachments: 72px square with the filename label beneath, x-to-remove
+               *  pinned to the top-right corner of the thumbnail. */
+              <View key={a.id} style={{ width: 72, alignItems: 'center', gap: 4 }}>
+                <View>
+                  <Image
+                    source={{ uri: chipImageUrl(daemonUrl, token, a.url) }}
+                    style={{ width: 72, height: 72, borderRadius: 8 }}
+                    resizeMode="cover"
+                  />
+                  <Pressable
+                    onPress={() => setPending(prev => prev.filter((_, j) => j !== i))}
+                    hitSlop={6}
+                    style={{
+                      position: 'absolute', top: -4, right: -4,
+                      backgroundColor: '#000', borderRadius: 999, padding: 2,
+                    }}
+                  >
+                    <HeroIcon name="x" size={12} color="#ffffff" />
+                  </Pressable>
+                </View>
+                <Text style={{ color: fg, fontSize: 11, width: 72, textAlign: 'center' }} numberOfLines={1}>
+                  {a.name ?? a.id}
+                </Text>
+              </View>
+            ) : (
+              /** Non-image attachments keep the inline chip layout — files/audio don'​t benefit
+               *  from a thumbnail and look fine as a row. */
+              <View key={a.id} style={{
+                flexDirection: 'row', alignItems: 'center', gap: 6,
+                paddingHorizontal: 8, paddingVertical: 4,
+                borderRadius: 12, backgroundColor: chipBg,
+              }}>
+                <HeroIcon name={kindIcon(a.kind)} size={14} color={fg} />
+                <Text style={{ color: fg, fontSize: 12, maxWidth: 140 }} numberOfLines={1}>{a.name ?? a.id}</Text>
+                <Pressable onPress={() => setPending(prev => prev.filter((_, j) => j !== i))} hitSlop={6}>
+                  <HeroIcon name="x" size={14} color={sub} />
+                </Pressable>
+              </View>
+            )
           ))}
         </View>
       ) : null}

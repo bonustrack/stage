@@ -13,6 +13,10 @@ const props = defineProps<{
   reactions?: Map<string, number>;
   transcript?: string;
   replyPreview?: string;
+  /** Optimistic-send marker — bubble renders at 50% opacity until the SSE echo arrives. */
+  pending?: boolean;
+  /** True when the composer'​s replyingTo points at this bubble — show a warm-gold ring. */
+  replyTarget?: boolean;
 }>();
 const emit = defineEmits<{ (e: 'react', emoji: string): void; (e: 'reply'): void }>();
 const pickerOpen = ref(false);
@@ -57,10 +61,14 @@ function fmtSize(n: number): string {
 <template>
   <div class="flex flex-col" :class="mine ? 'items-end' : 'items-start'">
     <div
-      class="leading-snug text-[15px] flex flex-col gap-1.5 select-text break-words group/bubble relative"
-      :class="mine
-        ? 'max-w-[78%] px-3.5 py-2 rounded-2xl rounded-br-md bg-metro-fg-light dark:bg-white text-white dark:text-black'
-        : 'w-full px-0 py-0 text-metro-fg-light dark:text-metro-fg-dark'"
+      class="leading-snug text-[15px] flex flex-col gap-1.5 select-text break-words group/bubble relative transition-opacity"
+      :class="[
+        mine
+          ? 'max-w-[78%] px-3.5 py-2 rounded-2xl rounded-br-md bg-metro-fg-light dark:bg-white text-white dark:text-black'
+          : 'w-full px-0 py-0 text-metro-fg-light dark:text-metro-fg-dark',
+        pending ? 'opacity-50' : '',
+        replyTarget ? 'ring-2 ring-[#c0a06e] ring-offset-2 ring-offset-metro-bg-light dark:ring-offset-metro-bg-dark' : '',
+      ]"
     >
       <div class="absolute -top-3 right-1 flex gap-1 opacity-0 group-hover/bubble:opacity-100 transition">
         <button type="button" title="Reply"

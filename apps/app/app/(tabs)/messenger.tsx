@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  FlatList, Keyboard, Modal, Pressable, RefreshControl, Text, View, useColorScheme,
+  Animated as RNAnimated,
+  FlatList, Keyboard, Modal, PanResponder, Pressable, RefreshControl, Text, View, useColorScheme,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useFocusEffect, useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { MessengerBubble } from '../../components/MessengerBubble';
@@ -15,6 +17,7 @@ import { loadConfig, isConfigured, type Config } from '../../lib/config';
 import {
   isReaction, isTranscript, reactMessenger, reactionsByMessage, transcriptsByMessage,
 } from '../../lib/messenger';
+import { saveBubbleCache, useCachedBubbles } from '../../lib/messenger-cache';
 import { getMessengerLastRead, markMessengerRead } from '../../lib/messenger-unread';
 import { registerForPush } from '../../lib/push';
 import { useTail } from '../../lib/sse';
@@ -53,22 +56,43 @@ export default function Messenger(): React.ReactElement {
   useFocusEffect(useCallback(() => { if (enabled) reconnect(); }, [enabled, reconnect]));
   const [refreshing, setRefreshing] = useState(false);
   const [showJump, setShowJump] = useState(false);
+  /** Bump to force-remount the FlatList. Used by jump-to-bottom because every variant of
+   *  the scroll API (`scrollToOffset`, `scrollToIndex`, `getScrollResponder`,
+   *  `getNativeScrollRef`) trips reanimated #3670 "property is not writable" on devices
+   *  with Reduce Motion. Remount lands at the inverted list's default offset = bottom. */
+  const [listEpoch, setListEpoch] = useState(0);
   const [replyingTo, setReplyingTo] = useState<{ id: string; preview: string } | null>(null);
   const [menuFor, setMenuFor] = useState<HistoryEntry | null>(null);
-  /** Manual keyboard-overlap tracking — softwareKeyboardLayoutMode: "resize" doesn't shrink
-   *  the window when edgeToEdgeEnabled is on, so the composer would sit under the keyboard.
-   *  `endCoordinates.height` underreports on Samsung (gesture-nav inset isn't rolled in),
-   *  so add the bottom safe-area inset back to get the full visual overlap. */
+  /** Optimistic outbound entries — rendered immediately on send, dedupe on text+freshness when the
+   *  real event arrives via SSE. */
+  const [optimistic, setOptimistic] = useState<HistoryEntry[]>([]);
+  /** Composer rides on KeyboardStickyView for smooth native-driver translateY. The FlatList
+   *  can'​t use the same wrapper — wrapping its scrollView in Animated.View breaks
+   *  scrollToOffset (`property is not writable` from inside RN internals). Fall back to
+   *  bumping contentContainerStyle.paddingTop via state on keyboardDidShow/Hide; the
+   *  resulting JS-thread lag is the trade-off. */
   const insets = useSafeAreaInsets();
+  /** Swipe left→right on the screen → back to the Home tab, with the messenger sliding
+   *  with the finger. Past 60px on release → navigate back; otherwise spring home.
+   *  The bubble'​s pan only claims left-going drags so right-going ones fall through. */
+  const swipeBackX = useRef(new RNAnimated.Value(0)).current;
+  const backPan = useMemo(() => PanResponder.create({
+    onMoveShouldSetPanResponder: (_, g) => g.dx > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
+    onPanResponderMove: (_, g) => { swipeBackX.setValue(Math.max(0, g.dx)); },
+    onPanResponderRelease: (_, g) => {
+      if (g.dx >= 60) router.push('/(tabs)');
+      RNAnimated.spring(swipeBackX, { toValue: 0, useNativeDriver: true, speed: 18, bounciness: 6 }).start();
+    },
+    onPanResponderTerminate: () => {
+      RNAnimated.spring(swipeBackX, { toValue: 0, useNativeDriver: true, speed: 18, bounciness: 6 }).start();
+    },
+  }), [router, swipeBackX]);
   const [kbHeight, setKbHeight] = useState(0);
   useEffect(() => {
     const show = Keyboard.addListener('keyboardDidShow', e => setKbHeight(e.endCoordinates.height));
     const hide = Keyboard.addListener('keyboardDidHide', () => setKbHeight(0));
     return () => { show.remove(); hide.remove(); };
   }, []);
-  /** Always include insets.bottom so the composer clears the gesture-nav bar even when
-   *  the keyboard is closed (the tab bar is hidden on this screen). */
-  const kbOverlap = kbHeight + insets.bottom;
   const listRef = useRef<FlatList<HistoryEntry>>(null);
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -80,10 +104,25 @@ export default function Messenger(): React.ReactElement {
   /** Reaction + transcript events decorate their target msg — don't render as their own bubbles. */
   const reactions = useMemo(() => reactionsByMessage(events), [events]);
   const transcripts = useMemo(() => transcriptsByMessage(events), [events]);
-  const bubbleEvents = useMemo(
+  const cachedBubbles = useCachedBubbles();
+  const liveBubbles = useMemo(
     () => events.filter(e => !isReaction(e) && !isTranscript(e)),
     [events],
   );
+  /** Show cached bubbles on cold open so the feed isn'​t empty for a frame while SSE
+   *  seeds. Once live events arrive, they take over and the cache gets refreshed. */
+  const bubbleEvents = liveBubbles.length > 0 ? liveBubbles : cachedBubbles;
+  useEffect(() => { if (liveBubbles.length > 0) saveBubbleCache(liveBubbles); }, [liveBubbles]);
+  /** Drop optimistic entries that a real SSE event now covers (same text + sent within 30s). */
+  useEffect(() => {
+    if (!optimistic.length) return;
+    setOptimistic(prev => prev.filter(o =>
+      !bubbleEvents.some(e => e.from === MESSENGER_USER && e.text === o.text
+        && Math.abs(new Date(e.ts).getTime() - new Date(o.ts).getTime()) < 30_000),
+    ));
+  }, [bubbleEvents, optimistic.length]);
+  /** Inverted FlatList expects newest-first → put optimistic at the top. */
+  const allBubbles = useMemo(() => [...optimistic, ...bubbleEvents], [bubbleEvents, optimistic]);
   const previewOf = (e: HistoryEntry): string =>
     e.text?.slice(0, 80) || `[${(e.payload as { attachments?: { kind: string }[] } | undefined)?.attachments?.[0]?.kind ?? 'attachment'}]`;
   const onReact = useCallback((messageId: string, emoji: string) => {
@@ -110,15 +149,31 @@ export default function Messenger(): React.ReactElement {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: bg, paddingBottom: kbOverlap }}>
+    <RNAnimated.View
+      {...backPan.panHandlers}
+      style={{
+        flex: 1, backgroundColor: bg, paddingBottom: insets.bottom,
+        transform: [{ translateX: swipeBackX }],
+      }}
+    >
       <FlatList
+        key={listEpoch}
         ref={listRef}
-        data={bubbleEvents}
+        data={allBubbles}
         inverted
+        showsVerticalScrollIndicator={false}
+        /** Anchor the bottom-visible item (= newest on inverted) so as new bubbles or the
+         *  initial seed lands, scroll stays pinned to the latest message. */
+        maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
         keyExtractor={e => e.id}
-        /** Inverted list: paddingTop is visually the BOTTOM — small gap so the latest message
-         *  doesn't hug the composer card. */
-        contentContainerStyle={{ paddingTop: 12, paddingBottom: 6 }}
+        /** `flex:1` so the list claims the full column above the composer. Without it the
+         *  list collapses to content size and the composer ends up mid-screen with empty
+         *  space above it. `marginBottom:kbHeight` lifts the list above the keyboard. */
+        style={{ flex: 1, marginBottom: kbHeight }}
+        /** Inverted: paddingTop = visual BOTTOM (composer side), paddingBottom = visual TOP
+         *  (nav side). Bump the top so the oldest message clears the absolute top-nav strip
+         *  when the user scrolls all the way up. */
+        contentContainerStyle={{ paddingTop: 12, paddingBottom: insets.top + 44 + 8 }}
         onScroll={(ev) => { setShowJump(ev.nativeEvent.contentOffset.y > 200); }}
         scrollEventThrottle={32}
         renderItem={({ item }) => (
@@ -126,6 +181,8 @@ export default function Messenger(): React.ReactElement {
             entry={item}
             dark={dark}
             unread={item.from !== MESSENGER_USER && item.station === 'messenger' && item.ts > unreadCutoff}
+            pending={item.id.startsWith('tmp_')}
+            replyTarget={replyingTo?.id === item.id}
             daemonUrl={cfg?.daemonUrl ?? ''}
             token={cfg?.token ?? ''}
             reactions={reactions.get(item.id)}
@@ -144,17 +201,18 @@ export default function Messenger(): React.ReactElement {
         keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={sub} />}
       />
-      {/** Top nav: solid bg strip with back arrow + status pill, mirrors the composer footer.
-       *  Sits absolute over the FlatList so the inverted list doesn't reserve space for it. */}
+      {/** Top nav: solid bg strip mirrors the composer footer + extends UP to cover the
+       *  status-bar area, so content sliding up under the keyboard doesn'​t show through
+       *  behind the system icons. */}
       <View style={{
-        position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
-        height: 44, paddingHorizontal: 14, backgroundColor: bg,
+        position: 'absolute', top: -insets.top, left: 0, right: 0, zIndex: 2,
+        height: 44 + insets.top, paddingTop: insets.top, paddingHorizontal: 14, backgroundColor: bg,
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
       }}>
         <Pressable
           onPress={() => router.push('/(tabs)')}
           hitSlop={10}
-          style={{ position: 'absolute', left: 14, padding: 6 }}
+          style={{ position: 'absolute', left: 14, top: insets.top + 4, padding: 6 }}
         >
           <HeroIcon name="arrowLeft" size={22} color={fg} />
         </Pressable>
@@ -178,24 +236,50 @@ export default function Messenger(): React.ReactElement {
       <ComposerGradient bg={bg} direction="up" top={44} height={10} />
       {showJump ? (
         <Pressable
-          onPress={() => listRef.current?.scrollToOffset({ offset: 0, animated: true })}
+          onPress={() => {
+            /** Every variant of FlatList's scroll API trips reanimated #3670 on this
+             *  device. Sidestep the scroll API entirely: bump the `key` so the FlatList
+             *  remounts. Default offset on an inverted list = 0 = visual bottom = newest. */
+            setListEpoch(e => e + 1);
+            setShowJump(false);
+          }}
           style={{
             position: 'absolute', alignSelf: 'center', bottom: 170, zIndex: 3,
             width: 36, height: 36, borderRadius: 999,
-            backgroundColor: dark ? '#1d2230' : '#ffffff',
+            backgroundColor: '#ffffff',
             alignItems: 'center', justifyContent: 'center',
             shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 6, elevation: 4,
           }}
         >
-          <HeroIcon name="arrowDown" size={18} color={fg} />
+          <HeroIcon name="arrowDown" size={18} color="#000000" />
         </Pressable>
       ) : null}
       {cfg ? (
+        <KeyboardStickyView offset={{ opened: insets.bottom }}>
         <MessengerComposer
           daemonUrl={cfg.daemonUrl} token={cfg.token} dark={dark}
           replyingTo={replyingTo ?? undefined}
           onClearReply={() => setReplyingTo(null)}
+          onOptimistic={({ localId, text, attachments, replyTo }) => {
+            /** Inverted FlatList + `maintainVisibleContentPosition` + prepended optimistic
+             *  entry = bubble appears at the visual bottom automatically. No scrollToOffset
+             *  needed — and avoiding it dodges the reanimated #3670 "property is not
+             *  writable" red-box that try/catch can't swallow (it fires through LogBox,
+             *  not as a sync throw). */
+            setOptimistic(prev => [{
+              id: localId, ts: new Date().toISOString(),
+              station: 'messenger', line: MESSENGER_LINE,
+              from: MESSENGER_USER, to: MESSENGER_LINE,
+              text: text || undefined,
+              ...(replyTo ? { replyTo } : {}),
+              ...(attachments.length ? { payload: { attachments } } : {}),
+            } as HistoryEntry, ...prev]);
+            /** If the user scrolled away before sending, remount the list so they snap
+             *  back to their own bubble. No flash when already at the bottom. */
+            if (showJump) { setListEpoch(e => e + 1); setShowJump(false); }
+          }}
         />
+        </KeyboardStickyView>
       ) : null}
       <BubbleActionMenu
         target={menuFor}
@@ -211,7 +295,7 @@ export default function Messenger(): React.ReactElement {
           setMenuFor(null);
         }}
       />
-    </View>
+    </RNAnimated.View>
   );
 }
 
