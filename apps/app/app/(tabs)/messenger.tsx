@@ -160,9 +160,10 @@ export default function Messenger(): React.ReactElement {
          *  initial seed lands, scroll stays pinned to the latest message. */
         maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
         keyExtractor={e => e.id}
-        /** Lift the FlatList'​s bottom edge by kbHeight when the keyboard is open so the
-         *  newest message stays above the keyboard (rather than getting clipped behind it). */
-        style={{ marginBottom: kbHeight }}
+        /** `flex:1` so the list claims the full column above the composer. Without it the
+         *  list collapses to content size and the composer ends up mid-screen with empty
+         *  space above it. `marginBottom:kbHeight` lifts the list above the keyboard. */
+        style={{ flex: 1, marginBottom: kbHeight }}
         /** Inverted: paddingTop = visual BOTTOM (composer side), paddingBottom = visual TOP
          *  (nav side). Bump the top so the oldest message clears the absolute top-nav strip
          *  when the user scrolls all the way up. */
@@ -230,10 +231,10 @@ export default function Messenger(): React.ReactElement {
       {showJump ? (
         <Pressable
           onPress={() => {
-            /** scrollToOffset throws on this device (Reanimated freezes a FlatList slot);
-             *  swallow so the press at least hides the button cleanly. See
-             *  react-native-reanimated #3670 for the upstream story. */
-            try { listRef.current?.scrollToOffset({ offset: 0, animated: true }); }
+            /** `scrollToIndex` goes through a different RN code path than `scrollToOffset` —
+             *  the latter trips "property is not writable" on Reanimated v4 + Reduce Motion
+             *  (issue #3670). Inverted list: index 0 is the newest = visual bottom. */
+            try { listRef.current?.scrollToIndex({ index: 0, animated: true }); }
             catch { /* ignore */ }
             setShowJump(false);
           }}
@@ -255,6 +256,11 @@ export default function Messenger(): React.ReactElement {
           replyingTo={replyingTo ?? undefined}
           onClearReply={() => setReplyingTo(null)}
           onOptimistic={({ localId, text, attachments, replyTo }) => {
+            /** Inverted FlatList + `maintainVisibleContentPosition` + prepended optimistic
+             *  entry = bubble appears at the visual bottom automatically. No scrollToOffset
+             *  needed — and avoiding it dodges the reanimated #3670 "property is not
+             *  writable" red-box that try/catch can't swallow (it fires through LogBox,
+             *  not as a sync throw). */
             setOptimistic(prev => [{
               id: localId, ts: new Date().toISOString(),
               station: 'messenger', line: MESSENGER_LINE,
@@ -263,9 +269,6 @@ export default function Messenger(): React.ReactElement {
               ...(replyTo ? { replyTo } : {}),
               ...(attachments.length ? { payload: { attachments } } : {}),
             } as HistoryEntry, ...prev]);
-            /** Snap back to the bottom so the user sees their bubble appear (try/catch
-             *  because the scroll API can throw on this device — see commit history). */
-            try { listRef.current?.scrollToOffset({ offset: 0, animated: true }); } catch { /* ignore */ }
           }}
         />
         </KeyboardStickyView>
