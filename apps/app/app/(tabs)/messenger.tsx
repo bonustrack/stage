@@ -137,6 +137,18 @@ export default function Messenger(): React.ReactElement {
     );
     if (live.length !== optimistic.length) setOptimistic(live);
   }, [bubbleEvents, optimistic]);
+  /** Sticky-bottom for inbound messages: when a new entry arrives and the user is
+   *  already at the visual bottom (`showJump=false` means scroll offset < 200px),
+   *  remount the list so it lands at offset 0 again. Otherwise
+   *  `maintainVisibleContentPosition` keeps them anchored to the prior bottom-item
+   *  and the new entry stays just below the viewport. Skip on initial mount. */
+  const prevBubbleCount = useRef(0);
+  useEffect(() => {
+    if (allBubbles.length > prevBubbleCount.current && prevBubbleCount.current > 0 && !showJump) {
+      setListEpoch(e => e + 1);
+    }
+    prevBubbleCount.current = allBubbles.length;
+  }, [allBubbles.length, showJump]);
   const previewOf = (e: HistoryEntry): string =>
     e.text?.slice(0, 80) || `[${(e.payload as { attachments?: { kind: string }[] } | undefined)?.attachments?.[0]?.kind ?? 'attachment'}]`;
   const onReact = useCallback((messageId: string, emoji: string) => {
