@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Animated as RNAnimated,
+  Animated as RNAnimated, AppState,
   FlatList, Modal, PanResponder, Pressable, Text, View, useColorScheme,
 } from 'react-native';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
@@ -20,7 +20,7 @@ import {
 } from '../../lib/messenger';
 import { saveBubbleCache, useCachedBubbles } from '../../lib/messenger-cache';
 import { getMessengerLastRead, markMessengerRead } from '../../lib/messenger-unread';
-import { registerForPush } from '../../lib/push';
+import { registerForPush, setMessengerActive } from '../../lib/push';
 import { useTail } from '../../lib/sse';
 import type { HistoryEntry } from '../../lib/types';
 
@@ -44,7 +44,23 @@ export default function Messenger(): React.ReactElement {
       if (c && isConfigured(c)) void registerForPush(c.daemonUrl, c.token).catch(() => { /* ignore */ });
     });
     void markMessengerRead();
+    /** Mark the messenger tab as foregrounded — the notification handler in
+     *  lib/push.ts skips banners + shade entries while this flag is true, since
+     *  the user is already seeing inbound bubbles live in the feed. Cleared on
+     *  blur so backgrounded users still get notified. */
+    setMessengerActive(true);
+    return (): void => setMessengerActive(false);
   }, []));
+  /** Messenger tab can be the focused screen but the whole app might be backgrounded
+   *  (phone locked, user on another app). In that case we DO want notifications, so
+   *  toggle the active flag with AppState — true only when both messenger is focused
+   *  AND the app is foreground. */
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') setMessengerActive(false);
+    });
+    return (): void => sub.remove();
+  }, []);
 
   const tailOpts = useMemo(() => ({
     daemonUrl: cfg?.daemonUrl ?? '', token: cfg?.token ?? '',
