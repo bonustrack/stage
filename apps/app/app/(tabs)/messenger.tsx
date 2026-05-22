@@ -274,6 +274,9 @@ export default function Messenger(): React.ReactElement {
               ...(replyTo ? { replyTo } : {}),
               ...(attachments.length ? { payload: { attachments } } : {}),
             } as HistoryEntry, ...prev]);
+            /** If the user scrolled away before sending, remount the list so they snap
+             *  back to their own bubble. No flash when already at the bottom. */
+            if (showJump) { setListEpoch(e => e + 1); setShowJump(false); }
           }}
         />
         </KeyboardStickyView>
