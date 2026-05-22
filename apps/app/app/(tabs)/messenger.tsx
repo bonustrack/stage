@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated as RNAnimated,
-  FlatList, Modal, PanResponder, Pressable, RefreshControl, Text, View, useColorScheme,
+  FlatList, Modal, PanResponder, Pressable, Text, View, useColorScheme,
 } from 'react-native';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -52,8 +52,7 @@ export default function Messenger(): React.ReactElement {
   }), [cfg]);
 
   const enabled = !!cfg && isConfigured(cfg);
-  const { events, reconnect, status } = useTail(tailOpts, enabled);
-  const [refreshing, setRefreshing] = useState(false);
+  const { events, status } = useTail(tailOpts, enabled);
   const [showJump, setShowJump] = useState(false);
   /** Bump to force-remount the FlatList. Used by jump-to-bottom and on focus because every
    *  variant of the scroll API (`scrollToOffset`, `scrollToIndex`, `getScrollResponder`,
@@ -102,12 +101,6 @@ export default function Messenger(): React.ReactElement {
     marginBottom: Math.max(0, -kbHeightShared.value - insets.bottom),
   }));
   const listRef = useRef<FlatList<HistoryEntry>>(null);
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    reconnect();
-    /** useTail.reconnect is sync; brief spinner pretends until the next render delivers seed. */
-    setTimeout(() => setRefreshing(false), 600);
-  }, [reconnect]);
 
   /** Reaction + transcript events decorate their target msg — don't render as their own bubbles. */
   const reactions = useMemo(() => reactionsByMessage(events), [events]);
@@ -226,7 +219,6 @@ export default function Messenger(): React.ReactElement {
           </View>
         }
         keyboardShouldPersistTaps="handled"
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={sub} />}
       />
       </Reanimated.View>
       {/** Top nav: solid bg strip mirrors the composer footer + extends UP to cover the
