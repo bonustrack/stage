@@ -160,16 +160,31 @@ export default function Messenger(): React.ReactElement {
     );
     return [...live, ...bubbleEvents];
   }, [bubbleEvents, optimistic]);
-  /** Insert a Discord-style "NEW MESSAGES" separator sentinel between unread and
-   *  read entries. Data is newest-first → find the first index with ts <= cutoff
-   *  (= first read entry); insert sentinel before it. Suppress when there are no
-   *  unread (= idx 0) or no read (= idx -1) entries. */
+  /** Insert a Discord-style "NEW MESSAGES" separator between unread and read
+   *  entries. Skip the user's OWN messages when locating the boundary — they're
+   *  trivially "read" (you sent them) so sending shouldn'​t push the separator.
+   *  The separator goes immediately before the first non-mine entry with
+   *  ts <= cutoff (= the newest already-read agent message). Suppress when
+   *  there are no non-mine unread entries (idx 0) or no non-mine read entries
+   *  (idx -1). */
   const allBubblesWithSeparator = useMemo<HistoryEntry[]>(() => {
-    const firstReadIdx = allBubbles.findIndex(b => b.ts <= unreadCutoff);
-    if (firstReadIdx <= 0) return allBubbles;
+    let separatorIdx = -1;
+    let sawUnreadAgentEntry = false;
+    for (let i = 0; i < allBubbles.length; i++) {
+      const b = allBubbles[i];
+      if (b.from === MESSENGER_USER) continue;
+      if (b.ts > unreadCutoff) { sawUnreadAgentEntry = true; continue; }
+      separatorIdx = i;
+      break;
+    }
+    /** Only insert the separator when there'​s at least one non-mine UNREAD entry
+     *  above the first non-mine read entry. Without this check, sending an own
+     *  message after the cutoff would push the separator above the last read
+     *  agent message even though there'​s nothing to separate. */
+    if (separatorIdx <= 0 || !sawUnreadAgentEntry) return allBubbles;
     const sentinel = { id: '__unread-separator__', ts: '', station: 'messenger',
       line: MESSENGER_LINE, from: '', to: '' } as HistoryEntry;
-    return [...allBubbles.slice(0, firstReadIdx), sentinel, ...allBubbles.slice(firstReadIdx)];
+    return [...allBubbles.slice(0, separatorIdx), sentinel, ...allBubbles.slice(separatorIdx)];
   }, [allBubbles, unreadCutoff]);
   /** Once SSE has caught up, drop the now-dead optimistic entries from state so the
    *  array doesn'​t grow forever. Safe to do via effect because the displayed list
