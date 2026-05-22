@@ -7,12 +7,21 @@ import { Platform } from 'react-native';
 import { loadConfig, isConfigured } from './config';
 import { sendMessenger } from './messenger';
 
+/** True while the messenger tab is the foreground screen. Read by the notification
+ *  handler to skip the heads-up banner + shade entry — the user can see the new
+ *  message in the live feed anyway, no need to also dump it into the notif tray. */
+let messengerActive = false;
+export function setMessengerActive(active: boolean): void {
+  messengerActive = active;
+  if (active) { void Notifications.dismissAllNotificationsAsync().catch(() => { /* best-effort */ }); }
+}
+
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
+    shouldShowBanner: !messengerActive,
+    shouldShowList: !messengerActive,
     shouldPlaySound: false,
-    shouldSetBadge: true,
+    shouldSetBadge: !messengerActive,
   }),
 });
 
