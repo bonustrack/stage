@@ -113,16 +113,29 @@ export default function Messenger(): React.ReactElement {
    *  seeds. Once live events arrive, they take over and the cache gets refreshed. */
   const bubbleEvents = liveBubbles.length > 0 ? liveBubbles : cachedBubbles;
   useEffect(() => { if (liveBubbles.length > 0) saveBubbleCache(liveBubbles); }, [liveBubbles]);
-  /** Drop optimistic entries that a real SSE event now covers (same text + sent within 30s). */
-  useEffect(() => {
-    if (!optimistic.length) return;
-    setOptimistic(prev => prev.filter(o =>
+  /** Inverted FlatList expects newest-first → put optimistic at the top. Filter out
+   *  optimistic entries inline (not via useEffect) so the SSE-confirmed bubble never
+   *  renders alongside its pending twin even for one frame. The useEffect schedule used
+   *  to leave both visible until the next paint. */
+  const allBubbles = useMemo(() => {
+    if (!optimistic.length) return bubbleEvents;
+    const live = optimistic.filter(o =>
       !bubbleEvents.some(e => e.from === MESSENGER_USER && e.text === o.text
         && Math.abs(new Date(e.ts).getTime() - new Date(o.ts).getTime()) < 30_000),
-    ));
-  }, [bubbleEvents, optimistic.length]);
-  /** Inverted FlatList expects newest-first → put optimistic at the top. */
-  const allBubbles = useMemo(() => [...optimistic, ...bubbleEvents], [bubbleEvents, optimistic]);
+    );
+    return [...live, ...bubbleEvents];
+  }, [bubbleEvents, optimistic]);
+  /** Once SSE has caught up, drop the now-dead optimistic entries from state so the
+   *  array doesn'​t grow forever. Safe to do via effect because the displayed list
+   *  already excluded them above. */
+  useEffect(() => {
+    if (!optimistic.length) return;
+    const live = optimistic.filter(o =>
+      !bubbleEvents.some(e => e.from === MESSENGER_USER && e.text === o.text
+        && Math.abs(new Date(e.ts).getTime() - new Date(o.ts).getTime()) < 30_000),
+    );
+    if (live.length !== optimistic.length) setOptimistic(live);
+  }, [bubbleEvents, optimistic]);
   const previewOf = (e: HistoryEntry): string =>
     e.text?.slice(0, 80) || `[${(e.payload as { attachments?: { kind: string }[] } | undefined)?.attachments?.[0]?.kind ?? 'attachment'}]`;
   const onReact = useCallback((messageId: string, emoji: string) => {
@@ -274,9 +287,12 @@ export default function Messenger(): React.ReactElement {
               ...(replyTo ? { replyTo } : {}),
               ...(attachments.length ? { payload: { attachments } } : {}),
             } as HistoryEntry, ...prev]);
-            /** If the user scrolled away before sending, remount the list so they snap
-             *  back to their own bubble. No flash when already at the bottom. */
-            if (showJump) { setListEpoch(e => e + 1); setShowJump(false); }
+            /** Always remount so the user lands on their own bubble — even at the visual
+             *  bottom `maintainVisibleContentPosition` anchors the previously-visible
+             *  content and the new entry falls below the viewport. Brief flash, but the
+             *  bubble is always visible after sending. */
+            setListEpoch(e => e + 1);
+            setShowJump(false);
           }}
         />
         </KeyboardStickyView>
