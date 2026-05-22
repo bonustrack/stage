@@ -13,7 +13,22 @@ import { sendMessenger } from './messenger';
 let messengerActive = false;
 export function setMessengerActive(active: boolean): void {
   messengerActive = active;
-  if (active) { void Notifications.dismissAllNotificationsAsync().catch(() => { /* best-effort */ }); }
+  if (active) void dismissAllMessengerNotifs();
+}
+
+/** Aggressive clear — Samsung's One UI sometimes ignores the bulk
+ *  `dismissAllNotificationsAsync` for cross-process Expo pushes, so iterate
+ *  presented notifications and dismiss each one explicitly. Also resets the
+ *  app icon badge. Idempotent + best-effort. */
+export async function dismissAllMessengerNotifs(): Promise<void> {
+  try {
+    const presented = await Notifications.getPresentedNotificationsAsync();
+    await Promise.all(presented.map(n =>
+      Notifications.dismissNotificationAsync(n.request.identifier).catch(() => undefined),
+    ));
+    await Notifications.dismissAllNotificationsAsync().catch(() => undefined);
+    await Notifications.setBadgeCountAsync(0).catch(() => undefined);
+  } catch { /* swallow — clearing the tray shouldn'​t crash the app */ }
 }
 
 Notifications.setNotificationHandler({

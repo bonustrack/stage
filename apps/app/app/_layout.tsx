@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
-import { Stack, useRouter } from 'expo-router';
+import { useEffect, useRef } from 'react';
+import { Stack, useRouter, usePathname } from 'expo-router';
+import { loadLastRoute, saveLastRoute } from '../lib/last-route';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import * as Notifications from 'expo-notifications';
@@ -40,6 +41,22 @@ export default function RootLayout(): React.ReactElement {
     });
     return (): void => sub.remove();
   }, [router]);
+
+  /** Restore the last tab on cold open. Run once on mount, before the user has
+   *  a chance to navigate manually. The notification deep-link above can still
+   *  override (later effect → later navigate). */
+  const restoredRoute = useRef(false);
+  useEffect(() => {
+    if (restoredRoute.current) return;
+    restoredRoute.current = true;
+    void loadLastRoute().then(p => {
+      if (p && p !== '/' && p !== '/(tabs)') router.replace(p);
+    });
+  }, [router]);
+
+  /** Persist on every route change. */
+  const pathname = usePathname();
+  useEffect(() => { void saveLastRoute(pathname); }, [pathname]);
 
   /** Calibre — matches sx-monorepo's typography. Two weights: medium (default) + semibold (headers/buttons).
    *  TTF (not WOFF2) so Android'​s native Typeface loader can pick it up — expo-font's WOFF2

@@ -19,7 +19,10 @@ import {
   isReaction, isTranscript, reactMessenger, reactionsByMessage, sendMessenger, transcriptsByMessage,
 } from '../../lib/messenger';
 import { saveBubbleCache, useCachedBubbles } from '../../lib/messenger-cache';
-import { getMessengerLastRead, markMessengerRead } from '../../lib/messenger-unread';
+import {
+  getMessengerLastRead, markMessengerRead, markMessengerUnreadFrom,
+  subscribeMessengerLastRead, unsubscribeMessengerLastRead,
+} from '../../lib/messenger-unread';
 import { registerForPush, setMessengerActive } from '../../lib/push';
 import { useTail } from '../../lib/sse';
 import type { HistoryEntry } from '../../lib/types';
@@ -36,7 +39,17 @@ export default function Messenger(): React.ReactElement {
 
   const [cfg, setCfg] = useState<Config | null>(null);
   /** Captured once on mount → entries newer than this render with the unread style. */
-  const [unreadCutoff] = useState(() => getMessengerLastRead());
+  /** Track lastRead reactively so:
+   *  - focus auto-mark-read → cutoff jumps to now() → unread highlight clears
+   *  - explicit mark-as-unread → cutoff drops → that bubble + newer ones highlight
+   *  No snapshot — Less prefers the highlight to disappear as soon as the message
+   *  is read, rather than persisting for the whole session. */
+  const [unreadCutoff, setUnreadCutoff] = useState(() => getMessengerLastRead());
+  useEffect(() => {
+    const handler = (iso: string): void => setUnreadCutoff(iso);
+    subscribeMessengerLastRead(handler);
+    return (): void => unsubscribeMessengerLastRead(handler);
+  }, []);
 
   useFocusEffect(useCallback(() => {
     void loadConfig().then(c => {
@@ -117,6 +130,11 @@ export default function Messenger(): React.ReactElement {
     marginBottom: Math.max(0, -kbHeightShared.value - insets.bottom),
   }));
   const listRef = useRef<FlatList<HistoryEntry>>(null);
+  /** Note: explicit scroll-restore across cold opens is intentionally NOT
+   *  implemented. `initialScrollIndex` calls scrollToIndex → scrollToOffset →
+   *  scrollTo internally, which trips reanimated #3670 on this device. The
+   *  unread separator + composer-draft persistence give the user enough
+   *  context to find where they left off without crashing the feed. */
 
   /** Reaction + transcript events decorate their target msg — don't render as their own bubbles. */
   const reactions = useMemo(() => reactionsByMessage(events), [events]);
@@ -142,6 +160,17 @@ export default function Messenger(): React.ReactElement {
     );
     return [...live, ...bubbleEvents];
   }, [bubbleEvents, optimistic]);
+  /** Insert a Discord-style "NEW MESSAGES" separator sentinel between unread and
+   *  read entries. Data is newest-first → find the first index with ts <= cutoff
+   *  (= first read entry); insert sentinel before it. Suppress when there are no
+   *  unread (= idx 0) or no read (= idx -1) entries. */
+  const allBubblesWithSeparator = useMemo<HistoryEntry[]>(() => {
+    const firstReadIdx = allBubbles.findIndex(b => b.ts <= unreadCutoff);
+    if (firstReadIdx <= 0) return allBubbles;
+    const sentinel = { id: '__unread-separator__', ts: '', station: 'messenger',
+      line: MESSENGER_LINE, from: '', to: '' } as HistoryEntry;
+    return [...allBubbles.slice(0, firstReadIdx), sentinel, ...allBubbles.slice(firstReadIdx)];
+  }, [allBubbles, unreadCutoff]);
   /** Once SSE has caught up, drop the now-dead optimistic entries from state so the
    *  array doesn'​t grow forever. Safe to do via effect because the displayed list
    *  already excluded them above. */
@@ -202,7 +231,7 @@ export default function Messenger(): React.ReactElement {
       <FlatList
         key={listEpoch}
         ref={listRef}
-        data={allBubbles}
+        data={allBubblesWithSeparator}
         inverted
         showsVerticalScrollIndicator={false}
         /** Anchor the bottom-visible item (= newest on inverted) so as new bubbles or the
@@ -219,11 +248,22 @@ export default function Messenger(): React.ReactElement {
         contentContainerStyle={{ paddingTop: 12, paddingBottom: insets.top + 44 + 8 }}
         onScroll={(ev) => { setShowJump(ev.nativeEvent.contentOffset.y > 200); }}
         scrollEventThrottle={32}
-        renderItem={({ item }) => (
+        renderItem={({ item }) => item.id === '__unread-separator__' ? (
+          <View style={{
+            flexDirection: 'row', alignItems: 'center',
+            paddingHorizontal: 14, paddingVertical: 6, gap: 10,
+          }}>
+            <View style={{ flex: 1, height: 1, backgroundColor: '#d96868' }} />
+            <Text style={{ color: '#d96868', fontSize: 11, fontFamily: 'Calibre-Semibold', letterSpacing: 0.5 }}>
+              NEW MESSAGES
+            </Text>
+            <View style={{ flex: 1, height: 1, backgroundColor: '#d96868' }} />
+          </View>
+        ) : (
           <MessengerBubble
             entry={item}
             dark={dark}
-            unread={item.from !== MESSENGER_USER && item.station === 'messenger' && item.ts > unreadCutoff}
+            unread={item.station === 'messenger' && item.ts > unreadCutoff && !isReaction(item) && !isTranscript(item)}
             pending={item.id.startsWith('tmp_')}
             replyTarget={replyingTo?.id === item.id}
             daemonUrl={cfg?.daemonUrl ?? ''}
@@ -345,6 +385,10 @@ export default function Messenger(): React.ReactElement {
           if (menuFor?.text) void Clipboard.setStringAsync(menuFor.text);
           setMenuFor(null);
         }}
+        onMarkUnread={() => {
+          if (menuFor) void markMessengerUnreadFrom(menuFor.ts);
+          setMenuFor(null);
+        }}
       />
     </RNAnimated.View>
   );
@@ -352,10 +396,11 @@ export default function Messenger(): React.ReactElement {
 
 const ACTION_EMOJIS = ['👍', '❤️', '😂', '😮', '🔥', '🎉'] as const;
 function BubbleActionMenu({
-  target, dark, onClose, onReact, onReply, onCopy,
+  target, dark, onClose, onReact, onReply, onCopy, onMarkUnread,
 }: {
   target: HistoryEntry | null; dark: boolean; onClose: () => void;
   onReact: (emoji: string) => void; onReply: () => void; onCopy: () => void;
+  onMarkUnread: () => void;
 }): React.ReactElement {
   const sheetBg = dark ? '#1d2230' : '#ffffff';
   const fg = dark ? '#e8ecf2' : '#1a1f29';
@@ -384,6 +429,10 @@ function BubbleActionMenu({
               <Text style={{ color: fg, fontSize: 16 }}>Copy text</Text>
             </Pressable>
           ) : null}
+          <Pressable onPress={onMarkUnread} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}>
+            <HeroIcon name="arrowDown" size={20} color={fg} />
+            <Text style={{ color: fg, fontSize: 16 }}>Mark as unread</Text>
+          </Pressable>
           <Pressable onPress={onClose} style={{ paddingVertical: 10, alignItems: 'center' }}>
             <Text style={{ color: sub, fontSize: 14 }}>Cancel</Text>
           </Pressable>
