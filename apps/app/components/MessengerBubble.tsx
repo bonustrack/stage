@@ -1,7 +1,7 @@
 /** ChatGPT-dark-style messenger row: user gets a bubble (right), assistant is bubble-less (left). */
 
 import { useMemo, useRef, useState } from 'react';
-import { Animated, Linking, PanResponder, Pressable, Text, View } from 'react-native';
+import { Animated, Linking, PanResponder, Pressable, Text, TextInput, View } from 'react-native';
 import Markdown, { MarkdownIt } from 'react-native-markdown-display';
 import { HeroIcon } from './HeroIcon';
 import { MessengerAudioPlayer } from './MessengerAudioPlayer';
@@ -61,12 +61,13 @@ function markdownStyles(fg: string, dark: boolean, mine: boolean): Record<string
     heading1: { color: fg, fontSize: 20, fontFamily: 'Calibre-Semibold', marginTop: 4, marginBottom: 2 },
     heading2: { color: fg, fontSize: 18, fontFamily: 'Calibre-Semibold', marginTop: 4, marginBottom: 2 },
     heading3: { color: fg, fontSize: 16, fontFamily: 'Calibre-Semibold', marginTop: 4, marginBottom: 2 },
-    /** Pin fontFamily + size + lineHeight on every inline mark. Calibre-Semibold +
-     *  italic-fallback both visually render larger than Calibre-Medium at the same
-     *  nominal fontSize (different em-square / x-height), so step them DOWN to match
-     *  the body's visual size rather than match nominal points. */
-    strong: { fontFamily: 'Calibre-Semibold', fontSize: 15, lineHeight: lh },
-    em: { fontFamily: 'Calibre-Medium', fontStyle: 'italic', fontSize: 15, lineHeight: lh },
+    /** Pin fontFamily + weight + size + lineHeight on every inline mark. The markdown
+     *  lib adds a default fontWeight:'bold' on strong which makes RN look for the
+     *  bold-variant of the inherited family — since Calibre-Semibold is registered as
+     *  its OWN family (not a weight of Calibre-Medium), RN falls back to system bold.
+     *  Pinning fontWeight:'normal' lets the explicit Calibre-Semibold family win. */
+    strong: { fontFamily: 'Calibre-Semibold', fontWeight: 'normal', fontSize: 15, lineHeight: lh },
+    em: { fontFamily: 'Calibre-Medium', fontStyle: 'italic', fontWeight: 'normal', fontSize: 15, lineHeight: lh },
     link: { color: fg, textDecorationLine: 'underline' },
     /** Menlo's em-square is wider than Calibre's, so size down to match. */
     code_inline: { backgroundColor: codeBg, paddingHorizontal: 4, borderRadius: 4, fontFamily: 'Menlo', fontSize: 13, lineHeight: lh },
@@ -77,16 +78,176 @@ function markdownStyles(fg: string, dark: boolean, mine: boolean): Record<string
   };
 }
 
+interface QuestionOption { label: string; description?: string }
+interface Question {
+  header?: string;
+  options: QuestionOption[];
+  multiSelect?: boolean;
+  /** Default true. When true, an "Other…" affordance lets the user type a free-text
+   *  answer instead of (or in addition to, for multi-select) the listed options. */
+  allowOther?: boolean;
+}
+
+function questionOf(entry: HistoryEntry): Question | undefined {
+  const p = entry.payload as { question?: Question } | undefined;
+  if (!p?.question || !Array.isArray(p.question.options)) return undefined;
+  return p.question;
+}
+
+/** Question view — single-select fires onAnswer instantly; multi-select toggles
+ *  options locally and submits the joined labels as one message on tap of "Submit".
+ *  An implicit "Other…" affordance (default on) lets the user type a free-text
+ *  answer instead of (or alongside, in multi mode) the listed options. */
+function QuestionView({ question, dark, sub, onAnswer }: {
+  question: Question; dark: boolean; sub: string; onAnswer: (label: string) => void;
+}): React.ReactElement {
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [otherOpen, setOtherOpen] = useState(false);
+  const [otherText, setOtherText] = useState('');
+  const multi = question.multiSelect === true;
+  const allowOther = question.allowOther !== false;
+  const toggle = (label: string): void => {
+    if (!multi) { onAnswer(label); return; }
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label); else next.add(label);
+      return next;
+    });
+  };
+  const submit = (): void => {
+    /** Preserve the user's option order so the answer reads naturally. */
+    const chosen = question.options.filter(o => selected.has(o.label)).map(o => o.label);
+    const other = otherText.trim();
+    if (multi) {
+      if (chosen.length === 0 && !other) return;
+      onAnswer([...chosen, ...(other ? [other] : [])].join(', '));
+    } else {
+      /** Single-select Other submit — just send the typed text. */
+      if (!other) return;
+      onAnswer(other);
+    }
+  };
+  const needSubmitButton = multi || otherOpen;
+  return (
+    <View style={{ alignSelf: 'stretch', gap: 6, marginTop: 8 }}>
+      {question.header ? (
+        <Text style={{ color: sub, fontSize: 11, fontFamily: 'Calibre-Semibold', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          {question.header}{multi ? ' · multi-select' : ''}
+        </Text>
+      ) : null}
+      {question.options.map((opt, i) => {
+        const isOn = selected.has(opt.label);
+        return (
+          <Pressable
+            key={`${i}-${opt.label}`}
+            onPress={() => toggle(opt.label)}
+            style={({ pressed }) => ({
+              paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12,
+              backgroundColor: isOn
+                ? (dark ? 'rgba(192,160,110,0.22)' : 'rgba(192,160,110,0.18)')
+                : pressed
+                  ? (dark ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.08)')
+                  : (dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)'),
+              borderWidth: 1,
+              borderColor: isOn
+                ? '#c0a06e'
+                : (dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.10)'),
+            })}
+          >
+            <Text style={{ color: dark ? '#e8ecf2' : '#1a1f29', fontSize: 15, fontFamily: 'Calibre-Medium' }}>
+              {multi ? (isOn ? '☑︎  ' : '☐  ') : ''}{opt.label}
+            </Text>
+            {opt.description ? (
+              <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
+                {opt.description}
+              </Text>
+            ) : null}
+          </Pressable>
+        );
+      })}
+      {allowOther && !otherOpen ? (
+        <Pressable
+          onPress={() => setOtherOpen(true)}
+          style={({ pressed }) => ({
+            paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12,
+            backgroundColor: pressed
+              ? (dark ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.08)')
+              : (dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)'),
+            borderWidth: 1, borderStyle: 'dashed',
+            borderColor: dark ? 'rgba(255,255,255,0.20)' : 'rgba(0,0,0,0.18)',
+          })}
+        >
+          <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
+            Other…
+          </Text>
+        </Pressable>
+      ) : null}
+      {otherOpen ? (
+        <View style={{
+          paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12,
+          backgroundColor: dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
+          borderWidth: 1, borderColor: dark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.14)',
+        }}>
+          <TextInput
+            value={otherText}
+            onChangeText={setOtherText}
+            placeholder="Type your answer…"
+            placeholderTextColor={sub}
+            multiline
+            autoFocus
+            onSubmitEditing={submit}
+            blurOnSubmit
+            style={{
+              color: dark ? '#e8ecf2' : '#1a1f29',
+              fontFamily: 'Calibre-Medium', fontSize: 15, lineHeight: 22,
+              minHeight: 22, padding: 0,
+            }}
+          />
+        </View>
+      ) : null}
+      {needSubmitButton ? (
+        <Pressable
+          onPress={submit}
+          disabled={multi ? (selected.size === 0 && !otherText.trim()) : !otherText.trim()}
+          style={({ pressed }) => {
+            const disabled = multi
+              ? (selected.size === 0 && !otherText.trim())
+              : !otherText.trim();
+            return {
+              marginTop: 4, alignSelf: 'flex-start',
+              paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999,
+              backgroundColor: disabled
+                ? (dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)')
+                : pressed ? '#a08458' : '#c0a06e',
+              opacity: disabled ? 0.5 : 1,
+            };
+          }}
+        >
+          <Text style={{ color: '#000', fontSize: 14, fontFamily: 'Calibre-Semibold' }}>
+            Submit{multi && selected.size > 0 ? ` (${selected.size}${otherText.trim() ? '+1' : ''})` : ''}
+          </Text>
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
 export function MessengerBubble({
-  entry, dark, unread, pending, replyTarget, onReact, onReply, onLongPress, replyPreview, reactions, transcript, daemonUrl, token,
+  entry, dark, unread, pending, replyTarget, onReact, onReply, onLongPress, onAnswer,
+  replyPreview, reactions, transcript, daemonUrl, token,
 }: {
   entry: HistoryEntry; dark: boolean; unread: boolean; pending?: boolean; replyTarget?: boolean;
   onReact?: (emoji: string) => void; onReply?: () => void; onLongPress?: () => void;
+  /** Tapping a question option fires this with the chosen label (parent sends it as
+   *  a normal user message with replyTo=entry.id so the agent links the answer to
+   *  the question). */
+  onAnswer?: (label: string) => void;
   replyPreview?: string; reactions?: Map<string, number>; transcript?: string;
   daemonUrl: string; token: string;
 }): React.ReactElement {
   const mine = entry.from === MESSENGER_USER;
   const atts = attachmentsOf(entry);
+  const question = questionOf(entry);
   const bubbleBg = mine ? (dark ? '#cbd5e1' : '#1a1f29') : 'transparent';
   const fg = mine
     ? (dark ? '#000000' : '#ffffff')
@@ -169,6 +330,9 @@ export function MessengerBubble({
           <View style={{ alignSelf: 'stretch' }}>
             <Markdown {...markdownProps}>{entry.text}</Markdown>
           </View>
+        ) : null}
+        {question && onAnswer ? (
+          <QuestionView question={question} dark={dark} sub={sub} onAnswer={onAnswer} />
         ) : null}
         {transcript ? (
           <Text style={{
