@@ -5,7 +5,6 @@ import {
   ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View, useColorScheme,
 } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { ActivityChart } from '../../components/ActivityChart';
 import { ActivityHeader } from '../../components/ActivityHeader';
 import { Composer } from '../../components/Composer';
 import { EventRow } from '../../components/EventRow';
@@ -120,7 +119,6 @@ export default function Activity(): React.ReactElement {
         onClearChat={() => router.setParams({ chat: undefined })}
         onFilter={() => setFilterOpen(true)}
       />
-      <ActivityChart events={filtered} />
       <FlatList
         data={visible}
         keyExtractor={(e: HistoryEntry) => e.id}
