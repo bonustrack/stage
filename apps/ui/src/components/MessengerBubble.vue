@@ -61,7 +61,7 @@ function fmtSize(n: number): string {
 <template>
   <div class="flex flex-col" :class="mine ? 'items-end' : 'items-start'">
     <div
-      class="leading-snug text-[15px] flex flex-col gap-1.5 select-text break-words relative transition-opacity"
+      class="text-[17px] leading-[23px] flex flex-col gap-1.5 select-text break-words relative transition-opacity"
       :class="[
         mine
           ? 'max-w-[78%] px-3.5 py-2 rounded-2xl rounded-br-md bg-metro-fg-light dark:bg-[#cbd5e1] text-white dark:text-black'
