@@ -207,15 +207,6 @@ onBeforeUnmount(() => { tail.stop(); stopRecording(); });
         </div>
       </div>
     </div>
-    <!-- Jump-to-bottom button: floats above the composer when scrolled away from the
-         newest message. Matches the mobile UX. -->
-    <button v-if="!isAtBottom" type="button" title="Jump to latest"
-      class="absolute self-center bottom-[110px] z-10 w-9 h-9 rounded-full
-        bg-white text-black shadow-lg flex items-center justify-center
-        hover:scale-105 transition-transform"
-      @click="scrollToBottom('smooth')">
-      <HeroIcon name="arrowDown" :size="18" />
-    </button>
     <div v-if="err" class="px-4 py-1 text-xs text-metro-err">send failed: {{ err }}</div>
     <input ref="imageInput" type="file" accept="image/*" class="hidden" @change="pickAndUpload(imageInput)" />
     <input ref="fileInput" type="file" class="hidden" @change="pickAndUpload(fileInput)" />
@@ -225,9 +216,21 @@ onBeforeUnmount(() => { tail.stop(); stopRecording(); });
     <div class="pointer-events-none relative h-3 -mb-3 z-10
       bg-gradient-to-b from-transparent to-metro-bg-light dark:to-metro-bg-dark" />
     <!-- Composer: regular flex child pinned to the bottom of the column, no border —
-         the fade above handles the visual separation. -->
+         the fade above handles the visual separation. Houses the jump-to-latest button
+         as an absolute-positioned child so its placement tracks composer height instead
+         of being a hardcoded bottom-offset that overlaps when the composer grows. -->
     <div class="relative px-3 pb-3 pt-1.5 z-10
       bg-metro-bg-light dark:bg-metro-bg-dark">
+      <!-- Jump-to-latest button: bottom-full puts it just above the composer wrapper
+           regardless of how tall the composer grows (reply preview / attachments /
+           recording indicator all push the composer up; the button follows). -->
+      <button v-if="!isAtBottom" type="button" title="Jump to latest"
+        class="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-9 h-9 rounded-full
+          bg-white text-black shadow-lg flex items-center justify-center
+          hover:scale-105 transition-transform"
+        @click="scrollToBottom('smooth')">
+        <HeroIcon name="arrowDown" :size="18" />
+      </button>
       <div v-if="replyingTo" class="flex items-center gap-2 pb-1.5">
         <div class="flex-1 border-l-2 border-metro-sub-light dark:border-metro-sub-dark pl-2">
           <div class="text-[10px] text-metro-sub-light dark:text-metro-sub-dark">Replying to</div>
@@ -288,7 +291,7 @@ onBeforeUnmount(() => { tail.stop(); stopRecording(); });
           placeholder="Message the assistant…"
           rows="1"
           class="w-full resize-none min-h-[24px] max-h-[140px] bg-transparent
-            text-metro-fg-light dark:text-metro-fg-dark text-[15px] outline-none
+            text-metro-fg-light dark:text-metro-fg-dark text-[15px] leading-[22px] outline-none
             placeholder:text-metro-sub-light dark:placeholder:text-metro-sub-dark px-1 py-0.5"
           @keydown.enter.exact.prevent="send"
         />
