@@ -25,9 +25,16 @@ function writePushTokens(tokens: string[]): void {
   writeFileSync(PUSH_TOKENS_FILE, JSON.stringify([...new Set(tokens)]));
 }
 
-async function pushExpo(tokens: string[], title: string, body: string): Promise<void> {
+async function pushExpo(tokens: string[], title: string, body: string, replyTo?: string): Promise<void> {
   if (tokens.length === 0) return;
-  const messages = tokens.map(to => ({ to, title, body, sound: 'default' }));
+  /** `categoryId: 'messenger.reply'` opts the notification into the inline Reply
+   *  action the app registered at startup; `data.replyTo` lets the response
+   *  listener thread the answer back to the originating message. */
+  const messages = tokens.map(to => ({
+    to, title, body, sound: 'default',
+    categoryId: 'messenger.reply',
+    ...(replyTo ? { data: { replyTo } } : {}),
+  }));
   try {
     await fetch('https://exp.host/--/api/v2/push/send', {
       method: 'POST',
@@ -137,7 +144,7 @@ export async function handleMessengerSend(
           : a ? `📎 ${a.name ?? 'File'}` : '';
     const questionLabel = question ? `❓ ${question.header ?? 'Choose an option'}` : '';
     const summary = text || kindLabel || questionLabel || '(empty)';
-    void pushExpo(readPushTokens(), 'Metro', summary.slice(0, 200));
+    void pushExpo(readPushTokens(), 'Metro', summary.slice(0, 200), entry.id);
   }
   /** Fire-and-forget: transcribe any audio attachments and emit a follow-up event. */
   for (const att of attachments) {

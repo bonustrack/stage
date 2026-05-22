@@ -3,6 +3,7 @@ import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import * as Notifications from 'expo-notifications';
+import { attachReplyHandler } from '../lib/push';
 import { ActivityIndicator, Text, TextInput, useColorScheme, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
@@ -27,10 +28,15 @@ export default function RootLayout(): React.ReactElement {
   const dark = scheme === 'dark';
   const router = useRouter();
 
-  /** Tapping a messenger push notification deep-links into the messenger tab. */
+  /** Tapping a messenger push notification deep-links into the messenger tab —
+   *  unless the user used the inline Reply action, which `attachReplyHandler`
+   *  handles separately (and shouldn'​t pull focus into the app). */
   useEffect(() => {
-    const sub = Notifications.addNotificationResponseReceivedListener(() => {
-      router.push('/(tabs)/messenger');
+    attachReplyHandler();
+    const sub = Notifications.addNotificationResponseReceivedListener((resp) => {
+      if (resp.actionIdentifier === Notifications.DEFAULT_ACTION_IDENTIFIER) {
+        router.push('/(tabs)/messenger');
+      }
     });
     return (): void => sub.remove();
   }, [router]);
