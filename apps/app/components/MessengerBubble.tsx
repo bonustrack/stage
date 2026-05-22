@@ -50,21 +50,27 @@ function AttachmentView({ att, fullUrl, fg, sub }: {
   );
 }
 
-function markdownStyles(fg: string, dark: boolean): Record<string, object> {
+function markdownStyles(fg: string, dark: boolean, mine: boolean): Record<string, object> {
   const codeBg = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
-  /** react-native-markdown-display creates its own <Text> elements that bypass Text.defaultProps —
-   *  so we have to pin Calibre on the markdown body explicitly or it falls back to system. */
+  /** Tighter leading on the user's own bubble — Less prefers a snugger look there.
+   *  Assistant text keeps 23 for comfortable reading on long replies. */
+  const lh = mine ? 21 : 23;
   return {
-    body: { color: fg, fontSize: 17, lineHeight: 23, fontFamily: 'Calibre-Medium' },
+    body: { color: fg, fontSize: 17, lineHeight: lh, fontFamily: 'Calibre-Medium' },
     paragraph: { marginTop: 0, marginBottom: 0 },
     heading1: { color: fg, fontSize: 20, fontFamily: 'Calibre-Semibold', marginTop: 4, marginBottom: 2 },
     heading2: { color: fg, fontSize: 18, fontFamily: 'Calibre-Semibold', marginTop: 4, marginBottom: 2 },
     heading3: { color: fg, fontSize: 16, fontFamily: 'Calibre-Semibold', marginTop: 4, marginBottom: 2 },
-    strong: { fontFamily: 'Calibre-Semibold' },
-    em: { fontStyle: 'italic' },
+    /** Pin fontFamily + size + lineHeight on every inline mark. Calibre-Semibold +
+     *  italic-fallback both visually render larger than Calibre-Medium at the same
+     *  nominal fontSize (different em-square / x-height), so step them DOWN to match
+     *  the body's visual size rather than match nominal points. */
+    strong: { fontFamily: 'Calibre-Semibold', fontSize: 15, lineHeight: lh },
+    em: { fontFamily: 'Calibre-Medium', fontStyle: 'italic', fontSize: 15, lineHeight: lh },
     link: { color: fg, textDecorationLine: 'underline' },
-    code_inline: { backgroundColor: codeBg, paddingHorizontal: 4, borderRadius: 4, fontFamily: 'Menlo' },
-    fence: { backgroundColor: codeBg, padding: 8, borderRadius: 6, fontFamily: 'Menlo', fontSize: 13 },
+    /** Menlo's em-square is wider than Calibre's, so size down to match. */
+    code_inline: { backgroundColor: codeBg, paddingHorizontal: 4, borderRadius: 4, fontFamily: 'Menlo', fontSize: 13, lineHeight: lh },
+    fence: { backgroundColor: codeBg, padding: 8, borderRadius: 6, fontFamily: 'Menlo', fontSize: 12, lineHeight: 18 },
     bullet_list: { marginTop: 2, marginBottom: 2 },
     ordered_list: { marginTop: 2, marginBottom: 2 },
     blockquote: { borderLeftWidth: 3, borderLeftColor: codeBg, paddingLeft: 8, marginVertical: 4 },
@@ -91,7 +97,7 @@ export function MessengerBubble({
   const markdownProps = {
     markdownit: mdParser,
     onLinkPress: (url: string): boolean => { void Linking.openURL(url); return false; },
-    style: markdownStyles(fg, dark),
+    style: markdownStyles(fg, dark, mine),
   };
   /** Swipe-to-reply (right→left, Telegram-style): claim once dx is left-leaning + dominates dy,
    *  drag the bubble with the finger up to ~80px, snap back on release, fire onReply if dx<=-60. */
