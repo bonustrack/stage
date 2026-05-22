@@ -1,6 +1,7 @@
 /** Activity-feed header bar: connection dot, count, and navigation pressables. */
 
 import { Pressable, Text, View, useColorScheme } from 'react-native';
+import { HeroIcon } from './HeroIcon';
 
 const LINK = { color: '#ffffff', fontSize: 13, fontWeight: '600' as const };
 
@@ -26,11 +27,14 @@ export function ActivityHeader({
           {status}{error ? ` · ${error}` : ''} · {count} event{count === 1 ? '' : 's'}
         </Text>
         <View style={{ flex: 1 }} />
-        <Pressable onPress={onFilter} hitSlop={8}>
-          <Text style={{
-            ...LINK, color: filterActive ? '#83c989' : LINK.color,
-            fontWeight: filterActive ? '700' : '600',
-          }}>Filter{filterActive ? ' •' : ''}</Text>
+        <Pressable onPress={onFilter} hitSlop={8} style={{ position: 'relative' }}>
+          <HeroIcon name="filter" size={20} color={filterActive ? '#83c989' : LINK.color} />
+          {filterActive ? (
+            <View style={{
+              position: 'absolute', top: -2, right: -2,
+              width: 7, height: 7, borderRadius: 999, backgroundColor: '#83c989',
+            }} />
+          ) : null}
         </Pressable>
       </View>
       {chat ? (

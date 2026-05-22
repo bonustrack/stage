@@ -30,21 +30,54 @@ function previewOf(e: { text?: string; payload?: unknown }): string {
 }
 
 const tail = useTail(cfg, chat);
-/** Optimistic outbound entries — rendered immediately on send, dedupe by text + freshness when
- *  the real SSE event lands. */
+/** Optimistic outbound entries — rendered instantly on send, dedupe inline when the SSE
+ *  event lands (in the same computed so the pending+confirmed twin can't both flash). */
 const optimistic = ref<HistoryEntry[]>([]);
 const liveBubbles = computed(() =>
   [...tail.events.value].reverse().filter(e => !isReaction(e) && !isTranscript(e)));
-watch(liveBubbles, current => {
-  if (!optimistic.value.length) return;
-  optimistic.value = optimistic.value.filter(o =>
-    !current.some(e => e.from === MESSENGER_USER && e.text === o.text
+/** Newest-first. Optimistic dropped inline once a matching SSE entry covers them. */
+const bubbles = computed(() => {
+  if (!optimistic.value.length) return liveBubbles.value;
+  const live = optimistic.value.filter(o =>
+    !liveBubbles.value.some(e => e.from === MESSENGER_USER && e.text === o.text
       && Math.abs(new Date(e.ts).getTime() - new Date(o.ts).getTime()) < 30_000));
+  return [...live, ...liveBubbles.value];
 });
-/** Optimistic entries are stored newest-first; live bubbles already are. */
-const bubbles = computed(() => [...optimistic.value, ...liveBubbles.value]);
+/** Once the matching SSE event arrives, prune the optimistic state (the displayed list
+ *  already excluded the dupe via the computed above — this just stops the array growing). */
+watch(bubbles, () => {
+  if (!optimistic.value.length) return;
+  const stillPending = optimistic.value.filter(o =>
+    !liveBubbles.value.some(e => e.from === MESSENGER_USER && e.text === o.text
+      && Math.abs(new Date(e.ts).getTime() - new Date(o.ts).getTime()) < 30_000));
+  if (stillPending.length !== optimistic.value.length) optimistic.value = stillPending;
+});
+/** Oldest-first for rendering: visual top = oldest, visual bottom = newest. */
+const bubblesAscending = computed(() => [...bubbles.value].reverse());
 const reactions = computed(() => reactionsByMessage(tail.events.value));
 const transcripts = computed(() => transcriptsByMessage(tail.events.value));
+
+/** Scroll-to-bottom + jump button — track scrollTop on the bubble container. The user
+ *  is "at the bottom" when scrollTop + clientHeight is within 32px of scrollHeight.
+ *  Show the jump button when scrolled further than that. */
+const scrollContainer = ref<HTMLElement | null>(null);
+const isAtBottom = ref(true);
+function scrollToBottom(behavior: ScrollBehavior = 'auto'): void {
+  const el = scrollContainer.value;
+  if (!el) return;
+  el.scrollTo({ top: el.scrollHeight, behavior });
+}
+function onScroll(): void {
+  const el = scrollContainer.value;
+  if (!el) return;
+  isAtBottom.value = el.scrollHeight - el.scrollTop - el.clientHeight < 32;
+}
+/** New bubble arrived: stay pinned to the bottom if the user was already there.
+ *  nextTick so the bubble has actually rendered before we measure scrollHeight. */
+watch(bubblesAscending, () => {
+  if (!isAtBottom.value) return;
+  void nextTick(() => scrollToBottom());
+});
 
 function chipImageUrl(a: Attachment): string {
   return `${cfg.value.daemonUrl.replace(/\/$/, '')}${a.url}?token=${encodeURIComponent(cfg.value.token)}`;
@@ -85,7 +118,6 @@ const { recording, recordSecs, start: startRecording, stop: stopRecording } = us
 async function send(): Promise<void> {
   const body = text.value.trim();
   if (!body && pending.value.length === 0) return;
-  /** Build the optimistic entry first → bubble appears at 50% opacity instantly. */
   const localId = `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const ts = new Date().toISOString();
   const replyTo = replyingTo.value?.id;
@@ -98,22 +130,30 @@ async function send(): Promise<void> {
     ...(replyTo ? { replyTo } : {}),
     ...(atts.length ? { payload: { attachments: atts } } : {}),
   } as HistoryEntry, ...optimistic.value];
-  /** Clear the composer immediately — the bubble carries the user'​s input now. */
   const sentBody = body; const sentAtts = atts;
   text.value = ''; pending.value = []; replyingTo.value = null;
   sending.value = true; err.value = null;
+  /** Always jump to bottom on send so the user sees their bubble — even if they were
+   *  already there, the new entry can be just out of view. */
+  isAtBottom.value = true;
+  void nextTick(() => scrollToBottom('smooth'));
   try {
     await sendMessenger(cfg.value.daemonUrl, cfg.value.token, sentBody, sentAtts, replyTo);
   } catch (e) { err.value = (e as Error).message; }
   finally { sending.value = false; }
 }
 
-onMounted(() => { cfg.value = loadConfig(); tail.reconnect(); });
+onMounted(() => {
+  cfg.value = loadConfig();
+  tail.reconnect();
+  /** Start at the bottom — chat-app default. nextTick gives the SSE seed a render frame. */
+  void nextTick(() => scrollToBottom());
+});
 onBeforeUnmount(() => { tail.stop(); stopRecording(); });
 </script>
 
 <template>
-  <div class="flex flex-col min-h-screen pb-[140px]"
+  <div class="flex flex-col h-[calc(100vh-60px)]"
     @dragover.prevent
     @drop="onDrop"
     @paste="onPaste">
@@ -125,29 +165,45 @@ onBeforeUnmount(() => { tail.stop(); stopRecording(); });
         :class="tail.status.value === 'connecting' ? 'bg-metro-warn' : 'bg-metro-err'"></span>
       <span>{{ tail.status.value === 'connecting' ? 'Connecting…' : tail.status.value === 'error' ? 'Reconnecting…' : 'Offline' }}</span>
     </div>
-    <div class="flex-1 px-3 pt-3 flex flex-col gap-1.5">
-      <MessengerBubble
-        v-for="e in bubbles"
-        :key="e.id"
-        :entry="e"
-        :daemonUrl="cfg.daemonUrl"
-        :token="cfg.token"
-        :pending="e.id.startsWith('tmp_')"
-        :replyTarget="replyingTo?.id === e.id"
-        :reactions="reactions.get(e.id)"
-        :transcript="transcripts.get(e.id)"
-        :replyPreview="e.replyTo ? previewOf(tail.events.value.find(x => x.id === e.replyTo) ?? e) : undefined"
-        @react="(emoji) => onReact(e.id, emoji)"
-        @reply="replyingTo = { id: e.id, preview: previewOf(e) }"
-      />
-      <div v-if="bubbles.length === 0" class="p-8 text-center text-metro-sub-light dark:text-metro-sub-dark">
-        Type a message below to start chatting.
+    <!-- Bubble scroll area: contained (not window-scrolled) so the composer can stick
+         to the bottom and we can pin scroll position to newest on new messages. -->
+    <div ref="scrollContainer" class="flex-1 overflow-y-auto px-3 pt-3" @scroll="onScroll">
+      <div class="flex flex-col gap-1.5">
+        <MessengerBubble
+          v-for="e in bubblesAscending"
+          :key="e.id"
+          :entry="e"
+          :daemonUrl="cfg.daemonUrl"
+          :token="cfg.token"
+          :pending="e.id.startsWith('tmp_')"
+          :replyTarget="replyingTo?.id === e.id"
+          :reactions="reactions.get(e.id)"
+          :transcript="transcripts.get(e.id)"
+          :replyPreview="e.replyTo ? previewOf(tail.events.value.find(x => x.id === e.replyTo) ?? e) : undefined"
+          @react="(emoji) => onReact(e.id, emoji)"
+          @reply="replyingTo = { id: e.id, preview: previewOf(e) }"
+        />
+        <div v-if="bubbles.length === 0" class="p-8 text-center text-metro-sub-light dark:text-metro-sub-dark">
+          Type a message below to start chatting.
+        </div>
       </div>
     </div>
-    <div v-if="err" class="px-4 pt-2 text-xs text-metro-err fixed bottom-[150px] left-0 right-0">send failed: {{ err }}</div>
+    <!-- Jump-to-bottom button: floats above the composer when scrolled away from the
+         newest message. Matches the mobile UX. -->
+    <button v-if="!isAtBottom" type="button" title="Jump to latest"
+      class="absolute self-center bottom-[110px] z-10 w-9 h-9 rounded-full
+        bg-white text-black shadow-lg flex items-center justify-center
+        hover:scale-105 transition-transform"
+      @click="scrollToBottom('smooth')">
+      <HeroIcon name="arrowDown" :size="18" />
+    </button>
+    <div v-if="err" class="px-4 py-1 text-xs text-metro-err">send failed: {{ err }}</div>
     <input ref="imageInput" type="file" accept="image/*" class="hidden" @change="pickAndUpload(imageInput)" />
     <input ref="fileInput" type="file" class="hidden" @change="pickAndUpload(fileInput)" />
-    <div class="fixed bottom-[60px] left-0 right-0 z-10 px-3 pb-3 pt-1.5">
+    <!-- Composer: regular flex child pinned to the bottom of the column, not fixed —
+         the contained scroll area handles the gap above it cleanly. -->
+    <div class="px-3 pb-3 pt-1.5 border-t border-metro-border-light dark:border-metro-border-dark
+      bg-metro-bg-light dark:bg-metro-bg-dark">
       <div v-if="replyingTo" class="flex items-center gap-2 pb-1.5">
         <div class="flex-1 border-l-2 border-metro-sub-light dark:border-metro-sub-dark pl-2">
           <div class="text-[10px] text-metro-sub-light dark:text-metro-sub-dark">Replying to</div>

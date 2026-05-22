@@ -77,7 +77,7 @@ export function MessengerBubble({
 }): React.ReactElement {
   const mine = entry.from === MESSENGER_USER;
   const atts = attachmentsOf(entry);
-  const bubbleBg = mine ? (dark ? '#e5e7eb' : '#1a1f29') : 'transparent';
+  const bubbleBg = mine ? (dark ? '#cbd5e1' : '#1a1f29') : 'transparent';
   const fg = mine
     ? (dark ? '#000000' : '#ffffff')
     : (dark ? '#e8ecf2' : '#1a1f29');
