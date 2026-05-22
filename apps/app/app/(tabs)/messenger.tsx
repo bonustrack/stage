@@ -56,6 +56,11 @@ export default function Messenger(): React.ReactElement {
   useFocusEffect(useCallback(() => { if (enabled) reconnect(); }, [enabled, reconnect]));
   const [refreshing, setRefreshing] = useState(false);
   const [showJump, setShowJump] = useState(false);
+  /** Bump to force-remount the FlatList. Used by jump-to-bottom because every variant of
+   *  the scroll API (`scrollToOffset`, `scrollToIndex`, `getScrollResponder`,
+   *  `getNativeScrollRef`) trips reanimated #3670 "property is not writable" on devices
+   *  with Reduce Motion. Remount lands at the inverted list's default offset = bottom. */
+  const [listEpoch, setListEpoch] = useState(0);
   const [replyingTo, setReplyingTo] = useState<{ id: string; preview: string } | null>(null);
   const [menuFor, setMenuFor] = useState<HistoryEntry | null>(null);
   /** Optimistic outbound entries — rendered immediately on send, dedupe on text+freshness when the
@@ -152,6 +157,7 @@ export default function Messenger(): React.ReactElement {
       }}
     >
       <FlatList
+        key={listEpoch}
         ref={listRef}
         data={allBubbles}
         inverted
@@ -231,11 +237,10 @@ export default function Messenger(): React.ReactElement {
       {showJump ? (
         <Pressable
           onPress={() => {
-            /** `scrollToIndex` goes through a different RN code path than `scrollToOffset` —
-             *  the latter trips "property is not writable" on Reanimated v4 + Reduce Motion
-             *  (issue #3670). Inverted list: index 0 is the newest = visual bottom. */
-            try { listRef.current?.scrollToIndex({ index: 0, animated: true }); }
-            catch { /* ignore */ }
+            /** Every variant of FlatList's scroll API trips reanimated #3670 on this
+             *  device. Sidestep the scroll API entirely: bump the `key` so the FlatList
+             *  remounts. Default offset on an inverted list = 0 = visual bottom = newest. */
+            setListEpoch(e => e + 1);
             setShowJump(false);
           }}
           style={{
