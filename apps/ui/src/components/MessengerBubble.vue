@@ -61,27 +61,15 @@ function fmtSize(n: number): string {
 <template>
   <div class="flex flex-col" :class="mine ? 'items-end' : 'items-start'">
     <div
-      class="leading-snug text-[15px] flex flex-col gap-1.5 select-text break-words group/bubble relative transition-opacity"
+      class="leading-snug text-[15px] flex flex-col gap-1.5 select-text break-words relative transition-opacity"
       :class="[
         mine
-          ? 'max-w-[78%] px-3.5 py-2 rounded-2xl rounded-br-md bg-metro-fg-light dark:bg-white text-white dark:text-black'
+          ? 'max-w-[78%] px-3.5 py-2 rounded-2xl rounded-br-md bg-metro-fg-light dark:bg-[#cbd5e1] text-white dark:text-black'
           : 'w-full px-0 py-0 text-metro-fg-light dark:text-metro-fg-dark',
         pending ? 'opacity-50' : '',
         replyTarget ? 'ring-2 ring-[#c0a06e] ring-offset-2 ring-offset-metro-bg-light dark:ring-offset-metro-bg-dark' : '',
       ]"
     >
-      <div class="absolute -top-3 right-1 flex gap-1 opacity-0 group-hover/bubble:opacity-100 transition">
-        <button type="button" title="Reply"
-          class="w-7 h-7 rounded-full bg-metro-surface-light dark:bg-metro-surface-dark
-            border border-metro-border-light dark:border-metro-border-dark
-            text-metro-fg-light dark:text-metro-fg-dark text-sm shadow"
-          @click.stop="emit('reply')">↩</button>
-        <button type="button" title="Add reaction"
-          class="w-7 h-7 rounded-full bg-metro-surface-light dark:bg-metro-surface-dark
-            border border-metro-border-light dark:border-metro-border-dark
-            text-metro-fg-light dark:text-metro-fg-dark text-sm shadow"
-          @click.stop="pickerOpen = !pickerOpen">☺</button>
-      </div>
       <div v-if="props.replyPreview"
         class="border-l-2 border-current opacity-60 pl-2 text-[12px] italic truncate"
       >{{ props.replyPreview }}</div>
@@ -121,10 +109,28 @@ function fmtSize(n: number): string {
       <div v-if="props.transcript" class="text-[13px] italic opacity-75">“{{ props.transcript }}”</div>
       <div v-else-if="hasAudioAttachment && transcribingFresh"
         class="text-[12px] italic opacity-60">transcribing…</div>
+      <!-- Bottom row: react + reply icons + timestamp. Mirrors the mobile bubble's
+           always-visible action row, replacing the hover-shown floating buttons. -->
       <div
-        class="text-[10px]"
-        :class="mine ? 'text-right opacity-60' : 'text-left text-metro-sub-light dark:text-metro-sub-dark'"
-      >{{ fmtTs(entry.ts) }}</div>
+        class="flex items-center gap-1.5"
+        :class="mine ? 'justify-end' : 'justify-start'"
+      >
+        <button type="button" title="React"
+          class="opacity-60 hover:opacity-100 transition"
+          :class="mine ? 'text-current' : 'text-metro-sub-light dark:text-metro-sub-dark'"
+          @click.stop="pickerOpen = !pickerOpen">
+          <HeroIcon name="faceSmile" :size="14" />
+        </button>
+        <button type="button" title="Reply"
+          class="opacity-60 hover:opacity-100 transition"
+          :class="mine ? 'text-current' : 'text-metro-sub-light dark:text-metro-sub-dark'"
+          @click.stop="emit('reply')">
+          <HeroIcon name="reply" :size="14" />
+        </button>
+        <span class="text-[10px]"
+          :class="mine ? 'opacity-60' : 'text-metro-sub-light dark:text-metro-sub-dark'"
+        >{{ fmtTs(entry.ts) }}</span>
+      </div>
     </div>
     <div v-if="reactions && reactions.size" class="flex flex-wrap gap-1 mt-1 max-w-[78%]">
       <span
