@@ -94,14 +94,28 @@ export async function handleMessengerSend(
 ): Promise<void> {
   const body = await readJsonBody<{
     text?: string; as?: string; attachments?: Attachment[]; replyTo?: string;
+    question?: {
+      header?: string;
+      options: Array<{ label: string; description?: string }>;
+      multiSelect?: boolean;
+    };
   }>(req);
   if ('__error' in body) return send(res, req, 400, { error: body.__error });
   const text = (body.text ?? '').trim();
   const attachments = Array.isArray(body.attachments) ? body.attachments : [];
-  if (!text && attachments.length === 0) return send(res, req, 400, { error: 'text or attachments required' });
+  const question = body.question && Array.isArray(body.question.options) && body.question.options.length > 0
+    ? body.question : undefined;
+  if (!text && attachments.length === 0 && !question) {
+    return send(res, req, 400, { error: 'text, attachments, or question required' });
+  }
   const fromAgent = body.as === 'agent';
   const agent = userSelf();
   const replyTo = typeof body.replyTo === 'string' && body.replyTo ? body.replyTo : undefined;
+  /** Merge attachments + question into a single payload object so the client can read
+   *  both off `payload.attachments` and `payload.question`. */
+  const payload = (attachments.length > 0 || question)
+    ? { ...(attachments.length > 0 ? { attachments } : {}), ...(question ? { question } : {}) }
+    : undefined;
   const entry: HistoryEntry = {
     id: mintId(),
     ts: new Date().toISOString(),
@@ -111,7 +125,7 @@ export async function handleMessengerSend(
     to: fromAgent ? MESSENGER_USER : agent,
     text: text || undefined,
     ...(replyTo ? { replyTo } : {}),
-    ...(attachments.length > 0 ? { payload: { attachments } } : {}),
+    ...(payload ? { payload } : {}),
   };
   emit(entry);
   /** Agent → user: push to registered tokens. User → agent: their own message; skip. */
@@ -121,7 +135,8 @@ export async function handleMessengerSend(
       : a?.kind === 'audio' ? '🎤 Voice message'
         : a?.kind === 'video' ? '🎬 Video'
           : a ? `📎 ${a.name ?? 'File'}` : '';
-    const summary = text || kindLabel || '(empty)';
+    const questionLabel = question ? `❓ ${question.header ?? 'Choose an option'}` : '';
+    const summary = text || kindLabel || questionLabel || '(empty)';
     void pushExpo(readPushTokens(), 'Metro', summary.slice(0, 200));
   }
   /** Fire-and-forget: transcribe any audio attachments and emit a follow-up event. */

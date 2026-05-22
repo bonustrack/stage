@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated as RNAnimated,
-  FlatList, Keyboard, Modal, PanResponder, Pressable, RefreshControl, Text, View, useColorScheme,
+  FlatList, Modal, PanResponder, Pressable, RefreshControl, Text, View, useColorScheme,
 } from 'react-native';
+import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { KeyboardStickyView } from 'react-native-keyboard-controller';
+import { KeyboardStickyView, useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
 import { useFocusEffect, useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { MessengerBubble } from '../../components/MessengerBubble';
@@ -15,7 +16,7 @@ import { ComposerGradient } from '../../components/ComposerGradient';
 import { HeroIcon } from '../../components/HeroIcon';
 import { loadConfig, isConfigured, type Config } from '../../lib/config';
 import {
-  isReaction, isTranscript, reactMessenger, reactionsByMessage, transcriptsByMessage,
+  isReaction, isTranscript, reactMessenger, reactionsByMessage, sendMessenger, transcriptsByMessage,
 } from '../../lib/messenger';
 import { saveBubbleCache, useCachedBubbles } from '../../lib/messenger-cache';
 import { getMessengerLastRead, markMessengerRead } from '../../lib/messenger-unread';
@@ -89,12 +90,17 @@ export default function Messenger(): React.ReactElement {
       RNAnimated.spring(swipeBackX, { toValue: 0, useNativeDriver: true, speed: 18, bounciness: 6 }).start();
     },
   }), [router, swipeBackX]);
-  const [kbHeight, setKbHeight] = useState(0);
-  useEffect(() => {
-    const show = Keyboard.addListener('keyboardDidShow', e => setKbHeight(e.endCoordinates.height));
-    const hide = Keyboard.addListener('keyboardDidHide', () => setKbHeight(0));
-    return () => { show.remove(); hide.remove(); };
-  }, []);
+  /** Reanimated-driven keyboard offset shared with the composer's KeyboardStickyView,
+   *  so the FlatList wrapper lifts in lockstep (native thread) with the composer.
+   *  The composer's translate at open = `height.value - insets.bottom` (negative),
+   *  meaning it lifts by `keyboardHeight - insets.bottom`. Match that for the
+   *  feed by subtracting `insets.bottom` here too — otherwise the feed overshoots
+   *  by the bottom safe-area amount. Clamp ≥0 so the closed-state doesn't tug
+   *  the feed down. */
+  const { height: kbHeightShared } = useReanimatedKeyboardAnimation();
+  const listWrapperStyle = useAnimatedStyle(() => ({
+    marginBottom: Math.max(0, -kbHeightShared.value - insets.bottom),
+  }));
   const listRef = useRef<FlatList<HistoryEntry>>(null);
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -171,6 +177,7 @@ export default function Messenger(): React.ReactElement {
         transform: [{ translateX: swipeBackX }],
       }}
     >
+      <Reanimated.View style={[{ flex: 1 }, listWrapperStyle]}>
       <FlatList
         key={listEpoch}
         ref={listRef}
@@ -181,10 +188,10 @@ export default function Messenger(): React.ReactElement {
          *  initial seed lands, scroll stays pinned to the latest message. */
         maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
         keyExtractor={e => e.id}
-        /** `flex:1` so the list claims the full column above the composer. Without it the
-         *  list collapses to content size and the composer ends up mid-screen with empty
-         *  space above it. `marginBottom:kbHeight` lifts the list above the keyboard. */
-        style={{ flex: 1, marginBottom: kbHeight }}
+        /** `flex:1` to fill the animated wrapper above. The wrapper carries the keyboard
+         *  marginBottom on the native thread; wrapping the FlatList itself in Reanimated
+         *  is unsafe (crashes Fabric / reanimated #3670). */
+        style={{ flex: 1 }}
         /** Inverted: paddingTop = visual BOTTOM (composer side), paddingBottom = visual TOP
          *  (nav side). Bump the top so the oldest message clears the absolute top-nav strip
          *  when the user scrolls all the way up. */
@@ -206,6 +213,11 @@ export default function Messenger(): React.ReactElement {
             onReact={(emoji) => onReact(item.id, emoji)}
             onReply={() => setReplyingTo({ id: item.id, preview: previewOf(item) })}
             onLongPress={() => setMenuFor(item)}
+            onAnswer={(label) => {
+              if (!cfg) return;
+              void sendMessenger(cfg.daemonUrl, cfg.token, label, [], item.id)
+                .catch((e: unknown) => { console.warn('answer send failed', e); });
+            }}
           />
         )}
         ListEmptyComponent={
@@ -216,6 +228,7 @@ export default function Messenger(): React.ReactElement {
         keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={sub} />}
       />
+      </Reanimated.View>
       {/** Top nav: solid bg strip mirrors the composer footer + extends UP to cover the
        *  status-bar area, so content sliding up under the keyboard doesn'​t show through
        *  behind the system icons. */}
