@@ -1,15 +1,20 @@
 /** Floating two-line composer (Claude-mobile-style): textarea on top, [+ / mic / send] below. */
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator, Alert, Image, Pressable, Text, TextInput, View,
 } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
 import { Audio } from 'expo-av';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { ComposerGradient } from './ComposerGradient';
 import { HeroIcon, type HeroIconName } from './HeroIcon';
 import { sendMessenger, uploadAttachment, type Attachment } from '../lib/messenger';
+
+/** Persist composer draft across app restarts so typed-but-unsent text survives a
+ *  force-close. Mirrors how iMessage / WhatsApp keep your half-finished reply. */
+const DRAFT_KEY = 'messenger-composer-draft';
 
 interface Props {
   daemonUrl: string; token: string; dark: boolean;
@@ -39,6 +44,26 @@ export function MessengerComposer({ daemonUrl, token, dark, replyingTo, onClearR
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
   const recRef = useRef<Audio.Recording | null>(null);
   const recTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  /** Restore draft on mount + persist on change (debounced). Skip the persist
+   *  on the very first restore so we don'​t clobber a fresher save. */
+  const draftRestored = useRef(false);
+  const draftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    void SecureStore.getItemAsync(DRAFT_KEY).then(v => {
+      if (v) setText(v);
+      draftRestored.current = true;
+    }).catch(() => { draftRestored.current = true; });
+  }, []);
+  useEffect(() => {
+    if (!draftRestored.current) return;
+    if (draftTimer.current) clearTimeout(draftTimer.current);
+    draftTimer.current = setTimeout(() => {
+      void (text
+        ? SecureStore.setItemAsync(DRAFT_KEY, text)
+        : SecureStore.deleteItemAsync(DRAFT_KEY)
+      ).catch(() => { /* ignore */ });
+    }, 300);
+  }, [text]);
 
   const canSend = !sending && (text.trim().length > 0 || pending.length > 0);
 

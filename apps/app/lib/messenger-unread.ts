@@ -20,7 +20,27 @@ export async function markMessengerRead(): Promise<void> {
   await SecureStore.setItemAsync(KEY, lastReadIso).catch(() => { /* ignore */ });
 }
 
+/** Discord/Telegram-style "Mark as unread": rewind lastRead to just BEFORE the
+ *  target message's timestamp, so the target (and everything newer) is unread
+ *  again. Subtract 1ms so the target's own ts > lastRead. */
+export async function markMessengerUnreadFrom(ts: string): Promise<void> {
+  const t = new Date(ts).getTime();
+  lastReadIso = new Date(Number.isFinite(t) ? t - 1 : 0).toISOString();
+  listeners.forEach(l => l(lastReadIso));
+  await SecureStore.setItemAsync(KEY, lastReadIso).catch(() => { /* ignore */ });
+}
+
 export function getMessengerLastRead(): string { return lastReadIso; }
+
+/** Imperative subscribe / unsubscribe used by callers outside of `useMessengerUnread`
+ *  (e.g. the messenger screen's effective-cutoff derivation that needs to react to
+ *  mark-as-unread mid-session without remounting). */
+export function subscribeMessengerLastRead(fn: (iso: string) => void): void {
+  listeners.add(fn);
+}
+export function unsubscribeMessengerLastRead(fn: (iso: string) => void): void {
+  listeners.delete(fn);
+}
 
 export function useMessengerUnread(events: HistoryEntry[]): number {
   const [lastRead, setLastRead] = useState(lastReadIso);

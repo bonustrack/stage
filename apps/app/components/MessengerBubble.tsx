@@ -290,6 +290,9 @@ export function MessengerBubble({
         paddingHorizontal: 12, paddingVertical: mine ? 3 : 6,
         transform: [{ translateX: swipeX }],
         opacity: pending ? 0.5 : 1,
+        /** Soft-gray tint across the bubble row for unread messages (both mine and
+         *  assistant). Bubble itself is unchanged — only the surrounding row. */
+        backgroundColor: unread ? (dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)') : 'transparent',
       }}
     >
       {/** Pressable handles onLongPress; the outer Animated.View'​s PanResponder steals horizontal drags. */}
