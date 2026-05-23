@@ -118,6 +118,10 @@ export function passesMode(
 export type TailOpts = {
   mode: Mode; self: Line | null;
   chatFilter?: string; stationFilter?: string; includeWebhooks?: boolean;
+  /** Skip entries whose `from` matches any of these URIs — useful for self-echo
+   *  suppression: an agent subscribing to its own outbound history just to
+   *  filter them right back out wastes a context-window roundtrip. */
+  excludeFrom?: string[];
 };
 
 /** Drain matching entries from `offset` to EOF, returning the new offset. */
@@ -130,6 +134,7 @@ export function drainTail(
     offset = next;
     if (opts.chatFilter && entry.line !== opts.chatFilter) continue;
     if (opts.stationFilter && entry.station !== opts.stationFilter) continue;
+    if (opts.excludeFrom && opts.excludeFrom.includes(entry.from)) continue;
     if (!passesMode(entry, opts.mode, opts.self, claims, { includeWebhooks: opts.includeWebhooks })) continue;
     if (onEntry(entry) === true) return offset;
   }

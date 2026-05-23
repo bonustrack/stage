@@ -21,9 +21,13 @@ export async function cmdTail(_: string[], f: Flags): Promise<void> {
   const self: Line | null = raw !== undefined ? asLine(raw) : auto === 'metro://user' ? null : auto;
   const mode = pickMode(f.strict === true, f.unclaimed === true, f.all === true, self,
     msg => { throw exitErr(`--${msg}`, 1); });
+  const excludeFromFlag = flagOne(f, 'exclude-from');
   const tail: TailOpts = {
     mode, self, chatFilter: flagOne(f, 'chat'), stationFilter: flagOne(f, 'station'),
     includeWebhooks: f['include-webhooks'] === true,
+    excludeFrom: excludeFromFlag
+      ? excludeFromFlag.split(',').map(s => s.trim()).filter(Boolean)
+      : undefined,
   };
   const follow = f.follow === true;
   const limit = Number(flagOne(f, 'limit')) || 0;

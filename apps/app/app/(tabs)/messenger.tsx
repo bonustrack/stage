@@ -24,7 +24,7 @@ import {
   subscribeMessengerLastRead, unsubscribeMessengerLastRead,
 } from '../../lib/messenger-unread';
 import { registerForPush, setMessengerActive } from '../../lib/push';
-import { useTail } from '../../lib/sse';
+import { fetchHistoryPage, useTail } from '../../lib/sse';
 import type { HistoryEntry } from '../../lib/types';
 
 const MESSENGER_LINE = 'metro://messenger/owner';
@@ -152,14 +152,51 @@ export default function Messenger(): React.ReactElement {
    *  optimistic entries inline (not via useEffect) so the SSE-confirmed bubble never
    *  renders alongside its pending twin even for one frame. The useEffect schedule used
    *  to leave both visible until the next paint. */
+  /** Older history paged in via /api/state?before=N&limit=M as the user scrolls
+   *  up past the initial SSE seed. Deduped against `bubbleEvents` by id. */
+  const [older, setOlder] = useState<HistoryEntry[]>([]);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const [olderExhausted, setOlderExhausted] = useState(false);
   const allBubbles = useMemo(() => {
-    if (!optimistic.length) return bubbleEvents;
+    const seen = new Set(bubbleEvents.map(e => e.id));
+    const olderFiltered = older.filter(e => !seen.has(e.id));
+    const combined = [...bubbleEvents, ...olderFiltered];
+    if (!optimistic.length) return combined;
     const live = optimistic.filter(o =>
-      !bubbleEvents.some(e => e.from === MESSENGER_USER && e.text === o.text
+      !combined.some(e => e.from === MESSENGER_USER && e.text === o.text
         && Math.abs(new Date(e.ts).getTime() - new Date(o.ts).getTime()) < 30_000),
     );
-    return [...live, ...bubbleEvents];
-  }, [bubbleEvents, optimistic]);
+    return [...live, ...combined];
+  }, [bubbleEvents, optimistic, older]);
+  /** When the inverted list reaches its end (= visual TOP, user scrolled all the
+   *  way up), pull the next page of older messenger entries from the daemon. */
+  const loadOlder = useCallback(() => {
+    if (loadingOlder || olderExhausted || !cfg) return;
+    setLoadingOlder(true);
+    const before = bubbleEvents.length + older.length;
+    void fetchHistoryPage(cfg.daemonUrl, cfg.token, before, 30)
+      .then(r => {
+        setLoadingOlder(false);
+        if (!r.ok) return;
+        const messengerOnly = r.entries.filter(e =>
+          e.station === 'messenger'
+          && !isReaction(e)
+          && !isTranscript(e),
+        );
+        if (r.entries.length === 0) { setOlderExhausted(true); return; }
+        if (messengerOnly.length === 0) {
+          /** The page had nothing for the messenger filter — try the next one
+           *  before giving up so a single sparse page doesn'​t stop pagination. */
+          setOlder(prev => [...prev, ...r.entries.filter(e => e.station === 'messenger')]);
+          return;
+        }
+        setOlder(prev => {
+          const seen = new Set([...bubbleEvents, ...prev].map(e => e.id));
+          return [...prev, ...messengerOnly.filter(e => !seen.has(e.id))];
+        });
+      })
+      .catch(() => setLoadingOlder(false));
+  }, [loadingOlder, olderExhausted, cfg, bubbleEvents, older]);
   /** Insert a Discord-style "NEW MESSAGES" separator between unread and read
    *  entries. Skip the user's OWN messages when locating the boundary — they're
    *  trivially "read" (you sent them) so sending shouldn'​t push the separator.
@@ -263,6 +300,10 @@ export default function Messenger(): React.ReactElement {
         contentContainerStyle={{ paddingTop: 12, paddingBottom: insets.top + 44 + 8 }}
         onScroll={(ev) => { setShowJump(ev.nativeEvent.contentOffset.y > 200); }}
         scrollEventThrottle={32}
+        /** Inverted list: end-of-data = visual TOP. Pull the next page of older
+         *  messenger entries from the daemon when the user scrolls all the way up. */
+        onEndReached={loadOlder}
+        onEndReachedThreshold={0.5}
         renderItem={({ item }) => item.id === '__unread-separator__' ? (
           <View style={{
             flexDirection: 'row', alignItems: 'center',
@@ -278,7 +319,7 @@ export default function Messenger(): React.ReactElement {
           <MessengerBubble
             entry={item}
             dark={dark}
-            unread={item.station === 'messenger' && item.ts > unreadCutoff && !isReaction(item) && !isTranscript(item)}
+            unread={item.station === 'messenger' && item.from !== MESSENGER_USER && item.ts > unreadCutoff && !isReaction(item) && !isTranscript(item)}
             pending={item.id.startsWith('tmp_')}
             replyTarget={replyingTo?.id === item.id}
             daemonUrl={cfg?.daemonUrl ?? ''}

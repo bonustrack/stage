@@ -132,10 +132,12 @@ async function handleTail(req: IncomingMessage, res: ServerResponse, q: URLSearc
   const self = asParam ? asLine(asParam) : null;
   const isOn = (k: string): boolean => q.get(k) === 'true' || q.get('mode') === k;
   const mode = pickMode(isOn('strict'), isOn('unclaimed'), isOn('all'), self, () => 'all');
+  const excludeFromCsv = q.get('exclude_from');
   const opts: TailOpts = {
     mode, self, chatFilter: q.get('chat') ?? undefined,
     stationFilter: q.get('station') ?? undefined,
     includeWebhooks: q.get('include_webhooks') === 'true',
+    excludeFrom: excludeFromCsv ? excludeFromCsv.split(',').map(s => s.trim()).filter(Boolean) : undefined,
   };
   res.writeHead(200, {
     'content-type': 'text/event-stream', 'cache-control': 'no-cache, no-transform',
