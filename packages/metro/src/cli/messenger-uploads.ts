@@ -81,9 +81,13 @@ export async function handleMessengerUpload(
   });
   try { await pipeline(req, out); }
   catch (err) { try { send(res, req, 413, { error: errMsg(err) }); } catch { /* ignore */ } return; }
-  /** Path-only URL; the client adds host + token. Stable, host-independent across tunnels. */
+  /** Path-only URL; the client adds host + token. Stable, host-independent across tunnels.
+   *  `localPath` is the absolute server path — useful to agents running on the same host
+   *  that want to Read the file directly without the curl/auth roundtrip. Mobile/web
+   *  clients ignore the field. */
   send(res, req, 200, {
     id, url: `/api/messenger/files/${filename}`, kind: kindFromMime(mime), mime, size: total, name,
+    localPath: dest,
   });
 }
 
