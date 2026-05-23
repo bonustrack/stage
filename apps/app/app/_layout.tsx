@@ -1,6 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { Stack, useRouter, usePathname } from 'expo-router';
 import { loadLastRoute, saveLastRoute } from '../lib/last-route';
+import { loadConfig, isConfigured } from '../lib/config';
+import { uploadAttachment } from '../lib/messenger';
+import { pushStagedAttachments } from '../lib/share-intent-staging';
+import { useShareIntent } from 'expo-share-intent';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import * as Notifications from 'expo-notifications';
@@ -57,6 +61,33 @@ export default function RootLayout(): React.ReactElement {
   /** Persist on every route change. */
   const pathname = usePathname();
   useEffect(() => { void saveLastRoute(pathname); }, [pathname]);
+
+  /** Android Share Intent → messenger composer. Files arrive via expo-share-intent
+   *  (intent filters configured in app.json). We upload each file to /api/messenger/upload,
+   *  stage the resulting Attachment objects in a module-level queue, then push the
+   *  user into the messenger tab. The composer drains the queue into its `pending`
+   *  state so the attachments appear pre-staged. */
+  const { hasShareIntent, shareIntent, resetShareIntent } = useShareIntent();
+  useEffect(() => {
+    if (!hasShareIntent || !shareIntent) return;
+    void (async (): Promise<void> => {
+      const cfg = await loadConfig();
+      if (!cfg || !isConfigured(cfg)) { resetShareIntent(); return; }
+      const files = shareIntent.files ?? [];
+      for (const f of files) {
+        try {
+          const att = await uploadAttachment(
+            cfg.daemonUrl, cfg.token, f.path,
+            f.mimeType ?? 'application/octet-stream',
+            f.fileName ?? undefined,
+          );
+          pushStagedAttachments(att);
+        } catch { /* ignore individual upload failures */ }
+      }
+      resetShareIntent();
+      router.push('/(tabs)/messenger');
+    })();
+  }, [hasShareIntent, shareIntent, resetShareIntent, router]);
 
   /** Calibre — matches sx-monorepo's typography. Two weights: medium (default) + semibold (headers/buttons).
    *  TTF (not WOFF2) so Android'​s native Typeface loader can pick it up — expo-font's WOFF2

@@ -11,6 +11,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { ComposerGradient } from './ComposerGradient';
 import { HeroIcon, type HeroIconName } from './HeroIcon';
 import { sendMessenger, uploadAttachment, type Attachment } from '../lib/messenger';
+import { drainStagedAttachments, hasStagedAttachments } from '../lib/share-intent-staging';
 
 /** Persist composer draft across app restarts so typed-but-unsent text survives a
  *  force-close. Mirrors how iMessage / WhatsApp keep your half-finished reply. */
@@ -35,7 +36,7 @@ export function MessengerComposer({ daemonUrl, token, dark, replyingTo, onClearR
   const chipBg = dark ? '#1d2230' : '#eef1f7';
 
   const [text, setText] = useState('');
-  const [pending, setPending] = useState<Attachment[]>([]);
+  const [pending, setPending] = useState<Attachment[]>(() => drainStagedAttachments());
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
