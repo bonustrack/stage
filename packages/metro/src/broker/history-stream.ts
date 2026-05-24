@@ -80,12 +80,17 @@ export function* readEntriesFrom(offset: number): Generator<{ entry: HistoryEntr
         const raw = pending.subarray(0, nl).toString('utf8').trim();
         pending = pending.subarray(nl + 1);
         if (!raw) continue;
+        /** offsetAfter = read-cursor in file - bytes still in pending buffer. Captured
+         *  outside the try so malformed lines also advance the cursor — without this,
+         *  drainTail returns an offset BEFORE the bad line, and the poll backstop in
+         *  followTail re-reads + re-warns it forever. */
+        const offsetAfter = pos - pending.length;
         try {
           const entry = JSON.parse(raw) as HistoryEntry;
-          /** offsetAfter = read-cursor in file - bytes still in pending buffer */
-          yield { entry, offset: pos - pending.length };
+          yield { entry, offset: offsetAfter };
         } catch (err) {
-          log.warn({ err: errMsg(err) }, 'broker: skipped malformed history line');
+          log.warn({ err: errMsg(err), offset: offsetAfter }, 'broker: skipped malformed history line');
+          yield { entry: null as unknown as HistoryEntry, offset: offsetAfter };
         }
       }
     }
@@ -132,6 +137,8 @@ export function drainTail(
   const claims = readClaims();
   for (const { entry, offset: next } of readEntriesFrom(offset)) {
     offset = next;
+    /** A null entry signals a malformed line — cursor's already advanced past it; skip filtering. */
+    if (!entry) continue;
     if (opts.chatFilter && entry.line !== opts.chatFilter) continue;
     if (opts.stationFilter && entry.station !== opts.stationFilter) continue;
     if (opts.excludeFrom && opts.excludeFrom.includes(entry.from)) continue;
