@@ -7,6 +7,7 @@ import pkg from '../../package.json' with { type: 'json' };
 import { errMsg, log } from '../log.js';
 import { listLines, loadMetroEnv, STATE_DIR } from '../paths.js';
 import { readHistory } from '../history.js';
+import { cmdAgent } from './agent.js';
 import { cmdDoctor, cmdSetup, cmdUpdate } from './config.js';
 import { cmdClaim, cmdClaims, cmdRelease, cmdTail } from './tail.js';
 import { cmdCall, cmdTrains, cmdTunnel, cmdWebhook } from './webhook.js';
@@ -126,6 +127,7 @@ const COMMANDS: Record<string, (positional: string[], flags: Flags) => Promise<v
   history: cmdHistory, tail: cmdTail,
   claim: cmdClaim, release: cmdRelease, claims: cmdClaims,
   update: cmdUpdate,
+  agent: cmdAgent,
 };
 
 async function main(): Promise<void> {
