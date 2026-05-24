@@ -515,6 +515,19 @@ describe('members.json (channel-with-membership primitive)', () => {
     expect(isMember(CHANNEL, CAROL)).toBe(true);
   });
 
+  test('signJwt / verifyJwt round-trip + reject tampered + reject garbage', async () => {
+    const { signJwt, verifyJwt } = await import('../src/cli/auth-api.ts');
+    const tok = signJwt(ALICE);
+    expect(verifyJwt(tok)).toBe(ALICE);
+    /** Flip one base64url char in the signature → must fail. */
+    const parts = tok.split('.');
+    const last = parts[2];
+    parts[2] = last.slice(0, -1) + (last.endsWith('A') ? 'B' : 'A');
+    expect(verifyJwt(parts.join('.'))).toBe(null);
+    expect(verifyJwt('not.a.jwt')).toBe(null);
+    expect(verifyJwt('still-not-a-jwt')).toBe(null);
+  });
+
   test('drainTail with requester gates restricted lines, leaves unrestricted alone', () => {
     setMembers(asLine(CHANNEL), [ALICE]);  /** OTHER stays unrestricted */
     appendToBrokerHistory({
