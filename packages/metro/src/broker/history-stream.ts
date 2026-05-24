@@ -9,6 +9,7 @@ import { STATE_DIR } from '../paths.js';
 import { Line } from '../lines.js';
 import type { HistoryEntry } from '../history.js';
 import { HISTORY_FILE, readClaims, type ClaimsMap } from './claims.js';
+import { isMember, readMembers, type MembersMap } from './members.js';
 
 const CURSORS_DIR = join(STATE_DIR, 'cursors');
 
@@ -122,6 +123,10 @@ export type TailOpts = {
    *  suppression: an agent subscribing to its own outbound history just to
    *  filter them right back out wastes a context-window roundtrip. */
   excludeFrom?: string[];
+  /** Identity on whose behalf the tail is running. When set, entries on a
+   *  member-gated line are skipped unless the requester is a listed member.
+   *  Lines without a membership entry pass through unchanged (back-compat). */
+  requester?: Line;
 };
 
 /** Drain matching entries from `offset` to EOF, returning the new offset. */
@@ -130,11 +135,14 @@ export function drainTail(
   offset: number, opts: TailOpts, onEntry: (e: HistoryEntry) => void | boolean,
 ): number {
   const claims = readClaims();
+  /** Members are only consulted when a `requester` is set — cheap admin-token path stays unchanged. */
+  const members: MembersMap | null = opts.requester ? readMembers() : null;
   for (const { entry, offset: next } of readEntriesFrom(offset)) {
     offset = next;
     if (opts.chatFilter && entry.line !== opts.chatFilter) continue;
     if (opts.stationFilter && entry.station !== opts.stationFilter) continue;
     if (opts.excludeFrom && opts.excludeFrom.includes(entry.from)) continue;
+    if (members && opts.requester && !isMember(entry.line, opts.requester, members)) continue;
     if (!passesMode(entry, opts.mode, opts.self, claims, { includeWebhooks: opts.includeWebhooks })) continue;
     if (onEntry(entry) === true) return offset;
   }
