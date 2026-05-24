@@ -53,6 +53,7 @@ export default function TabsLayout(): React.ReactElement {
       {(
         [
           ['index', 'home', 0],
+          ['channels', 'chat', 0],
           ['search', 'search', 0],
           ['lines', 'list', 0],
           ['settings', 'cog', 0],
