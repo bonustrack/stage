@@ -101,6 +101,10 @@ export async function handleMessengerSend(
 ): Promise<void> {
   const body = await readJsonBody<{
     text?: string; as?: string; attachments?: Attachment[]; replyTo?: string;
+    /** Optional — defaults to the single-user back-compat line `metro://messenger/owner`.
+     *  Must start with `metro://messenger/` so this endpoint can't be repurposed as a
+     *  generic write to any line in the system. */
+    line?: string;
     question?: {
       header?: string;
       options: Array<{ label: string; description?: string }>;
@@ -115,6 +119,8 @@ export async function handleMessengerSend(
   if (!text && attachments.length === 0 && !question) {
     return send(res, req, 400, { error: 'text, attachments, or question required' });
   }
+  const channelLine = typeof body.line === 'string' && body.line.startsWith('metro://messenger/')
+    ? body.line as Line : MESSENGER_LINE;
   const fromAgent = body.as === 'agent';
   const agent = userSelf();
   const replyTo = typeof body.replyTo === 'string' && body.replyTo ? body.replyTo : undefined;
@@ -127,7 +133,7 @@ export async function handleMessengerSend(
     id: mintId(),
     ts: new Date().toISOString(),
     station: 'messenger',
-    line: MESSENGER_LINE,
+    line: channelLine,
     from: fromAgent ? agent : MESSENGER_USER,
     to: fromAgent ? MESSENGER_USER : agent,
     text: text || undefined,
@@ -154,7 +160,7 @@ export async function handleMessengerSend(
       if (!transcript) return;
       emit({
         id: mintId(), ts: new Date().toISOString(),
-        station: 'messenger', line: MESSENGER_LINE,
+        station: 'messenger', line: entry.line,
         from: entry.from, to: entry.to,
         payload: { transcribeFor: entry.id, transcript },
       });
@@ -167,7 +173,7 @@ export async function handleMessengerSend(
 export async function handleMessengerReact(
   req: IncomingMessage, res: ServerResponse, emit: Emit, send: Send,
 ): Promise<void> {
-  const body = await readJsonBody<{ messageId?: string; emoji?: string; as?: string }>(req);
+  const body = await readJsonBody<{ messageId?: string; emoji?: string; as?: string; line?: string }>(req);
   if ('__error' in body) return send(res, req, 400, { error: body.__error });
   const messageId = (body.messageId ?? '').trim();
   const emoji = (body.emoji ?? '').trim();
@@ -179,7 +185,12 @@ export async function handleMessengerReact(
   /** readHistory returns newest-first; break on first match so we get the latest event's state. */
   const recent = readHistory({ limit: 500, station: 'messenger' });
   let active = false;
+  /** Reaction needs to land on the SAME channel as the original message, so look up its line
+   *  via the recent history scan above; fall back to the body hint or the default line. */
+  let reactionLine: Line = (typeof body.line === 'string' && body.line.startsWith('metro://messenger/'))
+    ? body.line as Line : MESSENGER_LINE;
   for (const e of recent) {
+    if (e.id === messageId) reactionLine = e.line as Line;
     const p = e.payload as { reactTo?: string; emoji?: string; removed?: boolean } | undefined;
     if (!p?.reactTo || p.reactTo !== messageId || p.emoji !== emoji || e.from !== sender) continue;
     active = !p.removed;
@@ -189,7 +200,7 @@ export async function handleMessengerReact(
     id: mintId(),
     ts: new Date().toISOString(),
     station: 'messenger',
-    line: MESSENGER_LINE,
+    line: reactionLine,
     from: sender,
     to: fromAgent ? MESSENGER_USER : agent,
     payload: { reactTo: messageId, emoji, ...(active ? { removed: true } : {}) },

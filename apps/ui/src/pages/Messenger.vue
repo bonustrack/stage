@@ -9,11 +9,18 @@ import {
 } from '../lib/messenger';
 import { useRecorder } from '../lib/useRecorder';
 
-const MESSENGER_LINE = 'metro://messenger/owner';
+const DEFAULT_LINE = 'metro://messenger/owner';
 const MESSENGER_USER = 'metro://messenger/user/owner';
 
+const route = useRoute();
+/** `?line=` param drives multi-channel routing; falls back to the original solo line for back-compat. */
+const activeLine = computed(() => {
+  const q = route.query.line;
+  return (typeof q === 'string' && q.startsWith('metro://messenger/')) ? q : DEFAULT_LINE;
+});
+
 const cfg = ref<Config>(loadConfig());
-const chat = ref<string | undefined>(MESSENGER_LINE);
+const chat = computed(() => activeLine.value);
 const text = ref('');
 const sending = ref(false);
 const err = ref<string | null>(null);
@@ -84,7 +91,7 @@ function chipImageUrl(a: Attachment): string {
 }
 
 function onReact(messageId: string, emoji: string): void {
-  void reactMessenger(cfg.value.daemonUrl, cfg.value.token, messageId, emoji)
+  void reactMessenger(cfg.value.daemonUrl, cfg.value.token, messageId, emoji, activeLine.value)
     .catch(e => { err.value = (e as Error).message; });
 }
 
@@ -124,8 +131,8 @@ async function send(): Promise<void> {
   const atts = pending.value;
   optimistic.value = [{
     id: localId, ts,
-    station: 'messenger', line: MESSENGER_LINE,
-    from: MESSENGER_USER, to: MESSENGER_LINE,
+    station: 'messenger', line: activeLine.value,
+    from: MESSENGER_USER, to: activeLine.value,
     text: body || undefined,
     ...(replyTo ? { replyTo } : {}),
     ...(atts.length ? { payload: { attachments: atts } } : {}),
@@ -138,7 +145,7 @@ async function send(): Promise<void> {
   isAtBottom.value = true;
   void nextTick(() => scrollToBottom('smooth'));
   try {
-    await sendMessenger(cfg.value.daemonUrl, cfg.value.token, sentBody, sentAtts, replyTo);
+    await sendMessenger(cfg.value.daemonUrl, cfg.value.token, sentBody, sentAtts, replyTo, activeLine.value);
   } catch (e) { err.value = (e as Error).message; }
   finally { sending.value = false; }
 }

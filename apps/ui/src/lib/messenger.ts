@@ -24,12 +24,16 @@ export async function uploadAttachment(
 
 export async function sendMessenger(
   daemonUrl: string, token: string, text: string,
-  attachments: Attachment[] = [], replyTo?: string,
+  attachments: Attachment[] = [], replyTo?: string, line?: string,
 ): Promise<void> {
   const res = await fetch(`${daemonUrl.replace(/\/$/, '')}/api/messenger/send`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text, as: 'user', attachments, ...(replyTo ? { replyTo } : {}) }),
+    body: JSON.stringify({
+      text, as: 'user', attachments,
+      ...(replyTo ? { replyTo } : {}),
+      ...(line ? { line } : {}),
+    }),
   });
   if (!res.ok) {
     const j = (await res.json().catch(() => ({}))) as { error?: string };
@@ -38,12 +42,12 @@ export async function sendMessenger(
 }
 
 export async function reactMessenger(
-  daemonUrl: string, token: string, messageId: string, emoji: string,
+  daemonUrl: string, token: string, messageId: string, emoji: string, line?: string,
 ): Promise<void> {
   const res = await fetch(`${daemonUrl.replace(/\/$/, '')}/api/messenger/react`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messageId, emoji, as: 'user' }),
+    body: JSON.stringify({ messageId, emoji, as: 'user', ...(line ? { line } : {}) }),
   });
   if (!res.ok) {
     const j = (await res.json().catch(() => ({}))) as { error?: string };
