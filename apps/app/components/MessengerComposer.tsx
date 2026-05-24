@@ -10,7 +10,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { ComposerGradient } from './ComposerGradient';
 import { HeroIcon, type HeroIconName } from './HeroIcon';
-import { sendMessenger, uploadAttachment, type Attachment } from '../lib/messenger';
+import { sendMessenger, sendXmtpAttachment, uploadAttachment, type Attachment } from '../lib/messenger';
 import { drainStagedAttachments, hasStagedAttachments } from '../lib/share-intent-staging';
 
 /** Persist composer draft across app restarts so typed-but-unsent text survives a
@@ -75,8 +75,15 @@ export function MessengerComposer({
   const upload = async (uri: string, mime: string, name?: string): Promise<void> => {
     setUploading(true);
     try {
-      const att = await uploadAttachment(daemonUrl, token, uri, mime, name);
-      setPending(prev => [...prev, att]);
+      /** XMTP attachments are sent inline immediately (no upload pool — XMTP envelopes
+       *  carry the bytes themselves). For other stations (messenger), stash in the
+       *  pending pool so the user can write a caption + send text+attachments together. */
+      if (line?.startsWith('metro://xmtp/')) {
+        await sendXmtpAttachment(daemonUrl, token, line, uri, mime, name);
+      } else {
+        const att = await uploadAttachment(daemonUrl, token, uri, mime, name);
+        setPending(prev => [...prev, att]);
+      }
     } catch (e) { setErr((e as Error).message); }
     finally { setUploading(false); }
   };
