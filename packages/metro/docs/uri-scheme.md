@@ -21,6 +21,7 @@ The URI parses cleanly with the WHATWG `URL` parser: `new URL(line)` gives `prot
 | `claude`   | `metro://claude/<user-id>/<session-id>`      | `metro://claude/9bfc7af0-…/50b00d11-…`                                 |
 | `codex`    | `metro://codex/<user-id>/<session-id>`       | `metro://codex/8119ecb1-…/01997d4b-…`                                  |
 | `webhook`  | `metro://webhook/<endpoint-id>`              | `metro://webhook/fwaCgTKJuLAjS2K0`                                     |
+| `xmtp`     | `metro://xmtp/<conversation-id>`             | `metro://xmtp/abc123def456…`                                           |
 
 Claude / Codex lines mirror the `<root>/<sub>` structure of `metro://telegram/<chat-id>/<topic-id>`: `<user-id>` (the stable account id — same across devices) plays the role of `<chat-id>`, and `<session-id>` (one conversation) plays the role of `<topic-id>`. Both segments are derived per station (see [participants](#participants) below).
 
@@ -34,6 +35,7 @@ Every chat station also exposes participant URIs — used as `from` on inbound/o
 | claude  | `metro://claude/user/<orgId>`    | `metro://claude/user/9bfc7af0-2117-44c5-baf2-d22ba382d065`    |
 | codex   | `metro://codex/user/<accountId>` | `metro://codex/user/8119ecb1-b05e-48db-aa80-434584439df9`     |
 | webhook | `metro://webhook/<endpointId>`   | `metro://webhook/fwaCgTKJuLAjS2K0` (line + `from` are the same — no HTTP-side user identity) |
+| xmtp    | `metro://xmtp/user/<inboxId>`    | `metro://xmtp/user/9a1c…` (XMTP inbox id; one inbox can fan out to multiple wallets) |
 
 `from` and `to` on history entries are always participant URIs. Discord/Telegram inbounds set `from` to the user URI; the daemon sets `to` to the local user identity:
 
