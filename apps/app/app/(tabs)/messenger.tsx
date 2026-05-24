@@ -32,9 +32,10 @@ const MESSENGER_USER = 'metro://messenger/user/owner';
 
 export default function Messenger(): React.ReactElement {
   const router = useRouter();
-  /** `?line=` route param drives multi-channel routing; falls back to the original solo line. */
+  /** `?line=` route param drives multi-channel routing. Accepts in-tree messenger lines
+   *  AND train-backed lines (xmtp, telegram, discord) — the composer routes sends per station. */
   const params = useLocalSearchParams<{ line?: string }>();
-  const MESSENGER_LINE = typeof params.line === 'string' && params.line.startsWith('metro://messenger/')
+  const MESSENGER_LINE = typeof params.line === 'string' && /^metro:\/\/[a-z]+\//.test(params.line)
     ? params.line : DEFAULT_LINE;
   const dark = useColorScheme() === 'dark';
   const fg = dark ? '#e8ecf2' : '#1a1f29';

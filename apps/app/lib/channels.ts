@@ -35,15 +35,20 @@ export async function createChannel(
   return await res.json() as Channel;
 }
 
-/** Pretty short id for display — `metro://messenger/channel/aBcD…` → `aBcD…`. */
+/** Pretty short id for display — handles both messenger channels and XMTP convs. */
 export function channelShortId(line: string): string {
-  const m = line.match(/^metro:\/\/messenger\/channel\/(.+)$/);
-  return m ? m[1] : line;
+  const messenger = line.match(/^metro:\/\/messenger\/channel\/(.+)$/);
+  if (messenger) return messenger[1];
+  const xmtp = line.match(/^metro:\/\/xmtp\/(.+)$/);
+  if (xmtp) return `xmtp:${xmtp[1].slice(0, 12)}…`;
+  return line;
 }
 
 /** Best-effort short label for a wallet/agent URI displayed in channel-list rows. */
 export function shortMember(uri: string): string {
-  const m = uri.match(/^metro:\/\/user\/eth\/(0x[a-f0-9]{40})$/i);
-  if (m) return `${m[1].slice(0, 6)}…${m[1].slice(-4)}`;
+  const eth = uri.match(/^metro:\/\/user\/eth\/(0x[a-f0-9]{40})$/i);
+  if (eth) return `${eth[1].slice(0, 6)}…${eth[1].slice(-4)}`;
+  const xmtpUser = uri.match(/^metro:\/\/xmtp\/user\/([a-f0-9]+)/i);
+  if (xmtpUser) return `xmtp:${xmtpUser[1].slice(0, 8)}…`;
   return uri.replace(/^metro:\/\//, '');
 }

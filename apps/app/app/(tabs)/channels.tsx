@@ -1,10 +1,12 @@
-/** Channels screen — list every messenger channel the signed-in identity is a member of. */
+/** Channels screen — every messenger channel + every XMTP conversation the daemon has seen. */
 
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, Text, View, useColorScheme } from 'react-native';
 import { useRouter } from 'expo-router';
 import { channelShortId, listChannels, shortMember, type Channel } from '../../lib/channels';
 import { loadConfig, isConfigured } from '../../lib/config';
+import { fetchState } from '../../lib/sse';
+import type { HistoryEntry, StateSnapshot } from '../../lib/types';
 
 function fmtTs(ts: string | null): string {
   if (!ts) return '';
@@ -31,8 +33,29 @@ export default function Channels(): React.ReactElement {
     void (async (): Promise<void> => {
       const cfg = await loadConfig();
       if (!isConfigured(cfg)) { setError('not configured — open Settings'); return; }
-      try { setRows(await listChannels(cfg.daemonUrl, cfg.token)); }
-      catch (e) { setError((e as Error).message); }
+      try {
+        const [messenger, state] = await Promise.all([
+          listChannels(cfg.daemonUrl, cfg.token).catch(() => []),
+          fetchState(cfg.daemonUrl, cfg.token),
+        ]);
+        /** Dedup `metro://xmtp/*` lines from recent history, surfacing each as a synthetic
+         *  Channel row so the user can tap into any active XMTP convo. */
+        const xmtpRows: Channel[] = [];
+        if (state.ok) {
+          const seen = new Map<string, { ts: string; from: string }>();
+          for (const e of ((state.data as StateSnapshot).recent_history ?? []) as HistoryEntry[]) {
+            if (!e.line.startsWith('metro://xmtp/')) continue;
+            const prev = seen.get(e.line);
+            if (!prev || prev.ts < e.ts) seen.set(e.line, { ts: e.ts, from: e.from });
+          }
+          for (const [line, info] of seen) {
+            xmtpRows.push({ line, members: [info.from], permissions: {}, lastTs: info.ts });
+          }
+        }
+        const all = [...messenger, ...xmtpRows];
+        all.sort((a, b) => (b.lastTs ?? '').localeCompare(a.lastTs ?? ''));
+        setRows(all);
+      } catch (e) { setError((e as Error).message); }
     })();
   }, []);
 
