@@ -86,12 +86,20 @@ export function isTranscript(e: HistoryLike): boolean {
   return Boolean(p?.transcribeFor);
 }
 
-/** Map of msgId → transcript text, from `{transcribeFor, transcript}` events. */
+/** Map of msgId → transcript text. Picks up both shapes:
+ *  - merged: `payload.transcript` set directly on the audio entry (single event,
+ *    daemon won the 2s race).
+ *  - follow-up: separate `{transcribeFor, transcript}` event referencing the
+ *    original (used when transcription lost the race). */
 export function transcriptsByMessage(events: HistoryLike[]): Map<string, string> {
   const out = new Map<string, string>();
   for (const e of events) {
-    const p = e.payload as { transcribeFor?: string; transcript?: string } | undefined;
-    if (p?.transcribeFor && p.transcript) out.set(p.transcribeFor, p.transcript);
+    const p = e.payload as
+      | { transcribeFor?: string; transcript?: string; attachments?: { kind?: string }[] }
+      | undefined;
+    if (!p) continue;
+    if (p.transcribeFor && p.transcript) out.set(p.transcribeFor, p.transcript);
+    else if (p.transcript && p.attachments?.some(a => a.kind === 'audio')) out.set(e.id, p.transcript);
   }
   return out;
 }

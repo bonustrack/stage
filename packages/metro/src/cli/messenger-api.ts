@@ -134,6 +134,34 @@ export async function handleMessengerSend(
     ...(replyTo ? { replyTo } : {}),
     ...(payload ? { payload } : {}),
   };
+  /** Voice merge: if the message has an audio attachment, race transcription
+   *  against a 2s timeout BEFORE the first emit. If the transcript wins, embed
+   *  it on the entry's payload so the bubble + agent both see one event. If the
+   *  timeout wins, emit unchanged and fall back to the legacy follow-up event
+   *  pattern further down. */
+  const audioForMerge = attachments.find(a => a.kind === 'audio');
+  if (audioForMerge) {
+    const filename = basename(audioForMerge.url);
+    const transcriptionPromise = transcribeAudio(join(UPLOADS_DIR, filename));
+    const winner = await Promise.race([
+      transcriptionPromise.then(t => ({ done: true, t })),
+      new Promise<{ done: false; t: null }>(r => setTimeout(() => r({ done: false, t: null }), 2_000)),
+    ]);
+    if (winner.done && winner.t) {
+      entry.payload = { ...(entry.payload as object | undefined ?? {}), transcript: winner.t };
+    } else {
+      /** Lost the race — schedule the follow-up emit when transcription eventually finishes. */
+      void transcriptionPromise.then(t => {
+        if (!t) return;
+        emit({
+          id: mintId(), ts: new Date().toISOString(),
+          station: 'messenger', line: MESSENGER_LINE,
+          from: entry.from, to: entry.to,
+          payload: { transcribeFor: entry.id, transcript: t },
+        });
+      });
+    }
+  }
   emit(entry);
   /** Agent → user: push to registered tokens. User → agent: their own message; skip. */
   if (fromAgent) {
@@ -145,20 +173,6 @@ export async function handleMessengerSend(
     const questionLabel = question ? `❓ ${question.header ?? 'Choose an option'}` : '';
     const summary = text || kindLabel || questionLabel || '(empty)';
     void pushExpo(readPushTokens(), 'Metro', summary.slice(0, 200), entry.id);
-  }
-  /** Fire-and-forget: transcribe any audio attachments and emit a follow-up event. */
-  for (const att of attachments) {
-    if (att.kind !== 'audio') continue;
-    const filename = basename(att.url);
-    void transcribeAudio(join(UPLOADS_DIR, filename)).then(transcript => {
-      if (!transcript) return;
-      emit({
-        id: mintId(), ts: new Date().toISOString(),
-        station: 'messenger', line: MESSENGER_LINE,
-        from: entry.from, to: entry.to,
-        payload: { transcribeFor: entry.id, transcript },
-      });
-    });
   }
   send(res, req, 200, { id: entry.id, line: entry.line });
 }
