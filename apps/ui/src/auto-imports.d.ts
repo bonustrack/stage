@@ -7,8 +7,10 @@
 export {}
 declare global {
   const EffectScope: typeof import('vue').EffectScope
+  const channelShortId: typeof import('./lib/channels').channelShortId
   const computed: typeof import('vue').computed
   const createApp: typeof import('vue').createApp
+  const createChannel: typeof import('./lib/channels').createChannel
   const customRef: typeof import('vue').customRef
   const defineAsyncComponent: typeof import('vue').defineAsyncComponent
   const defineComponent: typeof import('vue').defineComponent
@@ -28,6 +30,7 @@ declare global {
   const isRef: typeof import('vue').isRef
   const isShallow: typeof import('vue').isShallow
   const isTranscript: typeof import('./lib/messenger').isTranscript
+  const listChannels: typeof import('./lib/channels').listChannels
   const loadConfig: typeof import('./lib/config').loadConfig
   const markRaw: typeof import('vue').markRaw
   const matchesSearch: typeof import('./lib/search').matchesSearch

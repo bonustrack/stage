@@ -8,7 +8,7 @@ import {
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardStickyView, useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { MessengerBubble } from '../../components/MessengerBubble';
 import { MessengerComposer } from '../../components/MessengerComposer';
@@ -25,6 +25,9 @@ import {
 } from '../../lib/messenger-unread';
 import { registerForPush, setMessengerActive } from '../../lib/push';
 import { fetchHistoryPage, useTail } from '../../lib/sse';
+import {
+  XMTP_USER_PREFIX, isXmtpLine, useXmtpFeed, xmtpReact, xmtpReply,
+} from '../../lib/xmtp';
 import type { HistoryEntry } from '../../lib/types';
 
 const MESSENGER_LINE = 'metro://messenger/owner';
@@ -36,6 +39,15 @@ export default function Messenger(): React.ReactElement {
   const fg = dark ? '#e8ecf2' : '#1a1f29';
   const sub = dark ? '#8a94a6' : '#5a6477';
   const bg = dark ? '#000000' : '#ffffff';
+
+  /** When the screen is opened from the Channels tab, `line` is set to a
+   *  `metro://xmtp/<convId>` URI — drop straight into the local-XMTP code path
+   *  and skip the daemon hop entirely. Anything else (default + the
+   *  back-compat assistant chat at `metro://messenger/owner`) keeps the
+   *  existing SSE-backed behavior. */
+  const { line: lineParam } = useLocalSearchParams<{ line?: string }>();
+  const activeLine = lineParam ?? MESSENGER_LINE;
+  const xmtpMode = isXmtpLine(activeLine);
 
   const [cfg, setCfg] = useState<Config | null>(null);
   /** Captured once on mount → entries newer than this render with the unread style. */
@@ -54,7 +66,11 @@ export default function Messenger(): React.ReactElement {
   useFocusEffect(useCallback(() => {
     void loadConfig().then(c => {
       setCfg(c);
-      if (c && isConfigured(c)) void registerForPush(c.daemonUrl, c.token).catch(() => { /* ignore */ });
+      /** Push registration is only useful for the daemon-routed messenger station;
+       *  XMTP messages aren't relayed through the daemon's push pipeline (yet). */
+      if (!xmtpMode && c && isConfigured(c)) {
+        void registerForPush(c.daemonUrl, c.token).catch(() => { /* ignore */ });
+      }
     });
     void markMessengerRead();
     /** Mark the messenger tab as foregrounded — the notification handler in
@@ -63,7 +79,7 @@ export default function Messenger(): React.ReactElement {
      *  blur so backgrounded users still get notified. */
     setMessengerActive(true);
     return (): void => setMessengerActive(false);
-  }, []));
+  }, [xmtpMode]));
   /** Messenger tab can be the focused screen but the whole app might be backgrounded
    *  (phone locked, user on another app). In that case we DO want notifications, so
    *  toggle the active flag with AppState — true only when both messenger is focused
@@ -80,8 +96,26 @@ export default function Messenger(): React.ReactElement {
     chat: MESSENGER_LINE, includeWebhooks: false,
   }), [cfg]);
 
-  const enabled = !!cfg && isConfigured(cfg);
-  const { events, status } = useTail(tailOpts, enabled);
+  /** Both hooks always mount; the unused one stays idle. `useTail` is suppressed
+   *  in xmtp mode (enabled=false) so it doesn't open an SSE stream that the
+   *  user doesn't care about; same for `useXmtpFeed` in the daemon-line path. */
+  const daemonEnabled = !!cfg && isConfigured(cfg) && !xmtpMode;
+  const { events: tailEvents, status: tailStatus } = useTail(tailOpts, daemonEnabled);
+  const xmtpFeed = useXmtpFeed(xmtpMode ? activeLine : null, xmtpMode);
+  /** Unified event stream + connection status — downstream code reads these
+   *  without caring which transport produced them. */
+  const events = xmtpMode ? xmtpFeed.events : tailEvents;
+  const status: 'idle' | 'connecting' | 'open' | 'error' | 'closed' = xmtpMode
+    ? (xmtpFeed.status === 'open' ? 'open'
+      : xmtpFeed.status === 'loading' ? 'connecting'
+        : xmtpFeed.status === 'error' ? 'error' : 'idle')
+    : tailStatus;
+  /** "My" URI changes per transport: daemon = the messenger user constant,
+   *  xmtp = the inbox-id-scoped URI emitted by the daemon-side train. */
+  const myUri = xmtpMode
+    ? (xmtpFeed.inboxId ? `${XMTP_USER_PREFIX}${xmtpFeed.inboxId}` : XMTP_USER_PREFIX)
+    : MESSENGER_USER;
+  const enabled = xmtpMode ? true : (!!cfg && isConfigured(cfg));
   const [showJump, setShowJump] = useState(false);
   /** Bump to force-remount the FlatList. Used by jump-to-bottom and on focus because every
    *  variant of the scroll API (`scrollToOffset`, `scrollToIndex`, `getScrollResponder`,
@@ -145,9 +179,15 @@ export default function Messenger(): React.ReactElement {
     [events],
   );
   /** Show cached bubbles on cold open so the feed isn'​t empty for a frame while SSE
-   *  seeds. Once live events arrive, they take over and the cache gets refreshed. */
-  const bubbleEvents = liveBubbles.length > 0 ? liveBubbles : cachedBubbles;
-  useEffect(() => { if (liveBubbles.length > 0) saveBubbleCache(liveBubbles); }, [liveBubbles]);
+   *  seeds. Once live events arrive, they take over and the cache gets refreshed.
+   *  XMTP-mode skips the cache — `useXmtpFeed` seeds from the local sqlite store
+   *  directly so there's no flash of empty + no value in re-caching elsewhere. */
+  const bubbleEvents = xmtpMode
+    ? liveBubbles
+    : (liveBubbles.length > 0 ? liveBubbles : cachedBubbles);
+  useEffect(() => {
+    if (!xmtpMode && liveBubbles.length > 0) saveBubbleCache(liveBubbles);
+  }, [liveBubbles, xmtpMode]);
   /** Inverted FlatList expects newest-first → put optimistic at the top. Filter out
    *  optimistic entries inline (not via useEffect) so the SSE-confirmed bubble never
    *  renders alongside its pending twin even for one frame. The useEffect schedule used
@@ -163,14 +203,17 @@ export default function Messenger(): React.ReactElement {
     const combined = [...bubbleEvents, ...olderFiltered];
     if (!optimistic.length) return combined;
     const live = optimistic.filter(o =>
-      !combined.some(e => e.from === MESSENGER_USER && e.text === o.text
+      !combined.some(e => e.from === myUri && e.text === o.text
         && Math.abs(new Date(e.ts).getTime() - new Date(o.ts).getTime()) < 30_000),
     );
     return [...live, ...combined];
-  }, [bubbleEvents, optimistic, older]);
+  }, [bubbleEvents, optimistic, older, myUri]);
   /** When the inverted list reaches its end (= visual TOP, user scrolled all the
-   *  way up), pull the next page of older messenger entries from the daemon. */
+   *  way up), pull the next page of older messenger entries from the daemon.
+   *  Skipped in xmtp mode — `useXmtpFeed` already seeds 100 messages and there's
+   *  no daemon to page through. (TODO: paginate via `conv.messages({limit, before})`.) */
   const loadOlder = useCallback(() => {
+    if (xmtpMode) return;
     if (loadingOlder || olderExhausted || !cfg) return;
     setLoadingOlder(true);
     const before = bubbleEvents.length + older.length;
@@ -196,7 +239,7 @@ export default function Messenger(): React.ReactElement {
         });
       })
       .catch(() => setLoadingOlder(false));
-  }, [loadingOlder, olderExhausted, cfg, bubbleEvents, older]);
+  }, [loadingOlder, olderExhausted, cfg, bubbleEvents, older, xmtpMode]);
   /** Insert a Discord-style "NEW MESSAGES" separator between unread and read
    *  entries. Skip the user's OWN messages when locating the boundary — they're
    *  trivially "read" (you sent them) so sending shouldn'​t push the separator.
@@ -209,7 +252,7 @@ export default function Messenger(): React.ReactElement {
     let sawUnreadAgentEntry = false;
     for (let i = 0; i < allBubbles.length; i++) {
       const b = allBubbles[i];
-      if (b.from === MESSENGER_USER) continue;
+      if (b.from === myUri) continue;
       if (b.ts > unreadCutoff) { sawUnreadAgentEntry = true; continue; }
       separatorIdx = i;
       break;
@@ -220,20 +263,20 @@ export default function Messenger(): React.ReactElement {
      *  agent message even though there'​s nothing to separate. */
     if (separatorIdx <= 0 || !sawUnreadAgentEntry) return allBubbles;
     const sentinel = { id: '__unread-separator__', ts: '', station: 'messenger',
-      line: MESSENGER_LINE, from: '', to: '' } as HistoryEntry;
+      line: activeLine, from: '', to: '' } as HistoryEntry;
     return [...allBubbles.slice(0, separatorIdx), sentinel, ...allBubbles.slice(separatorIdx)];
-  }, [allBubbles, unreadCutoff]);
+  }, [allBubbles, unreadCutoff, myUri, activeLine]);
   /** Once SSE has caught up, drop the now-dead optimistic entries from state so the
    *  array doesn'​t grow forever. Safe to do via effect because the displayed list
    *  already excluded them above. */
   useEffect(() => {
     if (!optimistic.length) return;
     const live = optimistic.filter(o =>
-      !bubbleEvents.some(e => e.from === MESSENGER_USER && e.text === o.text
+      !bubbleEvents.some(e => e.from === myUri && e.text === o.text
         && Math.abs(new Date(e.ts).getTime() - new Date(o.ts).getTime()) < 30_000),
     );
     if (live.length !== optimistic.length) setOptimistic(live);
-  }, [bubbleEvents, optimistic]);
+  }, [bubbleEvents, optimistic, myUri]);
   /** Sticky-bottom for inbound messages: when a new entry arrives and the user is
    *  already at the visual bottom (`showJump=false` means scroll offset < 200px),
    *  remount the list so it lands at offset 0 again. Otherwise
@@ -249,12 +292,23 @@ export default function Messenger(): React.ReactElement {
   const previewOf = (e: HistoryEntry): string =>
     e.text?.slice(0, 80) || `[${(e.payload as { attachments?: { kind: string }[] } | undefined)?.attachments?.[0]?.kind ?? 'attachment'}]`;
   const onReact = useCallback((messageId: string, emoji: string) => {
+    if (xmtpMode) {
+      /** XMTP reactions are toggle-by-resend (the same emoji from the same
+       *  inbox replaces the previous state, matching the messenger UX). For v1
+       *  we always emit `action: 'added'` — the daemon-side `reactionsByMessage`
+       *  reducer already handles the removed-event semantics, but the mobile UI
+       *  doesn't expose a way to un-react yet. (TODO: long-press own reaction
+       *  → send `removed`.) */
+      void xmtpReact(activeLine, messageId, emoji)
+        .catch((e: unknown) => { console.warn('xmtp react failed', e); });
+      return;
+    }
     if (!cfg) return;
     void reactMessenger(cfg.daemonUrl, cfg.token, messageId, emoji)
       .catch((e: unknown) => { console.warn('react failed', e); });
-  }, [cfg]);
+  }, [cfg, xmtpMode, activeLine]);
 
-  if (cfg && !isConfigured(cfg)) {
+  if (!xmtpMode && cfg && !isConfigured(cfg)) {
     return (
       <View style={{ flex: 1, padding: 24, gap: 12, justifyContent: 'center', backgroundColor: bg }}>
         <Text style={{ color: fg, fontSize: 18, fontWeight: '700' }}>Set up first</Text>
@@ -319,7 +373,8 @@ export default function Messenger(): React.ReactElement {
           <MessengerBubble
             entry={item}
             dark={dark}
-            unread={item.station === 'messenger' && item.from !== MESSENGER_USER && item.ts > unreadCutoff && !isReaction(item) && !isTranscript(item)}
+            myUri={myUri}
+            unread={(xmtpMode || item.station === 'messenger') && item.from !== myUri && item.ts > unreadCutoff && !isReaction(item) && !isTranscript(item)}
             pending={item.id.startsWith('tmp_')}
             replyTarget={replyingTo?.id === item.id}
             daemonUrl={cfg?.daemonUrl ?? ''}
@@ -331,6 +386,13 @@ export default function Messenger(): React.ReactElement {
             onReply={() => setReplyingTo({ id: item.id, preview: previewOf(item) })}
             onLongPress={() => setMenuFor(item)}
             onAnswer={(label) => {
+              if (xmtpMode) {
+                /** Answer-to-question buttons appear on questions sent by the agent;
+                 *  in XMTP mode reply via the local client instead of the daemon. */
+                void xmtpReply(activeLine, item.id, label)
+                  .catch((e: unknown) => { console.warn('xmtp answer failed', e); });
+                return;
+              }
               if (!cfg) return;
               void sendMessenger(cfg.daemonUrl, cfg.token, label, [], item.id)
                 .catch((e: unknown) => { console.warn('answer send failed', e); });
@@ -398,10 +460,13 @@ export default function Messenger(): React.ReactElement {
           <HeroIcon name="arrowDown" size={18} color="#000000" />
         </Pressable>
       ) : null}
-      {cfg ? (
+      {cfg || xmtpMode ? (
         <KeyboardStickyView offset={{ opened: insets.bottom }}>
         <MessengerComposer
-          daemonUrl={cfg.daemonUrl} token={cfg.token} dark={dark}
+          /** Daemon URL/token are unused in xmtp mode but the composer always expects
+           *  the prop pair — pass empty strings when we don't have config. */
+          daemonUrl={cfg?.daemonUrl ?? ''} token={cfg?.token ?? ''} dark={dark}
+          xmtpLine={xmtpMode ? activeLine : undefined}
           replyingTo={replyingTo ?? undefined}
           onClearReply={() => setReplyingTo(null)}
           onOptimistic={({ localId, text, attachments, replyTo }) => {
@@ -412,8 +477,8 @@ export default function Messenger(): React.ReactElement {
              *  not as a sync throw). */
             setOptimistic(prev => [{
               id: localId, ts: new Date().toISOString(),
-              station: 'messenger', line: MESSENGER_LINE,
-              from: MESSENGER_USER, to: MESSENGER_LINE,
+              station: xmtpMode ? 'xmtp' : 'messenger', line: activeLine,
+              from: myUri, to: activeLine,
               text: text || undefined,
               ...(replyTo ? { replyTo } : {}),
               ...(attachments.length ? { payload: { attachments } } : {}),
