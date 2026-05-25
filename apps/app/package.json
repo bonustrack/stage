@@ -20,7 +20,7 @@
     "expo-dev-client": "~6.0.21",
     "expo-device": "~8.0.10",
     "expo-document-picker": "~14.0.8",
-    "expo-file-system": "^56.0.7",
+    "expo-file-system": "~19.0.22",
     "expo-font": "~14.0.11",
     "expo-image-picker": "~17.0.11",
     "expo-notifications": "~0.32.17",
@@ -44,7 +44,7 @@
   "devDependencies": {
     "@expo/ngrok": "4.1.0",
     "@types/react": "~19.1.0",
-    "babel-preset-expo": "^55.0.22",
+    "babel-preset-expo": "~54.0.10",
     "eslint": "^10.3.0",
     "typescript": "~5.9.2",
     "typescript-eslint": "^8.59.2"
