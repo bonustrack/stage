@@ -87,11 +87,8 @@ export default function EditProfileModal({
         }}>
           <Pressable onPress={onClose} disabled={saving}><Text style={{ color: sub, fontSize: 15 }}>Cancel</Text></Pressable>
           <Text style={{ color: fg, fontSize: 17, fontFamily: 'Calibre-Semibold' }}>Edit profile</Text>
-          <Pressable onPress={save} disabled={saving || uploading}>
-            <Text style={{ color: saving || uploading ? sub : fg, fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
-              {saving ? 'Saving…' : 'Save'}
-            </Text>
-          </Pressable>
+          {/** Spacer to balance the row — Save sits at the bottom as a pill now. */}
+          <View style={{ width: 50 }} />
         </View>
         <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
           <View style={{ alignItems: 'center', marginBottom: 20 }}>
@@ -127,6 +124,23 @@ export default function EditProfileModal({
               />
             </View>
           ))}
+
+          <Pressable
+            onPress={() => { void save(); }}
+            disabled={saving || uploading}
+            style={({ pressed }) => ({
+              marginTop: 16, paddingVertical: 14,
+              backgroundColor: '#ffffff', borderRadius: 999,
+              alignItems: 'center', justifyContent: 'center',
+              shadowColor: '#000000', shadowOpacity: 0.18, shadowRadius: 8, shadowOffset: { width: 0, height: 2 },
+              elevation: 4,
+              opacity: pressed ? 0.85 : (saving || uploading) ? 0.6 : 1,
+            })}
+          >
+            <Text style={{ color: '#000000', fontSize: 16, fontFamily: 'Calibre-Medium' }}>
+              {saving ? 'Saving…' : 'Save'}
+            </Text>
+          </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
     </Modal>
