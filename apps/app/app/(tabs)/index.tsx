@@ -302,7 +302,6 @@ export default function Messenger(): React.ReactElement {
       if (appStateSub) try { appStateSub.remove(); } catch { /* ignore */ }
       if (pollTimer) clearInterval(pollTimer);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onPullToRefresh = async (): Promise<void> => {

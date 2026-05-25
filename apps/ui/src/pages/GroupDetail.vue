@@ -6,7 +6,7 @@
 import { IdentifierKind } from '@xmtp/browser-sdk';
 import {
   convOfLine, getCachedXmtpClient, getOrCreateXmtpClient, lineOfConv,
-  memberInboxToAddressMap, shortAddress, stampBoxAvatarUrl,
+  memberInboxToAddressMap, shortAddress,
 } from '../lib/xmtp';
 import { readProfile } from '../lib/profile';
 import type { SnapshotProfile } from '@shared/profile/snapshot';
@@ -185,33 +185,16 @@ function openMember(addr: string): void { void router.push(`/user/${addr}`); }
     <div v-if="errorMsg" class="px-4 pb-2 text-xs text-red-500">{{ errorMsg }}</div>
 
     <ul class="flex flex-col">
-      <li v-for="addr in members" :key="addr.toLowerCase()"
-        class="flex items-center gap-3 px-3.5 py-2.5
-          bg-metro-surface-light dark:bg-metro-surface-dark
-          border-b border-metro-border-light dark:border-metro-border-dark"
-        :class="{ 'opacity-50': removing === addr.toLowerCase() }"
-      >
-        <button type="button" class="flex items-center gap-3 flex-1 min-w-0 text-left" @click="openMember(addr)">
-          <img :src="stampBoxAvatarUrl(addr, 64)" alt="" class="w-8 h-8 rounded-full bg-metro-border-dark" />
-          <div class="flex-1 min-w-0">
-            <div class="text-sm text-metro-fg-light dark:text-metro-fg-dark truncate font-head">
-              {{ memberNames[addr] || shortAddress(addr) }}{{ addr.toLowerCase() === selfAddress ? ' (you)' : '' }}
-            </div>
-            <div v-if="memberNames[addr]" class="text-xs text-metro-sub-light dark:text-metro-sub-dark truncate mt-0.5">
-              {{ shortAddress(addr) }}
-            </div>
-          </div>
-        </button>
-        <button
-          v-if="addr.toLowerCase() !== selfAddress"
-          type="button"
-          :disabled="removing === addr.toLowerCase()"
-          class="p-1.5 rounded-full text-red-500 hover:bg-red-500/10 disabled:opacity-50"
-          @click="removeMember(addr)"
-        >
-          <HeroIcon name="trash" :size="18" />
-        </button>
-      </li>
+      <MemberRow
+        v-for="addr in members"
+        :key="addr.toLowerCase()"
+        :address="addr"
+        :name="memberNames[addr] ?? null"
+        :is-self="addr.toLowerCase() === selfAddress"
+        :removing="removing === addr.toLowerCase()"
+        @open="openMember(addr)"
+        @remove="removeMember(addr)"
+      />
     </ul>
   </div>
 </template>

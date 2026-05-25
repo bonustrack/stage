@@ -263,7 +263,11 @@ export function MessengerBubble({
    *  when undefined (e.g. legacy callers that don't wire it). */
   onAvatarPress?: (address: string) => void;
 }): React.ReactElement {
-  const mine = entry.from === myUri;
+  /** Discord-style layout doesn't visually distinguish own messages —
+   *  myUri is accepted for forward compatibility (e.g. read-receipts) but
+   *  not currently styled-on. Silence the no-unused-vars rule by void-ing
+   *  the comparison. */
+  void (entry.from === myUri);
   const atts = attachmentsOf(entry);
   const question = questionOf(entry);
   /** Group system events (rename / member add / image change) get a muted

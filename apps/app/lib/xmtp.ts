@@ -276,7 +276,7 @@ export async function memberInboxToAddressMap(conv: Conversation): Promise<Recor
     }
     return map;
   } catch (err) {
-    process.env.NODE_ENV !== 'production' && console.warn('memberInboxToAddressMap failed', (err as Error).message);
+    if (process.env.NODE_ENV !== 'production') console.warn('memberInboxToAddressMap failed', (err as Error).message);
     return {};
   }
 }
@@ -311,7 +311,7 @@ export async function groupMemberEthAddresses(conv: Conversation): Promise<strin
     }
     return addrs;
   } catch (err) {
-    process.env.NODE_ENV !== 'production' && console.warn('groupMemberEthAddresses failed', (err as Error).message);
+    if (process.env.NODE_ENV !== 'production') console.warn('groupMemberEthAddresses failed', (err as Error).message);
     return [];
   }
 }
@@ -472,7 +472,7 @@ export async function xmtpSendAttachment(
   /** Use the typed `sendAttachment` helper (not the generic `send({attachment})`) so the
    *  native side runs the codec's full encode + size-validation path and surfaces real
    *  errors instead of silently dropping payloads that exceed libxmtp's per-message limit. */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const c = conv as unknown as { sendAttachment?: (p: StaticAttachmentContent) => Promise<string> };
   if (typeof c.sendAttachment === 'function') return await c.sendAttachment(payload);
   return await conv.send({ attachment: payload });

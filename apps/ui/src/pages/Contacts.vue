@@ -84,25 +84,12 @@ onMounted(async () => {
           placeholder:text-metro-sub-light dark:placeholder:text-metro-sub-dark"
       />
     </div>
-    <button
-      v-if="searchResolution.status === 'resolved' && searchResolution.address"
-      type="button"
-      class="mx-3 mb-2 px-3 py-2 rounded-lg
-        bg-metro-fg-light dark:bg-metro-fg-dark
-        text-metro-bg-light dark:text-metro-bg-dark
-        text-sm text-left hover:opacity-90"
-      @click="openSearchedProfile"
-    >
-      Open profile of {{ searchResolution.address.slice(0, 6) }}…{{ searchResolution.address.slice(-4) }}
-    </button>
-    <div v-else-if="searchResolution.status === 'resolving'"
-      class="mx-3 mb-2 px-3 py-2 text-xs text-metro-sub-light dark:text-metro-sub-dark">
-      Resolving…
-    </div>
-    <div v-else-if="searchResolution.status === 'missed'"
-      class="mx-3 mb-2 px-3 py-2 text-xs text-metro-sub-light dark:text-metro-sub-dark">
-      No address found for "{{ query }}"
-    </div>
+    <SearchResolution
+      :status="searchResolution.status"
+      :address="searchResolution.address"
+      :query="query"
+      @open="openSearchedProfile"
+    />
     <div v-if="error" class="flex-1 flex items-center justify-center text-sm text-metro-fg-light dark:text-metro-fg-dark px-6">
       {{ error }}
     </div>

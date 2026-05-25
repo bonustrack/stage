@@ -14,8 +14,8 @@ import {
   flagOne, isJson, parseArgs, writeJson, type ExitErr, type Flags,
 } from './util.js';
 
-/** True if another live process owns the dispatcher lockfile. Mirrors paths.acquireLock'
- *  s detection but as a peek — no claim, no exit. */
+/** True if another live process owns the dispatcher lockfile. Mirrors
+ *  paths.acquireLock's detection but as a peek — no claim, no exit. */
 function anotherDispatcherRunning(): boolean {
   const lockFile = join(STATE_DIR, '.tail-lock');
   if (!existsSync(lockFile)) return false;
@@ -133,8 +133,9 @@ async function main(): Promise<void> {
   if (cmd === '--version' || cmd === '-v') return void process.stdout.write(`${pkg.version}\n`);
   if (cmd === '--help' || cmd === '-h') return void process.stdout.write(USAGE);
   if (!cmd) {
-    /** Multi-agent: another `metro` already owns the dispatcher → drop into tail mode so
-     *  a second agent (e.g. Codex while Claude is running) still gets the event stream. */
+    /** Multi-agent: another `metro` already owns the dispatcher → drop
+     *  into tail mode so a second agent (e.g. Codex while Claude is
+     *  running) still gets the event stream. */
     if (anotherDispatcherRunning()) {
       log.info({}, 'dispatcher already running; subscribing as tail (--follow --json --since=tail)');
       await cmdTail([], { follow: true, json: true, since: 'tail' });

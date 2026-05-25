@@ -3,7 +3,7 @@
  *  local XMTP client. Layout: top-nav with back arrow, scrollable message list (newest
  *  at the bottom), composer pinned to the viewport bottom. */
 
-import { XMTP_USER_PREFIX, convOfLine, lineOfConv, peerEthAddressOfDm, shortAddress, stampBoxAvatarUrl } from '../lib/xmtp';
+import { XMTP_USER_PREFIX, convOfLine, lineOfConv, peerEthAddressOfDm } from '../lib/xmtp';
 import { xmtpReact } from '../lib/xmtpSend';
 import { useXmtpFeed, reactionsByMessage, isReactionEntry } from '../lib/xmtpFeed';
 import { markConvRead } from '../lib/channelsCache';
@@ -125,42 +125,14 @@ function onActionCopy(): void {
 
 <template>
   <div class="fixed inset-0 flex flex-col bg-metro-bg-light dark:bg-metro-bg-dark">
-    <div class="h-12 flex items-center px-3 border-b border-metro-border-light dark:border-metro-border-dark
-      bg-metro-bg-light dark:bg-metro-bg-dark shrink-0 relative">
-      <button type="button" class="p-1.5 text-metro-fg-light dark:text-metro-fg-dark"
-        @click="router.push('/channels')">
-        <HeroIcon name="arrowLeft" :size="22" />
-      </button>
-      <!-- Header title — tap to open the per-user profile (DM) or the
-           group detail page (group). -->
-      <button
-        type="button"
-        class="flex-1 flex items-center justify-center gap-2 px-3 py-1 -mx-1
-          text-sm text-metro-fg-light dark:text-metro-fg-dark
-          hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark rounded-lg"
-        @click="openHeader"
-      >
-        <img v-if="peerAddress"
-          :src="stampBoxAvatarUrl(peerAddress, 48)"
-          alt=""
-          class="w-6 h-6 rounded-full bg-metro-border-dark"
-        />
-        <HeroIcon v-else-if="isGroup" name="users" :size="16" />
-        <span class="truncate max-w-[200px] font-head">
-          {{ peerAddress ? shortAddress(peerAddress) : (groupName || 'Conversation') }}
-        </span>
-      </button>
-      <div v-if="feed.status.value !== 'open'"
-        class="absolute top-1/2 right-3 -translate-y-1/2 flex items-center gap-1.5
-          px-2.5 py-1 rounded-full bg-metro-hover-light dark:bg-metro-hover-dark">
-        <span class="w-1.5 h-1.5 rounded-full"
-          :class="feed.status.value === 'loading' ? 'bg-metro-warn'
-            : feed.status.value === 'error' ? 'bg-metro-err' : 'bg-metro-sub-dark'" />
-        <span class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark">
-          {{ feed.status.value === 'loading' ? '…' : feed.status.value === 'error' ? '!' : '·' }}
-        </span>
-      </div>
-    </div>
+    <ConversationHeader
+      :peer-address="peerAddress"
+      :group-name="groupName"
+      :is-group="isGroup"
+      :status="feed.status.value"
+      @back="router.push('/channels')"
+      @open="openHeader"
+    />
 
     <div ref="scroller" class="flex-1 overflow-y-auto py-3 no-scrollbar">
       <div v-if="allBubbles.length === 0 && feed.status.value === 'open'"
