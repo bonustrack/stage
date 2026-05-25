@@ -99,8 +99,18 @@ export async function getOrCreateXmtpClient(env: XmtpEnv = 'production'): Promis
   if (savedAddress && savedEnv === env
     && savedAddress.toLowerCase() === account.address.toLowerCase()) {
     try {
-      cachedClient = await Client.build(new PublicIdentity(savedAddress, 'ETHEREUM'), opts);
-      return cachedClient;
+      /** Race Client.build against a 20s timeout — MLS state replay can hang
+       *  indefinitely on a corrupted local store, and the user has no way to
+       *  recover without either a manual nuke or the "Reset XMTP" action. */
+      const built = await Promise.race<Client | null>([
+        Client.build(new PublicIdentity(savedAddress, 'ETHEREUM'), opts),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 20_000)),
+      ]);
+      if (built) {
+        cachedClient = built;
+        return cachedClient;
+      }
+      /** Build timed out — fall through to create() with a fresh registration. */
     } catch { /* fall through to create() if rebuild failed */ }
   }
   /** XMTP registers a new installation by asking the EOA to sign its handshake

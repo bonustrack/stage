@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import Constants from 'expo-constants';
-import { getOrCreateXmtpClient, shortAddress } from '../../lib/xmtp';
+import { DevSettings } from 'react-native';
+import { getOrCreateXmtpClient, resetXmtpClient, shortAddress } from '../../lib/xmtp';
+import { resetAccount } from '../../lib/wallet';
 import {
   setThemePreference, useEffectiveColorScheme, useThemePreference,
   type ThemePreference,
@@ -90,6 +92,39 @@ export default function Settings(): React.ReactElement {
             </Pressable>
           );
         })}
+      </View>
+
+      <View style={{ marginTop: 32, paddingHorizontal: 16 }}>
+        <Pressable
+          onPress={() => {
+            Alert.alert(
+              'Reset XMTP identity',
+              'This wipes the local wallet + XMTP database. You will get a fresh inbox on next launch. Existing conversations on this device will become unreachable.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Reset', style: 'destructive', onPress: () => {
+                    void (async (): Promise<void> => {
+                      await resetXmtpClient();
+                      await resetAccount();
+                      /** Dev-client reload. In a published build this is a no-op;
+                       *  swap to expo-updates' reloadAsync if/when we ship one. */
+                      DevSettings.reload?.();
+                    })();
+                  } },
+              ],
+            );
+          }}
+          style={({ pressed }) => ({
+            padding: 12, borderRadius: 12,
+            backgroundColor: pressed ? '#3a2530' : 'transparent',
+            borderWidth: 1, borderColor: dark ? '#5c2231' : '#e9bbc4',
+            alignItems: 'center',
+          })}
+        >
+          <Text style={{ color: dark ? '#ff6b80' : '#b91c1c', fontSize: 14 }}>
+            Reset XMTP identity
+          </Text>
+        </Pressable>
       </View>
 
       <View style={{ marginTop: 24, paddingHorizontal: 16, paddingBottom: 16 }}>
