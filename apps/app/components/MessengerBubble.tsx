@@ -1,7 +1,9 @@
-/** ChatGPT-dark-style messenger row: user gets a bubble (right), assistant is bubble-less (left). */
+/** Discord-style messenger row: every message left-aligned, avatar at the start,
+ *  no colored bubble even for the local user's own messages. */
 
 import { useMemo, useRef, useState } from 'react';
-import { Animated, Linking, PanResponder, Pressable, Text, TextInput, View } from 'react-native';
+import { Animated, Image, Linking, PanResponder, Pressable, Text, TextInput, View } from 'react-native';
+import { stampBoxAvatarUrl } from '../lib/xmtp';
 import Markdown, { MarkdownIt } from 'react-native-markdown-display';
 import { HeroIcon } from './HeroIcon';
 import { MessengerAudioPlayer } from './MessengerAudioPlayer';
@@ -238,7 +240,7 @@ function QuestionView({ question, dark, sub, onAnswer }: {
 
 export function MessengerBubble({
   entry, dark, unread, pending, replyTarget, onReact, onReply, onLongPress, onAnswer,
-  replyPreview, reactions, transcript, daemonUrl, token, myUri,
+  replyPreview, reactions, transcript, daemonUrl, token, myUri, senderEthAddress,
 }: {
   entry: HistoryEntry; dark: boolean; unread: boolean; pending?: boolean; replyTarget?: boolean;
   onReact?: (emoji: string) => void; onReply?: () => void; onLongPress?: () => void;
@@ -251,21 +253,23 @@ export function MessengerBubble({
   /** Self URI used to mark a bubble as the user's own. XMTP callers pass
    *  `metro://xmtp/user/<inboxId>`. */
   myUri: string;
+  /** Resolved eth address of the sender — used for the left-side stamp.fyi
+   *  avatar. null when the SDK hasn't surfaced the mapping yet (we fall back
+   *  to a tinted placeholder so row geometry doesn't shift). */
+  senderEthAddress?: string | null;
 }): React.ReactElement {
   const mine = entry.from === myUri;
   const atts = attachmentsOf(entry);
   const question = questionOf(entry);
-  const bubbleBg = mine ? (dark ? '#cbd5e1' : '#1a1f29') : 'transparent';
-  const fg = mine
-    ? (dark ? '#000000' : '#ffffff')
-    : (dark ? '#e8ecf2' : '#1a1f29');
+  const fg = dark ? '#e8ecf2' : '#1a1f29';
   const sub = dark ? '#8a94a6' : '#5a6477';
   const pillBg = dark ? '#1d2230' : '#eef1f7';
   const [pickerOpen, setPickerOpen] = useState(false);
   const markdownProps = {
     markdownit: mdParser,
     onLinkPress: (url: string): boolean => { void Linking.openURL(url); return false; },
-    style: markdownStyles(fg, dark, mine),
+    /** Discord-style: all messages render with the same typography regardless of sender. */
+    style: markdownStyles(fg, dark, false),
   };
   /** Swipe-to-reply (right→left, Telegram-style): claim once dx is left-leaning + dominates dy,
    *  drag the bubble with the finger up to ~80px, snap back on release, fire onReply if dx<=-60. */
@@ -288,37 +292,45 @@ export function MessengerBubble({
     },
     onPanResponderTerminationRequest: () => false,
   }), [onReply, swipeX]);
+  const AVATAR_SIZE = 24;
   return (
     <Animated.View
       {...panResponder.panHandlers}
       style={{
-        flexDirection: 'column',
-        alignItems: mine ? 'flex-end' : 'flex-start',
-        paddingHorizontal: 12, paddingVertical: mine ? 3 : 6,
+        flexDirection: 'row', alignItems: 'flex-start',
+        paddingHorizontal: 12, paddingVertical: 6, gap: 10,
         transform: [{ translateX: swipeX }],
         opacity: pending ? 0.5 : 1,
-        /** Soft-gray tint across the bubble row for unread messages (both mine and
-         *  assistant). Bubble itself is unchanged — only the surrounding row. */
         backgroundColor: unread ? (dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)') : 'transparent',
       }}
     >
+      {/** Discord-style row avatar. Stamp.fyi when we have an eth address;
+       *   neutral placeholder while the SDK is still resolving the sender. */}
+      {senderEthAddress ? (
+        <Image
+          source={{ uri: stampBoxAvatarUrl(senderEthAddress, AVATAR_SIZE * 2) }}
+          style={{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: 999, backgroundColor: '#1a1f29', marginTop: 2 }}
+        />
+      ) : (
+        <View style={{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: 999, backgroundColor: '#1a1f29', marginTop: 2 }} />
+      )}
+      {/** Right column: message content + reactions + reaction picker stacked. */}
+      <View style={{ flex: 1, minWidth: 0, flexDirection: 'column' }}>
       {/** Pressable handles onLongPress; the outer Animated.View'​s PanResponder steals horizontal drags. */}
       <Pressable
         onLongPress={onLongPress}
         delayLongPress={300}
         style={{
-          flexDirection: 'column', maxWidth: mine ? '78%' : '100%', width: mine ? undefined : '100%',
-          backgroundColor: bubbleBg, paddingHorizontal: mine ? 14 : 0, paddingVertical: mine ? 9 : 0,
-          borderTopLeftRadius: 20, borderTopRightRadius: 20,
-          borderBottomLeftRadius: mine ? 20 : 0, borderBottomRightRadius: mine ? 6 : 0,
-          /** Reply-target highlight wins over the unread border (yellow-ish accent ring). */
-          borderWidth: replyTarget ? 1.5 : (unread && mine ? 1.5 : 0),
+          flexDirection: 'column',
+          paddingHorizontal: 0, paddingVertical: 0,
+          borderRadius: replyTarget ? 8 : 0,
+          borderWidth: replyTarget ? 1.5 : (unread ? 1.5 : 0),
           borderColor: replyTarget ? '#c0a06e' : (unread ? (dark ? '#ffffff' : '#1a1f29') : 'transparent'),
         }}
       >
         {replyPreview ? (
           <View style={{
-            alignSelf: 'stretch', borderLeftWidth: 2, borderLeftColor: mine ? fg : sub,
+            alignSelf: 'stretch', borderLeftWidth: 2, borderLeftColor: sub,
             paddingLeft: 6, marginBottom: 4, opacity: 0.7,
           }}>
             <Text style={{ color: fg, fontSize: 12, fontStyle: 'italic' }} numberOfLines={2}>
@@ -353,7 +365,7 @@ export function MessengerBubble({
         ) : null}
         {transcript ? (
           <Text style={{
-            color: mine ? fg : sub, opacity: 0.75, fontSize: 13, fontStyle: 'italic',
+            color: sub, opacity: 0.85, fontSize: 13, fontStyle: 'italic',
             marginTop: atts.length ? 4 : 0,
           }}>“{transcript}”</Text>
         ) : atts.some(a => a.kind === 'audio') && Date.now() - new Date(entry.ts).getTime() < 30_000 ? (
@@ -366,27 +378,24 @@ export function MessengerBubble({
         ) : null}
         <View style={{
           alignSelf: 'stretch',
-          flexDirection: 'row', alignItems: 'center',
-          justifyContent: mine ? 'flex-end' : 'flex-start',
+          flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start',
           gap: 6, marginTop: 3,
         }}>
           {onReact ? (
             <Pressable onPress={() => setPickerOpen(o => !o)} hitSlop={8}>
-              <HeroIcon name="faceSmile" size={14} color={mine ? fg : sub} />
+              <HeroIcon name="faceSmile" size={14} color={sub} />
             </Pressable>
           ) : null}
           {onReply ? (
             <Pressable onPress={onReply} hitSlop={8}>
-              <HeroIcon name="reply" size={14} color={mine ? fg : sub} />
+              <HeroIcon name="reply" size={14} color={sub} />
             </Pressable>
           ) : null}
-          <Text style={{
-            color: mine ? fg : sub, opacity: mine ? 0.55 : 1, fontSize: 10,
-          }}>{fmtTs(entry.ts)}</Text>
+          <Text style={{ color: sub, fontSize: 10 }}>{fmtTs(entry.ts)}</Text>
         </View>
       </Pressable>
       {reactions && reactions.size > 0 ? (
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 4, maxWidth: '78%' }}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
           {[...reactions.entries()].map(([emoji, count]) => (
             <View key={emoji} style={{
               flexDirection: 'row', alignItems: 'center', gap: 4,
@@ -403,6 +412,7 @@ export function MessengerBubble({
           flexDirection: 'row', gap: 8, marginTop: 6, paddingHorizontal: 10, paddingVertical: 6,
           borderRadius: 999, backgroundColor: dark ? '#1d2230' : '#ffffff',
           shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 8, elevation: 4,
+          alignSelf: 'flex-start',
         }}>
           {REACT_PRESETS.map(e => (
             <Pressable
@@ -415,6 +425,7 @@ export function MessengerBubble({
           </Pressable>
         </View>
       ) : null}
+      </View>
     </Animated.View>
   );
 }

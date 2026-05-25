@@ -16,7 +16,8 @@ import { ComposerGradient } from '../../components/ComposerGradient';
 import { HeroIcon } from '../../components/HeroIcon';
 import {
   XMTP_USER_PREFIX, lineOfConv, useXmtpFeed, xmtpReact, xmtpReply,
-  convOfLine, peerEthAddressOfDm, groupMemberEthAddresses, stampBoxAvatarUrl,
+  convOfLine, peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap,
+  stampBoxAvatarUrl,
 } from '../../lib/xmtp';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import type { HistoryEntry } from '../../lib/types';
@@ -120,9 +121,17 @@ export default function XmtpConversation(): React.ReactElement {
    *  resolves its send promise (XMTP self-sends don't always come back via streamMessages). */
   const [optimistic, setOptimistic] = useState<HistoryEntry[]>([]);
   /** Per-conversation member addresses, resolved once on mount. `peerAddr` is
-   *  set for DMs (single avatar), `memberAddrs` for groups (stacked). */
+   *  set for DMs (single avatar), `memberAddrs` for groups (stacked).
+   *  `inboxToAddr` lets the bubble look up the sender's eth address for the
+   *  Discord-style row avatar. */
   const [peerAddr, setPeerAddr] = useState<string | null>(null);
   const [memberAddrs, setMemberAddrs] = useState<string[]>([]);
+  const [inboxToAddr, setInboxToAddr] = useState<Record<string, string>>({});
+  const senderEthOf = useCallback((from: string): string | null => {
+    if (!from.startsWith(XMTP_USER_PREFIX)) return null;
+    const inboxId = from.slice(XMTP_USER_PREFIX.length);
+    return inboxToAddr[inboxId] ?? null;
+  }, [inboxToAddr]);
   useEffect(() => {
     if (!convId) return;
     let cancelled = false;
@@ -130,7 +139,9 @@ export default function XmtpConversation(): React.ReactElement {
       const conv = await convOfLine(activeLine);
       if (cancelled || !conv) return;
       const peer = await peerEthAddressOfDm(conv);
+      const fullMap = await memberInboxToAddressMap(conv);
       if (cancelled) return;
+      setInboxToAddr(fullMap);
       if (peer) { setPeerAddr(peer); return; }
       const members = await groupMemberEthAddresses(conv);
       if (!cancelled) setMemberAddrs(members);
@@ -248,6 +259,7 @@ export default function XmtpConversation(): React.ReactElement {
             entry={item}
             dark={dark}
             myUri={myUri}
+            senderEthAddress={senderEthOf(item.from)}
             unread={false}
             pending={item.id.startsWith('tmp_')}
             replyTarget={replyingTo?.id === item.id}

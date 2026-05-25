@@ -214,6 +214,36 @@ export async function createAskQuestionGroup(): Promise<string> {
   return group.id;
 }
 
+/** Resolve every member of a conversation as a `{inboxId → ethAddress}` map,
+ *  INCLUDING the local user. Used by the conversation view to look up the
+ *  sender of each message and render their stamp.fyi avatar. */
+export async function memberInboxToAddressMap(conv: Conversation): Promise<Record<string, string>> {
+  try {
+    const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+    const members = await (conv as unknown as {
+      members: () => Promise<{ inboxId: string }[]>;
+    }).members();
+    const ids = members.map(m => m.inboxId);
+    if (ids.length === 0) return {};
+    /** `inboxStates` returns results in request order — pair them back to the inbox ids. */
+    const states = await client.inboxStates(
+      true,
+      ids as Parameters<typeof client.inboxStates>[1],
+    );
+    const map: Record<string, string> = {};
+    for (let i = 0; i < ids.length; i++) {
+      const s = states[i];
+      if (!s) continue;
+      const eth = s.identities.find(it => it.kind === 'ETHEREUM');
+      if (eth?.identifier) map[ids[i]!] = eth.identifier;
+    }
+    return map;
+  } catch (err) {
+    process.env.NODE_ENV !== 'production' && console.warn('memberInboxToAddressMap failed', (err as Error).message);
+    return {};
+  }
+}
+
 /** Resolve the Ethereum addresses of every member of a group conversation, excluding the
  *  local user's own inbox. Used by the Channels list to render a multi-avatar stack for
  *  group rows. Returns [] for DMs (use `peerEthAddressOfDm` for those) or when the
