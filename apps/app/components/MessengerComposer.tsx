@@ -10,33 +10,48 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { ComposerGradient } from './ComposerGradient';
 import { HeroIcon, type HeroIconName } from './HeroIcon';
-import { sendMessenger, uploadAttachment, type Attachment } from '../lib/messenger';
-import { drainStagedAttachments, hasStagedAttachments } from '../lib/share-intent-staging';
+import { fileUriToBase64, xmtpReply, xmtpSendAttachment, xmtpSendText } from '../lib/xmtp';
+
+/** Composer-local representation of a staged attachment. `url` is a `file://` URI in xmtp
+ *  mode (the only mode the mobile composer supports now). `id` is a client-side dedupe key. */
+interface Attachment {
+  id: string; url: string; kind: string; mime: string; size: number; name?: string;
+}
 
 /** Persist composer draft across app restarts so typed-but-unsent text survives a
  *  force-close. Mirrors how iMessage / WhatsApp keep your half-finished reply. */
 const DRAFT_KEY = 'messenger-composer-draft';
 
 interface Props {
-  daemonUrl: string; token: string; dark: boolean;
+  dark: boolean;
+  /** Target XMTP conversation line URI (`metro://xmtp/<convId>`). Required — the
+   *  mobile composer only supports the XMTP transport now (the daemon-routed
+   *  messenger pipeline was removed). */
+  xmtpLine: string;
+  /** Legacy props kept for API stability with parent screens that pass them; ignored
+   *  now that the daemon pipeline is gone. */
+  daemonUrl?: string;
+  token?: string;
   replyingTo?: { id: string; preview: string };
   onClearReply?: () => void;
   /** Optimistic-render hook: invoked the moment the user taps send, before the API call. */
   onOptimistic?: (entry: { localId: string; text: string; attachments: Attachment[]; replyTo?: string }) => void;
+  /** Fired AFTER the send completes (success OR failure). Lets the parent drop the
+   *  optimistic entry instead of waiting for an SSE/stream echo that may never arrive
+   *  (XMTP `streamMessages` doesn't always replay self-sends — pending bubbles would stick). */
+  onSent?: (localId: string, error?: string) => void;
 }
 
-function chipImageUrl(daemonUrl: string, token: string, url: string): string {
-  return `${daemonUrl.replace(/\/$/, '')}${url}?token=${encodeURIComponent(token)}`;
-}
-
-export function MessengerComposer({ daemonUrl, token, dark, replyingTo, onClearReply, onOptimistic }: Props): React.ReactElement {
+export function MessengerComposer({
+  dark, xmtpLine, replyingTo, onClearReply, onOptimistic, onSent,
+}: Props): React.ReactElement {
   const fg = dark ? '#e8ecf2' : '#1a1f29';
   const sub = dark ? '#8a94a6' : '#5a6477';
   const inputBg = dark ? '#16191f' : '#f3f5f9';
   const chipBg = dark ? '#1d2230' : '#eef1f7';
 
   const [text, setText] = useState('');
-  const [pending, setPending] = useState<Attachment[]>(() => drainStagedAttachments());
+  const [pending, setPending] = useState<Attachment[]>([]);
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -71,8 +86,25 @@ export function MessengerComposer({ daemonUrl, token, dark, replyingTo, onClearR
   const upload = async (uri: string, mime: string, name?: string): Promise<void> => {
     setUploading(true);
     try {
-      const att = await uploadAttachment(daemonUrl, token, uri, mime, name);
-      setPending(prev => [...prev, att]);
+      /** Stage the local file URI and base64-encode at send time. The chip uses `url`
+       *  as a render hint (`file://...` works with `Image` source on RN), and `id` is
+       *  just a client-side dedupe key.
+       *
+       *  Pre-flight the file size: libxmtp's native side silently drops oversize
+       *  attachments without raising a JS error (the send "succeeds" but the message
+       *  never publishes). Reject in the composer where the user sees the error
+       *  instead of staring at a ghost bubble. */
+      const head = await fetch(uri);
+      const blob = await head.blob();
+      const XMTP_INLINE_MAX = 800 * 1024;
+      if (blob.size > XMTP_INLINE_MAX) {
+        throw new Error(`Image is ${(blob.size / 1024).toFixed(0)} KB — XMTP inline limit ~${XMTP_INLINE_MAX / 1024} KB. Pick a smaller image (or take a screenshot/crop).`);
+      }
+      const kind = mime.startsWith('image/') ? 'image'
+        : mime.startsWith('audio/') ? 'audio'
+          : mime.startsWith('video/') ? 'video' : 'file';
+      const id = `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      setPending(prev => [...prev, { id, url: uri, kind, mime, size: blob.size, name }]);
     } catch (e) { setErr((e as Error).message); }
     finally { setUploading(false); }
   };
@@ -123,14 +155,37 @@ export function MessengerComposer({ daemonUrl, token, dark, replyingTo, onClearR
     /** Fire the optimistic-render hook first so the bubble shows up instantly while the
      *  API call is still in flight. The SSE event for the real message will dedupe by text. */
     const localId = `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    onOptimistic?.({ localId, text: body, attachments: pending, replyTo: replyingTo?.id });
+    /** Snapshot the in-flight attachments + reply id so we can clear composer state
+     *  before awaiting the network — `pending`/`replyingTo` could be set to new values
+     *  by the time the send promise resolves. */
+    const sendingAttachments = pending;
+    const sendingReplyTo = replyingTo?.id;
+    onOptimistic?.({ localId, text: body, attachments: sendingAttachments, replyTo: sendingReplyTo });
     /** Clear the composer immediately — the bubble already shows the user's input. */
     setText(''); setPending([]); onClearReply?.();
     setSending(true); setErr(null);
+    let sendErr: string | undefined;
     try {
-      await sendMessenger(daemonUrl, token, body, pending, replyingTo?.id);
-    } catch (e) { setErr((e as Error).message); }
-    finally { setSending(false); }
+      /** Send text + each attachment as its own typed XMTP message. The body is sent as
+       *  a `reply` when there's a `replyingTo`; standalone attachments go as plain
+       *  `attachment` messages (replies-with-attachments would need a ReplyContent
+       *  wrapping an attachment, not v1). */
+      if (body) {
+        if (sendingReplyTo) await xmtpReply(xmtpLine, sendingReplyTo, body);
+        else await xmtpSendText(xmtpLine, body);
+      }
+      for (const a of sendingAttachments) {
+        const dataB64 = await fileUriToBase64(a.url);
+        await xmtpSendAttachment(xmtpLine, a.name ?? a.id, a.mime, dataB64);
+      }
+    } catch (e) { sendErr = (e as Error).message; setErr(sendErr); }
+    finally {
+      setSending(false);
+      /** Always tell the parent the send finished (success or failure) so the optimistic
+       *  bubble clears. XMTP self-sends don't always come back through streamMessages, so
+       *  waiting for an echo stranded the bubble in pending state forever. */
+      onSent?.(localId, sendErr);
+    }
   };
 
   const Btn = ({ icon, onPress, active }: { icon: HeroIconName; onPress: () => void; active?: boolean }): React.ReactElement => (
@@ -166,7 +221,8 @@ export function MessengerComposer({ daemonUrl, token, dark, replyingTo, onClearR
               <View key={a.id} style={{ width: 72, alignItems: 'center', gap: 4 }}>
                 <View>
                   <Image
-                    source={{ uri: chipImageUrl(daemonUrl, token, a.url) }}
+                    /** `a.url` is a local file:// URI — works directly with RN `Image`. */
+                    source={{ uri: a.url }}
                     style={{ width: 72, height: 72, borderRadius: 8 }}
                     resizeMode="cover"
                   />

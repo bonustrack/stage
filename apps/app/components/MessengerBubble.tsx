@@ -8,14 +8,22 @@ import { MessengerAudioPlayer } from './MessengerAudioPlayer';
 import { MessengerImageAttachment } from './MessengerImageAttachment';
 import type { HistoryEntry } from '../lib/types';
 
-const MESSENGER_USER = 'metro://messenger/user/owner';
+/** Default "from" URI used to mark a bubble as the user's own when no
+ *  `myUri` prop is passed. Matches the daemon-side messenger station's user
+ *  URI; XMTP-mode callers override this with their inbox-scoped URI. */
+const DEFAULT_MINE_URI = 'metro://messenger/user/owner';
 const REACT_PRESETS = ['👍', '❤️', '😂', '😮', '🔥', '🎉'];
 /** `linkify` + `breaks` turn bare URLs into tappable links and treat `\n` as a line
  *  break, matching the markdown-it config on the web side. Constructed once at
  *  module scope — the lib re-parses input each render anyway. */
 const mdParser = MarkdownIt({ typographer: false, linkify: true, breaks: true });
 
-interface Attachment { id: string; url: string; kind: string; mime: string; size: number; name?: string }
+/** Shape covers both messenger-station attachments (id+url, served by the daemon) and XMTP
+ *  inline attachments (dataB64 carries the raw bytes — no URL exists). */
+interface Attachment {
+  id?: string; url?: string; dataB64?: string;
+  kind: string; mime?: string; size?: number; name?: string;
+}
 
 function fmtTs(ts: string): string {
   try { return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }); }
@@ -234,7 +242,7 @@ function QuestionView({ question, dark, sub, onAnswer }: {
 
 export function MessengerBubble({
   entry, dark, unread, pending, replyTarget, onReact, onReply, onLongPress, onAnswer,
-  replyPreview, reactions, transcript, daemonUrl, token,
+  replyPreview, reactions, transcript, daemonUrl, token, myUri,
 }: {
   entry: HistoryEntry; dark: boolean; unread: boolean; pending?: boolean; replyTarget?: boolean;
   onReact?: (emoji: string) => void; onReply?: () => void; onLongPress?: () => void;
@@ -244,8 +252,11 @@ export function MessengerBubble({
   onAnswer?: (label: string) => void;
   replyPreview?: string; reactions?: Map<string, number>; transcript?: string;
   daemonUrl: string; token: string;
+  /** Override the "is this bubble mine?" check. Defaults to the legacy messenger-station
+   *  user URI; XMTP-mode callers pass `metro://xmtp/user/<inboxId>`. */
+  myUri?: string;
 }): React.ReactElement {
-  const mine = entry.from === MESSENGER_USER;
+  const mine = entry.from === (myUri ?? DEFAULT_MINE_URI);
   const atts = attachmentsOf(entry);
   const question = questionOf(entry);
   const bubbleBg = mine ? (dark ? '#cbd5e1' : '#1a1f29') : 'transparent';
@@ -319,15 +330,22 @@ export function MessengerBubble({
             </Text>
           </View>
         ) : null}
-        {atts.length > 0 ? <View style={{ alignSelf: 'stretch' }}>{atts.map(a => (
-          <AttachmentView
-            key={a.id}
-            att={a}
-            fg={fg}
-            sub={sub}
-            fullUrl={`${daemonUrl.replace(/\/$/, '')}${a.url}?token=${encodeURIComponent(token)}`}
-          />
-        ))}</View> : null}
+        {atts.length > 0 ? <View style={{ alignSelf: 'stretch' }}>{atts.map((a, i) => {
+          /** XMTP inline attachments carry bytes in `dataB64` — render via data: URI.
+           *  Messenger-station attachments carry a `url` — append the auth token query param. */
+          const fullUrl = a.dataB64
+            ? `data:${a.mime ?? 'application/octet-stream'};base64,${a.dataB64}`
+            : `${daemonUrl.replace(/\/$/, '')}${a.url ?? ''}?token=${encodeURIComponent(token)}`;
+          return (
+            <AttachmentView
+              key={a.id ?? `${entry.id}-att-${i}`}
+              att={a}
+              fg={fg}
+              sub={sub}
+              fullUrl={fullUrl}
+            />
+          );
+        })}</View> : null}
         {/** Markdown wrapped so the lib's internal layout can't bleed into the timestamp row below. */}
         {entry.text ? (
           <View style={{ alignSelf: 'stretch' }}>

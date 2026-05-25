@@ -1,20 +1,15 @@
 import { useEffect, useRef } from 'react';
 import { Stack, useRouter, usePathname } from 'expo-router';
 import { loadLastRoute, saveLastRoute } from '../lib/last-route';
-import { loadConfig, isConfigured } from '../lib/config';
-import { uploadAttachment } from '../lib/messenger';
-import { pushStagedAttachments } from '../lib/share-intent-staging';
 import { useShareIntent } from 'expo-share-intent';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
-import * as Notifications from 'expo-notifications';
-import { attachReplyHandler } from '../lib/push';
 import { ActivityIndicator, Text, TextInput, useColorScheme, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 /** Set Calibre-Medium as the app-wide default for Text + TextInput via defaultProps.
- *  This is a fallback — call-site `style={{…}}` overrides — but it'​s the safest path:
+ *  This is a fallback — call-site `style={{…}}` overrides — but it's the safest path:
  *  monkey-patching the forwardRef render fn upstream broke FlatList.scrollToOffset on
  *  some Android versions (see git for details). Individual screens that want guaranteed
  *  Calibre should pin fontFamily explicitly. */
@@ -33,22 +28,8 @@ export default function RootLayout(): React.ReactElement {
   const dark = scheme === 'dark';
   const router = useRouter();
 
-  /** Tapping a messenger push notification deep-links into the messenger tab —
-   *  unless the user used the inline Reply action, which `attachReplyHandler`
-   *  handles separately (and shouldn'​t pull focus into the app). */
-  useEffect(() => {
-    attachReplyHandler();
-    const sub = Notifications.addNotificationResponseReceivedListener((resp) => {
-      if (resp.actionIdentifier === Notifications.DEFAULT_ACTION_IDENTIFIER) {
-        router.push('/(tabs)/messenger');
-      }
-    });
-    return (): void => sub.remove();
-  }, [router]);
-
   /** Restore the last tab on cold open. Run once on mount, before the user has
-   *  a chance to navigate manually. The notification deep-link above can still
-   *  override (later effect → later navigate). */
+   *  a chance to navigate manually. */
   const restoredRoute = useRef(false);
   useEffect(() => {
     if (restoredRoute.current) return;
@@ -62,35 +43,19 @@ export default function RootLayout(): React.ReactElement {
   const pathname = usePathname();
   useEffect(() => { void saveLastRoute(pathname); }, [pathname]);
 
-  /** Android Share Intent → messenger composer. Files arrive via expo-share-intent
-   *  (intent filters configured in app.json). We upload each file to /api/messenger/upload,
-   *  stage the resulting Attachment objects in a module-level queue, then push the
-   *  user into the messenger tab. The composer drains the queue into its `pending`
-   *  state so the attachments appear pre-staged. */
-  const { hasShareIntent, shareIntent, resetShareIntent } = useShareIntent();
+  /** Android Share Intent → drop the user into the messenger tab. The XMTP composer
+   *  doesn't yet support pre-staged attachments (the daemon-routed upload pipeline
+   *  is gone); for now we just navigate, and the user can re-pick the file via the
+   *  composer's picker once a conversation is open. */
+  const { hasShareIntent, resetShareIntent } = useShareIntent();
   useEffect(() => {
-    if (!hasShareIntent || !shareIntent) return;
-    void (async (): Promise<void> => {
-      const cfg = await loadConfig();
-      if (!cfg || !isConfigured(cfg)) { resetShareIntent(); return; }
-      const files = shareIntent.files ?? [];
-      for (const f of files) {
-        try {
-          const att = await uploadAttachment(
-            cfg.daemonUrl, cfg.token, f.path,
-            f.mimeType ?? 'application/octet-stream',
-            f.fileName ?? undefined,
-          );
-          pushStagedAttachments(att);
-        } catch { /* ignore individual upload failures */ }
-      }
-      resetShareIntent();
-      router.push('/(tabs)/messenger');
-    })();
-  }, [hasShareIntent, shareIntent, resetShareIntent, router]);
+    if (!hasShareIntent) return;
+    resetShareIntent();
+    router.push('/(tabs)/messenger');
+  }, [hasShareIntent, resetShareIntent, router]);
 
   /** Calibre — matches sx-monorepo's typography. Two weights: medium (default) + semibold (headers/buttons).
-   *  TTF (not WOFF2) so Android'​s native Typeface loader can pick it up — expo-font's WOFF2
+   *  TTF (not WOFF2) so Android's native Typeface loader can pick it up — expo-font's WOFF2
    *  support is web-only. */
   const [loaded] = useFonts({
     'Calibre-Medium': require('../assets/fonts/Calibre-Medium-Custom.ttf'),
@@ -119,6 +84,7 @@ export default function RootLayout(): React.ReactElement {
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="event/[id]" options={{ title: 'Event' }} />
+        <Stack.Screen name="xmtp/[convId]" options={{ headerShown: false }} />
       </Stack>
       </KeyboardProvider>
     </GestureHandlerRootView>
