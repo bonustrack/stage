@@ -224,6 +224,17 @@ export const ASK_QUESTION_MEMBERS = [
   '0x25391bddaa8d7ecdfe183615c1005259cd3b79d5', // Less
 ] as const;
 
+/** Find or create a DM with a peer by Ethereum address. Returns the conv id
+ *  ready to push into `/xmtp/[convId]`. Used from the per-user profile page'​s
+ *  "Open chat" button. */
+export async function openDmWithAddress(address: string): Promise<string> {
+  const client = await getOrCreateXmtpClient('production');
+  const dm = await client.conversations.findOrCreateDmWithIdentity(
+    new PublicIdentity(address, 'ETHEREUM'),
+  );
+  return dm.id;
+}
+
 /** Spin up a 3-party group with the local user, claude, and Less. The local
  *  wallet is implicitly added as the creator; any address in ASK_QUESTION_MEMBERS
  *  that matches the local wallet (i.e. when Less or claude themselves tap the

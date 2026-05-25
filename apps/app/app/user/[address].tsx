@@ -9,7 +9,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
-import { shortAddress, stampBoxAvatarUrl } from '../../lib/xmtp';
+import { shortAddress, stampBoxAvatarUrl, openDmWithAddress } from '../../lib/xmtp';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { readProfile } from '../../lib/profile';
 import { type SnapshotProfile } from '../../../_shared/profile/snapshot';
@@ -31,12 +31,24 @@ export default function UserProfileView(): React.ReactElement {
   const addr = address ?? '';
 
   const [profile, setProfile] = useState<SnapshotProfile | null>(null);
+  const [openingDm, setOpeningDm] = useState(false);
   useEffect(() => {
     if (!addr) return;
     let cancelled = false;
     void readProfile(addr).then(p => { if (!cancelled) setProfile(p); });
     return (): void => { cancelled = true; };
   }, [addr]);
+
+  const onMessage = async (): Promise<void> => {
+    if (!addr || openingDm) return;
+    setOpeningDm(true);
+    try {
+      const convId = await openDmWithAddress(addr);
+      router.replace({ pathname: '/xmtp/[convId]', params: { convId } });
+    } catch (e) {
+      console.warn('openDmWithAddress failed', (e as Error).message);
+    } finally { setOpeningDm(false); }
+  };
 
   const copy = (value: string): void => { void Clipboard.setStringAsync(value); };
 
@@ -75,10 +87,26 @@ export default function UserProfileView(): React.ReactElement {
           {profile?.about?.trim() ? (
             <Text style={{
               color: sub, fontSize: 14, marginTop: 6, paddingHorizontal: 32, textAlign: 'center',
+              fontFamily: 'Calibre-Medium',
             }}>
               {profile.about}
             </Text>
           ) : null}
+          <Pressable
+            onPress={() => { void onMessage(); }}
+            disabled={openingDm}
+            style={({ pressed }) => ({
+              marginTop: 18, paddingHorizontal: 28, paddingVertical: 12,
+              borderRadius: 999, backgroundColor: '#ffffff',
+              shadowColor: '#000000', shadowOpacity: 0.18, shadowRadius: 8, shadowOffset: { width: 0, height: 2 },
+              elevation: 4,
+              opacity: pressed ? 0.85 : openingDm ? 0.6 : 1,
+            })}
+          >
+            <Text style={{ color: '#000000', fontSize: 15, fontFamily: 'Calibre-Medium' }}>
+              {openingDm ? 'Opening…' : 'Message'}
+            </Text>
+          </Pressable>
         </View>
 
         <Pressable onPress={() => copy(addr)}>
