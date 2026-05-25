@@ -86,7 +86,7 @@ function HeaderAvatars({ peerAddr, memberAddrs, bg }: {
           alignItems: 'center', justifyContent: 'center',
           borderWidth: 2, borderColor: bg, marginLeft: -8,
         }}>
-          <Text style={{ color: '#ffffff', fontSize: 9 }}>+{overflow}</Text>
+          <Text style={{ color: '#ffffff', fontSize: 9 , fontFamily: 'Calibre-Medium'}}>+{overflow}</Text>
         </View>
       ) : null}
     </View>
@@ -326,7 +326,7 @@ export default function XmtpConversation(): React.ReactElement {
               width: 6, height: 6, borderRadius: 999,
               backgroundColor: status === 'connecting' ? '#c0a06e' : '#d96868',
             }} />
-            <Text style={{ color: sub, fontSize: 11 }}>
+            <Text style={{ color: sub, fontSize: 11 , fontFamily: 'Calibre-Medium'}}>
               {status === 'connecting' ? 'Connecting…' : status === 'error' ? 'Reconnecting…' : 'Offline'}
             </Text>
           </View>
@@ -434,16 +434,16 @@ function BubbleActionMenu({
           </View>
           <Pressable onPress={onReply} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}>
             <HeroIcon name="reply" size={20} color={fg} />
-            <Text style={{ color: fg, fontSize: 16 }}>Reply</Text>
+            <Text style={{ color: fg, fontSize: 16 , fontFamily: 'Calibre-Medium'}}>Reply</Text>
           </Pressable>
           {target?.text ? (
             <Pressable onPress={onCopy} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}>
               <HeroIcon name="copy" size={20} color={fg} />
-              <Text style={{ color: fg, fontSize: 16 }}>Copy text</Text>
+              <Text style={{ color: fg, fontSize: 16 , fontFamily: 'Calibre-Medium'}}>Copy text</Text>
             </Pressable>
           ) : null}
           <Pressable onPress={onClose} style={{ paddingVertical: 10, alignItems: 'center' }}>
-            <Text style={{ color: sub, fontSize: 14 }}>Cancel</Text>
+            <Text style={{ color: sub, fontSize: 14 , fontFamily: 'Calibre-Medium'}}>Cancel</Text>
           </Pressable>
         </Pressable>
       </Pressable>

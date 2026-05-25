@@ -51,7 +51,7 @@ function AttachmentView({ att, fullUrl, fg, sub }: {
       }}
     >
       <HeroIcon name="paperClip" size={16} color={fg} />
-      <Text style={{ color: fg, fontSize: 13, flexShrink: 1 }} numberOfLines={1}>{label}</Text>
+      <Text style={{ color: fg, fontSize: 13, flexShrink: 1 , fontFamily: 'Calibre-Medium'}} numberOfLines={1}>{label}</Text>
     </Pressable>
   );
 }
@@ -342,7 +342,7 @@ export function MessengerBubble({
             alignSelf: 'stretch', borderLeftWidth: 2, borderLeftColor: sub,
             paddingLeft: 6, marginBottom: 4, opacity: 0.7,
           }}>
-            <Text style={{ color: fg, fontSize: 12, fontStyle: 'italic' }} numberOfLines={2}>
+            <Text style={{ color: fg, fontSize: 12, fontStyle: 'italic' , fontFamily: 'Calibre-Medium'}} numberOfLines={2}>
               {replyPreview}
             </Text>
           </View>
@@ -381,7 +381,7 @@ export function MessengerBubble({
           /** Fresh audio bubble + transcription still running. Old audio without a transcript
            *  (predates the pipeline or its event was dropped) gets nothing rather than
            *  a forever "transcribing…" placeholder. */
-          <Text style={{ color: sub, opacity: 0.6, fontSize: 13, fontStyle: 'italic', marginTop: 4 }}>
+          <Text style={{ color: sub, opacity: 0.6, fontSize: 13, fontStyle: 'italic', marginTop: 4 , fontFamily: 'Calibre-Medium'}}>
             transcribing…
           </Text>
         ) : null}
@@ -400,7 +400,7 @@ export function MessengerBubble({
               <HeroIcon name="reply" size={14} color={sub} />
             </Pressable>
           ) : null}
-          <Text style={{ color: sub, fontSize: 10 }}>{fmtTs(entry.ts)}</Text>
+          <Text style={{ color: sub, fontSize: 10 , fontFamily: 'Calibre-Medium'}}>{fmtTs(entry.ts)}</Text>
         </View>
       </Pressable>
       {reactions && reactions.size > 0 ? (
@@ -410,8 +410,8 @@ export function MessengerBubble({
               flexDirection: 'row', alignItems: 'center', gap: 4,
               paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, backgroundColor: pillBg,
             }}>
-              <Text style={{ fontSize: 13 }}>{emoji}</Text>
-              <Text style={{ fontSize: 11, color: sub }}>{count}</Text>
+              <Text style={{ fontSize: 13 , fontFamily: 'Calibre-Medium'}}>{emoji}</Text>
+              <Text style={{ fontSize: 11, color: sub , fontFamily: 'Calibre-Medium'}}>{count}</Text>
             </View>
           ))}
         </View>

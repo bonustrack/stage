@@ -206,8 +206,8 @@ export function MessengerComposer({
       {replyingTo ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingBottom: 6 }}>
           <View style={{ flex: 1, borderLeftWidth: 2, borderLeftColor: sub, paddingLeft: 8 }}>
-            <Text style={{ color: sub, fontSize: 10 }}>Replying to</Text>
-            <Text style={{ color: fg, fontSize: 12 }} numberOfLines={1}>{replyingTo.preview}</Text>
+            <Text style={{ color: sub, fontSize: 10 , fontFamily: 'Calibre-Medium'}}>Replying to</Text>
+            <Text style={{ color: fg, fontSize: 12 , fontFamily: 'Calibre-Medium'}} numberOfLines={1}>{replyingTo.preview}</Text>
           </View>
           <Pressable onPress={onClearReply} hitSlop={6}><HeroIcon name="x" size={16} color={sub} /></Pressable>
         </View>
@@ -237,7 +237,7 @@ export function MessengerComposer({
                     <HeroIcon name="x" size={12} color="#ffffff" />
                   </Pressable>
                 </View>
-                <Text style={{ color: fg, fontSize: 11, width: 72, textAlign: 'center' }} numberOfLines={1}>
+                <Text style={{ color: fg, fontSize: 11, width: 72, textAlign: 'center' , fontFamily: 'Calibre-Medium'}} numberOfLines={1}>
                   {a.name ?? a.id}
                 </Text>
               </View>
@@ -250,7 +250,7 @@ export function MessengerComposer({
                 borderRadius: 12, backgroundColor: chipBg,
               }}>
                 <HeroIcon name={kindIcon(a.kind)} size={14} color={fg} />
-                <Text style={{ color: fg, fontSize: 12, maxWidth: 140 }} numberOfLines={1}>{a.name ?? a.id}</Text>
+                <Text style={{ color: fg, fontSize: 12, maxWidth: 140 , fontFamily: 'Calibre-Medium'}} numberOfLines={1}>{a.name ?? a.id}</Text>
                 <Pressable onPress={() => setPending(prev => prev.filter((_, j) => j !== i))} hitSlop={6}>
                   <HeroIcon name="x" size={14} color={sub} />
                 </Pressable>

@@ -90,7 +90,7 @@ export function MessengerAudioPlayer({ uri, fg, sub }: Props): React.ReactElemen
           paddingHorizontal: 4,
         }}>{rate}x</Text>
       </Pressable>
-      <Text style={{ color: fg, fontSize: 11, opacity: 0.6, minWidth: 36, textAlign: 'right' }}>
+      <Text style={{ color: fg, fontSize: 11, opacity: 0.6, minWidth: 36, textAlign: 'right' , fontFamily: 'Calibre-Medium'}}>
         {playing ? fmt(position) : fmt(duration || position)}
       </Text>
     </View>
