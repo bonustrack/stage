@@ -33,6 +33,8 @@ const XMTP_CODECS = [
   new RemoteAttachmentCodec(),
 ];
 import type { HistoryEntry } from './types';
+import { loadOrCreateAccount, loadOrCreateWalletClient, resetAccount } from './wallet';
+import type { WalletClient } from 'viem';
 
 export type XmtpEnv = 'production' | 'dev' | 'local';
 
@@ -81,24 +83,30 @@ async function ensureDbDir(): Promise<string> {
 }
 
 /** Lazily build the XMTP client. Returns a singleton — repeat calls share the instance.
- *  Called from the app's root effect on startup. */
+ *  Called from the app's root effect on startup. The XMTP identity is bootstrapped
+ *  from the local EOA in `lib/wallet.ts`, so the same address signs both XMTP
+ *  registration and Snapshot profile updates. */
 let cachedClient: Client | null = null;
 export async function getOrCreateXmtpClient(env: XmtpEnv = 'production'): Promise<Client> {
   if (cachedClient) return cachedClient;
   const dbDirectory = await ensureDbDir();
   const dbEncryptionKey = await loadOrCreateDbKey();
   const opts = { env, dbDirectory, dbEncryptionKey, codecs: XMTP_CODECS };
+  const account = await loadOrCreateAccount();
   const savedAddress = await SecureStore.getItemAsync(ADDRESS_KEY).catch(() => null);
   const savedEnv = await SecureStore.getItemAsync(ENV_KEY).catch(() => null);
-  /** Rebuild only if we have a saved address AND it matches the current env (different
-   *  networks → different inboxes). Otherwise start fresh. */
-  if (savedAddress && savedEnv === env) {
+  /** Rebuild only if we have a saved address that matches the local EOA AND the env. */
+  if (savedAddress && savedEnv === env
+    && savedAddress.toLowerCase() === account.address.toLowerCase()) {
     try {
       cachedClient = await Client.build(new PublicIdentity(savedAddress, 'ETHEREUM'), opts);
       return cachedClient;
-    } catch { /* fall through to createRandom if rebuild failed */ }
+    } catch { /* fall through to create() if rebuild failed */ }
   }
-  cachedClient = await Client.createRandom(opts);
+  /** XMTP registers a new installation by asking the EOA to sign its handshake
+   *  challenge. Pure-JS viem signing — no user-facing prompt. */
+  const wallet = await loadOrCreateWalletClient();
+  cachedClient = await Client.create(wallet as unknown as WalletClient, opts);
   await SecureStore.setItemAsync(ADDRESS_KEY, cachedClient.publicIdentity.identifier);
   await SecureStore.setItemAsync(ENV_KEY, env);
   return cachedClient;
@@ -106,13 +114,14 @@ export async function getOrCreateXmtpClient(env: XmtpEnv = 'production'): Promis
 
 export function getCachedXmtpClient(): Client | null { return cachedClient; }
 
-/** Drop the local XMTP identity (key store + cached client). Next call to
- *  `getOrCreateXmtpClient` will mint a fresh wallet. */
+/** Drop the local XMTP identity AND the EOA backing it (key store + cached client).
+ *  Next call to `getOrCreateXmtpClient` will mint a fresh wallet + inbox. */
 export async function resetXmtpClient(): Promise<void> {
   cachedClient = null;
   await SecureStore.deleteItemAsync(ADDRESS_KEY).catch(() => undefined);
   await SecureStore.deleteItemAsync(ENV_KEY).catch(() => undefined);
   await SecureStore.deleteItemAsync(DB_ENCRYPTION_KEY).catch(() => undefined);
+  await resetAccount();
   const dir = dbDirObj();
   if (dir.exists) dir.delete();
 }

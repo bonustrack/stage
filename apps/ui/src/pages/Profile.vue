@@ -1,20 +1,34 @@
 <script setup lang="ts">
-/** Profile tab — big stamp avatar + wallet + xmtp inbox id. Web build skips the
- *  push-token card (no push on web). */
+/** Profile tab — wallet identity + Snapshot-hub profile (display name, bio,
+ *  custom avatar, socials). Tap Edit to open the EIP-712 update sheet. */
 
-import { getOrCreateXmtpClient, stampBoxAvatarUrl, shortAddress } from '../lib/xmtp';
+import { getOrCreateXmtpClient, shortAddress } from '../lib/xmtp';
+import { loadCachedProfile, readProfile, type SnapshotProfile } from '../lib/profile';
+import { avatarRenderUrl } from '@shared/profile/snapshot';
 
 const AVATAR_SIZE = 120;
 
 const address = ref('');
 const inboxId = ref('');
+const profile = ref<SnapshotProfile>({});
+const editing = ref(false);
 const copyHint = ref<'address' | 'inboxId' | null>(null);
+
+const displayName = computed(() =>
+  profile.value.name?.trim() || (address.value ? shortAddress(address.value) : 'Loading…'),
+);
 
 onMounted(async () => {
   try {
     const client = await getOrCreateXmtpClient('production');
     address.value = client.accountIdentifier?.identifier ?? '';
     inboxId.value = client.inboxId ?? '';
+    const cached = loadCachedProfile();
+    if (cached) profile.value = cached;
+    if (address.value) {
+      const remote = await readProfile(address.value);
+      if (remote) profile.value = remote;
+    }
   } catch { /* leave fields blank */ }
 });
 
@@ -30,26 +44,35 @@ async function copy(value: string, label: 'address' | 'inboxId'): Promise<void> 
 
 <template>
   <div class="min-h-screen">
-    <div class="px-4 pt-4 pb-2">
+    <div class="flex items-center justify-between px-4 pt-4 pb-2">
       <h1 class="font-head text-xl text-metro-fg-light dark:text-metro-fg-dark">Profile</h1>
+      <button
+        v-if="address" type="button"
+        class="font-head text-sm text-metro-fg-light dark:text-metro-fg-dark"
+        @click="editing = true"
+      >Edit</button>
     </div>
 
     <div class="flex flex-col items-center pt-6 pb-4">
       <img v-if="address"
-        :src="stampBoxAvatarUrl(address, AVATAR_SIZE * 2)"
+        :src="avatarRenderUrl(address, profile.avatar, AVATAR_SIZE * 2)"
         alt=""
         :width="AVATAR_SIZE" :height="AVATAR_SIZE"
-        class="rounded-full bg-metro-border-dark"
+        class="rounded-full bg-metro-border-dark object-cover"
+        :style="{ width: `${AVATAR_SIZE}px`, height: `${AVATAR_SIZE}px` }"
       />
       <div v-else class="rounded-full bg-metro-border-dark" :style="{ width: `${AVATAR_SIZE}px`, height: `${AVATAR_SIZE}px` }" />
-      <div class="font-head text-base text-metro-fg-light dark:text-metro-fg-dark mt-3.5">
-        {{ address ? shortAddress(address) : 'Loading…' }}
+      <div class="font-head text-lg text-metro-fg-light dark:text-metro-fg-dark mt-3.5">
+        {{ displayName }}
+      </div>
+      <div v-if="profile.about"
+        class="text-[13px] text-metro-sub-light dark:text-metro-sub-dark mt-1.5 px-6 text-center max-w-md">
+        {{ profile.about }}
       </div>
     </div>
 
     <button
-      v-if="address"
-      type="button"
+      v-if="address" type="button"
       class="block w-[calc(100%-2rem)] mx-4 mt-2 p-3 rounded-xl text-left
         bg-metro-surface-light dark:bg-metro-surface-dark
         border border-metro-border-light dark:border-metro-border-dark"
@@ -64,8 +87,7 @@ async function copy(value: string, label: 'address' | 'inboxId'): Promise<void> 
     </button>
 
     <button
-      v-if="inboxId"
-      type="button"
+      v-if="inboxId" type="button"
       class="block w-[calc(100%-2rem)] mx-4 mt-3 p-3 rounded-xl text-left
         bg-metro-surface-light dark:bg-metro-surface-dark
         border border-metro-border-light dark:border-metro-border-dark"
@@ -78,5 +100,11 @@ async function copy(value: string, label: 'address' | 'inboxId'): Promise<void> 
         {{ inboxId }}
       </div>
     </button>
+
+    <EditProfileModal
+      :open="editing" :address="address" :initial="profile"
+      @close="editing = false"
+      @saved="next => profile = next"
+    />
   </div>
 </template>
