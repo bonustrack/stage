@@ -86,6 +86,13 @@ async function summarize(conv: Conversation): Promise<Row> {
 }
 
 
+/** Module-level cache of the channel-list rows. Survives navigation between
+ *  tabs so re-mounting the Channels screen renders the previously-known list
+ *  instantly and the "Initialising XMTP…" spinner only shows on the very first
+ *  open (when there's nothing to display). Each successful fresh fetch writes
+ *  back into the cache. Lives for the lifetime of the JS process. */
+let cachedRowsModule: Row[] | null = null;
+
 export default function Messenger(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
@@ -94,7 +101,7 @@ export default function Messenger(): React.ReactElement {
   const bg = dark ? '#000000' : '#ffffff';
   const border = dark ? '#262c38' : '#e3e7ef';
   const rowBg = dark ? '#161a22' : '#fafbfd';
-  const [rows, setRows] = useState<Row[] | null>(null);
+  const [rows, setRows] = useState<Row[] | null>(cachedRowsModule);
   const [error, setError] = useState<string>('');
   const [query, setQuery] = useState<string>('');
   const [creatingAsk, setCreatingAsk] = useState(false);
@@ -144,15 +151,18 @@ export default function Messenger(): React.ReactElement {
         clearTimeout(initTimer);
         summarized.sort((a, b) => (b.lastTs ?? 0) - (a.lastTs ?? 0));
         setRows(summarized);
+        cachedRowsModule = summarized;
         /** Subscribe to newly-created conversations so groups + DMs created
          *  while the tab is mounted show up without a manual refresh. */
         try {
           cancelConvStream = await client.conversations.stream(async (conv) => {
             if (cancelled || !conv) return;
             const r = await summarize(conv);
-            setRows(prev => prev
-              ? [r, ...prev.filter(x => x.convId !== r.convId)]
-              : [r]);
+            setRows(prev => {
+              const next = prev ? [r, ...prev.filter(x => x.convId !== r.convId)] : [r];
+              cachedRowsModule = next;
+              return next;
+            });
           }) ?? null;
         } catch { /* stream init failed — the next mount will pick things up */ }
         /** Subscribe to every new message across all convs so the per-row
@@ -174,7 +184,9 @@ export default function Messenger(): React.ReactElement {
               const cur = prev[idx]!;
               const newAvatar = cur.inboxToAddr[msg.senderInboxId ?? ''] ?? cur.avatarAddress;
               const updated = { ...cur, lastTs, lastPreview, avatarAddress: newAvatar };
-              return [updated, ...prev.slice(0, idx), ...prev.slice(idx + 1)];
+              const next = [updated, ...prev.slice(0, idx), ...prev.slice(idx + 1)];
+              cachedRowsModule = next;
+              return next;
             });
           }) ?? null;
         } catch { /* message stream init failed — preview will lag */ }
