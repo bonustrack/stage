@@ -233,10 +233,13 @@ async function handleCall({ id, action, args }: CallMsg): Promise<void> {
       const { line, replyTo, text } = args as { line: string; replyTo: string; text: string };
       const conv = await convOf(line);
       if (!conv) throw new Error(`conversation not found for ${line}`);
+      /** node-bindings' Reply.content is an `EncodedContent` (needs `parameters`+`content`
+       *  bytes), not a raw string — use `encodeText` to wrap the text codec output. */
+      const { encodeText } = await import('@xmtp/node-bindings');
       const sentId = await conv.sendReply({
-        reference: replyTo, content: text,
+        reference: replyTo, content: encodeText(text),
         contentType: { authorityId: 'xmtp.org', typeId: 'text', versionMajor: 1, versionMinor: 0 },
-      });
+      } as unknown as Reply);
       emitOutbound(line, sentId, text);
       respond(id, { result: { messageId: sentId } });
     } else if (action === 'sendAttachment') {
