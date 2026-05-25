@@ -127,7 +127,8 @@ export default function XmtpConversation(): React.ReactElement {
   const [peerAddr, setPeerAddr] = useState<string | null>(null);
   const [memberAddrs, setMemberAddrs] = useState<string[]>([]);
   const [inboxToAddr, setInboxToAddr] = useState<Record<string, string>>({});
-  const [groupName, setGroupName] = useState<string>('');
+  /** null = not yet fetched, '' = fetched but no name set, other = the name. */
+  const [groupName, setGroupName] = useState<string | null>(null);
   /** `isGroup` gates the rename UI. We only learn it after `convOfLine`
    *  resolves — DMs don't expose a name field so we suppress the affordance. */
   const [isGroup, setIsGroup] = useState(false);
@@ -331,7 +332,7 @@ export default function XmtpConversation(): React.ReactElement {
           <HeroIcon name="arrowLeft" size={22} color={fg} />
         </Pressable>
         {/** Title slot — group name (tap to rename for groups), no name shown for DMs. */}
-        {isGroup ? (
+        {isGroup && groupName !== null ? (
           <Pressable
             onPress={() => { setRenameDraft(groupName); setRenameOpen(true); }}
             style={{ flex: 1, alignItems: 'flex-start', paddingLeft: 4 }}
