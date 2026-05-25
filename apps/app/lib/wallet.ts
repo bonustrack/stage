@@ -3,6 +3,10 @@
  *  enclave on iOS, keystore on Android); first-launch mints a fresh one. Same
  *  shape the web app uses in `apps/ui/src/lib/xmtp.ts`. */
 
+/** Side-effect import — installs the Math.random crypto.getRandomValues
+ *  polyfill (see lib/cryptoShim.ts). Has to come BEFORE any viem import on
+ *  this file so the module-init crypto check finds a defined function. */
+import './cryptoShim';
 import * as SecureStore from 'expo-secure-store';
 import {
   generatePrivateKey, privateKeyToAccount, type PrivateKeyAccount,
