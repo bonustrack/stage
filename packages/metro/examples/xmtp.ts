@@ -45,6 +45,41 @@ const mintId = (): string => `msg_${Math.random().toString(36).slice(2, 10)}`;
 const SELF_URI = process.env.METRO_SELF_URI ?? '';
 const lineOf = (convId: string): string => `metro://xmtp/${convId}`;
 
+/** Local whisper.cpp transcription. Opt-in via $METRO_WHISPER_MODEL existing on disk.
+ *  Defaults match `packages/metro/src/cli/messenger-transcribe.ts` so a single model
+ *  install serves both the legacy messenger upload path + the XMTP inline-audio path. */
+const WHISPER_BIN = process.env.METRO_WHISPER_BIN ?? 'whisper-cli';
+const WHISPER_MODEL = process.env.METRO_WHISPER_MODEL
+  ?? `${process.env.HOME}/.cache/whisper-cpp/ggml-base.bin`;
+const FFMPEG_BIN = process.env.METRO_FFMPEG_BIN ?? 'ffmpeg';
+async function transcribeAndEmit(audio: Uint8Array, line: string, sourceMsgId: string): Promise<void> {
+  const { existsSync, readFileSync, writeFileSync, unlinkSync, mkdtempSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { spawn } = await import('node:child_process');
+  if (!existsSync(WHISPER_MODEL)) return;
+  const dir = mkdtempSync(join(tmpdir(), 'xmtp-tx-'));
+  const inFile = join(dir, 'in.m4a'); const wav = join(dir, 'in.wav'); const out = join(dir, 'in');
+  const run = (bin: string, args: string[]): Promise<void> => new Promise((res, rej) => {
+    const p = spawn(bin, args, { stdio: 'ignore' });
+    p.on('error', rej); p.on('exit', c => c === 0 ? res() : rej(new Error(`${bin} ${c}`)));
+  });
+  try {
+    writeFileSync(inFile, audio);
+    await run(FFMPEG_BIN, ['-y', '-i', inFile, '-ar', '16000', '-ac', '1', wav]);
+    await run(WHISPER_BIN, ['-m', WHISPER_MODEL, '-f', wav, '--output-txt', '-of', out]);
+    const text = readFileSync(`${out}.txt`, 'utf8').trim();
+    if (!text) return;
+    emit({
+      kind: 'inbound', id: mintId(), ts: new Date().toISOString(),
+      station: 'xmtp', line, from: SELF_URI,
+      text: `🎙️ ${text}`,
+      payload: { contentType: 'transcript', transcribeFor: sourceMsgId, transcript: text },
+    });
+  } catch (err) { process.stderr.write(`xmtp transcribe failed: ${(err as Error).message}\n`); }
+  finally { for (const f of [inFile, wav, `${out}.txt`]) { try { unlinkSync(f); } catch { /* ignore */ } } }
+}
+
 const account = privateKeyToAccount(PK as `0x${string}`);
 const signer: Signer = {
   type: 'EOA',
@@ -115,11 +150,16 @@ function envelope(msg: DecodedMessage, conv: Conversation): Record<string, unkno
      *  a separate fetch. Large files (>1MB) bloat history.jsonl; switch to remoteAttachment
      *  on the sender side for those. */
     const dataB64 = Buffer.from(a.content).toString('base64');
-    return {
+    const out = {
       ...base,
       text: `[${kind}: ${a.filename ?? 'attachment'}]`,
       payload: { contentType: typeId, attachments: [{ kind, mime: a.mimeType, name: a.filename, dataB64 }] },
     };
+    /** Audio attachments → kick off whisper.cpp transcription async + emit a follow-up
+     *  event tagged `transcribeFor` so downstream consumers (mobile bubble, agent worker,
+     *  monitor) see the transcript without blocking the main stream. */
+    if (kind === 'audio') void transcribeAndEmit(a.content, base.line, base.id);
+    return out;
   }
   if (typeId === 'remoteStaticAttachment' && c && typeof c === 'object') {
     const r = c as { url: string; filename?: string; contentDigest?: string; nonce?: Uint8Array; salt?: Uint8Array; secret?: Uint8Array; scheme?: string; contentLength?: number };
