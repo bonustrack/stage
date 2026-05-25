@@ -8,6 +8,7 @@ import * as SecureStore from 'expo-secure-store';
 import { Audio } from 'expo-av';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
 import { ComposerGradient } from './ComposerGradient';
 import { HeroIcon, type HeroIconName } from './HeroIcon';
 import { fileUriToBase64, xmtpReply, xmtpSendAttachment, xmtpSendText } from '../lib/xmtp';
@@ -124,6 +125,20 @@ export function MessengerComposer({
     if (r.canceled) return;
     const a = r.assets[0];
     await upload(a.uri, a.mimeType ?? 'application/octet-stream', a.name);
+  };
+
+  /** Share current location as a Google Maps URL text message. Skipping the
+   *  geo: scheme + bespoke attachment shape so any XMTP client that doesn't
+   *  know about location attachments still gets a clickable link. */
+  const pickLocation = async (): Promise<void> => {
+    setErr(null);
+    const perm = await Location.requestForegroundPermissionsAsync();
+    if (!perm.granted) { Alert.alert('Location permission denied'); return; }
+    try {
+      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const url = `https://maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`;
+      await xmtpSendText(xmtpLine, `📍 ${url}`);
+    } catch (e) { setErr((e as Error).message); }
   };
 
   const startRec = async (): Promise<void> => {
@@ -292,7 +307,11 @@ export function MessengerComposer({
       {attachMenuOpen ? (
         <View style={{ flexDirection: 'row', gap: 10, paddingTop: 10 }}>
           {(
-            [['photo', 'Image', pickImage], ['paperClip', 'File', pickFile]] as const
+            [
+              ['photo', 'Image', pickImage],
+              ['paperClip', 'File', pickFile],
+              ['mapPin', 'Location', pickLocation],
+            ] as const
           ).map(([icon, label, action]) => (
             <Pressable
               key={label}
