@@ -3,7 +3,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Animated as RNAnimated, FlatList, Modal, PanResponder, Pressable, Text, View, useColorScheme,
+  Animated as RNAnimated, FlatList, Modal, PanResponder, Pressable, Text, View,
 } from 'react-native';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,6 +17,7 @@ import { HeroIcon } from '../../components/HeroIcon';
 import {
   XMTP_USER_PREFIX, lineOfConv, useXmtpFeed, xmtpReact, xmtpReply,
 } from '../../lib/xmtp';
+import { useEffectiveColorScheme } from '../../lib/theme';
 import type { HistoryEntry } from '../../lib/types';
 
 /** Reaction events decorate their target msg — fold them into per-message,
@@ -48,7 +49,7 @@ function isReaction(e: HistoryEntry): boolean {
 
 export default function XmtpConversation(): React.ReactElement {
   const router = useRouter();
-  const dark = useColorScheme() === 'dark';
+  const dark = useEffectiveColorScheme() === 'dark';
   const fg = dark ? '#e8ecf2' : '#1a1f29';
   const sub = dark ? '#8a94a6' : '#5a6477';
   const bg = dark ? '#000000' : '#ffffff';
@@ -83,7 +84,7 @@ export default function XmtpConversation(): React.ReactElement {
     onMoveShouldSetPanResponder: (_, g) => g.dx > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
     onPanResponderMove: (_, g) => { swipeBackX.setValue(Math.max(0, g.dx)); },
     onPanResponderRelease: (_, g) => {
-      if (g.dx >= 60) router.push('/');
+      if (g.dx >= 60) router.push('/(tabs)/messenger');
       RNAnimated.spring(swipeBackX, { toValue: 0, useNativeDriver: true, speed: 18, bounciness: 6 }).start();
     },
     onPanResponderTerminate: () => {
@@ -218,7 +219,7 @@ export default function XmtpConversation(): React.ReactElement {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
       }}>
         <Pressable
-          onPress={() => router.push('/')}
+          onPress={() => router.push('/(tabs)/messenger')}
           hitSlop={10}
           style={{ position: 'absolute', left: 14, top: insets.top + 4, padding: 6 }}
         >
