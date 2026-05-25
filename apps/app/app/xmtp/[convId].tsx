@@ -278,12 +278,12 @@ export default function XmtpConversation(): React.ReactElement {
       <View style={{
         position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
         height: 44 + insets.top, paddingTop: insets.top, paddingHorizontal: 14, backgroundColor: bg,
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
       }}>
         <Pressable
           onPress={() => router.replace('/')}
           hitSlop={10}
-          style={{ position: 'absolute', left: 14, top: insets.top + 4, padding: 6 }}
+          style={{ padding: 6 }}
         >
           <HeroIcon name="arrowLeft" size={22} color={fg} />
         </Pressable>
