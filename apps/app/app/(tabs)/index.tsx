@@ -12,6 +12,7 @@ import { useRouter } from 'expo-router';
 import type { Conversation, DecodedMessage } from '@xmtp/react-native-sdk';
 import {
   getOrCreateXmtpClient, peerEthAddressOfDm, groupMemberEthAddresses, stampBoxAvatarUrl,
+  createAskQuestionGroup,
 } from '../../lib/xmtp';
 import { useEffectiveColorScheme } from '../../lib/theme';
 
@@ -149,6 +150,20 @@ export default function Messenger(): React.ReactElement {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [error, setError] = useState<string>('');
   const [query, setQuery] = useState<string>('');
+  const [creatingAsk, setCreatingAsk] = useState(false);
+
+  const onAskPress = async (): Promise<void> => {
+    if (creatingAsk) return;
+    setCreatingAsk(true);
+    try {
+      const convId = await createAskQuestionGroup();
+      router.push({ pathname: '/xmtp/[convId]', params: { convId } });
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setCreatingAsk(false);
+    }
+  };
 
   const filtered = useMemo(() => {
     if (!rows) return null;
@@ -191,9 +206,28 @@ export default function Messenger(): React.ReactElement {
     );
   }
 
+  const askBg = dark ? '#1f2630' : '#1a1f29';
+  const askFg = dark ? '#ffffff' : '#ffffff';
+
   return (
     <View style={{ flex: 1, backgroundColor: bg }}>
-      <View style={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 8 }}>
+      <View style={{ paddingHorizontal: 12, paddingTop: 12, paddingBottom: 8 }}>
+        <Pressable
+          onPress={() => { void onAskPress(); }}
+          disabled={creatingAsk}
+          style={({ pressed }) => ({
+            backgroundColor: pressed ? sub : askBg,
+            borderRadius: 12, paddingVertical: 12, paddingHorizontal: 14,
+            alignItems: 'center', justifyContent: 'center',
+            opacity: creatingAsk ? 0.6 : 1,
+          })}
+        >
+          <Text style={{ color: askFg, fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
+            {creatingAsk ? 'Creating group…' : 'Ask a question'}
+          </Text>
+        </Pressable>
+      </View>
+      <View style={{ paddingHorizontal: 12, paddingTop: 4, paddingBottom: 8 }}>
         <TextInput
           value={query}
           onChangeText={setQuery}
