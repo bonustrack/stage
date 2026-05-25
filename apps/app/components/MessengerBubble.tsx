@@ -18,7 +18,12 @@ const REACT_PRESETS = ['👍', '❤️', '😂', '😮', '🔥', '🎉'];
  *  module scope — the lib re-parses input each render anyway. */
 const mdParser = MarkdownIt({ typographer: false, linkify: true, breaks: true });
 
-interface Attachment { id: string; url: string; kind: string; mime: string; size: number; name?: string }
+/** Shape covers both messenger-station attachments (id+url, served by the daemon) and XMTP
+ *  inline attachments (dataB64 carries the raw bytes — no URL exists). */
+interface Attachment {
+  id?: string; url?: string; dataB64?: string;
+  kind: string; mime?: string; size?: number; name?: string;
+}
 
 function fmtTs(ts: string): string {
   try { return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }); }
@@ -325,15 +330,22 @@ export function MessengerBubble({
             </Text>
           </View>
         ) : null}
-        {atts.length > 0 ? <View style={{ alignSelf: 'stretch' }}>{atts.map(a => (
-          <AttachmentView
-            key={a.id}
-            att={a}
-            fg={fg}
-            sub={sub}
-            fullUrl={`${daemonUrl.replace(/\/$/, '')}${a.url}?token=${encodeURIComponent(token)}`}
-          />
-        ))}</View> : null}
+        {atts.length > 0 ? <View style={{ alignSelf: 'stretch' }}>{atts.map((a, i) => {
+          /** XMTP inline attachments carry bytes in `dataB64` — render via data: URI.
+           *  Messenger-station attachments carry a `url` — append the auth token query param. */
+          const fullUrl = a.dataB64
+            ? `data:${a.mime ?? 'application/octet-stream'};base64,${a.dataB64}`
+            : `${daemonUrl.replace(/\/$/, '')}${a.url ?? ''}?token=${encodeURIComponent(token)}`;
+          return (
+            <AttachmentView
+              key={a.id ?? `${entry.id}-att-${i}`}
+              att={a}
+              fg={fg}
+              sub={sub}
+              fullUrl={fullUrl}
+            />
+          );
+        })}</View> : null}
         {/** Markdown wrapped so the lib's internal layout can't bleed into the timestamp row below. */}
         {entry.text ? (
           <View style={{ alignSelf: 'stretch' }}>
