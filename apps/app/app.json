@@ -55,6 +55,12 @@
         {
           "microphonePermission": "Allow Metro to record voice messages."
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Metro to share your current location in chat."
+        }
       ]
     ],
     "notification": {
