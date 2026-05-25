@@ -8,7 +8,7 @@ import {
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardStickyView, useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { MessengerBubble } from '../../components/MessengerBubble';
 import { MessengerComposer } from '../../components/MessengerComposer';
@@ -27,11 +27,15 @@ import { registerForPush, setMessengerActive } from '../../lib/push';
 import { fetchHistoryPage, useTail } from '../../lib/sse';
 import type { HistoryEntry } from '../../lib/types';
 
-const MESSENGER_LINE = 'metro://messenger/owner';
+const DEFAULT_LINE = 'metro://messenger/owner';
 const MESSENGER_USER = 'metro://messenger/user/owner';
 
 export default function Messenger(): React.ReactElement {
   const router = useRouter();
+  /** `?line=` route param drives multi-channel routing; falls back to the original solo line. */
+  const params = useLocalSearchParams<{ line?: string }>();
+  const MESSENGER_LINE = typeof params.line === 'string' && params.line.startsWith('metro://messenger/')
+    ? params.line : DEFAULT_LINE;
   const dark = useColorScheme() === 'dark';
   const fg = dark ? '#e8ecf2' : '#1a1f29';
   const sub = dark ? '#8a94a6' : '#5a6477';
@@ -250,9 +254,9 @@ export default function Messenger(): React.ReactElement {
     e.text?.slice(0, 80) || `[${(e.payload as { attachments?: { kind: string }[] } | undefined)?.attachments?.[0]?.kind ?? 'attachment'}]`;
   const onReact = useCallback((messageId: string, emoji: string) => {
     if (!cfg) return;
-    void reactMessenger(cfg.daemonUrl, cfg.token, messageId, emoji)
+    void reactMessenger(cfg.daemonUrl, cfg.token, messageId, emoji, MESSENGER_LINE)
       .catch((e: unknown) => { console.warn('react failed', e); });
-  }, [cfg]);
+  }, [cfg, MESSENGER_LINE]);
 
   if (cfg && !isConfigured(cfg)) {
     return (
@@ -332,7 +336,7 @@ export default function Messenger(): React.ReactElement {
             onLongPress={() => setMenuFor(item)}
             onAnswer={(label) => {
               if (!cfg) return;
-              void sendMessenger(cfg.daemonUrl, cfg.token, label, [], item.id)
+              void sendMessenger(cfg.daemonUrl, cfg.token, label, [], item.id, MESSENGER_LINE)
                 .catch((e: unknown) => { console.warn('answer send failed', e); });
             }}
           />
@@ -401,7 +405,7 @@ export default function Messenger(): React.ReactElement {
       {cfg ? (
         <KeyboardStickyView offset={{ opened: insets.bottom }}>
         <MessengerComposer
-          daemonUrl={cfg.daemonUrl} token={cfg.token} dark={dark}
+          daemonUrl={cfg.daemonUrl} token={cfg.token} dark={dark} line={MESSENGER_LINE}
           replyingTo={replyingTo ?? undefined}
           onClearReply={() => setReplyingTo(null)}
           onOptimistic={({ localId, text, attachments, replyTo }) => {

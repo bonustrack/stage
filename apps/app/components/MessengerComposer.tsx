@@ -19,6 +19,8 @@ const DRAFT_KEY = 'messenger-composer-draft';
 
 interface Props {
   daemonUrl: string; token: string; dark: boolean;
+  /** Channel line for this composer. Defaults to the back-compat solo line. */
+  line?: string;
   replyingTo?: { id: string; preview: string };
   onClearReply?: () => void;
   /** Optimistic-render hook: invoked the moment the user taps send, before the API call. */
@@ -29,7 +31,9 @@ function chipImageUrl(daemonUrl: string, token: string, url: string): string {
   return `${daemonUrl.replace(/\/$/, '')}${url}?token=${encodeURIComponent(token)}`;
 }
 
-export function MessengerComposer({ daemonUrl, token, dark, replyingTo, onClearReply, onOptimistic }: Props): React.ReactElement {
+export function MessengerComposer({
+  daemonUrl, token, dark, line, replyingTo, onClearReply, onOptimistic,
+}: Props): React.ReactElement {
   const fg = dark ? '#e8ecf2' : '#1a1f29';
   const sub = dark ? '#8a94a6' : '#5a6477';
   const inputBg = dark ? '#16191f' : '#f3f5f9';
@@ -128,7 +132,7 @@ export function MessengerComposer({ daemonUrl, token, dark, replyingTo, onClearR
     setText(''); setPending([]); onClearReply?.();
     setSending(true); setErr(null);
     try {
-      await sendMessenger(daemonUrl, token, body, pending, replyingTo?.id);
+      await sendMessenger(daemonUrl, token, body, pending, replyingTo?.id, line);
     } catch (e) { setErr((e as Error).message); }
     finally { setSending(false); }
   };
