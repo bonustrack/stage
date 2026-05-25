@@ -10,22 +10,28 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { ComposerGradient } from './ComposerGradient';
 import { HeroIcon, type HeroIconName } from './HeroIcon';
-import { sendMessenger, uploadAttachment, type Attachment } from '../lib/messenger';
-import { drainStagedAttachments, hasStagedAttachments } from '../lib/share-intent-staging';
 import { fileUriToBase64, xmtpReply, xmtpSendAttachment, xmtpSendText } from '../lib/xmtp';
+
+/** Composer-local representation of a staged attachment. `url` is a `file://` URI in xmtp
+ *  mode (the only mode the mobile composer supports now). `id` is a client-side dedupe key. */
+interface Attachment {
+  id: string; url: string; kind: string; mime: string; size: number; name?: string;
+}
 
 /** Persist composer draft across app restarts so typed-but-unsent text survives a
  *  force-close. Mirrors how iMessage / WhatsApp keep your half-finished reply. */
 const DRAFT_KEY = 'messenger-composer-draft';
 
 interface Props {
-  daemonUrl: string; token: string; dark: boolean;
-  /** When set (= `metro://xmtp/<convId>`), the composer skips the daemon entirely and
-   *  sends text/attachments/replies via the local XMTP client. The `daemonUrl`/`token`
-   *  pair is ignored for sending in that mode, but still used to build the image chip
-   *  thumbnail URL — fine because the staged-attachment chip uses the local file URI
-   *  directly in xmtp mode (`a.url` is the file:// path, not a daemon route). */
-  xmtpLine?: string;
+  dark: boolean;
+  /** Target XMTP conversation line URI (`metro://xmtp/<convId>`). Required — the
+   *  mobile composer only supports the XMTP transport now (the daemon-routed
+   *  messenger pipeline was removed). */
+  xmtpLine: string;
+  /** Legacy props kept for API stability with parent screens that pass them; ignored
+   *  now that the daemon pipeline is gone. */
+  daemonUrl?: string;
+  token?: string;
   replyingTo?: { id: string; preview: string };
   onClearReply?: () => void;
   /** Optimistic-render hook: invoked the moment the user taps send, before the API call. */
@@ -36,21 +42,16 @@ interface Props {
   onSent?: (localId: string, error?: string) => void;
 }
 
-function chipImageUrl(daemonUrl: string, token: string, url: string): string {
-  return `${daemonUrl.replace(/\/$/, '')}${url}?token=${encodeURIComponent(token)}`;
-}
-
 export function MessengerComposer({
-  daemonUrl, token, dark, xmtpLine, replyingTo, onClearReply, onOptimistic, onSent,
+  dark, xmtpLine, replyingTo, onClearReply, onOptimistic, onSent,
 }: Props): React.ReactElement {
-  const xmtpMode = !!xmtpLine;
   const fg = dark ? '#e8ecf2' : '#1a1f29';
   const sub = dark ? '#8a94a6' : '#5a6477';
   const inputBg = dark ? '#16191f' : '#f3f5f9';
   const chipBg = dark ? '#1d2230' : '#eef1f7';
 
   const [text, setText] = useState('');
-  const [pending, setPending] = useState<Attachment[]>(() => drainStagedAttachments());
+  const [pending, setPending] = useState<Attachment[]>([]);
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -85,31 +86,25 @@ export function MessengerComposer({
   const upload = async (uri: string, mime: string, name?: string): Promise<void> => {
     setUploading(true);
     try {
-      if (xmtpMode) {
-        /** In xmtp mode the daemon isn't involved — we just stage the local file URI
-         *  and base64-encode at send time. The chip uses `url` as a render hint
-         *  (`file://...` works with `Image` source on RN), and `id` is just a
-         *  client-side dedupe key.
-         *
-         *  Pre-flight the file size: libxmtp's native side silently drops oversize
-         *  attachments without raising a JS error (the send "succeeds" but the message
-         *  never publishes). Reject in the composer where the user sees the error
-         *  instead of staring at a ghost bubble. */
-        const head = await fetch(uri);
-        const blob = await head.blob();
-        const XMTP_INLINE_MAX = 800 * 1024;
-        if (blob.size > XMTP_INLINE_MAX) {
-          throw new Error(`Image is ${(blob.size / 1024).toFixed(0)} KB — XMTP inline limit ~${XMTP_INLINE_MAX / 1024} KB. Pick a smaller image (or take a screenshot/crop).`);
-        }
-        const kind = mime.startsWith('image/') ? 'image'
-          : mime.startsWith('audio/') ? 'audio'
-            : mime.startsWith('video/') ? 'video' : 'file';
-        const id = `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-        setPending(prev => [...prev, { id, url: uri, kind, mime, size: blob.size, name }]);
-      } else {
-        const att = await uploadAttachment(daemonUrl, token, uri, mime, name);
-        setPending(prev => [...prev, att]);
+      /** Stage the local file URI and base64-encode at send time. The chip uses `url`
+       *  as a render hint (`file://...` works with `Image` source on RN), and `id` is
+       *  just a client-side dedupe key.
+       *
+       *  Pre-flight the file size: libxmtp's native side silently drops oversize
+       *  attachments without raising a JS error (the send "succeeds" but the message
+       *  never publishes). Reject in the composer where the user sees the error
+       *  instead of staring at a ghost bubble. */
+      const head = await fetch(uri);
+      const blob = await head.blob();
+      const XMTP_INLINE_MAX = 800 * 1024;
+      if (blob.size > XMTP_INLINE_MAX) {
+        throw new Error(`Image is ${(blob.size / 1024).toFixed(0)} KB — XMTP inline limit ~${XMTP_INLINE_MAX / 1024} KB. Pick a smaller image (or take a screenshot/crop).`);
       }
+      const kind = mime.startsWith('image/') ? 'image'
+        : mime.startsWith('audio/') ? 'audio'
+          : mime.startsWith('video/') ? 'video' : 'file';
+      const id = `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      setPending(prev => [...prev, { id, url: uri, kind, mime, size: blob.size, name }]);
     } catch (e) { setErr((e as Error).message); }
     finally { setUploading(false); }
   };
@@ -171,21 +166,17 @@ export function MessengerComposer({
     setSending(true); setErr(null);
     let sendErr: string | undefined;
     try {
-      if (xmtpMode && xmtpLine) {
-        /** XMTP path — send text + each attachment as its own typed message. The body
-         *  is sent as a `reply` when there's a `replyingTo`; standalone attachments
-         *  go as plain `attachment` messages (replies-with-attachments would need a
-         *  ReplyContent wrapping an attachment, not v1). */
-        if (body) {
-          if (sendingReplyTo) await xmtpReply(xmtpLine, sendingReplyTo, body);
-          else await xmtpSendText(xmtpLine, body);
-        }
-        for (const a of sendingAttachments) {
-          const dataB64 = await fileUriToBase64(a.url);
-          await xmtpSendAttachment(xmtpLine, a.name ?? a.id, a.mime, dataB64);
-        }
-      } else {
-        await sendMessenger(daemonUrl, token, body, sendingAttachments, sendingReplyTo);
+      /** Send text + each attachment as its own typed XMTP message. The body is sent as
+       *  a `reply` when there's a `replyingTo`; standalone attachments go as plain
+       *  `attachment` messages (replies-with-attachments would need a ReplyContent
+       *  wrapping an attachment, not v1). */
+      if (body) {
+        if (sendingReplyTo) await xmtpReply(xmtpLine, sendingReplyTo, body);
+        else await xmtpSendText(xmtpLine, body);
+      }
+      for (const a of sendingAttachments) {
+        const dataB64 = await fileUriToBase64(a.url);
+        await xmtpSendAttachment(xmtpLine, a.name ?? a.id, a.mime, dataB64);
       }
     } catch (e) { sendErr = (e as Error).message; setErr(sendErr); }
     finally {
@@ -230,9 +221,8 @@ export function MessengerComposer({
               <View key={a.id} style={{ width: 72, alignItems: 'center', gap: 4 }}>
                 <View>
                   <Image
-                    /** In xmtp mode `a.url` is already a local file:// URI; otherwise it's
-                     *  the daemon-served attachment route that needs auth-token appended. */
-                    source={{ uri: xmtpMode ? a.url : chipImageUrl(daemonUrl, token, a.url) }}
+                    /** `a.url` is a local file:// URI — works directly with RN `Image`. */
+                    source={{ uri: a.url }}
                     style={{ width: 72, height: 72, borderRadius: 8 }}
                     resizeMode="cover"
                   />
