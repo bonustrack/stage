@@ -324,25 +324,27 @@ export default function Messenger(): React.ReactElement {
               <View style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: '#1a1f29' }} />
             )}
             <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={{ color: fg, fontSize: 18, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
-                {item.title}
-              </Text>
-              <Text style={{ color: sub, fontSize: 15, marginTop: 4, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
-                {item.lastPreview || '(no messages yet)'}
-              </Text>
-            </View>
-            <View style={{ alignItems: 'flex-end', marginLeft: 8, gap: 4 }}>
-              <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{fmtTs(item.lastTs)}</Text>
-              {item.unreadCount > 0 ? (
-                <View style={{
-                  minWidth: 22, height: 22, borderRadius: 999, backgroundColor: '#ffffff',
-                  alignItems: 'center', justifyContent: 'center', paddingHorizontal: 7,
-                }}>
-                  <Text style={{ color: '#000000', fontSize: 12, fontFamily: 'Calibre-Semibold' }}>
-                    {item.unreadCount > 99 ? '99+' : item.unreadCount}
-                  </Text>
-                </View>
-              ) : null}
+              <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
+                <Text style={{ color: fg, fontSize: 18, fontFamily: 'Calibre-Semibold', flex: 1 }} numberOfLines={1}>
+                  {item.title}
+                </Text>
+                <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{fmtTs(item.lastTs)}</Text>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium', flex: 1 }} numberOfLines={1}>
+                  {item.lastPreview || '(no messages yet)'}
+                </Text>
+                {item.unreadCount > 0 ? (
+                  <View style={{
+                    minWidth: 22, height: 22, borderRadius: 999, backgroundColor: '#ffffff',
+                    alignItems: 'center', justifyContent: 'center', paddingHorizontal: 7,
+                  }}>
+                    <Text style={{ color: '#000000', fontSize: 12, fontFamily: 'Calibre-Semibold' }}>
+                      {item.unreadCount > 99 ? '99+' : item.unreadCount}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
             </View>
           </Pressable>
         )}
