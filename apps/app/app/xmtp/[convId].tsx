@@ -3,7 +3,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Animated as RNAnimated, FlatList, Modal, PanResponder, Pressable, Text, View,
+  Animated as RNAnimated, FlatList, Image, Modal, PanResponder, Pressable, Text, View,
 } from 'react-native';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,6 +16,7 @@ import { ComposerGradient } from '../../components/ComposerGradient';
 import { HeroIcon } from '../../components/HeroIcon';
 import {
   XMTP_USER_PREFIX, lineOfConv, useXmtpFeed, xmtpReact, xmtpReply,
+  convOfLine, peerEthAddressOfDm, groupMemberEthAddresses, stampBoxAvatarUrl,
 } from '../../lib/xmtp';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import type { HistoryEntry } from '../../lib/types';
@@ -47,6 +48,49 @@ function isReaction(e: HistoryEntry): boolean {
   return Boolean(p?.reactTo);
 }
 
+/** Stamp.fyi avatars shown in the conversation header. Mirrors the channels-
+ *  list row avatar but locked at 24px per the design spec. DMs render a single
+ *  circle; groups stack up to 3 member avatars with a "+N" overflow tile. */
+function HeaderAvatars({ peerAddr, memberAddrs, bg }: {
+  peerAddr: string | null; memberAddrs: string[]; bg: string;
+}): React.ReactElement | null {
+  const SIZE = 24;
+  if (peerAddr) {
+    return (
+      <Image
+        source={{ uri: stampBoxAvatarUrl(peerAddr, SIZE * 2) }}
+        style={{ width: SIZE, height: SIZE, borderRadius: 999, backgroundColor: '#1a1f29' }}
+      />
+    );
+  }
+  const visible = memberAddrs.slice(0, 3);
+  const overflow = memberAddrs.length - 3;
+  if (visible.length === 0) return null;
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      {visible.map((a, i) => (
+        <Image
+          key={a.toLowerCase()}
+          source={{ uri: stampBoxAvatarUrl(a, SIZE * 2) }}
+          style={{
+            width: SIZE, height: SIZE, borderRadius: 999, backgroundColor: '#1a1f29',
+            borderWidth: 2, borderColor: bg, marginLeft: i === 0 ? 0 : -8,
+          }}
+        />
+      ))}
+      {overflow > 0 ? (
+        <View style={{
+          width: SIZE, height: SIZE, borderRadius: 999, backgroundColor: '#3a4250',
+          alignItems: 'center', justifyContent: 'center',
+          borderWidth: 2, borderColor: bg, marginLeft: -8,
+        }}>
+          <Text style={{ color: '#ffffff', fontSize: 9 }}>+{overflow}</Text>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 export default function XmtpConversation(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
@@ -75,6 +119,24 @@ export default function XmtpConversation(): React.ReactElement {
   /** Optimistic outbound entries — rendered immediately on send, dropped once the composer
    *  resolves its send promise (XMTP self-sends don't always come back via streamMessages). */
   const [optimistic, setOptimistic] = useState<HistoryEntry[]>([]);
+  /** Per-conversation member addresses, resolved once on mount. `peerAddr` is
+   *  set for DMs (single avatar), `memberAddrs` for groups (stacked). */
+  const [peerAddr, setPeerAddr] = useState<string | null>(null);
+  const [memberAddrs, setMemberAddrs] = useState<string[]>([]);
+  useEffect(() => {
+    if (!convId) return;
+    let cancelled = false;
+    void (async (): Promise<void> => {
+      const conv = await convOfLine(activeLine);
+      if (cancelled || !conv) return;
+      const peer = await peerEthAddressOfDm(conv);
+      if (cancelled) return;
+      if (peer) { setPeerAddr(peer); return; }
+      const members = await groupMemberEthAddresses(conv);
+      if (!cancelled) setMemberAddrs(members);
+    })();
+    return (): void => { cancelled = true; };
+  }, [activeLine, convId]);
   const insets = useSafeAreaInsets();
   /** Swipe left→right on the screen → back to the messenger list, with the screen sliding
    *  with the finger. Past 60px on release → navigate back; otherwise spring home.
@@ -239,7 +301,9 @@ export default function XmtpConversation(): React.ReactElement {
               {status === 'connecting' ? 'Connecting…' : status === 'error' ? 'Reconnecting…' : 'Offline'}
             </Text>
           </View>
-        ) : null}
+        ) : (
+          <HeaderAvatars peerAddr={peerAddr} memberAddrs={memberAddrs} bg={bg} />
+        )}
       </View>
       {/** Fade strip below the top nav — mirrors the composer's top fade. Position it
        *  flush against the nav bottom (which sits at `44 + insets.top`), so the solid

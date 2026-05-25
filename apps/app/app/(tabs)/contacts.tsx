@@ -119,7 +119,7 @@ export default function Contacts(): React.ReactElement {
           >
             <Image
               source={{ uri: stampBoxAvatarUrl(item.address) }}
-              style={{ width: 36, height: 36, borderRadius: 999, backgroundColor: '#1a1f29' }}
+              style={{ width: 24, height: 24, borderRadius: 999, backgroundColor: '#1a1f29' }}
             />
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={{ color: fg, fontSize: 14 }} numberOfLines={1}>

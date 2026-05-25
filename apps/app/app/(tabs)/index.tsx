@@ -73,7 +73,9 @@ async function summarize(conv: Conversation): Promise<Row> {
   };
 }
 
-const AVATAR_PX = 36;
+/** Unified avatar size across the app — applies to single + stacked rows and the
+ *  conversation header alike. Profile pages still render their hero at 120px. */
+const AVATAR_PX = 24;
 
 function SingleAvatar({ address }: { address: string }): React.ReactElement {
   return (
@@ -86,14 +88,13 @@ function SingleAvatar({ address }: { address: string }): React.ReactElement {
 
 /** Multi-member avatar stack — overlapping stamp.box circles. Up to 3 members
  *  are rendered; if there are more, the third slot becomes a "+N" count tile.
- *  Fits inside the same 36px square a single avatar uses so row geometry doesn't
- *  shift between DM and group rows. */
+ *  Every circle is AVATAR_PX (24px) per the design spec. */
 function GroupAvatarStack({ addresses, bg }: {
   addresses: string[]; bg: string;
 }): React.ReactElement {
   const visible = addresses.slice(0, 3);
   const overflow = addresses.length - 3;
-  const size = visible.length === 1 ? AVATAR_PX : 24;
+  const size = AVATAR_PX;
   const overlap = 8;
 
   if (visible.length === 0) {
@@ -103,13 +104,13 @@ function GroupAvatarStack({ addresses, bg }: {
         backgroundColor: '#3a4250',
         alignItems: 'center', justifyContent: 'center',
       }}>
-        <Text style={{ color: '#ffffff', fontSize: 16, fontFamily: 'Calibre-Semibold' }}>·</Text>
+        <Text style={{ color: '#ffffff', fontSize: 14, fontFamily: 'Calibre-Semibold' }}>·</Text>
       </View>
     );
   }
 
   return (
-    <View style={{ width: AVATAR_PX, height: AVATAR_PX, flexDirection: 'row', alignItems: 'center' }}>
+    <View style={{ height: AVATAR_PX, flexDirection: 'row', alignItems: 'center' }}>
       {visible.map((addr, i) => (
         <Image
           key={addr.toLowerCase()}
