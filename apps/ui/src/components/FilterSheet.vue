@@ -6,7 +6,7 @@ export interface Filters {
   includeWebhooks: boolean;
 }
 
-const STATIONS: string[] = ['discord', 'telegram', 'webhook', 'claude', 'codex', 'messenger'];
+const STATIONS: string[] = ['discord', 'telegram', 'webhook', 'claude', 'codex'];
 
 const props = defineProps<{ open: boolean; filters: Filters }>();
 const emit = defineEmits<{ (e: 'close'): void; (e: 'update', f: Filters): void }>();

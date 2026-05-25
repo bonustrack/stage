@@ -14,7 +14,7 @@ replace on demand.
 1. Spawns each file in `~/.metro/trains/*.{ts,js,mjs}` as a long-running Bun subprocess.
 2. Multiplexes their stdout (JSON lines) into one unified event stream on metro's stdout.
 3. Routes `metro call <train> <action> <args>` requests back to the matching train's stdin.
-4. Two builtin event sources stay in core: **webhooks** (HTTP receiver) and **messenger** (in-daemon chat).
+4. One builtin event source stays in core: **webhooks** (HTTP receiver).
 
 ## Starting metro
 
@@ -72,7 +72,6 @@ Trains should set `is_private: true` for DMs. For groups, narrow on `payload`:
 - **discord** — DM when `payload.guildId == null`; otherwise look at `payload.mentions.users`.
 - **telegram** — DM when `payload.chat.type === 'private'`; otherwise look at `payload.entities` mentions.
 - **webhook** — every POST is for you by design. Route on `payload.headers['x-github-event']` / `x-intercom-topic`.
-- **messenger** — every event on the messenger line is between the user and the agent. No filtering needed.
 
 ## CLI cheat sheet
 
@@ -92,18 +91,6 @@ metro doctor                                # health check
 ## Webhooks (builtin source)
 
 Webhooks stay in core because they're shared HTTP infra (one Cloudflare tunnel routes many endpoints). `metro webhook add <label>` issues an endpoint id; the full URL is `https://<tunnel-host>/wh/<id>` (or `http://127.0.0.1:8420/wh/<id>` locally). Events arrive on `metro://webhook/<id>`.
-
-## Messenger (builtin source)
-
-Direct chat between the agent and the device. Five endpoints — all under the same bearer-token guard as `/api/state`:
-
-- `POST /api/messenger/send {text?, attachments?, as?}` — emit an envelope on `metro://messenger/owner`. Either text or attachments required.
-- `POST /api/messenger/react {messageId, emoji, as?}` — emit a slim `payload.reactTo` envelope. If the sender already has an active reaction with this emoji on this target, emits `{removed: true}` instead — reactions are toggleable.
-- `POST /api/messenger/upload` — raw binary upload (≤ 25 MiB, body = file bytes, `Content-Type` + optional `X-Filename` headers). Returns `{id, url, kind, mime, size, name?}`; files land in `$METRO_STATE_DIR/messenger-uploads/`.
-- `GET /api/messenger/files/<name>` — stream a stored upload. Accepts `Authorization: Bearer …` header *or* `?token=…` query (for `<img>` / `<audio>` tags). Content-Type derived from extension.
-- `POST /api/messenger/register {pushToken}` — store an Expo push token so agent replies push to the device.
-
-The mobile + web companion apps use these for chat with the agent. The envelope is the standard slim shape — no `kind` / `emoji` fields, direction derived from `Line.isLocal(from)`.
 
 ## Crashes
 

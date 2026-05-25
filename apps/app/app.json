@@ -55,13 +55,6 @@
         {
           "microphonePermission": "Allow Metro to record voice messages."
         }
-      ],
-      [
-        "expo-share-intent",
-        {
-          "androidIntentFilters": ["image/*", "video/*", "*/*"],
-          "androidMainActivityAttributes": { "android:launchMode": "singleTask" }
-        }
       ]
     ],
     "notification": {

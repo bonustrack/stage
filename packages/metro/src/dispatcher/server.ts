@@ -77,7 +77,7 @@ export async function startWebhookServer(emit: Emit): Promise<Server> {
 }
 
 async function handleRequest(req: IncomingMessage, res: ServerResponse, emit: Emit): Promise<void> {
-  if (handleMonitorRequest(req, res, emit)) return;
+  if (handleMonitorRequest(req, res)) return;
   const m = req.url?.match(/^\/wh\/([A-Za-z0-9_-]+)/);
   if (!m) { res.writeHead(404).end(); return; }
   const endpointId = m[1];
