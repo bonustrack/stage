@@ -1,13 +1,16 @@
-/** Settings tab — wallet-address copy pill + theme switcher. */
+/** Settings tab — wallet-address copy pill + theme switcher + app version. */
 
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
+import Constants from 'expo-constants';
 import { getOrCreateXmtpClient, shortAddress } from '../../lib/xmtp';
 import {
   setThemePreference, useEffectiveColorScheme, useThemePreference,
   type ThemePreference,
 } from '../../lib/theme';
+
+const APP_VERSION = Constants.expoConfig?.version ?? 'unknown';
 
 const THEME_OPTIONS: { value: ThemePreference; label: string }[] = [
   { value: 'light', label: 'Light' },
@@ -87,6 +90,12 @@ export default function Settings(): React.ReactElement {
             </Pressable>
           );
         })}
+      </View>
+
+      <View style={{ marginTop: 24, paddingHorizontal: 16, paddingBottom: 16 }}>
+        <Text style={{ color: sub, fontSize: 11, textAlign: 'center' }}>
+          Metro · v{APP_VERSION}
+        </Text>
       </View>
     </View>
   );

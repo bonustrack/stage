@@ -1,8 +1,11 @@
 <script setup lang="ts">
 /** Settings tab — wallet-address copy pill + theme switcher. */
 
+import pkg from '../../package.json';
 import { getOrCreateXmtpClient, shortAddress } from '../lib/xmtp';
 import { setThemePreference, useThemePreference, type ThemePreference } from '../lib/theme';
+
+const APP_VERSION = pkg.version;
 
 const THEME_OPTIONS: { value: ThemePreference; label: string }[] = [
   { value: 'light', label: 'Light' },
@@ -68,6 +71,10 @@ async function copyAddress(): Promise<void> {
         <span class="text-metro-fg-light dark:text-metro-fg-dark text-[15px]">{{ opt.label }}</span>
         <span v-if="pref === opt.value" class="text-metro-fg-light dark:text-metro-fg-dark text-lg">✓</span>
       </button>
+    </div>
+
+    <div class="mt-6 mb-4 text-center text-[11px] text-metro-sub-light dark:text-metro-sub-dark">
+      Metro · v{{ APP_VERSION }}
     </div>
   </div>
 </template>
