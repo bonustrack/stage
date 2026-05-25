@@ -86,7 +86,7 @@ export default function EditProfileModal({
           paddingHorizontal: 16, paddingTop: insets.top + 12, paddingBottom: 12,
           borderBottomWidth: 1, borderBottomColor: border,
         }}>
-          <Pressable onPress={onClose} disabled={saving}><Text style={{ color: sub, fontSize: 15 }}>Cancel</Text></Pressable>
+          <Pressable onPress={onClose} disabled={saving}><Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>Cancel</Text></Pressable>
           <Text style={{ color: fg, fontSize: 17, fontFamily: 'Calibre-Semibold' }}>Edit profile</Text>
           {/** Spacer to balance the row — Save sits at the bottom as a pill now. */}
           <View style={{ width: 50 }} />
@@ -104,12 +104,12 @@ export default function EditProfileModal({
                 </View>
               ) : null}
             </Pressable>
-            <Text style={{ color: sub, fontSize: 12, marginTop: 8 }}>Tap to change avatar</Text>
+            <Text style={{ color: sub, fontSize: 12, marginTop: 8, fontFamily: 'Calibre-Medium' }}>Tap to change avatar</Text>
           </View>
 
           {FIELDS.map(f => (
             <View key={f.key} style={{ marginBottom: 14 }}>
-              <Text style={{ color: sub, fontSize: 11, marginBottom: 4 }}>{f.label.toUpperCase()}</Text>
+              <Text style={{ color: sub, fontSize: 11, marginBottom: 4, fontFamily: 'Calibre-Medium' }}>{f.label.toUpperCase()}</Text>
               <TextInput
                 value={(form[f.key] ?? '') as string}
                 onChangeText={t => update(f.key, t)}

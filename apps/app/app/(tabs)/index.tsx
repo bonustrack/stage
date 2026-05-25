@@ -244,7 +244,7 @@ export default function Messenger(): React.ReactElement {
   if (error) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: bg }}>
-        <Text style={{ color: fg, fontSize: 15, textAlign: 'center', marginBottom: 16 }}>{error}</Text>
+        <Text style={{ color: fg, fontSize: 15, textAlign: 'center', marginBottom: 16 , fontFamily: 'Calibre-Medium'}}>{error}</Text>
         <Pressable
           onPress={() => {
             void (async (): Promise<void> => {
@@ -259,7 +259,7 @@ export default function Messenger(): React.ReactElement {
             borderWidth: 1, borderColor: dark ? '#5c2231' : '#e9bbc4',
           })}
         >
-          <Text style={{ color: dark ? '#ff6b80' : '#b91c1c', fontSize: 14 }}>
+          <Text style={{ color: dark ? '#ff6b80' : '#b91c1c', fontSize: 14 , fontFamily: 'Calibre-Medium'}}>
             Reset XMTP identity
           </Text>
         </Pressable>
@@ -270,7 +270,7 @@ export default function Messenger(): React.ReactElement {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: bg }}>
         <ActivityIndicator />
-        <Text style={{ color: sub, marginTop: 8, fontSize: 12 }}>Initialising XMTP…</Text>
+        <Text style={{ color: sub, marginTop: 8, fontSize: 12 , fontFamily: 'Calibre-Medium'}}>Initialising XMTP…</Text>
       </View>
     );
   }

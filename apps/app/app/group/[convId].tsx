@@ -122,7 +122,7 @@ export default function GroupDetail(): React.ReactElement {
       </View>
 
       <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16 }}>
-        <Text style={{ color: sub, fontSize: 11 }}>GROUP NAME</Text>
+        <Text style={{ color: sub, fontSize: 11, fontFamily: 'Calibre-Medium' }}>GROUP NAME</Text>
         {editing ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 }}>
             <TextInput
@@ -153,12 +153,12 @@ export default function GroupDetail(): React.ReactElement {
             <Text style={{ color: fg, fontSize: 20, fontFamily: 'Calibre-Semibold' }}>
               {name && name.trim() ? name : 'Untitled group'}
             </Text>
-            <Text style={{ color: sub, fontSize: 12, marginTop: 4 }}>Tap to rename</Text>
+            <Text style={{ color: sub, fontSize: 12, marginTop: 4, fontFamily: 'Calibre-Medium' }}>Tap to rename</Text>
           </Pressable>
         )}
       </View>
 
-      <Text style={{ color: sub, fontSize: 11, paddingHorizontal: 16, paddingBottom: 6 }}>
+      <Text style={{ color: sub, fontSize: 11, paddingHorizontal: 16, paddingBottom: 6, fontFamily: 'Calibre-Medium' }}>
         MEMBERS ({members.length})
       </Text>
       <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingBottom: 12 }}>

@@ -63,7 +63,7 @@ export default function Contacts(): React.ReactElement {
   if (error) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: bg }}>
-        <Text style={{ color: fg, fontSize: 15 }}>{error}</Text>
+        <Text style={{ color: fg, fontSize: 15 , fontFamily: 'Calibre-Medium'}}>{error}</Text>
       </View>
     );
   }
@@ -71,7 +71,7 @@ export default function Contacts(): React.ReactElement {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: bg }}>
         <ActivityIndicator />
-        <Text style={{ color: sub, marginTop: 8, fontSize: 12 }}>Loading contacts…</Text>
+        <Text style={{ color: sub, marginTop: 8, fontSize: 12 , fontFamily: 'Calibre-Medium'}}>Loading contacts…</Text>
       </View>
     );
   }
@@ -122,10 +122,10 @@ export default function Contacts(): React.ReactElement {
               style={{ width: 24, height: 24, borderRadius: 999, backgroundColor: '#1a1f29' }}
             />
             <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={{ color: fg, fontSize: 14 }} numberOfLines={1}>
+              <Text style={{ color: fg, fontSize: 14 , fontFamily: 'Calibre-Medium'}} numberOfLines={1}>
                 {item.address}
               </Text>
-              <Text style={{ color: sub, fontSize: 12, marginTop: 4 }} numberOfLines={1}>
+              <Text style={{ color: sub, fontSize: 12, marginTop: 4 , fontFamily: 'Calibre-Medium'}} numberOfLines={1}>
                 {shortAddress(item.address)}
               </Text>
             </View>

@@ -76,7 +76,7 @@ export default function Profile(): React.ReactElement {
           {address ? displayName : 'Loading…'}
         </Text>
         {profile.about ? (
-          <Text style={{ color: sub, fontSize: 13, marginTop: 6, paddingHorizontal: 24, textAlign: 'center' }}>
+          <Text style={{ color: sub, fontSize: 13, marginTop: 6, paddingHorizontal: 24, textAlign: 'center', fontFamily: 'Calibre-Medium' }}>
             {profile.about}
           </Text>
         ) : null}
@@ -87,8 +87,8 @@ export default function Profile(): React.ReactElement {
           onPress={() => copy(address, 'Wallet address')}
           style={{ marginHorizontal: 16, marginTop: 8, padding: 12, borderRadius: 12, backgroundColor: rowBg, borderWidth: 1, borderColor: border }}
         >
-          <Text style={{ color: sub, fontSize: 11 }}>WALLET ADDRESS (tap to copy)</Text>
-          <Text style={{ color: fg, fontSize: 13, marginTop: 4 }}>{address}</Text>
+          <Text style={{ color: sub, fontSize: 11, fontFamily: 'Calibre-Medium' }}>WALLET ADDRESS (tap to copy)</Text>
+          <Text style={{ color: fg, fontSize: 13, marginTop: 4, fontFamily: 'Calibre-Medium' }}>{address}</Text>
         </Pressable>
       ) : null}
 
@@ -97,8 +97,8 @@ export default function Profile(): React.ReactElement {
           onPress={() => copy(inboxId, 'XMTP inbox id')}
           style={{ marginHorizontal: 16, marginTop: 12, padding: 12, borderRadius: 12, backgroundColor: rowBg, borderWidth: 1, borderColor: border }}
         >
-          <Text style={{ color: sub, fontSize: 11 }}>XMTP INBOX ID (tap to copy)</Text>
-          <Text style={{ color: fg, fontSize: 13, marginTop: 4 }} numberOfLines={1}>{inboxId}</Text>
+          <Text style={{ color: sub, fontSize: 11, fontFamily: 'Calibre-Medium' }}>XMTP INBOX ID (tap to copy)</Text>
+          <Text style={{ color: fg, fontSize: 13, marginTop: 4, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>{inboxId}</Text>
         </Pressable>
       ) : null}
 
@@ -137,9 +137,9 @@ function PushTokenCard({ status, token, error, onCopy, sub, fg, border, rowBg }:
         opacity: status === 'ready' ? 1 : 0.7,
       }}
     >
-      <Text style={{ color: sub, fontSize: 11 }}>{label}</Text>
+      <Text style={{ color: sub, fontSize: 11, fontFamily: 'Calibre-Medium' }}>{label}</Text>
       {body ? (
-        <Text style={{ color: fg, fontSize: 11, marginTop: 4 }}
+        <Text style={{ color: fg, fontSize: 11, marginTop: 4, fontFamily: 'Calibre-Medium' }}
           numberOfLines={token ? 3 : undefined} selectable>
           {body}
         </Text>

@@ -45,8 +45,8 @@ export default function UserProfileView(): React.ReactElement {
       marginHorizontal: 16, marginTop: 12, padding: 12,
       borderRadius: 12, backgroundColor: rowBg, borderWidth: 1, borderColor: border,
     }}>
-      <Text style={{ color: sub, fontSize: 11 }}>{label.toUpperCase()}</Text>
-      <Text style={{ color: fg, fontSize: 14, marginTop: 4 }} selectable>{value}</Text>
+      <Text style={{ color: sub, fontSize: 11, fontFamily: 'Calibre-Medium' }}>{label.toUpperCase()}</Text>
+      <Text style={{ color: fg, fontSize: 14, marginTop: 4, fontFamily: 'Calibre-Medium' }} selectable>{value}</Text>
     </View>
   );
 

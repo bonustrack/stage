@@ -58,14 +58,14 @@ export default function Settings(): React.ReactElement {
             borderWidth: 1, borderColor: border,
           }}
         >
-          <Text style={{ color: sub, fontSize: 11 }}>YOUR XMTP ADDRESS (tap to copy)</Text>
-          <Text style={{ color: fg, fontSize: 13, marginTop: 2 }}>
+          <Text style={{ color: sub, fontSize: 11 , fontFamily: 'Calibre-Medium'}}>YOUR XMTP ADDRESS (tap to copy)</Text>
+          <Text style={{ color: fg, fontSize: 13, marginTop: 2 , fontFamily: 'Calibre-Medium'}}>
             {shortAddress(myAddress)}
           </Text>
         </Pressable>
       ) : null}
 
-      <Text style={{ color: sub, fontSize: 11, paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8 }}>
+      <Text style={{ color: sub, fontSize: 11, paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8 , fontFamily: 'Calibre-Medium'}}>
         THEME
       </Text>
       <View style={{
@@ -85,7 +85,7 @@ export default function Settings(): React.ReactElement {
                 backgroundColor: pressed ? border : 'transparent',
               })}
             >
-              <Text style={{ color: fg, fontSize: 15 }}>{opt.label}</Text>
+              <Text style={{ color: fg, fontSize: 15 , fontFamily: 'Calibre-Medium'}}>{opt.label}</Text>
               {selected ? (
                 <Text style={{ color: accent, fontSize: 18, fontFamily: 'Calibre-Semibold' }}>✓</Text>
               ) : null}
@@ -121,14 +121,14 @@ export default function Settings(): React.ReactElement {
             alignItems: 'center',
           })}
         >
-          <Text style={{ color: dark ? '#ff6b80' : '#b91c1c', fontSize: 14 }}>
+          <Text style={{ color: dark ? '#ff6b80' : '#b91c1c', fontSize: 14 , fontFamily: 'Calibre-Medium'}}>
             Reset XMTP identity
           </Text>
         </Pressable>
       </View>
 
       <View style={{ marginTop: 24, paddingHorizontal: 16, paddingBottom: 16 }}>
-        <Text style={{ color: sub, fontSize: 11, textAlign: 'center' }}>
+        <Text style={{ color: sub, fontSize: 11, textAlign: 'center' , fontFamily: 'Calibre-Medium'}}>
           Metro · v{APP_VERSION}
         </Text>
       </View>
