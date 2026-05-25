@@ -16,9 +16,21 @@ import * as SecureStore from 'expo-secure-store';
 import { Directory, Paths } from 'expo-file-system';
 import {
   Client, PublicIdentity,
+  ReactionCodec, ReplyCodec, StaticAttachmentCodec, RemoteAttachmentCodec,
   type Conversation, type DecodedMessage, type ConversationVersion,
   type ReactionContent, type ReplyContent, type StaticAttachmentContent,
 } from '@xmtp/react-native-sdk';
+
+/** Codecs the local XMTP client decodes inbound + uses to encode outbound. Without these
+ *  the RN SDK's `msg.content()` throws on reaction/reply/attachment payloads and we fall
+ *  back to "[<typeId> payload]" placeholder text — that's why Less saw "[reaction payload]"
+ *  instead of "[react 👍]" on his own outbound bubbles. */
+const XMTP_CODECS = [
+  new ReactionCodec(),
+  new ReplyCodec(),
+  new StaticAttachmentCodec(),
+  new RemoteAttachmentCodec(),
+];
 import type { HistoryEntry } from './types';
 
 export type XmtpEnv = 'production' | 'dev' | 'local';
@@ -74,7 +86,7 @@ export async function getOrCreateXmtpClient(env: XmtpEnv = 'production'): Promis
   if (cachedClient) return cachedClient;
   const dbDirectory = await ensureDbDir();
   const dbEncryptionKey = await loadOrCreateDbKey();
-  const opts = { env, dbDirectory, dbEncryptionKey };
+  const opts = { env, dbDirectory, dbEncryptionKey, codecs: XMTP_CODECS };
   const savedAddress = await SecureStore.getItemAsync(ADDRESS_KEY).catch(() => null);
   const savedEnv = await SecureStore.getItemAsync(ENV_KEY).catch(() => null);
   /** Rebuild only if we have a saved address AND it matches the current env (different
