@@ -56,13 +56,13 @@ function AttachmentView({ att, fullUrl, fg, sub }: {
   );
 }
 
-function markdownStyles(fg: string, dark: boolean, mine: boolean): Record<string, object> {
+function markdownStyles(fg: string, dark: boolean, mine: boolean, italic = false): Record<string, object> {
   const codeBg = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
   /** Tighter leading on the user's own bubble — Less prefers a snugger look there.
    *  Assistant text keeps 23 for comfortable reading on long replies. */
   const lh = mine ? 21 : 23;
   return {
-    body: { color: fg, fontSize: 17, lineHeight: lh, fontFamily: 'Calibre-Medium' },
+    body: { color: fg, fontSize: 17, lineHeight: lh, fontFamily: 'Calibre-Medium', fontStyle: italic ? 'italic' : 'normal' },
     paragraph: { marginTop: 0, marginBottom: 0 },
     heading1: { color: fg, fontSize: 20, fontFamily: 'Calibre-Semibold', marginTop: 4, marginBottom: 2 },
     heading2: { color: fg, fontSize: 18, fontFamily: 'Calibre-Semibold', marginTop: 4, marginBottom: 2 },
@@ -264,7 +264,11 @@ export function MessengerBubble({
   const mine = entry.from === myUri;
   const atts = attachmentsOf(entry);
   const question = questionOf(entry);
-  const fg = dark ? '#e8ecf2' : '#1a1f29';
+  /** Group system events (rename / member add / image change) get a muted
+   *  italic treatment and a feed color in the body text — set when
+   *  envelopeOfXmtpMessage stamps `payload.system: true`. */
+  const isSystem = (entry.payload as { system?: boolean } | undefined)?.system === true;
+  const fg = isSystem ? (dark ? '#8a94a6' : '#5a6477') : (dark ? '#e8ecf2' : '#1a1f29');
   const sub = dark ? '#8a94a6' : '#5a6477';
   const pillBg = dark ? '#1d2230' : '#eef1f7';
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -272,7 +276,7 @@ export function MessengerBubble({
     markdownit: mdParser,
     onLinkPress: (url: string): boolean => { void Linking.openURL(url); return false; },
     /** Discord-style: all messages render with the same typography regardless of sender. */
-    style: markdownStyles(fg, dark, false),
+    style: markdownStyles(fg, dark, false, isSystem),
   };
   /** Swipe-to-reply (right→left, Telegram-style): claim once dx is left-leaning + dominates dy,
    *  drag the bubble with the finger up to ~80px, snap back on release, fire onReply if dx<=-60. */
