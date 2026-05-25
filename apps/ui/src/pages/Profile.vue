@@ -58,7 +58,7 @@ async function copy(value: string, label: 'address' | 'inboxId'): Promise<void> 
       <div class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark">
         WALLET ADDRESS ({{ copyHint === 'address' ? 'copied!' : 'tap to copy' }})
       </div>
-      <div class="text-[13px] font-mono text-metro-fg-light dark:text-metro-fg-dark mt-1 break-all">
+      <div class="text-[13px] text-metro-fg-light dark:text-metro-fg-dark mt-1 break-all">
         {{ address }}
       </div>
     </button>
@@ -74,7 +74,7 @@ async function copy(value: string, label: 'address' | 'inboxId'): Promise<void> 
       <div class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark">
         XMTP INBOX ID ({{ copyHint === 'inboxId' ? 'copied!' : 'tap to copy' }})
       </div>
-      <div class="text-[13px] font-mono text-metro-fg-light dark:text-metro-fg-dark mt-1 truncate">
+      <div class="text-[13px] text-metro-fg-light dark:text-metro-fg-dark mt-1 truncate">
         {{ inboxId }}
       </div>
     </button>

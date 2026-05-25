@@ -48,7 +48,7 @@ async function copyAddress(): Promise<void> {
       <div class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark">
         YOUR XMTP ADDRESS ({{ copied ? 'copied!' : 'tap to copy' }})
       </div>
-      <div class="text-[13px] font-mono text-metro-fg-light dark:text-metro-fg-dark mt-0.5">
+      <div class="text-[13px] text-metro-fg-light dark:text-metro-fg-dark mt-0.5">
         {{ shortAddress(myAddress) }}
       </div>
     </button>

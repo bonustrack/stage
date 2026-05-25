@@ -56,9 +56,12 @@ async function summarize(conv: Conversation): Promise<Row> {
   }
   const peerAddress = await peerEthAddressOfDm(conv);
   const memberAddresses = peerAddress ? [] : await groupMemberEthAddresses(conv);
+  /** memberAddresses excludes the local wallet — title counts the whole group
+   *  so add 1 back in for the user themselves. */
+  const totalMembers = memberAddresses.length + 1;
   const title = peerAddress
     ?? (memberAddresses.length > 0
-      ? `${memberAddresses.length} member${memberAddresses.length === 1 ? '' : 's'}`
+      ? `${totalMembers} member${totalMembers === 1 ? '' : 's'}`
       : conv.id.slice(0, 12));
   return {
     convId: conv.id,
@@ -82,6 +85,12 @@ const filtered = computed(() => {
   );
 });
 
+/** AsyncStreamProxy<...>; we only need to call .end() on cleanup so the
+ *  stored handle is just typed by what we use. */
+type StreamHandle = { end: () => Promise<unknown> };
+let stopConvStream: StreamHandle | null = null;
+let stopMsgStream: StreamHandle | null = null;
+
 onMounted(async () => {
   try {
     const client = await getOrCreateXmtpClient('production');
@@ -90,28 +99,51 @@ onMounted(async () => {
     const summarized = await Promise.all(convs.map(summarize));
     summarized.sort((a, b) => (b.lastTs ?? 0) - (a.lastTs ?? 0));
     rows.value = summarized;
+    /** Subscribe to newly-created convs so groups created on this device
+     *  (or invitations the user is added to) show up without a refresh. */
+    stopConvStream = await client.conversations.stream({
+      onValue: async (conv) => {
+        if (!conv) return;
+        const r = await summarize(conv);
+        rows.value = rows.value
+          ? [r, ...rows.value.filter(x => x.convId !== r.convId)]
+          : [r];
+      },
+      onError: () => { /* swallow — next mount will resync */ },
+    });
+    /** Subscribe to every new message across convs so the per-row preview
+     *  + timestamp update in real time and the active conv floats to the top. */
+    stopMsgStream = await client.conversations.streamAllMessages({
+      onValue: async (msg) => {
+        if (!msg) return;
+        const decoded: unknown = msg.content;
+        const preview = typeof decoded === 'string'
+          ? decoded
+          : `[${msg.contentType?.typeId ?? 'unknown'}]`;
+        const lastTs = Number(msg.sentAtNs / 1_000_000n);
+        const lastPreview = preview.slice(0, 80);
+        if (!rows.value) return;
+        const idx = rows.value.findIndex(r => r.convId === msg.conversationId);
+        if (idx === -1) return;
+        const updated: Row = { ...rows.value[idx], lastTs, lastPreview };
+        rows.value = [updated, ...rows.value.slice(0, idx), ...rows.value.slice(idx + 1)];
+      },
+      onError: () => { /* swallow */ },
+    });
   } catch (e) { error.value = (e as Error).message; }
+});
+
+onUnmounted(() => {
+  void stopConvStream?.end();
+  void stopMsgStream?.end();
 });
 
 function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col">
+  <div class="min-h-screen flex flex-col relative">
     <div class="px-3 pt-3 pb-2">
-      <button
-        type="button"
-        :disabled="creatingAsk"
-        class="w-full bg-metro-fg-light dark:bg-metro-border-dark
-          text-white text-sm font-head
-          rounded-xl px-4 py-3 transition-opacity disabled:opacity-60
-          hover:opacity-90"
-        @click="onAskPress"
-      >
-        {{ creatingAsk ? 'Creating group…' : 'Ask a question' }}
-      </button>
-    </div>
-    <div class="px-3 pb-2">
       <input
         v-model="query"
         type="text"
@@ -176,7 +208,7 @@ function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
             </div>
           </div>
           <div class="flex-1 min-w-0">
-            <div class="font-mono text-sm text-metro-fg-light dark:text-metro-fg-dark truncate">
+            <div class="text-sm text-metro-fg-light dark:text-metro-fg-dark truncate">
               {{ r.title }}
             </div>
             <div class="text-xs text-metro-sub-light dark:text-metro-sub-dark truncate mt-0.5">
@@ -189,5 +221,17 @@ function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
         </button>
       </li>
     </ul>
+    <!-- Floating "Ask a question" pill — anchored above the bottom TabBar. -->
+    <button
+      type="button"
+      :disabled="creatingAsk"
+      class="fixed left-1/2 -translate-x-1/2 bottom-[76px] z-30
+        bg-white text-black text-sm font-head
+        px-7 py-3 rounded-full shadow-lg
+        disabled:opacity-60 hover:opacity-90 transition-opacity"
+      @click="onAskPress"
+    >
+      {{ creatingAsk ? 'Creating group…' : 'Ask a question' }}
+    </button>
   </div>
 </template>

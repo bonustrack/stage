@@ -88,7 +88,7 @@ onMounted(async () => {
             class="w-9 h-9 rounded-full bg-metro-border-dark shrink-0"
           />
           <div class="flex-1 min-w-0">
-            <div class="font-mono text-sm text-metro-fg-light dark:text-metro-fg-dark truncate">
+            <div class="text-sm text-metro-fg-light dark:text-metro-fg-dark truncate">
               {{ c.address }}
             </div>
             <div class="text-xs text-metro-sub-light dark:text-metro-sub-dark mt-0.5">
