@@ -23,6 +23,10 @@ import {
   type Conversation, type DecodedMessage, type Signer,
 } from '@xmtp/node-sdk';
 import { ContentTypeReaction, ReactionCodec, type Reaction } from '@xmtp/content-type-reaction';
+/** node-sdk's native bindings expect numeric enums (0=Unknown 1=Added 2=Removed for action,
+ *  0=Unknown 1=Unicode 2=Shortcode 3=Custom for schema) — the string form from the codec
+ *  errors with "NumberExpected" through napi. Pull the enums from node-sdk directly. */
+import { ReactionAction, ReactionSchema } from '@xmtp/node-sdk';
 import { ContentTypeReply, ReplyCodec, type Reply } from '@xmtp/content-type-reply';
 import {
   AttachmentCodec, ContentTypeAttachment, RemoteAttachmentCodec,
@@ -156,43 +160,54 @@ async function handleCall({ id, action, args }: CallMsg): Promise<void> {
       emitOutbound(line, messageId, text);
       respond(id, { result: { messageId } });
     } else if (action === 'react') {
-      /** `action: 'added'` adds the reaction; `'removed'` clears it. Matches messenger's
-       *  toggle semantics — caller decides which by checking history first if needed. */
+      /** node-sdk has typed `sendReaction / sendReply / sendAttachment` helpers that handle
+       *  codec encoding. Calling raw `conv.send(payload, ContentType)` errors with "Content
+       *  type required when sending encoded content" because the base `send` expects already-
+       *  encoded bytes — pass the structured payload through the typed helpers instead.
+       *  XMTP V3 reactions also need `referenceInboxId` (inbox id of the original message's
+       *  sender) — look it up from local messages if the caller didn't supply it. */
       const { line, messageId, emoji, action: reactAction } = args as {
         line: string; messageId: string; emoji: string; action?: 'added' | 'removed';
+        referenceInboxId?: string;
       };
       const conv = await convOf(line);
       if (!conv) throw new Error(`conversation not found for ${line}`);
-      const payload: Reaction = {
-        reference: messageId, action: reactAction ?? 'added', content: emoji, schema: 'unicode',
-      };
-      const sentId = await conv.send(payload, ContentTypeReaction);
+      let refInbox = (args as { referenceInboxId?: string }).referenceInboxId;
+      if (!refInbox) {
+        const found = (await conv.messages()).find(m => m.id === messageId);
+        refInbox = found?.senderInboxId;
+        if (!refInbox) throw new Error(`could not resolve referenceInboxId for ${messageId}`);
+      }
+      const sentId = await conv.sendReaction({
+        reference: messageId, referenceInboxId: refInbox,
+        action: reactAction === 'removed' ? ReactionAction.Removed : ReactionAction.Added,
+        content: emoji, schema: ReactionSchema.Unicode,
+      });
       emitOutbound(line, sentId, `[react ${emoji}${reactAction === 'removed' ? ' (removed)' : ''}]`);
       respond(id, { result: { messageId: sentId } });
     } else if (action === 'reply') {
-      /** Plain-text reply to an existing xmtp message id on this conversation. */
       const { line, replyTo, text } = args as { line: string; replyTo: string; text: string };
       const conv = await convOf(line);
       if (!conv) throw new Error(`conversation not found for ${line}`);
-      const payload: Reply = {
-        reference: replyTo, content: text, contentType: { authorityId: 'xmtp.org', typeId: 'text', versionMajor: 1, versionMinor: 0 },
-      };
-      const sentId = await conv.send(payload, ContentTypeReply);
+      const sentId = await conv.sendReply({
+        reference: replyTo, content: text,
+        contentType: { authorityId: 'xmtp.org', typeId: 'text', versionMajor: 1, versionMinor: 0 },
+      });
       emitOutbound(line, sentId, text);
       respond(id, { result: { messageId: sentId } });
     } else if (action === 'sendAttachment') {
-      /** Inline attachment — caller passes base64 bytes + filename + mime. Best for files
-       *  under ~1 MB; for larger payloads switch to remoteStaticAttachment (caller uploads,
-       *  passes URL + encryption key — out of scope for v1). */
       const { line, name, mime, dataB64 } = args as {
         line: string; name: string; mime: string; dataB64: string;
       };
       const conv = await convOf(line);
       if (!conv) throw new Error(`conversation not found for ${line}`);
-      const payload: Attachment = {
-        filename: name, mimeType: mime, data: new Uint8Array(Buffer.from(dataB64, 'base64')),
-      };
-      const sentId = await conv.send(payload, ContentTypeAttachment);
+      /** node-sdk's `Attachment` shape uses `content: Uint8Array`, not the `data` field
+       *  from `@xmtp/content-type-remote-attachment`'s older type — calling sendAttachment
+       *  with the wrong shape errors "Missing field `content`". */
+      const sentId = await conv.sendAttachment({
+        filename: name, mimeType: mime,
+        content: new Uint8Array(Buffer.from(dataB64, 'base64')),
+      } as unknown as Attachment);
       emitOutbound(line, sentId, `[${mime.split('/')[0]}: ${name}]`);
       respond(id, { result: { messageId: sentId } });
     } else if (action === 'newDm') {
