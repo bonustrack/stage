@@ -23,9 +23,11 @@ import type { HistoryEntry } from './types';
 
 export type XmtpEnv = 'production' | 'dev' | 'local';
 
-const ADDRESS_KEY = 'xmtp:address';
-const ENV_KEY = 'xmtp:env';
-const DB_ENCRYPTION_KEY = 'xmtp:dbEncryptionKey';
+/** SecureStore keys must match `[A-Za-z0-9._-]+` — colons are rejected on Android, which
+ *  surfaced as an `Invalid key provided to SecureStore` runtime crash on Less's device. */
+const ADDRESS_KEY = 'xmtp.address';
+const ENV_KEY = 'xmtp.env';
+const DB_ENCRYPTION_KEY = 'xmtp.dbEncryptionKey';
 
 /** XMTP requires a 32-byte key it uses to AES-encrypt the on-device sqlite store. We mint
  *  one on first launch and persist it in expo-secure-store (secure enclave on iOS, Android
