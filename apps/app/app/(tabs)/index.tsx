@@ -283,14 +283,14 @@ export default function Messenger(): React.ReactElement {
               <View style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: '#1a1f29' }} />
             )}
             <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={{ color: fg, fontSize: 14 }} numberOfLines={1}>
+              <Text style={{ color: fg, fontSize: 14, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
                 {item.title}
               </Text>
-              <Text style={{ color: sub, fontSize: 12, marginTop: 4 }} numberOfLines={1}>
+              <Text style={{ color: sub, fontSize: 12, marginTop: 4, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
                 {item.lastPreview || '(no messages yet)'}
               </Text>
             </View>
-            <Text style={{ color: sub, fontSize: 12, marginLeft: 8 }}>{fmtTs(item.lastTs)}</Text>
+            <Text style={{ color: sub, fontSize: 12, marginLeft: 8, fontFamily: 'Calibre-Medium' }}>{fmtTs(item.lastTs)}</Text>
           </Pressable>
         )}
       />
