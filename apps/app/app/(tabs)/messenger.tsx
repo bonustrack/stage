@@ -490,6 +490,12 @@ export default function Messenger(): React.ReactElement {
             setListEpoch(e => e + 1);
             setShowJump(false);
           }}
+          onSent={(localId) => {
+            /** Drop the optimistic entry as soon as the send resolves — XMTP's
+             *  streamMessages doesn't always replay self-sends, so waiting for the
+             *  feed echo left bubbles stranded in pending state. */
+            setOptimistic(prev => prev.filter(o => o.id !== localId));
+          }}
         />
         </KeyboardStickyView>
       ) : null}

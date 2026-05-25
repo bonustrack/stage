@@ -30,6 +30,10 @@ interface Props {
   onClearReply?: () => void;
   /** Optimistic-render hook: invoked the moment the user taps send, before the API call. */
   onOptimistic?: (entry: { localId: string; text: string; attachments: Attachment[]; replyTo?: string }) => void;
+  /** Fired AFTER the send completes (success OR failure). Lets the parent drop the
+   *  optimistic entry instead of waiting for an SSE/stream echo that may never arrive
+   *  (XMTP `streamMessages` doesn't always replay self-sends — pending bubbles would stick). */
+  onSent?: (localId: string, error?: string) => void;
 }
 
 function chipImageUrl(daemonUrl: string, token: string, url: string): string {
@@ -37,7 +41,7 @@ function chipImageUrl(daemonUrl: string, token: string, url: string): string {
 }
 
 export function MessengerComposer({
-  daemonUrl, token, dark, xmtpLine, replyingTo, onClearReply, onOptimistic,
+  daemonUrl, token, dark, xmtpLine, replyingTo, onClearReply, onOptimistic, onSent,
 }: Props): React.ReactElement {
   const xmtpMode = !!xmtpLine;
   const fg = dark ? '#e8ecf2' : '#1a1f29';
@@ -154,6 +158,7 @@ export function MessengerComposer({
     /** Clear the composer immediately — the bubble already shows the user's input. */
     setText(''); setPending([]); onClearReply?.();
     setSending(true); setErr(null);
+    let sendErr: string | undefined;
     try {
       if (xmtpMode && xmtpLine) {
         /** XMTP path — send text + each attachment as its own typed message. The body
@@ -171,8 +176,14 @@ export function MessengerComposer({
       } else {
         await sendMessenger(daemonUrl, token, body, sendingAttachments, sendingReplyTo);
       }
-    } catch (e) { setErr((e as Error).message); }
-    finally { setSending(false); }
+    } catch (e) { sendErr = (e as Error).message; setErr(sendErr); }
+    finally {
+      setSending(false);
+      /** Always tell the parent the send finished (success or failure) so the optimistic
+       *  bubble clears. XMTP self-sends don't always come back through streamMessages, so
+       *  waiting for an echo stranded the bubble in pending state forever. */
+      onSent?.(localId, sendErr);
+    }
   };
 
   const Btn = ({ icon, onPress, active }: { icon: HeroIconName; onPress: () => void; active?: boolean }): React.ReactElement => (
