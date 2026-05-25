@@ -13,7 +13,8 @@ import type { Conversation, DecodedMessage } from '@xmtp/react-native-sdk';
 import { DevSettings } from 'react-native';
 import {
   getOrCreateXmtpClient, resetXmtpClient,
-  peerEthAddressOfDm, groupMemberEthAddresses, stampBoxAvatarUrl,
+  peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap,
+  stampBoxAvatarUrl,
   createAskQuestionGroup,
 } from '../../lib/xmtp';
 import { resetAccount } from '../../lib/wallet';
@@ -24,10 +25,13 @@ interface Row {
   title: string;
   lastTs: number | null;
   lastPreview: string;
-  /** DM peer's eth address. Null for group convs. */
-  peerAddress: string | null;
-  /** Other members' eth addresses for group convs (excludes the local user). Empty for DMs. */
-  memberAddresses: string[];
+  /** Eth address whose stamp.fyi avatar should render in the row. Resolved
+   *  to the latest sender when there's a message, else the peer (DMs) or
+   *  the first other member (groups). */
+  avatarAddress: string | null;
+  /** Cached inbox → eth address map, kept so live stream updates can resolve
+   *  a new sender's avatar without an extra round-trip. */
+  inboxToAddr: Record<string, string>;
 }
 
 function fmtTs(ts: number | null): string {
@@ -41,9 +45,6 @@ function fmtTs(ts: number | null): string {
 }
 
 async function summarize(conv: Conversation): Promise<Row> {
-  /** Each conv carries its own MLS state that may not be reflected in the
-   *  outer syncAllConversations call — sync once explicitly so the preview
-   *  reads the freshest message rather than the empty pre-sync slate. */
   await conv.sync().catch(() => undefined);
   const msgs: DecodedMessage[] = await conv.messages({ limit: 1 }).catch(() => []);
   const last = msgs[0];
@@ -56,9 +57,7 @@ async function summarize(conv: Conversation): Promise<Row> {
   }
   const peerAddress = await peerEthAddressOfDm(conv);
   const memberAddresses = peerAddress ? [] : await groupMemberEthAddresses(conv);
-  /** For groups, prefer the explicit name set via newGroup/updateName before
-   *  falling back to the "N members" auto-label. DMs always use the peer's
-   *  address as the title. */
+  const inboxToAddr = await memberInboxToAddressMap(conv);
   const totalMembers = memberAddresses.length + 1;
   const groupName = peerAddress ? '' : await ((conv as unknown as { name?: () => Promise<string> }).name?.() ?? Promise.resolve(''));
   const title = peerAddress
@@ -67,92 +66,25 @@ async function summarize(conv: Conversation): Promise<Row> {
       : memberAddresses.length > 0
         ? `${totalMembers} member${totalMembers === 1 ? '' : 's'}`
         : conv.topic.replace(/^.*\//, '').slice(0, 12));
+  /** Avatar follows the most recent activity. Falls back to the static DM
+   *  peer / first other member when there's no message yet. */
+  const lastSenderAddress = last?.senderInboxId
+    ? inboxToAddr[last.senderInboxId] ?? null
+    : null;
+  const avatarAddress = lastSenderAddress
+    ?? peerAddress
+    ?? memberAddresses[0]
+    ?? null;
   return {
     convId: conv.id,
     title,
     lastTs: last?.sentNs ? Math.floor(last.sentNs / 1_000_000) : null,
     lastPreview: preview.slice(0, 80),
-    peerAddress,
-    memberAddresses,
+    avatarAddress,
+    inboxToAddr,
   };
 }
 
-/** Unified avatar size across the app — applies to single + stacked rows and the
- *  conversation header alike. Profile pages still render their hero at 120px. */
-const AVATAR_PX = 24;
-
-function SingleAvatar({ address }: { address: string }): React.ReactElement {
-  return (
-    <Image
-      source={{ uri: stampBoxAvatarUrl(address) }}
-      style={{ width: AVATAR_PX, height: AVATAR_PX, borderRadius: 999, backgroundColor: '#1a1f29' }}
-    />
-  );
-}
-
-/** Multi-member avatar stack — overlapping stamp.box circles. Up to 3 members
- *  are rendered; if there are more, the third slot becomes a "+N" count tile.
- *  Every circle is AVATAR_PX (24px) per the design spec. */
-function GroupAvatarStack({ addresses, bg }: {
-  addresses: string[]; bg: string;
-}): React.ReactElement {
-  const visible = addresses.slice(0, 3);
-  const overflow = addresses.length - 3;
-  const size = AVATAR_PX;
-  const overlap = 8;
-
-  if (visible.length === 0) {
-    return (
-      <View style={{
-        width: AVATAR_PX, height: AVATAR_PX, borderRadius: 999,
-        backgroundColor: '#3a4250',
-        alignItems: 'center', justifyContent: 'center',
-      }}>
-        <Text style={{ color: '#ffffff', fontSize: 14, fontFamily: 'Calibre-Semibold' }}>·</Text>
-      </View>
-    );
-  }
-
-  return (
-    <View style={{ height: AVATAR_PX, flexDirection: 'row', alignItems: 'center' }}>
-      {visible.map((addr, i) => (
-        <Image
-          key={addr.toLowerCase()}
-          source={{ uri: stampBoxAvatarUrl(addr) }}
-          style={{
-            width: size, height: size, borderRadius: 999,
-            backgroundColor: '#1a1f29',
-            borderWidth: 2, borderColor: bg,
-            marginLeft: i === 0 ? 0 : -overlap,
-          }}
-        />
-      ))}
-      {overflow > 0 ? (
-        <View
-          style={{
-            width: size, height: size, borderRadius: 999,
-            backgroundColor: '#3a4250',
-            alignItems: 'center', justifyContent: 'center',
-            borderWidth: 2, borderColor: bg,
-            marginLeft: -overlap,
-          }}
-        >
-          <Text style={{ color: '#ffffff', fontSize: 10, fontFamily: 'Calibre-Semibold' }}>
-            +{overflow}
-          </Text>
-        </View>
-      ) : null}
-    </View>
-  );
-}
-
-function RowAvatar({ peerAddress, memberAddresses, rowBg }: {
-  peerAddress: string | null; memberAddresses: string[]; rowBg: string;
-}): React.ReactElement {
-  if (peerAddress) return <SingleAvatar address={peerAddress} />;
-  if (memberAddresses.length === 1) return <SingleAvatar address={memberAddresses[0]!} />;
-  return <GroupAvatarStack addresses={memberAddresses} bg={rowBg} />;
-}
 
 export default function Messenger(): React.ReactElement {
   const router = useRouter();
@@ -187,8 +119,8 @@ export default function Messenger(): React.ReactElement {
     return rows.filter(r =>
       r.title.toLowerCase().includes(q)
       || r.lastPreview.toLowerCase().includes(q)
-      || (r.peerAddress?.toLowerCase().includes(q) ?? false)
-      || r.memberAddresses.some(a => a.toLowerCase().includes(q)),
+      || (r.avatarAddress?.toLowerCase().includes(q) ?? false)
+      || Object.values(r.inboxToAddr).some(a => a.toLowerCase().includes(q)),
     );
   }, [rows, query]);
 
@@ -239,7 +171,9 @@ export default function Messenger(): React.ReactElement {
               if (!prev) return prev;
               const idx = prev.findIndex(r => r.convId === msg.conversationId);
               if (idx === -1) return prev;
-              const updated = { ...prev[idx]!, lastTs, lastPreview };
+              const cur = prev[idx]!;
+              const newAvatar = cur.inboxToAddr[msg.senderInboxId ?? ''] ?? cur.avatarAddress;
+              const updated = { ...cur, lastTs, lastPreview, avatarAddress: newAvatar };
               return [updated, ...prev.slice(0, idx), ...prev.slice(idx + 1)];
             });
           }) ?? null;
@@ -322,17 +256,20 @@ export default function Messenger(): React.ReactElement {
           <Pressable
             onPress={() => router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } })}
             style={({ pressed }) => ({
-              backgroundColor: pressed ? border : rowBg,
+              backgroundColor: pressed ? border : 'transparent',
               flexDirection: 'row', alignItems: 'center', gap: 12,
               paddingHorizontal: 14, paddingVertical: 12,
               borderBottomWidth: 1, borderBottomColor: border,
             })}
           >
-            <RowAvatar
-              peerAddress={item.peerAddress}
-              memberAddresses={item.memberAddresses}
-              rowBg={rowBg}
-            />
+            {item.avatarAddress ? (
+              <Image
+                source={{ uri: stampBoxAvatarUrl(item.avatarAddress, 64) }}
+                style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: '#1a1f29' }}
+              />
+            ) : (
+              <View style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: '#1a1f29' }} />
+            )}
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={{ color: fg, fontSize: 14 }} numberOfLines={1}>
                 {item.title}
