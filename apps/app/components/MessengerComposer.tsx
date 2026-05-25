@@ -89,12 +89,23 @@ export function MessengerComposer({
         /** In xmtp mode the daemon isn't involved — we just stage the local file URI
          *  and base64-encode at send time. The chip uses `url` as a render hint
          *  (`file://...` works with `Image` source on RN), and `id` is just a
-         *  client-side dedupe key. */
+         *  client-side dedupe key.
+         *
+         *  Pre-flight the file size: libxmtp's native side silently drops oversize
+         *  attachments without raising a JS error (the send "succeeds" but the message
+         *  never publishes). Reject in the composer where the user sees the error
+         *  instead of staring at a ghost bubble. */
+        const head = await fetch(uri);
+        const blob = await head.blob();
+        const XMTP_INLINE_MAX = 800 * 1024;
+        if (blob.size > XMTP_INLINE_MAX) {
+          throw new Error(`Image is ${(blob.size / 1024).toFixed(0)} KB — XMTP inline limit ~${XMTP_INLINE_MAX / 1024} KB. Pick a smaller image (or take a screenshot/crop).`);
+        }
         const kind = mime.startsWith('image/') ? 'image'
           : mime.startsWith('audio/') ? 'audio'
             : mime.startsWith('video/') ? 'video' : 'file';
         const id = `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-        setPending(prev => [...prev, { id, url: uri, kind, mime, size: 0, name }]);
+        setPending(prev => [...prev, { id, url: uri, kind, mime, size: blob.size, name }]);
       } else {
         const att = await uploadAttachment(daemonUrl, token, uri, mime, name);
         setPending(prev => [...prev, att]);
