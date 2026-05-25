@@ -12,6 +12,7 @@
  *  device keystore on Android and the secure enclave on iOS. */
 
 import { useEffect, useState } from 'react';
+import { AppState } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { Directory, Paths } from 'expo-file-system';
 import {
@@ -256,6 +257,12 @@ export async function xmtpSendAttachment(
   const conv = await convOfLine(line);
   if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
   const payload: StaticAttachmentContent = { filename, mimeType, data: dataB64 };
+  /** Use the typed `sendAttachment` helper (not the generic `send({attachment})`) so the
+   *  native side runs the codec's full encode + size-validation path and surfaces real
+   *  errors instead of silently dropping payloads that exceed libxmtp's per-message limit. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const c = conv as unknown as { sendAttachment?: (p: StaticAttachmentContent) => Promise<string> };
+  if (typeof c.sendAttachment === 'function') return await c.sendAttachment(payload);
   return await conv.send({ attachment: payload });
 }
 
@@ -279,32 +286,59 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
   useEffect(() => {
     if (!enabled || !line) { setStatus('idle'); return; }
     let cancelled = false;
-    let unsubscribe: (() => void) | null = null;
+    let unsubscribeStream: (() => void) | null = null;
+    let pollTimer: ReturnType<typeof setInterval> | null = null;
+    let appStateSub: { remove: () => void } | null = null;
     setStatus('loading');
     setError(null);
+
+    /** Re-sync from the network + merge any new messages into `events`. Called on the
+     *  initial mount, on app foreground, every 5s as a stream-died backstop, and after
+     *  the per-conv streamMessages callback fires. Idempotent — already-seen ids are
+     *  filtered out via the id check. */
+    const refresh = async (): Promise<void> => {
+      try {
+        const conv = await convOfLine(line);
+        if (!conv || cancelled) return;
+        await conv.sync().catch(() => undefined);
+        const msgs = await conv.messages({ limit: 100 });
+        if (cancelled) return;
+        const fresh = msgs.map(m => envelopeOfXmtpMessage(m, line));
+        setEvents(prev => {
+          if (prev.length === 0) return fresh;
+          const seen = new Set(prev.map(e => e.id));
+          const additions = fresh.filter(e => !seen.has(e.id));
+          if (additions.length === 0) return prev;
+          /** `messages()` returns newest-first; merge new items into the same ordering. */
+          return [...additions, ...prev];
+        });
+      } catch { /* swallow — next tick or AppState change will retry */ }
+    };
+
     (async (): Promise<void> => {
       try {
         const client = await getOrCreateXmtpClient('production');
         if (cancelled) return;
         setInboxId(client.inboxId);
-        const conv = await convOfLine(line);
-        if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
-        /** Fetch the latest network state before seeding history — otherwise we'd render only
-         *  what the local sqlite cache happens to have. */
-        await conv.sync().catch(() => { /* tolerate offline */ });
-        const msgs = await conv.messages({ limit: 100 });
-        if (cancelled) return;
-        const seeded = msgs.map(m => envelopeOfXmtpMessage(m, line));
-        /** `messages()` returns newest-first by default — matches the inverted FlatList expectation. */
-        setEvents(seeded);
+        await refresh();
         setStatus('open');
-        /** Live subscription. Native callback fires for each new message; we prepend so the
-         *  newest is at index 0 (inverted-list convention). */
-        unsubscribe = await conv.streamMessages(async (msg): Promise<void> => {
-          if (cancelled) return;
-          const env = envelopeOfXmtpMessage(msg, line);
-          setEvents(prev => prev.some(e => e.id === env.id) ? prev : [env, ...prev]);
+        /** Per-conv streamMessages — primary live source. The RN SDK's native stream can
+         *  silently die on network blips, app backgrounding, or after long idles — we
+         *  paper over that with the AppState + poll backstops below. */
+        try {
+          unsubscribeStream = await (await convOfLine(line))?.streamMessages(async (msg) => {
+            if (cancelled) return;
+            const env = envelopeOfXmtpMessage(msg, line);
+            setEvents(prev => prev.some(e => e.id === env.id) ? prev : [env, ...prev]);
+          }) ?? null;
+        } catch { /* stream init failed — backstops will keep the feed fresh */ }
+        /** Foreground-resume: when the user comes back to the app, the stream may have
+         *  died while suspended. Re-sync explicitly. */
+        appStateSub = AppState.addEventListener('change', (state) => {
+          if (state === 'active') void refresh();
         });
+        /** Slow poll as a last-resort backstop — picks up anything the stream missed. */
+        pollTimer = setInterval(() => { void refresh(); }, 5_000);
       } catch (e) {
         if (cancelled) return;
         setStatus('error');
@@ -313,7 +347,9 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
     })();
     return (): void => {
       cancelled = true;
-      if (unsubscribe) try { unsubscribe(); } catch { /* ignore */ }
+      if (unsubscribeStream) try { unsubscribeStream(); } catch { /* ignore */ }
+      if (pollTimer) clearInterval(pollTimer);
+      if (appStateSub) try { appStateSub.remove(); } catch { /* ignore */ }
     };
   }, [line, enabled]);
 
