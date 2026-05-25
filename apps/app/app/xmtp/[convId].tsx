@@ -213,7 +213,7 @@ export default function XmtpConversation(): React.ReactElement {
        *  status-bar area, so content sliding up under the keyboard doesn't show through
        *  behind the system icons. */}
       <View style={{
-        position: 'absolute', top: -insets.top, left: 0, right: 0, zIndex: 2,
+        position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
         height: 44 + insets.top, paddingTop: insets.top, paddingHorizontal: 14, backgroundColor: bg,
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
       }}>
