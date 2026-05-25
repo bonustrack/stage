@@ -11,17 +11,12 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    ActivityChart: typeof import('./components/ActivityChart.vue')['default']
-    AppHeader: typeof import('./components/AppHeader.vue')['default']
+    BubbleActionSheet: typeof import('./components/BubbleActionSheet.vue')['default']
     Composer: typeof import('./components/Composer.vue')['default']
-    EventRow: typeof import('./components/EventRow.vue')['default']
-    FilterSheet: typeof import('./components/FilterSheet.vue')['default']
     HeroIcon: typeof import('./components/HeroIcon.vue')['default']
     MessengerBubble: typeof import('./components/MessengerBubble.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
-    SearchBar: typeof import('./components/SearchBar.vue')['default']
-    StationIcon: typeof import('./components/StationIcon.vue')['default']
     TabBar: typeof import('./components/TabBar.vue')['default']
   }
 }

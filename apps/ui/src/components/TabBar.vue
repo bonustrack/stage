@@ -1,11 +1,14 @@
 <script setup lang="ts">
-/** Bottom tab bar — Home / Search / Lines / Settings. Mirrors apps/app/(tabs)/_layout.tsx. */
+/** Bottom tab bar — Channels / Contacts / Settings / Profile.
+ *  Mirrors apps/app/app/(tabs)/_layout.tsx (icons-only, no labels). */
 
-const TABS = [
-  { to: '/',          label: 'Home',      icon: 'home' as const   },
-  { to: '/search',    label: 'Search',    icon: 'search' as const },
-  { to: '/lines',     label: 'Lines',     icon: 'list' as const   },
-  { to: '/settings',  label: 'Settings',  icon: 'cog' as const    },
+import type { HeroIconName } from './HeroIcon.vue';
+
+const TABS: { to: string; label: string; icon: HeroIconName }[] = [
+  { to: '/channels', label: 'Channels', icon: 'send' },
+  { to: '/contacts', label: 'Contacts', icon: 'users' },
+  { to: '/settings', label: 'Settings', icon: 'cog' },
+  { to: '/profile',  label: 'Profile',  icon: 'user' },
 ];
 </script>
 
@@ -18,7 +21,7 @@ const TABS = [
       v-for="tab in TABS"
       :key="tab.to"
       :to="tab.to"
-      v-slot="{ isActive }"
+      v-slot="{ isActive, navigate }"
       custom
     >
       <a
@@ -26,11 +29,11 @@ const TABS = [
         :aria-label="tab.label"
         class="flex items-center justify-center px-5 py-2 transition-colors"
         :class="isActive
-          ? 'text-metro-accent'
+          ? 'text-metro-fg-light dark:text-metro-fg-dark'
           : 'text-metro-sub-light dark:text-metro-sub-dark hover:text-metro-fg-light dark:hover:text-metro-fg-dark'"
-        @click.prevent="$router.push(tab.to)"
+        @click.prevent="navigate"
       >
-        <HeroIcon :name="tab.icon" :size="26" :focused="isActive" />
+        <HeroIcon :name="tab.icon" :size="26" />
       </a>
     </RouterLink>
   </nav>
