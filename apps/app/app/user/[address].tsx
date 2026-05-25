@@ -12,7 +12,7 @@ import * as Clipboard from 'expo-clipboard';
 import { shortAddress, stampBoxAvatarUrl } from '../../lib/xmtp';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { readProfile } from '../../lib/profile';
-import { avatarRenderUrl, type SnapshotProfile } from '../../../_shared/profile/snapshot';
+import { type SnapshotProfile } from '../../../_shared/profile/snapshot';
 import { HeroIcon } from '../../components/HeroIcon';
 
 const AVATAR_SIZE = 120;
@@ -63,7 +63,7 @@ export default function UserProfileView(): React.ReactElement {
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
         <View style={{ alignItems: 'center', paddingTop: 16, paddingBottom: 8 }}>
           <Image
-            source={{ uri: avatarRenderUrl(addr, profile?.avatar, AVATAR_SIZE * 2) }}
+            source={{ uri: stampBoxAvatarUrl(addr, AVATAR_SIZE * 2) }}
             style={{
               width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: AVATAR_SIZE / 2,
               backgroundColor: '#1a1f29',

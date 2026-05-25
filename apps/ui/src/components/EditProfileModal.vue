@@ -4,7 +4,8 @@
  *  account, POSTs to the Snapshot sequencer. */
 
 import { type SnapshotProfile, updateProfile, uploadAvatar } from '../lib/profile';
-import { PROFILE_FIELD_LIMITS, avatarRenderUrl } from '@shared/profile/snapshot';
+import { PROFILE_FIELD_LIMITS } from '@shared/profile/snapshot';
+import { stampBoxAvatarUrl } from '../lib/xmtp';
 
 const props = defineProps<{ open: boolean; address: string; initial: SnapshotProfile }>();
 const emit = defineEmits<{ (e: 'close'): void; (e: 'saved', next: SnapshotProfile): void }>();
@@ -79,7 +80,7 @@ async function save(): Promise<void> {
           <button type="button" :disabled="uploading"
             class="relative rounded-full overflow-hidden bg-metro-surface-light dark:bg-metro-surface-dark disabled:opacity-50"
             @click="fileInput?.click()">
-            <img :src="avatarRenderUrl(address, form.avatar, 192)" alt="" class="w-24 h-24 rounded-full object-cover" />
+            <img :src="stampBoxAvatarUrl(address, 192)" alt="" class="w-24 h-24 rounded-full object-cover" />
             <div v-if="uploading" class="absolute inset-0 flex items-center justify-center bg-black/40 text-white text-xs">…</div>
           </button>
           <div class="text-xs text-metro-sub-light dark:text-metro-sub-dark mt-2">Tap to change avatar</div>

@@ -13,7 +13,8 @@ import * as ImagePicker from 'expo-image-picker';
 import {
   type SnapshotProfile, updateProfile, uploadAvatar,
 } from '../lib/profile';
-import { PROFILE_FIELD_LIMITS, avatarRenderUrl } from '../../_shared/profile/snapshot';
+import { PROFILE_FIELD_LIMITS } from '../../_shared/profile/snapshot';
+import { stampBoxAvatarUrl } from '../lib/xmtp';
 
 const AVATAR_SIZE = 96;
 
@@ -94,7 +95,7 @@ export default function EditProfileModal({
           <View style={{ alignItems: 'center', marginBottom: 20 }}>
             <Pressable onPress={pickAvatar} disabled={uploading}>
               <Image
-                source={{ uri: avatarRenderUrl(address, form.avatar, AVATAR_SIZE * 2) }}
+                source={{ uri: stampBoxAvatarUrl(address, AVATAR_SIZE * 2) }}
                 style={{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: AVATAR_SIZE / 2, backgroundColor: rowBg, opacity: uploading ? 0.5 : 1 }}
               />
               {uploading ? (

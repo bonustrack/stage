@@ -4,13 +4,12 @@
 import { useEffect, useState } from 'react';
 import { Alert, Image, Pressable, Text, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import { getOrCreateXmtpClient, shortAddress } from '../../lib/xmtp';
+import { getOrCreateXmtpClient, shortAddress, stampBoxAvatarUrl } from '../../lib/xmtp';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { usePushToken, type PushStatus } from '../../lib/push';
 import {
   loadCachedProfile, readProfile, type SnapshotProfile,
 } from '../../lib/profile';
-import { avatarRenderUrl } from '../../../_shared/profile/snapshot';
 import EditProfileModal from '../../components/EditProfileModal';
 
 const AVATAR_SIZE = 120;
@@ -67,7 +66,7 @@ export default function Profile(): React.ReactElement {
       <View style={{ alignItems: 'center', paddingTop: 24, paddingBottom: 16 }}>
         {address ? (
           <Image
-            source={{ uri: avatarRenderUrl(address, profile.avatar, AVATAR_SIZE * 2) }}
+            source={{ uri: stampBoxAvatarUrl(address, AVATAR_SIZE * 2) }}
             style={{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: AVATAR_SIZE / 2, backgroundColor: rowBg }}
           />
         ) : (

@@ -2,9 +2,8 @@
 /** Profile tab — wallet identity + Snapshot-hub profile (display name, bio,
  *  custom avatar, socials). Tap Edit to open the EIP-712 update sheet. */
 
-import { getOrCreateXmtpClient, shortAddress } from '../lib/xmtp';
+import { getOrCreateXmtpClient, shortAddress, stampBoxAvatarUrl } from '../lib/xmtp';
 import { loadCachedProfile, readProfile, type SnapshotProfile } from '../lib/profile';
-import { avatarRenderUrl } from '@shared/profile/snapshot';
 
 const AVATAR_SIZE = 120;
 
@@ -55,7 +54,7 @@ async function copy(value: string, label: 'address' | 'inboxId'): Promise<void> 
 
     <div class="flex flex-col items-center pt-6 pb-4">
       <img v-if="address"
-        :src="avatarRenderUrl(address, profile.avatar, AVATAR_SIZE * 2)"
+        :src="stampBoxAvatarUrl(address, AVATAR_SIZE * 2)"
         alt=""
         :width="AVATAR_SIZE" :height="AVATAR_SIZE"
         class="rounded-full bg-metro-border-dark object-cover"
