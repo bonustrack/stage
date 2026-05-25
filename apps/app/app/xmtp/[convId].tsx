@@ -3,7 +3,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Animated as RNAnimated, FlatList, Image, Modal, PanResponder, Pressable, Text, View,
+  Animated as RNAnimated, FlatList, Image, Modal, PanResponder, Pressable, Text, TextInput, View,
 } from 'react-native';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -127,6 +127,13 @@ export default function XmtpConversation(): React.ReactElement {
   const [peerAddr, setPeerAddr] = useState<string | null>(null);
   const [memberAddrs, setMemberAddrs] = useState<string[]>([]);
   const [inboxToAddr, setInboxToAddr] = useState<Record<string, string>>({});
+  const [groupName, setGroupName] = useState<string>('');
+  /** `isGroup` gates the rename UI. We only learn it after `convOfLine`
+   *  resolves — DMs don't expose a name field so we suppress the affordance. */
+  const [isGroup, setIsGroup] = useState(false);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameDraft, setRenameDraft] = useState('');
+  const [renaming, setRenaming] = useState(false);
   const senderEthOf = useCallback((from: string): string | null => {
     if (!from.startsWith(XMTP_USER_PREFIX)) return null;
     const inboxId = from.slice(XMTP_USER_PREFIX.length);
@@ -143,11 +150,35 @@ export default function XmtpConversation(): React.ReactElement {
       if (cancelled) return;
       setInboxToAddr(fullMap);
       if (peer) { setPeerAddr(peer); return; }
-      const members = await groupMemberEthAddresses(conv);
-      if (!cancelled) setMemberAddrs(members);
+      setIsGroup(true);
+      const [members, name] = await Promise.all([
+        groupMemberEthAddresses(conv),
+        (conv as unknown as { name?: () => Promise<string> }).name?.() ?? Promise.resolve(''),
+      ]);
+      if (!cancelled) {
+        setMemberAddrs(members);
+        setGroupName(name ?? '');
+      }
     })();
     return (): void => { cancelled = true; };
   }, [activeLine, convId]);
+
+  const submitRename = async (): Promise<void> => {
+    const next = renameDraft.trim();
+    if (!next || renaming) return;
+    setRenaming(true);
+    try {
+      const conv = await convOfLine(activeLine);
+      const group = conv as unknown as { updateName?: (n: string) => Promise<void> };
+      await group.updateName?.(next);
+      setGroupName(next);
+      setRenameOpen(false);
+    } catch (e) {
+      /** Update can fail when the local user isn't an admin (default permission
+       *  model). Surface inline in the modal rather than nuking the UI. */
+      console.warn('updateName failed', (e as Error).message);
+    } finally { setRenaming(false); }
+  };
   const insets = useSafeAreaInsets();
   /** Swipe left→right on the screen → back to the messenger list, with the screen sliding
    *  with the finger. Past 60px on release → navigate back; otherwise spring home.
@@ -299,6 +330,18 @@ export default function XmtpConversation(): React.ReactElement {
         >
           <HeroIcon name="arrowLeft" size={22} color={fg} />
         </Pressable>
+        {/** Title slot — group name (tap to rename for groups), no name shown for DMs. */}
+        {isGroup ? (
+          <Pressable
+            onPress={() => { setRenameDraft(groupName); setRenameOpen(true); }}
+            style={{ flex: 1, alignItems: 'center', paddingHorizontal: 8 }}
+            hitSlop={6}
+          >
+            <Text style={{ color: fg, fontSize: 15, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
+              {groupName || 'Untitled group'}
+            </Text>
+          </Pressable>
+        ) : <View style={{ flex: 1 }} />}
         {status !== 'open' ? (
           <View style={{
             flexDirection: 'row', alignItems: 'center', gap: 6,
@@ -317,6 +360,51 @@ export default function XmtpConversation(): React.ReactElement {
           <HeaderAvatars peerAddr={peerAddr} memberAddrs={memberAddrs} bg={bg} />
         )}
       </View>
+      {/** Rename modal — minimal sheet, only visible for groups when title tapped. */}
+      <Modal visible={renameOpen} onRequestClose={() => setRenameOpen(false)} animationType="fade" transparent>
+        <Pressable onPress={() => !renaming && setRenameOpen(false)} style={{
+          flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center',
+          padding: 24,
+        }}>
+          <Pressable onPress={() => undefined} style={{
+            width: '100%', maxWidth: 420, padding: 20, borderRadius: 16, backgroundColor: bg,
+            borderWidth: 1, borderColor: dark ? '#262c38' : '#e3e7ef',
+          }}>
+            <Text style={{ color: fg, fontSize: 16, fontFamily: 'Calibre-Semibold', marginBottom: 12 }}>
+              Rename group
+            </Text>
+            <TextInput
+              value={renameDraft}
+              onChangeText={setRenameDraft}
+              placeholder="Group name"
+              placeholderTextColor={sub}
+              autoFocus
+              style={{
+                color: fg, backgroundColor: dark ? '#161a22' : '#fafbfd',
+                borderWidth: 1, borderColor: dark ? '#262c38' : '#e3e7ef',
+                borderRadius: 12, padding: 12, fontSize: 14,
+              }}
+            />
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
+              <Pressable onPress={() => setRenameOpen(false)} disabled={renaming}
+                style={{ paddingHorizontal: 14, paddingVertical: 10 }}>
+                <Text style={{ color: sub, fontSize: 14 }}>Cancel</Text>
+              </Pressable>
+              <Pressable onPress={() => { void submitRename(); }}
+                disabled={renaming || !renameDraft.trim()}
+                style={({ pressed }) => ({
+                  paddingHorizontal: 18, paddingVertical: 10, borderRadius: 999,
+                  backgroundColor: '#ffffff',
+                  opacity: pressed ? 0.85 : (renaming || !renameDraft.trim()) ? 0.5 : 1,
+                })}>
+                <Text style={{ color: '#000000', fontSize: 14, fontFamily: 'Calibre-Medium' }}>
+                  {renaming ? 'Saving…' : 'Save'}
+                </Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
       {/** Fade strip below the top nav — mirrors the composer's top fade. Position it
        *  flush against the nav bottom (which sits at `44 + insets.top`), so the solid
        *  bg fades smoothly into the scrolling content beneath. */}
