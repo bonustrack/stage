@@ -54,7 +54,7 @@ export default function Settings(): React.ReactElement {
           }}
         >
           <Text style={{ color: sub, fontSize: 11 }}>YOUR XMTP ADDRESS (tap to copy)</Text>
-          <Text style={{ color: fg, fontSize: 13, fontFamily: 'monospace', marginTop: 2 }}>
+          <Text style={{ color: fg, fontSize: 13, marginTop: 2 }}>
             {shortAddress(myAddress)}
           </Text>
         </Pressable>

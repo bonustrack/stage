@@ -7,33 +7,34 @@
 export {}
 declare global {
   const EffectScope: typeof import('vue').EffectScope
-  const channelShortId: typeof import('./lib/channels').channelShortId
+  const XMTP_USER_PREFIX: typeof import('./lib/xmtp').XMTP_USER_PREFIX
   const computed: typeof import('vue').computed
+  const convIdOfLine: typeof import('./lib/xmtp').convIdOfLine
+  const convOfLine: typeof import('./lib/xmtp').convOfLine
   const createApp: typeof import('vue').createApp
-  const createChannel: typeof import('./lib/channels').createChannel
   const customRef: typeof import('vue').customRef
   const defineAsyncComponent: typeof import('vue').defineAsyncComponent
   const defineComponent: typeof import('vue').defineComponent
   const effectScope: typeof import('vue').effectScope
-  const fetchHistoryPage: typeof import('./lib/api').fetchHistoryPage
-  const fetchState: typeof import('./lib/api').fetchState
+  const envelopeOfXmtpMessage: typeof import('./lib/xmtpFeed').envelopeOfXmtpMessage
+  const getCachedXmtpClient: typeof import('./lib/xmtp').getCachedXmtpClient
   const getCurrentInstance: typeof import('vue').getCurrentInstance
   const getCurrentScope: typeof import('vue').getCurrentScope
   const getCurrentWatcher: typeof import('vue').getCurrentWatcher
+  const getOrCreateXmtpClient: typeof import('./lib/xmtp').getOrCreateXmtpClient
+  const groupMemberEthAddresses: typeof import('./lib/xmtp').groupMemberEthAddresses
   const h: typeof import('vue').h
   const inject: typeof import('vue').inject
-  const isConfigured: typeof import('./lib/config').isConfigured
+  const installThemeClassEffect: typeof import('./lib/theme').installThemeClassEffect
   const isProxy: typeof import('vue').isProxy
-  const isReaction: typeof import('./lib/messenger').isReaction
+  const isReactionEntry: typeof import('./lib/xmtpFeed').isReactionEntry
   const isReactive: typeof import('vue').isReactive
   const isReadonly: typeof import('vue').isReadonly
   const isRef: typeof import('vue').isRef
   const isShallow: typeof import('vue').isShallow
-  const isTranscript: typeof import('./lib/messenger').isTranscript
-  const listChannels: typeof import('./lib/channels').listChannels
-  const loadConfig: typeof import('./lib/config').loadConfig
+  const isXmtpLine: typeof import('./lib/xmtp').isXmtpLine
+  const lineOfConv: typeof import('./lib/xmtp').lineOfConv
   const markRaw: typeof import('vue').markRaw
-  const matchesSearch: typeof import('./lib/search').matchesSearch
   const nextTick: typeof import('vue').nextTick
   const onActivated: typeof import('vue').onActivated
   const onBeforeMount: typeof import('vue').onBeforeMount
@@ -51,45 +52,47 @@ declare global {
   const onUnmounted: typeof import('vue').onUnmounted
   const onUpdated: typeof import('vue').onUpdated
   const onWatcherCleanup: typeof import('vue').onWatcherCleanup
-  const openTail: typeof import('./lib/api').openTail
-  const parseRichText: typeof import('./lib/rich-text').parseRichText
+  const peerEthAddressOfDm: typeof import('./lib/xmtp').peerEthAddressOfDm
   const provide: typeof import('vue').provide
-  const reactMessenger: typeof import('./lib/messenger').reactMessenger
-  const reactionsByMessage: typeof import('./lib/messenger').reactionsByMessage
+  const reactionsByMessage: typeof import('./lib/xmtpFeed').reactionsByMessage
   const reactive: typeof import('vue').reactive
   const readonly: typeof import('vue').readonly
   const ref: typeof import('vue').ref
+  const resetXmtpClient: typeof import('./lib/xmtp').resetXmtpClient
   const resolveComponent: typeof import('vue').resolveComponent
-  const saveConfig: typeof import('./lib/config').saveConfig
-  const sendCall: typeof import('./lib/api').sendCall
-  const sendMessenger: typeof import('./lib/messenger').sendMessenger
+  const setThemePreference: typeof import('./lib/theme').setThemePreference
   const shallowReactive: typeof import('vue').shallowReactive
   const shallowReadonly: typeof import('vue').shallowReadonly
   const shallowRef: typeof import('vue').shallowRef
+  const shortAddress: typeof import('./lib/xmtp').shortAddress
+  const stampBoxAvatarUrl: typeof import('./lib/xmtp').stampBoxAvatarUrl
   const toRaw: typeof import('vue').toRaw
   const toRef: typeof import('vue').toRef
   const toRefs: typeof import('vue').toRefs
   const toValue: typeof import('vue').toValue
-  const transcriptsByMessage: typeof import('./lib/messenger').transcriptsByMessage
   const triggerRef: typeof import('vue').triggerRef
   const unref: typeof import('vue').unref
-  const uploadAttachment: typeof import('./lib/messenger').uploadAttachment
   const useAttrs: typeof import('vue').useAttrs
   const useCssModule: typeof import('vue').useCssModule
   const useCssVars: typeof import('vue').useCssVars
+  const useEffectiveColorScheme: typeof import('./lib/theme').useEffectiveColorScheme
   const useId: typeof import('vue').useId
   const useLink: typeof import('vue-router').useLink
   const useModel: typeof import('vue').useModel
-  const useRecorder: typeof import('./lib/useRecorder').useRecorder
   const useRoute: typeof import('vue-router').useRoute
   const useRouter: typeof import('vue-router').useRouter
   const useSlots: typeof import('vue').useSlots
-  const useTail: typeof import('./lib/useTail').useTail
   const useTemplateRef: typeof import('vue').useTemplateRef
+  const useThemePreference: typeof import('./lib/theme').useThemePreference
+  const useXmtpFeed: typeof import('./lib/xmtpFeed').useXmtpFeed
   const watch: typeof import('vue').watch
   const watchEffect: typeof import('vue').watchEffect
   const watchPostEffect: typeof import('vue').watchPostEffect
   const watchSyncEffect: typeof import('vue').watchSyncEffect
+  const xmtpReact: typeof import('./lib/xmtpSend').xmtpReact
+  const xmtpReply: typeof import('./lib/xmtpSend').xmtpReply
+  const xmtpSendAttachment: typeof import('./lib/xmtpSend').xmtpSendAttachment
+  const xmtpSendText: typeof import('./lib/xmtpSend').xmtpSendText
 }
 // for type re-export
 declare global {
@@ -97,23 +100,17 @@ declare global {
   export type { Component, Slot, Slots, ComponentPublicInstance, ComputedRef, DirectiveBinding, ExtractDefaultPropTypes, ExtractPropTypes, ExtractPublicPropTypes, InjectionKey, PropType, Ref, ShallowRef, MaybeRef, MaybeRefOrGetter, VNode, WritableComputedRef } from 'vue'
   import('vue')
   // @ts-ignore
-  export type { TailOptions } from './lib/api'
-  import('./lib/api')
-  // @ts-ignore
-  export type { Config } from './lib/config'
-  import('./lib/config')
-  // @ts-ignore
-  export type { Attachment, HistoryLike } from './lib/messenger'
-  import('./lib/messenger')
+  export type { ThemePreference } from './lib/theme'
+  import('./lib/theme')
   // @ts-ignore
   export type { HistoryEntry } from './lib/types'
   import('./lib/types')
   // @ts-ignore
-  export type { UseRecorderHandle } from './lib/useRecorder'
-  import('./lib/useRecorder')
+  export type { XmtpClient, XmtpEnv } from './lib/xmtp'
+  import('./lib/xmtp')
   // @ts-ignore
-  export type { UseTailHandle } from './lib/useTail'
-  import('./lib/useTail')
+  export type { XmtpFeedStatus, XmtpFeedHandle } from './lib/xmtpFeed'
+  import('./lib/xmtpFeed')
 }
 
 // for vue template auto import
@@ -122,30 +119,34 @@ declare module 'vue' {
   interface GlobalComponents {}
   interface ComponentCustomProperties {
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
+    readonly XMTP_USER_PREFIX: UnwrapRef<typeof import('./lib/xmtp')['XMTP_USER_PREFIX']>
     readonly computed: UnwrapRef<typeof import('vue')['computed']>
+    readonly convIdOfLine: UnwrapRef<typeof import('./lib/xmtp')['convIdOfLine']>
+    readonly convOfLine: UnwrapRef<typeof import('./lib/xmtp')['convOfLine']>
     readonly createApp: UnwrapRef<typeof import('vue')['createApp']>
     readonly customRef: UnwrapRef<typeof import('vue')['customRef']>
     readonly defineAsyncComponent: UnwrapRef<typeof import('vue')['defineAsyncComponent']>
     readonly defineComponent: UnwrapRef<typeof import('vue')['defineComponent']>
     readonly effectScope: UnwrapRef<typeof import('vue')['effectScope']>
-    readonly fetchHistoryPage: UnwrapRef<typeof import('./lib/api')['fetchHistoryPage']>
-    readonly fetchState: UnwrapRef<typeof import('./lib/api')['fetchState']>
+    readonly envelopeOfXmtpMessage: UnwrapRef<typeof import('./lib/xmtpFeed')['envelopeOfXmtpMessage']>
+    readonly getCachedXmtpClient: UnwrapRef<typeof import('./lib/xmtp')['getCachedXmtpClient']>
     readonly getCurrentInstance: UnwrapRef<typeof import('vue')['getCurrentInstance']>
     readonly getCurrentScope: UnwrapRef<typeof import('vue')['getCurrentScope']>
     readonly getCurrentWatcher: UnwrapRef<typeof import('vue')['getCurrentWatcher']>
+    readonly getOrCreateXmtpClient: UnwrapRef<typeof import('./lib/xmtp')['getOrCreateXmtpClient']>
+    readonly groupMemberEthAddresses: UnwrapRef<typeof import('./lib/xmtp')['groupMemberEthAddresses']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
-    readonly isConfigured: UnwrapRef<typeof import('./lib/config')['isConfigured']>
+    readonly installThemeClassEffect: UnwrapRef<typeof import('./lib/theme')['installThemeClassEffect']>
     readonly isProxy: UnwrapRef<typeof import('vue')['isProxy']>
-    readonly isReaction: UnwrapRef<typeof import('./lib/messenger')['isReaction']>
+    readonly isReactionEntry: UnwrapRef<typeof import('./lib/xmtpFeed')['isReactionEntry']>
     readonly isReactive: UnwrapRef<typeof import('vue')['isReactive']>
     readonly isReadonly: UnwrapRef<typeof import('vue')['isReadonly']>
     readonly isRef: UnwrapRef<typeof import('vue')['isRef']>
     readonly isShallow: UnwrapRef<typeof import('vue')['isShallow']>
-    readonly isTranscript: UnwrapRef<typeof import('./lib/messenger')['isTranscript']>
-    readonly loadConfig: UnwrapRef<typeof import('./lib/config')['loadConfig']>
+    readonly isXmtpLine: UnwrapRef<typeof import('./lib/xmtp')['isXmtpLine']>
+    readonly lineOfConv: UnwrapRef<typeof import('./lib/xmtp')['lineOfConv']>
     readonly markRaw: UnwrapRef<typeof import('vue')['markRaw']>
-    readonly matchesSearch: UnwrapRef<typeof import('./lib/search')['matchesSearch']>
     readonly nextTick: UnwrapRef<typeof import('vue')['nextTick']>
     readonly onActivated: UnwrapRef<typeof import('vue')['onActivated']>
     readonly onBeforeMount: UnwrapRef<typeof import('vue')['onBeforeMount']>
@@ -163,43 +164,46 @@ declare module 'vue' {
     readonly onUnmounted: UnwrapRef<typeof import('vue')['onUnmounted']>
     readonly onUpdated: UnwrapRef<typeof import('vue')['onUpdated']>
     readonly onWatcherCleanup: UnwrapRef<typeof import('vue')['onWatcherCleanup']>
-    readonly openTail: UnwrapRef<typeof import('./lib/api')['openTail']>
+    readonly peerEthAddressOfDm: UnwrapRef<typeof import('./lib/xmtp')['peerEthAddressOfDm']>
     readonly provide: UnwrapRef<typeof import('vue')['provide']>
-    readonly reactMessenger: UnwrapRef<typeof import('./lib/messenger')['reactMessenger']>
-    readonly reactionsByMessage: UnwrapRef<typeof import('./lib/messenger')['reactionsByMessage']>
+    readonly reactionsByMessage: UnwrapRef<typeof import('./lib/xmtpFeed')['reactionsByMessage']>
     readonly reactive: UnwrapRef<typeof import('vue')['reactive']>
     readonly readonly: UnwrapRef<typeof import('vue')['readonly']>
     readonly ref: UnwrapRef<typeof import('vue')['ref']>
+    readonly resetXmtpClient: UnwrapRef<typeof import('./lib/xmtp')['resetXmtpClient']>
     readonly resolveComponent: UnwrapRef<typeof import('vue')['resolveComponent']>
-    readonly saveConfig: UnwrapRef<typeof import('./lib/config')['saveConfig']>
-    readonly sendCall: UnwrapRef<typeof import('./lib/api')['sendCall']>
-    readonly sendMessenger: UnwrapRef<typeof import('./lib/messenger')['sendMessenger']>
+    readonly setThemePreference: UnwrapRef<typeof import('./lib/theme')['setThemePreference']>
     readonly shallowReactive: UnwrapRef<typeof import('vue')['shallowReactive']>
     readonly shallowReadonly: UnwrapRef<typeof import('vue')['shallowReadonly']>
     readonly shallowRef: UnwrapRef<typeof import('vue')['shallowRef']>
+    readonly shortAddress: UnwrapRef<typeof import('./lib/xmtp')['shortAddress']>
+    readonly stampBoxAvatarUrl: UnwrapRef<typeof import('./lib/xmtp')['stampBoxAvatarUrl']>
     readonly toRaw: UnwrapRef<typeof import('vue')['toRaw']>
     readonly toRef: UnwrapRef<typeof import('vue')['toRef']>
     readonly toRefs: UnwrapRef<typeof import('vue')['toRefs']>
     readonly toValue: UnwrapRef<typeof import('vue')['toValue']>
-    readonly transcriptsByMessage: UnwrapRef<typeof import('./lib/messenger')['transcriptsByMessage']>
     readonly triggerRef: UnwrapRef<typeof import('vue')['triggerRef']>
     readonly unref: UnwrapRef<typeof import('vue')['unref']>
-    readonly uploadAttachment: UnwrapRef<typeof import('./lib/messenger')['uploadAttachment']>
     readonly useAttrs: UnwrapRef<typeof import('vue')['useAttrs']>
     readonly useCssModule: UnwrapRef<typeof import('vue')['useCssModule']>
     readonly useCssVars: UnwrapRef<typeof import('vue')['useCssVars']>
+    readonly useEffectiveColorScheme: UnwrapRef<typeof import('./lib/theme')['useEffectiveColorScheme']>
     readonly useId: UnwrapRef<typeof import('vue')['useId']>
     readonly useLink: UnwrapRef<typeof import('vue-router')['useLink']>
     readonly useModel: UnwrapRef<typeof import('vue')['useModel']>
-    readonly useRecorder: UnwrapRef<typeof import('./lib/useRecorder')['useRecorder']>
     readonly useRoute: UnwrapRef<typeof import('vue-router')['useRoute']>
     readonly useRouter: UnwrapRef<typeof import('vue-router')['useRouter']>
     readonly useSlots: UnwrapRef<typeof import('vue')['useSlots']>
-    readonly useTail: UnwrapRef<typeof import('./lib/useTail')['useTail']>
     readonly useTemplateRef: UnwrapRef<typeof import('vue')['useTemplateRef']>
+    readonly useThemePreference: UnwrapRef<typeof import('./lib/theme')['useThemePreference']>
+    readonly useXmtpFeed: UnwrapRef<typeof import('./lib/xmtpFeed')['useXmtpFeed']>
     readonly watch: UnwrapRef<typeof import('vue')['watch']>
     readonly watchEffect: UnwrapRef<typeof import('vue')['watchEffect']>
     readonly watchPostEffect: UnwrapRef<typeof import('vue')['watchPostEffect']>
     readonly watchSyncEffect: UnwrapRef<typeof import('vue')['watchSyncEffect']>
+    readonly xmtpReact: UnwrapRef<typeof import('./lib/xmtpSend')['xmtpReact']>
+    readonly xmtpReply: UnwrapRef<typeof import('./lib/xmtpSend')['xmtpReply']>
+    readonly xmtpSendAttachment: UnwrapRef<typeof import('./lib/xmtpSend')['xmtpSendAttachment']>
+    readonly xmtpSendText: UnwrapRef<typeof import('./lib/xmtpSend')['xmtpSendText']>
   }
 }

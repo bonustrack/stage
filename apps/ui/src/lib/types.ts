@@ -1,4 +1,6 @@
-/** Event/state shapes — mirror the daemon's HistoryEntry. Synced by hand with apps/app/lib/types.ts. */
+/** Shared event envelope shape used by the XMTP feed + bubble renderer. Mirrors
+ *  apps/app/lib/types.ts so the two clients can talk the same language even though
+ *  the web build never sees the daemon's event log. */
 
 export interface HistoryEntry {
   id: string;

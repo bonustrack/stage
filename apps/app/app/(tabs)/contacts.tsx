@@ -122,7 +122,7 @@ export default function Contacts(): React.ReactElement {
               style={{ width: 36, height: 36, borderRadius: 999, backgroundColor: '#1a1f29' }}
             />
             <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={{ color: fg, fontSize: 14, fontFamily: 'monospace' }} numberOfLines={1}>
+              <Text style={{ color: fg, fontSize: 14 }} numberOfLines={1}>
                 {item.address}
               </Text>
               <Text style={{ color: sub, fontSize: 12, marginTop: 4 }} numberOfLines={1}>

@@ -12,6 +12,7 @@ import { useRouter } from 'expo-router';
 import type { Conversation, DecodedMessage } from '@xmtp/react-native-sdk';
 import {
   getOrCreateXmtpClient, peerEthAddressOfDm, groupMemberEthAddresses, stampBoxAvatarUrl,
+  createAskQuestionGroup,
 } from '../../lib/xmtp';
 import { useEffectiveColorScheme } from '../../lib/theme';
 
@@ -48,9 +49,12 @@ async function summarize(conv: Conversation): Promise<Row> {
   }
   const peerAddress = await peerEthAddressOfDm(conv);
   const memberAddresses = peerAddress ? [] : await groupMemberEthAddresses(conv);
+  /** memberAddresses excludes the local wallet — the title is a human count of
+   *  the WHOLE group so add 1 back in for the user themselves. */
+  const totalMembers = memberAddresses.length + 1;
   const title = peerAddress
     ?? (memberAddresses.length > 0
-      ? `${memberAddresses.length} member${memberAddresses.length === 1 ? '' : 's'}`
+      ? `${totalMembers} member${totalMembers === 1 ? '' : 's'}`
       : conv.topic.replace(/^.*\//, '').slice(0, 12));
   return {
     convId: conv.id,
@@ -149,6 +153,20 @@ export default function Messenger(): React.ReactElement {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [error, setError] = useState<string>('');
   const [query, setQuery] = useState<string>('');
+  const [creatingAsk, setCreatingAsk] = useState(false);
+
+  const onAskPress = async (): Promise<void> => {
+    if (creatingAsk) return;
+    setCreatingAsk(true);
+    try {
+      const convId = await createAskQuestionGroup();
+      router.push({ pathname: '/xmtp/[convId]', params: { convId } });
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setCreatingAsk(false);
+    }
+  };
 
   const filtered = useMemo(() => {
     if (!rows) return null;
@@ -163,16 +181,57 @@ export default function Messenger(): React.ReactElement {
   }, [rows, query]);
 
   useEffect(() => {
+    let cancelled = false;
+    let cancelConvStream: (() => void) | null = null;
+    let cancelMsgStream: (() => void) | null = null;
     void (async (): Promise<void> => {
       try {
         const client = await getOrCreateXmtpClient('production');
         await client.conversations.syncAllConversations(['allowed', 'unknown']);
         const convs = await client.conversations.list(undefined, undefined, ['allowed', 'unknown']);
         const summarized = await Promise.all(convs.map(summarize));
+        if (cancelled) return;
         summarized.sort((a, b) => (b.lastTs ?? 0) - (a.lastTs ?? 0));
         setRows(summarized);
+        /** Subscribe to newly-created conversations so groups + DMs created
+         *  while the tab is mounted show up without a manual refresh. */
+        try {
+          cancelConvStream = await client.conversations.stream(async (conv) => {
+            if (cancelled || !conv) return;
+            const r = await summarize(conv);
+            setRows(prev => prev
+              ? [r, ...prev.filter(x => x.convId !== r.convId)]
+              : [r]);
+          }) ?? null;
+        } catch { /* stream init failed — the next mount will pick things up */ }
+        /** Subscribe to every new message across all convs so the per-row
+         *  lastTs + lastPreview reflect activity in real time. */
+        try {
+          cancelMsgStream = await client.conversations.streamAllMessages(async (msg) => {
+            if (cancelled || !msg) return;
+            let preview = '';
+            try {
+              const decoded: unknown = msg.content();
+              preview = typeof decoded === 'string' ? decoded : `[${msg.contentTypeId ?? 'unknown'}]`;
+            } catch { preview = `[${msg.contentTypeId ?? 'unknown'}]`; }
+            const lastTs = msg.sentNs ? Math.floor(msg.sentNs / 1_000_000) : Date.now();
+            const lastPreview = preview.slice(0, 80);
+            setRows(prev => {
+              if (!prev) return prev;
+              const idx = prev.findIndex(r => r.convId === msg.conversationId);
+              if (idx === -1) return prev;
+              const updated = { ...prev[idx]!, lastTs, lastPreview };
+              return [updated, ...prev.slice(0, idx), ...prev.slice(idx + 1)];
+            });
+          }) ?? null;
+        } catch { /* message stream init failed — preview will lag */ }
       } catch (e) { setError((e as Error).message); }
     })();
+    return (): void => {
+      cancelled = true;
+      if (cancelConvStream) try { cancelConvStream(); } catch { /* ignore */ }
+      if (cancelMsgStream) try { cancelMsgStream(); } catch { /* ignore */ }
+    };
   }, []);
 
   if (error) {
@@ -193,7 +252,7 @@ export default function Messenger(): React.ReactElement {
 
   return (
     <View style={{ flex: 1, backgroundColor: bg }}>
-      <View style={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 8 }}>
+      <View style={{ paddingHorizontal: 12, paddingTop: 12, paddingBottom: 8 }}>
         <TextInput
           value={query}
           onChangeText={setQuery}
@@ -212,6 +271,8 @@ export default function Messenger(): React.ReactElement {
       <FlatList
         data={filtered ?? rows}
         keyExtractor={r => r.convId}
+        /** Leave room at the bottom for the floating "Ask a question" pill. */
+        contentContainerStyle={{ paddingBottom: 88 }}
         ListEmptyComponent={
           <View style={{ padding: 32, alignItems: 'center' }}>
             <Text style={{ color: sub, textAlign: 'center' }}>
@@ -235,7 +296,7 @@ export default function Messenger(): React.ReactElement {
               rowBg={rowBg}
             />
             <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={{ color: fg, fontSize: 14, fontFamily: 'monospace' }} numberOfLines={1}>
+              <Text style={{ color: fg, fontSize: 14 }} numberOfLines={1}>
                 {item.title}
               </Text>
               <Text style={{ color: sub, fontSize: 12, marginTop: 4 }} numberOfLines={1}>
@@ -246,6 +307,25 @@ export default function Messenger(): React.ReactElement {
           </Pressable>
         )}
       />
+      {/** Floating "Ask a question" pill — full-width, anchored above the tab
+       *   bar so it stays reachable while the channel list scrolls underneath. */}
+      <Pressable
+        onPress={() => { void onAskPress(); }}
+        disabled={creatingAsk}
+        style={({ pressed }) => ({
+          position: 'absolute', left: 16, right: 16, bottom: 16,
+          backgroundColor: '#ffffff',
+          borderRadius: 999, paddingVertical: 14,
+          alignItems: 'center', justifyContent: 'center',
+          shadowColor: '#000000', shadowOpacity: 0.18, shadowRadius: 8, shadowOffset: { width: 0, height: 2 },
+          elevation: 4,
+          opacity: pressed ? 0.85 : creatingAsk ? 0.6 : 1,
+        })}
+      >
+        <Text style={{ color: '#000000', fontSize: 17 }}>
+          {creatingAsk ? 'Creating group…' : 'Ask a question'}
+        </Text>
+      </Pressable>
     </View>
   );
 }

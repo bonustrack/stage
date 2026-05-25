@@ -73,7 +73,7 @@ export default function Profile(): React.ReactElement {
           }}
         >
           <Text style={{ color: sub, fontSize: 11 }}>WALLET ADDRESS (tap to copy)</Text>
-          <Text style={{ color: fg, fontSize: 13, fontFamily: 'monospace', marginTop: 4 }}>
+          <Text style={{ color: fg, fontSize: 13, marginTop: 4 }}>
             {address}
           </Text>
         </Pressable>
@@ -89,7 +89,7 @@ export default function Profile(): React.ReactElement {
           }}
         >
           <Text style={{ color: sub, fontSize: 11 }}>XMTP INBOX ID (tap to copy)</Text>
-          <Text style={{ color: fg, fontSize: 13, fontFamily: 'monospace', marginTop: 4 }} numberOfLines={1}>
+          <Text style={{ color: fg, fontSize: 13, marginTop: 4 }} numberOfLines={1}>
             {inboxId}
           </Text>
         </Pressable>
@@ -127,7 +127,7 @@ function PushTokenCard({ status, token, error, onCopy, sub, fg, border, rowBg }:
       <Text style={{ color: sub, fontSize: 11 }}>{label}</Text>
       {body ? (
         <Text
-          style={{ color: fg, fontSize: 11, fontFamily: 'monospace', marginTop: 4 }}
+          style={{ color: fg, fontSize: 11, marginTop: 4 }}
           numberOfLines={token ? 3 : undefined}
           selectable
         >
