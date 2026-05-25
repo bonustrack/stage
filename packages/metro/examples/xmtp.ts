@@ -80,6 +80,128 @@ async function transcribeAndEmit(audio: Uint8Array, line: string, sourceMsgId: s
   finally { for (const f of [inFile, wav, `${out}.txt`]) { try { unlinkSync(f); } catch { /* ignore */ } } }
 }
 
+/* ────────────────────────────────────────────────────────────────────────────
+ * FCM push pipeline — daemon-side notifier.
+ *
+ * On every outbound XMTP message we send (claude → user), iterate every device
+ * token stored in ~/.cache/metro/xmtp-push-tokens.json and POST a notification
+ * via FCM v1 HTTP. Auth is the standard service-account → JWT → OAuth2 flow.
+ *
+ * No client lib (firebase-admin) so the train stays a single file with zero
+ * extra deps — pure node:crypto + fetch.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+const FCM_SVC_PATH = `${process.env.HOME}/.config/metro/firebase-service-account.json`;
+const FCM_TOKENS_PATH = `${process.env.HOME}/.cache/metro/xmtp-push-tokens.json`;
+
+interface FcmServiceAccount {
+  client_email: string;
+  private_key: string;
+  project_id: string;
+  token_uri: string;
+}
+interface StoredPushToken { token: string; registeredAt: string }
+
+function loadFcmSvc(): FcmServiceAccount | null {
+  const { existsSync, readFileSync } = require('node:fs') as typeof import('node:fs');
+  if (!existsSync(FCM_SVC_PATH)) return null;
+  try { return JSON.parse(readFileSync(FCM_SVC_PATH, 'utf8')) as FcmServiceAccount; }
+  catch (err) { process.stderr.write(`fcm: bad service account: ${(err as Error).message}\n`); return null; }
+}
+
+function loadPushTokens(): StoredPushToken[] {
+  const { existsSync, readFileSync } = require('node:fs') as typeof import('node:fs');
+  if (!existsSync(FCM_TOKENS_PATH)) return [];
+  try { return JSON.parse(readFileSync(FCM_TOKENS_PATH, 'utf8')) as StoredPushToken[]; }
+  catch { return []; }
+}
+function savePushTokens(tokens: StoredPushToken[]): void {
+  const { writeFileSync, mkdirSync } = require('node:fs') as typeof import('node:fs');
+  const { dirname } = require('node:path') as typeof import('node:path');
+  mkdirSync(dirname(FCM_TOKENS_PATH), { recursive: true });
+  writeFileSync(FCM_TOKENS_PATH, JSON.stringify(tokens, null, 2));
+}
+
+/** Cached OAuth2 access token. Google issues these with a 1h TTL — we keep a 60s
+ *  safety margin and re-mint via the JWT-bearer grant on next use. */
+let cachedAccessToken: { token: string; expiresAt: number } | null = null;
+async function fcmAccessToken(): Promise<string | null> {
+  const svc = loadFcmSvc();
+  if (!svc) return null;
+  if (cachedAccessToken && cachedAccessToken.expiresAt > Date.now() + 60_000) return cachedAccessToken.token;
+
+  const { createSign } = require('node:crypto') as typeof import('node:crypto');
+  const enc = (o: unknown): string => Buffer.from(JSON.stringify(o)).toString('base64url');
+  const now = Math.floor(Date.now() / 1000);
+  const header = { alg: 'RS256', typ: 'JWT' };
+  const payload = {
+    iss: svc.client_email,
+    scope: 'https://www.googleapis.com/auth/firebase.messaging',
+    aud: svc.token_uri,
+    iat: now, exp: now + 3600,
+  };
+  const sigInput = `${enc(header)}.${enc(payload)}`;
+  const signer = createSign('RSA-SHA256');
+  signer.update(sigInput); signer.end();
+  const sig = signer.sign(svc.private_key).toString('base64url');
+  const jwt = `${sigInput}.${sig}`;
+
+  const res = await fetch(svc.token_uri, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `grant_type=${encodeURIComponent('urn:ietf:params:oauth:grant-type:jwt-bearer')}&assertion=${jwt}`,
+  });
+  if (!res.ok) {
+    process.stderr.write(`fcm token exchange ${res.status}: ${await res.text()}\n`);
+    return null;
+  }
+  const json = await res.json() as { access_token: string; expires_in: number };
+  cachedAccessToken = { token: json.access_token, expiresAt: Date.now() + json.expires_in * 1000 };
+  return cachedAccessToken.token;
+}
+
+/** Send one FCM v1 push to a single device token. Quietly drops UNREGISTERED /
+ *  INVALID_ARGUMENT errors by pruning the token from the store so we don't keep
+ *  pushing to a token that no longer belongs to a live install. */
+async function fcmPushTo(deviceToken: string, title: string, body: string, data: Record<string, string> = {}): Promise<void> {
+  const svc = loadFcmSvc();
+  if (!svc) return;
+  const at = await fcmAccessToken();
+  if (!at) return;
+  const url = `https://fcm.googleapis.com/v1/projects/${svc.project_id}/messages:send`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${at}` },
+    body: JSON.stringify({
+      message: {
+        token: deviceToken,
+        notification: { title, body },
+        android: { priority: 'HIGH', notification: { channel_id: 'xmtp', sound: 'default' } },
+        data,
+      },
+    }),
+  });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => '');
+    if (txt.includes('UNREGISTERED') || txt.includes('NOT_FOUND') || txt.includes('INVALID_ARGUMENT')) {
+      const remaining = loadPushTokens().filter(t => t.token !== deviceToken);
+      savePushTokens(remaining);
+      process.stderr.write(`fcm: pruned stale token ${deviceToken.slice(0, 12)}…\n`);
+      return;
+    }
+    process.stderr.write(`fcm push ${res.status}: ${txt}\n`);
+  }
+}
+
+/** Fan-out: push to every registered device. Title/body are kept generic — message
+ *  content stays on the device since the daemon can't really know what'll feel
+ *  right to surface in a notification. */
+async function fcmPushToAll(title: string, body: string, data: Record<string, string> = {}): Promise<void> {
+  const tokens = loadPushTokens();
+  if (tokens.length === 0) return;
+  await Promise.all(tokens.map(t => fcmPushTo(t.token, title, body, data).catch(() => undefined)));
+}
+
 const account = privateKeyToAccount(PK as `0x${string}`);
 const signer: Signer = {
   type: 'EOA',
@@ -182,10 +304,17 @@ function envelope(msg: DecodedMessage, conv: Conversation): Record<string, unkno
   return { ...base, text: `[${typeId ?? 'unknown'} payload]`, payload: { contentType: typeId } };
 }
 
-const emitOutbound = (line: string, messageId: string, text: string): void => emit({
-  kind: 'outbound', id: mintId(), ts: new Date().toISOString(),
-  station: 'xmtp', line, from: SELF_URI, to: line, message_id: messageId, text,
-});
+const emitOutbound = (line: string, messageId: string, text: string): void => {
+  emit({
+    kind: 'outbound', id: mintId(), ts: new Date().toISOString(),
+    station: 'xmtp', line, from: SELF_URI, to: line, message_id: messageId, text,
+  });
+  /** Fire-and-forget FCM push to every registered device. Body is the literal
+   *  outbound text trimmed to a tray-friendly length; data carries the metro
+   *  line so the app can deep-link into the right conversation on tap. */
+  const preview = text.length > 140 ? `${text.slice(0, 137)}…` : text;
+  void fcmPushToAll('New message', preview, { line, messageId }).catch(() => undefined);
+};
 
 function convOf(line: string): Promise<Conversation | undefined> {
   const convId = line.match(/^metro:\/\/xmtp\/([^/]+)$/)?.[1];
@@ -270,7 +399,32 @@ async function handleCall({ id, action, args }: CallMsg): Promise<void> {
         name ? { name } : undefined,
       );
       respond(id, { result: { line: lineOf(group.id), id: group.id } });
-    } else respond(id, { error: `unknown action '${action}' (have: send, react, reply, sendAttachment, newDm, newGroup)` });
+    } else if (action === 'register-push') {
+      /** Store an FCM device token so future daemon-outbound XMTP messages
+       *  surface as Android/iOS push notifications. Idempotent on repeat
+       *  registrations of the same token. */
+      const { token } = args as { token?: string };
+      if (!token || typeof token !== 'string' || token.length < 20) {
+        throw new Error('register-push requires a non-empty FCM device token');
+      }
+      const existing = loadPushTokens();
+      const remaining = existing.filter(t => t.token !== token);
+      remaining.push({ token, registeredAt: new Date().toISOString() });
+      savePushTokens(remaining);
+      respond(id, { result: { stored: true, total: remaining.length } });
+    } else if (action === 'list-push') {
+      const tokens = loadPushTokens();
+      respond(id, { result: { count: tokens.length, tokens: tokens.map(t => ({ token: `${t.token.slice(0, 12)}…${t.token.slice(-6)}`, registeredAt: t.registeredAt })) } });
+    } else if (action === 'test-push') {
+      const { title, body } = args as { title?: string; body?: string };
+      await fcmPushToAll(title ?? 'Metro test', body ?? 'Push pipeline is alive ✅', { source: 'test-push' });
+      const tokens = loadPushTokens();
+      respond(id, { result: { sent: tokens.length } });
+    } else if (action === 'unregister-push') {
+      const { token } = args as { token: string };
+      savePushTokens(loadPushTokens().filter(t => t.token !== token));
+      respond(id, { result: { removed: true } });
+    } else respond(id, { error: `unknown action '${action}' (have: send, react, reply, sendAttachment, newDm, newGroup, register-push, list-push, test-push, unregister-push)` });
   } catch (err) { respond(id, { error: (err as Error).message }); }
 }
 

@@ -126,6 +126,57 @@ export function shortAddress(addr: string): string {
   return addr.length > 10 ? `${addr.slice(0, 6)}…${addr.slice(-4)}` : addr;
 }
 
+/** Resolve the peer's Ethereum address for a DM conversation. Returns null for
+ *  groups or when the lookup fails (uncached peer, network blip, etc.). */
+export async function peerEthAddressOfDm(conv: Conversation): Promise<string | null> {
+  /** `version` is 'DM' | 'GROUP'; only DMs have a single peer. */
+  if ((conv as unknown as { version?: string }).version !== 'DM') return null;
+  const dm = conv as unknown as { peerInboxId: () => Promise<string> };
+  try {
+    const inboxId = await dm.peerInboxId();
+    const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+    const states = await client.inboxStates(false, [inboxId as Parameters<typeof client.inboxStates>[1][number]]);
+    const eth = states[0]?.identities.find(i => i.kind === 'ETHEREUM');
+    return eth?.identifier ?? null;
+  } catch { return null; }
+}
+
+/** stamp.fyi avatar URL for an Ethereum address. Matches the host sx-monorepo uses
+ *  (`apps/ui/src/helpers/stamp.ts`). The CDN returns a 200 with a generic identicon
+ *  when no custom avatar is set, so callers can render this URL directly without
+ *  needing a network-error fallback. */
+export function stampBoxAvatarUrl(address: string, size = 120): string {
+  return `https://stamp.fyi/avatar/eth:${address.toLowerCase()}?s=${size}`;
+}
+
+/** Resolve the Ethereum addresses of every member of a group conversation, excluding the
+ *  local user's own inbox. Used by the Channels list to render a multi-avatar stack for
+ *  group rows. Returns [] for DMs (use `peerEthAddressOfDm` for those) or when the
+ *  members lookup fails. */
+export async function groupMemberEthAddresses(conv: Conversation): Promise<string[]> {
+  if ((conv as unknown as { version?: string }).version !== 'GROUP') return [];
+  try {
+    const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+    const members = await (conv as unknown as {
+      members: () => Promise<{ inboxId: string }[]>;
+    }).members();
+    const otherIds = members
+      .map(m => m.inboxId)
+      .filter(id => id !== client.inboxId);
+    if (otherIds.length === 0) return [];
+    const states = await client.inboxStates(
+      false,
+      otherIds as Parameters<typeof client.inboxStates>[1],
+    );
+    const addrs: string[] = [];
+    for (const s of states) {
+      const eth = s.identities.find(i => i.kind === 'ETHEREUM');
+      if (eth?.identifier) addrs.push(eth.identifier);
+    }
+    return addrs;
+  } catch { return []; }
+}
+
 export type { ConversationVersion };
 
 /** URI prefix used for inbound XMTP "from" addresses. Mirrors the daemon-side train

@@ -1,9 +1,10 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
-import { ActivityIndicator, Text, TextInput, useColorScheme, View } from 'react-native';
+import { ActivityIndicator, Text, TextInput, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
+import { useEffectiveColorScheme } from '../lib/theme';
 
 /** Set Calibre-Medium as the app-wide default for Text + TextInput via defaultProps.
  *  This is a fallback — call-site `style={{…}}` overrides — but it's the safest path:
@@ -21,8 +22,7 @@ import { KeyboardProvider } from 'react-native-keyboard-controller';
 })();
 
 export default function RootLayout(): React.ReactElement {
-  const scheme = useColorScheme();
-  const dark = scheme === 'dark';
+  const dark = useEffectiveColorScheme() === 'dark';
 
   /** Calibre — matches sx-monorepo's typography. Two weights: medium (default) + semibold (headers/buttons).
    *  TTF (not WOFF2) so Android's native Typeface loader can pick it up — expo-font's WOFF2
@@ -50,7 +50,7 @@ export default function RootLayout(): React.ReactElement {
           contentStyle: { backgroundColor: dark ? '#000000' : '#ffffff' },
         }}
       >
-        <Stack.Screen name="index" />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="xmtp/[convId]" />
       </Stack>
       </KeyboardProvider>
