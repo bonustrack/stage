@@ -304,7 +304,9 @@ export default function XmtpConversation(): React.ReactElement {
         >
           <HeroIcon name="arrowLeft" size={22} color={fg} />
         </Pressable>
-        {/** Title slot — group name (tap to rename for groups), no name shown for DMs. */}
+        {/** Title slot — groups tap into /group/[convId], DMs tap into the
+         *   peer's /user/[address] profile. The whole row stretches so the
+         *   tap target is wide. */}
         {isGroup && groupName !== null ? (
           <Pressable
             onPress={() => router.push({ pathname: '/group/[convId]', params: { convId: convId ?? '' } })}
@@ -313,6 +315,16 @@ export default function XmtpConversation(): React.ReactElement {
           >
             <Text style={{ color: fg, fontSize: 19, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
               {groupName || 'Untitled group'}
+            </Text>
+          </Pressable>
+        ) : peerAddr ? (
+          <Pressable
+            onPress={() => router.push({ pathname: '/user/[address]', params: { address: peerAddr } })}
+            style={{ flex: 1, alignItems: 'flex-start', paddingLeft: 4 }}
+            hitSlop={6}
+          >
+            <Text style={{ color: fg, fontSize: 19, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
+              {peerAddr.slice(0, 6)}…{peerAddr.slice(-4)}
             </Text>
           </Pressable>
         ) : <View style={{ flex: 1 }} />}
