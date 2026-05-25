@@ -87,7 +87,11 @@ import {
   readClaims as brokerReadClaims,
   CLAIMS_FILE, HISTORY_FILE,
 } from '../src/broker/claims.ts';
-import { passesMode, cursorKey } from '../src/broker/history-stream.ts';
+import { drainTail, passesMode, cursorKey } from '../src/broker/history-stream.ts';
+import {
+  addMembers, deleteMembership, getPermission, hasMembership, isMember, MEMBERS_FILE,
+  readMembers, removeMembers, setMembers,
+} from '../src/broker/members.ts';
 import { asLine } from '../src/lines.ts';
 import type { HistoryEntry } from '../src/history.ts';
 import { unlinkSync } from 'node:fs';
@@ -446,5 +450,87 @@ describe('metro claim CLI auto-claim simulation', () => {
     const r = runCli(['release', CHAT_LINE, '--json']);
     expect(r.status).toBe(0);
     expect(readClaims()[CHAT_LINE]).toBeUndefined();
+  });
+});
+
+describe('members.json (channel-with-membership primitive)', () => {
+  const CHANNEL = 'metro://messenger/channel/abc123';
+  const OTHER = 'metro://messenger/channel/def456';
+  const ALICE = asLine('metro://user/eth/0xAlice');
+  const BOB = asLine('metro://user/eth/0xBob');
+  const CAROL = asLine('metro://user/eth/0xCarol');
+
+  function resetMembers(): void {
+    try { unlinkSync(MEMBERS_FILE); } catch { /* not there yet */ }
+  }
+
+  beforeEach(() => { resetMembers(); resetBrokerHistory(); });
+
+  test('readMembers returns empty when file missing', () => {
+    expect(readMembers()).toEqual({});
+  });
+
+  test('setMembers writes + readMembers round-trips, dedups input', () => {
+    setMembers(asLine(CHANNEL), [ALICE, BOB, ALICE]);
+    expect(readMembers()[CHANNEL].members).toEqual([ALICE, BOB]);
+  });
+
+  test('addMembers creates entry + appends without duplicates', () => {
+    addMembers(asLine(CHANNEL), [ALICE]);
+    addMembers(asLine(CHANNEL), [BOB, ALICE]);
+    expect(readMembers()[CHANNEL].members.sort()).toEqual([ALICE, BOB].sort());
+  });
+
+  test('removeMembers drops URIs + deletes entry when emptied', () => {
+    setMembers(asLine(CHANNEL), [ALICE, BOB]);
+    removeMembers(asLine(CHANNEL), [BOB]);
+    expect(readMembers()[CHANNEL].members).toEqual([ALICE]);
+    removeMembers(asLine(CHANNEL), [ALICE]);
+    expect(readMembers()[CHANNEL]).toBeUndefined();
+  });
+
+  test('hasMembership / isMember: unrestricted line passes through', () => {
+    expect(hasMembership(CHANNEL)).toBe(false);
+    expect(isMember(CHANNEL, ALICE)).toBe(true);
+  });
+
+  test('isMember: restricted line filters non-members', () => {
+    setMembers(asLine(CHANNEL), [ALICE]);
+    expect(isMember(CHANNEL, ALICE)).toBe(true);
+    expect(isMember(CHANNEL, BOB)).toBe(false);
+  });
+
+  test('getPermission: default write, explicit overrides, null for non-members', () => {
+    setMembers(asLine(CHANNEL), [ALICE, BOB], { [ALICE]: 'admin' });
+    expect(getPermission(CHANNEL, ALICE)).toBe('admin');
+    expect(getPermission(CHANNEL, BOB)).toBe('write');
+    expect(getPermission(CHANNEL, CAROL)).toBe(null);
+    expect(getPermission(OTHER, ALICE)).toBe('write');  /** unrestricted */
+  });
+
+  test('deleteMembership lifts the gate', () => {
+    setMembers(asLine(CHANNEL), [ALICE]);
+    deleteMembership(asLine(CHANNEL));
+    expect(hasMembership(CHANNEL)).toBe(false);
+    expect(isMember(CHANNEL, CAROL)).toBe(true);
+  });
+
+  test('drainTail with requester gates restricted lines, leaves unrestricted alone', () => {
+    setMembers(asLine(CHANNEL), [ALICE]);  /** OTHER stays unrestricted */
+    appendToBrokerHistory({
+      id: 'a1', ts: '2026-05-24T00:00:00Z', station: 'messenger', line: CHANNEL,
+      from: ALICE, to: BOB, text: 'restricted hello',
+    });
+    appendToBrokerHistory({
+      id: 'a2', ts: '2026-05-24T00:00:01Z', station: 'messenger', line: OTHER,
+      from: CAROL, to: BOB, text: 'unrestricted hello',
+    });
+    const collected: string[] = [];
+    drainTail(0, { mode: 'all', self: null, requester: BOB }, e => { collected.push(e.id); });
+    /** BOB not a member of CHANNEL → restricted entry dropped; OTHER has no membership → passes. */
+    expect(collected).toEqual(['a2']);
+    const all: string[] = [];
+    drainTail(0, { mode: 'all', self: null, requester: ALICE }, e => { all.push(e.id); });
+    expect(all).toEqual(['a1', 'a2']);
   });
 });

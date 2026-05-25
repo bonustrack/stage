@@ -7,6 +7,7 @@ import { readClaims } from '../broker/claims.js';
 import {
   drainTail, followTail, historySize, type Mode, type TailOpts,
 } from '../broker/history-stream.js';
+import { isMember, readMembers } from '../broker/members.js';
 import { readHistory, type HistoryEntry } from '../history.js';
 import { ipcCall } from '../ipc.js';
 import { asLine, Line } from '../lines.js';
@@ -119,8 +120,14 @@ function nonNegInt(raw: string | null): number | null {
 function handleState(res: ServerResponse, req: IncomingMessage, q: URLSearchParams): void {
   const before = nonNegInt(q.get('before'));
   const limit = Math.min(nonNegInt(q.get('limit')) ?? 100, 500);
-  if (before !== null) return send(res, req, 200, { recent_history: readHistory({ limit, skip: before }) });
-  const recent = readHistory({ limit }), claims = readClaims();
+  const requesterParam = q.get('requester');
+  const requester = requesterParam ? asLine(requesterParam) : null;
+  /** Membership filter applied post-read; cheap because state is bounded by `limit`. */
+  const members = requester ? readMembers() : null;
+  const gate = (entries: HistoryEntry[]): HistoryEntry[] =>
+    requester && members ? entries.filter(e => isMember(e.line, requester, members)) : entries;
+  if (before !== null) return send(res, req, 200, { recent_history: gate(readHistory({ limit, skip: before })) });
+  const recent = gate(readHistory({ limit })), claims = readClaims();
   const lines = new Set<string>([...recent.map(e => e.line), ...Object.keys(claims)]);
   send(res, req, 200, {
     claims, lines: [...lines], recent_history: recent, bot_ids: readBotIds(), version: pkg.version,
@@ -133,11 +140,16 @@ async function handleTail(req: IncomingMessage, res: ServerResponse, q: URLSearc
   const isOn = (k: string): boolean => q.get(k) === 'true' || q.get('mode') === k;
   const mode = pickMode(isOn('strict'), isOn('unclaimed'), isOn('all'), self, () => 'all');
   const excludeFromCsv = q.get('exclude_from');
+  /** `requester` is the wallet/identity the JWT (eventually) resolves to. For now the admin
+   *  token grants the unscoped view; a `?requester=<uri>` query param lets internal callers
+   *  opt into membership filtering ahead of the SIWE/JWT plumbing landing. */
+  const requesterParam = q.get('requester');
   const opts: TailOpts = {
     mode, self, chatFilter: q.get('chat') ?? undefined,
     stationFilter: q.get('station') ?? undefined,
     includeWebhooks: q.get('include_webhooks') === 'true',
     excludeFrom: excludeFromCsv ? excludeFromCsv.split(',').map(s => s.trim()).filter(Boolean) : undefined,
+    requester: requesterParam ? asLine(requesterParam) : undefined,
   };
   res.writeHead(200, {
     'content-type': 'text/event-stream', 'cache-control': 'no-cache, no-transform',
