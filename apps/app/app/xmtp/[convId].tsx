@@ -3,7 +3,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Animated as RNAnimated, FlatList, Image, Modal, PanResponder, Pressable, Text, View,
+  Animated as RNAnimated, FlatList, Image, Modal, Pressable, Text, View,
 } from 'react-native';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -162,21 +162,6 @@ export default function XmtpConversation(): React.ReactElement {
   }, [activeLine, convId]);
 
   const insets = useSafeAreaInsets();
-  /** Swipe left→right on the screen → back to the messenger list, with the screen sliding
-   *  with the finger. Past 60px on release → navigate back; otherwise spring home.
-   *  The bubble's pan only claims left-going drags so right-going ones fall through. */
-  const swipeBackX = useRef(new RNAnimated.Value(0)).current;
-  const backPan = useMemo(() => PanResponder.create({
-    onMoveShouldSetPanResponder: (_, g) => g.dx > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
-    onPanResponderMove: (_, g) => { swipeBackX.setValue(Math.max(0, g.dx)); },
-    onPanResponderRelease: (_, g) => {
-      if (g.dx >= 60) router.replace('/');
-      RNAnimated.spring(swipeBackX, { toValue: 0, useNativeDriver: true, speed: 18, bounciness: 6 }).start();
-    },
-    onPanResponderTerminate: () => {
-      RNAnimated.spring(swipeBackX, { toValue: 0, useNativeDriver: true, speed: 18, bounciness: 6 }).start();
-    },
-  }), [router, swipeBackX]);
   /** Reanimated-driven keyboard offset shared with the composer's KeyboardStickyView,
    *  so the FlatList wrapper lifts in lockstep (native thread) with the composer.
    *  Match the composer's `height.value - insets.bottom` translate by subtracting
@@ -244,10 +229,8 @@ export default function XmtpConversation(): React.ReactElement {
 
   return (
     <RNAnimated.View
-      {...backPan.panHandlers}
       style={{
         flex: 1, backgroundColor: bg, paddingBottom: insets.bottom,
-        transform: [{ translateX: swipeBackX }],
       }}
     >
       <Reanimated.View style={[{ flex: 1 }, listWrapperStyle]}>
