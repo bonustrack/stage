@@ -56,13 +56,17 @@ async function summarize(conv: Conversation): Promise<Row> {
   }
   const peerAddress = await peerEthAddressOfDm(conv);
   const memberAddresses = peerAddress ? [] : await groupMemberEthAddresses(conv);
-  /** memberAddresses excludes the local wallet — the title is a human count of
-   *  the WHOLE group so add 1 back in for the user themselves. */
+  /** For groups, prefer the explicit name set via newGroup/updateName before
+   *  falling back to the "N members" auto-label. DMs always use the peer's
+   *  address as the title. */
   const totalMembers = memberAddresses.length + 1;
+  const groupName = peerAddress ? '' : await ((conv as unknown as { name?: () => Promise<string> }).name?.() ?? Promise.resolve(''));
   const title = peerAddress
-    ?? (memberAddresses.length > 0
-      ? `${totalMembers} member${totalMembers === 1 ? '' : 's'}`
-      : conv.topic.replace(/^.*\//, '').slice(0, 12));
+    ?? (groupName && groupName.trim()
+      ? groupName.trim()
+      : memberAddresses.length > 0
+        ? `${totalMembers} member${totalMembers === 1 ? '' : 's'}`
+        : conv.topic.replace(/^.*\//, '').slice(0, 12));
   return {
     convId: conv.id,
     title,
