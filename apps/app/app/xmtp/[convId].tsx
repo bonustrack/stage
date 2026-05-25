@@ -211,8 +211,16 @@ export default function XmtpConversation(): React.ReactElement {
    *  remount the list so it lands at offset 0 again. Skip on initial mount. */
   const prevBubbleCount = useRef(0);
   useEffect(() => {
-    if (allBubbles.length > prevBubbleCount.current && prevBubbleCount.current > 0 && !showJump) {
-      setListEpoch(e => e + 1);
+    if (allBubbles.length > prevBubbleCount.current && prevBubbleCount.current > 0) {
+      /** New message arrived while we were at the visual bottom — keep us pinned
+       *  by force-remounting + clearing the jump-button. Without the explicit
+       *  setShowJump(false) the inverted list sometimes reports a stale large
+       *  offset after maintainVisibleContentPosition shifts content, leaving
+       *  the button visible despite the user being at offset 0. */
+      if (!showJump) {
+        setListEpoch(e => e + 1);
+      }
+      setShowJump(false);
     }
     prevBubbleCount.current = allBubbles.length;
   }, [allBubbles.length, showJump]);
