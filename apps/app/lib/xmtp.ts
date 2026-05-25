@@ -20,7 +20,9 @@ import {
   ReactionCodec, ReplyCodec, StaticAttachmentCodec, RemoteAttachmentCodec,
   type Conversation, type DecodedMessage, type ConversationVersion,
   type ReactionContent, type ReplyContent, type StaticAttachmentContent,
+  type Signer,
 } from '@xmtp/react-native-sdk';
+import type { PrivateKeyAccount } from 'viem/accounts';
 
 /** Codecs the local XMTP client decodes inbound + uses to encode outbound. Without these
  *  the RN SDK's `msg.content()` throws on reaction/reply/attachment payloads and we fall
@@ -33,8 +35,26 @@ const XMTP_CODECS = [
   new RemoteAttachmentCodec(),
 ];
 import type { HistoryEntry } from './types';
-import { loadOrCreateAccount, loadOrCreateWalletClient, resetAccount } from './wallet';
-import type { WalletClient } from 'viem';
+import { loadOrCreateAccount, resetAccount } from './wallet';
+
+/** Build the XMTP-RN `Signer` adapter for a viem `PrivateKeyAccount`.
+ *  Shape pulled from `node_modules/@xmtp/react-native-sdk/src/lib/Signer.ts`:
+ *  `getIdentifier / getChainId / getBlockNumber / signerType / signMessage`.
+ *  `signMessage` resolves with `{ signature: hexString }` — passing a
+ *  viem WalletClient instead surfaces as "Cannot read property 'raw' of
+ *  undefined" inside the native registration handler. */
+function signerForAccount(account: PrivateKeyAccount): Signer {
+  return {
+    getIdentifier: async () => new PublicIdentity(account.address, 'ETHEREUM'),
+    getChainId: () => 1,
+    getBlockNumber: () => undefined,
+    signerType: () => 'EOA',
+    signMessage: async (message: string) => {
+      const signature = await account.signMessage({ message });
+      return { signature };
+    },
+  };
+}
 
 export type XmtpEnv = 'production' | 'dev' | 'local';
 
@@ -115,8 +135,8 @@ export async function getOrCreateXmtpClient(env: XmtpEnv = 'production'): Promis
   }
   /** XMTP registers a new installation by asking the EOA to sign its handshake
    *  challenge. Pure-JS viem signing — no user-facing prompt. */
-  const wallet = await loadOrCreateWalletClient();
-  cachedClient = await Client.create(wallet as unknown as WalletClient, opts);
+  const signer = signerForAccount(account);
+  cachedClient = await Client.create(signer, opts);
   await SecureStore.setItemAsync(ADDRESS_KEY, cachedClient.publicIdentity.identifier);
   await SecureStore.setItemAsync(ENV_KEY, env);
   return cachedClient;
