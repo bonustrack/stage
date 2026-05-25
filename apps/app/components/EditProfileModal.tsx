@@ -8,6 +8,7 @@ import {
   ActivityIndicator, Alert, Image, KeyboardAvoidingView, Modal, Platform,
   Pressable, ScrollView, Text, TextInput, View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import {
   type SnapshotProfile, updateProfile, uploadAvatar,
@@ -38,6 +39,7 @@ export default function EditProfileModal({
   const bg = dark ? '#000000' : '#ffffff';
   const border = dark ? '#262c38' : '#e3e7ef';
   const rowBg = dark ? '#161a22' : '#fafbfd';
+  const insets = useSafeAreaInsets();
 
   const [form, setForm] = useState<SnapshotProfile>(initial);
   const [saving, setSaving] = useState(false);
@@ -78,7 +80,11 @@ export default function EditProfileModal({
     <Modal visible={visible} onRequestClose={onClose} animationType="slide" transparent={false}>
       <KeyboardAvoidingView style={{ flex: 1, backgroundColor: bg }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: border }}>
+        <View style={{
+          flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+          paddingHorizontal: 16, paddingTop: insets.top + 12, paddingBottom: 12,
+          borderBottomWidth: 1, borderBottomColor: border,
+        }}>
           <Pressable onPress={onClose} disabled={saving}><Text style={{ color: sub, fontSize: 15 }}>Cancel</Text></Pressable>
           <Text style={{ color: fg, fontSize: 17, fontFamily: 'Calibre-Semibold' }}>Edit profile</Text>
           <Pressable onPress={save} disabled={saving || uploading}>
