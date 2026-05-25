@@ -13,7 +13,18 @@
  *  safe for development; existing wallets that were already minted under the
  *  previous flow are unaffected (Math.random is only used at mint time). */
 
-const NATIVE_CRYPTO = (globalThis as { crypto?: Crypto }).crypto;
+/** viem (and most node-leaning libs) reach for `Buffer` for hex encode/decode.
+ *  React Native doesn't ship it; the `buffer` npm package is a pure-JS shim. */
+import { Buffer as BufferPolyfill } from 'buffer';
+const G = globalThis as {
+  Buffer?: typeof BufferPolyfill;
+  crypto?: Crypto;
+};
+if (typeof G.Buffer === 'undefined') {
+  G.Buffer = BufferPolyfill;
+}
+
+const NATIVE_CRYPTO = G.crypto;
 
 if (!NATIVE_CRYPTO || typeof NATIVE_CRYPTO.getRandomValues !== 'function') {
   const shim = {

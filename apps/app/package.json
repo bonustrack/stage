@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@xmtp/react-native-sdk": "^5.7.0",
+    "buffer": "^6.0.3",
     "expo": "~54.0.33",
     "expo-av": "~16.0.8",
     "expo-clipboard": "~8.0.8",
