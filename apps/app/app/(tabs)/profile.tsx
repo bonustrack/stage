@@ -66,7 +66,7 @@ export default function Profile(): React.ReactElement {
       <View style={{ alignItems: 'center', paddingTop: 24, paddingBottom: 16 }}>
         {address ? (
           <Image
-            source={{ uri: stampBoxAvatarUrl(address, AVATAR_SIZE * 2) }}
+            source={{ uri: stampBoxAvatarUrl(address, AVATAR_SIZE * 2, profile.avatar?.slice(-12)) }}
             style={{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: AVATAR_SIZE / 2, backgroundColor: rowBg }}
           />
         ) : (

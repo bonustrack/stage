@@ -185,9 +185,15 @@ export async function peerEthAddressOfDm(conv: Conversation): Promise<string | n
 /** stamp.fyi avatar URL for an Ethereum address. Matches the host sx-monorepo uses
  *  (`apps/ui/src/helpers/stamp.ts`). The CDN returns a 200 with a generic identicon
  *  when no custom avatar is set, so callers can render this URL directly without
- *  needing a network-error fallback. */
-export function stampBoxAvatarUrl(address: string, size = 120): string {
-  return `https://stamp.fyi/avatar/eth:${address.toLowerCase()}?s=${size}`;
+ *  needing a network-error fallback.
+ *
+ *  `cacheBust` is appended verbatim as `&cb=…` — pass a value that changes when
+ *  the underlying avatar changes (e.g. the last few chars of the IPFS CID
+ *  stored in profile.avatar) so the device + stamp CDN refetch instead of
+ *  serving the previous image. */
+export function stampBoxAvatarUrl(address: string, size = 120, cacheBust?: string): string {
+  const base = `https://stamp.fyi/avatar/eth:${address.toLowerCase()}?s=${size}`;
+  return cacheBust ? `${base}&cb=${encodeURIComponent(cacheBust)}` : base;
 }
 
 /** Hardcoded co-members for the "Ask a question" group: claude (the daemon's
