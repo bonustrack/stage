@@ -61,7 +61,10 @@ function dbDirObj(): Directory { return new Directory(Paths.document, 'xmtp'); }
 async function ensureDbDir(): Promise<string> {
   const dir = dbDirObj();
   if (!dir.exists) dir.create({ intermediates: true });
-  return dir.uri;
+  /** XMTP wants a filesystem path (`/data/user/0/...`), not a URI (`file:///data/user/0/...`).
+   *  expo-file-system's `.uri` includes the scheme; strip it. Also drop any trailing slash —
+   *  the SDK appends its own file names. */
+  return dir.uri.replace(/^file:\/+/, '/').replace(/\/$/, '');
 }
 
 /** Lazily build the XMTP client. Returns a singleton — repeat calls share the instance.
