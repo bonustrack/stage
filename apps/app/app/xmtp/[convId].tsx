@@ -337,7 +337,7 @@ export default function XmtpConversation(): React.ReactElement {
             style={{ flex: 1, alignItems: 'flex-start', paddingLeft: 4 }}
             hitSlop={6}
           >
-            <Text style={{ color: fg, fontSize: 17, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
+            <Text style={{ color: fg, fontSize: 19, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
               {groupName || 'Untitled group'}
             </Text>
           </Pressable>
