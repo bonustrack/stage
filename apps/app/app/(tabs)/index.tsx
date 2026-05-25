@@ -10,10 +10,13 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import type { Conversation, DecodedMessage } from '@xmtp/react-native-sdk';
+import { DevSettings } from 'react-native';
 import {
-  getOrCreateXmtpClient, peerEthAddressOfDm, groupMemberEthAddresses, stampBoxAvatarUrl,
+  getOrCreateXmtpClient, resetXmtpClient,
+  peerEthAddressOfDm, groupMemberEthAddresses, stampBoxAvatarUrl,
   createAskQuestionGroup,
 } from '../../lib/xmtp';
+import { resetAccount } from '../../lib/wallet';
 import { useEffectiveColorScheme } from '../../lib/theme';
 
 interface Row {
@@ -184,6 +187,12 @@ export default function Messenger(): React.ReactElement {
     let cancelled = false;
     let cancelConvStream: (() => void) | null = null;
     let cancelMsgStream: (() => void) | null = null;
+    /** Outer init timeout — if XMTP boot+sync hasn't finished in 30s, surface
+     *  an error + recovery UI instead of leaving the user staring at a spinner. */
+    const initTimer = setTimeout(() => {
+      if (cancelled) return;
+      setError('XMTP failed to initialise (timed out). Tap Reset below to wipe the local identity and start fresh.');
+    }, 30_000);
     void (async (): Promise<void> => {
       try {
         const client = await getOrCreateXmtpClient('production');
@@ -191,6 +200,7 @@ export default function Messenger(): React.ReactElement {
         const convs = await client.conversations.list(undefined, undefined, ['allowed', 'unknown']);
         const summarized = await Promise.all(convs.map(summarize));
         if (cancelled) return;
+        clearTimeout(initTimer);
         summarized.sort((a, b) => (b.lastTs ?? 0) - (a.lastTs ?? 0));
         setRows(summarized);
         /** Subscribe to newly-created conversations so groups + DMs created
@@ -229,6 +239,7 @@ export default function Messenger(): React.ReactElement {
     })();
     return (): void => {
       cancelled = true;
+      clearTimeout(initTimer);
       if (cancelConvStream) try { cancelConvStream(); } catch { /* ignore */ }
       if (cancelMsgStream) try { cancelMsgStream(); } catch { /* ignore */ }
     };
@@ -237,7 +248,25 @@ export default function Messenger(): React.ReactElement {
   if (error) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: bg }}>
-        <Text style={{ color: fg, fontSize: 15 }}>{error}</Text>
+        <Text style={{ color: fg, fontSize: 15, textAlign: 'center', marginBottom: 16 }}>{error}</Text>
+        <Pressable
+          onPress={() => {
+            void (async (): Promise<void> => {
+              await resetXmtpClient();
+              await resetAccount();
+              DevSettings.reload?.();
+            })();
+          }}
+          style={({ pressed }) => ({
+            paddingHorizontal: 20, paddingVertical: 12, borderRadius: 999,
+            backgroundColor: pressed ? '#5c2231' : 'transparent',
+            borderWidth: 1, borderColor: dark ? '#5c2231' : '#e9bbc4',
+          })}
+        >
+          <Text style={{ color: dark ? '#ff6b80' : '#b91c1c', fontSize: 14 }}>
+            Reset XMTP identity
+          </Text>
+        </Pressable>
       </View>
     );
   }
