@@ -1,14 +1,15 @@
-/** Messenger tab — XMTP conversations the local wallet is a member of.
+/** Home screen — XMTP conversations the local wallet is a member of.
  *  Tapping a row pushes into `/xmtp/[convId]` for the full chat view. */
 
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator, Alert, FlatList, Pressable, Text, View, useColorScheme,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import type { Conversation, DecodedMessage } from '@xmtp/react-native-sdk';
-import { getOrCreateXmtpClient, shortAddress } from '../../lib/xmtp';
+import { getOrCreateXmtpClient, shortAddress } from '../lib/xmtp';
 
 interface Row { convId: string; title: string; lastTs: number | null; lastPreview: string }
 
@@ -46,9 +47,10 @@ async function summarize(conv: Conversation): Promise<Row> {
   };
 }
 
-export default function Messenger(): React.ReactElement {
+export default function Home(): React.ReactElement {
   const router = useRouter();
   const dark = useColorScheme() === 'dark';
+  const insets = useSafeAreaInsets();
   const fg = dark ? '#e8ecf2' : '#1a1f29';
   const sub = dark ? '#8a94a6' : '#5a6477';
   const bg = dark ? '#000000' : '#ffffff';
@@ -74,14 +76,14 @@ export default function Messenger(): React.ReactElement {
 
   if (error) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: bg }}>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: bg, paddingTop: insets.top }}>
         <Text style={{ color: fg, fontSize: 15 }}>{error}</Text>
       </View>
     );
   }
   if (!rows) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: bg }}>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: bg, paddingTop: insets.top }}>
         <ActivityIndicator />
         <Text style={{ color: sub, marginTop: 8, fontSize: 12 }}>Initialising XMTP…</Text>
       </View>
@@ -89,7 +91,7 @@ export default function Messenger(): React.ReactElement {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: bg }}>
+    <View style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
       {myAddress ? (
         <Pressable
           onPress={() => {
