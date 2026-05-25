@@ -1,3 +1,6 @@
+/** Hoisted side-effect import — installs the crypto.getRandomValues shim
+ *  BEFORE any viem (and transitively any wallet/profile) module loads. */
+import '../lib/cryptoShim';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
