@@ -8,6 +8,8 @@ import Markdown, { MarkdownIt } from 'react-native-markdown-display';
 import { HeroIcon } from './HeroIcon';
 import { MessengerAudioPlayer } from './MessengerAudioPlayer';
 import { MessengerImageAttachment } from './MessengerImageAttachment';
+import { YouTubeEmbed, LocationEmbed } from './MediaEmbeds';
+import { mapCoordsOf, youtubeIdOf } from '../lib/embedDetect';
 import type { HistoryEntry } from '../lib/types';
 
 const REACT_PRESETS = ['👍', '❤️', '😂', '😮', '🔥', '🎉'];
@@ -33,10 +35,10 @@ function attachmentsOf(entry: HistoryEntry): Attachment[] {
   return Array.isArray(p?.attachments) ? p.attachments : [];
 }
 
-function AttachmentView({ att, fullUrl, fg, sub }: {
-  att: Attachment; fullUrl: string; fg: string; sub: string;
+function AttachmentView({ att, fullUrl, fg, sub, dark }: {
+  att: Attachment; fullUrl: string; fg: string; sub: string; dark: boolean;
 }): React.ReactElement {
-  if (att.kind === 'image') return <MessengerImageAttachment uri={fullUrl} />;
+  if (att.kind === 'image') return <MessengerImageAttachment uri={fullUrl} dark={dark} />;
   if (att.kind === 'audio') {
     return <MessengerAudioPlayer uri={fullUrl} fg={fg} sub={sub} />;
   }
@@ -360,6 +362,7 @@ export function MessengerBubble({
               fg={fg}
               sub={sub}
               fullUrl={fullUrl}
+              dark={dark}
             />
           );
         })}</View> : null}
@@ -369,6 +372,17 @@ export function MessengerBubble({
             <Markdown {...markdownProps}>{entry.text}</Markdown>
           </View>
         ) : null}
+        {/** Inline embeds — YouTube + location. Rendered below the message
+         *   text so the source URL stays clickable while the preview gives
+         *   the at-a-glance affordance. Detection is pure regex; misses
+         *   gracefully render nothing. */}
+        {(() => {
+          const ytId = youtubeIdOf(entry.text);
+          if (ytId) return <View style={{ alignSelf: 'stretch', marginTop: 6 }}><YouTubeEmbed videoId={ytId} dark={dark} /></View>;
+          const coords = mapCoordsOf(entry.text);
+          if (coords) return <View style={{ alignSelf: 'stretch', marginTop: 6 }}><LocationEmbed lat={coords.lat} lng={coords.lng} sourceUrl={coords.sourceUrl} dark={dark} /></View>;
+          return null;
+        })()}
         {question && onAnswer ? (
           <QuestionView question={question} dark={dark} sub={sub} onAnswer={onAnswer} />
         ) : null}
