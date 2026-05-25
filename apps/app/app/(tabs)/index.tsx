@@ -322,7 +322,7 @@ export default function Messenger(): React.ReactElement {
           opacity: pressed ? 0.85 : creatingAsk ? 0.6 : 1,
         })}
       >
-        <Text style={{ color: '#000000', fontSize: 15, fontFamily: 'Calibre-Medium' }}>
+        <Text style={{ color: '#000000', fontSize: 16, fontFamily: 'Calibre-Medium' }}>
           {creatingAsk ? 'Creating group…' : 'Ask a question'}
         </Text>
       </Pressable>

@@ -226,7 +226,7 @@ function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
       type="button"
       :disabled="creatingAsk"
       class="fixed left-4 right-4 bottom-[76px] z-30
-        bg-white text-black text-sm font-sans
+        bg-white text-black text-[15px] font-sans
         py-3 rounded-full shadow-lg
         disabled:opacity-60 hover:opacity-90 transition-opacity"
       @click="onAskPress"
