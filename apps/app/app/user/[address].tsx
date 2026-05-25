@@ -97,13 +97,11 @@ export default function UserProfileView(): React.ReactElement {
             disabled={openingDm}
             style={({ pressed }) => ({
               marginTop: 18, paddingHorizontal: 28, paddingVertical: 12,
-              borderRadius: 999, backgroundColor: '#ffffff',
-              shadowColor: '#000000', shadowOpacity: 0.18, shadowRadius: 8, shadowOffset: { width: 0, height: 2 },
-              elevation: 4,
+              borderRadius: 999, backgroundColor: dark ? '#ffffff' : '#000000',
               opacity: pressed ? 0.85 : openingDm ? 0.6 : 1,
             })}
           >
-            <Text style={{ color: '#000000', fontSize: 15, fontFamily: 'Calibre-Medium' }}>
+            <Text style={{ color: dark ? '#000000' : '#ffffff', fontSize: 15, fontFamily: 'Calibre-Medium' }}>
               {openingDm ? 'Opening…' : 'Message'}
             </Text>
           </Pressable>

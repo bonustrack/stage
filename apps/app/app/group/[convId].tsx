@@ -140,10 +140,10 @@ export default function GroupDetail(): React.ReactElement {
             <Pressable onPress={() => { void saveName(); }} disabled={saving || !draft.trim()}
               style={({ pressed }) => ({
                 paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999,
-                backgroundColor: '#ffffff',
+                backgroundColor: dark ? '#ffffff' : '#000000',
                 opacity: pressed ? 0.85 : (saving || !draft.trim()) ? 0.5 : 1,
               })}>
-              <Text style={{ color: '#000000', fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+              <Text style={{ color: dark ? '#000000' : '#ffffff', fontSize: 13, fontFamily: 'Calibre-Medium' }}>
                 {saving ? 'Saving…' : 'Save'}
               </Text>
             </Pressable>
@@ -180,12 +180,12 @@ export default function GroupDetail(): React.ReactElement {
           disabled={adding || !addDraft.trim()}
           style={({ pressed }) => ({
             paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999,
-            backgroundColor: '#ffffff',
+            backgroundColor: dark ? '#ffffff' : '#000000',
             opacity: pressed ? 0.85 : (adding || !addDraft.trim()) ? 0.5 : 1,
             alignSelf: 'center',
           })}
         >
-          <Text style={{ color: '#000000', fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+          <Text style={{ color: dark ? '#000000' : '#ffffff', fontSize: 13, fontFamily: 'Calibre-Medium' }}>
             {adding ? 'Adding…' : 'Add'}
           </Text>
         </Pressable>

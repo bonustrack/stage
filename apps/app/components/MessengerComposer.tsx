@@ -280,10 +280,15 @@ export function MessengerComposer({
           <Btn icon={recording ? 'stop' : 'microphone'} onPress={() => void (recording ? stopRec() : startRec())} active={recording} />
           <Pressable onPress={() => void send()} disabled={!canSend}
             style={({ pressed }) => ({
-              backgroundColor: pressed ? '#cccccc' : '#ffffff', opacity: canSend ? 1 : 0.45,
+              backgroundColor: dark
+                ? (pressed ? '#cccccc' : '#ffffff')
+                : (pressed ? '#333333' : '#000000'),
+              opacity: canSend ? 1 : 0.45,
               width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
             })}>
-            {sending ? <ActivityIndicator color="#000" /> : <HeroIcon name="send" size={20} color="#000" />}
+            {sending
+              ? <ActivityIndicator color={dark ? '#000' : '#fff'} />
+              : <HeroIcon name="send" size={20} color={dark ? '#000' : '#fff'} />}
           </Pressable>
         </View>
       </View>

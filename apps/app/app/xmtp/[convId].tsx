@@ -362,12 +362,11 @@ export default function XmtpConversation(): React.ReactElement {
           style={{
             position: 'absolute', alignSelf: 'center', bottom: 170, zIndex: 3,
             width: 36, height: 36, borderRadius: 999,
-            backgroundColor: '#ffffff',
+            backgroundColor: dark ? '#ffffff' : '#000000',
             alignItems: 'center', justifyContent: 'center',
-            shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 6, elevation: 4,
           }}
         >
-          <HeroIcon name="arrowDown" size={18} color="#000000" />
+          <HeroIcon name="arrowDown" size={18} color={dark ? '#000000' : '#ffffff'} />
         </Pressable>
       ) : null}
       <KeyboardStickyView offset={{ opened: insets.bottom }}>

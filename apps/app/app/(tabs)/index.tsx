@@ -356,15 +356,13 @@ export default function Messenger(): React.ReactElement {
         disabled={creatingAsk}
         style={({ pressed }) => ({
           position: 'absolute', left: 16, right: 16, bottom: 16,
-          backgroundColor: '#ffffff',
+          backgroundColor: dark ? '#ffffff' : '#000000',
           borderRadius: 999, paddingVertical: 14,
           alignItems: 'center', justifyContent: 'center',
-          shadowColor: '#000000', shadowOpacity: 0.18, shadowRadius: 8, shadowOffset: { width: 0, height: 2 },
-          elevation: 4,
           opacity: pressed ? 0.85 : creatingAsk ? 0.6 : 1,
         })}
       >
-        <Text style={{ color: '#000000', fontSize: 16, fontFamily: 'Calibre-Medium' }}>
+        <Text style={{ color: dark ? '#000000' : '#ffffff', fontSize: 16, fontFamily: 'Calibre-Medium' }}>
           {creatingAsk ? 'Creating group…' : 'Ask a question'}
         </Text>
       </Pressable>

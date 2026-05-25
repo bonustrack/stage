@@ -131,14 +131,12 @@ export default function EditProfileModal({
             disabled={saving || uploading}
             style={({ pressed }) => ({
               marginTop: 16, paddingVertical: 14,
-              backgroundColor: '#ffffff', borderRadius: 999,
+              backgroundColor: dark ? '#ffffff' : '#000000', borderRadius: 999,
               alignItems: 'center', justifyContent: 'center',
-              shadowColor: '#000000', shadowOpacity: 0.18, shadowRadius: 8, shadowOffset: { width: 0, height: 2 },
-              elevation: 4,
               opacity: pressed ? 0.85 : (saving || uploading) ? 0.6 : 1,
             })}
           >
-            <Text style={{ color: '#000000', fontSize: 16, fontFamily: 'Calibre-Medium' }}>
+            <Text style={{ color: dark ? '#000000' : '#ffffff', fontSize: 16, fontFamily: 'Calibre-Medium' }}>
               {saving ? 'Saving…' : 'Save'}
             </Text>
           </Pressable>

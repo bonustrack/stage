@@ -19,6 +19,11 @@ export default function TabsLayout(): React.ReactElement {
   const tabBarStyle = {
     backgroundColor: bg,
     borderTopColor: border,
+    borderTopWidth: 1,
+    /** Kill Android'​s default elevation shadow on the tab bar — use only the
+     *  1px top border for the separator. */
+    elevation: 0,
+    shadowOpacity: 0,
     height: 60 + insets.bottom,
     paddingTop: 6,
     paddingBottom: insets.bottom,
