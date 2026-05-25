@@ -16,6 +16,7 @@ import {
   peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap,
   stampBoxAvatarUrl,
   createAskQuestionGroup,
+  getLastReadNs,
 } from '../../lib/xmtp';
 import { resetAccount } from '../../lib/wallet';
 import { useEffectiveColorScheme } from '../../lib/theme';
@@ -32,6 +33,15 @@ interface Row {
   /** Cached inbox → eth address map, kept so live stream updates can resolve
    *  a new sender's avatar without an extra round-trip. */
   inboxToAddr: Record<string, string>;
+  /** Count of messages newer than the per-conv lastReadNs that the LOCAL
+   *  user didn't send. 0 hides the badge. */
+  unreadCount: number;
+  /** Cached lastReadNs — kept so streamAllMessages updates can recompute the
+   *  count without a SecureStore round-trip per new msg. */
+  lastReadNs: number;
+  /** Own inbox id — also needed to filter own messages out of the unread
+   *  recount on stream updates. */
+  selfInboxId: string;
 }
 
 function fmtTs(ts: number | null): string {
@@ -44,9 +54,12 @@ function fmtTs(ts: number | null): string {
   return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
-async function summarize(conv: Conversation): Promise<Row> {
+async function summarize(conv: Conversation, selfInboxId: string): Promise<Row> {
   await conv.sync().catch(() => undefined);
-  const msgs: DecodedMessage[] = await conv.messages({ limit: 1 }).catch(() => []);
+  /** Pull the latest 50 messages — enough to compute an accurate unread count
+   *  for active conversations without ballooning each row fetch. */
+  const recent: DecodedMessage[] = await conv.messages({ limit: 50 }).catch(() => []);
+  const msgs = recent;
   const last = msgs[0];
   let preview = '';
   if (last) {
@@ -75,6 +88,14 @@ async function summarize(conv: Conversation): Promise<Row> {
     ?? peerAddress
     ?? memberAddresses[0]
     ?? null;
+  /** Unread count = msgs newer than the persisted lastReadNs not sent by us. */
+  const lastReadNs = await getLastReadNs(conv.id);
+  let unreadCount = 0;
+  for (const m of msgs) {
+    if (!m.sentNs || m.sentNs <= lastReadNs) break;
+    if (m.senderInboxId === selfInboxId) continue;
+    unreadCount += 1;
+  }
   return {
     convId: conv.id,
     title,
@@ -82,6 +103,9 @@ async function summarize(conv: Conversation): Promise<Row> {
     lastPreview: preview.slice(0, 80),
     avatarAddress,
     inboxToAddr,
+    unreadCount,
+    lastReadNs,
+    selfInboxId,
   };
 }
 
@@ -144,9 +168,10 @@ export default function Messenger(): React.ReactElement {
     void (async (): Promise<void> => {
       try {
         const client = await getOrCreateXmtpClient('production');
+        const selfInboxId = client.inboxId;
         await client.conversations.syncAllConversations(['allowed', 'unknown']);
         const convs = await client.conversations.list(undefined, undefined, ['allowed', 'unknown']);
-        const summarized = await Promise.all(convs.map(summarize));
+        const summarized = await Promise.all(convs.map(c => summarize(c, selfInboxId)));
         if (cancelled) return;
         clearTimeout(initTimer);
         summarized.sort((a, b) => (b.lastTs ?? 0) - (a.lastTs ?? 0));
@@ -157,7 +182,7 @@ export default function Messenger(): React.ReactElement {
         try {
           cancelConvStream = await client.conversations.stream(async (conv) => {
             if (cancelled || !conv) return;
-            const r = await summarize(conv);
+            const r = await summarize(conv, selfInboxId);
             setRows(prev => {
               const next = prev ? [r, ...prev.filter(x => x.convId !== r.convId)] : [r];
               cachedRowsModule = next;
@@ -183,7 +208,12 @@ export default function Messenger(): React.ReactElement {
               if (idx === -1) return prev;
               const cur = prev[idx]!;
               const newAvatar = cur.inboxToAddr[msg.senderInboxId ?? ''] ?? cur.avatarAddress;
-              const updated = { ...cur, lastTs, lastPreview, avatarAddress: newAvatar };
+              /** Bump the unread count when the new msg is newer than what we'd
+               *  read AND not authored by the local user. */
+              const isUnread = (msg.sentNs ?? 0) > cur.lastReadNs
+                && msg.senderInboxId !== cur.selfInboxId;
+              const unreadCount = isUnread ? cur.unreadCount + 1 : cur.unreadCount;
+              const updated = { ...cur, lastTs, lastPreview, avatarAddress: newAvatar, unreadCount };
               const next = [updated, ...prev.slice(0, idx), ...prev.slice(idx + 1)];
               cachedRowsModule = next;
               return next;
@@ -290,7 +320,19 @@ export default function Messenger(): React.ReactElement {
                 {item.lastPreview || '(no messages yet)'}
               </Text>
             </View>
-            <Text style={{ color: sub, fontSize: 13, marginLeft: 8, fontFamily: 'Calibre-Medium' }}>{fmtTs(item.lastTs)}</Text>
+            <View style={{ alignItems: 'flex-end', marginLeft: 8, gap: 4 }}>
+              <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{fmtTs(item.lastTs)}</Text>
+              {item.unreadCount > 0 ? (
+                <View style={{
+                  minWidth: 22, height: 22, borderRadius: 999, backgroundColor: '#2bb3a3',
+                  alignItems: 'center', justifyContent: 'center', paddingHorizontal: 7,
+                }}>
+                  <Text style={{ color: '#ffffff', fontSize: 12, fontFamily: 'Calibre-Semibold' }}>
+                    {item.unreadCount > 99 ? '99+' : item.unreadCount}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
           </Pressable>
         )}
       />

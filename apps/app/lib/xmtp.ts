@@ -162,6 +162,23 @@ export async function resetXmtpClient(): Promise<void> {
 /** Format a metro-style line URI for an XMTP conversation. Mirrors the daemon train. */
 export function lineOfConv(convId: string): string { return `metro://xmtp/${convId}`; }
 
+/** Per-conv "last read at" timestamp (XMTP `sentNs` units) persisted in
+ *  SecureStore. Used by the Channels list to compute an unread count and
+ *  by the conversation view to mark messages as read on open. */
+const LAST_READ_PREFIX = 'unread.lastRead.';
+export async function getLastReadNs(convId: string): Promise<number> {
+  try {
+    const raw = await SecureStore.getItemAsync(LAST_READ_PREFIX + convId);
+    if (!raw) return 0;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : 0;
+  } catch { return 0; }
+}
+export async function setLastReadNs(convId: string, ns: number): Promise<void> {
+  try { await SecureStore.setItemAsync(LAST_READ_PREFIX + convId, String(ns)); }
+  catch { /* best-effort */ }
+}
+
 /** Pretty-print a wallet address as `0x1234…abcd`. */
 export function shortAddress(addr: string): string {
   if (!addr) return '';
