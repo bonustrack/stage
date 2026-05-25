@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   convOfLine, lineOfConv, memberInboxToAddressMap, stampBoxAvatarUrl, shortAddress,
 } from '../../lib/xmtp';
+import { PublicIdentity } from '@xmtp/react-native-sdk';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { HeroIcon } from '../../components/HeroIcon';
 
@@ -34,6 +35,9 @@ export default function GroupDetail(): React.ReactElement {
   /** `members` = [eth address]; sorted alphabetically so the order is stable
    *  across re-fetches. Includes the local user. */
   const [members, setMembers] = useState<string[]>([]);
+  /** Add-member input + busy flag. The Add row sits above the member list. */
+  const [addDraft, setAddDraft] = useState('');
+  const [adding, setAdding] = useState(false);
 
   useEffect(() => {
     if (!convId) return;
@@ -53,6 +57,27 @@ export default function GroupDetail(): React.ReactElement {
     })();
     return (): void => { cancelled = true; };
   }, [convId, line]);
+
+  const addMember = async (): Promise<void> => {
+    const addr = addDraft.trim();
+    if (!/^0x[0-9a-fA-F]{40}$/.test(addr) || adding) {
+      Alert.alert('Add member', 'Enter a valid 0x… Ethereum address.');
+      return;
+    }
+    setAdding(true);
+    try {
+      const conv = await convOfLine(line);
+      const group = conv as unknown as { addMembersByIdentity?: (ids: PublicIdentity[]) => Promise<unknown> };
+      if (!group.addMembersByIdentity) throw new Error('Not a group conversation');
+      await group.addMembersByIdentity([new PublicIdentity(addr, 'ETHEREUM')]);
+      setAddDraft('');
+      /** Re-fetch the member list so the new row shows up immediately. */
+      const fullMap = await memberInboxToAddressMap(conv);
+      setMembers(Object.values(fullMap).sort((a, b) => a.localeCompare(b)));
+    } catch (e) {
+      Alert.alert('Add member failed', (e as Error).message ?? 'Unknown error');
+    } finally { setAdding(false); }
+  };
 
   const saveName = async (): Promise<void> => {
     const next = draft.trim();
@@ -120,6 +145,35 @@ export default function GroupDetail(): React.ReactElement {
       <Text style={{ color: sub, fontSize: 11, paddingHorizontal: 16, paddingBottom: 6 }}>
         MEMBERS ({members.length})
       </Text>
+      <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingBottom: 12 }}>
+        <TextInput
+          value={addDraft}
+          onChangeText={setAddDraft}
+          placeholder="0x… Ethereum address"
+          placeholderTextColor={sub}
+          autoCorrect={false}
+          autoCapitalize="none"
+          style={{
+            flex: 1, color: fg, backgroundColor: rowBg,
+            borderWidth: 1, borderColor: border, borderRadius: 10,
+            paddingHorizontal: 10, paddingVertical: 8, fontSize: 13,
+          }}
+        />
+        <Pressable
+          onPress={() => { void addMember(); }}
+          disabled={adding || !addDraft.trim()}
+          style={({ pressed }) => ({
+            paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999,
+            backgroundColor: '#ffffff',
+            opacity: pressed ? 0.85 : (adding || !addDraft.trim()) ? 0.5 : 1,
+            alignSelf: 'center',
+          })}
+        >
+          <Text style={{ color: '#000000', fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+            {adding ? 'Adding…' : 'Add'}
+          </Text>
+        </Pressable>
+      </View>
       <FlatList
         data={members}
         keyExtractor={addr => addr.toLowerCase()}
