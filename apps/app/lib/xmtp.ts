@@ -174,7 +174,9 @@ export async function peerEthAddressOfDm(conv: Conversation): Promise<string | n
   try {
     const inboxId = await dm.peerInboxId();
     const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
-    const states = await client.inboxStates(false, [inboxId as Parameters<typeof client.inboxStates>[1][number]]);
+    /** Same network-fetch reason as `groupMemberEthAddresses` — fresh peers
+     *  may not be in the cache yet on the first render after creation. */
+    const states = await client.inboxStates(true, [inboxId as Parameters<typeof client.inboxStates>[1][number]]);
     const eth = states[0]?.identities.find(i => i.kind === 'ETHEREUM');
     return eth?.identifier ?? null;
   } catch { return null; }
@@ -227,8 +229,12 @@ export async function groupMemberEthAddresses(conv: Conversation): Promise<strin
       .map(m => m.inboxId)
       .filter(id => id !== client.inboxId);
     if (otherIds.length === 0) return [];
+    /** `refreshFromNetwork=true` — for newly-created groups the local inbox-state
+     *  cache may not yet have the Ethereum identity for every member, so a
+     *  cache-only lookup returns no addresses (and the row falls back to its
+     *  topic-suffix title like "proto" instead of a member count). */
     const states = await client.inboxStates(
-      false,
+      true,
       otherIds as Parameters<typeof client.inboxStates>[1],
     );
     const addrs: string[] = [];
@@ -237,7 +243,10 @@ export async function groupMemberEthAddresses(conv: Conversation): Promise<strin
       if (eth?.identifier) addrs.push(eth.identifier);
     }
     return addrs;
-  } catch { return []; }
+  } catch (err) {
+    process.env.NODE_ENV !== 'production' && console.warn('groupMemberEthAddresses failed', (err as Error).message);
+    return [];
+  }
 }
 
 export type { ConversationVersion };

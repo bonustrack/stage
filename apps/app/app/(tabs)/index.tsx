@@ -41,6 +41,10 @@ function fmtTs(ts: number | null): string {
 }
 
 async function summarize(conv: Conversation): Promise<Row> {
+  /** Each conv carries its own MLS state that may not be reflected in the
+   *  outer syncAllConversations call — sync once explicitly so the preview
+   *  reads the freshest message rather than the empty pre-sync slate. */
+  await conv.sync().catch(() => undefined);
   const msgs: DecodedMessage[] = await conv.messages({ limit: 1 }).catch(() => []);
   const last = msgs[0];
   let preview = '';
