@@ -295,7 +295,7 @@ export function MessengerBubble({
     },
     onPanResponderTerminationRequest: () => false,
   }), [onReply, swipeX]);
-  const AVATAR_SIZE = 32;
+  const AVATAR_SIZE = 24;
   return (
     <Animated.View
       {...panResponder.panHandlers}
