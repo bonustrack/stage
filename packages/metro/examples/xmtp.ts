@@ -103,14 +103,18 @@ function envelope(msg: DecodedMessage, conv: Conversation): Record<string, unkno
     };
   }
   if (typeId === 'attachment' && c && typeof c === 'object') {
-    const a = c as Attachment;
+    /** node-bindings' native Attachment shape is `{ filename?, mimeType, content: Uint8Array }`
+     *  — NOT the `@xmtp/content-type-remote-attachment` JS shape with `data`. msg.content
+     *  comes from the native side, so cast to the native field names. Casting to the JS
+     *  type made `a.data` undefined → crashed the train on every attachment. */
+    const a = c as { filename?: string; mimeType: string; content: Uint8Array };
     const kind = a.mimeType?.startsWith('image/') ? 'image'
       : a.mimeType?.startsWith('audio/') ? 'audio'
         : a.mimeType?.startsWith('video/') ? 'video' : 'file';
     /** Inline bytes — base64 in the payload so downstream renderers can show them without
      *  a separate fetch. Large files (>1MB) bloat history.jsonl; switch to remoteAttachment
      *  on the sender side for those. */
-    const dataB64 = Buffer.from(a.data).toString('base64');
+    const dataB64 = Buffer.from(a.content).toString('base64');
     return {
       ...base,
       text: `[${kind}: ${a.filename ?? 'attachment'}]`,
