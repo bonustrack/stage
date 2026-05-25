@@ -17,8 +17,9 @@ import { HeroIcon } from '../../components/HeroIcon';
 import {
   XMTP_USER_PREFIX, lineOfConv, useXmtpFeed, xmtpReact, xmtpReply,
   convOfLine, peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap,
-  stampBoxAvatarUrl, setLastReadNs,
+  stampBoxAvatarUrl,
 } from '../../lib/xmtp';
+import { markConvRead } from '../../lib/channelsCache';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import type { HistoryEntry } from '../../lib/types';
 
@@ -109,7 +110,7 @@ export default function XmtpConversation(): React.ReactElement {
    *  not-yet-seen message also flips to read on the next mount. */
   useEffect(() => {
     if (!convId) return;
-    void setLastReadNs(convId, Date.now() * 1_000_000);
+    void markConvRead(convId);
   }, [convId, events.length]);
   const status: 'idle' | 'connecting' | 'open' | 'error' = xmtpFeed.status === 'open' ? 'open'
     : xmtpFeed.status === 'loading' ? 'connecting'

@@ -20,6 +20,7 @@ import {
 } from '../../lib/xmtp';
 import { resetAccount } from '../../lib/wallet';
 import { useEffectiveColorScheme } from '../../lib/theme';
+import { getCachedRows, setCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
 
 interface Row {
   convId: string;
@@ -110,12 +111,9 @@ async function summarize(conv: Conversation, selfInboxId: string): Promise<Row> 
 }
 
 
-/** Module-level cache of the channel-list rows. Survives navigation between
- *  tabs so re-mounting the Channels screen renders the previously-known list
- *  instantly and the "Initialising XMTP…" spinner only shows on the very first
- *  open (when there's nothing to display). Each successful fresh fetch writes
- *  back into the cache. Lives for the lifetime of the JS process. */
-let cachedRowsModule: Row[] | null = null;
+/** Channels-list cache lives in lib/channelsCache so the conversation view
+ *  can reach in to clear unread on mount without an import cycle. The Row[]
+ *  shape is a superset of CachedRow — write through directly. */
 
 export default function Messenger(): React.ReactElement {
   const router = useRouter();
@@ -125,7 +123,23 @@ export default function Messenger(): React.ReactElement {
   const bg = dark ? '#000000' : '#ffffff';
   const border = dark ? '#262c38' : '#e3e7ef';
   const rowBg = dark ? '#161a22' : '#fafbfd';
-  const [rows, setRows] = useState<Row[] | null>(cachedRowsModule);
+  const [rows, setRowsState] = useState<Row[] | null>(getCachedRows() as Row[] | null);
+  /** Wrap setRows so every state update also lands in the shared cache + fans
+   *  out to subscribers (e.g. the conv view'​s markConvRead can mutate the
+   *  cache and we'll re-render via the subscription below). */
+  const setRows = (next: Row[] | null | ((p: Row[] | null) => Row[] | null)): void => {
+    if (typeof next === 'function') {
+      setRowsState(prev => {
+        const v = (next as (p: Row[] | null) => Row[] | null)(prev);
+        setCachedRows(v);
+        return v;
+      });
+    } else {
+      setRowsState(next);
+      setCachedRows(next);
+    }
+  };
+  useEffect(() => subscribeCachedRows(r => setRowsState(r as Row[] | null)), []);
   const [error, setError] = useState<string>('');
   const [query, setQuery] = useState<string>('');
   const [creatingAsk, setCreatingAsk] = useState(false);
@@ -176,7 +190,6 @@ export default function Messenger(): React.ReactElement {
         clearTimeout(initTimer);
         summarized.sort((a, b) => (b.lastTs ?? 0) - (a.lastTs ?? 0));
         setRows(summarized);
-        cachedRowsModule = summarized;
         /** Subscribe to newly-created conversations so groups + DMs created
          *  while the tab is mounted show up without a manual refresh. */
         try {
@@ -185,7 +198,6 @@ export default function Messenger(): React.ReactElement {
             const r = await summarize(conv, selfInboxId);
             setRows(prev => {
               const next = prev ? [r, ...prev.filter(x => x.convId !== r.convId)] : [r];
-              cachedRowsModule = next;
               return next;
             });
           }) ?? null;
@@ -215,7 +227,6 @@ export default function Messenger(): React.ReactElement {
               const unreadCount = isUnread ? cur.unreadCount + 1 : cur.unreadCount;
               const updated = { ...cur, lastTs, lastPreview, avatarAddress: newAvatar, unreadCount };
               const next = [updated, ...prev.slice(0, idx), ...prev.slice(idx + 1)];
-              cachedRowsModule = next;
               return next;
             });
           }) ?? null;
@@ -324,10 +335,10 @@ export default function Messenger(): React.ReactElement {
               <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{fmtTs(item.lastTs)}</Text>
               {item.unreadCount > 0 ? (
                 <View style={{
-                  minWidth: 22, height: 22, borderRadius: 999, backgroundColor: '#2bb3a3',
+                  minWidth: 22, height: 22, borderRadius: 999, backgroundColor: '#ffffff',
                   alignItems: 'center', justifyContent: 'center', paddingHorizontal: 7,
                 }}>
-                  <Text style={{ color: '#ffffff', fontSize: 12, fontFamily: 'Calibre-Semibold' }}>
+                  <Text style={{ color: '#000000', fontSize: 12, fontFamily: 'Calibre-Semibold' }}>
                     {item.unreadCount > 99 ? '99+' : item.unreadCount}
                   </Text>
                 </View>
