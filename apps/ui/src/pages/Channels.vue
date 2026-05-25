@@ -5,6 +5,7 @@
 import type { Conversation } from '@xmtp/browser-sdk';
 import {
   getOrCreateXmtpClient, peerEthAddressOfDm, groupMemberEthAddresses, stampBoxAvatarUrl,
+  createAskQuestionGroup,
 } from '../lib/xmtp';
 
 interface Row {
@@ -20,6 +21,20 @@ const router = useRouter();
 const rows = ref<Row[] | null>(null);
 const error = ref<string>('');
 const query = ref<string>('');
+const creatingAsk = ref(false);
+
+async function onAskPress(): Promise<void> {
+  if (creatingAsk.value) return;
+  creatingAsk.value = true;
+  try {
+    const convId = await createAskQuestionGroup();
+    void router.push(`/xmtp/${convId}`);
+  } catch (e) {
+    error.value = (e as Error).message;
+  } finally {
+    creatingAsk.value = false;
+  }
+}
 
 function fmtTs(ts: number | null): string {
   if (!ts) return '';
@@ -84,6 +99,19 @@ function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
 <template>
   <div class="min-h-screen flex flex-col">
     <div class="px-3 pt-3 pb-2">
+      <button
+        type="button"
+        :disabled="creatingAsk"
+        class="w-full bg-metro-fg-light dark:bg-metro-border-dark
+          text-white text-sm font-head
+          rounded-xl px-4 py-3 transition-opacity disabled:opacity-60
+          hover:opacity-90"
+        @click="onAskPress"
+      >
+        {{ creatingAsk ? 'Creating group…' : 'Ask a question' }}
+      </button>
+    </div>
+    <div class="px-3 pb-2">
       <input
         v-model="query"
         type="text"

@@ -166,6 +166,32 @@ export async function convOfLine(line: string): Promise<Conversation | null> {
   return conv ?? null;
 }
 
+/** Hardcoded co-members for the "Ask a question" group: claude (the daemon's
+ *  XMTP identity) + Less (the project owner). The local wallet is added
+ *  implicitly as the creator. */
+export const ASK_QUESTION_MEMBERS = [
+  '0x0bA043c6F25085C68042bad079c29bD8f16a651A', // claude (daemon xmtp train)
+  '0x25391bddaa8d7ecdfe183615c1005259cd3b79d5', // Less
+] as const;
+
+/** Spin up a 3-party group with the local user, claude, and Less. Filters
+ *  out any address that matches the local wallet so testing from one of the
+ *  hardcoded co-member accounts doesn't try to add a duplicate member. */
+export async function createAskQuestionGroup(): Promise<string> {
+  const client = await getOrCreateXmtpClient('production');
+  const selfAddr = client.accountIdentifier?.identifier.toLowerCase()
+    ?? '';
+  const peers = ASK_QUESTION_MEMBERS
+    .filter(a => a.toLowerCase() !== selfAddr)
+    .map(a => ({ identifier: a.toLowerCase(), identifierKind: IdentifierKind.Ethereum }));
+  /** The browser SDK uses `groupName` (matches the underlying wasm bindings),
+   *  while the RN SDK exposes the same field as `name`. */
+  const group = await client.conversations.createGroupWithIdentifiers(peers, {
+    groupName: 'Ask a question',
+  });
+  return group.id;
+}
+
 /** Drop the local XMTP identity. Next `getOrCreateXmtpClient` mints a fresh wallet. */
 export async function resetXmtpClient(): Promise<void> {
   cachedClient?.close();
