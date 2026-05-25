@@ -84,7 +84,7 @@ export default function XmtpConversation(): React.ReactElement {
     onMoveShouldSetPanResponder: (_, g) => g.dx > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
     onPanResponderMove: (_, g) => { swipeBackX.setValue(Math.max(0, g.dx)); },
     onPanResponderRelease: (_, g) => {
-      if (g.dx >= 60) router.push('/(tabs)/messenger');
+      if (g.dx >= 60) router.replace('/');
       RNAnimated.spring(swipeBackX, { toValue: 0, useNativeDriver: true, speed: 18, bounciness: 6 }).start();
     },
     onPanResponderTerminate: () => {
@@ -219,7 +219,7 @@ export default function XmtpConversation(): React.ReactElement {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
       }}>
         <Pressable
-          onPress={() => router.push('/(tabs)/messenger')}
+          onPress={() => router.replace('/')}
           hitSlop={10}
           style={{ position: 'absolute', left: 14, top: insets.top + 4, padding: 6 }}
         >
