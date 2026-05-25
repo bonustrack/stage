@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Stack, useRouter, usePathname } from 'expo-router';
 import { loadLastRoute, saveLastRoute } from '../lib/last-route';
-import { useShareIntent } from 'expo-share-intent';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import { ActivityIndicator, Text, TextInput, useColorScheme, View } from 'react-native';
@@ -42,17 +41,6 @@ export default function RootLayout(): React.ReactElement {
   /** Persist on every route change. */
   const pathname = usePathname();
   useEffect(() => { void saveLastRoute(pathname); }, [pathname]);
-
-  /** Android Share Intent → drop the user into the messenger tab. The XMTP composer
-   *  doesn't yet support pre-staged attachments (the daemon-routed upload pipeline
-   *  is gone); for now we just navigate, and the user can re-pick the file via the
-   *  composer's picker once a conversation is open. */
-  const { hasShareIntent, resetShareIntent } = useShareIntent();
-  useEffect(() => {
-    if (!hasShareIntent) return;
-    resetShareIntent();
-    router.push('/(tabs)/messenger');
-  }, [hasShareIntent, resetShareIntent, router]);
 
   /** Calibre — matches sx-monorepo's typography. Two weights: medium (default) + semibold (headers/buttons).
    *  TTF (not WOFF2) so Android's native Typeface loader can pick it up — expo-font's WOFF2

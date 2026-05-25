@@ -20,11 +20,9 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll));
 </script>
 
 <template>
-  <!-- `pb-[60px]` reserves space for the fixed TabBar on every page EXCEPT messenger:
-       messenger owns its bottom edge (contained scroll + sticky composer) and the
-       extra padding pushes the composer off-screen below the tab bar. -->
+  <!-- `pb-[60px]` reserves space for the fixed TabBar on every page. -->
   <div class="min-h-screen bg-metro-bg-light dark:bg-metro-bg-dark text-metro-fg-light dark:text-metro-fg-dark no-scrollbar"
-    :class="showTabs && route.name !== 'messenger' ? 'pb-[60px]' : ''">
+    :class="showTabs ? 'pb-[60px]' : ''">
     <RouterView />
     <TabBar
       v-if="showTabs"

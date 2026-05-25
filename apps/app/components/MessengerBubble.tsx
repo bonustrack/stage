@@ -8,10 +8,6 @@ import { MessengerAudioPlayer } from './MessengerAudioPlayer';
 import { MessengerImageAttachment } from './MessengerImageAttachment';
 import type { HistoryEntry } from '../lib/types';
 
-/** Default "from" URI used to mark a bubble as the user's own when no
- *  `myUri` prop is passed. Matches the daemon-side messenger station's user
- *  URI; XMTP-mode callers override this with their inbox-scoped URI. */
-const DEFAULT_MINE_URI = 'metro://messenger/user/owner';
 const REACT_PRESETS = ['👍', '❤️', '😂', '😮', '🔥', '🎉'];
 /** `linkify` + `breaks` turn bare URLs into tappable links and treat `\n` as a line
  *  break, matching the markdown-it config on the web side. Constructed once at
@@ -252,11 +248,11 @@ export function MessengerBubble({
   onAnswer?: (label: string) => void;
   replyPreview?: string; reactions?: Map<string, number>; transcript?: string;
   daemonUrl: string; token: string;
-  /** Override the "is this bubble mine?" check. Defaults to the legacy messenger-station
-   *  user URI; XMTP-mode callers pass `metro://xmtp/user/<inboxId>`. */
-  myUri?: string;
+  /** Self URI used to mark a bubble as the user's own. XMTP callers pass
+   *  `metro://xmtp/user/<inboxId>`. */
+  myUri: string;
 }): React.ReactElement {
-  const mine = entry.from === (myUri ?? DEFAULT_MINE_URI);
+  const mine = entry.from === myUri;
   const atts = attachmentsOf(entry);
   const question = questionOf(entry);
   const bubbleBg = mine ? (dark ? '#cbd5e1' : '#1a1f29') : 'transparent';
