@@ -1,4 +1,5 @@
-/** Event/state shapes — mirror the daemon's `HistoryEntry`. Kept in sync by hand. */
+/** Chat-bubble shape — mirrors the daemon's `HistoryEntry` for the XMTP feed
+ *  adapter in `./xmtp.ts` and the `MessengerBubble` component. Kept in sync by hand. */
 
 export interface HistoryEntry {
   id: string;
@@ -16,12 +17,4 @@ export interface HistoryEntry {
   display?: string;
   /** Raw platform-native payload (Discord message, GitHub webhook body, etc). Shape varies per station. */
   payload?: unknown;
-}
-
-/** Shape returned by `GET /api/state`. */
-export interface StateSnapshot {
-  claims: Record<string, string>;
-  lines: string[];
-  recent_history: HistoryEntry[];
-  bot_ids: Record<string, string>;
 }
