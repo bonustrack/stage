@@ -18,6 +18,7 @@ import { Directory, Paths } from 'expo-file-system';
 import {
   Client, PublicIdentity,
   ReactionCodec, ReplyCodec, StaticAttachmentCodec, RemoteAttachmentCodec,
+  GroupUpdatedCodec,
   type Conversation, type DecodedMessage, type ConversationVersion,
   type ReactionContent, type ReplyContent, type StaticAttachmentContent,
   type Signer,
@@ -27,12 +28,14 @@ import type { PrivateKeyAccount } from 'viem/accounts';
 /** Codecs the local XMTP client decodes inbound + uses to encode outbound. Without these
  *  the RN SDK's `msg.content()` throws on reaction/reply/attachment payloads and we fall
  *  back to "[<typeId> payload]" placeholder text — that's why Less saw "[reaction payload]"
- *  instead of "[react 👍]" on his own outbound bubbles. */
+ *  instead of "[react 👍]" on his own outbound bubbles. GroupUpdatedCodec is required for
+ *  membership/rename system messages to decode at all. */
 const XMTP_CODECS = [
   new ReactionCodec(),
   new ReplyCodec(),
   new StaticAttachmentCodec(),
   new RemoteAttachmentCodec(),
+  new GroupUpdatedCodec(),
 ];
 import type { HistoryEntry } from './types';
 import { loadOrCreateAccount, resetAccount } from './wallet';
