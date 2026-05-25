@@ -528,6 +528,21 @@ describe('members.json (channel-with-membership primitive)', () => {
     expect(verifyJwt('still-not-a-jwt')).toBe(null);
   });
 
+  test('readTeamWallets parses env, lowercases, dedupes, ignores invalid', async () => {
+    const { readTeamWallets } = await import('../src/cli/channels-api.ts');
+    const prev = process.env.TEAM_WALLETS;
+    const a = '0xAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAa';  /** mixed case, valid hex */
+    const aLower = a.toLowerCase();
+    const b = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+    process.env.TEAM_WALLETS = `${a},${aLower},bogus,${b},toolong0xcccc,0x_invalid`;
+    const out = readTeamWallets().sort();
+    expect(out).toEqual([
+      asLine(`metro://user/eth/${aLower}`),
+      asLine(`metro://user/eth/${b}`),
+    ].sort());
+    process.env.TEAM_WALLETS = prev;
+  });
+
   test('drainTail with requester gates restricted lines, leaves unrestricted alone', () => {
     setMembers(asLine(CHANNEL), [ALICE]);  /** OTHER stays unrestricted */
     appendToBrokerHistory({

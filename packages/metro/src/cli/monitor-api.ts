@@ -14,6 +14,7 @@ import { asLine, Line } from '../lines.js';
 import { errMsg, log } from '../log.js';
 import { readBotIds } from '../paths.js';
 import { handleSiweLogin, requesterFromJwt } from './auth-api.js';
+import { routeChannels } from './channels-api.js';
 import { routeMessenger } from './messenger-api.js';
 
 /** Monitor endpoints answer only on dedicated hostnames so webhook tunnel can't double-serve them. */
@@ -122,6 +123,8 @@ export function handleMonitorRequest(
   }
   /** /api/messenger/* — send, register, upload, files/:name. */
   if (path.startsWith('/api/messenger/') && routeMessenger(req, res, path, emit, send)) return true;
+  /** /api/channels[/...] — channel CRUD + membership mutation. */
+  if (path.startsWith('/api/channels') && routeChannels(req, res, path, send, requester)) return true;
   /** GET-only paths reject other verbs with 405. Anything else → 404. */
   if (req.method !== 'GET' && (path === '/api/state' || path === '/api/tail')) {
     send(res, req, 405, { error: 'method not allowed' });
