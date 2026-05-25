@@ -1,9 +1,11 @@
 <script setup lang="ts">
-/** Chat bubble: own messages right-aligned (accent fill), others left-aligned (surface fill).
- *  Renders text, reply pill, attachments, and a reactions strip. Long-press / right-click
- *  fires `request-actions` so the parent can pop the action sheet. */
+/** Chat bubble: own messages right-aligned (accent fill), others left-aligned
+ *  (surface fill). Renders text, reply pill, attachments, YouTube + location
+ *  embeds, and a reactions strip. Long-press / right-click fires
+ *  `request-actions` so the parent can pop the action sheet. */
 
 import type { HistoryEntry } from '../lib/types';
+import { mapCoordsOf, youtubeIdOf } from '../lib/embedDetect';
 
 interface AttachmentLike {
   kind: string; mime?: string; name?: string; dataB64?: string; url?: string;
@@ -25,13 +27,17 @@ const attachments = computed<AttachmentLike[]>(() => {
   return Array.isArray(p?.attachments) ? p.attachments : [];
 });
 
+const youtubeId = computed(() => youtubeIdOf(props.entry.text));
+const mapCoords = computed(() => mapCoordsOf(props.entry.text));
+
 function fmtTs(ts: string): string {
   try { return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }); }
   catch { return ts.slice(11, 16); }
 }
 
-/** Build a data: URL from a base64-encoded inline attachment so we can render it directly. */
-function dataUrlOf(att: AttachmentLike): string | null {
+/** Build a usable URL for an inline attachment — data: URI for base64
+ *  payloads, raw URL when the daemon serves the bytes. */
+function urlOf(att: AttachmentLike): string | null {
   if (att.url) return att.url;
   if (att.dataB64 && att.mime) return `data:${att.mime};base64,${att.dataB64}`;
   return null;
@@ -57,12 +63,13 @@ function onContext(ev: MouseEvent): void {
           {{ props.replyPreview.slice(0, 80) }}
         </div>
         <div v-for="(att, i) in attachments" :key="i" class="mb-1.5">
-          <img v-if="att.kind === 'image' && dataUrlOf(att)"
-            :src="dataUrlOf(att) ?? undefined"
-            :alt="att.name ?? 'image'"
-            class="max-w-full rounded-lg" />
-          <a v-else-if="dataUrlOf(att)"
-            :href="dataUrlOf(att) ?? undefined"
+          <!-- Image attachments get the MediaCard frame for visual parity
+               with the other embeds. -->
+          <MediaCard v-if="att.kind === 'image' && urlOf(att)">
+            <img :src="urlOf(att) ?? undefined" :alt="att.name ?? 'image'" class="block w-full aspect-square object-cover" />
+          </MediaCard>
+          <a v-else-if="urlOf(att)"
+            :href="urlOf(att) ?? undefined"
             :download="att.name ?? undefined"
             class="inline-flex items-center gap-2 underline text-sm">
             <HeroIcon name="paperClip" :size="14" />
@@ -71,6 +78,14 @@ function onContext(ev: MouseEvent): void {
           <span v-else class="text-xs opacity-70">[{{ att.kind }}{{ att.name ? `: ${att.name}` : '' }}]</span>
         </div>
         <div v-if="props.entry.text" class="whitespace-pre-wrap break-words">{{ props.entry.text }}</div>
+        <!-- Inline embeds detected from the message text. Rendered after the
+             text so the source URL stays clickable + visible. -->
+        <div v-if="youtubeId" class="mt-2">
+          <YouTubeEmbed :video-id="youtubeId" />
+        </div>
+        <div v-else-if="mapCoords" class="mt-2">
+          <LocationEmbed :lat="mapCoords.lat" :lng="mapCoords.lng" :source-url="mapCoords.sourceUrl" />
+        </div>
       </div>
       <div class="flex items-center gap-1.5 mt-1 text-[10px] text-metro-sub-light dark:text-metro-sub-dark"
         :class="props.mine ? 'justify-end' : 'justify-start'">

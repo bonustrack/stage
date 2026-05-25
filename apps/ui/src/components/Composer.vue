@@ -2,7 +2,7 @@
 /** Plain-text composer wired to the local XMTP client. Enter sends, Shift+Enter newlines.
  *  When a reply target is set the bar above the input shows the snippet with a clear button. */
 
-import { xmtpSendText, xmtpReply } from '../lib/xmtpSend';
+import { xmtpSendText, xmtpReply, xmtpSendAttachment } from '../lib/xmtpSend';
 
 const props = defineProps<{
   line: string;
@@ -17,6 +17,62 @@ const emit = defineEmits<{
 const text = ref('');
 const sending = ref(false);
 const err = ref<string | null>(null);
+const attachOpen = ref(false);
+const fileInput = ref<HTMLInputElement | null>(null);
+
+function toggleAttach(): void { attachOpen.value = !attachOpen.value; }
+
+function pickImage(): void {
+  attachOpen.value = false;
+  fileInput.value?.click();
+}
+
+async function onFileChange(ev: Event): Promise<void> {
+  const input = ev.target as HTMLInputElement;
+  const file = input.files?.[0];
+  input.value = '';
+  if (!file) return;
+  try {
+    const dataB64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (): void => {
+        const r = reader.result;
+        if (typeof r !== 'string') { reject(new Error('FileReader returned non-string')); return; }
+        const comma = r.indexOf(',');
+        resolve(comma === -1 ? r : r.slice(comma + 1));
+      };
+      reader.onerror = (): void => reject(reader.error ?? new Error('FileReader failed'));
+      reader.readAsDataURL(file);
+    });
+    await xmtpSendAttachment(props.line, file.name, file.type || 'application/octet-stream', dataB64);
+  } catch (e) {
+    err.value = (e as Error).message;
+  }
+}
+
+async function shareLocation(): Promise<void> {
+  attachOpen.value = false;
+  if (!navigator.geolocation) {
+    err.value = 'Geolocation unavailable in this browser.';
+    return;
+  }
+  try {
+    const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: false, timeout: 10_000, maximumAge: 60_000,
+      });
+    });
+    const { latitude, longitude } = pos.coords;
+    const url = `https://maps.google.com/?q=${latitude.toFixed(7)},${longitude.toFixed(7)}`;
+    const localId = `tmp_${Math.random().toString(36).slice(2, 10)}`;
+    const body = `📍 ${url}`;
+    emit('optimistic', { localId, text: body });
+    await xmtpSendText(props.line, body);
+    emit('sent', localId);
+  } catch (e) {
+    err.value = `Location failed: ${(e as Error).message ?? 'permission denied'}`;
+  }
+}
 
 async function send(): Promise<void> {
   const body = text.value.trim();
@@ -53,7 +109,48 @@ async function send(): Promise<void> {
         <HeroIcon name="x" :size="14" />
       </button>
     </div>
+    <div v-if="attachOpen" class="flex gap-2 px-3 pt-2">
+      <button
+        type="button"
+        class="flex items-center gap-2 px-3 py-2 rounded-lg
+          border border-metro-border-light dark:border-metro-border-dark
+          bg-metro-surface-light dark:bg-metro-surface-dark text-sm
+          text-metro-fg-light dark:text-metro-fg-dark
+          hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
+        @click="pickImage"
+      >
+        <HeroIcon name="photo" :size="16" /> Image
+      </button>
+      <button
+        type="button"
+        class="flex items-center gap-2 px-3 py-2 rounded-lg
+          border border-metro-border-light dark:border-metro-border-dark
+          bg-metro-surface-light dark:bg-metro-surface-dark text-sm
+          text-metro-fg-light dark:text-metro-fg-dark
+          hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
+        @click="shareLocation"
+      >
+        <HeroIcon name="mapPin" :size="16" /> Location
+      </button>
+    </div>
+    <input
+      ref="fileInput"
+      type="file"
+      accept="image/*"
+      class="hidden"
+      @change="onFileChange"
+    />
     <div class="flex items-end gap-2 p-3">
+      <button
+        type="button"
+        class="w-10 h-10 shrink-0 rounded-full flex items-center justify-center
+          text-metro-sub-light dark:text-metro-sub-dark
+          hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
+        :title="attachOpen ? 'Close attach menu' : 'Attach'"
+        @click="toggleAttach"
+      >
+        <HeroIcon :name="attachOpen ? 'x' : 'plus'" :size="20" />
+      </button>
       <textarea
         v-model="text"
         placeholder="Message…"

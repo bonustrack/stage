@@ -98,6 +98,7 @@ export default function GroupDetail(): React.ReactElement {
     setAdding(true);
     try {
       const conv = await convOfLine(line);
+      if (!conv) throw new Error('Conversation not found');
       const group = conv as unknown as { addMembersByIdentity?: (ids: PublicIdentity[]) => Promise<unknown> };
       if (!group.addMembersByIdentity) throw new Error('Not a group conversation');
       await group.addMembersByIdentity([new PublicIdentity(addr, 'ETHEREUM')]);

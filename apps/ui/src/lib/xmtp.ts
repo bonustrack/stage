@@ -200,3 +200,47 @@ export async function resetXmtpClient(): Promise<void> {
   localStorage.removeItem(ADDRESS_KEY);
   localStorage.removeItem(ENV_KEY);
 }
+
+/** Find or create a DM with a peer by Ethereum address. Returns the conv id
+ *  ready to push into `/xmtp/:convId`. */
+export async function openDmWithAddress(address: string): Promise<string> {
+  const client = await getOrCreateXmtpClient('production');
+  const dm = await client.conversations.createDmWithIdentifier({
+    identifier: address.toLowerCase(),
+    identifierKind: IdentifierKind.Ethereum,
+  });
+  return dm.id;
+}
+
+/** Map every member inbox id of a conversation to its Ethereum address.
+ *  Includes the local user. Used by the conversation view + group page. */
+export async function memberInboxToAddressMap(conv: Conversation): Promise<Record<string, string>> {
+  try {
+    const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+    const members = await conv.members();
+    const ids = members.map(m => m.inboxId);
+    if (ids.length === 0) return {};
+    const states = await client.preferences.getInboxStates(ids);
+    const map: Record<string, string> = {};
+    for (let i = 0; i < ids.length; i++) {
+      const eth = states[i]?.accountIdentifiers.find(it => it.identifierKind === IdentifierKind.Ethereum);
+      if (eth?.identifier) map[ids[i]!] = eth.identifier;
+    }
+    return map;
+  } catch { return {}; }
+}
+
+/** Per-conv "last read at" timestamp in XMTP `sentAtNs` units (number, not
+ *  bigint — we coerce on read/write). Persisted under `unread.lastRead.<id>`
+ *  in localStorage so unread counts survive a reload. */
+const LAST_READ_PREFIX = 'unread.lastRead.';
+export function getLastReadNs(convId: string): number {
+  const raw = localStorage.getItem(LAST_READ_PREFIX + convId);
+  if (!raw) return 0;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : 0;
+}
+export function setLastReadNs(convId: string, ns: number): void {
+  try { localStorage.setItem(LAST_READ_PREFIX + convId, String(ns)); }
+  catch { /* quota / private-mode — best effort */ }
+}

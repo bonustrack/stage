@@ -3,9 +3,10 @@
  *  local XMTP client. Layout: top-nav with back arrow, scrollable message list (newest
  *  at the bottom), composer pinned to the viewport bottom. */
 
-import { XMTP_USER_PREFIX, lineOfConv } from '../lib/xmtp';
+import { XMTP_USER_PREFIX, convOfLine, lineOfConv, peerEthAddressOfDm, shortAddress, stampBoxAvatarUrl } from '../lib/xmtp';
 import { xmtpReact } from '../lib/xmtpSend';
 import { useXmtpFeed, reactionsByMessage, isReactionEntry } from '../lib/xmtpFeed';
+import { markConvRead } from '../lib/channelsCache';
 import type { HistoryEntry } from '../lib/types';
 
 const route = useRoute();
@@ -20,6 +21,34 @@ const myUri = computed(() => feed.inboxId.value ? `${XMTP_USER_PREFIX}${feed.inb
 const replyingTo = ref<{ id: string; preview: string } | null>(null);
 const actionTarget = ref<HistoryEntry | null>(null);
 const optimistic = ref<HistoryEntry[]>([]);
+
+/** Header metadata — DM resolves to peer eth address; group resolves to
+ *  the group name. Used to render the title + avatar + tap target. */
+const peerAddress = ref<string | null>(null);
+const groupName = ref<string>('');
+const isGroup = computed(() => peerAddress.value === null && groupName.value !== '');
+
+watchEffect(async () => {
+  if (!convId.value || !line.value) return;
+  peerAddress.value = null;
+  groupName.value = '';
+  const conv = await convOfLine(line.value).catch(() => null);
+  if (!conv) return;
+  const peer = await peerEthAddressOfDm(conv);
+  if (peer) { peerAddress.value = peer; return; }
+  const n = (conv as unknown as { name?: string | (() => Promise<string>) }).name;
+  groupName.value = typeof n === 'function' ? await n() : (n ?? '');
+});
+
+/** Mark conv as read when bubbles arrive and on initial mount. */
+watch(() => feed.events.value.length, () => {
+  if (convId.value && feed.events.value.length > 0) markConvRead(convId.value);
+});
+
+function openHeader(): void {
+  if (peerAddress.value) void router.push(`/user/${peerAddress.value}`);
+  else if (convId.value) void router.push(`/group/${convId.value}`);
+}
 
 const reactions = computed(() => reactionsByMessage(feed.events.value));
 const liveBubbles = computed(() => feed.events.value.filter(e => !isReactionEntry(e)));
@@ -102,15 +131,33 @@ function onActionCopy(): void {
         @click="router.push('/channels')">
         <HeroIcon name="arrowLeft" :size="22" />
       </button>
+      <!-- Header title — tap to open the per-user profile (DM) or the
+           group detail page (group). -->
+      <button
+        type="button"
+        class="flex-1 flex items-center justify-center gap-2 px-3 py-1 -mx-1
+          text-sm text-metro-fg-light dark:text-metro-fg-dark
+          hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark rounded-lg"
+        @click="openHeader"
+      >
+        <img v-if="peerAddress"
+          :src="stampBoxAvatarUrl(peerAddress, 48)"
+          alt=""
+          class="w-6 h-6 rounded-full bg-metro-border-dark"
+        />
+        <HeroIcon v-else-if="isGroup" name="users" :size="16" />
+        <span class="truncate max-w-[200px] font-head">
+          {{ peerAddress ? shortAddress(peerAddress) : (groupName || 'Conversation') }}
+        </span>
+      </button>
       <div v-if="feed.status.value !== 'open'"
-        class="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5
+        class="absolute top-1/2 right-3 -translate-y-1/2 flex items-center gap-1.5
           px-2.5 py-1 rounded-full bg-metro-hover-light dark:bg-metro-hover-dark">
         <span class="w-1.5 h-1.5 rounded-full"
           :class="feed.status.value === 'loading' ? 'bg-metro-warn'
             : feed.status.value === 'error' ? 'bg-metro-err' : 'bg-metro-sub-dark'" />
         <span class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark">
-          {{ feed.status.value === 'loading' ? 'Connecting…'
-             : feed.status.value === 'error' ? 'Reconnecting…' : 'Offline' }}
+          {{ feed.status.value === 'loading' ? '…' : feed.status.value === 'error' ? '!' : '·' }}
         </span>
       </div>
     </div>

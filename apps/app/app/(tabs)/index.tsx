@@ -257,7 +257,11 @@ export default function Messenger(): React.ReactElement {
             let needsRefresh = false;
             setRows(prev => {
               if (!prev) return prev;
-              const idx = prev.findIndex(r => r.convId === msg.conversationId);
+              /** `conversationId` exists on the native msg envelope but isn't
+               *  surfaced in the TS DecodedMessage type — access through an
+               *  unknown cast. */
+              const msgConvId = (msg as unknown as { conversationId?: string }).conversationId;
+              const idx = prev.findIndex(r => r.convId === msgConvId);
               if (idx === -1) { needsRefresh = true; return prev; }
               const cur = prev[idx]!;
               const newAvatar = cur.inboxToAddr[msg.senderInboxId ?? ''] ?? cur.avatarAddress;
