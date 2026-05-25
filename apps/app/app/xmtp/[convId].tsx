@@ -292,6 +292,7 @@ export default function XmtpConversation(): React.ReactElement {
             dark={dark}
             myUri={myUri}
             senderEthAddress={senderEthOf(item.from)}
+            onAvatarPress={(addr) => router.push({ pathname: '/user/[address]', params: { address: addr } })}
             unread={false}
             pending={item.id.startsWith('tmp_')}
             replyTarget={replyingTo?.id === item.id}

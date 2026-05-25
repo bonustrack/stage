@@ -240,7 +240,7 @@ function QuestionView({ question, dark, sub, onAnswer }: {
 
 export function MessengerBubble({
   entry, dark, unread, pending, replyTarget, onReact, onReply, onLongPress, onAnswer,
-  replyPreview, reactions, transcript, daemonUrl, token, myUri, senderEthAddress,
+  replyPreview, reactions, transcript, daemonUrl, token, myUri, senderEthAddress, onAvatarPress,
 }: {
   entry: HistoryEntry; dark: boolean; unread: boolean; pending?: boolean; replyTarget?: boolean;
   onReact?: (emoji: string) => void; onReply?: () => void; onLongPress?: () => void;
@@ -257,6 +257,9 @@ export function MessengerBubble({
    *  avatar. null when the SDK hasn't surfaced the mapping yet (we fall back
    *  to a tinted placeholder so row geometry doesn't shift). */
   senderEthAddress?: string | null;
+  /** Tap on the avatar — parent routes to the per-user profile view. Skipped
+   *  when undefined (e.g. legacy callers that don't wire it). */
+  onAvatarPress?: (address: string) => void;
 }): React.ReactElement {
   const mine = entry.from === myUri;
   const atts = attachmentsOf(entry);
@@ -307,10 +310,12 @@ export function MessengerBubble({
       {/** Discord-style row avatar. Stamp.fyi when we have an eth address;
        *   neutral placeholder while the SDK is still resolving the sender. */}
       {senderEthAddress ? (
-        <Image
-          source={{ uri: stampBoxAvatarUrl(senderEthAddress, AVATAR_SIZE * 2) }}
-          style={{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: 999, backgroundColor: '#1a1f29', marginTop: 2 }}
-        />
+        <Pressable onPress={() => onAvatarPress?.(senderEthAddress)} hitSlop={6}>
+          <Image
+            source={{ uri: stampBoxAvatarUrl(senderEthAddress, AVATAR_SIZE * 2) }}
+            style={{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: 999, backgroundColor: '#1a1f29', marginTop: 2 }}
+          />
+        </Pressable>
       ) : (
         <View style={{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: 999, backgroundColor: '#1a1f29', marginTop: 2 }} />
       )}
