@@ -259,25 +259,6 @@ export function MessengerComposer({
           ))}
         </View>
       ) : null}
-      {attachMenuOpen ? (
-        <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 6, paddingBottom: 6 }}>
-          {(
-            [['photo', 'Image', pickImage], ['paperClip', 'File', pickFile]] as const
-          ).map(([icon, label, action]) => (
-            <Pressable
-              key={label}
-              onPress={() => { setAttachMenuOpen(false); void action(); }}
-              style={{
-                flexDirection: 'row', alignItems: 'center', gap: 6,
-                paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: chipBg,
-              }}
-            >
-              <HeroIcon name={icon} size={16} color={fg} />
-              <Text style={{ color: fg, fontSize: 13 }}>{label}</Text>
-            </Pressable>
-          ))}
-        </View>
-      ) : null}
       {recording || uploading || err ? (
         <Text style={{
           color: err ? '#d96868' : recording ? '#d96868' : sub,
@@ -306,6 +287,29 @@ export function MessengerComposer({
           </Pressable>
         </View>
       </View>
+      {/** Attach menu — boxes below the composer with icon + label per source.
+       *   Tap the + button in the composer row to toggle. */}
+      {attachMenuOpen ? (
+        <View style={{ flexDirection: 'row', gap: 10, paddingTop: 10 }}>
+          {(
+            [['photo', 'Image', pickImage], ['paperClip', 'File', pickFile]] as const
+          ).map(([icon, label, action]) => (
+            <Pressable
+              key={label}
+              onPress={() => { setAttachMenuOpen(false); void action(); }}
+              style={({ pressed }) => ({
+                flex: 1, alignItems: 'center', justifyContent: 'center',
+                paddingVertical: 14, borderRadius: 12,
+                backgroundColor: pressed ? chipBg : inputBg,
+                borderWidth: 1, borderColor: chipBg,
+              })}
+            >
+              <HeroIcon name={icon} size={22} color={fg} />
+              <Text style={{ color: fg, fontSize: 13, marginTop: 6, fontFamily: 'Calibre-Medium' }}>{label}</Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
     </View>
   );
 }
