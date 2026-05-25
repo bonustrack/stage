@@ -6,12 +6,14 @@
 // biome-ignore lint: disable
 export {}
 declare global {
+  const ASK_QUESTION_MEMBERS: typeof import('./lib/xmtp').ASK_QUESTION_MEMBERS
   const EffectScope: typeof import('vue').EffectScope
   const XMTP_USER_PREFIX: typeof import('./lib/xmtp').XMTP_USER_PREFIX
   const computed: typeof import('vue').computed
   const convIdOfLine: typeof import('./lib/xmtp').convIdOfLine
   const convOfLine: typeof import('./lib/xmtp').convOfLine
   const createApp: typeof import('vue').createApp
+  const createAskQuestionGroup: typeof import('./lib/xmtp').createAskQuestionGroup
   const customRef: typeof import('vue').customRef
   const defineAsyncComponent: typeof import('vue').defineAsyncComponent
   const defineComponent: typeof import('vue').defineComponent
@@ -34,6 +36,7 @@ declare global {
   const isShallow: typeof import('vue').isShallow
   const isXmtpLine: typeof import('./lib/xmtp').isXmtpLine
   const lineOfConv: typeof import('./lib/xmtp').lineOfConv
+  const loadCachedProfile: typeof import('./lib/profile').loadCachedProfile
   const markRaw: typeof import('vue').markRaw
   const nextTick: typeof import('vue').nextTick
   const onActivated: typeof import('vue').onActivated
@@ -56,6 +59,7 @@ declare global {
   const provide: typeof import('vue').provide
   const reactionsByMessage: typeof import('./lib/xmtpFeed').reactionsByMessage
   const reactive: typeof import('vue').reactive
+  const readProfile: typeof import('./lib/profile').readProfile
   const readonly: typeof import('vue').readonly
   const ref: typeof import('vue').ref
   const resetXmtpClient: typeof import('./lib/xmtp').resetXmtpClient
@@ -72,6 +76,8 @@ declare global {
   const toValue: typeof import('vue').toValue
   const triggerRef: typeof import('vue').triggerRef
   const unref: typeof import('vue').unref
+  const updateProfile: typeof import('./lib/profile').updateProfile
+  const uploadAvatar: typeof import('./lib/profile').uploadAvatar
   const useAttrs: typeof import('vue').useAttrs
   const useCssModule: typeof import('vue').useCssModule
   const useCssVars: typeof import('vue').useCssVars
@@ -100,6 +106,9 @@ declare global {
   export type { Component, Slot, Slots, ComponentPublicInstance, ComputedRef, DirectiveBinding, ExtractDefaultPropTypes, ExtractPropTypes, ExtractPublicPropTypes, InjectionKey, PropType, Ref, ShallowRef, MaybeRef, MaybeRefOrGetter, VNode, WritableComputedRef } from 'vue'
   import('vue')
   // @ts-ignore
+  export type { SnapshotProfile } from './lib/profile'
+  import('./lib/profile')
+  // @ts-ignore
   export type { ThemePreference } from './lib/theme'
   import('./lib/theme')
   // @ts-ignore
@@ -118,12 +127,14 @@ import { UnwrapRef } from 'vue'
 declare module 'vue' {
   interface GlobalComponents {}
   interface ComponentCustomProperties {
+    readonly ASK_QUESTION_MEMBERS: UnwrapRef<typeof import('./lib/xmtp')['ASK_QUESTION_MEMBERS']>
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
     readonly XMTP_USER_PREFIX: UnwrapRef<typeof import('./lib/xmtp')['XMTP_USER_PREFIX']>
     readonly computed: UnwrapRef<typeof import('vue')['computed']>
     readonly convIdOfLine: UnwrapRef<typeof import('./lib/xmtp')['convIdOfLine']>
     readonly convOfLine: UnwrapRef<typeof import('./lib/xmtp')['convOfLine']>
     readonly createApp: UnwrapRef<typeof import('vue')['createApp']>
+    readonly createAskQuestionGroup: UnwrapRef<typeof import('./lib/xmtp')['createAskQuestionGroup']>
     readonly customRef: UnwrapRef<typeof import('vue')['customRef']>
     readonly defineAsyncComponent: UnwrapRef<typeof import('vue')['defineAsyncComponent']>
     readonly defineComponent: UnwrapRef<typeof import('vue')['defineComponent']>
@@ -146,6 +157,7 @@ declare module 'vue' {
     readonly isShallow: UnwrapRef<typeof import('vue')['isShallow']>
     readonly isXmtpLine: UnwrapRef<typeof import('./lib/xmtp')['isXmtpLine']>
     readonly lineOfConv: UnwrapRef<typeof import('./lib/xmtp')['lineOfConv']>
+    readonly loadCachedProfile: UnwrapRef<typeof import('./lib/profile')['loadCachedProfile']>
     readonly markRaw: UnwrapRef<typeof import('vue')['markRaw']>
     readonly nextTick: UnwrapRef<typeof import('vue')['nextTick']>
     readonly onActivated: UnwrapRef<typeof import('vue')['onActivated']>
@@ -168,6 +180,7 @@ declare module 'vue' {
     readonly provide: UnwrapRef<typeof import('vue')['provide']>
     readonly reactionsByMessage: UnwrapRef<typeof import('./lib/xmtpFeed')['reactionsByMessage']>
     readonly reactive: UnwrapRef<typeof import('vue')['reactive']>
+    readonly readProfile: UnwrapRef<typeof import('./lib/profile')['readProfile']>
     readonly readonly: UnwrapRef<typeof import('vue')['readonly']>
     readonly ref: UnwrapRef<typeof import('vue')['ref']>
     readonly resetXmtpClient: UnwrapRef<typeof import('./lib/xmtp')['resetXmtpClient']>
@@ -184,6 +197,8 @@ declare module 'vue' {
     readonly toValue: UnwrapRef<typeof import('vue')['toValue']>
     readonly triggerRef: UnwrapRef<typeof import('vue')['triggerRef']>
     readonly unref: UnwrapRef<typeof import('vue')['unref']>
+    readonly updateProfile: UnwrapRef<typeof import('./lib/profile')['updateProfile']>
+    readonly uploadAvatar: UnwrapRef<typeof import('./lib/profile')['uploadAvatar']>
     readonly useAttrs: UnwrapRef<typeof import('vue')['useAttrs']>
     readonly useCssModule: UnwrapRef<typeof import('vue')['useCssModule']>
     readonly useCssVars: UnwrapRef<typeof import('vue')['useCssVars']>

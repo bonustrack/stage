@@ -13,6 +13,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     BubbleActionSheet: typeof import('./components/BubbleActionSheet.vue')['default']
     Composer: typeof import('./components/Composer.vue')['default']
+    EditProfileModal: typeof import('./components/EditProfileModal.vue')['default']
     HeroIcon: typeof import('./components/HeroIcon.vue')['default']
     MessengerBubble: typeof import('./components/MessengerBubble.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
