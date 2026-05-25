@@ -12,6 +12,8 @@ import {
   convOfLine, lineOfConv, memberInboxToAddressMap, stampBoxAvatarUrl, shortAddress,
 } from '../../lib/xmtp';
 import { PublicIdentity } from '@xmtp/react-native-sdk';
+import { readProfile } from '../../lib/profile';
+import type { SnapshotProfile } from '../../../_shared/profile/snapshot';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { HeroIcon } from '../../components/HeroIcon';
 
@@ -35,6 +37,9 @@ export default function GroupDetail(): React.ReactElement {
   /** `members` = [eth address]; sorted alphabetically so the order is stable
    *  across re-fetches. Includes the local user. */
   const [members, setMembers] = useState<string[]>([]);
+  /** Snapshot profile name per address — fetched after the member list lands.
+   *  null = no profile / no name. */
+  const [memberNames, setMemberNames] = useState<Record<string, string | null>>({});
   /** Add-member input + busy flag. The Add row sits above the member list. */
   const [addDraft, setAddDraft] = useState('');
   const [adding, setAdding] = useState(false);
@@ -54,6 +59,17 @@ export default function GroupDetail(): React.ReactElement {
       setDraft(n ?? '');
       const addrs = Object.values(addrMap).sort((a, b) => a.localeCompare(b));
       setMembers(addrs);
+      /** Fetch Snapshot profile names in parallel — each row falls back to the
+       *  address when the lookup misses, so this is a pure enrichment. */
+      const profiles = await Promise.all(
+        addrs.map(a => readProfile(a).catch(() => null as SnapshotProfile | null)),
+      );
+      if (cancelled) return;
+      const next: Record<string, string | null> = {};
+      for (let i = 0; i < addrs.length; i++) {
+        next[addrs[i]!] = profiles[i]?.name?.trim() || null;
+      }
+      setMemberNames(next);
     })();
     return (): void => { cancelled = true; };
   }, [convId, line]);
@@ -189,12 +205,18 @@ export default function GroupDetail(): React.ReactElement {
           >
             <Image
               source={{ uri: stampBoxAvatarUrl(item) }}
-              style={{ width: 24, height: 24, borderRadius: 999, backgroundColor: '#1a1f29' }}
+              style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: '#1a1f29' }}
             />
-            <Text style={{ color: fg, fontSize: 14, flex: 1 }} numberOfLines={1}>
-              {item}
-            </Text>
-            <Text style={{ color: sub, fontSize: 12 }}>{shortAddress(item)}</Text>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={{ color: fg, fontSize: 15, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
+                {memberNames[item] || shortAddress(item)}
+              </Text>
+              {memberNames[item] ? (
+                <Text style={{ color: sub, fontSize: 12, marginTop: 2, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
+                  {shortAddress(item)}
+                </Text>
+              ) : null}
+            </View>
           </Pressable>
         )}
       />
