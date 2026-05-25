@@ -307,31 +307,25 @@ export default function Messenger(): React.ReactElement {
           </Pressable>
         )}
       />
-      {/** Floating "Ask a question" pill — anchored above the tab bar so it
-       *   stays reachable while the channel list scrolls underneath. */}
-      <View
-        pointerEvents="box-none"
-        style={{
+      {/** Floating "Ask a question" pill — full-width, anchored above the tab
+       *   bar so it stays reachable while the channel list scrolls underneath. */}
+      <Pressable
+        onPress={() => { void onAskPress(); }}
+        disabled={creatingAsk}
+        style={({ pressed }) => ({
           position: 'absolute', left: 16, right: 16, bottom: 16,
-          alignItems: 'center',
-        }}
+          backgroundColor: '#ffffff',
+          borderRadius: 999, paddingVertical: 14,
+          alignItems: 'center', justifyContent: 'center',
+          shadowColor: '#000000', shadowOpacity: 0.18, shadowRadius: 8, shadowOffset: { width: 0, height: 2 },
+          elevation: 4,
+          opacity: pressed ? 0.85 : creatingAsk ? 0.6 : 1,
+        })}
       >
-        <Pressable
-          onPress={() => { void onAskPress(); }}
-          disabled={creatingAsk}
-          style={({ pressed }) => ({
-            backgroundColor: '#ffffff',
-            borderRadius: 999, paddingVertical: 14, paddingHorizontal: 28,
-            shadowColor: '#000000', shadowOpacity: 0.18, shadowRadius: 8, shadowOffset: { width: 0, height: 2 },
-            elevation: 4,
-            opacity: pressed ? 0.85 : creatingAsk ? 0.6 : 1,
-          })}
-        >
-          <Text style={{ color: '#000000', fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
-            {creatingAsk ? 'Creating group…' : 'Ask a question'}
-          </Text>
-        </Pressable>
-      </View>
+        <Text style={{ color: '#000000', fontSize: 17 }}>
+          {creatingAsk ? 'Creating group…' : 'Ask a question'}
+        </Text>
+      </Pressable>
     </View>
   );
 }
