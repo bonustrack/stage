@@ -3,9 +3,10 @@
  *  local XMTP client. Layout: top-nav with back arrow, scrollable message list (newest
  *  at the bottom), composer pinned to the viewport bottom. */
 
-import { XMTP_USER_PREFIX, lineOfConv } from '../lib/xmtp';
+import { XMTP_USER_PREFIX, convOfLine, lineOfConv, peerEthAddressOfDm } from '../lib/xmtp';
 import { xmtpReact } from '../lib/xmtpSend';
 import { useXmtpFeed, reactionsByMessage, isReactionEntry } from '../lib/xmtpFeed';
+import { markConvRead } from '../lib/channelsCache';
 import type { HistoryEntry } from '../lib/types';
 
 const route = useRoute();
@@ -20,6 +21,34 @@ const myUri = computed(() => feed.inboxId.value ? `${XMTP_USER_PREFIX}${feed.inb
 const replyingTo = ref<{ id: string; preview: string } | null>(null);
 const actionTarget = ref<HistoryEntry | null>(null);
 const optimistic = ref<HistoryEntry[]>([]);
+
+/** Header metadata — DM resolves to peer eth address; group resolves to
+ *  the group name. Used to render the title + avatar + tap target. */
+const peerAddress = ref<string | null>(null);
+const groupName = ref<string>('');
+const isGroup = computed(() => peerAddress.value === null && groupName.value !== '');
+
+watchEffect(async () => {
+  if (!convId.value || !line.value) return;
+  peerAddress.value = null;
+  groupName.value = '';
+  const conv = await convOfLine(line.value).catch(() => null);
+  if (!conv) return;
+  const peer = await peerEthAddressOfDm(conv);
+  if (peer) { peerAddress.value = peer; return; }
+  const n = (conv as unknown as { name?: string | (() => Promise<string>) }).name;
+  groupName.value = typeof n === 'function' ? await n() : (n ?? '');
+});
+
+/** Mark conv as read when bubbles arrive and on initial mount. */
+watch(() => feed.events.value.length, () => {
+  if (convId.value && feed.events.value.length > 0) markConvRead(convId.value);
+});
+
+function openHeader(): void {
+  if (peerAddress.value) void router.push(`/user/${peerAddress.value}`);
+  else if (convId.value) void router.push(`/group/${convId.value}`);
+}
 
 const reactions = computed(() => reactionsByMessage(feed.events.value));
 const liveBubbles = computed(() => feed.events.value.filter(e => !isReactionEntry(e)));
@@ -96,24 +125,14 @@ function onActionCopy(): void {
 
 <template>
   <div class="fixed inset-0 flex flex-col bg-metro-bg-light dark:bg-metro-bg-dark">
-    <div class="h-12 flex items-center px-3 border-b border-metro-border-light dark:border-metro-border-dark
-      bg-metro-bg-light dark:bg-metro-bg-dark shrink-0 relative">
-      <button type="button" class="p-1.5 text-metro-fg-light dark:text-metro-fg-dark"
-        @click="router.push('/channels')">
-        <HeroIcon name="arrowLeft" :size="22" />
-      </button>
-      <div v-if="feed.status.value !== 'open'"
-        class="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5
-          px-2.5 py-1 rounded-full bg-metro-hover-light dark:bg-metro-hover-dark">
-        <span class="w-1.5 h-1.5 rounded-full"
-          :class="feed.status.value === 'loading' ? 'bg-metro-warn'
-            : feed.status.value === 'error' ? 'bg-metro-err' : 'bg-metro-sub-dark'" />
-        <span class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark">
-          {{ feed.status.value === 'loading' ? 'Connecting…'
-             : feed.status.value === 'error' ? 'Reconnecting…' : 'Offline' }}
-        </span>
-      </div>
-    </div>
+    <ConversationHeader
+      :peer-address="peerAddress"
+      :group-name="groupName"
+      :is-group="isGroup"
+      :status="feed.status.value"
+      @back="router.push('/channels')"
+      @open="openHeader"
+    />
 
     <div ref="scroller" class="flex-1 overflow-y-auto py-3 no-scrollbar">
       <div v-if="allBubbles.length === 0 && feed.status.value === 'open'"

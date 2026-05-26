@@ -111,39 +111,7 @@ export function stampBoxAvatarUrl(address: string, size = 120): string {
   return `https://stamp.fyi/avatar/eth:${address.toLowerCase()}?s=${size}`;
 }
 
-/** Resolve the peer's Ethereum address for a DM conversation. Returns null for
- *  groups or when the lookup fails. */
-export async function peerEthAddressOfDm(conv: Conversation): Promise<string | null> {
-  /** DMs expose `peerInboxId()`; groups don't. Feature-detect rather than relying
-   *  on the SDK's private version tag. */
-  const dm = conv as unknown as { peerInboxId?: () => Promise<string> };
-  if (typeof dm.peerInboxId !== 'function') return null;
-  try {
-    const inboxId = await dm.peerInboxId();
-    const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
-    const states = await client.preferences.getInboxStates([inboxId]);
-    const eth = states[0]?.accountIdentifiers.find(i => i.identifierKind === IdentifierKind.Ethereum);
-    return eth?.identifier ?? null;
-  } catch { return null; }
-}
-
-/** Group member eth addresses, excluding the local user's own inbox. [] for DMs. */
-export async function groupMemberEthAddresses(conv: Conversation): Promise<string[]> {
-  if (typeof (conv as unknown as { peerInboxId?: unknown }).peerInboxId === 'function') return [];
-  try {
-    const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
-    const members = await conv.members();
-    const otherIds = members.map(m => m.inboxId).filter(id => id !== client.inboxId);
-    if (otherIds.length === 0) return [];
-    const states = await client.preferences.getInboxStates(otherIds);
-    const addrs: string[] = [];
-    for (const s of states) {
-      const eth = s.accountIdentifiers.find(i => i.identifierKind === IdentifierKind.Ethereum);
-      if (eth?.identifier) addrs.push(eth.identifier);
-    }
-    return addrs;
-  } catch { return []; }
-}
+export { peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap } from './xmtpResolve';
 
 /** URI prefix used for inbound XMTP "from" addresses. Mirrors the mobile app. */
 export const XMTP_USER_PREFIX = 'metro://xmtp/user/';
@@ -199,4 +167,30 @@ export async function resetXmtpClient(): Promise<void> {
   localStorage.removeItem(PRIVATE_KEY_KEY);
   localStorage.removeItem(ADDRESS_KEY);
   localStorage.removeItem(ENV_KEY);
+}
+
+/** Find or create a DM with a peer by Ethereum address. Returns the conv id
+ *  ready to push into `/xmtp/:convId`. */
+export async function openDmWithAddress(address: string): Promise<string> {
+  const client = await getOrCreateXmtpClient('production');
+  const dm = await client.conversations.createDmWithIdentifier({
+    identifier: address.toLowerCase(),
+    identifierKind: IdentifierKind.Ethereum,
+  });
+  return dm.id;
+}
+
+/** Per-conv "last read at" timestamp in XMTP `sentAtNs` units (number, not
+ *  bigint — we coerce on read/write). Persisted under `unread.lastRead.<id>`
+ *  in localStorage so unread counts survive a reload. */
+const LAST_READ_PREFIX = 'unread.lastRead.';
+export function getLastReadNs(convId: string): number {
+  const raw = localStorage.getItem(LAST_READ_PREFIX + convId);
+  if (!raw) return 0;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : 0;
+}
+export function setLastReadNs(convId: string, ns: number): void {
+  try { localStorage.setItem(LAST_READ_PREFIX + convId, String(ns)); }
+  catch { /* quota / private-mode — best effort */ }
 }

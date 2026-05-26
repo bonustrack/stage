@@ -5,6 +5,7 @@
 import {
   getOrCreateXmtpClient, peerEthAddressOfDm, stampBoxAvatarUrl, shortAddress,
 } from '../lib/xmtp';
+import { isAddressLike, isDomainLike, resolveDomain } from '../lib/stamp';
 
 interface Contact { address: string; convId: string }
 
@@ -12,6 +13,7 @@ const router = useRouter();
 const contacts = ref<Contact[] | null>(null);
 const error = ref<string>('');
 const query = ref<string>('');
+const searchResolution = ref<{ status: 'idle' | 'resolving' | 'resolved' | 'missed'; address: string | null }>({ status: 'idle', address: null });
 
 const filtered = computed(() => {
   if (!contacts.value) return null;
@@ -19,6 +21,25 @@ const filtered = computed(() => {
   if (!q) return contacts.value;
   return contacts.value.filter(c => c.address.toLowerCase().includes(q));
 });
+
+watch(query, (q) => {
+  const v = q.trim();
+  if (!v) { searchResolution.value = { status: 'idle', address: null }; return; }
+  if (isAddressLike(v)) { searchResolution.value = { status: 'resolved', address: v }; return; }
+  if (!isDomainLike(v)) { searchResolution.value = { status: 'idle', address: null }; return; }
+  searchResolution.value = { status: 'resolving', address: null };
+  void resolveDomain(v).then(addr => {
+    if (query.value.trim() !== v) return;
+    searchResolution.value = addr
+      ? { status: 'resolved', address: addr }
+      : { status: 'missed', address: null };
+  });
+}, { flush: 'post' });
+
+function openSearchedProfile(): void {
+  const addr = searchResolution.value.address;
+  if (addr) void router.push(`/user/${addr}`);
+}
 
 onMounted(async () => {
   try {
@@ -53,7 +74,7 @@ onMounted(async () => {
       <input
         v-model="query"
         type="text"
-        placeholder="Search contacts…"
+        placeholder="Search contacts or paste 0x… / name.eth…"
         autocomplete="off"
         autocorrect="off"
         autocapitalize="off"
@@ -63,6 +84,12 @@ onMounted(async () => {
           placeholder:text-metro-sub-light dark:placeholder:text-metro-sub-dark"
       />
     </div>
+    <SearchResolution
+      :status="searchResolution.status"
+      :address="searchResolution.address"
+      :query="query"
+      @open="openSearchedProfile"
+    />
     <div v-if="error" class="flex-1 flex items-center justify-center text-sm text-metro-fg-light dark:text-metro-fg-dark px-6">
       {{ error }}
     </div>

@@ -9,7 +9,8 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
-  convOfLine, lineOfConv, memberInboxToAddressMap, stampBoxAvatarUrl, shortAddress,
+  convOfLine, getCachedXmtpClient, getOrCreateXmtpClient, lineOfConv,
+  memberInboxToAddressMap, stampBoxAvatarUrl, shortAddress,
 } from '../../lib/xmtp';
 import { PublicIdentity } from '@xmtp/react-native-sdk';
 import { readProfile } from '../../lib/profile';
@@ -43,6 +44,20 @@ export default function GroupDetail(): React.ReactElement {
   /** Add-member input + busy flag. The Add row sits above the member list. */
   const [addDraft, setAddDraft] = useState('');
   const [adding, setAdding] = useState(false);
+  /** Lower-cased local wallet address — used to suppress the remove button
+   *  on the local user's own row. */
+  const [selfAddress, setSelfAddress] = useState<string>('');
+  /** Per-address removal busy flag. Disables the row + the remove button
+   *  while the XMTP call is in flight. */
+  const [removing, setRemoving] = useState<string | null>(null);
+
+  useEffect(() => {
+    const c = getCachedXmtpClient();
+    if (c) { setSelfAddress(c.publicIdentity.identifier.toLowerCase()); return; }
+    void getOrCreateXmtpClient('production').then(client => {
+      setSelfAddress(client.publicIdentity.identifier.toLowerCase());
+    }).catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     if (!convId) return;
@@ -83,6 +98,7 @@ export default function GroupDetail(): React.ReactElement {
     setAdding(true);
     try {
       const conv = await convOfLine(line);
+      if (!conv) throw new Error('Conversation not found');
       const group = conv as unknown as { addMembersByIdentity?: (ids: PublicIdentity[]) => Promise<unknown> };
       if (!group.addMembersByIdentity) throw new Error('Not a group conversation');
       await group.addMembersByIdentity([new PublicIdentity(addr, 'ETHEREUM')]);
@@ -93,6 +109,40 @@ export default function GroupDetail(): React.ReactElement {
     } catch (e) {
       Alert.alert('Add member failed', (e as Error).message ?? 'Unknown error');
     } finally { setAdding(false); }
+  };
+
+  const removeMember = (addr: string): void => {
+    Alert.alert(
+      'Remove member',
+      `Remove ${shortAddress(addr)} from this group? They'll lose access to past + future messages.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove', style: 'destructive', onPress: () => {
+            void (async (): Promise<void> => {
+              setRemoving(addr.toLowerCase());
+              try {
+                const conv = await convOfLine(line);
+                /** XMTP V3 groups expose `removeMembersByIdentity` —
+                 *  callable only by group admins/super-admins. Surface
+                 *  the raw error (often "not authorised") so the user
+                 *  can act on it. */
+                const group = conv as unknown as {
+                  removeMembersByIdentity?: (ids: PublicIdentity[]) => Promise<unknown>;
+                };
+                if (!group.removeMembersByIdentity) throw new Error('Not a group conversation');
+                await group.removeMembersByIdentity([new PublicIdentity(addr, 'ETHEREUM')]);
+                /** Re-fetch the member list so the row disappears immediately. */
+                const fullMap = await memberInboxToAddressMap(conv!);
+                setMembers(Object.values(fullMap).sort((a, b) => a.localeCompare(b)));
+              } catch (e) {
+                Alert.alert('Remove member failed', (e as Error).message ?? 'Unknown error');
+              } finally { setRemoving(null); }
+            })();
+          },
+        },
+      ],
+    );
   };
 
   const saveName = async (): Promise<void> => {
@@ -193,32 +243,51 @@ export default function GroupDetail(): React.ReactElement {
       <FlatList
         data={members}
         keyExtractor={addr => addr.toLowerCase()}
-        renderItem={({ item }) => (
-          <Pressable
-            onPress={() => router.push({ pathname: '/user/[address]', params: { address: item } })}
-            style={({ pressed }) => ({
-              backgroundColor: pressed ? border : rowBg,
-              flexDirection: 'row', alignItems: 'center', gap: 12,
-              paddingHorizontal: 14, paddingVertical: 12,
-              borderBottomWidth: 1, borderBottomColor: border,
-            })}
-          >
-            <Image
-              source={{ uri: stampBoxAvatarUrl(item) }}
-              style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: '#1a1f29' }}
-            />
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={{ color: fg, fontSize: 15, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
-                {memberNames[item] || shortAddress(item)}
-              </Text>
-              {memberNames[item] ? (
-                <Text style={{ color: sub, fontSize: 12, marginTop: 2, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
-                  {shortAddress(item)}
+        renderItem={({ item }) => {
+          const isSelf = item.toLowerCase() === selfAddress;
+          const isRemovingThis = removing === item.toLowerCase();
+          return (
+            <Pressable
+              onPress={() => router.push({ pathname: '/user/[address]', params: { address: item } })}
+              disabled={isRemovingThis}
+              style={({ pressed }) => ({
+                backgroundColor: pressed ? border : rowBg,
+                flexDirection: 'row', alignItems: 'center', gap: 12,
+                paddingHorizontal: 14, paddingVertical: 12,
+                borderBottomWidth: 1, borderBottomColor: border,
+                opacity: isRemovingThis ? 0.5 : 1,
+              })}
+            >
+              <Image
+                source={{ uri: stampBoxAvatarUrl(item) }}
+                style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: '#1a1f29' }}
+              />
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={{ color: fg, fontSize: 15, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
+                  {memberNames[item] || shortAddress(item)}{isSelf ? ' (you)' : ''}
                 </Text>
-              ) : null}
-            </View>
-          </Pressable>
-        )}
+                {memberNames[item] ? (
+                  <Text style={{ color: sub, fontSize: 12, marginTop: 2, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
+                    {shortAddress(item)}
+                  </Text>
+                ) : null}
+              </View>
+              {isSelf ? null : (
+                <Pressable
+                  onPress={() => removeMember(item)}
+                  disabled={isRemovingThis}
+                  hitSlop={10}
+                  style={({ pressed }) => ({
+                    padding: 6, borderRadius: 999,
+                    backgroundColor: pressed ? (dark ? '#3a1820' : '#fbe3e8') : 'transparent',
+                  })}
+                >
+                  <HeroIcon name="trash" size={18} color={dark ? '#ff6b80' : '#b91c1c'} />
+                </Pressable>
+              )}
+            </Pressable>
+          );
+        }}
       />
     </View>
   );

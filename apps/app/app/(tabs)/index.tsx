@@ -4,9 +4,10 @@
  *  the other members for groups (excluding the local user). Both are resolved
  *  once per conv during the initial list build and cached in component state. */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator, FlatList, Image, Pressable, Text, TextInput, View,
+  ActivityIndicator, AppState, FlatList, Image, Pressable, RefreshControl,
+  Text, TextInput, View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import type { Conversation, DecodedMessage } from '@xmtp/react-native-sdk';
@@ -20,7 +21,7 @@ import {
 } from '../../lib/xmtp';
 import { resetAccount } from '../../lib/wallet';
 import { useEffectiveColorScheme } from '../../lib/theme';
-import { getCachedRows, setCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
+import { getCachedRows, hydrateCachedRows, setCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
 
 interface Row {
   convId: string;
@@ -43,6 +44,9 @@ interface Row {
   /** Own inbox id — also needed to filter own messages out of the unread
    *  recount on stream updates. */
   selfInboxId: string;
+  /** Make Row a structural superset of `CachedRow` so we can pass it
+   *  straight through `setCachedRows` without casting. */
+  [key: string]: unknown;
 }
 
 function fmtTs(ts: number | null): string {
@@ -143,6 +147,10 @@ export default function Messenger(): React.ReactElement {
   const [error, setError] = useState<string>('');
   const [query, setQuery] = useState<string>('');
   const [creatingAsk, setCreatingAsk] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  /** Held across effect re-runs so AppState + poll backstops can call refresh
+   *  without re-binding to a stale client. */
+  const refreshFromNetworkRef = useRef<(() => Promise<void>) | null>(null);
 
   const onAskPress = async (): Promise<void> => {
     if (creatingAsk) return;
@@ -173,23 +181,52 @@ export default function Messenger(): React.ReactElement {
     let cancelled = false;
     let cancelConvStream: (() => void) | null = null;
     let cancelMsgStream: (() => void) | null = null;
-    /** Outer init timeout — if XMTP boot+sync hasn't finished in 30s, surface
-     *  an error + recovery UI instead of leaving the user staring at a spinner. */
-    const initTimer = setTimeout(() => {
+    let pollTimer: ReturnType<typeof setInterval> | null = null;
+    let appStateSub: { remove: () => void } | null = null;
+
+    /** Hydrate the persisted cache first — if we have rows from a previous
+     *  session, render them immediately so the user sees the channels list
+     *  before XMTP finishes initialising. The network refresh below then
+     *  reconciles any changes. */
+    void hydrateCachedRows().then(cached => {
       if (cancelled) return;
+      if (cached && Array.isArray(cached) && cached.length > 0 && !rows) {
+        setRowsState(cached as Row[]);
+      }
+    });
+
+    /** Outer init timeout — if XMTP boot+sync hasn't finished in 30s AND we
+     *  have no cached rows to render, surface an error + recovery UI instead
+     *  of leaving the user staring at a spinner. Skipped when cache is warm. */
+    const initTimer = setTimeout(() => {
+      if (cancelled || (rows && rows.length > 0)) return;
       setError('XMTP failed to initialise (timed out). Tap Reset below to wipe the local identity and start fresh.');
     }, 30_000);
+
     void (async (): Promise<void> => {
       try {
         const client = await getOrCreateXmtpClient('production');
         const selfInboxId = client.inboxId;
-        await client.conversations.syncAllConversations(['allowed', 'unknown']);
-        const convs = await client.conversations.list(undefined, undefined, ['allowed', 'unknown']);
-        const summarized = await Promise.all(convs.map(c => summarize(c, selfInboxId)));
-        if (cancelled) return;
-        clearTimeout(initTimer);
-        summarized.sort((a, b) => (b.lastTs ?? 0) - (a.lastTs ?? 0));
-        setRows(summarized);
+
+        /** Reusable refresh that any backstop (AppState resume, slow poll,
+         *  pull-to-refresh, unknown-conv stream hit) can call to re-sync +
+         *  re-summarise the full list. */
+        const refresh = async (): Promise<void> => {
+          if (cancelled) return;
+          try {
+            await client.conversations.syncAllConversations(['allowed', 'unknown']);
+            const convs = await client.conversations.list(undefined, undefined, ['allowed', 'unknown']);
+            const summarized = await Promise.all(convs.map(c => summarize(c, selfInboxId)));
+            if (cancelled) return;
+            summarized.sort((a, b) => (b.lastTs ?? 0) - (a.lastTs ?? 0));
+            setRows(summarized);
+            clearTimeout(initTimer);
+          } catch { /* swallow — backstops keep firing */ }
+        };
+        refreshFromNetworkRef.current = refresh;
+
+        await refresh();
+
         /** Subscribe to newly-created conversations so groups + DMs created
          *  while the tab is mounted show up without a manual refresh. */
         try {
@@ -201,9 +238,12 @@ export default function Messenger(): React.ReactElement {
               return next;
             });
           }) ?? null;
-        } catch { /* stream init failed — the next mount will pick things up */ }
+        } catch { /* stream init failed — backstops will pick it up */ }
+
         /** Subscribe to every new message across all convs so the per-row
-         *  lastTs + lastPreview reflect activity in real time. */
+         *  lastTs + lastPreview reflect activity in real time. When the msg
+         *  belongs to a conv we haven't summarised yet (just-received from
+         *  a peer), trigger a full refresh so it shows up. */
         try {
           cancelMsgStream = await client.conversations.streamAllMessages(async (msg) => {
             if (cancelled || !msg) return;
@@ -214,10 +254,15 @@ export default function Messenger(): React.ReactElement {
             } catch { preview = `[${msg.contentTypeId ?? 'unknown'}]`; }
             const lastTs = msg.sentNs ? Math.floor(msg.sentNs / 1_000_000) : Date.now();
             const lastPreview = preview.slice(0, 80);
+            let needsRefresh = false;
             setRows(prev => {
               if (!prev) return prev;
-              const idx = prev.findIndex(r => r.convId === msg.conversationId);
-              if (idx === -1) return prev;
+              /** `conversationId` exists on the native msg envelope but isn't
+               *  surfaced in the TS DecodedMessage type — access through an
+               *  unknown cast. */
+              const msgConvId = (msg as unknown as { conversationId?: string }).conversationId;
+              const idx = prev.findIndex(r => r.convId === msgConvId);
+              if (idx === -1) { needsRefresh = true; return prev; }
               const cur = prev[idx]!;
               const newAvatar = cur.inboxToAddr[msg.senderInboxId ?? ''] ?? cur.avatarAddress;
               /** Bump the unread count when the new msg is newer than what we'd
@@ -229,17 +274,41 @@ export default function Messenger(): React.ReactElement {
               const next = [updated, ...prev.slice(0, idx), ...prev.slice(idx + 1)];
               return next;
             });
+            if (needsRefresh) void refresh();
           }) ?? null;
         } catch { /* message stream init failed — preview will lag */ }
-      } catch (e) { setError((e as Error).message); }
+
+        /** Foreground resume — the native streams often die while the app is
+         *  backgrounded; re-sync on every active transition. */
+        appStateSub = AppState.addEventListener('change', (state) => {
+          if (state === 'active') void refresh();
+        });
+
+        /** Slow poll as a last-resort backstop. Catches anything the stream
+         *  dropped (network blip, push-without-stream, etc.). 30s is gentle
+         *  on battery + bandwidth while still feeling live. */
+        pollTimer = setInterval(() => { void refresh(); }, 30_000);
+      } catch (e) {
+        if (!rows || rows.length === 0) setError((e as Error).message);
+      }
     })();
+
     return (): void => {
       cancelled = true;
       clearTimeout(initTimer);
+      refreshFromNetworkRef.current = null;
       if (cancelConvStream) try { cancelConvStream(); } catch { /* ignore */ }
       if (cancelMsgStream) try { cancelMsgStream(); } catch { /* ignore */ }
+      if (appStateSub) try { appStateSub.remove(); } catch { /* ignore */ }
+      if (pollTimer) clearInterval(pollTimer);
     };
   }, []);
+
+  const onPullToRefresh = async (): Promise<void> => {
+    if (refreshing) return;
+    setRefreshing(true);
+    try { await refreshFromNetworkRef.current?.(); } finally { setRefreshing(false); }
+  };
 
   if (error) {
     return (
@@ -296,6 +365,13 @@ export default function Messenger(): React.ReactElement {
       <FlatList
         data={filtered ?? rows}
         keyExtractor={r => r.convId}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => { void onPullToRefresh(); }}
+            tintColor={sub}
+          />
+        }
         /** Leave room at the bottom for the floating "Ask a question" pill. */
         contentContainerStyle={{ paddingBottom: 88 }}
         ListEmptyComponent={

@@ -80,10 +80,9 @@ export function* readEntriesFrom(offset: number): Generator<{ entry: HistoryEntr
         const raw = pending.subarray(0, nl).toString('utf8').trim();
         pending = pending.subarray(nl + 1);
         if (!raw) continue;
-        /** offsetAfter = read-cursor in file - bytes still in pending buffer. Captured
-         *  outside the try so malformed lines also advance the cursor — without this,
-         *  drainTail returns an offset BEFORE the bad line, and the poll backstop in
-         *  followTail re-reads + re-warns it forever. */
+        /** offsetAfter = file read-cursor minus bytes still in the pending
+         *  buffer. Captured outside the try so malformed lines also advance
+         *  the cursor (otherwise the poll backstop re-reads them forever). */
         const offsetAfter = pos - pending.length;
         try {
           const entry = JSON.parse(raw) as HistoryEntry;
@@ -99,9 +98,8 @@ export function* readEntriesFrom(offset: number): Generator<{ entry: HistoryEntr
   }
 }
 
-/**
- * Claim-aware filter. Webhooks excluded from personal modes unless `includeWebhooks`.
- */
+/** Claim-aware filter. Webhooks excluded from personal modes unless
+ *  `includeWebhooks` is set. */
 export function passesMode(
   event: HistoryEntry,
   mode: Mode,
@@ -123,9 +121,8 @@ export function passesMode(
 export type TailOpts = {
   mode: Mode; self: Line | null;
   chatFilter?: string; stationFilter?: string; includeWebhooks?: boolean;
-  /** Skip entries whose `from` matches any of these URIs — useful for self-echo
-   *  suppression: an agent subscribing to its own outbound history just to
-   *  filter them right back out wastes a context-window roundtrip. */
+  /** Skip entries whose `from` matches any of these URIs — self-echo
+   *  suppression so an agent doesn't see its own outbound replayed. */
   excludeFrom?: string[];
 };
 

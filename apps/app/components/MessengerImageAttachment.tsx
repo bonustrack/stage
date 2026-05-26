@@ -1,20 +1,25 @@
-/** Inline image attachment — tap to open a fullscreen lightbox modal. */
+/** Inline image attachment — tap to open a fullscreen lightbox modal. The
+ *  thumbnail itself is wrapped in `MediaCard` for visual parity with other
+ *  embeds (YouTube, location, video). */
 
 import { useState } from 'react';
 import { Image, Modal, Pressable } from 'react-native';
 import { HeroIcon } from './HeroIcon';
+import { MediaCard } from './MediaCard';
 
-export function MessengerImageAttachment({ uri }: { uri: string }): React.ReactElement {
+export function MessengerImageAttachment({ uri, dark = true }: {
+  uri: string; dark?: boolean;
+}): React.ReactElement {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <Pressable onPress={() => setOpen(true)}>
+      <MediaCard dark={dark} onPress={() => setOpen(true)} width={220}>
         <Image
           source={{ uri }}
-          style={{ width: 220, height: 220, borderRadius: 10, marginBottom: 6 }}
+          style={{ width: '100%', aspectRatio: 1 }}
           resizeMode="cover"
         />
-      </Pressable>
+      </MediaCard>
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable
           onPress={() => setOpen(false)}
