@@ -7,6 +7,7 @@
 import { stampBoxAvatarUrl, XMTP_USER_PREFIX } from '../lib/xmtp';
 import type { HistoryEntry } from '../lib/types';
 import { mapCoordsOf, youtubeIdOf } from '../lib/embedDetect';
+import { renderMarkdown } from '../lib/renderMarkdown';
 
 interface AttachmentLike {
   kind: string; mime?: string; name?: string; dataB64?: string; url?: string;
@@ -61,13 +62,39 @@ function onContext(ev: MouseEvent): void {
   emit('request-actions', props.entry);
 }
 
+/** Long-press (touch) / press-hold (mouse) opens the action sheet, matching the
+ *  mobile app — right-click alone isn't reachable on touch and gets swallowed
+ *  by the host page inside the embed widget. Cancels if the pointer moves
+ *  (a scroll/drag) or lifts before the hold threshold. */
+let lpTimer: ReturnType<typeof setTimeout> | null = null;
+let lpX = 0;
+let lpY = 0;
+function clearLongPress(): void {
+  if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; }
+}
+function onPointerDown(ev: PointerEvent): void {
+  lpX = ev.clientX; lpY = ev.clientY;
+  clearLongPress();
+  lpTimer = setTimeout(() => { lpTimer = null; emit('request-actions', props.entry); }, 450);
+}
+function onPointerMove(ev: PointerEvent): void {
+  if (!lpTimer) return;
+  if (Math.abs(ev.clientX - lpX) > 10 || Math.abs(ev.clientY - lpY) > 10) clearLongPress();
+}
+
 function onAvatar(): void {
   if (senderAddress.value) emit('open-avatar', senderAddress.value);
 }
 </script>
 
 <template>
-  <div class="flex items-start gap-2.5 px-3 py-1.5" @contextmenu="onContext">
+  <div class="flex items-start gap-2.5 px-4 py-1.5"
+    @contextmenu="onContext"
+    @pointerdown="onPointerDown"
+    @pointermove="onPointerMove"
+    @pointerup="clearLongPress"
+    @pointercancel="clearLongPress"
+    @pointerleave="clearLongPress">
     <!-- 24px stamp.fyi avatar at the start of every row — neutral
          placeholder when the inbox→address mapping hasn't resolved yet
          so geometry doesn't shift. -->
@@ -103,13 +130,19 @@ function onAvatar(): void {
         </a>
         <span v-else class="text-xs opacity-70 font-sans">[{{ att.kind }}{{ att.name ? `: ${att.name}` : '' }}]</span>
       </div>
+      <!-- Markdown-rendered (linkify + breaks) to match the mobile app: bare URLs
+           become clickable links. v-html is safe — markdown-it escapes raw HTML
+           and blocks javascript:/data: links. -->
       <div v-if="props.entry.text"
-        class="whitespace-pre-wrap break-words font-sans text-[17px] leading-snug select-text"
+        class="break-words font-sans text-[17px] leading-snug select-text
+          [&_p]:m-0 [&_p:not(:last-child)]:mb-1.5 [&_a]:underline [&_a]:break-words
+          [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5
+          [&_code]:font-mono [&_code]:text-[15px] [&_pre]:whitespace-pre-wrap"
         :class="isSystem
           ? 'text-metro-fg-light dark:text-metro-fg-dark'
-          : 'text-metro-head-light dark:text-metro-head-dark'">
-        {{ props.entry.text }}
-      </div>
+          : 'text-metro-head-light dark:text-metro-head-dark'"
+        v-html="renderMarkdown(props.entry.text)"
+      />
       <div v-if="youtubeId" class="mt-1.5">
         <YouTubeEmbed :video-id="youtubeId" />
       </div>

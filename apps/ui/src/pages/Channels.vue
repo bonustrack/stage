@@ -97,7 +97,7 @@ function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
   <div class="h-[100dvh] flex flex-col relative">
     <!-- Topnav: page title, refresh, and (embedded only) a close button at the
          end, so the channels homepage has a single topnav like conversations. -->
-    <div class="h-12 flex items-center shrink-0 gap-1 pl-3 pr-1
+    <div class="h-[64px] box-border flex items-center shrink-0 gap-1 pl-4 pr-1
       bg-metro-bg-light dark:bg-metro-bg-dark
       border-b border-metro-border-light dark:border-metro-border-dark">
       <span class="flex-1 font-head text-base text-metro-head-light dark:text-metro-head-dark">
@@ -125,7 +125,7 @@ function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
       </button>
     </div>
     <!-- Search input (standalone site only — hidden in the widget). -->
-    <div v-if="!embedded" class="shrink-0 px-3 pt-3 pb-2 bg-metro-bg-light dark:bg-metro-bg-dark">
+    <div v-if="!embedded" class="shrink-0 px-4 pt-3 pb-2 bg-metro-bg-light dark:bg-metro-bg-dark">
       <input
         v-model="query"
         type="text"

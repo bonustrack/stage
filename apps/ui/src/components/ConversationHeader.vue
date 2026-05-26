@@ -25,7 +25,7 @@ const embedded = runningInIframe();
 </script>
 
 <template>
-  <div class="h-12 flex items-stretch shrink-0
+  <div class="h-[64px] box-border flex items-stretch shrink-0
     bg-metro-bg-light dark:bg-metro-bg-dark
     border-b border-metro-border-light dark:border-metro-border-dark">
     <button type="button" class="h-full pl-3 pr-1 flex items-center text-metro-fg-light dark:text-metro-fg-dark" @click="emit('back')">

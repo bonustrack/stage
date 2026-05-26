@@ -36,7 +36,7 @@ function fmtTs(ts: number | null): string {
 <template>
   <button
     type="button"
-    class="w-full text-left px-3.5"
+    class="w-full text-left px-4"
     @click="emit('open')"
   >
     <!-- Inner row carries the separator: it starts at the avatar's left edge
@@ -46,9 +46,9 @@ function fmtTs(ts: number | null): string {
       <img v-if="renderedAvatar"
         :src="renderedAvatar"
         alt=""
-        class="w-9 h-9 rounded-full bg-metro-border-dark shrink-0 object-cover"
+        class="w-8 h-8 rounded-full bg-metro-border-dark shrink-0 object-cover"
       />
-      <div v-else class="w-9 h-9 rounded-full bg-metro-border-dark shrink-0" />
+      <div v-else class="w-8 h-8 rounded-full bg-metro-border-dark shrink-0" />
       <div class="flex-1 min-w-0">
       <div class="flex items-baseline gap-2">
         <div class="text-base text-metro-head-light dark:text-metro-head-dark truncate flex-1 font-head">
