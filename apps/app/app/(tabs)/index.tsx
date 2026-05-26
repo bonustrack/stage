@@ -22,6 +22,7 @@ import { resetAccount } from '../../lib/wallet';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { getCachedRows, hydrateCachedRows, setCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
 import { usePeerProfiles, getPeerAvatarCb } from '../../lib/peerProfiles';
+import { HeroIcon } from '../../components/HeroIcon';
 import { previewOfXmtpContent } from '../../../_shared/xmtp/humanize';
 import { avatarRenderUrl } from '../../../_shared/profile/snapshot';
 import { Spinner } from '../../components/Spinner';
@@ -354,21 +355,24 @@ export default function Messenger(): React.ReactElement {
 
   return (
     <View style={{ flex: 1, backgroundColor: bg }}>
-      <View style={{ paddingHorizontal: 12, paddingTop: 12, paddingBottom: 8 }}>
-        <TextInput
-          value={query}
-          onChangeText={setQuery}
-          placeholder="Search channels…"
-          placeholderTextColor={sub}
-          autoCorrect={false}
-          autoCapitalize="none"
-          style={{
-            backgroundColor: rowBg,
-            borderWidth: 1, borderColor: border, borderRadius: 10,
-            paddingHorizontal: 12, paddingVertical: 8,
-            color: fg, fontSize: 14,
-          }}
-        />
+      {/* Home topnav: a search input with the search icon inside it on the right. */}
+      <View style={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: border }}>
+        <View style={{
+          flexDirection: 'row', alignItems: 'center', gap: 8,
+          backgroundColor: rowBg, borderWidth: 1, borderColor: border, borderRadius: 10,
+          paddingHorizontal: 12,
+        }}>
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search channels…"
+            placeholderTextColor={sub}
+            autoCorrect={false}
+            autoCapitalize="none"
+            style={{ flex: 1, paddingVertical: 9, color: fg, fontSize: 14 }}
+          />
+          <HeroIcon name="search" size={18} color={sub} />
+        </View>
       </View>
       <FlatList
         data={filtered ?? rows}
