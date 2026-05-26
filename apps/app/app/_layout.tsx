@@ -4,7 +4,8 @@ import '../lib/cryptoShim';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
-import { ActivityIndicator, Text, TextInput, View } from 'react-native';
+import { Text, TextInput, View } from 'react-native';
+import { Spinner } from '../components/Spinner';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { useEffectiveColorScheme } from '../lib/theme';
@@ -38,7 +39,7 @@ export default function RootLayout(): React.ReactElement {
   if (!loaded) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: dark ? '#0e0f10' : '#ffffff' }}>
-        <ActivityIndicator />
+        <Spinner size={28} color={dark ? '#ffffff' : '#000000'} />
       </View>
     );
   }

@@ -25,7 +25,7 @@ const embedded = runningInIframe();
 </script>
 
 <template>
-  <div class="h-[64px] box-border flex items-stretch shrink-0
+  <div class="h-[56px] box-border flex items-stretch shrink-0
     bg-metro-bg-light dark:bg-metro-bg-dark
     border-b border-metro-border-light dark:border-metro-border-dark">
     <button type="button" class="h-full pl-3 pr-1 flex items-center text-metro-fg-light dark:text-metro-fg-dark" @click="emit('back')">
@@ -38,7 +38,7 @@ const embedded = runningInIframe();
       class="flex-1 h-full flex items-center justify-between min-w-0 gap-2 pr-3"
       @click="emit('open')"
     >
-      <span class="truncate font-head text-base text-metro-head-light dark:text-metro-head-dark">
+      <span class="truncate font-head text-[17px] text-metro-head-light dark:text-metro-head-dark">
         {{ props.peerAddress ? shortAddress(props.peerAddress) : (props.groupName || 'Conversation') }}
       </span>
       <div v-if="props.status !== 'open'"

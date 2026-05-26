@@ -97,10 +97,10 @@ function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
   <div class="h-[100dvh] flex flex-col relative">
     <!-- Topnav: page title, refresh, and (embedded only) a close button at the
          end, so the channels homepage has a single topnav like conversations. -->
-    <div class="h-[64px] box-border flex items-center shrink-0 gap-1 pl-4 pr-1
+    <div class="h-[56px] box-border flex items-center shrink-0 gap-1 pl-4 pr-1
       bg-metro-bg-light dark:bg-metro-bg-dark
       border-b border-metro-border-light dark:border-metro-border-dark">
-      <span class="flex-1 font-head text-base text-metro-head-light dark:text-metro-head-dark">
+      <span class="flex-1 font-head text-[17px] text-metro-head-light dark:text-metro-head-dark">
         Channels
       </span>
       <button
@@ -149,8 +149,8 @@ function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
     <div v-if="error" class="flex-1 flex items-center justify-center text-sm text-metro-fg-light dark:text-metro-fg-dark px-6">
       {{ error }}
     </div>
-    <div v-else-if="!rows" class="flex-1 flex items-center justify-center text-xs text-metro-sub-light dark:text-metro-sub-dark">
-      Initialising XMTP…
+    <div v-else-if="!rows" class="flex-1 flex items-center justify-center text-metro-head-light dark:text-metro-head-dark">
+      <Spinner :size="28" />
     </div>
     <ul v-else class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-[150px]">
       <li v-if="filtered && filtered.length === 0" class="p-8 text-center text-sm text-metro-sub-light dark:text-metro-sub-dark">

@@ -6,7 +6,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator, AppState, FlatList, Image, Pressable, RefreshControl,
+  AppState, FlatList, Image, Pressable, RefreshControl,
   Text, TextInput, View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -24,6 +24,7 @@ import { useEffectiveColorScheme } from '../../lib/theme';
 import { getCachedRows, hydrateCachedRows, setCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
 import { previewOfXmtpContent } from '../../../_shared/xmtp/humanize';
 import { avatarRenderUrl } from '../../../_shared/profile/snapshot';
+import { Spinner } from '../../components/Spinner';
 
 interface Row {
   convId: string;
@@ -355,8 +356,7 @@ export default function Messenger(): React.ReactElement {
   if (!rows) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: bg }}>
-        <ActivityIndicator />
-        <Text style={{ color: sub, marginTop: 8, fontSize: 12 , fontFamily: 'Calibre-Medium'}}>Initialising XMTP…</Text>
+        <Spinner size={28} color={head} />
       </View>
     );
   }
