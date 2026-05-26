@@ -313,47 +313,39 @@ export default function XmtpConversation(): React.ReactElement {
         >
           <HeroIcon name="arrowLeft" size={22} color={fg} />
         </Pressable>
-        {/** Title slot — groups tap into /group/[convId], DMs tap into the
-         *   peer's /user/[address] profile. The whole row stretches so the
-         *   tap target is wide. */}
-        {isGroup && groupName !== null ? (
-          <Pressable
-            onPress={() => router.push({ pathname: '/group/[convId]', params: { convId: convId ?? '' } })}
-            style={{ flex: 1, alignItems: 'flex-start', paddingLeft: 4 }}
-            hitSlop={6}
-          >
-            <Text style={{ color: head, fontSize: 19, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
-              {groupName || 'Untitled group'}
-            </Text>
-          </Pressable>
-        ) : peerAddr ? (
-          <Pressable
-            onPress={() => router.push({ pathname: '/user/[address]', params: { address: peerAddr } })}
-            style={{ flex: 1, alignItems: 'flex-start', paddingLeft: 4 }}
-            hitSlop={6}
-          >
-            <Text style={{ color: head, fontSize: 19, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
-              {peerAddr.slice(0, 6)}…{peerAddr.slice(-4)}
-            </Text>
-          </Pressable>
-        ) : <View style={{ flex: 1 }} />}
-        {status !== 'open' ? (
-          <View style={{
-            flexDirection: 'row', alignItems: 'center', gap: 6,
-            paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999,
-            backgroundColor: dark ? 'rgba(40,46,58,0.92)' : 'rgba(238,241,247,0.95)',
-          }}>
+        {/** Everything right of the back arrow is one tap target → the
+         *   group/channel detail page (or the peer's profile for a DM).
+         *   Title on the left, status pill / member-avatar stack on the right. */}
+        <Pressable
+          onPress={() => {
+            if (isGroup) router.push({ pathname: '/group/[convId]', params: { convId: convId ?? '' } });
+            else if (peerAddr) router.push({ pathname: '/user/[address]', params: { address: peerAddr } });
+          }}
+          style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 4 }}
+          hitSlop={6}
+        >
+          <Text style={{ color: head, fontSize: 19, fontFamily: 'Calibre-Semibold', flex: 1 }} numberOfLines={1}>
+            {isGroup ? (groupName || 'Untitled group')
+              : peerAddr ? `${peerAddr.slice(0, 6)}…${peerAddr.slice(-4)}` : ''}
+          </Text>
+          {status !== 'open' ? (
             <View style={{
-              width: 6, height: 6, borderRadius: 999,
-              backgroundColor: status === 'connecting' ? '#c0a06e' : '#d96868',
-            }} />
-            <Text style={{ color: sub, fontSize: 11 , fontFamily: 'Calibre-Medium'}}>
-              {status === 'connecting' ? 'Connecting…' : status === 'error' ? 'Reconnecting…' : 'Offline'}
-            </Text>
-          </View>
-        ) : (
-          <HeaderAvatars peerAddr={peerAddr} memberAddrs={memberAddrs} bg={bg} border={dark ? '#282a2d' : '#e4e4e5'} />
-        )}
+              flexDirection: 'row', alignItems: 'center', gap: 6,
+              paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999,
+              backgroundColor: dark ? 'rgba(40,46,58,0.92)' : 'rgba(238,241,247,0.95)',
+            }}>
+              <View style={{
+                width: 6, height: 6, borderRadius: 999,
+                backgroundColor: status === 'connecting' ? '#c0a06e' : '#d96868',
+              }} />
+              <Text style={{ color: sub, fontSize: 11 , fontFamily: 'Calibre-Medium'}}>
+                {status === 'connecting' ? 'Connecting…' : status === 'error' ? 'Reconnecting…' : 'Offline'}
+              </Text>
+            </View>
+          ) : (
+            <HeaderAvatars peerAddr={peerAddr} memberAddrs={memberAddrs} bg={bg} border={dark ? '#282a2d' : '#e4e4e5'} />
+          )}
+        </Pressable>
       </View>
       {/** Fade strip below the top nav — mirrors the composer's top fade. Position it
        *  flush against the nav bottom (which sits at `44 + insets.top`), so the solid
