@@ -31,10 +31,15 @@ const PATHS: Record<string, string> = {
 export type HeroIconName = keyof typeof PATHS;
 
 const props = defineProps<{ name: HeroIconName; size?: number }>();
+
+/** Render every web icon a notch smaller than the requested size — HeroIcons
+ *  read large on the web shell relative to the surrounding text. Applied
+ *  centrally so callers keep passing their mobile-parity sizes. */
+const px = computed(() => Math.round((props.size ?? 24) * 0.85));
 </script>
 
 <template>
-  <svg :width="props.size ?? 24" :height="props.size ?? 24" viewBox="0 0 24 24">
+  <svg :width="px" :height="px" viewBox="0 0 24 24">
     <path
       :d="PATHS[props.name]"
       fill="none"

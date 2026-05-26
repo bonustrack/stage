@@ -110,39 +110,47 @@ async function send(): Promise<void> {
       </button>
     </div>
     <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFileChange" />
-    <div class="flex items-end gap-2 p-3">
-      <button
-        type="button"
-        class="w-10 h-10 shrink-0 rounded-full flex items-center justify-center
-          text-metro-sub-light dark:text-metro-sub-dark
-          hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
-        :title="attachOpen ? 'Close attach menu' : 'Attach'"
-        @click="toggleAttach"
-      >
-        <HeroIcon :name="attachOpen ? 'x' : 'plus'" :size="20" />
-      </button>
+    <!-- Mobile-style composer: textarea on top, [+ / spacer / send] row below,
+         both inside one rounded surface. Mirrors MessengerComposer.tsx. -->
+    <div class="m-2.5 p-2.5 rounded-2xl bg-metro-surface-light dark:bg-metro-surface-dark">
       <textarea
         v-model="text"
         placeholder="Message…"
-        rows="1"
-        class="flex-1 resize-none min-h-[40px] max-h-[120px] font-sans
-          bg-metro-surface-light dark:bg-metro-surface-dark
-          border border-metro-border-light dark:border-metro-border-dark rounded-2xl px-4 py-2 text-[15px] outline-none
+        rows="2"
+        class="w-full resize-none min-h-[44px] max-h-[140px] font-sans
+          bg-transparent px-2 pt-1 pb-2 text-[16px] leading-snug outline-none
           text-metro-fg-light dark:text-metro-fg-dark
-          focus:ring-2 focus:ring-metro-fg-light dark:focus:ring-metro-fg-dark"
+          placeholder:text-metro-sub-light dark:placeholder:text-metro-sub-dark"
         @keydown.enter.exact.prevent="send"
       />
-      <button
-        type="button"
-        :disabled="sending || !text.trim()"
-        class="bg-metro-head-light dark:bg-metro-head-dark text-metro-bg-light dark:text-metro-bg-dark
-          font-head px-5 py-2 rounded-full disabled:opacity-50 min-w-[68px]"
-        @click="send"
-      >{{ sending ? '…' : 'Send' }}</button>
+      <div class="flex items-center gap-1">
+        <button
+          type="button"
+          class="w-9 h-9 shrink-0 rounded-full flex items-center justify-center
+            text-metro-fg-light dark:text-metro-fg-dark
+            hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
+          :title="attachOpen ? 'Close attach menu' : 'Attach'"
+          @click="toggleAttach"
+        >
+          <HeroIcon :name="attachOpen ? 'x' : 'plus'" :size="20" />
+        </button>
+        <div class="flex-1" />
+        <button
+          type="button"
+          :disabled="sending || !text.trim()"
+          class="w-9 h-9 shrink-0 rounded-full flex items-center justify-center
+            bg-metro-head-light dark:bg-metro-head-dark text-metro-bg-light dark:text-metro-bg-dark
+            disabled:opacity-50"
+          :title="sending ? 'Sending…' : 'Send'"
+          @click="send"
+        >
+          <HeroIcon name="send" :size="18" />
+        </button>
+      </div>
     </div>
     <!-- Attach menu drops BELOW the composer row when open, matching mobile.
          Mobile uses box-style options stacked horizontally; mirror that. -->
-    <div v-if="attachOpen" class="flex gap-2 px-3 pb-3">
+    <div v-if="attachOpen" class="flex gap-2 px-2.5 pb-3">
       <button
         type="button"
         class="flex items-center gap-2 px-3 py-2 rounded-xl

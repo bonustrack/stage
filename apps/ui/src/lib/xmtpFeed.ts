@@ -10,6 +10,7 @@ import {
 import {
   XMTP_USER_PREFIX, getOrCreateXmtpClient, convOfLine,
 } from './xmtp';
+import { previewOfXmtpContent } from '@shared/xmtp/humanize';
 import type { HistoryEntry } from './types';
 
 /** Per-message reaction counts derived from the latest emit-or-removal of each
@@ -98,7 +99,9 @@ export function envelopeOfXmtpMessage(msg: DecodedMessage, line: string): Histor
       },
     };
   }
-  return { ...base, text: msg.fallback ?? `[${typeId} payload]`, payload: { contentType: typeId } };
+  const isGroupUpdate = typeId === 'group_updated' || typeId === 'groupUpdated';
+  const text = isGroupUpdate ? previewOfXmtpContent(decoded, typeId) : (msg.fallback ?? `[${typeId} payload]`);
+  return { ...base, text, payload: { contentType: typeId } };
 }
 
 export type XmtpFeedStatus = 'idle' | 'loading' | 'open' | 'error';

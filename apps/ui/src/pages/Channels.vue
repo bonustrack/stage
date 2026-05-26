@@ -91,7 +91,8 @@ function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
 
 <template>
   <div class="min-h-screen flex flex-col relative">
-    <div class="px-3 pt-3 pb-2 flex items-center gap-2">
+    <div class="sticky top-0 z-10 px-3 pt-3 pb-2 flex items-center gap-2
+      bg-metro-bg-light dark:bg-metro-bg-dark">
       <input
         v-model="query"
         type="text"

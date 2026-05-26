@@ -12,12 +12,22 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     BubbleActionSheet: typeof import('./components/BubbleActionSheet.vue')['default']
+    ChannelRow: typeof import('./components/ChannelRow.vue')['default']
     Composer: typeof import('./components/Composer.vue')['default']
+    ConversationHeader: typeof import('./components/ConversationHeader.vue')['default']
     EditProfileModal: typeof import('./components/EditProfileModal.vue')['default']
+    GroupAvatarEditor: typeof import('./components/GroupAvatarEditor.vue')['default']
     HeroIcon: typeof import('./components/HeroIcon.vue')['default']
+    InlineEditableText: typeof import('./components/InlineEditableText.vue')['default']
+    LocationEmbed: typeof import('./components/LocationEmbed.vue')['default']
+    MediaCard: typeof import('./components/MediaCard.vue')['default']
+    MemberAddForm: typeof import('./components/MemberAddForm.vue')['default']
+    MemberRow: typeof import('./components/MemberRow.vue')['default']
     MessengerBubble: typeof import('./components/MessengerBubble.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    SearchResolution: typeof import('./components/SearchResolution.vue')['default']
     TabBar: typeof import('./components/TabBar.vue')['default']
+    YouTubeEmbed: typeof import('./components/YouTubeEmbed.vue')['default']
   }
 }

@@ -30,6 +30,13 @@ const isGroup = computed(() => peerAddress.value === null && groupName.value !==
 /** inboxId → eth address for every member, threaded into each bubble so
  *  the per-row stamp.fyi avatar can resolve without a per-bubble lookup. */
 const inboxToAddr = ref<Record<string, string>>({});
+/** Member eth addresses excluding the local user — drives the header
+ *  avatar stack (mirrors the mobile conversation header). */
+const memberAddresses = computed(() =>
+  Object.entries(inboxToAddr.value)
+    .filter(([id]) => id !== feed.inboxId.value)
+    .map(([, addr]) => addr),
+);
 
 watchEffect(async () => {
   if (!convId.value || !line.value) return;
@@ -136,6 +143,7 @@ function onActionCopy(): void {
       :peer-address="peerAddress"
       :group-name="groupName"
       :is-group="isGroup"
+      :member-addresses="memberAddresses"
       :status="feed.status.value"
       @back="router.push('/channels')"
       @open="openHeader"
