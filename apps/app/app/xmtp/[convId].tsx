@@ -305,6 +305,7 @@ export default function XmtpConversation(): React.ReactElement {
         position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
         height: 44 + insets.top, paddingTop: insets.top, backgroundColor: bg,
         flexDirection: 'row', alignItems: 'stretch',
+        borderBottomWidth: 1, borderBottomColor: dark ? '#282a2d' : '#e4e4e5',
       }}>
         <Pressable
           onPress={() => router.replace('/')}
@@ -348,7 +349,7 @@ export default function XmtpConversation(): React.ReactElement {
       {/** Fade strip below the top nav — mirrors the composer's top fade. Position it
        *  flush against the nav bottom (which sits at `44 + insets.top`), so the solid
        *  bg fades smoothly into the scrolling content beneath. */}
-      <ComposerGradient bg={bg} direction="up" top={44 + insets.top} height={10} />
+      <ComposerGradient bg={bg} direction="up" top={44 + insets.top} height={16} />
       {showJump ? (
         <Pressable
           onPress={() => {
