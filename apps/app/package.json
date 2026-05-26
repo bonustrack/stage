@@ -12,6 +12,7 @@
     "lint": "eslint app/ components/ lib/"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.100.14",
     "@xmtp/react-native-sdk": "^5.7.0",
     "buffer": "^6.0.3",
     "expo": "~54.0.33",

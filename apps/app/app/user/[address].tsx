@@ -11,8 +11,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import { shortAddress, openDmWithAddress } from '../../lib/xmtp';
 import { useEffectiveColorScheme } from '../../lib/theme';
-import { readProfile } from '../../lib/profile';
-import { avatarRenderUrl, type SnapshotProfile } from '../../../_shared/profile/snapshot';
+import { useProfileQuery } from '../../lib/useProfile';
+import { avatarRenderUrl } from '../../../_shared/profile/snapshot';
 import { HeroIcon } from '../../components/HeroIcon';
 
 const AVATAR_SIZE = 120;
@@ -31,15 +31,8 @@ export default function UserProfileView(): React.ReactElement {
   const { address } = useLocalSearchParams<{ address: string }>();
   const addr = address ?? '';
 
-  const [profile, setProfile] = useState<SnapshotProfile | null>(null);
-  const [loaded, setLoaded] = useState(false);
+  const { data: profile, isSuccess: loaded } = useProfileQuery(addr);
   const [openingDm, setOpeningDm] = useState(false);
-  useEffect(() => {
-    if (!addr) return;
-    let cancelled = false;
-    void readProfile(addr).then(p => { if (!cancelled) { setProfile(p); setLoaded(true); } });
-    return (): void => { cancelled = true; };
-  }, [addr]);
 
   const onMessage = async (): Promise<void> => {
     if (!addr || openingDm) return;

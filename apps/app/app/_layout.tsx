@@ -9,6 +9,16 @@ import { Spinner } from '../components/Spinner';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { useEffectiveColorScheme } from '../lib/theme';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+/** App-wide TanStack Query client — caches request/response data (profiles,
+ *  message history) with stale-while-revalidate + dedup. Live XMTP streams stay
+ *  outside Query (they're push, not fetch). */
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { staleTime: 60_000, gcTime: 30 * 60_000, retry: 1, refetchOnWindowFocus: false },
+  },
+});
 
 /** Set Calibre-Medium as the app-wide default for Text + TextInput via defaultProps.
  *  This is a fallback — call-site `style={{…}}` overrides — but it's the safest path:
@@ -45,6 +55,7 @@ export default function RootLayout(): React.ReactElement {
   }
 
   return (
+    <QueryClientProvider client={queryClient}>
     <GestureHandlerRootView style={{ flex: 1 }}>
       <KeyboardProvider>
       <StatusBar style={dark ? 'light' : 'dark'} />
@@ -59,5 +70,6 @@ export default function RootLayout(): React.ReactElement {
       </Stack>
       </KeyboardProvider>
     </GestureHandlerRootView>
+    </QueryClientProvider>
   );
 }
