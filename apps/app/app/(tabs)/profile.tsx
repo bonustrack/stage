@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { Alert, Image, Pressable, Text, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { getOrCreateXmtpClient, shortAddress, stampBoxAvatarUrl } from '../../lib/xmtp';
+import { getCacheHash } from '../../../_shared/profile/snapshot';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { usePushToken, type PushStatus } from '../../lib/push';
 import {
@@ -67,7 +68,7 @@ export default function Profile(): React.ReactElement {
       <View style={{ alignItems: 'center', paddingTop: 24, paddingBottom: 16 }}>
         {address ? (
           <Image
-            source={{ uri: stampBoxAvatarUrl(address, AVATAR_SIZE * 2, profile.avatar?.slice(-12)) }}
+            source={{ uri: stampBoxAvatarUrl(address, AVATAR_SIZE * 2, getCacheHash(profile.avatar)) }}
             style={{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: AVATAR_SIZE / 2, backgroundColor: rowBg }}
           />
         ) : (
