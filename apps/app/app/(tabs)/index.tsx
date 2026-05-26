@@ -403,11 +403,16 @@ export default function Messenger(): React.ReactElement {
             onPress={() => router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } })}
             style={({ pressed }) => ({
               backgroundColor: pressed ? border : 'transparent',
-              flexDirection: 'row', alignItems: 'center', gap: 12,
-              paddingHorizontal: 14, paddingVertical: 12,
-              borderBottomWidth: 1, borderBottomColor: border,
+              paddingHorizontal: 14,
             })}
           >
+            {/* Inner row carries the separator: it starts at the avatar's left
+                edge (inset by paddingHorizontal), not the full card width. */}
+            <View style={{
+              flexDirection: 'row', alignItems: 'center', gap: 12,
+              paddingVertical: 12,
+              borderBottomWidth: 1, borderBottomColor: border,
+            }}>
             {item.avatarUri ? (
               <Image
                 source={{ uri: avatarRenderUrl('', item.avatarUri, 64) }}
@@ -443,6 +448,7 @@ export default function Messenger(): React.ReactElement {
                   </View>
                 ) : null}
               </View>
+            </View>
             </View>
           </Pressable>
         )}

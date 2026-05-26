@@ -116,7 +116,7 @@ function onAvatar(): void {
       <div v-else-if="mapCoords" class="mt-1.5">
         <LocationEmbed :lat="mapCoords.lat" :lng="mapCoords.lng" :source-url="mapCoords.sourceUrl" />
       </div>
-      <div class="flex items-center gap-1.5 mt-1 text-[10px] text-metro-sub-light dark:text-metro-sub-dark font-sans">
+      <div class="flex items-center gap-1.5 mt-1 text-[11px] text-metro-sub-light dark:text-metro-sub-dark font-sans">
         <span>{{ fmtTs(props.entry.ts) }}</span>
         <template v-if="props.reactions && props.reactions.size > 0">
           <button

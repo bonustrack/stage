@@ -12,6 +12,13 @@ export function postUnreadToParent(count: number): void {
   }
 }
 
+/** Ask the host page to close the widget. Used by the in-widget close button
+ *  so the messenger's own topnav carries the close affordance (single topnav)
+ *  instead of the host stacking a second header bar above the iframe. */
+export function postCloseToParent(): void {
+  if (runningInIframe()) window.parent.postMessage({ type: 'metro:close' }, '*');
+}
+
 /** When embedded, let the host page drive the color scheme so the widget
  *  matches the surrounding UI instantly. The host posts
  *  `{ type: 'metro:theme', theme: 'light' | 'dark' | 'system' }`. */

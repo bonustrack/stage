@@ -36,17 +36,20 @@ function fmtTs(ts: number | null): string {
 <template>
   <button
     type="button"
-    class="w-full text-left flex items-center gap-3 px-3.5 py-3
-      border-b border-metro-border-light dark:border-metro-border-dark"
+    class="w-full text-left px-3.5"
     @click="emit('open')"
   >
-    <img v-if="renderedAvatar"
-      :src="renderedAvatar"
-      alt=""
-      class="w-9 h-9 rounded-full bg-metro-border-dark shrink-0 object-cover"
-    />
-    <div v-else class="w-9 h-9 rounded-full bg-metro-border-dark shrink-0" />
-    <div class="flex-1 min-w-0">
+    <!-- Inner row carries the separator: it starts at the avatar's left edge
+         (inset from the screen by the card's px-3.5), not full width. -->
+    <div class="flex items-center gap-3 py-3
+      border-b border-metro-border-light dark:border-metro-border-dark">
+      <img v-if="renderedAvatar"
+        :src="renderedAvatar"
+        alt=""
+        class="w-9 h-9 rounded-full bg-metro-border-dark shrink-0 object-cover"
+      />
+      <div v-else class="w-9 h-9 rounded-full bg-metro-border-dark shrink-0" />
+      <div class="flex-1 min-w-0">
       <div class="flex items-baseline gap-2">
         <div class="text-base text-metro-head-light dark:text-metro-head-dark truncate flex-1 font-head">
           {{ props.title }}
@@ -66,6 +69,7 @@ function fmtTs(ts: number | null): string {
             text-[11px] font-head flex items-center justify-center shrink-0">
           {{ props.unreadCount > 99 ? '99+' : props.unreadCount }}
         </div>
+      </div>
       </div>
     </div>
   </button>

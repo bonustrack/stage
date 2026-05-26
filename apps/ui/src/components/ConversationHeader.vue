@@ -6,6 +6,7 @@
 
 import { shortAddress, stampBoxAvatarUrl } from '../lib/xmtp';
 import type { XmtpFeedStatus } from '../lib/xmtpFeed';
+import { runningInIframe, postCloseToParent } from '../lib/embedBridge';
 
 const props = defineProps<{
   peerAddress: string | null;
@@ -18,11 +19,15 @@ const emit = defineEmits<{ (e: 'back'): void; (e: 'open'): void }>();
 
 const visibleMembers = computed(() => props.memberAddresses.slice(0, 3));
 const overflow = computed(() => Math.max(0, props.memberAddresses.length - 3));
+/** Embedded (widget): show a close button at the end of this topnav so the
+ *  widget has a single merged header instead of a second host-side bar. */
+const embedded = runningInIframe();
 </script>
 
 <template>
-  <div class="h-12 flex items-stretch
-    bg-metro-bg-light dark:bg-metro-bg-dark shrink-0">
+  <div class="h-12 flex items-stretch shrink-0
+    bg-metro-bg-light dark:bg-metro-bg-dark
+    border-b border-metro-border-light dark:border-metro-border-dark">
     <button type="button" class="h-full pl-3 pr-1 flex items-center text-metro-fg-light dark:text-metro-fg-dark" @click="emit('back')">
       <HeroIcon name="arrowLeft" :size="20" />
     </button>
@@ -64,6 +69,16 @@ const overflow = computed(() => Math.max(0, props.memberAddresses.length - 3));
           +{{ overflow }}
         </div>
       </div>
+    </button>
+    <!-- Widget only: close button at the very end of the (single) topnav. -->
+    <button
+      v-if="embedded"
+      type="button"
+      class="h-full pr-3 pl-1 flex items-center text-metro-fg-light dark:text-metro-fg-dark"
+      title="Close"
+      @click="postCloseToParent"
+    >
+      <HeroIcon name="x" :size="20" />
     </button>
   </div>
 </template>

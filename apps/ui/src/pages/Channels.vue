@@ -8,7 +8,7 @@ import { cachedRows, hydrateCachedRows } from '../lib/channelsCache';
 import { type ChannelRow as Row } from '../lib/channelsSummarize';
 import { startChannelStream, type ChannelStreamHandles } from '../lib/useChannelStream';
 import { isAddressLike, isDomainLike, resolveDomain } from '../lib/stamp';
-import { runningInIframe } from '../lib/embedBridge';
+import { runningInIframe, postCloseToParent } from '../lib/embedBridge';
 
 const router = useRouter();
 /** Embedded (iframed) = widget. Hides the search topnav + drops the Ask
@@ -95,8 +95,37 @@ function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
 
 <template>
   <div class="h-[100dvh] flex flex-col relative">
-    <div v-if="!embedded" class="shrink-0 px-3 pt-3 pb-2 flex items-center gap-2
-      bg-metro-bg-light dark:bg-metro-bg-dark">
+    <!-- Topnav: page title, refresh, and (embedded only) a close button at the
+         end, so the channels homepage has a single topnav like conversations. -->
+    <div class="h-12 flex items-center shrink-0 gap-1 pl-3 pr-1
+      bg-metro-bg-light dark:bg-metro-bg-dark
+      border-b border-metro-border-light dark:border-metro-border-dark">
+      <span class="flex-1 font-head text-base text-metro-head-light dark:text-metro-head-dark">
+        Channels
+      </span>
+      <button
+        v-if="!embedded"
+        type="button"
+        :disabled="refreshing"
+        class="p-2 rounded-lg text-metro-sub-light dark:text-metro-sub-dark
+          hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark disabled:opacity-50"
+        :title="refreshing ? 'Refreshing…' : 'Refresh channels'"
+        @click="refreshFromNetwork"
+      >
+        <HeroIcon name="arrowDown" :size="16" :class="refreshing ? 'animate-spin' : ''" />
+      </button>
+      <button
+        v-if="embedded"
+        type="button"
+        class="px-2 py-2 text-metro-fg-light dark:text-metro-fg-dark"
+        title="Close"
+        @click="postCloseToParent"
+      >
+        <HeroIcon name="x" :size="20" />
+      </button>
+    </div>
+    <!-- Search input (standalone site only — hidden in the widget). -->
+    <div v-if="!embedded" class="shrink-0 px-3 pt-3 pb-2 bg-metro-bg-light dark:bg-metro-bg-dark">
       <input
         v-model="query"
         type="text"
@@ -104,22 +133,11 @@ function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
         autocomplete="off"
         autocorrect="off"
         autocapitalize="off"
-        class="flex-1 bg-metro-surface-light dark:bg-metro-surface-dark
+        class="w-full bg-metro-surface-light dark:bg-metro-surface-dark
           border border-metro-border-light dark:border-metro-border-dark rounded-lg px-3 py-2 text-sm
           text-metro-fg-light dark:text-metro-fg-dark outline-none
           placeholder:text-metro-sub-light dark:placeholder:text-metro-sub-dark"
       />
-      <button
-        type="button"
-        :disabled="refreshing"
-        class="p-2 rounded-lg text-metro-sub-light dark:text-metro-sub-dark
-          hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark
-          disabled:opacity-50"
-        :title="refreshing ? 'Refreshing…' : 'Refresh channels'"
-        @click="refreshFromNetwork"
-      >
-        <HeroIcon name="arrowDown" :size="16" :class="refreshing ? 'animate-spin' : ''" />
-      </button>
     </div>
     <SearchResolution
       :status="searchResolution.status"
@@ -154,10 +172,10 @@ function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
     <button
       type="button"
       :disabled="creatingAsk"
-      class="fixed left-4 right-4 z-30
+      class="fixed left-1/2 -translate-x-1/2 z-30
         bg-metro-head-light dark:bg-metro-head-dark
         text-metro-bg-light dark:text-metro-bg-dark
-        text-[17px] font-sans py-3 rounded-full
+        text-[17px] font-sans px-6 h-10 inline-flex items-center justify-center rounded-full whitespace-nowrap
         disabled:opacity-60 hover:opacity-90 transition-opacity"
       :class="embedded ? 'bottom-4' : 'bottom-[76px]'"
       @click="onAskPress"
