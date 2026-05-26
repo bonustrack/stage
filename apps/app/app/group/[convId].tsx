@@ -4,8 +4,9 @@
 
 import { useEffect, useState } from 'react';
 import {
-  Alert, FlatList, Image, Pressable, Text, TextInput, View,
+  ActivityIndicator, Alert, FlatList, Image, Pressable, ScrollView, Text, TextInput, View,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -13,8 +14,8 @@ import {
   memberInboxToAddressMap, stampBoxAvatarUrl, shortAddress,
 } from '../../lib/xmtp';
 import { PublicIdentity } from '@xmtp/react-native-sdk';
-import { readProfile } from '../../lib/profile';
-import type { SnapshotProfile } from '../../../_shared/profile/snapshot';
+import { readProfile, uploadAvatar } from '../../lib/profile';
+import { avatarRenderUrl, type SnapshotProfile } from '../../../_shared/profile/snapshot';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { HeroIcon } from '../../components/HeroIcon';
 
@@ -50,6 +51,15 @@ export default function GroupDetail(): React.ReactElement {
   /** Per-address removal busy flag. Disables the row + the remove button
    *  while the XMTP call is in flight. */
   const [removing, setRemoving] = useState<string | null>(null);
+  /** Group image URL (raw — could be ipfs://). Stored as the XMTP
+   *  `group_image_url_square` field; rendered via `avatarRenderUrl`. */
+  const [imageUrl, setImageUrl] = useState<string>('');
+  const [uploadingImage, setUploadingImage] = useState(false);
+  /** Group description — inline-editable like the group name. */
+  const [description, setDescription] = useState<string>('');
+  const [descriptionDraft, setDescriptionDraft] = useState('');
+  const [editingDescription, setEditingDescription] = useState(false);
+  const [savingDescription, setSavingDescription] = useState(false);
 
   useEffect(() => {
     const c = getCachedXmtpClient();
@@ -65,13 +75,23 @@ export default function GroupDetail(): React.ReactElement {
     void (async (): Promise<void> => {
       const conv = await convOfLine(line);
       if (cancelled || !conv) return;
-      const [n, addrMap] = await Promise.all([
-        (conv as unknown as { name?: () => Promise<string> }).name?.() ?? Promise.resolve(''),
+      const group = conv as unknown as {
+        name?: () => Promise<string>;
+        imageUrl?: () => Promise<string>;
+        description?: () => Promise<string>;
+      };
+      const [n, img, desc, addrMap] = await Promise.all([
+        group.name?.() ?? Promise.resolve(''),
+        group.imageUrl?.().catch(() => '') ?? Promise.resolve(''),
+        group.description?.().catch(() => '') ?? Promise.resolve(''),
         memberInboxToAddressMap(conv),
       ]);
       if (cancelled) return;
       setName(n ?? '');
       setDraft(n ?? '');
+      setImageUrl(img ?? '');
+      setDescription(desc ?? '');
+      setDescriptionDraft(desc ?? '');
       const addrs = Object.values(addrMap).sort((a, b) => a.localeCompare(b));
       setMembers(addrs);
       /** Fetch Snapshot profile names in parallel — each row falls back to the
@@ -145,6 +165,44 @@ export default function GroupDetail(): React.ReactElement {
     );
   };
 
+  const pickImage = async (): Promise<void> => {
+    if (uploadingImage) return;
+    const r = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: 'images', quality: 0.85, allowsMultipleSelection: false,
+    });
+    if (r.canceled || !r.assets?.length) return;
+    const a = r.assets[0]!;
+    setUploadingImage(true);
+    try {
+      const url = await uploadAvatar(a.uri, a.mimeType ?? 'image/jpeg', a.fileName ?? 'group-avatar');
+      const conv = await convOfLine(line);
+      if (!conv) throw new Error('Conversation not found');
+      const group = conv as unknown as { updateImageUrl?: (u: string) => Promise<void> };
+      if (!group.updateImageUrl) throw new Error('Not a group conversation');
+      await group.updateImageUrl(url);
+      setImageUrl(url);
+    } catch (e) {
+      Alert.alert('Image upload failed', (e as Error).message ?? 'Unknown error');
+    } finally { setUploadingImage(false); }
+  };
+
+  const saveDescription = async (): Promise<void> => {
+    const next = descriptionDraft.trim();
+    if (savingDescription) return;
+    setSavingDescription(true);
+    try {
+      const conv = await convOfLine(line);
+      if (!conv) throw new Error('Conversation not found');
+      const group = conv as unknown as { updateDescription?: (d: string) => Promise<void> };
+      if (!group.updateDescription) throw new Error('Not a group conversation');
+      await group.updateDescription(next);
+      setDescription(next);
+      setEditingDescription(false);
+    } catch (e) {
+      Alert.alert('Description update failed', (e as Error).message ?? 'Unknown error');
+    } finally { setSavingDescription(false); }
+  };
+
   const saveName = async (): Promise<void> => {
     const next = draft.trim();
     if (!next || saving) return;
@@ -171,7 +229,35 @@ export default function GroupDetail(): React.ReactElement {
         </Pressable>
       </View>
 
-      <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16 }}>
+      <View style={{ alignItems: 'center', paddingTop: 4, paddingBottom: 16 }}>
+        <Pressable onPress={() => { void pickImage(); }} disabled={uploadingImage} hitSlop={8}>
+          {imageUrl ? (
+            <Image
+              source={{ uri: avatarRenderUrl('', imageUrl, 240) }}
+              style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: rowBg, opacity: uploadingImage ? 0.5 : 1 }}
+            />
+          ) : (
+            <View style={{
+              width: 96, height: 96, borderRadius: 48, backgroundColor: rowBg,
+              borderWidth: 1, borderColor: border,
+              alignItems: 'center', justifyContent: 'center',
+              opacity: uploadingImage ? 0.5 : 1,
+            }}>
+              <Text style={{ color: sub, fontSize: 28 }}>＋</Text>
+            </View>
+          )}
+          {uploadingImage ? (
+            <View style={{ position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' }}>
+              <ActivityIndicator color={fg} />
+            </View>
+          ) : null}
+        </Pressable>
+        <Text style={{ color: sub, fontSize: 11, marginTop: 6, fontFamily: 'Calibre-Medium' }}>
+          {uploadingImage ? 'Uploading…' : 'Tap to change image'}
+        </Text>
+      </View>
+
+      <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
         <Text style={{ color: sub, fontSize: 11, fontFamily: 'Calibre-Medium' }}>GROUP NAME</Text>
         {editing ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 }}>
@@ -204,6 +290,44 @@ export default function GroupDetail(): React.ReactElement {
               {name && name.trim() ? name : 'Untitled group'}
             </Text>
             <Text style={{ color: sub, fontSize: 12, marginTop: 4, fontFamily: 'Calibre-Medium' }}>Tap to rename</Text>
+          </Pressable>
+        )}
+      </View>
+
+      <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
+        <Text style={{ color: sub, fontSize: 11, fontFamily: 'Calibre-Medium' }}>DESCRIPTION</Text>
+        {editingDescription ? (
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 6 }}>
+            <TextInput
+              value={descriptionDraft}
+              onChangeText={setDescriptionDraft}
+              placeholder="What is this group about?"
+              placeholderTextColor={sub}
+              multiline
+              autoFocus
+              style={{
+                flex: 1, color: fg, backgroundColor: rowBg,
+                borderWidth: 1, borderColor: border, borderRadius: 10,
+                paddingHorizontal: 10, paddingVertical: 8, fontSize: 14,
+                minHeight: 60, textAlignVertical: 'top',
+              }}
+            />
+            <Pressable onPress={() => { void saveDescription(); }} disabled={savingDescription}
+              style={({ pressed }) => ({
+                paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999,
+                backgroundColor: dark ? '#ffffff' : '#000000',
+                opacity: pressed ? 0.85 : savingDescription ? 0.5 : 1,
+              })}>
+              <Text style={{ color: dark ? '#000000' : '#ffffff', fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+                {savingDescription ? 'Saving…' : 'Save'}
+              </Text>
+            </Pressable>
+          </View>
+        ) : (
+          <Pressable onPress={() => setEditingDescription(true)} hitSlop={6} style={{ marginTop: 6 }}>
+            <Text style={{ color: description.trim() ? fg : sub, fontSize: 14, fontFamily: 'Calibre-Medium' }}>
+              {description.trim() || 'Tap to add a description'}
+            </Text>
           </Pressable>
         )}
       </View>
