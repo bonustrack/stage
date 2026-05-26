@@ -6,27 +6,21 @@
 
 import { openDmWithAddress, shortAddress } from '../lib/xmtp';
 import { readProfile } from '../lib/profile';
-import { avatarRenderUrl, type SnapshotProfile } from '@shared/profile/snapshot';
+import { avatarRenderUrl } from '@shared/profile/snapshot';
+import { useQuery } from '@tanstack/vue-query';
 
 const route = useRoute();
 const router = useRouter();
 const AVATAR_SIZE = 120;
 
 const address = computed(() => (route.params.address as string) ?? '');
-const profile = ref<SnapshotProfile | null>(null);
-const loaded = ref(false);
+const { data: profile, isSuccess: loaded } = useQuery({
+  queryKey: ['profile', computed(() => address.value.toLowerCase())],
+  queryFn: () => readProfile(address.value),
+  enabled: computed(() => !!address.value),
+});
 const openingDm = ref(false);
 const copied = ref(false);
-
-watchEffect(async () => {
-  const addr = address.value;
-  if (!addr) return;
-  profile.value = null;
-  loaded.value = false;
-  const p = await readProfile(addr).catch(() => null);
-  profile.value = p;
-  loaded.value = true;
-});
 
 async function onMessage(): Promise<void> {
   if (!address.value || openingDm.value) return;
