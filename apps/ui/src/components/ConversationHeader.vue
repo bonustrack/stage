@@ -21,15 +21,16 @@ const overflow = computed(() => Math.max(0, props.memberAddresses.length - 3));
 </script>
 
 <template>
-  <div class="h-12 flex items-center gap-2 px-3
+  <div class="h-12 flex items-stretch
     bg-metro-bg-light dark:bg-metro-bg-dark shrink-0">
-    <button type="button" class="p-1.5 text-metro-fg-light dark:text-metro-fg-dark" @click="emit('back')">
+    <button type="button" class="h-full pl-3 pr-1 flex items-center text-metro-fg-light dark:text-metro-fg-dark" @click="emit('back')">
       <HeroIcon name="arrowLeft" :size="20" />
     </button>
-    <!-- Everything right of the back arrow opens the group/channel (or peer) profile. -->
+    <!-- Everything right of the back arrow opens the group/channel (or peer)
+         profile — full height + edge-to-edge so 100% of the bar is clickable. -->
     <button
       type="button"
-      class="flex-1 flex items-center justify-between min-w-0 gap-2 px-1 py-1"
+      class="flex-1 h-full flex items-center justify-between min-w-0 gap-2 pr-3"
       @click="emit('open')"
     >
       <span class="truncate font-head text-base text-metro-head-light dark:text-metro-head-dark">

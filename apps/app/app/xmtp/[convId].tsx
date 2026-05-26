@@ -303,26 +303,24 @@ export default function XmtpConversation(): React.ReactElement {
        *  behind the system icons. */}
       <View style={{
         position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
-        height: 44 + insets.top, paddingTop: insets.top, paddingHorizontal: 14, backgroundColor: bg,
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+        height: 44 + insets.top, paddingTop: insets.top, backgroundColor: bg,
+        flexDirection: 'row', alignItems: 'stretch',
       }}>
         <Pressable
           onPress={() => router.replace('/')}
-          hitSlop={10}
-          style={{ padding: 6 }}
+          style={{ paddingLeft: 14, paddingRight: 8, justifyContent: 'center' }}
         >
           <HeroIcon name="arrowLeft" size={22} color={fg} />
         </Pressable>
         {/** Everything right of the back arrow is one tap target → the
          *   group/channel detail page (or the peer's profile for a DM).
-         *   Title on the left, status pill / member-avatar stack on the right. */}
+         *   Fills full height + to the right edge so 100% is clickable. */}
         <Pressable
           onPress={() => {
             if (isGroup) router.push({ pathname: '/group/[convId]', params: { convId: convId ?? '' } });
             else if (peerAddr) router.push({ pathname: '/user/[address]', params: { address: peerAddr } });
           }}
-          style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 4 }}
-          hitSlop={6}
+          style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingRight: 14 }}
         >
           <Text style={{ color: head, fontSize: 19, fontFamily: 'Calibre-Semibold', flex: 1 }} numberOfLines={1}>
             {isGroup ? (groupName || 'Untitled group')
