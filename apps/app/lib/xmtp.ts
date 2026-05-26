@@ -39,6 +39,7 @@ const XMTP_CODECS = [
 ];
 import type { HistoryEntry } from './types';
 import { loadOrCreateAccount, resetAccount } from './wallet';
+import { humanizeGroupUpdated, type GroupUpdatedContent } from '../../_shared/xmtp/humanize';
 
 /** Build the XMTP-RN `Signer` adapter for a viem `PrivateKeyAccount`.
  *  Shape pulled from `node_modules/@xmtp/react-native-sdk/src/lib/Signer.ts`:
@@ -396,25 +397,7 @@ export function envelopeOfXmtpMessage(msg: DecodedMessage, line: string): Histor
     };
   }
   if (typeId === 'group_updated' || typeId === 'groupUpdated') {
-    /** Human-readable summary of a group metadata change — rename, add/remove
-     *  members, image swap. Falls back to a generic line if the payload shape
-     *  doesn't match what we expect. */
-    const g = decoded as {
-      initiatedByInboxId?: string;
-      membersAdded?: { inboxId: string }[];
-      membersRemoved?: { inboxId: string }[];
-      metadataFieldsChanged?: { fieldName: string; oldValue: string; newValue: string }[];
-    };
-    const parts: string[] = [];
-    for (const f of g.metadataFieldsChanged ?? []) {
-      if (f.fieldName === 'group_name') parts.push(`renamed the group to "${f.newValue}"`);
-      else if (f.fieldName === 'group_image_url_square') parts.push('updated the group image');
-      else if (f.fieldName === 'description') parts.push('updated the group description');
-      else parts.push(`changed ${f.fieldName.replace(/_/g, ' ')}`);
-    }
-    if ((g.membersAdded ?? []).length) parts.push(`added ${g.membersAdded!.length} member${g.membersAdded!.length === 1 ? '' : 's'}`);
-    if ((g.membersRemoved ?? []).length) parts.push(`removed ${g.membersRemoved!.length} member${g.membersRemoved!.length === 1 ? '' : 's'}`);
-    const summary = parts.length ? parts.join(' • ') : 'updated the group';
+    const summary = humanizeGroupUpdated(decoded as GroupUpdatedContent);
     return { ...base, text: summary, payload: { contentType: typeId, system: true } };
   }
   if (typeId === 'attachment') {

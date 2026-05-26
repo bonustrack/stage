@@ -7,6 +7,7 @@ import {
   peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap,
   getLastReadNs,
 } from './xmtp';
+import { previewOfXmtpContent } from '@shared/xmtp/humanize';
 
 export interface ChannelRow {
   convId: string;
@@ -33,13 +34,7 @@ export async function summarizeConv(
    *  the latest, matching the mobile codepath. */
   const recent = [...msgs].reverse();
   const last = recent[0];
-  let preview = '';
-  if (last) {
-    const decoded: unknown = last.content;
-    preview = typeof decoded === 'string'
-      ? decoded
-      : `[${last.contentType?.typeId ?? 'unknown'}]`;
-  }
+  const preview = last ? previewOfXmtpContent(last.content, last.contentType?.typeId) : '';
   const peerAddress = await peerEthAddressOfDm(conv);
   const memberAddresses = peerAddress ? [] : await groupMemberEthAddresses(conv);
   const inboxToAddr = await memberInboxToAddressMap(conv);
