@@ -22,6 +22,7 @@ import {
 import { resetAccount } from '../../lib/wallet';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { getCachedRows, hydrateCachedRows, setCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
+import { previewOfXmtpContent } from '../../../_shared/xmtp/humanize';
 
 interface Row {
   convId: string;
@@ -68,10 +69,8 @@ async function summarize(conv: Conversation, selfInboxId: string): Promise<Row> 
   const last = msgs[0];
   let preview = '';
   if (last) {
-    try {
-      const decoded: unknown = last.content();
-      preview = typeof decoded === 'string' ? decoded : `[${last.contentTypeId ?? 'unknown'}]`;
-    } catch { preview = `[${last.contentTypeId ?? 'unknown'}]`; }
+    try { preview = previewOfXmtpContent(last.content(), last.contentTypeId); }
+    catch { preview = `[${last.contentTypeId ?? 'unknown'}]`; }
   }
   const peerAddress = await peerEthAddressOfDm(conv);
   const memberAddresses = peerAddress ? [] : await groupMemberEthAddresses(conv);
@@ -248,10 +247,8 @@ export default function Messenger(): React.ReactElement {
           cancelMsgStream = await client.conversations.streamAllMessages(async (msg) => {
             if (cancelled || !msg) return;
             let preview = '';
-            try {
-              const decoded: unknown = msg.content();
-              preview = typeof decoded === 'string' ? decoded : `[${msg.contentTypeId ?? 'unknown'}]`;
-            } catch { preview = `[${msg.contentTypeId ?? 'unknown'}]`; }
+            try { preview = previewOfXmtpContent(msg.content(), msg.contentTypeId); }
+            catch { preview = `[${msg.contentTypeId ?? 'unknown'}]`; }
             const lastTs = msg.sentNs ? Math.floor(msg.sentNs / 1_000_000) : Date.now();
             const lastPreview = preview.slice(0, 80);
             let needsRefresh = false;

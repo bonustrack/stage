@@ -13,6 +13,7 @@ import type { Conversation } from '@xmtp/browser-sdk';
 import { type XmtpClient } from './xmtp';
 import { cachedRows, setCachedRows } from './channelsCache';
 import { summarizeConv, type ChannelRow } from './channelsSummarize';
+import { previewOfXmtpContent } from '@shared/xmtp/humanize';
 
 type StreamHandle = { end: () => Promise<unknown> };
 
@@ -56,10 +57,7 @@ export async function startChannelStream(client: XmtpClient): Promise<ChannelStr
   stopMsgStream = await client.conversations.streamAllMessages({
     onValue: async (msg) => {
       if (!msg) return;
-      const decoded: unknown = msg.content;
-      const preview = typeof decoded === 'string'
-        ? decoded
-        : `[${msg.contentType?.typeId ?? 'unknown'}]`;
+      const preview = previewOfXmtpContent(msg.content, msg.contentType?.typeId);
       const lastTs = Number(msg.sentAtNs / 1_000_000n);
       const lastPreview = preview.slice(0, 80);
       const prev = (cachedRows.value as ChannelRow[] | null) ?? [];
