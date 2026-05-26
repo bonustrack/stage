@@ -72,7 +72,7 @@ async function copy(value: string): Promise<void> {
           :disabled="openingDm"
           class="mt-4 px-6 py-2.5 rounded-full
             bg-metro-head-light dark:bg-metro-head-dark text-metro-bg-light dark:text-metro-bg-dark
-            text-sm disabled:opacity-60 hover:opacity-90 transition-opacity"
+            text-[18px] disabled:opacity-60 hover:opacity-90 transition-opacity"
           @click="onMessage"
         >
           {{ openingDm ? 'Opening…' : 'Message' }}

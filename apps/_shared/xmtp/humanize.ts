@@ -3,24 +3,32 @@
  *  mobile and web — without this the channels row falls back to the raw
  *  `[xmtp.org/group_updated:1.0]` label instead of "removed 1 member". */
 
+interface FieldChange { fieldName: string; oldValue?: string; newValue?: string }
+/** The RN SDK and the browser/wasm SDK name these fields differently
+ *  (`membersAdded`/`addedInboxes`, `metadataFieldsChanged`/`metadataFieldChanges`),
+ *  so accept either shape. */
 export interface GroupUpdatedContent {
   initiatedByInboxId?: string;
   membersAdded?: { inboxId: string }[];
   membersRemoved?: { inboxId: string }[];
-  metadataFieldsChanged?: { fieldName: string; oldValue: string; newValue: string }[];
+  metadataFieldsChanged?: FieldChange[];
+  addedInboxes?: { inboxId: string }[];
+  removedInboxes?: { inboxId: string }[];
+  metadataFieldChanges?: FieldChange[];
 }
 
 export function humanizeGroupUpdated(g: GroupUpdatedContent): string {
   const parts: string[] = [];
-  for (const f of g.metadataFieldsChanged ?? []) {
+  const fields = g.metadataFieldsChanged ?? g.metadataFieldChanges ?? [];
+  for (const f of fields) {
     if (f.fieldName === 'group_name') parts.push(`renamed the group to "${f.newValue}"`);
     else if (f.fieldName === 'group_image_url_square') parts.push('updated the group image');
     else if (f.fieldName === 'description') parts.push('updated the group description');
     else parts.push(`changed ${f.fieldName.replace(/_/g, ' ')}`);
   }
-  const addedCount = g.membersAdded?.length ?? 0;
+  const addedCount = (g.membersAdded ?? g.addedInboxes)?.length ?? 0;
   if (addedCount) parts.push(`added ${addedCount} member${addedCount === 1 ? '' : 's'}`);
-  const removedCount = g.membersRemoved?.length ?? 0;
+  const removedCount = (g.membersRemoved ?? g.removedInboxes)?.length ?? 0;
   if (removedCount) parts.push(`removed ${removedCount} member${removedCount === 1 ? '' : 's'}`);
   return parts.length ? parts.join(' • ') : 'updated the group';
 }

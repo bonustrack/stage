@@ -21,7 +21,7 @@ const overflow = computed(() => Math.max(0, props.memberAddresses.length - 3));
 </script>
 
 <template>
-  <div class="h-12 flex items-center gap-2 px-3 border-b border-metro-border-light dark:border-metro-border-dark
+  <div class="h-12 flex items-center gap-2 px-3
     bg-metro-bg-light dark:bg-metro-bg-dark shrink-0">
     <button type="button" class="p-1.5 text-metro-fg-light dark:text-metro-fg-dark" @click="emit('back')">
       <HeroIcon name="arrowLeft" :size="22" />

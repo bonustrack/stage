@@ -149,7 +149,11 @@ function onActionCopy(): void {
       @open="openHeader"
     />
 
-    <div ref="scroller" class="flex-1 overflow-y-auto py-3 no-scrollbar">
+    <!-- Gradient fades (no hard border) under the topnav + above the composer, like mobile. -->
+    <div class="relative flex-1 min-h-0">
+      <div class="pointer-events-none absolute top-0 inset-x-0 h-4 z-10 bg-gradient-to-b from-metro-bg-light dark:from-metro-bg-dark to-transparent" />
+      <div class="pointer-events-none absolute bottom-0 inset-x-0 h-4 z-10 bg-gradient-to-t from-metro-bg-light dark:from-metro-bg-dark to-transparent" />
+      <div ref="scroller" class="absolute inset-0 overflow-y-auto py-3 no-scrollbar">
       <div v-if="allBubbles.length === 0 && feed.status.value === 'open'"
         class="p-8 text-center text-sm text-metro-sub-light dark:text-metro-sub-dark">
         Type a message below to start chatting.
@@ -168,6 +172,7 @@ function onActionCopy(): void {
         @react="onReact($event.entry.id, $event.emoji)"
         @open-avatar="router.push(`/user/${$event}`)"
       />
+      </div>
     </div>
 
     <Composer

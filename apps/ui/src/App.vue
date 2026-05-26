@@ -3,10 +3,15 @@
  *  full-screen XMTP conversation view. Theme class is installed in main.ts. */
 
 const route = useRoute();
-/** Hide the tab bar on the full-screen XMTP conversation view AND on any
- *  embed route — embeds are meant to drop into someone else's UI without
- *  the metro chrome. */
-const showTabs = computed(() => route.name !== 'xmtp' && route.name !== 'embed');
+/** True when running inside an iframe (the embed widget on a 3rd-party
+ *  site). Embeds never show the metro tab bar — only the full metro.box
+ *  site does. */
+const isEmbedded = typeof window !== 'undefined' && window.self !== window.top;
+/** Hide the tab bar on the full-screen XMTP conversation view, on embed
+ *  routes, and whenever we're iframed. */
+const showTabs = computed(
+  () => !isEmbedded && route.name !== 'xmtp' && route.name !== 'embed',
+);
 </script>
 
 <template>

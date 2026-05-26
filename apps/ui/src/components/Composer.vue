@@ -98,8 +98,7 @@ async function send(): Promise<void> {
 </script>
 
 <template>
-  <div class="border-t border-metro-border-light dark:border-metro-border-dark
-    bg-metro-bg-light dark:bg-metro-bg-dark">
+  <div class="bg-metro-bg-light dark:bg-metro-bg-dark">
     <div v-if="err" class="px-4 pt-2 text-xs text-metro-err">send failed: {{ err }}</div>
     <div v-if="props.replyingTo"
       class="flex items-center gap-2 px-4 pt-2 text-xs text-metro-sub-light dark:text-metro-sub-dark">
@@ -116,9 +115,9 @@ async function send(): Promise<void> {
       <textarea
         v-model="text"
         placeholder="Message…"
-        rows="2"
-        class="w-full resize-none min-h-[44px] max-h-[140px] font-sans
-          bg-transparent px-2 pt-1 pb-2 text-[16px] leading-snug outline-none
+        rows="1"
+        class="w-full resize-none min-h-[24px] max-h-[140px] font-sans
+          bg-transparent px-2 pt-0.5 pb-1.5 text-[16px] leading-snug outline-none
           text-metro-fg-light dark:text-metro-fg-dark
           placeholder:text-metro-sub-light dark:placeholder:text-metro-sub-dark"
         @keydown.enter.exact.prevent="send"

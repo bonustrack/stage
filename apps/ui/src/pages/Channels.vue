@@ -90,8 +90,8 @@ function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col relative">
-    <div class="sticky top-0 z-10 px-3 pt-3 pb-2 flex items-center gap-2
+  <div class="h-[100dvh] flex flex-col relative">
+    <div class="shrink-0 px-3 pt-3 pb-2 flex items-center gap-2
       bg-metro-bg-light dark:bg-metro-bg-dark">
       <input
         v-model="query"
@@ -130,7 +130,7 @@ function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
     <div v-else-if="!rows" class="flex-1 flex items-center justify-center text-xs text-metro-sub-light dark:text-metro-sub-dark">
       Initialising XMTP…
     </div>
-    <ul v-else class="flex-1">
+    <ul v-else class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-[150px]">
       <li v-if="filtered && filtered.length === 0" class="p-8 text-center text-sm text-metro-sub-light dark:text-metro-sub-dark">
         {{ query ? `No matches for "${query}"` : 'No conversations yet. Share your address from Settings to start one.' }}
       </li>
@@ -153,7 +153,7 @@ function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
       class="fixed left-4 right-4 bottom-[76px] z-30
         bg-metro-head-light dark:bg-metro-head-dark
         text-metro-bg-light dark:text-metro-bg-dark
-        text-[15px] font-sans py-3 rounded-full shadow-lg
+        text-[18px] font-sans py-3 rounded-full
         disabled:opacity-60 hover:opacity-90 transition-opacity"
       @click="onAskPress"
     >
