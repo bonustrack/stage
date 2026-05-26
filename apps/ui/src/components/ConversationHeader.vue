@@ -29,8 +29,7 @@ const overflow = computed(() => Math.max(0, props.memberAddresses.length - 3));
     <!-- Everything right of the back arrow opens the group/channel (or peer) profile. -->
     <button
       type="button"
-      class="flex-1 flex items-center justify-between min-w-0 gap-2 px-1 py-1
-        hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark rounded-lg"
+      class="flex-1 flex items-center justify-between min-w-0 gap-2 px-1 py-1"
       @click="emit('open')"
     >
       <span class="truncate font-head text-base text-metro-head-light dark:text-metro-head-dark">

@@ -36,10 +36,7 @@ function fmtTs(ts: number | null): string {
 <template>
   <button
     type="button"
-    class="w-full text-left flex items-center gap-3 px-3.5 py-3
-      bg-metro-surface-light dark:bg-metro-surface-dark
-      border-b border-metro-border-light dark:border-metro-border-dark
-      hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark transition-colors"
+    class="w-full text-left flex items-center gap-3 px-3.5 py-3"
     @click="emit('open')"
   >
     <img v-if="renderedAvatar"
