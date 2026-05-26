@@ -117,7 +117,7 @@ async function send(): Promise<void> {
         placeholder="Message…"
         rows="1"
         class="w-full resize-none min-h-[24px] max-h-[140px] font-sans
-          bg-transparent px-2 pt-0.5 pb-1.5 text-[16px] leading-snug outline-none
+          bg-transparent px-2 pt-0.5 pb-1.5 text-[17px] leading-snug outline-none
           text-metro-head-light dark:text-metro-head-dark
           placeholder:text-metro-sub-light dark:placeholder:text-metro-sub-dark"
         @keydown.enter.exact.prevent="send"

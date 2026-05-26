@@ -101,7 +101,7 @@ export function envelopeOfXmtpMessage(msg: DecodedMessage, line: string): Histor
   }
   const isGroupUpdate = typeId === 'group_updated' || typeId === 'groupUpdated';
   const text = isGroupUpdate ? previewOfXmtpContent(decoded, typeId) : (msg.fallback ?? `[${typeId} payload]`);
-  return { ...base, text, payload: { contentType: typeId } };
+  return { ...base, text, payload: { contentType: typeId, ...(isGroupUpdate ? { system: true } : {}) } };
 }
 
 export type XmtpFeedStatus = 'idle' | 'loading' | 'open' | 'error';

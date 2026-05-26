@@ -104,9 +104,9 @@ function onAvatar(): void {
         <span v-else class="text-xs opacity-70 font-sans">[{{ att.kind }}{{ att.name ? `: ${att.name}` : '' }}]</span>
       </div>
       <div v-if="props.entry.text"
-        class="whitespace-pre-wrap break-words font-sans text-[16px] leading-snug select-text"
+        class="whitespace-pre-wrap break-words font-sans text-[17px] leading-snug select-text"
         :class="isSystem
-          ? 'text-metro-sub-light dark:text-metro-sub-dark'
+          ? 'text-metro-fg-light dark:text-metro-fg-dark'
           : 'text-metro-head-light dark:text-metro-head-dark'">
         {{ props.entry.text }}
       </div>

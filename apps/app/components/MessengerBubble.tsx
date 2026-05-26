@@ -64,7 +64,7 @@ function markdownStyles(fg: string, dark: boolean, mine: boolean): Record<string
    *  Assistant text keeps 23 for comfortable reading on long replies. */
   const lh = mine ? 21 : 23;
   return {
-    body: { color: fg, fontSize: 17, lineHeight: lh, fontFamily: 'Calibre-Medium' },
+    body: { color: fg, fontSize: 18, lineHeight: lh, fontFamily: 'Calibre-Medium' },
     paragraph: { marginTop: 0, marginBottom: 0 },
     heading1: { color: fg, fontSize: 20, fontFamily: 'Calibre-Semibold', marginTop: 4, marginBottom: 2 },
     heading2: { color: fg, fontSize: 18, fontFamily: 'Calibre-Semibold', marginTop: 4, marginBottom: 2 },
@@ -274,7 +274,7 @@ export function MessengerBubble({
    *  italic treatment and a feed color in the body text — set when
    *  envelopeOfXmtpMessage stamps `payload.system: true`. */
   const isSystem = (entry.payload as { system?: boolean } | undefined)?.system === true;
-  const fg = isSystem ? (dark ? '#7a7a7e' : '#8a929d') : (dark ? '#ffffff' : '#000000');
+  const fg = isSystem ? (dark ? '#9f9fa3' : '#57606a') : (dark ? '#ffffff' : '#000000');
   const sub = dark ? '#7a7a7e' : '#8a929d';
   const pillBg = dark ? '#282a2d' : '#e4e4e5';
   const avatarBg = dark ? '#282a2d' : '#e4e4e5';

@@ -288,7 +288,7 @@ export function MessengerComposer({
       <View style={{ backgroundColor: inputBg, borderRadius: 10, padding: 10 }}>
         <TextInput
           value={text} onChangeText={setText} placeholder="Ask Metro" placeholderTextColor={sub} multiline
-          style={{ color: head, fontFamily: 'Calibre-Medium', fontSize: 17, lineHeight: 22, minHeight: 24, maxHeight: 140, paddingHorizontal: 8, paddingTop: 4, paddingBottom: 8, textAlignVertical: 'top' }}
+          style={{ color: head, fontFamily: 'Calibre-Medium', fontSize: 18, lineHeight: 23, minHeight: 24, maxHeight: 140, paddingHorizontal: 8, paddingTop: 4, paddingBottom: 8, textAlignVertical: 'top' }}
         />
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
           <Btn icon={attachMenuOpen ? 'x' : 'plus'} onPress={() => setAttachMenuOpen(o => !o)} />
