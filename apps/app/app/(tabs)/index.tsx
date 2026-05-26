@@ -21,7 +21,7 @@ import {
 import { resetAccount } from '../../lib/wallet';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { getCachedRows, hydrateCachedRows, setCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
-import { usePeerProfiles, getPeerAvatarCb } from '../../lib/peerProfiles';
+import { usePeerProfiles, getPeerAvatarCb, getPeerName } from '../../lib/peerProfiles';
 import { HeroIcon } from '../../components/HeroIcon';
 import { previewOfXmtpContent } from '../../../_shared/xmtp/humanize';
 import { avatarRenderUrl } from '../../../_shared/profile/snapshot';
@@ -40,6 +40,12 @@ interface Row {
    *  `avatarAddress` — when set, the row renders this image directly so
    *  groups show their own avatar instead of a member's stamp. */
   avatarUri: string | null;
+  /** DM peer address (null for groups) — drives showing the peer's display name. */
+  peerAddress: string | null;
+  /** Eth address of the latest message's sender (null if self/unknown). */
+  lastSenderAddress: string | null;
+  /** Whether the local user sent the latest message → "You: …" preview prefix. */
+  lastFromSelf: boolean;
   /** Cached inbox → eth address map, kept so live stream updates can resolve
    *  a new sender's avatar without an extra round-trip. */
   inboxToAddr: Record<string, string>;
@@ -107,6 +113,7 @@ async function summarize(conv: Conversation, selfInboxId: string): Promise<Row> 
   const lastSenderAddress = last?.senderInboxId
     ? inboxToAddr[last.senderInboxId] ?? null
     : null;
+  const lastFromSelf = !!last && last.senderInboxId === selfInboxId;
   const avatarAddress = peerAddress
     ?? lastSenderAddress
     ?? memberAddresses[0]
@@ -127,6 +134,9 @@ async function summarize(conv: Conversation, selfInboxId: string): Promise<Row> 
     lastPreview: preview.slice(0, 80),
     avatarAddress,
     avatarUri,
+    peerAddress,
+    lastSenderAddress,
+    lastFromSelf,
     inboxToAddr,
     unreadCount,
     lastReadNs,
@@ -186,7 +196,7 @@ export default function Messenger(): React.ReactElement {
 
   /** Batch-resolve the displayed peers' profiles → avatar cache-busters. */
   const channelProfilesVersion = usePeerProfiles(
-    (filtered ?? rows ?? []).map(r => r.avatarAddress),
+    (filtered ?? rows ?? []).flatMap(r => [r.avatarAddress, r.peerAddress, r.lastSenderAddress]),
   );
 
   useEffect(() => {
@@ -405,7 +415,7 @@ export default function Messenger(): React.ReactElement {
                 edge (inset by paddingHorizontal), not the full card width. */}
             <View style={{
               flexDirection: 'row', alignItems: 'center', gap: 12,
-              paddingVertical: 12,
+              paddingVertical: 14,
               borderBottomWidth: 1, borderBottomColor: border,
             }}>
             {item.avatarUri ? (
@@ -424,13 +434,15 @@ export default function Messenger(): React.ReactElement {
             <View style={{ flex: 1, minWidth: 0 }}>
               <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
                 <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', flex: 1 }} numberOfLines={1}>
-                  {item.title}
+                  {item.peerAddress ? (getPeerName(item.peerAddress) ?? item.title) : item.title}
                 </Text>
                 <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{fmtTs(item.lastTs)}</Text>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
                 <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium', flex: 1 }} numberOfLines={1}>
-                  {item.lastPreview || '(no messages yet)'}
+                  {item.lastPreview
+                    ? `${item.lastFromSelf ? 'You' : item.lastSenderAddress ? (getPeerName(item.lastSenderAddress) ?? shortAddress(item.lastSenderAddress)) : ''}${(item.lastFromSelf || item.lastSenderAddress) ? ': ' : ''}${item.lastPreview}`
+                    : '(no messages yet)'}
                 </Text>
                 {item.unreadCount > 0 ? (
                   <View style={{
