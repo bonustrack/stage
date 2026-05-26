@@ -14,7 +14,11 @@ export interface ChannelRow {
   title: string;
   lastTs: number | null;
   lastPreview: string;
+  /** Stamp.fyi address — used when there's no uploaded group image. */
   avatarAddress: string | null;
+  /** Group-uploaded image (ipfs:// or http). Takes precedence over the
+   *  stamp address when present. Null for DMs. */
+  avatarUri: string | null;
   inboxToAddr: Record<string, string>;
   unreadCount: number;
   lastReadNs: number;
@@ -39,18 +43,20 @@ export async function summarizeConv(
   const memberAddresses = peerAddress ? [] : await groupMemberEthAddresses(conv);
   const inboxToAddr = await memberInboxToAddressMap(conv);
   const totalMembers = memberAddresses.length + 1;
-  const groupName = (conv as unknown as { name?: string | (() => Promise<string>) }).name;
-  const resolvedName = typeof groupName === 'function' ? await groupName() : groupName ?? '';
+  /** Browser SDK exposes name + imageUrl as synchronous getters. */
+  const groupMeta = conv as unknown as { name?: string; imageUrl?: string };
+  const resolvedName = (groupMeta.name ?? '').trim();
   const title = peerAddress
-    ?? (resolvedName && resolvedName.trim()
-      ? resolvedName.trim()
+    ?? (resolvedName
+      ? resolvedName
       : memberAddresses.length > 0
         ? `${totalMembers} member${totalMembers === 1 ? '' : 's'}`
         : conv.id.slice(0, 12));
   const lastSenderAddress = last?.senderInboxId
     ? inboxToAddr[last.senderInboxId] ?? null
     : null;
-  const avatarAddress = lastSenderAddress ?? peerAddress ?? memberAddresses[0] ?? null;
+  const avatarAddress = peerAddress ?? lastSenderAddress ?? memberAddresses[0] ?? null;
+  const avatarUri = peerAddress ? null : ((groupMeta.imageUrl ?? '').trim() || null);
   const lastReadNs = getLastReadNs(conv.id);
   let unreadCount = 0;
   for (const m of recent) {
@@ -65,6 +71,7 @@ export async function summarizeConv(
     lastTs: last ? Number(last.sentAtNs / 1_000_000n) : null,
     lastPreview: preview.slice(0, 80),
     avatarAddress,
+    avatarUri,
     inboxToAddr,
     unreadCount,
     lastReadNs,
