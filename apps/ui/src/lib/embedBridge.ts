@@ -11,3 +11,17 @@ export function postUnreadToParent(count: number): void {
     window.parent.postMessage({ type: 'metro:inbound', count }, '*');
   }
 }
+
+/** When embedded, let the host page drive the color scheme so the widget
+ *  matches the surrounding UI instantly. The host posts
+ *  `{ type: 'metro:theme', theme: 'light' | 'dark' | 'system' }`. */
+export function installEmbedThemeBridge(apply: (t: 'light' | 'dark' | 'system') => void): void {
+  if (!runningInIframe()) return;
+  window.addEventListener('message', (e: MessageEvent) => {
+    const d = e.data as { type?: string; theme?: string } | null;
+    if (d?.type !== 'metro:theme') return;
+    if (d.theme === 'light' || d.theme === 'dark' || d.theme === 'system') apply(d.theme);
+  });
+  /** Tell the host we're ready so it can push the current theme immediately. */
+  window.parent.postMessage({ type: 'metro:ready' }, '*');
+}
