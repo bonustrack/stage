@@ -217,7 +217,7 @@ export function MessengerComposer({
   );
   const bg = dark ? '#0e0f10' : '#ffffff';
   return (
-    <View style={{ paddingHorizontal: 10, paddingTop: 6, paddingBottom: 18, backgroundColor: bg }}>
+    <View style={{ paddingHorizontal: 10, paddingTop: 6, paddingBottom: 14, backgroundColor: bg }}>
       <ComposerGradient bg={bg} direction="down" top={-16} height={16} />
       {replyingTo ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingBottom: 6 }}>

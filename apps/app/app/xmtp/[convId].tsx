@@ -12,6 +12,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { MessengerBubble } from '../../components/MessengerBubble';
 import { usePeerProfiles, getPeerName, getPeerAvatarCb } from '../../lib/peerProfiles';
+import { avatarRenderUrl } from '../../../_shared/profile/snapshot';
 import { MessengerComposer } from '../../components/MessengerComposer';
 import { ComposerGradient } from '../../components/ComposerGradient';
 import { HeroIcon } from '../../components/HeroIcon';
@@ -54,43 +55,22 @@ function isReaction(e: HistoryEntry): boolean {
 /** Stamp.fyi avatars shown in the conversation header. Mirrors the channels-
  *  list row avatar but locked at 24px per the design spec. DMs render a single
  *  circle; groups stack up to 3 member avatars with a "+N" overflow tile. */
-function HeaderAvatars({ peerAddr, memberAddrs, bg, border }: {
-  peerAddr: string | null; memberAddrs: string[]; bg: string; border: string;
+function HeaderAvatar({ peerAddr, memberAddrs, groupImage, border }: {
+  peerAddr: string | null; memberAddrs: string[]; groupImage: string; border: string;
 }): React.ReactElement | null {
-  const SIZE = 24;
-  if (peerAddr) {
-    return (
-      <Image
-        source={{ uri: stampBoxAvatarUrl(peerAddr, SIZE * 2, getPeerAvatarCb(peerAddr)) }}
-        style={{ width: SIZE, height: SIZE, borderRadius: 999, backgroundColor: border }}
-      />
-    );
-  }
-  const visible = memberAddrs.slice(0, 3);
-  const overflow = memberAddrs.length - 3;
-  if (visible.length === 0) return null;
+  const SIZE = 30;
+  /** DM → peer's avatar; group → its uploaded image if set, else fall back to
+   *  the first member's avatar. Shown before the title (leading). */
+  const uri = peerAddr
+    ? stampBoxAvatarUrl(peerAddr, SIZE * 2, getPeerAvatarCb(peerAddr))
+    : groupImage
+      ? avatarRenderUrl('', groupImage, SIZE * 2)
+      : memberAddrs[0]
+        ? stampBoxAvatarUrl(memberAddrs[0], SIZE * 2, getPeerAvatarCb(memberAddrs[0]))
+        : null;
+  if (!uri) return null;
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-      {visible.map((a, i) => (
-        <Image
-          key={a.toLowerCase()}
-          source={{ uri: stampBoxAvatarUrl(a, SIZE * 2, getPeerAvatarCb(a)) }}
-          style={{
-            width: SIZE, height: SIZE, borderRadius: 999, backgroundColor: border,
-            borderWidth: 2, borderColor: bg, marginLeft: i === 0 ? 0 : -8,
-          }}
-        />
-      ))}
-      {overflow > 0 ? (
-        <View style={{
-          width: SIZE, height: SIZE, borderRadius: 999, backgroundColor: '#3a4250',
-          alignItems: 'center', justifyContent: 'center',
-          borderWidth: 2, borderColor: bg, marginLeft: -8,
-        }}>
-          <Text style={{ color: '#ffffff', fontSize: 9 , fontFamily: 'Calibre-Medium'}}>+{overflow}</Text>
-        </View>
-      ) : null}
-    </View>
+    <Image source={{ uri }} style={{ width: SIZE, height: SIZE, borderRadius: 999, backgroundColor: border }} />
   );
 }
 
@@ -139,6 +119,7 @@ export default function XmtpConversation(): React.ReactElement {
   const [inboxToAddr, setInboxToAddr] = useState<Record<string, string>>({});
   /** null = not yet fetched, '' = fetched but no name set, other = the name. */
   const [groupName, setGroupName] = useState<string | null>(null);
+  const [groupImage, setGroupImage] = useState('');
   /** `isGroup` gates the title affordance (tap → /group/[convId]). DMs don't
    *  show a title since there's no group name to display or edit. */
   const [isGroup, setIsGroup] = useState(false);
@@ -162,13 +143,15 @@ export default function XmtpConversation(): React.ReactElement {
       setInboxToAddr(fullMap);
       if (peer) { setPeerAddr(peer); return; }
       setIsGroup(true);
-      const [members, name] = await Promise.all([
+      const [members, name, image] = await Promise.all([
         groupMemberEthAddresses(conv),
         (conv as unknown as { name?: () => Promise<string> }).name?.() ?? Promise.resolve(''),
+        (conv as unknown as { imageUrl?: () => Promise<string> }).imageUrl?.().catch(() => '') ?? Promise.resolve(''),
       ]);
       if (!cancelled) {
         setMemberAddrs(members);
         setGroupName(name ?? '');
+        setGroupImage(image ?? '');
       }
     })();
     return (): void => { cancelled = true; };
@@ -326,8 +309,9 @@ export default function XmtpConversation(): React.ReactElement {
             if (isGroup) router.push({ pathname: '/group/[convId]', params: { convId: convId ?? '' } });
             else if (peerAddr) router.push({ pathname: '/user/[address]', params: { address: peerAddr } });
           }}
-          style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingRight: 14 }}
+          style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 14 }}
         >
+          <HeaderAvatar peerAddr={peerAddr} memberAddrs={memberAddrs} groupImage={groupImage} border={dark ? '#282a2d' : '#e4e4e5'} />
           <Text style={{ color: head, fontSize: 19, fontFamily: 'Calibre-Semibold', flex: 1 }} numberOfLines={1}>
             {isGroup ? (groupName || 'Untitled group')
               : peerAddr ? (getPeerName(peerAddr) ?? `${peerAddr.slice(0, 6)}…${peerAddr.slice(-4)}`) : ''}
@@ -346,9 +330,7 @@ export default function XmtpConversation(): React.ReactElement {
                 {status === 'connecting' ? 'Connecting…' : status === 'error' ? 'Reconnecting…' : 'Offline'}
               </Text>
             </View>
-          ) : (
-            <HeaderAvatars peerAddr={peerAddr} memberAddrs={memberAddrs} bg={bg} border={dark ? '#282a2d' : '#e4e4e5'} />
-          )}
+          ) : null}
         </Pressable>
       </View>
       {/** Fade strip below the top nav — mirrors the composer's top fade. Position it
