@@ -2,15 +2,16 @@
 /** Profile tab — wallet identity + Snapshot-hub profile (display name, bio,
  *  custom avatar, socials). Tap Edit to open the EIP-712 update sheet. */
 
-import { getOrCreateXmtpClient, shortAddress, stampBoxAvatarUrl } from '../lib/xmtp';
+import { getOrCreateXmtpClient, shortAddress } from '../lib/xmtp';
 import { loadCachedProfile, readProfile, type SnapshotProfile } from '../lib/profile';
-import { getCacheHash } from '@shared/profile/snapshot';
+import { avatarRenderUrl } from '@shared/profile/snapshot';
 
 const AVATAR_SIZE = 120;
 
 const address = ref('');
 const inboxId = ref('');
 const profile = ref<SnapshotProfile>({});
+const loaded = ref(false);
 const editing = ref(false);
 const copyHint = ref<'address' | 'inboxId' | null>(null);
 
@@ -25,6 +26,7 @@ onMounted(async () => {
     inboxId.value = client.inboxId ?? '';
     const cached = loadCachedProfile();
     if (cached) profile.value = cached;
+    loaded.value = true;
     if (address.value) {
       const remote = await readProfile(address.value);
       if (remote) profile.value = remote;
@@ -54,8 +56,8 @@ async function copy(value: string, label: 'address' | 'inboxId'): Promise<void> 
     </div>
 
     <div class="flex flex-col items-center pt-6 pb-4">
-      <img v-if="address"
-        :src="stampBoxAvatarUrl(address, AVATAR_SIZE * 2, getCacheHash(profile.avatar))"
+      <img v-if="address && loaded"
+        :src="avatarRenderUrl(address, profile.avatar, AVATAR_SIZE * 2)"
         alt=""
         :width="AVATAR_SIZE" :height="AVATAR_SIZE"
         class="rounded-full bg-metro-border-dark object-cover"

@@ -4,9 +4,9 @@
  *  tab layout but without edit controls; adds a Message button that
  *  find-or-creates the DM and routes to the conversation. */
 
-import { openDmWithAddress, shortAddress, stampBoxAvatarUrl } from '../lib/xmtp';
+import { openDmWithAddress, shortAddress } from '../lib/xmtp';
 import { readProfile } from '../lib/profile';
-import { getCacheHash, type SnapshotProfile } from '@shared/profile/snapshot';
+import { avatarRenderUrl, type SnapshotProfile } from '@shared/profile/snapshot';
 
 const route = useRoute();
 const router = useRouter();
@@ -14,6 +14,7 @@ const AVATAR_SIZE = 120;
 
 const address = computed(() => (route.params.address as string) ?? '');
 const profile = ref<SnapshotProfile | null>(null);
+const loaded = ref(false);
 const openingDm = ref(false);
 const copied = ref(false);
 
@@ -21,8 +22,10 @@ watchEffect(async () => {
   const addr = address.value;
   if (!addr) return;
   profile.value = null;
+  loaded.value = false;
   const p = await readProfile(addr).catch(() => null);
   profile.value = p;
+  loaded.value = true;
 });
 
 async function onMessage(): Promise<void> {
@@ -54,12 +57,13 @@ async function copy(value: string): Promise<void> {
     </div>
     <div class="px-6 pb-8">
       <div class="flex flex-col items-center pt-2">
-        <img
-          :src="stampBoxAvatarUrl(address, AVATAR_SIZE * 2, getCacheHash(profile?.avatar))"
+        <img v-if="loaded"
+          :src="avatarRenderUrl(address, profile?.avatar ?? undefined, AVATAR_SIZE * 2)"
           alt=""
           :style="{ width: AVATAR_SIZE + 'px', height: AVATAR_SIZE + 'px' }"
-          class="rounded-full bg-metro-border-dark"
+          class="rounded-full bg-metro-border-dark object-cover"
         />
+        <div v-else class="rounded-full bg-metro-border-dark" :style="{ width: AVATAR_SIZE + 'px', height: AVATAR_SIZE + 'px' }" />
         <div class="mt-3 text-lg font-head text-metro-head-light dark:text-metro-head-dark">
           {{ profile?.name?.trim() || shortAddress(address) }}
         </div>
