@@ -21,6 +21,7 @@ import {
 import { resetAccount } from '../../lib/wallet';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { getCachedRows, hydrateCachedRows, setCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
+import { usePeerProfiles, getPeerAvatarCb } from '../../lib/peerProfiles';
 import { previewOfXmtpContent } from '../../../_shared/xmtp/humanize';
 import { avatarRenderUrl } from '../../../_shared/profile/snapshot';
 import { Spinner } from '../../components/Spinner';
@@ -181,6 +182,11 @@ export default function Messenger(): React.ReactElement {
       || Object.values(r.inboxToAddr).some(a => a.toLowerCase().includes(q)),
     );
   }, [rows, query]);
+
+  /** Batch-resolve the displayed peers' profiles → avatar cache-busters. */
+  const channelProfilesVersion = usePeerProfiles(
+    (filtered ?? rows ?? []).map(r => r.avatarAddress),
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -366,6 +372,7 @@ export default function Messenger(): React.ReactElement {
       </View>
       <FlatList
         data={filtered ?? rows}
+        extraData={channelProfilesVersion}
         keyExtractor={r => r.convId}
         refreshControl={
           <RefreshControl
@@ -404,7 +411,7 @@ export default function Messenger(): React.ReactElement {
               />
             ) : item.avatarAddress ? (
               <Image
-                source={{ uri: stampBoxAvatarUrl(item.avatarAddress, 64) }}
+                source={{ uri: stampBoxAvatarUrl(item.avatarAddress, 64, getPeerAvatarCb(item.avatarAddress)) }}
                 style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border }}
               />
             ) : (

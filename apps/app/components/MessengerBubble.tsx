@@ -4,6 +4,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { Animated, Image, Linking, PanResponder, Pressable, Text, TextInput, View } from 'react-native';
 import { stampBoxAvatarUrl } from '../lib/xmtp';
+import { getPeerAvatarCb } from '../lib/peerProfiles';
 import Markdown, { MarkdownIt } from 'react-native-markdown-display';
 import { HeroIcon } from './HeroIcon';
 import { MessengerAudioPlayer } from './MessengerAudioPlayer';
@@ -323,7 +324,7 @@ export function MessengerBubble({
       {senderEthAddress ? (
         <Pressable onPress={() => onAvatarPress?.(senderEthAddress)} hitSlop={6}>
           <Image
-            source={{ uri: stampBoxAvatarUrl(senderEthAddress, AVATAR_SIZE * 2) }}
+            source={{ uri: stampBoxAvatarUrl(senderEthAddress, AVATAR_SIZE * 2, getPeerAvatarCb(senderEthAddress)) }}
             style={{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: 999, backgroundColor: avatarBg, marginTop: 2 }}
           />
         </Pressable>

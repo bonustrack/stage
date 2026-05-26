@@ -11,6 +11,7 @@ import { KeyboardStickyView, useReanimatedKeyboardAnimation } from 'react-native
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { MessengerBubble } from '../../components/MessengerBubble';
+import { usePeerProfiles, getPeerName, getPeerAvatarCb } from '../../lib/peerProfiles';
 import { MessengerComposer } from '../../components/MessengerComposer';
 import { ComposerGradient } from '../../components/ComposerGradient';
 import { HeroIcon } from '../../components/HeroIcon';
@@ -60,7 +61,7 @@ function HeaderAvatars({ peerAddr, memberAddrs, bg, border }: {
   if (peerAddr) {
     return (
       <Image
-        source={{ uri: stampBoxAvatarUrl(peerAddr, SIZE * 2) }}
+        source={{ uri: stampBoxAvatarUrl(peerAddr, SIZE * 2, getPeerAvatarCb(peerAddr)) }}
         style={{ width: SIZE, height: SIZE, borderRadius: 999, backgroundColor: border }}
       />
     );
@@ -73,7 +74,7 @@ function HeaderAvatars({ peerAddr, memberAddrs, bg, border }: {
       {visible.map((a, i) => (
         <Image
           key={a.toLowerCase()}
-          source={{ uri: stampBoxAvatarUrl(a, SIZE * 2) }}
+          source={{ uri: stampBoxAvatarUrl(a, SIZE * 2, getPeerAvatarCb(a)) }}
           style={{
             width: SIZE, height: SIZE, borderRadius: 999, backgroundColor: border,
             borderWidth: 2, borderColor: bg, marginLeft: i === 0 ? 0 : -8,
@@ -146,6 +147,9 @@ export default function XmtpConversation(): React.ReactElement {
     const inboxId = from.slice(XMTP_USER_PREFIX.length);
     return inboxToAddr[inboxId] ?? null;
   }, [inboxToAddr]);
+
+  /** Resolve peer + member profiles → DM display name + avatar cache-busters. */
+  const profilesVersion = usePeerProfiles([peerAddr, ...memberAddrs]);
   useEffect(() => {
     if (!convId) return;
     let cancelled = false;
@@ -255,6 +259,7 @@ export default function XmtpConversation(): React.ReactElement {
         key={listEpoch}
         ref={listRef}
         data={allBubbles}
+        extraData={profilesVersion}
         inverted
         showsVerticalScrollIndicator={false}
         /** Anchor the bottom-visible item (= newest on inverted) so as new bubbles or the
@@ -264,7 +269,7 @@ export default function XmtpConversation(): React.ReactElement {
         style={{ flex: 1 }}
         /** Inverted: paddingTop = visual BOTTOM (composer side), paddingBottom = visual TOP
          *  (nav side). Bump the top so the oldest message clears the absolute top-nav strip. */
-        contentContainerStyle={{ paddingTop: 12, paddingBottom: insets.top + 44 + 8 }}
+        contentContainerStyle={{ paddingTop: 12, paddingBottom: insets.top + 52 + 8 }}
         onScroll={(ev) => { setShowJump(ev.nativeEvent.contentOffset.y > 200); }}
         scrollEventThrottle={32}
         renderItem={({ item }) => (
@@ -303,7 +308,7 @@ export default function XmtpConversation(): React.ReactElement {
        *  behind the system icons. */}
       <View style={{
         position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
-        height: 44 + insets.top, paddingTop: insets.top, backgroundColor: bg,
+        height: 52 + insets.top, paddingTop: insets.top, backgroundColor: bg,
         flexDirection: 'row', alignItems: 'stretch',
         borderBottomWidth: 1, borderBottomColor: dark ? '#282a2d' : '#e4e4e5',
       }}>
@@ -325,7 +330,7 @@ export default function XmtpConversation(): React.ReactElement {
         >
           <Text style={{ color: head, fontSize: 19, fontFamily: 'Calibre-Semibold', flex: 1 }} numberOfLines={1}>
             {isGroup ? (groupName || 'Untitled group')
-              : peerAddr ? `${peerAddr.slice(0, 6)}…${peerAddr.slice(-4)}` : ''}
+              : peerAddr ? (getPeerName(peerAddr) ?? `${peerAddr.slice(0, 6)}…${peerAddr.slice(-4)}`) : ''}
           </Text>
           {status !== 'open' ? (
             <View style={{
@@ -349,7 +354,7 @@ export default function XmtpConversation(): React.ReactElement {
       {/** Fade strip below the top nav — mirrors the composer's top fade. Position it
        *  flush against the nav bottom (which sits at `44 + insets.top`), so the solid
        *  bg fades smoothly into the scrolling content beneath. */}
-      <ComposerGradient bg={bg} direction="up" top={44 + insets.top} height={16} />
+      <ComposerGradient bg={bg} direction="up" top={52 + insets.top} height={16} />
       {showJump ? (
         <Pressable
           onPress={() => {
