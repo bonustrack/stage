@@ -5,7 +5,7 @@
 import type { Conversation } from '@xmtp/browser-sdk';
 import {
   peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap,
-  getLastReadNs,
+  getLastReadNs, shortAddress,
 } from './xmtp';
 import { previewOfXmtpContent } from '@shared/xmtp/humanize';
 
@@ -47,7 +47,8 @@ export async function summarizeConv(
   const groupMeta = conv as unknown as { name?: string; imageUrl?: string };
   const resolvedName = (groupMeta.name ?? '').trim();
   const title = peerAddress
-    ?? (resolvedName
+    ? shortAddress(peerAddress)
+    : (resolvedName
       ? resolvedName
       : memberAddresses.length > 0
         ? `${totalMembers} member${totalMembers === 1 ? '' : 's'}`

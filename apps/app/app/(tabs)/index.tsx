@@ -15,7 +15,7 @@ import { DevSettings } from 'react-native';
 import {
   getOrCreateXmtpClient, resetXmtpClient,
   peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap,
-  stampBoxAvatarUrl,
+  stampBoxAvatarUrl, shortAddress,
   createAskQuestionGroup,
   getLastReadNs,
 } from '../../lib/xmtp';
@@ -93,7 +93,8 @@ async function summarize(conv: Conversation, selfInboxId: string): Promise<Row> 
         return { name: n ?? '', imageUrl: img ?? '' };
       })();
   const title = peerAddress
-    ?? (groupMeta.name.trim()
+    ? shortAddress(peerAddress)
+    : (groupMeta.name.trim()
       ? groupMeta.name.trim()
       : memberAddresses.length > 0
         ? `${totalMembers} member${totalMembers === 1 ? '' : 's'}`
