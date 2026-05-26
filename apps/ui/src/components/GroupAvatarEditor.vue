@@ -35,12 +35,12 @@ function onChange(ev: Event): void {
         :class="{ 'opacity-50': props.uploading }"
       />
       <div v-else
-        class="w-24 h-24 rounded-full flex items-center justify-center text-3xl
+        class="w-24 h-24 rounded-full flex items-center justify-center
           bg-metro-surface-light dark:bg-metro-surface-dark
           border border-metro-border-light dark:border-metro-border-dark
           text-metro-sub-light dark:text-metro-sub-dark"
         :class="{ 'opacity-50': props.uploading }"
-      >＋</div>
+      ><HeroIcon name="plus" :size="28" /></div>
     </button>
     <input ref="input" type="file" accept="image/jpeg,image/png" class="hidden" @change="onChange" />
     <div class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark mt-1.5 font-sans">

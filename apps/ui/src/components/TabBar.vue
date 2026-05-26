@@ -27,7 +27,7 @@ const TABS: { to: string; label: string; icon: HeroIconName }[] = [
         hover:text-metro-head-light dark:hover:text-metro-head-dark"
       active-class="!text-metro-head-light dark:!text-metro-head-dark"
     >
-      <HeroIcon :name="tab.icon" :size="24" />
+      <HeroIcon :name="tab.icon" :size="20" />
     </RouterLink>
   </nav>
 </template>

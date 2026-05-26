@@ -10,6 +10,9 @@ import { startChannelStream, type ChannelStreamHandles } from '../lib/useChannel
 import { isAddressLike, isDomainLike, resolveDomain } from '../lib/stamp';
 
 const router = useRouter();
+/** Embedded (iframed) = widget; no tab bar, so the Ask pill sits at the
+ *  very bottom instead of reserving the tab-bar gap. */
+const isEmbedded = typeof window !== 'undefined' && window.self !== window.top;
 const rows = ref<Row[] | null>(hydrateCachedRows() as Row[] | null);
 const error = ref<string>('');
 const query = ref<string>('');
@@ -150,11 +153,12 @@ function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
     <button
       type="button"
       :disabled="creatingAsk"
-      class="fixed left-4 right-4 bottom-[76px] z-30
+      class="fixed left-4 right-4 z-30
         bg-metro-head-light dark:bg-metro-head-dark
         text-metro-bg-light dark:text-metro-bg-dark
         text-[18px] font-sans py-3 rounded-full
         disabled:opacity-60 hover:opacity-90 transition-opacity"
+      :class="isEmbedded ? 'bottom-4' : 'bottom-[76px]'"
       @click="onAskPress"
     >
       {{ creatingAsk ? 'Creating group…' : 'Ask a question' }}
