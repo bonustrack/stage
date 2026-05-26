@@ -109,37 +109,7 @@ async function send(): Promise<void> {
         <HeroIcon name="x" :size="14" />
       </button>
     </div>
-    <div v-if="attachOpen" class="flex gap-2 px-3 pt-2">
-      <button
-        type="button"
-        class="flex items-center gap-2 px-3 py-2 rounded-lg
-          border border-metro-border-light dark:border-metro-border-dark
-          bg-metro-surface-light dark:bg-metro-surface-dark text-sm
-          text-metro-fg-light dark:text-metro-fg-dark
-          hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
-        @click="pickImage"
-      >
-        <HeroIcon name="photo" :size="16" /> Image
-      </button>
-      <button
-        type="button"
-        class="flex items-center gap-2 px-3 py-2 rounded-lg
-          border border-metro-border-light dark:border-metro-border-dark
-          bg-metro-surface-light dark:bg-metro-surface-dark text-sm
-          text-metro-fg-light dark:text-metro-fg-dark
-          hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
-        @click="shareLocation"
-      >
-        <HeroIcon name="mapPin" :size="16" /> Location
-      </button>
-    </div>
-    <input
-      ref="fileInput"
-      type="file"
-      accept="image/*"
-      class="hidden"
-      @change="onFileChange"
-    />
+    <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFileChange" />
     <div class="flex items-end gap-2 p-3">
       <button
         type="button"
@@ -155,9 +125,9 @@ async function send(): Promise<void> {
         v-model="text"
         placeholder="Message…"
         rows="1"
-        class="flex-1 resize-none min-h-[40px] max-h-[120px]
+        class="flex-1 resize-none min-h-[40px] max-h-[120px] font-sans
           bg-metro-surface-light dark:bg-metro-surface-dark
-          border border-metro-border-light dark:border-metro-border-dark rounded-2xl px-4 py-2 text-sm outline-none
+          border border-metro-border-light dark:border-metro-border-dark rounded-2xl px-4 py-2 text-[15px] outline-none
           text-metro-fg-light dark:text-metro-fg-dark
           focus:ring-2 focus:ring-metro-fg-light dark:focus:ring-metro-fg-dark"
         @keydown.enter.exact.prevent="send"
@@ -166,9 +136,35 @@ async function send(): Promise<void> {
         type="button"
         :disabled="sending || !text.trim()"
         class="bg-metro-fg-light dark:bg-metro-fg-dark text-metro-bg-light dark:text-metro-bg-dark
-          font-semibold px-5 py-2 rounded-full disabled:opacity-50 min-w-[68px]"
+          font-head px-5 py-2 rounded-full disabled:opacity-50 min-w-[68px]"
         @click="send"
       >{{ sending ? '…' : 'Send' }}</button>
+    </div>
+    <!-- Attach menu drops BELOW the composer row when open, matching mobile.
+         Mobile uses box-style options stacked horizontally; mirror that. -->
+    <div v-if="attachOpen" class="flex gap-2 px-3 pb-3">
+      <button
+        type="button"
+        class="flex items-center gap-2 px-3 py-2 rounded-xl
+          border border-metro-border-light dark:border-metro-border-dark
+          bg-metro-surface-light dark:bg-metro-surface-dark text-sm font-sans
+          text-metro-fg-light dark:text-metro-fg-dark
+          hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
+        @click="pickImage"
+      >
+        <HeroIcon name="photo" :size="16" /> Image
+      </button>
+      <button
+        type="button"
+        class="flex items-center gap-2 px-3 py-2 rounded-xl
+          border border-metro-border-light dark:border-metro-border-dark
+          bg-metro-surface-light dark:bg-metro-surface-dark text-sm font-sans
+          text-metro-fg-light dark:text-metro-fg-dark
+          hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
+        @click="shareLocation"
+      >
+        <HeroIcon name="mapPin" :size="16" /> Location
+      </button>
     </div>
   </div>
 </template>

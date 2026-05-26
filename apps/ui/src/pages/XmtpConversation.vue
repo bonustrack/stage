@@ -3,7 +3,7 @@
  *  local XMTP client. Layout: top-nav with back arrow, scrollable message list (newest
  *  at the bottom), composer pinned to the viewport bottom. */
 
-import { XMTP_USER_PREFIX, convOfLine, lineOfConv, peerEthAddressOfDm } from '../lib/xmtp';
+import { XMTP_USER_PREFIX, convOfLine, lineOfConv, peerEthAddressOfDm, memberInboxToAddressMap } from '../lib/xmtp';
 import { xmtpReact } from '../lib/xmtpSend';
 import { useXmtpFeed, reactionsByMessage, isReactionEntry } from '../lib/xmtpFeed';
 import { markConvRead } from '../lib/channelsCache';
@@ -27,17 +27,24 @@ const optimistic = ref<HistoryEntry[]>([]);
 const peerAddress = ref<string | null>(null);
 const groupName = ref<string>('');
 const isGroup = computed(() => peerAddress.value === null && groupName.value !== '');
+/** inboxId → eth address for every member, threaded into each bubble so
+ *  the per-row stamp.fyi avatar can resolve without a per-bubble lookup. */
+const inboxToAddr = ref<Record<string, string>>({});
 
 watchEffect(async () => {
   if (!convId.value || !line.value) return;
   peerAddress.value = null;
   groupName.value = '';
+  inboxToAddr.value = {};
   const conv = await convOfLine(line.value).catch(() => null);
   if (!conv) return;
   const peer = await peerEthAddressOfDm(conv);
-  if (peer) { peerAddress.value = peer; return; }
-  const n = (conv as unknown as { name?: string | (() => Promise<string>) }).name;
-  groupName.value = typeof n === 'function' ? await n() : (n ?? '');
+  if (peer) peerAddress.value = peer;
+  else {
+    const n = (conv as unknown as { name?: string | (() => Promise<string>) }).name;
+    groupName.value = typeof n === 'function' ? await n() : (n ?? '');
+  }
+  inboxToAddr.value = await memberInboxToAddressMap(conv);
 });
 
 /** Mark conv as read when bubbles arrive and on initial mount. */
@@ -144,12 +151,14 @@ function onActionCopy(): void {
         :key="entry.id"
         :entry="entry"
         :mine="entry.from === myUri"
+        :inbox-to-addr="inboxToAddr"
         :reactions="reactions.get(entry.id)"
         :reply-preview="entry.replyTo
           ? previewOf(feed.events.value.find(e => e.id === entry.replyTo) ?? entry)
           : undefined"
         @request-actions="actionTarget = $event"
         @react="onReact($event.entry.id, $event.emoji)"
+        @open-avatar="router.push(`/user/${$event}`)"
       />
     </div>
 
