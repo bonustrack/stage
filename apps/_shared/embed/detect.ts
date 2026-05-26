@@ -14,7 +14,10 @@ export function youtubeIdOf(text: string | undefined | null): string | null {
     /(?:youtu\.be\/)([A-Za-z0-9_-]{11})/,
     /(?:youtube\.com\/watch\?[^\s]*[?&]?v=)([A-Za-z0-9_-]{11})/,
     /(?:youtube\.com\/shorts\/)([A-Za-z0-9_-]{11})/,
+    /(?:youtube\.com\/live\/)([A-Za-z0-9_-]{11})/,
+    /(?:youtube\.com\/embed\/)([A-Za-z0-9_-]{11})/,
     /(?:m\.youtube\.com\/watch\?[^\s]*[?&]?v=)([A-Za-z0-9_-]{11})/,
+    /(?:m\.youtube\.com\/live\/)([A-Za-z0-9_-]{11})/,
   ];
   for (const p of patterns) {
     const m = p.exec(text);
