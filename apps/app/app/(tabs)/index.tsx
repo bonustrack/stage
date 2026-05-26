@@ -16,7 +16,6 @@ import {
   getOrCreateXmtpClient, resetXmtpClient,
   peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap,
   stampBoxAvatarUrl, shortAddress,
-  createAskQuestionGroup,
   getLastReadNs,
 } from '../../lib/xmtp';
 import { resetAccount } from '../../lib/wallet';
@@ -166,24 +165,10 @@ export default function Messenger(): React.ReactElement {
   useEffect(() => subscribeCachedRows(r => setRowsState(r as Row[] | null)), []);
   const [error, setError] = useState<string>('');
   const [query, setQuery] = useState<string>('');
-  const [creatingAsk, setCreatingAsk] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   /** Held across effect re-runs so AppState + poll backstops can call refresh
    *  without re-binding to a stale client. */
   const refreshFromNetworkRef = useRef<(() => Promise<void>) | null>(null);
-
-  const onAskPress = async (): Promise<void> => {
-    if (creatingAsk) return;
-    setCreatingAsk(true);
-    try {
-      const convId = await createAskQuestionGroup();
-      router.push({ pathname: '/xmtp/[convId]', params: { convId } });
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setCreatingAsk(false);
-    }
-  };
 
   const filtered = useMemo(() => {
     if (!rows) return null;
@@ -389,8 +374,7 @@ export default function Messenger(): React.ReactElement {
             tintColor={sub}
           />
         }
-        /** Leave room at the bottom for the floating "Ask a question" pill. */
-        contentContainerStyle={{ paddingBottom: 88 }}
+        contentContainerStyle={{ paddingBottom: 24 }}
         ListEmptyComponent={
           <View style={{ padding: 32, alignItems: 'center' }}>
             <Text style={{ color: sub, textAlign: 'center' }}>
@@ -453,23 +437,6 @@ export default function Messenger(): React.ReactElement {
           </Pressable>
         )}
       />
-      {/** Floating "Ask a question" pill — full-width, anchored above the tab
-       *   bar so it stays reachable while the channel list scrolls underneath. */}
-      <Pressable
-        onPress={() => { void onAskPress(); }}
-        disabled={creatingAsk}
-        style={({ pressed }) => ({
-          position: 'absolute', left: 16, right: 16, bottom: 16,
-          backgroundColor: dark ? '#ffffff' : '#000000',
-          borderRadius: 999, paddingVertical: 14,
-          alignItems: 'center', justifyContent: 'center',
-          opacity: pressed ? 0.85 : creatingAsk ? 0.6 : 1,
-        })}
-      >
-        <Text style={{ color: dark ? '#000000' : '#ffffff', fontSize: 16, fontFamily: 'Calibre-Medium' }}>
-          {creatingAsk ? 'Creating group…' : 'Ask a question'}
-        </Text>
-      </Pressable>
     </View>
   );
 }
