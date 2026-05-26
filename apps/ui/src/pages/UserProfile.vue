@@ -6,7 +6,7 @@
 
 import { openDmWithAddress, shortAddress, stampBoxAvatarUrl } from '../lib/xmtp';
 import { readProfile } from '../lib/profile';
-import type { SnapshotProfile } from '@shared/profile/snapshot';
+import { getCacheHash, type SnapshotProfile } from '@shared/profile/snapshot';
 
 const route = useRoute();
 const router = useRouter();
@@ -55,7 +55,7 @@ async function copy(value: string): Promise<void> {
     <div class="px-6 pb-8">
       <div class="flex flex-col items-center pt-2">
         <img
-          :src="stampBoxAvatarUrl(address, AVATAR_SIZE * 2)"
+          :src="stampBoxAvatarUrl(address, AVATAR_SIZE * 2, getCacheHash(profile?.avatar))"
           alt=""
           :style="{ width: AVATAR_SIZE + 'px', height: AVATAR_SIZE + 'px' }"
           class="rounded-full bg-metro-border-dark"

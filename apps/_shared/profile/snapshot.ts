@@ -49,6 +49,25 @@ export function avatarRenderUrl(address: string, avatar: string | undefined, siz
   return avatar;
 }
 
+/** Short, stable cache-buster derived from the avatar value (its URL/CID). It
+ *  changes whenever the avatar changes, so stamp.fyi — which caches by address —
+ *  refetches the new image instead of serving the previously-cached one. Used
+ *  as `&cb=<hash>` on stamp URLs, matching sx-monorepo + the mobile app.
+ *  Dependency-free non-crypto hash (cyrb53); uniqueness is all a cache key needs. */
+export function getCacheHash(value?: string | null): string | undefined {
+  if (!value) return undefined;
+  let h1 = 0xdeadbeef;
+  let h2 = 0x41c6ce57;
+  for (let i = 0; i < value.length; i++) {
+    const ch = value.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16);
+}
+
 /** GraphQL request for the canonical Snapshot user record. */
 export const USER_QUERY = `query User($id: String!) {
   user(id: $id) { id name about avatar cover github twitter lens farcaster created }

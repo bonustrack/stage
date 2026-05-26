@@ -106,9 +106,12 @@ export function shortAddress(addr: string): string {
 }
 
 /** stamp.fyi avatar URL. `cdn.stamp.box` has no DNS — `stamp.fyi` is the canonical
- *  host. Returns a 200 identicon when no custom avatar exists. */
-export function stampBoxAvatarUrl(address: string, size = 120): string {
-  return `https://stamp.fyi/avatar/eth:${address.toLowerCase()}?s=${size}`;
+ *  host. Returns a 200 identicon when no custom avatar exists. `cacheBust` is
+ *  appended as `&cb=…` (pass `getCacheHash(profile.avatar)`) so stamp refetches
+ *  when the avatar changes instead of serving the previously-cached image. */
+export function stampBoxAvatarUrl(address: string, size = 120, cacheBust?: string): string {
+  const base = `https://stamp.fyi/avatar/eth:${address.toLowerCase()}?s=${size}`;
+  return cacheBust ? `${base}&cb=${encodeURIComponent(cacheBust)}` : base;
 }
 
 export { peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap } from './xmtpResolve';

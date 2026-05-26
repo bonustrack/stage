@@ -4,6 +4,7 @@
 
 import { getOrCreateXmtpClient, shortAddress, stampBoxAvatarUrl } from '../lib/xmtp';
 import { loadCachedProfile, readProfile, type SnapshotProfile } from '../lib/profile';
+import { getCacheHash } from '@shared/profile/snapshot';
 
 const AVATAR_SIZE = 120;
 
@@ -54,7 +55,7 @@ async function copy(value: string, label: 'address' | 'inboxId'): Promise<void> 
 
     <div class="flex flex-col items-center pt-6 pb-4">
       <img v-if="address"
-        :src="stampBoxAvatarUrl(address, AVATAR_SIZE * 2)"
+        :src="stampBoxAvatarUrl(address, AVATAR_SIZE * 2, getCacheHash(profile.avatar))"
         alt=""
         :width="AVATAR_SIZE" :height="AVATAR_SIZE"
         class="rounded-full bg-metro-border-dark object-cover"
