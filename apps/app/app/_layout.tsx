@@ -37,7 +37,7 @@ export default function RootLayout(): React.ReactElement {
 
   if (!loaded) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: dark ? '#000000' : '#ffffff' }}>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: dark ? '#0e0f10' : '#ffffff' }}>
         <ActivityIndicator />
       </View>
     );
@@ -50,7 +50,7 @@ export default function RootLayout(): React.ReactElement {
       <Stack
         screenOptions={{
           headerShown: false,
-          contentStyle: { backgroundColor: dark ? '#000000' : '#ffffff' },
+          contentStyle: { backgroundColor: dark ? '#0e0f10' : '#ffffff' },
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

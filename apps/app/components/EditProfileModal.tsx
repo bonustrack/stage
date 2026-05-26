@@ -35,11 +35,12 @@ export default function EditProfileModal({
   onSaved: (next: SnapshotProfile) => void;
   address: string; initial: SnapshotProfile; dark: boolean;
 }): React.ReactElement {
-  const fg = dark ? '#e8ecf2' : '#1a1f29';
-  const sub = dark ? '#8a94a6' : '#5a6477';
-  const bg = dark ? '#000000' : '#ffffff';
-  const border = dark ? '#262c38' : '#e3e7ef';
-  const rowBg = dark ? '#161a22' : '#fafbfd';
+  const fg = dark ? '#9f9fa3' : '#57606a';
+  const head = dark ? '#ffffff' : '#000000';
+  const sub = dark ? '#7a7a7e' : '#8a929d';
+  const bg = dark ? '#0e0f10' : '#ffffff';
+  const border = dark ? '#282a2d' : '#e4e4e5';
+  const rowBg = dark ? '#282a2d' : '#e4e4e5';
   const insets = useSafeAreaInsets();
 
   const [form, setForm] = useState<SnapshotProfile>(initial);
@@ -87,7 +88,7 @@ export default function EditProfileModal({
           borderBottomWidth: 1, borderBottomColor: border,
         }}>
           <Pressable onPress={onClose} disabled={saving}><Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>Cancel</Text></Pressable>
-          <Text style={{ color: fg, fontSize: 17, fontFamily: 'Calibre-Semibold' }}>Edit profile</Text>
+          <Text style={{ color: head, fontSize: 17, fontFamily: 'Calibre-Semibold' }}>Edit profile</Text>
           {/** Spacer to balance the row — Save sits at the bottom as a pill now. */}
           <View style={{ width: 50 }} />
         </View>

@@ -37,7 +37,7 @@ async function copyAddress(): Promise<void> {
 <template>
   <div class="min-h-screen">
     <div class="px-4 pt-4 pb-2">
-      <h1 class="font-head text-xl text-metro-fg-light dark:text-metro-fg-dark">Settings</h1>
+      <h1 class="font-head text-xl text-metro-head-light dark:text-metro-head-dark">Settings</h1>
     </div>
 
     <button

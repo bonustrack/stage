@@ -140,11 +140,12 @@ async function summarize(conv: Conversation, selfInboxId: string): Promise<Row> 
 export default function Messenger(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const fg = dark ? '#e8ecf2' : '#1a1f29';
-  const sub = dark ? '#8a94a6' : '#5a6477';
-  const bg = dark ? '#000000' : '#ffffff';
-  const border = dark ? '#262c38' : '#e3e7ef';
-  const rowBg = dark ? '#161a22' : '#fafbfd';
+  const fg = dark ? '#9f9fa3' : '#57606a';
+  const head = dark ? '#ffffff' : '#000000';
+  const sub = dark ? '#7a7a7e' : '#8a929d';
+  const bg = dark ? '#0e0f10' : '#ffffff';
+  const border = dark ? '#282a2d' : '#e4e4e5';
+  const rowBg = dark ? '#282a2d' : '#e4e4e5';
   const [rows, setRowsState] = useState<Row[] | null>(getCachedRows() as Row[] | null);
   /** Wrap setRows so every state update also lands in the shared cache + fans
    *  out to subscribers (e.g. the conv view'​s markConvRead can mutate the
@@ -410,19 +411,19 @@ export default function Messenger(): React.ReactElement {
             {item.avatarUri ? (
               <Image
                 source={{ uri: avatarRenderUrl('', item.avatarUri, 64) }}
-                style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: '#1a1f29' }}
+                style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border }}
               />
             ) : item.avatarAddress ? (
               <Image
                 source={{ uri: stampBoxAvatarUrl(item.avatarAddress, 64) }}
-                style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: '#1a1f29' }}
+                style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border }}
               />
             ) : (
-              <View style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: '#1a1f29' }} />
+              <View style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border }} />
             )}
             <View style={{ flex: 1, minWidth: 0 }}>
               <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
-                <Text style={{ color: fg, fontSize: 18, fontFamily: 'Calibre-Semibold', flex: 1 }} numberOfLines={1}>
+                <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', flex: 1 }} numberOfLines={1}>
                   {item.title}
                 </Text>
                 <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{fmtTs(item.lastTs)}</Text>
@@ -433,10 +434,10 @@ export default function Messenger(): React.ReactElement {
                 </Text>
                 {item.unreadCount > 0 ? (
                   <View style={{
-                    minWidth: 22, height: 22, borderRadius: 999, backgroundColor: '#ffffff',
+                    minWidth: 22, height: 22, borderRadius: 999, backgroundColor: head,
                     alignItems: 'center', justifyContent: 'center', paddingHorizontal: 7,
                   }}>
-                    <Text style={{ color: '#000000', fontSize: 12, fontFamily: 'Calibre-Semibold' }}>
+                    <Text style={{ color: bg, fontSize: 12, fontFamily: 'Calibre-Semibold' }}>
                       {item.unreadCount > 99 ? '99+' : item.unreadCount}
                     </Text>
                   </View>

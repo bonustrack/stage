@@ -11,10 +11,10 @@ import { useEffectiveColorScheme } from '../../lib/theme';
 export default function TabsLayout(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const insets = useSafeAreaInsets();
-  const bg = dark ? '#000000' : '#ffffff';
-  const border = dark ? '#1f2630' : '#e5e9f0';
-  const active = dark ? '#ffffff' : '#1a1f29';
-  const inactive = dark ? '#8a94a6' : '#5a6477';
+  const bg = dark ? '#0e0f10' : '#ffffff';
+  const border = dark ? '#282a2d' : '#e4e4e5';
+  const active = dark ? '#ffffff' : '#000000';
+  const inactive = dark ? '#7a7a7e' : '#8a929d';
 
   const tabBarStyle = {
     backgroundColor: bg,

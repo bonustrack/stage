@@ -16,7 +16,7 @@ const emit = defineEmits<{ (e: 'open'): void }>();
     v-if="props.status === 'resolved' && props.address"
     type="button"
     class="mx-3 mb-2 px-3 py-2 rounded-lg
-      bg-metro-fg-light dark:bg-metro-fg-dark
+      bg-metro-head-light dark:bg-metro-head-dark
       text-metro-bg-light dark:text-metro-bg-dark
       text-sm text-left hover:opacity-90 block"
     @click="emit('open')"

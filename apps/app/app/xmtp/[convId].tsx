@@ -53,15 +53,15 @@ function isReaction(e: HistoryEntry): boolean {
 /** Stamp.fyi avatars shown in the conversation header. Mirrors the channels-
  *  list row avatar but locked at 24px per the design spec. DMs render a single
  *  circle; groups stack up to 3 member avatars with a "+N" overflow tile. */
-function HeaderAvatars({ peerAddr, memberAddrs, bg }: {
-  peerAddr: string | null; memberAddrs: string[]; bg: string;
+function HeaderAvatars({ peerAddr, memberAddrs, bg, border }: {
+  peerAddr: string | null; memberAddrs: string[]; bg: string; border: string;
 }): React.ReactElement | null {
   const SIZE = 24;
   if (peerAddr) {
     return (
       <Image
         source={{ uri: stampBoxAvatarUrl(peerAddr, SIZE * 2) }}
-        style={{ width: SIZE, height: SIZE, borderRadius: 999, backgroundColor: '#1a1f29' }}
+        style={{ width: SIZE, height: SIZE, borderRadius: 999, backgroundColor: border }}
       />
     );
   }
@@ -75,7 +75,7 @@ function HeaderAvatars({ peerAddr, memberAddrs, bg }: {
           key={a.toLowerCase()}
           source={{ uri: stampBoxAvatarUrl(a, SIZE * 2) }}
           style={{
-            width: SIZE, height: SIZE, borderRadius: 999, backgroundColor: '#1a1f29',
+            width: SIZE, height: SIZE, borderRadius: 999, backgroundColor: border,
             borderWidth: 2, borderColor: bg, marginLeft: i === 0 ? 0 : -8,
           }}
         />
@@ -96,9 +96,10 @@ function HeaderAvatars({ peerAddr, memberAddrs, bg }: {
 export default function XmtpConversation(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const fg = dark ? '#e8ecf2' : '#1a1f29';
-  const sub = dark ? '#8a94a6' : '#5a6477';
-  const bg = dark ? '#000000' : '#ffffff';
+  const fg = dark ? '#9f9fa3' : '#57606a';
+  const head = dark ? '#ffffff' : '#000000';
+  const sub = dark ? '#7a7a7e' : '#8a929d';
+  const bg = dark ? '#0e0f10' : '#ffffff';
 
   const { convId } = useLocalSearchParams<{ convId: string }>();
   const activeLine = lineOfConv(convId ?? '');
@@ -321,7 +322,7 @@ export default function XmtpConversation(): React.ReactElement {
             style={{ flex: 1, alignItems: 'flex-start', paddingLeft: 4 }}
             hitSlop={6}
           >
-            <Text style={{ color: fg, fontSize: 19, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
+            <Text style={{ color: head, fontSize: 19, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
               {groupName || 'Untitled group'}
             </Text>
           </Pressable>
@@ -331,7 +332,7 @@ export default function XmtpConversation(): React.ReactElement {
             style={{ flex: 1, alignItems: 'flex-start', paddingLeft: 4 }}
             hitSlop={6}
           >
-            <Text style={{ color: fg, fontSize: 19, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
+            <Text style={{ color: head, fontSize: 19, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
               {peerAddr.slice(0, 6)}…{peerAddr.slice(-4)}
             </Text>
           </Pressable>
@@ -351,7 +352,7 @@ export default function XmtpConversation(): React.ReactElement {
             </Text>
           </View>
         ) : (
-          <HeaderAvatars peerAddr={peerAddr} memberAddrs={memberAddrs} bg={bg} />
+          <HeaderAvatars peerAddr={peerAddr} memberAddrs={memberAddrs} bg={bg} border={dark ? '#282a2d' : '#e4e4e5'} />
         )}
       </View>
       {/** Fade strip below the top nav — mirrors the composer's top fade. Position it
@@ -434,9 +435,9 @@ function BubbleActionMenu({
   target: HistoryEntry | null; dark: boolean; onClose: () => void;
   onReact: (emoji: string) => void; onReply: () => void; onCopy: () => void;
 }): React.ReactElement {
-  const sheetBg = dark ? '#1d2230' : '#ffffff';
-  const fg = dark ? '#e8ecf2' : '#1a1f29';
-  const sub = dark ? '#8a94a6' : '#5a6477';
+  const sheetBg = dark ? '#282a2d' : '#ffffff';
+  const fg = dark ? '#9f9fa3' : '#57606a';
+  const sub = dark ? '#7a7a7e' : '#8a929d';
   return (
     <Modal visible={!!target} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>

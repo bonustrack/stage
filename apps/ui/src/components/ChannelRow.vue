@@ -50,7 +50,7 @@ function fmtTs(ts: number | null): string {
     <div v-else class="w-9 h-9 rounded-full bg-metro-border-dark shrink-0" />
     <div class="flex-1 min-w-0">
       <div class="flex items-baseline gap-2">
-        <div class="text-sm text-metro-fg-light dark:text-metro-fg-dark truncate flex-1 font-head">
+        <div class="text-sm text-metro-head-light dark:text-metro-head-dark truncate flex-1 font-head">
           {{ props.title }}
         </div>
         <div class="text-xs text-metro-sub-light dark:text-metro-sub-dark shrink-0">
@@ -63,7 +63,7 @@ function fmtTs(ts: number | null): string {
         </div>
         <div v-if="props.unreadCount > 0"
           class="min-w-[22px] h-5 rounded-full px-1.5
-            bg-metro-fg-light dark:bg-metro-fg-dark
+            bg-metro-head-light dark:bg-metro-head-dark
             text-metro-bg-light dark:text-metro-bg-dark
             text-[11px] font-head flex items-center justify-center shrink-0">
           {{ props.unreadCount > 99 ? '99+' : props.unreadCount }}

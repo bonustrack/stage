@@ -43,7 +43,7 @@ export function YouTubeEmbed({ videoId, dark }: {
         </View>
       </View>
       <View style={{ paddingHorizontal: 10, paddingVertical: 6 }}>
-        <Text style={{ color: dark ? '#8a94a6' : '#5a6477', fontSize: 11, fontFamily: 'Calibre-Medium' }}>
+        <Text style={{ color: dark ? '#7a7a7e' : '#8a929d', fontSize: 11, fontFamily: 'Calibre-Medium' }}>
           YouTube
         </Text>
       </View>
@@ -65,7 +65,7 @@ export function LocationEmbed({ lat, lng, sourceUrl, dark }: {
       <View style={{ aspectRatio: 1, position: 'relative' }}>
         <Image
           source={{ uri: tileUrl }}
-          style={{ width: '100%', height: '100%', backgroundColor: '#0d1018' }}
+          style={{ width: '100%', height: '100%', backgroundColor: dark ? '#282a2d' : '#e4e4e5' }}
           resizeMode="cover"
         />
         <View style={{
@@ -75,10 +75,10 @@ export function LocationEmbed({ lat, lng, sourceUrl, dark }: {
         </View>
       </View>
       <View style={{ paddingHorizontal: 10, paddingVertical: 6 }}>
-        <Text style={{ color: dark ? '#e8ecf2' : '#1a1f29', fontSize: 12, fontFamily: 'Calibre-Semibold' }}>
+        <Text style={{ color: dark ? '#ffffff' : '#000000', fontSize: 12, fontFamily: 'Calibre-Semibold' }}>
           Location
         </Text>
-        <Text style={{ color: dark ? '#8a94a6' : '#5a6477', fontSize: 11, fontFamily: 'Calibre-Medium' }}>
+        <Text style={{ color: dark ? '#7a7a7e' : '#8a929d', fontSize: 11, fontFamily: 'Calibre-Medium' }}>
           {label} · tap to open
         </Text>
       </View>

@@ -33,7 +33,7 @@ function onAdd(): void {
     <button
       type="button"
       :disabled="props.adding || !valid"
-      class="px-3.5 py-2 rounded-full bg-metro-fg-light dark:bg-metro-fg-dark
+      class="px-3.5 py-2 rounded-full bg-metro-head-light dark:bg-metro-head-dark
         text-metro-bg-light dark:text-metro-bg-dark text-sm font-head disabled:opacity-50"
       @click="onAdd"
     >

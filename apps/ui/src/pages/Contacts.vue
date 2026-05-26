@@ -68,7 +68,7 @@ onMounted(async () => {
 <template>
   <div class="min-h-screen flex flex-col">
     <div class="px-4 pt-4 pb-2">
-      <h1 class="font-head text-xl text-metro-fg-light dark:text-metro-fg-dark">Contacts</h1>
+      <h1 class="font-head text-xl text-metro-head-light dark:text-metro-head-dark">Contacts</h1>
     </div>
     <div class="px-3 pb-2">
       <input

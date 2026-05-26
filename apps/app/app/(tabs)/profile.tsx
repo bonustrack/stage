@@ -16,11 +16,12 @@ const AVATAR_SIZE = 120;
 
 export default function Profile(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
-  const fg = dark ? '#e8ecf2' : '#1a1f29';
-  const sub = dark ? '#8a94a6' : '#5a6477';
-  const bg = dark ? '#000000' : '#ffffff';
-  const border = dark ? '#262c38' : '#e3e7ef';
-  const rowBg = dark ? '#161a22' : '#fafbfd';
+  const fg = dark ? '#9f9fa3' : '#57606a';
+  const head = dark ? '#ffffff' : '#000000';
+  const sub = dark ? '#7a7a7e' : '#8a929d';
+  const bg = dark ? '#0e0f10' : '#ffffff';
+  const border = dark ? '#282a2d' : '#e4e4e5';
+  const rowBg = dark ? '#282a2d' : '#e4e4e5';
 
   const [address, setAddress] = useState<string>('');
   const [inboxId, setInboxId] = useState<string>('');
@@ -55,10 +56,10 @@ export default function Profile(): React.ReactElement {
   return (
     <View style={{ flex: 1, backgroundColor: bg }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 }}>
-        <Text style={{ color: fg, fontSize: 22, fontFamily: 'Calibre-Semibold' }}>Profile</Text>
+        <Text style={{ color: head, fontSize: 22, fontFamily: 'Calibre-Semibold' }}>Profile</Text>
         {address ? (
           <Pressable onPress={() => setEditing(true)} hitSlop={8}>
-            <Text style={{ color: fg, fontSize: 14, fontFamily: 'Calibre-Semibold' }}>Edit</Text>
+            <Text style={{ color: head, fontSize: 14, fontFamily: 'Calibre-Semibold' }}>Edit</Text>
           </Pressable>
         ) : null}
       </View>
@@ -72,7 +73,7 @@ export default function Profile(): React.ReactElement {
         ) : (
           <View style={{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: AVATAR_SIZE / 2, backgroundColor: rowBg }} />
         )}
-        <Text style={{ color: fg, fontSize: 18, fontFamily: 'Calibre-Semibold', marginTop: 14 }}>
+        <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', marginTop: 14 }}>
           {address ? displayName : 'Loading…'}
         </Text>
         {profile.about ? (

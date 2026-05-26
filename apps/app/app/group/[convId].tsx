@@ -23,11 +23,12 @@ export default function GroupDetail(): React.ReactElement {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const dark = useEffectiveColorScheme() === 'dark';
-  const fg = dark ? '#e8ecf2' : '#1a1f29';
-  const sub = dark ? '#8a94a6' : '#5a6477';
-  const bg = dark ? '#000000' : '#ffffff';
-  const border = dark ? '#262c38' : '#e3e7ef';
-  const rowBg = dark ? '#161a22' : '#fafbfd';
+  const fg = dark ? '#9f9fa3' : '#57606a';
+  const head = dark ? '#ffffff' : '#000000';
+  const sub = dark ? '#7a7a7e' : '#8a929d';
+  const bg = dark ? '#0e0f10' : '#ffffff';
+  const border = dark ? '#282a2d' : '#e4e4e5';
+  const rowBg = dark ? '#282a2d' : '#e4e4e5';
 
   const { convId } = useLocalSearchParams<{ convId: string }>();
   const line = lineOfConv(convId ?? '');
@@ -286,7 +287,7 @@ export default function GroupDetail(): React.ReactElement {
           </View>
         ) : (
           <Pressable onPress={() => setEditing(true)} hitSlop={6} style={{ marginTop: 6 }}>
-            <Text style={{ color: fg, fontSize: 20, fontFamily: 'Calibre-Semibold' }}>
+            <Text style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold' }}>
               {name && name.trim() ? name : 'Untitled group'}
             </Text>
             <Text style={{ color: sub, fontSize: 12, marginTop: 4, fontFamily: 'Calibre-Medium' }}>Tap to rename</Text>
@@ -384,10 +385,10 @@ export default function GroupDetail(): React.ReactElement {
             >
               <Image
                 source={{ uri: stampBoxAvatarUrl(item) }}
-                style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: '#1a1f29' }}
+                style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border }}
               />
               <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={{ color: fg, fontSize: 15, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
+                <Text style={{ color: head, fontSize: 15, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
                   {memberNames[item] || shortAddress(item)}{isSelf ? ' (you)' : ''}
                 </Text>
                 {memberNames[item] ? (
