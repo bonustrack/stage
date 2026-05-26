@@ -58,7 +58,7 @@ function isReaction(e: HistoryEntry): boolean {
 function HeaderAvatar({ peerAddr, memberAddrs, groupImage, border }: {
   peerAddr: string | null; memberAddrs: string[]; groupImage: string; border: string;
 }): React.ReactElement | null {
-  const SIZE = 30;
+  const SIZE = 24;
   /** DM → peer's avatar; group → its uploaded image if set, else fall back to
    *  the first member's avatar. Shown before the title (leading). */
   const uri = peerAddr
