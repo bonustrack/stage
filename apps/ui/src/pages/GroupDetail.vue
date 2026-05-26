@@ -1,33 +1,31 @@
 <script setup lang="ts">
-/** Group detail view — list members (avatar + short address; click → user
- *  profile), inline-editable group name, add by 0x address, remove with
- *  confirm. Web counterpart to apps/app/app/group/[convId].tsx. */
+/** Group detail view — avatar/name/description editing, member list +
+ *  add/remove. Web counterpart to apps/app/app/group/[convId].tsx. */
 
 import { IdentifierKind } from '@xmtp/browser-sdk';
 import {
   convOfLine, getCachedXmtpClient, getOrCreateXmtpClient, lineOfConv,
   memberInboxToAddressMap, shortAddress,
 } from '../lib/xmtp';
-import { readProfile } from '../lib/profile';
+import { readProfile, uploadAvatar } from '../lib/profile';
 import type { SnapshotProfile } from '@shared/profile/snapshot';
 
 const route = useRoute();
 const router = useRouter();
-
 const convId = computed(() => (route.params.convId as string) ?? '');
 const line = computed(() => lineOfConv(convId.value));
-
 const name = ref<string | null>(null);
-const draft = ref('');
-const editing = ref(false);
 const saving = ref(false);
 const members = ref<string[]>([]);
 const memberNames = ref<Record<string, string | null>>({});
-const addDraft = ref('');
 const adding = ref(false);
 const selfAddress = ref('');
 const removing = ref<string | null>(null);
 const errorMsg = ref('');
+const imageUrl = ref<string>('');
+const uploadingImage = ref(false);
+const description = ref<string>('');
+const savingDescription = ref(false);
 
 watchEffect(async () => {
   if (!convId.value) return;
@@ -39,10 +37,14 @@ watchEffect(async () => {
   }
   const conv = await convOfLine(line.value);
   if (!conv) return;
-  const groupName = (conv as unknown as { name?: string | (() => Promise<string>) }).name;
-  const resolvedName = typeof groupName === 'function' ? await groupName() : groupName ?? '';
-  name.value = resolvedName ?? '';
-  draft.value = resolvedName ?? '';
+  const group = conv as unknown as {
+    name?: string;
+    imageUrl?: string;
+    description?: string;
+  };
+  name.value = group.name ?? '';
+  imageUrl.value = group.imageUrl ?? '';
+  description.value = group.description ?? '';
   const addrMap = await memberInboxToAddressMap(conv);
   const addrs = Object.values(addrMap).sort((a, b) => a.localeCompare(b));
   members.value = addrs;
@@ -56,8 +58,7 @@ watchEffect(async () => {
   memberNames.value = next;
 });
 
-async function saveName(): Promise<void> {
-  const next = draft.value.trim();
+async function onSaveName(next: string): Promise<void> {
   if (!next || saving.value) return;
   saving.value = true;
   errorMsg.value = '';
@@ -67,56 +68,75 @@ async function saveName(): Promise<void> {
     if (!group.updateName) throw new Error('Not a group conversation');
     await group.updateName(next);
     name.value = next;
-    editing.value = false;
   } catch (e) {
     errorMsg.value = `Rename failed: ${(e as Error).message}`;
   } finally { saving.value = false; }
 }
 
-async function addMember(): Promise<void> {
-  const addr = addDraft.value.trim();
-  if (!/^0x[0-9a-fA-F]{40}$/.test(addr) || adding.value) {
-    errorMsg.value = 'Enter a valid 0x… Ethereum address.';
-    return;
-  }
-  adding.value = true;
+async function onSaveDescription(next: string): Promise<void> {
+  if (savingDescription.value) return;
+  savingDescription.value = true;
   errorMsg.value = '';
   try {
     const conv = await convOfLine(line.value);
     if (!conv) throw new Error('Conversation not found');
-    const group = conv as unknown as {
-      addMembersByIdentifiers?: (ids: { identifier: string; identifierKind: IdentifierKind }[]) => Promise<unknown>;
-    };
-    if (!group.addMembersByIdentifiers) throw new Error('Not a group conversation');
-    await group.addMembersByIdentifiers([{ identifier: addr.toLowerCase(), identifierKind: IdentifierKind.Ethereum }]);
-    addDraft.value = '';
+    const group = conv as unknown as { updateDescription?: (d: string) => Promise<void> };
+    if (!group.updateDescription) throw new Error('Not a group conversation');
+    await group.updateDescription(next);
+    description.value = next;
+  } catch (e) {
+    errorMsg.value = `Description update failed: ${(e as Error).message}`;
+  } finally { savingDescription.value = false; }
+}
+
+type MemberOp = 'addMembersByIdentifiers' | 'removeMembersByIdentifiers';
+async function mutateMembers(op: MemberOp, addr: string, errLabel: string): Promise<void> {
+  errorMsg.value = '';
+  try {
+    const conv = await convOfLine(line.value);
+    if (!conv) throw new Error('Conversation not found');
+    const group = conv as unknown as Record<MemberOp, ((ids: { identifier: string; identifierKind: IdentifierKind }[]) => Promise<unknown>) | undefined>;
+    const fn = group[op];
+    if (!fn) throw new Error('Not a group conversation');
+    await fn([{ identifier: addr.toLowerCase(), identifierKind: IdentifierKind.Ethereum }]);
     const fullMap = await memberInboxToAddressMap(conv);
     members.value = Object.values(fullMap).sort((a, b) => a.localeCompare(b));
-  } catch (e) {
-    errorMsg.value = `Add failed: ${(e as Error).message}`;
-  } finally { adding.value = false; }
+  } catch (e) { errorMsg.value = `${errLabel}: ${(e as Error).message}`; }
+}
+
+async function onAddMember(addr: string): Promise<void> {
+  if (adding.value) return;
+  adding.value = true;
+  try { await mutateMembers('addMembersByIdentifiers', addr, 'Add failed'); }
+  finally { adding.value = false; }
 }
 
 async function removeMember(addr: string): Promise<void> {
   if (!confirm(`Remove ${shortAddress(addr)} from this group?`)) return;
   removing.value = addr.toLowerCase();
-  errorMsg.value = '';
-  try {
-    const conv = await convOfLine(line.value);
-    if (!conv) throw new Error('Conversation not found');
-    const group = conv as unknown as {
-      removeMembersByIdentifiers?: (ids: { identifier: string; identifierKind: IdentifierKind }[]) => Promise<unknown>;
-    };
-    if (!group.removeMembersByIdentifiers) throw new Error('Not a group conversation');
-    await group.removeMembersByIdentifiers([{ identifier: addr.toLowerCase(), identifierKind: IdentifierKind.Ethereum }]);
-    const fullMap = await memberInboxToAddressMap(conv);
-    members.value = Object.values(fullMap).sort((a, b) => a.localeCompare(b));
-  } catch (e) {
-    errorMsg.value = `Remove failed: ${(e as Error).message}`;
-  } finally { removing.value = null; }
+  try { await mutateMembers('removeMembersByIdentifiers', addr, 'Remove failed'); }
+  finally { removing.value = null; }
 }
 
 function openMember(addr: string): void { void router.push(`/user/${addr}`); }
+
+async function onPickImage(file: File): Promise<void> {
+  if (uploadingImage.value) return;
+  uploadingImage.value = true;
+  errorMsg.value = '';
+  try {
+    const url = await uploadAvatar(file);
+    const conv = await convOfLine(line.value);
+    if (!conv) throw new Error('Conversation not found');
+    const group = conv as unknown as { updateImageUrl?: (u: string) => Promise<void> };
+    if (!group.updateImageUrl) throw new Error('Not a group conversation');
+    await group.updateImageUrl(url);
+    imageUrl.value = url;
+  } catch (e) {
+    errorMsg.value = `Image upload failed: ${(e as Error).message}`;
+  } finally { uploadingImage.value = false; }
+}
+
 </script>
 
 <template>
@@ -127,61 +147,39 @@ function openMember(addr: string): void { void router.push(`/user/${addr}`); }
       </button>
     </div>
 
-    <div class="px-4 pt-2 pb-4">
-      <div class="text-[11px] uppercase tracking-wide text-metro-sub-light dark:text-metro-sub-dark">Group name</div>
-      <div v-if="editing" class="flex items-center gap-2 mt-1.5">
-        <input
-          v-model="draft"
-          type="text"
-          placeholder="Group name"
-          autofocus
-          class="flex-1 bg-metro-surface-light dark:bg-metro-surface-dark
-            border border-metro-border-light dark:border-metro-border-dark
-            rounded-lg px-3 py-2 text-base text-metro-fg-light dark:text-metro-fg-dark outline-none"
-        />
-        <button
-          type="button"
-          :disabled="saving || !draft.trim()"
-          class="px-3.5 py-2 rounded-full bg-metro-fg-light dark:bg-metro-fg-dark
-            text-metro-bg-light dark:text-metro-bg-dark text-sm disabled:opacity-50"
-          @click="saveName"
-        >
-          {{ saving ? 'Saving…' : 'Save' }}
-        </button>
-      </div>
-      <button v-else type="button" class="mt-1.5 block text-left" @click="editing = true">
-        <div class="text-xl text-metro-fg-light dark:text-metro-fg-dark font-head">
-          {{ name && name.trim() ? name : 'Untitled group' }}
-        </div>
-        <div class="text-xs text-metro-sub-light dark:text-metro-sub-dark mt-0.5">Tap to rename</div>
-      </button>
+    <GroupAvatarEditor
+      :image-url="imageUrl"
+      :uploading="uploadingImage"
+      @pick="onPickImage"
+    />
+
+    <div class="px-4 pt-1 pb-4">
+      <InlineEditableText
+        label="Group name"
+        :value="name ?? ''"
+        placeholder="Group name"
+        empty-label="Untitled group"
+        :saving="saving"
+        @save="onSaveName"
+      />
+    </div>
+    <div class="px-4 pb-4">
+      <InlineEditableText
+        label="Description"
+        :value="description"
+        placeholder="What is this group about?"
+        empty-label="Tap to add a description"
+        multiline
+        value-class="text-sm text-metro-fg-light dark:text-metro-fg-dark font-sans"
+        :saving="savingDescription"
+        @save="onSaveDescription"
+      />
     </div>
 
     <div class="text-[11px] uppercase tracking-wide text-metro-sub-light dark:text-metro-sub-dark px-4 pb-1.5">
       Members ({{ members.length }})
     </div>
-    <div class="flex gap-2 px-4 pb-3">
-      <input
-        v-model="addDraft"
-        type="text"
-        placeholder="0x… Ethereum address"
-        autocomplete="off"
-        autocorrect="off"
-        autocapitalize="off"
-        class="flex-1 bg-metro-surface-light dark:bg-metro-surface-dark
-          border border-metro-border-light dark:border-metro-border-dark
-          rounded-lg px-3 py-2 text-sm text-metro-fg-light dark:text-metro-fg-dark outline-none"
-      />
-      <button
-        type="button"
-        :disabled="adding || !addDraft.trim()"
-        class="px-3.5 py-2 rounded-full bg-metro-fg-light dark:bg-metro-fg-dark
-          text-metro-bg-light dark:text-metro-bg-dark text-sm disabled:opacity-50"
-        @click="addMember"
-      >
-        {{ adding ? 'Adding…' : 'Add' }}
-      </button>
-    </div>
+    <MemberAddForm :adding="adding" @add="onAddMember" />
     <div v-if="errorMsg" class="px-4 pb-2 text-xs text-red-500">{{ errorMsg }}</div>
 
     <ul class="flex flex-col">
