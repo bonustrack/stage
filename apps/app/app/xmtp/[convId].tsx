@@ -11,7 +11,7 @@ import { KeyboardStickyView, useReanimatedKeyboardAnimation } from 'react-native
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { MessengerBubble } from '../../components/MessengerBubble';
-import { usePeerProfiles, getPeerName, getPeerAvatarCb } from '../../lib/peerProfiles';
+import { usePeerProfiles, getPeerName, getPeerAvatar } from '../../lib/peerProfiles';
 import { avatarRenderUrl } from '../../../_shared/profile/snapshot';
 import { MessengerComposer } from '../../components/MessengerComposer';
 import { ComposerGradient } from '../../components/ComposerGradient';
@@ -59,15 +59,19 @@ function HeaderAvatar({ peerAddr, memberAddrs, groupImage, border }: {
   peerAddr: string | null; memberAddrs: string[]; groupImage: string; border: string;
 }): React.ReactElement | null {
   const SIZE = 24;
-  /** DM → peer's avatar; group → its uploaded image if set, else fall back to
-   *  the first member's avatar. Shown before the title (leading). */
-  const uri = peerAddr
-    ? stampBoxAvatarUrl(peerAddr, SIZE * 2, getPeerAvatarCb(peerAddr))
-    : groupImage
-      ? avatarRenderUrl('', groupImage, SIZE * 2)
-      : memberAddrs[0]
-        ? stampBoxAvatarUrl(memberAddrs[0], SIZE * 2, getPeerAvatarCb(memberAddrs[0]))
-        : null;
+  /** Leading avatar — shown only when a real one is available: the DM peer's
+   *  custom avatar, a group's uploaded image, or a member's custom avatar. No
+   *  identicon fallback → render nothing (title only) otherwise. */
+  let uri: string | null = null;
+  if (peerAddr) {
+    const av = getPeerAvatar(peerAddr);
+    if (av) uri = avatarRenderUrl(peerAddr, av, SIZE * 2);
+  } else if (groupImage) {
+    uri = avatarRenderUrl('', groupImage, SIZE * 2);
+  } else {
+    const m = memberAddrs.find(a => getPeerAvatar(a));
+    if (m) uri = avatarRenderUrl(m, getPeerAvatar(m), SIZE * 2);
+  }
   if (!uri) return null;
   return (
     <Image source={{ uri }} style={{ width: SIZE, height: SIZE, borderRadius: 999, backgroundColor: border }} />
@@ -316,21 +320,6 @@ export default function XmtpConversation(): React.ReactElement {
             {isGroup ? (groupName || 'Untitled group')
               : peerAddr ? (getPeerName(peerAddr) ?? `${peerAddr.slice(0, 6)}…${peerAddr.slice(-4)}`) : ''}
           </Text>
-          {status !== 'open' ? (
-            <View style={{
-              flexDirection: 'row', alignItems: 'center', gap: 6,
-              paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999,
-              backgroundColor: dark ? 'rgba(40,46,58,0.92)' : 'rgba(238,241,247,0.95)',
-            }}>
-              <View style={{
-                width: 6, height: 6, borderRadius: 999,
-                backgroundColor: status === 'connecting' ? '#c0a06e' : '#d96868',
-              }} />
-              <Text style={{ color: sub, fontSize: 11 , fontFamily: 'Calibre-Medium'}}>
-                {status === 'connecting' ? 'Connecting…' : status === 'error' ? 'Reconnecting…' : 'Offline'}
-              </Text>
-            </View>
-          ) : null}
         </Pressable>
       </View>
       {/** Fade strip below the top nav — mirrors the composer's top fade. Position it

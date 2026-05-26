@@ -64,6 +64,14 @@ export function getPeerAvatarCb(address?: string | null): string | undefined {
   return getCacheHash(store.get(address.toLowerCase())?.avatar);
 }
 
+/** The raw stored avatar value (ipfs://… or URL), or undefined if the peer has
+ *  no custom avatar set. Use to decide whether to show a real avatar at all. */
+export function getPeerAvatar(address?: string | null): string | undefined {
+  if (!address) return undefined;
+  const a = store.get(address.toLowerCase())?.avatar;
+  return a && a.trim() ? a : undefined;
+}
+
 /** Subscribe + fetch: re-renders the caller when the batch resolves. Returns a
  *  version counter usable as FlatList `extraData` so rows re-render too. */
 export function usePeerProfiles(addresses: (string | null | undefined)[]): number {
