@@ -20,7 +20,9 @@
 }
 
 @layer base {
-  html { color-scheme: light dark; }
+  /** Bump the root font a notch (16px → 17px) so all rem-based Tailwind text
+   *  utilities scale up proportionally across the web UI. Web-only. */
+  html { color-scheme: light dark; font-size: 17px; }
   body {
     -webkit-font-smoothing: antialiased;
     font-family: 'Calibre-Medium', system-ui, sans-serif;

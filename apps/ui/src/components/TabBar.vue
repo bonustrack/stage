@@ -21,20 +21,13 @@ const TABS: { to: string; label: string; icon: HeroIconName }[] = [
       v-for="tab in TABS"
       :key="tab.to"
       :to="tab.to"
-      v-slot="{ isActive, navigate }"
-      custom
+      :aria-label="tab.label"
+      class="flex items-center justify-center px-5 py-2 transition-colors
+        text-metro-sub-light dark:text-metro-sub-dark
+        hover:text-metro-head-light dark:hover:text-metro-head-dark"
+      active-class="!text-metro-head-light dark:!text-metro-head-dark"
     >
-      <a
-        :href="tab.to"
-        :aria-label="tab.label"
-        class="flex items-center justify-center px-5 py-2 transition-colors"
-        :class="isActive
-          ? 'text-metro-head-light dark:text-metro-head-dark'
-          : 'text-metro-sub-light dark:text-metro-sub-dark hover:text-metro-head-light dark:hover:text-metro-head-dark'"
-        @click.prevent="navigate"
-      >
-        <HeroIcon :name="tab.icon" :size="26" />
-      </a>
+      <HeroIcon :name="tab.icon" :size="24" />
     </RouterLink>
   </nav>
 </template>
