@@ -60,7 +60,7 @@ async function copy(value: string): Promise<void> {
           :style="{ width: AVATAR_SIZE + 'px', height: AVATAR_SIZE + 'px' }"
           class="rounded-full bg-metro-border-dark"
         />
-        <div class="mt-3 text-lg font-head text-metro-fg-light dark:text-metro-fg-dark">
+        <div class="mt-3 text-lg font-head text-metro-head-light dark:text-metro-head-dark">
           {{ profile?.name?.trim() || shortAddress(address) }}
         </div>
         <div v-if="profile?.about?.trim()"
@@ -71,7 +71,7 @@ async function copy(value: string): Promise<void> {
           type="button"
           :disabled="openingDm"
           class="mt-4 px-6 py-2.5 rounded-full
-            bg-metro-fg-light dark:bg-metro-fg-dark text-metro-bg-light dark:text-metro-bg-dark
+            bg-metro-head-light dark:bg-metro-head-dark text-metro-bg-light dark:text-metro-bg-dark
             text-sm disabled:opacity-60 hover:opacity-90 transition-opacity"
           @click="onMessage"
         >

@@ -44,10 +44,10 @@ async function copy(value: string, label: 'address' | 'inboxId'): Promise<void> 
 <template>
   <div class="min-h-screen">
     <div class="flex items-center justify-between px-4 pt-4 pb-2">
-      <h1 class="font-head text-xl text-metro-fg-light dark:text-metro-fg-dark">Profile</h1>
+      <h1 class="font-head text-xl text-metro-head-light dark:text-metro-head-dark">Profile</h1>
       <button
         v-if="address" type="button"
-        class="font-head text-sm text-metro-fg-light dark:text-metro-fg-dark"
+        class="font-head text-sm text-metro-head-light dark:text-metro-head-dark"
         @click="editing = true"
       >Edit</button>
     </div>
@@ -61,7 +61,7 @@ async function copy(value: string, label: 'address' | 'inboxId'): Promise<void> 
         :style="{ width: `${AVATAR_SIZE}px`, height: `${AVATAR_SIZE}px` }"
       />
       <div v-else class="rounded-full bg-metro-border-dark" :style="{ width: `${AVATAR_SIZE}px`, height: `${AVATAR_SIZE}px` }" />
-      <div class="font-head text-lg text-metro-fg-light dark:text-metro-fg-dark mt-3.5">
+      <div class="font-head text-lg text-metro-head-light dark:text-metro-head-dark mt-3.5">
         {{ displayName }}
       </div>
       <div v-if="profile.about"

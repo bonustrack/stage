@@ -162,7 +162,7 @@ function QuestionView({ question, dark, sub, onAnswer }: {
                 : (dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.10)'),
             })}
           >
-            <Text style={{ color: dark ? '#e8ecf2' : '#1a1f29', fontSize: 15, fontFamily: 'Calibre-Medium' }}>
+            <Text style={{ color: dark ? '#9f9fa3' : '#57606a', fontSize: 15, fontFamily: 'Calibre-Medium' }}>
               {multi ? (isOn ? '☑︎  ' : '☐  ') : ''}{opt.label}
             </Text>
             {opt.description ? (
@@ -206,7 +206,7 @@ function QuestionView({ question, dark, sub, onAnswer }: {
             onSubmitEditing={submit}
             blurOnSubmit
             style={{
-              color: dark ? '#e8ecf2' : '#1a1f29',
+              color: dark ? '#9f9fa3' : '#57606a',
               fontFamily: 'Calibre-Medium', fontSize: 15, lineHeight: 22,
               minHeight: 22, padding: 0,
             }}
@@ -274,9 +274,10 @@ export function MessengerBubble({
    *  italic treatment and a feed color in the body text — set when
    *  envelopeOfXmtpMessage stamps `payload.system: true`. */
   const isSystem = (entry.payload as { system?: boolean } | undefined)?.system === true;
-  const fg = isSystem ? (dark ? '#8a94a6' : '#5a6477') : (dark ? '#e8ecf2' : '#1a1f29');
-  const sub = dark ? '#8a94a6' : '#5a6477';
-  const pillBg = dark ? '#1d2230' : '#eef1f7';
+  const fg = isSystem ? (dark ? '#7a7a7e' : '#8a929d') : (dark ? '#9f9fa3' : '#57606a');
+  const sub = dark ? '#7a7a7e' : '#8a929d';
+  const pillBg = dark ? '#282a2d' : '#e4e4e5';
+  const avatarBg = dark ? '#282a2d' : '#e4e4e5';
   const [pickerOpen, setPickerOpen] = useState(false);
   const markdownProps = {
     markdownit: mdParser,
@@ -323,11 +324,11 @@ export function MessengerBubble({
         <Pressable onPress={() => onAvatarPress?.(senderEthAddress)} hitSlop={6}>
           <Image
             source={{ uri: stampBoxAvatarUrl(senderEthAddress, AVATAR_SIZE * 2) }}
-            style={{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: 999, backgroundColor: '#1a1f29', marginTop: 2 }}
+            style={{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: 999, backgroundColor: avatarBg, marginTop: 2 }}
           />
         </Pressable>
       ) : (
-        <View style={{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: 999, backgroundColor: '#1a1f29', marginTop: 2 }} />
+        <View style={{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: 999, backgroundColor: avatarBg, marginTop: 2 }} />
       )}
       {/** Right column: message content + reactions + reaction picker stacked. */}
       <View style={{ flex: 1, minWidth: 0, flexDirection: 'column' }}>
@@ -340,7 +341,7 @@ export function MessengerBubble({
           paddingHorizontal: 0, paddingVertical: 0,
           borderRadius: replyTarget ? 8 : 0,
           borderWidth: replyTarget ? 1.5 : (unread ? 1.5 : 0),
-          borderColor: replyTarget ? '#c0a06e' : (unread ? (dark ? '#ffffff' : '#1a1f29') : 'transparent'),
+          borderColor: replyTarget ? '#c0a06e' : (unread ? (dark ? '#ffffff' : '#000000') : 'transparent'),
         }}
       >
         {replyPreview ? (
@@ -437,7 +438,7 @@ export function MessengerBubble({
       {pickerOpen ? (
         <View style={{
           flexDirection: 'row', gap: 8, marginTop: 6, paddingHorizontal: 10, paddingVertical: 6,
-          borderRadius: 999, backgroundColor: dark ? '#1d2230' : '#ffffff',
+          borderRadius: 999, backgroundColor: dark ? '#282a2d' : '#ffffff',
           shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 8, elevation: 4,
           alignSelf: 'flex-start',
         }}>

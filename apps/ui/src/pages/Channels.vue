@@ -150,7 +150,7 @@ function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
       type="button"
       :disabled="creatingAsk"
       class="fixed left-4 right-4 bottom-[76px] z-30
-        bg-metro-fg-light dark:bg-metro-fg-dark
+        bg-metro-head-light dark:bg-metro-head-dark
         text-metro-bg-light dark:text-metro-bg-dark
         text-[15px] font-sans py-3 rounded-full shadow-lg
         disabled:opacity-60 hover:opacity-90 transition-opacity"

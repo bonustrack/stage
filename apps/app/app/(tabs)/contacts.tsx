@@ -18,11 +18,12 @@ interface Contact { address: string; convId: string }
 export default function Contacts(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const fg = dark ? '#e8ecf2' : '#1a1f29';
-  const sub = dark ? '#8a94a6' : '#5a6477';
-  const bg = dark ? '#000000' : '#ffffff';
-  const border = dark ? '#262c38' : '#e3e7ef';
-  const rowBg = dark ? '#161a22' : '#fafbfd';
+  const fg = dark ? '#9f9fa3' : '#57606a';
+  const head = dark ? '#ffffff' : '#000000';
+  const sub = dark ? '#7a7a7e' : '#8a929d';
+  const bg = dark ? '#0e0f10' : '#ffffff';
+  const border = dark ? '#282a2d' : '#e4e4e5';
+  const rowBg = dark ? '#282a2d' : '#e4e4e5';
   const [contacts, setContacts] = useState<Contact[] | null>(null);
   const [error, setError] = useState<string>('');
   const [query, setQuery] = useState<string>('');
@@ -79,7 +80,7 @@ export default function Contacts(): React.ReactElement {
   return (
     <View style={{ flex: 1, backgroundColor: bg }}>
       <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 }}>
-        <Text style={{ color: fg, fontSize: 22, fontFamily: 'Calibre-Semibold' }}>Contacts</Text>
+        <Text style={{ color: head, fontSize: 22, fontFamily: 'Calibre-Semibold' }}>Contacts</Text>
       </View>
       <View style={{ paddingHorizontal: 12, paddingBottom: 8 }}>
         <TextInput
@@ -119,10 +120,10 @@ export default function Contacts(): React.ReactElement {
           >
             <Image
               source={{ uri: stampBoxAvatarUrl(item.address) }}
-              style={{ width: 24, height: 24, borderRadius: 999, backgroundColor: '#1a1f29' }}
+              style={{ width: 24, height: 24, borderRadius: 999, backgroundColor: border }}
             />
             <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={{ color: fg, fontSize: 14 , fontFamily: 'Calibre-Medium'}} numberOfLines={1}>
+              <Text style={{ color: head, fontSize: 14 , fontFamily: 'Calibre-Medium'}} numberOfLines={1}>
                 {item.address}
               </Text>
               <Text style={{ color: sub, fontSize: 12, marginTop: 4 , fontFamily: 'Calibre-Medium'}} numberOfLines={1}>

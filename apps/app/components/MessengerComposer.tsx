@@ -46,10 +46,10 @@ interface Props {
 export function MessengerComposer({
   dark, xmtpLine, replyingTo, onClearReply, onOptimistic, onSent,
 }: Props): React.ReactElement {
-  const fg = dark ? '#e8ecf2' : '#1a1f29';
-  const sub = dark ? '#8a94a6' : '#5a6477';
-  const inputBg = dark ? '#16191f' : '#f3f5f9';
-  const chipBg = dark ? '#1d2230' : '#eef1f7';
+  const fg = dark ? '#9f9fa3' : '#57606a';
+  const sub = dark ? '#7a7a7e' : '#8a929d';
+  const inputBg = dark ? '#282a2d' : '#e4e4e5';
+  const chipBg = dark ? '#282a2d' : '#e4e4e5';
 
   const [text, setText] = useState('');
   const [pending, setPending] = useState<Attachment[]>([]);
@@ -214,7 +214,7 @@ export function MessengerComposer({
   const kindIcon = (kind: string): HeroIconName => (
     kind === 'image' ? 'photo' : kind === 'audio' ? 'microphone' : 'paperClip'
   );
-  const bg = dark ? '#000000' : '#ffffff';
+  const bg = dark ? '#0e0f10' : '#ffffff';
   return (
     <View style={{ paddingHorizontal: 10, paddingTop: 6, paddingBottom: 18, backgroundColor: bg }}>
       <ComposerGradient bg={bg} direction="down" top={-10} height={10} />

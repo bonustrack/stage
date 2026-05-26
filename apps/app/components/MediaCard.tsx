@@ -15,8 +15,8 @@ interface Props {
 }
 
 export function MediaCard({ dark, onPress, width, children }: Props): React.ReactElement {
-  const border = dark ? '#262c38' : '#e3e7ef';
-  const bg = dark ? '#0d1018' : '#f5f7fb';
+  const border = dark ? '#282a2d' : '#e4e4e5';
+  const bg = dark ? '#282a2d' : '#e4e4e5';
   const style = {
     width: width ?? undefined,
     maxWidth: 280,

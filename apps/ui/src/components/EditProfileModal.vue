@@ -68,9 +68,9 @@ async function save(): Promise<void> {
       max-h-[90vh] flex flex-col">
       <div class="flex items-center justify-between px-4 py-3 border-b border-metro-border-light dark:border-metro-border-dark">
         <button type="button" class="text-metro-sub-light dark:text-metro-sub-dark text-sm" :disabled="saving" @click="emit('close')">Cancel</button>
-        <div class="font-head text-metro-fg-light dark:text-metro-fg-dark text-base">Edit profile</div>
+        <div class="font-head text-metro-head-light dark:text-metro-head-dark text-base">Edit profile</div>
         <button type="button" class="font-head text-sm"
-          :class="saving || uploading ? 'text-metro-sub-light dark:text-metro-sub-dark' : 'text-metro-fg-light dark:text-metro-fg-dark'"
+          :class="saving || uploading ? 'text-metro-sub-light dark:text-metro-sub-dark' : 'text-metro-head-light dark:text-metro-head-dark'"
           :disabled="saving || uploading" @click="save">
           {{ saving ? 'Saving…' : 'Save' }}
         </button>

@@ -24,7 +24,7 @@ const emit = defineEmits<{ (e: 'open'): void; (e: 'remove'): void }>();
     <button type="button" class="flex items-center gap-3 flex-1 min-w-0 text-left" @click="emit('open')">
       <img :src="stampBoxAvatarUrl(props.address, 64)" alt="" class="w-8 h-8 rounded-full bg-metro-border-dark" />
       <div class="flex-1 min-w-0">
-        <div class="text-sm text-metro-fg-light dark:text-metro-fg-dark truncate font-head">
+        <div class="text-sm text-metro-head-light dark:text-metro-head-dark truncate font-head">
           {{ props.name || shortAddress(props.address) }}{{ props.isSelf ? ' (you)' : '' }}
         </div>
         <div v-if="props.name" class="text-xs text-metro-sub-light dark:text-metro-sub-dark truncate mt-0.5">

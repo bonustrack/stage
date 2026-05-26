@@ -31,7 +31,7 @@ const emit = defineEmits<{ (e: 'back'): void; (e: 'open'): void }>();
       <img v-if="props.peerAddress" :src="stampBoxAvatarUrl(props.peerAddress, 48)" alt=""
         class="w-6 h-6 rounded-full bg-metro-border-dark" />
       <HeroIcon v-else-if="props.isGroup" name="users" :size="16" />
-      <span class="truncate max-w-[200px] font-head">
+      <span class="truncate max-w-[200px] font-head text-metro-head-light dark:text-metro-head-dark">
         {{ props.peerAddress ? shortAddress(props.peerAddress) : (props.groupName || 'Conversation') }}
       </span>
     </button>

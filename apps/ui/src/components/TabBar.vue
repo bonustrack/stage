@@ -29,8 +29,8 @@ const TABS: { to: string; label: string; icon: HeroIconName }[] = [
         :aria-label="tab.label"
         class="flex items-center justify-center px-5 py-2 transition-colors"
         :class="isActive
-          ? 'text-metro-fg-light dark:text-metro-fg-dark'
-          : 'text-metro-sub-light dark:text-metro-sub-dark hover:text-metro-fg-light dark:hover:text-metro-fg-dark'"
+          ? 'text-metro-head-light dark:text-metro-head-dark'
+          : 'text-metro-sub-light dark:text-metro-sub-dark hover:text-metro-head-light dark:hover:text-metro-head-dark'"
         @click.prevent="navigate"
       >
         <HeroIcon :name="tab.icon" :size="26" />

@@ -135,7 +135,7 @@ async function send(): Promise<void> {
       <button
         type="button"
         :disabled="sending || !text.trim()"
-        class="bg-metro-fg-light dark:bg-metro-fg-dark text-metro-bg-light dark:text-metro-bg-dark
+        class="bg-metro-head-light dark:bg-metro-head-dark text-metro-bg-light dark:text-metro-bg-dark
           font-head px-5 py-2 rounded-full disabled:opacity-50 min-w-[68px]"
         @click="send"
       >{{ sending ? '…' : 'Send' }}</button>

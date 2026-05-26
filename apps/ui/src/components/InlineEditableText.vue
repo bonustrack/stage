@@ -19,7 +19,7 @@ const props = withDefaults(defineProps<{
   multiline: false,
   saving: false,
   emptyLabel: 'Tap to edit',
-  valueClass: 'text-xl text-metro-fg-light dark:text-metro-fg-dark font-head',
+  valueClass: 'text-xl text-metro-head-light dark:text-metro-head-dark font-head',
 });
 const emit = defineEmits<{ (e: 'save', next: string): void }>();
 
@@ -60,7 +60,7 @@ function onSave(): void {
       <button
         type="button"
         :disabled="props.saving"
-        class="px-3.5 py-2 rounded-full bg-metro-fg-light dark:bg-metro-fg-dark
+        class="px-3.5 py-2 rounded-full bg-metro-head-light dark:bg-metro-head-dark
           text-metro-bg-light dark:text-metro-bg-dark text-sm disabled:opacity-50"
         @click="onSave"
       >

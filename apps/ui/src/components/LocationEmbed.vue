@@ -19,7 +19,7 @@ function open(): void { window.open(props.sourceUrl, '_blank', 'noopener'); }
       <div class="absolute inset-0 flex items-center justify-center text-3xl">📍</div>
     </div>
     <div class="px-2.5 py-1.5">
-      <div class="text-xs text-metro-fg-light dark:text-metro-fg-dark font-head">Location</div>
+      <div class="text-xs text-metro-head-light dark:text-metro-head-dark font-head">Location</div>
       <div class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark">{{ label }} · tap to open</div>
     </div>
   </MediaCard>
