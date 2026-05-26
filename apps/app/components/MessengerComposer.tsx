@@ -47,6 +47,7 @@ export function MessengerComposer({
   dark, xmtpLine, replyingTo, onClearReply, onOptimistic, onSent,
 }: Props): React.ReactElement {
   const fg = dark ? '#9f9fa3' : '#57606a';
+  const head = dark ? '#ffffff' : '#000000';
   const sub = dark ? '#7a7a7e' : '#8a929d';
   const inputBg = dark ? '#282a2d' : '#e4e4e5';
   const chipBg = dark ? '#282a2d' : '#e4e4e5';
@@ -284,10 +285,10 @@ export function MessengerComposer({
             : 'Uploading…')}
         </Text>
       ) : null}
-      <View style={{ backgroundColor: inputBg, borderRadius: 14, padding: 10 }}>
+      <View style={{ backgroundColor: inputBg, borderRadius: 10, padding: 10 }}>
         <TextInput
           value={text} onChangeText={setText} placeholder="Ask Metro" placeholderTextColor={sub} multiline
-          style={{ color: fg, fontFamily: 'Calibre-Medium', fontSize: 17, lineHeight: 22, minHeight: 24, maxHeight: 140, paddingHorizontal: 8, paddingTop: 4, paddingBottom: 8, textAlignVertical: 'top' }}
+          style={{ color: head, fontFamily: 'Calibre-Medium', fontSize: 17, lineHeight: 22, minHeight: 24, maxHeight: 140, paddingHorizontal: 8, paddingTop: 4, paddingBottom: 8, textAlignVertical: 'top' }}
         />
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
           <Btn icon={attachMenuOpen ? 'x' : 'plus'} onPress={() => setAttachMenuOpen(o => !o)} />
