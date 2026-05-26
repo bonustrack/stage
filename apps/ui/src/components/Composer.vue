@@ -27,11 +27,7 @@ function pickImage(): void {
   fileInput.value?.click();
 }
 
-async function onFileChange(ev: Event): Promise<void> {
-  const input = ev.target as HTMLInputElement;
-  const file = input.files?.[0];
-  input.value = '';
-  if (!file) return;
+async function sendFile(file: File): Promise<void> {
   try {
     const dataB64 = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
@@ -44,10 +40,27 @@ async function onFileChange(ev: Event): Promise<void> {
       reader.onerror = (): void => reject(reader.error ?? new Error('FileReader failed'));
       reader.readAsDataURL(file);
     });
-    await xmtpSendAttachment(props.line, file.name, file.type || 'application/octet-stream', dataB64);
+    await xmtpSendAttachment(props.line, file.name || 'image', file.type || 'application/octet-stream', dataB64);
   } catch (e) {
     err.value = (e as Error).message;
   }
+}
+
+async function onFileChange(ev: Event): Promise<void> {
+  const input = ev.target as HTMLInputElement;
+  const file = input.files?.[0];
+  input.value = '';
+  if (file) await sendFile(file);
+}
+
+/** Ctrl/Cmd-V of an image in the composer sends it as an attachment. */
+function onPaste(ev: ClipboardEvent): void {
+  const item = Array.from(ev.clipboardData?.items ?? []).find(i => i.type.startsWith('image/'));
+  if (!item) return;
+  const file = item.getAsFile();
+  if (!file) return;
+  ev.preventDefault();
+  void sendFile(file);
 }
 
 async function shareLocation(): Promise<void> {
@@ -121,6 +134,7 @@ async function send(): Promise<void> {
           text-metro-head-light dark:text-metro-head-dark
           placeholder:text-metro-sub-light dark:placeholder:text-metro-sub-dark"
         @keydown.enter.exact.prevent="send"
+        @paste="onPaste"
       />
       <div class="flex items-center gap-1">
         <button
