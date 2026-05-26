@@ -117,17 +117,26 @@ function onOptimistic(payload: { localId: string; text: string; replyTo?: string
     from: myUri.value,
     to: line.value ?? '',
     text: payload.text,
+    pending: true,
     ...(payload.replyTo ? { replyTo: payload.replyTo } : {}),
   } as HistoryEntry];
 }
 
+/** Send resolved: flip the optimistic bubble from pending (gray) to normal.
+ *  It stays until the live stream echo arrives, at which point the dedup in
+ *  allBubbles drops it — so there's no flicker/gap. */
 function onSent(localId: string): void {
-  optimistic.value = optimistic.value.filter(o => o.id !== localId);
+  optimistic.value = optimistic.value.map(o => (o.id === localId ? { ...o, pending: false } : o));
 }
 
 function onActionReply(): void {
   if (actionTarget.value) replyingTo.value = { id: actionTarget.value.id, preview: previewOf(actionTarget.value) };
   actionTarget.value = null;
+}
+
+/** Direct reply from the bubble's hover toolbar (no action sheet needed). */
+function onBubbleReply(entry: HistoryEntry): void {
+  replyingTo.value = { id: entry.id, preview: previewOf(entry) };
 }
 
 function onActionCopy(): void {
@@ -174,6 +183,7 @@ function onActionCopy(): void {
           : undefined"
         @request-actions="actionTarget = $event"
         @react="onReact($event.entry.id, $event.emoji)"
+        @reply="onBubbleReply($event)"
         @open-avatar="router.push(`/user/${$event}`)"
       />
       </div>

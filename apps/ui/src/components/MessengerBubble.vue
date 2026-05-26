@@ -25,6 +25,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'request-actions', entry: HistoryEntry): void;
   (e: 'react', payload: { entry: HistoryEntry; emoji: string }): void;
+  (e: 'reply', entry: HistoryEntry): void;
   (e: 'open-avatar', address: string): void;
 }>();
 
@@ -36,6 +37,10 @@ const attachments = computed<AttachmentLike[]>(() => {
 const youtubeId = computed(() => youtubeIdOf(props.entry.text));
 const mapCoords = computed(() => mapCoordsOf(props.entry.text));
 const isSystem = computed(() => (props.entry.payload as { system?: boolean } | undefined)?.system === true);
+/** Optimistic message awaiting network confirmation — render gray, like mobile. */
+const isPending = computed(() => props.entry.pending === true);
+
+const QUICK_EMOJIS = ['👍', '❤️', '😂'];
 
 const senderInboxId = computed(() => {
   const f = props.entry.from ?? '';
@@ -88,13 +93,30 @@ function onAvatar(): void {
 </script>
 
 <template>
-  <div class="flex items-start gap-2.5 px-4 py-1.5"
+  <div class="group relative flex items-start gap-2.5 px-4 py-1.5 transition-opacity"
+    :class="{ 'opacity-50': isPending }"
     @contextmenu="onContext"
     @pointerdown="onPointerDown"
     @pointermove="onPointerMove"
     @pointerup="clearLongPress"
     @pointercancel="clearLongPress"
     @pointerleave="clearLongPress">
+    <!-- Hover toolbar (desktop): quick reactions + reply, so react/reply are
+         discoverable without needing the long-press / right-click sheet. -->
+    <div v-if="!isPending"
+      class="absolute -top-2 right-3 z-10 flex items-center gap-0.5 px-1 py-0.5 rounded-full
+        opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity
+        bg-metro-surface-light dark:bg-metro-surface-dark
+        border border-metro-border-light dark:border-metro-border-dark shadow-sm">
+      <button v-for="e in QUICK_EMOJIS" :key="e" type="button"
+        class="px-1 text-base leading-none hover:scale-125 transition-transform"
+        @click="emit('react', { entry: props.entry, emoji: e })">{{ e }}</button>
+      <button type="button" title="Reply"
+        class="px-1 text-metro-fg-light dark:text-metro-fg-dark hover:opacity-70"
+        @click="emit('reply', props.entry)">
+        <HeroIcon name="reply" :size="15" />
+      </button>
+    </div>
     <!-- 24px stamp.fyi avatar at the start of every row — neutral
          placeholder when the inbox→address mapping hasn't resolved yet
          so geometry doesn't shift. -->
