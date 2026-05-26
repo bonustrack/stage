@@ -136,6 +136,7 @@ function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
       <li v-for="r in filtered ?? rows" :key="r.convId">
         <ChannelRow
           :avatar-address="r.avatarAddress"
+          :avatar-uri="r.avatarUri"
           :title="r.title"
           :last-ts="r.lastTs"
           :last-preview="r.lastPreview"

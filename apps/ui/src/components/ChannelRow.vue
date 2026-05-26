@@ -4,15 +4,23 @@
  *  per-file LOC cap. */
 
 import { stampBoxAvatarUrl } from '../lib/xmtp';
+import { avatarRenderUrl } from '@shared/profile/snapshot';
 
 const props = defineProps<{
   avatarAddress: string | null;
+  avatarUri?: string | null;
   title: string;
   lastTs: number | null;
   lastPreview: string;
   unreadCount: number;
 }>();
 const emit = defineEmits<{ (e: 'open'): void }>();
+
+const renderedAvatar = computed(() => {
+  if (props.avatarUri) return avatarRenderUrl('', props.avatarUri, 64);
+  if (props.avatarAddress) return stampBoxAvatarUrl(props.avatarAddress, 64);
+  return null;
+});
 
 function fmtTs(ts: number | null): string {
   if (!ts) return '';
@@ -34,10 +42,10 @@ function fmtTs(ts: number | null): string {
       hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark transition-colors"
     @click="emit('open')"
   >
-    <img v-if="props.avatarAddress"
-      :src="stampBoxAvatarUrl(props.avatarAddress, 64)"
+    <img v-if="renderedAvatar"
+      :src="renderedAvatar"
       alt=""
-      class="w-9 h-9 rounded-full bg-metro-border-dark shrink-0"
+      class="w-9 h-9 rounded-full bg-metro-border-dark shrink-0 object-cover"
     />
     <div v-else class="w-9 h-9 rounded-full bg-metro-border-dark shrink-0" />
     <div class="flex-1 min-w-0">

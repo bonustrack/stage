@@ -23,6 +23,7 @@ import { resetAccount } from '../../lib/wallet';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { getCachedRows, hydrateCachedRows, setCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
 import { previewOfXmtpContent } from '../../../_shared/xmtp/humanize';
+import { avatarRenderUrl } from '../../../_shared/profile/snapshot';
 
 interface Row {
   convId: string;
@@ -31,8 +32,12 @@ interface Row {
   lastPreview: string;
   /** Eth address whose stamp.fyi avatar should render in the row. Resolved
    *  to the latest sender when there's a message, else the peer (DMs) or
-   *  the first other member (groups). */
+   *  the first other member (groups). Ignored when `avatarUri` is set. */
   avatarAddress: string | null;
+  /** Group-uploaded image (ipfs:// or http URL). Takes precedence over
+   *  `avatarAddress` — when set, the row renders this image directly so
+   *  groups show their own avatar instead of a member's stamp. */
+  avatarUri: string | null;
   /** Cached inbox → eth address map, kept so live stream updates can resolve
    *  a new sender's avatar without an extra round-trip. */
   inboxToAddr: Record<string, string>;
@@ -76,22 +81,34 @@ async function summarize(conv: Conversation, selfInboxId: string): Promise<Row> 
   const memberAddresses = peerAddress ? [] : await groupMemberEthAddresses(conv);
   const inboxToAddr = await memberInboxToAddressMap(conv);
   const totalMembers = memberAddresses.length + 1;
-  const groupName = peerAddress ? '' : await ((conv as unknown as { name?: () => Promise<string> }).name?.() ?? Promise.resolve(''));
+  /** Read group metadata (name + uploaded image) in one shot for groups. */
+  const groupMeta = peerAddress
+    ? { name: '', imageUrl: '' }
+    : await (async (): Promise<{ name: string; imageUrl: string }> => {
+        const g = conv as unknown as { name?: () => Promise<string>; imageUrl?: () => Promise<string> };
+        const [n, img] = await Promise.all([
+          g.name?.() ?? Promise.resolve(''),
+          g.imageUrl?.().catch(() => '') ?? Promise.resolve(''),
+        ]);
+        return { name: n ?? '', imageUrl: img ?? '' };
+      })();
   const title = peerAddress
-    ?? (groupName && groupName.trim()
-      ? groupName.trim()
+    ?? (groupMeta.name.trim()
+      ? groupMeta.name.trim()
       : memberAddresses.length > 0
         ? `${totalMembers} member${totalMembers === 1 ? '' : 's'}`
         : conv.topic.replace(/^.*\//, '').slice(0, 12));
-  /** Avatar follows the most recent activity. Falls back to the static DM
-   *  peer / first other member when there's no message yet. */
+  /** For DMs: use the peer's stamp. For groups with an uploaded image:
+   *  use that image (via avatarUri). Otherwise fall back to the latest
+   *  sender / first member stamp. */
   const lastSenderAddress = last?.senderInboxId
     ? inboxToAddr[last.senderInboxId] ?? null
     : null;
-  const avatarAddress = lastSenderAddress
-    ?? peerAddress
+  const avatarAddress = peerAddress
+    ?? lastSenderAddress
     ?? memberAddresses[0]
     ?? null;
+  const avatarUri = peerAddress ? null : (groupMeta.imageUrl.trim() || null);
   /** Unread count = msgs newer than the persisted lastReadNs not sent by us. */
   const lastReadNs = await getLastReadNs(conv.id);
   let unreadCount = 0;
@@ -106,6 +123,7 @@ async function summarize(conv: Conversation, selfInboxId: string): Promise<Row> 
     lastTs: last?.sentNs ? Math.floor(last.sentNs / 1_000_000) : null,
     lastPreview: preview.slice(0, 80),
     avatarAddress,
+    avatarUri,
     inboxToAddr,
     unreadCount,
     lastReadNs,
@@ -388,7 +406,12 @@ export default function Messenger(): React.ReactElement {
               borderBottomWidth: 1, borderBottomColor: border,
             })}
           >
-            {item.avatarAddress ? (
+            {item.avatarUri ? (
+              <Image
+                source={{ uri: avatarRenderUrl('', item.avatarUri, 64) }}
+                style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: '#1a1f29' }}
+              />
+            ) : item.avatarAddress ? (
               <Image
                 source={{ uri: stampBoxAvatarUrl(item.avatarAddress, 64) }}
                 style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: '#1a1f29' }}
