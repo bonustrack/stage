@@ -8,11 +8,12 @@ import { cachedRows, hydrateCachedRows } from '../lib/channelsCache';
 import { type ChannelRow as Row } from '../lib/channelsSummarize';
 import { startChannelStream, type ChannelStreamHandles } from '../lib/useChannelStream';
 import { isAddressLike, isDomainLike, resolveDomain } from '../lib/stamp';
+import { runningInIframe } from '../lib/embedBridge';
 
 const router = useRouter();
-/** Embedded (iframed) = widget; no tab bar, so the Ask pill sits at the
- *  very bottom instead of reserving the tab-bar gap. */
-const isEmbedded = typeof window !== 'undefined' && window.self !== window.top;
+/** Embedded (iframed) = widget. Hides the search topnav + drops the Ask
+ *  pill to the very bottom (no tab-bar gap to reserve). */
+const embedded = runningInIframe();
 const rows = ref<Row[] | null>(hydrateCachedRows() as Row[] | null);
 const error = ref<string>('');
 const query = ref<string>('');
@@ -94,7 +95,7 @@ function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
 
 <template>
   <div class="h-[100dvh] flex flex-col relative">
-    <div class="shrink-0 px-3 pt-3 pb-2 flex items-center gap-2
+    <div v-if="!embedded" class="shrink-0 px-3 pt-3 pb-2 flex items-center gap-2
       bg-metro-bg-light dark:bg-metro-bg-dark">
       <input
         v-model="query"
@@ -156,9 +157,9 @@ function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
       class="fixed left-4 right-4 z-30
         bg-metro-head-light dark:bg-metro-head-dark
         text-metro-bg-light dark:text-metro-bg-dark
-        text-[18px] font-sans py-3 rounded-full
+        text-[15px] font-sans py-3 rounded-full
         disabled:opacity-60 hover:opacity-90 transition-opacity"
-      :class="isEmbedded ? 'bottom-4' : 'bottom-[76px]'"
+      :class="embedded ? 'bottom-4' : 'bottom-[76px]'"
       @click="onAskPress"
     >
       {{ creatingAsk ? 'Creating group…' : 'Ask a question' }}
