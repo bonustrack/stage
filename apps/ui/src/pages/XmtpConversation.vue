@@ -1,12 +1,11 @@
 <script setup lang="ts">
-/** XMTP conversation view — opened from /channels or /contacts. Live-streams via the
- *  local XMTP client. Layout: top-nav with back arrow, scrollable message list (newest
- *  at the bottom), composer pinned to the viewport bottom. */
+/** XMTP conversation view — live-streamed via the local XMTP client. */
 
 import { XMTP_USER_PREFIX, convOfLine, lineOfConv, peerEthAddressOfDm, memberInboxToAddressMap } from '../lib/xmtp';
 import { xmtpReact } from '../lib/xmtpSend';
 import { useXmtpFeed, reactionsByMessage, isReactionEntry } from '../lib/xmtpFeed';
 import { markConvRead } from '../lib/channelsCache';
+import { postUnreadToParent } from '../lib/embedBridge';
 import type { HistoryEntry } from '../lib/types';
 
 const route = useRoute();
@@ -22,16 +21,13 @@ const replyingTo = ref<{ id: string; preview: string } | null>(null);
 const actionTarget = ref<HistoryEntry | null>(null);
 const optimistic = ref<HistoryEntry[]>([]);
 
-/** Header metadata — DM resolves to peer eth address; group resolves to
- *  the group name. Used to render the title + avatar + tap target. */
+/** Header metadata — DM peer address or group name. */
 const peerAddress = ref<string | null>(null);
 const groupName = ref<string>('');
 const isGroup = computed(() => peerAddress.value === null && groupName.value !== '');
-/** inboxId → eth address for every member, threaded into each bubble so
- *  the per-row stamp.fyi avatar can resolve without a per-bubble lookup. */
+/** inboxId → eth address for every member (threaded into each bubble). */
 const inboxToAddr = ref<Record<string, string>>({});
-/** Member eth addresses excluding the local user — drives the header
- *  avatar stack (mirrors the mobile conversation header). */
+/** Member eth addresses excluding self — drives the header avatar stack. */
 const memberAddresses = computed(() =>
   Object.entries(inboxToAddr.value)
     .filter(([id]) => id !== feed.inboxId.value)
@@ -54,9 +50,15 @@ watchEffect(async () => {
   inboxToAddr.value = await memberInboxToAddressMap(conv);
 });
 
-/** Mark conv as read when bubbles arrive and on initial mount. */
-watch(() => feed.events.value.length, () => {
-  if (convId.value && feed.events.value.length > 0) markConvRead(convId.value);
+/** Mark conv as read when bubbles arrive; ping the embed host (if iframed)
+ *  with the inbound count so its launcher can badge unread. */
+watch(() => feed.events.value.length, (len, prev) => {
+  if (convId.value && len > 0) markConvRead(convId.value);
+  const added = len - (prev ?? 0);
+  if (added > 0) {
+    postUnreadToParent(feed.events.value.slice(0, added)
+      .filter(e => e.from !== myUri.value && !isReactionEntry(e)).length);
+  }
 });
 
 function openHeader(): void {
@@ -67,9 +69,7 @@ function openHeader(): void {
 const reactions = computed(() => reactionsByMessage(feed.events.value));
 const liveBubbles = computed(() => feed.events.value.filter(e => !isReactionEntry(e)));
 
-/** Filter optimistic entries inline so the streamed-confirmed bubble never renders
- *  alongside its pending twin. liveBubbles is newest-first; flip to oldest-first
- *  for top-down rendering. */
+/** Drop optimistic twins of confirmed bubbles; flip to oldest-first. */
 const allBubbles = computed(() => {
   const live = optimistic.value.filter(o =>
     !liveBubbles.value.some(e => e.from === myUri.value && e.text === o.text
