@@ -2,7 +2,8 @@
 /** Plain-text composer wired to the local XMTP client. Enter sends, Shift+Enter newlines.
  *  When a reply target is set the bar above the input shows the snippet with a clear button. */
 
-import { xmtpSendText, xmtpReply, xmtpSendAttachment } from '../lib/xmtpSend';
+import { xmtpSendText, xmtpReply } from '../lib/xmtpSend';
+import { useComposerAttach } from '../lib/useComposerAttach';
 
 const props = defineProps<{
   line: string;
@@ -19,6 +20,9 @@ const sending = ref(false);
 const err = ref<string | null>(null);
 const attachOpen = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);
+const textarea = ref<HTMLTextAreaElement | null>(null);
+const { pending, clear: clearPending, onPaste, onFileChange, flush: flushPending } =
+  useComposerAttach(() => props.line, m => { err.value = m; });
 
 function toggleAttach(): void { attachOpen.value = !attachOpen.value; }
 
@@ -27,40 +31,12 @@ function pickImage(): void {
   fileInput.value?.click();
 }
 
-async function sendFile(file: File): Promise<void> {
-  try {
-    const dataB64 = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (): void => {
-        const r = reader.result;
-        if (typeof r !== 'string') { reject(new Error('FileReader returned non-string')); return; }
-        const comma = r.indexOf(',');
-        resolve(comma === -1 ? r : r.slice(comma + 1));
-      };
-      reader.onerror = (): void => reject(reader.error ?? new Error('FileReader failed'));
-      reader.readAsDataURL(file);
-    });
-    await xmtpSendAttachment(props.line, file.name || 'image', file.type || 'application/octet-stream', dataB64);
-  } catch (e) {
-    err.value = (e as Error).message;
-  }
-}
-
-async function onFileChange(ev: Event): Promise<void> {
-  const input = ev.target as HTMLInputElement;
-  const file = input.files?.[0];
-  input.value = '';
-  if (file) await sendFile(file);
-}
-
-/** Ctrl/Cmd-V of an image in the composer sends it as an attachment. */
-function onPaste(ev: ClipboardEvent): void {
-  const item = Array.from(ev.clipboardData?.items ?? []).find(i => i.type.startsWith('image/'));
-  if (!item) return;
-  const file = item.getAsFile();
-  if (!file) return;
-  ev.preventDefault();
-  void sendFile(file);
+/** Grow the textarea with its content up to the max height. */
+function autoGrow(): void {
+  const el = textarea.value;
+  if (!el) return;
+  el.style.height = 'auto';
+  el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
 }
 
 async function shareLocation(): Promise<void> {
@@ -89,21 +65,25 @@ async function shareLocation(): Promise<void> {
 
 async function send(): Promise<void> {
   const body = text.value.trim();
-  if (!body || sending.value) return;
+  const staged = pending.value;
+  if ((!body && !staged) || sending.value) return;
   sending.value = true;
   err.value = null;
-  const localId = `tmp_${Math.random().toString(36).slice(2, 10)}`;
-  const replyTo = props.replyingTo?.id;
-  emit('optimistic', { localId, text: body, ...(replyTo ? { replyTo } : {}) });
-  text.value = '';
   try {
-    if (replyTo) await xmtpReply(props.line, replyTo, body);
-    else await xmtpSendText(props.line, body);
-    emit('clear-reply');
-    emit('sent', localId);
+    if (staged) await flushPending();
+    if (body) {
+      const localId = `tmp_${Math.random().toString(36).slice(2, 10)}`;
+      const replyTo = props.replyingTo?.id;
+      emit('optimistic', { localId, text: body, ...(replyTo ? { replyTo } : {}) });
+      text.value = '';
+      nextTick(autoGrow);
+      if (replyTo) await xmtpReply(props.line, replyTo, body);
+      else await xmtpSendText(props.line, body);
+      emit('clear-reply');
+      emit('sent', localId);
+    }
   } catch (e) {
     err.value = (e as Error).message;
-    emit('sent', localId);
   } finally {
     sending.value = false;
   }
@@ -124,15 +104,29 @@ async function send(): Promise<void> {
     <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFileChange" />
     <!-- Mobile-style composer: textarea on top, [+ / spacer / send] row below,
          both inside one rounded surface. Mirrors MessengerComposer.tsx. -->
-    <div class="m-2.5 p-2.5 rounded-2xl bg-metro-surface-light dark:bg-metro-surface-dark">
+    <div class="m-2.5 px-2.5 py-1.5 rounded-2xl bg-metro-surface-light dark:bg-metro-surface-dark">
+      <!-- Pending pasted/selected image preview — removable, sent on Send. -->
+      <div v-if="pending" class="relative inline-block mb-2">
+        <img :src="pending.url" alt="" class="max-h-32 rounded-lg" />
+        <button
+          type="button"
+          class="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-black/70 text-white flex items-center justify-center"
+          title="Remove"
+          @click="clearPending"
+        >
+          <HeroIcon name="x" :size="12" />
+        </button>
+      </div>
       <textarea
+        ref="textarea"
         v-model="text"
         placeholder="Message…"
         rows="1"
         class="w-full resize-none min-h-[24px] max-h-[140px] font-sans
-          bg-transparent px-2 pt-0.5 pb-1.5 text-[17px] leading-snug outline-none
+          bg-transparent px-2 py-0 text-[17px] leading-snug outline-none
           text-metro-head-light dark:text-metro-head-dark
           placeholder:text-metro-sub-light dark:placeholder:text-metro-sub-dark"
+        @input="autoGrow"
         @keydown.enter.exact.prevent="send"
         @paste="onPaste"
       />
@@ -150,7 +144,7 @@ async function send(): Promise<void> {
         <div class="flex-1" />
         <button
           type="button"
-          :disabled="sending || !text.trim()"
+          :disabled="sending || (!text.trim() && !pending)"
           class="w-9 h-9 shrink-0 rounded-full flex items-center justify-center
             bg-metro-head-light dark:bg-metro-head-dark text-metro-bg-light dark:text-metro-bg-dark
             disabled:opacity-50"
