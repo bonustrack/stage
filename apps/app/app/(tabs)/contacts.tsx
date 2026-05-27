@@ -12,6 +12,7 @@ import {
   getOrCreateXmtpClient, peerEthAddressOfDm, stampBoxAvatarUrl, shortAddress,
 } from '../../lib/xmtp';
 import { useEffectiveColorScheme } from '../../lib/theme';
+import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 
 interface Contact { address: string; convId: string }
 
@@ -34,6 +35,10 @@ export default function Contacts(): React.ReactElement {
     if (!q) return contacts;
     return contacts.filter(c => c.address.toLowerCase().includes(q));
   }, [contacts, query]);
+
+  /** Resolve Snapshot display names for the contact addresses (re-renders rows
+   *  once they load). */
+  usePeerProfiles((contacts ?? []).map(c => c.address));
 
   useEffect(() => {
     void (async (): Promise<void> => {
@@ -112,23 +117,25 @@ export default function Contacts(): React.ReactElement {
           <Pressable
             onPress={() => router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } })}
             style={({ pressed }) => ({
-              backgroundColor: pressed ? border : rowBg,
+              backgroundColor: pressed ? border : 'transparent',
               flexDirection: 'row', alignItems: 'center', gap: 12,
-              paddingHorizontal: 14, paddingVertical: 12,
+              paddingHorizontal: 14, paddingVertical: 14,
               borderBottomWidth: 1, borderBottomColor: border,
             })}
           >
             <Image
               source={{ uri: stampBoxAvatarUrl(item.address) }}
-              style={{ width: 24, height: 24, borderRadius: 999, backgroundColor: border }}
+              style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border }}
             />
             <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={{ color: head, fontSize: 14 , fontFamily: 'Calibre-Medium'}} numberOfLines={1}>
-                {item.address}
+              <Text style={{ color: head, fontSize: 16 , fontFamily: 'Calibre-Semibold'}} numberOfLines={1}>
+                {getPeerName(item.address) ?? shortAddress(item.address)}
               </Text>
-              <Text style={{ color: sub, fontSize: 12, marginTop: 4 , fontFamily: 'Calibre-Medium'}} numberOfLines={1}>
-                {shortAddress(item.address)}
-              </Text>
+              {getPeerName(item.address) ? (
+                <Text style={{ color: sub, fontSize: 13, marginTop: 2 , fontFamily: 'Calibre-Medium'}} numberOfLines={1}>
+                  {shortAddress(item.address)}
+                </Text>
+              ) : null}
             </View>
           </Pressable>
         )}
