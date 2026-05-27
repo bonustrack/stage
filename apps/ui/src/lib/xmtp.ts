@@ -23,6 +23,7 @@ import {
   type PrivateKeyAccount,
 } from 'viem/accounts';
 import { hexToBytes, type Hex } from 'viem';
+import { getHostAccount, hostSigner } from './hostSigner';
 
 export type { XmtpEnv };
 
@@ -70,26 +71,40 @@ export async function getOrCreateXmtpClient(env: XmtpEnv = 'production'): Promis
   if (cachedClient) return cachedClient;
   if (buildingClient) return buildingClient;
   buildingClient = (async (): Promise<XmtpClient> => {
-    const account = loadOrCreateAccount();
-    const signer = signerForAccount(account);
+    /** Embedded in a host app (e.g. Snapshot)? Borrow its connected wallet via the
+     *  postMessage bridge so the widget's XMTP identity == the user's wallet, with
+     *  no separate connect. Falls back to a local throwaway key on the standalone
+     *  site or when the host exposes no wallet. */
+    const hostAddress = await getHostAccount().catch(() => null);
+    let signer: Signer;
+    let address: string;
+    if (hostAddress) {
+      signer = hostSigner(hostAddress);
+      address = hostAddress;
+    } else {
+      const account = loadOrCreateAccount();
+      signer = signerForAccount(account);
+      address = account.address.toLowerCase();
+    }
     const savedAddress = localStorage.getItem(ADDRESS_KEY);
     const savedEnv = localStorage.getItem(ENV_KEY);
     /** TS narrows `Omit<ClientOptions, "codecs">` to the `{ backend }` branch when the
      *  literal only contains `env`. Cast to the network-options shape so `env` survives. */
     const opts = { env } as Parameters<typeof Client.create>[1];
     /** Reuse on-disk identity only when both the address (key match) and env
-     *  (network match) line up — different networks live under different inboxes. */
-    if (savedAddress && savedAddress.toLowerCase() === account.address.toLowerCase() && savedEnv === env) {
+     *  (network match) line up — different networks live under different inboxes.
+     *  Reusing skips re-signing — important for the host-wallet path (no extra prompt). */
+    if (savedAddress && savedAddress.toLowerCase() === address && savedEnv === env) {
       try {
         cachedClient = await Client.build(
-          { identifier: account.address.toLowerCase(), identifierKind: IdentifierKind.Ethereum },
+          { identifier: address, identifierKind: IdentifierKind.Ethereum },
           opts,
         );
         return cachedClient;
       } catch { /* fall through to create() */ }
     }
     cachedClient = await Client.create(signer, opts);
-    localStorage.setItem(ADDRESS_KEY, account.address.toLowerCase());
+    localStorage.setItem(ADDRESS_KEY, address);
     localStorage.setItem(ENV_KEY, env);
     return cachedClient;
   })();
