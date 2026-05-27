@@ -55,22 +55,19 @@ function isReaction(e: HistoryEntry): boolean {
 /** Stamp.fyi avatars shown in the conversation header. Mirrors the channels-
  *  list row avatar but locked at 24px per the design spec. DMs render a single
  *  circle; groups stack up to 3 member avatars with a "+N" overflow tile. */
-function HeaderAvatar({ peerAddr, memberAddrs, groupImage, border }: {
-  peerAddr: string | null; memberAddrs: string[]; groupImage: string; border: string;
+function HeaderAvatar({ peerAddr, groupImage, border }: {
+  peerAddr: string | null; groupImage: string; border: string;
 }): React.ReactElement | null {
   const SIZE = 24;
-  /** Leading avatar — shown only when a real one is available: the DM peer's
-   *  custom avatar, a group's uploaded image, or a member's custom avatar. No
-   *  identicon fallback → render nothing (title only) otherwise. */
+  /** Show the leading avatar for a 1-1 (the peer's custom avatar, else their
+   *  identicon) or for a group that has its own uploaded image. Groups without
+   *  an image show nothing — no member-avatar fallback. */
   let uri: string | null = null;
   if (peerAddr) {
     const av = getPeerAvatar(peerAddr);
-    if (av) uri = avatarRenderUrl(peerAddr, av, SIZE * 2);
+    uri = av ? avatarRenderUrl(peerAddr, av, SIZE * 2) : stampBoxAvatarUrl(peerAddr, SIZE * 2);
   } else if (groupImage) {
     uri = avatarRenderUrl('', groupImage, SIZE * 2);
-  } else {
-    const m = memberAddrs.find(a => getPeerAvatar(a));
-    if (m) uri = avatarRenderUrl(m, getPeerAvatar(m), SIZE * 2);
   }
   if (!uri) return null;
   return (
@@ -281,7 +278,7 @@ export default function XmtpConversation(): React.ReactElement {
           }}
           style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 14 }}
         >
-          <HeaderAvatar peerAddr={peerAddr} memberAddrs={memberAddrs} groupImage={groupImage} border={dark ? '#282a2d' : '#e4e4e5'} />
+          <HeaderAvatar peerAddr={peerAddr} groupImage={groupImage} border={dark ? '#282a2d' : '#e4e4e5'} />
           <Text style={{ color: head, fontSize: 19, fontFamily: 'Calibre-Semibold', flex: 1 }} numberOfLines={1}>
             {isGroup ? (groupName === null ? '' : (groupName || 'Untitled group'))
               : peerAddr ? (getPeerName(peerAddr) ?? `${peerAddr.slice(0, 6)}…${peerAddr.slice(-4)}`) : ''}
