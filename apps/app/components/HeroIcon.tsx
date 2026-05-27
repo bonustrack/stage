@@ -27,6 +27,8 @@ const PATHS: Record<string, string> = {
   stop: 'M5 5h14v14H5z',
   // pencil — unsent draft indicator (plain pencil, no surrounding box)
   pencil: 'M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z',
+  // check — confirm / send voice recording
+  check: 'M5 13l4 4L19 7',
   // x — close / dismiss
   x: 'M6 18L18 6M6 6l12 12',
   // plus — attachment menu trigger
