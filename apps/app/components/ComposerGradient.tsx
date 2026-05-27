@@ -16,20 +16,25 @@ interface Props {
    *  'up':              solid at top → transparent at bottom (sits below status bar). */
   direction?: 'up' | 'down';
   height?: number;
-  /** Absolute positioning offsets relative to the wrapping View. */
+  /** Absolute positioning offsets relative to the wrapping View. `left`/`right`
+   *  default to 0; pass negatives to bleed past a padded parent (RN insets
+   *  absolute children by the parent's padding, so a fade inside a padded
+   *  container otherwise leaves un-faded strips at the screen edges). */
   top?: number;
   bottom?: number;
+  left?: number;
+  right?: number;
 }
 
 /** Slice count across the strip — 16 over a 24px strip (1.5px each) reads as a
  *  smooth ramp without visible banding. */
 const SLICES = 16;
 
-export function ComposerGradient({ bg, direction = 'down', height = 24, top, bottom }: Props): React.ReactElement {
+export function ComposerGradient({ bg, direction = 'down', height = 24, top, bottom, left = 0, right = 0 }: Props): React.ReactElement {
   const sliceH = height / SLICES;
   return (
     <View pointerEvents="none" style={{
-      position: 'absolute', left: 0, right: 0, height,
+      position: 'absolute', left, right, height,
       ...(top !== undefined ? { top } : {}),
       ...(bottom !== undefined ? { bottom } : {}),
     }}>

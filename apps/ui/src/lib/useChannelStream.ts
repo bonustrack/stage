@@ -27,7 +27,17 @@ export interface ChannelStreamHandles {
 export async function startChannelStream(client: XmtpClient): Promise<ChannelStreamHandles> {
   const selfInboxId = client.inboxId ?? '';
 
-  const refresh = async (): Promise<void> => {
+  /** A full refresh re-summarises every conversation — `messages()` + per-member
+   *  inbox-state resolution per conv — which is the call pattern that previously
+   *  drained the XMTP read rate limit. The live streams below cover real-time
+   *  updates, so a full refresh is only a backstop: debounce the automatic callers
+   *  (visibility + poll + peer-conv fallback) to at most once per window, while
+   *  letting an explicit user action (`force`) always run. */
+  let lastRefreshAt = 0;
+  const MIN_AUTO_REFRESH_MS = 20_000;
+  const refresh = async (force = false): Promise<void> => {
+    if (!force && Date.now() - lastRefreshAt < MIN_AUTO_REFRESH_MS) return;
+    lastRefreshAt = Date.now();
     try {
       await client.conversations.syncAll();
       const convs = await client.conversations.list();
@@ -46,7 +56,7 @@ export async function startChannelStream(client: XmtpClient): Promise<ChannelStr
   /** Pull synced consent from the network before the first summarise so
    *  cross-device read/unread state is reflected from the start. */
   await syncPreferences();
-  await refresh();
+  await refresh(true);
 
   stopConvStream = await client.conversations.stream({
     onValue: async (conv: Conversation | undefined) => {
@@ -90,10 +100,13 @@ export async function startChannelStream(client: XmtpClient): Promise<ChannelStr
     if (document.visibilityState === 'visible') { void syncPreferences(); void refresh(); }
   };
   document.addEventListener('visibilitychange', visibilityHandler);
-  pollTimer = setInterval(() => { void refresh(); }, 30_000);
+  /** Backstop poll for dropped streams — every 5min, not 30s. The live streams
+   *  handle real-time updates; this just catches anything they missed. */
+  pollTimer = setInterval(() => { void refresh(); }, 300_000);
 
   return {
-    refresh,
+    /** Manual pull-to-refresh / button: always force a fresh full re-summarise. */
+    refresh: () => refresh(true),
     stop: async (): Promise<void> => {
       try { await stopConvStream?.end(); } catch { /* ignore */ }
       try { await stopMsgStream?.end(); } catch { /* ignore */ }

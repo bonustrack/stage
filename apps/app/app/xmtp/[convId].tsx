@@ -296,10 +296,12 @@ export default function XmtpConversation(): React.ReactElement {
           </Text>
         </Pressable>
       </View>
-      {/** Fade strip below the top nav — mirrors the composer's top fade. Position it
-       *  flush against the nav bottom (which sits at `44 + insets.top`), so the solid
-       *  bg fades smoothly into the scrolling content beneath. */}
-      <ComposerGradient bg={bg} direction="up" top={52 + insets.top} height={24} />
+      {/** Fade strip below the top nav — mirrors the composer's top fade. The nav is
+       *  `52 + insets.top` tall; start the fade 1px higher so its solid-bg top edge
+       *  overlaps the nav bottom by 1px, closing the hairline seam between the two
+       *  absolute bg layers (the "1px missing"). The fade then ramps down to
+       *  transparent over the content beneath. */}
+      <ComposerGradient bg={bg} direction="up" top={52 + insets.top - 1} height={24} />
       {showJump ? (
         <Pressable
           onPress={() => {
