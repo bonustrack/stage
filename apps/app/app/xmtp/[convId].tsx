@@ -13,6 +13,7 @@ import * as Clipboard from 'expo-clipboard';
 import { MessengerBubble } from '../../components/MessengerBubble';
 import { usePeerProfiles, getPeerName, getPeerAvatar } from '../../lib/peerProfiles';
 import { useConvMeta } from '../../lib/useConvMeta';
+import { Spinner } from '../../components/Spinner';
 import { avatarRenderUrl } from '../../../_shared/profile/snapshot';
 import { MessengerComposer } from '../../components/MessengerComposer';
 import { ComposerGradient } from '../../components/ComposerGradient';
@@ -247,7 +248,9 @@ export default function XmtpConversation(): React.ReactElement {
         )}
         ListEmptyComponent={
           <View style={{ padding: 32, alignItems: 'center' }}>
-            <Text style={{ color: sub }}>Type a message below to start chatting.</Text>
+            {status === 'open'
+              ? <Text style={{ color: sub }}>Type a message below to start chatting.</Text>
+              : <Spinner size={28} color={head} />}
           </View>
         }
         keyboardShouldPersistTaps="handled"

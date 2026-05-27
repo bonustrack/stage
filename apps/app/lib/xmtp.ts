@@ -477,10 +477,15 @@ export type XmtpFeedStatus = 'idle' | 'loading' | 'open' | 'error';
  *  Caller passes a metro line URI (`metro://xmtp/<convId>`). When `enabled` is
  *  false, the hook stays idle — callers use this to suppress loading until the
  *  client is built. */
+/** Per-conversation message cache so re-opening a channel renders its messages
+ *  instantly (no empty-state flash); the network history still refreshes in the
+ *  background. Survives navigation within the session. */
+const feedCache = new Map<string, HistoryEntry[]>();
+
 export function useXmtpFeed(line: string | null, enabled: boolean): {
   events: HistoryEntry[]; status: XmtpFeedStatus; error: string | null; inboxId: string;
 } {
-  const [events, setEvents] = useState<HistoryEntry[]>([]);
+  const [events, setEvents] = useState<HistoryEntry[]>(() => (line ? feedCache.get(line) ?? [] : []));
   const [status, setStatus] = useState<XmtpFeedStatus>('idle');
   const [error, setError] = useState<string | null>(null);
   const [inboxId, setInboxId] = useState<string>('');
@@ -491,7 +496,9 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
     let unsubscribeStream: (() => void) | null = null;
     let pollTimer: ReturnType<typeof setInterval> | null = null;
     let appStateSub: { remove: () => void } | null = null;
-    setStatus('loading');
+    /** Seeded from cache → already 'open' (skip the spinner); otherwise show the
+     *  loading spinner until the first refresh lands. */
+    setStatus(feedCache.get(line)?.length ? 'open' : 'loading');
     setError(null);
 
     /** Re-sync from the network + merge any new messages into `events`. Called on the
@@ -554,6 +561,11 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
       if (appStateSub) try { appStateSub.remove(); } catch { /* ignore */ }
     };
   }, [line, enabled]);
+
+  /** Keep the per-conversation cache in sync so the next open is instant. */
+  useEffect(() => {
+    if (line && events.length > 0) feedCache.set(line, events);
+  }, [line, events]);
 
   return { events, status, error, inboxId };
 }
