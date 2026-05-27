@@ -53,7 +53,7 @@ Usage:
   metro update                                Upgrade in place.
   metro --version | --help
 
-Trains: place \`<name>.ts\` files in ~/.metro/trains/. See \`@stage-labs/metro/examples\`.
+Trains: place \`<name>.ts\` files in ~/.metro/trains/. See \`@metro-labs/metro/examples\`.
 Lines: metro://<station>/<path>. Multi-line args: pipe on stdin where supported.
 Exit codes: 0 success · 1 usage · 2 config · 3 upstream
 `;

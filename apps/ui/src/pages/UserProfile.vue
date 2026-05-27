@@ -6,7 +6,7 @@
 
 import { openDmWithAddress, shortAddress } from '../lib/xmtp';
 import { readProfile } from '../lib/profile';
-import { avatarRenderUrl } from '@stage-labs/metro-client/profile/snapshot';
+import { avatarRenderUrl } from '@metro-labs/client/profile/snapshot';
 import { useQuery } from '@tanstack/vue-query';
 
 const route = useRoute();

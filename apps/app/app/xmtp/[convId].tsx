@@ -14,7 +14,7 @@ import { MessengerBubble } from '../../components/MessengerBubble';
 import { usePeerProfiles, getPeerName, getPeerAvatar } from '../../lib/peerProfiles';
 import { useConvMeta } from '../../lib/useConvMeta';
 import { Spinner } from '../../components/Spinner';
-import { avatarRenderUrl } from '@stage-labs/metro-client/profile/snapshot';
+import { avatarRenderUrl } from '@metro-labs/client/profile/snapshot';
 import { MessengerComposer } from '../../components/MessengerComposer';
 import { ComposerGradient } from '../../components/ComposerGradient';
 import { HeroIcon } from '../../components/HeroIcon';

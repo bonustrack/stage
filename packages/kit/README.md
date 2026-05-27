@@ -1,4 +1,4 @@
-# @stage-labs/metro-kit
+# @metro-labs/kit
 
 Shared design-system primitives for the Metro clients.
 
@@ -19,8 +19,8 @@ plus a documented contract for keeping the two implementations visually in sync.
 | `stations` | `STATIONS`, `StationKey`, `StationIconDef`, `getStationIcon()`, `stationLabel()` | station icon renderers in both apps |
 | `theme` | `ThemePreference`, `THEME_STORAGE_KEY`, `THEME_PREFERENCES`, `isThemePreference()` | `apps/ui/src/lib/theme.ts`, `apps/app/lib/theme.ts` |
 
-Import either from the root (`@stage-labs/metro-kit`) or a subpath
-(`@stage-labs/metro-kit/icons`).
+Import either from the root (`@metro-labs/kit`) or a subpath
+(`@metro-labs/kit/icons`).
 
 ## Component-naming convention
 
@@ -35,12 +35,12 @@ the codebases stay legible side-by-side:
 
 ## Shareable vs framework-specific
 
-**Shareable (lives here or in `@stage-labs/metro-client`):**
+**Shareable (lives here or in `@metro-labs/client`):**
 - Colour / spacing / radius tokens, font stacks
 - SVG path data (HeroIcons, station glyphs)
 - Pure types & prop-shape contracts
 - Pure logic with no UI: profile/Snapshot, XMTP humanisation, embed detection,
-  Stamp resolution, activity bucketing → these live in `@stage-labs/metro-client`.
+  Stamp resolution, activity bucketing → these live in `@metro-labs/client`.
 
 **Framework-specific (stays in each app):**
 - Anything that renders: `.vue` SFCs, `.tsx` components, the `<svg>`/`<Svg>`

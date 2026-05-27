@@ -10,7 +10,7 @@ import {
 import {
   XMTP_USER_PREFIX, getOrCreateXmtpClient, convOfLine,
 } from './xmtp';
-import { previewOfXmtpContent } from '@stage-labs/metro-client/xmtp/humanize';
+import { previewOfXmtpContent } from '@metro-labs/client/xmtp/humanize';
 import type { HistoryEntry } from './types';
 
 /** Per-message reaction counts derived from the latest emit-or-removal of each

@@ -1,8 +1,8 @@
-# @stage-labs/metro-ui
+# ui
 
 Vue 3 web companion for the Metro daemon. Consumes the same monitor endpoints
 (`GET /api/state`, `GET /api/tail`, `POST /api/call/<train>/<action>`) as
-`@stage-labs/metro-app`, so the two are visually + functionally parallel.
+`app`, so the two are visually + functionally parallel.
 
 ## Develop
 
