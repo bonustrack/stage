@@ -1,9 +1,9 @@
 <script setup lang="ts">
 /** Renders a Heroicons v1 outline glyph. Path data lives in
- *  @stage-labs/metro-kit (shared with apps/app/components/HeroIcon.tsx) so the
+ *  @metro-labs/kit (shared with apps/app/components/HeroIcon.tsx) so the
  *  two clients keep one icon vocabulary. */
 
-import { HERO_ICON_PATHS, HERO_ICON_DEFAULTS, type HeroIconName } from '@stage-labs/metro-kit/icons';
+import { HERO_ICON_PATHS, HERO_ICON_DEFAULTS, type HeroIconName } from '@metro-labs/kit/icons';
 
 export type { HeroIconName };
 

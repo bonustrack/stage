@@ -4,7 +4,7 @@
  *  per-file LOC cap. */
 
 import { stampBoxAvatarUrl } from '../lib/xmtp';
-import { avatarRenderUrl } from '@stage-labs/metro-client/profile/snapshot';
+import { avatarRenderUrl } from '@metro-labs/client/profile/snapshot';
 
 const props = defineProps<{
   avatarAddress: string | null;

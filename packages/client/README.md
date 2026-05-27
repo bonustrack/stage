@@ -1,4 +1,4 @@
-# @stage-labs/metro-client
+# @metro-labs/client
 
 Framework-agnostic shared logic for the Metro clients (`apps/ui` Vue web +
 `apps/app` React Native). **Pure TypeScript** — no Vue, no React, no
@@ -12,13 +12,13 @@ web. It's now a real workspace package so both apps import it the same way.
 
 | Subpath | What |
 | --- | --- |
-| `@stage-labs/metro-client/types` | `HistoryEntry` — the message/event envelope both feeds render |
-| `@stage-labs/metro-client/profile/snapshot` | Snapshot hub endpoints, EIP-712 schema, profile read/write, `avatarRenderUrl`, `getCacheHash`, `PROFILE_FIELD_LIMITS` |
-| `@stage-labs/metro-client/xmtp/humanize` | `previewOfXmtpContent`, `humanizeGroupUpdated`, `shortContentType` |
-| `@stage-labs/metro-client/embed/detect` | `youtubeIdOf`, `mapCoordsOf`, `osmTileXY`, `osmTileUrl` |
-| `@stage-labs/metro-client/stamp/resolve` | `resolveDomain`, `lookupName`, `isAddressLike`, `isDomainLike`, `resolveSearchInputToAddress` |
+| `@metro-labs/client/types` | `HistoryEntry` — the message/event envelope both feeds render |
+| `@metro-labs/client/profile/snapshot` | Snapshot hub endpoints, EIP-712 schema, profile read/write, `avatarRenderUrl`, `getCacheHash`, `PROFILE_FIELD_LIMITS` |
+| `@metro-labs/client/xmtp/humanize` | `previewOfXmtpContent`, `humanizeGroupUpdated`, `shortContentType` |
+| `@metro-labs/client/embed/detect` | `youtubeIdOf`, `mapCoordsOf`, `osmTileXY`, `osmTileUrl` |
+| `@metro-labs/client/stamp/resolve` | `resolveDomain`, `lookupName`, `isAddressLike`, `isDomainLike`, `resolveSearchInputToAddress` |
 
-The package root (`@stage-labs/metro-client`) re-exports everything.
+The package root (`@metro-labs/client`) re-exports everything.
 
 ## No build step
 

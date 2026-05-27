@@ -1,12 +1,12 @@
 /** Renders a Heroicons v1 outline glyph. Path data lives in
- * @stage-labs/metro-kit (shared with apps/ui/src/components/HeroIcon.vue) so the
+ * @metro-labs/kit (shared with apps/ui/src/components/HeroIcon.vue) so the
  * two clients keep one icon vocabulary. Stroke is currentColor, fill is
  * transparent, viewBox is the v1 outline standard 24×24. An active/focused
  * state can be signalled by thickening the stroke (see HERO_ICON_DEFAULTS).
  */
 
 import { Path, Svg } from 'react-native-svg';
-import { HERO_ICON_PATHS, HERO_ICON_DEFAULTS, type HeroIconName } from '@stage-labs/metro-kit/icons';
+import { HERO_ICON_PATHS, HERO_ICON_DEFAULTS, type HeroIconName } from '@metro-labs/kit/icons';
 
 export type { HeroIconName };
 
