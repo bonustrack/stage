@@ -196,20 +196,20 @@ const cardClass = 'w-full max-w-sm flex items-center gap-3 px-4 py-4 rounded-2xl
         :class="view === 'home' ? 'text-metro-head-light dark:text-metro-head-dark' : 'text-metro-sub-light dark:text-metro-sub-dark'"
         @click="view = 'home'">
         <HeroIcon name="home" :size="22" />
-        <span class="text-[11px] font-sans">Home</span>
+        <span class="text-[13px] font-sans">Home</span>
       </button>
       <button type="button" class="flex-1 flex flex-col items-center gap-1 py-2.5 transition-colors"
         :class="view === 'messages' ? 'text-metro-head-light dark:text-metro-head-dark' : 'text-metro-sub-light dark:text-metro-sub-dark'"
         @click="view = 'messages'">
         <HeroIcon name="list" :size="22" />
-        <span class="text-[11px] font-sans">Messages</span>
+        <span class="text-[13px] font-sans">Messages</span>
       </button>
       <button type="button"
         class="flex-1 flex flex-col items-center gap-1 py-2.5 text-metro-sub-light dark:text-metro-sub-dark
           hover:text-metro-head-light dark:hover:text-metro-head-dark transition-colors"
         @click="openDocs">
         <HeroIcon name="document" :size="22" />
-        <span class="text-[11px] font-sans">Docs</span>
+        <span class="text-[13px] font-sans">Docs</span>
       </button>
     </div>
   </div>
