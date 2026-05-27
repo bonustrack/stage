@@ -9,7 +9,7 @@ code lives in train scripts outside this repo, written on demand by the user or 
 
 ```
 packages/
-  metro/        # @stage-labs/metro — the daemon + CLI (see packages/metro/README.md)
+  metro/        # @metro-labs/metro — the daemon + CLI (see packages/metro/README.md)
 apps/
   app/          # app — mobile activity monitor + composer (Expo + RN)
   ui/           # ui — web activity monitor + composer (Vue 3 + Vite)
@@ -18,7 +18,7 @@ apps/
 
 ## Packages
 
-- [`@stage-labs/metro`](packages/metro/README.md) — install with `npm i -g @stage-labs/metro`. Run `metro` to multiplex train events onto stdout, forward action calls via `metro call <train> <action> <args>` or `POST /api/call/<train>/<action>`.
+- [`@metro-labs/metro`](packages/metro/README.md) — install with `npm i -g @metro-labs/metro`. Run `metro` to multiplex train events onto stdout, forward action calls via `metro call <train> <action> <args>` or `POST /api/call/<train>/<action>`.
 - [`app`](apps/app/README.md) — Expo / React Native companion. View live activity, filter lines, send replies from your phone via the daemon's bearer-token-gated monitor endpoints. Start with `bun --cwd apps/app start`.
 - `ui` — Vue 3 web companion with the same surface. `bun --cwd apps/ui dev` opens the dev server on `localhost:5173`; `bun --cwd apps/ui build` emits a static bundle in `apps/ui/dist/`.
 

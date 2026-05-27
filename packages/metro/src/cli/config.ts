@@ -92,7 +92,7 @@ export async function cmdSetup(p: string[], f: Flags): Promise<void> {
   process.stdout.write(
     `metro ${pkg.version}\n\nconfig dir:  ${CONFIG_ENV_FILE}${cfgExists ? '' : ' (not yet written)'}\n`
     + `trains dir:  ${TRAINS_DIR}${trainsExists ? '' : ' (will be created on first run)'}\n\n`
-    + 'Get started: see @stage-labs/metro/examples; drop train scripts in ~/.metro/trains/.\n');
+    + 'Get started: see @metro-labs/metro/examples; drop train scripts in ~/.metro/trains/.\n');
 }
 
 export async function cmdDoctor(_: string[], f: Flags): Promise<void> {
@@ -143,15 +143,15 @@ export async function cmdDoctor(_: string[], f: Flags): Promise<void> {
 
 export async function cmdUpdate(_: string[], f: Flags): Promise<void> {
   const tag = pkg.version.includes('-') ? 'beta' : 'latest';
-  const res = await fetch('https://registry.npmjs.org/@stage-labs/metro', { signal: AbortSignal.timeout(15_000) });
+  const res = await fetch('https://registry.npmjs.org/@metro-labs/metro', { signal: AbortSignal.timeout(15_000) });
   if (!res.ok) throw new Error(`npm registry: ${res.status}`);
   const latest = ((await res.json()) as { 'dist-tags'?: Record<string, string> })['dist-tags']?.[tag];
-  if (!latest) throw new Error(`no '${tag}' dist-tag for @stage-labs/metro`);
+  if (!latest) throw new Error(`no '${tag}' dist-tag for @metro-labs/metro`);
   if (latest === pkg.version) {
     return emit(f, `already on ${pkg.version} (latest ${tag})`,
       { ok: true, current: pkg.version, latest, upgraded: false });
   }
-  const argv1 = process.argv[1] ?? '', spec = `@stage-labs/metro@${tag}`;
+  const argv1 = process.argv[1] ?? '', spec = `@metro-labs/metro@${tag}`;
   const argv = argv1.includes('/.bun/') || argv1.includes('\\bun\\') ? ['bun', 'add', '-g', spec]
     : argv1.includes('/pnpm/') || argv1.includes('\\pnpm\\') ? ['pnpm', 'add', '-g', spec]
     : ['npm', 'install', '-g', spec];

@@ -1,6 +1,6 @@
 # Metro
 
-[![npm](https://img.shields.io/npm/v/@stage-labs/metro/beta?label=npm&color=cb3837)](https://www.npmjs.com/package/@stage-labs/metro)
+[![npm](https://img.shields.io/npm/v/@metro-labs/metro/beta?label=npm&color=cb3837)](https://www.npmjs.com/package/@metro-labs/metro)
 [![lines of code](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.codetabs.com%2Fv1%2Floc%2F%3Fgithub%3Dbonustrack%2Fmetro%26ignored%3Dapps%2Ctest&query=%24%5B0%5D.linesOfCode&label=lines%20of%20TypeScript&color=blue)](https://github.com/bonustrack/metro)
 
 > **Event-interception wire. Supervises train subprocesses, multiplexes their stdout into one
@@ -32,11 +32,11 @@ You own streaming, tool calls, and reply timing. Metro is the wire.
 ## Quickstart
 
 ```bash
-npm install -g @stage-labs/metro@beta    # or: bun add -g @stage-labs/metro@beta
+npm install -g @metro-labs/metro@beta    # or: bun add -g @metro-labs/metro@beta
 
 # One-time train setup (Telegram — no npm deps needed; uses native fetch)
 mkdir -p ~/.metro && cd ~/.metro && bun init -y
-cp $(npm root -g)/@stage-labs/metro/examples/telegram.ts ~/.metro/trains/
+cp $(npm root -g)/@metro-labs/metro/examples/telegram.ts ~/.metro/trains/
 echo 'TELEGRAM_BOT_TOKEN=your-token' >> ~/.metro/.env
 
 metro doctor                                # verify

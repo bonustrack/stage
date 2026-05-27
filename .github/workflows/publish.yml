@@ -1,9 +1,11 @@
 name: Publish
 
 on:
-  push:
-    branches: [main]
-    paths: ['packages/metro/package.json']
+  # Manual-only. Auto-publish-on-push was disabled during the @metro-labs rebrand
+  # so renaming the package wouldn't publish before the @metro-labs npm org exists.
+  # Re-add the push trigger (branches:[main], paths:['packages/metro/package.json'])
+  # or run this workflow manually once ready to publish @metro-labs/metro.
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -42,7 +44,7 @@ jobs:
 
       # Build the metro package's dist/ before publishing.
       - if: steps.meta.outputs.publish == 'true'
-        run: bun run --filter @stage-labs/metro build
+        run: bun run --filter @metro-labs/metro build
 
       - if: steps.meta.outputs.publish == 'true'
         working-directory: packages/metro
