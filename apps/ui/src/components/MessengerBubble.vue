@@ -40,7 +40,9 @@ const isSystem = computed(() => (props.entry.payload as { system?: boolean } | u
 /** Optimistic message awaiting network confirmation — render gray, like mobile. */
 const isPending = computed(() => props.entry.pending === true);
 
-const QUICK_EMOJIS = ['👍', '❤️', '😂'];
+/** Same preset set as the mobile app's inline reaction picker. */
+const REACT_PRESETS = ['👍', '❤️', '😂', '😮', '🔥', '🎉'];
+const pickerOpen = ref(false);
 
 const senderInboxId = computed(() => {
   const f = props.entry.from ?? '';
@@ -101,22 +103,6 @@ function onAvatar(): void {
     @pointerup="clearLongPress"
     @pointercancel="clearLongPress"
     @pointerleave="clearLongPress">
-    <!-- Hover toolbar (desktop): quick reactions + reply, so react/reply are
-         discoverable without needing the long-press / right-click sheet. -->
-    <div v-if="!isPending"
-      class="absolute -top-2 right-3 z-10 flex items-center gap-0.5 px-1 py-0.5 rounded-full
-        opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity
-        bg-metro-surface-light dark:bg-metro-surface-dark
-        border border-metro-border-light dark:border-metro-border-dark shadow-sm">
-      <button v-for="e in QUICK_EMOJIS" :key="e" type="button"
-        class="px-1 text-base leading-none hover:scale-125 transition-transform"
-        @click="emit('react', { entry: props.entry, emoji: e })">{{ e }}</button>
-      <button type="button" title="Reply"
-        class="px-1 text-metro-fg-light dark:text-metro-fg-dark hover:opacity-70"
-        @click="emit('reply', props.entry)">
-        <HeroIcon name="reply" :size="15" />
-      </button>
-    </div>
     <!-- 24px stamp.fyi avatar at the start of every row — neutral
          placeholder when the inbox→address mapping hasn't resolved yet
          so geometry doesn't shift. -->
@@ -171,19 +157,41 @@ function onAvatar(): void {
       <div v-else-if="mapCoords" class="mt-1.5">
         <LocationEmbed :lat="mapCoords.lat" :lng="mapCoords.lng" :source-url="mapCoords.sourceUrl" />
       </div>
-      <div class="flex items-center gap-1.5 mt-1 text-[11px] text-metro-sub-light dark:text-metro-sub-dark font-sans">
-        <span>{{ fmtTs(props.entry.ts) }}</span>
-        <template v-if="props.reactions && props.reactions.size > 0">
-          <button
-            v-for="[emoji, count] in props.reactions"
-            :key="emoji"
-            type="button"
-            class="px-1.5 py-0.5 rounded-full bg-metro-surface-light dark:bg-metro-surface-dark
-              border border-metro-border-light dark:border-metro-border-dark
-              text-[11px] text-metro-fg-light dark:text-metro-fg-dark"
-            @click="emit('react', { entry: props.entry, emoji })"
-          >{{ emoji }} {{ count }}</button>
-        </template>
+      <!-- Action row under the message — matches the mobile app: always-visible
+           react + reply icons, then the timestamp (no hover required). -->
+      <div class="flex items-center gap-1.5 mt-1 text-metro-sub-light dark:text-metro-sub-dark">
+        <button v-if="!isPending" type="button" title="React"
+          class="hover:opacity-70" @click="pickerOpen = !pickerOpen">
+          <HeroIcon name="faceSmile" :size="14" />
+        </button>
+        <button v-if="!isPending" type="button" title="Reply"
+          class="hover:opacity-70" @click="emit('reply', props.entry)">
+          <HeroIcon name="reply" :size="14" />
+        </button>
+        <span class="text-[12px] font-sans">{{ fmtTs(props.entry.ts) }}</span>
+      </div>
+      <!-- Inline emoji picker — toggled by the react icon, mirrors mobile. -->
+      <div v-if="pickerOpen"
+        class="inline-flex items-center gap-2 mt-1.5 px-2.5 py-1.5 rounded-full
+          bg-metro-surface-light dark:bg-metro-surface-dark
+          border border-metro-border-light dark:border-metro-border-dark shadow-sm">
+        <button v-for="e in REACT_PRESETS" :key="e" type="button"
+          class="text-xl leading-none hover:scale-125 transition-transform"
+          @click="emit('react', { entry: props.entry, emoji: e }); pickerOpen = false">{{ e }}</button>
+        <button type="button" class="px-1 text-metro-sub-light dark:text-metro-sub-dark"
+          @click="pickerOpen = false">✕</button>
+      </div>
+      <!-- Reactions pills on their own row below (matches mobile). -->
+      <div v-if="props.reactions && props.reactions.size > 0" class="flex flex-wrap items-center gap-1 mt-1">
+        <button
+          v-for="[emoji, count] in props.reactions"
+          :key="emoji"
+          type="button"
+          class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-metro-surface-light dark:bg-metro-surface-dark
+            border border-metro-border-light dark:border-metro-border-dark
+            text-[12px] text-metro-fg-light dark:text-metro-fg-dark"
+          @click="emit('react', { entry: props.entry, emoji })"
+        >{{ emoji }} {{ count }}</button>
       </div>
     </div>
   </div>
