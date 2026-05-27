@@ -75,6 +75,14 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Allow Metro to share your current location in chat."
         }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow Metro to show your recent photos in the message composer.",
+          "savePhotosPermission": "Allow Metro to save photos.",
+          "isAccessMediaLocationEnabled": false
+        }
       ]
     ],
     "notification": {
