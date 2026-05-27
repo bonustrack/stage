@@ -8,6 +8,7 @@ import { DevSettings } from 'react-native';
 import { getOrCreateXmtpClient, resetXmtpClient, shortAddress } from '../../lib/xmtp';
 import { resetAccount } from '../../lib/wallet';
 import { AccountsManager } from '../../components/AccountsManager';
+import { HeroIcon } from '../../components/HeroIcon';
 import {
   setThemePreference, useEffectiveColorScheme, useThemePreference,
   type ThemePreference,
@@ -59,8 +60,8 @@ export default function Settings(): React.ReactElement {
             borderWidth: 1, borderColor: border,
           }}
         >
-          <Text style={{ color: sub, fontSize: 11 , fontFamily: 'Calibre-Medium'}}>YOUR XMTP ADDRESS (tap to copy)</Text>
-          <Text style={{ color: fg, fontSize: 13, marginTop: 2 , fontFamily: 'Calibre-Medium'}}>
+          <Text style={{ color: sub, fontSize: 13 , fontFamily: 'Calibre-Medium'}}>YOUR XMTP ADDRESS (tap to copy)</Text>
+          <Text style={{ color: fg, fontSize: 16, marginTop: 2 , fontFamily: 'Calibre-Medium'}}>
             {shortAddress(myAddress)}
           </Text>
         </Pressable>
@@ -68,7 +69,7 @@ export default function Settings(): React.ReactElement {
 
       <AccountsManager dark={dark} />
 
-      <Text style={{ color: sub, fontSize: 11, paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8 , fontFamily: 'Calibre-Medium'}}>
+      <Text style={{ color: sub, fontSize: 13, paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8 , fontFamily: 'Calibre-Medium'}}>
         THEME
       </Text>
       <View style={{
@@ -88,9 +89,9 @@ export default function Settings(): React.ReactElement {
                 backgroundColor: pressed ? border : 'transparent',
               })}
             >
-              <Text style={{ color: fg, fontSize: 15 , fontFamily: 'Calibre-Medium'}}>{opt.label}</Text>
+              <Text style={{ color: fg, fontSize: 17 , fontFamily: 'Calibre-Medium'}}>{opt.label}</Text>
               {selected ? (
-                <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold' }}>✓</Text>
+                <HeroIcon name="check" size={20} color={head} />
               ) : null}
             </Pressable>
           );
@@ -124,7 +125,7 @@ export default function Settings(): React.ReactElement {
             alignItems: 'center',
           })}
         >
-          <Text style={{ color: dark ? '#ff6b80' : '#b91c1c', fontSize: 14 , fontFamily: 'Calibre-Medium'}}>
+          <Text style={{ color: dark ? '#ff6b80' : '#b91c1c', fontSize: 16 , fontFamily: 'Calibre-Medium'}}>
             Reset XMTP identity
           </Text>
         </Pressable>
