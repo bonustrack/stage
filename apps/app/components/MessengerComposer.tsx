@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import {
-  Alert, Image, Pressable, Text, TextInput, View,
+  Alert, Image, Pressable, ScrollView, Text, TextInput, View,
 } from 'react-native';
 import { loadDrafts, getDraft, setDraft } from '../lib/drafts';
 import { Audio } from 'expo-av';
+import * as MediaLibrary from 'expo-media-library';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
@@ -62,6 +63,8 @@ export function MessengerComposer({
   /** Rolling mic levels (0..1) for the recording waveform — newest at the end. */
   const [levels, setLevels] = useState<number[]>([]);
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
+  /** Recent device photos shown inline in the attach menu (Discord-style). */
+  const [recentPhotos, setRecentPhotos] = useState<MediaLibrary.Asset[]>([]);
   const recRef = useRef<Audio.Recording | null>(null);
   const recTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   /** Mic press timestamp — distinguishes push-to-talk (hold ≥ threshold →
@@ -130,6 +133,34 @@ export function MessengerComposer({
     for (const a of r.assets) {
       await upload(a.uri, a.mimeType ?? 'image/jpeg', a.fileName ?? undefined);
     }
+  };
+
+  /** Load recent device photos when the attach menu opens, so they show inline
+   *  (Discord-style) without leaving the app. Permission is requested on first open. */
+  useEffect(() => {
+    if (!attachMenuOpen) return;
+    let cancelled = false;
+    void (async (): Promise<void> => {
+      try {
+        const perm = await MediaLibrary.requestPermissionsAsync();
+        if (!perm.granted || cancelled) return;
+        const res = await MediaLibrary.getAssetsAsync({
+          first: 24, mediaType: 'photo', sortBy: [['creationTime', false]],
+        });
+        if (!cancelled) setRecentPhotos(res.assets);
+      } catch { /* no gallery — the picker buttons below still work */ }
+    })();
+    return () => { cancelled = true; };
+  }, [attachMenuOpen]);
+
+  /** Tap a recent photo → stage it as a pending attachment. Resolve the asset's
+   *  local file URI (asset.uri can be a non-fetchable content:// on Android). */
+  const pickRecent = async (asset: MediaLibrary.Asset): Promise<void> => {
+    setAttachMenuOpen(false);
+    try {
+      const info = await MediaLibrary.getAssetInfoAsync(asset);
+      await upload(info.localUri ?? asset.uri, 'image/jpeg', asset.filename);
+    } catch (e) { setErr((e as Error).message); }
   };
 
   const pickFile = async (): Promise<void> => {
@@ -400,7 +431,19 @@ export function MessengerComposer({
       {/** Attach menu — boxes below the composer with icon + label per source.
        *   Tap the + button in the composer row to toggle. */}
       {attachMenuOpen ? (
-        <View style={{ flexDirection: 'row', gap: 10, paddingTop: 10 }}>
+        <View style={{ paddingTop: 10, gap: 10 }}>
+          {/** Inline recent-photos strip (Discord-style) — tap to attach without
+           *   leaving the app. Hidden until the gallery loads / permission granted. */}
+          {recentPhotos.length > 0 ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+              {recentPhotos.map(a => (
+                <Pressable key={a.id} onPress={() => void pickRecent(a)}>
+                  <Image source={{ uri: a.uri }} style={{ width: 76, height: 76, borderRadius: 10, backgroundColor: chipBg }} />
+                </Pressable>
+              ))}
+            </ScrollView>
+          ) : null}
+        <View style={{ flexDirection: 'row', gap: 10 }}>
           {(
             [
               ['photo', 'Image', pickImage],
@@ -422,6 +465,7 @@ export function MessengerComposer({
               <Text style={{ color: fg, fontSize: 13, marginTop: 6, fontFamily: 'Calibre-Medium' }}>{label}</Text>
             </Pressable>
           ))}
+        </View>
         </View>
       ) : null}
     </View>
