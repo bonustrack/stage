@@ -11,6 +11,8 @@ const props = defineProps<{
   isSelf: boolean;
   removing: boolean;
   role?: 'owner' | 'admin' | 'member';
+  /** Only show the remove button when the viewer is a group admin/owner. */
+  canRemove?: boolean;
 }>();
 const emit = defineEmits<{ (e: 'open'): void; (e: 'remove'): void }>();
 </script>
@@ -41,7 +43,7 @@ const emit = defineEmits<{ (e: 'open'): void; (e: 'remove'): void }>();
         : 'bg-metro-border-light dark:bg-metro-border-dark text-metro-sub-light dark:text-metro-sub-dark'"
     >{{ props.role === 'owner' ? 'Owner' : 'Admin' }}</span>
     <button
-      v-if="!props.isSelf"
+      v-if="!props.isSelf && props.canRemove"
       type="button"
       :disabled="props.removing"
       class="p-1.5 rounded-full text-red-500 hover:bg-red-500/10 disabled:opacity-50"

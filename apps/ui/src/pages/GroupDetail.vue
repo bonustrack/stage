@@ -28,6 +28,16 @@ const uploadingImage = ref(false);
 const description = ref<string>('');
 const savingDescription = ref(false);
 
+/** Only group admins/owners can edit metadata + manage members (enforced by the
+ *  group's admin-only policy); hide those affordances from plain members. */
+const selfIsAdmin = computed(() => {
+  const self = selfAddress.value.toLowerCase();
+  for (const [addr, role] of Object.entries(memberRoles.value)) {
+    if (addr.toLowerCase() === self) return role === 'owner' || role === 'admin';
+  }
+  return false;
+});
+
 watchEffect(async () => {
   if (!convId.value) return;
   const c = getCachedXmtpClient();
@@ -165,6 +175,7 @@ async function onPickImage(file: File): Promise<void> {
     <GroupAvatarEditor
       :image-url="imageUrl"
       :uploading="uploadingImage"
+      :readonly="!selfIsAdmin"
       @pick="onPickImage"
     />
 
@@ -175,6 +186,7 @@ async function onPickImage(file: File): Promise<void> {
         placeholder="Group name"
         empty-label="Untitled group"
         :saving="saving"
+        :readonly="!selfIsAdmin"
         @save="onSaveName"
       />
     </div>
@@ -187,6 +199,7 @@ async function onPickImage(file: File): Promise<void> {
         multiline
         value-class="text-sm text-metro-fg-light dark:text-metro-fg-dark font-sans"
         :saving="savingDescription"
+        :readonly="!selfIsAdmin"
         @save="onSaveDescription"
       />
     </div>
@@ -194,7 +207,7 @@ async function onPickImage(file: File): Promise<void> {
     <div class="text-[11px] uppercase tracking-wide text-metro-sub-light dark:text-metro-sub-dark px-4 pb-1.5">
       Members ({{ members.length }})
     </div>
-    <MemberAddForm :adding="adding" @add="onAddMember" />
+    <MemberAddForm v-if="selfIsAdmin" :adding="adding" @add="onAddMember" />
     <div v-if="errorMsg" class="px-4 pb-2 text-xs text-red-500">{{ errorMsg }}</div>
 
     <ul class="flex flex-col">
@@ -205,6 +218,7 @@ async function onPickImage(file: File): Promise<void> {
         :name="memberNames[addr] ?? null"
         :role="memberRoles[addr] ?? 'member'"
         :is-self="addr.toLowerCase() === selfAddress"
+        :can-remove="selfIsAdmin"
         :removing="removing === addr.toLowerCase()"
         @open="openMember(addr)"
         @remove="removeMember(addr)"
