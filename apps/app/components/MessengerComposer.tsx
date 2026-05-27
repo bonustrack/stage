@@ -53,6 +53,9 @@ export function MessengerComposer({
   const [pending, setPending] = useState<Attachment[]>([]);
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
+  /** Textarea content height — drives the scroll fades (only shown once the
+   *  input grows tall enough to scroll, so short messages aren't faded). */
+  const [textareaH, setTextareaH] = useState(0);
   const [err, setErr] = useState<string | null>(null);
   const [recording, setRecording] = useState(false);
   const [recordSecs, setRecordSecs] = useState(0);
@@ -328,10 +331,21 @@ export function MessengerComposer({
             </Text>
           ) : null}
           <View style={{ backgroundColor: inputBg, borderRadius: 10, padding: 10 }}>
-            <TextInput
-              value={text} onChangeText={setText} placeholder="Ask Metro" placeholderTextColor={sub} multiline
-              style={{ color: head, fontFamily: 'Calibre-Medium', fontSize: 18, lineHeight: 23, minHeight: 24, maxHeight: 140, paddingHorizontal: 8, paddingTop: 4, paddingBottom: 8, textAlignVertical: 'top' }}
-            />
+            {/** Textarea wrapped so top+bottom fades can overlay it — shown only
+             *   once the content scrolls (tall), so short messages aren't faded. */}
+            <View style={{ position: 'relative' }}>
+              <TextInput
+                value={text} onChangeText={setText} placeholder="Ask Metro" placeholderTextColor={sub} multiline
+                onContentSizeChange={(e) => setTextareaH(e.nativeEvent.contentSize.height)}
+                style={{ color: head, fontFamily: 'Calibre-Medium', fontSize: 18, lineHeight: 23, minHeight: 24, maxHeight: 140, paddingHorizontal: 8, paddingTop: 4, paddingBottom: 8, textAlignVertical: 'top' }}
+              />
+              {textareaH > 132 ? (
+                <>
+                  <ComposerGradient bg={inputBg} direction="up" top={0} height={12} />
+                  <ComposerGradient bg={inputBg} direction="down" bottom={0} height={12} />
+                </>
+              ) : null}
+            </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <Btn icon={attachMenuOpen ? 'x' : 'plus'} onPress={() => setAttachMenuOpen(o => !o)} />
               <View style={{ flex: 1 }} />
