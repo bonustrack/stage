@@ -1,8 +1,14 @@
-/** Top-fade or bottom-fade gradient strip via react-native-svg LinearGradient. */
+/** Top-fade or bottom-fade gradient strip.
+ *
+ *  Implemented as a stack of thin solid slices with stepped opacity rather than a
+ *  react-native-svg `LinearGradient`. On Android, react-native-svg gradients render
+ *  unreliably here: alpha baked into `stopColor` (rgba) gets dropped — the fade
+ *  collapses to a solid same-colour bar (invisible over a matching background) —
+ *  and percentage `Rect` dims inside an auto-sized absolute container can compute
+ *  to 0, so nothing draws at all. Stepped `View`s are plain RN core: they always
+ *  render and give a clean linear 0→100% opacity ramp on every device. */
 
-import { useId } from 'react';
 import { View } from 'react-native';
-import { Defs, LinearGradient, Rect, Stop, Svg } from 'react-native-svg';
 
 interface Props {
   bg: string;
@@ -15,38 +21,24 @@ interface Props {
   bottom?: number;
 }
 
-/** `#rgb`/`#rrggbb` → `rgba(r,g,b,a)`. */
-function rgba(hex: string, alpha: number): string {
-  const h = hex.replace('#', '');
-  const full = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
-  const n = parseInt(full, 16);
-  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
-}
+/** Slice count across the strip — 12 over a 24px strip (2px each) reads as smooth. */
+const SLICES = 12;
 
-export function ComposerGradient({ bg, direction = 'down', height = 20, top, bottom }: Props): React.ReactElement {
-  /** Unique id per instance — react-native-svg registers gradient defs globally
-   *  by id, so a shared id collides when several fades are on screen. */
-  const id = 'grad' + useId().replace(/[^a-zA-Z0-9]/g, '');
-  /** Alpha baked into the stop COLORS (rgba) rather than stopOpacity: react-native-svg
-   *  renders a 2-stop stopColor+stopOpacity gradient compressed toward the middle
-   *  (~50% at the ends), so the fade never reaches 0%/100%. rgba color interpolation
-   *  hits the true extremes — a clean linear 0→100% ramp. */
-  const [c0, c1] = direction === 'down' ? [rgba(bg, 0), rgba(bg, 1)] : [rgba(bg, 1), rgba(bg, 0)];
+export function ComposerGradient({ bg, direction = 'down', height = 24, top, bottom }: Props): React.ReactElement {
+  const sliceH = height / SLICES;
   return (
     <View pointerEvents="none" style={{
       position: 'absolute', left: 0, right: 0, height,
       ...(top !== undefined ? { top } : {}),
       ...(bottom !== undefined ? { bottom } : {}),
     }}>
-      <Svg width="100%" height="100%">
-        <Defs>
-          <LinearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor={c0} />
-            <Stop offset="1" stopColor={c1} />
-          </LinearGradient>
-        </Defs>
-        <Rect width="100%" height="100%" fill={`url(#${id})`} />
-      </Svg>
+      {Array.from({ length: SLICES }, (_, i) => {
+        /** Slice midpoint as a 0→1 fraction, top→bottom. 'down' ramps opacity up
+         *  (transparent top → solid bottom); 'up' ramps it down. */
+        const t = (i + 0.5) / SLICES;
+        const opacity = direction === 'down' ? t : 1 - t;
+        return <View key={i} style={{ height: sliceH, backgroundColor: bg, opacity }} />;
+      })}
     </View>
   );
 }
