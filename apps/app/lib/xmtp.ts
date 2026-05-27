@@ -38,7 +38,11 @@ const XMTP_CODECS = [
   new GroupUpdatedCodec(),
 ];
 import type { HistoryEntry } from './types';
-import { loadOrCreateAccount, resetAccount } from './wallet';
+import {
+  getActiveAccount, addGeneratedAccount, getViemAccount,
+  loadAccounts, setActiveAccountId, markRegistered, removeAccount, clearAllAccounts,
+  type AccountRecord,
+} from './accounts';
 import { humanizeGroupUpdated, type GroupUpdatedContent } from '../../_shared/xmtp/humanize';
 
 /** Build the XMTP-RN `Signer` adapter for a viem `PrivateKeyAccount`.
@@ -60,11 +64,24 @@ function signerForAccount(account: PrivateKeyAccount): Signer {
   };
 }
 
+/** Build the XMTP Signer for an account record. Local accounts (generated /
+ *  imported) sign silently with their viem key; WalletConnect accounts would
+ *  delegate to the connected wallet — only ever needed once, at installation
+ *  registration (Client.create). Reads + sends afterwards use the on-device
+ *  installation key, so a registered account never re-prompts the wallet. */
+async function signerForRecord(rec: AccountRecord): Promise<Signer> {
+  if (rec.type === 'walletconnect') {
+    throw new Error('WalletConnect signing is not available in this build yet.');
+  }
+  const acct = await getViemAccount(rec.id);
+  if (!acct) throw new Error('No signing key for this account.');
+  return signerForAccount(acct);
+}
+
 export type XmtpEnv = 'production' | 'dev' | 'local';
 
 /** SecureStore keys must match `[A-Za-z0-9._-]+` — colons are rejected on Android, which
  *  surfaced as an `Invalid key provided to SecureStore` runtime crash on Less's device. */
-const ADDRESS_KEY = 'xmtp.address';
 const ENV_KEY = 'xmtp.env';
 const DB_ENCRYPTION_KEY = 'xmtp.dbEncryptionKey';
 
@@ -95,10 +112,10 @@ async function loadOrCreateDbKey(): Promise<Uint8Array> {
 
 /** XMTP needs a writable directory for its sqlite + key store. Document directory is
  *  app-private + persisted across restarts. */
-function dbDirObj(): Directory { return new Directory(Paths.document, 'xmtp'); }
+function dbDirObj(name: string): Directory { return new Directory(Paths.document, name); }
 
-async function ensureDbDir(): Promise<string> {
-  const dir = dbDirObj();
+async function ensureDbDir(name: string): Promise<string> {
+  const dir = dbDirObj(name);
   if (!dir.exists) dir.create({ intermediates: true });
   /** XMTP wants a filesystem path (`/data/user/0/...`), not a URI (`file:///data/user/0/...`).
    *  expo-file-system's `.uri` includes the scheme; strip it. Also drop any trailing slash —
@@ -113,51 +130,87 @@ async function ensureDbDir(): Promise<string> {
 let cachedClient: Client | null = null;
 export async function getOrCreateXmtpClient(env: XmtpEnv = 'production'): Promise<Client> {
   if (cachedClient) return cachedClient;
-  const dbDirectory = await ensureDbDir();
+  /** Resolve the active account, minting + activating a generated one on the
+   *  very first launch (or after a full reset). */
+  const account = (await getActiveAccount()) ?? (await addGeneratedAccount());
+  return buildClientForAccount(account, env);
+}
+
+/** (Re)build the XMTP client for a specific account. Tries `Client.build`
+ *  against that account's own db when we believe an installation exists, races
+ *  a 20s timeout (MLS replay can hang on a corrupted store), and falls back to
+ *  a fresh `Client.create` + installation registration. */
+async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<Client> {
+  const dbDirectory = await ensureDbDir(rec.dbDir);
   const dbEncryptionKey = await loadOrCreateDbKey();
   const opts = { env, dbDirectory, dbEncryptionKey, codecs: XMTP_CODECS };
-  const account = await loadOrCreateAccount();
-  const savedAddress = await SecureStore.getItemAsync(ADDRESS_KEY).catch(() => null);
-  const savedEnv = await SecureStore.getItemAsync(ENV_KEY).catch(() => null);
-  /** Rebuild only if we have a saved address that matches the local EOA AND the env. */
-  if (savedAddress && savedEnv === env
-    && savedAddress.toLowerCase() === account.address.toLowerCase()) {
+  if (rec.registered) {
     try {
-      /** Race Client.build against a 20s timeout — MLS state replay can hang
-       *  indefinitely on a corrupted local store, and the user has no way to
-       *  recover without either a manual nuke or the "Reset XMTP" action. */
       const built = await Promise.race<Client | null>([
-        Client.build(new PublicIdentity(savedAddress, 'ETHEREUM'), opts),
+        Client.build(new PublicIdentity(rec.address, 'ETHEREUM'), opts),
         new Promise<null>((resolve) => setTimeout(() => resolve(null), 20_000)),
       ]);
       if (built) {
         cachedClient = built;
+        await setActiveAccountId(rec.id);
+        await SecureStore.setItemAsync(ENV_KEY, env);
         return cachedClient;
       }
       /** Build timed out — fall through to create() with a fresh registration. */
     } catch { /* fall through to create() if rebuild failed */ }
   }
-  /** XMTP registers a new installation by asking the EOA to sign its handshake
-   *  challenge. Pure-JS viem signing — no user-facing prompt. */
-  const signer = signerForAccount(account);
+  /** XMTP registers a new installation by asking the account to sign its
+   *  handshake challenge — silent for local keys, a one-time wallet prompt
+   *  for WalletConnect. */
+  const signer = await signerForRecord(rec);
   cachedClient = await Client.create(signer, opts);
-  await SecureStore.setItemAsync(ADDRESS_KEY, cachedClient.publicIdentity.identifier);
+  await markRegistered(rec.id);
+  await setActiveAccountId(rec.id);
   await SecureStore.setItemAsync(ENV_KEY, env);
   return cachedClient;
 }
 
+/** Switch the active account: drop the cached client and rebuild against the
+ *  target account's db. Callers typically reload the app afterwards so every
+ *  screen re-inits against the new inbox. */
+export async function switchToAccount(id: string, env: XmtpEnv = 'production'): Promise<Client> {
+  const list = await loadAccounts();
+  const rec = list.find(a => a.id === id);
+  if (!rec) throw new Error('Account not found.');
+  cachedClient = null;
+  await setActiveAccountId(id);
+  return buildClientForAccount(rec, env);
+}
+
 export function getCachedXmtpClient(): Client | null { return cachedClient; }
 
-/** Drop the local XMTP identity AND the EOA backing it (key store + cached client).
- *  Next call to `getOrCreateXmtpClient` will mint a fresh wallet + inbox. */
+/** Delete a single account: registry entry + key (lib/accounts) + its on-disk
+ *  XMTP store. Drops the cached client so the next getOrCreate rebuilds against
+ *  whatever account is active afterwards. */
+export async function deleteAccount(id: string): Promise<void> {
+  const list = await loadAccounts();
+  const rec = list.find(a => a.id === id);
+  await removeAccount(id);
+  if (rec) {
+    const dir = dbDirObj(rec.dbDir);
+    if (dir.exists) { try { dir.delete(); } catch { /* best-effort */ } }
+  }
+  cachedClient = null;
+}
+
+/** Full wipe: drop the cached client, every account's on-disk XMTP store (plus
+ *  the legacy `xmtp/` dir), the shared db key, and the whole account registry.
+ *  Next call to `getOrCreateXmtpClient` mints a fresh wallet + inbox. */
 export async function resetXmtpClient(): Promise<void> {
   cachedClient = null;
-  await SecureStore.deleteItemAsync(ADDRESS_KEY).catch(() => undefined);
   await SecureStore.deleteItemAsync(ENV_KEY).catch(() => undefined);
   await SecureStore.deleteItemAsync(DB_ENCRYPTION_KEY).catch(() => undefined);
-  await resetAccount();
-  const dir = dbDirObj();
-  if (dir.exists) dir.delete();
+  const removed = await clearAllAccounts();
+  const dirs = new Set<string>(['xmtp', ...removed.map(a => a.dbDir)]);
+  for (const name of dirs) {
+    const dir = dbDirObj(name);
+    if (dir.exists) { try { dir.delete(); } catch { /* best-effort */ } }
+  }
 }
 
 /** Format a metro-style line URI for an XMTP conversation. Mirrors the daemon train. */

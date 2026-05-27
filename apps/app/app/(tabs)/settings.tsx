@@ -1,12 +1,13 @@
 /** Settings tab — wallet-address copy pill + theme switcher + app version. */
 
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import Constants from 'expo-constants';
 import { DevSettings } from 'react-native';
 import { getOrCreateXmtpClient, resetXmtpClient, shortAddress } from '../../lib/xmtp';
 import { resetAccount } from '../../lib/wallet';
+import { AccountsManager } from '../../components/AccountsManager';
 import {
   setThemePreference, useEffectiveColorScheme, useThemePreference,
   type ThemePreference,
@@ -41,7 +42,7 @@ export default function Settings(): React.ReactElement {
   }, []);
 
   return (
-    <View style={{ flex: 1, backgroundColor: bg }}>
+    <ScrollView style={{ flex: 1, backgroundColor: bg }} contentContainerStyle={{ paddingBottom: 24 }}>
       <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 }}>
         <Text style={{ color: head, fontSize: 22, fontFamily: 'Calibre-Semibold' }}>Settings</Text>
       </View>
@@ -64,6 +65,8 @@ export default function Settings(): React.ReactElement {
           </Text>
         </Pressable>
       ) : null}
+
+      <AccountsManager dark={dark} />
 
       <Text style={{ color: sub, fontSize: 11, paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8 , fontFamily: 'Calibre-Medium'}}>
         THEME
@@ -132,6 +135,6 @@ export default function Settings(): React.ReactElement {
           Metro · v{APP_VERSION}
         </Text>
       </View>
-    </View>
+    </ScrollView>
   );
 }
