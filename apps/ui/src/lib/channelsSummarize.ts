@@ -5,7 +5,7 @@
 import type { Conversation } from '@xmtp/browser-sdk';
 import {
   peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap,
-  getLastReadNs, shortAddress,
+  getLastReadNs, getConvConsent, shortAddress,
 } from './xmtp';
 import { previewOfXmtpContent } from '@stage-labs/metro-client/xmtp/humanize';
 
@@ -22,6 +22,8 @@ export interface ChannelRow {
   inboxToAddr: Record<string, string>;
   unreadCount: number;
   lastReadNs: number;
+  /** Synced cross-device "marked unread" flag from XMTP consent state. */
+  markedUnread: boolean;
   selfInboxId: string;
   peerAddress: string | null;
   memberAddresses: string[];
@@ -66,6 +68,15 @@ export async function summarizeConv(
     if (m.senderInboxId === selfInboxId) continue;
     unreadCount += 1;
   }
+  const lastFromSelf = !!last && last.senderInboxId === selfInboxId;
+  /** Cross-device read flag: consent 'unknown' forces a badge only when this
+   *  device has no local read marker yet (lastReadNs === 0), the timestamp
+   *  count is 0, and there's an inbound last message. Opening a conv flips
+   *  consent → 'allowed', so this self-heals and avoids phantom badges on
+   *  conversations read before this feature existed. */
+  const consent = await getConvConsent(conv.id).catch(() => 'unknown' as const);
+  const markedUnread = consent === 'unknown' && lastReadNs === 0
+    && unreadCount === 0 && !!last && !lastFromSelf;
   return {
     convId: conv.id,
     title,
@@ -76,6 +87,7 @@ export async function summarizeConv(
     inboxToAddr,
     unreadCount,
     lastReadNs,
+    markedUnread,
     selfInboxId,
     peerAddress,
     memberAddresses,

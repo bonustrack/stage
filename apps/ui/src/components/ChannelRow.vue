@@ -13,8 +13,9 @@ const props = defineProps<{
   lastTs: number | null;
   lastPreview: string;
   unreadCount: number;
+  markedUnread?: boolean;
 }>();
-const emit = defineEmits<{ (e: 'open'): void }>();
+const emit = defineEmits<{ (e: 'open'): void; (e: 'menu', ev: MouseEvent): void }>();
 
 const renderedAvatar = computed(() => {
   if (props.avatarUri) return avatarRenderUrl('', props.avatarUri, 64);
@@ -38,6 +39,7 @@ function fmtTs(ts: number | null): string {
     type="button"
     class="w-full text-left px-4"
     @click="emit('open')"
+    @contextmenu.prevent="emit('menu', $event)"
   >
     <!-- Inner row carries the separator: it starts at the avatar's left edge
          (inset from the screen by the card's px-3.5), not full width. -->
@@ -69,6 +71,9 @@ function fmtTs(ts: number | null): string {
             text-[11px] font-head flex items-center justify-center shrink-0">
           {{ props.unreadCount > 99 ? '99+' : props.unreadCount }}
         </div>
+        <!-- Explicitly marked unread (cross-device) but no counted messages → dot. -->
+        <div v-else-if="props.markedUnread"
+          class="w-3 h-3 rounded-full shrink-0 bg-metro-head-light dark:bg-metro-head-dark" />
       </div>
       </div>
     </div>

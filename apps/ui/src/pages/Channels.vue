@@ -4,7 +4,7 @@
  *  badges, persisted cache so the list renders before XMTP boots). */
 
 import { getOrCreateXmtpClient, createAskQuestionGroup, ASK_QUESTION_MEMBERS, stampBoxAvatarUrl } from '../lib/xmtp';
-import { cachedRows, hydrateCachedRows } from '../lib/channelsCache';
+import { cachedRows, hydrateCachedRows, markConvRead, markConvUnread } from '../lib/channelsCache';
 import { type ChannelRow as Row } from '../lib/channelsSummarize';
 import { startChannelStream, type ChannelStreamHandles } from '../lib/useChannelStream';
 import { isAddressLike, isDomainLike, resolveDomain } from '../lib/stamp';
@@ -91,6 +91,29 @@ onMounted(async () => {
 onUnmounted(() => { void stream?.stop(); stream = null; });
 
 function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
+
+/** Per-row context menu (right-click on web) with the Mark read/unread toggle.
+ *  Positioned at the cursor; dismissed on outside click / scroll / Escape. */
+const rowMenu = ref<{ convId: string; title: string; isUnread: boolean; x: number; y: number } | null>(null);
+function openRowMenu(r: Row, ev: MouseEvent): void {
+  /** Clamp X so the ~200px menu never spills off the right edge. */
+  const maxX = (typeof window !== 'undefined' ? window.innerWidth : 9999) - 200;
+  rowMenu.value = {
+    convId: r.convId,
+    title: r.title,
+    isUnread: r.unreadCount > 0 || !!r.markedUnread,
+    x: Math.max(8, Math.min(ev.clientX, maxX)),
+    y: ev.clientY,
+  };
+}
+function closeRowMenu(): void { rowMenu.value = null; }
+function toggleRowUnread(): void {
+  const m = rowMenu.value;
+  if (!m) return;
+  closeRowMenu();
+  if (m.isUnread) markConvRead(m.convId);
+  else markConvUnread(m.convId);
+}
 
 /** Embedded widget opens on the Intercom-style "Ask a question" home; the
  *  standalone site goes straight to the channel list (mobile-app UX) and uses
@@ -195,7 +218,9 @@ const cardClass = 'w-full max-w-sm flex items-center gap-3 px-4 py-4 rounded-2xl
             :last-ts="r.lastTs"
             :last-preview="r.lastPreview"
             :unread-count="r.unreadCount"
+            :marked-unread="r.markedUnread"
             @open="open(r.convId)"
+            @menu="(ev) => openRowMenu(r, ev)"
           />
         </li>
       </ul>
@@ -225,5 +250,26 @@ const cardClass = 'w-full max-w-sm flex items-center gap-3 px-4 py-4 rounded-2xl
         <span class="text-[15px] font-sans">Docs</span>
       </button>
     </div>
+
+    <!-- Per-row context menu: Mark as read / unread (cross-device via XMTP consent). -->
+    <template v-if="rowMenu">
+      <div class="fixed inset-0 z-40" @click="closeRowMenu" @contextmenu.prevent="closeRowMenu" />
+      <div
+        class="fixed z-50 min-w-[180px] py-1 rounded-lg shadow-lg
+          bg-metro-bg-light dark:bg-metro-surface-dark
+          border border-metro-border-light dark:border-metro-border-dark"
+        :style="{ left: rowMenu.x + 'px', top: rowMenu.y + 'px' }"
+      >
+        <button
+          type="button"
+          class="w-full text-left px-3 py-2 text-sm
+            text-metro-head-light dark:text-metro-head-dark
+            hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
+          @click="toggleRowUnread"
+        >
+          {{ rowMenu.isUnread ? 'Mark as read' : 'Mark as unread' }}
+        </button>
+      </div>
+    </template>
   </div>
 </template>
