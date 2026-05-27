@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Alert, Image, Pressable, Text, TextInput, View,
+  Alert, Image, Pressable, Text, TextInput, View,
 } from 'react-native';
 import { loadDrafts, getDraft, setDraft } from '../lib/drafts';
 import { Audio } from 'expo-av';
@@ -344,8 +344,8 @@ export function MessengerComposer({
               />
               {textareaH > 132 ? (
                 <>
-                  <ComposerGradient bg={inputBg} direction="up" top={0} height={12} />
-                  <ComposerGradient bg={inputBg} direction="down" bottom={0} height={12} />
+                  <ComposerGradient bg={inputBg} direction="up" top={0} height={26} />
+                  <ComposerGradient bg={inputBg} direction="down" bottom={0} height={26} />
                 </>
               ) : null}
             </View>
@@ -365,15 +365,16 @@ export function MessengerComposer({
               >
                 <HeroIcon name="microphone" size={22} color={fg} />
               </Pressable>
+              {/** No loading spinner — the optimistic bubble appears + the input
+               *   clears instantly on tap, so sending feels immediate; the actual
+               *   publish happens in the background. */}
               <Pressable onPress={() => void send()} disabled={!canSend}
                 style={({ pressed }) => ({
                   backgroundColor: dark ? (pressed ? '#cccccc' : '#ffffff') : (pressed ? '#333333' : '#000000'),
                   opacity: canSend ? 1 : 0.45,
                   width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
                 })}>
-                {sending
-                  ? <ActivityIndicator color={dark ? '#000' : '#fff'} />
-                  : <HeroIcon name="send" size={20} color={dark ? '#000' : '#fff'} />}
+                <HeroIcon name="send" size={20} color={dark ? '#000' : '#fff'} />
               </Pressable>
             </View>
           </View>
