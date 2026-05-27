@@ -316,7 +316,11 @@ export function MessengerBubble({
         paddingHorizontal: 12, paddingVertical: 6, gap: 10,
         transform: [{ translateX: swipeX }],
         opacity: pending ? 0.5 : 1,
-        backgroundColor: unread ? (dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)') : 'transparent',
+        /** Permalink/reply jump target: full-row lighter background (~10% toward
+         *  white), spanning the whole width incl. the avatar gutter. */
+        backgroundColor: replyTarget
+          ? (dark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.05)')
+          : (unread ? (dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)') : 'transparent'),
       }}
     >
       {/** Discord-style row avatar. Stamp.fyi when we have an eth address;
@@ -339,16 +343,10 @@ export function MessengerBubble({
         delayLongPress={300}
         style={{
           flexDirection: 'column',
-          /** Permalink/reply jump target: highlight with a subtly lighter background
-           *  (~10% toward white) + padding, NOT an orange border. */
-          paddingHorizontal: replyTarget ? 8 : 0,
-          paddingVertical: replyTarget ? 6 : 0,
-          borderRadius: replyTarget ? 10 : 0,
-          backgroundColor: replyTarget
-            ? (dark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.05)')
-            : 'transparent',
-          borderWidth: (unread && !replyTarget) ? 1.5 : 0,
-          borderColor: (unread && !replyTarget) ? (dark ? '#ffffff' : '#000000') : 'transparent',
+          /** Reply-target highlight is a full-row background on the outer View now;
+           *  keep only the unread outline here. */
+          borderWidth: unread ? 1.5 : 0,
+          borderColor: unread ? (dark ? '#ffffff' : '#000000') : 'transparent',
         }}
       >
         {replyPreview ? (
