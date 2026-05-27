@@ -4,10 +4,10 @@
  *  the other members for groups (excluding the local user). Both are resolved
  *  once per conv during the initial list build and cached in component state. */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   AppState, FlatList, Image, Pressable, RefreshControl,
-  Text, TextInput, View,
+  Text, View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import type { Conversation, DecodedMessage } from '@xmtp/react-native-sdk';
@@ -158,7 +158,6 @@ export default function Messenger(): React.ReactElement {
   const sub = dark ? '#7a7a7e' : '#8a929d';
   const bg = dark ? '#0e0f10' : '#ffffff';
   const border = dark ? '#282a2d' : '#e4e4e5';
-  const rowBg = dark ? '#282a2d' : '#e4e4e5';
   const [rows, setRowsState] = useState<Row[] | null>(getCachedRows() as Row[] | null);
   /** Wrap setRows so every state update also lands in the shared cache + fans
    *  out to subscribers (e.g. the conv view'​s markConvRead can mutate the
@@ -177,27 +176,14 @@ export default function Messenger(): React.ReactElement {
   };
   useEffect(() => subscribeCachedRows(r => setRowsState(r as Row[] | null)), []);
   const [error, setError] = useState<string>('');
-  const [query, setQuery] = useState<string>('');
   const [refreshing, setRefreshing] = useState(false);
   /** Held across effect re-runs so AppState + poll backstops can call refresh
    *  without re-binding to a stale client. */
   const refreshFromNetworkRef = useRef<(() => Promise<void>) | null>(null);
 
-  const filtered = useMemo(() => {
-    if (!rows) return null;
-    const q = query.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter(r =>
-      r.title.toLowerCase().includes(q)
-      || r.lastPreview.toLowerCase().includes(q)
-      || (r.avatarAddress?.toLowerCase().includes(q) ?? false)
-      || Object.values(r.inboxToAddr).some(a => a.toLowerCase().includes(q)),
-    );
-  }, [rows, query]);
-
   /** Batch-resolve the displayed peers' profiles → avatar cache-busters. */
   const channelProfilesVersion = usePeerProfiles(
-    (filtered ?? rows ?? []).flatMap(r => [r.avatarAddress, r.peerAddress, r.lastSenderAddress]),
+    (rows ?? []).flatMap(r => [r.avatarAddress, r.peerAddress, r.lastSenderAddress]),
   );
   const draftsVersion = useDraftsVersion();
 
@@ -367,27 +353,12 @@ export default function Messenger(): React.ReactElement {
 
   return (
     <View style={{ flex: 1, backgroundColor: bg }}>
-      {/* Home topnav: a search input with the search icon inside it on the right. */}
-      <View style={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: border }}>
-        <View style={{
-          flexDirection: 'row', alignItems: 'center', gap: 8,
-          backgroundColor: rowBg, borderWidth: 1, borderColor: border, borderRadius: 10,
-          paddingHorizontal: 12,
-        }}>
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search channels…"
-            placeholderTextColor={sub}
-            autoCorrect={false}
-            autoCapitalize="none"
-            style={{ flex: 1, paddingVertical: 9, color: fg, fontSize: 14 }}
-          />
-          <HeroIcon name="search" size={18} color={sub} />
-        </View>
+      {/* Home topnav: title (search input removed). */}
+      <View style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: border }}>
+        <Text style={{ color: head, fontSize: 22, fontFamily: 'Calibre-Semibold' }}>Channels</Text>
       </View>
       <FlatList
-        data={filtered ?? rows}
+        data={rows ?? []}
         extraData={`${channelProfilesVersion}:${draftsVersion}`}
         keyExtractor={r => r.convId}
         refreshControl={
@@ -401,7 +372,7 @@ export default function Messenger(): React.ReactElement {
         ListEmptyComponent={
           <View style={{ padding: 32, alignItems: 'center' }}>
             <Text style={{ color: sub, textAlign: 'center' }}>
-              {query ? `No matches for "${query}"` : 'No conversations yet. Share your address from Settings to start one.'}
+              No conversations yet. Share your address from Settings to start one.
             </Text>
           </View>
         }
