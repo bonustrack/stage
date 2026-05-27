@@ -12,10 +12,12 @@ import {
   ActivityIndicator, Alert, DevSettings, Image, Modal, Pressable, Text,
   TextInput, View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import { useAppKit } from '@reown/appkit-wagmi-react-native';
 import { useAccount, useSignMessage } from 'wagmi';
 import { HeroIcon } from './HeroIcon';
+import { usePeerProfiles, getPeerName } from '../lib/peerProfiles';
 import { stampBoxAvatarUrl, shortAddress, deleteAccount, switchToAccount } from '../lib/xmtp';
 import {
   loadAccounts, getActiveAccountId, setActiveAccountId, addGeneratedAccount,
@@ -97,6 +99,10 @@ export function AccountsManager({ dark }: { dark: boolean }): React.ReactElement
 
   const manageRec = accounts.find(a => a.id === manageId) ?? null;
 
+  /** Resolve Snapshot display names for each account address (re-renders the
+   *  rows once they load) so the list shows names, not just addresses. */
+  usePeerProfiles(accounts.map(a => a.address));
+
   async function onSwitch(id: string): Promise<void> {
     if (id === activeId || busy) return;
     setBusy(true);
@@ -168,7 +174,7 @@ export function AccountsManager({ dark }: { dark: boolean }): React.ReactElement
 
   return (
     <View>
-      <Text style={{ color: sub, fontSize: 11, paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8, fontFamily: 'Calibre-Medium' }}>
+      <Text style={{ color: sub, fontSize: 13, paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8, fontFamily: 'Calibre-Medium' }}>
         ACCOUNTS
       </Text>
       <View style={{
@@ -195,15 +201,15 @@ export function AccountsManager({ dark }: { dark: boolean }): React.ReactElement
                 style={{ width: 28, height: 28, borderRadius: 999, backgroundColor: border }}
               />
               <View style={{ flex: 1, minWidth: 0 }}>
-                <Text numberOfLines={1} style={{ color: head, fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
-                  {a.label ?? shortAddress(a.address)}
+                <Text numberOfLines={1} style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>
+                  {getPeerName(a.address) ?? a.label ?? shortAddress(a.address)}
                 </Text>
-                <Text numberOfLines={1} style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', marginTop: 1 }}>
-                  {TYPE_LABEL[a.type]}{a.label ? ` · ${shortAddress(a.address)}` : ''}
+                <Text numberOfLines={1} style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 1 }}>
+                  {shortAddress(a.address)} · {TYPE_LABEL[a.type]}
                 </Text>
               </View>
               {active ? (
-                <HeroIcon name="check" size={18} color={head} />
+                <HeroIcon name="check" size={20} color={head} />
               ) : (
                 <Pressable hitSlop={10} onPress={() => setManageId(a.id)}>
                   <Text style={{ color: sub, fontSize: 20, fontFamily: 'Calibre-Semibold', paddingHorizontal: 4 }}>⋯</Text>
@@ -229,10 +235,10 @@ export function AccountsManager({ dark }: { dark: boolean }): React.ReactElement
           <View style={{ width: 28, height: 28, borderRadius: 999, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: sub, borderStyle: 'dashed' }}>
             <HeroIcon name="plus" size={16} color={sub} />
           </View>
-          <Text style={{ color: head, fontSize: 15, fontFamily: 'Calibre-Semibold' }}>Add account</Text>
+          <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>Add account</Text>
         </Pressable>
       </View>
-      <Text style={{ color: sub, fontSize: 11, paddingHorizontal: 16, paddingTop: 8, fontFamily: 'Calibre-Medium' }}>
+      <Text style={{ color: sub, fontSize: 13, paddingHorizontal: 16, paddingTop: 8, fontFamily: 'Calibre-Medium' }}>
         Tap to switch · long-press for options
       </Text>
 
@@ -329,13 +335,16 @@ function SheetModal({ visible, onClose, children, bg, border, title, head }: {
   visible: boolean; onClose: () => void; children: React.ReactNode;
   bg: string; border: string; title?: string; head: string;
 }): React.ReactElement {
+  /** Pad the sheet past the Android nav bar so its last row isn't overlapped
+   *  / cut off by the system navigation buttons. */
+  const insets = useSafeAreaInsets();
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>
-        <Pressable onPress={(e) => e.stopPropagation()} style={{ backgroundColor: bg, borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 16, paddingBottom: 28, borderTopWidth: 1, borderColor: border }}>
+        <Pressable onPress={(e) => e.stopPropagation()} style={{ backgroundColor: bg, borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 16, paddingBottom: 28 + insets.bottom, borderTopWidth: 1, borderColor: border }}>
           <View style={{ alignSelf: 'center', width: 36, height: 4, borderRadius: 2, backgroundColor: border, marginBottom: 12 }} />
           {title ? (
-            <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold', marginBottom: 10 }}>{title}</Text>
+            <Text style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold', marginBottom: 12 }}>{title}</Text>
           ) : null}
           {children}
         </Pressable>
@@ -358,8 +367,8 @@ function SheetButton({ label, desc, onPress, head, sub, border, danger, dark }: 
         backgroundColor: pressed ? border : 'transparent',
       })}
     >
-      <Text style={{ color: labelColor, fontSize: 15, fontFamily: 'Calibre-Semibold' }}>{label}</Text>
-      {desc ? <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', marginTop: 2 }}>{desc}</Text> : null}
+      <Text style={{ color: labelColor, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>{label}</Text>
+      {desc ? <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 2 }}>{desc}</Text> : null}
     </Pressable>
   );
 }

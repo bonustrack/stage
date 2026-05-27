@@ -53,6 +53,13 @@ export function ensurePeerProfiles(addresses: (string | null | undefined)[]): vo
   void fetchBatch(todo);
 }
 
+/** True once we've fetched this address's profile (hit or miss). Lets callers
+ *  hold off rendering an avatar until its final URL is known — avoids showing a
+ *  cache-buster-less stamp first and swapping it when the profile lands. */
+export function isPeerResolved(address?: string | null): boolean {
+  return !!address && store.has(address.toLowerCase());
+}
+
 export function getPeerName(address?: string | null): string | undefined {
   if (!address) return undefined;
   const n = store.get(address.toLowerCase())?.name;

@@ -7,7 +7,7 @@ import '../lib/cryptoShim';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
-import { Text, TextInput, View } from 'react-native';
+import { LogBox, Text, TextInput, View } from 'react-native';
 import { Spinner } from '../components/Spinner';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
@@ -24,6 +24,12 @@ const queryClient = new QueryClient({
     queries: { staleTime: 60_000, gcTime: 30 * 60_000, retry: 1, refetchOnWindowFocus: false },
   },
 });
+
+/** Silence WalletConnect's benign "emitting session_request … without any
+ *  listeners" notice — a stale-session lifecycle log from @walletconnect/sign-client
+ *  that surfaces as a red dev error toast but is harmless (and a no-op in release,
+ *  where LogBox is disabled). */
+LogBox.ignoreLogs([/emitting session_request/, /without any listeners/]);
 
 /** Set Calibre-Medium as the app-wide default for Text + TextInput via defaultProps.
  *  This is a fallback — call-site `style={{…}}` overrides — but it's the safest path:

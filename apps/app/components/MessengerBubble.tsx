@@ -316,7 +316,11 @@ export function MessengerBubble({
         paddingHorizontal: 12, paddingVertical: 6, gap: 10,
         transform: [{ translateX: swipeX }],
         opacity: pending ? 0.5 : 1,
-        backgroundColor: unread ? (dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)') : 'transparent',
+        /** Permalink/reply jump target: full-row lighter background (~10% toward
+         *  white), spanning the whole width incl. the avatar gutter. */
+        backgroundColor: replyTarget
+          ? (dark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.05)')
+          : (unread ? (dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)') : 'transparent'),
       }}
     >
       {/** Discord-style row avatar. Stamp.fyi when we have an eth address;
@@ -339,10 +343,10 @@ export function MessengerBubble({
         delayLongPress={300}
         style={{
           flexDirection: 'column',
-          paddingHorizontal: 0, paddingVertical: 0,
-          borderRadius: replyTarget ? 8 : 0,
-          borderWidth: replyTarget ? 1.5 : (unread ? 1.5 : 0),
-          borderColor: replyTarget ? '#c0a06e' : (unread ? (dark ? '#ffffff' : '#000000') : 'transparent'),
+          /** Reply-target highlight is a full-row background on the outer View now;
+           *  keep only the unread outline here. */
+          borderWidth: unread ? 1.5 : 0,
+          borderColor: unread ? (dark ? '#ffffff' : '#000000') : 'transparent',
         }}
       >
         {replyPreview ? (
@@ -350,7 +354,7 @@ export function MessengerBubble({
             alignSelf: 'stretch', borderLeftWidth: 2, borderLeftColor: sub,
             paddingLeft: 6, marginBottom: 4, opacity: 0.7,
           }}>
-            <Text style={{ color: fg, fontSize: 12, fontStyle: 'italic' , fontFamily: 'Calibre-Medium'}} numberOfLines={2}>
+            <Text style={{ color: fg, fontSize: 14, fontStyle: 'italic' , fontFamily: 'Calibre-Medium'}} numberOfLines={2}>
               {replyPreview}
             </Text>
           </View>

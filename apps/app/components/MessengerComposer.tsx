@@ -252,8 +252,8 @@ export function MessengerComposer({
       {replyingTo ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingBottom: 6 }}>
           <View style={{ flex: 1, borderLeftWidth: 2, borderLeftColor: sub, paddingLeft: 8 }}>
-            <Text style={{ color: sub, fontSize: 10 , fontFamily: 'Calibre-Medium'}}>Replying to</Text>
-            <Text style={{ color: fg, fontSize: 12 , fontFamily: 'Calibre-Medium'}} numberOfLines={1}>{replyingTo.preview}</Text>
+            <Text style={{ color: sub, fontSize: 12 , fontFamily: 'Calibre-Medium'}}>Replying to</Text>
+            <Text style={{ color: fg, fontSize: 14 , fontFamily: 'Calibre-Medium'}} numberOfLines={1}>{replyingTo.preview}</Text>
           </View>
           <Pressable onPress={onClearReply} hitSlop={6}><HeroIcon name="x" size={16} color={sub} /></Pressable>
         </View>
