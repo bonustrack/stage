@@ -1,0 +1,6 @@
+# Apple App Site Association must be served as JSON (the file has no extension,
+# so Netlify won't infer the content type on its own).
+/.well-known/apple-app-site-association
+  Content-Type: application/json
+/.well-known/assetlinks.json
+  Content-Type: application/json
