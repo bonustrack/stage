@@ -95,6 +95,11 @@ function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
 /** Widget/site home shows 3 actions; "Messages" switches to the channel list. */
 const view = ref<'home' | 'messages'>('home');
 function openDocs(): void { window.open('https://docs.snapshot.box', '_blank', 'noopener,noreferrer'); }
+const cardClass = 'w-full max-w-sm flex items-center gap-3 px-4 py-4 rounded-2xl text-left '
+  + 'bg-metro-surface-light dark:bg-metro-surface-dark '
+  + 'border border-metro-border-light dark:border-metro-border-dark '
+  + 'text-metro-head-light dark:text-metro-head-dark '
+  + 'hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark transition-colors disabled:opacity-60';
 </script>
 
 <template>
@@ -139,39 +144,19 @@ function openDocs(): void { window.open('https://docs.snapshot.box', '_blank', '
       </button>
     </div>
 
-    <!-- HOME: three actions (Ask a question / Messages / Docs). -->
-    <div v-if="view === 'home'" class="flex-1 flex flex-col items-center justify-center gap-3 px-8">
-      <button
-        type="button"
-        :disabled="creatingAsk"
-        class="w-full max-w-xs h-12 rounded-full text-[17px] font-sans flex items-center justify-center
-          bg-metro-head-light dark:bg-metro-head-dark text-metro-bg-light dark:text-metro-bg-dark
-          disabled:opacity-60 hover:opacity-90 transition-opacity"
-        @click="onAskPress"
-      >
-        {{ creatingAsk ? 'Creating group…' : 'Ask a question' }}
+    <!-- HOME: three action cards (Ask a question / Messages / Docs). -->
+    <div v-if="view === 'home'" class="flex-1 flex flex-col items-center justify-center gap-3 px-6">
+      <button type="button" :disabled="creatingAsk" :class="cardClass" @click="onAskPress">
+        <HeroIcon name="chat" :size="24" class="shrink-0 text-metro-fg-light dark:text-metro-fg-dark" />
+        <span class="flex-1 text-[17px] font-sans">{{ creatingAsk ? 'Creating group…' : 'Ask a question' }}</span>
       </button>
-      <button
-        type="button"
-        class="w-full max-w-xs h-12 rounded-full text-[17px] font-sans flex items-center justify-center
-          bg-metro-surface-light dark:bg-metro-surface-dark
-          border border-metro-border-light dark:border-metro-border-dark
-          text-metro-head-light dark:text-metro-head-dark
-          hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark transition-colors"
-        @click="view = 'messages'"
-      >
-        Messages
+      <button type="button" :class="cardClass" @click="view = 'messages'">
+        <HeroIcon name="list" :size="24" class="shrink-0 text-metro-fg-light dark:text-metro-fg-dark" />
+        <span class="flex-1 text-[17px] font-sans">Messages</span>
       </button>
-      <button
-        type="button"
-        class="w-full max-w-xs h-12 rounded-full text-[17px] font-sans flex items-center justify-center
-          bg-metro-surface-light dark:bg-metro-surface-dark
-          border border-metro-border-light dark:border-metro-border-dark
-          text-metro-head-light dark:text-metro-head-dark
-          hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark transition-colors"
-        @click="openDocs"
-      >
-        Docs
+      <button type="button" :class="cardClass" @click="openDocs">
+        <HeroIcon name="document" :size="24" class="shrink-0 text-metro-fg-light dark:text-metro-fg-dark" />
+        <span class="flex-1 text-[17px] font-sans">Docs</span>
       </button>
       <div v-if="error" class="text-xs text-metro-err mt-1">{{ error }}</div>
     </div>
