@@ -10,6 +10,9 @@ const props = withDefaults(defineProps<{
   multiline?: boolean;
   saving?: boolean;
   emptyLabel?: string;
+  /** When true the value is shown as static text — no click-to-edit. Used to
+   *  hide editing from members who aren't group admins. */
+  readonly?: boolean;
   /** Tailwind classes applied to the rendered value when not editing.
    *  Lets the parent pick a heading size for `name` vs body size for
    *  `description` without forking the component. */
@@ -19,6 +22,7 @@ const props = withDefaults(defineProps<{
   multiline: false,
   saving: false,
   emptyLabel: 'Tap to edit',
+  readonly: false,
   valueClass: 'text-xl text-metro-head-light dark:text-metro-head-dark font-head',
 });
 const emit = defineEmits<{ (e: 'save', next: string): void }>();
@@ -35,7 +39,11 @@ function onSave(): void {
 <template>
   <div>
     <div class="text-[11px] uppercase tracking-wide text-metro-sub-light dark:text-metro-sub-dark">{{ props.label }}</div>
-    <div v-if="editing" class="flex items-start gap-2 mt-1.5">
+    <div v-if="props.readonly" class="mt-1.5">
+      <div v-if="props.value.trim()" :class="props.valueClass">{{ props.value.trim() }}</div>
+      <div v-else class="text-sm text-metro-sub-light dark:text-metro-sub-dark font-sans">{{ props.emptyLabel }}</div>
+    </div>
+    <div v-else-if="editing" class="flex items-start gap-2 mt-1.5">
       <textarea
         v-if="props.multiline"
         v-model="draft"

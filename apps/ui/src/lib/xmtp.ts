@@ -106,9 +106,12 @@ export function shortAddress(addr: string): string {
 }
 
 /** stamp.fyi avatar URL. `cdn.stamp.box` has no DNS — `stamp.fyi` is the canonical
- *  host. Returns a 200 identicon when no custom avatar exists. */
-export function stampBoxAvatarUrl(address: string, size = 120): string {
-  return `https://stamp.fyi/avatar/eth:${address.toLowerCase()}?s=${size}`;
+ *  host. Returns a 200 identicon when no custom avatar exists. `cacheBust` is
+ *  appended as `&cb=…` (pass `getCacheHash(profile.avatar)`) so stamp refetches
+ *  when the avatar changes instead of serving the previously-cached image. */
+export function stampBoxAvatarUrl(address: string, size = 120, cacheBust?: string): string {
+  const base = `https://stamp.fyi/avatar/eth:${address.toLowerCase()}?s=${size}`;
+  return cacheBust ? `${base}&cb=${encodeURIComponent(cacheBust)}` : base;
 }
 
 export { peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap } from './xmtpResolve';
@@ -142,22 +145,31 @@ export const ASK_QUESTION_MEMBERS = [
   '0x25391bddaa8d7ecdfe183615c1005259cd3b79d5', // Less
 ] as const;
 
-/** Spin up a 3-party group with the local user, claude, and Less. Filters
- *  out any address that matches the local wallet so testing from one of the
- *  hardcoded co-member accounts doesn't try to add a duplicate member. */
+/** Base URL of the Metro API (daemon-backed). */
+export const METRO_API_URL = 'https://api.metro.box';
+
+/** Create the "Ask a question" group via the Metro API so the *daemon* owns it
+ *  (daemon = super-admin) and the local user joins as a plain member — rather
+ *  than the user creating + owning it client-side. The daemon adds us by
+ *  address; we sync the conversation list so the new group resolves locally,
+ *  then return its id for navigation. */
 export async function createAskQuestionGroup(): Promise<string> {
   const client = await getOrCreateXmtpClient('production');
-  const selfAddr = client.accountIdentifier?.identifier.toLowerCase()
-    ?? '';
-  const peers = ASK_QUESTION_MEMBERS
-    .filter(a => a.toLowerCase() !== selfAddr)
-    .map(a => ({ identifier: a.toLowerCase(), identifierKind: IdentifierKind.Ethereum }));
-  /** The browser SDK uses `groupName` (matches the underlying wasm bindings),
-   *  while the RN SDK exposes the same field as `name`. */
-  const group = await client.conversations.createGroupWithIdentifiers(peers, {
-    groupName: 'Ask a question',
+  const selfAddr = client.accountIdentifier?.identifier.toLowerCase() ?? '';
+  if (!selfAddr) throw new Error('No local XMTP address available.');
+  const res = await fetch(`${METRO_API_URL}/ask-question`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ address: selfAddr }),
   });
-  return group.id;
+  const json = await res.json().catch(() => ({})) as { conversationId?: string; error?: string };
+  if (!res.ok || !json.conversationId) {
+    throw new Error(json.error ?? `Could not start the conversation (${res.status}).`);
+  }
+  /** The daemon created the group + added us; pull it into the local store so
+   *  navigation + the conversation view find it immediately. */
+  await client.conversations.sync().catch(() => undefined);
+  return json.conversationId;
 }
 
 /** Drop the local XMTP identity. Next `getOrCreateXmtpClient` mints a fresh wallet. */

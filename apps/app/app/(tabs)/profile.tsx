@@ -4,7 +4,8 @@
 import { useEffect, useState } from 'react';
 import { Alert, Image, Pressable, Text, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import { getOrCreateXmtpClient, shortAddress, stampBoxAvatarUrl } from '../../lib/xmtp';
+import { getOrCreateXmtpClient, shortAddress } from '../../lib/xmtp';
+import { avatarRenderUrl } from '../../../_shared/profile/snapshot';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { usePushToken, type PushStatus } from '../../lib/push';
 import {
@@ -26,6 +27,7 @@ export default function Profile(): React.ReactElement {
   const [address, setAddress] = useState<string>('');
   const [inboxId, setInboxId] = useState<string>('');
   const [profile, setProfile] = useState<SnapshotProfile>({});
+  const [loaded, setLoaded] = useState(false);
   const [editing, setEditing] = useState(false);
   const push = usePushToken();
 
@@ -40,6 +42,7 @@ export default function Profile(): React.ReactElement {
          *  the hub fetch then promotes the canonical record. */
         const cached = await loadCachedProfile();
         if (cached) setProfile(cached);
+        setLoaded(true);
         const remote = await readProfile(addr);
         if (remote) setProfile(remote);
       } catch { /* leave fields blank — render placeholder */ }
@@ -65,9 +68,9 @@ export default function Profile(): React.ReactElement {
       </View>
 
       <View style={{ alignItems: 'center', paddingTop: 24, paddingBottom: 16 }}>
-        {address ? (
+        {address && loaded ? (
           <Image
-            source={{ uri: stampBoxAvatarUrl(address, AVATAR_SIZE * 2, profile.avatar?.slice(-12)) }}
+            source={{ uri: avatarRenderUrl(address, profile.avatar, AVATAR_SIZE * 2) }}
             style={{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: AVATAR_SIZE / 2, backgroundColor: rowBg }}
           />
         ) : (

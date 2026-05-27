@@ -3,12 +3,12 @@
  *  Mirrors apps/app/app/(tabs)/index.tsx (search, stamp avatars, unread
  *  badges, persisted cache so the list renders before XMTP boots). */
 
-import { getOrCreateXmtpClient, createAskQuestionGroup } from '../lib/xmtp';
+import { getOrCreateXmtpClient, createAskQuestionGroup, ASK_QUESTION_MEMBERS, stampBoxAvatarUrl } from '../lib/xmtp';
 import { cachedRows, hydrateCachedRows } from '../lib/channelsCache';
 import { type ChannelRow as Row } from '../lib/channelsSummarize';
 import { startChannelStream, type ChannelStreamHandles } from '../lib/useChannelStream';
 import { isAddressLike, isDomainLike, resolveDomain } from '../lib/stamp';
-import { runningInIframe } from '../lib/embedBridge';
+import { runningInIframe, postCloseToParent } from '../lib/embedBridge';
 
 const router = useRouter();
 /** Embedded (iframed) = widget. Hides the search topnav + drops the Ask
@@ -91,78 +91,136 @@ onMounted(async () => {
 onUnmounted(() => { void stream?.stop(); stream = null; });
 
 function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
+
+/** Widget/site home shows 3 actions; "Messages" switches to the channel list. */
+const view = ref<'home' | 'messages'>('home');
+function openDocs(): void { window.open('https://docs.snapshot.box', '_blank', 'noopener,noreferrer'); }
+const cardClass = 'w-full max-w-sm flex items-center gap-3 px-4 py-4 rounded-2xl text-left '
+  + 'border border-metro-border-light dark:border-metro-border-dark '
+  + 'text-metro-head-light dark:text-metro-head-dark '
+  + 'hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark transition-colors disabled:opacity-60';
 </script>
 
 <template>
   <div class="h-[100dvh] flex flex-col relative">
-    <div v-if="!embedded" class="shrink-0 px-3 pt-3 pb-2 flex items-center gap-2
-      bg-metro-bg-light dark:bg-metro-bg-dark">
-      <input
-        v-model="query"
-        type="text"
-        placeholder="Search channels or paste 0x… / name.eth…"
-        autocomplete="off"
-        autocorrect="off"
-        autocapitalize="off"
-        class="flex-1 bg-metro-surface-light dark:bg-metro-surface-dark
-          border border-metro-border-light dark:border-metro-border-dark rounded-lg px-3 py-2 text-sm
-          text-metro-fg-light dark:text-metro-fg-dark outline-none
-          placeholder:text-metro-sub-light dark:placeholder:text-metro-sub-dark"
-      />
+    <!-- Topnav: page title, refresh, and (embedded only) a close button at the
+         end, so the channels homepage has a single topnav like conversations. -->
+    <div class="h-[56px] box-border flex items-center shrink-0 gap-1 pl-2 pr-1
+      bg-metro-bg-light dark:bg-metro-bg-dark
+      border-b border-metro-border-light dark:border-metro-border-dark">
+      <span class="flex-1 font-head text-[17px] text-metro-head-light dark:text-metro-head-dark pl-2">
+        {{ view === 'messages' ? 'Messages' : 'Home' }}
+      </span>
       <button
+        v-if="!embedded && view === 'messages'"
         type="button"
         :disabled="refreshing"
         class="p-2 rounded-lg text-metro-sub-light dark:text-metro-sub-dark
-          hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark
-          disabled:opacity-50"
+          hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark disabled:opacity-50"
         :title="refreshing ? 'Refreshing…' : 'Refresh channels'"
         @click="refreshFromNetwork"
       >
         <HeroIcon name="arrowDown" :size="16" :class="refreshing ? 'animate-spin' : ''" />
       </button>
+      <button
+        v-if="embedded"
+        type="button"
+        class="px-2 py-2 text-metro-fg-light dark:text-metro-fg-dark"
+        title="Close"
+        @click="postCloseToParent"
+      >
+        <HeroIcon name="x" :size="20" />
+      </button>
     </div>
-    <SearchResolution
-      :status="searchResolution.status"
-      :address="searchResolution.address"
-      :query="query"
-      @open="openSearchedProfile"
-    />
 
-    <div v-if="error" class="flex-1 flex items-center justify-center text-sm text-metro-fg-light dark:text-metro-fg-dark px-6">
-      {{ error }}
+    <!-- HOME: the "Ask a question" action card. Messages/Docs live in the footer nav. -->
+    <div v-if="view === 'home'" class="flex-1 flex flex-col items-center justify-center gap-3 px-6">
+      <button type="button" :disabled="creatingAsk" :class="cardClass" @click="onAskPress">
+        <HeroIcon name="chat" :size="24" class="shrink-0 text-metro-fg-light dark:text-metro-fg-dark" />
+        <span class="flex-1 text-[17px] font-sans">{{ creatingAsk ? 'Creating group…' : 'Ask a question' }}</span>
+        <div class="flex items-center shrink-0">
+          <img
+            v-for="(addr, i) in ASK_QUESTION_MEMBERS"
+            :key="addr"
+            :src="stampBoxAvatarUrl(addr, 56)"
+            alt=""
+            class="w-7 h-7 rounded-full bg-metro-border-light dark:bg-metro-border-dark
+              border-2 border-metro-bg-light dark:border-metro-bg-dark"
+            :class="i === 0 ? '' : '-ml-2'"
+          />
+        </div>
+      </button>
+      <div v-if="error" class="text-xs text-metro-err mt-1">{{ error }}</div>
     </div>
-    <div v-else-if="!rows" class="flex-1 flex items-center justify-center text-xs text-metro-sub-light dark:text-metro-sub-dark">
-      Initialising XMTP…
-    </div>
-    <ul v-else class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-[150px]">
-      <li v-if="filtered && filtered.length === 0" class="p-8 text-center text-sm text-metro-sub-light dark:text-metro-sub-dark">
-        {{ query ? `No matches for "${query}"` : 'No conversations yet. Share your address from Settings to start one.' }}
-      </li>
-      <li v-for="r in filtered ?? rows" :key="r.convId">
-        <ChannelRow
-          :avatar-address="r.avatarAddress"
-          :avatar-uri="r.avatarUri"
-          :title="r.title"
-          :last-ts="r.lastTs"
-          :last-preview="r.lastPreview"
-          :unread-count="r.unreadCount"
-          @open="open(r.convId)"
+
+    <!-- MESSAGES: search (standalone) + the channel list. -->
+    <template v-else>
+      <div v-if="!embedded" class="shrink-0 px-4 pt-3 pb-2 bg-metro-bg-light dark:bg-metro-bg-dark">
+        <input
+          v-model="query"
+          type="text"
+          placeholder="Search channels or paste 0x… / name.eth…"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          class="w-full bg-metro-surface-light dark:bg-metro-surface-dark
+            border border-metro-border-light dark:border-metro-border-dark rounded-lg px-3 py-2 text-sm
+            text-metro-fg-light dark:text-metro-fg-dark outline-none
+            placeholder:text-metro-sub-light dark:placeholder:text-metro-sub-dark"
         />
-      </li>
-    </ul>
-    <!-- Floating "Ask a question" pill — full-width above the bottom TabBar. -->
-    <button
-      type="button"
-      :disabled="creatingAsk"
-      class="fixed left-4 right-4 z-30
-        bg-metro-head-light dark:bg-metro-head-dark
-        text-metro-bg-light dark:text-metro-bg-dark
-        text-[17px] font-sans py-3 rounded-full
-        disabled:opacity-60 hover:opacity-90 transition-opacity"
-      :class="embedded ? 'bottom-4' : 'bottom-[76px]'"
-      @click="onAskPress"
-    >
-      {{ creatingAsk ? 'Creating group…' : 'Ask a question' }}
-    </button>
+      </div>
+      <SearchResolution
+        :status="searchResolution.status"
+        :address="searchResolution.address"
+        :query="query"
+        @open="openSearchedProfile"
+      />
+      <div v-if="error" class="flex-1 flex items-center justify-center text-sm text-metro-fg-light dark:text-metro-fg-dark px-6">
+        {{ error }}
+      </div>
+      <div v-else-if="!rows" class="flex-1 flex items-center justify-center text-metro-head-light dark:text-metro-head-dark">
+        <Spinner :size="28" />
+      </div>
+      <ul v-else class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-6">
+        <li v-if="filtered && filtered.length === 0" class="p-8 text-center text-sm text-metro-sub-light dark:text-metro-sub-dark">
+          {{ query ? `No matches for "${query}"` : 'No conversations yet. Share your address from Settings to start one.' }}
+        </li>
+        <li v-for="r in filtered ?? rows" :key="r.convId">
+          <ChannelRow
+            :avatar-address="r.avatarAddress"
+            :avatar-uri="r.avatarUri"
+            :title="r.title"
+            :last-ts="r.lastTs"
+            :last-preview="r.lastPreview"
+            :unread-count="r.unreadCount"
+            @open="open(r.convId)"
+          />
+        </li>
+      </ul>
+    </template>
+
+    <!-- Footer nav (Intercom-style): Home (default) / Messages / Docs. -->
+    <div class="shrink-0 flex items-stretch border-t border-metro-border-light dark:border-metro-border-dark
+      bg-metro-bg-light dark:bg-metro-bg-dark">
+      <button type="button" class="flex-1 flex flex-col items-center gap-1 py-2.5 transition-colors"
+        :class="view === 'home' ? 'text-metro-head-light dark:text-metro-head-dark' : 'text-metro-sub-light dark:text-metro-sub-dark'"
+        @click="view = 'home'">
+        <HeroIcon name="home" :size="22" />
+        <span class="text-[15px] font-sans">Home</span>
+      </button>
+      <button type="button" class="flex-1 flex flex-col items-center gap-1 py-2.5 transition-colors"
+        :class="view === 'messages' ? 'text-metro-head-light dark:text-metro-head-dark' : 'text-metro-sub-light dark:text-metro-sub-dark'"
+        @click="view = 'messages'">
+        <HeroIcon name="list" :size="22" />
+        <span class="text-[15px] font-sans">Messages</span>
+      </button>
+      <button type="button"
+        class="flex-1 flex flex-col items-center gap-1 py-2.5 text-metro-sub-light dark:text-metro-sub-dark
+          hover:text-metro-head-light dark:hover:text-metro-head-dark transition-colors"
+        @click="openDocs">
+        <HeroIcon name="document" :size="22" />
+        <span class="text-[15px] font-sans">Docs</span>
+      </button>
+    </div>
   </div>
 </template>

@@ -16,4 +16,7 @@ export interface HistoryEntry {
   replyTo?: string;
   display?: string;
   payload?: unknown;
+  /** Optimistic (locally-sent, not yet confirmed by the network). Rendered at
+   *  reduced opacity until the send resolves, then flipped to normal. */
+  pending?: boolean;
 }

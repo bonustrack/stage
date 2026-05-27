@@ -18,6 +18,7 @@ const name = ref<string | null>(null);
 const saving = ref(false);
 const members = ref<string[]>([]);
 const memberNames = ref<Record<string, string | null>>({});
+const memberRoles = ref<Record<string, 'owner' | 'admin' | 'member'>>({});
 const adding = ref(false);
 const selfAddress = ref('');
 const removing = ref<string | null>(null);
@@ -26,6 +27,16 @@ const imageUrl = ref<string>('');
 const uploadingImage = ref(false);
 const description = ref<string>('');
 const savingDescription = ref(false);
+
+/** Only group admins/owners can edit metadata + manage members (enforced by the
+ *  group's admin-only policy); hide those affordances from plain members. */
+const selfIsAdmin = computed(() => {
+  const self = selfAddress.value.toLowerCase();
+  for (const [addr, role] of Object.entries(memberRoles.value)) {
+    if (addr.toLowerCase() === self) return role === 'owner' || role === 'admin';
+  }
+  return false;
+});
 
 watchEffect(async () => {
   if (!convId.value) return;
@@ -41,6 +52,8 @@ watchEffect(async () => {
     name?: string;
     imageUrl?: string;
     description?: string;
+    superAdmins?: string[];
+    admins?: () => string[];
   };
   name.value = group.name ?? '';
   imageUrl.value = group.imageUrl ?? '';
@@ -48,6 +61,18 @@ watchEffect(async () => {
   const addrMap = await memberInboxToAddressMap(conv);
   const addrs = Object.values(addrMap).sort((a, b) => a.localeCompare(b));
   members.value = addrs;
+  /** Role per member: super-admin → Owner, admin → Admin, else Member.
+   *  superAdmins/admins are inbox ids, matched against the inbox→address map. */
+  try {
+    const superSet = new Set((group.superAdmins ?? []).map(s => s.toLowerCase()));
+    const adminSet = new Set((group.admins?.() ?? []).map(a => a.toLowerCase()));
+    const roles: Record<string, 'owner' | 'admin' | 'member'> = {};
+    for (const [inboxId, addr] of Object.entries(addrMap)) {
+      const iid = inboxId.toLowerCase();
+      roles[addr] = superSet.has(iid) ? 'owner' : adminSet.has(iid) ? 'admin' : 'member';
+    }
+    memberRoles.value = roles;
+  } catch { /* roles are best-effort */ }
   /** Enrich with Snapshot profile names — pure best-effort, rows fall back
    *  to short addresses when the lookup misses. */
   const profiles = await Promise.all(
@@ -150,6 +175,7 @@ async function onPickImage(file: File): Promise<void> {
     <GroupAvatarEditor
       :image-url="imageUrl"
       :uploading="uploadingImage"
+      :readonly="!selfIsAdmin"
       @pick="onPickImage"
     />
 
@@ -160,6 +186,7 @@ async function onPickImage(file: File): Promise<void> {
         placeholder="Group name"
         empty-label="Untitled group"
         :saving="saving"
+        :readonly="!selfIsAdmin"
         @save="onSaveName"
       />
     </div>
@@ -172,6 +199,7 @@ async function onPickImage(file: File): Promise<void> {
         multiline
         value-class="text-sm text-metro-fg-light dark:text-metro-fg-dark font-sans"
         :saving="savingDescription"
+        :readonly="!selfIsAdmin"
         @save="onSaveDescription"
       />
     </div>
@@ -179,7 +207,7 @@ async function onPickImage(file: File): Promise<void> {
     <div class="text-[11px] uppercase tracking-wide text-metro-sub-light dark:text-metro-sub-dark px-4 pb-1.5">
       Members ({{ members.length }})
     </div>
-    <MemberAddForm :adding="adding" @add="onAddMember" />
+    <MemberAddForm v-if="selfIsAdmin" :adding="adding" @add="onAddMember" />
     <div v-if="errorMsg" class="px-4 pb-2 text-xs text-red-500">{{ errorMsg }}</div>
 
     <ul class="flex flex-col">
@@ -188,7 +216,9 @@ async function onPickImage(file: File): Promise<void> {
         :key="addr.toLowerCase()"
         :address="addr"
         :name="memberNames[addr] ?? null"
+        :role="memberRoles[addr] ?? 'member'"
         :is-self="addr.toLowerCase() === selfAddress"
+        :can-remove="selfIsAdmin"
         :removing="removing === addr.toLowerCase()"
         @open="openMember(addr)"
         @remove="removeMember(addr)"

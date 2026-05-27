@@ -9,10 +9,10 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
-import { shortAddress, stampBoxAvatarUrl, openDmWithAddress } from '../../lib/xmtp';
+import { shortAddress, openDmWithAddress } from '../../lib/xmtp';
 import { useEffectiveColorScheme } from '../../lib/theme';
-import { readProfile } from '../../lib/profile';
-import { type SnapshotProfile } from '../../../_shared/profile/snapshot';
+import { useProfileQuery } from '../../lib/useProfile';
+import { avatarRenderUrl } from '../../../_shared/profile/snapshot';
 import { HeroIcon } from '../../components/HeroIcon';
 
 const AVATAR_SIZE = 120;
@@ -31,14 +31,8 @@ export default function UserProfileView(): React.ReactElement {
   const { address } = useLocalSearchParams<{ address: string }>();
   const addr = address ?? '';
 
-  const [profile, setProfile] = useState<SnapshotProfile | null>(null);
+  const { data: profile, isSuccess: loaded } = useProfileQuery(addr);
   const [openingDm, setOpeningDm] = useState(false);
-  useEffect(() => {
-    if (!addr) return;
-    let cancelled = false;
-    void readProfile(addr).then(p => { if (!cancelled) setProfile(p); });
-    return (): void => { cancelled = true; };
-  }, [addr]);
 
   const onMessage = async (): Promise<void> => {
     if (!addr || openingDm) return;
@@ -75,13 +69,22 @@ export default function UserProfileView(): React.ReactElement {
       </View>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
         <View style={{ alignItems: 'center', paddingTop: 16, paddingBottom: 8 }}>
-          <Image
-            source={{ uri: stampBoxAvatarUrl(addr, AVATAR_SIZE * 2) }}
-            style={{
+          {/* Wait for the profile so we render the real avatar directly (no
+              blockie→real flash); custom avatars resolve via IPFS, not stamp. */}
+          {loaded ? (
+            <Image
+              source={{ uri: avatarRenderUrl(addr, profile?.avatar ?? undefined, AVATAR_SIZE * 2) }}
+              style={{
+                width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: AVATAR_SIZE / 2,
+                backgroundColor: border,
+              }}
+            />
+          ) : (
+            <View style={{
               width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: AVATAR_SIZE / 2,
               backgroundColor: border,
-            }}
-          />
+            }} />
+          )}
           <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', marginTop: 14 }}>
             {profile?.name?.trim() || shortAddress(addr)}
           </Text>

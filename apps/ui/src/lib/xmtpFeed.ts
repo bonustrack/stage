@@ -113,6 +113,11 @@ export interface XmtpFeedHandle {
   inboxId: Ref<string>;
 }
 
+/** Per-conversation message cache so re-opening a channel renders its messages
+ *  instantly (no loading spinner); the live history still refreshes in the
+ *  background. Keyed by line, survives navigation within the SPA session. */
+const feedCache = new Map<string, HistoryEntry[]>();
+
 /** Vue composable: load a conversation's history then subscribe to its live stream.
  *  Events are returned newest-first so an inverted list can consume them unchanged.
  *  Pass `enabled=false` while the client is still booting to keep the feed idle. */
@@ -145,10 +150,14 @@ export function useXmtpFeed(line: Ref<string | null>, enabled: Ref<boolean>): Xm
       if (cancelled || activeLine !== current) return;
       /** `messages()` is oldest-first; flip for inverted feed. */
       const fresh = msgs.map(m => envelopeOfXmtpMessage(m, current)).reverse();
-      if (events.value.length === 0) { events.value = fresh; return; }
-      const seen = new Set(events.value.map(e => e.id));
-      const additions = fresh.filter(e => !seen.has(e.id));
-      if (additions.length) events.value = [...additions, ...events.value];
+      if (events.value.length === 0) {
+        events.value = fresh;
+      } else {
+        const seen = new Set(events.value.map(e => e.id));
+        const additions = fresh.filter(e => !seen.has(e.id));
+        if (additions.length) events.value = [...additions, ...events.value];
+      }
+      feedCache.set(current, events.value);
     } catch { /* next tick or visibility flip retries */ }
   };
 
@@ -156,9 +165,11 @@ export function useXmtpFeed(line: Ref<string | null>, enabled: Ref<boolean>): Xm
     if (!enabled.value || !line.value) { status.value = 'idle'; return; }
     activeLine = line.value;
     cancelled = false;
-    status.value = 'loading';
     error.value = null;
-    events.value = [];
+    /** Seed instantly from cache so re-opening a channel skips the spinner. */
+    const seeded = line.value ? feedCache.get(line.value) : undefined;
+    events.value = seeded ? [...seeded] : [];
+    status.value = seeded && seeded.length ? 'open' : 'loading';
     try {
       const client = await getOrCreateXmtpClient('production');
       if (cancelled || activeLine !== line.value) return;
@@ -174,6 +185,7 @@ export function useXmtpFeed(line: Ref<string | null>, enabled: Ref<boolean>): Xm
               const env = envelopeOfXmtpMessage(msg, activeLine);
               if (!events.value.some(e => e.id === env.id)) {
                 events.value = [env, ...events.value];
+                feedCache.set(activeLine, events.value);
               }
             },
           });

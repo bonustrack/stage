@@ -104,7 +104,7 @@ async function send(): Promise<void> {
     <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFileChange" />
     <!-- Mobile-style composer: textarea on top, [+ / spacer / send] row below,
          both inside one rounded surface. Mirrors MessengerComposer.tsx. -->
-    <div class="m-2.5 px-2.5 py-1.5 rounded-2xl bg-metro-surface-light dark:bg-metro-surface-dark">
+    <div class="m-4 mt-0 px-3 pt-2.5 pb-1.5 rounded-2xl bg-metro-surface-light dark:bg-metro-surface-dark">
       <!-- Pending pasted/selected image preview — removable, sent on Send. -->
       <div v-if="pending" class="relative inline-block mb-2">
         <img :src="pending.url" alt="" class="max-h-32 rounded-lg" />
@@ -133,7 +133,7 @@ async function send(): Promise<void> {
       <div class="flex items-center gap-1">
         <button
           type="button"
-          class="w-9 h-9 shrink-0 rounded-full flex items-center justify-center
+          class="w-10 h-10 shrink-0 rounded-full flex items-center justify-center
             text-metro-fg-light dark:text-metro-fg-dark
             hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
           :title="attachOpen ? 'Close attach menu' : 'Attach'"
@@ -145,19 +145,19 @@ async function send(): Promise<void> {
         <button
           type="button"
           :disabled="sending || (!text.trim() && !pending)"
-          class="w-9 h-9 shrink-0 rounded-full flex items-center justify-center
+          class="w-10 h-10 shrink-0 rounded-full flex items-center justify-center
             bg-metro-head-light dark:bg-metro-head-dark text-metro-bg-light dark:text-metro-bg-dark
             disabled:opacity-50"
           :title="sending ? 'Sending…' : 'Send'"
           @click="send"
         >
-          <HeroIcon name="send" :size="18" />
+          <HeroIcon name="send" :size="22" />
         </button>
       </div>
     </div>
     <!-- Attach menu drops BELOW the composer row when open, matching mobile.
          Mobile uses box-style options stacked horizontally; mirror that. -->
-    <div v-if="attachOpen" class="flex gap-2 px-2.5 pb-3">
+    <div v-if="attachOpen" class="flex gap-2 px-3 pb-3">
       <button
         type="button"
         class="flex items-center gap-2 px-3 py-2 rounded-xl

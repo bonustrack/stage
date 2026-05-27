@@ -11,12 +11,15 @@ import { KeyboardStickyView, useReanimatedKeyboardAnimation } from 'react-native
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { MessengerBubble } from '../../components/MessengerBubble';
+import { usePeerProfiles, getPeerName, getPeerAvatar } from '../../lib/peerProfiles';
+import { useConvMeta } from '../../lib/useConvMeta';
+import { Spinner } from '../../components/Spinner';
+import { avatarRenderUrl } from '../../../_shared/profile/snapshot';
 import { MessengerComposer } from '../../components/MessengerComposer';
 import { ComposerGradient } from '../../components/ComposerGradient';
 import { HeroIcon } from '../../components/HeroIcon';
 import {
   XMTP_USER_PREFIX, lineOfConv, useXmtpFeed, xmtpReact, xmtpReply,
-  convOfLine, peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap,
   stampBoxAvatarUrl,
 } from '../../lib/xmtp';
 import { markConvRead } from '../../lib/channelsCache';
@@ -53,43 +56,23 @@ function isReaction(e: HistoryEntry): boolean {
 /** Stamp.fyi avatars shown in the conversation header. Mirrors the channels-
  *  list row avatar but locked at 24px per the design spec. DMs render a single
  *  circle; groups stack up to 3 member avatars with a "+N" overflow tile. */
-function HeaderAvatars({ peerAddr, memberAddrs, bg, border }: {
-  peerAddr: string | null; memberAddrs: string[]; bg: string; border: string;
+function HeaderAvatar({ peerAddr, groupImage, border }: {
+  peerAddr: string | null; groupImage: string; border: string;
 }): React.ReactElement | null {
   const SIZE = 24;
+  /** Show the leading avatar for a 1-1 (the peer's custom avatar, else their
+   *  identicon) or for a group that has its own uploaded image. Groups without
+   *  an image show nothing — no member-avatar fallback. */
+  let uri: string | null = null;
   if (peerAddr) {
-    return (
-      <Image
-        source={{ uri: stampBoxAvatarUrl(peerAddr, SIZE * 2) }}
-        style={{ width: SIZE, height: SIZE, borderRadius: 999, backgroundColor: border }}
-      />
-    );
+    const av = getPeerAvatar(peerAddr);
+    uri = av ? avatarRenderUrl(peerAddr, av, SIZE * 2) : stampBoxAvatarUrl(peerAddr, SIZE * 2);
+  } else if (groupImage) {
+    uri = avatarRenderUrl('', groupImage, SIZE * 2);
   }
-  const visible = memberAddrs.slice(0, 3);
-  const overflow = memberAddrs.length - 3;
-  if (visible.length === 0) return null;
+  if (!uri) return null;
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-      {visible.map((a, i) => (
-        <Image
-          key={a.toLowerCase()}
-          source={{ uri: stampBoxAvatarUrl(a, SIZE * 2) }}
-          style={{
-            width: SIZE, height: SIZE, borderRadius: 999, backgroundColor: border,
-            borderWidth: 2, borderColor: bg, marginLeft: i === 0 ? 0 : -8,
-          }}
-        />
-      ))}
-      {overflow > 0 ? (
-        <View style={{
-          width: SIZE, height: SIZE, borderRadius: 999, backgroundColor: '#3a4250',
-          alignItems: 'center', justifyContent: 'center',
-          borderWidth: 2, borderColor: bg, marginLeft: -8,
-        }}>
-          <Text style={{ color: '#ffffff', fontSize: 9 , fontFamily: 'Calibre-Medium'}}>+{overflow}</Text>
-        </View>
-      ) : null}
-    </View>
+    <Image source={{ uri }} style={{ width: SIZE, height: SIZE, borderRadius: 999, backgroundColor: border }} />
   );
 }
 
@@ -129,46 +112,18 @@ export default function XmtpConversation(): React.ReactElement {
   /** Optimistic outbound entries — rendered immediately on send, dropped once the composer
    *  resolves its send promise (XMTP self-sends don't always come back via streamMessages). */
   const [optimistic, setOptimistic] = useState<HistoryEntry[]>([]);
-  /** Per-conversation member addresses, resolved once on mount. `peerAddr` is
-   *  set for DMs (single avatar), `memberAddrs` for groups (stacked).
-   *  `inboxToAddr` lets the bubble look up the sender's eth address for the
-   *  Discord-style row avatar. */
-  const [peerAddr, setPeerAddr] = useState<string | null>(null);
-  const [memberAddrs, setMemberAddrs] = useState<string[]>([]);
-  const [inboxToAddr, setInboxToAddr] = useState<Record<string, string>>({});
-  /** null = not yet fetched, '' = fetched but no name set, other = the name. */
-  const [groupName, setGroupName] = useState<string | null>(null);
-  /** `isGroup` gates the title affordance (tap → /group/[convId]). DMs don't
-   *  show a title since there's no group name to display or edit. */
-  const [isGroup, setIsGroup] = useState(false);
+  /** Conversation metadata via TanStack Query — cached by convId so the topnav
+   *  title + avatar render instantly on the second open (groupName: null = not
+   *  resolved, '' = no name; isGroup gates the title→/group affordance). */
+  const { peerAddr, memberAddrs, inboxToAddr, groupName, groupImage, isGroup } = useConvMeta(convId);
   const senderEthOf = useCallback((from: string): string | null => {
     if (!from.startsWith(XMTP_USER_PREFIX)) return null;
     const inboxId = from.slice(XMTP_USER_PREFIX.length);
     return inboxToAddr[inboxId] ?? null;
   }, [inboxToAddr]);
-  useEffect(() => {
-    if (!convId) return;
-    let cancelled = false;
-    void (async (): Promise<void> => {
-      const conv = await convOfLine(activeLine);
-      if (cancelled || !conv) return;
-      const peer = await peerEthAddressOfDm(conv);
-      const fullMap = await memberInboxToAddressMap(conv);
-      if (cancelled) return;
-      setInboxToAddr(fullMap);
-      if (peer) { setPeerAddr(peer); return; }
-      setIsGroup(true);
-      const [members, name] = await Promise.all([
-        groupMemberEthAddresses(conv),
-        (conv as unknown as { name?: () => Promise<string> }).name?.() ?? Promise.resolve(''),
-      ]);
-      if (!cancelled) {
-        setMemberAddrs(members);
-        setGroupName(name ?? '');
-      }
-    })();
-    return (): void => { cancelled = true; };
-  }, [activeLine, convId]);
+
+  /** Resolve peer + member profiles → DM display name + avatar cache-busters. */
+  const profilesVersion = usePeerProfiles([peerAddr, ...memberAddrs]);
 
   const insets = useSafeAreaInsets();
   /** Reanimated-driven keyboard offset shared with the composer's KeyboardStickyView,
@@ -255,6 +210,7 @@ export default function XmtpConversation(): React.ReactElement {
         key={listEpoch}
         ref={listRef}
         data={allBubbles}
+        extraData={profilesVersion}
         inverted
         showsVerticalScrollIndicator={false}
         /** Anchor the bottom-visible item (= newest on inverted) so as new bubbles or the
@@ -264,7 +220,7 @@ export default function XmtpConversation(): React.ReactElement {
         style={{ flex: 1 }}
         /** Inverted: paddingTop = visual BOTTOM (composer side), paddingBottom = visual TOP
          *  (nav side). Bump the top so the oldest message clears the absolute top-nav strip. */
-        contentContainerStyle={{ paddingTop: 12, paddingBottom: insets.top + 44 + 8 }}
+        contentContainerStyle={{ paddingTop: 12, paddingBottom: insets.top + 52 + 8 }}
         onScroll={(ev) => { setShowJump(ev.nativeEvent.contentOffset.y > 200); }}
         scrollEventThrottle={32}
         renderItem={({ item }) => (
@@ -292,7 +248,9 @@ export default function XmtpConversation(): React.ReactElement {
         )}
         ListEmptyComponent={
           <View style={{ padding: 32, alignItems: 'center' }}>
-            <Text style={{ color: sub }}>Type a message below to start chatting.</Text>
+            {status === 'open'
+              ? <Text style={{ color: sub }}>Type a message below to start chatting.</Text>
+              : <Spinner size={28} color={head} />}
           </View>
         }
         keyboardShouldPersistTaps="handled"
@@ -303,8 +261,9 @@ export default function XmtpConversation(): React.ReactElement {
        *  behind the system icons. */}
       <View style={{
         position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
-        height: 44 + insets.top, paddingTop: insets.top, backgroundColor: bg,
+        height: 52 + insets.top, paddingTop: insets.top, backgroundColor: bg,
         flexDirection: 'row', alignItems: 'stretch',
+        borderBottomWidth: 1, borderBottomColor: dark ? '#282a2d' : '#e4e4e5',
       }}>
         <Pressable
           onPress={() => router.replace('/')}
@@ -320,35 +279,19 @@ export default function XmtpConversation(): React.ReactElement {
             if (isGroup) router.push({ pathname: '/group/[convId]', params: { convId: convId ?? '' } });
             else if (peerAddr) router.push({ pathname: '/user/[address]', params: { address: peerAddr } });
           }}
-          style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingRight: 14 }}
+          style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 14 }}
         >
+          <HeaderAvatar peerAddr={peerAddr} groupImage={groupImage} border={dark ? '#282a2d' : '#e4e4e5'} />
           <Text style={{ color: head, fontSize: 19, fontFamily: 'Calibre-Semibold', flex: 1 }} numberOfLines={1}>
-            {isGroup ? (groupName || 'Untitled group')
-              : peerAddr ? `${peerAddr.slice(0, 6)}…${peerAddr.slice(-4)}` : ''}
+            {isGroup ? (groupName === null ? '' : (groupName || 'Untitled group'))
+              : peerAddr ? (getPeerName(peerAddr) ?? `${peerAddr.slice(0, 6)}…${peerAddr.slice(-4)}`) : ''}
           </Text>
-          {status !== 'open' ? (
-            <View style={{
-              flexDirection: 'row', alignItems: 'center', gap: 6,
-              paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999,
-              backgroundColor: dark ? 'rgba(40,46,58,0.92)' : 'rgba(238,241,247,0.95)',
-            }}>
-              <View style={{
-                width: 6, height: 6, borderRadius: 999,
-                backgroundColor: status === 'connecting' ? '#c0a06e' : '#d96868',
-              }} />
-              <Text style={{ color: sub, fontSize: 11 , fontFamily: 'Calibre-Medium'}}>
-                {status === 'connecting' ? 'Connecting…' : status === 'error' ? 'Reconnecting…' : 'Offline'}
-              </Text>
-            </View>
-          ) : (
-            <HeaderAvatars peerAddr={peerAddr} memberAddrs={memberAddrs} bg={bg} border={dark ? '#282a2d' : '#e4e4e5'} />
-          )}
         </Pressable>
       </View>
       {/** Fade strip below the top nav — mirrors the composer's top fade. Position it
        *  flush against the nav bottom (which sits at `44 + insets.top`), so the solid
        *  bg fades smoothly into the scrolling content beneath. */}
-      <ComposerGradient bg={bg} direction="up" top={44 + insets.top} height={10} />
+      <ComposerGradient bg={bg} direction="up" top={52 + insets.top} height={16} />
       {showJump ? (
         <Pressable
           onPress={() => {

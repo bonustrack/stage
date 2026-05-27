@@ -38,8 +38,13 @@ const XMTP_CODECS = [
   new GroupUpdatedCodec(),
 ];
 import type { HistoryEntry } from './types';
-import { loadOrCreateAccount, resetAccount } from './wallet';
+import {
+  getActiveAccount, addGeneratedAccount, getViemAccount,
+  loadAccounts, setActiveAccountId, markRegistered, removeAccount, clearAllAccounts,
+  type AccountRecord,
+} from './accounts';
 import { humanizeGroupUpdated, type GroupUpdatedContent } from '../../_shared/xmtp/humanize';
+import { getWcSign } from './wcSigner';
 
 /** Build the XMTP-RN `Signer` adapter for a viem `PrivateKeyAccount`.
  *  Shape pulled from `node_modules/@xmtp/react-native-sdk/src/lib/Signer.ts`:
@@ -60,11 +65,37 @@ function signerForAccount(account: PrivateKeyAccount): Signer {
   };
 }
 
+/** Build the XMTP Signer for an account record. Local accounts (generated /
+ *  imported) sign silently with their viem key; WalletConnect accounts would
+ *  delegate to the connected wallet — only ever needed once, at installation
+ *  registration (Client.create). Reads + sends afterwards use the on-device
+ *  installation key, so a registered account never re-prompts the wallet. */
+async function signerForRecord(rec: AccountRecord): Promise<Signer> {
+  if (rec.type === 'walletconnect') {
+    const wcSign = getWcSign();
+    if (!wcSign) throw new Error('Reconnect your wallet to finish setting up this account.');
+    return {
+      getIdentifier: async () => new PublicIdentity(rec.address, 'ETHEREUM'),
+      getChainId: () => 1,
+      getBlockNumber: () => undefined,
+      signerType: () => 'EOA',
+      signMessage: async (message: string) => {
+        /** Routes to the connected wallet via WalletConnect (personal_sign).
+         *  Only invoked once — when registering this account's XMTP installation. */
+        const signature = await wcSign(message);
+        return { signature };
+      },
+    };
+  }
+  const acct = await getViemAccount(rec.id);
+  if (!acct) throw new Error('No signing key for this account.');
+  return signerForAccount(acct);
+}
+
 export type XmtpEnv = 'production' | 'dev' | 'local';
 
 /** SecureStore keys must match `[A-Za-z0-9._-]+` — colons are rejected on Android, which
  *  surfaced as an `Invalid key provided to SecureStore` runtime crash on Less's device. */
-const ADDRESS_KEY = 'xmtp.address';
 const ENV_KEY = 'xmtp.env';
 const DB_ENCRYPTION_KEY = 'xmtp.dbEncryptionKey';
 
@@ -95,10 +126,10 @@ async function loadOrCreateDbKey(): Promise<Uint8Array> {
 
 /** XMTP needs a writable directory for its sqlite + key store. Document directory is
  *  app-private + persisted across restarts. */
-function dbDirObj(): Directory { return new Directory(Paths.document, 'xmtp'); }
+function dbDirObj(name: string): Directory { return new Directory(Paths.document, name); }
 
-async function ensureDbDir(): Promise<string> {
-  const dir = dbDirObj();
+async function ensureDbDir(name: string): Promise<string> {
+  const dir = dbDirObj(name);
   if (!dir.exists) dir.create({ intermediates: true });
   /** XMTP wants a filesystem path (`/data/user/0/...`), not a URI (`file:///data/user/0/...`).
    *  expo-file-system's `.uri` includes the scheme; strip it. Also drop any trailing slash —
@@ -113,51 +144,87 @@ async function ensureDbDir(): Promise<string> {
 let cachedClient: Client | null = null;
 export async function getOrCreateXmtpClient(env: XmtpEnv = 'production'): Promise<Client> {
   if (cachedClient) return cachedClient;
-  const dbDirectory = await ensureDbDir();
+  /** Resolve the active account, minting + activating a generated one on the
+   *  very first launch (or after a full reset). */
+  const account = (await getActiveAccount()) ?? (await addGeneratedAccount());
+  return buildClientForAccount(account, env);
+}
+
+/** (Re)build the XMTP client for a specific account. Tries `Client.build`
+ *  against that account's own db when we believe an installation exists, races
+ *  a 20s timeout (MLS replay can hang on a corrupted store), and falls back to
+ *  a fresh `Client.create` + installation registration. */
+async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<Client> {
+  const dbDirectory = await ensureDbDir(rec.dbDir);
   const dbEncryptionKey = await loadOrCreateDbKey();
   const opts = { env, dbDirectory, dbEncryptionKey, codecs: XMTP_CODECS };
-  const account = await loadOrCreateAccount();
-  const savedAddress = await SecureStore.getItemAsync(ADDRESS_KEY).catch(() => null);
-  const savedEnv = await SecureStore.getItemAsync(ENV_KEY).catch(() => null);
-  /** Rebuild only if we have a saved address that matches the local EOA AND the env. */
-  if (savedAddress && savedEnv === env
-    && savedAddress.toLowerCase() === account.address.toLowerCase()) {
+  if (rec.registered) {
     try {
-      /** Race Client.build against a 20s timeout — MLS state replay can hang
-       *  indefinitely on a corrupted local store, and the user has no way to
-       *  recover without either a manual nuke or the "Reset XMTP" action. */
       const built = await Promise.race<Client | null>([
-        Client.build(new PublicIdentity(savedAddress, 'ETHEREUM'), opts),
+        Client.build(new PublicIdentity(rec.address, 'ETHEREUM'), opts),
         new Promise<null>((resolve) => setTimeout(() => resolve(null), 20_000)),
       ]);
       if (built) {
         cachedClient = built;
+        await setActiveAccountId(rec.id);
+        await SecureStore.setItemAsync(ENV_KEY, env);
         return cachedClient;
       }
       /** Build timed out — fall through to create() with a fresh registration. */
     } catch { /* fall through to create() if rebuild failed */ }
   }
-  /** XMTP registers a new installation by asking the EOA to sign its handshake
-   *  challenge. Pure-JS viem signing — no user-facing prompt. */
-  const signer = signerForAccount(account);
+  /** XMTP registers a new installation by asking the account to sign its
+   *  handshake challenge — silent for local keys, a one-time wallet prompt
+   *  for WalletConnect. */
+  const signer = await signerForRecord(rec);
   cachedClient = await Client.create(signer, opts);
-  await SecureStore.setItemAsync(ADDRESS_KEY, cachedClient.publicIdentity.identifier);
+  await markRegistered(rec.id);
+  await setActiveAccountId(rec.id);
   await SecureStore.setItemAsync(ENV_KEY, env);
   return cachedClient;
 }
 
+/** Switch the active account: drop the cached client and rebuild against the
+ *  target account's db. Callers typically reload the app afterwards so every
+ *  screen re-inits against the new inbox. */
+export async function switchToAccount(id: string, env: XmtpEnv = 'production'): Promise<Client> {
+  const list = await loadAccounts();
+  const rec = list.find(a => a.id === id);
+  if (!rec) throw new Error('Account not found.');
+  cachedClient = null;
+  await setActiveAccountId(id);
+  return buildClientForAccount(rec, env);
+}
+
 export function getCachedXmtpClient(): Client | null { return cachedClient; }
 
-/** Drop the local XMTP identity AND the EOA backing it (key store + cached client).
- *  Next call to `getOrCreateXmtpClient` will mint a fresh wallet + inbox. */
+/** Delete a single account: registry entry + key (lib/accounts) + its on-disk
+ *  XMTP store. Drops the cached client so the next getOrCreate rebuilds against
+ *  whatever account is active afterwards. */
+export async function deleteAccount(id: string): Promise<void> {
+  const list = await loadAccounts();
+  const rec = list.find(a => a.id === id);
+  await removeAccount(id);
+  if (rec) {
+    const dir = dbDirObj(rec.dbDir);
+    if (dir.exists) { try { dir.delete(); } catch { /* best-effort */ } }
+  }
+  cachedClient = null;
+}
+
+/** Full wipe: drop the cached client, every account's on-disk XMTP store (plus
+ *  the legacy `xmtp/` dir), the shared db key, and the whole account registry.
+ *  Next call to `getOrCreateXmtpClient` mints a fresh wallet + inbox. */
 export async function resetXmtpClient(): Promise<void> {
   cachedClient = null;
-  await SecureStore.deleteItemAsync(ADDRESS_KEY).catch(() => undefined);
   await SecureStore.deleteItemAsync(ENV_KEY).catch(() => undefined);
   await SecureStore.deleteItemAsync(DB_ENCRYPTION_KEY).catch(() => undefined);
-  await resetAccount();
-  const dir = dbDirObj();
-  if (dir.exists) dir.delete();
+  const removed = await clearAllAccounts();
+  const dirs = new Set<string>(['xmtp', ...removed.map(a => a.dbDir)]);
+  for (const name of dirs) {
+    const dir = dbDirObj(name);
+    if (dir.exists) { try { dir.delete(); } catch { /* best-effort */ } }
+  }
 }
 
 /** Format a metro-style line URI for an XMTP conversation. Mirrors the daemon train. */
@@ -186,8 +253,44 @@ export function shortAddress(addr: string): string {
   return addr.length > 10 ? `${addr.slice(0, 6)}…${addr.slice(-4)}` : addr;
 }
 
+/** inbox id → ETH address cache. An inbox's ETH identity is stable, so once
+ *  resolved we never hit the identity API for it again. This is the key to
+ *  staying under XMTP's read rate limit: channel re-summarizes (30s poll,
+ *  per-message stream, AppState resume, pull-to-refresh) reuse cached identities
+ *  instead of calling GetIdentityUpdates per member on every pass. */
+const inboxEthCache = new Map<string, string>();
+
+/** Resolve inbox ids → ETH address, cache-first. Only ids not already cached
+ *  hit the network (`inboxStates(true)`); cached ids cost zero reads. */
+async function resolveInboxEth(
+  client: Awaited<ReturnType<typeof getOrCreateXmtpClient>>,
+  ids: string[],
+): Promise<Record<string, string>> {
+  const out: Record<string, string> = {};
+  const missing: string[] = [];
+  for (const id of ids) {
+    const cached = inboxEthCache.get(id);
+    if (cached) out[id] = cached;
+    else missing.push(id);
+  }
+  if (missing.length > 0) {
+    const states = await client.inboxStates(
+      true,
+      missing as Parameters<typeof client.inboxStates>[1],
+    );
+    for (let i = 0; i < missing.length; i++) {
+      const eth = states[i]?.identities.find(it => it.kind === 'ETHEREUM');
+      if (eth?.identifier) {
+        out[missing[i]!] = eth.identifier;
+        inboxEthCache.set(missing[i]!, eth.identifier);
+      }
+    }
+  }
+  return out;
+}
+
 /** Resolve the peer's Ethereum address for a DM conversation. Returns null for
- *  groups or when the lookup fails (uncached peer, network blip, etc.). */
+ *  groups or when the lookup fails. Cached after the first resolve. */
 export async function peerEthAddressOfDm(conv: Conversation): Promise<string | null> {
   /** `version` is 'DM' | 'GROUP'; only DMs have a single peer. */
   if ((conv as unknown as { version?: string }).version !== 'DM') return null;
@@ -195,11 +298,8 @@ export async function peerEthAddressOfDm(conv: Conversation): Promise<string | n
   try {
     const inboxId = await dm.peerInboxId();
     const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
-    /** Same network-fetch reason as `groupMemberEthAddresses` — fresh peers
-     *  may not be in the cache yet on the first render after creation. */
-    const states = await client.inboxStates(true, [inboxId as Parameters<typeof client.inboxStates>[1][number]]);
-    const eth = states[0]?.identities.find(i => i.kind === 'ETHEREUM');
-    return eth?.identifier ?? null;
+    const map = await resolveInboxEth(client, [inboxId]);
+    return map[inboxId] ?? null;
   } catch { return null; }
 }
 
@@ -262,20 +362,7 @@ export async function memberInboxToAddressMap(conv: Conversation): Promise<Recor
       members: () => Promise<{ inboxId: string }[]>;
     }).members();
     const ids = members.map(m => m.inboxId);
-    if (ids.length === 0) return {};
-    /** `inboxStates` returns results in request order — pair them back to the inbox ids. */
-    const states = await client.inboxStates(
-      true,
-      ids as Parameters<typeof client.inboxStates>[1],
-    );
-    const map: Record<string, string> = {};
-    for (let i = 0; i < ids.length; i++) {
-      const s = states[i];
-      if (!s) continue;
-      const eth = s.identities.find(it => it.kind === 'ETHEREUM');
-      if (eth?.identifier) map[ids[i]!] = eth.identifier;
-    }
-    return map;
+    return await resolveInboxEth(client, ids);
   } catch (err) {
     if (process.env.NODE_ENV !== 'production') console.warn('memberInboxToAddressMap failed', (err as Error).message);
     return {};
@@ -296,21 +383,8 @@ export async function groupMemberEthAddresses(conv: Conversation): Promise<strin
     const otherIds = members
       .map(m => m.inboxId)
       .filter(id => id !== client.inboxId);
-    if (otherIds.length === 0) return [];
-    /** `refreshFromNetwork=true` — for newly-created groups the local inbox-state
-     *  cache may not yet have the Ethereum identity for every member, so a
-     *  cache-only lookup returns no addresses (and the row falls back to its
-     *  topic-suffix title like "proto" instead of a member count). */
-    const states = await client.inboxStates(
-      true,
-      otherIds as Parameters<typeof client.inboxStates>[1],
-    );
-    const addrs: string[] = [];
-    for (const s of states) {
-      const eth = s.identities.find(i => i.kind === 'ETHEREUM');
-      if (eth?.identifier) addrs.push(eth.identifier);
-    }
-    return addrs;
+    const map = await resolveInboxEth(client, otherIds);
+    return otherIds.map(id => map[id]).filter((a): a is string => !!a);
   } catch (err) {
     if (process.env.NODE_ENV !== 'production') console.warn('groupMemberEthAddresses failed', (err as Error).message);
     return [];
@@ -470,10 +544,15 @@ export type XmtpFeedStatus = 'idle' | 'loading' | 'open' | 'error';
  *  Caller passes a metro line URI (`metro://xmtp/<convId>`). When `enabled` is
  *  false, the hook stays idle — callers use this to suppress loading until the
  *  client is built. */
+/** Per-conversation message cache so re-opening a channel renders its messages
+ *  instantly (no empty-state flash); the network history still refreshes in the
+ *  background. Survives navigation within the session. */
+const feedCache = new Map<string, HistoryEntry[]>();
+
 export function useXmtpFeed(line: string | null, enabled: boolean): {
   events: HistoryEntry[]; status: XmtpFeedStatus; error: string | null; inboxId: string;
 } {
-  const [events, setEvents] = useState<HistoryEntry[]>([]);
+  const [events, setEvents] = useState<HistoryEntry[]>(() => (line ? feedCache.get(line) ?? [] : []));
   const [status, setStatus] = useState<XmtpFeedStatus>('idle');
   const [error, setError] = useState<string | null>(null);
   const [inboxId, setInboxId] = useState<string>('');
@@ -484,7 +563,9 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
     let unsubscribeStream: (() => void) | null = null;
     let pollTimer: ReturnType<typeof setInterval> | null = null;
     let appStateSub: { remove: () => void } | null = null;
-    setStatus('loading');
+    /** Seeded from cache → already 'open' (skip the spinner); otherwise show the
+     *  loading spinner until the first refresh lands. */
+    setStatus(feedCache.get(line)?.length ? 'open' : 'loading');
     setError(null);
 
     /** Re-sync from the network + merge any new messages into `events`. Called on the
@@ -547,6 +628,11 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
       if (appStateSub) try { appStateSub.remove(); } catch { /* ignore */ }
     };
   }, [line, enabled]);
+
+  /** Keep the per-conversation cache in sync so the next open is instant. */
+  useEffect(() => {
+    if (line && events.length > 0) feedCache.set(line, events);
+  }, [line, events]);
 
   return { events, status, error, inboxId };
 }

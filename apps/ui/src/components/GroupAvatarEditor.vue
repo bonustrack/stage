@@ -9,6 +9,8 @@ import { avatarRenderUrl } from '@shared/profile/snapshot';
 const props = defineProps<{
   imageUrl: string;
   uploading: boolean;
+  /** Members who aren't admins can't change the image — show it, no picker. */
+  readonly?: boolean;
 }>();
 const emit = defineEmits<{ (e: 'pick', file: File): void }>();
 
@@ -26,7 +28,7 @@ function onChange(ev: Event): void {
 
 <template>
   <div class="flex flex-col items-center pt-1 pb-4">
-    <button type="button" :disabled="props.uploading" class="relative" @click="pick">
+    <button type="button" :disabled="props.uploading || props.readonly" class="relative" @click="pick">
       <img
         v-if="props.imageUrl"
         :src="avatarRenderUrl('', props.imageUrl, 240)"
@@ -40,10 +42,10 @@ function onChange(ev: Event): void {
           border border-metro-border-light dark:border-metro-border-dark
           text-metro-sub-light dark:text-metro-sub-dark"
         :class="{ 'opacity-50': props.uploading }"
-      ><HeroIcon name="plus" :size="28" /></div>
+      ><HeroIcon :name="props.readonly ? 'users' : 'plus'" :size="28" /></div>
     </button>
     <input ref="input" type="file" accept="image/jpeg,image/png" class="hidden" @change="onChange" />
-    <div class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark mt-1.5 font-sans">
+    <div v-if="!props.readonly" class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark mt-1.5 font-sans">
       {{ props.uploading ? 'Uploading…' : 'Tap to change image' }}
     </div>
   </div>

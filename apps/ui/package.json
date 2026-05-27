@@ -11,6 +11,7 @@
     "lint": "eslint src/"
   },
   "dependencies": {
+    "@tanstack/vue-query": "^5.100.14",
     "@xmtp/browser-sdk": "^7.0.0",
     "markdown-it": "^14.1.1",
     "viem": "^2.51.0",

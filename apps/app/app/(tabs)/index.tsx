@@ -6,7 +6,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator, AppState, FlatList, Image, Pressable, RefreshControl,
+  AppState, FlatList, Image, Pressable, RefreshControl,
   Text, TextInput, View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -16,14 +16,17 @@ import {
   getOrCreateXmtpClient, resetXmtpClient,
   peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap,
   stampBoxAvatarUrl, shortAddress,
-  createAskQuestionGroup,
   getLastReadNs,
 } from '../../lib/xmtp';
 import { resetAccount } from '../../lib/wallet';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { getCachedRows, hydrateCachedRows, setCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
+import { usePeerProfiles, getPeerAvatarCb, getPeerName } from '../../lib/peerProfiles';
+import { HeroIcon } from '../../components/HeroIcon';
+import { hasDraft, useDraftsVersion } from '../../lib/drafts';
 import { previewOfXmtpContent } from '../../../_shared/xmtp/humanize';
 import { avatarRenderUrl } from '../../../_shared/profile/snapshot';
+import { Spinner } from '../../components/Spinner';
 
 interface Row {
   convId: string;
@@ -38,6 +41,12 @@ interface Row {
    *  `avatarAddress` — when set, the row renders this image directly so
    *  groups show their own avatar instead of a member's stamp. */
   avatarUri: string | null;
+  /** DM peer address (null for groups) — drives showing the peer's display name. */
+  peerAddress: string | null;
+  /** Eth address of the latest message's sender (null if self/unknown). */
+  lastSenderAddress: string | null;
+  /** Whether the local user sent the latest message → "You: …" preview prefix. */
+  lastFromSelf: boolean;
   /** Cached inbox → eth address map, kept so live stream updates can resolve
    *  a new sender's avatar without an extra round-trip. */
   inboxToAddr: Record<string, string>;
@@ -105,6 +114,7 @@ async function summarize(conv: Conversation, selfInboxId: string): Promise<Row> 
   const lastSenderAddress = last?.senderInboxId
     ? inboxToAddr[last.senderInboxId] ?? null
     : null;
+  const lastFromSelf = !!last && last.senderInboxId === selfInboxId;
   const avatarAddress = peerAddress
     ?? lastSenderAddress
     ?? memberAddresses[0]
@@ -125,6 +135,9 @@ async function summarize(conv: Conversation, selfInboxId: string): Promise<Row> 
     lastPreview: preview.slice(0, 80),
     avatarAddress,
     avatarUri,
+    peerAddress,
+    lastSenderAddress,
+    lastFromSelf,
     inboxToAddr,
     unreadCount,
     lastReadNs,
@@ -165,24 +178,10 @@ export default function Messenger(): React.ReactElement {
   useEffect(() => subscribeCachedRows(r => setRowsState(r as Row[] | null)), []);
   const [error, setError] = useState<string>('');
   const [query, setQuery] = useState<string>('');
-  const [creatingAsk, setCreatingAsk] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   /** Held across effect re-runs so AppState + poll backstops can call refresh
    *  without re-binding to a stale client. */
   const refreshFromNetworkRef = useRef<(() => Promise<void>) | null>(null);
-
-  const onAskPress = async (): Promise<void> => {
-    if (creatingAsk) return;
-    setCreatingAsk(true);
-    try {
-      const convId = await createAskQuestionGroup();
-      router.push({ pathname: '/xmtp/[convId]', params: { convId } });
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setCreatingAsk(false);
-    }
-  };
 
   const filtered = useMemo(() => {
     if (!rows) return null;
@@ -195,6 +194,12 @@ export default function Messenger(): React.ReactElement {
       || Object.values(r.inboxToAddr).some(a => a.toLowerCase().includes(q)),
     );
   }, [rows, query]);
+
+  /** Batch-resolve the displayed peers' profiles → avatar cache-busters. */
+  const channelProfilesVersion = usePeerProfiles(
+    (filtered ?? rows ?? []).flatMap(r => [r.avatarAddress, r.peerAddress, r.lastSenderAddress]),
+  );
+  const draftsVersion = useDraftsVersion();
 
   useEffect(() => {
     let cancelled = false;
@@ -355,32 +360,35 @@ export default function Messenger(): React.ReactElement {
   if (!rows) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: bg }}>
-        <ActivityIndicator />
-        <Text style={{ color: sub, marginTop: 8, fontSize: 12 , fontFamily: 'Calibre-Medium'}}>Initialising XMTP…</Text>
+        <Spinner size={28} color={head} />
       </View>
     );
   }
 
   return (
     <View style={{ flex: 1, backgroundColor: bg }}>
-      <View style={{ paddingHorizontal: 12, paddingTop: 12, paddingBottom: 8 }}>
-        <TextInput
-          value={query}
-          onChangeText={setQuery}
-          placeholder="Search channels…"
-          placeholderTextColor={sub}
-          autoCorrect={false}
-          autoCapitalize="none"
-          style={{
-            backgroundColor: rowBg,
-            borderWidth: 1, borderColor: border, borderRadius: 10,
-            paddingHorizontal: 12, paddingVertical: 8,
-            color: fg, fontSize: 14,
-          }}
-        />
+      {/* Home topnav: a search input with the search icon inside it on the right. */}
+      <View style={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: border }}>
+        <View style={{
+          flexDirection: 'row', alignItems: 'center', gap: 8,
+          backgroundColor: rowBg, borderWidth: 1, borderColor: border, borderRadius: 10,
+          paddingHorizontal: 12,
+        }}>
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search channels…"
+            placeholderTextColor={sub}
+            autoCorrect={false}
+            autoCapitalize="none"
+            style={{ flex: 1, paddingVertical: 9, color: fg, fontSize: 14 }}
+          />
+          <HeroIcon name="search" size={18} color={sub} />
+        </View>
       </View>
       <FlatList
         data={filtered ?? rows}
+        extraData={`${channelProfilesVersion}:${draftsVersion}`}
         keyExtractor={r => r.convId}
         refreshControl={
           <RefreshControl
@@ -389,8 +397,7 @@ export default function Messenger(): React.ReactElement {
             tintColor={sub}
           />
         }
-        /** Leave room at the bottom for the floating "Ask a question" pill. */
-        contentContainerStyle={{ paddingBottom: 88 }}
+        contentContainerStyle={{ paddingBottom: 24 }}
         ListEmptyComponent={
           <View style={{ padding: 32, alignItems: 'center' }}>
             <Text style={{ color: sub, textAlign: 'center' }}>
@@ -403,11 +410,16 @@ export default function Messenger(): React.ReactElement {
             onPress={() => router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } })}
             style={({ pressed }) => ({
               backgroundColor: pressed ? border : 'transparent',
-              flexDirection: 'row', alignItems: 'center', gap: 12,
-              paddingHorizontal: 14, paddingVertical: 12,
-              borderBottomWidth: 1, borderBottomColor: border,
+              paddingHorizontal: 14,
             })}
           >
+            {/* Inner row carries the separator: it starts at the avatar's left
+                edge (inset by paddingHorizontal), not the full card width. */}
+            <View style={{
+              flexDirection: 'row', alignItems: 'center', gap: 12,
+              paddingVertical: 14,
+              borderBottomWidth: 1, borderBottomColor: border,
+            }}>
             {item.avatarUri ? (
               <Image
                 source={{ uri: avatarRenderUrl('', item.avatarUri, 64) }}
@@ -415,22 +427,25 @@ export default function Messenger(): React.ReactElement {
               />
             ) : item.avatarAddress ? (
               <Image
-                source={{ uri: stampBoxAvatarUrl(item.avatarAddress, 64) }}
+                source={{ uri: stampBoxAvatarUrl(item.avatarAddress, 64, getPeerAvatarCb(item.avatarAddress)) }}
                 style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border }}
               />
             ) : (
               <View style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border }} />
             )}
             <View style={{ flex: 1, minWidth: 0 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                {hasDraft(item.convId) ? <HeroIcon name="pencil" size={14} color={sub} /> : null}
                 <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', flex: 1 }} numberOfLines={1}>
-                  {item.title}
+                  {item.peerAddress ? (getPeerName(item.peerAddress) ?? item.title) : item.title}
                 </Text>
                 <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{fmtTs(item.lastTs)}</Text>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
                 <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium', flex: 1 }} numberOfLines={1}>
-                  {item.lastPreview || '(no messages yet)'}
+                  {item.lastPreview
+                    ? `${item.lastFromSelf ? 'You' : item.lastSenderAddress ? (getPeerName(item.lastSenderAddress) ?? shortAddress(item.lastSenderAddress)) : ''}${(item.lastFromSelf || item.lastSenderAddress) ? ': ' : ''}${item.lastPreview}`
+                    : '(no messages yet)'}
                 </Text>
                 {item.unreadCount > 0 ? (
                   <View style={{
@@ -444,26 +459,10 @@ export default function Messenger(): React.ReactElement {
                 ) : null}
               </View>
             </View>
+            </View>
           </Pressable>
         )}
       />
-      {/** Floating "Ask a question" pill — full-width, anchored above the tab
-       *   bar so it stays reachable while the channel list scrolls underneath. */}
-      <Pressable
-        onPress={() => { void onAskPress(); }}
-        disabled={creatingAsk}
-        style={({ pressed }) => ({
-          position: 'absolute', left: 16, right: 16, bottom: 16,
-          backgroundColor: dark ? '#ffffff' : '#000000',
-          borderRadius: 999, paddingVertical: 14,
-          alignItems: 'center', justifyContent: 'center',
-          opacity: pressed ? 0.85 : creatingAsk ? 0.6 : 1,
-        })}
-      >
-        <Text style={{ color: dark ? '#000000' : '#ffffff', fontSize: 16, fontFamily: 'Calibre-Medium' }}>
-          {creatingAsk ? 'Creating group…' : 'Ask a question'}
-        </Text>
-      </Pressable>
     </View>
   );
 }

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator, Alert, Image, Pressable, Text, TextInput, View,
 } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
+import { loadDrafts, getDraft, setDraft } from '../lib/drafts';
 import { Audio } from 'expo-av';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -19,9 +19,6 @@ interface Attachment {
   id: string; url: string; kind: string; mime: string; size: number; name?: string;
 }
 
-/** Persist composer draft across app restarts so typed-but-unsent text survives a
- *  force-close. Mirrors how iMessage / WhatsApp keep your half-finished reply. */
-const DRAFT_KEY = 'messenger-composer-draft';
 
 interface Props {
   dark: boolean;
@@ -59,29 +56,33 @@ export function MessengerComposer({
   const [err, setErr] = useState<string | null>(null);
   const [recording, setRecording] = useState(false);
   const [recordSecs, setRecordSecs] = useState(0);
+  /** Rolling mic levels (0..1) for the recording waveform — newest at the end. */
+  const [levels, setLevels] = useState<number[]>([]);
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
   const recRef = useRef<Audio.Recording | null>(null);
   const recTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   /** Restore draft on mount + persist on change (debounced). Skip the persist
    *  on the very first restore so we don'​t clobber a fresher save. */
+  /** Per-conversation draft: restore on mount, persist (debounced) on change,
+   *  keyed by convId so each channel keeps its own unsent text and the channels
+   *  list can flag rows that have a draft. */
+  const convId = xmtpLine.replace('metro://xmtp/', '');
   const draftRestored = useRef(false);
   const draftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    void SecureStore.getItemAsync(DRAFT_KEY).then(v => {
-      if (v) setText(v);
+    draftRestored.current = false;
+    void loadDrafts().then(() => {
+      const d = getDraft(convId);
+      if (d) setText(d);
       draftRestored.current = true;
-    }).catch(() => { draftRestored.current = true; });
-  }, []);
+    });
+  }, [convId]);
   useEffect(() => {
     if (!draftRestored.current) return;
     if (draftTimer.current) clearTimeout(draftTimer.current);
-    draftTimer.current = setTimeout(() => {
-      void (text
-        ? SecureStore.setItemAsync(DRAFT_KEY, text)
-        : SecureStore.deleteItemAsync(DRAFT_KEY)
-      ).catch(() => { /* ignore */ });
-    }, 300);
-  }, [text]);
+    draftTimer.current = setTimeout(() => { setDraft(convId, text); }, 300);
+    return () => { if (draftTimer.current) clearTimeout(draftTimer.current); };
+  }, [text, convId]);
 
   const canSend = !sending && (text.trim().length > 0 || pending.length > 0);
 
@@ -148,7 +149,16 @@ export function MessengerComposer({
     if (!perm.granted) { Alert.alert('Mic permission denied'); return; }
     await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
     const rec = new Audio.Recording();
-    await rec.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+    await rec.prepareToRecordAsync({ ...Audio.RecordingOptionsPresets.HIGH_QUALITY, isMeteringEnabled: true });
+    /** Feed mic metering (dBFS, ~-55 silent → 0 loud) into the waveform. */
+    rec.setProgressUpdateInterval(80);
+    rec.setOnRecordingStatusUpdate((s) => {
+      if (s.isRecording && typeof s.metering === 'number') {
+        const level = Math.max(0.05, Math.min(1, (s.metering + 55) / 55));
+        setLevels(prev => [...prev, level].slice(-40));
+      }
+    });
+    setLevels([]);
     await rec.startAsync();
     recRef.current = rec;
     setRecording(true);
@@ -156,10 +166,20 @@ export function MessengerComposer({
     recTimerRef.current = setInterval(() => { setRecordSecs(s => s + 1); }, 1000);
   };
 
+  /** Stop without sending (the ✕ in the recording pill). */
+  const cancelRec = async (): Promise<void> => {
+    const rec = recRef.current; if (!rec) return;
+    setRecording(false); recRef.current = null;
+    if (recTimerRef.current) { clearInterval(recTimerRef.current); recTimerRef.current = null; }
+    setLevels([]);
+    try { await rec.stopAndUnloadAsync(); } catch { /* ignore */ }
+  };
+
   const stopRec = async (): Promise<void> => {
     const rec = recRef.current; if (!rec) return;
     setRecording(false); recRef.current = null;
     if (recTimerRef.current) { clearInterval(recTimerRef.current); recTimerRef.current = null; }
+    setLevels([]);
     await rec.stopAndUnloadAsync();
     const uri = rec.getURI(); if (!uri) return;
     await upload(uri, 'audio/m4a', `voice-${Date.now()}.m4a`);
@@ -217,8 +237,8 @@ export function MessengerComposer({
   );
   const bg = dark ? '#0e0f10' : '#ffffff';
   return (
-    <View style={{ paddingHorizontal: 10, paddingTop: 6, paddingBottom: 18, backgroundColor: bg }}>
-      <ComposerGradient bg={bg} direction="down" top={-10} height={10} />
+    <View style={{ paddingHorizontal: 10, paddingTop: 6, paddingBottom: 14, backgroundColor: bg }}>
+      <ComposerGradient bg={bg} direction="down" top={-16} height={16} />
       {replyingTo ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingBottom: 6 }}>
           <View style={{ flex: 1, borderLeftWidth: 2, borderLeftColor: sub, paddingLeft: 8 }}>
@@ -275,39 +295,59 @@ export function MessengerComposer({
           ))}
         </View>
       ) : null}
-      {recording || uploading || err ? (
-        <Text style={{
-          color: err ? '#d96868' : recording ? '#d96868' : sub,
-          fontSize: 12, paddingHorizontal: 14, paddingBottom: 4,
+      {recording ? (
+        /* Recording pill: cancel · live waveform · timer · send (Claude-style). */
+        <View style={{
+          flexDirection: 'row', alignItems: 'center', gap: 8,
+          backgroundColor: inputBg, borderRadius: 999, paddingHorizontal: 6, paddingVertical: 6,
         }}>
-          {err ?? (recording
-            ? `● Recording… ${Math.floor(recordSecs / 60)}:${(recordSecs % 60).toString().padStart(2, '0')}`
-            : 'Uploading…')}
-        </Text>
-      ) : null}
-      <View style={{ backgroundColor: inputBg, borderRadius: 10, padding: 10 }}>
-        <TextInput
-          value={text} onChangeText={setText} placeholder="Ask Metro" placeholderTextColor={sub} multiline
-          style={{ color: head, fontFamily: 'Calibre-Medium', fontSize: 18, lineHeight: 23, minHeight: 24, maxHeight: 140, paddingHorizontal: 8, paddingTop: 4, paddingBottom: 8, textAlignVertical: 'top' }}
-        />
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-          <Btn icon={attachMenuOpen ? 'x' : 'plus'} onPress={() => setAttachMenuOpen(o => !o)} />
-          <View style={{ flex: 1 }} />
-          <Btn icon={recording ? 'stop' : 'microphone'} onPress={() => void (recording ? stopRec() : startRec())} active={recording} />
-          <Pressable onPress={() => void send()} disabled={!canSend}
-            style={({ pressed }) => ({
-              backgroundColor: dark
-                ? (pressed ? '#cccccc' : '#ffffff')
-                : (pressed ? '#333333' : '#000000'),
-              opacity: canSend ? 1 : 0.45,
-              width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
-            })}>
-            {sending
-              ? <ActivityIndicator color={dark ? '#000' : '#fff'} />
-              : <HeroIcon name="send" size={20} color={dark ? '#000' : '#fff'} />}
+          <Pressable onPress={() => void cancelRec()} hitSlop={8}
+            style={{ width: 34, height: 34, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: dark ? '#3a3d42' : '#d0d3d8' }}>
+            <HeroIcon name="x" size={18} color={head} />
+          </Pressable>
+          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', height: 28, overflow: 'hidden' }}>
+            {[...Array(Math.max(0, 40 - levels.length)).fill(0.05), ...levels].slice(-40).map((lvl, i) => (
+              <View key={i} style={{ width: 3, marginHorizontal: 1, borderRadius: 2, height: Math.max(3, Math.round(lvl * 26)), backgroundColor: head, opacity: 0.85 }} />
+            ))}
+          </View>
+          <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', minWidth: 40, textAlign: 'center' }}>
+            {Math.floor(recordSecs / 60)}:{(recordSecs % 60).toString().padStart(2, '0')}
+          </Text>
+          <Pressable onPress={() => void stopRec()} hitSlop={8}
+            style={({ pressed }) => ({ width: 34, height: 34, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: pressed ? '#c0522e' : '#e2622f' })}>
+            <HeroIcon name="check" size={18} color="#ffffff" />
           </Pressable>
         </View>
-      </View>
+      ) : (
+        <>
+          {uploading || err ? (
+            <Text style={{ color: err ? '#d96868' : sub, fontSize: 12, paddingHorizontal: 14, paddingBottom: 4 }}>
+              {err ?? 'Uploading…'}
+            </Text>
+          ) : null}
+          <View style={{ backgroundColor: inputBg, borderRadius: 10, padding: 10 }}>
+            <TextInput
+              value={text} onChangeText={setText} placeholder="Ask Metro" placeholderTextColor={sub} multiline
+              style={{ color: head, fontFamily: 'Calibre-Medium', fontSize: 18, lineHeight: 23, minHeight: 24, maxHeight: 140, paddingHorizontal: 8, paddingTop: 4, paddingBottom: 8, textAlignVertical: 'top' }}
+            />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Btn icon={attachMenuOpen ? 'x' : 'plus'} onPress={() => setAttachMenuOpen(o => !o)} />
+              <View style={{ flex: 1 }} />
+              <Btn icon="microphone" onPress={() => void startRec()} />
+              <Pressable onPress={() => void send()} disabled={!canSend}
+                style={({ pressed }) => ({
+                  backgroundColor: dark ? (pressed ? '#cccccc' : '#ffffff') : (pressed ? '#333333' : '#000000'),
+                  opacity: canSend ? 1 : 0.45,
+                  width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
+                })}>
+                {sending
+                  ? <ActivityIndicator color={dark ? '#000' : '#fff'} />
+                  : <HeroIcon name="send" size={20} color={dark ? '#000' : '#fff'} />}
+              </Pressable>
+            </View>
+          </View>
+        </>
+      )}
       {/** Attach menu — boxes below the composer with icon + label per source.
        *   Tap the + button in the composer row to toggle. */}
       {attachMenuOpen ? (
