@@ -43,6 +43,8 @@ export default function GroupDetail(): React.ReactElement {
   /** Snapshot profile name per address — fetched after the member list lands.
    *  null = no profile / no name. */
   const [memberNames, setMemberNames] = useState<Record<string, string | null>>({});
+  /** Role per member address: super-admin → owner, admin → admin, else member. */
+  const [memberRoles, setMemberRoles] = useState<Record<string, 'owner' | 'admin' | 'member'>>({});
   /** Add-member input + busy flag. The Add row sits above the member list. */
   const [addDraft, setAddDraft] = useState('');
   const [adding, setAdding] = useState(false);
@@ -80,12 +82,16 @@ export default function GroupDetail(): React.ReactElement {
         name?: () => Promise<string>;
         imageUrl?: () => Promise<string>;
         description?: () => Promise<string>;
+        listSuperAdmins?: () => Promise<string[]>;
+        listAdmins?: () => Promise<string[]>;
       };
-      const [n, img, desc, addrMap] = await Promise.all([
+      const [n, img, desc, addrMap, supers, admins] = await Promise.all([
         group.name?.() ?? Promise.resolve(''),
         group.imageUrl?.().catch(() => '') ?? Promise.resolve(''),
         group.description?.().catch(() => '') ?? Promise.resolve(''),
         memberInboxToAddressMap(conv),
+        group.listSuperAdmins?.().catch(() => [] as string[]) ?? Promise.resolve([] as string[]),
+        group.listAdmins?.().catch(() => [] as string[]) ?? Promise.resolve([] as string[]),
       ]);
       if (cancelled) return;
       setName(n ?? '');
@@ -95,6 +101,15 @@ export default function GroupDetail(): React.ReactElement {
       setDescriptionDraft(desc ?? '');
       const addrs = Object.values(addrMap).sort((a, b) => a.localeCompare(b));
       setMembers(addrs);
+      /** Map each member (by inbox id) to a role; super-admin = Owner. */
+      const superSet = new Set(supers.map(s => s.toLowerCase()));
+      const adminSet = new Set(admins.map(a => a.toLowerCase()));
+      const roles: Record<string, 'owner' | 'admin' | 'member'> = {};
+      for (const [inboxId, addr] of Object.entries(addrMap)) {
+        const iid = inboxId.toLowerCase();
+        roles[addr] = superSet.has(iid) ? 'owner' : adminSet.has(iid) ? 'admin' : 'member';
+      }
+      setMemberRoles(roles);
       /** Fetch Snapshot profile names in parallel — each row falls back to the
        *  address when the lookup misses, so this is a pure enrichment. */
       const profiles = await Promise.all(
@@ -397,6 +412,19 @@ export default function GroupDetail(): React.ReactElement {
                   </Text>
                 ) : null}
               </View>
+              {memberRoles[item] && memberRoles[item] !== 'member' ? (
+                <View style={{
+                  paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999,
+                  backgroundColor: memberRoles[item] === 'owner'
+                    ? (dark ? 'rgba(45,212,191,0.18)' : 'rgba(13,148,136,0.12)')
+                    : (dark ? '#282a2d' : '#e4e4e5'),
+                }}>
+                  <Text style={{
+                    fontSize: 11, fontFamily: 'Calibre-Medium',
+                    color: memberRoles[item] === 'owner' ? (dark ? '#2dd4bf' : '#0d9488') : sub,
+                  }}>{memberRoles[item] === 'owner' ? 'Owner' : 'Admin'}</Text>
+                </View>
+              ) : null}
               {isSelf ? null : (
                 <Pressable
                   onPress={() => removeMember(item)}

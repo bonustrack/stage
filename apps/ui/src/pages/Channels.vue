@@ -92,8 +92,10 @@ onUnmounted(() => { void stream?.stop(); stream = null; });
 
 function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
 
-/** Widget/site home shows 3 actions; "Messages" switches to the channel list. */
-const view = ref<'home' | 'messages'>('home');
+/** Embedded widget opens on the Intercom-style "Ask a question" home; the
+ *  standalone site goes straight to the channel list (mobile-app UX) and uses
+ *  the app's bottom TabBar (Channels/Contacts/Profile/Settings) for nav. */
+const view = ref<'home' | 'messages'>(embedded ? 'home' : 'messages');
 function openDocs(): void { window.open('https://docs.snapshot.box', '_blank', 'noopener,noreferrer'); }
 const cardClass = 'w-full max-w-sm flex items-center gap-3 px-4 py-4 rounded-2xl text-left '
   + 'border border-metro-border-light dark:border-metro-border-dark '
@@ -102,14 +104,14 @@ const cardClass = 'w-full max-w-sm flex items-center gap-3 px-4 py-4 rounded-2xl
 </script>
 
 <template>
-  <div class="h-[100dvh] flex flex-col relative">
+  <div class="h-[100dvh] flex flex-col relative" :class="embedded ? '' : 'pb-[60px]'">
     <!-- Topnav: page title, refresh, and (embedded only) a close button at the
          end, so the channels homepage has a single topnav like conversations. -->
     <div class="h-[56px] box-border flex items-center shrink-0 gap-1 pl-2 pr-1
       bg-metro-bg-light dark:bg-metro-bg-dark
       border-b border-metro-border-light dark:border-metro-border-dark">
       <span class="flex-1 font-head text-[17px] text-metro-head-light dark:text-metro-head-dark pl-2">
-        {{ view === 'messages' ? 'Messages' : 'Home' }}
+        {{ embedded ? (view === 'messages' ? 'Messages' : 'Home') : 'Channels' }}
       </span>
       <button
         v-if="!embedded && view === 'messages'"
@@ -199,8 +201,9 @@ const cardClass = 'w-full max-w-sm flex items-center gap-3 px-4 py-4 rounded-2xl
       </ul>
     </template>
 
-    <!-- Footer nav (Intercom-style): Home (default) / Messages / Docs. -->
-    <div class="shrink-0 flex items-stretch border-t border-metro-border-light dark:border-metro-border-dark
+    <!-- Footer nav (Intercom-style): Home / Messages / Docs — embedded widget only.
+         The standalone site uses the app-wide TabBar instead (mobile-app UX). -->
+    <div v-if="embedded" class="shrink-0 flex items-stretch border-t border-metro-border-light dark:border-metro-border-dark
       bg-metro-bg-light dark:bg-metro-bg-dark">
       <button type="button" class="flex-1 flex flex-col items-center gap-1 py-2.5 transition-colors"
         :class="view === 'home' ? 'text-metro-head-light dark:text-metro-head-dark' : 'text-metro-sub-light dark:text-metro-sub-dark'"
