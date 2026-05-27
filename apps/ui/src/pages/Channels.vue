@@ -91,20 +91,34 @@ onMounted(async () => {
 onUnmounted(() => { void stream?.stop(); stream = null; });
 
 function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
+
+/** Widget/site home shows 3 actions; "Messages" switches to the channel list. */
+const view = ref<'home' | 'messages'>('home');
+function openDocs(): void { window.open('https://docs.snapshot.box', '_blank', 'noopener,noreferrer'); }
 </script>
 
 <template>
   <div class="h-[100dvh] flex flex-col relative">
     <!-- Topnav: page title, refresh, and (embedded only) a close button at the
          end, so the channels homepage has a single topnav like conversations. -->
-    <div class="h-[56px] box-border flex items-center shrink-0 gap-1 pl-4 pr-1
+    <div class="h-[56px] box-border flex items-center shrink-0 gap-1 pl-2 pr-1
       bg-metro-bg-light dark:bg-metro-bg-dark
       border-b border-metro-border-light dark:border-metro-border-dark">
-      <span class="flex-1 font-head text-[17px] text-metro-head-light dark:text-metro-head-dark">
-        Channels
+      <button
+        v-if="view === 'messages'"
+        type="button"
+        class="px-2 py-2 text-metro-fg-light dark:text-metro-fg-dark"
+        title="Back"
+        @click="view = 'home'"
+      >
+        <HeroIcon name="arrowLeft" :size="20" />
+      </button>
+      <span class="flex-1 font-head text-[17px] text-metro-head-light dark:text-metro-head-dark"
+        :class="view === 'messages' ? '' : 'pl-2'">
+        {{ view === 'messages' ? 'Messages' : 'Home' }}
       </span>
       <button
-        v-if="!embedded"
+        v-if="!embedded && view === 'messages'"
         type="button"
         :disabled="refreshing"
         class="p-2 rounded-lg text-metro-sub-light dark:text-metro-sub-dark
@@ -124,63 +138,88 @@ function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
         <HeroIcon name="x" :size="20" />
       </button>
     </div>
-    <!-- Search input (standalone site only — hidden in the widget). -->
-    <div v-if="!embedded" class="shrink-0 px-4 pt-3 pb-2 bg-metro-bg-light dark:bg-metro-bg-dark">
-      <input
-        v-model="query"
-        type="text"
-        placeholder="Search channels or paste 0x… / name.eth…"
-        autocomplete="off"
-        autocorrect="off"
-        autocapitalize="off"
-        class="w-full bg-metro-surface-light dark:bg-metro-surface-dark
-          border border-metro-border-light dark:border-metro-border-dark rounded-lg px-3 py-2 text-sm
-          text-metro-fg-light dark:text-metro-fg-dark outline-none
-          placeholder:text-metro-sub-light dark:placeholder:text-metro-sub-dark"
-      />
-    </div>
-    <SearchResolution
-      :status="searchResolution.status"
-      :address="searchResolution.address"
-      :query="query"
-      @open="openSearchedProfile"
-    />
 
-    <div v-if="error" class="flex-1 flex items-center justify-center text-sm text-metro-fg-light dark:text-metro-fg-dark px-6">
-      {{ error }}
+    <!-- HOME: three actions (Ask a question / Messages / Docs). -->
+    <div v-if="view === 'home'" class="flex-1 flex flex-col items-center justify-center gap-3 px-8">
+      <button
+        type="button"
+        :disabled="creatingAsk"
+        class="w-full max-w-xs h-12 rounded-full text-[17px] font-sans flex items-center justify-center
+          bg-metro-head-light dark:bg-metro-head-dark text-metro-bg-light dark:text-metro-bg-dark
+          disabled:opacity-60 hover:opacity-90 transition-opacity"
+        @click="onAskPress"
+      >
+        {{ creatingAsk ? 'Creating group…' : 'Ask a question' }}
+      </button>
+      <button
+        type="button"
+        class="w-full max-w-xs h-12 rounded-full text-[17px] font-sans flex items-center justify-center
+          bg-metro-surface-light dark:bg-metro-surface-dark
+          border border-metro-border-light dark:border-metro-border-dark
+          text-metro-head-light dark:text-metro-head-dark
+          hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark transition-colors"
+        @click="view = 'messages'"
+      >
+        Messages
+      </button>
+      <button
+        type="button"
+        class="w-full max-w-xs h-12 rounded-full text-[17px] font-sans flex items-center justify-center
+          bg-metro-surface-light dark:bg-metro-surface-dark
+          border border-metro-border-light dark:border-metro-border-dark
+          text-metro-head-light dark:text-metro-head-dark
+          hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark transition-colors"
+        @click="openDocs"
+      >
+        Docs
+      </button>
+      <div v-if="error" class="text-xs text-metro-err mt-1">{{ error }}</div>
     </div>
-    <div v-else-if="!rows" class="flex-1 flex items-center justify-center text-metro-head-light dark:text-metro-head-dark">
-      <Spinner :size="28" />
-    </div>
-    <ul v-else class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-[150px]">
-      <li v-if="filtered && filtered.length === 0" class="p-8 text-center text-sm text-metro-sub-light dark:text-metro-sub-dark">
-        {{ query ? `No matches for "${query}"` : 'No conversations yet. Share your address from Settings to start one.' }}
-      </li>
-      <li v-for="r in filtered ?? rows" :key="r.convId">
-        <ChannelRow
-          :avatar-address="r.avatarAddress"
-          :avatar-uri="r.avatarUri"
-          :title="r.title"
-          :last-ts="r.lastTs"
-          :last-preview="r.lastPreview"
-          :unread-count="r.unreadCount"
-          @open="open(r.convId)"
+
+    <!-- MESSAGES: search (standalone) + the channel list. -->
+    <template v-else>
+      <div v-if="!embedded" class="shrink-0 px-4 pt-3 pb-2 bg-metro-bg-light dark:bg-metro-bg-dark">
+        <input
+          v-model="query"
+          type="text"
+          placeholder="Search channels or paste 0x… / name.eth…"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          class="w-full bg-metro-surface-light dark:bg-metro-surface-dark
+            border border-metro-border-light dark:border-metro-border-dark rounded-lg px-3 py-2 text-sm
+            text-metro-fg-light dark:text-metro-fg-dark outline-none
+            placeholder:text-metro-sub-light dark:placeholder:text-metro-sub-dark"
         />
-      </li>
-    </ul>
-    <!-- Floating "Ask a question" pill — full-width above the bottom TabBar. -->
-    <button
-      type="button"
-      :disabled="creatingAsk"
-      class="fixed left-1/2 -translate-x-1/2 z-30
-        bg-metro-head-light dark:bg-metro-head-dark
-        text-metro-bg-light dark:text-metro-bg-dark
-        text-[17px] font-sans px-6 h-10 inline-flex items-center justify-center rounded-full whitespace-nowrap
-        disabled:opacity-60 hover:opacity-90 transition-opacity"
-      :class="embedded ? 'bottom-4' : 'bottom-[76px]'"
-      @click="onAskPress"
-    >
-      {{ creatingAsk ? 'Creating group…' : 'Ask a question' }}
-    </button>
+      </div>
+      <SearchResolution
+        :status="searchResolution.status"
+        :address="searchResolution.address"
+        :query="query"
+        @open="openSearchedProfile"
+      />
+      <div v-if="error" class="flex-1 flex items-center justify-center text-sm text-metro-fg-light dark:text-metro-fg-dark px-6">
+        {{ error }}
+      </div>
+      <div v-else-if="!rows" class="flex-1 flex items-center justify-center text-metro-head-light dark:text-metro-head-dark">
+        <Spinner :size="28" />
+      </div>
+      <ul v-else class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-6">
+        <li v-if="filtered && filtered.length === 0" class="p-8 text-center text-sm text-metro-sub-light dark:text-metro-sub-dark">
+          {{ query ? `No matches for "${query}"` : 'No conversations yet. Share your address from Settings to start one.' }}
+        </li>
+        <li v-for="r in filtered ?? rows" :key="r.convId">
+          <ChannelRow
+            :avatar-address="r.avatarAddress"
+            :avatar-uri="r.avatarUri"
+            :title="r.title"
+            :last-ts="r.lastTs"
+            :last-preview="r.lastPreview"
+            :unread-count="r.unreadCount"
+            @open="open(r.convId)"
+          />
+        </li>
+      </ul>
+    </template>
   </div>
 </template>
