@@ -15,7 +15,7 @@ import {
 } from '../../lib/xmtp';
 import { PublicIdentity } from '@xmtp/react-native-sdk';
 import { readProfile, uploadAvatar } from '../../lib/profile';
-import { avatarRenderUrl, type SnapshotProfile } from '../../../_shared/profile/snapshot';
+import { avatarRenderUrl, type SnapshotProfile } from '@stage-labs/metro-client/profile/snapshot';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { HeroIcon } from '../../components/HeroIcon';
 

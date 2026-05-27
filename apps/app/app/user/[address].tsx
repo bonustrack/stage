@@ -12,7 +12,7 @@ import * as Clipboard from 'expo-clipboard';
 import { shortAddress, openDmWithAddress } from '../../lib/xmtp';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { useProfileQuery } from '../../lib/useProfile';
-import { avatarRenderUrl } from '../../../_shared/profile/snapshot';
+import { avatarRenderUrl } from '@stage-labs/metro-client/profile/snapshot';
 import { HeroIcon } from '../../components/HeroIcon';
 
 const AVATAR_SIZE = 120;

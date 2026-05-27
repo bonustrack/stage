@@ -1,0 +1,26 @@
+{
+  "name": "@stage-labs/metro-client",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Framework-agnostic shared logic for the Metro clients (web + mobile): Snapshot profiles, XMTP content humanisation, embed detection, Stamp resolution, activity bucketing, and shared types. Pure TypeScript — no Vue / React / react-native.",
+  "license": "MIT",
+  "type": "module",
+  "types": "./src/index.ts",
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./types": "./src/types.ts",
+    "./profile/snapshot": "./src/profile/snapshot.ts",
+    "./xmtp/humanize": "./src/xmtp/humanize.ts",
+    "./embed/detect": "./src/embed/detect.ts",
+    "./stamp/resolve": "./src/stamp/resolve.ts",
+    "./charts/activity-buckets": "./src/charts/activity-buckets.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.2"
+  }
+}

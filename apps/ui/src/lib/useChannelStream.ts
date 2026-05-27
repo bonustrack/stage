@@ -13,7 +13,7 @@ import type { Conversation } from '@xmtp/browser-sdk';
 import { type XmtpClient } from './xmtp';
 import { cachedRows, setCachedRows } from './channelsCache';
 import { summarizeConv, type ChannelRow } from './channelsSummarize';
-import { previewOfXmtpContent } from '@shared/xmtp/humanize';
+import { previewOfXmtpContent } from '@stage-labs/metro-client/xmtp/humanize';
 
 type StreamHandle = { end: () => Promise<unknown> };
 

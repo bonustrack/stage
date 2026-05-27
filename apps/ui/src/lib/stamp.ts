@@ -3,4 +3,4 @@
 export {
   resolveDomain, lookupName, isAddressLike, isDomainLike,
   resolveSearchInputToAddress,
-} from '@shared/stamp/resolve';
+} from '@stage-labs/metro-client/stamp/resolve';
