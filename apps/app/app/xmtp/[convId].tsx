@@ -3,7 +3,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Animated as RNAnimated, FlatList, Image, Modal, Pressable, Text, View,
+  Animated as RNAnimated, FlatList, Image, Modal, Pressable, Share, Text, View,
 } from 'react-native';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -364,6 +364,12 @@ export default function XmtpConversation(): React.ReactElement {
           if (menuFor?.text) void Clipboard.setStringAsync(menuFor.text);
           setMenuFor(null);
         }}
+        onShareLink={() => {
+          /** Shareable permalink to this message. Opens the conversation on the
+           *  web today; the metro:// universal-link handling is the follow-up. */
+          if (menuFor) void Share.share({ message: `https://metro.box/#/xmtp/${convId}?m=${menuFor.id}` });
+          setMenuFor(null);
+        }}
       />
     </RNAnimated.View>
   );
@@ -371,10 +377,11 @@ export default function XmtpConversation(): React.ReactElement {
 
 const ACTION_EMOJIS = ['👍', '❤️', '😂', '😮', '🔥', '🎉'] as const;
 function BubbleActionMenu({
-  target, dark, onClose, onReact, onReply, onCopy,
+  target, dark, onClose, onReact, onReply, onCopy, onShareLink,
 }: {
   target: HistoryEntry | null; dark: boolean; onClose: () => void;
   onReact: (emoji: string) => void; onReply: () => void; onCopy: () => void;
+  onShareLink: () => void;
 }): React.ReactElement {
   const sheetBg = dark ? '#282a2d' : '#ffffff';
   const fg = dark ? '#9f9fa3' : '#57606a';
@@ -403,6 +410,10 @@ function BubbleActionMenu({
               <Text style={{ color: fg, fontSize: 16 , fontFamily: 'Calibre-Medium'}}>Copy text</Text>
             </Pressable>
           ) : null}
+          <Pressable onPress={onShareLink} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}>
+            <HeroIcon name="send" size={20} color={fg} />
+            <Text style={{ color: fg, fontSize: 16 , fontFamily: 'Calibre-Medium'}}>Share link</Text>
+          </Pressable>
           <Pressable onPress={onClose} style={{ paddingVertical: 10, alignItems: 'center' }}>
             <Text style={{ color: sub, fontSize: 14 , fontFamily: 'Calibre-Medium'}}>Cancel</Text>
           </Pressable>

@@ -12,6 +12,7 @@ const emit = defineEmits<{
   (e: 'react', emoji: string): void;
   (e: 'reply'): void;
   (e: 'copy'): void;
+  (e: 'copy-link'): void;
 }>();
 void props;
 </script>
@@ -37,6 +38,12 @@ void props;
         @click="emit('copy')">
         <HeroIcon name="copy" :size="20" />
         <span class="text-base">Copy text</span>
+      </button>
+      <button type="button"
+        class="w-full flex items-center gap-3 py-3 text-metro-fg-light dark:text-metro-fg-dark"
+        @click="emit('copy-link')">
+        <HeroIcon name="send" :size="20" />
+        <span class="text-base">Copy link</span>
       </button>
       <button type="button"
         class="w-full py-2.5 text-center text-sm text-metro-sub-light dark:text-metro-sub-dark"
