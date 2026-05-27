@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator, Alert, Image, Pressable, Text, TextInput, View,
 } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
+import { loadDrafts, getDraft, setDraft } from '../lib/drafts';
 import { Audio } from 'expo-av';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -19,9 +19,6 @@ interface Attachment {
   id: string; url: string; kind: string; mime: string; size: number; name?: string;
 }
 
-/** Persist composer draft across app restarts so typed-but-unsent text survives a
- *  force-close. Mirrors how iMessage / WhatsApp keep your half-finished reply. */
-const DRAFT_KEY = 'messenger-composer-draft';
 
 interface Props {
   dark: boolean;
@@ -64,24 +61,26 @@ export function MessengerComposer({
   const recTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   /** Restore draft on mount + persist on change (debounced). Skip the persist
    *  on the very first restore so we don'​t clobber a fresher save. */
+  /** Per-conversation draft: restore on mount, persist (debounced) on change,
+   *  keyed by convId so each channel keeps its own unsent text and the channels
+   *  list can flag rows that have a draft. */
+  const convId = xmtpLine.replace('metro://xmtp/', '');
   const draftRestored = useRef(false);
   const draftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    void SecureStore.getItemAsync(DRAFT_KEY).then(v => {
-      if (v) setText(v);
+    draftRestored.current = false;
+    void loadDrafts().then(() => {
+      const d = getDraft(convId);
+      if (d) setText(d);
       draftRestored.current = true;
-    }).catch(() => { draftRestored.current = true; });
-  }, []);
+    });
+  }, [convId]);
   useEffect(() => {
     if (!draftRestored.current) return;
     if (draftTimer.current) clearTimeout(draftTimer.current);
-    draftTimer.current = setTimeout(() => {
-      void (text
-        ? SecureStore.setItemAsync(DRAFT_KEY, text)
-        : SecureStore.deleteItemAsync(DRAFT_KEY)
-      ).catch(() => { /* ignore */ });
-    }, 300);
-  }, [text]);
+    draftTimer.current = setTimeout(() => { setDraft(convId, text); }, 300);
+    return () => { if (draftTimer.current) clearTimeout(draftTimer.current); };
+  }, [text, convId]);
 
   const canSend = !sending && (text.trim().length > 0 || pending.length > 0);
 

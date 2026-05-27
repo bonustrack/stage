@@ -23,6 +23,7 @@ import { useEffectiveColorScheme } from '../../lib/theme';
 import { getCachedRows, hydrateCachedRows, setCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
 import { usePeerProfiles, getPeerAvatarCb, getPeerName } from '../../lib/peerProfiles';
 import { HeroIcon } from '../../components/HeroIcon';
+import { hasDraft, useDraftsVersion } from '../../lib/drafts';
 import { previewOfXmtpContent } from '../../../_shared/xmtp/humanize';
 import { avatarRenderUrl } from '../../../_shared/profile/snapshot';
 import { Spinner } from '../../components/Spinner';
@@ -198,6 +199,7 @@ export default function Messenger(): React.ReactElement {
   const channelProfilesVersion = usePeerProfiles(
     (filtered ?? rows ?? []).flatMap(r => [r.avatarAddress, r.peerAddress, r.lastSenderAddress]),
   );
+  const draftsVersion = useDraftsVersion();
 
   useEffect(() => {
     let cancelled = false;
@@ -386,7 +388,7 @@ export default function Messenger(): React.ReactElement {
       </View>
       <FlatList
         data={filtered ?? rows}
-        extraData={channelProfilesVersion}
+        extraData={`${channelProfilesVersion}:${draftsVersion}`}
         keyExtractor={r => r.convId}
         refreshControl={
           <RefreshControl
@@ -432,7 +434,8 @@ export default function Messenger(): React.ReactElement {
               <View style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border }} />
             )}
             <View style={{ flex: 1, minWidth: 0 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                {hasDraft(item.convId) ? <HeroIcon name="pencil" size={14} color={sub} /> : null}
                 <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', flex: 1 }} numberOfLines={1}>
                   {item.peerAddress ? (getPeerName(item.peerAddress) ?? item.title) : item.title}
                 </Text>

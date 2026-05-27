@@ -25,6 +25,8 @@ const PATHS: Record<string, string> = {
   faceSmile: 'M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
   // stop — recorder stop (filled square)
   stop: 'M5 5h14v14H5z',
+  // pencil — unsent draft indicator
+  pencil: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z',
   // x — close / dismiss
   x: 'M6 18L18 6M6 6l12 12',
   // plus — attachment menu trigger
