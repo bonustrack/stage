@@ -8,6 +8,10 @@
         "turbo": "^2.3.3",
       },
     },
+    "apps/api": {
+      "name": "@stage-labs/metro-api",
+      "version": "0.1.0",
+    },
     "apps/app": {
       "name": "@stage-labs/metro-app",
       "version": "0.1.0",
@@ -29,6 +33,7 @@
         "expo-file-system": "~19.0.22",
         "expo-font": "~14.0.11",
         "expo-image-picker": "~17.0.11",
+        "expo-linking": "~8.0.12",
         "expo-location": "~19.0.8",
         "expo-notifications": "~0.32.17",
         "expo-router": "~6.0.23",
@@ -860,6 +865,8 @@
     "@solana/transactions": ["@solana/transactions@5.5.1", "", { "dependencies": { "@solana/addresses": "5.5.1", "@solana/codecs-core": "5.5.1", "@solana/codecs-data-structures": "5.5.1", "@solana/codecs-numbers": "5.5.1", "@solana/codecs-strings": "5.5.1", "@solana/errors": "5.5.1", "@solana/functional": "5.5.1", "@solana/instructions": "5.5.1", "@solana/keys": "5.5.1", "@solana/nominal-types": "5.5.1", "@solana/rpc-types": "5.5.1", "@solana/transaction-messages": "5.5.1" }, "peerDependencies": { "typescript": "^5.0.0" }, "optionalPeers": ["typescript"] }, "sha512-8hHtDxtqalZ157pnx6p8k10D7J/KY/biLzfgh9R09VNLLY3Fqi7kJvJCr7M2ik3oRll56pxhraAGCC9yIT6eOA=="],
 
     "@stage-labs/metro": ["@stage-labs/metro@workspace:packages/metro"],
+
+    "@stage-labs/metro-api": ["@stage-labs/metro-api@workspace:apps/api"],
 
     "@stage-labs/metro-app": ["@stage-labs/metro-app@workspace:apps/app"],
 

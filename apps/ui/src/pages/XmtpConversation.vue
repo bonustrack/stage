@@ -89,17 +89,59 @@ watch([liveBubbles, optimistic], () => {
 
 const scroller = ref<HTMLElement | null>(null);
 
+/** Permalink target message (`metro.box/#/xmtp/<convId>?m=<msgId>`). When set we
+ *  scroll to that bubble (once it exists in the feed) instead of pinning to the
+ *  bottom, and flash-highlight it. Cleared after the first successful scroll so
+ *  later inbound messages resume normal sticky-bottom behaviour. */
+const targetMsgId = computed(() => {
+  const m = route.query.m;
+  return (Array.isArray(m) ? m[0] : m) ?? null;
+});
+const highlightId = ref<string | null>(null);
+const scrolledToTarget = ref(false);
+
+function scrollToTargetMessage(): boolean {
+  const id = targetMsgId.value;
+  if (!id || scrolledToTarget.value) return false;
+  const el = document.getElementById(`msg-${id}`);
+  if (!el) return false;
+  el.scrollIntoView({ block: 'center' });
+  highlightId.value = id;
+  scrolledToTarget.value = true;
+  // Drop the highlight after the flash animation so re-renders don't replay it.
+  window.setTimeout(() => { if (highlightId.value === id) highlightId.value = null; }, 2200);
+  return true;
+}
+
+/** Reset the one-shot scroll guard when navigating to a different permalink. */
+watch([convId, targetMsgId], () => { scrolledToTarget.value = false; });
+
 function previewOf(e: HistoryEntry): string {
   if (e.text) return e.text.slice(0, 80);
   const att = (e.payload as { attachments?: { kind: string }[] } | undefined)?.attachments?.[0]?.kind;
   return `[${att ?? 'attachment'}]`;
 }
 
+function scrollToBottom(): void {
+  if (scroller.value) scroller.value.scrollTop = scroller.value.scrollHeight;
+}
 watch(allBubbles, () => {
-  nextTick(() => { if (scroller.value) scroller.value.scrollTop = scroller.value.scrollHeight; });
+  nextTick(() => {
+    // If a permalink targets a specific message and we haven't reached it yet,
+    // try to scroll there; only fall back to the bottom when there's no target.
+    if (targetMsgId.value && !scrolledToTarget.value) {
+      if (scrollToTargetMessage()) return;
+      // Target not in the feed yet — stay put while more history streams in.
+      return;
+    }
+    scrollToBottom();
+  });
 }, { flush: 'post' });
 onMounted(() => {
-  nextTick(() => { if (scroller.value) scroller.value.scrollTop = scroller.value.scrollHeight; });
+  nextTick(() => {
+    if (targetMsgId.value && scrollToTargetMessage()) return;
+    scrollToBottom();
+  });
 });
 
 function onReact(messageId: string, emoji: string): void {
@@ -174,6 +216,8 @@ function onActionCopy(): void {
       <MessengerBubble
         v-for="entry in allBubbles"
         :key="entry.id"
+        :id="`msg-${entry.id}`"
+        :class="{ 'metro-msg-flash': entry.id === highlightId }"
         :entry="entry"
         :mine="entry.from === myUri"
         :inbox-to-addr="inboxToAddr"
@@ -211,4 +255,13 @@ function onActionCopy(): void {
 <style scoped>
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { scrollbar-width: none; }
+
+/* Brief highlight when arriving at a message via a ?m=<id> permalink. */
+.metro-msg-flash {
+  animation: metro-msg-flash 2.2s ease-out;
+}
+@keyframes metro-msg-flash {
+  0%, 30% { background-color: rgba(99, 102, 241, 0.18); }
+  100% { background-color: transparent; }
+}
 </style>

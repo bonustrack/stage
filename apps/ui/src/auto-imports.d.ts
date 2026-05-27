@@ -8,6 +8,7 @@ export {}
 declare global {
   const ASK_QUESTION_MEMBERS: typeof import('./lib/xmtp').ASK_QUESTION_MEMBERS
   const EffectScope: typeof import('vue').EffectScope
+  const METRO_API_URL: typeof import('./lib/xmtp').METRO_API_URL
   const XMTP_USER_PREFIX: typeof import('./lib/xmtp').XMTP_USER_PREFIX
   const cachedRows: typeof import('./lib/channelsCache').cachedRows
   const computed: typeof import('vue').computed
@@ -30,6 +31,7 @@ declare global {
   const h: typeof import('vue').h
   const hydrateCachedRows: typeof import('./lib/channelsCache').hydrateCachedRows
   const inject: typeof import('vue').inject
+  const installEmbedThemeBridge: typeof import('./lib/embedBridge').installEmbedThemeBridge
   const installThemeClassEffect: typeof import('./lib/theme').installThemeClassEffect
   const isAddressLike: typeof import('./lib/stamp').isAddressLike
   const isDomainLike: typeof import('./lib/stamp').isDomainLike
@@ -68,16 +70,20 @@ declare global {
   const osmTileUrl: typeof import('./lib/embedDetect').osmTileUrl
   const osmTileXY: typeof import('./lib/embedDetect').osmTileXY
   const peerEthAddressOfDm: typeof import('./lib/xmtpResolve').peerEthAddressOfDm
+  const postCloseToParent: typeof import('./lib/embedBridge').postCloseToParent
+  const postUnreadToParent: typeof import('./lib/embedBridge').postUnreadToParent
   const provide: typeof import('vue').provide
   const reactionsByMessage: typeof import('./lib/xmtpFeed').reactionsByMessage
   const reactive: typeof import('vue').reactive
   const readProfile: typeof import('./lib/profile').readProfile
   const readonly: typeof import('vue').readonly
   const ref: typeof import('vue').ref
+  const renderMarkdown: typeof import('./lib/renderMarkdown').renderMarkdown
   const resetXmtpClient: typeof import('./lib/xmtp').resetXmtpClient
   const resolveComponent: typeof import('vue').resolveComponent
   const resolveDomain: typeof import('./lib/stamp').resolveDomain
   const resolveSearchInputToAddress: typeof import('./lib/stamp').resolveSearchInputToAddress
+  const runningInIframe: typeof import('./lib/embedBridge').runningInIframe
   const setCachedRows: typeof import('./lib/channelsCache').setCachedRows
   const setLastReadNs: typeof import('./lib/xmtp').setLastReadNs
   const setThemePreference: typeof import('./lib/theme').setThemePreference
@@ -97,6 +103,7 @@ declare global {
   const updateProfile: typeof import('./lib/profile').updateProfile
   const uploadAvatar: typeof import('./lib/profile').uploadAvatar
   const useAttrs: typeof import('vue').useAttrs
+  const useComposerAttach: typeof import('./lib/useComposerAttach').useComposerAttach
   const useCssModule: typeof import('vue').useCssModule
   const useCssVars: typeof import('vue').useCssVars
   const useEffectiveColorScheme: typeof import('./lib/theme').useEffectiveColorScheme
@@ -157,6 +164,7 @@ declare module 'vue' {
   interface ComponentCustomProperties {
     readonly ASK_QUESTION_MEMBERS: UnwrapRef<typeof import('./lib/xmtp')['ASK_QUESTION_MEMBERS']>
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
+    readonly METRO_API_URL: UnwrapRef<typeof import('./lib/xmtp')['METRO_API_URL']>
     readonly XMTP_USER_PREFIX: UnwrapRef<typeof import('./lib/xmtp')['XMTP_USER_PREFIX']>
     readonly cachedRows: UnwrapRef<typeof import('./lib/channelsCache')['cachedRows']>
     readonly computed: UnwrapRef<typeof import('vue')['computed']>
@@ -179,6 +187,7 @@ declare module 'vue' {
     readonly h: UnwrapRef<typeof import('vue')['h']>
     readonly hydrateCachedRows: UnwrapRef<typeof import('./lib/channelsCache')['hydrateCachedRows']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
+    readonly installEmbedThemeBridge: UnwrapRef<typeof import('./lib/embedBridge')['installEmbedThemeBridge']>
     readonly installThemeClassEffect: UnwrapRef<typeof import('./lib/theme')['installThemeClassEffect']>
     readonly isAddressLike: UnwrapRef<typeof import('./lib/stamp')['isAddressLike']>
     readonly isDomainLike: UnwrapRef<typeof import('./lib/stamp')['isDomainLike']>
@@ -217,16 +226,20 @@ declare module 'vue' {
     readonly osmTileUrl: UnwrapRef<typeof import('./lib/embedDetect')['osmTileUrl']>
     readonly osmTileXY: UnwrapRef<typeof import('./lib/embedDetect')['osmTileXY']>
     readonly peerEthAddressOfDm: UnwrapRef<typeof import('./lib/xmtpResolve')['peerEthAddressOfDm']>
+    readonly postCloseToParent: UnwrapRef<typeof import('./lib/embedBridge')['postCloseToParent']>
+    readonly postUnreadToParent: UnwrapRef<typeof import('./lib/embedBridge')['postUnreadToParent']>
     readonly provide: UnwrapRef<typeof import('vue')['provide']>
     readonly reactionsByMessage: UnwrapRef<typeof import('./lib/xmtpFeed')['reactionsByMessage']>
     readonly reactive: UnwrapRef<typeof import('vue')['reactive']>
     readonly readProfile: UnwrapRef<typeof import('./lib/profile')['readProfile']>
     readonly readonly: UnwrapRef<typeof import('vue')['readonly']>
     readonly ref: UnwrapRef<typeof import('vue')['ref']>
+    readonly renderMarkdown: UnwrapRef<typeof import('./lib/renderMarkdown')['renderMarkdown']>
     readonly resetXmtpClient: UnwrapRef<typeof import('./lib/xmtp')['resetXmtpClient']>
     readonly resolveComponent: UnwrapRef<typeof import('vue')['resolveComponent']>
     readonly resolveDomain: UnwrapRef<typeof import('./lib/stamp')['resolveDomain']>
     readonly resolveSearchInputToAddress: UnwrapRef<typeof import('./lib/stamp')['resolveSearchInputToAddress']>
+    readonly runningInIframe: UnwrapRef<typeof import('./lib/embedBridge')['runningInIframe']>
     readonly setCachedRows: UnwrapRef<typeof import('./lib/channelsCache')['setCachedRows']>
     readonly setLastReadNs: UnwrapRef<typeof import('./lib/xmtp')['setLastReadNs']>
     readonly setThemePreference: UnwrapRef<typeof import('./lib/theme')['setThemePreference']>
@@ -246,6 +259,7 @@ declare module 'vue' {
     readonly updateProfile: UnwrapRef<typeof import('./lib/profile')['updateProfile']>
     readonly uploadAvatar: UnwrapRef<typeof import('./lib/profile')['uploadAvatar']>
     readonly useAttrs: UnwrapRef<typeof import('vue')['useAttrs']>
+    readonly useComposerAttach: UnwrapRef<typeof import('./lib/useComposerAttach')['useComposerAttach']>
     readonly useCssModule: UnwrapRef<typeof import('vue')['useCssModule']>
     readonly useCssVars: UnwrapRef<typeof import('vue')['useCssVars']>
     readonly useEffectiveColorScheme: UnwrapRef<typeof import('./lib/theme')['useEffectiveColorScheme']>
