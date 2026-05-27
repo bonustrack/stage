@@ -18,6 +18,7 @@ const name = ref<string | null>(null);
 const saving = ref(false);
 const members = ref<string[]>([]);
 const memberNames = ref<Record<string, string | null>>({});
+const memberRoles = ref<Record<string, 'owner' | 'admin' | 'member'>>({});
 const adding = ref(false);
 const selfAddress = ref('');
 const removing = ref<string | null>(null);
@@ -41,6 +42,8 @@ watchEffect(async () => {
     name?: string;
     imageUrl?: string;
     description?: string;
+    superAdmins?: string[];
+    admins?: () => string[];
   };
   name.value = group.name ?? '';
   imageUrl.value = group.imageUrl ?? '';
@@ -48,6 +51,18 @@ watchEffect(async () => {
   const addrMap = await memberInboxToAddressMap(conv);
   const addrs = Object.values(addrMap).sort((a, b) => a.localeCompare(b));
   members.value = addrs;
+  /** Role per member: super-admin → Owner, admin → Admin, else Member.
+   *  superAdmins/admins are inbox ids, matched against the inbox→address map. */
+  try {
+    const superSet = new Set((group.superAdmins ?? []).map(s => s.toLowerCase()));
+    const adminSet = new Set((group.admins?.() ?? []).map(a => a.toLowerCase()));
+    const roles: Record<string, 'owner' | 'admin' | 'member'> = {};
+    for (const [inboxId, addr] of Object.entries(addrMap)) {
+      const iid = inboxId.toLowerCase();
+      roles[addr] = superSet.has(iid) ? 'owner' : adminSet.has(iid) ? 'admin' : 'member';
+    }
+    memberRoles.value = roles;
+  } catch { /* roles are best-effort */ }
   /** Enrich with Snapshot profile names — pure best-effort, rows fall back
    *  to short addresses when the lookup misses. */
   const profiles = await Promise.all(
@@ -188,6 +203,7 @@ async function onPickImage(file: File): Promise<void> {
         :key="addr.toLowerCase()"
         :address="addr"
         :name="memberNames[addr] ?? null"
+        :role="memberRoles[addr] ?? 'member'"
         :is-self="addr.toLowerCase() === selfAddress"
         :removing="removing === addr.toLowerCase()"
         @open="openMember(addr)"

@@ -10,6 +10,7 @@ const props = defineProps<{
   name: string | null;
   isSelf: boolean;
   removing: boolean;
+  role?: 'owner' | 'admin' | 'member';
 }>();
 const emit = defineEmits<{ (e: 'open'): void; (e: 'remove'): void }>();
 </script>
@@ -32,6 +33,13 @@ const emit = defineEmits<{ (e: 'open'): void; (e: 'remove'): void }>();
         </div>
       </div>
     </button>
+    <span
+      v-if="props.role && props.role !== 'member'"
+      class="shrink-0 px-2 py-0.5 rounded-full text-[11px] font-sans"
+      :class="props.role === 'owner'
+        ? 'bg-teal-500/15 text-teal-600 dark:text-teal-400'
+        : 'bg-metro-border-light dark:bg-metro-border-dark text-metro-sub-light dark:text-metro-sub-dark'"
+    >{{ props.role === 'owner' ? 'Owner' : 'Admin' }}</span>
     <button
       v-if="!props.isSelf"
       type="button"

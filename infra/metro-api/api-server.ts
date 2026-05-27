@@ -21,7 +21,9 @@ const CORS: Record<string, string> = {
 /** Run the daemon's xmtp `newGroup` action via the metro CLI and pull the
  *  created group's id/line out of its stdout (which may carry extra log lines). */
 async function createDaemonOwnedGroup(address: string, name: string): Promise<{ id: string; line: string }> {
-  const args = JSON.stringify({ addresses: [address], name });
+  /** admin-only → only the daemon (creator/super-admin) can edit name/image or
+   *  manage members; the user joins as a plain member who can only chat. */
+  const args = JSON.stringify({ addresses: [address], name, permissions: 'admin-only' });
   const proc = Bun.spawn(['metro', 'call', 'xmtp', 'newGroup', args], { stdout: 'pipe', stderr: 'pipe' });
   const [out, err] = await Promise.all([
     new Response(proc.stdout).text(),
