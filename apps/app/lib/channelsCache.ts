@@ -8,12 +8,16 @@
  *  so the cache is always brought up to date within a few seconds. */
 
 import { Directory, File, Paths } from 'expo-file-system';
-import { setLastReadNs } from './xmtp';
+import { markConvReadSynced, markConvUnreadSynced } from './xmtp';
 
 export interface CachedRow {
   convId: string;
   unreadCount: number;
   lastReadNs: number;
+  /** Synced (cross-device) "explicitly marked unread" flag, driven by XMTP
+   *  conversation consent state. When true the row shows a badge even if the
+   *  timestamp-based count is 0. */
+  markedUnread?: boolean;
   /** Anything else the Channels screen attaches — opaque to this module. */
   [key: string]: unknown;
 }
@@ -67,15 +71,47 @@ export function subscribeCachedRows(l: (rows: CachedRow[] | null) => void): () =
 }
 
 /** Mark a conv as read NOW — patches the cached row (so the badge clears
- *  before the Channels screen re-syncs) AND writes the persistent
- *  `lastReadNs` SecureStore key so next mount agrees. */
+ *  before the Channels screen re-syncs), writes the persistent `lastReadNs`
+ *  SecureStore key so next mount agrees, AND flips the synced consent flag to
+ *  'allowed' so other installations of this inbox see it as read too. */
 export async function markConvRead(convId: string): Promise<void> {
   const nowNs = Date.now() * 1_000_000;
-  await setLastReadNs(convId, nowNs);
+  await markConvReadSynced(convId);
   if (!rows) return;
   const idx = rows.findIndex(r => r.convId === convId);
   if (idx === -1) return;
   const next = [...rows];
-  next[idx] = { ...rows[idx]!, unreadCount: 0, lastReadNs: nowNs };
+  next[idx] = { ...rows[idx]!, unreadCount: 0, lastReadNs: nowNs, markedUnread: false };
+  setCachedRows(next);
+}
+
+/** Mark a conv as UNREAD — cross-device. Flips the synced consent flag to
+ *  'unknown', rewinds the local lastReadNs, and patches the cached row so the
+ *  badge appears immediately on this device. */
+export async function markConvUnread(convId: string): Promise<void> {
+  await markConvUnreadSynced(convId);
+  if (!rows) return;
+  const idx = rows.findIndex(r => r.convId === convId);
+  if (idx === -1) return;
+  const next = [...rows];
+  /** Surface at least one unread so the badge shows even when the timestamp
+   *  recount hasn't run yet. */
+  const cur = rows[idx]!;
+  next[idx] = { ...cur, unreadCount: Math.max(1, cur.unreadCount), lastReadNs: 0, markedUnread: true };
+  setCachedRows(next);
+}
+
+/** Apply a consent change that arrived from another device (via the consent
+ *  stream) to the cached rows so the badge reconciles live without a refetch. */
+export function applyConsentToRows(convId: string, markedUnread: boolean): void {
+  if (!rows) return;
+  const idx = rows.findIndex(r => r.convId === convId);
+  if (idx === -1) return;
+  const cur = rows[idx]!;
+  if (!!cur.markedUnread === markedUnread) return;
+  const next = [...rows];
+  next[idx] = markedUnread
+    ? { ...cur, markedUnread: true, unreadCount: Math.max(1, cur.unreadCount) }
+    : { ...cur, markedUnread: false, unreadCount: 0 };
   setCachedRows(next);
 }

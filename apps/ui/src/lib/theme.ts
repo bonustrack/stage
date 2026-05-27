@@ -4,16 +4,17 @@
  *  the Settings screen — same model as apps/app/lib/theme.ts. */
 
 import { ref, computed, onUnmounted, type Ref, type ComputedRef } from 'vue';
+import {
+  THEME_STORAGE_KEY as STORAGE_KEY, isThemePreference,
+  type ThemePreference,
+} from '@stage-labs/metro-kit/theme';
 
-export type ThemePreference = 'light' | 'dark' | 'system';
-
-const STORAGE_KEY = 'app.theme';
-const VALID = new Set<ThemePreference>(['light', 'dark', 'system']);
+export type { ThemePreference };
 
 function loadInitial(): ThemePreference {
   try {
     const v = localStorage.getItem(STORAGE_KEY);
-    if (v && VALID.has(v as ThemePreference)) return v as ThemePreference;
+    if (isThemePreference(v)) return v;
   } catch { /* localStorage may be blocked — fall back */ }
   return 'system';
 }
@@ -28,7 +29,7 @@ function emit(p: ThemePreference): void {
 
 /** Persist + broadcast a new theme preference. */
 export function setThemePreference(p: ThemePreference): void {
-  if (!VALID.has(p)) return;
+  if (!isThemePreference(p)) return;
   emit(p);
   try { localStorage.setItem(STORAGE_KEY, p); } catch { /* best-effort */ }
 }

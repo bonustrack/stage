@@ -7,7 +7,7 @@
  *  "no profile" → {}) are cached for the session so repeated renders are free. */
 
 import { useEffect, useReducer } from 'react';
-import { SNAPSHOT_HUB_GRAPHQL, getCacheHash } from '../../_shared/profile/snapshot';
+import { SNAPSHOT_HUB_GRAPHQL, getCacheHash } from '@stage-labs/metro-client/profile/snapshot';
 
 interface PeerProfile { name?: string; avatar?: string }
 

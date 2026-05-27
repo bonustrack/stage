@@ -8,7 +8,7 @@ import {
   memberInboxToAddressMap, shortAddress,
 } from '../lib/xmtp';
 import { readProfile, uploadAvatar } from '../lib/profile';
-import type { SnapshotProfile } from '@shared/profile/snapshot';
+import type { SnapshotProfile } from '@stage-labs/metro-client/profile/snapshot';
 
 const route = useRoute();
 const router = useRouter();

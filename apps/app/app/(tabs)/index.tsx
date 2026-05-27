@@ -4,10 +4,10 @@
  *  the other members for groups (excluding the local user). Both are resolved
  *  once per conv during the initial list build and cached in component state. */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
-  AppState, FlatList, Image, Pressable, RefreshControl,
-  Text, TextInput, View,
+  AppState, FlatList, Image, Modal, Pressable, RefreshControl,
+  Text, View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import type { Conversation, DecodedMessage } from '@xmtp/react-native-sdk';
@@ -16,16 +16,19 @@ import {
   getOrCreateXmtpClient, resetXmtpClient,
   peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap,
   stampBoxAvatarUrl, shortAddress,
-  getLastReadNs,
+  getLastReadNs, getConvConsent, syncPreferences, streamConvConsent,
 } from '../../lib/xmtp';
 import { resetAccount } from '../../lib/wallet';
 import { useEffectiveColorScheme } from '../../lib/theme';
-import { getCachedRows, hydrateCachedRows, setCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
+import {
+  getCachedRows, hydrateCachedRows, setCachedRows, subscribeCachedRows,
+  markConvUnread, markConvRead, applyConsentToRows,
+} from '../../lib/channelsCache';
 import { usePeerProfiles, getPeerAvatarCb, getPeerName } from '../../lib/peerProfiles';
 import { HeroIcon } from '../../components/HeroIcon';
 import { hasDraft, useDraftsVersion } from '../../lib/drafts';
-import { previewOfXmtpContent } from '../../../_shared/xmtp/humanize';
-import { avatarRenderUrl } from '../../../_shared/profile/snapshot';
+import { previewOfXmtpContent } from '@stage-labs/metro-client/xmtp/humanize';
+import { avatarRenderUrl } from '@stage-labs/metro-client/profile/snapshot';
 import { Spinner } from '../../components/Spinner';
 
 interface Row {
@@ -56,6 +59,9 @@ interface Row {
   /** Cached lastReadNs — kept so streamAllMessages updates can recompute the
    *  count without a SecureStore round-trip per new msg. */
   lastReadNs: number;
+  /** Synced (cross-device) "explicitly marked unread" flag from XMTP consent
+   *  state. Forces the badge on even when the timestamp count is 0. */
+  markedUnread: boolean;
   /** Own inbox id — also needed to filter own messages out of the unread
    *  recount on stream updates. */
   selfInboxId: string;
@@ -128,6 +134,16 @@ async function summarize(conv: Conversation, selfInboxId: string): Promise<Row> 
     if (m.senderInboxId === selfInboxId) continue;
     unreadCount += 1;
   }
+  /** Cross-device read flag: consent 'unknown' = unread on the inbox level. We
+   *  only let it FORCE a badge when this device has NO local read marker yet
+   *  (`lastReadNs === 0`) and there's an inbound last message. Once a device has
+   *  read the conv (lastReadNs > 0) we trust the local timestamp count and only
+   *  surface an *explicit* "mark unread" (which resets lastReadNs to 0). This
+   *  avoids phantom badges on conversations read before this feature existed,
+   *  while still propagating a genuine cross-device "mark unread". */
+  const consent = await getConvConsent(conv.id).catch(() => 'unknown' as const);
+  const markedUnread = consent === 'unknown' && lastReadNs === 0
+    && unreadCount === 0 && !!last && !lastFromSelf;
   return {
     convId: conv.id,
     title,
@@ -142,6 +158,7 @@ async function summarize(conv: Conversation, selfInboxId: string): Promise<Row> 
     unreadCount,
     lastReadNs,
     selfInboxId,
+    markedUnread,
   };
 }
 
@@ -158,7 +175,6 @@ export default function Messenger(): React.ReactElement {
   const sub = dark ? '#7a7a7e' : '#8a929d';
   const bg = dark ? '#0e0f10' : '#ffffff';
   const border = dark ? '#282a2d' : '#e4e4e5';
-  const rowBg = dark ? '#282a2d' : '#e4e4e5';
   const [rows, setRowsState] = useState<Row[] | null>(getCachedRows() as Row[] | null);
   /** Wrap setRows so every state update also lands in the shared cache + fans
    *  out to subscribers (e.g. the conv view'​s markConvRead can mutate the
@@ -177,27 +193,17 @@ export default function Messenger(): React.ReactElement {
   };
   useEffect(() => subscribeCachedRows(r => setRowsState(r as Row[] | null)), []);
   const [error, setError] = useState<string>('');
-  const [query, setQuery] = useState<string>('');
   const [refreshing, setRefreshing] = useState(false);
+  /** Row long-pressed → opens the per-conversation action sheet (Mark as
+   *  read/unread). Holds the convId + whether it currently reads as unread. */
+  const [rowMenu, setRowMenu] = useState<{ convId: string; title: string; isUnread: boolean } | null>(null);
   /** Held across effect re-runs so AppState + poll backstops can call refresh
    *  without re-binding to a stale client. */
   const refreshFromNetworkRef = useRef<(() => Promise<void>) | null>(null);
 
-  const filtered = useMemo(() => {
-    if (!rows) return null;
-    const q = query.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter(r =>
-      r.title.toLowerCase().includes(q)
-      || r.lastPreview.toLowerCase().includes(q)
-      || (r.avatarAddress?.toLowerCase().includes(q) ?? false)
-      || Object.values(r.inboxToAddr).some(a => a.toLowerCase().includes(q)),
-    );
-  }, [rows, query]);
-
   /** Batch-resolve the displayed peers' profiles → avatar cache-busters. */
   const channelProfilesVersion = usePeerProfiles(
-    (filtered ?? rows ?? []).flatMap(r => [r.avatarAddress, r.peerAddress, r.lastSenderAddress]),
+    (rows ?? []).flatMap(r => [r.avatarAddress, r.peerAddress, r.lastSenderAddress]),
   );
   const draftsVersion = useDraftsVersion();
 
@@ -205,6 +211,7 @@ export default function Messenger(): React.ReactElement {
     let cancelled = false;
     let cancelConvStream: (() => void) | null = null;
     let cancelMsgStream: (() => void) | null = null;
+    let cancelConsentStream: (() => void) | null = null;
     let pollTimer: ReturnType<typeof setInterval> | null = null;
     let appStateSub: { remove: () => void } | null = null;
 
@@ -293,6 +300,9 @@ export default function Messenger(): React.ReactElement {
                 && msg.senderInboxId !== cur.selfInboxId;
               const unreadCount = isUnread ? cur.unreadCount + 1 : cur.unreadCount;
               const updated = { ...cur, lastTs, lastPreview, avatarAddress: newAvatar, unreadCount };
+              /** A real inbound message supersedes a stale forced-unread flag —
+               *  it's now counted in unreadCount, so drop the marker. */
+              if (isUnread) updated.markedUnread = false;
               const next = [updated, ...prev.slice(0, idx), ...prev.slice(idx + 1)];
               return next;
             });
@@ -300,10 +310,22 @@ export default function Messenger(): React.ReactElement {
           }) ?? null;
         } catch { /* message stream init failed — preview will lag */ }
 
+        /** Cross-device read/unread: pull synced consent from the network, then
+         *  subscribe to live consent changes so a "mark unread" on another device
+         *  reconciles the badge here without a full refetch. */
+        await syncPreferences();
+        try {
+          cancelConsentStream = streamConvConsent((convId, state) => {
+            if (cancelled) return;
+            applyConsentToRows(convId, state === 'unknown');
+          });
+        } catch { /* consent stream unavailable — refresh backstop covers it */ }
+
         /** Foreground resume — the native streams often die while the app is
-         *  backgrounded; re-sync on every active transition. */
+         *  backgrounded; re-sync on every active transition. Also pull synced
+         *  consent so cross-device read state lands on resume. */
         appStateSub = AppState.addEventListener('change', (state) => {
-          if (state === 'active') void refresh();
+          if (state === 'active') { void syncPreferences(); void refresh(); }
         });
 
         /** Slow poll as a last-resort backstop. Catches anything the stream
@@ -321,6 +343,7 @@ export default function Messenger(): React.ReactElement {
       refreshFromNetworkRef.current = null;
       if (cancelConvStream) try { cancelConvStream(); } catch { /* ignore */ }
       if (cancelMsgStream) try { cancelMsgStream(); } catch { /* ignore */ }
+      if (cancelConsentStream) try { cancelConsentStream(); } catch { /* ignore */ }
       if (appStateSub) try { appStateSub.remove(); } catch { /* ignore */ }
       if (pollTimer) clearInterval(pollTimer);
     };
@@ -367,27 +390,12 @@ export default function Messenger(): React.ReactElement {
 
   return (
     <View style={{ flex: 1, backgroundColor: bg }}>
-      {/* Home topnav: a search input with the search icon inside it on the right. */}
-      <View style={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: border }}>
-        <View style={{
-          flexDirection: 'row', alignItems: 'center', gap: 8,
-          backgroundColor: rowBg, borderWidth: 1, borderColor: border, borderRadius: 10,
-          paddingHorizontal: 12,
-        }}>
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search channels…"
-            placeholderTextColor={sub}
-            autoCorrect={false}
-            autoCapitalize="none"
-            style={{ flex: 1, paddingVertical: 9, color: fg, fontSize: 14 }}
-          />
-          <HeroIcon name="search" size={18} color={sub} />
-        </View>
+      {/* Home topnav: title (search input removed). */}
+      <View style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: border }}>
+        <Text style={{ color: head, fontSize: 22, fontFamily: 'Calibre-Semibold' }}>Channels</Text>
       </View>
       <FlatList
-        data={filtered ?? rows}
+        data={rows ?? []}
         extraData={`${channelProfilesVersion}:${draftsVersion}`}
         keyExtractor={r => r.convId}
         refreshControl={
@@ -401,13 +409,19 @@ export default function Messenger(): React.ReactElement {
         ListEmptyComponent={
           <View style={{ padding: 32, alignItems: 'center' }}>
             <Text style={{ color: sub, textAlign: 'center' }}>
-              {query ? `No matches for "${query}"` : 'No conversations yet. Share your address from Settings to start one.'}
+              No conversations yet. Share your address from Settings to start one.
             </Text>
           </View>
         }
         renderItem={({ item }) => (
           <Pressable
             onPress={() => router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } })}
+            onLongPress={() => setRowMenu({
+              convId: item.convId,
+              title: item.peerAddress ? (getPeerName(item.peerAddress) ?? item.title) : item.title,
+              isUnread: item.unreadCount > 0 || !!item.markedUnread,
+            })}
+            delayLongPress={300}
             style={({ pressed }) => ({
               backgroundColor: pressed ? border : 'transparent',
               paddingHorizontal: 14,
@@ -456,6 +470,12 @@ export default function Messenger(): React.ReactElement {
                       {item.unreadCount > 99 ? '99+' : item.unreadCount}
                     </Text>
                   </View>
+                ) : item.markedUnread ? (
+                  /** Explicitly marked unread (cross-device) but no counted msgs
+                   *  → show a plain dot rather than a number. */
+                  <View style={{
+                    width: 12, height: 12, borderRadius: 999, backgroundColor: head,
+                  }} />
                 ) : null}
               </View>
             </View>
@@ -463,6 +483,55 @@ export default function Messenger(): React.ReactElement {
           </Pressable>
         )}
       />
+      <RowActionSheet
+        target={rowMenu}
+        dark={dark}
+        onClose={() => setRowMenu(null)}
+        onToggleUnread={() => {
+          if (!rowMenu) return;
+          const { convId, isUnread } = rowMenu;
+          setRowMenu(null);
+          if (isUnread) void markConvRead(convId);
+          else void markConvUnread(convId);
+        }}
+      />
     </View>
+  );
+}
+
+/** Bottom action sheet shown on long-pressing a channel row. v1 exposes a
+ *  single toggle: Mark as read / Mark as unread (cross-device via XMTP consent). */
+function RowActionSheet({
+  target, dark, onClose, onToggleUnread,
+}: {
+  target: { convId: string; title: string; isUnread: boolean } | null;
+  dark: boolean; onClose: () => void; onToggleUnread: () => void;
+}): React.ReactElement {
+  const sheetBg = dark ? '#282a2d' : '#ffffff';
+  const fg = dark ? '#9f9fa3' : '#57606a';
+  const sub = dark ? '#7a7a7e' : '#8a929d';
+  const head = dark ? '#ffffff' : '#000000';
+  return (
+    <Modal visible={!!target} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>
+        <Pressable onPress={e => e.stopPropagation()} style={{
+          backgroundColor: sheetBg, borderTopLeftRadius: 16, borderTopRightRadius: 16,
+          padding: 16, paddingBottom: 24, gap: 4,
+        }}>
+          <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', paddingHorizontal: 4, paddingBottom: 6 }} numberOfLines={1}>
+            {target?.title ?? ''}
+          </Text>
+          <Pressable onPress={onToggleUnread} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 }}>
+            <HeroIcon name={target?.isUnread ? 'check' : 'envelope'} size={20} color={head} />
+            <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Medium' }}>
+              {target?.isUnread ? 'Mark as read' : 'Mark as unread'}
+            </Text>
+          </Pressable>
+          <Pressable onPress={onClose} style={{ paddingVertical: 10, alignItems: 'center' }}>
+            <Text style={{ color: fg, fontSize: 14, fontFamily: 'Calibre-Medium' }}>Cancel</Text>
+          </Pressable>
+        </Pressable>
+      </Pressable>
+    </Modal>
   );
 }

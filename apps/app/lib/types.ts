@@ -1,20 +1,5 @@
-/** Chat-bubble shape — mirrors the daemon's `HistoryEntry` for the XMTP feed
- *  adapter in `./xmtp.ts` and the `MessengerBubble` component. Kept in sync by hand. */
+/** Re-export of the shared event/message envelope so existing call sites in
+ *  apps/app keep their `./types` import path. The canonical definition lives in
+ *  @stage-labs/metro-client (shared with the web client). */
 
-export interface HistoryEntry {
-  id: string;
-  ts: string;
-  station: string;
-  line: string;
-  lineName?: string;
-  from: string;
-  fromName?: string;
-  to: string;
-  text?: string;
-  messageId?: string;
-  replyTo?: string;
-  /** Pre-rendered chat-bubble markdown. */
-  display?: string;
-  /** Raw platform-native payload (Discord message, GitHub webhook body, etc). Shape varies per station. */
-  payload?: unknown;
-}
+export type { HistoryEntry } from '@stage-labs/metro-client/types';

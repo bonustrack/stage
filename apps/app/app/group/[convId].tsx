@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from 'react';
 import {
-  ActivityIndicator, Alert, FlatList, Image, Pressable, ScrollView, Text, TextInput, View,
+  ActivityIndicator, Alert, FlatList, Image, Pressable, Text, TextInput, View,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -15,7 +15,7 @@ import {
 } from '../../lib/xmtp';
 import { PublicIdentity } from '@xmtp/react-native-sdk';
 import { readProfile, uploadAvatar } from '../../lib/profile';
-import { avatarRenderUrl, type SnapshotProfile } from '../../../_shared/profile/snapshot';
+import { avatarRenderUrl, type SnapshotProfile } from '@stage-labs/metro-client/profile/snapshot';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { HeroIcon } from '../../components/HeroIcon';
 

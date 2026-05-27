@@ -13,7 +13,7 @@ import * as ImagePicker from 'expo-image-picker';
 import {
   type SnapshotProfile, updateProfile, uploadAvatar,
 } from '../lib/profile';
-import { PROFILE_FIELD_LIMITS, getCacheHash } from '../../_shared/profile/snapshot';
+import { PROFILE_FIELD_LIMITS, getCacheHash } from '@stage-labs/metro-client/profile/snapshot';
 import { stampBoxAvatarUrl } from '../lib/xmtp';
 
 const AVATAR_SIZE = 96;

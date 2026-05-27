@@ -13,6 +13,8 @@
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
+    "@stage-labs/metro-client": "workspace:*",
+    "@stage-labs/metro-kit": "workspace:*",
     "@react-native-community/netinfo": "11.4.1",
     "@reown/appkit-wagmi-react-native": "1.3.2",
     "@tanstack/react-query": "^5.100.14",
@@ -29,6 +31,7 @@
     "expo-file-system": "~19.0.22",
     "expo-font": "~14.0.11",
     "expo-image-picker": "~17.0.11",
+    "expo-linking": "~8.0.12",
     "expo-location": "~19.0.8",
     "expo-notifications": "~0.32.17",
     "expo-router": "~6.0.23",

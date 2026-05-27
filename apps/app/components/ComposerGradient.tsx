@@ -1,8 +1,14 @@
-/** Top-fade or bottom-fade gradient strip via react-native-svg LinearGradient. */
+/** Top-fade or bottom-fade gradient strip.
+ *
+ *  Implemented as a stack of thin solid slices with stepped opacity rather than a
+ *  react-native-svg `LinearGradient`. On Android, react-native-svg gradients render
+ *  unreliably here: alpha baked into `stopColor` (rgba) gets dropped — the fade
+ *  collapses to a solid same-colour bar (invisible over a matching background) —
+ *  and percentage `Rect` dims inside an auto-sized absolute container can compute
+ *  to 0, so nothing draws at all. Stepped `View`s are plain RN core: they always
+ *  render and give a clean linear 0→100% opacity ramp on every device. */
 
-import { useId } from 'react';
 import { View } from 'react-native';
-import { Defs, LinearGradient, Rect, Stop, Svg } from 'react-native-svg';
 
 interface Props {
   bg: string;
@@ -15,28 +21,28 @@ interface Props {
   bottom?: number;
 }
 
-export function ComposerGradient({ bg, direction = 'down', height = 20, top, bottom }: Props): React.ReactElement {
-  /** Unique id PER INSTANCE. react-native-svg registers gradient defs globally by
-   *  id, so a shared id (`grad-down`/`grad-up`) collides whenever more than one
-   *  fade is on screen (feed + composer + the two textarea fades) — the def
-   *  resolves to the wrong one and the fade stops reaching 0% opacity. */
-  const id = 'grad' + useId().replace(/[^a-zA-Z0-9]/g, '');
-  const [topOpacity, bottomOpacity] = direction === 'down' ? [0, 1] : [1, 0];
+/** Slice count across the strip — 16 over a 24px strip (1.5px each) reads as a
+ *  smooth ramp without visible banding. */
+const SLICES = 16;
+
+export function ComposerGradient({ bg, direction = 'down', height = 24, top, bottom }: Props): React.ReactElement {
+  const sliceH = height / SLICES;
   return (
     <View pointerEvents="none" style={{
       position: 'absolute', left: 0, right: 0, height,
       ...(top !== undefined ? { top } : {}),
       ...(bottom !== undefined ? { bottom } : {}),
     }}>
-      <Svg width="100%" height="100%">
-        <Defs>
-          <LinearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor={bg} stopOpacity={topOpacity} />
-            <Stop offset="1" stopColor={bg} stopOpacity={bottomOpacity} />
-          </LinearGradient>
-        </Defs>
-        <Rect width="100%" height="100%" fill={`url(#${id})`} />
-      </Svg>
+      {Array.from({ length: SLICES }, (_, i) => {
+        /** Slice position as a 0→1 fraction, top→bottom, hitting the EXACT
+         *  endpoints (t=0 and t=1) so the strip is fully transparent at one edge
+         *  and fully solid at the other — a true linear 0→100% ramp, no residual
+         *  tint over content. 'down' ramps opacity up (transparent top → solid
+         *  bottom); 'up' ramps it down. */
+        const t = i / (SLICES - 1);
+        const opacity = direction === 'down' ? t : 1 - t;
+        return <View key={i} style={{ height: sliceH, backgroundColor: bg, opacity }} />;
+      })}
     </View>
   );
 }

@@ -10,10 +10,10 @@
  *  Vue lifecycle (onMounted / onUnmounted). */
 
 import type { Conversation } from '@xmtp/browser-sdk';
-import { type XmtpClient } from './xmtp';
-import { cachedRows, setCachedRows } from './channelsCache';
+import { type XmtpClient, syncPreferences, streamConvConsent } from './xmtp';
+import { cachedRows, setCachedRows, applyConsentToRows } from './channelsCache';
 import { summarizeConv, type ChannelRow } from './channelsSummarize';
-import { previewOfXmtpContent } from '@shared/xmtp/humanize';
+import { previewOfXmtpContent } from '@stage-labs/metro-client/xmtp/humanize';
 
 type StreamHandle = { end: () => Promise<unknown> };
 
@@ -39,9 +39,13 @@ export async function startChannelStream(client: XmtpClient): Promise<ChannelStr
 
   let stopConvStream: StreamHandle | null = null;
   let stopMsgStream: StreamHandle | null = null;
+  let stopConsentStream: (() => Promise<void>) | null = null;
   let pollTimer: ReturnType<typeof setInterval> | null = null;
   let visibilityHandler: (() => void) | null = null;
 
+  /** Pull synced consent from the network before the first summarise so
+   *  cross-device read/unread state is reflected from the start. */
+  await syncPreferences();
   await refresh();
 
   stopConvStream = await client.conversations.stream({
@@ -69,13 +73,21 @@ export async function startChannelStream(client: XmtpClient): Promise<ChannelStr
       const isUnread = sentNs > cur.lastReadNs && msg.senderInboxId !== cur.selfInboxId;
       const unreadCount = isUnread ? cur.unreadCount + 1 : cur.unreadCount;
       const updated: ChannelRow = { ...cur, lastTs, lastPreview, avatarAddress: newAvatar, unreadCount };
+      /** A real inbound message supersedes a stale forced-unread flag. */
+      if (isUnread) updated.markedUnread = false;
       setCachedRows([updated, ...prev.slice(0, idx), ...prev.slice(idx + 1)]);
     },
     onError: () => { /* backstops fire */ },
   });
 
+  /** Cross-device read/unread: live consent changes from another installation
+   *  reconcile the badge here. */
+  stopConsentStream = await streamConvConsent((convId, state) => {
+    applyConsentToRows(convId, state === 'unknown');
+  });
+
   visibilityHandler = (): void => {
-    if (document.visibilityState === 'visible') void refresh();
+    if (document.visibilityState === 'visible') { void syncPreferences(); void refresh(); }
   };
   document.addEventListener('visibilitychange', visibilityHandler);
   pollTimer = setInterval(() => { void refresh(); }, 30_000);
@@ -85,6 +97,7 @@ export async function startChannelStream(client: XmtpClient): Promise<ChannelStr
     stop: async (): Promise<void> => {
       try { await stopConvStream?.end(); } catch { /* ignore */ }
       try { await stopMsgStream?.end(); } catch { /* ignore */ }
+      try { await stopConsentStream?.(); } catch { /* ignore */ }
       if (pollTimer) clearInterval(pollTimer);
       if (visibilityHandler) document.removeEventListener('visibilitychange', visibilityHandler);
     },
