@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from 'react';
 import {
-  ActivityIndicator, Alert, FlatList, Image, Pressable, Text, TextInput, View,
+  ActivityIndicator, Alert, FlatList, Image, Modal, Pressable, Text, TextInput, View,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -48,6 +48,7 @@ export default function GroupDetail(): React.ReactElement {
   /** Add-member input + busy flag. The Add row sits above the member list. */
   const [addDraft, setAddDraft] = useState('');
   const [adding, setAdding] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
   /** Lower-cased local wallet address — used to suppress the remove button
    *  on the local user's own row. */
   const [selfAddress, setSelfAddress] = useState<string>('');
@@ -139,6 +140,7 @@ export default function GroupDetail(): React.ReactElement {
       if (!group.addMembersByIdentity) throw new Error('Not a group conversation');
       await group.addMembersByIdentity([new PublicIdentity(addr, 'ETHEREUM')]);
       setAddDraft('');
+      setAddOpen(false);
       /** Re-fetch the member list so the new row shows up immediately. */
       const fullMap = await memberInboxToAddressMap(conv);
       setMembers(Object.values(fullMap).sort((a, b) => a.localeCompare(b)));
@@ -268,13 +270,13 @@ export default function GroupDetail(): React.ReactElement {
             </View>
           ) : null}
         </Pressable>
-        <Text style={{ color: sub, fontSize: 11, marginTop: 6, fontFamily: 'Calibre-Medium' }}>
+        <Text style={{ color: sub, fontSize: 13, marginTop: 6, fontFamily: 'Calibre-Medium' }}>
           {uploadingImage ? 'Uploading…' : 'Tap to change image'}
         </Text>
       </View>
 
       <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
-        <Text style={{ color: sub, fontSize: 11, fontFamily: 'Calibre-Medium' }}>GROUP NAME</Text>
+        <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>GROUP NAME</Text>
         {editing ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 }}>
             <TextInput
@@ -311,7 +313,7 @@ export default function GroupDetail(): React.ReactElement {
       </View>
 
       <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
-        <Text style={{ color: sub, fontSize: 11, fontFamily: 'Calibre-Medium' }}>DESCRIPTION</Text>
+        <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>DESCRIPTION</Text>
         {editingDescription ? (
           <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 6 }}>
             <TextInput
@@ -348,36 +350,27 @@ export default function GroupDetail(): React.ReactElement {
         )}
       </View>
 
-      <Text style={{ color: sub, fontSize: 11, paddingHorizontal: 16, paddingBottom: 6, fontFamily: 'Calibre-Medium' }}>
-        MEMBERS ({members.length})
-      </Text>
-      <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingBottom: 12 }}>
-        <TextInput
-          value={addDraft}
-          onChangeText={setAddDraft}
-          placeholder="0x… Ethereum address"
-          placeholderTextColor={sub}
-          autoCorrect={false}
-          autoCapitalize="none"
-          style={{
-            flex: 1, color: fg, backgroundColor: rowBg,
-            borderWidth: 1, borderColor: border, borderRadius: 10,
-            paddingHorizontal: 10, paddingVertical: 8, fontSize: 13,
-          }}
-        />
+      {/** MEMBERS header: label left, add-member button (avatar + plus) top-right
+       *   → opens a modal to add by address (no inline input). */}
+      <View style={{
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+        paddingHorizontal: 16, paddingBottom: 8,
+      }}>
+        <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+          MEMBERS ({members.length})
+        </Text>
         <Pressable
-          onPress={() => { void addMember(); }}
-          disabled={adding || !addDraft.trim()}
+          onPress={() => { setAddDraft(''); setAddOpen(true); }}
+          hitSlop={8}
           style={({ pressed }) => ({
-            paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999,
-            backgroundColor: dark ? '#ffffff' : '#000000',
-            opacity: pressed ? 0.85 : (adding || !addDraft.trim()) ? 0.5 : 1,
-            alignSelf: 'center',
+            flexDirection: 'row', alignItems: 'center', gap: 5,
+            paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999,
+            borderWidth: 1, borderColor: border,
+            backgroundColor: pressed ? border : 'transparent',
           })}
         >
-          <Text style={{ color: dark ? '#000000' : '#ffffff', fontSize: 13, fontFamily: 'Calibre-Medium' }}>
-            {adding ? 'Adding…' : 'Add'}
-          </Text>
+          <HeroIcon name="users" size={16} color={fg} />
+          <HeroIcon name="plus" size={14} color={fg} />
         </Pressable>
       </View>
       <FlatList
@@ -391,9 +384,9 @@ export default function GroupDetail(): React.ReactElement {
               onPress={() => router.push({ pathname: '/user/[address]', params: { address: item } })}
               disabled={isRemovingThis}
               style={({ pressed }) => ({
-                backgroundColor: pressed ? border : rowBg,
+                backgroundColor: pressed ? border : 'transparent',
                 flexDirection: 'row', alignItems: 'center', gap: 12,
-                paddingHorizontal: 14, paddingVertical: 12,
+                paddingHorizontal: 14, paddingVertical: 14,
                 borderBottomWidth: 1, borderBottomColor: border,
                 opacity: isRemovingThis ? 0.5 : 1,
               })}
@@ -442,6 +435,47 @@ export default function GroupDetail(): React.ReactElement {
           );
         }}
       />
+
+      {/* Add-member modal — opened by the + button in the MEMBERS header. */}
+      <Modal visible={addOpen} transparent animationType="slide" onRequestClose={() => setAddOpen(false)}>
+        <Pressable onPress={() => setAddOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>
+          <Pressable onPress={(e) => e.stopPropagation()} style={{
+            backgroundColor: dark ? '#1a1b1d' : '#ffffff',
+            borderTopLeftRadius: 18, borderTopRightRadius: 18,
+            padding: 16, paddingBottom: 28 + insets.bottom, borderTopWidth: 1, borderColor: border,
+          }}>
+            <View style={{ alignSelf: 'center', width: 36, height: 4, borderRadius: 2, backgroundColor: border, marginBottom: 12 }} />
+            <Text style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold', marginBottom: 12 }}>Add member</Text>
+            <TextInput
+              value={addDraft}
+              onChangeText={setAddDraft}
+              placeholder="0x… Ethereum address"
+              placeholderTextColor={sub}
+              autoCorrect={false}
+              autoCapitalize="none"
+              autoFocus
+              style={{
+                color: fg, backgroundColor: rowBg,
+                borderWidth: 1, borderColor: border, borderRadius: 10,
+                paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, marginBottom: 10,
+              }}
+            />
+            <Pressable
+              onPress={() => { void addMember(); }}
+              disabled={adding || !addDraft.trim()}
+              style={({ pressed }) => ({
+                paddingVertical: 12, borderRadius: 999, alignItems: 'center',
+                backgroundColor: dark ? '#ffffff' : '#000000',
+                opacity: pressed ? 0.85 : (adding || !addDraft.trim()) ? 0.5 : 1,
+              })}
+            >
+              <Text style={{ color: dark ? '#000000' : '#ffffff', fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
+                {adding ? 'Adding…' : 'Add member'}
+              </Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
