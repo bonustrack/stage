@@ -24,7 +24,7 @@ import {
   getCachedRows, hydrateCachedRows, setCachedRows, subscribeCachedRows,
   markConvUnread, markConvRead, applyConsentToRows,
 } from '../../lib/channelsCache';
-import { usePeerProfiles, getPeerAvatarCb, getPeerName } from '../../lib/peerProfiles';
+import { usePeerProfiles, getPeerAvatarCb, getPeerName, isPeerResolved } from '../../lib/peerProfiles';
 import { HeroIcon } from '../../components/HeroIcon';
 import { hasDraft, useDraftsVersion } from '../../lib/drafts';
 import { previewOfXmtpContent } from '@metro-labs/client/xmtp/humanize';
@@ -439,7 +439,10 @@ export default function Messenger(): React.ReactElement {
                 source={{ uri: avatarRenderUrl('', item.avatarUri, 64) }}
                 style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border }}
               />
-            ) : item.avatarAddress ? (
+            ) : (item.avatarAddress && isPeerResolved(item.avatarAddress)) ? (
+              /** Only render once the profile is resolved, so the URL (incl. its
+               *  avatar cache-buster) is final from the first paint — no wrong-avatar
+               *  flash that swaps when the profile lands. */
               <Image
                 source={{ uri: stampBoxAvatarUrl(item.avatarAddress, 64, getPeerAvatarCb(item.avatarAddress)) }}
                 style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border }}
