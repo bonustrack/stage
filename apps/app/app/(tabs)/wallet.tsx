@@ -6,7 +6,7 @@ import * as Clipboard from 'expo-clipboard';
 import { createPublicClient, http, formatEther, type Hex } from 'viem';
 import { mainnet } from 'viem/chains';
 import { getOrCreateXmtpClient, shortAddress, stampBoxAvatarUrl } from '../../lib/xmtp';
-import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
+import { usePeerProfiles, getPeerName, getPeerAvatarCb } from '../../lib/peerProfiles';
 import { useEffectiveColorScheme } from '../../lib/theme';
 
 export default function Wallet(): React.ReactElement {
@@ -31,9 +31,9 @@ export default function Wallet(): React.ReactElement {
         const addr = client.publicIdentity.identifier;
         if (cancelled) return;
         setAddress(addr);
-        /** Read-only mainnet RPC (viem's default public endpoint) — just an
-         *  eth_getBalance, no key needed. */
-        const pub = createPublicClient({ chain: mainnet, transport: http() });
+        /** Read-only mainnet RPC via brovider (the same proxy Snapshot UI uses —
+         *  viem's default public endpoint was failing). Just an eth_getBalance. */
+        const pub = createPublicClient({ chain: mainnet, transport: http('https://rpc.brovider.xyz/1') });
         const wei = await pub.getBalance({ address: addr as Hex });
         if (!cancelled) setBalance(formatEther(wei));
       } catch (e) {
@@ -58,7 +58,7 @@ export default function Wallet(): React.ReactElement {
       }}>
         {address ? (
           <Image
-            source={{ uri: stampBoxAvatarUrl(address, 120) }}
+            source={{ uri: stampBoxAvatarUrl(address, 120, getPeerAvatarCb(address)) }}
             style={{ width: 60, height: 60, borderRadius: 999, backgroundColor: border }}
           />
         ) : (
