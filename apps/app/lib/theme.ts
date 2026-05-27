@@ -7,11 +7,12 @@
 import { useEffect, useState } from 'react';
 import { useColorScheme } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import {
+  THEME_STORAGE_KEY as STORAGE_KEY, isThemePreference,
+  type ThemePreference,
+} from '@stage-labs/metro-kit/theme';
 
-export type ThemePreference = 'light' | 'dark' | 'system';
-
-const STORAGE_KEY = 'app.theme';
-const VALID = new Set<ThemePreference>(['light', 'dark', 'system']);
+export type { ThemePreference };
 
 /** Cached preference — populated on first hook mount from SecureStore. Subsequent reads
  *  return synchronously so screens never flash the wrong theme. */
@@ -30,13 +31,13 @@ async function ensureLoaded(): Promise<void> {
   loaded = true;
   try {
     const v = await SecureStore.getItemAsync(STORAGE_KEY);
-    if (v && VALID.has(v as ThemePreference)) emit(v as ThemePreference);
+    if (isThemePreference(v)) emit(v);
   } catch { /* fall back to 'system' default */ }
 }
 
 /** Persist + broadcast a new theme preference. */
 export async function setThemePreference(p: ThemePreference): Promise<void> {
-  if (!VALID.has(p)) return;
+  if (!isThemePreference(p)) return;
   emit(p);
   try { await SecureStore.setItemAsync(STORAGE_KEY, p); } catch { /* best-effort */ }
 }

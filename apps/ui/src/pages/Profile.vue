@@ -4,7 +4,7 @@
 
 import { getOrCreateXmtpClient, shortAddress } from '../lib/xmtp';
 import { loadCachedProfile, readProfile, type SnapshotProfile } from '../lib/profile';
-import { avatarRenderUrl } from '@shared/profile/snapshot';
+import { avatarRenderUrl } from '@stage-labs/metro-client/profile/snapshot';
 
 const AVATAR_SIZE = 120;
 

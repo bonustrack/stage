@@ -7,7 +7,7 @@ import {
   peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap,
   getLastReadNs, shortAddress,
 } from './xmtp';
-import { previewOfXmtpContent } from '@shared/xmtp/humanize';
+import { previewOfXmtpContent } from '@stage-labs/metro-client/xmtp/humanize';
 
 export interface ChannelRow {
   convId: string;

@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { Alert, Image, Pressable, Text, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { getOrCreateXmtpClient, shortAddress } from '../../lib/xmtp';
-import { avatarRenderUrl } from '../../../_shared/profile/snapshot';
+import { avatarRenderUrl } from '@stage-labs/metro-client/profile/snapshot';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { usePushToken, type PushStatus } from '../../lib/push';
 import {

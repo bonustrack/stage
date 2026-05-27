@@ -1,22 +1,5 @@
-/** Shared event envelope shape used by the XMTP feed + bubble renderer. Mirrors
- *  apps/app/lib/types.ts so the two clients can talk the same language even though
- *  the web build never sees the daemon's event log. */
+/** Re-export of the shared event/message envelope so existing call sites in
+ *  apps/ui keep their `../lib/types` import path. The canonical definition
+ *  lives in @stage-labs/metro-client (shared with the mobile app). */
 
-export interface HistoryEntry {
-  id: string;
-  ts: string;
-  station: string;
-  line: string;
-  lineName?: string;
-  from: string;
-  fromName?: string;
-  to: string;
-  text?: string;
-  messageId?: string;
-  replyTo?: string;
-  display?: string;
-  payload?: unknown;
-  /** Optimistic (locally-sent, not yet confirmed by the network). Rendered at
-   *  reduced opacity until the send resolves, then flipped to normal. */
-  pending?: boolean;
-}
+export type { HistoryEntry } from '@stage-labs/metro-client/types';
