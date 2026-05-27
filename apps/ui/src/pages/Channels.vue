@@ -3,7 +3,7 @@
  *  Mirrors apps/app/app/(tabs)/index.tsx (search, stamp avatars, unread
  *  badges, persisted cache so the list renders before XMTP boots). */
 
-import { getOrCreateXmtpClient, createAskQuestionGroup } from '../lib/xmtp';
+import { getOrCreateXmtpClient, createAskQuestionGroup, ASK_QUESTION_MEMBERS, stampBoxAvatarUrl } from '../lib/xmtp';
 import { cachedRows, hydrateCachedRows } from '../lib/channelsCache';
 import { type ChannelRow as Row } from '../lib/channelsSummarize';
 import { startChannelStream, type ChannelStreamHandles } from '../lib/useChannelStream';
@@ -96,7 +96,6 @@ function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
 const view = ref<'home' | 'messages'>('home');
 function openDocs(): void { window.open('https://docs.snapshot.box', '_blank', 'noopener,noreferrer'); }
 const cardClass = 'w-full max-w-sm flex items-center gap-3 px-4 py-4 rounded-2xl text-left '
-  + 'bg-metro-surface-light dark:bg-metro-surface-dark '
   + 'border border-metro-border-light dark:border-metro-border-dark '
   + 'text-metro-head-light dark:text-metro-head-dark '
   + 'hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark transition-colors disabled:opacity-60';
@@ -139,6 +138,17 @@ const cardClass = 'w-full max-w-sm flex items-center gap-3 px-4 py-4 rounded-2xl
       <button type="button" :disabled="creatingAsk" :class="cardClass" @click="onAskPress">
         <HeroIcon name="chat" :size="24" class="shrink-0 text-metro-fg-light dark:text-metro-fg-dark" />
         <span class="flex-1 text-[17px] font-sans">{{ creatingAsk ? 'Creating group…' : 'Ask a question' }}</span>
+        <div class="flex items-center shrink-0">
+          <img
+            v-for="(addr, i) in ASK_QUESTION_MEMBERS"
+            :key="addr"
+            :src="stampBoxAvatarUrl(addr, 56)"
+            alt=""
+            class="w-7 h-7 rounded-full bg-metro-border-light dark:bg-metro-border-dark
+              border-2 border-metro-bg-light dark:border-metro-bg-dark"
+            :class="i === 0 ? '' : '-ml-2'"
+          />
+        </div>
       </button>
       <div v-if="error" class="text-xs text-metro-err mt-1">{{ error }}</div>
     </div>
