@@ -17,9 +17,9 @@ import {
 const APP_VERSION = Constants.expoConfig?.version ?? 'unknown';
 
 const THEME_OPTIONS: { value: ThemePreference; label: string }[] = [
+  { value: 'system', label: 'System' },
   { value: 'light', label: 'Light' },
   { value: 'dark', label: 'Dark' },
-  { value: 'system', label: 'System' },
 ];
 
 export default function Settings(): React.ReactElement {
@@ -119,7 +119,7 @@ export default function Settings(): React.ReactElement {
             );
           }}
           style={({ pressed }) => ({
-            padding: 12, borderRadius: 12,
+            padding: 12, borderRadius: 999,
             backgroundColor: pressed ? '#3a2530' : 'transparent',
             borderWidth: 1, borderColor: dark ? '#5c2231' : '#e9bbc4',
             alignItems: 'center',
