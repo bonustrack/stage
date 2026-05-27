@@ -67,6 +67,10 @@ export function MessengerComposer({
   /** Mic press timestamp — distinguishes push-to-talk (hold ≥ threshold →
    *  release stops) from a tap (click to start, then tap ✓ to stop). */
   const micPressStart = useRef(0);
+  /** Synchronous mirror of `recording` — the mic's onPressOut needs to know we're
+   *  recording without waiting for the async state update, so push-to-talk release
+   *  reliably stops. */
+  const recordingRef = useRef(false);
   /** Restore draft on mount + persist on change (debounced). Skip the persist
    *  on the very first restore so we don'​t clobber a fresher save. */
   /** Per-conversation draft: restore on mount, persist (debounced) on change,
@@ -149,10 +153,17 @@ export function MessengerComposer({
     } catch (e) { setErr((e as Error).message); }
   };
 
+  /** If a stop/cancel arrives while startRec is still preparing (recRef not set
+   *  yet), we stash the intent here and honour it once start finishes. */
+  const pendingStop = useRef<null | 'send' | 'cancel'>(null);
+
   const startRec = async (): Promise<void> => {
+    if (recordingRef.current) return;
     setErr(null);
+    recordingRef.current = true;
+    pendingStop.current = null;
     const perm = await Audio.requestPermissionsAsync();
-    if (!perm.granted) { Alert.alert('Mic permission denied'); return; }
+    if (!perm.granted) { recordingRef.current = false; Alert.alert('Mic permission denied'); return; }
     await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
     const rec = new Audio.Recording();
     await rec.prepareToRecordAsync({ ...Audio.RecordingOptionsPresets.HIGH_QUALITY, isMeteringEnabled: true });
@@ -170,20 +181,28 @@ export function MessengerComposer({
     setRecording(true);
     setRecordSecs(0);
     recTimerRef.current = setInterval(() => { setRecordSecs(s => s + 1); }, 1000);
+    /** A release/cancel that landed mid-prepare — honour it now that we're live. */
+    if (pendingStop.current === 'cancel') void cancelRec();
+    else if (pendingStop.current === 'send') void stopRec();
   };
 
-  /** Stop without sending (the ✕ in the recording pill). */
+  /** Stop without staging (the ✕ / slide-left cancel). */
   const cancelRec = async (): Promise<void> => {
-    const rec = recRef.current; if (!rec) return;
-    setRecording(false); recRef.current = null;
+    recordingRef.current = false;
+    const rec = recRef.current;
+    if (!rec) { pendingStop.current = 'cancel'; setRecording(false); return; }
+    setRecording(false); recRef.current = null; pendingStop.current = null;
     if (recTimerRef.current) { clearInterval(recTimerRef.current); recTimerRef.current = null; }
     setLevels([]);
     try { await rec.stopAndUnloadAsync(); } catch { /* ignore */ }
   };
 
+  /** Stop and stage the clip as a pending attachment in the composer (NOT auto-send). */
   const stopRec = async (): Promise<void> => {
-    const rec = recRef.current; if (!rec) return;
-    setRecording(false); recRef.current = null;
+    recordingRef.current = false;
+    const rec = recRef.current;
+    if (!rec) { pendingStop.current = 'send'; return; }
+    setRecording(false); recRef.current = null; pendingStop.current = null;
     if (recTimerRef.current) { clearInterval(recTimerRef.current); recTimerRef.current = null; }
     setLevels([]);
     await rec.stopAndUnloadAsync();
@@ -305,83 +324,79 @@ export function MessengerComposer({
           ))}
         </View>
       ) : null}
-      {recording ? (
-        /* Recording pill: cancel · live waveform · timer · send (Claude-style). */
-        <View style={{
-          flexDirection: 'row', alignItems: 'center', gap: 8,
-          backgroundColor: inputBg, borderRadius: 999, paddingHorizontal: 6, paddingVertical: 6,
-        }}>
-          <Pressable onPress={() => void cancelRec()} hitSlop={8}
-            style={{ width: 34, height: 34, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: dark ? '#3a3d42' : '#d0d3d8' }}>
-            <HeroIcon name="x" size={18} color={head} />
-          </Pressable>
-          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', height: 28, overflow: 'hidden' }}>
-            {[...Array(Math.max(0, 40 - levels.length)).fill(0.05), ...levels].slice(-40).map((lvl, i) => (
-              <View key={i} style={{ width: 3, marginHorizontal: 1, borderRadius: 2, height: Math.max(3, Math.round(lvl * 26)), backgroundColor: head, opacity: 0.85 }} />
-            ))}
-          </View>
-          <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', minWidth: 40, textAlign: 'center' }}>
-            {Math.floor(recordSecs / 60)}:{(recordSecs % 60).toString().padStart(2, '0')}
-          </Text>
-          <Pressable onPress={() => void stopRec()} hitSlop={8}
-            style={({ pressed }) => ({ width: 34, height: 34, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: pressed ? '#c0522e' : '#e2622f' })}>
-            <HeroIcon name="check" size={18} color="#ffffff" />
-          </Pressable>
-        </View>
-      ) : (
-        <>
-          {uploading || err ? (
-            <Text style={{ color: err ? '#d96868' : sub, fontSize: 12, paddingHorizontal: 14, paddingBottom: 4 }}>
-              {err ?? 'Uploading…'}
+      {uploading || err ? (
+        <Text style={{ color: err ? '#d96868' : sub, fontSize: 12, paddingHorizontal: 14, paddingBottom: 4 }}>
+          {err ?? 'Uploading…'}
+        </Text>
+      ) : null}
+      <View style={{ backgroundColor: inputBg, borderRadius: 10, padding: 10 }}>
+        {/** Top slot: live waveform + timer while recording, else the textarea. The
+         *   button row (incl. the mic) below stays mounted across both states, so a
+         *   push-to-talk press→release gesture isn't interrupted by a UI swap. */}
+        {recording ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', height: 28, paddingHorizontal: 4 }}>
+            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', height: 28, overflow: 'hidden' }}>
+              {[...Array(Math.max(0, 40 - levels.length)).fill(0.05), ...levels].slice(-40).map((lvl, i) => (
+                <View key={i} style={{ width: 3, marginHorizontal: 1, borderRadius: 2, height: Math.max(3, Math.round(lvl * 26)), backgroundColor: head, opacity: 0.85 }} />
+              ))}
+            </View>
+            <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', minWidth: 40, textAlign: 'center' }}>
+              {Math.floor(recordSecs / 60)}:{(recordSecs % 60).toString().padStart(2, '0')}
             </Text>
-          ) : null}
-          <View style={{ backgroundColor: inputBg, borderRadius: 10, padding: 10 }}>
-            {/** Textarea wrapped so top+bottom fades can overlay it — shown only
-             *   once the content scrolls (tall), so short messages aren't faded. */}
-            <View style={{ position: 'relative' }}>
-              <TextInput
-                value={text} onChangeText={setText} placeholder="Ask Metro" placeholderTextColor={sub} multiline
-                onContentSizeChange={(e) => setTextareaH(e.nativeEvent.contentSize.height)}
-                style={{ color: head, fontFamily: 'Calibre-Medium', fontSize: 18, lineHeight: 23, minHeight: 24, maxHeight: 140, paddingHorizontal: 8, paddingTop: 4, paddingBottom: 8, textAlignVertical: 'top' }}
-              />
-              {textareaH > 132 ? (
-                <>
-                  <ComposerGradient bg={inputBg} direction="up" top={0} height={24} />
-                  <ComposerGradient bg={inputBg} direction="down" bottom={0} height={24} />
-                </>
-              ) : null}
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <Btn icon={attachMenuOpen ? 'x' : 'plus'} onPress={() => setAttachMenuOpen(o => !o)} />
-              <View style={{ flex: 1 }} />
-              {/** Two ways to record: (1) press-hold the mic to record, release to
-               *   stop (push-to-talk); (2) a quick tap starts recording and the ✓ in
-               *   the pill stops it. onPressIn starts; onPressOut stops only if held. */}
-              <Pressable
-                onPressIn={() => { micPressStart.current = Date.now(); if (!recording) void startRec(); }}
-                onPressOut={() => { if (Date.now() - micPressStart.current >= 350) void stopRec(); }}
-                style={({ pressed }) => ({
-                  width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
-                  backgroundColor: pressed ? chipBg : 'transparent',
-                })}
-              >
-                <HeroIcon name="microphone" size={22} color={fg} />
-              </Pressable>
-              {/** No loading spinner — the optimistic bubble appears + the input
-               *   clears instantly on tap, so sending feels immediate; the actual
-               *   publish happens in the background. */}
-              <Pressable onPress={() => void send()} disabled={!canSend}
-                style={({ pressed }) => ({
-                  backgroundColor: dark ? (pressed ? '#cccccc' : '#ffffff') : (pressed ? '#333333' : '#000000'),
-                  opacity: canSend ? 1 : 0.45,
-                  width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
-                })}>
-                <HeroIcon name="send" size={20} color={dark ? '#000' : '#fff'} />
-              </Pressable>
-            </View>
           </View>
-        </>
-      )}
+        ) : (
+          <View style={{ position: 'relative' }}>
+            <TextInput
+              value={text} onChangeText={setText} placeholder="Ask Metro" placeholderTextColor={sub} multiline
+              onContentSizeChange={(e) => setTextareaH(e.nativeEvent.contentSize.height)}
+              style={{ color: head, fontFamily: 'Calibre-Medium', fontSize: 18, lineHeight: 23, minHeight: 24, maxHeight: 140, paddingHorizontal: 8, paddingTop: 4, paddingBottom: 8, textAlignVertical: 'top' }}
+            />
+            {textareaH > 132 ? (
+              <>
+                <ComposerGradient bg={inputBg} direction="up" top={0} height={24} />
+                <ComposerGradient bg={inputBg} direction="down" bottom={0} height={24} />
+              </>
+            ) : null}
+          </View>
+        )}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+          {/** Left: cancel (✕) while recording, else the attach (+) menu toggle. */}
+          {recording
+            ? <Btn icon="x" onPress={() => void cancelRec()} />
+            : <Btn icon={attachMenuOpen ? 'x' : 'plus'} onPress={() => setAttachMenuOpen(o => !o)} />}
+          <View style={{ flex: 1 }} />
+          {/** Mic — both record flows, mounted across recording so the gesture survives:
+           *   • tap to start → tap again (or the ✓) to stop+stage;
+           *   • press-hold to record → release (held ≥350ms) to stop+stage.
+           *   The clip lands as a PENDING attachment in the composer, not auto-sent. */}
+          <Pressable
+            onPressIn={() => { micPressStart.current = Date.now(); if (recordingRef.current) void stopRec(); else void startRec(); }}
+            onPressOut={() => { if (recordingRef.current && Date.now() - micPressStart.current >= 350) void stopRec(); }}
+            style={({ pressed }) => ({
+              width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
+              backgroundColor: recording ? '#e2622f' : (pressed ? chipBg : 'transparent'),
+            })}
+          >
+            <HeroIcon name="microphone" size={22} color={recording ? '#ffffff' : fg} />
+          </Pressable>
+          {/** Right: ✓ confirm (stop+stage) while recording, else send. */}
+          {recording ? (
+            <Pressable onPress={() => void stopRec()}
+              style={({ pressed }) => ({ backgroundColor: pressed ? '#cccccc' : (dark ? '#ffffff' : '#000000'), width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center' })}>
+              <HeroIcon name="check" size={20} color={dark ? '#000' : '#fff'} />
+            </Pressable>
+          ) : (
+            <Pressable onPress={() => void send()} disabled={!canSend}
+              style={({ pressed }) => ({
+                backgroundColor: dark ? (pressed ? '#cccccc' : '#ffffff') : (pressed ? '#333333' : '#000000'),
+                opacity: canSend ? 1 : 0.45,
+                width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
+              })}>
+              <HeroIcon name="send" size={20} color={dark ? '#000' : '#fff'} />
+            </Pressable>
+          )}
+        </View>
+      </View>
       {/** Attach menu — boxes below the composer with icon + label per source.
        *   Tap the + button in the composer row to toggle. */}
       {attachMenuOpen ? (
