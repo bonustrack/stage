@@ -302,17 +302,17 @@ export default function XmtpConversation(): React.ReactElement {
        *  absolute bg layers (the "1px missing"). The fade then ramps down to
        *  transparent over the content beneath. */}
       <ComposerGradient bg={bg} direction="up" top={52 + insets.top - 1} height={24} />
+      <KeyboardStickyView offset={{ opened: insets.bottom }}>
+      <View>
+      {/** Jump-to-bottom: anchored just above the composer (bottom:'100%') and inside
+       *   the KeyboardStickyView, so it tracks the composer's height + the keyboard
+       *   instead of a fixed offset that floated in the middle of a tall composer.
+       *   Bump the FlatList key to remount → inverted offset 0 = newest at the bottom. */}
       {showJump ? (
         <Pressable
-          onPress={() => {
-            /** Every variant of FlatList's scroll API trips reanimated #3670 on this
-             *  device. Sidestep the scroll API entirely: bump the `key` so the FlatList
-             *  remounts. Default offset on an inverted list = 0 = visual bottom = newest. */
-            setListEpoch(e => e + 1);
-            setShowJump(false);
-          }}
+          onPress={() => { setListEpoch(e => e + 1); setShowJump(false); }}
           style={{
-            position: 'absolute', alignSelf: 'center', bottom: 170, zIndex: 3,
+            position: 'absolute', alignSelf: 'center', bottom: '100%', marginBottom: 8, zIndex: 3,
             width: 36, height: 36, borderRadius: 999,
             backgroundColor: dark ? '#ffffff' : '#000000',
             alignItems: 'center', justifyContent: 'center',
@@ -321,7 +321,6 @@ export default function XmtpConversation(): React.ReactElement {
           <HeroIcon name="arrowDown" size={18} color={dark ? '#000000' : '#ffffff'} />
         </Pressable>
       ) : null}
-      <KeyboardStickyView offset={{ opened: insets.bottom }}>
       <MessengerComposer
         /** Daemon URL/token are unused in xmtp mode but the composer always expects
          *  the prop pair — pass empty strings. */
@@ -352,6 +351,7 @@ export default function XmtpConversation(): React.ReactElement {
           setOptimistic(prev => prev.filter(o => o.id !== localId));
         }}
       />
+      </View>
       </KeyboardStickyView>
       <BubbleActionMenu
         target={menuFor}
