@@ -9,12 +9,10 @@ requesting user as a member, so the user doesn't own it.
 - `POST /ask-question { address }` → `{ conversationId, line }` — creates a
   daemon-owned group via `metro call xmtp newGroup`.
 
-## Run (current setup, on the daemon's Mac)
-The server file lives at `~/.metro/api-server.ts` (this is a backup copy).
-
+## Run (on the daemon's Mac)
 ```sh
-# 1. API server on :8500
-nohup bun ~/.metro/api-server.ts > /tmp/metro-api.log 2>&1 &
+# 1. API server on :8500 (from this app)
+nohup bun apps/api/src/index.ts > /tmp/metro-api.log 2>&1 &   # or: bun --cwd apps/api start
 
 # 2. Cloudflare tunnel api.metro.box → :8500
 #    (tunnel "metro-api", id 12772a09-df11-4e29-b880-1dc63a09bad1, DNS routed on the metro.box zone)
