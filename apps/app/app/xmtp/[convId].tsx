@@ -317,7 +317,7 @@ export default function XmtpConversation(): React.ReactElement {
         >
           <HeaderAvatar peerAddr={peerAddr} memberAddrs={memberAddrs} groupImage={groupImage} border={dark ? '#282a2d' : '#e4e4e5'} />
           <Text style={{ color: head, fontSize: 19, fontFamily: 'Calibre-Semibold', flex: 1 }} numberOfLines={1}>
-            {isGroup ? (groupName || 'Untitled group')
+            {isGroup ? (groupName === null ? '' : (groupName || 'Untitled group'))
               : peerAddr ? (getPeerName(peerAddr) ?? `${peerAddr.slice(0, 6)}…${peerAddr.slice(-4)}`) : ''}
           </Text>
         </Pressable>
