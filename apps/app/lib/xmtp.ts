@@ -44,6 +44,7 @@ import {
   type AccountRecord,
 } from './accounts';
 import { humanizeGroupUpdated, type GroupUpdatedContent } from '../../_shared/xmtp/humanize';
+import { getWcSign } from './wcSigner';
 
 /** Build the XMTP-RN `Signer` adapter for a viem `PrivateKeyAccount`.
  *  Shape pulled from `node_modules/@xmtp/react-native-sdk/src/lib/Signer.ts`:
@@ -71,7 +72,20 @@ function signerForAccount(account: PrivateKeyAccount): Signer {
  *  installation key, so a registered account never re-prompts the wallet. */
 async function signerForRecord(rec: AccountRecord): Promise<Signer> {
   if (rec.type === 'walletconnect') {
-    throw new Error('WalletConnect signing is not available in this build yet.');
+    const wcSign = getWcSign();
+    if (!wcSign) throw new Error('Reconnect your wallet to finish setting up this account.');
+    return {
+      getIdentifier: async () => new PublicIdentity(rec.address, 'ETHEREUM'),
+      getChainId: () => 1,
+      getBlockNumber: () => undefined,
+      signerType: () => 'EOA',
+      signMessage: async (message: string) => {
+        /** Routes to the connected wallet via WalletConnect (personal_sign).
+         *  Only invoked once — when registering this account's XMTP installation. */
+        const signature = await wcSign(message);
+        return { signature };
+      },
+    };
   }
   const acct = await getViemAccount(rec.id);
   if (!acct) throw new Error('No signing key for this account.');
