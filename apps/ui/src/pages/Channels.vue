@@ -109,17 +109,7 @@ const cardClass = 'w-full max-w-sm flex items-center gap-3 px-4 py-4 rounded-2xl
     <div class="h-[56px] box-border flex items-center shrink-0 gap-1 pl-2 pr-1
       bg-metro-bg-light dark:bg-metro-bg-dark
       border-b border-metro-border-light dark:border-metro-border-dark">
-      <button
-        v-if="view === 'messages'"
-        type="button"
-        class="px-2 py-2 text-metro-fg-light dark:text-metro-fg-dark"
-        title="Back"
-        @click="view = 'home'"
-      >
-        <HeroIcon name="arrowLeft" :size="20" />
-      </button>
-      <span class="flex-1 font-head text-[17px] text-metro-head-light dark:text-metro-head-dark"
-        :class="view === 'messages' ? '' : 'pl-2'">
+      <span class="flex-1 font-head text-[17px] text-metro-head-light dark:text-metro-head-dark pl-2">
         {{ view === 'messages' ? 'Messages' : 'Home' }}
       </span>
       <button
@@ -144,19 +134,11 @@ const cardClass = 'w-full max-w-sm flex items-center gap-3 px-4 py-4 rounded-2xl
       </button>
     </div>
 
-    <!-- HOME: three action cards (Ask a question / Messages / Docs). -->
+    <!-- HOME: the "Ask a question" action card. Messages/Docs live in the footer nav. -->
     <div v-if="view === 'home'" class="flex-1 flex flex-col items-center justify-center gap-3 px-6">
       <button type="button" :disabled="creatingAsk" :class="cardClass" @click="onAskPress">
         <HeroIcon name="chat" :size="24" class="shrink-0 text-metro-fg-light dark:text-metro-fg-dark" />
         <span class="flex-1 text-[17px] font-sans">{{ creatingAsk ? 'Creating group…' : 'Ask a question' }}</span>
-      </button>
-      <button type="button" :class="cardClass" @click="view = 'messages'">
-        <HeroIcon name="list" :size="24" class="shrink-0 text-metro-fg-light dark:text-metro-fg-dark" />
-        <span class="flex-1 text-[17px] font-sans">Messages</span>
-      </button>
-      <button type="button" :class="cardClass" @click="openDocs">
-        <HeroIcon name="document" :size="24" class="shrink-0 text-metro-fg-light dark:text-metro-fg-dark" />
-        <span class="flex-1 text-[17px] font-sans">Docs</span>
       </button>
       <div v-if="error" class="text-xs text-metro-err mt-1">{{ error }}</div>
     </div>
@@ -206,5 +188,29 @@ const cardClass = 'w-full max-w-sm flex items-center gap-3 px-4 py-4 rounded-2xl
         </li>
       </ul>
     </template>
+
+    <!-- Footer nav (Intercom-style): Home (default) / Messages / Docs. -->
+    <div class="shrink-0 flex items-stretch border-t border-metro-border-light dark:border-metro-border-dark
+      bg-metro-bg-light dark:bg-metro-bg-dark">
+      <button type="button" class="flex-1 flex flex-col items-center gap-1 py-2.5 transition-colors"
+        :class="view === 'home' ? 'text-metro-head-light dark:text-metro-head-dark' : 'text-metro-sub-light dark:text-metro-sub-dark'"
+        @click="view = 'home'">
+        <HeroIcon name="home" :size="22" />
+        <span class="text-[11px] font-sans">Home</span>
+      </button>
+      <button type="button" class="flex-1 flex flex-col items-center gap-1 py-2.5 transition-colors"
+        :class="view === 'messages' ? 'text-metro-head-light dark:text-metro-head-dark' : 'text-metro-sub-light dark:text-metro-sub-dark'"
+        @click="view = 'messages'">
+        <HeroIcon name="list" :size="22" />
+        <span class="text-[11px] font-sans">Messages</span>
+      </button>
+      <button type="button"
+        class="flex-1 flex flex-col items-center gap-1 py-2.5 text-metro-sub-light dark:text-metro-sub-dark
+          hover:text-metro-head-light dark:hover:text-metro-head-dark transition-colors"
+        @click="openDocs">
+        <HeroIcon name="document" :size="22" />
+        <span class="text-[11px] font-sans">Docs</span>
+      </button>
+    </div>
   </div>
 </template>
