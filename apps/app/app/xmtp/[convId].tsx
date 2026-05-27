@@ -12,13 +12,13 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { MessengerBubble } from '../../components/MessengerBubble';
 import { usePeerProfiles, getPeerName, getPeerAvatar } from '../../lib/peerProfiles';
+import { useConvMeta } from '../../lib/useConvMeta';
 import { avatarRenderUrl } from '../../../_shared/profile/snapshot';
 import { MessengerComposer } from '../../components/MessengerComposer';
 import { ComposerGradient } from '../../components/ComposerGradient';
 import { HeroIcon } from '../../components/HeroIcon';
 import {
   XMTP_USER_PREFIX, lineOfConv, useXmtpFeed, xmtpReact, xmtpReply,
-  convOfLine, peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap,
   stampBoxAvatarUrl,
 } from '../../lib/xmtp';
 import { markConvRead } from '../../lib/channelsCache';
@@ -114,19 +114,10 @@ export default function XmtpConversation(): React.ReactElement {
   /** Optimistic outbound entries — rendered immediately on send, dropped once the composer
    *  resolves its send promise (XMTP self-sends don't always come back via streamMessages). */
   const [optimistic, setOptimistic] = useState<HistoryEntry[]>([]);
-  /** Per-conversation member addresses, resolved once on mount. `peerAddr` is
-   *  set for DMs (single avatar), `memberAddrs` for groups (stacked).
-   *  `inboxToAddr` lets the bubble look up the sender's eth address for the
-   *  Discord-style row avatar. */
-  const [peerAddr, setPeerAddr] = useState<string | null>(null);
-  const [memberAddrs, setMemberAddrs] = useState<string[]>([]);
-  const [inboxToAddr, setInboxToAddr] = useState<Record<string, string>>({});
-  /** null = not yet fetched, '' = fetched but no name set, other = the name. */
-  const [groupName, setGroupName] = useState<string | null>(null);
-  const [groupImage, setGroupImage] = useState('');
-  /** `isGroup` gates the title affordance (tap → /group/[convId]). DMs don't
-   *  show a title since there's no group name to display or edit. */
-  const [isGroup, setIsGroup] = useState(false);
+  /** Conversation metadata via TanStack Query — cached by convId so the topnav
+   *  title + avatar render instantly on the second open (groupName: null = not
+   *  resolved, '' = no name; isGroup gates the title→/group affordance). */
+  const { peerAddr, memberAddrs, inboxToAddr, groupName, groupImage, isGroup } = useConvMeta(convId);
   const senderEthOf = useCallback((from: string): string | null => {
     if (!from.startsWith(XMTP_USER_PREFIX)) return null;
     const inboxId = from.slice(XMTP_USER_PREFIX.length);
@@ -135,31 +126,6 @@ export default function XmtpConversation(): React.ReactElement {
 
   /** Resolve peer + member profiles → DM display name + avatar cache-busters. */
   const profilesVersion = usePeerProfiles([peerAddr, ...memberAddrs]);
-  useEffect(() => {
-    if (!convId) return;
-    let cancelled = false;
-    void (async (): Promise<void> => {
-      const conv = await convOfLine(activeLine);
-      if (cancelled || !conv) return;
-      const peer = await peerEthAddressOfDm(conv);
-      const fullMap = await memberInboxToAddressMap(conv);
-      if (cancelled) return;
-      setInboxToAddr(fullMap);
-      if (peer) { setPeerAddr(peer); return; }
-      setIsGroup(true);
-      const [members, name, image] = await Promise.all([
-        groupMemberEthAddresses(conv),
-        (conv as unknown as { name?: () => Promise<string> }).name?.() ?? Promise.resolve(''),
-        (conv as unknown as { imageUrl?: () => Promise<string> }).imageUrl?.().catch(() => '') ?? Promise.resolve(''),
-      ]);
-      if (!cancelled) {
-        setMemberAddrs(members);
-        setGroupName(name ?? '');
-        setGroupImage(image ?? '');
-      }
-    })();
-    return (): void => { cancelled = true; };
-  }, [activeLine, convId]);
 
   const insets = useSafeAreaInsets();
   /** Reanimated-driven keyboard offset shared with the composer's KeyboardStickyView,
