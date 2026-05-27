@@ -339,10 +339,16 @@ export function MessengerBubble({
         delayLongPress={300}
         style={{
           flexDirection: 'column',
-          paddingHorizontal: 0, paddingVertical: 0,
-          borderRadius: replyTarget ? 8 : 0,
-          borderWidth: replyTarget ? 1.5 : (unread ? 1.5 : 0),
-          borderColor: replyTarget ? '#c0a06e' : (unread ? (dark ? '#ffffff' : '#000000') : 'transparent'),
+          /** Permalink/reply jump target: highlight with a subtly lighter background
+           *  (~10% toward white) + padding, NOT an orange border. */
+          paddingHorizontal: replyTarget ? 8 : 0,
+          paddingVertical: replyTarget ? 6 : 0,
+          borderRadius: replyTarget ? 10 : 0,
+          backgroundColor: replyTarget
+            ? (dark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.05)')
+            : 'transparent',
+          borderWidth: (unread && !replyTarget) ? 1.5 : 0,
+          borderColor: (unread && !replyTarget) ? (dark ? '#ffffff' : '#000000') : 'transparent',
         }}
       >
         {replyPreview ? (
@@ -350,7 +356,7 @@ export function MessengerBubble({
             alignSelf: 'stretch', borderLeftWidth: 2, borderLeftColor: sub,
             paddingLeft: 6, marginBottom: 4, opacity: 0.7,
           }}>
-            <Text style={{ color: fg, fontSize: 12, fontStyle: 'italic' , fontFamily: 'Calibre-Medium'}} numberOfLines={2}>
+            <Text style={{ color: fg, fontSize: 14, fontStyle: 'italic' , fontFamily: 'Calibre-Medium'}} numberOfLines={2}>
               {replyPreview}
             </Text>
           </View>
