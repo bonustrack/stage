@@ -25,6 +25,7 @@ import {
   type AccountRecord,
 } from '../lib/accounts';
 import { setWcSign } from '../lib/wcSigner';
+import { bumpAccountEpoch } from '../lib/accountEpoch';
 
 const TYPE_LABEL: Record<AccountRecord['type'], string> = {
   generated: 'Generated',
@@ -107,14 +108,16 @@ export function AccountsManager({ dark }: { dark: boolean }): React.ReactElement
     if (id === activeId || busy) return;
     setBusy(true);
     try {
-      /** Just re-point the active account; the reload re-inits XMTP against it
-       *  (building/registering the inbox on boot) — no double build here. */
-      await setActiveAccountId(id);
-      reloadApp();
+      /** In-place switch — no full app reload (which on the dev client re-downloads
+       *  the whole JS bundle + flashes white). switchToAccount drops the cached
+       *  client + builds the target account's; bumpAccountEpoch re-inits the
+       *  channels list against it. Far snappier than reloadApp(). */
+      await switchToAccount(id);
+      bumpAccountEpoch();
+      await refresh();
     } catch (e) {
       Alert.alert('Switch failed', (e as Error).message);
-      setBusy(false);
-    }
+    } finally { setBusy(false); }
   }
 
   async function onGenerate(): Promise<void> {
