@@ -64,6 +64,9 @@ export function MessengerComposer({
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
   const recRef = useRef<Audio.Recording | null>(null);
   const recTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  /** Mic press timestamp — distinguishes push-to-talk (hold ≥ threshold →
+   *  release stops) from a tap (click to start, then tap ✓ to stop). */
+  const micPressStart = useRef(0);
   /** Restore draft on mount + persist on change (debounced). Skip the persist
    *  on the very first restore so we don'​t clobber a fresher save. */
   /** Per-conversation draft: restore on mount, persist (debounced) on change,
@@ -349,7 +352,19 @@ export function MessengerComposer({
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <Btn icon={attachMenuOpen ? 'x' : 'plus'} onPress={() => setAttachMenuOpen(o => !o)} />
               <View style={{ flex: 1 }} />
-              <Btn icon="microphone" onPress={() => void startRec()} />
+              {/** Two ways to record: (1) press-hold the mic to record, release to
+               *   stop (push-to-talk); (2) a quick tap starts recording and the ✓ in
+               *   the pill stops it. onPressIn starts; onPressOut stops only if held. */}
+              <Pressable
+                onPressIn={() => { micPressStart.current = Date.now(); if (!recording) void startRec(); }}
+                onPressOut={() => { if (Date.now() - micPressStart.current >= 350) void stopRec(); }}
+                style={({ pressed }) => ({
+                  width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: pressed ? chipBg : 'transparent',
+                })}
+              >
+                <HeroIcon name="microphone" size={22} color={fg} />
+              </Pressable>
               <Pressable onPress={() => void send()} disabled={!canSend}
                 style={({ pressed }) => ({
                   backgroundColor: dark ? (pressed ? '#cccccc' : '#ffffff') : (pressed ? '#333333' : '#000000'),
