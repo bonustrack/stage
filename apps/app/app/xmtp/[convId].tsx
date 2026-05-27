@@ -228,7 +228,7 @@ export default function XmtpConversation(): React.ReactElement {
         style={{ flex: 1 }}
         /** Inverted: paddingTop = visual BOTTOM (composer side), paddingBottom = visual TOP
          *  (nav side). Bump the top so the oldest message clears the absolute top-nav strip. */
-        contentContainerStyle={{ paddingTop: 0, paddingBottom: insets.top + 52 + 8 }}
+        contentContainerStyle={{ paddingTop: 24, paddingBottom: insets.top + 52 + 24 }}
         onScroll={(ev) => { setShowJump(ev.nativeEvent.contentOffset.y > 200); }}
         scrollEventThrottle={32}
         renderItem={({ item }) => (
@@ -299,7 +299,7 @@ export default function XmtpConversation(): React.ReactElement {
       {/** Fade strip below the top nav — mirrors the composer's top fade. Position it
        *  flush against the nav bottom (which sits at `44 + insets.top`), so the solid
        *  bg fades smoothly into the scrolling content beneath. */}
-      <ComposerGradient bg={bg} direction="up" top={52 + insets.top} height={16} />
+      <ComposerGradient bg={bg} direction="up" top={52 + insets.top} height={24} />
       {showJump ? (
         <Pressable
           onPress={() => {
