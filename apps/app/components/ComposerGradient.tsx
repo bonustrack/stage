@@ -1,5 +1,6 @@
 /** Top-fade or bottom-fade gradient strip via react-native-svg LinearGradient. */
 
+import { useId } from 'react';
 import { View } from 'react-native';
 import { Defs, LinearGradient, Rect, Stop, Svg } from 'react-native-svg';
 
@@ -15,7 +16,11 @@ interface Props {
 }
 
 export function ComposerGradient({ bg, direction = 'down', height = 20, top, bottom }: Props): React.ReactElement {
-  const id = `grad-${direction}`;
+  /** Unique id PER INSTANCE. react-native-svg registers gradient defs globally by
+   *  id, so a shared id (`grad-down`/`grad-up`) collides whenever more than one
+   *  fade is on screen (feed + composer + the two textarea fades) — the def
+   *  resolves to the wrong one and the fade stops reaching 0% opacity. */
+  const id = 'grad' + useId().replace(/[^a-zA-Z0-9]/g, '');
   const [topOpacity, bottomOpacity] = direction === 'down' ? [0, 1] : [1, 0];
   return (
     <View pointerEvents="none" style={{
