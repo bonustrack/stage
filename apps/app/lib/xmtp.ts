@@ -43,7 +43,7 @@ import {
   loadAccounts, setActiveAccountId, markRegistered, removeAccount, clearAllAccounts,
   type AccountRecord,
 } from './accounts';
-import { humanizeGroupUpdated, type GroupUpdatedContent } from '@stage-labs/metro-client/xmtp/humanize';
+import { humanizeGroupUpdated, type GroupUpdatedContent } from '@metro-labs/client/xmtp/humanize';
 import { getWcSign } from './wcSigner';
 
 /** Build the XMTP-RN `Signer` adapter for a viem `PrivateKeyAccount`.

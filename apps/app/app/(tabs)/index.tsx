@@ -27,8 +27,8 @@ import {
 import { usePeerProfiles, getPeerAvatarCb, getPeerName } from '../../lib/peerProfiles';
 import { HeroIcon } from '../../components/HeroIcon';
 import { hasDraft, useDraftsVersion } from '../../lib/drafts';
-import { previewOfXmtpContent } from '@stage-labs/metro-client/xmtp/humanize';
-import { avatarRenderUrl } from '@stage-labs/metro-client/profile/snapshot';
+import { previewOfXmtpContent } from '@metro-labs/client/xmtp/humanize';
+import { avatarRenderUrl } from '@metro-labs/client/profile/snapshot';
 import { Spinner } from '../../components/Spinner';
 
 interface Row {

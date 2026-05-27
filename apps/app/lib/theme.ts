@@ -10,7 +10,7 @@ import * as SecureStore from 'expo-secure-store';
 import {
   THEME_STORAGE_KEY as STORAGE_KEY, isThemePreference,
   type ThemePreference,
-} from '@stage-labs/metro-kit/theme';
+} from '@metro-labs/kit/theme';
 
 export type { ThemePreference };
 

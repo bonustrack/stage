@@ -2,8 +2,8 @@
 /**
  * Extends Expo's Metro config for the bun monorepo:
  * - accept `.woff2` as a bundled asset (Calibre fonts under assets/fonts/)
- * - watch the repo root so the workspace packages (@stage-labs/metro-client,
- *   @stage-labs/metro-kit under ../../packages/*) resolve and hot-reload
+ * - watch the repo root so the workspace packages (@metro-labs/client,
+ *   @metro-labs/kit under ../../packages/*) resolve and hot-reload
  * - resolve modules from both the app-local and the hoisted root node_modules
  */
 const path = require('path');

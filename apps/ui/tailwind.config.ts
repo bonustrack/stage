@@ -1,7 +1,7 @@
 import type { Config } from 'tailwindcss';
-import { colors as metro, fontFamily } from '@stage-labs/metro-kit/tokens';
+import { colors as metro, fontFamily } from '@metro-labs/kit/tokens';
 
-/** The `metro.*` palette + font stacks come from @stage-labs/metro-kit so the */
+/** The `metro.*` palette + font stacks come from @metro-labs/kit so the */
 /** React Native app (apps/app) and this web shell share one source of truth. */
 const config: Config = {
   content: ['./index.html', './src/**/*.{ts,vue}'],
