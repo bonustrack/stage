@@ -26,6 +26,12 @@ import { markConvRead } from '../../lib/channelsCache';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import type { HistoryEntry } from '../../lib/types';
 
+/** Whether an entry carries attachments — used to dedup an optimistic
+ *  attachment-only send (empty text) against its confirmed twin. */
+function hasAttachments(e: HistoryEntry): boolean {
+  return (((e.payload as { attachments?: unknown[] } | undefined)?.attachments?.length) ?? 0) > 0;
+}
+
 /** Reaction events decorate their target msg — fold them into per-message,
  *  per-emoji counts rather than rendering as standalone bubbles. */
 function reactionsByMessage(events: HistoryEntry[]): Map<string, Map<string, number>> {
@@ -145,23 +151,25 @@ export default function XmtpConversation(): React.ReactElement {
   /** Inverted FlatList expects newest-first → put optimistic at the top. Filter out
    *  optimistic entries inline so the streamed-confirmed bubble never renders
    *  alongside its pending twin even for one frame. */
+  /** An optimistic entry is "confirmed" once a live message from us lands within
+   *  30s that matches either its text or (for attachment-only sends, where text
+   *  is empty) its attachment presence — so optimistic images solidify into the
+   *  real bubble instead of lingering as a faded duplicate. */
+  const isConfirmed = useCallback((o: HistoryEntry): boolean =>
+    liveBubbles.some(e => e.from === myUri
+      && Math.abs(new Date(e.ts).getTime() - new Date(o.ts).getTime()) < 30_000
+      && (e.text === o.text || (hasAttachments(o) && hasAttachments(e)))),
+  [liveBubbles, myUri]);
   const allBubbles = useMemo(() => {
     if (!optimistic.length) return liveBubbles;
-    const live = optimistic.filter(o =>
-      !liveBubbles.some(e => e.from === myUri && e.text === o.text
-        && Math.abs(new Date(e.ts).getTime() - new Date(o.ts).getTime()) < 30_000),
-    );
-    return [...live, ...liveBubbles];
-  }, [liveBubbles, optimistic, myUri]);
+    return [...optimistic.filter(o => !isConfirmed(o)), ...liveBubbles];
+  }, [liveBubbles, optimistic, isConfirmed]);
   /** Once the live feed has caught up, drop the now-dead optimistic entries from state. */
   useEffect(() => {
     if (!optimistic.length) return;
-    const live = optimistic.filter(o =>
-      !liveBubbles.some(e => e.from === myUri && e.text === o.text
-        && Math.abs(new Date(e.ts).getTime() - new Date(o.ts).getTime()) < 30_000),
-    );
+    const live = optimistic.filter(o => !isConfirmed(o));
     if (live.length !== optimistic.length) setOptimistic(live);
-  }, [liveBubbles, optimistic, myUri]);
+  }, [liveBubbles, optimistic, isConfirmed]);
   /** Sticky-bottom for inbound messages: when a new entry arrives and the user is
    *  already at the visual bottom (`showJump=false` means scroll offset < 200px),
    *  remount the list so it lands at offset 0 again. Skip on initial mount. */
@@ -220,7 +228,7 @@ export default function XmtpConversation(): React.ReactElement {
         style={{ flex: 1 }}
         /** Inverted: paddingTop = visual BOTTOM (composer side), paddingBottom = visual TOP
          *  (nav side). Bump the top so the oldest message clears the absolute top-nav strip. */
-        contentContainerStyle={{ paddingTop: 4, paddingBottom: insets.top + 52 + 8 }}
+        contentContainerStyle={{ paddingTop: 0, paddingBottom: insets.top + 52 + 8 }}
         onScroll={(ev) => { setShowJump(ev.nativeEvent.contentOffset.y > 200); }}
         scrollEventThrottle={32}
         renderItem={({ item }) => (

@@ -357,10 +357,15 @@ export function MessengerBubble({
         ) : null}
         {atts.length > 0 ? <View style={{ alignSelf: 'stretch' }}>{atts.map((a, i) => {
           /** XMTP inline attachments carry bytes in `dataB64` — render via data: URI.
-           *  Messenger-station attachments carry a `url` — append the auth token query param. */
+           *  Optimistic (pending) attachments carry the local `file://` URI so the image
+           *  shows instantly while the send is in flight; full `http(s)`/`data` URIs render
+           *  as-is too. Messenger-station attachments carry a daemon `url` path — append the
+           *  auth token query param. */
           const fullUrl = a.dataB64
             ? `data:${a.mime ?? 'application/octet-stream'};base64,${a.dataB64}`
-            : `${daemonUrl.replace(/\/$/, '')}${a.url ?? ''}?token=${encodeURIComponent(token)}`;
+            : a.url && /^(file|https?|data):/.test(a.url)
+              ? a.url
+              : `${daemonUrl.replace(/\/$/, '')}${a.url ?? ''}?token=${encodeURIComponent(token)}`;
           return (
             <AttachmentView
               key={a.id ?? `${entry.id}-att-${i}`}
