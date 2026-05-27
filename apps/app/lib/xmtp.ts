@@ -186,8 +186,44 @@ export function shortAddress(addr: string): string {
   return addr.length > 10 ? `${addr.slice(0, 6)}…${addr.slice(-4)}` : addr;
 }
 
+/** inbox id → ETH address cache. An inbox's ETH identity is stable, so once
+ *  resolved we never hit the identity API for it again. This is the key to
+ *  staying under XMTP's read rate limit: channel re-summarizes (30s poll,
+ *  per-message stream, AppState resume, pull-to-refresh) reuse cached identities
+ *  instead of calling GetIdentityUpdates per member on every pass. */
+const inboxEthCache = new Map<string, string>();
+
+/** Resolve inbox ids → ETH address, cache-first. Only ids not already cached
+ *  hit the network (`inboxStates(true)`); cached ids cost zero reads. */
+async function resolveInboxEth(
+  client: Awaited<ReturnType<typeof getOrCreateXmtpClient>>,
+  ids: string[],
+): Promise<Record<string, string>> {
+  const out: Record<string, string> = {};
+  const missing: string[] = [];
+  for (const id of ids) {
+    const cached = inboxEthCache.get(id);
+    if (cached) out[id] = cached;
+    else missing.push(id);
+  }
+  if (missing.length > 0) {
+    const states = await client.inboxStates(
+      true,
+      missing as Parameters<typeof client.inboxStates>[1],
+    );
+    for (let i = 0; i < missing.length; i++) {
+      const eth = states[i]?.identities.find(it => it.kind === 'ETHEREUM');
+      if (eth?.identifier) {
+        out[missing[i]!] = eth.identifier;
+        inboxEthCache.set(missing[i]!, eth.identifier);
+      }
+    }
+  }
+  return out;
+}
+
 /** Resolve the peer's Ethereum address for a DM conversation. Returns null for
- *  groups or when the lookup fails (uncached peer, network blip, etc.). */
+ *  groups or when the lookup fails. Cached after the first resolve. */
 export async function peerEthAddressOfDm(conv: Conversation): Promise<string | null> {
   /** `version` is 'DM' | 'GROUP'; only DMs have a single peer. */
   if ((conv as unknown as { version?: string }).version !== 'DM') return null;
@@ -195,11 +231,8 @@ export async function peerEthAddressOfDm(conv: Conversation): Promise<string | n
   try {
     const inboxId = await dm.peerInboxId();
     const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
-    /** Same network-fetch reason as `groupMemberEthAddresses` — fresh peers
-     *  may not be in the cache yet on the first render after creation. */
-    const states = await client.inboxStates(true, [inboxId as Parameters<typeof client.inboxStates>[1][number]]);
-    const eth = states[0]?.identities.find(i => i.kind === 'ETHEREUM');
-    return eth?.identifier ?? null;
+    const map = await resolveInboxEth(client, [inboxId]);
+    return map[inboxId] ?? null;
   } catch { return null; }
 }
 
@@ -262,20 +295,7 @@ export async function memberInboxToAddressMap(conv: Conversation): Promise<Recor
       members: () => Promise<{ inboxId: string }[]>;
     }).members();
     const ids = members.map(m => m.inboxId);
-    if (ids.length === 0) return {};
-    /** `inboxStates` returns results in request order — pair them back to the inbox ids. */
-    const states = await client.inboxStates(
-      true,
-      ids as Parameters<typeof client.inboxStates>[1],
-    );
-    const map: Record<string, string> = {};
-    for (let i = 0; i < ids.length; i++) {
-      const s = states[i];
-      if (!s) continue;
-      const eth = s.identities.find(it => it.kind === 'ETHEREUM');
-      if (eth?.identifier) map[ids[i]!] = eth.identifier;
-    }
-    return map;
+    return await resolveInboxEth(client, ids);
   } catch (err) {
     if (process.env.NODE_ENV !== 'production') console.warn('memberInboxToAddressMap failed', (err as Error).message);
     return {};
@@ -296,21 +316,8 @@ export async function groupMemberEthAddresses(conv: Conversation): Promise<strin
     const otherIds = members
       .map(m => m.inboxId)
       .filter(id => id !== client.inboxId);
-    if (otherIds.length === 0) return [];
-    /** `refreshFromNetwork=true` — for newly-created groups the local inbox-state
-     *  cache may not yet have the Ethereum identity for every member, so a
-     *  cache-only lookup returns no addresses (and the row falls back to its
-     *  topic-suffix title like "proto" instead of a member count). */
-    const states = await client.inboxStates(
-      true,
-      otherIds as Parameters<typeof client.inboxStates>[1],
-    );
-    const addrs: string[] = [];
-    for (const s of states) {
-      const eth = s.identities.find(i => i.kind === 'ETHEREUM');
-      if (eth?.identifier) addrs.push(eth.identifier);
-    }
-    return addrs;
+    const map = await resolveInboxEth(client, otherIds);
+    return otherIds.map(id => map[id]).filter((a): a is string => !!a);
   } catch (err) {
     if (process.env.NODE_ENV !== 'production') console.warn('groupMemberEthAddresses failed', (err as Error).message);
     return [];
