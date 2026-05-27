@@ -144,6 +144,15 @@ function onActionCopy(): void {
   if (t && navigator.clipboard) void navigator.clipboard.writeText(t);
   actionTarget.value = null;
 }
+
+/** Shareable permalink to the message (hash-route form, matches the mobile app). */
+function onActionCopyLink(): void {
+  const msg = actionTarget.value;
+  if (msg && navigator.clipboard) {
+    void navigator.clipboard.writeText(`https://metro.box/#/xmtp/${convId.value}?m=${msg.id}`);
+  }
+  actionTarget.value = null;
+}
 </script>
 
 <template>
@@ -204,6 +213,7 @@ function onActionCopy(): void {
       @react="onReact(actionTarget!.id, $event)"
       @reply="onActionReply"
       @copy="onActionCopy"
+      @copy-link="onActionCopyLink"
     />
   </div>
 </template>
