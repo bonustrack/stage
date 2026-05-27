@@ -246,7 +246,9 @@ export function MessengerComposer({
     <View style={{ paddingHorizontal: 10, paddingTop: 0, paddingBottom: 14, backgroundColor: bg }}>
       {/** 24px fade sits directly above the composer (paddingTop is 0), so the
        *  messages fade straight into the composer over a uniform 24px ramp. */}
-      <ComposerGradient bg={bg} direction="down" top={-24} height={24} />
+      {/** left/right -10 cancels this View's paddingHorizontal:10 so the fade
+       *   bleeds to the screen edges instead of leaving un-faded side strips. */}
+      <ComposerGradient bg={bg} direction="down" top={-24} height={24} left={-10} right={-10} />
       {replyingTo ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingBottom: 6 }}>
           <View style={{ flex: 1, borderLeftWidth: 2, borderLeftColor: sub, paddingLeft: 8 }}>
