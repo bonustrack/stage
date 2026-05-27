@@ -2,7 +2,7 @@
  *  any avatar tap in the messenger; mirrors the Profile tab layout but
  *  without edit controls. */
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Image, Pressable, ScrollView, Text, View,
 } from 'react-native';

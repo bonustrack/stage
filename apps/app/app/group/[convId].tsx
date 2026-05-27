@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from 'react';
 import {
-  ActivityIndicator, Alert, FlatList, Image, Pressable, ScrollView, Text, TextInput, View,
+  ActivityIndicator, Alert, FlatList, Image, Pressable, Text, TextInput, View,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
