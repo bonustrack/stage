@@ -220,7 +220,7 @@ export default function XmtpConversation(): React.ReactElement {
         style={{ flex: 1 }}
         /** Inverted: paddingTop = visual BOTTOM (composer side), paddingBottom = visual TOP
          *  (nav side). Bump the top so the oldest message clears the absolute top-nav strip. */
-        contentContainerStyle={{ paddingTop: 12, paddingBottom: insets.top + 52 + 8 }}
+        contentContainerStyle={{ paddingTop: 4, paddingBottom: insets.top + 52 + 8 }}
         onScroll={(ev) => { setShowJump(ev.nativeEvent.contentOffset.y > 200); }}
         scrollEventThrottle={32}
         renderItem={({ item }) => (

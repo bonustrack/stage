@@ -237,8 +237,11 @@ export function MessengerComposer({
   );
   const bg = dark ? '#0e0f10' : '#ffffff';
   return (
-    <View style={{ paddingHorizontal: 10, paddingTop: 6, paddingBottom: 14, backgroundColor: bg }}>
-      <ComposerGradient bg={bg} direction="down" top={-16} height={16} />
+    <View style={{ paddingHorizontal: 10, paddingTop: 4, paddingBottom: 14, backgroundColor: bg }}>
+      {/** Fade ends exactly at the input box: spans 16px of feed above the
+       *  container + the 4px paddingTop, so there's no black band between the
+       *  faded messages and the composer. */}
+      <ComposerGradient bg={bg} direction="down" top={-16} height={20} />
       {replyingTo ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingBottom: 6 }}>
           <View style={{ flex: 1, borderLeftWidth: 2, borderLeftColor: sub, paddingLeft: 8 }}>
