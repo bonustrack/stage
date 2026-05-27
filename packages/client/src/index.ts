@@ -10,4 +10,3 @@ export * from './profile/snapshot';
 export * from './xmtp/humanize';
 export * from './embed/detect';
 export * from './stamp/resolve';
-export * from './charts/activity-buckets';

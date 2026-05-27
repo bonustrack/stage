@@ -12,7 +12,6 @@
     ".": "./src/index.ts",
     "./tokens": "./src/tokens.ts",
     "./icons": "./src/icons.ts",
-    "./stations": "./src/stations.ts",
     "./theme": "./src/theme.ts"
   },
   "scripts": {

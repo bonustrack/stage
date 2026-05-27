@@ -17,7 +17,6 @@ web. It's now a real workspace package so both apps import it the same way.
 | `@stage-labs/metro-client/xmtp/humanize` | `previewOfXmtpContent`, `humanizeGroupUpdated`, `shortContentType` |
 | `@stage-labs/metro-client/embed/detect` | `youtubeIdOf`, `mapCoordsOf`, `osmTileXY`, `osmTileUrl` |
 | `@stage-labs/metro-client/stamp/resolve` | `resolveDomain`, `lookupName`, `isAddressLike`, `isDomainLike`, `resolveSearchInputToAddress` |
-| `@stage-labs/metro-client/charts/activity-buckets` | `bucketByHour`, `BucketEvent`, `ActivityBucket` |
 
 The package root (`@stage-labs/metro-client`) re-exports everything.
 
