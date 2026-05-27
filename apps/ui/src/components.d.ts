@@ -27,6 +27,7 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SearchResolution: typeof import('./components/SearchResolution.vue')['default']
+    Spinner: typeof import('./components/Spinner.vue')['default']
     TabBar: typeof import('./components/TabBar.vue')['default']
     YouTubeEmbed: typeof import('./components/YouTubeEmbed.vue')['default']
   }
