@@ -21,8 +21,9 @@ interface Props {
   bottom?: number;
 }
 
-/** Slice count across the strip — 12 over a 24px strip (2px each) reads as smooth. */
-const SLICES = 12;
+/** Slice count across the strip — 16 over a 24px strip (1.5px each) reads as a
+ *  smooth ramp without visible banding. */
+const SLICES = 16;
 
 export function ComposerGradient({ bg, direction = 'down', height = 24, top, bottom }: Props): React.ReactElement {
   const sliceH = height / SLICES;
@@ -33,9 +34,12 @@ export function ComposerGradient({ bg, direction = 'down', height = 24, top, bot
       ...(bottom !== undefined ? { bottom } : {}),
     }}>
       {Array.from({ length: SLICES }, (_, i) => {
-        /** Slice midpoint as a 0→1 fraction, top→bottom. 'down' ramps opacity up
-         *  (transparent top → solid bottom); 'up' ramps it down. */
-        const t = (i + 0.5) / SLICES;
+        /** Slice position as a 0→1 fraction, top→bottom, hitting the EXACT
+         *  endpoints (t=0 and t=1) so the strip is fully transparent at one edge
+         *  and fully solid at the other — a true linear 0→100% ramp, no residual
+         *  tint over content. 'down' ramps opacity up (transparent top → solid
+         *  bottom); 'up' ramps it down. */
+        const t = i / (SLICES - 1);
         const opacity = direction === 'down' ? t : 1 - t;
         return <View key={i} style={{ height: sliceH, backgroundColor: bg, opacity }} />;
       })}
