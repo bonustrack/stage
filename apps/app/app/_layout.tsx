@@ -1,3 +1,6 @@
+/** WalletConnect/AppKit polyfills — must be the very first import in the app
+ *  entry (sets up crypto/networking globals it needs). */
+import '@walletconnect/react-native-compat';
 /** Hoisted side-effect import — installs the crypto.getRandomValues shim
  *  BEFORE any viem (and transitively any wallet/profile) module loads. */
 import '../lib/cryptoShim';
@@ -10,6 +13,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { useEffectiveColorScheme } from '../lib/theme';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { WalletConnectProvider } from '../components/WalletConnectProvider';
 
 /** App-wide TanStack Query client — caches request/response data (profiles,
  *  message history) with stale-while-revalidate + dedup. Live XMTP streams stay
@@ -56,6 +60,7 @@ export default function RootLayout(): React.ReactElement {
 
   return (
     <QueryClientProvider client={queryClient}>
+    <WalletConnectProvider>
     <GestureHandlerRootView style={{ flex: 1 }}>
       <KeyboardProvider>
       <StatusBar style={dark ? 'light' : 'dark'} />
@@ -70,6 +75,7 @@ export default function RootLayout(): React.ReactElement {
       </Stack>
       </KeyboardProvider>
     </GestureHandlerRootView>
+    </WalletConnectProvider>
     </QueryClientProvider>
   );
 }

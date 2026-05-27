@@ -13,12 +13,16 @@ import {
   TextInput, View,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
+import { useAppKit } from '@reown/appkit-wagmi-react-native';
+import { useAccount, useSignMessage } from 'wagmi';
 import { HeroIcon } from './HeroIcon';
-import { stampBoxAvatarUrl, shortAddress, deleteAccount } from '../lib/xmtp';
+import { stampBoxAvatarUrl, shortAddress, deleteAccount, switchToAccount } from '../lib/xmtp';
 import {
   loadAccounts, getActiveAccountId, setActiveAccountId, addGeneratedAccount,
-  importPrivateKey, getPrivateKey, canExportPrivateKey, type AccountRecord,
+  importPrivateKey, addWalletConnectAccount, getPrivateKey, canExportPrivateKey,
+  type AccountRecord,
 } from '../lib/accounts';
+import { setWcSign } from '../lib/wcSigner';
 
 const TYPE_LABEL: Record<AccountRecord['type'], string> = {
   generated: 'Generated',
@@ -49,6 +53,39 @@ export function AccountsManager({ dark }: { dark: boolean }): React.ReactElement
   const [importErr, setImportErr] = useState('');
   const [manageId, setManageId] = useState<string | null>(null);
   const [revealPk, setRevealPk] = useState<string | null>(null);
+
+  /** WalletConnect (Reown AppKit) — open() shows the wallet picker; the effect
+   *  below reacts once a wallet is connected. */
+  const { open } = useAppKit();
+  const { address: wcAddress, isConnected } = useAccount();
+  const { signMessageAsync } = useSignMessage();
+  const [wcPending, setWcPending] = useState(false);
+
+  useEffect(() => {
+    if (!wcPending || !isConnected || !wcAddress) return;
+    let cancelled = false;
+    void (async (): Promise<void> => {
+      try {
+        setBusy(true);
+        /** Register the sign fn xmtp.ts will call for the one-time installation
+         *  challenge; signMessageAsync routes personal_sign to the wallet. */
+        setWcSign(async (message: string) => signMessageAsync({ message, account: wcAddress }));
+        const rec = await addWalletConnectAccount(wcAddress);
+        /** Build + register this account's XMTP installation now (wallet prompts
+         *  personal_sign once). After the reload it's registered → Client.build,
+         *  no further prompts. */
+        await switchToAccount(rec.id);
+        if (!cancelled) { setWcPending(false); reloadApp(); }
+      } catch (e) {
+        if (!cancelled) {
+          setWcPending(false);
+          setBusy(false);
+          Alert.alert('WalletConnect setup failed', (e as Error).message);
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [wcPending, isConnected, wcAddress, signMessageAsync]);
 
   const refresh = useCallback(async (): Promise<void> => {
     const [list, active] = await Promise.all([loadAccounts(), getActiveAccountId()]);
@@ -209,7 +246,7 @@ export function AccountsManager({ dark }: { dark: boolean }): React.ReactElement
       <SheetModal visible={addOpen} onClose={() => setAddOpen(false)} bg={sheetBg} border={border} title="Add account" head={head}>
         <SheetButton label="Generate a new account" desc="Create a fresh wallet on this device" head={head} sub={sub} border={border} onPress={() => void onGenerate()} />
         <SheetButton label="Import private key" desc="Paste an existing wallet's private key" head={head} sub={sub} border={border} onPress={() => { setAddOpen(false); setImportErr(''); setImportText(''); setImportOpen(true); }} />
-        <SheetButton label="Connect with WalletConnect" desc="Coming in the next app update" head={head} sub={sub} border={border} onPress={() => { setAddOpen(false); Alert.alert('WalletConnect', 'WalletConnect login is being enabled in the next app build. For now, generate a new account or import a private key.'); }} />
+        <SheetButton label="Connect with WalletConnect" desc="Sign in with an existing wallet" head={head} sub={sub} border={border} onPress={() => { setAddOpen(false); setWcPending(true); open(); }} />
       </SheetModal>
 
       {/* Import private key */}
