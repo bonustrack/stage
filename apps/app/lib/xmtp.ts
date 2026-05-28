@@ -14,13 +14,15 @@
 import { useEffect, useState } from 'react';
 import { AppState } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
-import { Directory, Paths } from 'expo-file-system';
+import { Directory, File, Paths } from 'expo-file-system';
 import {
   Client, PublicIdentity,
   ReactionCodec, ReplyCodec, StaticAttachmentCodec, RemoteAttachmentCodec,
-  GroupUpdatedCodec,
+  MultiRemoteAttachmentCodec, GroupUpdatedCodec,
   type Conversation, type DecodedMessage, type ConversationVersion,
   type ReactionContent, type ReplyContent, type StaticAttachmentContent,
+  type MultiRemoteAttachmentContent, type RemoteAttachmentInfo,
+  type RemoteAttachmentMetadata, type EncryptedLocalAttachment,
   type Signer,
 } from '@xmtp/react-native-sdk';
 import type { PrivateKeyAccount } from 'viem/accounts';
@@ -35,6 +37,14 @@ const XMTP_CODECS = [
   new ReplyCodec(),
   new StaticAttachmentCodec(),
   new RemoteAttachmentCodec(),
+  /** MultiRemoteAttachmentCodec lets one message carry several encrypted-remote
+   *  attachments (`xmtp.org/multiRemoteStaticAttachment`). Without it registered,
+   *  `msg.content()` throws on inbound multi-attachment payloads and we'd fall
+   *  back to the "[…payload]" placeholder; on outbound it's needed so
+   *  `conv.send({ multiRemoteAttachment })` encodes. Pure JS registration — the
+   *  native module (already in @xmtp/react-native-sdk 5.7.0) supplies the
+   *  encrypt/decrypt primitives, so no new native dep / dev-client rebuild. */
+  new MultiRemoteAttachmentCodec(),
   new GroupUpdatedCodec(),
 ];
 import type { HistoryEntry } from './types';
@@ -572,6 +582,27 @@ export function envelopeOfXmtpMessage(msg: DecodedMessage, line: string): Histor
       payload: { contentType: typeId, attachments: [{ kind, mime: a.mimeType, name: a.filename, dataB64: a.data }] },
     };
   }
+  if (typeId === 'multiRemoteStaticAttachment' || typeId === 'multiRemoteAttachment') {
+    /** One message carrying N encrypted-remote attachments. The bytes live on
+     *  IPFS (ciphertext); each attachment is rendered as a `remote` placeholder
+     *  and lazily downloaded + decrypted by the bubble (`resolveRemoteAttachment`).
+     *  We surface the per-attachment metadata under `remote` so the renderer has
+     *  everything it needs without re-decoding the message. The MIME type isn't in
+     *  the metadata, so infer `kind` from the filename extension. */
+    const m = decoded as MultiRemoteAttachmentContent;
+    const attachments = (m.attachments ?? []).map((info, i) => {
+      const name = info.filename ?? `attachment-${i + 1}`;
+      const ext = name.split('.').pop()?.toLowerCase() ?? '';
+      const kind = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic'].includes(ext) ? 'image'
+        : ['m4a', 'mp3', 'wav', 'aac', 'ogg'].includes(ext) ? 'audio'
+          : ['mp4', 'mov', 'webm'].includes(ext) ? 'video' : 'file';
+      return { kind, name, remote: info };
+    });
+    const summary = attachments.length === 1
+      ? `[${attachments[0]!.kind}: ${attachments[0]!.name}]`
+      : `[${attachments.length} attachments]`;
+    return { ...base, text: summary, payload: { contentType: typeId, attachments } };
+  }
   /** Unknown / unsupported codec — render fallback if the codec provided one. */
   return { ...base, text: msg.fallback ?? `[${typeId} payload]`, payload: { contentType: typeId } };
 }
@@ -618,6 +649,93 @@ export async function xmtpSendAttachment(
   const c = conv as unknown as { sendAttachment?: (p: StaticAttachmentContent) => Promise<string> };
   if (typeof c.sendAttachment === 'function') return await c.sendAttachment(payload);
   return await conv.send({ attachment: payload });
+}
+
+/** Pineapple = Snapshot's IPFS pinning gateway. Reused from the avatar-upload
+ *  path (`lib/profile.ts`); attachments are encrypted client-side before upload,
+ *  so the public CID only ever exposes ciphertext. */
+const PINEAPPLE_UPLOAD_URL = 'https://pineapple.fyi/upload';
+/** Read gateway for fetching pinned content back. Mirrors `avatarRenderUrl`'s
+ *  `ipfs://` resolution in `@metro-labs/client/profile/snapshot`. */
+const IPFS_GATEWAY = 'https://snapshot.4everland.link/ipfs/';
+
+/** A locally-staged attachment ready to bundle into a multi-remote message.
+ *  `fileUri` must be a `file://` URI (XMTP's native `encryptAttachment` rejects
+ *  anything else). */
+export interface LocalAttachmentInput { fileUri: string; mimeType: string; filename: string }
+
+/** Upload an encrypted attachment's ciphertext to IPFS and return the public
+ *  HTTPS URL the recipient fetches from. Streams the file straight off disk via
+ *  RN FormData (no base64 round-trip) — same shape as `uploadAvatar`. */
+async function uploadEncryptedToIpfs(encryptedFileUri: string, filename: string): Promise<string> {
+  const form = new FormData();
+  form.append('file', { uri: encryptedFileUri, name: filename, type: 'application/octet-stream' } as unknown as Blob);
+  const res = await fetch(PINEAPPLE_UPLOAD_URL, { method: 'POST', body: form });
+  const json = await res.json().catch(() => ({})) as { result?: { cid?: string }; error?: { message?: string } };
+  if (json.error?.message) throw new Error(json.error.message);
+  const cid = json.result?.cid;
+  if (!cid) throw new Error('Pineapple returned no CID');
+  return `${IPFS_GATEWAY}${cid}`;
+}
+
+/** Send several attachments as ONE XMTP message using the multi-remote-attachment
+ *  content type. Each file is encrypted on-device (native `encryptAttachment`),
+ *  its ciphertext uploaded to IPFS, and the resulting URL + decryption metadata
+ *  bundled into a single `multiRemoteAttachment` payload. This replaces the old
+ *  "one inline StaticAttachment message per file" loop — recipients now get a
+ *  single message + there's no ~800 KB inline cap (the bytes ride IPFS, not the
+ *  MLS envelope). Returns the message id. */
+export async function xmtpSendMultiRemoteAttachment(
+  line: string, files: LocalAttachmentInput[],
+): Promise<string> {
+  if (files.length === 0) throw new Error('No attachments to send.');
+  const conv = await convOfLine(line);
+  if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
+  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+
+  const infos: RemoteAttachmentInfo[] = [];
+  for (const f of files) {
+    /** Native side requires a `file://` uri — picker results that hand back
+     *  `content://` (Android gallery) must be materialised first by the caller. */
+    const fileUri = f.fileUri.startsWith('file://') ? f.fileUri : `file://${f.fileUri.replace(/^file:\/+/, '/')}`;
+    const encrypted = await client.encryptAttachment({
+      fileUri, mimeType: f.mimeType, filename: f.filename,
+    });
+    const url = await uploadEncryptedToIpfs(encrypted.encryptedLocalFileUri, f.filename);
+    /** `buildMultiRemoteAttachmentInfo` stitches the upload URL onto the encryption
+     *  metadata (secret/salt/nonce/digest) the recipient needs to decrypt. */
+    infos.push(MultiRemoteAttachmentCodec.buildMultiRemoteAttachmentInfo(url, encrypted.metadata));
+  }
+
+  const payload: MultiRemoteAttachmentContent = { attachments: infos };
+  return await conv.send({ multiRemoteAttachment: payload });
+}
+
+/** Download + decrypt a single remote attachment to a local `file://` URI the RN
+ *  `Image`/audio player can render. Used by the bubble renderer when it hits a
+ *  `remote` attachment placeholder. The ciphertext is fetched from its IPFS URL,
+ *  written to the cache dir, then handed to the native `decryptAttachment` with
+ *  the metadata that travelled in the message. */
+export async function resolveRemoteAttachment(info: RemoteAttachmentInfo): Promise<{
+  fileUri: string; mimeType?: string; filename?: string;
+}> {
+  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  /** Unique cache filename so concurrent resolves don't collide. */
+  const tmpName = `xmtp-att-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.bin`;
+  const dest = new File(Paths.cache, tmpName);
+  if (dest.exists) try { dest.delete(); } catch { /* overwrite below */ }
+  await File.downloadFileAsync(info.url, dest, { idempotent: true });
+  const metadata: RemoteAttachmentMetadata = {
+    secret: info.secret, salt: info.salt, nonce: info.nonce,
+    contentDigest: info.contentDigest, contentLength: info.contentLength,
+    filename: info.filename,
+  };
+  const encrypted: EncryptedLocalAttachment = {
+    encryptedLocalFileUri: dest.uri.startsWith('file://') ? dest.uri : `file://${dest.uri.replace(/^file:\/+/, '/')}`,
+    metadata,
+  };
+  const decrypted = await client.decryptAttachment(encrypted);
+  return { fileUri: decrypted.fileUri, mimeType: decrypted.mimeType, filename: decrypted.filename };
 }
 
 export type XmtpFeedStatus = 'idle' | 'loading' | 'open' | 'error';

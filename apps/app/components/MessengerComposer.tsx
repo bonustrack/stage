@@ -13,7 +13,7 @@ import * as Location from 'expo-location';
 import { ComposerGradient } from './ComposerGradient';
 import { HeroIcon, type HeroIconName } from './HeroIcon';
 import { Avatar } from './Avatar';
-import { fileUriToBase64, xmtpReply, xmtpSendAttachment, xmtpSendText } from '../lib/xmtp';
+import { xmtpReply, xmtpSendMultiRemoteAttachment, xmtpSendText } from '../lib/xmtp';
 
 /** Composer-local representation of a staged attachment. `url` is a `file://` URI in xmtp
  *  mode (the only mode the mobile composer supports now). `id` is a client-side dedupe key. */
@@ -120,20 +120,16 @@ export function MessengerComposer({
   const upload = async (uri: string, mime: string, name?: string): Promise<void> => {
     setUploading(true);
     try {
-      /** Stage the local file URI and base64-encode at send time. The chip uses `url`
-       *  as a render hint (`file://...` works with `Image` source on RN), and `id` is
-       *  just a client-side dedupe key.
+      /** Stage the local file URI; it's encrypted + uploaded at send time (see
+       *  `send`). The chip uses `url` as a render hint (`file://...` works with
+       *  `Image` source on RN), and `id` is just a client-side dedupe key.
        *
-       *  Pre-flight the file size: libxmtp's native side silently drops oversize
-       *  attachments without raising a JS error (the send "succeeds" but the message
-       *  never publishes). Reject in the composer where the user sees the error
-       *  instead of staring at a ghost bubble. */
+       *  No inline size cap here anymore — attachments now ride the remote
+       *  (multi-remote-attachment) path: bytes are encrypted + pinned to IPFS,
+       *  not stuffed into the MLS envelope, so the old ~800 KB inline limit is
+       *  gone. We still read the size for the chip metadata. */
       const head = await fetch(uri);
       const blob = await head.blob();
-      const XMTP_INLINE_MAX = 800 * 1024;
-      if (blob.size > XMTP_INLINE_MAX) {
-        throw new Error(`Image is ${(blob.size / 1024).toFixed(0)} KB — XMTP inline limit ~${XMTP_INLINE_MAX / 1024} KB. Pick a smaller image (or take a screenshot/crop).`);
-      }
       const kind = mime.startsWith('image/') ? 'image'
         : mime.startsWith('audio/') ? 'audio'
           : mime.startsWith('video/') ? 'video' : 'file';
@@ -293,17 +289,28 @@ export function MessengerComposer({
     setSending(true); setErr(null);
     let sendErr: string | undefined;
     try {
-      /** Send text + each attachment as its own typed XMTP message. The body is sent as
-       *  a `reply` when there's a `replyingTo`; standalone attachments go as plain
-       *  `attachment` messages (replies-with-attachments would need a ReplyContent
-       *  wrapping an attachment, not v1). */
+      /** Send the text body first (as a `reply` when there's a `replyingTo`,
+       *  else plain text), then ALL staged attachments as ONE multi-remote
+       *  attachment message — each file is encrypted on-device + its ciphertext
+       *  pinned to IPFS, and the references bundled into a single message. This
+       *  replaces the previous "one inline StaticAttachment message per file"
+       *  loop, so a multi-image/voice/file send lands as a single bubble.
+       *  (Replies-with-attachments would need a ReplyContent wrapping the
+       *  multi-attachment, not v1 — the text reply + attachment message stay
+       *  separate.) */
       if (body) {
         if (sendingReplyTo) await xmtpReply(xmtpLine, sendingReplyTo, body);
         else await xmtpSendText(xmtpLine, body);
       }
-      for (const a of sendingAttachments) {
-        const dataB64 = await fileUriToBase64(a.url);
-        await xmtpSendAttachment(xmtpLine, a.name ?? a.id, a.mime, dataB64);
+      if (sendingAttachments.length > 0) {
+        await xmtpSendMultiRemoteAttachment(
+          xmtpLine,
+          sendingAttachments.map(a => ({
+            fileUri: a.url,
+            mimeType: a.mime,
+            filename: a.name ?? a.id,
+          })),
+        );
       }
     } catch (e) { sendErr = (e as Error).message; setErr(sendErr); }
     finally {

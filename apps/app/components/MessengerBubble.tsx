@@ -1,8 +1,8 @@
 /** Discord-style messenger row: every message left-aligned, avatar at the start,
  *  no colored bubble even for the local user's own messages. */
 
-import { useMemo, useRef, useState } from 'react';
-import { Animated, Linking, PanResponder, Pressable, Text, TextInput, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Animated, Linking, PanResponder, Pressable, Text, TextInput, View } from 'react-native';
 import { getPeerAvatarCb } from '../lib/peerProfiles';
 import Markdown, { MarkdownIt } from 'react-native-markdown-display';
 import { HeroIcon } from './HeroIcon';
@@ -11,7 +11,9 @@ import { MessengerImageAttachment } from './MessengerImageAttachment';
 import { YouTubeEmbed, LocationEmbed } from './MediaEmbeds';
 import { mapCoordsOf, youtubeIdOf } from '../lib/embedDetect';
 import { Avatar } from './Avatar';
+import { resolveRemoteAttachment } from '../lib/xmtp';
 import type { HistoryEntry } from '../lib/types';
+import type { RemoteAttachmentInfo } from '@xmtp/react-native-sdk';
 
 const REACT_PRESETS = ['👍', '❤️', '😂', '😮', '🔥', '🎉'];
 /** `linkify` + `breaks` turn bare URLs into tappable links and treat `\n` as a line
@@ -19,10 +21,12 @@ const REACT_PRESETS = ['👍', '❤️', '😂', '😮', '🔥', '🎉'];
  *  module scope — the lib re-parses input each render anyway. */
 const mdParser = MarkdownIt({ typographer: false, linkify: true, breaks: true });
 
-/** Shape covers both messenger-station attachments (id+url, served by the daemon) and XMTP
- *  inline attachments (dataB64 carries the raw bytes — no URL exists). */
+/** Shape covers messenger-station attachments (id+url, served by the daemon), XMTP
+ *  inline attachments (dataB64 carries the raw bytes — no URL exists), and XMTP
+ *  multi-remote attachments (`remote` carries the IPFS URL + decryption metadata;
+ *  the bytes are fetched + decrypted lazily by `RemoteAttachmentResolver`). */
 interface Attachment {
-  id?: string; url?: string; dataB64?: string;
+  id?: string; url?: string; dataB64?: string; remote?: RemoteAttachmentInfo;
   kind: string; mime?: string; size?: number; name?: string;
 }
 
@@ -57,6 +61,61 @@ function AttachmentView({ att, fullUrl, fg, sub, dark }: {
       <Text style={{ color: fg, fontSize: 13, flexShrink: 1 , fontFamily: 'Calibre-Medium'}} numberOfLines={1}>{label}</Text>
     </Pressable>
   );
+}
+
+/** Remote (multi-remote) attachment: ciphertext lives on IPFS. Download +
+ *  decrypt on mount to a local `file://` URI, then hand off to the regular
+ *  `AttachmentView`. Shows a spinner while resolving and a tappable retry chip
+ *  on failure (gateway hiccup / decrypt error). */
+function RemoteAttachmentResolver({ att, fg, sub, dark }: {
+  att: Attachment; fg: string; sub: string; dark: boolean;
+}): React.ReactElement {
+  const [uri, setUri] = useState<string | null>(null);
+  const [mime, setMime] = useState<string | undefined>(att.mime);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    if (!att.remote) return;
+    let cancelled = false;
+    setFailed(false);
+    void resolveRemoteAttachment(att.remote)
+      .then(r => { if (!cancelled) { setUri(r.fileUri); if (r.mimeType) setMime(r.mimeType); } })
+      .catch(() => { if (!cancelled) setFailed(true); });
+    return () => { cancelled = true; };
+  }, [att.remote, attempt]);
+
+  if (failed) {
+    return (
+      <Pressable
+        onPress={() => setAttempt(a => a + 1)}
+        style={{
+          flexDirection: 'row', alignItems: 'center', gap: 8,
+          paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8,
+          backgroundColor: 'rgba(0,0,0,0.12)', marginBottom: 6,
+        }}
+      >
+        <HeroIcon name="paperClip" size={16} color={fg} />
+        <Text style={{ color: fg, fontSize: 13, flexShrink: 1, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
+          {att.name ?? 'attachment'} — tap to retry
+        </Text>
+      </Pressable>
+    );
+  }
+  if (!uri) {
+    return (
+      <View style={{
+        flexDirection: 'row', alignItems: 'center', gap: 8,
+        paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8,
+        backgroundColor: 'rgba(0,0,0,0.12)', marginBottom: 6,
+      }}>
+        <ActivityIndicator size="small" color={fg} />
+        <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
+          {att.name ?? 'attachment'}
+        </Text>
+      </View>
+    );
+  }
+  return <AttachmentView att={{ ...att, mime }} fullUrl={uri} fg={fg} sub={sub} dark={dark} />;
 }
 
 function markdownStyles(fg: string, dark: boolean, mine: boolean): Record<string, object> {
@@ -365,12 +424,18 @@ export function MessengerBubble({
            *  image shows instantly while the send is in flight; full `http(s)`/
            *  `data:` URIs render as-is. The legacy daemon-hosted attachment path
            *  (`daemonUrl + token`) is gone since Metro is XMTP-only now. */
+          const key = a.id ?? `${entry.id}-att-${i}`;
+          /** Multi-remote attachments carry encrypted bytes on IPFS — resolve
+           *  (download + decrypt) lazily before rendering. */
+          if (a.remote) {
+            return <RemoteAttachmentResolver key={key} att={a} fg={fg} sub={sub} dark={dark} />;
+          }
           const fullUrl = a.dataB64
             ? `data:${a.mime ?? 'application/octet-stream'};base64,${a.dataB64}`
             : a.url ?? '';
           return (
             <AttachmentView
-              key={a.id ?? `${entry.id}-att-${i}`}
+              key={key}
               att={a}
               fg={fg}
               sub={sub}
