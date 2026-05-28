@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { errMsg, log } from './log.js';
 import { STATE_DIR } from './paths.js';
 import { Line } from './lines.js';
-import { claudeUserId, claudeSessionId, codexUserId, codexSessionId } from './local-identity.js';
+import { claudeUserId, claudeSessionId, codexUserId, codexSessionId, codexUserIdOrNull } from './local-identity.js';
 
 export interface HistoryEntry {
   id: string;
@@ -107,6 +107,26 @@ export function userSelf(): Line {
   if (process.env.CLAUDECODE) return Line.user('claude', claudeUserId());
   if (process.env.METRO_CODEX_RC || process.env.CODEX_HOME) return Line.user('codex', codexUserId());
   return 'metro://user' as Line;
+}
+
+/** Self URI handed to trains as `METRO_SELF_URI` (legacy single-account hint a */
+/** train may use for outbound `from`). For the SHARED multi-account daemon a */
+/** single per-CLI identity is wrong — it labels one account's outbound with */
+/** another CLI's URI (the observed `from: metro://codex/...` leak on tony's */
+/** sends). So propagate only an EXPLICIT self (`METRO_FROM`/`METRO_SELF_URI`); */
+/** else hand trains neutral `metro://user` and let them stamp `from` per account. */
+export function daemonSelf(): Line {
+  const explicit = process.env.METRO_FROM || process.env.METRO_SELF_URI;
+  return (explicit ?? 'metro://user') as Line;
+}
+
+/** The Codex user's **participant** URI, independent of the daemon's own `self`. */
+/** Lets the dispatcher gate the Codex bridge to its own feed even when the */
+/** daemon runs neutral (no METRO_CODEX_RC). Null if no Codex identity resolves */
+/** (not logged in / not configured) — caller should then push nothing. */
+export function codexSelf(): Line | null {
+  const id = codexUserIdOrNull();
+  return id ? Line.user('codex', id) : null;
 }
 
 /** The current user's **line** URI `<user-id>/<session>`. Null until session is known (rc thread pending). */

@@ -12,6 +12,7 @@ import {
   addEndpoint, listEndpoints, loadTunnelConfig, removeEndpoint, saveTunnelConfig, webhookPort,
 } from '../tunnel.js';
 import { emit, exitErr, flagOne, isJson, need, writeJson, type Flags } from './util.js';
+import { enforceSendGuard } from './send-guard.js';
 
 function urlFor(endpointId: string): string {
   const t = loadTunnelConfig();
@@ -110,7 +111,11 @@ export async function cmdCall(p: string[], f: Flags): Promise<void> {
   need(p, 2, 'metro call <train> <action> [args-json | @file | -]');
   loadMetroEnv();
   const [train, action, rawArgs] = p;
-  const resp = await ipcCall({ op: 'forward-call', train, action, args: await readArgs(rawArgs) });
+  const args = await readArgs(rawArgs);
+  /** Per-session identity guard: refuse to send XMTP on an account owned by a */
+  /** different CLI (e.g. a codex session sending on tony's account). */
+  enforceSendGuard(train, action, args);
+  const resp = await ipcCall({ op: 'forward-call', train, action, args });
   if (!resp.ok) throw new Error(resp.error);
   if (!('response' in resp)) throw new Error('daemon returned malformed forward-call response');
   if (resp.response.error) throw new Error(`train '${train}': ${resp.response.error}`);
