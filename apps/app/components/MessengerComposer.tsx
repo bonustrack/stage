@@ -1,8 +1,8 @@
 /** Floating two-line composer (Claude-mobile-style): textarea on top, [+ / mic / send] below. */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Alert, Image, Pressable, ScrollView, Text, TextInput, View,
+  Alert, Animated, Image, PanResponder, Pressable, ScrollView, Text, TextInput, View,
 } from 'react-native';
 import { loadDrafts, getDraft, setDraft } from '../lib/drafts';
 import { Audio } from 'expo-av';
@@ -81,6 +81,17 @@ export function MessengerComposer({
    *  recording without waiting for the async state update, so push-to-talk release
    *  reliably stops. */
   const recordingRef = useRef(false);
+  /** Slide-to-cancel: while a push-to-talk gesture is in flight, the user
+   *  can drag the mic button leftwards past `SLIDE_CANCEL_THRESHOLD_PX`
+   *  to cancel the recording on release (Discord/Telegram pattern). The
+   *  Animated value drives both the mic translateX and the inline
+   *  "← slide to cancel" hint fade. */
+  const slideX = useRef(new Animated.Value(0)).current;
+  /** Synchronous mirror of the latest drag dx, so onPanResponderRelease
+   *  can decide between cancel vs stop without consulting the
+   *  AnimatedValue (which doesn't expose a readable current value
+   *  without going through `addListener`). */
+  const slideXRef = useRef(0);
   /** Restore draft on mount + persist on change (debounced). Skip the persist
    *  on the very first restore so we don'​t clobber a fresher save. */
   /** Per-conversation draft: restore on mount, persist (debounced) on change,
@@ -304,6 +315,51 @@ export function MessengerComposer({
     }
   };
 
+  /** Slide-to-cancel threshold — distance the mic has to travel left before a
+   *  release cancels the recording instead of stopping+staging it. */
+  const SLIDE_CANCEL_THRESHOLD_PX = 80;
+  /** PanResponder driving the push-to-talk + slide-to-cancel gesture on the
+   *  mic button. Replaces the previous onPressIn/onPressOut Pressable so the
+   *  same handler tracks horizontal drags during the hold. Defined once via
+   *  useMemo — the closures read `recordingRef` + `slideXRef` so we don't
+   *  re-bind every render. */
+  const micPanResponder = useMemo(() => PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: () => true,
+    onPanResponderGrant: () => {
+      micPressStart.current = Date.now();
+      slideXRef.current = 0;
+      slideX.setValue(0);
+      /** Tap mode: a press while recording stops it; otherwise it starts. */
+      if (recordingRef.current) { void stopRec(); return; }
+      void startRec();
+    },
+    onPanResponderMove: (_, g) => {
+      /** Only track leftwards drag; rightwards is irrelevant. Clamp at
+       *  -120 so the hint can't slide off-screen. */
+      const dx = Math.max(-120, Math.min(0, g.dx));
+      slideXRef.current = dx;
+      slideX.setValue(dx);
+    },
+    onPanResponderRelease: () => {
+      const dx = slideXRef.current;
+      const held = Date.now() - micPressStart.current;
+      Animated.spring(slideX, { toValue: 0, useNativeDriver: true, speed: 24, bounciness: 6 }).start();
+      slideXRef.current = 0;
+      if (!recordingRef.current) return;
+      if (dx <= -SLIDE_CANCEL_THRESHOLD_PX) { void cancelRec(); return; }
+      /** Held long enough → push-to-talk release stops + stages. Short
+       *  press → leave running so the user can hit ✓ later (tap mode). */
+      if (held >= 350) void stopRec();
+    },
+    onPanResponderTerminate: () => {
+      Animated.spring(slideX, { toValue: 0, useNativeDriver: true, speed: 24, bounciness: 6 }).start();
+      slideXRef.current = 0;
+    },
+    onPanResponderTerminationRequest: () => false,
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), []);
+
   /** `@`-mention parser. Looks backwards from the cursor for the most recent
    *  `@` and grabs the token up to (but not including) any whitespace. Null
    *  when no active mention or when the candidate list is empty / disabled. */
@@ -461,7 +517,24 @@ export function MessengerComposer({
          *   push-to-talk press→release gesture isn't interrupted by a UI swap. */}
         {recording ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', height: 28, paddingHorizontal: 4 }}>
-            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', height: 28, overflow: 'hidden' }}>
+            {/** "← Slide to cancel" hint — fades in as the user drags the
+             *   mic left, slides with the gesture. Opacity ramps from 0.4
+             *   at rest to 1.0 at the cancel threshold. */}
+            <Animated.View style={{
+              flexDirection: 'row', alignItems: 'center', gap: 6,
+              transform: [{ translateX: slideX }],
+              opacity: slideX.interpolate({
+                inputRange: [-SLIDE_CANCEL_THRESHOLD_PX, -16, 0],
+                outputRange: [1, 0.7, 0.4],
+                extrapolate: 'clamp',
+              }),
+            }}>
+              <HeroIcon name="arrowLeft" size={14} color={sub} />
+              <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+                Slide to cancel
+              </Text>
+            </Animated.View>
+            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', height: 28, overflow: 'hidden' }}>
               {[...Array(Math.max(0, 40 - levels.length)).fill(0.05), ...levels].slice(-40).map((lvl, i) => (
                 <View key={i} style={{ width: 3, marginHorizontal: 1, borderRadius: 2, height: Math.max(3, Math.round(lvl * 26)), backgroundColor: head, opacity: 0.85 }} />
               ))}
@@ -496,17 +569,18 @@ export function MessengerComposer({
           {/** Mic — both record flows, mounted across recording so the gesture survives:
            *   • tap to start → tap again (or the ✓) to stop+stage;
            *   • press-hold to record → release (held ≥350ms) to stop+stage.
+           *   • slide-left past 80px during a hold → cancel on release.
            *   The clip lands as a PENDING attachment in the composer, not auto-sent. */}
-          <Pressable
-            onPressIn={() => { micPressStart.current = Date.now(); if (recordingRef.current) void stopRec(); else void startRec(); }}
-            onPressOut={() => { if (recordingRef.current && Date.now() - micPressStart.current >= 350) void stopRec(); }}
-            style={({ pressed }) => ({
+          <Animated.View
+            {...micPanResponder.panHandlers}
+            style={{
               width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
-              backgroundColor: recording ? '#e2622f' : (pressed ? chipBg : 'transparent'),
-            })}
+              backgroundColor: recording ? '#e2622f' : 'transparent',
+              transform: [{ translateX: slideX }],
+            }}
           >
             <HeroIcon name="microphone" size={22} color={recording ? '#ffffff' : fg} />
-          </Pressable>
+          </Animated.View>
           {/** Right: ✓ confirm (stop+stage) while recording, else send. */}
           {recording ? (
             <Pressable onPress={() => void stopRec()}
