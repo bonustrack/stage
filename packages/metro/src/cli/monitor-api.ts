@@ -125,6 +125,12 @@ async function handleTail(req: IncomingMessage, res: ServerResponse, q: URLSearc
   const self = asParam ? asLine(asParam) : null;
   const isOn = (k: string): boolean => q.get(k) === 'true' || q.get('mode') === k;
   const mode = pickMode(isOn('strict'), isOn('unclaimed'), isOn('all'), self, () => 'all');
+  /** Validate `since` before SSE headers commit so bad input 400s instead of silently hitting EOF (mirrors CLI). */
+  const since = q.get('since');
+  const sinceN = since !== null && since !== 'tail' ? Number(since) : NaN;
+  if (since !== null && since !== 'tail' && (!Number.isFinite(sinceN) || sinceN < 0)) {
+    return send(res, req, 400, { error: `since must be a byte offset or 'tail' (got '${since}')` });
+  }
   const excludeFromCsv = q.get('exclude_from');
   const opts: TailOpts = {
     mode, self, chatFilter: q.get('chat') ?? undefined,
@@ -138,9 +144,7 @@ async function handleTail(req: IncomingMessage, res: ServerResponse, q: URLSearc
     /** Cloudflare/proxies buffer SSE without this hint. */
     'x-accel-buffering': 'no',
   });
-  /** `since=tail` (default) starts at EOF; `since=0` replays the full file; numeric = byte offset. */
-  const since = q.get('since');
-  const sinceN = since && since !== 'tail' ? Number(since) : NaN;
+  /** Validated above: a non-negative `sinceN` replays from that byte offset; 'tail'/omitted → EOF. */
   let offset = Number.isFinite(sinceN) && sinceN >= 0 ? sinceN : historySize();
   /** 4 KiB padding so Cloudflare's HTTP/2 buffer flushes (else holds 30+ s on free tier). */
   res.write(`: metro monitor tail (mode=${opts.mode}${self ? `, as=${self}` : ''})\n: ${'-'.repeat(4096)}\n\n`);

@@ -19,6 +19,8 @@ function urlFor(endpointId: string): string {
 }
 
 export async function cmdWebhook(p: string[], f: Flags): Promise<void> {
+  /** Load ~/.metro/.env first so webhookPort()/urlFor print the same port the daemon listens on. */
+  loadMetroEnv();
   const sub = p[0];
   if (sub === 'add')    return cmdWebhookAdd(p.slice(1), f);
   if (sub === 'list' || sub === undefined) return cmdWebhookList(f);
@@ -53,6 +55,8 @@ async function cmdWebhookRemove(p: string[], f: Flags): Promise<void> {
 }
 
 export async function cmdTunnel(p: string[], f: Flags): Promise<void> {
+  /** Load ~/.metro/.env so webhookPort()/urlFor match the daemon's configured port. */
+  loadMetroEnv();
   const sub = p[0];
   if (sub === 'setup') return cmdTunnelSetup(p.slice(1), f);
   if (sub === 'status' || sub === undefined) return cmdTunnelStatus(f);

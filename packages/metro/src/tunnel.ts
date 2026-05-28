@@ -12,9 +12,12 @@ const RESTART_DELAY_MS = 2_000;
 
 export type TunnelConfig = { name: string; hostname: string };
 
-export const loadTunnelConfig = (): TunnelConfig | null => existsSync(FILE)
-  ? JSON.parse(readFileSync(FILE, 'utf8')) as TunnelConfig
-  : null;
+/** Read tunnel.json. Null if missing or malformed — guarded like readWebhooks so a bad file can't crash boot. */
+export const loadTunnelConfig = (): TunnelConfig | null => {
+  if (!existsSync(FILE)) return null;
+  try { return JSON.parse(readFileSync(FILE, 'utf8')) as TunnelConfig; }
+  catch (err) { log.warn({ err: errMsg(err), path: FILE }, 'tunnel.json: malformed, ignoring'); return null; }
+};
 
 export function saveTunnelConfig(c: TunnelConfig): void { writeFileSync(FILE, JSON.stringify(c, null, 2)); }
 
