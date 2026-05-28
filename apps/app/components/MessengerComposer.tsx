@@ -163,14 +163,24 @@ export function MessengerComposer({
     return () => { cancelled = true; };
   }, [attachMenuOpen]);
 
-  /** Tap a recent photo → stage it as a pending attachment. Resolve the asset's
-   *  local file URI (asset.uri can be a non-fetchable content:// on Android). */
+  /** Tap a recent photo → stage it as a pending attachment.
+   *
+   *  We try `getAssetInfoAsync` first because it resolves a `file://` URI
+   *  (more upload-friendly than `content://` on Android). But that call
+   *  reads EXIF, which requires `ACCESS_MEDIA_LOCATION` — we deliberately
+   *  configured the plugin with `isAccessMediaLocationEnabled: false` so
+   *  users don't have to grant location for picture-sharing, so it throws.
+   *  Catch that, fall back to `asset.uri` (RN's `fetch` handles `content://`
+   *  on Android via the network module). */
   const pickRecent = async (asset: MediaLibrary.Asset): Promise<void> => {
     setAttachMenuOpen(false);
+    let uri = asset.uri;
     try {
       const info = await MediaLibrary.getAssetInfoAsync(asset);
-      await upload(info.localUri ?? asset.uri, 'image/jpeg', asset.filename);
-    } catch (e) { setErr((e as Error).message); }
+      uri = info.localUri ?? asset.uri;
+    } catch { /* ACCESS_MEDIA_LOCATION missing — fall through with asset.uri */ }
+    try { await upload(uri, 'image/jpeg', asset.filename); }
+    catch (e) { setErr((e as Error).message); }
   };
 
   const pickFile = async (): Promise<void> => {
