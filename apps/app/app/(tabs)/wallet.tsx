@@ -10,11 +10,12 @@ import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { createPublicClient, http, formatEther, formatUnits, type Hex } from 'viem';
 import { mainnet } from 'viem/chains';
 import { useRouter } from 'expo-router';
-import { getOrCreateXmtpClient, shortAddress, stampBoxAvatarUrl } from '../../lib/xmtp';
+import { getOrCreateXmtpClient, shortAddress } from '../../lib/xmtp';
 import { usePeerProfiles, getPeerName, getPeerAvatarCb } from '../../lib/peerProfiles';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { getErc20UsdPrices, getSimplePrices } from '../../lib/coingecko';
 import { HeroIcon, type HeroIconName } from '../../components/HeroIcon';
+import { Avatar } from '../../components/Avatar';
 
 const MULTICALL3 = '0xcA11bde05977b3631167028862bE2a173976CA11' as const;
 
@@ -170,14 +171,12 @@ export default function Wallet(): React.ReactElement {
         marginHorizontal: 16, marginTop: 8, padding: 20, borderRadius: 16,
         backgroundColor: card, borderWidth: 1, borderColor: border, alignItems: 'center',
       }}>
-        {address ? (
-          <Image
-            source={{ uri: stampBoxAvatarUrl(address, 120, getPeerAvatarCb(address)) }}
-            style={{ width: 60, height: 60, borderRadius: 999, backgroundColor: border }}
-          />
-        ) : (
-          <View style={{ width: 60, height: 60, borderRadius: 999, backgroundColor: border }} />
-        )}
+        <Avatar
+          address={address || null}
+          size="lg"
+          cacheBuster={address ? getPeerAvatarCb(address) : undefined}
+          style={{ backgroundColor: border }}
+        />
         <Text style={{ color: head, fontSize: 17, fontFamily: 'Calibre-Semibold', marginTop: 12 }} numberOfLines={1}>
           {getPeerName(address) ?? (address ? shortAddress(address) : '—')}
         </Text>

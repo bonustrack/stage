@@ -4,7 +4,7 @@
 
 import { useState } from 'react';
 import {
-  Image, Pressable, ScrollView, Text, View,
+  Pressable, ScrollView, Text, View,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,10 +12,8 @@ import * as Clipboard from 'expo-clipboard';
 import { shortAddress, openDmWithAddress } from '../../lib/xmtp';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { useProfileQuery } from '../../lib/useProfile';
-import { avatarRenderUrl } from '@metro-labs/client/profile/snapshot';
 import { HeroIcon } from '../../components/HeroIcon';
-
-const AVATAR_SIZE = 64;
+import { Avatar } from '../../components/Avatar';
 
 export default function UserProfileView(): React.ReactElement {
   const router = useRouter();
@@ -71,20 +69,12 @@ export default function UserProfileView(): React.ReactElement {
         <View style={{ alignItems: 'center', paddingTop: 16, paddingBottom: 8 }}>
           {/* Wait for the profile so we render the real avatar directly (no
               blockie→real flash); custom avatars resolve via IPFS, not stamp. */}
-          {loaded ? (
-            <Image
-              source={{ uri: avatarRenderUrl(addr, profile?.avatar ?? undefined, AVATAR_SIZE * 2) }}
-              style={{
-                width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: AVATAR_SIZE / 2,
-                backgroundColor: border,
-              }}
-            />
-          ) : (
-            <View style={{
-              width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: AVATAR_SIZE / 2,
-              backgroundColor: border,
-            }} />
-          )}
+          <Avatar
+            address={loaded ? addr : null}
+            imageUri={profile?.avatar}
+            size="lg"
+            style={{ backgroundColor: border }}
+          />
           <Text style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold', marginTop: 14 }}>
             {profile?.name?.trim() || shortAddress(addr)}
           </Text>

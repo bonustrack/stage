@@ -3,7 +3,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Animated as RNAnimated, FlatList, Image, InteractionManager, Modal, Pressable, Share, Text, View,
+  Animated as RNAnimated, FlatList, InteractionManager, Modal, Pressable, Share, Text, View,
 } from 'react-native';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,13 +14,13 @@ import { MessengerBubble } from '../../components/MessengerBubble';
 import { usePeerProfiles, getPeerName, getPeerAvatar } from '../../lib/peerProfiles';
 import { useConvMeta } from '../../lib/useConvMeta';
 import { Spinner } from '../../components/Spinner';
-import { avatarRenderUrl } from '@metro-labs/client/profile/snapshot';
 import { MessengerComposer } from '../../components/MessengerComposer';
 import { ComposerGradient } from '../../components/ComposerGradient';
 import { HeroIcon } from '../../components/HeroIcon';
+import { Avatar } from '../../components/Avatar';
 import {
   XMTP_USER_PREFIX, lineOfConv, useXmtpFeed, xmtpReact, xmtpReply,
-  stampBoxAvatarUrl, shortAddress,
+  shortAddress,
 } from '../../lib/xmtp';
 import { markConvRead } from '../../lib/channelsCache';
 import { useEffectiveColorScheme } from '../../lib/theme';
@@ -59,27 +59,19 @@ function isReaction(e: HistoryEntry): boolean {
   return Boolean(p?.reactTo);
 }
 
-/** Stamp.fyi avatars shown in the conversation header. Mirrors the channels-
- *  list row avatar but locked at 24px per the design spec. DMs render a single
- *  circle; groups stack up to 3 member avatars with a "+N" overflow tile. */
+/** Topnav avatar — 1-1 conversations use the peer's identicon/custom avatar,
+ *  groups show their uploaded image (none → render nothing, no per-member
+ *  fallback stacking). Delegates rendering to the shared Avatar component. */
 function HeaderAvatar({ peerAddr, groupImage, border }: {
   peerAddr: string | null; groupImage: string; border: string;
 }): React.ReactElement | null {
-  const SIZE = 24;
-  /** Show the leading avatar for a 1-1 (the peer's custom avatar, else their
-   *  identicon) or for a group that has its own uploaded image. Groups without
-   *  an image show nothing — no member-avatar fallback. */
-  let uri: string | null = null;
   if (peerAddr) {
-    const av = getPeerAvatar(peerAddr);
-    uri = av ? avatarRenderUrl(peerAddr, av, SIZE * 2) : stampBoxAvatarUrl(peerAddr, SIZE * 2);
-  } else if (groupImage) {
-    uri = avatarRenderUrl('', groupImage, SIZE * 2);
+    return <Avatar address={peerAddr} imageUri={getPeerAvatar(peerAddr)} size="sm" style={{ backgroundColor: border }} />;
   }
-  if (!uri) return null;
-  return (
-    <Image source={{ uri }} style={{ width: SIZE, height: SIZE, borderRadius: 999, backgroundColor: border }} />
-  );
+  if (groupImage) {
+    return <Avatar imageUri={groupImage} size="sm" style={{ backgroundColor: border }} />;
+  }
+  return null;
 }
 
 export default function XmtpConversation(): React.ReactElement {
@@ -276,9 +268,11 @@ export default function XmtpConversation(): React.ReactElement {
             onPress={() => router.push({ pathname: '/user/[address]', params: { address: peerAddr } })}
             style={{ alignItems: 'center', paddingVertical: 24, paddingHorizontal: 24 }}
           >
-            <Image
-              source={{ uri: stampBoxAvatarUrl(peerAddr, 96, getPeerAvatar(peerAddr)) }}
-              style={{ width: 64, height: 64, borderRadius: 999, backgroundColor: border }}
+            <Avatar
+              address={peerAddr}
+              imageUri={getPeerAvatar(peerAddr)}
+              size="lg"
+              style={{ backgroundColor: border }}
             />
             <Text style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold', marginTop: 12 }} numberOfLines={1}>
               {getPeerName(peerAddr) ?? shortAddress(peerAddr)}
