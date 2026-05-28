@@ -3,14 +3,15 @@
  *   - `parseArgs`  : positional vs flags, `--k=v`, `--k v`, bare `--flag`,
  *                    repeated flags (→ array), boolean-vs-string merge rules.
  *   - `flagOne`    : last-string-value extraction.
- *   - `flagList`   : multi-value + comma-split.
- *   - `resolveText`: the positional (no-stdin) branch.
+ *
+ * (`flagList` / `resolveText` were removed as dead code in #127, so their
+ *  coverage is dropped here — nothing in src/ calls them anymore.)
  *
  * Pure in-process; no fs / network.
  */
 
 import { describe, expect, test } from 'bun:test';
-import { parseArgs, flagOne, flagList, resolveText } from '../src/cli/util.ts';
+import { parseArgs, flagOne } from '../src/cli/util.ts';
 
 describe('parseArgs — positionals', () => {
   test('bare strings become positionals in order', () => {
@@ -107,32 +108,3 @@ describe('flagOne', () => {
   });
 });
 
-describe('flagList', () => {
-  test('single string', () => {
-    expect(flagList({ x: 'a' }, 'x')).toEqual(['a']);
-  });
-  test('comma-splits a single value and trims', () => {
-    expect(flagList({ x: 'a, b ,c' }, 'x')).toEqual(['a', 'b', 'c']);
-  });
-  test('flattens an array of values, each comma-split', () => {
-    expect(flagList({ x: ['a,b', 'c'] }, 'x')).toEqual(['a', 'b', 'c']);
-  });
-  test('drops empty entries from trailing/leading commas', () => {
-    expect(flagList({ x: 'a,,b,' }, 'x')).toEqual(['a', 'b']);
-  });
-  test('boolean flag yields empty list', () => {
-    expect(flagList({ x: true }, 'x')).toEqual([]);
-  });
-  test('missing key yields empty list', () => {
-    expect(flagList({}, 'x')).toEqual([]);
-  });
-});
-
-describe('resolveText — positional branch (no stdin read)', () => {
-  test('joins positionals from the offset with spaces', async () => {
-    await expect(resolveText(['send', 'metro://discord/1', 'hello', 'world'], 2)).resolves.toBe('hello world');
-  });
-  test('single positional at offset', async () => {
-    await expect(resolveText(['send', 'x', 'just-this'], 2)).resolves.toBe('just-this');
-  });
-});
