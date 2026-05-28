@@ -8,9 +8,11 @@ import { Line } from '../lines.js';
 import { errMsg, log } from '../log.js';
 import { noteSeen } from '../paths.js';
 import {
-  appendHistory, formatDisplay, mintId, noteUserFromLine, userSelf, type HistoryEntry,
+  appendHistory, codexSelf, formatDisplay, mintId, noteUserFromLine, userSelf, type HistoryEntry,
 } from '../history.js';
 import { handleMonitorRequest } from '../cli/tail.js';
+import { passesMode } from '../broker/history-stream.js';
+import { readClaims } from '../broker/claims.js';
 import type { TrainEvent } from '../trains/protocol.js';
 import type { CodexRC } from '../codex-rc/client.js';
 import { findEndpoint, listEndpoints, webhookPort } from '../tunnel.js';
@@ -18,12 +20,34 @@ import { findEndpoint, listEndpoints, webhookPort } from '../tunnel.js';
 type Emit = (entry: HistoryEntry) => void;
 
 export function makeEmit(codexRc: CodexRC | null): Emit {
+  /** Resolve the Codex participant URI once. The bridge must only receive the */
+  /** Codex CLI's own feed — NOT every event (the historical "combined" bug: */
+  /** `codexRc.push` was unconditional, so Codex also saw tony's events). */
+  /** Null ⇒ no Codex identity resolvable ⇒ bridge receives nothing. */
+  const cxSelf: Line | null = codexRc ? codexSelf() : null;
+  if (codexRc && !cxSelf) {
+    log.warn({}, 'codex bridge: no Codex identity resolvable — bridge will receive no events');
+  }
+  /** Short-TTL claims cache so we don't re-read claims.json per event in the */
+  /** emit hot path (claims change rarely; 1s staleness is harmless). */
+  let claimsCache: ReturnType<typeof readClaims> | null = null;
+  let claimsAt = 0;
+  const claims = (): ReturnType<typeof readClaims> => {
+    const now = Date.now();
+    if (!claimsCache || now - claimsAt > 1_000) { claimsCache = readClaims(); claimsAt = now; }
+    return claimsCache;
+  };
   return function emit(entry: HistoryEntry): void {
     /** `display` first so it survives Monitor's body truncation — the user must see it to echo it. */
     const enriched: HistoryEntry = { display: formatDisplay(entry), ...entry };
     const json = JSON.stringify(enriched);
     process.stdout.write(json + '\n');
-    codexRc?.push(json);
+    /** Feed isolation: only forward to the Codex bridge what a */
+    /** `metro tail --as=<codex-self> --strict` would receive — events routed to */
+    /** the Codex owner (`to === cxSelf`) or claimed by it. Same predicate as CLI tail. */
+    if (codexRc && cxSelf && passesMode(enriched, 'mine-only', cxSelf, claims())) {
+      codexRc.push(json);
+    }
     noteSeen(entry.line, entry.lineName);
     for (const l of [entry.line, entry.from, entry.to]) if (l) noteUserFromLine(l);
     appendHistory(enriched);

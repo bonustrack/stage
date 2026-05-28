@@ -45,6 +45,14 @@ const codexAccountId = memo(() => {
 
 export const claudeUserId = (): string => process.env.METRO_USER_ID || claudeAccountId();
 export const codexUserId = (): string => process.env.METRO_USER_ID || codexAccountId();
+
+/** Non-throwing Codex account-id resolver. Returns null instead of throwing */
+/** when Codex isn't logged in / auth.json is absent — lets a neutral daemon */
+/** gate the Codex bridge without crashing if Codex is unavailable. */
+export const codexUserIdOrNull = (): string | null => {
+  if (process.env.METRO_USER_ID) return process.env.METRO_USER_ID;
+  try { return codexAccountId(); } catch { return null; }
+};
 export const claudeSessionId = (): string | null =>
   process.env.METRO_USER_SESSION_ID || process.env.CLAUDE_CODE_SESSION_ID || null;
 

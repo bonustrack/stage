@@ -1,4 +1,6 @@
-import { chmodSync, existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync, closeSync, existsSync, mkdirSync, openSync, readFileSync, unlinkSync, writeFileSync, writeSync,
+} from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { errMsg, log } from './log.js';
@@ -42,17 +44,38 @@ export function loadMetroEnv(): void {
   }
 }
 
-/** Singleton pidfile. Exits if another instance owns it; reclaims stale locks. */
+/** Singleton pidfile. Exits if a live instance owns it; reclaims stale locks. */
+/** Uses O_EXCL create so two near-simultaneous starts can't BOTH win the lock */
+/** (the old check-then-write TOCTOU let two dispatchers race onto one socket). */
+/** On EEXIST inspect the holder: alive ⇒ exit, stale ⇒ reclaim + retry. */
 export function acquireLock(lockFile: string): void {
-  if (existsSync(lockFile)) {
-    const pid = Number(readFileSync(lockFile, 'utf8').trim());
+  for (let attempt = 0; attempt < 5; attempt++) {
     try {
-      if (Number.isInteger(pid) && pid > 0) { process.kill(pid, 0); log.info({ pid }, 'another `metro` is running; exiting'); process.exit(0); }
-    } catch { /* stale */ }
-    try { unlinkSync(lockFile); } catch { /* ignore */ }
+      const fd = openSync(lockFile, 'wx'); // O_CREAT | O_EXCL — fails if it exists
+      writeSync(fd, String(process.pid));
+      closeSync(fd);
+      process.on('exit', () => {
+        try { if (readFileSync(lockFile, 'utf8').trim() === String(process.pid)) unlinkSync(lockFile); }
+        catch { /* ignore */ }
+      });
+      return;
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code !== 'EEXIST') throw err;
+      /** Someone holds the lock — is it alive? */
+      let pid = NaN;
+      try { pid = Number(readFileSync(lockFile, 'utf8').trim()); } catch { /* unreadable — treat as stale */ }
+      try {
+        if (Number.isInteger(pid) && pid > 0) {
+          process.kill(pid, 0); // throws if dead
+          log.info({ pid }, 'a healthy `metro` daemon is already running; exiting (no second dispatcher)');
+          process.exit(0);
+        }
+      } catch { /* dead/unreadable → stale */ }
+      /** Stale lock — reclaim and retry the O_EXCL create on the next loop. */
+      try { unlinkSync(lockFile); } catch { /* lost the race to another reclaimer; retry */ }
+    }
   }
-  writeFileSync(lockFile, String(process.pid));
-  process.on('exit', () => { try { if (readFileSync(lockFile, 'utf8').trim() === String(process.pid)) unlinkSync(lockFile); } catch { /* ignore */ } });
+  throw new Error(`metro: could not acquire dispatcher lock (${lockFile}) after retries`);
 }
 
 /* ──────────── caches: seen lines (lines.json) + bot ids (bot-ids.json) ──────────── */
