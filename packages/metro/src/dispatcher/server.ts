@@ -38,8 +38,8 @@ export function makeEmit(codexRc: CodexRC | null): Emit {
     return claimsCache;
   };
   return function emit(entry: HistoryEntry): void {
-    /** `display` first so it survives Monitor's body truncation — the user must see it to echo it. */
-    const enriched: HistoryEntry = { display: formatDisplay(entry), ...entry };
+    /** Spread first, then `display`, so the computed bubble wins (old order let a stale one clobber it). */
+    const enriched: HistoryEntry = { ...entry, display: entry.display ?? formatDisplay(entry) };
     const json = JSON.stringify(enriched);
     process.stdout.write(json + '\n');
     /** Feed isolation: only forward to the Codex bridge what a */

@@ -291,6 +291,26 @@ describe('GET /api/tail (SSE)', () => {
     expect(buf).toContain('"text":"first"');
   });
 
+  test('400 on non-numeric ?since (mirrors CLI --since validation, not silent EOF)', async () => {
+    const stateDir = freshStateDir();
+    server = await startServer({ METRO_STATE_DIR: stateDir, METRO_MONITOR_TOKEN: TOKEN });
+    const r = await fetch(`${server.url}/api/tail?since=abc`, {
+      headers: { authorization: `Bearer ${TOKEN}` },
+    });
+    expect(r.status).toBe(400);
+    const j = await r.json() as { error: string };
+    expect(j.error).toContain('byte offset');
+  });
+
+  test('400 on negative ?since', async () => {
+    const stateDir = freshStateDir();
+    server = await startServer({ METRO_STATE_DIR: stateDir, METRO_MONITOR_TOKEN: TOKEN });
+    const r = await fetch(`${server.url}/api/tail?since=-5`, {
+      headers: { authorization: `Bearer ${TOKEN}` },
+    });
+    expect(r.status).toBe(400);
+  });
+
   test('appended events arrive after initial drain', async () => {
     const stateDir = freshStateDir();
     seedHistory(stateDir, [
