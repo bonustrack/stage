@@ -20,7 +20,7 @@ import { HeroIcon } from './HeroIcon';
 import { usePeerProfiles, getPeerName } from '../lib/peerProfiles';
 import { stampBoxAvatarUrl, shortAddress, deleteAccount, switchToAccount } from '../lib/xmtp';
 import {
-  loadAccounts, getActiveAccountId, setActiveAccountId, addGeneratedAccount,
+  loadAccounts, getActiveAccountId, addGeneratedAccount,
   importPrivateKey, addWalletConnectAccount, getPrivateKey, canExportPrivateKey,
   type AccountRecord,
 } from '../lib/accounts';

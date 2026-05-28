@@ -243,7 +243,7 @@ function QuestionView({ question, dark, sub, onAnswer }: {
 
 export function MessengerBubble({
   entry, dark, unread, pending, replyTarget, onReact, onReply, onLongPress, onAnswer,
-  replyPreview, reactions, transcript, daemonUrl, token, myUri, senderEthAddress, onAvatarPress,
+  replyPreview, reactions, transcript, myUri, senderEthAddress, onAvatarPress,
 }: {
   entry: HistoryEntry; dark: boolean; unread: boolean; pending?: boolean; replyTarget?: boolean;
   onReact?: (emoji: string) => void; onReply?: () => void; onLongPress?: () => void;
@@ -252,7 +252,6 @@ export function MessengerBubble({
    *  the question). */
   onAnswer?: (label: string) => void;
   replyPreview?: string; reactions?: Map<string, number>; transcript?: string;
-  daemonUrl: string; token: string;
   /** Self URI used to mark a bubble as the user's own. XMTP callers pass
    *  `metro://xmtp/user/<inboxId>`. */
   myUri: string;
@@ -362,15 +361,13 @@ export function MessengerBubble({
         ) : null}
         {atts.length > 0 ? <View style={{ alignSelf: 'stretch' }}>{atts.map((a, i) => {
           /** XMTP inline attachments carry bytes in `dataB64` — render via data: URI.
-           *  Optimistic (pending) attachments carry the local `file://` URI so the image
-           *  shows instantly while the send is in flight; full `http(s)`/`data` URIs render
-           *  as-is too. Messenger-station attachments carry a daemon `url` path — append the
-           *  auth token query param. */
+           *  Optimistic (pending) attachments carry the local `file://` URI so the
+           *  image shows instantly while the send is in flight; full `http(s)`/
+           *  `data:` URIs render as-is. The legacy daemon-hosted attachment path
+           *  (`daemonUrl + token`) is gone since Metro is XMTP-only now. */
           const fullUrl = a.dataB64
             ? `data:${a.mime ?? 'application/octet-stream'};base64,${a.dataB64}`
-            : a.url && /^(file|https?|data):/.test(a.url)
-              ? a.url
-              : `${daemonUrl.replace(/\/$/, '')}${a.url ?? ''}?token=${encodeURIComponent(token)}`;
+            : a.url ?? '';
           return (
             <AttachmentView
               key={a.id ?? `${entry.id}-att-${i}`}

@@ -240,8 +240,6 @@ export default function XmtpConversation(): React.ReactElement {
             unread={false}
             pending={item.id.startsWith('tmp_')}
             replyTarget={replyingTo?.id === item.id}
-            daemonUrl=""
-            token=""
             reactions={reactions.get(item.id)}
             replyPreview={item.replyTo ? previewOf(events.find(e => e.id === item.replyTo) ?? item) : undefined}
             onReact={(emoji) => onReact(item.id, emoji)}
@@ -343,9 +341,7 @@ export default function XmtpConversation(): React.ReactElement {
         </Pressable>
       ) : null}
       <MessengerComposer
-        /** Daemon URL/token are unused in xmtp mode but the composer always expects
-         *  the prop pair — pass empty strings. */
-        daemonUrl="" token="" dark={dark}
+        dark={dark}
         xmtpLine={activeLine}
         replyingTo={replyingTo ?? undefined}
         onClearReply={() => setReplyingTo(null)}
