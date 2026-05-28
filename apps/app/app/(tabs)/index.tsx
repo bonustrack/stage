@@ -400,7 +400,7 @@ export default function Messenger(): React.ReactElement {
       }}>
         <Text style={{ color: head, fontSize: 22, fontFamily: 'Calibre-Semibold' }}>Channels</Text>
         <Pressable onPress={() => router.push('/search')} hitSlop={8}>
-          <HeroIcon name="search" size={22} color={head} />
+          <HeroIcon name="search" size={26} color={head} />
         </Pressable>
       </View>
       <FlatList

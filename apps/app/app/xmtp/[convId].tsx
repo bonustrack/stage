@@ -328,6 +328,18 @@ export default function XmtpConversation(): React.ReactElement {
         xmtpLine={activeLine}
         replyingTo={replyingTo ?? undefined}
         onClearReply={() => setReplyingTo(null)}
+        onReplyPreviewPress={() => {
+          /** Tap on the composer's "Replying to …" slab → jump the inverted
+           *  feed to the target bubble. `allBubbles` is newest-first, so the
+           *  message index IS the inverted-list index. Falls back to a no-op
+           *  when the source bubble isn't in the visible slice (already
+           *  pruned), to avoid throwing on `scrollToIndex`. */
+          if (!replyingTo) return;
+          const idx = allBubbles.findIndex(b => b.id === replyingTo.id);
+          if (idx < 0) return;
+          try { listRef.current?.scrollToIndex({ index: idx, animated: true, viewPosition: 0.5 }); }
+          catch { /* ignore — onScrollToIndexFailed will refire after layout */ }
+        }}
         onOptimistic={({ localId, text, attachments, replyTo }) => {
           /** Inverted FlatList + `maintainVisibleContentPosition` + prepended optimistic
            *  entry = bubble appears at the visual bottom automatically. */

@@ -9,9 +9,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { createPublicClient, http, isAddress, type Hex } from 'viem';
-import { mainnet } from 'viem/chains';
+import { isAddress } from 'viem';
 import { openDmWithAddress, shortAddress, stampBoxAvatarUrl } from '../lib/xmtp';
+import { resolveEnsName } from '../lib/ens';
 import { usePeerProfiles, getPeerName, getPeerAvatarCb } from '../lib/peerProfiles';
 import { useEffectiveColorScheme } from '../lib/theme';
 import { getCachedRows } from '../lib/channelsCache';
@@ -59,8 +59,11 @@ export default function Search(): React.ReactElement {
   /** Resolve names so the existing list + result render with display names. */
   usePeerProfiles([resolved?.address, ...existing.map(p => p.address)]);
 
-  /** Debounced resolution: address goes straight; *.eth hits viem getEnsAddress on
-   *  mainnet (brovider RPC, same as the wallet). Other input clears the result. */
+  /** Debounced resolution: a full address goes straight through; anything that
+   *  looks like an ENS-style name (`*.eth`, multi-label) is sent to stamp.fyi's
+   *  `resolve_names` endpoint — the same path Snapshot UI uses, which sidesteps
+   *  viem's UniversalResolver pitfalls (CCIP-Read, custom resolvers) and just
+   *  works for offchain names. Other input clears the result. */
   useEffect(() => {
     const q = query.trim();
     setResolveErr(null);
@@ -72,8 +75,7 @@ export default function Search(): React.ReactElement {
     const t = setTimeout(() => {
       void (async (): Promise<void> => {
         try {
-          const pub = createPublicClient({ chain: mainnet, transport: http('https://rpc.brovider.xyz/1') });
-          const addr = await pub.getEnsAddress({ name: q.toLowerCase() });
+          const addr = await resolveEnsName(q.toLowerCase());
           if (cancelled) return;
           if (addr) setResolved({ address: addr.toLowerCase(), source: 'ens' });
           else { setResolved(null); setResolveErr(`No address set for ${q}`); }

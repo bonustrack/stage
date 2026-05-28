@@ -1,21 +1,37 @@
-/** Wallet tab — shows the logged-in account's address + mainnet ETH/USDC balance,
- *  with Send/Receive shortcuts. Balances are fetched in a single Multicall3 round-trip
- *  via the brovider RPC (the same proxy Snapshot UI uses; viem's default public
- *  endpoint was failing). */
+/** Wallet tab — header with the logged-in identity, asset list (ETH +
+ *  stablecoins) with live USD prices via CoinGecko Pro, and Send / Receive
+ *  shortcuts. Balances are pulled in a single Multicall3 round-trip via the
+ *  brovider RPC (the proxy Snapshot UI uses; viem's default public endpoint
+ *  was failing in RN). The row layout mirrors Snapshot UI's treasury page:
+ *  bordered rows, symbol + name on the left, balance + USD value on the right. */
 
 import { useEffect, useState } from 'react';
-import { Alert, Image, Pressable, ScrollView, Text, View } from 'react-native';
-import * as Clipboard from 'expo-clipboard';
+import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { createPublicClient, http, formatEther, formatUnits, type Hex } from 'viem';
 import { mainnet } from 'viem/chains';
+import { useRouter } from 'expo-router';
 import { getOrCreateXmtpClient, shortAddress, stampBoxAvatarUrl } from '../../lib/xmtp';
 import { usePeerProfiles, getPeerName, getPeerAvatarCb } from '../../lib/peerProfiles';
 import { useEffectiveColorScheme } from '../../lib/theme';
+import { getErc20UsdPrices, getSimplePrices } from '../../lib/coingecko';
 import { HeroIcon, type HeroIconName } from '../../components/HeroIcon';
 
 const MULTICALL3 = '0xcA11bde05977b3631167028862bE2a173976CA11' as const;
-/** Circle USDC on Ethereum mainnet (6 decimals). */
-const USDC_MAINNET = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' as const;
+
+/** Asset registry — ETH + the two stablecoins Less called out in the review.
+ *  `address: null` is the special "native" row; everything else is an ERC-20
+ *  on Ethereum mainnet. `cgId` lets us hit the simple-price endpoint for ETH
+ *  (the contract-price endpoint doesn't cover native coins). */
+interface Asset {
+  symbol: string; name: string; decimals: number;
+  address: Hex | null;
+  cgId?: string;        // coingecko id for native price lookup
+}
+const ASSETS: Asset[] = [
+  { symbol: 'ETH', name: 'Ethereum', decimals: 18, address: null, cgId: 'ethereum' },
+  { symbol: 'USDC', name: 'USD Coin', decimals: 6, address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' },
+  { symbol: 'USDT', name: 'Tether USD', decimals: 6, address: '0xdAC17F958D2ee523a2206206994597C13D831ec7' },
+];
 
 const erc20Abi = [{
   name: 'balanceOf', type: 'function', stateMutability: 'view',
@@ -28,7 +44,16 @@ const multicall3Abi = [{
   outputs: [{ name: 'b', type: 'uint256' }],
 }] as const;
 
+interface AssetRow {
+  symbol: string; name: string;
+  /** Decimal-string balance (`formatUnits` output). */
+  balance: string;
+  /** USD price per unit, or null when CoinGecko didn't return this asset. */
+  priceUsd: number | null;
+}
+
 export default function Wallet(): React.ReactElement {
+  const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
   const head = dark ? '#ffffff' : '#000000';
   const fg = dark ? '#9f9fa3' : '#57606a';
@@ -38,8 +63,7 @@ export default function Wallet(): React.ReactElement {
   const card = dark ? '#282a2d' : '#e4e4e5';
 
   const [address, setAddress] = useState<string>('');
-  const [eth, setEth] = useState<string | null>(null);
-  const [usdc, setUsdc] = useState<string | null>(null);
+  const [rows, setRows] = useState<AssetRow[] | null>(null);
   const [err, setErr] = useState<string>('');
   usePeerProfiles([address]);
 
@@ -52,16 +76,31 @@ export default function Wallet(): React.ReactElement {
         if (cancelled) return;
         setAddress(addr);
         const pub = createPublicClient({ chain: mainnet, transport: http('https://rpc.brovider.xyz/1') });
-        /** One round-trip via Multicall3: ETH via getEthBalance + USDC balanceOf. */
-        const [ethRes, usdcRes] = await pub.multicall({
-          contracts: [
-            { address: MULTICALL3, abi: multicall3Abi, functionName: 'getEthBalance', args: [addr as Hex] },
-            { address: USDC_MAINNET, abi: erc20Abi, functionName: 'balanceOf', args: [addr as Hex] },
-          ],
-        });
+        /** One Multicall3 batch: ETH balance via getEthBalance + every ERC-20's balanceOf. */
+        const calls = ASSETS.map(a => a.address === null
+          ? { address: MULTICALL3, abi: multicall3Abi, functionName: 'getEthBalance' as const, args: [addr as Hex] }
+          : { address: a.address, abi: erc20Abi, functionName: 'balanceOf' as const, args: [addr as Hex] });
+        const results = await pub.multicall({ contracts: calls });
+        /** Prices in parallel: contract endpoint for ERC-20s, simple-price for ETH. */
+        const erc20Addrs = ASSETS.filter(a => a.address).map(a => a.address!.toLowerCase());
+        const cgIds = ASSETS.filter(a => a.cgId).map(a => a.cgId!);
+        const [tokenPrices, simplePrices] = await Promise.all([
+          getErc20UsdPrices('ethereum', erc20Addrs).catch(() => ({} as Record<string, { usd: number }>)),
+          getSimplePrices(cgIds).catch(() => ({} as Record<string, { usd: number }>)),
+        ]);
         if (cancelled) return;
-        if (ethRes.status === 'success') setEth(formatEther(ethRes.result));
-        if (usdcRes.status === 'success') setUsdc(formatUnits(usdcRes.result, 6));
+        const next: AssetRow[] = ASSETS.map((a, i) => {
+          const r = results[i]!;
+          const raw = r.status === 'success' ? r.result as bigint : 0n;
+          const balance = a.address === null
+            ? formatEther(raw)
+            : formatUnits(raw, a.decimals);
+          const priceUsd = a.address === null
+            ? (a.cgId ? simplePrices[a.cgId]?.usd ?? null : null)
+            : tokenPrices[a.address.toLowerCase()]?.usd ?? null;
+          return { symbol: a.symbol, name: a.name, balance, priceUsd };
+        });
+        setRows(next);
       } catch (e) {
         if (!cancelled) setErr((e as Error).message);
       }
@@ -69,14 +108,17 @@ export default function Wallet(): React.ReactElement {
     return () => { cancelled = true; };
   }, []);
 
-  const fmt = (v: string | null, maxFrac = 5): string => v === null ? '…'
-    : Number(v).toLocaleString(undefined, { maximumFractionDigits: maxFrac });
-
-  const onSend = (): void => Alert.alert('Send', 'Send is coming soon.');
-  const onReceive = (): void => {
-    if (!address) return;
-    void Clipboard.setStringAsync(address);
-    Alert.alert('Receive', `Copy this address to receive funds:\n\n${address}`);
+  const totalUsd = rows
+    ? rows.reduce((s, r) => s + (r.priceUsd ?? 0) * Number(r.balance), 0)
+    : null;
+  const fmtUsd = (v: number, maxFrac = 2): string =>
+    v.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: maxFrac });
+  const fmtBalance = (v: string): string => {
+    const n = Number(v);
+    /** Tighter precision for big numbers; more for dust. Keeps the row clean
+     *  without dropping informative digits on, say, 0.0034 ETH. */
+    const max = n >= 1 ? 4 : 6;
+    return n.toLocaleString(undefined, { maximumFractionDigits: max });
   };
 
   const Btn = ({ icon, label, onPress }: { icon: HeroIconName; label: string; onPress: () => void }): React.ReactElement => (
@@ -99,6 +141,7 @@ export default function Wallet(): React.ReactElement {
         <Text style={{ color: head, fontSize: 22, fontFamily: 'Calibre-Semibold' }}>Wallet</Text>
       </View>
 
+      {/* Identity card — avatar + name + tap-to-copy address + total USD value. */}
       <View style={{
         marginHorizontal: 16, marginTop: 8, padding: 20, borderRadius: 16,
         backgroundColor: card, borderWidth: 1, borderColor: border, alignItems: 'center',
@@ -114,38 +157,66 @@ export default function Wallet(): React.ReactElement {
         <Text style={{ color: head, fontSize: 17, fontFamily: 'Calibre-Semibold', marginTop: 12 }} numberOfLines={1}>
           {getPeerName(address) ?? (address ? shortAddress(address) : '—')}
         </Text>
-        <Pressable onPress={() => { if (address) { void Clipboard.setStringAsync(address); } }} hitSlop={6}>
-          <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
-            {address ? shortAddress(address) : ''}{address ? '  ·  tap to copy' : ''}
-          </Text>
-        </Pressable>
+        <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
+          {address ? shortAddress(address) : ''}
+        </Text>
 
         <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', marginTop: 20 }}>
-          BALANCE · ETHEREUM
+          TOTAL VALUE · ETHEREUM
         </Text>
         {err ? (
           <Text style={{ color: '#d96868', fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 4, textAlign: 'center' }}>
-            Couldn’t load balance
+            Couldn’t load balances
           </Text>
         ) : (
-          <>
-            <Text style={{ color: head, fontSize: 34, fontFamily: 'Calibre-Semibold', marginTop: 2 }}>
-              {fmt(eth)} ETH
-            </Text>
-            <Text style={{ color: fg, fontSize: 17, fontFamily: 'Calibre-Medium', marginTop: 4 }}>
-              {fmt(usdc, 2)} USDC
-            </Text>
-          </>
+          <Text style={{ color: head, fontSize: 34, fontFamily: 'Calibre-Semibold', marginTop: 2 }}>
+            {totalUsd === null ? '…' : fmtUsd(totalUsd)}
+          </Text>
         )}
       </View>
 
       <View style={{ flexDirection: 'row', gap: 10, marginHorizontal: 16, marginTop: 12 }}>
-        <Btn icon="send" label="Send" onPress={onSend} />
-        <Btn icon="arrowDown" label="Receive" onPress={onReceive} />
+        <Btn icon="send" label="Send" onPress={() => router.push('/wallet/send')} />
+        <Btn icon="arrowDown" label="Receive" onPress={() => router.push('/wallet/receive')} />
+      </View>
+
+      {/* Asset list — Snapshot-treasury-style rows, border-bottom separators. */}
+      <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', paddingHorizontal: 16, paddingTop: 22, paddingBottom: 6 }}>
+        ASSETS
+      </Text>
+      <View style={{ marginHorizontal: 16, borderTopWidth: 1, borderTopColor: border }}>
+        {(rows ?? ASSETS.map(a => ({ symbol: a.symbol, name: a.name, balance: '0', priceUsd: null }))).map(r => {
+          const valueUsd = r.priceUsd === null ? null : r.priceUsd * Number(r.balance);
+          return (
+            <View
+              key={r.symbol}
+              style={{
+                flexDirection: 'row', alignItems: 'center',
+                paddingVertical: 14,
+                borderBottomWidth: 1, borderBottomColor: border,
+              }}
+            >
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>{r.symbol}</Text>
+                <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 2 }} numberOfLines={1}>
+                  {r.name}
+                </Text>
+              </View>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>
+                  {rows ? fmtBalance(r.balance) : '…'}
+                </Text>
+                <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
+                  {valueUsd === null ? '—' : fmtUsd(valueUsd)}
+                </Text>
+              </View>
+            </View>
+          );
+        })}
       </View>
 
       <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', textAlign: 'center', marginTop: 16, paddingHorizontal: 24 }}>
-        This is the wallet you’re logged in with. Balances read live from Ethereum mainnet via Multicall3.
+        Balances read live from Ethereum mainnet via Multicall3. Prices via CoinGecko.
       </Text>
     </ScrollView>
   );
