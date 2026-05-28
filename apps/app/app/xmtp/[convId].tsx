@@ -3,7 +3,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Animated as RNAnimated, FlatList, InteractionManager, Modal, Pressable, Share, Text, View,
+  Animated as RNAnimated, FlatList, Modal, Pressable, Share, Text, View,
 } from 'react-native';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -346,26 +346,18 @@ export default function XmtpConversation(): React.ReactElement {
         replyingTo={replyingTo ?? undefined}
         onClearReply={() => setReplyingTo(null)}
         onReplyPreviewPress={() => {
-          /** Tap on the composer's "Replying to …" slab → jump the inverted
-           *  feed to the target bubble. `allBubbles` is newest-first, so the
-           *  message index IS the inverted-list index.
-           *
-           *  Two reliability hacks needed for devices with Reduce Motion ON
-           *  (reanimated #3670 throws "property is not writable" on the
-           *  animated path of every scroll API):
-           *  - `animated: false` — bypasses the reanimated mutator.
-           *  - InteractionManager defer — lets the keyboard/composer settle
-           *    first so the scroll dispatch is on a clean frame.
-           *  Errors are swallowed (`onScrollToIndexFailed` below also
-           *  silently no-ops); the bubble still gets the `replyTarget`
-           *  highlight via state so the user sees it once they scroll. */
-          if (!replyingTo) return;
-          const idx = allBubbles.findIndex(b => b.id === replyingTo.id);
-          if (idx < 0) return;
-          InteractionManager.runAfterInteractions(() => {
-            try { listRef.current?.scrollToIndex({ index: idx, animated: false, viewPosition: 0.5 }); }
-            catch { /* fallback: row stays highlighted via replyTarget */ }
-          });
+          /** Tapping the composer's "Replying to …" slab USED to call
+           *  `listRef.current.scrollToIndex` to jump the inverted feed to the
+           *  target bubble — but every variant of the FlatList scroll API
+           *  (scrollToIndex, scrollToOffset, getScrollResponder, …) trips
+           *  reanimated #3670 ("property is not writable") on devices with
+           *  Reduce Motion ON, even with `animated: false` + try/catch + an
+           *  `onScrollToIndexFailed` handler, because the throw is deferred
+           *  past the JS catch. There's no reliable scroll path right now.
+           *  The bubble still gets the `replyTarget` highlight (set by the
+           *  parent's `replyingTo` state) so the user can find it via manual
+           *  scroll — that's the best we can do until reanimated lands a fix. */
+          void replyingTo;
         }}
         onOptimistic={({ localId, text, attachments, replyTo }) => {
           /** Inverted FlatList + `maintainVisibleContentPosition` + prepended optimistic
