@@ -12,6 +12,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { ComposerGradient } from './ComposerGradient';
 import { HeroIcon, type HeroIconName } from './HeroIcon';
+import { Avatar } from './Avatar';
 import { fileUriToBase64, xmtpReply, xmtpSendAttachment, xmtpSendText } from '../lib/xmtp';
 
 /** Composer-local representation of a staged attachment. `url` is a `file://` URI in xmtp
@@ -27,6 +28,10 @@ interface Props {
    *  mobile composer only supports the XMTP transport now (the daemon-routed
    *  messenger pipeline was removed). */
   xmtpLine: string;
+  /** Candidates surfaced in the `@`-mention popup — channel members for
+   *  groups, or contact list for DMs. Parent owns the source-of-truth list;
+   *  composer just filters/renders. Empty array disables the popup. */
+  mentionCandidates?: { address: string; name: string; cacheBuster?: number }[];
   replyingTo?: { id: string; preview: string };
   onClearReply?: () => void;
   /** Tap on the "Replying to …" preview — parent scrolls the feed to the
@@ -41,7 +46,7 @@ interface Props {
 }
 
 export function MessengerComposer({
-  dark, xmtpLine, replyingTo, onClearReply, onReplyPreviewPress, onOptimistic, onSent,
+  dark, xmtpLine, mentionCandidates, replyingTo, onClearReply, onReplyPreviewPress, onOptimistic, onSent,
 }: Props): React.ReactElement {
   const fg = dark ? '#9f9fa3' : '#57606a';
   const head = dark ? '#ffffff' : '#000000';
@@ -50,6 +55,9 @@ export function MessengerComposer({
   const chipBg = dark ? '#282a2d' : '#e4e4e5';
 
   const [text, setText] = useState('');
+  /** Cursor position in `text`, kept in sync via onSelectionChange so the
+   *  mention detector knows where the user is typing. */
+  const [selection, setSelection] = useState<{ start: number; end: number }>({ start: 0, end: 0 });
   const [pending, setPending] = useState<Attachment[]>([]);
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -296,6 +304,42 @@ export function MessengerComposer({
     }
   };
 
+  /** `@`-mention parser. Looks backwards from the cursor for the most recent
+   *  `@` and grabs the token up to (but not including) any whitespace. Null
+   *  when no active mention or when the candidate list is empty / disabled. */
+  const mention = (() => {
+    if (!mentionCandidates || mentionCandidates.length === 0) return null;
+    const cursor = selection.start;
+    const before = text.slice(0, cursor);
+    /** Match `@<token>` (no whitespace in token) anchored at the end of
+     *  `before`. The `@` must be at start-of-string or after whitespace
+     *  so we don't trigger on email-like substrings. */
+    const m = /(^|\s)@(\S*)$/.exec(before);
+    if (!m) return null;
+    const query = m[2] ?? '';
+    /** Range to replace on selection — covers the `@` and the query token. */
+    const start = cursor - query.length - 1;
+    return { query: query.toLowerCase(), start, end: cursor };
+  })();
+  const mentionMatches = mention === null ? [] : mentionCandidates!
+    .filter(c => {
+      const q = mention.query;
+      if (!q) return true;
+      return c.name.toLowerCase().includes(q) || c.address.toLowerCase().includes(q);
+    })
+    .slice(0, 6);
+  const pickMention = (c: { address: string; name: string }): void => {
+    if (!mention) return;
+    /** Insert `@<name> ` and advance the cursor to the end of the insertion. */
+    const insert = `@${c.name} `;
+    const next = text.slice(0, mention.start) + insert + text.slice(mention.end);
+    const nextCursor = mention.start + insert.length;
+    setText(next);
+    /** RN's TextInput selection prop is one-shot on Android — set it via
+     *  state and let the controlled value reapply. */
+    setSelection({ start: nextCursor, end: nextCursor });
+  };
+
   const Btn = ({ icon, onPress, active }: { icon: HeroIconName; onPress: () => void; active?: boolean }): React.ReactElement => (
     <Pressable onPress={onPress} style={({ pressed }) => ({
       width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
@@ -327,6 +371,36 @@ export function MessengerComposer({
             <Text style={{ color: fg, fontSize: 14, marginTop: 3, fontFamily: 'Calibre-Medium'}} numberOfLines={1}>{replyingTo.preview}</Text>
           </Pressable>
           <Pressable onPress={onClearReply} hitSlop={6}><HeroIcon name="x" size={16} color={sub} /></Pressable>
+        </View>
+      ) : null}
+      {/** @-mention popup — Discord-style, stacked above the composer.
+       *   Only renders when there's an active mention AND at least one match. */}
+      {mention && mentionMatches.length > 0 ? (
+        <View style={{
+          marginHorizontal: 6, marginBottom: 8, borderRadius: 12, overflow: 'hidden',
+          borderWidth: 1, borderColor: dark ? '#282a2d' : '#e4e4e5',
+          backgroundColor: dark ? '#1a1a1c' : '#ffffff',
+        }}>
+          {mentionMatches.map((c, i) => (
+            <Pressable
+              key={c.address}
+              onPress={() => pickMention(c)}
+              style={({ pressed }) => ({
+                flexDirection: 'row', alignItems: 'center', gap: 10,
+                paddingHorizontal: 12, paddingVertical: 8,
+                backgroundColor: pressed ? (dark ? '#282a2d' : '#e4e4e5') : 'transparent',
+                borderTopWidth: i === 0 ? 0 : 1, borderTopColor: dark ? '#282a2d' : '#e4e4e5',
+              })}
+            >
+              <Avatar address={c.address} size="sm" cacheBuster={c.cacheBuster} />
+              <Text style={{ color: head, fontSize: 15, fontFamily: 'Calibre-Semibold', flex: 1 }} numberOfLines={1}>
+                {c.name}
+              </Text>
+              <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
+                {c.address.slice(0, 6)}…{c.address.slice(-4)}
+              </Text>
+            </Pressable>
+          ))}
         </View>
       ) : null}
       {pending.length > 0 ? (
@@ -401,6 +475,8 @@ export function MessengerComposer({
             <TextInput
               value={text} onChangeText={setText} placeholder="Ask Metro" placeholderTextColor={sub} multiline
               onContentSizeChange={(e) => setTextareaH(e.nativeEvent.contentSize.height)}
+              selection={selection}
+              onSelectionChange={(e) => setSelection(e.nativeEvent.selection)}
               style={{ color: head, fontFamily: 'Calibre-Medium', fontSize: 18, lineHeight: 23, minHeight: 24, maxHeight: 140, paddingHorizontal: 8, paddingTop: 4, paddingBottom: 8, textAlignVertical: 'top' }}
             />
             {textareaH > 132 ? (
