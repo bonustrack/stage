@@ -23,8 +23,10 @@ import { stampBoxAvatarUrl, shortAddress, deleteAccount, switchToAccount } from 
 import {
   loadAccounts, getActiveAccountId, addGeneratedAccount,
   importPrivateKey, addWalletConnectAccount, getPrivateKey, canExportPrivateKey,
+  storeMnemonic, importMnemonicAccount,
   type AccountRecord,
 } from '../lib/accounts';
+import { scanActiveAccounts, type DerivedAccount } from '../lib/mnemonicScan';
 import { setWcSign } from '../lib/wcSigner';
 import { bumpAccountEpoch } from '../lib/accountEpoch';
 
@@ -32,6 +34,7 @@ const TYPE_LABEL: Record<AccountRecord['type'], string> = {
   generated: 'Generated',
   privateKey: 'Imported key',
   walletconnect: 'WalletConnect',
+  mnemonic: 'Seed phrase',
 };
 
 function reloadApp(): void {
@@ -57,6 +60,15 @@ export function AccountsManager({ dark }: { dark: boolean }): React.ReactElement
   const [importErr, setImportErr] = useState('');
   const [manageId, setManageId] = useState<string | null>(null);
   const [revealPk, setRevealPk] = useState<string | null>(null);
+
+  /** Mnemonic import + active-account scan. */
+  const [seedOpen, setSeedOpen] = useState(false);
+  const [seedText, setSeedText] = useState('');
+  const [seedErr, setSeedErr] = useState('');
+  const [scanning, setScanning] = useState(false);
+  const [scanProbeIdx, setScanProbeIdx] = useState<number | null>(null);
+  const [scanResults, setScanResults] = useState<DerivedAccount[] | null>(null);
+  const [selectedIdx, setSelectedIdx] = useState<Set<number>>(new Set());
 
   /** WalletConnect (Reown AppKit) — open() shows the wallet picker; the effect
    *  below reacts once a wallet is connected. */
@@ -101,9 +113,13 @@ export function AccountsManager({ dark }: { dark: boolean }): React.ReactElement
 
   const manageRec = accounts.find(a => a.id === manageId) ?? null;
 
-  /** Resolve Snapshot display names for each account address (re-renders the
-   *  rows once they load) so the list shows names, not just addresses. */
-  usePeerProfiles(accounts.map(a => a.address));
+  /** Resolve Snapshot display names for each account address — plus any
+   *  scanned-but-not-yet-imported addresses — so both the list and the scan
+   *  results show names, not just addresses. */
+  usePeerProfiles([
+    ...accounts.map(a => a.address),
+    ...(scanResults?.map(d => d.address) ?? []),
+  ]);
 
   async function onSwitch(id: string): Promise<void> {
     if (id === activeId || busy) return;
@@ -147,6 +163,69 @@ export function AccountsManager({ dark }: { dark: boolean }): React.ReactElement
       setImportErr((e as Error).message);
       setBusy(false);
     }
+  }
+
+  /** Validate + store the pasted seed, then scan its derived accounts for
+   *  activeness (XMTP inbox / Snapshot profile) with a live progress counter. */
+  async function onScanSeed(): Promise<void> {
+    if (scanning) return;
+    setSeedErr('');
+    setScanResults(null);
+    setSelectedIdx(new Set());
+    setScanning(true);
+    setScanProbeIdx(0);
+    try {
+      await storeMnemonic(seedText);
+      /** Re-read the normalized phrase we just stored rather than re-deriving
+       *  from raw input, so the scanner sees exactly what was persisted. */
+      const phrase = seedText.trim().replace(/\s+/g, ' ').toLowerCase();
+      const found = await scanActiveAccounts(phrase, 'production', (probed) => {
+        setScanProbeIdx(probed.index);
+      });
+      /** Default-select the first active account so the common case (import the
+       *  primary account) is one tap. */
+      const firstActive = found.find(d => d.onXmtp || d.onSnapshot) ?? found[0];
+      setScanResults(found);
+      setSelectedIdx(new Set(firstActive ? [firstActive.index] : []));
+    } catch (e) {
+      setSeedErr((e as Error).message);
+    } finally {
+      setScanning(false);
+      setScanProbeIdx(null);
+    }
+  }
+
+  /** Import the checked derived accounts and switch to the first of them. */
+  async function onImportSelected(): Promise<void> {
+    if (busy || selectedIdx.size === 0) return;
+    setBusy(true);
+    try {
+      const indices = [...selectedIdx].sort((a, b) => a - b);
+      let firstId: string | null = null;
+      for (const i of indices) {
+        const rec = await importMnemonicAccount(i);
+        if (!firstId) firstId = rec.id;
+      }
+      setSeedOpen(false);
+      setSeedText('');
+      setScanResults(null);
+      setSelectedIdx(new Set());
+      /** Switch to the first imported account; reload so XMTP re-inits against
+       *  it (matches the generate/import-key flows). */
+      if (firstId) { await switchToAccount(firstId); }
+      reloadApp();
+    } catch (e) {
+      Alert.alert('Import failed', (e as Error).message);
+      setBusy(false);
+    }
+  }
+
+  function toggleSelected(index: number): void {
+    setSelectedIdx(prev => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index); else next.add(index);
+      return next;
+    });
   }
 
   async function onExport(id: string): Promise<void> {
@@ -256,6 +335,7 @@ export function AccountsManager({ dark }: { dark: boolean }): React.ReactElement
       <SheetModal visible={addOpen} onClose={() => setAddOpen(false)} bg={sheetBg} border={border} title="Add account" head={head}>
         <SheetButton label="Generate a new account" desc="Create a fresh wallet on this device" head={head} sub={sub} border={border} onPress={() => void onGenerate()} />
         <SheetButton label="Import private key" desc="Paste an existing wallet's private key" head={head} sub={sub} border={border} onPress={() => { setAddOpen(false); setImportErr(''); setImportText(''); setImportOpen(true); }} />
+        <SheetButton label="Import seed phrase" desc="Find active accounts from a 12–24 word phrase" head={head} sub={sub} border={border} onPress={() => { setAddOpen(false); setSeedErr(''); setSeedText(''); setScanResults(null); setSelectedIdx(new Set()); setSeedOpen(true); }} />
         <SheetButton label="Connect with WalletConnect" desc="Sign in with an existing wallet" head={head} sub={sub} border={border} onPress={() => { setAddOpen(false); setWcPending(true); open(); }} />
       </SheetModal>
 
@@ -291,6 +371,127 @@ export function AccountsManager({ dark }: { dark: boolean }): React.ReactElement
             <Text style={{ color: '#000', fontSize: 14, fontFamily: 'Calibre-Semibold' }}>Import</Text>
           </Pressable>
         </View>
+      </SheetModal>
+
+      {/* Import seed phrase → scan for active accounts → pick which to import */}
+      <SheetModal visible={seedOpen} onClose={() => { if (!scanning && !busy) setSeedOpen(false); }} bg={sheetBg} border={border} title="Import seed phrase" head={head}>
+        {!scanResults && !scanning ? (
+          <>
+            <TextInput
+              value={seedText}
+              onChangeText={(t) => { setSeedText(t); setSeedErr(''); }}
+              placeholder="Enter your 12–24 word seed phrase"
+              placeholderTextColor={sub}
+              autoCapitalize="none"
+              autoCorrect={false}
+              multiline
+              secureTextEntry={false}
+              style={{
+                color: head, fontFamily: 'Menlo', fontSize: 13, minHeight: 72,
+                borderWidth: 1, borderColor: border, borderRadius: 10,
+                paddingHorizontal: 12, paddingVertical: 10, marginBottom: 8,
+                textAlignVertical: 'top',
+              }}
+            />
+            {seedErr ? <Text style={{ color: '#ff6b80', fontSize: 12, marginBottom: 8, fontFamily: 'Calibre-Medium' }}>{seedErr}</Text> : null}
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <Pressable
+                onPress={() => void (async () => { const t = await Clipboard.getStringAsync(); if (t) { setSeedText(t.trim()); setSeedErr(''); } })()}
+                style={({ pressed }) => ({ flex: 1, paddingVertical: 11, borderRadius: 10, alignItems: 'center', borderWidth: 1, borderColor: border, backgroundColor: pressed ? border : 'transparent' })}
+              >
+                <Text style={{ color: head, fontSize: 14, fontFamily: 'Calibre-Semibold' }}>Paste</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => void onScanSeed()}
+                disabled={!seedText.trim()}
+                style={({ pressed }) => ({ flex: 1, paddingVertical: 11, borderRadius: 10, alignItems: 'center', backgroundColor: !seedText.trim() ? border : pressed ? '#a08458' : '#c0a06e', opacity: !seedText.trim() ? 0.6 : 1 })}
+              >
+                <Text style={{ color: '#000', fontSize: 14, fontFamily: 'Calibre-Semibold' }}>Scan accounts</Text>
+              </Pressable>
+            </View>
+          </>
+        ) : null}
+
+        {scanning ? (
+          <View style={{ paddingVertical: 24, alignItems: 'center', gap: 12 }}>
+            <ActivityIndicator color={head} />
+            <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium' }}>
+              {scanProbeIdx === null ? 'Scanning…' : `Checking account #${scanProbeIdx}…`}
+            </Text>
+          </View>
+        ) : null}
+
+        {scanResults && !scanning ? (
+          <>
+            {scanResults.length === 0 ? (
+              <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium', paddingVertical: 12 }}>
+                No accounts found for this seed phrase.
+              </Text>
+            ) : (
+              <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginBottom: 8 }}>
+                {`Found ${scanResults.length} account${scanResults.length === 1 ? '' : 's'}. Select which to import.`}
+              </Text>
+            )}
+            {scanResults.map((d) => {
+              const checked = selectedIdx.has(d.index);
+              const already = accounts.some(a => a.id === d.address.toLowerCase());
+              const name = getPeerName(d.address) ?? d.snapshotName;
+              const signals = [d.onXmtp ? 'XMTP' : null, d.onSnapshot ? 'Snapshot' : null].filter(Boolean).join(' · ');
+              return (
+                <Pressable
+                  key={d.index}
+                  onPress={() => { if (!already) toggleSelected(d.index); }}
+                  disabled={already}
+                  style={({ pressed }) => ({
+                    flexDirection: 'row', alignItems: 'center', gap: 12,
+                    paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, marginTop: 8,
+                    borderWidth: 1, borderColor: border,
+                    opacity: already ? 0.5 : 1,
+                    backgroundColor: pressed ? border : 'transparent',
+                  })}
+                >
+                  <Image
+                    source={{ uri: stampBoxAvatarUrl(d.address, 56) }}
+                    style={{ width: 28, height: 28, borderRadius: 999, backgroundColor: border }}
+                  />
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text numberOfLines={1} style={{ color: head, fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
+                      {name ?? `Account #${d.index}`}
+                    </Text>
+                    <Text numberOfLines={1} style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', marginTop: 1 }}>
+                      {shortAddress(d.address)}{signals ? ` · ${signals}` : ''}{already ? ' · added' : ''}
+                    </Text>
+                  </View>
+                  {already ? (
+                    <HeroIcon name="check" size={18} color={sub} />
+                  ) : (
+                    <View style={{
+                      width: 22, height: 22, borderRadius: 6,
+                      borderWidth: 1.5, borderColor: checked ? '#c0a06e' : sub,
+                      backgroundColor: checked ? '#c0a06e' : 'transparent',
+                      alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      {checked ? <HeroIcon name="check" size={15} color="#000" /> : null}
+                    </View>
+                  )}
+                </Pressable>
+              );
+            })}
+            <Pressable
+              onPress={() => void onImportSelected()}
+              disabled={selectedIdx.size === 0 || busy}
+              style={({ pressed }) => ({
+                marginTop: 12, paddingVertical: 12, borderRadius: 10, alignItems: 'center',
+                backgroundColor: selectedIdx.size === 0 ? border : pressed ? '#a08458' : '#c0a06e',
+                opacity: selectedIdx.size === 0 ? 0.6 : 1,
+              })}
+            >
+              <Text style={{ color: '#000', fontSize: 14, fontFamily: 'Calibre-Semibold' }}>
+                {selectedIdx.size === 0 ? 'Select accounts to import' : `Import ${selectedIdx.size} account${selectedIdx.size === 1 ? '' : 's'}`}
+              </Text>
+            </Pressable>
+          </>
+        ) : null}
       </SheetModal>
 
       {/* Per-account options */}

@@ -17,11 +17,14 @@
 
 import './cryptoShim';
 import * as SecureStore from 'expo-secure-store';
-import { generatePrivateKey, privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts';
+import {
+  generatePrivateKey, privateKeyToAccount, mnemonicToAccount,
+  type PrivateKeyAccount,
+} from 'viem/accounts';
 import type { Hex } from 'viem';
 import { clearCachedRows } from './channelsCache';
 
-export type AccountType = 'generated' | 'privateKey' | 'walletconnect';
+export type AccountType = 'generated' | 'privateKey' | 'walletconnect' | 'mnemonic';
 
 export interface AccountRecord {
   /** Lowercased address — stable, SecureStore-key-safe identifier. */
@@ -34,12 +37,22 @@ export interface AccountRecord {
   dbDir: string;
   /** An XMTP installation has been created in dbDir (so we Client.build, not create). */
   registered?: boolean;
+  /** For 'mnemonic' accounts: BIP-44 address index this account was derived at
+   *  (path m/44'/60'/0'/0/<index>). Lets the UI show "Account #i" and dedup the
+   *  scan against accounts already imported from the same seed. */
+  hdIndex?: number;
   createdAt: number;
 }
 
 const LIST_KEY = 'accounts.list';
 const ACTIVE_KEY = 'accounts.active';
 const PK_PREFIX = 'wallet.pk.';
+/** The single imported BIP-39 seed phrase, stored once in SecureStore (secure
+ *  enclave on iOS / keystore on Android). Never logged, never leaves the device.
+ *  Derived accounts also stash their own derived private key under PK_PREFIX so
+ *  signing goes through the same `getPrivateKey` path as every other local
+ *  account — the mnemonic is kept only so the user can derive further accounts. */
+const MNEMONIC_KEY = 'wallet.mnemonic';
 /** Pre-multi-account single-key location + its XMTP db dir. */
 const LEGACY_PK_KEY = 'wallet.privateKey';
 const LEGACY_DB_DIR = 'xmtp';
@@ -146,6 +159,71 @@ export async function importPrivateKey(input: string): Promise<AccountRecord> {
   return addLocalAccount(normalizePk(input), 'privateKey');
 }
 
+/** Normalize a pasted BIP-39 mnemonic: trim, collapse runs of whitespace, and
+ *  lowercase (the wordlist is all-lowercase). Throws when it isn't a plausible
+ *  12/15/18/21/24-word phrase. viem's `mnemonicToAccount` does the real
+ *  checksum/word validation at derivation time. */
+export function normalizeMnemonic(input: string): string {
+  const phrase = input.trim().replace(/\s+/g, ' ').toLowerCase();
+  const words = phrase ? phrase.split(' ') : [];
+  if (![12, 15, 18, 21, 24].includes(words.length)) {
+    throw new Error('Invalid seed phrase — expected 12, 15, 18, 21, or 24 words.');
+  }
+  return phrase;
+}
+
+/** Stash the imported seed phrase in SecureStore. Overwrites any previous one
+ *  (the app holds a single seed). Validates the phrase by deriving index 0. */
+export async function storeMnemonic(input: string): Promise<void> {
+  const phrase = normalizeMnemonic(input);
+  /** Throws on a bad checksum / unknown word before we persist anything. */
+  mnemonicToAccount(phrase, { addressIndex: 0 });
+  await SecureStore.setItemAsync(MNEMONIC_KEY, phrase);
+}
+
+/** The stored seed phrase, or null when none has been imported. Handle with
+ *  care — never log or surface this. */
+export async function getMnemonic(): Promise<string | null> {
+  return SecureStore.getItemAsync(MNEMONIC_KEY).catch(() => null);
+}
+
+/** True once a seed phrase has been imported (used to gate "derive more"). */
+export async function hasMnemonic(): Promise<boolean> {
+  return !!(await getMnemonic());
+}
+
+/** Derive the EOA at BIP-44 path m/44'/60'/0'/0/<index> from a mnemonic, without
+ *  persisting anything. Used by the scanner to probe addresses for activeness
+ *  before the user commits to importing them. */
+export function deriveAddressAtIndex(mnemonic: string, index: number): string {
+  return mnemonicToAccount(mnemonic, { addressIndex: index }).address;
+}
+
+/** Import one account derived from a mnemonic at the given address index. Stores
+ *  the derived private key under PK_PREFIX (so it signs like any other local
+ *  account) and tags the record with its hdIndex. The mnemonic must already be
+ *  stored via `storeMnemonic`. Does NOT change the active account — the caller
+ *  decides which imported account to switch to. */
+export async function importMnemonicAccount(index: number): Promise<AccountRecord> {
+  const mnemonic = await getMnemonic();
+  if (!mnemonic) throw new Error('No seed phrase stored — import one first.');
+  const hd = mnemonicToAccount(mnemonic, { addressIndex: index });
+  const pk = hd.getHdKey().privateKey;
+  if (!pk) throw new Error('Could not derive the private key for this account.');
+  const pkHex = ('0x' + Buffer.from(pk).toString('hex')) as Hex;
+  const id = hd.address.toLowerCase();
+  const list = await loadAccounts();
+  const existing = list.find(a => a.id === id);
+  if (existing) return existing;
+  await SecureStore.setItemAsync(PK_PREFIX + id, pkHex);
+  const rec: AccountRecord = {
+    id, address: hd.address, type: 'mnemonic', dbDir: `xmtp-${id}`,
+    registered: false, hdIndex: index, createdAt: Date.now(),
+  };
+  await persist([...list, rec]);
+  return rec;
+}
+
 /** WalletConnect account — no private key stored locally. The address is the
  *  one returned by the connected wallet session; signing is delegated to it. */
 export async function addWalletConnectAccount(address: string): Promise<AccountRecord> {
@@ -196,6 +274,7 @@ export async function clearAllAccounts(): Promise<AccountRecord[]> {
   await SecureStore.deleteItemAsync(LIST_KEY).catch(() => undefined);
   await SecureStore.deleteItemAsync(ACTIVE_KEY).catch(() => undefined);
   await SecureStore.deleteItemAsync(LEGACY_PK_KEY).catch(() => undefined);
+  await SecureStore.deleteItemAsync(MNEMONIC_KEY).catch(() => undefined);
   cache = null;
   return list;
 }
