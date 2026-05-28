@@ -21,7 +21,7 @@ The URI parses cleanly with the WHATWG `URL` parser: `new URL(line)` gives `prot
 | `claude`   | `metro://claude/<user-id>/<session-id>`      | `metro://claude/9bfc7af0-…/50b00d11-…`                                 |
 | `codex`    | `metro://codex/<user-id>/<session-id>`       | `metro://codex/8119ecb1-…/01997d4b-…`                                  |
 | `webhook`  | `metro://webhook/<endpoint-id>`              | `metro://webhook/fwaCgTKJuLAjS2K0`                                     |
-| `xmtp`     | `metro://xmtp/<conversation-id>`             | `metro://xmtp/abc123def456…`                                           |
+| `xmtp`     | `metro://xmtp/<account>/<conversation-id>`   | `metro://xmtp/tony/abc123def456…`                                      |
 
 Claude / Codex lines mirror the `<root>/<sub>` structure of `metro://telegram/<chat-id>/<topic-id>`: `<user-id>` (the stable account id — same across devices) plays the role of `<chat-id>`, and `<session-id>` (one conversation) plays the role of `<topic-id>`. Both segments are derived per station (see [participants](#participants) below).
 
@@ -35,7 +35,7 @@ Every chat station also exposes participant URIs — used as `from` on inbound/o
 | claude  | `metro://claude/user/<orgId>`    | `metro://claude/user/9bfc7af0-2117-44c5-baf2-d22ba382d065`    |
 | codex   | `metro://codex/user/<accountId>` | `metro://codex/user/8119ecb1-b05e-48db-aa80-434584439df9`     |
 | webhook | `metro://webhook/<endpointId>`   | `metro://webhook/fwaCgTKJuLAjS2K0` (line + `from` are the same — no HTTP-side user identity) |
-| xmtp    | `metro://xmtp/user/<inboxId>`    | `metro://xmtp/user/9a1c…` (XMTP inbox id; one inbox can fan out to multiple wallets) |
+| xmtp    | `metro://xmtp/<account>/user/<inboxId>` | `metro://xmtp/tony/user/9a1c…` (XMTP inbox id; one inbox can fan out to multiple wallets) |
 
 `from` and `to` on history entries are always participant URIs. Discord/Telegram inbounds set `from` to the user URI; the daemon sets `to` to the local user identity:
 
@@ -72,6 +72,15 @@ Receive-only HTTP endpoint for third-party services (GitHub, Intercom, Fireflies
 - **HMAC verification:** if `--secret` was set on `metro webhook add`, requests must include a matching `X-Hub-Signature-256: sha256=<hex>` (GitHub/Intercom format) — mismatches are rejected with 401 before reaching the stream.
 - **Public reachability:** provided by a Cloudflare named tunnel — see [Tunneling](#tunneling) below. Without one, the listener stays loopback-only (useful for `curl` testing).
 
+## XMTP station — account-scoped
+
+The XMTP train is **multi-account**: it boots N XMTP identities (one client each) from `~/.metro/xmtp-accounts.json`, so every XMTP line carries the account as its first segment.
+
+- **Line:** `metro://xmtp/<account>/<conversation-id>` — `<account>` is the id from `xmtp-accounts.json`. The single-segment legacy form `metro://xmtp/<conversation-id>` resolves against an account literally named `default` (the back-compat single-account fallback); if no `default` account is configured, calls on a legacy line error.
+- **Participant `from`:** `metro://xmtp/<account>/user/<inboxId>` — the sender URI is account-scoped too, preventing cross-account `from` collisions.
+- **Event tagging:** inbound events also carry `payload.account` (and a top-level `account`) so consumers can route by identity.
+- **Feed isolation:** an account may declare an `owner` URI in its config; the train then stamps `to = <owner>` on that account's inbound events. Because the broker always delivers an event whose `to` matches a session's own identity (see [broker.md](broker.md)), a session tailing as that owner (`metro tail --as <owner> --strict`) receives only that account's XMTP feed. Accounts with no `owner` stay broadcast. Outbound actions select the account from the line's `<account>` segment (or an `account` arg for actions with no line). Signing keys are file-scoped secrets (a raw `privateKey`, or an HD index `derive` into `~/.metro/xmtp-mnemonic`) and never appear on the wire.
+
 ## Tunneling
 
 Webhook providers need a public URL. Metro integrates with **Cloudflare named tunnels** (free, stable, account-scoped):
@@ -92,6 +101,7 @@ Messages on chat lines are referenced by **line + message id** (two args), not a
 metro call discord send '{"line":"metro://discord/123","text":"ack","replyTo":"4567"}'
 metro call discord edit '{"line":"metro://discord/123","messageId":"9876","text":"fixed typo"}'
 metro call telegram react '{"line":"metro://telegram/-100/42","messageId":"4567","emoji":"👍"}'
+metro call xmtp send '{"line":"metro://xmtp/tony/abc123…","text":"gm"}'    # account from the line segment
 ```
 
 ## Properties
