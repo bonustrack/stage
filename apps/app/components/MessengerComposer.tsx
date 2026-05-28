@@ -33,6 +33,9 @@ interface Props {
   token?: string;
   replyingTo?: { id: string; preview: string };
   onClearReply?: () => void;
+  /** Tap on the "Replying to …" preview — parent scrolls the feed to the
+   *  target message + flashes the highlight. No-op when omitted. */
+  onReplyPreviewPress?: () => void;
   /** Optimistic-render hook: invoked the moment the user taps send, before the API call. */
   onOptimistic?: (entry: { localId: string; text: string; attachments: Attachment[]; replyTo?: string }) => void;
   /** Fired AFTER the send completes (success OR failure). Lets the parent drop the
@@ -42,7 +45,7 @@ interface Props {
 }
 
 export function MessengerComposer({
-  dark, xmtpLine, replyingTo, onClearReply, onOptimistic, onSent,
+  dark, xmtpLine, replyingTo, onClearReply, onReplyPreviewPress, onOptimistic, onSent,
 }: Props): React.ReactElement {
   const fg = dark ? '#9f9fa3' : '#57606a';
   const head = dark ? '#ffffff' : '#000000';
@@ -136,13 +139,20 @@ export function MessengerComposer({
   };
 
   /** Load recent device photos when the attach menu opens, so they show inline
-   *  (Discord-style) without leaving the app. Permission is requested on first open. */
+   *  (Discord-style) without leaving the app. Permission is requested on first
+   *  open. We always ask for the FULL `photo` access (`granularPermissions:
+   *  ['photo']` is configured at the plugin layer in app.json) — accepting the
+   *  partial / "selected photos" grant would dump us into Android's system
+   *  picker and defeat the whole inline-strip feature. */
   useEffect(() => {
     if (!attachMenuOpen) return;
     let cancelled = false;
     void (async (): Promise<void> => {
       try {
-        const perm = await MediaLibrary.requestPermissionsAsync();
+        /** Request the full-photo permission explicitly via `granularPermissions`
+         *  — without this Android 14+ defaults to the limited "user-selected"
+         *  grant, which makes `getAssetsAsync` return only the picked subset. */
+        const perm = await MediaLibrary.requestPermissionsAsync(false, ['photo']);
         if (!perm.granted || cancelled) return;
         const res = await MediaLibrary.getAssetsAsync({
           first: 24, mediaType: 'photo', sortBy: [['creationTime', false]],
@@ -301,10 +311,15 @@ export function MessengerComposer({
       <ComposerGradient bg={bg} direction="down" top={-24} height={24} left={-10} right={-10} />
       {replyingTo ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingBottom: 6 }}>
-          <View style={{ flex: 1, borderLeftWidth: 2, borderLeftColor: sub, paddingLeft: 8 }}>
+          {/** Tap the quoted slab → parent scrolls the feed to the target. The
+           *   ✕ stays as its own Pressable so it stays clear-only. */}
+          <Pressable
+            onPress={onReplyPreviewPress}
+            style={{ flex: 1, borderLeftWidth: 2, borderLeftColor: sub, paddingLeft: 8 }}
+          >
             <Text style={{ color: sub, fontSize: 12 , fontFamily: 'Calibre-Medium'}}>Replying to</Text>
-            <Text style={{ color: fg, fontSize: 14 , fontFamily: 'Calibre-Medium'}} numberOfLines={1}>{replyingTo.preview}</Text>
-          </View>
+            <Text style={{ color: fg, fontSize: 14, marginTop: 3, fontFamily: 'Calibre-Medium'}} numberOfLines={1}>{replyingTo.preview}</Text>
+          </Pressable>
           <Pressable onPress={onClearReply} hitSlop={6}><HeroIcon name="x" size={16} color={sub} /></Pressable>
         </View>
       ) : null}
