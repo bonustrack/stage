@@ -9,6 +9,9 @@ import type { Line } from './lines.js';
 export const STATE_DIR = process.env.METRO_STATE_DIR ?? join(homedir(), '.cache', 'metro');
 mkdirSync(STATE_DIR, { recursive: true });
 
+/** Append-only JSONL message log. Single source of truth — import everywhere, never re-derive. */
+export const HISTORY_FILE = join(STATE_DIR, 'history.jsonl');
+
 const CONFIG_DIR = process.env.METRO_CONFIG_DIR ?? join(process.env.XDG_CONFIG_HOME || join(homedir(), '.config'), 'metro');
 export const CONFIG_ENV_FILE = join(CONFIG_DIR, '.env');
 

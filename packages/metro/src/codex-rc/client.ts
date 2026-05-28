@@ -34,7 +34,6 @@ export class CodexRC {
 
   start(): void { void this.connect(); }
 
-  getThreadId(): string | null { return this.threadId; }
   onThread(listener: (id: string | null) => void): void { this.threadListener = listener; }
   private setThreadId(id: string | null): void {
     if (this.threadId === id) return;

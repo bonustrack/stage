@@ -4,7 +4,7 @@ import { randomBytes } from 'node:crypto';
 import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { errMsg, log } from './log.js';
-import { STATE_DIR } from './paths.js';
+import { HISTORY_FILE, STATE_DIR } from './paths.js';
 import { Line } from './lines.js';
 import { claudeUserId, claudeSessionId, codexUserId, codexSessionId, codexUserIdOrNull } from './local-identity.js';
 
@@ -48,15 +48,13 @@ export function formatDisplay(e: HistoryEntry): string {
   return `${headerFor('📩', [e.station, e.fromName ?? e.from, e.lineName])}\n> ${body}`;
 }
 
-const FILE = join(STATE_DIR, 'history.jsonl');
-
 /** Mint a universal metro message ID. Short, prefixed, URL-safe. */
 export const mintId = (): string => `msg_${randomBytes(6).toString('base64url')}`;
 
 /** Append one entry as a JSON line. POSIX-atomic for sub-PIPE_BUF writes (we're well under). */
 export function appendHistory(entry: HistoryEntry): void {
-  try { appendFileSync(FILE, JSON.stringify(entry) + '\n'); }
-  catch (err) { log.warn({ err: errMsg(err), path: FILE }, 'history append failed'); }
+  try { appendFileSync(HISTORY_FILE, JSON.stringify(entry) + '\n'); }
+  catch (err) { log.warn({ err: errMsg(err), path: HISTORY_FILE }, 'history append failed'); }
 }
 
 export interface HistoryFilter {
@@ -72,8 +70,8 @@ export interface HistoryFilter {
 
 /** Read JSONL, parse, filter (most-recent-first), apply `skip` then `limit`. Empty array if file is missing. */
 export function readHistory(filter: HistoryFilter = {}): HistoryEntry[] {
-  if (!existsSync(FILE)) return [];
-  const lines = readFileSync(FILE, 'utf8').split('\n');
+  if (!existsSync(HISTORY_FILE)) return [];
+  const lines = readFileSync(HISTORY_FILE, 'utf8').split('\n');
   const out: HistoryEntry[] = [];
   const skip = filter.skip ?? 0;
   let skipped = 0;
