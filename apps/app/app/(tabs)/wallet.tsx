@@ -39,7 +39,10 @@ const ASSETS: Asset[] = [
   { symbol: 'USDC', name: 'USD Coin',  decimals: 6,  address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', logoAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' },
   { symbol: 'USDT', name: 'Tether USD', decimals: 6, address: '0xdAC17F958D2ee523a2206206994597C13D831ec7', logoAddress: '0xdAC17F958D2ee523a2206206994597C13D831ec7' },
 ];
-const MAINNET_NETWORK_LOGO = 'https://assets.coingecko.com/coins/images/279/standard/ethereum.png';
+/** Mainnet network bullet — Snapshot's IPFS-hosted logo (same one used in
+ *  the UI's `BadgeNetwork` over the IPFS gateway at `ipfs.snapshot.box`).
+ *  Hardcoded so we don't need to pull snapshot.js's full networks.json. */
+const MAINNET_NETWORK_LOGO = 'https://ipfs.snapshot.box/ipfs/bafkreid7ndxh6y2ljw2jhbisodiyrhcy2udvnwqgon5wgells3kh4si5z4';
 const tokenLogoUrl = (addr: string, size = 64): string =>
   `https://cdn.stamp.fyi/token/eip155:1:${addr.toLowerCase()}?s=${size * 2}`;
 
@@ -126,8 +129,14 @@ export default function Wallet(): React.ReactElement {
   const totalUsd = rows
     ? rows.reduce((s, r) => s + (r.priceUsd ?? 0) * Number(r.balance), 0)
     : null;
+  /** Plain `$` (no `US`) — `currencyDisplay: 'narrowSymbol'` strips the
+   *  locale-specific country prefix Intl would otherwise add. */
   const fmtUsd = (v: number, maxFrac = 2): string =>
-    v.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: maxFrac });
+    v.toLocaleString(undefined, {
+      style: 'currency', currency: 'USD',
+      currencyDisplay: 'narrowSymbol',
+      maximumFractionDigits: maxFrac,
+    });
   const fmtBalance = (v: string): string => {
     const n = Number(v);
     /** Tighter precision for big numbers; more for dust. Keeps the row clean
@@ -232,13 +241,13 @@ export default function Wallet(): React.ReactElement {
                 />
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>{r.symbol}</Text>
+                <Text style={{ color: head, fontSize: 17, fontFamily: 'Calibre-Semibold' }}>{r.symbol}</Text>
                 <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 2 }} numberOfLines={1}>
                   {r.name}
                 </Text>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
-                <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>
+                <Text style={{ color: head, fontSize: 17, fontFamily: 'Calibre-Semibold' }}>
                   {rows ? fmtBalance(r.balance) : '…'}
                 </Text>
                 <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 2 }}>

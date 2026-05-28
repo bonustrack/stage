@@ -14,7 +14,7 @@ import {
 import EditProfileModal from '../../components/EditProfileModal';
 import { HeroIcon } from '../../components/HeroIcon';
 
-const AVATAR_SIZE = 120;
+const AVATAR_SIZE = 64;
 
 export default function Profile(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
@@ -77,7 +77,7 @@ export default function Profile(): React.ReactElement {
         ) : (
           <View style={{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: AVATAR_SIZE / 2, backgroundColor: rowBg }} />
         )}
-        <Text style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold', marginTop: 14 }}>
+        <Text style={{ color: head, fontSize: 22, fontFamily: 'Calibre-Semibold', marginTop: 14 }}>
           {address ? displayName : 'Loading…'}
         </Text>
         {profile.about ? (

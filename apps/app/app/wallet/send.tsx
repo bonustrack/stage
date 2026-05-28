@@ -10,7 +10,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createPublicClient, http, formatEther, isAddress, type Hex } from 'viem';
 import { mainnet } from 'viem/chains';
@@ -33,6 +33,10 @@ function looksLikeEns(s: string): boolean {
 
 export default function WalletSend(): React.ReactElement {
   const router = useRouter();
+  /** `to` may be pre-populated by callers (e.g. the profile page's Send
+   *  button passes `?to=<address>`) — seed the input from it so the user
+   *  doesn't have to retype. */
+  const params = useLocalSearchParams<{ to?: string }>();
   const dark = useEffectiveColorScheme() === 'dark';
   const head = dark ? '#ffffff' : '#000000';
   const fg = dark ? '#9f9fa3' : '#57606a';
@@ -42,7 +46,7 @@ export default function WalletSend(): React.ReactElement {
   const inputBg = dark ? '#282a2d' : '#e4e4e5';
   const insets = useSafeAreaInsets();
 
-  const [to, setTo] = useState('');
+  const [to, setTo] = useState<string>(typeof params.to === 'string' ? params.to : '');
   /** The text in the amount input — keyed by `mode`. */
   const [amount, setAmount] = useState('');
   /** `eth` = the input value is interpreted as ETH units; `usd` = as USD.

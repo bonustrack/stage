@@ -20,7 +20,7 @@ import { ComposerGradient } from '../../components/ComposerGradient';
 import { HeroIcon } from '../../components/HeroIcon';
 import {
   XMTP_USER_PREFIX, lineOfConv, useXmtpFeed, xmtpReact, xmtpReply,
-  stampBoxAvatarUrl,
+  stampBoxAvatarUrl, shortAddress,
 } from '../../lib/xmtp';
 import { markConvRead } from '../../lib/channelsCache';
 import { useEffectiveColorScheme } from '../../lib/theme';
@@ -89,6 +89,7 @@ export default function XmtpConversation(): React.ReactElement {
   const head = dark ? '#ffffff' : '#000000';
   const sub = dark ? '#7a7a7e' : '#8a929d';
   const bg = dark ? '#0e0f10' : '#ffffff';
+  const border = dark ? '#282a2d' : '#e4e4e5';
 
   const { convId } = useLocalSearchParams<{ convId: string }>();
   const activeLine = lineOfConv(convId ?? '');
@@ -267,6 +268,26 @@ export default function XmtpConversation(): React.ReactElement {
               : <Spinner size={28} color={head} />}
           </View>
         }
+        /** DM intro banner — inverted list so `ListFooterComponent` renders
+         *  at the visual TOP (oldest end). Only on 1-to-1 DMs; groups have
+         *  their own group page reachable from the topnav. */
+        ListFooterComponent={!isGroup && peerAddr ? (
+          <Pressable
+            onPress={() => router.push({ pathname: '/user/[address]', params: { address: peerAddr } })}
+            style={{ alignItems: 'center', paddingVertical: 24, paddingHorizontal: 24 }}
+          >
+            <Image
+              source={{ uri: stampBoxAvatarUrl(peerAddr, 96, getPeerAvatar(peerAddr)) }}
+              style={{ width: 64, height: 64, borderRadius: 999, backgroundColor: border }}
+            />
+            <Text style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold', marginTop: 12 }} numberOfLines={1}>
+              {getPeerName(peerAddr) ?? shortAddress(peerAddr)}
+            </Text>
+            <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 2 }} numberOfLines={1}>
+              {shortAddress(peerAddr)}
+            </Text>
+          </Pressable>
+        ) : null}
         keyboardShouldPersistTaps="handled"
       />
       </Reanimated.View>
