@@ -13,12 +13,35 @@ import * as Location from 'expo-location';
 import { ComposerGradient } from './ComposerGradient';
 import { HeroIcon, type HeroIconName } from './HeroIcon';
 import { Avatar } from './Avatar';
-import { fileUriToBase64, xmtpReply, xmtpSendAttachment, xmtpSendText } from '../lib/xmtp';
+import { xmtpReply, xmtpSendMultiRemoteAttachment, xmtpSendText } from '../lib/xmtp';
 
 /** Composer-local representation of a staged attachment. `url` is a `file://` URI in xmtp
  *  mode (the only mode the mobile composer supports now). `id` is a client-side dedupe key. */
 interface Attachment {
   id: string; url: string; kind: string; mime: string; size: number; name?: string;
+}
+
+/** Map a file extension → MIME type for the formats the composer can stage. The
+ *  voice recorder writes `.m4a` (AAC) and image pickers can hand back HEIC/PNG
+ *  etc. with a missing `mimeType`, so we need a deterministic fallback. */
+const EXT_MIME: Record<string, string> = {
+  jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif',
+  webp: 'image/webp', heic: 'image/heic', heif: 'image/heif', bmp: 'image/bmp',
+  m4a: 'audio/m4a', mp3: 'audio/mpeg', wav: 'audio/wav', aac: 'audio/aac',
+  ogg: 'audio/ogg', caf: 'audio/x-caf', mp4: 'video/mp4', mov: 'video/quicktime',
+  webm: 'video/webm', pdf: 'application/pdf',
+};
+
+/** Resolve a usable MIME for a staged file. Prefers the picker/recorder-supplied
+ *  `mime`, but pickers frequently return `''`/`undefined` (HEIC screenshots,
+ *  some Android gallery `content://` rows, the voice recorder on certain OS
+ *  builds). An empty MIME breaks the `kind` bucket and the native
+ *  `encryptAttachment`/IPFS upload at send time, so fall back to the file
+ *  extension, then to a generic binary type. */
+function mimeOf(mime: string | undefined | null, nameOrUri: string): string {
+  if (mime && mime.includes('/')) return mime;
+  const ext = nameOrUri.split('?')[0]?.split('#')[0]?.split('.').pop()?.toLowerCase() ?? '';
+  return EXT_MIME[ext] ?? 'application/octet-stream';
 }
 
 
@@ -135,25 +158,32 @@ export function MessengerComposer({
   const upload = async (uri: string, mime: string, name?: string): Promise<void> => {
     setUploading(true);
     try {
-      /** Stage the local file URI and base64-encode at send time. The chip uses `url`
-       *  as a render hint (`file://...` works with `Image` source on RN), and `id` is
-       *  just a client-side dedupe key.
+      /** Stage the local file URI; it's encrypted + uploaded at send time (see
+       *  `send`). The chip uses `url` as a render hint (`file://...` works with
+       *  `Image` source on RN), and `id` is just a client-side dedupe key.
        *
-       *  Pre-flight the file size: libxmtp's native side silently drops oversize
-       *  attachments without raising a JS error (the send "succeeds" but the message
-       *  never publishes). Reject in the composer where the user sees the error
-       *  instead of staring at a ghost bubble. */
-      const head = await fetch(uri);
-      const blob = await head.blob();
-      const XMTP_INLINE_MAX = 800 * 1024;
-      if (blob.size > XMTP_INLINE_MAX) {
-        throw new Error(`Image is ${(blob.size / 1024).toFixed(0)} KB — XMTP inline limit ~${XMTP_INLINE_MAX / 1024} KB. Pick a smaller image (or take a screenshot/crop).`);
-      }
-      const kind = mime.startsWith('image/') ? 'image'
-        : mime.startsWith('audio/') ? 'audio'
-          : mime.startsWith('video/') ? 'video' : 'file';
+       *  No inline size cap here anymore — attachments now ride the remote
+       *  (multi-remote-attachment) path: bytes are encrypted + pinned to IPFS,
+       *  not stuffed into the MLS envelope, so the old ~800 KB inline limit is
+       *  gone.
+       *
+       *  Always derive a concrete MIME: pickers/recorders sometimes hand back an
+       *  empty or undefined `mimeType` (HEIC screenshots, some Android gallery
+       *  rows, the voice recorder on certain OS builds). An empty MIME breaks
+       *  both the `kind` bucket below AND the encrypt/upload step at send time,
+       *  so fall back to the file extension and finally to a sane default. */
+      const resolvedMime = mimeOf(mime, name ?? uri);
+      const kind = resolvedMime.startsWith('image/') ? 'image'
+        : resolvedMime.startsWith('audio/') ? 'audio'
+          : resolvedMime.startsWith('video/') ? 'video' : 'file';
+      /** Size is cosmetic now (chip metadata only — no cap), so read it
+       *  best-effort. `fetch(file://).blob()` is flaky on some platforms and
+       *  must never block staging: a throw here previously rejected the whole
+       *  attachment, surfacing as an add-time error. Default to 0 on failure. */
+      let size = 0;
+      try { size = (await (await fetch(uri)).blob()).size; } catch { /* size is cosmetic */ }
       const id = `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-      setPending(prev => [...prev, { id, url: uri, kind, mime, size: blob.size, name }]);
+      setPending(prev => [...prev, { id, url: uri, kind, mime: resolvedMime, size, name }]);
     } catch (e) { setErr((e as Error).message); }
     finally { setUploading(false); }
   };
@@ -308,17 +338,28 @@ export function MessengerComposer({
     setSending(true); setErr(null);
     let sendErr: string | undefined;
     try {
-      /** Send text + each attachment as its own typed XMTP message. The body is sent as
-       *  a `reply` when there's a `replyingTo`; standalone attachments go as plain
-       *  `attachment` messages (replies-with-attachments would need a ReplyContent
-       *  wrapping an attachment, not v1). */
+      /** Send the text body first (as a `reply` when there's a `replyingTo`,
+       *  else plain text), then ALL staged attachments as ONE multi-remote
+       *  attachment message — each file is encrypted on-device + its ciphertext
+       *  pinned to IPFS, and the references bundled into a single message. This
+       *  replaces the previous "one inline StaticAttachment message per file"
+       *  loop, so a multi-image/voice/file send lands as a single bubble.
+       *  (Replies-with-attachments would need a ReplyContent wrapping the
+       *  multi-attachment, not v1 — the text reply + attachment message stay
+       *  separate.) */
       if (body) {
         if (sendingReplyTo) await xmtpReply(xmtpLine, sendingReplyTo, body);
         else await xmtpSendText(xmtpLine, body);
       }
-      for (const a of sendingAttachments) {
-        const dataB64 = await fileUriToBase64(a.url);
-        await xmtpSendAttachment(xmtpLine, a.name ?? a.id, a.mime, dataB64);
+      if (sendingAttachments.length > 0) {
+        await xmtpSendMultiRemoteAttachment(
+          xmtpLine,
+          sendingAttachments.map(a => ({
+            fileUri: a.url,
+            mimeType: a.mime,
+            filename: a.name ?? a.id,
+          })),
+        );
       }
     } catch (e) { sendErr = (e as Error).message; setErr(sendErr); }
     finally {
