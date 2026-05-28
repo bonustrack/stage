@@ -21,6 +21,29 @@ interface Attachment {
   id: string; url: string; kind: string; mime: string; size: number; name?: string;
 }
 
+/** Map a file extension → MIME type for the formats the composer can stage. The
+ *  voice recorder writes `.m4a` (AAC) and image pickers can hand back HEIC/PNG
+ *  etc. with a missing `mimeType`, so we need a deterministic fallback. */
+const EXT_MIME: Record<string, string> = {
+  jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif',
+  webp: 'image/webp', heic: 'image/heic', heif: 'image/heif', bmp: 'image/bmp',
+  m4a: 'audio/m4a', mp3: 'audio/mpeg', wav: 'audio/wav', aac: 'audio/aac',
+  ogg: 'audio/ogg', caf: 'audio/x-caf', mp4: 'video/mp4', mov: 'video/quicktime',
+  webm: 'video/webm', pdf: 'application/pdf',
+};
+
+/** Resolve a usable MIME for a staged file. Prefers the picker/recorder-supplied
+ *  `mime`, but pickers frequently return `''`/`undefined` (HEIC screenshots,
+ *  some Android gallery `content://` rows, the voice recorder on certain OS
+ *  builds). An empty MIME breaks the `kind` bucket and the native
+ *  `encryptAttachment`/IPFS upload at send time, so fall back to the file
+ *  extension, then to a generic binary type. */
+function mimeOf(mime: string | undefined | null, nameOrUri: string): string {
+  if (mime && mime.includes('/')) return mime;
+  const ext = nameOrUri.split('?')[0]?.split('#')[0]?.split('.').pop()?.toLowerCase() ?? '';
+  return EXT_MIME[ext] ?? 'application/octet-stream';
+}
+
 
 interface Props {
   dark: boolean;
@@ -127,14 +150,25 @@ export function MessengerComposer({
        *  No inline size cap here anymore — attachments now ride the remote
        *  (multi-remote-attachment) path: bytes are encrypted + pinned to IPFS,
        *  not stuffed into the MLS envelope, so the old ~800 KB inline limit is
-       *  gone. We still read the size for the chip metadata. */
-      const head = await fetch(uri);
-      const blob = await head.blob();
-      const kind = mime.startsWith('image/') ? 'image'
-        : mime.startsWith('audio/') ? 'audio'
-          : mime.startsWith('video/') ? 'video' : 'file';
+       *  gone.
+       *
+       *  Always derive a concrete MIME: pickers/recorders sometimes hand back an
+       *  empty or undefined `mimeType` (HEIC screenshots, some Android gallery
+       *  rows, the voice recorder on certain OS builds). An empty MIME breaks
+       *  both the `kind` bucket below AND the encrypt/upload step at send time,
+       *  so fall back to the file extension and finally to a sane default. */
+      const resolvedMime = mimeOf(mime, name ?? uri);
+      const kind = resolvedMime.startsWith('image/') ? 'image'
+        : resolvedMime.startsWith('audio/') ? 'audio'
+          : resolvedMime.startsWith('video/') ? 'video' : 'file';
+      /** Size is cosmetic now (chip metadata only — no cap), so read it
+       *  best-effort. `fetch(file://).blob()` is flaky on some platforms and
+       *  must never block staging: a throw here previously rejected the whole
+       *  attachment, surfacing as an add-time error. Default to 0 on failure. */
+      let size = 0;
+      try { size = (await (await fetch(uri)).blob()).size; } catch { /* size is cosmetic */ }
       const id = `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-      setPending(prev => [...prev, { id, url: uri, kind, mime, size: blob.size, name }]);
+      setPending(prev => [...prev, { id, url: uri, kind, mime: resolvedMime, size, name }]);
     } catch (e) { setErr((e as Error).message); }
     finally { setUploading(false); }
   };

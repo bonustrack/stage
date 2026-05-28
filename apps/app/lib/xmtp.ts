@@ -660,9 +660,43 @@ const PINEAPPLE_UPLOAD_URL = 'https://pineapple.fyi/upload';
 const IPFS_GATEWAY = 'https://snapshot.4everland.link/ipfs/';
 
 /** A locally-staged attachment ready to bundle into a multi-remote message.
- *  `fileUri` must be a `file://` URI (XMTP's native `encryptAttachment` rejects
- *  anything else). */
+ *  `fileUri` may be `file://`, `content://` (Android gallery) or `blob:` (web) —
+ *  `materializeFileUri` normalises it to the `file://` URI the native
+ *  `encryptAttachment` requires. */
 export interface LocalAttachmentInput { fileUri: string; mimeType: string; filename: string }
+
+/** Extension → MIME fallback for the formats the composer can stage. Mirrors the
+ *  composer's table; used as a last resort when a picker/recorder hands back an
+ *  empty MIME so the native encoder never receives `''`. */
+const EXT_MIME: Record<string, string> = {
+  jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif',
+  webp: 'image/webp', heic: 'image/heic', heif: 'image/heif', bmp: 'image/bmp',
+  m4a: 'audio/m4a', mp3: 'audio/mpeg', wav: 'audio/wav', aac: 'audio/aac',
+  ogg: 'audio/ogg', caf: 'audio/x-caf', mp4: 'video/mp4', mov: 'video/quicktime',
+  webm: 'video/webm', pdf: 'application/pdf',
+};
+
+/** Resolve any staged source URI to a real on-disk `file://` URI.
+ *
+ *  `client.encryptAttachment` rejects anything that doesn't start with `file://`.
+ *  A plain `file://` source is returned as-is. Other schemes (`content://` on
+ *  Android, `blob:` / `data:` on web, bare paths) are streamed into the cache dir
+ *  via `fetch().blob()` + `File.write` so the native side gets a path it can
+ *  read. */
+async function materializeFileUri(src: string): Promise<string> {
+  if (src.startsWith('file://')) return src;
+  /** Bare absolute path (no scheme) — just prefix it. */
+  if (src.startsWith('/')) return `file://${src}`;
+  const ext = src.split('?')[0]?.split('#')[0]?.split('.').pop()?.toLowerCase() ?? 'bin';
+  const tmpName = `xmtp-send-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext.length <= 5 ? ext : 'bin'}`;
+  const dest = new File(Paths.cache, tmpName);
+  if (dest.exists) try { dest.delete(); } catch { /* overwrite below */ }
+  const blob = await (await fetch(src)).blob();
+  const buf = new Uint8Array(await blob.arrayBuffer());
+  dest.create();
+  dest.write(buf);
+  return dest.uri.startsWith('file://') ? dest.uri : `file://${dest.uri.replace(/^file:\/+/, '/')}`;
+}
 
 /** Upload an encrypted attachment's ciphertext to IPFS and return the public
  *  HTTPS URL the recipient fetches from. Streams the file straight off disk via
@@ -695,11 +729,24 @@ export async function xmtpSendMultiRemoteAttachment(
 
   const infos: RemoteAttachmentInfo[] = [];
   for (const f of files) {
-    /** Native side requires a `file://` uri — picker results that hand back
-     *  `content://` (Android gallery) must be materialised first by the caller. */
-    const fileUri = f.fileUri.startsWith('file://') ? f.fileUri : `file://${f.fileUri.replace(/^file:\/+/, '/')}`;
+    /** Native `encryptAttachment` hard-requires a `file://` uri. Picker results
+     *  vary by platform/source:
+     *   - voice recorder / expo-image-picker copies → already `file://…`
+     *   - Android gallery (`MediaLibrary` fallback when ACCESS_MEDIA_LOCATION is
+     *     denied) → `content://…`
+     *   - web → `blob:…`
+     *  Anything that isn't `file://` is materialised into the cache dir first.
+     *  The previous `file://${…}` string-prefix hack turned `content://x` into
+     *  `file://content://x`, which the native side rejected — gallery images on
+     *  Android never sent. */
+    const fileUri = await materializeFileUri(f.fileUri);
+    /** Never hand the native encoder an empty MIME — guarantee one from the
+     *  filename extension as a last resort (matches the composer's `mimeOf`). */
+    const mimeType = f.mimeType && f.mimeType.includes('/')
+      ? f.mimeType
+      : (EXT_MIME[f.filename.split('.').pop()?.toLowerCase() ?? ''] ?? 'application/octet-stream');
     const encrypted = await client.encryptAttachment({
-      fileUri, mimeType: f.mimeType, filename: f.filename,
+      fileUri, mimeType, filename: f.filename,
     });
     const url = await uploadEncryptedToIpfs(encrypted.encryptedLocalFileUri, f.filename);
     /** `buildMultiRemoteAttachmentInfo` stitches the upload URL onto the encryption
