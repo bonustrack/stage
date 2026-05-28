@@ -47,6 +47,8 @@ export const HERO_ICON_PATHS = {
   reply: 'M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6',
   // arrow-down — scroll-to-bottom jump button
   arrowDown: 'M19 14l-7 7m0 0l-7-7m7 7V3',
+  // arrow-down-tray — download / save-to-device action (heroicons v1 "download")
+  arrowDownTray: 'M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4',
   // arrow-left — back navigation in headers
   arrowLeft: 'M10 19l-7-7m0 0l7-7m-7 7h18',
   // duplicate / copy — clipboard "copy text" action in the bubble menu

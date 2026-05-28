@@ -18,6 +18,7 @@ import { readProfile, uploadAvatar } from '../../lib/profile';
 import { avatarRenderUrl, type SnapshotProfile } from '@metro-labs/client/profile/snapshot';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { HeroIcon } from '../../components/HeroIcon';
+import { ImageViewer } from '../../components/ImageViewer';
 
 export default function GroupDetail(): React.ReactElement {
   const router = useRouter();
@@ -64,6 +65,8 @@ export default function GroupDetail(): React.ReactElement {
   const [descriptionDraft, setDescriptionDraft] = useState('');
   const [editingDescription, setEditingDescription] = useState(false);
   const [savingDescription, setSavingDescription] = useState(false);
+  /** When set, the fullscreen ImageViewer shows the group image. */
+  const [viewerOpen, setViewerOpen] = useState(false);
 
   useEffect(() => {
     const c = getCachedXmtpClient();
@@ -248,7 +251,12 @@ export default function GroupDetail(): React.ReactElement {
       </View>
 
       <View style={{ alignItems: 'center', paddingTop: 4, paddingBottom: 16 }}>
-        <Pressable onPress={() => { void pickImage(); }} disabled={uploadingImage} hitSlop={8}>
+        <Pressable
+          onPress={() => { if (imageUrl) setViewerOpen(true); else void pickImage(); }}
+          onLongPress={() => { void pickImage(); }}
+          disabled={uploadingImage}
+          hitSlop={8}
+        >
           {imageUrl ? (
             <Image
               source={{ uri: avatarRenderUrl('', imageUrl, 240) }}
@@ -271,7 +279,7 @@ export default function GroupDetail(): React.ReactElement {
           ) : null}
         </Pressable>
         <Text style={{ color: sub, fontSize: 13, marginTop: 6, fontFamily: 'Calibre-Medium' }}>
-          {uploadingImage ? 'Uploading…' : 'Tap to change image'}
+          {uploadingImage ? 'Uploading…' : imageUrl ? 'Tap to view · hold to change' : 'Tap to add image'}
         </Text>
       </View>
 
@@ -476,6 +484,12 @@ export default function GroupDetail(): React.ReactElement {
           </Pressable>
         </Pressable>
       </Modal>
+
+      <ImageViewer
+        uri={imageUrl ? avatarRenderUrl('', imageUrl, 1024) : ''}
+        visible={viewerOpen}
+        onClose={() => setViewerOpen(false)}
+      />
     </View>
   );
 }

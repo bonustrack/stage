@@ -14,6 +14,7 @@ import {
 import EditProfileModal from '../../components/EditProfileModal';
 import { HeroIcon } from '../../components/HeroIcon';
 import { Avatar } from '../../components/Avatar';
+import { ImageViewer } from '../../components/ImageViewer';
 
 export default function Profile(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
@@ -29,6 +30,7 @@ export default function Profile(): React.ReactElement {
   const [profile, setProfile] = useState<SnapshotProfile>({});
   const [loaded, setLoaded] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [viewerUri, setViewerUri] = useState<string | null>(null);
   const push = usePushToken();
 
   useEffect(() => {
@@ -73,6 +75,7 @@ export default function Profile(): React.ReactElement {
           imageUri={loaded ? profile.avatar : null}
           size="lg"
           style={{ backgroundColor: rowBg }}
+          onPress={uri => { if (uri) setViewerUri(uri); }}
         />
         <Text style={{ color: head, fontSize: 22, fontFamily: 'Calibre-Semibold', marginTop: 14 }}>
           {address ? displayName : 'Loading…'}
@@ -115,6 +118,7 @@ export default function Profile(): React.ReactElement {
         onSaved={next => setProfile(next)}
         address={address} initial={profile} dark={dark}
       />
+      <ImageViewer uri={viewerUri ?? ''} visible={viewerUri !== null} onClose={() => setViewerUri(null)} />
     </View>
   );
 }
