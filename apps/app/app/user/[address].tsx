@@ -72,7 +72,7 @@ export default function UserProfileView(): React.ReactElement {
           <Avatar
             address={loaded ? addr : null}
             imageUri={profile?.avatar}
-            size="lg"
+            size={128}
             style={{ backgroundColor: border }}
           />
           <Text style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold', marginTop: 14 }}>

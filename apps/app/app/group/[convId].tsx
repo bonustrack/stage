@@ -251,12 +251,12 @@ export default function GroupDetail(): React.ReactElement {
         <Pressable onPress={() => { void pickImage(); }} disabled={uploadingImage} hitSlop={8}>
           {imageUrl ? (
             <Image
-              source={{ uri: avatarRenderUrl('', imageUrl, 240) }}
-              style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: rowBg, opacity: uploadingImage ? 0.5 : 1 }}
+              source={{ uri: avatarRenderUrl('', imageUrl, 256) }}
+              style={{ width: 128, height: 128, borderRadius: 64, backgroundColor: rowBg, opacity: uploadingImage ? 0.5 : 1 }}
             />
           ) : (
             <View style={{
-              width: 96, height: 96, borderRadius: 48, backgroundColor: rowBg,
+              width: 128, height: 128, borderRadius: 64, backgroundColor: rowBg,
               borderWidth: 1, borderColor: border,
               alignItems: 'center', justifyContent: 'center',
               opacity: uploadingImage ? 0.5 : 1,

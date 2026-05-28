@@ -32,7 +32,9 @@ interface Props {
   /** Custom uploaded avatar URI (ipfs:// or https://). Takes precedence
    *  over `address` when set + non-empty. */
   imageUri?: string | null;
-  size?: AvatarSize;
+  /** Either a canonical preset (`sm`/`md`/`lg`) or an explicit pixel size for
+   *  one-off larger/smaller call sites that don't map onto a preset. */
+  size?: AvatarSize | number;
   /** Cache-buster appended to the stamp URL. Pass `getPeerAvatarCb(address)`
    *  for peer rows so an avatar update invalidates the cached image. */
   cacheBuster?: number | string;
@@ -43,7 +45,7 @@ interface Props {
 export function Avatar({
   address, imageUri, size = 'md', cacheBuster, style,
 }: Props): React.ReactElement {
-  const px = SIZE_PX[size];
+  const px = typeof size === 'number' ? size : SIZE_PX[size];
   const placeholderBg = '#282a2d';
   /** stamp.fyi serves doubled-pixel WebPs by convention — keeps retina rows
    *  crisp without bumping the displayed dimension. */

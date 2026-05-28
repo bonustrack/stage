@@ -71,7 +71,7 @@ export default function Profile(): React.ReactElement {
         <Avatar
           address={address && loaded ? address : null}
           imageUri={loaded ? profile.avatar : null}
-          size="lg"
+          size={128}
           style={{ backgroundColor: rowBg }}
         />
         <Text style={{ color: head, fontSize: 22, fontFamily: 'Calibre-Semibold', marginTop: 14 }}>
