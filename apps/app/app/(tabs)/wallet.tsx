@@ -61,6 +61,9 @@ interface AssetRow {
   balance: string;
   /** USD price per unit, or null when CoinGecko didn't return this asset. */
   priceUsd: number | null;
+  /** 24-hour percentage change for the asset's USD price. Shown beneath
+   *  the per-unit price as +/-x.xx%. */
+  change24h: number | null;
   /** Cached logo URL (stamp.fyi) so the renderer doesn't recompute on every row. */
   logoUrl: string;
 }
@@ -96,9 +99,10 @@ export default function Wallet(): React.ReactElement {
         /** Prices in parallel: contract endpoint for ERC-20s, simple-price for ETH. */
         const erc20Addrs = ASSETS.filter(a => a.address).map(a => a.address!.toLowerCase());
         const cgIds = ASSETS.filter(a => a.cgId).map(a => a.cgId!);
+        type Price = { usd: number; usd_24h_change?: number };
         const [tokenPrices, simplePrices] = await Promise.all([
-          getErc20UsdPrices('ethereum', erc20Addrs).catch(() => ({} as Record<string, { usd: number }>)),
-          getSimplePrices(cgIds).catch(() => ({} as Record<string, { usd: number }>)),
+          getErc20UsdPrices('ethereum', erc20Addrs).catch(() => ({} as Record<string, Price>)),
+          getSimplePrices(cgIds).catch(() => ({} as Record<string, Price>)),
         ]);
         if (cancelled) return;
         const next: AssetRow[] = ASSETS.map((a, i) => {
@@ -107,11 +111,13 @@ export default function Wallet(): React.ReactElement {
           const balance = a.address === null
             ? formatEther(raw)
             : formatUnits(raw, a.decimals);
-          const priceUsd = a.address === null
-            ? (a.cgId ? simplePrices[a.cgId]?.usd ?? null : null)
-            : tokenPrices[a.address.toLowerCase()]?.usd ?? null;
+          const priceRec: Price | undefined = a.address === null
+            ? (a.cgId ? simplePrices[a.cgId] : undefined)
+            : tokenPrices[a.address.toLowerCase()];
+          const priceUsd = priceRec?.usd ?? null;
+          const change24h = typeof priceRec?.usd_24h_change === 'number' ? priceRec.usd_24h_change : null;
           return {
-            symbol: a.symbol, name: a.name, balance, priceUsd,
+            symbol: a.symbol, name: a.name, balance, priceUsd, change24h,
             logoUrl: stampTokenUrl(1, a.logoAddress, 32),
           };
         });
@@ -126,14 +132,18 @@ export default function Wallet(): React.ReactElement {
   const totalUsd = rows
     ? rows.reduce((s, r) => s + (r.priceUsd ?? 0) * Number(r.balance), 0)
     : null;
-  /** Plain `$` (no `US`) — `currencyDisplay: 'narrowSymbol'` strips the
-   *  locale-specific country prefix Intl would otherwise add. */
-  const fmtUsd = (v: number, maxFrac = 2): string =>
-    v.toLocaleString(undefined, {
+  /** Plain `$` (no `US`). `currencyDisplay: 'narrowSymbol'` still resolves to
+   *  `US$` on `en-US` system locales (Android default) — we explicitly request
+   *  `en` to get the bare `$` symbol, then strip any stray `US` prefix as a
+   *  belt-and-suspenders for locales that ignore the hint. */
+  const fmtUsd = (v: number, maxFrac = 2): string => {
+    const s = v.toLocaleString('en', {
       style: 'currency', currency: 'USD',
       currencyDisplay: 'narrowSymbol',
       maximumFractionDigits: maxFrac,
     });
+    return s.replace(/^US\$/, '$');
+  };
   const fmtBalance = (v: string): string => {
     const n = Number(v);
     /** Tighter precision for big numbers; more for dust. Keeps the row clean
@@ -205,10 +215,15 @@ export default function Wallet(): React.ReactElement {
       </Text>
       <View style={{ marginHorizontal: 16, borderTopWidth: 1, borderTopColor: border }}>
         {(rows ?? ASSETS.map(a => ({
-          symbol: a.symbol, name: a.name, balance: '0', priceUsd: null,
+          symbol: a.symbol, name: a.name, balance: '0', priceUsd: null, change24h: null,
           logoUrl: stampTokenUrl(1, a.logoAddress, 32),
         }))).map(r => {
           const valueUsd = r.priceUsd === null ? null : r.priceUsd * Number(r.balance);
+          /** Up/down colour for the 24h change pill — green for non-negative,
+           *  red for negative. Uses the same tones as Snapshot UI's treasury. */
+          const changeColor = r.change24h === null ? sub : r.change24h >= 0 ? '#22c55e' : '#d96868';
+          const changeText = r.change24h === null ? '' :
+            `${r.change24h >= 0 ? '+' : ''}${r.change24h.toFixed(2)}%`;
           return (
             <View
               key={r.symbol}
@@ -219,8 +234,8 @@ export default function Wallet(): React.ReactElement {
               }}
             >
               {/* Token avatar with a small mainnet network-bullet overlay, like
-                  Snapshot UI treasury. The bullet sits bottom-right with a ring
-                  matching the page background so it reads as a separate badge. */}
+                  Snapshot UI treasury. `resizeMode: contain` so the IPFS logo
+                  isn't cropped/zoomed inside the small badge slot. */}
               <View style={{ width: 36, height: 36 }}>
                 <Image
                   source={{ uri: r.logoUrl }}
@@ -228,18 +243,26 @@ export default function Wallet(): React.ReactElement {
                 />
                 <Image
                   source={{ uri: MAINNET_NETWORK_LOGO }}
+                  resizeMode="contain"
                   style={{
                     position: 'absolute', right: -2, bottom: -2,
                     width: 14, height: 14, borderRadius: 999,
-                    borderWidth: 2, borderColor: bg, backgroundColor: border,
+                    borderWidth: 2, borderColor: bg, backgroundColor: '#ffffff',
                   }}
                 />
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={{ color: head, fontSize: 17, fontFamily: 'Calibre-Semibold' }}>{r.symbol}</Text>
-                <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 2 }} numberOfLines={1}>
-                  {r.name}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                  <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+                    {r.priceUsd === null ? r.name : fmtUsd(r.priceUsd, r.priceUsd < 1 ? 4 : 2)}
+                  </Text>
+                  {changeText ? (
+                    <Text style={{ color: changeColor, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+                      {changeText}
+                    </Text>
+                  ) : null}
+                </View>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
                 <Text style={{ color: head, fontSize: 17, fontFamily: 'Calibre-Semibold' }}>

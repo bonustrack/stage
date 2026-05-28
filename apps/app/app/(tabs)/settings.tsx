@@ -6,6 +6,7 @@ import * as Clipboard from 'expo-clipboard';
 import Constants from 'expo-constants';
 import { DevSettings } from 'react-native';
 import { getOrCreateXmtpClient, resetXmtpClient, shortAddress } from '../../lib/xmtp';
+import { flash } from '../../lib/toast';
 import { resetAccount } from '../../lib/wallet';
 import { AccountsManager } from '../../components/AccountsManager';
 import { HeroIcon } from '../../components/HeroIcon';
@@ -16,10 +17,12 @@ import {
 
 const APP_VERSION = Constants.expoConfig?.version ?? 'unknown';
 
-const THEME_OPTIONS: { value: ThemePreference; label: string }[] = [
-  { value: 'system', label: 'System' },
-  { value: 'light', label: 'Light' },
-  { value: 'dark', label: 'Dark' },
+import type { HeroIconName } from '../../components/HeroIcon';
+
+const THEME_OPTIONS: { value: ThemePreference; label: string; icon: HeroIconName }[] = [
+  { value: 'system', label: 'System', icon: 'desktop' },
+  { value: 'light',  label: 'Light',  icon: 'sun' },
+  { value: 'dark',   label: 'Dark',   icon: 'moon' },
 ];
 
 export default function Settings(): React.ReactElement {
@@ -52,7 +55,7 @@ export default function Settings(): React.ReactElement {
         <Pressable
           onPress={() => {
             void Clipboard.setStringAsync(myAddress);
-            Alert.alert('Copied', myAddress);
+            flash('Address copied');
           }}
           style={{
             marginHorizontal: 16, marginTop: 8, padding: 12,
@@ -84,12 +87,13 @@ export default function Settings(): React.ReactElement {
               onPress={() => { void setThemePreference(opt.value); }}
               style={({ pressed }) => ({
                 paddingHorizontal: 14, paddingVertical: 14,
-                flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                flexDirection: 'row', alignItems: 'center', gap: 12,
                 borderTopWidth: i === 0 ? 0 : 1, borderTopColor: border,
                 backgroundColor: pressed ? border : 'transparent',
               })}
             >
-              <Text style={{ color: fg, fontSize: 17 , fontFamily: 'Calibre-Medium'}}>{opt.label}</Text>
+              <HeroIcon name={opt.icon} size={22} color={head} />
+              <Text style={{ color: fg, fontSize: 18, fontFamily: 'Calibre-Medium', flex: 1 }}>{opt.label}</Text>
               {selected ? (
                 <HeroIcon name="check" size={20} color={head} />
               ) : null}
