@@ -3,7 +3,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Animated as RNAnimated, FlatList, Image, Modal, Pressable, Share, Text, View,
+  Animated as RNAnimated, FlatList, Image, InteractionManager, Modal, Pressable, Share, Text, View,
 } from 'react-native';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -231,6 +231,12 @@ export default function XmtpConversation(): React.ReactElement {
         contentContainerStyle={{ paddingTop: 24, paddingBottom: insets.top + 52 + 24 }}
         onScroll={(ev) => { setShowJump(ev.nativeEvent.contentOffset.y > 200); }}
         scrollEventThrottle={32}
+        /** Silent fallback — `scrollToIndex` on a virtualised inverted list
+         *  can fire before the target row has rendered. Without this handler
+         *  RN's red-screen pops on the dev build. We just no-op; the bubble
+         *  still highlights via `replyTarget`, so the user finds it on
+         *  manual scroll. */
+        onScrollToIndexFailed={() => undefined}
         renderItem={({ item }) => (
           <MessengerBubble
             entry={item}
@@ -331,14 +337,24 @@ export default function XmtpConversation(): React.ReactElement {
         onReplyPreviewPress={() => {
           /** Tap on the composer's "Replying to …" slab → jump the inverted
            *  feed to the target bubble. `allBubbles` is newest-first, so the
-           *  message index IS the inverted-list index. Falls back to a no-op
-           *  when the source bubble isn't in the visible slice (already
-           *  pruned), to avoid throwing on `scrollToIndex`. */
+           *  message index IS the inverted-list index.
+           *
+           *  Two reliability hacks needed for devices with Reduce Motion ON
+           *  (reanimated #3670 throws "property is not writable" on the
+           *  animated path of every scroll API):
+           *  - `animated: false` — bypasses the reanimated mutator.
+           *  - InteractionManager defer — lets the keyboard/composer settle
+           *    first so the scroll dispatch is on a clean frame.
+           *  Errors are swallowed (`onScrollToIndexFailed` below also
+           *  silently no-ops); the bubble still gets the `replyTarget`
+           *  highlight via state so the user sees it once they scroll. */
           if (!replyingTo) return;
           const idx = allBubbles.findIndex(b => b.id === replyingTo.id);
           if (idx < 0) return;
-          try { listRef.current?.scrollToIndex({ index: idx, animated: true, viewPosition: 0.5 }); }
-          catch { /* ignore — onScrollToIndexFailed will refire after layout */ }
+          InteractionManager.runAfterInteractions(() => {
+            try { listRef.current?.scrollToIndex({ index: idx, animated: false, viewPosition: 0.5 }); }
+            catch { /* fallback: row stays highlighted via replyTarget */ }
+          });
         }}
         onOptimistic={({ localId, text, attachments, replyTo }) => {
           /** Inverted FlatList + `maintainVisibleContentPosition` + prepended optimistic
