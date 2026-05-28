@@ -21,17 +21,27 @@ const MULTICALL3 = '0xcA11bde05977b3631167028862bE2a173976CA11' as const;
 /** Asset registry — ETH + the two stablecoins Less called out in the review.
  *  `address: null` is the special "native" row; everything else is an ERC-20
  *  on Ethereum mainnet. `cgId` lets us hit the simple-price endpoint for ETH
- *  (the contract-price endpoint doesn't cover native coins). */
+ *  (the contract-price endpoint doesn't cover native coins).
+ *
+ *  `logoAddress` is the contract address used to fetch the token icon from
+ *  `cdn.stamp.fyi` — Snapshot UI uses the canonical ETH sentinel
+ *  (`0xeeee…eeee`) for native ETH; stamp.fyi serves it from a curated set. */
 interface Asset {
   symbol: string; name: string; decimals: number;
   address: Hex | null;
+  logoAddress: string;
   cgId?: string;        // coingecko id for native price lookup
 }
+/** Stamp.fyi's "native ETH" sentinel — matches sx-monorepo's `ETH_CONTRACT`. */
+const ETH_LOGO_SENTINEL = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
 const ASSETS: Asset[] = [
-  { symbol: 'ETH', name: 'Ethereum', decimals: 18, address: null, cgId: 'ethereum' },
-  { symbol: 'USDC', name: 'USD Coin', decimals: 6, address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' },
-  { symbol: 'USDT', name: 'Tether USD', decimals: 6, address: '0xdAC17F958D2ee523a2206206994597C13D831ec7' },
+  { symbol: 'ETH',  name: 'Ethereum',  decimals: 18, address: null, logoAddress: ETH_LOGO_SENTINEL, cgId: 'ethereum' },
+  { symbol: 'USDC', name: 'USD Coin',  decimals: 6,  address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', logoAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' },
+  { symbol: 'USDT', name: 'Tether USD', decimals: 6, address: '0xdAC17F958D2ee523a2206206994597C13D831ec7', logoAddress: '0xdAC17F958D2ee523a2206206994597C13D831ec7' },
 ];
+const MAINNET_NETWORK_LOGO = 'https://assets.coingecko.com/coins/images/279/standard/ethereum.png';
+const tokenLogoUrl = (addr: string, size = 64): string =>
+  `https://cdn.stamp.fyi/token/eip155:1:${addr.toLowerCase()}?s=${size * 2}`;
 
 const erc20Abi = [{
   name: 'balanceOf', type: 'function', stateMutability: 'view',
@@ -50,6 +60,8 @@ interface AssetRow {
   balance: string;
   /** USD price per unit, or null when CoinGecko didn't return this asset. */
   priceUsd: number | null;
+  /** Cached logo URL (stamp.fyi) so the renderer doesn't recompute on every row. */
+  logoUrl: string;
 }
 
 export default function Wallet(): React.ReactElement {
@@ -98,7 +110,10 @@ export default function Wallet(): React.ReactElement {
           const priceUsd = a.address === null
             ? (a.cgId ? simplePrices[a.cgId]?.usd ?? null : null)
             : tokenPrices[a.address.toLowerCase()]?.usd ?? null;
-          return { symbol: a.symbol, name: a.name, balance, priceUsd };
+          return {
+            symbol: a.symbol, name: a.name, balance, priceUsd,
+            logoUrl: tokenLogoUrl(a.logoAddress, 64),
+          };
         });
         setRows(next);
       } catch (e) {
@@ -130,7 +145,7 @@ export default function Wallet(): React.ReactElement {
         backgroundColor: pressed ? border : card, borderWidth: 1, borderColor: border,
       })}
     >
-      <HeroIcon name={icon} size={18} color={head} />
+      <HeroIcon name={icon} size={22} color={head} />
       <Text style={{ color: head, fontSize: 15, fontFamily: 'Calibre-Semibold' }}>{label}</Text>
     </Pressable>
   );
@@ -185,17 +200,37 @@ export default function Wallet(): React.ReactElement {
         ASSETS
       </Text>
       <View style={{ marginHorizontal: 16, borderTopWidth: 1, borderTopColor: border }}>
-        {(rows ?? ASSETS.map(a => ({ symbol: a.symbol, name: a.name, balance: '0', priceUsd: null }))).map(r => {
+        {(rows ?? ASSETS.map(a => ({
+          symbol: a.symbol, name: a.name, balance: '0', priceUsd: null,
+          logoUrl: tokenLogoUrl(a.logoAddress, 64),
+        }))).map(r => {
           const valueUsd = r.priceUsd === null ? null : r.priceUsd * Number(r.balance);
           return (
             <View
               key={r.symbol}
               style={{
-                flexDirection: 'row', alignItems: 'center',
+                flexDirection: 'row', alignItems: 'center', gap: 12,
                 paddingVertical: 14,
                 borderBottomWidth: 1, borderBottomColor: border,
               }}
             >
+              {/* Token avatar with a small mainnet network-bullet overlay, like
+                  Snapshot UI treasury. The bullet sits bottom-right with a ring
+                  matching the page background so it reads as a separate badge. */}
+              <View style={{ width: 36, height: 36 }}>
+                <Image
+                  source={{ uri: r.logoUrl }}
+                  style={{ width: 36, height: 36, borderRadius: 999, backgroundColor: border }}
+                />
+                <Image
+                  source={{ uri: MAINNET_NETWORK_LOGO }}
+                  style={{
+                    position: 'absolute', right: -2, bottom: -2,
+                    width: 14, height: 14, borderRadius: 999,
+                    borderWidth: 2, borderColor: bg, backgroundColor: border,
+                  }}
+                />
+              </View>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>{r.symbol}</Text>
                 <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 2 }} numberOfLines={1}>
@@ -214,10 +249,6 @@ export default function Wallet(): React.ReactElement {
           );
         })}
       </View>
-
-      <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', textAlign: 'center', marginTop: 16, paddingHorizontal: 24 }}>
-        Balances read live from Ethereum mainnet via Multicall3. Prices via CoinGecko.
-      </Text>
     </ScrollView>
   );
 }
