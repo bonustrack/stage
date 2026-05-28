@@ -124,6 +124,31 @@ export default function XmtpConversation(): React.ReactElement {
   /** Resolve peer + member profiles → DM display name + avatar cache-busters. */
   const profilesVersion = usePeerProfiles([peerAddr, ...memberAddrs]);
 
+  /** @-mention candidates surfaced in the composer popup. For groups it's
+   *  the member list (sans self); for DMs the lone peer. Reads from the
+   *  resolved peerProfiles cache so we always have the latest display name. */
+  const mentionCandidates = useMemo(() => {
+    const seen = new Set<string>();
+    const out: { address: string; name: string; cacheBuster: number }[] = [];
+    const add = (addr: string | null): void => {
+      if (!addr) return;
+      const k = addr.toLowerCase();
+      if (seen.has(k)) return;
+      seen.add(k);
+      out.push({
+        address: addr,
+        name: getPeerName(addr) ?? `${addr.slice(0, 6)}…${addr.slice(-4)}`,
+        cacheBuster: getPeerAvatar(addr) ? 1 : 0,
+      });
+    };
+    if (isGroup) memberAddrs.forEach(add);
+    else add(peerAddr);
+    return out;
+    /** profilesVersion bumps each time peer profiles resolve, so the names
+     *  flip from the short-address fallback to the real display name. */
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isGroup, memberAddrs, peerAddr, profilesVersion]);
+
   const insets = useSafeAreaInsets();
   /** Reanimated-driven keyboard offset shared with the composer's KeyboardStickyView,
    *  so the FlatList wrapper lifts in lockstep (native thread) with the composer.
@@ -343,6 +368,7 @@ export default function XmtpConversation(): React.ReactElement {
       <MessengerComposer
         dark={dark}
         xmtpLine={activeLine}
+        mentionCandidates={mentionCandidates}
         replyingTo={replyingTo ?? undefined}
         onClearReply={() => setReplyingTo(null)}
         onReplyPreviewPress={() => {
