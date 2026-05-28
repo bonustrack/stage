@@ -25,6 +25,7 @@ import {
   markConvUnread, markConvRead, applyConsentToRows,
 } from '../../lib/channelsCache';
 import { usePeerProfiles, getPeerAvatarCb, getPeerName, isPeerResolved } from '../../lib/peerProfiles';
+import { useAccountEpoch } from '../../lib/accountEpoch';
 import { HeroIcon } from '../../components/HeroIcon';
 import { hasDraft, useDraftsVersion } from '../../lib/drafts';
 import { previewOfXmtpContent } from '@metro-labs/client/xmtp/humanize';
@@ -206,6 +207,8 @@ export default function Messenger(): React.ReactElement {
     (rows ?? []).flatMap(r => [r.avatarAddress, r.peerAddress, r.lastSenderAddress]),
   );
   const draftsVersion = useDraftsVersion();
+  /** Re-runs the XMTP init below when the active account changes (in-place switch). */
+  const accountEpoch = useAccountEpoch();
 
   useEffect(() => {
     let cancelled = false;
@@ -347,7 +350,7 @@ export default function Messenger(): React.ReactElement {
       if (appStateSub) try { appStateSub.remove(); } catch { /* ignore */ }
       if (pollTimer) clearInterval(pollTimer);
     };
-  }, []);
+  }, [accountEpoch]);
 
   const onPullToRefresh = async (): Promise<void> => {
     if (refreshing) return;

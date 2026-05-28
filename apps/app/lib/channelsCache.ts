@@ -59,6 +59,16 @@ function persistCachedRows(next: CachedRow[] | null): void {
   } catch { /* best-effort */ }
 }
 
+/** Wipe the persisted + in-memory cache. Called on account switch so the next
+ *  account never momentarily shows the previous account's channels/avatars (the
+ *  cache file is global, not per-account). */
+export function clearCachedRows(): void {
+  rows = null;
+  hydrated = false;
+  persistCachedRows(null);
+  for (const l of listeners) l(null);
+}
+
 export function getCachedRows(): CachedRow[] | null { return rows; }
 export function setCachedRows(next: CachedRow[] | null): void {
   rows = next;

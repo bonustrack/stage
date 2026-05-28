@@ -19,6 +19,7 @@ import './cryptoShim';
 import * as SecureStore from 'expo-secure-store';
 import { generatePrivateKey, privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts';
 import type { Hex } from 'viem';
+import { clearCachedRows } from './channelsCache';
 
 export type AccountType = 'generated' | 'privateKey' | 'walletconnect';
 
@@ -92,7 +93,11 @@ export async function getActiveAccountId(): Promise<string | null> {
 }
 
 export async function setActiveAccountId(id: string): Promise<void> {
+  const prev = await SecureStore.getItemAsync(ACTIVE_KEY).catch(() => null);
   await SecureStore.setItemAsync(ACTIVE_KEY, id);
+  /** Switching to a different account: wipe the global channels cache so the
+   *  reload doesn't momentarily show the previous account's channels/avatars. */
+  if (prev && prev !== id) clearCachedRows();
 }
 
 /** Active account, falling back to the first in the list when the pointer is
