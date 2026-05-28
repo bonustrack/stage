@@ -69,7 +69,6 @@ export default function Wallet(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
   const head = dark ? '#ffffff' : '#000000';
-  const fg = dark ? '#9f9fa3' : '#57606a';
   const sub = dark ? '#7a7a7e' : '#8a929d';
   const bg = dark ? '#0e0f10' : '#ffffff';
   const border = dark ? '#282a2d' : '#e4e4e5';

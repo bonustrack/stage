@@ -27,10 +27,6 @@ interface Props {
    *  mobile composer only supports the XMTP transport now (the daemon-routed
    *  messenger pipeline was removed). */
   xmtpLine: string;
-  /** Legacy props kept for API stability with parent screens that pass them; ignored
-   *  now that the daemon pipeline is gone. */
-  daemonUrl?: string;
-  token?: string;
   replyingTo?: { id: string; preview: string };
   onClearReply?: () => void;
   /** Tap on the "Replying to …" preview — parent scrolls the feed to the
