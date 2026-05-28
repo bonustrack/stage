@@ -12,6 +12,7 @@ import {
   loadCachedProfile, readProfile, type SnapshotProfile,
 } from '../../lib/profile';
 import EditProfileModal from '../../components/EditProfileModal';
+import { HeroIcon } from '../../components/HeroIcon';
 
 const AVATAR_SIZE = 120;
 
@@ -62,7 +63,7 @@ export default function Profile(): React.ReactElement {
         <Text style={{ color: head, fontSize: 22, fontFamily: 'Calibre-Semibold' }}>Profile</Text>
         {address ? (
           <Pressable onPress={() => setEditing(true)} hitSlop={8}>
-            <Text style={{ color: head, fontSize: 14, fontFamily: 'Calibre-Semibold' }}>Edit</Text>
+            <HeroIcon name="pencil" size={22} color={head} />
           </Pressable>
         ) : null}
       </View>
@@ -76,11 +77,11 @@ export default function Profile(): React.ReactElement {
         ) : (
           <View style={{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: AVATAR_SIZE / 2, backgroundColor: rowBg }} />
         )}
-        <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', marginTop: 14 }}>
+        <Text style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold', marginTop: 14 }}>
           {address ? displayName : 'Loading…'}
         </Text>
         {profile.about ? (
-          <Text style={{ color: sub, fontSize: 13, marginTop: 6, paddingHorizontal: 24, textAlign: 'center', fontFamily: 'Calibre-Medium' }}>
+          <Text style={{ color: sub, fontSize: 14, marginTop: 6, paddingHorizontal: 24, textAlign: 'center', fontFamily: 'Calibre-Medium' }}>
             {profile.about}
           </Text>
         ) : null}
@@ -91,8 +92,8 @@ export default function Profile(): React.ReactElement {
           onPress={() => copy(address, 'Wallet address')}
           style={{ marginHorizontal: 16, marginTop: 8, padding: 12, borderRadius: 12, backgroundColor: rowBg, borderWidth: 1, borderColor: border }}
         >
-          <Text style={{ color: sub, fontSize: 11, fontFamily: 'Calibre-Medium' }}>WALLET ADDRESS (tap to copy)</Text>
-          <Text style={{ color: fg, fontSize: 13, marginTop: 4, fontFamily: 'Calibre-Medium' }}>{address}</Text>
+          <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>WALLET ADDRESS (tap to copy)</Text>
+          <Text style={{ color: fg, fontSize: 14, marginTop: 4, fontFamily: 'Calibre-Medium' }}>{address}</Text>
         </Pressable>
       ) : null}
 
@@ -101,8 +102,8 @@ export default function Profile(): React.ReactElement {
           onPress={() => copy(inboxId, 'XMTP inbox id')}
           style={{ marginHorizontal: 16, marginTop: 12, padding: 12, borderRadius: 12, backgroundColor: rowBg, borderWidth: 1, borderColor: border }}
         >
-          <Text style={{ color: sub, fontSize: 11, fontFamily: 'Calibre-Medium' }}>XMTP INBOX ID (tap to copy)</Text>
-          <Text style={{ color: fg, fontSize: 13, marginTop: 4, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>{inboxId}</Text>
+          <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>XMTP INBOX ID (tap to copy)</Text>
+          <Text style={{ color: fg, fontSize: 14, marginTop: 4, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>{inboxId}</Text>
         </Pressable>
       ) : null}
 
@@ -141,9 +142,9 @@ function PushTokenCard({ status, token, error, onCopy, sub, fg, border, rowBg }:
         opacity: status === 'ready' ? 1 : 0.7,
       }}
     >
-      <Text style={{ color: sub, fontSize: 11, fontFamily: 'Calibre-Medium' }}>{label}</Text>
+      <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>{label}</Text>
       {body ? (
-        <Text style={{ color: fg, fontSize: 11, marginTop: 4, fontFamily: 'Calibre-Medium' }}
+        <Text style={{ color: fg, fontSize: 12, marginTop: 4, fontFamily: 'Calibre-Medium' }}
           numberOfLines={token ? 3 : undefined} selectable>
           {body}
         </Text>

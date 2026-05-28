@@ -393,9 +393,15 @@ export default function Messenger(): React.ReactElement {
 
   return (
     <View style={{ flex: 1, backgroundColor: bg }}>
-      {/* Home topnav: title (search input removed). */}
-      <View style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: border }}>
+      {/* Home topnav: title left, search icon right → opens the /search page. */}
+      <View style={{
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+        paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: border,
+      }}>
         <Text style={{ color: head, fontSize: 22, fontFamily: 'Calibre-Semibold' }}>Channels</Text>
+        <Pressable onPress={() => router.push('/search')} hitSlop={8}>
+          <HeroIcon name="search" size={22} color={head} />
+        </Pressable>
       </View>
       <FlatList
         data={rows ?? []}
@@ -461,7 +467,9 @@ export default function Messenger(): React.ReactElement {
                 </Text>
                 <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{fmtTs(item.lastTs)}</Text>
               </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+              {/** Reserve the badge's height (22) regardless of whether one is shown,
+               *   so rows with/without the unread indicator are the same total height. */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4, minHeight: 22 }}>
                 <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium', flex: 1 }} numberOfLines={1}>
                   {item.lastPreview
                     ? `${item.lastFromSelf ? 'You' : item.lastSenderAddress ? (getPeerName(item.lastSenderAddress) ?? shortAddress(item.lastSenderAddress)) : ''}${(item.lastFromSelf || item.lastSenderAddress) ? ': ' : ''}${item.lastPreview}`
