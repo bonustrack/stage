@@ -13,7 +13,7 @@ import * as Location from 'expo-location';
 import { ComposerGradient } from './ComposerGradient';
 import { HeroIcon, type HeroIconName } from './HeroIcon';
 import { Avatar } from './Avatar';
-import { xmtpReply, xmtpSendMultiRemoteAttachment, xmtpSendText } from '../lib/xmtp';
+import { fileUriToBase64, xmtpReply, xmtpSendAttachment, xmtpSendText } from '../lib/xmtp';
 
 /** Composer-local representation of a staged attachment. `url` is a `file://` URI in xmtp
  *  mode (the only mode the mobile composer supports now). `id` is a client-side dedupe key. */
@@ -43,6 +43,15 @@ function mimeOf(mime: string | undefined | null, nameOrUri: string): string {
   const ext = nameOrUri.split('?')[0]?.split('#')[0]?.split('.').pop()?.toLowerCase() ?? '';
   return EXT_MIME[ext] ?? 'application/octet-stream';
 }
+
+/** Inline (StaticAttachment) attachments are encrypted into the MLS message
+ *  envelope, which libxmtp caps at ~1 MB. Guard below that with codec overhead
+ *  headroom so the send fails fast with a clear, user-facing message instead of
+ *  a cryptic native error (restores the pre-#118 inline size guard). The
+ *  multi-remote / blob-store path (xmtpSendMultiRemoteAttachment) is the future
+ *  home for larger files — currently disabled on the send side because the
+ *  pineapple upload endpoint rejects ciphertext. */
+const INLINE_ATTACHMENT_MAX_BYTES = 900 * 1024;
 
 
 interface Props {
@@ -158,14 +167,13 @@ export function MessengerComposer({
   const upload = async (uri: string, mime: string, name?: string): Promise<void> => {
     setUploading(true);
     try {
-      /** Stage the local file URI; it's encrypted + uploaded at send time (see
+      /** Stage the local file URI; it's encrypted in-message at send time (see
        *  `send`). The chip uses `url` as a render hint (`file://...` works with
        *  `Image` source on RN), and `id` is just a client-side dedupe key.
        *
-       *  No inline size cap here anymore — attachments now ride the remote
-       *  (multi-remote-attachment) path: bytes are encrypted + pinned to IPFS,
-       *  not stuffed into the MLS envelope, so the old ~800 KB inline limit is
-       *  gone.
+       *  No size check at staging time — the inline ~1 MB cap is enforced at
+       *  send time (see `send`), where we have the decoded byte length and can
+       *  surface a clear error.
        *
        *  Always derive a concrete MIME: pickers/recorders sometimes hand back an
        *  empty or undefined `mimeType` (HEIC screenshots, some Android gallery
@@ -339,27 +347,37 @@ export function MessengerComposer({
     let sendErr: string | undefined;
     try {
       /** Send the text body first (as a `reply` when there's a `replyingTo`,
-       *  else plain text), then ALL staged attachments as ONE multi-remote
-       *  attachment message — each file is encrypted on-device + its ciphertext
-       *  pinned to IPFS, and the references bundled into a single message. This
-       *  replaces the previous "one inline StaticAttachment message per file"
-       *  loop, so a multi-image/voice/file send lands as a single bubble.
-       *  (Replies-with-attachments would need a ReplyContent wrapping the
-       *  multi-attachment, not v1 — the text reply + attachment message stay
-       *  separate.) */
+       *  else plain text), then EACH staged attachment as its own INLINE
+       *  StaticAttachment message — encrypted in-message via the XMTP
+       *  AttachmentCodec, no external upload. This is the pre-#118 working
+       *  behavior, restored because the multi-remote path uploads ciphertext to
+       *  pineapple.fyi, which is image-only and 415s non-image bytes. Multiple
+       *  files therefore land as multiple bubbles (acceptable). The multi-remote
+       *  send helper (`xmtpSendMultiRemoteAttachment`) is left in place but
+       *  unused, ready for a future blob-store follow-up; its receive/decode +
+       *  ImageViewer render path is untouched so already-sent multi-remote
+       *  messages still render. */
       if (body) {
         if (sendingReplyTo) await xmtpReply(xmtpLine, sendingReplyTo, body);
         else await xmtpSendText(xmtpLine, body);
       }
-      if (sendingAttachments.length > 0) {
-        await xmtpSendMultiRemoteAttachment(
-          xmtpLine,
-          sendingAttachments.map(a => ({
-            fileUri: a.url,
-            mimeType: a.mime,
-            filename: a.name ?? a.id,
-          })),
-        );
+      for (const a of sendingAttachments) {
+        const mimeType = mimeOf(a.mime, a.name ?? a.url);
+        const filename = a.name ?? a.id;
+        const dataB64 = await fileUriToBase64(a.url);
+        /** Inline bytes ride the MLS envelope (~1 MB libxmtp cap). Compute the
+         *  real decoded byte size from the base64 length (4 base64 chars → 3
+         *  bytes, minus padding) and reject oversized files with a clear error
+         *  rather than letting the native encoder fail opaquely. */
+        const padding = dataB64.endsWith('==') ? 2 : dataB64.endsWith('=') ? 1 : 0;
+        const byteLen = Math.floor((dataB64.length * 3) / 4) - padding;
+        if (byteLen > INLINE_ATTACHMENT_MAX_BYTES) {
+          throw new Error(
+            `"${filename}" is too large to send (${(byteLen / (1024 * 1024)).toFixed(1)} MB). `
+            + `Attachments must be under ${Math.round(INLINE_ATTACHMENT_MAX_BYTES / 1024)} KB.`,
+          );
+        }
+        await xmtpSendAttachment(xmtpLine, filename, mimeType, dataB64);
       }
     } catch (e) { sendErr = (e as Error).message; setErr(sendErr); }
     finally {
