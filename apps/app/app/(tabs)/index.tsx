@@ -450,7 +450,7 @@ export default function Messenger(): React.ReactElement {
             <Avatar
               imageUri={item.avatarUri}
               address={!item.avatarUri && item.avatarAddress && isPeerResolved(item.avatarAddress) ? item.avatarAddress : null}
-              size={48}
+              size={40}
               cacheBuster={item.avatarAddress ? getPeerAvatarCb(item.avatarAddress) : undefined}
               style={{ backgroundColor: border }}
             />
