@@ -18,6 +18,7 @@ import { useAppKit } from '@reown/appkit-wagmi-react-native';
 import { useAccount, useSignMessage } from 'wagmi';
 import { HeroIcon } from './HeroIcon';
 import { usePeerProfiles, getPeerName } from '../lib/peerProfiles';
+import { flash } from '../lib/toast';
 import { stampBoxAvatarUrl, shortAddress, deleteAccount, switchToAccount } from '../lib/xmtp';
 import {
   loadAccounts, getActiveAccountId, addGeneratedAccount,
@@ -323,7 +324,7 @@ export function AccountsManager({ dark }: { dark: boolean }): React.ReactElement
           {revealPk}
         </Text>
         <Pressable
-          onPress={() => { if (revealPk) { void Clipboard.setStringAsync(revealPk); Alert.alert('Copied', 'Private key copied to clipboard.'); } }}
+          onPress={() => { if (revealPk) { void Clipboard.setStringAsync(revealPk); flash('Private key copied'); } }}
           style={({ pressed }) => ({ paddingVertical: 11, borderRadius: 10, alignItems: 'center', backgroundColor: pressed ? '#a08458' : '#c0a06e' })}
         >
           <Text style={{ color: '#000', fontSize: 14, fontFamily: 'Calibre-Semibold' }}>Copy to clipboard</Text>

@@ -6,7 +6,7 @@
  *  needed) layered on react-native-svg which the app already depends on. */
 
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,6 +14,7 @@ import QRCode from 'react-native-qrcode-svg';
 import { getOrCreateXmtpClient } from '../../lib/xmtp';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { HeroIcon } from '../../components/HeroIcon';
+import { flash } from '../../lib/toast';
 
 export default function WalletReceive(): React.ReactElement {
   const router = useRouter();
@@ -42,7 +43,7 @@ export default function WalletReceive(): React.ReactElement {
   const copy = (): void => {
     if (!address) return;
     void Clipboard.setStringAsync(address);
-    Alert.alert('Copied', 'Wallet address copied to clipboard.');
+    flash('Address copied');
   };
 
   return (

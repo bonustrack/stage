@@ -2,9 +2,10 @@
  *  custom avatar, socials). Tap Edit to open the EIP-712 update sheet. */
 
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { getOrCreateXmtpClient, shortAddress } from '../../lib/xmtp';
+import { flash } from '../../lib/toast';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { usePushToken, type PushStatus } from '../../lib/push';
 import {
@@ -50,7 +51,7 @@ export default function Profile(): React.ReactElement {
 
   const copy = (value: string, label: string): void => {
     void Clipboard.setStringAsync(value);
-    Alert.alert('Copied', `${label} copied to clipboard`);
+    flash(`${label} copied`);
   };
 
   const displayName = profile.name?.trim() || shortAddress(address);
@@ -83,10 +84,12 @@ export default function Profile(): React.ReactElement {
         ) : null}
       </View>
 
+      {/* Read-only profile rows — bgless (backgrounds reserved for inputs).
+          Border-bottom separator like the channels list. */}
       {address ? (
         <Pressable
           onPress={() => copy(address, 'Wallet address')}
-          style={{ marginHorizontal: 16, marginTop: 8, padding: 12, borderRadius: 12, backgroundColor: rowBg, borderWidth: 1, borderColor: border }}
+          style={{ marginHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: border }}
         >
           <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>WALLET ADDRESS (tap to copy)</Text>
           <Text style={{ color: fg, fontSize: 14, marginTop: 4, fontFamily: 'Calibre-Medium' }}>{address}</Text>
@@ -96,7 +99,7 @@ export default function Profile(): React.ReactElement {
       {inboxId ? (
         <Pressable
           onPress={() => copy(inboxId, 'XMTP inbox id')}
-          style={{ marginHorizontal: 16, marginTop: 12, padding: 12, borderRadius: 12, backgroundColor: rowBg, borderWidth: 1, borderColor: border }}
+          style={{ marginHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: border }}
         >
           <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>XMTP INBOX ID (tap to copy)</Text>
           <Text style={{ color: fg, fontSize: 14, marginTop: 4, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>{inboxId}</Text>
@@ -105,7 +108,7 @@ export default function Profile(): React.ReactElement {
 
       <PushTokenCard status={push.status} token={push.token} error={push.error}
         onCopy={() => push.token && copy(push.token, 'FCM device token')}
-        sub={sub} fg={fg} border={border} rowBg={rowBg} />
+        sub={sub} fg={fg} border={border} />
 
       <EditProfileModal
         visible={editing} onClose={() => setEditing(false)}
@@ -116,9 +119,9 @@ export default function Profile(): React.ReactElement {
   );
 }
 
-function PushTokenCard({ status, token, error, onCopy, sub, fg, border, rowBg }: {
+function PushTokenCard({ status, token, error, onCopy, sub, fg, border }: {
   status: PushStatus; token: string | null; error: string | null; onCopy: () => void;
-  sub: string; fg: string; border: string; rowBg: string;
+  sub: string; fg: string; border: string;
 }): React.ReactElement {
   const label = status === 'requesting' ? 'PUSH TOKEN (requesting permission…)'
     : status === 'denied' ? 'PUSH TOKEN (permission denied — enable in system settings)'
@@ -132,9 +135,8 @@ function PushTokenCard({ status, token, error, onCopy, sub, fg, border, rowBg }:
     <Pressable
       onPress={token ? onCopy : undefined}
       style={{
-        marginHorizontal: 16, marginTop: 12, padding: 12,
-        borderRadius: 12, backgroundColor: rowBg,
-        borderWidth: 1, borderColor: border,
+        marginHorizontal: 16, paddingVertical: 12,
+        borderBottomWidth: 1, borderBottomColor: border,
         opacity: status === 'ready' ? 1 : 0.7,
       }}
     >
