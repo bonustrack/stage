@@ -72,6 +72,9 @@ export function MessengerComposer({
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
   /** Recent device photos shown inline in the attach menu (Discord-style). */
   const [recentPhotos, setRecentPhotos] = useState<MediaLibrary.Asset[]>([]);
+  /** Composer text input — focused programmatically when a reply target is
+   *  set so the keyboard pops straight up (the user is clearly about to type). */
+  const inputRef = useRef<TextInput>(null);
   const recRef = useRef<Audio.Recording | null>(null);
   const recTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   /** Mic press timestamp — distinguishes push-to-talk (hold ≥ threshold →
@@ -114,6 +117,18 @@ export function MessengerComposer({
     draftTimer.current = setTimeout(() => { setDraft(convId, text); }, 300);
     return () => { if (draftTimer.current) clearTimeout(draftTimer.current); };
   }, [text, convId]);
+
+  /** When the user picks a message to reply to, focus the input + raise the
+   *  keyboard immediately — they're about to type. Keyed on the target id so
+   *  it re-fires when switching reply targets, not on every render. Works
+   *  whether or not the keyboard was already open (`.focus()` is idempotent).
+   *  Deferred a tick so the "Replying to" slab has mounted first. */
+  const replyTargetId = replyingTo?.id;
+  useEffect(() => {
+    if (!replyTargetId) return;
+    const t = setTimeout(() => inputRef.current?.focus(), 0);
+    return () => clearTimeout(t);
+  }, [replyTargetId]);
 
   const canSend = !sending && (text.trim().length > 0 || pending.length > 0);
 
@@ -546,6 +561,7 @@ export function MessengerComposer({
         ) : (
           <View style={{ position: 'relative' }}>
             <TextInput
+              ref={inputRef}
               value={text} onChangeText={setText} placeholder="Ask Metro" placeholderTextColor={sub} multiline
               onContentSizeChange={(e) => setTextareaH(e.nativeEvent.contentSize.height)}
               selection={selection}

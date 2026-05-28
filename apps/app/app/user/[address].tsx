@@ -9,6 +9,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
+import { flash } from '../../lib/toast';
 import { shortAddress, openDmWithAddress } from '../../lib/xmtp';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { useProfileQuery } from '../../lib/useProfile';
@@ -43,15 +44,26 @@ export default function UserProfileView(): React.ReactElement {
     } finally { setOpeningDm(false); }
   };
 
-  const copy = (value: string): void => { void Clipboard.setStringAsync(value); };
+  const copy = (value: string, label = 'Address'): void => {
+    void Clipboard.setStringAsync(value);
+    flash(`${label} copied`);
+  };
 
-  const Row = ({ label, value }: { label: string; value: string }): React.ReactElement => (
+  const Row = ({ label, value, onCopy }: { label: string; value: string; onCopy?: () => void }): React.ReactElement => (
     <View style={{
       marginHorizontal: 16, marginTop: 12, padding: 12,
       borderRadius: 12, backgroundColor: rowBg, borderWidth: 1, borderColor: border,
+      flexDirection: 'row', alignItems: 'center', gap: 8,
     }}>
-      <Text style={{ color: sub, fontSize: 11, fontFamily: 'Calibre-Medium' }}>{label.toUpperCase()}</Text>
-      <Text style={{ color: fg, fontSize: 14, marginTop: 4, fontFamily: 'Calibre-Medium' }} selectable>{value}</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={{ color: sub, fontSize: 11, fontFamily: 'Calibre-Medium' }}>{label.toUpperCase()}</Text>
+        <Text style={{ color: fg, fontSize: 14, marginTop: 4, fontFamily: 'Calibre-Medium' }} selectable>{value}</Text>
+      </View>
+      {onCopy ? (
+        <Pressable onPress={onCopy} hitSlop={8} style={{ padding: 4 }}>
+          <HeroIcon name="copy" size={18} color={sub} />
+        </Pressable>
+      ) : null}
     </View>
   );
 
@@ -116,9 +128,7 @@ export default function UserProfileView(): React.ReactElement {
           </View>
         </View>
 
-        <Pressable onPress={() => copy(addr)}>
-          <Row label="Wallet address (tap to copy)" value={addr} />
-        </Pressable>
+        <Row label="Wallet address" value={addr} onCopy={() => copy(addr, 'Address')} />
 
         {profile?.github?.trim() ? <Row label="GitHub" value={profile.github} /> : null}
         {profile?.twitter?.trim() ? <Row label="X (Twitter)" value={profile.twitter} /> : null}
