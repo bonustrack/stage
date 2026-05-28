@@ -16,6 +16,7 @@ import { useEffectiveColorScheme } from '../../lib/theme';
 import { getErc20UsdPrices, getSimplePrices } from '../../lib/coingecko';
 import { HeroIcon, type HeroIconName } from '../../components/HeroIcon';
 import { Avatar } from '../../components/Avatar';
+import { stampTokenUrl, NATIVE_TOKEN_SENTINEL } from '@metro-labs/kit/avatar';
 
 const MULTICALL3 = '0xcA11bde05977b3631167028862bE2a173976CA11' as const;
 
@@ -25,18 +26,16 @@ const MULTICALL3 = '0xcA11bde05977b3631167028862bE2a173976CA11' as const;
  *  (the contract-price endpoint doesn't cover native coins).
  *
  *  `logoAddress` is the contract address used to fetch the token icon from
- *  `cdn.stamp.fyi` — Snapshot UI uses the canonical ETH sentinel
- *  (`0xeeee…eeee`) for native ETH; stamp.fyi serves it from a curated set. */
+ *  `cdn.stamp.fyi` — Snapshot UI uses the canonical ETH sentinel for
+ *  native ETH; stamp.fyi serves it from a curated set. */
 interface Asset {
   symbol: string; name: string; decimals: number;
   address: Hex | null;
   logoAddress: string;
   cgId?: string;        // coingecko id for native price lookup
 }
-/** Stamp.fyi's "native ETH" sentinel — matches sx-monorepo's `ETH_CONTRACT`. */
-const ETH_LOGO_SENTINEL = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
 const ASSETS: Asset[] = [
-  { symbol: 'ETH',  name: 'Ethereum',  decimals: 18, address: null, logoAddress: ETH_LOGO_SENTINEL, cgId: 'ethereum' },
+  { symbol: 'ETH',  name: 'Ethereum',  decimals: 18, address: null, logoAddress: NATIVE_TOKEN_SENTINEL, cgId: 'ethereum' },
   { symbol: 'USDC', name: 'USD Coin',  decimals: 6,  address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', logoAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' },
   { symbol: 'USDT', name: 'Tether USD', decimals: 6, address: '0xdAC17F958D2ee523a2206206994597C13D831ec7', logoAddress: '0xdAC17F958D2ee523a2206206994597C13D831ec7' },
 ];
@@ -44,8 +43,6 @@ const ASSETS: Asset[] = [
  *  the UI's `BadgeNetwork` over the IPFS gateway at `ipfs.snapshot.box`).
  *  Hardcoded so we don't need to pull snapshot.js's full networks.json. */
 const MAINNET_NETWORK_LOGO = 'https://ipfs.snapshot.box/ipfs/bafkreid7ndxh6y2ljw2jhbisodiyrhcy2udvnwqgon5wgells3kh4si5z4';
-const tokenLogoUrl = (addr: string, size = 64): string =>
-  `https://cdn.stamp.fyi/token/eip155:1:${addr.toLowerCase()}?s=${size * 2}`;
 
 const erc20Abi = [{
   name: 'balanceOf', type: 'function', stateMutability: 'view',
@@ -116,7 +113,7 @@ export default function Wallet(): React.ReactElement {
             : tokenPrices[a.address.toLowerCase()]?.usd ?? null;
           return {
             symbol: a.symbol, name: a.name, balance, priceUsd,
-            logoUrl: tokenLogoUrl(a.logoAddress, 64),
+            logoUrl: stampTokenUrl(1, a.logoAddress, 32),
           };
         });
         setRows(next);
@@ -210,7 +207,7 @@ export default function Wallet(): React.ReactElement {
       <View style={{ marginHorizontal: 16, borderTopWidth: 1, borderTopColor: border }}>
         {(rows ?? ASSETS.map(a => ({
           symbol: a.symbol, name: a.name, balance: '0', priceUsd: null,
-          logoUrl: tokenLogoUrl(a.logoAddress, 64),
+          logoUrl: stampTokenUrl(1, a.logoAddress, 32),
         }))).map(r => {
           const valueUsd = r.priceUsd === null ? null : r.priceUsd * Number(r.balance);
           return (

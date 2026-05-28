@@ -18,12 +18,13 @@
 
 import { Image, View } from 'react-native';
 import type { ImageStyle, StyleProp } from 'react-native';
-import { stampBoxAvatarUrl } from '../lib/xmtp';
+import { stampAvatarUrl, AVATAR_SIZES, type AvatarSize } from '@metro-labs/kit/avatar';
 import { avatarRenderUrl } from '@metro-labs/client/profile/snapshot';
 
-export type AvatarSize = 'sm' | 'md' | 'lg';
+export type { AvatarSize };
+export { AVATAR_SIZES };
 
-const SIZE_PX: Record<AvatarSize, number> = { sm: 24, md: 32, lg: 64 };
+const SIZE_PX = AVATAR_SIZES;
 
 interface Props {
   /** Eth address used for the stamp.fyi identicon fallback. */
@@ -52,10 +53,7 @@ export function Avatar({
   };
   let uri: string | null = null;
   if (imageUri && imageUri.trim()) uri = avatarRenderUrl(address ?? '', imageUri, fetchPx);
-  else if (address) {
-    const cb = cacheBuster === undefined ? undefined : String(cacheBuster);
-    uri = stampBoxAvatarUrl(address, fetchPx, cb);
-  }
+  else if (address) uri = stampAvatarUrl(address, px, cacheBuster);
 
   if (!uri) {
     return <View style={[baseStyle, style]} />;
@@ -63,4 +61,3 @@ export function Avatar({
   return <Image source={{ uri }} style={[baseStyle, style]} />;
 }
 
-export const AVATAR_SIZES = SIZE_PX;

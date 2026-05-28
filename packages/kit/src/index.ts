@@ -10,3 +10,4 @@
 export * from './tokens';
 export * from './icons';
 export * from './theme';
+export * from './avatar';

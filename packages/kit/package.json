@@ -12,7 +12,8 @@
     ".": "./src/index.ts",
     "./tokens": "./src/tokens.ts",
     "./icons": "./src/icons.ts",
-    "./theme": "./src/theme.ts"
+    "./theme": "./src/theme.ts",
+    "./avatar": "./src/avatar.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
