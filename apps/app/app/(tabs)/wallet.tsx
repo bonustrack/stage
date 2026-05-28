@@ -118,7 +118,7 @@ export default function Wallet(): React.ReactElement {
           const change24h = typeof priceRec?.usd_24h_change === 'number' ? priceRec.usd_24h_change : null;
           return {
             symbol: a.symbol, name: a.name, balance, priceUsd, change24h,
-            logoUrl: stampTokenUrl(1, a.logoAddress, 40),
+            logoUrl: stampTokenUrl(1, a.logoAddress, 32),
           };
         });
         setRows(next);
@@ -216,7 +216,7 @@ export default function Wallet(): React.ReactElement {
       <View style={{ marginHorizontal: 16, borderTopWidth: 1, borderTopColor: border }}>
         {(rows ?? ASSETS.map(a => ({
           symbol: a.symbol, name: a.name, balance: '0', priceUsd: null, change24h: null,
-          logoUrl: stampTokenUrl(1, a.logoAddress, 40),
+          logoUrl: stampTokenUrl(1, a.logoAddress, 32),
         }))).map(r => {
           const valueUsd = r.priceUsd === null ? null : r.priceUsd * Number(r.balance);
           /** Up/down colour for the 24h change pill — green for non-negative,
@@ -236,10 +236,10 @@ export default function Wallet(): React.ReactElement {
               {/* Token avatar with a small mainnet network-bullet overlay, like
                   Snapshot UI treasury. `resizeMode: contain` so the IPFS logo
                   isn't cropped/zoomed inside the small badge slot. */}
-              <View style={{ width: 40, height: 40 }}>
+              <View style={{ width: 32, height: 32 }}>
                 <Image
                   source={{ uri: r.logoUrl }}
-                  style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: border }}
+                  style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border }}
                 />
                 <Image
                   source={{ uri: MAINNET_NETWORK_LOGO }}
