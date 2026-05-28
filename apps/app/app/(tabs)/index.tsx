@@ -6,7 +6,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import {
-  AppState, FlatList, Image, Modal, Pressable, RefreshControl,
+  AppState, FlatList, Modal, Pressable, RefreshControl,
   Text, View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -15,7 +15,7 @@ import { DevSettings } from 'react-native';
 import {
   getOrCreateXmtpClient, resetXmtpClient,
   peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap,
-  stampBoxAvatarUrl, shortAddress,
+  shortAddress,
   getLastReadNs, getConvConsent, syncPreferences, streamConvConsent,
 } from '../../lib/xmtp';
 import { resetAccount } from '../../lib/wallet';
@@ -29,8 +29,8 @@ import { useAccountEpoch } from '../../lib/accountEpoch';
 import { HeroIcon } from '../../components/HeroIcon';
 import { hasDraft, useDraftsVersion } from '../../lib/drafts';
 import { previewOfXmtpContent } from '@metro-labs/client/xmtp/humanize';
-import { avatarRenderUrl } from '@metro-labs/client/profile/snapshot';
 import { Spinner } from '../../components/Spinner';
+import { Avatar } from '../../components/Avatar';
 
 interface Row {
   convId: string;
@@ -443,22 +443,17 @@ export default function Messenger(): React.ReactElement {
               paddingVertical: 14,
               borderBottomWidth: 1, borderBottomColor: border,
             }}>
-            {item.avatarUri ? (
-              <Image
-                source={{ uri: avatarRenderUrl('', item.avatarUri, 64) }}
-                style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border }}
-              />
-            ) : (item.avatarAddress && isPeerResolved(item.avatarAddress)) ? (
-              /** Only render once the profile is resolved, so the URL (incl. its
-               *  avatar cache-buster) is final from the first paint — no wrong-avatar
-               *  flash that swaps when the profile lands. */
-              <Image
-                source={{ uri: stampBoxAvatarUrl(item.avatarAddress, 64, getPeerAvatarCb(item.avatarAddress)) }}
-                style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border }}
-              />
-            ) : (
-              <View style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border }} />
-            )}
+            {/** Group-uploaded image OR (only once the peer profile has
+             *   resolved) the peer's stamp/custom avatar — gating on
+             *   `isPeerResolved` avoids the wrong-avatar flash when the
+             *   cache-buster lands after the first paint. */}
+            <Avatar
+              imageUri={item.avatarUri}
+              address={!item.avatarUri && item.avatarAddress && isPeerResolved(item.avatarAddress) ? item.avatarAddress : null}
+              size="md"
+              cacheBuster={item.avatarAddress ? getPeerAvatarCb(item.avatarAddress) : undefined}
+              style={{ backgroundColor: border }}
+            />
             <View style={{ flex: 1, minWidth: 0 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 {hasDraft(item.convId) ? <HeroIcon name="pencil" size={14} color={sub} /> : null}

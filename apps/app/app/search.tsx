@@ -6,16 +6,17 @@
  *  are also surfaced below the resolved result. */
 
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { isAddress } from 'viem';
-import { openDmWithAddress, shortAddress, stampBoxAvatarUrl } from '../lib/xmtp';
+import { openDmWithAddress, shortAddress } from '../lib/xmtp';
 import { resolveEnsName } from '../lib/ens';
 import { usePeerProfiles, getPeerName, getPeerAvatarCb } from '../lib/peerProfiles';
 import { useEffectiveColorScheme } from '../lib/theme';
 import { getCachedRows } from '../lib/channelsCache';
 import { HeroIcon } from '../components/HeroIcon';
+import { Avatar } from '../components/Avatar';
 
 /** Cheap pre-flight — accept any *.eth (or longer multi-label) as ENS-resolvable. */
 function looksLikeEns(s: string): boolean {
@@ -156,9 +157,11 @@ export default function Search(): React.ReactElement {
               borderBottomWidth: 1, borderBottomColor: border,
             })}
           >
-            <Image
-              source={{ uri: stampBoxAvatarUrl(resolved.address, 64, getPeerAvatarCb(resolved.address)) }}
-              style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border }}
+            <Avatar
+              address={resolved.address}
+              size="md"
+              cacheBuster={getPeerAvatarCb(resolved.address)}
+              style={{ backgroundColor: border }}
             />
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
@@ -197,9 +200,11 @@ export default function Search(): React.ReactElement {
               borderBottomWidth: 1, borderBottomColor: border,
             })}
           >
-            <Image
-              source={{ uri: stampBoxAvatarUrl(p.address, 64, getPeerAvatarCb(p.address)) }}
-              style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border }}
+            <Avatar
+              address={p.address}
+              size="md"
+              cacheBuster={getPeerAvatarCb(p.address)}
+              style={{ backgroundColor: border }}
             />
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>

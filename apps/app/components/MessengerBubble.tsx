@@ -2,8 +2,7 @@
  *  no colored bubble even for the local user's own messages. */
 
 import { useMemo, useRef, useState } from 'react';
-import { Animated, Image, Linking, PanResponder, Pressable, Text, TextInput, View } from 'react-native';
-import { stampBoxAvatarUrl } from '../lib/xmtp';
+import { Animated, Linking, PanResponder, Pressable, Text, TextInput, View } from 'react-native';
 import { getPeerAvatarCb } from '../lib/peerProfiles';
 import Markdown, { MarkdownIt } from 'react-native-markdown-display';
 import { HeroIcon } from './HeroIcon';
@@ -11,6 +10,7 @@ import { MessengerAudioPlayer } from './MessengerAudioPlayer';
 import { MessengerImageAttachment } from './MessengerImageAttachment';
 import { YouTubeEmbed, LocationEmbed } from './MediaEmbeds';
 import { mapCoordsOf, youtubeIdOf } from '../lib/embedDetect';
+import { Avatar } from './Avatar';
 import type { HistoryEntry } from '../lib/types';
 
 const REACT_PRESETS = ['👍', '❤️', '😂', '😮', '🔥', '🎉'];
@@ -307,7 +307,6 @@ export function MessengerBubble({
     },
     onPanResponderTerminationRequest: () => false,
   }), [onReply, swipeX]);
-  const AVATAR_SIZE = 24;
   return (
     <Animated.View
       {...panResponder.panHandlers}
@@ -323,17 +322,19 @@ export function MessengerBubble({
           : (unread ? (dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)') : 'transparent'),
       }}
     >
-      {/** Discord-style row avatar. Stamp.fyi when we have an eth address;
-       *   neutral placeholder while the SDK is still resolving the sender. */}
+      {/** Discord-style row avatar — `sm` (24px). Tapping it surfaces the
+       *   sender's profile via the parent's `onAvatarPress` handler. */}
       {senderEthAddress ? (
-        <Pressable onPress={() => onAvatarPress?.(senderEthAddress)} hitSlop={6}>
-          <Image
-            source={{ uri: stampBoxAvatarUrl(senderEthAddress, AVATAR_SIZE * 2, getPeerAvatarCb(senderEthAddress)) }}
-            style={{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: 999, backgroundColor: avatarBg, marginTop: 2 }}
+        <Pressable onPress={() => onAvatarPress?.(senderEthAddress)} hitSlop={6} style={{ marginTop: 2 }}>
+          <Avatar
+            address={senderEthAddress}
+            size="sm"
+            cacheBuster={getPeerAvatarCb(senderEthAddress)}
+            style={{ backgroundColor: avatarBg }}
           />
         </Pressable>
       ) : (
-        <View style={{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: 999, backgroundColor: avatarBg, marginTop: 2 }} />
+        <Avatar size="sm" style={{ backgroundColor: avatarBg, marginTop: 2 }} />
       )}
       {/** Right column: message content + reactions + reaction picker stacked. */}
       <View style={{ flex: 1, minWidth: 0, flexDirection: 'column' }}>

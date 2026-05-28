@@ -2,10 +2,9 @@
  *  custom avatar, socials). Tap Edit to open the EIP-712 update sheet. */
 
 import { useEffect, useState } from 'react';
-import { Alert, Image, Pressable, Text, View } from 'react-native';
+import { Alert, Pressable, Text, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { getOrCreateXmtpClient, shortAddress } from '../../lib/xmtp';
-import { avatarRenderUrl } from '@metro-labs/client/profile/snapshot';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { usePushToken, type PushStatus } from '../../lib/push';
 import {
@@ -13,8 +12,7 @@ import {
 } from '../../lib/profile';
 import EditProfileModal from '../../components/EditProfileModal';
 import { HeroIcon } from '../../components/HeroIcon';
-
-const AVATAR_SIZE = 64;
+import { Avatar } from '../../components/Avatar';
 
 export default function Profile(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
@@ -69,14 +67,12 @@ export default function Profile(): React.ReactElement {
       </View>
 
       <View style={{ alignItems: 'center', paddingTop: 24, paddingBottom: 16 }}>
-        {address && loaded ? (
-          <Image
-            source={{ uri: avatarRenderUrl(address, profile.avatar, AVATAR_SIZE * 2) }}
-            style={{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: AVATAR_SIZE / 2, backgroundColor: rowBg }}
-          />
-        ) : (
-          <View style={{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: AVATAR_SIZE / 2, backgroundColor: rowBg }} />
-        )}
+        <Avatar
+          address={address && loaded ? address : null}
+          imageUri={loaded ? profile.avatar : null}
+          size="lg"
+          style={{ backgroundColor: rowBg }}
+        />
         <Text style={{ color: head, fontSize: 22, fontFamily: 'Calibre-Semibold', marginTop: 14 }}>
           {address ? displayName : 'Loading…'}
         </Text>
