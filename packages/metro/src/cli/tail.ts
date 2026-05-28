@@ -39,6 +39,10 @@ export async function cmdTail(_: string[], f: Flags): Promise<void> {
   if (since !== undefined && since !== 'tail' && (!Number.isFinite(sN) || sN < 0)) {
     throw exitErr(`--since must be a byte offset or 'tail' (got '${since}')`, 1);
   }
+  /** --since: 'tail'→EOF (live only); <num>→explicit byte offset; omitted→this */
+  /** reader's persisted cursor (resume), else 0. CLI tail is stateful. This DIFFERS */
+  /** from SSE /api/tail, which defaults to EOF (stateless stream, no cursor). Same */
+  /** flag name, two defaults — see monitor-api.ts:handleTail + the tail help text. */
   let offset = since === 'tail' ? historySize() : Number.isFinite(sN) ? sN : key ? readCursor(key) : 0;
   let emitted = 0;
   const onEntry = (entry: HistoryEntry): boolean | void => {

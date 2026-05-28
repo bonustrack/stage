@@ -11,8 +11,21 @@ import { TRAINS_DIR } from '../trains/supervisor.js';
 import {
   addEndpoint, listEndpoints, loadTunnelConfig, removeEndpoint, saveTunnelConfig, webhookPort,
 } from '../tunnel.js';
+import { errMsg } from '../log.js';
 import { emit, exitErr, flagOne, isJson, need, writeJson, type Flags } from './util.js';
 import { enforceSendGuard } from './send-guard.js';
+
+/** Wrap an IPC round-trip so daemon-down surfaces as the documented exit code 4 */
+/** (distinct from code-1 usage / code-2 config) — agents parsing exit codes can */
+/** tell "start the daemon" apart from a usage error. ipcCall's message already */
+/** tells the human/agent how to start it. */
+async function ipc(req: Parameters<typeof ipcCall>[0]): Promise<Awaited<ReturnType<typeof ipcCall>>> {
+  try {
+    return await ipcCall(req);
+  } catch (err) {
+    throw exitErr(errMsg(err), 4);
+  }
+}
 
 function urlFor(endpointId: string): string {
   const t = loadTunnelConfig();
@@ -119,10 +132,11 @@ export async function cmdCall(p: string[], f: Flags): Promise<void> {
   /** Per-session identity guard: refuse to send XMTP on an account owned by a */
   /** different CLI (e.g. a codex session sending on tony's account). */
   enforceSendGuard(train, action, args);
-  const resp = await ipcCall({ op: 'forward-call', train, action, args });
-  if (!resp.ok) throw new Error(resp.error);
-  if (!('response' in resp)) throw new Error('daemon returned malformed forward-call response');
-  if (resp.response.error) throw new Error(`train '${train}': ${resp.response.error}`);
+  const resp = await ipc({ op: 'forward-call', train, action, args });
+  /** `resp.error` here is the daemon rejecting the request (e.g. unknown train) — code 3 (upstream). */
+  if (!resp.ok) throw exitErr(resp.error, 3);
+  if (!('response' in resp)) throw exitErr('daemon returned malformed forward-call response', 3);
+  if (resp.response.error) throw exitErr(`train '${train}': ${resp.response.error}`, 3);
   if (isJson(f)) writeJson(resp.response.result ?? null);
   else process.stdout.write(JSON.stringify(resp.response.result ?? null) + '\n');
 }
@@ -131,11 +145,11 @@ export async function cmdTrains(p: string[], f: Flags): Promise<void> {
   const sub = p[0] ?? 'list';
   if (sub === 'restart') return cmdTrainsRestart(p.slice(1), f);
   if (sub === 'new') return cmdTrainsNew(p.slice(1), f);
-  if (sub !== 'list') throw new Error(`metro trains <list|restart|new>   (got '${sub}')`);
+  if (sub !== 'list') throw exitErr(`usage: metro trains <list|restart|new>   (got '${sub}')`, 1);
   loadMetroEnv();
-  const resp = await ipcCall({ op: 'trains-list' });
-  if (!resp.ok) throw new Error(resp.error);
-  if (!('trains' in resp)) throw new Error('daemon returned malformed trains-list response');
+  const resp = await ipc({ op: 'trains-list' });
+  if (!resp.ok) throw exitErr(resp.error, 3);
+  if (!('trains' in resp)) throw exitErr('daemon returned malformed trains-list response', 3);
   if (isJson(f)) return writeJson({ trains: resp.trains });
   if (!resp.trains.length) {
     process.stdout.write('metro trains\n\n  (no trains in ~/.metro/trains/)\n');
@@ -155,8 +169,8 @@ export async function cmdTrains(p: string[], f: Flags): Promise<void> {
 async function cmdTrainsRestart(p: string[], f: Flags): Promise<void> {
   need(p, 1, 'metro trains restart <name>');
   loadMetroEnv();
-  const resp = await ipcCall({ op: 'train-restart', name: p[0] });
-  if (!resp.ok) throw new Error(resp.error);
+  const resp = await ipc({ op: 'train-restart', name: p[0] });
+  if (!resp.ok) throw exitErr(resp.error, 3);
   emit(f, `restarted train '${p[0]}'`, { ok: true, name: p[0] });
 }
 

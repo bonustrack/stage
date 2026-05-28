@@ -145,6 +145,9 @@ async function handleTail(req: IncomingMessage, res: ServerResponse, q: URLSearc
     'x-accel-buffering': 'no',
   });
   /** Validated above: a non-negative `sinceN` replays from that byte offset; 'tail'/omitted → EOF. */
+  /** NB: this default DIFFERS from CLI `metro tail`, which resumes from the reader's persisted */
+  /** cursor. SSE is a stateless live stream (no cursor), so EOF is the sane default; pass an */
+  /** explicit `since` to backfill. Bad input 400s above (before headers commit). See cli/tail.ts. */
   let offset = Number.isFinite(sinceN) && sinceN >= 0 ? sinceN : historySize();
   /** 4 KiB padding so Cloudflare's HTTP/2 buffer flushes (else holds 30+ s on free tier). */
   res.write(`: metro monitor tail (mode=${opts.mode}${self ? `, as=${self}` : ''})\n: ${'-'.repeat(4096)}\n\n`);
