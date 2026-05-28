@@ -5,13 +5,14 @@ import {
 } from 'node:fs';
 import { join } from 'node:path';
 import { log } from '../log.js';
-import { STATE_DIR } from '../paths.js';
+import { HISTORY_FILE, STATE_DIR } from '../paths.js';
 import { Line } from '../lines.js';
 import type { HistoryEntry } from '../history.js';
 
 export const CLAIMS_FILE = join(STATE_DIR, 'claims.json');
 const CLAIMS_LOCK = join(STATE_DIR, 'claims.json.lock');
-export const HISTORY_FILE = join(STATE_DIR, 'history.jsonl');
+/** Re-exported for the broker tail + tests; canonical definition lives in paths.ts. */
+export { HISTORY_FILE };
 
 export type ClaimsMap = Record<string, Line>;
 

@@ -22,13 +22,6 @@ export function flagOne(f: Flags, key: string): string | undefined {
   return undefined;
 }
 
-/** Return all string values for `key`, also splitting comma-separated entries. */
-export function flagList(f: Flags, key: string): string[] {
-  const v = f[key];
-  const raw = typeof v === 'string' ? [v] : Array.isArray(v) ? v : [];
-  return raw.flatMap(s => s.split(',').map(p => p.trim()).filter(Boolean));
-}
-
 export function parseArgs(argv: string[]): { positional: string[]; flags: Flags } {
   const positional: string[] = [], flags: Flags = {};
   const add = (k: string, val: string | boolean): void => {
@@ -47,14 +40,4 @@ export function parseArgs(argv: string[]): { positional: string[]; flags: Flags 
     else add(a.slice(2), true);
   }
   return { positional, flags };
-}
-
-export async function resolveText(positional: string[], from: number): Promise<string> {
-  if (positional.length > from) return positional.slice(from).join(' ');
-  if (process.stdin.isTTY) throw exitErr('text is required (or pipe text on stdin)', 1);
-  const chunks: Buffer[] = [];
-  for await (const c of process.stdin) chunks.push(c as Buffer);
-  const stdin = Buffer.concat(chunks).toString('utf8').replace(/\n$/, '');
-  if (!stdin) throw exitErr('text is required (or pipe text on stdin)', 1);
-  return stdin;
 }
