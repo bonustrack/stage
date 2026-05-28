@@ -15,7 +15,7 @@ import { useProfileQuery } from '../../lib/useProfile';
 import { avatarRenderUrl } from '@metro-labs/client/profile/snapshot';
 import { HeroIcon } from '../../components/HeroIcon';
 
-const AVATAR_SIZE = 120;
+const AVATAR_SIZE = 64;
 
 export default function UserProfileView(): React.ReactElement {
   const router = useRouter();
@@ -85,7 +85,7 @@ export default function UserProfileView(): React.ReactElement {
               backgroundColor: border,
             }} />
           )}
-          <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', marginTop: 14 }}>
+          <Text style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold', marginTop: 14 }}>
             {profile?.name?.trim() || shortAddress(addr)}
           </Text>
           {profile?.about?.trim() ? (
@@ -96,19 +96,34 @@ export default function UserProfileView(): React.ReactElement {
               {profile.about}
             </Text>
           ) : null}
-          <Pressable
-            onPress={() => { void onMessage(); }}
-            disabled={openingDm}
-            style={({ pressed }) => ({
-              marginTop: 18, paddingHorizontal: 28, paddingVertical: 12,
-              borderRadius: 999, backgroundColor: dark ? '#ffffff' : '#000000',
-              opacity: pressed ? 0.85 : openingDm ? 0.6 : 1,
-            })}
-          >
-            <Text style={{ color: dark ? '#000000' : '#ffffff', fontSize: 15, fontFamily: 'Calibre-Medium' }}>
-              {openingDm ? 'Opening…' : 'Message'}
-            </Text>
-          </Pressable>
+          {/* Action row — Message (opens or creates a DM) + Send (jumps into
+              the wallet Send form with this address prefilled). The pair sits
+              on the same row so neither dominates the header. */}
+          <View style={{ flexDirection: 'row', gap: 10, marginTop: 18, paddingHorizontal: 24 }}>
+            <Pressable
+              onPress={() => { void onMessage(); }}
+              disabled={openingDm}
+              style={({ pressed }) => ({
+                flex: 1, paddingVertical: 12, alignItems: 'center',
+                borderRadius: 999, backgroundColor: dark ? '#ffffff' : '#000000',
+                opacity: pressed ? 0.85 : openingDm ? 0.6 : 1,
+              })}
+            >
+              <Text style={{ color: dark ? '#000000' : '#ffffff', fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
+                {openingDm ? 'Opening…' : 'Message'}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => router.push({ pathname: '/wallet/send', params: { to: addr } })}
+              style={({ pressed }) => ({
+                flex: 1, paddingVertical: 12, alignItems: 'center',
+                borderRadius: 999, backgroundColor: pressed ? border : rowBg,
+                borderWidth: 1, borderColor: border,
+              })}
+            >
+              <Text style={{ color: head, fontSize: 15, fontFamily: 'Calibre-Semibold' }}>Send</Text>
+            </Pressable>
+          </View>
         </View>
 
         <Pressable onPress={() => copy(addr)}>
