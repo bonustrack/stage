@@ -15,6 +15,7 @@ import { useEffectiveColorScheme } from '../../lib/theme';
 import { useProfileQuery } from '../../lib/useProfile';
 import { HeroIcon } from '../../components/HeroIcon';
 import { Avatar } from '../../components/Avatar';
+import { ImageViewer } from '../../components/ImageViewer';
 
 export default function UserProfileView(): React.ReactElement {
   const router = useRouter();
@@ -32,6 +33,7 @@ export default function UserProfileView(): React.ReactElement {
 
   const { data: profile, isSuccess: loaded } = useProfileQuery(addr);
   const [openingDm, setOpeningDm] = useState(false);
+  const [viewerUri, setViewerUri] = useState<string | null>(null);
 
   const onMessage = async (): Promise<void> => {
     if (!addr || openingDm) return;
@@ -86,6 +88,7 @@ export default function UserProfileView(): React.ReactElement {
             imageUri={profile?.avatar}
             size={128}
             style={{ backgroundColor: border }}
+            onPress={uri => { if (uri) setViewerUri(uri); }}
           />
           <Text style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold', marginTop: 14 }}>
             {profile?.name?.trim() || shortAddress(addr)}
@@ -135,6 +138,7 @@ export default function UserProfileView(): React.ReactElement {
         {profile?.lens?.trim() ? <Row label="Lens" value={profile.lens} /> : null}
         {profile?.farcaster?.trim() ? <Row label="Farcaster" value={profile.farcaster} /> : null}
       </ScrollView>
+      <ImageViewer uri={viewerUri ?? ''} visible={viewerUri !== null} onClose={() => setViewerUri(null)} />
     </View>
   );
 }
