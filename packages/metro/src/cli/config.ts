@@ -81,7 +81,7 @@ function envCheck(): Check[] {
 export async function cmdSetup(p: string[], f: Flags): Promise<void> {
   const [sub] = p;
   if (sub === 'skill') return cmdSetupSkill(p.slice(1), f);
-  if (sub) throw new Error(`unknown setup subcommand '${sub}' (try: skill)`);
+  if (sub) throw exitErr(`unknown setup subcommand '${sub}' (try: skill)`, 1);
   loadMetroEnv();
   const cfgExists = existsSync(CONFIG_ENV_FILE), trainsExists = existsSync(TRAINS_DIR);
   if (isJson(f)) return writeJson({
@@ -114,7 +114,10 @@ export async function cmdDoctor(_: string[], f: Flags): Promise<void> {
     const pid = Number(readFileSync(lockFile, 'utf8').trim());
     if (!Number.isInteger(pid) || pid <= 0) throw new Error('invalid pid');
     process.kill(pid, 0);
-    checks.push({ name: 'dispatcher', ok: true, detail: `running (pid ${pid})` });
+    /** Surface the otherwise-invisible attach behavior: a second bare `metro` won't */
+    /** start a rival daemon — it subscribes as a live reader (tail --follow). */
+    checks.push({ name: 'dispatcher', ok: true,
+      detail: `running (pid ${pid}) — bare \`metro\` attaches as a reader (tail --follow)` });
   } catch { checks.push({ name: 'dispatcher', ok: null, detail: 'stale lockfile (auto-reclaims)' }); }
   checks.push({ name: 'codex-rc', ok: null,
     detail: process.env.METRO_CODEX_RC ? `push enabled → ${process.env.METRO_CODEX_RC}`
@@ -144,9 +147,9 @@ export async function cmdDoctor(_: string[], f: Flags): Promise<void> {
 export async function cmdUpdate(_: string[], f: Flags): Promise<void> {
   const tag = pkg.version.includes('-') ? 'beta' : 'latest';
   const res = await fetch('https://registry.npmjs.org/@metro-labs/metro', { signal: AbortSignal.timeout(15_000) });
-  if (!res.ok) throw new Error(`npm registry: ${res.status}`);
+  if (!res.ok) throw exitErr(`npm registry: ${res.status}`, 3);
   const latest = ((await res.json()) as { 'dist-tags'?: Record<string, string> })['dist-tags']?.[tag];
-  if (!latest) throw new Error(`no '${tag}' dist-tag for @metro-labs/metro`);
+  if (!latest) throw exitErr(`no '${tag}' dist-tag for @metro-labs/metro`, 3);
   if (latest === pkg.version) {
     return emit(f, `already on ${pkg.version} (latest ${tag})`,
       { ok: true, current: pkg.version, latest, upgraded: false });

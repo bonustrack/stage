@@ -29,6 +29,9 @@ metro multiplexes them onto stdout. Outbound action calls flow back via \`metro 
 
 Usage:
   metro                                       Run the dispatcher (emits JSON events on stdout).
+                                              If a dispatcher is already running, bare \`metro\`
+                                              instead attaches as a live reader (tail --follow
+                                              --json --since=tail) so a second agent can subscribe.
   metro setup                                 Print config status (credentials are owned by trains).
   metro setup skill [clear]                   Install/remove the metro skill into ~/.claude / ~/.codex.
   metro doctor                                Health check.
@@ -43,6 +46,10 @@ Usage:
   metro tail [--as=<user-uri>] [--follow] [--strict | --unclaimed | --all] [--include-webhooks]
              [--chat=<line>] [--station=…] [--since=<offset|tail>] [--limit=N]
                                               Subscribe to the event log; claim-aware by default.
+                                              --since: byte offset, or 'tail' for EOF (live only).
+                                              Default (omitted) resumes from this reader's saved
+                                              cursor. NB: the SSE /api/tail endpoint shares the
+                                              flag name but defaults to EOF, not the cursor.
   metro claim <line> [--as=<user-uri>]        Take exclusive ownership of a line.
   metro release <line>                        Release a line (it returns to broadcast).
   metro claims                                Print the current claims map.
@@ -53,9 +60,13 @@ Usage:
   metro update                                Upgrade in place.
   metro --version | --help
 
+Global flags:
+  --json                                      Machine-readable output on any command (and on
+                                              errors: {"ok":false,"error":…,"code":…}).
+
 Trains: place \`<name>.ts\` files in ~/.metro/trains/. See \`@metro-labs/metro/examples\`.
 Lines: metro://<station>/<path>. Multi-line args: pipe on stdin where supported.
-Exit codes: 0 success · 1 usage · 2 config · 3 upstream
+Exit codes: 0 success · 1 usage · 2 config · 3 upstream · 4 daemon not running
 `;
 
 async function cmdLines(_: string[], f: Flags): Promise<void> {

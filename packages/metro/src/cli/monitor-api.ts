@@ -138,7 +138,10 @@ async function handleTail(req: IncomingMessage, res: ServerResponse, q: URLSearc
     /** Cloudflare/proxies buffer SSE without this hint. */
     'x-accel-buffering': 'no',
   });
-  /** `since=tail` (default) starts at EOF; `since=0` replays the full file; numeric = byte offset. */
+  /** `since=tail` (default) → EOF; `since=0` replays the whole file; numeric = byte offset. */
+  /** NB: this default DIFFERS from CLI `metro tail`, which resumes from the reader's persisted */
+  /** cursor. SSE is a stateless live stream (no cursor), so EOF is the sane default; pass an */
+  /** explicit `since` to backfill. Invalid input falls through to EOF silently. See cli/tail.ts. */
   const since = q.get('since');
   const sinceN = since && since !== 'tail' ? Number(since) : NaN;
   let offset = Number.isFinite(sinceN) && sinceN >= 0 ? sinceN : historySize();
