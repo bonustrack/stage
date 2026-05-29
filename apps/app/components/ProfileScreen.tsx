@@ -124,7 +124,7 @@ export function ProfileScreen({ address, variant }: {
 
         {isSelf ? (
           <Pressable onPress={() => setMenuOpen(true)} hitSlop={8} style={{ padding: 6 }}>
-            <HeroIcon name="dotsVertical" size={22} color={c.head} />
+            <HeroIcon name="dotsHorizontal" size={22} color={c.head} />
           </Pressable>
         ) : null}
       </View>
