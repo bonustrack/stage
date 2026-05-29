@@ -74,19 +74,33 @@ export async function openConversationAsBubble(args: {
   }
 }
 
-/** Download an avatar `url` to a cache file (keyed by `key`) and return a
- *  `file://` uri (or null on failure → native falls back to a neutral circle /
- *  the app icon). The native side needs a local bitmap, not an https url. */
+/** Download an avatar `url` to a cache file (keyed by `key`) and return a RAW
+ *  filesystem path (or null on failure → native falls back to a neutral circle /
+ *  the app icon). The native side decodes with `BitmapFactory.decodeFile`, which
+ *  needs a raw path (`/data/user/0/.../x.png`), NOT a `file://` uri — a uri
+ *  decodes to null → the green fallback circle. We strip the scheme here (mirrors
+ *  `ensureDbDir` in lib/xmtp.ts) so native always gets a path it can read. */
 async function cacheAvatarFile(url: string | null, key: string): Promise<string | null> {
   if (!url) return null;
   try {
     const dest = new File(Paths.cache, `avatar-${key}.png`);
     if (dest.exists) try { dest.delete(); } catch { /* overwrite */ }
-    const blob = await (await fetch(url)).blob();
+    const res = await fetch(url);
+    if (!res.ok) {
+      console.warn('cacheAvatarFile: fetch failed', url, res.status);
+      return null;
+    }
+    const blob = await res.blob();
     const buf = new Uint8Array(await blob.arrayBuffer());
     dest.create();
     dest.write(buf);
-    return dest.uri.startsWith('file://') ? dest.uri : `file://${dest.uri.replace(/^file:\/+/, '/')}`;
+    // Verify the bytes actually landed before handing native a path.
+    if (!dest.exists) {
+      console.warn('cacheAvatarFile: write produced no file', dest.uri);
+      return null;
+    }
+    // RAW path, no `file://` scheme — BitmapFactory.decodeFile needs it raw.
+    return dest.uri.replace(/^file:\/+/, '/');
   } catch (e) {
     console.warn('cacheAvatarFile failed', e);
     return null;
@@ -247,7 +261,9 @@ async function openTargetChat(): Promise<void> {
     return;
   }
   const convId = await resolveTargetConvId(t);
-  navigateToUrl(lineOfConv(convId));
+  // `?focus=1` → the DM screen auto-focuses the composer + raises the keyboard
+  // on arrival (the user tapped "open chat" → they're about to type).
+  navigateToUrl(`${lineOfConv(convId)}?focus=1`);
 }
 
 /** Send a recorded clip as an XMTP audio attachment to the ACTIVE target's DM,

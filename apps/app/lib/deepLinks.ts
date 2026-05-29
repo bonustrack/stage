@@ -27,7 +27,7 @@ import { router } from 'expo-router';
 
 /** An expo-router navigation target derived from an incoming link. */
 export type ParsedRoute =
-  | { pathname: '/xmtp/[convId]'; params: { convId: string; m?: string } }
+  | { pathname: '/xmtp/[convId]'; params: { convId: string; m?: string; focus?: string } }
   | { pathname: '/group/[convId]'; params: { convId: string } }
   | { pathname: '/user/[address]'; params: { address: string } }
   | { pathname: '/(tabs)'; params?: undefined }
@@ -92,7 +92,13 @@ export function routeForUrl(url: string): ParsedRoute | null {
     case 'embed': {
       if (!second) return null;
       const m = query.get('m') ?? undefined;
-      return { pathname: '/xmtp/[convId]', params: m ? { convId: second, m } : { convId: second } };
+      /** `focus=1` (e.g. opening from the floating pill) → the conversation
+       *  screen auto-focuses the composer + raises the keyboard on arrival. */
+      const focus = query.get('focus') ?? undefined;
+      return {
+        pathname: '/xmtp/[convId]',
+        params: { convId: second, ...(m ? { m } : {}), ...(focus ? { focus } : {}) },
+      };
     }
     case 'group':
       return second ? { pathname: '/group/[convId]', params: { convId: second } } : null;

@@ -67,6 +67,10 @@ interface Props {
   /** `nonce` (optional) changes on every reply action — even re-replying to the
    *  same message — so the composer re-focuses + re-opens the keyboard each time. */
   replyingTo?: { id: string; preview: string; nonce?: number };
+  /** Bump to focus the composer + raise the keyboard WITHOUT setting a reply
+   *  target (e.g. opening a DM from the floating pill). Each new value re-fires
+   *  the focus effect. */
+  autoFocusNonce?: number;
   onClearReply?: () => void;
   /** Tap on the "Replying to …" preview — parent scrolls the feed to the
    *  target message + flashes the highlight. No-op when omitted. */
@@ -80,7 +84,7 @@ interface Props {
 }
 
 export function MessengerComposer({
-  dark, xmtpLine, mentionCandidates, replyingTo, onClearReply, onReplyPreviewPress, onOptimistic, onSent,
+  dark, xmtpLine, mentionCandidates, replyingTo, autoFocusNonce, onClearReply, onReplyPreviewPress, onOptimistic, onSent,
 }: Props): React.ReactElement {
   const fg = dark ? '#9f9fa3' : '#57606a';
   const head = dark ? '#ffffff' : '#000000';
@@ -167,6 +171,15 @@ export function MessengerComposer({
     const t = setTimeout(() => inputRef.current?.focus(), 0);
     return () => clearTimeout(t);
   }, [replyTargetId, replyNonce]);
+
+  /** Focus + raise the keyboard on a reply-less autofocus signal (e.g. opening
+   *  the DM from the floating pill). Deferred a tick so the input has mounted;
+   *  re-fires on each new nonce. */
+  useEffect(() => {
+    if (!autoFocusNonce) return;
+    const t = setTimeout(() => inputRef.current?.focus(), 0);
+    return () => clearTimeout(t);
+  }, [autoFocusNonce]);
 
   const canSend = !sending && (text.trim().length > 0 || pending.length > 0);
 

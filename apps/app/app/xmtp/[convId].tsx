@@ -85,8 +85,12 @@ export default function XmtpConversation(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { fg, head, sub, bg, border } = usePalette();
 
-  const { convId } = useLocalSearchParams<{ convId: string }>();
+  const { convId, focus } = useLocalSearchParams<{ convId: string; focus?: string }>();
   const activeLine = lineOfConv(convId ?? '');
+  /** When opened with `?focus=1` (e.g. from the floating pill's "open chat"),
+   *  raise the keyboard + focus the composer on arrival. A one-shot nonce taken
+   *  at mount drives the composer's autofocus effect. */
+  const autoFocusNonce = useMemo(() => (focus ? Date.now() : undefined), [focus]);
 
   const xmtpFeed = useXmtpFeed(activeLine, !!convId);
   const events = xmtpFeed.events;
@@ -505,6 +509,7 @@ export default function XmtpConversation(): React.ReactElement {
         xmtpLine={activeLine}
         mentionCandidates={mentionCandidates}
         replyingTo={replyingTo ?? undefined}
+        autoFocusNonce={autoFocusNonce}
         onClearReply={() => setReplyingTo(null)}
         onReplyPreviewPress={() => {
           /** Tapping the composer's "Replying to …" slab jumps the feed to the
