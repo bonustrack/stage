@@ -466,8 +466,13 @@ export function MessengerComposer({
     .slice(0, 6);
   const pickMention = (c: { address: string; name: string }): void => {
     if (!mention) return;
-    /** Insert `@<name> ` and advance the cursor to the end of the insertion. */
-    const insert = `@${c.name} `;
+    /** Insert the bare address as `@<address> ` and advance the cursor to the end
+     *  of the insertion. The lowercased address is the stable wire form (survives
+     *  username changes); the bubble renderer resolves it to a tappable `@<name>`
+     *  at render time. The trailing space ensures the just-inserted token isn't
+     *  re-parsed as an active mention by `/(^|\s)@(\S*)$/` (the cursor lands after
+     *  whitespace). */
+    const insert = `@${c.address.toLowerCase()} `;
     const next = text.slice(0, mention.start) + insert + text.slice(mention.end);
     const nextCursor = mention.start + insert.length;
     setText(next);

@@ -79,6 +79,8 @@ export default function RootLayout(): React.ReactElement {
       <Stack
         screenOptions={{
           headerShown: false,
+          // No push/pop transition — pages swap instantly (user preference).
+          animation: 'none',
           contentStyle: { backgroundColor: dark ? '#0e0f10' : '#ffffff' },
         }}
       >

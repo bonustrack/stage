@@ -317,11 +317,11 @@ export default function GroupDetail(): React.ReactElement {
           {imageUrl ? (
             <Image
               source={{ uri: avatarRenderUrl('', imageUrl, 256) }}
-              style={{ width: 128, height: 128, borderRadius: 64, backgroundColor: rowBg, opacity: uploadingImage ? 0.5 : 1 }}
+              style={{ width: 128, height: 128, borderRadius: 15, backgroundColor: rowBg, opacity: uploadingImage ? 0.5 : 1 }}
             />
           ) : (
             <View style={{
-              width: 128, height: 128, borderRadius: 64, backgroundColor: rowBg,
+              width: 128, height: 128, borderRadius: 15, backgroundColor: rowBg,
               borderWidth: 1, borderColor: border,
               alignItems: 'center', justifyContent: 'center',
               opacity: uploadingImage ? 0.5 : 1,
@@ -341,7 +341,6 @@ export default function GroupDetail(): React.ReactElement {
       </View>
 
       <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
-        <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>GROUP NAME</Text>
         {editing ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 }}>
             <TextInput
@@ -368,8 +367,8 @@ export default function GroupDetail(): React.ReactElement {
             </Pressable>
           </View>
         ) : (
-          <Pressable onPress={() => setEditing(true)} hitSlop={6} style={{ marginTop: 6 }}>
-            <Text style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold' }}>
+          <Pressable onPress={() => setEditing(true)} hitSlop={6} style={{ marginTop: 6, alignItems: 'center' }}>
+            <Text style={{ color: head, fontSize: 22, fontFamily: 'Calibre-Semibold', textAlign: 'center' }}>
               {name && name.trim() ? name : 'Untitled group'}
             </Text>
             <Text style={{ color: sub, fontSize: 12, marginTop: 4, fontFamily: 'Calibre-Medium' }}>Tap to rename</Text>

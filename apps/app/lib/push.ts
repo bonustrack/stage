@@ -28,12 +28,22 @@ import * as Notifications from 'expo-notifications';
  *  defaults to suppressing both. Set globally so it applies regardless of which
  *  screen is mounted when the push arrives. */
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
+  handleNotification: async (notification) => {
+    /** Foreground de-dup: while the app runs, the channels-list stream posts its
+     *  OWN local notification for each inbound message (tagged data.kind ===
+     *  'xmtp-inbound'). This handler ALSO runs for the daemon's REMOTE FCM push
+     *  for that same message — showing both is the duplicate the user saw. So in
+     *  the foreground we only surface our local notif and suppress the remote
+     *  banner. In the BACKGROUND this handler doesn't run, so the OS still shows
+     *  the remote push — no notification is lost. */
+    const isLocal = (notification.request?.content?.data as { kind?: string } | undefined)?.kind === 'xmtp-inbound';
+    return {
+      shouldShowBanner: isLocal,
+      shouldShowList: isLocal,
+      shouldPlaySound: isLocal,
+      shouldSetBadge: true,
+    };
+  },
 });
 
 export type PushStatus = 'idle' | 'requesting' | 'ready' | 'denied' | 'unavailable' | 'error';

@@ -36,11 +36,13 @@ export default function Settings(): React.ReactElement {
   const rowBg = dark ? '#282a2d' : '#e4e4e5';
 
   const [myAddress, setMyAddress] = useState<string>('');
+  const [myInboxId, setMyInboxId] = useState<string>('');
   useEffect(() => {
     void (async (): Promise<void> => {
       try {
         const client = await getOrCreateXmtpClient('production');
         setMyAddress(client.publicIdentity.identifier);
+        setMyInboxId(client.inboxId);
       } catch { /* surface elsewhere — settings shouldn't block on XMTP boot */ }
     })();
   }, []);
@@ -66,6 +68,25 @@ export default function Settings(): React.ReactElement {
           <Text style={{ color: sub, fontSize: 13 , fontFamily: 'Calibre-Medium'}}>YOUR XMTP ADDRESS (tap to copy)</Text>
           <Text style={{ color: fg, fontSize: 16, marginTop: 2 , fontFamily: 'Calibre-Medium'}}>
             {shortAddress(myAddress)}
+          </Text>
+        </Pressable>
+      ) : null}
+
+      {myInboxId ? (
+        <Pressable
+          onPress={() => {
+            void Clipboard.setStringAsync(myInboxId);
+            flash('Inbox id copied');
+          }}
+          style={{
+            marginHorizontal: 16, marginTop: 8, padding: 12,
+            borderRadius: 12, backgroundColor: rowBg,
+            borderWidth: 1, borderColor: border,
+          }}
+        >
+          <Text style={{ color: sub, fontSize: 13 , fontFamily: 'Calibre-Medium'}}>YOUR XMTP INBOX ID (tap to copy)</Text>
+          <Text style={{ color: fg, fontSize: 16, marginTop: 2 , fontFamily: 'Calibre-Medium'}}>
+            {myInboxId}
           </Text>
         </Pressable>
       ) : null}

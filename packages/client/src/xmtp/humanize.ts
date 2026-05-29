@@ -33,6 +33,27 @@ export function humanizeGroupUpdated(g: GroupUpdatedContent): string {
   return parts.length ? parts.join(' • ') : 'updated the group';
 }
 
+/** Mention wire form stored in the raw XMTP message text: a bare address,
+ *  `@0x<40 hex>`. The address is the source of truth; the bubble renderer
+ *  resolves it to a tappable `@<username>` at render time. */
+const MENTION_RE = /@(0x[0-9a-fA-F]{40})\b/g;
+
+/** Collapse an address mention `@0xABCD…1234` → the friendly short form
+ *  `@0xabcd…1234` (first 6 + last 4 of the address, matching `shortAddress`'s
+ *  `…` style) for any plain-text / preview / snippet context (channel-list
+ *  rows, reply previews, push text) so the raw 42-char address never leaks.
+ *  This is a pure helper with no profile lookup available, so it can't resolve
+ *  the username — the live bubble renderer does that. No-op (cheap) when the
+ *  text has no address mentions. */
+export function humanizeMentions(text: string): string {
+  if (!text.includes('@0x')) return text;
+  return text.replace(MENTION_RE, (_m, addr: string) =>
+    `@${addr.slice(0, 6)}…${addr.slice(-4)}`);
+}
+
+/** Back-compat alias — older call sites import `stripMentionMarkup`. */
+export const stripMentionMarkup = humanizeMentions;
+
 /** Normalise a content-type id — RN SDK returns the full
  *  `xmtp.org/group_updated:1.0` form, browser SDK returns the short
  *  `group_updated`. Reduce both to the short authority-less name. */
@@ -46,7 +67,7 @@ export function shortContentType(raw: string | undefined | null): string {
  *  `listConvs` actions to surface system messages as readable text. */
 export function previewOfXmtpContent(decoded: unknown, contentTypeId: string | undefined | null): string {
   const typeId = shortContentType(contentTypeId);
-  if (typeof decoded === 'string') return decoded;
+  if (typeof decoded === 'string') return stripMentionMarkup(decoded);
   if (typeId === 'group_updated' || typeId === 'groupUpdated') {
     return humanizeGroupUpdated(decoded as GroupUpdatedContent);
   }
@@ -57,8 +78,8 @@ export function previewOfXmtpContent(decoded: unknown, contentTypeId: string | u
   }
   if (typeId === 'reply') {
     const r = decoded as { content?: { text?: string } | string };
-    if (typeof r.content === 'string') return r.content;
-    return r.content?.text ?? '[reply]';
+    if (typeof r.content === 'string') return stripMentionMarkup(r.content);
+    return r.content?.text ? stripMentionMarkup(r.content.text) : '[reply]';
   }
   if (typeId === 'attachment') {
     const a = decoded as { filename?: string; mimeType?: string };

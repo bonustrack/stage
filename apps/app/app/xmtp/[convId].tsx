@@ -11,6 +11,7 @@ import { KeyboardStickyView, useReanimatedKeyboardAnimation } from 'react-native
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { MessengerBubble } from '../../components/MessengerBubble';
+import { stripMentionMarkup } from '@metro-labs/client/xmtp/humanize';
 import { usePeerProfiles, getPeerName, getPeerAvatar } from '../../lib/peerProfiles';
 import { useConvMeta } from '../../lib/useConvMeta';
 import { Spinner } from '../../components/Spinner';
@@ -70,7 +71,7 @@ function HeaderAvatar({ peerAddr, groupImage, border }: {
     return <Avatar address={peerAddr} imageUri={getPeerAvatar(peerAddr)} size="sm" style={{ backgroundColor: border }} />;
   }
   if (groupImage) {
-    return <Avatar imageUri={groupImage} size="sm" style={{ backgroundColor: border }} />;
+    return <Avatar imageUri={groupImage} size="sm" square style={{ backgroundColor: border }} />;
   }
   return null;
 }
@@ -89,6 +90,7 @@ export default function XmtpConversation(): React.ReactElement {
 
   const xmtpFeed = useXmtpFeed(activeLine, !!convId);
   const events = xmtpFeed.events;
+  const { loadOlder, hasMore, loadingOlder } = xmtpFeed;
   /** Mark the conversation as read whenever the latest event id changes —
    *  uses `Date.now() * 1e6` as an upper bound in nanoseconds so any
    *  not-yet-seen message also flips to read on the next mount. */
@@ -222,7 +224,7 @@ export default function XmtpConversation(): React.ReactElement {
     prevBubbleCount.current = allBubbles.length;
   }, [allBubbles.length, showJump]);
   const previewOf = (e: HistoryEntry): string =>
-    e.text?.slice(0, 80) || `[${(e.payload as { attachments?: { kind: string }[] } | undefined)?.attachments?.[0]?.kind ?? 'attachment'}]`;
+    (e.text ? stripMentionMarkup(e.text).slice(0, 80) : '') || `[${(e.payload as { attachments?: { kind: string }[] } | undefined)?.attachments?.[0]?.kind ?? 'attachment'}]`;
   /** Jump to the original of a quoted/replied-to message: scroll the inverted
    *  list to its row + flash a highlight. The scroll is best-effort — wrapped in
    *  try/catch with `animated:false` (reanimated #3670 makes the animated path
@@ -304,6 +306,14 @@ export default function XmtpConversation(): React.ReactElement {
         maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
         keyExtractor={e => e.id}
         style={{ flex: 1 }}
+        /** Inverted list: onEndReached fires near the visual TOP (the OLDEST end),
+         *  which is exactly when we want to page in older history. loadOlder() reads
+         *  the oldest loaded event's ts as a before-cursor and appends the next page
+         *  to the END of the data array — on an inverted list that adds rows above
+         *  the current view without moving the viewport. No-ops while loading or
+         *  once history is exhausted (guarded inside the hook). */
+        onEndReached={() => { void loadOlder(); }}
+        onEndReachedThreshold={0.5}
         /** Inverted: paddingTop = visual BOTTOM (composer side), paddingBottom = visual TOP
          *  (nav side). Bump the top so the oldest message clears the absolute top-nav strip. */
         contentContainerStyle={{ paddingTop: 24, paddingBottom: insets.top + 52 + 24 }}
@@ -353,28 +363,39 @@ export default function XmtpConversation(): React.ReactElement {
               : <Spinner size={28} color={head} />}
           </View>
         }
-        /** DM intro banner — inverted list so `ListFooterComponent` renders
-         *  at the visual TOP (oldest end). Only on 1-to-1 DMs; groups have
-         *  their own group page reachable from the topnav. */
-        ListFooterComponent={!isGroup && peerAddr ? (
-          <Pressable
-            onPress={() => router.push({ pathname: '/user/[address]', params: { address: peerAddr } })}
-            style={{ alignItems: 'center', paddingVertical: 24, paddingHorizontal: 24 }}
-          >
-            <Avatar
-              address={peerAddr}
-              imageUri={getPeerAvatar(peerAddr)}
-              size="lg"
-              style={{ backgroundColor: border }}
-            />
-            <Text style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold', marginTop: 12 }} numberOfLines={1}>
-              {getPeerName(peerAddr) ?? shortAddress(peerAddr)}
-            </Text>
-            <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 2 }} numberOfLines={1}>
-              {shortAddress(peerAddr)}
-            </Text>
-          </Pressable>
-        ) : null}
+        /** Inverted list → `ListFooterComponent` renders at the visual TOP (oldest
+         *  end). Holds two things, top-to-bottom: a small "loading older" spinner
+         *  while a previous page is paginating in, then the DM intro banner.
+         *  The DM banner only shows once history is exhausted (`!hasMore`) so it
+         *  doesn't sit mid-scroll above still-unloaded messages. */
+        ListFooterComponent={
+          <>
+            {loadingOlder ? (
+              <View style={{ paddingVertical: 16, alignItems: 'center' }}>
+                <Spinner size={20} color={sub} />
+              </View>
+            ) : null}
+            {!isGroup && peerAddr && hasMore === false ? (
+              <Pressable
+                onPress={() => router.push({ pathname: '/user/[address]', params: { address: peerAddr } })}
+                style={{ alignItems: 'center', paddingVertical: 24, paddingHorizontal: 24 }}
+              >
+                <Avatar
+                  address={peerAddr}
+                  imageUri={getPeerAvatar(peerAddr)}
+                  size="lg"
+                  style={{ backgroundColor: border }}
+                />
+                <Text style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold', marginTop: 12 }} numberOfLines={1}>
+                  {getPeerName(peerAddr) ?? shortAddress(peerAddr)}
+                </Text>
+                <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 2 }} numberOfLines={1}>
+                  {shortAddress(peerAddr)}
+                </Text>
+              </Pressable>
+            ) : null}
+          </>
+        }
         keyboardShouldPersistTaps="handled"
       />
       </Reanimated.View>

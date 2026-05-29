@@ -68,22 +68,6 @@ export function ProfileScreen({ address, variant }: {
   const [menuOpen, setMenuOpen] = useState(false);
   const [openingDm, setOpeningDm] = useState(false);
   const [viewerUri, setViewerUri] = useState<string | null>(null);
-  /** Own profile shows the XMTP inbox id row; resolve it from the client. */
-  const [inboxId, setInboxId] = useState('');
-
-  useEffect(() => {
-    if (!isSelf) { setInboxId(''); return; }
-    const cached = getCachedXmtpClient();
-    if (cached) { setInboxId(cached.inboxId); return; }
-    let alive = true;
-    void (async (): Promise<void> => {
-      try {
-        const client = await getOrCreateXmtpClient('production');
-        if (alive) setInboxId(client.inboxId);
-      } catch { /* leave blank */ }
-    })();
-    return () => { alive = false; };
-  }, [isSelf]);
 
   const onMessage = async (): Promise<void> => {
     if (!addr || openingDm) return;
@@ -163,11 +147,6 @@ export function ProfileScreen({ address, variant }: {
         </View>
 
         {addr ? <InfoRow label="Wallet address" value={addr} onCopy={() => copy(addr, 'Address')} c={c} /> : null}
-
-        {/* XMTP inbox id — own profile only (peers don't expose theirs here). */}
-        {isSelf && inboxId ? (
-          <InfoRow label="XMTP inbox id" value={inboxId} onCopy={() => copy(inboxId, 'XMTP inbox id')} c={c} />
-        ) : null}
 
         {profile?.github?.trim() ? <InfoRow label="GitHub" value={profile.github} c={c} /> : null}
         {profile?.twitter?.trim() ? <InfoRow label="X (Twitter)" value={profile.twitter} c={c} /> : null}

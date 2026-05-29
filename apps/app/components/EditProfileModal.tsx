@@ -25,8 +25,6 @@ const FIELDS: Field[] = [
   { key: 'about', label: 'About', placeholder: 'Tell your story', multiline: true },
   { key: 'github', label: 'GitHub', placeholder: 'GitHub handle' },
   { key: 'twitter', label: 'X (Twitter)', placeholder: 'X handle' },
-  { key: 'lens', label: 'Lens', placeholder: 'Lens handle' },
-  { key: 'farcaster', label: 'Farcaster', placeholder: 'Farcaster handle' },
 ];
 
 export default function EditProfileModal({

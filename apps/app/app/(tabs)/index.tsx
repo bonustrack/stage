@@ -4,7 +4,7 @@
  *  the other members for groups (excluding the local user). Both are resolved
  *  once per conv during the initial list build and cached in component state. */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AppState, FlatList, Modal, Pressable, RefreshControl,
   Text, View,
@@ -32,6 +32,7 @@ import { hasDraft, useDraftsVersion } from '../../lib/drafts';
 import { previewOfXmtpContent } from '@metro-labs/client/xmtp/humanize';
 import { Spinner } from '../../components/Spinner';
 import { Avatar } from '../../components/Avatar';
+import { loadPinnedIds, isPinned, togglePin, subscribePins } from '../../lib/pins';
 
 interface Row {
   convId: string;
@@ -217,6 +218,29 @@ export default function Messenger(): React.ReactElement {
   /** Held across effect re-runs so AppState + poll backstops can call refresh
    *  without re-binding to a stale client. */
   const refreshFromNetworkRef = useRef<(() => Promise<void>) | null>(null);
+  /** Device-only pinned conv ids. Loaded once on mount; `subscribePins` bumps
+   *  this on every toggle so the display sort below re-derives + re-renders. */
+  const [pinned, setPinned] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    void loadPinnedIds().then(setPinned);
+    /** On toggle the cache is already updated; re-read it (resolves instantly
+     *  once loaded) into a fresh Set so React sees a new reference. */
+    return subscribePins(() => { void loadPinnedIds().then(s => setPinned(new Set(s))); });
+  }, []);
+
+  /** Display ordering: pinned rows float to the top (keeping their own lastTs
+   *  desc order), then the rest by lastTs desc. Derived for display only — the
+   *  source `rows` state stays untouched so the stream-update logic (which
+   *  prepends/reorders by recency) keeps working against the raw list. */
+  const sortedRows = useMemo(() => {
+    const list = rows ?? [];
+    return [...list].sort((a, b) => {
+      const ap = pinned.has(a.convId) ? 1 : 0;
+      const bp = pinned.has(b.convId) ? 1 : 0;
+      if (ap !== bp) return bp - ap;
+      return (b.lastTs ?? 0) - (a.lastTs ?? 0);
+    });
+  }, [rows, pinned]);
 
   /** Batch-resolve the displayed peers' profiles → avatar cache-busters. */
   const channelProfilesVersion = usePeerProfiles(
@@ -329,8 +353,12 @@ export default function Messenger(): React.ReactElement {
               const latestRows = getCachedRows() as Row[] | null;
               const row = msgConvIdForNote ? latestRows?.find(r => r.convId === msgConvIdForNote) : undefined;
               const senderAddr = row?.inboxToAddr?.[msg.senderInboxId ?? ''] ?? null;
-              const title = row?.title
-                || (senderAddr ? shortAddress(senderAddr) : 'New message');
+              /** Group → the group name (row.title). DM → the SENDER's resolved
+               *  username (row.title for a DM is only a short address, so resolve
+               *  the name first), then the short address. */
+              const title = (row && !row.peerAddress)
+                ? (row.title || 'New message')
+                : ((senderAddr && getPeerName(senderAddr)) || (senderAddr ? shortAddress(senderAddr) : 'New message'));
               void presentInboundNotification({
                 title, body: preview.slice(0, 140),
                 convId: msgConvIdForNote ?? '', messageId: msg.id,
@@ -455,8 +483,8 @@ export default function Messenger(): React.ReactElement {
         </Pressable>
       </View>
       <FlatList
-        data={rows ?? []}
-        extraData={`${channelProfilesVersion}:${draftsVersion}`}
+        data={sortedRows}
+        extraData={`${channelProfilesVersion}:${draftsVersion}:${pinned.size}`}
         keyExtractor={r => r.convId}
         refreshControl={
           <RefreshControl
@@ -502,11 +530,13 @@ export default function Messenger(): React.ReactElement {
               imageUri={item.avatarUri}
               address={!item.avatarUri && item.avatarAddress && isPeerResolved(item.avatarAddress) ? item.avatarAddress : null}
               size={40}
+              square={!item.peerAddress}
               cacheBuster={item.avatarAddress ? getPeerAvatarCb(item.avatarAddress) : undefined}
               style={{ backgroundColor: border }}
             />
             <View style={{ flex: 1, minWidth: 0 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                {isPinned(item.convId) ? <HeroIcon name="mapPin" size={13} color={sub} /> : null}
                 {hasDraft(item.convId) ? <HeroIcon name="pencil" size={14} color={sub} /> : null}
                 <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', flex: 1 }} numberOfLines={1}>
                   {item.peerAddress ? (getPeerName(item.peerAddress) ?? item.title) : item.title}
@@ -546,6 +576,7 @@ export default function Messenger(): React.ReactElement {
       <RowActionSheet
         target={rowMenu}
         dark={dark}
+        pinned={rowMenu ? pinned.has(rowMenu.convId) : false}
         onClose={() => setRowMenu(null)}
         onToggleUnread={() => {
           if (!rowMenu) return;
@@ -553,6 +584,12 @@ export default function Messenger(): React.ReactElement {
           setRowMenu(null);
           if (isUnread) void markConvRead(convId);
           else void markConvUnread(convId);
+        }}
+        onTogglePin={() => {
+          if (!rowMenu) return;
+          const { convId } = rowMenu;
+          setRowMenu(null);
+          void togglePin(convId);
         }}
       />
     </View>
@@ -562,10 +599,11 @@ export default function Messenger(): React.ReactElement {
 /** Bottom action sheet shown on long-pressing a channel row. v1 exposes a
  *  single toggle: Mark as read / Mark as unread (cross-device via XMTP consent). */
 function RowActionSheet({
-  target, dark, onClose, onToggleUnread,
+  target, dark, pinned, onClose, onToggleUnread, onTogglePin,
 }: {
   target: { convId: string; title: string; isUnread: boolean } | null;
-  dark: boolean; onClose: () => void; onToggleUnread: () => void;
+  dark: boolean; pinned: boolean; onClose: () => void;
+  onToggleUnread: () => void; onTogglePin: () => void;
 }): React.ReactElement {
   const sheetBg = dark ? '#282a2d' : '#ffffff';
   const fg = dark ? '#9f9fa3' : '#57606a';
@@ -585,6 +623,12 @@ function RowActionSheet({
             <HeroIcon name={target?.isUnread ? 'check' : 'envelope'} size={20} color={head} />
             <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Medium' }}>
               {target?.isUnread ? 'Mark as read' : 'Mark as unread'}
+            </Text>
+          </Pressable>
+          <Pressable onPress={onTogglePin} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 }}>
+            <HeroIcon name="mapPin" size={20} color={head} />
+            <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Medium' }}>
+              {pinned ? 'Unpin' : 'Pin'}
             </Text>
           </Pressable>
           <Pressable onPress={onClose} style={{ paddingVertical: 10, alignItems: 'center' }}>

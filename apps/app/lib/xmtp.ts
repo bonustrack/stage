@@ -11,7 +11,7 @@
  *  Key material never crosses the JS bridge — the SDK keeps it native side, backed by the
  *  device keystore on Android and the secure enclave on iOS. */
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { Directory, File, Paths } from 'expo-file-system';
@@ -835,13 +835,31 @@ export type XmtpFeedStatus = 'idle' | 'loading' | 'open' | 'error';
  *  background. Survives navigation within the session. */
 const feedCache = new Map<string, HistoryEntry[]>();
 
+/** First-page + per-scroll-up page size. Opening a conversation used to decode
+ *  100 messages up front (~150–220ms on-device, on the critical path before first
+ *  paint); a small first page paints fast and older pages stream in on scroll-up. */
+const PAGE_SIZE = 20;
+
 export function useXmtpFeed(line: string | null, enabled: boolean): {
   events: HistoryEntry[]; status: XmtpFeedStatus; error: string | null; inboxId: string;
+  loadOlder: () => Promise<void>; hasMore: boolean; loadingOlder: boolean;
 } {
   const [events, setEvents] = useState<HistoryEntry[]>(() => (line ? feedCache.get(line) ?? [] : []));
   const [status, setStatus] = useState<XmtpFeedStatus>('idle');
   const [error, setError] = useState<string | null>(null);
   const [inboxId, setInboxId] = useState<string>('');
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  /** Latest events held in a ref so the stable `loadOlder` callback can read the
+   *  current tail (oldest loaded event = pagination cursor) without re-creating
+   *  itself on every render. */
+  const eventsRef = useRef<HistoryEntry[]>(events);
+  eventsRef.current = events;
+  const loadingOlderRef = useRef(false);
+  const hasMoreRef = useRef(true);
+  hasMoreRef.current = hasMore;
+  const lineRef = useRef(line);
+  lineRef.current = line;
 
   useEffect(() => {
     if (!enabled || !line) { setStatus('idle'); return; }
@@ -853,30 +871,51 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
      *  loading spinner until the first refresh lands. */
     setStatus(feedCache.get(line)?.length ? 'open' : 'loading');
     setError(null);
+    /** Fresh conversation → reset older-page pagination so scroll-up can fetch
+     *  history again from the new conv's tail. */
+    setHasMore(true);
+    setLoadingOlder(false);
+    loadingOlderRef.current = false;
 
     /** Re-sync from the network + merge any new messages into `events`. Called on the
      *  initial mount, on app foreground, every 5s as a stream-died backstop, and after
      *  the per-conv streamMessages callback fires. Idempotent — already-seen ids are
      *  filtered out via the id check. */
+    /** Map decoded messages → envelopes and merge into `events` (dedup by id).
+     *  Drops our private register-push control DMs — they ride the plain-text
+     *  content type but must never render as chat bubbles. */
+    const applyMessages = (msgs: DecodedMessage[]): void => {
+      const fresh = msgs.map(m => envelopeOfXmtpMessage(m, line))
+        .filter(e => !isMetroControlBody(e.text));
+      setEvents(prev => {
+        if (prev.length === 0) return fresh;
+        const seen = new Set(prev.map(e => e.id));
+        const additions = fresh.filter(e => !seen.has(e.id));
+        if (additions.length === 0) return prev;
+        /** `messages()` returns newest-first; merge new items into the same ordering. */
+        return [...additions, ...prev];
+      });
+    };
     const refresh = async (): Promise<void> => {
       try {
         const conv = await convOfLine(line);
         if (!conv || cancelled) return;
-        await conv.sync().catch(() => undefined);
-        const msgs = await conv.messages({ limit: 100 });
+        /** Local-first open: paint whatever is already in the local MLS db
+         *  IMMEDIATELY, before the network sync. Cold opens were waiting ~0.5s on
+         *  conv.sync() (a network round-trip) before showing anything; reading the
+         *  local store first takes that round-trip off the open-conversation
+         *  critical path. The boot-time syncAll keeps the local store warm.
+         *  Only the first PAGE_SIZE are decoded up front — older pages stream in
+         *  via loadOlder() on scroll-up. */
+        const local = await conv.messages({ limit: PAGE_SIZE });
         if (cancelled) return;
-        /** Drop our private register-push control DMs — they ride the plain-text
-         *  content type but must never render as chat bubbles. */
-        const fresh = msgs.map(m => envelopeOfXmtpMessage(m, line))
-          .filter(e => !isMetroControlBody(e.text));
-        setEvents(prev => {
-          if (prev.length === 0) return fresh;
-          const seen = new Set(prev.map(e => e.id));
-          const additions = fresh.filter(e => !seen.has(e.id));
-          if (additions.length === 0) return prev;
-          /** `messages()` returns newest-first; merge new items into the same ordering. */
-          return [...additions, ...prev];
-        });
+        applyMessages(local);
+        /** Then reconcile with the network and merge anything new. */
+        await conv.sync().catch(() => undefined);
+        if (cancelled) return;
+        const synced = await conv.messages({ limit: PAGE_SIZE });
+        if (cancelled) return;
+        applyMessages(synced);
       } catch { /* swallow — next tick or AppState change will retry */ }
     };
 
@@ -924,7 +963,54 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
     if (line && events.length > 0) feedCache.set(line, events);
   }, [line, events]);
 
-  return { events, status, error, inboxId };
+  /** Fetch the next older page on scroll-up. Events are newest-first, so the LAST
+   *  loaded event is the oldest; its `sentNs` is the cursor. The RN SDK's
+   *  `Conversation.messages({ limit, beforeNs, direction })` (MessagesOptions,
+   *  direction defaults to DESCENDING = newest-first) returns the `limit` messages
+   *  sent strictly before `beforeNs`, still newest-first — so we APPEND them to the
+   *  end of `events`, preserving the newest-first ordering the inverted list wants.
+   *  Stable identity (deps are only refs) so the FlatList's onEndReached prop never
+   *  churns. Never throws. */
+  const loadOlder = useCallback(async (): Promise<void> => {
+    const ln = lineRef.current;
+    if (loadingOlderRef.current || !hasMoreRef.current || !ln) return;
+    const oldest = eventsRef.current[eventsRef.current.length - 1];
+    if (!oldest) return;
+    /** `oldest.ts` is the ISO ms timestamp the envelope was built from `sentNs`;
+     *  reconstruct the ns cursor (the SDK only loses sub-ms precision, which is
+     *  fine for a strict before-cursor on distinct messages). */
+    const beforeNs = new Date(oldest.ts).getTime() * 1_000_000;
+    loadingOlderRef.current = true;
+    setLoadingOlder(true);
+    try {
+      const conv = await convOfLine(ln);
+      if (!conv) return;
+      const older = await conv.messages({
+        limit: PAGE_SIZE,
+        beforeNs,
+        direction: 'DESCENDING',
+      });
+      const mapped = older
+        .map(m => envelopeOfXmtpMessage(m, ln))
+        .filter(e => !isMetroControlBody(e.text));
+      setEvents(prev => {
+        const seen = new Set(prev.map(e => e.id));
+        const additions = mapped.filter(e => !seen.has(e.id));
+        if (additions.length === 0) return prev;
+        /** Append older page to the END → keeps the whole list newest-first. */
+        return [...prev, ...additions];
+      });
+      /** Fewer than a full page of NEW older messages came back → end of history. */
+      const newCount = mapped.filter(e => !eventsRef.current.some(x => x.id === e.id)).length;
+      if (newCount < PAGE_SIZE) { hasMoreRef.current = false; setHasMore(false); }
+    } catch { /* best-effort — scroll-up will retry on the next onEndReached */ }
+    finally {
+      loadingOlderRef.current = false;
+      setLoadingOlder(false);
+    }
+  }, []);
+
+  return { events, status, error, inboxId, loadOlder, hasMore, loadingOlder };
 }
 
 /** Read a local file URI into a base64 string. Used to wrap picker results in the

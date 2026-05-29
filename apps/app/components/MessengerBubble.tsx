@@ -3,6 +3,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, Linking, PanResponder, Pressable, Text, TextInput, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { getPeerAvatarCb } from '../lib/peerProfiles';
 import Markdown, { MarkdownIt } from 'react-native-markdown-display';
 import { HeroIcon } from './HeroIcon';
@@ -11,7 +12,8 @@ import { MessengerImageAttachment } from './MessengerImageAttachment';
 import { YouTubeEmbed, LocationEmbed } from './MediaEmbeds';
 import { mapCoordsOf, youtubeIdOf } from '../lib/embedDetect';
 import { Avatar } from './Avatar';
-import { resolveRemoteAttachment } from '../lib/xmtp';
+import { resolveRemoteAttachment, shortAddress } from '../lib/xmtp';
+import { useProfileQuery } from '../lib/useProfile';
 import type { HistoryEntry } from '../lib/types';
 import type { RemoteAttachmentInfo } from '@xmtp/react-native-sdk';
 
@@ -20,6 +22,72 @@ const REACT_PRESETS = ['👍', '❤️', '😂', '😮', '🔥', '🎉'];
  *  break, matching the markdown-it config on the web side. Constructed once at
  *  module scope — the lib re-parses input each render anyway. */
 const mdParser = MarkdownIt({ typographer: false, linkify: true, breaks: true });
+
+/** Matches an `@`-mention stored in the raw message as a bare lowercase address
+ *  (the composer's wire form), e.g. `@0x1d8c…0b5b`. Capture group 1 is the
+ *  42-char address. The `\b` boundary lets a mention be immediately followed by
+ *  punctuation (`@0xabc…, hi`) without swallowing it. Address matching is
+ *  case-insensitive so a hand-typed mixed-case address still links. */
+const MENTION_RE = /@(0x[0-9a-fA-F]{40})\b/g;
+
+/** One tappable `@username` chip resolved from an address. Lives as its own
+ *  component so the `useProfileQuery` hook is called exactly once per mention
+ *  (never inside a loop in the parent) — react-query dedupes/caches the lookup
+ *  across every chip pointing at the same address. Falls back to the short
+ *  address while the profile is loading or has no username. */
+function MentionLink({ address, dark }: { address: string; dark: boolean }): React.ReactElement {
+  const router = useRouter();
+  const { data: profile } = useProfileQuery(address);
+  const display = profile?.name?.trim() || shortAddress(address);
+  const linkColor = dark ? '#7aa2ff' : '#2f6feb';
+  return (
+    <Text
+      onPress={() => router.push({ pathname: '/user/[address]', params: { address } })}
+      style={{ color: linkColor, fontFamily: 'Calibre-Semibold' }}
+      suppressHighlighting
+    >
+      @{display}
+    </Text>
+  );
+}
+
+/** Body text with clickable `@0x<address>` mentions. Splits the raw text into
+ *  alternating plain-text runs and mention runs, rendering plain runs with the
+ *  bubble's existing markdown body typography (color/size/font) and each mention
+ *  as a nested `<MentionLink>`. No-mention messages take a fast path upstream
+ *  (the caller renders <Markdown> directly), so this only runs when at least one
+ *  address mention is present and markdown formatting is intentionally not
+ *  applied to those messages. */
+function MentionBody({ text, fg, dark }: { text: string; fg: string; dark: boolean }): React.ReactElement {
+  const runs: React.ReactNode[] = [];
+  let last = 0;
+  let m: RegExpExecArray | null;
+  MENTION_RE.lastIndex = 0;
+  let i = 0;
+  while ((m = MENTION_RE.exec(text)) !== null) {
+    if (m.index > last) runs.push(text.slice(last, m.index));
+    runs.push(<MentionLink key={`m${i}`} address={m[1].toLowerCase()} dark={dark} />);
+    last = m.index + m[0].length;
+    i += 1;
+  }
+  if (last < text.length) runs.push(text.slice(last));
+  return (
+    <Text style={{ color: fg, fontSize: 18, lineHeight: 23, fontFamily: 'Calibre-Medium' }}>
+      {runs}
+    </Text>
+  );
+}
+
+/** Cheap test for the slow (mention-aware) body path. Resets the shared regex's
+ *  `lastIndex` (the `g` flag makes `.test()` stateful) so a no-match leaves it at
+ *  0 for the next caller. */
+function hasMention(text: string): boolean {
+  if (!text.includes('@0x')) return false;
+  MENTION_RE.lastIndex = 0;
+  const found = MENTION_RE.test(text);
+  MENTION_RE.lastIndex = 0;
+  return found;
+}
 
 /** Shape covers messenger-station attachments (id+url, served by the daemon), XMTP
  *  inline attachments (dataB64 carries the raw bytes — no URL exists), and XMTP
@@ -454,7 +522,9 @@ export function MessengerBubble({
         {/** Markdown wrapped so the lib's internal layout can't bleed into the timestamp row below. */}
         {entry.text ? (
           <View style={{ alignSelf: 'stretch' }}>
-            <Markdown {...markdownProps}>{entry.text}</Markdown>
+            {hasMention(entry.text)
+              ? <MentionBody text={entry.text} fg={fg} dark={dark} />
+              : <Markdown {...markdownProps}>{entry.text}</Markdown>}
           </View>
         ) : null}
         {/** Inline embeds — YouTube + location. Rendered below the message
