@@ -18,5 +18,9 @@ export type PillErrorEvent = {
 export type MetroPillModuleEvents = {
   onRecorded: (e: RecordedEvent) => void;
   onPillTapped: () => void;
+  /** Fired when the user taps the "open chat" glyph in the pill's expanded bar.
+   *  The native side already brought the app to the foreground; JS routes to the
+   *  daemon ("Tony") DM. */
+  onOpenChat: () => void;
   onError: (e: PillErrorEvent) => void;
 };
