@@ -152,22 +152,24 @@ export default function Wallet(): React.ReactElement {
     return n.toLocaleString(undefined, { maximumFractionDigits: max });
   };
 
-  /** Action pill — fully-rounded (`borderRadius: 999`). All four actions
-   *  (Send / Receive / Top up / Buy) sit side-by-side on a SINGLE row with
-   *  equal widths (`flex: 1`). Narrower now, so the icon stacks over a smaller
-   *  label to keep both readable. */
+  /** Action button — a PERFECT CIRCLE (fixed 56×56, `borderRadius: 28`) holding
+   *  just the icon, with the label BELOW it. The four actions (Send / Receive /
+   *  Top up / Buy) sit side-by-side on a single row, each in an equal-width
+   *  (`flex: 1`) centered column so the circles space out evenly. */
   const Btn = ({ icon, label, onPress }: { icon: HeroIconName; label: string; onPress: () => void }): React.ReactElement => (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        flex: 1, paddingVertical: 10, borderRadius: 999,
-        alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 4,
-        backgroundColor: pressed ? border : card, borderWidth: 1, borderColor: border,
-      })}
-    >
-      <HeroIcon name={icon} size={20} color={head} />
+    <View style={{ flex: 1, alignItems: 'center', gap: 6 }}>
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => ({
+          width: 56, height: 56, borderRadius: 28,
+          alignItems: 'center', justifyContent: 'center',
+          backgroundColor: pressed ? border : card, borderWidth: 1, borderColor: border,
+        })}
+      >
+        <HeroIcon name={icon} size={22} color={head} />
+      </Pressable>
       <Text style={{ color: head, fontSize: 13, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{label}</Text>
-    </Pressable>
+    </View>
   );
 
   return (
@@ -248,7 +250,7 @@ export default function Wallet(): React.ReactElement {
               </View>
               {/* Left column — token NAME (top) over price + 24h change (bottom). */}
               <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={{ color: head, fontSize: 17, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{r.name}</Text>
+                <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{r.name}</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
                   <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
                     {r.priceUsd === null ? r.symbol : fmtUsd(r.priceUsd, r.priceUsd < 1 ? 4 : 2)}
@@ -262,7 +264,7 @@ export default function Wallet(): React.ReactElement {
               </View>
               {/* Right column — USD VALUE (top, big/white) over amount + symbol (bottom). */}
               <View style={{ alignItems: 'flex-end' }}>
-                <Text style={{ color: head, fontSize: 17, fontFamily: 'Calibre-Semibold' }}>
+                <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold' }}>
                   {valueUsd === null ? '—' : fmtUsd(valueUsd)}
                 </Text>
                 <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium', marginTop: 2 }}>

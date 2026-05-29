@@ -72,9 +72,9 @@ export function previewOfXmtpContent(decoded: unknown, contentTypeId: string | u
     return humanizeGroupUpdated(decoded as GroupUpdatedContent);
   }
   if (typeId === 'reaction') {
-    const r = decoded as { content?: string; action?: string };
-    const removed = r.action === 'removed' || r.action === 'Removed';
-    return `[react ${r.content ?? '?'}${removed ? ' (removed)' : ''}]`;
+    // Preview as just the emoji (e.g. "🔥") rather than "[react 🔥]".
+    const r = decoded as { content?: string };
+    return r.content ?? '👍';
   }
   if (typeId === 'reply') {
     const r = decoded as { content?: { text?: string } | string };
@@ -83,9 +83,10 @@ export function previewOfXmtpContent(decoded: unknown, contentTypeId: string | u
   }
   if (typeId === 'attachment') {
     const a = decoded as { filename?: string; mimeType?: string };
+    // Voice/audio → a mic emoji rather than "[audio: voice-….m4a]".
+    if (a.mimeType?.startsWith('audio/')) return '🎤';
     const kind = a.mimeType?.startsWith('image/') ? 'image'
-      : a.mimeType?.startsWith('audio/') ? 'audio'
-        : a.mimeType?.startsWith('video/') ? 'video' : 'file';
+      : a.mimeType?.startsWith('video/') ? 'video' : 'file';
     return a.filename ? `[${kind}: ${a.filename}]` : `[${kind}]`;
   }
   return `[${typeId}]`;
