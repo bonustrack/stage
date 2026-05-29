@@ -22,14 +22,14 @@ import {
   Client, ConsentState, IdentifierKind,
   type Conversation, type DecodedMessage, type Signer,
 } from '@xmtp/node-sdk';
-import { ContentTypeReaction, ReactionCodec, type Reaction } from '@xmtp/content-type-reaction';
+import { ReactionCodec, type Reaction } from '@xmtp/content-type-reaction';
 /** node-sdk's native bindings expect numeric enums (0=Unknown 1=Added 2=Removed for action,
  *  0=Unknown 1=Unicode 2=Shortcode 3=Custom for schema) — the string form from the codec
  *  errors with "NumberExpected" through napi. Pull the enums from node-sdk directly. */
 import { ReactionAction, ReactionSchema } from '@xmtp/node-sdk';
-import { ContentTypeReply, ReplyCodec, type Reply } from '@xmtp/content-type-reply';
+import { ReplyCodec, type Reply } from '@xmtp/content-type-reply';
 import {
-  AttachmentCodec, ContentTypeAttachment, RemoteAttachmentCodec,
+  AttachmentCodec, RemoteAttachmentCodec,
   type Attachment,
 } from '@xmtp/content-type-remote-attachment';
 import { privateKeyToAccount } from 'viem/accounts';
