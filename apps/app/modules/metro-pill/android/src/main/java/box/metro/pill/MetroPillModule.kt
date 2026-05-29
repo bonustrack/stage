@@ -34,7 +34,7 @@ class MetroPillModule : Module() {
   private val context: Context
     get() = appContext.reactContext ?: throw IllegalStateException("No react context")
 
-  override fun definition(): ModuleDefinition = ModuleDefinition {
+  override fun definition() = ModuleDefinition {
     Name("MetroPill")
 
     Events("onRecorded", "onPillTapped", "onError")
