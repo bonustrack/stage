@@ -19,7 +19,7 @@ export const STDOUT_LINE_MAX = 4 * 1024 * 1024; // 4 MiB safeguard per line
 
 /** Train stdout event line (snake_case wire); dispatcher translates to camelCase HistoryEntry. */
 export type TrainEvent = {
-  station?: string; kind?: string; line?: string; line_name?: string;
+  station?: string; line?: string; line_name?: string;
   from?: string; from_name?: string; to?: string;
   message_id?: string; reply_to?: string; is_private?: boolean;
   text?: string; emoji?: string; payload?: unknown; ts?: string; id?: string;
