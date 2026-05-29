@@ -24,6 +24,7 @@ import {
   shortAddress, leaveGroupConv,
 } from '../../lib/xmtp';
 import { flash } from '../../lib/toast';
+import { isPillAvailable, openConversationAsBubble } from '../../lib/pill';
 import { markConvRead, patchRowSent } from '../../lib/channelsCache';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import type { HistoryEntry } from '../../lib/types';
@@ -118,9 +119,14 @@ export default function XmtpConversation(): React.ReactElement {
   const [jumpHighlightId, setJumpHighlightId] = useState<string | null>(null);
   const jumpClearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [menuFor, setMenuFor] = useState<HistoryEntry | null>(null);
-  /** Topnav overflow (3-dot) menu — groups only. Holds the "Leave group" action. */
+  /** Topnav overflow (3-dot) menu — groups show "Leave group"; DMs show
+   *  "Open as bubble" (Android, when the native pill/bubble module is linked). */
   const [overflowOpen, setOverflowOpen] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  /** Whether the native pill/bubble module is present on this build → gates the
+   *  DM "Open as bubble" item. Resolved once on mount (cheap native check). */
+  const [pillAvailable, setPillAvailable] = useState(false);
+  useEffect(() => { setPillAvailable(isPillAvailable()); }, []);
   /** Optimistic outbound entries — rendered immediately on send, dropped once the composer
    *  resolves its send promise (XMTP self-sends don't always come back via streamMessages). */
   const [optimistic, setOptimistic] = useState<HistoryEntry[]>([]);
@@ -274,6 +280,19 @@ export default function XmtpConversation(): React.ReactElement {
     );
   }, [activeLine, router]);
 
+  /** DM "Open as bubble" — pop a floating Android chat-head for this 1-1.
+   *  Graceful no-op + toast if the native module/bubbles aren't available
+   *  (handled inside `openConversationAsBubble`). */
+  const onOpenAsBubble = useCallback(() => {
+    setOverflowOpen(false);
+    if (!convId || !peerAddr) return;
+    void openConversationAsBubble({
+      convId,
+      peerName: getPeerName(peerAddr) ?? shortAddress(peerAddr),
+      peerAddress: peerAddr,
+    });
+  }, [convId, peerAddr]);
+
   if (!convId) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: bg }}>
@@ -425,8 +444,9 @@ export default function XmtpConversation(): React.ReactElement {
               : peerAddr ? (getPeerName(peerAddr) ?? shortAddress(peerAddr)) : ''}
           </Text>
         </Pressable>
-        {/** Overflow (3-dot) menu — groups only. Holds "Leave group". */}
-        {isGroup ? (
+        {/** Overflow (3-dot) menu — groups always (Leave group); DMs only when
+         *   the native pill/bubble module is linked (Open as bubble). */}
+        {(isGroup || (peerAddr && pillAvailable)) ? (
           <Pressable
             onPress={() => setOverflowOpen(true)}
             hitSlop={8}
@@ -506,7 +526,7 @@ export default function XmtpConversation(): React.ReactElement {
       />
       </View>
       </KeyboardStickyView>
-      {/** Group overflow menu — bottom sheet with "Leave group". */}
+      {/** Topnav overflow menu — bottom sheet. Group → info + leave; DM → bubble. */}
       <Modal visible={overflowOpen} transparent animationType="fade" onRequestClose={() => setOverflowOpen(false)}>
         <Pressable onPress={() => setOverflowOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>
           <Pressable onPress={e => e.stopPropagation()} style={{
@@ -514,23 +534,35 @@ export default function XmtpConversation(): React.ReactElement {
             borderTopLeftRadius: 16, borderTopRightRadius: 16,
             padding: 16, paddingBottom: 24 + insets.bottom, gap: 4,
           }}>
-            <Pressable
-              onPress={() => router.push({ pathname: '/group/[convId]', params: { convId: convId ?? '' } })}
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}
-            >
-              <HeroIcon name="users" size={20} color={fg} />
-              <Text style={{ color: fg, fontSize: 16, fontFamily: 'Calibre-Medium' }}>Group info</Text>
-            </Pressable>
-            <Pressable
-              onPress={onLeaveGroup}
-              disabled={leaving}
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, opacity: leaving ? 0.5 : 1 }}
-            >
-              <HeroIcon name="arrowLeft" size={20} color={dark ? '#ff6b80' : '#b91c1c'} />
-              <Text style={{ color: dark ? '#ff6b80' : '#b91c1c', fontSize: 16, fontFamily: 'Calibre-Medium' }}>
-                {leaving ? 'Leaving…' : 'Leave group'}
-              </Text>
-            </Pressable>
+            {isGroup ? (
+              <>
+                <Pressable
+                  onPress={() => router.push({ pathname: '/group/[convId]', params: { convId: convId ?? '' } })}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}
+                >
+                  <HeroIcon name="users" size={20} color={fg} />
+                  <Text style={{ color: fg, fontSize: 16, fontFamily: 'Calibre-Medium' }}>Group info</Text>
+                </Pressable>
+                <Pressable
+                  onPress={onLeaveGroup}
+                  disabled={leaving}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, opacity: leaving ? 0.5 : 1 }}
+                >
+                  <HeroIcon name="arrowLeft" size={20} color={dark ? '#ff6b80' : '#b91c1c'} />
+                  <Text style={{ color: dark ? '#ff6b80' : '#b91c1c', fontSize: 16, fontFamily: 'Calibre-Medium' }}>
+                    {leaving ? 'Leaving…' : 'Leave group'}
+                  </Text>
+                </Pressable>
+              </>
+            ) : (
+              <Pressable
+                onPress={onOpenAsBubble}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}
+              >
+                <HeroIcon name="chat" size={20} color={fg} />
+                <Text style={{ color: fg, fontSize: 16, fontFamily: 'Calibre-Medium' }}>Open as bubble</Text>
+              </Pressable>
+            )}
             <Pressable onPress={() => setOverflowOpen(false)} style={{ paddingVertical: 10, alignItems: 'center' }}>
               <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium' }}>Cancel</Text>
             </Pressable>
