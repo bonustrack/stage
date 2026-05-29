@@ -167,7 +167,7 @@ export default function Search(): React.ReactElement {
             </View>
             {opening === resolved.address.toLowerCase()
               ? <ActivityIndicator color={head} />
-              : <HeroIcon name="chat" size={18} color={fg} />}
+              : <HeroIcon name="chatRect" size={18} color={fg} />}
           </Pressable>
         ) : null}
 

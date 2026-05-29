@@ -4,7 +4,7 @@
 
 import { Modal, Pressable, Text, View } from 'react-native';
 import { usePalette, type Palette } from '../lib/theme';
-import { HeroIcon } from './HeroIcon';
+import { HeroIcon, type HeroIconName } from './HeroIcon';
 
 export type ProfileColors = Palette;
 
@@ -35,35 +35,36 @@ export function InfoRow({ label, value, onCopy, c }: {
   );
 }
 
-/** Message + Send action pair shown only on OTHER users' profiles. */
-export function ProfileActions({ dark, opening, onMessage, onSend, c }: {
+/** Message + Send action pair shown only on OTHER users' profiles.
+ *  Two circle buttons matching the wallet tab's action buttons exactly: a
+ *  56×56 circle (borderRadius 28, card bg, 1px border) holding the icon, with
+ *  the label below the circle. */
+export function ProfileActions({ opening, onMessage, onSend, c }: {
   dark: boolean; opening: boolean; onMessage: () => void; onSend: () => void; c: ProfileColors;
 }): React.ReactElement {
+  const Btn = ({ icon, label, onPress, disabled }: {
+    icon: HeroIconName; label: string; onPress: () => void; disabled?: boolean;
+  }): React.ReactElement => (
+    <View style={{ alignItems: 'center', gap: 6 }}>
+      <Pressable
+        onPress={onPress}
+        disabled={disabled}
+        style={({ pressed }) => ({
+          width: 56, height: 56, borderRadius: 28,
+          alignItems: 'center', justifyContent: 'center',
+          backgroundColor: pressed ? c.border : c.rowBg, borderWidth: 1, borderColor: c.border,
+          opacity: disabled ? 0.6 : 1,
+        })}
+      >
+        <HeroIcon name={icon} size={22} color={c.head} />
+      </Pressable>
+      <Text style={{ color: c.head, fontSize: 14, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{label}</Text>
+    </View>
+  );
   return (
-    <View style={{ flexDirection: 'row', gap: 10, marginTop: 18, paddingHorizontal: 24, alignSelf: 'stretch' }}>
-      <Pressable
-        onPress={onMessage}
-        disabled={opening}
-        style={({ pressed }) => ({
-          flex: 1, paddingVertical: 12, alignItems: 'center',
-          borderRadius: 999, backgroundColor: dark ? '#ffffff' : '#000000',
-          opacity: pressed ? 0.85 : opening ? 0.6 : 1,
-        })}
-      >
-        <Text style={{ color: dark ? '#000000' : '#ffffff', fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
-          {opening ? 'Opening…' : 'Message'}
-        </Text>
-      </Pressable>
-      <Pressable
-        onPress={onSend}
-        style={({ pressed }) => ({
-          flex: 1, paddingVertical: 12, alignItems: 'center',
-          borderRadius: 999, backgroundColor: pressed ? c.border : c.rowBg,
-          borderWidth: 1, borderColor: c.border,
-        })}
-      >
-        <Text style={{ color: c.head, fontSize: 15, fontFamily: 'Calibre-Semibold' }}>Send</Text>
-      </Pressable>
+    <View style={{ flexDirection: 'row', gap: 28, marginTop: 18, justifyContent: 'center' }}>
+      <Btn icon="chatRect" label={opening ? 'Opening…' : 'Message'} onPress={onMessage} disabled={opening} />
+      <Btn icon="send" label="Send" onPress={onSend} />
     </View>
   );
 }

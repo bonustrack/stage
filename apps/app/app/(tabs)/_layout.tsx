@@ -42,7 +42,7 @@ export default function TabsLayout(): React.ReactElement {
     >
       {(
         [
-          ['index', 'send'],
+          ['index', 'chatRect'],
           ['wallet', 'wallet'],
           ['profile', 'user'],
           ['settings', 'cog'],

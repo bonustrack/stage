@@ -50,6 +50,9 @@ export function AccountsManager({ dark }: { dark: boolean }): React.ReactElement
   const [accounts, setAccounts] = useState<AccountRecord[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  /** Collapsed by default — show only the active account as a row with a chevron;
+   *  tapping expands the other accounts + "Add account". Collapses after a switch. */
+  const [expanded, setExpanded] = useState(false);
 
   const [addOpen, setAddOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
@@ -100,6 +103,42 @@ export function AccountsManager({ dark }: { dark: boolean }): React.ReactElement
   useEffect(() => { void refresh(); }, [refresh]);
 
   const manageRec = accounts.find(a => a.id === manageId) ?? null;
+  const activeRec = accounts.find(a => a.id === activeId) ?? null;
+  const otherAccounts = accounts.filter(a => a.id !== activeId);
+
+  /** Single account row — avatar, name + short address/type, and a trailing slot
+   *  (chevron on the active/collapsed row, ⋯ manage affordance on the others). */
+  function AccountRow({ rec, onPress, topBorder, trailing }: {
+    rec: AccountRecord; onPress: () => void; topBorder: boolean; trailing: React.ReactNode;
+  }): React.ReactElement {
+    return (
+      <Pressable
+        onPress={onPress}
+        onLongPress={() => setManageId(rec.id)}
+        delayLongPress={300}
+        style={({ pressed }) => ({
+          paddingHorizontal: 14, paddingVertical: 12,
+          flexDirection: 'row', alignItems: 'center', gap: 12,
+          borderTopWidth: topBorder ? 1 : 0, borderTopColor: border,
+          backgroundColor: pressed ? border : 'transparent',
+        })}
+      >
+        <Image
+          source={{ uri: stampBoxAvatarUrl(rec.address, 56) }}
+          style={{ width: 28, height: 28, borderRadius: 999, backgroundColor: border }}
+        />
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text numberOfLines={1} style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>
+            {getPeerName(rec.address) ?? rec.label ?? shortAddress(rec.address)}
+          </Text>
+          <Text numberOfLines={1} style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 1 }}>
+            {shortAddress(rec.address)} · {TYPE_LABEL[rec.type]}
+          </Text>
+        </View>
+        {trailing}
+      </Pressable>
+    );
+  }
 
   /** Resolve Snapshot display names for each account address (re-renders the
    *  rows once they load) so the list shows names, not just addresses. */
@@ -116,6 +155,7 @@ export function AccountsManager({ dark }: { dark: boolean }): React.ReactElement
       await switchToAccount(id);
       bumpAccountEpoch();
       await refresh();
+      setExpanded(false);
     } catch (e) {
       Alert.alert('Switch failed', (e as Error).message);
     } finally { setBusy(false); }
@@ -185,65 +225,57 @@ export function AccountsManager({ dark }: { dark: boolean }): React.ReactElement
         marginHorizontal: 16, borderRadius: 12, overflow: 'hidden',
         borderWidth: 1, borderColor: border, backgroundColor: rowBg,
       }}>
-        {accounts.map((a, i) => {
-          const active = a.id === activeId;
-          return (
-            <Pressable
-              key={a.id}
-              onPress={() => void onSwitch(a.id)}
-              onLongPress={() => setManageId(a.id)}
-              delayLongPress={300}
-              style={({ pressed }) => ({
-                paddingHorizontal: 14, paddingVertical: 12,
-                flexDirection: 'row', alignItems: 'center', gap: 12,
-                borderTopWidth: i === 0 ? 0 : 1, borderTopColor: border,
-                backgroundColor: pressed ? border : 'transparent',
-              })}
-            >
-              <Image
-                source={{ uri: stampBoxAvatarUrl(a.address, 56) }}
-                style={{ width: 28, height: 28, borderRadius: 999, backgroundColor: border }}
-              />
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Text numberOfLines={1} style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>
-                  {getPeerName(a.address) ?? a.label ?? shortAddress(a.address)}
-                </Text>
-                <Text numberOfLines={1} style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 1 }}>
-                  {shortAddress(a.address)} · {TYPE_LABEL[a.type]}
-                </Text>
-              </View>
-              {active ? (
-                <HeroIcon name="check" size={20} color={head} />
-              ) : (
-                <Pressable hitSlop={10} onPress={() => setManageId(a.id)}>
-                  <Text style={{ color: sub, fontSize: 20, fontFamily: 'Calibre-Semibold', paddingHorizontal: 4 }}>⋯</Text>
-                </Pressable>
-              )}
-            </Pressable>
-          );
-        })}
-        {accounts.length === 0 ? (
+        {/* Collapsed header row — the ACTIVE account + a chevron. Tapping it
+            toggles the dropdown of the other accounts. */}
+        {activeRec ? (
+          <AccountRow
+            rec={activeRec}
+            topBorder={false}
+            onPress={() => setExpanded(e => !e)}
+            trailing={<HeroIcon name={expanded ? 'chevronUp' : 'chevronDown'} size={20} color={sub} />}
+          />
+        ) : accounts.length === 0 ? (
           <Text style={{ color: sub, fontSize: 13, padding: 14, fontFamily: 'Calibre-Medium' }}>
             No accounts yet.
           </Text>
         ) : null}
-        <Pressable
-          onPress={() => setAddOpen(true)}
-          style={({ pressed }) => ({
-            paddingHorizontal: 14, paddingVertical: 12,
-            flexDirection: 'row', alignItems: 'center', gap: 12,
-            borderTopWidth: accounts.length ? 1 : 0, borderTopColor: border,
-            backgroundColor: pressed ? border : 'transparent',
-          })}
-        >
-          <View style={{ width: 28, height: 28, borderRadius: 999, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: sub, borderStyle: 'dashed' }}>
-            <HeroIcon name="plus" size={16} color={sub} />
-          </View>
-          <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>Add account</Text>
-        </Pressable>
+
+        {/* Expanded — the OTHER accounts (tap to switch, ⋯/long-press to manage)
+            followed by "Add account". */}
+        {expanded ? (
+          <>
+            {otherAccounts.map(a => (
+              <AccountRow
+                key={a.id}
+                rec={a}
+                topBorder
+                onPress={() => void onSwitch(a.id)}
+                trailing={
+                  <Pressable hitSlop={10} onPress={() => setManageId(a.id)}>
+                    <Text style={{ color: sub, fontSize: 20, fontFamily: 'Calibre-Semibold', paddingHorizontal: 4 }}>⋯</Text>
+                  </Pressable>
+                }
+              />
+            ))}
+            <Pressable
+              onPress={() => setAddOpen(true)}
+              style={({ pressed }) => ({
+                paddingHorizontal: 14, paddingVertical: 12,
+                flexDirection: 'row', alignItems: 'center', gap: 12,
+                borderTopWidth: 1, borderTopColor: border,
+                backgroundColor: pressed ? border : 'transparent',
+              })}
+            >
+              <View style={{ width: 28, height: 28, borderRadius: 999, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: sub, borderStyle: 'dashed' }}>
+                <HeroIcon name="plus" size={16} color={sub} />
+              </View>
+              <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>Add account</Text>
+            </Pressable>
+          </>
+        ) : null}
       </View>
       <Text style={{ color: sub, fontSize: 13, paddingHorizontal: 16, paddingTop: 8, fontFamily: 'Calibre-Medium' }}>
-        Tap to switch · long-press for options
+        {expanded ? 'Tap an account to switch · long-press for options' : 'Tap to switch or add accounts'}
       </Text>
 
       {busy ? (

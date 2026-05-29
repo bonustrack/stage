@@ -163,7 +163,7 @@ export default function Wallet(): React.ReactElement {
       >
         <HeroIcon name={icon} size={22} color={head} />
       </Pressable>
-      <Text style={{ color: head, fontSize: 13, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{label}</Text>
+      <Text style={{ color: head, fontSize: 14, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{label}</Text>
     </View>
   );
 
@@ -178,7 +178,6 @@ export default function Wallet(): React.ReactElement {
           ETHEREUM" label were dropped per review. */}
       <View style={{
         marginHorizontal: 16, marginTop: 8, paddingHorizontal: 16, paddingVertical: 16,
-        borderRadius: 16, backgroundColor: card, borderWidth: 1, borderColor: border,
       }}>
         {err ? (
           <Text style={{ color: '#d96868', fontSize: 13, fontFamily: 'Calibre-Medium' }}>
@@ -203,7 +202,7 @@ export default function Wallet(): React.ReactElement {
 
       {/* Asset list — Snapshot-treasury-style rows, border-bottom separators. */}
       <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', paddingHorizontal: 16, paddingTop: 22, paddingBottom: 6 }}>
-        ASSETS
+        TOKENS
       </Text>
       <View style={{ marginHorizontal: 16, borderTopWidth: 1, borderTopColor: border }}>
         {(rows ?? ASSETS.map(a => ({

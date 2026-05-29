@@ -13,6 +13,7 @@ import {
 import { flash } from '../../lib/toast';
 import { resetAccount } from '../../lib/wallet';
 import { AccountsManager } from '../../components/AccountsManager';
+import { useAccountEpoch } from '../../lib/accountEpoch';
 import { HeroIcon } from '../../components/HeroIcon';
 import {
   setThemePreference, useEffectiveColorScheme, usePalette, useThemePreference,
@@ -34,6 +35,9 @@ export default function Settings(): React.ReactElement {
   const pref = useThemePreference();
   const { fg, head, sub, bg, border, rowBg } = usePalette();
 
+  /** Re-fetch the active account's address/inbox whenever the active account
+   *  switches (AccountsManager bumps this on an in-place switch). */
+  const accountEpoch = useAccountEpoch();
   const [myAddress, setMyAddress] = useState<string>('');
   const [myInboxId, setMyInboxId] = useState<string>('');
 
@@ -83,20 +87,26 @@ export default function Settings(): React.ReactElement {
     if (showPill()) setPillOn(true);
   }, []);
   useEffect(() => {
+    let alive = true;
     void (async (): Promise<void> => {
       try {
         const client = await getOrCreateXmtpClient('production');
+        if (!alive) return;
         setMyAddress(client.publicIdentity.identifier);
         setMyInboxId(client.inboxId);
       } catch { /* surface elsewhere — settings shouldn't block on XMTP boot */ }
     })();
-  }, []);
+    return () => { alive = false; };
+  }, [accountEpoch]);
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: bg }} contentContainerStyle={{ paddingBottom: 24 }}>
       <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 }}>
         <Text style={{ color: head, fontSize: 22, fontFamily: 'Calibre-Semibold' }}>Settings</Text>
       </View>
+
+      {/* Accounts first — the active account drives everything below it. */}
+      <AccountsManager dark={dark} />
 
       {myAddress ? (
         <Pressable
@@ -135,8 +145,6 @@ export default function Settings(): React.ReactElement {
           </Text>
         </Pressable>
       ) : null}
-
-      <AccountsManager dark={dark} />
 
       <Text style={{ color: sub, fontSize: 13, paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8 , fontFamily: 'Calibre-Medium'}}>
         THEME
