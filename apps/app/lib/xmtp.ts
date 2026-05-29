@@ -55,6 +55,7 @@ import {
 } from './accounts';
 import { humanizeGroupUpdated, type GroupUpdatedContent } from '@metro-labs/client/xmtp/humanize';
 import { getWcSign } from './wcSigner';
+import { registerPushWithDaemon, isMetroControlBody } from './push';
 
 /** Build the XMTP-RN `Signer` adapter for a viem `PrivateKeyAccount`.
  *  Shape pulled from `node_modules/@xmtp/react-native-sdk/src/lib/Signer.ts`:
@@ -178,6 +179,10 @@ async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<
         cachedClient = built;
         await setActiveAccountId(rec.id);
         await SecureStore.setItemAsync(ENV_KEY, env);
+        /** Auto-register this device's push token with the daemon for the now-
+         *  active account (background push for daemon-run inboxes). Fire-and-
+         *  forget + debounced inside registerPushWithDaemon — never blocks boot. */
+        void registerPushWithDaemon(built);
         return cachedClient;
       }
       /** Build timed out — fall through to create() with a fresh registration. */
@@ -191,6 +196,8 @@ async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<
   await markRegistered(rec.id);
   await setActiveAccountId(rec.id);
   await SecureStore.setItemAsync(ENV_KEY, env);
+  /** Same auto-registration on the fresh-installation path. */
+  void registerPushWithDaemon(cachedClient);
   return cachedClient;
 }
 
@@ -858,7 +865,10 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
         await conv.sync().catch(() => undefined);
         const msgs = await conv.messages({ limit: 100 });
         if (cancelled) return;
-        const fresh = msgs.map(m => envelopeOfXmtpMessage(m, line));
+        /** Drop our private register-push control DMs — they ride the plain-text
+         *  content type but must never render as chat bubbles. */
+        const fresh = msgs.map(m => envelopeOfXmtpMessage(m, line))
+          .filter(e => !isMetroControlBody(e.text));
         setEvents(prev => {
           if (prev.length === 0) return fresh;
           const seen = new Set(prev.map(e => e.id));
@@ -884,6 +894,7 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
           unsubscribeStream = await (await convOfLine(line))?.streamMessages(async (msg) => {
             if (cancelled) return;
             const env = envelopeOfXmtpMessage(msg, line);
+            if (isMetroControlBody(env.text)) return; // suppress control DMs
             setEvents(prev => prev.some(e => e.id === env.id) ? prev : [env, ...prev]);
           }) ?? null;
         } catch { /* stream init failed — backstops will keep the feed fresh */ }
