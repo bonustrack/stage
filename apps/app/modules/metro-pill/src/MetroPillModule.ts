@@ -13,9 +13,13 @@ declare class MetroPillModule extends NativeModule<MetroPillModuleEvents> {
   isPillVisible(): boolean;
   /** Starts the overlay foreground service + shows the pill. The collapsed pill
    *  renders the avatar at `avatarPath` (a local file path) as a circle; pass
-   *  null to use the neutral fallback circle. Returns false if the overlay
-   *  permission is missing (and emits `onError`). */
-  showPill(avatarPath: string | null): boolean;
+   *  null to use the neutral fallback circle. `badge` is the initial unread count
+   *  drawn on the pill (0 hides it). Returns false if the overlay permission is
+   *  missing (and emits `onError`). */
+  showPill(avatarPath: string | null, badge: number): boolean;
+  /** Update the unread-count badge on the live pill (0 hides it, >9 → "9+").
+   *  No-op when the pill isn't currently showing. */
+  setBadge(count: number): boolean;
   /** Hides the pill + stops the foreground service. */
   hidePill(): boolean;
   /** Whether Android Bubbles are supported + allowed (API 30+, channel/app

@@ -54,6 +54,7 @@ import kotlin.math.min
 class OverlayView(
   private val context: Context,
   private val avatarPath: String?,
+  private val initialBadge: Int,
   private val onRecordStart: () -> Unit,
   private val onRecordStop: (commit: Boolean) -> Unit,
   private val onClose: () -> Unit,
@@ -67,6 +68,8 @@ class OverlayView(
   private var ring: View? = null
   private var hint: TextView? = null
   private var bar: LinearLayout? = null
+  private var badge: TextView? = null
+  private var badgeCount = initialBadge.coerceAtLeast(0)
 
   private val prefs = context.getSharedPreferences("metro_pill", Context.MODE_PRIVATE)
   private val handler = Handler(Looper.getMainLooper())
@@ -104,12 +107,31 @@ class OverlayView(
       FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT,
     ))
     ring = r
+
+    // The unread-count badge — a filled accent circle pinned to the avatar's
+    // top-right corner. Hidden when the count is 0. Lives inside the pill so it
+    // scales with the recording grow + stays visible in the collapsed state.
+    val badgeView = TextView(context).apply {
+      textSize = 10f
+      setTextColor(Color.WHITE)
+      typeface = Typeface.DEFAULT_BOLD
+      gravity = Gravity.CENTER
+      includeFontPadding = false
+      background = badgeCircle()
+      visibility = View.GONE
+    }
+    val badgeSize = dp(BADGE_DP)
+    p.addView(badgeView, FrameLayout.LayoutParams(badgeSize, badgeSize).apply {
+      gravity = Gravity.TOP or Gravity.END
+    })
+    badge = badgeView
     pill = p
 
     val pillSize = dp(PILL_DP)
     container.addView(p, FrameLayout.LayoutParams(pillSize, pillSize).apply {
       gravity = Gravity.CENTER_VERTICAL or Gravity.START
     })
+    renderBadge()
 
     // ---- the slide-to-cancel hint (shown only while recording) ----
     val h = TextView(context).apply {
@@ -174,6 +196,13 @@ class OverlayView(
    *  safety net). */
   fun setRecording(recording: Boolean) {
     avatar?.post { renderRecording(recording, cancelArmed = false) }
+  }
+
+  /** Update the unread-count badge. 0 hides it; >9 renders "9+". Posts to the
+   *  view's handler so it's safe to call from any thread (JS bridge). */
+  fun setBadge(count: Int) {
+    badgeCount = count.coerceAtLeast(0)
+    badge?.post { renderBadge() }
   }
 
   fun detach() {
@@ -343,6 +372,24 @@ class OverlayView(
     }
   }
 
+  /** Show/hide + label the unread-count badge from [badgeCount]. */
+  private fun renderBadge() {
+    val b = badge ?: return
+    if (badgeCount <= 0) {
+      b.visibility = View.GONE
+      return
+    }
+    b.text = if (badgeCount > 9) "9+" else badgeCount.toString()
+    b.visibility = View.VISIBLE
+  }
+
+  /** Filled accent circle backing the unread badge. */
+  private fun badgeCircle() = GradientDrawable().apply {
+    shape = GradientDrawable.OVAL
+    setColor(BADGE_COLOR)
+    setStroke(dp(1), Color.WHITE)
+  }
+
   /** The collapsed-pill drawable: the avatar bitmap clipped to a circle, or a
    *  neutral teal circle when no avatar is available / it can't be decoded. */
   private fun buildAvatarDrawable(): Drawable {
@@ -437,6 +484,7 @@ class OverlayView(
 
   companion object {
     private const val PILL_DP = 40            // collapsed-pill avatar diameter
+    private const val BADGE_DP = 18           // unread-count badge diameter
     private const val REST_ALPHA = 0.6f       // 60% opacity at rest
     private const val RING_WIDTH_DP = 3       // recording ring thickness
     private const val HOLD_MS = 280L          // long-press threshold for push-to-talk
@@ -446,6 +494,7 @@ class OverlayView(
     private val REST_COLOR = Color.parseColor("#14b8a6") // teal (neutral fallback)
     private val REC_COLOR = Color.parseColor("#ef4444")  // red (recording)
     private val CANCEL_COLOR = Color.parseColor("#7f1d1d") // dark red (will cancel)
+    private val BADGE_COLOR = Color.parseColor("#ef4444") // accent (unread badge)
 
     private const val CHAT = "💬"
     private const val CLOSE = "✕"

@@ -71,7 +71,7 @@ class MetroPillModule : Module() {
       OverlayService.isRunning
     }
 
-    Function("showPill") { avatarPath: String? ->
+    Function("showPill") { avatarPath: String?, badge: Int ->
       if (!Settings.canDrawOverlays(context)) {
         sendEvent("onError", mapOf("message" to "overlay-permission-missing"))
         return@Function false
@@ -79,7 +79,19 @@ class MetroPillModule : Module() {
       val intent = Intent(context, OverlayService::class.java)
         .putExtra(OverlayService.EXTRA_ACTION, OverlayService.ACTION_SHOW)
         .putExtra(OverlayService.EXTRA_AVATAR_PATH, avatarPath)
+        .putExtra(OverlayService.EXTRA_BADGE, badge)
       ContextCompat.startForegroundService(context, intent)
+      true
+    }
+
+    /** Update the unread-count badge on the live pill (no-op if not showing). */
+    Function("setBadge") { count: Int ->
+      val intent = Intent(context, OverlayService::class.java)
+        .putExtra(OverlayService.EXTRA_ACTION, OverlayService.ACTION_BADGE)
+        .putExtra(OverlayService.EXTRA_BADGE, count)
+      try {
+        context.startService(intent)
+      } catch (_: Throwable) { /* service may not be running */ }
       true
     }
 

@@ -24,8 +24,11 @@ import {
   shortAddress, leaveGroupConv,
 } from '../../lib/xmtp';
 import { flash } from '../../lib/toast';
-import { isPillAvailable, openConversationAsBubble } from '../../lib/pill';
-import { markConvRead, patchRowSent } from '../../lib/channelsCache';
+import {
+  hasOverlayPermission, isPillAvailable, openConversationAsBubble,
+  requestOverlayPermission, showPill,
+} from '../../lib/pill';
+import { getCachedRows, markConvRead, patchRowSent } from '../../lib/channelsCache';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import type { HistoryEntry } from '../../lib/types';
 
@@ -293,6 +296,22 @@ export default function XmtpConversation(): React.ReactElement {
     });
   }, [convId, peerAddr]);
 
+  /** DM "Float as pill" — launch the always-on floating voice pill targeting
+   *  THIS peer. Records push-to-talk voice clips straight to their DM + shows
+   *  their unread badge. Ensures the overlay permission first (the grant has no
+   *  callback, so we toast + bail; the user re-taps after granting). */
+  const onFloatAsPill = useCallback(() => {
+    setOverflowOpen(false);
+    if (!convId || !peerAddr) return;
+    if (!hasOverlayPermission()) {
+      void requestOverlayPermission();
+      flash('Allow “Display over other apps”, then tap Float as pill again');
+      return;
+    }
+    const unread = getCachedRows()?.find(r => r.convId === convId)?.unreadCount ?? 0;
+    void showPill(peerAddr, null, unread);
+  }, [convId, peerAddr]);
+
   if (!convId) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: bg }}>
@@ -555,13 +574,22 @@ export default function XmtpConversation(): React.ReactElement {
                 </Pressable>
               </>
             ) : (
-              <Pressable
-                onPress={onOpenAsBubble}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}
-              >
-                <HeroIcon name="chat" size={20} color={fg} />
-                <Text style={{ color: fg, fontSize: 16, fontFamily: 'Calibre-Medium' }}>Open as bubble</Text>
-              </Pressable>
+              <>
+                <Pressable
+                  onPress={onOpenAsBubble}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}
+                >
+                  <HeroIcon name="chat" size={20} color={fg} />
+                  <Text style={{ color: fg, fontSize: 16, fontFamily: 'Calibre-Medium' }}>Open as bubble</Text>
+                </Pressable>
+                <Pressable
+                  onPress={onFloatAsPill}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}
+                >
+                  <HeroIcon name="microphone" size={20} color={fg} />
+                  <Text style={{ color: fg, fontSize: 16, fontFamily: 'Calibre-Medium' }}>Float as pill</Text>
+                </Pressable>
+              </>
             )}
             <Pressable onPress={() => setOverflowOpen(false)} style={{ paddingVertical: 10, alignItems: 'center' }}>
               <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium' }}>Cancel</Text>

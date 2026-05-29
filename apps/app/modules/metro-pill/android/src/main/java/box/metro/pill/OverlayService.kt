@@ -38,9 +38,16 @@ class OverlayService : Service() {
         stopSelf()
         return START_NOT_STICKY
       }
+      ACTION_BADGE -> {
+        // Update the unread badge on the live pill (no-op if not showing).
+        overlay?.setBadge(intent.getIntExtra(EXTRA_BADGE, 0))
+      }
       else -> {
         startForegroundNotification()
-        showOverlay(intent?.getStringExtra(EXTRA_AVATAR_PATH))
+        showOverlay(
+          intent?.getStringExtra(EXTRA_AVATAR_PATH),
+          intent?.getIntExtra(EXTRA_BADGE, 0) ?: 0,
+        )
       }
     }
     return START_STICKY
@@ -70,11 +77,16 @@ class OverlayService : Service() {
     }
   }
 
-  private fun showOverlay(avatarPath: String?) {
-    if (overlay != null) return
+  private fun showOverlay(avatarPath: String?, badge: Int) {
+    if (overlay != null) {
+      // Already showing → just refresh the badge (e.g. re-show for a new target).
+      overlay?.setBadge(badge)
+      return
+    }
     overlay = OverlayView(
       this,
       avatarPath = avatarPath,
+      initialBadge = badge,
       onRecordStart = { startRecording() },
       onRecordStop = { commit -> stopRecording(commit) },
       onClose = { closeFromPill() },
@@ -170,8 +182,10 @@ class OverlayService : Service() {
   companion object {
     const val EXTRA_ACTION = "action"
     const val EXTRA_AVATAR_PATH = "avatarPath"
+    const val EXTRA_BADGE = "badge"
     const val ACTION_SHOW = "show"
     const val ACTION_HIDE = "hide"
+    const val ACTION_BADGE = "badge"
     private const val FGS_ID = 4711
 
     @Volatile

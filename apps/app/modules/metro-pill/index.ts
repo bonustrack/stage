@@ -40,9 +40,16 @@ export function isPillVisible(): boolean {
 
 /** Show the floating pill. `avatarPath` is a local file path the native side
  *  renders as the collapsed pill's circular avatar (null → neutral fallback).
+ *  `badge` is the initial unread count drawn on the pill (0 hides it).
  *  Returns false if unavailable or permission missing. */
-export function showPill(avatarPath?: string | null): boolean {
-  return native?.showPill(avatarPath ?? null) ?? false;
+export function showPill(avatarPath?: string | null, badge = 0): boolean {
+  return native?.showPill(avatarPath ?? null, badge) ?? false;
+}
+
+/** Update the unread-count badge on the live pill (0 hides it, >9 → "9+").
+ *  No-op when the pill isn't showing / the module isn't linked. */
+export function setBadge(count: number): boolean {
+  return native?.setBadge(count) ?? false;
 }
 
 export function hidePill(): boolean {
