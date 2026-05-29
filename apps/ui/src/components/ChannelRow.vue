@@ -61,7 +61,7 @@ function fmtTs(ts: number | null): string {
         </div>
       </div>
       <div class="flex items-center gap-2 mt-1">
-        <div class="text-sm text-metro-sub-light dark:text-metro-sub-dark truncate flex-1">
+        <div class="text-[15px] text-metro-sub-light dark:text-metro-sub-dark truncate flex-1">
           {{ props.lastPreview || '(no messages yet)' }}
         </div>
         <div v-if="props.unreadCount > 0"

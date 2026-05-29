@@ -465,7 +465,7 @@ export default function Messenger(): React.ReactElement {
               {/** Reserve the badge's height (22) regardless of whether one is shown,
                *   so rows with/without the unread indicator are the same total height. */}
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4, minHeight: 22 }}>
-                <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium', flex: 1 }} numberOfLines={1}>
+                <Text style={{ color: sub, fontSize: 16, fontFamily: 'Calibre-Medium', flex: 1 }} numberOfLines={1}>
                   {item.lastPreview
                     ? `${item.lastFromSelf ? 'You' : item.lastSenderAddress ? (getPeerName(item.lastSenderAddress) ?? shortAddress(item.lastSenderAddress)) : ''}${(item.lastFromSelf || item.lastSenderAddress) ? ': ' : ''}${item.lastPreview}`
                     : '(no messages yet)'}
