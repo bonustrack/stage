@@ -91,9 +91,10 @@ One shared daemon serves every CLI; each loads its own routed feed:
 - Claude Code owns one XMTP account (e.g. `tony`); Codex owns another (e.g. `codex`).
 - Account ownership is declared by the `owner` URI in `~/.metro/xmtp-accounts.json`.
 - Feed isolation is log-based: each reader's tail filter + the shared `claims.json`
-  decide delivery (claimed-by-self ∨ unclaimed; webhooks excluded from personal
-  feeds; DMs always pass). Outbound auto-claims 1:1 lines so a chat answered by one
-  agent stops fanning out to the others.
+  decide delivery. The default personal mode (`mine-or-unclaimed`) delivers lines
+  claimed by self plus any unclaimed line; events addressed to `self` (`to === self`)
+  always pass, and webhooks are excluded from personal feeds unless `--include-webhooks`.
+  Claiming is explicit (`metro claim <line>`); there is no auto-claim on outbound.
 - Each CLI should send only from its own account; the XMTP **send-guard**
   ([`src/cli/send-guard.ts`](../packages/metro/src/cli/send-guard.ts)) refuses a
   cross-account send when caller and account-owner stations conflict.

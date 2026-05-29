@@ -14,9 +14,9 @@ plus a documented contract for keeping the two implementations visually in sync.
 
 | Module | Exports | Consumed by |
 | --- | --- | --- |
-| `tokens` | `colors` (the `metro.*` palette), `color()`, `fontFamily`, `spacing`, `radius` | `apps/ui/tailwind.config.ts` (palette source of truth), `apps/app/**` StyleSheet colours |
+| `tokens` | `colors` (the `metro.*` palette), `fontFamily` | `apps/ui/tailwind.config.ts` (palette source of truth), `apps/app/**` StyleSheet colours |
 | `icons` | `HERO_ICON_PATHS` (union of both shells' icons), `HeroIconName`, `HERO_ICON_DEFAULTS` | `apps/ui/src/components/HeroIcon.vue`, `apps/app/components/HeroIcon.tsx` |
-| `stations` | `STATIONS`, `StationKey`, `StationIconDef`, `getStationIcon()`, `stationLabel()` | station icon renderers in both apps |
+| `avatar` | `AvatarSize`, `AVATAR_SIZES`, `stampAvatarUrl()`, `stampTokenUrl()`, `NATIVE_TOKEN_SENTINEL` | avatar renderers in both apps |
 | `theme` | `ThemePreference`, `THEME_STORAGE_KEY`, `THEME_PREFERENCES`, `isThemePreference()` | `apps/ui/src/lib/theme.ts`, `apps/app/lib/theme.ts` |
 
 Import either from the root (`@metro-labs/kit`) or a subpath
@@ -36,11 +36,11 @@ the codebases stay legible side-by-side:
 ## Shareable vs framework-specific
 
 **Shareable (lives here or in `@metro-labs/client`):**
-- Colour / spacing / radius tokens, font stacks
-- SVG path data (HeroIcons, station glyphs)
+- Colour tokens, font stacks, avatar-URL helpers
+- SVG path data (HeroIcons)
 - Pure types & prop-shape contracts
 - Pure logic with no UI: profile/Snapshot, XMTP humanisation, embed detection,
-  Stamp resolution, activity bucketing → these live in `@metro-labs/client`.
+  Stamp resolution → these live in `@metro-labs/client`.
 
 **Framework-specific (stays in each app):**
 - Anything that renders: `.vue` SFCs, `.tsx` components, the `<svg>`/`<Svg>`

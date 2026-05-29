@@ -21,7 +21,7 @@ metro  ─── stdin (one JSON line per action call) ──>  train
        <── stdout (one JSON line per event OR response) ── train
 ```
 
-- **Inbound event** (train → metro): `{ kind, station, line, from, from_name?, message_id?, line_name?, reply_to?, text?, is_private?, payload? }` — snake_case on the wire. Metro mints `id` + `display` if absent and translates to camelCase for `history.jsonl` / the broker (`HistoryEntry` in `src/history.ts`).
+- **Inbound event** (train → metro): `{ station?, line, line_name?, from?, from_name?, to?, message_id?, reply_to?, is_private?, text?, emoji?, payload?, ts?, id? }` — snake_case on the wire; `line` (string) is the only required field. There is no `kind` field — direction is derived from `from` (`Line.isLocal` ⇒ outbound). Metro mints `id` + `display` if absent and translates to camelCase for `history.jsonl` / the broker (`HistoryEntry` in `src/history.ts`).
 - **Call** (metro → train): `{ "op": "call", "id": "req_abc", "action": "send", "args": {...} }`.
 - **Response** (train → metro): `{ "op": "response", "id": "req_abc", "result": {...} }` or `{ ..., "error": "..." }`.
 

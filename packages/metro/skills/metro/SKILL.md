@@ -22,7 +22,9 @@ replace on demand.
 
 **Codex:** `shell(command: "METRO_CODEX_RC=ws://127.0.0.1:8421 metro", run_in_background: true)` — metro pushes each event via JSON-RPC `turn/start`. The user must run a Codex daemon + TUI on the same WebSocket URL (`codex app-server --listen ws://127.0.0.1:8421` + `codex --remote ws://127.0.0.1:8421`, type "hi" once to seed a thread).
 
-`metro doctor` reports trains found, deps installed, dispatcher running, codex-rc, skill install.
+`metro doctor` reports trains found, `~/.metro` deps, dispatcher running, codex-rc, tunnel, webhooks, env vars, and skill install.
+
+If a dispatcher is already running, a bare `metro` does **not** start a rival daemon — it attaches as a live reader (`tail --follow --json --since=tail`), so a second agent shares the same daemon.
 
 ## Multi-agent discipline
 
@@ -32,7 +34,16 @@ use `/tmp/metro-agents/HANDOFF.md` when it exists.
 
 Reply or call back on the exact `line` from the inbound event unless the user
 explicitly asks for a different destination. For account-scoped XMTP lines, send
-only from the account owned by the current CLI/session.
+only from the account owned by the current CLI/session — `metro call` enforces
+this with a **send-guard** (see below).
+
+**Claim a line for exclusive handling.** Two agents on one daemon can each tail a
+claim-aware feed (the default). `metro claim <line>` takes ownership so other
+tails stop seeing that line; `metro release <line>` returns it to broadcast;
+`metro claims` prints the map. Tail modes: default `mine-or-unclaimed`
+(your claims + anything unclaimed), `--strict` (only lines you claimed, needs
+`--as`), `--unclaimed` (only unclaimed), `--all` (everything). Claims live in
+`claims.json` under the state dir.
 
 ## Envelope
 
@@ -55,6 +66,13 @@ metro call discord edit  '{"line":"metro://discord/123","messageId":"999","text"
 ```
 
 `[args]` can be JSON, `@path/to/args.json`, `-` (stdin), or a bare string. Action names are whatever the train exposes — metro core knows nothing about them.
+
+**Send-guard (xmtp only):** when the caller's session (`claude` vs `codex`) is
+known and the target XMTP account is owned by the *other* session, `metro call`
+refuses identity-targeting actions (`send`, `reply`, `react`, `sendAttachment`,
+`newDm`, `newGroup`) — so a Codex CLI can't accidentally send from the Claude
+account. Ownership is read from `~/.metro/xmtp-accounts.json`; it allows when
+ownership can't be attributed. Override with `METRO_ALLOW_CROSS_ACCOUNT=1`.
 
 ## Writing a new train
 
@@ -86,16 +104,29 @@ Trains should set `is_private: true` for DMs. For groups, narrow on `payload`:
 ## CLI cheat sheet
 
 ```
-metro                                       # start the daemon
-metro trains [list]                         # list trains + state
-metro trains new <name>                     # scaffold ~/.metro/trains/<name>.ts
+metro                                       # start the daemon (or attach as a reader if one runs)
+metro lines                                 # list recently-seen conversations
+metro trains [list]                         # list trains + state (running, pid, fail count)
+metro trains new <name>                     # scaffold ~/.metro/trains/<name>.ts from the example
 metro trains restart <name>                 # kill + respawn a train (resets backoff)
-metro call <train> <action> <args>          # forward an action call
-metro tail [--as=<user-uri>] [--follow]     # subscribe to the event log
-metro history [--limit=N] [--line=…] [--from=…] [--text=…] [--since=…]
-metro webhook add <label>                   # register an HTTP receive endpoint
+metro call <train> <action> [args]          # forward an action call (args: JSON | @file | - | bare string)
+metro tail [--as=<user-uri>] [--follow] [--strict|--unclaimed|--all] [--include-webhooks]
+           [--chat=<line>] [--station=…] [--since=<offset|tail>] [--limit=N]
+metro history [--limit=N] [--line=…] [--station=…] [--from=…] [--text=…] [--since=…]
+metro claim <line> [--as=<user-uri>]        # take exclusive ownership of a line
+metro release <line>                        # release a line back to broadcast
+metro claims                                # print the current claims map
+metro webhook add <label> [--secret=…]      # register an HTTP receive endpoint
+metro webhook list | remove <id>            # list/remove endpoints
 metro tunnel setup <name> <hostname>        # configure a Cloudflare named tunnel
+metro tunnel status                         # show tunnel config
+metro setup [skill [clear]]                 # config status; install/remove this SKILL.md
 metro doctor                                # health check
+metro update                                # upgrade in place
+metro --version | --help
+
+# Global: --json (machine-readable output, and {"ok":false,…} on errors).
+# Exit codes: 0 ok · 1 usage · 2 config · 3 upstream · 4 daemon not running.
 ```
 
 ## Webhooks (builtin source)
