@@ -10,26 +10,33 @@ code lives in train scripts outside this repo, written on demand by the user or 
 ```
 packages/
   metro/        # @metro-labs/metro — the daemon + CLI (see packages/metro/README.md)
+  client/       # framework-neutral client logic shared by mobile + web
+  kit/          # design tokens, icon data, theme contracts
 apps/
   app/          # app — mobile activity monitor + composer (Expo + RN)
   ui/           # ui — web activity monitor + composer (Vue 3 + Vite)
-  _shared/      # shared assets (e.g. station-icon SVG defs) imported by both apps
 ```
 
 ## Packages
 
 - [`@metro-labs/metro`](packages/metro/README.md) — install with `npm i -g @metro-labs/metro`. Run `metro` to multiplex train events onto stdout, forward action calls via `metro call <train> <action> <args>` or `POST /api/call/<train>/<action>`.
 - [`app`](apps/app/README.md) — Expo / React Native companion. View live activity, filter lines, send replies from your phone via the daemon's bearer-token-gated monitor endpoints. Start with `bun --cwd apps/app start`.
-- `ui` — Vue 3 web companion with the same surface. `bun --cwd apps/ui dev` opens the dev server on `localhost:5173`; `bun --cwd apps/ui build` emits a static bundle in `apps/ui/dist/`.
+- [`ui`](apps/ui/README.md) — Vue 3 web companion with the same surface. `bun --cwd apps/ui dev` opens the dev server on `localhost:5173`; `bun --cwd apps/ui build` emits a static bundle in `apps/ui/dist/`.
+- [`@metro-labs/client`](packages/client/README.md) — pure shared logic for client apps.
+- [`@metro-labs/kit`](packages/kit/README.md) — shared visual tokens, icon data, and theme contracts.
 
-The monitor endpoints (`/api/state`, `/api/tail` SSE, `/api/call/<train>/<action>`,
-`/api/messenger/send`, `/api/messenger/register`) are documented in
+The monitor endpoints (`/api/state`, `/api/tail` SSE, `/api/call/<train>/<action>`) are documented in
 [`packages/metro/docs/monitor.md`](packages/metro/docs/monitor.md); enable them by
 setting `METRO_MONITOR_TOKEN` in `~/.config/metro/.env`. Broker semantics (claims,
 multi-user fan-out) are in
 [`packages/metro/docs/broker.md`](packages/metro/docs/broker.md); the `metro://` URI
 scheme is in
 [`packages/metro/docs/uri-scheme.md`](packages/metro/docs/uri-scheme.md).
+
+## Documentation
+
+The root documentation hub lives in [`docs/`](docs/README.md). Start there for
+architecture, CLI/agent workflow, development, operations, and client notes.
 
 ## Development
 

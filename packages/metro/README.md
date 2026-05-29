@@ -16,7 +16,7 @@ Metro is not a framework with platform connectors. Metro is the wire.
 $ metro &                              # backgrounded
 $ Monitor( … metro's stdout … )
 
->>> {"kind":"inbound","station":"discord","line":"metro://discord/123…","message_id":"9876",
+>>> {"station":"discord","line":"metro://discord/123…","message_id":"9876",
      "text":"@metro 5xx spike on /v1/sync — look?",
      "payload":{"channelId":"123…","guildId":"456…","content":"<@…> 5xx spike…",
                 "mentions":{"users":["<bot-id>"],"roles":[],"everyone":false},…}}
@@ -61,7 +61,7 @@ Requires **Bun ≥ 1.3** (trains run under `bun run`). Metro core itself works u
 ~/.metro/trains/<anything>.ts ─> stdout ─────┼──>  metro daemon ──>  stdout (Monitor / Codex push)
                                              │                       history.jsonl
 HTTP /wh/<id>  (builtin webhook receiver) ───┤
-IPC `notify`   (builtin cross-user channel) ─┘
+IPC `notify`   (builtin cross-user event) ───┘
 
 metro call discord send {…}  ──>  IPC ──>  daemon  ──>  train stdin  ──>  response  ──> CLI stdout
 ```
@@ -78,7 +78,7 @@ not what any specific action does.
 **Inbound (train → metro stdout)** — one JSON line per event (wire fields are `snake_case`):
 
 ```json
-{"kind":"inbound","station":"discord","line":"metro://discord/123","from":"metro://discord/user/456","from_name":"alice","message_id":"789","text":"hi","is_private":false,"ts":"2026-05-17T18:00:00Z","payload":{...}}
+{"station":"discord","line":"metro://discord/123","from":"metro://discord/user/456","from_name":"alice","message_id":"789","text":"hi","is_private":false,"ts":"2026-05-17T18:00:00Z","payload":{...}}
 ```
 
 **Outbound (metro → train stdin)** — one JSON line per action call:

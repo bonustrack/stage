@@ -14,7 +14,7 @@ replace on demand.
 1. Spawns each file in `~/.metro/trains/*.{ts,js,mjs}` as a long-running Bun subprocess.
 2. Multiplexes their stdout (JSON lines) into one unified event stream on metro's stdout.
 3. Routes `metro call <train> <action> <args>` requests back to the matching train's stdin.
-4. One builtin event source stays in core: **webhooks** (HTTP receiver).
+4. Two builtin sources stay in core: **webhooks** (HTTP receiver) and `notify` (local IPC).
 
 ## Starting metro
 
@@ -23,6 +23,16 @@ replace on demand.
 **Codex:** `shell(command: "METRO_CODEX_RC=ws://127.0.0.1:8421 metro", run_in_background: true)` — metro pushes each event via JSON-RPC `turn/start`. The user must run a Codex daemon + TUI on the same WebSocket URL (`codex app-server --listen ws://127.0.0.1:8421` + `codex --remote ws://127.0.0.1:8421`, type "hi" once to seed a thread).
 
 `metro doctor` reports trains found, deps installed, dispatcher running, codex-rc, skill install.
+
+## Multi-agent discipline
+
+When several agents share one machine, coordinate through a shared local handoff
+file rather than sending from another agent's chat account. In the Metro project,
+use `/tmp/metro-agents/HANDOFF.md` when it exists.
+
+Reply or call back on the exact `line` from the inbound event unless the user
+explicitly asks for a different destination. For account-scoped XMTP lines, send
+only from the account owned by the current CLI/session.
 
 ## Envelope
 
@@ -48,7 +58,7 @@ metro call discord edit  '{"line":"metro://discord/123","messageId":"999","text"
 
 ## Writing a new train
 
-1. Start from `node_modules/@stage-labs/metro/examples/telegram.ts`.
+1. Start from `node_modules/@metro-labs/metro/examples/telegram.ts`.
 2. Copy → `~/.metro/trains/<name>.ts` and edit. Keep the inbound envelope shape and the `op:"call"` → `op:"response"` protocol.
 3. Deps (if needed): `cd ~/.metro && bun add <pkg>`. Credentials: `echo 'FOO_TOKEN=…' >> ~/.metro/.env`.
 4. Restart the metro daemon (or just `metro trains restart <name>`) to pick up the new train.
@@ -59,7 +69,7 @@ Trains are throwaway — if the user asks for new functionality, rewrite the tra
 
 ```
 mkdir -p ~/.metro && cd ~/.metro && bun init -y
-cp node_modules/@stage-labs/metro/examples/telegram.ts ~/.metro/trains/
+cp node_modules/@metro-labs/metro/examples/telegram.ts ~/.metro/trains/
 echo 'TELEGRAM_BOT_TOKEN=…' >> ~/.metro/.env
 metro setup skill    # optional — installs this SKILL.md into ~/.claude / ~/.codex
 metro

@@ -19,10 +19,13 @@ CORS suits your setup.
 
 ## Pages
 
-- `/` — Activity feed (live SSE, search, kind/station filter sheet, compose).
-- `/lines` — One-shot snapshot of currently-seen lines + claim owners.
+- `/` — Channel list / activity entry point.
+- `/xmtp/:convId` — XMTP conversation.
+- `/group/:id` — XMTP group detail.
+- `/contacts` — Contacts.
+- `/profile` — Local profile.
+- `/user/:address` — Peer profile.
 - `/settings` — Daemon URL, bearer token, self URI. `localStorage`-backed.
-- `/event/:id` — Per-event detail.
 
 ## Theme
 
@@ -33,6 +36,5 @@ in light + dark mode. System theme is the default; switch by toggling the
 
 ## Shared assets
 
-Station icons (Discord blurple, Telegram cyan, webhook gray, plus the Claude /
-Codex glyphs) live in `apps/_shared/icons/stations.ts` and are imported in
-both the RN and Vue apps so brand colours stay aligned by construction.
+Shared tokens and icon definitions live in `@metro-labs/kit`; pure client logic
+lives in `@metro-labs/client`.

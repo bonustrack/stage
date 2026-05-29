@@ -84,30 +84,35 @@ the full endpoint spec.
 apps/app/
   app/
     _layout.tsx          ← stack navigator (light/dark auto)
-    index.tsx            ← Activity feed (SSE tail, search, compose)
-    lines.tsx            ← Lines list (claims overview, tap to filter)
-    settings.tsx         ← Daemon URL + token + self URI
-    event/[id].tsx       ← Event detail (full text + metadata)
+    (tabs)/index.tsx     ← Home / channel list
+    (tabs)/profile.tsx   ← Local profile
+    (tabs)/settings.tsx  ← Settings
+    (tabs)/wallet.tsx    ← Wallet
+    xmtp/[convId].tsx    ← XMTP conversation
+    group/[convId].tsx   ← XMTP group detail
+    user/[address].tsx   ← Peer profile
   components/
-    ActivityHeader.tsx   ← top bar: status, filter / lines / settings actions
-    Composer.tsx         ← chat-bound send box, POSTs /api/call/<train>/send
-    EventRow.tsx         ← one history entry row (brand-coloured station pill)
-    FilterSheet.tsx      ← bottom-sheet kind/station/from/to filter
-    FilterSheetParts.tsx ← Section / Chip / StationChip building blocks
-    SearchBar.tsx        ← case-insensitive substring search
-    StationIcon.tsx      ← two-letter brand-coloured pill
+    MessengerComposer.tsx
+    MessengerBubble.tsx
+    MediaCard.tsx
+    HeroIcon.tsx
+    WalletConnectProvider.tsx
   lib/
-    config.ts            ← persisted config (expo-secure-store)
-    sse.ts               ← SSE reader + useTail hook + fetchState
-    types.ts             ← shapes mirroring packages/metro/src/history.ts
+    accounts.ts
+    walletconnect.ts
+    xmtp.ts
+    push.ts
+    theme.ts
 ```
 
-Brand colours + glyphs come from `apps/_shared/icons/stations.ts` so the
-mobile + web shells stay in sync.
+Shared colours + glyphs come from `@metro-labs/kit`; shared client logic comes
+from `@metro-labs/client`.
 
-## What's not here
+## Boundaries
 
-- Push notifications for inbounds — would need the daemon to mint Expo push tokens.
-- React / edit — only send is wired into the composer.
-- Multi-account / multi-daemon — single config slot today.
-- App Store / Play Store builds — Expo Go runnable only.
+- Native dependency changes require a matching development build before pointing
+  Less's phone at a new bundler branch.
+- XMTP V3 fresh installs do not automatically backfill old message bodies from
+  another installation's local DB; test new messages first.
+- Keep framework-neutral logic in `@metro-labs/client` and design data in
+  `@metro-labs/kit`; keep React Native rendering in this app.
