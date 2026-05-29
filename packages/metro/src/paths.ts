@@ -1,8 +1,8 @@
 import {
-  chmodSync, closeSync, existsSync, mkdirSync, openSync, readFileSync, unlinkSync, writeFileSync, writeSync,
+  closeSync, existsSync, mkdirSync, openSync, readFileSync, unlinkSync, writeFileSync, writeSync,
 } from 'node:fs';
 import { homedir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 import { errMsg, log } from './log.js';
 import type { Line } from './lines.js';
 
@@ -29,12 +29,6 @@ export function readDotenv(path: string): Record<string, string> {
     if (m) out[m[1]] = m[2].replace(QUOTED_RE, '$2');
   }
   return out;
-}
-
-export function writeDotenv(path: string, env: Record<string, string>): void {
-  mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, Object.entries(env).map(([k, v]) => `${k}=${v}`).join('\n') + '\n');
-  chmodSync(path, 0o600);
 }
 
 /** Precedence: process.env > cwd/.env > ~/.metro/.env > $METRO_CONFIG_DIR/.env. First-set wins. */

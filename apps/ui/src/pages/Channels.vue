@@ -7,7 +7,7 @@ import { getOrCreateXmtpClient, createAskQuestionGroup, ASK_QUESTION_MEMBERS, st
 import { cachedRows, hydrateCachedRows, markConvRead, markConvUnread } from '../lib/channelsCache';
 import { type ChannelRow as Row } from '../lib/channelsSummarize';
 import { startChannelStream, type ChannelStreamHandles } from '../lib/useChannelStream';
-import { isAddressLike, isDomainLike, resolveDomain } from '../lib/stamp';
+import { useSearchResolution } from '../lib/useSearchResolution';
 import { runningInIframe, postCloseToParent } from '../lib/embedBridge';
 
 const router = useRouter();
@@ -19,7 +19,7 @@ const error = ref<string>('');
 const query = ref<string>('');
 const creatingAsk = ref(false);
 const refreshing = ref(false);
-const searchResolution = ref<{ status: 'idle' | 'resolving' | 'resolved' | 'missed'; address: string | null }>({ status: 'idle', address: null });
+const { searchResolution, openSearchedProfile } = useSearchResolution(query, router);
 
 /** Sync rows ref with the shared cache so other surfaces (markConvRead in
  *  XmtpConversation) propagate changes here without a refetch. */
@@ -47,29 +47,6 @@ const filtered = computed(() => {
     || r.memberAddresses.some(a => a.toLowerCase().includes(q)),
   );
 });
-
-/** Watch the search input — when it contains a domain like `fabien.eth`,
- *  resolve via Stamp so the user gets an "Open profile" suggestion below
- *  the list. Pure address inputs short-circuit (no resolution needed). */
-watch(query, (q) => {
-  const v = q.trim();
-  if (!v) { searchResolution.value = { status: 'idle', address: null }; return; }
-  if (isAddressLike(v)) { searchResolution.value = { status: 'resolved', address: v }; return; }
-  if (!isDomainLike(v)) { searchResolution.value = { status: 'idle', address: null }; return; }
-  searchResolution.value = { status: 'resolving', address: null };
-  void resolveDomain(v).then(addr => {
-    /** Race protection — bail if the user kept typing. */
-    if (query.value.trim() !== v) return;
-    searchResolution.value = addr
-      ? { status: 'resolved', address: addr }
-      : { status: 'missed', address: null };
-  });
-}, { flush: 'post' });
-
-function openSearchedProfile(): void {
-  const addr = searchResolution.value.address;
-  if (addr) void router.push(`/user/${addr}`);
-}
 
 let stream: ChannelStreamHandles | null = null;
 

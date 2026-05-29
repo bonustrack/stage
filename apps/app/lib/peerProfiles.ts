@@ -104,7 +104,6 @@ export function usePeerProfiles(addresses: (string | null | undefined)[]): numbe
     const fn = (): void => bump();
     listeners.add(fn);
     return () => { listeners.delete(fn); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
   return version;
 }

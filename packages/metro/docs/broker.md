@@ -85,26 +85,12 @@ back in with `metro tail --as <id> --include-webhooks`.
 Direct messages between users (`event.to == user-line`) always pass the filter regardless of
 mode — they're inherently 1:1 and can't be "claimed" by someone else.
 
-### Auto-claim on outbound
+### Claiming is explicit
 
-Outbound paths call `tryAutoClaim` ([broker/claims.ts](../src/broker/claims.ts)) to claim the target `<line>`
-for the actor (`userSelf()`) the first time it's touched, atomically — same lockfile as
-`metro claim`. Auto-claim only fires when **the line topology is 1:1** (DM, or a
-Claude/Codex cross-user line). Shared lines are skipped:
-
-| Line                                            | Classification | Auto-claim? | How                                                          |
-|-------------------------------------------------|----------------|-------------|--------------------------------------------------------------|
-| `metro://telegram/<positive-id>` (incl. topics) | DM             | Yes         | Telegram chat-id > 0 ⇒ private chat                          |
-| `metro://telegram/<negative-id>` / `-100…`      | group          | **No**      | Telegram chat-id < 0 ⇒ group/supergroup                      |
-| `metro://discord/<channel-id>` (no guild)       | DM             | Yes         | Recent inbound payload `guildId == null`                     |
-| `metro://discord/<channel-id>` (in guild)       | group          | **No**      | Recent inbound payload `guildId != null`                     |
-| `metro://discord/<channel-id>` (no inbound)     | unknown        | Yes         | No metadata cached — treat as DM-eligible until proven group |
-| `metro://claude/...` / `metro://codex/...`      | 1:1            | Yes         | Cross-user notify is inherently 1:1 by construction          |
-| `metro://webhook/<id>`                          | broadcast      | **Never**   | Webhook lines are a stream, not a conversation               |
-
-- If the line is already claimed by someone else (and topology check passed), the action
-  still proceeds but the claim is **not overwritten**.
-- Auto-claim writes happen after the action succeeds, so a failed call never writes to `claims.json`.
+There is no auto-claim. A line stops fanning out to other personal feeds only when
+someone explicitly claims it with `metro claim <line>` (or `--as <id>`); `metro release
+<line>` returns it to broadcast. Until then a line is unclaimed and reaches every
+matching `--as <id>` (mine-or-unclaimed) tail as well as every `--unclaimed`/`--all` tail.
 
 ### `metro tail` mechanics
 
@@ -134,8 +120,7 @@ coupling between subscriber count and daemon state.
 
 ## Concurrency
 
-Multiple processes write `history.jsonl`: the daemon's `emit()` and short-lived auto-claim
-writers. `appendFileSync` opens with `O_APPEND`; POSIX guarantees atomic seek-to-end-and-write
+The daemon's `emit()` writes `history.jsonl`. `appendFileSync` opens with `O_APPEND`; POSIX guarantees atomic seek-to-end-and-write
 per `write(2)`. Concurrent writers produce whole lines in some order, never interleaved halves.
 Node issues one `write(2)` per `appendFileSync` call, and history entries stay well under
 per-syscall atomicity limits (~2GB on Linux, `INT_MAX` on macOS).

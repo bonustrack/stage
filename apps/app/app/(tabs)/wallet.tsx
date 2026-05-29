@@ -13,7 +13,7 @@ import { useRouter } from 'expo-router';
 import { getOrCreateXmtpClient } from '../../lib/xmtp';
 import { flash } from '../../lib/toast';
 import { usePeerProfiles } from '../../lib/peerProfiles';
-import { useEffectiveColorScheme } from '../../lib/theme';
+import { usePalette } from '../../lib/theme';
 import { getErc20UsdPrices, getSimplePrices } from '../../lib/coingecko';
 import { HeroIcon, type HeroIconName } from '../../components/HeroIcon';
 import { stampTokenUrl, NATIVE_TOKEN_SENTINEL } from '@metro-labs/kit/avatar';
@@ -70,12 +70,7 @@ interface AssetRow {
 
 export default function Wallet(): React.ReactElement {
   const router = useRouter();
-  const dark = useEffectiveColorScheme() === 'dark';
-  const head = dark ? '#ffffff' : '#000000';
-  const sub = dark ? '#7a7a7e' : '#8a929d';
-  const bg = dark ? '#0e0f10' : '#ffffff';
-  const border = dark ? '#282a2d' : '#e4e4e5';
-  const card = dark ? '#282a2d' : '#e4e4e5';
+  const { head, sub, bg, border, rowBg: card } = usePalette();
 
   const [address, setAddress] = useState<string>('');
   const [rows, setRows] = useState<AssetRow[] | null>(null);

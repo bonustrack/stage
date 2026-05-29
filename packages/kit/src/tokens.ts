@@ -38,41 +38,9 @@ export const colors = {
   err: '#d96868',
 } as const;
 
-export type MetroColorKey = keyof typeof colors;
-
-/** Convenience accessor: resolve a base token (e.g. `bg`, `surface`, `fg`) to
- *  its hex for the given scheme. Tokens without a light/dark split (accent, ok,
- *  warn, err) are returned as-is regardless of scheme. */
-export function color(base: string, scheme: 'light' | 'dark'): string {
-  const scoped = `${base}-${scheme}` as MetroColorKey;
-  if (scoped in colors) return colors[scoped];
-  if (base in colors) return colors[base as MetroColorKey];
-  throw new Error(`Unknown metro color token: ${base}`);
-}
-
 /** Font families used across both shells (Calibre is bundled in both apps). */
 export const fontFamily = {
   sans: ['Calibre-Medium', 'system-ui', 'sans-serif'],
   head: ['Calibre-Semibold', 'system-ui', 'sans-serif'],
   mono: ['Menlo', 'ui-monospace', 'monospace'],
-} as const;
-
-/** 4px-based spacing scale (matches the implicit rhythm used by both shells). */
-export const spacing = {
-  xs: 4,
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 24,
-  '2xl': 32,
-} as const;
-
-export type SpacingKey = keyof typeof spacing;
-
-/** Corner-radius scale shared by bubbles, cards, and avatars. */
-export const radius = {
-  sm: 6,
-  md: 10,
-  lg: 16,
-  full: 9999,
 } as const;

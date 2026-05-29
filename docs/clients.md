@@ -55,9 +55,9 @@ bun --cwd apps/ui preview
 
 `@metro-labs/kit` contains pure visual data:
 
-- Colors, spacing, radii
+- Color tokens and font stacks
 - Hero icon paths
-- Station icon definitions
+- Avatar-URL helpers (Stamp avatar/token URLs)
 - Theme preference contract
 
 Keep these packages framework-neutral. Web and mobile render their own components.

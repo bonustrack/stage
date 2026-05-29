@@ -46,15 +46,16 @@ Override with `METRO_USER_ID` / `METRO_USER_SESSION_ID`, or `--from=<uri>` /
 Routing is purely log-based — one append-only `history.jsonl`, a flat `claims.json`,
 and a per-reader cursor. The delivery rule is:
 
-> An event reaches a reader when its `line` is **claimed by that reader** *or*
-> **claimed by no one** — except webhooks, which are excluded from personal feeds
-> unless `--include-webhooks` is set.
+> An event reaches a reader (in the default `mine-or-unclaimed` mode) when its
+> `line` is **claimed by that reader** *or* **claimed by no one** — except
+> webhooks, which are excluded from personal feeds unless `--include-webhooks` is set.
 
 Direct messages (`event.to == reader's user line`) always pass, regardless of
-claims. Outbound calls auto-claim the target line for the actor when the line is
-1:1 (a DM or a Claude/Codex cross-user line), so a chat answered by one agent stops
-fanning out to the others. Shared/group lines are never auto-claimed. The full
-auto-claim table is in [broker semantics](../packages/metro/docs/broker.md#auto-claim-on-outbound).
+claims. Claiming is explicit: `metro claim <line>` takes a line so it stops
+fanning out to other personal feeds, and `metro release <line>` returns it to
+broadcast. There is no auto-claim on outbound — an agent that wants exclusive
+handling of a conversation claims it. See
+[broker semantics](../packages/metro/docs/broker.md).
 
 ## Multi-account XMTP
 

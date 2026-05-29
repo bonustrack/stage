@@ -16,6 +16,7 @@ import {
 import { PROFILE_FIELD_LIMITS, getCacheHash } from '@metro-labs/client/profile/snapshot';
 import { stampBoxAvatarUrl } from '../lib/xmtp';
 import { setPeerProfile } from '../lib/peerProfiles';
+import { usePalette } from '../lib/theme';
 
 const AVATAR_SIZE = 96;
 
@@ -34,12 +35,7 @@ export default function EditProfileModal({
   onSaved: (next: SnapshotProfile) => void;
   address: string; initial: SnapshotProfile; dark: boolean;
 }): React.ReactElement {
-  const fg = dark ? '#9f9fa3' : '#57606a';
-  const head = dark ? '#ffffff' : '#000000';
-  const sub = dark ? '#7a7a7e' : '#8a929d';
-  const bg = dark ? '#0e0f10' : '#ffffff';
-  const border = dark ? '#282a2d' : '#e4e4e5';
-  const rowBg = dark ? '#282a2d' : '#e4e4e5';
+  const { fg, head, sub, bg, border, rowBg } = usePalette();
   const insets = useSafeAreaInsets();
 
   const [form, setForm] = useState<SnapshotProfile>(initial);

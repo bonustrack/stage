@@ -3,7 +3,7 @@
  *  every mounted component in sync the moment the user toggles the choice on
  *  the Settings screen — same model as apps/app/lib/theme.ts. */
 
-import { ref, computed, onUnmounted, type Ref, type ComputedRef } from 'vue';
+import { ref, onUnmounted, type Ref } from 'vue';
 import {
   THEME_STORAGE_KEY as STORAGE_KEY, isThemePreference,
   type ThemePreference,
@@ -51,16 +51,6 @@ if (typeof window !== 'undefined' && window.matchMedia) {
   /** Older Safari uses `addListener`; modern browsers ignore the deprecated alias.
    *  `addEventListener('change', …)` is the wide-compat path. */
   mq.addEventListener('change', e => { systemDark.value = e.matches; });
-}
-
-/** Resolve the effective color scheme; 'system' falls back to the OS preference. */
-export function useEffectiveColorScheme(): ComputedRef<'light' | 'dark'> {
-  const pref = useThemePreference();
-  return computed(() => {
-    if (pref.value === 'light') return 'light';
-    if (pref.value === 'dark') return 'dark';
-    return systemDark.value ? 'dark' : 'light';
-  });
 }
 
 /** Sync the `<html>` element's `dark` class with the effective scheme. Called once

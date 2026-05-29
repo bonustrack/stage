@@ -5,8 +5,7 @@
 ```text
 ~/.metro/trains/                train scripts
 ~/.metro/.env                   train credentials
-~/.metro/xmtp-accounts.json     XMTP account config
-~/.metro/xmtp-mnemonic          mnemonic for derived XMTP accounts
+~/.metro/xmtp-accounts.json     XMTP account config (read by the send-guard)
 ~/.cache/metro/history.jsonl    event log
 ~/.cache/metro/claims.json      line ownership
 ~/.cache/metro/cursors/         tail cursors
@@ -35,8 +34,8 @@ The target model is one daemon, plain:
 metro
 ```
 
-Do not set `XMTP_ONLY_ACCOUNTS` for the shared daemon unless debugging account
-boot issues. Account isolation should be done by owner routing and tail filters.
+Account isolation is done by owner routing and tail filters, not by limiting
+which accounts the xmtp train boots.
 
 Do not set `METRO_CODEX_RC` on the shared daemon. Codex attaches its bridge
 separately, against the already-running daemon (a bare `metro` with
