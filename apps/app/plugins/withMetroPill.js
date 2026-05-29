@@ -13,6 +13,10 @@
  *   - FOREGROUND_SERVICE    + FOREGROUND_SERVICE_MICROPHONE (API 34+ mic FGS)
  *   - POST_NOTIFICATIONS    (API 33+, for the FGS + bubble notifications)
  *   - <service> OverlayService with foregroundServiceType="microphone"
+ *   - android:resizeableActivity="true" on MainActivity — REQUIRED for Android
+ *     Bubbles. The activity launched inside a bubble must be resizeable or the
+ *     system silently refuses to float it (isBubblesSupported() can be true yet
+ *     openAsBubble() shows nothing). Default RN/Expo manifests omit this.
  */
 const { withAndroidManifest, AndroidConfig } = require('expo/config-plugins');
 
@@ -56,6 +60,14 @@ function withMetroPill(config) {
           'android:foregroundServiceType': 'microphone',
         },
       });
+    }
+
+    // --- MainActivity must be resizeable for Android Bubbles ---
+    // A bubble hosts the target activity in a floating, resizeable window; if the
+    // activity isn't resizeable the OS won't float it. Set it on every <activity>
+    // (there's only MainActivity in this app) so the bubble deep-link target qualifies.
+    for (const activity of app.activity || []) {
+      if (activity.$) activity.$['android:resizeableActivity'] = 'true';
     }
 
     return cfg;
