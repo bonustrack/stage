@@ -27,24 +27,24 @@ declare global {
   const getCurrentInstance: typeof import('vue').getCurrentInstance
   const getCurrentScope: typeof import('vue').getCurrentScope
   const getCurrentWatcher: typeof import('vue').getCurrentWatcher
+  const getHostAccount: typeof import('./lib/hostSigner').getHostAccount
   const getLastReadNs: typeof import('./lib/xmtp').getLastReadNs
   const getOrCreateXmtpClient: typeof import('./lib/xmtp').getOrCreateXmtpClient
   const groupMemberEthAddresses: typeof import('./lib/xmtpResolve').groupMemberEthAddresses
   const h: typeof import('vue').h
+  const hostSigner: typeof import('./lib/hostSigner').hostSigner
   const hydrateCachedRows: typeof import('./lib/channelsCache').hydrateCachedRows
   const inject: typeof import('vue').inject
   const installEmbedThemeBridge: typeof import('./lib/embedBridge').installEmbedThemeBridge
   const installThemeClassEffect: typeof import('./lib/theme').installThemeClassEffect
   const isAddressLike: typeof import('./lib/stamp').isAddressLike
   const isDomainLike: typeof import('./lib/stamp').isDomainLike
-  const isEmbedded: typeof import('./lib/embedBridge').isEmbedded
   const isProxy: typeof import('vue').isProxy
   const isReactionEntry: typeof import('./lib/xmtpFeed').isReactionEntry
   const isReactive: typeof import('vue').isReactive
   const isReadonly: typeof import('vue').isReadonly
   const isRef: typeof import('vue').isRef
   const isShallow: typeof import('vue').isShallow
-  const isXmtpLine: typeof import('./lib/xmtp').isXmtpLine
   const lineOfConv: typeof import('./lib/xmtp').lineOfConv
   const loadCachedProfile: typeof import('./lib/profile').loadCachedProfile
   const lookupName: typeof import('./lib/stamp').lookupName
@@ -85,7 +85,6 @@ declare global {
   const readonly: typeof import('vue').readonly
   const ref: typeof import('vue').ref
   const renderMarkdown: typeof import('./lib/renderMarkdown').renderMarkdown
-  const resetXmtpClient: typeof import('./lib/xmtp').resetXmtpClient
   const resolveComponent: typeof import('vue').resolveComponent
   const resolveDomain: typeof import('./lib/stamp').resolveDomain
   const resolveSearchInputToAddress: typeof import('./lib/stamp').resolveSearchInputToAddress
@@ -114,12 +113,12 @@ declare global {
   const useComposerAttach: typeof import('./lib/useComposerAttach').useComposerAttach
   const useCssModule: typeof import('vue').useCssModule
   const useCssVars: typeof import('vue').useCssVars
-  const useEffectiveColorScheme: typeof import('./lib/theme').useEffectiveColorScheme
   const useId: typeof import('vue').useId
   const useLink: typeof import('vue-router').useLink
   const useModel: typeof import('vue').useModel
   const useRoute: typeof import('vue-router').useRoute
   const useRouter: typeof import('vue-router').useRouter
+  const useSearchResolution: typeof import('./lib/useSearchResolution').useSearchResolution
   const useSlots: typeof import('vue').useSlots
   const useTemplateRef: typeof import('vue').useTemplateRef
   const useThemePreference: typeof import('./lib/theme').useThemePreference
@@ -158,6 +157,9 @@ declare global {
   export type { ChannelStreamHandles } from './lib/useChannelStream'
   import('./lib/useChannelStream')
   // @ts-ignore
+  export type { SearchResolution } from './lib/useSearchResolution'
+  import('./lib/useSearchResolution')
+  // @ts-ignore
   export type { XmtpClient, XmtpEnv } from './lib/xmtp'
   import('./lib/xmtp')
   // @ts-ignore
@@ -191,10 +193,12 @@ declare module 'vue' {
     readonly getCurrentInstance: UnwrapRef<typeof import('vue')['getCurrentInstance']>
     readonly getCurrentScope: UnwrapRef<typeof import('vue')['getCurrentScope']>
     readonly getCurrentWatcher: UnwrapRef<typeof import('vue')['getCurrentWatcher']>
+    readonly getHostAccount: UnwrapRef<typeof import('./lib/hostSigner')['getHostAccount']>
     readonly getLastReadNs: UnwrapRef<typeof import('./lib/xmtp')['getLastReadNs']>
     readonly getOrCreateXmtpClient: UnwrapRef<typeof import('./lib/xmtp')['getOrCreateXmtpClient']>
     readonly groupMemberEthAddresses: UnwrapRef<typeof import('./lib/xmtpResolve')['groupMemberEthAddresses']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
+    readonly hostSigner: UnwrapRef<typeof import('./lib/hostSigner')['hostSigner']>
     readonly hydrateCachedRows: UnwrapRef<typeof import('./lib/channelsCache')['hydrateCachedRows']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
     readonly installEmbedThemeBridge: UnwrapRef<typeof import('./lib/embedBridge')['installEmbedThemeBridge']>
@@ -207,7 +211,6 @@ declare module 'vue' {
     readonly isReadonly: UnwrapRef<typeof import('vue')['isReadonly']>
     readonly isRef: UnwrapRef<typeof import('vue')['isRef']>
     readonly isShallow: UnwrapRef<typeof import('vue')['isShallow']>
-    readonly isXmtpLine: UnwrapRef<typeof import('./lib/xmtp')['isXmtpLine']>
     readonly lineOfConv: UnwrapRef<typeof import('./lib/xmtp')['lineOfConv']>
     readonly loadCachedProfile: UnwrapRef<typeof import('./lib/profile')['loadCachedProfile']>
     readonly lookupName: UnwrapRef<typeof import('./lib/stamp')['lookupName']>
@@ -248,7 +251,6 @@ declare module 'vue' {
     readonly readonly: UnwrapRef<typeof import('vue')['readonly']>
     readonly ref: UnwrapRef<typeof import('vue')['ref']>
     readonly renderMarkdown: UnwrapRef<typeof import('./lib/renderMarkdown')['renderMarkdown']>
-    readonly resetXmtpClient: UnwrapRef<typeof import('./lib/xmtp')['resetXmtpClient']>
     readonly resolveComponent: UnwrapRef<typeof import('vue')['resolveComponent']>
     readonly resolveDomain: UnwrapRef<typeof import('./lib/stamp')['resolveDomain']>
     readonly resolveSearchInputToAddress: UnwrapRef<typeof import('./lib/stamp')['resolveSearchInputToAddress']>
@@ -277,12 +279,12 @@ declare module 'vue' {
     readonly useComposerAttach: UnwrapRef<typeof import('./lib/useComposerAttach')['useComposerAttach']>
     readonly useCssModule: UnwrapRef<typeof import('vue')['useCssModule']>
     readonly useCssVars: UnwrapRef<typeof import('vue')['useCssVars']>
-    readonly useEffectiveColorScheme: UnwrapRef<typeof import('./lib/theme')['useEffectiveColorScheme']>
     readonly useId: UnwrapRef<typeof import('vue')['useId']>
     readonly useLink: UnwrapRef<typeof import('vue-router')['useLink']>
     readonly useModel: UnwrapRef<typeof import('vue')['useModel']>
     readonly useRoute: UnwrapRef<typeof import('vue-router')['useRoute']>
     readonly useRouter: UnwrapRef<typeof import('vue-router')['useRouter']>
+    readonly useSearchResolution: UnwrapRef<typeof import('./lib/useSearchResolution')['useSearchResolution']>
     readonly useSlots: UnwrapRef<typeof import('vue')['useSlots']>
     readonly useTemplateRef: UnwrapRef<typeof import('vue')['useTemplateRef']>
     readonly useThemePreference: UnwrapRef<typeof import('./lib/theme')['useThemePreference']>

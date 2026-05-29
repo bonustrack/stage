@@ -5,7 +5,7 @@
 import {
   getOrCreateXmtpClient, peerEthAddressOfDm, stampBoxAvatarUrl, shortAddress,
 } from '../lib/xmtp';
-import { isAddressLike, isDomainLike, resolveDomain } from '../lib/stamp';
+import { useSearchResolution } from '../lib/useSearchResolution';
 
 interface Contact { address: string; convId: string }
 
@@ -13,7 +13,7 @@ const router = useRouter();
 const contacts = ref<Contact[] | null>(null);
 const error = ref<string>('');
 const query = ref<string>('');
-const searchResolution = ref<{ status: 'idle' | 'resolving' | 'resolved' | 'missed'; address: string | null }>({ status: 'idle', address: null });
+const { searchResolution, openSearchedProfile } = useSearchResolution(query, router);
 
 const filtered = computed(() => {
   if (!contacts.value) return null;
@@ -21,25 +21,6 @@ const filtered = computed(() => {
   if (!q) return contacts.value;
   return contacts.value.filter(c => c.address.toLowerCase().includes(q));
 });
-
-watch(query, (q) => {
-  const v = q.trim();
-  if (!v) { searchResolution.value = { status: 'idle', address: null }; return; }
-  if (isAddressLike(v)) { searchResolution.value = { status: 'resolved', address: v }; return; }
-  if (!isDomainLike(v)) { searchResolution.value = { status: 'idle', address: null }; return; }
-  searchResolution.value = { status: 'resolving', address: null };
-  void resolveDomain(v).then(addr => {
-    if (query.value.trim() !== v) return;
-    searchResolution.value = addr
-      ? { status: 'resolved', address: addr }
-      : { status: 'missed', address: null };
-  });
-}, { flush: 'post' });
-
-function openSearchedProfile(): void {
-  const addr = searchResolution.value.address;
-  if (addr) void router.push(`/user/${addr}`);
-}
 
 onMounted(async () => {
   try {

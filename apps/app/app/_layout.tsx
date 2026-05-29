@@ -7,12 +7,14 @@ import '../lib/cryptoShim';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
+import { useEffect } from 'react';
 import { LogBox, Text, TextInput, View } from 'react-native';
 import { Spinner } from '../components/Spinner';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { useEffectiveColorScheme } from '../lib/theme';
 import { useDeepLinks } from '../lib/deepLinks';
+import { installPillAudioBridge } from '../lib/pill';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WalletConnectProvider } from '../components/WalletConnectProvider';
 
@@ -53,6 +55,11 @@ export default function RootLayout(): React.ReactElement {
    *  (after the Stack below has mounted) so cold-start taps land correctly; warm
    *  links navigate immediately. */
   useDeepLinks();
+
+  /** Wire the floating-pill's recorded-audio callback to the XMTP audio-send
+   *  pipeline (→ daemon "Tony" DM). Idempotent + Android-only; no-op when the
+   *  native module isn't linked. Installed once for the app's lifetime. */
+  useEffect(() => installPillAudioBridge(), []);
 
   /** Calibre — matches sx-monorepo's typography. Two weights: medium (default) + semibold (headers/buttons).
    *  TTF (not WOFF2) so Android's native Typeface loader can pick it up — expo-font's WOFF2

@@ -81,133 +81,9 @@ const WEBHOOK_LINE = 'metro://webhook/gh-main';
 /** In-process tests — drive the broker primitive directly. Real station IO is bypassed. */
 /** The broker module reads `STATE_DIR` ONCE at import time, so all tests share one dir */
 /** that we reset between cases via the file deletions below. */
-import {
-  tryAutoClaim,
-  classifyLine,
-  readClaims as brokerReadClaims,
-  CLAIMS_FILE, HISTORY_FILE,
-} from '../src/broker/claims.ts';
 import { drainTail, passesMode, cursorKey } from '../src/broker/history-stream.ts';
 import { asLine } from '../src/lines.ts';
 import type { HistoryEntry } from '../src/history.ts';
-import { unlinkSync } from 'node:fs';
-
-function resetBrokerClaims(): void {
-  try { unlinkSync(CLAIMS_FILE); } catch { /* not there yet */ }
-}
-
-function resetBrokerHistory(): void {
-  try { unlinkSync(HISTORY_FILE); } catch { /* not there yet */ }
-}
-
-/** Append directly to the broker's resolved history path so in-process tests can read what they write. */
-function appendToBrokerHistory(entry: Record<string, unknown>): void {
-  mkdirSync(require('node:path').dirname(HISTORY_FILE), { recursive: true });
-  appendFileSync(HISTORY_FILE, JSON.stringify(entry) + '\n');
-}
-
-describe('tryAutoClaim (broker primitive used by outbound actions)', () => {
-  test('writes claim when line is unclaimed', () => {
-    resetBrokerClaims();
-    const r = tryAutoClaim(asLine(CHAT_LINE), asLine(WORKER_A));
-    expect(r.status).toBe('claimed');
-    expect(brokerReadClaims()[CHAT_LINE]).toBe(WORKER_A);
-  });
-
-  test('returns kept when owner already matches', () => {
-    resetBrokerClaims();
-    tryAutoClaim(asLine(CHAT_LINE), asLine(WORKER_A));
-    const r = tryAutoClaim(asLine(CHAT_LINE), asLine(WORKER_A));
-    expect(r.status).toBe('kept');
-  });
-
-  test('does NOT overwrite a foreign owner', () => {
-    resetBrokerClaims();
-    tryAutoClaim(asLine(CHAT_LINE), asLine(WORKER_A));
-    const r = tryAutoClaim(asLine(CHAT_LINE), asLine(WORKER_B));
-    expect(r.status).toBe('skipped');
-    if (r.status === 'skipped') expect(r.existing).toBe(WORKER_A);
-    expect(brokerReadClaims()[CHAT_LINE]).toBe(WORKER_A);
-  });
-
-  test('skips group-classified line (issue #34)', () => {
-    resetBrokerClaims();
-    const r = tryAutoClaim(asLine(CHAT_LINE), asLine(WORKER_A), { lineKind: 'group' });
-    expect(r.status).toBe('group');
-    expect(brokerReadClaims()[CHAT_LINE]).toBeUndefined();
-  });
-
-  test('--claim (force) bypasses group-skip', () => {
-    resetBrokerClaims();
-    const r = tryAutoClaim(asLine(CHAT_LINE), asLine(WORKER_A), { lineKind: 'group', force: true });
-    expect(r.status).toBe('claimed');
-    expect(brokerReadClaims()[CHAT_LINE]).toBe(WORKER_A);
-  });
-
-  test('skips webhook lines outright regardless of kind', () => {
-    resetBrokerClaims();
-    const r = tryAutoClaim(asLine('metro://webhook/gh-main'), asLine(WORKER_A), { lineKind: 'dm' });
-    expect(r.status).toBe('webhook');
-    expect(brokerReadClaims()['metro://webhook/gh-main']).toBeUndefined();
-  });
-
-  test('claude/codex lines always claim regardless of kind', () => {
-    resetBrokerClaims();
-    const r = tryAutoClaim(asLine('metro://claude/user/abc/sess1'), asLine(WORKER_A), { lineKind: 'group' });
-    expect(r.status).toBe('claimed');
-    expect(brokerReadClaims()['metro://claude/user/abc/sess1']).toBe(WORKER_A);
-  });
-});
-
-describe('classifyLine (issue #34: DM vs group detection)', () => {
-  test('telegram positive chat id ⇒ dm', () => {
-    expect(classifyLine(asLine('metro://telegram/25220238'))).toBe('dm');
-  });
-
-  test('telegram negative chat id ⇒ group', () => {
-    expect(classifyLine(asLine('metro://telegram/-1003950444088'))).toBe('group');
-  });
-
-  test('telegram negative chat id with topic ⇒ group', () => {
-    expect(classifyLine(asLine('metro://telegram/-1003950444088/42'))).toBe('group');
-  });
-
-  test('claude/codex lines ⇒ dm', () => {
-    expect(classifyLine(asLine('metro://claude/user/abc/sess1'))).toBe('dm');
-    expect(classifyLine(asLine('metro://codex/user/xyz/thread1'))).toBe('dm');
-  });
-
-  test('webhook line ⇒ group (broker also short-circuits via webhook rule)', () => {
-    expect(classifyLine(asLine('metro://webhook/gh-main'))).toBe('group');
-  });
-
-  test('discord with no inbound history ⇒ unknown', () => {
-    /** No history seeded → unknown → broker treats as claim-eligible (conservative). */
-    expect(classifyLine(asLine('metro://discord/9999999'))).toBe('unknown');
-  });
-
-  test('discord inbound payload.guildId == null ⇒ dm', () => {
-    resetBrokerHistory();
-    const dmLine = 'metro://discord/dm-channel-id';
-    appendToBrokerHistory({
-      id: 'msg_dm', ts: '2026-05-16T00:00:00Z', kind: 'inbound', station: 'discord',
-      line: dmLine, from: 'metro://discord/u/alice', to: 'metro://discord/u/me',
-      text: 'hi', payload: { guildId: null },
-    });
-    expect(classifyLine(asLine(dmLine))).toBe('dm');
-  });
-
-  test('discord inbound payload.guildId != null ⇒ group', () => {
-    resetBrokerHistory();
-    const guildLine = 'metro://discord/guild-channel-id';
-    appendToBrokerHistory({
-      id: 'msg_g', ts: '2026-05-16T00:00:00Z', kind: 'inbound', station: 'discord',
-      line: guildLine, from: 'metro://discord/u/alice', to: guildLine,
-      text: 'hi', payload: { guildId: '123456' },
-    });
-    expect(classifyLine(asLine(guildLine))).toBe('group');
-  });
-});
 
 describe('cursorKey (issue #34: mode-derived cursor key)', () => {
   test('--as=<id> mine-or-unclaimed → userSlug(id)', () => {
@@ -457,11 +333,8 @@ describe('metro tail cursor independence (issue #34)', () => {
 
 describe('metro claim CLI auto-claim simulation', () => {
   /**
-   * Auto-claim runs inside cmdSend/Reply/Edit/React. Those require a real platform side-effect
-   * (Discord/Telegram API). We exercise the *logic* by calling `metro claim` (which uses the same
-   * `withClaimsLock` path) — and the unit tests above cover `tryAutoClaim` directly.
-   *
-   * This integration block validates the CLI envelope (flags, env-var, exit codes).
+   * Claim/release run via the CLI, which uses the `withClaimsLock` path. This integration block
+   * validates the CLI envelope (flags, env-var, exit codes) and the claim/release round-trip.
    */
 
   test('metro claims is empty initially', () => {

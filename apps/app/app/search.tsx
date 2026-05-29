@@ -13,7 +13,7 @@ import { isAddress } from 'viem';
 import { openDmWithAddress, shortAddress } from '../lib/xmtp';
 import { resolveEnsName } from '../lib/ens';
 import { usePeerProfiles, getPeerName, getPeerAvatarCb } from '../lib/peerProfiles';
-import { useEffectiveColorScheme } from '../lib/theme';
+import { usePalette } from '../lib/theme';
 import { getCachedRows } from '../lib/channelsCache';
 import { HeroIcon } from '../components/HeroIcon';
 import { Avatar } from '../components/Avatar';
@@ -25,13 +25,7 @@ function looksLikeEns(s: string): boolean {
 
 export default function Search(): React.ReactElement {
   const router = useRouter();
-  const dark = useEffectiveColorScheme() === 'dark';
-  const head = dark ? '#ffffff' : '#000000';
-  const fg = dark ? '#9f9fa3' : '#57606a';
-  const sub = dark ? '#7a7a7e' : '#8a929d';
-  const bg = dark ? '#0e0f10' : '#ffffff';
-  const border = dark ? '#282a2d' : '#e4e4e5';
-  const rowBg = dark ? '#282a2d' : '#e4e4e5';
+  const { fg, head, sub, bg, border, rowBg } = usePalette();
   const insets = useSafeAreaInsets();
 
   const [query, setQuery] = useState('');

@@ -167,12 +167,6 @@ export async function markRegistered(id: string): Promise<void> {
   if (rec && !rec.registered) { rec.registered = true; await persist(list); }
 }
 
-export async function renameAccount(id: string, label: string): Promise<void> {
-  const list = await loadAccounts();
-  const rec = list.find(a => a.id === id);
-  if (rec) { rec.label = label.trim() || undefined; await persist(list); }
-}
-
 /** Remove one account: drop its key + record, and re-point `active` if it was
  *  the one removed. Returns the new list. Caller deletes the on-disk db dir. */
 export async function removeAccount(id: string): Promise<AccountRecord[]> {
@@ -199,6 +193,3 @@ export async function clearAllAccounts(): Promise<AccountRecord[]> {
   cache = null;
   return list;
 }
-
-/** Drop the in-memory cache so the next read re-hydrates from SecureStore. */
-export function invalidateAccountsCache(): void { cache = null; }

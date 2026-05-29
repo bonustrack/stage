@@ -1,17 +1,21 @@
 /** Settings tab — wallet-address copy pill + theme switcher + app version. */
 
-import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { Alert, AppState, Pressable, ScrollView, Switch, Text, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import Constants from 'expo-constants';
 import { DevSettings } from 'react-native';
 import { getOrCreateXmtpClient, resetXmtpClient, shortAddress } from '../../lib/xmtp';
+import {
+  hasOverlayPermission, hidePill, isPillAvailable, isPillVisible,
+  requestOverlayPermission, showPill,
+} from '../../lib/pill';
 import { flash } from '../../lib/toast';
 import { resetAccount } from '../../lib/wallet';
 import { AccountsManager } from '../../components/AccountsManager';
 import { HeroIcon } from '../../components/HeroIcon';
 import {
-  setThemePreference, useEffectiveColorScheme, useThemePreference,
+  setThemePreference, useEffectiveColorScheme, usePalette, useThemePreference,
   type ThemePreference,
 } from '../../lib/theme';
 
@@ -28,15 +32,56 @@ const THEME_OPTIONS: { value: ThemePreference; label: string; icon: HeroIconName
 export default function Settings(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const pref = useThemePreference();
-  const fg = dark ? '#9f9fa3' : '#57606a';
-  const head = dark ? '#ffffff' : '#000000';
-  const sub = dark ? '#7a7a7e' : '#8a929d';
-  const bg = dark ? '#0e0f10' : '#ffffff';
-  const border = dark ? '#282a2d' : '#e4e4e5';
-  const rowBg = dark ? '#282a2d' : '#e4e4e5';
+  const { fg, head, sub, bg, border, rowBg } = usePalette();
 
   const [myAddress, setMyAddress] = useState<string>('');
   const [myInboxId, setMyInboxId] = useState<string>('');
+
+  /** Floating voice-pill toggle. Mirrors the live native state (the FGS may
+   *  outlive a JS reload). When the user enables it without the overlay
+   *  permission we send them to system settings + re-poll on resume. */
+  const pillSupported = isPillAvailable();
+  const [pillOn, setPillOn] = useState(false);
+  /** Set when the user toggled the pill ON but lacked the overlay permission —
+   *  on the next return-to-foreground we re-check and start the pill if granted. */
+  const [pendingPill, setPendingPill] = useState(false);
+
+  useEffect(() => {
+    if (pillSupported) setPillOn(isPillVisible());
+  }, [pillSupported]);
+
+  /** Re-poll the overlay permission when the app returns to the foreground —
+   *  the SYSTEM_ALERT_WINDOW grant has no callback. */
+  useEffect(() => {
+    if (!pillSupported) return undefined;
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') return;
+      if (pendingPill && hasOverlayPermission()) {
+        setPendingPill(false);
+        if (showPill()) setPillOn(true);
+      }
+      setPillOn(isPillVisible());
+    });
+    return () => subscription.remove();
+  }, [pillSupported, pendingPill]);
+
+  const togglePill = useCallback((next: boolean) => {
+    if (!next) {
+      hidePill();
+      setPillOn(false);
+      setPendingPill(false);
+      return;
+    }
+    if (!hasOverlayPermission()) {
+      // Send the user to the system "Display over other apps" page; we'll start
+      // the pill on resume once it's granted (re-poll above).
+      setPendingPill(true);
+      void requestOverlayPermission();
+      flash('Allow “Display over other apps”, then return');
+      return;
+    }
+    if (showPill()) setPillOn(true);
+  }, []);
   useEffect(() => {
     void (async (): Promise<void> => {
       try {
@@ -122,6 +167,29 @@ export default function Settings(): React.ReactElement {
           );
         })}
       </View>
+
+      {pillSupported ? (
+        <>
+          <Text style={{ color: sub, fontSize: 13, paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8, fontFamily: 'Calibre-Medium' }}>
+            FLOATING VOICE PILL
+          </Text>
+          <View style={{
+            marginHorizontal: 16, borderRadius: 12, overflow: 'hidden',
+            borderWidth: 1, borderColor: border, backgroundColor: rowBg,
+            paddingHorizontal: 14, paddingVertical: 12,
+            flexDirection: 'row', alignItems: 'center', gap: 12,
+          }}>
+            <HeroIcon name="microphone" size={22} color={head} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: fg, fontSize: 16, fontFamily: 'Calibre-Medium' }}>Floating voice pill</Text>
+              <Text style={{ color: sub, fontSize: 13, marginTop: 2, fontFamily: 'Calibre-Medium' }}>
+                Tap the always-on bubble to record a voice note to Tony.
+              </Text>
+            </View>
+            <Switch value={pillOn} onValueChange={togglePill} />
+          </View>
+        </>
+      ) : null}
 
       <View style={{ marginTop: 32, paddingHorizontal: 16 }}>
         <Pressable

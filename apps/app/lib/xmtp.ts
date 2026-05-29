@@ -419,14 +419,6 @@ export function stampBoxAvatarUrl(address: string, size = 120, cacheBust?: strin
   return cacheBust ? `${base}&cb=${encodeURIComponent(cacheBust)}` : base;
 }
 
-/** Hardcoded co-members for the "Ask a question" group: claude (the daemon's
- *  XMTP identity) + Less (the project owner). Lowercased on the way out so
- *  dedup against the local wallet is case-insensitive. */
-export const ASK_QUESTION_MEMBERS = [
-  '0x0bA043c6F25085C68042bad079c29bD8f16a651A', // claude (daemon xmtp train)
-  '0x25391bddaa8d7ecdfe183615c1005259cd3b79d5', // Less
-] as const;
-
 /** Find or create a DM with a peer by Ethereum address. Returns the conv id
  *  ready to push into `/xmtp/[convId]`. Used from the per-user profile page'​s
  *  "Open chat" button. */
@@ -436,22 +428,6 @@ export async function openDmWithAddress(address: string): Promise<string> {
     new PublicIdentity(address, 'ETHEREUM'),
   );
   return dm.id;
-}
-
-/** Spin up a 3-party group with the local user, claude, and Less. The local
- *  wallet is implicitly added as the creator; any address in ASK_QUESTION_MEMBERS
- *  that matches the local wallet (i.e. when Less or claude themselves tap the
- *  button) is filtered out. Returns the new conversation's id. */
-export async function createAskQuestionGroup(): Promise<string> {
-  const client = await getOrCreateXmtpClient('production');
-  const selfAddr = client.publicIdentity.identifier.toLowerCase();
-  const peers = ASK_QUESTION_MEMBERS
-    .filter(a => a.toLowerCase() !== selfAddr)
-    .map(a => new PublicIdentity(a, 'ETHEREUM'));
-  const group = await client.conversations.newGroupWithIdentities(peers, {
-    name: 'Ask a question',
-  });
-  return group.id;
 }
 
 /** Resolve every member of a conversation as a `{inboxId → ethAddress}` map,
@@ -528,11 +504,6 @@ export type { ConversationVersion };
  *  (`packages/metro/examples/xmtp.ts`) so the rest of the app can rely on a single
  *  convention. */
 export const XMTP_USER_PREFIX = 'metro://xmtp/user/';
-
-/** True when a metro line URI points at an XMTP conversation. */
-export function isXmtpLine(line: string | undefined | null): boolean {
-  return !!line && line.startsWith('metro://xmtp/');
-}
 
 /** Extract the XMTP conversation id from a `metro://xmtp/<convId>` line URI.
  *  Returns null when the line doesn't match. */

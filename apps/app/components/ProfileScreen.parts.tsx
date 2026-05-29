@@ -3,23 +3,13 @@
  *  state of their own beyond what the parent passes down. */
 
 import { Modal, Pressable, Text, View } from 'react-native';
-import { useEffectiveColorScheme } from '../lib/theme';
+import { usePalette, type Palette } from '../lib/theme';
 import { HeroIcon } from './HeroIcon';
 
-export interface ProfileColors {
-  fg: string; head: string; sub: string; bg: string; border: string; rowBg: string;
-}
+export type ProfileColors = Palette;
 
 export function useProfileColors(): ProfileColors {
-  const dark = useEffectiveColorScheme() === 'dark';
-  return {
-    fg: dark ? '#9f9fa3' : '#57606a',
-    head: dark ? '#ffffff' : '#000000',
-    sub: dark ? '#7a7a7e' : '#8a929d',
-    bg: dark ? '#0e0f10' : '#ffffff',
-    border: dark ? '#282a2d' : '#e4e4e5',
-    rowBg: dark ? '#282a2d' : '#e4e4e5',
-  };
+  return usePalette();
 }
 
 /** Boxed read-only field with an optional copy affordance. */

@@ -19,9 +19,9 @@ CORS suits your setup.
 
 ## Pages
 
-- `/` — Channel list / activity entry point.
+- `/` — redirects to `/channels` (channel list / activity entry point).
 - `/xmtp/:convId` — XMTP conversation.
-- `/group/:id` — XMTP group detail.
+- `/group/:convId` — XMTP group detail.
 - `/contacts` — Contacts.
 - `/profile` — Local profile.
 - `/user/:address` — Peer profile.
@@ -29,10 +29,10 @@ CORS suits your setup.
 
 ## Theme
 
-Tailwind config mirrors the React Native palette in `apps/app/` (same
-`#0f1115`/`#161a22`/`#5aa9ff`/etc) so the two clients look indistinguishable
-in light + dark mode. System theme is the default; switch by toggling the
-`dark` class on `<html>`.
+The Tailwind `metro.*` palette is imported from `@metro-labs/kit/tokens` (the
+single source of truth that `apps/app/` also renders against), so the two clients
+look indistinguishable in light + dark mode. System theme is the default; switch by
+toggling the `dark` class on `<html>`.
 
 ## Shared assets
 

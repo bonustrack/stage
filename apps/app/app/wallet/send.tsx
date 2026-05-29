@@ -17,7 +17,7 @@ import { mainnet } from 'viem/chains';
 import { getOrCreateXmtpClient } from '../../lib/xmtp';
 import { resolveEnsName } from '../../lib/ens';
 import { getSimplePrices } from '../../lib/coingecko';
-import { useEffectiveColorScheme } from '../../lib/theme';
+import { usePalette } from '../../lib/theme';
 import { HeroIcon } from '../../components/HeroIcon';
 
 const MULTICALL3 = '0xcA11bde05977b3631167028862bE2a173976CA11' as const;
@@ -37,13 +37,7 @@ export default function WalletSend(): React.ReactElement {
    *  button passes `?to=<address>`) — seed the input from it so the user
    *  doesn't have to retype. */
   const params = useLocalSearchParams<{ to?: string }>();
-  const dark = useEffectiveColorScheme() === 'dark';
-  const head = dark ? '#ffffff' : '#000000';
-  const fg = dark ? '#9f9fa3' : '#57606a';
-  const sub = dark ? '#7a7a7e' : '#8a929d';
-  const bg = dark ? '#0e0f10' : '#ffffff';
-  const border = dark ? '#282a2d' : '#e4e4e5';
-  const inputBg = dark ? '#282a2d' : '#e4e4e5';
+  const { fg, head, sub, bg, border, rowBg: inputBg } = usePalette();
   const insets = useSafeAreaInsets();
 
   const [to, setTo] = useState<string>(typeof params.to === 'string' ? params.to : '');

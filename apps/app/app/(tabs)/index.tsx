@@ -19,7 +19,7 @@ import {
   getLastReadNs, getConvConsent, syncPreferences, streamConvConsent,
 } from '../../lib/xmtp';
 import { resetAccount } from '../../lib/wallet';
-import { useEffectiveColorScheme } from '../../lib/theme';
+import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import {
   getCachedRows, hydrateCachedRows, setCachedRows, subscribeCachedRows,
   markConvUnread, markConvRead, applyConsentToRows,
@@ -188,11 +188,7 @@ async function summarize(conv: Conversation, selfInboxId: string): Promise<Row> 
 export default function Messenger(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const fg = dark ? '#9f9fa3' : '#57606a';
-  const head = dark ? '#ffffff' : '#000000';
-  const sub = dark ? '#7a7a7e' : '#8a929d';
-  const bg = dark ? '#0e0f10' : '#ffffff';
-  const border = dark ? '#282a2d' : '#e4e4e5';
+  const { fg, head, sub, bg, border } = usePalette();
   const [rows, setRowsState] = useState<Row[] | null>(getCachedRows() as Row[] | null);
   /** Wrap setRows so every state update also lands in the shared cache + fans
    *  out to subscribers (e.g. the conv view'​s markConvRead can mutate the
