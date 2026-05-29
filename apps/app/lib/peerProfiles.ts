@@ -43,6 +43,21 @@ async function fetchBatch(addrs: string[]): Promise<void> {
   }
 }
 
+/** Overwrite a single peer's cached profile + notify subscribers. Used after
+ *  the local user edits their own Snapshot profile (name/avatar) so every
+ *  surface reading from this cache — message bubbles, group member rows, the
+ *  conversation topnav — picks up the change (incl. a fresh avatar cache-buster)
+ *  without an app reload. `null` fields clear that part of the profile. */
+export function setPeerProfile(
+  address: string,
+  profile: { name?: string | null; avatar?: string | null },
+): void {
+  const id = address.toLowerCase();
+  store.set(id, { name: profile.name ?? undefined, avatar: profile.avatar ?? undefined });
+  pending.delete(id);
+  listeners.forEach(l => l());
+}
+
 /** Queue any not-yet-known addresses for a batched fetch. Safe to call often. */
 export function ensurePeerProfiles(addresses: (string | null | undefined)[]): void {
   const todo = [...new Set(

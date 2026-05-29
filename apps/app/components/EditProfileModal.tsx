@@ -15,6 +15,7 @@ import {
 } from '../lib/profile';
 import { PROFILE_FIELD_LIMITS, getCacheHash } from '@metro-labs/client/profile/snapshot';
 import { stampBoxAvatarUrl } from '../lib/xmtp';
+import { setPeerProfile } from '../lib/peerProfiles';
 
 const AVATAR_SIZE = 96;
 
@@ -70,6 +71,11 @@ export default function EditProfileModal({
     setSaving(true);
     try {
       await updateProfile(form);
+      /** Push the new name/avatar into the shared peer-profile cache so every
+       *  surface that renders the local user (group member rows, message
+       *  bubbles, conversation topnav) reflects the change — incl. a fresh
+       *  avatar cache-buster — without an app reload. */
+      if (address) setPeerProfile(address, { name: form.name, avatar: form.avatar });
       onSaved(form);
       onClose();
     } catch (e) { Alert.alert('Save failed', (e as Error).message); }

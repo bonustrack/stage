@@ -302,10 +302,13 @@ function QuestionView({ question, dark, sub, onAnswer }: {
 
 export function MessengerBubble({
   entry, dark, unread, pending, replyTarget, onReact, onReply, onLongPress, onAnswer,
-  replyPreview, reactions, transcript, myUri, senderEthAddress, onAvatarPress,
+  replyPreview, onReplyPreviewPress, reactions, transcript, myUri, senderEthAddress, onAvatarPress,
 }: {
   entry: HistoryEntry; dark: boolean; unread: boolean; pending?: boolean; replyTarget?: boolean;
   onReact?: (emoji: string) => void; onReply?: () => void; onLongPress?: () => void;
+  /** Tap the quoted reply-preview slab → parent jumps/scrolls to the original
+   *  message. No-op when undefined (e.g. a bubble that isn't a reply). */
+  onReplyPreviewPress?: () => void;
   /** Tapping a question option fires this with the chosen label (parent sends it as
    *  a normal user message with replyTo=entry.id so the agent links the answer to
    *  the question). */
@@ -409,14 +412,18 @@ export function MessengerBubble({
         }}
       >
         {replyPreview ? (
-          <View style={{
-            alignSelf: 'stretch', borderLeftWidth: 2, borderLeftColor: sub,
-            paddingLeft: 6, marginBottom: 4, opacity: 0.7,
-          }}>
+          <Pressable
+            onPress={onReplyPreviewPress}
+            disabled={!onReplyPreviewPress}
+            style={({ pressed }) => ({
+              alignSelf: 'stretch', borderLeftWidth: 2, borderLeftColor: sub,
+              paddingLeft: 6, marginBottom: 4, opacity: pressed ? 0.45 : 0.7,
+            })}
+          >
             <Text style={{ color: fg, fontSize: 14, fontStyle: 'italic' , fontFamily: 'Calibre-Medium'}} numberOfLines={2}>
               {replyPreview}
             </Text>
-          </View>
+          </Pressable>
         ) : null}
         {atts.length > 0 ? <View style={{ alignSelf: 'stretch' }}>{atts.map((a, i) => {
           /** XMTP inline attachments carry bytes in `dataB64` — render via data: URI.

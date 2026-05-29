@@ -64,7 +64,9 @@ interface Props {
    *  groups, or contact list for DMs. Parent owns the source-of-truth list;
    *  composer just filters/renders. Empty array disables the popup. */
   mentionCandidates?: { address: string; name: string; cacheBuster?: number }[];
-  replyingTo?: { id: string; preview: string };
+  /** `nonce` (optional) changes on every reply action — even re-replying to the
+   *  same message — so the composer re-focuses + re-opens the keyboard each time. */
+  replyingTo?: { id: string; preview: string; nonce?: number };
   onClearReply?: () => void;
   /** Tap on the "Replying to …" preview — parent scrolls the feed to the
    *  target message + flashes the highlight. No-op when omitted. */
@@ -151,16 +153,20 @@ export function MessengerComposer({
   }, [text, convId]);
 
   /** When the user picks a message to reply to, focus the input + raise the
-   *  keyboard immediately — they're about to type. Keyed on the target id so
-   *  it re-fires when switching reply targets, not on every render. Works
-   *  whether or not the keyboard was already open (`.focus()` is idempotent).
-   *  Deferred a tick so the "Replying to" slab has mounted first. */
+   *  keyboard immediately — they're about to type. Keyed on the reply `nonce`
+   *  (bumped by the parent on EVERY reply action, incl. re-tapping the same
+   *  message after a keyboard dismiss) so the focus re-fires each time rather
+   *  than deduping on the message id. Falls back to the id for callers that
+   *  don't pass a nonce. Works whether or not the keyboard was already open
+   *  (`.focus()` is idempotent). Deferred a tick so the "Replying to" slab has
+   *  mounted first. */
   const replyTargetId = replyingTo?.id;
+  const replyNonce = replyingTo?.nonce;
   useEffect(() => {
     if (!replyTargetId) return;
     const t = setTimeout(() => inputRef.current?.focus(), 0);
     return () => clearTimeout(t);
-  }, [replyTargetId]);
+  }, [replyTargetId, replyNonce]);
 
   const canSend = !sending && (text.trim().length > 0 || pending.length > 0);
 

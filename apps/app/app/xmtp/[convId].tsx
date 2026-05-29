@@ -23,7 +23,7 @@ import {
   shortAddress, leaveGroupConv,
 } from '../../lib/xmtp';
 import { flash } from '../../lib/toast';
-import { markConvRead } from '../../lib/channelsCache';
+import { markConvRead, patchRowSent } from '../../lib/channelsCache';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import type { HistoryEntry } from '../../lib/types';
 
@@ -107,7 +107,18 @@ export default function XmtpConversation(): React.ReactElement {
    *  `getNativeScrollRef`) trips reanimated #3670 "property is not writable" on devices
    *  with Reduce Motion. Remount lands at the inverted list's default offset = bottom. */
   const [listEpoch, setListEpoch] = useState(0);
-  const [replyingTo, setReplyingTo] = useState<{ id: string; preview: string } | null>(null);
+  /** `nonce` bumps on every reply action (even re-tapping the same message) so the
+   *  composer's focus effect re-fires and re-opens the keyboard each time — keying
+   *  only on the message id deduped repeat replies after a keyboard dismiss. */
+  const [replyingTo, setReplyingTo] = useState<{ id: string; preview: string; nonce: number } | null>(null);
+  const setReplyTarget = useCallback((id: string, preview: string) => {
+    setReplyingTo({ id, preview, nonce: Date.now() });
+  }, []);
+  /** Transient highlight on a message we jumped to (by tapping its quoted
+   *  reply-preview). Distinct from `replyingTo` so jumping to the original
+   *  doesn't open the composer reply slab. Cleared after a short flash. */
+  const [jumpHighlightId, setJumpHighlightId] = useState<string | null>(null);
+  const jumpClearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [menuFor, setMenuFor] = useState<HistoryEntry | null>(null);
   /** Topnav overflow (3-dot) menu — groups only. Holds the "Leave group" action. */
   const [overflowOpen, setOverflowOpen] = useState(false);
@@ -193,7 +204,7 @@ export default function XmtpConversation(): React.ReactElement {
     if (live.length !== optimistic.length) setOptimistic(live);
   }, [liveBubbles, optimistic, isConfirmed]);
   /** Sticky-bottom for inbound messages: when a new entry arrives and the user is
-   *  already at the visual bottom (`showJump=false` means scroll offset < 200px),
+   *  already at the visual bottom (`showJump=false` means scroll offset ≤ 12px),
    *  remount the list so it lands at offset 0 again. Skip on initial mount. */
   const prevBubbleCount = useRef(0);
   useEffect(() => {
@@ -212,6 +223,24 @@ export default function XmtpConversation(): React.ReactElement {
   }, [allBubbles.length, showJump]);
   const previewOf = (e: HistoryEntry): string =>
     e.text?.slice(0, 80) || `[${(e.payload as { attachments?: { kind: string }[] } | undefined)?.attachments?.[0]?.kind ?? 'attachment'}]`;
+  /** Jump to the original of a quoted/replied-to message: scroll the inverted
+   *  list to its row + flash a highlight. The scroll is best-effort — wrapped in
+   *  try/catch with `animated:false` (reanimated #3670 makes the animated path
+   *  throw on Reduce-Motion devices) and backed by the list's
+   *  `onScrollToIndexFailed` no-op for not-yet-rendered rows. The highlight
+   *  always fires so the user gets feedback even when the scroll can't land. */
+  const jumpToMessage = useCallback((messageId: string) => {
+    const idx = allBubbles.findIndex(b => b.id === messageId);
+    setJumpHighlightId(messageId);
+    if (jumpClearTimer.current) clearTimeout(jumpClearTimer.current);
+    jumpClearTimer.current = setTimeout(() => setJumpHighlightId(null), 1800);
+    if (idx < 0) return;
+    try {
+      listRef.current?.scrollToIndex({ index: idx, animated: false, viewPosition: 0.5 });
+    } catch { /* reanimated #3670 / row not rendered — highlight is the feedback */ }
+  }, [allBubbles]);
+  useEffect(() => () => { if (jumpClearTimer.current) clearTimeout(jumpClearTimer.current); }, []);
+
   const onReact = useCallback((messageId: string, emoji: string) => {
     /** XMTP reactions are toggle-by-resend (the same emoji from the same inbox replaces
      *  the previous state). For v1 we always emit `action: 'added'` — the mobile UI
@@ -278,8 +307,16 @@ export default function XmtpConversation(): React.ReactElement {
         /** Inverted: paddingTop = visual BOTTOM (composer side), paddingBottom = visual TOP
          *  (nav side). Bump the top so the oldest message clears the absolute top-nav strip. */
         contentContainerStyle={{ paddingTop: 24, paddingBottom: insets.top + 52 + 24 }}
-        onScroll={(ev) => { setShowJump(ev.nativeEvent.contentOffset.y > 200); }}
-        scrollEventThrottle={32}
+        /** Inverted list: `contentOffset.y` is ~0 at the visual bottom. Hide the
+         *  jump button within ~12px of the bottom (so it never lingers when the
+         *  user is already down) and show it the moment they scroll up past that.
+         *  `scrollEventThrottle={16}` (≈1 event/frame) keeps the show/hide snappy
+         *  instead of the laggy 32ms cadence. */
+        onScroll={(ev) => {
+          const next = ev.nativeEvent.contentOffset.y > 12;
+          setShowJump(prev => (prev === next ? prev : next));
+        }}
+        scrollEventThrottle={16}
         /** Silent fallback — `scrollToIndex` on a virtualised inverted list
          *  can fire before the target row has rendered. Without this handler
          *  RN's red-screen pops on the dev build. We just no-op; the bubble
@@ -295,11 +332,13 @@ export default function XmtpConversation(): React.ReactElement {
             onAvatarPress={(addr) => router.push({ pathname: '/user/[address]', params: { address: addr } })}
             unread={false}
             pending={item.id.startsWith('tmp_')}
-            replyTarget={replyingTo?.id === item.id}
+            replyTarget={replyingTo?.id === item.id || jumpHighlightId === item.id}
             reactions={reactions.get(item.id)}
             replyPreview={item.replyTo ? previewOf(events.find(e => e.id === item.replyTo) ?? item) : undefined}
+            /** Tap the quoted slab → jump+highlight the original message. */
+            onReplyPreviewPress={item.replyTo ? () => jumpToMessage(item.replyTo as string) : undefined}
             onReact={(emoji) => onReact(item.id, emoji)}
-            onReply={() => setReplyingTo({ id: item.id, preview: previewOf(item) })}
+            onReply={() => setReplyTarget(item.id, previewOf(item))}
             onLongPress={() => setMenuFor(item)}
             onAnswer={(label) => {
               void xmtpReply(activeLine, item.id, label)
@@ -377,7 +416,7 @@ export default function XmtpConversation(): React.ReactElement {
             hitSlop={8}
             style={{ paddingHorizontal: 14, justifyContent: 'center' }}
           >
-            <HeroIcon name="dotsVertical" size={22} color={fg} />
+            <HeroIcon name="dotsHorizontal" size={22} color={fg} />
           </Pressable>
         ) : null}
       </View>
@@ -413,18 +452,12 @@ export default function XmtpConversation(): React.ReactElement {
         replyingTo={replyingTo ?? undefined}
         onClearReply={() => setReplyingTo(null)}
         onReplyPreviewPress={() => {
-          /** Tapping the composer's "Replying to …" slab USED to call
-           *  `listRef.current.scrollToIndex` to jump the inverted feed to the
-           *  target bubble — but every variant of the FlatList scroll API
-           *  (scrollToIndex, scrollToOffset, getScrollResponder, …) trips
-           *  reanimated #3670 ("property is not writable") on devices with
-           *  Reduce Motion ON, even with `animated: false` + try/catch + an
-           *  `onScrollToIndexFailed` handler, because the throw is deferred
-           *  past the JS catch. There's no reliable scroll path right now.
-           *  The bubble still gets the `replyTarget` highlight (set by the
-           *  parent's `replyingTo` state) so the user can find it via manual
-           *  scroll — that's the best we can do until reanimated lands a fix. */
-          void replyingTo;
+          /** Tapping the composer's "Replying to …" slab jumps the feed to the
+           *  target bubble + flashes its highlight, sharing the same best-effort
+           *  scroll path as tapping a quoted preview in a bubble (guarded
+           *  `scrollToIndex` + `onScrollToIndexFailed` no-op for reanimated
+           *  #3670 / not-yet-rendered rows). */
+          if (replyingTo) jumpToMessage(replyingTo.id);
         }}
         onOptimistic={({ localId, text, attachments, replyTo }) => {
           /** Inverted FlatList + `maintainVisibleContentPosition` + prepended optimistic
@@ -441,6 +474,12 @@ export default function XmtpConversation(): React.ReactElement {
            *  anchors the previously-visible content and the new entry falls below the viewport. */
           setListEpoch(e => e + 1);
           setShowJump(false);
+          /** Patch the channels-list cache right away so the just-sent message
+           *  shows as the latest preview when the user goes back — XMTP
+           *  self-sends don't reliably replay through `streamAllMessages`, so
+           *  the list would otherwise lag until the next 30s poll / app resume. */
+          const preview = text.trim() || `[${attachments[0]?.kind ?? 'attachment'}]`;
+          if (convId) patchRowSent(convId, preview);
         }}
         onSent={(localId) => {
           /** Drop the optimistic entry as soon as the send resolves — XMTP's streamMessages
@@ -488,7 +527,7 @@ export default function XmtpConversation(): React.ReactElement {
         onClose={() => setMenuFor(null)}
         onReact={emoji => { if (menuFor) onReact(menuFor.id, emoji); setMenuFor(null); }}
         onReply={() => {
-          if (menuFor) setReplyingTo({ id: menuFor.id, preview: previewOf(menuFor) });
+          if (menuFor) setReplyTarget(menuFor.id, previewOf(menuFor));
           setMenuFor(null);
         }}
         onCopy={() => {
