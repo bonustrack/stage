@@ -84,7 +84,18 @@
           "isAccessMediaLocationEnabled": false,
           "granularPermissions": ["photo"]
         }
-      ]
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 30,
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35
+          }
+        }
+      ],
+      "./plugins/withMetroPill"
     ],
     "notification": {
       "icon": "./assets/notification-icon.png",
