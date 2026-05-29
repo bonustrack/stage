@@ -13,7 +13,7 @@ import * as Location from 'expo-location';
 import { ComposerGradient } from './ComposerGradient';
 import { HeroIcon, type HeroIconName } from './HeroIcon';
 import { Avatar } from './Avatar';
-import { fileUriToBase64, xmtpReply, xmtpSendAttachment, xmtpSendText } from '../lib/xmtp';
+import { fileUriToBase64, shortAddress, xmtpReply, xmtpSendAttachment, xmtpSendText } from '../lib/xmtp';
 
 /** Composer-local representation of a staged attachment. `url` is a `file://` URI in xmtp
  *  mode (the only mode the mobile composer supports now). `id` is a client-side dedupe key. */
@@ -437,7 +437,6 @@ export function MessengerComposer({
       slideXRef.current = 0;
     },
     onPanResponderTerminationRequest: () => false,
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }), []);
 
   /** `@`-mention parser. Looks backwards from the cursor for the most recent
@@ -538,7 +537,7 @@ export function MessengerComposer({
                 {c.name}
               </Text>
               <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
-                {c.address.slice(0, 6)}…{c.address.slice(-4)}
+                {shortAddress(c.address)}
               </Text>
             </Pressable>
           ))}

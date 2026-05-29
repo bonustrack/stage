@@ -20,7 +20,6 @@
  *    2. Register the 'xmtp' notification channel the daemon + local path target.
  *    3. Fetch its raw FCM/APNs device token via expo-notifications. */
 
-import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 
@@ -45,8 +44,6 @@ Notifications.setNotificationHandler({
     };
   },
 });
-
-export type PushStatus = 'idle' | 'requesting' | 'ready' | 'denied' | 'unavailable' | 'error';
 
 async function ensureChannel(): Promise<void> {
   if (Platform.OS !== 'android') return;
@@ -76,40 +73,6 @@ export async function getDeviceFcmToken(): Promise<string | null> {
     const resp = await Notifications.getDevicePushTokenAsync();
     return typeof resp.data === 'string' ? resp.data : null;
   } catch { return null; }
-}
-
-/** React hook variant — kicks the registration flow on mount and exposes the
- *  resulting status + token. UI components observe { status, token } to render
- *  appropriate copy ("Tap to allow", "Pasting needed", etc.). */
-export function usePushToken(): { status: PushStatus; token: string | null; error: string | null } {
-  const [status, setStatus] = useState<PushStatus>('idle');
-  const [token, setToken] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    setStatus('requesting');
-    void (async (): Promise<void> => {
-      try {
-        await ensureChannel();
-        const granted = await ensurePermission();
-        if (cancelled) return;
-        if (!granted) { setStatus('denied'); return; }
-        const resp = await Notifications.getDevicePushTokenAsync();
-        if (cancelled) return;
-        if (typeof resp.data !== 'string') { setStatus('unavailable'); return; }
-        setToken(resp.data);
-        setStatus('ready');
-      } catch (e) {
-        if (cancelled) return;
-        setStatus('error');
-        setError((e as Error).message);
-      }
-    })();
-    return (): void => { cancelled = true; };
-  }, []);
-
-  return { status, token, error };
 }
 
 /** Ensure the 'xmtp' channel exists and POST_NOTIFICATIONS is granted. Shared

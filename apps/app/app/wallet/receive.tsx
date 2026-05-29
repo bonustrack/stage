@@ -12,19 +12,13 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import QRCode from 'react-native-qrcode-svg';
 import { getOrCreateXmtpClient } from '../../lib/xmtp';
-import { useEffectiveColorScheme } from '../../lib/theme';
+import { usePalette } from '../../lib/theme';
 import { HeroIcon } from '../../components/HeroIcon';
 import { flash } from '../../lib/toast';
 
 export default function WalletReceive(): React.ReactElement {
   const router = useRouter();
-  const dark = useEffectiveColorScheme() === 'dark';
-  const head = dark ? '#ffffff' : '#000000';
-  const fg = dark ? '#9f9fa3' : '#57606a';
-  const sub = dark ? '#7a7a7e' : '#8a929d';
-  const bg = dark ? '#0e0f10' : '#ffffff';
-  const border = dark ? '#282a2d' : '#e4e4e5';
-  const card = dark ? '#282a2d' : '#e4e4e5';
+  const { fg, head, sub, bg, border, rowBg: card } = usePalette();
   const insets = useSafeAreaInsets();
 
   const [address, setAddress] = useState('');

@@ -65,3 +65,22 @@ export function useEffectiveColorScheme(): 'light' | 'dark' {
   if (pref === 'dark') return 'dark';
   return sys === 'dark' ? 'dark' : 'light';
 }
+
+/** The 6-key scheme-aware palette shared by every screen's inline StyleSheet.
+ *  Single source of truth so the dark/light hex block isn't copy-pasted per file. */
+export interface Palette {
+  fg: string; head: string; sub: string; bg: string; border: string; rowBg: string;
+}
+
+/** Resolve the shared palette for the effective color scheme. */
+export function usePalette(): Palette {
+  const dark = useEffectiveColorScheme() === 'dark';
+  return {
+    fg: dark ? '#9f9fa3' : '#57606a',
+    head: dark ? '#ffffff' : '#000000',
+    sub: dark ? '#7a7a7e' : '#8a929d',
+    bg: dark ? '#0e0f10' : '#ffffff',
+    border: dark ? '#282a2d' : '#e4e4e5',
+    rowBg: dark ? '#282a2d' : '#e4e4e5',
+  };
+}

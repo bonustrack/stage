@@ -11,7 +11,7 @@ import { resetAccount } from '../../lib/wallet';
 import { AccountsManager } from '../../components/AccountsManager';
 import { HeroIcon } from '../../components/HeroIcon';
 import {
-  setThemePreference, useEffectiveColorScheme, useThemePreference,
+  setThemePreference, useEffectiveColorScheme, usePalette, useThemePreference,
   type ThemePreference,
 } from '../../lib/theme';
 
@@ -28,12 +28,7 @@ const THEME_OPTIONS: { value: ThemePreference; label: string; icon: HeroIconName
 export default function Settings(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const pref = useThemePreference();
-  const fg = dark ? '#9f9fa3' : '#57606a';
-  const head = dark ? '#ffffff' : '#000000';
-  const sub = dark ? '#7a7a7e' : '#8a929d';
-  const bg = dark ? '#0e0f10' : '#ffffff';
-  const border = dark ? '#282a2d' : '#e4e4e5';
-  const rowBg = dark ? '#282a2d' : '#e4e4e5';
+  const { fg, head, sub, bg, border, rowBg } = usePalette();
 
   const [myAddress, setMyAddress] = useState<string>('');
   const [myInboxId, setMyInboxId] = useState<string>('');

@@ -25,7 +25,7 @@ import {
 } from '../../lib/xmtp';
 import { flash } from '../../lib/toast';
 import { markConvRead, patchRowSent } from '../../lib/channelsCache';
-import { useEffectiveColorScheme } from '../../lib/theme';
+import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import type { HistoryEntry } from '../../lib/types';
 
 /** Whether an entry carries attachments — used to dedup an optimistic
@@ -79,11 +79,7 @@ function HeaderAvatar({ peerAddr, groupImage, border }: {
 export default function XmtpConversation(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const fg = dark ? '#9f9fa3' : '#57606a';
-  const head = dark ? '#ffffff' : '#000000';
-  const sub = dark ? '#7a7a7e' : '#8a929d';
-  const bg = dark ? '#0e0f10' : '#ffffff';
-  const border = dark ? '#282a2d' : '#e4e4e5';
+  const { fg, head, sub, bg, border } = usePalette();
 
   const { convId } = useLocalSearchParams<{ convId: string }>();
   const activeLine = lineOfConv(convId ?? '');
@@ -154,7 +150,7 @@ export default function XmtpConversation(): React.ReactElement {
       seen.add(k);
       out.push({
         address: addr,
-        name: getPeerName(addr) ?? `${addr.slice(0, 6)}…${addr.slice(-4)}`,
+        name: getPeerName(addr) ?? shortAddress(addr),
         cacheBuster: getPeerAvatar(addr) ? 1 : 0,
       });
     };
@@ -163,7 +159,6 @@ export default function XmtpConversation(): React.ReactElement {
     return out;
     /** profilesVersion bumps each time peer profiles resolve, so the names
      *  flip from the short-address fallback to the real display name. */
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isGroup, memberAddrs, peerAddr, profilesVersion]);
 
   const insets = useSafeAreaInsets();
@@ -427,7 +422,7 @@ export default function XmtpConversation(): React.ReactElement {
           <HeaderAvatar peerAddr={peerAddr} groupImage={groupImage} border={dark ? '#282a2d' : '#e4e4e5'} />
           <Text style={{ color: head, fontSize: 19, fontFamily: 'Calibre-Semibold', flex: 1 }} numberOfLines={1}>
             {isGroup ? (groupName === null ? '' : (groupName || 'Untitled group'))
-              : peerAddr ? (getPeerName(peerAddr) ?? `${peerAddr.slice(0, 6)}…${peerAddr.slice(-4)}`) : ''}
+              : peerAddr ? (getPeerName(peerAddr) ?? shortAddress(peerAddr)) : ''}
           </Text>
         </Pressable>
         {/** Overflow (3-dot) menu — groups only. Holds "Leave group". */}
