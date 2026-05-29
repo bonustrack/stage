@@ -14,6 +14,7 @@ import { File, Paths } from 'expo-file-system';
 import * as MetroPill from '../modules/metro-pill';
 import {
   openDmWithAddress, lineOfConv, fileUriToBase64, xmtpSendAttachment, getCachedXmtpClient,
+  stampBoxAvatarUrl,
 } from './xmtp';
 import { getPeerAvatar } from './peerProfiles';
 import { DAEMON_INBOX_ADDRESS } from './pushRegister';
@@ -54,7 +55,8 @@ export async function openConversationAsBubble(args: {
     flash('Bubbles are off for this app (enable in system settings)');
     return false;
   }
-  const avatarUri = await cacheAvatarFile(args.peerAddress ?? null);
+  const url = getPeerAvatar(args.peerAddress ?? undefined) ?? null;
+  const avatarUri = await cacheAvatarFile(url, args.peerAddress?.toLowerCase() ?? 'bubble');
   try {
     await MetroPill.openAsBubble({
       convId: args.convId,
@@ -70,14 +72,13 @@ export async function openConversationAsBubble(args: {
   }
 }
 
-/** Download the peer's stamp.fyi avatar to a cache file and return a `file://`
- *  uri (or null on failure → native falls back to the app icon). */
-async function cacheAvatarFile(address: string | null): Promise<string | null> {
-  if (!address) return null;
-  const url = getPeerAvatar(address);
+/** Download an avatar `url` to a cache file (keyed by `key`) and return a
+ *  `file://` uri (or null on failure → native falls back to a neutral circle /
+ *  the app icon). The native side needs a local bitmap, not an https url. */
+async function cacheAvatarFile(url: string | null, key: string): Promise<string | null> {
   if (!url) return null;
   try {
-    const dest = new File(Paths.cache, `bubble-avatar-${address.toLowerCase()}.png`);
+    const dest = new File(Paths.cache, `avatar-${key}.png`);
     if (dest.exists) try { dest.delete(); } catch { /* overwrite */ }
     const blob = await (await fetch(url)).blob();
     const buf = new Uint8Array(await blob.arrayBuffer());
@@ -90,6 +91,18 @@ async function cacheAvatarFile(address: string | null): Promise<string | null> {
   }
 }
 
+/** The address whose avatar the collapsed pill shows. Today: the daemon
+ *  ("Tony"). Swap this single line to the local user's address to make the pill
+ *  the user's own avatar. */
+const PILL_AVATAR_ADDRESS = DAEMON_INBOX_ADDRESS;
+
+/** Resolve + cache the pill avatar to a local file path. stamp.fyi always
+ *  returns a 200 (generic identicon when no custom avatar), so this resolves a
+ *  usable path for the daemon even without a stored custom avatar. */
+async function cachePillAvatar(): Promise<string | null> {
+  return cacheAvatarFile(stampBoxAvatarUrl(PILL_AVATAR_ADDRESS), `pill-${PILL_AVATAR_ADDRESS.toLowerCase()}`);
+}
+
 /** Request the SYSTEM_ALERT_WINDOW permission (opens the system settings page;
  *  no callback — re-poll `hasOverlayPermission()` on resume). */
 export async function requestOverlayPermission(): Promise<void> {
@@ -97,9 +110,10 @@ export async function requestOverlayPermission(): Promise<void> {
   await MetroPill.requestOverlayPermission();
 }
 
-/** Show the floating pill. Returns false if unavailable or the overlay
- *  permission is missing. */
-export function showPill(): boolean {
+/** Show the floating pill (collapsed pill = the daemon "Tony" avatar). Downloads
+ *  the avatar to a cache file first so the native side has a local bitmap.
+ *  Resolves false if unavailable or the overlay permission is missing. */
+export async function showPill(): Promise<boolean> {
   if (!isPillAvailable()) {
     flash('Floating pill needs a newer app build');
     return false;
@@ -108,7 +122,8 @@ export function showPill(): boolean {
     flash('Grant “Display over other apps” first');
     return false;
   }
-  return MetroPill.showPill();
+  const avatarPath = await cachePillAvatar();
+  return MetroPill.showPill(avatarPath);
 }
 
 export function hidePill(): boolean {

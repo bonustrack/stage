@@ -40,7 +40,7 @@ class OverlayService : Service() {
       }
       else -> {
         startForegroundNotification()
-        showOverlay()
+        showOverlay(intent?.getStringExtra(EXTRA_AVATAR_PATH))
       }
     }
     return START_STICKY
@@ -70,10 +70,11 @@ class OverlayService : Service() {
     }
   }
 
-  private fun showOverlay() {
+  private fun showOverlay(avatarPath: String?) {
     if (overlay != null) return
     overlay = OverlayView(
       this,
+      avatarPath = avatarPath,
       onRecordStart = { startRecording() },
       onRecordStop = { commit -> stopRecording(commit) },
       onClose = { closeFromPill() },
@@ -168,6 +169,7 @@ class OverlayService : Service() {
 
   companion object {
     const val EXTRA_ACTION = "action"
+    const val EXTRA_AVATAR_PATH = "avatarPath"
     const val ACTION_SHOW = "show"
     const val ACTION_HIDE = "hide"
     private const val FGS_ID = 4711

@@ -38,9 +38,11 @@ export function isPillVisible(): boolean {
   return native?.isPillVisible() ?? false;
 }
 
-/** Show the floating pill. Returns false if unavailable or permission missing. */
-export function showPill(): boolean {
-  return native?.showPill() ?? false;
+/** Show the floating pill. `avatarPath` is a local file path the native side
+ *  renders as the collapsed pill's circular avatar (null → neutral fallback).
+ *  Returns false if unavailable or permission missing. */
+export function showPill(avatarPath?: string | null): boolean {
+  return native?.showPill(avatarPath ?? null) ?? false;
 }
 
 export function hidePill(): boolean {

@@ -11,9 +11,11 @@ declare class MetroPillModule extends NativeModule<MetroPillModuleEvents> {
   requestOverlayPermission(): Promise<void>;
   /** Whether the overlay foreground service is currently running. */
   isPillVisible(): boolean;
-  /** Starts the overlay foreground service + shows the pill. Returns false if
-   *  the overlay permission is missing (and emits `onError`). */
-  showPill(): boolean;
+  /** Starts the overlay foreground service + shows the pill. The collapsed pill
+   *  renders the avatar at `avatarPath` (a local file path) as a circle; pass
+   *  null to use the neutral fallback circle. Returns false if the overlay
+   *  permission is missing (and emits `onError`). */
+  showPill(avatarPath: string | null): boolean;
   /** Hides the pill + stops the foreground service. */
   hidePill(): boolean;
   /** Whether Android Bubbles are supported + allowed (API 30+, channel/app

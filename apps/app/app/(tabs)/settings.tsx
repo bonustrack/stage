@@ -58,7 +58,7 @@ export default function Settings(): React.ReactElement {
       if (state !== 'active') return;
       if (pendingPill && hasOverlayPermission()) {
         setPendingPill(false);
-        if (showPill()) setPillOn(true);
+        void showPill().then((ok) => { if (ok) setPillOn(true); });
       }
       setPillOn(isPillVisible());
     });
@@ -80,7 +80,7 @@ export default function Settings(): React.ReactElement {
       flash('Allow “Display over other apps”, then return');
       return;
     }
-    if (showPill()) setPillOn(true);
+    void showPill().then((ok) => { if (ok) setPillOn(true); });
   }, []);
   useEffect(() => {
     void (async (): Promise<void> => {

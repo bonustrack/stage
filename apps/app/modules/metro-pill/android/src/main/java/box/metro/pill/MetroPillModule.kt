@@ -71,13 +71,14 @@ class MetroPillModule : Module() {
       OverlayService.isRunning
     }
 
-    Function("showPill") {
+    Function("showPill") { avatarPath: String? ->
       if (!Settings.canDrawOverlays(context)) {
         sendEvent("onError", mapOf("message" to "overlay-permission-missing"))
         return@Function false
       }
       val intent = Intent(context, OverlayService::class.java)
         .putExtra(OverlayService.EXTRA_ACTION, OverlayService.ACTION_SHOW)
+        .putExtra(OverlayService.EXTRA_AVATAR_PATH, avatarPath)
       ContextCompat.startForegroundService(context, intent)
       true
     }
