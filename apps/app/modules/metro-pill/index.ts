@@ -77,3 +77,9 @@ export function addErrorListener(cb: (e: PillErrorEvent) => void): EventSubscrip
 export function addPillTappedListener(cb: () => void): EventSubscription {
   return native ? native.addListener('onPillTapped', cb) : NOOP_SUB;
 }
+
+/** Subscribe to the "open chat" action from the pill's expanded bar. The native
+ *  side has already foregrounded the app; the handler routes to the daemon DM. */
+export function addOpenChatListener(cb: () => void): EventSubscription {
+  return native ? native.addListener('onOpenChat', cb) : NOOP_SUB;
+}

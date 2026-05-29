@@ -72,39 +72,76 @@ class OverlayService : Service() {
 
   private fun showOverlay() {
     if (overlay != null) return
-    overlay = OverlayView(this) { tapAction() }.also { it.attach() }
+    overlay = OverlayView(
+      this,
+      onRecordStart = { startRecording() },
+      onRecordStop = { commit -> stopRecording(commit) },
+      onClose = { closeFromPill() },
+      onOpenChat = { openChat() },
+    ).also { it.attach() }
   }
 
-  /** Pill tap: toggles recording. First tap starts, second tap stops + emits. */
-  private fun tapAction() {
-    MetroPillModule.emit("onPillTapped", mapOf<String, Any?>())
-    val rec = recorder
-    if (rec != null && rec.isRecording) {
-      val result = rec.stop()
+  /** Push-to-talk press began (long-press fired). Start the recorder. */
+  private fun startRecording() {
+    if (recorder?.isRecording == true) return
+    val newRec = AudioRecorder(this)
+    try {
+      newRec.start()
+      recorder = newRec
+      overlay?.setRecording(true)
+    } catch (e: Throwable) {
       recorder = null
       overlay?.setRecording(false)
-      if (result != null) {
-        MetroPillModule.emit(
-          "onRecorded",
-          mapOf(
-            "uri" to result.uri,
-            "durationMs" to result.durationMs,
-            "mimeType" to "audio/m4a",
-          ),
-        )
-      } else {
-        MetroPillModule.emit("onError", mapOf("message" to "recording-empty"))
-      }
-    } else {
-      val newRec = AudioRecorder(this)
-      try {
-        newRec.start()
-        recorder = newRec
-        overlay?.setRecording(true)
-      } catch (e: Throwable) {
-        MetroPillModule.emit("onError", mapOf("message" to ("record-start-failed: " + (e.message ?: "unknown"))))
-      }
+      MetroPillModule.emit("onError", mapOf("message" to ("record-start-failed: " + (e.message ?: "unknown"))))
     }
+  }
+
+  /** Push-to-talk released. `commit` = send the clip; otherwise (slide-to-cancel)
+   *  discard it without emitting onRecorded. */
+  private fun stopRecording(commit: Boolean) {
+    val rec = recorder ?: return
+    if (!rec.isRecording) { recorder = null; return }
+    val result = rec.stop()
+    recorder = null
+    overlay?.setRecording(false)
+    if (!commit) {
+      // Slide-to-cancel: drop the file, send nothing.
+      result?.let { runCatching { java.io.File(android.net.Uri.parse(it.uri).path ?: "").delete() } }
+      return
+    }
+    if (result != null) {
+      MetroPillModule.emit(
+        "onRecorded",
+        mapOf(
+          "uri" to result.uri,
+          "durationMs" to result.durationMs,
+          "mimeType" to "audio/m4a",
+        ),
+      )
+    } else {
+      MetroPillModule.emit("onError", mapOf("message" to "recording-empty"))
+    }
+  }
+
+  /** ✕ from the expanded bar → hide the pill + stop the service (same path as
+   *  the JS hidePill()). */
+  private fun closeFromPill() {
+    teardown()
+    stopForegroundCompat()
+    stopSelf()
+  }
+
+  /** "Open chat" glyph → bring the Metro app to the foreground (launch
+   *  MainActivity, the most reliable foreground bring-up from a background
+   *  service) and fire onOpenChat so JS routes to the daemon DM. */
+  private fun openChat() {
+    try {
+      val launch = packageManager.getLaunchIntentForPackage(packageName)?.apply {
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+      }
+      if (launch != null) startActivity(launch)
+    } catch (_: Throwable) { /* best-effort foreground */ }
+    MetroPillModule.emit("onOpenChat", mapOf<String, Any?>())
   }
 
   private fun teardown() {

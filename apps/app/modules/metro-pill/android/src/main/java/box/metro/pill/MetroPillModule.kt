@@ -37,7 +37,7 @@ class MetroPillModule : Module() {
   override fun definition() = ModuleDefinition {
     Name("MetroPill")
 
-    Events("onRecorded", "onPillTapped", "onError")
+    Events("onRecorded", "onPillTapped", "onOpenChat", "onError")
 
     OnCreate {
       instanceRef = WeakReference(this@MetroPillModule)

@@ -18,6 +18,7 @@ import {
 import { getPeerAvatar } from './peerProfiles';
 import { DAEMON_INBOX_ADDRESS } from './pushRegister';
 import { flash } from './toast';
+import { navigateToUrl } from './deepLinks';
 
 /** Whether the native pill/bubble module is linked on this build. */
 export function isPillAvailable(): boolean {
@@ -131,12 +132,33 @@ export function installPillAudioBridge(): () => void {
   const errSub = MetroPill.addErrorListener((e) => {
     console.warn('MetroPill error', e.message);
   });
+  // "Open chat" from the pill's expanded bar → route to the daemon ("Tony") DM.
+  // The native side already foregrounded the app (launched MainActivity); here we
+  // resolve the daemon convId (JS-only knowledge) and navigate to it.
+  const openSub = MetroPill.addOpenChatListener(() => {
+    void openDaemonChat().catch((err) => {
+      console.warn('pill openChat failed', err);
+      flash('Couldn’t open chat');
+    });
+  });
 
   return () => {
     installed = false;
     recSub.remove();
     errSub.remove();
+    openSub.remove();
   };
+}
+
+/** Resolve the daemon ("Tony") DM and navigate to it. The daemon convId is
+ *  derived from its XMTP address (not known natively), so this lives JS-side. */
+async function openDaemonChat(): Promise<void> {
+  if (!getCachedXmtpClient()) {
+    flash('Open Metro to chat with Tony');
+    return;
+  }
+  const convId = await openDmWithAddress(DAEMON_INBOX_ADDRESS);
+  navigateToUrl(lineOfConv(convId));
 }
 
 /** Send a recorded clip as an XMTP audio attachment to the daemon ("Tony") DM,
