@@ -127,13 +127,16 @@ function PushTokenCard({ status, token, error, onCopy, sub, fg, border }: {
   status: PushStatus; token: string | null; error: string | null; onCopy: () => void;
   sub: string; fg: string; border: string;
 }): React.ReactElement {
-  const label = status === 'requesting' ? 'PUSH TOKEN (requesting permission…)'
-    : status === 'denied' ? 'PUSH TOKEN (permission denied — enable in system settings)'
-    : status === 'unavailable' ? 'PUSH TOKEN (no Play Services / not a real device)'
-    : status === 'error' ? `PUSH TOKEN (error: ${error ?? 'unknown'})`
-    : 'PUSH TOKEN (tap to copy)';
+  const label = status === 'requesting' ? 'NOTIFICATIONS (requesting permission…)'
+    : status === 'denied' ? 'NOTIFICATIONS (permission denied — enable in system settings)'
+    : status === 'unavailable' ? 'NOTIFICATIONS (no Play Services / not a real device)'
+    : status === 'error' ? `NOTIFICATIONS (error: ${error ?? 'unknown'})`
+    : 'NOTIFICATIONS (registered — tap to copy token)';
   const showSubtitle = status !== 'ready';
-  const body = token ?? (showSubtitle ? 'Run `metro call xmtp register-push \'{"token":"…"}\'` on the daemon host after copying.' : '');
+  /** Auto-registration: the app now registers this token with the daemon over
+   *  XMTP on launch + account switch — no manual `metro call` step. The token is
+   *  kept visible purely as a debug affordance. */
+  const body = token ?? (showSubtitle ? 'Enable notifications to receive XMTP message alerts.' : '');
 
   return (
     <Pressable
