@@ -72,6 +72,16 @@ interface Row {
   [key: string]: unknown;
 }
 
+/** Extract the conversation id from an XMTP MLS topic. Stream `DecodedMessage`s
+ *  only expose `topic` (`/xmtp/mls/1/g-<hexId>/proto`), not `conversationId`, so
+ *  the `g-<id>` segment is the bridge back to `Row.convId` (which stores
+ *  `conv.id`). Returns null when the topic doesn't match the expected shape. */
+function convIdFromTopic(topic: string | undefined): string | null {
+  if (!topic) return null;
+  const m = /\/g-([0-9a-fA-F]+)\//.exec(topic);
+  return m ? m[1]! : null;
+}
+
 function fmtTs(ts: number | null): string {
   if (!ts) return '';
   const d = new Date(ts);
@@ -301,32 +311,40 @@ export default function Messenger(): React.ReactElement {
              *  notified without the daemon. Skip our own messages, system/silent
              *  types, and our private register-push control payloads. The daemon
              *  separately background-pushes daemon-run inboxes; this covers the
-             *  app-running case for every account. */
-            const msgConvIdForNote = (msg as unknown as { conversationId?: string }).conversationId;
+             *  app-running case for every account.
+             *
+             *  The RN `DecodedMessage` only carries `topic` (e.g.
+             *  `/xmtp/mls/1/g-<id>/proto`), NOT `conversationId` — so derive the
+             *  conv id from the topic (with the native `conversationId`, when
+             *  present, as a fallback). The conv id is best-effort: it only enriches
+             *  the title + deep-link payload, so a miss still notifies. */
+            const msgConvIdForNote = convIdFromTopic((msg as unknown as { topic?: string }).topic)
+              ?? (msg as unknown as { conversationId?: string }).conversationId
+              ?? null;
             const isOwn = msg.senderInboxId === selfInboxId;
             const isSystem = /group_updated|groupUpdated|read_receipt|readReceipt/.test(msg.contentTypeId ?? '');
-            if (!isOwn && !isSystem && msgConvIdForNote && preview) {
+            if (!isOwn && !isSystem && preview) {
               /** Read the latest rows from the shared cache (the effect closure's
                *  `rows` is stale — deps are [accountEpoch]). */
               const latestRows = getCachedRows() as Row[] | null;
-              const row = latestRows?.find(r => r.convId === msgConvIdForNote);
+              const row = msgConvIdForNote ? latestRows?.find(r => r.convId === msgConvIdForNote) : undefined;
               const senderAddr = row?.inboxToAddr?.[msg.senderInboxId ?? ''] ?? null;
               const title = row?.title
                 || (senderAddr ? shortAddress(senderAddr) : 'New message');
               void presentInboundNotification({
                 title, body: preview.slice(0, 140),
-                convId: msgConvIdForNote, messageId: msg.id,
+                convId: msgConvIdForNote ?? '', messageId: msg.id,
               });
             }
 
             let needsRefresh = false;
             setRows(prev => {
               if (!prev) return prev;
-              /** `conversationId` exists on the native msg envelope but isn't
-               *  surfaced in the TS DecodedMessage type — access through an
-               *  unknown cast. */
-              const msgConvId = (msg as unknown as { conversationId?: string }).conversationId;
-              const idx = prev.findIndex(r => r.convId === msgConvId);
+              /** Derive the conv id from the topic (see `convIdFromTopic`); the
+               *  native `conversationId`, when present, is a fallback. Reuse the
+               *  value already computed above for the notification. */
+              const msgConvId = msgConvIdForNote;
+              const idx = msgConvId ? prev.findIndex(r => r.convId === msgConvId) : -1;
               if (idx === -1) { needsRefresh = true; return prev; }
               const cur = prev[idx]!;
               const newAvatar = cur.inboxToAddr[msg.senderInboxId ?? ''] ?? cur.avatarAddress;

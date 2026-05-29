@@ -110,8 +110,16 @@ export async function ensureNotificationReady(): Promise<boolean> {
   return ensurePermission();
 }
 
-/** Magic prefix marking a plain-text XMTP message as a private control payload
- *  rather than a chat message. Re-exported from pushRegister so the channels
- *  list / conversation view can suppress these from the UI without importing the
- *  XMTP-client-typed module. */
-export { isMetroControlBody } from './pushRegister';
+/** Public re-exports from the XMTP-client-typed `pushRegister` module so callers
+ *  import the whole push surface from one place (`lib/push`):
+ *   - `isMetroControlBody`     — suppress control DMs in list / conversation UI
+ *     (no XMTP-client import needed at the call site).
+ *   - `registerPushWithDaemon` — auto-register the device token over an XMTP
+ *     control DM (called from the client-ready / account-switch paths).
+ *   - `presentInboundNotification` — foreground local notification (option b),
+ *     called from the global message stream. */
+export {
+  isMetroControlBody,
+  registerPushWithDaemon,
+  presentInboundNotification,
+} from './pushRegister';
