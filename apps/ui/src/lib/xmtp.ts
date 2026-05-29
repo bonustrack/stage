@@ -137,10 +137,6 @@ export { peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap } 
 /** URI prefix used for inbound XMTP "from" addresses. Mirrors the mobile app. */
 export const XMTP_USER_PREFIX = 'metro://xmtp/user/';
 
-export function isXmtpLine(line: string | undefined | null): boolean {
-  return !!line && line.startsWith('metro://xmtp/');
-}
-
 export function convIdOfLine(line: string): string | null {
   const m = line.match(/^metro:\/\/xmtp\/([^/]+)$/);
   return m ? m[1] : null;
@@ -190,15 +186,6 @@ export async function createAskQuestionGroup(): Promise<string> {
   return json.conversationId;
 }
 
-/** Drop the local XMTP identity. Next `getOrCreateXmtpClient` mints a fresh wallet. */
-export async function resetXmtpClient(): Promise<void> {
-  cachedClient?.close();
-  cachedClient = null;
-  localStorage.removeItem(PRIVATE_KEY_KEY);
-  localStorage.removeItem(ADDRESS_KEY);
-  localStorage.removeItem(ENV_KEY);
-}
-
 /** Find or create a DM with a peer by Ethereum address. Returns the conv id
  *  ready to push into `/xmtp/:convId`. */
 export async function openDmWithAddress(address: string): Promise<string> {
@@ -235,14 +222,18 @@ export function setLastReadNs(convId: string, ns: number): void {
  *  The numeric unread *count* stays per-device (lastReadNs); the binary
  *  read/unread state propagates cross-device. */
 
+/** Map an XMTP `ConsentState` enum to its string form used across the UI. */
+function consentStateToString(s: ConsentState): 'allowed' | 'denied' | 'unknown' {
+  return s === ConsentState.Allowed ? 'allowed'
+    : s === ConsentState.Denied ? 'denied' : 'unknown';
+}
+
 /** Read a conversation's synced consent state as a string. */
 export async function getConvConsent(convId: string): Promise<'allowed' | 'denied' | 'unknown'> {
   try {
     const conv = await convOfLine(lineOfConv(convId));
     if (!conv) return 'unknown';
-    const state = await conv.consentState();
-    return state === ConsentState.Allowed ? 'allowed'
-      : state === ConsentState.Denied ? 'denied' : 'unknown';
+    return consentStateToString(await conv.consentState());
   } catch { return 'unknown'; }
 }
 
@@ -288,9 +279,7 @@ export async function streamConvConsent(
     onValue: (records: Consent[]) => {
       for (const c of records) {
         if (c.entityType !== ConsentEntityType.GroupId) continue;
-        const state = c.state === ConsentState.Allowed ? 'allowed'
-          : c.state === ConsentState.Denied ? 'denied' : 'unknown';
-        onChange(c.entity, state);
+        onChange(c.entity, consentStateToString(c.state));
       }
     },
     onError: () => { /* backstops resync */ },

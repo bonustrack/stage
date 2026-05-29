@@ -6,7 +6,7 @@ const route = useRoute();
 /** True when running inside an iframe (the embed widget on a 3rd-party
  *  site). Embeds never show the metro tab bar — only the full metro.box
  *  site does. */
-const isEmbedded = typeof window !== 'undefined' && window.self !== window.top;
+const isEmbedded = runningInIframe();
 /** Hide the tab bar on the full-screen XMTP conversation view, on embed
  *  routes, and whenever we're iframed. */
 const showTabs = computed(

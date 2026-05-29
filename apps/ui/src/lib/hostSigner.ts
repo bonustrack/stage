@@ -90,20 +90,6 @@ function hostSignMessage(message: string, timeoutMs = 120_000): Promise<string> 
   });
 }
 
-/** Subscribe to host wallet changes (connect / disconnect / switch). The host
- *  posts `metro:account` with the new address (or empty to signal disconnect).
- *  Returns an unsubscribe fn. */
-export function onHostAccountChange(cb: (address: string | null) => void): () => void {
-  const onMsg = (e: MessageEvent): void => {
-    if (!fromParent(e)) return;
-    const d = e.data as { type?: string; address?: string } | null;
-    if (d?.type !== 'metro:account') return;
-    cb(typeof d.address === 'string' && /^0x[0-9a-fA-F]{40}$/.test(d.address) ? d.address.toLowerCase() : null);
-  };
-  window.addEventListener('message', onMsg);
-  return () => window.removeEventListener('message', onMsg);
-}
-
 /** XMTP `Signer` backed by the host wallet. `address` comes from getHostAccount(). */
 export function hostSigner(address: string): Signer {
   return {
