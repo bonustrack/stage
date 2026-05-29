@@ -16,10 +16,14 @@
  *  call sites that all picked their own size constants and forgot the
  *  cache-buster half the time. */
 
-import { Image, View } from 'react-native';
+import { Image, Pressable, View } from 'react-native';
 import type { ImageStyle, StyleProp } from 'react-native';
 import { stampAvatarUrl, AVATAR_SIZES, type AvatarSize } from '@metro-labs/kit/avatar';
 import { avatarRenderUrl } from '@metro-labs/client/profile/snapshot';
+
+/** Fetch size (px) requested when an avatar is opened large — independent of
+ *  the displayed size so the fullscreen viewer gets a crisp image. */
+const FULLSCREEN_FETCH_PX = 512;
 
 export type { AvatarSize };
 export { AVATAR_SIZES };
@@ -32,18 +36,25 @@ interface Props {
   /** Custom uploaded avatar URI (ipfs:// or https://). Takes precedence
    *  over `address` when set + non-empty. */
   imageUri?: string | null;
-  size?: AvatarSize;
+  /** Either a canonical preset (`sm`/`md`/`lg`) or an explicit pixel size for
+   *  one-off larger/smaller call sites that don't map onto a preset. */
+  size?: AvatarSize | number;
   /** Cache-buster appended to the stamp URL. Pass `getPeerAvatarCb(address)`
    *  for peer rows so an avatar update invalidates the cached image. */
   cacheBuster?: number | string;
   /** Extra style overrides (background colour, ring, etc.). */
   style?: StyleProp<ImageStyle>;
+  /** Tap handler. Receives a HIGH-RES resolved image URI (sized for the
+   *  fullscreen viewer), or null when there's no image (placeholder circle).
+   *  When set, the avatar is wrapped in a Pressable. Keeps the avatar-URL
+   *  resolution in one place so call sites don't re-derive stamp/IPFS URLs. */
+  onPress?: (fullUri: string | null) => void;
 }
 
 export function Avatar({
-  address, imageUri, size = 'md', cacheBuster, style,
+  address, imageUri, size = 'md', cacheBuster, style, onPress,
 }: Props): React.ReactElement {
-  const px = SIZE_PX[size];
+  const px = typeof size === 'number' ? size : SIZE_PX[size];
   const placeholderBg = '#282a2d';
   /** stamp.fyi serves doubled-pixel WebPs by convention — keeps retina rows
    *  crisp without bumping the displayed dimension. */
@@ -55,9 +66,21 @@ export function Avatar({
   if (imageUri && imageUri.trim()) uri = avatarRenderUrl(address ?? '', imageUri, fetchPx);
   else if (address) uri = stampAvatarUrl(address, px, cacheBuster);
 
-  if (!uri) {
-    return <View style={[baseStyle, style]} />;
-  }
-  return <Image source={{ uri }} style={[baseStyle, style]} />;
+  const inner = uri
+    ? <Image source={{ uri }} style={[baseStyle, style]} />
+    : <View style={[baseStyle, style]} />;
+
+  if (!onPress) return inner;
+
+  /** Resolve a larger URI for the fullscreen viewer than the displayed one. */
+  let fullUri: string | null = null;
+  if (imageUri && imageUri.trim()) fullUri = avatarRenderUrl(address ?? '', imageUri, FULLSCREEN_FETCH_PX);
+  else if (address) fullUri = stampAvatarUrl(address, FULLSCREEN_FETCH_PX / 2, cacheBuster);
+
+  return (
+    <Pressable onPress={() => onPress(fullUri)} hitSlop={8}>
+      {inner}
+    </Pressable>
+  );
 }
 

@@ -236,10 +236,10 @@ export default function Wallet(): React.ReactElement {
               {/* Token avatar with a small mainnet network-bullet overlay, like
                   Snapshot UI treasury. `resizeMode: contain` so the IPFS logo
                   isn't cropped/zoomed inside the small badge slot. */}
-              <View style={{ width: 36, height: 36 }}>
+              <View style={{ width: 32, height: 32 }}>
                 <Image
                   source={{ uri: r.logoUrl }}
-                  style={{ width: 36, height: 36, borderRadius: 999, backgroundColor: border }}
+                  style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border }}
                 />
                 <Image
                   source={{ uri: MAINNET_NETWORK_LOGO }}
