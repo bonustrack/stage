@@ -111,6 +111,32 @@ export async function markConvUnread(convId: string): Promise<void> {
   setCachedRows(next);
 }
 
+/** Patch a row's last-message preview after the LOCAL user sends — XMTP
+ *  self-sends don't reliably replay through `streamAllMessages`, so without
+ *  this the channels list keeps showing the previous preview/timestamp until
+ *  the next 30s poll or app resume. Mirrors the stream-update path: bump
+ *  `lastTs`, set the preview, mark it as from self, and re-sort newest-first so
+ *  the conversation jumps to the top. Reading the conv also clears unread, so we
+ *  zero those here too. No-op if the row isn't cached yet (a fresh conv lands on
+ *  the next network refresh). */
+export function patchRowSent(convId: string, preview: string): void {
+  if (!rows) return;
+  const idx = rows.findIndex(r => r.convId === convId);
+  if (idx === -1) return;
+  const cur = rows[idx]!;
+  const updated: CachedRow = {
+    ...cur,
+    lastTs: Date.now(),
+    lastPreview: preview.slice(0, 80),
+    lastFromSelf: true,
+    unreadCount: 0,
+    markedUnread: false,
+  };
+  /** Move the just-touched conv to the top — the list is sorted newest-first. */
+  const next = [updated, ...rows.slice(0, idx), ...rows.slice(idx + 1)];
+  setCachedRows(next);
+}
+
 /** Apply a consent change that arrived from another device (via the consent
  *  stream) to the cached rows so the badge reconciles live without a refetch. */
 export function applyConsentToRows(convId: string, markedUnread: boolean): void {

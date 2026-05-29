@@ -3,6 +3,7 @@
  *  inline-editable. DMs don't get this view (they have no group metadata). */
 
 import { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   ActivityIndicator, Alert, FlatList, Image, Modal, Pressable, Text, TextInput, View,
 } from 'react-native';
@@ -36,6 +37,13 @@ export default function GroupDetail(): React.ReactElement {
 
   const { convId } = useLocalSearchParams<{ convId: string }>();
   const line = lineOfConv(convId ?? '');
+  const queryClient = useQueryClient();
+  /** Invalidate the cached conversation metadata so the chat-view topnav (which
+   *  reads `useConvMeta`, a 5-min-stale TanStack query) picks up a renamed group
+   *  / new group image / description without an app reload. */
+  const invalidateConvMeta = (): void => {
+    if (convId) void queryClient.invalidateQueries({ queryKey: ['convMeta', convId] });
+  };
 
   const [name, setName] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
@@ -218,6 +226,7 @@ export default function GroupDetail(): React.ReactElement {
       if (!group.updateImageUrl) throw new Error('Not a group conversation');
       await group.updateImageUrl(url);
       setImageUrl(url);
+      invalidateConvMeta();
     } catch (e) {
       Alert.alert('Image upload failed', (e as Error).message ?? 'Unknown error');
     } finally { setUploadingImage(false); }
@@ -235,6 +244,7 @@ export default function GroupDetail(): React.ReactElement {
       await group.updateDescription(next);
       setDescription(next);
       setEditingDescription(false);
+      invalidateConvMeta();
     } catch (e) {
       Alert.alert('Description update failed', (e as Error).message ?? 'Unknown error');
     } finally { setSavingDescription(false); }
@@ -277,6 +287,7 @@ export default function GroupDetail(): React.ReactElement {
       await group.updateName?.(next);
       setName(next);
       setEditing(false);
+      invalidateConvMeta();
     } catch (e) {
       Alert.alert('Rename failed', (e as Error).message ?? 'Unknown error');
     } finally { setSaving(false); }
@@ -292,7 +303,7 @@ export default function GroupDetail(): React.ReactElement {
           <HeroIcon name="arrowLeft" size={22} color={fg} />
         </Pressable>
         <Pressable onPress={() => setOverflowOpen(true)} hitSlop={10} style={{ padding: 6 }}>
-          <HeroIcon name="dotsVertical" size={22} color={fg} />
+          <HeroIcon name="dotsHorizontal" size={22} color={fg} />
         </Pressable>
       </View>
 

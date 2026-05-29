@@ -79,6 +79,8 @@ export const HERO_ICON_PATHS = {
   desktop: 'M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
   // dots-vertical — overflow / "more" menu trigger (heroicons v1 outline)
   dotsVertical: 'M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z',
+  // dots-horizontal — overflow / "more" menu trigger (heroicons v1 outline)
+  dotsHorizontal: 'M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z',
 } as const;
 
 export type HeroIconName = keyof typeof HERO_ICON_PATHS;
