@@ -10,13 +10,12 @@ import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { createPublicClient, http, formatEther, formatUnits, type Hex } from 'viem';
 import { mainnet } from 'viem/chains';
 import { useRouter } from 'expo-router';
-import { getOrCreateXmtpClient, shortAddress } from '../../lib/xmtp';
+import { getOrCreateXmtpClient } from '../../lib/xmtp';
 import { flash } from '../../lib/toast';
-import { usePeerProfiles, getPeerName, getPeerAvatarCb } from '../../lib/peerProfiles';
+import { usePeerProfiles } from '../../lib/peerProfiles';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { getErc20UsdPrices, getSimplePrices } from '../../lib/coingecko';
 import { HeroIcon, type HeroIconName } from '../../components/HeroIcon';
-import { Avatar } from '../../components/Avatar';
 import { stampTokenUrl, NATIVE_TOKEN_SENTINEL } from '@metro-labs/kit/avatar';
 
 const MULTICALL3 = '0xcA11bde05977b3631167028862bE2a173976CA11' as const;
@@ -153,20 +152,21 @@ export default function Wallet(): React.ReactElement {
     return n.toLocaleString(undefined, { maximumFractionDigits: max });
   };
 
-  /** Action pill — fully-rounded (`borderRadius: 999`). Lives in a wrap row so
-   *  the four actions (Send / Receive / Top up / Buy) flow 2-per-line on narrow
-   *  screens. `flexBasis: '47%'` keeps two pills per row with the row gap. */
+  /** Action pill — fully-rounded (`borderRadius: 999`). All four actions
+   *  (Send / Receive / Top up / Buy) sit side-by-side on a SINGLE row with
+   *  equal widths (`flex: 1`). Narrower now, so the icon stacks over a smaller
+   *  label to keep both readable. */
   const Btn = ({ icon, label, onPress }: { icon: HeroIconName; label: string; onPress: () => void }): React.ReactElement => (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => ({
-        flexGrow: 1, flexBasis: '47%', paddingVertical: 12, borderRadius: 999,
-        alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8,
+        flex: 1, paddingVertical: 10, borderRadius: 999,
+        alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 4,
         backgroundColor: pressed ? border : card, borderWidth: 1, borderColor: border,
       })}
     >
-      <HeroIcon name={icon} size={22} color={head} />
-      <Text style={{ color: head, fontSize: 15, fontFamily: 'Calibre-Semibold' }}>{label}</Text>
+      <HeroIcon name={icon} size={20} color={head} />
+      <Text style={{ color: head, fontSize: 13, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{label}</Text>
     </Pressable>
   );
 
@@ -176,40 +176,19 @@ export default function Wallet(): React.ReactElement {
         <Text style={{ color: head, fontSize: 22, fontFamily: 'Calibre-Semibold' }}>Wallet</Text>
       </View>
 
-      {/* Identity card — left-aligned: avatar + name/address header row, then the
-          total USD value below. Tightened vertical padding so there's no empty
-          dead space under the value (the old card centred everything and left a
-          tall gap at the bottom). */}
+      {/* Value card — compact, left-aligned. Just the big total USD value;
+          the account header (avatar/name/address) and the "TOTAL VALUE ·
+          ETHEREUM" label were dropped per review. */}
       <View style={{
         marginHorizontal: 16, marginTop: 8, paddingHorizontal: 16, paddingVertical: 16,
         borderRadius: 16, backgroundColor: card, borderWidth: 1, borderColor: border,
       }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <Avatar
-            address={address || null}
-            size="md"
-            cacheBuster={address ? getPeerAvatarCb(address) : undefined}
-            style={{ backgroundColor: border }}
-          />
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={{ color: head, fontSize: 17, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
-              {getPeerName(address) ?? (address ? shortAddress(address) : '—')}
-            </Text>
-            <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
-              {address ? shortAddress(address) : ''}
-            </Text>
-          </View>
-        </View>
-
-        <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', marginTop: 16 }}>
-          TOTAL VALUE · ETHEREUM
-        </Text>
         {err ? (
-          <Text style={{ color: '#d96868', fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
+          <Text style={{ color: '#d96868', fontSize: 13, fontFamily: 'Calibre-Medium' }}>
             Couldn’t load balances
           </Text>
         ) : (
-          <Text style={{ color: head, fontSize: 34, fontFamily: 'Calibre-Semibold', marginTop: 2 }}>
+          <Text style={{ color: head, fontSize: 34, fontFamily: 'Calibre-Semibold' }}>
             {totalUsd === null ? '…' : fmtUsd(totalUsd)}
           </Text>
         )}
@@ -217,8 +196,8 @@ export default function Wallet(): React.ReactElement {
 
       {/* Four action pills — Send / Receive route to existing screens;
           Top up / Buy are placeholders (no on/off-ramp wired yet) and flash a
-          "coming soon" toast. Wrap row → 2×2 on phones, single row on wide. */}
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginHorizontal: 16, marginTop: 12 }}>
+          "coming soon" toast. Single row, equal widths. */}
+      <View style={{ flexDirection: 'row', gap: 8, marginHorizontal: 16, marginTop: 12 }}>
         <Btn icon="send" label="Send" onPress={() => router.push('/wallet/send')} />
         <Btn icon="arrowDown" label="Receive" onPress={() => router.push('/wallet/receive')} />
         <Btn icon="plus" label="Top up" onPress={() => flash('Top up — coming soon')} />
@@ -271,11 +250,11 @@ export default function Wallet(): React.ReactElement {
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={{ color: head, fontSize: 17, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{r.name}</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                  <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium' }}>
+                  <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
                     {r.priceUsd === null ? r.symbol : fmtUsd(r.priceUsd, r.priceUsd < 1 ? 4 : 2)}
                   </Text>
                   {changeText ? (
-                    <Text style={{ color: changeColor, fontSize: 14, fontFamily: 'Calibre-Medium' }}>
+                    <Text style={{ color: changeColor, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
                       {changeText}
                     </Text>
                   ) : null}
@@ -286,7 +265,7 @@ export default function Wallet(): React.ReactElement {
                 <Text style={{ color: head, fontSize: 17, fontFamily: 'Calibre-Semibold' }}>
                   {valueUsd === null ? '—' : fmtUsd(valueUsd)}
                 </Text>
-                <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
+                <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
                   {rows ? `${fmtBalance(r.balance)} ${r.symbol}` : '…'}
                 </Text>
               </View>
