@@ -2,8 +2,8 @@
  *  stablecoins) with live USD prices via CoinGecko Pro, and Send / Receive
  *  shortcuts. Balances are pulled in a single Multicall3 round-trip via the
  *  brovider RPC (the proxy Snapshot UI uses; viem's default public endpoint
- *  was failing in RN). The row layout mirrors Snapshot UI's treasury page:
- *  bordered rows, symbol + name on the left, balance + USD value on the right. */
+ *  was failing in RN). Each row is a 4-corner layout: token name + price/24h-change
+ *  on the left, USD value + amount/symbol on the right. */
 
 import { useEffect, useState } from 'react';
 import { Image, Pressable, ScrollView, Text, View } from 'react-native';
@@ -176,29 +176,36 @@ export default function Wallet(): React.ReactElement {
         <Text style={{ color: head, fontSize: 22, fontFamily: 'Calibre-Semibold' }}>Wallet</Text>
       </View>
 
-      {/* Identity card — avatar + name + tap-to-copy address + total USD value. */}
+      {/* Identity card — left-aligned: avatar + name/address header row, then the
+          total USD value below. Tightened vertical padding so there's no empty
+          dead space under the value (the old card centred everything and left a
+          tall gap at the bottom). */}
       <View style={{
-        marginHorizontal: 16, marginTop: 8, padding: 20, borderRadius: 16,
-        backgroundColor: card, borderWidth: 1, borderColor: border, alignItems: 'center',
+        marginHorizontal: 16, marginTop: 8, paddingHorizontal: 16, paddingVertical: 16,
+        borderRadius: 16, backgroundColor: card, borderWidth: 1, borderColor: border,
       }}>
-        <Avatar
-          address={address || null}
-          size="lg"
-          cacheBuster={address ? getPeerAvatarCb(address) : undefined}
-          style={{ backgroundColor: border }}
-        />
-        <Text style={{ color: head, fontSize: 17, fontFamily: 'Calibre-Semibold', marginTop: 12 }} numberOfLines={1}>
-          {getPeerName(address) ?? (address ? shortAddress(address) : '—')}
-        </Text>
-        <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
-          {address ? shortAddress(address) : ''}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <Avatar
+            address={address || null}
+            size="md"
+            cacheBuster={address ? getPeerAvatarCb(address) : undefined}
+            style={{ backgroundColor: border }}
+          />
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={{ color: head, fontSize: 17, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
+              {getPeerName(address) ?? (address ? shortAddress(address) : '—')}
+            </Text>
+            <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
+              {address ? shortAddress(address) : ''}
+            </Text>
+          </View>
+        </View>
 
-        <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', marginTop: 20 }}>
+        <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', marginTop: 16 }}>
           TOTAL VALUE · ETHEREUM
         </Text>
         {err ? (
-          <Text style={{ color: '#d96868', fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 4, textAlign: 'center' }}>
+          <Text style={{ color: '#d96868', fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
             Couldn’t load balances
           </Text>
         ) : (
@@ -260,25 +267,27 @@ export default function Wallet(): React.ReactElement {
                   }}
                 />
               </View>
+              {/* Left column — token NAME (top) over price + 24h change (bottom). */}
               <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={{ color: head, fontSize: 17, fontFamily: 'Calibre-Semibold' }}>{r.symbol}</Text>
+                <Text style={{ color: head, fontSize: 17, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{r.name}</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                  <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
-                    {r.priceUsd === null ? r.name : fmtUsd(r.priceUsd, r.priceUsd < 1 ? 4 : 2)}
+                  <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium' }}>
+                    {r.priceUsd === null ? r.symbol : fmtUsd(r.priceUsd, r.priceUsd < 1 ? 4 : 2)}
                   </Text>
                   {changeText ? (
-                    <Text style={{ color: changeColor, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+                    <Text style={{ color: changeColor, fontSize: 14, fontFamily: 'Calibre-Medium' }}>
                       {changeText}
                     </Text>
                   ) : null}
                 </View>
               </View>
+              {/* Right column — USD VALUE (top, big/white) over amount + symbol (bottom). */}
               <View style={{ alignItems: 'flex-end' }}>
                 <Text style={{ color: head, fontSize: 17, fontFamily: 'Calibre-Semibold' }}>
-                  {rows ? fmtBalance(r.balance) : '…'}
-                </Text>
-                <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
                   {valueUsd === null ? '—' : fmtUsd(valueUsd)}
+                </Text>
+                <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
+                  {rows ? `${fmtBalance(r.balance)} ${r.symbol}` : '…'}
                 </Text>
               </View>
             </View>
