@@ -486,6 +486,35 @@ export async function groupMemberEthAddresses(conv: Conversation): Promise<strin
   }
 }
 
+/** Leave a group conversation. The XMTP RN SDK (5.7) exposes `group.leaveGroup()`
+ *  natively — it removes the local inbox from the group's member list (a real
+ *  leave, not a local hide). Falls back to denying consent (local hide) when the
+ *  conversation predates the method or `leaveGroup` throws, so the row still
+ *  disappears from the user's list either way. Returns `'left'` for a true leave,
+ *  `'hidden'` when it could only deny consent. */
+export async function leaveGroupConv(line: string): Promise<'left' | 'hidden'> {
+  const conv = await convOfLine(line);
+  if (!conv) throw new Error('Conversation not found');
+  const group = conv as unknown as {
+    leaveGroup?: () => Promise<void>;
+    updateConsent?: (state: XmtpConsent) => Promise<void>;
+  };
+  if (group.leaveGroup) {
+    try {
+      await group.leaveGroup();
+      /** Also deny consent so the conversation drops out of the local list
+       *  immediately, before the member-removal commit syncs back. */
+      await group.updateConsent?.('denied').catch(() => undefined);
+      return 'left';
+    } catch {
+      /* fall through to consent-deny hide */
+    }
+  }
+  if (!group.updateConsent) throw new Error('Not a group conversation');
+  await group.updateConsent('denied');
+  return 'hidden';
+}
+
 export type { ConversationVersion };
 
 /** URI prefix used for inbound XMTP "from" addresses. Mirrors the daemon-side train

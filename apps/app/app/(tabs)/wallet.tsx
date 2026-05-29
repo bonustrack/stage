@@ -11,6 +11,7 @@ import { createPublicClient, http, formatEther, formatUnits, type Hex } from 'vi
 import { mainnet } from 'viem/chains';
 import { useRouter } from 'expo-router';
 import { getOrCreateXmtpClient, shortAddress } from '../../lib/xmtp';
+import { flash } from '../../lib/toast';
 import { usePeerProfiles, getPeerName, getPeerAvatarCb } from '../../lib/peerProfiles';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { getErc20UsdPrices, getSimplePrices } from '../../lib/coingecko';
@@ -152,12 +153,15 @@ export default function Wallet(): React.ReactElement {
     return n.toLocaleString(undefined, { maximumFractionDigits: max });
   };
 
+  /** Action pill — fully-rounded (`borderRadius: 999`). Lives in a wrap row so
+   *  the four actions (Send / Receive / Top up / Buy) flow 2-per-line on narrow
+   *  screens. `flexBasis: '47%'` keeps two pills per row with the row gap. */
   const Btn = ({ icon, label, onPress }: { icon: HeroIconName; label: string; onPress: () => void }): React.ReactElement => (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => ({
-        flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
-        flexDirection: 'row', gap: 8,
+        flexGrow: 1, flexBasis: '47%', paddingVertical: 12, borderRadius: 999,
+        alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8,
         backgroundColor: pressed ? border : card, borderWidth: 1, borderColor: border,
       })}
     >
@@ -204,9 +208,14 @@ export default function Wallet(): React.ReactElement {
         )}
       </View>
 
-      <View style={{ flexDirection: 'row', gap: 10, marginHorizontal: 16, marginTop: 12 }}>
+      {/* Four action pills — Send / Receive route to existing screens;
+          Top up / Buy are placeholders (no on/off-ramp wired yet) and flash a
+          "coming soon" toast. Wrap row → 2×2 on phones, single row on wide. */}
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginHorizontal: 16, marginTop: 12 }}>
         <Btn icon="send" label="Send" onPress={() => router.push('/wallet/send')} />
         <Btn icon="arrowDown" label="Receive" onPress={() => router.push('/wallet/receive')} />
+        <Btn icon="plus" label="Top up" onPress={() => flash('Top up — coming soon')} />
+        <Btn icon="wallet" label="Buy" onPress={() => flash('Buy — coming soon')} />
       </View>
 
       {/* Asset list — Snapshot-treasury-style rows, border-bottom separators. */}

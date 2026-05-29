@@ -11,13 +11,16 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   convOfLine, getCachedXmtpClient, getOrCreateXmtpClient, lineOfConv,
-  memberInboxToAddressMap, stampBoxAvatarUrl, shortAddress,
+  memberInboxToAddressMap, shortAddress, leaveGroupConv,
 } from '../../lib/xmtp';
+import { flash } from '../../lib/toast';
 import { PublicIdentity } from '@xmtp/react-native-sdk';
 import { readProfile, uploadAvatar } from '../../lib/profile';
 import { avatarRenderUrl, type SnapshotProfile } from '@metro-labs/client/profile/snapshot';
+import { usePeerProfiles, getPeerAvatar, getPeerAvatarCb } from '../../lib/peerProfiles';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { HeroIcon } from '../../components/HeroIcon';
+import { Avatar } from '../../components/Avatar';
 import { ImageViewer } from '../../components/ImageViewer';
 
 export default function GroupDetail(): React.ReactElement {
@@ -67,6 +70,16 @@ export default function GroupDetail(): React.ReactElement {
   const [savingDescription, setSavingDescription] = useState(false);
   /** When set, the fullscreen ImageViewer shows the group image. */
   const [viewerOpen, setViewerOpen] = useState(false);
+
+  /** Overflow (3-dot) menu in the group-info topnav + its leave-in-flight flag. */
+  const [overflowOpen, setOverflowOpen] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+
+  /** Resolve each member's Snapshot profile so the rows pick up custom avatars
+   *  + the cache-buster, exactly like the conversation bubbles and channels
+   *  list. `profilesVersion` bumps as batches land → drives the FlatList
+   *  `extraData` so rows re-render once avatars resolve. */
+  const profilesVersion = usePeerProfiles(members);
 
   useEffect(() => {
     const c = getCachedXmtpClient();
@@ -190,6 +203,9 @@ export default function GroupDetail(): React.ReactElement {
     if (uploadingImage) return;
     const r = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: 'images', quality: 0.85, allowsMultipleSelection: false,
+      /** Built-in square crop/resize step before upload — `allowsEditing` is
+       *  part of expo-image-picker, no extra native dep. */
+      allowsEditing: true, aspect: [1, 1],
     });
     if (r.canceled || !r.assets?.length) return;
     const a = r.assets[0]!;
@@ -224,6 +240,33 @@ export default function GroupDetail(): React.ReactElement {
     } finally { setSavingDescription(false); }
   };
 
+  /** Leave the group from the info view — confirm, call the SDK (true leave
+   *  when supported, else consent-deny hide), pop back to the conversation list. */
+  const leaveGroup = (): void => {
+    setOverflowOpen(false);
+    Alert.alert(
+      'Leave group',
+      'You’ll stop receiving messages from this group. You can be re-added by a member later.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Leave', style: 'destructive', onPress: () => {
+            void (async (): Promise<void> => {
+              setLeaving(true);
+              try {
+                const result = await leaveGroupConv(line);
+                flash(result === 'left' ? 'Left group' : 'Group hidden');
+                router.replace('/');
+              } catch (e) {
+                Alert.alert('Couldn’t leave', (e as Error).message ?? 'Unknown error');
+              } finally { setLeaving(false); }
+            })();
+          },
+        },
+      ],
+    );
+  };
+
   const saveName = async (): Promise<void> => {
     const next = draft.trim();
     if (!next || saving) return;
@@ -243,10 +286,13 @@ export default function GroupDetail(): React.ReactElement {
     <View style={{ flex: 1, backgroundColor: bg }}>
       <View style={{
         height: 44 + insets.top, paddingTop: insets.top, paddingHorizontal: 14,
-        flexDirection: 'row', alignItems: 'center',
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
       }}>
         <Pressable onPress={() => router.back()} hitSlop={10} style={{ padding: 6 }}>
           <HeroIcon name="arrowLeft" size={22} color={fg} />
+        </Pressable>
+        <Pressable onPress={() => setOverflowOpen(true)} hitSlop={10} style={{ padding: 6 }}>
+          <HeroIcon name="dotsVertical" size={22} color={fg} />
         </Pressable>
       </View>
 
@@ -383,6 +429,7 @@ export default function GroupDetail(): React.ReactElement {
       </View>
       <FlatList
         data={members}
+        extraData={profilesVersion}
         keyExtractor={addr => addr.toLowerCase()}
         renderItem={({ item }) => {
           const isSelf = item.toLowerCase() === selfAddress;
@@ -399,9 +446,12 @@ export default function GroupDetail(): React.ReactElement {
                 opacity: isRemovingThis ? 0.5 : 1,
               })}
             >
-              <Image
-                source={{ uri: stampBoxAvatarUrl(item) }}
-                style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border }}
+              <Avatar
+                address={item}
+                imageUri={getPeerAvatar(item)}
+                cacheBuster={getPeerAvatarCb(item)}
+                size="md"
+                style={{ backgroundColor: border }}
               />
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={{ color: head, fontSize: 15, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
@@ -480,6 +530,31 @@ export default function GroupDetail(): React.ReactElement {
               <Text style={{ color: dark ? '#000000' : '#ffffff', fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
                 {adding ? 'Adding…' : 'Add member'}
               </Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Overflow menu — opened by the 3-dot button in the topnav. Holds Leave group. */}
+      <Modal visible={overflowOpen} transparent animationType="fade" onRequestClose={() => setOverflowOpen(false)}>
+        <Pressable onPress={() => setOverflowOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>
+          <Pressable onPress={e => e.stopPropagation()} style={{
+            backgroundColor: dark ? '#282a2d' : '#ffffff',
+            borderTopLeftRadius: 16, borderTopRightRadius: 16,
+            padding: 16, paddingBottom: 24 + insets.bottom, gap: 4,
+          }}>
+            <Pressable
+              onPress={leaveGroup}
+              disabled={leaving}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, opacity: leaving ? 0.5 : 1 }}
+            >
+              <HeroIcon name="arrowLeft" size={20} color={dark ? '#ff6b80' : '#b91c1c'} />
+              <Text style={{ color: dark ? '#ff6b80' : '#b91c1c', fontSize: 16, fontFamily: 'Calibre-Medium' }}>
+                {leaving ? 'Leaving…' : 'Leave group'}
+              </Text>
+            </Pressable>
+            <Pressable onPress={() => setOverflowOpen(false)} style={{ paddingVertical: 10, alignItems: 'center' }}>
+              <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium' }}>Cancel</Text>
             </Pressable>
           </Pressable>
         </Pressable>

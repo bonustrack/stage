@@ -52,6 +52,9 @@ export default function EditProfileModal({
   const pickAvatar = async (): Promise<void> => {
     const r = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: 'images', quality: 0.85, allowsMultipleSelection: false,
+      /** Built-in square crop/resize step before upload — `allowsEditing` is
+       *  part of expo-image-picker, no extra native dep. */
+      allowsEditing: true, aspect: [1, 1],
     });
     if (r.canceled || !r.assets?.length) return;
     const a = r.assets[0];

@@ -77,6 +77,8 @@ export const HERO_ICON_PATHS = {
   moon: 'M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z',
   // computer-desktop — "system" theme picker (heroicons v1 desktop-computer)
   desktop: 'M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
+  // dots-vertical — overflow / "more" menu trigger (heroicons v1 outline)
+  dotsVertical: 'M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z',
 } as const;
 
 export type HeroIconName = keyof typeof HERO_ICON_PATHS;

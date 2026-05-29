@@ -3,7 +3,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Animated as RNAnimated, FlatList, Modal, Pressable, Share, Text, View,
+  Alert, Animated as RNAnimated, FlatList, Modal, Pressable, Share, Text, View,
 } from 'react-native';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,8 +20,9 @@ import { HeroIcon } from '../../components/HeroIcon';
 import { Avatar } from '../../components/Avatar';
 import {
   XMTP_USER_PREFIX, lineOfConv, useXmtpFeed, xmtpReact, xmtpReply,
-  shortAddress,
+  shortAddress, leaveGroupConv,
 } from '../../lib/xmtp';
+import { flash } from '../../lib/toast';
 import { markConvRead } from '../../lib/channelsCache';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import type { HistoryEntry } from '../../lib/types';
@@ -108,6 +109,9 @@ export default function XmtpConversation(): React.ReactElement {
   const [listEpoch, setListEpoch] = useState(0);
   const [replyingTo, setReplyingTo] = useState<{ id: string; preview: string } | null>(null);
   const [menuFor, setMenuFor] = useState<HistoryEntry | null>(null);
+  /** Topnav overflow (3-dot) menu — groups only. Holds the "Leave group" action. */
+  const [overflowOpen, setOverflowOpen] = useState(false);
+  const [leaving, setLeaving] = useState(false);
   /** Optimistic outbound entries — rendered immediately on send, dropped once the composer
    *  resolves its send promise (XMTP self-sends don't always come back via streamMessages). */
   const [optimistic, setOptimistic] = useState<HistoryEntry[]>([]);
@@ -216,6 +220,33 @@ export default function XmtpConversation(): React.ReactElement {
     void xmtpReact(activeLine, messageId, emoji)
       .catch((e: unknown) => { console.warn('xmtp react failed', e); });
   }, [activeLine]);
+
+  /** Leave-group flow — confirm, call the SDK (true leave when available, else
+   *  consent-deny hide), then pop back to the conversation list. */
+  const onLeaveGroup = useCallback(() => {
+    setOverflowOpen(false);
+    Alert.alert(
+      'Leave group',
+      'You’ll stop receiving messages from this group. You can be re-added by a member later.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Leave', style: 'destructive', onPress: () => {
+            void (async (): Promise<void> => {
+              setLeaving(true);
+              try {
+                const result = await leaveGroupConv(activeLine);
+                flash(result === 'left' ? 'Left group' : 'Group hidden');
+                router.replace('/');
+              } catch (e) {
+                Alert.alert('Couldn’t leave', (e as Error).message ?? 'Unknown error');
+              } finally { setLeaving(false); }
+            })();
+          },
+        },
+      ],
+    );
+  }, [activeLine, router]);
 
   if (!convId) {
     return (
@@ -339,6 +370,16 @@ export default function XmtpConversation(): React.ReactElement {
               : peerAddr ? (getPeerName(peerAddr) ?? `${peerAddr.slice(0, 6)}…${peerAddr.slice(-4)}`) : ''}
           </Text>
         </Pressable>
+        {/** Overflow (3-dot) menu — groups only. Holds "Leave group". */}
+        {isGroup ? (
+          <Pressable
+            onPress={() => setOverflowOpen(true)}
+            hitSlop={8}
+            style={{ paddingHorizontal: 14, justifyContent: 'center' }}
+          >
+            <HeroIcon name="dotsVertical" size={22} color={fg} />
+          </Pressable>
+        ) : null}
       </View>
       {/** Fade strip below the top nav — mirrors the composer's top fade. The nav is
        *  `52 + insets.top` tall; start the fade 1px higher so its solid-bg top edge
@@ -410,6 +451,37 @@ export default function XmtpConversation(): React.ReactElement {
       />
       </View>
       </KeyboardStickyView>
+      {/** Group overflow menu — bottom sheet with "Leave group". */}
+      <Modal visible={overflowOpen} transparent animationType="fade" onRequestClose={() => setOverflowOpen(false)}>
+        <Pressable onPress={() => setOverflowOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>
+          <Pressable onPress={e => e.stopPropagation()} style={{
+            backgroundColor: dark ? '#282a2d' : '#ffffff',
+            borderTopLeftRadius: 16, borderTopRightRadius: 16,
+            padding: 16, paddingBottom: 24 + insets.bottom, gap: 4,
+          }}>
+            <Pressable
+              onPress={() => router.push({ pathname: '/group/[convId]', params: { convId: convId ?? '' } })}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}
+            >
+              <HeroIcon name="users" size={20} color={fg} />
+              <Text style={{ color: fg, fontSize: 16, fontFamily: 'Calibre-Medium' }}>Group info</Text>
+            </Pressable>
+            <Pressable
+              onPress={onLeaveGroup}
+              disabled={leaving}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, opacity: leaving ? 0.5 : 1 }}
+            >
+              <HeroIcon name="arrowLeft" size={20} color={dark ? '#ff6b80' : '#b91c1c'} />
+              <Text style={{ color: dark ? '#ff6b80' : '#b91c1c', fontSize: 16, fontFamily: 'Calibre-Medium' }}>
+                {leaving ? 'Leaving…' : 'Leave group'}
+              </Text>
+            </Pressable>
+            <Pressable onPress={() => setOverflowOpen(false)} style={{ paddingVertical: 10, alignItems: 'center' }}>
+              <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium' }}>Cancel</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
       <BubbleActionMenu
         target={menuFor}
         dark={dark}
