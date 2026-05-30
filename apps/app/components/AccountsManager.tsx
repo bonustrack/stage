@@ -38,7 +38,7 @@ function reloadApp(): void {
   DevSettings.reload?.();
 }
 
-export function AccountsManager({ dark, flat = false }: { dark: boolean; flat?: boolean }): React.ReactElement {
+export function AccountsManager({ dark, flat = false, onSwitched }: { dark: boolean; flat?: boolean; onSwitched?: () => void }): React.ReactElement {
   const head = dark ? '#ffffff' : '#000000';
   const sub = dark ? '#7a7a7e' : '#8a929d';
   const border = dark ? '#282a2d' : '#e4e4e5';
@@ -157,6 +157,9 @@ export function AccountsManager({ dark, flat = false }: { dark: boolean; flat?: 
       await switchToAccount(id);
       await refresh();
       setExpanded(false);
+      /** Let the host dismiss itself after a switch (the full-page /accounts
+       *  switcher passes router.back). Other callers omit it → no-op. */
+      onSwitched?.();
     } catch (e) {
       Alert.alert('Switch failed', (e as Error).message);
     } finally { setBusy(false); }

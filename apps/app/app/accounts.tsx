@@ -35,7 +35,7 @@ export default function Accounts(): React.ReactElement {
       </Box>
 
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}>
-        <AccountsManager dark={dark} flat />
+        <AccountsManager dark={dark} flat onSwitched={() => router.back()} />
       </ScrollView>
     </Box>
   );
