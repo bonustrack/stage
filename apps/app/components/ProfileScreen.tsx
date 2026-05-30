@@ -128,6 +128,17 @@ export function ProfileScreen({ address, variant }: {
           <Text style={{ color: c.head, fontSize: 20, fontFamily: 'Calibre-Semibold', marginTop: 14 }}>
             {displayName}
           </Text>
+          {addr ? (
+            <Pressable
+              onPress={() => copy(addr, 'Address')}
+              hitSlop={8}
+              style={{ marginTop: 2 }}
+            >
+              <Text style={{ color: c.sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
+                {shortAddress(addr)}
+              </Text>
+            </Pressable>
+          ) : null}
           {profile?.about?.trim() ? (
             <Text style={{
               color: c.sub, fontSize: 14, marginTop: 6, textAlign: 'left',
@@ -146,8 +157,6 @@ export function ProfileScreen({ address, variant }: {
             />
           ) : null}
         </View>
-
-        {addr ? <InfoRow label="Wallet address" value={addr} onCopy={() => copy(addr, 'Address')} c={c} /> : null}
 
         {profile?.github?.trim() ? <InfoRow label="GitHub" value={profile.github} c={c} /> : null}
         {profile?.twitter?.trim() ? <InfoRow label="X (Twitter)" value={profile.twitter} c={c} /> : null}
