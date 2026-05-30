@@ -29,6 +29,7 @@ const PERMISSIONS = [
 ];
 
 const SERVICE_NAME = 'box.metro.pill.OverlayService';
+const FCM_SERVICE_NAME = 'box.metro.pill.MetroFcmService';
 
 /** @param {import('@expo/config-plugins').ExportedConfig} config */
 function withMetroPill(config) {
@@ -59,6 +60,28 @@ function withMetroPill(config) {
           'android:exported': 'false',
           'android:foregroundServiceType': 'microphone',
         },
+      });
+    }
+
+    // --- custom FCM service (avatar largeIcon notifications) ---
+    // Renders avatar data-pushes with a round largeIcon, delegates the rest to
+    // Expo's ExpoFirebaseMessagingService. intent-filter priority="1" so it wins
+    // as the default MESSAGING_EVENT receiver over Expo's (priority 0).
+    const hasFcm = app.service.some(
+      (s) => s.$ && s.$['android:name'] === FCM_SERVICE_NAME,
+    );
+    if (!hasFcm) {
+      app.service.push({
+        $: {
+          'android:name': FCM_SERVICE_NAME,
+          'android:exported': 'false',
+        },
+        'intent-filter': [
+          {
+            $: { 'android:priority': '1' },
+            action: [{ $: { 'android:name': 'com.google.firebase.MESSAGING_EVENT' } }],
+          },
+        ],
       });
     }
 

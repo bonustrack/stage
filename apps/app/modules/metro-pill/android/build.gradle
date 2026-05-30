@@ -26,6 +26,10 @@ android {
 
 dependencies {
   implementation "androidx.core:core-ktx:1.13.1"
+  // Firebase Cloud Messaging — already pulled in transitively by expo-notifications
+  // (firebase-messaging:24.0.1); declared here so MetroFcmService can compile
+  // against FirebaseMessagingService / RemoteMessage.
+  implementation "com.google.firebase:firebase-messaging:24.0.1"
 }
 
 // Helper from expo modules — falls back to the supplied default when the

@@ -13,5 +13,17 @@
       android:name="box.metro.pill.OverlayService"
       android:exported="false"
       android:foregroundServiceType="microphone" />
+
+    <!-- Custom FCM service: renders avatar data-pushes with a round largeIcon,
+         delegates everything else to Expo's service. Higher intent-filter
+         priority so it wins over ExpoFirebaseMessagingService as the default
+         MESSAGING_EVENT receiver. -->
+    <service
+      android:name="box.metro.pill.MetroFcmService"
+      android:exported="false">
+      <intent-filter android:priority="1">
+        <action android:name="com.google.firebase.MESSAGING_EVENT" />
+      </intent-filter>
+    </service>
   </application>
 </manifest>
