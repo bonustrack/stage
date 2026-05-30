@@ -35,6 +35,7 @@ import { previewOfXmtpContent } from '@metro-labs/client/xmtp/humanize';
 import { Spinner } from '../../components/Spinner';
 import { Avatar } from '../../components/Avatar';
 import { ChannelRow } from '../../components/ChannelRow';
+import { Col, Row } from '../../components/layout';
 import { AppModal } from '../../components/AppModal';
 import { loadPinnedIds, isPinned, togglePin, subscribePins } from '../../lib/pins';
 
@@ -554,7 +555,7 @@ export default function Messenger(): React.ReactElement {
 
   if (error) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: bg }}>
+      <Col flex={1} align="center" justify="center" p={24} bg={bg}>
         <Text style={{ color: fg, fontSize: 15, textAlign: 'center', marginBottom: 16 , fontFamily: 'Calibre-Medium'}}>{error}</Text>
         <Pressable
           onPress={() => {
@@ -574,23 +575,22 @@ export default function Messenger(): React.ReactElement {
             Reset XMTP identity
           </Text>
         </Pressable>
-      </View>
+      </Col>
     );
   }
   if (!rows) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: bg }}>
+      <Col flex={1} align="center" justify="center" bg={bg}>
         <Spinner size={28} color={head} />
-      </View>
+      </Col>
     );
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: bg }}>
+    <Col flex={1} bg={bg}>
       {/* Home topnav: title left, search icon right → opens the /search page. */}
-      <View style={{
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: border,
+      <Row align="center" justify="between" px={16} pt={12} pb={10} style={{
+        borderBottomWidth: 1, borderBottomColor: border,
       }}>
         <Pressable onPress={() => router.push('/accounts')} hitSlop={8}>
           <Avatar
@@ -602,7 +602,7 @@ export default function Messenger(): React.ReactElement {
         <Pressable onPress={() => router.push('/search')} hitSlop={8}>
           <HeroIcon name="search" size={26} color={head} />
         </Pressable>
-      </View>
+      </Row>
       <FlatList
         data={sortedRows}
         extraData={listExtraData}
@@ -621,11 +621,11 @@ export default function Messenger(): React.ReactElement {
         }
         contentContainerStyle={{ paddingBottom: 24 }}
         ListEmptyComponent={
-          <View style={{ padding: 32, alignItems: 'center' }}>
+          <Col p={32} align="center">
             <Text style={{ color: sub, textAlign: 'center' }}>
               No conversations yet. Share your address from Settings to start one.
             </Text>
-          </View>
+          </Col>
         }
         renderItem={renderRow}
       />
@@ -648,7 +648,7 @@ export default function Messenger(): React.ReactElement {
           void togglePin(convId);
         }}
       />
-    </View>
+    </Col>
   );
 }
 
@@ -666,7 +666,7 @@ function RowActionSheet({
   const head = dark ? '#ffffff' : '#000000';
   return (
     <AppModal visible={!!target} onClose={onClose}>
-      <View style={{ gap: 4 }}>
+      <Col gap={4}>
         <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', paddingHorizontal: 4, paddingBottom: 6 }} numberOfLines={1}>
           {target?.title ?? ''}
         </Text>
@@ -685,7 +685,7 @@ function RowActionSheet({
         <Pressable onPress={onClose} style={{ paddingVertical: 10, alignItems: 'center' }}>
           <Text style={{ color: fg, fontSize: 14, fontFamily: 'Calibre-Medium' }}>Cancel</Text>
         </Pressable>
-      </View>
+      </Col>
     </AppModal>
   );
 }

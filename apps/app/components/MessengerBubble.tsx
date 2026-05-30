@@ -12,6 +12,7 @@ import { MessengerImageAttachment } from './MessengerImageAttachment';
 import { YouTubeEmbed, LocationEmbed } from './MediaEmbeds';
 import { mapCoordsOf, youtubeIdOf } from '../lib/embedDetect';
 import { Avatar } from './Avatar';
+import { Row, Col } from './layout';
 import { resolveRemoteAttachment, shortAddress } from '../lib/xmtp';
 import { useProfileQuery } from '../lib/useProfile';
 import type { HistoryEntry } from '../lib/types';
@@ -171,16 +172,12 @@ function RemoteAttachmentResolver({ att, fg, sub, dark }: {
   }
   if (!uri) {
     return (
-      <View style={{
-        flexDirection: 'row', alignItems: 'center', gap: 8,
-        paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8,
-        backgroundColor: 'rgba(0,0,0,0.12)', marginBottom: 6,
-      }}>
+      <Row align="center" gap={8} px={10} py={8} radius={8} bg="rgba(0,0,0,0.12)" mb={6}>
         <ActivityIndicator size="small" color={fg} />
         <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
           {att.name ?? 'attachment'}
         </Text>
-      </View>
+      </Row>
     );
   }
   return <AttachmentView att={{ ...att, mime }} fullUrl={uri} fg={fg} sub={sub} dark={dark} />;
@@ -438,14 +435,14 @@ function PollView({ poll, dark, sub, votes, ownVotes, onVote }: {
                 backgroundColor: dark ? 'rgba(192,160,110,0.16)' : 'rgba(192,160,110,0.14)',
               }}
             />
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Row align="center" justify="between">
               <Text style={{ color: dark ? '#9f9fa3' : '#57606a', fontSize: 15, fontFamily: 'Calibre-Medium', flexShrink: 1 }}>
                 {isOn ? '✓  ' : (multi ? '☐  ' : '')}{opt.label}
               </Text>
               <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Semibold', marginLeft: 8 }}>
                 {count}
               </Text>
-            </View>
+            </Row>
             {opt.description ? (
               <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
                 {opt.description}
@@ -593,7 +590,7 @@ function MessengerBubbleBase({
         <Avatar size="sm" style={{ backgroundColor: avatarBg, marginTop: 2 }} />
       )}
       {/** Right column: message content + reactions + reaction picker stacked. */}
-      <View style={{ flex: 1, minWidth: 0, flexDirection: 'column' }}>
+      <Col flex={1} style={{ minWidth: 0 }}>
       {/** Pressable handles onLongPress; the outer Animated.View'​s PanResponder steals horizontal drags. */}
       <Pressable
         onPress={onReact ? onBubbleTap : undefined}
@@ -694,11 +691,7 @@ function MessengerBubbleBase({
             transcribing…
           </Text>
         ) : null}
-        <View style={{
-          alignSelf: 'stretch',
-          flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start',
-          gap: 6, marginTop: 3,
-        }}>
+        <Row align="center" justify="start" gap={6} mt={3} style={{ alignSelf: 'stretch' }}>
           {onReact ? (
             <Pressable onPress={() => setPickerOpen(o => !o)} hitSlop={8}>
               <HeroIcon name="faceSmile" size={14} color={sub} />
@@ -710,7 +703,7 @@ function MessengerBubbleBase({
             </Pressable>
           ) : null}
           <Text style={{ color: sub, fontSize: 10 , fontFamily: 'Calibre-Medium'}}>{fmtTs(entry.ts)}</Text>
-        </View>
+        </Row>
       </Pressable>
       {(() => {
         /** Only show a pending pill for an emoji the live stream hasn't yet
@@ -727,7 +720,7 @@ function MessengerBubbleBase({
         const hasConfirmed = confirmedEntries.length > 0;
         if (!hasConfirmed && pending.length === 0) return null;
         return (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
+          <Row wrap gap={4} mt={4}>
             {confirmedEntries.map(([emoji, count]) => {
               /** Tapping/long-pressing a pill the user OWNS toggles their reaction
                *  off (onReact detects ownership → sends `removed`). Pills they don't
@@ -762,22 +755,18 @@ function MessengerBubbleBase({
               );
             })}
             {pending.map(emoji => (
-              <View key={`pending-${emoji}`} style={{
-                flexDirection: 'row', alignItems: 'center', gap: 4,
-                paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, backgroundColor: pillBg,
+              <Row key={`pending-${emoji}`} align="center" gap={4} px={8} py={2} radius={999} bg={pillBg} style={{
                 opacity: 0.45,
               }}>
                 <Text style={{ fontSize: 13 , fontFamily: 'Calibre-Medium'}}>{emoji}</Text>
                 <Text style={{ fontSize: 11, color: sub , fontFamily: 'Calibre-Medium'}}>1</Text>
-              </View>
+              </Row>
             ))}
-          </View>
+          </Row>
         );
       })()}
       {pickerOpen ? (
-        <View style={{
-          flexDirection: 'row', gap: 8, marginTop: 6, paddingHorizontal: 10, paddingVertical: 6,
-          borderRadius: 999, backgroundColor: dark ? '#282a2d' : '#ffffff',
+        <Row gap={8} mt={6} px={10} py={6} radius={999} bg={dark ? '#282a2d' : '#ffffff'} style={{
           shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 8, elevation: 4,
           alignSelf: 'flex-start',
         }}>
@@ -790,9 +779,9 @@ function MessengerBubbleBase({
           <Pressable onPress={() => setPickerOpen(false)}>
             <Text style={{ fontSize: 16, color: sub, paddingHorizontal: 4 }}>✕</Text>
           </Pressable>
-        </View>
+        </Row>
       ) : null}
-      </View>
+      </Col>
     </Animated.View>
   );
 }
