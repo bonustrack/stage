@@ -97,12 +97,22 @@ export default function RootLayout(): React.ReactElement {
       <Stack
         screenOptions={{
           headerShown: false,
-          // No push/pop transition — pages swap instantly (user preference).
-          animation: 'none',
+          /** iOS/Telegram-style push: the new screen slides in from the right while
+           *  the previous page parallaxes underneath, and an interactive horizontal
+           *  back-swipe pops it (revealing that previous page). `slide_from_right` is
+           *  what gives the parallax-underneath look on Android too (default has none).
+           *  Edge gesture only (no `fullScreenGestureEnabled`): swipe-to-reply on bubbles
+           *  is a horizontal pan, so a full-screen back gesture could fight it — keeping
+           *  the back-swipe at the left edge avoids that conflict. */
+          animation: 'slide_from_right',
+          gestureEnabled: true,
+          gestureDirection: 'horizontal',
           contentStyle: { backgroundColor: dark ? '#0e0f10' : '#ffffff' },
         }}
       >
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        {/** Root tab group: no back-swipe (it's the stack root — nothing to pop to,
+         *  and a gesture here would interfere with tab UX). */}
+        <Stack.Screen name="(tabs)" options={{ headerShown: false, gestureEnabled: false, animation: 'none' }} />
         <Stack.Screen name="xmtp/[convId]" />
         <Stack.Screen name="accounts" />
       </Stack>
