@@ -119,9 +119,14 @@ class MetroFcmService : FirebaseMessagingService() {
     // Fall back to the (group) title hash when there's no convId in the push.
     val notifId = pushConvId?.hashCode() ?: groupTitle.hashCode()
 
+    // HEADING: a group card's bold heading is the CHANNEL (group) name; a 1-1
+    // DM keeps the sender's name. MessagingStyle promotes conversationTitle
+    // (set to groupTitle below) to the group heading, but we also set
+    // contentTitle accordingly so no collapsed/OEM fallback ever shows the
+    // sender as the group heading.
     val builder = NotificationCompat.Builder(this, channelId)
       .setSmallIcon(smallIconRes())
-      .setContentTitle(title)
+      .setContentTitle(if (isGroup) groupTitle else title)
       .setContentText(body)
       .setAutoCancel(true)
       .setCategory(NotificationCompat.CATEGORY_MESSAGE)
