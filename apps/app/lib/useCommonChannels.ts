@@ -13,9 +13,18 @@
  *  All resolution runs async after mount; the consumer shows nothing until at
  *  least the cache is hydrated and resolution settles. */
 
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { getCachedRows, hydrateCachedRows, type CachedRow } from './channelsCache';
 import { convOfLine, groupMemberEthAddresses, lineOfConv } from './xmtp';
+import { getAccountEpoch } from './accountEpoch';
+import { MemoryStore } from './cache';
+
+/** Member-set cache keyed by `${convId}:${accountEpoch}` (#7). Resolving a
+ *  group's member eth addresses is the only per-group network work in the common-
+ *  channels walk; caching it per account makes repeat profile opens (and
+ *  cross-account switches back) free. Cleared implicitly on account switch by the
+ *  epoch suffix changing — stale entries just go unread. */
+const memberSetCache = new MemoryStore<string, string[]>();
 
 export interface CommonChannel {
   convId: string;
@@ -24,58 +33,80 @@ export interface CommonChannel {
   /** First other member's address — stamp fallback when there's no group image. */
   avatarAddress: string | null;
   memberCount: number;
+  /** Homepage-parity fields, pulled from the SAME persisted channels cache the
+   *  channels tab writes (`channelsCache`, keyed by convId). Undefined/0 when the
+   *  cache has no entry for this group yet (no extra network calls — falls back
+   *  to the member-count subtitle). */
+  lastTs: number | null;
+  lastPreview: string;
+  /** Latest sender's eth address (for the "Name: …" preview prefix). */
+  lastSenderAddress: string | null;
+  lastFromSelf: boolean;
+  unreadCount: number;
+  markedUnread: boolean;
 }
 
 /** Returns `{ channels, loading }`. `channels` is the resolved common-group set
  *  (empty until resolution finishes). `loading` is true while we're still
  *  walking the candidate groups. */
+/** Resolve a group's member eth set, cache-first (#7, keyed by convId+epoch). */
+async function memberSetOf(convId: string): Promise<string[]> {
+  const key = `${convId}:${getAccountEpoch()}`;
+  const cached = memberSetCache.get(key);
+  if (cached) return cached;
+  const conv = await convOfLine(lineOfConv(convId));
+  if (!conv) return [];
+  const members = await groupMemberEthAddresses(conv);
+  memberSetCache.set(key, members);
+  return members;
+}
+
+async function resolveCommonChannels(peerAddress: string): Promise<CommonChannel[]> {
+  const peer = peerAddress.toLowerCase();
+  await hydrateCachedRows().catch(() => undefined);
+  const rows = getCachedRows() ?? [];
+  /** Group rows only: DMs carry a non-null peerAddress in the cache. */
+  const groups = rows.filter((r): r is CachedRow & { peerAddress: null } =>
+    r.peerAddress == null);
+  /** #7: walk all candidate groups' member sets IN PARALLEL (was serial). */
+  const resolved = await Promise.all(groups.map(async (row) => {
+    try {
+      const members = await memberSetOf(row.convId);
+      if (!members.some(a => a.toLowerCase() === peer)) return null;
+      /** Reuse the SAME cached row the channels tab summarised — it carries the
+       *  preview/unread/timestamp/marked-unread the homepage renders. `row` IS
+       *  that cached row, so just read the fields off it (no extra fetch). */
+      return {
+        convId: row.convId,
+        title: typeof row.title === 'string' && row.title.trim()
+          ? row.title.trim() : 'Group',
+        avatarUri: typeof row.avatarUri === 'string' ? row.avatarUri : null,
+        avatarAddress: members[0] ?? null,
+        /** members excludes self → +1 for the local user. */
+        memberCount: members.length + 1,
+        lastTs: typeof row.lastTs === 'number' ? row.lastTs : null,
+        lastPreview: typeof row.lastPreview === 'string' ? row.lastPreview : '',
+        lastSenderAddress: typeof row.lastSenderAddress === 'string' ? row.lastSenderAddress : null,
+        lastFromSelf: row.lastFromSelf === true,
+        unreadCount: typeof row.unreadCount === 'number' ? row.unreadCount : 0,
+        markedUnread: row.markedUnread === true,
+      } as CommonChannel;
+    } catch { return null; }
+  }));
+  return resolved.filter((c): c is CommonChannel => c !== null);
+}
+
 export function useCommonChannels(peerAddress: string | null, enabled: boolean): {
   channels: CommonChannel[];
   loading: boolean;
 } {
-  const [channels, setChannels] = useState<CommonChannel[]>([]);
-  const [loading, setLoading] = useState(enabled);
-
-  useEffect(() => {
-    if (!enabled || !peerAddress) { setChannels([]); setLoading(false); return; }
-    const peer = peerAddress.toLowerCase();
-    let alive = true;
-    setLoading(true);
-    setChannels([]);
-
-    void (async (): Promise<void> => {
-      await hydrateCachedRows().catch(() => undefined);
-      const rows = getCachedRows() ?? [];
-      /** Group rows only: DMs carry a non-null peerAddress in the cache. */
-      const groups = rows.filter((r): r is CachedRow & { peerAddress: null } =>
-        r.peerAddress == null);
-
-      const found: CommonChannel[] = [];
-      for (const row of groups) {
-        if (!alive) return;
-        try {
-          const conv = await convOfLine(lineOfConv(row.convId));
-          if (!conv) continue;
-          const members = await groupMemberEthAddresses(conv);
-          if (!members.some(a => a.toLowerCase() === peer)) continue;
-          found.push({
-            convId: row.convId,
-            title: typeof row.title === 'string' && row.title.trim()
-              ? row.title.trim() : 'Group',
-            avatarUri: typeof row.avatarUri === 'string' ? row.avatarUri : null,
-            avatarAddress: members[0] ?? null,
-            /** members excludes self → +1 for the local user. */
-            memberCount: members.length + 1,
-          });
-          /** Surface incrementally so rows appear as they resolve. */
-          if (alive) setChannels([...found]);
-        } catch { /* skip groups we can't resolve */ }
-      }
-      if (alive) { setChannels([...found]); setLoading(false); }
-    })();
-
-    return () => { alive = false; };
-  }, [peerAddress, enabled]);
-
-  return { channels, loading };
+  /** TanStack Query with a PER-ACCOUNT key (account epoch) so switching accounts
+   *  and reopening the same peer's profile hits cache instead of re-walking. */
+  const { data, isLoading } = useQuery({
+    queryKey: ['commonChannels', getAccountEpoch(), peerAddress?.toLowerCase() ?? ''],
+    queryFn: () => resolveCommonChannels(peerAddress as string),
+    enabled: enabled && !!peerAddress,
+    staleTime: 5 * 60_000,
+  });
+  return { channels: data ?? [], loading: (enabled && !!peerAddress) ? isLoading : false };
 }
