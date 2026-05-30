@@ -25,6 +25,10 @@
         "backgroundColor": "#0f1115"
       },
       "edgeToEdgeEnabled": true,
+      "androidStatusBar": {
+        "barStyle": "light-content",
+        "translucent": true
+      },
       "predictiveBackGestureEnabled": false,
       "softwareKeyboardLayoutMode": "resize",
       "googleServicesFile": "./google-services.json",
