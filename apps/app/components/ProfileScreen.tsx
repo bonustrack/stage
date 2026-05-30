@@ -115,7 +115,7 @@ export function ProfileScreen({ address, variant }: {
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
-        <View style={{ alignItems: 'center', paddingTop: 16, paddingBottom: 8 }}>
+        <View style={{ alignItems: 'flex-start', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 }}>
           {/* Wait for the profile so we render the real avatar directly (no
               blockie→real flash); custom avatars resolve via IPFS, not stamp. */}
           <Avatar
@@ -130,7 +130,7 @@ export function ProfileScreen({ address, variant }: {
           </Text>
           {profile?.about?.trim() ? (
             <Text style={{
-              color: c.sub, fontSize: 14, marginTop: 6, paddingHorizontal: 32, textAlign: 'center',
+              color: c.sub, fontSize: 14, marginTop: 6, textAlign: 'left',
               fontFamily: 'Calibre-Medium',
             }}>
               {profile.about}

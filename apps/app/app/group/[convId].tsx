@@ -303,7 +303,7 @@ export default function GroupDetail(): React.ReactElement {
         </Pressable>
       </View>
 
-      <View style={{ alignItems: 'center', paddingTop: 4, paddingBottom: 16 }}>
+      <View style={{ alignItems: 'flex-start', paddingHorizontal: 16, paddingTop: 4, paddingBottom: 16 }}>
         <Pressable
           onPress={() => { if (imageUrl) setViewerOpen(true); else void pickImage(); }}
           onLongPress={() => { void pickImage(); }}
@@ -363,8 +363,8 @@ export default function GroupDetail(): React.ReactElement {
             </Pressable>
           </View>
         ) : (
-          <Pressable onPress={() => setEditing(true)} hitSlop={6} style={{ marginTop: 6, alignItems: 'center' }}>
-            <Text style={{ color: head, fontSize: 22, fontFamily: 'Calibre-Semibold', textAlign: 'center' }}>
+          <Pressable onPress={() => setEditing(true)} hitSlop={6} style={{ marginTop: 6, alignItems: 'flex-start' }}>
+            <Text style={{ color: head, fontSize: 22, fontFamily: 'Calibre-Semibold', textAlign: 'left' }}>
               {name && name.trim() ? name : 'Untitled group'}
             </Text>
             <Text style={{ color: sub, fontSize: 12, marginTop: 4, fontFamily: 'Calibre-Medium' }}>Tap to rename</Text>
