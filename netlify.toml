@@ -12,3 +12,8 @@
   # Pin bun so a future Netlify default bump can't silently change CLI
   # semantics again.
   BUN_VERSION = "1.3.13"
+  # Pin Node to 22 to match the repo's `engines.node: ">=22"`. Netlify's
+  # default build image ships an older Node (18/20); `vite@6`, `vue-tsc`,
+  # and several workspace deps assume Node >=22, so the default image can
+  # fail the clean build even though it passes locally on Node 22.
+  NODE_VERSION = "22"
