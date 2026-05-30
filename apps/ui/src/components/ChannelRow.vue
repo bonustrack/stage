@@ -5,6 +5,7 @@
 
 import { stampBoxAvatarUrl } from '../lib/xmtp';
 import { avatarRenderUrl } from '@metro-labs/client/profile/snapshot';
+import { Row, Col } from './layout';
 
 const props = defineProps<{
   avatarAddress: string | null;
@@ -43,7 +44,7 @@ function fmtTs(ts: number | null): string {
   >
     <!-- Inner row carries the separator: it starts at the avatar's left edge
          (inset from the screen by the card's px-3.5), not full width. -->
-    <div class="flex items-center gap-3 py-3
+    <Row align="center" :gap="12" class="py-3
       border-b border-metro-border-light dark:border-metro-border-dark">
       <img v-if="renderedAvatar"
         :src="renderedAvatar"
@@ -51,16 +52,16 @@ function fmtTs(ts: number | null): string {
         class="w-8 h-8 rounded-full bg-metro-border-dark shrink-0 object-cover"
       />
       <div v-else class="w-8 h-8 rounded-full bg-metro-border-dark shrink-0" />
-      <div class="flex-1 min-w-0">
-      <div class="flex items-baseline gap-2">
+      <Col class="flex-1 min-w-0">
+      <Row align="baseline" :gap="8">
         <div class="text-base text-metro-head-light dark:text-metro-head-dark truncate flex-1 font-head">
           {{ props.title }}
         </div>
         <div class="text-xs text-metro-sub-light dark:text-metro-sub-dark shrink-0">
           {{ fmtTs(props.lastTs) }}
         </div>
-      </div>
-      <div class="flex items-center gap-2 mt-1">
+      </Row>
+      <Row align="center" :gap="8" class="mt-1">
         <div class="text-[15px] text-metro-sub-light dark:text-metro-sub-dark truncate flex-1">
           {{ props.lastPreview || '(no messages yet)' }}
         </div>
@@ -74,8 +75,8 @@ function fmtTs(ts: number | null): string {
         <!-- Explicitly marked unread (cross-device) but no counted messages → dot. -->
         <div v-else-if="props.markedUnread"
           class="w-3 h-3 rounded-full shrink-0 bg-metro-head-light dark:bg-metro-head-dark" />
-      </div>
-      </div>
-    </div>
+      </Row>
+      </Col>
+    </Row>
   </button>
 </template>
