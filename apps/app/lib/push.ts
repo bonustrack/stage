@@ -95,4 +95,5 @@ export {
   isMetroControlBody,
   registerPushWithDaemon,
   presentInboundNotification,
+  isDaemonPushRegistered,
 } from './pushRegister';

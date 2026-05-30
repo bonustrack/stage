@@ -11,9 +11,10 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Shader
 import android.os.Build
-import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.app.Person
+import androidx.core.graphics.drawable.IconCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import java.net.HttpURLConnection
@@ -34,12 +35,22 @@ import kotlin.math.min
  * (line = optional metro:// deep-link to open the right conversation.)
  *
  * It downloads `avatarUrl`, circular-crops it (same approach as
- * OverlayView.CircleBitmapDrawable), and posts a NotificationCompat built from
- * custom RemoteViews (notif_message / notif_message_big) that place the round
- * sender avatar on the LEFT, so it renders like Telegram on the collapsed card
- * (setLargeIcon alone lands top-right on Samsung OneUI, and MessagingStyle only
- * shows the avatar left when expanded). Falls back to a standard card +
- * setLargeIcon-free BigTextStyle if the avatar fails to download.
+ * OverlayView.CircleBitmapDrawable), and posts a NotificationCompat using
+ * MessagingStyle with a Person whose icon is the round avatar. This is how
+ * Telegram gets the sender avatar in the FAR-LEFT slot: MessagingStyle promotes
+ * the Person icon to the large round avatar on the LEFT of the card on Samsung
+ * OneUI (and the expanded card on stock Android), and DEMOTES the mandatory app
+ * small-icon to a tiny monochrome badge overlapping the avatar's corner.
+ *
+ * HARD OEM LIMITATION: Android REQUIRES setSmallIcon() on every notification and
+ * always draws it somewhere (corner badge in MessagingStyle, header top-left in
+ * DecoratedCustomViewStyle). It can never be replaced by the avatar or removed.
+ * MessagingStyle is the closest-to-Telegram result because it shrinks that icon
+ * to a corner badge instead of the prominent header slot — which is exactly the
+ * problem with the previous DecoratedCustomViewStyle + custom-RemoteViews path
+ * (that style ALWAYS renders the system header with the 'M' icon top-left, so
+ * the avatar could never take the far-left slot). Falls back to a plain
+ * BigTextStyle card if the avatar fails to download.
  *
  * DELEGATION: any message that is NOT an avatar-data push (a plain FCM
  * notification message, or a data message without `avatarUrl`) is forwarded to
@@ -89,29 +100,23 @@ class MetroFcmService : FirebaseMessagingService() {
       .setPriority(NotificationCompat.PRIORITY_HIGH)
 
     if (avatar != null) {
-      // AVATAR ON THE LEFT (Telegram-style). The standard setLargeIcon renders
-      // the avatar top-RIGHT on Samsung OneUI, and MessagingStyle only puts the
-      // avatar left on the EXPANDED card. So we drive the layout ourselves with
-      // custom RemoteViews that place the round avatar (pre-circle-cropped
-      // bitmap) on the left, with title + body to its right. DecoratedCustomView
-      // keeps system chrome (app name, timestamp, expand chevron) + theme.
-      val collapsed = RemoteViews(packageName, R.layout.notif_message).apply {
-        setImageViewBitmap(R.id.metro_notif_avatar, avatar)
-        setTextViewText(R.id.metro_notif_title, title)
-        setTextViewText(R.id.metro_notif_body, body)
-      }
-      val expanded = RemoteViews(packageName, R.layout.notif_message_big).apply {
-        setImageViewBitmap(R.id.metro_notif_avatar, avatar)
-        setTextViewText(R.id.metro_notif_title, title)
-        setTextViewText(R.id.metro_notif_body, body)
-      }
-      builder
-        .setStyle(NotificationCompat.DecoratedCustomViewStyle())
-        .setCustomContentView(collapsed)
-        .setCustomBigContentView(expanded)
+      // AVATAR ON THE FAR LEFT (Telegram-style) via MessagingStyle + Person icon.
+      // MessagingStyle renders the Person's icon as the large round avatar on the
+      // LEFT of the card (OneUI collapsed + stock expanded) and demotes the
+      // mandatory app small-icon to a tiny corner badge — the closest achievable
+      // to Telegram. The Person is the SENDER (title); "self" is left default.
+      val sender = Person.Builder()
+        .setName(title)
+        .setIcon(IconCompat.createWithBitmap(avatar))
+        .build()
+      builder.setStyle(
+        NotificationCompat.MessagingStyle(
+          Person.Builder().setName("You").build(),
+        ).addMessage(body, System.currentTimeMillis(), sender),
+      )
     } else {
       // DEFENSIVE FALLBACK: avatar download failed — post a standard card so a
-      // notification still shows (avatar would have rendered top-right here).
+      // notification still shows (no avatar; small-icon only).
       builder.setStyle(NotificationCompat.BigTextStyle().bigText(body))
     }
 

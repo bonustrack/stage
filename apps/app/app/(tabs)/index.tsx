@@ -25,7 +25,7 @@ import {
   markConvUnread, markConvRead, applyConsentToRows,
 } from '../../lib/channelsCache';
 import { usePeerProfiles, getPeerAvatarCb, getPeerName, isPeerResolved } from '../../lib/peerProfiles';
-import { presentInboundNotification, isMetroControlBody } from '../../lib/push';
+import { presentInboundNotification, isMetroControlBody, isDaemonPushRegistered } from '../../lib/push';
 import { useAccountEpoch } from '../../lib/accountEpoch';
 import { HeroIcon } from '../../components/HeroIcon';
 import { hasDraft, useDraftsVersion } from '../../lib/drafts';
@@ -278,6 +278,16 @@ export default function Messenger(): React.ReactElement {
         const client = await getOrCreateXmtpClient('production');
         const selfInboxId = client.inboxId;
 
+        /** Is the daemon pushing for THIS account? If so its data-push is rendered
+         *  natively by MetroFcmService (avatar card) in BOTH foreground and
+         *  background, and that native notify() can't be suppressed JS-side — so we
+         *  must NOT also post the JS local notif or we get two cards (the duplicate).
+         *  Only phone-only accounts (daemon has no key, never registered) fall back
+         *  to the JS local notif as their sole notification path. */
+        const daemonPushes = await isDaemonPushRegistered(
+          client.publicIdentity?.identifier ?? '',
+        );
+
         /** Reusable refresh that any backstop (AppState resume, slow poll,
          *  pull-to-refresh, unknown-conv stream hit) can call to re-sync +
          *  re-summarise the full list. */
@@ -355,7 +365,12 @@ export default function Messenger(): React.ReactElement {
              *  backgrounded, so an AppState check — not just "is the effect mounted"
              *  — is required.) */
             const isForeground = AppState.currentState === 'active';
-            if (!isOwn && !isSystem && preview && isForeground) {
+            /** Skip the JS local notif entirely when the daemon pushes for this
+             *  account — MetroFcmService already renders the native avatar card for
+             *  the same message (and it can't be suppressed JS-side). This is the
+             *  definitive duplicate fix; the foreground AppState gate alone was racy
+             *  (Android reports 'active' transiently during background transitions). */
+            if (!isOwn && !isSystem && preview && isForeground && !daemonPushes) {
               /** Read the latest rows from the shared cache (the effect closure's
                *  `rows` is stale — deps are [accountEpoch]). */
               const latestRows = getCachedRows() as Row[] | null;
