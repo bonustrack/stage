@@ -3,15 +3,15 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Alert, Animated as RNAnimated, FlatList, Pressable, Share, Text, View,
+  Alert, Animated as RNAnimated, AppState, FlatList, Pressable, Share, Text, View,
 } from 'react-native';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardStickyView, useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { MessengerBubble } from '../../components/MessengerBubble';
-import { stripMentionMarkup } from '@metro-labs/client/xmtp/humanize';
+import { stripMentionMarkup, attachmentEmojiPreview } from '@metro-labs/client/xmtp/humanize';
 import { usePeerProfiles, getPeerName, getPeerAvatar } from '../../lib/peerProfiles';
 import { useConvMeta } from '../../lib/useConvMeta';
 import { Spinner } from '../../components/Spinner';
@@ -30,6 +30,7 @@ import {
   hasOverlayPermission, isPillAvailable, openConversationAsBubble,
   requestOverlayPermission, showPill,
 } from '../../lib/pill';
+import { setActiveConversation } from '../../modules/metro-pill';
 import { getCachedRows, markConvRead, patchRowSent } from '../../lib/channelsCache';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import type { HistoryEntry } from '../../lib/types';
@@ -206,6 +207,29 @@ export default function XmtpConversation(): React.ReactElement {
     if (!convId) return;
     void markConvRead(convId);
   }, [convId, events.length]);
+  /** Tell native which conversation is on-screen so the FCM service suppresses a
+   *  push for it (the user is already looking at it). Set on focus, cleared on
+   *  blur AND when the app backgrounds (so a push for THIS conv still fires once
+   *  the user can't see it). `active_conv == convId` ⟺ "foreground + viewing it".
+   *  Native no-ops the call off-Android / on pre-module builds. */
+  useFocusEffect(useCallback(() => {
+    if (!convId) return;
+    setActiveConversation(convId);
+    const sub = AppState.addEventListener('change', (s) => {
+      // Only clear on a TRUE background transition. Android fires a transient
+      // 'inactive' when the incoming heads-up / FCM high-priority push briefly
+      // takes window focus — clearing on 'inactive' wiped active_conv at the
+      // exact moment MetroFcmService reads it, so the suppression never matched
+      // even though the user was staring at the chat. Treat anything that is
+      // not 'background' as still-viewing.
+      if (s === 'background') setActiveConversation(null);
+      else setActiveConversation(convId);
+    });
+    return () => {
+      sub.remove();
+      setActiveConversation(null);
+    };
+  }, [convId]));
   const status: 'idle' | 'connecting' | 'open' | 'error' = xmtpFeed.status === 'open' ? 'open'
     : xmtpFeed.status === 'loading' ? 'connecting'
       : xmtpFeed.status === 'error' ? 'error' : 'idle';
@@ -492,7 +516,11 @@ export default function XmtpConversation(): React.ReactElement {
     prevBubbleCount.current = allBubbles.length;
   }, [allBubbles.length, showJump]);
   const previewOf = (e: HistoryEntry): string =>
-    (e.text ? stripMentionMarkup(e.text).slice(0, 80) : '') || `[${(e.payload as { attachments?: { kind: string }[] } | undefined)?.attachments?.[0]?.kind ?? 'attachment'}]`;
+    (e.text ? stripMentionMarkup(e.text).slice(0, 80) : '')
+    || (() => {
+      const a = (e.payload as { attachments?: { mime?: string; name?: string }[] } | undefined)?.attachments?.[0];
+      return attachmentEmojiPreview(a?.mime, a?.name);
+    })();
   /** Jump to the original of a quoted/replied-to message: scroll the inverted
    *  list to its row + flash a highlight. The scroll is best-effort — wrapped in
    *  try/catch with `animated:false` (reanimated #3670 makes the animated path
@@ -846,7 +874,7 @@ export default function XmtpConversation(): React.ReactElement {
             hitSlop={8}
             style={{ paddingHorizontal: 14, justifyContent: 'center' }}
           >
-            <HeroIcon name="dotsHorizontal" size={22} color={fg} />
+            <HeroIcon name="dotsVertical" size={22} color={fg} />
           </Pressable>
         ) : null}
       </View>
@@ -909,7 +937,7 @@ export default function XmtpConversation(): React.ReactElement {
            *  shows as the latest preview when the user goes back — XMTP
            *  self-sends don't reliably replay through `streamAllMessages`, so
            *  the list would otherwise lag until the next 30s poll / app resume. */
-          const preview = text.trim() || `[${attachments[0]?.kind ?? 'attachment'}]`;
+          const preview = text.trim() || attachmentEmojiPreview(attachments[0]?.mime, attachments[0]?.name);
           if (convId) patchRowSent(convId, preview);
         }}
         onSent={(localId, _error, sentId) => {
