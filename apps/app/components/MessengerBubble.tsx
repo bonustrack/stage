@@ -643,6 +643,12 @@ function MessengerBubbleBase({
           borderColor: unread ? (dark ? '#ffffff' : '#000000') : 'transparent',
         }}
       >
+        {/** Timestamp / "Sending" header — rendered ABOVE the message body
+         *   (reply preview / attachments / text) as a small left-aligned
+         *   header line. Same Text style as the old footer timestamp. */}
+        <Row align="center" justify="start" style={{ alignSelf: 'stretch' }}>
+          <Text style={{ color: sub, fontSize: 11 , fontFamily: 'Calibre-Medium'}}>{pending ? 'Sending' : fmtTs(entry.ts)}</Text>
+        </Row>
         {replyPreview ? (
           <Pressable
             onPress={onReplyPreviewPress}
@@ -743,7 +749,6 @@ function MessengerBubbleBase({
               <HeroIcon name="reply" size={14} color={sub} />
             </Pressable>
           ) : null}
-          <Text style={{ color: sub, fontSize: 11 , fontFamily: 'Calibre-Medium'}}>{pending ? 'Sending' : fmtTs(entry.ts)}</Text>
         </Row>
       </Pressable>
       {pending ? null : (() => {
