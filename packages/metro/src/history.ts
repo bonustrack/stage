@@ -8,12 +8,7 @@ import { HISTORY_FILE, STATE_DIR } from './paths.js';
 import { Line } from './lines.js';
 import { claudeUserId, claudeSessionId, codexUserId, codexSessionId, codexUserIdOrNull } from './local-identity.js';
 
-/**
- * Typed, discriminated event payload that rides alongside the legacy
- * `text`/`display` strings. Agents can branch on `event.type` instead of
- * regexing the pre-rendered `display`. Backward-compat: `text`/`display`
- * stay populated; `event` is optional and additive.
- */
+/** Typed, discriminated event payload alongside legacy `text`/`display`; additive + backward-compat. */
 export type StructuredEvent =
   /** A normal chat message. */
   | { type: 'msg' }
@@ -127,12 +122,8 @@ export function readHistory(filter: HistoryFilter = {}): HistoryEntry[] {
 
 /* ──────────── per-line read cursor: O(new) "what's new on this line" ──────────── */
 
-/**
- * The history jsonl is append-only, so a byte offset is a stable, monotonic
- * cursor: everything before it has been read, everything after is new. We track
- * one offset per line so each line's reader only re-parses the tail it hasn't
- * seen — turning "what's new on this line" from O(file) into O(new).
- */
+// Append-only jsonl ⇒ byte offset is a stable monotonic cursor; one per line so
+// each reader re-parses only its unseen tail (O(new), not O(file)).
 const CURSOR_FILE = join(STATE_DIR, 'read-cursors.json');
 
 /** Map of line URI → last-read byte offset into HISTORY_FILE. */
@@ -151,17 +142,9 @@ function writeCursor(line: string, offset: number): void {
   catch (err) { log.warn({ err: errMsg(err) }, 'read-cursors: write failed'); }
 }
 
-/**
- * Return entries appended to `line` since the last `readNewForLine(line)` call
- * (most-recent-first, like `readHistory`). Reads only the byte tail past the
- * persisted cursor, then advances the cursor to EOF — so steady-state cost is
- * O(new bytes), not O(file).
- *
- * `advance: false` peeks without moving the cursor (useful for a dry preview).
- * The cursor is global (file-offset based); per-line filtering is applied to
- * the freshly-read tail. Falls back gracefully if the file shrank/rotated
- * (offset > size ⇒ treat as fresh from 0).
- */
+// Entries appended to `line` since the last call (most-recent-first). Reads only
+// the byte tail past the persisted cursor, then advances it to EOF (O(new bytes)).
+// `advance:false` peeks without moving the cursor; offset>size ⇒ file rotated, reset.
 export function readNewForLine(
   line: string,
   opts: { advance?: boolean } = {},
@@ -197,7 +180,9 @@ export function readNewForLine(
 /** Reset a line's cursor (next `readNewForLine` re-reads the whole file for it). */
 export function resetCursor(line: string): void {
   const store = readCursors();
-  if (line in store) { delete store[line]; try { writeFileSync(CURSOR_FILE, JSON.stringify(store)); } catch { /* noop */ } }
+  if (!(line in store)) return;
+  delete store[line];
+  try { writeFileSync(CURSOR_FILE, JSON.stringify(store)); } catch { /* noop */ }
 }
 
 function matches(e: HistoryEntry, f: HistoryFilter): boolean {
@@ -218,21 +203,17 @@ export function userSelf(): Line {
   return 'metro://user' as Line;
 }
 
-/** Self URI handed to trains as `METRO_SELF_URI` (legacy single-account hint a */
-/** train may use for outbound `from`). For the SHARED multi-account daemon a */
-/** single per-CLI identity is wrong — it labels one account's outbound with */
-/** another CLI's URI (the observed `from: metro://codex/...` leak on tony's */
-/** sends). So propagate only an EXPLICIT self (`METRO_FROM`/`METRO_SELF_URI`); */
-/** else hand trains neutral `metro://user` and let them stamp `from` per account. */
+// Self URI for trains (`METRO_SELF_URI`). On the shared multi-account daemon a
+// per-CLI identity leaks one account's `from` onto another, so propagate only an
+// EXPLICIT self; else hand trains neutral `metro://user` to stamp `from` per account.
 export function daemonSelf(): Line {
   const explicit = process.env.METRO_FROM || process.env.METRO_SELF_URI;
   return (explicit ?? 'metro://user') as Line;
 }
 
-/** The Codex user's **participant** URI, independent of the daemon's own `self`. */
-/** Lets the dispatcher gate the Codex bridge to its own feed even when the */
-/** daemon runs neutral (no METRO_CODEX_RC). Null if no Codex identity resolves */
-/** (not logged in / not configured) — caller should then push nothing. */
+// Codex user's participant URI, independent of the daemon's own `self`; lets the
+// dispatcher gate the Codex bridge to its feed even when the daemon runs neutral.
+// Null if no Codex identity resolves — caller should then push nothing.
 export function codexSelf(): Line | null {
   const id = codexUserIdOrNull();
   return id ? Line.user('codex', id) : null;

@@ -50,14 +50,9 @@ export class TrainSupervisor {
     this.watchForReloads();
   }
 
-  /**
-   * Hot-reload (#15): watch the trains dir and reload only the single train whose
-   * source changed (debounced — editors emit several fs events per save). A new
-   * file spawns a fresh train; a deleted file leaves the existing process alone
-   * (we never auto-kill on unlink — too easy to lose a train to an editor's
-   * atomic-rename). Best-effort: if `watch` is unavailable, on-demand restart
-   * still works.
-   */
+  // Hot-reload (#15): watch the trains dir, reload only the changed train (debounced).
+  // New file ⇒ fresh train; deleted file ⇒ leave the process (never auto-kill on unlink).
+  // Best-effort: if `watch` is unavailable, on-demand restart still works.
   private watchForReloads(): void {
     try {
       this.watcher = watch(this.dir, (_event, filename) => {
