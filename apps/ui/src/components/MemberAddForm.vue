@@ -3,6 +3,8 @@
  *  keep that page under the per-file LOC cap. Validates a 0x address
  *  locally so the parent's add-member call doesn't have to. */
 
+import { Row } from './layout';
+
 const props = defineProps<{ adding: boolean }>();
 const emit = defineEmits<{ (e: 'add', address: string): void }>();
 
@@ -17,7 +19,7 @@ function onAdd(): void {
 </script>
 
 <template>
-  <div class="flex gap-2 px-4 pb-3">
+  <Row :gap="8" class="px-4 pb-3">
     <input
       v-model="draft"
       type="text"
@@ -39,5 +41,5 @@ function onAdd(): void {
     >
       {{ props.adding ? 'Adding…' : 'Add' }}
     </button>
-  </div>
+  </Row>
 </template>

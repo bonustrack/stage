@@ -3,6 +3,7 @@
  *  Mirrors apps/app/app/(tabs)/_layout.tsx (icons-only, no labels). */
 
 import type { HeroIconName } from './HeroIcon.vue';
+import { Row } from './layout';
 
 const TABS: { to: string; label: string; icon: HeroIconName }[] = [
   { to: '/channels', label: 'Channels', icon: 'send' },
@@ -13,9 +14,9 @@ const TABS: { to: string; label: string; icon: HeroIconName }[] = [
 </script>
 
 <template>
-  <nav class="border-t border-metro-border-light dark:border-metro-border-dark
+  <Row as="nav" align="center" justify="around" class="border-t border-metro-border-light dark:border-metro-border-dark
     bg-metro-bg-light dark:bg-metro-bg-dark
-    flex items-center justify-around py-1.5
+    py-1.5
     safe-area-bottom">
     <RouterLink
       v-for="tab in TABS"
@@ -29,7 +30,7 @@ const TABS: { to: string; label: string; icon: HeroIconName }[] = [
     >
       <HeroIcon :name="tab.icon" :size="20" />
     </RouterLink>
-  </nav>
+  </Row>
 </template>
 
 <style scoped>

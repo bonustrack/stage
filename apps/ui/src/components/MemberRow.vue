@@ -4,6 +4,7 @@
  *  per-file LOC cap. */
 
 import { shortAddress, stampBoxAvatarUrl } from '../lib/xmtp';
+import { Row } from './layout';
 
 const props = defineProps<{
   address: string;
@@ -18,8 +19,11 @@ const emit = defineEmits<{ (e: 'open'): void; (e: 'remove'): void }>();
 </script>
 
 <template>
-  <li
-    class="flex items-center gap-3 px-3.5 py-2.5
+  <Row
+    as="li"
+    align="center"
+    :gap="12"
+    class="px-3.5 py-2.5
       bg-metro-surface-light dark:bg-metro-surface-dark
       border-b border-metro-border-light dark:border-metro-border-dark"
     :class="{ 'opacity-50': props.removing }"
@@ -51,5 +55,5 @@ const emit = defineEmits<{ (e: 'open'): void; (e: 'remove'): void }>();
     >
       <HeroIcon name="trash" :size="18" />
     </button>
-  </li>
+  </Row>
 </template>

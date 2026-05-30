@@ -6,6 +6,7 @@ import {
   getOrCreateXmtpClient, peerEthAddressOfDm, stampBoxAvatarUrl, shortAddress,
 } from '../lib/xmtp';
 import { useSearchResolution } from '../lib/useSearchResolution';
+import { Col } from '../components/layout';
 
 interface Contact { address: string; convId: string }
 
@@ -47,7 +48,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col">
+  <Col class="min-h-screen">
     <div class="px-4 pt-4 pb-2">
       <h1 class="font-head text-xl text-metro-head-light dark:text-metro-head-dark">Contacts</h1>
     </div>
@@ -71,12 +72,12 @@ onMounted(async () => {
       :query="query"
       @open="openSearchedProfile"
     />
-    <div v-if="error" class="flex-1 flex items-center justify-center text-sm text-metro-fg-light dark:text-metro-fg-dark px-6">
+    <Col v-if="error" align="center" justify="center" class="flex-1 text-sm text-metro-fg-light dark:text-metro-fg-dark px-6">
       {{ error }}
-    </div>
-    <div v-else-if="!contacts" class="flex-1 flex items-center justify-center text-xs text-metro-sub-light dark:text-metro-sub-dark">
+    </Col>
+    <Col v-else-if="!contacts" align="center" justify="center" class="flex-1 text-xs text-metro-sub-light dark:text-metro-sub-dark">
       Loading contacts…
-    </div>
+    </Col>
     <ul v-else class="flex-1">
       <li v-if="filtered && filtered.length === 0" class="p-8 text-center text-sm text-metro-sub-light dark:text-metro-sub-dark">
         {{ query ? `No matches for "${query}"` : 'No contacts yet. Start a DM from Channels to populate this list.' }}
@@ -106,5 +107,5 @@ onMounted(async () => {
         </button>
       </li>
     </ul>
-  </div>
+  </Col>
 </template>
