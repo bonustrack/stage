@@ -1050,21 +1050,24 @@ function BubbleActionMenu({
   const divider = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)';
 
   const screenH = Dimensions.get('window').height;
-  /** Strip + dropdown are ONE cohesive stacked unit: emoji strip on top, a fixed
-   *  24px gap, then the action dropdown directly below. The unit is anchored near
-   *  the tapped message and clamped so the dropdown's bottom never runs off-screen
-   *  past the composer / safe area — regardless of message height. */
+  /** Strip + dropdown are ONE cohesive stacked unit rendered in a single absolute
+   *  column: emoji strip on top, a literal GAP-px spacer, then the action dropdown
+   *  directly below. Because the dropdown follows the strip's REAL rendered height
+   *  in normal flow, the only vertical space between them is exactly GAP — no
+   *  hard-coded strip-height estimate. The column is anchored near the tapped
+   *  message and clamped so its bottom never runs off-screen past the composer /
+   *  safe area (clamp uses an ESTIMATED total height; the strip↔card gap stays
+   *  the literal GAP regardless). */
   const actionCount = 2 + (target?.text ? 1 : 0);
-  const cardH = actionCount * 48 + 16;       // estimated dropdown height
-  const stripH = 52;                          // fixed-height emoji pill
-  const GAP = 24;                             // fixed gap between strip and dropdown
+  const cardH = actionCount * 48 + 16;       // estimated dropdown height (clamp only)
+  const stripH = 40;                          // estimated strip height (clamp only)
+  const GAP = 6;                              // literal gap between strip and dropdown
   const TOP_MARGIN = 40;                      // min top inset
   const BOTTOM_MARGIN = 40;                   // keep clear of composer / safe area
-  const unitH = stripH + GAP + cardH;         // total height of the stacked unit
+  const unitH = stripH + GAP + cardH;         // estimated total height (clamp only)
   /** Anchor the top of the unit near the message top; clamp into screen bounds. */
   const maxTop = screenH - BOTTOM_MARGIN - unitH;
   const stripTop = Math.max(TOP_MARGIN, Math.min(anchor.y, maxTop));
-  const cardTop = stripTop + stripH + GAP;    // dropdown always 24px below strip
 
   const reactAndClose = (e: string): void => { onReact(e); onClose(); };
 
@@ -1091,14 +1094,16 @@ function BubbleActionMenu({
         onPress={onClose}
         style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }}
       >
-        {/** Emoji reaction strip — rounded pill floating above the message. */}
+        {/** Strip + dropdown as one absolute column. The dropdown sits directly
+          *  below the strip's REAL height + a literal GAP spacer — no stripH math. */}
         <View
           style={{
             position: 'absolute', left: 12, right: 12, top: stripTop,
-            flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start',
+            alignItems: 'flex-start',
           }}
           pointerEvents="box-none"
         >
+          {/** Emoji reaction strip — rounded pill floating above the message. */}
           <View style={{
             flexDirection: 'row', alignItems: 'center', gap: 4,
             backgroundColor: stripBg, borderRadius: 999,
@@ -1135,21 +1140,24 @@ function BubbleActionMenu({
               </>
             )}
           </View>
-        </View>
 
-        {/** Action dropdown — rounded card anchored just below (or above) the message. */}
-        <View
-          style={{
-            position: 'absolute', left: 12, top: cardTop, minWidth: 220, maxWidth: 320,
-            backgroundColor: cardBg, borderRadius: 14, paddingVertical: 4, overflow: 'hidden',
-            shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 8,
-          }}
-        >
-          <ActionRow icon="reply" label="Reply" onPress={onReply} />
-          {target?.text ? <View style={{ height: 1, backgroundColor: divider, marginLeft: 16 }} /> : null}
-          {target?.text ? <ActionRow icon="copy" label="Copy" onPress={onCopy} /> : null}
-          <View style={{ height: 1, backgroundColor: divider, marginLeft: 16 }} />
-          <ActionRow icon="send" label="Share link" onPress={onShareLink} />
+          {/** Literal gap — the ONLY vertical space between strip and dropdown. */}
+          <View style={{ height: GAP }} pointerEvents="none" />
+
+          {/** Action dropdown — rounded card directly below the strip. */}
+          <View
+            style={{
+              minWidth: 220, maxWidth: 320,
+              backgroundColor: cardBg, borderRadius: 14, paddingVertical: 4, overflow: 'hidden',
+              shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 8,
+            }}
+          >
+            <ActionRow icon="reply" label="Reply" onPress={onReply} />
+            {target?.text ? <View style={{ height: 1, backgroundColor: divider, marginLeft: 16 }} /> : null}
+            {target?.text ? <ActionRow icon="copy" label="Copy" onPress={onCopy} /> : null}
+            <View style={{ height: 1, backgroundColor: divider, marginLeft: 16 }} />
+            <ActionRow icon="send" label="Share link" onPress={onShareLink} />
+          </View>
         </View>
       </Pressable>
     </Modal>
