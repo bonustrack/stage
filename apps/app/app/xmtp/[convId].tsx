@@ -40,19 +40,35 @@ function hasAttachments(e: HistoryEntry): boolean {
   return (((e.payload as { attachments?: unknown[] } | undefined)?.attachments?.length) ?? 0) > 0;
 }
 
+/** True when a reaction is actually a poll VOTE (and so must not render as an
+ *  emoji pill). A vote is either tagged `schema:'custom'`, or — for decode paths
+ *  that drop the schema — a reaction on a poll bubble whose content is a pure
+ *  non-negative integer that is a valid option index for that poll. A genuine
+ *  emoji reaction on a poll (❤️, 👍, …) is NOT an integer, so it stays a pill. */
+function isPollVote(
+  p: { reactTo?: string; emoji?: string; schema?: string } | undefined,
+  pollOptionCounts: Map<string, number>,
+): boolean {
+  if (!p) return false;
+  if (p.schema === 'custom') return true;
+  if (!p.reactTo || !p.emoji) return false;
+  const optionCount = pollOptionCounts.get(p.reactTo);
+  if (optionCount === undefined) return false; // not a reaction on a poll
+  if (!/^\d+$/.test(p.emoji)) return false; // a real emoji, not a bare index
+  const idx = Number.parseInt(p.emoji, 10);
+  return Number.isInteger(idx) && idx >= 0 && idx < optionCount;
+}
+
 /** Reaction events decorate their target msg — fold them into per-message,
  *  per-emoji counts rather than rendering as standalone bubbles. */
-function reactionsByMessage(events: HistoryEntry[], pollIds: Set<string>): Map<string, Map<string, number>> {
+function reactionsByMessage(events: HistoryEntry[], pollOptionCounts: Map<string, number>): Map<string, Map<string, number>> {
   const latest = new Map<string, { ts: string; removed: boolean }>();
   for (const e of events) {
     const p = e.payload as { reactTo?: string; emoji?: string; removed?: boolean; schema?: string } | undefined;
-    /** Skip poll votes — they're reactions with schema:'custom' whose content is an
-     *  option index, tallied separately by votesByPoll (not rendered as emoji pills).
-     *  Belt-and-suspenders: also skip any reaction pointing at a poll bubble, since
-     *  some decode paths don't reliably surface `schema` on inbound votes and the
-     *  index would otherwise render as a "0"/"1"/"2" emoji pill. */
-    if (p?.schema === 'custom') continue;
-    if (p?.reactTo && pollIds.has(p.reactTo)) continue;
+    /** Skip poll VOTES only — they're tallied separately by votesByPoll and would
+     *  otherwise render as a "0"/"1"/"2" emoji pill. Genuine emoji reactions on a
+     *  poll (❤️, 👍, …) must still render as pills. */
+    if (isPollVote(p, pollOptionCounts)) continue;
     if (!p?.reactTo || !p.emoji) continue;
     const k = `${p.reactTo} ${p.emoji} ${e.from}`;
     const cur = latest.get(k);
@@ -71,13 +87,12 @@ function reactionsByMessage(events: HistoryEntry[], pollIds: Set<string>): Map<s
 
 /** Emojis the local user currently has on each message (latest add not undone by a
  *  later removal). Drives un-react: tapping an emoji you already own toggles it off. */
-function ownReactionsByMessage(events: HistoryEntry[], myUri: string, pollIds: Set<string>): Map<string, Set<string>> {
+function ownReactionsByMessage(events: HistoryEntry[], myUri: string, pollOptionCounts: Map<string, number>): Map<string, Set<string>> {
   const latest = new Map<string, { ts: string; removed: boolean }>();
   for (const e of events) {
     if (e.from !== myUri) continue;
     const p = e.payload as { reactTo?: string; emoji?: string; removed?: boolean; schema?: string } | undefined;
-    if (p?.schema === 'custom') continue;
-    if (p?.reactTo && pollIds.has(p.reactTo)) continue;
+    if (isPollVote(p, pollOptionCounts)) continue;
     if (!p?.reactTo || !p.emoji) continue;
     const k = `${p.reactTo} ${p.emoji}`;
     const cur = latest.get(k);
@@ -107,6 +122,18 @@ function voteEventsOf(events: HistoryEntry[]): VoteEvent[] {
     const p = e.payload as { reactTo?: string; emoji?: string; removed?: boolean; schema?: string } | undefined;
     if (p?.schema !== 'custom' || !p.reactTo || p.emoji === undefined) continue;
     out.push({ reference: p.reactTo, content: p.emoji, schema: 'custom', removed: !!p.removed, voter: e.from, ts: e.ts });
+  }
+  return out;
+}
+
+/** Poll message ids → option count, derived from the poll bubbles in the feed.
+ *  Used to tell a vote (content = a valid option index) from a genuine emoji
+ *  reaction on a poll, when the vote's `schema:'custom'` tag didn't survive decode. */
+function pollOptionCountsInFeed(events: HistoryEntry[]): Map<string, number> {
+  const out = new Map<string, number>();
+  for (const e of events) {
+    const p = e.payload as { contentType?: string; poll?: { options?: unknown[] } } | undefined;
+    if (p?.contentType === 'poll' && Array.isArray(p.poll?.options)) out.set(e.id, p.poll.options.length);
   }
   return out;
 }
@@ -289,12 +316,13 @@ export default function XmtpConversation(): React.ReactElement {
   const listRef = useRef<FlatList<HistoryEntry>>(null);
 
   /** Reaction events decorate their target msg — don't render as their own bubbles. */
-  /** Poll message ids in the feed — used to keep vote-reactions out of the emoji
-   *  pill grouping even when the inbound decode didn't tag them schema:'custom'. */
-  const pollIds = useMemo(() => new Set(pollsInFeed(events).keys()), [events]);
-  const reactions = useMemo(() => reactionsByMessage(events, pollIds), [events, pollIds]);
+  /** Poll message ids → option count — used to keep vote-reactions (content = a
+   *  valid option index) out of the emoji pill grouping even when the inbound decode
+   *  didn't tag them schema:'custom', while still rendering real emoji reactions. */
+  const pollOptionCounts = useMemo(() => pollOptionCountsInFeed(events), [events]);
+  const reactions = useMemo(() => reactionsByMessage(events, pollOptionCounts), [events, pollOptionCounts]);
   /** Emojis the local user currently owns per message — toggles un-react in onReact. */
-  const ownReactions = useMemo(() => ownReactionsByMessage(events, myUri, pollIds), [events, myUri, pollIds]);
+  const ownReactions = useMemo(() => ownReactionsByMessage(events, myUri, pollOptionCounts), [events, myUri, pollOptionCounts]);
   /** Poll tallies — confirmed votes per poll message id, and the local user's
    *  selections (drives the checkmark + result bar). */
   const votes = useMemo(() => votesByMessage(events), [events]);
