@@ -550,14 +550,51 @@ function MessengerBubbleBase({
     },
     onPanResponderTerminationRequest: () => false,
   }), [onReply, swipeX, pending]);
-  /** Single-tap a message → open the Telegram-style anchored menu (emoji strip +
-   *  action dropdown). We measure the row's on-screen rect and hand the parent the
-   *  Y + height so it can float the overlay just above/below the bubble. The outer
-   *  PanResponder still owns horizontal swipe-to-reply, so taps and swipes don't
-   *  collide. Quick-react now lives in the menu's emoji strip (no more double-tap). */
+  /** Tap a message → discriminate single vs double:
+   *   - SINGLE tap (no second tap within 230ms) → open the Telegram-style anchored
+   *     menu (emoji strip + action dropdown). We measure the row's on-screen rect at
+   *     tap time and hand the parent the Y + height so it can float the overlay just
+   *     above/below the bubble.
+   *   - DOUBLE tap (second tap inside the window) → quick 👍, reusing the same
+   *     optimistic onReact toggle path as the emoji picker/pills (add if not present,
+   *     remove if already your 👍). The pending single-tap is cancelled.
+   *  The outer PanResponder still owns horizontal swipe-to-reply, so taps and swipes
+   *  don't collide. The ~230ms delay on the menu opening is the standard cost of
+   *  double-tap support. */
   const rowRef = useRef<React.ComponentRef<typeof View>>(null);
+  const singleTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Cached anchor from the tap's measureInWindow, so the delayed single-tap still
+   *  floats the menu against the row's on-screen rect after the 230ms window. */
+  const pendingAnchor = useRef<{ y: number; height: number }>({ y: 0, height: 0 });
+  useEffect(() => () => {
+    if (singleTapTimer.current) clearTimeout(singleTapTimer.current);
+  }, []);
   const onBubbleTap = (): void => {
-    if (pending || !onOpenMenu) return;
+    if (pending) return;
+    /** Second tap inside the window → double-tap quick 👍, cancel the pending single. */
+    if (singleTapTimer.current) {
+      clearTimeout(singleTapTimer.current);
+      singleTapTimer.current = null;
+      onReact?.('👍');
+      return;
+    }
+    if (!onOpenMenu) return;
+    /** Capture the anchor now (the row may have scrolled by the time the timer
+     *  fires). measureInWindow is async, so stash the result in a ref. */
+    const node = rowRef.current;
+    if (node) node.measureInWindow((_x, y, _w, h) => { pendingAnchor.current = { y, height: h }; });
+    else pendingAnchor.current = { y: 0, height: 0 };
+    singleTapTimer.current = setTimeout(() => {
+      singleTapTimer.current = null;
+      onOpenMenu(pendingAnchor.current);
+    }, 230);
+  };
+  /** Long-press → open the menu immediately (no tap-discrimination delay). Measures
+   *  the row rect synchronously-ish via measureInWindow, same anchor contract. */
+  const onBubbleLongPress = (): void => {
+    if (pending) return;
+    if (singleTapTimer.current) { clearTimeout(singleTapTimer.current); singleTapTimer.current = null; }
+    if (!onOpenMenu) { onLongPress?.(); return; }
     const node = rowRef.current;
     if (!node) { onOpenMenu({ y: 0, height: 0 }); return; }
     node.measureInWindow((_x, y, _w, h) => onOpenMenu({ y, height: h }));
@@ -595,8 +632,8 @@ function MessengerBubbleBase({
       <Col flex={1} style={{ minWidth: 0, opacity: pending ? 0.5 : 1 }}>
       {/** Pressable handles onLongPress; the outer Animated.View'​s PanResponder steals horizontal drags. */}
       <Pressable
-        onPress={onOpenMenu ? onBubbleTap : undefined}
-        onLongPress={pending ? undefined : (onOpenMenu ? onBubbleTap : onLongPress)}
+        onPress={(onOpenMenu || onReact) ? onBubbleTap : undefined}
+        onLongPress={pending ? undefined : (onOpenMenu ? onBubbleLongPress : onLongPress)}
         delayLongPress={300}
         style={{
           flexDirection: 'column',
