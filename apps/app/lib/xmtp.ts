@@ -608,6 +608,22 @@ export function envelopeOfXmtpMessage(msg: DecodedMessage, line: string): Histor
   if (typeId === 'reaction') {
     const r = decoded as ReactionContent;
     const removed = r.action === 'removed';
+    /** A poll VOTE is a reaction with schema:'custom' whose content is the option
+     *  index. Surface `schema:'custom'` + `voteFor`/`optionIndex` so the tally
+     *  helpers can pick votes out of history (the cold-load path) and so the
+     *  channels-list preview doesn't render an index as an emoji. This MUST be
+     *  handled inside the single reaction branch — a second `if (typeId ===
+     *  'reaction')` below would be dead code, since this branch returns first. */
+    if (r.schema === 'custom') {
+      return {
+        ...base,
+        text: `[vote ${r.content}${removed ? ' (removed)' : ''}]`,
+        payload: {
+          contentType: typeId, reactTo: r.reference, emoji: r.content,
+          schema: 'custom', voteFor: r.reference, optionIndex: Number(r.content), removed,
+        },
+      };
+    }
     return {
       ...base,
       text: `[react ${r.content}${removed ? ' (removed)' : ''}]`,
@@ -623,24 +639,6 @@ export function envelopeOfXmtpMessage(msg: DecodedMessage, line: string): Histor
       text: pollFallbackText(poll),
       payload: { contentType: typeId, poll },
     };
-  }
-  if (typeId === 'reaction') {
-    const r = decoded as ReactionContent;
-    /** A poll VOTE is a reaction with schema:'custom' whose content is the
-     *  option index. Surface `voteFor` (poll message id) + `optionIndex` so the
-     *  tally helpers can pick votes out without re-deriving from raw reactions,
-     *  and so the channels-list preview doesn't render an index as an emoji. */
-    if (r.schema === 'custom') {
-      const removed = r.action === 'removed';
-      return {
-        ...base,
-        text: `[vote ${r.content}${removed ? ' (removed)' : ''}]`,
-        payload: {
-          contentType: typeId, reactTo: r.reference, emoji: r.content,
-          schema: 'custom', voteFor: r.reference, optionIndex: Number(r.content), removed,
-        },
-      };
-    }
   }
   if (typeId === 'reply') {
     const r = decoded as ReplyContent;
