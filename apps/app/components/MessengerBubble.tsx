@@ -18,7 +18,7 @@ import { useProfileQuery } from '../lib/useProfile';
 import type { HistoryEntry } from '../lib/types';
 import type { RemoteAttachmentInfo } from '@xmtp/react-native-sdk';
 
-const REACT_PRESETS = ['👍', '❤️', '😂', '😮', '🔥', '🎉'];
+export const REACT_PRESETS = ['👍', '🔥', '👀', '🙏', '😁', '💯', '🫡'];
 /** `linkify` + `breaks` turn bare URLs into tappable links and treat `\n` as a line
  *  break, matching the markdown-it config on the web side. Constructed once at
  *  module scope — the lib re-parses input each render anyway. */
@@ -459,12 +459,16 @@ function PollView({ poll, dark, sub, votes, ownVotes, onVote }: {
 }
 
 function MessengerBubbleBase({
-  entry, dark, unread, pending, replyTarget, onReact, onReply, onLongPress, onAnswer,
+  entry, dark, unread, pending, replyTarget, onReact, onReply, onLongPress, onOpenMenu, onAnswer,
   replyPreview, onReplyPreviewPress, reactions, pendingReactions, pendingRemovals, ownEmojis, transcript, myUri, senderEthAddress, onAvatarPress,
   votes, ownVotes, onVote,
 }: {
   entry: HistoryEntry; dark: boolean; unread: boolean; pending?: boolean; replyTarget?: boolean;
   onReact?: (emoji: string) => void; onReply?: () => void; onLongPress?: () => void;
+  /** Single-tap a message → open the Telegram-style anchored menu. The parent
+   *  positions the emoji-strip + action-dropdown overlay relative to the row's
+   *  on-screen rect (measured here via measureInWindow). */
+  onOpenMenu?: (anchor: { y: number; height: number }) => void;
   /** Tap the quoted reply-preview slab → parent jumps/scrolls to the original
    *  message. No-op when undefined (e.g. a bubble that isn't a reply). */
   onReplyPreviewPress?: () => void;
@@ -546,23 +550,21 @@ function MessengerBubbleBase({
     },
     onPanResponderTerminationRequest: () => false,
   }), [onReply, swipeX, pending]);
-  /** Double-tap a message → quick 👍, reusing the same optimistic onReact path as
-   *  the emoji picker. Manual lastTap timestamp check (two taps within 300ms) — a
-   *  single tap stays a no-op, long-press still opens the menu, and the outer
-   *  PanResponder owns horizontal swipe-to-reply, so none of them collide. */
-  const lastTapRef = useRef(0);
+  /** Single-tap a message → open the Telegram-style anchored menu (emoji strip +
+   *  action dropdown). We measure the row's on-screen rect and hand the parent the
+   *  Y + height so it can float the overlay just above/below the bubble. The outer
+   *  PanResponder still owns horizontal swipe-to-reply, so taps and swipes don't
+   *  collide. Quick-react now lives in the menu's emoji strip (no more double-tap). */
+  const rowRef = useRef<React.ComponentRef<typeof View>>(null);
   const onBubbleTap = (): void => {
-    if (pending) return;
-    const now = Date.now();
-    if (now - lastTapRef.current < 300) {
-      lastTapRef.current = 0;
-      onReact?.('👍');
-    } else {
-      lastTapRef.current = now;
-    }
+    if (pending || !onOpenMenu) return;
+    const node = rowRef.current;
+    if (!node) { onOpenMenu({ y: 0, height: 0 }); return; }
+    node.measureInWindow((_x, y, _w, h) => onOpenMenu({ y, height: h }));
   };
   return (
     <Animated.View
+      ref={rowRef}
       {...panResponder.panHandlers}
       style={{
         flexDirection: 'row', alignItems: 'flex-start',
@@ -593,8 +595,8 @@ function MessengerBubbleBase({
       <Col flex={1} style={{ minWidth: 0, opacity: pending ? 0.5 : 1 }}>
       {/** Pressable handles onLongPress; the outer Animated.View'​s PanResponder steals horizontal drags. */}
       <Pressable
-        onPress={onReact ? onBubbleTap : undefined}
-        onLongPress={pending ? undefined : onLongPress}
+        onPress={onOpenMenu ? onBubbleTap : undefined}
+        onLongPress={pending ? undefined : (onOpenMenu ? onBubbleTap : onLongPress)}
         delayLongPress={300}
         style={{
           flexDirection: 'column',

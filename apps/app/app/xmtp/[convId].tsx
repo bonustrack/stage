@@ -2,14 +2,16 @@
  *  local XMTP client directly; no daemon hop. */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Animated as RNAnimated, AppState, FlatList, Pressable, Share, Text } from 'react-native';
+import {
+  Alert, Animated as RNAnimated, AppState, Dimensions, FlatList, Modal, Pressable, ScrollView, Share, Text, View,
+} from 'react-native';
 import { Box } from '../../components/layout';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardStickyView, useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
-import { MessengerBubble } from '../../components/MessengerBubble';
+import { MessengerBubble, REACT_PRESETS } from '../../components/MessengerBubble';
 import { stripMentionMarkup, attachmentEmojiPreview } from '@metro-labs/client/xmtp/humanize';
 import { usePeerProfiles, getPeerName, getPeerAvatar } from '../../lib/peerProfiles';
 import { useConvMeta } from '../../lib/useConvMeta';
@@ -252,6 +254,9 @@ export default function XmtpConversation(): React.ReactElement {
   const [jumpHighlightId, setJumpHighlightId] = useState<string | null>(null);
   const jumpClearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [menuFor, setMenuFor] = useState<HistoryEntry | null>(null);
+  /** On-screen rect of the tapped message row — drives where the anchored
+   *  Telegram-style menu (emoji strip + action dropdown) floats. */
+  const [menuAnchor, setMenuAnchor] = useState<{ y: number; height: number }>({ y: 0, height: 0 });
   /** Topnav overflow (3-dot) menu — groups show "Leave group"; DMs show
    *  "Open as bubble" (Android, when the native pill/bubble module is linked). */
   const [overflowOpen, setOverflowOpen] = useState(false);
@@ -770,7 +775,7 @@ export default function XmtpConversation(): React.ReactElement {
             onVote={(idx, action) => onVote(item.id, idx, action)}
             onReact={(emoji) => onReact(item.id, emoji)}
             onReply={() => setReplyTarget(item.id, previewOf(item))}
-            onLongPress={() => setMenuFor(item)}
+            onOpenMenu={(anchor) => { setMenuAnchor(anchor); setMenuFor(item); }}
             onAnswer={(label) => {
               void xmtpReply(activeLine, item.id, label)
                 .catch((e: unknown) => { console.warn('xmtp answer failed', e); });
@@ -994,6 +999,7 @@ export default function XmtpConversation(): React.ReactElement {
       </AppModal>
       <BubbleActionMenu
         target={menuFor}
+        anchor={menuAnchor}
         dark={dark}
         onClose={() => setMenuFor(null)}
         onReact={emoji => { if (menuFor) onReact(menuFor.id, emoji); setMenuFor(null); }}
@@ -1016,44 +1022,135 @@ export default function XmtpConversation(): React.ReactElement {
   );
 }
 
-const ACTION_EMOJIS = ['👍', '❤️', '😂', '😮', '🔥', '🎉'] as const;
+/** Fuller emoji set revealed by the strip's chevron — a quick scrollable row
+ *  beyond the 7 presets. Kept inline (no native emoji-keyboard dependency). */
+const MORE_EMOJIS = ['❤️', '😂', '😮', '😢', '🎉', '🤯', '🥳', '👏', '🙌', '🤝', '✅', '❌', '👌', '🚀', '💀', '🤔', '😅', '🫶'];
+
+/** Telegram-style anchored message menu: a horizontal emoji-reaction pill floating
+ *  just above the tapped message, and a vertical action dropdown just below it, over
+ *  a dimmed full-screen backdrop. Positioning is driven by the row's measured
+ *  on-screen rect (`anchor`), clamped to the screen so it never runs off the top or
+ *  bottom edge. Tapping a strip emoji reacts + closes; the chevron reveals more
+ *  emojis; any action or an outside tap dismisses. */
 function BubbleActionMenu({
-  target, dark, onClose, onReact, onReply, onCopy, onShareLink,
+  target, anchor, dark, onClose, onReact, onReply, onCopy, onShareLink,
 }: {
-  target: HistoryEntry | null; dark: boolean; onClose: () => void;
+  target: HistoryEntry | null; anchor: { y: number; height: number };
+  dark: boolean; onClose: () => void;
   onReact: (emoji: string) => void; onReply: () => void; onCopy: () => void;
   onShareLink: () => void;
 }): React.ReactElement {
-  const fg = dark ? '#9f9fa3' : '#57606a';
+  const [expanded, setExpanded] = useState(false);
+  useEffect(() => { if (!target) setExpanded(false); }, [target]);
+
+  const fg = dark ? '#e7e7ea' : '#1f2328';
   const sub = dark ? '#7a7a7e' : '#8a929d';
+  const cardBg = dark ? '#21262b' : '#ffffff';
+  const stripBg = dark ? '#21262b' : '#ffffff';
+  const divider = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)';
+
+  const screenH = Dimensions.get('window').height;
+  /** Estimated dropdown height (Reply + optional Copy + Share + paddings) — used to
+   *  decide whether to drop below the message or flip above it near the screen
+   *  bottom. Rough is fine; the values just bias the flip + clamp. */
+  const actionCount = 2 + (target?.text ? 1 : 0);
+  const cardH = actionCount * 48 + 16;
+  const stripH = 52;
+  /** Strip sits just above the message; dropdown just below. If the message is low
+   *  on screen, render the dropdown above the strip instead so it stays visible. */
+  const top = Math.max(60, anchor.y);
+  const flipUp = top + anchor.height + stripH + cardH > screenH - 40;
+  const stripTop = Math.max(40, top - stripH - 8);
+  const cardTop = flipUp
+    ? Math.max(stripTop - cardH - 8, 40)
+    : Math.min(top + anchor.height + 8, screenH - cardH - 40);
+
+  const reactAndClose = (e: string): void => { onReact(e); onClose(); };
+
+  const ActionRow = ({ icon, label, color, onPress }: {
+    icon: React.ComponentProps<typeof HeroIcon>['name']; label: string; color?: string; onPress: () => void;
+  }): React.ReactElement => (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        flexDirection: 'row', alignItems: 'center', gap: 14,
+        paddingVertical: 13, paddingHorizontal: 16,
+        backgroundColor: pressed ? (dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)') : 'transparent',
+      })}
+    >
+      <HeroIcon name={icon} size={20} color={color ?? fg} />
+      <Text style={{ color: color ?? fg, fontSize: 16, fontFamily: 'Calibre-Medium' }}>{label}</Text>
+    </Pressable>
+  );
+
   return (
-    <AppModal visible={!!target} onClose={onClose}>
-      <Box style={{ gap: 10 }}>
-          <Box style={{ flexDirection: 'row', justifyContent: 'space-around', paddingBottom: 8 }}>
-            {ACTION_EMOJIS.map(e => (
-              <Pressable key={e} onPress={() => onReact(e)} hitSlop={8}>
-                <Text style={{ fontSize: 28 }}>{e}</Text>
-              </Pressable>
-            ))}
-          </Box>
-          <Pressable onPress={onReply} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}>
-            <HeroIcon name="reply" size={20} color={fg} />
-            <Text style={{ color: fg, fontSize: 16 , fontFamily: 'Calibre-Medium'}}>Reply</Text>
-          </Pressable>
-          {target?.text ? (
-            <Pressable onPress={onCopy} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}>
-              <HeroIcon name="copy" size={20} color={fg} />
-              <Text style={{ color: fg, fontSize: 16 , fontFamily: 'Calibre-Medium'}}>Copy text</Text>
-            </Pressable>
-          ) : null}
-          <Pressable onPress={onShareLink} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}>
-            <HeroIcon name="send" size={20} color={fg} />
-            <Text style={{ color: fg, fontSize: 16 , fontFamily: 'Calibre-Medium'}}>Share link</Text>
-          </Pressable>
-          <Pressable onPress={onClose} style={{ paddingVertical: 10, alignItems: 'center' }}>
-            <Text style={{ color: sub, fontSize: 14 , fontFamily: 'Calibre-Medium'}}>Cancel</Text>
-          </Pressable>
-      </Box>
-    </AppModal>
+    <Modal visible={!!target} transparent animationType="fade" onRequestClose={onClose}>
+      {/** Dimmed full-screen backdrop — tap anywhere outside the cards to dismiss. */}
+      <Pressable
+        onPress={onClose}
+        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }}
+      >
+        {/** Emoji reaction strip — rounded pill floating above the message. */}
+        <View
+          style={{
+            position: 'absolute', left: 12, right: 12, top: stripTop,
+            flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start',
+          }}
+          pointerEvents="box-none"
+        >
+          <View style={{
+            flexDirection: 'row', alignItems: 'center', gap: 4,
+            backgroundColor: stripBg, borderRadius: 999,
+            paddingHorizontal: 10, paddingVertical: 6,
+            shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 6,
+            maxWidth: '100%',
+          }}>
+            {expanded ? (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingRight: 4 }}>
+                {[...REACT_PRESETS, ...MORE_EMOJIS].map(e => (
+                  <Pressable key={e} onPress={() => reactAndClose(e)} hitSlop={4}>
+                    <Text style={{ fontSize: 26 }}>{e}</Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            ) : (
+              <>
+                {REACT_PRESETS.map(e => (
+                  <Pressable key={e} onPress={() => reactAndClose(e)} hitSlop={4} style={{ paddingHorizontal: 2 }}>
+                    <Text style={{ fontSize: 24 }}>{e}</Text>
+                  </Pressable>
+                ))}
+                <Pressable
+                  onPress={() => setExpanded(true)}
+                  hitSlop={6}
+                  style={{
+                    width: 30, height: 30, borderRadius: 999, marginLeft: 2,
+                    alignItems: 'center', justifyContent: 'center',
+                    backgroundColor: dark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.06)',
+                  }}
+                >
+                  <HeroIcon name="chevronDown" size={16} color={sub} />
+                </Pressable>
+              </>
+            )}
+          </View>
+        </View>
+
+        {/** Action dropdown — rounded card anchored just below (or above) the message. */}
+        <View
+          style={{
+            position: 'absolute', left: 12, top: cardTop, minWidth: 220, maxWidth: 320,
+            backgroundColor: cardBg, borderRadius: 14, paddingVertical: 4, overflow: 'hidden',
+            shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 8,
+          }}
+        >
+          <ActionRow icon="reply" label="Reply" onPress={onReply} />
+          {target?.text ? <View style={{ height: 1, backgroundColor: divider, marginLeft: 16 }} /> : null}
+          {target?.text ? <ActionRow icon="copy" label="Copy" onPress={onCopy} /> : null}
+          <View style={{ height: 1, backgroundColor: divider, marginLeft: 16 }} />
+          <ActionRow icon="send" label="Share link" onPress={onShareLink} />
+        </View>
+      </Pressable>
+    </Modal>
   );
 }
