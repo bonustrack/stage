@@ -87,11 +87,23 @@ export function previewOfXmtpContent(decoded: unknown, contentTypeId: string | u
   }
   if (typeId === 'attachment') {
     const a = decoded as { filename?: string; mimeType?: string };
-    // Voice/audio → a mic emoji rather than "[audio: voice-….m4a]".
-    if (a.mimeType?.startsWith('audio/')) return '🎤';
-    const kind = a.mimeType?.startsWith('image/') ? 'image'
-      : a.mimeType?.startsWith('video/') ? 'video' : 'file';
-    return a.filename ? `[${kind}: ${a.filename}]` : `[${kind}]`;
+    return attachmentEmojiPreview(a.mimeType, a.filename);
   }
   return `[${typeId}]`;
+}
+
+/** Map an attachment to a clean emoji preview (no filename noise) for the
+ *  channels-list row, reply previews and push text:
+ *    image → 📷, audio/voice → 🎤, video → 🎥, anything else → 📎.
+ *  MIME type is authoritative; falls back to the filename extension when the
+ *  remote-attachment metadata omits the MIME (multi-remote attachments). */
+export function attachmentEmojiPreview(mimeType?: string | null, filename?: string | null): string {
+  const ext = filename?.split('.').pop()?.toLowerCase() ?? '';
+  const isImage = mimeType?.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic'].includes(ext);
+  const isAudio = mimeType?.startsWith('audio/') || ['m4a', 'mp3', 'wav', 'aac', 'ogg'].includes(ext);
+  const isVideo = mimeType?.startsWith('video/') || ['mp4', 'mov', 'webm'].includes(ext);
+  if (isImage) return '📷';
+  if (isAudio) return '🎤';
+  if (isVideo) return '🎥';
+  return '📎';
 }

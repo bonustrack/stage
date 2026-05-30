@@ -10,7 +10,7 @@ import { KeyboardStickyView, useReanimatedKeyboardAnimation } from 'react-native
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { MessengerBubble } from '../../components/MessengerBubble';
-import { stripMentionMarkup } from '@metro-labs/client/xmtp/humanize';
+import { stripMentionMarkup, attachmentEmojiPreview } from '@metro-labs/client/xmtp/humanize';
 import { usePeerProfiles, getPeerName, getPeerAvatar } from '../../lib/peerProfiles';
 import { useConvMeta } from '../../lib/useConvMeta';
 import { Spinner } from '../../components/Spinner';
@@ -491,7 +491,11 @@ export default function XmtpConversation(): React.ReactElement {
     prevBubbleCount.current = allBubbles.length;
   }, [allBubbles.length, showJump]);
   const previewOf = (e: HistoryEntry): string =>
-    (e.text ? stripMentionMarkup(e.text).slice(0, 80) : '') || `[${(e.payload as { attachments?: { kind: string }[] } | undefined)?.attachments?.[0]?.kind ?? 'attachment'}]`;
+    (e.text ? stripMentionMarkup(e.text).slice(0, 80) : '')
+    || (() => {
+      const a = (e.payload as { attachments?: { mime?: string; name?: string }[] } | undefined)?.attachments?.[0];
+      return attachmentEmojiPreview(a?.mime, a?.name);
+    })();
   /** Jump to the original of a quoted/replied-to message: scroll the inverted
    *  list to its row + flash a highlight. The scroll is best-effort — wrapped in
    *  try/catch with `animated:false` (reanimated #3670 makes the animated path
@@ -901,7 +905,7 @@ export default function XmtpConversation(): React.ReactElement {
            *  shows as the latest preview when the user goes back — XMTP
            *  self-sends don't reliably replay through `streamAllMessages`, so
            *  the list would otherwise lag until the next 30s poll / app resume. */
-          const preview = text.trim() || `[${attachments[0]?.kind ?? 'attachment'}]`;
+          const preview = text.trim() || attachmentEmojiPreview(attachments[0]?.mime, attachments[0]?.name);
           if (convId) patchRowSent(convId, preview);
         }}
         onSent={(localId, _error, sentId) => {

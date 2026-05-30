@@ -6,7 +6,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  AppState, FlatList, Pressable, RefreshControl,
+  AppState, FlatList, Pressable,
   Text,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -220,7 +220,6 @@ export default function Messenger(): React.ReactElement {
   };
   useEffect(() => subscribeCachedRows(r => setRowsState(r as Row[] | null)), []);
   const [error, setError] = useState<string>('');
-  const [refreshing, setRefreshing] = useState(false);
   /** Row long-pressed → opens the per-conversation action sheet (Mark as
    *  read/unread). Holds the convId + whether it currently reads as unread. */
   const [rowMenu, setRowMenu] = useState<{ convId: string; title: string; isUnread: boolean } | null>(null);
@@ -496,13 +495,7 @@ export default function Messenger(): React.ReactElement {
     };
   }, [accountEpoch]);
 
-  const onPullToRefresh = async (): Promise<void> => {
-    if (refreshing) return;
-    setRefreshing(true);
-    try { await refreshFromNetworkRef.current?.(); } finally { setRefreshing(false); }
-  };
-
-  /** #6: stable extraData (an array, identity changes only when one of these
+/** #6: stable extraData (an array, identity changes only when one of these
    *  versions does) instead of a freshly-built string every render — so the
    *  FlatList doesn't treat every parent re-render as "data changed" and
    *  re-render the whole window on each stream tick. */
@@ -612,13 +605,6 @@ export default function Messenger(): React.ReactElement {
         initialNumToRender={10}
         maxToRenderPerBatch={10}
         removeClippedSubviews
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => { void onPullToRefresh(); }}
-            tintColor={sub}
-          />
-        }
         contentContainerStyle={{ paddingBottom: 24 }}
         ListEmptyComponent={
           <Col p={32} align="center">
