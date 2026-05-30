@@ -11,6 +11,7 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Shader
 import android.os.Build
+import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.google.firebase.messaging.FirebaseMessagingService
@@ -33,16 +34,21 @@ import kotlin.math.min
  * (line = optional metro:// deep-link to open the right conversation.)
  *
  * It downloads `avatarUrl`, circular-crops it (same approach as
- * OverlayView.CircleBitmapDrawable), and posts a NotificationCompat with
- * `.setLargeIcon(bitmap)` + a MessagingStyle whose Person uses the avatar icon,
- * so it renders like Telegram (round sender avatar on the left).
+ * OverlayView.CircleBitmapDrawable), and posts a NotificationCompat built from
+ * custom RemoteViews (notif_message / notif_message_big) that place the round
+ * sender avatar on the LEFT, so it renders like Telegram on the collapsed card
+ * (setLargeIcon alone lands top-right on Samsung OneUI, and MessagingStyle only
+ * shows the avatar left when expanded). Falls back to a standard card +
+ * setLargeIcon-free BigTextStyle if the avatar fails to download.
  *
  * DELEGATION: any message that is NOT an avatar-data push (a plain FCM
  * notification message, or a data message without `avatarUrl`) is forwarded to
- * Expo's own FirebaseMessagingService so existing expo-notifications behaviour
- * is preserved. Because only one FirebaseMessagingService can be the default
- * receiver, this service is declared with a higher manifest priority (see
- * withMetroPill config plugin) and shadows ExpoFirebaseMessagingService.
+ * an *instance* of Expo's own FirebaseMessagingService (created reflectively)
+ * so existing expo-notifications behaviour is preserved. This service is the
+ * ONLY MESSAGING_EVENT receiver in the merged manifest — Expo's receiver is
+ * stripped via tools:node="remove" (see withMetroPill) to stop the duplicate
+ * card. The delegation does NOT need Expo's manifest receiver: it instantiates
+ * the class directly, so non-avatar pushes still post exactly as before.
  *
  * DAEMON FOLLOW-UP (not wired here): the daemon (~/.metro/trains/xmtp.ts
  * fcmPushTo) must send these as high-priority **data** messages carrying
@@ -74,12 +80,6 @@ class MetroFcmService : FirebaseMessagingService() {
 
     val avatar = runCatching { downloadAndCircleCrop(avatarUrl) }.getOrNull()
 
-    // NOTE: do NOT use NotificationCompat.MessagingStyle here. MessagingStyle
-    // OWNS the icon slot — on the COLLAPSED card it shows the app small-icon and
-    // surfaces the Person avatar only on expand, and it actively suppresses any
-    // builder.setLargeIcon(). To get Telegram's round sender avatar on the
-    // COLLAPSED card we use the default style + setLargeIcon(circleBitmap), and
-    // BigTextStyle for a clean expanded view (BigTextStyle keeps the largeIcon).
     val builder = NotificationCompat.Builder(this, channelId)
       .setSmallIcon(smallIconRes())
       .setContentTitle(title)
@@ -87,9 +87,34 @@ class MetroFcmService : FirebaseMessagingService() {
       .setAutoCancel(true)
       .setCategory(NotificationCompat.CATEGORY_MESSAGE)
       .setPriority(NotificationCompat.PRIORITY_HIGH)
-      .setStyle(NotificationCompat.BigTextStyle().bigText(body))
 
-    if (avatar != null) builder.setLargeIcon(avatar)
+    if (avatar != null) {
+      // AVATAR ON THE LEFT (Telegram-style). The standard setLargeIcon renders
+      // the avatar top-RIGHT on Samsung OneUI, and MessagingStyle only puts the
+      // avatar left on the EXPANDED card. So we drive the layout ourselves with
+      // custom RemoteViews that place the round avatar (pre-circle-cropped
+      // bitmap) on the left, with title + body to its right. DecoratedCustomView
+      // keeps system chrome (app name, timestamp, expand chevron) + theme.
+      val collapsed = RemoteViews(packageName, R.layout.notif_message).apply {
+        setImageViewBitmap(R.id.metro_notif_avatar, avatar)
+        setTextViewText(R.id.metro_notif_title, title)
+        setTextViewText(R.id.metro_notif_body, body)
+      }
+      val expanded = RemoteViews(packageName, R.layout.notif_message_big).apply {
+        setImageViewBitmap(R.id.metro_notif_avatar, avatar)
+        setTextViewText(R.id.metro_notif_title, title)
+        setTextViewText(R.id.metro_notif_body, body)
+      }
+      builder
+        .setStyle(NotificationCompat.DecoratedCustomViewStyle())
+        .setCustomContentView(collapsed)
+        .setCustomBigContentView(expanded)
+    } else {
+      // DEFENSIVE FALLBACK: avatar download failed — post a standard card so a
+      // notification still shows (avatar would have rendered top-right here).
+      builder.setStyle(NotificationCompat.BigTextStyle().bigText(body))
+    }
+
     contentIntent(line)?.let { builder.setContentIntent(it) }
 
     if (NotificationManagerCompat.from(this).areNotificationsEnabled()) {

@@ -32,9 +32,18 @@ const SERVICE_NAME = 'box.metro.pill.OverlayService';
 const FCM_SERVICE_NAME = 'box.metro.pill.MetroFcmService';
 
 /** @param {import('@expo/config-plugins').ExportedConfig} config */
+const EXPO_FCM_SERVICE_NAME =
+  'expo.modules.notifications.service.ExpoFirebaseMessagingService';
+
 function withMetroPill(config) {
   return withAndroidManifest(config, (cfg) => {
     const manifest = cfg.modResults.manifest;
+
+    // Ensure the `tools` namespace is available so we can use tools:node="remove".
+    manifest.$ = manifest.$ || {};
+    if (!manifest.$['xmlns:tools']) {
+      manifest.$['xmlns:tools'] = 'http://schemas.android.com/tools';
+    }
 
     // --- permissions ---
     manifest['uses-permission'] = manifest['uses-permission'] || [];
@@ -63,10 +72,12 @@ function withMetroPill(config) {
       });
     }
 
-    // --- custom FCM service (avatar largeIcon notifications) ---
-    // Renders avatar data-pushes with a round largeIcon, delegates the rest to
-    // Expo's ExpoFirebaseMessagingService. intent-filter priority="1" so it wins
-    // as the default MESSAGING_EVENT receiver over Expo's (priority 0).
+    // --- custom FCM service (the ONLY MESSAGING_EVENT receiver) ---
+    // MetroFcmService is the single FirebaseMessagingService that receives FCM
+    // messages. It renders avatar data-pushes natively (custom RemoteViews with
+    // the avatar on the left) and reflectively forwards every other push to an
+    // *instance* of ExpoFirebaseMessagingService (see MetroFcmService.kt) so all
+    // existing expo-notifications behaviour is preserved.
     const hasFcm = app.service.some(
       (s) => s.$ && s.$['android:name'] === FCM_SERVICE_NAME,
     );
@@ -78,10 +89,33 @@ function withMetroPill(config) {
         },
         'intent-filter': [
           {
-            $: { 'android:priority': '1' },
             action: [{ $: { 'android:name': 'com.google.firebase.MESSAGING_EVENT' } }],
           },
         ],
+      });
+    }
+
+    // --- strip Expo's FCM receiver from the merged manifest ---
+    // The intent-filter priority trick does NOT make FCM route a data message to
+    // a single service: FCM dispatches to whichever FirebaseMessagingService is
+    // registered, and expo-notifications' ExpoFirebaseMessagingService is still a
+    // MESSAGING_EVENT receiver at priority 0 in the merged manifest — so BOTH
+    // services fire and the user gets two cards. We remove Expo's <service> via
+    // the manifest-merger tools:node="remove" marker. Delegation still works
+    // because MetroFcmService instantiates the Expo service class directly
+    // (reflection) — that path does not need the manifest receiver.
+    const hasExpoRemoval = app.service.some(
+      (s) =>
+        s.$ &&
+        s.$['android:name'] === EXPO_FCM_SERVICE_NAME &&
+        s.$['tools:node'] === 'remove',
+    );
+    if (!hasExpoRemoval) {
+      app.service.push({
+        $: {
+          'android:name': EXPO_FCM_SERVICE_NAME,
+          'tools:node': 'remove',
+        },
       });
     }
 
