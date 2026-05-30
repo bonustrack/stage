@@ -542,8 +542,8 @@ export default function Messenger(): React.ReactElement {
         })}
       />
     );
-    /** Versions drive re-creation so name/avatar/pin/draft resolutions repaint. */
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    /** Versions drive re-creation so name/avatar/pin/draft resolutions repaint.
+     *  (deps intentionally partial — react-hooks/exhaustive-deps not enabled.) */
   }, [router, channelProfilesVersion, draftsVersion, pinned]);
 
   /** ChannelRow is fixed-height (#5) → getItemLayout lets the list skip

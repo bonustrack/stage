@@ -12,7 +12,8 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import { useEffect } from 'react';
-import { LogBox, Text, TextInput, View } from 'react-native';
+import { LogBox, Text, TextInput } from 'react-native';
+import { Box } from '../components/layout';
 import { Spinner } from '../components/Spinner';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
@@ -81,9 +82,9 @@ export default function RootLayout(): React.ReactElement {
 
   if (!loaded) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: dark ? '#0e0f10' : '#ffffff' }}>
+      <Box style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: dark ? '#0e0f10' : '#ffffff' }}>
         <Spinner size={28} color={dark ? '#ffffff' : '#000000'} />
-      </View>
+      </Box>
     );
   }
 

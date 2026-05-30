@@ -9,7 +9,8 @@
  *  contract we're shipping. */
 
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TextInput } from 'react-native';
+import { Box } from '../../components/layout';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createPublicClient, http, formatEther, isAddress, type Hex } from 'viem';
@@ -138,8 +139,8 @@ export default function WalletSend(): React.ReactElement {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
-      <View style={{
+    <Box style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
+      <Box style={{
         flexDirection: 'row', alignItems: 'center', gap: 8,
         paddingHorizontal: 12, paddingTop: 8, paddingBottom: 10,
         borderBottomWidth: 1, borderBottomColor: border,
@@ -148,11 +149,11 @@ export default function WalletSend(): React.ReactElement {
           <HeroIcon name="arrowLeft" size={22} color={fg} />
         </Pressable>
         <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', flex: 1 }}>Send</Text>
-      </View>
+      </Box>
 
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 16, gap: 16 }}>
         {/* Recipient */}
-        <View style={{ gap: 6 }}>
+        <Box style={{ gap: 6 }}>
           <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>RECIPIENT</Text>
           <TextInput
             value={to}
@@ -168,10 +169,10 @@ export default function WalletSend(): React.ReactElement {
             }}
           />
           {resolving ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4 }}>
+            <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4 }}>
               <ActivityIndicator size="small" color={fg} />
               <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>Resolving…</Text>
-            </View>
+            </Box>
           ) : resolved ? (
             <Text style={{ color: fg, fontSize: 13, fontFamily: 'Calibre-Medium', paddingHorizontal: 4 }}>
               → {resolved}
@@ -181,20 +182,20 @@ export default function WalletSend(): React.ReactElement {
               {resolveErr}
             </Text>
           ) : null}
-        </View>
+        </Box>
 
         {/* Amount + USD/ETH toggle + Max */}
-        <View style={{ gap: 6 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <Box style={{ gap: 6 }}>
+          <Box style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', flex: 1 }}>AMOUNT</Text>
             <Pressable onPress={onMax} hitSlop={6} disabled={!ethBalance}>
               <Text style={{ color: ethBalance ? '#c0a06e' : sub, fontSize: 12, fontFamily: 'Calibre-Semibold' }}>
                 MAX
               </Text>
             </Pressable>
-          </View>
+          </Box>
 
-          <View style={{
+          <Box style={{
             flexDirection: 'row', alignItems: 'center',
             backgroundColor: inputBg, borderRadius: 12,
             paddingHorizontal: 14, paddingVertical: 12, gap: 8,
@@ -237,7 +238,7 @@ export default function WalletSend(): React.ReactElement {
               </Text>
               <HeroIcon name="arrowDown" size={14} color={fg} />
             </Pressable>
-          </View>
+          </Box>
 
           {secondaryLabel ? (
             <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', paddingHorizontal: 4 }}>
@@ -249,7 +250,7 @@ export default function WalletSend(): React.ReactElement {
               Balance: {Number(ethBalance).toLocaleString(undefined, { maximumFractionDigits: 6 })} ETH
             </Text>
           ) : null}
-        </View>
+        </Box>
 
         <Pressable
           onPress={onSubmit}
@@ -265,6 +266,6 @@ export default function WalletSend(): React.ReactElement {
           </Text>
         </Pressable>
       </ScrollView>
-    </View>
+    </Box>
   );
 }

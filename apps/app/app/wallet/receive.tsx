@@ -6,7 +6,8 @@
  *  needed) layered on react-native-svg which the app already depends on. */
 
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text } from 'react-native';
+import { Box } from '../../components/layout';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -41,8 +42,8 @@ export default function WalletReceive(): React.ReactElement {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
-      <View style={{
+    <Box style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
+      <Box style={{
         flexDirection: 'row', alignItems: 'center', gap: 8,
         paddingHorizontal: 12, paddingTop: 8, paddingBottom: 10,
         borderBottomWidth: 1, borderBottomColor: border,
@@ -51,11 +52,11 @@ export default function WalletReceive(): React.ReactElement {
           <HeroIcon name="arrowLeft" size={22} color={fg} />
         </Pressable>
         <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', flex: 1 }}>Receive</Text>
-      </View>
+      </Box>
 
       <ScrollView contentContainerStyle={{ padding: 16, alignItems: 'center', gap: 16 }}>
         {/* QR card — always white background so contrast is correct in dark mode too. */}
-        <View style={{
+        <Box style={{
           backgroundColor: '#ffffff', padding: 16, borderRadius: 16,
           borderWidth: 1, borderColor: border,
           alignItems: 'center', justifyContent: 'center',
@@ -68,9 +69,9 @@ export default function WalletReceive(): React.ReactElement {
               backgroundColor="#ffffff"
             />
           ) : (
-            <View style={{ width: 240, height: 240, backgroundColor: '#f4f4f5' }} />
+            <Box style={{ width: 240, height: 240, backgroundColor: '#f4f4f5' }} />
           )}
-        </View>
+        </Box>
 
         <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', marginTop: 4 }}>
           WALLET ADDRESS (tap to copy)
@@ -92,6 +93,6 @@ export default function WalletReceive(): React.ReactElement {
           Scan or share this address to receive ETH or tokens on Ethereum mainnet.
         </Text>
       </ScrollView>
-    </View>
+    </Box>
   );
 }

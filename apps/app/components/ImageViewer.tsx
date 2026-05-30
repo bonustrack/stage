@@ -17,7 +17,8 @@
  *  patterns — there's no iOS toast primitive). */
 
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Image, Modal, Platform, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Modal, Platform, Pressable, Text } from 'react-native';
+import { Box } from './layout';
 import * as MediaLibrary from 'expo-media-library';
 import { Directory, File, Paths } from 'expo-file-system';
 import { Buffer } from 'buffer';
@@ -95,7 +96,7 @@ export function ImageViewer({ uri, visible, onClose }: {
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.97)' }}>
+      <Box style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.97)' }}>
         {/* Tap the backdrop (anywhere not on a control) to dismiss. */}
         <Pressable
           onPress={onClose}
@@ -116,7 +117,7 @@ export function ImageViewer({ uri, visible, onClose }: {
         </Pressable>
 
         {/* Download — bottom-center pill. */}
-        <View style={{ position: 'absolute', bottom: 48, left: 0, right: 0, alignItems: 'center' }}>
+        <Box style={{ position: 'absolute', bottom: 48, left: 0, right: 0, alignItems: 'center' }}>
           <Pressable
             onPress={() => { void onDownload(); }}
             disabled={saving}
@@ -134,8 +135,8 @@ export function ImageViewer({ uri, visible, onClose }: {
               {saving ? 'Saving…' : 'Download'}
             </Text>
           </Pressable>
-        </View>
-      </View>
+        </Box>
+      </Box>
     </Modal>
   );
 }

@@ -7,7 +7,7 @@
  *  Presentational pieces live in ./ProfileScreen.parts to keep this under cap. */
 
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQueryClient } from '@tanstack/react-query';
@@ -97,7 +97,7 @@ export function ProfileScreen({ address, variant }: {
           For `route` the header is absolutely positioned so it floats over the
           full-bleed cover (back button / dots sit on top of the banner); for
           `tab` it stays an in-flow opaque strip above the scroll content. */}
-      <View style={{
+      <Box style={{
         ...(variant === 'route'
           ? {
             position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
@@ -119,7 +119,7 @@ export function ProfileScreen({ address, variant }: {
             <HeroIcon name="dotsHorizontal" size={22} color={c.head} />
           </Pressable>
         ) : null}
-      </View>
+      </Box>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
         {/* Full-bleed cover banner (input-bg). For the `route` variant the cover
@@ -134,7 +134,7 @@ export function ProfileScreen({ address, variant }: {
             rounded TOP corners so the black curves over the gray banner (bottom-sheet
             look). overflow:'visible' + avatar zIndex keep the avatar from being
             clipped by the rounding. */}
-        <View style={{
+        <Box style={{
           alignItems: 'flex-start', paddingHorizontal: 16, paddingBottom: 8,
           backgroundColor: c.bg, marginTop: -18,
           borderTopLeftRadius: 18, borderTopRightRadius: 18,
@@ -186,7 +186,7 @@ export function ProfileScreen({ address, variant }: {
               onSend={() => router.push({ pathname: '/wallet/send', params: { to: addr } })}
             />
           ) : null}
-        </View>
+        </Box>
 
         {profile?.github?.trim() ? <InfoRow label="GitHub" value={profile.github} c={c} /> : null}
         {profile?.twitter?.trim() ? <InfoRow label="X (Twitter)" value={profile.twitter} c={c} /> : null}

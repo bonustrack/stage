@@ -6,7 +6,7 @@
  *  on the left, USD value + amount/symbol on the right. */
 
 import { useEffect, useState } from 'react';
-import { Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, Text } from 'react-native';
 import { createPublicClient, http, formatEther, formatUnits, type Hex } from 'viem';
 import { mainnet } from 'viem/chains';
 import { useRouter } from 'expo-router';
@@ -16,7 +16,7 @@ import { usePeerProfiles } from '../../lib/peerProfiles';
 import { usePalette } from '../../lib/theme';
 import { getErc20UsdPrices, getSimplePrices } from '../../lib/coingecko';
 import { HeroIcon, type HeroIconName } from '../../components/HeroIcon';
-import { Col, Row } from '../../components/layout';
+import { Col, Row, Box } from '../../components/layout';
 import { stampTokenUrl, NATIVE_TOKEN_SENTINEL } from '@metro-labs/kit/avatar';
 
 const MULTICALL3 = '0xcA11bde05977b3631167028862bE2a173976CA11' as const;
@@ -226,7 +226,7 @@ export default function Wallet(): React.ReactElement {
               {/* Token avatar with a small mainnet network-bullet overlay, like
                   Snapshot UI treasury. `resizeMode: contain` so the IPFS logo
                   isn't cropped/zoomed inside the small badge slot. */}
-              <View style={{ width: 32, height: 32 }}>
+              <Box style={{ width: 32, height: 32 }}>
                 <Image
                   source={{ uri: r.logoUrl }}
                   style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border }}
@@ -240,7 +240,7 @@ export default function Wallet(): React.ReactElement {
                     borderWidth: 2, borderColor: bg, backgroundColor: '#ffffff',
                   }}
                 />
-              </View>
+              </Box>
               {/* Left column — token NAME (top) over price + 24h change (bottom). */}
               <Col flex={1} style={{ minWidth: 0 }}>
                 <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{r.name}</Text>

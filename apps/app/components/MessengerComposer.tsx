@@ -1,9 +1,7 @@
 /** Floating two-line composer (Claude-mobile-style): textarea on top, [+ / mic / send] below. */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Alert, Animated, Image, PanResponder, Pressable, ScrollView, Text, TextInput, View,
-} from 'react-native';
+import { Alert, Animated, Image, PanResponder, Pressable, ScrollView, Text, TextInput } from 'react-native';
 import { loadDrafts, getDraft, setDraft } from '../lib/drafts';
 import { Audio } from 'expo-av';
 import * as MediaLibrary from 'expo-media-library';
@@ -612,7 +610,7 @@ export function MessengerComposer({
               /** Image attachments: 72px square with the filename label beneath, x-to-remove
                *  pinned to the top-right corner of the thumbnail. */
               <Col key={a.id} align="center" gap={4} style={{ width: 72 }}>
-                <View>
+                <Box>
                   <Image
                     /** `a.url` is a local file:// URI — works directly with RN `Image`. */
                     source={{ uri: a.url }}
@@ -629,7 +627,7 @@ export function MessengerComposer({
                   >
                     <HeroIcon name="x" size={12} color="#ffffff" />
                   </Pressable>
-                </View>
+                </Box>
                 <Text style={{ color: fg, fontSize: 11, width: 72, textAlign: 'center' , fontFamily: 'Calibre-Medium'}} numberOfLines={1}>
                   {a.name ?? a.id}
                 </Text>
@@ -678,7 +676,7 @@ export function MessengerComposer({
             </Animated.View>
             <Row flex={1} align="center" justify="end" style={{ height: 28, overflow: 'hidden' }}>
               {[...Array(Math.max(0, 40 - levels.length)).fill(0.05), ...levels].slice(-40).map((lvl, i) => (
-                <View key={i} style={{ width: 3, marginHorizontal: 1, borderRadius: 2, height: Math.max(3, Math.round(lvl * 26)), backgroundColor: head, opacity: 0.85 }} />
+                <Box key={i} style={{ width: 3, marginHorizontal: 1, borderRadius: 2, height: Math.max(3, Math.round(lvl * 26)), backgroundColor: head, opacity: 0.85 }} />
               ))}
             </Row>
             <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', minWidth: 40, textAlign: 'center' }}>
@@ -686,7 +684,7 @@ export function MessengerComposer({
             </Text>
           </Row>
         ) : (
-          <View style={{ position: 'relative' }}>
+          <Box style={{ position: 'relative' }}>
             <TextInput
               ref={inputRef}
               value={text} onChangeText={setText} placeholder="Ask Metro" placeholderTextColor={sub} multiline
@@ -701,7 +699,7 @@ export function MessengerComposer({
                 <ComposerGradient bg={inputBg} direction="down" bottom={0} height={24} />
               </>
             ) : null}
-          </View>
+          </Box>
         )}
         <Row align="center" gap={4}>
           {/** Left: cancel (✕) while recording, else the attach (+) menu toggle. */}
@@ -835,13 +833,13 @@ export function MessengerComposer({
             style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 }}
           >
             <Text style={{ color: fg, fontSize: 15, fontFamily: 'Calibre-Medium' }}>Allow multiple choices</Text>
-            <View style={{
+            <Box style={{
               width: 44, height: 26, borderRadius: 999, padding: 3,
               backgroundColor: pollMulti ? '#c0a06e' : inputBg,
               alignItems: pollMulti ? 'flex-end' : 'flex-start',
             }}>
-              <View style={{ width: 20, height: 20, borderRadius: 999, backgroundColor: '#ffffff' }} />
-            </View>
+              <Box style={{ width: 20, height: 20, borderRadius: 999, backgroundColor: '#ffffff' }} />
+            </Box>
           </Pressable>
           <Pressable
             onPress={() => void sendPoll()}

@@ -6,7 +6,8 @@
  *  are also surfaced below the resolved result. */
 
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, TextInput } from 'react-native';
+import { Box } from '../components/layout';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { isAddress } from 'viem';
@@ -107,9 +108,9 @@ export default function Search(): React.ReactElement {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
+    <Box style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
       {/* Topnav: back + title + input. */}
-      <View style={{
+      <Box style={{
         flexDirection: 'row', alignItems: 'center', gap: 8,
         paddingHorizontal: 12, paddingTop: 8, paddingBottom: 10,
         borderBottomWidth: 1, borderBottomColor: border,
@@ -131,14 +132,14 @@ export default function Search(): React.ReactElement {
             paddingHorizontal: 14, paddingVertical: 8,
           }}
         />
-      </View>
+      </Box>
 
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 24 }}>
         {/* Resolved result card */}
         {resolving ? (
-          <View style={{ paddingVertical: 16, alignItems: 'center' }}>
+          <Box style={{ paddingVertical: 16, alignItems: 'center' }}>
             <ActivityIndicator color={head} />
-          </View>
+          </Box>
         ) : null}
 
         {resolved ? (
@@ -157,14 +158,14 @@ export default function Search(): React.ReactElement {
               cacheBuster={getPeerAvatarCb(resolved.address)}
               style={{ backgroundColor: border }}
             />
-            <View style={{ flex: 1, minWidth: 0 }}>
+            <Box style={{ flex: 1, minWidth: 0 }}>
               <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
                 {getPeerName(resolved.address) ?? (resolved.source === 'ens' ? query.trim() : shortAddress(resolved.address))}
               </Text>
               <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 2 }} numberOfLines={1}>
                 {shortAddress(resolved.address)}
               </Text>
-            </View>
+            </Box>
             {opening === resolved.address.toLowerCase()
               ? <ActivityIndicator color={head} />
               : <HeroIcon name="chatRect" size={18} color={fg} />}
@@ -200,7 +201,7 @@ export default function Search(): React.ReactElement {
               cacheBuster={getPeerAvatarCb(p.address)}
               style={{ backgroundColor: border }}
             />
-            <View style={{ flex: 1, minWidth: 0 }}>
+            <Box style={{ flex: 1, minWidth: 0 }}>
               <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
                 {getPeerName(p.address) ?? shortAddress(p.address)}
               </Text>
@@ -209,7 +210,7 @@ export default function Search(): React.ReactElement {
                   {shortAddress(p.address)}
                 </Text>
               ) : null}
-            </View>
+            </Box>
             {opening === p.address.toLowerCase() ? <ActivityIndicator color={head} /> : null}
           </Pressable>
         ))}
@@ -220,6 +221,6 @@ export default function Search(): React.ReactElement {
           </Text>
         ) : null}
       </ScrollView>
-    </View>
+    </Box>
   );
 }

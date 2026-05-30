@@ -2,7 +2,8 @@
  *  Split out purely to keep each file under the 200-line lint cap; these have no
  *  state of their own beyond what the parent passes down. */
 
-import { Modal, Pressable, Text, View } from 'react-native';
+import { Modal, Pressable, Text } from 'react-native';
+import { Box } from './layout';
 import { usePalette, type Palette } from '../lib/theme';
 import { HeroIcon, type HeroIconName } from './HeroIcon';
 
@@ -17,21 +18,21 @@ export function InfoRow({ label, value, onCopy, c }: {
   label: string; value: string; onCopy?: () => void; c: ProfileColors;
 }): React.ReactElement {
   return (
-    <View style={{
+    <Box style={{
       marginHorizontal: 16, marginTop: 12, padding: 12,
       borderRadius: 12, backgroundColor: c.rowBg, borderWidth: 1, borderColor: c.border,
       flexDirection: 'row', alignItems: 'center', gap: 8,
     }}>
-      <View style={{ flex: 1 }}>
+      <Box style={{ flex: 1 }}>
         <Text style={{ color: c.sub, fontSize: 11, fontFamily: 'Calibre-Medium' }}>{label.toUpperCase()}</Text>
         <Text style={{ color: c.fg, fontSize: 14, marginTop: 4, fontFamily: 'Calibre-Medium' }} selectable>{value}</Text>
-      </View>
+      </Box>
       {onCopy ? (
         <Pressable onPress={onCopy} hitSlop={8} style={{ padding: 4 }}>
           <HeroIcon name="copy" size={18} color={c.sub} />
         </Pressable>
       ) : null}
-    </View>
+    </Box>
   );
 }
 
@@ -45,7 +46,7 @@ export function ProfileActions({ opening, onMessage, onSend, c }: {
   const Btn = ({ icon, label, onPress, disabled }: {
     icon: HeroIconName; label: string; onPress: () => void; disabled?: boolean;
   }): React.ReactElement => (
-    <View style={{ alignItems: 'center', gap: 6 }}>
+    <Box style={{ alignItems: 'center', gap: 6 }}>
       <Pressable
         onPress={onPress}
         disabled={disabled}
@@ -59,13 +60,13 @@ export function ProfileActions({ opening, onMessage, onSend, c }: {
         <HeroIcon name={icon} size={22} color={c.head} />
       </Pressable>
       <Text style={{ color: c.head, fontSize: 14, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{label}</Text>
-    </View>
+    </Box>
   );
   return (
-    <View style={{ flexDirection: 'row', alignSelf: 'stretch', paddingHorizontal: 16, gap: 12, marginTop: 18, justifyContent: 'flex-start' }}>
+    <Box style={{ flexDirection: 'row', alignSelf: 'stretch', paddingHorizontal: 16, gap: 12, marginTop: 18, justifyContent: 'flex-start' }}>
       <Btn icon="chatRect" label={opening ? 'Opening…' : 'Message'} onPress={onMessage} disabled={opening} />
       <Btn icon="send" label="Send" onPress={onSend} />
-    </View>
+    </Box>
   );
 }
 
@@ -77,7 +78,7 @@ export function EditMenu({ visible, top, onClose, onEdit, c }: {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={{ flex: 1 }} onPress={onClose}>
-        <View style={{
+        <Box style={{
           position: 'absolute', right: 12, top,
           minWidth: 168, borderRadius: 12, overflow: 'hidden',
           backgroundColor: c.bg, borderWidth: 1, borderColor: c.border,
@@ -93,7 +94,7 @@ export function EditMenu({ visible, top, onClose, onEdit, c }: {
             <HeroIcon name="pencil" size={18} color={c.head} />
             <Text style={{ color: c.head, fontSize: 15, fontFamily: 'Calibre-Medium' }}>Edit profile</Text>
           </Pressable>
-        </View>
+        </Box>
       </Pressable>
     </Modal>
   );

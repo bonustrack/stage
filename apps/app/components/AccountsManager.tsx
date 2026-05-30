@@ -8,10 +8,8 @@
  *  in-app Modals (Alert.prompt is iOS-only). */
 
 import { useCallback, useEffect, useState } from 'react';
-import {
-  ActivityIndicator, Alert, DevSettings, Image, Modal, Pressable, Text,
-  TextInput, View,
-} from 'react-native';
+import { ActivityIndicator, Alert, DevSettings, Image, Modal, Pressable, Text, TextInput } from 'react-native';
+import { Box } from './layout';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import { useAppKit } from '@reown/appkit-wagmi-react-native';
@@ -127,14 +125,14 @@ export function AccountsManager({ dark, flat = false }: { dark: boolean; flat?: 
           source={{ uri: stampBoxAvatarUrl(rec.address, 56) }}
           style={{ width: 28, height: 28, borderRadius: 999, backgroundColor: border }}
         />
-        <View style={{ flex: 1, minWidth: 0 }}>
+        <Box style={{ flex: 1, minWidth: 0 }}>
           <Text numberOfLines={1} style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>
             {getPeerName(rec.address) ?? rec.label ?? shortAddress(rec.address)}
           </Text>
           <Text numberOfLines={1} style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 1 }}>
             {shortAddress(rec.address)} · {TYPE_LABEL[rec.type]}
           </Text>
-        </View>
+        </Box>
         {trailing}
       </Pressable>
     );
@@ -220,13 +218,13 @@ export function AccountsManager({ dark, flat = false }: { dark: boolean; flat?: 
   }
 
   return (
-    <View>
+    <Box>
       {!flat ? (
         <Text style={{ color: sub, fontSize: 13, paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8, fontFamily: 'Calibre-Medium' }}>
           ACCOUNTS
         </Text>
       ) : null}
-      <View style={flat ? {
+      <Box style={flat ? {
         backgroundColor: 'transparent',
       } : {
         marginHorizontal: 16, borderRadius: 12, overflow: 'hidden',
@@ -241,7 +239,7 @@ export function AccountsManager({ dark, flat = false }: { dark: boolean; flat?: 
             </Text>
           ) : (
             accounts.map((a, i) => (
-              <View key={a.id} style={{ backgroundColor: a.id === activeId ? border : 'transparent' }}>
+              <Box key={a.id} style={{ backgroundColor: a.id === activeId ? border : 'transparent' }}>
                 <AccountRow
                   rec={a}
                   topBorder={i > 0}
@@ -254,7 +252,7 @@ export function AccountsManager({ dark, flat = false }: { dark: boolean; flat?: 
                         </Pressable>
                   }
                 />
-              </View>
+              </Box>
             ))
           )
         ) : (
@@ -300,14 +298,14 @@ export function AccountsManager({ dark, flat = false }: { dark: boolean; flat?: 
                 backgroundColor: pressed ? border : 'transparent',
               })}
             >
-              <View style={{ width: 28, height: 28, borderRadius: 999, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: sub, borderStyle: 'dashed' }}>
+              <Box style={{ width: 28, height: 28, borderRadius: 999, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: sub, borderStyle: 'dashed' }}>
                 <HeroIcon name="plus" size={16} color={sub} />
-              </View>
+              </Box>
               <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>Add account</Text>
             </Pressable>
           </>
         ) : null}
-      </View>
+      </Box>
       {!flat ? (
         <Text style={{ color: sub, fontSize: 13, paddingHorizontal: 16, paddingTop: 8, fontFamily: 'Calibre-Medium' }}>
           {expanded ? 'Tap an account to switch · long-press for options' : 'Tap to switch or add accounts'}
@@ -315,9 +313,9 @@ export function AccountsManager({ dark, flat = false }: { dark: boolean; flat?: 
       ) : null}
 
       {busy ? (
-        <View style={{ paddingTop: 12, alignItems: 'center' }}>
+        <Box style={{ paddingTop: 12, alignItems: 'center' }}>
           <ActivityIndicator color={head} />
-        </View>
+        </Box>
       ) : null}
 
       {/* Add-account picker */}
@@ -344,7 +342,7 @@ export function AccountsManager({ dark, flat = false }: { dark: boolean; flat?: 
           }}
         />
         {importErr ? <Text style={{ color: '#ff6b80', fontSize: 12, marginBottom: 8, fontFamily: 'Calibre-Medium' }}>{importErr}</Text> : null}
-        <View style={{ flexDirection: 'row', gap: 8 }}>
+        <Box style={{ flexDirection: 'row', gap: 8 }}>
           <Pressable
             onPress={() => void (async () => { const t = await Clipboard.getStringAsync(); if (t) { setImportText(t.trim()); setImportErr(''); } })()}
             style={({ pressed }) => ({ flex: 1, paddingVertical: 11, borderRadius: 10, alignItems: 'center', borderWidth: 1, borderColor: border, backgroundColor: pressed ? border : 'transparent' })}
@@ -358,7 +356,7 @@ export function AccountsManager({ dark, flat = false }: { dark: boolean; flat?: 
           >
             <Text style={{ color: '#000', fontSize: 14, fontFamily: 'Calibre-Semibold' }}>Import</Text>
           </Pressable>
-        </View>
+        </Box>
       </SheetModal>
 
       {/* Per-account options */}
@@ -398,7 +396,7 @@ export function AccountsManager({ dark, flat = false }: { dark: boolean; flat?: 
           <Text style={{ color: '#000', fontSize: 14, fontFamily: 'Calibre-Semibold' }}>Copy to clipboard</Text>
         </Pressable>
       </SheetModal>
-    </View>
+    </Box>
   );
 }
 
@@ -414,7 +412,7 @@ function SheetModal({ visible, onClose, children, bg, border, title, head }: {
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>
         <Pressable onPress={(e) => e.stopPropagation()} style={{ backgroundColor: bg, borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 16, paddingBottom: 28 + insets.bottom, borderTopWidth: 1, borderColor: border }}>
-          <View style={{ alignSelf: 'center', width: 36, height: 4, borderRadius: 2, backgroundColor: border, marginBottom: 12 }} />
+          <Box style={{ alignSelf: 'center', width: 36, height: 4, borderRadius: 2, backgroundColor: border, marginBottom: 12 }} />
           {title ? (
             <Text style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold', marginBottom: 12 }}>{title}</Text>
           ) : null}

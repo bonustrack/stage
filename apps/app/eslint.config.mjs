@@ -13,13 +13,12 @@ export default tseslint.config(
       "@typescript-eslint/no-require-imports": "off",
       // Steer layout containers to the Box/Row/Col primitives instead of raw View.
       // Only `View` is restricted — ScrollView, Pressable, Animated.View, etc. are fine.
-      // `warn`, not `error`: ~17 screens/components still use raw View (animated/
-      // measured/modal-overlay cases) post-migration. Keeps the signal + blocks the
-      // habit in review without failing CI; flip to "error" once the holdouts are
-      // migrated. Where a raw View is genuinely required, add a targeted
-      // `// eslint-disable-next-line no-restricted-imports` at that site.
+      // `error`: all holdouts have been migrated to Box/Row/Col. Where a raw View
+      // is genuinely required (onLayout/ref measurement, overlays, MaskedView
+      // children, etc.), add a targeted
+      // `// eslint-disable-next-line no-restricted-imports` at the import site.
       "no-restricted-imports": [
-        "warn",
+        "error",
         {
           paths: [
             {

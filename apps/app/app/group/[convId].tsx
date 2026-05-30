@@ -4,9 +4,8 @@
 
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import {
-  ActivityIndicator, Alert, FlatList, Image, Pressable, Text, TextInput, View,
-} from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Image, Pressable, Text, TextInput } from 'react-native';
+import { Box } from '../../components/layout';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -290,8 +289,8 @@ export default function GroupDetail(): React.ReactElement {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: bg }}>
-      <View style={{
+    <Box style={{ flex: 1, backgroundColor: bg }}>
+      <Box style={{
         height: 44 + insets.top, paddingTop: insets.top, paddingHorizontal: 14,
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
       }}>
@@ -301,9 +300,9 @@ export default function GroupDetail(): React.ReactElement {
         <Pressable onPress={() => setOverflowOpen(true)} hitSlop={10} style={{ padding: 6 }}>
           <HeroIcon name="dotsHorizontal" size={22} color={fg} />
         </Pressable>
-      </View>
+      </Box>
 
-      <View style={{ alignItems: 'flex-start', paddingHorizontal: 16, paddingTop: 4, paddingBottom: 16 }}>
+      <Box style={{ alignItems: 'flex-start', paddingHorizontal: 16, paddingTop: 4, paddingBottom: 16 }}>
         <Pressable
           onPress={() => { if (imageUrl) setViewerOpen(true); else void pickImage(); }}
           onLongPress={() => { void pickImage(); }}
@@ -316,29 +315,29 @@ export default function GroupDetail(): React.ReactElement {
               style={{ width: 128, height: 128, borderRadius: 15, backgroundColor: rowBg, opacity: uploadingImage ? 0.5 : 1 }}
             />
           ) : (
-            <View style={{
+            <Box style={{
               width: 128, height: 128, borderRadius: 15, backgroundColor: rowBg,
               borderWidth: 1, borderColor: border,
               alignItems: 'center', justifyContent: 'center',
               opacity: uploadingImage ? 0.5 : 1,
             }}>
               <Text style={{ color: sub, fontSize: 28 }}>＋</Text>
-            </View>
+            </Box>
           )}
           {uploadingImage ? (
-            <View style={{ position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' }}>
+            <Box style={{ position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' }}>
               <ActivityIndicator color={fg} />
-            </View>
+            </Box>
           ) : null}
         </Pressable>
         <Text style={{ color: sub, fontSize: 13, marginTop: 6, fontFamily: 'Calibre-Medium' }}>
           {uploadingImage ? 'Uploading…' : imageUrl ? 'Tap to view · hold to change' : 'Tap to add image'}
         </Text>
-      </View>
+      </Box>
 
-      <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
+      <Box style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
         {editing ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 }}>
+          <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 }}>
             <TextInput
               value={draft}
               onChangeText={setDraft}
@@ -361,7 +360,7 @@ export default function GroupDetail(): React.ReactElement {
                 {saving ? 'Saving…' : 'Save'}
               </Text>
             </Pressable>
-          </View>
+          </Box>
         ) : (
           <Pressable onPress={() => setEditing(true)} hitSlop={6} style={{ marginTop: 6, alignItems: 'flex-start' }}>
             <Text style={{ color: head, fontSize: 22, fontFamily: 'Calibre-Semibold', textAlign: 'left' }}>
@@ -370,12 +369,12 @@ export default function GroupDetail(): React.ReactElement {
             <Text style={{ color: sub, fontSize: 12, marginTop: 4, fontFamily: 'Calibre-Medium' }}>Tap to rename</Text>
           </Pressable>
         )}
-      </View>
+      </Box>
 
-      <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
+      <Box style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
         <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>DESCRIPTION</Text>
         {editingDescription ? (
-          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 6 }}>
+          <Box style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 6 }}>
             <TextInput
               value={descriptionDraft}
               onChangeText={setDescriptionDraft}
@@ -400,7 +399,7 @@ export default function GroupDetail(): React.ReactElement {
                 {savingDescription ? 'Saving…' : 'Save'}
               </Text>
             </Pressable>
-          </View>
+          </Box>
         ) : (
           <Pressable onPress={() => setEditingDescription(true)} hitSlop={6} style={{ marginTop: 6 }}>
             <Text style={{ color: description.trim() ? fg : sub, fontSize: 14, fontFamily: 'Calibre-Medium' }}>
@@ -408,11 +407,11 @@ export default function GroupDetail(): React.ReactElement {
             </Text>
           </Pressable>
         )}
-      </View>
+      </Box>
 
       {/** MEMBERS header: label left, add-member button (avatar + plus) top-right
        *   → opens a modal to add by address (no inline input). */}
-      <View style={{
+      <Box style={{
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
         paddingHorizontal: 16, paddingBottom: 8,
       }}>
@@ -432,7 +431,7 @@ export default function GroupDetail(): React.ReactElement {
           <HeroIcon name="users" size={16} color={fg} />
           <HeroIcon name="plus" size={14} color={fg} />
         </Pressable>
-      </View>
+      </Box>
       <FlatList
         data={members}
         extraData={profilesVersion}
@@ -459,7 +458,7 @@ export default function GroupDetail(): React.ReactElement {
                 size="md"
                 style={{ backgroundColor: border }}
               />
-              <View style={{ flex: 1, minWidth: 0 }}>
+              <Box style={{ flex: 1, minWidth: 0 }}>
                 <Text style={{ color: head, fontSize: 15, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
                   {memberNames[item] || shortAddress(item)}{isSelf ? ' (you)' : ''}
                 </Text>
@@ -468,9 +467,9 @@ export default function GroupDetail(): React.ReactElement {
                     {shortAddress(item)}
                   </Text>
                 ) : null}
-              </View>
+              </Box>
               {memberRoles[item] && memberRoles[item] !== 'member' ? (
-                <View style={{
+                <Box style={{
                   paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999,
                   backgroundColor: memberRoles[item] === 'owner'
                     ? (dark ? 'rgba(45,212,191,0.18)' : 'rgba(13,148,136,0.12)')
@@ -480,7 +479,7 @@ export default function GroupDetail(): React.ReactElement {
                     fontSize: 11, fontFamily: 'Calibre-Medium',
                     color: memberRoles[item] === 'owner' ? (dark ? '#2dd4bf' : '#0d9488') : sub,
                   }}>{memberRoles[item] === 'owner' ? 'Owner' : 'Admin'}</Text>
-                </View>
+                </Box>
               ) : null}
               {isSelf ? null : (
                 <Pressable
@@ -502,7 +501,7 @@ export default function GroupDetail(): React.ReactElement {
 
       {/* Add-member modal — opened by the + button in the MEMBERS header. */}
       <AppModal visible={addOpen} onClose={() => setAddOpen(false)} title="Add member">
-        <View>
+        <Box>
             <TextInput
               value={addDraft}
               onChangeText={setAddDraft}
@@ -530,12 +529,12 @@ export default function GroupDetail(): React.ReactElement {
                 {adding ? 'Adding…' : 'Add member'}
               </Text>
             </Pressable>
-        </View>
+        </Box>
       </AppModal>
 
       {/* Overflow menu — opened by the 3-dot button in the topnav. Holds Leave group. */}
       <AppModal visible={overflowOpen} onClose={() => setOverflowOpen(false)}>
-        <View style={{ gap: 4 }}>
+        <Box style={{ gap: 4 }}>
             <Pressable
               onPress={leaveGroup}
               disabled={leaving}
@@ -549,7 +548,7 @@ export default function GroupDetail(): React.ReactElement {
             <Pressable onPress={() => setOverflowOpen(false)} style={{ paddingVertical: 10, alignItems: 'center' }}>
               <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium' }}>Cancel</Text>
             </Pressable>
-        </View>
+        </Box>
       </AppModal>
 
       <ImageViewer
@@ -557,6 +556,6 @@ export default function GroupDetail(): React.ReactElement {
         visible={viewerOpen}
         onClose={() => setViewerOpen(false)}
       />
-    </View>
+    </Box>
   );
 }

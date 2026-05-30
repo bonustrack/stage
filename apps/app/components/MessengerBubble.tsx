@@ -2,7 +2,7 @@
  *  no colored bubble even for the local user's own messages. */
 
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Linking, PanResponder, Pressable, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Animated, Linking, PanResponder, Pressable, Text, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import { getPeerAvatarCb } from '../lib/peerProfiles';
 import Markdown, { MarkdownIt } from 'react-native-markdown-display';
@@ -12,7 +12,7 @@ import { MessengerImageAttachment } from './MessengerImageAttachment';
 import { YouTubeEmbed, LocationEmbed } from './MediaEmbeds';
 import { mapCoordsOf, youtubeIdOf } from '../lib/embedDetect';
 import { Avatar } from './Avatar';
-import { Row, Col } from './layout';
+import { Row, Col, Box } from './layout';
 import { resolveRemoteAttachment, shortAddress } from '../lib/xmtp';
 import { useProfileQuery } from '../lib/useProfile';
 import type { HistoryEntry } from '../lib/types';
@@ -262,7 +262,7 @@ function QuestionView({ question, dark, sub, onAnswer }: {
   };
   const needSubmitButton = multi || otherOpen;
   return (
-    <View style={{ alignSelf: 'stretch', gap: 6, marginTop: 8 }}>
+    <Box style={{ alignSelf: 'stretch', gap: 6, marginTop: 8 }}>
       {question.header ? (
         <Text style={{ color: sub, fontSize: 11, fontFamily: 'Calibre-Semibold', textTransform: 'uppercase', letterSpacing: 0.5 }}>
           {question.header}{multi ? ' · multi-select' : ''}
@@ -316,7 +316,7 @@ function QuestionView({ question, dark, sub, onAnswer }: {
         </Pressable>
       ) : null}
       {otherOpen ? (
-        <View style={{
+        <Box style={{
           paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12,
           backgroundColor: dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
           borderWidth: 1, borderColor: dark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.14)',
@@ -336,7 +336,7 @@ function QuestionView({ question, dark, sub, onAnswer }: {
               minHeight: 22, padding: 0,
             }}
           />
-        </View>
+        </Box>
       ) : null}
       {needSubmitButton ? (
         <Pressable
@@ -361,7 +361,7 @@ function QuestionView({ question, dark, sub, onAnswer }: {
           </Text>
         </Pressable>
       ) : null}
-    </View>
+    </Box>
   );
 }
 
@@ -400,7 +400,7 @@ function PollView({ poll, dark, sub, votes, ownVotes, onVote }: {
     onVote(idx, owned ? 'removed' : 'added');
   };
   return (
-    <View style={{ alignSelf: 'stretch', gap: 6, marginTop: 8 }}>
+    <Box style={{ alignSelf: 'stretch', gap: 6, marginTop: 8 }}>
       {poll.header ? (
         <Text style={{ color: sub, fontSize: 11, fontFamily: 'Calibre-Semibold', textTransform: 'uppercase', letterSpacing: 0.5 }}>
           {poll.header}{multi ? ' · multi-select' : ''}
@@ -427,7 +427,7 @@ function PollView({ poll, dark, sub, votes, ownVotes, onVote }: {
             })}
           >
             {/** Result bar — width tracks the option's vote share, sits behind the label. */}
-            <View
+            <Box
               pointerEvents="none"
               style={{
                 position: 'absolute', left: 0, top: 0, bottom: 0,
@@ -454,7 +454,7 @@ function PollView({ poll, dark, sub, votes, ownVotes, onVote }: {
       <Text style={{ color: sub, fontSize: 11, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
         {total} vote{total === 1 ? '' : 's'}
       </Text>
-    </View>
+    </Box>
   );
 }
 
@@ -618,7 +618,7 @@ function MessengerBubbleBase({
             </Text>
           </Pressable>
         ) : null}
-        {atts.length > 0 ? <View style={{ alignSelf: 'stretch' }}>{atts.map((a, i) => {
+        {atts.length > 0 ? <Box style={{ alignSelf: 'stretch' }}>{atts.map((a, i) => {
           /** XMTP inline attachments carry bytes in `dataB64` — render via data: URI.
            *  Optimistic (pending) attachments carry the local `file://` URI so the
            *  image shows instantly while the send is in flight; full `http(s)`/
@@ -643,23 +643,23 @@ function MessengerBubbleBase({
               dark={dark}
             />
           );
-        })}</View> : null}
+        })}</Box> : null}
         {/** Markdown wrapped so the lib's internal layout can't bleed into the timestamp row below. */}
         {poll ? (
           /** Poll bubble: render the question as the main text (the raw fallback
            *  multi-line string lives in entry.text but the PollView shows the
            *  options interactively, so we only surface the question here). */
           poll.question ? (
-            <View style={{ alignSelf: 'stretch' }}>
+            <Box style={{ alignSelf: 'stretch' }}>
               <Markdown {...markdownProps}>{poll.question}</Markdown>
-            </View>
+            </Box>
           ) : null
         ) : entry.text ? (
-          <View style={{ alignSelf: 'stretch' }}>
+          <Box style={{ alignSelf: 'stretch' }}>
             {hasMention(entry.text)
               ? <MentionBody text={entry.text} fg={fg} dark={dark} />
               : <Markdown {...markdownProps}>{entry.text}</Markdown>}
-          </View>
+          </Box>
         ) : null}
         {/** Inline embeds — YouTube + location. Rendered below the message
          *   text so the source URL stays clickable while the preview gives
@@ -667,9 +667,9 @@ function MessengerBubbleBase({
          *   gracefully render nothing. */}
         {(() => {
           const ytId = youtubeIdOf(entry.text);
-          if (ytId) return <View style={{ alignSelf: 'stretch', marginTop: 6 }}><YouTubeEmbed videoId={ytId} dark={dark} /></View>;
+          if (ytId) return <Box style={{ alignSelf: 'stretch', marginTop: 6 }}><YouTubeEmbed videoId={ytId} dark={dark} /></Box>;
           const coords = mapCoordsOf(entry.text);
-          if (coords) return <View style={{ alignSelf: 'stretch', marginTop: 6 }}><LocationEmbed lat={coords.lat} lng={coords.lng} sourceUrl={coords.sourceUrl} dark={dark} /></View>;
+          if (coords) return <Box style={{ alignSelf: 'stretch', marginTop: 6 }}><LocationEmbed lat={coords.lat} lng={coords.lng} sourceUrl={coords.sourceUrl} dark={dark} /></Box>;
           return null;
         })()}
         {question && onAnswer ? (
@@ -751,7 +751,7 @@ function MessengerBubbleBase({
                   {inner}
                 </Pressable>
               ) : (
-                <View key={emoji} style={pillStyle}>{inner}</View>
+                <Box key={emoji} style={pillStyle}>{inner}</Box>
               );
             })}
             {pending.map(emoji => (

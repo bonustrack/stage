@@ -14,11 +14,11 @@
  *  that context (common channels) can omit them gracefully. */
 
 import { memo } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, Text } from 'react-native';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { Avatar } from './Avatar';
 import { HeroIcon } from './HeroIcon';
-import { Row, Col } from './layout';
+import { Row, Col, Box } from './layout';
 import { usePalette } from '../lib/theme';
 
 export interface ChannelRowProps {
@@ -112,7 +112,7 @@ function ChannelRowBase({
                 </Text>
               </Row>
             ) : markedUnread ? (
-              <View style={{ width: 12, height: 12, borderRadius: 999, backgroundColor: head }} />
+              <Box style={{ width: 12, height: 12, borderRadius: 999, backgroundColor: head }} />
             ) : showChevron ? (
               <Text style={{ color: sub, fontSize: 18 }}>›</Text>
             ) : null}
