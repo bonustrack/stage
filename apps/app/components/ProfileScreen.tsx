@@ -127,7 +127,7 @@ export function ProfileScreen({ address, variant }: {
             sheet below rounds UP over it (inverted/scooped curve), so the gray no
             longer pokes down with rounded corners. */}
         <View style={{
-          height: 100 + (variant === 'route' ? insets.top : 0),
+          height: 150 + (variant === 'route' ? insets.top : 0),
           backgroundColor: c.rowBg,
         }} />
         {/* Content sheet: page-bg block pulled UP 18px to overlap the cover, with
