@@ -138,8 +138,9 @@ class MetroFcmService : FirebaseMessagingService() {
    *  OverlayView.CircleBitmapDrawable's square-crop + circle clip). */
   private fun downloadAndCircleCrop(url: String): Bitmap? {
     val conn = (URL(url).openConnection() as HttpURLConnection).apply {
-      connectTimeout = 8000
-      readTimeout = 8000
+      // 4s keeps the synchronous avatar download under FCM's ~10s dispatch budget so largeIcon is attached before the first notify()
+      connectTimeout = 4000
+      readTimeout = 4000
       instanceFollowRedirects = true
     }
     return try {
