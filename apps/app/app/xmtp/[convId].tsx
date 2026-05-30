@@ -859,7 +859,7 @@ export default function XmtpConversation(): React.ReactElement {
             hitSlop={8}
             style={{ paddingHorizontal: 14, justifyContent: 'center' }}
           >
-            <HeroIcon name="dotsHorizontal" size={22} color={fg} />
+            <HeroIcon name="dotsVertical" size={22} color={fg} />
           </Pressable>
         ) : null}
       </Box>

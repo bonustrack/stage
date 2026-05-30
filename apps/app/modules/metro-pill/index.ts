@@ -78,7 +78,7 @@ export async function openAsBubble(args: {
  *  Pass null to clear (on blur / background). No-op when the module isn't
  *  linked — suppression simply never engages on older builds. */
 export function setActiveConversation(convId: string | null): boolean {
-  return native?.setActiveConversation(convId) ?? false;
+  return native?.setActiveConversation?.(convId) ?? false;
 }
 
 /** Subscribe to recorded-audio events from the pill. Returns a subscription

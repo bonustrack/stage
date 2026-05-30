@@ -568,7 +568,6 @@ function MessengerBubbleBase({
         flexDirection: 'row', alignItems: 'flex-start',
         paddingHorizontal: 12, paddingVertical: 6, gap: 10,
         transform: [{ translateX: swipeX }],
-        opacity: pending ? 0.5 : 1,
         /** Permalink/reply jump target: full-row lighter background (~10% toward
          *  white), spanning the whole width incl. the avatar gutter. */
         backgroundColor: replyTarget
@@ -591,7 +590,7 @@ function MessengerBubbleBase({
         <Avatar size="sm" style={{ backgroundColor: avatarBg, marginTop: 2 }} />
       )}
       {/** Right column: message content + reactions + reaction picker stacked. */}
-      <Col flex={1} style={{ minWidth: 0 }}>
+      <Col flex={1} style={{ minWidth: 0, opacity: pending ? 0.5 : 1 }}>
       {/** Pressable handles onLongPress; the outer Animated.View'​s PanResponder steals horizontal drags. */}
       <Pressable
         onPress={onReact ? onBubbleTap : undefined}
@@ -705,7 +704,7 @@ function MessengerBubbleBase({
               <HeroIcon name="reply" size={14} color={sub} />
             </Pressable>
           ) : null}
-          <Text style={{ color: sub, fontSize: 10 , fontFamily: 'Calibre-Medium'}}>{pending ? 'Sending' : fmtTs(entry.ts)}</Text>
+          <Text style={{ color: sub, fontSize: 11 , fontFamily: 'Calibre-Medium'}}>{pending ? 'Sending' : fmtTs(entry.ts)}</Text>
         </Row>
       </Pressable>
       {pending ? null : (() => {
