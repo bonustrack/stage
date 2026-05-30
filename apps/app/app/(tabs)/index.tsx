@@ -438,13 +438,24 @@ export default function Messenger(): React.ReactElement {
               const idx = msgConvId ? prev.findIndex(r => r.convId === msgConvId) : -1;
               if (idx === -1) { needsRefresh = true; return prev; }
               const cur = prev[idx]!;
-              const newAvatar = cur.inboxToAddr[msg.senderInboxId ?? ''] ?? cur.avatarAddress;
+              const senderAddr = cur.inboxToAddr[msg.senderInboxId ?? ''] ?? null;
+              const newAvatar = senderAddr ?? cur.avatarAddress;
+              /** Attribute the preview to whoever SENT this message — including a
+               *  reaction (its own senderInboxId is the reactor, NOT the peer or
+               *  the referenced message's author). Without this the row keeps the
+               *  stale lastSenderAddress from summarize() — e.g. the DM peer — so a
+               *  reaction the local user makes would show "Tony: 👍" instead of the
+               *  reactor's name. */
+              const lastFromSelf = msg.senderInboxId === cur.selfInboxId;
               /** Bump the unread count when the new msg is newer than what we'd
                *  read AND not authored by the local user. */
               const isUnread = (msg.sentNs ?? 0) > cur.lastReadNs
                 && msg.senderInboxId !== cur.selfInboxId;
               const unreadCount = isUnread ? cur.unreadCount + 1 : cur.unreadCount;
-              const updated = { ...cur, lastTs, lastPreview, avatarAddress: newAvatar, unreadCount };
+              const updated = {
+                ...cur, lastTs, lastPreview, avatarAddress: newAvatar,
+                lastSenderAddress: senderAddr, lastFromSelf, unreadCount,
+              };
               /** A real inbound message supersedes a stale forced-unread flag —
                *  it's now counted in unreadCount, so drop the marker. */
               if (isUnread) updated.markedUnread = false;
