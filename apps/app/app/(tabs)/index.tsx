@@ -26,7 +26,7 @@ import {
   markConvUnread, markConvRead, applyConsentToRows,
 } from '../../lib/channelsCache';
 import { usePeerProfiles, getPeerAvatarCb, getPeerName, isPeerResolved } from '../../lib/peerProfiles';
-import { presentInboundNotification, isMetroControlBody, isDaemonPushRegistered } from '../../lib/push';
+import { isMetroControlBody } from '../../lib/push';
 import { useAccountEpoch } from '../../lib/accountEpoch';
 import { getActiveAccount } from '../../lib/accounts';
 import { HeroIcon } from '../../components/HeroIcon';
@@ -300,16 +300,6 @@ export default function Messenger(): React.ReactElement {
         const client = await getOrCreateXmtpClient('production');
         const selfInboxId = client.inboxId;
 
-        /** Is the daemon pushing for THIS account? If so its data-push is rendered
-         *  natively by MetroFcmService (avatar card) in BOTH foreground and
-         *  background, and that native notify() can't be suppressed JS-side — so we
-         *  must NOT also post the JS local notif or we get two cards (the duplicate).
-         *  Only phone-only accounts (daemon has no key, never registered) fall back
-         *  to the JS local notif as their sole notification path. */
-        const daemonPushes = await isDaemonPushRegistered(
-          client.publicIdentity?.identifier ?? '',
-        );
-
         /** Reusable refresh that any backstop (AppState resume, slow poll,
          *  pull-to-refresh, unknown-conv stream hit) can call to re-sync +
          *  re-summarise the full list. */
@@ -391,42 +381,17 @@ export default function Messenger(): React.ReactElement {
               ?? convIdFromTopic((msg as unknown as { topic?: string }).topic)
               ?? (msg as unknown as { conversationId?: string }).conversationId
               ?? null;
-            const isOwn = msg.senderInboxId === selfInboxId;
-            const isSystem = /group_updated|groupUpdated|read_receipt|readReceipt/.test(msg.contentTypeId ?? '');
-            /** DUPLICATE-NOTIFICATION FIX: only post the JS local notification
-             *  while the app is in the FOREGROUND. When backgrounded, the daemon's
-             *  remote FCM data-push is rendered natively by MetroFcmService
-             *  (Telegram-style avatar card) — if this stream is also alive it would
-             *  post a SECOND, avatar-less local notification for the same message
-             *  (the two cards the user saw). In the foreground the native card's
-             *  banner is suppressed by setNotificationHandler (lib/push.ts), so this
-             *  local notif is the only one shown. Net: exactly one card in both
-             *  states. (The msg stream often keeps running briefly after the app is
-             *  backgrounded, so an AppState check — not just "is the effect mounted"
-             *  — is required.) */
-            const isForeground = AppState.currentState === 'active';
-            /** Skip the JS local notif entirely when the daemon pushes for this
-             *  account — MetroFcmService already renders the native avatar card for
-             *  the same message (and it can't be suppressed JS-side). This is the
-             *  definitive duplicate fix; the foreground AppState gate alone was racy
-             *  (Android reports 'active' transiently during background transitions). */
-            if (!isOwn && !isSystem && preview && isForeground && !daemonPushes) {
-              /** Read the latest rows from the shared cache (the effect closure's
-               *  `rows` is stale — deps are [accountEpoch]). */
-              const latestRows = getCachedRows() as Row[] | null;
-              const row = msgConvIdForNote ? latestRows?.find(r => r.convId === msgConvIdForNote) : undefined;
-              const senderAddr = row?.inboxToAddr?.[msg.senderInboxId ?? ''] ?? null;
-              /** Group → the group name (row.title). DM → the SENDER's resolved
-               *  username (row.title for a DM is only a short address, so resolve
-               *  the name first), then the short address. */
-              const title = (row && !row.peerAddress)
-                ? (row.title || 'New message')
-                : ((senderAddr && getPeerName(senderAddr)) || (senderAddr ? shortAddress(senderAddr) : 'New message'));
-              void presentInboundNotification({
-                title, body: preview.slice(0, 140),
-                convId: msgConvIdForNote ?? '', messageId: msg.id,
-              });
-            }
+            /** NOTE: The JS local-notification path was REMOVED here. The daemon +
+             *  native MetroFcmService are now the SINGLE source of inbound push
+             *  notifications — they post one merged MessagingStyle card per
+             *  conversation (with sender avatar, deep-link, open-channel
+             *  suppression). The old `presentInboundNotification` call posted a
+             *  SECOND, avatar-less, per-message local notif for the same message
+             *  (the duplicate "M"-logo cards). This stream still owns all the
+             *  channel-row / unread-count / cache work below — only the
+             *  notification side effect is gone. (An account with no daemon push
+             *  registration gets no notifications, which is acceptable: the daemon
+             *  pushes for the active account.) */
 
             let needsRefresh = false;
             setRows(prev => {
