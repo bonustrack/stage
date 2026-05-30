@@ -176,11 +176,17 @@ export function MessengerComposer({
   const replyNonce = replyingTo?.nonce;
   useEffect(() => {
     if (!replyTargetId) return;
-    const t = setTimeout(() => {
-      console.warn('[reply-focus]', { replyTargetId, replyNonce });
+    /** Defer to the next frame so the "Replying to" slab has mounted, then
+     *  blur→focus. The bare `.focus()` is a no-op on the 2nd+ reply: after the
+     *  user dismisses the keyboard, RN's TextInput can still consider itself
+     *  the focused responder, so calling `.focus()` again does nothing and the
+     *  keyboard stays closed. Blurring first forces RN to re-acquire focus and
+     *  reliably re-raises the keyboard every time. */
+    const raf = requestAnimationFrame(() => {
+      inputRef.current?.blur();
       inputRef.current?.focus();
-    }, 0);
-    return () => clearTimeout(t);
+    });
+    return () => cancelAnimationFrame(raf);
   }, [replyTargetId, replyNonce]);
 
   /** Focus + raise the keyboard on a reply-less autofocus signal (e.g. opening
