@@ -685,7 +685,7 @@ export default function XmtpConversation(): React.ReactElement {
         key={listEpoch}
         ref={listRef}
         data={allBubbles}
-        extraData={[profilesVersion, optimisticReactions, reactions, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes]}
+        extraData={[profilesVersion, optimisticReactions, reactions, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, confirmedIds]}
         inverted
         showsVerticalScrollIndicator={false}
         /** Anchor the bottom-visible item (= newest on inverted) so as new bubbles or the
@@ -736,7 +736,14 @@ export default function XmtpConversation(): React.ReactElement {
             senderEthAddress={senderEthOf(item.from)}
             onAvatarPress={(addr) => router.push({ pathname: '/user/[address]', params: { address: addr } })}
             unread={false}
-            pending={item.id.startsWith('tmp_')}
+            /** Dim ("sending") only while the send is still in flight: an optimistic
+             *  entry (id `tmp_…`) whose real id has NOT yet come back from conv.send().
+             *  The moment onSent resolves with a sentId we record it in confirmedIds,
+             *  which flips this to solid immediately — no waiting for the stream echo
+             *  (XMTP self-sends don't reliably replay, esp. in groups). The optimistic
+             *  entry is still dropped/merged by id when the live bubble lands, so this
+             *  never produces a duplicate. */
+            pending={item.id.startsWith('tmp_') && !confirmedIds.has(item.id)}
             replyTarget={replyingTo?.id === item.id || jumpHighlightId === item.id}
             reactions={reactions.get(item.id)}
             pendingReactions={optimisticReactions.get(item.id)}
