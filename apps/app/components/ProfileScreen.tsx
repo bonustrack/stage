@@ -92,16 +92,22 @@ export function ProfileScreen({ address, variant }: {
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
       {/* Header — variant-specific. Both expose the own-profile overflow menu
-          (edit) on the right; the route variant adds a back button on the left. */}
+          (edit) on the right; the route variant adds a back button on the left.
+          For `route` the header is absolutely positioned so it floats over the
+          full-bleed cover (back button / dots sit on top of the banner); for
+          `tab` it stays an in-flow opaque strip above the scroll content. */}
       <View style={{
         ...(variant === 'route'
-          ? { height: 44 + insets.top, paddingTop: insets.top, paddingHorizontal: 14 }
+          ? {
+            position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
+            height: 44 + insets.top, paddingTop: insets.top, paddingHorizontal: 14,
+          }
           : { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 }),
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
       }}>
         {variant === 'route' ? (
           <Pressable onPress={() => router.back()} hitSlop={10} style={{ padding: 6 }}>
-            <HeroIcon name="arrowLeft" size={22} color={c.fg} />
+            <HeroIcon name="arrowLeft" size={22} color={c.head} />
           </Pressable>
         ) : (
           <Text style={{ color: c.head, fontSize: 22, fontFamily: 'Calibre-Semibold' }}>Profile</Text>
@@ -115,9 +121,18 @@ export function ProfileScreen({ address, variant }: {
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
-        {/* Full-bleed cover banner (input-bg). The avatar below straddles it via
-            a negative marginTop so its top half overlaps the banner. */}
-        <View style={{ height: 100, backgroundColor: c.rowBg }} />
+        {/* Full-bleed cover banner (input-bg). For the `route` variant the cover
+            extends up behind the floating header/status bar (height += insets.top)
+            so the colour bleeds to y=0; rounded bottom corners give it a card edge.
+            The avatar below straddles it via a negative marginTop — that overlap is
+            relative to the cover's *visible bottom*, which is unchanged because the
+            extra height is added at the TOP only. */}
+        <View style={{
+          height: 100 + (variant === 'route' ? insets.top : 0),
+          backgroundColor: c.rowBg,
+          borderBottomLeftRadius: 18,
+          borderBottomRightRadius: 18,
+        }} />
         <View style={{ alignItems: 'flex-start', paddingHorizontal: 16, paddingBottom: 8 }}>
           {/* Wait for the profile so we render the real avatar directly (no
               blockie→real flash); custom avatars resolve via IPFS, not stamp.
