@@ -2,7 +2,8 @@
  *  attachment (image, video, map, YouTube thumbnail) a consistent frame so
  *  they feel like discrete cards rather than free-floating images. */
 
-import { Pressable, View } from 'react-native';
+import { Pressable } from 'react-native';
+import { Box } from './layout';
 
 interface Props {
   dark: boolean;
@@ -37,5 +38,5 @@ export function MediaCard({ dark, onPress, width, children }: Props): React.Reac
       </Pressable>
     );
   }
-  return <View style={style}>{children}</View>;
+  return <Box style={style}>{children}</Box>;
 }

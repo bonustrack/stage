@@ -16,10 +16,8 @@ import { emit, exitErr, flagOne, isJson, need, writeJson, type Flags } from './u
 import { enforceSendGuard } from './send-guard.js';
 import { isKnownCtrlVerb, validateCtrl, SchemaError } from '../schema.js';
 
-/** Wrap an IPC round-trip so daemon-down surfaces as the documented exit code 4 */
-/** (distinct from code-1 usage / code-2 config) — agents parsing exit codes can */
-/** tell "start the daemon" apart from a usage error. ipcCall's message already */
-/** tells the human/agent how to start it. */
+// Wrap an IPC round-trip so daemon-down surfaces as exit code 4 (distinct from
+// code-1 usage / code-2 config); ipcCall's message says how to start the daemon.
 async function ipc(req: Parameters<typeof ipcCall>[0]): Promise<Awaited<ReturnType<typeof ipcCall>>> {
   try {
     return await ipcCall(req);
@@ -130,9 +128,7 @@ export async function cmdCall(p: string[], f: Flags): Promise<void> {
   loadMetroEnv();
   const [train, action, rawArgs] = p;
   const args = await readArgs(rawArgs);
-  /** Typed control-verb schema (#16): the same validator the trains use. Catch */
-  /** malformed register-push/test-push args CLI-side so the round-trip fails fast */
-  /** with a precise path-scoped message instead of a generic train rejection. */
+  // Typed control-verb schema (#16): validate CLI-side so malformed args fail fast.
   if (isKnownCtrlVerb(action) && typeof args === 'object' && args !== null) {
     try { validateCtrl(action, args); }
     catch (err) { throw exitErr(err instanceof SchemaError ? `invalid ${action} args — ${err.message}` : errMsg(err), 1); }

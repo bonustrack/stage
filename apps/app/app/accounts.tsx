@@ -4,7 +4,8 @@
  *  Switching is in-place (epoch bump) so the channels list re-inits without a
  *  full reload; the user taps back to return. */
 
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text } from 'react-native';
+import { Box } from '../components/layout';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
@@ -18,9 +19,9 @@ export default function Accounts(): React.ReactElement {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
+    <Box style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
       {/* Topnav: back + title, mirroring the search page. */}
-      <View style={{
+      <Box style={{
         flexDirection: 'row', alignItems: 'center', gap: 8,
         paddingHorizontal: 12, paddingTop: 8, paddingBottom: 10,
         borderBottomWidth: 1, borderBottomColor: border,
@@ -31,11 +32,11 @@ export default function Accounts(): React.ReactElement {
         <Text style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold' }}>
           Accounts
         </Text>
-      </View>
+      </Box>
 
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}>
         <AccountsManager dark={dark} flat />
       </ScrollView>
-    </View>
+    </Box>
   );
 }

@@ -1,7 +1,8 @@
 /** Inline audio player for messenger bubbles — lazy-loads via expo-av Audio.Sound. */
 
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, Text } from 'react-native';
+import { Box } from './layout';
 import { Audio, AVPlaybackStatus } from 'expo-av';
 import { HeroIcon } from './HeroIcon';
 
@@ -67,7 +68,7 @@ export function MessengerAudioPlayer({ uri, fg, sub }: Props): React.ReactElemen
   const progress = duration > 0 ? Math.min(position / duration, 1) : 0;
 
   return (
-    <View style={{
+    <Box style={{
       flexDirection: 'row', alignItems: 'center', gap: 10,
       paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10,
       backgroundColor: 'rgba(0,0,0,0.12)', marginBottom: 6, minWidth: 220,
@@ -80,9 +81,9 @@ export function MessengerAudioPlayer({ uri, fg, sub }: Props): React.ReactElemen
         onLayout={(ev) => setBarWidth(ev.nativeEvent.layout.width)}
         onPress={(ev) => seekTo(ev.nativeEvent.locationX)}
       >
-        <View style={{ height: 3, backgroundColor: sub, opacity: 0.4, borderRadius: 2 }}>
-          <View style={{ height: 3, width: `${progress * 100}%`, backgroundColor: fg, borderRadius: 2 }} />
-        </View>
+        <Box style={{ height: 3, backgroundColor: sub, opacity: 0.4, borderRadius: 2 }}>
+          <Box style={{ height: 3, width: `${progress * 100}%`, backgroundColor: fg, borderRadius: 2 }} />
+        </Box>
       </Pressable>
       <Pressable onPress={cycleRate} hitSlop={6}>
         <Text style={{
@@ -93,6 +94,6 @@ export function MessengerAudioPlayer({ uri, fg, sub }: Props): React.ReactElemen
       <Text style={{ color: fg, fontSize: 11, opacity: 0.6, minWidth: 36, textAlign: 'right' , fontFamily: 'Calibre-Medium'}}>
         {playing ? fmt(position) : fmt(duration || position)}
       </Text>
-    </View>
+    </Box>
   );
 }

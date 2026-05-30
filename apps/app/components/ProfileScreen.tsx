@@ -7,7 +7,7 @@
  *  Presentational pieces live in ./ProfileScreen.parts to keep this under cap. */
 
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQueryClient } from '@tanstack/react-query';
@@ -21,6 +21,7 @@ import { useProfileQuery } from '../lib/useProfile';
 import EditProfileModal from './EditProfileModal';
 import { HeroIcon } from './HeroIcon';
 import { Avatar } from './Avatar';
+import { Box, Col } from './layout';
 import { ImageViewer } from './ImageViewer';
 import {
   EditMenu, InfoRow, ProfileActions, useProfileColors,
@@ -90,13 +91,13 @@ export function ProfileScreen({ address, variant }: {
   const headerTop = variant === 'route' ? 44 + insets.top : 56;
 
   return (
-    <View style={{ flex: 1, backgroundColor: c.bg }}>
+    <Col flex={1} bg={c.bg}>
       {/* Header — variant-specific. Both expose the own-profile overflow menu
           (edit) on the right; the route variant adds a back button on the left.
           For `route` the header is absolutely positioned so it floats over the
           full-bleed cover (back button / dots sit on top of the banner); for
           `tab` it stays an in-flow opaque strip above the scroll content. */}
-      <View style={{
+      <Box style={{
         ...(variant === 'route'
           ? {
             position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
@@ -118,7 +119,7 @@ export function ProfileScreen({ address, variant }: {
             <HeroIcon name="dotsHorizontal" size={22} color={c.head} />
           </Pressable>
         ) : null}
-      </View>
+      </Box>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
         {/* Full-bleed cover banner (input-bg). For the `route` variant the cover
@@ -126,15 +127,14 @@ export function ProfileScreen({ address, variant }: {
             so the colour bleeds to y=0. Its bottom edge is FLAT — the black content
             sheet below rounds UP over it (inverted/scooped curve), so the gray no
             longer pokes down with rounded corners. */}
-        <View style={{
+        <Box bg={c.rowBg} style={{
           height: 140 + (variant === 'route' ? insets.top : 0),
-          backgroundColor: c.rowBg,
         }} />
         {/* Content sheet: page-bg block pulled UP 18px to overlap the cover, with
             rounded TOP corners so the black curves over the gray banner (bottom-sheet
             look). overflow:'visible' + avatar zIndex keep the avatar from being
             clipped by the rounding. */}
-        <View style={{
+        <Box style={{
           alignItems: 'flex-start', paddingHorizontal: 16, paddingBottom: 8,
           backgroundColor: c.bg, marginTop: -18,
           borderTopLeftRadius: 18, borderTopRightRadius: 18,
@@ -186,7 +186,7 @@ export function ProfileScreen({ address, variant }: {
               onSend={() => router.push({ pathname: '/wallet/send', params: { to: addr } })}
             />
           ) : null}
-        </View>
+        </Box>
 
         {profile?.github?.trim() ? <InfoRow label="GitHub" value={profile.github} c={c} /> : null}
         {profile?.twitter?.trim() ? <InfoRow label="X (Twitter)" value={profile.twitter} c={c} /> : null}
@@ -217,6 +217,6 @@ export function ProfileScreen({ address, variant }: {
         address={addr} initial={profile ?? {}} dark={dark}
       />
       <ImageViewer uri={viewerUri ?? ''} visible={viewerUri !== null} onClose={() => setViewerUri(null)} />
-    </View>
+    </Col>
   );
 }

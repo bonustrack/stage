@@ -6,7 +6,7 @@
  *  on the left, USD value + amount/symbol on the right. */
 
 import { useEffect, useState } from 'react';
-import { Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, Text } from 'react-native';
 import { createPublicClient, http, formatEther, formatUnits, type Hex } from 'viem';
 import { mainnet } from 'viem/chains';
 import { useRouter } from 'expo-router';
@@ -16,6 +16,7 @@ import { usePeerProfiles } from '../../lib/peerProfiles';
 import { usePalette } from '../../lib/theme';
 import { getErc20UsdPrices, getSimplePrices } from '../../lib/coingecko';
 import { HeroIcon, type HeroIconName } from '../../components/HeroIcon';
+import { Col, Row, Box } from '../../components/layout';
 import { stampTokenUrl, NATIVE_TOKEN_SENTINEL } from '@metro-labs/kit/avatar';
 
 const MULTICALL3 = '0xcA11bde05977b3631167028862bE2a173976CA11' as const;
@@ -153,7 +154,7 @@ export default function Wallet(): React.ReactElement {
    *  column is content-width (no `flex: 1` stretch) so the row starts at the
    *  16px content edge rather than spreading across the screen. */
   const Btn = ({ icon, label, onPress }: { icon: HeroIconName; label: string; onPress: () => void }): React.ReactElement => (
-    <View style={{ alignItems: 'center', gap: 6 }}>
+    <Col align="center" gap={6}>
       <Pressable
         onPress={onPress}
         style={({ pressed }) => ({
@@ -165,21 +166,19 @@ export default function Wallet(): React.ReactElement {
         <HeroIcon name={icon} size={26} color={head} />
       </Pressable>
       <Text style={{ color: head, fontSize: 14, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{label}</Text>
-    </View>
+    </Col>
   );
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: bg }} contentContainerStyle={{ paddingBottom: 24 }}>
-      <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 }}>
+      <Col px={16} pt={16} pb={8}>
         <Text style={{ color: head, fontSize: 22, fontFamily: 'Calibre-Semibold' }}>Wallet</Text>
-      </View>
+      </Col>
 
       {/* Value card — compact, left-aligned. Just the big total USD value;
           the account header (avatar/name/address) and the "TOTAL VALUE ·
           ETHEREUM" label were dropped per review. */}
-      <View style={{
-        marginHorizontal: 16, marginTop: 8, paddingVertical: 16, alignItems: 'flex-start',
-      }}>
+      <Col mx={16} mt={8} py={16} align="start">
         {err ? (
           <Text style={{ color: '#d96868', fontSize: 13, fontFamily: 'Calibre-Medium' }}>
             Couldn’t load balances
@@ -189,23 +188,23 @@ export default function Wallet(): React.ReactElement {
             {totalUsd === null ? '…' : fmtUsd(totalUsd)}
           </Text>
         )}
-      </View>
+      </Col>
 
       {/* Four action pills — Send / Receive route to existing screens;
           Top up / Buy are placeholders (no on/off-ramp wired yet) and flash a
           "coming soon" toast. Single row, LEFT-aligned, 12px gap between buttons. */}
-      <View style={{ flexDirection: 'row', justifyContent: 'flex-start', gap: 12, marginHorizontal: 16, marginTop: 12 }}>
+      <Row justify="start" gap={12} mx={16} mt={12}>
         <Btn icon="send" label="Send" onPress={() => router.push('/wallet/send')} />
         <Btn icon="arrowDown" label="Receive" onPress={() => router.push('/wallet/receive')} />
         <Btn icon="switchHorizontal" label="Swap" onPress={() => flash('Swap — coming soon')} />
         <Btn icon="creditCard" label="Buy" onPress={() => flash('Buy — coming soon')} />
-      </View>
+      </Row>
 
       {/* Asset list — Snapshot-treasury-style rows, border-bottom separators. */}
       <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', paddingHorizontal: 16, paddingTop: 22, paddingBottom: 6 }}>
         TOKENS
       </Text>
-      <View style={{ marginHorizontal: 16, borderTopWidth: 1, borderTopColor: border }}>
+      <Col mx={16} style={{ borderTopWidth: 1, borderTopColor: border }}>
         {(rows ?? ASSETS.map(a => ({
           symbol: a.symbol, name: a.name, balance: '0', priceUsd: null, change24h: null,
           logoUrl: stampTokenUrl(1, a.logoAddress, 32),
@@ -217,18 +216,17 @@ export default function Wallet(): React.ReactElement {
           const changeText = r.change24h === null ? '' :
             `${r.change24h >= 0 ? '+' : ''}${r.change24h.toFixed(2)}%`;
           return (
-            <View
+            <Row
               key={r.symbol}
+              align="center" gap={12} py={14}
               style={{
-                flexDirection: 'row', alignItems: 'center', gap: 12,
-                paddingVertical: 14,
                 borderBottomWidth: 1, borderBottomColor: border,
               }}
             >
               {/* Token avatar with a small mainnet network-bullet overlay, like
                   Snapshot UI treasury. `resizeMode: contain` so the IPFS logo
                   isn't cropped/zoomed inside the small badge slot. */}
-              <View style={{ width: 32, height: 32 }}>
+              <Box style={{ width: 32, height: 32 }}>
                 <Image
                   source={{ uri: r.logoUrl }}
                   style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border }}
@@ -242,11 +240,11 @@ export default function Wallet(): React.ReactElement {
                     borderWidth: 2, borderColor: bg, backgroundColor: '#ffffff',
                   }}
                 />
-              </View>
+              </Box>
               {/* Left column — token NAME (top) over price + 24h change (bottom). */}
-              <View style={{ flex: 1, minWidth: 0 }}>
+              <Col flex={1} style={{ minWidth: 0 }}>
                 <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{r.name}</Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                <Row align="center" gap={6} mt={2}>
                   <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
                     {r.priceUsd === null ? r.symbol : fmtUsd(r.priceUsd, r.priceUsd < 1 ? 4 : 2)}
                   </Text>
@@ -255,21 +253,21 @@ export default function Wallet(): React.ReactElement {
                       {changeText}
                     </Text>
                   ) : null}
-                </View>
-              </View>
+                </Row>
+              </Col>
               {/* Right column — USD VALUE (top, big/white) over amount + symbol (bottom). */}
-              <View style={{ alignItems: 'flex-end' }}>
+              <Col align="end">
                 <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold' }}>
                   {valueUsd === null ? '—' : fmtUsd(valueUsd)}
                 </Text>
                 <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
                   {rows ? `${fmtBalance(r.balance)} ${r.symbol}` : '…'}
                 </Text>
-              </View>
-            </View>
+              </Col>
+            </Row>
           );
         })}
-      </View>
+      </Col>
     </ScrollView>
   );
 }

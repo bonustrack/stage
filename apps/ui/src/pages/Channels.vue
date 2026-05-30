@@ -9,6 +9,7 @@ import { type ChannelRow as Row } from '../lib/channelsSummarize';
 import { startChannelStream, type ChannelStreamHandles } from '../lib/useChannelStream';
 import { useSearchResolution } from '../lib/useSearchResolution';
 import { runningInIframe, postCloseToParent } from '../lib/embedBridge';
+import { Row as LayoutRow, Col } from '../components/layout';
 
 const router = useRouter();
 /** Embedded (iframed) = widget. Hides the search topnav + drops the Ask
@@ -104,10 +105,10 @@ const cardClass = 'w-full max-w-sm flex items-center gap-3 px-4 py-4 rounded-2xl
 </script>
 
 <template>
-  <div class="h-[100dvh] flex flex-col relative" :class="embedded ? '' : 'pb-[60px]'">
+  <Col class="h-[100dvh] relative" :class="embedded ? '' : 'pb-[60px]'">
     <!-- Topnav: page title, refresh, and (embedded only) a close button at the
          end, so the channels homepage has a single topnav like conversations. -->
-    <div class="h-[56px] box-border flex items-center shrink-0 gap-1 pl-2 pr-1
+    <LayoutRow align="center" :gap="4" class="h-[56px] box-border shrink-0 pl-2 pr-1
       bg-metro-bg-light dark:bg-metro-bg-dark
       border-b border-metro-border-light dark:border-metro-border-dark">
       <span class="flex-1 font-head text-[17px] text-metro-head-light dark:text-metro-head-dark pl-2">
@@ -133,14 +134,14 @@ const cardClass = 'w-full max-w-sm flex items-center gap-3 px-4 py-4 rounded-2xl
       >
         <HeroIcon name="x" :size="20" />
       </button>
-    </div>
+    </LayoutRow>
 
     <!-- HOME: the "Ask a question" action card. Messages/Docs live in the footer nav. -->
-    <div v-if="view === 'home'" class="flex-1 flex flex-col items-center justify-center gap-3 px-6">
+    <Col v-if="view === 'home'" align="center" justify="center" :gap="12" class="flex-1 px-6">
       <button type="button" :disabled="creatingAsk" :class="cardClass" @click="onAskPress">
         <HeroIcon name="chat" :size="24" class="shrink-0 text-metro-fg-light dark:text-metro-fg-dark" />
         <span class="flex-1 text-[17px] font-sans">{{ creatingAsk ? 'Creating group…' : 'Ask a question' }}</span>
-        <div class="flex items-center shrink-0">
+        <LayoutRow align="center" class="shrink-0">
           <img
             v-for="(addr, i) in ASK_QUESTION_MEMBERS"
             :key="addr"
@@ -150,10 +151,10 @@ const cardClass = 'w-full max-w-sm flex items-center gap-3 px-4 py-4 rounded-2xl
               border-2 border-metro-bg-light dark:border-metro-bg-dark"
             :class="i === 0 ? '' : '-ml-2'"
           />
-        </div>
+        </LayoutRow>
       </button>
       <div v-if="error" class="text-xs text-metro-err mt-1">{{ error }}</div>
-    </div>
+    </Col>
 
     <!-- MESSAGES: search (standalone) + the channel list. -->
     <template v-else>
@@ -177,12 +178,12 @@ const cardClass = 'w-full max-w-sm flex items-center gap-3 px-4 py-4 rounded-2xl
         :query="query"
         @open="openSearchedProfile"
       />
-      <div v-if="error" class="flex-1 flex items-center justify-center text-sm text-metro-fg-light dark:text-metro-fg-dark px-6">
+      <Col v-if="error" align="center" justify="center" class="flex-1 text-sm text-metro-fg-light dark:text-metro-fg-dark px-6">
         {{ error }}
-      </div>
-      <div v-else-if="!rows" class="flex-1 flex items-center justify-center text-metro-head-light dark:text-metro-head-dark">
+      </Col>
+      <Col v-else-if="!rows" align="center" justify="center" class="flex-1 text-metro-head-light dark:text-metro-head-dark">
         <Spinner :size="28" />
-      </div>
+      </Col>
       <ul v-else class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-6">
         <li v-if="filtered && filtered.length === 0" class="p-8 text-center text-sm text-metro-sub-light dark:text-metro-sub-dark">
           {{ query ? `No matches for "${query}"` : 'No conversations yet. Share your address from Settings to start one.' }}
@@ -205,28 +206,28 @@ const cardClass = 'w-full max-w-sm flex items-center gap-3 px-4 py-4 rounded-2xl
 
     <!-- Footer nav (Intercom-style): Home / Messages / Docs — embedded widget only.
          The standalone site uses the app-wide TabBar instead (mobile-app UX). -->
-    <div v-if="embedded" class="shrink-0 flex items-stretch border-t border-metro-border-light dark:border-metro-border-dark
+    <LayoutRow v-if="embedded" align="stretch" class="shrink-0 border-t border-metro-border-light dark:border-metro-border-dark
       bg-metro-bg-light dark:bg-metro-bg-dark">
-      <button type="button" class="flex-1 flex flex-col items-center gap-1 py-2.5 transition-colors"
+      <Col as="button" type="button" align="center" :gap="4" class="flex-1 py-2.5 transition-colors"
         :class="view === 'home' ? 'text-metro-head-light dark:text-metro-head-dark' : 'text-metro-sub-light dark:text-metro-sub-dark'"
         @click="view = 'home'">
         <HeroIcon name="home" :size="22" />
         <span class="text-[15px] font-sans">Home</span>
-      </button>
-      <button type="button" class="flex-1 flex flex-col items-center gap-1 py-2.5 transition-colors"
+      </Col>
+      <Col as="button" type="button" align="center" :gap="4" class="flex-1 py-2.5 transition-colors"
         :class="view === 'messages' ? 'text-metro-head-light dark:text-metro-head-dark' : 'text-metro-sub-light dark:text-metro-sub-dark'"
         @click="view = 'messages'">
         <HeroIcon name="list" :size="22" />
         <span class="text-[15px] font-sans">Messages</span>
-      </button>
-      <button type="button"
-        class="flex-1 flex flex-col items-center gap-1 py-2.5 text-metro-sub-light dark:text-metro-sub-dark
+      </Col>
+      <Col as="button" type="button" align="center" :gap="4"
+        class="flex-1 py-2.5 text-metro-sub-light dark:text-metro-sub-dark
           hover:text-metro-head-light dark:hover:text-metro-head-dark transition-colors"
         @click="openDocs">
         <HeroIcon name="document" :size="22" />
         <span class="text-[15px] font-sans">Docs</span>
-      </button>
-    </div>
+      </Col>
+    </LayoutRow>
 
     <!-- Per-row context menu: Mark as read / unread (cross-device via XMTP consent). -->
     <template v-if="rowMenu">
@@ -248,5 +249,5 @@ const cardClass = 'w-full max-w-sm flex items-center gap-3 px-4 py-4 rounded-2xl
         </button>
       </div>
     </template>
-  </div>
+  </Col>
 </template>

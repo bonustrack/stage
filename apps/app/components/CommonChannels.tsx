@@ -14,7 +14,8 @@
  *  When the cache has no entry for a group yet, it falls back to the member
  *  count subtitle. */
 
-import { ActivityIndicator, Text, View } from 'react-native';
+import { ActivityIndicator, Text } from 'react-native';
+import { Box } from './layout';
 import { useRouter } from 'expo-router';
 import { ChannelRow } from './ChannelRow';
 import { getPeerAvatarCb, getPeerName, isPeerResolved } from '../lib/peerProfiles';
@@ -48,8 +49,8 @@ export function CommonChannels({ peerAddress, enabled, c }: {
   if (channels.length === 0 && !loading) return null;
 
   return (
-    <View style={{ marginTop: 20 }}>
-      <View style={{
+    <Box style={{ marginTop: 20 }}>
+      <Box style={{
         flexDirection: 'row', alignItems: 'center', gap: 8,
         marginHorizontal: 20, marginBottom: 6,
       }}>
@@ -57,7 +58,7 @@ export function CommonChannels({ peerAddress, enabled, c }: {
           COMMON CHANNELS
         </Text>
         {loading ? <ActivityIndicator size="small" color={c.sub} /> : null}
-      </View>
+      </Box>
 
       {/* Flat full-width rows — identical to the channels tab (index.tsx
           renderRow): same preview prefix, timestamp, unread badge, pin/draft
@@ -93,6 +94,6 @@ export function CommonChannels({ peerAddress, enabled, c }: {
           />
         );
       })}
-    </View>
+    </Box>
   );
 }

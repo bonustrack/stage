@@ -12,7 +12,7 @@
  *  id) avoids cross-instance collisions that otherwise compress the ramp. */
 
 import { useId } from 'react';
-import { View } from 'react-native';
+import { Box } from './layout';
 import { Defs, LinearGradient, Rect, Stop, Svg } from 'react-native-svg';
 
 interface Props {
@@ -33,7 +33,7 @@ export function ComposerGradient({ bg, direction = 'down', height = 24, top, bot
   const id = 'cg' + useId().replace(/[^a-zA-Z0-9]/g, '');
   const [o0, o1] = direction === 'down' ? [0, 1] : [1, 0];
   return (
-    <View pointerEvents="none" style={{
+    <Box pointerEvents="none" style={{
       position: 'absolute', left, right, height,
       ...(top !== undefined ? { top } : {}),
       ...(bottom !== undefined ? { bottom } : {}),
@@ -47,6 +47,6 @@ export function ComposerGradient({ bg, direction = 'down', height = 24, top, bot
         </Defs>
         <Rect x="0" y="0" width="100%" height={height} fill={`url(#${id})`} />
       </Svg>
-    </View>
+    </Box>
   );
 }

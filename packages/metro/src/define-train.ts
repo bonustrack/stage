@@ -1,28 +1,8 @@
-/**
- * defineTrain — train-authoring SDK (#13).
- *
- * The reference trains (telegram/discord/xmtp) each hand-reimplement the same
- * scaffolding: the JSON envelope shape, the stdin `op:call` → stdout
- * `op:response` protocol, line-buffered stdin parsing, the self-echo of
- * outbound sends, multi-account boot, and (for xmtp) FCM fan-out. That's ~1000
- * lines of duplicated boilerplate across three files.
- *
- * `defineTrain({ accounts, parseLine, onInbound, actions })` factors all of that
- * out. A train author writes only the platform-specific bits:
- *   - `accounts`         : boot one client per configured account (optional —
- *                          single-account trains omit it).
- *   - `parseLine(line)`  : map a metro:// line back to a routing target.
- *   - `onInbound`        : the polling / streaming loop that calls `ctx.emit(...)`.
- *   - `actions`          : a map of action-name → handler. Return value is the
- *                          `result`; throwing becomes the `error`.
- *
- * The SDK owns: stdin draining, op:call dispatch + op:response bookkeeping,
- * error→response mapping, the inbound/outbound envelope helpers, SELF_URI
- * wiring, account boot fan-out, and optional FCM push fan-out.
- *
- * Pure transport — no platform deps. Import it from a train script:
- *   import { defineTrain } from '@metro-labs/metro/define-train';
- */
+// defineTrain — train-authoring SDK (#13).
+// Factors out shared train scaffolding (envelope shape, op:call→op:response
+// protocol, stdin buffering, self-echo, account boot, FCM fan-out) so authors
+// write only platform bits: `accounts`, `parseLine`, `onInbound`, `actions`.
+// Pure transport, no platform deps: import { defineTrain } from '@metro-labs/metro/define-train';
 
 /* ──────────── wire shapes (mirror src/trains/protocol.ts) ──────────── */
 
@@ -78,10 +58,7 @@ export type ActionHandler<Client> = (
 export type DefineTrainOptions<Client> = {
   /** Train name override; defaults to METRO_TRAIN_NAME or 'train'. */
   name?: string;
-  /**
-   * Boot accounts. Return one handle per account. Omit for trains with no
-   * account concept (the context's `accounts` map is then empty).
-   */
+  /** Boot accounts: one handle each. Omit for account-less trains (`accounts` map stays empty). */
   accounts?: (ctx: TrainContext<Client>) => Promise<AccountHandle<Client>[]> | AccountHandle<Client>[];
   /** Parse a metro:// line into a routing target (or null if it isn't ours). */
   parseLine?: (line: string) => unknown;
@@ -104,11 +81,7 @@ function mintIdImpl(): string {
   return `msg_${Math.random().toString(36).slice(2, 10)}`;
 }
 
-/**
- * Build (but do not start the stdin pump for) a train. Used by `defineTrain`
- * and directly by tests so the call-dispatch path can be exercised without a
- * real stdin. `write` defaults to stdout.
- */
+/** Build (not start) a train. Used by `defineTrain` + tests to dispatch calls without stdin. */
 export function buildTrain<Client>(
   opts: DefineTrainOptions<Client>,
   write: (s: string) => void = s => void process.stdout.write(s),
@@ -164,11 +137,7 @@ export function buildTrain<Client>(
   return { ctx, dispatch, boot };
 }
 
-/**
- * Define + run a train: boots accounts, starts the stdin op:call pump, then
- * runs the inbound loop. Returns a handle (the inbound loop runs in the
- * background). This is the one call a train script makes.
- */
+/** Define + run a train: boot accounts, start the op:call pump, run the inbound loop (unawaited). */
 export async function defineTrain<Client = unknown>(
   opts: DefineTrainOptions<Client>,
 ): Promise<RunningTrain<Client>> {

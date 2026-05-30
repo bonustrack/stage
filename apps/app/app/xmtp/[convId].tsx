@@ -2,9 +2,8 @@
  *  local XMTP client directly; no daemon hop. */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Alert, Animated as RNAnimated, FlatList, Pressable, Share, Text, View,
-} from 'react-native';
+import { Alert, Animated as RNAnimated, FlatList, Pressable, Share, Text } from 'react-native';
+import { Box } from '../../components/layout';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardStickyView, useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
@@ -668,9 +667,9 @@ export default function XmtpConversation(): React.ReactElement {
 
   if (!convId) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: bg }}>
+      <Box style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: bg }}>
         <Text style={{ color: sub }}>Missing conversation id.</Text>
-      </View>
+      </Box>
     );
   }
 
@@ -758,11 +757,11 @@ export default function XmtpConversation(): React.ReactElement {
           />
         )}
         ListEmptyComponent={
-          <View style={{ padding: 32, alignItems: 'center' }}>
+          <Box style={{ padding: 32, alignItems: 'center' }}>
             {status === 'open'
               ? <Text style={{ color: sub }}>Type a message below to start chatting.</Text>
               : <Spinner size={28} color={head} />}
-          </View>
+          </Box>
         }
         /** Inverted list → `ListFooterComponent` renders at the visual TOP (oldest
          *  end). Holds two things, top-to-bottom: a small "loading older" spinner
@@ -772,9 +771,9 @@ export default function XmtpConversation(): React.ReactElement {
         ListFooterComponent={
           <>
             {loadingOlder ? (
-              <View style={{ paddingVertical: 16, alignItems: 'center' }}>
+              <Box style={{ paddingVertical: 16, alignItems: 'center' }}>
                 <Spinner size={20} color={sub} />
-              </View>
+              </Box>
             ) : null}
             {!isGroup && peerAddr && hasMore === false ? (
               <Pressable
@@ -803,7 +802,7 @@ export default function XmtpConversation(): React.ReactElement {
       {/** Top nav: solid bg strip mirrors the composer footer + extends UP to cover the
        *  status-bar area, so content sliding up under the keyboard doesn't show through
        *  behind the system icons. */}
-      <View style={{
+      <Box style={{
         position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
         height: 52 + insets.top, paddingTop: insets.top, backgroundColor: bg,
         flexDirection: 'row', alignItems: 'stretch',
@@ -842,7 +841,7 @@ export default function XmtpConversation(): React.ReactElement {
             <HeroIcon name="dotsHorizontal" size={22} color={fg} />
           </Pressable>
         ) : null}
-      </View>
+      </Box>
       {/** Fade strip below the top nav — mirrors the composer's top fade. The nav is
        *  `52 + insets.top` tall; start the fade 1px higher so its solid-bg top edge
        *  overlaps the nav bottom by 1px, closing the hairline seam between the two
@@ -850,7 +849,7 @@ export default function XmtpConversation(): React.ReactElement {
        *  transparent over the content beneath. */}
       <ComposerGradient bg={bg} direction="up" top={52 + insets.top - 1} height={24} />
       <KeyboardStickyView offset={{ opened: insets.bottom }}>
-      <View>
+      <Box>
       {/** Jump-to-bottom: anchored just above the composer (bottom:'100%') and inside
        *   the KeyboardStickyView, so it tracks the composer's height + the keyboard
        *   instead of a fixed offset that floated in the middle of a tall composer.
@@ -924,11 +923,11 @@ export default function XmtpConversation(): React.ReactElement {
           }
         }}
       />
-      </View>
+      </Box>
       </KeyboardStickyView>
       {/** Topnav overflow menu — bottom sheet. Group → info + leave; DM → bubble. */}
       <AppModal visible={overflowOpen} onClose={() => setOverflowOpen(false)}>
-        <View style={{ gap: 4 }}>
+        <Box style={{ gap: 4 }}>
             {isGroup ? (
               <>
                 <Pressable
@@ -970,7 +969,7 @@ export default function XmtpConversation(): React.ReactElement {
             <Pressable onPress={() => setOverflowOpen(false)} style={{ paddingVertical: 10, alignItems: 'center' }}>
               <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium' }}>Cancel</Text>
             </Pressable>
-        </View>
+        </Box>
       </AppModal>
       <BubbleActionMenu
         target={menuFor}
@@ -1008,14 +1007,14 @@ function BubbleActionMenu({
   const sub = dark ? '#7a7a7e' : '#8a929d';
   return (
     <AppModal visible={!!target} onClose={onClose}>
-      <View style={{ gap: 10 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-around', paddingBottom: 8 }}>
+      <Box style={{ gap: 10 }}>
+          <Box style={{ flexDirection: 'row', justifyContent: 'space-around', paddingBottom: 8 }}>
             {ACTION_EMOJIS.map(e => (
               <Pressable key={e} onPress={() => onReact(e)} hitSlop={8}>
                 <Text style={{ fontSize: 28 }}>{e}</Text>
               </Pressable>
             ))}
-          </View>
+          </Box>
           <Pressable onPress={onReply} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}>
             <HeroIcon name="reply" size={20} color={fg} />
             <Text style={{ color: fg, fontSize: 16 , fontFamily: 'Calibre-Medium'}}>Reply</Text>
@@ -1033,7 +1032,7 @@ function BubbleActionMenu({
           <Pressable onPress={onClose} style={{ paddingVertical: 10, alignItems: 'center' }}>
             <Text style={{ color: sub, fontSize: 14 , fontFamily: 'Calibre-Medium'}}>Cancel</Text>
           </Pressable>
-      </View>
+      </Box>
     </AppModal>
   );
 }

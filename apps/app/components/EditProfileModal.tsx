@@ -4,10 +4,8 @@
  *  refreshes immediately. */
 
 import { useEffect, useState } from 'react';
-import {
-  ActivityIndicator, Alert, Image, KeyboardAvoidingView, Modal, Platform,
-  Pressable, ScrollView, Text, TextInput, View,
-} from 'react-native';
+import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput } from 'react-native';
+import { Box } from './layout';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import {
@@ -85,7 +83,7 @@ export default function EditProfileModal({
     <Modal visible={visible} onRequestClose={onClose} animationType="slide" transparent={false}>
       <KeyboardAvoidingView style={{ flex: 1, backgroundColor: bg }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={{
+        <Box style={{
           flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
           paddingHorizontal: 16, paddingTop: insets.top + 12, paddingBottom: 12,
           borderBottomWidth: 1, borderBottomColor: border,
@@ -93,26 +91,26 @@ export default function EditProfileModal({
           <Pressable onPress={onClose} disabled={saving}><Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>Cancel</Text></Pressable>
           <Text style={{ color: head, fontSize: 17, fontFamily: 'Calibre-Semibold' }}>Edit profile</Text>
           {/** Spacer to balance the row — Save sits at the bottom as a pill now. */}
-          <View style={{ width: 50 }} />
-        </View>
+          <Box style={{ width: 50 }} />
+        </Box>
         <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
-          <View style={{ alignItems: 'center', marginBottom: 20 }}>
+          <Box style={{ alignItems: 'center', marginBottom: 20 }}>
             <Pressable onPress={pickAvatar} disabled={uploading}>
               <Image
                 source={{ uri: stampBoxAvatarUrl(address, AVATAR_SIZE * 2, getCacheHash(form.avatar)) }}
                 style={{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: AVATAR_SIZE / 2, backgroundColor: rowBg, opacity: uploading ? 0.5 : 1 }}
               />
               {uploading ? (
-                <View style={{ position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' }}>
+                <Box style={{ position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' }}>
                   <ActivityIndicator color={fg} />
-                </View>
+                </Box>
               ) : null}
             </Pressable>
             <Text style={{ color: sub, fontSize: 12, marginTop: 8, fontFamily: 'Calibre-Medium' }}>Tap to change avatar</Text>
-          </View>
+          </Box>
 
           {FIELDS.map(f => (
-            <View key={f.key} style={{ marginBottom: 14 }}>
+            <Box key={f.key} style={{ marginBottom: 14 }}>
               <Text style={{ color: sub, fontSize: 11, marginBottom: 4, fontFamily: 'Calibre-Medium' }}>{f.label.toUpperCase()}</Text>
               <TextInput
                 value={(form[f.key] ?? '') as string}
@@ -127,7 +125,7 @@ export default function EditProfileModal({
                   textAlignVertical: f.multiline ? 'top' : 'center',
                 }}
               />
-            </View>
+            </Box>
           ))}
 
           <Pressable

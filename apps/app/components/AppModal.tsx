@@ -5,9 +5,8 @@
  *  global navigation bar (the reported overlap bug). */
 
 import type { ReactNode } from 'react';
-import {
-  Modal, Pressable, ScrollView, Text, View,
-} from 'react-native';
+import { Modal, Pressable, ScrollView, Text } from 'react-native';
+import { Box } from './layout';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useEffectiveColorScheme } from '../lib/theme';
 import { HeroIcon } from './HeroIcon';
@@ -44,7 +43,7 @@ export function AppModal({
           }}
         >
           {title ? (
-            <View style={{
+            <Box style={{
               flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
               paddingHorizontal: 16, paddingBottom: 4,
             }}>
@@ -54,7 +53,7 @@ export function AppModal({
               <Pressable onPress={onClose} hitSlop={10}>
                 <HeroIcon name="x" size={22} color={head} />
               </Pressable>
-            </View>
+            </Box>
           ) : null}
           <ScrollView
             keyboardShouldPersistTaps="handled"

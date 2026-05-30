@@ -2,7 +2,7 @@
  *  no colored bubble even for the local user's own messages. */
 
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Linking, PanResponder, Pressable, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Animated, Linking, PanResponder, Pressable, Text, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import { getPeerAvatarCb } from '../lib/peerProfiles';
 import Markdown, { MarkdownIt } from 'react-native-markdown-display';
@@ -12,6 +12,7 @@ import { MessengerImageAttachment } from './MessengerImageAttachment';
 import { YouTubeEmbed, LocationEmbed } from './MediaEmbeds';
 import { mapCoordsOf, youtubeIdOf } from '../lib/embedDetect';
 import { Avatar } from './Avatar';
+import { Row, Col, Box } from './layout';
 import { resolveRemoteAttachment, shortAddress } from '../lib/xmtp';
 import { useProfileQuery } from '../lib/useProfile';
 import type { HistoryEntry } from '../lib/types';
@@ -171,16 +172,12 @@ function RemoteAttachmentResolver({ att, fg, sub, dark }: {
   }
   if (!uri) {
     return (
-      <View style={{
-        flexDirection: 'row', alignItems: 'center', gap: 8,
-        paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8,
-        backgroundColor: 'rgba(0,0,0,0.12)', marginBottom: 6,
-      }}>
+      <Row align="center" gap={8} px={10} py={8} radius={8} bg="rgba(0,0,0,0.12)" mb={6}>
         <ActivityIndicator size="small" color={fg} />
         <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
           {att.name ?? 'attachment'}
         </Text>
-      </View>
+      </Row>
     );
   }
   return <AttachmentView att={{ ...att, mime }} fullUrl={uri} fg={fg} sub={sub} dark={dark} />;
@@ -265,7 +262,7 @@ function QuestionView({ question, dark, sub, onAnswer }: {
   };
   const needSubmitButton = multi || otherOpen;
   return (
-    <View style={{ alignSelf: 'stretch', gap: 6, marginTop: 8 }}>
+    <Box style={{ alignSelf: 'stretch', gap: 6, marginTop: 8 }}>
       {question.header ? (
         <Text style={{ color: sub, fontSize: 11, fontFamily: 'Calibre-Semibold', textTransform: 'uppercase', letterSpacing: 0.5 }}>
           {question.header}{multi ? ' · multi-select' : ''}
@@ -319,7 +316,7 @@ function QuestionView({ question, dark, sub, onAnswer }: {
         </Pressable>
       ) : null}
       {otherOpen ? (
-        <View style={{
+        <Box style={{
           paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12,
           backgroundColor: dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
           borderWidth: 1, borderColor: dark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.14)',
@@ -339,7 +336,7 @@ function QuestionView({ question, dark, sub, onAnswer }: {
               minHeight: 22, padding: 0,
             }}
           />
-        </View>
+        </Box>
       ) : null}
       {needSubmitButton ? (
         <Pressable
@@ -364,7 +361,7 @@ function QuestionView({ question, dark, sub, onAnswer }: {
           </Text>
         </Pressable>
       ) : null}
-    </View>
+    </Box>
   );
 }
 
@@ -403,7 +400,7 @@ function PollView({ poll, dark, sub, votes, ownVotes, onVote }: {
     onVote(idx, owned ? 'removed' : 'added');
   };
   return (
-    <View style={{ alignSelf: 'stretch', gap: 6, marginTop: 8 }}>
+    <Box style={{ alignSelf: 'stretch', gap: 6, marginTop: 8 }}>
       {poll.header ? (
         <Text style={{ color: sub, fontSize: 11, fontFamily: 'Calibre-Semibold', textTransform: 'uppercase', letterSpacing: 0.5 }}>
           {poll.header}{multi ? ' · multi-select' : ''}
@@ -430,7 +427,7 @@ function PollView({ poll, dark, sub, votes, ownVotes, onVote }: {
             })}
           >
             {/** Result bar — width tracks the option's vote share, sits behind the label. */}
-            <View
+            <Box
               pointerEvents="none"
               style={{
                 position: 'absolute', left: 0, top: 0, bottom: 0,
@@ -438,14 +435,14 @@ function PollView({ poll, dark, sub, votes, ownVotes, onVote }: {
                 backgroundColor: dark ? 'rgba(192,160,110,0.16)' : 'rgba(192,160,110,0.14)',
               }}
             />
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Row align="center" justify="between">
               <Text style={{ color: dark ? '#9f9fa3' : '#57606a', fontSize: 15, fontFamily: 'Calibre-Medium', flexShrink: 1 }}>
                 {isOn ? '✓  ' : (multi ? '☐  ' : '')}{opt.label}
               </Text>
               <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Semibold', marginLeft: 8 }}>
                 {count}
               </Text>
-            </View>
+            </Row>
             {opt.description ? (
               <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
                 {opt.description}
@@ -457,7 +454,7 @@ function PollView({ poll, dark, sub, votes, ownVotes, onVote }: {
       <Text style={{ color: sub, fontSize: 11, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
         {total} vote{total === 1 ? '' : 's'}
       </Text>
-    </View>
+    </Box>
   );
 }
 
@@ -593,7 +590,7 @@ function MessengerBubbleBase({
         <Avatar size="sm" style={{ backgroundColor: avatarBg, marginTop: 2 }} />
       )}
       {/** Right column: message content + reactions + reaction picker stacked. */}
-      <View style={{ flex: 1, minWidth: 0, flexDirection: 'column' }}>
+      <Col flex={1} style={{ minWidth: 0 }}>
       {/** Pressable handles onLongPress; the outer Animated.View'​s PanResponder steals horizontal drags. */}
       <Pressable
         onPress={onReact ? onBubbleTap : undefined}
@@ -621,7 +618,7 @@ function MessengerBubbleBase({
             </Text>
           </Pressable>
         ) : null}
-        {atts.length > 0 ? <View style={{ alignSelf: 'stretch' }}>{atts.map((a, i) => {
+        {atts.length > 0 ? <Box style={{ alignSelf: 'stretch' }}>{atts.map((a, i) => {
           /** XMTP inline attachments carry bytes in `dataB64` — render via data: URI.
            *  Optimistic (pending) attachments carry the local `file://` URI so the
            *  image shows instantly while the send is in flight; full `http(s)`/
@@ -646,23 +643,23 @@ function MessengerBubbleBase({
               dark={dark}
             />
           );
-        })}</View> : null}
+        })}</Box> : null}
         {/** Markdown wrapped so the lib's internal layout can't bleed into the timestamp row below. */}
         {poll ? (
           /** Poll bubble: render the question as the main text (the raw fallback
            *  multi-line string lives in entry.text but the PollView shows the
            *  options interactively, so we only surface the question here). */
           poll.question ? (
-            <View style={{ alignSelf: 'stretch' }}>
+            <Box style={{ alignSelf: 'stretch' }}>
               <Markdown {...markdownProps}>{poll.question}</Markdown>
-            </View>
+            </Box>
           ) : null
         ) : entry.text ? (
-          <View style={{ alignSelf: 'stretch' }}>
+          <Box style={{ alignSelf: 'stretch' }}>
             {hasMention(entry.text)
               ? <MentionBody text={entry.text} fg={fg} dark={dark} />
               : <Markdown {...markdownProps}>{entry.text}</Markdown>}
-          </View>
+          </Box>
         ) : null}
         {/** Inline embeds — YouTube + location. Rendered below the message
          *   text so the source URL stays clickable while the preview gives
@@ -670,9 +667,9 @@ function MessengerBubbleBase({
          *   gracefully render nothing. */}
         {(() => {
           const ytId = youtubeIdOf(entry.text);
-          if (ytId) return <View style={{ alignSelf: 'stretch', marginTop: 6 }}><YouTubeEmbed videoId={ytId} dark={dark} /></View>;
+          if (ytId) return <Box style={{ alignSelf: 'stretch', marginTop: 6 }}><YouTubeEmbed videoId={ytId} dark={dark} /></Box>;
           const coords = mapCoordsOf(entry.text);
-          if (coords) return <View style={{ alignSelf: 'stretch', marginTop: 6 }}><LocationEmbed lat={coords.lat} lng={coords.lng} sourceUrl={coords.sourceUrl} dark={dark} /></View>;
+          if (coords) return <Box style={{ alignSelf: 'stretch', marginTop: 6 }}><LocationEmbed lat={coords.lat} lng={coords.lng} sourceUrl={coords.sourceUrl} dark={dark} /></Box>;
           return null;
         })()}
         {question && onAnswer ? (
@@ -694,11 +691,7 @@ function MessengerBubbleBase({
             transcribing…
           </Text>
         ) : null}
-        <View style={{
-          alignSelf: 'stretch',
-          flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start',
-          gap: 6, marginTop: 3,
-        }}>
+        <Row align="center" justify="start" gap={6} mt={3} style={{ alignSelf: 'stretch' }}>
           {onReact ? (
             <Pressable onPress={() => setPickerOpen(o => !o)} hitSlop={8}>
               <HeroIcon name="faceSmile" size={14} color={sub} />
@@ -710,7 +703,7 @@ function MessengerBubbleBase({
             </Pressable>
           ) : null}
           <Text style={{ color: sub, fontSize: 10 , fontFamily: 'Calibre-Medium'}}>{fmtTs(entry.ts)}</Text>
-        </View>
+        </Row>
       </Pressable>
       {(() => {
         /** Only show a pending pill for an emoji the live stream hasn't yet
@@ -727,7 +720,7 @@ function MessengerBubbleBase({
         const hasConfirmed = confirmedEntries.length > 0;
         if (!hasConfirmed && pending.length === 0) return null;
         return (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
+          <Row wrap gap={4} mt={4}>
             {confirmedEntries.map(([emoji, count]) => {
               /** Tapping/long-pressing a pill the user OWNS toggles their reaction
                *  off (onReact detects ownership → sends `removed`). Pills they don't
@@ -758,26 +751,22 @@ function MessengerBubbleBase({
                   {inner}
                 </Pressable>
               ) : (
-                <View key={emoji} style={pillStyle}>{inner}</View>
+                <Box key={emoji} style={pillStyle}>{inner}</Box>
               );
             })}
             {pending.map(emoji => (
-              <View key={`pending-${emoji}`} style={{
-                flexDirection: 'row', alignItems: 'center', gap: 4,
-                paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, backgroundColor: pillBg,
+              <Row key={`pending-${emoji}`} align="center" gap={4} px={8} py={2} radius={999} bg={pillBg} style={{
                 opacity: 0.45,
               }}>
                 <Text style={{ fontSize: 13 , fontFamily: 'Calibre-Medium'}}>{emoji}</Text>
                 <Text style={{ fontSize: 11, color: sub , fontFamily: 'Calibre-Medium'}}>1</Text>
-              </View>
+              </Row>
             ))}
-          </View>
+          </Row>
         );
       })()}
       {pickerOpen ? (
-        <View style={{
-          flexDirection: 'row', gap: 8, marginTop: 6, paddingHorizontal: 10, paddingVertical: 6,
-          borderRadius: 999, backgroundColor: dark ? '#282a2d' : '#ffffff',
+        <Row gap={8} mt={6} px={10} py={6} radius={999} bg={dark ? '#282a2d' : '#ffffff'} style={{
           shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 8, elevation: 4,
           alignSelf: 'flex-start',
         }}>
@@ -790,9 +779,9 @@ function MessengerBubbleBase({
           <Pressable onPress={() => setPickerOpen(false)}>
             <Text style={{ fontSize: 16, color: sub, paddingHorizontal: 4 }}>✕</Text>
           </Pressable>
-        </View>
+        </Row>
       ) : null}
-      </View>
+      </Col>
     </Animated.View>
   );
 }

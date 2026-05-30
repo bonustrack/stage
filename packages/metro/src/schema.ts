@@ -1,16 +1,6 @@
-/**
- * Typed metro-call + METRO_CTRL schema (#16).
- *
- * The control verbs that flow over the wire — both as outbound action-call args
- * (`metro call xmtp register-push '{…}'`) and as in-band METRO_CTRL DM payloads
- * (`METRO_CTRL:register-push:{json}`) — were previously stringly-typed JSON that
- * each train re-parsed and re-validated by hand. This module publishes ONE
- * lightweight runtime-validated schema so the CLI and the trains validate
- * identically.
- *
- * Zero-dependency: a tiny validator combinator (no zod) so trains stay
- * dependency-light and the same code runs CLI-side and train-side.
- */
+// Typed metro-call + METRO_CTRL schema (#16). One runtime-validated schema for the
+// control verbs (both call-arg and `METRO_CTRL:verb:{json}` paths) so CLI and trains
+// validate identically. Zero-dependency: a tiny validator combinator (no zod).
 
 /* ──────────── tiny runtime validator ──────────── */
 
@@ -109,12 +99,8 @@ export type CtrlVerb = keyof typeof CTRL_SCHEMAS;
 export const isKnownCtrlVerb = (verb: string): verb is CtrlVerb =>
   Object.prototype.hasOwnProperty.call(CTRL_SCHEMAS, verb);
 
-/**
- * Validate a control payload. Accepts either a parsed object (call-arg path) or
- * a raw JSON string (METRO_CTRL DM path). Returns the typed value or throws
- * SchemaError. Unknown verbs throw — callers that want to ignore them should
- * gate on `isKnownCtrlVerb` first.
- */
+// Validate a control payload (parsed object or raw JSON string). Returns the typed
+// value or throws SchemaError. Unknown verbs throw — gate on `isKnownCtrlVerb` first.
 export function validateCtrl(verb: string, payload: unknown): unknown {
   if (!isKnownCtrlVerb(verb)) throw new Error(`unknown control verb '${verb}'`);
   const obj = typeof payload === 'string' ? (payload ? JSON.parse(payload) : {}) : payload;

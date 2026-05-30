@@ -16,7 +16,8 @@
  *  call sites that all picked their own size constants and forgot the
  *  cache-buster half the time. */
 
-import { Image, Pressable, View } from 'react-native';
+import { Image, Pressable } from 'react-native';
+import { Box } from './layout';
 import type { ImageStyle, StyleProp } from 'react-native';
 import { stampAvatarUrl, AVATAR_SIZES, type AvatarSize } from '@metro-labs/kit/avatar';
 import { avatarRenderUrl } from '@metro-labs/client/profile/snapshot';
@@ -73,7 +74,7 @@ export function Avatar({
 
   const inner = uri
     ? <Image source={{ uri }} style={[baseStyle, style]} />
-    : <View style={[baseStyle, style]} />;
+    : <Box style={[baseStyle, style]} />;
 
   if (!onPress) return inner;
 

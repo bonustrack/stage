@@ -13,10 +13,12 @@
  *  Timestamp, preview, and unread props are all optional so callers without
  *  that context (common channels) can omit them gracefully. */
 
-import { Pressable, Text, View } from 'react-native';
+import { memo } from 'react';
+import { Pressable, Text } from 'react-native';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { Avatar } from './Avatar';
 import { HeroIcon } from './HeroIcon';
+import { Row, Col, Box } from './layout';
 import { usePalette } from '../lib/theme';
 
 export interface ChannelRowProps {
@@ -49,7 +51,10 @@ export interface ChannelRowProps {
   containerStyle?: StyleProp<ViewStyle>;
 }
 
-export function ChannelRow({
+/** #6: memoised so a stream tick that re-renders the channels list only
+ *  re-renders the rows whose props actually changed (not the whole window).
+ *  All props are primitives or stable callbacks (hoisted in the caller). */
+function ChannelRowBase({
   title, avatarAddress, avatarUri, cacheBuster, square,
   lastPreview, timestamp, subtitle, unreadCount = 0, markedUnread,
   pinned, hasDraft, showChevron, avatarSize = 40,
@@ -70,9 +75,7 @@ export function ChannelRow({
     >
       {/* Inner row carries the separator: it starts at the avatar's left edge
           (inset by paddingHorizontal), not the full card width. */}
-      <View style={{
-        flexDirection: 'row', alignItems: 'center', gap: 12,
-        paddingVertical: 14,
+      <Row align="center" gap={12} py={14} style={{
         borderBottomWidth: 1, borderBottomColor: border,
       }}>
         <Avatar
@@ -83,8 +86,8 @@ export function ChannelRow({
           cacheBuster={cacheBuster}
           style={{ backgroundColor: border }}
         />
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <Col flex={1} style={{ minWidth: 0 }}>
+          <Row align="center" gap={6}>
             {pinned ? <HeroIcon name="mapPin" size={13} color={sub} /> : null}
             {hasDraft ? <HeroIcon name="pencil" size={14} color={sub} /> : null}
             <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', flex: 1 }} numberOfLines={1}>
@@ -93,30 +96,31 @@ export function ChannelRow({
             {timestamp ? (
               <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{timestamp}</Text>
             ) : null}
-          </View>
+          </Row>
           {/* Reserve the badge's height (22) regardless of whether one shows so
               rows with/without the unread indicator are the same total height. */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4, minHeight: 22 }}>
+          <Row align="center" gap={8} mt={4} style={{ minHeight: 22 }}>
             <Text style={{ color: sub, fontSize: 16, fontFamily: 'Calibre-Medium', flex: 1 }} numberOfLines={1}>
               {previewText}
             </Text>
             {unreadCount > 0 ? (
-              <View style={{
-                minWidth: 22, height: 22, borderRadius: 999, backgroundColor: head,
-                alignItems: 'center', justifyContent: 'center', paddingHorizontal: 7,
+              <Row align="center" justify="center" px={7} radius={999} bg={head} style={{
+                minWidth: 22, height: 22,
               }}>
                 <Text style={{ color: bg, fontSize: 12, fontFamily: 'Calibre-Semibold' }}>
                   {unreadCount > 99 ? '99+' : unreadCount}
                 </Text>
-              </View>
+              </Row>
             ) : markedUnread ? (
-              <View style={{ width: 12, height: 12, borderRadius: 999, backgroundColor: head }} />
+              <Box style={{ width: 12, height: 12, borderRadius: 999, backgroundColor: head }} />
             ) : showChevron ? (
               <Text style={{ color: sub, fontSize: 18 }}>›</Text>
             ) : null}
-          </View>
-        </View>
-      </View>
+          </Row>
+        </Col>
+      </Row>
     </Pressable>
   );
 }
+
+export const ChannelRow = memo(ChannelRowBase);
