@@ -125,10 +125,17 @@ export default function RootLayout(): React.ReactElement {
           name="(tabs)"
           options={{ headerShown: false, stackAnimation: 'none' }}
         />
+        {/** Pushed routes open INSTANTLY (`stackAnimation: 'none'` — user prefers
+         *   no push/pop slide). The interactive swipe-back still works: in
+         *   react-native-screens the finger-tracking pop is driven entirely by
+         *   `goBackGesture` (→ `ScreenTransition.SwipeRight`, see
+         *   gesture-handler/constraints.ts `getAnimationForTransition`), which is
+         *   INDEPENDENT of `stackAnimation`. So the previous page still parallaxes
+         *   in underneath your thumb on drag, while a tap-to-open is instant. */}
         <NativeSwipeStack.Screen
           name="xmtp/[convId]"
           options={{
-            stackAnimation: 'slide_from_right',
+            stackAnimation: 'none',
             goBackGesture: 'swipeRight',
             screenEdgeGesture: true,
           }}
@@ -136,7 +143,7 @@ export default function RootLayout(): React.ReactElement {
         <NativeSwipeStack.Screen
           name="accounts"
           options={{
-            stackAnimation: 'slide_from_right',
+            stackAnimation: 'none',
             goBackGesture: 'swipeRight',
             screenEdgeGesture: true,
           }}
