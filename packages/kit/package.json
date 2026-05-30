@@ -13,7 +13,8 @@
     "./tokens": "./src/tokens.ts",
     "./icons": "./src/icons.ts",
     "./theme": "./src/theme.ts",
-    "./avatar": "./src/avatar.ts"
+    "./avatar": "./src/avatar.ts",
+    "./layout": "./src/layout.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
