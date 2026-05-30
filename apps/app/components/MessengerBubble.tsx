@@ -539,19 +539,20 @@ function MessengerBubbleBase({
     onPanResponderRelease: (_, g) => {
       const triggered = g.dx <= -60;
       Animated.spring(swipeX, { toValue: 0, useNativeDriver: true, speed: 18, bounciness: 6 }).start();
-      if (triggered) onReply?.();
+      if (triggered && !pending) onReply?.();
     },
     onPanResponderTerminate: () => {
       Animated.spring(swipeX, { toValue: 0, useNativeDriver: true, speed: 18, bounciness: 6 }).start();
     },
     onPanResponderTerminationRequest: () => false,
-  }), [onReply, swipeX]);
+  }), [onReply, swipeX, pending]);
   /** Double-tap a message → quick 👍, reusing the same optimistic onReact path as
    *  the emoji picker. Manual lastTap timestamp check (two taps within 300ms) — a
    *  single tap stays a no-op, long-press still opens the menu, and the outer
    *  PanResponder owns horizontal swipe-to-reply, so none of them collide. */
   const lastTapRef = useRef(0);
   const onBubbleTap = (): void => {
+    if (pending) return;
     const now = Date.now();
     if (now - lastTapRef.current < 300) {
       lastTapRef.current = 0;
@@ -567,7 +568,6 @@ function MessengerBubbleBase({
         flexDirection: 'row', alignItems: 'flex-start',
         paddingHorizontal: 12, paddingVertical: 6, gap: 10,
         transform: [{ translateX: swipeX }],
-        opacity: pending ? 0.5 : 1,
         /** Permalink/reply jump target: full-row lighter background (~10% toward
          *  white), spanning the whole width incl. the avatar gutter. */
         backgroundColor: replyTarget
@@ -590,11 +590,11 @@ function MessengerBubbleBase({
         <Avatar size="sm" style={{ backgroundColor: avatarBg, marginTop: 2 }} />
       )}
       {/** Right column: message content + reactions + reaction picker stacked. */}
-      <Col flex={1} style={{ minWidth: 0 }}>
+      <Col flex={1} style={{ minWidth: 0, opacity: pending ? 0.5 : 1 }}>
       {/** Pressable handles onLongPress; the outer Animated.View'​s PanResponder steals horizontal drags. */}
       <Pressable
         onPress={onReact ? onBubbleTap : undefined}
-        onLongPress={onLongPress}
+        onLongPress={pending ? undefined : onLongPress}
         delayLongPress={300}
         style={{
           flexDirection: 'column',
@@ -692,25 +692,27 @@ function MessengerBubbleBase({
           </Text>
         ) : null}
         <Row align="center" justify="start" gap={6} mt={3} style={{ alignSelf: 'stretch' }}>
-          {onReact ? (
+          {/** While pending: hide the react + reply affordances and show "Sending"
+           *   in place of the timestamp, reusing the exact timestamp Text style. */}
+          {!pending && onReact ? (
             <Pressable onPress={() => setPickerOpen(o => !o)} hitSlop={8}>
               <HeroIcon name="faceSmile" size={14} color={sub} />
             </Pressable>
           ) : null}
-          {onReply ? (
+          {!pending && onReply ? (
             <Pressable onPress={onReply} hitSlop={8}>
               <HeroIcon name="reply" size={14} color={sub} />
             </Pressable>
           ) : null}
-          <Text style={{ color: sub, fontSize: 10 , fontFamily: 'Calibre-Medium'}}>{fmtTs(entry.ts)}</Text>
+          <Text style={{ color: sub, fontSize: 11 , fontFamily: 'Calibre-Medium'}}>{pending ? 'Sending' : fmtTs(entry.ts)}</Text>
         </Row>
       </Pressable>
-      {(() => {
+      {pending ? null : (() => {
         /** Only show a pending pill for an emoji the live stream hasn't yet
          *  confirmed on this message — once it lands in `reactions` the parent
          *  also drops it from the optimistic list, but this guards the in-between
          *  frame so we never render a confirmed + pending pill for the same emoji. */
-        const pending = (pendingReactions ?? []).filter(e => !reactions?.has(e));
+        const pendingEmojis = (pendingReactions ?? []).filter(e => !reactions?.has(e));
         /** Drop optimistically-removed emojis from the confirmed pill list so the
          *  pill vanishes the instant the user un-reacts (before the stream echo). */
         const removed = new Set(pendingRemovals ?? []);
@@ -718,14 +720,13 @@ function MessengerBubbleBase({
           ? [...reactions.entries()].filter(([emoji]) => !removed.has(emoji))
           : [];
         const hasConfirmed = confirmedEntries.length > 0;
-        if (!hasConfirmed && pending.length === 0) return null;
+        if (!hasConfirmed && pendingEmojis.length === 0) return null;
         return (
           <Row wrap gap={4} mt={4}>
             {confirmedEntries.map(([emoji, count]) => {
-              /** Tapping/long-pressing a pill the user OWNS toggles their reaction
-               *  off (onReact detects ownership → sends `removed`). Pills they don't
-               *  own stay static. Own pills get a subtle outline to signal they're
-               *  interactive / "mine". */
+              /** Tapping/long-pressing ANY pill toggles that emoji as the user's
+               *  own reaction — onReact handles add-if-not-owned / remove-if-owned.
+               *  Own pills get a subtle outline to signal they're "mine". */
               const mine = !!ownEmojis?.has(emoji);
               const inner = (
                 <>
@@ -739,7 +740,7 @@ function MessengerBubbleBase({
                 borderWidth: mine ? 1 : 0,
                 borderColor: mine ? (dark ? '#7aa2ff' : '#2f6feb') : 'transparent',
               };
-              return mine && onReact ? (
+              return onReact ? (
                 <Pressable
                   key={emoji}
                   onPress={() => onReact(emoji)}
@@ -754,7 +755,7 @@ function MessengerBubbleBase({
                 <View key={emoji} style={pillStyle}>{inner}</View>
               );
             })}
-            {pending.map(emoji => (
+            {pendingEmojis.map(emoji => (
               <Row key={`pending-${emoji}`} align="center" gap={4} px={8} py={2} radius={999} bg={pillBg} style={{
                 opacity: 0.45,
               }}>
@@ -765,7 +766,7 @@ function MessengerBubbleBase({
           </Row>
         );
       })()}
-      {pickerOpen ? (
+      {pickerOpen && !pending ? (
         <Row gap={8} mt={6} px={10} py={6} radius={999} bg={dark ? '#282a2d' : '#ffffff'} style={{
           shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 8, elevation: 4,
           alignSelf: 'flex-start',

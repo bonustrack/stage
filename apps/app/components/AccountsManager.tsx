@@ -26,7 +26,6 @@ import {
   type AccountRecord,
 } from '../lib/accounts';
 import { setWcSign } from '../lib/wcSigner';
-import { clearCachedRows } from '../lib/channelsCache';
 
 const TYPE_LABEL: Record<AccountRecord['type'], string> = {
   generated: 'Generated',
@@ -40,7 +39,7 @@ function reloadApp(): void {
   DevSettings.reload?.();
 }
 
-export function AccountsManager({ dark, flat = false }: { dark: boolean; flat?: boolean }): React.ReactElement {
+export function AccountsManager({ dark, flat = false, onSwitched }: { dark: boolean; flat?: boolean; onSwitched?: () => void }): React.ReactElement {
   const head = dark ? '#ffffff' : '#000000';
   const sub = dark ? '#7a7a7e' : '#8a929d';
   const border = dark ? '#282a2d' : '#e4e4e5';
@@ -149,16 +148,20 @@ export function AccountsManager({ dark, flat = false }: { dark: boolean; flat?: 
     setBusy(true);
     try {
       /** In-place switch — no full app reload (which on the dev client re-downloads
-       *  the whole JS bundle + flashes white). Clear the previous account's
-       *  persisted channels list first so its rows/avatars never flash under the
-       *  new inbox, then switchToAccount drops the cached client + global stream,
-       *  builds the target account's client, and bumps the account epoch — which
-       *  re-inits the channels list + any open conversation against the new inbox.
-       *  Far snappier than reloadApp(). */
-      clearCachedRows();
+       *  the whole JS bundle + flashes white). switchToAccount drops the cached
+       *  client + global stream, builds the target account's client, points the
+       *  (account-scoped) channels cache at the target account's store, and bumps
+       *  the account epoch — which re-inits the channels list + any open
+       *  conversation against the new inbox. We DON'T clear the cache: each
+       *  account keeps its own rows, so the target account's channels render
+       *  instantly from cache (instant 2nd open) and the stream revalidates in the
+       *  background. Far snappier than reloadApp(). */
       await switchToAccount(id);
       await refresh();
       setExpanded(false);
+      /** Let the host dismiss itself after a switch (the full-page /accounts
+       *  switcher passes router.back). Other callers omit it → no-op. */
+      onSwitched?.();
     } catch (e) {
       Alert.alert('Switch failed', (e as Error).message);
     } finally { setBusy(false); }

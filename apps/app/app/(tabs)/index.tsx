@@ -6,7 +6,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  AppState, FlatList, Pressable, RefreshControl,
+  AppState, FlatList, Pressable,
   Text, View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -220,7 +220,6 @@ export default function Messenger(): React.ReactElement {
   };
   useEffect(() => subscribeCachedRows(r => setRowsState(r as Row[] | null)), []);
   const [error, setError] = useState<string>('');
-  const [refreshing, setRefreshing] = useState(false);
   /** Row long-pressed → opens the per-conversation action sheet (Mark as
    *  read/unread). Holds the convId + whether it currently reads as unread. */
   const [rowMenu, setRowMenu] = useState<{ convId: string; title: string; isUnread: boolean } | null>(null);
@@ -412,13 +411,28 @@ export default function Messenger(): React.ReactElement {
               const idx = msgConvId ? prev.findIndex(r => r.convId === msgConvId) : -1;
               if (idx === -1) { needsRefresh = true; return prev; }
               const cur = prev[idx]!;
-              const newAvatar = cur.inboxToAddr[msg.senderInboxId ?? ''] ?? cur.avatarAddress;
+              const senderAddr = cur.inboxToAddr[msg.senderInboxId ?? ''] ?? null;
+              /** DM cards are pinned to the PEER's avatar — never the latest
+               *  sender. Otherwise a message from self (or the shared-inbox
+               *  daemon) would flip the card to the local user's own avatar.
+               *  Groups still track the latest sender's stamp. */
+              const newAvatar = cur.peerAddress ?? senderAddr ?? cur.avatarAddress;
+              /** Attribute the preview to whoever SENT this message — including a
+               *  reaction (its own senderInboxId is the reactor, NOT the peer or
+               *  the referenced message's author). Without this the row keeps the
+               *  stale lastSenderAddress from summarize() — e.g. the DM peer — so a
+               *  reaction the local user makes would show "Tony: 👍" instead of the
+               *  reactor's name. */
+              const lastFromSelf = msg.senderInboxId === cur.selfInboxId;
               /** Bump the unread count when the new msg is newer than what we'd
                *  read AND not authored by the local user. */
               const isUnread = (msg.sentNs ?? 0) > cur.lastReadNs
                 && msg.senderInboxId !== cur.selfInboxId;
               const unreadCount = isUnread ? cur.unreadCount + 1 : cur.unreadCount;
-              const updated = { ...cur, lastTs, lastPreview, avatarAddress: newAvatar, unreadCount };
+              const updated = {
+                ...cur, lastTs, lastPreview, avatarAddress: newAvatar,
+                lastSenderAddress: senderAddr, lastFromSelf, unreadCount,
+              };
               /** A real inbound message supersedes a stale forced-unread flag —
                *  it's now counted in unreadCount, so drop the marker. */
               if (isUnread) updated.markedUnread = false;
@@ -469,13 +483,7 @@ export default function Messenger(): React.ReactElement {
     };
   }, [accountEpoch]);
 
-  const onPullToRefresh = async (): Promise<void> => {
-    if (refreshing) return;
-    setRefreshing(true);
-    try { await refreshFromNetworkRef.current?.(); } finally { setRefreshing(false); }
-  };
-
-  /** #6: stable extraData (an array, identity changes only when one of these
+/** #6: stable extraData (an array, identity changes only when one of these
    *  versions does) instead of a freshly-built string every render — so the
    *  FlatList doesn't treat every parent re-render as "data changed" and
    *  re-render the whole window on each stream tick. */
@@ -490,7 +498,7 @@ export default function Messenger(): React.ReactElement {
   const renderRow = useCallback(({ item }: { item: Row }): React.ReactElement => {
     const displayTitle = item.peerAddress ? (getPeerName(item.peerAddress) ?? item.title) : item.title;
     const preview = item.lastPreview
-      ? `${item.lastFromSelf ? 'You' : item.lastSenderAddress ? (getPeerName(item.lastSenderAddress) ?? shortAddress(item.lastSenderAddress)) : ''}${(item.lastFromSelf || item.lastSenderAddress) ? ': ' : ''}${item.lastPreview}`
+      ? `${item.lastSenderAddress ? `${getPeerName(item.lastSenderAddress) ?? shortAddress(item.lastSenderAddress)}: ` : ''}${item.lastPreview}`
       : '(no messages yet)';
     const showAddr = !item.avatarUri && item.avatarAddress && isPeerResolved(item.avatarAddress)
       ? item.avatarAddress : null;
@@ -585,13 +593,6 @@ export default function Messenger(): React.ReactElement {
         initialNumToRender={10}
         maxToRenderPerBatch={10}
         removeClippedSubviews
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => { void onPullToRefresh(); }}
-            tintColor={sub}
-          />
-        }
         contentContainerStyle={{ paddingBottom: 24 }}
         ListEmptyComponent={
           <Col p={32} align="center">

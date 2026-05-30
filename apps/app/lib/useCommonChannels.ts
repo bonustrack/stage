@@ -14,7 +14,7 @@
  *  least the cache is hydrated and resolution settles. */
 
 import { useQuery } from '@tanstack/react-query';
-import { getCachedRows, hydrateCachedRows, type CachedRow } from './channelsCache';
+import { getCachedRows, hydrateCachedRows, getActiveAccountIdSync, type CachedRow } from './channelsCache';
 import { convOfLine, groupMemberEthAddresses, lineOfConv } from './xmtp';
 import { getAccountEpoch } from './accountEpoch';
 import { MemoryStore } from './cache';
@@ -100,10 +100,11 @@ export function useCommonChannels(peerAddress: string | null, enabled: boolean):
   channels: CommonChannel[];
   loading: boolean;
 } {
-  /** TanStack Query with a PER-ACCOUNT key (account epoch) so switching accounts
-   *  and reopening the same peer's profile hits cache instead of re-walking. */
+  /** TanStack Query keyed by the ACTIVE ACCOUNT ID (stable per account, unlike
+   *  the monotonic account epoch) so switching to another account and BACK
+   *  re-hits this account's cached common-channels instead of re-walking. */
   const { data, isLoading } = useQuery({
-    queryKey: ['commonChannels', getAccountEpoch(), peerAddress?.toLowerCase() ?? ''],
+    queryKey: ['commonChannels', getActiveAccountIdSync(), peerAddress?.toLowerCase() ?? ''],
     queryFn: () => resolveCommonChannels(peerAddress as string),
     enabled: enabled && !!peerAddress,
     staleTime: 5 * 60_000,

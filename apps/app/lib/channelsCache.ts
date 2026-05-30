@@ -1,11 +1,18 @@
-/** In-process channels-list cache shared between the Channels screen + any
+/** Per-account channels-list cache shared between the Channels screen + any
  *  other surface that needs to reach in and mutate the unread count.
  *
- *  Persisted to a JSON file in the app document directory so the channels
- *  list renders immediately on cold start instead of blocking on
- *  `Client.build` + `syncAllConversations` (~3-8s on Less's network). The
- *  Channels screen re-syncs from the network in the background regardless,
- *  so the cache is always brought up to date within a few seconds. */
+ *  ACCOUNT-SCOPED: each account keeps its OWN persisted store
+ *  (`channels-cache.<accountId>.json`) plus its own in-memory mirror. Switching
+ *  accounts no longer WIPES the cache — it just swaps the active pointer, so the
+ *  target account's rows render instantly (from memory if seen this session, or
+ *  from its own file on disk) and then the live stream/summarize revalidates in
+ *  the background. This is what makes the 2nd open of an account instant.
+ *
+ *  Persisted to a JSON file in the app document directory so the channels list
+ *  renders immediately on cold start instead of blocking on `Client.build` +
+ *  `syncAllConversations` (~3-8s on Less's network). The Channels screen re-syncs
+ *  from the network in the background regardless, so the cache is always brought
+ *  up to date within a few seconds. */
 
 import { PersistentStore } from './cache';
 import { markConvReadSynced, markConvUnreadSynced } from './xmtp';
@@ -22,33 +29,99 @@ export interface CachedRow {
   [key: string]: unknown;
 }
 
-/** Channels list lives in the unified persistence layer (lib/cache) — one JSON
- *  file in the app document dir, mirrored in memory with pub/sub. The thin
- *  wrappers below preserve the previous module surface so callers are unchanged. */
-const store = new PersistentStore<CachedRow[]>('channels-cache.json');
+/** One PersistentStore per account id, lazily created. Each account's rows live
+ *  in their own file so cross-account data is retained — switching accounts
+ *  never clears another account's cache. */
+const stores = new Map<string, PersistentStore<CachedRow[]>>();
 
-/** Pull the persisted cache off disk into the in-process slot. Idempotent —
- *  the file read only happens on the first call. Safe to call from a render
- *  effect; the result lands in `rows` synchronously after this awaits. */
+/** Account id whose store the unscoped API (getCachedRows / setCachedRows /
+ *  subscribeCachedRows / mark*) currently reads + writes. Defaults to a shared
+ *  bucket until the active account is known (set on boot + on switch). */
+const DEFAULT_KEY = '__default__';
+let activeId: string = DEFAULT_KEY;
+
+/** Subscribers to the ACTIVE account's rows. They follow the active pointer:
+ *  on an account switch we re-notify them with the new account's rows so the
+ *  Channels screen swaps instantly without a refetch. */
+const activeListeners = new Set<(rows: CachedRow[] | null) => void>();
+/** Per-store unsubscribe for the currently-active store, so we can detach when
+ *  the active pointer moves. */
+let activeStoreUnsub: (() => void) | null = null;
+
+function fileNameFor(id: string): string {
+  /** Sanitise the id for a filename (account ids are lowercased addresses, but
+   *  be defensive). The legacy single-account file name is preserved for the
+   *  default bucket so an existing cache isn't orphaned. */
+  if (id === DEFAULT_KEY) return 'channels-cache.json';
+  const safe = id.replace(/[^A-Za-z0-9._-]/g, '_');
+  return `channels-cache.${safe}.json`;
+}
+
+function storeFor(id: string): PersistentStore<CachedRow[]> {
+  let s = stores.get(id);
+  if (!s) { s = new PersistentStore<CachedRow[]>(fileNameFor(id)); stores.set(id, s); }
+  return s;
+}
+
+function activeStore(): PersistentStore<CachedRow[]> { return storeFor(activeId); }
+
+/** Synchronous snapshot of the active account id — for react-query keys that
+ *  need to scope cached data to the active account (so each account keeps its
+ *  OWN cache entry and switching BACK to an account hits cache instead of
+ *  re-fetching). Stable per account, unlike the monotonic account epoch. */
+export function getActiveAccountIdSync(): string { return activeId; }
+
+/** Wire the active store's pub/sub to the active-listener set, so writes to the
+ *  active account (including stream write-through) fan out to the Channels
+ *  screen. Called whenever the active pointer changes. */
+function bindActiveStore(): void {
+  if (activeStoreUnsub) { try { activeStoreUnsub(); } catch { /* ignore */ } activeStoreUnsub = null; }
+  activeStoreUnsub = activeStore().subscribe(v => {
+    for (const l of activeListeners) l(v);
+  });
+}
+bindActiveStore();
+
+/** Point the unscoped API at a specific account's store. Called on app boot and
+ *  on every account switch (replaces the old clearCachedRows-on-switch). Swaps
+ *  the active pointer, re-binds pub/sub, then notifies active subscribers with
+ *  the target account's CURRENT rows (instant) and kicks off a lazy hydrate of
+ *  its file (notifies again when disk lands). Cross-account data is untouched. */
+export function setActiveAccountForCache(id: string | null): void {
+  const next = id || DEFAULT_KEY;
+  if (next === activeId) return;
+  activeId = next;
+  bindActiveStore();
+  const s = activeStore();
+  /** Immediate swap to whatever's already in memory for this account. */
+  for (const l of activeListeners) l(s.get());
+  /** Lazy hydrate from this account's file; the store's own subscribe (bound
+   *  above) re-notifies active listeners when the disk read lands. */
+  void s.hydrate();
+}
+
+/** Pull the persisted cache (for the ACTIVE account) off disk into the
+ *  in-process slot. Idempotent — the file read only happens on the first call
+ *  per account. Safe to call from a render effect. */
 export async function hydrateCachedRows(): Promise<CachedRow[] | null> {
-  const v = await store.hydrate();
+  const v = await activeStore().hydrate();
   return Array.isArray(v) ? v : null;
 }
 
-/** Wipe the persisted + in-memory cache. Called on account switch so the next
- *  account never momentarily shows the previous account's channels/avatars (the
- *  cache file is global, not per-account). */
-export function clearCachedRows(): void { store.clear(); }
+/** Clear ONLY the active account's persisted + in-memory cache. Use on account
+ *  REMOVAL (its data is gone for good), NOT on switch — switching now retains
+ *  every account's cache and just swaps the active pointer. */
+export function clearCachedRows(): void { activeStore().clear(); }
 
-export function getCachedRows(): CachedRow[] | null { return store.get(); }
-export function setCachedRows(next: CachedRow[] | null): void { store.set(next); }
+export function getCachedRows(): CachedRow[] | null { return activeStore().get(); }
+export function setCachedRows(next: CachedRow[] | null): void { activeStore().set(next); }
 export function subscribeCachedRows(l: (rows: CachedRow[] | null) => void): () => void {
-  return store.subscribe(l);
+  activeListeners.add(l);
+  return () => { activeListeners.delete(l); };
 }
 
-/** Latest in-memory rows, for code that previously read the module-level
- *  `rows`. */
-function currentRows(): CachedRow[] | null { return store.get(); }
+/** Latest in-memory rows for the active account. */
+function currentRows(): CachedRow[] | null { return activeStore().get(); }
 
 /** Mark a conv as read NOW — patches the cached row (so the badge clears
  *  before the Channels screen re-syncs), writes the persistent `lastReadNs`

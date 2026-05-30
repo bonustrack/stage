@@ -73,6 +73,14 @@ export async function openAsBubble(args: {
   await native.openAsBubble(args.convId, args.title, args.deepLink, args.avatarUri ?? null);
 }
 
+/** Report the conversation the user is currently viewing so the native FCM
+ *  service suppresses a push for it (the user has already seen the message).
+ *  Pass null to clear (on blur / background). No-op when the module isn't
+ *  linked — suppression simply never engages on older builds. */
+export function setActiveConversation(convId: string | null): boolean {
+  return native?.setActiveConversation?.(convId) ?? false;
+}
+
 /** Subscribe to recorded-audio events from the pill. Returns a subscription
  *  whose `.remove()` detaches the listener. No-op subscription when unavailable. */
 export function addRecordedListener(cb: (e: RecordedEvent) => void): EventSubscription {

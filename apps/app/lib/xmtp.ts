@@ -236,9 +236,10 @@ export async function switchToAccount(id: string, env: XmtpEnv = 'production'): 
 /** Drop all client-scoped in-memory state on an account change: the cached
  *  client, the single global message stream + its backstops, and every session
  *  cache that's keyed to the previous inbox (per-conv feeds, inbox→eth). The
- *  persisted channels-list cache is cleared separately by the channels screen
- *  (clearCachedRows) since it lives in a different module to avoid an import
- *  cycle. */
+ *  persisted channels-list cache is NOT cleared — it's account-scoped (one store
+ *  per account id), so switchToAccount → setActiveAccountId just repoints it at
+ *  the target account's store, keeping every account's rows cached for an instant
+ *  re-open. */
 function resetClientScopedState(): void {
   cachedClient = null;
   teardownGlobalStream();
