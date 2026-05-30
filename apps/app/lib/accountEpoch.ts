@@ -19,6 +19,11 @@ export function bumpAccountEpoch(): void {
   for (const l of listeners) l();
 }
 
+/** Non-hook read of the current account epoch — for react-query keys that need
+ *  to scope a cached resolution to the active account (so an in-place account
+ *  switch invalidates the entry without a hook). */
+export function getAccountEpoch(): number { return epoch; }
+
 /** Re-renders the caller whenever the active account changes. Use the returned
  *  value as a useEffect dependency to re-run per-account initialisation. */
 export function useAccountEpoch(): number {

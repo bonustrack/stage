@@ -380,6 +380,29 @@ export function shortAddress(addr: string): string {
  *  instead of calling GetIdentityUpdates per member on every pass. */
 const inboxEthCache = new MemoryStore<string, string>();
 
+/** Batch-resolve inbox ids → ETH address across MANY rows in ONE network call.
+ *  Collect every uncached id, fire a single `inboxStates(true, [...])`, prime the
+ *  cache, then per-row work can call `resolveInboxEth` (cache hit, zero reads).
+ *  Kills the N+1 where each channel row resolved its members serially. Exported
+ *  so the channels list can pre-warm the cache before summarising rows. */
+export async function primeInboxEthCache(
+  client: Awaited<ReturnType<typeof getOrCreateXmtpClient>>,
+  ids: string[],
+): Promise<void> {
+  const missing = [...new Set(ids)].filter(id => id && !inboxEthCache.get(id));
+  if (missing.length === 0) return;
+  try {
+    const states = await client.inboxStates(
+      true,
+      missing as Parameters<typeof client.inboxStates>[1],
+    );
+    for (let i = 0; i < missing.length; i++) {
+      const eth = states[i]?.identities.find(it => it.kind === 'ETHEREUM');
+      if (eth?.identifier) inboxEthCache.set(missing[i]!, eth.identifier);
+    }
+  } catch { /* best-effort — per-row resolveInboxEth still falls back */ }
+}
+
 /** Resolve inbox ids → ETH address, cache-first. Only ids not already cached
  *  hit the network (`inboxStates(true)`); cached ids cost zero reads. */
 async function resolveInboxEth(
@@ -852,6 +875,28 @@ function pushToFeedSlice(line: string, env: HistoryEntry): void {
   feedCache.set(line, [env, ...prev]);
 }
 
+/** A decoded inbound message, routed to channels-list subscribers (#1). Carries
+ *  the conv id + the pre-decoded preview/sender so the list doesn't re-decode
+ *  (the conv-view feedCache slice gets the same message via pushToFeedSlice). */
+export interface StreamMsg {
+  convId: string | null;
+  /** The raw RN DecodedMessage — subscribers read senderInboxId/sentNs/id/
+   *  content()/contentTypeId off it (channels list needs preview + sender). */
+  msg: DecodedMessage;
+}
+
+/** Channels-list subscribers to the SINGLE global stream (#1). index.tsx
+ *  subscribes here instead of starting its own `streamAllMessages`, so each
+ *  inbound is decoded once and routed to BOTH the feedCache slice (conv view)
+ *  AND these subscribers (row/preview/unread bookkeeping). */
+const streamSubscribers = new Set<(m: StreamMsg) => void>();
+export function subscribeAllMessages(cb: (m: StreamMsg) => void): () => void {
+  streamSubscribers.add(cb);
+  /** Ensure the one app-wide stream is running once anyone subscribes. */
+  void ensureGlobalStream();
+  return () => { streamSubscribers.delete(cb); };
+}
+
 let globalStreamCancel: (() => void) | null = null;
 let globalStreamStarting = false;
 let globalResyncTimer: ReturnType<typeof setInterval> | null = null;
@@ -892,6 +937,12 @@ async function ensureGlobalStream(): Promise<void> {
       if (!msg) return;
       const convId = (msg as unknown as { conversationId?: string }).conversationId
         ?? convIdFromTopicStr((msg as unknown as { topic?: string }).topic);
+      /** Fan out the raw message to channels-list subscribers FIRST (#1) — they
+       *  do their own control-DM filtering + need the raw msg for preview/sender.
+       *  One decode, two consumers. */
+      if (streamSubscribers.size > 0) {
+        for (const cb of streamSubscribers) { try { cb({ convId: convId ?? null, msg }); } catch { /* ignore */ } }
+      }
       if (!convId) return;
       const line = lineOfConv(convId);
       const env = envelopeOfXmtpMessage(msg, line);
