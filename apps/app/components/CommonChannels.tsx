@@ -5,10 +5,10 @@
  *  blocks the profile render. Renders nothing until at least one common
  *  channel resolves (or shows a small loader while still walking groups).
  *
- *  Each row reuses the shared `ChannelRow` so this section reads identically
- *  to the channels-tab list. Common channels have no last-message/unread
- *  context, so the preview slot shows the member count and the unread badge
- *  is omitted (a trailing chevron renders instead). */
+ *  Each row reuses the shared `ChannelRow` as flat full-width rows so this
+ *  section reads identically to the channels-tab list (no surrounding card,
+ *  no chevron). Common channels have no last-message/unread context, so the
+ *  preview slot shows the member count and the unread badge is omitted. */
 
 import { ActivityIndicator, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -40,24 +40,22 @@ export function CommonChannels({ peerAddress, enabled, c }: {
         {loading ? <ActivityIndicator size="small" color={c.sub} /> : null}
       </View>
 
-      <View style={{
-        marginHorizontal: 16, borderRadius: 12, overflow: 'hidden',
-        backgroundColor: c.rowBg, borderWidth: 1, borderColor: c.border,
-      }}>
-        {channels.map(ch => (
-          <ChannelRow
-            key={ch.convId}
-            title={ch.title}
-            avatarUri={ch.avatarUri}
-            avatarAddress={ch.avatarUri ? null : ch.avatarAddress}
-            cacheBuster={ch.avatarAddress ? getPeerAvatarCb(ch.avatarAddress) : undefined}
-            square
-            subtitle={`${ch.memberCount} member${ch.memberCount === 1 ? '' : 's'}`}
-            showChevron
-            onPress={() => router.push({ pathname: '/xmtp/[convId]', params: { convId: ch.convId } })}
-          />
-        ))}
-      </View>
+      {/* Flat full-width rows — same look as the channels tab (index.tsx):
+          default ChannelRow padding/background, no surrounding card, no
+          chevron. Common channels have no preview/unread context, so we pass
+          the member count as the subtitle and omit those props. */}
+      {channels.map(ch => (
+        <ChannelRow
+          key={ch.convId}
+          title={ch.title}
+          avatarUri={ch.avatarUri}
+          avatarAddress={ch.avatarUri ? null : ch.avatarAddress}
+          cacheBuster={ch.avatarAddress ? getPeerAvatarCb(ch.avatarAddress) : undefined}
+          square
+          subtitle={`${ch.memberCount} member${ch.memberCount === 1 ? '' : 's'}`}
+          onPress={() => router.push({ pathname: '/xmtp/[convId]', params: { convId: ch.convId } })}
+        />
+      ))}
     </View>
   );
 }
