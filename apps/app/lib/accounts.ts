@@ -19,7 +19,7 @@ import './cryptoShim';
 import * as SecureStore from 'expo-secure-store';
 import { generatePrivateKey, privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts';
 import type { Hex } from 'viem';
-import { clearCachedRows } from './channelsCache';
+import { setActiveAccountForCache } from './channelsCache';
 
 export type AccountType = 'generated' | 'privateKey' | 'walletconnect';
 
@@ -89,15 +89,21 @@ export async function loadAccounts(): Promise<AccountRecord[]> {
 }
 
 export async function getActiveAccountId(): Promise<string | null> {
-  return SecureStore.getItemAsync(ACTIVE_KEY).catch(() => null);
+  const id = await SecureStore.getItemAsync(ACTIVE_KEY).catch(() => null);
+  /** Boot init: point the channels cache at the active account's store so the
+   *  Channels screen reads the right per-account rows on cold start (idempotent —
+   *  no-ops when the pointer is already set; the switch path sets it directly). */
+  if (id) setActiveAccountForCache(id);
+  return id;
 }
 
 export async function setActiveAccountId(id: string): Promise<void> {
-  const prev = await SecureStore.getItemAsync(ACTIVE_KEY).catch(() => null);
   await SecureStore.setItemAsync(ACTIVE_KEY, id);
-  /** Switching to a different account: wipe the global channels cache so the
-   *  reload doesn't momentarily show the previous account's channels/avatars. */
-  if (prev && prev !== id) clearCachedRows();
+  /** Point the channels cache at THIS account's store. We no longer wipe — each
+   *  account keeps its own cached rows, so switching swaps to the target
+   *  account's data instantly (instant 2nd open) and the stream revalidates in
+   *  the background. */
+  setActiveAccountForCache(id);
 }
 
 /** Active account, falling back to the first in the list when the pointer is
