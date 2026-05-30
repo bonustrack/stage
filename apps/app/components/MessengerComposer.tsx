@@ -13,6 +13,7 @@ import * as Location from 'expo-location';
 import { ComposerGradient } from './ComposerGradient';
 import { HeroIcon, type HeroIconName } from './HeroIcon';
 import { Avatar } from './Avatar';
+import { Box, Row, Col } from './layout';
 import { fileUriToBase64, shortAddress, xmtpReply, xmtpSendAttachment, xmtpSendText, xmtpSendPoll } from '../lib/xmtp';
 import { AppModal } from './AppModal';
 import { type PollContent, mintPollId, pollFallbackText } from '@metro-labs/client/xmtp/poll';
@@ -555,14 +556,14 @@ export function MessengerComposer({
   );
   const bg = dark ? '#0e0f10' : '#ffffff';
   return (
-    <View style={{ paddingHorizontal: 10, paddingTop: 0, paddingBottom: 14, backgroundColor: bg }}>
+    <Col px={10} pt={0} pb={14} bg={bg}>
       {/** 24px fade sits directly above the composer (paddingTop is 0), so the
        *  messages fade straight into the composer over a uniform 24px ramp. */}
       {/** left/right -10 cancels this View's paddingHorizontal:10 so the fade
        *   bleeds to the screen edges instead of leaving un-faded side strips. */}
       <ComposerGradient bg={bg} direction="down" top={-24} height={24} left={-10} right={-10} />
       {replyingTo ? (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingBottom: 6 }}>
+        <Row align="center" gap={8} px={14} pb={6}>
           {/** Tap the quoted slab → parent scrolls the feed to the target. The
            *   ✕ stays as its own Pressable so it stays clear-only. */}
           <Pressable
@@ -573,15 +574,14 @@ export function MessengerComposer({
             <Text style={{ color: fg, fontSize: 14, marginTop: 3, fontFamily: 'Calibre-Medium'}} numberOfLines={1}>{replyingTo.preview}</Text>
           </Pressable>
           <Pressable onPress={onClearReply} hitSlop={6}><HeroIcon name="x" size={16} color={sub} /></Pressable>
-        </View>
+        </Row>
       ) : null}
       {/** @-mention popup — Discord-style, stacked above the composer.
        *   Only renders when there's an active mention AND at least one match. */}
       {mention && mentionMatches.length > 0 ? (
-        <View style={{
-          marginHorizontal: 6, marginBottom: 8, borderRadius: 12, overflow: 'hidden',
+        <Col mx={6} mb={8} radius={12} bg={dark ? '#1a1a1c' : '#ffffff'} style={{
+          overflow: 'hidden',
           borderWidth: 1, borderColor: dark ? '#282a2d' : '#e4e4e5',
-          backgroundColor: dark ? '#1a1a1c' : '#ffffff',
         }}>
           {mentionMatches.map((c, i) => (
             <Pressable
@@ -603,15 +603,15 @@ export function MessengerComposer({
               </Text>
             </Pressable>
           ))}
-        </View>
+        </Col>
       ) : null}
       {pending.length > 0 ? (
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 6, paddingBottom: 6 }}>
+        <Row wrap gap={8} px={6} pb={6}>
           {pending.map((a, i) => (
             a.kind === 'image' ? (
               /** Image attachments: 72px square with the filename label beneath, x-to-remove
                *  pinned to the top-right corner of the thumbnail. */
-              <View key={a.id} style={{ width: 72, alignItems: 'center', gap: 4 }}>
+              <Col key={a.id} align="center" gap={4} style={{ width: 72 }}>
                 <View>
                   <Image
                     /** `a.url` is a local file:// URI — works directly with RN `Image`. */
@@ -633,36 +633,32 @@ export function MessengerComposer({
                 <Text style={{ color: fg, fontSize: 11, width: 72, textAlign: 'center' , fontFamily: 'Calibre-Medium'}} numberOfLines={1}>
                   {a.name ?? a.id}
                 </Text>
-              </View>
+              </Col>
             ) : (
               /** Non-image attachments keep the inline chip layout — files/audio don'​t benefit
                *  from a thumbnail and look fine as a row. */
-              <View key={a.id} style={{
-                flexDirection: 'row', alignItems: 'center', gap: 6,
-                paddingHorizontal: 8, paddingVertical: 4,
-                borderRadius: 12, backgroundColor: chipBg,
-              }}>
+              <Row key={a.id} align="center" gap={6} px={8} py={4} radius={12} bg={chipBg}>
                 <HeroIcon name={kindIcon(a.kind)} size={14} color={fg} />
                 <Text style={{ color: fg, fontSize: 12, maxWidth: 140 , fontFamily: 'Calibre-Medium'}} numberOfLines={1}>{a.name ?? a.id}</Text>
                 <Pressable onPress={() => setPending(prev => prev.filter((_, j) => j !== i))} hitSlop={6}>
                   <HeroIcon name="x" size={14} color={sub} />
                 </Pressable>
-              </View>
+              </Row>
             )
           ))}
-        </View>
+        </Row>
       ) : null}
       {uploading || err ? (
         <Text style={{ color: err ? '#d96868' : sub, fontSize: 12, paddingHorizontal: 14, paddingBottom: 4 }}>
           {err ?? 'Uploading…'}
         </Text>
       ) : null}
-      <View style={{ backgroundColor: inputBg, borderRadius: 10, padding: 10 }}>
+      <Col bg={inputBg} radius={10} p={10}>
         {/** Top slot: live waveform + timer while recording, else the textarea. The
          *   button row (incl. the mic) below stays mounted across both states, so a
          *   push-to-talk press→release gesture isn't interrupted by a UI swap. */}
         {recording ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', height: 28, paddingHorizontal: 4 }}>
+          <Row align="center" px={4} style={{ height: 28 }}>
             {/** "← Slide to cancel" hint — fades in as the user drags the
              *   mic left, slides with the gesture. Opacity ramps from 0.4
              *   at rest to 1.0 at the cancel threshold. */}
@@ -680,15 +676,15 @@ export function MessengerComposer({
                 Slide to cancel
               </Text>
             </Animated.View>
-            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', height: 28, overflow: 'hidden' }}>
+            <Row flex={1} align="center" justify="end" style={{ height: 28, overflow: 'hidden' }}>
               {[...Array(Math.max(0, 40 - levels.length)).fill(0.05), ...levels].slice(-40).map((lvl, i) => (
                 <View key={i} style={{ width: 3, marginHorizontal: 1, borderRadius: 2, height: Math.max(3, Math.round(lvl * 26)), backgroundColor: head, opacity: 0.85 }} />
               ))}
-            </View>
+            </Row>
             <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', minWidth: 40, textAlign: 'center' }}>
               {Math.floor(recordSecs / 60)}:{(recordSecs % 60).toString().padStart(2, '0')}
             </Text>
-          </View>
+          </Row>
         ) : (
           <View style={{ position: 'relative' }}>
             <TextInput
@@ -707,12 +703,12 @@ export function MessengerComposer({
             ) : null}
           </View>
         )}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+        <Row align="center" gap={4}>
           {/** Left: cancel (✕) while recording, else the attach (+) menu toggle. */}
           {recording
             ? <Btn icon="x" onPress={() => void cancelRec()} />
             : <Btn icon={attachMenuOpen ? 'x' : 'plus'} onPress={() => setAttachMenuOpen(o => !o)} />}
-          <View style={{ flex: 1 }} />
+          <Box flex={1} />
           {/** Mic — both record flows, mounted across recording so the gesture survives:
            *   • tap to start → tap again (or the ✓) to stop+stage;
            *   • press-hold to record → release (held ≥350ms) to stop+stage.
@@ -744,12 +740,12 @@ export function MessengerComposer({
               <HeroIcon name="send" size={20} color={dark ? '#000' : '#fff'} />
             </Pressable>
           )}
-        </View>
-      </View>
+        </Row>
+      </Col>
       {/** Attach menu — boxes below the composer with icon + label per source.
        *   Tap the + button in the composer row to toggle. */}
       {attachMenuOpen ? (
-        <View style={{ paddingTop: 10, gap: 10 }}>
+        <Col pt={10} gap={10}>
           {/** Inline recent-photos strip (Discord-style) — tap to attach without
            *   leaving the app. Hidden until the gallery loads / permission granted. */}
           {recentPhotos.length > 0 ? (
@@ -761,7 +757,7 @@ export function MessengerComposer({
               ))}
             </ScrollView>
           ) : null}
-        <View style={{ flexDirection: 'row', gap: 10 }}>
+        <Row gap={10}>
           {(
             [
               ['photo', 'Image', pickImage],
@@ -784,14 +780,14 @@ export function MessengerComposer({
               <Text style={{ color: fg, fontSize: 13, marginTop: 6, fontFamily: 'Calibre-Medium' }}>{label}</Text>
             </Pressable>
           ))}
-        </View>
-        </View>
+        </Row>
+        </Col>
       ) : null}
       {/** Poll-builder sheet — question + optional header + dynamic option rows
        *   (min 2) + multi-select toggle. Submit mints a pollId and sends via the
        *   same optimistic flow as text. */}
       <AppModal visible={pollOpen} onClose={() => setPollOpen(false)} title="New poll">
-        <View style={{ gap: 12, paddingBottom: 8 }}>
+        <Col gap={12} pb={8}>
           <TextInput
             value={pollQuestion}
             onChangeText={setPollQuestion}
@@ -809,7 +805,7 @@ export function MessengerComposer({
             style={{ color: fg, backgroundColor: inputBg, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 14 }}
           />
           {pollOptions.map((opt, i) => (
-            <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Row key={i} align="center" gap={8}>
               <TextInput
                 value={opt}
                 onChangeText={t => setPollOptions(prev => prev.map((o, j) => (j === i ? t : o)))}
@@ -822,7 +818,7 @@ export function MessengerComposer({
                   <HeroIcon name="x" size={18} color={sub} />
                 </Pressable>
               ) : null}
-            </View>
+            </Row>
           ))}
           <Pressable
             onPress={() => setPollOptions(prev => [...prev, ''])}
@@ -856,8 +852,8 @@ export function MessengerComposer({
           >
             <Text style={{ color: '#000', fontSize: 16, fontFamily: 'Calibre-Semibold' }}>Send poll</Text>
           </Pressable>
-        </View>
+        </Col>
       </AppModal>
-    </View>
+    </Col>
   );
 }

@@ -13,6 +13,7 @@ import { flash } from '../../lib/toast';
 import { resetAccount } from '../../lib/wallet';
 import { useAccountEpoch } from '../../lib/accountEpoch';
 import { HeroIcon } from '../../components/HeroIcon';
+import { Col } from '../../components/layout';
 import {
   setThemePreference, useEffectiveColorScheme, usePalette, useThemePreference,
   type ThemePreference,
@@ -78,9 +79,9 @@ export default function Settings(): React.ReactElement {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: bg }} contentContainerStyle={{ paddingBottom: 24 }}>
-      <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 }}>
+      <Col px={16} pt={16} pb={8}>
         <Text style={{ color: head, fontSize: 22, fontFamily: 'Calibre-Semibold' }}>Settings</Text>
-      </View>
+      </Col>
 
       {/* Account switching now lives in the topnav-avatar modal on the
           Channels tab — Settings keeps just the active account's pills. */}
@@ -125,9 +126,9 @@ export default function Settings(): React.ReactElement {
       <Text style={{ color: sub, fontSize: 13, paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8 , fontFamily: 'Calibre-Medium'}}>
         THEME
       </Text>
-      <View style={{
-        marginHorizontal: 16, borderRadius: 12, overflow: 'hidden',
-        borderWidth: 1, borderColor: border, backgroundColor: rowBg,
+      <Col mx={16} radius={12} bg={rowBg} style={{
+        overflow: 'hidden',
+        borderWidth: 1, borderColor: border,
       }}>
         {THEME_OPTIONS.map((opt, i) => {
           const selected = pref === opt.value;
@@ -150,7 +151,7 @@ export default function Settings(): React.ReactElement {
             </Pressable>
           );
         })}
-      </View>
+      </Col>
 
       {pillSupported ? (
         <>
@@ -167,14 +168,14 @@ export default function Settings(): React.ReactElement {
             }}
           >
             <HeroIcon name="microphone" size={22} color={head} />
-            <View style={{ flex: 1 }}>
+            <Col flex={1}>
               <Text style={{ color: fg, fontSize: 16, fontFamily: 'Calibre-Medium' }}>Floating voice pill</Text>
               <Text style={{ color: sub, fontSize: 13, marginTop: 2, fontFamily: 'Calibre-Medium' }}>
                 {overlayGranted
                   ? 'Ready. Open a chat → ⋯ → “Float as pill” to launch it for that person.'
                   : 'Grant “Display over other apps” to enable. Launch it per-person from a chat’s “Float as pill”.'}
               </Text>
-            </View>
+            </Col>
             {overlayGranted
               ? <HeroIcon name="check" size={20} color={head} />
               : <Text style={{ color: head, fontSize: 14, fontFamily: 'Calibre-Medium' }}>Grant</Text>}
@@ -182,7 +183,7 @@ export default function Settings(): React.ReactElement {
         </>
       ) : null}
 
-      <View style={{ marginTop: 32, paddingHorizontal: 16 }}>
+      <Col mt={32} px={16}>
         <Pressable
           onPress={() => {
             Alert.alert(
@@ -213,13 +214,13 @@ export default function Settings(): React.ReactElement {
             Reset XMTP identity
           </Text>
         </Pressable>
-      </View>
+      </Col>
 
-      <View style={{ marginTop: 24, paddingHorizontal: 16, paddingBottom: 16 }}>
+      <Col mt={24} px={16} pb={16}>
         <Text style={{ color: sub, fontSize: 11, textAlign: 'center' , fontFamily: 'Calibre-Medium'}}>
           Metro · v{APP_VERSION}
         </Text>
-      </View>
+      </Col>
     </ScrollView>
   );
 }
