@@ -4,6 +4,8 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.BitmapShader
@@ -157,14 +159,35 @@ class MetroFcmService : FirebaseMessagingService() {
     return tail.takeIf { it.isNotBlank() }
   }
 
-  /** Tap → open the app (deep-linking the exact conversation is JS-side via the
-   *  existing notification-response handler; we pass `line` as an extra). */
+  /** Tap → open the exact conversation via an expo-router deep link.
+   *
+   *  WHY ACTION_VIEW (not a launch intent + extra): this notification is posted
+   *  NATIVELY, so expo-notifications' JS response listener never fires on tap —
+   *  the app's `usePushDeepLinks` never sees it. Instead we fire an
+   *  `ACTION_VIEW metro://xmtp/<convId>` at the app's own scheme. expo-router +
+   *  expo-linking auto-route that URL (path-based) to `app/xmtp/[convId].tsx` on
+   *  BOTH cold start (getInitialURL) and warm tap (the `url` Linking event) with
+   *  no JS change needed. The app's MainActivity already declares the `metro`
+   *  scheme intent-filter (expo injects it from app.json `"scheme": "metro"`).
+   *
+   *  We deep-link the BARE convId (`metro://xmtp/<convId>`), not the raw `line`
+   *  (which may be account-scoped `metro://xmtp/<acct>/<convId>` — 3 segments
+   *  expo-router can't map to the single-segment `[convId]` route). `convIdOfLine`
+   *  takes the last path segment, matching what the conversation screen expects.
+   *  Falls back to a plain launch intent when there's no conv to target. */
   private fun contentIntent(line: String?): PendingIntent? {
-    val launch = packageManager.getLaunchIntentForPackage(packageName) ?: return null
-    if (line != null) launch.putExtra("metroLine", line)
     val flags = PendingIntent.FLAG_UPDATE_CURRENT or
       (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0)
-    return PendingIntent.getActivity(this, line?.hashCode() ?: 0, launch, flags)
+    val convId = convIdOfLine(line)
+    if (convId == null) {
+      val launch = packageManager.getLaunchIntentForPackage(packageName) ?: return null
+      return PendingIntent.getActivity(this, 0, launch, flags)
+    }
+    val view = Intent(Intent.ACTION_VIEW, Uri.parse("metro://xmtp/$convId")).apply {
+      setPackage(packageName)
+      addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+    }
+    return PendingIntent.getActivity(this, convId.hashCode(), view, flags)
   }
 
   private fun ensureChannel(channelId: String) {
