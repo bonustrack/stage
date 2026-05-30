@@ -123,21 +123,28 @@ export function ProfileScreen({ address, variant }: {
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
         {/* Full-bleed cover banner (input-bg). For the `route` variant the cover
             extends up behind the floating header/status bar (height += insets.top)
-            so the colour bleeds to y=0; rounded bottom corners give it a card edge.
-            The avatar below straddles it via a negative marginTop — that overlap is
-            relative to the cover's *visible bottom*, which is unchanged because the
-            extra height is added at the TOP only. */}
+            so the colour bleeds to y=0. Its bottom edge is FLAT — the black content
+            sheet below rounds UP over it (inverted/scooped curve), so the gray no
+            longer pokes down with rounded corners. */}
         <View style={{
           height: 100 + (variant === 'route' ? insets.top : 0),
           backgroundColor: c.rowBg,
-          borderBottomLeftRadius: 18,
-          borderBottomRightRadius: 18,
         }} />
-        <View style={{ alignItems: 'flex-start', paddingHorizontal: 16, paddingBottom: 8 }}>
+        {/* Content sheet: page-bg block pulled UP 18px to overlap the cover, with
+            rounded TOP corners so the black curves over the gray banner (bottom-sheet
+            look). overflow:'visible' + avatar zIndex keep the avatar from being
+            clipped by the rounding. */}
+        <View style={{
+          alignItems: 'flex-start', paddingHorizontal: 16, paddingBottom: 8,
+          backgroundColor: c.bg, marginTop: -18,
+          borderTopLeftRadius: 18, borderTopRightRadius: 18,
+          overflow: 'visible',
+        }}>
           {/* Wait for the profile so we render the real avatar directly (no
               blockie→real flash); custom avatars resolve via IPFS, not stamp.
-              marginTop -44 (half the 88 avatar) straddles the banner edge; the
-              page-bg ring separates the avatar from the cover. */}
+              marginTop -44 (half the 88 avatar, relative to this sheet's top)
+              centres the avatar on the rounded black top edge — half over gray
+              cover, half over black. zIndex:1 keeps it above the sheet. */}
           <Avatar
             address={loaded && addr ? addr : null}
             imageUri={loaded ? profile?.avatar : null}
