@@ -8,7 +8,6 @@ import '@walletconnect/react-native-compat';
 /** Hoisted side-effect import — installs the crypto.getRandomValues shim
  *  BEFORE any viem (and transitively any wallet/profile) module loads. */
 import '../lib/cryptoShim';
-import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import { useEffect } from 'react';
@@ -16,7 +15,9 @@ import { LogBox, Text, TextInput } from 'react-native';
 import { Box } from '../components/layout';
 import { Spinner } from '../components/Spinner';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { GestureDetectorProvider } from 'react-native-screens/gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
+import { NativeSwipeStack } from '../components/NativeSwipeStack';
 import { useEffectiveColorScheme } from '../lib/theme';
 import { useDeepLinks } from '../lib/deepLinks';
 import { usePushDeepLinks } from '../lib/push';
@@ -92,37 +93,57 @@ export default function RootLayout(): React.ReactElement {
     <QueryClientProvider client={queryClient}>
     <WalletConnectProvider>
     <GestureHandlerRootView style={{ flex: 1 }}>
+      {/** GestureDetectorProvider powers react-native-screens' reanimated-driven
+       *   interactive swipe-back (`goBackGesture`). It must wrap the navigator. */}
+      <GestureDetectorProvider>
       <KeyboardProvider>
       <StatusBar style={dark ? 'light' : 'dark'} />
-      <Stack
+      {/** TRUE interactive swipe-back. expo-router's default `<Stack>` renders
+       *   through @react-navigation/native-stack 7.x, which does NOT wire
+       *   react-native-screens' `goBackGesture`/`screenEdgeGesture` — so there's
+       *   no finger-tracking pop on Android (react-navigation#6893, #7947) and
+       *   only iOS' built-in edge swipe. react-native-screens ships its OWN
+       *   native-stack that DOES support those options (reanimated worklet, works
+       *   on both platforms under Fabric/new-arch — which this app enables). We
+       *   graft it onto expo-router via `withLayoutContext` (see
+       *   components/NativeSwipeStack), keeping file-based routing intact and
+       *   swapping only the navigator implementation. This replaces the previous
+       *   JS <EdgeSwipeBack> shim.
+       *
+       *   `goBackGesture: 'swipeRight'` auto-selects `ScreenTransition.SwipeRight`,
+       *   so the previous page parallaxes in underneath the finger. We scope it to
+       *   a left-edge zone (`screenEdgeGesture: true`) so it never fights the
+       *   leftward swipe-to-reply pan on message bubbles. */}
+      <NativeSwipeStack
         screenOptions={{
           headerShown: false,
-          /** iOS/Telegram-style push: the new screen slides in from the right while
-           *  the previous page parallaxes underneath, and an interactive horizontal
-           *  back-swipe pops it (revealing that previous page). `slide_from_right` is
-           *  what gives the parallax-underneath look on Android too (default has none).
-           *  Edge gesture only (no `fullScreenGestureEnabled`): swipe-to-reply on bubbles
-           *  is a horizontal pan, so a full-screen back gesture could fight it — keeping
-           *  the back-swipe at the left edge avoids that conflict.
-           *
-           *  ANDROID: `gestureEnabled` here is iOS-only — react-navigation's native-stack
-           *  never wired the interactive swipe-pop on Android (react-navigation#6893,
-           *  #7947). So pushed routes wrap their content in <EdgeSwipeBack> (a JS
-           *  left-edge pan via gesture-handler + reanimated) to get the real swipe-back
-           *  on Android. See components/EdgeSwipeBack.tsx. */
-          animation: 'slide_from_right',
-          gestureEnabled: true,
-          gestureDirection: 'horizontal',
           contentStyle: { backgroundColor: dark ? '#0e0f10' : '#ffffff' },
         }}
       >
-        {/** Root tab group: no back-swipe (it's the stack root — nothing to pop to,
-         *  and a gesture here would interfere with tab UX). */}
-        <Stack.Screen name="(tabs)" options={{ headerShown: false, gestureEnabled: false, animation: 'none' }} />
-        <Stack.Screen name="xmtp/[convId]" />
-        <Stack.Screen name="accounts" />
-      </Stack>
+        {/** Root tab group: no back-gesture (stack root — nothing to pop to). */}
+        <NativeSwipeStack.Screen
+          name="(tabs)"
+          options={{ headerShown: false, stackAnimation: 'none' }}
+        />
+        <NativeSwipeStack.Screen
+          name="xmtp/[convId]"
+          options={{
+            stackAnimation: 'slide_from_right',
+            goBackGesture: 'swipeRight',
+            screenEdgeGesture: true,
+          }}
+        />
+        <NativeSwipeStack.Screen
+          name="accounts"
+          options={{
+            stackAnimation: 'slide_from_right',
+            goBackGesture: 'swipeRight',
+            screenEdgeGesture: true,
+          }}
+        />
+      </NativeSwipeStack>
       </KeyboardProvider>
+      </GestureDetectorProvider>
     </GestureHandlerRootView>
     </WalletConnectProvider>
     </QueryClientProvider>
