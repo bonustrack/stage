@@ -4,7 +4,7 @@
  *  the other members for groups (excluding the local user). Both are resolved
  *  once per conv during the initial list build and cached in component state. */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AppState, FlatList, Pressable, RefreshControl,
   Text, View,
@@ -17,6 +17,7 @@ import {
   peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap,
   shortAddress,
   getLastReadNs, getConvConsent, syncPreferences, streamConvConsent,
+  primeInboxEthCache, subscribeAllMessages,
 } from '../../lib/xmtp';
 import { resetAccount } from '../../lib/wallet';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
@@ -34,7 +35,6 @@ import { previewOfXmtpContent } from '@metro-labs/client/xmtp/humanize';
 import { Spinner } from '../../components/Spinner';
 import { Avatar } from '../../components/Avatar';
 import { ChannelRow } from '../../components/ChannelRow';
-import { AccountsManager } from '../../components/AccountsManager';
 import { AppModal } from '../../components/AppModal';
 import { loadPinnedIds, isPinned, togglePin, subscribePins } from '../../lib/pins';
 
@@ -87,6 +87,10 @@ function convIdFromTopic(topic: string | undefined): string | null {
   return m ? m[1]! : null;
 }
 
+/** Fixed ChannelRow height: 14px vertical padding ×2 + ~48px content (title 22 +
+ *  4 margin + 22 badge-reserve) + 1px separator. Used by getItemLayout (#5). */
+const CHANNEL_ROW_HEIGHT = 77;
+
 function fmtTs(ts: number | null): string {
   if (!ts) return '';
   const d = new Date(ts);
@@ -99,9 +103,13 @@ function fmtTs(ts: number | null): string {
 
 async function summarize(conv: Conversation, selfInboxId: string): Promise<Row> {
   await conv.sync().catch(() => undefined);
-  /** Pull the latest 50 messages — enough to compute an accurate unread count
-   *  for active conversations without ballooning each row fetch. */
-  const recent: DecodedMessage[] = await conv.messages({ limit: 50 }).catch(() => []);
+  /** #2: pull only the latest message for the row PREVIEW — we no longer recompute
+   *  the unread count from 50 msgs per row (that's now maintained incrementally
+   *  from the live stream deltas). A previously-read conv seeds unreadCount=0; the
+   *  global stream bumps it on each new inbound. Cross-device "marked unread" still
+   *  surfaces via consent below. We fetch 2 so a trailing control DM doesn't blank
+   *  the preview. */
+  const recent: DecodedMessage[] = await conv.messages({ limit: 2 }).catch(() => []);
   const msgs = recent;
   /** Skip our own register-push control DMs (plain-text, magic-prefixed) when
    *  choosing the row's "last message" so the preview never shows METRO_CTRL:. */
@@ -223,8 +231,6 @@ export default function Messenger(): React.ReactElement {
   const [pinned, setPinned] = useState<Set<string>>(new Set());
   /** Active account's own address → topnav avatar. */
   const [myAddress, setMyAddress] = useState<string | null>(null);
-  /** Tapping the topnav avatar opens the account-switcher bottom sheet. */
-  const [accountModalOpen, setAccountModalOpen] = useState(false);
   useEffect(() => {
     void loadPinnedIds().then(setPinned);
     /** On toggle the cache is already updated; re-read it (resolves instantly
@@ -302,6 +308,17 @@ export default function Messenger(): React.ReactElement {
           try {
             await client.conversations.syncAllConversations(['allowed', 'unknown']);
             const convs = await client.conversations.list(undefined, undefined, ['allowed', 'unknown']);
+            /** #3 BATCH inbox resolution: collect every member inbox id across all
+             *  convs in parallel, then resolve the uncached ones in ONE
+             *  inboxStates(true, [...]) call so per-row summarise hits the cache
+             *  (kills the per-row N+1 GetIdentityUpdates that caused the outage). */
+            try {
+              const memberLists = await Promise.all(convs.map(c =>
+                (c as unknown as { members: () => Promise<{ inboxId: string }[]> })
+                  .members().then(ms => ms.map(m => m.inboxId)).catch(() => [] as string[]),
+              ));
+              await primeInboxEthCache(client, memberLists.flat());
+            } catch { /* per-row resolveInboxEth still falls back */ }
             const summarized = await Promise.all(convs.map(c => summarize(c, selfInboxId)));
             if (cancelled) return;
             summarized.sort((a, b) => (b.lastTs ?? 0) - (a.lastTs ?? 0));
@@ -331,8 +348,14 @@ export default function Messenger(): React.ReactElement {
          *  belongs to a conv we haven't summarised yet (just-received from
          *  a peer), trigger a full refresh so it shows up. */
         try {
-          cancelMsgStream = await client.conversations.streamAllMessages(async (msg) => {
+          /** #1 ONE STREAM: subscribe to the single module-level
+           *  streamAllMessages fan-out in lib/xmtp instead of starting our own
+           *  (every inbound used to be decoded twice — here + the conv-view
+           *  feed). The raw DecodedMessage is routed to us; the conv-view
+           *  feedCache slice gets the same message from the same decode. */
+          cancelMsgStream = subscribeAllMessages(({ convId: streamConvId, msg }) => {
             if (cancelled || !msg) return;
+            void (async (): Promise<void> => {
             let decoded: unknown;
             let preview = '';
             try { decoded = msg.content(); preview = previewOfXmtpContent(decoded, msg.contentTypeId); }
@@ -354,7 +377,8 @@ export default function Messenger(): React.ReactElement {
              *  conv id from the topic (with the native `conversationId`, when
              *  present, as a fallback). The conv id is best-effort: it only enriches
              *  the title + deep-link payload, so a miss still notifies. */
-            const msgConvIdForNote = convIdFromTopic((msg as unknown as { topic?: string }).topic)
+            const msgConvIdForNote = streamConvId
+              ?? convIdFromTopic((msg as unknown as { topic?: string }).topic)
               ?? (msg as unknown as { conversationId?: string }).conversationId
               ?? null;
             const isOwn = msg.senderInboxId === selfInboxId;
@@ -401,7 +425,8 @@ export default function Messenger(): React.ReactElement {
               return next;
             });
             if (needsRefresh) void refresh();
-          }) ?? null;
+            })();
+          });
         } catch { /* message stream init failed — preview will lag */ }
 
         /** Cross-device read/unread: pull synced consent from the network, then
@@ -449,6 +474,57 @@ export default function Messenger(): React.ReactElement {
     try { await refreshFromNetworkRef.current?.(); } finally { setRefreshing(false); }
   };
 
+  /** #6: stable extraData (an array, identity changes only when one of these
+   *  versions does) instead of a freshly-built string every render — so the
+   *  FlatList doesn't treat every parent re-render as "data changed" and
+   *  re-render the whole window on each stream tick. */
+  const listExtraData = useMemo(
+    () => [channelProfilesVersion, draftsVersion, pinned] as const,
+    [channelProfilesVersion, draftsVersion, pinned],
+  );
+
+  /** #6: hoisted renderItem so its identity is stable across stream ticks (only
+   *  re-created when a resolution version changes), letting memoised ChannelRow
+   *  skip rows whose props are unchanged. */
+  const renderRow = useCallback(({ item }: { item: Row }): React.ReactElement => {
+    const displayTitle = item.peerAddress ? (getPeerName(item.peerAddress) ?? item.title) : item.title;
+    const preview = item.lastPreview
+      ? `${item.lastFromSelf ? 'You' : item.lastSenderAddress ? (getPeerName(item.lastSenderAddress) ?? shortAddress(item.lastSenderAddress)) : ''}${(item.lastFromSelf || item.lastSenderAddress) ? ': ' : ''}${item.lastPreview}`
+      : '(no messages yet)';
+    const showAddr = !item.avatarUri && item.avatarAddress && isPeerResolved(item.avatarAddress)
+      ? item.avatarAddress : null;
+    return (
+      <ChannelRow
+        title={displayTitle}
+        avatarUri={item.avatarUri}
+        avatarAddress={showAddr}
+        cacheBuster={item.avatarAddress ? getPeerAvatarCb(item.avatarAddress) : undefined}
+        square={!item.peerAddress}
+        lastPreview={preview}
+        timestamp={fmtTs(item.lastTs)}
+        unreadCount={item.unreadCount}
+        markedUnread={item.markedUnread}
+        pinned={isPinned(item.convId)}
+        hasDraft={hasDraft(item.convId)}
+        onPress={() => router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } })}
+        onLongPress={() => setRowMenu({
+          convId: item.convId,
+          title: item.peerAddress ? (getPeerName(item.peerAddress) ?? item.title) : item.title,
+          isUnread: item.unreadCount > 0 || !!item.markedUnread,
+        })}
+      />
+    );
+    /** Versions drive re-creation so name/avatar/pin/draft resolutions repaint. */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router, channelProfilesVersion, draftsVersion, pinned]);
+
+  /** ChannelRow is fixed-height (#5) → getItemLayout lets the list skip
+   *  measuring + jump-scroll without rendering intermediate rows. Keep in sync
+   *  with ChannelRow's layout (avatar 40 / 14px vertical padding / 1px border). */
+  const getRowLayout = useCallback((_d: ArrayLike<Row> | null | undefined, index: number) => (
+    { length: CHANNEL_ROW_HEIGHT, offset: CHANNEL_ROW_HEIGHT * index, index }
+  ), []);
+
   if (error) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: bg }}>
@@ -489,7 +565,7 @@ export default function Messenger(): React.ReactElement {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
         paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: border,
       }}>
-        <Pressable onPress={() => setAccountModalOpen(true)} hitSlop={8}>
+        <Pressable onPress={() => router.push('/accounts')} hitSlop={8}>
           <Avatar
             address={myAddress}
             size={24}
@@ -502,8 +578,13 @@ export default function Messenger(): React.ReactElement {
       </View>
       <FlatList
         data={sortedRows}
-        extraData={`${channelProfilesVersion}:${draftsVersion}:${pinned.size}`}
+        extraData={listExtraData}
         keyExtractor={r => r.convId}
+        getItemLayout={getRowLayout}
+        windowSize={11}
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        removeClippedSubviews
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -519,37 +600,7 @@ export default function Messenger(): React.ReactElement {
             </Text>
           </View>
         }
-        renderItem={({ item }) => {
-          const displayTitle = item.peerAddress ? (getPeerName(item.peerAddress) ?? item.title) : item.title;
-          const preview = item.lastPreview
-            ? `${item.lastFromSelf ? 'You' : item.lastSenderAddress ? (getPeerName(item.lastSenderAddress) ?? shortAddress(item.lastSenderAddress)) : ''}${(item.lastFromSelf || item.lastSenderAddress) ? ': ' : ''}${item.lastPreview}`
-            : '(no messages yet)';
-          /** Gate the stamp avatar on `isPeerResolved` to avoid the wrong-avatar
-           *  flash when the cache-buster lands after the first paint. */
-          const showAddr = !item.avatarUri && item.avatarAddress && isPeerResolved(item.avatarAddress)
-            ? item.avatarAddress : null;
-          return (
-            <ChannelRow
-              title={displayTitle}
-              avatarUri={item.avatarUri}
-              avatarAddress={showAddr}
-              cacheBuster={item.avatarAddress ? getPeerAvatarCb(item.avatarAddress) : undefined}
-              square={!item.peerAddress}
-              lastPreview={preview}
-              timestamp={fmtTs(item.lastTs)}
-              unreadCount={item.unreadCount}
-              markedUnread={item.markedUnread}
-              pinned={isPinned(item.convId)}
-              hasDraft={hasDraft(item.convId)}
-              onPress={() => router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } })}
-              onLongPress={() => setRowMenu({
-                convId: item.convId,
-                title: item.peerAddress ? (getPeerName(item.peerAddress) ?? item.title) : item.title,
-                isUnread: item.unreadCount > 0 || !!item.markedUnread,
-              })}
-            />
-          );
-        }}
+        renderItem={renderRow}
       />
       <RowActionSheet
         target={rowMenu}
@@ -570,28 +621,7 @@ export default function Messenger(): React.ReactElement {
           void togglePin(convId);
         }}
       />
-      <AccountSwitcherModal
-        visible={accountModalOpen}
-        dark={dark}
-        onClose={() => setAccountModalOpen(false)}
-      />
     </View>
-  );
-}
-
-/** Account-switcher bottom sheet — opened by tapping the topnav avatar. Reuses
- *  AccountsManager (the canonical account list + switch/add/manage logic) inside
- *  a dim-backdrop modal. Tap outside or the X to dismiss; switching is in-place
- *  (epoch bump) so the list re-inits without a full reload. */
-function AccountSwitcherModal({
-  visible, dark, onClose,
-}: {
-  visible: boolean; dark: boolean; onClose: () => void;
-}): React.ReactElement {
-  return (
-    <AppModal visible={visible} onClose={onClose} title="Accounts">
-      <AccountsManager dark={dark} flat />
-    </AppModal>
   );
 }
 
