@@ -13,8 +13,6 @@ import android.graphics.Shader
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.app.Person
-import androidx.core.graphics.drawable.IconCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import java.net.HttpURLConnection
@@ -76,11 +74,12 @@ class MetroFcmService : FirebaseMessagingService() {
 
     val avatar = runCatching { downloadAndCircleCrop(avatarUrl) }.getOrNull()
 
-    val person = Person.Builder()
-      .setName(title)
-      .apply { if (avatar != null) setIcon(IconCompat.createWithBitmap(avatar)) }
-      .build()
-
+    // NOTE: do NOT use NotificationCompat.MessagingStyle here. MessagingStyle
+    // OWNS the icon slot — on the COLLAPSED card it shows the app small-icon and
+    // surfaces the Person avatar only on expand, and it actively suppresses any
+    // builder.setLargeIcon(). To get Telegram's round sender avatar on the
+    // COLLAPSED card we use the default style + setLargeIcon(circleBitmap), and
+    // BigTextStyle for a clean expanded view (BigTextStyle keeps the largeIcon).
     val builder = NotificationCompat.Builder(this, channelId)
       .setSmallIcon(smallIconRes())
       .setContentTitle(title)
@@ -88,10 +87,7 @@ class MetroFcmService : FirebaseMessagingService() {
       .setAutoCancel(true)
       .setCategory(NotificationCompat.CATEGORY_MESSAGE)
       .setPriority(NotificationCompat.PRIORITY_HIGH)
-      .setStyle(
-        NotificationCompat.MessagingStyle(person)
-          .addMessage(body, System.currentTimeMillis(), person),
-      )
+      .setStyle(NotificationCompat.BigTextStyle().bigText(body))
 
     if (avatar != null) builder.setLargeIcon(avatar)
     contentIntent(line)?.let { builder.setContentIntent(it) }
