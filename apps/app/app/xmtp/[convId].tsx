@@ -1050,20 +1050,21 @@ function BubbleActionMenu({
   const divider = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)';
 
   const screenH = Dimensions.get('window').height;
-  /** Estimated dropdown height (Reply + optional Copy + Share + paddings) — used to
-   *  decide whether to drop below the message or flip above it near the screen
-   *  bottom. Rough is fine; the values just bias the flip + clamp. */
+  /** Strip + dropdown are ONE cohesive stacked unit: emoji strip on top, a fixed
+   *  24px gap, then the action dropdown directly below. The unit is anchored near
+   *  the tapped message and clamped so the dropdown's bottom never runs off-screen
+   *  past the composer / safe area — regardless of message height. */
   const actionCount = 2 + (target?.text ? 1 : 0);
-  const cardH = actionCount * 48 + 16;
-  const stripH = 52;
-  /** Strip sits just above the message; dropdown just below. If the message is low
-   *  on screen, render the dropdown above the strip instead so it stays visible. */
-  const top = Math.max(60, anchor.y);
-  const flipUp = top + anchor.height + stripH + cardH > screenH - 40;
-  const stripTop = Math.max(40, top - stripH - 8);
-  const cardTop = flipUp
-    ? Math.max(stripTop - cardH - 8, 40)
-    : Math.min(top + anchor.height + 8, screenH - cardH - 40);
+  const cardH = actionCount * 48 + 16;       // estimated dropdown height
+  const stripH = 52;                          // fixed-height emoji pill
+  const GAP = 24;                             // fixed gap between strip and dropdown
+  const TOP_MARGIN = 40;                      // min top inset
+  const BOTTOM_MARGIN = 40;                   // keep clear of composer / safe area
+  const unitH = stripH + GAP + cardH;         // total height of the stacked unit
+  /** Anchor the top of the unit near the message top; clamp into screen bounds. */
+  const maxTop = screenH - BOTTOM_MARGIN - unitH;
+  const stripTop = Math.max(TOP_MARGIN, Math.min(anchor.y, maxTop));
+  const cardTop = stripTop + stripH + GAP;    // dropdown always 24px below strip
 
   const reactAndClose = (e: string): void => { onReact(e); onClose(); };
 
