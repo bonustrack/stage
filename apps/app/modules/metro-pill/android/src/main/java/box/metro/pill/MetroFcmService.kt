@@ -87,6 +87,21 @@ class MetroFcmService : FirebaseMessagingService() {
     val channelId = data["channelId"] ?: DEFAULT_CHANNEL_ID
     val line = data["line"]
 
+    // SUPPRESSION: if the user is currently viewing this exact conversation
+    // (app foreground + that screen focused), the conversation screen has
+    // written its bare convId into the shared "metro_pill" prefs. The push
+    // carries the conv via `line` (metro://xmtp/<acct>/<convId> or legacy
+    // metro://xmtp/<convId>) and/or an explicit `convId` data field. We extract
+    // the bare convId from both and, on an exact match, drop the notification —
+    // the user has already seen it. Cleared (null) on blur/background, so the
+    // default (no stored value) NEVER suppresses; only an exact match does.
+    val pushConvId = data["convId"]?.takeIf { it.isNotBlank() } ?: convIdOfLine(line)
+    if (pushConvId != null) {
+      val active = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        .getString(KEY_ACTIVE_CONV, null)
+      if (active != null && active == pushConvId) return
+    }
+
     ensureChannel(channelId)
 
     val avatar = runCatching { downloadAndCircleCrop(avatarUrl) }.getOrNull()
@@ -130,6 +145,16 @@ class MetroFcmService : FirebaseMessagingService() {
         // POST_NOTIFICATIONS not granted — silently drop.
       }
     }
+  }
+
+  /** Extract the bare conversation id from a metro line URI. Handles both the
+   *  account-scoped `metro://xmtp/<acct>/<convId>` and the legacy
+   *  `metro://xmtp/<convId>` form by taking the LAST path segment — which is
+   *  the convId in both, and matches what the conversation screen stores. */
+  private fun convIdOfLine(line: String?): String? {
+    if (line.isNullOrBlank()) return null
+    val tail = line.substringAfterLast('/', "").substringBefore('?')
+    return tail.takeIf { it.isNotBlank() }
   }
 
   /** Tap → open the app (deep-linking the exact conversation is JS-side via the
@@ -228,5 +253,10 @@ class MetroFcmService : FirebaseMessagingService() {
 
   companion object {
     private const val DEFAULT_CHANNEL_ID = "metro-messages"
+
+    // Shared with MetroPillModule.setActiveConversation — the conversation the
+    // user is currently viewing (bare convId), for notification suppression.
+    private const val PREFS_NAME = "metro_pill"
+    private const val KEY_ACTIVE_CONV = "active_conv"
   }
 }
