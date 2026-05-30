@@ -88,6 +88,11 @@ class MetroFcmService : FirebaseMessagingService() {
     val body = data["body"] ?: message.notification?.body ?: ""
     val channelId = data["channelId"] ?: DEFAULT_CHANNEL_ID
     val line = data["line"]
+    // GROUP vs 1-1: the daemon sets `isGroup`/`groupTitle` for group convos. When
+    // grouped, MessagingStyle shows the conversation (group) title and treats
+    // `title` as the per-message sender; for 1-1 there is a single sender.
+    val isGroup = data["isGroup"] == "true" || data["isGroup"] == "1"
+    val groupTitle = data["groupTitle"]?.takeIf { it.isNotBlank() } ?: title
 
     // SUPPRESSION: if the user is currently viewing this exact conversation
     // (app foreground + that screen focused), the conversation screen has
@@ -108,6 +113,12 @@ class MetroFcmService : FirebaseMessagingService() {
 
     val avatar = runCatching { downloadAndCircleCrop(avatarUrl) }.getOrNull()
 
+    // STABLE PER-CONVERSATION NOTIFICATION ID: derive a stable id from the bare
+    // convId so re-notifying the SAME conversation UPDATES the same card instead
+    // of stacking a new one (Telegram/WhatsApp behaviour: one card per channel).
+    // Fall back to the (group) title hash when there's no convId in the push.
+    val notifId = pushConvId?.hashCode() ?: groupTitle.hashCode()
+
     val builder = NotificationCompat.Builder(this, channelId)
       .setSmallIcon(smallIconRes())
       .setContentTitle(title)
@@ -126,11 +137,20 @@ class MetroFcmService : FirebaseMessagingService() {
         .setName(title)
         .setIcon(IconCompat.createWithBitmap(avatar))
         .build()
-      builder.setStyle(
-        NotificationCompat.MessagingStyle(
-          Person.Builder().setName("You").build(),
-        ).addMessage(body, System.currentTimeMillis(), sender),
-      )
+
+      // ACCUMULATE messages across separate FCM deliveries. Each onMessageReceived
+      // is a fresh call with no in-memory history, so we restore the existing
+      // notification's MessagingStyle from the active notification carrying the
+      // same id and append the new message — yielding the native "stacked
+      // messages, one card per conversation, with a count" behaviour.
+      val style = restoreStyle(notifId)
+        ?: NotificationCompat.MessagingStyle(Person.Builder().setName("You").build())
+      if (isGroup) {
+        // Reads as a group: shows the conversation title + per-message senders.
+        style.setGroupConversation(true).conversationTitle = groupTitle
+      }
+      style.addMessage(body, System.currentTimeMillis(), sender)
+      builder.setStyle(style)
     } else {
       // DEFENSIVE FALLBACK: avatar download failed — post a standard card so a
       // notification still shows (no avatar; small-icon only).
@@ -141,12 +161,28 @@ class MetroFcmService : FirebaseMessagingService() {
 
     if (NotificationManagerCompat.from(this).areNotificationsEnabled()) {
       try {
-        NotificationManagerCompat.from(this)
-          .notify(line?.hashCode() ?: title.hashCode(), builder.build())
+        NotificationManagerCompat.from(this).notify(notifId, builder.build())
       } catch (_: SecurityException) {
         // POST_NOTIFICATIONS not granted — silently drop.
       }
     }
+  }
+
+  /** Restore the MessagingStyle from the currently-posted notification with the
+   *  given id, so a fresh FCM delivery can APPEND its message to the existing
+   *  stack instead of replacing it. Returns null when there's no active
+   *  notification for this conversation (→ caller starts a fresh style).
+   *
+   *  getActiveNotifications() is API 23+ (the app's minSdk is well above), so no
+   *  legacy fallback is needed — older devices simply start fresh each time. */
+  private fun restoreStyle(notifId: Int): NotificationCompat.MessagingStyle? {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return null
+    return runCatching {
+      val mgr = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+      val existing = mgr.activeNotifications.firstOrNull { it.id == notifId }?.notification
+        ?: return null
+      NotificationCompat.MessagingStyle.extractMessagingStyleFromNotification(existing)
+    }.getOrNull()
   }
 
   /** Extract the bare conversation id from a metro line URI. Handles both the
