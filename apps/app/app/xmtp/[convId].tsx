@@ -42,13 +42,17 @@ function hasAttachments(e: HistoryEntry): boolean {
 
 /** Reaction events decorate their target msg — fold them into per-message,
  *  per-emoji counts rather than rendering as standalone bubbles. */
-function reactionsByMessage(events: HistoryEntry[]): Map<string, Map<string, number>> {
+function reactionsByMessage(events: HistoryEntry[], pollIds: Set<string>): Map<string, Map<string, number>> {
   const latest = new Map<string, { ts: string; removed: boolean }>();
   for (const e of events) {
     const p = e.payload as { reactTo?: string; emoji?: string; removed?: boolean; schema?: string } | undefined;
     /** Skip poll votes — they're reactions with schema:'custom' whose content is an
-     *  option index, tallied separately by votesByPoll (not rendered as emoji pills). */
+     *  option index, tallied separately by votesByPoll (not rendered as emoji pills).
+     *  Belt-and-suspenders: also skip any reaction pointing at a poll bubble, since
+     *  some decode paths don't reliably surface `schema` on inbound votes and the
+     *  index would otherwise render as a "0"/"1"/"2" emoji pill. */
     if (p?.schema === 'custom') continue;
+    if (p?.reactTo && pollIds.has(p.reactTo)) continue;
     if (!p?.reactTo || !p.emoji) continue;
     const k = `${p.reactTo} ${p.emoji} ${e.from}`;
     const cur = latest.get(k);
@@ -67,12 +71,13 @@ function reactionsByMessage(events: HistoryEntry[]): Map<string, Map<string, num
 
 /** Emojis the local user currently has on each message (latest add not undone by a
  *  later removal). Drives un-react: tapping an emoji you already own toggles it off. */
-function ownReactionsByMessage(events: HistoryEntry[], myUri: string): Map<string, Set<string>> {
+function ownReactionsByMessage(events: HistoryEntry[], myUri: string, pollIds: Set<string>): Map<string, Set<string>> {
   const latest = new Map<string, { ts: string; removed: boolean }>();
   for (const e of events) {
     if (e.from !== myUri) continue;
     const p = e.payload as { reactTo?: string; emoji?: string; removed?: boolean; schema?: string } | undefined;
     if (p?.schema === 'custom') continue;
+    if (p?.reactTo && pollIds.has(p.reactTo)) continue;
     if (!p?.reactTo || !p.emoji) continue;
     const k = `${p.reactTo} ${p.emoji}`;
     const cur = latest.get(k);
@@ -284,9 +289,12 @@ export default function XmtpConversation(): React.ReactElement {
   const listRef = useRef<FlatList<HistoryEntry>>(null);
 
   /** Reaction events decorate their target msg — don't render as their own bubbles. */
-  const reactions = useMemo(() => reactionsByMessage(events), [events]);
+  /** Poll message ids in the feed — used to keep vote-reactions out of the emoji
+   *  pill grouping even when the inbound decode didn't tag them schema:'custom'. */
+  const pollIds = useMemo(() => new Set(pollsInFeed(events).keys()), [events]);
+  const reactions = useMemo(() => reactionsByMessage(events, pollIds), [events, pollIds]);
   /** Emojis the local user currently owns per message — toggles un-react in onReact. */
-  const ownReactions = useMemo(() => ownReactionsByMessage(events, myUri), [events, myUri]);
+  const ownReactions = useMemo(() => ownReactionsByMessage(events, myUri, pollIds), [events, myUri, pollIds]);
   /** Poll tallies — confirmed votes per poll message id, and the local user's
    *  selections (drives the checkmark + result bar). */
   const votes = useMemo(() => votesByMessage(events), [events]);
