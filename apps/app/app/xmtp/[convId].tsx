@@ -2,12 +2,12 @@
  *  local XMTP client directly; no daemon hop. */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Animated as RNAnimated, FlatList, Pressable, Share, Text } from 'react-native';
+import { Alert, Animated as RNAnimated, AppState, FlatList, Pressable, Share, Text } from 'react-native';
 import { Box } from '../../components/layout';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardStickyView, useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { MessengerBubble } from '../../components/MessengerBubble';
 import { stripMentionMarkup, attachmentEmojiPreview } from '@metro-labs/client/xmtp/humanize';
@@ -29,6 +29,7 @@ import {
   hasOverlayPermission, isPillAvailable, openConversationAsBubble,
   requestOverlayPermission, showPill,
 } from '../../lib/pill';
+import { setActiveConversation } from '../../modules/metro-pill';
 import { getCachedRows, markConvRead, patchRowSent } from '../../lib/channelsCache';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import type { HistoryEntry } from '../../lib/types';
@@ -205,6 +206,22 @@ export default function XmtpConversation(): React.ReactElement {
     if (!convId) return;
     void markConvRead(convId);
   }, [convId, events.length]);
+  /** Tell native which conversation is on-screen so the FCM service suppresses a
+   *  push for it (the user is already looking at it). Set on focus, cleared on
+   *  blur AND when the app backgrounds (so a push for THIS conv still fires once
+   *  the user can't see it). `active_conv == convId` ⟺ "foreground + viewing it".
+   *  Native no-ops the call off-Android / on pre-module builds. */
+  useFocusEffect(useCallback(() => {
+    if (!convId) return;
+    setActiveConversation(convId);
+    const sub = AppState.addEventListener('change', (s) => {
+      setActiveConversation(s === 'active' ? convId : null);
+    });
+    return () => {
+      sub.remove();
+      setActiveConversation(null);
+    };
+  }, [convId]));
   const status: 'idle' | 'connecting' | 'open' | 'error' = xmtpFeed.status === 'open' ? 'open'
     : xmtpFeed.status === 'loading' ? 'connecting'
       : xmtpFeed.status === 'error' ? 'error' : 'idle';

@@ -28,6 +28,10 @@ declare class MetroPillModule extends NativeModule<MetroPillModuleEvents> {
   /** Posts a conversation shortcut + bubble notification for a 1-1 DM.
    *  `deepLink` is the `metro://xmtp/<convId>` link the bubble opens. */
   openAsBubble(convId: string, title: string, deepLink: string, avatarUri: string | null): Promise<void>;
+  /** Report the conversation the user is currently viewing (bare convId) so the
+   *  FCM service can suppress a push for it. Pass null to clear (on blur /
+   *  background). Persisted to SharedPreferences so the FCM process can read it. */
+  setActiveConversation(convId: string | null): boolean;
 }
 
 // `requireNativeModule` throws on platforms where the module isn't linked
