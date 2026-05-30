@@ -8,7 +8,8 @@ import { Line } from '../lines.js';
 import { errMsg, log } from '../log.js';
 import { noteSeen } from '../paths.js';
 import {
-  appendHistory, codexSelf, formatDisplay, mintId, noteUserFromLine, userSelf, type HistoryEntry,
+  appendHistory, classifyEvent, codexSelf, formatDisplay, mintId, noteUserFromLine, userSelf,
+  type HistoryEntry,
 } from '../history.js';
 import { handleMonitorRequest } from '../cli/tail.js';
 import { passesMode } from '../broker/history-stream.js';
@@ -39,7 +40,11 @@ export function makeEmit(codexRc: CodexRC | null): Emit {
   };
   return function emit(entry: HistoryEntry): void {
     /** Spread first, then `display`, so the computed bubble wins (old order let a stale one clobber it). */
-    const enriched: HistoryEntry = { ...entry, display: entry.display ?? formatDisplay(entry) };
+    const enriched: HistoryEntry = {
+      ...entry,
+      display: entry.display ?? formatDisplay(entry),
+      event: entry.event ?? classifyEvent(entry),
+    };
     const json = JSON.stringify(enriched);
     process.stdout.write(json + '\n');
     /** Feed isolation: only forward to the Codex bridge what a */

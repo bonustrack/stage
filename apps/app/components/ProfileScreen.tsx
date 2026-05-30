@@ -25,6 +25,7 @@ import { ImageViewer } from './ImageViewer';
 import {
   EditMenu, InfoRow, ProfileActions, useProfileColors,
 } from './ProfileScreen.parts';
+import { CommonChannels } from './CommonChannels';
 
 export type ProfileScreenVariant = 'tab' | 'route';
 
@@ -152,6 +153,10 @@ export function ProfileScreen({ address, variant }: {
         {profile?.twitter?.trim() ? <InfoRow label="X (Twitter)" value={profile.twitter} c={c} /> : null}
         {profile?.lens?.trim() ? <InfoRow label="Lens" value={profile.lens} c={c} /> : null}
         {profile?.farcaster?.trim() ? <InfoRow label="Farcaster" value={profile.farcaster} c={c} /> : null}
+
+        {/* Common channels — groups the local user + this peer are BOTH in.
+            Only for OTHER users; resolves async so it never blocks the render. */}
+        {!isSelf && addr ? <CommonChannels peerAddress={addr} enabled={!isSelf} c={c} /> : null}
       </ScrollView>
 
       {isSelf ? (

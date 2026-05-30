@@ -1,12 +1,32 @@
 /** Append-only JSONL history of every message that flows through metro (inbound + outbound). */
 
 import { randomBytes } from 'node:crypto';
-import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { errMsg, log } from './log.js';
 import { HISTORY_FILE, STATE_DIR } from './paths.js';
 import { Line } from './lines.js';
 import { claudeUserId, claudeSessionId, codexUserId, codexSessionId, codexUserIdOrNull } from './local-identity.js';
+
+/**
+ * Typed, discriminated event payload that rides alongside the legacy
+ * `text`/`display` strings. Agents can branch on `event.type` instead of
+ * regexing the pre-rendered `display`. Backward-compat: `text`/`display`
+ * stay populated; `event` is optional and additive.
+ */
+export type StructuredEvent =
+  /** A normal chat message. */
+  | { type: 'msg' }
+  /** An emoji reaction to another message. `emoji` is the reaction glyph. */
+  | { type: 'react'; emoji?: string; targetId?: string }
+  /** An edit of a previously-sent message. */
+  | { type: 'edit'; targetId?: string }
+  /** A reply that quotes/threads off another message. */
+  | { type: 'reply'; replyTo?: string }
+  /** A system/webhook/automation event (e.g. GitHub webhook). */
+  | { type: 'system'; source?: string; eventName?: string }
+  /** A push-notification delivery acknowledgement. */
+  | { type: 'push-ack'; targetId?: string };
 
 export interface HistoryEntry {
   id: string;
@@ -29,6 +49,22 @@ export interface HistoryEntry {
   payload?: unknown;
   /** Pre-rendered chat-bubble markdown — the user's first chat output should be this string verbatim. */
   display?: string;
+  /** Typed, discriminated event shape — lets agents branch on kind instead of regexing `display`/`text`. */
+  event?: StructuredEvent;
+}
+
+/** Derive the structured `event` from an entry's known fields. Best-effort; defaults to `msg`. */
+export function classifyEvent(e: HistoryEntry): StructuredEvent {
+  if (e.station === 'webhook' && !Line.isLocal(e.from)) {
+    const headers = (e.payload as { headers?: Record<string, string> } | undefined)?.headers;
+    const eventName = headers?.['x-github-event'] ?? headers?.['x-intercom-topic'];
+    return { type: 'system', source: 'webhook', eventName };
+  }
+  const emoji = (e.payload as { emoji?: string } | undefined)?.emoji
+    ?? e.text?.match(/^\[react (.+)\]$/)?.[1];
+  if (emoji) return { type: 'react', emoji, targetId: e.replyTo };
+  if (e.replyTo) return { type: 'reply', replyTo: e.replyTo };
+  return { type: 'msg' };
 }
 
 /** Pre-render a chat-bubble line. Direction is derived: from === local agent → outbound (📤), else inbound (📩). */
@@ -87,6 +123,81 @@ export function readHistory(filter: HistoryFilter = {}): HistoryEntry[] {
     if (filter.limit && out.length >= filter.limit) break;
   }
   return out;
+}
+
+/* ──────────── per-line read cursor: O(new) "what's new on this line" ──────────── */
+
+/**
+ * The history jsonl is append-only, so a byte offset is a stable, monotonic
+ * cursor: everything before it has been read, everything after is new. We track
+ * one offset per line so each line's reader only re-parses the tail it hasn't
+ * seen — turning "what's new on this line" from O(file) into O(new).
+ */
+const CURSOR_FILE = join(STATE_DIR, 'read-cursors.json');
+
+/** Map of line URI → last-read byte offset into HISTORY_FILE. */
+type CursorStore = Record<string, number>;
+
+function readCursors(): CursorStore {
+  if (!existsSync(CURSOR_FILE)) return {};
+  try { return JSON.parse(readFileSync(CURSOR_FILE, 'utf8')) as CursorStore; }
+  catch (err) { log.warn({ err: errMsg(err) }, 'read-cursors: malformed, resetting'); return {}; }
+}
+
+function writeCursor(line: string, offset: number): void {
+  const store = readCursors();
+  store[line] = offset;
+  try { writeFileSync(CURSOR_FILE, JSON.stringify(store)); }
+  catch (err) { log.warn({ err: errMsg(err) }, 'read-cursors: write failed'); }
+}
+
+/**
+ * Return entries appended to `line` since the last `readNewForLine(line)` call
+ * (most-recent-first, like `readHistory`). Reads only the byte tail past the
+ * persisted cursor, then advances the cursor to EOF — so steady-state cost is
+ * O(new bytes), not O(file).
+ *
+ * `advance: false` peeks without moving the cursor (useful for a dry preview).
+ * The cursor is global (file-offset based); per-line filtering is applied to
+ * the freshly-read tail. Falls back gracefully if the file shrank/rotated
+ * (offset > size ⇒ treat as fresh from 0).
+ */
+export function readNewForLine(
+  line: string,
+  opts: { advance?: boolean } = {},
+): HistoryEntry[] {
+  if (!existsSync(HISTORY_FILE)) return [];
+  const advance = opts.advance ?? true;
+  const size = statSync(HISTORY_FILE).size;
+  const cursors = readCursors();
+  let from = cursors[line] ?? 0;
+  if (from > size) from = 0; // file truncated/rotated — restart this line's cursor
+  if (from === size) { return []; } // nothing new, no scan
+
+  /** Read only the tail. Slice on the last newline ≤ `from` to avoid a half line. */
+  const buf = readFileSync(HISTORY_FILE);
+  let start = from;
+  if (start > 0) {
+    // back up to the byte after the previous newline so we start on a record boundary
+    while (start > 0 && buf[start - 1] !== 0x0a) start--;
+  }
+  const tail = buf.subarray(start, size).toString('utf8');
+  const out: HistoryEntry[] = [];
+  for (const raw of tail.split('\n')) {
+    const t = raw.trim();
+    if (!t) continue;
+    let e: HistoryEntry;
+    try { e = JSON.parse(t) as HistoryEntry; } catch { continue; }
+    if (e.line === line) out.push(e);
+  }
+  if (advance) writeCursor(line, size);
+  return out.reverse(); // most-recent-first, matching readHistory
+}
+
+/** Reset a line's cursor (next `readNewForLine` re-reads the whole file for it). */
+export function resetCursor(line: string): void {
+  const store = readCursors();
+  if (line in store) { delete store[line]; try { writeFileSync(CURSOR_FILE, JSON.stringify(store)); } catch { /* noop */ } }
 }
 
 function matches(e: HistoryEntry, f: HistoryFilter): boolean {

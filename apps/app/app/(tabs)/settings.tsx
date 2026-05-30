@@ -11,7 +11,6 @@ import {
 } from '../../lib/pill';
 import { flash } from '../../lib/toast';
 import { resetAccount } from '../../lib/wallet';
-import { AccountsManager } from '../../components/AccountsManager';
 import { useAccountEpoch } from '../../lib/accountEpoch';
 import { HeroIcon } from '../../components/HeroIcon';
 import {
@@ -83,9 +82,8 @@ export default function Settings(): React.ReactElement {
         <Text style={{ color: head, fontSize: 22, fontFamily: 'Calibre-Semibold' }}>Settings</Text>
       </View>
 
-      {/* Accounts first — the active account drives everything below it. */}
-      <AccountsManager dark={dark} />
-
+      {/* Account switching now lives in the topnav-avatar modal on the
+          Channels tab — Settings keeps just the active account's pills. */}
       {myAddress ? (
         <Pressable
           onPress={() => {

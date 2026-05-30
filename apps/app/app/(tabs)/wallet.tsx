@@ -196,8 +196,8 @@ export default function Wallet(): React.ReactElement {
       <View style={{ flexDirection: 'row', gap: 8, marginHorizontal: 16, marginTop: 12 }}>
         <Btn icon="send" label="Send" onPress={() => router.push('/wallet/send')} />
         <Btn icon="arrowDown" label="Receive" onPress={() => router.push('/wallet/receive')} />
-        <Btn icon="plus" label="Top up" onPress={() => flash('Top up — coming soon')} />
-        <Btn icon="wallet" label="Buy" onPress={() => flash('Buy — coming soon')} />
+        <Btn icon="switchHorizontal" label="Swap" onPress={() => flash('Swap — coming soon')} />
+        <Btn icon="creditCard" label="Buy" onPress={() => flash('Buy — coming soon')} />
       </View>
 
       {/* Asset list — Snapshot-treasury-style rows, border-bottom separators. */}

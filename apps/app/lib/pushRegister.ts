@@ -55,7 +55,10 @@ import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Client } from '@xmtp/react-native-sdk';
 import { PublicIdentity } from '@xmtp/react-native-sdk';
+import { useEffect } from 'react';
+import { router } from 'expo-router';
 import { ensureNotificationReady, getDeviceFcmToken } from './push';
+import { markConvRead } from './channelsCache';
 
 /** The daemon's XMTP identity (the `tony` daemon wallet) — the inbox the control
  *  DM is sent to. Same address used for the "Ask a question" group co-member. */
@@ -100,7 +103,13 @@ export function buildRegisterPushBody(payload: {
 /** Debounce: don't re-send the same (account, token) pairing more than once per
  *  window. A device switching accounts re-registers (different key); a token
  *  rotation re-registers (different value). */
-const REGISTER_TTL_MS = 1000 * 60 * 60 * 24 * 3; // 3 days
+// Kept deliberately short: if the server-side token is ever lost (e.g. a daemon
+// FCM token wipe), this debounce is the only thing gating re-registration. A long
+// TTL means the server stays token-less — and pushes stay dead — until the window
+// elapses. 6h trades a little extra re-register traffic for fast recovery: the
+// token is restored on the next app open within 6h of any server-side wipe, while
+// still avoiding a re-register on every single launch.
+const REGISTER_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
 const lastRegisterKey = (account: string): string => `push.register.${account}`;
 
 function platformTag(): 'android' | 'ios' | null {
@@ -162,6 +171,58 @@ export async function registerPushWithDaemon(client: PushClient): Promise<void> 
       console.warn('registerPushWithDaemon failed', (err as Error).message);
     }
   }
+}
+
+/** Extract the conversation id a notification points at. Both the foreground
+ *  local notif (`presentInboundNotification`, data.convId) and the daemon's
+ *  remote FCM push carry the conv id in `data` — accept the common aliases the
+ *  daemon may use (`convId` / `conversationId` / a `line` like
+ *  `metro://xmtp/<acct>/<convId>`). Returns null when none is present. */
+function convIdFromNotificationData(data: unknown): string | null {
+  if (!data || typeof data !== 'object') return null;
+  const d = data as Record<string, unknown>;
+  const direct = d.convId ?? d.conversationId;
+  if (typeof direct === 'string' && direct.length > 0) return direct;
+  if (typeof d.line === 'string') {
+    // metro://xmtp/<account>/<convId>  → last non-empty path segment.
+    const seg = d.line.replace(/[?#].*$/, '').split('/').filter(Boolean);
+    const last = seg[seg.length - 1];
+    if (last && last !== 'xmtp') return last;
+  }
+  return null;
+}
+
+/** Navigate to the conversation a tapped notification points at + clear its
+ *  unread badge. Shared by the cold-start (getLastNotificationResponse) and
+ *  warm (addNotificationResponseReceivedListener) paths. Best-effort. */
+function openConvFromResponse(response: Notifications.NotificationResponse | null): void {
+  if (!response) return;
+  const convId = convIdFromNotificationData(response.notification?.request?.content?.data);
+  if (!convId) return;
+  router.push({ pathname: '/xmtp/[convId]', params: { convId } });
+  // Clearing unread is async + best-effort; the nav already happened.
+  void markConvRead(convId).catch(() => undefined);
+}
+
+/** Install the notification-tap deep-link handler once for the app's lifetime.
+ *  Mount in the root layout. Handles BOTH:
+ *   - cold start: the app was launched by tapping a push while killed
+ *     (`getLastNotificationResponseAsync`),
+ *   - warm/background: a tap arrives while the app is alive/backgrounded
+ *     (`addNotificationResponseReceivedListener`).
+ *  On tap it routes to `/xmtp/[convId]` and calls `markConvRead` so the unread
+ *  badge clears immediately. */
+export function usePushDeepLinks(): void {
+  useEffect(() => {
+    let cancelled = false;
+    // Cold-start: a tap that launched the app from killed state.
+    void Notifications.getLastNotificationResponseAsync()
+      .then((resp) => { if (!cancelled) openConvFromResponse(resp); })
+      .catch(() => undefined);
+    // Warm/background taps while the app is alive.
+    const sub = Notifications.addNotificationResponseReceivedListener(openConvFromResponse);
+    return (): void => { cancelled = true; sub.remove(); };
+  }, []);
 }
 
 /** Present a foreground local notification for an inbound XMTP message (option

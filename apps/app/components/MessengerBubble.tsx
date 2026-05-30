@@ -370,7 +370,7 @@ function QuestionView({ question, dark, sub, onAnswer }: {
 
 export function MessengerBubble({
   entry, dark, unread, pending, replyTarget, onReact, onReply, onLongPress, onAnswer,
-  replyPreview, onReplyPreviewPress, reactions, transcript, myUri, senderEthAddress, onAvatarPress,
+  replyPreview, onReplyPreviewPress, reactions, pendingReactions, pendingRemovals, ownEmojis, transcript, myUri, senderEthAddress, onAvatarPress,
 }: {
   entry: HistoryEntry; dark: boolean; unread: boolean; pending?: boolean; replyTarget?: boolean;
   onReact?: (emoji: string) => void; onReply?: () => void; onLongPress?: () => void;
@@ -381,7 +381,18 @@ export function MessengerBubble({
    *  a normal user message with replyTo=entry.id so the agent links the answer to
    *  the question). */
   onAnswer?: (label: string) => void;
-  replyPreview?: string; reactions?: Map<string, number>; transcript?: string;
+  replyPreview?: string; reactions?: Map<string, number>;
+  /** Optimistic (not-yet-confirmed) reactions from the local user — rendered at
+   *  reduced opacity alongside confirmed reaction pills until the live XMTP
+   *  stream echoes them back. */
+  pendingReactions?: string[];
+  /** Emojis the local user just un-reacted (optimistic) — hide the confirmed pill
+   *  immediately until the live stream echoes the `removed` event. */
+  pendingRemovals?: string[];
+  /** Emojis the local user currently owns on this message — own pills get a subtle
+   *  outline + tapping/long-pressing one toggles the reaction off (onReact). */
+  ownEmojis?: Set<string>;
+  transcript?: string;
   /** Self URI used to mark a bubble as the user's own. XMTP callers pass
    *  `metro://xmtp/user/<inboxId>`. */
   myUri: string;
@@ -436,6 +447,20 @@ export function MessengerBubble({
     },
     onPanResponderTerminationRequest: () => false,
   }), [onReply, swipeX]);
+  /** Double-tap a message → quick 👍, reusing the same optimistic onReact path as
+   *  the emoji picker. Manual lastTap timestamp check (two taps within 300ms) — a
+   *  single tap stays a no-op, long-press still opens the menu, and the outer
+   *  PanResponder owns horizontal swipe-to-reply, so none of them collide. */
+  const lastTapRef = useRef(0);
+  const onBubbleTap = (): void => {
+    const now = Date.now();
+    if (now - lastTapRef.current < 300) {
+      lastTapRef.current = 0;
+      onReact?.('👍');
+    } else {
+      lastTapRef.current = now;
+    }
+  };
   return (
     <Animated.View
       {...panResponder.panHandlers}
@@ -469,6 +494,7 @@ export function MessengerBubble({
       <View style={{ flex: 1, minWidth: 0, flexDirection: 'column' }}>
       {/** Pressable handles onLongPress; the outer Animated.View'​s PanResponder steals horizontal drags. */}
       <Pressable
+        onPress={onReact ? onBubbleTap : undefined}
         onLongPress={onLongPress}
         delayLongPress={300}
         style={{
@@ -572,19 +598,68 @@ export function MessengerBubble({
           <Text style={{ color: sub, fontSize: 10 , fontFamily: 'Calibre-Medium'}}>{fmtTs(entry.ts)}</Text>
         </View>
       </Pressable>
-      {reactions && reactions.size > 0 ? (
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
-          {[...reactions.entries()].map(([emoji, count]) => (
-            <View key={emoji} style={{
-              flexDirection: 'row', alignItems: 'center', gap: 4,
-              paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, backgroundColor: pillBg,
-            }}>
-              <Text style={{ fontSize: 13 , fontFamily: 'Calibre-Medium'}}>{emoji}</Text>
-              <Text style={{ fontSize: 11, color: sub , fontFamily: 'Calibre-Medium'}}>{count}</Text>
-            </View>
-          ))}
-        </View>
-      ) : null}
+      {(() => {
+        /** Only show a pending pill for an emoji the live stream hasn't yet
+         *  confirmed on this message — once it lands in `reactions` the parent
+         *  also drops it from the optimistic list, but this guards the in-between
+         *  frame so we never render a confirmed + pending pill for the same emoji. */
+        const pending = (pendingReactions ?? []).filter(e => !reactions?.has(e));
+        /** Drop optimistically-removed emojis from the confirmed pill list so the
+         *  pill vanishes the instant the user un-reacts (before the stream echo). */
+        const removed = new Set(pendingRemovals ?? []);
+        const confirmedEntries = reactions
+          ? [...reactions.entries()].filter(([emoji]) => !removed.has(emoji))
+          : [];
+        const hasConfirmed = confirmedEntries.length > 0;
+        if (!hasConfirmed && pending.length === 0) return null;
+        return (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
+            {confirmedEntries.map(([emoji, count]) => {
+              /** Tapping/long-pressing a pill the user OWNS toggles their reaction
+               *  off (onReact detects ownership → sends `removed`). Pills they don't
+               *  own stay static. Own pills get a subtle outline to signal they're
+               *  interactive / "mine". */
+              const mine = !!ownEmojis?.has(emoji);
+              const inner = (
+                <>
+                  <Text style={{ fontSize: 13, fontFamily: 'Calibre-Medium' }}>{emoji}</Text>
+                  <Text style={{ fontSize: 11, color: sub, fontFamily: 'Calibre-Medium' }}>{count}</Text>
+                </>
+              );
+              const pillStyle = {
+                flexDirection: 'row' as const, alignItems: 'center' as const, gap: 4,
+                paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, backgroundColor: pillBg,
+                borderWidth: mine ? 1 : 0,
+                borderColor: mine ? (dark ? '#7aa2ff' : '#2f6feb') : 'transparent',
+              };
+              return mine && onReact ? (
+                <Pressable
+                  key={emoji}
+                  onPress={() => onReact(emoji)}
+                  onLongPress={() => onReact(emoji)}
+                  delayLongPress={300}
+                  hitSlop={6}
+                  style={pillStyle}
+                >
+                  {inner}
+                </Pressable>
+              ) : (
+                <View key={emoji} style={pillStyle}>{inner}</View>
+              );
+            })}
+            {pending.map(emoji => (
+              <View key={`pending-${emoji}`} style={{
+                flexDirection: 'row', alignItems: 'center', gap: 4,
+                paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, backgroundColor: pillBg,
+                opacity: 0.45,
+              }}>
+                <Text style={{ fontSize: 13 , fontFamily: 'Calibre-Medium'}}>{emoji}</Text>
+                <Text style={{ fontSize: 11, color: sub , fontFamily: 'Calibre-Medium'}}>1</Text>
+              </View>
+            ))}
+          </View>
+        );
+      })()}
       {pickerOpen ? (
         <View style={{
           flexDirection: 'row', gap: 8, marginTop: 6, paddingHorizontal: 10, paddingVertical: 6,

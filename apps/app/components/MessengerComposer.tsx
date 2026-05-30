@@ -80,7 +80,7 @@ interface Props {
   /** Fired AFTER the send completes (success OR failure). Lets the parent drop the
    *  optimistic entry instead of waiting for an SSE/stream echo that may never arrive
    *  (XMTP `streamMessages` doesn't always replay self-sends — pending bubbles would stick). */
-  onSent?: (localId: string, error?: string) => void;
+  onSent?: (localId: string, error?: string, sentId?: string) => void;
 }
 
 export function MessengerComposer({
@@ -168,7 +168,10 @@ export function MessengerComposer({
   const replyNonce = replyingTo?.nonce;
   useEffect(() => {
     if (!replyTargetId) return;
-    const t = setTimeout(() => inputRef.current?.focus(), 0);
+    const t = setTimeout(() => {
+      console.warn('[reply-focus]', { replyTargetId, replyNonce });
+      inputRef.current?.focus();
+    }, 0);
     return () => clearTimeout(t);
   }, [replyTargetId, replyNonce]);
 
@@ -364,6 +367,10 @@ export function MessengerComposer({
     setText(''); setPending([]); onClearReply?.();
     setSending(true); setErr(null);
     let sendErr: string | undefined;
+    /** Real XMTP message id of the bubble that represents this optimistic entry —
+     *  the text body when there's text, else the first attachment. conv.send()
+     *  returns it; we thread it to onSent so the parent confirms by exact id. */
+    let sentId: string | undefined;
     try {
       /** Send the text body first (as a `reply` when there's a `replyingTo`,
        *  else plain text), then EACH staged attachment as its own INLINE
@@ -377,8 +384,8 @@ export function MessengerComposer({
        *  ImageViewer render path is untouched so already-sent multi-remote
        *  messages still render. */
       if (body) {
-        if (sendingReplyTo) await xmtpReply(xmtpLine, sendingReplyTo, body);
-        else await xmtpSendText(xmtpLine, body);
+        if (sendingReplyTo) sentId = await xmtpReply(xmtpLine, sendingReplyTo, body);
+        else sentId = await xmtpSendText(xmtpLine, body);
       }
       for (const a of sendingAttachments) {
         const mimeType = mimeOf(a.mime, a.name ?? a.url);
@@ -396,7 +403,10 @@ export function MessengerComposer({
             + `Attachments must be under ${Math.round(INLINE_ATTACHMENT_MAX_BYTES / 1024)} KB.`,
           );
         }
-        await xmtpSendAttachment(xmtpLine, filename, mimeType, dataB64);
+        const attId = await xmtpSendAttachment(xmtpLine, filename, mimeType, dataB64);
+        /** Attachment-only send (no text body) — the optimistic bubble carries the
+         *  attachments, so its real-id twin is the first attachment message. */
+        if (!sentId) sentId = attId;
       }
     } catch (e) { sendErr = (e as Error).message; setErr(sendErr); }
     finally {
@@ -404,7 +414,7 @@ export function MessengerComposer({
       /** Always tell the parent the send finished (success or failure) so the optimistic
        *  bubble clears. XMTP self-sends don't always come back through streamMessages, so
        *  waiting for an echo stranded the bubble in pending state forever. */
-      onSent?.(localId, sendErr);
+      onSent?.(localId, sendErr, sentId);
     }
   };
 

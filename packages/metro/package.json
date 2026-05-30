@@ -17,6 +17,11 @@
   "bin": {
     "metro": "./dist/cli/index.js"
   },
+  "exports": {
+    ".": "./dist/cli/index.js",
+    "./define-train": "./dist/define-train.js",
+    "./schema": "./dist/schema.js"
+  },
   "files": [
     "dist",
     "docs",

@@ -7,7 +7,7 @@
  *  Channels screen re-syncs from the network in the background regardless,
  *  so the cache is always brought up to date within a few seconds. */
 
-import { Directory, File, Paths } from 'expo-file-system';
+import { PersistentStore } from './cache';
 import { markConvReadSynced, markConvUnreadSynced } from './xmtp';
 
 export interface CachedRow {
@@ -22,63 +22,33 @@ export interface CachedRow {
   [key: string]: unknown;
 }
 
-let rows: CachedRow[] | null = null;
-let hydrated = false;
-const listeners = new Set<(rows: CachedRow[] | null) => void>();
-
-function cacheFile(): File {
-  const dir = new Directory(Paths.document, 'metro');
-  if (!dir.exists) dir.create({ intermediates: true });
-  return new File(dir, 'channels-cache.json');
-}
+/** Channels list lives in the unified persistence layer (lib/cache) — one JSON
+ *  file in the app document dir, mirrored in memory with pub/sub. The thin
+ *  wrappers below preserve the previous module surface so callers are unchanged. */
+const store = new PersistentStore<CachedRow[]>('channels-cache.json');
 
 /** Pull the persisted cache off disk into the in-process slot. Idempotent —
  *  the file read only happens on the first call. Safe to call from a render
  *  effect; the result lands in `rows` synchronously after this awaits. */
 export async function hydrateCachedRows(): Promise<CachedRow[] | null> {
-  if (hydrated) return rows;
-  hydrated = true;
-  try {
-    const f = cacheFile();
-    if (!f.exists) return rows;
-    const raw = await f.text();
-    const parsed = JSON.parse(raw) as CachedRow[];
-    if (Array.isArray(parsed)) {
-      rows = parsed;
-      for (const l of listeners) l(rows);
-    }
-  } catch { /* corrupted cache — next setCachedRows overwrites it */ }
-  return rows;
-}
-
-function persistCachedRows(next: CachedRow[] | null): void {
-  try {
-    const f = cacheFile();
-    if (next === null) { if (f.exists) f.delete(); return; }
-    f.write(JSON.stringify(next));
-  } catch { /* best-effort */ }
+  const v = await store.hydrate();
+  return Array.isArray(v) ? v : null;
 }
 
 /** Wipe the persisted + in-memory cache. Called on account switch so the next
  *  account never momentarily shows the previous account's channels/avatars (the
  *  cache file is global, not per-account). */
-export function clearCachedRows(): void {
-  rows = null;
-  hydrated = false;
-  persistCachedRows(null);
-  for (const l of listeners) l(null);
+export function clearCachedRows(): void { store.clear(); }
+
+export function getCachedRows(): CachedRow[] | null { return store.get(); }
+export function setCachedRows(next: CachedRow[] | null): void { store.set(next); }
+export function subscribeCachedRows(l: (rows: CachedRow[] | null) => void): () => void {
+  return store.subscribe(l);
 }
 
-export function getCachedRows(): CachedRow[] | null { return rows; }
-export function setCachedRows(next: CachedRow[] | null): void {
-  rows = next;
-  persistCachedRows(next);
-  for (const l of listeners) l(rows);
-}
-export function subscribeCachedRows(l: (rows: CachedRow[] | null) => void): () => void {
-  listeners.add(l);
-  return (): void => { listeners.delete(l); };
-}
+/** Latest in-memory rows, for code that previously read the module-level
+ *  `rows`. */
+function currentRows(): CachedRow[] | null { return store.get(); }
 
 /** Mark a conv as read NOW — patches the cached row (so the badge clears
  *  before the Channels screen re-syncs), writes the persistent `lastReadNs`
@@ -87,6 +57,7 @@ export function subscribeCachedRows(l: (rows: CachedRow[] | null) => void): () =
 export async function markConvRead(convId: string): Promise<void> {
   const nowNs = Date.now() * 1_000_000;
   await markConvReadSynced(convId);
+  const rows = currentRows();
   if (!rows) return;
   const idx = rows.findIndex(r => r.convId === convId);
   if (idx === -1) return;
@@ -100,6 +71,7 @@ export async function markConvRead(convId: string): Promise<void> {
  *  badge appears immediately on this device. */
 export async function markConvUnread(convId: string): Promise<void> {
   await markConvUnreadSynced(convId);
+  const rows = currentRows();
   if (!rows) return;
   const idx = rows.findIndex(r => r.convId === convId);
   if (idx === -1) return;
@@ -120,6 +92,7 @@ export async function markConvUnread(convId: string): Promise<void> {
  *  zero those here too. No-op if the row isn't cached yet (a fresh conv lands on
  *  the next network refresh). */
 export function patchRowSent(convId: string, preview: string): void {
+  const rows = currentRows();
   if (!rows) return;
   const idx = rows.findIndex(r => r.convId === convId);
   if (idx === -1) return;
@@ -140,6 +113,7 @@ export function patchRowSent(convId: string, preview: string): void {
 /** Apply a consent change that arrived from another device (via the consent
  *  stream) to the cached rows so the badge reconciles live without a refetch. */
 export function applyConsentToRows(convId: string, markedUnread: boolean): void {
+  const rows = currentRows();
   if (!rows) return;
   const idx = rows.findIndex(r => r.convId === convId);
   if (idx === -1) return;

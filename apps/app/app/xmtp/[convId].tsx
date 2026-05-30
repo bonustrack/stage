@@ -3,7 +3,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Alert, Animated as RNAnimated, FlatList, Modal, Pressable, Share, Text, View,
+  Alert, Animated as RNAnimated, FlatList, Pressable, Share, Text, View,
 } from 'react-native';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,6 +19,7 @@ import { MessengerComposer } from '../../components/MessengerComposer';
 import { ComposerGradient } from '../../components/ComposerGradient';
 import { HeroIcon } from '../../components/HeroIcon';
 import { Avatar } from '../../components/Avatar';
+import { AppModal } from '../../components/AppModal';
 import {
   XMTP_USER_PREFIX, lineOfConv, useXmtpFeed, xmtpReact, xmtpReply,
   shortAddress, leaveGroupConv,
@@ -56,6 +57,29 @@ function reactionsByMessage(events: HistoryEntry[]): Map<string, Map<string, num
     let m = out.get(msgId);
     if (!m) { m = new Map(); out.set(msgId, m); }
     m.set(emoji, (m.get(emoji) ?? 0) + 1);
+  }
+  return out;
+}
+
+/** Emojis the local user currently has on each message (latest add not undone by a
+ *  later removal). Drives un-react: tapping an emoji you already own toggles it off. */
+function ownReactionsByMessage(events: HistoryEntry[], myUri: string): Map<string, Set<string>> {
+  const latest = new Map<string, { ts: string; removed: boolean }>();
+  for (const e of events) {
+    if (e.from !== myUri) continue;
+    const p = e.payload as { reactTo?: string; emoji?: string; removed?: boolean } | undefined;
+    if (!p?.reactTo || !p.emoji) continue;
+    const k = `${p.reactTo} ${p.emoji}`;
+    const cur = latest.get(k);
+    if (!cur || cur.ts < e.ts) latest.set(k, { ts: e.ts, removed: !!p.removed });
+  }
+  const out = new Map<string, Set<string>>();
+  for (const [k, v] of latest) {
+    if (v.removed) continue;
+    const [msgId, emoji] = k.split(' ');
+    let s = out.get(msgId);
+    if (!s) { s = new Set(); out.set(msgId, s); }
+    s.add(emoji);
   }
   return out;
 }
@@ -117,8 +141,14 @@ export default function XmtpConversation(): React.ReactElement {
    *  composer's focus effect re-fires and re-opens the keyboard each time — keying
    *  only on the message id deduped repeat replies after a keyboard dismiss. */
   const [replyingTo, setReplyingTo] = useState<{ id: string; preview: string; nonce: number } | null>(null);
+  /** Monotonic reply counter — guarantees a fresh `nonce` on EVERY swipe-to-reply,
+   *  even two taps on the same message within the same millisecond (where
+   *  `Date.now()` would collide and React would bail on the focus effect, leaving
+   *  the keyboard closed on the 2nd+ reply). */
+  const replyNonceRef = useRef(0);
   const setReplyTarget = useCallback((id: string, preview: string) => {
-    setReplyingTo({ id, preview, nonce: Date.now() });
+    replyNonceRef.current += 1;
+    setReplyingTo({ id, preview, nonce: replyNonceRef.current });
   }, []);
   /** Transient highlight on a message we jumped to (by tapping its quoted
    *  reply-preview). Distinct from `replyingTo` so jumping to the original
@@ -137,6 +167,21 @@ export default function XmtpConversation(): React.ReactElement {
   /** Optimistic outbound entries — rendered immediately on send, dropped once the composer
    *  resolves its send promise (XMTP self-sends don't always come back via streamMessages). */
   const [optimistic, setOptimistic] = useState<HistoryEntry[]>([]);
+  /** localId → real XMTP message id, resolved when the composer's send() promise
+   *  settles (conv.send returns the id). Lets us confirm/drop an optimistic entry
+   *  by EXACT id when that id appears in the live feed — zero false-confirm vs the
+   *  text+timestamp heuristic, which stays as a fallback for sends that resolve
+   *  without an id (or before the map updates). */
+  const [confirmedIds, setConfirmedIds] = useState<Map<string, string>>(new Map());
+  /** Optimistic reactions: messageId → emoji[] the local user just tapped, shown
+   *  semi-transparent until the live XMTP stream echoes the reaction back (or the
+   *  send fails). Dropped per-pair in the dedup effect below + on send rejection. */
+  const [optimisticReactions, setOptimisticReactions] = useState<Map<string, string[]>>(new Map());
+  /** Optimistic un-reacts: messageId → emoji[] the local user just removed. Hides
+   *  the confirmed pill immediately (semi-transparent removal isn't a thing — it
+   *  just vanishes) until the live stream echoes the `removed` event back, at which
+   *  point `reactions` no longer carries it and we drop it from this map. */
+  const [optimisticRemovals, setOptimisticRemovals] = useState<Map<string, string[]>>(new Map());
   /** Conversation metadata via TanStack Query — cached by convId so the topnav
    *  title + avatar render instantly on the second open (groupName: null = not
    *  resolved, '' = no name; isGroup gates the title→/group affordance). */
@@ -187,6 +232,39 @@ export default function XmtpConversation(): React.ReactElement {
 
   /** Reaction events decorate their target msg — don't render as their own bubbles. */
   const reactions = useMemo(() => reactionsByMessage(events), [events]);
+  /** Emojis the local user currently owns per message — toggles un-react in onReact. */
+  const ownReactions = useMemo(() => ownReactionsByMessage(events, myUri), [events, myUri]);
+  /** Once the live stream confirms an optimistic reaction (emoji now present in
+   *  `reactions` for that message), drop it from the pending map so the pill flips
+   *  from semi-transparent to the solid confirmed pill. */
+  useEffect(() => {
+    setOptimisticReactions(prev => {
+      if (prev.size === 0) return prev;
+      let changed = false;
+      const next = new Map<string, string[]>();
+      for (const [msgId, emojis] of prev) {
+        const confirmed = reactions.get(msgId);
+        const left = emojis.filter(e => !confirmed?.has(e));
+        if (left.length !== emojis.length) changed = true;
+        if (left.length) next.set(msgId, left);
+      }
+      return changed ? next : prev;
+    });
+    /** Symmetric drop for pending un-reacts: once the live feed no longer carries the
+     *  emoji on that message, the removal has confirmed — forget it. */
+    setOptimisticRemovals(prev => {
+      if (prev.size === 0) return prev;
+      let changed = false;
+      const next = new Map<string, string[]>();
+      for (const [msgId, emojis] of prev) {
+        const confirmed = reactions.get(msgId);
+        const left = emojis.filter(e => confirmed?.has(e));
+        if (left.length !== emojis.length) changed = true;
+        if (left.length) next.set(msgId, left);
+      }
+      return changed ? next : prev;
+    });
+  }, [reactions]);
   const liveBubbles = useMemo(
     () => events.filter(e => !isReaction(e)),
     [events],
@@ -194,25 +272,74 @@ export default function XmtpConversation(): React.ReactElement {
   /** Inverted FlatList expects newest-first → put optimistic at the top. Filter out
    *  optimistic entries inline so the streamed-confirmed bubble never renders
    *  alongside its pending twin even for one frame. */
-  /** An optimistic entry is "confirmed" once a live message from us lands within
-   *  30s that matches either its text or (for attachment-only sends, where text
-   *  is empty) its attachment presence — so optimistic images solidify into the
-   *  real bubble instead of lingering as a faded duplicate. */
-  const isConfirmed = useCallback((o: HistoryEntry): boolean =>
-    liveBubbles.some(e => e.from === myUri
-      && Math.abs(new Date(e.ts).getTime() - new Date(o.ts).getTime()) < 30_000
-      && (e.text === o.text || (hasAttachments(o) && hasAttachments(e)))),
-  [liveBubbles, myUri]);
+  /** Match optimistic entries to their confirmed live twins.
+   *
+   *  THE RACE (root cause of the "sent message doesn't show until the stream
+   *  confirms it" bug): the old check was `liveBubbles.some(e => same text
+   *  within 30s)`. If you'd sent the SAME text in the last 30s, a brand-new
+   *  optimistic entry instantly matched that OLD live bubble and got filtered
+   *  out of `allBubbles` on the very first render — so it vanished until its
+   *  own stream echo arrived seconds later. Duplicate/similar quick sends hit
+   *  this every time; that's the intermittency.
+   *
+   *  Fix: only confirm against live messages that landed AT/AFTER the optimistic
+   *  entry's own send time, and consume each live message at most once so two
+   *  optimistic entries can't both latch onto a single (possibly older) bubble.
+   *  Returns the set of optimistic ids that are now confirmed. */
+  const confirmedOptimisticIds = useMemo(() => {
+    const confirmed = new Set<string>();
+    if (!optimistic.length) return confirmed;
+    const used = new Set<string>(); // live message ids already claimed
+    /** Oldest optimistic first so earlier sends claim earlier echoes. */
+    const ordered = [...optimistic].sort(
+      (a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime(),
+    );
+    for (const o of ordered) {
+      /** Exact-id confirm: once we know the real id (from onSent) and it's in the
+       *  live feed, confirm by id — no false positives, instant + stable. */
+      const realId = confirmedIds.get(o.id);
+      if (realId) {
+        const byId = liveBubbles.find(e => e.id === realId && !used.has(e.id));
+        if (byId) { used.add(byId.id); confirmed.add(o.id); continue; }
+      }
+      const oTs = new Date(o.ts).getTime();
+      const match = liveBubbles.find(e =>
+        e.from === myUri
+        && !used.has(e.id)
+        /** Echo must be no earlier than this send (1s slack for clock skew) and
+         *  within a tight 30s window — never a message that predates the send. */
+        && new Date(e.ts).getTime() >= oTs - 1_000
+        && new Date(e.ts).getTime() - oTs < 30_000
+        && (e.text === o.text || (hasAttachments(o) && hasAttachments(e))));
+      if (match) { used.add(match.id); confirmed.add(o.id); }
+    }
+    return confirmed;
+  }, [liveBubbles, optimistic, myUri, confirmedIds]);
   const allBubbles = useMemo(() => {
     if (!optimistic.length) return liveBubbles;
-    return [...optimistic.filter(o => !isConfirmed(o)), ...liveBubbles];
-  }, [liveBubbles, optimistic, isConfirmed]);
+    return [...optimistic.filter(o => !confirmedOptimisticIds.has(o.id)), ...liveBubbles];
+  }, [liveBubbles, optimistic, confirmedOptimisticIds]);
   /** Once the live feed has caught up, drop the now-dead optimistic entries from state. */
   useEffect(() => {
     if (!optimistic.length) return;
-    const live = optimistic.filter(o => !isConfirmed(o));
-    if (live.length !== optimistic.length) setOptimistic(live);
-  }, [liveBubbles, optimistic, isConfirmed]);
+    const live = optimistic.filter(o => !confirmedOptimisticIds.has(o.id));
+    if (live.length !== optimistic.length) {
+      for (const o of optimistic) {
+        if (confirmedOptimisticIds.has(o.id)) console.warn('[opt-send]', 'drop', o.id);
+      }
+      setOptimistic(live);
+      /** Forget any id mappings for the dropped entries so the map can't grow unbounded. */
+      setConfirmedIds(prev => {
+        if (prev.size === 0) return prev;
+        let changed = false;
+        const next = new Map(prev);
+        for (const o of optimistic) {
+          if (confirmedOptimisticIds.has(o.id) && next.delete(o.id)) changed = true;
+        }
+        return changed ? next : prev;
+      });
+    }
+  }, [optimistic, confirmedOptimisticIds]);
   /** Sticky-bottom for inbound messages: when a new entry arrives and the user is
    *  already at the visual bottom (`showJump=false` means scroll offset ≤ 12px),
    *  remount the list so it lands at offset 0 again. Skip on initial mount. */
@@ -252,13 +379,65 @@ export default function XmtpConversation(): React.ReactElement {
   useEffect(() => () => { if (jumpClearTimer.current) clearTimeout(jumpClearTimer.current); }, []);
 
   const onReact = useCallback((messageId: string, emoji: string) => {
-    /** XMTP reactions are toggle-by-resend (the same emoji from the same inbox replaces
-     *  the previous state). For v1 we always emit `action: 'added'` — the mobile UI
-     *  doesn't expose a way to un-react yet. (TODO: long-press own reaction → send
-     *  `removed`.) */
-    void xmtpReact(activeLine, messageId, emoji)
-      .catch((e: unknown) => { console.warn('xmtp react failed', e); });
-  }, [activeLine]);
+    /** Toggle: if the user already owns this emoji on this message (confirmed in the
+     *  live feed, and not already optimistically removed), re-selecting / tapping the
+     *  pill sends `removed`; otherwise `added`. */
+    const alreadyOwned = !!ownReactions.get(messageId)?.has(emoji)
+      && !(optimisticRemovals.get(messageId)?.includes(emoji));
+    const action: 'added' | 'removed' = alreadyOwned ? 'removed' : 'added';
+
+    if (action === 'removed') {
+      /** Optimistic un-react: hide the pill immediately. */
+      setOptimisticRemovals(prev => {
+        const cur = prev.get(messageId) ?? [];
+        if (cur.includes(emoji)) return prev;
+        const next = new Map(prev);
+        next.set(messageId, [...cur, emoji]);
+        return next;
+      });
+      /** Also clear any not-yet-confirmed optimistic add for the same pair. */
+      setOptimisticReactions(prev => {
+        const cur = prev.get(messageId);
+        if (!cur?.includes(emoji)) return prev;
+        const left = cur.filter(e => e !== emoji);
+        const next = new Map(prev);
+        if (left.length) next.set(messageId, left); else next.delete(messageId);
+        return next;
+      });
+      const undo = (): void => setOptimisticRemovals(prev => {
+        const cur = prev.get(messageId);
+        if (!cur) return prev;
+        const left = cur.filter(e => e !== emoji);
+        const next = new Map(prev);
+        if (left.length) next.set(messageId, left); else next.delete(messageId);
+        return next;
+      });
+      void xmtpReact(activeLine, messageId, emoji, 'removed')
+        .catch((e: unknown) => { console.warn('xmtp un-react failed', e); undo(); });
+      return;
+    }
+
+    /** Optimistic reaction: drop the pill in immediately (semi-transparent) before
+     *  the XMTP send resolves, then let the live stream solidify it. Dedup by
+     *  messageId+emoji so re-tapping the same emoji doesn't stack duplicates. */
+    setOptimisticReactions(prev => {
+      const cur = prev.get(messageId) ?? [];
+      if (cur.includes(emoji)) return prev;
+      const next = new Map(prev);
+      next.set(messageId, [...cur, emoji]);
+      return next;
+    });
+    const dropPending = (): void => setOptimisticReactions(prev => {
+      const cur = prev.get(messageId);
+      if (!cur) return prev;
+      const left = cur.filter(e => e !== emoji);
+      const next = new Map(prev);
+      if (left.length) next.set(messageId, left); else next.delete(messageId);
+      return next;
+    });
+    void xmtpReact(activeLine, messageId, emoji, 'added')
+      .catch((e: unknown) => { console.warn('xmtp react failed', e); dropPending(); });
+  }, [activeLine, ownReactions, optimisticRemovals]);
 
   /** Leave-group flow — confirm, call the SDK (true leave when available, else
    *  consent-deny hide), then pop back to the conversation list. */
@@ -335,7 +514,7 @@ export default function XmtpConversation(): React.ReactElement {
         key={listEpoch}
         ref={listRef}
         data={allBubbles}
-        extraData={profilesVersion}
+        extraData={[profilesVersion, optimisticReactions, reactions, optimisticRemovals, ownReactions]}
         inverted
         showsVerticalScrollIndicator={false}
         /** Anchor the bottom-visible item (= newest on inverted) so as new bubbles or the
@@ -381,6 +560,9 @@ export default function XmtpConversation(): React.ReactElement {
             pending={item.id.startsWith('tmp_')}
             replyTarget={replyingTo?.id === item.id || jumpHighlightId === item.id}
             reactions={reactions.get(item.id)}
+            pendingReactions={optimisticReactions.get(item.id)}
+            pendingRemovals={optimisticRemovals.get(item.id)}
+            ownEmojis={ownReactions.get(item.id)}
             replyPreview={item.replyTo ? previewOf(events.find(e => e.id === item.replyTo) ?? item) : undefined}
             /** Tap the quoted slab → jump+highlight the original message. */
             onReplyPreviewPress={item.replyTo ? () => jumpToMessage(item.replyTo as string) : undefined}
@@ -522,6 +704,7 @@ export default function XmtpConversation(): React.ReactElement {
         onOptimistic={({ localId, text, attachments, replyTo }) => {
           /** Inverted FlatList + `maintainVisibleContentPosition` + prepended optimistic
            *  entry = bubble appears at the visual bottom automatically. */
+          console.warn('[opt-send]', 'add', localId);
           setOptimistic(prev => [{
             id: localId, ts: new Date().toISOString(),
             station: 'xmtp', line: activeLine,
@@ -541,23 +724,30 @@ export default function XmtpConversation(): React.ReactElement {
           const preview = text.trim() || `[${attachments[0]?.kind ?? 'attachment'}]`;
           if (convId) patchRowSent(convId, preview);
         }}
-        onSent={(localId) => {
-          /** Drop the optimistic entry as soon as the send resolves — XMTP's streamMessages
-           *  doesn't always replay self-sends, so waiting for the feed echo left bubbles
-           *  stranded in pending state. */
-          setOptimistic(prev => prev.filter(o => o.id !== localId));
+        onSent={(localId, _error, sentId) => {
+          /** conv.send() resolves with the real XMTP message id — thread it back so
+           *  the dedup memo confirms this optimistic entry by EXACT id when it shows
+           *  up in the live feed (no text+timestamp guessing). We DON'T drop the
+           *  optimistic entry here anymore: dropping it before the live echo arrives
+           *  made the just-sent bubble vanish for a frame. The dedup effect drops it
+           *  once the matching live bubble lands (by id, else the ts fallback). On a
+           *  send error (no id) keep the old behavior: drop the stranded bubble. */
+          if (sentId) {
+            setConfirmedIds(prev => {
+              const next = new Map(prev);
+              next.set(localId, sentId);
+              return next;
+            });
+          } else {
+            setOptimistic(prev => prev.filter(o => o.id !== localId));
+          }
         }}
       />
       </View>
       </KeyboardStickyView>
       {/** Topnav overflow menu — bottom sheet. Group → info + leave; DM → bubble. */}
-      <Modal visible={overflowOpen} transparent animationType="fade" onRequestClose={() => setOverflowOpen(false)}>
-        <Pressable onPress={() => setOverflowOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>
-          <Pressable onPress={e => e.stopPropagation()} style={{
-            backgroundColor: dark ? '#282a2d' : '#ffffff',
-            borderTopLeftRadius: 16, borderTopRightRadius: 16,
-            padding: 16, paddingBottom: 24 + insets.bottom, gap: 4,
-          }}>
+      <AppModal visible={overflowOpen} onClose={() => setOverflowOpen(false)}>
+        <View style={{ gap: 4 }}>
             {isGroup ? (
               <>
                 <Pressable
@@ -599,9 +789,8 @@ export default function XmtpConversation(): React.ReactElement {
             <Pressable onPress={() => setOverflowOpen(false)} style={{ paddingVertical: 10, alignItems: 'center' }}>
               <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium' }}>Cancel</Text>
             </Pressable>
-          </Pressable>
-        </Pressable>
-      </Modal>
+        </View>
+      </AppModal>
       <BubbleActionMenu
         target={menuFor}
         dark={dark}
@@ -634,16 +823,11 @@ function BubbleActionMenu({
   onReact: (emoji: string) => void; onReply: () => void; onCopy: () => void;
   onShareLink: () => void;
 }): React.ReactElement {
-  const sheetBg = dark ? '#282a2d' : '#ffffff';
   const fg = dark ? '#9f9fa3' : '#57606a';
   const sub = dark ? '#7a7a7e' : '#8a929d';
   return (
-    <Modal visible={!!target} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>
-        <Pressable onPress={e => e.stopPropagation()} style={{
-          backgroundColor: sheetBg, borderTopLeftRadius: 16, borderTopRightRadius: 16,
-          padding: 16, paddingBottom: 24, gap: 10,
-        }}>
+    <AppModal visible={!!target} onClose={onClose}>
+      <View style={{ gap: 10 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-around', paddingBottom: 8 }}>
             {ACTION_EMOJIS.map(e => (
               <Pressable key={e} onPress={() => onReact(e)} hitSlop={8}>
@@ -668,8 +852,7 @@ function BubbleActionMenu({
           <Pressable onPress={onClose} style={{ paddingVertical: 10, alignItems: 'center' }}>
             <Text style={{ color: sub, fontSize: 14 , fontFamily: 'Calibre-Medium'}}>Cancel</Text>
           </Pressable>
-        </Pressable>
-      </Pressable>
-    </Modal>
+      </View>
+    </AppModal>
   );
 }

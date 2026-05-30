@@ -1,9 +1,9 @@
 /** Train supervisor: spawn `~/.metro/trains/*.{ts,js,mjs}` under `bun run`, multiplex their */
 /** stdout (events + call-responses), route outbound calls to their stdin. Pure transport. */
 
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, statSync, watch, type FSWatcher } from 'node:fs';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { join, parse as parsePath } from 'node:path';
 import { errMsg, log } from '../log.js';
 import { daemonSelf } from '../history.js';
 import {
@@ -13,6 +13,9 @@ import {
 
 const RESTART_BACKOFFS_MS = [1_000, 5_000, 30_000] as const;
 const MAX_CONSECUTIVE_FAILS = 5;
+/** Debounce window for the hot-reload watcher: editors fire several fs events per save. */
+const HOT_RELOAD_DEBOUNCE_MS = 300;
+const TRAIN_EXT = /\.(ts|js|mjs)$/;
 
 export const TRAINS_DIR = process.env.METRO_TRAINS_DIR ?? join(homedir(), '.metro', 'trains');
 
@@ -32,6 +35,8 @@ export class TrainSupervisor {
   private trains = new Map<string, TrainState>();
   private onEvent: ((event: TrainEvent, train: string) => void) | null = null;
   private nextCallId = 1;
+  private watcher: FSWatcher | null = null;
+  private reloadTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   constructor(private dir: string = TRAINS_DIR) {}
 
@@ -42,10 +47,58 @@ export class TrainSupervisor {
     mkdirSync(this.dir, { recursive: true });
     for (const t of listTrainFiles(this.dir)) this.startTrain(t.name, t.path);
     log.info({ dir: this.dir, count: this.trains.size }, 'train supervisor: started');
+    this.watchForReloads();
+  }
+
+  /**
+   * Hot-reload (#15): watch the trains dir and reload only the single train whose
+   * source changed (debounced — editors emit several fs events per save). A new
+   * file spawns a fresh train; a deleted file leaves the existing process alone
+   * (we never auto-kill on unlink — too easy to lose a train to an editor's
+   * atomic-rename). Best-effort: if `watch` is unavailable, on-demand restart
+   * still works.
+   */
+  private watchForReloads(): void {
+    try {
+      this.watcher = watch(this.dir, (_event, filename) => {
+        if (!filename) return;
+        const base = filename.toString();
+        if (!TRAIN_EXT.test(base) || base.startsWith('_') || base.startsWith('.')) return;
+        const name = parsePath(base).name;
+        const existing = this.reloadTimers.get(name);
+        if (existing) clearTimeout(existing);
+        this.reloadTimers.set(name, setTimeout(() => {
+          this.reloadTimers.delete(name);
+          this.handleSourceChange(name, join(this.dir, base));
+        }, HOT_RELOAD_DEBOUNCE_MS));
+      });
+      this.watcher.on('error', err => log.warn({ err: errMsg(err) }, 'train hot-reload: watcher error'));
+      log.info({ dir: this.dir }, 'train hot-reload: watching');
+    } catch (err) {
+      log.warn({ err: errMsg(err) }, 'train hot-reload: watch unavailable (on-demand restart only)');
+    }
+  }
+
+  /** A train source file changed (or appeared). Restart it if known, else spawn it. */
+  private handleSourceChange(name: string, path: string): void {
+    const known = this.trains.get(name);
+    if (known) {
+      /** Deleted file: leave the running process; nothing to reload onto. */
+      try { if (!statSync(path).isFile()) return; } catch { return; }
+      log.info({ name }, 'train hot-reload: source changed, restarting');
+      void this.restart(name).catch(err => log.warn({ name, err: errMsg(err) }, 'train hot-reload: restart failed'));
+      return;
+    }
+    try { if (!statSync(path).isFile()) return; } catch { return; }
+    log.info({ name }, 'train hot-reload: new train, spawning');
+    this.startTrain(name, path);
   }
 
   /** Shut everything down (graceful: send SIGTERM, then SIGKILL after grace period). */
   async stop(): Promise<void> {
+    if (this.watcher) { try { this.watcher.close(); } catch { /* ignore */ } this.watcher = null; }
+    for (const timer of this.reloadTimers.values()) clearTimeout(timer);
+    this.reloadTimers.clear();
     const tasks: Promise<unknown>[] = [];
     for (const t of this.trains.values()) {
       t.stopped = true;

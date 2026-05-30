@@ -6,7 +6,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  AppState, FlatList, Modal, Pressable, RefreshControl,
+  AppState, FlatList, Pressable, RefreshControl,
   Text, View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -27,11 +27,15 @@ import {
 import { usePeerProfiles, getPeerAvatarCb, getPeerName, isPeerResolved } from '../../lib/peerProfiles';
 import { presentInboundNotification, isMetroControlBody } from '../../lib/push';
 import { useAccountEpoch } from '../../lib/accountEpoch';
+import { getActiveAccount } from '../../lib/accounts';
 import { HeroIcon } from '../../components/HeroIcon';
 import { hasDraft, useDraftsVersion } from '../../lib/drafts';
 import { previewOfXmtpContent } from '@metro-labs/client/xmtp/humanize';
 import { Spinner } from '../../components/Spinner';
 import { Avatar } from '../../components/Avatar';
+import { ChannelRow } from '../../components/ChannelRow';
+import { AccountsManager } from '../../components/AccountsManager';
+import { AppModal } from '../../components/AppModal';
 import { loadPinnedIds, isPinned, togglePin, subscribePins } from '../../lib/pins';
 
 interface Row {
@@ -217,6 +221,10 @@ export default function Messenger(): React.ReactElement {
   /** Device-only pinned conv ids. Loaded once on mount; `subscribePins` bumps
    *  this on every toggle so the display sort below re-derives + re-renders. */
   const [pinned, setPinned] = useState<Set<string>>(new Set());
+  /** Active account's own address → topnav avatar. */
+  const [myAddress, setMyAddress] = useState<string | null>(null);
+  /** Tapping the topnav avatar opens the account-switcher bottom sheet. */
+  const [accountModalOpen, setAccountModalOpen] = useState(false);
   useEffect(() => {
     void loadPinnedIds().then(setPinned);
     /** On toggle the cache is already updated; re-read it (resolves instantly
@@ -245,6 +253,14 @@ export default function Messenger(): React.ReactElement {
   const draftsVersion = useDraftsVersion();
   /** Re-runs the XMTP init below when the active account changes (in-place switch). */
   const accountEpoch = useAccountEpoch();
+  /** Re-resolve the active account's address for the topnav avatar on switch. */
+  useEffect(() => {
+    let cancelled = false;
+    void getActiveAccount().then(acct => {
+      if (!cancelled) setMyAddress(acct?.address ?? null);
+    });
+    return () => { cancelled = true; };
+  }, [accountEpoch]);
 
   useEffect(() => {
     let cancelled = false;
@@ -473,7 +489,13 @@ export default function Messenger(): React.ReactElement {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
         paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: border,
       }}>
-        <Text style={{ color: head, fontSize: 22, fontFamily: 'Calibre-Semibold' }}>Channels</Text>
+        <Pressable onPress={() => setAccountModalOpen(true)} hitSlop={8}>
+          <Avatar
+            address={myAddress}
+            size={24}
+            style={{ backgroundColor: border }}
+          />
+        </Pressable>
         <Pressable onPress={() => router.push('/search')} hitSlop={8}>
           <HeroIcon name="search" size={26} color={head} />
         </Pressable>
@@ -497,77 +519,37 @@ export default function Messenger(): React.ReactElement {
             </Text>
           </View>
         }
-        renderItem={({ item }) => (
-          <Pressable
-            onPress={() => router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } })}
-            onLongPress={() => setRowMenu({
-              convId: item.convId,
-              title: item.peerAddress ? (getPeerName(item.peerAddress) ?? item.title) : item.title,
-              isUnread: item.unreadCount > 0 || !!item.markedUnread,
-            })}
-            delayLongPress={300}
-            style={({ pressed }) => ({
-              backgroundColor: pressed ? border : 'transparent',
-              paddingHorizontal: 14,
-            })}
-          >
-            {/* Inner row carries the separator: it starts at the avatar's left
-                edge (inset by paddingHorizontal), not the full card width. */}
-            <View style={{
-              flexDirection: 'row', alignItems: 'center', gap: 12,
-              paddingVertical: 14,
-              borderBottomWidth: 1, borderBottomColor: border,
-            }}>
-            {/** Group-uploaded image OR (only once the peer profile has
-             *   resolved) the peer's stamp/custom avatar — gating on
-             *   `isPeerResolved` avoids the wrong-avatar flash when the
-             *   cache-buster lands after the first paint. */}
-            <Avatar
-              imageUri={item.avatarUri}
-              address={!item.avatarUri && item.avatarAddress && isPeerResolved(item.avatarAddress) ? item.avatarAddress : null}
-              size={40}
-              square={!item.peerAddress}
+        renderItem={({ item }) => {
+          const displayTitle = item.peerAddress ? (getPeerName(item.peerAddress) ?? item.title) : item.title;
+          const preview = item.lastPreview
+            ? `${item.lastFromSelf ? 'You' : item.lastSenderAddress ? (getPeerName(item.lastSenderAddress) ?? shortAddress(item.lastSenderAddress)) : ''}${(item.lastFromSelf || item.lastSenderAddress) ? ': ' : ''}${item.lastPreview}`
+            : '(no messages yet)';
+          /** Gate the stamp avatar on `isPeerResolved` to avoid the wrong-avatar
+           *  flash when the cache-buster lands after the first paint. */
+          const showAddr = !item.avatarUri && item.avatarAddress && isPeerResolved(item.avatarAddress)
+            ? item.avatarAddress : null;
+          return (
+            <ChannelRow
+              title={displayTitle}
+              avatarUri={item.avatarUri}
+              avatarAddress={showAddr}
               cacheBuster={item.avatarAddress ? getPeerAvatarCb(item.avatarAddress) : undefined}
-              style={{ backgroundColor: border }}
+              square={!item.peerAddress}
+              lastPreview={preview}
+              timestamp={fmtTs(item.lastTs)}
+              unreadCount={item.unreadCount}
+              markedUnread={item.markedUnread}
+              pinned={isPinned(item.convId)}
+              hasDraft={hasDraft(item.convId)}
+              onPress={() => router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } })}
+              onLongPress={() => setRowMenu({
+                convId: item.convId,
+                title: item.peerAddress ? (getPeerName(item.peerAddress) ?? item.title) : item.title,
+                isUnread: item.unreadCount > 0 || !!item.markedUnread,
+              })}
             />
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                {isPinned(item.convId) ? <HeroIcon name="mapPin" size={13} color={sub} /> : null}
-                {hasDraft(item.convId) ? <HeroIcon name="pencil" size={14} color={sub} /> : null}
-                <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', flex: 1 }} numberOfLines={1}>
-                  {item.peerAddress ? (getPeerName(item.peerAddress) ?? item.title) : item.title}
-                </Text>
-                <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{fmtTs(item.lastTs)}</Text>
-              </View>
-              {/** Reserve the badge's height (22) regardless of whether one is shown,
-               *   so rows with/without the unread indicator are the same total height. */}
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4, minHeight: 22 }}>
-                <Text style={{ color: sub, fontSize: 16, fontFamily: 'Calibre-Medium', flex: 1 }} numberOfLines={1}>
-                  {item.lastPreview
-                    ? `${item.lastFromSelf ? 'You' : item.lastSenderAddress ? (getPeerName(item.lastSenderAddress) ?? shortAddress(item.lastSenderAddress)) : ''}${(item.lastFromSelf || item.lastSenderAddress) ? ': ' : ''}${item.lastPreview}`
-                    : '(no messages yet)'}
-                </Text>
-                {item.unreadCount > 0 ? (
-                  <View style={{
-                    minWidth: 22, height: 22, borderRadius: 999, backgroundColor: head,
-                    alignItems: 'center', justifyContent: 'center', paddingHorizontal: 7,
-                  }}>
-                    <Text style={{ color: bg, fontSize: 12, fontFamily: 'Calibre-Semibold' }}>
-                      {item.unreadCount > 99 ? '99+' : item.unreadCount}
-                    </Text>
-                  </View>
-                ) : item.markedUnread ? (
-                  /** Explicitly marked unread (cross-device) but no counted msgs
-                   *  → show a plain dot rather than a number. */
-                  <View style={{
-                    width: 12, height: 12, borderRadius: 999, backgroundColor: head,
-                  }} />
-                ) : null}
-              </View>
-            </View>
-            </View>
-          </Pressable>
-        )}
+          );
+        }}
       />
       <RowActionSheet
         target={rowMenu}
@@ -588,7 +570,28 @@ export default function Messenger(): React.ReactElement {
           void togglePin(convId);
         }}
       />
+      <AccountSwitcherModal
+        visible={accountModalOpen}
+        dark={dark}
+        onClose={() => setAccountModalOpen(false)}
+      />
     </View>
+  );
+}
+
+/** Account-switcher bottom sheet — opened by tapping the topnav avatar. Reuses
+ *  AccountsManager (the canonical account list + switch/add/manage logic) inside
+ *  a dim-backdrop modal. Tap outside or the X to dismiss; switching is in-place
+ *  (epoch bump) so the list re-inits without a full reload. */
+function AccountSwitcherModal({
+  visible, dark, onClose,
+}: {
+  visible: boolean; dark: boolean; onClose: () => void;
+}): React.ReactElement {
+  return (
+    <AppModal visible={visible} onClose={onClose} title="Accounts">
+      <AccountsManager dark={dark} flat />
+    </AppModal>
   );
 }
 
@@ -601,37 +604,31 @@ function RowActionSheet({
   dark: boolean; pinned: boolean; onClose: () => void;
   onToggleUnread: () => void; onTogglePin: () => void;
 }): React.ReactElement {
-  const sheetBg = dark ? '#282a2d' : '#ffffff';
   const fg = dark ? '#9f9fa3' : '#57606a';
   const sub = dark ? '#7a7a7e' : '#8a929d';
   const head = dark ? '#ffffff' : '#000000';
   return (
-    <Modal visible={!!target} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>
-        <Pressable onPress={e => e.stopPropagation()} style={{
-          backgroundColor: sheetBg, borderTopLeftRadius: 16, borderTopRightRadius: 16,
-          padding: 16, paddingBottom: 24, gap: 4,
-        }}>
-          <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', paddingHorizontal: 4, paddingBottom: 6 }} numberOfLines={1}>
-            {target?.title ?? ''}
+    <AppModal visible={!!target} onClose={onClose}>
+      <View style={{ gap: 4 }}>
+        <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', paddingHorizontal: 4, paddingBottom: 6 }} numberOfLines={1}>
+          {target?.title ?? ''}
+        </Text>
+        <Pressable onPress={onToggleUnread} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 }}>
+          <HeroIcon name={target?.isUnread ? 'check' : 'envelope'} size={20} color={head} />
+          <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Medium' }}>
+            {target?.isUnread ? 'Mark as read' : 'Mark as unread'}
           </Text>
-          <Pressable onPress={onToggleUnread} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 }}>
-            <HeroIcon name={target?.isUnread ? 'check' : 'envelope'} size={20} color={head} />
-            <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Medium' }}>
-              {target?.isUnread ? 'Mark as read' : 'Mark as unread'}
-            </Text>
-          </Pressable>
-          <Pressable onPress={onTogglePin} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 }}>
-            <HeroIcon name="mapPin" size={20} color={head} />
-            <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Medium' }}>
-              {pinned ? 'Unpin' : 'Pin'}
-            </Text>
-          </Pressable>
-          <Pressable onPress={onClose} style={{ paddingVertical: 10, alignItems: 'center' }}>
-            <Text style={{ color: fg, fontSize: 14, fontFamily: 'Calibre-Medium' }}>Cancel</Text>
-          </Pressable>
         </Pressable>
-      </Pressable>
-    </Modal>
+        <Pressable onPress={onTogglePin} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 }}>
+          <HeroIcon name="mapPin" size={20} color={head} />
+          <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Medium' }}>
+            {pinned ? 'Unpin' : 'Pin'}
+          </Text>
+        </Pressable>
+        <Pressable onPress={onClose} style={{ paddingVertical: 10, alignItems: 'center' }}>
+          <Text style={{ color: fg, fontSize: 14, fontFamily: 'Calibre-Medium' }}>Cancel</Text>
+        </Pressable>
+      </View>
+    </AppModal>
   );
 }

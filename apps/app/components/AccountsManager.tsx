@@ -26,7 +26,7 @@ import {
   type AccountRecord,
 } from '../lib/accounts';
 import { setWcSign } from '../lib/wcSigner';
-import { bumpAccountEpoch } from '../lib/accountEpoch';
+import { clearCachedRows } from '../lib/channelsCache';
 
 const TYPE_LABEL: Record<AccountRecord['type'], string> = {
   generated: 'Generated',
@@ -40,7 +40,7 @@ function reloadApp(): void {
   DevSettings.reload?.();
 }
 
-export function AccountsManager({ dark }: { dark: boolean }): React.ReactElement {
+export function AccountsManager({ dark, flat = false }: { dark: boolean; flat?: boolean }): React.ReactElement {
   const head = dark ? '#ffffff' : '#000000';
   const sub = dark ? '#7a7a7e' : '#8a929d';
   const border = dark ? '#282a2d' : '#e4e4e5';
@@ -149,11 +149,14 @@ export function AccountsManager({ dark }: { dark: boolean }): React.ReactElement
     setBusy(true);
     try {
       /** In-place switch — no full app reload (which on the dev client re-downloads
-       *  the whole JS bundle + flashes white). switchToAccount drops the cached
-       *  client + builds the target account's; bumpAccountEpoch re-inits the
-       *  channels list against it. Far snappier than reloadApp(). */
+       *  the whole JS bundle + flashes white). Clear the previous account's
+       *  persisted channels list first so its rows/avatars never flash under the
+       *  new inbox, then switchToAccount drops the cached client + global stream,
+       *  builds the target account's client, and bumps the account epoch — which
+       *  re-inits the channels list + any open conversation against the new inbox.
+       *  Far snappier than reloadApp(). */
+      clearCachedRows();
       await switchToAccount(id);
-      bumpAccountEpoch();
       await refresh();
       setExpanded(false);
     } catch (e) {
@@ -218,33 +221,64 @@ export function AccountsManager({ dark }: { dark: boolean }): React.ReactElement
 
   return (
     <View>
-      <Text style={{ color: sub, fontSize: 13, paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8, fontFamily: 'Calibre-Medium' }}>
-        ACCOUNTS
-      </Text>
-      <View style={{
+      {!flat ? (
+        <Text style={{ color: sub, fontSize: 13, paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8, fontFamily: 'Calibre-Medium' }}>
+          ACCOUNTS
+        </Text>
+      ) : null}
+      <View style={flat ? {
+        backgroundColor: 'transparent',
+      } : {
         marginHorizontal: 16, borderRadius: 12, overflow: 'hidden',
         borderWidth: 1, borderColor: border, backgroundColor: rowBg,
       }}>
-        {/* Collapsed header row — the ACTIVE account + a chevron. Tapping it
-            toggles the dropdown of the other accounts. */}
-        {activeRec ? (
-          <AccountRow
-            rec={activeRec}
-            topBorder={false}
-            onPress={() => setExpanded(e => !e)}
-            trailing={<HeroIcon name={expanded ? 'chevronUp' : 'chevronDown'} size={20} color={sub} />}
-          />
-        ) : accounts.length === 0 ? (
-          <Text style={{ color: sub, fontSize: 13, padding: 14, fontFamily: 'Calibre-Medium' }}>
-            No accounts yet.
-          </Text>
-        ) : null}
+        {flat ? (
+          /* Flat mode (modal) — EVERY account as a row, all visible at once,
+             active one highlighted. No collapse/dropdown. */
+          accounts.length === 0 ? (
+            <Text style={{ color: sub, fontSize: 13, padding: 14, fontFamily: 'Calibre-Medium' }}>
+              No accounts yet.
+            </Text>
+          ) : (
+            accounts.map((a, i) => (
+              <View key={a.id} style={{ backgroundColor: a.id === activeId ? border : 'transparent' }}>
+                <AccountRow
+                  rec={a}
+                  topBorder={i > 0}
+                  onPress={() => void onSwitch(a.id)}
+                  trailing={
+                    a.id === activeId
+                      ? <HeroIcon name="check" size={20} color={head} />
+                      : <Pressable hitSlop={10} onPress={() => setManageId(a.id)}>
+                          <Text style={{ color: sub, fontSize: 20, fontFamily: 'Calibre-Semibold', paddingHorizontal: 4 }}>⋯</Text>
+                        </Pressable>
+                  }
+                />
+              </View>
+            ))
+          )
+        ) : (
+          /* Collapsed header row — the ACTIVE account + a chevron. Tapping it
+             toggles the dropdown of the other accounts. */
+          activeRec ? (
+            <AccountRow
+              rec={activeRec}
+              topBorder={false}
+              onPress={() => setExpanded(e => !e)}
+              trailing={<HeroIcon name={expanded ? 'chevronUp' : 'chevronDown'} size={20} color={sub} />}
+            />
+          ) : accounts.length === 0 ? (
+            <Text style={{ color: sub, fontSize: 13, padding: 14, fontFamily: 'Calibre-Medium' }}>
+              No accounts yet.
+            </Text>
+          ) : null
+        )}
 
-        {/* Expanded — the OTHER accounts (tap to switch, ⋯/long-press to manage)
-            followed by "Add account". */}
-        {expanded ? (
+        {/* Expanded (non-flat) OR always (flat) — followed by "Add account".
+            In flat mode the OTHER accounts are already rendered above. */}
+        {flat || expanded ? (
           <>
-            {otherAccounts.map(a => (
+            {!flat ? otherAccounts.map(a => (
               <AccountRow
                 key={a.id}
                 rec={a}
@@ -256,7 +290,7 @@ export function AccountsManager({ dark }: { dark: boolean }): React.ReactElement
                   </Pressable>
                 }
               />
-            ))}
+            )) : null}
             <Pressable
               onPress={() => setAddOpen(true)}
               style={({ pressed }) => ({
@@ -274,9 +308,11 @@ export function AccountsManager({ dark }: { dark: boolean }): React.ReactElement
           </>
         ) : null}
       </View>
-      <Text style={{ color: sub, fontSize: 13, paddingHorizontal: 16, paddingTop: 8, fontFamily: 'Calibre-Medium' }}>
-        {expanded ? 'Tap an account to switch · long-press for options' : 'Tap to switch or add accounts'}
-      </Text>
+      {!flat ? (
+        <Text style={{ color: sub, fontSize: 13, paddingHorizontal: 16, paddingTop: 8, fontFamily: 'Calibre-Medium' }}>
+          {expanded ? 'Tap an account to switch · long-press for options' : 'Tap to switch or add accounts'}
+        </Text>
+      ) : null}
 
       {busy ? (
         <View style={{ paddingTop: 12, alignItems: 'center' }}>

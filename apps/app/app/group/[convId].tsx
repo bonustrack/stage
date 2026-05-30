@@ -5,7 +5,7 @@
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
-  ActivityIndicator, Alert, FlatList, Image, Modal, Pressable, Text, TextInput, View,
+  ActivityIndicator, Alert, FlatList, Image, Pressable, Text, TextInput, View,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -23,6 +23,7 @@ import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { HeroIcon } from '../../components/HeroIcon';
 import { Avatar } from '../../components/Avatar';
 import { ImageViewer } from '../../components/ImageViewer';
+import { AppModal } from '../../components/AppModal';
 
 export default function GroupDetail(): React.ReactElement {
   const router = useRouter();
@@ -500,15 +501,8 @@ export default function GroupDetail(): React.ReactElement {
       />
 
       {/* Add-member modal — opened by the + button in the MEMBERS header. */}
-      <Modal visible={addOpen} transparent animationType="slide" onRequestClose={() => setAddOpen(false)}>
-        <Pressable onPress={() => setAddOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>
-          <Pressable onPress={(e) => e.stopPropagation()} style={{
-            backgroundColor: dark ? '#1a1b1d' : '#ffffff',
-            borderTopLeftRadius: 18, borderTopRightRadius: 18,
-            padding: 16, paddingBottom: 28 + insets.bottom, borderTopWidth: 1, borderColor: border,
-          }}>
-            <View style={{ alignSelf: 'center', width: 36, height: 4, borderRadius: 2, backgroundColor: border, marginBottom: 12 }} />
-            <Text style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold', marginBottom: 12 }}>Add member</Text>
+      <AppModal visible={addOpen} onClose={() => setAddOpen(false)} title="Add member">
+        <View>
             <TextInput
               value={addDraft}
               onChangeText={setAddDraft}
@@ -536,18 +530,12 @@ export default function GroupDetail(): React.ReactElement {
                 {adding ? 'Adding…' : 'Add member'}
               </Text>
             </Pressable>
-          </Pressable>
-        </Pressable>
-      </Modal>
+        </View>
+      </AppModal>
 
       {/* Overflow menu — opened by the 3-dot button in the topnav. Holds Leave group. */}
-      <Modal visible={overflowOpen} transparent animationType="fade" onRequestClose={() => setOverflowOpen(false)}>
-        <Pressable onPress={() => setOverflowOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>
-          <Pressable onPress={e => e.stopPropagation()} style={{
-            backgroundColor: dark ? '#282a2d' : '#ffffff',
-            borderTopLeftRadius: 16, borderTopRightRadius: 16,
-            padding: 16, paddingBottom: 24 + insets.bottom, gap: 4,
-          }}>
+      <AppModal visible={overflowOpen} onClose={() => setOverflowOpen(false)}>
+        <View style={{ gap: 4 }}>
             <Pressable
               onPress={leaveGroup}
               disabled={leaving}
@@ -561,9 +549,8 @@ export default function GroupDetail(): React.ReactElement {
             <Pressable onPress={() => setOverflowOpen(false)} style={{ paddingVertical: 10, alignItems: 'center' }}>
               <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium' }}>Cancel</Text>
             </Pressable>
-          </Pressable>
-        </Pressable>
-      </Modal>
+        </View>
+      </AppModal>
 
       <ImageViewer
         uri={imageUrl ? avatarRenderUrl('', imageUrl, 1024) : ''}

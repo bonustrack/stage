@@ -56,6 +56,8 @@ import {
 import { humanizeGroupUpdated, type GroupUpdatedContent } from '@metro-labs/client/xmtp/humanize';
 import { getWcSign } from './wcSigner';
 import { registerPushWithDaemon, isMetroControlBody } from './push';
+import { MemoryStore, getSecure, setSecure } from './cache';
+import { bumpAccountEpoch, useAccountEpoch } from './accountEpoch';
 
 /** Build the XMTP-RN `Signer` adapter for a viem `PrivateKeyAccount`.
  *  Shape pulled from `node_modules/@xmtp/react-native-sdk/src/lib/Signer.ts`:
@@ -208,9 +210,28 @@ export async function switchToAccount(id: string, env: XmtpEnv = 'production'): 
   const list = await loadAccounts();
   const rec = list.find(a => a.id === id);
   if (!rec) throw new Error('Account not found.');
-  cachedClient = null;
+  resetClientScopedState();
   await setActiveAccountId(id);
-  return buildClientForAccount(rec, env);
+  const client = await buildClientForAccount(rec, env);
+  /** Bump the account epoch so every screen holding per-account XMTP state
+   *  (channels list, open conversation) re-inits against the new inbox without a
+   *  hard app reload. Callers used to DevSettings.reload() here. */
+  bumpAccountEpoch();
+  return client;
+}
+
+/** Drop all client-scoped in-memory state on an account change: the cached
+ *  client, the single global message stream + its backstops, and every session
+ *  cache that's keyed to the previous inbox (per-conv feeds, inbox→eth). The
+ *  persisted channels-list cache is cleared separately by the channels screen
+ *  (clearCachedRows) since it lives in a different module to avoid an import
+ *  cycle. */
+function resetClientScopedState(): void {
+  cachedClient = null;
+  teardownGlobalStream();
+  activeFeedLines.clear();
+  feedCache.clear();
+  inboxEthCache.clear();
 }
 
 export function getCachedXmtpClient(): Client | null { return cachedClient; }
@@ -226,14 +247,14 @@ export async function deleteAccount(id: string): Promise<void> {
     const dir = dbDirObj(rec.dbDir);
     if (dir.exists) { try { dir.delete(); } catch { /* best-effort */ } }
   }
-  cachedClient = null;
+  resetClientScopedState();
 }
 
 /** Full wipe: drop the cached client, every account's on-disk XMTP store (plus
  *  the legacy `xmtp/` dir), the shared db key, and the whole account registry.
  *  Next call to `getOrCreateXmtpClient` mints a fresh wallet + inbox. */
 export async function resetXmtpClient(): Promise<void> {
-  cachedClient = null;
+  resetClientScopedState();
   await SecureStore.deleteItemAsync(ENV_KEY).catch(() => undefined);
   await SecureStore.deleteItemAsync(DB_ENCRYPTION_KEY).catch(() => undefined);
   const removed = await clearAllAccounts();
@@ -252,16 +273,13 @@ export function lineOfConv(convId: string): string { return `metro://xmtp/${conv
  *  by the conversation view to mark messages as read on open. */
 const LAST_READ_PREFIX = 'unread.lastRead.';
 export async function getLastReadNs(convId: string): Promise<number> {
-  try {
-    const raw = await SecureStore.getItemAsync(LAST_READ_PREFIX + convId);
-    if (!raw) return 0;
-    const n = Number(raw);
-    return Number.isFinite(n) ? n : 0;
-  } catch { return 0; }
+  const raw = await getSecure(LAST_READ_PREFIX + convId);
+  if (!raw) return 0;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : 0;
 }
 export async function setLastReadNs(convId: string, ns: number): Promise<void> {
-  try { await SecureStore.setItemAsync(LAST_READ_PREFIX + convId, String(ns)); }
-  catch { /* best-effort */ }
+  await setSecure(LAST_READ_PREFIX + convId, String(ns));
 }
 
 /** Cross-device read/unread marker — synced across the inbox's installations via
@@ -360,7 +378,7 @@ export function shortAddress(addr: string): string {
  *  staying under XMTP's read rate limit: channel re-summarizes (30s poll,
  *  per-message stream, AppState resume, pull-to-refresh) reuse cached identities
  *  instead of calling GetIdentityUpdates per member on every pass. */
-const inboxEthCache = new Map<string, string>();
+const inboxEthCache = new MemoryStore<string, string>();
 
 /** Resolve inbox ids → ETH address, cache-first. Only ids not already cached
  *  hit the network (`inboxStates(true)`); cached ids cost zero reads. */
@@ -804,7 +822,114 @@ export type XmtpFeedStatus = 'idle' | 'loading' | 'open' | 'error';
 /** Per-conversation message cache so re-opening a channel renders its messages
  *  instantly (no empty-state flash); the network history still refreshes in the
  *  background. Survives navigation within the session. */
-const feedCache = new Map<string, HistoryEntry[]>();
+const feedCache = new MemoryStore<string, HistoryEntry[]>();
+
+/** ───────────────────────────────────────────────────────────────────────────
+ *  SINGLE GLOBAL MESSAGE STREAM (#6)
+ *
+ *  Previously every open `useXmtpFeed` started its OWN per-conversation
+ *  `streamMessages` + a 5s `setInterval` poll. With several channels open that
+ *  meant N native streams + N polls hammering the XMTP read-rate limit (which
+ *  previously caused an outage) and the battery.
+ *
+ *  Now there is exactly ONE module-level `streamAllMessages` fan-out for the
+ *  whole app. Each inbound message is decoded once, routed into the relevant
+ *  conv's `feedCache` slice, and pushed to that slice's subscribers. A single
+ *  low-frequency (30s) global resync + an AppState-resume resync act as the only
+ *  backstops (the RN native stream can silently die on backgrounding/blips).
+ *
+ *  `useXmtpFeed` no longer owns a stream or a poll — it subscribes to its conv's
+ *  feedCache slice. The channels list keeps its own `streamAllMessages` (it needs
+ *  the row/preview/unread bookkeeping), so this fan-out is scoped to the
+ *  conversation-view feed only.
+ *  ─────────────────────────────────────────────────────────────────────────── */
+
+/** Append a decoded message to a conv's cached slice (newest-first, deduped),
+ *  notifying that slice's subscribers via the MemoryStore. Returns nothing. */
+function pushToFeedSlice(line: string, env: HistoryEntry): void {
+  const prev = feedCache.get(line) ?? [];
+  if (prev.some(e => e.id === env.id)) return;
+  feedCache.set(line, [env, ...prev]);
+}
+
+let globalStreamCancel: (() => void) | null = null;
+let globalStreamStarting = false;
+let globalResyncTimer: ReturnType<typeof setInterval> | null = null;
+let globalAppStateSub: { remove: () => void } | null = null;
+/** Conv lines with at least one live subscriber — drives which slices the global
+ *  resync backstop refreshes (we don't resync every conv the inbox has ever
+ *  seen, only the ones currently being viewed). */
+const activeFeedLines = new Set<string>();
+
+/** Resync the currently-subscribed conv slices from the local store. Cheap
+ *  backstop for anything the native stream dropped. */
+async function resyncActiveFeeds(): Promise<void> {
+  for (const line of activeFeedLines) {
+    try {
+      const conv = await convOfLine(line);
+      if (!conv) continue;
+      await conv.sync().catch(() => undefined);
+      const msgs = await conv.messages({ limit: PAGE_SIZE });
+      for (const m of msgs.reverse()) {
+        const env = envelopeOfXmtpMessage(m, line);
+        if (!isMetroControlBody(env.text)) pushToFeedSlice(line, env);
+      }
+    } catch { /* best-effort — next tick retries */ }
+  }
+}
+
+/** Lazily start the single app-wide message stream + its backstops. Idempotent;
+ *  safe to call from every `useXmtpFeed` mount. */
+async function ensureGlobalStream(): Promise<void> {
+  if (globalStreamCancel || globalStreamStarting) return;
+  globalStreamStarting = true;
+  try {
+    const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+    /** A single native subscription for every conversation on this inbox. We map
+     *  each message to the metro line via its conversation/topic id and route it
+     *  into the matching feedCache slice. */
+    await client.conversations.streamAllMessages(async (msg) => {
+      if (!msg) return;
+      const convId = (msg as unknown as { conversationId?: string }).conversationId
+        ?? convIdFromTopicStr((msg as unknown as { topic?: string }).topic);
+      if (!convId) return;
+      const line = lineOfConv(convId);
+      const env = envelopeOfXmtpMessage(msg, line);
+      if (isMetroControlBody(env.text)) return;
+      pushToFeedSlice(line, env);
+    });
+    /** Cancellation is via the SDK's imperative `cancelStreamAllMessages` (the
+     *  stream starter itself resolves to void). */
+    globalStreamCancel = () => {
+      try { client.conversations.cancelStreamAllMessages(); } catch { /* ignore */ }
+    };
+    /** One low-frequency global resync — replaces the old per-conv 5s poll. */
+    if (!globalResyncTimer) globalResyncTimer = setInterval(() => { void resyncActiveFeeds(); }, 30_000);
+    if (!globalAppStateSub) {
+      globalAppStateSub = AppState.addEventListener('change', (state) => {
+        if (state === 'active') void resyncActiveFeeds();
+      });
+    }
+  } catch { /* stream init failed — resync backstop still covers active feeds */ }
+  finally { globalStreamStarting = false; }
+}
+
+/** Tear down the global stream + backstops. Called when the active account
+ *  changes so the next account starts a fresh stream against its own inbox. */
+function teardownGlobalStream(): void {
+  if (globalStreamCancel) { globalStreamCancel(); globalStreamCancel = null; }
+  if (globalResyncTimer) { clearInterval(globalResyncTimer); globalResyncTimer = null; }
+  if (globalAppStateSub) { try { globalAppStateSub.remove(); } catch { /* ignore */ } globalAppStateSub = null; }
+}
+
+/** Extract a conv id from an MLS topic (`/xmtp/mls/1/g-<hexId>/proto`). The RN
+ *  `DecodedMessage` from `streamAllMessages` exposes `topic` but not always
+ *  `conversationId`. */
+function convIdFromTopicStr(topic: string | undefined): string | null {
+  if (!topic) return null;
+  const m = /\/g-([0-9a-fA-F]+)\//.exec(topic);
+  return m ? m[1]! : null;
+}
 
 /** First-page + per-scroll-up page size. Opening a conversation used to decode
  *  100 messages up front (~150–220ms on-device, on the critical path before first
@@ -815,6 +940,10 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
   events: HistoryEntry[]; status: XmtpFeedStatus; error: string | null; inboxId: string;
   loadOlder: () => Promise<void>; hasMore: boolean; loadingOlder: boolean;
 } {
+  /** Re-init the feed when the active account changes (in-place switch) — the
+   *  cached client + feedCache have been swapped out under us, so re-run the
+   *  effect against the new inbox without a hard reload. */
+  const accountEpoch = useAccountEpoch();
   const [events, setEvents] = useState<HistoryEntry[]>(() => (line ? feedCache.get(line) ?? [] : []));
   const [status, setStatus] = useState<XmtpFeedStatus>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -834,60 +963,67 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
 
   useEffect(() => {
     if (!enabled || !line) { setStatus('idle'); return; }
+    const ln = line;
     let cancelled = false;
-    let unsubscribeStream: (() => void) | null = null;
-    let pollTimer: ReturnType<typeof setInterval> | null = null;
-    let appStateSub: { remove: () => void } | null = null;
     /** Seeded from cache → already 'open' (skip the spinner); otherwise show the
      *  loading spinner until the first refresh lands. */
-    setStatus(feedCache.get(line)?.length ? 'open' : 'loading');
+    setStatus(feedCache.get(ln)?.length ? 'open' : 'loading');
     setError(null);
+    setEvents(feedCache.get(ln) ?? []);
     /** Fresh conversation → reset older-page pagination so scroll-up can fetch
      *  history again from the new conv's tail. */
     setHasMore(true);
     setLoadingOlder(false);
     loadingOlderRef.current = false;
 
-    /** Re-sync from the network + merge any new messages into `events`. Called on the
-     *  initial mount, on app foreground, every 5s as a stream-died backstop, and after
-     *  the per-conv streamMessages callback fires. Idempotent — already-seen ids are
-     *  filtered out via the id check. */
-    /** Map decoded messages → envelopes and merge into `events` (dedup by id).
-     *  Drops our private register-push control DMs — they ride the plain-text
-     *  content type but must never render as chat bubbles. */
+    /** Mark this conv as having a live viewer so the single global resync
+     *  backstop keeps its slice fresh, and ensure the one app-wide message
+     *  stream is running. No per-conv stream + no per-conv poll any more — the
+     *  module-level `streamAllMessages` fan-out (see ensureGlobalStream) routes
+     *  inbound messages straight into `feedCache`, which we subscribe to below. */
+    activeFeedLines.add(ln);
+    void ensureGlobalStream();
+
+    /** Subscribe to this conv's feedCache slice. The global stream + the initial
+     *  load + the resync backstop all write through `pushToFeedSlice`/`feedCache`,
+     *  which fires this callback. Mirror the slice into local `events` state. */
+    const unsubscribe = feedCache.subscribe(ln, (slice) => {
+      if (cancelled || !slice) return;
+      setEvents(slice);
+    });
+
+    /** Map decoded messages → envelopes and merge into the conv's feedCache slice
+     *  (dedup by id, newest-first). Drops our private register-push control DMs —
+     *  they ride plain text but must never render as chat bubbles. */
     const applyMessages = (msgs: DecodedMessage[]): void => {
-      const fresh = msgs.map(m => envelopeOfXmtpMessage(m, line))
-        .filter(e => !isMetroControlBody(e.text));
-      setEvents(prev => {
-        if (prev.length === 0) return fresh;
-        const seen = new Set(prev.map(e => e.id));
-        const additions = fresh.filter(e => !seen.has(e.id));
-        if (additions.length === 0) return prev;
-        /** `messages()` returns newest-first; merge new items into the same ordering. */
-        return [...additions, ...prev];
-      });
+      const prev = feedCache.get(ln) ?? [];
+      const seen = new Set(prev.map(e => e.id));
+      const additions = msgs.map(m => envelopeOfXmtpMessage(m, ln))
+        .filter(e => !isMetroControlBody(e.text) && !seen.has(e.id));
+      if (additions.length === 0) {
+        /** Still surface the cached slice on the very first paint. */
+        if (prev.length > 0) setEvents(prev);
+        return;
+      }
+      /** `messages()` returns newest-first; merge new items into the same ordering. */
+      feedCache.set(ln, [...additions, ...prev]);
     };
+
+    /** Local-first open: paint whatever is already in the local MLS db
+     *  IMMEDIATELY, before the network sync, then reconcile with the network. */
     const refresh = async (): Promise<void> => {
       try {
-        const conv = await convOfLine(line);
+        const conv = await convOfLine(ln);
         if (!conv || cancelled) return;
-        /** Local-first open: paint whatever is already in the local MLS db
-         *  IMMEDIATELY, before the network sync. Cold opens were waiting ~0.5s on
-         *  conv.sync() (a network round-trip) before showing anything; reading the
-         *  local store first takes that round-trip off the open-conversation
-         *  critical path. The boot-time syncAll keeps the local store warm.
-         *  Only the first PAGE_SIZE are decoded up front — older pages stream in
-         *  via loadOlder() on scroll-up. */
         const local = await conv.messages({ limit: PAGE_SIZE });
         if (cancelled) return;
         applyMessages(local);
-        /** Then reconcile with the network and merge anything new. */
         await conv.sync().catch(() => undefined);
         if (cancelled) return;
         const synced = await conv.messages({ limit: PAGE_SIZE });
         if (cancelled) return;
         applyMessages(synced);
-      } catch { /* swallow — next tick or AppState change will retry */ }
+      } catch { /* swallow — global resync backstop will retry */ }
     };
 
     (async (): Promise<void> => {
@@ -897,24 +1033,6 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
         setInboxId(client.inboxId);
         await refresh();
         setStatus('open');
-        /** Per-conv streamMessages — primary live source. The RN SDK's native stream can
-         *  silently die on network blips, app backgrounding, or after long idles — we
-         *  paper over that with the AppState + poll backstops below. */
-        try {
-          unsubscribeStream = await (await convOfLine(line))?.streamMessages(async (msg) => {
-            if (cancelled) return;
-            const env = envelopeOfXmtpMessage(msg, line);
-            if (isMetroControlBody(env.text)) return; // suppress control DMs
-            setEvents(prev => prev.some(e => e.id === env.id) ? prev : [env, ...prev]);
-          }) ?? null;
-        } catch { /* stream init failed — backstops will keep the feed fresh */ }
-        /** Foreground-resume: when the user comes back to the app, the stream may have
-         *  died while suspended. Re-sync explicitly. */
-        appStateSub = AppState.addEventListener('change', (state) => {
-          if (state === 'active') void refresh();
-        });
-        /** Slow poll as a last-resort backstop — picks up anything the stream missed. */
-        pollTimer = setInterval(() => { void refresh(); }, 5_000);
       } catch (e) {
         if (cancelled) return;
         setStatus('error');
@@ -923,16 +1041,10 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
     })();
     return (): void => {
       cancelled = true;
-      if (unsubscribeStream) try { unsubscribeStream(); } catch { /* ignore */ }
-      if (pollTimer) clearInterval(pollTimer);
-      if (appStateSub) try { appStateSub.remove(); } catch { /* ignore */ }
+      unsubscribe();
+      activeFeedLines.delete(ln);
     };
-  }, [line, enabled]);
-
-  /** Keep the per-conversation cache in sync so the next open is instant. */
-  useEffect(() => {
-    if (line && events.length > 0) feedCache.set(line, events);
-  }, [line, events]);
+  }, [line, enabled, accountEpoch]);
 
   /** Fetch the next older page on scroll-up. Events are newest-first, so the LAST
    *  loaded event is the oldest; its `sentNs` is the cursor. The RN SDK's
@@ -964,13 +1076,12 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
       const mapped = older
         .map(m => envelopeOfXmtpMessage(m, ln))
         .filter(e => !isMetroControlBody(e.text));
-      setEvents(prev => {
-        const seen = new Set(prev.map(e => e.id));
-        const additions = mapped.filter(e => !seen.has(e.id));
-        if (additions.length === 0) return prev;
-        /** Append older page to the END → keeps the whole list newest-first. */
-        return [...prev, ...additions];
-      });
+      /** Write older pages through feedCache (the single source of truth) so the
+       *  slice subscription keeps them — append to the END to keep newest-first. */
+      const prev = feedCache.get(ln) ?? eventsRef.current;
+      const seen = new Set(prev.map(e => e.id));
+      const additions = mapped.filter(e => !seen.has(e.id));
+      if (additions.length > 0) feedCache.set(ln, [...prev, ...additions]);
       /** Fewer than a full page of NEW older messages came back → end of history. */
       const newCount = mapped.filter(e => !eventsRef.current.some(x => x.id === e.id)).length;
       if (newCount < PAGE_SIZE) { hasMoreRef.current = false; setHasMore(false); }
