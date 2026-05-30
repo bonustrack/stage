@@ -103,7 +103,13 @@ export default function RootLayout(): React.ReactElement {
            *  what gives the parallax-underneath look on Android too (default has none).
            *  Edge gesture only (no `fullScreenGestureEnabled`): swipe-to-reply on bubbles
            *  is a horizontal pan, so a full-screen back gesture could fight it — keeping
-           *  the back-swipe at the left edge avoids that conflict. */
+           *  the back-swipe at the left edge avoids that conflict.
+           *
+           *  ANDROID: `gestureEnabled` here is iOS-only — react-navigation's native-stack
+           *  never wired the interactive swipe-pop on Android (react-navigation#6893,
+           *  #7947). So pushed routes wrap their content in <EdgeSwipeBack> (a JS
+           *  left-edge pan via gesture-handler + reanimated) to get the real swipe-back
+           *  on Android. See components/EdgeSwipeBack.tsx. */
           animation: 'slide_from_right',
           gestureEnabled: true,
           gestureDirection: 'horizontal',

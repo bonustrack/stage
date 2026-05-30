@@ -12,6 +12,7 @@ import { KeyboardStickyView, useReanimatedKeyboardAnimation } from 'react-native
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { MessengerBubble, REACT_PRESETS } from '../../components/MessengerBubble';
+import { EdgeSwipeBack } from '../../components/EdgeSwipeBack';
 import { stripMentionMarkup, attachmentEmojiPreview } from '@metro-labs/client/xmtp/humanize';
 import { usePeerProfiles, getPeerName, getPeerAvatar } from '../../lib/peerProfiles';
 import { useConvMeta } from '../../lib/useConvMeta';
@@ -700,6 +701,7 @@ export default function XmtpConversation(): React.ReactElement {
   }
 
   return (
+    <EdgeSwipeBack onBack={() => router.back()}>
     <RNAnimated.View
       style={{
         flex: 1, backgroundColor: bg, paddingBottom: insets.bottom,
@@ -1019,6 +1021,7 @@ export default function XmtpConversation(): React.ReactElement {
         }}
       />
     </RNAnimated.View>
+    </EdgeSwipeBack>
   );
 }
 
