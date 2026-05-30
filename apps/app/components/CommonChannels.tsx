@@ -67,9 +67,11 @@ export function CommonChannels({ peerAddress, enabled, c }: {
           fall back to the member-count subtitle, exactly as before. */}
       {channels.map(ch => {
         const hasMsg = ch.lastPreview.length > 0;
-        /** Mirror index.tsx renderRow: "You: …" / "<Name>: …" prefix. */
+        /** Mirror index.tsx renderRow: always show the sender's name prefix
+         *  (self-sent included — the daemon/agent shares the inbox, so "You:"
+         *  would hide a legitimate agent reply; show its profile name instead). */
         const preview = hasMsg
-          ? `${ch.lastFromSelf ? 'You' : ch.lastSenderAddress ? (getPeerName(ch.lastSenderAddress) ?? shortAddress(ch.lastSenderAddress)) : ''}${(ch.lastFromSelf || ch.lastSenderAddress) ? ': ' : ''}${ch.lastPreview}`
+          ? `${ch.lastSenderAddress ? `${getPeerName(ch.lastSenderAddress) ?? shortAddress(ch.lastSenderAddress)}: ` : ''}${ch.lastPreview}`
           : null;
         /** Group avatar stamp only once the address profile is resolved (same
          *  guard the channels tab uses to avoid a flash of the wrong stamp). */
