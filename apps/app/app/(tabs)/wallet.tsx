@@ -149,10 +149,11 @@ export default function Wallet(): React.ReactElement {
 
   /** Action button — a PERFECT CIRCLE (fixed 56×56, `borderRadius: 28`) holding
    *  just the icon, with the label BELOW it. The four actions (Send / Receive /
-   *  Top up / Buy) sit side-by-side on a single row, each in an equal-width
-   *  (`flex: 1`) centered column so the circles space out evenly. */
+   *  Swap / Buy) sit LEFT-aligned on a single row, separated by a 24px gap. Each
+   *  column is content-width (no `flex: 1` stretch) so the row starts at the
+   *  16px content edge rather than spreading across the screen. */
   const Btn = ({ icon, label, onPress }: { icon: HeroIconName; label: string; onPress: () => void }): React.ReactElement => (
-    <View style={{ flex: 1, alignItems: 'center', gap: 6 }}>
+    <View style={{ alignItems: 'center', gap: 6 }}>
       <Pressable
         onPress={onPress}
         style={({ pressed }) => ({
@@ -192,8 +193,8 @@ export default function Wallet(): React.ReactElement {
 
       {/* Four action pills — Send / Receive route to existing screens;
           Top up / Buy are placeholders (no on/off-ramp wired yet) and flash a
-          "coming soon" toast. Single row, equal widths. */}
-      <View style={{ flexDirection: 'row', gap: 8, marginHorizontal: 16, marginTop: 12 }}>
+          "coming soon" toast. Single row, LEFT-aligned, 24px gap between buttons. */}
+      <View style={{ flexDirection: 'row', justifyContent: 'flex-start', gap: 24, marginHorizontal: 16, marginTop: 12 }}>
         <Btn icon="send" label="Send" onPress={() => router.push('/wallet/send')} />
         <Btn icon="arrowDown" label="Receive" onPress={() => router.push('/wallet/receive')} />
         <Btn icon="switchHorizontal" label="Swap" onPress={() => flash('Swap — coming soon')} />
