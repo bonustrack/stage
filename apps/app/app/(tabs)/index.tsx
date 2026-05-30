@@ -439,7 +439,11 @@ export default function Messenger(): React.ReactElement {
               if (idx === -1) { needsRefresh = true; return prev; }
               const cur = prev[idx]!;
               const senderAddr = cur.inboxToAddr[msg.senderInboxId ?? ''] ?? null;
-              const newAvatar = senderAddr ?? cur.avatarAddress;
+              /** DM cards are pinned to the PEER's avatar — never the latest
+               *  sender. Otherwise a message from self (or the shared-inbox
+               *  daemon) would flip the card to the local user's own avatar.
+               *  Groups still track the latest sender's stamp. */
+              const newAvatar = cur.peerAddress ?? senderAddr ?? cur.avatarAddress;
               /** Attribute the preview to whoever SENT this message — including a
                *  reaction (its own senderInboxId is the reactor, NOT the peer or
                *  the referenced message's author). Without this the row keeps the
