@@ -121,14 +121,14 @@ export function ProfileScreen({ address, variant }: {
         <View style={{ alignItems: 'flex-start', paddingHorizontal: 16, paddingBottom: 8 }}>
           {/* Wait for the profile so we render the real avatar directly (no
               blockie→real flash); custom avatars resolve via IPFS, not stamp.
-              marginTop -64 (half the 128 avatar) straddles the banner edge; the
+              marginTop -44 (half the 88 avatar) straddles the banner edge; the
               page-bg ring separates the avatar from the cover. */}
           <Avatar
             address={loaded && addr ? addr : null}
             imageUri={loaded ? profile?.avatar : null}
-            size={128}
+            size={88}
             style={{
-              backgroundColor: c.rowBg, marginTop: -64, zIndex: 1,
+              backgroundColor: c.rowBg, marginTop: -44, zIndex: 1,
               borderWidth: 3, borderColor: c.bg,
             }}
             onPress={uri => { if (uri) setViewerUri(uri); }}
