@@ -177,7 +177,7 @@ export default function Wallet(): React.ReactElement {
           the account header (avatar/name/address) and the "TOTAL VALUE ·
           ETHEREUM" label were dropped per review. */}
       <View style={{
-        marginHorizontal: 16, marginTop: 8, paddingHorizontal: 16, paddingVertical: 16,
+        marginHorizontal: 16, marginTop: 8, paddingVertical: 16, alignItems: 'flex-start',
       }}>
         {err ? (
           <Text style={{ color: '#d96868', fontSize: 13, fontFamily: 'Calibre-Medium' }}>
