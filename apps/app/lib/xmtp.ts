@@ -26,6 +26,11 @@ import {
   type Signer,
 } from '@xmtp/react-native-sdk';
 import type { PrivateKeyAccount } from 'viem/accounts';
+import { PollCodec } from './xmtpPollCodec';
+
+/** Shared PollCodec instance — used both in XMTP_CODECS (decode/encode) and by
+ *  xmtpSendPoll (to pass its contentType to the JS-codec send path). */
+const POLL_CODEC = new PollCodec();
 
 /** Codecs the local XMTP client decodes inbound + uses to encode outbound. Without these
  *  the RN SDK's `msg.content()` throws on reaction/reply/attachment payloads and we fall
@@ -46,6 +51,13 @@ const XMTP_CODECS = [
    *  encrypt/decrypt primitives, so no new native dep / dev-client rebuild. */
   new MultiRemoteAttachmentCodec(),
   new GroupUpdatedCodec(),
+  /** Metro poll content type `metro.box/poll:1.0`. Pure-JS JSContentCodec — the
+   *  poll body is UTF-8 JSON bytes inside an EncodedContent, so no native module
+   *  / dev-client rebuild. Required on both encode (xmtpSendPoll) and decode
+   *  (inbound poll bubbles) — without it msg.content() throws and we fall back
+   *  to the "[poll payload]" placeholder. Votes are plain reactions (see
+   *  xmtpVote) and need no extra codec. */
+  POLL_CODEC,
 ];
 import type { HistoryEntry } from './types';
 import {
@@ -54,6 +66,7 @@ import {
   type AccountRecord,
 } from './accounts';
 import { humanizeGroupUpdated, type GroupUpdatedContent } from '@metro-labs/client/xmtp/humanize';
+import { type PollContent, pollFallbackText } from '@metro-labs/client/xmtp/poll';
 import { getWcSign } from './wcSigner';
 import { registerPushWithDaemon, isMetroControlBody } from './push';
 import { MemoryStore, getSecure, setSecure } from './cache';
@@ -601,6 +614,34 @@ export function envelopeOfXmtpMessage(msg: DecodedMessage, line: string): Histor
       payload: { contentType: typeId, reactTo: r.reference, emoji: r.content, removed },
     };
   }
+  if (typeId === 'poll') {
+    /** Decoded PollContent rides on `payload.poll`; `text` is the plain-text
+     *  fallback so non-poll-aware surfaces (search, copy) still read sensibly. */
+    const poll = decoded as PollContent;
+    return {
+      ...base,
+      text: pollFallbackText(poll),
+      payload: { contentType: typeId, poll },
+    };
+  }
+  if (typeId === 'reaction') {
+    const r = decoded as ReactionContent;
+    /** A poll VOTE is a reaction with schema:'custom' whose content is the
+     *  option index. Surface `voteFor` (poll message id) + `optionIndex` so the
+     *  tally helpers can pick votes out without re-deriving from raw reactions,
+     *  and so the channels-list preview doesn't render an index as an emoji. */
+    if (r.schema === 'custom') {
+      const removed = r.action === 'removed';
+      return {
+        ...base,
+        text: `[vote ${r.content}${removed ? ' (removed)' : ''}]`,
+        payload: {
+          contentType: typeId, reactTo: r.reference, emoji: r.content,
+          schema: 'custom', voteFor: r.reference, optionIndex: Number(r.content), removed,
+        },
+      };
+    }
+  }
   if (typeId === 'reply') {
     const r = decoded as ReplyContent;
     /** Inner reply payload is a NativeMessageContent — promote text up to the bubble level
@@ -670,6 +711,33 @@ export async function xmtpReact(
   const conv = await convOfLine(line);
   if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
   const payload: ReactionContent = { reference: messageId, action, content: emoji, schema: 'unicode' };
+  return await conv.send({ reaction: payload });
+}
+
+/** Send a Metro poll (`metro.box/poll:1.0`). The poll is encoded by PollCodec
+ *  into an EncodedContent; we pass the codec's contentType so the SDK routes
+ *  through the JS-codec send path (sendEncodedContent) rather than treating the
+ *  object as a native content shape. Returns the poll's XMTP message id — the
+ *  reference every vote targets. */
+export async function xmtpSendPoll(line: string, poll: PollContent): Promise<string> {
+  const conv = await convOfLine(line);
+  if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
+  return await conv.send(poll, { contentType: POLL_CODEC.contentType });
+}
+
+/** Cast (`added`) or retract (`removed`) a poll vote. A vote is just a reaction
+ *  with `schema:'custom'` whose `content` is the chosen option INDEX and whose
+ *  `reference` is the poll message id — so votes reuse the reaction tally +
+ *  cross-device sync with zero new content type. */
+export async function xmtpVote(
+  line: string, pollMessageId: string, optionIndex: number,
+  action: 'added' | 'removed' = 'added',
+): Promise<string> {
+  const conv = await convOfLine(line);
+  if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
+  const payload: ReactionContent = {
+    reference: pollMessageId, action, content: String(optionIndex), schema: 'custom',
+  };
   return await conv.send({ reaction: payload });
 }
 

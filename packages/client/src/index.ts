@@ -8,5 +8,6 @@
 export * from './types';
 export * from './profile/snapshot';
 export * from './xmtp/humanize';
+export * from './xmtp/poll';
 export * from './embed/detect';
 export * from './stamp/resolve';

@@ -21,9 +21,10 @@ import { HeroIcon } from '../../components/HeroIcon';
 import { Avatar } from '../../components/Avatar';
 import { AppModal } from '../../components/AppModal';
 import {
-  XMTP_USER_PREFIX, lineOfConv, useXmtpFeed, xmtpReact, xmtpReply,
+  XMTP_USER_PREFIX, lineOfConv, useXmtpFeed, xmtpReact, xmtpReply, xmtpVote,
   shortAddress, leaveGroupConv,
 } from '../../lib/xmtp';
+import { votesByPoll as tallyVotes, ownVotes as tallyOwnVotes, type VoteEvent } from '@metro-labs/client/xmtp/poll';
 import { flash } from '../../lib/toast';
 import {
   hasOverlayPermission, isPillAvailable, openConversationAsBubble,
@@ -44,7 +45,10 @@ function hasAttachments(e: HistoryEntry): boolean {
 function reactionsByMessage(events: HistoryEntry[]): Map<string, Map<string, number>> {
   const latest = new Map<string, { ts: string; removed: boolean }>();
   for (const e of events) {
-    const p = e.payload as { reactTo?: string; emoji?: string; removed?: boolean } | undefined;
+    const p = e.payload as { reactTo?: string; emoji?: string; removed?: boolean; schema?: string } | undefined;
+    /** Skip poll votes — they're reactions with schema:'custom' whose content is an
+     *  option index, tallied separately by votesByPoll (not rendered as emoji pills). */
+    if (p?.schema === 'custom') continue;
     if (!p?.reactTo || !p.emoji) continue;
     const k = `${p.reactTo} ${p.emoji} ${e.from}`;
     const cur = latest.get(k);
@@ -67,7 +71,8 @@ function ownReactionsByMessage(events: HistoryEntry[], myUri: string): Map<strin
   const latest = new Map<string, { ts: string; removed: boolean }>();
   for (const e of events) {
     if (e.from !== myUri) continue;
-    const p = e.payload as { reactTo?: string; emoji?: string; removed?: boolean } | undefined;
+    const p = e.payload as { reactTo?: string; emoji?: string; removed?: boolean; schema?: string } | undefined;
+    if (p?.schema === 'custom') continue;
     if (!p?.reactTo || !p.emoji) continue;
     const k = `${p.reactTo} ${p.emoji}`;
     const cur = latest.get(k);
@@ -87,6 +92,49 @@ function ownReactionsByMessage(events: HistoryEntry[], myUri: string): Map<strin
 function isReaction(e: HistoryEntry): boolean {
   const p = e.payload as { reactTo?: string } | undefined;
   return Boolean(p?.reactTo);
+}
+
+/** Adapt the conversation's reaction events into the shared `VoteEvent` shape
+ *  the pure tally helpers consume. Only schema:'custom' reactions are votes. */
+function voteEventsOf(events: HistoryEntry[]): VoteEvent[] {
+  const out: VoteEvent[] = [];
+  for (const e of events) {
+    const p = e.payload as { reactTo?: string; emoji?: string; removed?: boolean; schema?: string } | undefined;
+    if (p?.schema !== 'custom' || !p.reactTo || p.emoji === undefined) continue;
+    out.push({ reference: p.reactTo, content: p.emoji, schema: 'custom', removed: !!p.removed, voter: e.from, ts: e.ts });
+  }
+  return out;
+}
+
+/** Poll message ids → multiSelect flag, derived from the poll bubbles in the feed
+ *  (single-select tallies dedupe differently than multi). */
+function pollsInFeed(events: HistoryEntry[]): Map<string, boolean> {
+  const out = new Map<string, boolean>();
+  for (const e of events) {
+    const p = e.payload as { contentType?: string; poll?: { multiSelect?: boolean } } | undefined;
+    if (p?.contentType === 'poll' && p.poll) out.set(e.id, p.poll.multiSelect === true);
+  }
+  return out;
+}
+
+/** Build `pollMessageId → (optionIndex → Set<voterUri>)` for every poll in the feed. */
+function votesByMessage(events: HistoryEntry[]): Map<string, Map<number, Set<string>>> {
+  const polls = pollsInFeed(events);
+  if (polls.size === 0) return new Map();
+  const voteEvents = voteEventsOf(events);
+  const out = new Map<string, Map<number, Set<string>>>();
+  for (const [pollId, multi] of polls) out.set(pollId, tallyVotes(voteEvents, pollId, multi));
+  return out;
+}
+
+/** Option indices the local user has selected, per poll message id. */
+function ownVotesByMessage(events: HistoryEntry[], myUri: string): Map<string, Set<number>> {
+  const polls = pollsInFeed(events);
+  if (polls.size === 0) return new Map();
+  const voteEvents = voteEventsOf(events);
+  const out = new Map<string, Set<number>>();
+  for (const [pollId, multi] of polls) out.set(pollId, tallyOwnVotes(voteEvents, myUri, pollId, multi));
+  return out;
 }
 
 /** Topnav avatar — 1-1 conversations use the peer's identicon/custom avatar,
@@ -182,6 +230,11 @@ export default function XmtpConversation(): React.ReactElement {
    *  just vanishes) until the live stream echoes the `removed` event back, at which
    *  point `reactions` no longer carries it and we drop it from this map. */
   const [optimisticRemovals, setOptimisticRemovals] = useState<Map<string, string[]>>(new Map());
+  /** Optimistic poll selection: pollMessageId → Set<optionIndex> the local user
+   *  just tapped, applied instantly over the confirmed tally until the live
+   *  stream echoes the vote reaction back (then the memoized `ownVotes` carries
+   *  it and we drop the override). */
+  const [optimisticVotes, setOptimisticVotes] = useState<Map<string, Set<number>>>(new Map());
   /** Conversation metadata via TanStack Query — cached by convId so the topnav
    *  title + avatar render instantly on the second open (groupName: null = not
    *  resolved, '' = no name; isGroup gates the title→/group affordance). */
@@ -234,6 +287,53 @@ export default function XmtpConversation(): React.ReactElement {
   const reactions = useMemo(() => reactionsByMessage(events), [events]);
   /** Emojis the local user currently owns per message — toggles un-react in onReact. */
   const ownReactions = useMemo(() => ownReactionsByMessage(events, myUri), [events, myUri]);
+  /** Poll tallies — confirmed votes per poll message id, and the local user's
+   *  selections (drives the checkmark + result bar). */
+  const votes = useMemo(() => votesByMessage(events), [events]);
+  const ownVotes = useMemo(() => ownVotesByMessage(events, myUri), [events, myUri]);
+  /** Once the confirmed tally matches an optimistic selection (same set of
+   *  indices), drop the override so the bubble reads purely off the live feed. */
+  useEffect(() => {
+    setOptimisticVotes(prev => {
+      if (prev.size === 0) return prev;
+      let changed = false;
+      const next = new Map<string, Set<number>>();
+      for (const [pollId, sel] of prev) {
+        const confirmed = ownVotes.get(pollId) ?? new Set<number>();
+        const same = sel.size === confirmed.size && [...sel].every(i => confirmed.has(i));
+        if (same) { changed = true; continue; }
+        next.set(pollId, sel);
+      }
+      return changed ? next : prev;
+    });
+  }, [ownVotes]);
+  /** Display tallies merge the optimistic selection over the confirmed one so a
+   *  tapped option flips instantly: the local voter is added to / removed from
+   *  the per-option voter sets, and ownVotes reflects the pending choice. */
+  const displayOwnVotes = useMemo(() => {
+    if (optimisticVotes.size === 0) return ownVotes;
+    const merged = new Map(ownVotes);
+    for (const [pollId, sel] of optimisticVotes) merged.set(pollId, sel);
+    return merged;
+  }, [ownVotes, optimisticVotes]);
+  const displayVotes = useMemo(() => {
+    if (optimisticVotes.size === 0) return votes;
+    const merged = new Map<string, Map<number, Set<string>>>();
+    for (const [pollId, tally] of votes) merged.set(pollId, new Map([...tally].map(([i, s]) => [i, new Set(s)])));
+    for (const [pollId, sel] of optimisticVotes) {
+      const confirmedOwn = ownVotes.get(pollId) ?? new Set<number>();
+      let tally = merged.get(pollId);
+      if (!tally) { tally = new Map(); merged.set(pollId, tally); }
+      /** Remove me from options I no longer hold, add me to the pending ones. */
+      for (const idx of confirmedOwn) if (!sel.has(idx)) tally.get(idx)?.delete(myUri);
+      for (const idx of sel) {
+        let s = tally.get(idx);
+        if (!s) { s = new Set(); tally.set(idx, s); }
+        s.add(myUri);
+      }
+    }
+    return merged;
+  }, [votes, optimisticVotes, ownVotes, myUri]);
   /** Once the live stream confirms an optimistic reaction (emoji now present in
    *  `reactions` for that message), drop it from the pending map so the pill flips
    *  from semi-transparent to the solid confirmed pill. */
@@ -324,9 +424,6 @@ export default function XmtpConversation(): React.ReactElement {
     if (!optimistic.length) return;
     const live = optimistic.filter(o => !confirmedOptimisticIds.has(o.id));
     if (live.length !== optimistic.length) {
-      for (const o of optimistic) {
-        if (confirmedOptimisticIds.has(o.id)) console.warn('[opt-send]', 'drop', o.id);
-      }
       setOptimistic(live);
       /** Forget any id mappings for the dropped entries so the map can't grow unbounded. */
       setConfirmedIds(prev => {
@@ -439,6 +536,44 @@ export default function XmtpConversation(): React.ReactElement {
       .catch((e: unknown) => { console.warn('xmtp react failed', e); dropPending(); });
   }, [activeLine, ownReactions, optimisticRemovals]);
 
+  /** Cast/retract a poll vote. Computes the next selection set optimistically
+   *  (single-select = exactly this option or none; multi = toggle), drops it into
+   *  `optimisticVotes` for instant UI, then sends. Single-select switching also
+   *  retracts the previously-held option so the cross-device tally converges
+   *  without relying solely on last-write-wins. */
+  const onVote = useCallback((pollMessageId: string, optionIndex: number, action: 'added' | 'removed') => {
+    const multi = pollsInFeed(events).get(pollMessageId) === true;
+    const current = optimisticVotes.get(pollMessageId)
+      ?? ownVotes.get(pollMessageId)
+      ?? new Set<number>();
+    const next = new Set(current);
+    if (action === 'removed') {
+      next.delete(optionIndex);
+    } else if (multi) {
+      next.add(optionIndex);
+    } else {
+      next.clear();
+      next.add(optionIndex);
+    }
+    setOptimisticVotes(prev => { const m = new Map(prev); m.set(pollMessageId, next); return m; });
+
+    const undo = (): void => setOptimisticVotes(prev => {
+      const m = new Map(prev); m.delete(pollMessageId); return m;
+    });
+    /** Single-select switch: retract every previously-held option that isn't the
+     *  new pick so other clients don't double-count. */
+    if (!multi && action === 'added') {
+      for (const prevIdx of current) {
+        if (prevIdx !== optionIndex) {
+          void xmtpVote(activeLine, pollMessageId, prevIdx, 'removed')
+            .catch((e: unknown) => console.warn('xmtp vote-retract failed', e));
+        }
+      }
+    }
+    void xmtpVote(activeLine, pollMessageId, optionIndex, action)
+      .catch((e: unknown) => { console.warn('xmtp vote failed', e); undo(); });
+  }, [activeLine, events, optimisticVotes, ownVotes]);
+
   /** Leave-group flow — confirm, call the SDK (true leave when available, else
    *  consent-deny hide), then pop back to the conversation list. */
   const onLeaveGroup = useCallback(() => {
@@ -514,7 +649,7 @@ export default function XmtpConversation(): React.ReactElement {
         key={listEpoch}
         ref={listRef}
         data={allBubbles}
-        extraData={[profilesVersion, optimisticReactions, reactions, optimisticRemovals, ownReactions]}
+        extraData={[profilesVersion, optimisticReactions, reactions, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes]}
         inverted
         showsVerticalScrollIndicator={false}
         /** Anchor the bottom-visible item (= newest on inverted) so as new bubbles or the
@@ -522,6 +657,14 @@ export default function XmtpConversation(): React.ReactElement {
         maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
         keyExtractor={e => e.id}
         style={{ flex: 1 }}
+        /** #5 FlatList perf: bubbles are VARIABLE height (text/attachments/
+         *  reactions) so no getItemLayout — but cap the render window + batch
+         *  size + clip offscreen rows so a long thread doesn't mount every
+         *  bubble at once on open. */
+        windowSize={11}
+        initialNumToRender={12}
+        maxToRenderPerBatch={10}
+        removeClippedSubviews
         /** Inverted list: onEndReached fires near the visual TOP (the OLDEST end),
          *  which is exactly when we want to page in older history. loadOlder() reads
          *  the oldest loaded event's ts as a before-cursor and appends the next page
@@ -566,6 +709,9 @@ export default function XmtpConversation(): React.ReactElement {
             replyPreview={item.replyTo ? previewOf(events.find(e => e.id === item.replyTo) ?? item) : undefined}
             /** Tap the quoted slab → jump+highlight the original message. */
             onReplyPreviewPress={item.replyTo ? () => jumpToMessage(item.replyTo as string) : undefined}
+            votes={displayVotes.get(item.id)}
+            ownVotes={displayOwnVotes.get(item.id)}
+            onVote={(idx, action) => onVote(item.id, idx, action)}
             onReact={(emoji) => onReact(item.id, emoji)}
             onReply={() => setReplyTarget(item.id, previewOf(item))}
             onLongPress={() => setMenuFor(item)}
@@ -701,17 +847,16 @@ export default function XmtpConversation(): React.ReactElement {
            *  #3670 / not-yet-rendered rows). */
           if (replyingTo) jumpToMessage(replyingTo.id);
         }}
-        onOptimistic={({ localId, text, attachments, replyTo }) => {
+        onOptimistic={({ localId, text, attachments, replyTo, payload }) => {
           /** Inverted FlatList + `maintainVisibleContentPosition` + prepended optimistic
            *  entry = bubble appears at the visual bottom automatically. */
-          console.warn('[opt-send]', 'add', localId);
           setOptimistic(prev => [{
             id: localId, ts: new Date().toISOString(),
             station: 'xmtp', line: activeLine,
             from: myUri, to: activeLine,
             text: text || undefined,
             ...(replyTo ? { replyTo } : {}),
-            ...(attachments.length ? { payload: { attachments } } : {}),
+            ...(payload ? { payload } : attachments.length ? { payload: { attachments } } : {}),
           } as HistoryEntry, ...prev]);
           /** Always remount so the user lands on their own bubble — `maintainVisibleContentPosition`
            *  anchors the previously-visible content and the new entry falls below the viewport. */

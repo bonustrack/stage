@@ -13,7 +13,9 @@ import * as Location from 'expo-location';
 import { ComposerGradient } from './ComposerGradient';
 import { HeroIcon, type HeroIconName } from './HeroIcon';
 import { Avatar } from './Avatar';
-import { fileUriToBase64, shortAddress, xmtpReply, xmtpSendAttachment, xmtpSendText } from '../lib/xmtp';
+import { fileUriToBase64, shortAddress, xmtpReply, xmtpSendAttachment, xmtpSendText, xmtpSendPoll } from '../lib/xmtp';
+import { AppModal } from './AppModal';
+import { type PollContent, mintPollId, pollFallbackText } from '@metro-labs/client/xmtp/poll';
 
 /** Composer-local representation of a staged attachment. `url` is a `file://` URI in xmtp
  *  mode (the only mode the mobile composer supports now). `id` is a client-side dedupe key. */
@@ -76,7 +78,7 @@ interface Props {
    *  target message + flashes the highlight. No-op when omitted. */
   onReplyPreviewPress?: () => void;
   /** Optimistic-render hook: invoked the moment the user taps send, before the API call. */
-  onOptimistic?: (entry: { localId: string; text: string; attachments: Attachment[]; replyTo?: string }) => void;
+  onOptimistic?: (entry: { localId: string; text: string; attachments: Attachment[]; replyTo?: string; payload?: unknown }) => void;
   /** Fired AFTER the send completes (success OR failure). Lets the parent drop the
    *  optimistic entry instead of waiting for an SSE/stream echo that may never arrive
    *  (XMTP `streamMessages` doesn't always replay self-sends — pending bubbles would stick). */
@@ -108,6 +110,13 @@ export function MessengerComposer({
   /** Rolling mic levels (0..1) for the recording waveform — newest at the end. */
   const [levels, setLevels] = useState<number[]>([]);
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
+  /** Poll-builder sheet state. `pollOpen` toggles the AppModal; the rest is the
+   *  in-progress poll being authored. Options start as two empty rows (min 2). */
+  const [pollOpen, setPollOpen] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState('');
+  const [pollHeader, setPollHeader] = useState('');
+  const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
+  const [pollMulti, setPollMulti] = useState(false);
   /** Recent device photos shown inline in the attach menu (Discord-style). */
   const [recentPhotos, setRecentPhotos] = useState<MediaLibrary.Asset[]>([]);
   /** Composer text input — focused programmatically when a reply target is
@@ -349,6 +358,36 @@ export function MessengerComposer({
     await rec.stopAndUnloadAsync();
     const uri = rec.getURI(); if (!uri) return;
     await upload(uri, 'audio/m4a', `voice-${Date.now()}.m4a`);
+  };
+
+  /** Build + send the in-progress poll, reusing the same optimistic flow as text:
+   *  the optimistic entry carries `payload.poll` so the bubble renders the
+   *  PollView instantly, and the real XMTP message id threads back via onSent so
+   *  the dedup memo confirms it by id (else falls back to the fallback-text match). */
+  const sendPoll = async (): Promise<void> => {
+    const question = pollQuestion.trim();
+    const options = pollOptions.map(o => o.trim()).filter(Boolean);
+    if (!question || options.length < 2) {
+      Alert.alert('Add a question and at least 2 options');
+      return;
+    }
+    const poll: PollContent = {
+      pollId: mintPollId(),
+      question,
+      ...(pollHeader.trim() ? { header: pollHeader.trim() } : {}),
+      options: options.map(label => ({ label })),
+      ...(pollMulti ? { multiSelect: true } : {}),
+    };
+    const localId = `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    onOptimistic?.({ localId, text: pollFallbackText(poll), attachments: [], payload: { contentType: 'poll', poll } });
+    /** Reset + close the builder immediately — the bubble already shows the poll. */
+    setPollOpen(false);
+    setPollQuestion(''); setPollHeader(''); setPollOptions(['', '']); setPollMulti(false);
+    let sendErr: string | undefined;
+    let sentId: string | undefined;
+    try { sentId = await xmtpSendPoll(xmtpLine, poll); }
+    catch (e) { sendErr = (e as Error).message; setErr(sendErr); }
+    finally { onSent?.(localId, sendErr, sentId); }
   };
 
   const send = async (): Promise<void> => {
@@ -728,6 +767,7 @@ export function MessengerComposer({
               ['photo', 'Image', pickImage],
               ['paperClip', 'File', pickFile],
               ['mapPin', 'Location', pickLocation],
+              ['chartBar', 'Poll', async () => setPollOpen(true)],
             ] as const
           ).map(([icon, label, action]) => (
             <Pressable
@@ -747,6 +787,77 @@ export function MessengerComposer({
         </View>
         </View>
       ) : null}
+      {/** Poll-builder sheet — question + optional header + dynamic option rows
+       *   (min 2) + multi-select toggle. Submit mints a pollId and sends via the
+       *   same optimistic flow as text. */}
+      <AppModal visible={pollOpen} onClose={() => setPollOpen(false)} title="New poll">
+        <View style={{ gap: 12, paddingBottom: 8 }}>
+          <TextInput
+            value={pollQuestion}
+            onChangeText={setPollQuestion}
+            placeholder="Question"
+            placeholderTextColor={sub}
+            style={{ color: fg, backgroundColor: inputBg, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 16 }}
+          />
+          <TextInput
+            value={pollHeader}
+            onChangeText={setPollHeader}
+            placeholder="Header (optional, e.g. LUNCH)"
+            placeholderTextColor={sub}
+            maxLength={12}
+            autoCapitalize="characters"
+            style={{ color: fg, backgroundColor: inputBg, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 14 }}
+          />
+          {pollOptions.map((opt, i) => (
+            <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <TextInput
+                value={opt}
+                onChangeText={t => setPollOptions(prev => prev.map((o, j) => (j === i ? t : o)))}
+                placeholder={`Option ${i + 1}`}
+                placeholderTextColor={sub}
+                style={{ flex: 1, color: fg, backgroundColor: inputBg, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 16 }}
+              />
+              {pollOptions.length > 2 ? (
+                <Pressable onPress={() => setPollOptions(prev => prev.filter((_, j) => j !== i))} hitSlop={8}>
+                  <HeroIcon name="x" size={18} color={sub} />
+                </Pressable>
+              ) : null}
+            </View>
+          ))}
+          <Pressable
+            onPress={() => setPollOptions(prev => [...prev, ''])}
+            style={({ pressed }) => ({
+              flexDirection: 'row', alignItems: 'center', gap: 6,
+              paddingVertical: 8, paddingHorizontal: 4, opacity: pressed ? 0.6 : 1,
+            })}
+          >
+            <HeroIcon name="plus" size={16} color={'#c0a06e'} />
+            <Text style={{ color: '#c0a06e', fontSize: 14, fontFamily: 'Calibre-Semibold' }}>Add option</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => setPollMulti(m => !m)}
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 }}
+          >
+            <Text style={{ color: fg, fontSize: 15, fontFamily: 'Calibre-Medium' }}>Allow multiple choices</Text>
+            <View style={{
+              width: 44, height: 26, borderRadius: 999, padding: 3,
+              backgroundColor: pollMulti ? '#c0a06e' : inputBg,
+              alignItems: pollMulti ? 'flex-end' : 'flex-start',
+            }}>
+              <View style={{ width: 20, height: 20, borderRadius: 999, backgroundColor: '#ffffff' }} />
+            </View>
+          </Pressable>
+          <Pressable
+            onPress={() => void sendPoll()}
+            style={({ pressed }) => ({
+              marginTop: 4, alignItems: 'center', paddingVertical: 13, borderRadius: 12,
+              backgroundColor: pressed ? '#a08458' : '#c0a06e',
+            })}
+          >
+            <Text style={{ color: '#000', fontSize: 16, fontFamily: 'Calibre-Semibold' }}>Send poll</Text>
+          </Pressable>
+        </View>
+      </AppModal>
     </View>
   );
 }

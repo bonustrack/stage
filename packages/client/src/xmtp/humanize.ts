@@ -76,6 +76,10 @@ export function previewOfXmtpContent(decoded: unknown, contentTypeId: string | u
     const r = decoded as { content?: string };
     return r.content ?? '👍';
   }
+  if (typeId === 'poll') {
+    const p = decoded as { question?: string };
+    return p.question ? `Poll: ${p.question}` : '[poll]';
+  }
   if (typeId === 'reply') {
     const r = decoded as { content?: { text?: string } | string };
     if (typeof r.content === 'string') return stripMentionMarkup(r.content);
