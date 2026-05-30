@@ -238,15 +238,15 @@ export default function XmtpConversation(): React.ReactElement {
   /** `nonce` bumps on every reply action (even re-tapping the same message) so the
    *  composer's focus effect re-fires and re-opens the keyboard each time — keying
    *  only on the message id deduped repeat replies after a keyboard dismiss. */
-  const [replyingTo, setReplyingTo] = useState<{ id: string; preview: string; nonce: number } | null>(null);
+  const [replyingTo, setReplyingTo] = useState<{ id: string; preview: string; sender?: string | null; nonce: number } | null>(null);
   /** Monotonic reply counter — guarantees a fresh `nonce` on EVERY swipe-to-reply,
    *  even two taps on the same message within the same millisecond (where
    *  `Date.now()` would collide and React would bail on the focus effect, leaving
    *  the keyboard closed on the 2nd+ reply). */
   const replyNonceRef = useRef(0);
-  const setReplyTarget = useCallback((id: string, preview: string) => {
+  const setReplyTarget = useCallback((id: string, preview: string, sender?: string | null) => {
     replyNonceRef.current += 1;
-    setReplyingTo({ id, preview, nonce: replyNonceRef.current });
+    setReplyingTo({ id, preview, sender, nonce: replyNonceRef.current });
   }, []);
   /** Transient highlight on a message we jumped to (by tapping its quoted
    *  reply-preview). Distinct from `replyingTo` so jumping to the original
@@ -774,7 +774,7 @@ export default function XmtpConversation(): React.ReactElement {
             ownVotes={displayOwnVotes.get(item.id)}
             onVote={(idx, action) => onVote(item.id, idx, action)}
             onReact={(emoji) => onReact(item.id, emoji)}
-            onReply={() => setReplyTarget(item.id, previewOf(item))}
+            onReply={() => setReplyTarget(item.id, previewOf(item), senderEthOf(item.from))}
             onOpenMenu={(anchor) => { setMenuAnchor(anchor); setMenuFor(item); }}
             onAnswer={(label) => {
               void xmtpReply(activeLine, item.id, label)
@@ -1004,7 +1004,7 @@ export default function XmtpConversation(): React.ReactElement {
         onClose={() => setMenuFor(null)}
         onReact={emoji => { if (menuFor) onReact(menuFor.id, emoji); setMenuFor(null); }}
         onReply={() => {
-          if (menuFor) setReplyTarget(menuFor.id, previewOf(menuFor));
+          if (menuFor) setReplyTarget(menuFor.id, previewOf(menuFor), senderEthOf(menuFor.from));
           setMenuFor(null);
         }}
         onCopy={() => {

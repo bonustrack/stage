@@ -1,7 +1,7 @@
 /** Floating two-line composer (Claude-mobile-style): textarea on top, [+ / mic / send] below. */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Animated, Image, PanResponder, Pressable, ScrollView, Text, TextInput } from 'react-native';
+import { Alert, Animated, Image, PanResponder, Pressable, ScrollView, StyleSheet, Text, TextInput } from 'react-native';
 import { loadDrafts, getDraft, setDraft } from '../lib/drafts';
 import { Audio } from 'expo-av';
 import * as MediaLibrary from 'expo-media-library';
@@ -13,6 +13,7 @@ import { HeroIcon, type HeroIconName } from './HeroIcon';
 import { Avatar } from './Avatar';
 import { Box, Row, Col } from './layout';
 import { fileUriToBase64, shortAddress, xmtpReply, xmtpSendAttachment, xmtpSendText, xmtpSendPoll } from '../lib/xmtp';
+import { getPeerName } from '../lib/peerProfiles';
 import { AppModal } from './AppModal';
 import { type PollContent, mintPollId, pollFallbackText } from '@metro-labs/client/xmtp/poll';
 
@@ -67,7 +68,7 @@ interface Props {
   mentionCandidates?: { address: string; name: string; cacheBuster?: number }[];
   /** `nonce` (optional) changes on every reply action — even re-replying to the
    *  same message — so the composer re-focuses + re-opens the keyboard each time. */
-  replyingTo?: { id: string; preview: string; nonce?: number };
+  replyingTo?: { id: string; preview: string; sender?: string | null; nonce?: number };
   /** Bump to focus the composer + raise the keyboard WITHOUT setting a reply
    *  target (e.g. opening a DM from the floating pill). Each new value re-fires
    *  the focus effect. */
@@ -567,17 +568,31 @@ export function MessengerComposer({
        *   bleeds to the screen edges instead of leaving un-faded side strips. */}
       <ComposerGradient bg={bg} direction="down" top={-24} height={24} left={-10} right={-10} />
       {replyingTo ? (
-        <Row align="center" gap={8} px={14} pb={6}>
-          {/** Tap the quoted slab → parent scrolls the feed to the target. The
-           *   ✕ stays as its own Pressable so it stays clear-only. */}
+        /** Discord-style reply banner: a circled ✕ (clears the reply) on the left,
+         *  then "Replying to <username>" — username in the accent color. No preview
+         *  of the replied message text (intentional). Sits above the input with a
+         *  top divider, matching the composer's padding. */
+        <Row align="center" gap={10} px={14} py={8} style={{
+          borderTopWidth: StyleSheet.hairlineWidth,
+          borderTopColor: dark ? '#282a2d' : '#e4e4e5',
+        }}>
           <Pressable
-            onPress={onReplyPreviewPress}
-            style={{ flex: 1, borderLeftWidth: 2, borderLeftColor: sub, paddingLeft: 8 }}
+            onPress={onClearReply}
+            hitSlop={8}
+            style={{
+              width: 22, height: 22, borderRadius: 11,
+              alignItems: 'center', justifyContent: 'center',
+              backgroundColor: dark ? '#282a2d' : '#e4e4e5',
+            }}
           >
-            <Text style={{ color: sub, fontSize: 12 , fontFamily: 'Calibre-Medium'}}>Replying to</Text>
-            <Text style={{ color: fg, fontSize: 14, marginTop: 3, fontFamily: 'Calibre-Medium'}} numberOfLines={1}>{replyingTo.preview}</Text>
+            <HeroIcon name="x" size={14} color={dark ? '#9f9fa3' : '#57606a'} />
           </Pressable>
-          <Pressable onPress={onClearReply} hitSlop={6}><HeroIcon name="x" size={16} color={sub} /></Pressable>
+          <Text style={{ fontSize: 14, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
+            <Text style={{ color: sub }}>Replying to </Text>
+            <Text style={{ color: '#c0a06e' }}>
+              {(replyingTo.sender ? getPeerName(replyingTo.sender) : undefined) ?? (replyingTo.sender ? shortAddress(replyingTo.sender) : 'message')}
+            </Text>
+          </Text>
         </Row>
       ) : null}
       {/** @-mention popup — Discord-style, stacked above the composer.
