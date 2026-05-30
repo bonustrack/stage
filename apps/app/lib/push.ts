@@ -96,4 +96,5 @@ export {
   registerPushWithDaemon,
   presentInboundNotification,
   usePushDeepLinks,
+  isDaemonPushRegistered,
 } from './pushRegister';

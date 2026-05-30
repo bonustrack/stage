@@ -120,11 +120,20 @@ class MetroPillModule : Module() {
     // Bubbles are production-usable only on API 30+. API 29 (Q) was dev-flag only.
     if (Build.VERSION.SDK_INT < 30) return false
     val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+    // App-level user toggle: NONE means the user disabled bubbles for the whole
+    // app → nothing we can do. ALL or SELECTED both mean the app may post bubbles
+    // (SELECTED just defers the per-conversation promotion to the user).
     if (nm.bubblePreference == android.app.NotificationManager.BUBBLE_PREFERENCE_NONE) return false
-    val channel = nm.getNotificationChannel(CHANNEL_ID)
-    // Channel may not exist yet (created lazily in postBubble); treat that as
-    // "supported, will be allowed" — canBubble() is re-checked after creation.
-    return channel == null || channel.canBubble()
+    // Make sure OUR channel exists with allowBubbles=true. We DON'T gate on
+    // channel.canBubble() here: canBubble() also folds in the per-conversation
+    // (SELECTED-mode) promotion state, which is false until the user promotes the
+    // first bubble — gating on it would make isBubblesSupported() return false
+    // forever under the default "Selected conversations can bubble" setting (the
+    // exact false-negative we hit). The app-level preference (!= NONE) is the
+    // real capability gate; the OS decides per-conversation promotion when we
+    // actually post the bubble.
+    ensureBubbleChannel()
+    return true
   }
 
   private fun ensureBubbleChannel() {
@@ -132,13 +141,24 @@ class MetroPillModule : Module() {
     val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
     val existing = nm.getNotificationChannel(CHANNEL_ID)
     if (existing != null) {
-      // Channel settings (incl. allowBubbles) are immutable after creation;
-      // only setAllowBubbles on first creation has effect.
+      // allowBubbles is one of the few channel settings an app can keep re-granting
+      // after creation (a capability it owns). If a prior build created this
+      // channel without it, recreate-on-top to flip it on so the bubble we post is
+      // honoured. canBubble() reads the EFFECTIVE state (app pref ∧ channel ∧
+      // conversation), so we can't use it to detect "allowBubbles was never set" —
+      // just re-assert it unconditionally; createNotificationChannel is a no-op
+      // when nothing changed.
+      if (Build.VERSION.SDK_INT >= 30) {
+        existing.setAllowBubbles(true)
+        nm.createNotificationChannel(existing)
+      }
       return
     }
     val channel = android.app.NotificationChannel(
       CHANNEL_ID, "Conversations", android.app.NotificationManager.IMPORTANCE_HIGH,
     )
+    // Conversation-style channel: allow bubbles (API 30+) so the bubble we post
+    // on it is honoured by the system.
     if (Build.VERSION.SDK_INT >= 30) channel.setAllowBubbles(true)
     nm.createNotificationChannel(channel)
   }

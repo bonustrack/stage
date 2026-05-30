@@ -1,4 +1,5 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:tools="http://schemas.android.com/tools">
   <!-- Permissions are also declared by the config plugin (withMetroPill) so they
        land in the merged manifest even if module-manifest merge order changes.
        Declaring them here keeps the module self-describing. -->
@@ -13,5 +14,25 @@
       android:name="box.metro.pill.OverlayService"
       android:exported="false"
       android:foregroundServiceType="microphone" />
+
+    <!-- Custom FCM service: the ONLY MESSAGING_EVENT receiver. Renders avatar
+         data-pushes natively (avatar-left custom RemoteViews) and reflectively
+         forwards every other push to an instance of ExpoFirebaseMessagingService
+         (see MetroFcmService.kt) so existing expo-notifications behaviour is kept. -->
+    <service
+      android:name="box.metro.pill.MetroFcmService"
+      android:exported="false">
+      <intent-filter>
+        <action android:name="com.google.firebase.MESSAGING_EVENT" />
+      </intent-filter>
+    </service>
+
+    <!-- Remove Expo's FCM receiver from the merged manifest so a single
+         data-only push is NOT delivered to two services (which posted two
+         cards). Delegation to Expo for non-avatar pushes is done in-process via
+         reflection, so it does not depend on this manifest receiver. -->
+    <service
+      android:name="expo.modules.notifications.service.ExpoFirebaseMessagingService"
+      tools:node="remove" />
   </application>
 </manifest>

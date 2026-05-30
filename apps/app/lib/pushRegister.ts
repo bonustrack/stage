@@ -225,6 +225,26 @@ export function usePushDeepLinks(): void {
   }, []);
 }
 
+/** True when `account` (lowercased address) has a live push registration with
+ *  the daemon — i.e. `registerPushWithDaemon` succeeded for it within the TTL.
+ *
+ *  Used to gate the foreground JS local notification: if the daemon is pushing
+ *  for this account, its data-push is rendered NATIVELY by MetroFcmService (the
+ *  Telegram-style avatar card) in BOTH foreground and background. That native
+ *  `notify()` does NOT pass through expo-notifications' setNotificationHandler,
+ *  so it can't be suppressed JS-side — meaning if we ALSO post the JS local
+ *  notif we get two cards (the duplicate the user saw). So when the daemon
+ *  covers this account we skip the JS local notif entirely; phone-only accounts
+ *  the daemon has no key for keep getting the JS local notif as their only path. */
+export async function isDaemonPushRegistered(account: string): Promise<boolean> {
+  try {
+    const prev = await AsyncStorage.getItem(lastRegisterKey(account.toLowerCase()));
+    if (!prev) return false;
+    const { token, at } = JSON.parse(prev) as { token?: string; at?: number };
+    return !!token && typeof at === 'number' && Date.now() - at < REGISTER_TTL_MS;
+  } catch { return false; }
+}
+
 /** Present a foreground local notification for an inbound XMTP message (option
  *  b). Called from the global message stream for messages that are NOT our own,
  *  NOT system/silent types, and NOT our own control DMs (the caller filters
