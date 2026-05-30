@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AppState, FlatList, Pressable, RefreshControl,
-  Text, View,
+  Text,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import type { Conversation, DecodedMessage } from '@xmtp/react-native-sdk';

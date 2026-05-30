@@ -1,7 +1,7 @@
 /** Settings tab — wallet-address copy pill + theme switcher + app version. */
 
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, AppState, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, AppState, Pressable, ScrollView, Text } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import Constants from 'expo-constants';
 import { DevSettings } from 'react-native';
