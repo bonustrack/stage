@@ -725,10 +725,9 @@ function MessengerBubbleBase({
         return (
           <Row wrap gap={4} mt={4}>
             {confirmedEntries.map(([emoji, count]) => {
-              /** Tapping/long-pressing a pill the user OWNS toggles their reaction
-               *  off (onReact detects ownership → sends `removed`). Pills they don't
-               *  own stay static. Own pills get a subtle outline to signal they're
-               *  interactive / "mine". */
+              /** Tapping/long-pressing ANY pill toggles that emoji as the user's
+               *  own reaction — onReact handles add-if-not-owned / remove-if-owned.
+               *  Own pills get a subtle outline to signal they're "mine". */
               const mine = !!ownEmojis?.has(emoji);
               const inner = (
                 <>
@@ -742,7 +741,7 @@ function MessengerBubbleBase({
                 borderWidth: mine ? 1 : 0,
                 borderColor: mine ? (dark ? '#7aa2ff' : '#2f6feb') : 'transparent',
               };
-              return mine && onReact ? (
+              return onReact ? (
                 <Pressable
                   key={emoji}
                   onPress={() => onReact(emoji)}
