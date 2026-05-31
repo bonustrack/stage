@@ -896,7 +896,19 @@ const SWARM_UPLOAD_URL = 'https://blob.metro.box/upload';
  *  are fetched straight from any Swarm gateway by reference. The trailing slash is
  *  required (the `/bzz/<ref>/` form returns the exact original bytes; `/bytes`
  *  returns swarm-framed junk). */
-const SWARM_GATEWAY = 'https://api.gateway.ethswarm.org/bzz/';
+const SWARM_GATEWAY = 'https://api.swarmy.cloud/bzz/';
+
+/** Resolve a gateway-agnostic `swarm://<ref>` URL to a concrete HTTPS read URL on
+ *  the default gateway. Stored messages carry `swarm://<ref>` (no gateway baked
+ *  in) so a future gateway swap needs no message rewrite — we pick a real gateway
+ *  only at fetch time. Backward-compat: legacy messages (≤ ec2a2ce) carry a full
+ *  `https://…/bzz/<ref>/` URL; those — and any other non-`swarm://` url — pass
+ *  through unchanged so they still resolve. */
+export function swarmToHttp(url: string): string {
+  if (!url.startsWith('swarm://')) return url;
+  const ref = url.slice('swarm://'.length).replace(/\/+$/, '');
+  return `${SWARM_GATEWAY}${ref}/`;
+}
 
 /** A locally-staged attachment ready to bundle into a multi-remote message.
  *  `fileUri` may be `file://`, `content://` (Android gallery) or `blob:` (web) —
@@ -958,7 +970,10 @@ async function uploadEncryptedToIpfs(encryptedFileUri: string, _filename: string
   const json = await res.json().catch(() => ({})) as { ref?: string; error?: string };
   if (!res.ok || json.error) throw new Error(json.error ?? `Swarm upload failed (${res.status})`);
   if (!json.ref) throw new Error('Swarm proxy returned no reference');
-  return `${SWARM_GATEWAY}${json.ref}/`;
+  /** Store the gateway-agnostic `swarm://<ref>` form in the message. The recipient
+   *  maps it to a concrete gateway at fetch time via `swarmToHttp` — so the
+   *  gateway can be swapped later without rewriting any stored message. */
+  return `swarm://${json.ref}`;
 }
 
 /** Send several attachments as ONE XMTP message using the multi-remote-attachment
@@ -1020,7 +1035,11 @@ export async function resolveRemoteAttachment(info: RemoteAttachmentInfo): Promi
   const tmpName = `xmtp-att-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.bin`;
   const dest = new File(Paths.cache, tmpName);
   if (dest.exists) try { dest.delete(); } catch { /* overwrite below */ }
-  await File.downloadFileAsync(info.url, dest, { idempotent: true });
+  /** The stored url may be gateway-agnostic (`swarm://<ref>`) or a legacy full
+   *  gateway URL. Map it to a concrete HTTPS gateway before the GET — the native
+   *  decrypt only sees ciphertext bytes, so the host doesn't affect decryption
+   *  (secret/salt/nonce come from the message metadata, untouched here). */
+  await File.downloadFileAsync(swarmToHttp(info.url), dest, { idempotent: true });
   const metadata: RemoteAttachmentMetadata = {
     secret: info.secret, salt: info.salt, nonce: info.nonce,
     contentDigest: info.contentDigest, contentLength: info.contentLength,
