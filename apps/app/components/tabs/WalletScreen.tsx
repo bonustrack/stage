@@ -6,7 +6,9 @@
  *  on the left, USD value + amount/symbol on the right. */
 
 import { useEffect, useState } from 'react';
-import { Image, Pressable, ScrollView } from 'react-native';
+import { Image, Pressable } from 'react-native';
+import { ScrollView } from 'react-native-gesture-handler';
+import type { SimultaneousRefs } from '../SwipeTabs';
 import { Text } from '@metro-labs/kit/text';
 import { Title } from '@metro-labs/kit/title';
 import { createPublicClient, http, formatEther, formatUnits, type Hex } from 'viem';
@@ -71,7 +73,7 @@ interface AssetRow {
   logoUrl: string;
 }
 
-export function WalletScreen(): React.ReactElement {
+export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const router = useRouter();
   const { head, sub, bg, border, rowBg: card } = usePalette();
 
@@ -172,7 +174,7 @@ export function WalletScreen(): React.ReactElement {
   );
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: bg }} contentContainerStyle={{ paddingBottom: 24 }}>
+    <ScrollView simultaneousHandlers={panRef} style={{ flex: 1, backgroundColor: bg }} contentContainerStyle={{ paddingBottom: 24 }}>
       <Col px={16} pt={16} pb={8}>
         <Title style={{ color: head, fontSize: 22 }}>Wallet</Title>
       </Col>

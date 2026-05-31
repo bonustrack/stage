@@ -26,9 +26,10 @@
  *  Pure JS (reanimated + gesture-handler, both already installed) → no new native
  *  module; hot-reloads in the existing dev client. */
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { View, useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import type { GestureType } from 'react-native-gesture-handler';
 import Animated, {
   useAnimatedStyle, useSharedValue, withSpring, withTiming, runOnJS,
 } from 'react-native-reanimated';
@@ -39,6 +40,13 @@ import { HomeScreen } from './tabs/HomeScreen';
 import { WalletScreen } from './tabs/WalletScreen';
 import { ProfileTabScreen } from './tabs/ProfileTab';
 import { SettingsScreen } from './tabs/SettingsScreen';
+
+/** The shape accepted by an inner scrollable's `simultaneousHandlers` prop and
+ *  by each tab body's `panRef` prop. It's a React ref to the pager Pan gesture
+ *  — handed DOWN so each page's primary FlatList/ScrollView declares an explicit
+ *  SIMULTANEOUS relation with the horizontal pager Pan (RNGH composition), rather
+ *  than the two gestures racing through the old heuristic activeOffset arbitration. */
+export type SimultaneousRefs = React.RefObject<GestureType | undefined>;
 
 /** Tab order = the order declared in `app/(tabs)/_layout.tsx`. Index 0..3. */
 const TAB_ORDER = ['index', 'wallet', 'profile', 'settings'] as const;
@@ -57,7 +65,7 @@ const TAB_HREF: Record<TabName, Href> = {
  *  at once is fine (only four screens) and lets each keep its own scroll/state
  *  while the neighbour is already rendered during the drag — so it's visible the
  *  instant the finger moves. */
-const PAGES: Record<TabName, () => React.ReactElement> = {
+const PAGES: Record<TabName, (props: { panRef?: SimultaneousRefs }) => React.ReactElement> = {
   index: HomeScreen,
   wallet: WalletScreen,
   profile: ProfileTabScreen,
@@ -86,6 +94,14 @@ export function TabsPager(): React.ReactElement {
   const { width } = useWindowDimensions();
 
   const routeIndex = indexOfPathname(pathname);
+
+  /** Stable ref to the pager Pan, handed down to every page so its primary
+   *  scrollable declares a SIMULTANEOUS relation with this Pan. With the relation
+   *  explicit, RNGH stops heuristically arbitrating the two: the Pan's own
+   *  direction gate (`activeOffsetX` arms it, `failOffsetY` kills it) deterministically
+   *  decides who drives — horizontal → Pan switches tabs (even when the drag starts
+   *  over the list / after scroll momentum), vertical → the scrollable scrolls. */
+  const panRef = useRef<GestureType | undefined>(undefined) as SimultaneousRefs;
 
   /** `tx` = strip translateX. Settled position is `-index*W`. */
   const tx = useSharedValue(-routeIndex * width);
@@ -135,6 +151,10 @@ export function TabsPager(): React.ReactElement {
   }, [routeIndex, width]);
 
   const pan = Gesture.Pan()
+    /** Give the Pan a ref so each page's scrollable can name it in
+     *  `simultaneousHandlers` — the explicit relation that removes the
+     *  non-deterministic race with the inner scroll. */
+    .withRef(panRef)
     /** Arm only on a clearly-horizontal drag; vertical-first wins → scroll.
      *  Lower X threshold than the Y fail-band so a horizontal-first flick arms
      *  reliably on the FIRST try, while any vertical intent still scrolls. */
@@ -185,7 +205,7 @@ export function TabsPager(): React.ReactElement {
           const Body = PAGES[name];
           return (
             <View key={name} style={{ width }}>
-              <Body />
+              <Body panRef={panRef} />
             </View>
           );
         })}

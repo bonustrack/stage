@@ -7,7 +7,9 @@
  *  Presentational pieces live in ./ProfileScreen.parts to keep this under cap. */
 
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView } from 'react-native';
+import { Pressable } from 'react-native';
+import { ScrollView } from 'react-native-gesture-handler';
+import type { SimultaneousRefs } from './SwipeTabs';
 import { Text } from '@metro-labs/kit/text';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -51,9 +53,12 @@ function useSelfAddress(): string {
   return self;
 }
 
-export function ProfileScreen({ address, variant }: {
+export function ProfileScreen({ address, variant, panRef }: {
   address: string;
   variant: ProfileScreenVariant;
+  /** When mounted inside the swipe pager (Profile tab), the horizontal pager
+   *  Pan ref so this screen's ScrollView relates to it simultaneously. */
+  panRef?: SimultaneousRefs;
 }): React.ReactElement {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -122,7 +127,7 @@ export function ProfileScreen({ address, variant }: {
         ) : null}
       </Box>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
+      <ScrollView simultaneousHandlers={panRef} contentContainerStyle={{ paddingBottom: 32 }}>
         {/* Full-bleed cover banner (input-bg). For the `route` variant the cover
             extends up behind the floating header/status bar (height += insets.top)
             so the colour bleeds to y=0. Its bottom edge is FLAT — the black content

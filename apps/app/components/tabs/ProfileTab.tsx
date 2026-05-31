@@ -11,8 +11,9 @@
 import { useEffect, useState } from 'react';
 import { getCachedXmtpClient, getOrCreateXmtpClient } from '../../lib/xmtp';
 import { ProfileScreen } from '../ProfileScreen';
+import type { SimultaneousRefs } from '../SwipeTabs';
 
-export function ProfileTabScreen(): React.ReactElement {
+export function ProfileTabScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const [address, setAddress] = useState<string>(
     getCachedXmtpClient()?.publicIdentity.identifier ?? '',
   );
@@ -30,6 +31,6 @@ export function ProfileTabScreen(): React.ReactElement {
   }, [address]);
 
   return (
-      <ProfileScreen address={address} variant="tab" />
+      <ProfileScreen address={address} variant="tab" panRef={panRef} />
   );
 }

@@ -1,7 +1,9 @@
 /** Settings tab — wallet-address copy pill + theme switcher + app version. */
 
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, AppState, Pressable, ScrollView } from 'react-native';
+import { Alert, AppState, Pressable } from 'react-native';
+import { ScrollView } from 'react-native-gesture-handler';
+import type { SimultaneousRefs } from '../SwipeTabs';
 import { Text } from '@metro-labs/kit/text';
 import { Title } from '@metro-labs/kit/title';
 import * as Clipboard from 'expo-clipboard';
@@ -31,7 +33,7 @@ const THEME_OPTIONS: { value: ThemePreference; label: string; icon: HeroIconName
   { value: 'dark',   label: 'Dark',   icon: 'moon' },
 ];
 
-export function SettingsScreen(): React.ReactElement {
+export function SettingsScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const pref = useThemePreference();
   const { fg, head, sub, bg, border, rowBg } = usePalette();
@@ -80,7 +82,7 @@ export function SettingsScreen(): React.ReactElement {
   }, [accountEpoch]);
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: bg }} contentContainerStyle={{ paddingBottom: 24 }}>
+    <ScrollView simultaneousHandlers={panRef} style={{ flex: 1, backgroundColor: bg }} contentContainerStyle={{ paddingBottom: 24 }}>
       <Col px={16} pt={16} pb={8}>
         <Title dark={dark} style={{ color: head, fontSize: 22 }}>Settings</Title>
       </Col>

@@ -5,7 +5,9 @@
  *  once per conv during the initial list build and cached in component state. */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AppState, FlatList, Pressable } from 'react-native';
+import { AppState, Pressable } from 'react-native';
+import { FlatList } from 'react-native-gesture-handler';
+import type { SimultaneousRefs } from '../SwipeTabs';
 import { Text } from '@metro-labs/kit/text';
 import { useRouter } from 'expo-router';
 import type { Conversation, DecodedMessage } from '@xmtp/react-native-sdk';
@@ -193,7 +195,7 @@ async function summarize(conv: Conversation, selfInboxId: string): Promise<Row> 
  *  can reach in to clear unread on mount without an import cycle. The Row[]
  *  shape is a superset of CachedRow — write through directly. */
 
-export function HomeScreen(): React.ReactElement {
+export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
   const { fg, head, sub, bg, border } = usePalette();
@@ -607,6 +609,7 @@ export function HomeScreen(): React.ReactElement {
         </Pressable>
       </Row>
       <FlatList
+        simultaneousHandlers={panRef}
         data={sortedRows}
         ListHeaderComponent={
           requestCount > 0 ? (
