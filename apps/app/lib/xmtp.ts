@@ -296,89 +296,33 @@ export async function setLastReadNs(convId: string, ns: number): Promise<void> {
   await setSecure(LAST_READ_PREFIX + convId, String(ns));
 }
 
-/** Cross-device read/unread marker — synced across the inbox's installations via
- *  XMTP's per-conversation consent state.
- *
- *  XMTP V3's `client.preferences` does NOT expose an arbitrary synced key/value
- *  store; the only writable, per-conversation primitive that auto-syncs across a
- *  user's installations is conversation *consent* (`allowed | denied | unknown`,
- *  streamed via `streamConsent`, pulled via `preferences.sync()`). We repurpose
- *  the `allowed`↔`unknown` axis as a synced read flag — never `denied`, which
- *  would hide/block the conversation:
- *    - `allowed`  → read
- *    - `unknown`  → unread (also the default for a brand-new inbound conv, which
- *                   already shows a badge from its timestamp count, so the
- *                   semantics line up)
- *  The numeric unread *count* stays per-device (lastReadNs); the binary
- *  read/unread state is what propagates cross-device. */
+/** Read/unread state lives ENTIRELY on the per-device `lastReadNs` marker above
+ *  — it is no longer coupled to XMTP consent. A conversation is "unread" when its
+ *  latest inbound message's `sentNs` is newer than the stored `lastReadNs`, and an
+ *  explicit "mark unread" simply rewinds `lastReadNs` to 0. Consent
+ *  (`allowed | denied | unknown`) is now free to mean inbox / message-request /
+ *  blocked. */
 export type XmtpConsent = 'allowed' | 'denied' | 'unknown';
 
-/** Read a conversation's synced consent state. 'unknown' on any failure so a
- *  fresh/unsynced conv reads as not-explicitly-read. */
-export async function getConvConsent(convId: string): Promise<XmtpConsent> {
-  try {
-    const conv = await convOfLine(lineOfConv(convId));
-    if (!conv) return 'unknown';
-    return (await conv.consentState()) as XmtpConsent;
-  } catch { return 'unknown'; }
-}
-
-/** Mark a conversation read across devices: consent → 'allowed' (synced) and
- *  bump the local lastReadNs so the per-device count clears too. */
+/** Mark a conversation read: bump the local `lastReadNs` past every message so
+ *  the per-device unread count clears. No consent write. */
 export async function markConvReadSynced(convId: string): Promise<void> {
   await setLastReadNs(convId, Date.now() * 1_000_000);
-  try {
-    const conv = await convOfLine(lineOfConv(convId));
-    if (conv && (await conv.consentState()) !== 'allowed') {
-      await conv.updateConsent('allowed');
-    }
-  } catch { /* best-effort — local lastReadNs still cleared the badge */ }
 }
 
-/** Mark a conversation unread across devices: consent → 'unknown' (synced) and
- *  rewind the local lastReadNs so this device shows the badge immediately. */
+/** Mark a conversation unread: rewind `lastReadNs` to 0 so the badge surfaces
+ *  again on the next recount. No consent write. */
 export async function markConvUnreadSynced(convId: string): Promise<void> {
-  /** Rewind just before the latest message so the timestamp count surfaces
-   *  ≥1 unread here without depending on the consent stream round-trip. */
   await setLastReadNs(convId, 0);
-  try {
-    const conv = await convOfLine(lineOfConv(convId));
-    if (conv && (await conv.consentState()) !== 'unknown') {
-      await conv.updateConsent('unknown');
-    }
-  } catch { /* best-effort */ }
 }
 
-/** Pull synced preference/consent updates from the network into the local DB.
- *  Call on app foreground so consent changes made on another device land here. */
+/** Pull synced preference updates from the network into the local DB. Call on
+ *  app foreground so preference changes made on another device land here. */
 export async function syncPreferences(): Promise<void> {
   try {
     const client = getCachedXmtpClient();
     await (client as unknown as { preferences?: { sync?: () => Promise<unknown> } })?.preferences?.sync?.();
   } catch { /* best-effort */ }
-}
-
-/** Subscribe to cross-device consent changes. Fires `(convId, state)` whenever a
- *  conversation's consent flips on any of the inbox's installations. Returns an
- *  unsubscribe fn. Used by the Channels list to reconcile read/unread live. */
-export function streamConvConsent(
-  onChange: (convId: string, state: XmtpConsent) => void,
-): () => void {
-  const client = getCachedXmtpClient();
-  const prefs = (client as unknown as {
-    preferences?: {
-      streamConsent?: (
-        cb: (c: { value: string; entryType: string; state: XmtpConsent }) => Promise<void>,
-      ) => Promise<void>;
-      cancelStreamConsent?: () => void;
-    };
-  })?.preferences;
-  if (!prefs?.streamConsent) return () => undefined;
-  void prefs.streamConsent(async (c) => {
-    /** Only conversation-scoped consent records carry an unread flag. */
-    if (c.entryType === 'conversation_id') onChange(c.value, c.state);
-  }).catch(() => undefined);
-  return () => { try { prefs.cancelStreamConsent?.(); } catch { /* ignore */ } };
 }
 
 /** Pretty-print a wallet address as `0x1234…abcd`. */

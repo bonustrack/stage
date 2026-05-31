@@ -16,14 +16,14 @@ import {
   getOrCreateXmtpClient, resetXmtpClient,
   peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap,
   shortAddress,
-  getLastReadNs, getConvConsent, syncPreferences, streamConvConsent,
+  getLastReadNs, syncPreferences,
   primeInboxEthCache, subscribeAllMessages,
 } from '../../lib/xmtp';
 import { resetAccount } from '../../lib/wallet';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import {
   getCachedRows, hydrateCachedRows, setCachedRows, subscribeCachedRows,
-  markConvUnread, markConvRead, applyConsentToRows,
+  markConvUnread, markConvRead,
 } from '../../lib/channelsCache';
 import { usePeerProfiles, getPeerAvatarCb, getPeerName, isPeerResolved } from '../../lib/peerProfiles';
 import { isMetroControlBody } from '../../lib/push';
@@ -107,8 +107,8 @@ async function summarize(conv: Conversation, selfInboxId: string): Promise<Row> 
   /** #2: pull only the latest message for the row PREVIEW — we no longer recompute
    *  the unread count from 50 msgs per row (that's now maintained incrementally
    *  from the live stream deltas). A previously-read conv seeds unreadCount=0; the
-   *  global stream bumps it on each new inbound. Cross-device "marked unread" still
-   *  surfaces via consent below. We fetch 2 so a trailing control DM doesn't blank
+   *  global stream bumps it on each new inbound. "Marked unread" still surfaces
+   *  via the lastReadNs marker below. We fetch 2 so a trailing control DM doesn't blank
    *  the preview. */
   const recent: DecodedMessage[] = await conv.messages({ limit: 2 }).catch(() => []);
   const msgs = recent;
@@ -165,15 +165,11 @@ async function summarize(conv: Conversation, selfInboxId: string): Promise<Row> 
     if (m.senderInboxId === selfInboxId) continue;
     unreadCount += 1;
   }
-  /** Cross-device read flag: consent 'unknown' = unread on the inbox level. We
-   *  only let it FORCE a badge when this device has NO local read marker yet
-   *  (`lastReadNs === 0`) and there's an inbound last message. Once a device has
-   *  read the conv (lastReadNs > 0) we trust the local timestamp count and only
-   *  surface an *explicit* "mark unread" (which resets lastReadNs to 0). This
-   *  avoids phantom badges on conversations read before this feature existed,
-   *  while still propagating a genuine cross-device "mark unread". */
-  const consent = await getConvConsent(conv.id).catch(() => 'unknown' as const);
-  const markedUnread = consent === 'unknown' && lastReadNs === 0
+  /** Explicit "mark unread" flag, derived purely from the per-device
+   *  `lastReadNs`: a rewound marker (`lastReadNs === 0`) with an inbound last
+   *  message and no timestamp-counted unreads means the user (or a never-read
+   *  fresh conv) wants a badge. No XMTP consent involved. */
+  const markedUnread = lastReadNs === 0
     && unreadCount === 0 && !!last && !lastFromSelf;
   return {
     convId: conv.id,
@@ -272,7 +268,6 @@ export default function Messenger(): React.ReactElement {
     let cancelled = false;
     let cancelConvStream: (() => void) | null = null;
     let cancelMsgStream: (() => void) | null = null;
-    let cancelConsentStream: (() => void) | null = null;
     let pollTimer: ReturnType<typeof setInterval> | null = null;
     let appStateSub: { remove: () => void } | null = null;
 
@@ -436,20 +431,12 @@ export default function Messenger(): React.ReactElement {
           });
         } catch { /* message stream init failed — preview will lag */ }
 
-        /** Cross-device read/unread: pull synced consent from the network, then
-         *  subscribe to live consent changes so a "mark unread" on another device
-         *  reconciles the badge here without a full refetch. */
+        /** Pull synced preferences from the network on init. Read/unread is now
+         *  per-device (lastReadNs), so there's no consent stream to subscribe to. */
         await syncPreferences();
-        try {
-          cancelConsentStream = streamConvConsent((convId, state) => {
-            if (cancelled) return;
-            applyConsentToRows(convId, state === 'unknown');
-          });
-        } catch { /* consent stream unavailable — refresh backstop covers it */ }
 
         /** Foreground resume — the native streams often die while the app is
-         *  backgrounded; re-sync on every active transition. Also pull synced
-         *  consent so cross-device read state lands on resume. */
+         *  backgrounded; re-sync on every active transition. */
         appStateSub = AppState.addEventListener('change', (state) => {
           if (state === 'active') { void syncPreferences(); void refresh(); }
         });
@@ -469,7 +456,6 @@ export default function Messenger(): React.ReactElement {
       refreshFromNetworkRef.current = null;
       if (cancelConvStream) try { cancelConvStream(); } catch { /* ignore */ }
       if (cancelMsgStream) try { cancelMsgStream(); } catch { /* ignore */ }
-      if (cancelConsentStream) try { cancelConsentStream(); } catch { /* ignore */ }
       if (appStateSub) try { appStateSub.remove(); } catch { /* ignore */ }
       if (pollTimer) clearInterval(pollTimer);
     };
@@ -619,7 +605,7 @@ export default function Messenger(): React.ReactElement {
 }
 
 /** Bottom action sheet shown on long-pressing a channel row. v1 exposes a
- *  single toggle: Mark as read / Mark as unread (cross-device via XMTP consent). */
+ *  single toggle: Mark as read / Mark as unread (per-device via lastReadNs). */
 function RowActionSheet({
   target, dark, pinned, onClose, onToggleUnread, onTogglePin,
 }: {
