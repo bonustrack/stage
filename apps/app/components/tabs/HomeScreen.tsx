@@ -5,7 +5,7 @@
  *  once per conv during the initial list build and cached in component state. */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AppState, Pressable } from 'react-native';
+import { AppState, Pressable, Vibration } from 'react-native';
 import { FlatList } from 'react-native-gesture-handler';
 import type { SimultaneousRefs } from '../SwipeTabs';
 import { Text } from '@metro-labs/kit/text';
@@ -540,11 +540,16 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
         pinned={isPinned(item.convId)}
         hasDraft={hasDraft(item.convId)}
         onPress={() => router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } })}
-        onLongPress={() => setRowMenu({
-          convId: item.convId,
-          title: item.peerAddress ? (getPeerName(item.peerAddress) ?? item.title) : item.title,
-          isUnread: item.unreadCount > 0 || !!item.markedUnread,
-        })}
+        onLongPress={() => {
+          /** Tiny haptic-style buzz when the long-press opens the row menu.
+           *  RN core Vibration (no native dep / rebuild needed); ~10ms = a subtle tap. */
+          Vibration.vibrate(10);
+          setRowMenu({
+            convId: item.convId,
+            title: item.peerAddress ? (getPeerName(item.peerAddress) ?? item.title) : item.title,
+            isUnread: item.unreadCount > 0 || !!item.markedUnread,
+          });
+        }}
       />
     );
     /** Versions drive re-creation so name/avatar/pin/draft resolutions repaint.
