@@ -5,7 +5,6 @@ import { Alert, Animated, Image, PanResponder, Pressable, ScrollView, StyleSheet
 import { Text } from '@metro-labs/kit/text';
 import { loadDrafts, getDraft, setDraft } from '../lib/drafts';
 import { Audio } from 'expo-av';
-import * as MediaLibrary from 'expo-media-library';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
@@ -141,8 +140,6 @@ export function MessengerComposer({
   const [txTo, setTxTo] = useState('');
   const [txAmount, setTxAmount] = useState('');
   const [txNote, setTxNote] = useState('');
-  /** Recent device photos shown inline in the attach menu (Discord-style). */
-  const [recentPhotos, setRecentPhotos] = useState<MediaLibrary.Asset[]>([]);
   /** Composer text input — focused programmatically when a reply target is
    *  set so the keyboard pops straight up (the user is clearly about to type). */
   const inputRef = useRef<TextInput>(null);
@@ -265,51 +262,6 @@ export function MessengerComposer({
     for (const a of r.assets) {
       await upload(a.uri, a.mimeType ?? 'image/jpeg', a.fileName ?? undefined);
     }
-  };
-
-  /** Load recent device photos when the attach menu opens, so they show inline
-   *  (Discord-style) without leaving the app. Permission is requested on first
-   *  open. We always ask for the FULL `photo` access (`granularPermissions:
-   *  ['photo']` is configured at the plugin layer in app.json) — accepting the
-   *  partial / "selected photos" grant would dump us into Android's system
-   *  picker and defeat the whole inline-strip feature. */
-  useEffect(() => {
-    if (!attachMenuOpen) return;
-    let cancelled = false;
-    void (async (): Promise<void> => {
-      try {
-        /** Request the full-photo permission explicitly via `granularPermissions`
-         *  — without this Android 14+ defaults to the limited "user-selected"
-         *  grant, which makes `getAssetsAsync` return only the picked subset. */
-        const perm = await MediaLibrary.requestPermissionsAsync(false, ['photo']);
-        if (!perm.granted || cancelled) return;
-        const res = await MediaLibrary.getAssetsAsync({
-          first: 24, mediaType: 'photo', sortBy: [['creationTime', false]],
-        });
-        if (!cancelled) setRecentPhotos(res.assets);
-      } catch { /* no gallery — the picker buttons below still work */ }
-    })();
-    return () => { cancelled = true; };
-  }, [attachMenuOpen]);
-
-  /** Tap a recent photo → stage it as a pending attachment.
-   *
-   *  We try `getAssetInfoAsync` first because it resolves a `file://` URI
-   *  (more upload-friendly than `content://` on Android). But that call
-   *  reads EXIF, which requires `ACCESS_MEDIA_LOCATION` — we deliberately
-   *  configured the plugin with `isAccessMediaLocationEnabled: false` so
-   *  users don't have to grant location for picture-sharing, so it throws.
-   *  Catch that, fall back to `asset.uri` (RN's `fetch` handles `content://`
-   *  on Android via the network module). */
-  const pickRecent = async (asset: MediaLibrary.Asset): Promise<void> => {
-    setAttachMenuOpen(false);
-    let uri = asset.uri;
-    try {
-      const info = await MediaLibrary.getAssetInfoAsync(asset);
-      uri = info.localUri ?? asset.uri;
-    } catch { /* ACCESS_MEDIA_LOCATION missing — fall through with asset.uri */ }
-    try { await upload(uri, 'image/jpeg', asset.filename); }
-    catch (e) { setErr((e as Error).message); }
   };
 
   const pickFile = async (): Promise<void> => {
@@ -880,22 +832,18 @@ export function MessengerComposer({
           )}
         </Row>
       </Col>
-      {/** Attach menu — boxes below the composer with icon + label per source.
-       *   Tap the + button in the composer row to toggle. */}
+      {/** Attach menu — a horizontally-scrollable row of circular icon+label
+       *   buttons (same pattern as the Wallet Send/Receive + user-profile
+       *   Message actions: a 56×56 circle holding the icon, label beneath).
+       *   Tap the + button in the composer row to toggle. Add more actions to
+       *   the array below and the row just scrolls — no wrapping. */}
       {attachMenuOpen ? (
-        <Col pt={10} gap={10}>
-          {/** Inline recent-photos strip (Discord-style) — tap to attach without
-           *   leaving the app. Hidden until the gallery loads / permission granted. */}
-          {recentPhotos.length > 0 ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-              {recentPhotos.map(a => (
-                <Pressable key={a.id} onPress={() => void pickRecent(a)}>
-                  <Image source={{ uri: a.uri }} style={{ width: 76, height: 76, borderRadius: 10, backgroundColor: chipBg }} />
-                </Pressable>
-              ))}
-            </ScrollView>
-          ) : null}
-        <Row gap={10}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ gap: 16, paddingHorizontal: 6, paddingTop: 12, paddingBottom: 2 }}
+        >
           {(
             [
               ['photo', 'Image', pickImage],
@@ -906,22 +854,22 @@ export function MessengerComposer({
               ['wallet', 'Payment', async () => openTx()],
             ] as const
           ).map(([icon, label, action]) => (
-            <Pressable
-              key={label}
-              onPress={() => { setAttachMenuOpen(false); void action(); }}
-              style={({ pressed }) => ({
-                flex: 1, alignItems: 'center', justifyContent: 'center',
-                paddingVertical: 14, borderRadius: 12,
-                backgroundColor: pressed ? chipBg : inputBg,
-                borderWidth: 1, borderColor: chipBg,
-              })}
-            >
-              <Icon name={icon} size={22} color={fg} />
-              <Text style={{ color: fg, fontSize: 13, marginTop: 6, fontFamily: 'Calibre-Medium' }}>{label}</Text>
-            </Pressable>
+            <Col key={label} align="center" gap={6}>
+              <Pressable
+                onPress={() => { setAttachMenuOpen(false); void action(); }}
+                style={({ pressed }) => ({
+                  width: 56, height: 56, borderRadius: 28,
+                  alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: pressed ? chipBg : inputBg,
+                  borderWidth: 1, borderColor: chipBg,
+                })}
+              >
+                <Icon name={icon} size={26} color={head} />
+              </Pressable>
+              <Text style={{ color: head, fontSize: 14, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{label}</Text>
+            </Col>
           ))}
-        </Row>
-        </Col>
+        </ScrollView>
       ) : null}
       {/** Poll-builder sheet — question + optional header + dynamic option rows
        *   (min 2) + multi-select toggle. Submit mints a pollId and sends via the
