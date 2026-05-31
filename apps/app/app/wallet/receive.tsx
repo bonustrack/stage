@@ -15,6 +15,7 @@ import QRCode from 'react-native-qrcode-svg';
 import { getOrCreateXmtpClient } from '../../lib/xmtp';
 import { usePalette } from '../../lib/theme';
 import { HeroIcon } from '../../components/HeroIcon';
+import { SwipeBack } from '../../components/SwipeBack';
 import { flash } from '../../lib/toast';
 
 export default function WalletReceive(): React.ReactElement {
@@ -42,6 +43,7 @@ export default function WalletReceive(): React.ReactElement {
   };
 
   return (
+    <SwipeBack>
     <Box style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
       <Box style={{
         flexDirection: 'row', alignItems: 'center', gap: 8,
@@ -94,5 +96,6 @@ export default function WalletReceive(): React.ReactElement {
         </Text>
       </ScrollView>
     </Box>
+    </SwipeBack>
   );
 }

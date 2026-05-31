@@ -17,6 +17,7 @@ import { usePeerProfiles, getPeerName, getPeerAvatarCb } from '../lib/peerProfil
 import { usePalette } from '../lib/theme';
 import { getCachedRows } from '../lib/channelsCache';
 import { HeroIcon } from '../components/HeroIcon';
+import { SwipeBack } from '../components/SwipeBack';
 import { Avatar } from '../components/Avatar';
 
 /** Cheap pre-flight — accept any *.eth (or longer multi-label) as ENS-resolvable. */
@@ -108,6 +109,7 @@ export default function Search(): React.ReactElement {
   };
 
   return (
+    <SwipeBack>
     <Box style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
       {/* Topnav: back + title + input. */}
       <Box style={{
@@ -222,5 +224,6 @@ export default function Search(): React.ReactElement {
         ) : null}
       </ScrollView>
     </Box>
+    </SwipeBack>
   );
 }

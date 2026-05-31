@@ -21,6 +21,7 @@ import { usePeerProfiles, getPeerAvatar, getPeerAvatarCb } from '../../lib/peerP
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { HeroIcon } from '../../components/HeroIcon';
 import { Avatar } from '../../components/Avatar';
+import { SwipeBack } from '../../components/SwipeBack';
 import { ImageViewer } from '../../components/ImageViewer';
 import { AppModal } from '../../components/AppModal';
 
@@ -289,6 +290,7 @@ export default function GroupDetail(): React.ReactElement {
   };
 
   return (
+    <SwipeBack>
     <Box style={{ flex: 1, backgroundColor: bg }}>
       <Box style={{
         height: 44 + insets.top, paddingTop: insets.top, paddingHorizontal: 14,
@@ -557,5 +559,6 @@ export default function GroupDetail(): React.ReactElement {
         onClose={() => setViewerOpen(false)}
       />
     </Box>
+    </SwipeBack>
   );
 }
