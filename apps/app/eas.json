@@ -21,6 +21,18 @@
     },
     "production": {
       "autoIncrement": true
+    },
+    "development-prod": {
+      "extends": "development",
+      "env": { "APP_VARIANT": "prod" }
+    },
+    "preview-prod": {
+      "extends": "preview",
+      "env": { "APP_VARIANT": "prod" }
+    },
+    "production-prod": {
+      "extends": "production",
+      "env": { "APP_VARIANT": "prod" }
     }
   },
   "submit": {

@@ -1,0 +1,170 @@
+// @ts-check
+/**
+ * Expo app config — TWO variants that install side-by-side on one device.
+ *
+ * Variant is selected by the APP_VARIANT env var:
+ *   APP_VARIANT=prod   → "Stage"  / stage://  / stage.box  / box.stage  ids
+ *   (unset / anything) → "Metro"  / metro://  / metro.box  / box.metro.monitor (dev, default)
+ *
+ * Only NATIVE config differs between variants (app name, scheme, bundle id /
+ * package, associated domains, intent filters, Firebase file). The runtime
+ * deep-link parser (lib/deepLinks.ts) is already scheme-agnostic — it parses
+ * whatever custom scheme the OS hands it — so stage:// links work with no JS
+ * change. Push-tap navigation (lib/pushRegister.ts) routes by convId in the
+ * notification `data`, not by URL scheme, so it's variant-agnostic too.
+ *
+ * NOTE: these are native-build-time settings. Switching variant requires a NEW
+ * native build (EAS or local); it has no effect on a running dev client or the
+ * current installed bundle.
+ */
+
+// ─── Prod display name — ONE-LINE change if the user wants "State" instead. ───
+const PROD_NAME = 'Stage';
+// ──────────────────────────────────────────────────────────────────────────
+
+const IS_PROD = process.env.APP_VARIANT === 'prod';
+
+/** Per-variant native identity. Dev ids are UNCHANGED from the original
+ *  app.json so existing installs/builds keep working. Prod mirrors dev's
+ *  reverse-DNS-of-host structure: metro.box→box.metro.monitor, stage.box→box.stage. */
+const variant = IS_PROD
+  ? {
+      name: PROD_NAME,
+      slug: 'metro', // EAS project slug is fixed (same Expo project / projectId).
+      scheme: 'stage',
+      host: 'stage.box',
+      bundleId: 'box.stage',
+      androidPackage: 'box.stage',
+      // Prod Firebase file — MUST be added before a prod Android build will
+      // succeed. See report: prod google-services.json is still MISSING.
+      googleServicesFile: './google-services.prod.json',
+    }
+  : {
+      name: 'Metro',
+      slug: 'metro',
+      scheme: 'metro',
+      host: 'metro.box',
+      bundleId: 'box.metro.monitor',
+      androidPackage: 'box.metro.monitor',
+      googleServicesFile: './google-services.json',
+    };
+
+/** @type {import('@expo/config-types').ExpoConfig} */
+const config = {
+  name: variant.name,
+  slug: variant.slug,
+  scheme: variant.scheme,
+  version: '0.1.0',
+  orientation: 'portrait',
+  icon: './assets/icon.png',
+  userInterfaceStyle: 'automatic',
+  newArchEnabled: true,
+  splash: {
+    image: './assets/splash-icon.png',
+    resizeMode: 'contain',
+    backgroundColor: '#0f1115',
+  },
+  ios: {
+    supportsTablet: true,
+    bundleIdentifier: variant.bundleId,
+    associatedDomains: [`applinks:${variant.host}`],
+  },
+  android: {
+    package: variant.androidPackage,
+    adaptiveIcon: {
+      foregroundImage: './assets/adaptive-icon.png',
+      backgroundColor: '#0f1115',
+    },
+    edgeToEdgeEnabled: true,
+    androidStatusBar: {
+      barStyle: 'light-content',
+      translucent: true,
+    },
+    predictiveBackGestureEnabled: false,
+    softwareKeyboardLayoutMode: 'resize',
+    googleServicesFile: variant.googleServicesFile,
+    allowBackup: false,
+    intentFilters: [
+      {
+        action: 'VIEW',
+        autoVerify: true,
+        data: [{ scheme: 'https', host: variant.host }],
+        category: ['BROWSABLE', 'DEFAULT'],
+      },
+      {
+        action: 'VIEW',
+        data: [{ scheme: variant.scheme }],
+        category: ['BROWSABLE', 'DEFAULT'],
+      },
+    ],
+  },
+  web: {
+    favicon: './assets/favicon.png',
+  },
+  plugins: [
+    'expo-router',
+    'expo-secure-store',
+    'expo-font',
+    [
+      'expo-notifications',
+      {
+        icon: './assets/notification-icon.png',
+        color: '#ffffff',
+      },
+    ],
+    [
+      'expo-image-picker',
+      {
+        photosPermission: `Allow ${variant.name} to choose images to send in the messenger.`,
+        cameraPermission: `Allow ${variant.name} to take photos to send in the messenger.`,
+      },
+    ],
+    [
+      'expo-av',
+      {
+        microphonePermission: `Allow ${variant.name} to record voice messages.`,
+      },
+    ],
+    [
+      'expo-location',
+      {
+        locationAlwaysAndWhenInUsePermission: `Allow ${variant.name} to share your current location in chat.`,
+      },
+    ],
+    [
+      'expo-media-library',
+      {
+        photosPermission: `Allow ${variant.name} to show your recent photos in the message composer.`,
+        savePhotosPermission: `Allow ${variant.name} to save photos.`,
+        isAccessMediaLocationEnabled: false,
+        granularPermissions: ['photo'],
+      },
+    ],
+    [
+      'expo-build-properties',
+      {
+        android: {
+          minSdkVersion: 30,
+          compileSdkVersion: 36,
+          targetSdkVersion: 36,
+        },
+      },
+    ],
+    './plugins/withMetroPill',
+  ],
+  notification: {
+    icon: './assets/notification-icon.png',
+    color: '#ffffff',
+    iosDisplayInForeground: true,
+    androidMode: 'default',
+  },
+  extra: {
+    router: {},
+    eas: {
+      projectId: '1707f2db-c2b8-4c91-9341-27b1d57d355f',
+    },
+  },
+  owner: 'bonustrack',
+};
+
+module.exports = { expo: config };
