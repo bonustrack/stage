@@ -153,6 +153,19 @@ export default function RootLayout(): React.ReactElement {
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: dark ? '#0e0f10' : '#ffffff' },
+          /** AUTHORITATIVE status-bar icon color under Android edge-to-edge
+           *  (`edgeToEdgeEnabled: true`, targetSdk 36). expo-status-bar's
+           *  `<StatusBar style>` / `setStatusBarStyle` pass through to RN's
+           *  native StatusBar, but react-native-screens' native-stack OWNS the
+           *  window status-bar trait: on every screen mount it drives
+           *  `WindowInsetsControllerCompat.isAppearanceLightStatusBars` from this
+           *  per-screen option (see ScreenWindowTraits.kt `setStyle`), clobbering
+           *  any global JS StatusBar call — which is why the runtime expo-status-bar
+           *  fix kept reverting to black icons on navigation. Setting it here is the
+           *  reliable path: rn-screens semantics are 'light' = light (white) icons,
+           *  matching `barStyle`. It's a JS option → native trait, so it hot-reloads
+           *  on the dev client (no APK needed). */
+          statusBarStyle: barStyle,
           stackAnimation: 'none',
           goBackGesture: 'swipeRight',
           screenEdgeGesture: false,
