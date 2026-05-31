@@ -18,6 +18,7 @@ import {
   shortAddress,
   getLastReadNs, syncPreferences,
   primeInboxEthCache, subscribeAllMessages,
+  listRequestConvs, streamConvConsent, syncConsent,
 } from '../../lib/xmtp';
 import { resetAccount } from '../../lib/wallet';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
@@ -35,7 +36,7 @@ import { previewOfXmtpContent } from '@metro-labs/client/xmtp/humanize';
 import { Spinner } from '../../components/Spinner';
 import { Avatar } from '../../components/Avatar';
 import { ChannelRow } from '../../components/ChannelRow';
-import { Col, Row } from '../../components/layout';
+import { Box, Col, Row } from '../../components/layout';
 import { AppModal } from '../../components/AppModal';
 import { loadPinnedIds, isPinned, togglePin, subscribePins } from '../../lib/pins';
 
@@ -227,6 +228,9 @@ export default function Messenger(): React.ReactElement {
   const [pinned, setPinned] = useState<Set<string>>(new Set());
   /** Active account's own address → topnav avatar. */
   const [myAddress, setMyAddress] = useState<string | null>(null);
+  /** Count of pending message requests ('unknown' consent convs). Drives the
+   *  "Requests (N)" entry at the top of the list; hidden when 0. */
+  const [requestCount, setRequestCount] = useState<number>(0);
   useEffect(() => {
     void loadPinnedIds().then(setPinned);
     /** On toggle the cache is already updated; re-read it (resolves instantly
@@ -268,6 +272,7 @@ export default function Messenger(): React.ReactElement {
     let cancelled = false;
     let cancelConvStream: (() => void) | null = null;
     let cancelMsgStream: (() => void) | null = null;
+    let cancelConsentStream: (() => void) | null = null;
     let pollTimer: ReturnType<typeof setInterval> | null = null;
     let appStateSub: { remove: () => void } | null = null;
 
@@ -295,6 +300,15 @@ export default function Messenger(): React.ReactElement {
         const client = await getOrCreateXmtpClient('production');
         const selfInboxId = client.inboxId;
 
+        /** Recount pending message requests ('unknown' consent). Cheap — only
+         *  reads the local conv list (synced separately by listRequestConvs). */
+        const refreshRequestCount = async (): Promise<void> => {
+          try {
+            const reqs = await listRequestConvs();
+            if (!cancelled) setRequestCount(reqs.length);
+          } catch { /* swallow */ }
+        };
+
         /** Reusable refresh that any backstop (AppState resume, slow poll,
          *  pull-to-refresh, unknown-conv stream hit) can call to re-sync +
          *  re-summarise the full list. */
@@ -302,7 +316,11 @@ export default function Messenger(): React.ReactElement {
           if (cancelled) return;
           try {
             await client.conversations.syncAllConversations(['allowed', 'unknown']);
-            const convs = await client.conversations.list(undefined, undefined, ['allowed', 'unknown']);
+            /** Main inbox = only ACCEPTED convs ('allowed'). The 'unknown'
+             *  convs are pending message requests, surfaced separately via the
+             *  Requests entry (count refreshed alongside). */
+            const convs = await client.conversations.list(undefined, undefined, ['allowed']);
+            void refreshRequestCount();
             /** #3 BATCH inbox resolution: collect every member inbox id across all
              *  convs in parallel, then resolve the uncached ones in ONE
              *  inboxStates(true, [...]) call so per-row summarise hits the cache
@@ -330,6 +348,11 @@ export default function Messenger(): React.ReactElement {
         try {
           cancelConvStream = await client.conversations.stream(async (conv) => {
             if (cancelled || !conv) return;
+            /** A streamed conv we haven't accepted yet ('unknown') is a message
+             *  request — surface it in the Requests count, not the inbox. */
+            const cs = await (conv as unknown as { consentState: () => Promise<string> })
+              .consentState().catch(() => 'allowed');
+            if (cs !== 'allowed') { void refreshRequestCount(); return; }
             const r = await summarize(conv, selfInboxId);
             setRows(prev => {
               const next = prev ? [r, ...prev.filter(x => x.convId !== r.convId)] : [r];
@@ -434,11 +457,28 @@ export default function Messenger(): React.ReactElement {
         /** Pull synced preferences from the network on init. Read/unread is now
          *  per-device (lastReadNs), so there's no consent stream to subscribe to. */
         await syncPreferences();
+        await syncConsent();
+
+        /** Live-reconcile when a conv is accepted/blocked (here or on another
+         *  device): re-pull consent, then re-summarise the inbox + recount
+         *  requests so an accepted request appears + the badge drops. */
+        try {
+          cancelConsentStream = streamConvConsent(() => {
+            void (async (): Promise<void> => {
+              await syncConsent();
+              void refresh();
+              void refreshRequestCount();
+            })();
+          });
+        } catch { /* stream init failed — AppState resume backstops it */ }
 
         /** Foreground resume — the native streams often die while the app is
          *  backgrounded; re-sync on every active transition. */
         appStateSub = AppState.addEventListener('change', (state) => {
-          if (state === 'active') { void syncPreferences(); void refresh(); }
+          if (state === 'active') {
+            void syncPreferences(); void syncConsent();
+            void refresh(); void refreshRequestCount();
+          }
         });
 
         /** Slow poll as a last-resort backstop. Catches anything the stream
@@ -456,6 +496,7 @@ export default function Messenger(): React.ReactElement {
       refreshFromNetworkRef.current = null;
       if (cancelConvStream) try { cancelConvStream(); } catch { /* ignore */ }
       if (cancelMsgStream) try { cancelMsgStream(); } catch { /* ignore */ }
+      if (cancelConsentStream) try { cancelConsentStream(); } catch { /* ignore */ }
       if (appStateSub) try { appStateSub.remove(); } catch { /* ignore */ }
       if (pollTimer) clearInterval(pollTimer);
     };
@@ -564,7 +605,35 @@ export default function Messenger(): React.ReactElement {
       </Row>
       <FlatList
         data={sortedRows}
-        extraData={listExtraData}
+        ListHeaderComponent={
+          requestCount > 0 ? (
+            <Pressable
+              onPress={() => router.push('/xmtp/requests')}
+              style={({ pressed }) => ({
+                flexDirection: 'row', alignItems: 'center', gap: 12,
+                paddingHorizontal: 16, paddingVertical: 16,
+                borderBottomWidth: 1, borderBottomColor: border,
+                backgroundColor: pressed ? (dark ? '#1a1a1c' : '#f2f2f4') : 'transparent',
+              })}
+            >
+              <Box radius={20} bg={border} align="center" justify="center" style={{ width: 40, height: 40 }}>
+                <HeroIcon name="envelope" size={20} color={head} />
+              </Box>
+              <Col flex={1}>
+                <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Medium' }}>
+                  Message requests
+                </Text>
+                <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+                  {requestCount} pending
+                </Text>
+              </Col>
+              <Box px={9} py={3} radius={999} bg={dark ? '#3a3a3c' : '#e4e4e8'}>
+                <Text style={{ color: head, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{requestCount}</Text>
+              </Box>
+            </Pressable>
+          ) : null
+        }
+        extraData={[listExtraData, requestCount]}
         keyExtractor={r => r.convId}
         getItemLayout={getRowLayout}
         windowSize={11}
