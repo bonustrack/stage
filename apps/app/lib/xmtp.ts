@@ -958,7 +958,7 @@ async function materializeFileUri(src: string): Promise<string> {
  *  gateway URL `https://api.gateway.ethswarm.org/bzz/<ref>/` — reads never touch
  *  the daemon. The blob is already client-side encrypted, so the public reference
  *  only ever exposes ciphertext. */
-async function uploadEncryptedToIpfs(encryptedFileUri: string, _filename: string): Promise<string> {
+async function uploadEncryptedToIpfs(encryptedFileUri: string, filename: string): Promise<string> {
   /** Read the encrypted bytes off disk; `fetch(file://)` gives us a Blob we can
    *  ship as a raw binary body (the proxy reads `req.arrayBuffer()`). */
   const blob = await (await fetch(encryptedFileUri)).blob();
@@ -971,7 +971,7 @@ async function uploadEncryptedToIpfs(encryptedFileUri: string, _filename: string
   /** swarmy enforces a ~1MB body cap → 413. Surface a clear, actionable message
    *  instead of a raw 502/"Swarm upload failed". */
   if (res.status === 413 || json.status === 413) {
-    throw new Error('Image too large to send (max ~1MB). Try a smaller photo.');
+    throw new Error(`"${filename}" is too large to send (max ~1MB). Try a smaller file.`);
   }
   if (!res.ok || json.error) throw new Error(json.error ?? `Swarm upload failed (${res.status})`);
   if (!json.ref) throw new Error('Swarm proxy returned no reference');

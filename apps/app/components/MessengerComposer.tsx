@@ -486,19 +486,24 @@ export function MessengerComposer({
         if (sendingReplyTo) sentId = await xmtpReply(xmtpLine, sendingReplyTo, body);
         else sentId = await xmtpSendText(xmtpLine, body);
       }
-      /** Partition the staged attachments. IMAGES go out as a SINGLE
-       *  `multiRemoteAttachment` message (encrypted on-device, ciphertext
-       *  uploaded to pineapple.fyi IPFS, bundled into one envelope) — so N pics
-       *  land as one gallery bubble and there's no ~1 MB inline cap. NON-image
-       *  attachments still go via the per-file INLINE StaticAttachment path,
-       *  because pineapple.fyi 415s non-image ciphertext. A single image also
-       *  rides the multi path (one-item gallery renders fine). */
-      const imageAtts = sendingAttachments.filter((a) => mimeOf(a.mime, a.name ?? a.url).startsWith('image/'));
-      const otherAtts = sendingAttachments.filter((a) => !mimeOf(a.mime, a.name ?? a.url).startsWith('image/'));
-      if (imageAtts.length > 0) {
+      /** Send ALL staged "+"-menu attachments (images AND files, mixed, in
+       *  staged order) as a SINGLE `multiRemoteAttachment` message. Each file is
+       *  encrypted on-device, its ciphertext uploaded to the swarmy proxy
+       *  (content-agnostic — any mime), and bundled into one envelope. So a photo
+       *  + a PDF land as ONE bubble. MultiRemoteAttachment carries filename +
+       *  mimeType per attachment, so a recipient renders the image as a thumbnail
+       *  and the PDF as a tappable file chip. The per-file ~1 MB swarmy cap
+       *  surfaces as a clean 413 error from uploadEncryptedToIpfs.
+       *
+       *  VOICE/audio recordings are EXCLUDED — they keep their own standalone
+       *  inline send path (recorder/waveform flow). Only image + file kinds get
+       *  folded into the multi bundle. */
+      const multiAtts = sendingAttachments.filter((a) => a.kind !== 'audio');
+      const audioAtts = sendingAttachments.filter((a) => a.kind === 'audio');
+      if (multiAtts.length > 0) {
         const multiId = await xmtpSendMultiRemoteAttachment(
           xmtpLine,
-          imageAtts.map((a) => ({
+          multiAtts.map((a) => ({
             fileUri: a.url,
             mimeType: mimeOf(a.mime, a.name ?? a.url),
             filename: a.name ?? a.id,
@@ -508,7 +513,9 @@ export function MessengerComposer({
          *  the attachments, so its real-id twin is the multi-attachment message. */
         if (!sentId) sentId = multiId;
       }
-      for (const a of otherAtts) {
+      /** Voice/audio keeps the per-file INLINE StaticAttachment path (its own
+       *  message, as before). */
+      for (const a of audioAtts) {
         const mimeType = mimeOf(a.mime, a.name ?? a.url);
         const filename = a.name ?? a.id;
         const dataB64 = await fileUriToBase64(a.url);
