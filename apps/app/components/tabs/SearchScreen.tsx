@@ -23,7 +23,7 @@
  *
  *  Pure JS, no new native module; lives in the dev client. */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, TextInput } from 'react-native';
 import { FlatList } from 'react-native-gesture-handler';
 import { Text } from '@metro-labs/kit/text';

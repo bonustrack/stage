@@ -27,7 +27,8 @@
  *  module; hot-reloads in the existing dev client. */
 
 import { useEffect, useRef } from 'react';
-import { View, useWindowDimensions } from 'react-native';
+import { useWindowDimensions } from 'react-native';
+import { Box } from './layout';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import type { GestureType } from 'react-native-gesture-handler';
 import Animated, {
@@ -155,7 +156,6 @@ export function TabsPager({ drawerProgress }: { drawerProgress?: SharedValue<num
       // Rotation only — re-anchor without animation.
       tx.value = -routeIndex * width;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [routeIndex, width]);
 
   const pan = Gesture.Pan()
@@ -226,9 +226,9 @@ export function TabsPager({ drawerProgress }: { drawerProgress?: SharedValue<num
         {TAB_ORDER.map((name) => {
           const Body = PAGES[name];
           return (
-            <View key={name} style={{ width }}>
+            <Box key={name} style={{ width }}>
               <Body panRef={panRef} />
-            </View>
+            </Box>
           );
         })}
       </Animated.View>

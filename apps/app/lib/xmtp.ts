@@ -579,8 +579,13 @@ export function streamConvConsent(cb: () => void): () => void {
   let canceller: (() => void) | null = null;
   let cancelled = false;
   void prefs.streamConsent(() => cb()).then(sub => {
-    if (cancelled) { try { (sub as { end?: () => void }).end?.() ?? (sub as () => void)?.(); } catch { /* ignore */ } return; }
-    canceller = () => { try { (sub as { end?: () => void }).end?.() ?? (sub as () => void)?.(); } catch { /* ignore */ } };
+    const stop = () => {
+      const end = (sub as { end?: () => void }).end;
+      if (typeof end === 'function') end.call(sub);
+      else if (typeof sub === 'function') (sub as () => void)();
+    };
+    if (cancelled) { try { stop(); } catch { /* ignore */ } return; }
+    canceller = () => { try { stop(); } catch { /* ignore */ } };
   }).catch(() => undefined);
   return () => { cancelled = true; canceller?.(); };
 }

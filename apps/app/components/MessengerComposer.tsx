@@ -85,7 +85,6 @@ interface Props {
   onClearReply?: () => void;
   /** Tap on the "Replying to …" preview — parent scrolls the feed to the
    *  target message + flashes the highlight. No-op when omitted. */
-  onReplyPreviewPress?: () => void;
   /** Optimistic-render hook: invoked the moment the user taps send, before the API call. */
   onOptimistic?: (entry: { localId: string; text: string; attachments: Attachment[]; replyTo?: string; payload?: unknown }) => void;
   /** Fired AFTER the send completes (success OR failure). Lets the parent drop the
@@ -95,7 +94,7 @@ interface Props {
 }
 
 export function MessengerComposer({
-  dark, xmtpLine, mentionCandidates, replyingTo, autoFocusNonce, onClearReply, onReplyPreviewPress, onOptimistic, onSent,
+  dark, xmtpLine, mentionCandidates, replyingTo, autoFocusNonce, onClearReply, onOptimistic, onSent,
 }: Props): React.ReactElement {
   const fg = dark ? '#9f9fa3' : '#57606a';
   const head = dark ? '#ffffff' : '#000000';

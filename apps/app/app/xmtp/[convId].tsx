@@ -2,7 +2,7 @@
  *  local XMTP client directly; no daemon hop. */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated as RNAnimated, AppState, Dimensions, Modal, Pressable, ScrollView, Share, View } from 'react-native';
+import { Animated as RNAnimated, AppState, Dimensions, Modal, Pressable, ScrollView, Share } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 /** RNGH's gesture-aware FlatList (drop-in for RN's): its scroll runs through a
  *  native RNGH handler, so under GestureDetectorProvider it COMPOSES with the
@@ -665,7 +665,8 @@ export default function XmtpConversation(): React.ReactElement {
           if (!td) throw new Error('Malformed typed-data request');
           /** viem/wagmi inject the EIP712Domain entry themselves from `domain`;
            *  a duplicate in `types` makes them reject the request. Strip it. */
-          const { EIP712Domain: _drop, ...types } = (td.types ?? {}) as Record<string, unknown>;
+          const types = { ...((td.types ?? {}) as Record<string, unknown>) };
+          delete types.EIP712Domain;
           signature = local
             ? await local.signTypedData({
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1061,14 +1062,6 @@ export default function XmtpConversation(): React.ReactElement {
         replyingTo={replyingTo ?? undefined}
         autoFocusNonce={autoFocusNonce}
         onClearReply={() => setReplyingTo(null)}
-        onReplyPreviewPress={() => {
-          /** Tapping the composer's "Replying to …" slab jumps the feed to the
-           *  target bubble + flashes its highlight, sharing the same best-effort
-           *  scroll path as tapping a quoted preview in a bubble (guarded
-           *  `scrollToIndex` + `onScrollToIndexFailed` no-op for reanimated
-           *  #3670 / not-yet-rendered rows). */
-          if (replyingTo) jumpToMessage(replyingTo.id);
-        }}
         onOptimistic={({ localId, text, attachments, replyTo, payload }) => {
           /** Inverted FlatList + `maintainVisibleContentPosition` + prepended optimistic
            *  entry = bubble appears at the visual bottom automatically. */
@@ -1226,7 +1219,7 @@ function BubbleActionMenu({
       >
         {/** Strip + dropdown as one absolute column. The dropdown sits directly
           *  below the strip's REAL height + a literal GAP spacer — no stripH math. */}
-        <View
+        <Box
           style={{
             position: 'absolute', left: 12, right: 12, top: stripTop,
             alignItems: 'flex-start',
@@ -1234,7 +1227,7 @@ function BubbleActionMenu({
           pointerEvents="box-none"
         >
           {/** Emoji reaction strip — rounded pill floating above the message. */}
-          <View style={{
+          <Box style={{
             flexDirection: 'row', alignItems: 'center', gap: 4,
             backgroundColor: stripBg, borderRadius: 999,
             paddingHorizontal: 10, paddingVertical: 6,
@@ -1269,13 +1262,13 @@ function BubbleActionMenu({
                 </Pressable>
               </>
             )}
-          </View>
+          </Box>
 
           {/** Literal gap — the ONLY vertical space between strip and dropdown. */}
-          <View style={{ height: GAP }} pointerEvents="none" />
+          <Box style={{ height: GAP }} pointerEvents="none" />
 
           {/** Action dropdown — rounded card directly below the strip. */}
-          <View
+          <Box
             style={{
               minWidth: 220, maxWidth: 320,
               backgroundColor: cardBg, borderRadius: 14, paddingVertical: 4, overflow: 'hidden',
@@ -1283,12 +1276,12 @@ function BubbleActionMenu({
             }}
           >
             <ActionRow icon="reply" label="Reply" onPress={onReply} />
-            {target?.text ? <View style={{ height: 1, backgroundColor: divider, marginLeft: 16 }} /> : null}
+            {target?.text ? <Box style={{ height: 1, backgroundColor: divider, marginLeft: 16 }} /> : null}
             {target?.text ? <ActionRow icon="copy" label="Copy" onPress={onCopy} /> : null}
-            <View style={{ height: 1, backgroundColor: divider, marginLeft: 16 }} />
+            <Box style={{ height: 1, backgroundColor: divider, marginLeft: 16 }} />
             <ActionRow icon="send" label="Share link" onPress={onShareLink} />
-          </View>
-        </View>
+          </Box>
+        </Box>
       </Pressable>
     </Modal>
   );

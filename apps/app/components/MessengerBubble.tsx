@@ -2,7 +2,9 @@
  *  no colored bubble even for the local user's own messages. */
 
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, TextInput, View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, TextInput } from 'react-native';
+// eslint-disable-next-line no-restricted-imports -- type-only: rowRef measureInWindow() ref typing
+import type { View } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, runOnJS } from 'react-native-reanimated';
@@ -697,7 +699,7 @@ function TxRequestCard({ req, dark, sub, paying, onPay }: {
     ? `${call.metadata.amount} ${call.metadata.currency ?? 'ETH'}`
     : eth ? `${eth} ETH` : undefined;
   return (
-    <View style={{
+    <Box style={{
       alignSelf: 'stretch', gap: 8, marginTop: 8, padding: 12, borderRadius: 14,
       borderWidth: 1, borderColor: '#c0a06e',
       backgroundColor: dark ? 'rgba(192,160,110,0.10)' : 'rgba(192,160,110,0.10)',
@@ -731,21 +733,21 @@ function TxRequestCard({ req, dark, sub, paying, onPay }: {
           style={{ marginTop: 2 }}
         />
       ) : null}
-    </View>
+    </Box>
   );
 }
 
 /** TxReceiptCard — a confirmed payment. Shows the amount (when the metadata
  *  carried it) and a tappable explorer link to the tx hash. */
-function TxReceiptCard({ receipt, dark, sub }: {
-  receipt: TxReceipt; dark: boolean; sub: string;
+function TxReceiptCard({ receipt, dark }: {
+  receipt: TxReceipt; dark: boolean;
 }): React.ReactElement {
   const amountLabel = receipt.metadata?.amount != null
     ? `${receipt.metadata.amount} ${receipt.metadata.currency ?? 'ETH'}`
     : undefined;
   const url = explorerUrl(receipt.networkId, receipt.reference);
   return (
-    <View style={{
+    <Box style={{
       alignSelf: 'stretch', gap: 6, marginTop: 8, padding: 12, borderRadius: 14,
       borderWidth: 1, borderColor: dark ? 'rgba(120,200,120,0.4)' : 'rgba(60,160,60,0.35)',
       backgroundColor: dark ? 'rgba(120,200,120,0.08)' : 'rgba(60,160,60,0.06)',
@@ -761,7 +763,7 @@ function TxReceiptCard({ receipt, dark, sub }: {
           {shortAddress(receipt.reference)} · View on explorer
         </Text>
       </Pressable>
-    </View>
+    </Box>
   );
 }
 
@@ -899,7 +901,7 @@ function MessengerBubbleBase({
    *  The outer RNGH Pan gesture still owns horizontal swipe-to-reply, so taps and
    *  swipes don't collide. */
   const DOUBLE_TAP_MS = 250;
-  const rowRef = useRef<React.ComponentRef<typeof View>>(null);
+  const rowRef = useRef<View>(null);
   /** Timestamp of the last tap-that-opened-the-menu, so the next tap inside the
    *  window can be recognised as a double-tap 👍. */
   const lastOpenAt = useRef<number>(0);
@@ -1084,7 +1086,7 @@ function MessengerBubbleBase({
           <TxRequestCard req={txReq} dark={dark} sub={sub} paying={paying} onPay={onPay} />
         ) : null}
         {txReceipt ? (
-          <TxReceiptCard receipt={txReceipt} dark={dark} sub={sub} />
+          <TxReceiptCard receipt={txReceipt} dark={dark} />
         ) : null}
         {transcript ? (
           <Text style={{

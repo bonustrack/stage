@@ -6,7 +6,6 @@
 
 import type { ReactNode } from 'react';
 import { Modal, Pressable, ScrollView } from 'react-native';
-import { Text } from '@metro-labs/kit/text';
 import { Title } from '@metro-labs/kit/title';
 import { Box } from './layout';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

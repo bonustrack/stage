@@ -3,7 +3,7 @@
  *  active theme, no labels, status-bar inset baked into `sceneStyle.paddingTop`
  *  so individual screens don't have to reach for `useSafeAreaInsets` themselves. */
 
-import { View } from 'react-native';
+import { Box } from '../../components/layout';
 import { Tabs, usePathname } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSharedValue } from 'react-native-reanimated';
@@ -46,7 +46,7 @@ export default function TabsLayout(): React.ReactElement {
   const tabBarHeight = 60 + insets.bottom;
 
   return (
-    <View style={{ flex: 1, backgroundColor: bg }}>
+    <Box style={{ flex: 1, backgroundColor: bg }}>
       {/* `Tabs` stays mounted as the ROUTING + tab-bar source of truth: deep
           links to /wallet etc. resolve, the URL is correct, and the active
           highlight is router-driven. The route scenes themselves render
@@ -89,7 +89,7 @@ export default function TabsLayout(): React.ReactElement {
       {/* Pager overlay — covers the scene area (status-bar inset at top, stops
           above the tab bar at the bottom) so the tab bar keeps its taps. */}
       {pagerVisible ? (
-        <View
+        <Box
           pointerEvents="box-none"
           style={{
             position: 'absolute',
@@ -100,12 +100,12 @@ export default function TabsLayout(): React.ReactElement {
           }}
         >
           <TabsPager drawerProgress={drawerProgress} />
-        </View>
+        </Box>
       ) : null}
       {/* Left drawer overlay — full screen, ABOVE the pager + tab bar (X-style:
           the panel + dim backdrop cover most of the screen). pointerEvents is
           'none' while closed so it never steals taps from the tabs underneath. */}
       <LeftDrawer progress={drawerProgress} />
-    </View>
+    </Box>
   );
 }

@@ -3,15 +3,15 @@
  *  the LeftDrawer's Settings row. Since the pager doesn't mount it, this route
  *  renders the real `SettingsScreen` body itself. */
 
-import { View } from 'react-native';
+import { Box } from '../../components/layout';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SettingsScreen } from '../../components/tabs/SettingsScreen';
 
 export default function SettingsRoute(): React.ReactElement {
   const insets = useSafeAreaInsets();
   return (
-    <View style={{ flex: 1, paddingTop: insets.top }}>
+    <Box style={{ flex: 1, paddingTop: insets.top }}>
       <SettingsScreen />
-    </View>
+    </Box>
   );
 }

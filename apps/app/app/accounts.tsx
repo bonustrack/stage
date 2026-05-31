@@ -5,7 +5,6 @@
  *  full reload; the user taps back to return. */
 
 import { Pressable, ScrollView } from 'react-native';
-import { Text } from '@metro-labs/kit/text';
 import { Title } from '@metro-labs/kit/title';
 import { Box } from '../components/layout';
 import { useRouter } from 'expo-router';

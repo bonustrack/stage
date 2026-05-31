@@ -17,7 +17,8 @@
  *  module. */
 
 import { useCallback, useEffect, useState } from 'react';
-import { BackHandler, Image, Pressable, View, useWindowDimensions } from 'react-native';
+import { BackHandler, Image, Pressable, useWindowDimensions } from 'react-native';
+import { Box } from './layout';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useAnimatedStyle, withSpring, runOnJS, type SharedValue,
@@ -130,7 +131,7 @@ export function LeftDrawer({ progress }: { progress: SharedValue<number> }): Rea
   }
 
   return (
-    <View
+    <Box
       pointerEvents={interactive ? 'auto' : 'none'}
       style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
     >
@@ -154,7 +155,7 @@ export function LeftDrawer({ progress }: { progress: SharedValue<number> }): Rea
           ]}
         >
           {/* Avatar header */}
-          <View style={{ paddingHorizontal: 18, paddingBottom: 16 }}>
+          <Box style={{ paddingHorizontal: 18, paddingBottom: 16 }}>
             {activeRec ? (
               <>
                 <Image
@@ -169,12 +170,12 @@ export function LeftDrawer({ progress }: { progress: SharedValue<number> }): Rea
                 </Text>
               </>
             ) : null}
-          </View>
+          </Box>
 
-          <View style={{ height: 1, backgroundColor: border }} />
+          <Box style={{ height: 1, backgroundColor: border }} />
 
           {/* Accounts — tap to switch. */}
-          <View style={{ paddingVertical: 6 }}>
+          <Box style={{ paddingVertical: 6 }}>
             {accounts.map((a) => (
               <Pressable
                 key={a.id}
@@ -189,27 +190,27 @@ export function LeftDrawer({ progress }: { progress: SharedValue<number> }): Rea
                   source={{ uri: stampBoxAvatarUrl(a.address, 56) }}
                   style={{ width: 30, height: 30, borderRadius: 999, backgroundColor: border }}
                 />
-                <View style={{ flex: 1, minWidth: 0 }}>
+                <Box style={{ flex: 1, minWidth: 0 }}>
                   <Text numberOfLines={1} style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>
                     {getPeerName(a.address) ?? a.label ?? shortAddress(a.address)}
                   </Text>
                   <Text numberOfLines={1} style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', marginTop: 1 }}>
                     {shortAddress(a.address)}
                   </Text>
-                </View>
+                </Box>
                 {a.id === activeId ? <Icon name="check" size={20} color={head} /> : null}
               </Pressable>
             ))}
-          </View>
+          </Box>
 
-          <View style={{ height: 1, backgroundColor: border }} />
+          <Box style={{ height: 1, backgroundColor: border }} />
 
           {/* Profile + Settings rows. */}
           <DrawerRow icon="user" label="Profile" head={head} sub={sub} border={border} onPress={() => go('/profile')} />
           <DrawerRow icon="cog" label="Settings" head={head} sub={sub} border={border} onPress={() => go('/settings')} />
         </Animated.View>
       </GestureDetector>
-    </View>
+    </Box>
   );
 }
 
