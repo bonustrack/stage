@@ -3,7 +3,12 @@
   "compilerOptions": {
     "strict": true,
     "types": ["react", "react-native"],
-    "moduleResolution": "bundler"
+    "moduleResolution": "bundler",
+    "baseUrl": ".",
+    "paths": {
+      "react-native": ["./node_modules/react-native"],
+      "react-native-svg": ["./node_modules/react-native-svg"]
+    }
   },
   "include": ["app/**/*.ts", "app/**/*.tsx", "components/**/*.ts", "components/**/*.tsx", "lib/**/*.ts"]
 }

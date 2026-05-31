@@ -8,6 +8,11 @@
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "react-native": ["../../apps/app/node_modules/react-native"],
+      "react-native-svg": ["../../apps/app/node_modules/react-native-svg"]
+    },
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "verbatimModuleSyntax": false,
