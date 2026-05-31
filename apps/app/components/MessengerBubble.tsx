@@ -12,6 +12,7 @@ import Markdown, { MarkdownIt } from 'react-native-markdown-display';
 import { Icon } from '@metro-labs/kit/icon';
 import { MessengerAudioPlayer } from './MessengerAudioPlayer';
 import { MessengerImageAttachment } from './MessengerImageAttachment';
+import { MessengerVideoAttachment } from './MessengerVideoAttachment';
 import { YouTubeEmbed, LocationEmbed } from './MediaEmbeds';
 import { mapCoordsOf, youtubeIdOf } from '../lib/embedDetect';
 import { Avatar } from './Avatar';
@@ -117,6 +118,7 @@ function AttachmentView({ att, fullUrl, fg, sub, dark }: {
   att: Attachment; fullUrl: string; fg: string; sub: string; dark: boolean;
 }): React.ReactElement {
   if (att.kind === 'image') return <MessengerImageAttachment uri={fullUrl} dark={dark} />;
+  if (att.kind === 'video' || att.mime?.startsWith('video/')) return <MessengerVideoAttachment uri={fullUrl} />;
   if (att.kind === 'audio') {
     return <MessengerAudioPlayer uri={fullUrl} fg={fg} sub={sub} />;
   }

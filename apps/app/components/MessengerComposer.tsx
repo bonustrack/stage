@@ -259,11 +259,14 @@ export function MessengerComposer({
       // quality 0.5 re-encodes JPEGs smaller to stay under swarmy's ~1MB body
       // cap without a native resizer (expo-image-manipulator). Very large photos
       // can still exceed 1MB → the upload errors cleanly (see send catch below).
-      mediaTypes: 'images', quality: 0.5, allowsMultipleSelection: true, selectionLimit: 10,
+      mediaTypes: ['images', 'videos'], quality: 0.5, allowsMultipleSelection: true, selectionLimit: 10,
     });
     if (r.canceled || !r.assets?.length) return;
     for (const a of r.assets) {
-      await upload(a.uri, a.mimeType ?? 'image/jpeg', a.fileName ?? undefined);
+      // Videos report asset.type === 'video'; pick a concrete video MIME so the
+      // staged kind/upload land on the video branch (upload() derives kind from MIME).
+      const fallbackMime = a.type === 'video' ? 'video/mp4' : 'image/jpeg';
+      await upload(a.uri, a.mimeType ?? fallbackMime, a.fileName ?? undefined);
     }
   };
 
