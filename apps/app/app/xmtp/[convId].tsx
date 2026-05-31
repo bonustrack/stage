@@ -37,6 +37,12 @@ import {
 } from '@metro-labs/client/xmtp/tx';
 import { sendNativeOrToken } from '../../lib/tx';
 import { flash } from '../../lib/toast';
+import { xmtpSendSignatureReference } from '../../lib/xmtp';
+import {
+  type SignatureRequestContent, type SignatureReferenceContent,
+} from '@metro-labs/client/xmtp/sign';
+import { signTypedData, signMessage, getAccount } from 'wagmi/actions';
+import { wagmiConfig } from '../../lib/walletconnect';
 import {
   hasOverlayPermission, isPillAvailable, openConversationAsBubble,
   requestOverlayPermission, showPill,
@@ -612,6 +618,48 @@ export default function XmtpConversation(): React.ReactElement {
    *  `optimisticVotes` for instant UI, then sends. Single-select switching also
    *  retracts the previously-held option so the cross-device tally converges
    *  without relying solely on last-write-wins. */
+  /** Message ids whose signature is currently being produced — drives the
+   *  Sign-button spinner. */
+  const [signingIds, setSigningIds] = useState<Set<string>>(new Set());
+
+  /** Sign an in-chat signature request. For `eip712` we route the typed data
+   *  through wagmi `signTypedData`; for `personal` through `signMessage`. On
+   *  success we post a SignatureReference back into the SAME conversation so the
+   *  request card flips to a "Signed ✓" receipt for everyone. */
+  const onSign = useCallback((requestId: string, req: SignatureRequestContent) => {
+    setSigningIds(prev => new Set(prev).add(requestId));
+    void (async () => {
+      try {
+        let signature: string;
+        if (req.kind === 'eip712') {
+          const td = req.eip712;
+          if (!td) throw new Error('Malformed typed-data request');
+          signature = await signTypedData(wagmiConfig, {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            domain: td.domain as any,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            types: td.types as any,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            primaryType: td.primaryType as any,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            message: td.message as any,
+          });
+        } else {
+          const message = req.message ?? '';
+          if (!message) throw new Error('Empty message to sign');
+          signature = await signMessage(wagmiConfig, { message });
+        }
+        const signer = getAccount(wagmiConfig).address ?? '';
+        const ref: SignatureReferenceContent = { requestId, signature, signer };
+        await xmtpSendSignatureReference(activeLine, ref);
+      } catch (e) {
+        flash((e as Error).message || 'Signing failed');
+      } finally {
+        setSigningIds(prev => { const n = new Set(prev); n.delete(requestId); return n; });
+      }
+    })();
+  }, [activeLine]);
+
   const onVote = useCallback((pollMessageId: string, optionIndex: number, action: 'added' | 'removed') => {
     const multi = pollsInFeed(events).get(pollMessageId) === true;
     const current = optimisticVotes.get(pollMessageId)
@@ -831,6 +879,14 @@ export default function XmtpConversation(): React.ReactElement {
             votes={displayVotes.get(item.id)}
             ownVotes={displayOwnVotes.get(item.id)}
             onVote={(idx, action) => onVote(item.id, idx, action)}
+            signing={signingIds.has(item.id)}
+            /** Show "Sign" only on a request from the OTHER party — you don't
+             *  sign your own request. */
+            onSign={(() => {
+              const req = (item.payload as { signatureRequest?: SignatureRequestContent } | undefined)?.signatureRequest;
+              if (!req || item.from === myUri) return undefined;
+              return () => onSign(item.id, req);
+            })()}
             paying={payingIds.has(item.id)}
             /** Show "Pay" only on a payment request from the OTHER party — you
              *  don't pay your own request. */

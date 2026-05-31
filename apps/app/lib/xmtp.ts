@@ -27,11 +27,17 @@ import {
 } from '@xmtp/react-native-sdk';
 import type { PrivateKeyAccount } from 'viem/accounts';
 import { PollCodec } from './xmtpPollCodec';
+import { SignatureRequestCodec, SignatureReferenceCodec } from './xmtpSignatureCodec';
 import { WalletSendCallsCodec, TransactionReferenceCodec } from './xmtpTxCodec';
 
 /** Shared PollCodec instance — used both in XMTP_CODECS (decode/encode) and by
  *  xmtpSendPoll (to pass its contentType to the JS-codec send path). */
 const POLL_CODEC = new PollCodec();
+/** Shared signature codec instances — registered in XMTP_CODECS and reused
+ *  by xmtpSendSignatureRequest / xmtpSendSignatureReference to route through
+ *  the JS-codec send path (their contentType drives sendEncodedContent). */
+const SIGNATURE_REQUEST_CODEC = new SignatureRequestCodec();
+const SIGNATURE_REFERENCE_CODEC = new SignatureReferenceCodec();
 /** Shared transaction codec instances — registered in XMTP_CODECS and reused
  *  by xmtpSendTxRequest / xmtpSendTxReference to route through the JS-codec
  *  send path (their contentType drives sendEncodedContent). */
@@ -64,6 +70,14 @@ const XMTP_CODECS = [
    *  to the "[poll payload]" placeholder. Votes are plain reactions (see
    *  xmtpVote) and need no extra codec. */
   POLL_CODEC,
+  /** Metro signature content types `metro.box/signatureRequest:1.0` (a request
+   *  to sign EIP-712 typed data or a personal_sign string) + `signatureReference`
+   *  (the signature posted back). Pure-JS JSContentCodecs (UTF-8 JSON bodies) — no
+   *  native module / dev-client rebuild. Required on both encode
+   *  (xmtpSendSignatureRequest/Reference) and decode (inbound bubbles) — without
+   *  them msg.content() throws and we fall back to the "[…payload]" placeholder. */
+  SIGNATURE_REQUEST_CODEC,
+  SIGNATURE_REFERENCE_CODEC,
   /** In-chat transactions. WalletSendCalls = a payment REQUEST (EIP-5792
    *  wallet_sendCalls batch); TransactionReference = the RECEIPT (tx hash)
    *  posted back after the payer broadcasts. Pure-JS JSContentCodecs (UTF-8
@@ -82,6 +96,10 @@ import {
 } from './accounts';
 import { humanizeGroupUpdated, type GroupUpdatedContent } from '@metro-labs/client/xmtp/humanize';
 import { type PollContent, pollFallbackText } from '@metro-labs/client/xmtp/poll';
+import {
+  type SignatureRequestContent, type SignatureReferenceContent,
+  signatureRequestFallbackText, signatureReferenceFallbackText,
+} from '@metro-labs/client/xmtp/sign';
 import {
   type WalletSendCallsContent, type TransactionReferenceContent,
   walletSendCallsFallbackText, transactionReferenceFallbackText,
@@ -664,6 +682,26 @@ export function envelopeOfXmtpMessage(msg: DecodedMessage, line: string): Histor
       payload: { contentType: typeId, poll },
     };
   }
+  if (typeId === 'signatureRequest') {
+    /** Signature REQUEST. The decoded SignatureRequestContent rides on
+     *  `payload.signatureRequest`; the bubble renders an interactive "Sign" card. */
+    const sig = decoded as SignatureRequestContent;
+    return {
+      ...base,
+      text: signatureRequestFallbackText(sig),
+      payload: { contentType: typeId, signatureRequest: sig },
+    };
+  }
+  if (typeId === 'signatureReference') {
+    /** Signature RECEIPT. The decoded SignatureReferenceContent rides on
+     *  `payload.signatureReference`; the bubble renders "Signed ✓" + signer. */
+    const ref = decoded as SignatureReferenceContent;
+    return {
+      ...base,
+      text: signatureReferenceFallbackText(ref),
+      payload: { contentType: typeId, signatureReference: ref },
+    };
+  }
   if (typeId === 'walletSendCalls') {
     /** Payment REQUEST. The decoded WalletSendCalls rides on
      *  `payload.walletSendCalls`; the bubble renders an interactive "Pay" card. */
@@ -765,6 +803,25 @@ export async function xmtpSendPoll(line: string, poll: PollContent): Promise<str
   const conv = await convOfLine(line);
   if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
   return await conv.send(poll, { contentType: POLL_CODEC.contentType });
+}
+
+/** Send a signature REQUEST (`metro.box/signatureRequest:1.0`) — either EIP-712
+ *  typed data or a personal_sign string. Mirrors xmtpSendPoll. */
+export async function xmtpSendSignatureRequest(
+  line: string, content: SignatureRequestContent,
+): Promise<string> {
+  const conv = await convOfLine(line);
+  if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
+  return await conv.send(content, { contentType: SIGNATURE_REQUEST_CODEC.contentType });
+}
+
+/** Post a signature RECEIPT (`metro.box/signatureReference:1.0`) back. Mirrors xmtpSendPoll. */
+export async function xmtpSendSignatureReference(
+  line: string, ref: SignatureReferenceContent,
+): Promise<string> {
+  const conv = await convOfLine(line);
+  if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
+  return await conv.send(ref, { contentType: SIGNATURE_REFERENCE_CODEC.contentType });
 }
 
 /** Send an in-chat payment REQUEST (`xmtp.org/walletSendCalls:1.0`). The

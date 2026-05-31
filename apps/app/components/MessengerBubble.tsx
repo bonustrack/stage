@@ -461,6 +461,115 @@ function PollView({ poll, dark, sub, votes, ownVotes, onVote }: {
 }
 
 // ---------------------------------------------------------------------------
+// In-chat signatures — SignatureRequest (request to sign) + SignatureReference
+// (the signature posted back). Local-render shapes mirror
+// @metro-labs/client/xmtp/sign.
+// ---------------------------------------------------------------------------
+
+interface SigRequest {
+  id?: string;
+  kind?: 'eip712' | 'personal';
+  eip712?: { domain?: Record<string, unknown>; types?: Record<string, Array<{ name: string; type: string }>>; primaryType?: string; message?: Record<string, unknown> };
+  message?: string;
+  description?: string;
+}
+interface SigReference {
+  requestId?: string;
+  signature: string;
+  signer?: string;
+}
+
+function sigRequestOf(entry: HistoryEntry): SigRequest | undefined {
+  const p = entry.payload as { signatureRequest?: SigRequest } | undefined;
+  if (!p?.signatureRequest?.kind) return undefined;
+  return p.signatureRequest;
+}
+function sigReferenceOf(entry: HistoryEntry): SigReference | undefined {
+  const p = entry.payload as { signatureReference?: SigReference } | undefined;
+  if (!p?.signatureReference?.signature) return undefined;
+  return p.signatureReference;
+}
+
+/** SigRequestCard — a signature-request bubble. Shows the description + a hint
+ *  of what's being signed and a "Sign" button that fires `onSign` (the parent
+ *  signs via wagmi signTypedData/signMessage, then posts a SignatureReference
+ *  back). */
+function SigRequestCard({ req, dark, sub, signing, onSign }: {
+  req: SigRequest; dark: boolean; sub: string; signing?: boolean;
+  onSign?: () => void;
+}): React.ReactElement {
+  const desc = req.description?.trim()
+    || (req.kind === 'eip712' ? `Sign ${req.eip712?.primaryType ?? 'typed data'}` : 'Sign message');
+  const preview = req.kind === 'personal'
+    ? req.message
+    : `EIP-712 · ${req.eip712?.primaryType ?? 'typed data'}`;
+  return (
+    <Box style={{
+      alignSelf: 'stretch', gap: 8, marginTop: 8, padding: 12, borderRadius: 14,
+      borderWidth: 1, borderColor: '#c0a06e',
+      backgroundColor: 'rgba(192,160,110,0.10)',
+    }}>
+      <Row align="center" gap={8}>
+        <HeroIcon name="pencil" size={18} color="#c0a06e" />
+        <Text style={{ color: dark ? '#ffffff' : '#000000', fontSize: 15, fontFamily: 'Calibre-Semibold', flexShrink: 1 }}>
+          {desc}
+        </Text>
+      </Row>
+      {preview ? (
+        <Text numberOfLines={3} style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>
+          {preview}
+        </Text>
+      ) : null}
+      {onSign ? (
+        <Pressable
+          disabled={signing}
+          onPress={onSign}
+          style={({ pressed }) => ({
+            marginTop: 2, alignItems: 'center', paddingVertical: 11, borderRadius: 12,
+            opacity: signing ? 0.6 : 1,
+            backgroundColor: pressed ? '#a08458' : '#c0a06e',
+          })}
+        >
+          {signing
+            ? <ActivityIndicator color="#000" />
+            : <Text style={{ color: '#000', fontSize: 15, fontFamily: 'Calibre-Semibold' }}>Sign</Text>}
+        </Pressable>
+      ) : null}
+    </Box>
+  );
+}
+
+/** SigReferenceCard — a completed signature. Shows "Signed ✓" + the signer and
+ *  a shortened signature. */
+function SigReferenceCard({ ref, dark, sub }: {
+  ref: SigReference; dark: boolean; sub: string;
+}): React.ReactElement {
+  const short = (h?: string): string => (h && h.length > 14 ? `${h.slice(0, 8)}…${h.slice(-4)}` : (h ?? ''));
+  return (
+    <Box style={{
+      alignSelf: 'stretch', gap: 6, marginTop: 8, padding: 12, borderRadius: 14,
+      borderWidth: 1, borderColor: dark ? 'rgba(120,200,120,0.4)' : 'rgba(60,160,60,0.35)',
+      backgroundColor: dark ? 'rgba(120,200,120,0.08)' : 'rgba(60,160,60,0.06)',
+    }}>
+      <Row align="center" gap={8}>
+        <HeroIcon name="check" size={18} color={dark ? '#7fd07f' : '#2f9e44'} />
+        <Text style={{ color: dark ? '#ffffff' : '#000000', fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
+          Signed ✓
+        </Text>
+      </Row>
+      {ref.signer ? (
+        <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>
+          by {shortAddress(ref.signer)}
+        </Text>
+      ) : null}
+      <Text style={{ color: '#c0a06e', fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+        {short(ref.signature)}
+      </Text>
+    </Box>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // In-chat transactions — WalletSendCalls (request) + TransactionReference
 // (receipt). Local-render shapes mirror @metro-labs/client/xmtp/tx.
 // ---------------------------------------------------------------------------
@@ -603,7 +712,7 @@ function TxReceiptCard({ receipt, dark, sub }: {
 function MessengerBubbleBase({
   entry, dark, unread, pending, replyTarget, onReact, onReply, onLongPress, onOpenMenu, onAnswer,
   replyPreview, onReplyPreviewPress, reactions, pendingReactions, pendingRemovals, ownEmojis, transcript, myUri, senderEthAddress, onAvatarPress,
-  votes, ownVotes, onVote, onPay, paying,
+  votes, ownVotes, onVote, onPay, paying, onSign, signing,
 }: {
   entry: HistoryEntry; dark: boolean; unread: boolean; pending?: boolean; replyTarget?: boolean;
   onReact?: (emoji: string) => void; onReply?: () => void; onLongPress?: () => void;
@@ -653,6 +762,11 @@ function MessengerBubbleBase({
   onPay?: () => void;
   /** True while this request's payment is broadcasting — shows a spinner on Pay. */
   paying?: boolean;
+  /** Sign an in-chat signature request. The parent signs via wagmi
+   *  (signTypedData / signMessage) and posts a SignatureReference back. */
+  onSign?: () => void;
+  /** True while this request's signature is being produced — shows a spinner. */
+  signing?: boolean;
 }): React.ReactElement {
   /** Discord-style layout doesn't visually distinguish own messages —
    *  myUri is accepted for forward compatibility (e.g. read-receipts) but
@@ -662,6 +776,8 @@ function MessengerBubbleBase({
   const atts = attachmentsOf(entry);
   const question = questionOf(entry);
   const poll = pollOf(entry);
+  const sigReq = sigRequestOf(entry);
+  const sigRef = sigReferenceOf(entry);
   const txReq = txRequestOf(entry);
   const txReceipt = txReceiptOf(entry);
   /** Group system events (rename / member add / image change) get a muted
@@ -884,6 +1000,12 @@ function MessengerBubbleBase({
         ) : null}
         {poll && onVote ? (
           <PollView poll={poll} dark={dark} sub={sub} votes={votes} ownVotes={ownVotes} onVote={onVote} />
+        ) : null}
+        {sigReq ? (
+          <SigRequestCard req={sigReq} dark={dark} sub={sub} signing={signing} onSign={onSign} />
+        ) : null}
+        {sigRef ? (
+          <SigReferenceCard ref={sigRef} dark={dark} sub={sub} />
         ) : null}
         {txReq ? (
           <TxRequestCard req={txReq} dark={dark} sub={sub} paying={paying} onPay={onPay} />

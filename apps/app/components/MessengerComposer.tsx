@@ -17,6 +17,10 @@ import { getPeerName } from '../lib/peerProfiles';
 import { AppModal } from './AppModal';
 import { type PollContent, mintPollId, pollFallbackText } from '@metro-labs/client/xmtp/poll';
 import {
+  type SignatureRequestContent, mintSignatureRequestId, signatureRequestFallbackText,
+} from '@metro-labs/client/xmtp/sign';
+import { xmtpSendSignatureRequest } from '../lib/xmtp';
+import {
   type WalletSendCallsContent, walletSendCallsFallbackText,
 } from '@metro-labs/client/xmtp/tx';
 import { getActiveAccount } from '../lib/accounts';
@@ -122,6 +126,13 @@ export function MessengerComposer({
   const [pollHeader, setPollHeader] = useState('');
   const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
   const [pollMulti, setPollMulti] = useState(false);
+  /** Signature-request sheet state. `sigOpen` toggles the AppModal; `sigKind`
+   *  switches between a personal_sign string and full EIP-712 typed-data JSON. */
+  const [sigOpen, setSigOpen] = useState(false);
+  const [sigKind, setSigKind] = useState<'personal' | 'eip712'>('personal');
+  const [sigDesc, setSigDesc] = useState('');
+  const [sigMessage, setSigMessage] = useState('');
+  const [sigJson, setSigJson] = useState('');
   /** Payment-request sheet state. `txOpen` toggles the AppModal; the rest is the
    *  in-progress WalletSendCalls being authored. Native ETH only for now (no
    *  token-address field) — `amount` is decimal ETH. */
@@ -382,6 +393,47 @@ export function MessengerComposer({
    *  the optimistic entry carries `payload.poll` so the bubble renders the
    *  PollView instantly, and the real XMTP message id threads back via onSent so
    *  the dedup memo confirms it by id (else falls back to the fallback-text match). */
+  /** Build + send a signature request, reusing the same optimistic flow as the
+   *  poll: the optimistic entry carries `payload.signatureRequest` so the bubble
+   *  renders the request card instantly. For `eip712` we validate that sigJson is
+   *  parseable typed data; for `personal` we just need a non-empty message. */
+  const sendSignatureRequest = async (): Promise<void> => {
+    const description = sigDesc.trim();
+    let content: SignatureRequestContent;
+    if (sigKind === 'personal') {
+      const message = sigMessage.trim();
+      if (!message) { Alert.alert('Enter a message to sign'); return; }
+      content = { id: mintSignatureRequestId(), kind: 'personal', message, ...(description ? { description } : {}) };
+    } else {
+      let parsed: unknown;
+      try { parsed = JSON.parse(sigJson); }
+      catch { Alert.alert('Typed-data JSON is not valid JSON'); return; }
+      const td = parsed as { domain?: unknown; types?: unknown; primaryType?: unknown; message?: unknown };
+      if (!td || typeof td !== 'object' || !td.types || !td.primaryType || !td.message) {
+        Alert.alert('Typed data needs `types`, `primaryType`, and `message` fields'); return;
+      }
+      content = {
+        id: mintSignatureRequestId(), kind: 'eip712',
+        eip712: {
+          domain: (td.domain ?? {}) as Record<string, unknown>,
+          types: td.types as Record<string, Array<{ name: string; type: string }>>,
+          primaryType: td.primaryType as string,
+          message: td.message as Record<string, unknown>,
+        },
+        ...(description ? { description } : {}),
+      };
+    }
+    const localId = `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    onOptimistic?.({ localId, text: signatureRequestFallbackText(content), attachments: [], payload: { contentType: 'signatureRequest', signatureRequest: content } });
+    setSigOpen(false);
+    setSigDesc(''); setSigMessage(''); setSigJson(''); setSigKind('personal');
+    let sendErr: string | undefined;
+    let sentId: string | undefined;
+    try { sentId = await xmtpSendSignatureRequest(xmtpLine, content); }
+    catch (e) { sendErr = (e as Error).message; setErr(sendErr); }
+    finally { onSent?.(localId, sendErr, sentId); }
+  };
+
   const sendPoll = async (): Promise<void> => {
     const question = pollQuestion.trim();
     const options = pollOptions.map(o => o.trim()).filter(Boolean);
@@ -838,6 +890,7 @@ export function MessengerComposer({
               ['paperClip', 'File', pickFile],
               ['mapPin', 'Location', pickLocation],
               ['chartBar', 'Poll', async () => setPollOpen(true)],
+              ['pencil', 'Sign', async () => setSigOpen(true)],
               ['wallet', 'Payment', async () => openTx()],
             ] as const
           ).map(([icon, label, action]) => (
@@ -926,6 +979,65 @@ export function MessengerComposer({
             })}
           >
             <Text style={{ color: '#000', fontSize: 16, fontFamily: 'Calibre-Semibold' }}>Send poll</Text>
+          </Pressable>
+        </Col>
+      </AppModal>
+      {/** Signature-request sheet — a personal/eip712 toggle, a description, and
+       *   either a single message field (personal_sign) or a multiline typed-data
+       *   JSON field (eth_signTypedData_v4). Submit validates + sends. */}
+      <AppModal visible={sigOpen} onClose={() => setSigOpen(false)} title="Request signature">
+        <Col gap={12} pb={8}>
+          <Row gap={8}>
+            {([['personal', 'Message'], ['eip712', 'Typed data']] as const).map(([k, label]) => (
+              <Pressable
+                key={k}
+                onPress={() => setSigKind(k)}
+                style={{
+                  flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 10,
+                  borderWidth: 1, borderColor: sigKind === k ? '#c0a06e' : chipBg,
+                  backgroundColor: sigKind === k ? 'rgba(192,160,110,0.15)' : inputBg,
+                }}
+              >
+                <Text style={{ color: sigKind === k ? '#c0a06e' : fg, fontSize: 14, fontFamily: 'Calibre-Semibold' }}>{label}</Text>
+              </Pressable>
+            ))}
+          </Row>
+          <TextInput
+            value={sigDesc}
+            onChangeText={setSigDesc}
+            placeholder="Description (e.g. Sign in to dapp)"
+            placeholderTextColor={sub}
+            style={{ color: fg, backgroundColor: inputBg, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 15 }}
+          />
+          {sigKind === 'personal' ? (
+            <TextInput
+              value={sigMessage}
+              onChangeText={setSigMessage}
+              placeholder="Message to sign"
+              placeholderTextColor={sub}
+              multiline
+              style={{ color: fg, backgroundColor: inputBg, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, minHeight: 80, fontFamily: 'Calibre-Medium', fontSize: 15, textAlignVertical: 'top' }}
+            />
+          ) : (
+            <TextInput
+              value={sigJson}
+              onChangeText={setSigJson}
+              placeholder={'EIP-712 typed data JSON\n{ "domain": {…}, "types": {…}, "primaryType": "…", "message": {…} }'}
+              placeholderTextColor={sub}
+              multiline
+              autoCapitalize="none"
+              autoCorrect={false}
+              style={{ color: fg, backgroundColor: inputBg, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, minHeight: 160, fontFamily: 'Calibre-Medium', fontSize: 13, textAlignVertical: 'top' }}
+            />
+          )}
+          <Pressable
+            onPress={() => void sendSignatureRequest()}
+            style={({ pressed }) => ({
+              marginTop: 4, alignItems: 'center', paddingVertical: 13, borderRadius: 12,
+              backgroundColor: pressed ? '#a08458' : '#c0a06e',
+            })}
+          >
+            <Text style={{ color: '#000', fontSize: 16, fontFamily: 'Calibre-Semibold' }}>Send request</Text>
           </Pressable>
         </Col>
       </AppModal>
