@@ -8,7 +8,7 @@ import '@walletconnect/react-native-compat';
 /** Hoisted side-effect import — installs the crypto.getRandomValues shim
  *  BEFORE any viem (and transitively any wallet/profile) module loads. */
 import '../lib/cryptoShim';
-import { StatusBar } from 'expo-status-bar';
+import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import { useEffect } from 'react';
 import { LogBox, Text, TextInput } from 'react-native';
@@ -18,7 +18,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { GestureDetectorProvider } from 'react-native-screens/gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { NativeSwipeStack } from '../components/NativeSwipeStack';
-import { useEffectiveColorScheme } from '../lib/theme';
+import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { useDeepLinks } from '../lib/deepLinks';
 import { usePushDeepLinks } from '../lib/push';
 import { installPillAudioBridge } from '../lib/pill';
@@ -55,8 +55,30 @@ LogBox.ignoreLogs([/emitting session_request/, /without any listeners/]);
   TextInputAny.defaultProps.style = [{ fontFamily: 'Calibre-Medium' }, TextInputAny.defaultProps.style];
 })();
 
+/** Perceived-luminance check on a #rrggbb hex. < 0.5 → dark surface → needs
+ *  light (white) status-bar icons. */
+function isDarkBg(hex: string): boolean {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return true; // assume dark (app's default chrome) when unparseable
+  const n = parseInt(m[1], 16);
+  const r = (n >> 16) & 0xff, g = (n >> 8) & 0xff, b = n & 0xff;
+  return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.5;
+}
+
 export default function RootLayout(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
+
+  /** Status-bar icons must follow the RENDERED chrome, not just the
+   *  color-scheme pref. The app paints a near-black surface in dark mode and so
+   *  needs LIGHT (white) icons. The previous `dark ? 'light' : 'dark'` showed
+   *  dark, invisible icons whenever the OS was in light mode but pref='system'
+   *  (→ useEffectiveColorScheme 'light') while the app still rendered a dark
+   *  surface. Drive the style off the real palette bg luminance, and ALSO set it
+   *  imperatively (effect below) because under Android edge-to-edge the
+   *  declarative <StatusBar> can be shadowed by the native baseline on first
+   *  paint. */
+  const barStyle: 'light' | 'dark' = isDarkBg(usePalette().bg) ? 'light' : 'dark';
+  useEffect(() => { setStatusBarStyle(barStyle, true); }, [barStyle]);
 
   /** Universal/deep links → screen navigation. `getInitialURL` resolves async
    *  (after the Stack below has mounted) so cold-start taps land correctly; warm
@@ -97,7 +119,7 @@ export default function RootLayout(): React.ReactElement {
        *   interactive swipe-back (`goBackGesture`). It must wrap the navigator. */}
       <GestureDetectorProvider>
       <KeyboardProvider>
-      <StatusBar style={dark ? 'light' : 'dark'} />
+      <StatusBar style={barStyle} translucent backgroundColor="transparent" />
       {/** TRUE interactive swipe-back. expo-router's default `<Stack>` renders
        *   through @react-navigation/native-stack 7.x, which does NOT wire
        *   react-native-screens' `goBackGesture`/`screenEdgeGesture` — so there's
@@ -111,9 +133,15 @@ export default function RootLayout(): React.ReactElement {
        *   JS <EdgeSwipeBack> shim.
        *
        *   `goBackGesture: 'swipeRight'` auto-selects `ScreenTransition.SwipeRight`,
-       *   so the previous page parallaxes in underneath the finger. We scope it to
-       *   a left-edge zone (`screenEdgeGesture: true`) so it never fights the
-       *   leftward swipe-to-reply pan on message bubbles. */}
+       *   so the previous page parallaxes in underneath the finger.
+       *   `screenEdgeGesture: false` → FULL-WIDTH back gesture (Telegram-style):
+       *   rn-screens drops the 50px left-edge hit-slop (see
+       *   gesture-handler/ScreenGestureDetector — the `if (screenEdgeGesture)`
+       *   hitSlop branch), so the rightward pan is recognised across the whole
+       *   screen. It's RIGHTWARD (translationX>0); MessengerBubble swipe-to-reply
+       *   is LEFTWARD (dx<-10), opposite directions, so the two pans don't fight.
+       *   Vertical FlatList scroll, the message menu, and horizontal scrollviews
+       *   are unaffected (the back pan only claims rightward horizontal drags). */}
       <NativeSwipeStack
         screenOptions={{
           headerShown: false,
@@ -137,7 +165,7 @@ export default function RootLayout(): React.ReactElement {
           options={{
             stackAnimation: 'none',
             goBackGesture: 'swipeRight',
-            screenEdgeGesture: true,
+            screenEdgeGesture: false,
           }}
         />
         <NativeSwipeStack.Screen
@@ -145,7 +173,7 @@ export default function RootLayout(): React.ReactElement {
           options={{
             stackAnimation: 'none',
             goBackGesture: 'swipeRight',
-            screenEdgeGesture: true,
+            screenEdgeGesture: false,
           }}
         />
       </NativeSwipeStack>
