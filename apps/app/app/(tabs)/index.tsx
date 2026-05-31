@@ -37,6 +37,7 @@ import { ChannelRow } from '../../components/ChannelRow';
 import { Box, Col, Row } from '../../components/layout';
 import { AppModal } from '../../components/AppModal';
 import { loadPinnedIds, isPinned, togglePin, subscribePins } from '../../lib/pins';
+import { SwipeTabPage } from '../../components/SwipeTabs';
 
 interface Row {
   convId: string;
@@ -590,6 +591,7 @@ export default function Messenger(): React.ReactElement {
   }
 
   return (
+    <SwipeTabPage tab="index">
     <Col flex={1} bg={bg}>
       {/* Home topnav: title left, search icon right → opens the /search page. */}
       <Row align="center" justify="between" px={16} pt={12} pb={10} style={{
@@ -673,6 +675,7 @@ export default function Messenger(): React.ReactElement {
         }}
       />
     </Col>
+    </SwipeTabPage>
   );
 }
 

@@ -11,6 +11,7 @@
 import { useEffect, useState } from 'react';
 import { getCachedXmtpClient, getOrCreateXmtpClient } from '../../lib/xmtp';
 import { ProfileScreen } from '../../components/ProfileScreen';
+import { SwipeTabPage } from '../../components/SwipeTabs';
 
 export default function Profile(): React.ReactElement {
   const [address, setAddress] = useState<string>(
@@ -29,5 +30,9 @@ export default function Profile(): React.ReactElement {
     return () => { alive = false; };
   }, [address]);
 
-  return <ProfileScreen address={address} variant="tab" />;
+  return (
+    <SwipeTabPage tab="profile">
+      <ProfileScreen address={address} variant="tab" />
+    </SwipeTabPage>
+  );
 }

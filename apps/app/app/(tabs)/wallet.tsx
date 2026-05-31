@@ -19,6 +19,7 @@ import { usePalette } from '../../lib/theme';
 import { getErc20UsdPrices, getSimplePrices } from '../../lib/coingecko';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Col, Row, Box } from '../../components/layout';
+import { SwipeTabPage } from '../../components/SwipeTabs';
 import { stampTokenUrl, NATIVE_TOKEN_SENTINEL } from '@metro-labs/kit/avatar';
 
 const MULTICALL3 = '0xcA11bde05977b3631167028862bE2a173976CA11' as const;
@@ -172,6 +173,7 @@ export default function Wallet(): React.ReactElement {
   );
 
   return (
+    <SwipeTabPage tab="wallet">
     <ScrollView style={{ flex: 1, backgroundColor: bg }} contentContainerStyle={{ paddingBottom: 24 }}>
       <Col px={16} pt={16} pb={8}>
         <Title style={{ color: head, fontSize: 22 }}>Wallet</Title>
@@ -271,5 +273,6 @@ export default function Wallet(): React.ReactElement {
         })}
       </Col>
     </ScrollView>
+    </SwipeTabPage>
   );
 }

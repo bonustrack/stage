@@ -16,6 +16,7 @@ import { resetAccount } from '../../lib/wallet';
 import { useAccountEpoch } from '../../lib/accountEpoch';
 import { Icon } from '@metro-labs/kit/icon';
 import { Col } from '../../components/layout';
+import { SwipeTabPage } from '../../components/SwipeTabs';
 import {
   setThemePreference, useEffectiveColorScheme, usePalette, useThemePreference,
   type ThemePreference,
@@ -80,6 +81,7 @@ export default function Settings(): React.ReactElement {
   }, [accountEpoch]);
 
   return (
+    <SwipeTabPage tab="settings">
     <ScrollView style={{ flex: 1, backgroundColor: bg }} contentContainerStyle={{ paddingBottom: 24 }}>
       <Col px={16} pt={16} pb={8}>
         <Title dark={dark} style={{ color: head, fontSize: 22 }}>Settings</Title>
@@ -224,5 +226,6 @@ export default function Settings(): React.ReactElement {
         </Text>
       </Col>
     </ScrollView>
+    </SwipeTabPage>
   );
 }

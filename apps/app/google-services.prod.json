@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "163881755635",
+    "project_id": "metro-e47f6",
+    "storage_bucket": "metro-e47f6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:163881755635:android:348cbb5c2c411aca7da886",
+        "android_client_info": {
+          "package_name": "box.stage"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDgp-GNIMWxcPtLeM5xL4BKLc0h9L1DHpQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
