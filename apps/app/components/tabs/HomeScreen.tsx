@@ -37,6 +37,7 @@ import { Avatar } from '../Avatar';
 import { ChannelRow } from '../ChannelRow';
 import { Box, Col, Row } from '../layout';
 import { loadPinnedIds, isPinned, subscribePins } from '../../lib/pins';
+import { CHANNELS_SCROLL_KEY, getScrollOffset, saveScrollOffset, flushScrollOffset } from '../../lib/scrollPos';
 import { ChannelMenu } from '../ChannelMenu';
 
 interface Row {
@@ -222,6 +223,14 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
   /** Held across effect re-runs so AppState + poll backstops can call refresh
    *  without re-binding to a stale client. */
   const refreshFromNetworkRef = useRef<(() => Promise<void>) | null>(null);
+  /** Channels-list scroll persistence: the FlatList ref to restore onto, the
+   *  saved offset (read once on mount), a one-shot flag so we only auto-restore
+   *  the first time content lays out, and the latest measured content height so a
+   *  saved offset can be clamped to it (never scroll past the end). */
+  const listRef = useRef<FlatList<Row>>(null);
+  const savedOffsetRef = useRef<number | undefined>(undefined);
+  const didRestoreRef = useRef(false);
+  const contentHeightRef = useRef(0);
   /** Device-only pinned conv ids. Loaded once on mount; `subscribePins` bumps
    *  this on every toggle so the display sort below re-derives + re-renders. */
   const [pinned, setPinned] = useState<Set<string>>(new Set());
@@ -230,6 +239,13 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
   /** Count of pending message requests ('unknown' consent convs). Drives the
    *  "Requests (N)" entry at the top of the list; hidden when 0. */
   const [requestCount, setRequestCount] = useState<number>(0);
+  /** Load the saved channels-list offset once on mount. The actual scroll
+   *  happens in onContentSizeChange (below) once rows have laid out — restoring
+   *  before content exists would clamp to 0. */
+  useEffect(() => {
+    void getScrollOffset(CHANNELS_SCROLL_KEY).then(o => { savedOffsetRef.current = o; });
+    return () => { flushScrollOffset(CHANNELS_SCROLL_KEY); };
+  }, []);
   useEffect(() => {
     void loadPinnedIds().then(setPinned);
     /** On toggle the cache is already updated; re-read it (resolves instantly
@@ -615,8 +631,27 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
         </Pressable>
       </Row>
       <FlatList
+        ref={listRef}
         simultaneousHandlers={panRef}
         data={sortedRows}
+        /** Persist the offset as the user scrolls (debounced inside the lib). */
+        onScroll={(ev) => { saveScrollOffset(CHANNELS_SCROLL_KEY, ev.nativeEvent.contentOffset.y); }}
+        scrollEventThrottle={16}
+        /** Restore the saved offset once, after rows have laid out. Clamp to the
+         *  measured content height so a stale offset (rows since removed) can't
+         *  scroll past the end. */
+        onContentSizeChange={(_w, h) => {
+          contentHeightRef.current = h;
+          if (didRestoreRef.current) return;
+          const want = savedOffsetRef.current;
+          if (want == null || want <= 0) { didRestoreRef.current = true; return; }
+          if (h <= 0) return; // not laid out yet — wait for the next size change
+          didRestoreRef.current = true;
+          const offset = Math.min(want, Math.max(0, h));
+          requestAnimationFrame(() => {
+            try { listRef.current?.scrollToOffset({ offset, animated: false }); } catch { /* best-effort */ }
+          });
+        }}
         ListHeaderComponent={
           requestCount > 0 ? (
             <Pressable

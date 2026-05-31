@@ -50,6 +50,7 @@ import {
 } from '../../lib/pill';
 import { setActiveConversation } from '../../modules/metro-pill';
 import { getCachedRows, markConvRead, patchRowSent } from '../../lib/channelsCache';
+import { convScrollKey, getScrollOffset, saveScrollOffset, flushScrollOffset } from '../../lib/scrollPos';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import type { HistoryEntry } from '../../lib/types';
 
@@ -351,6 +352,23 @@ export default function XmtpConversation(): React.ReactElement {
     marginBottom: Math.max(0, -kbHeightShared.value - insets.bottom),
   }));
   const listRef = useRef<FlatList<HistoryEntry>>(null);
+  /** Per-conversation scroll persistence. The list is INVERTED, so
+   *  `contentOffset.y` is the distance scrolled UP from the newest message
+   *  (0 = pinned to bottom/newest) — restoring that same offset lands on the
+   *  same content. We restore only ONCE, on the very first content layout after
+   *  mount, and only if a saved offset exists; otherwise the default (bottom)
+   *  stands. Remounts via listEpoch (jump-to-bottom, sticky-bottom on new msg)
+   *  deliberately skip restore so they land at the bottom as before. */
+  const savedScrollRef = useRef<number | undefined>(undefined);
+  const savedScrollLoaded = useRef(false);
+  const didRestoreScroll = useRef(false);
+  useEffect(() => {
+    if (!convId) return;
+    void getScrollOffset(convScrollKey(convId)).then(o => {
+      savedScrollRef.current = o; savedScrollLoaded.current = true;
+    });
+    return () => { flushScrollOffset(convScrollKey(convId)); };
+  }, [convId]);
 
   /** Reaction events decorate their target msg — don't render as their own bubbles. */
   /** Poll message ids → option count — used to keep vote-reactions (content = a
@@ -843,10 +861,30 @@ export default function XmtpConversation(): React.ReactElement {
          *  `scrollEventThrottle={16}` (≈1 event/frame) keeps the show/hide snappy
          *  instead of the laggy 32ms cadence. */
         onScroll={(ev) => {
-          const next = ev.nativeEvent.contentOffset.y > 12;
+          const y = ev.nativeEvent.contentOffset.y;
+          const next = y > 12;
           setShowJump(prev => (prev === next ? prev : next));
+          /** Persist the inverted offset (debounced) so reopening restores it. */
+          if (convId) saveScrollOffset(convScrollKey(convId), y);
         }}
         scrollEventThrottle={16}
+        /** Restore the saved (inverted) offset once, after the first content
+         *  layout — only on the initial mount (epoch 0), only if a saved offset
+         *  was found, and only if the list has content. Clamp to content height
+         *  so a stale offset can't overscroll. Remounts (listEpoch > 0) skip
+         *  this and keep landing at the bottom. */
+        onContentSizeChange={(_w, h) => {
+          if (didRestoreScroll.current || listEpoch !== 0) return;
+          if (!savedScrollLoaded.current) return; // saved offset not read yet
+          const want = savedScrollRef.current;
+          if (want == null || want <= 0) { didRestoreScroll.current = true; return; }
+          if (h <= 0 || allBubbles.length === 0) return; // wait for real content
+          didRestoreScroll.current = true;
+          const offset = Math.min(want, Math.max(0, h));
+          requestAnimationFrame(() => {
+            try { listRef.current?.scrollToOffset({ offset, animated: false }); } catch { /* reanimated #3670 / best-effort */ }
+          });
+        }}
         /** Silent fallback — `scrollToIndex` on a virtualised inverted list
          *  can fire before the target row has rendered. Without this handler
          *  RN's red-screen pops on the dev build. We just no-op; the bubble
