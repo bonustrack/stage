@@ -2,7 +2,7 @@
  *  local XMTP client directly; no daemon hop. */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Animated as RNAnimated, AppState, Dimensions, Modal, Pressable, ScrollView, Share, View } from 'react-native';
+import { Animated as RNAnimated, AppState, Dimensions, Modal, Pressable, ScrollView, Share, View } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 /** RNGH's gesture-aware FlatList (drop-in for RN's): its scroll runs through a
  *  native RNGH handler, so under GestureDetectorProvider it COMPOSES with the
@@ -29,7 +29,7 @@ import { ChannelMenu } from '../../components/ChannelMenu';
 import { isPinned } from '../../lib/pins';
 import {
   XMTP_USER_PREFIX, lineOfConv, useXmtpFeed, xmtpReact, xmtpReply, xmtpVote,
-  shortAddress, leaveGroupConv, xmtpSendTxReference,
+  shortAddress, xmtpSendTxReference,
 } from '../../lib/xmtp';
 import { votesByPoll as tallyVotes, ownVotes as tallyOwnVotes, type VoteEvent } from '@metro-labs/client/xmtp/poll';
 import {
@@ -277,7 +277,6 @@ export default function XmtpConversation(): React.ReactElement {
   /** Topnav overflow (3-dot) menu — groups show "Leave group"; DMs show
    *  "Open as bubble" (Android, when the native pill/bubble module is linked). */
   const [overflowOpen, setOverflowOpen] = useState(false);
-  const [leaving, setLeaving] = useState(false);
   /** Whether the native pill/bubble module is present on this build → gates the
    *  DM "Open as bubble" item. Resolved once on mount (cheap native check). */
   const [pillAvailable, setPillAvailable] = useState(false);
@@ -763,33 +762,6 @@ export default function XmtpConversation(): React.ReactElement {
     })();
   }, [activeLine]);
 
-  /** Leave-group flow — confirm, call the SDK (true leave when available, else
-   *  consent-deny hide), then pop back to the conversation list. */
-  const onLeaveGroup = useCallback(() => {
-    setOverflowOpen(false);
-    Alert.alert(
-      'Leave group',
-      'You’ll stop receiving messages from this group. You can be re-added by a member later.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Leave', style: 'destructive', onPress: () => {
-            void (async (): Promise<void> => {
-              setLeaving(true);
-              try {
-                const result = await leaveGroupConv(activeLine);
-                flash(result === 'left' ? 'Left group' : 'Group hidden');
-                router.replace('/');
-              } catch (e) {
-                Alert.alert('Couldn’t leave', (e as Error).message ?? 'Unknown error');
-              } finally { setLeaving(false); }
-            })();
-          },
-        },
-      ],
-    );
-  }, [activeLine, router]);
-
   /** DM "Open as bubble" — pop a floating Android chat-head for this 1-1.
    *  Graceful no-op + toast if the native module/bubbles aren't available
    *  (handled inside `openConversationAsBubble`). */
@@ -1112,7 +1084,8 @@ export default function XmtpConversation(): React.ReactElement {
         isUnread={(getCachedRows()?.find(r => r.convId === convId)?.unreadCount ?? 0) > 0}
         isPinned={convId ? isPinned(convId) : false}
         onClose={() => setOverflowOpen(false)}
-        onLeaveGroup={leaving ? undefined : onLeaveGroup}
+        context="view"
+        onAfterLeave={result => flash(result === 'left' ? 'Left group' : 'Group hidden')}
         onOpenAsBubble={pillAvailable ? onOpenAsBubble : undefined}
         onFloatAsPill={pillAvailable ? onFloatAsPill : undefined}
       />

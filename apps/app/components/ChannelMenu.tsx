@@ -14,12 +14,12 @@
  *    - Pin / Unpin       — both contexts (toggle by `isPinned`)
  *    - Group info        — groups only (navigates to /group/[convId])
  *    - Profile           — DMs only, when `peerAddress` is known
- *    - Leave group       — groups only, when `onLeaveGroup` is supplied
+ *    - Leave group       — ALL groups, both contexts (built-in confirm + leave)
  *    - Open as bubble /
  *      Float as pill     — DMs only, when the matching callback is supplied
  */
 
-import { Pressable } from 'react-native';
+import { Alert, Pressable } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import { useRouter } from 'expo-router';
@@ -28,6 +28,7 @@ import { AppModal } from './AppModal';
 import { useEffectiveColorScheme } from '../lib/theme';
 import { markConvRead, markConvUnread } from '../lib/channelsCache';
 import { togglePin } from '../lib/pins';
+import { leaveGroupConv, lineOfConv } from '../lib/xmtp';
 
 export interface ChannelMenuProps {
   /** Conversation id the actions operate on. */
@@ -45,9 +46,11 @@ export interface ChannelMenuProps {
   /** Sheet visibility (controlled by the parent). */
   visible: boolean;
   onClose: () => void;
-  /** Group-view only: leave-group flow (owns its own confirm dialog). When
-   *  omitted the Leave-group row is hidden (e.g. the list context). */
-  onLeaveGroup?: () => void;
+  /** Where the menu is mounted — drives post-leave navigation. 'view' pops back
+   *  to the channels list; 'list' just lets the list reconcile (default). */
+  context?: 'list' | 'view';
+  /** Optional hook fired after a successful leave (e.g. toast / refresh). */
+  onAfterLeave?: (result: 'left' | 'hidden') => void;
   /** DM-view only: pop a floating Android chat-head for this 1-1. */
   onOpenAsBubble?: () => void;
   /** DM-view only: launch the always-on floating voice pill for this peer. */
@@ -56,7 +59,7 @@ export interface ChannelMenuProps {
 
 export function ChannelMenu({
   convId, title, isGroup, peerAddress, isUnread, isPinned,
-  visible, onClose, onLeaveGroup, onOpenAsBubble, onFloatAsPill,
+  visible, onClose, context = 'list', onAfterLeave, onOpenAsBubble, onFloatAsPill,
 }: ChannelMenuProps): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
@@ -66,6 +69,32 @@ export function ChannelMenu({
   const danger = dark ? '#ff6b80' : '#b91c1c';
 
   const run = (fn: () => void): void => { onClose(); fn(); };
+
+  /** Built-in Leave-group flow — confirm, leave via XMTP, then navigate
+   *  context-aware: pop back from the channel view; let the list reconcile. */
+  const onLeaveGroup = (): void => {
+    onClose();
+    Alert.alert(
+      'Leave group',
+      'You’ll stop receiving messages from this group. You can be re-added by a member later.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Leave', style: 'destructive', onPress: () => {
+            void (async (): Promise<void> => {
+              try {
+                const result = await leaveGroupConv(lineOfConv(convId));
+                onAfterLeave?.(result);
+                if (context === 'view') router.replace('/');
+              } catch (e) {
+                Alert.alert('Couldn’t leave', (e as Error).message ?? 'Unknown error');
+              }
+            })();
+          },
+        },
+      ],
+    );
+  };
 
   return (
     <AppModal visible={visible} onClose={onClose}>
@@ -116,7 +145,7 @@ export function ChannelMenu({
           <MenuRow icon="microphone" label="Float as pill" color={head} onPress={onFloatAsPill} />
         ) : null}
 
-        {isGroup && onLeaveGroup ? (
+        {isGroup ? (
           <MenuRow icon="arrowLeft" label="Leave group" color={danger} onPress={onLeaveGroup} />
         ) : null}
 
