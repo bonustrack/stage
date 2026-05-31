@@ -17,7 +17,7 @@ export default function TabsLayout(): React.ReactElement {
    *  Home rightward drag) and the LeftDrawer (which renders it + owns close). */
   const drawerProgress = useSharedValue(0);
   const pathname = usePathname();
-  /** The pager only mounts the four tab bodies (Home/Wallet/Profile/Notifications).
+  /** The pager only mounts the five tab bodies (Home/Search/Wallet/Notifications/Profile).
    *  Settings is a non-pager route now → hide the pager overlay there so the real
    *  SettingsScreen rendered by the route shows through. */
   const pagerVisible = !pathname.startsWith('/settings');
@@ -66,6 +66,7 @@ export default function TabsLayout(): React.ReactElement {
         {(
           [
             ['index', 'chatBubble'],
+            ['search', 'search'],
             ['wallet', 'wallet'],
             ['notifications', 'bell'],
             ['profile', 'user'],

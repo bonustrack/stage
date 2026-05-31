@@ -38,6 +38,7 @@ import { usePathname, useRouter } from 'expo-router';
 import type { Href } from 'expo-router';
 
 import { HomeScreen } from './tabs/HomeScreen';
+import { SearchScreen } from './tabs/SearchScreen';
 import { WalletScreen } from './tabs/WalletScreen';
 import { ProfileTabScreen } from './tabs/ProfileTab';
 import { NotificationsScreen } from './tabs/NotificationsScreen';
@@ -50,13 +51,14 @@ import { NotificationsScreen } from './tabs/NotificationsScreen';
 export type SimultaneousRefs = React.RefObject<GestureType | undefined>;
 
 /** Tab order = the order declared in `app/(tabs)/_layout.tsx`. Index 0..3. */
-const TAB_ORDER = ['index', 'wallet', 'notifications', 'profile'] as const;
+const TAB_ORDER = ['index', 'search', 'wallet', 'notifications', 'profile'] as const;
 type TabName = (typeof TAB_ORDER)[number];
 
 /** expo-router pathnames for each tab (the `(tabs)` group is path-transparent;
  *  `index` is the group root `/`). */
 const TAB_HREF: Record<TabName, Href> = {
   index: '/',
+  search: '/search',
   wallet: '/wallet',
   profile: '/profile',
   notifications: '/notifications',
@@ -68,6 +70,7 @@ const TAB_HREF: Record<TabName, Href> = {
  *  instant the finger moves. */
 const PAGES: Record<TabName, (props: { panRef?: SimultaneousRefs }) => React.ReactElement> = {
   index: HomeScreen,
+  search: SearchScreen,
   wallet: WalletScreen,
   profile: ProfileTabScreen,
   notifications: NotificationsScreen,
@@ -77,9 +80,10 @@ const PAGES: Record<TabName, (props: { panRef?: SimultaneousRefs }) => React.Rea
  *  current index (the pager isn't mounted off the tabs group anyway). */
 function indexOfPathname(pathname: string): number {
   if (pathname === '/' || pathname === '') return 0;
-  if (pathname.startsWith('/wallet')) return 1;
-  if (pathname.startsWith('/notifications')) return 2;
-  if (pathname.startsWith('/profile')) return 3;
+  if (pathname.startsWith('/search')) return 1;
+  if (pathname.startsWith('/wallet')) return 2;
+  if (pathname.startsWith('/notifications')) return 3;
+  if (pathname.startsWith('/profile')) return 4;
   return 0;
 }
 
