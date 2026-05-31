@@ -1,0 +1,148 @@
+name: Release Stage
+
+# Builds the Stage (prod) variant for Android (APK) + iOS and publishes the
+# artifacts to a GitHub Release when apps/app/package.json's version changes on
+# main. Also runnable manually via workflow_dispatch.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/app/package.json'
+  workflow_dispatch:
+
+# Avoid double-building on overlapping pushes.
+concurrency:
+  group: release-stage-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.check.outputs.changed }}
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+      - id: check
+        run: |
+          VERSION=$(jq -r .version apps/app/package.json)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          # Manual runs always proceed.
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Manual dispatch — building v$VERSION"
+            exit 0
+          fi
+          PREV=$(git show HEAD~1:apps/app/package.json 2>/dev/null | jq -r .version || echo "")
+          if [ "$VERSION" != "$PREV" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Version changed: $PREV -> $VERSION"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Version unchanged ($VERSION) — skipping build."
+          fi
+
+  android:
+    needs: guard
+    if: needs.guard.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    env:
+      APP_VARIANT: prod
+    outputs:
+      apk: ${{ steps.build.outputs.apk }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.9
+      - run: bun install --frozen-lockfile
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - id: build
+        working-directory: apps/app
+        run: |
+          # preview-prod = release APK (Stage variant) per eas.json.
+          # NOTE: EAS free tier has a monthly cloud-build cap; cloud builds may
+          # queue or be rejected if the cap is hit.
+          OUT=$(eas build -p android --profile preview-prod --non-interactive --json --wait)
+          echo "$OUT"
+          URL=$(echo "$OUT" | jq -r '.[0].artifacts.buildUrl // .[0].artifacts.applicationArchiveUrl')
+          if [ -z "$URL" ] || [ "$URL" = "null" ]; then
+            echo "No artifact URL from EAS"; exit 1
+          fi
+          curl -fSL "$URL" -o "$GITHUB_WORKSPACE/metro-stage.apk"
+          echo "apk=metro-stage.apk" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: metro-stage.apk
+
+  ios:
+    needs: guard
+    if: needs.guard.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    # iOS requires Apple Developer credentials configured in EAS
+    # (`eas credentials`) and a paid Apple Developer account. If those aren't
+    # set up this step fails — continue-on-error keeps the Android release alive.
+    continue-on-error: true
+    env:
+      APP_VARIANT: prod
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.9
+      - run: bun install --frozen-lockfile
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - working-directory: apps/app
+        run: |
+          OUT=$(eas build -p ios --profile preview-prod --non-interactive --json --wait)
+          echo "$OUT"
+          URL=$(echo "$OUT" | jq -r '.[0].artifacts.buildUrl // .[0].artifacts.applicationArchiveUrl')
+          if [ -z "$URL" ] || [ "$URL" = "null" ]; then
+            echo "No iOS artifact URL from EAS"; exit 1
+          fi
+          curl -fSL "$URL" -o "$GITHUB_WORKSPACE/metro-stage.ipa"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-ipa
+          path: metro-stage.ipa
+          if-no-files-found: ignore
+
+  release:
+    needs: [guard, android, ios]
+    if: needs.guard.outputs.changed == 'true' && !cancelled() && needs.android.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: android-apk
+          path: artifacts
+      # iOS may not exist (continue-on-error); don't fail if missing.
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: ios-ipa
+          path: artifacts
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.guard.outputs.version }}
+          name: Metro Stage v${{ needs.guard.outputs.version }}
+          prerelease: false
+          body: |
+            Stage (prod) build for v${{ needs.guard.outputs.version }}.
+            Commit: ${{ github.sha }}
+          files: |
+            artifacts/*.apk
+            artifacts/*.ipa
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
