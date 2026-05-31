@@ -1,5 +1,5 @@
 /** Horizontal pager for the four first-level `(tabs)` pages
- *  (Home → Wallet → Profile → Settings).
+ *  (Home → Wallet → Notifications → Profile).
  *
  *  TRUE finger-follow paging: all four tab bodies are mounted ONCE, side-by-side
  *  in a row of width `4 × screenWidth`. A reanimated shared value `tx` holds the
@@ -50,7 +50,7 @@ import { NotificationsScreen } from './tabs/NotificationsScreen';
 export type SimultaneousRefs = React.RefObject<GestureType | undefined>;
 
 /** Tab order = the order declared in `app/(tabs)/_layout.tsx`. Index 0..3. */
-const TAB_ORDER = ['index', 'wallet', 'profile', 'notifications'] as const;
+const TAB_ORDER = ['index', 'wallet', 'notifications', 'profile'] as const;
 type TabName = (typeof TAB_ORDER)[number];
 
 /** expo-router pathnames for each tab (the `(tabs)` group is path-transparent;
@@ -78,8 +78,8 @@ const PAGES: Record<TabName, (props: { panRef?: SimultaneousRefs }) => React.Rea
 function indexOfPathname(pathname: string): number {
   if (pathname === '/' || pathname === '') return 0;
   if (pathname.startsWith('/wallet')) return 1;
-  if (pathname.startsWith('/profile')) return 2;
-  if (pathname.startsWith('/notifications')) return 3;
+  if (pathname.startsWith('/notifications')) return 2;
+  if (pathname.startsWith('/profile')) return 3;
   return 0;
 }
 
