@@ -75,8 +75,8 @@ function indexOfPathname(pathname: string): number {
 }
 
 /** Switch tabs if dragged past this fraction of the screen width OR flung. */
-const SWITCH_FRACTION = 0.25;
-const FLING_VELOCITY = 600;
+const SWITCH_FRACTION = 0.2;
+const FLING_VELOCITY = 450;
 
 /** Single pager host. Rendered once from `(tabs)/_layout.tsx` as the scene for
  *  every tab route; the route files themselves are empty placeholders. */
@@ -90,8 +90,17 @@ export function TabsPager(): React.ReactElement {
   /** `tx` = strip translateX. Settled position is `-index*W`. */
   const tx = useSharedValue(-routeIndex * width);
   /** Index the pager is currently resting on (drives gesture clamping + the
-   *  navigate on settle). Kept on the UI thread as a shared value. */
+   *  navigate on settle). Kept on the UI thread as a shared value, and is the
+   *  SINGLE SOURCE OF TRUTH for `tx` during + after a swipe. */
   const index = useSharedValue(routeIndex);
+  /** Set by the gesture when IT initiated the route change, so the pathname
+   *  re-sync effect below knows the strip is already where it should be and
+   *  must NOT re-anchor `tx` (which would kill the in-flight settle spring and
+   *  make the next swipe feel like it "needs multiple tries"). */
+  const gestureDrivenTo = useSharedValue<number | null>(null);
+  /** Last width we anchored to — only re-anchor on a genuine width change
+   *  (rotation), never on a bare pathname update. */
+  const lastWidth = useSharedValue(width);
 
   const navigate = (i: number): void => {
     const name = TAB_ORDER[i];
@@ -99,22 +108,38 @@ export function TabsPager(): React.ReactElement {
   };
 
   /** Keep the pager in sync when the route changes from OUTSIDE a swipe —
-   *  tab-bar tap or a deep link. Animate the strip to the new page. */
+   *  tab-bar tap or a deep link. Animate the strip to the new page. Crucially
+   *  this must be a no-op when the gesture itself drove the change. */
   useEffect(() => {
+    const widthChanged = lastWidth.value !== width;
+    lastWidth.value = width;
+
+    // The gesture already moved (or is springing) to this route — leave it be.
+    if (gestureDrivenTo.value === routeIndex) {
+      gestureDrivenTo.value = null;
+      index.value = routeIndex;
+      // Only correct the resting anchor if the device actually rotated.
+      if (widthChanged) tx.value = -routeIndex * width;
+      return;
+    }
+
     if (index.value !== routeIndex) {
+      // External change (tab-bar tap / deep link) → animate to it.
       index.value = routeIndex;
       tx.value = withTiming(-routeIndex * width, { duration: 220 });
-    } else {
-      // width may have changed (rotation) — re-anchor without animation.
+    } else if (widthChanged) {
+      // Rotation only — re-anchor without animation.
       tx.value = -routeIndex * width;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [routeIndex, width]);
 
   const pan = Gesture.Pan()
-    /** Arm only on a clearly-horizontal drag; vertical-first wins → scroll. */
-    .activeOffsetX([-15, 15])
-    .failOffsetY([-12, 12])
+    /** Arm only on a clearly-horizontal drag; vertical-first wins → scroll.
+     *  Lower X threshold than the Y fail-band so a horizontal-first flick arms
+     *  reliably on the FIRST try, while any vertical intent still scrolls. */
+    .activeOffsetX([-10, 10])
+    .failOffsetY([-14, 14])
     .onUpdate((e) => {
       'worklet';
       const base = -index.value * width;
@@ -138,7 +163,12 @@ export function TabsPager(): React.ReactElement {
       tx.value = withSpring(-target * width, {
         damping: 22, stiffness: 240, velocity: e.velocityX,
       });
-      if (target !== routeIndex) runOnJS(navigate)(target);
+      if (target !== routeIndex) {
+        // Mark the route change as gesture-driven so the pathname re-sync
+        // effect doesn't re-anchor `tx` and interrupt this settle spring.
+        gestureDrivenTo.value = target;
+        runOnJS(navigate)(target);
+      }
     });
 
   const stripStyle = useAnimatedStyle(() => ({
