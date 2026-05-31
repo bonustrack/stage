@@ -148,7 +148,11 @@ export default function RootLayout(): React.ReactElement {
           statusBarStyle: barStyle,
           goBackGesture: 'swipeRight',
           screenEdgeGesture: true,
-          stackAnimation: 'none',
+          /** Interactive swipe-back needs a real transition for the gesture to
+           *  scrub — 'none' silently disables the edge-swipe reveal. Keep a fast
+           *  slide (short duration) so swipe-back works AND pushes stay snappy. */
+          stackAnimation: 'slide_from_right',
+          animationDuration: 200,
         }}
       >
         {/** Tab root: no back gesture (it's the bottom of the stack), instant. */}
