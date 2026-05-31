@@ -3,8 +3,14 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Alert, Animated as RNAnimated, AppState, Dimensions, FlatList, Modal, Pressable, ScrollView, Share, Text, View,
+  Alert, Animated as RNAnimated, AppState, Dimensions, Modal, Pressable, ScrollView, Share, Text, View,
 } from 'react-native';
+/** RNGH's gesture-aware FlatList (drop-in for RN's): its scroll runs through a
+ *  native RNGH handler, so under GestureDetectorProvider it COMPOSES with the
+ *  native-stack edge swipe-back instead of being starved by it. The edge gesture
+ *  is left-edge-confined + horizontal; this scroll is vertical → RNGH arbitrates
+ *  them by direction and the scroll wins everywhere off the edge. */
+import { FlatList } from 'react-native-gesture-handler';
 import { Box } from '../../components/layout';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,7 +18,6 @@ import { KeyboardStickyView, useReanimatedKeyboardAnimation } from 'react-native
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { MessengerBubble, REACT_PRESETS } from '../../components/MessengerBubble';
-import { SwipeBack } from '../../components/SwipeBack';
 import { stripMentionMarkup, attachmentEmojiPreview } from '@metro-labs/client/xmtp/humanize';
 import { usePeerProfiles, getPeerName, getPeerAvatar } from '../../lib/peerProfiles';
 import { useConvMeta } from '../../lib/useConvMeta';
@@ -701,7 +706,6 @@ export default function XmtpConversation(): React.ReactElement {
   }
 
   return (
-    <SwipeBack onBack={() => router.replace('/')}>
     <RNAnimated.View
       style={{
         flex: 1, backgroundColor: bg, paddingBottom: insets.bottom,
@@ -1028,7 +1032,6 @@ export default function XmtpConversation(): React.ReactElement {
         }}
       />
     </RNAnimated.View>
-    </SwipeBack>
   );
 }
 

@@ -15,8 +15,9 @@ import { LogBox, Text, TextInput } from 'react-native';
 import { Box } from '../components/layout';
 import { Spinner } from '../components/Spinner';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { GestureDetectorProvider } from 'react-native-screens/gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
-import { Stack } from 'expo-router';
+import { NativeSwipeStack } from '../components/NativeSwipeStack';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { useDeepLinks } from '../lib/deepLinks';
 import { usePushDeepLinks } from '../lib/push';
@@ -114,34 +115,47 @@ export default function RootLayout(): React.ReactElement {
     <QueryClientProvider client={queryClient}>
     <WalletConnectProvider>
     <GestureHandlerRootView style={{ flex: 1 }}>
+      {/** GestureDetectorProvider (react-native-screens/gesture-handler) wires the
+       *   native-stack's interactive edge swipe-back into the RNGH gesture tree, so
+       *   it arbitrates cleanly with the app's other RNGH gestures (MessengerBubble
+       *   swipe-to-reply, scroll) rather than fighting a separate touch system.
+       *   This is now safe because swipe-to-reply was migrated off PanResponder to
+       *   RNGH (commit 1e3a0e3) — the two systems compose under one provider. */}
+      <GestureDetectorProvider>
       <KeyboardProvider>
       <StatusBar style={barStyle} translucent backgroundColor="transparent" />
-      {/** Plain expo-router <Stack> (→ @react-navigation/native-stack). The
-       *   previous react-native-screens-own native-stack + GestureDetectorProvider
-       *   interactive swipe-back was reverted: its root gesture layer was stealing
-       *   the touch stream from the message-list FlatList vertical scroll and the
-       *   MessengerBubble leftward swipe-to-reply PanResponder app-wide. Core chat
-       *   (scroll + swipe-to-reply) takes priority over the fancy swipe-back.
+      {/** react-native-screens native-stack (via NativeSwipeStack/withLayoutContext)
+       *   instead of expo-router's default @react-navigation native-stack — only
+       *   rn-screens exposes the interactive finger-following edge swipe-back
+       *   (`goBackGesture: 'swipeRight'` + `screenEdgeGesture: true`) that reveals
+       *   the previous page sliding underneath on the native thread (real iOS/
+       *   Telegram parallax), which the old JS SwipeBack couldn't do.
        *
-       *   `animation: 'none'` → instant transitions (the preferred feel).
-       *   `statusBarStyle: barStyle` keeps the white-on-dark status-bar icons:
-       *   @react-navigation/native-stack drives the rn-screens window trait from
-       *   this per-screen option, and we also set it imperatively (effect above) +
-       *   declaratively (<StatusBar> above) so it survives navigation.
+       *   Pushed routes opt into the EDGE gesture (left ~50px catch zone) +
+       *   slide_from_right animation. The (tabs) root disables the gesture (nothing
+       *   to go back to) and keeps instant transitions.
        *
-       *   No interactive swipe-back remains: iOS keeps its built-in edge swipe;
-       *   Android is hardware-back only. */}
-      <Stack
+       *   `statusBarStyle: barStyle` keeps white-on-dark status-bar icons; we also
+       *   set it imperatively (effect above) + declaratively (<StatusBar>) so it
+       *   survives navigation. */}
+      <NativeSwipeStack
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: dark ? '#0e0f10' : '#ffffff' },
           statusBarStyle: barStyle,
-          animation: 'none',
+          goBackGesture: 'swipeRight',
+          screenEdgeGesture: true,
+          stackAnimation: 'slide_from_right',
         }}
       >
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      </Stack>
+        {/** Tab root: no back gesture (it's the bottom of the stack), instant. */}
+        <NativeSwipeStack.Screen
+          name="(tabs)"
+          options={{ gestureEnabled: false, screenEdgeGesture: false, stackAnimation: 'none' }}
+        />
+      </NativeSwipeStack>
       </KeyboardProvider>
+      </GestureDetectorProvider>
     </GestureHandlerRootView>
     </WalletConnectProvider>
     </QueryClientProvider>

@@ -4,7 +4,10 @@
 
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { ActivityIndicator, Alert, FlatList, Image, Pressable, Text, TextInput } from 'react-native';
+import { ActivityIndicator, Alert, Image, Pressable, Text, TextInput } from 'react-native';
+/** RNGH gesture-aware FlatList so vertical scroll composes with the native-stack
+ *  edge swipe-back under GestureDetectorProvider (see xmtp/[convId] for rationale). */
+import { FlatList } from 'react-native-gesture-handler';
 import { Box } from '../../components/layout';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -21,7 +24,6 @@ import { usePeerProfiles, getPeerAvatar, getPeerAvatarCb } from '../../lib/peerP
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { HeroIcon } from '../../components/HeroIcon';
 import { Avatar } from '../../components/Avatar';
-import { SwipeBack } from '../../components/SwipeBack';
 import { ImageViewer } from '../../components/ImageViewer';
 import { AppModal } from '../../components/AppModal';
 
@@ -290,7 +292,6 @@ export default function GroupDetail(): React.ReactElement {
   };
 
   return (
-    <SwipeBack>
     <Box style={{ flex: 1, backgroundColor: bg }}>
       <Box style={{
         height: 44 + insets.top, paddingTop: insets.top, paddingHorizontal: 14,
@@ -559,6 +560,5 @@ export default function GroupDetail(): React.ReactElement {
         onClose={() => setViewerOpen(false)}
       />
     </Box>
-    </SwipeBack>
   );
 }

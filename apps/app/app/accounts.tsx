@@ -11,7 +11,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { HeroIcon } from '../components/HeroIcon';
 import { AccountsManager } from '../components/AccountsManager';
-import { SwipeBack } from '../components/SwipeBack';
 
 export default function Accounts(): React.ReactElement {
   const router = useRouter();
@@ -20,7 +19,6 @@ export default function Accounts(): React.ReactElement {
   const insets = useSafeAreaInsets();
 
   return (
-    <SwipeBack>
     <Box style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
       {/* Topnav: back + title, mirroring the search page. */}
       <Box style={{
@@ -40,6 +38,5 @@ export default function Accounts(): React.ReactElement {
         <AccountsManager dark={dark} flat onSwitched={() => router.back()} />
       </ScrollView>
     </Box>
-    </SwipeBack>
   );
 }

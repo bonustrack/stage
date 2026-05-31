@@ -6,13 +6,8 @@
 
 import { useLocalSearchParams } from 'expo-router';
 import { ProfileScreen } from '../../components/ProfileScreen';
-import { SwipeBack } from '../../components/SwipeBack';
 
 export default function UserProfileView(): React.ReactElement {
   const { address } = useLocalSearchParams<{ address: string }>();
-  return (
-    <SwipeBack>
-      <ProfileScreen address={address ?? ''} variant="route" />
-    </SwipeBack>
-  );
+  return <ProfileScreen address={address ?? ''} variant="route" />;
 }

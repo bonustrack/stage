@@ -20,7 +20,6 @@ import { resolveEnsName } from '../../lib/ens';
 import { getSimplePrices } from '../../lib/coingecko';
 import { usePalette } from '../../lib/theme';
 import { HeroIcon } from '../../components/HeroIcon';
-import { SwipeBack } from '../../components/SwipeBack';
 
 const MULTICALL3 = '0xcA11bde05977b3631167028862bE2a173976CA11' as const;
 const multicall3Abi = [{
@@ -140,7 +139,6 @@ export default function WalletSend(): React.ReactElement {
   };
 
   return (
-    <SwipeBack>
     <Box style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
       <Box style={{
         flexDirection: 'row', alignItems: 'center', gap: 8,
@@ -269,6 +267,5 @@ export default function WalletSend(): React.ReactElement {
         </Pressable>
       </ScrollView>
     </Box>
-    </SwipeBack>
   );
 }
