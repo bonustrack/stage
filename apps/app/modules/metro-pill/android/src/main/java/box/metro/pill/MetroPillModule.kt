@@ -114,6 +114,23 @@ class MetroPillModule : Module() {
     AsyncFunction("openAsBubble") { convId: String, title: String, deepLink: String, avatarUri: String? ->
       postBubble(convId, title, deepLink, avatarUri)
     }
+
+    // ---- Active-conversation tracking (notification suppression) ----
+    // The conversation screen reports the convId it's currently showing (on
+    // focus) and clears it (null) on blur / background. MetroFcmService — which
+    // runs in a SEPARATE process/context for FCM dispatch — reads this from
+    // SharedPreferences and suppresses the push when it matches the inbound
+    // message's conversation (the user is already looking at it). Stored in
+    // prefs so it survives the JS↔FCM process boundary; null clears the key so
+    // no suppression happens by default.
+    Function("setActiveConversation") { convId: String? ->
+      val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+      prefs.edit().apply {
+        if (convId.isNullOrBlank()) remove(KEY_ACTIVE_CONV)
+        else putString(KEY_ACTIVE_CONV, convId)
+      }.apply()
+      true
+    }
   }
 
   private fun bubblesSupported(): Boolean {
@@ -243,6 +260,11 @@ class MetroPillModule : Module() {
 
   companion object {
     const val CHANNEL_ID = "metro-conversations"
+
+    /** SharedPreferences shared with MetroFcmService for notification
+     *  suppression of the currently-open conversation. */
+    const val PREFS_NAME = "metro_pill"
+    const val KEY_ACTIVE_CONV = "active_conv"
 
     /** Weak ref so the OverlayService can deliver recorder results back into JS
      *  without leaking the module across JS reloads. Cleared in OnDestroy. */

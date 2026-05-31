@@ -2,7 +2,7 @@
  *  no colored bubble even for the local user's own messages. */
 
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Linking, PanResponder, Pressable, Text, TextInput } from 'react-native';
+import { ActivityIndicator, Animated, Linking, PanResponder, Pressable, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { getPeerAvatarCb } from '../lib/peerProfiles';
 import Markdown, { MarkdownIt } from 'react-native-markdown-display';

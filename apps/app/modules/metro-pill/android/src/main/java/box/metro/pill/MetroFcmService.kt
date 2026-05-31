@@ -4,6 +4,8 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.BitmapShader
@@ -86,14 +88,45 @@ class MetroFcmService : FirebaseMessagingService() {
     val body = data["body"] ?: message.notification?.body ?: ""
     val channelId = data["channelId"] ?: DEFAULT_CHANNEL_ID
     val line = data["line"]
+    // GROUP vs 1-1: the daemon sets `isGroup`/`groupTitle` for group convos. When
+    // grouped, MessagingStyle shows the conversation (group) title and treats
+    // `title` as the per-message sender; for 1-1 there is a single sender.
+    val isGroup = data["isGroup"] == "true" || data["isGroup"] == "1"
+    val groupTitle = data["groupTitle"]?.takeIf { it.isNotBlank() } ?: title
+
+    // SUPPRESSION: if the user is currently viewing this exact conversation
+    // (app foreground + that screen focused), the conversation screen has
+    // written its bare convId into the shared "metro_pill" prefs. The push
+    // carries the conv via `line` (metro://xmtp/<acct>/<convId> or legacy
+    // metro://xmtp/<convId>) and/or an explicit `convId` data field. We extract
+    // the bare convId from both and, on an exact match, drop the notification —
+    // the user has already seen it. Cleared (null) on blur/background, so the
+    // default (no stored value) NEVER suppresses; only an exact match does.
+    val pushConvId = data["convId"]?.takeIf { it.isNotBlank() } ?: convIdOfLine(line)
+    if (pushConvId != null) {
+      val active = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        .getString(KEY_ACTIVE_CONV, null)
+      if (active != null && active == pushConvId) return
+    }
 
     ensureChannel(channelId)
 
     val avatar = runCatching { downloadAndCircleCrop(avatarUrl) }.getOrNull()
 
+    // STABLE PER-CONVERSATION NOTIFICATION ID: derive a stable id from the bare
+    // convId so re-notifying the SAME conversation UPDATES the same card instead
+    // of stacking a new one (Telegram/WhatsApp behaviour: one card per channel).
+    // Fall back to the (group) title hash when there's no convId in the push.
+    val notifId = pushConvId?.hashCode() ?: groupTitle.hashCode()
+
+    // HEADING: a group card's bold heading is the CHANNEL (group) name; a 1-1
+    // DM keeps the sender's name. MessagingStyle promotes conversationTitle
+    // (set to groupTitle below) to the group heading, but we also set
+    // contentTitle accordingly so no collapsed/OEM fallback ever shows the
+    // sender as the group heading.
     val builder = NotificationCompat.Builder(this, channelId)
       .setSmallIcon(smallIconRes())
-      .setContentTitle(title)
+      .setContentTitle(if (isGroup) groupTitle else title)
       .setContentText(body)
       .setAutoCancel(true)
       .setCategory(NotificationCompat.CATEGORY_MESSAGE)
@@ -109,11 +142,20 @@ class MetroFcmService : FirebaseMessagingService() {
         .setName(title)
         .setIcon(IconCompat.createWithBitmap(avatar))
         .build()
-      builder.setStyle(
-        NotificationCompat.MessagingStyle(
-          Person.Builder().setName("You").build(),
-        ).addMessage(body, System.currentTimeMillis(), sender),
-      )
+
+      // ACCUMULATE messages across separate FCM deliveries. Each onMessageReceived
+      // is a fresh call with no in-memory history, so we restore the existing
+      // notification's MessagingStyle from the active notification carrying the
+      // same id and append the new message — yielding the native "stacked
+      // messages, one card per conversation, with a count" behaviour.
+      val style = restoreStyle(notifId)
+        ?: NotificationCompat.MessagingStyle(Person.Builder().setName("You").build())
+      if (isGroup) {
+        // Reads as a group: shows the conversation title + per-message senders.
+        style.setGroupConversation(true).conversationTitle = groupTitle
+      }
+      style.addMessage(body, System.currentTimeMillis(), sender)
+      builder.setStyle(style)
     } else {
       // DEFENSIVE FALLBACK: avatar download failed — post a standard card so a
       // notification still shows (no avatar; small-icon only).
@@ -124,22 +166,69 @@ class MetroFcmService : FirebaseMessagingService() {
 
     if (NotificationManagerCompat.from(this).areNotificationsEnabled()) {
       try {
-        NotificationManagerCompat.from(this)
-          .notify(line?.hashCode() ?: title.hashCode(), builder.build())
+        NotificationManagerCompat.from(this).notify(notifId, builder.build())
       } catch (_: SecurityException) {
         // POST_NOTIFICATIONS not granted — silently drop.
       }
     }
   }
 
-  /** Tap → open the app (deep-linking the exact conversation is JS-side via the
-   *  existing notification-response handler; we pass `line` as an extra). */
+  /** Restore the MessagingStyle from the currently-posted notification with the
+   *  given id, so a fresh FCM delivery can APPEND its message to the existing
+   *  stack instead of replacing it. Returns null when there's no active
+   *  notification for this conversation (→ caller starts a fresh style).
+   *
+   *  getActiveNotifications() is API 23+ (the app's minSdk is well above), so no
+   *  legacy fallback is needed — older devices simply start fresh each time. */
+  private fun restoreStyle(notifId: Int): NotificationCompat.MessagingStyle? {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return null
+    return runCatching {
+      val mgr = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+      val existing = mgr.activeNotifications.firstOrNull { it.id == notifId }?.notification
+        ?: return null
+      NotificationCompat.MessagingStyle.extractMessagingStyleFromNotification(existing)
+    }.getOrNull()
+  }
+
+  /** Extract the bare conversation id from a metro line URI. Handles both the
+   *  account-scoped `metro://xmtp/<acct>/<convId>` and the legacy
+   *  `metro://xmtp/<convId>` form by taking the LAST path segment — which is
+   *  the convId in both, and matches what the conversation screen stores. */
+  private fun convIdOfLine(line: String?): String? {
+    if (line.isNullOrBlank()) return null
+    val tail = line.substringAfterLast('/', "").substringBefore('?')
+    return tail.takeIf { it.isNotBlank() }
+  }
+
+  /** Tap → open the exact conversation via an expo-router deep link.
+   *
+   *  WHY ACTION_VIEW (not a launch intent + extra): this notification is posted
+   *  NATIVELY, so expo-notifications' JS response listener never fires on tap —
+   *  the app's `usePushDeepLinks` never sees it. Instead we fire an
+   *  `ACTION_VIEW metro://xmtp/<convId>` at the app's own scheme. expo-router +
+   *  expo-linking auto-route that URL (path-based) to `app/xmtp/[convId].tsx` on
+   *  BOTH cold start (getInitialURL) and warm tap (the `url` Linking event) with
+   *  no JS change needed. The app's MainActivity already declares the `metro`
+   *  scheme intent-filter (expo injects it from app.json `"scheme": "metro"`).
+   *
+   *  We deep-link the BARE convId (`metro://xmtp/<convId>`), not the raw `line`
+   *  (which may be account-scoped `metro://xmtp/<acct>/<convId>` — 3 segments
+   *  expo-router can't map to the single-segment `[convId]` route). `convIdOfLine`
+   *  takes the last path segment, matching what the conversation screen expects.
+   *  Falls back to a plain launch intent when there's no conv to target. */
   private fun contentIntent(line: String?): PendingIntent? {
-    val launch = packageManager.getLaunchIntentForPackage(packageName) ?: return null
-    if (line != null) launch.putExtra("metroLine", line)
     val flags = PendingIntent.FLAG_UPDATE_CURRENT or
       (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0)
-    return PendingIntent.getActivity(this, line?.hashCode() ?: 0, launch, flags)
+    val convId = convIdOfLine(line)
+    if (convId == null) {
+      val launch = packageManager.getLaunchIntentForPackage(packageName) ?: return null
+      return PendingIntent.getActivity(this, 0, launch, flags)
+    }
+    val view = Intent(Intent.ACTION_VIEW, Uri.parse("metro://xmtp/$convId")).apply {
+      setPackage(packageName)
+      addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+    }
+    return PendingIntent.getActivity(this, convId.hashCode(), view, flags)
   }
 
   private fun ensureChannel(channelId: String) {
@@ -228,5 +317,10 @@ class MetroFcmService : FirebaseMessagingService() {
 
   companion object {
     private const val DEFAULT_CHANNEL_ID = "metro-messages"
+
+    // Shared with MetroPillModule.setActiveConversation — the conversation the
+    // user is currently viewing (bare convId), for notification suppression.
+    private const val PREFS_NAME = "metro_pill"
+    private const val KEY_ACTIVE_CONV = "active_conv"
   }
 }
