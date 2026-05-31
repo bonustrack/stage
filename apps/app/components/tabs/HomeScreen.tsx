@@ -24,7 +24,6 @@ import { resetAccount } from '../../lib/wallet';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import {
   getCachedRows, hydrateCachedRows, setCachedRows, subscribeCachedRows,
-  markConvUnread, markConvRead,
 } from '../../lib/channelsCache';
 import { usePeerProfiles, getPeerAvatarCb, getPeerName, isPeerResolved } from '../../lib/peerProfiles';
 import { isMetroControlBody } from '../../lib/push';
@@ -37,8 +36,8 @@ import { Spinner } from '../Spinner';
 import { Avatar } from '../Avatar';
 import { ChannelRow } from '../ChannelRow';
 import { Box, Col, Row } from '../layout';
-import { AppModal } from '../AppModal';
-import { loadPinnedIds, isPinned, togglePin, subscribePins } from '../../lib/pins';
+import { loadPinnedIds, isPinned, subscribePins } from '../../lib/pins';
+import { ChannelMenu } from '../ChannelMenu';
 
 interface Row {
   convId: string;
@@ -219,7 +218,7 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
   const [error, setError] = useState<string>('');
   /** Row long-pressed → opens the per-conversation action sheet (Mark as
    *  read/unread). Holds the convId + whether it currently reads as unread. */
-  const [rowMenu, setRowMenu] = useState<{ convId: string; title: string; isUnread: boolean } | null>(null);
+  const [rowMenu, setRowMenu] = useState<{ convId: string; title: string; isUnread: boolean; isGroup: boolean; peerAddress: string | null } | null>(null);
   /** Held across effect re-runs so AppState + poll backstops can call refresh
    *  without re-binding to a stale client. */
   const refreshFromNetworkRef = useRef<(() => Promise<void>) | null>(null);
@@ -548,6 +547,8 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
             convId: item.convId,
             title: item.peerAddress ? (getPeerName(item.peerAddress) ?? item.title) : item.title,
             isUnread: item.unreadCount > 0 || !!item.markedUnread,
+            isGroup: !item.peerAddress,
+            peerAddress: item.peerAddress,
           });
         }}
       />
@@ -661,63 +662,16 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
         }
         renderItem={renderRow}
       />
-      <RowActionSheet
-        target={rowMenu}
-        dark={dark}
-        pinned={rowMenu ? pinned.has(rowMenu.convId) : false}
+      <ChannelMenu
+        visible={!!rowMenu}
+        convId={rowMenu?.convId ?? ''}
+        title={rowMenu?.title}
+        isGroup={rowMenu?.isGroup ?? false}
+        peerAddress={rowMenu?.peerAddress ?? null}
+        isUnread={rowMenu?.isUnread ?? false}
+        isPinned={rowMenu ? pinned.has(rowMenu.convId) : false}
         onClose={() => setRowMenu(null)}
-        onToggleUnread={() => {
-          if (!rowMenu) return;
-          const { convId, isUnread } = rowMenu;
-          setRowMenu(null);
-          if (isUnread) void markConvRead(convId);
-          else void markConvUnread(convId);
-        }}
-        onTogglePin={() => {
-          if (!rowMenu) return;
-          const { convId } = rowMenu;
-          setRowMenu(null);
-          void togglePin(convId);
-        }}
       />
     </Col>
-  );
-}
-
-/** Bottom action sheet shown on long-pressing a channel row. v1 exposes a
- *  single toggle: Mark as read / Mark as unread (per-device via lastReadNs). */
-function RowActionSheet({
-  target, dark, pinned, onClose, onToggleUnread, onTogglePin,
-}: {
-  target: { convId: string; title: string; isUnread: boolean } | null;
-  dark: boolean; pinned: boolean; onClose: () => void;
-  onToggleUnread: () => void; onTogglePin: () => void;
-}): React.ReactElement {
-  const fg = dark ? '#9f9fa3' : '#57606a';
-  const sub = dark ? '#7a7a7e' : '#8a929d';
-  const head = dark ? '#ffffff' : '#000000';
-  return (
-    <AppModal visible={!!target} onClose={onClose}>
-      <Col gap={4}>
-        <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', paddingHorizontal: 4, paddingBottom: 6 }} numberOfLines={1}>
-          {target?.title ?? ''}
-        </Text>
-        <Pressable onPress={onToggleUnread} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 }}>
-          <Icon name={target?.isUnread ? 'check' : 'envelope'} size={20} color={head} />
-          <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Medium' }}>
-            {target?.isUnread ? 'Mark as read' : 'Mark as unread'}
-          </Text>
-        </Pressable>
-        <Pressable onPress={onTogglePin} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 }}>
-          <Icon name="mapPin" size={20} color={head} />
-          <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Medium' }}>
-            {pinned ? 'Unpin' : 'Pin'}
-          </Text>
-        </Pressable>
-        <Pressable onPress={onClose} style={{ paddingVertical: 10, alignItems: 'center' }}>
-          <Text style={{ color: fg, fontSize: 14, fontFamily: 'Calibre-Medium' }}>Cancel</Text>
-        </Pressable>
-      </Col>
-    </AppModal>
   );
 }

@@ -25,7 +25,8 @@ import { MessengerComposer } from '../../components/MessengerComposer';
 import { ComposerGradient } from '../../components/ComposerGradient';
 import { Icon } from '@metro-labs/kit/icon';
 import { Avatar } from '../../components/Avatar';
-import { AppModal } from '../../components/AppModal';
+import { ChannelMenu } from '../../components/ChannelMenu';
+import { isPinned } from '../../lib/pins';
 import {
   XMTP_USER_PREFIX, lineOfConv, useXmtpFeed, xmtpReact, xmtpReply, xmtpVote,
   shortAddress, leaveGroupConv, xmtpSendTxReference,
@@ -1007,17 +1008,16 @@ export default function XmtpConversation(): React.ReactElement {
               : peerAddr ? (getPeerName(peerAddr) ?? shortAddress(peerAddr)) : ''}
           </Text>
         </Pressable>
-        {/** Overflow (3-dot) menu — groups always (Leave group); DMs only when
-         *   the native pill/bubble module is linked (Open as bubble). */}
-        {(isGroup || (peerAddr && pillAvailable)) ? (
-          <Pressable
-            onPress={() => setOverflowOpen(true)}
-            hitSlop={8}
-            style={{ paddingHorizontal: 14, justifyContent: 'center' }}
-          >
-            <Icon name="dotsVertical" size={22} color={fg} />
-          </Pressable>
-        ) : null}
+        {/** Overflow (3-dot) menu — shared ChannelMenu. Always shown: every conv
+         *   has Mark read/unread + Pin/Unpin + Group info / Profile; groups add
+         *   Leave group, DMs add Open as bubble / Float as pill (pill module). */}
+        <Pressable
+          onPress={() => setOverflowOpen(true)}
+          hitSlop={8}
+          style={{ paddingHorizontal: 14, justifyContent: 'center' }}
+        >
+          <Icon name="dotsVertical" size={22} color={fg} />
+        </Pressable>
       </Box>
       {/** Fade strip below the top nav — mirrors the composer's top fade. The nav is
        *  `52 + insets.top` tall; start the fade 1px higher so its solid-bg top edge
@@ -1102,52 +1102,20 @@ export default function XmtpConversation(): React.ReactElement {
       />
       </Box>
       </KeyboardStickyView>
-      {/** Topnav overflow menu — bottom sheet. Group → info + leave; DM → bubble. */}
-      <AppModal visible={overflowOpen} onClose={() => setOverflowOpen(false)}>
-        <Box style={{ gap: 4 }}>
-            {isGroup ? (
-              <>
-                <Pressable
-                  onPress={() => router.push({ pathname: '/group/[convId]', params: { convId: convId ?? '' } })}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}
-                >
-                  <Icon name="users" size={20} color={fg} />
-                  <Text style={{ color: fg, fontSize: 16, fontFamily: 'Calibre-Medium' }}>Group info</Text>
-                </Pressable>
-                <Pressable
-                  onPress={onLeaveGroup}
-                  disabled={leaving}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, opacity: leaving ? 0.5 : 1 }}
-                >
-                  <Icon name="arrowLeft" size={20} color={dark ? '#ff6b80' : '#b91c1c'} />
-                  <Text style={{ color: dark ? '#ff6b80' : '#b91c1c', fontSize: 16, fontFamily: 'Calibre-Medium' }}>
-                    {leaving ? 'Leaving…' : 'Leave group'}
-                  </Text>
-                </Pressable>
-              </>
-            ) : (
-              <>
-                <Pressable
-                  onPress={onOpenAsBubble}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}
-                >
-                  <Icon name="chat" size={20} color={fg} />
-                  <Text style={{ color: fg, fontSize: 16, fontFamily: 'Calibre-Medium' }}>Open as bubble</Text>
-                </Pressable>
-                <Pressable
-                  onPress={onFloatAsPill}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}
-                >
-                  <Icon name="microphone" size={20} color={fg} />
-                  <Text style={{ color: fg, fontSize: 16, fontFamily: 'Calibre-Medium' }}>Float as pill</Text>
-                </Pressable>
-              </>
-            )}
-            <Pressable onPress={() => setOverflowOpen(false)} style={{ paddingVertical: 10, alignItems: 'center' }}>
-              <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium' }}>Cancel</Text>
-            </Pressable>
-        </Box>
-      </AppModal>
+      {/** Topnav overflow menu — the shared ChannelMenu bottom sheet. */}
+      <ChannelMenu
+        visible={overflowOpen}
+        convId={convId ?? ''}
+        title={isGroup ? (groupName || undefined) : (peerAddr ? (getPeerName(peerAddr) ?? shortAddress(peerAddr)) : undefined)}
+        isGroup={isGroup}
+        peerAddress={peerAddr}
+        isUnread={(getCachedRows()?.find(r => r.convId === convId)?.unreadCount ?? 0) > 0}
+        isPinned={convId ? isPinned(convId) : false}
+        onClose={() => setOverflowOpen(false)}
+        onLeaveGroup={leaving ? undefined : onLeaveGroup}
+        onOpenAsBubble={pillAvailable ? onOpenAsBubble : undefined}
+        onFloatAsPill={pillAvailable ? onFloatAsPill : undefined}
+      />
       <BubbleActionMenu
         target={menuFor}
         anchor={menuAnchor}
