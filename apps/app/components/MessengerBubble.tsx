@@ -15,6 +15,7 @@ import { YouTubeEmbed, LocationEmbed } from './MediaEmbeds';
 import { mapCoordsOf, youtubeIdOf } from '../lib/embedDetect';
 import { Avatar } from './Avatar';
 import { Row, Col, Box } from './layout';
+import { Button } from '@metro-labs/kit/button';
 import { resolveRemoteAttachment, shortAddress } from '../lib/xmtp';
 import { useProfileQuery } from '../lib/useProfile';
 import type { HistoryEntry } from '../lib/types';
@@ -520,19 +521,17 @@ function SigRequestCard({ req, dark, sub, signing, onSign }: {
         </Text>
       ) : null}
       {onSign ? (
-        <Pressable
-          disabled={signing}
+        <Button
+          variant="primary"
+          size="lg"
+          fullWidth
+          pill
+          dark={dark}
+          loading={signing}
           onPress={onSign}
-          style={({ pressed }) => ({
-            marginTop: 2, alignItems: 'center', paddingVertical: 11, borderRadius: 999,
-            opacity: signing ? 0.6 : pressed ? 0.85 : 1,
-            backgroundColor: dark ? '#ffffff' : '#000000',
-          })}
-        >
-          {signing
-            ? <ActivityIndicator color={dark ? '#000' : '#fff'} />
-            : <Text style={{ color: dark ? '#0e0f10' : '#ffffff', fontSize: 15, fontFamily: 'Calibre-Semibold' }}>Sign</Text>}
-        </Pressable>
+          label="Sign"
+          style={{ marginTop: 2 }}
+        />
       ) : null}
     </Box>
   );
@@ -660,19 +659,17 @@ function TxRequestCard({ req, dark, sub, paying, onPay }: {
         </Text>
       ) : null}
       {onPay ? (
-        <Pressable
-          disabled={paying}
+        <Button
+          variant="primary"
+          size="lg"
+          fullWidth
+          pill
+          dark={dark}
+          loading={paying}
           onPress={onPay}
-          style={({ pressed }) => ({
-            marginTop: 2, alignItems: 'center', paddingVertical: 11, borderRadius: 12,
-            opacity: paying ? 0.6 : 1,
-            backgroundColor: pressed ? '#a08458' : '#c0a06e',
-          })}
-        >
-          {paying
-            ? <ActivityIndicator color="#000" />
-            : <Text style={{ color: '#000', fontSize: 15, fontFamily: 'Calibre-Semibold' }}>Pay</Text>}
-        </Pressable>
+          label="Pay"
+          style={{ marginTop: 2 }}
+        />
       ) : null}
     </View>
   );

@@ -17,7 +17,8 @@ import { mainnet } from 'viem/chains';
 import { getOrCreateXmtpClient } from '../../lib/xmtp';
 import { resolveEnsName } from '../../lib/ens';
 import { getSimplePrices } from '../../lib/coingecko';
-import { usePalette } from '../../lib/theme';
+import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
+import { Button } from '@metro-labs/kit/button';
 import { HeroIcon } from '../../components/HeroIcon';
 import { sendNativeOrToken } from '../../lib/tx';
 import { getAccount, waitForTransactionReceipt } from 'wagmi/actions';
@@ -42,6 +43,7 @@ export default function WalletSend(): React.ReactElement {
    *  doesn't have to retype. */
   const params = useLocalSearchParams<{ to?: string }>();
   const { fg, head, sub, bg, border, rowBg: inputBg } = usePalette();
+  const dark = useEffectiveColorScheme() === 'dark';
   const insets = useSafeAreaInsets();
   const { open } = useAppKit();
 
@@ -223,11 +225,16 @@ export default function WalletSend(): React.ReactElement {
         <Box style={{ gap: 6 }}>
           <Box style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', flex: 1 }}>AMOUNT</Text>
-            <Pressable onPress={onMax} hitSlop={6} disabled={!ethBalance}>
-              <Text style={{ color: ethBalance ? '#c0a06e' : sub, fontSize: 12, fontFamily: 'Calibre-Semibold' }}>
-                MAX
-              </Text>
-            </Pressable>
+            <Button
+              variant="ghost"
+              size="sm"
+              dark={dark}
+              disabled={!ethBalance}
+              onPress={onMax}
+              label="MAX"
+              textStyle={{ color: ethBalance ? '#c0a06e' : sub, fontSize: 12 }}
+              style={{ height: 24, paddingHorizontal: 8 }}
+            />
           </Box>
 
           <Box style={{
@@ -287,24 +294,21 @@ export default function WalletSend(): React.ReactElement {
           ) : null}
         </Box>
 
-        <Pressable
+        <Button
+          variant="primary"
+          size="lg"
+          fullWidth
+          pill
+          dark={dark}
+          loading={busy}
+          disabled={!canSubmit || txState === 'confirmed'}
           onPress={onSubmit}
-          disabled={!canSubmit || busy || txState === 'confirmed'}
-          style={({ pressed }) => ({
-            marginTop: 8, paddingVertical: 14, borderRadius: 999, alignItems: 'center',
-            flexDirection: 'row', justifyContent: 'center', gap: 8,
-            backgroundColor: (!canSubmit || busy) ? inputBg : pressed ? '#a08458' : '#c0a06e',
-            opacity: (!canSubmit && !busy) ? 0.6 : 1,
-          })}
-        >
-          {busy ? <ActivityIndicator size="small" color={fg} /> : null}
-          <Text style={{ color: (!canSubmit || busy) ? sub : '#000', fontSize: 16, fontFamily: 'Calibre-Semibold' }}>
-            {txState === 'submitting' ? 'Confirm in wallet…'
-              : txState === 'pending' ? 'Sending…'
-              : txState === 'confirmed' ? 'Sent ✓'
-              : 'Send'}
-          </Text>
-        </Pressable>
+          label={txState === 'submitting' ? 'Confirm in wallet…'
+            : txState === 'pending' ? 'Sending…'
+            : txState === 'confirmed' ? 'Sent ✓'
+            : 'Send'}
+          style={{ marginTop: 8 }}
+        />
 
         {/* Tx status: hash link once broadcast, plus errors. */}
         {txHash ? (

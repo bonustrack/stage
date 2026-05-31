@@ -14,12 +14,18 @@
     "./icons": "./src/icons.ts",
     "./theme": "./src/theme.ts",
     "./avatar": "./src/avatar.ts",
-    "./layout": "./src/layout.ts"
+    "./layout": "./src/layout.ts",
+    "./button": "./src/button.tsx"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@types/react": "~19.1.0",
     "typescript": "~5.9.2"
   }
 }
