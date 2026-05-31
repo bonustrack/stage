@@ -27,10 +27,16 @@ import {
 } from '@xmtp/react-native-sdk';
 import type { PrivateKeyAccount } from 'viem/accounts';
 import { PollCodec } from './xmtpPollCodec';
+import { WalletSendCallsCodec, TransactionReferenceCodec } from './xmtpTxCodec';
 
 /** Shared PollCodec instance — used both in XMTP_CODECS (decode/encode) and by
  *  xmtpSendPoll (to pass its contentType to the JS-codec send path). */
 const POLL_CODEC = new PollCodec();
+/** Shared transaction codec instances — registered in XMTP_CODECS and reused
+ *  by xmtpSendTxRequest / xmtpSendTxReference to route through the JS-codec
+ *  send path (their contentType drives sendEncodedContent). */
+const WALLET_SEND_CALLS_CODEC = new WalletSendCallsCodec();
+const TRANSACTION_REFERENCE_CODEC = new TransactionReferenceCodec();
 
 /** Codecs the local XMTP client decodes inbound + uses to encode outbound. Without these
  *  the RN SDK's `msg.content()` throws on reaction/reply/attachment payloads and we fall
@@ -58,6 +64,15 @@ const XMTP_CODECS = [
    *  to the "[poll payload]" placeholder. Votes are plain reactions (see
    *  xmtpVote) and need no extra codec. */
   POLL_CODEC,
+  /** In-chat transactions. WalletSendCalls = a payment REQUEST (EIP-5792
+   *  wallet_sendCalls batch); TransactionReference = the RECEIPT (tx hash)
+   *  posted back after the payer broadcasts. Pure-JS JSContentCodecs (UTF-8
+   *  JSON bodies) — no native module / dev-client rebuild. Required on both
+   *  encode (xmtpSendTxRequest/Reference) and decode (inbound tx bubbles) —
+   *  without them msg.content() throws and we fall back to the "[…payload]"
+   *  placeholder. */
+  WALLET_SEND_CALLS_CODEC,
+  TRANSACTION_REFERENCE_CODEC,
 ];
 import type { HistoryEntry } from './types';
 import {
@@ -67,6 +82,10 @@ import {
 } from './accounts';
 import { humanizeGroupUpdated, type GroupUpdatedContent } from '@metro-labs/client/xmtp/humanize';
 import { type PollContent, pollFallbackText } from '@metro-labs/client/xmtp/poll';
+import {
+  type WalletSendCallsContent, type TransactionReferenceContent,
+  walletSendCallsFallbackText, transactionReferenceFallbackText,
+} from '@metro-labs/client/xmtp/tx';
 import { getWcSign } from './wcSigner';
 import { registerPushWithDaemon, isMetroControlBody } from './push';
 import { MemoryStore, getSecure, setSecure } from './cache';
@@ -645,6 +664,26 @@ export function envelopeOfXmtpMessage(msg: DecodedMessage, line: string): Histor
       payload: { contentType: typeId, poll },
     };
   }
+  if (typeId === 'walletSendCalls') {
+    /** Payment REQUEST. The decoded WalletSendCalls rides on
+     *  `payload.walletSendCalls`; the bubble renders an interactive "Pay" card. */
+    const wsc = decoded as WalletSendCallsContent;
+    return {
+      ...base,
+      text: walletSendCallsFallbackText(wsc),
+      payload: { contentType: typeId, walletSendCalls: wsc },
+    };
+  }
+  if (typeId === 'transactionReference') {
+    /** Payment RECEIPT. The decoded TransactionReference rides on
+     *  `payload.txReference`; the bubble renders amount + explorer link. */
+    const ref = decoded as TransactionReferenceContent;
+    return {
+      ...base,
+      text: transactionReferenceFallbackText(ref),
+      payload: { contentType: typeId, txReference: ref },
+    };
+  }
   if (typeId === 'reply') {
     const r = decoded as ReplyContent;
     /** Inner reply payload is a NativeMessageContent — promote text up to the bubble level
@@ -726,6 +765,24 @@ export async function xmtpSendPoll(line: string, poll: PollContent): Promise<str
   const conv = await convOfLine(line);
   if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
   return await conv.send(poll, { contentType: POLL_CODEC.contentType });
+}
+
+/** Send an in-chat payment REQUEST (`xmtp.org/walletSendCalls:1.0`). The
+ *  WalletSendCalls is encoded by WalletSendCallsCodec; we pass the codec's
+ *  contentType so the SDK routes through the JS-codec send path. Returns the
+ *  request's XMTP message id. Mirrors xmtpSendPoll. */
+export async function xmtpSendTxRequest(line: string, params: WalletSendCallsContent): Promise<string> {
+  const conv = await convOfLine(line);
+  if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
+  return await conv.send(params, { contentType: WALLET_SEND_CALLS_CODEC.contentType });
+}
+
+/** Post a payment RECEIPT (`xmtp.org/transactionReference:1.0`) back into the
+ *  conversation after the payer broadcasts the tx. Mirrors xmtpSendPoll. */
+export async function xmtpSendTxReference(line: string, ref: TransactionReferenceContent): Promise<string> {
+  const conv = await convOfLine(line);
+  if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
+  return await conv.send(ref, { contentType: TRANSACTION_REFERENCE_CODEC.contentType });
 }
 
 /** Cast (`added`) or retract (`removed`) a poll vote. A vote is just a reaction

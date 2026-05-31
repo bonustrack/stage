@@ -12,10 +12,15 @@ import { ComposerGradient } from './ComposerGradient';
 import { HeroIcon, type HeroIconName } from './HeroIcon';
 import { Avatar } from './Avatar';
 import { Box, Row, Col } from './layout';
-import { fileUriToBase64, shortAddress, xmtpReply, xmtpSendAttachment, xmtpSendText, xmtpSendPoll } from '../lib/xmtp';
+import { fileUriToBase64, shortAddress, xmtpReply, xmtpSendAttachment, xmtpSendText, xmtpSendPoll, xmtpSendTxRequest } from '../lib/xmtp';
 import { getPeerName } from '../lib/peerProfiles';
 import { AppModal } from './AppModal';
 import { type PollContent, mintPollId, pollFallbackText } from '@metro-labs/client/xmtp/poll';
+import {
+  type WalletSendCallsContent, walletSendCallsFallbackText,
+} from '@metro-labs/client/xmtp/tx';
+import { getActiveAccount } from '../lib/accounts';
+import { isAddress, parseUnits, toHex } from 'viem';
 
 /** Composer-local representation of a staged attachment. `url` is a `file://` URI in xmtp
  *  mode (the only mode the mobile composer supports now). `id` is a client-side dedupe key. */
@@ -117,6 +122,13 @@ export function MessengerComposer({
   const [pollHeader, setPollHeader] = useState('');
   const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
   const [pollMulti, setPollMulti] = useState(false);
+  /** Payment-request sheet state. `txOpen` toggles the AppModal; the rest is the
+   *  in-progress WalletSendCalls being authored. Native ETH only for now (no
+   *  token-address field) — `amount` is decimal ETH. */
+  const [txOpen, setTxOpen] = useState(false);
+  const [txTo, setTxTo] = useState('');
+  const [txAmount, setTxAmount] = useState('');
+  const [txNote, setTxNote] = useState('');
   /** Recent device photos shown inline in the attach menu (Discord-style). */
   const [recentPhotos, setRecentPhotos] = useState<MediaLibrary.Asset[]>([]);
   /** Composer text input — focused programmatically when a reply target is
@@ -394,6 +406,49 @@ export function MessengerComposer({
     try { sentId = await xmtpSendPoll(xmtpLine, poll); }
     catch (e) { sendErr = (e as Error).message; setErr(sendErr); }
     finally { onSent?.(localId, sendErr, sentId); }
+  };
+
+  /** Build + send an in-chat payment REQUEST (WalletSendCalls). `from` is the
+   *  active account (the wallet expected to sign — i.e. the recipient asks the
+   *  peer to pay, so `from` is left as self for symmetry and the payer's wallet
+   *  overrides it at sign time). Native ETH only: one call with `to` = the
+   *  recipient and `value` = hex wei. Reuses the same optimistic flow as poll. */
+  const sendTxRequest = async (): Promise<void> => {
+    const to = txTo.trim();
+    const amount = txAmount.trim();
+    if (!isAddress(to)) { Alert.alert('Enter a valid recipient address'); return; }
+    const n = Number(amount);
+    if (!isFinite(n) || n <= 0) { Alert.alert('Enter a valid amount'); return; }
+    const acct = await getActiveAccount();
+    if (!acct) { Alert.alert('No active account'); return; }
+    const description = txNote.trim() || `Send ${amount} ETH`;
+    /** Hex WEI — value must be a 0x-hex string, NOT decimal. */
+    const valueHex = toHex(parseUnits(amount, 18));
+    const wsc: WalletSendCallsContent = {
+      version: '1.0',
+      chainId: '0x1',
+      from: acct.address,
+      calls: [{
+        to,
+        value: valueHex,
+        metadata: { description, transactionType: 'transfer', currency: 'ETH', amount: n, decimals: 18, toAddress: to },
+      }],
+    };
+    const localId = `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    onOptimistic?.({ localId, text: walletSendCallsFallbackText(wsc), attachments: [], payload: { contentType: 'walletSendCalls', walletSendCalls: wsc } });
+    setTxOpen(false);
+    setTxTo(''); setTxAmount(''); setTxNote('');
+    let sendErr: string | undefined;
+    let sentId: string | undefined;
+    try { sentId = await xmtpSendTxRequest(xmtpLine, wsc); }
+    catch (e) { sendErr = (e as Error).message; setErr(sendErr); }
+    finally { onSent?.(localId, sendErr, sentId); }
+  };
+
+  /** Prefill the recipient with the lone DM peer when opening the sheet. */
+  const openTx = (): void => {
+    if (!txTo && mentionCandidates?.length === 1) setTxTo(mentionCandidates[0]!.address);
+    setTxOpen(true);
   };
 
   const send = async (): Promise<void> => {
@@ -783,6 +838,7 @@ export function MessengerComposer({
               ['paperClip', 'File', pickFile],
               ['mapPin', 'Location', pickLocation],
               ['chartBar', 'Poll', async () => setPollOpen(true)],
+              ['wallet', 'Payment', async () => openTx()],
             ] as const
           ).map(([icon, label, action]) => (
             <Pressable
@@ -870,6 +926,47 @@ export function MessengerComposer({
             })}
           >
             <Text style={{ color: '#000', fontSize: 16, fontFamily: 'Calibre-Semibold' }}>Send poll</Text>
+          </Pressable>
+        </Col>
+      </AppModal>
+      {/** Payment-request sheet — recipient + ETH amount + optional note. Submit
+       *   builds a WalletSendCalls (native ETH transfer, chainId 0x1, value hex
+       *   wei) and sends it via the same optimistic flow. The peer pays from
+       *   their bubble's "Pay" button. */}
+      <AppModal visible={txOpen} onClose={() => setTxOpen(false)} title="Request payment / Send">
+        <Col gap={12} pb={8}>
+          <TextInput
+            value={txTo}
+            onChangeText={setTxTo}
+            placeholder="Recipient address (0x…)"
+            placeholderTextColor={sub}
+            autoCapitalize="none"
+            autoCorrect={false}
+            style={{ color: fg, backgroundColor: inputBg, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 14 }}
+          />
+          <TextInput
+            value={txAmount}
+            onChangeText={setTxAmount}
+            placeholder="Amount (ETH)"
+            placeholderTextColor={sub}
+            keyboardType="decimal-pad"
+            style={{ color: fg, backgroundColor: inputBg, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 16 }}
+          />
+          <TextInput
+            value={txNote}
+            onChangeText={setTxNote}
+            placeholder="Note (optional)"
+            placeholderTextColor={sub}
+            style={{ color: fg, backgroundColor: inputBg, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 16 }}
+          />
+          <Pressable
+            onPress={() => void sendTxRequest()}
+            style={({ pressed }) => ({
+              marginTop: 4, alignItems: 'center', paddingVertical: 13, borderRadius: 12,
+              backgroundColor: pressed ? '#a08458' : '#c0a06e',
+            })}
+          >
+            <Text style={{ color: '#000', fontSize: 16, fontFamily: 'Calibre-Semibold' }}>Send request</Text>
           </Pressable>
         </Col>
       </AppModal>

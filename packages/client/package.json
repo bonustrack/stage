@@ -14,6 +14,7 @@
     "./profile/snapshot": "./src/profile/snapshot.ts",
     "./xmtp/humanize": "./src/xmtp/humanize.ts",
     "./xmtp/poll": "./src/xmtp/poll.ts",
+    "./xmtp/tx": "./src/xmtp/tx.ts",
     "./embed/detect": "./src/embed/detect.ts",
     "./stamp/resolve": "./src/stamp/resolve.ts"
   },

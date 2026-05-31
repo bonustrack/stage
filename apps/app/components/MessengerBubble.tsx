@@ -460,10 +460,150 @@ function PollView({ poll, dark, sub, votes, ownVotes, onVote }: {
   );
 }
 
+// ---------------------------------------------------------------------------
+// In-chat transactions — WalletSendCalls (request) + TransactionReference
+// (receipt). Local-render shapes mirror @metro-labs/client/xmtp/tx.
+// ---------------------------------------------------------------------------
+
+interface TxRequest {
+  version?: string;
+  chainId?: string;
+  from?: string;
+  calls: Array<{ to?: string; data?: string; value?: string; metadata?: { description?: string; currency?: string; amount?: number } }>;
+}
+interface TxReceipt {
+  networkId: number | string;
+  reference: string;
+  metadata?: { currency?: string; amount?: number; toAddress?: string };
+}
+
+function txRequestOf(entry: HistoryEntry): TxRequest | undefined {
+  const p = entry.payload as { walletSendCalls?: TxRequest } | undefined;
+  if (!p?.walletSendCalls || !Array.isArray(p.walletSendCalls.calls)) return undefined;
+  return p.walletSendCalls;
+}
+function txReceiptOf(entry: HistoryEntry): TxReceipt | undefined {
+  const p = entry.payload as { txReference?: TxReceipt } | undefined;
+  if (!p?.txReference?.reference) return undefined;
+  return p.txReference;
+}
+
+/** Block-explorer URL for a chain id (decimal/hex/number) + tx hash. Mirrors
+ *  explorerTxUrl in @metro-labs/client/xmtp/tx (re-stated to avoid pulling the
+ *  helper through a separate import in the bubble). */
+function explorerUrl(networkId: number | string, txHash: string): string {
+  const id = typeof networkId === 'number' ? networkId
+    : networkId.startsWith('0x') ? parseInt(networkId, 16) : parseInt(networkId, 10);
+  const base: Record<number, string> = {
+    1: 'https://etherscan.io', 10: 'https://optimistic.etherscan.io',
+    137: 'https://polygonscan.com', 8453: 'https://basescan.org',
+    42161: 'https://arbiscan.io', 11155111: 'https://sepolia.etherscan.io',
+  };
+  return `${base[id] ?? 'https://etherscan.io'}/tx/${txHash}`;
+}
+
+/** Format a hex-wei value (from a WalletSendCalls call) as a short ETH string. */
+function ethFromWeiHex(valueHex?: string): string | undefined {
+  if (!valueHex) return undefined;
+  try {
+    const wei = BigInt(valueHex);
+    /** Trim to a readable decimal — 1e18 wei = 1 ETH. */
+    const whole = wei / 1_000_000_000_000_000_000n;
+    const frac = wei % 1_000_000_000_000_000_000n;
+    if (frac === 0n) return `${whole}`;
+    const fracStr = frac.toString().padStart(18, '0').replace(/0+$/, '');
+    return `${whole}.${fracStr}`;
+  } catch { return undefined; }
+}
+
+/** TxRequestCard — a payment request bubble. Shows the description + amount and
+ *  a "Pay" button that fires `onPay` (the parent broadcasts via the phase-3
+ *  sendTx helper, then posts a TransactionReference back). */
+function TxRequestCard({ req, dark, sub, paying, onPay }: {
+  req: TxRequest; dark: boolean; sub: string; paying?: boolean;
+  onPay?: () => void;
+}): React.ReactElement {
+  const call = req.calls[0];
+  const desc = call?.metadata?.description ?? 'Payment request';
+  const eth = ethFromWeiHex(call?.value);
+  const amountLabel = call?.metadata?.amount != null
+    ? `${call.metadata.amount} ${call.metadata.currency ?? 'ETH'}`
+    : eth ? `${eth} ETH` : undefined;
+  return (
+    <View style={{
+      alignSelf: 'stretch', gap: 8, marginTop: 8, padding: 12, borderRadius: 14,
+      borderWidth: 1, borderColor: '#c0a06e',
+      backgroundColor: dark ? 'rgba(192,160,110,0.10)' : 'rgba(192,160,110,0.10)',
+    }}>
+      <Row align="center" gap={8}>
+        <HeroIcon name="wallet" size={18} color="#c0a06e" />
+        <Text style={{ color: dark ? '#ffffff' : '#000000', fontSize: 15, fontFamily: 'Calibre-Semibold', flexShrink: 1 }}>
+          {desc}
+        </Text>
+      </Row>
+      {amountLabel ? (
+        <Text style={{ color: dark ? '#ffffff' : '#000000', fontSize: 22, fontFamily: 'Calibre-Semibold' }}>
+          {amountLabel}
+        </Text>
+      ) : null}
+      {call?.to ? (
+        <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>
+          To {shortAddress(call.to)}
+        </Text>
+      ) : null}
+      {onPay ? (
+        <Pressable
+          disabled={paying}
+          onPress={onPay}
+          style={({ pressed }) => ({
+            marginTop: 2, alignItems: 'center', paddingVertical: 11, borderRadius: 12,
+            opacity: paying ? 0.6 : 1,
+            backgroundColor: pressed ? '#a08458' : '#c0a06e',
+          })}
+        >
+          {paying
+            ? <ActivityIndicator color="#000" />
+            : <Text style={{ color: '#000', fontSize: 15, fontFamily: 'Calibre-Semibold' }}>Pay</Text>}
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
+/** TxReceiptCard — a confirmed payment. Shows the amount (when the metadata
+ *  carried it) and a tappable explorer link to the tx hash. */
+function TxReceiptCard({ receipt, dark, sub }: {
+  receipt: TxReceipt; dark: boolean; sub: string;
+}): React.ReactElement {
+  const amountLabel = receipt.metadata?.amount != null
+    ? `${receipt.metadata.amount} ${receipt.metadata.currency ?? 'ETH'}`
+    : undefined;
+  const url = explorerUrl(receipt.networkId, receipt.reference);
+  return (
+    <View style={{
+      alignSelf: 'stretch', gap: 6, marginTop: 8, padding: 12, borderRadius: 14,
+      borderWidth: 1, borderColor: dark ? 'rgba(120,200,120,0.4)' : 'rgba(60,160,60,0.35)',
+      backgroundColor: dark ? 'rgba(120,200,120,0.08)' : 'rgba(60,160,60,0.06)',
+    }}>
+      <Row align="center" gap={8}>
+        <HeroIcon name="check" size={18} color={dark ? '#7fd07f' : '#2f9e44'} />
+        <Text style={{ color: dark ? '#ffffff' : '#000000', fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
+          Payment sent{amountLabel ? ` · ${amountLabel}` : ''}
+        </Text>
+      </Row>
+      <Pressable onPress={() => void Linking.openURL(url)}>
+        <Text style={{ color: '#c0a06e', fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+          {shortAddress(receipt.reference)} · View on explorer
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
+
 function MessengerBubbleBase({
   entry, dark, unread, pending, replyTarget, onReact, onReply, onLongPress, onOpenMenu, onAnswer,
   replyPreview, onReplyPreviewPress, reactions, pendingReactions, pendingRemovals, ownEmojis, transcript, myUri, senderEthAddress, onAvatarPress,
-  votes, ownVotes, onVote,
+  votes, ownVotes, onVote, onPay, paying,
 }: {
   entry: HistoryEntry; dark: boolean; unread: boolean; pending?: boolean; replyTarget?: boolean;
   onReact?: (emoji: string) => void; onReply?: () => void; onLongPress?: () => void;
@@ -507,6 +647,12 @@ function MessengerBubbleBase({
   ownVotes?: Set<number>;
   /** Cast/retract a vote on this poll's option. */
   onVote?: (optionIndex: number, action: 'added' | 'removed') => void;
+  /** Pay an in-chat payment request (WalletSendCalls). The parent broadcasts the
+   *  call via the phase-3 sendTx helper and posts a TransactionReference back.
+   *  Undefined => the Pay button is hidden (e.g. it's the user's own request). */
+  onPay?: () => void;
+  /** True while this request's payment is broadcasting — shows a spinner on Pay. */
+  paying?: boolean;
 }): React.ReactElement {
   /** Discord-style layout doesn't visually distinguish own messages —
    *  myUri is accepted for forward compatibility (e.g. read-receipts) but
@@ -516,6 +662,8 @@ function MessengerBubbleBase({
   const atts = attachmentsOf(entry);
   const question = questionOf(entry);
   const poll = pollOf(entry);
+  const txReq = txRequestOf(entry);
+  const txReceipt = txReceiptOf(entry);
   /** Group system events (rename / member add / image change) get a muted
    *  italic treatment and a feed color in the body text — set when
    *  envelopeOfXmtpMessage stamps `payload.system: true`. */
@@ -709,6 +857,10 @@ function MessengerBubbleBase({
               <Markdown {...markdownProps}>{poll.question}</Markdown>
             </Box>
           ) : null
+        ) : (txReq || txReceipt) ? (
+          /** Transaction bubbles render an interactive card instead of the raw
+           *  "[Transaction request]" / "[Transaction]" fallback text. */
+          null
         ) : entry.text ? (
           <Box style={{ alignSelf: 'stretch' }}>
             {hasMention(entry.text)
@@ -732,6 +884,12 @@ function MessengerBubbleBase({
         ) : null}
         {poll && onVote ? (
           <PollView poll={poll} dark={dark} sub={sub} votes={votes} ownVotes={ownVotes} onVote={onVote} />
+        ) : null}
+        {txReq ? (
+          <TxRequestCard req={txReq} dark={dark} sub={sub} paying={paying} onPay={onPay} />
+        ) : null}
+        {txReceipt ? (
+          <TxReceiptCard receipt={txReceipt} dark={dark} sub={sub} />
         ) : null}
         {transcript ? (
           <Text style={{

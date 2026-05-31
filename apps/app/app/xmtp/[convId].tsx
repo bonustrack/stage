@@ -29,9 +29,13 @@ import { Avatar } from '../../components/Avatar';
 import { AppModal } from '../../components/AppModal';
 import {
   XMTP_USER_PREFIX, lineOfConv, useXmtpFeed, xmtpReact, xmtpReply, xmtpVote,
-  shortAddress, leaveGroupConv,
+  shortAddress, leaveGroupConv, xmtpSendTxReference,
 } from '../../lib/xmtp';
 import { votesByPoll as tallyVotes, ownVotes as tallyOwnVotes, type VoteEvent } from '@metro-labs/client/xmtp/poll';
+import {
+  type WalletSendCallsContent, type TransactionReferenceContent, chainIdToNumber,
+} from '@metro-labs/client/xmtp/tx';
+import { sendNativeOrToken } from '../../lib/tx';
 import { flash } from '../../lib/toast';
 import {
   hasOverlayPermission, isPillAvailable, openConversationAsBubble,
@@ -641,6 +645,47 @@ export default function XmtpConversation(): React.ReactElement {
       .catch((e: unknown) => { console.warn('xmtp vote failed', e); undo(); });
   }, [activeLine, events, optimisticVotes, ownVotes]);
 
+  /** Message ids whose payment is currently broadcasting — drives the Pay
+   *  spinner. */
+  const [payingIds, setPayingIds] = useState<Set<string>>(new Set());
+
+  /** Pay an in-chat payment request. Broadcasts the first call via the phase-3
+   *  sendTx helper (native ETH or ERC-20 transfer decoded from the call), then
+   *  posts a TransactionReference back into the SAME conversation so the request
+   *  card flips to a receipt for everyone. */
+  const onPay = useCallback((requestId: string, wsc: WalletSendCallsContent) => {
+    const call = wsc.calls?.[0];
+    if (!call?.to) { flash('Malformed payment request'); return; }
+    const chainId = chainIdToNumber(wsc.chainId);
+    setPayingIds(prev => new Set(prev).add(requestId));
+    void (async () => {
+      try {
+        /** Native transfer: value is hex wei → decimal ETH for the helper.
+         *  (ERC-20 `data` paths aren't built by the composer yet; value-only
+         *  native sends are the supported request shape.) */
+        const wei = BigInt(call.value ?? '0x0');
+        const amount = (Number(wei) / 1e18).toString();
+        const txHash = await sendNativeOrToken({ to: call.to as string, amount, chainId });
+        const ref: TransactionReferenceContent = {
+          networkId: chainId,
+          reference: txHash,
+          metadata: {
+            transactionType: 'transfer',
+            currency: call.metadata?.currency ?? 'ETH',
+            ...(call.metadata?.amount != null ? { amount: call.metadata.amount } : {}),
+            decimals: 18,
+            toAddress: call.to as string,
+          },
+        };
+        await xmtpSendTxReference(activeLine, ref);
+      } catch (e) {
+        flash((e as Error).message || 'Payment failed');
+      } finally {
+        setPayingIds(prev => { const n = new Set(prev); n.delete(requestId); return n; });
+      }
+    })();
+  }, [activeLine]);
+
   /** Leave-group flow — confirm, call the SDK (true leave when available, else
    *  consent-deny hide), then pop back to the conversation list. */
   const onLeaveGroup = useCallback(() => {
@@ -786,6 +831,14 @@ export default function XmtpConversation(): React.ReactElement {
             votes={displayVotes.get(item.id)}
             ownVotes={displayOwnVotes.get(item.id)}
             onVote={(idx, action) => onVote(item.id, idx, action)}
+            paying={payingIds.has(item.id)}
+            /** Show "Pay" only on a payment request from the OTHER party — you
+             *  don't pay your own request. */
+            onPay={(() => {
+              const wsc = (item.payload as { walletSendCalls?: WalletSendCallsContent } | undefined)?.walletSendCalls;
+              if (!wsc || item.from === myUri) return undefined;
+              return () => onPay(item.id, wsc);
+            })()}
             onReact={(emoji) => onReact(item.id, emoji)}
             onReply={() => setReplyTarget(item.id, previewOf(item), senderEthOf(item.from))}
             onOpenMenu={(anchor) => { setMenuAnchor(anchor); setMenuFor(item); }}
