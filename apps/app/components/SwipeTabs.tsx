@@ -40,7 +40,7 @@ import type { Href } from 'expo-router';
 import { HomeScreen } from './tabs/HomeScreen';
 import { WalletScreen } from './tabs/WalletScreen';
 import { ProfileTabScreen } from './tabs/ProfileTab';
-import { SettingsScreen } from './tabs/SettingsScreen';
+import { NotificationsScreen } from './tabs/NotificationsScreen';
 
 /** The shape accepted by an inner scrollable's `simultaneousHandlers` prop and
  *  by each tab body's `panRef` prop. It's a React ref to the pager Pan gesture
@@ -50,7 +50,7 @@ import { SettingsScreen } from './tabs/SettingsScreen';
 export type SimultaneousRefs = React.RefObject<GestureType | undefined>;
 
 /** Tab order = the order declared in `app/(tabs)/_layout.tsx`. Index 0..3. */
-const TAB_ORDER = ['index', 'wallet', 'profile', 'settings'] as const;
+const TAB_ORDER = ['index', 'wallet', 'profile', 'notifications'] as const;
 type TabName = (typeof TAB_ORDER)[number];
 
 /** expo-router pathnames for each tab (the `(tabs)` group is path-transparent;
@@ -59,7 +59,7 @@ const TAB_HREF: Record<TabName, Href> = {
   index: '/',
   wallet: '/wallet',
   profile: '/profile',
-  settings: '/settings',
+  notifications: '/notifications',
 };
 
 /** The four tab bodies, mounted side-by-side in pager order. Mounting all four
@@ -70,7 +70,7 @@ const PAGES: Record<TabName, (props: { panRef?: SimultaneousRefs }) => React.Rea
   index: HomeScreen,
   wallet: WalletScreen,
   profile: ProfileTabScreen,
-  settings: SettingsScreen,
+  notifications: NotificationsScreen,
 };
 
 /** Map the focused pathname → pager index. Unknown / nested paths keep the
@@ -79,7 +79,7 @@ function indexOfPathname(pathname: string): number {
   if (pathname === '/' || pathname === '') return 0;
   if (pathname.startsWith('/wallet')) return 1;
   if (pathname.startsWith('/profile')) return 2;
-  if (pathname.startsWith('/settings')) return 3;
+  if (pathname.startsWith('/notifications')) return 3;
   return 0;
 }
 

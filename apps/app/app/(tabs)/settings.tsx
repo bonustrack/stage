@@ -1,10 +1,17 @@
-/** Route placeholder — the actual screen body is rendered by the shared
- *  horizontal pager in `_layout.tsx` (all four tab bodies mounted side-by-side
- *  so swiping reveals the neighbour as it follows the finger). This file exists
- *  only so expo-router keeps a real route per tab — deep links to `/wallet`
- *  etc. resolve, the URL stays correct, and the bottom tab-bar highlight is
- *  router-driven. It renders nothing (the pager overlays the scene). */
+/** Settings route — NO LONGER in the bottom tab bar (hidden via `href: null` in
+ *  `_layout.tsx`) and NO LONGER in the swipe pager strip. It's reached only from
+ *  the LeftDrawer's Settings row. Since the pager doesn't mount it, this route
+ *  renders the real `SettingsScreen` body itself. */
 
-export default function TabRoutePlaceholder(): null {
-  return null;
+import { View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SettingsScreen } from '../../components/tabs/SettingsScreen';
+
+export default function SettingsRoute(): React.ReactElement {
+  const insets = useSafeAreaInsets();
+  return (
+    <View style={{ flex: 1, paddingTop: insets.top }}>
+      <SettingsScreen />
+    </View>
+  );
 }

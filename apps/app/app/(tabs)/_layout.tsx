@@ -4,7 +4,7 @@
  *  so individual screens don't have to reach for `useSafeAreaInsets` themselves. */
 
 import { View } from 'react-native';
-import { Tabs } from 'expo-router';
+import { Tabs, usePathname } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSharedValue } from 'react-native-reanimated';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
@@ -16,6 +16,11 @@ export default function TabsLayout(): React.ReactElement {
   /** 0 = drawer closed, 1 = fully open. Shared by the pager (which drives it on a
    *  Home rightward drag) and the LeftDrawer (which renders it + owns close). */
   const drawerProgress = useSharedValue(0);
+  const pathname = usePathname();
+  /** The pager only mounts the four tab bodies (Home/Wallet/Profile/Notifications).
+   *  Settings is a non-pager route now → hide the pager overlay there so the real
+   *  SettingsScreen rendered by the route shows through. */
+  const pagerVisible = !pathname.startsWith('/settings');
   const dark = useEffectiveColorScheme() === 'dark';
   const insets = useSafeAreaInsets();
   const bg = dark ? '#0e0f10' : '#ffffff';
@@ -63,7 +68,7 @@ export default function TabsLayout(): React.ReactElement {
             ['index', 'chatRect'],
             ['wallet', 'wallet'],
             ['profile', 'user'],
-            ['settings', 'cog'],
+            ['notifications', 'envelope'],
           ] as const satisfies ReadonlyArray<readonly [string, HeroIconName]>
         ).map(([name, icon]) => (
           <Tabs.Screen
@@ -76,21 +81,26 @@ export default function TabsLayout(): React.ReactElement {
             }}
           />
         ))}
+        {/* Settings is reachable only from the LeftDrawer now — keep the route
+            (so the drawer can navigate to /settings) but hide it from the bar. */}
+        <Tabs.Screen name="settings" options={{ href: null }} />
       </Tabs>
       {/* Pager overlay — covers the scene area (status-bar inset at top, stops
           above the tab bar at the bottom) so the tab bar keeps its taps. */}
-      <View
-        pointerEvents="box-none"
-        style={{
-          position: 'absolute',
-          top: insets.top,
-          left: 0,
-          right: 0,
-          bottom: tabBarHeight,
-        }}
-      >
-        <TabsPager drawerProgress={drawerProgress} />
-      </View>
+      {pagerVisible ? (
+        <View
+          pointerEvents="box-none"
+          style={{
+            position: 'absolute',
+            top: insets.top,
+            left: 0,
+            right: 0,
+            bottom: tabBarHeight,
+          }}
+        >
+          <TabsPager drawerProgress={drawerProgress} />
+        </View>
+      ) : null}
       {/* Left drawer overlay — full screen, ABOVE the pager + tab bar (X-style:
           the panel + dim backdrop cover most of the screen). pointerEvents is
           'none' while closed so it never steals taps from the tabs underneath. */}
