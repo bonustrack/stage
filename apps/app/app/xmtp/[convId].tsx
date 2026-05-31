@@ -926,6 +926,7 @@ export default function XmtpConversation(): React.ReactElement {
             onReact={(emoji) => onReact(item.id, emoji)}
             onReply={() => setReplyTarget(item.id, previewOf(item), senderEthOf(item.from))}
             onOpenMenu={(anchor) => { setMenuAnchor(anchor); setMenuFor(item); }}
+            onCloseMenu={() => setMenuFor(null)}
             onAnswer={(label) => {
               void xmtpReply(activeLine, item.id, label)
                 .catch((e: unknown) => { console.warn('xmtp answer failed', e); });
@@ -1238,7 +1239,7 @@ function BubbleActionMenu({
   );
 
   return (
-    <Modal visible={!!target} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal visible={!!target} transparent animationType="none" onRequestClose={onClose}>
       {/** Dimmed full-screen backdrop — tap anywhere outside the cards to dismiss. */}
       <Pressable
         onPress={onClose}

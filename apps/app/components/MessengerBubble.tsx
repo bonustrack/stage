@@ -764,7 +764,7 @@ function TxReceiptCard({ receipt, dark, sub }: {
 }
 
 function MessengerBubbleBase({
-  entry, dark, unread, pending, replyTarget, onReact, onReply, onLongPress, onOpenMenu, onAnswer,
+  entry, dark, unread, pending, replyTarget, onReact, onReply, onLongPress, onOpenMenu, onCloseMenu, onAnswer,
   replyPreview, onReplyPreviewPress, reactions, pendingReactions, pendingRemovals, ownEmojis, transcript, myUri, senderEthAddress, onAvatarPress,
   votes, ownVotes, onVote, onPay, paying, onSign, signing,
 }: {
@@ -774,6 +774,9 @@ function MessengerBubbleBase({
    *  positions the emoji-strip + action-dropdown overlay relative to the row's
    *  on-screen rect (measured here via measureInWindow). */
   onOpenMenu?: (anchor: { y: number; height: number }) => void;
+  /** Close the just-opened anchored menu — fired when a fast double-tap supersedes
+   *  the instant single-tap menu open (the double-tap is treated as a quick 👍). */
+  onCloseMenu?: () => void;
   /** Tap the quoted reply-preview slab → parent jumps/scrolls to the original
    *  message. No-op when undefined (e.g. a bubble that isn't a reply). */
   onReplyPreviewPress?: () => void;
@@ -879,54 +882,68 @@ function MessengerBubbleBase({
     // fireReply closes over onReply+pending; recreate when they change.
     [onReply, pending, swipeX]);
   const swipeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: swipeX.value }] }));
-  /** Tap a message → discriminate single vs double:
-   *   - SINGLE tap (no second tap within 230ms) → open the Telegram-style anchored
-   *     menu (emoji strip + action dropdown). We measure the row's on-screen rect at
-   *     tap time and hand the parent the Y + height so it can float the overlay just
-   *     above/below the bubble.
-   *   - DOUBLE tap (second tap inside the window) → quick 👍, reusing the same
-   *     optimistic onReact toggle path as the emoji picker/pills (add if not present,
-   *     remove if already your 👍). The pending single-tap is cancelled.
-   *  The outer RNGH Pan gesture still owns horizontal swipe-to-reply, so taps and swipes
-   *  don't collide. The ~230ms delay on the menu opening is the standard cost of
-   *  double-tap support. */
+  /** Tap a message → open the Telegram-style anchored menu INSTANTLY on the first
+   *  tap (no disambiguation wait). We measure the row's on-screen rect at tap time
+   *  and hand the parent the Y + height so it can float the overlay just above/below
+   *  the bubble — the menu render never blocks on the async measure (the parent
+   *  sets visible state synchronously; the anchor refines a frame later if needed).
+   *
+   *  DOUBLE-TAP 👍 is kept WITHOUT delaying the single tap: the menu opens on tap #1,
+   *  and if a second tap lands within DOUBLE_TAP_MS, we treat it as the quick 👍 —
+   *  firing the same optimistic onReact('👍') toggle and immediately closing the
+   *  just-opened menu (onCloseMenu). So the menu open is never delayed; a fast
+   *  double-tap simply supersedes it.
+   *
+   *  The outer RNGH Pan gesture still owns horizontal swipe-to-reply, so taps and
+   *  swipes don't collide. */
+  const DOUBLE_TAP_MS = 250;
   const rowRef = useRef<React.ComponentRef<typeof View>>(null);
-  const singleTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  /** Cached anchor from the tap's measureInWindow, so the delayed single-tap still
-   *  floats the menu against the row's on-screen rect after the 230ms window. */
-  const pendingAnchor = useRef<{ y: number; height: number }>({ y: 0, height: 0 });
-  useEffect(() => () => {
-    if (singleTapTimer.current) clearTimeout(singleTapTimer.current);
-  }, []);
+  /** Timestamp of the last tap-that-opened-the-menu, so the next tap inside the
+   *  window can be recognised as a double-tap 👍. */
+  const lastOpenAt = useRef<number>(0);
+  /** Last measured row rect — used to open the menu synchronously at a sensible
+   *  anchor while the fresh measureInWindow is still in flight. */
+  const lastAnchor = useRef<{ y: number; height: number }>({ y: 0, height: 0 });
   const onBubbleTap = (): void => {
     if (pending) return;
-    /** Second tap inside the window → double-tap quick 👍, cancel the pending single. */
-    if (singleTapTimer.current) {
-      clearTimeout(singleTapTimer.current);
-      singleTapTimer.current = null;
+    /** Second tap inside the window → double-tap quick 👍, supersede the open menu. */
+    if (Date.now() - lastOpenAt.current < DOUBLE_TAP_MS) {
+      lastOpenAt.current = 0;
+      onCloseMenu?.();
       onReact?.('👍');
       return;
     }
-    if (!onOpenMenu) return;
-    /** Capture the anchor now (the row may have scrolled by the time the timer
-     *  fires). measureInWindow is async, so stash the result in a ref. */
+    if (!onOpenMenu) {
+      /** No menu wired (react-only caller): a plain tap is a quick 👍. */
+      onReact?.('👍');
+      return;
+    }
+    /** Open immediately. Anchor at a sane default (rect refined when measure
+     *  returns), so visibility never waits on the async measureInWindow. */
+    lastOpenAt.current = Date.now();
     const node = rowRef.current;
-    if (node) node.measureInWindow((_x, y, _w, h) => { pendingAnchor.current = { y, height: h }; });
-    else pendingAnchor.current = { y: 0, height: 0 };
-    singleTapTimer.current = setTimeout(() => {
-      singleTapTimer.current = null;
-      onOpenMenu(pendingAnchor.current);
-    }, 230);
+    /** Open SYNCHRONOUSLY with the last-known anchor (cached from a prior measure,
+     *  or 0 on first open) so the modal is visible this frame. Then kick off the
+     *  async measureInWindow and refine the anchor when it returns — the menu is
+     *  already on screen, so this only nudges its position, no perceptible wait. */
+    onOpenMenu(lastAnchor.current);
+    if (node) node.measureInWindow((_x, y, _w, h) => {
+      lastAnchor.current = { y, height: h };
+      onOpenMenu({ y, height: h });
+    });
   };
   /** Long-press → open the menu immediately (no tap-discrimination delay). Measures
    *  the row rect synchronously-ish via measureInWindow, same anchor contract. */
   const onBubbleLongPress = (): void => {
     if (pending) return;
-    if (singleTapTimer.current) { clearTimeout(singleTapTimer.current); singleTapTimer.current = null; }
     if (!onOpenMenu) { onLongPress?.(); return; }
     const node = rowRef.current;
-    if (!node) { onOpenMenu({ y: 0, height: 0 }); return; }
-    node.measureInWindow((_x, y, _w, h) => onOpenMenu({ y, height: h }));
+    /** Open synchronously at the cached anchor, refine when measure returns. */
+    onOpenMenu(lastAnchor.current);
+    if (node) node.measureInWindow((_x, y, _w, h) => {
+      lastAnchor.current = { y, height: h };
+      onOpenMenu({ y, height: h });
+    });
   };
   return (
     <GestureDetector gesture={replyPan}>
