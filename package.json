@@ -26,5 +26,8 @@
   "packageManager": "bun@1.3.9",
   "engines": {
     "node": ">=22"
+  },
+  "patchedDependencies": {
+    "react-native-screens@4.16.0": "patches/react-native-screens@4.16.0.patch"
   }
 }
