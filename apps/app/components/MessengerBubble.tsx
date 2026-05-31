@@ -2,7 +2,9 @@
  *  no colored bubble even for the local user's own messages. */
 
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Linking, PanResponder, Pressable, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, Text, TextInput, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, runOnJS } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { getPeerAvatarCb } from '../lib/peerProfiles';
 import Markdown, { MarkdownIt } from 'react-native-markdown-display';
@@ -529,27 +531,36 @@ function MessengerBubbleBase({
     /** Discord-style: all messages render with the same typography regardless of sender. */
     style: markdownStyles(fg, dark, false),
   };
-  /** Swipe-to-reply (right→left, Telegram-style): claim once dx is left-leaning + dominates dy,
-   *  drag the bubble with the finger up to ~80px, snap back on release, fire onReply if dx<=-60. */
-  const swipeX = useRef(new Animated.Value(0)).current;
-  const panResponder = useMemo(() => PanResponder.create({
-    onMoveShouldSetPanResponderCapture: (_, g) => {
-      const ax = Math.abs(g.dx), ay = Math.abs(g.dy);
-      return g.dx < -10 && ax > ay * 1.5;
-    },
-    onPanResponderMove: (_, g) => {
-      swipeX.setValue(Math.max(-80, Math.min(0, g.dx)));
-    },
-    onPanResponderRelease: (_, g) => {
-      const triggered = g.dx <= -60;
-      Animated.spring(swipeX, { toValue: 0, useNativeDriver: true, speed: 18, bounciness: 6 }).start();
-      if (triggered && !pending) onReply?.();
-    },
-    onPanResponderTerminate: () => {
-      Animated.spring(swipeX, { toValue: 0, useNativeDriver: true, speed: 18, bounciness: 6 }).start();
-    },
-    onPanResponderTerminationRequest: () => false,
-  }), [onReply, swipeX, pending]);
+  /** Swipe-to-reply (right→left, Telegram-style), now on react-native-gesture-handler
+   *  (was a legacy RN PanResponder). PanResponder sat OUTSIDE RNGH's arbitration, so
+   *  it couldn't coordinate with the RNGH-based back gesture or yield cleanly to the
+   *  FlatList scroll — moving it onto an RNGH `Gesture.Pan()` lets RNGH arbitrate all
+   *  three by direction:
+   *    - reply  = LEFTWARD  horizontal  → `.activeOffsetX(-15)` (arms only on a clear
+   *               leftward drag; a rightward back-swipe never arms it).
+   *    - scroll = VERTICAL              → `.failOffsetY([-12,12])` (a vertical-first
+   *               drag fails this gesture, handing the touch to the inverted FlatList).
+   *    - back   = RIGHTWARD             → opposite sign, never claimed here.
+   *  The bubble translateX tracks the finger (clamped to [-80,0]) on the UI thread via
+   *  reanimated; on release past ~60px it fires onReply, then springs back. */
+  const swipeX = useSharedValue(0);
+  const fireReply = (): void => { if (!pending) onReply?.(); };
+  const replyPan = useMemo(() => Gesture.Pan()
+    .activeOffsetX(-15)
+    .failOffsetY([-12, 12])
+    .onChange(e => {
+      swipeX.value = Math.max(-80, Math.min(0, e.translationX));
+    })
+    .onEnd(e => {
+      if (e.translationX <= -60) runOnJS(fireReply)();
+      swipeX.value = withSpring(0, { damping: 18, stiffness: 220 });
+    })
+    .onFinalize(() => {
+      swipeX.value = withSpring(0, { damping: 18, stiffness: 220 });
+    }),
+    // fireReply closes over onReply+pending; recreate when they change.
+    [onReply, pending, swipeX]);
+  const swipeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: swipeX.value }] }));
   /** Tap a message → discriminate single vs double:
    *   - SINGLE tap (no second tap within 230ms) → open the Telegram-style anchored
    *     menu (emoji strip + action dropdown). We measure the row's on-screen rect at
@@ -558,7 +569,7 @@ function MessengerBubbleBase({
    *   - DOUBLE tap (second tap inside the window) → quick 👍, reusing the same
    *     optimistic onReact toggle path as the emoji picker/pills (add if not present,
    *     remove if already your 👍). The pending single-tap is cancelled.
-   *  The outer PanResponder still owns horizontal swipe-to-reply, so taps and swipes
+   *  The outer RNGH Pan gesture still owns horizontal swipe-to-reply, so taps and swipes
    *  don't collide. The ~230ms delay on the menu opening is the standard cost of
    *  double-tap support. */
   const rowRef = useRef<React.ComponentRef<typeof View>>(null);
@@ -600,19 +611,18 @@ function MessengerBubbleBase({
     node.measureInWindow((_x, y, _w, h) => onOpenMenu({ y, height: h }));
   };
   return (
+    <GestureDetector gesture={replyPan}>
     <Animated.View
       ref={rowRef}
-      {...panResponder.panHandlers}
-      style={{
+      style={[swipeStyle, {
         flexDirection: 'row', alignItems: 'flex-start',
         paddingHorizontal: 12, paddingVertical: 6, gap: 10,
-        transform: [{ translateX: swipeX }],
         /** Permalink/reply jump target: full-row lighter background (~10% toward
          *  white), spanning the whole width incl. the avatar gutter. */
         backgroundColor: replyTarget
           ? (dark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.05)')
           : (unread ? (dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)') : 'transparent'),
-      }}
+      }]}
     >
       {/** Discord-style row avatar — `sm` (24px). Tapping it surfaces the
        *   sender's profile via the parent's `onAvatarPress` handler. */}
@@ -630,7 +640,7 @@ function MessengerBubbleBase({
       )}
       {/** Right column: message content + reactions + reaction picker stacked. */}
       <Col flex={1} style={{ minWidth: 0, opacity: pending ? 0.5 : 1 }}>
-      {/** Pressable handles onLongPress; the outer Animated.View'​s PanResponder steals horizontal drags. */}
+      {/** Pressable handles onLongPress; the outer RNGH Pan gesture claims leftward horizontal drags. */}
       <Pressable
         onPress={(onOpenMenu || onReact) ? onBubbleTap : undefined}
         onLongPress={pending ? undefined : (onOpenMenu ? onBubbleLongPress : onLongPress)}
@@ -828,6 +838,7 @@ function MessengerBubbleBase({
       ) : null}
       </Col>
     </Animated.View>
+    </GestureDetector>
   );
 }
 
