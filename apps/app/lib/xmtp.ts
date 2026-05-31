@@ -975,10 +975,12 @@ async function uploadEncryptedToIpfs(encryptedFileUri: string, _filename: string
   }
   if (!res.ok || json.error) throw new Error(json.error ?? `Swarm upload failed (${res.status})`);
   if (!json.ref) throw new Error('Swarm proxy returned no reference');
-  /** Store the gateway-agnostic `swarm://<ref>` form in the message. The recipient
-   *  maps it to a concrete gateway at fetch time via `swarmToHttp` — so the
-   *  gateway can be swapped later without rewriting any stored message. */
-  return `swarm://${json.ref}`;
+  /** Store a concrete HTTPS gateway URL in the message. The native XMTP SDK
+   *  validates the attachment url at send time and rejects non-http(s) schemes
+   *  (`java.net.MalformedURLException: unknown protocol: swarm`), so we must NOT
+   *  store a `swarm://<ref>` url here. Reads still pass through `swarmToHttp`,
+   *  which leaves https urls unchanged (and maps any legacy `swarm://` ones). */
+  return `${SWARM_GATEWAY}${json.ref}/`;
 }
 
 /** Send several attachments as ONE XMTP message using the multi-remote-attachment
