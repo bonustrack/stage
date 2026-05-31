@@ -13,7 +13,7 @@ import { ComposerGradient } from './ComposerGradient';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Avatar } from './Avatar';
 import { Box, Row, Col } from './layout';
-import { fileUriToBase64, shortAddress, xmtpReply, xmtpSendAttachment, xmtpSendText, xmtpSendPoll, xmtpSendTxRequest } from '../lib/xmtp';
+import { fileUriToBase64, shortAddress, xmtpReply, xmtpSendAttachment, xmtpSendMultiRemoteAttachment, xmtpSendText, xmtpSendPoll, xmtpSendTxRequest } from '../lib/xmtp';
 import { getPeerName } from '../lib/peerProfiles';
 import { AppModal } from './AppModal';
 import { type PollContent, mintPollId, pollFallbackText } from '@metro-labs/client/xmtp/poll';
@@ -526,21 +526,34 @@ export function MessengerComposer({
     let sentId: string | undefined;
     try {
       /** Send the text body first (as a `reply` when there's a `replyingTo`,
-       *  else plain text), then EACH staged attachment as its own INLINE
-       *  StaticAttachment message — encrypted in-message via the XMTP
-       *  AttachmentCodec, no external upload. This is the pre-#118 working
-       *  behavior, restored because the multi-remote path uploads ciphertext to
-       *  pineapple.fyi, which is image-only and 415s non-image bytes. Multiple
-       *  files therefore land as multiple bubbles (acceptable). The multi-remote
-       *  send helper (`xmtpSendMultiRemoteAttachment`) is left in place but
-       *  unused, ready for a future blob-store follow-up; its receive/decode +
-       *  ImageViewer render path is untouched so already-sent multi-remote
-       *  messages still render. */
+       *  else plain text). */
       if (body) {
         if (sendingReplyTo) sentId = await xmtpReply(xmtpLine, sendingReplyTo, body);
         else sentId = await xmtpSendText(xmtpLine, body);
       }
-      for (const a of sendingAttachments) {
+      /** Partition the staged attachments. IMAGES go out as a SINGLE
+       *  `multiRemoteAttachment` message (encrypted on-device, ciphertext
+       *  uploaded to pineapple.fyi IPFS, bundled into one envelope) — so N pics
+       *  land as one gallery bubble and there's no ~1 MB inline cap. NON-image
+       *  attachments still go via the per-file INLINE StaticAttachment path,
+       *  because pineapple.fyi 415s non-image ciphertext. A single image also
+       *  rides the multi path (one-item gallery renders fine). */
+      const imageAtts = sendingAttachments.filter((a) => mimeOf(a.mime, a.name ?? a.url).startsWith('image/'));
+      const otherAtts = sendingAttachments.filter((a) => !mimeOf(a.mime, a.name ?? a.url).startsWith('image/'));
+      if (imageAtts.length > 0) {
+        const multiId = await xmtpSendMultiRemoteAttachment(
+          xmtpLine,
+          imageAtts.map((a) => ({
+            fileUri: a.url,
+            mimeType: mimeOf(a.mime, a.name ?? a.url),
+            filename: a.name ?? a.id,
+          })),
+        );
+        /** Attachment-only send (no text body) — the optimistic bubble carries
+         *  the attachments, so its real-id twin is the multi-attachment message. */
+        if (!sentId) sentId = multiId;
+      }
+      for (const a of otherAtts) {
         const mimeType = mimeOf(a.mime, a.name ?? a.url);
         const filename = a.name ?? a.id;
         const dataB64 = await fileUriToBase64(a.url);
@@ -557,8 +570,6 @@ export function MessengerComposer({
           );
         }
         const attId = await xmtpSendAttachment(xmtpLine, filename, mimeType, dataB64);
-        /** Attachment-only send (no text body) — the optimistic bubble carries the
-         *  attachments, so its real-id twin is the first attachment message. */
         if (!sentId) sentId = attId;
       }
     } catch (e) { sendErr = (e as Error).message; setErr(sendErr); }
