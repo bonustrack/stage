@@ -148,11 +148,23 @@ export default function RootLayout(): React.ReactElement {
           statusBarStyle: barStyle,
           goBackGesture: 'swipeRight',
           screenEdgeGesture: true,
-          /** Interactive swipe-back needs a real transition for the gesture to
-           *  scrub — 'none' silently disables the edge-swipe reveal. Keep a fast
-           *  slide (short duration) so swipe-back works AND pushes stay snappy. */
-          stackAnimation: 'slide_from_right',
-          animationDuration: 200,
+          /** INSTANT forward + interactive swipe-back.
+           *
+           *  `stackAnimation:'none'` makes the PROGRAMMATIC push/pop (router.push,
+           *  router.back, hardware back) play no transition → forward is instant on
+           *  BOTH platforms. (On Android `animationDuration` is a no-op — the native
+           *  ScreenViewManager.setTransitionDuration() is `= Unit` — so a fast-slide
+           *  trick can't make the forward push instant there; only 'none' does.)
+           *
+           *  The interactive edge swipe-back is a SEPARATE mechanism: rn-screens'
+           *  `goBackGesture` drives a Reanimated worklet (ScreenGestureDetector +
+           *  RNScreensTurboModule.startTransition/updateTransition/finishTransition,
+           *  with ScreenTransition.SwipeRight). That worklet NEVER reads
+           *  `stackAnimation`, so the finger-driven reveal-and-pop still works with
+           *  'none'. `screenEdgeGesture:true` arms the left-edge catch zone (widened
+           *  to 120px hit-slop via the rn-screens patch). The (tabs) root disables
+           *  the gesture (bottom of the stack — nothing to go back to). */
+          stackAnimation: 'none',
         }}
       >
         {/** Tab root: no back gesture (it's the bottom of the stack), instant. */}
