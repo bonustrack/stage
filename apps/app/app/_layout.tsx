@@ -15,9 +15,8 @@ import { LogBox, Text, TextInput } from 'react-native';
 import { Box } from '../components/layout';
 import { Spinner } from '../components/Spinner';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { GestureDetectorProvider } from 'react-native-screens/gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
-import { NativeSwipeStack } from '../components/NativeSwipeStack';
+import { Stack } from 'expo-router';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { useDeepLinks } from '../lib/deepLinks';
 import { usePushDeepLinks } from '../lib/push';
@@ -115,76 +114,34 @@ export default function RootLayout(): React.ReactElement {
     <QueryClientProvider client={queryClient}>
     <WalletConnectProvider>
     <GestureHandlerRootView style={{ flex: 1 }}>
-      {/** GestureDetectorProvider powers react-native-screens' reanimated-driven
-       *   interactive swipe-back (`goBackGesture`). It must wrap the navigator. */}
-      <GestureDetectorProvider>
       <KeyboardProvider>
       <StatusBar style={barStyle} translucent backgroundColor="transparent" />
-      {/** TRUE interactive swipe-back. expo-router's default `<Stack>` renders
-       *   through @react-navigation/native-stack 7.x, which does NOT wire
-       *   react-native-screens' `goBackGesture`/`screenEdgeGesture` — so there's
-       *   no finger-tracking pop on Android (react-navigation#6893, #7947) and
-       *   only iOS' built-in edge swipe. react-native-screens ships its OWN
-       *   native-stack that DOES support those options (reanimated worklet, works
-       *   on both platforms under Fabric/new-arch — which this app enables). We
-       *   graft it onto expo-router via `withLayoutContext` (see
-       *   components/NativeSwipeStack), keeping file-based routing intact and
-       *   swapping only the navigator implementation. This replaces the previous
-       *   JS <EdgeSwipeBack> shim.
+      {/** Plain expo-router <Stack> (→ @react-navigation/native-stack). The
+       *   previous react-native-screens-own native-stack + GestureDetectorProvider
+       *   interactive swipe-back was reverted: its root gesture layer was stealing
+       *   the touch stream from the message-list FlatList vertical scroll and the
+       *   MessengerBubble leftward swipe-to-reply PanResponder app-wide. Core chat
+       *   (scroll + swipe-to-reply) takes priority over the fancy swipe-back.
        *
-       *   `goBackGesture: 'swipeRight'` auto-selects `ScreenTransition.SwipeRight`,
-       *   so the previous page parallaxes in underneath the finger.
-       *   `screenEdgeGesture: true` → LEFT-EDGE back gesture (50px hit-slop).
-       *   This is REQUIRED, not cosmetic: rn-screens only applies directional
-       *   discrimination (`.activeOffsetX(30)` + edge hitSlop) INSIDE the
-       *   `if (screenEdgeGesture)` branch of gesture-handler/ScreenGestureDetector.
-       *   With `screenEdgeGesture: false` the back gesture is a BARE `Gesture.Pan()`
-       *   with NO `activeOffsetX`/`failOffsetY` — it activates on ANY drag (vertical
-       *   or leftward) and wins arbitration over the inverted-FlatList scroll and the
-       *   MessengerBubble swipe-to-reply PanResponder, starving both. There is no JS
-       *   hook to inject offset constraints into the full-screen branch, so full-width
-       *   and scroll/reply cannot coexist. Edge mode restores rightward-only activation
-       *   at the left 50px, leaving vertical scroll and the leftward (dx<-10) reply
-       *   pan completely unclaimed. Back-swipe is narrower but scroll + reply work. */}
-      {/** Gesture options live in the Stack DEFAULTS so EVERY pushed route
-       *   inherits the interactive swipe-back (xmtp/[convId], accounts,
-       *   user/[address], group/[convId], wallet/*, search, …). expo-router
-       *   auto-registers file-based routes against this navigator, so they pick
-       *   up these defaults without an explicit <Stack.Screen> entry. Pushed
-       *   routes open INSTANTLY (`stackAnimation: 'none'`); the finger-tracking
-       *   pop is driven by `goBackGesture` independently of stackAnimation. */}
-      <NativeSwipeStack
+       *   `animation: 'none'` → instant transitions (the preferred feel).
+       *   `statusBarStyle: barStyle` keeps the white-on-dark status-bar icons:
+       *   @react-navigation/native-stack drives the rn-screens window trait from
+       *   this per-screen option, and we also set it imperatively (effect above) +
+       *   declaratively (<StatusBar> above) so it survives navigation.
+       *
+       *   No interactive swipe-back remains: iOS keeps its built-in edge swipe;
+       *   Android is hardware-back only. */}
+      <Stack
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: dark ? '#0e0f10' : '#ffffff' },
-          /** AUTHORITATIVE status-bar icon color under Android edge-to-edge
-           *  (`edgeToEdgeEnabled: true`, targetSdk 36). expo-status-bar's
-           *  `<StatusBar style>` / `setStatusBarStyle` pass through to RN's
-           *  native StatusBar, but react-native-screens' native-stack OWNS the
-           *  window status-bar trait: on every screen mount it drives
-           *  `WindowInsetsControllerCompat.isAppearanceLightStatusBars` from this
-           *  per-screen option (see ScreenWindowTraits.kt `setStyle`), clobbering
-           *  any global JS StatusBar call — which is why the runtime expo-status-bar
-           *  fix kept reverting to black icons on navigation. Setting it here is the
-           *  reliable path: rn-screens semantics are 'light' = light (white) icons,
-           *  matching `barStyle`. It's a JS option → native trait, so it hot-reloads
-           *  on the dev client (no APK needed). */
           statusBarStyle: barStyle,
-          stackAnimation: 'none',
-          goBackGesture: 'swipeRight',
-          screenEdgeGesture: true,
+          animation: 'none',
         }}
       >
-        {/** Root tab group (footer-nav root): explicitly DISABLE the back gesture
-         *   — it's the stack root, nothing to pop to, so a swipe on a tab screen
-         *   must not try to pop. Overrides the inherited defaults above. */}
-        <NativeSwipeStack.Screen
-          name="(tabs)"
-          options={{ headerShown: false, gestureEnabled: false, goBackGesture: undefined }}
-        />
-      </NativeSwipeStack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      </Stack>
       </KeyboardProvider>
-      </GestureDetectorProvider>
     </GestureHandlerRootView>
     </WalletConnectProvider>
     </QueryClientProvider>
