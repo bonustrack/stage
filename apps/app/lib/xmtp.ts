@@ -887,10 +887,16 @@ export async function xmtpSendAttachment(
 /** Pineapple = Snapshot's IPFS pinning gateway. Reused from the avatar-upload
  *  path (`lib/profile.ts`); attachments are encrypted client-side before upload,
  *  so the public CID only ever exposes ciphertext. */
-const PINEAPPLE_UPLOAD_URL = 'https://pineapple.fyi/upload';
-/** Read gateway for fetching pinned content back. Mirrors `avatarRenderUrl`'s
- *  `ipfs://` resolution in `@metro-labs/client/profile/snapshot`. */
-const IPFS_GATEWAY = 'https://snapshot.4everland.link/ipfs/';
+/** Metro daemon Swarm upload-proxy (cloudflared named tunnel → swarmproxy train).
+ *  The encrypted ciphertext is POSTed here as a raw binary body; the daemon holds
+ *  the swarmy API key server-side and returns `{ ref: "<swarmReference>" }`. Not a
+ *  secret — just the public host of the proxy endpoint. */
+const SWARM_UPLOAD_URL = 'https://blob.metro.box/upload';
+/** Public KEYLESS Swarm read gateway. Reads need no daemon and no key — the bytes
+ *  are fetched straight from any Swarm gateway by reference. The trailing slash is
+ *  required (the `/bzz/<ref>/` form returns the exact original bytes; `/bytes`
+ *  returns swarm-framed junk). */
+const SWARM_GATEWAY = 'https://api.gateway.ethswarm.org/bzz/';
 
 /** A locally-staged attachment ready to bundle into a multi-remote message.
  *  `fileUri` may be `file://`, `content://` (Android gallery) or `blob:` (web) —
@@ -931,18 +937,28 @@ async function materializeFileUri(src: string): Promise<string> {
   return dest.uri.startsWith('file://') ? dest.uri : `file://${dest.uri.replace(/^file:\/+/, '/')}`;
 }
 
-/** Upload an encrypted attachment's ciphertext to IPFS and return the public
- *  HTTPS URL the recipient fetches from. Streams the file straight off disk via
- *  RN FormData (no base64 round-trip) — same shape as `uploadAvatar`. */
-async function uploadEncryptedToIpfs(encryptedFileUri: string, filename: string): Promise<string> {
-  const form = new FormData();
-  form.append('file', { uri: encryptedFileUri, name: filename, type: 'application/octet-stream' } as unknown as Blob);
-  const res = await fetch(PINEAPPLE_UPLOAD_URL, { method: 'POST', body: form });
-  const json = await res.json().catch(() => ({})) as { result?: { cid?: string }; error?: { message?: string } };
-  if (json.error?.message) throw new Error(json.error.message);
-  const cid = json.result?.cid;
-  if (!cid) throw new Error('Pineapple returned no CID');
-  return `${IPFS_GATEWAY}${cid}`;
+/** Upload an encrypted attachment's ciphertext to Swarm (via the Metro daemon
+ *  proxy) and return the public KEYLESS HTTPS URL the recipient fetches from.
+ *
+ *  The ciphertext is read off disk into a single binary body and POSTed raw to the
+ *  daemon proxy (`SWARM_UPLOAD_URL`), which re-uploads it to swarmy.cloud with the
+ *  server-side API key and returns `{ ref }`. We then return the keyless public
+ *  gateway URL `https://api.gateway.ethswarm.org/bzz/<ref>/` — reads never touch
+ *  the daemon. The blob is already client-side encrypted, so the public reference
+ *  only ever exposes ciphertext. */
+async function uploadEncryptedToIpfs(encryptedFileUri: string, _filename: string): Promise<string> {
+  /** Read the encrypted bytes off disk; `fetch(file://)` gives us a Blob we can
+   *  ship as a raw binary body (the proxy reads `req.arrayBuffer()`). */
+  const blob = await (await fetch(encryptedFileUri)).blob();
+  const res = await fetch(SWARM_UPLOAD_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/octet-stream' },
+    body: blob,
+  });
+  const json = await res.json().catch(() => ({})) as { ref?: string; error?: string };
+  if (!res.ok || json.error) throw new Error(json.error ?? `Swarm upload failed (${res.status})`);
+  if (!json.ref) throw new Error('Swarm proxy returned no reference');
+  return `${SWARM_GATEWAY}${json.ref}/`;
 }
 
 /** Send several attachments as ONE XMTP message using the multi-remote-attachment
