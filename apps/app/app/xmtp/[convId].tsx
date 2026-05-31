@@ -43,6 +43,7 @@ import {
 } from '@metro-labs/client/xmtp/sign';
 import { signTypedData, signMessage, getAccount } from 'wagmi/actions';
 import { wagmiConfig } from '../../lib/walletconnect';
+import { getActiveViemAccount } from '../../lib/accounts';
 import {
   hasOverlayPermission, isPillAvailable, openConversationAsBubble,
   requestOverlayPermission, showPill,
@@ -205,7 +206,7 @@ function HeaderAvatar({ peerAddr, groupImage, border }: {
 export default function XmtpConversation(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { fg, head, sub, bg, border } = usePalette();
+  const { fg, head, sub, bg, border, rowBg } = usePalette();
 
   const { convId, focus } = useLocalSearchParams<{ convId: string; focus?: string }>();
   const activeLine = lineOfConv(convId ?? '');
@@ -630,26 +631,54 @@ export default function XmtpConversation(): React.ReactElement {
     setSigningIds(prev => new Set(prev).add(requestId));
     void (async () => {
       try {
+        /** Bind every signature to the wallet the rest of the app uses — the
+         *  active Reown/wagmi account. Passing `account` explicitly stops wagmi
+         *  from falling back to the connector's "current" account (which inside a
+         *  list-rendered bubble may not be the live one). */
+        /** Prefer the in-app key: if the active account is a local EOA
+         *  (generated/imported/migrated) we sign with its viem account directly,
+         *  no popup. Only when there's no local key (WalletConnect account) do we
+         *  delegate to the remote wallet through wagmi. */
+        const local = await getActiveViemAccount();
+        const account = local?.address ?? getAccount(wagmiConfig).address;
+        if (!account) throw new Error('Connect a wallet to sign');
         let signature: string;
         if (req.kind === 'eip712') {
           const td = req.eip712;
           if (!td) throw new Error('Malformed typed-data request');
-          signature = await signTypedData(wagmiConfig, {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            domain: td.domain as any,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            types: td.types as any,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            primaryType: td.primaryType as any,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            message: td.message as any,
-          });
+          /** viem/wagmi inject the EIP712Domain entry themselves from `domain`;
+           *  a duplicate in `types` makes them reject the request. Strip it. */
+          const { EIP712Domain: _drop, ...types } = (td.types ?? {}) as Record<string, unknown>;
+          signature = local
+            ? await local.signTypedData({
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                domain: td.domain as any,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                types: types as any,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                primaryType: td.primaryType as any,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                message: td.message as any,
+              })
+            : await signTypedData(wagmiConfig, {
+                account,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                domain: td.domain as any,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                types: types as any,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                primaryType: td.primaryType as any,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                message: td.message as any,
+              });
         } else {
           const message = req.message ?? '';
           if (!message) throw new Error('Empty message to sign');
-          signature = await signMessage(wagmiConfig, { message });
+          signature = local
+            ? await local.signMessage({ message })
+            : await signMessage(wagmiConfig, { account, message });
         }
-        const signer = getAccount(wagmiConfig).address ?? '';
+        const signer = account;
         const ref: SignatureReferenceContent = { requestId, signature, signer };
         await xmtpSendSignatureReference(activeLine, ref);
       } catch (e) {
@@ -1008,11 +1037,11 @@ export default function XmtpConversation(): React.ReactElement {
           style={{
             position: 'absolute', alignSelf: 'center', bottom: '100%', marginBottom: 8, zIndex: 3,
             width: 36, height: 36, borderRadius: 999,
-            backgroundColor: dark ? '#ffffff' : '#000000',
+            backgroundColor: dark ? rowBg : '#000000',
             alignItems: 'center', justifyContent: 'center',
           }}
         >
-          <HeroIcon name="arrowDown" size={18} color={dark ? '#000000' : '#ffffff'} />
+          <HeroIcon name="arrowDown" size={18} color="#ffffff" />
         </Pressable>
       ) : null}
       <MessengerComposer

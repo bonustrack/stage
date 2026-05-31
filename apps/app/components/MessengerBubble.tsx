@@ -491,35 +491,92 @@ function sigReferenceOf(entry: HistoryEntry): SigReference | undefined {
   return p.signatureReference;
 }
 
-/** SigRequestCard — a signature-request bubble. Shows the description + a hint
- *  of what's being signed and a "Sign" button that fires `onSign` (the parent
- *  signs via wagmi signTypedData/signMessage, then posts a SignatureReference
- *  back). */
+/** Render one EIP-712 message value as a readable string. Scalars pass through
+ *  (addresses/hex shown as-is, long hex truncated); nested objects/arrays are
+ *  JSON-stringified compactly so a row stays one line-ish. */
+function fmtSigValue(v: unknown): string {
+  if (v == null) return '';
+  if (typeof v === 'string') {
+    // Truncate very long hex (calldata, byte blobs) but keep addresses intact.
+    if (/^0x[0-9a-fA-F]{42,}$/.test(v) && v.length > 24) return `${v.slice(0, 12)}…${v.slice(-8)}`;
+    return v;
+  }
+  if (typeof v === 'number' || typeof v === 'bigint' || typeof v === 'boolean') return String(v);
+  try {
+    const s = JSON.stringify(v);
+    return s.length > 200 ? `${s.slice(0, 197)}…` : s;
+  } catch { return String(v); }
+}
+
+/** SigRequestCard — a signature-request bubble. Shows the description plus the
+ *  full message detail (domain/primaryType/fields for eip712, raw text for
+ *  personal) so the signer can review before tapping "Sign". */
 function SigRequestCard({ req, dark, sub, signing, onSign }: {
   req: SigRequest; dark: boolean; sub: string; signing?: boolean;
   onSign?: () => void;
 }): React.ReactElement {
   const desc = req.description?.trim()
     || (req.kind === 'eip712' ? `Sign ${req.eip712?.primaryType ?? 'typed data'}` : 'Sign message');
-  const preview = req.kind === 'personal'
-    ? req.message
-    : `EIP-712 · ${req.eip712?.primaryType ?? 'typed data'}`;
+  const detailBg = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
+  const detailBorder = dark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)';
+  const head = dark ? '#ffffff' : '#000000';
+
+  const domain = req.eip712?.domain as { name?: unknown; chainId?: unknown } | undefined;
+  const domainName = domain?.name != null ? String(domain.name) : undefined;
+  const chainId = domain?.chainId != null ? String(domain.chainId) : undefined;
+  const fields = req.kind === 'eip712' && req.eip712?.message
+    ? Object.entries(req.eip712.message)
+    : [];
+
   return (
     <Box style={{
       alignSelf: 'stretch', gap: 8, marginTop: 8, padding: 12, borderRadius: 14,
       backgroundColor: dark ? '#282a2d' : '#e4e4e5',
     }}>
       <Row align="center" gap={8}>
-        <HeroIcon name="pencil" size={18} color={dark ? '#ffffff' : '#000000'} />
-        <Text style={{ color: dark ? '#ffffff' : '#000000', fontSize: 15, fontFamily: 'Calibre-Semibold', flexShrink: 1 }}>
+        <HeroIcon name="pencil" size={18} color={head} />
+        <Text style={{ color: head, fontSize: 15, fontFamily: 'Calibre-Semibold', flexShrink: 1 }}>
           {desc}
         </Text>
       </Row>
-      {preview ? (
-        <Text numberOfLines={3} style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>
-          {preview}
-        </Text>
+
+      {req.kind === 'eip712' ? (
+        <Col gap={6} style={{
+          padding: 10, borderRadius: 10, borderWidth: 1,
+          borderColor: detailBorder, backgroundColor: detailBg,
+        }}>
+          {(domainName || chainId) ? (
+            <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>
+              {domainName ?? 'Domain'}{chainId ? ` · chain ${chainId}` : ''}
+            </Text>
+          ) : null}
+          {req.eip712?.primaryType ? (
+            <Text style={{ color: head, fontSize: 13, fontFamily: 'Calibre-Semibold' }}>
+              {req.eip712.primaryType}
+            </Text>
+          ) : null}
+          {fields.map(([k, v]) => (
+            <Row key={k} align="start" gap={8}>
+              <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', minWidth: 80, flexShrink: 0 }}>
+                {k}
+              </Text>
+              <Text numberOfLines={4} style={{ color: head, fontSize: 12, fontFamily: 'Menlo', flexShrink: 1, flex: 1 }}>
+                {fmtSigValue(v)}
+              </Text>
+            </Row>
+          ))}
+        </Col>
+      ) : req.message ? (
+        <Box style={{
+          padding: 10, borderRadius: 10, borderWidth: 1,
+          borderColor: detailBorder, backgroundColor: detailBg,
+        }}>
+          <Text numberOfLines={20} style={{ color: head, fontSize: 12, fontFamily: 'Menlo', lineHeight: 18 }}>
+            {req.message}
+          </Text>
+        </Box>
       ) : null}
+
       {onSign ? (
         <Button
           variant="primary"

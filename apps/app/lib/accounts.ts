@@ -117,12 +117,38 @@ export async function getActiveAccount(): Promise<AccountRecord | null> {
 
 export async function getPrivateKey(id: string): Promise<Hex | null> {
   const pk = await SecureStore.getItemAsync(PK_PREFIX + id).catch(() => null);
-  return pk && /^0x[0-9a-f]{64}$/.test(pk) ? (pk as Hex) : null;
+  if (pk && /^0x[0-9a-f]{64}$/.test(pk)) return pk as Hex;
+  /** Self-heal: a key from the pre-multi-account build (or an early multi-account
+   *  build that recorded the account but never copied the key) may still live only
+   *  under the legacy `wallet.privateKey`. Accept it iff it derives to THIS id, and
+   *  re-write it under the per-account key so future reads are direct. WC accounts
+   *  have no key anywhere → still null → WC signing path stays intact. */
+  const legacy = await SecureStore.getItemAsync(LEGACY_PK_KEY).catch(() => null);
+  if (legacy && /^0x[0-9a-fA-F]{64}$/.test(legacy)) {
+    const norm = ('0x' + legacy.slice(2).toLowerCase()) as Hex;
+    try {
+      if (privateKeyToAccount(norm).address.toLowerCase() === id.toLowerCase()) {
+        await SecureStore.setItemAsync(PK_PREFIX + id, norm).catch(() => undefined);
+        return norm;
+      }
+    } catch { /* malformed legacy key — fall through to null */ }
+  }
+  return null;
 }
 
 export async function getViemAccount(id: string): Promise<PrivateKeyAccount | null> {
   const pk = await getPrivateKey(id);
   return pk ? privateKeyToAccount(pk) : null;
+}
+
+/** The ACTIVE account as a viem signer, or null when it can't sign in-app
+ *  (WalletConnect account, or no stored key) — callers then fall back to the
+ *  remote/wagmi signing path. Resolves through getPrivateKey, which self-heals
+ *  a legacy `wallet.privateKey` into the per-account slot. */
+export async function getActiveViemAccount(): Promise<PrivateKeyAccount | null> {
+  const rec = await getActiveAccount();
+  if (!rec || rec.type === 'walletconnect') return null;
+  return getViemAccount(rec.id);
 }
 
 export function canExportPrivateKey(rec: AccountRecord): boolean {
@@ -134,7 +160,20 @@ async function addLocalAccount(pk: Hex, type: 'generated' | 'privateKey'): Promi
   const id = acct.address.toLowerCase();
   const list = await loadAccounts();
   const existing = list.find(a => a.id === id);
-  if (existing) { await setActiveAccountId(id); return existing; }
+  if (existing) {
+    /** Importing a key for an address we already had as a WalletConnect account
+     *  must UPGRADE it to a local signer: store the key and flip the type, so
+     *  getActiveViemAccount resolves it (in-app signing) instead of bouncing to WC. */
+    await SecureStore.setItemAsync(PK_PREFIX + id, pk);
+    if (existing.type === 'walletconnect') {
+      const upgraded: AccountRecord = { ...existing, type };
+      await persist(list.map(a => (a.id === id ? upgraded : a)));
+      await setActiveAccountId(id);
+      return upgraded;
+    }
+    await setActiveAccountId(id);
+    return existing;
+  }
   await SecureStore.setItemAsync(PK_PREFIX + id, pk);
   const rec: AccountRecord = {
     id, address: acct.address, type, dbDir: `xmtp-${id}`, registered: false, createdAt: Date.now(),
