@@ -142,39 +142,28 @@ export default function RootLayout(): React.ReactElement {
        *   is LEFTWARD (dx<-10), opposite directions, so the two pans don't fight.
        *   Vertical FlatList scroll, the message menu, and horizontal scrollviews
        *   are unaffected (the back pan only claims rightward horizontal drags). */}
+      {/** Gesture options live in the Stack DEFAULTS so EVERY pushed route
+       *   inherits the interactive swipe-back (xmtp/[convId], accounts,
+       *   user/[address], group/[convId], wallet/*, search, …). expo-router
+       *   auto-registers file-based routes against this navigator, so they pick
+       *   up these defaults without an explicit <Stack.Screen> entry. Pushed
+       *   routes open INSTANTLY (`stackAnimation: 'none'`); the finger-tracking
+       *   pop is driven by `goBackGesture` independently of stackAnimation. */}
       <NativeSwipeStack
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: dark ? '#0e0f10' : '#ffffff' },
+          stackAnimation: 'none',
+          goBackGesture: 'swipeRight',
+          screenEdgeGesture: false,
         }}
       >
-        {/** Root tab group: no back-gesture (stack root — nothing to pop to). */}
+        {/** Root tab group (footer-nav root): explicitly DISABLE the back gesture
+         *   — it's the stack root, nothing to pop to, so a swipe on a tab screen
+         *   must not try to pop. Overrides the inherited defaults above. */}
         <NativeSwipeStack.Screen
           name="(tabs)"
-          options={{ headerShown: false, stackAnimation: 'none' }}
-        />
-        {/** Pushed routes open INSTANTLY (`stackAnimation: 'none'` — user prefers
-         *   no push/pop slide). The interactive swipe-back still works: in
-         *   react-native-screens the finger-tracking pop is driven entirely by
-         *   `goBackGesture` (→ `ScreenTransition.SwipeRight`, see
-         *   gesture-handler/constraints.ts `getAnimationForTransition`), which is
-         *   INDEPENDENT of `stackAnimation`. So the previous page still parallaxes
-         *   in underneath your thumb on drag, while a tap-to-open is instant. */}
-        <NativeSwipeStack.Screen
-          name="xmtp/[convId]"
-          options={{
-            stackAnimation: 'none',
-            goBackGesture: 'swipeRight',
-            screenEdgeGesture: false,
-          }}
-        />
-        <NativeSwipeStack.Screen
-          name="accounts"
-          options={{
-            stackAnimation: 'none',
-            goBackGesture: 'swipeRight',
-            screenEdgeGesture: false,
-          }}
+          options={{ headerShown: false, gestureEnabled: false, goBackGesture: undefined }}
         />
       </NativeSwipeStack>
       </KeyboardProvider>
