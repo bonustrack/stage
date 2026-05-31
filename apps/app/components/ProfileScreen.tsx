@@ -7,7 +7,8 @@
  *  Presentational pieces live in ./ProfileScreen.parts to keep this under cap. */
 
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, Text } from 'react-native';
+import { Pressable, ScrollView } from 'react-native';
+import { Text } from '@metro-labs/kit/text';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQueryClient } from '@tanstack/react-query';
@@ -19,7 +20,7 @@ import { flash } from '../lib/toast';
 import { useEffectiveColorScheme } from '../lib/theme';
 import { useProfileQuery } from '../lib/useProfile';
 import EditProfileModal from './EditProfileModal';
-import { HeroIcon } from './HeroIcon';
+import { Icon } from '@metro-labs/kit/icon';
 import { Avatar } from './Avatar';
 import { Box, Col } from './layout';
 import { ImageViewer } from './ImageViewer';
@@ -108,7 +109,7 @@ export function ProfileScreen({ address, variant }: {
       }}>
         {variant === 'route' ? (
           <Pressable onPress={() => router.back()} hitSlop={10} style={{ padding: 6 }}>
-            <HeroIcon name="arrowLeft" size={22} color={c.head} />
+            <Icon name="arrowLeft" size={22} color={c.head} />
           </Pressable>
         ) : (
           <Text style={{ color: c.head, fontSize: 22, fontFamily: 'Calibre-Semibold' }}>Profile</Text>
@@ -116,7 +117,7 @@ export function ProfileScreen({ address, variant }: {
 
         {isSelf ? (
           <Pressable onPress={() => setMenuOpen(true)} hitSlop={8} style={{ padding: 6 }}>
-            <HeroIcon name="dotsHorizontal" size={22} color={c.head} />
+            <Icon name="dotsHorizontal" size={22} color={c.head} />
           </Pressable>
         ) : null}
       </Box>

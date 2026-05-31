@@ -14,7 +14,8 @@
  *  When the cache has no entry for a group yet, it falls back to the member
  *  count subtitle. */
 
-import { ActivityIndicator, Text } from 'react-native';
+import { ActivityIndicator } from 'react-native';
+import { Text } from '@metro-labs/kit/text';
 import { Box } from './layout';
 import { useRouter } from 'expo-router';
 import { ChannelRow } from './ChannelRow';

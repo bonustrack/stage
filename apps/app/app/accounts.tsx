@@ -4,12 +4,14 @@
  *  Switching is in-place (epoch bump) so the channels list re-inits without a
  *  full reload; the user taps back to return. */
 
-import { Pressable, ScrollView, Text } from 'react-native';
+import { Pressable, ScrollView } from 'react-native';
+import { Text } from '@metro-labs/kit/text';
+import { Title } from '@metro-labs/kit/title';
 import { Box } from '../components/layout';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
-import { HeroIcon } from '../components/HeroIcon';
+import { Icon } from '@metro-labs/kit/icon';
 import { AccountsManager } from '../components/AccountsManager';
 
 export default function Accounts(): React.ReactElement {
@@ -27,11 +29,11 @@ export default function Accounts(): React.ReactElement {
         borderBottomWidth: 1, borderBottomColor: border,
       }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
-          <HeroIcon name="arrowLeft" size={22} color={fg} />
+          <Icon name="arrowLeft" size={22} color={fg} />
         </Pressable>
-        <Text style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold' }}>
+        <Title dark={dark} style={{ color: head, fontSize: 20 }}>
           Accounts
-        </Text>
+        </Title>
       </Box>
 
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}>

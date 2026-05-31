@@ -17,12 +17,13 @@
  *  patterns — there's no iOS toast primitive). */
 
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Image, Modal, Platform, Pressable, Text } from 'react-native';
+import { ActivityIndicator, Alert, Image, Modal, Platform, Pressable } from 'react-native';
+import { Text } from '@metro-labs/kit/text';
 import { Box } from './layout';
 import * as MediaLibrary from 'expo-media-library';
 import { Directory, File, Paths } from 'expo-file-system';
 import { Buffer } from 'buffer';
-import { HeroIcon } from './HeroIcon';
+import { Icon } from '@metro-labs/kit/icon';
 import { flash } from '../lib/toast';
 
 /** Extension guessed from a `data:` URI mime or a URL path, used so the saved
@@ -113,7 +114,7 @@ export function ImageViewer({ uri, visible, onClose }: {
           style={{ position: 'absolute', top: 48, right: 20, padding: 10 }}
           hitSlop={10}
         >
-          <HeroIcon name="x" size={28} color="#ffffff" />
+          <Icon name="x" size={28} color="#ffffff" />
         </Pressable>
 
         {/* Download — bottom-center pill. */}
@@ -130,7 +131,7 @@ export function ImageViewer({ uri, visible, onClose }: {
           >
             {saving
               ? <ActivityIndicator size="small" color="#ffffff" />
-              : <HeroIcon name="arrowDownTray" size={18} color="#ffffff" />}
+              : <Icon name="arrowDownTray" size={18} color="#ffffff" />}
             <Text style={{ color: '#ffffff', fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
               {saving ? 'Saving…' : 'Download'}
             </Text>

@@ -2,10 +2,11 @@
  *  Split out purely to keep each file under the 200-line lint cap; these have no
  *  state of their own beyond what the parent passes down. */
 
-import { Modal, Pressable, Text } from 'react-native';
+import { Modal, Pressable } from 'react-native';
+import { Text } from '@metro-labs/kit/text';
 import { Box } from './layout';
 import { usePalette, type Palette } from '../lib/theme';
-import { HeroIcon, type HeroIconName } from './HeroIcon';
+import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 
 export type ProfileColors = Palette;
 
@@ -29,7 +30,7 @@ export function InfoRow({ label, value, onCopy, c }: {
       </Box>
       {onCopy ? (
         <Pressable onPress={onCopy} hitSlop={8} style={{ padding: 4 }}>
-          <HeroIcon name="copy" size={18} color={c.sub} />
+          <Icon name="copy" size={18} color={c.sub} />
         </Pressable>
       ) : null}
     </Box>
@@ -57,7 +58,7 @@ export function ProfileActions({ opening, onMessage, onSend, c }: {
           opacity: disabled ? 0.6 : 1,
         })}
       >
-        <HeroIcon name={icon} size={22} color={c.head} />
+        <Icon name={icon} size={22} color={c.head} />
       </Pressable>
       <Text style={{ color: c.head, fontSize: 14, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{label}</Text>
     </Box>
@@ -91,7 +92,7 @@ export function EditMenu({ visible, top, onClose, onEdit, c }: {
               backgroundColor: pressed ? c.rowBg : 'transparent',
             })}
           >
-            <HeroIcon name="pencil" size={18} color={c.head} />
+            <Icon name="pencil" size={18} color={c.head} />
             <Text style={{ color: c.head, fontSize: 15, fontFamily: 'Calibre-Medium' }}>Edit profile</Text>
           </Pressable>
         </Box>

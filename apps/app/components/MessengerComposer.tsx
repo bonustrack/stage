@@ -1,7 +1,8 @@
 /** Floating two-line composer (Claude-mobile-style): textarea on top, [+ / mic / send] below. */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Animated, Image, PanResponder, Pressable, ScrollView, StyleSheet, Text, TextInput } from 'react-native';
+import { Alert, Animated, Image, PanResponder, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
+import { Text } from '@metro-labs/kit/text';
 import { loadDrafts, getDraft, setDraft } from '../lib/drafts';
 import { Audio } from 'expo-av';
 import * as MediaLibrary from 'expo-media-library';
@@ -9,7 +10,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { ComposerGradient } from './ComposerGradient';
-import { HeroIcon, type HeroIconName } from './HeroIcon';
+import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Avatar } from './Avatar';
 import { Box, Row, Col } from './layout';
 import { fileUriToBase64, shortAddress, xmtpReply, xmtpSendAttachment, xmtpSendText, xmtpSendPoll, xmtpSendTxRequest } from '../lib/xmtp';
@@ -660,7 +661,7 @@ export function MessengerComposer({
       width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
       backgroundColor: active ? '#d96868' : (pressed ? chipBg : 'transparent'),
     })}>
-      <HeroIcon name={icon} size={22} color={active ? '#ffffff' : fg} />
+      <Icon name={icon} size={22} color={active ? '#ffffff' : fg} />
     </Pressable>
   );
   const kindIcon = (kind: string): HeroIconName => (
@@ -692,7 +693,7 @@ export function MessengerComposer({
               backgroundColor: dark ? '#282a2d' : '#e4e4e5',
             }}
           >
-            <HeroIcon name="x" size={14} color={dark ? '#9f9fa3' : '#57606a'} />
+            <Icon name="x" size={14} color={dark ? '#9f9fa3' : '#57606a'} />
           </Pressable>
           <Text style={{ fontSize: 14, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
             <Text style={{ color: sub }}>Replying to </Text>
@@ -753,7 +754,7 @@ export function MessengerComposer({
                       backgroundColor: '#000', borderRadius: 999, padding: 2,
                     }}
                   >
-                    <HeroIcon name="x" size={12} color="#ffffff" />
+                    <Icon name="x" size={12} color="#ffffff" />
                   </Pressable>
                 </Box>
                 <Text style={{ color: fg, fontSize: 11, width: 72, textAlign: 'center' , fontFamily: 'Calibre-Medium'}} numberOfLines={1}>
@@ -764,10 +765,10 @@ export function MessengerComposer({
               /** Non-image attachments keep the inline chip layout — files/audio don'​t benefit
                *  from a thumbnail and look fine as a row. */
               <Row key={a.id} align="center" gap={6} px={8} py={4} radius={12} bg={chipBg}>
-                <HeroIcon name={kindIcon(a.kind)} size={14} color={fg} />
+                <Icon name={kindIcon(a.kind)} size={14} color={fg} />
                 <Text style={{ color: fg, fontSize: 12, maxWidth: 140 , fontFamily: 'Calibre-Medium'}} numberOfLines={1}>{a.name ?? a.id}</Text>
                 <Pressable onPress={() => setPending(prev => prev.filter((_, j) => j !== i))} hitSlop={6}>
-                  <HeroIcon name="x" size={14} color={sub} />
+                  <Icon name="x" size={14} color={sub} />
                 </Pressable>
               </Row>
             )
@@ -797,7 +798,7 @@ export function MessengerComposer({
                 extrapolate: 'clamp',
               }),
             }}>
-              <HeroIcon name="arrowLeft" size={14} color={sub} />
+              <Icon name="arrowLeft" size={14} color={sub} />
               <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
                 Slide to cancel
               </Text>
@@ -848,13 +849,13 @@ export function MessengerComposer({
               transform: [{ translateX: slideX }],
             }}
           >
-            <HeroIcon name="microphone" size={22} color={recording ? '#ffffff' : fg} />
+            <Icon name="microphone" size={22} color={recording ? '#ffffff' : fg} />
           </Animated.View>
           {/** Right: ✓ confirm (stop+stage) while recording, else send. */}
           {recording ? (
             <Pressable onPress={() => void stopRec()}
               style={({ pressed }) => ({ backgroundColor: pressed ? '#cccccc' : (dark ? '#ffffff' : '#000000'), width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center' })}>
-              <HeroIcon name="check" size={20} color={dark ? '#000' : '#fff'} />
+              <Icon name="check" size={20} color={dark ? '#000' : '#fff'} />
             </Pressable>
           ) : (
             <Pressable onPress={() => void send()} disabled={!canSend}
@@ -863,7 +864,7 @@ export function MessengerComposer({
                 opacity: canSend ? 1 : 0.45,
                 width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
               })}>
-              <HeroIcon name="send" size={20} color={dark ? '#000' : '#fff'} />
+              <Icon name="send" size={20} color={dark ? '#000' : '#fff'} />
             </Pressable>
           )}
         </Row>
@@ -904,7 +905,7 @@ export function MessengerComposer({
                 borderWidth: 1, borderColor: chipBg,
               })}
             >
-              <HeroIcon name={icon} size={22} color={fg} />
+              <Icon name={icon} size={22} color={fg} />
               <Text style={{ color: fg, fontSize: 13, marginTop: 6, fontFamily: 'Calibre-Medium' }}>{label}</Text>
             </Pressable>
           ))}
@@ -943,7 +944,7 @@ export function MessengerComposer({
               />
               {pollOptions.length > 2 ? (
                 <Pressable onPress={() => setPollOptions(prev => prev.filter((_, j) => j !== i))} hitSlop={8}>
-                  <HeroIcon name="x" size={18} color={sub} />
+                  <Icon name="x" size={18} color={sub} />
                 </Pressable>
               ) : null}
             </Row>
@@ -955,7 +956,7 @@ export function MessengerComposer({
               paddingVertical: 8, paddingHorizontal: 4, opacity: pressed ? 0.6 : 1,
             })}
           >
-            <HeroIcon name="plus" size={16} color={'#c0a06e'} />
+            <Icon name="plus" size={16} color={'#c0a06e'} />
             <Text style={{ color: '#c0a06e', fontSize: 14, fontFamily: 'Calibre-Semibold' }}>Add option</Text>
           </Pressable>
           <Pressable

@@ -8,7 +8,8 @@
  *  Reown/wagmi wallet, surfacing pending then confirmed state + the tx hash. */
 
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, ScrollView, Text, TextInput } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, ScrollView, TextInput } from 'react-native';
+import { Text } from '@metro-labs/kit/text';
 import { Box } from '../../components/layout';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,7 +20,7 @@ import { resolveEnsName } from '../../lib/ens';
 import { getSimplePrices } from '../../lib/coingecko';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { Button } from '@metro-labs/kit/button';
-import { HeroIcon } from '../../components/HeroIcon';
+import { Icon } from '@metro-labs/kit/icon';
 import { sendNativeOrToken } from '../../lib/tx';
 import { getAccount, waitForTransactionReceipt } from 'wagmi/actions';
 import { wagmiConfig } from '../../lib/walletconnect';
@@ -183,7 +184,7 @@ export default function WalletSend(): React.ReactElement {
         borderBottomWidth: 1, borderBottomColor: border,
       }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
-          <HeroIcon name="arrowLeft" size={22} color={fg} />
+          <Icon name="arrowLeft" size={22} color={fg} />
         </Pressable>
         <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', flex: 1 }}>Send</Text>
       </Box>
@@ -278,7 +279,7 @@ export default function WalletSend(): React.ReactElement {
               <Text style={{ color: head, fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
                 {mode === 'eth' ? 'ETH' : 'USD'}
               </Text>
-              <HeroIcon name="arrowDown" size={14} color={fg} />
+              <Icon name="arrowDown" size={14} color={fg} />
             </Pressable>
           </Box>
 

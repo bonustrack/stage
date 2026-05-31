@@ -2,9 +2,8 @@
  *  local XMTP client directly; no daemon hop. */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Alert, Animated as RNAnimated, AppState, Dimensions, Modal, Pressable, ScrollView, Share, Text, View,
-} from 'react-native';
+import { Alert, Animated as RNAnimated, AppState, Dimensions, Modal, Pressable, ScrollView, Share, View } from 'react-native';
+import { Text } from '@metro-labs/kit/text';
 /** RNGH's gesture-aware FlatList (drop-in for RN's): its scroll runs through a
  *  native RNGH handler, so under GestureDetectorProvider it COMPOSES with the
  *  native-stack edge swipe-back instead of being starved by it. The edge gesture
@@ -24,7 +23,7 @@ import { useConvMeta } from '../../lib/useConvMeta';
 import { Spinner } from '../../components/Spinner';
 import { MessengerComposer } from '../../components/MessengerComposer';
 import { ComposerGradient } from '../../components/ComposerGradient';
-import { HeroIcon } from '../../components/HeroIcon';
+import { Icon } from '@metro-labs/kit/icon';
 import { Avatar } from '../../components/Avatar';
 import { AppModal } from '../../components/AppModal';
 import {
@@ -989,7 +988,7 @@ export default function XmtpConversation(): React.ReactElement {
           onPress={() => router.replace('/')}
           style={{ paddingLeft: 14, paddingRight: 8, justifyContent: 'center' }}
         >
-          <HeroIcon name="arrowLeft" size={22} color={fg} />
+          <Icon name="arrowLeft" size={22} color={fg} />
         </Pressable>
         {/** Everything right of the back arrow is one tap target → the
          *   group/channel detail page (or the peer's profile for a DM).
@@ -1015,7 +1014,7 @@ export default function XmtpConversation(): React.ReactElement {
             hitSlop={8}
             style={{ paddingHorizontal: 14, justifyContent: 'center' }}
           >
-            <HeroIcon name="dotsVertical" size={22} color={fg} />
+            <Icon name="dotsVertical" size={22} color={fg} />
           </Pressable>
         ) : null}
       </Box>
@@ -1041,7 +1040,7 @@ export default function XmtpConversation(): React.ReactElement {
             alignItems: 'center', justifyContent: 'center',
           }}
         >
-          <HeroIcon name="arrowDown" size={18} color="#ffffff" />
+          <Icon name="arrowDown" size={18} color="#ffffff" />
         </Pressable>
       ) : null}
       <MessengerComposer
@@ -1111,7 +1110,7 @@ export default function XmtpConversation(): React.ReactElement {
                   onPress={() => router.push({ pathname: '/group/[convId]', params: { convId: convId ?? '' } })}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}
                 >
-                  <HeroIcon name="users" size={20} color={fg} />
+                  <Icon name="users" size={20} color={fg} />
                   <Text style={{ color: fg, fontSize: 16, fontFamily: 'Calibre-Medium' }}>Group info</Text>
                 </Pressable>
                 <Pressable
@@ -1119,7 +1118,7 @@ export default function XmtpConversation(): React.ReactElement {
                   disabled={leaving}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, opacity: leaving ? 0.5 : 1 }}
                 >
-                  <HeroIcon name="arrowLeft" size={20} color={dark ? '#ff6b80' : '#b91c1c'} />
+                  <Icon name="arrowLeft" size={20} color={dark ? '#ff6b80' : '#b91c1c'} />
                   <Text style={{ color: dark ? '#ff6b80' : '#b91c1c', fontSize: 16, fontFamily: 'Calibre-Medium' }}>
                     {leaving ? 'Leaving…' : 'Leave group'}
                   </Text>
@@ -1131,14 +1130,14 @@ export default function XmtpConversation(): React.ReactElement {
                   onPress={onOpenAsBubble}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}
                 >
-                  <HeroIcon name="chat" size={20} color={fg} />
+                  <Icon name="chat" size={20} color={fg} />
                   <Text style={{ color: fg, fontSize: 16, fontFamily: 'Calibre-Medium' }}>Open as bubble</Text>
                 </Pressable>
                 <Pressable
                   onPress={onFloatAsPill}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}
                 >
-                  <HeroIcon name="microphone" size={20} color={fg} />
+                  <Icon name="microphone" size={20} color={fg} />
                   <Text style={{ color: fg, fontSize: 16, fontFamily: 'Calibre-Medium' }}>Float as pill</Text>
                 </Pressable>
               </>
@@ -1223,7 +1222,7 @@ function BubbleActionMenu({
   const reactAndClose = (e: string): void => { onReact(e); onClose(); };
 
   const ActionRow = ({ icon, label, color, onPress }: {
-    icon: React.ComponentProps<typeof HeroIcon>['name']; label: string; color?: string; onPress: () => void;
+    icon: React.ComponentProps<typeof Icon>['name']; label: string; color?: string; onPress: () => void;
   }): React.ReactElement => (
     <Pressable
       onPress={onPress}
@@ -1233,7 +1232,7 @@ function BubbleActionMenu({
         backgroundColor: pressed ? (dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)') : 'transparent',
       })}
     >
-      <HeroIcon name={icon} size={20} color={color ?? fg} />
+      <Icon name={icon} size={20} color={color ?? fg} />
       <Text style={{ color: color ?? fg, fontSize: 16, fontFamily: 'Calibre-Medium' }}>{label}</Text>
     </Pressable>
   );
@@ -1286,7 +1285,7 @@ function BubbleActionMenu({
                     backgroundColor: dark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.06)',
                   }}
                 >
-                  <HeroIcon name="chevronDown" size={16} color={sub} />
+                  <Icon name="chevronDown" size={16} color={sub} />
                 </Pressable>
               </>
             )}

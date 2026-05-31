@@ -5,7 +5,7 @@
 
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { HeroIcon, type HeroIconName } from '../../components/HeroIcon';
+import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { useEffectiveColorScheme } from '../../lib/theme';
 
 export default function TabsLayout(): React.ReactElement {
@@ -53,7 +53,7 @@ export default function TabsLayout(): React.ReactElement {
           name={name}
           options={{
             tabBarIcon: ({ color, focused }) => (
-              <HeroIcon name={icon} size={26} color={color} focused={focused} />
+              <Icon name={icon} size={26} color={color} focused={focused} />
             ),
           }}
         />

@@ -1,7 +1,9 @@
 /** Settings tab — wallet-address copy pill + theme switcher + app version. */
 
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, AppState, Pressable, ScrollView, Text } from 'react-native';
+import { Alert, AppState, Pressable, ScrollView } from 'react-native';
+import { Text } from '@metro-labs/kit/text';
+import { Title } from '@metro-labs/kit/title';
 import * as Clipboard from 'expo-clipboard';
 import Constants from 'expo-constants';
 import { DevSettings } from 'react-native';
@@ -12,7 +14,7 @@ import {
 import { flash } from '../../lib/toast';
 import { resetAccount } from '../../lib/wallet';
 import { useAccountEpoch } from '../../lib/accountEpoch';
-import { HeroIcon } from '../../components/HeroIcon';
+import { Icon } from '@metro-labs/kit/icon';
 import { Col } from '../../components/layout';
 import {
   setThemePreference, useEffectiveColorScheme, usePalette, useThemePreference,
@@ -21,7 +23,7 @@ import {
 
 const APP_VERSION = Constants.expoConfig?.version ?? 'unknown';
 
-import type { HeroIconName } from '../../components/HeroIcon';
+import type { HeroIconName } from '@metro-labs/kit/icon';
 
 const THEME_OPTIONS: { value: ThemePreference; label: string; icon: HeroIconName }[] = [
   { value: 'system', label: 'System', icon: 'desktop' },
@@ -80,7 +82,7 @@ export default function Settings(): React.ReactElement {
   return (
     <ScrollView style={{ flex: 1, backgroundColor: bg }} contentContainerStyle={{ paddingBottom: 24 }}>
       <Col px={16} pt={16} pb={8}>
-        <Text style={{ color: head, fontSize: 22, fontFamily: 'Calibre-Semibold' }}>Settings</Text>
+        <Title dark={dark} style={{ color: head, fontSize: 22 }}>Settings</Title>
       </Col>
 
       {/* Account switching now lives in the topnav-avatar modal on the
@@ -143,10 +145,10 @@ export default function Settings(): React.ReactElement {
                 backgroundColor: pressed ? border : 'transparent',
               })}
             >
-              <HeroIcon name={opt.icon} size={22} color={head} />
+              <Icon name={opt.icon} size={22} color={head} />
               <Text style={{ color: fg, fontSize: 18, fontFamily: 'Calibre-Medium', flex: 1 }}>{opt.label}</Text>
               {selected ? (
-                <HeroIcon name="check" size={20} color={head} />
+                <Icon name="check" size={20} color={head} />
               ) : null}
             </Pressable>
           );
@@ -167,7 +169,7 @@ export default function Settings(): React.ReactElement {
               flexDirection: 'row', alignItems: 'center', gap: 12,
             }}
           >
-            <HeroIcon name="microphone" size={22} color={head} />
+            <Icon name="microphone" size={22} color={head} />
             <Col flex={1}>
               <Text style={{ color: fg, fontSize: 16, fontFamily: 'Calibre-Medium' }}>Floating voice pill</Text>
               <Text style={{ color: sub, fontSize: 13, marginTop: 2, fontFamily: 'Calibre-Medium' }}>
@@ -177,7 +179,7 @@ export default function Settings(): React.ReactElement {
               </Text>
             </Col>
             {overlayGranted
-              ? <HeroIcon name="check" size={20} color={head} />
+              ? <Icon name="check" size={20} color={head} />
               : <Text style={{ color: head, fontSize: 14, fontFamily: 'Calibre-Medium' }}>Grant</Text>}
           </Pressable>
         </>

@@ -6,7 +6,8 @@
  *  are also surfaced below the resolved result. */
 
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, TextInput } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, TextInput } from 'react-native';
+import { Text } from '@metro-labs/kit/text';
 import { Box } from '../components/layout';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,7 +17,7 @@ import { resolveEnsName } from '../lib/ens';
 import { usePeerProfiles, getPeerName, getPeerAvatarCb } from '../lib/peerProfiles';
 import { usePalette } from '../lib/theme';
 import { getCachedRows } from '../lib/channelsCache';
-import { HeroIcon } from '../components/HeroIcon';
+import { Icon } from '@metro-labs/kit/icon';
 import { Avatar } from '../components/Avatar';
 
 /** Cheap pre-flight — accept any *.eth (or longer multi-label) as ENS-resolvable. */
@@ -116,7 +117,7 @@ export default function Search(): React.ReactElement {
         borderBottomWidth: 1, borderBottomColor: border,
       }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
-          <HeroIcon name="arrowLeft" size={22} color={fg} />
+          <Icon name="arrowLeft" size={22} color={fg} />
         </Pressable>
         <TextInput
           value={query}
@@ -168,7 +169,7 @@ export default function Search(): React.ReactElement {
             </Box>
             {opening === resolved.address.toLowerCase()
               ? <ActivityIndicator color={head} />
-              : <HeroIcon name="chatRect" size={18} color={fg} />}
+              : <Icon name="chatRect" size={18} color={fg} />}
           </Pressable>
         ) : null}
 

@@ -6,7 +6,8 @@
  *  only renders given the pre-extracted id/coords. Keeps the bubble simple
  *  and lets the detection logic stay unit-testable. */
 
-import { Image, Linking, Text } from 'react-native';
+import { Image, Linking } from 'react-native';
+import { Text } from '@metro-labs/kit/text';
 import { Box } from './layout';
 import { MediaCard } from './MediaCard';
 import { osmTileUrl } from '../lib/embedDetect';

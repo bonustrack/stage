@@ -4,7 +4,8 @@
 
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { ActivityIndicator, Alert, Image, Pressable, Text, TextInput } from 'react-native';
+import { ActivityIndicator, Alert, Image, Pressable, TextInput } from 'react-native';
+import { Text } from '@metro-labs/kit/text';
 /** RNGH gesture-aware FlatList so vertical scroll composes with the native-stack
  *  edge swipe-back under GestureDetectorProvider (see xmtp/[convId] for rationale). */
 import { FlatList } from 'react-native-gesture-handler';
@@ -22,7 +23,7 @@ import { readProfile, uploadAvatar } from '../../lib/profile';
 import { avatarRenderUrl, type SnapshotProfile } from '@metro-labs/client/profile/snapshot';
 import { usePeerProfiles, getPeerAvatar, getPeerAvatarCb } from '../../lib/peerProfiles';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { HeroIcon } from '../../components/HeroIcon';
+import { Icon } from '@metro-labs/kit/icon';
 import { Avatar } from '../../components/Avatar';
 import { ImageViewer } from '../../components/ImageViewer';
 import { AppModal } from '../../components/AppModal';
@@ -298,10 +299,10 @@ export default function GroupDetail(): React.ReactElement {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
       }}>
         <Pressable onPress={() => router.back()} hitSlop={10} style={{ padding: 6 }}>
-          <HeroIcon name="arrowLeft" size={22} color={fg} />
+          <Icon name="arrowLeft" size={22} color={fg} />
         </Pressable>
         <Pressable onPress={() => setOverflowOpen(true)} hitSlop={10} style={{ padding: 6 }}>
-          <HeroIcon name="dotsHorizontal" size={22} color={fg} />
+          <Icon name="dotsHorizontal" size={22} color={fg} />
         </Pressable>
       </Box>
 
@@ -431,8 +432,8 @@ export default function GroupDetail(): React.ReactElement {
             backgroundColor: pressed ? border : 'transparent',
           })}
         >
-          <HeroIcon name="users" size={16} color={fg} />
-          <HeroIcon name="plus" size={14} color={fg} />
+          <Icon name="users" size={16} color={fg} />
+          <Icon name="plus" size={14} color={fg} />
         </Pressable>
       </Box>
       <FlatList
@@ -494,7 +495,7 @@ export default function GroupDetail(): React.ReactElement {
                     backgroundColor: pressed ? (dark ? '#3a1820' : '#fbe3e8') : 'transparent',
                   })}
                 >
-                  <HeroIcon name="trash" size={18} color={dark ? '#ff6b80' : '#b91c1c'} />
+                  <Icon name="trash" size={18} color={dark ? '#ff6b80' : '#b91c1c'} />
                 </Pressable>
               )}
             </Pressable>
@@ -543,7 +544,7 @@ export default function GroupDetail(): React.ReactElement {
               disabled={leaving}
               style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, opacity: leaving ? 0.5 : 1 }}
             >
-              <HeroIcon name="arrowLeft" size={20} color={dark ? '#ff6b80' : '#b91c1c'} />
+              <Icon name="arrowLeft" size={20} color={dark ? '#ff6b80' : '#b91c1c'} />
               <Text style={{ color: dark ? '#ff6b80' : '#b91c1c', fontSize: 16, fontFamily: 'Calibre-Medium' }}>
                 {leaving ? 'Leaving…' : 'Leave group'}
               </Text>

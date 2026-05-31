@@ -14,10 +14,11 @@
  *  that context (common channels) can omit them gracefully. */
 
 import { memo } from 'react';
-import { Pressable, Text } from 'react-native';
+import { Pressable } from 'react-native';
+import { Text } from '@metro-labs/kit/text';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { Avatar } from './Avatar';
-import { HeroIcon } from './HeroIcon';
+import { Icon } from '@metro-labs/kit/icon';
 import { Row, Col, Box } from './layout';
 import { usePalette } from '../lib/theme';
 
@@ -88,8 +89,8 @@ function ChannelRowBase({
         />
         <Col flex={1} style={{ minWidth: 0 }}>
           <Row align="center" gap={6}>
-            {pinned ? <HeroIcon name="mapPin" size={13} color={sub} /> : null}
-            {hasDraft ? <HeroIcon name="pencil" size={14} color={sub} /> : null}
+            {pinned ? <Icon name="mapPin" size={13} color={sub} /> : null}
+            {hasDraft ? <Icon name="pencil" size={14} color={sub} /> : null}
             <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', flex: 1 }} numberOfLines={1}>
               {title}
             </Text>

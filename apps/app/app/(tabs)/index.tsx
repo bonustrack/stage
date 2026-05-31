@@ -5,10 +5,8 @@
  *  once per conv during the initial list build and cached in component state. */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  AppState, FlatList, Pressable,
-  Text,
-} from 'react-native';
+import { AppState, FlatList, Pressable } from 'react-native';
+import { Text } from '@metro-labs/kit/text';
 import { useRouter } from 'expo-router';
 import type { Conversation, DecodedMessage } from '@xmtp/react-native-sdk';
 import { DevSettings } from 'react-native';
@@ -30,7 +28,7 @@ import { usePeerProfiles, getPeerAvatarCb, getPeerName, isPeerResolved } from '.
 import { isMetroControlBody } from '../../lib/push';
 import { useAccountEpoch } from '../../lib/accountEpoch';
 import { getActiveAccount } from '../../lib/accounts';
-import { HeroIcon } from '../../components/HeroIcon';
+import { Icon } from '@metro-labs/kit/icon';
 import { hasDraft, useDraftsVersion } from '../../lib/drafts';
 import { previewOfXmtpContent } from '@metro-labs/client/xmtp/humanize';
 import { Spinner } from '../../components/Spinner';
@@ -605,7 +603,7 @@ export default function Messenger(): React.ReactElement {
           />
         </Pressable>
         <Pressable onPress={() => router.push('/search')} hitSlop={8}>
-          <HeroIcon name="search" size={26} color={head} />
+          <Icon name="search" size={26} color={head} />
         </Pressable>
       </Row>
       <FlatList
@@ -622,7 +620,7 @@ export default function Messenger(): React.ReactElement {
               })}
             >
               <Box radius={20} bg={border} align="center" justify="center" style={{ width: 40, height: 40 }}>
-                <HeroIcon name="envelope" size={20} color={head} />
+                <Icon name="envelope" size={20} color={head} />
               </Box>
               <Col flex={1}>
                 <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Medium' }}>
@@ -697,13 +695,13 @@ function RowActionSheet({
           {target?.title ?? ''}
         </Text>
         <Pressable onPress={onToggleUnread} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 }}>
-          <HeroIcon name={target?.isUnread ? 'check' : 'envelope'} size={20} color={head} />
+          <Icon name={target?.isUnread ? 'check' : 'envelope'} size={20} color={head} />
           <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Medium' }}>
             {target?.isUnread ? 'Mark as read' : 'Mark as unread'}
           </Text>
         </Pressable>
         <Pressable onPress={onTogglePin} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 }}>
-          <HeroIcon name="mapPin" size={20} color={head} />
+          <Icon name="mapPin" size={20} color={head} />
           <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Medium' }}>
             {pinned ? 'Unpin' : 'Pin'}
           </Text>

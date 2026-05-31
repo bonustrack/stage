@@ -6,7 +6,8 @@
  *  needed) layered on react-native-svg which the app already depends on. */
 
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, Text } from 'react-native';
+import { Pressable, ScrollView } from 'react-native';
+import { Text } from '@metro-labs/kit/text';
 import { Box } from '../../components/layout';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
@@ -14,7 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import QRCode from 'react-native-qrcode-svg';
 import { getOrCreateXmtpClient } from '../../lib/xmtp';
 import { usePalette } from '../../lib/theme';
-import { HeroIcon } from '../../components/HeroIcon';
+import { Icon } from '@metro-labs/kit/icon';
 import { flash } from '../../lib/toast';
 
 export default function WalletReceive(): React.ReactElement {
@@ -49,7 +50,7 @@ export default function WalletReceive(): React.ReactElement {
         borderBottomWidth: 1, borderBottomColor: border,
       }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
-          <HeroIcon name="arrowLeft" size={22} color={fg} />
+          <Icon name="arrowLeft" size={22} color={fg} />
         </Pressable>
         <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', flex: 1 }}>Receive</Text>
       </Box>

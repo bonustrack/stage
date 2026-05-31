@@ -5,11 +5,13 @@
  *  global navigation bar (the reported overlap bug). */
 
 import type { ReactNode } from 'react';
-import { Modal, Pressable, ScrollView, Text } from 'react-native';
+import { Modal, Pressable, ScrollView } from 'react-native';
+import { Text } from '@metro-labs/kit/text';
+import { Title } from '@metro-labs/kit/title';
 import { Box } from './layout';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useEffectiveColorScheme } from '../lib/theme';
-import { HeroIcon } from './HeroIcon';
+import { Icon } from '@metro-labs/kit/icon';
 
 export function AppModal({
   visible, onClose, title, children,
@@ -47,11 +49,11 @@ export function AppModal({
               flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
               paddingHorizontal: 16, paddingBottom: 4,
             }}>
-              <Text style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold' }}>
+              <Title dark={dark} style={{ color: head, fontSize: 20 }}>
                 {title}
-              </Text>
+              </Title>
               <Pressable onPress={onClose} hitSlop={10}>
-                <HeroIcon name="x" size={22} color={head} />
+                <Icon name="x" size={22} color={head} />
               </Pressable>
             </Box>
           ) : null}

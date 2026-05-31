@@ -8,15 +8,13 @@
  *  in-app Modals (Alert.prompt is iOS-only). */
 
 import { useCallback, useEffect, useState } from 'react';
-import {
-  ActivityIndicator, Alert, DevSettings, Image, Modal, Pressable, Text,
-  TextInput, View,
-} from 'react-native';
+import { ActivityIndicator, Alert, DevSettings, Image, Modal, Pressable, TextInput, View } from 'react-native';
+import { Text } from '@metro-labs/kit/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import { useAppKit } from '@reown/appkit-wagmi-react-native';
 import { useAccount, useSignMessage } from 'wagmi';
-import { HeroIcon } from './HeroIcon';
+import { Icon } from '@metro-labs/kit/icon';
 import { usePeerProfiles, getPeerName } from '../lib/peerProfiles';
 import { flash } from '../lib/toast';
 import { stampBoxAvatarUrl, shortAddress, deleteAccount, switchToAccount } from '../lib/xmtp';
@@ -251,7 +249,7 @@ export function AccountsManager({ dark, flat = false, onSwitched }: { dark: bool
                   onPress={() => void onSwitch(a.id)}
                   trailing={
                     a.id === activeId
-                      ? <HeroIcon name="check" size={20} color={head} />
+                      ? <Icon name="check" size={20} color={head} />
                       : <Pressable hitSlop={10} onPress={() => setManageId(a.id)}>
                           <Text style={{ color: sub, fontSize: 20, fontFamily: 'Calibre-Semibold', paddingHorizontal: 4 }}>⋯</Text>
                         </Pressable>
@@ -268,7 +266,7 @@ export function AccountsManager({ dark, flat = false, onSwitched }: { dark: bool
               rec={activeRec}
               topBorder={false}
               onPress={() => setExpanded(e => !e)}
-              trailing={<HeroIcon name={expanded ? 'chevronUp' : 'chevronDown'} size={20} color={sub} />}
+              trailing={<Icon name={expanded ? 'chevronUp' : 'chevronDown'} size={20} color={sub} />}
             />
           ) : accounts.length === 0 ? (
             <Text style={{ color: sub, fontSize: 13, padding: 14, fontFamily: 'Calibre-Medium' }}>
@@ -304,7 +302,7 @@ export function AccountsManager({ dark, flat = false, onSwitched }: { dark: bool
               })}
             >
               <View style={{ width: 28, height: 28, borderRadius: 999, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: sub, borderStyle: 'dashed' }}>
-                <HeroIcon name="plus" size={16} color={sub} />
+                <Icon name="plus" size={16} color={sub} />
               </View>
               <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>Add account</Text>
             </Pressable>

@@ -2,13 +2,14 @@
  *  no colored bubble even for the local user's own messages. */
 
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, TextInput, View } from 'react-native';
+import { Text } from '@metro-labs/kit/text';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, runOnJS } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { getPeerAvatarCb } from '../lib/peerProfiles';
 import Markdown, { MarkdownIt } from 'react-native-markdown-display';
-import { HeroIcon } from './HeroIcon';
+import { Icon } from '@metro-labs/kit/icon';
 import { MessengerAudioPlayer } from './MessengerAudioPlayer';
 import { MessengerImageAttachment } from './MessengerImageAttachment';
 import { YouTubeEmbed, LocationEmbed } from './MediaEmbeds';
@@ -129,7 +130,7 @@ function AttachmentView({ att, fullUrl, fg, sub, dark }: {
         backgroundColor: 'rgba(0,0,0,0.12)', marginBottom: 6,
       }}
     >
-      <HeroIcon name="paperClip" size={16} color={fg} />
+      <Icon name="paperClip" size={16} color={fg} />
       <Text style={{ color: fg, fontSize: 13, flexShrink: 1 , fontFamily: 'Calibre-Medium'}} numberOfLines={1}>{label}</Text>
     </Pressable>
   );
@@ -166,7 +167,7 @@ function RemoteAttachmentResolver({ att, fg, sub, dark }: {
           backgroundColor: 'rgba(0,0,0,0.12)', marginBottom: 6,
         }}
       >
-        <HeroIcon name="paperClip" size={16} color={fg} />
+        <Icon name="paperClip" size={16} color={fg} />
         <Text style={{ color: fg, fontSize: 13, flexShrink: 1, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
           {att.name ?? 'attachment'} — tap to retry
         </Text>
@@ -534,7 +535,7 @@ function SigRequestCard({ req, dark, sub, signing, onSign }: {
       backgroundColor: dark ? '#282a2d' : '#e4e4e5',
     }}>
       <Row align="center" gap={8}>
-        <HeroIcon name="pencil" size={18} color={head} />
+        <Icon name="pencil" size={18} color={head} />
         <Text style={{ color: head, fontSize: 15, fontFamily: 'Calibre-Semibold', flexShrink: 1 }}>
           {desc}
         </Text>
@@ -607,7 +608,7 @@ function SigReferenceCard({ ref, dark, sub }: {
       backgroundColor: dark ? 'rgba(120,200,120,0.08)' : 'rgba(60,160,60,0.06)',
     }}>
       <Row align="center" gap={8}>
-        <HeroIcon name="check" size={18} color={dark ? '#7fd07f' : '#2f9e44'} />
+        <Icon name="check" size={18} color={dark ? '#7fd07f' : '#2f9e44'} />
         <Text style={{ color: dark ? '#ffffff' : '#000000', fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
           Signed ✓
         </Text>
@@ -700,7 +701,7 @@ function TxRequestCard({ req, dark, sub, paying, onPay }: {
       backgroundColor: dark ? 'rgba(192,160,110,0.10)' : 'rgba(192,160,110,0.10)',
     }}>
       <Row align="center" gap={8}>
-        <HeroIcon name="wallet" size={18} color="#c0a06e" />
+        <Icon name="wallet" size={18} color="#c0a06e" />
         <Text style={{ color: dark ? '#ffffff' : '#000000', fontSize: 15, fontFamily: 'Calibre-Semibold', flexShrink: 1 }}>
           {desc}
         </Text>
@@ -748,7 +749,7 @@ function TxReceiptCard({ receipt, dark, sub }: {
       backgroundColor: dark ? 'rgba(120,200,120,0.08)' : 'rgba(60,160,60,0.06)',
     }}>
       <Row align="center" gap={8}>
-        <HeroIcon name="check" size={18} color={dark ? '#7fd07f' : '#2f9e44'} />
+        <Icon name="check" size={18} color={dark ? '#7fd07f' : '#2f9e44'} />
         <Text style={{ color: dark ? '#ffffff' : '#000000', fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
           Payment sent{amountLabel ? ` · ${amountLabel}` : ''}
         </Text>
@@ -1084,12 +1085,12 @@ function MessengerBubbleBase({
            *   in place of the timestamp, reusing the exact timestamp Text style. */}
           {!pending && onReact ? (
             <Pressable onPress={() => setPickerOpen(o => !o)} hitSlop={8}>
-              <HeroIcon name="faceSmile" size={14} color={sub} />
+              <Icon name="faceSmile" size={14} color={sub} />
             </Pressable>
           ) : null}
           {!pending && onReply ? (
             <Pressable onPress={onReply} hitSlop={8}>
-              <HeroIcon name="reply" size={14} color={sub} />
+              <Icon name="reply" size={14} color={sub} />
             </Pressable>
           ) : null}
         </Row>

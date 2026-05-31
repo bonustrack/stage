@@ -6,7 +6,9 @@
  *  on the left, USD value + amount/symbol on the right. */
 
 import { useEffect, useState } from 'react';
-import { Image, Pressable, ScrollView, Text } from 'react-native';
+import { Image, Pressable, ScrollView } from 'react-native';
+import { Text } from '@metro-labs/kit/text';
+import { Title } from '@metro-labs/kit/title';
 import { createPublicClient, http, formatEther, formatUnits, type Hex } from 'viem';
 import { mainnet } from 'viem/chains';
 import { useRouter } from 'expo-router';
@@ -15,7 +17,7 @@ import { flash } from '../../lib/toast';
 import { usePeerProfiles } from '../../lib/peerProfiles';
 import { usePalette } from '../../lib/theme';
 import { getErc20UsdPrices, getSimplePrices } from '../../lib/coingecko';
-import { HeroIcon, type HeroIconName } from '../../components/HeroIcon';
+import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Col, Row, Box } from '../../components/layout';
 import { stampTokenUrl, NATIVE_TOKEN_SENTINEL } from '@metro-labs/kit/avatar';
 
@@ -163,7 +165,7 @@ export default function Wallet(): React.ReactElement {
           backgroundColor: pressed ? border : card, borderWidth: 1, borderColor: border,
         })}
       >
-        <HeroIcon name={icon} size={26} color={head} />
+        <Icon name={icon} size={26} color={head} />
       </Pressable>
       <Text style={{ color: head, fontSize: 14, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{label}</Text>
     </Col>
@@ -172,7 +174,7 @@ export default function Wallet(): React.ReactElement {
   return (
     <ScrollView style={{ flex: 1, backgroundColor: bg }} contentContainerStyle={{ paddingBottom: 24 }}>
       <Col px={16} pt={16} pb={8}>
-        <Text style={{ color: head, fontSize: 22, fontFamily: 'Calibre-Semibold' }}>Wallet</Text>
+        <Title style={{ color: head, fontSize: 22 }}>Wallet</Title>
       </Col>
 
       {/* Value card — compact, left-aligned. Just the big total USD value;

@@ -8,7 +8,9 @@
  *  live (streamConvConsent) so accepted requests appear there without a reload. */
 
 import { useCallback, useEffect, useState } from 'react';
-import { FlatList, Pressable, Text } from 'react-native';
+import { FlatList, Pressable } from 'react-native';
+import { Text } from '@metro-labs/kit/text';
+import { Title } from '@metro-labs/kit/title';
 import type { Conversation, DecodedMessage } from '@xmtp/react-native-sdk';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,7 +22,7 @@ import {
 import { previewOfXmtpContent } from '@metro-labs/client/xmtp/humanize';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
-import { HeroIcon } from '../../components/HeroIcon';
+import { Icon } from '@metro-labs/kit/icon';
 import { Avatar } from '../../components/Avatar';
 import { Box, Col, Row } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
@@ -119,14 +121,14 @@ export default function Requests(): React.ReactElement {
             hitSlop={6}
             style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: border }}
           >
-            <HeroIcon name="x" size={18} color={dark ? '#ff6b80' : '#b91c1c'} />
+            <Icon name="x" size={18} color={dark ? '#ff6b80' : '#b91c1c'} />
           </Pressable>
           <Pressable
             onPress={() => act(item.convId, true)}
             hitSlop={6}
             style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: dark ? '#15321f' : '#dcf5e6' }}
           >
-            <HeroIcon name="check" size={18} color={dark ? '#34d399' : '#15803d'} />
+            <Icon name="check" size={18} color={dark ? '#34d399' : '#15803d'} />
           </Pressable>
         </Row>
       </Pressable>
@@ -141,11 +143,11 @@ export default function Requests(): React.ReactElement {
         borderBottomWidth: 1, borderBottomColor: border,
       }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
-          <HeroIcon name="arrowLeft" size={22} color={fg} />
+          <Icon name="arrowLeft" size={22} color={fg} />
         </Pressable>
-        <Text style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold' }}>
+        <Title dark={dark} style={{ color: head, fontSize: 20 }}>
           Message requests
-        </Text>
+        </Title>
       </Box>
 
       {!rows ? (

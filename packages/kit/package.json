@@ -15,11 +15,15 @@
     "./theme": "./src/theme.ts",
     "./avatar": "./src/avatar.ts",
     "./layout": "./src/layout.ts",
-    "./button": "./src/button.tsx"
+    "./button": "./src/button.tsx",
+    "./text": "./src/text.tsx",
+    "./title": "./src/title.tsx",
+    "./icon": "./src/icon.tsx"
   },
   "peerDependencies": {
     "react": "*",
-    "react-native": "*"
+    "react-native": "*",
+    "react-native-svg": "*"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

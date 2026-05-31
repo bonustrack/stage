@@ -1,10 +1,11 @@
 /** Inline audio player for messenger bubbles — lazy-loads via expo-av Audio.Sound. */
 
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, Text } from 'react-native';
+import { Pressable } from 'react-native';
+import { Text } from '@metro-labs/kit/text';
 import { Box } from './layout';
 import { Audio, AVPlaybackStatus } from 'expo-av';
-import { HeroIcon } from './HeroIcon';
+import { Icon } from '@metro-labs/kit/icon';
 
 interface Props { uri: string; fg: string; sub: string }
 
@@ -74,7 +75,7 @@ export function MessengerAudioPlayer({ uri, fg, sub }: Props): React.ReactElemen
       backgroundColor: 'rgba(0,0,0,0.12)', marginBottom: 6, minWidth: 220,
     }}>
       <Pressable onPress={() => void toggle()} hitSlop={8}>
-        <HeroIcon name={playing ? 'pause' : 'play'} size={24} color={fg} />
+        <Icon name={playing ? 'pause' : 'play'} size={24} color={fg} />
       </Pressable>
       <Pressable
         style={{ flex: 1, paddingVertical: 10 }}
