@@ -1080,20 +1080,6 @@ function MessengerBubbleBase({
             transcribing…
           </Text>
         ) : null}
-        <Row align="center" justify="start" gap={6} mt={3} style={{ alignSelf: 'stretch' }}>
-          {/** While pending: hide the react + reply affordances and show "Sending"
-           *   in place of the timestamp, reusing the exact timestamp Text style. */}
-          {!pending && onReact ? (
-            <Pressable onPress={() => setPickerOpen(o => !o)} hitSlop={8}>
-              <Icon name="faceSmile" size={14} color={sub} />
-            </Pressable>
-          ) : null}
-          {!pending && onReply ? (
-            <Pressable onPress={onReply} hitSlop={8}>
-              <Icon name="reply" size={14} color={sub} />
-            </Pressable>
-          ) : null}
-        </Row>
       </Pressable>
       {pending ? null : (() => {
         /** Only show a pending pill for an emoji the live stream hasn't yet
