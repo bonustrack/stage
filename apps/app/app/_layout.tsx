@@ -131,9 +131,12 @@ export default function RootLayout(): React.ReactElement {
        *   the previous page sliding underneath on the native thread (real iOS/
        *   Telegram parallax), which the old JS SwipeBack couldn't do.
        *
-       *   Pushed routes opt into the EDGE gesture (left ~50px catch zone) +
-       *   slide_from_right animation. The (tabs) root disables the gesture (nothing
-       *   to go back to) and keeps instant transitions.
+       *   Pushed routes opt into the EDGE gesture (left ~50px catch zone). The
+       *   programmatic push/pop uses stackAnimation:'none' so the hardware back
+       *   button + router.back() pop INSTANTLY; the interactive edge swipe still
+       *   reveals the previous page underneath via goBackGesture's own
+       *   ScreenTransition.SwipeRight (independent of stackAnimation). The (tabs)
+       *   root disables the gesture (nothing to go back to).
        *
        *   `statusBarStyle: barStyle` keeps white-on-dark status-bar icons; we also
        *   set it imperatively (effect above) + declaratively (<StatusBar>) so it
@@ -145,7 +148,7 @@ export default function RootLayout(): React.ReactElement {
           statusBarStyle: barStyle,
           goBackGesture: 'swipeRight',
           screenEdgeGesture: true,
-          stackAnimation: 'slide_from_right',
+          stackAnimation: 'none',
         }}
       >
         {/** Tab root: no back gesture (it's the bottom of the stack), instant. */}
