@@ -1,8 +1,8 @@
 diff --git a/lib/commonjs/gesture-handler/ScreenGestureDetector.js b/lib/commonjs/gesture-handler/ScreenGestureDetector.js
-index 0a520d60713c64667fe2b2445ec2895a78354b08..126e17e6d2c4d9e912c2cf16f74911f29154071e 100644
+index 0a520d60713c64667fe2b2445ec2895a78354b08..fd4213e793cf0cd959c0effb4745c863d63ab57d 100644
 --- a/lib/commonjs/gesture-handler/ScreenGestureDetector.js
 +++ b/lib/commonjs/gesture-handler/ScreenGestureDetector.js
-@@ -180,7 +180,7 @@ const ScreenGestureDetector = ({
+@@ -180,13 +180,13 @@ const ScreenGestureDetector = ({
    }
    let panGesture = _reactNativeGestureHandler.Gesture.Pan().onStart(onStart).onUpdate(onUpdate).onEnd(onEnd);
    if (screenEdgeGesture) {
@@ -11,11 +11,18 @@ index 0a520d60713c64667fe2b2445ec2895a78354b08..126e17e6d2c4d9e912c2cf16f74911f2
      const ACTIVATION_DISTANCE = 30;
      if (goBackGesture === 'swipeRight') {
        panGesture = panGesture.activeOffsetX(ACTIVATION_DISTANCE).hitSlop({
+         left: 0,
+         top: 0,
+-        width: HIT_SLOP_SIZE
++        width: _reactNative.Dimensions.get('window').width * 0.5
+       });
+     } else if (goBackGesture === 'swipeLeft') {
+       panGesture = panGesture.activeOffsetX(-ACTIVATION_DISTANCE).hitSlop({
 diff --git a/lib/module/gesture-handler/ScreenGestureDetector.js b/lib/module/gesture-handler/ScreenGestureDetector.js
-index b6cfc6fefe27ae140748fab6f5d927fe9bc603fb..3969c3ae11bc055af91a87e69f5d2e7ff2ae18b1 100644
+index b6cfc6fefe27ae140748fab6f5d927fe9bc603fb..ec3de3096dbacf5ee3cbb77fb9c4b301294cb38e 100644
 --- a/lib/module/gesture-handler/ScreenGestureDetector.js
 +++ b/lib/module/gesture-handler/ScreenGestureDetector.js
-@@ -172,7 +172,7 @@ const ScreenGestureDetector = ({
+@@ -172,13 +172,13 @@ const ScreenGestureDetector = ({
    }
    let panGesture = Gesture.Pan().onStart(onStart).onUpdate(onUpdate).onEnd(onEnd);
    if (screenEdgeGesture) {
@@ -24,11 +31,18 @@ index b6cfc6fefe27ae140748fab6f5d927fe9bc603fb..3969c3ae11bc055af91a87e69f5d2e7f
      const ACTIVATION_DISTANCE = 30;
      if (goBackGesture === 'swipeRight') {
        panGesture = panGesture.activeOffsetX(ACTIVATION_DISTANCE).hitSlop({
+         left: 0,
+         top: 0,
+-        width: HIT_SLOP_SIZE
++        width: Dimensions.get('window').width * 0.5
+       });
+     } else if (goBackGesture === 'swipeLeft') {
+       panGesture = panGesture.activeOffsetX(-ACTIVATION_DISTANCE).hitSlop({
 diff --git a/src/gesture-handler/ScreenGestureDetector.tsx b/src/gesture-handler/ScreenGestureDetector.tsx
-index 2afab563098831c3d92151353058626e357b959a..283a2d560ac4259ca264e49af4378909f0a8c4d3 100644
+index 2afab563098831c3d92151353058626e357b959a..4d893eff7efe4b52d3027bf82c7a77fdb35135d6 100644
 --- a/src/gesture-handler/ScreenGestureDetector.tsx
 +++ b/src/gesture-handler/ScreenGestureDetector.tsx
-@@ -224,7 +224,7 @@ const ScreenGestureDetector = ({
+@@ -224,12 +224,12 @@ const ScreenGestureDetector = ({
      .onEnd(onEnd);
  
    if (screenEdgeGesture) {
@@ -37,3 +51,9 @@ index 2afab563098831c3d92151353058626e357b959a..283a2d560ac4259ca264e49af4378909
      const ACTIVATION_DISTANCE = 30;
      if (goBackGesture === 'swipeRight') {
        panGesture = panGesture
+         .activeOffsetX(ACTIVATION_DISTANCE)
+-        .hitSlop({ left: 0, top: 0, width: HIT_SLOP_SIZE });
++        .hitSlop({ left: 0, top: 0, width: Dimensions.get('window').width * 0.5 });
+     } else if (goBackGesture === 'swipeLeft') {
+       panGesture = panGesture
+         .activeOffsetX(-ACTIVATION_DISTANCE)
