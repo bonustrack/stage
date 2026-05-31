@@ -134,14 +134,18 @@ export default function RootLayout(): React.ReactElement {
        *
        *   `goBackGesture: 'swipeRight'` auto-selects `ScreenTransition.SwipeRight`,
        *   so the previous page parallaxes in underneath the finger.
-       *   `screenEdgeGesture: false` → FULL-WIDTH back gesture (Telegram-style):
-       *   rn-screens drops the 50px left-edge hit-slop (see
-       *   gesture-handler/ScreenGestureDetector — the `if (screenEdgeGesture)`
-       *   hitSlop branch), so the rightward pan is recognised across the whole
-       *   screen. It's RIGHTWARD (translationX>0); MessengerBubble swipe-to-reply
-       *   is LEFTWARD (dx<-10), opposite directions, so the two pans don't fight.
-       *   Vertical FlatList scroll, the message menu, and horizontal scrollviews
-       *   are unaffected (the back pan only claims rightward horizontal drags). */}
+       *   `screenEdgeGesture: true` → LEFT-EDGE back gesture (50px hit-slop).
+       *   This is REQUIRED, not cosmetic: rn-screens only applies directional
+       *   discrimination (`.activeOffsetX(30)` + edge hitSlop) INSIDE the
+       *   `if (screenEdgeGesture)` branch of gesture-handler/ScreenGestureDetector.
+       *   With `screenEdgeGesture: false` the back gesture is a BARE `Gesture.Pan()`
+       *   with NO `activeOffsetX`/`failOffsetY` — it activates on ANY drag (vertical
+       *   or leftward) and wins arbitration over the inverted-FlatList scroll and the
+       *   MessengerBubble swipe-to-reply PanResponder, starving both. There is no JS
+       *   hook to inject offset constraints into the full-screen branch, so full-width
+       *   and scroll/reply cannot coexist. Edge mode restores rightward-only activation
+       *   at the left 50px, leaving vertical scroll and the leftward (dx<-10) reply
+       *   pan completely unclaimed. Back-swipe is narrower but scroll + reply work. */}
       {/** Gesture options live in the Stack DEFAULTS so EVERY pushed route
        *   inherits the interactive swipe-back (xmtp/[convId], accounts,
        *   user/[address], group/[convId], wallet/*, search, …). expo-router
@@ -168,7 +172,7 @@ export default function RootLayout(): React.ReactElement {
           statusBarStyle: barStyle,
           stackAnimation: 'none',
           goBackGesture: 'swipeRight',
-          screenEdgeGesture: false,
+          screenEdgeGesture: true,
         }}
       >
         {/** Root tab group (footer-nav root): explicitly DISABLE the back gesture
