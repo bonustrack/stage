@@ -525,14 +525,14 @@ function SigRequestCard({ req, dark, sub, signing, onSign }: {
           disabled={signing}
           onPress={onSign}
           style={({ pressed }) => ({
-            marginTop: 2, alignItems: 'center', paddingVertical: 11, borderRadius: 12,
-            opacity: signing ? 0.6 : 1,
-            backgroundColor: pressed ? '#a08458' : '#c0a06e',
+            marginTop: 2, alignItems: 'center', paddingVertical: 11, borderRadius: 999,
+            opacity: signing ? 0.6 : pressed ? 0.85 : 1,
+            backgroundColor: dark ? '#ffffff' : '#000000',
           })}
         >
           {signing
-            ? <ActivityIndicator color="#000" />
-            : <Text style={{ color: '#000', fontSize: 15, fontFamily: 'Calibre-Semibold' }}>Sign</Text>}
+            ? <ActivityIndicator color={dark ? '#000' : '#fff'} />
+            : <Text style={{ color: dark ? '#0e0f10' : '#ffffff', fontSize: 15, fontFamily: 'Calibre-Semibold' }}>Sign</Text>}
         </Pressable>
       ) : null}
     </Box>
