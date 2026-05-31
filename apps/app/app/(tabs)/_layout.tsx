@@ -65,7 +65,7 @@ export default function TabsLayout(): React.ReactElement {
       >
         {(
           [
-            ['index', 'chatRect'],
+            ['index', 'chatBubble'],
             ['wallet', 'wallet'],
             ['notifications', 'bell'],
             ['profile', 'user'],
