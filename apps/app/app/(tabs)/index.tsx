@@ -516,8 +516,13 @@ export default function Messenger(): React.ReactElement {
    *  skip rows whose props are unchanged. */
   const renderRow = useCallback(({ item }: { item: Row }): React.ReactElement => {
     const displayTitle = item.peerAddress ? (getPeerName(item.peerAddress) ?? item.title) : item.title;
+    const senderPrefix = item.lastFromSelf
+      ? 'You: '
+      : item.lastSenderAddress
+        ? `${getPeerName(item.lastSenderAddress) ?? shortAddress(item.lastSenderAddress)}: `
+        : '';
     const preview = item.lastPreview
-      ? `${item.lastSenderAddress ? `${getPeerName(item.lastSenderAddress) ?? shortAddress(item.lastSenderAddress)}: ` : ''}${item.lastPreview}`
+      ? `${senderPrefix}${item.lastPreview}`
       : '(no messages yet)';
     const showAddr = !item.avatarUri && item.avatarAddress && isPeerResolved(item.avatarAddress)
       ? item.avatarAddress : null;
