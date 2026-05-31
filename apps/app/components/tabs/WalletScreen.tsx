@@ -205,7 +205,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
       </Row>
 
       {/* Asset list — Snapshot-treasury-style rows, border-bottom separators. */}
-      <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', paddingHorizontal: 16, paddingTop: 22, paddingBottom: 6 }}>
+      <Text style={{ color: sub, fontSize: 14, letterSpacing: 1.2, fontFamily: 'Calibre-Medium', paddingHorizontal: 16, paddingTop: 22, paddingBottom: 6 }}>
         TOKENS
       </Text>
       <Col mx={16} style={{ borderTopWidth: 1, borderTopColor: border }}>
