@@ -506,11 +506,10 @@ function SigRequestCard({ req, dark, sub, signing, onSign }: {
   return (
     <Box style={{
       alignSelf: 'stretch', gap: 8, marginTop: 8, padding: 12, borderRadius: 14,
-      borderWidth: 1, borderColor: '#c0a06e',
-      backgroundColor: 'rgba(192,160,110,0.10)',
+      backgroundColor: dark ? '#282a2d' : '#e4e4e5',
     }}>
       <Row align="center" gap={8}>
-        <HeroIcon name="pencil" size={18} color="#c0a06e" />
+        <HeroIcon name="pencil" size={18} color={dark ? '#ffffff' : '#000000'} />
         <Text style={{ color: dark ? '#ffffff' : '#000000', fontSize: 15, fontFamily: 'Calibre-Semibold', flexShrink: 1 }}>
           {desc}
         </Text>

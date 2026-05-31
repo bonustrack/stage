@@ -806,9 +806,7 @@ export async function xmtpSendPoll(line: string, poll: PollContent): Promise<str
 }
 
 /** Send a signature REQUEST (`metro.box/signatureRequest:1.0`) — either EIP-712
- *  typed data or a personal_sign string. Encoded by SignatureRequestCodec; we
- *  pass the codec's contentType so the SDK routes through the JS-codec send
- *  path. Returns the request's XMTP message id. Mirrors xmtpSendPoll. */
+ *  typed data or a personal_sign string. Mirrors xmtpSendPoll. */
 export async function xmtpSendSignatureRequest(
   line: string, content: SignatureRequestContent,
 ): Promise<string> {
@@ -817,8 +815,7 @@ export async function xmtpSendSignatureRequest(
   return await conv.send(content, { contentType: SIGNATURE_REQUEST_CODEC.contentType });
 }
 
-/** Post a signature RECEIPT (`metro.box/signatureReference:1.0`) back into the
- *  conversation after the signer signs. Mirrors xmtpSendPoll. */
+/** Post a signature RECEIPT (`metro.box/signatureReference:1.0`) back. Mirrors xmtpSendPoll. */
 export async function xmtpSendSignatureReference(
   line: string, ref: SignatureReferenceContent,
 ): Promise<string> {
