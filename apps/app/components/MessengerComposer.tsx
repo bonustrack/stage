@@ -256,7 +256,10 @@ export function MessengerComposer({
 
   const pickImage = async (): Promise<void> => {
     const r = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: 'images', quality: 0.85, allowsMultipleSelection: true, selectionLimit: 10,
+      // quality 0.5 re-encodes JPEGs smaller to stay under swarmy's ~1MB body
+      // cap without a native resizer (expo-image-manipulator). Very large photos
+      // can still exceed 1MB → the upload errors cleanly (see send catch below).
+      mediaTypes: 'images', quality: 0.5, allowsMultipleSelection: true, selectionLimit: 10,
     });
     if (r.canceled || !r.assets?.length) return;
     for (const a of r.assets) {

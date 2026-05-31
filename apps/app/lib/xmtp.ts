@@ -967,7 +967,12 @@ async function uploadEncryptedToIpfs(encryptedFileUri: string, _filename: string
     headers: { 'Content-Type': 'application/octet-stream' },
     body: blob,
   });
-  const json = await res.json().catch(() => ({})) as { ref?: string; error?: string };
+  const json = await res.json().catch(() => ({})) as { ref?: string; error?: string; status?: number };
+  /** swarmy enforces a ~1MB body cap → 413. Surface a clear, actionable message
+   *  instead of a raw 502/"Swarm upload failed". */
+  if (res.status === 413 || json.status === 413) {
+    throw new Error('Image too large to send (max ~1MB). Try a smaller photo.');
+  }
   if (!res.ok || json.error) throw new Error(json.error ?? `Swarm upload failed (${res.status})`);
   if (!json.ref) throw new Error('Swarm proxy returned no reference');
   /** Store the gateway-agnostic `swarm://<ref>` form in the message. The recipient
