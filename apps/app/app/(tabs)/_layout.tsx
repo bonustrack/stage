@@ -6,11 +6,16 @@
 import { View } from 'react-native';
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSharedValue } from 'react-native-reanimated';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { TabsPager } from '../../components/SwipeTabs';
+import { LeftDrawer } from '../../components/LeftDrawer';
 
 export default function TabsLayout(): React.ReactElement {
+  /** 0 = drawer closed, 1 = fully open. Shared by the pager (which drives it on a
+   *  Home rightward drag) and the LeftDrawer (which renders it + owns close). */
+  const drawerProgress = useSharedValue(0);
   const dark = useEffectiveColorScheme() === 'dark';
   const insets = useSafeAreaInsets();
   const bg = dark ? '#0e0f10' : '#ffffff';
@@ -84,8 +89,12 @@ export default function TabsLayout(): React.ReactElement {
           bottom: tabBarHeight,
         }}
       >
-        <TabsPager />
+        <TabsPager drawerProgress={drawerProgress} />
       </View>
+      {/* Left drawer overlay — full screen, ABOVE the pager + tab bar (X-style:
+          the panel + dim backdrop cover most of the screen). pointerEvents is
+          'none' while closed so it never steals taps from the tabs underneath. */}
+      <LeftDrawer progress={drawerProgress} />
     </View>
   );
 }

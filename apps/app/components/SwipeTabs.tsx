@@ -32,6 +32,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import type { GestureType } from 'react-native-gesture-handler';
 import Animated, {
   useAnimatedStyle, useSharedValue, withSpring, withTiming, runOnJS,
+  type SharedValue,
 } from 'react-native-reanimated';
 import { usePathname, useRouter } from 'expo-router';
 import type { Href } from 'expo-router';
@@ -88,10 +89,13 @@ const FLING_VELOCITY = 450;
 
 /** Single pager host. Rendered once from `(tabs)/_layout.tsx` as the scene for
  *  every tab route; the route files themselves are empty placeholders. */
-export function TabsPager(): React.ReactElement {
+export function TabsPager({ drawerProgress }: { drawerProgress?: SharedValue<number> }): React.ReactElement {
   const router = useRouter();
   const pathname = usePathname();
   const { width } = useWindowDimensions();
+  /** Width of the left drawer — must match LeftDrawer's `W` so a rightward drag
+   *  at Home tracks the finger 1:1 into the drawer's open progress. */
+  const drawerW = Math.min(width * 0.82, 360);
 
   const routeIndex = indexOfPathname(pathname);
 
@@ -164,6 +168,13 @@ export function TabsPager(): React.ReactElement {
       'worklet';
       const base = -index.value * width;
       let drag = e.translationX;
+      /** Home + rightward drag → drive the LEFT DRAWER (finger-follow) instead of
+       *  rubber-banding the strip. Progress tracks the finger 1:1 over drawerW. */
+      if (drawerProgress && index.value === 0 && drag > 0) {
+        drawerProgress.value = Math.max(0, Math.min(1, drag / drawerW));
+        tx.value = base; // strip stays put while the drawer opens.
+        return;
+      }
       /** Rubber-band at the edges (no page before the first / after the last). */
       const atStart = index.value === 0 && drag > 0;
       const atEnd = index.value === TAB_ORDER.length - 1 && drag < 0;
@@ -172,6 +183,13 @@ export function TabsPager(): React.ReactElement {
     })
     .onEnd((e) => {
       'worklet';
+      /** Settle the drawer if this was a Home rightward (drawer) drag. */
+      if (drawerProgress && index.value === 0 && e.translationX > 0) {
+        const openIt = e.translationX > drawerW * 0.4 || e.velocityX > FLING_VELOCITY;
+        drawerProgress.value = withSpring(openIt ? 1 : 0, { damping: 22, stiffness: 240 });
+        tx.value = withSpring(0, { damping: 22, stiffness: 240 });
+        return;
+      }
       const passed = Math.abs(e.translationX) > width * SWITCH_FRACTION;
       const flung = Math.abs(e.velocityX) > FLING_VELOCITY;
       let target = index.value;
