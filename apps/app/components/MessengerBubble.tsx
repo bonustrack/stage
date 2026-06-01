@@ -2,7 +2,7 @@
  *  no colored bubble even for the local user's own messages. */
 
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, TextInput } from 'react-native';
+import { Linking, Pressable, TextInput } from 'react-native';
 // eslint-disable-next-line no-restricted-imports -- type-only: rowRef measureInWindow() ref typing
 import type { View } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
@@ -12,6 +12,7 @@ import { useRouter } from 'expo-router';
 import { getPeerAvatarCb } from '../lib/peerProfiles';
 import Markdown, { MarkdownIt } from 'react-native-markdown-display';
 import { Icon } from '@metro-labs/kit/icon';
+import { Spinner } from './Spinner';
 import { MessengerAudioPlayer } from './MessengerAudioPlayer';
 import { MessengerImageAttachment } from './MessengerImageAttachment';
 import { MessengerVideoAttachment } from './MessengerVideoAttachment';
@@ -181,7 +182,7 @@ function RemoteAttachmentResolver({ att, fg, sub, dark }: {
   if (!uri) {
     return (
       <Row align="center" gap={8} px={10} py={8} radius={8} bg="rgba(0,0,0,0.12)" mb={6}>
-        <ActivityIndicator size="small" color={fg} />
+        <Spinner size={20} color={fg} />
         <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
           {att.name ?? 'attachment'}
         </Text>

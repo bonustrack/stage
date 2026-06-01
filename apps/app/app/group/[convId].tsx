@@ -4,12 +4,13 @@
 
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { ActivityIndicator, Alert, Image, Pressable, TextInput } from 'react-native';
+import { Alert, Image, Pressable, TextInput } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 /** RNGH gesture-aware FlatList so vertical scroll composes with the native-stack
  *  edge swipe-back under GestureDetectorProvider (see xmtp/[convId] for rationale). */
 import { FlatList } from 'react-native-gesture-handler';
 import { Box } from '../../components/layout';
+import { Spinner } from '../../components/Spinner';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -330,7 +331,7 @@ export default function GroupDetail(): React.ReactElement {
           )}
           {uploadingImage ? (
             <Box style={{ position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' }}>
-              <ActivityIndicator color={fg} />
+              <Spinner size={20} color={fg} />
             </Box>
           ) : null}
         </Pressable>

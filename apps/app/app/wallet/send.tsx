@@ -8,9 +8,10 @@
  *  Reown/wagmi wallet, surfacing pending then confirmed state + the tx hash. */
 
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, ScrollView, TextInput } from 'react-native';
+import { Linking, Pressable, ScrollView, TextInput } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from '../../components/layout';
+import { Spinner } from '../../components/Spinner';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createPublicClient, http, formatEther, isAddress, type Hex } from 'viem';
@@ -208,7 +209,7 @@ export default function WalletSend(): React.ReactElement {
           />
           {resolving ? (
             <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4 }}>
-              <ActivityIndicator size="small" color={fg} />
+              <Spinner size={20} color={fg} />
               <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>Resolving…</Text>
             </Box>
           ) : resolved ? (

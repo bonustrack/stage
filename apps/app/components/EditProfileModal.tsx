@@ -4,9 +4,10 @@
  *  refreshes immediately. */
 
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, TextInput } from 'react-native';
+import { Alert, Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, TextInput } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from './layout';
+import { Spinner } from './Spinner';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import {
@@ -103,7 +104,7 @@ export default function EditProfileModal({
               />
               {uploading ? (
                 <Box style={{ position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' }}>
-                  <ActivityIndicator color={fg} />
+                  <Spinner size={20} color={fg} />
                 </Box>
               ) : null}
             </Pressable>

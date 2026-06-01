@@ -6,9 +6,10 @@
  *  are also surfaced below the resolved result. */
 
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, TextInput } from 'react-native';
+import { Pressable, ScrollView, TextInput } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from '../components/layout';
+import { Spinner } from '../components/Spinner';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { isAddress } from 'viem';
@@ -139,7 +140,7 @@ export default function Search(): React.ReactElement {
         {/* Resolved result card */}
         {resolving ? (
           <Box style={{ paddingVertical: 16, alignItems: 'center' }}>
-            <ActivityIndicator color={head} />
+            <Spinner size={20} color={head} />
           </Box>
         ) : null}
 
@@ -168,7 +169,7 @@ export default function Search(): React.ReactElement {
               </Text>
             </Box>
             {opening === resolved.address.toLowerCase()
-              ? <ActivityIndicator color={head} />
+              ? <Spinner size={20} color={head} />
               : <Icon name="chatRect" size={18} color={fg} />}
           </Pressable>
         ) : null}
@@ -212,7 +213,7 @@ export default function Search(): React.ReactElement {
                 </Text>
               ) : null}
             </Box>
-            {opening === p.address.toLowerCase() ? <ActivityIndicator color={head} /> : null}
+            {opening === p.address.toLowerCase() ? <Spinner size={20} color={head} /> : null}
           </Pressable>
         ))}
 

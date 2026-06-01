@@ -8,8 +8,9 @@
  *  in-app Modals (Alert.prompt is iOS-only). */
 
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, DevSettings, Image, Modal, Pressable, TextInput } from 'react-native';
+import { Alert, DevSettings, Image, Modal, Pressable, TextInput } from 'react-native';
 import { Box } from './layout';
+import { Spinner } from './Spinner';
 import { Text } from '@metro-labs/kit/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
@@ -318,7 +319,7 @@ export function AccountsManager({ dark, flat = false, onSwitched }: { dark: bool
 
       {busy ? (
         <Box style={{ paddingTop: 12, alignItems: 'center' }}>
-          <ActivityIndicator color={head} />
+          <Spinner size={20} color={head} />
         </Box>
       ) : null}
 

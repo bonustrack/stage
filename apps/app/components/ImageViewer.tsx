@@ -17,9 +17,10 @@
  *  patterns — there's no iOS toast primitive). */
 
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Image, Modal, Platform, Pressable } from 'react-native';
+import { Alert, Image, Modal, Platform, Pressable } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from './layout';
+import { Spinner } from './Spinner';
 import * as MediaLibrary from 'expo-media-library';
 import { Directory, File, Paths } from 'expo-file-system';
 import { Buffer } from 'buffer';
@@ -130,7 +131,7 @@ export function ImageViewer({ uri, visible, onClose }: {
             })}
           >
             {saving
-              ? <ActivityIndicator size="small" color="#ffffff" />
+              ? <Spinner size={20} color="#ffffff" />
               : <Icon name="arrowDownTray" size={18} color="#ffffff" />}
             <Text style={{ color: '#ffffff', fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
               {saving ? 'Saving…' : 'Download'}
