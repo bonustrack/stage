@@ -273,7 +273,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
         </Col>
       ) : rows === null ? (
         <Col mx={16} py={40} align="center">
-          <Spinner size={24} color={head} />
+          <Spinner size={28} color={head} />
         </Col>
       ) : (
       /* Asset list — Snapshot-treasury-style rows, border-bottom separators. */
@@ -357,7 +357,7 @@ function NftsView({
   if (status === 'loading' || status === 'idle') {
     return (
       <Col mx={16} py={40} align="center">
-        <Spinner size={24} color={head} />
+        <Spinner size={28} color={head} />
       </Col>
     );
   }
