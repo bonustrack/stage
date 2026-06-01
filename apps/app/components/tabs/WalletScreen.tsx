@@ -5,7 +5,7 @@
  *  was failing in RN). Each row is a 4-corner layout: token name + price/24h-change
  *  on the left, USD value + amount/symbol on the right. */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Image, Linking, Pressable } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import { Spinner } from '../Spinner';
@@ -91,8 +91,14 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
   const [nfts, setNfts] = useState<Nft[] | null>(null);
   const [nftStatus, setNftStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
 
+  // Guard re-fetch by the address we've already loaded for, NOT by `nftStatus`.
+  // (If `nftStatus` were a dep, setting it to 'loading' would re-run the effect,
+  //  whose cleanup flips `cancelled = true` on the in-flight run → the resolved
+  //  fetch skips setNftStatus('ready') and the spinner spins forever.)
+  const loadedAddrRef = useRef<string | null>(null);
   useEffect(() => {
-    if (tab !== 'nfts' || nftStatus !== 'idle' || !address) return;
+    if (tab !== 'nfts' || !address || loadedAddrRef.current === address) return;
+    loadedAddrRef.current = address;
     let cancelled = false;
     setNftStatus('loading');
     void (async (): Promise<void> => {
@@ -106,7 +112,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
       }
     })();
     return () => { cancelled = true; };
-  }, [tab, nftStatus, address]);
+  }, [tab, address]);
 
   useEffect(() => {
     let cancelled = false;

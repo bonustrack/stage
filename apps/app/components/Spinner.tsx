@@ -28,13 +28,17 @@ export function Spinner({ size = 24, color = '#000000' }: { size?: number; color
         <Defs>
           <LinearGradient id={gid} x1="28.154%" y1="63.74%" x2="74.629%" y2="17.783%">
             <Stop stopColor={color} offset="0%" />
-            <Stop stopColor={color} stopOpacity="0" offset="100%" />
+            {/* Cut the tail off abruptly instead of a long soft fade — the
+             *  gradual fade-to-transparent read as a "rounded" end. */}
+            <Stop stopColor={color} stopOpacity="0" offset="70%" />
           </LinearGradient>
         </Defs>
         <G transform="translate(2)" fill="none" fillRule="evenodd">
           <Circle stroke={`url(#${gid})`} strokeWidth={4} strokeLinecap="butt" cx={10} cy={12} r={10} />
           <Path d="M10 2C4.477 2 0 6.477 0 12" stroke={color} strokeWidth={4} strokeLinecap="butt" />
-          <Rect x={8} width={4} height={4} rx={0} fill={color} />
+          {/* Solid square cap over the leading stroke end — width 4 == strokeWidth
+           *  so it fully covers the butt end with a hard, straight edge. */}
+          <Rect x={8} y={0} width={4} height={4} rx={0} fill={color} />
         </G>
       </Svg>
     </Animated.View>
