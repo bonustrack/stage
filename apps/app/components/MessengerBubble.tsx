@@ -18,7 +18,7 @@ import { ReactionsRow, ReactionPicker } from './MessengerBubble.reactions';
 export { REACT_PRESETS };
 
 function MessengerBubbleBase({
-  entry, dark, unread, pending, replyTarget, onReact, onReply, onLongPress, onOpenMenu, onCloseMenu, onAnswer,
+  entry, dark, unread, pending, replyTarget, onReact, onReply, onLongPress, onOpenMenu, onAnswer,
   replyPreview, onReplyPreviewPress, reactions, pendingReactions, pendingRemovals, ownEmojis, transcript, myUri, senderEthAddress, onAvatarPress,
   votes, ownVotes, onVote, onPay, paying, onSign, signing,
 }: MessengerBubbleProps): React.ReactElement {
@@ -58,51 +58,53 @@ function MessengerBubbleBase({
     // fireReply closes over onReply+pending; recreate when they change.
     [onReply, pending, swipeX]);
   const swipeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: swipeX.value }] }));
-  /** Tap → open the anchored menu INSTANTLY on tap #1 (no disambiguation wait). The
-   *  menu opens synchronously at the cached anchor, then measureInWindow refines its
-   *  position a frame later. A second tap within DOUBLE_TAP_MS is treated as a quick
-   *  👍 that supersedes (and closes) the just-opened menu. The outer Pan gesture still
-   *  owns horizontal swipe-to-reply, so taps and swipes don't collide. */
-  const DOUBLE_TAP_MS = 250;
+  /** Tap handling is split into discrete RNGH gestures so single-tap, double-tap and
+   *  long-press arbitrate cleanly (and against the horizontal swipe-to-reply pan):
+   *   - SINGLE tap → open the Telegram-style anchored menu. It `requireExternalGestureToFail`
+   *     the double-tap, so a single tap waits ~RNGH's window for a 2nd tap to NOT arrive
+   *     before firing — no menu flash on a double-tap.
+   *   - DOUBLE tap → quick 👍, reusing the same optimistic onReact toggle path as the
+   *     emoji picker/pills (adds if absent, removes your 👍 if already present).
+   *   - LONG press → open the menu immediately.
+   *  We measure the row's on-screen rect via measureInWindow and hand the parent the
+   *  Y + height so it can float the overlay just above/below the bubble; lastAnchor is
+   *  the synchronous fallback for the first open before a measure has returned. */
   const rowRef = useRef<View>(null);
-  /** Timestamp of the last menu-opening tap, for double-tap 👍 recognition. */
-  const lastOpenAt = useRef<number>(0);
   /** Last measured row rect — opens the menu synchronously while a fresh measure flies. */
   const lastAnchor = useRef<{ y: number; height: number }>({ y: 0, height: 0 });
-  const refineAnchor = (): void => {
+  const openMenu = (): void => {
+    if (pending || !onOpenMenu) { if (!onOpenMenu) onLongPress?.(); return; }
+    onOpenMenu(lastAnchor.current);
     const node = rowRef.current;
     if (node) node.measureInWindow((_x, y, _w, h) => {
       lastAnchor.current = { y, height: h };
-      onOpenMenu?.({ y, height: h });
+      onOpenMenu({ y, height: h });
     });
   };
-  const onBubbleTap = (): void => {
+  const onSingleTap = (): void => {
     if (pending) return;
-    /** Second tap inside the window → double-tap quick 👍, supersede the open menu. */
-    if (Date.now() - lastOpenAt.current < DOUBLE_TAP_MS) {
-      lastOpenAt.current = 0;
-      onCloseMenu?.();
-      onReact?.('👍');
-      return;
-    }
-    if (!onOpenMenu) {
-      /** No menu wired (react-only caller): a plain tap is a quick 👍. */
-      onReact?.('👍');
-      return;
-    }
-    lastOpenAt.current = Date.now();
-    onOpenMenu(lastAnchor.current);
-    refineAnchor();
+    if (!onOpenMenu) { onReact?.('👍'); return; }
+    openMenu();
   };
-  /** Long-press → open the menu immediately (no tap-discrimination delay). */
-  const onBubbleLongPress = (): void => {
-    if (pending) return;
-    if (!onOpenMenu) { onLongPress?.(); return; }
-    onOpenMenu(lastAnchor.current);
-    refineAnchor();
-  };
+  const onDoubleTap = (): void => { if (!pending) onReact?.('👍'); };
+  /** Single-tap: yields to the double-tap so a 2nd tap never flashes the menu. */
+  const doubleTap = useMemo(() => Gesture.Tap().numberOfTaps(2).onEnd((_e, ok) => {
+    if (ok) runOnJS(onDoubleTap)();
+  }), [onDoubleTap]);
+  const singleTap = useMemo(() => Gesture.Tap().numberOfTaps(1)
+    .requireExternalGestureToFail(doubleTap)
+    .onEnd((_e, ok) => { if (ok) runOnJS(onSingleTap)(); }),
+    [doubleTap, onSingleTap]);
+  const longPress = useMemo(() => Gesture.LongPress().minDuration(300)
+    .onStart(() => runOnJS(openMenu)()),
+    [openMenu]);
+  /** Pan owns horizontal swipe-to-reply; the taps/long-press are mutually exclusive
+   *  with each other, and race against the pan (pan only arms on a clear left drag). */
+  const tapGestures = useMemo(
+    () => Gesture.Race(replyPan, Gesture.Exclusive(longPress, doubleTap, singleTap)),
+    [replyPan, longPress, doubleTap, singleTap]);
   return (
-    <GestureDetector gesture={replyPan}>
+    <GestureDetector gesture={tapGestures}>
     <Animated.View
       ref={rowRef}
       style={[swipeStyle, {
@@ -130,13 +132,10 @@ function MessengerBubbleBase({
       )}
       {/** Right column: message content + reactions + reaction picker stacked. */}
       <Col flex={1} style={{ minWidth: 0, opacity: pending ? 0.5 : 1 }}>
-      {/** Pressable handles onLongPress; the outer Pan gesture claims leftward drags. */}
-      <Pressable
-        onPress={(onOpenMenu || onReact) ? onBubbleTap : undefined}
-        onLongPress={pending ? undefined : (onOpenMenu ? onBubbleLongPress : onLongPress)}
-        delayLongPress={300}
+      {/** Tap/double-tap/long-press all live on the outer GestureDetector now; this is
+        *  just the content wrapper carrying the unread outline. */}
+      <Col
         style={{
-          flexDirection: 'column',
           /** Reply-target highlight is a full-row background on the outer View now;
            *  keep only the unread outline here. */
           borderWidth: unread ? 1.5 : 0,
@@ -161,7 +160,7 @@ function MessengerBubbleBase({
           onSign={onSign}
           signing={signing}
         />
-      </Pressable>
+      </Col>
       {pending ? null : (
         <ReactionsRow
           reactions={reactions}

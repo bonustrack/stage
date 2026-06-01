@@ -10,8 +10,9 @@ export interface MessengerBubbleProps {
    *  positions the emoji-strip + action-dropdown overlay relative to the row's
    *  on-screen rect (measured here via measureInWindow). */
   onOpenMenu?: (anchor: { y: number; height: number }) => void;
-  /** Close the just-opened anchored menu — fired when a fast double-tap supersedes
-   *  the instant single-tap menu open (the double-tap is treated as a quick 👍). */
+  /** Close the anchored menu — retained on the contract for callers that drive the
+   *  overlay (e.g. ConversationFeed clears its menu state). The bubble itself no
+   *  longer opens-then-closes: single-tap waits for the double-tap-👍 to fail. */
   onCloseMenu?: () => void;
   /** Tap the quoted reply-preview slab → parent jumps/scrolls to the original
    *  message. No-op when undefined (e.g. a bubble that isn't a reply). */
