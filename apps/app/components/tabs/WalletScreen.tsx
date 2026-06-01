@@ -248,7 +248,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
                 borderBottomColor: active ? head : 'transparent',
               }}
             >
-              <Text style={{ color: active ? head : sub, fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
+              <Text style={{ color: active ? head : sub, fontSize: 18, fontFamily: 'Calibre-Semibold' }}>
                 {t === 'tokens' ? 'Tokens' : 'NFTs'}
               </Text>
             </Pressable>
