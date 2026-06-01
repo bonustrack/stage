@@ -6,8 +6,9 @@
  *  on the left, USD value + amount/symbol on the right. */
 
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Linking, Pressable } from 'react-native';
+import { Image, Linking, Pressable } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
+import { Spinner } from '../Spinner';
 import type { SimultaneousRefs } from '../SwipeTabs';
 import { Text } from '@metro-labs/kit/text';
 import { Title } from '@metro-labs/kit/title';
@@ -258,13 +259,20 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
 
       {tab === 'nfts' ? (
         <NftsView status={nftStatus} nfts={nfts} head={head} sub={sub} border={border} />
+      ) : err ? (
+        <Col mx={16} py={40} align="center">
+          <Text style={{ color: '#d96868', fontSize: 15, fontFamily: 'Calibre-Medium' }}>
+            Couldn’t load tokens
+          </Text>
+        </Col>
+      ) : rows === null ? (
+        <Col mx={16} py={40} align="center">
+          <Spinner size={24} color={head} />
+        </Col>
       ) : (
       /* Asset list — Snapshot-treasury-style rows, border-bottom separators. */
       <Col mx={16}>
-        {(rows ?? ASSETS.map(a => ({
-          symbol: a.symbol, name: a.name, balance: '0', priceUsd: null, change24h: null,
-          logoUrl: stampTokenUrl(1, a.logoAddress, 32),
-        }))).map(r => {
+        {rows.map(r => {
           const valueUsd = r.priceUsd === null ? null : r.priceUsd * Number(r.balance);
           /** Up/down colour for the 24h change pill — green for non-negative,
            *  red for negative. Uses the same tones as Snapshot UI's treasury. */
@@ -317,7 +325,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
                   {valueUsd === null ? '—' : fmtUsd(valueUsd)}
                 </Text>
                 <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
-                  {rows ? `${fmtBalance(r.balance)} ${r.symbol}` : '…'}
+                  {`${fmtBalance(r.balance)} ${r.symbol}`}
                 </Text>
               </Col>
             </Row>
@@ -343,7 +351,7 @@ function NftsView({
   if (status === 'loading' || status === 'idle') {
     return (
       <Col mx={16} py={40} align="center">
-        <ActivityIndicator color={sub} />
+        <Spinner size={24} color={head} />
       </Col>
     );
   }
@@ -358,8 +366,12 @@ function NftsView({
   }
   if (!nfts || nfts.length === 0) {
     return (
-      <Col mx={16} py={40} align="center">
-        <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>No NFTs</Text>
+      <Col mx={16} py={48} align="center" gap={10}>
+        <Icon name="photo" size={36} color={sub} />
+        <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>No NFTs found</Text>
+        <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium', textAlign: 'center' }}>
+          This account doesn’t hold any NFTs yet.
+        </Text>
       </Col>
     );
   }
