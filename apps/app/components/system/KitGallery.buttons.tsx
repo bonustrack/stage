@@ -7,8 +7,35 @@ import { Button, type ButtonSize, type ButtonVariant } from '@metro-labs/kit/but
 import { Icon } from '@metro-labs/kit/icon';
 import { Text } from '@metro-labs/kit/text';
 
-const SIZES: ReadonlyArray<ButtonSize> = ['sm', 'md', 'lg'];
+/** Every button size the kit supports, ascending. Typed as Record<ButtonSize,…>
+ *  so adding a size to the kit's ButtonSize union breaks tsc here until the
+ *  gallery is updated — the gallery can never silently miss a size. */
+const SIZE_HEIGHT: Record<ButtonSize, number> = { sm: 32, md: 40, lg: 48 };
+const SIZES = Object.keys(SIZE_HEIGHT) as ButtonSize[];
 const ICON_PX: Record<ButtonSize, number> = { sm: 16, md: 18, lg: 20 };
+
+/** Prominent badge naming the size + its real pixel height from the kit spec. */
+function SizeLabel({ size, dark, sub }: {
+  size: ButtonSize; dark: boolean; sub: string;
+}): React.ReactElement {
+  return (
+    <Row gap={6} align="center" mt={8}>
+      <Box style={{
+        backgroundColor: dark ? '#282a2d' : '#e4e4e5',
+        borderRadius: 6,
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+      }}>
+        <Text dark={dark} weight="semibold" size="sm" style={{ textTransform: 'uppercase' }}>
+          {size}
+        </Text>
+      </Box>
+      <Text dark={dark} color={sub} variant="caption" weight="medium">
+        {SIZE_HEIGHT[size]}px
+      </Text>
+    </Row>
+  );
+}
 
 function ButtonTriad({ size, variant, dark }: {
   size: ButtonSize; variant: ButtonVariant; dark: boolean;
@@ -48,7 +75,7 @@ export function ButtonVariantBlock({ variant, dark, sub }: {
       </Text>
       {SIZES.map((size) => (
         <Box key={size} style={{ marginTop: 4 }}>
-          <Text dark={dark} variant="secondary" weight="medium" size="sm">{size}</Text>
+          <SizeLabel size={size} dark={dark} sub={sub} />
           <ButtonTriad size={size} variant={variant} dark={dark} />
         </Box>
       ))}
