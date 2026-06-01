@@ -26,10 +26,13 @@
     "react-native-svg": "*"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/"
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
-    "typescript": "~5.9.2"
+    "eslint": "^10.3.0",
+    "typescript": "~5.9.2",
+    "typescript-eslint": "^8.59.2"
   }
 }
