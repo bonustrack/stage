@@ -101,15 +101,15 @@ export function ProfileScreen({ address, variant, panRef }: {
         }}>
           {/* Wait for the profile so we render the real avatar directly (no
               blockie→real flash); custom avatars resolve via IPFS, not stamp.
-              marginTop -44 (half the 88 avatar, relative to this sheet's top)
-              centres the avatar on the rounded black top edge — half over gray
-              cover, half over black. zIndex:1 keeps it above the sheet. */}
+              marginTop -18 (~20% of the 88 avatar, relative to this sheet's top)
+              sits the avatar LOWER — only ~20% of its height over the gray cover,
+              ~80% over black. zIndex:1 keeps it above the sheet. */}
           <Avatar
             address={loaded && addr ? addr : null}
             imageUri={loaded ? profile?.avatar : null}
             size={88}
             style={{
-              backgroundColor: c.rowBg, marginTop: -44, zIndex: 1,
+              backgroundColor: c.rowBg, marginTop: -88 * 0.2, zIndex: 1,
               borderWidth: 3, borderColor: c.bg,
             }}
             onPress={uri => { if (uri) setViewerUri(uri); }}
