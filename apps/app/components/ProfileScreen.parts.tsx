@@ -120,7 +120,7 @@ export function ProfileActions({ opening, onMessage, onSend, c }: {
     </Box>
   );
   return (
-    <Box style={{ flexDirection: 'row', alignSelf: 'stretch', paddingHorizontal: 16, gap: 12, marginTop: 18, justifyContent: 'flex-start' }}>
+    <Box style={{ flexDirection: 'row', gap: 12, marginTop: 18, justifyContent: 'flex-start' }}>
       <Btn icon="chatRect" label={opening ? 'Opening…' : 'Message'} onPress={onMessage} disabled={opening} />
       <Btn icon="send" label="Send" onPress={onSend} />
     </Box>
