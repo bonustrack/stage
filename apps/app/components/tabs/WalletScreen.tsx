@@ -329,15 +329,21 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
                   source={{ uri: r.logoUrl }}
                   style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border }}
                 />
-                <Image
-                  source={{ uri: NETWORK_LOGO[r.chainId] ?? MAINNET_NETWORK_LOGO }}
-                  resizeMode="contain"
-                  style={{
-                    position: 'absolute', right: -2, bottom: -2,
-                    width: 15, height: 15, borderRadius: 4,
-                    borderWidth: 2, borderColor: bg, backgroundColor: '#ffffff',
-                  }}
-                />
+                {/* Network badge: a rounded-square white chip with the logo fully
+                    inside (padding + contain) so the rounded corners clip only the
+                    white frame, never the logo (which previously looked cropped). */}
+                <Box style={{
+                  position: 'absolute', right: -3, bottom: -3,
+                  width: 16, height: 16, borderRadius: 5,
+                  borderWidth: 2, borderColor: bg, backgroundColor: '#ffffff',
+                  padding: 1.5, overflow: 'hidden',
+                }}>
+                  <Image
+                    source={{ uri: NETWORK_LOGO[r.chainId] ?? MAINNET_NETWORK_LOGO }}
+                    resizeMode="contain"
+                    style={{ width: '100%', height: '100%' }}
+                  />
+                </Box>
               </Box>
               {/* Left column — token NAME (top) over price + 24h change (bottom). */}
               <Col flex={1} style={{ minWidth: 0 }}>
