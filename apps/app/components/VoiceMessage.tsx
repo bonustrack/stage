@@ -11,6 +11,11 @@ import { Icon } from '@metro-labs/kit/icon';
 import { Audio, AVPlaybackStatus } from 'expo-av';
 import { Box } from './layout';
 import { waveformBars } from './VoiceMessage.bars';
+import { useDecodedBars } from './VoiceMessage.barsCache';
+
+/** Bar count — shared by the synthetic placeholder and the real decode so the
+ *  swap from placeholder to true waveform doesn't reflow the track. */
+const BAR_COUNT = 34;
 
 /** Messenger's outgoing-bubble blue. Used for the pill so the player reads as
  *  a voice message regardless of the flat Discord-style row theming around it. */
@@ -32,7 +37,12 @@ export function VoiceMessage({ uri }: Props): React.ReactElement {
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const [barWidth, setBarWidth] = useState(0);
-  const bars = useMemo(() => waveformBars(uri), [uri]);
+  /** Synthetic placeholder shown until the on-device decode resolves; the real
+   *  PCM-derived bars replace it once `useDecodedBars` returns (and fall back to
+   *  this synthetic shape if decode fails or the native module is unavailable). */
+  const synthetic = useMemo(() => waveformBars(uri, BAR_COUNT), [uri]);
+  const decoded = useDecodedBars(uri, BAR_COUNT);
+  const bars = decoded ?? synthetic;
 
   useEffect(() => () => { void soundRef.current?.unloadAsync().catch(() => undefined); }, []);
 

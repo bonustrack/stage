@@ -151,6 +151,9 @@ const config = {
       },
     ],
     './plugins/withMetroPill',
+    // Native audio-decode module — powers TRUE voice-message waveforms
+    // (decodeAudioData → PCM). Requires a new dev-client build to take effect.
+    'react-native-audio-api',
   ],
   notification: {
     icon: './assets/notification-icon.png',
