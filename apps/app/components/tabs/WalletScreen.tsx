@@ -6,7 +6,7 @@
  *  on the left, USD value + amount/symbol on the right. */
 
 import { useEffect, useState } from 'react';
-import { Image, Pressable } from 'react-native';
+import { ActivityIndicator, Image, Linking, Pressable } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import type { SimultaneousRefs } from '../SwipeTabs';
 import { Text } from '@metro-labs/kit/text';
@@ -22,6 +22,7 @@ import { getErc20UsdPrices, getSimplePrices } from '../../lib/coingecko';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Col, Row, Box } from '../layout';
 import { stampTokenUrl, NATIVE_TOKEN_SENTINEL } from '@metro-labs/kit/avatar';
+import { getNftsAcrossChains, type Nft } from '../../lib/opensea';
 
 const MULTICALL3 = '0xcA11bde05977b3631167028862bE2a173976CA11' as const;
 
@@ -81,6 +82,30 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
   const [rows, setRows] = useState<AssetRow[] | null>(null);
   const [err, setErr] = useState<string>('');
   usePeerProfiles([address]);
+
+  /** Tokens | NFTs segmented toggle. NFTs are lazy-loaded: we only fetch on
+   *  the first switch to the NFTs tab, then cache in `nfts` so toggling back
+   *  and forth doesn't refetch. `nftStatus` drives the loading/error/empty UI. */
+  const [tab, setTab] = useState<'tokens' | 'nfts'>('tokens');
+  const [nfts, setNfts] = useState<Nft[] | null>(null);
+  const [nftStatus, setNftStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+
+  useEffect(() => {
+    if (tab !== 'nfts' || nftStatus !== 'idle' || !address) return;
+    let cancelled = false;
+    setNftStatus('loading');
+    void (async (): Promise<void> => {
+      try {
+        const list = await getNftsAcrossChains(address);
+        if (cancelled) return;
+        setNfts(list);
+        setNftStatus('ready');
+      } catch {
+        if (!cancelled) setNftStatus('error');
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [tab, nftStatus, address]);
 
   useEffect(() => {
     let cancelled = false;
@@ -204,10 +229,33 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
         <Btn icon="creditCard" label="Buy" onPress={() => flash('Buy — coming soon')} />
       </Row>
 
-      {/* Asset list — Snapshot-treasury-style rows, border-bottom separators. */}
-      <Text style={{ color: sub, fontSize: 14, letterSpacing: 1.2, fontFamily: 'Calibre-Medium', paddingHorizontal: 16, paddingTop: 22, paddingBottom: 6 }}>
-        TOKENS
-      </Text>
+      {/* Tokens | NFTs segmented toggle — pill control; active tab gets a
+          filled background, the other is plain. Default Tokens. */}
+      <Row gap={8} mx={16} mt={22} mb={6}>
+        {(['tokens', 'nfts'] as const).map(t => {
+          const active = tab === t;
+          return (
+            <Pressable
+              key={t}
+              onPress={() => setTab(t)}
+              style={{
+                paddingHorizontal: 16, paddingVertical: 7, borderRadius: 999,
+                borderWidth: 1, borderColor: border,
+                backgroundColor: active ? head : 'transparent',
+              }}
+            >
+              <Text style={{ color: active ? bg : sub, fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
+                {t === 'tokens' ? 'Tokens' : 'NFTs'}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </Row>
+
+      {tab === 'nfts' ? (
+        <NftsView status={nftStatus} nfts={nfts} head={head} sub={sub} border={border} />
+      ) : (
+      /* Asset list — Snapshot-treasury-style rows, border-bottom separators. */
       <Col mx={16} style={{ borderTopWidth: 1, borderTopColor: border }}>
         {(rows ?? ASSETS.map(a => ({
           symbol: a.symbol, name: a.name, balance: '0', priceUsd: null, change24h: null,
@@ -272,6 +320,83 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
           );
         })}
       </Col>
+      )}
     </ScrollView>
+  );
+}
+
+/** NFT grid view — 2-column grid of the account's NFTs from OpenSea. Shows a
+ *  spinner while loading, an error line on failure, an empty state when the
+ *  account holds nothing, else a grid of image cells (remote https image_url,
+ *  placeholder when missing) tappable to the NFT's OpenSea page. */
+function NftsView({
+  status, nfts, head, sub, border,
+}: {
+  status: 'idle' | 'loading' | 'ready' | 'error';
+  nfts: Nft[] | null;
+  head: string; sub: string; border: string;
+}): React.ReactElement {
+  if (status === 'loading' || status === 'idle') {
+    return (
+      <Col mx={16} py={40} align="center">
+        <ActivityIndicator color={sub} />
+      </Col>
+    );
+  }
+  if (status === 'error') {
+    return (
+      <Col mx={16} py={40} align="center">
+        <Text style={{ color: '#d96868', fontSize: 15, fontFamily: 'Calibre-Medium' }}>
+          Couldn’t load NFTs
+        </Text>
+      </Col>
+    );
+  }
+  if (!nfts || nfts.length === 0) {
+    return (
+      <Col mx={16} py={40} align="center">
+        <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>No NFTs</Text>
+      </Col>
+    );
+  }
+  return (
+    <Row mx={16} mt={6} style={{ flexWrap: 'wrap' }}>
+      {nfts.map(nft => (
+        <Box key={`${nft.chainId}:${nft.id}`} style={{ width: '50%' }}>
+          <Pressable
+            onPress={() => { if (nft.openseaUrl) void Linking.openURL(nft.openseaUrl); }}
+            style={({ pressed }) => ({ padding: 6, opacity: pressed ? 0.7 : 1 })}
+          >
+            {nft.image ? (
+              <Image
+                source={{ uri: nft.image }}
+                resizeMode="cover"
+                style={{ width: '100%', aspectRatio: 1, borderRadius: 12, backgroundColor: border }}
+              />
+            ) : (
+              <Box
+                style={{
+                  width: '100%', aspectRatio: 1, borderRadius: 12,
+                  backgroundColor: border, alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                <Icon name="photo" size={28} color={sub} />
+              </Box>
+            )}
+            <Text
+              numberOfLines={1}
+              style={{ color: head, fontSize: 15, fontFamily: 'Calibre-Semibold', marginTop: 6 }}
+            >
+              {nft.title}
+            </Text>
+            {nft.collection ? (
+              <Text numberOfLines={1} style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+                {nft.collection}
+              </Text>
+            ) : null}
+          </Pressable>
+        </Box>
+      ))}
+    </Row>
   );
 }
