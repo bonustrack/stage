@@ -19,6 +19,7 @@
  *  ─────────────────────────────────────────────────────────────────────────── */
 
 import { AppState } from 'react-native';
+import type { ConsentState } from '@xmtp/react-native-sdk';
 import type { HistoryEntry } from './types';
 import { isMetroControlBody } from './push';
 import { getCachedXmtpClient, getOrCreateXmtpClient, convOfLine } from './xmtp.client';
@@ -51,8 +52,14 @@ export function subscribeAllMessages(cb: (m: StreamMsg) => void): () => void {
   return () => { streamSubscribers.delete(cb); };
 }
 
+/** Match the daemon's fan-out: deliver Allowed + Unknown conversations (skip
+ *  explicitly denied). `ConsentState` is a string-literal union in the RN SDK
+ *  (not a runtime enum), so we pass the literals with the type for clarity. */
+const STREAM_CONSENT_STATES: ConsentState[] = ['allowed', 'unknown'];
+
 let globalStreamCancel: (() => void) | null = null;
 let globalStreamStarting = false;
+let globalStreamRearmTimer: ReturnType<typeof setTimeout> | null = null;
 let globalResyncTimer: ReturnType<typeof setInterval> | null = null;
 let globalAppStateSub: { remove: () => void } | null = null;
 
@@ -73,17 +80,23 @@ async function resyncActiveFeeds(): Promise<void> {
   }
 }
 
-/** Lazily start the single app-wide message stream + its backstops. Idempotent;
- *  safe to call from every `useXmtpFeed` mount. */
-export async function ensureGlobalStream(): Promise<void> {
-  if (globalStreamCancel || globalStreamStarting) return;
-  globalStreamStarting = true;
-  try {
-    const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
-    /** A single native subscription for every conversation on this inbox. We map
-     *  each message to the metro line via its conversation/topic id and route it
-     *  into the matching feedCache slice. */
-    await client.conversations.streamAllMessages(async (msg) => {
+/** Re-arm the global stream after a short debounce. Used by `onClose` so a
+ *  dropped native stream auto-restarts instead of silently degrading to the
+ *  low-frequency resync poll. */
+function rearmGlobalStream(): void {
+  if (globalStreamRearmTimer) return;
+  globalStreamRearmTimer = setTimeout(() => {
+    globalStreamRearmTimer = null;
+    void ensureGlobalStream();
+  }, 500);
+}
+
+/** Subscribe the one native fan-out for every conversation on this inbox. Maps
+ *  each message to its metro line and routes it into the matching feedCache
+ *  slice + channels-list subscribers. Re-armed via `onClose` on native drop. */
+async function startStream(client: Awaited<ReturnType<typeof getOrCreateXmtpClient>>): Promise<void> {
+  await client.conversations.streamAllMessages(
+    async (msg) => {
       if (!msg) return;
       const convId = (msg as unknown as { conversationId?: string }).conversationId
         ?? convIdFromTopicStr((msg as unknown as { topic?: string }).topic);
@@ -98,17 +111,42 @@ export async function ensureGlobalStream(): Promise<void> {
       const env = envelopeOfXmtpMessage(msg, line);
       if (isMetroControlBody(env.text)) return;
       pushToFeedSlice(line, env);
-    });
+    },
+    'all',
+    STREAM_CONSENT_STATES,
+    () => {
+      /** Native stream closed (backgrounding/blip). Drop the stale cancel,
+       *  resync the active feed once to cover the gap, then re-arm. */
+      globalStreamCancel = null;
+      void resyncActiveFeeds();
+      rearmGlobalStream();
+    },
+  );
+}
+
+/** Lazily start the single app-wide message stream + its backstops. Idempotent;
+ *  safe to call from every `useXmtpFeed` mount. */
+export async function ensureGlobalStream(): Promise<void> {
+  if (globalStreamCancel || globalStreamStarting) return;
+  globalStreamStarting = true;
+  try {
+    const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+    await startStream(client);
     /** Cancellation is via the SDK's imperative `cancelStreamAllMessages` (the
      *  stream starter itself resolves to void). */
     globalStreamCancel = () => {
       try { client.conversations.cancelStreamAllMessages(); } catch { /* ignore */ }
     };
-    /** One low-frequency global resync — replaces the old per-conv 5s poll. */
-    if (!globalResyncTimer) globalResyncTimer = setInterval(() => { void resyncActiveFeeds(); }, 30_000);
+    /** Low-frequency global resync backstop — only touches the active/open conv
+     *  (1 conv, PAGE_SIZE 20) so the rate-limit blast radius stays tiny. */
+    if (!globalResyncTimer) globalResyncTimer = setInterval(() => { void resyncActiveFeeds(); }, 7_000);
     if (!globalAppStateSub) {
       globalAppStateSub = AppState.addEventListener('change', (state) => {
-        if (state === 'active') void resyncActiveFeeds();
+        if (state !== 'active') return;
+        void resyncActiveFeeds();
+        /** Stream may have died while backgrounded (onClose nulled the cancel) —
+         *  restart it in addition to the one-off resync. */
+        if (!globalStreamCancel) void ensureGlobalStream();
       });
     }
   } catch { /* stream init failed — resync backstop still covers active feeds */ }
@@ -119,6 +157,7 @@ export async function ensureGlobalStream(): Promise<void> {
  *  changes so the next account starts a fresh stream against its own inbox. */
 function teardownGlobalStream(): void {
   if (globalStreamCancel) { globalStreamCancel(); globalStreamCancel = null; }
+  if (globalStreamRearmTimer) { clearTimeout(globalStreamRearmTimer); globalStreamRearmTimer = null; }
   if (globalResyncTimer) { clearInterval(globalResyncTimer); globalResyncTimer = null; }
   if (globalAppStateSub) { try { globalAppStateSub.remove(); } catch { /* ignore */ } globalAppStateSub = null; }
 }
