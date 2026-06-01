@@ -31,6 +31,9 @@ interface Props {
    *  the focus effect. */
   autoFocusNonce?: number;
   onClearReply?: () => void;
+  /** Tap the reply banner → best-effort scroll the feed to the replied-to
+   *  message (crash-safe; no-ops if the row isn't currently loaded). */
+  onJumpToReply?: (messageId: string) => void;
   /** Optimistic-render hook: invoked the moment the user taps send, before the API call. */
   onOptimistic?: (entry: { localId: string; text: string; attachments: Attachment[]; replyTo?: string; payload?: unknown }) => void;
   /** Fired AFTER the send completes (success OR failure). Lets the parent drop the
@@ -40,7 +43,7 @@ interface Props {
 }
 
 export function MessengerComposer({
-  dark, xmtpLine, mentionCandidates, replyingTo, autoFocusNonce, onClearReply, onOptimistic, onSent,
+  dark, xmtpLine, mentionCandidates, replyingTo, autoFocusNonce, onClearReply, onJumpToReply, onOptimistic, onSent,
 }: Props): React.ReactElement {
   const fg = dark ? '#9f9fa3' : '#57606a';
   const head = dark ? '#ffffff' : '#000000';
@@ -115,7 +118,10 @@ export function MessengerComposer({
        *   paddingHorizontal:10 so the fade bleeds to the screen edges. */}
       <ComposerGradient bg={bg} direction="down" top={-24} height={24} left={-10} right={-10} />
       {replyingTo ? (
-        <ReplyBanner dark={dark} sub={sub} sender={replyingTo.sender} onClear={onClearReply} />
+        <ReplyBanner
+          dark={dark} sub={sub} sender={replyingTo.sender} onClear={onClearReply}
+          onPress={onJumpToReply ? () => onJumpToReply(replyingTo.id) : undefined}
+        />
       ) : null}
       {/** @-mention popup — Discord-style, stacked above the composer. */}
       {mentionRange && mentionMatches.length > 0 ? (

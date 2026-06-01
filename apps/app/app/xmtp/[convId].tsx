@@ -38,7 +38,7 @@ export default function XmtpConversation(): React.ReactElement {
     replyingTo, setReplyingTo, setReplyTarget,
     menuFor, setMenuFor, menuAnchor, overflowOpen, setOverflowOpen,
     peerAddr, groupName, groupImage, isGroup, senderEthOf,
-    mentionCandidates, onReact, onOptimistic, onSent,
+    mentionCandidates, onReact, onOptimistic, onSent, jumpToMessage,
   } = c;
 
   const insets = useSafeAreaInsets();
@@ -151,6 +151,7 @@ export default function XmtpConversation(): React.ReactElement {
         replyingTo={replyingTo ?? undefined}
         autoFocusNonce={autoFocusNonce}
         onClearReply={() => setReplyingTo(null)}
+        onJumpToReply={jumpToMessage}
         onOptimistic={onOptimistic}
         onSent={onSent}
       />

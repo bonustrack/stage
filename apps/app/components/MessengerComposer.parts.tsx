@@ -16,33 +16,43 @@ const kindIcon = (kind: string): HeroIconName => (
 );
 
 export function ReplyBanner({
-  dark, sub, sender, onClear,
+  dark, sub, sender, onClear, onPress,
 }: {
-  dark: boolean; sub: string; sender?: string | null; onClear?: () => void;
+  dark: boolean; sub: string; sender?: string | null;
+  onClear?: () => void;
+  /** Tap the banner body → scroll the feed to the replied-to message. */
+  onPress?: () => void;
 }): React.ReactElement {
+  /** Link/mention color — same value MessengerBubble uses for inline links. */
+  const linkColor = dark ? '#7aa2ff' : '#2f6feb';
+  /** TopNav border value (palette `border`) — full-width hairline at the top. */
+  const borderColor = dark ? '#282a2d' : '#e4e4e5';
   return (
-    <Row align="center" gap={10} px={14} py={8} style={{
-      borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: dark ? '#282a2d' : '#e4e4e5',
-    }}>
-      <Pressable
-        onPress={onClear}
-        hitSlop={8}
-        style={{
-          width: 22, height: 22, borderRadius: 11,
-          alignItems: 'center', justifyContent: 'center',
-          backgroundColor: dark ? '#282a2d' : '#e4e4e5',
-        }}
-      >
-        <Icon name="x" size={14} color={dark ? '#9f9fa3' : '#57606a'} />
+    /** Outer container is edge-to-edge so the top border spans the full width;
+     *  the inner Row keeps the content padded. */
+    <Box style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: borderColor }}>
+      <Pressable onPress={onPress} disabled={!onPress}>
+        <Row align="center" gap={10} px={14} py={8}>
+          <Pressable
+            onPress={onClear}
+            hitSlop={8}
+            style={{
+              width: 22, height: 22, borderRadius: 11,
+              alignItems: 'center', justifyContent: 'center',
+              backgroundColor: borderColor,
+            }}
+          >
+            <Icon name="x" size={14} color={dark ? '#9f9fa3' : '#57606a'} />
+          </Pressable>
+          <Text style={{ fontSize: 14, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
+            <Text style={{ color: sub, fontFamily: 'Calibre-Regular' }}>Replying to </Text>
+            <Text style={{ color: linkColor, fontFamily: 'Calibre-Medium' }}>
+              {(sender ? getPeerName(sender) : undefined) ?? (sender ? shortAddress(sender) : 'message')}
+            </Text>
+          </Text>
+        </Row>
       </Pressable>
-      <Text style={{ fontSize: 14, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
-        <Text style={{ color: sub }}>Replying to </Text>
-        <Text style={{ color: '#c0a06e' }}>
-          {(sender ? getPeerName(sender) : undefined) ?? (sender ? shortAddress(sender) : 'message')}
-        </Text>
-      </Text>
-    </Row>
+    </Box>
   );
 }
 
