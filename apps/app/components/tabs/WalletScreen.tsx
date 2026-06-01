@@ -336,7 +336,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
                 <Box style={{
                   position: 'absolute', right: -3, bottom: -3,
                   width: 18, height: 18, borderRadius: 999,
-                  borderWidth: 1.5, borderColor: bg, backgroundColor: border,
+                  borderWidth: 2.5, borderColor: bg, backgroundColor: border,
                   overflow: 'hidden',
                 }}>
                   <Image
