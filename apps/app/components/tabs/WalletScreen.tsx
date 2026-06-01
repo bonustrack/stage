@@ -260,7 +260,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
         <NftsView status={nftStatus} nfts={nfts} head={head} sub={sub} border={border} />
       ) : (
       /* Asset list — Snapshot-treasury-style rows, border-bottom separators. */
-      <Col mx={16} style={{ borderTopWidth: 1, borderTopColor: border }}>
+      <Col mx={16}>
         {(rows ?? ASSETS.map(a => ({
           symbol: a.symbol, name: a.name, balance: '0', priceUsd: null, change24h: null,
           logoUrl: stampTokenUrl(1, a.logoAddress, 32),
