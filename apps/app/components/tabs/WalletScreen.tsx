@@ -329,18 +329,21 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
                   source={{ uri: r.logoUrl }}
                   style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border }}
                 />
-                {/* Network badge — exactly Snapshot UI's BadgeNetwork:
-                    rounded-full + border-2 in the page bg color + bg = border token
-                    (muted, NOT white). `contain` so the logo isn't cropped. */}
-                <Image
-                  source={{ uri: NETWORK_LOGO[r.chainId] ?? MAINNET_NETWORK_LOGO }}
-                  resizeMode="contain"
-                  style={{
-                    position: 'absolute', right: -3, bottom: -3,
-                    width: 16, height: 16, borderRadius: 999,
-                    borderWidth: 2, borderColor: bg, backgroundColor: border,
-                  }}
-                />
+                {/* Network badge — round chip (border-2 in page bg, muted bg) with
+                    the logo INSET + centered so it never touches the border / gets
+                    cropped (Snapshot-style). Logo is smaller than the chip. */}
+                <Box style={{
+                  position: 'absolute', right: -3, bottom: -3,
+                  width: 18, height: 18, borderRadius: 999,
+                  borderWidth: 2, borderColor: bg, backgroundColor: border,
+                  alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+                }}>
+                  <Image
+                    source={{ uri: NETWORK_LOGO[r.chainId] ?? MAINNET_NETWORK_LOGO }}
+                    resizeMode="contain"
+                    style={{ width: 10, height: 10 }}
+                  />
+                </Box>
               </Box>
               {/* Left column — token NAME (top) over price + 24h change (bottom). */}
               <Col flex={1} style={{ minWidth: 0 }}>
