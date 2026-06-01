@@ -3,7 +3,8 @@
  *  Enter an Ethereum address OR an ENS-style domain (`*.eth`). ENS resolves to an
  *  address via mainnet (the brovider RPC, same as the wallet tab). Tapping a result
  *  opens or creates a DM with that address. Existing DM contacts matching the query
- *  are also surfaced below the resolved result. */
+ *  are also surfaced below the resolved result. Presentational helpers live in
+ *  ./search.helpers to keep this under the line cap. */
 
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, TextInput } from 'react-native';
@@ -17,14 +18,9 @@ import { openDmWithAddress, shortAddress } from '../lib/xmtp';
 import { resolveEnsName } from '../lib/ens';
 import { usePeerProfiles, getPeerName, getPeerAvatarCb } from '../lib/peerProfiles';
 import { usePalette } from '../lib/theme';
-import { getCachedRows } from '../lib/channelsCache';
 import { Icon } from '@metro-labs/kit/icon';
 import { Avatar } from '../components/Avatar';
-
-/** Cheap pre-flight — accept any *.eth (or longer multi-label) as ENS-resolvable. */
-function looksLikeEns(s: string): boolean {
-  return /^[a-z0-9-]+(\.[a-z0-9-]+)+\.eth$|^[a-z0-9-]+\.eth$/i.test(s.trim());
-}
+import { SearchRow, getExistingPeers, looksLikeEns } from './search.helpers';
 
 export default function Search(): React.ReactElement {
   const router = useRouter();
@@ -38,21 +34,7 @@ export default function Search(): React.ReactElement {
   const [opening, setOpening] = useState<string | null>(null);
 
   /** Existing DM peers (address-keyed) pulled straight from the cached channels list. */
-  const existing = useMemo(() => {
-    const rows = getCachedRows() ?? [];
-    const seen = new Set<string>();
-    const peers: { address: string; convId: string }[] = [];
-    for (const r of rows) {
-      const a = (r as { peerAddress?: string | null; convId?: string }).peerAddress;
-      const c = (r as { peerAddress?: string | null; convId?: string }).convId;
-      if (!a || !c) continue;
-      const k = a.toLowerCase();
-      if (seen.has(k)) continue;
-      seen.add(k);
-      peers.push({ address: a, convId: c });
-    }
-    return peers;
-  }, []);
+  const existing = useMemo(() => getExistingPeers(), []);
 
   /** Resolve names so the existing list + result render with display names. */
   usePeerProfiles([resolved?.address, ...existing.map(p => p.address)]);
@@ -187,34 +169,14 @@ export default function Search(): React.ReactElement {
           </Text>
         ) : null}
         {filtered.map(p => (
-          <Pressable
+          <SearchRow
             key={p.address.toLowerCase()}
+            address={p.address}
+            title={getPeerName(p.address) ?? shortAddress(p.address)}
+            opening={opening === p.address.toLowerCase()}
             onPress={() => void open(p.address, p.convId)}
-            style={({ pressed }) => ({
-              backgroundColor: pressed ? border : 'transparent',
-              flexDirection: 'row', alignItems: 'center', gap: 12,
-              paddingHorizontal: 14, paddingVertical: 14,
-              borderBottomWidth: 1, borderBottomColor: border,
-            })}
-          >
-            <Avatar
-              address={p.address}
-              size="md"
-              cacheBuster={getPeerAvatarCb(p.address)}
-              style={{ backgroundColor: border }}
-            />
-            <Box style={{ flex: 1, minWidth: 0 }}>
-              <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
-                {getPeerName(p.address) ?? shortAddress(p.address)}
-              </Text>
-              {getPeerName(p.address) ? (
-                <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 2 }} numberOfLines={1}>
-                  {shortAddress(p.address)}
-                </Text>
-              ) : null}
-            </Box>
-            {opening === p.address.toLowerCase() ? <Spinner size={20} color={head} /> : null}
-          </Pressable>
+            c={{ fg, head, sub, border }}
+          />
         ))}
 
         {!resolved && !resolving && !filtered.length && query.trim() ? (

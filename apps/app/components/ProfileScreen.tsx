@@ -6,7 +6,7 @@
  *  into the tab scene) vs `route` (/user/[address], own back button + inset).
  *  Presentational pieces live in ./ProfileScreen.parts to keep this under cap. */
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Pressable } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import type { SimultaneousRefs } from './SwipeTabs';
@@ -15,43 +15,20 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
-import {
-  getCachedXmtpClient, getOrCreateXmtpClient, openDmWithAddress, shortAddress,
-} from '../lib/xmtp';
+import { openDmWithAddress, shortAddress } from '../lib/xmtp';
 import { flash } from '../lib/toast';
 import { useEffectiveColorScheme } from '../lib/theme';
 import { useProfileQuery } from '../lib/useProfile';
 import EditProfileModal from './EditProfileModal';
-import { Icon } from '@metro-labs/kit/icon';
 import { Avatar } from './Avatar';
 import { Box, Col } from './layout';
 import { ImageViewer } from './ImageViewer';
 import {
-  EditMenu, InfoRow, ProfileActions, useProfileColors,
+  EditMenu, InfoRow, ProfileActions, ProfileHeader, useProfileColors, useSelfAddress,
 } from './ProfileScreen.parts';
 import { CommonChannels } from './CommonChannels';
 
 export type ProfileScreenVariant = 'tab' | 'route';
-
-/** Resolve the active account's address: cached client first (synchronous, so
- *  own-vs-other settles on first paint when the client is already up), then a
- *  best-effort async fetch on cold start. */
-function useSelfAddress(): string {
-  const cached = getCachedXmtpClient();
-  const [self, setSelf] = useState(cached?.publicIdentity.identifier ?? '');
-  useEffect(() => {
-    if (self) return;
-    let alive = true;
-    void (async (): Promise<void> => {
-      try {
-        const client = await getOrCreateXmtpClient('production');
-        if (alive) setSelf(client.publicIdentity.identifier);
-      } catch { /* leave blank — treat as other until resolved */ }
-    })();
-    return () => { alive = false; };
-  }, [self]);
-  return self;
-}
 
 export function ProfileScreen({ address, variant, panRef }: {
   address: string;
@@ -98,34 +75,10 @@ export function ProfileScreen({ address, variant, panRef }: {
 
   return (
     <Col flex={1} bg={c.bg}>
-      {/* Header — variant-specific. Both expose the own-profile overflow menu
-          (edit) on the right; the route variant adds a back button on the left.
-          For `route` the header is absolutely positioned so it floats over the
-          full-bleed cover (back button / dots sit on top of the banner); for
-          `tab` it stays an in-flow opaque strip above the scroll content. */}
-      <Box style={{
-        ...(variant === 'route'
-          ? {
-            position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
-            height: 44 + insets.top, paddingTop: insets.top, paddingHorizontal: 14,
-          }
-          : { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 }),
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-      }}>
-        {variant === 'route' ? (
-          <Pressable onPress={() => router.back()} hitSlop={10} style={{ padding: 6 }}>
-            <Icon name="arrowLeft" size={22} color={c.head} />
-          </Pressable>
-        ) : (
-          <Text style={{ color: c.head, fontSize: 22, fontFamily: 'Calibre-Semibold' }}>Profile</Text>
-        )}
-
-        {isSelf ? (
-          <Pressable onPress={() => setMenuOpen(true)} hitSlop={8} style={{ padding: 6 }}>
-            <Icon name="dotsHorizontal" size={22} color={c.head} />
-          </Pressable>
-        ) : null}
-      </Box>
+      <ProfileHeader
+        variant={variant} insetTop={insets.top} isSelf={isSelf} c={c}
+        onBack={() => router.back()} onMenu={() => setMenuOpen(true)}
+      />
 
       <ScrollView simultaneousHandlers={panRef} contentContainerStyle={{ paddingBottom: 32 }}>
         {/* Full-bleed cover banner (input-bg). For the `route` variant the cover

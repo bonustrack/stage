@@ -20,6 +20,12 @@ import * as SecureStore from 'expo-secure-store';
 import { generatePrivateKey, privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts';
 import type { Hex } from 'viem';
 import { setActiveAccountForCache } from './channelsCache';
+import {
+  LEGACY_DB_DIR, LEGACY_PK_KEY, PK_PREFIX,
+  getViemAccount, normalizePk,
+} from './accounts.keys';
+
+export { canExportPrivateKey, getPrivateKey, getViemAccount } from './accounts.keys';
 
 export type AccountType = 'generated' | 'privateKey' | 'walletconnect';
 
@@ -39,29 +45,12 @@ export interface AccountRecord {
 
 const LIST_KEY = 'accounts.list';
 const ACTIVE_KEY = 'accounts.active';
-const PK_PREFIX = 'wallet.pk.';
-/** Pre-multi-account single-key location + its XMTP db dir. */
-const LEGACY_PK_KEY = 'wallet.privateKey';
-const LEGACY_DB_DIR = 'xmtp';
 
 let cache: AccountRecord[] | null = null;
 
 async function persist(list: AccountRecord[]): Promise<void> {
   cache = list;
   await SecureStore.setItemAsync(LIST_KEY, JSON.stringify(list));
-}
-
-/** Accept a private key with or without the `0x` prefix and any case; return a
- *  normalized lowercase `0x…` 32-byte hex, or throw if it isn't 64 hex chars. */
-function normalizePk(input: string): Hex {
-  let pk = input.trim();
-  if (pk.startsWith('0X')) pk = '0x' + pk.slice(2);
-  if (!pk.startsWith('0x')) pk = '0x' + pk;
-  pk = '0x' + pk.slice(2).toLowerCase();
-  if (!/^0x[0-9a-f]{64}$/.test(pk)) {
-    throw new Error('Invalid private key — expected 64 hex characters.');
-  }
-  return pk as Hex;
 }
 
 export async function loadAccounts(): Promise<AccountRecord[]> {
@@ -115,32 +104,6 @@ export async function getActiveAccount(): Promise<AccountRecord | null> {
   return list.find(a => a.id === id) ?? list[0];
 }
 
-export async function getPrivateKey(id: string): Promise<Hex | null> {
-  const pk = await SecureStore.getItemAsync(PK_PREFIX + id).catch(() => null);
-  if (pk && /^0x[0-9a-f]{64}$/.test(pk)) return pk as Hex;
-  /** Self-heal: a key from the pre-multi-account build (or an early multi-account
-   *  build that recorded the account but never copied the key) may still live only
-   *  under the legacy `wallet.privateKey`. Accept it iff it derives to THIS id, and
-   *  re-write it under the per-account key so future reads are direct. WC accounts
-   *  have no key anywhere → still null → WC signing path stays intact. */
-  const legacy = await SecureStore.getItemAsync(LEGACY_PK_KEY).catch(() => null);
-  if (legacy && /^0x[0-9a-fA-F]{64}$/.test(legacy)) {
-    const norm = ('0x' + legacy.slice(2).toLowerCase()) as Hex;
-    try {
-      if (privateKeyToAccount(norm).address.toLowerCase() === id.toLowerCase()) {
-        await SecureStore.setItemAsync(PK_PREFIX + id, norm).catch(() => undefined);
-        return norm;
-      }
-    } catch { /* malformed legacy key — fall through to null */ }
-  }
-  return null;
-}
-
-export async function getViemAccount(id: string): Promise<PrivateKeyAccount | null> {
-  const pk = await getPrivateKey(id);
-  return pk ? privateKeyToAccount(pk) : null;
-}
-
 /** The ACTIVE account as a viem signer, or null when it can't sign in-app
  *  (WalletConnect account, or no stored key) — callers then fall back to the
  *  remote/wagmi signing path. Resolves through getPrivateKey, which self-heals
@@ -149,10 +112,6 @@ export async function getActiveViemAccount(): Promise<PrivateKeyAccount | null> 
   const rec = await getActiveAccount();
   if (!rec || rec.type === 'walletconnect') return null;
   return getViemAccount(rec.id);
-}
-
-export function canExportPrivateKey(rec: AccountRecord): boolean {
-  return rec.type !== 'walletconnect';
 }
 
 async function addLocalAccount(pk: Hex, type: 'generated' | 'privateKey'): Promise<AccountRecord> {

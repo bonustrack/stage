@@ -17,7 +17,7 @@
  *  module. */
 
 import { useCallback, useEffect, useState } from 'react';
-import { BackHandler, Image, Pressable, useWindowDimensions } from 'react-native';
+import { BackHandler, Pressable, useWindowDimensions } from 'react-native';
 import { Box } from './layout';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -25,13 +25,12 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Text } from '@metro-labs/kit/text';
-import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 
 import { useEffectiveColorScheme } from '../lib/theme';
-import { usePeerProfiles, getPeerName } from '../lib/peerProfiles';
-import { shortAddress, stampBoxAvatarUrl, switchToAccount } from '../lib/xmtp';
+import { usePeerProfiles } from '../lib/peerProfiles';
+import { switchToAccount } from '../lib/xmtp';
 import { loadAccounts, getActiveAccountId, type AccountRecord } from '../lib/accounts';
+import { DrawerAccounts, DrawerHeader, DrawerRow } from './LeftDrawer.parts';
 
 /** Spring used for both open + close settles. */
 const SETTLE = { damping: 22, stiffness: 240 } as const;
@@ -155,53 +154,12 @@ export function LeftDrawer({ progress }: { progress: SharedValue<number> }): Rea
           ]}
         >
           {/* Avatar header */}
-          <Box style={{ paddingHorizontal: 18, paddingBottom: 16 }}>
-            {activeRec ? (
-              <>
-                <Image
-                  source={{ uri: stampBoxAvatarUrl(activeRec.address, 120) }}
-                  style={{ width: 56, height: 56, borderRadius: 999, backgroundColor: border, marginBottom: 10 }}
-                />
-                <Text numberOfLines={1} style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold' }}>
-                  {getPeerName(activeRec.address) ?? activeRec.label ?? shortAddress(activeRec.address)}
-                </Text>
-                <Text numberOfLines={1} style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium', marginTop: 1 }}>
-                  {shortAddress(activeRec.address)}
-                </Text>
-              </>
-            ) : null}
-          </Box>
+          <DrawerHeader rec={activeRec} c={{ head, sub, border }} />
 
           <Box style={{ height: 1, backgroundColor: border }} />
 
           {/* Accounts — tap to switch. */}
-          <Box style={{ paddingVertical: 6 }}>
-            {accounts.map((a) => (
-              <Pressable
-                key={a.id}
-                onPress={() => onSwitch(a.id)}
-                style={({ pressed }) => ({
-                  paddingHorizontal: 18, paddingVertical: 11,
-                  flexDirection: 'row', alignItems: 'center', gap: 12,
-                  backgroundColor: pressed ? border : 'transparent',
-                })}
-              >
-                <Image
-                  source={{ uri: stampBoxAvatarUrl(a.address, 56) }}
-                  style={{ width: 30, height: 30, borderRadius: 999, backgroundColor: border }}
-                />
-                <Box style={{ flex: 1, minWidth: 0 }}>
-                  <Text numberOfLines={1} style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>
-                    {getPeerName(a.address) ?? a.label ?? shortAddress(a.address)}
-                  </Text>
-                  <Text numberOfLines={1} style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', marginTop: 1 }}>
-                    {shortAddress(a.address)}
-                  </Text>
-                </Box>
-                {a.id === activeId ? <Icon name="check" size={20} color={head} /> : null}
-              </Pressable>
-            ))}
-          </Box>
+          <DrawerAccounts accounts={accounts} activeId={activeId} onSwitch={onSwitch} c={{ head, sub, border }} />
 
           <Box style={{ height: 1, backgroundColor: border }} />
 
@@ -211,24 +169,5 @@ export function LeftDrawer({ progress }: { progress: SharedValue<number> }): Rea
         </Animated.View>
       </GestureDetector>
     </Box>
-  );
-}
-
-function DrawerRow({ icon, label, onPress, head, sub, border }: {
-  icon: HeroIconName; label: string; onPress: () => void;
-  head: string; sub: string; border: string;
-}): React.ReactElement {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        paddingHorizontal: 18, paddingVertical: 14,
-        flexDirection: 'row', alignItems: 'center', gap: 14,
-        backgroundColor: pressed ? border : 'transparent',
-      })}
-    >
-      <Icon name={icon} size={22} color={sub} />
-      <Text style={{ color: head, fontSize: 17, fontFamily: 'Calibre-Semibold' }}>{label}</Text>
-    </Pressable>
   );
 }

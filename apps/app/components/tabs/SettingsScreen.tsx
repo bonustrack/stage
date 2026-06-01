@@ -1,7 +1,7 @@
 /** Settings tab — wallet-address copy pill + theme switcher + app version. */
 
-import { useCallback, useEffect, useState } from 'react';
-import { Alert, AppState, Pressable } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Alert, Pressable } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import type { SimultaneousRefs } from '../SwipeTabs';
 import { Text } from '@metro-labs/kit/text';
@@ -10,9 +10,6 @@ import * as Clipboard from 'expo-clipboard';
 import Constants from 'expo-constants';
 import { DevSettings } from 'react-native';
 import { getOrCreateXmtpClient, resetXmtpClient, shortAddress } from '../../lib/xmtp';
-import {
-  hasOverlayPermission, isPillAvailable, requestOverlayPermission,
-} from '../../lib/pill';
 import { flash } from '../../lib/toast';
 import { resetAccount } from '../../lib/wallet';
 import { useAccountEpoch } from '../../lib/accountEpoch';
@@ -20,18 +17,10 @@ import { Icon } from '@metro-labs/kit/icon';
 import { Col } from '../layout';
 import {
   setThemePreference, useEffectiveColorScheme, usePalette, useThemePreference,
-  type ThemePreference,
 } from '../../lib/theme';
+import { PillSection, THEME_OPTIONS } from './SettingsScreen.parts';
 
 const APP_VERSION = Constants.expoConfig?.version ?? 'unknown';
-
-import type { HeroIconName } from '@metro-labs/kit/icon';
-
-const THEME_OPTIONS: { value: ThemePreference; label: string; icon: HeroIconName }[] = [
-  { value: 'system', label: 'System', icon: 'desktop' },
-  { value: 'light',  label: 'Light',  icon: 'sun' },
-  { value: 'dark',   label: 'Dark',   icon: 'moon' },
-];
 
 export function SettingsScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
@@ -44,30 +33,6 @@ export function SettingsScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): 
   const [myAddress, setMyAddress] = useState<string>('');
   const [myInboxId, setMyInboxId] = useState<string>('');
 
-  /** Floating voice pill — now a PER-PERSON shortcut launched from a chat's
-   *  "Float as pill" overflow item. Settings only owns the overlay-permission
-   *  grant (the special SYSTEM_ALERT_WINDOW that the pill needs); the grant has
-   *  no callback, so we re-poll on return-to-foreground. */
-  const pillSupported = isPillAvailable();
-  const [overlayGranted, setOverlayGranted] = useState(false);
-
-  useEffect(() => {
-    if (pillSupported) setOverlayGranted(hasOverlayPermission());
-  }, [pillSupported]);
-
-  useEffect(() => {
-    if (!pillSupported) return undefined;
-    const subscription = AppState.addEventListener('change', (state) => {
-      if (state === 'active') setOverlayGranted(hasOverlayPermission());
-    });
-    return () => subscription.remove();
-  }, [pillSupported]);
-
-  const grantOverlay = useCallback(() => {
-    if (hasOverlayPermission()) { setOverlayGranted(true); return; }
-    void requestOverlayPermission();
-    flash('Allow “Display over other apps”, then return');
-  }, []);
   useEffect(() => {
     let alive = true;
     void (async (): Promise<void> => {
@@ -157,35 +122,7 @@ export function SettingsScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): 
         })}
       </Col>
 
-      {pillSupported ? (
-        <>
-          <Text style={{ color: sub, fontSize: 13, paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8, fontFamily: 'Calibre-Medium' }}>
-            FLOATING VOICE PILL
-          </Text>
-          <Pressable
-            onPress={overlayGranted ? undefined : grantOverlay}
-            style={{
-              marginHorizontal: 16, borderRadius: 12, overflow: 'hidden',
-              borderWidth: 1, borderColor: border, backgroundColor: rowBg,
-              paddingHorizontal: 14, paddingVertical: 12,
-              flexDirection: 'row', alignItems: 'center', gap: 12,
-            }}
-          >
-            <Icon name="microphone" size={22} color={head} />
-            <Col flex={1}>
-              <Text style={{ color: fg, fontSize: 16, fontFamily: 'Calibre-Medium' }}>Floating voice pill</Text>
-              <Text style={{ color: sub, fontSize: 13, marginTop: 2, fontFamily: 'Calibre-Medium' }}>
-                {overlayGranted
-                  ? 'Ready. Open a chat → ⋯ → “Float as pill” to launch it for that person.'
-                  : 'Grant “Display over other apps” to enable. Launch it per-person from a chat’s “Float as pill”.'}
-              </Text>
-            </Col>
-            {overlayGranted
-              ? <Icon name="check" size={20} color={head} />
-              : <Text style={{ color: head, fontSize: 14, fontFamily: 'Calibre-Medium' }}>Grant</Text>}
-          </Pressable>
-        </>
-      ) : null}
+      <PillSection c={{ fg, head, sub, border, rowBg }} />
 
       <Col mt={32} px={16}>
         <Pressable
