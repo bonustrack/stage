@@ -46,18 +46,29 @@ export function useConversationState(convId: string | undefined, focus: string |
    *  push for it (the user is already looking at it). Set on focus, cleared on
    *  blur AND when the app backgrounds (so a push for THIS conv still fires once
    *  the user can't see it). `active_conv == convId` ⟺ "foreground + viewing it".
-   *  Native no-ops the call off-Android / on pre-module builds. */
+   *  Native no-ops the call off-Android / on pre-module builds.
+   *
+   *  CASE NORMALISATION (the suppression bug): the native FCM service does an
+   *  EXACT-string `active_conv == data.convId` compare. The value the daemon
+   *  sends (`parseLine(line).convId`, from the node-sdk `conversation.id`) and
+   *  the value this screen stores (the route param, from the RN-sdk
+   *  `Conversation.id`) are both the MLS group-id hex — but the two SDKs are NOT
+   *  guaranteed to return the SAME case, so a mixed-case skew makes the exact
+   *  compare never match and the push for the open conversation still fires.
+   *  Lowercasing here + on the daemon side (xmtp-push-title) makes the native
+   *  exact compare case-insensitive WITHOUT a new APK. */
+  const activeConvId = useMemo(() => convId?.toLowerCase(), [convId]);
   useFocusEffect(useCallback(() => {
-    if (!convId) return;
-    setActiveConversation(convId);
+    if (!activeConvId) return;
+    setActiveConversation(activeConvId);
     const sub = AppState.addEventListener('change', (s) => {
-      setActiveConversation(s === 'active' ? convId : null);
+      setActiveConversation(s === 'active' ? activeConvId : null);
     });
     return () => {
       sub.remove();
       setActiveConversation(null);
     };
-  }, [convId]));
+  }, [activeConvId]));
   const status: 'idle' | 'connecting' | 'open' | 'error' = xmtpFeed.status === 'open' ? 'open'
     : xmtpFeed.status === 'loading' ? 'connecting'
       : xmtpFeed.status === 'error' ? 'error' : 'idle';

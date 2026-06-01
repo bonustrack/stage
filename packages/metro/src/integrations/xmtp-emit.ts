@@ -162,7 +162,9 @@ export function emitOutbound(accountId: string, line: string, messageId: string,
     const name = addr ? await resolveProfileName(addr) : '';
     const title = name || (addr ? shortAddr(addr) : 'New message');
     const data: Record<string, string> = { line, messageId };
-    { const p = parseLine(line); if (p) data.convId = p.convId; }
+    // Lowercase the bare convId to match the app's stored active_conv (see
+    // xmtp-push-title) so the native exact-string push suppression matches.
+    { const p = parseLine(line); if (p) data.convId = p.convId.toLowerCase(); }
     if (addr) data.avatarUrl = `https://stamp.fyi/avatar/eth:${addr}?s=128`;
     await fcmPushToAll(accountId, title, preview, data);
   })().catch(() => undefined);

@@ -88,7 +88,10 @@ export function pushInbound(
   void (async (): Promise<void> => {
     const { title, body, avatarUrl } = await pushTitleBody(accountId, env, msg);
     const data: Record<string, string> = { line, messageId };
-    { const p = parseLine(line); if (p) data.convId = p.convId; }
+    // Lowercase the bare convId so the APK's native EXACT-string suppression
+    // (`active_conv == data.convId`) matches the value the app stores from the
+    // RN-sdk `Conversation.id`, regardless of any node-sdk/RN-sdk case skew.
+    { const p = parseLine(line); if (p) data.convId = p.convId.toLowerCase(); }
     if (avatarUrl) data.avatarUrl = avatarUrl;
     // Group rendering hints for MetroFcmService: DMs expose peerInboxId(); groups
     // don't. Group title = conv.name (string or async fn). FCM data is string-only.
