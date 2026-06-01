@@ -42,6 +42,32 @@ function getDecodeAudioData(): typeof DecodeAudioData | null {
   return decodeAudioDataFn;
 }
 
+/** Resolve any voice-note source into a form `decodeAudioData` can actually
+ *  decode on-device. The native decoder accepts three input shapes but rejects
+ *  most string sources outright:
+ *   - `file://…` / bare path → decoded directly off disk (works).
+ *   - `http(s)://…`          → fetched then decoded (works).
+ *   - `data:audio/…;base64,` → THROWN by `isBase64Source` ("Base64 source
+ *                              decoding is not currently supported").
+ *   - `blob:…`               → THROWN by `isDataBlobString`.
+ *  Inline XMTP voice notes (StaticAttachment) render as `data:audio/m4a;base64,`
+ *  and the sender's own optimistic echo can be `blob:`/`data:` — both hit the
+ *  reject branches, so the decode always failed and the player fell back to the
+ *  synthetic waveform. We sidestep every string-source rejection by fetching
+ *  non-file/non-http sources into an ArrayBuffer (the `data:`/`blob:` fetch is a
+ *  cheap in-memory read) and handing that to the decoder's memory-block path,
+ *  which decodes m4a/aac/mp3/wav uniformly. `file://`/`http(s)` pass through so
+ *  remote decrypted clips still decode straight off disk / the network. */
+async function toDecodableInput(uri: string): Promise<string | ArrayBuffer> {
+  if (
+    uri.startsWith('file://') || uri.startsWith('/') ||
+    uri.startsWith('http://') || uri.startsWith('https://')
+  ) {
+    return uri;
+  }
+  return await (await fetch(uri)).arrayBuffer();
+}
+
 /** Decode `uri` to Float32 mono PCM, then bucket into `count` normalized bar
  *  heights (0..1) using per-bucket RMS (smoother + more speech-like than peak,
  *  which spikes on transients). Throws on any decode failure — caller falls
@@ -49,10 +75,21 @@ function getDecodeAudioData(): typeof DecodeAudioData | null {
 export async function decodeWaveformBars(uri: string, count: number): Promise<number[]> {
   const decodeAudioData = getDecodeAudioData();
   if (!decodeAudioData) throw new Error('react-native-audio-api unavailable');
-  const buffer = await decodeAudioData(uri, DECODE_SAMPLE_RATE);
-  const pcm = buffer.getChannelData(0);
-  if (!pcm || pcm.length === 0) throw new Error('empty PCM');
-  return bucketRms(pcm, count);
+  try {
+    const input = await toDecodableInput(uri);
+    const buffer = await decodeAudioData(input, DECODE_SAMPLE_RATE);
+    const pcm = buffer.getChannelData(0);
+    if (!pcm || pcm.length === 0) throw new Error('empty PCM');
+    return bucketRms(pcm, count);
+  } catch (err) {
+    /** One-line dev breadcrumb so the next on-device test reveals the exact
+     *  native error (codec/path/permission) behind a synthetic-bar fallback. */
+    if (__DEV__) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`[VoiceMessage] decode failed for ${uri.slice(0, 48)}: ${msg}`);
+    }
+    throw err;
+  }
 }
 
 /** Split `pcm` into `count` contiguous buckets, take each bucket's RMS, then
