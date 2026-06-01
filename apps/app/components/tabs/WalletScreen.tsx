@@ -329,19 +329,20 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
                   source={{ uri: r.logoUrl }}
                   style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border }}
                 />
-                {/* Network badge — round chip (border-2 in page bg, muted bg) with
-                    the logo INSET + centered so it never touches the border / gets
-                    cropped (Snapshot-style). Logo is smaller than the chip. */}
+                {/* Network badge — round chip with a page-bg border ring; the logo
+                    FILLS the circle (cover) and is clipped to a full circle by the
+                    chip's overflow, so a square logo (e.g. Base) renders as a circle
+                    just like Ethereum — identical style for every network. */}
                 <Box style={{
                   position: 'absolute', right: -3, bottom: -3,
                   width: 18, height: 18, borderRadius: 999,
                   borderWidth: 1.5, borderColor: bg, backgroundColor: border,
-                  alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+                  overflow: 'hidden',
                 }}>
                   <Image
                     source={{ uri: NETWORK_LOGO[r.chainId] ?? MAINNET_NETWORK_LOGO }}
-                    resizeMode="contain"
-                    style={{ width: 13, height: 13 }}
+                    resizeMode="cover"
+                    style={{ width: '100%', height: '100%' }}
                   />
                 </Box>
               </Box>
