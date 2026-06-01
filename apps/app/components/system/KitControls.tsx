@@ -79,6 +79,34 @@ export function TextField({ label, value, onChange, p, placeholder }: {
   );
 }
 
+/** Numeric input — same chrome as TextField but keyboardType=numeric; the value
+ *  is parsed to a number on change (empty / NaN clamps to `min`). */
+export function NumberField({ label, value, onChange, p, min = 0 }: {
+  label: string; value: number; onChange: (v: number) => void;
+  p: ControlPalette; min?: number;
+}): React.ReactElement {
+  return (
+    <Box mt={14}>
+      <FieldLabel label={label} sub={p.sub} />
+      <TextInput
+        value={String(value)}
+        onChangeText={(t) => {
+          const n = Number(t.replace(/[^0-9.]/g, ''));
+          onChange(Number.isFinite(n) ? n : min);
+        }}
+        keyboardType="numeric"
+        placeholderTextColor={p.sub}
+        style={{
+          marginTop: 8, borderWidth: 1, borderColor: p.border, borderRadius: 10,
+          paddingHorizontal: 12, paddingVertical: 10,
+          color: p.head, fontSize: 15, fontFamily: 'Calibre-Medium',
+          backgroundColor: p.rowBg,
+        }}
+      />
+    </Box>
+  );
+}
+
 export function ToggleField({ label, value, onChange, p }: {
   label: string; value: boolean; onChange: (v: boolean) => void; p: ControlPalette;
 }): React.ReactElement {

@@ -1,7 +1,8 @@
 /** Kit page — a Storybook-style explorer of @metro-labs/kit components. A single
  *  underline tab bar (KitTabs) switches between Title / Text / Button / Icons;
- *  each tab shows live, editable controls + a preview above the full grid of
- *  every size/variant. Also hosts the app-wide theme switcher. */
+ *  each tab shows a live preview above a controls form that is DYNAMICALLY
+ *  GENERATED from a per-component prop-spec (KitSpec) via the generic
+ *  ControlsForm. Also hosts the app-wide theme switcher. */
 
 import { Box } from '../layout';
 import { ThemeSwitcher } from './ThemeSwitcher';

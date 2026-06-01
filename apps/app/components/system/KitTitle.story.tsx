@@ -1,34 +1,27 @@
-/** Title story tab — live Title preview driven by a level control + text input,
- *  above the full levels/size-tokens gallery. Level state is typed as the kit's
- *  TitleLevel union; the preview renders Title at that level. */
+/** Title story tab — thin wrapper: state seeded from TITLE_SPEC, a live Title
+ *  preview, and the generic ControlsForm driving level + text. No bespoke form
+ *  code — fully data-driven from KitSpec. */
 
 import { useState } from 'react';
 import { Box } from '../layout';
-import { Title, type TitleLevel } from '@metro-labs/kit/title';
-import { Segmented, TextField, PreviewStage, type ControlPalette } from './KitControls';
-import { TitleSection } from './KitGallery.title';
-
-const LEVELS: ReadonlyArray<TitleLevel> = [1, 2, 3];
+import { Title } from '@metro-labs/kit/title';
+import { PreviewStage, type ControlPalette } from './KitControls';
+import { ControlsForm } from './ControlsForm';
+import { TITLE_SPEC, defaultsOf, type TitleState } from './KitSpec';
 
 export function KitTitleStory({ p }: { p: ControlPalette }): React.ReactElement {
   const { dark, head } = p;
-  const [level, setLevel] = useState<TitleLevel>(1);
-  const [text, setText] = useState<string>('The quick brown fox');
+  const [s, setS] = useState<TitleState>(() => defaultsOf(TITLE_SPEC));
 
   return (
     <Box>
       <PreviewStage p={p}>
-        <Title dark={dark} level={level} color={head}>{text || ' '}</Title>
+        <Title dark={dark} level={s.level} color={head}>
+          {s.text || ' '}
+        </Title>
       </PreviewStage>
 
-      <Segmented label="Level" value={level} options={LEVELS}
-        onChange={setLevel} labelOf={(l) => `Level ${l}`} p={p} />
-      <TextField label="Text" value={text} onChange={setText} p={p}
-        placeholder="The quick brown fox" />
-
-      <Box mt={24}>
-        <TitleSection dark={dark} head={head} />
-      </Box>
+      <ControlsForm spec={TITLE_SPEC} value={s} onChange={setS} p={p} />
     </Box>
   );
 }
