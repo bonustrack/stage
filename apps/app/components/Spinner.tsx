@@ -34,7 +34,7 @@ export function Spinner({ size = 24, color = '#000000' }: { size?: number; color
         <G transform="translate(2)" fill="none" fillRule="evenodd">
           <Circle stroke={`url(#${gid})`} strokeWidth={4} cx={10} cy={12} r={10} />
           <Path d="M10 2C4.477 2 0 6.477 0 12" stroke={color} strokeWidth={4} />
-          <Rect x={8} width={4} height={4} rx={8} fill={color} />
+          <Rect x={8} width={4} height={4} rx={0} fill={color} />
         </G>
       </Svg>
     </Animated.View>

@@ -63,7 +63,22 @@ export async function getNfts(address: string, chainId: string): Promise<Nft[]> 
     : 'https://api.opensea.io';
   const url = `${base}/api/v2/chain/${name}/account/${address}/nfts`;
 
-  const res = await fetch(url, { headers: { 'x-api-key': OPENSEA_API_KEY } });
+  // RN fetch has no built-in timeout; without one a hung chain request leaves
+  // Promise.all (in getNftsAcrossChains) pending forever → the NFT grid spinner
+  // spins indefinitely. Abort after 10s and degrade to [] like a non-200.
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 10000);
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      headers: { 'x-api-key': OPENSEA_API_KEY },
+      signal: ctrl.signal,
+    });
+  } catch {
+    return []; // aborted / network error — degrade gracefully
+  } finally {
+    clearTimeout(timer);
+  }
   if (!res.ok) return []; // rate-limited / not found — degrade gracefully
 
   const result = (await res.json()) as { nfts?: ApiNft[] };
