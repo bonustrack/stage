@@ -12,8 +12,8 @@ import { Spinner } from '../Spinner';
 import type { SimultaneousRefs } from '../SwipeTabs';
 import { Text } from '@metro-labs/kit/text';
 import { Title } from '@metro-labs/kit/title';
-import { createPublicClient, http, formatEther, formatUnits, type Hex } from 'viem';
-import { mainnet } from 'viem/chains';
+import { createPublicClient, http, formatEther, formatUnits, type Hex, type Chain } from 'viem';
+import { mainnet, base } from 'viem/chains';
 import { useRouter } from 'expo-router';
 import { getOrCreateXmtpClient } from '../../lib/xmtp';
 import { flash } from '../../lib/toast';
@@ -37,19 +37,29 @@ const MULTICALL3 = '0xcA11bde05977b3631167028862bE2a173976CA11' as const;
  *  native ETH; stamp.fyi serves it from a curated set. */
 interface Asset {
   symbol: string; name: string; decimals: number;
+  /** Chain this asset lives on (1 = Ethereum, 8453 = Base). */
+  chainId: number;
   address: Hex | null;
   logoAddress: string;
   cgId?: string;        // coingecko id for native price lookup
+  /** CoinGecko asset-platform id for the contract-price endpoint
+   *  (`ethereum`, `base`). Only set for ERC-20 rows. */
+  cgPlatform?: string;
 }
 const ASSETS: Asset[] = [
-  { symbol: 'ETH',  name: 'Ethereum',  decimals: 18, address: null, logoAddress: NATIVE_TOKEN_SENTINEL, cgId: 'ethereum' },
-  { symbol: 'USDC', name: 'USD Coin',  decimals: 6,  address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', logoAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' },
-  { symbol: 'USDT', name: 'Tether USD', decimals: 6, address: '0xdAC17F958D2ee523a2206206994597C13D831ec7', logoAddress: '0xdAC17F958D2ee523a2206206994597C13D831ec7' },
+  { symbol: 'ETH',  name: 'Ethereum',  decimals: 18, chainId: 1,    address: null, logoAddress: NATIVE_TOKEN_SENTINEL, cgId: 'ethereum' },
+  { symbol: 'USDC', name: 'USD Coin',  decimals: 6,  chainId: 1,    address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', logoAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', cgPlatform: 'ethereum' },
+  { symbol: 'ETH',  name: 'Ethereum',  decimals: 18, chainId: 8453, address: null, logoAddress: NATIVE_TOKEN_SENTINEL, cgId: 'ethereum' },
+  { symbol: 'USDC', name: 'USD Coin',  decimals: 6,  chainId: 8453, address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', logoAddress: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', cgPlatform: 'base' },
 ];
-/** Mainnet network bullet — Snapshot's IPFS-hosted logo (same one used in
- *  the UI's `BadgeNetwork` over the IPFS gateway at `ipfs.snapshot.box`).
- *  Hardcoded so we don't need to pull snapshot.js's full networks.json. */
+/** Network bullets — Ethereum is Snapshot's IPFS-hosted logo (the UI's
+ *  `BadgeNetwork`); Base is the canonical brand mark. Keyed by chainId so the
+ *  renderer can drop the right badge over each token avatar. */
 const MAINNET_NETWORK_LOGO = 'https://ipfs.snapshot.box/ipfs/bafkreid7ndxh6y2ljw2jhbisodiyrhcy2udvnwqgon5wgells3kh4si5z4';
+const BASE_NETWORK_LOGO = 'https://raw.githubusercontent.com/base-org/brand-kit/main/logo/symbol/Base_Symbol_Blue.png';
+const NETWORK_LOGO: Record<number, string> = { 1: MAINNET_NETWORK_LOGO, 8453: BASE_NETWORK_LOGO };
+const NETWORK_LABEL: Record<number, string> = { 1: 'Ethereum', 8453: 'Base' };
+const VIEM_CHAINS: Record<number, Chain> = { 1: mainnet, 8453: base };
 
 const erc20Abi = [{
   name: 'balanceOf', type: 'function', stateMutability: 'view',
@@ -64,6 +74,8 @@ const multicall3Abi = [{
 
 interface AssetRow {
   symbol: string; name: string;
+  /** Chain this row's asset lives on — drives the network badge + label. */
+  chainId: number;
   /** Decimal-string balance (`formatUnits` output). */
   balance: string;
   /** USD price per unit, or null when CoinGecko didn't return this asset. */
@@ -122,35 +134,52 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
         const addr = client.publicIdentity.identifier;
         if (cancelled) return;
         setAddress(addr);
-        const pub = createPublicClient({ chain: mainnet, transport: http('https://rpc.brovider.xyz/1') });
-        /** One Multicall3 batch: ETH balance via getEthBalance + every ERC-20's balanceOf. */
-        const calls = ASSETS.map(a => a.address === null
-          ? { address: MULTICALL3, abi: multicall3Abi, functionName: 'getEthBalance' as const, args: [addr as Hex] }
-          : { address: a.address, abi: erc20Abi, functionName: 'balanceOf' as const, args: [addr as Hex] });
-        const results = await pub.multicall({ contracts: calls });
-        /** Prices in parallel: contract endpoint for ERC-20s, simple-price for ETH. */
-        const erc20Addrs = ASSETS.filter(a => a.address).map(a => a.address!.toLowerCase());
-        const cgIds = ASSETS.filter(a => a.cgId).map(a => a.cgId!);
         type Price = { usd: number; usd_24h_change?: number };
-        const [tokenPrices, simplePrices] = await Promise.all([
-          getErc20UsdPrices('ethereum', erc20Addrs).catch(() => ({} as Record<string, Price>)),
+
+        /** Balances: one Multicall3 round-trip PER chain (brovider is multichain —
+         *  the path segment is the chainId). Each chain batches ETH balance via
+         *  getEthBalance + every ERC-20's balanceOf, and we run the chains in
+         *  parallel. Returns a chainId → (per-asset raw balance) map. */
+        const chainIds = [...new Set(ASSETS.map(a => a.chainId))];
+        const balancesByChain = new Map<number, bigint[]>();
+        await Promise.all(chainIds.map(async cid => {
+          const chainAssets = ASSETS.filter(a => a.chainId === cid);
+          const pub = createPublicClient({ chain: VIEM_CHAINS[cid]!, transport: http('https://rpc.brovider.xyz/' + cid) });
+          const calls = chainAssets.map(a => a.address === null
+            ? { address: MULTICALL3, abi: multicall3Abi, functionName: 'getEthBalance' as const, args: [addr as Hex] }
+            : { address: a.address, abi: erc20Abi, functionName: 'balanceOf' as const, args: [addr as Hex] });
+          const results = await pub.multicall({ contracts: calls });
+          balancesByChain.set(cid, results.map(r => r.status === 'success' ? r.result as bigint : 0n));
+        }));
+
+        /** Prices: simple-price once for ETH (same asset price on every chain),
+         *  plus the contract endpoint per CoinGecko platform for the ERC-20s. */
+        const platforms = [...new Set(ASSETS.filter(a => a.cgPlatform).map(a => a.cgPlatform!))];
+        const cgIds = [...new Set(ASSETS.filter(a => a.cgId).map(a => a.cgId!))];
+        const [simplePrices, ...platformPriceList] = await Promise.all([
           getSimplePrices(cgIds).catch(() => ({} as Record<string, Price>)),
+          ...platforms.map(p => getErc20UsdPrices(p, ASSETS.filter(a => a.cgPlatform === p).map(a => a.address!.toLowerCase()))
+            .catch(() => ({} as Record<string, Price>))),
         ]);
+        const tokenPricesByPlatform = new Map<string, Record<string, Price>>(
+          platforms.map((p, i) => [p, platformPriceList[i]!]),
+        );
         if (cancelled) return;
-        const next: AssetRow[] = ASSETS.map((a, i) => {
-          const r = results[i]!;
-          const raw = r.status === 'success' ? r.result as bigint : 0n;
+
+        const next: AssetRow[] = ASSETS.map(a => {
+          const idx = ASSETS.filter(x => x.chainId === a.chainId).indexOf(a);
+          const raw = balancesByChain.get(a.chainId)?.[idx] ?? 0n;
           const balance = a.address === null
             ? formatEther(raw)
             : formatUnits(raw, a.decimals);
           const priceRec: Price | undefined = a.address === null
             ? (a.cgId ? simplePrices[a.cgId] : undefined)
-            : tokenPrices[a.address.toLowerCase()];
+            : (a.cgPlatform ? tokenPricesByPlatform.get(a.cgPlatform)?.[a.address.toLowerCase()] : undefined);
           const priceUsd = priceRec?.usd ?? null;
           const change24h = typeof priceRec?.usd_24h_change === 'number' ? priceRec.usd_24h_change : null;
           return {
-            symbol: a.symbol, name: a.name, balance, priceUsd, change24h,
-            logoUrl: stampTokenUrl(1, a.logoAddress, 32),
+            symbol: a.symbol, name: a.name, chainId: a.chainId, balance, priceUsd, change24h,
+            logoUrl: stampTokenUrl(a.chainId, a.logoAddress, 32),
           };
         });
         setRows(next);
@@ -287,7 +316,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
             `${r.change24h >= 0 ? '+' : ''}${r.change24h.toFixed(2)}%`;
           return (
             <Row
-              key={r.symbol}
+              key={`${r.chainId}:${r.symbol}`}
               align="center" gap={12} py={14}
               style={{
                 borderBottomWidth: 1, borderBottomColor: border,
@@ -302,7 +331,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
                   style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border }}
                 />
                 <Image
-                  source={{ uri: MAINNET_NETWORK_LOGO }}
+                  source={{ uri: NETWORK_LOGO[r.chainId] ?? MAINNET_NETWORK_LOGO }}
                   resizeMode="contain"
                   style={{
                     position: 'absolute', right: -2, bottom: -2,
@@ -313,7 +342,12 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
               </Box>
               {/* Left column — token NAME (top) over price + 24h change (bottom). */}
               <Col flex={1} style={{ minWidth: 0 }}>
-                <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{r.name}</Text>
+                <Row align="center" gap={6}>
+                  <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{r.name}</Text>
+                  <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
+                    {`on ${NETWORK_LABEL[r.chainId] ?? r.chainId}`}
+                  </Text>
+                </Row>
                 <Row align="center" gap={6} mt={2}>
                   <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
                     {r.priceUsd === null ? r.symbol : fmtUsd(r.priceUsd, r.priceUsd < 1 ? 4 : 2)}
