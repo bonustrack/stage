@@ -20,6 +20,13 @@ export const fmtUsd = (v: number, maxFrac = 2): string => {
   });
   return s.replace(/^US\$/, '$');
 };
+/** Split a formatted USD string into its integer part (incl. currency symbol +
+ *  grouping) and its decimal fraction (incl. the leading `.`), so the decimals
+ *  can render in a dimmer colour. Returns `dec: ''` when there are no decimals. */
+export const splitUsd = (s: string): { int: string; dec: string } => {
+  const i = s.lastIndexOf('.');
+  return i === -1 ? { int: s, dec: '' } : { int: s.slice(0, i), dec: s.slice(i) };
+};
 export const fmtBalance = (v: string): string => {
   const n = Number(v);
   /** Tighter precision for big numbers; more for dust. Keeps the row clean

@@ -10,7 +10,6 @@ import { ScrollView } from 'react-native-gesture-handler';
 import { Spinner } from '../Spinner';
 import type { SimultaneousRefs } from '../SwipeTabs';
 import { Text } from '@metro-labs/kit/text';
-import { Title } from '@metro-labs/kit/title';
 import { useRouter } from 'expo-router';
 import { getOrCreateXmtpClient } from '../../lib/xmtp';
 import { flash } from '../../lib/toast';
@@ -20,7 +19,7 @@ import { Col, Row } from '../layout';
 import { getNftsAcrossChains, type Nft } from '../../lib/opensea';
 import { type AssetRow } from './WalletScreen.assets';
 import { fetchAssetRows } from './WalletScreen.data';
-import { Btn, WalletTabs, TokenRow, NftsView, fmtUsd } from './WalletScreen.parts';
+import { Btn, WalletTabs, TokenRow, NftsView, fmtUsd, splitUsd } from './WalletScreen.parts';
 
 export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const router = useRouter();
@@ -85,21 +84,21 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
 
   return (
     <ScrollView simultaneousHandlers={panRef} style={{ flex: 1, backgroundColor: bg }} contentContainerStyle={{ paddingBottom: 24 }}>
-      <Col px={16} pt={16} pb={8}>
-        <Title style={{ color: head, fontSize: 22 }}>Wallet</Title>
-      </Col>
-
       {/* Value card — compact, left-aligned. Just the big total USD value;
           the account header (avatar/name/address) and the "TOTAL VALUE ·
-          ETHEREUM" label were dropped per review. */}
-      <Col mx={16} mt={8} py={16} align="start">
+          ETHEREUM" label were dropped per review. Decimals render in the dim
+          `sub` colour to keep the leading dollars prominent. */}
+      <Col mx={16} pt={20} pb={16} align="start">
         {err ? (
           <Text style={{ color: '#d96868', fontSize: 13, fontFamily: 'Calibre-Medium' }}>
             Couldn’t load balances
           </Text>
+        ) : totalUsd === null ? (
+          <Text style={{ color: head, fontSize: 38, fontFamily: 'Calibre-Semibold' }}>…</Text>
         ) : (
-          <Text style={{ color: head, fontSize: 34, fontFamily: 'Calibre-Semibold' }}>
-            {totalUsd === null ? '…' : fmtUsd(totalUsd)}
+          <Text style={{ color: head, fontSize: 38, fontFamily: 'Calibre-Semibold' }}>
+            {splitUsd(fmtUsd(totalUsd)).int}
+            <Text style={{ color: sub }}>{splitUsd(fmtUsd(totalUsd)).dec}</Text>
           </Text>
         )}
       </Col>
