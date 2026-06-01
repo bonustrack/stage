@@ -1,4 +1,3 @@
-/* eslint-env node */
 /**
  * Extends Expo's Metro config for the bun monorepo:
  * - accept `.woff2` as a bundled asset (Calibre fonts under assets/fonts/)

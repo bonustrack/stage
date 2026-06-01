@@ -9,9 +9,9 @@ export default tseslint.config(
       // Strong typing: ban `any`. Use `unknown` + narrowing, real interfaces,
       // generics, or library types instead.
       "@typescript-eslint/no-explicit-any": "error",
-      // `warn`, not `error`: RN screens/components legitimately exceed 200 lines.
-      // Keeps the signal (tracks files to split later) without failing CI.
-      "max-lines": ["warn", { max: 200, skipBlankLines: false, skipComments: false }],
+      // `error`: every file in the codebase has been split to ≤200 lines.
+      // Hard cap, no exceptions — split a file rather than crossing it.
+      "max-lines": ["error", { max: 200, skipBlankLines: false, skipComments: false }],
       /** React Native bundles assets via require() — exempt. */
       "@typescript-eslint/no-require-imports": "off",
       // Steer layout containers to the Box/Row/Col primitives instead of raw View.
@@ -40,6 +40,14 @@ export default tseslint.config(
     files: ["components/layout/**"],
     rules: {
       "no-restricted-imports": "off",
+    },
+  },
+  {
+    // Build-config files (metro.config.js, expo config plugins) are CommonJS —
+    // require() is the correct module syntax there, and they aren't app source.
+    files: ["**/*.js"],
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
     },
   },
 );
