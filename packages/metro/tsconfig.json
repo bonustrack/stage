@@ -17,5 +17,6 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  "exclude": ["src/trains/discord.ts", "src/trains/telegram.ts", "src/trains/xmtp.ts"]
 }
