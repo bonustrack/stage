@@ -19,7 +19,9 @@ import { Col, Row } from '../layout';
 import { getNftsAcrossChains, type Nft } from '../../lib/opensea';
 import { type AssetRow } from './WalletScreen.assets';
 import { fetchAssetRows } from './WalletScreen.data';
-import { Btn, WalletTabs, TokenRow, NftsView, fmtUsd, splitUsd } from './WalletScreen.parts';
+import { Btn, WalletTabs, TokenRow, NftsView, fmtUsd, splitUsd, type WalletTab } from './WalletScreen.parts';
+import { PrivateView } from './WalletScreen.private';
+import { prewarmRailgun } from '../../lib/railgun/engine';
 
 export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const router = useRouter();
@@ -33,7 +35,13 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
   /** Tokens | NFTs segmented toggle. NFTs are lazy-loaded: we only fetch on
    *  the first switch to the NFTs tab, then cache in `nfts` so toggling back
    *  and forth doesn't refetch. `nftStatus` drives the loading/error/empty UI. */
-  const [tab, setTab] = useState<'tokens' | 'nfts'>('tokens');
+  const [tab, setTab] = useState<WalletTab>('tokens');
+
+  /** Eagerly pre-warm the Railgun engine + prover + Groth16 artifacts in the
+   *  background as soon as the wallet opens (behind the native guard, no-op when
+   *  the module isn't linked) so hitting Send on the Private tab pays no
+   *  cold-start cost — the proof can start immediately. */
+  useEffect(() => { void prewarmRailgun(); }, []);
   const [nfts, setNfts] = useState<Nft[] | null>(null);
   const [nftStatus, setNftStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
 
@@ -115,7 +123,9 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
 
       <WalletTabs tab={tab} setTab={setTab} head={head} sub={sub} border={border} />
 
-      {tab === 'nfts' ? (
+      {tab === 'private' ? (
+        <PrivateView head={head} sub={sub} border={border} />
+      ) : tab === 'nfts' ? (
         <NftsView status={nftStatus} nfts={nfts} head={head} sub={sub} border={border} />
       ) : err ? (
         <Col mx={16} py={40} align="center">

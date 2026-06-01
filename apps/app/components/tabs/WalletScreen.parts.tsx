@@ -62,14 +62,17 @@ export function Btn({ icon, label, onPress, head, border, card }: {
   );
 }
 
-/** Tokens | NFTs underline tabs — Snapshot-treasury style. */
+export type WalletTab = 'tokens' | 'nfts' | 'private';
+const TAB_LABEL: Record<WalletTab, string> = { tokens: 'Tokens', nfts: 'NFTs', private: 'Private' };
+
+/** Tokens | NFTs | Private underline tabs — Snapshot-treasury style. */
 export function WalletTabs({ tab, setTab, head, sub, border }: {
-  tab: 'tokens' | 'nfts'; setTab: (t: 'tokens' | 'nfts') => void; head: string; sub: string; border: string;
+  tab: WalletTab; setTab: (t: WalletTab) => void; head: string; sub: string; border: string;
 }): React.ReactElement {
   return (
     <Row justify="start" gap={24} mx={16} mt={22} mb={6}
       style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-      {(['tokens', 'nfts'] as const).map(t => {
+      {(['tokens', 'nfts', 'private'] as const).map(t => {
         const active = tab === t;
         return (
           <Pressable
@@ -83,7 +86,7 @@ export function WalletTabs({ tab, setTab, head, sub, border }: {
             }}
           >
             <Text style={{ color: active ? head : sub, fontSize: 18, fontFamily: 'Calibre-Semibold' }}>
-              {t === 'tokens' ? 'Tokens' : 'NFTs'}
+              {TAB_LABEL[t]}
             </Text>
           </Pressable>
         );
