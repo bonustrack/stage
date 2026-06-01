@@ -12,7 +12,8 @@
  */
 
 import { useCallback, useState } from 'react';
-import { Pressable, TextInput, ScrollView } from 'react-native';
+import { Image, Pressable, TextInput, ScrollView } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { Text } from '@metro-labs/kit/text';
 import { Title } from '@metro-labs/kit/title';
 import { Icon } from '@metro-labs/kit/icon';
@@ -20,10 +21,17 @@ import { Button } from '@metro-labs/kit/button';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createGroup } from '../../lib/xmtp';
+import { uploadAvatar } from '../../lib/profile';
 import { flash } from '../../lib/toast';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { Box, Col } from '../../components/layout';
+import { Spinner } from '../../components/Spinner';
 import { MemberPicker, useMemberPicker } from './MemberPicker';
+
+/** Locally-picked group image, held until create-time. We upload on submit
+ *  (not on pick) so a cancelled create costs no blob; `uri` is the on-device
+ *  asset uri used only for the preview. */
+interface PickedImage { uri: string; mime: string; name: string }
 
 export default function NewGroup(): React.ReactElement {
   const router = useRouter();
@@ -35,18 +43,42 @@ export default function NewGroup(): React.ReactElement {
   const picker = useMemberPicker();
   const { members } = picker;
   const [creating, setCreating] = useState(false);
+  const [image, setImage] = useState<PickedImage | null>(null);
+
+  /** Same square-crop image-pick flow the group-detail editor uses; we only
+   *  stage the asset here and upload it on create. */
+  const pickImage = useCallback(async (): Promise<void> => {
+    if (creating) return;
+    const r = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: 'images', quality: 0.85, allowsMultipleSelection: false,
+      allowsEditing: true, aspect: [1, 1],
+    });
+    if (r.canceled || !r.assets?.length) return;
+    const a = r.assets[0]!;
+    setImage({ uri: a.uri, mime: a.mimeType ?? 'image/jpeg', name: a.fileName ?? 'group-avatar' });
+  }, [creating]);
 
   const onCreate = useCallback(async (): Promise<void> => {
     if (members.length === 0 || creating) return;
     setCreating(true);
+    /** Upload first (so the url can be set in CreateGroupOptions). A failed
+     *  upload doesn't block creation — we create imageless + warn. */
+    let imageUrl: string | undefined;
+    if (image) {
+      try {
+        imageUrl = await uploadAvatar(image.uri, image.mime, image.name);
+      } catch {
+        flash("Couldn't upload the group image — creating without it.");
+      }
+    }
     try {
-      const { id } = await createGroup(members.map(m => m.address), name);
+      const { id } = await createGroup(members.map(m => m.address), name, imageUrl);
       router.replace({ pathname: '/xmtp/[convId]', params: { convId: id } });
     } catch (err) {
       flash((err as Error)?.message ?? "Couldn't create the group");
       setCreating(false);
     }
-  }, [members, name, creating, router]);
+  }, [members, name, image, creating, router]);
 
   return (
     <Box style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
@@ -68,6 +100,36 @@ export default function NewGroup(): React.ReactElement {
         contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 24 + insets.bottom }}
         keyboardShouldPersistTaps="handled"
       >
+        {/* Group image (optional) — tap to pick, square preview. */}
+        <Box style={{ alignItems: 'center', gap: 8 }}>
+          <Pressable onPress={() => { void pickImage(); }} disabled={creating} hitSlop={8}>
+            {image ? (
+              <Image
+                source={{ uri: image.uri }}
+                style={{
+                  width: 88, height: 88, borderRadius: Math.round(88 * 0.12),
+                  backgroundColor: rowBg, opacity: creating ? 0.5 : 1,
+                }}
+              />
+            ) : (
+              <Box style={{
+                width: 88, height: 88, borderRadius: Math.round(88 * 0.12), backgroundColor: rowBg,
+                borderWidth: 1, borderColor: border, alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Text style={{ color: sub, fontSize: 28 }}>＋</Text>
+              </Box>
+            )}
+            {creating && image ? (
+              <Box style={{ position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' }}>
+                <Spinner size={20} color={fg} />
+              </Box>
+            ) : null}
+          </Pressable>
+          <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>
+            {image ? 'Tap to change image' : 'Tap to add a group image'}
+          </Text>
+        </Box>
+
         {/* Group name (optional) */}
         <Col gap={6}>
           <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>

@@ -21,7 +21,11 @@ import { lineOfConv, type XmtpConsent } from './xmtp.types';
  *  Gotcha: every member must already have an XMTP inbox. The SDK throws when an
  *  address has never registered on XMTP; we surface that as a clear message so
  *  the screen can tell the user which address isn't reachable. */
-export async function createGroup(addresses: string[], name?: string): Promise<{ line: string; id: string }> {
+export async function createGroup(
+  addresses: string[],
+  name?: string,
+  imageUrl?: string,
+): Promise<{ line: string; id: string }> {
   const members = addresses
     .map(a => a.trim())
     .filter(a => /^0x[0-9a-fA-F]{40}$/.test(a));
@@ -29,15 +33,20 @@ export async function createGroup(addresses: string[], name?: string): Promise<{
 
   const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
   const identities = members.map(a => new PublicIdentity(a, 'ETHEREUM'));
-  const opts: { name?: string } = {};
+  const opts: { name?: string; imageUrl?: string } = {};
   const trimmedName = name?.trim();
   if (trimmedName) opts.name = trimmedName;
+  /** The RN SDK 5.7 CreateGroupOptions carries `imageUrl` (the group's
+   *  imageUrlSquare); set it at creation so no follow-up update call is
+   *  needed. Caller passes an already-uploaded https blob url. */
+  const trimmedImage = imageUrl?.trim();
+  if (trimmedImage) opts.imageUrl = trimmedImage;
 
   try {
     const group = await (client.conversations as unknown as {
       newGroupWithIdentities: (
         peers: PublicIdentity[],
-        opts?: { name?: string },
+        opts?: { name?: string; imageUrl?: string },
       ) => Promise<{ id: string }>;
     }).newGroupWithIdentities(identities, opts);
     return { line: lineOfConv(group.id), id: group.id };
