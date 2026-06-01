@@ -8,35 +8,21 @@
  *  Reown/wagmi wallet, surfacing pending then confirmed state + the tx hash. */
 
 import { useEffect, useMemo, useState } from 'react';
-import { Linking, Pressable, ScrollView, TextInput } from 'react-native';
-import { Text } from '@metro-labs/kit/text';
+import { ScrollView } from 'react-native';
 import { Box } from '../../components/layout';
-import { Spinner } from '../../components/Spinner';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { createPublicClient, http, formatEther, isAddress, type Hex } from 'viem';
-import { mainnet } from 'viem/chains';
-import { getOrCreateXmtpClient } from '../../lib/xmtp';
+import { isAddress, type Hex } from 'viem';
 import { resolveEnsName } from '../../lib/ens';
-import { getSimplePrices } from '../../lib/coingecko';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
-import { Button } from '@metro-labs/kit/button';
-import { Icon } from '@metro-labs/kit/icon';
 import { sendNativeOrToken } from '../../lib/tx';
 import { getAccount, waitForTransactionReceipt } from 'wagmi/actions';
 import { wagmiConfig } from '../../lib/walletconnect';
 import { useAppKit } from '@reown/appkit-wagmi-react-native';
-
-const MULTICALL3 = '0xcA11bde05977b3631167028862bE2a173976CA11' as const;
-const multicall3Abi = [{
-  name: 'getEthBalance', type: 'function', stateMutability: 'view',
-  inputs: [{ name: 'a', type: 'address' }],
-  outputs: [{ name: 'b', type: 'uint256' }],
-}] as const;
-
-function looksLikeEns(s: string): boolean {
-  return /^[a-z0-9-]+(\.[a-z0-9-]+)+\.eth$|^[a-z0-9-]+\.eth$/i.test(s.trim());
-}
+import { fetchBalanceAndPrice, looksLikeEns } from './send.helpers';
+import {
+  RecipientField, AmountField, SendHeader, SubmitButton, TxStatus,
+} from './send.fields';
 
 export default function WalletSend(): React.ReactElement {
   const router = useRouter();
@@ -72,16 +58,9 @@ export default function WalletSend(): React.ReactElement {
     let cancelled = false;
     void (async (): Promise<void> => {
       try {
-        const client = await getOrCreateXmtpClient('production');
-        const addr = client.publicIdentity.identifier as Hex;
-        const pub = createPublicClient({ chain: mainnet, transport: http('https://rpc.brovider.xyz/1') });
-        const [bal, prices] = await Promise.all([
-          pub.readContract({ address: MULTICALL3, abi: multicall3Abi, functionName: 'getEthBalance', args: [addr] }),
-          getSimplePrices(['ethereum']).catch(() => ({} as Record<string, { usd: number }>)),
-        ]);
+        const { ethBalance: bal, ethPriceUsd: p } = await fetchBalanceAndPrice();
         if (cancelled) return;
-        setEthBalance(formatEther(bal as bigint));
-        const p = prices['ethereum']?.usd;
+        setEthBalance(bal);
         if (typeof p === 'number') setEthPriceUsd(p);
       } catch { /* leave both as null — UI degrades to a basic Send form */ }
     })();
@@ -179,157 +158,34 @@ export default function WalletSend(): React.ReactElement {
 
   return (
     <Box style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
-      <Box style={{
-        flexDirection: 'row', alignItems: 'center', gap: 8,
-        paddingHorizontal: 12, paddingTop: 8, paddingBottom: 10,
-        borderBottomWidth: 1, borderBottomColor: border,
-      }}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
-          <Icon name="arrowLeft" size={22} color={fg} />
-        </Pressable>
-        <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', flex: 1 }}>Send</Text>
-      </Box>
+      <SendHeader fg={fg} head={head} border={border} onBack={() => router.back()} />
 
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 16, gap: 16 }}>
-        {/* Recipient */}
-        <Box style={{ gap: 6 }}>
-          <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>RECIPIENT</Text>
-          <TextInput
-            value={to}
-            onChangeText={setTo}
-            placeholder="0x… or name.eth"
-            placeholderTextColor={sub}
-            autoCapitalize="none"
-            autoCorrect={false}
-            style={{
-              color: head, fontSize: 16, fontFamily: 'Calibre-Medium',
-              backgroundColor: inputBg, borderRadius: 12,
-              paddingHorizontal: 14, paddingVertical: 12,
-            }}
-          />
-          {resolving ? (
-            <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4 }}>
-              <Spinner size={20} color={fg} />
-              <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>Resolving…</Text>
-            </Box>
-          ) : resolved ? (
-            <Text style={{ color: fg, fontSize: 13, fontFamily: 'Calibre-Medium', paddingHorizontal: 4 }}>
-              → {resolved}
-            </Text>
-          ) : resolveErr ? (
-            <Text style={{ color: '#d96868', fontSize: 13, fontFamily: 'Calibre-Medium', paddingHorizontal: 4 }}>
-              {resolveErr}
-            </Text>
-          ) : null}
-        </Box>
-
-        {/* Amount + USD/ETH toggle + Max */}
-        <Box style={{ gap: 6 }}>
-          <Box style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', flex: 1 }}>AMOUNT</Text>
-            <Button
-              variant="ghost"
-              size="sm"
-              dark={dark}
-              disabled={!ethBalance}
-              onPress={onMax}
-              label="MAX"
-              textStyle={{ color: ethBalance ? '#c0a06e' : sub, fontSize: 12 }}
-              style={{ height: 24, paddingHorizontal: 8 }}
-            />
-          </Box>
-
-          <Box style={{
-            flexDirection: 'row', alignItems: 'center',
-            backgroundColor: inputBg, borderRadius: 12,
-            paddingHorizontal: 14, paddingVertical: 12, gap: 8,
-          }}>
-            <TextInput
-              value={amount}
-              onChangeText={setAmount}
-              placeholder="0.0"
-              placeholderTextColor={sub}
-              keyboardType="decimal-pad"
-              style={{
-                flex: 1, color: head, fontSize: 18, fontFamily: 'Calibre-Semibold',
-                padding: 0,
-              }}
-            />
-            {/* Mode toggle — pressing it flips ETH↔USD and converts the
-                current value so the user doesn't lose what they typed. */}
-            <Pressable
-              onPress={() => {
-                if (!amount.trim() || !ethPriceUsd) { setMode(m => m === 'eth' ? 'usd' : 'eth'); return; }
-                const n = Number(amount);
-                if (!isFinite(n) || n <= 0) { setMode(m => m === 'eth' ? 'usd' : 'eth'); return; }
-                if (mode === 'eth') {
-                  /** ETH → USD: round to cents for UX. */
-                  setAmount((n * ethPriceUsd).toFixed(2));
-                  setMode('usd');
-                } else {
-                  setAmount((n / ethPriceUsd).toFixed(6).replace(/0+$/, '').replace(/\.$/, ''));
-                  setMode('eth');
-                }
-              }}
-              style={({ pressed }) => ({
-                flexDirection: 'row', alignItems: 'center', gap: 4,
-                paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999,
-                backgroundColor: pressed ? border : 'transparent',
-              })}
-            >
-              <Text style={{ color: head, fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
-                {mode === 'eth' ? 'ETH' : 'USD'}
-              </Text>
-              <Icon name="arrowDown" size={14} color={fg} />
-            </Pressable>
-          </Box>
-
-          {secondaryLabel ? (
-            <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', paddingHorizontal: 4 }}>
-              {secondaryLabel}
-            </Text>
-          ) : null}
-          {ethBalance ? (
-            <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', paddingHorizontal: 4 }}>
-              Balance: {Number(ethBalance).toLocaleString(undefined, { maximumFractionDigits: 6 })} ETH
-            </Text>
-          ) : null}
-        </Box>
-
-        <Button
-          variant="primary"
-          size="lg"
-          fullWidth
-          pill
-          dark={dark}
-          loading={busy}
-          disabled={!canSubmit || txState === 'confirmed'}
-          onPress={onSubmit}
-          label={txState === 'submitting' ? 'Confirm in wallet…'
-            : txState === 'pending' ? 'Sending…'
-            : txState === 'confirmed' ? 'Sent ✓'
-            : 'Send'}
-          style={{ marginTop: 8 }}
+        <RecipientField
+          pal={{ fg, head, sub, border, inputBg }}
+          to={to}
+          setTo={setTo}
+          resolving={resolving}
+          resolved={resolved}
+          resolveErr={resolveErr}
         />
 
-        {/* Tx status: hash link once broadcast, plus errors. */}
-        {txHash ? (
-          <Box style={{ gap: 4, paddingHorizontal: 4 }}>
-            <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>
-              {txState === 'confirmed' ? 'Confirmed' : 'Pending'}
-            </Text>
-            <Pressable onPress={() => Linking.openURL(`https://etherscan.io/tx/${txHash}`)} hitSlop={6}>
-              <Text style={{ color: '#c0a06e', fontSize: 13, fontFamily: 'Calibre-Medium' }}>
-                {txHash.slice(0, 10)}…{txHash.slice(-8)}
-              </Text>
-            </Pressable>
-          </Box>
-        ) : null}
-        {txErr ? (
-          <Text style={{ color: '#d96868', fontSize: 13, fontFamily: 'Calibre-Medium', paddingHorizontal: 4 }}>
-            {txErr}
-          </Text>
-        ) : null}
+        <AmountField
+          pal={{ fg, head, sub, border, inputBg }}
+          dark={dark}
+          amount={amount}
+          setAmount={setAmount}
+          mode={mode}
+          setMode={setMode}
+          ethBalance={ethBalance}
+          ethPriceUsd={ethPriceUsd}
+          secondaryLabel={secondaryLabel}
+          onMax={onMax}
+        />
+
+        <SubmitButton dark={dark} busy={busy} canSubmit={canSubmit} txState={txState} onSubmit={onSubmit} />
+
+        <TxStatus sub={sub} txState={txState} txHash={txHash} txErr={txErr} />
       </ScrollView>
     </Box>
   );
