@@ -60,8 +60,10 @@ const STREAM_CONSENT_STATES: ConsentState[] = ['allowed', 'unknown'];
 
 let globalStreamCancel: (() => void) | null = null;
 let globalStreamStarting = false;
-let globalStreamRearmTimer: ReturnType<typeof setTimeout> | null = null;
-let globalResyncTimer: ReturnType<typeof setInterval> | null = null;
+// `number` (RN timer id): the Railgun SDK pulls @types/node into the app's type
+// program, whose Timeout return type collides with the DOM lib at clear*().
+let globalStreamRearmTimer: number | null = null;
+let globalResyncTimer: number | null = null;
 let globalAppStateSub: { remove: () => void } | null = null;
 
 /** Resync the currently-subscribed conv slices from the local store. Cheap
@@ -89,7 +91,7 @@ function rearmGlobalStream(): void {
   globalStreamRearmTimer = setTimeout(() => {
     globalStreamRearmTimer = null;
     void ensureGlobalStream();
-  }, 500);
+  }, 500) as unknown as number;
 }
 
 /** Subscribe the one native fan-out for every conversation on this inbox. Maps
@@ -140,7 +142,7 @@ export async function ensureGlobalStream(): Promise<void> {
     };
     /** Low-frequency global resync backstop — only touches the active/open conv
      *  (1 conv, PAGE_SIZE 20) so the rate-limit blast radius stays tiny. */
-    if (!globalResyncTimer) globalResyncTimer = setInterval(() => { void resyncActiveFeeds(); }, 7_000);
+    if (!globalResyncTimer) globalResyncTimer = setInterval(() => { void resyncActiveFeeds(); }, 7_000) as unknown as number;
     /** FOREGROUND FLAG: the app is foregrounded right now (the stream just
      *  started from a live mount), so tell native to skip its generic push card —
      *  the rich JS local notif (presentInboundNotification, fired from the

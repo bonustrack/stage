@@ -35,7 +35,9 @@ export function useChannelsSync({
     let cancelConvStream: (() => void) | null = null;
     let cancelMsgStream: (() => void) | null = null;
     let cancelConsentStream: (() => void) | null = null;
-    let pollTimer: ReturnType<typeof setInterval> | null = null;
+    // `number` (RN timer id): the Railgun SDK pulls @types/node into the type
+    // program, whose Timeout collides with the DOM lib at clearInterval().
+    let pollTimer: number | null = null;
     let appStateSub: { remove: () => void } | null = null;
 
     /** Hydrate the persisted cache first — if we have rows from a previous
@@ -168,7 +170,7 @@ export function useChannelsSync({
         /** Slow poll as a last-resort backstop. Catches anything the stream
          *  dropped (network blip, push-without-stream, etc.). 30s is gentle
          *  on battery + bandwidth while still feeling live. */
-        pollTimer = setInterval(() => { void refresh(); }, 30_000);
+        pollTimer = setInterval(() => { void refresh(); }, 30_000) as unknown as number;
       } catch (e) {
         if (!rows || rows.length === 0) setError((e as Error).message);
       }

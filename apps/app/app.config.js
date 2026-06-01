@@ -154,6 +154,16 @@ const config = {
     // Native audio-decode module — powers TRUE voice-message waveforms
     // (decodeAudioData → PCM). Requires a new dev-client build to take effect.
     'react-native-audio-api',
+    // RAILGUN private wallet — the JS SDK (@railgun-community/wallet +
+    // shared-models + ethers) is autolinked as a normal JS dep. PROVING needs
+    // the C++ Groth16 prover `@railgun-community/native-prover`, a NATIVE
+    // module: it is NOT yet an npm package, so it must be added to package.json
+    // (git/tarball source) and will then autolink via Expo prebuild — NO config
+    // plugin entry is required for autolinking, but a NEW APK is REQUIRED before
+    // the Private wallet can prove. Until that build ships, lib/railgun gates on
+    // the prover's presence and the Private tab shows "needs the new app build"
+    // (see lib/railgun/native.ts). Add the native-prover dep + rebuild the APK
+    // to enable shield/transfer/unshield.
   ],
   notification: {
     icon: './assets/notification-icon.png',
