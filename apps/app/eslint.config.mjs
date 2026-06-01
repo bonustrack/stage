@@ -6,6 +6,9 @@ export default tseslint.config(
   {
     files: ["app/**/*.{ts,tsx}", "components/**/*.{ts,tsx}", "lib/**/*.{ts,tsx}"],
     rules: {
+      // Strong typing: ban `any`. Use `unknown` + narrowing, real interfaces,
+      // generics, or library types instead.
+      "@typescript-eslint/no-explicit-any": "error",
       // `warn`, not `error`: RN screens/components legitimately exceed 200 lines.
       // Keeps the signal (tracks files to split later) without failing CI.
       "max-lines": ["warn", { max: 200, skipBlankLines: false, skipComments: false }],

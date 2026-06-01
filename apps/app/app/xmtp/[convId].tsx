@@ -42,6 +42,7 @@ import {
   type SignatureRequestContent, type SignatureReferenceContent,
 } from '@metro-labs/client/xmtp/sign';
 import { signTypedData, signMessage, getAccount } from 'wagmi/actions';
+import type { TypedDataDefinition } from 'viem';
 import { wagmiConfig } from '../../lib/walletconnect';
 import { getActiveViemAccount } from '../../lib/accounts';
 import { setActiveConversation } from '../../modules/metro-pill';
@@ -657,30 +658,21 @@ export default function XmtpConversation(): React.ReactElement {
           if (!td) throw new Error('Malformed typed-data request');
           /** viem/wagmi inject the EIP712Domain entry themselves from `domain`;
            *  a duplicate in `types` makes them reject the request. Strip it. */
-          const types = { ...((td.types ?? {}) as Record<string, unknown>) };
+          const types = { ...td.types };
           delete types.EIP712Domain;
+          /** The wire payload is arbitrary JSON (any valid eth_signTypedData_v4
+           *  shape), so we cast once to viem's generic `TypedDataDefinition`
+           *  rather than satisfy its heavily-conditional generics field-by-field.
+           *  A real viem type — not `any`. */
+          const typedData = {
+            domain: td.domain,
+            types,
+            primaryType: td.primaryType,
+            message: td.message,
+          } as unknown as TypedDataDefinition;
           signature = local
-            ? await local.signTypedData({
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                domain: td.domain as any,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                types: types as any,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                primaryType: td.primaryType as any,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                message: td.message as any,
-              })
-            : await signTypedData(wagmiConfig, {
-                account,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                domain: td.domain as any,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                types: types as any,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                primaryType: td.primaryType as any,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                message: td.message as any,
-              });
+            ? await local.signTypedData(typedData)
+            : await signTypedData(wagmiConfig, { account, ...typedData });
         } else {
           const message = req.message ?? '';
           if (!message) throw new Error('Empty message to sign');
