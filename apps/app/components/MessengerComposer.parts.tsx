@@ -37,10 +37,10 @@ export function ReplyBanner({
       borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: borderColor,
     }}>
       <Pressable onPress={onPress} disabled={!onPress}>
-        {/** Left inset 18 → outer Box paddingHorizontal:10 + 18 = 28, matching the
-         *   composer text glyph origin (Col px:10 + editor Col p:10 + TextInput
-         *   paddingHorizontal:8) so the ✕ lines up with where the input text starts. */}
-        <Row align="center" gap={10} pl={18} pr={14} py={8}>
+        {/** No extra left inset → the outer Box paddingHorizontal:10 alone places the
+         *   ✕ at x≈10, flush with the composer's own left content edge (Col px:10),
+         *   rather than the text glyph origin (x≈28). */}
+        <Row align="center" gap={10} pl={0} pr={14} py={8}>
           <Pressable
             onPress={onClear}
             hitSlop={8}
@@ -52,9 +52,9 @@ export function ReplyBanner({
           >
             <Icon name="x" size={14} color="#000000" />
           </Pressable>
-          <Text style={{ fontSize: 15, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
-            <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>Replying to </Text>
-            <Text style={{ color: nameColor, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
+          <Text style={{ fontSize: 16, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
+            <Text style={{ color: sub, fontSize: 16, fontFamily: 'Calibre-Medium' }}>Replying to </Text>
+            <Text style={{ color: nameColor, fontSize: 16, fontFamily: 'Calibre-Medium' }}>
               {(sender ? getPeerName(sender) : undefined) ?? (sender ? shortAddress(sender) : 'message')}
             </Text>
           </Text>
