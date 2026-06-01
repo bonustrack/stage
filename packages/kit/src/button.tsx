@@ -5,8 +5,9 @@
  *  which is fine because only apps/app (RN) imports `@metro-labs/kit/button`.
  *  react-native is declared as a peerDependency.
  *
- *  Aesthetic (OpenAI ChatKit): clean, restrained, ~10px rounded corners (pill
- *  optional). Variants:
+ *  Aesthetic (OpenAI ChatKit): clean, restrained, fully-rounded (pill) corners
+ *  on every size/variant. `pill` additionally makes a circular icon-only button.
+ *  Variants:
  *    - primary   solid; follows the app convention — dark scheme → white bg /
  *                dark text, light scheme → black bg / white text.
  *    - secondary subtle filled (rowBg fill + border, head text).
@@ -54,7 +55,9 @@ export interface ButtonProps
   loading?: boolean;
   /** Stretch to the container width. */
   fullWidth?: boolean;
-  /** Fully-rounded corners. Default is a ~ChatKit 11px radius. */
+  /** Circular icon-only button: square aspect (width = height for the size),
+   *  centered icon, no horizontal padding. For icon-only usage. All buttons are
+   *  fully rounded regardless; `pill` additionally forces the square aspect. */
   pill?: boolean;
   /** Node rendered before the label. */
   icon?: ReactNode;
@@ -118,8 +121,11 @@ export function Button(props: ButtonProps): React.ReactElement {
         const usePressedBg = pressed && !isDisabled;
         const base: ViewStyle = {
           height: spec.height,
-          paddingHorizontal: spec.paddingHorizontal,
-          borderRadius: pill ? 999 : 11,
+          // `pill` = circular icon-only: square aspect, no horizontal padding.
+          width: pill ? spec.height : fullWidth ? '100%' : undefined,
+          paddingHorizontal: pill ? 0 : spec.paddingHorizontal,
+          // Always fully rounded; 999 fully rounds at any height. `pill` => circle.
+          borderRadius: 999,
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'center',
@@ -132,8 +138,7 @@ export function Button(props: ButtonProps): React.ReactElement {
                 : c.bg,
           borderWidth: c.borderColor ? 1 : 0,
           borderColor: c.borderColor,
-          alignSelf: fullWidth ? 'stretch' : 'flex-start',
-          width: fullWidth ? '100%' : undefined,
+          alignSelf: fullWidth && !pill ? 'stretch' : 'flex-start',
           opacity: isDisabled
             ? 0.4
             : usePressedBg && !c.pressedBg && !c.ghostPressedBg
