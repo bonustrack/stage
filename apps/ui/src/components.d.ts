@@ -11,8 +11,10 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    Box: typeof import('./components/layout/Box.vue')['default']
     BubbleActionSheet: typeof import('./components/BubbleActionSheet.vue')['default']
     ChannelRow: typeof import('./components/ChannelRow.vue')['default']
+    Col: typeof import('./components/layout/Col.vue')['default']
     Composer: typeof import('./components/Composer.vue')['default']
     ConversationHeader: typeof import('./components/ConversationHeader.vue')['default']
     EditProfileModal: typeof import('./components/EditProfileModal.vue')['default']
@@ -26,6 +28,7 @@ declare module 'vue' {
     MessengerBubble: typeof import('./components/MessengerBubble.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    Row: typeof import('./components/layout/Row.vue')['default']
     SearchResolution: typeof import('./components/SearchResolution.vue')['default']
     Spinner: typeof import('./components/Spinner.vue')['default']
     TabBar: typeof import('./components/TabBar.vue')['default']

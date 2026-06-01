@@ -18,7 +18,10 @@ const maxCommentLines = {
 };
 
 export default tseslint.config(
-  { ignores: ["node_modules/**", "dist/**"] },
+  // src/integrations/* are the runtime train scripts (xmtp/telegram/discord) —
+  // self-contained, long header doc-blocks, runtime deps not in the package.
+  // Already excluded from the tsc build (tsconfig `exclude`); mirror that here.
+  { ignores: ["node_modules/**", "dist/**", "src/integrations/**"] },
   ...tseslint.configs.recommended,
   {
     files: ["src/**/*.ts", "examples/**/*.ts"],
