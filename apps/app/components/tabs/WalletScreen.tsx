@@ -58,7 +58,6 @@ const ASSETS: Asset[] = [
 const MAINNET_NETWORK_LOGO = 'https://ipfs.snapshot.box/ipfs/bafkreid7ndxh6y2ljw2jhbisodiyrhcy2udvnwqgon5wgells3kh4si5z4';
 const BASE_NETWORK_LOGO = 'https://ipfs.snapshot.box/ipfs/bafkreid4ek4gnj6ccxl3yubwj2wr3d5t6dqelvvh4hv5wo5eldkqs725ri';
 const NETWORK_LOGO: Record<number, string> = { 1: MAINNET_NETWORK_LOGO, 8453: BASE_NETWORK_LOGO };
-const NETWORK_LABEL: Record<number, string> = { 1: 'Ethereum', 8453: 'Base' };
 const VIEM_CHAINS: Record<number, Chain> = { 1: mainnet, 8453: base };
 
 const erc20Abi = [{
@@ -335,19 +334,14 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
                   resizeMode="contain"
                   style={{
                     position: 'absolute', right: -2, bottom: -2,
-                    width: 14, height: 14, borderRadius: 999,
+                    width: 15, height: 15, borderRadius: 4,
                     borderWidth: 2, borderColor: bg, backgroundColor: '#ffffff',
                   }}
                 />
               </Box>
               {/* Left column — token NAME (top) over price + 24h change (bottom). */}
               <Col flex={1} style={{ minWidth: 0 }}>
-                <Row align="center" gap={6}>
-                  <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{r.name}</Text>
-                  <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
-                    {`on ${NETWORK_LABEL[r.chainId] ?? r.chainId}`}
-                  </Text>
-                </Row>
+                <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{r.name}</Text>
                 <Row align="center" gap={6} mt={2}>
                   <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
                     {r.priceUsd === null ? r.symbol : fmtUsd(r.priceUsd, r.priceUsd < 1 ? 4 : 2)}
