@@ -13,18 +13,42 @@
  *  native error) rejects and the caller falls back to synthetic bars — never a
  *  crash. The bars cache lives in VoiceMessage.barsCache.ts. */
 
-import { decodeAudioData } from 'react-native-audio-api';
+import type { decodeAudioData as DecodeAudioData } from 'react-native-audio-api';
 
 /** Resampling the decode to a low rate keeps the native→JS Float32 copy small
  *  (waveform only needs amplitude shape, not fidelity). 8 kHz mono is plenty
  *  for ~40 bars and roughly an order of magnitude less data than 44.1 kHz. */
 const DECODE_SAMPLE_RATE = 8000;
 
+/** react-native-audio-api is a NATIVE module: a top-level import throws at
+ *  module-eval time ("native module could not be found") on any APK built
+ *  without it, crashing the whole feed before render. So we resolve it LAZILY
+ *  + OPTIONALLY via require inside a try/catch, memoizing the result (the fn,
+ *  or null when unavailable). null → decode rejects → caller falls back to
+ *  synthetic bars. The eval is never allowed to throw uncaught. */
+let loaded = false;
+let decodeAudioDataFn: typeof DecodeAudioData | null = null;
+function getDecodeAudioData(): typeof DecodeAudioData | null {
+  if (loaded) return decodeAudioDataFn;
+  loaded = true;
+  try {
+    const mod = require('react-native-audio-api') as {
+      decodeAudioData?: typeof DecodeAudioData;
+    };
+    decodeAudioDataFn = typeof mod.decodeAudioData === 'function' ? mod.decodeAudioData : null;
+  } catch {
+    decodeAudioDataFn = null;
+  }
+  return decodeAudioDataFn;
+}
+
 /** Decode `uri` to Float32 mono PCM, then bucket into `count` normalized bar
  *  heights (0..1) using per-bucket RMS (smoother + more speech-like than peak,
  *  which spikes on transients). Throws on any decode failure — caller falls
  *  back to synthetic bars. */
 export async function decodeWaveformBars(uri: string, count: number): Promise<number[]> {
+  const decodeAudioData = getDecodeAudioData();
+  if (!decodeAudioData) throw new Error('react-native-audio-api unavailable');
   const buffer = await decodeAudioData(uri, DECODE_SAMPLE_RATE);
   const pcm = buffer.getChannelData(0);
   if (!pcm || pcm.length === 0) throw new Error('empty PCM');
