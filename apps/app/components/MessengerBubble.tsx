@@ -58,14 +58,12 @@ function MessengerBubbleBase({
     // fireReply closes over onReply+pending; recreate when they change.
     [onReply, pending, swipeX]);
   const swipeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: swipeX.value }] }));
-  /** Tap handling is split into discrete RNGH gestures so single-tap, double-tap and
-   *  long-press arbitrate cleanly (and against the horizontal swipe-to-reply pan):
-   *   - SINGLE tap → open the Telegram-style anchored menu. It `requireExternalGestureToFail`
-   *     the double-tap, so a single tap waits ~RNGH's window for a 2nd tap to NOT arrive
-   *     before firing — no menu flash on a double-tap.
+  /** Tap handling is split into discrete RNGH gestures so double-tap and long-press
+   *  arbitrate cleanly (and against the horizontal swipe-to-reply pan):
    *   - DOUBLE tap → quick 👍, reusing the same optimistic onReact toggle path as the
    *     emoji picker/pills (adds if absent, removes your 👍 if already present).
-   *   - LONG press → open the menu immediately.
+   *   - LONG press → open the menu immediately. A plain single tap does nothing —
+   *     the action menu opens ONLY via press-and-hold.
    *  We measure the row's on-screen rect via measureInWindow and hand the parent the
    *  Y + height so it can float the overlay just above/below the bubble; lastAnchor is
    *  the synchronous fallback for the first open before a measure has returned. */
@@ -81,28 +79,19 @@ function MessengerBubbleBase({
       onOpenMenu({ y, height: h });
     });
   };
-  const onSingleTap = (): void => {
-    if (pending) return;
-    if (!onOpenMenu) { onReact?.('👍'); return; }
-    openMenu();
-  };
   const onDoubleTap = (): void => { if (!pending) onReact?.('👍'); };
-  /** Single-tap: yields to the double-tap so a 2nd tap never flashes the menu. */
   const doubleTap = useMemo(() => Gesture.Tap().numberOfTaps(2).onEnd((_e, ok) => {
     if (ok) runOnJS(onDoubleTap)();
   }), [onDoubleTap]);
-  const singleTap = useMemo(() => Gesture.Tap().numberOfTaps(1)
-    .requireExternalGestureToFail(doubleTap)
-    .onEnd((_e, ok) => { if (ok) runOnJS(onSingleTap)(); }),
-    [doubleTap, onSingleTap]);
   const longPress = useMemo(() => Gesture.LongPress().minDuration(300)
     .onStart(() => runOnJS(openMenu)()),
     [openMenu]);
-  /** Pan owns horizontal swipe-to-reply; the taps/long-press are mutually exclusive
-   *  with each other, and race against the pan (pan only arms on a clear left drag). */
+  /** Pan owns horizontal swipe-to-reply; the long-press and double-tap are mutually
+   *  exclusive with each other, and race against the pan (pan only arms on a clear
+   *  left drag). A plain single tap is intentionally unhandled. */
   const tapGestures = useMemo(
-    () => Gesture.Race(replyPan, Gesture.Exclusive(longPress, doubleTap, singleTap)),
-    [replyPan, longPress, doubleTap, singleTap]);
+    () => Gesture.Race(replyPan, Gesture.Exclusive(longPress, doubleTap)),
+    [replyPan, longPress, doubleTap]);
   return (
     <GestureDetector gesture={tapGestures}>
     <Animated.View
