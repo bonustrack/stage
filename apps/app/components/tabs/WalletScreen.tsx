@@ -329,14 +329,16 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
                   source={{ uri: r.logoUrl }}
                   style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border }}
                 />
-                {/* Network badge: just the logo, square + slightly rounded, no
-                    white chip/border/background. `contain` so it's never cropped. */}
+                {/* Network badge — exactly Snapshot UI's BadgeNetwork:
+                    rounded-full + border-2 in the page bg color + bg = border token
+                    (muted, NOT white). `contain` so the logo isn't cropped. */}
                 <Image
                   source={{ uri: NETWORK_LOGO[r.chainId] ?? MAINNET_NETWORK_LOGO }}
                   resizeMode="contain"
                   style={{
                     position: 'absolute', right: -3, bottom: -3,
-                    width: 16, height: 16, borderRadius: 4,
+                    width: 16, height: 16, borderRadius: 999,
+                    borderWidth: 2, borderColor: bg, backgroundColor: border,
                   }}
                 />
               </Box>
