@@ -19,7 +19,7 @@ import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { Icon } from '@metro-labs/kit/icon';
 import { ImageViewer } from '../../components/ImageViewer';
 import { MemberRow, AddMemberModal, OverflowModal } from './group.parts';
-import { GroupImageEditor, GroupNameEditor, GroupDescriptionEditor } from './group.editor';
+import { GroupProfileHeader, GroupNameEditor, GroupDescriptionEditor } from './group.editor';
 import { loadGroupDetail } from './group.helpers';
 import { useGroupActions } from './group.actions';
 
@@ -101,7 +101,9 @@ export default function GroupDetail(): React.ReactElement {
 
   return (
     <Box style={{ flex: 1, backgroundColor: bg }}>
+      {/* Floating topnav over the cover banner — mirrors ProfileScreen `route`. */}
       <Box style={{
+        position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
         height: 44 + insets.top, paddingTop: insets.top, paddingHorizontal: 14,
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
       }}>
@@ -113,9 +115,9 @@ export default function GroupDetail(): React.ReactElement {
         </Pressable>
       </Box>
 
-      <GroupImageEditor
-        imageUrl={imageUrl} uploadingImage={uploadingImage}
-        fg={fg} sub={sub} border={border} rowBg={rowBg}
+      <GroupProfileHeader
+        insetTop={insets.top} imageUrl={imageUrl} uploadingImage={uploadingImage}
+        fg={fg} sub={sub} bg={bg} rowBg={rowBg}
         onTap={() => { if (imageUrl) setViewerOpen(true); else void pickImage(); }}
         onPick={() => { void pickImage(); }}
       />

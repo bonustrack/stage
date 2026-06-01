@@ -9,39 +9,58 @@ import { avatarRenderUrl } from '@metro-labs/client/profile/snapshot';
 
 interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; }
 
-export function GroupImageEditor({ imageUrl, uploadingImage, fg, sub, border, rowBg, onTap, onPick }: {
-  imageUrl: string; uploadingImage: boolean;
-  fg: string; sub: string; border: string; rowBg: string;
+/** Group header — mirrors the user ProfileScreen layout exactly: a full-bleed
+ *  cover banner (rowBg), then a page-bg sheet pulled UP 18px with rounded top
+ *  corners, and the group avatar (88px, square) overlapping the cover at
+ *  marginTop -44 (~80% over cover, half over the rounded black edge). The cover
+ *  has no dedicated image (groups carry a single avatar), so it uses the same
+ *  flat rowBg fallback the user profile uses. Tap avatar → view, hold → change. */
+export function GroupProfileHeader({ imageUrl, uploadingImage, insetTop, fg, sub, bg, rowBg, onTap, onPick }: {
+  imageUrl: string; uploadingImage: boolean; insetTop: number;
+  fg: string; sub: string; bg: string; rowBg: string;
   onTap: () => void; onPick: () => void;
 }): React.ReactElement {
   return (
-    <Box style={{ alignItems: 'flex-start', paddingHorizontal: 16, paddingTop: 4, paddingBottom: 16 }}>
-      <Pressable onPress={onTap} onLongPress={onPick} disabled={uploadingImage} hitSlop={8}>
-        {imageUrl ? (
-          <Image
-            source={{ uri: avatarRenderUrl('', imageUrl, 256) }}
-            style={{ width: 128, height: 128, borderRadius: 15, backgroundColor: rowBg, opacity: uploadingImage ? 0.5 : 1 }}
-          />
-        ) : (
-          <Box style={{
-            width: 128, height: 128, borderRadius: 15, backgroundColor: rowBg,
-            borderWidth: 1, borderColor: border,
-            alignItems: 'center', justifyContent: 'center',
-            opacity: uploadingImage ? 0.5 : 1,
-          }}>
-            <Text style={{ color: sub, fontSize: 28 }}>＋</Text>
-          </Box>
-        )}
-        {uploadingImage ? (
-          <Box style={{ position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' }}>
-            <Spinner size={20} color={fg} />
-          </Box>
-        ) : null}
-      </Pressable>
-      <Text style={{ color: sub, fontSize: 13, marginTop: 6, fontFamily: 'Calibre-Medium' }}>
-        {uploadingImage ? 'Uploading…' : imageUrl ? 'Tap to view · hold to change' : 'Tap to add image'}
-      </Text>
-    </Box>
+    <>
+      {/* Cover extends up behind the floating topnav/status bar so the colour
+          bleeds to y=0 (height += insetTop), exactly like ProfileScreen route. */}
+      <Box bg={rowBg} style={{ height: 140 + insetTop }} />
+      <Box style={{
+        alignItems: 'flex-start', paddingHorizontal: 16,
+        backgroundColor: bg, marginTop: -18,
+        borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'visible',
+      }}>
+        <Pressable onPress={onTap} onLongPress={onPick} disabled={uploadingImage} hitSlop={8}
+          style={{ marginTop: -44, zIndex: 1 }}>
+          {imageUrl ? (
+            <Image
+              source={{ uri: avatarRenderUrl('', imageUrl, 256) }}
+              style={{
+                width: 88, height: 88, borderRadius: Math.round(88 * 0.12),
+                backgroundColor: rowBg, borderWidth: 3, borderColor: bg,
+                opacity: uploadingImage ? 0.5 : 1,
+              }}
+            />
+          ) : (
+            <Box style={{
+              width: 88, height: 88, borderRadius: Math.round(88 * 0.12), backgroundColor: rowBg,
+              borderWidth: 3, borderColor: bg, alignItems: 'center', justifyContent: 'center',
+              opacity: uploadingImage ? 0.5 : 1,
+            }}>
+              <Text style={{ color: sub, fontSize: 28 }}>＋</Text>
+            </Box>
+          )}
+          {uploadingImage ? (
+            <Box style={{ position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' }}>
+              <Spinner size={20} color={fg} />
+            </Box>
+          ) : null}
+        </Pressable>
+        <Text style={{ color: sub, fontSize: 12, marginTop: 6, fontFamily: 'Calibre-Medium' }}>
+          {uploadingImage ? 'Uploading…' : imageUrl ? 'Tap to view · hold to change' : 'Tap to add image'}
+        </Text>
+      </Box>
+    </>
   );
 }
 
