@@ -1,30 +1,21 @@
 /** Train supervisor: spawn `~/.metro/trains/*.{ts,js,mjs}` under `bun run`, multiplex their */
 /** stdout (events + call-responses), route outbound calls to their stdin. Pure transport. */
 
-import { mkdirSync, statSync, watch, type FSWatcher } from 'node:fs';
+import { mkdirSync, statSync, type FSWatcher } from 'node:fs';
 import { homedir } from 'node:os';
-import { join, parse as parsePath } from 'node:path';
+import { join } from 'node:path';
 import { errMsg, log } from '../log.js';
 import { daemonSelf } from '../history.js';
 import {
   drainLines, failAllPending, listTrainFiles, mintCallId, parseTrainLine, sendCall,
-  type Pending, type TrainCallResponse, type TrainEvent,
+  type TrainCallResponse, type TrainEvent,
 } from './protocol.js';
-
-const RESTART_BACKOFFS_MS = [1_000, 5_000, 30_000] as const;
-const MAX_CONSECUTIVE_FAILS = 5;
-/** Debounce window for the hot-reload watcher: editors fire several fs events per save. */
-const HOT_RELOAD_DEBOUNCE_MS = 300;
-const TRAIN_EXT = /\.(ts|js|mjs)$/;
+import {
+  MAX_CONSECUTIVE_FAILS, RESTART_BACKOFFS_MS,
+  killGracefully, pumpStream, startWatcher, type TrainState,
+} from './supervisor-io.js';
 
 export const TRAINS_DIR = process.env.METRO_TRAINS_DIR ?? join(homedir(), '.metro', 'trains');
-
-type TrainState = {
-  name: string; path: string; proc: ReturnType<typeof Bun.spawn> | null;
-  pending: Map<string, Pending>; buf: string; errBuf: string; failCount: number;
-  restartTimer: ReturnType<typeof setTimeout> | null;
-  startedAt: string | null; stopped: boolean;
-};
 
 export type TrainInfo = {
   name: string; path: string; running: boolean; pid: number | null;
@@ -50,28 +41,9 @@ export class TrainSupervisor {
     this.watchForReloads();
   }
 
-  // Hot-reload (#15): watch the trains dir, reload only the changed train (debounced).
-  // New file ⇒ fresh train; deleted file ⇒ leave the process (never auto-kill on unlink).
-  // Best-effort: if `watch` is unavailable, on-demand restart still works.
   private watchForReloads(): void {
-    try {
-      this.watcher = watch(this.dir, (_event, filename) => {
-        if (!filename) return;
-        const base = filename.toString();
-        if (!TRAIN_EXT.test(base) || base.startsWith('_') || base.startsWith('.')) return;
-        const name = parsePath(base).name;
-        const existing = this.reloadTimers.get(name);
-        if (existing) clearTimeout(existing);
-        this.reloadTimers.set(name, setTimeout(() => {
-          this.reloadTimers.delete(name);
-          this.handleSourceChange(name, join(this.dir, base));
-        }, HOT_RELOAD_DEBOUNCE_MS));
-      });
-      this.watcher.on('error', err => log.warn({ err: errMsg(err) }, 'train hot-reload: watcher error'));
-      log.info({ dir: this.dir }, 'train hot-reload: watching');
-    } catch (err) {
-      log.warn({ err: errMsg(err) }, 'train hot-reload: watch unavailable (on-demand restart only)');
-    }
+    this.watcher = startWatcher(this.dir, this.reloadTimers,
+      (name, path) => this.handleSourceChange(name, path));
   }
 
   /** A train source file changed (or appeared). Restart it if known, else spawn it. */
@@ -223,26 +195,4 @@ export class TrainSupervisor {
       setTimeout(() => { if (state.proc && state.proc.exitCode === null) state.failCount = 0; }, 30_000);
     }, delay);
   }
-}
-
-function killGracefully(proc: ReturnType<typeof Bun.spawn> | null): Promise<unknown> | null {
-  if (!proc || proc.exitCode !== null) return null;
-  try { proc.kill('SIGTERM'); } catch { /* ignore */ }
-  const grace = setTimeout(() => { try { proc.kill('SIGKILL'); } catch { /* ignore */ } }, 2_000);
-  return proc.exited.finally(() => clearTimeout(grace));
-}
-
-async function pumpStream(
-  stream: unknown, name: string, kind: 'stdout' | 'stderr', onChunk: (s: string) => void,
-): Promise<void> {
-  if (!stream || typeof stream === 'number') return;
-  const reader = (stream as ReadableStream<Uint8Array>).getReader();
-  const dec = new TextDecoder();
-  try {
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      onChunk(dec.decode(value, { stream: true }));
-    }
-  } catch (err) { log.debug({ name, err: errMsg(err) }, `train: ${kind} pump ended`); }
 }

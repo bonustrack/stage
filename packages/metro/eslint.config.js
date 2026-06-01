@@ -18,10 +18,7 @@ const maxCommentLines = {
 };
 
 export default tseslint.config(
-  // src/integrations/* are the runtime train scripts (xmtp/telegram/discord) —
-  // self-contained, long header doc-blocks, runtime deps not in the package.
-  // Already excluded from the tsc build (tsconfig `exclude`); mirror that here.
-  { ignores: ["node_modules/**", "dist/**", "src/integrations/**"] },
+  { ignores: ["node_modules/**", "dist/**"] },
   ...tseslint.configs.recommended,
   {
     files: ["src/**/*.ts", "examples/**/*.ts"],
@@ -31,7 +28,7 @@ export default tseslint.config(
       "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
       "max-len": ["error", { code: 120, ignoreUrls: true, ignoreRegExpLiterals: true, ignoreStrings: true, ignoreTemplateLiterals: true }],
-      "max-lines": ["error", { max: 300, skipBlankLines: false, skipComments: false }],
+      "max-lines": ["error", { max: 200, skipBlankLines: false, skipComments: false }],
       // `multiline-comment-style: starred-block` removed — it fought the codebase's
       // pervasive inline `/* … */` annotation style (55 false-positive errors that
       // kept CI permanently red). `local/max-comment-lines` still caps comment length.
