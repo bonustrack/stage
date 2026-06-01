@@ -10,6 +10,7 @@ import { Avatar } from '../Avatar';
 import { Box, Row } from '../layout';
 import { Text } from '@metro-labs/kit/text';
 import { CHANNELS_SCROLL_KEY, saveScrollOffset } from '../../lib/scrollPos';
+import { useEffectiveColorScheme } from '../../lib/theme';
 import { CHANNEL_ROW_HEIGHT } from './HomeScreen.helpers';
 import type { Row as RowT } from './HomeScreen.helpers';
 import { HomeEmpty } from './HomeScreen.parts';
@@ -37,6 +38,12 @@ export function ChannelsList({
   listExtraData, listRef, savedOffsetRef, didRestoreRef, contentHeightRef,
   renderRow, getRowLayout,
 }: ChannelsListProps): React.ReactElement {
+  // Request-count badge: white bg + black text in dark theme. In light theme a
+  // white badge would vanish on the light topnav, so flip to a dark bg + white
+  // text there to stay legible.
+  const dark = useEffectiveColorScheme() === 'dark';
+  const badgeBg = dark ? '#ffffff' : '#000000';
+  const badgeFg = dark ? '#000000' : '#ffffff';
   return (
     <>
       {/* Home topnav: avatar left, "+" right → opens the create-group screen.
@@ -57,12 +64,12 @@ export function ChannelsList({
               <Box
                 px={5}
                 radius={999}
-                bg="#1d1f23"
+                bg={badgeBg}
                 align="center"
                 justify="center"
                 style={{ position: 'absolute', top: -6, right: -8, minWidth: 16, height: 16 }}
               >
-                <Text style={{ color: '#fff', fontSize: 10, fontFamily: 'Calibre-Semibold' }}>
+                <Text style={{ color: badgeFg, fontSize: 10, fontFamily: 'Calibre-Semibold' }}>
                   {requestCount > 99 ? '99+' : requestCount}
                 </Text>
               </Box>
