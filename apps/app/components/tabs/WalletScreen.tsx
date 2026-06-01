@@ -335,13 +335,13 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
                 <Box style={{
                   position: 'absolute', right: -3, bottom: -3,
                   width: 18, height: 18, borderRadius: 999,
-                  borderWidth: 2, borderColor: bg, backgroundColor: border,
+                  borderWidth: 1.5, borderColor: bg, backgroundColor: border,
                   alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
                 }}>
                   <Image
                     source={{ uri: NETWORK_LOGO[r.chainId] ?? MAINNET_NETWORK_LOGO }}
                     resizeMode="contain"
-                    style={{ width: 10, height: 10 }}
+                    style={{ width: 13, height: 13 }}
                   />
                 </Box>
               </Box>
