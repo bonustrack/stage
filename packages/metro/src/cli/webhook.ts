@@ -178,9 +178,10 @@ async function cmdTrainsRestart(p: string[], f: Flags): Promise<void> {
   emit(f, `restarted train '${p[0]}'`, { ok: true, name: p[0] });
 }
 
-/** dist/cli/webhook.js → <package-root>/examples/telegram.ts */
+/** dist/cli/webhook.js → <package-root>/examples/echo.ts (minimal scaffold;
+ *  the platform trains now live in src/trains/ and ship as canonical sources). */
 const bundledExample = (): string =>
-  join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'examples', 'telegram.ts');
+  join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'examples', 'echo.ts');
 
 async function cmdTrainsNew(p: string[], f: Flags): Promise<void> {
   need(p, 1, 'metro trains new <name>');
