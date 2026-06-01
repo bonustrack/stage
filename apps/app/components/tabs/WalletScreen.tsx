@@ -359,18 +359,16 @@ function NftsView({
     return (
       <Col mx={16} py={40} align="center">
         <Text style={{ color: '#d96868', fontSize: 15, fontFamily: 'Calibre-Medium' }}>
-          Couldn’t load NFTs
+          Failed to load NFTs.
         </Text>
       </Col>
     );
   }
   if (!nfts || nfts.length === 0) {
     return (
-      <Col mx={16} py={48} align="center" gap={10}>
-        <Icon name="photo" size={36} color={sub} />
-        <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>No NFTs found</Text>
-        <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium', textAlign: 'center' }}>
-          This account doesn’t hold any NFTs yet.
+      <Col mx={16} py={40} align="center">
+        <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
+          There are no NFTs in this wallet.
         </Text>
       </Col>
     );
