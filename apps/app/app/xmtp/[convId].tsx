@@ -44,10 +44,6 @@ import {
 import { signTypedData, signMessage, getAccount } from 'wagmi/actions';
 import { wagmiConfig } from '../../lib/walletconnect';
 import { getActiveViemAccount } from '../../lib/accounts';
-import {
-  hasOverlayPermission, isPillAvailable, openConversationAsBubble,
-  requestOverlayPermission, showPill,
-} from '../../lib/pill';
 import { setActiveConversation } from '../../modules/metro-pill';
 import { getCachedRows, markConvRead, patchRowSent } from '../../lib/channelsCache';
 import { convScrollKey, getScrollOffset, saveScrollOffset, flushScrollOffset } from '../../lib/scrollPos';
@@ -278,10 +274,6 @@ export default function XmtpConversation(): React.ReactElement {
   /** Topnav overflow (3-dot) menu — groups show "Leave group"; DMs show
    *  "Open as bubble" (Android, when the native pill/bubble module is linked). */
   const [overflowOpen, setOverflowOpen] = useState(false);
-  /** Whether the native pill/bubble module is present on this build → gates the
-   *  DM "Open as bubble" item. Resolved once on mount (cheap native check). */
-  const [pillAvailable, setPillAvailable] = useState(false);
-  useEffect(() => { setPillAvailable(isPillAvailable()); }, []);
   /** Optimistic outbound entries — rendered immediately on send, dropped once the composer
    *  resolves its send promise (XMTP self-sends don't always come back via streamMessages). */
   const [optimistic, setOptimistic] = useState<HistoryEntry[]>([]);
@@ -781,35 +773,6 @@ export default function XmtpConversation(): React.ReactElement {
     })();
   }, [activeLine]);
 
-  /** DM "Open as bubble" — pop a floating Android chat-head for this 1-1.
-   *  Graceful no-op + toast if the native module/bubbles aren't available
-   *  (handled inside `openConversationAsBubble`). */
-  const onOpenAsBubble = useCallback(() => {
-    setOverflowOpen(false);
-    if (!convId || !peerAddr) return;
-    void openConversationAsBubble({
-      convId,
-      peerName: getPeerName(peerAddr) ?? shortAddress(peerAddr),
-      peerAddress: peerAddr,
-    });
-  }, [convId, peerAddr]);
-
-  /** DM "Float as pill" — launch the always-on floating voice pill targeting
-   *  THIS peer. Records push-to-talk voice clips straight to their DM + shows
-   *  their unread badge. Ensures the overlay permission first (the grant has no
-   *  callback, so we toast + bail; the user re-taps after granting). */
-  const onFloatAsPill = useCallback(() => {
-    setOverflowOpen(false);
-    if (!convId || !peerAddr) return;
-    if (!hasOverlayPermission()) {
-      void requestOverlayPermission();
-      flash('Allow “Display over other apps”, then tap Float as pill again');
-      return;
-    }
-    const unread = getCachedRows()?.find(r => r.convId === convId)?.unreadCount ?? 0;
-    void showPill(peerAddr, null, unread);
-  }, [convId, peerAddr]);
-
   if (!convId) {
     return (
       <Box style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: bg }}>
@@ -1117,8 +1080,6 @@ export default function XmtpConversation(): React.ReactElement {
         onClose={() => setOverflowOpen(false)}
         context="view"
         onAfterLeave={result => flash(result === 'left' ? 'Left group' : 'Group hidden')}
-        onOpenAsBubble={pillAvailable ? onOpenAsBubble : undefined}
-        onFloatAsPill={pillAvailable ? onFloatAsPill : undefined}
       />
       <BubbleActionMenu
         target={menuFor}

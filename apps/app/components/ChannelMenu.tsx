@@ -5,18 +5,16 @@
  *
  *  The component owns the actions that only need ids/flags — Mark read/unread
  *  (channelsCache), Pin/Unpin (pins), and navigation to Group info / Profile
- *  (expo-router). Context-specific flows that carry their own confirm dialog or
- *  native state (Leave group, Open as bubble, Float as pill) are passed in as
- *  optional callbacks by the channel-view caller.
+ *  (expo-router). Context-specific flows that carry their own confirm dialog
+ *  (Leave group) are passed in as optional callbacks by the channel-view caller.
  *
  *  Action visibility:
  *    - Mark read/unread  — both contexts (toggle by `isUnread`)
  *    - Pin / Unpin       — both contexts (toggle by `isPinned`)
  *    - Group info        — groups only (navigates to /group/[convId])
+ *    - Add members       — groups only (navigates to /xmtp/add-members)
  *    - Profile           — DMs only, when `peerAddress` is known
  *    - Leave group       — ALL groups, both contexts (built-in confirm + leave)
- *    - Open as bubble /
- *      Float as pill     — DMs only, when the matching callback is supplied
  */
 
 import { Alert, Pressable } from 'react-native';
@@ -51,15 +49,11 @@ export interface ChannelMenuProps {
   context?: 'list' | 'view';
   /** Optional hook fired after a successful leave (e.g. toast / refresh). */
   onAfterLeave?: (result: 'left' | 'hidden') => void;
-  /** DM-view only: pop a floating Android chat-head for this 1-1. */
-  onOpenAsBubble?: () => void;
-  /** DM-view only: launch the always-on floating voice pill for this peer. */
-  onFloatAsPill?: () => void;
 }
 
 export function ChannelMenu({
   convId, title, isGroup, peerAddress, isUnread, isPinned,
-  visible, onClose, context = 'list', onAfterLeave, onOpenAsBubble, onFloatAsPill,
+  visible, onClose, context = 'list', onAfterLeave,
 }: ChannelMenuProps): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
@@ -138,11 +132,13 @@ export function ChannelMenu({
           />
         ) : null}
 
-        {!isGroup && onOpenAsBubble ? (
-          <MenuRow icon="chat" label="Open as bubble" color={head} onPress={onOpenAsBubble} />
-        ) : null}
-        {!isGroup && onFloatAsPill ? (
-          <MenuRow icon="microphone" label="Float as pill" color={head} onPress={onFloatAsPill} />
+        {isGroup ? (
+          <MenuRow
+            icon="plus"
+            label="Add members"
+            color={head}
+            onPress={() => run(() => router.push({ pathname: '/xmtp/add-members', params: { convId } }))}
+          />
         ) : null}
 
         {isGroup ? (

@@ -511,6 +511,37 @@ export async function createGroup(addresses: string[], name?: string): Promise<{
   }
 }
 
+/** Add members to an existing group by Ethereum address. Resolves the
+ *  conversation for `convId`, builds `PublicIdentity[]` the same way
+ *  `createGroup` does, and calls the SDK's `group.addMembersByIdentity` (5.7.0).
+ *  Throws a legible error for addresses not on XMTP and for permission denials
+ *  (only group admins may add members). */
+export async function addGroupMembers(convId: string, addresses: string[]): Promise<void> {
+  const members = addresses
+    .map(a => a.trim())
+    .filter(a => /^0x[0-9a-fA-F]{40}$/.test(a));
+  if (members.length === 0) throw new Error('Add at least one valid member address.');
+
+  const conv = await convOfLine(lineOfConv(convId));
+  if (!conv) throw new Error('Conversation not found');
+
+  const identities = members.map(a => new PublicIdentity(a, 'ETHEREUM'));
+  try {
+    await (conv as unknown as {
+      addMembersByIdentity: (identities: PublicIdentity[]) => Promise<unknown>;
+    }).addMembersByIdentity(identities);
+  } catch (err) {
+    const msg = (err as Error)?.message ?? String(err);
+    if (/inbox|identity|not.*regist|cannot.*find/i.test(msg)) {
+      throw new Error("One or more addresses aren't on XMTP yet, so they can't be added.");
+    }
+    if (/permission|admin|not.*allow|denied|unauthor/i.test(msg)) {
+      throw new Error('Only a group admin can add members.');
+    }
+    throw new Error(`Couldn't add members: ${msg}`);
+  }
+}
+
 /** Resolve every member of a conversation as a `{inboxId → ethAddress}` map,
  *  INCLUDING the local user. Used by the conversation view to look up the
  *  sender of each message and render their stamp.fyi avatar. */
