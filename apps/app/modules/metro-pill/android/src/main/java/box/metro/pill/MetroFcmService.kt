@@ -6,67 +6,41 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.BitmapShader
-import android.graphics.Canvas
-import android.graphics.Paint
-import android.graphics.Shader
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.app.Person
-import androidx.core.graphics.drawable.IconCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
-import java.net.HttpURLConnection
-import java.net.URL
-import kotlin.math.min
 
 /**
- * MetroFcmService — renders Telegram-style push notifications with the sender's
- * avatar as the round LARGE ICON on the left of the notification card.
+ * MetroFcmService — PRIVACY-PRESERVING push handler. The daemon/FCM/Google never
+ * see message plaintext: the daemon sends a CONTENTLESS, data-only, high-priority
+ * push carrying ONLY routing metadata:
  *
- * WHY a custom service: FCM v1 *notification* payloads cannot carry a largeIcon
- * — `setLargeIcon` is a client-side NotificationCompat.Builder feature. So the
- * avatar must be downloaded and the notification built natively. This service
- * handles FCM **data** messages shaped:
+ *   data: { channelId: "xmtp", account, line?, convId?, messageId, isGroup? }
  *
- *   data: { title, body, avatarUrl, channelId, line? }
+ * There is NO title, body, preview, sender name, avatar, or group name in the
+ * push. This service posts a GENERIC "New message" card from that metadata; the
+ * device holds the XMTP key and the in-app stream renders the real content when
+ * the conversation is opened (deep-linked from the card tap).
  *
- * (line = optional metro:// deep-link to open the right conversation.)
+ * PHASE-2 FOLLOW-UP (rich on-device preview): a background headless-JS decrypt
+ * that opens the on-device XMTP RN client to derive sender + preview was assessed
+ * as unreliable in a backgrounded/Doze app (FCM ~10s dispatch budget vs the RN
+ * SDK's up-to-20s MLS Client.build, plus sqlite-store lock contention with the
+ * foreground app, and a new expo-task-manager native dep). So we ship the
+ * generic-card fallback — a clear privacy win — and leave rich previews for a
+ * follow-up once a reliable background-decrypt path exists.
  *
- * It downloads `avatarUrl`, circular-crops it (same approach as
- * OverlayView.CircleBitmapDrawable), and posts a NotificationCompat using
- * MessagingStyle with a Person whose icon is the round avatar. This is how
- * Telegram gets the sender avatar in the FAR-LEFT slot: MessagingStyle promotes
- * the Person icon to the large round avatar on the LEFT of the card on Samsung
- * OneUI (and the expanded card on stock Android), and DEMOTES the mandatory app
- * small-icon to a tiny monochrome badge overlapping the avatar's corner.
+ * SUPPRESSION: a contentless push for the conversation the user is currently
+ * viewing is still dropped (the convId match against the shared prefs, below).
  *
- * HARD OEM LIMITATION: Android REQUIRES setSmallIcon() on every notification and
- * always draws it somewhere (corner badge in MessagingStyle, header top-left in
- * DecoratedCustomViewStyle). It can never be replaced by the avatar or removed.
- * MessagingStyle is the closest-to-Telegram result because it shrinks that icon
- * to a corner badge instead of the prominent header slot — which is exactly the
- * problem with the previous DecoratedCustomViewStyle + custom-RemoteViews path
- * (that style ALWAYS renders the system header with the 'M' icon top-left, so
- * the avatar could never take the far-left slot). Falls back to a plain
- * BigTextStyle card if the avatar fails to download.
- *
- * DELEGATION: any message that is NOT an avatar-data push (a plain FCM
- * notification message, or a data message without `avatarUrl`) is forwarded to
- * an *instance* of Expo's own FirebaseMessagingService (created reflectively)
- * so existing expo-notifications behaviour is preserved. This service is the
- * ONLY MESSAGING_EVENT receiver in the merged manifest — Expo's receiver is
- * stripped via tools:node="remove" (see withMetroPill) to stop the duplicate
- * card. The delegation does NOT need Expo's manifest receiver: it instantiates
- * the class directly, so non-avatar pushes still post exactly as before.
- *
- * DAEMON FOLLOW-UP (not wired here): the daemon (~/.metro/trains/xmtp.ts
- * fcmPushTo) must send these as high-priority **data** messages carrying
- * {title, body, avatarUrl} — see the report. Until then this service is inert
- * (it just delegates), so shipping it in the APK is safe.
+ * DELEGATION: any non-xmtp push (plain FCM notification, or a data message
+ * without channelId == "xmtp") is forwarded to an *instance* of Expo's own
+ * FirebaseMessagingService (created reflectively) so existing
+ * expo-notifications behaviour is preserved. This service is the ONLY
+ * MESSAGING_EVENT receiver in the merged manifest — Expo's receiver is stripped
+ * via tools:node="remove" (see withMetroPill) to stop the duplicate card.
  */
 class MetroFcmService : FirebaseMessagingService() {
 
@@ -77,22 +51,21 @@ class MetroFcmService : FirebaseMessagingService() {
 
   override fun onMessageReceived(message: RemoteMessage) {
     val data = message.data
-    val avatarUrl = data["avatarUrl"]
-    // Only handle our avatar data-pushes here; everything else is Expo's.
-    if (avatarUrl.isNullOrBlank()) {
+    // Only handle our CONTENTLESS xmtp routing pushes here (channelId == "xmtp",
+    // set by the daemon's fcmPushTo). Everything else is Expo's.
+    if (data["channelId"] != XMTP_CHANNEL_ID) {
       runCatching { delegateMessage(message) }
       return
     }
 
-    val title = data["title"] ?: message.notification?.title ?: "Metro"
-    val body = data["body"] ?: message.notification?.body ?: ""
-    val channelId = data["channelId"] ?: DEFAULT_CHANNEL_ID
+    // PRIVACY: the push carries NO plaintext — no title/body/avatar/sender/group
+    // name. We build a GENERIC card from routing metadata only. The device holds
+    // the XMTP key; rich on-device decrypt is tracked as Phase-2 follow-up.
+    val channelId = DEFAULT_CHANNEL_ID
     val line = data["line"]
-    // GROUP vs 1-1: the daemon sets `isGroup`/`groupTitle` for group convos. When
-    // grouped, MessagingStyle shows the conversation (group) title and treats
-    // `title` as the per-message sender; for 1-1 there is a single sender.
     val isGroup = data["isGroup"] == "true" || data["isGroup"] == "1"
-    val groupTitle = data["groupTitle"]?.takeIf { it.isNotBlank() } ?: title
+    val title = "Metro"
+    val body = if (isGroup) "New message in a group" else "New message"
 
     // SUPPRESSION: if the user is currently viewing this exact conversation
     // (app foreground + that screen focused), the conversation screen has
@@ -113,64 +86,27 @@ class MetroFcmService : FirebaseMessagingService() {
       val active = applicationContext
         .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         .getString(KEY_ACTIVE_CONV, null)
-      // TEMPORARY debug log — for on-device verification of the suppression
-      // match. REMOVE once confirmed working.
-      android.util.Log.w("MetroFcm", "suppress check: push=$pushConvId active=$active match=${active == pushConvId}")
       if (active != null && active == pushConvId) return
     }
 
     ensureChannel(channelId)
 
-    val avatar = runCatching { downloadAndCircleCrop(avatarUrl) }.getOrNull()
-
     // STABLE PER-CONVERSATION NOTIFICATION ID: derive a stable id from the bare
     // convId so re-notifying the SAME conversation UPDATES the same card instead
-    // of stacking a new one (Telegram/WhatsApp behaviour: one card per channel).
-    // Fall back to the (group) title hash when there's no convId in the push.
-    val notifId = pushConvId?.hashCode() ?: groupTitle.hashCode()
+    // of stacking a new one. Fall back to a constant when there's no convId.
+    val notifId = pushConvId?.hashCode() ?: GENERIC_NOTIF_ID
 
-    // HEADING: a group card's bold heading is the CHANNEL (group) name; a 1-1
-    // DM keeps the sender's name. MessagingStyle promotes conversationTitle
-    // (set to groupTitle below) to the group heading, but we also set
-    // contentTitle accordingly so no collapsed/OEM fallback ever shows the
-    // sender as the group heading.
+    // GENERIC privacy-preserving card: routing-only push carries no plaintext, so
+    // we show a content-free "New message" heading. Tapping opens the exact
+    // conversation (deep link below) where the app decrypts + renders for real.
     val builder = NotificationCompat.Builder(this, channelId)
       .setSmallIcon(smallIconRes())
-      .setContentTitle(if (isGroup) groupTitle else title)
+      .setContentTitle(title)
       .setContentText(body)
       .setAutoCancel(true)
       .setCategory(NotificationCompat.CATEGORY_MESSAGE)
       .setPriority(NotificationCompat.PRIORITY_HIGH)
-
-    if (avatar != null) {
-      // AVATAR ON THE FAR LEFT (Telegram-style) via MessagingStyle + Person icon.
-      // MessagingStyle renders the Person's icon as the large round avatar on the
-      // LEFT of the card (OneUI collapsed + stock expanded) and demotes the
-      // mandatory app small-icon to a tiny corner badge — the closest achievable
-      // to Telegram. The Person is the SENDER (title); "self" is left default.
-      val sender = Person.Builder()
-        .setName(title)
-        .setIcon(IconCompat.createWithBitmap(avatar))
-        .build()
-
-      // ACCUMULATE messages across separate FCM deliveries. Each onMessageReceived
-      // is a fresh call with no in-memory history, so we restore the existing
-      // notification's MessagingStyle from the active notification carrying the
-      // same id and append the new message — yielding the native "stacked
-      // messages, one card per conversation, with a count" behaviour.
-      val style = restoreStyle(notifId)
-        ?: NotificationCompat.MessagingStyle(Person.Builder().setName("You").build())
-      if (isGroup) {
-        // Reads as a group: shows the conversation title + per-message senders.
-        style.setGroupConversation(true).conversationTitle = groupTitle
-      }
-      style.addMessage(body, System.currentTimeMillis(), sender)
-      builder.setStyle(style)
-    } else {
-      // DEFENSIVE FALLBACK: avatar download failed — post a standard card so a
-      // notification still shows (no avatar; small-icon only).
-      builder.setStyle(NotificationCompat.BigTextStyle().bigText(body))
-    }
+      .setStyle(NotificationCompat.BigTextStyle().bigText(body))
 
     contentIntent(line)?.let { builder.setContentIntent(it) }
 
@@ -181,23 +117,6 @@ class MetroFcmService : FirebaseMessagingService() {
         // POST_NOTIFICATIONS not granted — silently drop.
       }
     }
-  }
-
-  /** Restore the MessagingStyle from the currently-posted notification with the
-   *  given id, so a fresh FCM delivery can APPEND its message to the existing
-   *  stack instead of replacing it. Returns null when there's no active
-   *  notification for this conversation (→ caller starts a fresh style).
-   *
-   *  getActiveNotifications() is API 23+ (the app's minSdk is well above), so no
-   *  legacy fallback is needed — older devices simply start fresh each time. */
-  private fun restoreStyle(notifId: Int): NotificationCompat.MessagingStyle? {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return null
-    return runCatching {
-      val mgr = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-      val existing = mgr.activeNotifications.firstOrNull { it.id == notifId }?.notification
-        ?: return null
-      NotificationCompat.MessagingStyle.extractMessagingStyleFromNotification(existing)
-    }.getOrNull()
   }
 
   /** Extract the bare conversation id from a metro line URI. Handles both the
@@ -259,43 +178,9 @@ class MetroFcmService : FirebaseMessagingService() {
     return applicationInfo.icon
   }
 
-  /** Download `url` and circular-crop to a square bitmap (mirrors
-   *  OverlayView.CircleBitmapDrawable's square-crop + circle clip). */
-  private fun downloadAndCircleCrop(url: String): Bitmap? {
-    val conn = (URL(url).openConnection() as HttpURLConnection).apply {
-      // 4s keeps the synchronous avatar download under FCM's ~10s dispatch budget so largeIcon is attached before the first notify()
-      connectTimeout = 4000
-      readTimeout = 4000
-      instanceFollowRedirects = true
-    }
-    return try {
-      conn.inputStream.use { stream ->
-        val src = BitmapFactory.decodeStream(stream) ?: return null
-        circleCrop(src)
-      }
-    } finally {
-      conn.disconnect()
-    }
-  }
-
-  private fun circleCrop(src: Bitmap): Bitmap {
-    val side = min(src.width, src.height)
-    val x = (src.width - side) / 2
-    val y = (src.height - side) / 2
-    val square = if (src.width == side && src.height == side) src
-      else Bitmap.createBitmap(src, x, y, side, side)
-    val out = Bitmap.createBitmap(side, side, Bitmap.Config.ARGB_8888)
-    val canvas = Canvas(out)
-    val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-      shader = BitmapShader(square, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
-    }
-    canvas.drawCircle(side / 2f, side / 2f, side / 2f, paint)
-    return out
-  }
-
   // --- delegation to Expo's FirebaseMessagingService -----------------------
   // We reflectively forward so a missing/renamed Expo class never crashes the
-  // app — non-avatar pushes simply behave as before.
+  // app — non-xmtp pushes simply behave as before.
 
   private fun delegateMessage(message: RemoteMessage) {
     val svc = expoService() ?: return
@@ -327,6 +212,13 @@ class MetroFcmService : FirebaseMessagingService() {
 
   companion object {
     private const val DEFAULT_CHANNEL_ID = "metro-messages"
+
+    // Routing-only xmtp pushes carry channelId == "xmtp" (set by the daemon's
+    // fcmPushTo). Anything else is delegated to Expo's messaging service.
+    private const val XMTP_CHANNEL_ID = "xmtp"
+
+    // Notification id used when a push has no convId to derive a stable id from.
+    private const val GENERIC_NOTIF_ID = 424242
 
     // Shared with MetroPillModule.setActiveConversation — the conversation the
     // user is currently viewing (bare convId), for notification suppression.

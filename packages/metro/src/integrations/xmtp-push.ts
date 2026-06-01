@@ -85,15 +85,15 @@ async function fcmAccessToken(): Promise<string | null> {
 }
 
 async function fcmPushTo(
-  deviceToken: string, title: string, body: string, data: Record<string, string> = {},
+  deviceToken: string, data: Record<string, string> = {},
 ): Promise<void> {
   const svc = loadFcmSvc(); if (!svc) return;
   const at = await fcmAccessToken(); if (!at) return;
   const url = `https://fcm.googleapis.com/v1/projects/${svc.project_id}/messages:send`;
-  // DATA-ONLY high-priority message — NO `notification` block. The APK's native
-  // MetroFcmService builds the Telegram-style notification from data.{title,body,
-  // avatarUrl,channelId}; a notification block would bypass the native handler.
-  const payloadData: Record<string, string> = { channelId: 'xmtp', ...data, title: String(title), body: String(body) };
+  // CONTENTLESS DATA-ONLY high-priority message — NO `notification` block and NO
+  // plaintext (no title/body/avatar). The device decrypts locally + builds the
+  // card. Payload carries ONLY routing metadata; FCM/Google never see content.
+  const payloadData: Record<string, string> = { channelId: 'xmtp', ...data };
   const res = await fetch(url, {
     method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${at}` },
     body: JSON.stringify({ message: { token: deviceToken, android: { priority: 'HIGH' }, data: payloadData } }),
@@ -110,10 +110,10 @@ async function fcmPushTo(
   }
 }
 
-/** Push to every token, or only those scoped to (or unscoped for) `accountId`. */
+/** Push CONTENTLESS routing data to every token, or only those scoped to (or
+ *  unscoped for) `accountId`. No plaintext ever crosses this boundary. */
 export async function fcmPushToAll(
-  accountId: string, title: string, body: string,
-  data: Record<string, string> = {}, excludeInboxId?: string,
+  accountId: string, data: Record<string, string> = {}, excludeInboxId?: string,
 ): Promise<void> {
   // Scope to the account and skip the sender's OWN device(s) (you don't get pushed
   // for a message you just sent). Sender match is by stored inboxId/inboxIds.
@@ -124,7 +124,7 @@ export async function fcmPushToAll(
   });
   if (tokens.length === 0) return;
   await Promise.all(tokens.map(
-    t => fcmPushTo(t.token, title, body, { ...data, account: accountId }).catch(() => undefined)));
+    t => fcmPushTo(t.token, { ...data, account: accountId }).catch(() => undefined)));
 }
 
 // ──────────── control DM (inbound, F2) — wire format from PR #135 ────────────

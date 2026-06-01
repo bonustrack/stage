@@ -8,7 +8,6 @@ import type { TransactionReference } from '@xmtp/content-type-transaction-refere
 import { accounts, lineOf, parseLine } from './xmtp-accounts.js';
 import { emit, mintId, rememberUid, SELF_URI } from './xmtp-wire.js';
 import { fcmPushToAll } from './xmtp-push.js';
-import { humanizePushPreview, resolveProfileName, shortAddr } from './xmtp-push-title.js';
 import { transcribeAndEmit } from './xmtp-transcribe.js';
 
 /** Stamp account into payload and (if configured) owner-route inbound `to`. */
@@ -154,18 +153,14 @@ export function emitOutbound(accountId: string, line: string, messageId: string,
     line, from: SELF_URI, to: line, message_id: messageId, text, account: accountId,
     payload: { account: accountId },
   });
-  const preview0 = humanizePushPreview(text);
-  const preview = preview0.length > 140 ? `${preview0.slice(0, 137)}…` : preview0;
-  // Notify the recipient device(s), titled with the SENDER's resolved profile name.
+  // CONTENTLESS push: notify the recipient device(s) of a daemon-sent message
+  // with routing metadata ONLY (no preview, no sender name, no avatar). The
+  // device decrypts locally + builds the card (privacy-preserving push).
   void (async (): Promise<void> => {
-    const addr = accounts.get(accountId)?.address ?? '';
-    const name = addr ? await resolveProfileName(addr) : '';
-    const title = name || (addr ? shortAddr(addr) : 'New message');
     const data: Record<string, string> = { line, messageId };
     // Lowercase the bare convId to match the app's stored active_conv (see
     // xmtp-push-title) so the native exact-string push suppression matches.
     { const p = parseLine(line); if (p) data.convId = p.convId.toLowerCase(); }
-    if (addr) data.avatarUrl = `https://stamp.fyi/avatar/eth:${addr}?s=128`;
-    await fcmPushToAll(accountId, title, preview, data);
+    await fcmPushToAll(accountId, data);
   })().catch(() => undefined);
 }

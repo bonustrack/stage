@@ -131,9 +131,10 @@ async function listPush(id: string): Promise<void> {
 }
 
 async function testPush(id: string, args: Args): Promise<void> {
-  const { title, body, account } = args as { title?: string; body?: string; account?: string };
+  const { account } = args as { account?: string };
   const acctId = account ?? (accounts.size === 1 ? [...accounts.keys()][0] : 'default');
-  await fcmPushToAll(acctId, title ?? 'Metro test', body ?? 'Push pipeline is alive ✅', { source: 'test-push' });
+  // Contentless test push (no plaintext); the device renders its generic card.
+  await fcmPushToAll(acctId, { channelId: 'xmtp', source: 'test-push' });
   const sent = loadPushTokens().filter(t => !t.account || t.account === acctId).length;
   respond(id, { result: { sent, account: acctId } });
 }
