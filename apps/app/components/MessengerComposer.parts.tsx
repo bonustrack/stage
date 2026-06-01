@@ -37,20 +37,23 @@ export function ReplyBanner({
       borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: borderColor,
     }}>
       <Pressable onPress={onPress} disabled={!onPress}>
-        <Row align="center" gap={10} px={14} py={8}>
+        {/** Left inset 18 → outer Box paddingHorizontal:10 + 18 = 28, matching the
+         *   composer text glyph origin (Col px:10 + editor Col p:10 + TextInput
+         *   paddingHorizontal:8) so the ✕ lines up with where the input text starts. */}
+        <Row align="center" gap={10} pl={18} pr={14} py={8}>
           <Pressable
             onPress={onClear}
             hitSlop={8}
             style={{
               width: 22, height: 22, borderRadius: 11,
               alignItems: 'center', justifyContent: 'center',
-              backgroundColor: borderColor,
+              backgroundColor: '#ffffff',
             }}
           >
-            <Icon name="x" size={14} color={dark ? '#9f9fa3' : '#57606a'} />
+            <Icon name="x" size={14} color="#000000" />
           </Pressable>
           <Text style={{ fontSize: 15, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
-            <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Regular' }}>Replying to </Text>
+            <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>Replying to </Text>
             <Text style={{ color: nameColor, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
               {(sender ? getPeerName(sender) : undefined) ?? (sender ? shortAddress(sender) : 'message')}
             </Text>
