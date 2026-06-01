@@ -466,6 +466,51 @@ export async function openDmWithAddress(address: string): Promise<string> {
   return dm.id;
 }
 
+/** Create a new XMTP group conversation with the given members.
+ *
+ *  `addresses` accepts 0x Ethereum addresses (.eth resolution is done by the
+ *  caller / create-group screen via resolveEnsName before we get here — this
+ *  helper only deals in raw addresses). At least one member is required.
+ *
+ *  Mirrors the daemon's `newGroup` action but uses the RN SDK 5.7 shape: the
+ *  installed @xmtp/react-native-sdk has no `createGroupWithIdentifiers` —
+ *  instead `conversations.newGroupWithIdentities(PublicIdentity[], opts)` where
+ *  `opts.name` sets the group title. We build PublicIdentity the same way
+ *  `openDmWithAddress` does (`new PublicIdentity(addr, 'ETHEREUM')`).
+ *
+ *  Gotcha: every member must already have an XMTP inbox. The SDK throws when an
+ *  address has never registered on XMTP; we surface that as a clear message so
+ *  the screen can tell the user which address isn't reachable. */
+export async function createGroup(addresses: string[], name?: string): Promise<{ line: string; id: string }> {
+  const members = addresses
+    .map(a => a.trim())
+    .filter(a => /^0x[0-9a-fA-F]{40}$/.test(a));
+  if (members.length === 0) throw new Error('Add at least one valid member address.');
+
+  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  const identities = members.map(a => new PublicIdentity(a, 'ETHEREUM'));
+  const opts: { name?: string } = {};
+  const trimmedName = name?.trim();
+  if (trimmedName) opts.name = trimmedName;
+
+  try {
+    const group = await (client.conversations as unknown as {
+      newGroupWithIdentities: (
+        peers: PublicIdentity[],
+        opts?: { name?: string },
+      ) => Promise<{ id: string }>;
+    }).newGroupWithIdentities(identities, opts);
+    return { line: lineOfConv(group.id), id: group.id };
+  } catch (err) {
+    const msg = (err as Error)?.message ?? String(err);
+    /** The native side rejects addresses with no XMTP inbox — make that legible. */
+    if (/inbox|identity|not.*regist|cannot.*find/i.test(msg)) {
+      throw new Error("One or more addresses aren't on XMTP yet, so they can't be added.");
+    }
+    throw new Error(`Couldn't create the group: ${msg}`);
+  }
+}
+
 /** Resolve every member of a conversation as a `{inboxId → ethAddress}` map,
  *  INCLUDING the local user. Used by the conversation view to look up the
  *  sender of each message and render their stamp.fyi avatar. */

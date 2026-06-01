@@ -615,7 +615,9 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
 
   return (
     <Col flex={1} bg={bg}>
-      {/* Home topnav: title left, search icon right → opens the /search page. */}
+      {/* Home topnav: avatar left, "+" right → opens the create-group screen.
+       *  (Search lives in its own tab now, so the old search icon here was
+       *  redundant and has been replaced.) */}
       <Row align="center" justify="between" px={16} pt={12} pb={10} style={{
         borderBottomWidth: 1, borderBottomColor: border,
       }}>
@@ -626,8 +628,8 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
             style={{ backgroundColor: border }}
           />
         </Pressable>
-        <Pressable onPress={() => router.push('/search')} hitSlop={8}>
-          <Icon name="search" size={26} color={head} />
+        <Pressable onPress={() => router.push('/xmtp/new-group')} hitSlop={8}>
+          <Icon name="plus" size={26} color={head} />
         </Pressable>
       </Row>
       <FlatList
