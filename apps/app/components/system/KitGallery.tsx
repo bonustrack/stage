@@ -8,6 +8,7 @@ import { Title, type TitleLevel } from '@metro-labs/kit/title';
 import { Text, type TextWeight } from '@metro-labs/kit/text';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { BUTTON_VARIANTS, ButtonVariantBlock } from './KitGallery.buttons';
+import { IconGallery, ICON_COUNT } from './KitGallery.icons';
 
 const TITLE_LEVELS: ReadonlyArray<{ level: TitleLevel; note: string }> = [
   { level: 1, note: 'level 1 · 28' },
@@ -78,6 +79,13 @@ export function KitGallery({ dark, head, sub, border, rowBg }: {
       {BUTTON_VARIANTS.map((variant) => (
         <ButtonVariantBlock key={variant} variant={variant} dark={dark} sub={sub} />
       ))}
+
+      {/* Icons */}
+      <SectionHeader title="Icons" dark={dark} head={head} sub={sub} />
+      <Text dark={dark} color={sub} variant="caption" weight="medium" style={{ marginTop: 2 }}>
+        All {ICON_COUNT} icons in the kit — @metro-labs/kit/icon.
+      </Text>
+      <IconGallery dark={dark} head={head} sub={sub} />
     </Box>
   );
 }
