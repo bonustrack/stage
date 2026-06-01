@@ -8,52 +8,36 @@
  *  cached on disk — no cold-start latency is ever added to the action itself.
  *
  *  Everything here is a no-op (resolves to a friendly unavailable state) on a
- *  build where the native module isn't linked yet — the bundler never resolves
- *  the SDK because loadRailgunEngine() require()s it lazily behind the guard. */
-import { loadRailgunEngine, isRailgunAvailable } from './native';
+ *  build where the native PROVER isn't linked yet — the bundler never resolves
+ *  the heavy SDK because it's required lazily behind isRailgunAvailable(). The
+ *  actual SDK init/provider wiring lives in sdkEngine.ts; this file keeps the
+ *  pre-warm/ready contract the rest of lib/railgun depends on. */
+import { isRailgunAvailable } from './native';
+import { initEngine, ensureProvider, isEngineReady } from './sdkEngine';
+import { DEFAULT_RAILGUN_NET, netForChainId } from './networks';
 
-/** Engine init runs at most once; concurrent callers await the same promise so
- *  pre-warm + a fast user tap don't double-initialise. */
-let warmup: Promise<boolean> | null = null;
-let ready = false;
+export function isRailgunReady(): boolean { return isEngineReady(); }
 
-export function isRailgunReady(): boolean { return ready; }
-
-/** Eagerly initialise the engine, load the Groth16 prover, and preload the
- *  proving artifacts so the first proof doesn't pay a cold start. Idempotent +
- *  safe to call on every app/wallet open. Resolves `false` (never throws) when
- *  the native module isn't available, so callers can fire-and-forget. */
+/** Eagerly initialise the engine, load the Groth16 prover, and connect the
+ *  default network's RPC so the first proof doesn't pay a cold start. Idempotent
+ *  + safe to call on every app/wallet open. Resolves `false` (never throws) when
+ *  the native prover isn't available, so callers can fire-and-forget. */
 export async function prewarmRailgun(): Promise<boolean> {
-  if (ready) return true;
+  if (isEngineReady()) return true;
   if (!isRailgunAvailable()) return false;
-  if (warmup) return warmup;
-  warmup = (async (): Promise<boolean> => {
-    try {
-      const eng = loadRailgunEngine() as RailgunEngineApi | null;
-      if (!eng) return false;
-      // 1) Start the engine (LevelDB artifact store lives in the app doc dir →
-      //    proving keys/artifacts are downloaded ONCE and cached on disk).
-      await eng.startRailgunEngine?.();
-      // 2) Load the Groth16 prover into memory (the expensive cold step).
-      await eng.loadProvider?.();
-      // 3) Preload the shield/transfer/unshield Groth16 artifacts so the first
-      //    real proof reuses them instead of fetching mid-action.
-      await eng.preloadArtifacts?.();
-      ready = true;
-      return true;
-    } catch {
-      warmup = null; // allow a retry on the next open
-      return false;
-    }
-  })();
-  return warmup;
+  const ok = await initEngine();
+  if (!ok) return false;
+  await ensureProvider(DEFAULT_RAILGUN_NET).catch(() => undefined);
+  return true;
 }
 
-/** Minimal structural view of the engine surface we touch. The real SDK has a
- *  far larger API; we only narrow the methods pre-warm needs, and treat them as
- *  optional so a version skew degrades to "not warmed" instead of crashing. */
-interface RailgunEngineApi {
-  startRailgunEngine?: () => Promise<void>;
-  loadProvider?: () => Promise<void>;
-  preloadArtifacts?: () => Promise<void>;
+/** Ensure the engine is warm + connected to the network for `chainId`. Used by
+ *  an action right before it proves, so a tap on a not-yet-warm chain still
+ *  works (it just waits for the warm-up it would otherwise have skipped). */
+export async function ensureRailgunForChain(chainId: number): Promise<boolean> {
+  if (!isRailgunAvailable()) return false;
+  const ok = isEngineReady() ? true : await initEngine();
+  if (!ok) return false;
+  await ensureProvider(netForChainId(chainId).net).catch(() => undefined);
+  return true;
 }

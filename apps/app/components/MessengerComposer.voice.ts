@@ -21,7 +21,10 @@ export const SLIDE_CANCEL_THRESHOLD_PX = 80;
 export function useVoiceRecorder(args: VoiceArgs) {
   const { upload, setErr, setRecording, setRecordSecs, setLevels } = args;
   const recRef = useRef<Audio.Recording | null>(null);
-  const recTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Pinned to `number` (the RN timer id): adding the Railgun SDK pulls
+  // @types/node into the app's type program, whose Timeout return type collides
+  // with the DOM lib at clearInterval() — `number` keeps the clear calls clean.
+  const recTimerRef = useRef<number | null>(null);
   /** Mic press timestamp — distinguishes push-to-talk (hold) from a tap. */
   const micPressStart = useRef(0);
   /** Synchronous mirror of `recording` so push-to-talk release reliably stops. */
@@ -56,7 +59,7 @@ export function useVoiceRecorder(args: VoiceArgs) {
     recRef.current = rec;
     setRecording(true);
     setRecordSecs(0);
-    recTimerRef.current = setInterval(() => { setRecordSecs(s => s + 1); }, 1000);
+    recTimerRef.current = setInterval(() => { setRecordSecs(s => s + 1); }, 1000) as unknown as number;
     /** A release/cancel that landed mid-prepare — honour it now that we're live. */
     if (pendingStop.current === 'cancel') void cancelRec();
     else if (pendingStop.current === 'send') void stopRec();
