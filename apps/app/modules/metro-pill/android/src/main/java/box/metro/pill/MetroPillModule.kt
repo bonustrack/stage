@@ -138,6 +138,22 @@ class MetroPillModule : Module() {
       }.commit()
       true
     }
+
+    // ---- App-foreground tracking (rich foreground-notification handoff) ----
+    // When the app is warm/foregrounded the live XMTP stream already holds the
+    // DECRYPTED message, so the JS layer posts a RICH local notification (real
+    // sender + preview) for conversations the user isn't viewing. To avoid a
+    // DUPLICATE card, MetroFcmService must NOT also post its generic card while
+    // foregrounded — so JS sets this `app_foreground` flag on active / clears it
+    // on background, and onMessageReceived skips the generic card when it's true.
+    // Same prefs file + commit() (synchronous) pattern as setActiveConversation
+    // so the FCM process reads a value that's already on disk.
+    Function("setAppForeground") { foreground: Boolean ->
+      val prefs = context.applicationContext
+        .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+      prefs.edit().putBoolean(KEY_APP_FOREGROUND, foreground).commit()
+      true
+    }
   }
 
   private fun bubblesSupported(): Boolean {
@@ -272,6 +288,10 @@ class MetroPillModule : Module() {
      *  suppression of the currently-open conversation. */
     const val PREFS_NAME = "metro_pill"
     const val KEY_ACTIVE_CONV = "active_conv"
+
+    /** Whether the app is currently foregrounded. When true, MetroFcmService
+     *  skips its generic card so the JS layer posts the rich one (no dupes). */
+    const val KEY_APP_FOREGROUND = "app_foreground"
 
     /** Weak ref so the OverlayService can deliver recorder results back into JS
      *  without leaking the module across JS reloads. Cleared in OnDestroy. */

@@ -58,6 +58,18 @@ class MetroFcmService : FirebaseMessagingService() {
       return
     }
 
+    // FOREGROUND HANDOFF: when the app is warm/foregrounded the live XMTP stream
+    // already holds the DECRYPTED message, so the JS layer posts a RICH local
+    // notification (real sender + preview) for conversations the user isn't
+    // viewing. The native generic card can't be suppressed JS-side (it bypasses
+    // expo-notifications' handler), so we skip it HERE when `app_foreground` is
+    // true — the JS rich card is the single foreground card. Cold/background
+    // (flag false/absent) keeps the existing generic-card behaviour below.
+    val foreground = applicationContext
+      .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+      .getBoolean(KEY_APP_FOREGROUND, false)
+    if (foreground) return
+
     // PRIVACY: the push carries NO plaintext — no title/body/avatar/sender/group
     // name. We build a GENERIC card from routing metadata only. The device holds
     // the XMTP key; rich on-device decrypt is tracked as Phase-2 follow-up.
@@ -224,5 +236,10 @@ class MetroFcmService : FirebaseMessagingService() {
     // user is currently viewing (bare convId), for notification suppression.
     private const val PREFS_NAME = "metro_pill"
     private const val KEY_ACTIVE_CONV = "active_conv"
+
+    // Shared with MetroPillModule.setAppForeground — true while the app is
+    // foregrounded, in which case the JS layer posts the rich card and this
+    // service skips its generic one (no duplicate card).
+    private const val KEY_APP_FOREGROUND = "app_foreground"
   }
 }

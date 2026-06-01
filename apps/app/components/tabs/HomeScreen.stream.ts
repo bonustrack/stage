@@ -2,16 +2,44 @@
  *  per-row update (lastTs/preview/avatar/unread). Extracted from HomeScreen.tsx
  *  (phase-2 lint, behaviour identical). */
 
-import { isMetroControlBody } from '../../lib/push';
+import { isMetroControlBody, presentInboundNotification } from '../../lib/push';
 import { previewOfXmtpContent } from '@metro-labs/client/xmtp/humanize';
+import { getPeerName } from '../../lib/peerProfiles';
+import { isActiveConv } from '../../lib/activeConv';
+import { shortAddress } from '../../lib/xmtp';
 import type { Row as RowT } from './HomeScreen.helpers';
 import { convIdFromTopic } from './HomeScreen.helpers';
 
 interface StreamedMsg {
+  id?: string;
   content: () => unknown;
   contentTypeId?: string;
   sentNs?: number;
   senderInboxId?: string;
+}
+
+/** De-dupe guard: the same DecodedMessage can be delivered more than once (the
+ *  native stream re-arm + an AppState-resume resync can both surface it), and
+ *  we must never post two cards for one message. Tracks the last N notified
+ *  message ids; bounded so it can't grow unbounded over a long session. */
+const notifiedMsgIds = new Set<string>();
+function alreadyNotified(id: string): boolean {
+  if (notifiedMsgIds.has(id)) return true;
+  notifiedMsgIds.add(id);
+  if (notifiedMsgIds.size > 200) {
+    const oldest = notifiedMsgIds.values().next().value;
+    if (oldest !== undefined) notifiedMsgIds.delete(oldest);
+  }
+  return false;
+}
+
+/** Conversation context captured from the matched row for the foreground rich
+ *  notification (resolved inside setRows, consumed just after). */
+interface NotifyCtx {
+  title: string;
+  senderAddr: string | null;
+  isGroup: boolean;
+  fromSelf: boolean;
 }
 
 interface MsgHandlerDeps {
@@ -52,12 +80,22 @@ export function makeMsgStreamHandler({ isCancelled, setRows, refresh }: MsgHandl
         ?? null;
 
       let needsRefresh = false;
+      /** Captured from the matched row so the foreground rich-notification path
+       *  (below, outside setRows) has the conversation context without a second
+       *  lookup. Null until a row matches. */
+      let notify: NotifyCtx | null = null;
       setRows(prev => {
         if (!prev) return prev;
         const idx = msgConvId ? prev.findIndex(r => r.convId === msgConvId) : -1;
         if (idx === -1) { needsRefresh = true; return prev; }
         const cur = prev[idx]!;
         const senderAddr = cur.inboxToAddr[msg.senderInboxId ?? ''] ?? null;
+        notify = {
+          title: cur.title,
+          senderAddr,
+          isGroup: cur.peerAddress == null,
+          fromSelf: msg.senderInboxId === cur.selfInboxId,
+        };
         /** DM cards are pinned to the PEER's avatar — never the latest sender.
          *  Otherwise a message from self (or the shared-inbox daemon) would
          *  flip the card to the local user's own avatar. Groups still track the
@@ -81,6 +119,26 @@ export function makeMsgStreamHandler({ isCancelled, setRows, refresh }: MsgHandl
         return [updated, ...prev.slice(0, idx), ...prev.slice(idx + 1)];
       });
       if (needsRefresh) void refresh();
+      maybeNotify(notify, msgConvId, msg.id, lastPreview);
     })();
   };
+}
+
+/** FOREGROUND RICH NOTIFICATION: the app is warm and the message arrived on the
+ *  live decrypted stream, so post a real sender + preview card (the native FCM
+ *  service is skipping its generic one while foregrounded — see setAppForeground).
+ *  Suppressed when it's our own message, when the user is viewing this exact
+ *  conversation (isActiveConv mirrors the native active-conv suppression), or
+ *  when we already notified this message id (de-dupe). DMs title with the peer
+ *  (name / short addr); groups title with the group + prefix the sender. */
+function maybeNotify(
+  n: NotifyCtx | null, convId: string | null, msgId: string | undefined, preview: string,
+): void {
+  if (!n || n.fromSelf || !convId || isActiveConv(convId)) return;
+  if (msgId && alreadyNotified(msgId)) return;
+  const senderName = getPeerName(n.senderAddr)
+    ?? (n.senderAddr ? shortAddress(n.senderAddr) : 'New message');
+  const title = n.isGroup ? n.title : (getPeerName(n.senderAddr) ?? n.title);
+  const body = n.isGroup ? `${senderName}: ${preview}` : preview;
+  void presentInboundNotification({ title, body, convId, messageId: msgId });
 }

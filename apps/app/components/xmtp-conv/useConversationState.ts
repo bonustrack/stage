@@ -13,6 +13,7 @@ import {
   XMTP_USER_PREFIX, lineOfConv, useXmtpFeed, xmtpReply, shortAddress,
 } from '../../lib/xmtp';
 import { setActiveConversation } from '../../modules/metro-pill';
+import { setActiveConvId } from '../../lib/activeConv';
 import { markConvRead } from '../../lib/channelsCache';
 import { convScrollKey, getScrollOffset, flushScrollOffset } from '../../lib/scrollPos';
 import type { HistoryEntry } from '../../lib/types';
@@ -42,31 +43,34 @@ export function useConversationState(convId: string | undefined, focus: string |
     if (!convId) return;
     void markConvRead(convId);
   }, [convId, events.length]);
-  /** Tell native which conversation is on-screen so the FCM service suppresses a
-   *  push for it (the user is already looking at it). Set on focus, cleared on
-   *  blur AND when the app backgrounds (so a push for THIS conv still fires once
-   *  the user can't see it). `active_conv == convId` ⟺ "foreground + viewing it".
-   *  Native no-ops the call off-Android / on pre-module builds.
+  /** Tell native + JS which conversation is on-screen so the FCM service (cold)
+   *  and the foreground rich-notif path (warm, via setActiveConvId) both suppress
+   *  a notification for it (the user is already looking at it). Set on focus,
+   *  cleared on blur AND when the app backgrounds (so a push for THIS conv still
+   *  fires once the user can't see it). Native no-ops off-Android / pre-module.
    *
    *  CASE NORMALISATION (the suppression bug): the native FCM service does an
    *  EXACT-string `active_conv == data.convId` compare. The value the daemon
-   *  sends (`parseLine(line).convId`, from the node-sdk `conversation.id`) and
-   *  the value this screen stores (the route param, from the RN-sdk
-   *  `Conversation.id`) are both the MLS group-id hex — but the two SDKs are NOT
-   *  guaranteed to return the SAME case, so a mixed-case skew makes the exact
-   *  compare never match and the push for the open conversation still fires.
+   *  sends (`parseLine(line).convId`, node-sdk `conversation.id`) and the value
+   *  this screen stores (route param, RN-sdk `Conversation.id`) are both the MLS
+   *  group-id hex — but the two SDKs aren't guaranteed to agree on case, so a
+   *  mixed-case skew makes the exact compare never match and the push fires.
    *  Lowercasing here + on the daemon side (xmtp-push-title) makes the native
    *  exact compare case-insensitive WITHOUT a new APK. */
   const activeConvId = useMemo(() => convId?.toLowerCase(), [convId]);
   useFocusEffect(useCallback(() => {
     if (!activeConvId) return;
     setActiveConversation(activeConvId);
+    setActiveConvId(activeConvId);
     const sub = AppState.addEventListener('change', (s) => {
-      setActiveConversation(s === 'active' ? activeConvId : null);
+      const open = s === 'active' ? activeConvId : null;
+      setActiveConversation(open);
+      setActiveConvId(open);
     });
     return () => {
       sub.remove();
       setActiveConversation(null);
+      setActiveConvId(null);
     };
   }, [activeConvId]));
   const status: 'idle' | 'connecting' | 'open' | 'error' = xmtpFeed.status === 'open' ? 'open'

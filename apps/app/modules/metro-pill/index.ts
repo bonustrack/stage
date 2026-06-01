@@ -81,6 +81,15 @@ export function setActiveConversation(convId: string | null): boolean {
   return native?.setActiveConversation?.(convId) ?? false;
 }
 
+/** Report whether the app is currently foregrounded. While true the native FCM
+ *  service skips its generic "New message" card so the JS layer can post a RICH
+ *  local notification (real sender + preview) from the live decrypted stream
+ *  with no duplicate. Set true on AppState 'active', false on background. No-op
+ *  when the module isn't linked (rich foreground notifs simply never engage). */
+export function setAppForeground(foreground: boolean): boolean {
+  return native?.setAppForeground?.(foreground) ?? false;
+}
+
 /** Subscribe to recorded-audio events from the pill. Returns a subscription
  *  whose `.remove()` detaches the listener. No-op subscription when unavailable. */
 export function addRecordedListener(cb: (e: RecordedEvent) => void): EventSubscription {

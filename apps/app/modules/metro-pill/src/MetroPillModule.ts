@@ -32,6 +32,10 @@ declare class MetroPillModule extends NativeModule<MetroPillModuleEvents> {
    *  FCM service can suppress a push for it. Pass null to clear (on blur /
    *  background). Persisted to SharedPreferences so the FCM process can read it. */
   setActiveConversation(convId: string | null): boolean;
+  /** Report whether the app is currently foregrounded so the FCM service can
+   *  skip its generic card (the JS layer posts a rich one instead) and avoid a
+   *  duplicate notification. Persisted to SharedPreferences for the FCM process. */
+  setAppForeground(foreground: boolean): boolean;
 }
 
 // `requireNativeModule` throws on platforms where the module isn't linked

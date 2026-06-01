@@ -20,6 +20,7 @@
 
 import { AppState } from 'react-native';
 import type { ConsentState } from '@xmtp/react-native-sdk';
+import { setAppForeground } from '../modules/metro-pill';
 import type { HistoryEntry } from './types';
 import { isMetroControlBody } from './push';
 import { getCachedXmtpClient, getOrCreateXmtpClient, convOfLine } from './xmtp.client';
@@ -140,8 +141,17 @@ export async function ensureGlobalStream(): Promise<void> {
     /** Low-frequency global resync backstop — only touches the active/open conv
      *  (1 conv, PAGE_SIZE 20) so the rate-limit blast radius stays tiny. */
     if (!globalResyncTimer) globalResyncTimer = setInterval(() => { void resyncActiveFeeds(); }, 7_000);
+    /** FOREGROUND FLAG: the app is foregrounded right now (the stream just
+     *  started from a live mount), so tell native to skip its generic push card —
+     *  the rich JS local notif (presentInboundNotification, fired from the
+     *  channels-list stream handler) is the single foreground card. Cleared on
+     *  background below so cold/background falls back to the generic card. */
+    setAppForeground(AppState.currentState === 'active');
     if (!globalAppStateSub) {
       globalAppStateSub = AppState.addEventListener('change', (state) => {
+        /** Mirror the active-conv plumbing: foreground ⟺ JS posts rich cards +
+         *  native suppresses its generic one; background ⟺ native generic card. */
+        setAppForeground(state === 'active');
         if (state !== 'active') return;
         void resyncActiveFeeds();
         /** Stream may have died while backgrounded (onClose nulled the cancel) —
@@ -160,6 +170,9 @@ function teardownGlobalStream(): void {
   if (globalStreamRearmTimer) { clearTimeout(globalStreamRearmTimer); globalStreamRearmTimer = null; }
   if (globalResyncTimer) { clearInterval(globalResyncTimer); globalResyncTimer = null; }
   if (globalAppStateSub) { try { globalAppStateSub.remove(); } catch { /* ignore */ } globalAppStateSub = null; }
+  /** Clear the foreground flag so a torn-down (account-switch) stream doesn't
+   *  leave native thinking the app is foreground and suppressing generic cards. */
+  setAppForeground(false);
 }
 /** Wire teardown into the shared state so the client module's
  *  `resetClientScopedState` can stop the stream on account switch without
