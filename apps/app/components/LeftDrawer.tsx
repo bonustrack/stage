@@ -156,12 +156,8 @@ export function LeftDrawer({ progress }: { progress: SharedValue<number> }): Rea
           {/* Avatar header */}
           <DrawerHeader rec={activeRec} c={{ head, sub, border }} />
 
-          <Box style={{ height: 1, backgroundColor: border }} />
-
           {/* Accounts — tap to switch. */}
           <DrawerAccounts accounts={accounts} activeId={activeId} onSwitch={onSwitch} c={{ head, sub, border }} />
-
-          <Box style={{ height: 1, backgroundColor: border }} />
 
           {/* Profile + Settings rows. */}
           <DrawerRow icon="user" label="Profile" head={head} sub={sub} border={border} onPress={() => go('/profile')} />

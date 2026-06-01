@@ -13,8 +13,9 @@ import { KitTitleStory } from './KitTitle.story';
 import { KitTextStory } from './KitText.story';
 import { KitButtonStory } from './KitButton.story';
 import { KitIconsStory } from './KitIcons.story';
+import { KitColorsStory } from './KitColors.story';
 
-const TABS = ['Title', 'Text', 'Button', 'Icons'] as const;
+const TABS = ['Title', 'Text', 'Button', 'Icons', 'Colors'] as const;
 type KitTab = (typeof TABS)[number];
 
 function TabBar({ tab, setTab, p }: {
@@ -54,6 +55,7 @@ export function KitTabs({ p }: { p: ControlPalette }): React.ReactElement {
         {tab === 'Text' ? <KitTextStory p={p} /> : null}
         {tab === 'Button' ? <KitButtonStory p={p} /> : null}
         {tab === 'Icons' ? <KitIconsStory p={p} /> : null}
+        {tab === 'Colors' ? <KitColorsStory p={p} /> : null}
       </Box>
     </Box>
   );
