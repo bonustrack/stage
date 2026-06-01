@@ -7,11 +7,12 @@ import { Pressable } from 'react-native';
 import { FlatList } from 'react-native-gesture-handler';
 import { Icon } from '@metro-labs/kit/icon';
 import { Avatar } from '../Avatar';
-import { Row } from '../layout';
+import { Box, Row } from '../layout';
+import { Text } from '@metro-labs/kit/text';
 import { CHANNELS_SCROLL_KEY, saveScrollOffset } from '../../lib/scrollPos';
 import { CHANNEL_ROW_HEIGHT } from './HomeScreen.helpers';
 import type { Row as RowT } from './HomeScreen.helpers';
-import { HomeEmpty, RequestsHeader } from './HomeScreen.parts';
+import { HomeEmpty } from './HomeScreen.parts';
 
 interface ChannelsListProps {
   panRef?: import('../SwipeTabs').SimultaneousRefs;
@@ -19,7 +20,6 @@ interface ChannelsListProps {
   myAddress: string | null;
   sortedRows: RowT[];
   requestCount: number;
-  dark: boolean;
   head: string;
   sub: string;
   border: string;
@@ -33,7 +33,7 @@ interface ChannelsListProps {
 }
 
 export function ChannelsList({
-  panRef, router, myAddress, sortedRows, requestCount, dark, head, sub, border,
+  panRef, router, myAddress, sortedRows, requestCount, head, sub, border,
   listExtraData, listRef, savedOffsetRef, didRestoreRef, contentHeightRef,
   renderRow, getRowLayout,
 }: ChannelsListProps): React.ReactElement {
@@ -48,9 +48,30 @@ export function ChannelsList({
         <Pressable onPress={() => router.push('/accounts')} hitSlop={8}>
           <Avatar address={myAddress} size={24} style={{ backgroundColor: border }} />
         </Pressable>
-        <Pressable onPress={() => router.push('/xmtp/new-group')} hitSlop={8}>
-          <Icon name="plus" size={26} color={head} />
-        </Pressable>
+        <Row align="center" gap={18}>
+          {/* Message requests: person icon + count badge (pending 'unknown'
+           *  consent convs). Badge hidden when 0; tap opens the requests list. */}
+          <Pressable onPress={() => router.push('/xmtp/requests')} hitSlop={8} style={{ position: 'relative' }}>
+            <Icon name="user" size={24} color={head} />
+            {requestCount > 0 ? (
+              <Box
+                px={5}
+                radius={999}
+                bg="#e0245e"
+                align="center"
+                justify="center"
+                style={{ position: 'absolute', top: -6, right: -8, minWidth: 16, height: 16 }}
+              >
+                <Text style={{ color: '#fff', fontSize: 10, fontFamily: 'Calibre-Semibold' }}>
+                  {requestCount > 99 ? '99+' : requestCount}
+                </Text>
+              </Box>
+            ) : null}
+          </Pressable>
+          <Pressable onPress={() => router.push('/xmtp/new-group')} hitSlop={8}>
+            <Icon name="plus" size={26} color={head} />
+          </Pressable>
+        </Row>
       </Row>
       <FlatList
         ref={listRef}
@@ -74,19 +95,7 @@ export function ChannelsList({
             try { listRef.current?.scrollToOffset({ offset, animated: false }); } catch { /* best-effort */ }
           });
         }}
-        ListHeaderComponent={
-          requestCount > 0 ? (
-            <RequestsHeader
-              requestCount={requestCount}
-              dark={dark}
-              head={head}
-              sub={sub}
-              border={border}
-              onPress={() => router.push('/xmtp/requests')}
-            />
-          ) : null
-        }
-        extraData={[listExtraData, requestCount]}
+        extraData={listExtraData}
         keyExtractor={r => r.convId}
         getItemLayout={getRowLayout}
         windowSize={11}

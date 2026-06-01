@@ -146,7 +146,6 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
         myAddress={myAddress}
         sortedRows={sortedRows}
         requestCount={requestCount}
-        dark={dark}
         head={head}
         sub={sub}
         border={border}

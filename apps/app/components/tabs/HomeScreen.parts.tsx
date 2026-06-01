@@ -5,8 +5,7 @@
 import { useCallback } from 'react';
 import { DevSettings, Pressable, Vibration } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
-import { Icon } from '@metro-labs/kit/icon';
-import { Box, Col } from '../layout';
+import { Col } from '../layout';
 import { Spinner } from '../Spinner';
 import { ChannelRow } from '../ChannelRow';
 import { resetXmtpClient, shortAddress } from '../../lib/xmtp';
@@ -120,38 +119,5 @@ export function HomeEmpty({ sub }: { sub: string }): React.ReactElement {
         No conversations yet. Share your address from Settings to start one.
       </Text>
     </Col>
-  );
-}
-
-/** "Message requests (N)" list header — only rendered when requestCount > 0. */
-export function RequestsHeader({ requestCount, dark, head, sub, border, onPress }: {
-  requestCount: number; dark: boolean; head: string; sub: string; border: string;
-  onPress: () => void;
-}): React.ReactElement {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        flexDirection: 'row', alignItems: 'center', gap: 12,
-        paddingHorizontal: 16, paddingVertical: 16,
-        borderBottomWidth: 1, borderBottomColor: border,
-        backgroundColor: pressed ? (dark ? '#1a1a1c' : '#f2f2f4') : 'transparent',
-      })}
-    >
-      <Box radius={20} bg={border} align="center" justify="center" style={{ width: 40, height: 40 }}>
-        <Icon name="envelope" size={20} color={head} />
-      </Box>
-      <Col flex={1}>
-        <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Medium' }}>
-          Message requests
-        </Text>
-        <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
-          {requestCount} pending
-        </Text>
-      </Col>
-      <Box px={9} py={3} radius={999} bg={dark ? '#3a3a3c' : '#e4e4e8'}>
-        <Text style={{ color: head, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{requestCount}</Text>
-      </Box>
-    </Pressable>
   );
 }
