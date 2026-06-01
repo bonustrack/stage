@@ -229,9 +229,12 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
         <Btn icon="creditCard" label="Buy" onPress={() => flash('Buy — coming soon')} />
       </Row>
 
-      {/* Tokens | NFTs segmented toggle — pill control; active tab gets a
-          filled background, the other is plain. Default Tokens. */}
-      <Row gap={8} mx={16} mt={22} mb={6}>
+      {/* Tokens | NFTs underline tabs — Snapshot-treasury style: a left-aligned
+          row of text tabs sitting on a full-width hairline divider; the active
+          tab gets a 2px bottom-border underline + head colour, inactive is
+          muted with no underline. Default Tokens. */}
+      <Row justify="start" gap={24} mx={16} mt={22} mb={6}
+        style={{ borderBottomWidth: 1, borderBottomColor: border }}>
         {(['tokens', 'nfts'] as const).map(t => {
           const active = tab === t;
           return (
@@ -239,12 +242,13 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
               key={t}
               onPress={() => setTab(t)}
               style={{
-                paddingHorizontal: 16, paddingVertical: 7, borderRadius: 999,
-                borderWidth: 1, borderColor: border,
-                backgroundColor: active ? head : 'transparent',
+                paddingVertical: 10,
+                marginBottom: -1,
+                borderBottomWidth: 2,
+                borderBottomColor: active ? head : 'transparent',
               }}
             >
-              <Text style={{ color: active ? bg : sub, fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
+              <Text style={{ color: active ? head : sub, fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
                 {t === 'tokens' ? 'Tokens' : 'NFTs'}
               </Text>
             </Pressable>
