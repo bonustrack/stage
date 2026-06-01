@@ -34,14 +34,20 @@ export function SystemScreen(): React.ReactElement {
             key={row.href}
             onPress={() => router.push(row.href)}
             style={({ pressed }) => ({
-              paddingHorizontal: 16, paddingVertical: 16,
-              flexDirection: 'row', alignItems: 'center', gap: 12,
-              borderBottomWidth: 1, borderBottomColor: divider,
               backgroundColor: pressed ? divider : 'transparent',
             })}
           >
-            <Icon name={row.icon} size={22} color={head} />
-            <Text style={{ color: fg, fontSize: 18, fontFamily: 'Calibre-Medium' }}>{row.label}</Text>
+            <Box
+              style={{
+                marginHorizontal: 16,
+                paddingVertical: 16,
+                flexDirection: 'row', alignItems: 'center', gap: 12,
+                borderBottomWidth: 1, borderBottomColor: divider,
+              }}
+            >
+              <Icon name={row.icon} size={22} color={head} />
+              <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Medium' }}>{row.label}</Text>
+            </Box>
           </Pressable>
         ))}
       </ScrollView>
