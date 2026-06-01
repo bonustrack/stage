@@ -98,7 +98,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
         ) : (
           <Text style={{ color: head, fontSize: 38, fontFamily: 'Calibre-Semibold' }}>
             {splitUsd(fmtUsd(totalUsd)).int}
-            <Text style={{ color: sub }}>{splitUsd(fmtUsd(totalUsd)).dec}</Text>
+            <Text style={{ color: sub, fontSize: 38, fontFamily: 'Calibre-Semibold' }}>{splitUsd(fmtUsd(totalUsd)).dec}</Text>
           </Text>
         )}
       </Col>
