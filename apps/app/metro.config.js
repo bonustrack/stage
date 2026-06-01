@@ -24,6 +24,15 @@ if (!config.resolver.assetExts.includes('woff2')) {
   config.resolver.assetExts.push('woff2');
 }
 config.watchFolders = [...(config.watchFolders ?? []), workspaceRoot];
+// Pin the server root to the app dir. Metro otherwise defaults serverRoot to the
+// common ancestor of projectRoot + watchFolders (the workspace root), and the dev
+// client then requests the entry as `./node_modules/expo-router/entry` relative to
+// THAT root. Under bun's non-hoisted install layout the workspace-root node_modules
+// is near-empty (deps live in apps/app/node_modules), so that path 404s with an
+// UnableToResolveError on device. Pinning to projectRoot resolves the entry from the
+// app's node_modules (where the symlink exists); workspace packages still resolve via
+// watchFolders + nodeModulesPaths, which are unaffected by serverRoot.
+config.server = { ...(config.server ?? {}), unstable_serverRoot: projectRoot };
 config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, 'node_modules'),
   path.resolve(workspaceRoot, 'node_modules'),

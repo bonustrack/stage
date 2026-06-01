@@ -28,7 +28,7 @@ import {
   getCachedXmtpClient, setCachedXmtpClient, resetClientScopedState,
 } from './xmtp.state';
 import { type XmtpEnv, convIdOfLine } from './xmtp.types';
-import { loadOrCreateDbKey, deleteDbKey, dbDirObj, ensureDbDir } from './xmtp.db';
+import { loadOrCreateDbKey, deleteDbKey, dbDirObj, ensureDbDir } from './xmtp.dbkey';
 
 export { getCachedXmtpClient } from './xmtp.state';
 

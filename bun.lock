@@ -119,6 +119,7 @@
       "peerDependencies": {
         "react": "*",
         "react-native": "*",
+        "react-native-svg": "*",
       },
     },
     "packages/metro": {
