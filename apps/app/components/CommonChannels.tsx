@@ -1,4 +1,4 @@
-/** "Common channels" section on a peer's profile (see ProfileScreen.tsx).
+/** "Channels" section on a peer's profile (see ProfileScreen.tsx).
  *  Lists the GROUP conversations the local user and the viewed peer are BOTH
  *  members of, each tappable → that group's conversation. Only mounted for
  *  OTHER users; resolution runs async via `useCommonChannels` so it never
@@ -14,8 +14,9 @@
  *  When the cache has no entry for a group yet, it falls back to the member
  *  count subtitle. */
 
+import { Pressable } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
-import { Box } from './layout';
+import { Box, Row } from './layout';
 import { Spinner } from './Spinner';
 import { useRouter } from 'expo-router';
 import { ChannelRow } from './ChannelRow';
@@ -51,15 +52,18 @@ export function CommonChannels({ peerAddress, enabled, c }: {
 
   return (
     <Box style={{ marginTop: 20 }}>
-      <Box style={{
-        flexDirection: 'row', alignItems: 'center', gap: 8,
-        marginHorizontal: 20, marginBottom: 6,
-      }}>
-        <Text style={{ color: c.sub, fontSize: 11, fontFamily: 'Calibre-Medium' }}>
-          COMMON CHANNELS
-        </Text>
+      {/* Underline-tab header — mirrors the Wallet page's WalletTabs visual
+          treatment (active bottom-border, 18px Calibre-Semibold, head colour),
+          rendered as a single tab. */}
+      <Row justify="start" align="center" gap={24} mx={16} mb={6}
+        style={{ borderBottomWidth: 1, borderBottomColor: c.border }}>
+        <Pressable style={{ paddingVertical: 10, marginBottom: -1, borderBottomWidth: 2, borderBottomColor: c.head }}>
+          <Text style={{ color: c.head, fontSize: 18, fontFamily: 'Calibre-Semibold' }}>
+            Channels
+          </Text>
+        </Pressable>
         {loading ? <Spinner size={20} color={c.sub} /> : null}
-      </Box>
+      </Row>
 
       {/* Flat full-width rows — identical to the channels tab (index.tsx
           renderRow): same preview prefix, timestamp, unread badge, pin/draft
