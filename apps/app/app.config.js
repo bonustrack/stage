@@ -166,6 +166,14 @@ const config = {
     eas: {
       projectId: '1707f2db-c2b8-4c91-9341-27b1d57d355f',
     },
+    // Git commit hash for the System → About page. EAS sets
+    // EAS_BUILD_GIT_COMMIT_HASH on cloud builds; falls back to a local GIT_HASH
+    // env or 'dev' when running an un-stamped dev bundle.
+    gitHash:
+      process.env.EAS_BUILD_GIT_COMMIT_HASH || process.env.GIT_HASH || 'dev',
+    // Active EAS build profile (development | preview | production), surfaced
+    // on the About page when available.
+    buildProfile: process.env.EAS_BUILD_PROFILE || 'dev',
   },
   owner: 'bonustrack',
 };
