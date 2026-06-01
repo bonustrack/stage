@@ -1,0 +1,24 @@
+/** About sub-page of the System menu — back-arrow header + the AboutPanel body.
+ *  Reached via /system → "About" row → /system/about. */
+
+import { ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Box } from '../layout';
+import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
+import { SystemHeader } from './SystemHeader';
+import { AboutPanel } from './AboutPanel';
+
+export function AboutPage(): React.ReactElement {
+  const dark = useEffectiveColorScheme() === 'dark';
+  const { fg, head, sub, bg, border } = usePalette();
+  const insets = useSafeAreaInsets();
+
+  return (
+    <Box style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
+      <SystemHeader title="About" dark={dark} fg={fg} head={head} border={border} />
+      <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
+        <AboutPanel dark={dark} head={head} sub={sub} border={border} />
+      </ScrollView>
+    </Box>
+  );
+}

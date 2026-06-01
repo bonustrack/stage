@@ -1,51 +1,57 @@
-/** System screen body — back-arrow header + Kit | About underline tabs, with a
- *  Kit component gallery and an About (version / commit) panel. Reached from the
- *  LeftDrawer's "System" row → /system. */
+/** System menu — a settings-style list with two rows (Kit, About), each pushing
+ *  its own sub-page (/system/kit, /system/about). Reached from the LeftDrawer's
+ *  "System" row → /system. */
 
-import { useState } from 'react';
-import { Pressable, ScrollView } from 'react-native';
+import { Pressable } from 'react-native';
+import { ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Box } from '../layout';
-import { Icon } from '@metro-labs/kit/icon';
-import { Title } from '@metro-labs/kit/title';
+import { Box, Col } from '../layout';
+import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
+import { Text } from '@metro-labs/kit/text';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { SystemTabs, type SystemTab } from './SystemTabs';
-import { KitGallery } from './KitGallery';
-import { AboutPanel } from './AboutPanel';
+import { SystemHeader } from './SystemHeader';
+
+type Href = '/system/kit' | '/system/about';
+const ROWS: { href: Href; label: string; sub: string; icon: HeroIconName }[] = [
+  { href: '/system/kit', label: 'Kit', sub: 'Component gallery', icon: 'cog' },
+  { href: '/system/about', label: 'About', sub: 'Version & build info', icon: 'document' },
+];
 
 export function SystemScreen(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
   const { fg, head, sub, bg, border, rowBg } = usePalette();
   const insets = useSafeAreaInsets();
-  const [tab, setTab] = useState<SystemTab>('kit');
 
   return (
     <Box style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
-      {/* Topnav: back + title, mirroring the Accounts page. */}
-      <Box style={{
-        flexDirection: 'row', alignItems: 'center', gap: 8,
-        paddingHorizontal: 12, paddingTop: 8, paddingBottom: 10,
-        borderBottomWidth: 1, borderBottomColor: border,
-      }}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
-          <Icon name="arrowLeft" size={22} color={fg} />
-        </Pressable>
-        <Title dark={dark} style={{ color: head, fontSize: 20 }}>System</Title>
-      </Box>
-
-      <SystemTabs tab={tab} setTab={setTab} head={head} sub={sub} border={border} />
-
-      <ScrollView
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}
-      >
-        {tab === 'kit' ? (
-          <KitGallery dark={dark} head={head} sub={sub} border={border} rowBg={rowBg} />
-        ) : (
-          <AboutPanel dark={dark} head={head} sub={sub} border={border} />
-        )}
+      <SystemHeader title="System" dark={dark} fg={fg} head={head} border={border} />
+      <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
+        <Col mx={16} mt={16} radius={12} bg={rowBg} style={{
+          overflow: 'hidden', borderWidth: 1, borderColor: border,
+        }}>
+          {ROWS.map((row, i) => (
+            <Pressable
+              key={row.href}
+              onPress={() => router.push(row.href)}
+              style={({ pressed }) => ({
+                paddingHorizontal: 14, paddingVertical: 14,
+                flexDirection: 'row', alignItems: 'center', gap: 12,
+                borderTopWidth: i === 0 ? 0 : 1, borderTopColor: border,
+                backgroundColor: pressed ? border : 'transparent',
+              })}
+            >
+              <Icon name={row.icon} size={22} color={head} />
+              <Col flex={1}>
+                <Text style={{ color: fg, fontSize: 18, fontFamily: 'Calibre-Medium' }}>{row.label}</Text>
+                <Text style={{ color: sub, fontSize: 13, marginTop: 2, fontFamily: 'Calibre-Medium' }}>
+                  {row.sub}
+                </Text>
+              </Col>
+            </Pressable>
+          ))}
+        </Col>
       </ScrollView>
     </Box>
   );

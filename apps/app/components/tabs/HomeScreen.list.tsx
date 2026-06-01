@@ -57,7 +57,7 @@ export function ChannelsList({
               <Box
                 px={5}
                 radius={999}
-                bg="#e0245e"
+                bg="#1d1f23"
                 align="center"
                 justify="center"
                 style={{ position: 'absolute', top: -6, right: -8, minWidth: 16, height: 16 }}
