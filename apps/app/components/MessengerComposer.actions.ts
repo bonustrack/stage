@@ -81,6 +81,17 @@ export function useComposerActions(a: ComposerActionsArgs) {
     }
   };
 
+  /** Take a photo with the device camera and stage it via the same pipeline. */
+  const takePhoto = async (): Promise<void> => {
+    a.setErr(null);
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) { Alert.alert('Camera permission denied'); return; }
+    const r = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.5 });
+    if (r.canceled || !r.assets?.length) return;
+    const asset = r.assets[0]!;
+    await upload(asset.uri, asset.mimeType ?? 'image/jpeg', asset.fileName ?? undefined);
+  };
+
   const pickFile = async (): Promise<void> => {
     const r = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true });
     if (r.canceled) return;
@@ -160,7 +171,7 @@ export function useComposerActions(a: ComposerActionsArgs) {
   return {
     slideX: voice.slideX, micPanResponder: voice.micPanResponder, SLIDE_CANCEL_THRESHOLD_PX,
     cancelRec: voice.cancelRec, stopRec: voice.stopRec,
-    pickImage, pickFile, pickLocation,
+    pickImage, takePhoto, pickFile, pickLocation,
     sendPoll: () => sendPoll(a),
     sendSignatureRequest: () => sendSignatureRequest(a),
     sendTxRequest: () => sendTxRequest(a),

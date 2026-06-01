@@ -159,6 +159,7 @@ export function MessengerComposer({
           onClose={() => setAttachMenuOpen(() => false)}
           actions={[
             ['photo', 'Image', actions.pickImage],
+            ['camera', 'Camera', actions.takePhoto],
             ['paperClip', 'File', actions.pickFile],
             ['mapPin', 'Location', actions.pickLocation],
             ['chartBar', 'Poll', () => setPollOpen(true)],
