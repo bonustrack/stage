@@ -13,9 +13,6 @@
 import {
   Client,
   IdentifierKind,
-  ConsentState,
-  ConsentEntityType,
-  type Consent,
   type Conversation, type Signer, type XmtpEnv,
 } from '@xmtp/browser-sdk';
 import {
@@ -151,138 +148,13 @@ export async function convOfLine(line: string): Promise<Conversation | null> {
   return conv ?? null;
 }
 
-/** Hardcoded co-members for the "Ask a question" group: claude (the daemon's
- *  XMTP identity) + Less (the project owner). The local wallet is added
- *  implicitly as the creator. */
-export const ASK_QUESTION_MEMBERS = [
-  '0x0bA043c6F25085C68042bad079c29bD8f16a651A', // claude (daemon xmtp train)
-  '0x25391bddaa8d7ecdfe183615c1005259cd3b79d5', // Less
-] as const;
+export {
+  ASK_QUESTION_MEMBERS, METRO_API_URL,
+  createAskQuestionGroup, openDmWithAddress,
+} from './xmtpGroups';
 
-/** Base URL of the Metro API (daemon-backed). */
-export const METRO_API_URL = 'https://api.metro.box';
-
-/** Create the "Ask a question" group via the Metro API so the *daemon* owns it
- *  (daemon = super-admin) and the local user joins as a plain member — rather
- *  than the user creating + owning it client-side. The daemon adds us by
- *  address; we sync the conversation list so the new group resolves locally,
- *  then return its id for navigation. */
-export async function createAskQuestionGroup(): Promise<string> {
-  const client = await getOrCreateXmtpClient('production');
-  const selfAddr = client.accountIdentifier?.identifier.toLowerCase() ?? '';
-  if (!selfAddr) throw new Error('No local XMTP address available.');
-  const res = await fetch(`${METRO_API_URL}/ask-question`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ address: selfAddr }),
-  });
-  const json = await res.json().catch(() => ({})) as { conversationId?: string; error?: string };
-  if (!res.ok || !json.conversationId) {
-    throw new Error(json.error ?? `Could not start the conversation (${res.status}).`);
-  }
-  /** The daemon created the group + added us; pull it into the local store so
-   *  navigation + the conversation view find it immediately. */
-  await client.conversations.sync().catch(() => undefined);
-  return json.conversationId;
-}
-
-/** Find or create a DM with a peer by Ethereum address. Returns the conv id
- *  ready to push into `/xmtp/:convId`. */
-export async function openDmWithAddress(address: string): Promise<string> {
-  const client = await getOrCreateXmtpClient('production');
-  const dm = await client.conversations.createDmWithIdentifier({
-    identifier: address.toLowerCase(),
-    identifierKind: IdentifierKind.Ethereum,
-  });
-  return dm.id;
-}
-
-/** Per-conv "last read at" timestamp in XMTP `sentAtNs` units (number, not
- *  bigint — we coerce on read/write). Persisted under `unread.lastRead.<id>`
- *  in localStorage so unread counts survive a reload. */
-const LAST_READ_PREFIX = 'unread.lastRead.';
-export function getLastReadNs(convId: string): number {
-  const raw = localStorage.getItem(LAST_READ_PREFIX + convId);
-  if (!raw) return 0;
-  const n = Number(raw);
-  return Number.isFinite(n) ? n : 0;
-}
-export function setLastReadNs(convId: string, ns: number): void {
-  try { localStorage.setItem(LAST_READ_PREFIX + convId, String(ns)); }
-  catch { /* quota / private-mode — best effort */ }
-}
-
-/** Cross-device read/unread marker — synced across the inbox's installations via
- *  XMTP's per-conversation consent state. See the matching block in
- *  apps/app/lib/xmtp.ts for the full rationale: XMTP V3 has no arbitrary synced
- *  KV store, so we repurpose the consent `allowed`↔`unknown` axis as a synced
- *  read flag (never `denied`, which would hide the conversation):
- *    - `allowed` → read
- *    - `unknown` → unread
- *  The numeric unread *count* stays per-device (lastReadNs); the binary
- *  read/unread state propagates cross-device. */
-
-/** Map an XMTP `ConsentState` enum to its string form used across the UI. */
-function consentStateToString(s: ConsentState): 'allowed' | 'denied' | 'unknown' {
-  return s === ConsentState.Allowed ? 'allowed'
-    : s === ConsentState.Denied ? 'denied' : 'unknown';
-}
-
-/** Read a conversation's synced consent state as a string. */
-export async function getConvConsent(convId: string): Promise<'allowed' | 'denied' | 'unknown'> {
-  try {
-    const conv = await convOfLine(lineOfConv(convId));
-    if (!conv) return 'unknown';
-    return consentStateToString(await conv.consentState());
-  } catch { return 'unknown'; }
-}
-
-/** Mark a conversation read across devices: consent → Allowed (synced) + bump
- *  the local lastReadNs so the per-device count clears too. */
-export async function markConvReadSynced(convId: string): Promise<void> {
-  setLastReadNs(convId, Date.now() * 1_000_000);
-  try {
-    const conv = await convOfLine(lineOfConv(convId));
-    if (conv && (await conv.consentState()) !== ConsentState.Allowed) {
-      await conv.updateConsentState(ConsentState.Allowed);
-    }
-  } catch { /* best-effort — local lastReadNs still cleared the badge */ }
-}
-
-/** Mark a conversation unread across devices: consent → Unknown (synced) +
- *  rewind the local lastReadNs so this device shows the badge immediately. */
-export async function markConvUnreadSynced(convId: string): Promise<void> {
-  setLastReadNs(convId, 0);
-  try {
-    const conv = await convOfLine(lineOfConv(convId));
-    if (conv && (await conv.consentState()) !== ConsentState.Unknown) {
-      await conv.updateConsentState(ConsentState.Unknown);
-    }
-  } catch { /* best-effort */ }
-}
-
-/** Pull synced preference/consent updates from the network into the local DB.
- *  Call on mount / tab-visible so consent changes from another device land. */
-export async function syncPreferences(): Promise<void> {
-  try { await getCachedXmtpClient()?.preferences.sync(); }
-  catch { /* best-effort */ }
-}
-
-/** Subscribe to cross-device consent changes. Fires `(convId, state)` for every
- *  conversation-scoped consent update. Returns a stop fn. */
-export async function streamConvConsent(
-  onChange: (convId: string, state: 'allowed' | 'denied' | 'unknown') => void,
-): Promise<() => Promise<void>> {
-  const client = getCachedXmtpClient();
-  if (!client) return async () => undefined;
-  const stream = await client.preferences.streamConsent({
-    onValue: (records: Consent[]) => {
-      for (const c of records) {
-        if (c.entityType !== ConsentEntityType.GroupId) continue;
-        onChange(c.entity, consentStateToString(c.state));
-      }
-    },
-    onError: () => { /* backstops resync */ },
-  });
-  return async () => { try { await stream.end(); } catch { /* ignore */ } };
-}
+export {
+  getLastReadNs, setLastReadNs,
+  getConvConsent, markConvReadSynced, markConvUnreadSynced,
+  syncPreferences, streamConvConsent,
+} from './xmtpConsent';
