@@ -104,8 +104,18 @@ class MetroFcmService : FirebaseMessagingService() {
     // default (no stored value) NEVER suppresses; only an exact match does.
     val pushConvId = data["convId"]?.takeIf { it.isNotBlank() } ?: convIdOfLine(line)
     if (pushConvId != null) {
-      val active = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+      // Read from the APPLICATION context (not the Service `this` context) so we
+      // hit the SAME SharedPreferencesImpl/file the writer
+      // (MetroPillModule.setActiveConversation, also via applicationContext)
+      // committed to. Reading via `this`/Service context resolved a different
+      // SharedPreferences instance, so the active-conv value was never visible
+      // here — the root cause of suppression never firing.
+      val active = applicationContext
+        .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         .getString(KEY_ACTIVE_CONV, null)
+      // TEMPORARY debug log — for on-device verification of the suppression
+      // match. REMOVE once confirmed working.
+      android.util.Log.w("MetroFcm", "suppress check: push=$pushConvId active=$active match=${active == pushConvId}")
       if (active != null && active == pushConvId) return
     }
 

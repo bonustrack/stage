@@ -124,11 +124,18 @@ class MetroPillModule : Module() {
     // prefs so it survives the JS↔FCM process boundary; null clears the key so
     // no suppression happens by default.
     Function("setActiveConversation") { convId: String? ->
-      val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+      // Resolve prefs from the APPLICATION context (not the react/activity
+      // context) so the writer and MetroFcmService — which reads from the
+      // application context — hit the SAME SharedPreferencesImpl/file. Use
+      // commit() (synchronous) instead of apply() to eliminate the apply()
+      // visibility race the diagnosis flagged: the write must be on disk
+      // before a push arrives a moment later.
+      val prefs = context.applicationContext
+        .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
       prefs.edit().apply {
         if (convId.isNullOrBlank()) remove(KEY_ACTIVE_CONV)
         else putString(KEY_ACTIVE_CONV, convId)
-      }.apply()
+      }.commit()
       true
     }
   }
