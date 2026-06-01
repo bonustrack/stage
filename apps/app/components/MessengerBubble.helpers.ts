@@ -55,7 +55,7 @@ export function markdownStyles(fg: string, dark: boolean, mine: boolean): Record
    *  Assistant text keeps 23 for comfortable reading on long replies. */
   const lh = mine ? 21 : 23;
   return {
-    body: { color: fg, fontSize: 18, lineHeight: lh, fontFamily: 'Calibre-Medium' },
+    body: { color: fg, fontSize: 19, lineHeight: lh, fontFamily: 'Calibre-Medium' },
     paragraph: { marginTop: 0, marginBottom: 0 },
     heading1: { color: fg, fontSize: 20, fontFamily: 'Calibre-Semibold', marginTop: 4, marginBottom: 2 },
     heading2: { color: fg, fontSize: 18, fontFamily: 'Calibre-Semibold', marginTop: 4, marginBottom: 2 },

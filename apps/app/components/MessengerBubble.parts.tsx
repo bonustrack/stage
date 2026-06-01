@@ -38,7 +38,7 @@ function MentionLink({ address, dark }: { address: string; dark: boolean }): Rea
  *  as a nested `<MentionLink>`. No-mention messages take a fast path upstream
  *  (the caller renders <Markdown> directly), so this only runs when at least one
  *  address mention is present (markdown isn't applied to those messages). */
-export function MentionBody({ text, fg, dark }: { text: string; fg: string; dark: boolean }): React.ReactElement {
+export function MentionBody({ text, fg, dark, selectable }: { text: string; fg: string; dark: boolean; selectable?: boolean }): React.ReactElement {
   const runs: React.ReactNode[] = [];
   let last = 0;
   let m: RegExpExecArray | null;
@@ -52,7 +52,7 @@ export function MentionBody({ text, fg, dark }: { text: string; fg: string; dark
   }
   if (last < text.length) runs.push(text.slice(last));
   return (
-    <Text style={{ color: fg, fontSize: 18, lineHeight: 23, fontFamily: 'Calibre-Medium' }}>
+    <Text selectable={selectable} style={{ color: fg, fontSize: 19, lineHeight: 23, fontFamily: 'Calibre-Medium' }}>
       {runs}
     </Text>
   );

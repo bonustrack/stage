@@ -37,11 +37,13 @@ const MORE_EMOJIS = ['❤️', '😂', '😮', '😢', '🎉', '🤯', '🥳', '
  *  bottom edge. Tapping a strip emoji reacts + closes; the chevron reveals more
  *  emojis; any action or an outside tap dismisses. */
 export function BubbleActionMenu({
-  target, anchor, dark, onClose, onReact, onReply, onCopy, onShareLink,
+  target, anchor, dark, onClose, onReact, onReply, onCopy, onSelect, onShareLink,
 }: {
   target: HistoryEntry | null; anchor: { y: number; height: number };
   dark: boolean; onClose: () => void;
   onReact: (emoji: string) => void; onReply: () => void; onCopy: () => void;
+  /** Enable OS text selection on the target message for partial copy. */
+  onSelect: () => void;
   onShareLink: () => void;
 }): React.ReactElement {
   const [expanded, setExpanded] = useState(false);
@@ -62,7 +64,7 @@ export function BubbleActionMenu({
    *  message and clamped so its bottom never runs off-screen past the composer /
    *  safe area (clamp uses an ESTIMATED total height; the strip↔card gap stays
    *  the literal GAP regardless). */
-  const actionCount = 2 + (target?.text ? 1 : 0);
+  const actionCount = 2 + (target?.text ? 2 : 0);
   const cardH = actionCount * 48 + 16;       // estimated dropdown height (clamp only)
   const stripH = 40;                          // estimated strip height (clamp only)
   const GAP = 6;                              // literal gap between strip and dropdown
@@ -159,6 +161,7 @@ export function BubbleActionMenu({
             <ActionRow icon="reply" label="Reply" onPress={onReply} />
             {target?.text ? <Box style={{ height: 1, backgroundColor: divider, marginLeft: 16 }} /> : null}
             {target?.text ? <ActionRow icon="copy" label="Copy" onPress={onCopy} /> : null}
+            {target?.text ? <ActionRow icon="document" label="Select" onPress={onSelect} /> : null}
             <Box style={{ height: 1, backgroundColor: divider, marginLeft: 16 }} />
             <ActionRow icon="send" label="Share link" onPress={onShareLink} />
           </Box>

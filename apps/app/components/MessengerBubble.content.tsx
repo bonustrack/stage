@@ -20,7 +20,7 @@ import { SigRequestCard, SigReferenceCard, TxRequestCard, TxReceiptCard } from '
 
 export function BubbleContent({
   entry, dark, pending, fg, sub, replyPreview, onReplyPreviewPress, transcript,
-  onAnswer, votes, ownVotes, onVote, onPay, paying, onSign, signing,
+  onAnswer, votes, ownVotes, onVote, onPay, paying, onSign, signing, selectable,
 }: {
   entry: HistoryEntry; dark: boolean; pending?: boolean; fg: string; sub: string;
   replyPreview?: string; onReplyPreviewPress?: () => void; transcript?: string;
@@ -28,6 +28,9 @@ export function BubbleContent({
   votes?: Map<number, Set<string>>; ownVotes?: Set<number>;
   onVote?: (optionIndex: number, action: 'added' | 'removed') => void;
   onPay?: () => void; paying?: boolean; onSign?: () => void; signing?: boolean;
+  /** When true, render the body in a plain selectable <Text> so OS text-selection
+   *  handles appear for partial copy (Markdown's nested Texts don't select cleanly). */
+  selectable?: boolean;
 }): React.ReactElement {
   const atts = attachmentsOf(entry);
   const question = questionOf(entry);
@@ -91,9 +94,11 @@ export function BubbleContent({
         null
       ) : entry.text ? (
         <Box style={{ alignSelf: 'stretch' }}>
-          {hasMention(entry.text)
-            ? <MentionBody text={entry.text} fg={fg} dark={dark} />
-            : <Markdown {...markdownProps}>{entry.text}</Markdown>}
+          {selectable
+            ? <Text selectable style={{ color: fg, fontSize: 19, lineHeight: 23, fontFamily: 'Calibre-Medium' }}>{entry.text}</Text>
+            : hasMention(entry.text)
+              ? <MentionBody text={entry.text} fg={fg} dark={dark} />
+              : <Markdown {...markdownProps}>{entry.text}</Markdown>}
         </Box>
       ) : null}
       {/** Inline embeds — YouTube + location, below the text so the URL stays tappable. */}

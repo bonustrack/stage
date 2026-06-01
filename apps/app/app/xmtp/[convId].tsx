@@ -1,6 +1,5 @@
-/** XMTP conversation view — opened from the messenger tab list. Talks to the
- *  local XMTP client directly; no daemon hop. State + handlers live in the
- *  useConversationState hook; presentational pieces in components/xmtp-conv. */
+/** XMTP conversation view — opened from the messenger tab list. State + handlers
+ *  live in useConversationState; presentational pieces in components/xmtp-conv. */
 
 import { Animated as RNAnimated, Pressable, Share } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
@@ -36,7 +35,7 @@ export default function XmtpConversation(): React.ReactElement {
     activeLine, autoFocusNonce,
     showJump, setShowJump, setListEpoch,
     replyingTo, setReplyingTo, setReplyTarget,
-    menuFor, setMenuFor, menuAnchor, overflowOpen, setOverflowOpen,
+    menuFor, setMenuFor, menuAnchor, overflowOpen, setOverflowOpen, setSelectedForCopy,
     peerAddr, groupName, groupImage, isGroup, senderEthOf,
     mentionCandidates, onReact, onOptimistic, onSent, jumpToMessage,
   } = c;
@@ -182,6 +181,11 @@ export default function XmtpConversation(): React.ReactElement {
         }}
         onCopy={() => {
           if (menuFor?.text) void Clipboard.setStringAsync(menuFor.text);
+          setMenuFor(null);
+        }}
+        onSelect={() => {
+          /** Flip this message into a selectable <Text> for partial-copy handles. */
+          if (menuFor) setSelectedForCopy(menuFor.id);
           setMenuFor(null);
         }}
         onShareLink={() => {

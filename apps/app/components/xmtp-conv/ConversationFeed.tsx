@@ -1,5 +1,4 @@
-/** The inverted message FlatList for the XMTP conversation screen — extracted
- *  from app/xmtp/[convId].tsx verbatim (phase-2 lint split). Rendering identical. */
+/** The inverted message FlatList for the XMTP conversation screen (lint split). */
 
 import { Pressable } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
@@ -37,7 +36,7 @@ export function ConversationFeed({
     reactions, ownReactions, displayVotes, displayOwnVotes,
     allBubbles, jumpToMessage,
     onReact, onSign, signingIds, onVote, onPay, payingIds, onAnswer,
-    setMenuAnchor, setMenuFor, setReplyTarget,
+    setMenuAnchor, setMenuFor, setReplyTarget, selectedForCopy,
   } = c;
 
   return (
@@ -45,7 +44,7 @@ export function ConversationFeed({
       key={listEpoch}
       ref={listRef}
       data={allBubbles}
-      extraData={[profilesVersion, optimisticReactions, reactions, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, confirmedIds]}
+      extraData={[profilesVersion, optimisticReactions, reactions, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, confirmedIds, selectedForCopy]}
       inverted
       showsVerticalScrollIndicator={false}
       /** Anchor the bottom-visible item (= newest on inverted) so as new bubbles or the
@@ -151,6 +150,7 @@ export function ConversationFeed({
           onReply={() => setReplyTarget(item.id, previewOf(item), senderEthOf(item.from))}
           onOpenMenu={(anchor) => { setMenuAnchor(anchor); setMenuFor(item); }}
           onCloseMenu={() => setMenuFor(null)}
+          selectable={selectedForCopy === item.id}
           onAnswer={(label) => onAnswer(item.id, label)}
         />
       )}

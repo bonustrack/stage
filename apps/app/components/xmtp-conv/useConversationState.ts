@@ -78,20 +78,19 @@ export function useConversationState(convId: string | undefined, focus: string |
       : xmtpFeed.status === 'error' ? 'error' : 'idle';
   const myUri = xmtpFeed.inboxId ? `${XMTP_USER_PREFIX}${xmtpFeed.inboxId}` : XMTP_USER_PREFIX;
 
-  /** `nonce` bumps on every reply action (even re-tapping the same message) so the
-   *  composer's focus effect re-fires and re-opens the keyboard each time — keying
-   *  only on the message id deduped repeat replies after a keyboard dismiss. */
+  /** `nonce` bumps on every reply action so the composer's focus effect re-fires
+   *  and re-opens the keyboard each time (keying on id deduped repeat replies). */
   const [replyingTo, setReplyingTo] = useState<{ id: string; preview: string; sender?: string | null; nonce: number } | null>(null);
-  /** Monotonic reply counter — guarantees a fresh `nonce` on EVERY swipe-to-reply,
-   *  even two taps on the same message within the same millisecond (where
-   *  `Date.now()` would collide and React would bail on the focus effect, leaving
-   *  the keyboard closed on the 2nd+ reply). */
+  /** Monotonic reply counter — fresh `nonce` on EVERY swipe-to-reply, even two
+   *  taps on the same message in the same ms (where `Date.now()` would collide). */
   const replyNonceRef = useRef(0);
   const setReplyTarget = useCallback((id: string, preview: string, sender?: string | null) => {
     replyNonceRef.current += 1;
     setReplyingTo({ id, preview, sender, nonce: replyNonceRef.current });
   }, []);
   const [menuFor, setMenuFor] = useState<HistoryEntry | null>(null);
+  /** Id of the "Select"-tapped message — its body renders selectable for copy. */
+  const [selectedForCopy, setSelectedForCopy] = useState<string | null>(null);
   /** On-screen rect of the tapped message row — drives where the anchored
    *  Telegram-style menu (emoji strip + action dropdown) floats. */
   const [menuAnchor, setMenuAnchor] = useState<{ y: number; height: number }>({ y: 0, height: 0 });
@@ -188,6 +187,7 @@ export function useConversationState(convId: string | undefined, focus: string |
     showJump, setShowJump, listEpoch, setListEpoch,
     replyingTo, setReplyingTo, setReplyTarget, jumpHighlightId,
     menuFor, setMenuFor, menuAnchor, setMenuAnchor, overflowOpen, setOverflowOpen,
+    selectedForCopy, setSelectedForCopy,
     confirmedIds, optimisticReactions, optimisticRemovals,
     peerAddr, groupName, groupImage, isGroup, senderEthOf,
     profilesVersion, mentionCandidates, listRef,
