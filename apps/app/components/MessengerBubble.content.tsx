@@ -76,7 +76,7 @@ export function BubbleContent({
           ? `data:${a.mime ?? 'application/octet-stream'};base64,${a.dataB64}`
           : a.url ?? '';
         return (
-          <AttachmentView key={key} att={a} fg={fg} sub={sub} fullUrl={fullUrl} dark={dark} />
+          <AttachmentView key={key} att={a} fg={fg} fullUrl={fullUrl} dark={dark} />
         );
       })}</Box> : null}
       {/** Poll bubble surfaces only the question here; PollView shows the options. */}

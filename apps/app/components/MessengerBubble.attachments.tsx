@@ -7,20 +7,20 @@ import { Linking, Pressable } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import { Spinner } from './Spinner';
-import { MessengerAudioPlayer } from './MessengerAudioPlayer';
+import { VoiceMessage } from './VoiceMessage';
 import { MessengerImageAttachment } from './MessengerImageAttachment';
 import { MessengerVideoAttachment } from './MessengerVideoAttachment';
 import { Row } from './layout';
 import { resolveRemoteAttachment } from '../lib/xmtp';
 import type { Attachment } from './MessengerBubble.helpers';
 
-export function AttachmentView({ att, fullUrl, fg, sub, dark }: {
-  att: Attachment; fullUrl: string; fg: string; sub: string; dark: boolean;
+export function AttachmentView({ att, fullUrl, fg, dark }: {
+  att: Attachment; fullUrl: string; fg: string; dark: boolean;
 }): React.ReactElement {
   if (att.kind === 'image') return <MessengerImageAttachment uri={fullUrl} dark={dark} />;
   if (att.kind === 'video' || att.mime?.startsWith('video/')) return <MessengerVideoAttachment uri={fullUrl} />;
-  if (att.kind === 'audio') {
-    return <MessengerAudioPlayer uri={fullUrl} fg={fg} sub={sub} />;
+  if (att.kind === 'audio' || att.mime?.startsWith('audio/')) {
+    return <VoiceMessage uri={fullUrl} />;
   }
   const label = att.name ?? `${att.kind} attachment`;
   return (
@@ -86,5 +86,5 @@ export function RemoteAttachmentResolver({ att, fg, sub, dark }: {
       </Row>
     );
   }
-  return <AttachmentView att={{ ...att, mime }} fullUrl={uri} fg={fg} sub={sub} dark={dark} />;
+  return <AttachmentView att={{ ...att, mime }} fullUrl={uri} fg={fg} dark={dark} />;
 }
