@@ -23,14 +23,19 @@ export function ReplyBanner({
   /** Tap the banner body → scroll the feed to the replied-to message. */
   onPress?: () => void;
 }): React.ReactElement {
-  /** Link/mention color — same value MessengerBubble uses for inline links. */
-  const linkColor = dark ? '#7aa2ff' : '#2f6feb';
-  /** TopNav border value (palette `border`) — full-width hairline at the top. */
+  /** Username color: white in dark theme, the light link/primary color otherwise. */
+  const nameColor = dark ? '#ffffff' : '#2f6feb';
+  /** TopNav border value — identical literal the conversation header renders
+   *  (`dark ? '#282a2d' : '#e4e4e5'`), so the banner hairline matches it exactly. */
   const borderColor = dark ? '#282a2d' : '#e4e4e5';
   return (
-    /** Outer container is edge-to-edge so the top border spans the full width;
-     *  the inner Row keeps the content padded. */
-    <Box style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: borderColor }}>
+    /** Outer container breaks out of the composer's `px={10}` with a -10 margin so
+     *  the top border spans the full screen width edge-to-edge; the matching 10px
+     *  paddingHorizontal keeps the inner content at its original inset. */
+    <Box style={{
+      marginHorizontal: -10, paddingHorizontal: 10,
+      borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: borderColor,
+    }}>
       <Pressable onPress={onPress} disabled={!onPress}>
         <Row align="center" gap={10} px={14} py={8}>
           <Pressable
@@ -44,9 +49,9 @@ export function ReplyBanner({
           >
             <Icon name="x" size={14} color={dark ? '#9f9fa3' : '#57606a'} />
           </Pressable>
-          <Text style={{ fontSize: 14, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
-            <Text style={{ color: sub, fontFamily: 'Calibre-Regular' }}>Replying to </Text>
-            <Text style={{ color: linkColor, fontFamily: 'Calibre-Medium' }}>
+          <Text style={{ fontSize: 15, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
+            <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Regular' }}>Replying to </Text>
+            <Text style={{ color: nameColor, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
               {(sender ? getPeerName(sender) : undefined) ?? (sender ? shortAddress(sender) : 'message')}
             </Text>
           </Text>
