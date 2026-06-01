@@ -20,7 +20,8 @@
       }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": { "APP_VARIANT": "prod" }
     },
     "development-prod": {
       "extends": "development",
@@ -36,6 +37,11 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "android": {
+        "track": "internal",
+        "applicationId": "box.stage"
+      }
+    }
   }
 }
