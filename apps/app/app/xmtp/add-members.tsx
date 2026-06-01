@@ -22,6 +22,7 @@ import { addGroupMembers } from '../../lib/xmtp';
 import { flash } from '../../lib/toast';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { Box } from '../../components/layout';
+import { useConvMeta } from '../../lib/useConvMeta';
 import { MemberPicker, useMemberPicker } from './MemberPicker';
 
 export default function AddMembers(): React.ReactElement {
@@ -34,6 +35,9 @@ export default function AddMembers(): React.ReactElement {
   const picker = useMemberPicker();
   const { members } = picker;
   const [submitting, setSubmitting] = useState(false);
+  /** Current group members — excluded from the contact suggestions so we don't
+   *  suggest adding someone who's already in the group. */
+  const { memberAddrs } = useConvMeta(convId);
 
   const onSubmit = useCallback(async (): Promise<void> => {
     if (members.length === 0 || submitting || !convId) return;
@@ -68,7 +72,7 @@ export default function AddMembers(): React.ReactElement {
         contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 24 + insets.bottom }}
         keyboardShouldPersistTaps="handled"
       >
-        <MemberPicker state={picker} dark={dark} />
+        <MemberPicker state={picker} dark={dark} exclude={memberAddrs} />
       </ScrollView>
 
       {/* Add */}

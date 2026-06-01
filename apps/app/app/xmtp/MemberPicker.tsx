@@ -3,10 +3,11 @@
  *  Owns the staged-member list and the "address / .eth → resolved chip" entry
  *  flow (the two screens previously duplicated this verbatim). `useMemberPicker`
  *  exposes the staged `members` (and a `reset`) so each screen can drive its own
- *  Create / Add submit; `<MemberPicker>` renders the entry field + removable
- *  chips. Behaviour is identical to the inlined version. */
+ *  Create / Add submit; `<MemberPicker>` renders the entry field, the tap-to-add
+ *  suggestions sourced from existing DM contacts, + removable chips. Manual
+ *  0x / .eth entry still works for peers not in the contact list. */
 
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Pressable, TextInput } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';
@@ -17,6 +18,8 @@ import { flash } from '../../lib/toast';
 import { usePalette } from '../../lib/theme';
 import { Avatar } from '../../components/Avatar';
 import { Col, Row } from '../../components/layout';
+import { useContacts, type Contact } from '../../lib/useContacts';
+import { ContactSuggestions } from './ContactSuggestions';
 
 export interface Member {
   /** Resolved 0x address — the canonical key. */
@@ -34,6 +37,11 @@ export interface MemberPickerState {
   adding: boolean;
   addMember: () => Promise<void>;
   removeMember: (address: string) => void;
+  /** Tap-to-add/remove a suggested contact (toggles selection by address). */
+  toggleContact: (contact: Contact) => void;
+  /** Lowercased addresses of every staged member — drives the suggestion
+   *  checkmarks. */
+  selectedAddresses: Set<string>;
 }
 
 export function useMemberPicker(): MemberPickerState {
@@ -71,15 +79,43 @@ export function useMemberPicker(): MemberPickerState {
   }, [entry, adding, members]);
 
   const removeMember = useCallback((address: string): void => {
-    setMembers(prev => prev.filter(m => m.address !== address));
+    const lower = address.toLowerCase();
+    setMembers(prev => prev.filter(m => m.address.toLowerCase() !== lower));
   }, []);
 
-  return { members, entry, setEntry, adding, addMember, removeMember };
+  const toggleContact = useCallback((contact: Contact): void => {
+    const lower = contact.address.toLowerCase();
+    setMembers(prev => (prev.some(m => m.address.toLowerCase() === lower)
+      ? prev.filter(m => m.address.toLowerCase() !== lower)
+      : [...prev, { address: contact.address, label: contact.name }]));
+    setEntry('');
+  }, []);
+
+  const selectedAddresses = useMemo(
+    () => new Set(members.map(m => m.address.toLowerCase())),
+    [members],
+  );
+
+  return {
+    members, entry, setEntry, adding, addMember, removeMember,
+    toggleContact, selectedAddresses,
+  };
 }
 
-export function MemberPicker({ state, dark }: { state: MemberPickerState; dark: boolean }): React.ReactElement {
+export function MemberPicker({ state, dark, exclude = [] }: {
+  state: MemberPickerState;
+  dark: boolean;
+  /** Addresses to omit from suggestions beyond self (e.g. an existing group's
+   *  current members). Staged members are NOT excluded — they stay visible with
+   *  a checkmark so a tap removes them. */
+  exclude?: string[];
+}): React.ReactElement {
   const { head, sub, border, rowBg } = usePalette();
-  const { members, entry, setEntry, adding, addMember, removeMember } = state;
+  const {
+    members, entry, setEntry, adding, addMember, removeMember,
+    toggleContact, selectedAddresses,
+  } = state;
+  const contacts = useContacts(exclude, entry);
 
   return (
     <>
@@ -115,6 +151,13 @@ export function MemberPicker({ state, dark }: { state: MemberPickerState; dark: 
           />
         </Row>
       </Col>
+
+      {/* Tap-to-add suggestions from the user's existing DM contacts */}
+      <ContactSuggestions
+        contacts={contacts}
+        selected={selectedAddresses}
+        onToggle={toggleContact}
+      />
 
       {/* Member chips */}
       {members.length > 0 && (
