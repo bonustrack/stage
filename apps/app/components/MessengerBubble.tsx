@@ -2,7 +2,7 @@
  *  no colored bubble even for the local user's own messages. */
 
 import { memo, useMemo, useRef, useState } from 'react';
-import { Pressable } from 'react-native';
+import { Pressable, Vibration } from 'react-native';
 // eslint-disable-next-line no-restricted-imports -- type-only: rowRef measureInWindow() ref typing
 import type { View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -70,8 +70,12 @@ function MessengerBubbleBase({
   const rowRef = useRef<View>(null);
   /** Last measured row rect — opens the menu synchronously while a fresh measure flies. */
   const lastAnchor = useRef<{ y: number; height: number }>({ y: 0, height: 0 });
+  /** Light haptic tick via RN's built-in Vibration — no native dep, hot-reloadable
+   *  (expo-haptics is not installed). Fired from the JS gesture callbacks below. */
+  const lightHaptic = (): void => { Vibration.vibrate(10); };
   const openMenu = (): void => {
     if (pending || !onOpenMenu) { if (!onOpenMenu) onLongPress?.(); return; }
+    lightHaptic();
     onOpenMenu(lastAnchor.current);
     const node = rowRef.current;
     if (node) node.measureInWindow((_x, y, _w, h) => {
@@ -79,7 +83,7 @@ function MessengerBubbleBase({
       onOpenMenu({ y, height: h });
     });
   };
-  const onDoubleTap = (): void => { if (!pending) onReact?.('👍'); };
+  const onDoubleTap = (): void => { if (!pending) { lightHaptic(); onReact?.('👍'); } };
   const doubleTap = useMemo(() => Gesture.Tap().numberOfTaps(2).onEnd((_e, ok) => {
     if (ok) runOnJS(onDoubleTap)();
   }), [onDoubleTap]);
