@@ -56,7 +56,7 @@ const ASSETS: Asset[] = [
  *  `BadgeNetwork`); Base is the canonical brand mark. Keyed by chainId so the
  *  renderer can drop the right badge over each token avatar. */
 const MAINNET_NETWORK_LOGO = 'https://ipfs.snapshot.box/ipfs/bafkreid7ndxh6y2ljw2jhbisodiyrhcy2udvnwqgon5wgells3kh4si5z4';
-const BASE_NETWORK_LOGO = 'https://raw.githubusercontent.com/base-org/brand-kit/main/logo/symbol/Base_Symbol_Blue.png';
+const BASE_NETWORK_LOGO = 'https://ipfs.snapshot.box/ipfs/bafkreid4ek4gnj6ccxl3yubwj2wr3d5t6dqelvvh4hv5wo5eldkqs725ri';
 const NETWORK_LOGO: Record<number, string> = { 1: MAINNET_NETWORK_LOGO, 8453: BASE_NETWORK_LOGO };
 const NETWORK_LABEL: Record<number, string> = { 1: 'Ethereum', 8453: 'Base' };
 const VIEM_CHAINS: Record<number, Chain> = { 1: mainnet, 8453: base };

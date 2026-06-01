@@ -28,7 +28,7 @@ import { Pressable, TextInput } from 'react-native';
 import { FlatList } from 'react-native-gesture-handler';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
-import { useRouter, usePathname } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { isAddress } from 'viem';
 import type { SimultaneousRefs } from '../SwipeTabs';
 import { usePalette } from '../../lib/theme';
@@ -94,11 +94,9 @@ function readConvRows(): ConvRow[] {
 
 export function SearchScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const router = useRouter();
-  const pathname = usePathname();
   const { fg, head, sub, bg, border, rowBg } = usePalette();
 
-  /** The search TextInput, so we can focus it whenever the Search tab becomes
-   *  the active route (tab-bar tap OR swipe settle — both land us on `/search`). */
+  /** The search TextInput ref (used to programmatically blur/clear). */
   const inputRef = useRef<TextInput>(null);
 
   const [query, setQuery] = useState('');
@@ -119,18 +117,6 @@ export function SearchScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
     ...convRows.map(r => r.avatarAddress),
   ]);
 
-  /** Auto-focus the input each time the Search tab becomes the active route.
-   *  The pager (SwipeTabs) drives expo-router on both tab-bar tap and swipe
-   *  settle, so `pathname === '/search'` is the reliable "Search is active"
-   *  signal — and it stays Home (`/`) at launch, so we never pop the keyboard
-   *  on cold start. rAF lets the tab become visible before we open the keyboard;
-   *  leaving Search blurs so the keyboard doesn't linger over other tabs. */
-  useEffect(() => {
-    const active = pathname === '/search' || pathname.startsWith('/search');
-    if (!active) { inputRef.current?.blur(); return; }
-    const id = requestAnimationFrame(() => inputRef.current?.focus());
-    return () => cancelAnimationFrame(id);
-  }, [pathname]);
 
   /** Debounce the raw input → q. */
   useEffect(() => {
