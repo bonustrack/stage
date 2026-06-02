@@ -31,6 +31,7 @@ import { usePeerProfiles } from '../lib/peerProfiles';
 import { switchToAccount } from '../lib/xmtp';
 import { loadAccounts, getActiveAccountId, type AccountRecord } from '../lib/accounts';
 import { DrawerAccounts, DrawerHeader, DrawerRow } from './LeftDrawer.parts';
+import { DrawerAccountActions } from './LeftDrawer.accounts';
 
 /** Spring used for both open + close settles. */
 const SETTLE = { damping: 22, stiffness: 240 } as const;
@@ -157,6 +158,9 @@ export function LeftDrawer({ progress }: { progress: SharedValue<number> }): Rea
 
           {/* Accounts — tap to switch. */}
           <DrawerAccounts accounts={accounts} activeId={activeId} onSwitch={onSwitch} c={{ head, sub, border }} />
+
+          {/* New account (generate) + Add account (import key/phrase). */}
+          <DrawerAccountActions head={head} sub={sub} border={border} dark={dark} onChanged={() => { void refresh(); }} />
 
           {/* Profile + Settings rows. */}
           <DrawerRow icon="user" label="Profile" head={head} sub={sub} border={border} onPress={() => go('/profile')} />
