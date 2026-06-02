@@ -22,6 +22,7 @@ import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { useDeepLinks } from '../lib/deepLinks';
 import { usePushDeepLinks } from '../lib/push';
 import { installPillAudioBridge } from '../lib/pill';
+import { ensureActiveAccount } from '../lib/xmtp';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WalletConnectProvider } from '../components/WalletConnectProvider';
 
@@ -94,6 +95,12 @@ export default function RootLayout(): React.ReactElement {
    *  pipeline (→ daemon "Tony" DM). Idempotent + Android-only; no-op when the
    *  native module isn't linked. Installed once for the app's lifetime. */
   useEffect(() => installPillAudioBridge(), []);
+
+  /** Mint the local EOA at boot, INDEPENDENT of XMTP. The wallet (Snapshot
+   *  signing) + Railgun (usePrivateWallet → getActiveAccountId) must always have
+   *  an account even when XMTP onboarding fails on a clean reinstall (stale db
+   *  key vs. wiped store). Idempotent — no-ops once an account exists. */
+  useEffect(() => { void ensureActiveAccount(); }, []);
 
   /** Calibre — matches sx-monorepo's typography. Two weights: medium (default) + semibold (headers/buttons).
    *  TTF (not WOFF2) so Android's native Typeface loader can pick it up — expo-font's WOFF2

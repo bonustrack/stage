@@ -37,6 +37,16 @@ export async function deleteDbKey(): Promise<void> {
   await SecureStore.deleteItemAsync(DB_ENCRYPTION_KEY).catch(() => undefined);
 }
 
+/** Auto-recovery wipe for a corrupt/key-mismatched XMTP store. Deletes ONE
+ *  account's on-disk sqlite store dir plus the shared db-encryption key, so the
+ *  next Client.create mints a fresh key + store. Never touches the account's
+ *  private key / EOA registry — only the local XMTP encryption material. */
+export async function wipeXmtpStore(dbDirName: string): Promise<void> {
+  const dir = dbDirObj(dbDirName);
+  if (dir.exists) { try { dir.delete(); } catch { /* best-effort */ } }
+  await deleteDbKey();
+}
+
 /** XMTP needs a writable directory for its sqlite + key store. Document directory is
  *  app-private + persisted across restarts. */
 export function dbDirObj(name: string): Directory { return new Directory(Paths.document, name); }

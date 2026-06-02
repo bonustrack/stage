@@ -17,20 +17,22 @@ import * as SecureStore from 'expo-secure-store';
 import { Client, PublicIdentity, type Conversation } from '@xmtp/react-native-sdk';
 import {
   getActiveAccount, addGeneratedAccount,
-  loadAccounts, setActiveAccountId, markRegistered, removeAccount, clearAllAccounts,
+  loadAccounts, setActiveAccountId, removeAccount, clearAllAccounts,
   type AccountRecord,
 } from './accounts';
 import { registerPushWithDaemon } from './push';
 import { getSecure, setSecure } from './cache';
 import { bumpAccountEpoch } from './accountEpoch';
-import { XMTP_CODECS, signerForRecord } from './xmtp.codecs';
+import { XMTP_CODECS } from './xmtp.codecs';
 import {
   getCachedXmtpClient, setCachedXmtpClient, resetClientScopedState,
 } from './xmtp.state';
 import { type XmtpEnv, convIdOfLine } from './xmtp.types';
 import { loadOrCreateDbKey, deleteDbKey, dbDirObj, ensureDbDir } from './xmtp.dbkey';
+import { createClientForAccount } from './xmtp.recover';
 
 export { getCachedXmtpClient } from './xmtp.state';
+export { ensureActiveAccount } from './xmtp.recover';
 
 /** SecureStore keys must match `[A-Za-z0-9._-]+` — colons are rejected on Android, which
  *  surfaced as an `Invalid key provided to SecureStore` runtime crash on Less's device. */
@@ -76,18 +78,7 @@ async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<
       /** Build timed out — fall through to create() with a fresh registration. */
     } catch { /* fall through to create() if rebuild failed */ }
   }
-  /** XMTP registers a new installation by asking the account to sign its
-   *  handshake challenge — silent for local keys, a one-time wallet prompt
-   *  for WalletConnect. */
-  const signer = await signerForRecord(rec);
-  const created = await Client.create(signer, opts);
-  setCachedXmtpClient(created);
-  await markRegistered(rec.id);
-  await setActiveAccountId(rec.id);
-  await SecureStore.setItemAsync(ENV_KEY, env);
-  /** Same auto-registration on the fresh-installation path. */
-  void registerPushWithDaemon(created);
-  return created;
+  return createClientForAccount(rec, env, opts);
 }
 
 /** Switch the active account: drop the cached client and rebuild against the
