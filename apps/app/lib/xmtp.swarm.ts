@@ -73,20 +73,31 @@ export async function materializeFileUri(src: string): Promise<string> {
  *  gateway URL `https://api.gateway.ethswarm.org/bzz/<ref>/` — reads never touch
  *  the daemon. The blob is already client-side encrypted, so the public reference
  *  only ever exposes ciphertext. */
+/** Max ciphertext we'll attempt to upload. The daemon proxy accepts up to ~12MB;
+ *  this guards a touch below so the send fails fast with a clear message instead
+ *  of buffering a huge body. NOTE: swarmy.cloud's nginx still hard-caps
+ *  /api/files at ~1MB upstream — files between 1MB and this limit reach the proxy
+ *  but currently 413 at swarmy until that cap is lifted (or the store changes). */
+export const SWARM_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
+
 export async function uploadEncryptedToIpfs(encryptedFileUri: string, filename: string): Promise<string> {
   /** Read the encrypted bytes off disk; `fetch(file://)` gives us a Blob we can
    *  ship as a raw binary body (the proxy reads `req.arrayBuffer()`). */
   const blob = await (await fetch(encryptedFileUri)).blob();
+  if (blob.size > SWARM_UPLOAD_MAX_BYTES) {
+    const mb = (SWARM_UPLOAD_MAX_BYTES / (1024 * 1024)).toFixed(0);
+    throw new Error(`"${filename}" is too large to send (max ~${mb}MB). Try a smaller file.`);
+  }
   const res = await fetch(SWARM_UPLOAD_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/octet-stream' },
     body: blob,
   });
   const json = await res.json().catch(() => ({})) as { ref?: string; error?: string; status?: number };
-  /** swarmy enforces a ~1MB body cap → 413. Surface a clear, actionable message
-   *  instead of a raw 502/"Swarm upload failed". */
+  /** swarmy's nginx still enforces a ~1MB body cap → 413. Surface a clear,
+   *  actionable message instead of a raw 502/"Swarm upload failed". */
   if (res.status === 413 || json.status === 413) {
-    throw new Error(`"${filename}" is too large to send (max ~1MB). Try a smaller file.`);
+    throw new Error(`"${filename}" is too large to send (server max ~1MB). Try a smaller file.`);
   }
   if (!res.ok || json.error) throw new Error(json.error ?? `Swarm upload failed (${res.status})`);
   if (!json.ref) throw new Error('Swarm proxy returned no reference');
