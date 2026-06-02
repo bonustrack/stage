@@ -40,8 +40,19 @@ export function useChannelRowRenderer(
     const preview = item.lastPreview
       ? `${senderPrefix}${item.lastPreview}`
       : '(no messages yet)';
-    const showAddr = !item.avatarUri && item.avatarAddress && isPeerResolved(item.avatarAddress)
-      ? item.avatarAddress : null;
+    /** Avatar address gate:
+     *   - GROUP (peerAddress == null): the address IS the deterministic
+     *     channel-id stamp seed — render it directly (no peer profile to
+     *     resolve, and we must NEVER blank a group avatar). Skipped only when
+     *     a group-uploaded image (avatarUri) takes precedence.
+     *   - DM (peerAddress set): hold off until the peer profile resolves so we
+     *     don't flash a cache-buster-less stamp before the real URL lands. */
+    const isGroup = !item.peerAddress;
+    const showAddr = item.avatarUri || !item.avatarAddress
+      ? null
+      : isGroup || isPeerResolved(item.avatarAddress)
+        ? item.avatarAddress
+        : null;
     return (
       <ChannelRow
         title={displayTitle}
