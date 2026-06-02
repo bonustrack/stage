@@ -9,12 +9,17 @@
  *  nodejs-mobile runtime isn't in this binary) we never call into it, so tsc /
  *  eslint / the bundler stay clean even though the native module isn't
  *  resolvable here. Any throw is caught and surfaced as text. */
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';
 import { Col } from '../layout';
 import { useEffectiveColorScheme } from '../../lib/theme';
-import { isBridgeAvailable, pingBridge } from '../../lib/railgun/bridge';
+import {
+  isBridgeAvailable,
+  pingBridge,
+  setBridgeStatusListener,
+} from '../../lib/railgun/bridge';
+import { PingLog, type LogLine } from './WalletScreen.private.ping.log';
 
 type ProbeState =
   | { kind: 'idle' }
@@ -30,10 +35,25 @@ export function BridgePingProbe({ sub, border }: {
   const dark = useEffectiveColorScheme() === 'dark';
   const [state, setState] = useState<ProbeState>({ kind: 'idle' });
   const [count, setCount] = useState(0);
+  const [log, setLog] = useState<LogLine[]>([]);
+  const runStart = useRef(0);
+
+  // Mirror the bridge's lifecycle lines into component state so the full
+  // boot→reply sequence renders on-device (no adb logcat). Cleared per run.
+  useEffect(() => {
+    setBridgeStatusListener((line) => {
+      const ms = runStart.current ? Date.now() - runStart.current : 0;
+      setLog((prev) => [...prev, { ms, line }]);
+    });
+    return () => setBridgeStatusListener(null);
+  }, []);
 
   const onPress = useCallback(async (): Promise<void> => {
+    runStart.current = Date.now();
+    setLog([]);
     if (!isBridgeAvailable()) {
       setState({ kind: 'err', text: UNAVAILABLE });
+      setLog([{ ms: 0, line: 'native module not present ✗' }]);
       return;
     }
     const at = count + 1;
@@ -71,6 +91,7 @@ export function BridgePingProbe({ sub, border }: {
       <Text style={{ color: resultColor, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
         {resultText}
       </Text>
+      <PingLog lines={log} sub={sub} />
     </Col>
   );
 }

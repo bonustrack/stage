@@ -31,6 +31,9 @@ import {
   type NodejsChannel,
 } from './nodejsMobile';
 import type { BridgeCall, BridgeEvent, CallParams, CallResult } from './protocol';
+import { attachRawProbe, fmtPayload, status } from './diagnostics';
+
+export { setBridgeStatusListener } from './diagnostics';
 
 /** Wire envelopes. Requests carry a correlation id; replies echo it. */
 interface RequestEnvelope { id: number; call: BridgeCall | 'ping'; params: unknown }
@@ -68,7 +71,11 @@ function channel(): NodejsChannel | null {
 export function startBridge(): boolean {
   if (started) return true;
   const mod = loadNodejsMobile();
-  if (!mod) return false;
+  if (!mod) {
+    status('native module not present ✗');
+    return false;
+  }
+  attachRawProbe(mod.channel, RAW_PROBE_EVENTS);
   mod.channel.addListener(REPLY_EVENT, (...args: unknown[]) => {
     const reply = args[0] as ReplyEnvelope | undefined;
     if (!reply || typeof reply.id !== 'number') return;
@@ -76,16 +83,29 @@ export function startBridge(): boolean {
     if (!entry) return;
     pending.delete(reply.id);
     clearTimeout(entry.timer);
-    if (reply.ok) entry.resolve(reply.result);
-    else entry.reject(new Error(reply.error ?? 'Railgun bridge error'));
+    if (reply.ok) {
+      status(`reply ← pong (id ${reply.id}) ${fmtPayload(reply.result)}`);
+      entry.resolve(reply.result);
+    } else {
+      status(`reply ← error (id ${reply.id}): ${reply.error ?? 'unknown'} ✗`);
+      entry.reject(new Error(reply.error ?? 'Railgun bridge error'));
+    }
   });
   readyPromise = new Promise<void>((resolve) => {
-    mod.channel.addListener(READY_EVENT, () => resolve());
+    mod.channel.addListener(READY_EVENT, (...args: unknown[]) => {
+      status(`Node booted ✓ ${fmtPayload(args[0])}`);
+      resolve();
+    });
   });
+  status('starting Node runtime…');
   mod.start('main.js');
   started = true;
   return true;
 }
+
+/** Candidate channel event names main.js / the native layer might post the boot
+ *  signal (or anything else) under — the raw probe listens on all of them. */
+const RAW_PROBE_EVENTS = ['message', 'event:message', 'event', READY_EVENT, REQUEST_EVENT, REPLY_EVENT];
 
 /** Issue a typed RPC call to the Node process. Rejects (never throws sync) when
  *  the runtime is absent so callers keep the existing degradation path. */
@@ -108,6 +128,7 @@ function rawCall(call: BridgeCall | 'ping', params: unknown): Promise<unknown> {
   return new Promise<unknown>((resolve, reject) => {
     const timer = setTimeout(() => {
       pending.delete(id);
+      status(`timed out after ${Math.round(CALL_TIMEOUT_MS / 1000)}s (id ${id}) ✗`);
       reject(new Error(`Railgun bridge call timed out: ${call}`));
     }, CALL_TIMEOUT_MS);
     pending.set(id, { resolve, reject, timer });
@@ -115,7 +136,10 @@ function rawCall(call: BridgeCall | 'ping', params: unknown): Promise<unknown> {
     // so posting before main.js registers its 'rg:request' listener drops the
     // request and the call hangs until timeout. readyPromise resolves on the
     // host's boot announcement (READY_EVENT).
-    void (readyPromise ?? Promise.resolve()).then(() => ch.post(REQUEST_EVENT, envelope));
+    void (readyPromise ?? Promise.resolve()).then(() => {
+      status(`request sent → ${call} (id ${id})`);
+      ch.post(REQUEST_EVENT, envelope);
+    });
   });
 }
 
