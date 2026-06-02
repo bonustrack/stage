@@ -33,10 +33,11 @@ import { attachRawProbe, fmtPayload, status } from './diagnostics';
 export { setBridgeStatusListener } from './diagnostics';
 export { walletInfo, getBalances } from './wallet';
 export type { WalletInfoResult, BalancesResult, BridgeBalanceRow } from './wallet';
+export { sdk, sdkListMethods } from './sdk';
 
 /** Wire envelopes (requests carry a correlation id; replies echo it). ExtraCall
  *  = non-BridgeCall host calls on the same channel (ping/engineInit/etc). */
-export type ExtraCall = 'ping' | 'engineStatus' | 'engineInit' | 'walletInfo' | 'balances';
+export type ExtraCall = 'ping' | 'engineStatus' | 'engineInit' | 'walletInfo' | 'balances' | 'sdk';
 interface RequestEnvelope { id: number; call: BridgeCall | ExtraCall; params: unknown }
 interface ReplyEnvelope { id: number; ok: boolean; result?: unknown; error?: string }
 
@@ -107,8 +108,7 @@ export function startBridge(): boolean {
   return true;
 }
 
-/** Candidate channel event names main.js / the native layer might post the boot
- *  signal (or anything else) under — the raw probe listens on all of them. */
+/** Candidate event names the boot signal (or anything) may arrive under. */
 const RAW_PROBE_EVENTS = ['message', 'event:message', 'event', READY_EVENT, REQUEST_EVENT, REPLY_EVENT];
 
 /** Issue a typed RPC call to the Node process. Rejects (never throws sync) when

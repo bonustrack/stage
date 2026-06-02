@@ -1,13 +1,16 @@
 /** RN-side bridge wrappers for the RAILGUN wallet + shielded-balance calls
- *  (Kohaku phase 1-2). Mirrors the ping/engineInit pattern in ./index.ts: each
- *  is a thin typed wrapper over the shared `rawCall` request/response primitive.
+ *  (Kohaku phase 1-2). These are thin TYPED wrappers over the GENERIC `sdk()`
+ *  dispatcher (./sdk.ts): `walletInfo` → sdk('createWallet'), `getBalances` →
+ *  sdk('balances'). Routing those names back to engine.js's stateful logic
+ *  (LevelDB + prover + wallet cache) happens in the host (main.js ENGINE_OPS),
+ *  so the deterministic 0zk derivation + scan behavior is unchanged — but the
+ *  wire path is now the one generic handler, so future ops need no new handler.
  *
  *  The deterministic key material (mnemonic + encryptionKey + creationBlocks) is
  *  derived on the RN side (lib/railgun/deriveKeys.ts) and passed IN so the EOA
  *  key never has to be re-derived in the Node host; see SECURITY note in
- *  ./index.ts. The Node-side handlers live in nodejs-assets/nodejs-project/
- *  engine.js (walletInfo / balances) + main.js (handler registration). */
-import { rawCall, ENGINE_INIT_TIMEOUT_MS } from './index';
+ *  ./index.ts. */
+import { sdk } from './sdk';
 
 /** Result of `walletInfo`: the active account's RAILGUN wallet, create-or-loaded
  *  in the Node host from deterministic key material (deriveKeys.ts). */
@@ -33,24 +36,22 @@ export interface BalancesResult {
   scanning: boolean;
 }
 
-/** walletInfo inits the engine if cold, so it gets the engine-init headroom.
- *  Balance scans run in the background but the handler returns promptly. */
-const BALANCES_TIMEOUT_MS = 30_000;
-
 /** Create-or-load the active account's RAILGUN wallet in the Node host and
- *  resolve its { railgunWalletID, railgunAddress }. The deterministic key
- *  material is derived on RN and passed in so the EOA key never re-derives in
- *  Node. */
+ *  resolve its { railgunWalletID, railgunAddress }. Routed through the generic
+ *  dispatcher (sdk('createWallet')) → engine.js, which inits the engine if cold.
+ *  The deterministic key material is derived on RN and passed in so the EOA key
+ *  never re-derives in Node. */
 export async function walletInfo(params: {
   encryptionKey: string;
   mnemonic: string;
   creationBlocks: Record<string, number>;
 }): Promise<WalletInfoResult> {
-  return (await rawCall('walletInfo', params, ENGINE_INIT_TIMEOUT_MS)) as WalletInfoResult;
+  return sdk<WalletInfoResult>('createWallet', [params]);
 }
 
 /** Trigger a shielded-balance scan for Ethereum + Sepolia and resolve the
- *  currently-known per-network ERC20 amounts. May be empty while scanning. */
+ *  currently-known per-network ERC20 amounts. May be empty while scanning.
+ *  Routed through sdk('balances') → engine.js's non-blocking scan + cache. */
 export async function getBalances(walletId: string): Promise<BalancesResult> {
-  return (await rawCall('balances', { walletId }, BALANCES_TIMEOUT_MS)) as BalancesResult;
+  return sdk<BalancesResult>('balances', [{ walletId }]);
 }

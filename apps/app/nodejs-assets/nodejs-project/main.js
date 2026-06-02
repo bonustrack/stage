@@ -151,6 +151,53 @@ handlers['balances'] = async function balances(params) {
   return getEngineMod().balances(params || {});
 };
 
+/* ───────────────────────── Generic SDK dispatcher ───────────────────────────
+ *
+ *  THE generic, future-proof handler. Takes { method, args } and invokes the
+ *  matching @railgun-community/wallet operation by name. This is what lets
+ *  phases 3-5 (shield / private-transfer / unshield) ship as PURE RN code with
+ *  NO further APK rebuild: the multi-step orchestration (estimate → prove →
+ *  populate → broadcast) lives in RN and composes these primitives.
+ *
+ *  Two routing tiers:
+ *    1. Stateful ENGINE ops (initEngine / getAddress / balances) → engine.js,
+ *       which owns the LevelDB + prover + provider wiring + wallet cache. These
+ *       reuse the exact phase-1-2 logic (no behavior change).
+ *    2. Everything else → the WHITELIST in sdkDispatch.js (a safe, explicit map
+ *       of SDK primitives; NOT arbitrary eval).
+ *
+ *  STUBS: 'shield' / 'privateTransfer' / 'unshield' are intentionally wired as
+ *  not_implemented so the dispatcher SHAPE supports them now; the RN side will
+ *  compose them from the whitelisted primitives above without a rebuild. */
+let sdkDispatch = null;
+function getSdkDispatch() {
+  // eslint-disable-next-line global-require
+  if (!sdkDispatch) sdkDispatch = require('./sdkDispatch');
+  return sdkDispatch;
+}
+
+const ENGINE_OPS = Object.create(null);
+ENGINE_OPS['initEngine'] = (args) => getEngineMod().init(args[0] || {});
+ENGINE_OPS['engineStatus'] = () => getEngineMod().status();
+ENGINE_OPS['createWallet'] = (args) => getEngineMod().walletInfo(args[0] || {});
+ENGINE_OPS['getAddress'] = (args) => getEngineMod().walletInfo(args[0] || {});
+ENGINE_OPS['balances'] = (args) => getEngineMod().balances(args[0] || {});
+ENGINE_OPS['listMethods'] = () => getSdkDispatch().listMethods();
+const NOT_IMPL = ['shield', 'privateTransfer', 'unshield'];
+
+handlers['sdk'] = async function sdk(params) {
+  const method = params && params.method;
+  const args = params && Array.isArray(params.args) ? params.args : [];
+  if (typeof method !== 'string') throw new Error('sdk requires { method, args }');
+  if (NOT_IMPL.indexOf(method) !== -1) {
+    const e = new Error('not_implemented: ' + method + ' (compose from whitelisted primitives on RN)');
+    e.code = 'not_implemented';
+    throw e;
+  }
+  if (ENGINE_OPS[method]) return ENGINE_OPS[method](args);
+  return getSdkDispatch().invoke(method, args);
+};
+
 async function dispatch(envelope) {
   if (!envelope || typeof envelope.id !== 'number') return;
   const handler = handlers[envelope.call];

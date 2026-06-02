@@ -18,6 +18,7 @@ import {
   engineInit,
   isBridgeAvailable,
   pingBridge,
+  sdkListMethods,
   setBridgeStatusListener,
 } from '../../lib/railgun/bridge';
 import { PingLog, type LogLine } from './WalletScreen.private.ping.log';
@@ -91,6 +92,22 @@ export function BridgePingProbe({ sub, border }: {
     }
   }, []);
 
+  const onMethods = useCallback(async (): Promise<void> => {
+    runStart.current = Date.now();
+    setLog([]);
+    if (!isBridgeAvailable()) {
+      setEngine({ kind: 'err', text: UNAVAILABLE });
+      return;
+    }
+    setEngine({ kind: 'running' });
+    try {
+      const methods = await sdkListMethods();
+      setEngine({ kind: 'ok', text: `${methods.length} SDK methods: ${methods.join(', ')}` });
+    } catch (e) {
+      setEngine({ kind: 'err', text: e instanceof Error ? e.message : String(e) });
+    }
+  }, []);
+
   const resultColor = state.kind === 'err' ? '#ff5c5c' : sub;
   const resultText =
     state.kind === 'idle' ? 'not run yet'
@@ -127,6 +144,12 @@ export function BridgePingProbe({ sub, border }: {
       <Text style={{ color: engineColor, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
         {engineText}
       </Text>
+      <Button
+        label="List SDK dispatcher methods"
+        variant="secondary"
+        dark={dark}
+        onPress={() => { void onMethods(); }}
+      />
       <PingLog lines={log} sub={sub} />
     </Col>
   );
