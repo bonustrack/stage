@@ -112,10 +112,10 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
         )}
       </Col>
 
-      {/* Four action pills — Send / Receive route to existing screens;
+      {/* Four action circles — Send / Receive route to existing screens;
           Swap / Buy are placeholders (no on/off-ramp wired yet) and flash a
-          "coming soon" toast. LEFT-aligned, wraps if the row overflows. */}
-      <Row justify="start" gap={10} mx={16} mt={12} style={{ flexWrap: 'wrap' }}>
+          "coming soon" toast. LEFT-aligned on a single row (icon-over-label). */}
+      <Row justify="start" gap={12} mx={16} mt={12}>
         <Btn icon="send" label="Send" onPress={() => router.push('/wallet/send')} head={head} dark={dark} />
         <Btn icon="arrowDown" label="Receive" onPress={() => router.push('/wallet/receive')} head={head} dark={dark} />
         <Btn icon="switchHorizontal" label="Swap" onPress={() => flash('Swap — coming soon')} head={head} dark={dark} />

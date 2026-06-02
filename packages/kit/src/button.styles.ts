@@ -5,7 +5,7 @@
 import type { TextStyle } from 'react-native';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
-export type ButtonSize = 'sm' | 'md' | 'lg';
+export type ButtonSize = 'sm' | 'md' | 'lg' | 'xl';
 
 export interface SizeSpec {
   height: number;
@@ -19,6 +19,9 @@ export const SIZES: Record<ButtonSize, SizeSpec> = {
   sm: { height: 32, paddingHorizontal: 12, fontSize: 14, gap: 6, spinner: 'small' },
   md: { height: 40, paddingHorizontal: 16, fontSize: 15, gap: 8, spinner: 'small' },
   lg: { height: 48, paddingHorizontal: 20, fontSize: 16, gap: 8, spinner: 'small' },
+  // `xl` is sized so a `pill` icon-only Button renders a 56×56 circle — the
+  // original wallet/profile action-circle size. Used icon-only (label below).
+  xl: { height: 56, paddingHorizontal: 24, fontSize: 16, gap: 8, spinner: 'small' },
 };
 
 export interface VariantColors {

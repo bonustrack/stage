@@ -65,7 +65,7 @@ export const BUTTON_SPEC: ControlSpec<ButtonState> = [
     key: 'variant', label: 'Variant', kind: 'enum', default: 'primary',
     options: ['primary', 'secondary', 'ghost', 'danger'],
   },
-  { key: 'size', label: 'Size', kind: 'enum', default: 'md', options: ['sm', 'md', 'lg'] },
+  { key: 'size', label: 'Size', kind: 'enum', default: 'md', options: ['sm', 'md', 'lg', 'xl'] },
   { key: 'label', label: 'Label', kind: 'string', default: 'Button', placeholder: 'Button' },
   { key: 'pill', label: 'Pill (icon-only)', kind: 'boolean', default: false },
   { key: 'fullWidth', label: 'Full width', kind: 'boolean', default: false },

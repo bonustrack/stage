@@ -11,7 +11,7 @@ import { PreviewStage, type ControlPalette } from './KitControls';
 import { ControlsForm } from './ControlsForm';
 import { BUTTON_SPEC, defaultsOf, type ButtonState } from './KitSpec';
 
-const ICON_PX: Record<ButtonState['size'], number> = { sm: 16, md: 18, lg: 20 };
+const ICON_PX: Record<ButtonState['size'], number> = { sm: 16, md: 18, lg: 20, xl: 26 };
 
 /** Icon tint that reads on each variant's fill (mirrors the button text colour). */
 function iconColorFor(variant: ButtonState['variant'], dark: boolean): string {

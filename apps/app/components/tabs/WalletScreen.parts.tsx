@@ -38,23 +38,25 @@ export const fmtBalance = (v: string): string => {
 
 interface Palette { head: string; sub: string; border: string; bg: string; card: string; }
 
-/** Action button — a standard kit pill Button with an inline icon + label
- *  (icon BEFORE the text). The four actions (Send / Receive / Swap / Buy) sit
- *  LEFT-aligned on a single wrapping row. Uses the `secondary` variant (subtle
- *  rowBg fill + border) so they read as the standard ChatKit pill buttons. */
+/** Action button — a kit `pill` icon-only Button rendering a 56×56 circle
+ *  (`size="xl"`, `variant="secondary"` = rowBg fill + border), with the text
+ *  label as a separate <Text> BELOW the circle. The four actions (Send /
+ *  Receive / Swap / Buy) sit LEFT-aligned on a single row, centered columns. */
 export function Btn({ icon, label, onPress, head, dark }: {
   icon: HeroIconName; label: string; onPress: () => void; head: string; dark: boolean;
 }): React.ReactElement {
   return (
-    <Button
-      variant="secondary"
-      size="md"
-      pill={false}
-      dark={dark}
-      onPress={onPress}
-      label={label}
-      icon={<Icon name={icon} size={18} color={head} />}
-    />
+    <Col align="center" gap={6}>
+      <Button
+        variant="secondary"
+        size="xl"
+        pill
+        dark={dark}
+        onPress={onPress}
+        icon={<Icon name={icon} size={26} color={head} />}
+      />
+      <Text style={{ color: head, fontSize: 14, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{label}</Text>
+    </Col>
   );
 }
 

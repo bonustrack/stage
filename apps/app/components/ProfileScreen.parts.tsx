@@ -95,28 +95,31 @@ export function InfoRow({ label, value, onCopy, c }: {
 }
 
 /** Message + Send action pair shown only on OTHER users' profiles.
- *  Standard kit pill Buttons (secondary variant) with an inline icon + label,
- *  LEFT-aligned in a single row. Message shows a spinner while opening. */
+ *  Kit `pill` icon-only Buttons (secondary variant, `size="xl"`) rendering a
+ *  56×56 circle, each with the text label as a separate <Text> BELOW the circle.
+ *  LEFT-aligned in a single row — matches the wallet tab's action buttons. */
 export function ProfileActions({ dark, opening, onMessage, onSend, c }: {
   dark: boolean; opening: boolean; onMessage: () => void; onSend: () => void; c: ProfileColors;
 }): React.ReactElement {
-  const Btn = ({ icon, label, onPress, disabled, loading }: {
-    icon: HeroIconName; label: string; onPress: () => void; disabled?: boolean; loading?: boolean;
+  const Btn = ({ icon, label, onPress, disabled }: {
+    icon: HeroIconName; label: string; onPress: () => void; disabled?: boolean;
   }): React.ReactElement => (
-    <Button
-      variant="secondary"
-      size="md"
-      dark={dark}
-      onPress={onPress}
-      disabled={disabled}
-      loading={loading}
-      label={label}
-      icon={<Icon name={icon} size={18} color={c.head} />}
-    />
+    <Box style={{ alignItems: 'center', gap: 6 }}>
+      <Button
+        variant="secondary"
+        size="xl"
+        pill
+        dark={dark}
+        onPress={onPress}
+        disabled={disabled}
+        icon={<Icon name={icon} size={22} color={c.head} />}
+      />
+      <Text style={{ color: c.head, fontSize: 14, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{label}</Text>
+    </Box>
   );
   return (
-    <Box style={{ flexDirection: 'row', gap: 10, marginTop: 18, justifyContent: 'flex-start' }}>
-      <Btn icon="chatRect" label={opening ? 'Opening…' : 'Message'} onPress={onMessage} disabled={opening} loading={opening} />
+    <Box style={{ flexDirection: 'row', gap: 12, marginTop: 18, justifyContent: 'flex-start' }}>
+      <Btn icon="chatRect" label={opening ? 'Opening…' : 'Message'} onPress={onMessage} disabled={opening} />
       <Btn icon="send" label="Send" onPress={onSend} />
     </Box>
   );
