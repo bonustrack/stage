@@ -137,6 +137,20 @@ handlers['engineInit'] = async function engineInit(params) {
   return result;
 };
 
+/* walletInfo: create-or-load the RAILGUN wallet for the active account (derived
+ * deterministically on RN) and return { railgunAddress (0zk…), railgunWalletID }.
+ * Inits the engine first if needed. */
+handlers['walletInfo'] = async function walletInfo(params) {
+  return getEngineMod().walletInfo(params || {});
+};
+
+/* balances: trigger a shielded-balance scan for Ethereum + Sepolia and return
+ * currently-known per-network ERC20 amounts (+ a `scanning` flag). Non-blocking:
+ * returns immediately with whatever the engine already knows. */
+handlers['balances'] = async function balances(params) {
+  return getEngineMod().balances(params || {});
+};
+
 async function dispatch(envelope) {
   if (!envelope || typeof envelope.id !== 'number') return;
   const handler = handlers[envelope.call];

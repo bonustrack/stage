@@ -13,18 +13,15 @@
  *  (with the runtime + bundled nodejs-project) ships, this stays dormant and the
  *  existing UI degradation path is unchanged.
  *
- *  TRANSPORT: we implement the minimal request/response correlation directly on
- *  the channel (each call gets a monotonic id; the Node side echoes it on the
- *  reply event), so we don't need the `nodejs-mobile-ipc2` dep on the RN side.
- *  The Node side may use ipc2 internally; the wire shape below is what matters.
+ *  TRANSPORT: request/response correlation directly on the channel (each call
+ *  gets a monotonic id; the Node side echoes it on the reply event), so no
+ *  `nodejs-mobile-ipc2` dep on the RN side.
  *
  *  SECURITY (key handling): the engine encryption key + mnemonic are derived on
- *  the RN side from the active account (lib/railgun/sdkWallet.ts) and passed in
- *  request payloads to the Node process. They cross only the in-process channel
- *  (no network, no disk on the RN side beyond the engine's own encrypted DB) and
- *  the Node process runs in the same app sandbox. The EOA private key NEVER
- *  leaves RN — shield/unshield sign on RN and pass only the resulting signature
- *  / populated tx. A password-gated key (vs derived) is a later hardening pass. */
+ *  the RN side (lib/railgun/deriveKeys.ts) and passed in request payloads. They
+ *  cross only the in-process channel (no network) and the Node process runs in
+ *  the same app sandbox. The EOA private key NEVER leaves RN — shield/unshield
+ *  sign on RN and pass only the populated tx. Password-gating is a later pass. */
 import {
   isNodejsMobilePresent,
   loadNodejsMobile,
@@ -34,9 +31,13 @@ import type { BridgeCall, BridgeEvent, CallParams, CallResult } from './protocol
 import { attachRawProbe, fmtPayload, status } from './diagnostics';
 
 export { setBridgeStatusListener } from './diagnostics';
+export { walletInfo, getBalances } from './wallet';
+export type { WalletInfoResult, BalancesResult, BridgeBalanceRow } from './wallet';
 
-/** Wire envelopes. Requests carry a correlation id; replies echo it. */
-interface RequestEnvelope { id: number; call: BridgeCall | 'ping' | 'engineStatus' | 'engineInit'; params: unknown }
+/** Wire envelopes (requests carry a correlation id; replies echo it). ExtraCall
+ *  = non-BridgeCall host calls on the same channel (ping/engineInit/etc). */
+export type ExtraCall = 'ping' | 'engineStatus' | 'engineInit' | 'walletInfo' | 'balances';
+interface RequestEnvelope { id: number; call: BridgeCall | ExtraCall; params: unknown }
 interface ReplyEnvelope { id: number; ok: boolean; result?: unknown; error?: string }
 
 const REQUEST_EVENT = 'rg:request';
@@ -51,7 +52,7 @@ const READY_EVENT = 'event:message';
 const CALL_TIMEOUT_MS = 15_000;
 /** Engine init connects two RPC providers + loads the native prover; give it
  *  generous headroom so a slow public RPC doesn't trip a false timeout. */
-const ENGINE_INIT_TIMEOUT_MS = 90_000;
+export const ENGINE_INIT_TIMEOUT_MS = 90_000;
 
 let started = false;
 let nextId = 1;
@@ -122,7 +123,7 @@ export async function bridgeCall<K extends BridgeCall>(
 /** Untyped request/response primitive shared by bridgeCall + pingBridge. Sends
  *  one envelope, awaits the id-matched reply, rejects on timeout / absent
  *  runtime. Keeps the correlation logic in one place. */
-function rawCall(call: BridgeCall | 'ping' | 'engineStatus' | 'engineInit', params: unknown, timeoutMs = CALL_TIMEOUT_MS): Promise<unknown> {
+export function rawCall(call: BridgeCall | ExtraCall, params: unknown, timeoutMs = CALL_TIMEOUT_MS): Promise<unknown> {
   const ch = channel();
   if (!ch) throw new Error('Private wallet needs the new app build');
   if (!started && !startBridge()) throw new Error('Railgun bridge unavailable');

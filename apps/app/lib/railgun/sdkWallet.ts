@@ -14,13 +14,9 @@
  *  (createRailgunWallet(encryptionKey, mnemonic, creationBlockNumbers)). */
 
 import '../cryptoShim';
-import { keccak256, type Hex } from 'viem';
-import { Mnemonic } from 'ethers';
-import { NETWORK_CONFIG } from '@railgun-community/shared-models';
 import { getActiveAccount } from '../accounts';
-import { getPrivateKey } from '../accounts.keys';
 import { requireWalletApi } from './sdkApi';
-import { RAILGUN_NETWORKS } from './networks';
+import { deriveRailgunKeyMaterial } from './deriveKeys';
 
 export interface RailgunWalletHandle {
   /** Engine wallet id (used by every tx/balance call). */
@@ -34,32 +30,17 @@ export interface RailgunWalletHandle {
 let cached: RailgunWalletHandle | null = null;
 let cachedForId: string | null = null;
 
-function mnemonicFromPrivateKey(pk: Hex): string {
-  const digest = keccak256(pk);
-  const entropy = ('0x' + digest.slice(2, 34)) as Hex; // 16 bytes → 12 words
-  return Mnemonic.fromEntropy(entropy).phrase;
-}
-
 /** Create-or-load the Railgun wallet for the CURRENT active account, memoized
  *  per account id. Throws when the account can't expose a key (WalletConnect),
- *  surfaced by the caller as an unsupported-account message. */
+ *  surfaced by the caller as an unsupported-account message. Key derivation is
+ *  shared with the embedded-Node bridge path (deriveKeys.ts) so the 0zk address
+ *  is identical no matter which path created the wallet. */
 export async function deriveRailgunWallet(): Promise<RailgunWalletHandle> {
   const acct = await getActiveAccount();
   if (!acct) throw new Error('No active account');
   if (cached && cachedForId === acct.id) return cached;
-  if (acct.type === 'walletconnect') {
-    throw new Error('Private wallet needs an in-app key (not WalletConnect)');
-  }
-  const pk = await getPrivateKey(acct.id);
-  if (!pk) throw new Error('Active account has no private key for Railgun');
 
-  const mnemonic = mnemonicFromPrivateKey(pk);
-  const encryptionKey = keccak256(pk).slice(2);
-
-  const creationBlocks: Record<string, number> = {};
-  for (const cfg of Object.values(RAILGUN_NETWORKS)) {
-    creationBlocks[cfg.networkName] = NETWORK_CONFIG[cfg.networkName].deploymentBlock;
-  }
+  const { mnemonic, encryptionKey, creationBlocks } = await deriveRailgunKeyMaterial();
 
   const sdk = requireWalletApi();
   const info = await sdk.createRailgunWallet(encryptionKey, mnemonic, creationBlocks);

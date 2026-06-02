@@ -6,10 +6,12 @@
  *  background refresh swaps in fresh numbers. On a build without the Railgun
  *  native module it shows a friendly "coming soon" rather than erroring. */
 import { Pressable } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { Text } from '@metro-labs/kit/text';
 import { Col, Row } from '../layout';
 import { flash } from '../../lib/toast';
 import { isRailgunAvailable } from '../../lib/railgun/native';
+import { isBridgeAvailable } from '../../lib/railgun/bridge';
 import { usePrivateWallet } from '../../lib/railgun/usePrivateWallet';
 import { fmtBalance } from './WalletScreen.parts';
 import { BridgePingProbe } from './WalletScreen.private.ping';
@@ -22,7 +24,10 @@ export function PrivateView({ head, sub, border }: {
   const { snapshot, pending } = usePrivateWallet();
   const live = pending.filter(p => p.phase === 'proving' || p.phase === 'broadcasting');
 
-  if (!isRailgunAvailable()) {
+  // The real view needs EITHER the native prover (full proving) OR just the
+  // embedded Node bridge (engine init + 0zk address + balance scan — no proof
+  // needed for phase 1-2). Only a build with neither shows the placeholder.
+  if (!isRailgunAvailable() && !isBridgeAvailable()) {
     return (
       <Col mx={16} py={40} align="center" gap={6}>
         <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>Private balances</Text>
@@ -40,7 +45,9 @@ export function PrivateView({ head, sub, border }: {
     <Col mx={16} mt={4}>
       {/* 0zk address pill — copyable; rendered from cache so it's instant. */}
       <Pressable
-        onPress={() => { if (snapshot?.zkAddress) flash('0zk address copied'); }}
+        onPress={() => {
+          if (snapshot?.zkAddress) { void Clipboard.setStringAsync(snapshot.zkAddress); flash('0zk address copied'); }
+        }}
         style={{ paddingVertical: 10 }}
       >
         <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>PRIVATE ADDRESS</Text>

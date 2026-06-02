@@ -134,6 +134,115 @@ async function init(params) {
   }
 }
 
+/* ───────────────────────── Wallet + balances (phase 1-2) ─────────────────────
+ *
+ *  walletInfo: create-or-load the RAILGUN wallet for the active account and
+ *  return its { railgunAddress (0zk…), railgunWalletID }. Determinism lives on
+ *  the RN side (lib/railgun/deriveKeys.ts): the SAME EOA private key always maps
+ *  to the SAME { encryptionKey, mnemonic }, and createRailgunWallet is itself
+ *  deterministic in the mnemonic, so the 0zk address is stable across launches.
+ *  We memoize the loaded wallet id per encryptionKey+mnemonic so repeat calls
+ *  are cheap (createRailgunWallet is idempotent but does disk work).
+ *
+ *  balances: trigger a Merkle-tree scan (refreshBalances) for Ethereum +
+ *  Sepolia and return whatever shielded ERC20 amounts are CURRENTLY known. The
+ *  scan is async (the engine walks the tree in the background and emits via the
+ *  balance-update callback we register once); we never block on a full scan — we
+ *  return the latest cached amounts plus a `scanning` flag so the UI shows an
+ *  empty/$0 state immediately and fills in as the callback lands. */
+
+let walletCacheKey = null; // `${encryptionKey}:${mnemonic}` of the loaded wallet
+let walletCacheId = null;
+
+/** Latest shielded ERC20 balances by `${chainId}:${walletID}` → [{tokenAddress,
+ *  amount(decimal string)}]. Populated by the balance-update callback the engine
+ *  fires after a scan; read synchronously by the `balances` handler. */
+const balanceCache = new Map();
+let balanceCallbackWired = false;
+
+function chainKey(chainId, walletId) {
+  return chainId + ':' + walletId;
+}
+
+/** Register the engine's balance-update callback ONCE so background scans keep
+ *  balanceCache fresh. RailgunBalancesEvent: { chain:{type,id}, railgunWalletID,
+ *  erc20Amounts:[{tokenAddress, amount:bigint}], ... }. */
+function wireBalanceCallback(sdk) {
+  if (balanceCallbackWired) return;
+  balanceCallbackWired = true;
+  sdk.setOnBalanceUpdateCallback(function onBalances(ev) {
+    try {
+      const rows = (ev.erc20Amounts || []).map((a) => ({
+        tokenAddress: a.tokenAddress,
+        amount: a.amount == null ? '0' : a.amount.toString(),
+      }));
+      balanceCache.set(chainKey(ev.chain.id, ev.railgunWalletID), rows);
+      emit('event:balanceUpdate', { chainId: ev.chain.id, walletId: ev.railgunWalletID, rows: rows });
+    } catch (_e) {
+      /* never let a malformed event sink the callback */
+    }
+  });
+}
+
+/** Create-or-load the wallet for the supplied (deterministic) key material. */
+async function walletInfo(params) {
+  if (!state.ready) await init(params || {});
+  // eslint-disable-next-line global-require
+  const sdk = require('@railgun-community/wallet');
+  wireBalanceCallback(sdk);
+
+  const encryptionKey = params && params.encryptionKey;
+  const mnemonic = params && params.mnemonic;
+  if (!encryptionKey || !mnemonic) {
+    throw new Error('walletInfo requires { encryptionKey, mnemonic }');
+  }
+  const creationBlocks = (params && params.creationBlocks) || undefined;
+
+  const key = encryptionKey + ':' + mnemonic;
+  if (walletCacheKey === key && walletCacheId) {
+    return { railgunWalletID: walletCacheId, railgunAddress: sdk.getRailgunAddress(walletCacheId) || '' };
+  }
+  const info = await sdk.createRailgunWallet(encryptionKey, mnemonic, creationBlocks);
+  walletCacheKey = key;
+  walletCacheId = info.id;
+  return { railgunWalletID: info.id, railgunAddress: info.railgunAddress };
+}
+
+/** Trigger a scan for both networks and return currently-known balances. */
+async function balances(params) {
+  if (!state.ready) await init(params || {});
+  // eslint-disable-next-line global-require
+  const sdk = require('@railgun-community/wallet');
+  // eslint-disable-next-line global-require
+  const shared = require('@railgun-community/shared-models');
+  wireBalanceCallback(sdk);
+
+  const walletId = params && params.walletId;
+  if (!walletId) throw new Error('balances requires { walletId }');
+
+  // ChainType.EVM === 0; ids: Ethereum=1, Sepolia=11155111.
+  const targets = [
+    { net: 'mainnet', chainId: 1 },
+    { net: 'sepolia', chainId: 11155111 },
+  ];
+  let scanning = false;
+  const networks = {};
+  for (const t of targets) {
+    const chain = { type: shared.ChainType ? shared.ChainType.EVM : 0, id: t.chainId };
+    try {
+      // Fire-and-forget the scan: it can take a while; the callback fills the
+      // cache. We DON'T await it so the handler returns promptly with whatever
+      // is already known (may be empty on a cold wallet — that's expected).
+      Promise.resolve(sdk.refreshBalances(chain, [walletId])).catch(() => undefined);
+      scanning = true;
+    } catch (_e) {
+      /* network may not be loaded; skip */
+    }
+    networks[t.net] = balanceCache.get(chainKey(t.chainId, walletId)) || [];
+  }
+  return { walletId: walletId, networks: networks, scanning: scanning };
+}
+
 function tryPkgVersion(name) {
   try {
     // eslint-disable-next-line global-require, import/no-dynamic-require
@@ -153,4 +262,4 @@ function status() {
   };
 }
 
-module.exports = { init, status };
+module.exports = { init, status, walletInfo, balances };

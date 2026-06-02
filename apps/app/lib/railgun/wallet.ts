@@ -13,6 +13,8 @@
  *  to safe empty/unavailable states (see native.ts). */
 import { parseUnits } from 'viem';
 import { isRailgunAvailable } from './native';
+import { isBridgeAvailable } from './bridge';
+import { bridgeRefreshSnapshot } from './bridgeWallet';
 import { ensureRailgunForChain } from './engine';
 import { deriveRailgunWallet } from './sdkWallet';
 import { shield, privateTransfer, unshield } from './sdkTx';
@@ -32,16 +34,24 @@ export async function openPrivateWallet(accountId: string): Promise<PrivateSnaps
   return warm;
 }
 
-/** Background refresh: derive the real 0zk address (cheap) and persist it so the
- *  tab shows the user's actual private address. Shielded-balance fetch is a
- *  second-pass item (needs the engine's balance subscription wired through the
- *  cache); we preserve any cached balances meanwhile. Never throws. */
+/** Background refresh: resolve the real 0zk address + shielded balances and
+ *  persist them so the tab shows the user's actual private wallet. Never throws.
+ *
+ *  PREFERRED PATH (device): the embedded Node host — the RAILGUN engine only
+ *  inits there, so it's the source of truth for both the 0zk address and the
+ *  shielded balances (bridgeRefreshSnapshot). FALLBACK: the Hermes direct-SDK
+ *  path, which can derive the 0zk address but can't init the engine on-device,
+ *  so it's address-only and preserves any cached balances. */
 export async function refreshSnapshot(accountId: string): Promise<void> {
-  if (!isRailgunAvailable()) return;
+  const prev = getCachedSnapshot(accountId);
   try {
+    if (isBridgeAvailable()) {
+      const next = await bridgeRefreshSnapshot(prev);
+      if (next) { snapshotStore(accountId).set(next); return; }
+    }
+    if (!isRailgunAvailable()) return;
     if (!(await ensureRailgunForChain(1))) return;
     const wallet = await deriveRailgunWallet();
-    const prev = getCachedSnapshot(accountId);
     snapshotStore(accountId).set({
       zkAddress: wallet.railgunAddress,
       balances: prev?.balances ?? [],
