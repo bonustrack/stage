@@ -29,6 +29,9 @@ export function PrivateView({ head, sub, border }: {
         <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium', textAlign: 'center' }}>
           Shielded transfers arrive in the next app build.
         </Text>
+        {/* Bridge ping works without the native prover — let Less test the
+            nodejs-mobile round-trip even on a prover-less build. */}
+        <BridgePingProbe sub={sub} border={border} />
       </Col>
     );
   }
