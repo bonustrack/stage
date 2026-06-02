@@ -28,7 +28,7 @@ import {
   getCachedXmtpClient, setCachedXmtpClient, resetClientScopedState,
 } from './xmtp.state';
 import { type XmtpEnv, convIdOfLine } from './xmtp.types';
-import { loadOrCreateDbKey, deleteDbKey, dbDirObj, ensureDbDir } from './xmtp.dbkey';
+import { loadOrCreateDbKey, deleteDbKey, deleteLegacyDbKey, dbDirObj, ensureDbDir } from './xmtp.dbkey';
 import { createClientForAccount } from './xmtp.recover';
 
 export { getCachedXmtpClient } from './xmtp.state';
@@ -57,7 +57,7 @@ export async function getOrCreateXmtpClient(env: XmtpEnv = 'production'): Promis
  *  a fresh `Client.create` + installation registration. */
 async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<Client> {
   const dbDirectory = await ensureDbDir(rec.dbDir);
-  const dbEncryptionKey = await loadOrCreateDbKey();
+  const dbEncryptionKey = await loadOrCreateDbKey(rec.id);
   const opts = { env, dbDirectory, dbEncryptionKey, codecs: XMTP_CODECS };
   if (rec.registered) {
     try {
@@ -122,6 +122,7 @@ export async function deleteAccount(id: string): Promise<void> {
     const dir = dbDirObj(rec.dbDir);
     if (dir.exists) { try { dir.delete(); } catch { /* best-effort */ } }
   }
+  await deleteDbKey(id);
   resetClientScopedState();
 }
 
@@ -131,8 +132,10 @@ export async function deleteAccount(id: string): Promise<void> {
 export async function resetXmtpClient(): Promise<void> {
   resetClientScopedState();
   await SecureStore.deleteItemAsync(ENV_KEY).catch(() => undefined);
-  await deleteDbKey();
   const removed = await clearAllAccounts();
+  /** Drop every removed account's per-account db key + the legacy global key. */
+  await Promise.all(removed.map(a => deleteDbKey(a.id)));
+  await deleteLegacyDbKey();
   const dirs = new Set<string>(['xmtp', ...removed.map(a => a.dbDir)]);
   for (const name of dirs) {
     const dir = dbDirObj(name);
