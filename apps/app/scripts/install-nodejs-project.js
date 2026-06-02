@@ -74,26 +74,42 @@ function linkNodeGypBuildMobileBin() {
  *   1. GenerateNodeProjectAssetsLists builds `file.list` with a Gradle
  *      fileTree(...).visit, excluding only `**​/.*` (dotfiles) and `**​/*~`.
  *   2. aapt merges nodejs-project/** into the APK assets, but aapt's DEFAULT
- *      ignoreAssetsPattern drops `<dir>_*` (any `_`-prefixed entry — dirs AND
- *      files, e.g. lodash internals like `_baseClone.js`) and `.*` (dotfiles).
- * Gradle LISTS the `_`-prefixed entries in `file.list`, but the DEFAULT aapt
- * pattern NEVER packages them → at launch RNNodeJsMobileModule reads `file.list`,
- * calls AssetManager.open() on a path that isn't a real asset →
+ *      ignoreAssetsPattern drops `<dir>_*` (any `_`-prefixed DIRECTORY, e.g.
+ *      __tests__/__fixtures__) and `.*` (dotfiles). (aapt's `<dir>_*` token
+ *      matches DIRECTORY names, not arbitrary files — `_version.js` etc. ARE
+ *      packaged; only `_`-prefixed dirs are dropped.)
+ * Gradle LISTS the files under `_`-prefixed dirs in `file.list`, but the DEFAULT
+ * aapt pattern NEVER packages them → at launch RNNodeJsMobileModule reads
+ * `file.list`, calls AssetManager.open() on a path that isn't a real asset →
  * FileNotFoundException → RuntimeException("Node assets copy failed").
  *
- * THE REAL FIX lives in withNodejsMobile.js: it OVERRIDES aapt's
- * ignoreAssetsPattern to `.*:*~` so aapt now packages `_`-prefixed dirs AND files
- * (we MUST keep them — lodash et al. require() `_*.js` at runtime; deleting them
- * would break the engine). With that override, packaged == file.list.
+ * THE FIX (deterministic-by-construction): DELETE every `_`-prefixed DIRECTORY
+ * from node_modules on disk BEFORE gradle runs. Then neither file.list nor the
+ * packaged set contains them → they stay in lockstep regardless of whether the
+ * aapt ignoreAssetsPattern override in withNodejsMobile.js actually takes effect.
+ * These dirs are ALL test/fixture trees (__tests__, __fixtures__, __flowtests__
+ * under @railgun-community/wallet, metro, metro-config, metro-file-map, ob1,
+ * flow-enums-runtime) — never required at runtime, safe to delete.
  *
- * This prune therefore only has to keep file.list and the packaged set in lockstep
- * by removing what NEITHER should contain:
+ * WHY THIS RATHER THAN RELYING ON THE aapt OVERRIDE (regression history):
+ *   - ded2a8f shipped this exact `_`-DIR prune and its APK (build 34f5f215) had
+ *     ZERO files listed-but-missing — the prune WORKED.
+ *   - 5c783c4 then DELETED the `_`-dir prune and bet solely on the aapt
+ *     `ignoreAssetsPattern '.*:*~'` override in withNodejsMobile.js. That override
+ *     did NOT take effect, so its APK (build 51ec2304) had 120 files listed in
+ *     file.list but absent from the packaged assets — ALL under `__`-prefixed test
+ *     dirs — and crashed at launch. We restore the prune as the PRIMARY fix and
+ *     keep the aapt override only as harmless defense-in-depth.
+ *
+ * CRITICAL: only `_`-prefixed DIRECTORIES are deleted. `_`-prefixed FILES
+ * (e.g. @ethersproject `_version.js`, lodash `_baseClone.js`) are KEPT — aapt
+ * packages them and the runtime require()s them; deleting them would break the
+ * engine. We also remove what NEITHER set should contain:
  *   - symlinks: AssetManager can't open them and aapt won't package them, yet a
  *     symlink-to-file can still be visited/listed by Gradle's fileTree → mismatch.
  *   - dot-prefixed entries (`.*`): Gradle excludes these from file.list AND aapt
  *     ignores them; removing them on disk keeps the tree clean and is harmless.
- * We do NOT touch `_`-prefixed dirs or files anymore — aapt now packages them and
- * the runtime needs the files. Idempotent. */
+ * Recurses into nested node_modules at every depth. Idempotent. */
 function pruneForAssetBundling() {
   const nm = path.join(projDir, 'node_modules');
   if (!fs.existsSync(nm)) return;
@@ -113,14 +129,23 @@ function pruneForAssetBundling() {
         continue;
       }
       // Dotfiles/-dirs (`.*`): excluded from Gradle's file.list AND ignored by
-      // aapt. Remove on disk so the tree matches both sets. Do NOT special-case
-      // `_`-prefixed entries: the aapt override now packages them and the runtime
-      // require()s the `_*.js` files (e.g. lodash internals).
+      // aapt. Remove on disk so the tree matches both sets.
       if (ent.name.startsWith('.')) {
         try { fs.rmSync(full, { recursive: true, force: true }); removed++; } catch {}
         continue;
       }
       if (ent.isDirectory()) {
+        // `_`-prefixed DIRECTORY: aapt's default ignoreAssetsPattern drops the
+        // whole dir, but Gradle's file.list lists its files → FileNotFoundException
+        // at launch. Delete it so neither set contains it. These are ALL test/
+        // fixture trees (__tests__, __fixtures__, __flowtests__) — never needed at
+        // runtime. (Matches the basename, so it catches them at EVERY depth,
+        // including nested node_modules.) `_`-prefixed FILES are NOT matched here
+        // — they fall through to walk()-free retention and stay packaged.
+        if (ent.name.startsWith('_')) {
+          try { fs.rmSync(full, { recursive: true, force: true }); removed++; } catch {}
+          continue;
+        }
         walk(full);
       }
     }
@@ -128,7 +153,7 @@ function pruneForAssetBundling() {
   walk(nm);
   process.stdout.write(
     '[install-nodejs-project] pruned ' + removed +
-      ' asset-unsafe entries (symlinks / dotfiles) from node_modules\n',
+      ' asset-unsafe entries (symlinks / dot- / _-dirs) from node_modules\n',
   );
   const left = countSymlinks(nm);
   process.stdout.write(
