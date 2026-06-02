@@ -35,7 +35,11 @@
  *   Info.plist / entitlement is required just to boot the runtime, so the iOS
  *   branch here is a documented no-op. Revisit when we wire iOS proving.
  */
-const { withAppBuildGradle, withDangerousMod } = require('expo/config-plugins');
+const {
+  withAppBuildGradle,
+  withDangerousMod,
+  withAndroidManifest,
+} = require('expo/config-plugins');
 const fs = require('fs');
 const path = require('path');
 
@@ -59,6 +63,7 @@ function withNodejsMobileGradle(config) {
       '    // libc++_shared) the embedded Node runtime bundles alongside RN.',
       '    packagingOptions {',
       '        jniLibs {',
+      '            useLegacyPackaging true',
       picks,
       '        }',
       '    }',
@@ -92,9 +97,22 @@ function withNodejsAssetsGuard(config) {
   ]);
 }
 
+/** nodejs-mobile's libnode.so is loaded in a Java static initializer via
+ *  System.loadLibrary("node") at app launch (before JS). Under AGP 8 the default
+ *  extractNativeLibs=false leaves it compressed-in-APK and the load fails →
+ *  UnsatisfiedLinkError in a static block → SIGABRT on launch. Force extraction. */
+function withExtractNativeLibs(config) {
+  return withAndroidManifest(config, (cfg) => {
+    const app = cfg.modResults.manifest.application?.[0];
+    if (app) app.$['android:extractNativeLibs'] = 'true';
+    return cfg;
+  });
+}
+
 /** @param {import('@expo/config-plugins').ExportedConfig} config */
 function withNodejsMobile(config) {
   config = withNodejsMobileGradle(config);
+  config = withExtractNativeLibs(config);
   config = withNodejsAssetsGuard(config);
   return config;
 }
