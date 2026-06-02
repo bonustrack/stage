@@ -25,6 +25,9 @@ export interface PrivateSnapshot {
   balances: PrivateBalance[];
   /** epoch ms of the last successful background refresh. */
   updatedAt: number;
+  /** True while a Merkle-tree scan is still running — the displayed amounts may
+   *  fill in as the engine's balance-update callback lands. */
+  scanning?: boolean;
 }
 
 /** Optimistic pending action overlaid on the cached snapshot so shield / send /

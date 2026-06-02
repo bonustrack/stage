@@ -20,28 +20,34 @@ import {
 } from './bridge';
 import { deriveRailgunKeyMaterial } from './deriveKeys';
 import { RAILGUN_NETWORKS, type RailgunNet } from './networks';
+import { RAILGUN_TOKENS } from './tokens';
 import type { PrivateBalance, PrivateSnapshot } from './types';
 
-/** Map a network's raw wei rows to UI PrivateBalance rows. Without per-token
- *  metadata yet (phase 3), we assume 18 decimals and label by a short token
- *  address; symbol/name/logo enrichment is a later pass. Zero rows are dropped. */
+/** Sum the engine's wei rows for a given token address (case-insensitive).
+ *  Railgun keys balances by ERC20 contract address; native ETH lands under the
+ *  network's WETH address (see tokens.ts). A token absent from the rows is 0. */
+function weiForToken(rows: BridgeBalanceRow[], address: string): bigint {
+  let total = 0n;
+  const want = address.toLowerCase();
+  for (const r of rows) {
+    if (r.tokenAddress.toLowerCase() !== want) continue;
+    try { total += BigInt(r.amount); } catch { /* skip malformed */ }
+  }
+  return total;
+}
+
+/** Map a network's raw wei rows to the FIXED ETH + USDC display rows, formatted
+ *  by each token's real decimals (ETH/WETH 18, USDC 6). Rows are emitted even at
+ *  zero so the tab always shows both tokens per network. */
 function mapRows(net: RailgunNet, rows: BridgeBalanceRow[]): PrivateBalance[] {
   const cfg = RAILGUN_NETWORKS[net];
-  const out: PrivateBalance[] = [];
-  for (const r of rows) {
-    let amount: bigint;
-    try { amount = BigInt(r.amount); } catch { continue; }
-    if (amount === 0n) continue;
-    const short = `${r.tokenAddress.slice(0, 6)}…${r.tokenAddress.slice(-4)}`;
-    out.push({
-      symbol: short,
-      name: cfg.label,
-      chainId: cfg.chainId,
-      balance: formatUnits(amount, 18),
-      logoUrl: '',
-    });
-  }
-  return out;
+  return RAILGUN_TOKENS[net].map((t) => ({
+    symbol: t.symbol,
+    name: cfg.label,
+    chainId: cfg.chainId,
+    balance: formatUnits(weiForToken(rows, t.address), t.decimals),
+    logoUrl: '',
+  }));
 }
 
 /** Resolve the live private snapshot (0zk address + shielded balances) via the
@@ -58,9 +64,11 @@ export async function bridgeRefreshSnapshot(prev: PrivateSnapshot | null): Promi
     creationBlocks: key.creationBlocks,
   });
   let balances = prev?.balances ?? [];
+  let scanning = false;
   try {
     const res = await getBalances(info.railgunWalletID);
     balances = [...mapRows('mainnet', res.networks.mainnet), ...mapRows('sepolia', res.networks.sepolia)];
+    scanning = res.scanning;
   } catch { /* scan may not be ready; keep the 0zk address + prior balances */ }
-  return { zkAddress: info.railgunAddress, balances, updatedAt: Date.now() };
+  return { zkAddress: info.railgunAddress, balances, updatedAt: Date.now(), scanning };
 }

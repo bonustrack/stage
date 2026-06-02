@@ -18,11 +18,38 @@ import { BridgePingProbe } from './WalletScreen.private.ping';
 
 const short0zk = (a: string): string => (a.length > 14 ? `${a.slice(0, 8)}…${a.slice(-4)}` : a);
 
+/** Per-network shielded-balance section: a chain header + each token row. */
+function NetworkSection({ label, rows, head, sub, border }: {
+  label: string; rows: { chainId: number; symbol: string; name: string; balance: string }[];
+  head: string; sub: string; border: string;
+}): React.ReactElement | null {
+  if (!rows.length) return null;
+  return (
+    <Col mt={18}>
+      <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Semibold', letterSpacing: 0.3 }}>
+        {label.toUpperCase()}
+      </Text>
+      {rows.map(b => (
+        <Row key={`${b.chainId}:${b.symbol}`} align="center" justify="between" py={14}
+          style={{ borderBottomWidth: 1, borderBottomColor: border }}>
+          <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold' }}>{b.symbol}</Text>
+          <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold' }}>
+            {`${fmtBalance(b.balance)} ${b.symbol}`}
+          </Text>
+        </Row>
+      ))}
+    </Col>
+  );
+}
+
 export function PrivateView({ head, sub, border }: {
   head: string; sub: string; border: string;
 }): React.ReactElement {
   const { snapshot, pending } = usePrivateWallet();
   const live = pending.filter(p => p.phase === 'proving' || p.phase === 'broadcasting');
+  const balances = snapshot?.balances ?? [];
+  const mainnet = balances.filter(b => b.chainId === 1);
+  const sepolia = balances.filter(b => b.chainId === 11155111);
 
   // The real view needs EITHER the native prover (full proving) OR just the
   // embedded Node bridge (engine init + 0zk address + balance scan — no proof
@@ -69,21 +96,23 @@ export function PrivateView({ head, sub, border }: {
         </Row>
       ))}
 
-      {snapshot?.balances.length
-        ? snapshot.balances.map(b => (
-          <Row key={`${b.chainId}:${b.symbol}`} align="center" justify="between" py={14}
-            style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-            <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold' }}>{b.name}</Text>
-            <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold' }}>
-              {`${fmtBalance(b.balance)} ${b.symbol}`}
+      {balances.length ? (
+        <>
+          <NetworkSection label="Ethereum" rows={mainnet} head={head} sub={sub} border={border} />
+          <NetworkSection label="Sepolia" rows={sepolia} head={head} sub={sub} border={border} />
+          {snapshot?.scanning ? (
+            <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 12 }}>
+              Scanning shielded balances…
             </Text>
-          </Row>
-        ))
-        : (
-          <Col py={32} align="center">
-            <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium' }}>No shielded balances yet</Text>
-          </Col>
-        )}
+          ) : null}
+        </>
+      ) : (
+        <Col py={32} align="center">
+          <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium' }}>
+            {snapshot?.scanning ? 'Scanning shielded balances…' : 'No shielded balances yet'}
+          </Text>
+        </Col>
+      )}
 
       {/* Dev: on-device round-trip check for the embedded Node bridge. */}
       <BridgePingProbe sub={sub} border={border} />
