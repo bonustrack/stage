@@ -94,8 +94,11 @@ async function createWithTimeout(
  *  new-installation handshake was rejected). Imported (pre-existing) inboxes only.
  *  We do NOT wipe for these — wiping the local store cannot free a network slot. */
 const INSTALLATION_LIMIT = [
-  'has reached the maximum number of installations',
-  'max installations', 'installation limit', '10/10', 'too many installations',
+  '10/10',
+  'has already registered',
+  'already registered',
+  'Please revoke existing installations',
+  'Cannot register a new installation',
 ];
 function isInstallationLimit(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err);
