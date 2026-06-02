@@ -20,11 +20,15 @@
  *      time by patches/nodejs-mobile-react-native@18.20.4.patch (bun
  *      patchedDependencies) — NOT here, because a config plugin can only edit the
  *      generated android/ project, not node_modules.
- *   2. The module bundles its own `libnode.so` and `libc++_shared.so` (and the
- *      prover later adds more .so/.node prebuilds). These collide with RN's own
- *      libc++_shared.so during APK packaging → "More than one file ... abi/...".
- *      THIS plugin adds packagingOptions.jniLibs.pickFirst so the merge wins
- *      deterministically instead of failing.
+ *   2. The module bundles its own `libnode.so` (and the prover later adds more
+ *      .so/.node prebuilds). libnode.so has no RN counterpart but the per-ABI
+ *      build can still produce a packaging dup → "More than one file ... abi/...".
+ *      THIS plugin adds packagingOptions.jniLibs.pickFirst for libnode.so so the
+ *      merge wins deterministically instead of failing. It does NOT pick-first
+ *      libc++_shared.so: the bun patch makes nodejs-mobile rely on the app's
+ *      (RN/Expo) STL instead of compiling + shipping its own NDK-24
+ *      libc++_shared.so, so there is no dup — and blanket-picking it could keep
+ *      the wrong STL and shadow the one XMTP's Rust MLS lib was built against.
  *   3. nodejs-mobile's libnode.so must not be stripped/compressed in a way that
  *      breaks dlopen of the bundled native modules — we keep the default useLegacy
  *      jniLibs packaging off (RN 0.81 default) and only pick-first the clashes.
@@ -43,10 +47,20 @@ const {
 const fs = require('fs');
 const path = require('path');
 
-/** .so libraries nodejs-mobile + RN both ship; pickFirst resolves the clash. */
+/** .so libraries nodejs-mobile + RN both ship; pickFirst resolves the clash.
+ *
+ *  NOTE: libc++_shared.so was DELIBERATELY removed from this list. The bun patch
+ *  (patches/nodejs-mobile-react-native@18.20.4.patch) now forces the module's
+ *  DoesAppAlreadyDefineWantedSTL() → true, so nodejs-mobile no longer compiles
+ *  with -DANDROID_STL=c++_shared and no longer emits its OWN NDK-24
+ *  libc++_shared.so. With only RN/Expo's libc++_shared.so present there is no dup
+ *  to arbitrate. Blanket-picking it here was the bug: gradle could keep
+ *  nodejs-mobile's NDK-24 STL and drop RN's, shadowing the STL that XMTP's Rust
+ *  MLS lib (libuniffi_xmtpv3.so) was built against → instant crash at XMTP.create.
+ *  If a future build still reports a libc++_shared.so merge dup, add it back as a
+ *  pickFirst — it will now pick RN's (the only remaining one). */
 const PICK_FIRST = [
   'lib/**/libnode.so',
-  'lib/**/libc++_shared.so',
 ];
 
 /** Insert (idempotently) a packagingOptions.jniLibs.pickFirst block into the
@@ -59,8 +73,9 @@ function withNodejsMobileGradle(config) {
     if (src.includes('// nodejs-mobile-pickFirst')) return cfg;
     const picks = PICK_FIRST.map((p) => `            pickFirst '${p}'`).join('\n');
     const block = [
-      '    // nodejs-mobile-pickFirst — resolve duplicate native libs (libnode/',
-      '    // libc++_shared) the embedded Node runtime bundles alongside RN.',
+      '    // nodejs-mobile-pickFirst — resolve duplicate libnode.so the embedded',
+      '    // Node runtime bundles. (libc++_shared.so is no longer emitted by the',
+      '    // module — see the bun patch — so it is intentionally NOT pick-first.)',
       '    packagingOptions {',
       '        jniLibs {',
       picks,

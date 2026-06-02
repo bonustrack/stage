@@ -1,8 +1,46 @@
 diff --git a/android/build.gradle b/android/build.gradle
-index 14be6078d34741856a4d4027b4497ea4966da0a7..2a661465e20a6159cd48938ba552a946d0a2d9a5 100644
+index 14be6078d34741856a4d4027b4497ea4966da0a7..a29ee9dba2a9f6f0ee38296b398349b0d702302e 100644
 --- a/android/build.gradle
 +++ b/android/build.gradle
-@@ -49,6 +49,9 @@ def DoesAppAlreadyDefineWantedSTL() {
+@@ -20,35 +20,23 @@ if (_compileNativeModulesSdkVersion<24) {
+     _compileNativeModulesSdkVersion=24;
+ }
+ def DoesAppAlreadyDefineWantedSTL() {
+-    // Since react-native 0.59.0, the Application already defines libc++_shared as the APP_STL.
+-    // Defining it also in this plugin would lead to a build error when merging assets.
+-    try {
+-        def _reactAndroidPropertiesFile = file("${rootDir}/../node_modules/react-native/ReactAndroid/gradle.properties");
+-        def _reactAndroidProperties = new Properties()
+-        if (_reactAndroidPropertiesFile.exists())
+-        {
+-            _reactAndroidPropertiesFile.withInputStream { _reactAndroidProperties.load(it) }
+-        }
+-        def _semver = _reactAndroidProperties.getProperty("VERSION_NAME").tokenize('.');
+-        if (_semver.size() != 3) {
+-            return false
+-        }
+-        def _major = _semver[0].toInteger()
+-        def _minor = _semver[1].toInteger()
+-        if ( _major > 0 || (_major == 0 && _minor >= 59) ) {
+-            return true
+-        } else {
+-            return false
+-        }
+-
+-    } catch ( Exception e ) {
+-        return false
+-    }
++    // PATCHED (Metro): under bun's non-hoisted node_modules layout the probe path
++    // ${rootDir}/../node_modules/react-native/ReactAndroid/gradle.properties does
++    // not exist (RN lives in node_modules/.bun/...), so the original probe returns
++    // false and force-compiles this module with -DANDROID_STL=c++_shared, emitting
++    // its OWN NDK-24 libc++_shared.so. That shadows RN/Expo's libc++_shared.so and
++    // breaks XMTP's Rust MLS lib (libuniffi_xmtpv3.so) → instant native crash at
++    // XMTP.create. We are on RN 0.81, which always defines the wanted STL
++    // (c++_shared), so the app already provides it — return true unconditionally.
++    return true
+ }
+ 
  def _isCorrectSTLDefinedByApp = DoesAppAlreadyDefineWantedSTL()
  
  android {
