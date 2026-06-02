@@ -52,9 +52,9 @@ export function ChannelsList({
       <Row align="center" justify="between" px={16} pt={12} pb={10} style={{
         borderBottomWidth: 1, borderBottomColor: border,
       }}>
-        <Pressable onPress={() => router.push('/accounts')} hitSlop={8}>
-          <Avatar address={myAddress} size={24} style={{ backgroundColor: border }} />
-        </Pressable>
+        {/* Static avatar: the top-left no longer opens the account-switcher
+         *  page (account switching lives in Settings). */}
+        <Avatar address={myAddress} size={24} style={{ backgroundColor: border }} />
         <Row align="center" gap={18}>
           {/* Message requests: person icon + count badge (pending 'unknown'
            *  consent convs). Badge hidden when 0; tap opens the requests list. */}
