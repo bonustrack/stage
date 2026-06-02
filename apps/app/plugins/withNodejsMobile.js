@@ -63,7 +63,6 @@ function withNodejsMobileGradle(config) {
       '    // libc++_shared) the embedded Node runtime bundles alongside RN.',
       '    packagingOptions {',
       '        jniLibs {',
-      '            useLegacyPackaging true',
       picks,
       '        }',
       '    }',

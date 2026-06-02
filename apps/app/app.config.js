@@ -58,7 +58,11 @@ const config = {
   orientation: 'portrait',
   icon: './assets/icon.png',
   userInterfaceStyle: 'automatic',
-  newArchEnabled: false,
+  // reanimated 4.x + react-native-worklets are new-architecture-ONLY: their
+  // gradle assertNewArchitectureEnabledTask hard-fails when this is false. The
+  // nodejs-mobile launch crash is fixed by extractNativeLibs + jniLibs pickFirst
+  // (see plugins/withNodejsMobile.js), NOT by disabling the new architecture.
+  newArchEnabled: true,
   splash: {
     image: './assets/splash-icon.png',
     resizeMode: 'contain',
