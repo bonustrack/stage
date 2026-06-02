@@ -36,6 +36,36 @@
 
 'use strict';
 
+// nodejs-mobile's Node v18 is compiled WITHOUT full ICU, so V8 rejects
+// `new TextDecoder('utf-8', { fatal: true })` with:
+//   "fatal" option is not supported on Node.js compiled without ICU
+// RAILGUN's wasm-bindgen glue (@railgun-community/poseidon-hash-wasm,
+// curve25519-scalarmult-wasm) constructs exactly that at module-eval time
+// (reading TextDecoder off require('util')), which throws inside the
+// startRailgunEngine require chain before the engine's JS fallback runs.
+// Dropping fatal/ignoreBOM is safe: the non-ICU build still decodes UTF-8
+// correctly; only those options are unsupported. Must run before engine require.
+(function patchTextDecoderForNoICU() {
+  try {
+    const util = require('util');
+    const OrigTextDecoder = util.TextDecoder;
+    function PatchedTextDecoder(label, options) {
+      if (options && ('fatal' in options || 'ignoreBOM' in options)) {
+        const safe = Object.assign({}, options);
+        delete safe.fatal;
+        delete safe.ignoreBOM;
+        return new OrigTextDecoder(label, safe);
+      }
+      return new OrigTextDecoder(label, options);
+    }
+    PatchedTextDecoder.prototype = OrigTextDecoder.prototype;
+    util.TextDecoder = PatchedTextDecoder;
+    if (typeof global !== 'undefined') global.TextDecoder = PatchedTextDecoder;
+  } catch (_err) {
+    // util always exists in nodejs-mobile.
+  }
+})();
+
 // nodejs-mobile-react-native injects the 'rn-bridge' module at runtime.
 let rnBridge = null;
 try {
