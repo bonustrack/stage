@@ -29,6 +29,7 @@
     },
     "preview-prod": {
       "extends": "preview",
+      "autoIncrement": true,
       "env": { "APP_VARIANT": "prod" }
     },
     "production-prod": {
