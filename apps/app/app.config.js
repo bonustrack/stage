@@ -151,6 +151,12 @@ const config = {
       },
     ],
     './plugins/withMetroPill',
+    // Embedded Node runtime (nodejs-mobile-react-native) that hosts the RAILGUN
+    // engine + native Groth16 prover. Autolinking wires the module; this plugin
+    // adds packagingOptions.pickFirst for the duplicate native libs. The AGP-8
+    // namespace fix lives in patches/nodejs-mobile-react-native@18.20.4.patch
+    // (bun). Requires a NEW APK before the embedded runtime exists on-device.
+    './plugins/withNodejsMobile',
     // Native audio-decode module — powers TRUE voice-message waveforms
     // (decodeAudioData → PCM). Requires a new dev-client build to take effect.
     'react-native-audio-api',
