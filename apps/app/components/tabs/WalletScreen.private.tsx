@@ -12,6 +12,7 @@ import { flash } from '../../lib/toast';
 import { isRailgunAvailable } from '../../lib/railgun/native';
 import { usePrivateWallet } from '../../lib/railgun/usePrivateWallet';
 import { fmtBalance } from './WalletScreen.parts';
+import { BridgePingProbe } from './WalletScreen.private.ping';
 
 const short0zk = (a: string): string => (a.length > 14 ? `${a.slice(0, 8)}…${a.slice(-4)}` : a);
 
@@ -73,6 +74,9 @@ export function PrivateView({ head, sub, border }: {
             <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium' }}>No shielded balances yet</Text>
           </Col>
         )}
+
+      {/* Dev: on-device round-trip check for the embedded Node bridge. */}
+      <BridgePingProbe sub={sub} border={border} />
     </Col>
   );
 }
