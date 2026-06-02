@@ -161,6 +161,98 @@ function pruneForAssetBundling() {
   );
 }
 
+/* nodejs-mobile's bundled Node v18 is built `--with-intl=none` (no ICU). RegExp
+ * Unicode property escapes (`\p{...}`) require ICU and throw at PARSE time:
+ *   SyntaxError: Invalid property name in character class
+ * In the entire engine runtime closure exactly ONE dep trips it:
+ *   urlpattern-polyfill (pulled in eagerly by @whatwg-node/fetch →
+ *   @graphql-mesh → @railgun-community/wallet). Its dist/urlpattern.{cjs,js}
+ *   have TOP-LEVEL (eager, throw-on-require) regexes using \p{ID_Start} /
+ *   \p{ID_Continue}, plus inline occurrences. A none-ICU binary can't be fixed
+ *   with runtime ICU data — so we rewrite the regexes to ASCII fallbacks.
+ *
+ * These URLPattern grammar identifiers are always ASCII in this context, so the
+ * ASCII classes are behavior-preserving here:
+ *   \p{ID_Start}    → A-Za-z      (identifier start: letters, plus the literal
+ *                                  `$ _` already present in the source class)
+ *   \p{ID_Continue} → 0-9A-Za-z   (identifier continue: + digits)
+ * We do a global string replace keyed on the exact `\p{ID_Start}` /
+ * `\p{ID_Continue}` substrings so every occurrence (top-level + inline ~1121)
+ * is caught. Idempotent: once rewritten there are no `\p{...}` left to match.
+ * Deps install FRESH at EAS time (above), so this MUST run here, not via a
+ * committed patch. */
+function patchUrlPatternForNoICU() {
+  const nm = path.join(projDir, 'node_modules');
+  if (!fs.existsSync(nm)) return;
+  // Exact substrings to rewrite. \p{ID_Start} sits in a class `[$_\p{ID_Start}]`
+  // and \p{ID_Continue} in `[$_<zwnj><zwj>\p{ID_Continue}]`; we only touch the
+  // \p{...} token itself so the surrounding class (incl. $ _ and the ZWNJ/ZWJ)
+  // is preserved verbatim.
+  const subs = [
+    ['\\p{ID_Start}', 'A-Za-z'],
+    ['\\p{ID_Continue}', '0-9A-Za-z'],
+  ];
+  const targets = [];
+  const walk = (dir) => {
+    let entries;
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const ent of entries) {
+      const full = path.join(dir, ent.name);
+      if (ent.isSymbolicLink()) continue;
+      if (ent.isDirectory()) {
+        walk(full);
+      } else if (
+        ent.name === 'urlpattern.cjs' ||
+        ent.name === 'urlpattern.js'
+      ) {
+        // only the urlpattern-polyfill dist copies
+        if (full.includes(path.join('urlpattern-polyfill', 'dist'))) {
+          targets.push(full);
+        }
+      }
+    }
+  };
+  walk(nm);
+  let filesPatched = 0;
+  let totalOccurrences = 0;
+  for (const file of targets) {
+    let src;
+    try {
+      src = fs.readFileSync(file, 'utf8');
+    } catch {
+      continue;
+    }
+    let occ = 0;
+    let out = src;
+    for (const [needle, repl] of subs) {
+      let idx = 0;
+      while ((idx = out.indexOf(needle, idx)) !== -1) {
+        occ++;
+        idx += needle.length;
+      }
+      out = out.split(needle).join(repl);
+    }
+    if (occ > 0) {
+      fs.writeFileSync(file, out);
+      filesPatched++;
+      totalOccurrences += occ;
+      process.stdout.write(
+        '[install-nodejs-project] patched ' + occ +
+          ' \\p{} regex(es) in ' + path.relative(nm, file) + '\n',
+      );
+    }
+  }
+  process.stdout.write(
+    '[install-nodejs-project] urlpattern no-ICU patch: ' + filesPatched +
+      ' file(s), ' + totalOccurrences + ' occurrence(s) rewritten' +
+      (targets.length === 0 ? ' (no urlpattern-polyfill found)' : '') + '\n',
+  );
+}
+
 function countSymlinks(dir) {
   let n = 0;
   let entries;
@@ -197,6 +289,10 @@ function main() {
   // GenerateNodeProjectAssetsLists / aapt merge (both run in the later gradle
   // phase; this eas-build-post-install hook runs first).
   pruneForAssetBundling();
+  // Rewrite urlpattern-polyfill's \p{} regexes to ASCII so the engine's eager
+  // require() of @whatwg-node/fetch doesn't SyntaxError on the no-ICU
+  // nodejs-mobile Node v18. Idempotent; must run after install, before gradle.
+  patchUrlPatternForNoICU();
   // Always (re)create the bin gradle's per-ABI rebuild hard-codes. (.bin lives
   // under a dot dir excluded from the asset list, so this is safe post-prune.)
   linkNodeGypBuildMobileBin();
