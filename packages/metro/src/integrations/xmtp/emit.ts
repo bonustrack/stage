@@ -5,10 +5,10 @@ import type { Reaction } from '@xmtp/content-type-reaction';
 import type { Reply } from '@xmtp/content-type-reply';
 import type { WalletSendCallsParams } from '@xmtp/content-type-wallet-send-calls';
 import type { TransactionReference } from '@xmtp/content-type-transaction-reference';
-import { accounts, lineOf, parseLine } from './xmtp-accounts.js';
-import { emit, mintId, rememberUid, SELF_URI } from './xmtp-wire.js';
-import { fcmPushToAll } from './xmtp-push.js';
-import { transcribeAndEmit } from './xmtp-transcribe.js';
+import { accounts, lineOf, parseLine } from './accounts.js';
+import { emit, mintId, rememberUid, SELF_URI } from './wire.js';
+import { fcmPushToAll } from './push.js';
+import { transcribeAndEmit } from './transcribe.js';
 
 /** Stamp account into payload and (if configured) owner-route inbound `to`. */
 export function emitInbound(accountId: string, e: Record<string, unknown>): void {

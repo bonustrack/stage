@@ -1,10 +1,10 @@
 /** Discord outbound action handler (send/reply/react/edit/delete/fetch/…). */
 
 import { ActivityType, type Message, type PresenceStatusData } from 'discord.js';
-import { accountFor, accounts, encodeEmoji, lineOf, rest, routeOf } from './discord-accounts.js';
-import { emitOutbound, emitOutboundEdit, emitOutboundReact } from './discord-format.js';
-import { respond } from './discord-wire.js';
-import { normalizeDiscord } from './messaging-normalize.js';
+import { accountFor, accounts, encodeEmoji, lineOf, rest, routeOf } from './accounts.js';
+import { emitOutbound, emitOutboundEdit, emitOutboundReact } from './format.js';
+import { respond } from './wire.js';
+import { normalizeDiscord } from '../messaging-normalize.js';
 
 async function sendMessage(
   accountId: string, channel: string, body: Record<string, unknown>, files?: string[],

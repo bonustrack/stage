@@ -5,15 +5,15 @@ import type { Reply } from '@xmtp/content-type-reply';
 import { AttachmentCodec, type Attachment } from '@xmtp/content-type-remote-attachment';
 import { WalletSendCallsCodec, type WalletSendCallsParams } from '@xmtp/content-type-wallet-send-calls';
 import { toHex } from 'viem';
-import { convOf } from './xmtp-accounts.js';
-import { resolveMsgId, respond } from './xmtp-wire.js';
-import { emitOutbound } from './xmtp-emit.js';
+import { convOf } from './accounts.js';
+import { resolveMsgId, respond } from './wire.js';
+import { emitOutbound } from './emit.js';
 import {
   PollCodec, SignatureRequestCodec, type PollContent, type SignatureRequestContent,
-} from './xmtp-codecs.js';
-import { convHandlers } from './xmtp-actions-conv.js';
-import { normalizeXmtp } from './messaging-normalize.js';
-import { unsupported } from '../messaging.js';
+} from './codecs.js';
+import { convHandlers } from './actions-conv.js';
+import { normalizeXmtp } from '../messaging-normalize.js';
+import { unsupported } from '../../messaging.js';
 
 type Args = Record<string, unknown>;
 
@@ -157,7 +157,7 @@ async function sendSignatureRequest(id: string, args: Args): Promise<void> {
 }
 
 async function accountsAction(id: string): Promise<void> {
-  const { accounts } = await import('./xmtp-accounts.js');
+  const { accounts } = await import('./accounts.js');
   respond(id, { result: { accounts: [...accounts.values()].map(a => ({
     id: a.cfg.id, address: a.address, inboxId: a.inboxId, env: a.cfg.env ?? 'production',
     owner: a.cfg.owner ?? null,

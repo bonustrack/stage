@@ -1,8 +1,8 @@
 /** Discord message/reaction projection into metro envelopes + outbound emitters. */
 
 import type { Message, MessageReaction, User } from 'discord.js';
-import { accounts, lineOf } from './discord-accounts.js';
-import { emit, mintId, SELF_URI } from './discord-wire.js';
+import { accounts, lineOf } from './accounts.js';
+import { emit, mintId, SELF_URI } from './wire.js';
 
 /** Stamp account into payload and (if configured) owner-route inbound `to`. */
 export function emitInbound(accountId: string, e: Record<string, unknown>): void {

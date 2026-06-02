@@ -18,11 +18,11 @@
 // account's tokens (own/echo + SILENT_TYPES + control DMs skipped). See xmtp-push.ts.
 
 import { ConsentState } from '@xmtp/node-sdk';
-import { accounts, bootAccount, loadAccounts, type Account } from './xmtp-accounts.js';
-import { emitInbound, envelope } from './xmtp-emit.js';
-import { handleControlDm } from './xmtp-push.js';
-import { pushInbound } from './xmtp-push-title.js';
-import { handleCall } from './xmtp-actions.js';
+import { accounts, bootAccount, loadAccounts, type Account } from './accounts.js';
+import { emitInbound, envelope } from './emit.js';
+import { handleControlDm } from './push.js';
+import { pushInbound } from './push-title.js';
+import { handleCall } from './actions.js';
 
 let buf = '';
 process.stdin.setEncoding('utf8');

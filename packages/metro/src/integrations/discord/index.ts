@@ -14,10 +14,10 @@
 import {
   Client, Events, GatewayIntentBits, Partials, type Message, type MessageReaction, type User,
 } from 'discord.js';
-import { accounts, loadAccounts, lineOf, type AccountConfig } from './discord-accounts.js';
-import { emitInbound, messageEnvelope, reactionEnvelope } from './discord-format.js';
-import { mintId } from './discord-wire.js';
-import { handleCall } from './discord-actions.js';
+import { accounts, loadAccounts, lineOf, type AccountConfig } from './accounts.js';
+import { emitInbound, messageEnvelope, reactionEnvelope } from './format.js';
+import { mintId } from './wire.js';
+import { handleCall } from './actions.js';
 
 let buf = '';
 process.stdin.setEncoding('utf8');

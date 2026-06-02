@@ -1,9 +1,9 @@
 /** XMTP conversation + push-token actions (newDm/newGroup/query/…/*-push). */
 
 import { IdentifierKind } from '@xmtp/node-sdk';
-import { accounts, accountForCall, convOf, lineOf, parseLine, type Account } from './xmtp-accounts.js';
-import { inboxEthCache, respond } from './xmtp-wire.js';
-import { fcmPushToAll, loadPushTokens, savePushTokens, storePushToken } from './xmtp-push.js';
+import { accounts, accountForCall, convOf, lineOf, parseLine, type Account } from './accounts.js';
+import { inboxEthCache, respond } from './wire.js';
+import { fcmPushToAll, loadPushTokens, savePushTokens, storePushToken } from './push.js';
 
 type Args = Record<string, unknown>;
 type Handler = (id: string, args: Args) => Promise<void>;

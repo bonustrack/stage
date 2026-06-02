@@ -1,7 +1,7 @@
 /** Telegram message types + projection into metro inbound envelopes. */
 
-import { accounts, lineOf } from './telegram-accounts.js';
-import { mintId } from './telegram-wire.js';
+import { accounts, lineOf } from './accounts.js';
+import { mintId } from './wire.js';
 
 export type TgMsg = {
   message_id: number; date: number;

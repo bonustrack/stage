@@ -1,9 +1,9 @@
 /** Telegram outbound action handler (send/react/edit/delete/media/download). */
 
-import { accountFor, accounts, tg, tgForm, targetOf } from './telegram-accounts.js';
-import { emit, mintId, respond, SELF_URI } from './telegram-wire.js';
-import { normalizeTelegram } from './messaging-normalize.js';
-import { unsupported } from '../messaging.js';
+import { accountFor, accounts, tg, tgForm, targetOf } from './accounts.js';
+import { emit, mintId, respond, SELF_URI } from './wire.js';
+import { normalizeTelegram } from '../messaging-normalize.js';
+import { unsupported } from '../../messaging.js';
 
 function emitOutbound(accountId: string, line: string, messageId: string, text: string, replyTo?: string): void {
   emit({

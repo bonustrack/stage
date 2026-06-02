@@ -1,8 +1,8 @@
 /** Contentless push fan-out: routing metadata ONLY — never plaintext. */
 
 import { type DecodedMessage } from '@xmtp/node-sdk';
-import { parseLine } from './xmtp-accounts.js';
-import { fcmPushToAll } from './xmtp-push.js';
+import { parseLine } from './accounts.js';
+import { fcmPushToAll } from './push.js';
 
 /** F1 + E1: fan out a CONTENTLESS FCM push (routing metadata ONLY — no plaintext,
  *  sender, avatar, or group name) for an inbound message; the device decrypts

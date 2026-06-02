@@ -1,7 +1,7 @@
 /** Whisper transcription of inbound voice/audio attachments → transcript event. */
 
-import { mintId, SELF_URI } from './xmtp-wire.js';
-import { emitInbound } from './xmtp-emit.js';
+import { mintId, SELF_URI } from './wire.js';
+import { emitInbound } from './emit.js';
 
 const WHISPER_BIN = process.env.METRO_WHISPER_BIN ?? 'whisper-cli';
 const WHISPER_MODEL = process.env.METRO_WHISPER_MODEL ?? `${process.env.HOME}/.cache/whisper-cpp/ggml-base.bin`;

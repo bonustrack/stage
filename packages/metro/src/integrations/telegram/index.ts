@@ -17,10 +17,10 @@
 // Back-compat: if telegram-accounts.json is absent, synthesizes one `default`
 // account from $TELEGRAM_BOT_TOKEN (legacy lines).
 
-import { accounts, loadAccounts, tg, type Account } from './telegram-accounts.js';
-import { emit } from './telegram-wire.js';
-import { emitInbound, envelope, reactionEnvelope, type TgMsg, type TgReaction } from './telegram-format.js';
-import { handleCall } from './telegram-actions.js';
+import { accounts, loadAccounts, tg, type Account } from './accounts.js';
+import { emit } from './wire.js';
+import { emitInbound, envelope, reactionEnvelope, type TgMsg, type TgReaction } from './format.js';
+import { handleCall } from './actions.js';
 
 let buf = '';
 process.stdin.setEncoding('utf8');
