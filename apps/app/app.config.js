@@ -105,6 +105,20 @@ const config = {
     'expo-router',
     'expo-secure-store',
     'expo-font',
+    // Native cold-launch splash so the app shows the Metro logo on the themed
+    // dark background instead of a blank gray screen. The legacy top-level
+    // `splash` key above is deprecated under the new architecture; the
+    // expo-splash-screen plugin is the SDK-54 form that generates the native
+    // splash resources. Takes effect only in a NEW native build (EAS/local),
+    // not a running dev client or the current installed bundle.
+    [
+      'expo-splash-screen',
+      {
+        image: './assets/splash-icon.png',
+        resizeMode: 'contain',
+        backgroundColor: '#0f1115',
+      },
+    ],
     [
       'expo-notifications',
       {
