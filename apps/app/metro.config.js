@@ -36,6 +36,18 @@ config.resolver.nodeModulesPaths = [
   path.resolve(workspaceRoot, 'node_modules'),
 ];
 
+// EXCLUDE the embedded-Node host from the Metro bundle. nodejs-assets/nodejs-
+// project/ runs the RAILGUN engine + Groth16 prover INSIDE nodejs-mobile-react-
+// native (a real Node runtime), not in Hermes — see lib/railgun/bridge/. Those
+// files are node-only (require('rn-bridge'), node-core, an N-API prover) and
+// must never be traversed/bundled by Metro; nodejs-mobile-react-native bundles
+// them into the native binary at build time instead. Mirrors RAILGUN Railway-
+// Wallet's metro blacklist of /nodejs-assets/ + /nodejs-src/.
+const nodejsHostBlock = /[/\\]nodejs-assets[/\\].*/;
+config.resolver.blockList = config.resolver.blockList
+  ? [].concat(config.resolver.blockList, nodejsHostBlock)
+  : nodejsHostBlock;
+
 // Single instance of the React/RN runtime for every package (incl. @metro-labs/kit).
 const appNodeModules = path.resolve(projectRoot, 'node_modules');
 

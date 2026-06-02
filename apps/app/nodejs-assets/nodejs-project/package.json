@@ -1,0 +1,19 @@
+{
+  "name": "metro-railgun-node-host",
+  "version": "0.0.1",
+  "private": true,
+  "main": "main.js",
+  "description": "Embedded Node host that runs the RAILGUN engine + Groth16 native prover inside nodejs-mobile-react-native. Scaffold only — engine deps added in the integration commit (see main.js NEXT STEPS).",
+  "engines": {
+    "node": "18"
+  },
+  "dependencies": {
+    "_comment": "TODO(integration): add the engine deps below, then rebuild the APK. They are NOT installed yet so this scaffold stays inert + commits without a network fetch. Versions mirror RAILGUN Railway-Wallet's nodejs-project. The native-prover is the N-API addon Hermes cannot load — the entire reason for this host.",
+    "_todo_railgun_wallet": "10.4.0 (match apps/app package.json @railgun-community/wallet)",
+    "_todo_railgun_shared_models": "7.6.1",
+    "_todo_native_prover": "https://ipfs-lb.com/ipfs/QmZL6Njoxfh42u1MMjMSsDd6uWeqTKepf1WRLELM8DCSLy/railgun-privacy-native-prover-4.0.3.tgz",
+    "_todo_leveldown": "leveldown-nodejs-mobile@6.0.1-1",
+    "_todo_ethers": "6.14.3",
+    "_todo_ipc": "nodejs-mobile-ipc2@1.1.0"
+  }
+}
