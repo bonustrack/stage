@@ -1,7 +1,11 @@
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["node_modules/**", ".expo/**", "dist/**"] },
+  // nodejs-assets/ is the embedded-Node host (runs inside nodejs-mobile, not
+  // Hermes). It's node-only JS with its own runtime/globals + an N-API prover;
+  // it is excluded from the Metro bundle (see metro.config.js) and built into
+  // the native binary separately, so the app's TS/RN lint rules don't apply.
+  { ignores: ["node_modules/**", ".expo/**", "dist/**", "nodejs-assets/**"] },
   ...tseslint.configs.recommended,
   {
     files: ["app/**/*.{ts,tsx}", "components/**/*.{ts,tsx}", "lib/**/*.{ts,tsx}"],
