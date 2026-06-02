@@ -12,6 +12,8 @@ import {
   PollCodec, SignatureRequestCodec, type PollContent, type SignatureRequestContent,
 } from './xmtp-codecs.js';
 import { convHandlers } from './xmtp-actions-conv.js';
+import { normalizeXmtp } from './messaging-normalize.js';
+import { unsupported } from '../messaging.js';
 
 type Args = Record<string, unknown>;
 
@@ -162,9 +164,17 @@ async function accountsAction(id: string): Promise<void> {
     keySource: typeof a.cfg.derive === 'number' ? `derive:${a.cfg.derive}` : 'privateKey' })) } });
 }
 
+// XMTP has no native edit/delete (immutable message log) — answer the canonical
+// verb with a uniform unsupported error rather than an "unknown action".
+async function unsupportedVerb(id: string, verb: string): Promise<void> {
+  respond(id, { error: unsupported(verb, 'xmtp') });
+}
+
 const handlers: Record<string, (id: string, args: Args) => Promise<void>> = {
   accounts: (id) => accountsAction(id),
   send, sendPoll, react, reply, sendAttachment, sendImage, sendTxRequest, sendSignatureRequest,
+  edit: (id) => unsupportedVerb(id, 'edit'),
+  delete: (id) => unsupportedVerb(id, 'delete'),
   ...convHandlers,
 };
 
@@ -173,7 +183,9 @@ const KNOWN = 'accounts, send, sendPoll, sendImage, sendTxRequest, react, reply,
 
 type CallMsg = { op: 'call'; id: string; action: string; args: Args };
 
-export async function handleCall({ id, action, args }: CallMsg): Promise<void> {
+export async function handleCall(msg: CallMsg): Promise<void> {
+  const { id } = msg;
+  const { action, args } = normalizeXmtp(msg.action, msg.args);
   try {
     const h = handlers[action];
     if (h) await h(id, args);

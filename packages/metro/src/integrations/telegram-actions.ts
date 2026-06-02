@@ -2,6 +2,8 @@
 
 import { accountFor, accounts, tg, tgForm, targetOf } from './telegram-accounts.js';
 import { emit, mintId, respond, SELF_URI } from './telegram-wire.js';
+import { normalizeTelegram } from './messaging-normalize.js';
+import { unsupported } from '../messaging.js';
 
 function emitOutbound(accountId: string, line: string, messageId: string, text: string, replyTo?: string): void {
   emit({
@@ -113,6 +115,8 @@ async function dispatch({ id, action, args }: CallMsg): Promise<void> {
     const r = await tg<{ message_id: number }>(accountId, 'sendLocation', { chat_id: chatId, latitude, longitude });
     emitOutbound(accountId, line, String(r.message_id), `[location: ${latitude}, ${longitude}]`);
     respond(id, { result: { messageId: String(r.message_id), account: accountId } });
+  } else if (action === 'read') {
+    respond(id, { error: unsupported('read', 'telegram') });
   } else if (action === 'download') {
     // `account` selects which bot's file API (file_ids are per-bot); else sole/default.
     const { fileId, outDir = '/tmp', account } = args as { fileId: string; outDir?: string; account?: string };
@@ -129,6 +133,7 @@ async function dispatch({ id, action, args }: CallMsg): Promise<void> {
 }
 
 export async function handleCall(msg: CallMsg): Promise<void> {
-  try { await dispatch(msg); }
+  const { action, args } = normalizeTelegram(msg.action, msg.args);
+  try { await dispatch({ ...msg, action, args }); }
   catch (err) { respond(msg.id, { error: (err as Error).message }); }
 }

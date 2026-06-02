@@ -11,6 +11,9 @@ import { cmdDoctor, cmdSetup, cmdUpdate } from './config.js';
 import { cmdClaim, cmdClaims, cmdRelease, cmdTail } from './tail.js';
 import { cmdCall, cmdTrains, cmdTunnel, cmdWebhook } from './webhook.js';
 import {
+  cmdDelete, cmdEdit, cmdRead, cmdReact, cmdReply, cmdSend, cmdUnreact,
+} from './messaging.js';
+import {
   flagOne, isJson, parseArgs, writeJson, type ExitErr, type Flags,
 } from './util.js';
 
@@ -39,7 +42,16 @@ Usage:
   metro trains [list]                         List supervised trains (running, pid, fail count).
   metro trains restart <name>                 Kill + respawn a train (resets backoff).
   metro trains new <name>                     Scaffold ~/.metro/trains/<name>.ts from the example.
-  metro call <train> <action> [args]          Forward an action call to a train via its stdin.
+  metro send <line> <text> [--reply <id>] [--attach <path|url> ...]
+                                              Send a message. <text> is inline, '@file', or '-' (stdin).
+  metro reply <line> <msgId> <text>           Reply to a message (sugar for send --reply).
+  metro react <line> <msgId> <emoji>          Add an emoji reaction.
+  metro unreact <line> <msgId> <emoji>        Remove an emoji reaction.
+  metro edit <line> <msgId> <text>            Edit a previously-sent message.
+  metro delete <line> <msgId>                 Delete a message.
+  metro read <line> [--limit N] [--before <id>] [--since <ts>]
+                                              Read recent messages for a line (live or daemon log).
+  metro call <train> <action> [args]          Low-level escape hatch: forward an action to a train.
                                               [args] is JSON, '@file', '-' (stdin), or a bare string.
   metro history [--limit=N] [--line=…] [--station=…] [--from=…] [--text=…] [--since=…]
                                               Read the universal message log (newest first).
@@ -133,6 +145,8 @@ const pad = (s: string, n: number): string => (s.length > n ? `${s.slice(0, n - 
 const COMMANDS: Record<string, (positional: string[], flags: Flags) => Promise<void>> = {
   setup: cmdSetup, doctor: cmdDoctor, lines: cmdLines,
   call: cmdCall, trains: cmdTrains,
+  send: cmdSend, reply: cmdReply, react: cmdReact, unreact: cmdUnreact,
+  edit: cmdEdit, delete: cmdDelete, read: cmdRead,
   webhook: cmdWebhook, tunnel: cmdTunnel,
   history: cmdHistory, tail: cmdTail,
   claim: cmdClaim, release: cmdRelease, claims: cmdClaims,

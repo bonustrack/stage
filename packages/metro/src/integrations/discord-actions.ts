@@ -4,6 +4,7 @@ import { ActivityType, type Message, type PresenceStatusData } from 'discord.js'
 import { accountFor, accounts, encodeEmoji, lineOf, rest, routeOf } from './discord-accounts.js';
 import { emitOutbound, emitOutboundEdit, emitOutboundReact } from './discord-format.js';
 import { respond } from './discord-wire.js';
+import { normalizeDiscord } from './messaging-normalize.js';
 
 async function sendMessage(
   accountId: string, channel: string, body: Record<string, unknown>, files?: string[],
@@ -169,6 +170,7 @@ async function dispatch({ id, action, args }: CallMsg): Promise<void> {
 }
 
 export async function handleCall(msg: CallMsg): Promise<void> {
-  try { await dispatch(msg); }
+  const { action, args } = normalizeDiscord(msg.action, msg.args);
+  try { await dispatch({ ...msg, action, args }); }
   catch (err) { respond(msg.id, { error: (err as Error).message }); }
 }
