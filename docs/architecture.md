@@ -11,8 +11,12 @@ Metro has one core package, `@metro-labs/metro`, and several clients:
 - `packages/kit` — framework-neutral UI tokens, icon data, and theme contracts.
 
 The daemon is intentionally small. Platform behavior lives in train scripts under
-`~/.metro/trains/`, outside the repo, so integrations can be rewritten without
-changing core.
+`~/.metro/trains/`, outside the repo, so stations can be rewritten without
+changing core. The in-repo source for the first-party stations (xmtp, discord,
+telegram) lives in `packages/metro/src/stations/<name>/`, each with its own
+`index.ts` plus `accounts`/`actions`/`format`/`wire` modules; the shared
+messaging contract sits alongside in `src/stations/messaging-normalize.ts` and
+`src/messaging.ts`.
 
 ## Event Flow
 
@@ -22,11 +26,14 @@ changing core.
 4. The dispatcher normalizes each event, appends it to
    `$METRO_STATE_DIR/history.jsonl`, and writes it to stdout.
 5. Subscribers read through `metro tail`, monitor SSE, or the Codex bridge.
-6. Outbound calls use `metro call <train> <action> <args>` or
-   `POST /api/call/<train>/<action>`, then the daemon forwards the call to the
-   selected train over stdin.
+6. Outbound work uses the standardized messaging verbs
+   (`metro send`/`reply`/`react`/`unreact`/`edit`/`delete`/`read`, routed by the
+   line's station) or the low-level `metro call <train> <action> <args>` /
+   `POST /api/call/<train>/<action>`. Either way the daemon forwards a
+   `forward-call` to the selected train over stdin.
 
-Core knows the train protocol, not platform-specific actions.
+Core knows the train protocol and the canonical messaging envelope, not the
+platform-specific actions a station maps it onto.
 
 ## Event Envelope
 

@@ -13,7 +13,9 @@ replace on demand.
 
 1. Spawns each file in `~/.metro/trains/*.{ts,js,mjs}` as a long-running Bun subprocess.
 2. Multiplexes their stdout (JSON lines) into one unified event stream on metro's stdout.
-3. Routes `metro call <train> <action> <args>` requests back to the matching train's stdin.
+3. Routes outbound work back to the matching train's stdin — either a standardized
+   messaging verb (`metro send`/`reply`/`react`/…, routed by the line's station) or
+   the low-level `metro call <train> <action> <args>`.
 4. Two builtin sources stay in core: **webhooks** (HTTP receiver) and `notify` (local IPC).
 
 ## Starting metro
@@ -55,22 +57,57 @@ Every event on stdout is a single JSON line:
 
 Wire fields are `snake_case` on the train protocol; the dispatcher translates to camelCase for `history.jsonl`. Trains supply `line`, `from`, `to`, `text`, plus `payload` (the platform's native message). Metro mints `id` + `display` if missing.
 
-**No `kind` field.** Direction is derived: `Line.isLocal(from)` → outbound (📤), else inbound (📩). Reactions and edits are train-specific — encode them in `text` (e.g. `[react 👀]`) plus whatever you need in `payload`.
+**No `kind` field.** Direction is derived: `Line.isLocal(from)` → outbound (📤), else inbound (📩). Inbound reactions/edits surface in `text` (e.g. `[react 👀]`) plus `payload`; outbound reactions/edits use the `react`/`unreact`/`edit` verbs.
 
-## Outbound: `metro call <train> <action> <args>`
+## Outbound: standardized verbs (preferred)
+
+Everyday outbound work uses the standardized messaging verbs. Each takes a
+`<line>` first; the line encodes its station, so metro routes the verb to that
+train automatically — **you never name the train**.
 
 ```
-metro call discord send '{"line":"metro://discord/123","text":"hi","replyTo":"789"}'
-metro call telegram react '{"line":"metro://telegram/-100/1","messageId":"42","emoji":"👀"}'
-metro call discord edit  '{"line":"metro://discord/123","messageId":"999","text":"new"}'
+metro send   <line> <text> [--reply <msgId>] [--attach <path|url> ...]
+metro reply  <line> <msgId> <text>
+metro react  <line> <msgId> <emoji>
+metro unreact <line> <msgId> <emoji>
+metro edit   <line> <msgId> <text>
+metro delete <line> <msgId>
+metro read   <line> [--limit N] [--before <msgId>] [--since <ts>]
 ```
 
-`[args]` can be JSON, `@path/to/args.json`, `-` (stdin), or a bare string. Action names are whatever the train exposes — metro core knows nothing about them.
+`<text>` is an inline string, `@file`, or `-` (stdin). Examples:
+
+```
+metro send  metro://discord/123 "hi" --reply 789
+metro react metro://telegram/-100/1 42 👀
+metro edit  metro://discord/123 999 "new"
+```
+
+The verbs share one **canonical envelope** —
+`{line,text?,replyTo?,attachments?,emoji?,messageId?,limit?,before?,since?,account?}` —
+and a fixed verb set (`send|reply|react|unreact|edit|delete|read`). Only
+`xmtp`/`discord`/`telegram` speak this contract today; a verb on any other station
+errors. A train-side adapter maps the envelope onto each station's native action
+(e.g. `unreact`→`react` empty, `read`→`fetch`/`query`), so verbs work without
+per-station custom payloads.
+
+### Escape hatch: `metro call <train> <action> <args>`
+
+For any station-specific action the verbs do not cover (e.g. `xmtp newGroup`):
+
+```
+metro call xmtp newGroup '{"members":["0x…"]}'
+```
+
+`[args]` can be JSON, `@path/to/args.json`, `-` (stdin), or a bare string. Action
+names are whatever the train exposes — metro core knows nothing about them. Unlike
+the verbs, `metro call` names the train explicitly.
 
 **Send-guard (xmtp only):** when the caller's session (`claude` vs `codex`) is
-known and the target XMTP account is owned by the *other* session, `metro call`
-refuses identity-targeting actions (`send`, `reply`, `react`, `sendAttachment`,
-`newDm`, `newGroup`) — so a Codex CLI can't accidentally send from the Claude
+known and the target XMTP account is owned by the *other* session, both the
+messaging verbs and `metro call` refuse identity-targeting actions (`send`,
+`reply`, `react`, `sendAttachment`, `newDm`, `newGroup`) — so a Codex CLI can't
+accidentally send from the Claude
 account. Ownership is read from `~/.metro/xmtp-accounts.json`; it allows when
 ownership can't be attributed. Override with `METRO_ALLOW_CROSS_ACCOUNT=1`.
 
@@ -82,6 +119,14 @@ ownership can't be attributed. Override with `METRO_ALLOW_CROSS_ACCOUNT=1`.
 4. Restart the metro daemon (or just `metro trains restart <name>`) to pick up the new train.
 
 Trains are throwaway — if the user asks for new functionality, rewrite the train rather than adding glue in core.
+
+**Speaking the messaging verb-contract.** If you want `metro send`/`reply`/`react`/
+`unreact`/`edit`/`delete`/`read` to route to your train (instead of forcing callers
+to use `metro call`), accept the canonical envelope
+(`{line,text?,replyTo?,attachments?,emoji?,messageId?,limit?,before?,since?}`) for
+those action names. The first-party stations (xmtp/discord/telegram) live in the
+repo at `packages/metro/src/stations/<name>/` and translate the envelope to their
+native actions via `src/stations/messaging-normalize.ts` — copy that pattern.
 
 ## First-run setup (once per machine)
 
@@ -109,7 +154,14 @@ metro lines                                 # list recently-seen conversations
 metro trains [list]                         # list trains + state (running, pid, fail count)
 metro trains new <name>                     # scaffold ~/.metro/trains/<name>.ts from the example
 metro trains restart <name>                 # kill + respawn a train (resets backoff)
-metro call <train> <action> [args]          # forward an action call (args: JSON | @file | - | bare string)
+metro send  <line> <text> [--reply <id>] [--attach <path|url> ...]   # send (text: inline | @file | -)
+metro reply <line> <msgId> <text>           # reply (sugar for send --reply)
+metro react   <line> <msgId> <emoji>        # add a reaction
+metro unreact <line> <msgId> <emoji>        # remove a reaction
+metro edit   <line> <msgId> <text>          # edit a sent message
+metro delete <line> <msgId>                 # delete a message
+metro read   <line> [--limit N] [--before <id>] [--since <ts>]       # read recent messages
+metro call <train> <action> [args]          # escape hatch (args: JSON | @file | - | bare string)
 metro tail [--as=<user-uri>] [--follow] [--strict|--unclaimed|--all] [--include-webhooks]
            [--chat=<line>] [--station=…] [--since=<offset|tail>] [--limit=N]
 metro history [--limit=N] [--line=…] [--station=…] [--from=…] [--text=…] [--since=…]

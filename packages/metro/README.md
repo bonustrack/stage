@@ -104,7 +104,14 @@ metro                                    # start the daemon (foreground)
 metro trains list                        # supervised trains + state
 metro trains new <name>                  # scaffold ~/.metro/trains/<name>.ts from the example
 metro trains restart <name>              # kill + respawn a train (resets backoff)
-metro call <train> <action> <args>       # forward an action call; args = JSON / @file / - / string
+metro send  <line> <text> [--reply <id>] [--attach <path|url> ...]   # send (text: inline / @file / -)
+metro reply <line> <msgId> <text>        # reply (sugar for send --reply)
+metro react   <line> <msgId> <emoji>     # add a reaction
+metro unreact <line> <msgId> <emoji>     # remove a reaction
+metro edit   <line> <msgId> <text>       # edit a sent message
+metro delete <line> <msgId>              # delete a message
+metro read   <line> [--limit N] [--before <id>] [--since <ts>]      # read recent messages
+metro call <train> <action> <args>       # low-level escape hatch; args = JSON / @file / - / string
 metro tail [--as=<user-uri>] [--follow]  # subscribe to the event log; claim-aware
 metro history [--limit=50] [--line=…]    # recent history (newest first), filterable
 metro lines                              # recently-seen conversations
@@ -120,8 +127,10 @@ metro doctor                             # health check (trains, deps, tunnel, w
 metro update                             # upgrade in place
 ```
 
-No more `metro send / reply / edit / react / download / fetch` — outbound is always
-`metro call <train> <action> <args>`, with action names defined by the train.
+The messaging verbs (`send`/`reply`/`react`/`unreact`/`edit`/`delete`/`read`) share
+one canonical envelope and route by the line's station (xmtp/discord/telegram).
+`metro call <train> <action> <args>` stays as the low-level escape hatch for any
+station-specific action the verbs do not cover.
 
 ---
 

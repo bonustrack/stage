@@ -52,9 +52,13 @@ Core source lives in `packages/metro/src`:
 
 - `dispatcher/` — HTTP server, webhook receiver, event emission.
 - `trains/` — supervisor and train protocol.
+- `stations/` — first-party station sources (`xmtp/`, `discord/`, `telegram/`),
+  each with `index`/`accounts`/`actions`/`format`/`wire`, plus the shared
+  `messaging-normalize.ts` contract adapter.
 - `broker/` — claims, history tailing, routing predicates.
-- `cli/` — CLI commands.
+- `cli/` — CLI commands (incl. `messaging.ts` for the standardized verbs).
 - `codex-rc/` — Codex remote-control bridge.
+- `messaging.ts` — the canonical messaging envelope + verb-contract.
 - `history.ts`, `lines.ts`, `paths.ts` — state and URI helpers.
 
 Tests live in `packages/metro/test`.

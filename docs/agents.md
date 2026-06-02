@@ -75,8 +75,9 @@ account the line names, which is why identity must be enforced.
 
 ### Send-guard
 
-Because one daemon serves several CLIs, a `metro call xmtp send` could send under
-the wrong identity. The send-guard ([`src/cli/send-guard.ts`](../packages/metro/src/cli/send-guard.ts))
+Because one daemon serves several CLIs, an XMTP send (whether via `metro send`/the
+other messaging verbs or `metro call xmtp send`) could go out under the wrong
+identity. The send-guard ([`src/cli/send-guard.ts`](../packages/metro/src/cli/send-guard.ts))
 prevents this. It applies only to the `xmtp` train and only to identity-bearing
 actions (`send`, `reply`, `react`, `sendAttachment`, `newDm`, `newGroup`).
 

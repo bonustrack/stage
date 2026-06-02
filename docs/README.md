@@ -3,7 +3,7 @@
 Metro is a local event wire for agents and companion apps. One daemon supervises
 train scripts, records every event to an append-only log, exposes claim-aware
 read APIs, and routes outbound action calls back to trains. Per-platform code
-lives in trains under `~/.metro/trains/`, outside this repo, so integrations can
+lives in trains under `~/.metro/trains/`, outside this repo, so stations can
 be rewritten without touching core.
 
 ## Start Here
@@ -30,5 +30,5 @@ These live next to the code they describe:
 
 - Docs in `/docs` are the entry point for people and agents. Package docs stay
   close to their code when they describe implementation detail.
-- Content here is derived from the actual source on the integration branch — keep
-  it accurate, not aspirational. When behavior changes, update the relevant doc.
+- Content here is derived from the actual source — keep it accurate, not
+  aspirational. When behavior changes, update the relevant doc.

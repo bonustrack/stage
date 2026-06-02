@@ -66,12 +66,64 @@ List supervised trains with running state, pid, and consecutive-failure count.
 - `metro trains new <name>` — scaffold `~/.metro/trains/<name>.ts` from the example.
 - `metro trains restart <name>` — kill and respawn a train, resetting its backoff.
 
+### Messaging verbs: `send` / `reply` / `react` / `unreact` / `edit` / `delete` / `read`
+
+The standardized messaging verbs are the everyday way to act on a conversation.
+Each takes a `<line>` first; the line encodes its station (`metro://<station>/…`),
+so metro routes the verb to that train automatically — you never name the train.
+Source: [`src/cli/messaging.ts`](../packages/metro/src/cli/messaging.ts).
+
+```sh
+metro send   <line> <text> [--reply <msgId>] [--attach <path|url> ...]
+metro reply  <line> <msgId> <text>
+metro react  <line> <msgId> <emoji>
+metro unreact <line> <msgId> <emoji>
+metro edit   <line> <msgId> <text>
+metro delete <line> <msgId>
+metro read   <line> [--limit N] [--before <msgId>] [--since <ts>]
+```
+
+- `<text>` is an inline string, `@file` (read from a file), or `-` (read stdin).
+- `metro reply` is sugar for `send --reply`.
+- `metro read` asks the train for live history; if the station does not implement
+  `read`, it falls back to the daemon's `history.jsonl` log.
+- Each verb builds a **canonical envelope** and forwards it as a normal `forward-call`.
+  Only `xmtp`, `discord`, and `telegram` speak the messaging contract today; a verb
+  on any other station errors (`station '<x>' does not speak the messaging contract`).
+
+```sh
+metro send  metro://discord/123 "ack" --reply 4567
+metro send  metro://discord/123 "see attached" --attach ./out.png
+metro react metro://telegram/-100/42 4567 👍
+metro edit  metro://discord/123 9876 "fixed typo"
+echo "piped body" | metro send metro://discord/123 -
+```
+
+#### The canonical envelope + verb-contract
+
+The verbs share one envelope and a fixed verb set, so messages can be
+sent/replied/reacted/queried uniformly across stations without per-platform
+payloads ([`src/messaging.ts`](../packages/metro/src/messaging.ts)):
+
+```ts
+verbs: send | reply | react | unreact | edit | delete | read
+envelope: { line, text?, replyTo?, attachments?, emoji?, messageId?,
+            limit?, before?, since?, account? }
+```
+
+A train-side adapter ([`src/stations/messaging-normalize.ts`](../packages/metro/src/stations/messaging-normalize.ts))
+translates the canonical envelope into each station's native `(action, args)`
+before the train's own dispatch runs — e.g. `unreact` → `react` with an empty
+emoji / `removed`, and `read` → the station's `fetch`/`query`. So the standardized
+verbs work without rewriting each station's native handlers.
+
 ### `metro call <train> <action> [args]`
 
-Forward an action call to a train via its stdin and print the response. Action
-names are defined by the train; core knows the protocol
-(`{op:"call", id, action, args}` → `{op:"response", id, result|error}`), not the
-semantics.
+Low-level escape hatch when a station exposes an action the messaging verbs do
+not cover (e.g. `xmtp newGroup`). Forward an action call to a train via its stdin
+and print the response. Action names are defined by the train; core knows the
+protocol (`{op:"call", id, action, args}` → `{op:"response", id, result|error}`),
+not the semantics. Unlike the verbs, `metro call` names the train explicitly.
 
 `[args]` accepts:
 
@@ -182,11 +234,14 @@ A named tunnel gives webhook endpoints a stable public URL
 
 Upgrade the installed package in place.
 
-## Outbound is always `metro call`
+## Two outbound paths
 
-There is no `metro send` / `reply` / `edit` / `react` / `download`. All outbound
-work is `metro call <train> <action> <args>`, where the action set is whatever the
-train exposes. This keeps core agnostic to platform features — trains are rewritten
-on demand without touching core. See [SKILL.md](../packages/metro/skills/metro/SKILL.md)
-for the agent-facing quick reference and [examples](../packages/metro/examples/README.md)
-for the wire protocol.
+- **Standardized verbs** (`send` / `reply` / `react` / `unreact` / `edit` /
+  `delete` / `read`) — routed by the line's station, sharing one canonical
+  envelope. This is the everyday path.
+- **`metro call <train> <action> <args>`** — the low-level escape hatch for any
+  station-specific action the verbs do not cover. Action names are whatever the
+  train exposes; core stays agnostic to platform features.
+
+See [SKILL.md](../packages/metro/skills/metro/SKILL.md) for the agent-facing quick
+reference and [examples](../packages/metro/examples/README.md) for the wire protocol.
