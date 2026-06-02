@@ -8,6 +8,9 @@ import Constants from 'expo-constants';
 import { Box } from '../layout';
 import { Title } from '@metro-labs/kit/title';
 import { Text } from '@metro-labs/kit/text';
+import { GitHubLinkRow } from './GitHubLinkRow';
+
+const METRO_GITHUB_URL = 'https://github.com/bonustrack/metro';
 
 interface AboutRowProps { label: string; value: string; mono?: boolean; dark: boolean; border: string }
 
@@ -25,8 +28,8 @@ function AboutRow({ label, value, mono, dark, border }: AboutRowProps): React.Re
   );
 }
 
-export function AboutPanel({ dark, head, sub, border }: {
-  dark: boolean; head: string; sub: string; border: string;
+export function AboutPanel({ dark, head, sub, border, rowBg }: {
+  dark: boolean; head: string; sub: string; border: string; rowBg: string;
 }): React.ReactElement {
   const cfg = Constants.expoConfig;
   const version = cfg?.version ?? 'unknown';
@@ -38,7 +41,8 @@ export function AboutPanel({ dark, head, sub, border }: {
   const pkgName = cfg?.name ?? 'Metro';
 
   return (
-    <Box style={{ paddingHorizontal: 16, paddingTop: 18 }}>
+    <Box style={{ paddingTop: 18 }}>
+      <Box style={{ paddingHorizontal: 16 }}>
       <Title dark={dark} level={2} color={head}>About</Title>
       <Text dark={dark} variant="secondary" weight="medium" size="sm" style={{ marginTop: 4, marginBottom: 8 }}>
         Build + runtime metadata for this install.
@@ -50,6 +54,13 @@ export function AboutPanel({ dark, head, sub, border }: {
       <Text dark={dark} color={sub} variant="caption" weight="medium" style={{ marginTop: 14 }}>
         Commit shows “dev” until a build sets EAS_BUILD_GIT_COMMIT_HASH.
       </Text>
+      </Box>
+      <GitHubLinkRow
+        dark={dark} head={head} sub={sub} border={border} rowBg={rowBg}
+        url={METRO_GITHUB_URL}
+        title="View Metro on GitHub"
+        subtitle="bonustrack/metro"
+      />
     </Box>
   );
 }

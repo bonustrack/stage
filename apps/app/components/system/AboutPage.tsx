@@ -10,14 +10,14 @@ import { AboutPanel } from './AboutPanel';
 
 export function AboutPage(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
-  const { fg, head, sub, bg, border } = usePalette();
+  const { fg, head, sub, bg, border, rowBg } = usePalette();
   const insets = useSafeAreaInsets();
 
   return (
     <Box style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
       <SystemHeader title="About" dark={dark} fg={fg} head={head} border={border} />
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
-        <AboutPanel dark={dark} head={head} sub={sub} border={border} />
+        <AboutPanel dark={dark} head={head} sub={sub} border={border} rowBg={rowBg} />
       </ScrollView>
     </Box>
   );
