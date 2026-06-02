@@ -99,7 +99,7 @@ function rawCall(call: BridgeCall | 'ping', params: unknown): Promise<unknown> {
       reject(new Error(`Railgun bridge call timed out: ${call}`));
     }, CALL_TIMEOUT_MS);
     pending.set(id, { resolve, reject, timer });
-    ch.send(REQUEST_EVENT, envelope);
+    ch.post(REQUEST_EVENT, envelope);
   });
 }
 

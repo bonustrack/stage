@@ -51,11 +51,11 @@ const REPLY_EVENT = 'rg:reply';
 
 function reply(id, ok, result, error) {
   if (!rnBridge) return;
-  rnBridge.channel.send(REPLY_EVENT, { id: id, ok: ok, result: result, error: error });
+  rnBridge.channel.post(REPLY_EVENT, { id: id, ok: ok, result: result, error: error });
 }
 
 function emit(event, payload) {
-  if (rnBridge) rnBridge.channel.send(event, payload);
+  if (rnBridge) rnBridge.channel.post(event, payload);
 }
 
 /* Handlers are filled in by the engine integration commit. Until then every

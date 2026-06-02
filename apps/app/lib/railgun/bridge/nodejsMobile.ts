@@ -15,7 +15,7 @@ import { Platform } from 'react-native';
 /** The bi-directional message channel exposed by nodejs-mobile-react-native. */
 export interface NodejsChannel {
   send: (event: string, ...args: unknown[]) => void;
-  post?: (event: string, payload: unknown) => void;
+  post: (event: string, payload: unknown) => void;
   addListener: (event: string, cb: (...args: unknown[]) => void) => void;
   removeListener?: (event: string, cb: (...args: unknown[]) => void) => void;
   removeAllListeners?: (event: string) => void;
