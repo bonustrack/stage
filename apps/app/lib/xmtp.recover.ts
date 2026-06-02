@@ -62,7 +62,7 @@ export async function ensureActiveAccount(): Promise<void> {
  *  wipe + retry of THIS account's local store. NETWORK-side create rejections
  *  (installation limit, handshake) are deliberately NOT here. */
 const STORE_CORRUPTION = ['PRAGMA key', 'StorageError', 'incorrect value'];
-function isStoreCorruption(err: unknown): boolean {
+export function isStoreCorruption(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err);
   return STORE_CORRUPTION.some(sig => msg.includes(sig));
 }

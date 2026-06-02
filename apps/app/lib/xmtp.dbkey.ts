@@ -80,11 +80,36 @@ export async function deleteLegacyDbKey(): Promise<void> {
 /** Auto-recovery wipe for a corrupt/key-mismatched LOCAL XMTP store. Deletes ONLY
  *  this account's on-disk sqlite store dir + its per-account db key, so the next
  *  Client.create mints a fresh key + store for THIS account alone. Never touches
- *  the account's private key / EOA registry, and never any OTHER account's key. */
+ *  the account's private key / EOA registry, and never any OTHER account's key.
+ *
+ *  LEGACY-KEY CASE: a legacy-migrated account's per-account key is a COPY of the
+ *  old global key (adopted in loadOrCreateDbKey). If that key is the corrupt one,
+ *  deleting only the per-account copy is not enough: the retry's loadOrCreateDbKey
+ *  finds no per-account key and RE-ADOPTS the still-present legacy global key — the
+ *  same bad key — so create fails identically. To actually self-heal we must also
+ *  drop the legacy global key when (and only when) THIS account was using it, so
+ *  the retry mints a genuinely fresh key.
+ *
+ *  Safety: we delete the legacy key ONLY if this account's persisted per-account
+ *  key byte-for-byte equals the legacy key. Any OTHER account that already loaded
+ *  has its own persisted per-account copy (loadOrCreateDbKey persists on adopt),
+ *  so it is unaffected. We never delete the legacy key on behalf of an account
+ *  that wasn't actually keyed by it. */
 export async function wipeXmtpStore(accountId: string, dbDirName: string): Promise<void> {
   const dir = dbDirObj(dbDirName);
   if (dir.exists) { try { dir.delete(); } catch { /* best-effort */ } }
+  /** Decide BEFORE deleting the per-account key whether it matched the legacy key. */
+  const accountKey = await SecureStore.getItemAsync(dbKeyId(accountId)).catch(() => null);
+  const legacyKey = await SecureStore.getItemAsync(LEGACY_DB_ENCRYPTION_KEY).catch(() => null);
   await deleteDbKey(accountId);
+  /** Only blow away the legacy global key if THIS account was actually keyed by it
+   *  (i.e. it's the legacy-migrated account whose corrupt store we're wiping), or
+   *  if this account had no per-account key yet but a legacy key exists (it would
+   *  have adopted that same key on retry). Either way the legacy key is the one
+   *  that would be re-adopted, so dropping it is what makes the retry fresh. */
+  if (legacyKey && (accountKey === legacyKey || accountKey === null)) {
+    await deleteLegacyDbKey();
+  }
 }
 
 /** XMTP needs a writable directory for its sqlite + key store. Document directory is

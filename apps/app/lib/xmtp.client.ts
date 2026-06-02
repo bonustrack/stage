@@ -28,8 +28,8 @@ import {
   getCachedXmtpClient, setCachedXmtpClient, resetClientScopedState,
 } from './xmtp.state';
 import { type XmtpEnv, convIdOfLine } from './xmtp.types';
-import { loadOrCreateDbKey, deleteDbKey, deleteLegacyDbKey, dbDirObj, ensureDbDir } from './xmtp.dbkey';
-import { createClientForAccount } from './xmtp.recover';
+import { loadOrCreateDbKey, deleteDbKey, deleteLegacyDbKey, dbDirObj, ensureDbDir, wipeXmtpStore } from './xmtp.dbkey';
+import { createClientForAccount, isStoreCorruption } from './xmtp.recover';
 
 export { getCachedXmtpClient } from './xmtp.state';
 export { ensureActiveAccount } from './xmtp.recover';
@@ -58,7 +58,7 @@ export async function getOrCreateXmtpClient(env: XmtpEnv = 'production'): Promis
 async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<Client> {
   const dbDirectory = await ensureDbDir(rec.dbDir);
   const dbEncryptionKey = await loadOrCreateDbKey(rec.id);
-  const opts = { env, dbDirectory, dbEncryptionKey, codecs: XMTP_CODECS };
+  let opts = { env, dbDirectory, dbEncryptionKey, codecs: XMTP_CODECS };
   if (rec.registered) {
     try {
       const built = await Promise.race<Client | null>([
@@ -69,14 +69,26 @@ async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<
         setCachedXmtpClient(built);
         await setActiveAccountId(rec.id);
         await SecureStore.setItemAsync(ENV_KEY, env);
-        /** Auto-register this device's push token with the daemon for the now-
-         *  active account (background push for daemon-run inboxes). Fire-and-
-         *  forget + debounced inside registerPushWithDaemon — never blocks boot. */
+        /** Auto-register this device's push token with the daemon for the now-active
+         *  account. Fire-and-forget + debounced inside — never blocks boot. */
         void registerPushWithDaemon(built);
         return built;
       }
       /** Build timed out — fall through to create() with a fresh registration. */
-    } catch { /* fall through to create() if rebuild failed */ }
+    } catch (e) {
+      /** A corrupt/key-mismatched store (the PRAGMA-key error on the legacy-migrated
+       *  account) makes `Client.build` throw; falling straight through to create()
+       *  would re-open the same dirty store and fail identically. Wipe this account's
+       *  store + db key (incl. the legacy global key when it was the one used) FIRST,
+       *  then rebuild opts against the clean dir + fresh key so create starts clean.
+       *  Non-corruption build failures fall through to create() unchanged. */
+      if (isStoreCorruption(e)) {
+        await wipeXmtpStore(rec.id, rec.dbDir);
+        const dir = await ensureDbDir(rec.dbDir);
+        const key = await loadOrCreateDbKey(rec.id);
+        opts = { env, dbDirectory: dir, dbEncryptionKey: key, codecs: XMTP_CODECS };
+      }
+    }
   }
   return createClientForAccount(rec, env, opts);
 }
@@ -143,9 +155,8 @@ export async function resetXmtpClient(): Promise<void> {
   }
 }
 
-/** Per-conv "last read at" timestamp (XMTP `sentNs` units) persisted in
- *  SecureStore. Used by the Channels list to compute an unread count and
- *  by the conversation view to mark messages as read on open. */
+/** Per-conv "last read at" timestamp (XMTP `sentNs` units) in SecureStore. Drives
+ *  the Channels unread count + marks messages read on open. */
 const LAST_READ_PREFIX = 'unread.lastRead.';
 export async function getLastReadNs(convId: string): Promise<number> {
   const raw = await getSecure(LAST_READ_PREFIX + convId);
@@ -157,14 +168,12 @@ export async function setLastReadNs(convId: string, ns: number): Promise<void> {
   await setSecure(LAST_READ_PREFIX + convId, String(ns));
 }
 
-/** Mark a conversation read: bump the local `lastReadNs` past every message so
- *  the per-device unread count clears. No consent write. */
+/** Mark read: bump local `lastReadNs` past every message so the badge clears. */
 export async function markConvReadSynced(convId: string): Promise<void> {
   await setLastReadNs(convId, Date.now() * 1_000_000);
 }
 
-/** Mark a conversation unread: rewind `lastReadNs` to 0 so the badge surfaces
- *  again on the next recount. No consent write. */
+/** Mark unread: rewind `lastReadNs` to 0 so the badge surfaces on next recount. */
 export async function markConvUnreadSynced(convId: string): Promise<void> {
   await setLastReadNs(convId, 0);
 }
@@ -184,8 +193,7 @@ export async function convOfLine(line: string): Promise<Conversation | null> {
   const convId = convIdOfLine(line);
   if (!convId) return null;
   const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
-  /** `findConversation` expects a branded `ConversationId`. The brand is a structural
-   *  tag — the underlying value is still a string, so cast through unknown. */
+  /** `findConversation` wants a branded `ConversationId` (structural tag over a string) — cast through unknown. */
   const conv = await client.conversations.findConversation(convId as unknown as Parameters<typeof client.conversations.findConversation>[0])
     .catch(() => null);
   return conv ?? null;
