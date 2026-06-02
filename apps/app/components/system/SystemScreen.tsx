@@ -12,10 +12,11 @@ import { Text } from '@metro-labs/kit/text';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { SystemHeader } from './SystemHeader';
 
-type Href = '/system/kit' | '/system/about';
+type Href = '/system/kit' | '/system/about' | '/call/test';
 const ROWS: { href: Href; label: string; icon: HeroIconName }[] = [
   { href: '/system/kit', label: 'Kit', icon: 'cog' },
   { href: '/system/about', label: 'About', icon: 'document' },
+  { href: '/call/test', label: 'Call test', icon: 'camera' },
 ];
 
 export function SystemScreen(): React.ReactElement {

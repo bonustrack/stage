@@ -151,6 +151,18 @@ const config = {
       },
     ],
     './plugins/withMetroPill',
+    // react-native-webrtc — NATIVE module powering video/voice calls. The
+    // config plugin wires the Android/iOS build (camera + mic permissions,
+    // Gradle/Podfile glue). Requires a NEW dev-client APK before the camera
+    // preview / RTCView renders; until then lib/webrtc gates and the test
+    // screen shows "WebRTC needs the dev build".
+    [
+      '@config-plugins/react-native-webrtc',
+      {
+        cameraPermission: 'Metro uses your camera for video calls.',
+        microphonePermission: 'Metro uses your microphone for calls.',
+      },
+    ],
     // Native audio-decode module — powers TRUE voice-message waveforms
     // (decodeAudioData → PCM). Requires a new dev-client build to take effect.
     'react-native-audio-api',
