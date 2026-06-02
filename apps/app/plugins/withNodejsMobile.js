@@ -63,9 +63,40 @@ const PICK_FIRST = [
   'lib/**/libnode.so',
 ];
 
-/** Insert (idempotently) a packagingOptions.jniLibs.pickFirst block into the
- *  app module's android {} so the duplicate .so files from nodejs-mobile don't
- *  fail the APK merge. Works on the Groovy build.gradle Expo prebuild emits. */
+/** The aapt ignoreAssetsPattern we force onto the FINAL (winning) androidResources
+ *  block. See the long rationale below where it is applied. */
+const NODEJS_IGNORE_ASSETS_PATTERN = '.*:*~';
+
+/** Insert the libnode.so pickFirst block AND make aapt package every asset
+ *  nodejs-mobile lists, by editing the Groovy build.gradle Expo prebuild emits.
+ *
+ *  WHY THE aapt PATTERN MATTERS (the "Node assets copy failed" launch crash):
+ *  nodejs-mobile-react-native's GenerateNodeProjectAssetsLists builds `file.list`
+ *  with a Gradle fileTree that excludes ONLY `**​/.*` (dotfiles) and `**​/*~`. At
+ *  launch RNNodeJsMobileModule reads file.list and AssetManager.open()s EVERY
+ *  listed path, so the set aapt PACKAGES must be a superset of file.list — else the
+ *  first missing entry throws FileNotFoundException → "Node assets copy failed".
+ *  aapt's compiled-in DEFAULT pattern drops `.*` AND `<dir>_*` (every `_`-prefixed
+ *  entry — dirs AND files, e.g. lodash `_baseClone.js`), which file.list contains →
+ *  crash. ded2a8f tried pruning `_`-DIRS + a legacy `aaptOptions` override, but
+ *  lodash et al. require() `_*.js` FILES at runtime (must NOT delete) and the
+ *  override was applied to a block the template later OVERWRITES.
+ *
+ *  THE FIX: set the FINAL/winning `ignoreAssetsPattern` to `.*:*~` so aapt ignores
+ *  EXACTLY what Gradle's file.list excludes and nothing else. Set-theory:
+ *    packaged = ALL − {dotfiles, *~}   file.list = ALL − {dotfiles, *~}
+ *  ⇒ packaged == file.list ⊇ file.list — every listed entry (incl. ALL `_`-prefixed
+ *  dirs AND files) is packaged and AssetManager.open()-able. No `!` tokens are
+ *  needed: `!` only un-ignores the literal default tokens, and we replace the whole
+ *  string rather than relying on the defaults.
+ *
+ *  CRITICAL gotcha (found via the generated gradle): Expo SDK 54 / RN 0.81 prebuild
+ *  ALREADY emits its own `androidResources { ignoreAssetsPattern '...' }` at the END
+ *  of the android{} block. In Groovy the LAST assignment wins, so PREPENDING a block
+ *  is inert — the template's value would override it. We therefore REPLACE the value
+ *  inside the template's existing androidResources block (regex on the emitted
+ *  string). If for some reason no such block exists, we fall back to appending one
+ *  just before android{}'s closing brace so ours is still last. */
 function withNodejsMobileGradle(config) {
   return withAppBuildGradle(config, (cfg) => {
     if (cfg.modResults.language !== 'groovy') return cfg;
@@ -81,21 +112,33 @@ function withNodejsMobileGradle(config) {
       picks,
       '        }',
       '    }',
-      '    // nodejs-mobile-aaptIgnore — nodejs-mobile generates `file.list` with a',
-      '    // Gradle fileTree that only excludes `.*` and `*~`, then RNNodeJsMobileModule',
-      '    // AssetManager.open()s every listed path at launch. aapt\'s DEFAULT',
-      '    // ignoreAssetsPattern additionally drops `_`-prefixed DIRECTORIES (`<dir>_*`)',
-      '    // e.g. node_modules `__tests__`/`__fixtures__` dirs, so those listed paths',
-      '    // are NOT packaged → FileNotFoundException → "Node assets copy failed" crash.',
-      '    // install-nodejs-project.js prunes those dirs; this aaptIgnore (which drops',
-      '    // only `.*`/`*~`, matching the file.list excludes) is defense-in-depth so any',
-      '    // `_`-dir that slips through is still packaged and openable at runtime.',
-      '    aaptOptions {',
-      "        ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'",
-      '    }',
     ].join('\n');
-    // Inject as the first statement inside the top-level `android {` block.
+    // Inject the pickFirst block as the first statement inside the top-level
+    // `android {` block.
     src = src.replace(/android\s*\{/, (m) => `${m}\n${block}\n`);
+
+    // nodejs-mobile-aaptIgnore: force the WINNING ignoreAssetsPattern. Replace the
+    // value of an existing (template-emitted) ignoreAssetsPattern assignment so our
+    // value is the one in effect; if none exists, append a block before android{}'s
+    // close. See the function doc for the set-theory rationale.
+    const ignoreRe = /ignoreAssetsPattern\s+'[^']*'/g;
+    if (ignoreRe.test(src)) {
+      src = src.replace(
+        ignoreRe,
+        `ignoreAssetsPattern '${NODEJS_IGNORE_ASSETS_PATTERN}' // nodejs-mobile-aaptIgnore: keep _-prefixed assets (file.list excludes only .* and *~)`,
+      );
+    } else {
+      const aaptBlock = [
+        '    // nodejs-mobile-aaptIgnore — package every asset nodejs-mobile lists.',
+        '    androidResources {',
+        `        ignoreAssetsPattern '${NODEJS_IGNORE_ASSETS_PATTERN}'`,
+        '    }',
+        '}',
+      ].join('\n');
+      // Replace the FIRST top-level android{} closing brace. The android{} block is
+      // emitted before the first standalone `}` at column 0.
+      src = src.replace(/\n\}\n/, `\n${aaptBlock}\n`);
+    }
     cfg.modResults.contents = src;
     return cfg;
   });

@@ -74,20 +74,26 @@ function linkNodeGypBuildMobileBin() {
  *   1. GenerateNodeProjectAssetsLists builds `file.list` with a Gradle
  *      fileTree(...).visit, excluding only `**​/.*` (dotfiles) and `**​/*~`.
  *   2. aapt merges nodejs-project/** into the APK assets, but aapt's DEFAULT
- *      `aaptOptions.ignoreAssetsPattern` drops, among others, any DIRECTORY
- *      whose name starts with `_` (the `<dir>_*` token) and any dot-prefixed
- *      entry (`.*`).
- * npm installs ~19 `_`-prefixed dirs (`__tests__`, `__fixtures__`,
- * `__flowtests__`) under @railgun-community/wallet, metro, etc. Gradle LISTS the
- * files inside them in `file.list`, but aapt NEVER packages them → at launch
- * RNNodeJsMobileModule reads `file.list`, calls AssetManager.open() on a path
- * that isn't a real asset → FileNotFoundException → RuntimeException("Node
- * assets copy failed") before any JS runs.
+ *      ignoreAssetsPattern drops `<dir>_*` (any `_`-prefixed entry — dirs AND
+ *      files, e.g. lodash internals like `_baseClone.js`) and `.*` (dotfiles).
+ * Gradle LISTS the `_`-prefixed entries in `file.list`, but the DEFAULT aapt
+ * pattern NEVER packages them → at launch RNNodeJsMobileModule reads `file.list`,
+ * calls AssetManager.open() on a path that isn't a real asset →
+ * FileNotFoundException → RuntimeException("Node assets copy failed").
  *
- * FIX: delete those `_`-prefixed dirs (pure test/fixture dirs, never require()d
- * at runtime) plus dot-prefixed entries and any symlinks (AssetManager also
- * cannot open symlinks) so the file.list Gradle generates and the assets aapt
- * packages are identical. Also shrinks the bundled node_modules. Idempotent. */
+ * THE REAL FIX lives in withNodejsMobile.js: it OVERRIDES aapt's
+ * ignoreAssetsPattern to `.*:*~` so aapt now packages `_`-prefixed dirs AND files
+ * (we MUST keep them — lodash et al. require() `_*.js` at runtime; deleting them
+ * would break the engine). With that override, packaged == file.list.
+ *
+ * This prune therefore only has to keep file.list and the packaged set in lockstep
+ * by removing what NEITHER should contain:
+ *   - symlinks: AssetManager can't open them and aapt won't package them, yet a
+ *     symlink-to-file can still be visited/listed by Gradle's fileTree → mismatch.
+ *   - dot-prefixed entries (`.*`): Gradle excludes these from file.list AND aapt
+ *     ignores them; removing them on disk keeps the tree clean and is harmless.
+ * We do NOT touch `_`-prefixed dirs or files anymore — aapt now packages them and
+ * the runtime needs the files. Idempotent. */
 function pruneForAssetBundling() {
   const nm = path.join(projDir, 'node_modules');
   if (!fs.existsSync(nm)) return;
@@ -106,19 +112,15 @@ function pruneForAssetBundling() {
         try { fs.rmSync(full, { force: true }); removed++; } catch {}
         continue;
       }
-      // Dropped by aapt's default ignoreAssetsPattern: `.*` (any name) and
-      // `<dir>_*` (directories starting with `_`). Match Gradle's `.*` exclude
-      // for dotfiles too, then remove the `_`-dir case Gradle does NOT exclude.
+      // Dotfiles/-dirs (`.*`): excluded from Gradle's file.list AND ignored by
+      // aapt. Remove on disk so the tree matches both sets. Do NOT special-case
+      // `_`-prefixed entries: the aapt override now packages them and the runtime
+      // require()s the `_*.js` files (e.g. lodash internals).
       if (ent.name.startsWith('.')) {
         try { fs.rmSync(full, { recursive: true, force: true }); removed++; } catch {}
         continue;
       }
       if (ent.isDirectory()) {
-        if (ent.name.startsWith('_')) {
-          // aapt drops the whole dir; Gradle lists its files → mismatch. Remove.
-          try { fs.rmSync(full, { recursive: true, force: true }); removed++; } catch {}
-          continue;
-        }
         walk(full);
       }
     }
@@ -126,7 +128,7 @@ function pruneForAssetBundling() {
   walk(nm);
   process.stdout.write(
     '[install-nodejs-project] pruned ' + removed +
-      ' asset-unsafe entries (symlinks / dot- / _-dirs) from node_modules\n',
+      ' asset-unsafe entries (symlinks / dotfiles) from node_modules\n',
   );
   const left = countSymlinks(nm);
   process.stdout.write(
