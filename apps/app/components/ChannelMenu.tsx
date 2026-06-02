@@ -162,7 +162,7 @@ function MenuRow({ icon, label, color, onPress }: {
   return (
     <Pressable onPress={onPress} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 }}>
       <Icon name={icon} size={20} color={color} />
-      <Text style={{ color, fontSize: 16, fontFamily: 'Calibre-Medium' }}>{label}</Text>
+      <Text style={{ color, fontSize: 18, fontFamily: 'Calibre-Medium' }}>{label}</Text>
     </Pressable>
   );
 }
