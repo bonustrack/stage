@@ -38,11 +38,20 @@ interface ReplyEnvelope { id: number; ok: boolean; result?: unknown; error?: str
 
 const REQUEST_EVENT = 'rg:request';
 const REPLY_EVENT = 'rg:reply';
-/** A single proof can take ~30s; allow generous headroom before timing out. */
-const CALL_TIMEOUT_MS = 120_000;
+/** main.js emits this once the Node host has booted + registered its request
+ *  listener (main.js:101). We gate the first post on it to avoid the boot-race
+ *  where an early request is dropped (post isn't buffered) and the call hangs. */
+const READY_EVENT = 'event:message';
+/** Keep tight so a genuine failure surfaces on-screen fast instead of a 2-minute
+ *  spinner. A single proof can take ~30s, but the boot-await gate means we no
+ *  longer need 120s of headroom for the dropped-first-request case. */
+const CALL_TIMEOUT_MS = 15_000;
 
 let started = false;
 let nextId = 1;
+/** Resolves once the embedded Node host announces it has booted. Created in
+ *  startBridge() before mod.start(); rawCall awaits it before posting. */
+let readyPromise: Promise<void> | null = null;
 const pending = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void; timer: ReturnType<typeof setTimeout> }>();
 
 /** True when the embedded Node runtime can serve bridge calls on this binary. */
@@ -69,6 +78,9 @@ export function startBridge(): boolean {
     clearTimeout(entry.timer);
     if (reply.ok) entry.resolve(reply.result);
     else entry.reject(new Error(reply.error ?? 'Railgun bridge error'));
+  });
+  readyPromise = new Promise<void>((resolve) => {
+    mod.channel.addListener(READY_EVENT, () => resolve());
   });
   mod.start('main.js');
   started = true;
@@ -99,7 +111,11 @@ function rawCall(call: BridgeCall | 'ping', params: unknown): Promise<unknown> {
       reject(new Error(`Railgun bridge call timed out: ${call}`));
     }, CALL_TIMEOUT_MS);
     pending.set(id, { resolve, reject, timer });
-    ch.post(REQUEST_EVENT, envelope);
+    // Gate the post on the Node host being ready: the channel does NOT buffer,
+    // so posting before main.js registers its 'rg:request' listener drops the
+    // request and the call hangs until timeout. readyPromise resolves on the
+    // host's boot announcement (READY_EVENT).
+    void (readyPromise ?? Promise.resolve()).then(() => ch.post(REQUEST_EVENT, envelope));
   });
 }
 
