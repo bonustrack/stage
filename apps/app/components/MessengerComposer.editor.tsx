@@ -6,6 +6,7 @@ import type { RefObject } from 'react';
 import { Animated, Pressable, ScrollView, TextInput, type PanResponderInstance } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
+import { Button } from '@metro-labs/kit/button';
 import { Box, Row, Col } from './layout';
 import { ComposerGradient } from './ComposerGradient';
 import { RecordingBar } from './MessengerComposer.parts';
@@ -78,21 +79,27 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
         >
           <Icon name="microphone" size={22} color={recording ? '#ffffff' : fg} />
         </Animated.View>
-        {/** Right: ✓ confirm (stop+stage) while recording, else send. */}
+        {/** Right: ✓ confirm (stop+stage) while recording, else send. A circular
+         *   icon-only kit pill (primary) — black/white solid per scheme. */}
         {recording ? (
-          <Pressable onPress={p.onStopRec}
-            style={({ pressed }) => ({ backgroundColor: pressed ? '#cccccc' : (dark ? '#ffffff' : '#000000'), width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center' })}>
-            <Icon name="check" size={20} color={dark ? '#000' : '#fff'} />
-          </Pressable>
+          <Button
+            variant="primary"
+            size="md"
+            pill
+            dark={dark}
+            onPress={p.onStopRec}
+            icon={<Icon name="check" size={20} color={dark ? '#000' : '#fff'} />}
+          />
         ) : (
-          <Pressable onPress={p.onSend} disabled={!p.canSend}
-            style={({ pressed }) => ({
-              backgroundColor: dark ? (pressed ? '#cccccc' : '#ffffff') : (pressed ? '#333333' : '#000000'),
-              opacity: p.canSend ? 1 : 0.45,
-              width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
-            })}>
-            <Icon name="send" size={20} color={dark ? '#000' : '#fff'} />
-          </Pressable>
+          <Button
+            variant="primary"
+            size="md"
+            pill
+            dark={dark}
+            disabled={!p.canSend}
+            onPress={p.onSend}
+            icon={<Icon name="send" size={20} color={dark ? '#000' : '#fff'} />}
+          />
         )}
       </Row>
     </Col>

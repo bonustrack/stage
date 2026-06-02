@@ -9,6 +9,7 @@ import { Box } from './layout';
 import { usePalette, type Palette } from '../lib/theme';
 import { getCachedXmtpClient, getOrCreateXmtpClient } from '../lib/xmtp';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
+import { Button } from '@metro-labs/kit/button';
 
 export type ProfileColors = Palette;
 
@@ -94,34 +95,28 @@ export function InfoRow({ label, value, onCopy, c }: {
 }
 
 /** Message + Send action pair shown only on OTHER users' profiles.
- *  Two circle buttons matching the wallet tab's action buttons exactly: a
- *  56×56 circle (borderRadius 28, card bg, 1px border) holding the icon, with
- *  the label below the circle. */
-export function ProfileActions({ opening, onMessage, onSend, c }: {
+ *  Standard kit pill Buttons (secondary variant) with an inline icon + label,
+ *  LEFT-aligned in a single row. Message shows a spinner while opening. */
+export function ProfileActions({ dark, opening, onMessage, onSend, c }: {
   dark: boolean; opening: boolean; onMessage: () => void; onSend: () => void; c: ProfileColors;
 }): React.ReactElement {
-  const Btn = ({ icon, label, onPress, disabled }: {
-    icon: HeroIconName; label: string; onPress: () => void; disabled?: boolean;
+  const Btn = ({ icon, label, onPress, disabled, loading }: {
+    icon: HeroIconName; label: string; onPress: () => void; disabled?: boolean; loading?: boolean;
   }): React.ReactElement => (
-    <Box style={{ alignItems: 'center', gap: 6 }}>
-      <Pressable
-        onPress={onPress}
-        disabled={disabled}
-        style={({ pressed }) => ({
-          width: 56, height: 56, borderRadius: 28,
-          alignItems: 'center', justifyContent: 'center',
-          backgroundColor: pressed ? c.border : c.rowBg, borderWidth: 1, borderColor: c.border,
-          opacity: disabled ? 0.6 : 1,
-        })}
-      >
-        <Icon name={icon} size={22} color={c.head} />
-      </Pressable>
-      <Text style={{ color: c.head, fontSize: 14, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{label}</Text>
-    </Box>
+    <Button
+      variant="secondary"
+      size="md"
+      dark={dark}
+      onPress={onPress}
+      disabled={disabled}
+      loading={loading}
+      label={label}
+      icon={<Icon name={icon} size={18} color={c.head} />}
+    />
   );
   return (
-    <Box style={{ flexDirection: 'row', gap: 12, marginTop: 18, justifyContent: 'flex-start' }}>
-      <Btn icon="chatRect" label={opening ? 'Opening…' : 'Message'} onPress={onMessage} disabled={opening} />
+    <Box style={{ flexDirection: 'row', gap: 10, marginTop: 18, justifyContent: 'flex-start' }}>
+      <Btn icon="chatRect" label={opening ? 'Opening…' : 'Message'} onPress={onMessage} disabled={opening} loading={opening} />
       <Btn icon="send" label="Send" onPress={onSend} />
     </Box>
   );

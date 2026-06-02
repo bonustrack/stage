@@ -13,7 +13,12 @@ import { Buffer } from 'buffer';
 import { Directory, File, Paths } from 'expo-file-system';
 import type { ArtifactStore, SnarkJSGroth16 } from '@railgun-community/wallet';
 import { NETWORK_CONFIG, type FallbackProviderJsonConfig } from '@railgun-community/shared-models';
-import { getNativeGroth16, isRailgunAvailable, type SnarkJSGroth16Like } from './native';
+import {
+  getNativeGroth16,
+  getNativeProverTriple,
+  isRailgunAvailable,
+  type SnarkJSGroth16Like,
+} from './native';
 import { requireWalletApi } from './sdkApi';
 import { RAILGUN_NETWORKS, type RailgunNet } from './networks';
 
@@ -66,6 +71,38 @@ function asEngineGroth16(g: SnarkJSGroth16Like): SnarkJSGroth16 {
   return g as unknown as SnarkJSGroth16;
 }
 
+/** The subset of `getEngine().prover` we drive. The native triple is the real
+ *  on-device path (RAILGUN's `@railgun-privacy/native-prover`); snarkjs is a
+ *  fallback. Typed loosely (the engine's nominal Proof/Buffer shapes differ from
+ *  our structural ones); narrowed via unknown, never `any`. */
+interface EngineProver {
+  setSnarkJSGroth16(g: SnarkJSGroth16): void;
+  setNativeProverGroth16(
+    nativeProveRailgun: unknown,
+    nativeProvePOI: unknown,
+    circuits: Record<string, number>,
+  ): void;
+}
+
+/** Register the Groth16 prover on the engine. Prefers the native prover triple
+ *  (real on-device proving); falls back to a snarkjs-style object. Returns false
+ *  when neither is present (build without the native prover) so the caller bails
+ *  out gracefully. */
+function wireProver(sdk: ReturnType<typeof requireWalletApi>): boolean {
+  const prover = sdk.getEngine().prover as unknown as EngineProver;
+  const triple = getNativeProverTriple();
+  if (triple) {
+    prover.setNativeProverGroth16(triple.nativeProveRailgun, triple.nativeProvePOI, triple.circuits);
+    return true;
+  }
+  const groth16 = getNativeGroth16();
+  if (groth16) {
+    prover.setSnarkJSGroth16(asEngineGroth16(groth16));
+    return true;
+  }
+  return false;
+}
+
 /** Initialize the engine ONCE + wire the Groth16 prover. Resolves false (never
  *  throws) when the native prover isn't present, so callers fire-and-forget. */
 export async function initEngine(): Promise<boolean> {
@@ -86,9 +123,7 @@ export async function initEngine(): Promise<boolean> {
         [], // customPOILists
         __DEV__, // verboseScanLogging
       );
-      const groth16 = getNativeGroth16();
-      if (!groth16) return false;
-      sdk.getEngine().prover.setSnarkJSGroth16(asEngineGroth16(groth16));
+      if (!wireProver(sdk)) return false;
       engineReady = true;
       return true;
     } catch {

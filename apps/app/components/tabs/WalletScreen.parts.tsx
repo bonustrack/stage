@@ -5,6 +5,7 @@
 import { Image, Pressable } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
+import { Button } from '@metro-labs/kit/button';
 import { Col, Row, Box } from '../layout';
 import { NETWORK_LOGO, MAINNET_NETWORK_LOGO, type AssetRow } from './WalletScreen.assets';
 
@@ -37,28 +38,23 @@ export const fmtBalance = (v: string): string => {
 
 interface Palette { head: string; sub: string; border: string; bg: string; card: string; }
 
-/** Action button — a PERFECT CIRCLE (fixed 56×56, `borderRadius: 28`) holding
- *  just the icon, with the label BELOW it. The four actions (Send / Receive /
- *  Swap / Buy) sit LEFT-aligned on a single row, separated by a 12px gap. Each
- *  column is content-width (no `flex: 1` stretch) so the row starts at the
- *  16px content edge rather than spreading across the screen. */
-export function Btn({ icon, label, onPress, head, border, card }: {
-  icon: HeroIconName; label: string; onPress: () => void; head: string; border: string; card: string;
+/** Action button — a standard kit pill Button with an inline icon + label
+ *  (icon BEFORE the text). The four actions (Send / Receive / Swap / Buy) sit
+ *  LEFT-aligned on a single wrapping row. Uses the `secondary` variant (subtle
+ *  rowBg fill + border) so they read as the standard ChatKit pill buttons. */
+export function Btn({ icon, label, onPress, head, dark }: {
+  icon: HeroIconName; label: string; onPress: () => void; head: string; dark: boolean;
 }): React.ReactElement {
   return (
-    <Col align="center" gap={6}>
-      <Pressable
-        onPress={onPress}
-        style={({ pressed }) => ({
-          width: 56, height: 56, borderRadius: 28,
-          alignItems: 'center', justifyContent: 'center',
-          backgroundColor: pressed ? border : card, borderWidth: 1, borderColor: border,
-        })}
-      >
-        <Icon name={icon} size={26} color={head} />
-      </Pressable>
-      <Text style={{ color: head, fontSize: 14, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{label}</Text>
-    </Col>
+    <Button
+      variant="secondary"
+      size="md"
+      pill={false}
+      dark={dark}
+      onPress={onPress}
+      label={label}
+      icon={<Icon name={icon} size={18} color={head} />}
+    />
   );
 }
 

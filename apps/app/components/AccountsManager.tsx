@@ -52,7 +52,7 @@ export function AccountsManager({ dark, flat = false, onSwitched }: { dark: bool
         visible={m.importOpen}
         onClose={() => { m.setImportOpen(false); }}
         importText={m.importText} setImportText={m.setImportText} setImportErr={m.setImportErr}
-        importErr={m.importErr} onImport={() => void m.onImport()} p={pal}
+        importErr={m.importErr} onImport={() => void m.onImport()} dark={dark} p={pal}
       />
       <ManageSheet
         manageRec={m.manageRec} activeId={m.activeId}
@@ -62,7 +62,7 @@ export function AccountsManager({ dark, flat = false, onSwitched }: { dark: bool
         onRemove={m.onRemove}
         dark={dark} p={pal}
       />
-      <ExportSheet revealPk={m.revealPk} onClose={() => m.setRevealPk(null)} p={pal} />
+      <ExportSheet revealPk={m.revealPk} onClose={() => m.setRevealPk(null)} dark={dark} p={pal} />
     </Box>
   );
 }

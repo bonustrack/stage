@@ -116,4 +116,8 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
   return resolved;
 };
 
+if (process.env.RG_BLOCK_WORKTREES) {
+  config.resolver.blockList = [/\.claude\/worktrees\/(?!agent-a3a263f507bde95a6)/];
+}
+
 module.exports = config;

@@ -6,15 +6,16 @@
 import { Pressable, TextInput } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
+import { Button } from '@metro-labs/kit/button';
 import { Box, Row, Col } from './layout';
 import { AppModal } from './AppModal';
 import { type Palette } from './MessengerComposer.helpers';
 
 export function PollSheet({
-  open, onClose, palette, question, setQuestion, header, setHeader,
+  open, onClose, palette, dark, question, setQuestion, header, setHeader,
   options, setOptions, multi, setMulti, onSend,
 }: {
-  open: boolean; onClose: () => void; palette: Palette;
+  open: boolean; onClose: () => void; palette: Palette; dark: boolean;
   question: string; setQuestion: (v: string) => void;
   header: string; setHeader: (v: string) => void;
   options: string[]; setOptions: React.Dispatch<React.SetStateAction<string[]>>;
@@ -57,16 +58,14 @@ export function PollSheet({
             ) : null}
           </Row>
         ))}
-        <Pressable
+        <Button
+          variant="ghost"
+          size="sm"
+          dark={dark}
           onPress={() => setOptions(prev => [...prev, ''])}
-          style={({ pressed }) => ({
-            flexDirection: 'row', alignItems: 'center', gap: 6,
-            paddingVertical: 8, paddingHorizontal: 4, opacity: pressed ? 0.6 : 1,
-          })}
-        >
-          <Icon name="plus" size={16} color={'#c0a06e'} />
-          <Text style={{ color: '#c0a06e', fontSize: 14, fontFamily: 'Calibre-Semibold' }}>Add option</Text>
-        </Pressable>
+          label="Add option"
+          icon={<Icon name="plus" size={16} color={fg} />}
+        />
         <Pressable
           onPress={() => setMulti(m => !m)}
           style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 }}
@@ -80,15 +79,15 @@ export function PollSheet({
             <Box style={{ width: 20, height: 20, borderRadius: 999, backgroundColor: '#ffffff' }} />
           </Box>
         </Pressable>
-        <Pressable
+        <Button
+          variant="primary"
+          size="lg"
+          fullWidth
+          dark={dark}
           onPress={onSend}
-          style={({ pressed }) => ({
-            marginTop: 4, alignItems: 'center', paddingVertical: 13, borderRadius: 12,
-            backgroundColor: pressed ? '#a08458' : '#c0a06e',
-          })}
-        >
-          <Text style={{ color: '#000', fontSize: 16, fontFamily: 'Calibre-Semibold' }}>Send poll</Text>
-        </Pressable>
+          label="Send poll"
+          style={{ marginTop: 4 }}
+        />
       </Col>
     </AppModal>
   );

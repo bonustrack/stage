@@ -1,9 +1,10 @@
 /** AccountsManager bottom sheets — add picker, import-key, per-account manage,
  *  and export-reveal. Extracted for lint line-budget. Rendering identical. */
 
-import { Pressable, TextInput } from 'react-native';
+import { TextInput } from 'react-native';
 import { Box } from './layout';
 import { Text } from '@metro-labs/kit/text';
+import { Button } from '@metro-labs/kit/button';
 import * as Clipboard from 'expo-clipboard';
 import { flash } from '../lib/toast';
 import { shortAddress } from '../lib/xmtp';
@@ -25,10 +26,10 @@ export function AddSheet({ visible, onClose, onGenerate, onImport, onWalletConne
   );
 }
 
-export function ImportSheet({ visible, onClose, importText, setImportText, setImportErr, importErr, onImport, p }: {
+export function ImportSheet({ visible, onClose, importText, setImportText, setImportErr, importErr, onImport, dark, p }: {
   visible: boolean; onClose: () => void;
   importText: string; setImportText: (t: string) => void; setImportErr: (e: string) => void;
-  importErr: string; onImport: () => void; p: Pal;
+  importErr: string; onImport: () => void; dark: boolean; p: Pal;
 }): React.ReactElement {
   return (
     <SheetModal visible={visible} onClose={onClose} bg={p.sheetBg} border={p.border} title="Import private key" head={p.head}>
@@ -48,19 +49,25 @@ export function ImportSheet({ visible, onClose, importText, setImportText, setIm
       />
       {importErr ? <Text style={{ color: '#ff6b80', fontSize: 12, marginBottom: 8, fontFamily: 'Calibre-Medium' }}>{importErr}</Text> : null}
       <Box style={{ flexDirection: 'row', gap: 8 }}>
-        <Pressable
+        <Button
+          variant="secondary"
+          size="md"
+          fullWidth
+          dark={dark}
           onPress={() => void (async () => { const t = await Clipboard.getStringAsync(); if (t) { setImportText(t.trim()); setImportErr(''); } })()}
-          style={({ pressed }) => ({ flex: 1, paddingVertical: 11, borderRadius: 10, alignItems: 'center', borderWidth: 1, borderColor: p.border, backgroundColor: pressed ? p.border : 'transparent' })}
-        >
-          <Text style={{ color: p.head, fontSize: 14, fontFamily: 'Calibre-Semibold' }}>Paste</Text>
-        </Pressable>
-        <Pressable
-          onPress={onImport}
+          label="Paste"
+          style={{ flex: 1 }}
+        />
+        <Button
+          variant="primary"
+          size="md"
+          fullWidth
+          dark={dark}
           disabled={!importText.trim()}
-          style={({ pressed }) => ({ flex: 1, paddingVertical: 11, borderRadius: 10, alignItems: 'center', backgroundColor: !importText.trim() ? p.border : pressed ? '#a08458' : '#c0a06e', opacity: !importText.trim() ? 0.6 : 1 })}
-        >
-          <Text style={{ color: '#000', fontSize: 14, fontFamily: 'Calibre-Semibold' }}>Import</Text>
-        </Pressable>
+          onPress={onImport}
+          label="Import"
+          style={{ flex: 1 }}
+        />
       </Box>
     </SheetModal>
   );
@@ -91,8 +98,8 @@ export function ManageSheet({ manageRec, activeId, onClose, onSwitch, onExport, 
   );
 }
 
-export function ExportSheet({ revealPk, onClose, p }: {
-  revealPk: string | null; onClose: () => void; p: Pal;
+export function ExportSheet({ revealPk, onClose, dark, p }: {
+  revealPk: string | null; onClose: () => void; dark: boolean; p: Pal;
 }): React.ReactElement {
   return (
     <SheetModal visible={revealPk !== null} onClose={onClose} bg={p.sheetBg} border={p.border} head={p.head} title="Private key">
@@ -106,12 +113,14 @@ export function ExportSheet({ revealPk, onClose, p }: {
       }}>
         {revealPk}
       </Text>
-      <Pressable
+      <Button
+        variant="primary"
+        size="md"
+        fullWidth
+        dark={dark}
         onPress={() => { if (revealPk) { void Clipboard.setStringAsync(revealPk); flash('Private key copied'); } }}
-        style={({ pressed }) => ({ paddingVertical: 11, borderRadius: 10, alignItems: 'center', backgroundColor: pressed ? '#a08458' : '#c0a06e' })}
-      >
-        <Text style={{ color: '#000', fontSize: 14, fontFamily: 'Calibre-Semibold' }}>Copy to clipboard</Text>
-      </Pressable>
+        label="Copy to clipboard"
+      />
     </SheetModal>
   );
 }

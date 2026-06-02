@@ -4,15 +4,16 @@
 
 import { Pressable, TextInput } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
+import { Button } from '@metro-labs/kit/button';
 import { Row, Col } from './layout';
 import { AppModal } from './AppModal';
 import { type Palette } from './MessengerComposer.helpers';
 
 export function SignatureSheet({
-  open, onClose, palette, kind, setKind, desc, setDesc,
+  open, onClose, palette, dark, kind, setKind, desc, setDesc,
   message, setMessage, json, setJson, onSend,
 }: {
-  open: boolean; onClose: () => void; palette: Palette;
+  open: boolean; onClose: () => void; palette: Palette; dark: boolean;
   kind: 'personal' | 'eip712'; setKind: (k: 'personal' | 'eip712') => void;
   desc: string; setDesc: (v: string) => void;
   message: string; setMessage: (v: string) => void;
@@ -66,24 +67,24 @@ export function SignatureSheet({
             style={{ color: fg, backgroundColor: inputBg, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, minHeight: 160, fontFamily: 'Calibre-Medium', fontSize: 13, textAlignVertical: 'top' }}
           />
         )}
-        <Pressable
+        <Button
+          variant="primary"
+          size="lg"
+          fullWidth
+          dark={dark}
           onPress={onSend}
-          style={({ pressed }) => ({
-            marginTop: 4, alignItems: 'center', paddingVertical: 13, borderRadius: 12,
-            backgroundColor: pressed ? '#a08458' : '#c0a06e',
-          })}
-        >
-          <Text style={{ color: '#000', fontSize: 16, fontFamily: 'Calibre-Semibold' }}>Send request</Text>
-        </Pressable>
+          label="Send request"
+          style={{ marginTop: 4 }}
+        />
       </Col>
     </AppModal>
   );
 }
 
 export function PaymentSheet({
-  open, onClose, palette, to, setTo, amount, setAmount, note, setNote, onSend,
+  open, onClose, palette, dark, to, setTo, amount, setAmount, note, setNote, onSend,
 }: {
-  open: boolean; onClose: () => void; palette: Palette;
+  open: boolean; onClose: () => void; palette: Palette; dark: boolean;
   to: string; setTo: (v: string) => void;
   amount: string; setAmount: (v: string) => void;
   note: string; setNote: (v: string) => void;
@@ -117,15 +118,15 @@ export function PaymentSheet({
           placeholderTextColor={sub}
           style={{ color: fg, backgroundColor: inputBg, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 16 }}
         />
-        <Pressable
+        <Button
+          variant="primary"
+          size="lg"
+          fullWidth
+          dark={dark}
           onPress={onSend}
-          style={({ pressed }) => ({
-            marginTop: 4, alignItems: 'center', paddingVertical: 13, borderRadius: 12,
-            backgroundColor: pressed ? '#a08458' : '#c0a06e',
-          })}
-        >
-          <Text style={{ color: '#000', fontSize: 16, fontFamily: 'Calibre-Semibold' }}>Send request</Text>
-        </Pressable>
+          label="Send request"
+          style={{ marginTop: 4 }}
+        />
       </Col>
     </AppModal>
   );

@@ -14,7 +14,7 @@ import { useRouter } from 'expo-router';
 import { getOrCreateXmtpClient } from '../../lib/xmtp';
 import { flash } from '../../lib/toast';
 import { usePeerProfiles } from '../../lib/peerProfiles';
-import { usePalette } from '../../lib/theme';
+import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { Col, Row } from '../layout';
 import { getNftsAcrossChains, type Nft } from '../../lib/opensea';
 import { type AssetRow } from './WalletScreen.assets';
@@ -25,7 +25,8 @@ import { prewarmRailgun } from '../../lib/railgun/engine';
 
 export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const router = useRouter();
-  const { head, sub, bg, border, rowBg: card } = usePalette();
+  const { head, sub, bg, border } = usePalette();
+  const dark = useEffectiveColorScheme() === 'dark';
 
   const [address, setAddress] = useState<string>('');
   const [rows, setRows] = useState<AssetRow[] | null>(null);
@@ -112,13 +113,13 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
       </Col>
 
       {/* Four action pills — Send / Receive route to existing screens;
-          Top up / Buy are placeholders (no on/off-ramp wired yet) and flash a
-          "coming soon" toast. Single row, LEFT-aligned, 12px gap between buttons. */}
-      <Row justify="start" gap={12} mx={16} mt={12}>
-        <Btn icon="send" label="Send" onPress={() => router.push('/wallet/send')} head={head} border={border} card={card} />
-        <Btn icon="arrowDown" label="Receive" onPress={() => router.push('/wallet/receive')} head={head} border={border} card={card} />
-        <Btn icon="switchHorizontal" label="Swap" onPress={() => flash('Swap — coming soon')} head={head} border={border} card={card} />
-        <Btn icon="creditCard" label="Buy" onPress={() => flash('Buy — coming soon')} head={head} border={border} card={card} />
+          Swap / Buy are placeholders (no on/off-ramp wired yet) and flash a
+          "coming soon" toast. LEFT-aligned, wraps if the row overflows. */}
+      <Row justify="start" gap={10} mx={16} mt={12} style={{ flexWrap: 'wrap' }}>
+        <Btn icon="send" label="Send" onPress={() => router.push('/wallet/send')} head={head} dark={dark} />
+        <Btn icon="arrowDown" label="Receive" onPress={() => router.push('/wallet/receive')} head={head} dark={dark} />
+        <Btn icon="switchHorizontal" label="Swap" onPress={() => flash('Swap — coming soon')} head={head} dark={dark} />
+        <Btn icon="creditCard" label="Buy" onPress={() => flash('Buy — coming soon')} head={head} dark={dark} />
       </Row>
 
       <WalletTabs tab={tab} setTab={setTab} head={head} sub={sub} border={border} />

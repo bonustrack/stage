@@ -169,7 +169,7 @@ export function MessengerComposer({
         />
       ) : null}
       <PollSheet
-        open={pollOpen} onClose={() => setPollOpen(false)} palette={palette}
+        open={pollOpen} onClose={() => setPollOpen(false)} palette={palette} dark={dark}
         question={pollQuestion} setQuestion={setPollQuestion}
         header={pollHeader} setHeader={setPollHeader}
         options={pollOptions} setOptions={setPollOptions}
@@ -177,7 +177,7 @@ export function MessengerComposer({
         onSend={() => void actions.sendPoll()}
       />
       <SignatureSheet
-        open={sigOpen} onClose={() => setSigOpen(false)} palette={palette}
+        open={sigOpen} onClose={() => setSigOpen(false)} palette={palette} dark={dark}
         kind={sigKind} setKind={setSigKind}
         desc={sigDesc} setDesc={setSigDesc}
         message={sigMessage} setMessage={setSigMessage}
@@ -185,7 +185,7 @@ export function MessengerComposer({
         onSend={() => void actions.sendSignatureRequest()}
       />
       <PaymentSheet
-        open={txOpen} onClose={() => setTxOpen(false)} palette={palette}
+        open={txOpen} onClose={() => setTxOpen(false)} palette={palette} dark={dark}
         to={txTo} setTo={setTxTo}
         amount={txAmount} setAmount={setTxAmount}
         note={txNote} setNote={setTxNote}
