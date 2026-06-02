@@ -38,11 +38,82 @@ config.resolver.nodeModulesPaths = [
 
 // Single instance of the React/RN runtime for every package (incl. @metro-labs/kit).
 const appNodeModules = path.resolve(projectRoot, 'node_modules');
+
+// node-core polyfills for the RAILGUN SDK (@railgun-community/wallet + ethers +
+// axios). The Railgun graph pulls in axios's NODE build (dist/node/axios.cjs ->
+// url/http/https/stream/zlib) and ethers' commonjs node files (crypto/net/http),
+// none of which exist on React Native. Map every reachable node-core name to a
+// pure-JS browser polyfill (all JS shims — NO new native deps), and to an empty
+// module for the socket/fs/compression internals whose RN/browser code paths
+// never actually run. `buffer` reuses the shim the app already uses for
+// viem/XMTP; `crypto` falls to crypto-browserify (the global getRandomValues
+// shim in lib/cryptoShim.ts still backs the platform RNG separately).
+const emptyShim = path.resolve(projectRoot, 'metro.shims', 'empty.js');
+const nodeCorePolyfills = {
+  url: 'react-native-url-polyfill',
+  stream: 'stream-browserify',
+  crypto: 'crypto-browserify',
+  buffer: 'buffer',
+  events: 'events',
+  process: 'process',
+  util: 'util',
+  assert: 'assert',
+  path: 'path-browserify',
+  punycode: 'punycode',
+  querystring: 'querystring-es3',
+  string_decoder: 'string_decoder',
+};
+const emptyShimNames = [
+  'http',
+  'https',
+  'zlib',
+  'net',
+  'tls',
+  'fs',
+  'dns',
+  'child_process',
+  'os',
+  'vm',
+];
+
 config.resolver.extraNodeModules = {
   ...(config.resolver.extraNodeModules ?? {}),
   react: path.join(appNodeModules, 'react'),
   'react-native': path.join(appNodeModules, 'react-native'),
   'react-native-svg': path.join(appNodeModules, 'react-native-svg'),
+  ...Object.fromEntries(
+    Object.entries(nodeCorePolyfills).map(([name, target]) => [
+      name,
+      require.resolve(target),
+    ]),
+  ),
+  ...Object.fromEntries(emptyShimNames.map((name) => [name, emptyShim])),
+};
+
+// Force axios to its BROWSER build (XHR adapter) instead of dist/node/axios.cjs,
+// which requires url/http/https/form-data/proxy-from-env. The browser bundle
+// uses XMLHttpRequest (which RN provides) and pulls in no node-core. axios is a
+// transitive dep of the Railgun SDK (not a direct app dep), so we let Metro
+// resolve it normally and then rewrite the resolved file to the browser build
+// that sits alongside it in the same package — no hard-coded bun-store hash.
+const upstreamResolveRequest = config.resolver.resolveRequest;
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  const resolved = upstreamResolveRequest
+    ? upstreamResolveRequest(context, moduleName, platform)
+    : context.resolveRequest(context, moduleName, platform);
+  if (
+    moduleName === 'axios' &&
+    resolved &&
+    resolved.type === 'sourceFile' &&
+    resolved.filePath.includes(`${path.sep}axios${path.sep}`)
+  ) {
+    const pkgDir = resolved.filePath.split(
+      `${path.sep}dist${path.sep}`,
+    )[0];
+    const browser = path.join(pkgDir, 'dist', 'browser', 'axios.cjs');
+    return { ...resolved, filePath: browser };
+  }
+  return resolved;
 };
 
 module.exports = config;
