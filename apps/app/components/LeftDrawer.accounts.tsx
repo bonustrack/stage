@@ -23,10 +23,18 @@ import { addGeneratedAccount, importWallet } from '../lib/accounts';
 import { AppModal } from './AppModal';
 import { DrawerRow } from './LeftDrawer.parts';
 
-/** Switch the active XMTP client to a freshly added account id. Swallows the
- *  error (surfaced via toast) so the drawer never crashes on a switch hiccup. */
+/** Switch the active XMTP client to a freshly added account id. The wallet/EOA
+ *  switch happens regardless (decoupled from XMTP), and switchToAccount bumps the
+ *  account epoch even when its XMTP inbox fails to build — so HomeScreen re-inits
+ *  onto the recoverable HomeError screen instead of a dead spinner. We surface a
+ *  toast here so the user knows messaging needs a reset, but never block the
+ *  wallet switch (don't re-throw). The drawer still closes via onChanged(). */
 async function activate(id: string, onChanged: () => void): Promise<void> {
-  try { await switchToAccount(id); } catch { /* surfaced via toast below */ }
+  try {
+    await switchToAccount(id);
+  } catch {
+    flash('Switched account — XMTP messaging needs a reset (see Home)');
+  }
   onChanged();
 }
 

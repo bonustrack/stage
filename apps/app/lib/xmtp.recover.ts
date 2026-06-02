@@ -47,10 +47,38 @@ export async function ensureActiveAccount(): Promise<void> {
 const STORE_KEY_MISMATCH = [
   'PRAGMA key', 'StorageError', 'incorrect value',
   'UnknownSigner', 'Error creating V3 client',
+  /** Generic native create-failure signatures: the new account's `Client.create`
+   *  can throw these on a clean reinstall when the inherited db key no longer
+   *  matches the freshly-allocated store. Broadened so the one-shot wipe+retry
+   *  fires for the dead-spinner case too. */
+  'ERROR in create', 'XMTP.create', 'Error creating', 'has been rejected',
 ];
 function isStoreKeyMismatch(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err);
   return STORE_KEY_MISMATCH.some(sig => msg.includes(sig));
+}
+
+/** A true native hang inside `Client.create` (MLS handshake / sqlite open never
+ *  returns) would leave the account-switch promise pending forever → dead
+ *  spinner. Race create against a 30s timeout so a hang REJECTS (then the
+ *  wipe+retry / HomeError UX path runs) instead of spinning. Mirrors the
+ *  `Client.build` timeout in xmtp.client.ts. */
+const CREATE_TIMEOUT_MS = 30_000;
+async function createWithTimeout(
+  signer: Awaited<ReturnType<typeof signerForRecord>>, opts: CreateOpts,
+): Promise<Client> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () => reject(new Error('XMTP.create timed out (native handshake hang)')),
+      CREATE_TIMEOUT_MS,
+    );
+  });
+  try {
+    return await Promise.race<Client>([Client.create(signer, opts), timeout]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 /** Run `Client.create` for a fresh installation. On a corrupt/key-mismatched
@@ -68,7 +96,7 @@ export async function createClientForAccount(
   const signer = await signerForRecord(rec);
   let created: Client;
   try {
-    created = await Client.create(signer, opts);
+    created = await createWithTimeout(signer, opts);
   } catch (e) {
     if (!recovered && isStoreKeyMismatch(e)) {
       await wipeXmtpStore(rec.dbDir);

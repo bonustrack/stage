@@ -89,13 +89,26 @@ export async function switchToAccount(id: string, env: XmtpEnv = 'production'): 
   const rec = list.find(a => a.id === id);
   if (!rec) throw new Error('Account not found.');
   resetClientScopedState();
+  /** Switch the WALLET first: the local EOA / Railgun is decoupled from XMTP, so
+   *  the new account must be usable for signing even if its XMTP inbox fails to
+   *  build below (clean-reinstall key mismatch, native create hang). */
   await setActiveAccountId(id);
-  const client = await buildClientForAccount(rec, env);
-  /** Bump the account epoch so every screen holding per-account XMTP state
-   *  (channels list, open conversation) re-inits against the new inbox without a
-   *  hard app reload. Callers used to DevSettings.reload() here. */
-  bumpAccountEpoch();
-  return client;
+  try {
+    const client = await buildClientForAccount(rec, env);
+    /** Bump the account epoch so every screen holding per-account XMTP state
+     *  (channels list, open conversation) re-inits against the new inbox without a
+     *  hard app reload. Callers used to DevSettings.reload() here. */
+    bumpAccountEpoch();
+    return client;
+  } catch (e) {
+    /** XMTP build/create failed (after the one-shot wipe+retry in
+     *  createClientForAccount) — but the wallet is already switched. Bump the
+     *  epoch anyway so HomeScreen re-inits and its own init-catch surfaces the
+     *  recoverable HomeError ("Reset XMTP identity") instead of leaving the user
+     *  on a dead spinner. Re-throw so the caller can also surface a toast. */
+    bumpAccountEpoch();
+    throw e;
+  }
 }
 
 /** Delete a single account: registry entry + key (lib/accounts) + its on-disk
