@@ -67,6 +67,89 @@ function linkNodeGypBuildMobileBin() {
   }
 }
 
+/* Make node_modules safe for nodejs-mobile's asset bundling.
+ *
+ * ROOT CAUSE of the "Node assets copy failed" launch crash:
+ * nodejs-mobile-react-native's gradle does two passes over nodejs-project:
+ *   1. GenerateNodeProjectAssetsLists builds `file.list` with a Gradle
+ *      fileTree(...).visit, excluding only `**​/.*` (dotfiles) and `**​/*~`.
+ *   2. aapt merges nodejs-project/** into the APK assets, but aapt's DEFAULT
+ *      `aaptOptions.ignoreAssetsPattern` drops, among others, any DIRECTORY
+ *      whose name starts with `_` (the `<dir>_*` token) and any dot-prefixed
+ *      entry (`.*`).
+ * npm installs ~19 `_`-prefixed dirs (`__tests__`, `__fixtures__`,
+ * `__flowtests__`) under @railgun-community/wallet, metro, etc. Gradle LISTS the
+ * files inside them in `file.list`, but aapt NEVER packages them → at launch
+ * RNNodeJsMobileModule reads `file.list`, calls AssetManager.open() on a path
+ * that isn't a real asset → FileNotFoundException → RuntimeException("Node
+ * assets copy failed") before any JS runs.
+ *
+ * FIX: delete those `_`-prefixed dirs (pure test/fixture dirs, never require()d
+ * at runtime) plus dot-prefixed entries and any symlinks (AssetManager also
+ * cannot open symlinks) so the file.list Gradle generates and the assets aapt
+ * packages are identical. Also shrinks the bundled node_modules. Idempotent. */
+function pruneForAssetBundling() {
+  const nm = path.join(projDir, 'node_modules');
+  if (!fs.existsSync(nm)) return;
+  let removed = 0;
+  const walk = (dir) => {
+    let entries;
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const ent of entries) {
+      const full = path.join(dir, ent.name);
+      // Symlinks: AssetManager can't open them; aapt won't package them either.
+      if (ent.isSymbolicLink()) {
+        try { fs.rmSync(full, { force: true }); removed++; } catch {}
+        continue;
+      }
+      // Dropped by aapt's default ignoreAssetsPattern: `.*` (any name) and
+      // `<dir>_*` (directories starting with `_`). Match Gradle's `.*` exclude
+      // for dotfiles too, then remove the `_`-dir case Gradle does NOT exclude.
+      if (ent.name.startsWith('.')) {
+        try { fs.rmSync(full, { recursive: true, force: true }); removed++; } catch {}
+        continue;
+      }
+      if (ent.isDirectory()) {
+        if (ent.name.startsWith('_')) {
+          // aapt drops the whole dir; Gradle lists its files → mismatch. Remove.
+          try { fs.rmSync(full, { recursive: true, force: true }); removed++; } catch {}
+          continue;
+        }
+        walk(full);
+      }
+    }
+  };
+  walk(nm);
+  process.stdout.write(
+    '[install-nodejs-project] pruned ' + removed +
+      ' asset-unsafe entries (symlinks / dot- / _-dirs) from node_modules\n',
+  );
+  const left = countSymlinks(nm);
+  process.stdout.write(
+    '[install-nodejs-project] symlinks remaining under node_modules: ' + left + '\n',
+  );
+}
+
+function countSymlinks(dir) {
+  let n = 0;
+  let entries;
+  try {
+    entries = fs.readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return 0;
+  }
+  for (const ent of entries) {
+    const full = path.join(dir, ent.name);
+    if (ent.isSymbolicLink()) n++;
+    else if (ent.isDirectory()) n += countSymlinks(full);
+  }
+  return n;
+}
+
 function main() {
   if (!fs.existsSync(path.join(projDir, 'package.json'))) {
     process.stdout.write('[install-nodejs-project] no nodejs-project — skipping\n');
@@ -81,7 +164,14 @@ function main() {
       stdio: 'inherit',
     });
   }
-  // Always (re)create the bin gradle's per-ABI rebuild hard-codes.
+  // Strip everything nodejs-mobile's asset bundling can't faithfully package
+  // (the cause of the "Node assets copy failed" launch crash). Always run — it
+  // is idempotent and cheap, and must happen BEFORE gradle's
+  // GenerateNodeProjectAssetsLists / aapt merge (both run in the later gradle
+  // phase; this eas-build-post-install hook runs first).
+  pruneForAssetBundling();
+  // Always (re)create the bin gradle's per-ABI rebuild hard-codes. (.bin lives
+  // under a dot dir excluded from the asset list, so this is safe post-prune.)
   linkNodeGypBuildMobileBin();
   process.stdout.write('[install-nodejs-project] done\n');
 }

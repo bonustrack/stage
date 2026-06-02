@@ -81,6 +81,18 @@ function withNodejsMobileGradle(config) {
       picks,
       '        }',
       '    }',
+      '    // nodejs-mobile-aaptIgnore — nodejs-mobile generates `file.list` with a',
+      '    // Gradle fileTree that only excludes `.*` and `*~`, then RNNodeJsMobileModule',
+      '    // AssetManager.open()s every listed path at launch. aapt\'s DEFAULT',
+      '    // ignoreAssetsPattern additionally drops `_`-prefixed DIRECTORIES (`<dir>_*`)',
+      '    // e.g. node_modules `__tests__`/`__fixtures__` dirs, so those listed paths',
+      '    // are NOT packaged → FileNotFoundException → "Node assets copy failed" crash.',
+      '    // install-nodejs-project.js prunes those dirs; this aaptIgnore (which drops',
+      '    // only `.*`/`*~`, matching the file.list excludes) is defense-in-depth so any',
+      '    // `_`-dir that slips through is still packaged and openable at runtime.',
+      '    aaptOptions {',
+      "        ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'",
+      '    }',
     ].join('\n');
     // Inject as the first statement inside the top-level `android {` block.
     src = src.replace(/android\s*\{/, (m) => `${m}\n${block}\n`);
