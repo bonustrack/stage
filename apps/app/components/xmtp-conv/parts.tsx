@@ -8,20 +8,26 @@ import { Box } from '../layout';
 import { Icon } from '@metro-labs/kit/icon';
 import { Avatar } from '../Avatar';
 import { getPeerAvatar } from '../../lib/peerProfiles';
+import { channelStampSeed } from '@metro-labs/kit/avatar';
 import { REACT_PRESETS } from '../MessengerBubble';
 import type { HistoryEntry } from '../../lib/types';
 
 /** Topnav avatar — 1-1 conversations use the peer's identicon/custom avatar,
- *  groups show their uploaded image (none → render nothing, no per-member
- *  fallback stacking). Delegates rendering to the shared Avatar component. */
-export function HeaderAvatar({ peerAddr, groupImage, border }: {
-  peerAddr: string | null; groupImage: string; border: string;
+ *  groups show their uploaded image, and groups WITHOUT one fall back to a
+ *  deterministic stamp.fyi identicon seeded by the channel id (so every channel
+ *  gets its own stable avatar everywhere). Delegates rendering to the shared
+ *  Avatar component. */
+export function HeaderAvatar({ peerAddr, groupImage, channelId, isGroup, border }: {
+  peerAddr: string | null; groupImage: string; channelId: string; isGroup: boolean; border: string;
 }): React.ReactElement | null {
   if (peerAddr) {
     return <Avatar address={peerAddr} imageUri={getPeerAvatar(peerAddr)} size="sm" style={{ backgroundColor: border }} />;
   }
   if (groupImage) {
     return <Avatar imageUri={groupImage} size="sm" square style={{ backgroundColor: border }} />;
+  }
+  if (isGroup && channelId) {
+    return <Avatar address={channelStampSeed(channelId)} size="sm" square style={{ backgroundColor: border }} />;
   }
   return null;
 }

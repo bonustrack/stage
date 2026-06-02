@@ -8,6 +8,7 @@ import {
 } from '../../lib/xmtp';
 import { isMetroControlBody } from '../../lib/push';
 import { previewOfXmtpContent } from '@metro-labs/client/xmtp/humanize';
+import { channelStampSeed } from '@metro-labs/kit/avatar';
 
 export interface Row {
   convId: string;
@@ -122,11 +123,14 @@ export async function summarize(conv: Conversation, selfInboxId: string): Promis
     ? inboxToAddr[last.senderInboxId] ?? null
     : null;
   const lastFromSelf = !!last && last.senderInboxId === selfInboxId;
-  const avatarAddress = peerAddress
-    ?? lastSenderAddress
-    ?? memberAddresses[0]
-    ?? null;
   const avatarUri = peerAddress ? null : (groupMeta.imageUrl.trim() || null);
+  /** Avatar seed precedence:
+   *   - DM: the peer's stamp (real eth address).
+   *   - Group WITH an uploaded image: handled by `avatarUri` (address ignored).
+   *   - Group WITHOUT an image: a deterministic stamp seeded by the channel id
+   *     so every channel gets its OWN stable identicon (not a member's). */
+  const avatarAddress = peerAddress
+    ?? (avatarUri ? null : channelStampSeed(conv.id));
   /** Unread count = msgs newer than the persisted lastReadNs not sent by us. */
   const lastReadNs = await getLastReadNs(conv.id);
   let unreadCount = 0;

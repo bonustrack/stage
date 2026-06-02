@@ -28,6 +28,29 @@ export function stampAvatarUrl(address: string, displayPx: number, cacheBust?: s
   return cacheBust === undefined ? base : `${base}&cb=${cacheBust}`;
 }
 
+/** Derive a stable, address-shaped (0x + 40 hex) seed from an arbitrary channel
+ *  id so stamp.fyi renders a deterministic per-channel identicon. XMTP group ids
+ *  are already hex strings; we strip a leading `0x`, keep only hex chars, then
+ *  pad/repeat to exactly 40 nibbles so the same channel always maps to the same
+ *  avatar. Pure + deterministic — no hashing dependency needed. */
+export function channelStampSeed(channelId: string): string {
+  const hex = channelId.toLowerCase().replace(/^0x/, '').replace(/[^0-9a-f]/g, '');
+  if (hex.length === 0) return `0x${'0'.repeat(40)}`;
+  let out = hex;
+  while (out.length < 40) out += hex;
+  return `0x${out.slice(0, 40)}`;
+}
+
+/** stamp.fyi identicon for a CHANNEL/GROUP that has no uploaded image — seeded
+ *  by the channel id (via {@link channelStampSeed}) so every channel gets a
+ *  unique, stable fallback avatar. Returns `imageUrl` untouched when the channel
+ *  DOES have an uploaded image, so call sites can use this as the single source
+ *  of truth: `channelAvatarUrl(id, imageUrl, px)`. */
+export function channelAvatarUrl(channelId: string, imageUrl: string | null | undefined, displayPx: number): string {
+  if (imageUrl && imageUrl.trim()) return imageUrl;
+  return stampAvatarUrl(channelStampSeed(channelId), displayPx);
+}
+
 /** stamp.fyi token-logo URL (ERC-20 contract or the ETH sentinel).
  *  Used by the wallet asset list — same family as the identicon above
  *  but the `token/` route, with the canonical Snapshot-style id. */

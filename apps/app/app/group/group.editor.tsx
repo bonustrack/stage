@@ -7,6 +7,7 @@ import { Box } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
 import { Button } from '@metro-labs/kit/button';
 import { avatarRenderUrl } from '@metro-labs/client/profile/snapshot';
+import { channelStampSeed, stampAvatarUrl } from '@metro-labs/kit/avatar';
 
 /** Inline "Save" pill shared by the name + description editors. A small primary
  *  button matched to the prior bespoke pill: paddingHorizontal 14, the legacy
@@ -36,11 +37,15 @@ interface Pal { fg: string; head: string; sub: string; border: string; rowBg: st
  *  marginTop -44 (~80% over cover, half over the rounded black edge). The cover
  *  has no dedicated image (groups carry a single avatar), so it uses the same
  *  flat rowBg fallback the user profile uses. Tap avatar → view, hold → change. */
-export function GroupProfileHeader({ imageUrl, uploadingImage, insetTop, fg, sub, bg, rowBg, onTap, onPick }: {
-  imageUrl: string; uploadingImage: boolean; insetTop: number;
+export function GroupProfileHeader({ imageUrl, channelId, uploadingImage, insetTop, fg, sub, bg, rowBg, onTap, onPick }: {
+  imageUrl: string; channelId: string; uploadingImage: boolean; insetTop: number;
   fg: string; sub: string; bg: string; rowBg: string;
   onTap: () => void; onPick: () => void;
 }): React.ReactElement {
+  /** No uploaded image → deterministic stamp.fyi identicon seeded by the channel
+   *  id, matching the list + header fallback so the channel reads the same
+   *  everywhere. Long-press still opens the picker (caption keeps the hint). */
+  const fallbackUri = channelId ? stampAvatarUrl(channelStampSeed(channelId), 88) : '';
   return (
     <>
       {/* Cover extends up behind the floating topnav/status bar so the colour
@@ -53,24 +58,14 @@ export function GroupProfileHeader({ imageUrl, uploadingImage, insetTop, fg, sub
       }}>
         <Pressable onPress={onTap} onLongPress={onPick} disabled={uploadingImage} hitSlop={8}
           style={{ marginTop: -44, zIndex: 1 }}>
-          {imageUrl ? (
-            <Image
-              source={{ uri: avatarRenderUrl('', imageUrl, 256) }}
-              style={{
-                width: 88, height: 88, borderRadius: Math.round(88 * 0.12),
-                backgroundColor: rowBg, borderWidth: 3, borderColor: bg,
-                opacity: uploadingImage ? 0.5 : 1,
-              }}
-            />
-          ) : (
-            <Box style={{
-              width: 88, height: 88, borderRadius: Math.round(88 * 0.12), backgroundColor: rowBg,
-              borderWidth: 3, borderColor: bg, alignItems: 'center', justifyContent: 'center',
+          <Image
+            source={{ uri: imageUrl ? avatarRenderUrl('', imageUrl, 256) : fallbackUri }}
+            style={{
+              width: 88, height: 88, borderRadius: Math.round(88 * 0.12),
+              backgroundColor: rowBg, borderWidth: 3, borderColor: bg,
               opacity: uploadingImage ? 0.5 : 1,
-            }}>
-              <Text style={{ color: sub, fontSize: 28 }}>＋</Text>
-            </Box>
-          )}
+            }}
+          />
           {uploadingImage ? (
             <Box style={{ position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' }}>
               <Spinner size={20} color={fg} />
