@@ -63,6 +63,22 @@ function emit(event, payload) {
  * friendly message instead of hanging. */
 const handlers = Object.create(null);
 
+/* Liveness probe used by the RN side (bridge.pingBridge) to confirm the embedded
+ * Node runtime actually booted and the round-trip channel works on this APK.
+ * Dependency-free so it works before any engine wiring. Echoes the payload plus
+ * the Node version so the on-device test can show what's running. */
+handlers['ping'] = function ping(params) {
+  return {
+    pong: true,
+    echo: params == null ? null : params,
+    node:
+      typeof process !== 'undefined' && process.version
+        ? process.version
+        : 'unknown',
+    at: Date.now(),
+  };
+};
+
 async function dispatch(envelope) {
   if (!envelope || typeof envelope.id !== 'number') return;
   const handler = handlers[envelope.call];

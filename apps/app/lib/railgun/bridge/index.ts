@@ -33,7 +33,7 @@ import {
 import type { BridgeCall, BridgeEvent, CallParams, CallResult } from './protocol';
 
 /** Wire envelopes. Requests carry a correlation id; replies echo it. */
-interface RequestEnvelope { id: number; call: BridgeCall; params: unknown }
+interface RequestEnvelope { id: number; call: BridgeCall | 'ping'; params: unknown }
 interface ReplyEnvelope { id: number; ok: boolean; result?: unknown; error?: string }
 
 const REQUEST_EVENT = 'rg:request';
@@ -81,23 +81,43 @@ export async function bridgeCall<K extends BridgeCall>(
   call: K,
   params: CallParams<K>,
 ): Promise<CallResult<K>> {
+  return rawCall(call, params) as Promise<CallResult<K>>;
+}
+
+/** Untyped request/response primitive shared by bridgeCall + pingBridge. Sends
+ *  one envelope, awaits the id-matched reply, rejects on timeout / absent
+ *  runtime. Keeps the correlation logic in one place. */
+function rawCall(call: BridgeCall | 'ping', params: unknown): Promise<unknown> {
   const ch = channel();
   if (!ch) throw new Error('Private wallet needs the new app build');
   if (!started && !startBridge()) throw new Error('Railgun bridge unavailable');
   const id = nextId++;
   const envelope: RequestEnvelope = { id, call, params };
-  return new Promise<CallResult<K>>((resolve, reject) => {
+  return new Promise<unknown>((resolve, reject) => {
     const timer = setTimeout(() => {
       pending.delete(id);
       reject(new Error(`Railgun bridge call timed out: ${call}`));
     }, CALL_TIMEOUT_MS);
-    pending.set(id, {
-      resolve: resolve as (v: unknown) => void,
-      reject,
-      timer,
-    });
+    pending.set(id, { resolve, reject, timer });
     ch.send(REQUEST_EVENT, envelope);
   });
+}
+
+/** Result of the embedded Node runtime liveness probe (handlers.ping in
+ *  nodejs-assets/nodejs-project/main.js). */
+export interface PingResult {
+  pong: boolean;
+  echo: unknown;
+  node: string;
+  at: number;
+}
+
+/** Round-trip a 'ping' through the embedded Node runtime. The KEY on-device
+ *  feasibility test: a successful resolve proves the APK shipped + booted the
+ *  Node runtime and the bi-directional channel works. Rejects (never throws
+ *  sync) when the runtime is absent so callers degrade gracefully. */
+export async function pingBridge(payload?: unknown): Promise<PingResult> {
+  return (await rawCall('ping', payload ?? { hello: 'metro' })) as PingResult;
 }
 
 /** Subscribe to an unsolicited Node push event (logs, balance/proof progress).

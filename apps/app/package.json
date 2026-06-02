@@ -44,6 +44,7 @@
     "expo-router": "~6.0.23",
     "expo-secure-store": "~15.0.8",
     "expo-status-bar": "~3.0.9",
+    "nodejs-mobile-react-native": "18.20.4",
     "path-browserify": "1.0.1",
     "querystring-es3": "0.2.1",
     "react": "19.1.0",

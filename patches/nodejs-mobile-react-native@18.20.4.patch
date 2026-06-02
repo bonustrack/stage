@@ -1,0 +1,107 @@
+diff --git a/android/build.gradle b/android/build.gradle
+index 14be6078d34741856a4d4027b4497ea4966da0a7..2a661465e20a6159cd48938ba552a946d0a2d9a5 100644
+--- a/android/build.gradle
++++ b/android/build.gradle
+@@ -49,6 +49,9 @@ def DoesAppAlreadyDefineWantedSTL() {
+ def _isCorrectSTLDefinedByApp = DoesAppAlreadyDefineWantedSTL()
+ 
+ android {
++    // AGP 8 (Expo SDK 54 / RN 0.81) requires the namespace here instead of the
++    // package= attribute in AndroidManifest.xml (which is now removed).
++    namespace "com.janeasystems.rn_nodejs_mobile"
+     compileSdkVersion ((rootProject?.ext?.properties?.compileSdkVersion) ?: 24)
+     buildToolsVersion ((rootProject?.ext?.properties?.buildToolsVersion) ?: "30.0.2")
+ 
+diff --git a/android/src/main/AndroidManifest.xml b/android/src/main/AndroidManifest.xml
+index 78cb6c572a0c30e6b1129d3378ed4a7418351a74..3c21b61c758c5d7a28b38a17848b0c94a337899b 100644
+--- a/android/src/main/AndroidManifest.xml
++++ b/android/src/main/AndroidManifest.xml
+@@ -1,6 +1,5 @@
+ 
+-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+-          package="com.janeasystems.rn_nodejs_mobile">
++<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+ 
+ </manifest>
+   
+\ No newline at end of file
+diff --git a/index.js b/index.js
+index fb09c487535de76e78b879bb31861b77c6a2434c..407b1631291462266b8959ec0280d11f4cf230c8 100644
+--- a/index.js
++++ b/index.js
+@@ -12,12 +12,25 @@ var channels = {};
+  * The MessageCodec class provides two static methods to serialize/deserialize
+  * the data sent through the events channel.
+ */
++// BigInt is not representable in JSON. RAILGUN amounts are BigInt, so we tag
++// them as strings on serialize and rehydrate them on deserialize (mirrors
++// Railway-Wallet's nodejs-mobile-react-native patch).
++const BIGINT_TAG = '$#BIGINT#$';
++function bigIntReplacer(_key, value) {
++  return typeof value === 'bigint' ? BIGINT_TAG + value.toString() : value;
++}
++function bigIntReviver(_key, value) {
++  return typeof value === 'string' && value.startsWith(BIGINT_TAG)
++    ? BigInt(value.slice(BIGINT_TAG.length))
++    : value;
++}
++
+ class MessageCodec {
+   // This is a 'private' constructor, should only be used by this class
+   // static methods.
+   constructor(_event, ..._payload) {
+     this.event = _event;
+-    this.payload = JSON.stringify(_payload);
++    this.payload = JSON.stringify(_payload, bigIntReplacer);
+   };
+ 
+   // Serialize the message payload and the message.
+@@ -31,7 +44,7 @@ class MessageCodec {
+   static deserialize(message) {
+     var envelope = JSON.parse(message);
+     if (typeof envelope.payload !== 'undefined') {
+-      envelope.payload = JSON.parse(envelope.payload);
++      envelope.payload = JSON.parse(envelope.payload, bigIntReviver);
+     }
+     return envelope;
+   };
+diff --git a/install/resources/nodejs-modules/builtin_modules/rn-bridge/index.js b/install/resources/nodejs-modules/builtin_modules/rn-bridge/index.js
+index c6280bf48d77eceed0498ac9cd192751182e1851..c13941d522eafb5db67b088efabcf93e2c6d3d5e 100644
+--- a/install/resources/nodejs-modules/builtin_modules/rn-bridge/index.js
++++ b/install/resources/nodejs-modules/builtin_modules/rn-bridge/index.js
+@@ -21,12 +21,25 @@ const SYSTEM_CHANNEL = '_SYSTEM_';
+  * The MessageCodec class provides two static methods to serialize/deserialize
+  * the data sent through the events channel.
+ */
++// BigInt is not representable in JSON. RAILGUN amounts are BigInt, so we tag
++// them as strings on serialize and rehydrate them on deserialize (mirrors
++// Railway-Wallet's nodejs-mobile-react-native patch).
++const BIGINT_TAG = '$#BIGINT#$';
++function bigIntReplacer(_key, value) {
++  return typeof value === 'bigint' ? BIGINT_TAG + value.toString() : value;
++}
++function bigIntReviver(_key, value) {
++  return typeof value === 'string' && value.startsWith(BIGINT_TAG)
++    ? BigInt(value.slice(BIGINT_TAG.length))
++    : value;
++}
++
+ class MessageCodec {
+   // This is a 'private' constructor, should only be used by this class
+   // static methods.
+   constructor(_event, ..._payload) {
+     this.event = _event;
+-    this.payload = JSON.stringify(_payload);
++    this.payload = JSON.stringify(_payload, bigIntReplacer);
+   };
+ 
+   // Serialize the message payload and the message.
+@@ -40,7 +53,7 @@ class MessageCodec {
+   static deserialize(message) {
+     var envelope = JSON.parse(message);
+     if (typeof envelope.payload !== 'undefined') {
+-      envelope.payload = JSON.parse(envelope.payload);
++      envelope.payload = JSON.parse(envelope.payload, bigIntReviver);
+     }
+     return envelope;
+   };
