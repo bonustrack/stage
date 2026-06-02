@@ -7,6 +7,7 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "node": "18.20.4",
       "android": {
         "buildType": "apk",
         "gradleCommand": ":app:assembleDebug -PreactNativeArchitectures=arm64-v8a"
@@ -14,6 +15,7 @@
     },
     "preview": {
       "distribution": "internal",
+      "node": "18.20.4",
       "android": {
         "buildType": "apk",
         "gradleCommand": ":app:assembleRelease -PreactNativeArchitectures=arm64-v8a"
@@ -21,6 +23,7 @@
     },
     "production": {
       "autoIncrement": true,
+      "node": "18.20.4",
       "env": { "APP_VARIANT": "prod" }
     },
     "development-prod": {
