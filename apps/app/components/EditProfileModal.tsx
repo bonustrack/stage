@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { Alert, Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, TextInput } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from './layout';
+import { Button } from '@metro-labs/kit/button';
 import { Spinner } from './Spinner';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
@@ -130,20 +131,17 @@ export default function EditProfileModal({
             </Box>
           ))}
 
-          <Pressable
-            onPress={() => { void save(); }}
+          <Button
+            variant="primary"
+            size="lg"
+            fullWidth
+            dark={dark}
             disabled={saving || uploading}
-            style={({ pressed }) => ({
-              marginTop: 16, paddingVertical: 14,
-              backgroundColor: dark ? '#ffffff' : '#000000', borderRadius: 999,
-              alignItems: 'center', justifyContent: 'center',
-              opacity: pressed ? 0.85 : (saving || uploading) ? 0.6 : 1,
-            })}
-          >
-            <Text style={{ color: dark ? '#000000' : '#ffffff', fontSize: 16, fontFamily: 'Calibre-Medium' }}>
-              {saving ? 'Saving…' : 'Save'}
-            </Text>
-          </Pressable>
+            onPress={() => { void save(); }}
+            label={saving ? 'Saving…' : 'Save'}
+            style={{ marginTop: 16 }}
+            textStyle={{ fontFamily: 'Calibre-Medium' }}
+          />
         </ScrollView>
       </KeyboardAvoidingView>
     </Modal>

@@ -7,6 +7,7 @@ import { Box } from '../../components/layout';
 import { shortAddress } from '../../lib/xmtp';
 import { getPeerAvatar, getPeerAvatarCb } from '../../lib/peerProfiles';
 import { Icon } from '@metro-labs/kit/icon';
+import { Button } from '@metro-labs/kit/button';
 import { Avatar } from '../../components/Avatar';
 import { AppModal } from '../../components/AppModal';
 
@@ -104,19 +105,15 @@ export function AddMemberModal({
             paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, marginBottom: 10,
           }}
         />
-        <Pressable
-          onPress={onAdd}
+        <Button
+          variant="primary"
+          size="md"
+          fullWidth
+          dark={dark}
           disabled={adding || !addDraft.trim()}
-          style={({ pressed }) => ({
-            paddingVertical: 12, borderRadius: 999, alignItems: 'center',
-            backgroundColor: dark ? '#ffffff' : '#000000',
-            opacity: pressed ? 0.85 : (adding || !addDraft.trim()) ? 0.5 : 1,
-          })}
-        >
-          <Text style={{ color: dark ? '#000000' : '#ffffff', fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
-            {adding ? 'Adding…' : 'Add member'}
-          </Text>
-        </Pressable>
+          onPress={onAdd}
+          label={adding ? 'Adding…' : 'Add member'}
+        />
       </Box>
     </AppModal>
   );

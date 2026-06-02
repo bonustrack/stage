@@ -5,7 +5,28 @@ import { Image, Pressable, TextInput } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
+import { Button } from '@metro-labs/kit/button';
 import { avatarRenderUrl } from '@metro-labs/client/profile/snapshot';
+
+/** Inline "Save" pill shared by the name + description editors. A small primary
+ *  button matched to the prior bespoke pill: paddingHorizontal 14, the legacy
+ *  13px Calibre-Medium label, height ~32 (kit `sm`). */
+function SaveButton({ saving, disabled, onSave, dark }: {
+  saving: boolean; disabled: boolean; onSave: () => void; dark: boolean;
+}): React.ReactElement {
+  return (
+    <Button
+      variant="primary"
+      size="sm"
+      dark={dark}
+      disabled={disabled}
+      onPress={onSave}
+      label={saving ? 'Saving…' : 'Save'}
+      style={{ paddingHorizontal: 14 }}
+      textStyle={{ fontSize: 13, fontFamily: 'Calibre-Medium' }}
+    />
+  );
+}
 
 interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; }
 
@@ -86,16 +107,7 @@ export function GroupNameEditor({ name, draft, setDraft, editing, setEditing, sa
               paddingHorizontal: 10, paddingVertical: 8, fontSize: 16,
             }}
           />
-          <Pressable onPress={onSave} disabled={saving || !draft.trim()}
-            style={({ pressed }) => ({
-              paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999,
-              backgroundColor: dark ? '#ffffff' : '#000000',
-              opacity: pressed ? 0.85 : (saving || !draft.trim()) ? 0.5 : 1,
-            })}>
-            <Text style={{ color: dark ? '#000000' : '#ffffff', fontSize: 13, fontFamily: 'Calibre-Medium' }}>
-              {saving ? 'Saving…' : 'Save'}
-            </Text>
-          </Pressable>
+          <SaveButton saving={saving} disabled={saving || !draft.trim()} onSave={onSave} dark={dark} />
         </Box>
       ) : (
         <Pressable onPress={() => setEditing(true)} hitSlop={6} style={{ marginTop: 6, alignItems: 'flex-start' }}>
@@ -134,16 +146,7 @@ export function GroupDescriptionEditor({ description, descriptionDraft, setDescr
               minHeight: 60, textAlignVertical: 'top',
             }}
           />
-          <Pressable onPress={onSave} disabled={saving}
-            style={({ pressed }) => ({
-              paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999,
-              backgroundColor: dark ? '#ffffff' : '#000000',
-              opacity: pressed ? 0.85 : saving ? 0.5 : 1,
-            })}>
-            <Text style={{ color: dark ? '#000000' : '#ffffff', fontSize: 13, fontFamily: 'Calibre-Medium' }}>
-              {saving ? 'Saving…' : 'Save'}
-            </Text>
-          </Pressable>
+          <SaveButton saving={saving} disabled={saving} onSave={onSave} dark={dark} />
         </Box>
       ) : (
         <Pressable onPress={() => setEditing(true)} hitSlop={6} style={{ marginTop: 6 }}>
