@@ -14,4 +14,12 @@ export default tseslint.config(
       "max-lines": ["error", { max: 200, skipBlankLines: false, skipComments: false }],
     },
   },
+  {
+    // Generated icon data: the full Heroicons v1 outline catalogue (~240
+    // entries). It is data, not logic, so it is exempt from the 200-line cap.
+    files: ["src/heroicons.data.ts"],
+    rules: {
+      "max-lines": "off",
+    },
+  },
 );

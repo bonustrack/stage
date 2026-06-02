@@ -7,6 +7,7 @@ import { Box } from '../layout';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { SystemHeader } from './SystemHeader';
 import { KitGallery } from './KitGallery';
+import { KitGitHubLink } from './KitGitHubLink';
 
 export function KitPage(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
@@ -20,6 +21,7 @@ export function KitPage(): React.ReactElement {
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}
       >
+        <KitGitHubLink dark={dark} head={head} sub={sub} border={border} rowBg={rowBg} />
         <KitGallery dark={dark} head={head} sub={sub} border={border} rowBg={rowBg} />
       </ScrollView>
     </Box>

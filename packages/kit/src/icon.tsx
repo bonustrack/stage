@@ -7,7 +7,7 @@
  *  from the palette convention when no explicit colour is given. */
 
 import { Path, Svg } from 'react-native-svg';
-import { HERO_ICON_PATHS, HERO_ICON_DEFAULTS, type HeroIconName } from '@metro-labs/kit/icons';
+import { heroIconPaths, HERO_ICON_DEFAULTS, type HeroIconName } from '@metro-labs/kit/icons';
 
 export type { HeroIconName };
 
@@ -28,14 +28,17 @@ export function Icon({ name, size = 22, color, dark, focused }: IconProps): Reac
   const stroke = color ?? (dark === undefined ? 'currentColor' : dark ? '#ffffff' : '#000000');
   return (
     <Svg width={size} height={size} viewBox={HERO_ICON_DEFAULTS.viewBox}>
-      <Path
-        d={HERO_ICON_PATHS[name]}
-        fill="none"
-        stroke={stroke}
-        strokeWidth={focused ? 2.4 : HERO_ICON_DEFAULTS.strokeWidth}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      {heroIconPaths(name).map((d, i) => (
+        <Path
+          key={i}
+          d={d}
+          fill="none"
+          stroke={stroke}
+          strokeWidth={focused ? 2.4 : HERO_ICON_DEFAULTS.strokeWidth}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      ))}
     </Svg>
   );
 }
