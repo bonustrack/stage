@@ -146,7 +146,6 @@ export function LeftDrawer({ progress }: { progress: SharedValue<number> }): Rea
             {
               position: 'absolute', top: 0, bottom: 0, left: 0, width: W,
               backgroundColor: sheetBg,
-              borderRightWidth: 1, borderRightColor: border,
               paddingTop: insets.top + 8,
               paddingBottom: insets.bottom + 8,
             },
