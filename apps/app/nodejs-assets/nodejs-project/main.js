@@ -7,11 +7,10 @@
  *  nodejs-mobile message channel. This mirrors RAILGUN's reference app
  *  (Railway-Wallet, mobile/nodejs-src/nodejs-project/src/main.ts).
  *
- *  STATUS: SCAFFOLD ONLY. This boot file is intentionally dependency-free so it
- *  is safely committable and does nothing harmful if the runtime is ever started
- *  before the engine deps are installed. The real engine wiring (the imports
- *  listed in NEXT STEPS below) is added in the follow-up commit that also adds
- *  the node deps + the nodejs-mobile-react-native RN dep + the new APK build.
+ *  STATUS (Milestone 1): boot + ping stay dependency-free here; the RAILGUN
+ *  engine + Groth16 native prover are wired in ./engine.js and loaded lazily on
+ *  the first engineInit/engineStatus call (see handlers below). Full private
+ *  send/receive (wallet:create, tx:*, proof:*) is a later milestone.
  *
  *  This folder is EXCLUDED from the Metro bundle (see apps/app/metro.config.js
  *  resolver.blockList) so RN never tries to bundle these node-only files. It is
@@ -77,6 +76,35 @@ handlers['ping'] = function ping(params) {
         : 'unknown',
     at: Date.now(),
   };
+};
+
+/* Lazily-loaded RAILGUN engine module. Required on first engine call (not at
+ * boot) so a failure to load the heavy native deps surfaces as a bridge error
+ * the probe can show, instead of crashing the host before the channel is up. */
+let engineMod = null;
+function getEngineMod() {
+  if (!engineMod) engineMod = require('./engine');
+  return engineMod;
+}
+
+/* engineStatus: report current engine state WITHOUT forcing init. Cheap probe. */
+handlers['engineStatus'] = function engineStatus() {
+  try {
+    return getEngineMod().status();
+  } catch (err) {
+    return { ready: false, prover: false, networks: [], error: err && err.message ? err.message : String(err) };
+  }
+};
+
+/* engineInit: initialize the engine + native prover + providers if needed, then
+ * report status. Any failure rejects via dispatch's catch so the probe never
+ * hangs and shows a real message. */
+handlers['engineInit'] = async function engineInit(params) {
+  const mod = getEngineMod();
+  emit('event:message', 'Railgun engine init starting…');
+  const result = await mod.init(params || {});
+  emit('event:message', 'Railgun engine ready ✓');
+  return result;
 };
 
 async function dispatch(envelope) {

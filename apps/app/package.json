@@ -9,7 +9,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint app/ components/ lib/"
+    "lint": "eslint app/ components/ lib/",
+    "eas-build-post-install": "node ./scripts/install-nodejs-project.js"
   },
   "dependencies": {
     "@metro-labs/client": "workspace:*",

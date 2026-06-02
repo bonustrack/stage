@@ -36,7 +36,7 @@ import { attachRawProbe, fmtPayload, status } from './diagnostics';
 export { setBridgeStatusListener } from './diagnostics';
 
 /** Wire envelopes. Requests carry a correlation id; replies echo it. */
-interface RequestEnvelope { id: number; call: BridgeCall | 'ping'; params: unknown }
+interface RequestEnvelope { id: number; call: BridgeCall | 'ping' | 'engineStatus' | 'engineInit'; params: unknown }
 interface ReplyEnvelope { id: number; ok: boolean; result?: unknown; error?: string }
 
 const REQUEST_EVENT = 'rg:request';
@@ -49,6 +49,9 @@ const READY_EVENT = 'event:message';
  *  spinner. A single proof can take ~30s, but the boot-await gate means we no
  *  longer need 120s of headroom for the dropped-first-request case. */
 const CALL_TIMEOUT_MS = 15_000;
+/** Engine init connects two RPC providers + loads the native prover; give it
+ *  generous headroom so a slow public RPC doesn't trip a false timeout. */
+const ENGINE_INIT_TIMEOUT_MS = 90_000;
 
 let started = false;
 let nextId = 1;
@@ -119,7 +122,7 @@ export async function bridgeCall<K extends BridgeCall>(
 /** Untyped request/response primitive shared by bridgeCall + pingBridge. Sends
  *  one envelope, awaits the id-matched reply, rejects on timeout / absent
  *  runtime. Keeps the correlation logic in one place. */
-function rawCall(call: BridgeCall | 'ping', params: unknown): Promise<unknown> {
+function rawCall(call: BridgeCall | 'ping' | 'engineStatus' | 'engineInit', params: unknown, timeoutMs = CALL_TIMEOUT_MS): Promise<unknown> {
   const ch = channel();
   if (!ch) throw new Error('Private wallet needs the new app build');
   if (!started && !startBridge()) throw new Error('Railgun bridge unavailable');
@@ -128,9 +131,9 @@ function rawCall(call: BridgeCall | 'ping', params: unknown): Promise<unknown> {
   return new Promise<unknown>((resolve, reject) => {
     const timer = setTimeout(() => {
       pending.delete(id);
-      status(`timed out after ${Math.round(CALL_TIMEOUT_MS / 1000)}s (id ${id}) ✗`);
+      status(`timed out after ${Math.round(timeoutMs / 1000)}s (id ${id}) ✗`);
       reject(new Error(`Railgun bridge call timed out: ${call}`));
-    }, CALL_TIMEOUT_MS);
+    }, timeoutMs);
     pending.set(id, { resolve, reject, timer });
     // Gate the post on the Node host being ready: the channel does NOT buffer,
     // so posting before main.js registers its 'rg:request' listener drops the
@@ -158,6 +161,28 @@ export interface PingResult {
  *  sync) when the runtime is absent so callers degrade gracefully. */
 export async function pingBridge(payload?: unknown): Promise<PingResult> {
   return (await rawCall('ping', payload ?? { hello: 'metro' })) as PingResult;
+}
+
+/** Result of the engine readiness probe (engine.js). `prover` true ⇒ Groth16
+ *  native prover loaded; `networks` lists chains whose providers came up. */
+export interface EngineStatusResult {
+  ready: boolean;
+  prover: boolean;
+  networks: string[];
+  version?: string | null;
+  dbPath?: string;
+  error?: string;
+}
+
+/** Read current engine status without forcing init (cheap, pollable). */
+export async function engineStatus(): Promise<EngineStatusResult> {
+  return (await rawCall('engineStatus', undefined)) as EngineStatusResult;
+}
+
+/** Init the engine + native prover + mainnet/Sepolia providers in the Node host
+ *  (idempotent), then resolve the status. Overrides the short call timeout. */
+export async function engineInit(dev = __DEV__): Promise<EngineStatusResult> {
+  return (await rawCall('engineInit', { walletSource: 'metro', dev }, ENGINE_INIT_TIMEOUT_MS)) as EngineStatusResult;
 }
 
 /** Subscribe to an unsolicited Node push event (logs, balance/proof progress).

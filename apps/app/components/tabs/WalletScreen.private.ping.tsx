@@ -15,6 +15,7 @@ import { Button } from '@metro-labs/kit/button';
 import { Col } from '../layout';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import {
+  engineInit,
   isBridgeAvailable,
   pingBridge,
   setBridgeStatusListener,
@@ -34,6 +35,7 @@ export function BridgePingProbe({ sub, border }: {
 }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const [state, setState] = useState<ProbeState>({ kind: 'idle' });
+  const [engine, setEngine] = useState<ProbeState>({ kind: 'idle' });
   const [count, setCount] = useState(0);
   const [log, setLog] = useState<LogLine[]>([]);
   const runStart = useRef(0);
@@ -70,11 +72,35 @@ export function BridgePingProbe({ sub, border }: {
     }
   }, [count]);
 
+  const onInit = useCallback(async (): Promise<void> => {
+    runStart.current = Date.now();
+    setLog([]);
+    if (!isBridgeAvailable()) {
+      setEngine({ kind: 'err', text: UNAVAILABLE });
+      setLog([{ ms: 0, line: 'native module not present ✗' }]);
+      return;
+    }
+    setEngine({ kind: 'running' });
+    const t0 = Date.now();
+    try {
+      const res = await engineInit();
+      const ms = Date.now() - t0;
+      setEngine({ kind: 'ok', text: `engine: ${JSON.stringify(res)} (${ms}ms)` });
+    } catch (e) {
+      setEngine({ kind: 'err', text: e instanceof Error ? e.message : String(e) });
+    }
+  }, []);
+
   const resultColor = state.kind === 'err' ? '#ff5c5c' : sub;
   const resultText =
     state.kind === 'idle' ? 'not run yet'
       : state.kind === 'running' ? 'pinging…'
         : state.text;
+  const engineColor = engine.kind === 'err' ? '#ff5c5c' : sub;
+  const engineText =
+    engine.kind === 'idle' ? 'not run yet'
+      : engine.kind === 'running' ? 'initializing engine…'
+        : engine.text;
 
   return (
     <Col mt={20} pt={16} gap={8} style={{ borderTopWidth: 1, borderTopColor: border }}>
@@ -90,6 +116,16 @@ export function BridgePingProbe({ sub, border }: {
       />
       <Text style={{ color: resultColor, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
         {resultText}
+      </Text>
+      <Button
+        label="Init Railgun engine"
+        variant="secondary"
+        dark={dark}
+        loading={engine.kind === 'running'}
+        onPress={() => { void onInit(); }}
+      />
+      <Text style={{ color: engineColor, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+        {engineText}
       </Text>
       <PingLog lines={log} sub={sub} />
     </Col>
