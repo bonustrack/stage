@@ -100,7 +100,7 @@ export default function EditProfileModal({
           <Box style={{ alignItems: 'center', marginBottom: 20 }}>
             <Pressable onPress={pickAvatar} disabled={uploading}>
               <Image
-                source={{ uri: stampBoxAvatarUrl(address, AVATAR_SIZE * 2, getCacheHash(form.avatar)) }}
+                source={{ uri: stampBoxAvatarUrl(address, AVATAR_SIZE, getCacheHash(form.avatar)) }}
                 style={{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: AVATAR_SIZE / 2, backgroundColor: rowBg, opacity: uploading ? 0.5 : 1 }}
               />
               {uploading ? (

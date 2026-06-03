@@ -30,7 +30,7 @@ export function AccountRow({ rec, onPress, onLongPress, topBorder, trailing, hea
       })}
     >
       <Image
-        source={{ uri: stampBoxAvatarUrl(rec.address, 56) }}
+        source={{ uri: stampBoxAvatarUrl(rec.address, 28) }}
         style={{ width: 28, height: 28, borderRadius: 999, backgroundColor: border }}
       />
       <Box style={{ flex: 1, minWidth: 0 }}>

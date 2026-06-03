@@ -59,6 +59,17 @@ export function stampTokenUrl(chainId: number, contract: string, displayPx: numb
   return `https://cdn.stamp.fyi/token/eip155:${chainId}:${contract.toLowerCase()}?s=${fetchPx}`;
 }
 
+/** Re-point an already-built stamp.fyi URL's `s=` (size) query param at a NEW
+ *  display size, requesting 2× for retina crispness. Use when a cached stamp URL
+ *  (built for a small list thumbnail, e.g. s=64 for a 32px row) is re-rendered at
+ *  a LARGER size (e.g. the 72px token-detail logo) and would otherwise upscale a
+ *  too-small image and look blurry. Pass the DISPLAY px; `s` becomes `displayPx*2`.
+ *  No-ops (returns the input) when the URL has no `s=` param. */
+export function withStampDisplayPx(url: string, displayPx: number): string {
+  if (!/[?&]s=\d+/.test(url)) return url;
+  return url.replace(/([?&]s=)\d+/, `$1${displayPx * 2}`);
+}
+
 /** Sentinel address Snapshot uses for native ETH on stamp.fyi.
  *  Matches sx-monorepo's `ETH_CONTRACT`. */
 export const NATIVE_TOKEN_SENTINEL = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';

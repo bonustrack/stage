@@ -60,12 +60,17 @@ export function shortAddress(addr: string): string {
  *  when no custom avatar is set, so callers can render this URL directly without
  *  needing a network-error fallback.
  *
+ *  Takes the DISPLAY px and internally requests `s = displayPx * 2` so every
+ *  call site renders a crisp retina (2×) identicon from a single source of truth
+ *  (mirrors `stampAvatarUrl` in @metro-labs/kit/avatar). Pass the on-screen size,
+ *  NOT a pre-doubled value.
+ *
  *  `cacheBust` is appended verbatim as `&cb=…` — pass a value that changes when
  *  the underlying avatar changes (e.g. the last few chars of the IPFS CID
  *  stored in profile.avatar) so the device + stamp CDN refetch instead of
  *  serving the previous image. */
-export function stampBoxAvatarUrl(address: string, size = 120, cacheBust?: string): string {
-  const base = `https://stamp.fyi/avatar/eth:${address.toLowerCase()}?s=${size}`;
+export function stampBoxAvatarUrl(address: string, displayPx = 60, cacheBust?: string): string {
+  const base = `https://stamp.fyi/avatar/eth:${address.toLowerCase()}?s=${displayPx * 2}`;
   return cacheBust ? `${base}&cb=${encodeURIComponent(cacheBust)}` : base;
 }
 

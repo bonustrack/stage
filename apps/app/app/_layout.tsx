@@ -20,6 +20,7 @@ import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { NativeSwipeStack } from '../components/NativeSwipeStack';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { useDeepLinks } from '../lib/deepLinks';
+import { useRestoreLastRoute } from '../lib/lastRoute';
 import { usePushDeepLinks } from '../lib/push';
 import { installPillAudioBridge } from '../lib/pill';
 import { ensureActiveAccount } from '../lib/xmtp';
@@ -85,6 +86,11 @@ export default function RootLayout(): React.ReactElement {
    *  (after the Stack below has mounted) so cold-start taps land correctly; warm
    *  links navigate immediately. */
   useDeepLinks();
+
+  /** Persist the active route on every navigation + restore it on a cold launch
+   *  (return the user to the last screen). Coordinates with useDeepLinks: a
+   *  cold-start deep link navigates first and the restore yields to it. */
+  useRestoreLastRoute();
 
   /** Notification taps → open that conversation + clear its unread badge.
    *  Handles both cold-start (app launched by the tap) and warm/background

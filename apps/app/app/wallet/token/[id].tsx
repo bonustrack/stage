@@ -23,6 +23,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useEffectiveColorScheme, usePalette } from '../../../lib/theme';
 import { Btn, fmtUsd, fmtBalance } from '../../../components/tabs/WalletScreen.parts';
 import { NETWORK_LOGO, MAINNET_NETWORK_LOGO, type AssetRow } from '../../../components/tabs/WalletScreen.assets';
+import { withStampDisplayPx } from '@metro-labs/kit/avatar';
 
 const NETWORK_LABEL: Record<number, string> = { 1: 'Ethereum', 11155111: 'Sepolia' };
 
@@ -72,10 +73,13 @@ export default function TokenDetail(): React.ReactElement {
       <Header head={head} border={border} onBack={() => router.back()} title={r.name} />
 
       {/* Token identity card — large logo with network badge, name + symbol,
-          balance and its USD value. Mirrors the list row's data, scaled up. */}
-      <Col mx={16} pt={28} align="center" gap={6}>
+          balance and its USD value. Mirrors the list row's data, scaled up.
+          LEFT-aligned to match the Wallet page's left-aligned value card. */}
+      <Col mx={16} pt={28} align="start" gap={6}>
         <Box style={{ width: 72, height: 72 }}>
-          <Image source={{ uri: r.logoUrl }}
+          {/* r.logoUrl is cached at the 32px LIST size (s=64); re-request it at
+              2× the 72px detail size (s=144) so the big logo stays crisp. */}
+          <Image source={{ uri: withStampDisplayPx(r.logoUrl, 72) }}
             style={{ width: 72, height: 72, borderRadius: 999, backgroundColor: border }} />
           <Box style={{
             position: 'absolute', right: -2, bottom: -2,
@@ -114,7 +118,7 @@ export default function TokenDetail(): React.ReactElement {
           page's Send/Receive/Swap/Buy circles. Send opens the public send
           flow pre-selected to this token; Shield opens send.tsx in shield
           mode pre-selected to this token. */}
-      <Row justify="center" gap={36} mt={32}>
+      <Row justify="start" gap={36} mt={32} mx={16}>
         <Btn icon="send" label="Send" head={head} dark={dark}
           onPress={() => router.push({ pathname: '/wallet/send', params: sendParams })} />
         {r.isPrivate ? (

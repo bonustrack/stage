@@ -96,9 +96,24 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
     <ScrollView
       simultaneousHandlers={panRef}
       style={{ flex: 1, backgroundColor: bg }}
-      contentContainerStyle={{ paddingBottom: 24 }}
+      contentContainerStyle={{ paddingBottom: 24, flexGrow: 1 }}
+      /** alwaysBounceVertical + flexGrow:1 keep the list pullable even when the
+       *  content is shorter than the viewport — without bounce the swipe-down
+       *  isn't recognised as an overscroll so RefreshControl never fires (this
+       *  was the "pull-to-refresh doesn't trigger" bug). nestedScrollEnabled lets
+       *  Android treat this as the scrolling element. The pager Pan gates on
+       *  failOffsetY and is declared simultaneous via panRef, so the vertical
+       *  pull is never swallowed by the horizontal tab-swipe. */
+      alwaysBounceVertical
+      nestedScrollEnabled
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={head} colors={[head]} />
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor={head}
+          colors={[head]}
+          progressBackgroundColor={bg}
+        />
       }
     >
       {/* Value card — compact, left-aligned. Just the big total USD value;

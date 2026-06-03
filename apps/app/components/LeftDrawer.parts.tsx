@@ -21,7 +21,7 @@ export function DrawerHeader({ rec, c }: {
       {rec ? (
         <>
           <Image
-            source={{ uri: stampBoxAvatarUrl(rec.address, 120) }}
+            source={{ uri: stampBoxAvatarUrl(rec.address, 56) }}
             style={{ width: 56, height: 56, borderRadius: 999, backgroundColor: c.border, marginBottom: 10 }}
           />
           <Text numberOfLines={1} style={{ color: c.head, fontSize: 20, fontFamily: 'Calibre-Semibold' }}>
@@ -54,7 +54,7 @@ export function DrawerAccounts({ accounts, activeId, onSwitch, c }: {
           })}
         >
           <Image
-            source={{ uri: stampBoxAvatarUrl(a.address, 56) }}
+            source={{ uri: stampBoxAvatarUrl(a.address, 30) }}
             style={{ width: 30, height: 30, borderRadius: 999, backgroundColor: c.border }}
           />
           <Box style={{ flex: 1, minWidth: 0 }}>
