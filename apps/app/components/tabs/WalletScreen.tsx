@@ -133,7 +133,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
       <WalletTabs tab={tab} setTab={setTab} head={head} sub={sub} border={border} />
 
       {tab === 'private' ? (
-        <PrivateView head={head} sub={sub} border={border} />
+        <PrivateView head={head} sub={sub} border={border} bg={bg} />
       ) : tab === 'nfts' ? (
         <NftsView status={nftStatus} nfts={nfts} head={head} sub={sub} border={border} />
       ) : err ? (

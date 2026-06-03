@@ -13,15 +13,29 @@ import { flash } from '../../lib/toast';
 import { isRailgunAvailable } from '../../lib/railgun/native';
 import { isBridgeAvailable } from '../../lib/railgun/bridge';
 import { usePrivateWallet } from '../../lib/railgun/usePrivateWallet';
-import { fmtBalance } from './WalletScreen.parts';
+import { TokenRow } from './WalletScreen.parts';
 import { BridgePingProbe } from './WalletScreen.private.ping';
+import type { PrivateBalance } from '../../lib/railgun/types';
+import type { AssetRow } from './WalletScreen.assets';
 
 const short0zk = (a: string): string => (a.length > 14 ? `${a.slice(0, 8)}…${a.slice(-4)}` : a);
 
-/** Per-network shielded-balance section: a chain header + each token row. */
-function NetworkSection({ label, rows, head, sub, border }: {
-  label: string; rows: { chainId: number; symbol: string; name: string; balance: string }[];
-  head: string; sub: string; border: string;
+/** Shape a shielded PrivateBalance into the public AssetRow so it renders
+ *  through the SHARED TokenRow — identical logo + network badge + Private pill
+ *  as the merged Tokens tab, so the two views can never visually drift. Carries
+ *  no USD price (shielded amounts are token-only). */
+function toAssetRow(b: PrivateBalance): AssetRow {
+  return {
+    symbol: b.symbol, name: b.name, chainId: b.chainId, balance: b.balance,
+    priceUsd: null, change24h: null, logoUrl: b.logoUrl, isPrivate: true,
+  };
+}
+
+/** Per-network shielded-balance section: a chain header + each token row,
+ *  rendered through the shared TokenRow (logo + network badge + Private pill). */
+function NetworkSection({ label, rows, head, sub, border, bg }: {
+  label: string; rows: PrivateBalance[];
+  head: string; sub: string; border: string; bg: string;
 }): React.ReactElement | null {
   if (!rows.length) return null;
   return (
@@ -30,20 +44,15 @@ function NetworkSection({ label, rows, head, sub, border }: {
         {label.toUpperCase()}
       </Text>
       {rows.map(b => (
-        <Row key={`${b.chainId}:${b.symbol}`} align="center" justify="between" py={14}
-          style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-          <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold' }}>{b.symbol}</Text>
-          <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold' }}>
-            {`${fmtBalance(b.balance)} ${b.symbol}`}
-          </Text>
-        </Row>
+        <TokenRow key={`${b.chainId}:${b.symbol}`} r={toAssetRow(b)}
+          head={head} sub={sub} border={border} bg={bg} />
       ))}
     </Col>
   );
 }
 
-export function PrivateView({ head, sub, border }: {
-  head: string; sub: string; border: string;
+export function PrivateView({ head, sub, border, bg }: {
+  head: string; sub: string; border: string; bg: string;
 }): React.ReactElement {
   // autoStart:true — this view is mounted ONLY on an explicit Private-tab open
   // (WalletScreen renders it behind `tab === 'private'`), so it's safe to boot
@@ -102,8 +111,8 @@ export function PrivateView({ head, sub, border }: {
 
       {balances.length ? (
         <>
-          <NetworkSection label="Ethereum" rows={mainnet} head={head} sub={sub} border={border} />
-          <NetworkSection label="Sepolia" rows={sepolia} head={head} sub={sub} border={border} />
+          <NetworkSection label="Ethereum" rows={mainnet} head={head} sub={sub} border={border} bg={bg} />
+          <NetworkSection label="Sepolia" rows={sepolia} head={head} sub={sub} border={border} bg={bg} />
           {snapshot?.scanning ? (
             <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 12 }}>
               Scanning shielded balances…
