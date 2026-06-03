@@ -40,6 +40,23 @@ function loadShared() {
   return _shared;
 }
 
+/** Recursively REVIVE wire-encoded bigints on the INPUT path. JSON can't carry a
+ *  bigint, so the RN side wraps every bigint arg as { __bigint: "<decimal>" }
+ *  (see lib/railgun/bridge/wire.ts). The shield/transfer SDK primitives do real
+ *  bigint arithmetic on `amount` (ShieldNoteERC20 etc.) and throw on a string, so
+ *  we MUST turn these markers back into real bigints before invoking the SDK.
+ *  Recurses through arrays + plain objects; leaves everything else untouched. */
+function revive(value) {
+  if (value && typeof value === 'object') {
+    if (typeof value.__bigint === 'string') return BigInt(value.__bigint);
+    if (Array.isArray(value)) return value.map(revive);
+    const out = {};
+    for (const k of Object.keys(value)) out[k] = revive(value[k]);
+    return out;
+  }
+  return value;
+}
+
 /** Recursively convert bigint → decimal string so results survive JSON. Leaves
  *  everything else untouched. Used on every whitelist result before reply. */
 function serialize(value) {
@@ -97,8 +114,8 @@ def('balance.rescanFull', (sdk, _shared, a) => sdk.rescanFullUTXOMerkletreesAndW
 def('balance.awaitWalletScan', (sdk, _shared, a) => sdk.awaitWalletScan(a[0], a[1]));
 
 // ── Gas estimation ────────────────────────────────────────────────────────────
-def('gas.estimateShield', (sdk, _shared, a) => sdk.gasEstimateForShield(a[0], a[1], a[2], a[3], a[4]));
-def('gas.estimateShieldBaseToken', (sdk, _shared, a) => sdk.gasEstimateForShieldBaseToken(a[0], a[1], a[2], a[3], a[4]));
+def('gas.estimateShield', (sdk, _shared, a) => sdk.gasEstimateForShield(a[0], a[1], a[2], a[3], a[4], a[5]));
+def('gas.estimateShieldBaseToken', (sdk, _shared, a) => sdk.gasEstimateForShieldBaseToken(a[0], a[1], a[2], a[3], a[4], a[5]));
 def('gas.estimateTransfer', (sdk, _shared, a) => sdk.gasEstimateForUnprovenTransfer(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7]));
 def('gas.estimateUnshield', (sdk, _shared, a) => sdk.gasEstimateForUnprovenUnshield(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7]));
 def('gas.estimateUnshieldBaseToken', (sdk, _shared, a) => sdk.gasEstimateForUnprovenUnshieldBaseToken(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7]));
@@ -134,7 +151,10 @@ async function invoke(method, args) {
   }
   const sdk = loadSdk();
   const shared = loadShared();
-  const result = await fn(sdk, shared, Array.isArray(args) ? args : []);
+  // Revive wire-encoded bigints ({ __bigint }) on the INPUT before the SDK runs
+  // its bigint arithmetic; serialize bigints back to strings on the way out.
+  const revived = revive(Array.isArray(args) ? args : []);
+  const result = await fn(sdk, shared, revived);
   return serialize(result);
 }
 
