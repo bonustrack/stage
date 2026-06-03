@@ -1,10 +1,13 @@
-/** Private (Railgun-shielded) balances view for the Wallet tab.
+/** Private (Railgun-shielded) tab for the Wallet — ADDRESS + ACTIONS only.
  *
- *  Renders INSTANTLY from the cached snapshot (no spinner on open): the cached
- *  0zk address + shielded balances paint immediately, optimistic pending
- *  shields/sends are overlaid live with a non-blocking progress chip, and a
- *  background refresh swaps in fresh numbers. On a build without the Railgun
- *  native module it shows a friendly "coming soon" rather than erroring. */
+ *  The shielded token BALANCES are not rendered here anymore; they're merged
+ *  into the Tokens tab's flat list (public + Private-badged rows). This view
+ *  shows the cached 0zk address (copyable, paints instantly), the live
+ *  pending-proof chips for in-flight shield/send/unshield actions, and the DEV
+ *  bridge ping probe. It still mounts usePrivateWallet(autoStart:true) so the
+ *  engine inits + scans on open — that populates the shared snapshot the Tokens
+ *  tab reads. On a build with neither the native prover nor the Node bridge it
+ *  shows a friendly "coming soon" rather than erroring. */
 import { Pressable } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { Text } from '@metro-labs/kit/text';
@@ -13,46 +16,12 @@ import { flash } from '../../lib/toast';
 import { isRailgunAvailable } from '../../lib/railgun/native';
 import { isBridgeAvailable } from '../../lib/railgun/bridge';
 import { usePrivateWallet } from '../../lib/railgun/usePrivateWallet';
-import { TokenRow } from './WalletScreen.parts';
 import { BridgePingProbe } from './WalletScreen.private.ping';
-import type { PrivateBalance } from '../../lib/railgun/types';
-import type { AssetRow } from './WalletScreen.assets';
 
 const short0zk = (a: string): string => (a.length > 14 ? `${a.slice(0, 8)}…${a.slice(-4)}` : a);
 
-/** Shape a shielded PrivateBalance into the public AssetRow so it renders
- *  through the SHARED TokenRow — identical logo + network badge + Private pill
- *  as the merged Tokens tab, so the two views can never visually drift. Carries
- *  no USD price (shielded amounts are token-only). */
-function toAssetRow(b: PrivateBalance): AssetRow {
-  return {
-    symbol: b.symbol, name: b.name, chainId: b.chainId, balance: b.balance,
-    priceUsd: null, change24h: null, logoUrl: b.logoUrl, isPrivate: true,
-  };
-}
-
-/** Per-network shielded-balance section: a chain header + each token row,
- *  rendered through the shared TokenRow (logo + network badge + Private pill). */
-function NetworkSection({ label, rows, head, sub, border, bg }: {
-  label: string; rows: PrivateBalance[];
-  head: string; sub: string; border: string; bg: string;
-}): React.ReactElement | null {
-  if (!rows.length) return null;
-  return (
-    <Col mt={18}>
-      <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Semibold', letterSpacing: 0.3 }}>
-        {label.toUpperCase()}
-      </Text>
-      {rows.map(b => (
-        <TokenRow key={`${b.chainId}:${b.symbol}`} r={toAssetRow(b)}
-          head={head} sub={sub} border={border} bg={bg} />
-      ))}
-    </Col>
-  );
-}
-
-export function PrivateView({ head, sub, border, bg }: {
-  head: string; sub: string; border: string; bg: string;
+export function PrivateView({ head, sub, border }: {
+  head: string; sub: string; border: string;
 }): React.ReactElement {
   // autoStart:true — this view is mounted ONLY on an explicit Private-tab open
   // (WalletScreen renders it behind `tab === 'private'`), so it's safe to boot
@@ -60,9 +29,6 @@ export function PrivateView({ head, sub, border, bg }: {
   // readiness so it never races Client.create on first launch.
   const { snapshot, pending } = usePrivateWallet(true);
   const live = pending.filter(p => p.phase === 'proving' || p.phase === 'broadcasting');
-  const balances = snapshot?.balances ?? [];
-  const mainnet = balances.filter(b => b.chainId === 1);
-  const sepolia = balances.filter(b => b.chainId === 11155111);
 
   // The real view needs EITHER the native prover (full proving) OR just the
   // embedded Node bridge (engine init + 0zk address + balance scan — no proof
@@ -109,23 +75,10 @@ export function PrivateView({ head, sub, border, bg }: {
         </Row>
       ))}
 
-      {balances.length ? (
-        <>
-          <NetworkSection label="Ethereum" rows={mainnet} head={head} sub={sub} border={border} bg={bg} />
-          <NetworkSection label="Sepolia" rows={sepolia} head={head} sub={sub} border={border} bg={bg} />
-          {snapshot?.scanning ? (
-            <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 12 }}>
-              Scanning shielded balances…
-            </Text>
-          ) : null}
-        </>
-      ) : (
-        <Col py={32} align="center">
-          <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium' }}>
-            {snapshot?.scanning ? 'Scanning shielded balances…' : 'No shielded balances yet'}
-          </Text>
-        </Col>
-      )}
+      {/* Token BALANCES are no longer rendered here — they live solely in the
+          Tokens tab (merged public + shielded flat list). This view keeps
+          autoStart:true so the engine still inits + scans, which populates the
+          shared snapshot the Tokens tab reads. */}
 
       {/* Dev: on-device round-trip check for the embedded Node bridge. */}
       <BridgePingProbe sub={sub} border={border} />

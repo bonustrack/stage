@@ -133,7 +133,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
       <WalletTabs tab={tab} setTab={setTab} head={head} sub={sub} border={border} />
 
       {tab === 'private' ? (
-        <PrivateView head={head} sub={sub} border={border} bg={bg} />
+        <PrivateView head={head} sub={sub} border={border} />
       ) : tab === 'nfts' ? (
         <NftsView status={nftStatus} nfts={nfts} head={head} sub={sub} border={border} />
       ) : err ? (
@@ -147,8 +147,9 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
           <Spinner size={28} color={head} />
         </Col>
       ) : (
-      /* Asset list — Snapshot-treasury-style rows, border-bottom separators.
-         Public balances first, then the shielded (Private-badged) rows. */
+      /* Asset list — ONE flat list, no network section headers (each row
+         carries its own network badge). Public balances first, then the
+         shielded (Private-badged) rows. */
       <Col mx={16}>
         {[...rows, ...privateRows].map(r => (
           <TokenRow
