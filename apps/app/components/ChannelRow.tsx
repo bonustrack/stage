@@ -66,8 +66,8 @@ const MAX_VISIBLE_LABELS = 2;
  *  pill style (rounded, bordered) minus the remove affordance, sized down to
  *  fit beside the name. Caps at MAX_VISIBLE_LABELS + a "+N" pill, and shrinks
  *  before the name does so the name stays the primary element. */
-function LabelChips({ labels, fg, sub, border, rowBg }: {
-  labels: string[]; fg: string; sub: string; border: string; rowBg: string;
+function LabelChips({ labels, fg, sub, rowBg }: {
+  labels: string[]; fg: string; sub: string; rowBg: string;
 }): React.ReactElement | null {
   if (labels.length === 0) return null;
   const visible = labels.slice(0, MAX_VISIBLE_LABELS);
@@ -77,7 +77,7 @@ function LabelChips({ labels, fg, sub, border, rowBg }: {
       {visible.map(label => (
         <Box key={label.toLowerCase()} style={{
           paddingHorizontal: 6, paddingVertical: 1, borderRadius: 999,
-          borderWidth: 1, borderColor: border, backgroundColor: rowBg,
+          backgroundColor: rowBg,
           flexShrink: 1, maxWidth: 90,
         }}>
           <Text numberOfLines={1} style={{ color: fg, fontSize: 11, fontFamily: 'Calibre-Medium' }}>
@@ -135,7 +135,7 @@ function ChannelRowBase({
               {title}
             </Text>
             {labels && labels.length > 0 ? (
-              <LabelChips labels={labels} fg={fg} sub={sub} border={border} rowBg={rowBg} />
+              <LabelChips labels={labels} fg={fg} sub={sub} rowBg={rowBg} />
             ) : null}
             <Box style={{ flex: 1 }} />
             {timestamp ? (

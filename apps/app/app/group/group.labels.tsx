@@ -25,7 +25,7 @@ function LabelChip({ label, busy, onRemove, p }: {
     <Box style={{
       flexDirection: 'row', alignItems: 'center', gap: 6,
       paddingLeft: 12, paddingRight: 8, paddingVertical: 6, borderRadius: 999,
-      borderWidth: 1, borderColor: p.border, backgroundColor: p.rowBg,
+      backgroundColor: p.rowBg,
       opacity: busy ? 0.5 : 1,
     }}>
       <Text style={{ color: p.fg, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{label}</Text>
