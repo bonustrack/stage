@@ -131,12 +131,19 @@ function ChannelRowBase({
           <Row align="center" gap={6}>
             {pinned ? <Icon name="mapPin" size={13} color={sub} /> : null}
             {hasDraft ? <Icon name="pencil" size={14} color={sub} /> : null}
-            <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', flexShrink: 1 }} numberOfLines={1}>
+            {/* Name + labels hug each other on the left; name shrinks (and
+                ellipsizes) first, the label chip stays right beside it. */}
+            <Text
+              style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', flexShrink: 1, minWidth: 0 }}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {title}
             </Text>
             {labels && labels.length > 0 ? (
               <LabelChips labels={labels} fg={fg} sub={sub} rowBg={rowBg} />
             ) : null}
+            {/* Flexible spacer pushes the timestamp to the far right edge. */}
             <Box style={{ flex: 1 }} />
             {timestamp ? (
               <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{timestamp}</Text>
