@@ -11,6 +11,7 @@
  *  PrivateBalance shape. Balances may be empty while the Merkle scan runs —
  *  that's expected and renders as the $0/empty state. Never throws. */
 import { formatUnits } from 'viem';
+import { stampTokenUrl } from '@metro-labs/kit/avatar';
 import {
   isBridgeAvailable,
   engineInit,
@@ -43,10 +44,10 @@ function mapRows(net: RailgunNet, rows: BridgeBalanceRow[]): PrivateBalance[] {
   const cfg = RAILGUN_NETWORKS[net];
   return RAILGUN_TOKENS[net].map((t) => ({
     symbol: t.symbol,
-    name: cfg.label,
+    name: t.name,
     chainId: cfg.chainId,
     balance: formatUnits(weiForToken(rows, t.address), t.decimals),
-    logoUrl: '',
+    logoUrl: stampTokenUrl(t.logoChainId, t.logoAddress, 32),
   }));
 }
 
