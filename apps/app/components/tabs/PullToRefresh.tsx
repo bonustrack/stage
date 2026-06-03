@@ -28,13 +28,14 @@ import { Animated, type NativeScrollEvent, type NativeSyntheticEvent } from 'rea
 import { Box } from '../layout';
 import { Spinner } from '../Spinner';
 
-const THRESHOLD = 70; // px of over-scroll past the top to arm a refresh
+const THRESHOLD = 56; // px of over-scroll past the top to arm a refresh
 const ACTIVE_OFFSET = 44; // resting y of the spinner while refreshing
 
 export interface PullHandlers {
   /** Spinner overlay — render as the FIRST child of the ScrollView's content. */
   indicator: React.ReactElement;
   onScroll: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
+  onScrollBeginDrag: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
   onScrollEndDrag: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
   scrollEventThrottle: number;
 }
@@ -63,13 +64,29 @@ export function usePullToRefresh(
     if (!refreshing) armed.current = false;
   }, [refreshing, pull]);
 
+  const onScrollBeginDrag = (e: NativeSyntheticEvent<NativeScrollEvent>): void => {
+    // Reset the per-drag latch/baseline. Use the offset at drag start as the
+    // reference so a pull is measured RELATIVE to wherever the top sits — on
+    // Android the over-scroll contentOffset.y may clamp at 0 and never report
+    // negative, so we can't rely on an absolute negative value alone.
+    minY.current = e.nativeEvent.contentOffset.y;
+  };
+
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>): void => {
     const y = e.nativeEvent.contentOffset.y;
     if (y < minY.current) minY.current = y;
     if (refreshing) return; // pinned to ACTIVE_OFFSET by the effect
-    // Map over-scroll (y < 0) to a damped pull distance for live feedback.
-    const dist = y < 0 ? Math.min(-y, THRESHOLD * 1.6) : 0;
-    pull.setValue(dist);
+    // Over-scroll distance: how far below the top (y<0, iOS bounce / Android
+    // overscroll) we've pulled. Drive the indicator for live feedback.
+    const pulled = y < 0 ? -y : 0;
+    pull.setValue(Math.min(pulled, THRESHOLD * 1.6));
+    // Arm DURING the drag the instant we cross the threshold — don't wait for
+    // release. On Android the negative offset is transient (the scroller snaps
+    // back fast), so reading it at onScrollEndDrag often misses it entirely.
+    if (!armed.current && pulled >= THRESHOLD) {
+      armed.current = true;
+      onRefresh();
+    }
   };
 
   const onScrollEndDrag = (e: NativeSyntheticEvent<NativeScrollEvent>): void => {
@@ -78,7 +95,7 @@ export function usePullToRefresh(
     if (!refreshing && !armed.current && pulled >= THRESHOLD) {
       armed.current = true;
       onRefresh();
-    } else if (!refreshing) {
+    } else if (!refreshing && !armed.current) {
       // Released short of the threshold — relax the indicator back to hidden.
       Animated.timing(pull, { toValue: 0, duration: 160, useNativeDriver: true }).start();
     }
@@ -114,5 +131,5 @@ export function usePullToRefresh(
     </Box>
   );
 
-  return { indicator, onScroll, onScrollEndDrag, scrollEventThrottle: 16 };
+  return { indicator, onScroll, onScrollBeginDrag, onScrollEndDrag, scrollEventThrottle: 16 };
 }
