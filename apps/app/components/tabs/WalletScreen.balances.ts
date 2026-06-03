@@ -2,11 +2,13 @@
  *  from WalletScreen for the lint line-budget. Owns the connected address, the
  *  fetched AssetRow[], the error string, and the pull-to-refresh spinner.
  *
- *  Pull-to-refresh re-runs the public balance fetch AND (when a private account
- *  is known) a fresh Railgun shielded-snapshot scan in parallel, holding the
- *  spinner until BOTH settle. refreshSnapshot pushes new balances into the cache
- *  store, which the usePrivateWallet subscription picks up — so the shielded
- *  rows update without this hook needing its return value. */
+ *  Pull-to-refresh re-runs the public balance fetch and (when a private account
+ *  is known) kicks off a fresh Railgun shielded-snapshot scan. The spinner is
+ *  settled on the FAST public fetch only (with an 8s hard cap) — the slow/hangy
+ *  engine scan runs in the background so it can never freeze the spinner.
+ *  refreshSnapshot pushes new balances into the cache store, which the
+ *  usePrivateWallet subscription picks up — so the shielded rows update without
+ *  this hook needing its return value. */
 
 import { useCallback, useEffect, useState } from 'react';
 import { getOrCreateXmtpClient } from '../../lib/xmtp';
@@ -52,14 +54,27 @@ export function useWalletBalances(privAccountId: string | null): WalletBalances 
   const onRefresh = useCallback((): void => {
     if (!address) return;
     setRefreshing(true);
+
+    /** Fire the shielded (Railgun) re-scan but DON'T let the spinner wait on it.
+     *  The engine path (nodejs-mobile bridge boot / Merkle scan) can be slow or
+     *  hang outright; awaiting it kept the spinner stuck on screen. It updates
+     *  the cache store in the background — usePrivateWallet picks it up. */
+    if (privAccountId) void refreshSnapshot(privAccountId).catch(() => {});
+
+    /** Settle the spinner on the FAST public fetch only, with an ~8s hard cap so
+     *  a hanging RPC can never freeze the spinner indefinitely. try/finally
+     *  guarantees setRefreshing(false) runs on success, error, AND timeout. */
     void (async (): Promise<void> => {
       try {
-        await Promise.all([
-          fetchAssetRows(address).then(next => { setRows(next); setErr(''); }),
-          privAccountId ? refreshSnapshot(privAccountId) : Promise.resolve(),
+        const next = await Promise.race([
+          fetchAssetRows(address),
+          new Promise<never>((_, rej) =>
+            setTimeout(() => rej(new Error('refresh timeout')), 8000)),
         ]);
+        setRows(next);
+        setErr('');
       } catch (e) {
-        setErr((e as Error).message);
+        if ((e as Error).message !== 'refresh timeout') setErr((e as Error).message);
       } finally {
         setRefreshing(false);
       }
