@@ -44,8 +44,9 @@ export interface ChannelRowProps {
   pinned?: boolean;
   hasDraft?: boolean;
   /** Group labels (from XMTP appData) to render as compact read-only chips
-   *  under the title. Groups only — DMs pass none. Capped to a few visible
-   *  with a "+N" overflow pill so the card never overflows. */
+   *  inline next to the title (same row as the group name). Groups only — DMs
+   *  pass none. Capped to a few visible with a "+N" overflow pill so the name
+   *  row never overflows; the name itself stays primary (truncates first). */
   labels?: string[];
   /** Trailing chevron (used in the boxed common-channels list). */
   showChevron?: boolean;
@@ -56,12 +57,15 @@ export interface ChannelRowProps {
   containerStyle?: StyleProp<ViewStyle>;
 }
 
-/** Max label chips shown on a card before collapsing the rest into "+N". */
-const MAX_VISIBLE_LABELS = 3;
+/** Max label chips shown inline before collapsing the rest into "+N". Kept low
+ *  (2) so the chips stay secondary to the group name on the same row. */
+const MAX_VISIBLE_LABELS = 2;
 
-/** Compact, read-only label chips row shown under the preview (groups only).
- *  Matches the group-info LabelChip pill style (rounded, bordered, subtle fill)
- *  minus the remove affordance. Caps at MAX_VISIBLE_LABELS + a "+N" pill. */
+/** Compact, read-only label chips shown INLINE on the name row, immediately to
+ *  the right of the group name (groups only). Matches the group-info LabelChip
+ *  pill style (rounded, bordered) minus the remove affordance, sized down to
+ *  fit beside the name. Caps at MAX_VISIBLE_LABELS + a "+N" pill, and shrinks
+ *  before the name does so the name stays the primary element. */
 function LabelChips({ labels, fg, sub, border }: {
   labels: string[]; fg: string; sub: string; border: string;
 }): React.ReactElement | null {
@@ -69,21 +73,19 @@ function LabelChips({ labels, fg, sub, border }: {
   const visible = labels.slice(0, MAX_VISIBLE_LABELS);
   const overflow = labels.length - visible.length;
   return (
-    <Row align="center" gap={6} mt={4} style={{ flexWrap: 'nowrap', overflow: 'hidden' }}>
+    <Row align="center" gap={4} style={{ flexWrap: 'nowrap', overflow: 'hidden', flexShrink: 1 }}>
       {visible.map(label => (
         <Box key={label.toLowerCase()} style={{
-          paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999,
-          borderWidth: 1, borderColor: border, flexShrink: 1,
+          paddingHorizontal: 6, paddingVertical: 1, borderRadius: 999,
+          borderWidth: 1, borderColor: border, flexShrink: 1, maxWidth: 90,
         }}>
-          <Text numberOfLines={1} style={{ color: fg, fontSize: 12, fontFamily: 'Calibre-Medium' }}>
+          <Text numberOfLines={1} style={{ color: fg, fontSize: 11, fontFamily: 'Calibre-Medium' }}>
             {label}
           </Text>
         </Box>
       ))}
       {overflow > 0 ? (
-        <Box style={{ paddingHorizontal: 8, paddingVertical: 2 }}>
-          <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>{`+${overflow}`}</Text>
-        </Box>
+        <Text style={{ color: sub, fontSize: 11, fontFamily: 'Calibre-Medium' }}>{`+${overflow}`}</Text>
       ) : null}
     </Row>
   );
@@ -128,9 +130,13 @@ function ChannelRowBase({
           <Row align="center" gap={6}>
             {pinned ? <Icon name="mapPin" size={13} color={sub} /> : null}
             {hasDraft ? <Icon name="pencil" size={14} color={sub} /> : null}
-            <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', flex: 1 }} numberOfLines={1}>
+            <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', flexShrink: 1 }} numberOfLines={1}>
               {title}
             </Text>
+            {labels && labels.length > 0 ? (
+              <LabelChips labels={labels} fg={fg} sub={sub} border={border} />
+            ) : null}
+            <Box style={{ flex: 1 }} />
             {timestamp ? (
               <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{timestamp}</Text>
             ) : null}
@@ -155,9 +161,6 @@ function ChannelRowBase({
               <Text style={{ color: sub, fontSize: 18 }}>›</Text>
             ) : null}
           </Row>
-          {labels && labels.length > 0 ? (
-            <LabelChips labels={labels} fg={fg} sub={sub} border={border} />
-          ) : null}
         </Col>
       </Row>
     </Pressable>
