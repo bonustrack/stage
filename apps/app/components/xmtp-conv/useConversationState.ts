@@ -1,6 +1,5 @@
-/** State + side-effects + action wiring for the XMTP conversation screen —
- *  extracted from app/xmtp/[convId].tsx (phase-2 lint split). The route owns only
- *  the render tree; reaction / vote / tx-sign sub-layers live in their own hooks. */
+/** State + side-effects + action wiring for the XMTP conversation screen — the
+ *  route owns only the render tree; reaction/vote/tx-sign layers are own hooks. */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
@@ -15,7 +14,7 @@ import { setActiveConvId } from '../../lib/activeConv';
 import { markConvRead, getCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
 import { getGithubLink } from '../../lib/xmtp.github';
 import { getGroupLabels } from '../../lib/xmtp.labels';
-import { convScrollKey, getScrollOffset, flushScrollOffset } from '../../lib/scrollPos';
+import { convScrollKey, getScrollOffset, flushScrollOffset, markConvAtBottom } from '../../lib/scrollPos';
 import type { HistoryEntry } from '../../lib/types';
 import {
   reactionsByMessage, ownReactionsByMessage,
@@ -49,19 +48,14 @@ export function useConversationState(convId: string | undefined, focus: string |
       setActiveConversation(open);
       setActiveConvId(open);
     });
-    return () => {
-      sub.remove();
-      setActiveConversation(null);
-      setActiveConvId(null);
-    };
+    return () => { sub.remove(); setActiveConversation(null); setActiveConvId(null); };
   }, [activeConvId]));
   const status: 'idle' | 'connecting' | 'open' | 'error' = xmtpFeed.status === 'open' ? 'open'
     : xmtpFeed.status === 'loading' ? 'connecting'
       : xmtpFeed.status === 'error' ? 'error' : 'idle';
   const myUri = xmtpFeed.inboxId ? `${XMTP_USER_PREFIX}${xmtpFeed.inboxId}` : XMTP_USER_PREFIX;
 
-  /** `nonce` bumps on every reply action so the composer's focus effect re-fires
-   *  (monotonic via replyNonceRef — fresh nonce on EVERY swipe-to-reply). */
+  /** `nonce` bumps every reply so the composer's focus effect re-fires (monotonic). */
   const [replyingTo, setReplyingTo] = useState<{ id: string; preview: string; sender?: string | null; nonce: number } | null>(null);
   const replyNonceRef = useRef(0);
   const setReplyTarget = useCallback((id: string, preview: string, sender?: string | null) => {
@@ -78,8 +72,7 @@ export function useConversationState(convId: string | undefined, focus: string |
   /** Conversation metadata via TanStack Query — cached by convId (groupName:
    *  null = not resolved, '' = no name; isGroup gates the title→/group). */
   const { peerAddr, memberAddrs, inboxToAddr, groupName, groupImage, groupDescription, isGroup } = useConvMeta(convId);
-  /** Linked GitHub issue/PR URL (Linear-style). Seed from cache, stay in sync,
-   *  refresh from synced appData on mount. */
+  /** Linked GitHub issue/PR URL — seed from cache, sync, refresh appData on mount. */
   const cachedGithub = (cid?: string): string | undefined => {
     const v = getCachedRows()?.find(r => r.convId === cid)?.github;
     return typeof v === 'string' && v ? v : undefined;
@@ -145,9 +138,9 @@ export function useConversationState(convId: string | undefined, focus: string |
   const didRestoreScroll = useRef(false);
   /** Deadline (ms epoch) the at-bottom mount keeps re-pinning to 0; 0 = unarmed. */
   const pinBottomUntil = useRef(0);
-  /** At-bottom flag, set on EVERY scroll. The debounced offset save can lose its
-   *  final at-bottom frame to a fast back-nav; this ref can't, so on unmount we
-   *  force-persist sentinel 0 when at bottom. Defaults true (fresh conv = bottom). */
+  /** At-bottom flag, set on EVERY scroll (and by markAtBottom). The debounced save
+   *  can lose its final at-bottom frame to a fast back-nav; this ref can't, so on
+   *  unmount we force-persist sentinel 0 when true. Defaults true (fresh = bottom). */
   const isAtBottomRef = useRef(true);
   useEffect(() => {
     if (!convId) return;
@@ -176,6 +169,12 @@ export function useConversationState(convId: string | undefined, focus: string |
     listRef, confirmedIds, allBubbles, jumpToMessage, onOptimistic, onSent,
   } = useOutboundLayer(events, myUri, convId, activeLine);
 
+  /** Jump-to-bottom pressed → list remounts to offset 0 (newest) but may not emit
+   *  an onScroll, so flag at-bottom + persist sentinel 0 now to survive leave. */
+  const markAtBottom = useCallback(() => {
+    isAtBottomRef.current = true;
+    if (convId) markConvAtBottom(convId);
+  }, [convId]);
   /** Inbound onAnswer (quick-reply button) — posts the label as a reply. */
   const onAnswer = useCallback((messageId: string, label: string) => {
     void xmtpReply(activeLine, messageId, label)
@@ -195,6 +194,6 @@ export function useConversationState(convId: string | undefined, focus: string |
     reactions, ownReactions, displayVotes, displayOwnVotes,
     allBubbles, jumpToMessage,
     onReact, onSign, signingIds, onVote, onPay, payingIds, onAnswer,
-    onOptimistic, onSent,
+    onOptimistic, onSent, markAtBottom,
   };
 }
