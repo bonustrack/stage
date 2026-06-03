@@ -21,16 +21,19 @@ interface EditorProps {
   textareaH: number; setTextareaH: (h: number) => void;
   inputRef: RefObject<TextInput | null>;
   attachMenuOpen: boolean; setAttachMenuOpen: (fn: (o: boolean) => boolean) => void;
+  /** Quick-access shortcut: icon of the last-used attachment type + its handler.
+   *  Both undefined until the user has picked an attachment once → button hidden. */
+  quickIcon?: HeroIconName; onQuick?: () => void;
   canSend: boolean;
   onCancelRec: () => void; onStopRec: () => void; onSend: () => void;
 }
 
 export function ComposerEditor(p: EditorProps): React.ReactElement {
   const { dark, fg, head, sub, inputBg, chipBg, recording } = p;
-  const Btn = ({ icon, onPress }: { icon: HeroIconName; onPress: () => void }): React.ReactElement => (
+  const Btn = ({ icon, onPress, mr }: { icon: HeroIconName; onPress: () => void; mr?: number }): React.ReactElement => (
     <Pressable onPress={onPress} style={({ pressed }) => ({
       width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
-      backgroundColor: pressed ? chipBg : 'transparent',
+      backgroundColor: pressed ? chipBg : 'transparent', marginRight: mr,
     })}>
       <Icon name={icon} size={22} color={fg} />
     </Pressable>
@@ -66,7 +69,24 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
         {/** Left: cancel (✕) while recording, else the attach (+) menu toggle. */}
         {recording
           ? <Btn icon="x" onPress={p.onCancelRec} />
-          : <Btn icon={p.attachMenuOpen ? 'x' : 'plus'} onPress={() => p.setAttachMenuOpen(o => !o)} />}
+          : (
+            <>
+              {/** + first (leftmost). Negative marginRight pulls the quick-access
+               *   icon tight against it — the 38px Btns have wide internal padding,
+               *   so this removes the visual slack (the Row gap=4 below would
+               *   otherwise leave the pair looking spread). Only apply the pull when
+               *   the quick icon is actually shown. */}
+              <Btn
+                icon={p.attachMenuOpen ? 'x' : 'plus'}
+                onPress={() => p.setAttachMenuOpen(o => !o)}
+                mr={!p.attachMenuOpen && p.quickIcon && p.onQuick ? -12 : undefined}
+              />
+              {/** Quick-access: re-trigger the last-used attachment type directly. */}
+              {!p.attachMenuOpen && p.quickIcon && p.onQuick
+                ? <Btn icon={p.quickIcon} onPress={p.onQuick} />
+                : null}
+            </>
+          )}
         <Box flex={1} />
         {/** Mic — both record flows, mounted across recording so the gesture survives. */}
         <Animated.View
@@ -104,6 +124,26 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
       </Row>
     </Col>
   );
+}
+
+export type AttachAction = [HeroIconName, string, () => void | Promise<void>];
+
+/** [icon, label, handler] for every + menu entry. Shared by the menu and the
+ *  quick-access shortcut so both stay in lock-step. */
+export function buildAttachActions(a: {
+  pickImage: () => Promise<void>; takePhoto: () => Promise<void>;
+  pickFile: () => Promise<void>; pickLocation: () => Promise<void>;
+  openPoll: () => void; openSig: () => void; openTx: () => void;
+}): AttachAction[] {
+  return [
+    ['photo', 'Image', a.pickImage],
+    ['camera', 'Camera', a.takePhoto],
+    ['paperClip', 'File', a.pickFile],
+    ['mapPin', 'Location', a.pickLocation],
+    ['chartBar', 'Poll', a.openPoll],
+    ['pencil', 'Sign', a.openSig],
+    ['wallet', 'Payment', a.openTx],
+  ];
 }
 
 export function AttachMenu({

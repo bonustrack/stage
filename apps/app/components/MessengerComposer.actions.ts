@@ -8,6 +8,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { xmtpSendText } from '../lib/xmtp';
+import { setLastAttachment } from '../lib/lastAttachment';
 import { type Attachment, mimeOf } from './MessengerComposer.helpers';
 import { rememberLocalAttachments, stashLocalAttachment } from '../lib/localAttachmentCache';
 import { useVoiceRecorder, SLIDE_CANCEL_THRESHOLD_PX } from './MessengerComposer.voice';
@@ -73,6 +74,7 @@ export function useComposerActions(a: ComposerActionsArgs) {
       mediaTypes: ['images', 'videos'], quality: 0.5, allowsMultipleSelection: true, selectionLimit: 10,
     });
     if (r.canceled || !r.assets?.length) return;
+    setLastAttachment('Image');
     for (const asset of r.assets) {
       const fallbackMime = asset.type === 'video' ? 'video/mp4' : 'image/jpeg';
       await upload(asset.uri, asset.mimeType ?? fallbackMime, asset.fileName ?? undefined);
@@ -86,6 +88,7 @@ export function useComposerActions(a: ComposerActionsArgs) {
     if (!perm.granted) { Alert.alert('Camera permission denied'); return; }
     const r = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.5 });
     if (r.canceled || !r.assets?.length) return;
+    setLastAttachment('Camera');
     const asset = r.assets[0]!;
     await upload(asset.uri, asset.mimeType ?? 'image/jpeg', asset.fileName ?? undefined);
   };
@@ -93,6 +96,7 @@ export function useComposerActions(a: ComposerActionsArgs) {
   const pickFile = async (): Promise<void> => {
     const r = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true });
     if (r.canceled) return;
+    setLastAttachment('File');
     const asset = r.assets[0];
     await upload(asset.uri, asset.mimeType ?? 'application/octet-stream', asset.name);
   };
@@ -106,6 +110,7 @@ export function useComposerActions(a: ComposerActionsArgs) {
       const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
       const url = `https://maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`;
       await xmtpSendText(a.xmtpLine, `📍 ${url}`);
+      setLastAttachment('Location');
     } catch (e) { a.setErr((e as Error).message); }
   };
 
