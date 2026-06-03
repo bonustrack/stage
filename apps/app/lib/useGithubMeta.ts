@@ -18,6 +18,9 @@ export interface GithubMeta {
   author?: string;
   description?: string;
   stars?: number;
+  /** PR only: lines added / removed. */
+  additions?: number;
+  deletions?: number;
 }
 
 async function fetchGithubMeta(ref: GithubRef): Promise<GithubMeta | null> {
@@ -52,6 +55,8 @@ async function fetchGithubMeta(ref: GithubRef): Promise<GithubMeta | null> {
       number: ref.number,
       state: merged ? 'merged' : rawState,
       author: typeof user?.login === 'string' ? user.login : undefined,
+      additions: ref.kind === 'pull' && typeof j.additions === 'number' ? j.additions : undefined,
+      deletions: ref.kind === 'pull' && typeof j.deletions === 'number' ? j.deletions : undefined,
     };
   } catch {
     return null;
