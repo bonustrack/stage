@@ -10,7 +10,17 @@
         "scripts/**/*.js",
         "nodejs-assets/**/*.js"
       ],
-      "project": ["app/**", "components/**", "lib/**", "modules/**"]
+      "project": ["app/**", "components/**", "lib/**", "modules/**"],
+      "ignoreDependencies": [
+        "buffer",
+        "crypto-browserify",
+        "path-browserify",
+        "querystring-es3",
+        "react-native-url-polyfill",
+        "readable-stream",
+        "stream-browserify",
+        "babel-preset-expo"
+      ]
     },
     "apps/api": {
       "project": ["src/**"]
