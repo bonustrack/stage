@@ -66,7 +66,7 @@ export function ConversationIntro({
           style={{ backgroundColor: border }}
         />
         <Text
-          style={{ color: head, fontSize: 22, lineHeight: 26, fontFamily: 'Calibre-Semibold', marginTop: 12, textAlign: 'left' }}
+          style={{ color: head, fontSize: 26, lineHeight: 30, fontFamily: 'Calibre-Semibold', marginTop: 12, textAlign: 'left' }}
           numberOfLines={2}
         >
           {name}
@@ -91,7 +91,7 @@ export function ConversationIntro({
       style={{ alignItems: 'flex-start', paddingVertical: 24, paddingHorizontal: 24 }}
     >
       <Avatar address={peerAddr} imageUri={getPeerAvatar(peerAddr)} size="lg" style={{ backgroundColor: border }} />
-      <Text style={{ color: head, fontSize: 22, lineHeight: 26, fontFamily: 'Calibre-Semibold', marginTop: 12 }} numberOfLines={1}>
+      <Text style={{ color: head, fontSize: 26, lineHeight: 30, fontFamily: 'Calibre-Semibold', marginTop: 12 }} numberOfLines={1}>
         {getPeerName(peerAddr) ?? shortAddress(peerAddr)}
       </Text>
       <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 2 }} numberOfLines={1}>
