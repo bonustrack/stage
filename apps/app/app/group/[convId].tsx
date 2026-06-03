@@ -21,6 +21,7 @@ import { ImageViewer } from '../../components/ImageViewer';
 import { MemberRow, AddMemberModal, OverflowModal } from './group.parts';
 import { GroupProfileHeader, GroupNameEditor, GroupDescriptionEditor } from './group.editor';
 import { loadGroupDetail } from './group.helpers';
+import { GroupLabelsSection } from './group.labels';
 import { useGroupActions } from './group.actions';
 
 export default function GroupDetail(): React.ReactElement {
@@ -33,9 +34,8 @@ export default function GroupDetail(): React.ReactElement {
   const { convId } = useLocalSearchParams<{ convId: string }>();
   const line = lineOfConv(convId ?? '');
   const queryClient = useQueryClient();
-  /** Invalidate the cached conversation metadata so the chat-view topnav (which
-   *  reads `useConvMeta`, a 5-min-stale TanStack query) picks up a renamed group
-   *  / new group image / description without an app reload. */
+  /** Invalidate cached conv metadata so the chat-view topnav (useConvMeta, a
+   *  5-min-stale query) picks up rename / new image / description without a reload. */
   const invalidateConvMeta = (): void => {
     if (convId) void queryClient.invalidateQueries({ queryKey: ['convMeta', convId] });
   };
@@ -55,8 +55,7 @@ export default function GroupDetail(): React.ReactElement {
   /** Role per member address: super-admin → owner, admin → admin, else member. */
   const [memberRoles, setMemberRoles] = useState<Record<string, 'owner' | 'admin' | 'member'>>({});
   const [addOpen, setAddOpen] = useState(false);
-  /** Lower-cased local wallet address — used to suppress the remove button
-   *  on the local user's own row. */
+  /** Lower-cased local wallet address — suppresses the remove button on self. */
   const [selfAddress, setSelfAddress] = useState<string>('');
   /** When set, the fullscreen ImageViewer shows the group image. */
   const [viewerOpen, setViewerOpen] = useState(false);
@@ -134,6 +133,7 @@ export default function GroupDetail(): React.ReactElement {
         onSave={() => { void saveDescription(); }} dark={dark} p={pal}
       />
 
+      <GroupLabelsSection line={line} p={pal} />
       {/** MEMBERS header: label left, add-member button (avatar + plus) top-right
        *   → opens a modal to add by address (no inline input). */}
       <Box style={{
