@@ -18,7 +18,7 @@ import { getActiveAccountId } from '../accounts';
 import { engineInit, walletInfo } from './bridge';
 import { deriveRailgunKeyMaterial } from './deriveKeys';
 import { addPending, updatePending } from './cache';
-import { populateShieldBaseToken, populateShieldErc20 } from './bridge/shieldCalls';
+import { populateShieldBaseToken, populateShieldErc20, ensureProviderLoaded } from './bridge/shieldCalls';
 import { getShieldSigner, deriveShieldPrivateKey, shieldNetForChainId } from './shieldClient';
 import { RAILGUN_TOKENS } from './tokens';
 import type { TokenMeta } from './tokens';
@@ -65,6 +65,18 @@ export async function shieldToPrivate(params: ShieldParams): Promise<ShieldResul
   try {
     const key = await deriveRailgunKeyMaterial();
     await engineInit();
+    // Ensure the engine has an RPC provider + merkletree for THIS chain before
+    // populating. engineInit (engine.js) loads providers best-effort and swallows
+    // per-network RPC failures, so a rate-limited/down public RPC at boot leaves
+    // no merkletree → populateShield fails with "txidVersion=null chain=0:<id>".
+    // Loading it here (idempotent per chain) surfaces a real RPC error clearly.
+    await ensureProviderLoaded(
+      {
+        chainId: cfg.chainId,
+        providers: cfg.rpcUrls.map((url, i) => ({ provider: url, priority: i + 1, weight: 1 })),
+      },
+      cfg.networkName,
+    );
     const info = await walletInfo({
       encryptionKey: key.encryptionKey, mnemonic: key.mnemonic, creationBlocks: key.creationBlocks,
     });
