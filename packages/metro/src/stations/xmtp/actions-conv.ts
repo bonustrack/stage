@@ -3,7 +3,9 @@
 import { IdentifierKind } from '@xmtp/node-sdk';
 import { accounts, accountForCall, convOf, lineOf, parseLine, type Account } from './accounts.js';
 import { inboxEthCache, respond } from './wire.js';
-import { fcmPushToAll, loadPushTokens, savePushTokens, storePushToken } from './push.js';
+import { warmGroupName } from './conv-name.js';
+import { pushHandlers } from './actions-push.js';
+import { cleanLabels, labelsBlob, type GroupLike } from './labels.js';
 
 type Args = Record<string, unknown>;
 type Handler = (id: string, args: Args) => Promise<void>;
@@ -25,57 +27,13 @@ async function newGroup(id: string, args: Args): Promise<void> {
   if (permissions === 'admin-only') opts.permissions = 1;
   const group = await acct.client.conversations.createGroupWithIdentifiers(
     addresses.map(a => ({ identifier: a, identifierKind: IdentifierKind.Ethereum })), opts);
+  warmGroupName(group.id, name);
   respond(id, { result: { line: lineOf(acct.cfg.id, group.id), id: group.id, account: acct.cfg.id } });
 }
 
-/** Build the app's labels appData blob ({v:1, labels}) MERGING into any existing
- *  appData so we never clobber other keys. Matches apps/app/lib/xmtp.labels.ts:
- *  trim, collapse whitespace, cap len 24, dedupe case-insensitively, cap 16. */
-const MAX_LABELS = 16;
-const MAX_LABEL_LEN = 24;
-function cleanLabels(raw: unknown): string[] {
-  if (!Array.isArray(raw)) return [];
-  const out: string[] = [];
-  const seen = new Set<string>();
-  for (const item of raw) {
-    if (typeof item !== 'string') continue;
-    const label = item.trim().replace(/\s+/g, ' ').slice(0, MAX_LABEL_LEN);
-    const key = label.toLowerCase();
-    if (!label || seen.has(key)) continue;
-    seen.add(key);
-    out.push(label);
-    if (out.length >= MAX_LABELS) break;
-  }
-  return out;
-}
-function labelsBlob(existingAppData: string | undefined, labels: string[]): string {
-  let existing: Record<string, unknown> = {};
-  if (existingAppData && existingAppData.trim()) {
-    try {
-      const p: unknown = JSON.parse(existingAppData);
-      if (p && typeof p === 'object' && !Array.isArray(p)) existing = p as Record<string, unknown>;
-    } catch { /* tolerate malformed */ }
-  }
-  return JSON.stringify({ ...existing, v: 1, labels: cleanLabels(labels) });
-}
-
-/** Minimal structural view of the node-sdk Group surface we touch. In node-sdk
- *  v6 `appData` is a SYNC getter (string), updateAppData/updateName/updateDescription
- *  are async. */
-interface GroupLike {
-  id: string;
-  appData?: string;
-  updateAppData?: (s: string) => Promise<void>;
-  updateName?: (s: string) => Promise<void>;
-  updateDescription?: (s: string) => Promise<void>;
-  sync?: () => Promise<unknown>;
-}
-
-/** Create a "request" group: name + description + a single status label (array
- *  per the app schema) + members. Members may be Ethereum addresses
- *  (memberAddresses) and/or XMTP inboxIds (memberInboxIds); at least one member
- *  required (default = Less, passed in by the orchestrator). Sets name,
- *  description, and labels appData in ONE createGroup call. */
+/** Create a "request" group (name + description + status label + members) in ONE
+ *  createGroup call. Members: Ethereum addrs (memberAddresses) and/or XMTP inboxIds
+ *  (memberInboxIds); at least one required (default = Less). */
 async function createRequestGroup(id: string, args: Args): Promise<void> {
   const { memberAddresses, memberInboxIds, name, description, labels } = args as {
     memberAddresses?: string[]; memberInboxIds?: string[];
@@ -109,6 +67,7 @@ async function createRequestGroup(id: string, args: Args): Promise<void> {
     group = created as unknown as GroupLike;
   }
 
+  warmGroupName(group.id, name);
   respond(id, { result: {
     line: lineOf(acct.cfg.id, group.id), id: group.id, account: acct.cfg.id,
     name, description: description ?? '', labels: cleanLabels(labels ?? []) } });
@@ -135,6 +94,7 @@ async function setLabels(id: string, args: Args): Promise<void> {
   await group.sync?.().catch(() => undefined);
   if (typeof setName === 'string' && setName && typeof group.updateName === 'function') {
     await group.updateName(setName);
+    warmGroupName(group.id, setName);
   }
   if (typeof setDescription === 'string' && typeof group.updateDescription === 'function') {
     await group.updateDescription(setDescription);
@@ -228,43 +188,7 @@ async function listConvs(id: string, args: Args): Promise<void> {
   respond(id, { result: { count: summaries.length, conversations: summaries.slice(0, lim) } });
 }
 
-async function registerPush(id: string, args: Args): Promise<void> {
-  const { token, account, platform, inboxId } = args as {
-    token?: string; account?: string; platform?: string; inboxId?: string };
-  if (!token || typeof token !== 'string' || token.length < 20) {
-    throw new Error('register-push requires a non-empty FCM device token');
-  }
-  const total = storePushToken({ token, account, platform, inboxId });
-  respond(id, { result: { stored: true, total, account: account ?? null } });
-}
-
-async function listPush(id: string): Promise<void> {
-  const tokens = loadPushTokens();
-  respond(id, { result: { count: tokens.length, tokens: tokens.map(t => ({
-    token: `${t.token.slice(0, 12)}…${t.token.slice(-6)}`, registeredAt: t.registeredAt,
-    lastSeenAt: t.lastSeenAt ?? null, account: t.account ?? null,
-    platform: t.platform ?? null, inboxId: t.inboxId ?? null })) } });
-}
-
-async function testPush(id: string, args: Args): Promise<void> {
-  const { account } = args as { account?: string };
-  const acctId = account ?? (accounts.size === 1 ? [...accounts.keys()][0] : 'default');
-  // Contentless test push (no plaintext); the device renders its generic card.
-  await fcmPushToAll(acctId, { channelId: 'xmtp', source: 'test-push' });
-  const sent = loadPushTokens().filter(t => !t.account || t.account === acctId).length;
-  respond(id, { result: { sent, account: acctId } });
-}
-
-async function unregisterPush(id: string, args: Args): Promise<void> {
-  const { token } = args as { token: string };
-  savePushTokens(loadPushTokens().filter(t => t.token !== token));
-  respond(id, { result: { removed: true } });
-}
-
 export const convHandlers: Record<string, Handler> = {
   newDm, newGroup, createRequestGroup, setLabels, query, groupInfo, listConvs,
-  'register-push': registerPush,
-  'list-push': (id) => listPush(id),
-  'test-push': testPush,
-  'unregister-push': unregisterPush,
+  ...pushHandlers,
 };

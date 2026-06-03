@@ -20,6 +20,7 @@
 import { ConsentState } from '@xmtp/node-sdk';
 import { accounts, bootAccount, loadAccounts, type Account } from './accounts.js';
 import { emitInbound, envelope } from './emit.js';
+import { groupNameFor } from './conv-name.js';
 import { handleControlDm } from './push.js';
 import { pushInbound } from './push-title.js';
 import { handleCall } from './actions.js';
@@ -73,6 +74,17 @@ async function runAccount(acct: Account): Promise<void> {
         const conv = await acct.client.conversations.getConversationById(msg.conversationId);
         if (!conv) continue;
         const env = envelope(id, msg, conv);
+        // Stamp the group's display name as line_name/lineName so the app shows
+        // a real title for group messages (esp. freshly-created request groups,
+        // which arrive nameless). Cached + local-only read — no XMTP network.
+        const name = await groupNameFor(msg.conversationId, conv);
+        if (name) {
+          env.line_name = name; env.lineName = name;
+          // Also inside payload — emitInbound projects payload, and the app/feed
+          // reads payload.lineName (matches the proven historical wire shape).
+          const p = (env.payload ?? {}) as Record<string, unknown>;
+          env.payload = { ...p, lineName: name };
+        }
         emitInbound(id, env);
         // F1 + E1: fan an FCM push to THIS account's tokens for the inbound message.
         pushInbound(id, env, msg, conv);
