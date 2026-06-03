@@ -38,17 +38,15 @@ export default function XmtpConversation(): React.ReactElement {
     replyingTo, setReplyingTo, setReplyTarget,
     menuFor, setMenuFor, menuAnchor, overflowOpen, setOverflowOpen, setSelectedForCopy,
     peerAddr, groupName, groupImage, isGroup, github, senderEthOf,
-    mentionCandidates, onReact, onOptimistic, onSent, jumpToMessage,
+    mentionCandidates, onReact, onOptimistic, onSent, jumpToMessage, markAtBottom,
   } = c;
 
   const insets = useSafeAreaInsets();
   /** Reanimated keyboard offset shared with the composer's KeyboardStickyView so the
    *  FlatList wrapper lifts in lockstep. Match the composer's `height - insets.bottom`
-   *  translate (subtract insets.bottom here too) or the feed overshoots. Clamp ≥0. */
+   *  translate (subtract insets.bottom too) or the feed overshoots. Clamp ≥0. */
   const { height: kbHeightShared } = useReanimatedKeyboardAnimation();
-  const listWrapperStyle = useAnimatedStyle(() => ({
-    marginBottom: Math.max(0, -kbHeightShared.value - insets.bottom),
-  }));
+  const listWrapperStyle = useAnimatedStyle(() => ({ marginBottom: Math.max(0, -kbHeightShared.value - insets.bottom) }));
 
   if (!convId) {
     return (
@@ -132,7 +130,7 @@ export default function XmtpConversation(): React.ReactElement {
        *   FlatList key remounts → inverted offset 0 = newest at the bottom. */}
       {showJump ? (
         <Pressable
-          onPress={() => { setListEpoch(e => e + 1); setShowJump(false); }}
+          onPress={() => { markAtBottom(); setListEpoch(e => e + 1); setShowJump(false); }}
           style={{
             position: 'absolute', alignSelf: 'center', bottom: '100%', marginBottom: 8, zIndex: 3,
             width: 36, height: 36, borderRadius: 999,

@@ -90,6 +90,14 @@ export function planFeedRestore(args: {
   return { offset: Math.min(savedOffset, Math.max(0, contentHeight)), done: true };
 }
 
+/** Force-mark a conversation as at-bottom: persist the sentinel 0 immediately so
+ *  a later leave restores to the newest message. Used by the jump-to-bottom
+ *  button, whose list remount lands at offset 0 but may not emit an onScroll to
+ *  update the at-bottom ref. */
+export function markConvAtBottom(convId: string): void {
+  flushScrollOffset(convScrollKey(convId), 0);
+}
+
 /** Cancel a pending debounced write for a key (e.g. on unmount) and flush the
  *  latest cached value synchronously-ish so a quick close doesn't lose it.
  *  Pass an `override` to FORCE-persist a definitive value (e.g. the at-bottom
