@@ -93,20 +93,12 @@ export function WalletTabs({ tab, setTab, head, sub, border }: {
   );
 }
 
-/** Small "Private" pill shown on Railgun-shielded token rows so they're
- *  visually distinct from public balances. Subtle outlined chip in the page's
- *  border tone — matches the app's quiet metadata-label styling. */
-function PrivateBadge({ head, border }: { head: string; border: string }): React.ReactElement {
-  return (
-    <Box style={{
-      paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999,
-      borderWidth: 1, borderColor: border, backgroundColor: border,
-    }}>
-      <Text style={{ color: head, fontSize: 11, fontFamily: 'Calibre-Semibold', letterSpacing: 0.3 }}>
-        Private
-      </Text>
-    </Box>
-  );
+/** Small eye-off icon shown on Railgun-shielded token rows so they're visually
+ *  distinct from public balances. Subtle muted glyph in the secondary text
+ *  tone — quieter than a text pill, matches the app's metadata styling. */
+function PrivateBadge({ sub }: { sub: string }): React.ReactElement {
+  const name: HeroIconName = 'eyeOff';
+  return <Icon name={name} size={15} color={sub} />;
 }
 
 /** A single asset row — 4-corner layout with token avatar + network badge. */
@@ -154,7 +146,7 @@ export function TokenRow({ r, head, sub, border, bg }: { r: AssetRow } & Omit<Pa
       <Col flex={1} style={{ minWidth: 0 }}>
         <Row align="center" gap={6} style={{ minWidth: 0 }}>
           <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{r.name}</Text>
-          {r.isPrivate ? <PrivateBadge head={head} border={border} /> : null}
+          {r.isPrivate ? <PrivateBadge sub={sub} /> : null}
         </Row>
         <Row align="center" gap={6} mt={2}>
           <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
