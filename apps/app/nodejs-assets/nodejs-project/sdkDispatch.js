@@ -117,13 +117,23 @@ def('balance.awaitWalletScan', (sdk, _shared, a) => sdk.awaitWalletScan(a[0], a[
 def('gas.estimateShield', (sdk, _shared, a) => sdk.gasEstimateForShield(a[0], a[1], a[2], a[3], a[4], a[5]));
 def('gas.estimateShieldBaseToken', (sdk, _shared, a) => sdk.gasEstimateForShieldBaseToken(a[0], a[1], a[2], a[3], a[4], a[5]));
 def('gas.estimateTransfer', (sdk, _shared, a) => sdk.gasEstimateForUnprovenTransfer(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7]));
-def('gas.estimateUnshield', (sdk, _shared, a) => sdk.gasEstimateForUnprovenUnshield(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7]));
-def('gas.estimateUnshieldBaseToken', (sdk, _shared, a) => sdk.gasEstimateForUnprovenUnshieldBaseToken(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7]));
+// gasEstimateForUnprovenUnshield takes 9 args; the trailing `sendWithPublicWallet`
+// (a[8]) MUST be forwarded — for a self-broadcast unshield (no broadcaster) it is
+// `true`, and the SDK branches its dummy-proof broadcaster-fee iteration on it. A
+// dropped 9th arg arrives undefined → wrong (broadcaster-fee) estimate path.
+def('gas.estimateUnshield', (sdk, _shared, a) => sdk.gasEstimateForUnprovenUnshield(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8]));
+def('gas.estimateUnshieldBaseToken', (sdk, _shared, a) => sdk.gasEstimateForUnprovenUnshieldBaseToken(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8]));
 
 // ── Proof generation (Groth16 — the whole reason the Node host exists) ────────
-def('proof.transfer', (sdk, _shared, a) => sdk.generateTransferProof(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10]));
-def('proof.unshield', (sdk, _shared, a) => sdk.generateUnshieldProof(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9]));
-def('proof.unshieldBaseToken', (sdk, _shared, a) => sdk.generateUnshieldBaseTokenProof(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9]));
+// The trailing `progressCallback` is a FUNCTION and cannot cross the JSON bridge
+// channel (it arrives undefined). The engine's transaction-batch invokes it
+// UNGUARDED (`progressCallback(progress)`), so a missing callback throws mid-proof.
+// We inject a host-side no-op so the proof completes; RN drives its own progress
+// chips from the call lifecycle (proving → broadcasting → confirmed) instead.
+const NOOP_PROGRESS = () => {};
+def('proof.transfer', (sdk, _shared, a) => sdk.generateTransferProof(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10] || NOOP_PROGRESS));
+def('proof.unshield', (sdk, _shared, a) => sdk.generateUnshieldProof(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9] || NOOP_PROGRESS));
+def('proof.unshieldBaseToken', (sdk, _shared, a) => sdk.generateUnshieldBaseTokenProof(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9] || NOOP_PROGRESS));
 
 // ── Transaction population (returns a populated tx; RN signs + broadcasts) ────
 def('tx.populateShield', (sdk, _shared, a) => sdk.populateShield(a[0], a[1], a[2], a[3], a[4], a[5])

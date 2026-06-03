@@ -148,8 +148,8 @@ export function TokenRow({ r, head, sub, border, bg, onPress }: { r: AssetRow; o
           Shielded rows carry a small "Private" pill next to the name. */}
       <Col flex={1} style={{ minWidth: 0 }}>
         <Row align="center" gap={6} style={{ minWidth: 0 }}>
-          <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{r.name}</Text>
           {r.isPrivate ? <PrivateBadge sub={sub} /> : null}
+          <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{r.name}</Text>
         </Row>
         <Row align="center" gap={6} mt={2}>
           <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>

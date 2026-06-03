@@ -88,8 +88,8 @@ export default function TokenDetail(): React.ReactElement {
         </Box>
 
         <Row align="center" gap={6} mt={10}>
-          <Text style={{ color: head, fontSize: 24, fontFamily: 'Calibre-Semibold' }}>{r.name}</Text>
           {r.isPrivate ? <Icon name="eyeOff" size={18} color={sub} /> : null}
+          <Text style={{ color: head, fontSize: 24, fontFamily: 'Calibre-Semibold' }}>{r.name}</Text>
         </Row>
 
         {/* Network badge pill */}
@@ -117,11 +117,21 @@ export default function TokenDetail(): React.ReactElement {
       <Row justify="center" gap={36} mt={32}>
         <Btn icon="send" label="Send" head={head} dark={dark}
           onPress={() => router.push({ pathname: '/wallet/send', params: sendParams })} />
-        <Btn icon="eyeOff" label="Shield" head={head} dark={dark}
-          onPress={() => router.push({
-            pathname: '/wallet/send',
-            params: { mode: 'shield', symbol: symbol ?? r.symbol, chainId: String(r.chainId) },
-          })} />
+        {r.isPrivate ? (
+          /* Shielded holding → Unshield (private → public, back to own EOA). */
+          <Btn icon="eye" label="Unshield" head={head} dark={dark}
+            onPress={() => router.push({
+              pathname: '/wallet/unshield',
+              params: { symbol: symbol ?? r.symbol, chainId: String(r.chainId) },
+            })} />
+        ) : (
+          /* Public holding → Shield (public → own 0zk). */
+          <Btn icon="eyeOff" label="Shield" head={head} dark={dark}
+            onPress={() => router.push({
+              pathname: '/wallet/send',
+              params: { mode: 'shield', symbol: symbol ?? r.symbol, chainId: String(r.chainId) },
+            })} />
+        )}
       </Row>
     </Box>
   );
