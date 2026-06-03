@@ -96,8 +96,11 @@ export async function deleteLegacyDbKey(): Promise<void> {
  *  so it is unaffected. We never delete the legacy key on behalf of an account
  *  that wasn't actually keyed by it. */
 export async function wipeXmtpStore(accountId: string, dbDirName: string): Promise<void> {
-  /** Delete the on-disk store (db3 + -wal/-shm sidecars) robustly so no stale db3
-   *  encrypted with the OLD key survives at the path the fresh key will reopen. */
+  /** Delete the on-disk store (db3 + -wal/-shm + the read-only `.sqlcipher_salt`
+   *  sidecar) robustly — wiping the WHOLE dir — so neither a stale db3 NOR a
+   *  stale salt encrypted under the OLD key survives at the path the fresh key
+   *  will reopen. A surviving salt-without-db3 (or db3-without-salt) is exactly
+   *  what triggers the persistent `PRAGMA key or salt has incorrect value`. */
   deleteDbFiles(dbDirName);
   /** Decide BEFORE deleting the per-account key whether it matched the legacy key. */
   const accountKey = await SecureStore.getItemAsync(dbKeyId(accountId)).catch(() => null);
@@ -113,20 +116,56 @@ export async function wipeXmtpStore(accountId: string, dbDirName: string): Promi
   }
 }
 
-/** Remove the on-disk sqlite store for one account: every file under its dbDir
- *  (the SDK's `xmtp-*.db3` + the `-wal` / `-shm` SQLCipher sidecars), then the
- *  dir itself. Deleting the dir alone removes the db3+sidecars inside it; we also
- *  delete the files first so a busy-handle dir.delete() can't leave a stale db3
- *  encrypted with the OLD key sitting at the path the fresh key will reopen. */
+/** Remove the on-disk sqlite store for one account, leaving an EMPTY, consistent
+ *  dir so the next Client.create starts from nothing (libxmtp's "create new db +
+ *  salt" path) and the fresh key, db3 header, and salt are all mutually
+ *  consistent.
+ *
+ *  libxmtp/SQLCipher writes FOUR files per inbox into this dir:
+ *    - `<name>.db3`                  the encrypted sqlite store
+ *    - `<name>.db3-wal`, `-shm`      the WAL sidecars
+ *    - `<name>.db3.sqlcipher_salt`   the 16-byte hex SALT sidecar, written
+ *                                    READ-ONLY (chmod 0444). The db3 header is
+ *                                    plaintext + the cipher salt lives ONLY in
+ *                                    this sidecar, so a db3 WITHOUT its salt (or
+ *                                    a salt WITHOUT its db3) makes every open
+ *                                    fail with `PRAGMA key or salt has incorrect
+ *                                    value`. A partial wipe is therefore fatal.
+ *
+ *  The old per-file loop was the bug: each `entry.delete()` swallowed its error
+ *  and the trailing `dir.delete()` was best-effort too, so a half-deleted dir
+ *  (db3 gone / salt left, or vice-versa) survived a "wipe" and poisoned the next
+ *  create. We now wipe the WHOLE dir tree in ONE recursive native call (which
+ *  also handles the read-only salt + any busy WAL handle far better than the JS
+ *  loop), then recreate it empty. Only if the recursive delete throws do we fall
+ *  back to the per-file sweep, and we ALWAYS recreate so the dir is left
+ *  guaranteed-empty for the fresh create. */
 export function deleteDbFiles(dbDirName: string): void {
   const dir = dbDirObj(dbDirName);
-  if (!dir.exists) return;
+  if (!dir.exists) {
+    /** Nothing on disk — make sure the (absent) dir is recreated empty so the
+     *  caller's ensureDbDir + create see a clean, consistent starting point. */
+    try { dir.create({ intermediates: true }); } catch { /* created by ensureDbDir */ }
+    return;
+  }
   try {
-    for (const entry of dir.list()) {
-      if (entry instanceof File) { try { entry.delete(); } catch { /* best-effort */ } }
-    }
-  } catch { /* list() can throw if the dir vanished mid-wipe — fine */ }
-  try { dir.delete(); } catch { /* best-effort: files above already gone */ }
+    /** One recursive native delete removes db3 + -wal + -shm + the read-only
+     *  `.sqlcipher_salt` sidecar atomically — no partial key/db/salt state. */
+    dir.delete();
+  } catch {
+    /** Recursive delete failed (rare: busy handle) — sweep every file by hand so
+     *  we at least don't leave a db3 without its salt or vice-versa. */
+    try {
+      for (const entry of dir.list()) {
+        if (entry instanceof File) { try { entry.delete(); } catch { /* best-effort */ } }
+      }
+    } catch { /* list() can throw if the dir vanished mid-wipe — fine */ }
+    try { dir.delete(); } catch { /* best-effort: files above already gone */ }
+  }
+  /** Recreate the dir empty so key ↔ db ↔ salt are all freshly consistent: an
+   *  empty dir forces libxmtp down its "(false,false) → create new db+salt" path
+   *  with our fresh key, instead of inheriting any stale db3 or salt. */
+  try { dbDirObj(dbDirName).create({ intermediates: true }); } catch { /* ensureDbDir will */ }
 }
 
 /** XMTP needs a writable directory for its sqlite + key store. Document directory is
