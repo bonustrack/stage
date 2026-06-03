@@ -26,8 +26,16 @@ const ARTIFACTS_DIR = path.join(DATA_ROOT, 'artifacts');
  *  later hardening pass. NetworkName values come from shared-models at runtime. */
 const RPC = {
   mainnet: ['https://rpc.brovider.xyz/1', 'https://ethereum-rpc.publicnode.com'],
-  sepolia: ['https://rpc.ankr.com/eth_sepolia', 'https://ethereum-sepolia-rpc.publicnode.com'],
+  sepolia: ['https://ethereum-sepolia-rpc.publicnode.com', 'https://sepolia.drpc.org'],
 };
+
+/** Private Proof of Innocence aggregator node(s). REQUIRED at engine start for
+ *  any network whose NETWORK_CONFIG defines `poi` (Sepolia + mainnet do) — else
+ *  loadProvider throws "This network requires Proof Of Innocence. Pass
+ *  poiNodeURL to startRailgunEngine...". This is the public aggregator from the
+ *  RAILGUN developer guide; passing it makes WalletPOI.started true so shield
+ *  populate/provider-load succeeds. Order = priority (fallback on failure). */
+const POI_NODE_URLS = ['https://ppoi-agg.horsewithsixlegs.xyz'];
 
 let state = { ready: false, prover: false, networks: [], version: null, initPromise: null };
 
@@ -115,7 +123,7 @@ async function init(params) {
       createArtifactStore(sdk.ArtifactStore),
       true, // useNativeArtifacts
       false, // skipMerkletreeScans
-      undefined, // poiNodeURLs (SDK defaults)
+      POI_NODE_URLS, // poiNodeURLs — REQUIRED (Sepolia/mainnet define NETWORK_CONFIG.poi)
       undefined, // customPOILists
     );
     state.prover = wireProver(sdk.getProver);
