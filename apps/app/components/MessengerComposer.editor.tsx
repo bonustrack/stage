@@ -10,7 +10,6 @@ import { Button } from '@metro-labs/kit/button';
 import { Box, Row, Col } from './layout';
 import { ComposerGradient } from './ComposerGradient';
 import { RecordingBar } from './MessengerComposer.parts';
-import { setLastAttachment } from '../lib/lastAttachment';
 
 interface EditorProps {
   dark: boolean; fg: string; head: string; sub: string; inputBg: string; chipBg: string;
@@ -158,7 +157,7 @@ export function AttachMenu({
       {actions.map(([icon, label, action]) => (
         <Col key={label} align="center" gap={6}>
           <Pressable
-            onPress={() => { onClose(); setLastAttachment(label); void action(); }}
+            onPress={() => { onClose(); void action(); }}
             style={({ pressed }) => ({
               width: 56, height: 56, borderRadius: 28,
               alignItems: 'center', justifyContent: 'center',
