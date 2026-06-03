@@ -1,32 +1,19 @@
-/** setGithub — set/clear the group's linked GitHub URL in synced appData. */
+/** setGithub — thin wrapper over updateChannelMeta: set/clear the group's linked
+ *  GitHub URL in synced appData (preserving labels + other keys). */
 
-import { accountForCall, convOf, lineOf } from './accounts.js';
 import { respond } from './wire.js';
-import { labelsBlob, readAppData, normalizeGithubUrl, type GroupLike } from './labels.js';
+import { applyChannelMeta, resolveLine } from './actions-meta.js';
 
 type Args = Record<string, unknown>;
 
-/** Set (or clear) the group's linked GitHub URL, preserving labels + other appData
- *  keys (merges via labelsBlob). `url`: a github.com http(s) URL to set, '' to
- *  clear. Resolves by `line`|`groupId` like setLabels. */
+/** Set (or clear) the group's linked GitHub URL. `url`: a github.com http(s) URL
+ *  to set, '' to clear. Resolves by `line`|`groupId` like setLabels. */
 export async function setGithub(id: string, args: Args): Promise<void> {
-  const { line, url } = args as { line?: string; groupId?: string; url: string };
-  let resolvedLine = line;
-  if (!resolvedLine && (args as { groupId?: string }).groupId) {
-    const acct = accountForCall(args as { account?: string });
-    resolvedLine = lineOf(acct.cfg.id, (args as { groupId: string }).groupId);
-  }
-  if (!resolvedLine) throw new Error('setGithub requires `line` or `groupId`');
-  const normalized = normalizeGithubUrl(url); // throws on bad url; '' = clear
-  const { acct, conv } = await convOf(resolvedLine);
-  if (!conv) throw new Error(`conversation not found for ${resolvedLine}`);
-  const group = conv as unknown as GroupLike;
-  if (typeof group.updateAppData !== 'function') {
-    throw new Error('setGithub target is not a group (no updateAppData)');
-  }
-  await group.sync?.().catch(() => undefined);
-  const existing = readAppData(group.appData);
-  await group.updateAppData(labelsBlob(group.appData, existing.labels, normalized));
+  const line = resolveLine(args, 'setGithub');
+  const { url } = args as { url: string };
+  if (typeof url !== 'string') throw new Error('setGithub requires a `url` string');
+  const result = await applyChannelMeta({ line, appData: { github: url } }, 'setGithub');
   respond(id, { result: {
-    line: resolvedLine, id: group.id, account: acct.cfg.id, github: normalized || undefined } });
+    line: result['line'], id: result['id'], account: result['account'],
+    github: result['github'] } });
 }

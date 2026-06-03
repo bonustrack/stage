@@ -8,6 +8,7 @@ import { pushHandlers } from './actions-push.js';
 import { cleanLabels, labelsBlob, readAppData, type GroupLike } from './labels.js';
 import { closeGroup } from './actions-close.js';
 import { setGithub } from './actions-github.js';
+import { updateChannelMeta, applyChannelMeta, resolveLine } from './actions-meta.js';
 
 type Args = Record<string, unknown>;
 type Handler = (id: string, args: Args) => Promise<void>;
@@ -75,36 +76,20 @@ async function createRequestGroup(id: string, args: Args): Promise<void> {
     name, description: description ?? '', labels: cleanLabels(labels ?? []) } });
 }
 
-/** Update a group's status labels (and optionally name/description). Loads the
- *  group, merges {v:1, labels} into existing appData, writes via updateAppData. */
+/** Update a group's status labels (and optionally name/description/github). Thin
+ *  wrapper over applyChannelMeta — merges {v:1, labels, github?} into appData. */
 async function setLabels(id: string, args: Args): Promise<void> {
-  const { line, labels, setName, setDescription, setGithub } = args as {
+  const { labels, setName, setDescription, setGithub } = args as {
     line?: string; groupId?: string; labels: string[];
     setName?: string; setDescription?: string; setGithub?: string };
-  let resolvedLine = line;
-  if (!resolvedLine && (args as { groupId?: string }).groupId) {
-    const acct = accountForCall(args as { account?: string });
-    resolvedLine = lineOf(acct.cfg.id, (args as { groupId: string }).groupId);
-  }
-  if (!resolvedLine) throw new Error('setLabels requires `line` or `groupId`');
+  const resolvedLine = resolveLine(args, 'setLabels');
   if (!Array.isArray(labels)) throw new Error('setLabels requires a `labels` array');
-  const { acct, conv } = await convOf(resolvedLine);
-  if (!conv) throw new Error(`conversation not found for ${resolvedLine}`);
-  const group = conv as unknown as GroupLike;
-  if (typeof group.updateAppData !== 'function') {
-    throw new Error('setLabels target is not a group (no updateAppData)');
-  }
-  await group.sync?.().catch(() => undefined);
-  if (typeof setName === 'string' && setName && typeof group.updateName === 'function') {
-    await group.updateName(setName);
-    warmGroupName(group.id, setName);
-  }
-  if (typeof setDescription === 'string' && typeof group.updateDescription === 'function') {
-    await group.updateDescription(setDescription);
-  }
-  const clean = cleanLabels(labels);
-  await group.updateAppData(labelsBlob(group.appData, clean, setGithub));
-  respond(id, { result: { line: resolvedLine, id: group.id, account: acct.cfg.id, labels: clean } });
+  const appData: Record<string, unknown> = { labels };
+  if (typeof setGithub === 'string') appData['github'] = setGithub;
+  const result = await applyChannelMeta(
+    { line: resolvedLine, name: setName, description: setDescription, appData }, 'setLabels');
+  respond(id, { result: {
+    line: result['line'], id: result['id'], account: result['account'], labels: result['labels'] } });
 }
 
 async function query(id: string, args: Args): Promise<void> {
@@ -194,6 +179,6 @@ async function listConvs(id: string, args: Args): Promise<void> {
 }
 
 export const convHandlers: Record<string, Handler> = {
-  newDm, newGroup, createRequestGroup, setLabels, setGithub, closeGroup, query, groupInfo, listConvs,
+  newDm, newGroup, createRequestGroup, setLabels, setGithub, updateChannelMeta, closeGroup, query, groupInfo, listConvs,
   ...pushHandlers,
 };

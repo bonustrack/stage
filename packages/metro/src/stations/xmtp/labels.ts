@@ -72,6 +72,34 @@ export function readAppData(appData: string | undefined): { labels: string[]; gi
   }
 }
 
+/** Merge a partial appData object into existing appData (preserving v:1, labels,
+ *  github, other keys). Cleans `labels`, validates `github` ('' clears). Returns
+ *  { blob, merged } — the JSON string to write + the parsed result. */
+export function mergeAppData(
+  existingAppData: string | undefined,
+  patch: Record<string, unknown>,
+): { blob: string; merged: Record<string, unknown> } {
+  let existing: Record<string, unknown> = {};
+  if (existingAppData && existingAppData.trim()) {
+    try {
+      const p: unknown = JSON.parse(existingAppData);
+      if (p && typeof p === 'object' && !Array.isArray(p)) existing = p as Record<string, unknown>;
+    } catch { /* tolerate malformed */ }
+  }
+  const merged: Record<string, unknown> = { ...existing, v: 1 };
+  for (const [k, v] of Object.entries(patch)) {
+    if (k === 'labels') { merged['labels'] = cleanLabels(v); continue; }
+    if (k === 'github') {
+      const g = normalizeGithubUrl(v); // throws on bad url; '' = clear
+      if (g) merged['github'] = g; else delete merged['github'];
+      continue;
+    }
+    if (v === undefined || v === null) delete merged[k]; // null = clear over the wire
+    else merged[k] = v;
+  }
+  return { blob: JSON.stringify(merged), merged };
+}
+
 /** Validate a GitHub URL. Returns the normalised URL, or throws. Empty string is
  *  the caller's "clear" sentinel and is allowed through unchanged. */
 export function normalizeGithubUrl(url: unknown): string {
