@@ -25,9 +25,11 @@ import type { RefObject } from 'react';
 import type { FlatList } from 'react-native-gesture-handler';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Reanimated, {
-  runOnJS, useAnimatedStyle, useSharedValue, withTiming,
+  interpolate, runOnJS, useAnimatedStyle, useSharedValue, withTiming,
 } from 'react-native-reanimated';
 import { useRouter, useNavigation } from 'expo-router';
+import { Box } from '../layout';
+import { usePalette } from '../../lib/theme';
 
 /** Rightward travel (dp) OR min velocity to commit the pop. */
 const POP_THRESHOLD = 64;
@@ -48,6 +50,7 @@ export function BackSwipe({
 }): React.ReactElement {
   const router = useRouter();
   const navigation = useNavigation();
+  const { bg } = usePalette();
   const tx = useSharedValue(0);
 
   const goBack = useCallback(() => {
@@ -57,12 +60,10 @@ export function BackSwipe({
   const pan = Gesture.Pan()
     .activeOffsetX(ACTIVE_X)
     .failOffsetY([-FAIL_Y, FAIL_Y])
-    /** Don't fight the inverted message list's native vertical scroll. RNGH types
-     *  the ref param as `RefObject<… | undefined>`; our list ref is
-     *  `RefObject<FlatList | null>` (React's useRef nullable shape), so we widen it
-     *  here — the value is the same component instance either way. */
+    /** RNGH wants `RefObject<ComponentType | undefined>`; our list ref is a
+     *  nullable FlatList ref. Same instance — widen the type for the call. */
     .simultaneousWithExternalGesture(
-      listRef as unknown as RefObject<React.ComponentType | undefined>,
+      listRef as unknown as RefObject<React.ComponentType<unknown> | undefined>,
     )
     .onUpdate((e) => {
       'worklet';
@@ -80,13 +81,48 @@ export function BackSwipe({
       tx.value = withTiming(0, { duration: 180 });
     });
 
-  const style = useAnimatedStyle(() => ({ transform: [{ translateX: tx.value }] }));
+  /** Moving card: follows the finger + casts a soft shadow on its left edge that
+   *  deepens with travel, so it reads as a card sliding away over the backdrop. */
+  const style = useAnimatedStyle(() => ({
+    transform: [{ translateX: tx.value }],
+    shadowOpacity: interpolate(tx.value, [0, 12], [0, 0.28]),
+  }));
+  /** Backdrop scrim revealed behind the card: theme bg (never black) with a thin
+   *  dark overlay that fades from fully dark→lighter as the card slides off, for
+   *  an iOS-like dimmed-parallax feel. */
+  const scrimStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(tx.value, [0, MAX_FOLLOW], [0, 0.18]),
+  }));
 
   return (
     <GestureDetector gesture={pan}>
-      <Reanimated.View style={[{ flex: 1 }, style]}>
-        {children}
-      </Reanimated.View>
+      <Box style={{ flex: 1, backgroundColor: bg }}>
+        {/** Dimmed scrim sits on top of the themed bg, under the moving card. */}
+        <Reanimated.View
+          pointerEvents="none"
+          style={[
+            { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#000' },
+            scrimStyle,
+          ]}
+        />
+        <Reanimated.View
+          style={[
+            {
+              flex: 1,
+              backgroundColor: bg,
+              // iOS: left-edge drop shadow on the sliding card.
+              shadowColor: '#000',
+              shadowOffset: { width: -3, height: 0 },
+              shadowRadius: 8,
+              // Android: elevation reads as an all-round shadow; cheap depth cue.
+              elevation: 12,
+            },
+            style,
+          ]}
+        >
+          {children}
+        </Reanimated.View>
+      </Box>
     </GestureDetector>
   );
 }

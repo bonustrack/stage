@@ -122,7 +122,8 @@ export default function XmtpConversation(): React.ReactElement {
         </Pressable>
       </Box>
       {/** Fade strip below the top nav — mirrors the composer's top fade. Start it 1px
-       *  higher so its solid-bg top edge overlaps the nav bottom, closing the seam. */}
+       *  higher so its solid-bg top edge overlaps the nav bottom, closing the hairline
+       *  seam between the two absolute bg layers, then ramps to transparent. */}
       <ComposerGradient bg={bg} direction="up" top={52 + insets.top - 1} height={24} />
       <KeyboardStickyView offset={{ opened: insets.bottom }}>
       <Box>
