@@ -27,13 +27,19 @@ export default function WalletSend(): React.ReactElement {
   const router = useRouter();
   /** `to` may be pre-populated by callers (e.g. the profile Send button passes
    *  `?to=<address>`) — seed the input so the user doesn't retype. */
-  const params = useLocalSearchParams<{ to?: string }>();
+  const params = useLocalSearchParams<{ to?: string; mode?: string; symbol?: string; chainId?: string }>();
   const { fg, head, sub, bg, border, rowBg: inputBg } = usePalette();
   const dark = useEffectiveColorScheme() === 'dark';
   const insets = useSafeAreaInsets();
 
-  /** Public send vs Shield (public → own 0zk private wallet). */
-  const [sendMode, setSendMode] = useState<'public' | 'shield'>('public');
+  /** Public send vs Shield (public → own 0zk private wallet). Defaults to
+   *  shield when the token detail page's Shield button passes `?mode=shield`. */
+  const [sendMode, setSendMode] = useState<'public' | 'shield'>(
+    params.mode === 'shield' ? 'shield' : 'public',
+  );
+  /** Token/network pre-selected by the token detail page (Shield button). */
+  const initialSymbol = params.symbol === 'USDC' ? 'USDC' : params.symbol === 'ETH' ? 'ETH' : undefined;
+  const initialChainId = typeof params.chainId === 'string' ? Number(params.chainId) : undefined;
   const { snapshot: privSnapshot } = usePrivateWallet();
   const p = usePublicSend(typeof params.to === 'string' ? params.to : '');
   const pal = { fg, head, sub, border, inputBg };
@@ -46,7 +52,8 @@ export default function WalletSend(): React.ReactElement {
         <SendModeToggle pal={pal} mode={sendMode} setMode={setSendMode} />
 
         {sendMode === 'shield' ? (
-          <ShieldForm pal={pal} dark={dark} zkAddress={privSnapshot?.zkAddress ?? null} />
+          <ShieldForm pal={pal} dark={dark} zkAddress={privSnapshot?.zkAddress ?? null}
+            initialSymbol={initialSymbol} initialChainId={initialChainId && Number.isFinite(initialChainId) ? initialChainId : undefined} />
         ) : (
           <>
             <RecipientField

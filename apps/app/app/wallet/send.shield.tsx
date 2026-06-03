@@ -23,12 +23,14 @@ type Phase = 'idle' | 'working' | 'broadcasting' | 'done' | 'error';
 const SYMBOLS = ['ETH', 'USDC'] as const;
 const NETS = [{ id: 11155111, label: 'Sepolia' }, { id: 1, label: 'Ethereum' }] as const;
 
-export function ShieldForm({ pal, dark, zkAddress }: {
+export function ShieldForm({ pal, dark, zkAddress, initialSymbol, initialChainId }: {
   pal: Pal; dark: boolean; zkAddress: string | null;
+  /** Pre-selected token/network (from the token detail page's Shield button). */
+  initialSymbol?: 'ETH' | 'USDC'; initialChainId?: number;
 }): React.ReactElement {
   const { fg, head, sub, border, inputBg } = pal;
-  const [symbol, setSymbol] = useState<'ETH' | 'USDC'>('ETH');
-  const [chainId, setChainId] = useState<number>(11155111);
+  const [symbol, setSymbol] = useState<'ETH' | 'USDC'>(initialSymbol ?? 'ETH');
+  const [chainId, setChainId] = useState<number>(initialChainId ?? 11155111);
   const [amount, setAmount] = useState('');
   const [phase, setPhase] = useState<Phase>('idle');
   const [txHash, setTxHash] = useState<string | null>(null);

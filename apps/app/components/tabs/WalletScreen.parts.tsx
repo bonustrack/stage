@@ -101,8 +101,10 @@ function PrivateBadge({ sub }: { sub: string }): React.ReactElement {
   return <Icon name={name} size={15} color={sub} />;
 }
 
-/** A single asset row — 4-corner layout with token avatar + network badge. */
-export function TokenRow({ r, head, sub, border, bg }: { r: AssetRow } & Omit<Palette, 'card'>): React.ReactElement {
+/** A single asset row — 4-corner layout with token avatar + network badge.
+ *  Tappable: `onPress` navigates to the token detail screen (wired by the
+ *  caller). Wrapped in a Pressable with a subtle pressed-opacity. */
+export function TokenRow({ r, head, sub, border, bg, onPress }: { r: AssetRow; onPress?: () => void } & Omit<Palette, 'card'>): React.ReactElement {
   const valueUsd = r.priceUsd === null ? null : r.priceUsd * Number(r.balance);
   /** Up/down colour for the 24h change pill — green for non-negative,
    *  red for negative. Uses the same tones as Snapshot UI's treasury. */
@@ -110,6 +112,7 @@ export function TokenRow({ r, head, sub, border, bg }: { r: AssetRow } & Omit<Pa
   const changeText = r.change24h === null ? '' :
     `${r.change24h >= 0 ? '+' : ''}${r.change24h.toFixed(2)}%`;
   return (
+    <Pressable onPress={onPress} disabled={!onPress} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
     <Row
       align="center" gap={12} py={14}
       style={{
@@ -169,6 +172,7 @@ export function TokenRow({ r, head, sub, border, bg }: { r: AssetRow } & Omit<Pa
         </Text>
       </Col>
     </Row>
+    </Pressable>
   );
 }
 

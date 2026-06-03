@@ -6,33 +6,31 @@
  *  on the left, USD value + amount/symbol on the right. */
 
 import { useEffect, useRef, useState } from 'react';
+import { RefreshControl } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import { Spinner } from '../Spinner';
 import type { SimultaneousRefs } from '../SwipeTabs';
 import { Text } from '@metro-labs/kit/text';
 import { useRouter } from 'expo-router';
-import { getOrCreateXmtpClient } from '../../lib/xmtp';
 import { flash } from '../../lib/toast';
 import { usePeerProfiles } from '../../lib/peerProfiles';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { Col, Row } from '../layout';
 import { getNftsAcrossChains, type Nft } from '../../lib/opensea';
-import { type AssetRow } from './WalletScreen.assets';
-import { fetchAssetRows } from './WalletScreen.data';
 import { Btn, WalletTabs, TokenRow, NftsView, fmtUsd, splitUsd, type WalletTab } from './WalletScreen.parts';
 import { PrivateView } from './WalletScreen.private';
 import { privateBalancesToRows, symbolPricesFromPublic } from './WalletScreen.private.rows';
 import { usePrivateWallet } from '../../lib/railgun/usePrivateWallet';
 import { prewarmRailgun } from '../../lib/railgun/engine';
+import { useWalletBalances } from './WalletScreen.balances';
 
 export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const router = useRouter();
   const { head, sub, bg, border } = usePalette();
   const dark = useEffectiveColorScheme() === 'dark';
 
-  const [address, setAddress] = useState<string>('');
-  const [rows, setRows] = useState<AssetRow[] | null>(null);
-  const [err, setErr] = useState<string>('');
+  const { snapshot: privSnapshot, accountId: privAccountId } = usePrivateWallet(true);
+  const { address, rows, err, refreshing, onRefresh } = useWalletBalances(privAccountId);
   usePeerProfiles([address]);
 
   /** Shielded (Railgun) balances — reuses the same instant-paint hook the
@@ -46,7 +44,6 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
    *  Client.create has settled (never races it on first launch). The bridge's
    *  `started`/readyPromise guard makes the boot single-flight, so if the
    *  Private tab already started it this is a no-op (no double-start). */
-  const { snapshot: privSnapshot } = usePrivateWallet(true);
   // ALWAYS render the fixed private row set (ETH/USDC × mainnet/Sepolia), even
   // pre-snapshot / pre-scan / at zero — pass the snapshot (may be null) so the
   // mapper seeds zero rows from the token registry then overlays live amounts.
@@ -91,30 +88,19 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
     return () => { cancelled = true; };
   }, [tab, address]);
 
-  useEffect(() => {
-    let cancelled = false;
-    void (async (): Promise<void> => {
-      try {
-        const client = await getOrCreateXmtpClient('production');
-        const addr = client.publicIdentity.identifier;
-        if (cancelled) return;
-        setAddress(addr);
-        const next = await fetchAssetRows(addr);
-        if (cancelled) return;
-        setRows(next);
-      } catch (e) {
-        if (!cancelled) setErr((e as Error).message);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
-
   const totalUsd = rows
     ? rows.reduce((s, r) => s + (r.priceUsd ?? 0) * Number(r.balance), 0)
     : null;
 
   return (
-    <ScrollView simultaneousHandlers={panRef} style={{ flex: 1, backgroundColor: bg }} contentContainerStyle={{ paddingBottom: 24 }}>
+    <ScrollView
+      simultaneousHandlers={panRef}
+      style={{ flex: 1, backgroundColor: bg }}
+      contentContainerStyle={{ paddingBottom: 24 }}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={head} colors={[head]} />
+      }
+    >
       {/* Value card — compact, left-aligned. Just the big total USD value;
           the account header (avatar/name/address) and the "TOTAL VALUE ·
           ETHEREUM" label were dropped per review. Decimals render in the dim
@@ -169,6 +155,13 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
           <TokenRow
             key={`${r.isPrivate ? 'priv' : 'pub'}:${r.chainId}:${r.symbol}`}
             r={r} head={head} sub={sub} border={border} bg={bg}
+            onPress={() => router.push({
+              pathname: '/wallet/token/[id]',
+              params: {
+                id: `${r.isPrivate ? 'priv' : 'pub'}:${r.chainId}:${r.symbol}`,
+                row: JSON.stringify(r),
+              },
+            })}
           />
         ))}
       </Col>
