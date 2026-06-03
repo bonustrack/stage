@@ -65,9 +65,10 @@ export default function XmtpConversation(): React.ReactElement {
         flex: 1, backgroundColor: bg, paddingBottom: insets.bottom,
       }}
     >
-      <Reanimated.View style={[{ flex: 1 }, listWrapperStyle]}>
-      {/** In-screen edge-swipe-back (see BackSwipe) — mounted here, not the root overlay. */}
+      {/** In-screen edge-swipe-back (see BackSwipe). Wraps the WHOLE screen tree
+       *   (topnav + feed + composer) so the entire page translates with the finger. */}
       <BackSwipe listRef={c.listRef}>
+      <Reanimated.View style={[{ flex: 1 }, listWrapperStyle]}>
       <ConversationFeed
         c={c}
         convId={convId}
@@ -78,7 +79,6 @@ export default function XmtpConversation(): React.ReactElement {
         insets={insets}
         router={router}
       />
-      </BackSwipe>
       </Reanimated.View>
       {/** Top nav: solid bg strip mirrors the composer footer + extends UP over the
        *  status-bar area so content sliding under the keyboard doesn't show through. */}
@@ -194,6 +194,7 @@ export default function XmtpConversation(): React.ReactElement {
           setMenuFor(null);
         }}
       />
+      </BackSwipe>
     </RNAnimated.View>
   );
 }
