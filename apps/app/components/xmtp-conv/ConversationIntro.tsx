@@ -74,7 +74,7 @@ export function ConversationIntro({
         <IntroLabelChips labels={groupLabels} fg={fg} rowBg={rowBg} />
         {desc ? (
           <Text
-            style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium', marginTop: 10, textAlign: 'left', lineHeight: 20 }}
+            style={{ color: sub, fontSize: 16, fontFamily: 'Calibre-Medium', marginTop: 10, textAlign: 'left', lineHeight: 21 }}
           >
             {desc}
           </Text>
@@ -99,7 +99,7 @@ export function ConversationIntro({
       </Text>
       {about ? (
         <Text
-          style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium', marginTop: 10, textAlign: 'left', lineHeight: 20 }}
+          style={{ color: sub, fontSize: 16, fontFamily: 'Calibre-Medium', marginTop: 10, textAlign: 'left', lineHeight: 21 }}
         >
           {about}
         </Text>
