@@ -22,7 +22,17 @@ import {
 import { deriveRailgunKeyMaterial } from './deriveKeys';
 import { RAILGUN_NETWORKS, type RailgunNet } from './networks';
 import { RAILGUN_TOKENS } from './tokens';
+import { patchBalanceDebug } from './balanceDebug';
 import type { PrivateBalance, PrivateSnapshot } from './types';
+
+/** Map raw wei rows for a chainId (not net) → fixed display rows. Used by the
+ *  live balanceUpdate watcher, which only knows the numeric chain id. */
+export function mapEventRows(chainId: number, rows: BridgeBalanceRow[]): PrivateBalance[] {
+  const net = (Object.keys(RAILGUN_NETWORKS) as RailgunNet[]).find(
+    (n) => RAILGUN_NETWORKS[n].chainId === chainId,
+  );
+  return net ? mapRows(net, rows) : [];
+}
 
 /** Sum the engine's wei rows for a given token address (case-insensitive).
  *  Railgun keys balances by ERC20 contract address; native ETH lands under the
@@ -56,9 +66,18 @@ function mapRows(net: RailgunNet, rows: BridgeBalanceRow[]): PrivateBalance[] {
  *  the caller can fall back. Throws only on genuine derivation/call failure
  *  (caught by the caller, which keeps the warm cache). */
 export async function bridgeRefreshSnapshot(prev: PrivateSnapshot | null): Promise<PrivateSnapshot | null> {
-  if (!isBridgeAvailable()) return null;
+  if (!isBridgeAvailable()) {
+    patchBalanceDebug({ bridgeAvailable: false, phase: 'idle' });
+    return null;
+  }
+  patchBalanceDebug({ bridgeAvailable: true, phase: 'scanning', refreshError: null, refreshAt: Date.now() });
   const key = await deriveRailgunKeyMaterial();
-  await engineInit();
+  try {
+    const st = await engineInit();
+    patchBalanceDebug({ engineReady: st.ready, engineError: st.error ?? null });
+  } catch (e) {
+    patchBalanceDebug({ engineReady: false, engineError: (e as Error).message });
+  }
   const info = await walletInfo({
     encryptionKey: key.encryptionKey,
     mnemonic: key.mnemonic,
@@ -70,6 +89,13 @@ export async function bridgeRefreshSnapshot(prev: PrivateSnapshot | null): Promi
     const res = await getBalances(info.railgunWalletID);
     balances = [...mapRows('mainnet', res.networks.mainnet), ...mapRows('sepolia', res.networks.sepolia)];
     scanning = res.scanning;
-  } catch { /* scan may not be ready; keep the 0zk address + prior balances */ }
+    patchBalanceDebug({
+      phase: 'done',
+      getBalancesRows: { mainnet: res.networks.mainnet.length, sepolia: res.networks.sepolia.length },
+    });
+  } catch (e) {
+    // scan may not be ready; keep the 0zk address + prior balances
+    patchBalanceDebug({ phase: 'error', refreshError: (e as Error).message });
+  }
   return { zkAddress: info.railgunAddress, balances, updatedAt: Date.now(), scanning };
 }
