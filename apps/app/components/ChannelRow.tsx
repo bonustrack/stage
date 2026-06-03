@@ -43,6 +43,10 @@ export interface ChannelRowProps {
   markedUnread?: boolean;
   pinned?: boolean;
   hasDraft?: boolean;
+  /** Group labels (from XMTP appData) to render as compact read-only chips
+   *  under the title. Groups only — DMs pass none. Capped to a few visible
+   *  with a "+N" overflow pill so the card never overflows. */
+  labels?: string[];
   /** Trailing chevron (used in the boxed common-channels list). */
   showChevron?: boolean;
   avatarSize?: number;
@@ -52,6 +56,39 @@ export interface ChannelRowProps {
   containerStyle?: StyleProp<ViewStyle>;
 }
 
+/** Max label chips shown on a card before collapsing the rest into "+N". */
+const MAX_VISIBLE_LABELS = 3;
+
+/** Compact, read-only label chips row shown under the preview (groups only).
+ *  Matches the group-info LabelChip pill style (rounded, bordered, subtle fill)
+ *  minus the remove affordance. Caps at MAX_VISIBLE_LABELS + a "+N" pill. */
+function LabelChips({ labels, fg, sub, border }: {
+  labels: string[]; fg: string; sub: string; border: string;
+}): React.ReactElement | null {
+  if (labels.length === 0) return null;
+  const visible = labels.slice(0, MAX_VISIBLE_LABELS);
+  const overflow = labels.length - visible.length;
+  return (
+    <Row align="center" gap={6} mt={4} style={{ flexWrap: 'nowrap', overflow: 'hidden' }}>
+      {visible.map(label => (
+        <Box key={label.toLowerCase()} style={{
+          paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999,
+          borderWidth: 1, borderColor: border, flexShrink: 1,
+        }}>
+          <Text numberOfLines={1} style={{ color: fg, fontSize: 12, fontFamily: 'Calibre-Medium' }}>
+            {label}
+          </Text>
+        </Box>
+      ))}
+      {overflow > 0 ? (
+        <Box style={{ paddingHorizontal: 8, paddingVertical: 2 }}>
+          <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>{`+${overflow}`}</Text>
+        </Box>
+      ) : null}
+    </Row>
+  );
+}
+
 /** #6: memoised so a stream tick that re-renders the channels list only
  *  re-renders the rows whose props actually changed (not the whole window).
  *  All props are primitives or stable callbacks (hoisted in the caller). */
@@ -59,9 +96,9 @@ function ChannelRowBase({
   title, avatarAddress, avatarUri, cacheBuster, square,
   lastPreview, timestamp, subtitle, unreadCount = 0, markedUnread,
   pinned, hasDraft, showChevron, avatarSize = 40,
-  onPress, onLongPress, containerStyle,
+  onPress, onLongPress, containerStyle, labels,
 }: ChannelRowProps): React.ReactElement {
-  const { head, sub, bg, border } = usePalette();
+  const { head, sub, fg, bg, border } = usePalette();
   const previewText = lastPreview && lastPreview.length > 0 ? lastPreview : subtitle ?? '';
 
   return (
@@ -118,6 +155,9 @@ function ChannelRowBase({
               <Text style={{ color: sub, fontSize: 18 }}>›</Text>
             ) : null}
           </Row>
+          {labels && labels.length > 0 ? (
+            <LabelChips labels={labels} fg={fg} sub={sub} border={border} />
+          ) : null}
         </Col>
       </Row>
     </Pressable>

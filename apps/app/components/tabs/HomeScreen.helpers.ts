@@ -9,6 +9,7 @@ import {
 import { isMetroControlBody } from '../../lib/push';
 import { previewOfXmtpContent } from '@metro-labs/client/xmtp/humanize';
 import { channelStampSeed } from '@metro-labs/kit/avatar';
+import { labelsOfSyncedGroup } from '../../lib/xmtp.labels';
 
 export interface Row {
   convId: string;
@@ -44,6 +45,10 @@ export interface Row {
   /** Own inbox id — also needed to filter own messages out of the unread
    *  recount on stream updates. */
   selfInboxId: string;
+  /** Group labels (from the group's synced XMTP appData), GROUPS ONLY — empty
+   *  for DMs. Read in summarize() off the already-synced conv (no extra sync),
+   *  so they refresh on every list refresh/poll. Rendered as chips on the card. */
+  labels: string[];
   /** Make Row a structural superset of `CachedRow` so we can pass it
    *  straight through `setCachedRows` without casting. */
   [key: string]: unknown;
@@ -62,6 +67,19 @@ export function convIdFromTopic(topic: string | undefined): string | null {
 /** Fixed ChannelRow height: 14px vertical padding ×2 + ~48px content (title 22 +
  *  4 margin + 22 badge-reserve) + 1px separator. Used by getItemLayout (#5). */
 export const CHANNEL_ROW_HEIGHT = 77;
+
+/** Extra height a row gains when it shows the label-chips line: chip pill
+ *  (~20px: 12px text + 2×2 padding + 2 border ≈ 18, round to 20) + 4px top
+ *  margin. Kept in sync with ChannelRow's LabelChips. */
+export const LABEL_CHIPS_ROW_HEIGHT = 24;
+
+/** Height of a single row, accounting for the optional group label-chips line.
+ *  Drives the variable-height getItemLayout so rows with chips don't desync the
+ *  list's jump-scroll math. */
+export function rowHeight(row: Row | undefined): number {
+  const hasLabels = Array.isArray(row?.labels) && row!.labels.length > 0;
+  return CHANNEL_ROW_HEIGHT + (hasLabels ? LABEL_CHIPS_ROW_HEIGHT : 0);
+}
 
 export function fmtTs(ts: number | null): string {
   if (!ts) return '';
@@ -109,6 +127,9 @@ export async function summarize(conv: Conversation, selfInboxId: string): Promis
         ]);
         return { name: n ?? '', imageUrl: img ?? '' };
       })();
+  /** Group labels (DMs have none). Read off the conv synced above at line ~77,
+   *  so no extra group.sync() fires per row — refreshes on each list refresh. */
+  const labels = peerAddress ? [] : await labelsOfSyncedGroup(conv);
   const title = peerAddress
     ? shortAddress(peerAddress)
     : (groupMeta.name.trim()
@@ -160,5 +181,6 @@ export async function summarize(conv: Conversation, selfInboxId: string): Promis
     lastReadNs,
     selfInboxId,
     markedUnread,
+    labels,
   };
 }

@@ -66,6 +66,7 @@ export function useChannelRowRenderer(
         markedUnread={item.markedUnread}
         pinned={isPinned(item.convId)}
         hasDraft={hasDraft(item.convId)}
+        labels={isGroup ? item.labels : undefined}
         onPress={() => router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } })}
         onLongPress={() => {
           /** Tiny haptic-style buzz when the long-press opens the row menu.

@@ -91,6 +91,22 @@ export async function getGroupLabels(line: string): Promise<string[]> {
   }
 }
 
+/** Read the labels off an ALREADY-LOADED group conversation WITHOUT forcing a
+ *  fresh `sync()`. The channels list calls `conv.sync()` once per row in
+ *  `summarize()`; this piggybacks on that synced state to read `appData()` with
+ *  no extra network round-trip — so rendering label chips on every card never
+ *  triggers a per-row sync (which would jank/rate-limit the list). Returns []
+ *  for DMs, non-groups, or any read error. */
+export async function labelsOfSyncedGroup(conv: unknown): Promise<string[]> {
+  const group = asGroup(conv);
+  if (!group) return [];
+  try {
+    return readLabels(parseBlob(await group.appData!()));
+  } catch {
+    return [];
+  }
+}
+
 /** Read → mutate → write, merging into the existing appData object so we never
  *  clobber other keys. Returns the resulting label list. Throws
  *  LabelPermissionError when the write is permission-denied. */

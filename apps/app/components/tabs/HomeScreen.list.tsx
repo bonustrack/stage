@@ -11,7 +11,7 @@ import { Box, Row } from '../layout';
 import { Text } from '@metro-labs/kit/text';
 import { CHANNELS_SCROLL_KEY, saveScrollOffset } from '../../lib/scrollPos';
 import { useEffectiveColorScheme } from '../../lib/theme';
-import { CHANNEL_ROW_HEIGHT } from './HomeScreen.helpers';
+import { rowHeight } from './HomeScreen.helpers';
 import type { Row as RowT } from './HomeScreen.helpers';
 import { HomeEmpty } from './HomeScreen.parts';
 
@@ -117,9 +117,12 @@ export function ChannelsList({
   );
 }
 
-/** ChannelRow is fixed-height (#5) → getItemLayout lets the list skip
- *  measuring + jump-scroll without rendering intermediate rows. Keep in sync
- *  with ChannelRow's layout (avatar 40 / 14px vertical padding / 1px border). */
-export function channelRowLayout(_d: ArrayLike<RowT> | null | undefined, index: number): { length: number; offset: number; index: number } {
-  return { length: CHANNEL_ROW_HEIGHT, offset: CHANNEL_ROW_HEIGHT * index, index };
+/** getItemLayout lets the list skip measuring + jump-scroll without rendering
+ *  intermediate rows. Rows are mostly fixed-height, but a group row showing
+ *  label chips is taller — so we sum per-row heights (rowHeight) up to `index`
+ *  for the offset, keeping jump-scroll math correct with variable heights. */
+export function channelRowLayout(d: ArrayLike<RowT> | null | undefined, index: number): { length: number; offset: number; index: number } {
+  let offset = 0;
+  for (let i = 0; i < index; i += 1) offset += rowHeight(d?.[i]);
+  return { length: rowHeight(d?.[index]), offset, index };
 }
