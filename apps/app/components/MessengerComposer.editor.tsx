@@ -31,10 +31,10 @@ interface EditorProps {
 
 export function ComposerEditor(p: EditorProps): React.ReactElement {
   const { dark, fg, head, sub, inputBg, chipBg, recording } = p;
-  const Btn = ({ icon, onPress }: { icon: HeroIconName; onPress: () => void }): React.ReactElement => (
+  const Btn = ({ icon, onPress, mr }: { icon: HeroIconName; onPress: () => void; mr?: number }): React.ReactElement => (
     <Pressable onPress={onPress} style={({ pressed }) => ({
       width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
-      backgroundColor: pressed ? chipBg : 'transparent',
+      backgroundColor: pressed ? chipBg : 'transparent', marginRight: mr,
     })}>
       <Icon name={icon} size={22} color={fg} />
     </Pressable>
@@ -72,9 +72,12 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
           ? <Btn icon="x" onPress={p.onCancelRec} />
           : (
             <>
-              {/** Quick-access: re-trigger the last-used attachment type directly. */}
+              {/** Quick-access: re-trigger the last-used attachment type directly.
+               *   Negative marginRight pulls it tight against the + button — the 38px
+               *   Btns have wide internal padding, so this removes the visual slack
+               *   (the Row gap=4 below would otherwise leave the pair looking spread). */}
               {!p.attachMenuOpen && p.quickIcon && p.onQuick
-                ? <Btn icon={p.quickIcon} onPress={p.onQuick} />
+                ? <Btn icon={p.quickIcon} onPress={p.onQuick} mr={-12} />
                 : null}
               <Btn icon={p.attachMenuOpen ? 'x' : 'plus'} onPress={() => p.setAttachMenuOpen(o => !o)} />
             </>
