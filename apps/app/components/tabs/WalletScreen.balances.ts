@@ -52,16 +52,27 @@ export function useWalletBalances(privAccountId: string | null): WalletBalances 
   const onRefresh = useCallback((): void => {
     if (!address) return;
     setRefreshing(true);
+    /** Belt-and-braces: even though the spinner is now a pure-JS overlay bound
+     *  to `refreshing` (so it can't strand the way the native RefreshControl
+     *  did), keep a hard 8s ceiling so a wedged RPC never leaves it spinning.
+     *  The public fetch is awaited for the visible spinner; the Railgun
+     *  shielded re-scan is fired in the BACKGROUND (it can take many seconds and
+     *  pushes its result into the cache store, which the UI subscribes to) so it
+     *  never holds the spinner hostage. */
+    let done = false;
+    const clear = (): void => { if (!done) { done = true; setRefreshing(false); } };
+    const hardStop = setTimeout(clear, 8000);
+    if (privAccountId) void refreshSnapshot(privAccountId).catch(() => {});
     void (async (): Promise<void> => {
       try {
-        await Promise.all([
-          fetchAssetRows(address).then(next => { setRows(next); setErr(''); }),
-          privAccountId ? refreshSnapshot(privAccountId) : Promise.resolve(),
-        ]);
+        const next = await fetchAssetRows(address);
+        setRows(next);
+        setErr('');
       } catch (e) {
         setErr((e as Error).message);
       } finally {
-        setRefreshing(false);
+        clearTimeout(hardStop);
+        clear();
       }
     })();
   }, [address, privAccountId]);

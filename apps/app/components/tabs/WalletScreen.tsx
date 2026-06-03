@@ -6,8 +6,8 @@
  *  on the left, USD value + amount/symbol on the right. */
 
 import { useEffect, useRef, useState } from 'react';
-import { RefreshControl } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
+import { usePullToRefresh } from './PullToRefresh';
 import { Spinner } from '../Spinner';
 import type { SimultaneousRefs } from '../SwipeTabs';
 import { Text } from '@metro-labs/kit/text';
@@ -32,6 +32,12 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
   const { snapshot: privSnapshot, accountId: privAccountId } = usePrivateWallet(true);
   const { address, rows, err, refreshing, onRefresh } = useWalletBalances(privAccountId);
   usePeerProfiles([address]);
+
+  /** Custom JS-only pull-to-refresh — replaces RN's native RefreshControl, which
+   *  stranded its spinner on Android inside this nested-gesture ScrollView. The
+   *  indicator's visibility is bound solely to `refreshing` (guaranteed to clear
+   *  via try/finally + 8s hardStop in balances.ts), so it can never wedge. */
+  const pull = usePullToRefresh(refreshing, onRefresh, head);
 
   /** Shielded (Railgun) balances — reuses the same instant-paint hook the
    *  Private tab uses (cached snapshot + pending overlay, no refetch). They're
@@ -99,23 +105,19 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
       contentContainerStyle={{ paddingBottom: 24, flexGrow: 1 }}
       /** alwaysBounceVertical + flexGrow:1 keep the list pullable even when the
        *  content is shorter than the viewport — without bounce the swipe-down
-       *  isn't recognised as an overscroll so RefreshControl never fires (this
-       *  was the "pull-to-refresh doesn't trigger" bug). nestedScrollEnabled lets
+       *  isn't recognised as an overscroll so the custom pull-to-refresh
+       *  (usePullToRefresh, onScroll-driven) never fires.
+       *  nestedScrollEnabled lets
        *  Android treat this as the scrolling element. The pager Pan gates on
        *  failOffsetY and is declared simultaneous via panRef, so the vertical
        *  pull is never swallowed by the horizontal tab-swipe. */
       alwaysBounceVertical
       nestedScrollEnabled
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          tintColor={head}
-          colors={[head]}
-          progressBackgroundColor={bg}
-        />
-      }
+      onScroll={pull.onScroll}
+      onScrollEndDrag={pull.onScrollEndDrag}
+      scrollEventThrottle={pull.scrollEventThrottle}
     >
+      {pull.indicator}
       {/* Value card — compact, left-aligned. Just the big total USD value;
           the account header (avatar/name/address) and the "TOTAL VALUE ·
           ETHEREUM" label were dropped per review. Decimals render in the dim
