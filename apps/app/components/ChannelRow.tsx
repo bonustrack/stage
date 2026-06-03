@@ -146,12 +146,13 @@ function ChannelRowBase({
           <Row align="center" gap={6}>
             {pinned ? <Icon name="mapPin" size={13} color={sub} /> : null}
             {hasDraft ? <Icon name="pencil" size={14} color={sub} /> : null}
-            <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', flex: 1, flexShrink: 1, minWidth: 0 }} numberOfLines={1} ellipsizeMode="tail">
+            <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', flexShrink: 1, minWidth: 0 }} numberOfLines={1} ellipsizeMode="tail">
               {title}
             </Text>
             {labels && labels.length > 0 ? (
               <LabelChips labels={labels} fg={fg} sub={sub} rowBg={rowBg} onLabelPress={onLabelPress} />
             ) : null}
+            <Box style={{ flex: 1 }} />
             {timestamp ? (
               <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{timestamp}</Text>
             ) : null}
