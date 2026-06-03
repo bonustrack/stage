@@ -21,7 +21,7 @@ import { type AssetRow } from './WalletScreen.assets';
 import { fetchAssetRows } from './WalletScreen.data';
 import { Btn, WalletTabs, TokenRow, NftsView, fmtUsd, splitUsd, type WalletTab } from './WalletScreen.parts';
 import { PrivateView } from './WalletScreen.private';
-import { privateBalancesToRows } from './WalletScreen.private.rows';
+import { privateBalancesToRows, symbolPricesFromPublic } from './WalletScreen.private.rows';
 import { usePrivateWallet } from '../../lib/railgun/usePrivateWallet';
 import { prewarmRailgun } from '../../lib/railgun/engine';
 
@@ -50,7 +50,10 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
   // ALWAYS render the fixed private row set (ETH/USDC × mainnet/Sepolia), even
   // pre-snapshot / pre-scan / at zero — pass the snapshot (may be null) so the
   // mapper seeds zero rows from the token registry then overlays live amounts.
-  const privateRows = privateBalancesToRows(privSnapshot);
+  const privateRows = privateBalancesToRows(
+    privSnapshot,
+    symbolPricesFromPublic(rows ?? []),
+  );
 
   /** Tokens | NFTs segmented toggle. NFTs are lazy-loaded: we only fetch on
    *  the first switch to the NFTs tab, then cache in `nfts` so toggling back
