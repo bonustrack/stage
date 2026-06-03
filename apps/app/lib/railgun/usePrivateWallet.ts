@@ -7,12 +7,16 @@
  *  BOOT-RACE GUARD: refreshSnapshot()→engineInit() boots the embedded Node
  *  (nodejs-mobile) runtime, whose native crypto/SQLCipher startup CONTENDS with
  *  XMTP's native `Client.create` MLS handshake when both run in the same process
- *  on first launch (intermittent "XMTP.create timed out" hangs). So:
- *    - `autoStart` defaults to FALSE: the always-mounted Tokens-tab consumer
- *      (WalletScreen.tsx) reads the warm cache only and NEVER boots the bridge.
- *    - Only an explicit Private-tab visit (PrivateView passes autoStart:true)
- *      boots the engine, and even then it waits for the XMTP client to be ready
- *      first (waitForXmtpReady) so nodejs-mobile never races create on boot. */
+ *  on first launch (intermittent "XMTP.create timed out" hangs). So the engine
+ *  boot is ALWAYS gated behind `waitForXmtpReady()` — it only ever starts AFTER
+ *  the XMTP client is ready, so nodejs-mobile is serialized after Client.create
+ *  and never races it on boot:
+ *    - `autoStart:true` consumers (both the always-mounted Tokens tab in
+ *      WalletScreen.tsx AND the Private tab) await waitForXmtpReady() THEN boot
+ *      the engine + background-refresh. The bridge's own `started`/readyPromise
+ *      guard makes this single-flight, so whichever tab triggers it first wins
+ *      and the other is a no-op (no double-start, one engine boot total).
+ *    - `autoStart:false` (default) reads the warm cache only and never boots. */
 import { useEffect, useState } from 'react';
 import { getActiveAccountId } from '../accounts';
 import { waitForXmtpReady } from '../xmtp';
@@ -26,9 +30,9 @@ export interface PrivateWalletState {
   pending: PendingAction[];
 }
 
-/** @param autoStart  When true (explicit Private-tab open), boot the engine +
- *  background-refresh AFTER XMTP is ready. When false (default — always-mounted
- *  Tokens tab), read the warm cache only; do NOT boot nodejs-mobile. */
+/** @param autoStart  When true (Tokens tab + Private tab), boot the engine +
+ *  background-refresh AFTER XMTP is ready (single-flight via the bridge guard).
+ *  When false, read the warm cache only; do NOT boot nodejs-mobile. */
 export function usePrivateWallet(autoStart = false): PrivateWalletState {
   const [accountId, setAccountId] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<PrivateSnapshot | null>(null);

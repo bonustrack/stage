@@ -37,8 +37,16 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
 
   /** Shielded (Railgun) balances — reuses the same instant-paint hook the
    *  Private tab uses (cached snapshot + pending overlay, no refetch). They're
-   *  merged into the public Tokens list below as `isPrivate` rows. */
-  const { snapshot: privSnapshot } = usePrivateWallet();
+   *  merged into the public Tokens list below as `isPrivate` rows.
+   *
+   *  autoStart:true so the Tokens tab itself boots the Railgun engine and the
+   *  user sees private balances WITHOUT having to open the Private tab. This is
+   *  the SAME safe path the Private tab uses: usePrivateWallet gates the engine
+   *  boot behind waitForXmtpReady(), so nodejs-mobile only starts AFTER XMTP's
+   *  Client.create has settled (never races it on first launch). The bridge's
+   *  `started`/readyPromise guard makes the boot single-flight, so if the
+   *  Private tab already started it this is a no-op (no double-start). */
+  const { snapshot: privSnapshot } = usePrivateWallet(true);
   const privateRows = privSnapshot ? privateBalancesToRows(privSnapshot.balances) : [];
 
   /** Tokens | NFTs segmented toggle. NFTs are lazy-loaded: we only fetch on
