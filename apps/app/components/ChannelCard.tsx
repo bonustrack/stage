@@ -9,6 +9,7 @@
 
 import { router } from 'expo-router';
 import { ChannelRow } from './ChannelRow';
+import { DmPeerCard } from './ChannelCard.dm';
 import { Box } from './layout';
 import { useConvMeta } from '../lib/useConvMeta';
 import { usePeerProfiles, getPeerName, getPeerAvatar, getPeerAvatarCb, isPeerResolved } from '../lib/peerProfiles';
@@ -16,7 +17,19 @@ import { channelStampSeed } from '@metro-labs/kit/avatar';
 import { usePalette } from '../lib/theme';
 import { shortAddress } from '../lib/xmtp';
 
-export function ChannelCard({ convId }: { convId: string; dark?: boolean }): React.ReactElement {
+/** When `peerAddress` is set the link is a DM-by-address share
+ *  (`metro://xmtp/user/<addr>`): render the peer card + open-on-tap path that
+ *  resolves each side's own local DM. Otherwise it's a conv-id link (group or
+ *  DM-by-id) resolved through `useConvMeta`. */
+export function ChannelCard(
+  { convId, peerAddress }: { convId?: string; peerAddress?: string; dark?: boolean },
+): React.ReactElement | null {
+  if (peerAddress) return <DmPeerCard address={peerAddress} />;
+  if (!convId) return null;
+  return <ConvIdCard convId={convId} />;
+}
+
+function ConvIdCard({ convId }: { convId: string }): React.ReactElement {
   const meta = useConvMeta(convId);
   usePeerProfiles([meta.peerAddr]);
   const { border } = usePalette();

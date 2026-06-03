@@ -8,7 +8,7 @@ import Markdown from 'react-native-markdown-display';
 import { YouTubeEmbed, LocationEmbed } from './MediaEmbeds';
 import { ChannelCard } from './ChannelCard';
 import { mapCoordsOf, youtubeIdOf } from '../lib/embedDetect';
-import { metroConvIdOf } from '../lib/xmtp';
+import { metroConvIdOf, metroDmPeerOf } from '../lib/xmtp';
 import { Box, Row } from './layout';
 import type { HistoryEntry } from '../lib/types';
 import {
@@ -97,7 +97,15 @@ export function BubbleContent({
       ) : entry.text ? (
         /** A message whose entire body is a metro channel link renders as the card
          *  alone (no raw URL); links mixed into other text keep the text + card. */
-        metroConvIdOf(entry.text) && entry.text.trim() === `metro://xmtp/${metroConvIdOf(entry.text)}` ? null : (
+        (() => {
+          const t = entry.text.trim();
+          const dmPeer = metroDmPeerOf(t);
+          const cid = metroConvIdOf(t);
+          // Whole-body channel/DM link → render the card alone (no raw URL).
+          const isBareLink = (dmPeer && t === `metro://xmtp/user/${dmPeer}`)
+            || (cid && t === `metro://xmtp/${cid}`);
+          return isBareLink;
+        })() ? null : (
           <Box style={{ alignSelf: 'stretch' }}>
             {selectable
               ? <Text selectable style={{ color: fg, fontSize: 19, lineHeight: 23, fontFamily: 'Calibre-Medium' }}>{entry.text}</Text>
@@ -109,6 +117,8 @@ export function BubbleContent({
       ) : null}
       {/** Inline embeds — metro channel card + YouTube + location, below the text so a URL stays tappable. */}
       {(() => {
+        const dmPeer = metroDmPeerOf(entry.text);
+        if (dmPeer) return <Box style={{ alignSelf: 'stretch', marginTop: 6 }}><ChannelCard peerAddress={dmPeer} dark={dark} /></Box>;
         const convId = metroConvIdOf(entry.text);
         if (convId) return <Box style={{ alignSelf: 'stretch', marginTop: 6 }}><ChannelCard convId={convId} dark={dark} /></Box>;
         const ytId = youtubeIdOf(entry.text);
