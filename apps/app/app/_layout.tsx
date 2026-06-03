@@ -174,8 +174,8 @@ export default function RootLayout(): React.ReactElement {
            *  RNScreensTurboModule.startTransition/updateTransition/finishTransition,
            *  with ScreenTransition.SwipeRight). That worklet NEVER reads
            *  `stackAnimation`, so the finger-driven reveal-and-pop still works with
-           *  'none'. `screenEdgeGesture:true` arms the left-edge catch zone (widened
-           *  to 120px hit-slop via the rn-screens patch). The (tabs) root disables
+           *  'none'. `screenEdgeGesture:true` arms the left-edge catch zone
+           *  (stock 50px hit-slop). The (tabs) root disables
            *  the gesture (bottom of the stack — nothing to go back to). */
           stackAnimation: 'none',
         }}

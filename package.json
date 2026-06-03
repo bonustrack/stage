@@ -28,7 +28,6 @@
     "node": ">=22"
   },
   "patchedDependencies": {
-    "react-native-screens@4.16.0": "patches/react-native-screens@4.16.0.patch",
     "nodejs-mobile-react-native@18.20.4": "patches/nodejs-mobile-react-native@18.20.4.patch"
   }
 }
