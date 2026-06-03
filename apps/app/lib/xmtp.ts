@@ -34,7 +34,8 @@ export type {
   LocalAttachmentInput, StreamMsg,
 } from './xmtp.types';
 export {
-  XMTP_USER_PREFIX, lineOfConv, convIdOfLine, shortAddress, stampBoxAvatarUrl,
+  XMTP_USER_PREFIX, lineOfConv, lineOfDmPeer, convIdOfLine, metroConvIdOf, metroDmPeerOf,
+  shortAddress, stampBoxAvatarUrl,
 } from './xmtp.types';
 
 export {

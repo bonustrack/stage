@@ -1,8 +1,6 @@
 /** State + side-effects + action wiring for the XMTP conversation screen —
- *  extracted from app/xmtp/[convId].tsx (phase-2 lint split). The route component
- *  owns only the render tree. Optimistic reaction / vote / tx-sign sub-layers live
- *  in their own hooks. Behavior, effect ordering, and memo deps are identical to
- *  the original inline version. */
+ *  extracted from app/xmtp/[convId].tsx (phase-2 lint split). The route owns only
+ *  the render tree; reaction / vote / tx-sign sub-layers live in their own hooks. */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
@@ -30,7 +28,6 @@ import { useOutboundLayer } from './useOutboundLayer';
 
 export function useConversationState(convId: string | undefined, focus: string | undefined) {
   const activeLine = lineOfConv(convId ?? '');
-  /** When opened with `?focus=1`, a one-shot nonce drives the composer autofocus. */
   const autoFocusNonce = useMemo(() => (focus ? Date.now() : undefined), [focus]);
 
   const xmtpFeed = useXmtpFeed(activeLine, !!convId);
@@ -40,9 +37,8 @@ export function useConversationState(convId: string | undefined, focus: string |
     if (!convId) return;
     void markConvRead(convId); // mark read when the latest event count changes
   }, [convId, events.length]);
-  /** Tell native + JS which conversation is on-screen so the FCM + foreground
-   *  rich-notif paths suppress its notification. Lowercase the id since the
-   *  native FCM service does an exact-string compare that's case-sensitive. */
+  /** Tell native + JS which conversation is on-screen so FCM + foreground rich-notif
+   *  paths suppress it. Lowercase: the native FCM compare is case-sensitive. */
   const activeConvId = useMemo(() => convId?.toLowerCase(), [convId]);
   useFocusEffect(useCallback(() => {
     if (!activeConvId) return;
@@ -64,9 +60,9 @@ export function useConversationState(convId: string | undefined, focus: string |
       : xmtpFeed.status === 'error' ? 'error' : 'idle';
   const myUri = xmtpFeed.inboxId ? `${XMTP_USER_PREFIX}${xmtpFeed.inboxId}` : XMTP_USER_PREFIX;
 
-  /** `nonce` bumps on every reply action so the composer's focus effect re-fires. */
+  /** `nonce` bumps on every reply action so the composer's focus effect re-fires
+   *  (monotonic via replyNonceRef — fresh nonce on EVERY swipe-to-reply). */
   const [replyingTo, setReplyingTo] = useState<{ id: string; preview: string; sender?: string | null; nonce: number } | null>(null);
-  /** Monotonic reply counter — fresh `nonce` on EVERY swipe-to-reply. */
   const replyNonceRef = useRef(0);
   const setReplyTarget = useCallback((id: string, preview: string, sender?: string | null) => {
     replyNonceRef.current += 1;
@@ -82,8 +78,8 @@ export function useConversationState(convId: string | undefined, focus: string |
   /** Conversation metadata via TanStack Query — cached by convId (groupName:
    *  null = not resolved, '' = no name; isGroup gates the title→/group). */
   const { peerAddr, memberAddrs, inboxToAddr, groupName, groupImage, groupDescription, isGroup } = useConvMeta(convId);
-  /** Linked GitHub issue/PR URL (Linear-style). Seed from the channels cache,
-   *  stay in sync, and refresh from synced appData on mount. */
+  /** Linked GitHub issue/PR URL (Linear-style). Seed from cache, stay in sync,
+   *  refresh from synced appData on mount. */
   const cachedGithub = (cid?: string): string | undefined => {
     const v = getCachedRows()?.find(r => r.convId === cid)?.github;
     return typeof v === 'string' && v ? v : undefined;
@@ -98,7 +94,7 @@ export function useConversationState(convId: string | undefined, focus: string |
     return () => { cancelled = true; unsub(); };
   }, [convId, activeLine, isGroup]);
 
-  /** Group label chips for the intro header. Seed from cache, refresh on mount. */
+  /** Group label chips for the intro header — seed from cache, refresh on mount. */
   const cachedLabels = (cid?: string): string[] => {
     const v = getCachedRows()?.find(r => r.convId === cid)?.labels;
     return Array.isArray(v) ? v.filter((l): l is string => typeof l === 'string') : [];
@@ -121,8 +117,8 @@ export function useConversationState(convId: string | undefined, focus: string |
   /** Resolve peer + member profiles → DM display name + avatar cache-busters. */
   const profilesVersion = usePeerProfiles([peerAddr, ...memberAddrs]);
 
-  /** @-mention candidates for the composer popup — group members (sans self)
-   *  or the lone DM peer, read from the resolved peerProfiles cache. */
+  /** @-mention candidates for the composer popup — group members (sans self) or
+   *  the lone DM peer, from the resolved peerProfiles cache. */
   const mentionCandidates = useMemo(() => {
     const seen = new Set<string>();
     const out: { address: string; name: string; cacheBuster: number }[] = [];
@@ -142,26 +138,31 @@ export function useConversationState(convId: string | undefined, focus: string |
     return out;
   }, [isGroup, memberAddrs, peerAddr, profilesVersion]);
 
-  /** Per-conversation scroll persistence. The list is INVERTED, so
-   *  `contentOffset.y` is the distance scrolled UP from the newest message
-   *  (0 = bottom). Restore once on first content layout if a saved offset
-   *  exists; listEpoch remounts skip restore so they land at the bottom. */
+  /** Per-conversation scroll persistence. INVERTED list → offset 0 = bottom/newest.
+   *  Restore once on first layout if a saved offset exists; remounts land at bottom. */
   const savedScrollRef = useRef<number | undefined>(undefined);
   const savedScrollLoaded = useRef(false);
   const didRestoreScroll = useRef(false);
+  /** Deadline (ms epoch) the at-bottom mount keeps re-pinning to 0; 0 = unarmed. */
+  const pinBottomUntil = useRef(0);
+  /** At-bottom flag, set on EVERY scroll. The debounced offset save can lose its
+   *  final at-bottom frame to a fast back-nav; this ref can't, so on unmount we
+   *  force-persist sentinel 0 when at bottom. Defaults true (fresh conv = bottom). */
+  const isAtBottomRef = useRef(true);
   useEffect(() => {
     if (!convId) return;
-    void getScrollOffset(convScrollKey(convId)).then(o => {
+    const key = convScrollKey(convId);
+    isAtBottomRef.current = true;
+    void getScrollOffset(key).then(o => {
       savedScrollRef.current = o; savedScrollLoaded.current = true;
     });
-    return () => { flushScrollOffset(convScrollKey(convId)); };
+    // At bottom on leave → force-persist the sentinel; else flush the pending offset.
+    return () => { flushScrollOffset(key, isAtBottomRef.current ? 0 : undefined); };
   }, [convId]);
 
-  /** Poll message ids → option count — keeps vote-reactions out of emoji pills. */
   const pollOptionCounts = useMemo(() => pollOptionCountsInFeed(events), [events]);
   const reactions = useMemo(() => reactionsByMessage(events, pollOptionCounts), [events, pollOptionCounts]);
   const ownReactions = useMemo(() => ownReactionsByMessage(events, myUri, pollOptionCounts), [events, myUri, pollOptionCounts]);
-  /** Poll tallies — confirmed votes per poll + the local user's selections. */
   const votes = useMemo(() => votesByMessage(events), [events]);
   const ownVotes = useMemo(() => ownVotesByMessage(events, myUri), [events, myUri]);
 
@@ -190,7 +191,7 @@ export function useConversationState(convId: string | undefined, focus: string |
     confirmedIds, optimisticReactions, optimisticRemovals,
     peerAddr, groupName, groupImage, groupDescription, groupLabels, isGroup, github, senderEthOf,
     profilesVersion, mentionCandidates, listRef,
-    savedScrollRef, savedScrollLoaded, didRestoreScroll,
+    savedScrollRef, savedScrollLoaded, didRestoreScroll, pinBottomUntil, isAtBottomRef,
     reactions, ownReactions, displayVotes, displayOwnVotes,
     allBubbles, jumpToMessage,
     onReact, onSign, signingIds, onVote, onPay, payingIds, onAnswer,

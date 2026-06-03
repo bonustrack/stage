@@ -8,6 +8,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ScrollView } from 'react-native-gesture-handler';
 import { usePullToRefresh } from './PullToRefresh';
+import { RefreshButton } from './WalletScreen.refreshButton';
 import { Spinner } from '../Spinner';
 import type { SimultaneousRefs } from '../SwipeTabs';
 import { Text } from '@metro-labs/kit/text';
@@ -15,7 +16,7 @@ import { useRouter } from 'expo-router';
 import { flash } from '../../lib/toast';
 import { usePeerProfiles } from '../../lib/peerProfiles';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { Col, Row } from '../layout';
+import { Box, Col, Row } from '../layout';
 import { getNftsAcrossChains, type Nft } from '../../lib/opensea';
 import { Btn, WalletTabs, NftsView, fmtUsd, splitUsd, type WalletTab } from './WalletScreen.parts';
 import { PrivateView } from './WalletScreen.private';
@@ -113,22 +114,28 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
   return (
     /** RNGH ScrollView, simultaneous with the pager Pan (panRef). Pull-to-refresh
      *  is a pure-JS onScroll gesture (usePullToRefresh) — RN's native
-     *  RefreshControl stranded its spinner on Android in this nested ScrollView. */
+     *  RefreshControl stranded its spinner on Android in this nested ScrollView.
+     *  Wrapped in a flex:1 Box so the tap-to-refresh icon button can anchor to
+     *  the screen top-right (absolute), independent of scroll content. */
+    <Box style={{ flex: 1, backgroundColor: bg }}>
+    <RefreshButton refreshing={refreshing} onRefresh={onRefresh} color={head} />
     <ScrollView
       simultaneousHandlers={panRef}
       style={{ flex: 1, backgroundColor: bg }}
       contentContainerStyle={{ paddingBottom: 24, flexGrow: 1 }}
-      /** alwaysBounceVertical + flexGrow:1 keep the list pullable even when the
-       *  content is shorter than the viewport — without bounce the swipe-down
-       *  isn't recognised as an overscroll so the custom pull-to-refresh
-       *  (usePullToRefresh, onScroll-driven) never fires.
-       *  nestedScrollEnabled lets
-       *  Android treat this as the scrolling element. The pager Pan gates on
-       *  failOffsetY and is declared simultaneous via panRef, so the vertical
-       *  pull is never swallowed by the horizontal tab-swipe. */
+      /** bounces + alwaysBounceVertical + flexGrow:1 keep the list pullable even
+       *  when content is shorter than the viewport — without bounce the swipe-down
+       *  isn't an overscroll so the custom pull-to-refresh never fires.
+       *  overScrollMode='always' enables Android overscroll; nestedScrollEnabled
+       *  makes Android treat this as the scroller. The pager Pan gates on
+       *  failOffsetY + simultaneous panRef, so the vertical pull is never
+       *  swallowed by the horizontal tab-swipe. */
+      bounces
       alwaysBounceVertical
+      overScrollMode="always"
       nestedScrollEnabled
       onScroll={pull.onScroll}
+      onScrollBeginDrag={pull.onScrollBeginDrag}
       onScrollEndDrag={pull.onScrollEndDrag}
       scrollEventThrottle={pull.scrollEventThrottle}
     >
@@ -187,5 +194,6 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
       />
       )}
     </ScrollView>
+    </Box>
   );
 }
