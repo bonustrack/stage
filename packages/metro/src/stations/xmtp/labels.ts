@@ -55,3 +55,36 @@ export function labelsBlob(
   }
   return JSON.stringify(blob);
 }
+
+/** Parse the {labels, github} we own out of a raw appData string. Tolerant:
+ *  empty / old / malformed → { labels: [], github: undefined }. */
+export function readAppData(appData: string | undefined): { labels: string[]; github?: string } {
+  if (!appData || !appData.trim()) return { labels: [] };
+  try {
+    const p: unknown = JSON.parse(appData);
+    if (!p || typeof p !== 'object' || Array.isArray(p)) return { labels: [] };
+    const rec = p as Record<string, unknown>;
+    const github = typeof rec['github'] === 'string' && (rec['github'] as string).trim()
+      ? (rec['github'] as string).trim() : undefined;
+    return { labels: cleanLabels(rec['labels']), github };
+  } catch {
+    return { labels: [] };
+  }
+}
+
+/** Validate a GitHub URL. Returns the normalised URL, or throws. Empty string is
+ *  the caller's "clear" sentinel and is allowed through unchanged. */
+export function normalizeGithubUrl(url: unknown): string {
+  if (typeof url !== 'string') throw new Error('setGithub requires a `url` string');
+  const trimmed = url.trim();
+  if (!trimmed) return ''; // clear sentinel
+  let parsed: URL;
+  try { parsed = new URL(trimmed); } catch { throw new Error(`invalid url: ${trimmed}`); }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new Error(`github url must be http(s): ${trimmed}`);
+  }
+  if (parsed.hostname !== 'github.com' && parsed.hostname !== 'www.github.com') {
+    throw new Error(`url must be a github.com URL: ${trimmed}`);
+  }
+  return trimmed;
+}

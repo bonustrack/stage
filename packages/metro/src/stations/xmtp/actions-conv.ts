@@ -5,8 +5,9 @@ import { accounts, accountForCall, convOf, lineOf, parseLine, type Account } fro
 import { inboxEthCache, respond } from './wire.js';
 import { warmGroupName } from './conv-name.js';
 import { pushHandlers } from './actions-push.js';
-import { cleanLabels, labelsBlob, type GroupLike } from './labels.js';
+import { cleanLabels, labelsBlob, readAppData, type GroupLike } from './labels.js';
 import { closeGroup } from './actions-close.js';
+import { setGithub } from './actions-github.js';
 
 type Args = Record<string, unknown>;
 type Handler = (id: string, args: Args) => Promise<void>;
@@ -153,8 +154,10 @@ async function groupInfo(id: string, args: Args): Promise<void> {
   const isDm = typeof (conv as unknown as { peerInboxId?: unknown }).peerInboxId === 'function';
   const groupName = (conv as unknown as { name?: string | (() => Promise<string>) }).name;
   const resolvedName = typeof groupName === 'function' ? await groupName() : (groupName ?? '');
+  // Readback: parse the labels + github we own out of the group's appData.
+  const { labels, github } = readAppData((conv as unknown as GroupLike).appData);
   respond(id, { result: { line, id: conv.id, account: acct.cfg.id, version: isDm ? 'dm' : 'group',
-    name: resolvedName ?? '', memberCount: inboxIds.length,
+    name: resolvedName ?? '', memberCount: inboxIds.length, labels, github,
     members: inboxIds.map(iid => ({ inboxId: iid, address: addresses[iid] ?? null })) } });
 }
 
@@ -191,6 +194,6 @@ async function listConvs(id: string, args: Args): Promise<void> {
 }
 
 export const convHandlers: Record<string, Handler> = {
-  newDm, newGroup, createRequestGroup, setLabels, closeGroup, query, groupInfo, listConvs,
+  newDm, newGroup, createRequestGroup, setLabels, setGithub, closeGroup, query, groupInfo, listConvs,
   ...pushHandlers,
 };
