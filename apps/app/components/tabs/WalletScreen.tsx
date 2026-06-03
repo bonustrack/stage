@@ -6,8 +6,8 @@
  *  on the left, USD value + amount/symbol on the right. */
 
 import { useEffect, useRef, useState } from 'react';
-import { RefreshControl } from 'react-native';
-import { ScrollView } from 'react-native-gesture-handler';
+import { RefreshControl, ScrollView } from 'react-native';
+import { NativeViewGestureHandler } from 'react-native-gesture-handler';
 import { Spinner } from '../Spinner';
 import type { SimultaneousRefs } from '../SwipeTabs';
 import { Text } from '@metro-labs/kit/text';
@@ -40,10 +40,9 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
    *  autoStart:true so the Tokens tab itself boots the Railgun engine and the
    *  user sees private balances WITHOUT having to open the Private tab. This is
    *  the SAME safe path the Private tab uses: usePrivateWallet gates the engine
-   *  boot behind waitForXmtpReady(), so nodejs-mobile only starts AFTER XMTP's
-   *  Client.create has settled (never races it on first launch). The bridge's
-   *  `started`/readyPromise guard makes the boot single-flight, so if the
-   *  Private tab already started it this is a no-op (no double-start). */
+   *  boot behind waitForXmtpReady() (nodejs-mobile starts only AFTER XMTP's
+   *  Client.create settles), and the bridge's started/readyPromise guard keeps
+   *  the boot single-flight, so a prior Private-tab start makes this a no-op. */
   // ALWAYS render the fixed private row set (ETH/USDC × mainnet/Sepolia), even
   // pre-snapshot / pre-scan / at zero — pass the snapshot (may be null) so the
   // mapper seeds zero rows from the token registry then overlays live amounts.
@@ -93,21 +92,27 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
     : null;
 
   return (
+    /** RN-CORE ScrollView (NOT RNGH's). The RNGH ScrollView wrapper imperatively
+     *  reapplies native props and on Android DESYNCS a controlled RefreshControl:
+     *  `refreshing` flips back to false in JS but the wrapper drops the update, so
+     *  the native spinner stays stuck forever — the REAL root cause (not onRefresh
+     *  timing, which always cleared state). Core ScrollView forwards the controlled
+     *  prop; we restore the pager-Pan simultaneous relation via an explicit
+     *  NativeViewGestureHandler (core ScrollView has no simultaneousHandlers). */
+    <NativeViewGestureHandler simultaneousHandlers={panRef}>
     <ScrollView
-      simultaneousHandlers={panRef}
       style={{ flex: 1, backgroundColor: bg }}
       contentContainerStyle={{ paddingBottom: 24, flexGrow: 1 }}
-      /** alwaysBounceVertical + flexGrow:1 keep the list pullable even when the
-       *  content is shorter than the viewport — without bounce the swipe-down
-       *  isn't recognised as an overscroll so RefreshControl never fires (this
-       *  was the "pull-to-refresh doesn't trigger" bug). nestedScrollEnabled lets
-       *  Android treat this as the scrolling element. The pager Pan gates on
-       *  failOffsetY and is declared simultaneous via panRef, so the vertical
-       *  pull is never swallowed by the horizontal tab-swipe. */
+      /** alwaysBounceVertical + flexGrow:1 keep the list pullable even when
+       *  content is shorter than the viewport (else the pull isn't an overscroll
+       *  and RefreshControl never fires). nestedScrollEnabled = Android scroller. */
       alwaysBounceVertical
       nestedScrollEnabled
       refreshControl={
         <RefreshControl
+          /** key tied to `refreshing` force-remounts the control on each flip —
+           *  belt-and-suspenders against a dropped controlled-prop update. */
+          key={refreshing ? 'refreshing' : 'idle'}
           refreshing={refreshing}
           onRefresh={onRefresh}
           tintColor={head}
@@ -190,5 +195,6 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
       </Col>
       )}
     </ScrollView>
+    </NativeViewGestureHandler>
   );
 }

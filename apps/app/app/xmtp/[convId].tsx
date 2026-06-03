@@ -22,6 +22,7 @@ import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { HeaderAvatar, BubbleActionMenu } from '../../components/xmtp-conv/parts';
 import { previewOf } from '../../components/xmtp-conv/feed-helpers';
 import { ConversationFeed } from '../../components/xmtp-conv/ConversationFeed';
+import { BackSwipe } from '../../components/xmtp-conv/BackSwipe';
 import { useConversationState } from '../../components/xmtp-conv/useConversationState';
 
 export default function XmtpConversation(): React.ReactElement {
@@ -65,6 +66,9 @@ export default function XmtpConversation(): React.ReactElement {
       }}
     >
       <Reanimated.View style={[{ flex: 1 }, listWrapperStyle]}>
+      {/** In-screen edge-swipe-back (see BackSwipe). Mounted here, not the root
+       *   overlay, so RNGH gets the touch over the native FlatList on Android. */}
+      <BackSwipe listRef={c.listRef}>
       <ConversationFeed
         c={c}
         convId={convId}
@@ -75,6 +79,7 @@ export default function XmtpConversation(): React.ReactElement {
         insets={insets}
         router={router}
       />
+      </BackSwipe>
       </Reanimated.View>
       {/** Top nav: solid bg strip mirrors the composer footer + extends UP to cover the
        *  status-bar area, so content sliding up under the keyboard doesn't show through

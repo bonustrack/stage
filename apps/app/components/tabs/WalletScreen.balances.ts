@@ -66,6 +66,13 @@ export function useWalletBalances(privAccountId: string | null): WalletBalances 
     if (!address) return;
     setRefreshing(true);
 
+    /** Absolute backstop, fully independent of the fetch/race below: clear the
+     *  visible spinner within 9s no matter what. The real stuck-spinner cause was
+     *  the RNGH ScrollView wrapper dropping the controlled-prop update (fixed by
+     *  switching WalletScreen to RN-core ScrollView), but this guarantees the JS
+     *  state never lingers either. */
+    const hardStop = setTimeout(() => { if (mounted.current) setRefreshing(false); }, 9000);
+
     /** Always-resolving dismiss: the RefreshControl spinner is tied to the public
      *  fetch (the only fast, bounded call) AND a hard 8s safety cap that races it,
      *  so the spinner is dismissed by whichever lands first. The dismiss runs in a
@@ -74,6 +81,7 @@ export function useWalletBalances(privAccountId: string | null): WalletBalances 
      *  uncontrolled — on Android that desyncs the native controlled spinner and
      *  leaves it stuck on screen (the >10s ghost spinner). */
     const stop = (): void => {
+      clearTimeout(hardStop);
       if (spinnerTimer.current) { clearTimeout(spinnerTimer.current); spinnerTimer.current = null; }
       if (mounted.current) setRefreshing(false);
     };
