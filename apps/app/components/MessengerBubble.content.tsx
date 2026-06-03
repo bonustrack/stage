@@ -7,7 +7,9 @@ import { Text } from '@metro-labs/kit/text';
 import Markdown from 'react-native-markdown-display';
 import { YouTubeEmbed, LocationEmbed } from './MediaEmbeds';
 import { ChannelCard } from './ChannelCard';
+import { GitHubLinkCard } from './GitHubLinkCard';
 import { mapCoordsOf, youtubeIdOf } from '../lib/embedDetect';
+import { githubLinkOf } from '../lib/githubDetect';
 import { metroConvIdOf, metroDmPeerOf } from '../lib/xmtp';
 import { Box, Row } from './layout';
 import type { HistoryEntry } from '../lib/types';
@@ -125,6 +127,8 @@ export function BubbleContent({
         if (ytId) return <Box style={{ alignSelf: 'stretch', marginTop: 6 }}><YouTubeEmbed videoId={ytId} dark={dark} /></Box>;
         const coords = mapCoordsOf(entry.text);
         if (coords) return <Box style={{ alignSelf: 'stretch', marginTop: 6 }}><LocationEmbed lat={coords.lat} lng={coords.lng} sourceUrl={coords.sourceUrl} dark={dark} /></Box>;
+        const gh = githubLinkOf(entry.text);
+        if (gh) return <Box style={{ alignSelf: 'stretch', marginTop: 6 }}><GitHubLinkCard url={gh.url} dark={dark} /></Box>;
         return null;
       })()}
       {question && onAnswer ? (
