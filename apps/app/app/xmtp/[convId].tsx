@@ -155,7 +155,8 @@ export default function XmtpConversation(): React.ReactElement {
       />
       </Box>
       </KeyboardStickyView>
-      {/** Topnav overflow menu — the shared ChannelMenu bottom sheet. */}
+      </BackSwipe>
+      {/** Overlays live OUTSIDE BackSwipe — portals/bottom-sheets must NOT slide. */}
       <ChannelMenu
         visible={overflowOpen}
         convId={convId ?? ''}
@@ -194,7 +195,6 @@ export default function XmtpConversation(): React.ReactElement {
           setMenuFor(null);
         }}
       />
-      </BackSwipe>
     </RNAnimated.View>
   );
 }
