@@ -22,7 +22,6 @@ import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { HeaderAvatar, BubbleActionMenu, GithubNavButton } from '../../components/xmtp-conv/parts';
 import { previewOf } from '../../components/xmtp-conv/feed-helpers';
 import { ConversationFeed } from '../../components/xmtp-conv/ConversationFeed';
-import { BackSwipe } from '../../components/xmtp-conv/BackSwipe';
 import { useConversationState } from '../../components/xmtp-conv/useConversationState';
 
 export default function XmtpConversation(): React.ReactElement {
@@ -62,9 +61,9 @@ export default function XmtpConversation(): React.ReactElement {
         flex: 1, backgroundColor: bg, paddingBottom: insets.bottom,
       }}
     >
-      {/** In-screen edge-swipe-back (see BackSwipe). Wraps the WHOLE screen tree
-       *   (topnav + feed + composer) so the entire page translates with the finger. */}
-      <BackSwipe listRef={c.listRef}>
+      {/** Swipe-back is handled NATIVELY by the rn-screens native-stack
+       *   (goBackGesture/screenEdgeGesture in app/_layout.tsx) — the previous
+       *   screen parallaxes in underneath the finger. No in-screen JS shim. */}
       <Reanimated.View style={[{ flex: 1 }, listWrapperStyle]}>
       <ConversationFeed
         c={c}
@@ -154,8 +153,7 @@ export default function XmtpConversation(): React.ReactElement {
       />
       </Box>
       </KeyboardStickyView>
-      </BackSwipe>
-      {/** Overlays live OUTSIDE BackSwipe — portals/bottom-sheets must NOT slide. */}
+      {/** Overlays: portals/bottom-sheets render above the page tree. */}
       <ChannelMenu
         visible={overflowOpen}
         convId={convId ?? ''}
