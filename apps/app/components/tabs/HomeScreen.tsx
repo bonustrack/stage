@@ -22,7 +22,7 @@ import type { Row as RowT } from './HomeScreen.helpers';
 import { HomeError, HomeSpinner, useChannelRowRenderer } from './HomeScreen.parts';
 import { ChannelsList, channelRowLayout } from './HomeScreen.list';
 import { useChannelsSync } from './HomeScreen.sync';
-import { LabelFilterSheet, UNLABELED } from './HomeScreen.filter';
+import { LabelFilterSheet, UNLABELED, useIncomingLabelFilter } from './HomeScreen.filter';
 import type { LabelFilterValue } from './HomeScreen.filter';
 
 /** Re-exported so existing import paths (`./HomeScreen`) stay unchanged. */
@@ -81,6 +81,9 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
    *  open/closed state is local UI here. */
   const [labelFilter, setLabelFilter] = useState<LabelFilterValue>(null);
   const [filterSheetOpen, setFilterSheetOpen] = useState<boolean>(false);
+  /** Apply cross-screen label-filter requests (a tapped channel-card label chip)
+   *  to the filter state — pending-on-mount + live while mounted. */
+  useIncomingLabelFilter(setLabelFilter);
   /** Load the saved channels-list offset once on mount. The actual scroll
    *  happens in onContentSizeChange (below) once rows have laid out — restoring
    *  before content exists would clamp to 0. */

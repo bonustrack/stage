@@ -48,6 +48,11 @@ export interface ChannelRowProps {
    *  pass none. Capped to a few visible with a "+N" overflow pill so the name
    *  row never overflows; the name itself stays primary (truncates first). */
   labels?: string[];
+  /** Tapping a label chip calls this with the chip's label (the caller
+   *  navigates to the Channels tab + applies it as the active filter). When
+   *  omitted the chips render non-interactive. The press is swallowed so it
+   *  never also fires the row's own onPress (opening the conversation). */
+  onLabelPress?: (label: string) => void;
   /** Trailing chevron (used in the boxed common-channels list). */
   showChevron?: boolean;
   avatarSize?: number;
@@ -66,8 +71,9 @@ const MAX_VISIBLE_LABELS = 2;
  *  pill style (rounded, bordered) minus the remove affordance, sized down to
  *  fit beside the name. Caps at MAX_VISIBLE_LABELS + a "+N" pill, and shrinks
  *  before the name does so the name stays the primary element. */
-function LabelChips({ labels, fg, sub, rowBg }: {
+function LabelChips({ labels, fg, sub, rowBg, onLabelPress }: {
   labels: string[]; fg: string; sub: string; rowBg: string;
+  onLabelPress?: (label: string) => void;
 }): React.ReactElement | null {
   if (labels.length === 0) return null;
   const visible = labels.slice(0, MAX_VISIBLE_LABELS);
@@ -75,14 +81,24 @@ function LabelChips({ labels, fg, sub, rowBg }: {
   return (
     <Row align="center" gap={4} style={{ flexWrap: 'nowrap', flexShrink: 0 }}>
       {visible.map(label => (
-        <Box key={label.toLowerCase()} style={{
-          paddingHorizontal: 6, paddingVertical: 1, borderRadius: 999,
-          backgroundColor: rowBg, flexShrink: 0,
-        }}>
+        <Pressable
+          key={label.toLowerCase()}
+          disabled={!onLabelPress}
+          /** Swallow the press so it doesn't bubble to the row's onPress (which
+           *  would open the conversation). onPressOut fires after the row's
+           *  Pressable would have, so we also gate via the dedicated handler. */
+          onPress={onLabelPress ? () => onLabelPress(label) : undefined}
+          hitSlop={6}
+          style={({ pressed }) => ({
+            paddingHorizontal: 6, paddingVertical: 1, borderRadius: 999,
+            backgroundColor: rowBg, flexShrink: 0,
+            opacity: pressed && onLabelPress ? 0.6 : 1,
+          })}
+        >
           <Text style={{ color: fg, fontSize: 11, fontFamily: 'Calibre-Medium' }}>
             {label}
           </Text>
-        </Box>
+        </Pressable>
       ))}
       {overflow > 0 ? (
         <Text style={{ color: sub, fontSize: 11, fontFamily: 'Calibre-Medium' }}>{`+${overflow}`}</Text>
@@ -98,7 +114,7 @@ function ChannelRowBase({
   title, avatarAddress, avatarUri, cacheBuster, square,
   lastPreview, timestamp, subtitle, unreadCount = 0, markedUnread,
   pinned, hasDraft, showChevron, avatarSize = 40,
-  onPress, onLongPress, containerStyle, labels,
+  onPress, onLongPress, containerStyle, labels, onLabelPress,
 }: ChannelRowProps): React.ReactElement {
   const { head, sub, fg, bg, border, rowBg } = usePalette();
   const previewText = lastPreview && lastPreview.length > 0 ? lastPreview : subtitle ?? '';
@@ -134,7 +150,7 @@ function ChannelRowBase({
               {title}
             </Text>
             {labels && labels.length > 0 ? (
-              <LabelChips labels={labels} fg={fg} sub={sub} rowBg={rowBg} />
+              <LabelChips labels={labels} fg={fg} sub={sub} rowBg={rowBg} onLabelPress={onLabelPress} />
             ) : null}
             {timestamp ? (
               <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{timestamp}</Text>

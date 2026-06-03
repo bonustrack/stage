@@ -13,6 +13,7 @@ import { resetAccount } from '../../lib/wallet';
 import { getPeerAvatarCb, getPeerName, isPeerResolved } from '../../lib/peerProfiles';
 import { hasDraft } from '../../lib/drafts';
 import { isPinned } from '../../lib/pins';
+import { requestLabelFilter } from '../../lib/labelFilterRequest';
 import type { Row as RowT } from './HomeScreen.helpers';
 import { fmtTs } from './HomeScreen.helpers';
 
@@ -67,6 +68,11 @@ export function useChannelRowRenderer(
         pinned={isPinned(item.convId)}
         hasDraft={hasDraft(item.convId)}
         labels={isGroup ? item.labels : undefined}
+        /** Already on the Channels tab — requesting the filter fans out to this
+         *  screen's live subscription, which sets labelFilter. No navigation
+         *  needed; the nested chip Pressable swallows the tap so the row's
+         *  onPress (open conversation) doesn't also fire. */
+        onLabelPress={isGroup ? requestLabelFilter : undefined}
         onPress={() => router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } })}
         onLongPress={() => {
           /** Tiny haptic-style buzz when the long-press opens the row menu.
