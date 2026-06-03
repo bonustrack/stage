@@ -1,4 +1,4 @@
-/** Android-safe edge-swipe-back.
+/** Android-safe edge-swipe-back (root navigator wrapper).
  *
  *  react-native-screens 4.x only implements the native finger-following back
  *  gesture on iOS — BOTH navigators (react-native-screens/native-stack AND
@@ -12,64 +12,55 @@
  *  calls `measure()` on a mocked animated ref and crashes with "Value is
  *  undefined, expected an Object" on the first edge-swipe. We do NOT use it.
  *
- *  ── Why the previous wrapper did NOTHING ──────────────────────────────────
- *  The earlier version wrapped a `Gesture.Pan` AROUND the whole navigator
- *  (`<GestureDetector><Box>{children=NativeSwipeStack}</Box></GestureDetector>`).
- *  react-native-screens presents each pushed route inside its OWN native
- *  `RNSScreen` container that the navigator attaches/detaches; touches that land
- *  inside the currently-presented screen are consumed by that screen's native
- *  sub-tree (its ScrollView/FlatList/content) and never bubble out to an RNGH
- *  handler bound to the navigator's ANCESTOR view. That's exactly why rn-screens
- *  ships its own `goBackGesture` instead of letting you Pan-wrap the stack — a
- *  parent-level Pan simply receives no events from inside a pushed screen, so it
- *  never activated and `onEnd` never ran. The `hitSlop({width:28})` strip made
- *  it worse: even the few edge touches that did reach it had to win against the
- *  screen's own native scroll, which it couldn't.
+ *  ── Approach ──────────────────────────────────────────────────────────────
+ *  A plain RNGH `Gesture.Pan` confined to the left edge that calls
+ *  `router.back()` once the finger has dragged far enough to the right. It never
+ *  touches `measure()`/view tags, so there is no ScreenGestureDetector and no
+ *  crash. `router.back()` is the stock pop, so the native slide animation +
+ *  header back button + hardware back all keep working unchanged.
  *
- *  ── The fix: a sibling overlay strip ─────────────────────────────────────
- *  Instead of wrapping, we render `children` (the navigator) and then an
- *  absolutely-positioned left-edge `GestureDetector` strip ON TOP of it, as a
- *  later sibling in the SAME parent. Being painted after (and above) the native
- *  screens, the strip sits in front of whatever screen is presented and receives
- *  the edge touch directly — there is no competing handler beneath it inside the
- *  strip, so the Pan owns the gesture deterministically on EVERY pushed route
- *  (xmtp/group/user/wallet/system/token …). `router.back()` is the stock pop, so
- *  the native slide animation + header back button + hardware back are unchanged.
+ *  This wraps the navigator and works for the SIMPLE pushed screens (wallet,
+ *  token, system, user/group profile…) whose content does not own a competing
+ *  native scroll over the left edge. The XMTP conversation screen has an
+ *  inverted RNGH FlatList that consumes touches inside its own native subtree,
+ *  so a navigator-ancestor Pan never receives them there — that screen mounts
+ *  its own in-screen `BackSwipe` (components/xmtp-conv/BackSwipe) that wraps the
+ *  feed directly and composes `simultaneousWithExternalGesture` with the list.
  *
- *  The strip is only ~24dp wide so it never eats normal taps in the body, and it
- *  disables itself (returns nothing) at the stack root so the (tabs) page's own
- *  left-edge drawer/page-swipe (SwipeTabs/LeftDrawer) keeps the edge there. */
+ *  Regression note (fixed here): commit 8e58eca replaced this wrap with an
+ *  absolutely-positioned transparent `box-only` overlay strip that relied on
+ *  z-index to sit above the presented route. On Android a sibling RN view can't
+ *  reliably layer above an rn-screens native RNSScreen container, so the strip
+ *  received no touches and the edge swipe — which had been working earlier with
+ *  the wrap — stopped firing on every screen. Reverted to the wrap. */
 
 import { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, useWindowDimensions } from 'react-native';
+import { useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
 import { useRouter, useNavigation } from 'expo-router';
 import { Box } from './layout';
 
-/** Width of the left-edge catch strip (dp). The overlay view IS the activation
- *  zone — a touch must start within this strip to begin the gesture, mirroring
- *  the iOS interactive-pop edge feel. Generous enough to catch a thumb at the
- *  bezel, narrow enough to leave the rest of the screen fully interactive. */
-const EDGE_WIDTH = 24;
+/** Width of the left-edge catch zone (dp). We confine the Pan recognizer to
+ *  this strip via `hitSlop`, so a drag must START at the left edge — deeper
+ *  horizontal scrolls/carousels never trigger a pop. Generous enough to catch a
+ *  thumb at the bezel, matching the iOS interactive-pop feel. */
+const EDGE_WIDTH = 40;
 /** Horizontal travel (dp) OR min velocity required before we commit the pop. */
 const POP_THRESHOLD = 56;
 const POP_VELOCITY = 350;
-/** Arm the pan on a small rightward drag; let a clear vertical move fail it so a
- *  vertical scroll/list that overlaps the strip still wins. */
-const ACTIVE_X = 10;
-const FAIL_Y = 18;
 
 export function EdgeSwipeBack({ children }: { children: React.ReactNode }): React.ReactElement {
   const router = useRouter();
   const navigation = useNavigation();
-  const { height } = useWindowDimensions();
+  const { width } = useWindowDimensions();
 
-  /** Reactive "is there a screen below us?" flag. At the stack root (the (tabs)
-   *  page) there's nothing to pop, so we DON'T render the strip at all — the tab
-   *  root's own left-edge drawer/page gestures keep the edge. Tracked via the
-   *  navigator's 'state' event (expo-router re-exports only a subset of hooks, so
-   *  we use `navigation` rather than @react-navigation/native directly). */
+  /** Reactive "is there a screen below us?" flag. When we're at the bottom
+   *  (the (tabs) root) there's nothing to pop, so we DISABLE the recognizer
+   *  entirely. That both avoids a useless no-op AND yields the left edge back to
+   *  the tab root's own drawer-open / page-swipe gestures (SwipeTabs/LeftDrawer).
+   *  We track it via the navigator's 'state' event (no @react-navigation/native
+   *  dep — expo-router only re-exports a subset of hooks). */
   const [canGoBack, setCanGoBack] = useState(false);
   useEffect(() => {
     const sync = (): void => setCanGoBack(navigation.canGoBack());
@@ -85,10 +76,15 @@ export function EdgeSwipeBack({ children }: { children: React.ReactNode }): Reac
   }, [navigation, router]);
 
   const pan = Gesture.Pan()
-    /** Arm on a clearly-rightward drag from the edge; a vertical move fails it so
-     *  any overlapping vertical scroll keeps scrolling. */
-    .activeOffsetX(ACTIVE_X)
-    .failOffsetY([-FAIL_Y, FAIL_Y])
+    /** Off at the stack root (see canGoBack above) — no conflict with the tab
+     *  root's own left-edge gestures. */
+    .enabled(canGoBack)
+    /** Confine activation to the left edge: a width-limited hit area means only
+     *  the leftmost EDGE_WIDTH dp can begin the gesture. */
+    .hitSlop({ left: 0, width: EDGE_WIDTH })
+    /** Recognize only rightward horizontal drags; let vertical scroll win. */
+    .activeOffsetX(12)
+    .failOffsetY([-14, 14])
     .onEnd((e) => {
       'worklet';
       if (e.translationX >= POP_THRESHOLD || e.velocityX >= POP_VELOCITY) {
@@ -97,31 +93,8 @@ export function EdgeSwipeBack({ children }: { children: React.ReactNode }): Reac
     });
 
   return (
-    <Box style={{ flex: 1 }}>
-      {children}
-      {/** Sibling overlay strip painted ON TOP of the native stack — receives the
-       *   left-edge touch on whatever screen is presented (see header). Only
-       *   mounted when there's something to pop. */}
-      {canGoBack ? (
-        <GestureDetector gesture={pan}>
-          <Box
-            style={[styles.edge, { height, width: EDGE_WIDTH }]}
-            /** `box-only` would swallow children's touches; there are none here.
-             *  The strip itself is transparent and intercepts only its own area. */
-            pointerEvents="box-only"
-          />
-        </GestureDetector>
-      ) : null}
-    </Box>
+    <GestureDetector gesture={pan}>
+      <Box style={{ flex: 1, width }}>{children}</Box>
+    </GestureDetector>
   );
 }
-
-const styles = StyleSheet.create({
-  edge: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    backgroundColor: 'transparent',
-    zIndex: 9999,
-  },
-});

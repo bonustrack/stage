@@ -57,8 +57,13 @@ export function BackSwipe({
   const pan = Gesture.Pan()
     .activeOffsetX(ACTIVE_X)
     .failOffsetY([-FAIL_Y, FAIL_Y])
-    /** Don't fight the inverted message list's native vertical scroll. */
-    .simultaneousWithExternalGesture(listRef)
+    /** Don't fight the inverted message list's native vertical scroll. RNGH types
+     *  the ref param as `RefObject<… | undefined>`; our list ref is
+     *  `RefObject<FlatList | null>` (React's useRef nullable shape), so we widen it
+     *  here — the value is the same component instance either way. */
+    .simultaneousWithExternalGesture(
+      listRef as unknown as RefObject<React.ComponentType | undefined>,
+    )
     .onUpdate((e) => {
       'worklet';
       /** Only follow rightward (positive) drags; clamp so it can't run away. */
