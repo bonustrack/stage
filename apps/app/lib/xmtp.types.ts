@@ -49,6 +49,16 @@ export function convIdOfLine(line: string): string | null {
   return m ? m[1] : null;
 }
 
+/** Find a `metro://xmtp/<convId>` channel link ANYWHERE in a block of text and
+ *  return the convId (vs `convIdOfLine` which anchors the whole string). Used by
+ *  the message renderer to surface an inline channel card. Returns null when the
+ *  text contains no metro channel link. */
+export function metroConvIdOf(text?: string | null): string | null {
+  if (!text) return null;
+  const m = text.match(/metro:\/\/xmtp\/([^\s/]+)/);
+  return m ? m[1] : null;
+}
+
 /** Pretty-print a wallet address as `0x1234…abcd`. */
 export function shortAddress(addr: string): string {
   if (!addr) return '';
