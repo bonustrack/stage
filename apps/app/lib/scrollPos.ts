@@ -22,6 +22,13 @@ const timers = new Map<string, ReturnType<typeof setTimeout>>();
 
 const WRITE_DEBOUNCE_MS = 300;
 
+/** Inverted feed: within this many px of offset 0 counts as "at the bottom"
+ *  (newest message visible). When the user leaves from here we must NOT restore
+ *  a concrete offset on return — new messages may have arrived, making any old
+ *  offset stale. Storing 0 makes restore a no-op so the feed lands at the
+ *  bottom/newest. */
+export const AT_BOTTOM_THRESHOLD_PX = 24;
+
 /** Read a saved offset. Returns the cached value if present, else reads storage
  *  once. A missing/invalid entry resolves to undefined → caller keeps default. */
 export async function getScrollOffset(key: string): Promise<number | undefined> {

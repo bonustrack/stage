@@ -8,7 +8,7 @@ import { Spinner } from '../Spinner';
 import { ConversationIntro } from './ConversationIntro';
 import type { SignatureRequestContent } from '@metro-labs/client/xmtp/sign';
 import type { WalletSendCallsContent } from '@metro-labs/client/xmtp/tx';
-import { convScrollKey, saveScrollOffset } from '../../lib/scrollPos';
+import { AT_BOTTOM_THRESHOLD_PX, convScrollKey, saveScrollOffset } from '../../lib/scrollPos';
 import { previewOf } from './feed-helpers';
 import type { useConversationState } from './useConversationState';
 
@@ -76,8 +76,12 @@ export function ConversationFeed({
         const y = ev.nativeEvent.contentOffset.y;
         const next = y > 12;
         setShowJump(prev => (prev === next ? prev : next));
-        /** Persist the inverted offset (debounced) so reopening restores it. */
-        if (convId) saveScrollOffset(convScrollKey(convId), y);
+        /** Persist the inverted offset (debounced) so reopening restores it. At
+         *  the bottom store sentinel 0 (restore treats <=0 as "land at bottom"),
+         *  so returning shows the newest even if msgs arrived while away — a
+         *  concrete old offset would now be stale. Only a genuine scrolled-up
+         *  position (beyond the threshold) persists its real y. */
+        if (convId) saveScrollOffset(convScrollKey(convId), y <= AT_BOTTOM_THRESHOLD_PX ? 0 : y);
       }}
       scrollEventThrottle={16}
       /** Restore the saved (inverted) offset once, after the first content
