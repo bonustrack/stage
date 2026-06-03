@@ -38,7 +38,7 @@ export {
 } from './xmtp.types';
 
 export {
-  getOrCreateXmtpClient, ensureActiveAccount, switchToAccount, getCachedXmtpClient, deleteAccount,
+  getOrCreateXmtpClient, ensureActiveAccount, switchToAccount, getCachedXmtpClient, waitForXmtpReady, deleteAccount,
   resetXmtpClient, getLastReadNs, setLastReadNs, markConvReadSynced,
   markConvUnreadSynced, syncPreferences, convOfLine,
 } from './xmtp.client';

@@ -15,6 +15,22 @@ let cachedClient: Client | null = null;
 export function getCachedXmtpClient(): Client | null { return cachedClient; }
 export function setCachedXmtpClient(client: Client | null): void { cachedClient = client; }
 
+/** Resolve once the XMTP client is built/created (or after `capMs`), so heavy
+ *  native consumers (the Railgun nodejs-mobile engine boot) can SERIALIZE behind
+ *  XMTP onboarding instead of racing `Client.create`'s native MLS/SQLCipher
+ *  handshake on first launch. Polls the cache — getOrCreateXmtpClient runs on
+ *  boot from HomeScreen.sync, so we only wait, never trigger create here. The
+ *  cap means a failed onboarding won't wedge the Private tab forever. */
+export async function waitForXmtpReady(capMs = 60_000): Promise<boolean> {
+  if (cachedClient) return true;
+  const start = Date.now();
+  while (Date.now() - start < capMs) {
+    await new Promise((r) => setTimeout(r, 250));
+    if (cachedClient) return true;
+  }
+  return false;
+}
+
 /** inbox id → ETH address cache. An inbox's ETH identity is stable, so once
  *  resolved we never hit the identity API for it again. This is the key to
  *  staying under XMTP's read rate limit: channel re-summarizes (30s poll,

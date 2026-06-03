@@ -34,7 +34,7 @@ import {
 } from './xmtp.dbkey';
 import { createClientForAccount, isStoreCorruption } from './xmtp.recover';
 
-export { getCachedXmtpClient } from './xmtp.state';
+export { getCachedXmtpClient, waitForXmtpReady } from './xmtp.state';
 export { ensureActiveAccount } from './xmtp.recover';
 
 /** SecureStore keys must match `[A-Za-z0-9._-]+` — colons are rejected on Android, which

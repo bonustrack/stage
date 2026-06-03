@@ -45,7 +45,11 @@ function NetworkSection({ label, rows, head, sub, border }: {
 export function PrivateView({ head, sub, border }: {
   head: string; sub: string; border: string;
 }): React.ReactElement {
-  const { snapshot, pending } = usePrivateWallet();
+  // autoStart:true — this view is mounted ONLY on an explicit Private-tab open
+  // (WalletScreen renders it behind `tab === 'private'`), so it's safe to boot
+  // the nodejs-mobile engine here; usePrivateWallet serializes it behind XMTP
+  // readiness so it never races Client.create on first launch.
+  const { snapshot, pending } = usePrivateWallet(true);
   const live = pending.filter(p => p.phase === 'proving' || p.phase === 'broadcasting');
   const balances = snapshot?.balances ?? [];
   const mainnet = balances.filter(b => b.chainId === 1);
