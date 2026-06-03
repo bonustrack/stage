@@ -47,7 +47,10 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
    *  `started`/readyPromise guard makes the boot single-flight, so if the
    *  Private tab already started it this is a no-op (no double-start). */
   const { snapshot: privSnapshot } = usePrivateWallet(true);
-  const privateRows = privSnapshot ? privateBalancesToRows(privSnapshot.balances) : [];
+  // ALWAYS render the fixed private row set (ETH/USDC × mainnet/Sepolia), even
+  // pre-snapshot / pre-scan / at zero — pass the snapshot (may be null) so the
+  // mapper seeds zero rows from the token registry then overlays live amounts.
+  const privateRows = privateBalancesToRows(privSnapshot);
 
   /** Tokens | NFTs segmented toggle. NFTs are lazy-loaded: we only fetch on
    *  the first switch to the NFTs tab, then cache in `nfts` so toggling back
