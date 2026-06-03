@@ -26,7 +26,7 @@ export function ConversationFeed({
 }): React.ReactElement {
   const {
     events, loadOlder, hasMore, loadingOlder, status, myUri,
-    setShowJump, listEpoch, replyingTo, jumpHighlightId,
+    setShowJump, listEpoch, replyingTo, jumpHighlightId, isAtBottomRef,
     confirmedIds, optimisticReactions, optimisticRemovals,
     peerAddr, isGroup, groupName, groupImage, groupDescription, groupLabels,
     senderEthOf, profilesVersion, listRef,
@@ -76,11 +76,11 @@ export function ConversationFeed({
         const y = ev.nativeEvent.contentOffset.y;
         const next = y > 12;
         setShowJump(prev => (prev === next ? prev : next));
-        /** Persist the inverted offset (debounced) so reopening restores it. At
-         *  the bottom store sentinel 0 (restore treats <=0 as "land at bottom"),
-         *  so returning shows the newest even if msgs arrived while away — a
-         *  concrete old offset would now be stale. Only a genuine scrolled-up
-         *  position (beyond the threshold) persists its real y. */
+        /** Authoritative at-bottom flag for the unmount flush (beats the debounce race). */
+        isAtBottomRef.current = y <= AT_BOTTOM_THRESHOLD_PX;
+        /** Persist the inverted offset (debounced). At bottom store sentinel 0
+         *  (restore treats <=0 as "land at bottom") so returning shows the newest
+         *  even if msgs arrived while away; a concrete old offset would be stale. */
         if (convId) saveScrollOffset(convScrollKey(convId), y <= AT_BOTTOM_THRESHOLD_PX ? 0 : y);
       }}
       scrollEventThrottle={16}

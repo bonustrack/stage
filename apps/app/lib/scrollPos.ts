@@ -58,12 +58,20 @@ export function saveScrollOffset(key: string, offset: number): void {
 }
 
 /** Cancel a pending debounced write for a key (e.g. on unmount) and flush the
- *  latest cached value synchronously-ish so a quick close doesn't lose it. */
-export function flushScrollOffset(key: string): void {
+ *  latest cached value synchronously-ish so a quick close doesn't lose it.
+ *  Pass an `override` to FORCE-persist a definitive value (e.g. the at-bottom
+ *  sentinel 0) regardless of any pending/stale cached offset — this beats the
+ *  flush race where the last `onScroll` before a fast back-nav was mid-scroll
+ *  and never reported the final at-bottom position. */
+export function flushScrollOffset(key: string, override?: number): void {
   const t = timers.get(key);
-  if (!t) return;
-  clearTimeout(t);
-  timers.delete(key);
+  if (t) { clearTimeout(t); timers.delete(key); }
+  if (override != null && Number.isFinite(override) && override >= 0) {
+    cache.set(key, override);
+    void AsyncStorage.setItem(key, String(override)).catch(() => { /* best-effort */ });
+    return;
+  }
+  if (!t) return; // nothing pending, no override → leave the last persisted value
   const v = cache.get(key);
   if (v != null) void AsyncStorage.setItem(key, String(v)).catch(() => { /* best-effort */ });
 }
