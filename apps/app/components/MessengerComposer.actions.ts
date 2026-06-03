@@ -11,7 +11,7 @@ import {
   fileUriToBase64, xmtpReply, xmtpSendAttachment, xmtpSendMultiRemoteAttachment, xmtpSendText,
 } from '../lib/xmtp';
 import { type Attachment, mimeOf, INLINE_ATTACHMENT_MAX_BYTES } from './MessengerComposer.helpers';
-import { rememberLocalAttachments } from '../lib/localAttachmentCache';
+import { rememberLocalAttachments, stashLocalAttachment } from '../lib/localAttachmentCache';
 import { useVoiceRecorder, SLIDE_CANCEL_THRESHOLD_PX } from './MessengerComposer.voice';
 import { sendPoll, sendSignatureRequest, sendTxRequest } from './MessengerComposer.builders';
 
@@ -122,7 +122,16 @@ export function useComposerActions(a: ComposerActionsArgs) {
     const body = a.text.trim();
     if (!body && a.pending.length === 0) return;
     const localId = mintLocalId();
-    const sendingAttachments = a.pending;
+    /** Copy each picked local image/video/file into a STABLE app-cache path up
+     *  front (synchronous, cheap on-disk copy). The picker's temp URI can be
+     *  evicted while the send is in flight, which would blank the dimmed pending
+     *  thumbnail; the stable path is pinned for the app session. Both the
+     *  optimistic bubble AND the post-confirm `RemoteAttachmentResolver` then
+     *  source these exact bytes, so the local image stays painted (no reload,
+     *  no blank frame) across the optimistic→echo handoff. Audio rides a
+     *  separate inline path and isn't displayed as a thumbnail, so leave it. */
+    const sendingAttachments = a.pending.map((at) =>
+      at.kind === 'audio' ? at : { ...at, url: stashLocalAttachment(at.url) });
     const sendingReplyTo = a.replyingTo?.id;
     a.onOptimistic?.({ localId, text: body, attachments: sendingAttachments, replyTo: sendingReplyTo });
     a.setText(''); a.setPending([]); a.onClearReply?.();

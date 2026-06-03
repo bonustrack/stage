@@ -27,6 +27,7 @@
  *  are dropped on app restart. */
 
 import { useSyncExternalStore } from 'react';
+import { File, Paths } from 'expo-file-system';
 
 /** messageId → ordered list of local `file://` URIs (one per attachment, in the
  *  same order the composer staged them). */
@@ -51,6 +52,33 @@ export function rememberLocalAttachments(messageId: string, uris: ReadonlyArray<
 export function getLocalAttachment(messageId: string, index: number): string | undefined {
   const uri = byMessageId.get(messageId)?.[index];
   return uri ? uri : undefined;
+}
+
+/** Copy a freshly-picked local `file://` URI into a STABLE app-cache file so it
+ *  survives the entire pending window. The OS image/document picker hands back a
+ *  temp URI (e.g. an `ImagePicker` cache entry) that can be evicted while the
+ *  send is in flight — if that happens mid-pending the dimmed thumbnail blanks.
+ *  Copying to our own `Paths.cache` entry pins the bytes for the app session.
+ *
+ *  Best-effort + synchronous-friendly: on any failure (non-`file://` scheme,
+ *  copy error) it returns the original URI so the caller is never worse off. The
+ *  copy is cheap (already-on-disk bytes) and the dest lives until app restart. */
+export function stashLocalAttachment(srcUri: string): string {
+  if (!srcUri.startsWith('file://')) return srcUri;
+  try {
+    const ext = srcUri.split('?')[0]?.split('#')[0]?.split('.').pop()?.toLowerCase() ?? 'bin';
+    const safeExt = ext.length > 0 && ext.length <= 5 ? ext : 'bin';
+    const name = `metro-pending-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${safeExt}`;
+    const src = new File(srcUri);
+    const dest = new File(Paths.cache, name);
+    if (dest.exists) try { dest.delete(); } catch { /* overwrite below */ }
+    src.copy(dest);
+    const uri = dest.uri;
+    return uri.startsWith('file://') ? uri : `file://${uri.replace(/^file:\/+/, '/')}`;
+  } catch {
+    /** Picker temp is still on disk in the common case — fall back to it. */
+    return srcUri;
+  }
 }
 
 /** Reactive read of the cached local URI for `(messageId, index)`. Re-renders the
