@@ -21,6 +21,8 @@ import { type AssetRow } from './WalletScreen.assets';
 import { fetchAssetRows } from './WalletScreen.data';
 import { Btn, WalletTabs, TokenRow, NftsView, fmtUsd, splitUsd, type WalletTab } from './WalletScreen.parts';
 import { PrivateView } from './WalletScreen.private';
+import { privateBalancesToRows } from './WalletScreen.private.rows';
+import { usePrivateWallet } from '../../lib/railgun/usePrivateWallet';
 import { prewarmRailgun } from '../../lib/railgun/engine';
 
 export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
@@ -32,6 +34,12 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
   const [rows, setRows] = useState<AssetRow[] | null>(null);
   const [err, setErr] = useState<string>('');
   usePeerProfiles([address]);
+
+  /** Shielded (Railgun) balances — reuses the same instant-paint hook the
+   *  Private tab uses (cached snapshot + pending overlay, no refetch). They're
+   *  merged into the public Tokens list below as `isPrivate` rows. */
+  const { snapshot: privSnapshot } = usePrivateWallet();
+  const privateRows = privSnapshot ? privateBalancesToRows(privSnapshot.balances) : [];
 
   /** Tokens | NFTs segmented toggle. NFTs are lazy-loaded: we only fetch on
    *  the first switch to the NFTs tab, then cache in `nfts` so toggling back
@@ -139,10 +147,14 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
           <Spinner size={28} color={head} />
         </Col>
       ) : (
-      /* Asset list — Snapshot-treasury-style rows, border-bottom separators. */
+      /* Asset list — Snapshot-treasury-style rows, border-bottom separators.
+         Public balances first, then the shielded (Private-badged) rows. */
       <Col mx={16}>
-        {rows.map(r => (
-          <TokenRow key={`${r.chainId}:${r.symbol}`} r={r} head={head} sub={sub} border={border} bg={bg} />
+        {[...rows, ...privateRows].map(r => (
+          <TokenRow
+            key={`${r.isPrivate ? 'priv' : 'pub'}:${r.chainId}:${r.symbol}`}
+            r={r} head={head} sub={sub} border={border} bg={bg}
+          />
         ))}
       </Col>
       )}

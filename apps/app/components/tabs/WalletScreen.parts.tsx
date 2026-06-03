@@ -93,6 +93,22 @@ export function WalletTabs({ tab, setTab, head, sub, border }: {
   );
 }
 
+/** Small "Private" pill shown on Railgun-shielded token rows so they're
+ *  visually distinct from public balances. Subtle outlined chip in the page's
+ *  border tone — matches the app's quiet metadata-label styling. */
+function PrivateBadge({ head, border }: { head: string; border: string }): React.ReactElement {
+  return (
+    <Box style={{
+      paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999,
+      borderWidth: 1, borderColor: border, backgroundColor: border,
+    }}>
+      <Text style={{ color: head, fontSize: 11, fontFamily: 'Calibre-Semibold', letterSpacing: 0.3 }}>
+        Private
+      </Text>
+    </Box>
+  );
+}
+
 /** A single asset row — 4-corner layout with token avatar + network badge. */
 export function TokenRow({ r, head, sub, border, bg }: { r: AssetRow } & Omit<Palette, 'card'>): React.ReactElement {
   const valueUsd = r.priceUsd === null ? null : r.priceUsd * Number(r.balance);
@@ -133,9 +149,13 @@ export function TokenRow({ r, head, sub, border, bg }: { r: AssetRow } & Omit<Pa
           />
         </Box>
       </Box>
-      {/* Left column — token NAME (top) over price + 24h change (bottom). */}
+      {/* Left column — token NAME (top) over price + 24h change (bottom).
+          Shielded rows carry a small "Private" pill next to the name. */}
       <Col flex={1} style={{ minWidth: 0 }}>
-        <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{r.name}</Text>
+        <Row align="center" gap={6} style={{ minWidth: 0 }}>
+          <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{r.name}</Text>
+          {r.isPrivate ? <PrivateBadge head={head} border={border} /> : null}
+        </Row>
         <Row align="center" gap={6} mt={2}>
           <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
             {r.priceUsd === null ? r.symbol : fmtUsd(r.priceUsd, r.priceUsd < 1 ? 4 : 2)}

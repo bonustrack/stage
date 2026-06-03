@@ -37,7 +37,12 @@ export const ASSETS: Asset[] = [
  *  renderer can drop the right badge over each token avatar. */
 export const MAINNET_NETWORK_LOGO = 'https://ipfs.snapshot.box/ipfs/bafkreid7ndxh6y2ljw2jhbisodiyrhcy2udvnwqgon5wgells3kh4si5z4';
 export const BASE_NETWORK_LOGO = 'https://ipfs.snapshot.box/ipfs/bafkreid4ek4gnj6ccxl3yubwj2wr3d5t6dqelvvh4hv5wo5eldkqs725ri';
-export const NETWORK_LOGO: Record<number, string> = { 1: MAINNET_NETWORK_LOGO, 8453: BASE_NETWORK_LOGO };
+export const SEPOLIA_NETWORK_LOGO = 'https://ipfs.snapshot.box/ipfs/bafkreif5b7trz7plh4mpfbnom2wqc6yogux6sgzwau6znwu7pbq6qeu63e';
+export const NETWORK_LOGO: Record<number, string> = {
+  1: MAINNET_NETWORK_LOGO,
+  8453: BASE_NETWORK_LOGO,
+  11155111: SEPOLIA_NETWORK_LOGO,
+};
 export const VIEM_CHAINS: Record<number, Chain> = { 1: mainnet, 8453: base };
 
 export const erc20Abi = [{
@@ -64,4 +69,7 @@ export interface AssetRow {
   change24h: number | null;
   /** Cached logo URL (stamp.fyi) so the renderer doesn't recompute on every row. */
   logoUrl: string;
+  /** True for Railgun-shielded balances merged into the public Tokens list —
+   *  drives the "Private" badge on the row. */
+  isPrivate?: boolean;
 }
