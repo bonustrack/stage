@@ -15,6 +15,7 @@ import { CHANNEL_ROW_HEIGHT } from './HomeScreen.helpers';
 import type { Row as RowT } from './HomeScreen.helpers';
 import { HomeEmpty } from './HomeScreen.parts';
 import { LabelFilterControl } from './HomeScreen.filter';
+import type { LabelFilterValue } from './HomeScreen.filter';
 
 interface ChannelsListProps {
   panRef?: import('../SwipeTabs').SimultaneousRefs;
@@ -23,7 +24,7 @@ interface ChannelsListProps {
   sortedRows: RowT[];
   requestCount: number;
   /** Active label filter (null = none) → drives the top-left control's state. */
-  labelFilter: string | null;
+  labelFilter: LabelFilterValue;
   /** Opens the label-picker sheet (owned by HomeScreen). */
   onOpenFilter: () => void;
   head: string;

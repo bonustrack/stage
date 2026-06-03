@@ -22,7 +22,8 @@ import type { Row as RowT } from './HomeScreen.helpers';
 import { HomeError, HomeSpinner, useChannelRowRenderer } from './HomeScreen.parts';
 import { ChannelsList, channelRowLayout } from './HomeScreen.list';
 import { useChannelsSync } from './HomeScreen.sync';
-import { LabelFilterSheet } from './HomeScreen.filter';
+import { LabelFilterSheet, UNLABELED } from './HomeScreen.filter';
+import type { LabelFilterValue } from './HomeScreen.filter';
 
 /** Re-exported so existing import paths (`./HomeScreen`) stay unchanged. */
 export type { Row } from './HomeScreen.helpers';
@@ -78,7 +79,7 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
   /** Active label filter (null = show all). Drives both the topnav control's
    *  highlighted state and the sortedRows filter below. The picker sheet's
    *  open/closed state is local UI here. */
-  const [labelFilter, setLabelFilter] = useState<string | null>(null);
+  const [labelFilter, setLabelFilter] = useState<LabelFilterValue>(null);
   const [filterSheetOpen, setFilterSheetOpen] = useState<boolean>(false);
   /** Load the saved channels-list offset once on mount. The actual scroll
    *  happens in onContentSizeChange (below) once rows have laid out — restoring
@@ -100,12 +101,14 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
    *  prepends/reorders by recency) keeps working against the raw list. */
   const sortedRows = useMemo(() => {
     const all = rows ?? [];
-    /** Label filter: keep only groups whose labels[] (same source ChannelRow
-     *  renders as chips) include the active label, case-insensitively. null →
-     *  no filter. Reactive to `rows` so cache updates re-derive automatically. */
+    /** Label filter: null → no filter; UNLABELED → only channels with no
+     *  labels[]; otherwise keep groups whose labels[] include the active label,
+     *  case-insensitively. Reactive to `rows` so cache updates re-derive. */
     const list = labelFilter == null
       ? all
-      : all.filter(r => (r.labels ?? []).some(l => l.toLowerCase() === labelFilter.toLowerCase()));
+      : labelFilter === UNLABELED
+        ? all.filter(r => (r.labels ?? []).length === 0)
+        : all.filter(r => (r.labels ?? []).some(l => l.toLowerCase() === labelFilter.toLowerCase()));
     return [...list].sort((a, b) => {
       const ap = pinned.has(a.convId) ? 1 : 0;
       const bp = pinned.has(b.convId) ? 1 : 0;
