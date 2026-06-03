@@ -28,6 +28,122 @@ async function newGroup(id: string, args: Args): Promise<void> {
   respond(id, { result: { line: lineOf(acct.cfg.id, group.id), id: group.id, account: acct.cfg.id } });
 }
 
+/** Build the app's labels appData blob ({v:1, labels}) MERGING into any existing
+ *  appData so we never clobber other keys. Matches apps/app/lib/xmtp.labels.ts:
+ *  trim, collapse whitespace, cap len 24, dedupe case-insensitively, cap 16. */
+const MAX_LABELS = 16;
+const MAX_LABEL_LEN = 24;
+function cleanLabels(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const item of raw) {
+    if (typeof item !== 'string') continue;
+    const label = item.trim().replace(/\s+/g, ' ').slice(0, MAX_LABEL_LEN);
+    const key = label.toLowerCase();
+    if (!label || seen.has(key)) continue;
+    seen.add(key);
+    out.push(label);
+    if (out.length >= MAX_LABELS) break;
+  }
+  return out;
+}
+function labelsBlob(existingAppData: string | undefined, labels: string[]): string {
+  let existing: Record<string, unknown> = {};
+  if (existingAppData && existingAppData.trim()) {
+    try {
+      const p: unknown = JSON.parse(existingAppData);
+      if (p && typeof p === 'object' && !Array.isArray(p)) existing = p as Record<string, unknown>;
+    } catch { /* tolerate malformed */ }
+  }
+  return JSON.stringify({ ...existing, v: 1, labels: cleanLabels(labels) });
+}
+
+/** Minimal structural view of the node-sdk Group surface we touch. In node-sdk
+ *  v6 `appData` is a SYNC getter (string), updateAppData/updateName/updateDescription
+ *  are async. */
+interface GroupLike {
+  id: string;
+  appData?: string;
+  updateAppData?: (s: string) => Promise<void>;
+  updateName?: (s: string) => Promise<void>;
+  updateDescription?: (s: string) => Promise<void>;
+  sync?: () => Promise<unknown>;
+}
+
+/** Create a "request" group: name + description + a single status label (array
+ *  per the app schema) + members. Members may be Ethereum addresses
+ *  (memberAddresses) and/or XMTP inboxIds (memberInboxIds); at least one member
+ *  required (default = Less, passed in by the orchestrator). Sets name,
+ *  description, and labels appData in ONE createGroup call. */
+async function createRequestGroup(id: string, args: Args): Promise<void> {
+  const { memberAddresses, memberInboxIds, name, description, labels } = args as {
+    memberAddresses?: string[]; memberInboxIds?: string[];
+    name: string; description?: string; labels?: string[] };
+  const acct = accountForCall(args as { account?: string });
+  if (!name || typeof name !== 'string') throw new Error('createRequestGroup requires a `name`');
+  const addrs = (memberAddresses ?? []).filter(a => typeof a === 'string' && a.length > 0);
+  const inboxes = (memberInboxIds ?? []).filter(a => typeof a === 'string' && a.length > 0);
+  if (addrs.length === 0 && inboxes.length === 0) {
+    throw new Error('createRequestGroup requires memberAddresses[] or memberInboxIds[]');
+  }
+  const opts: { groupName: string; groupDescription?: string; appData?: string } = { groupName: name };
+  if (description) opts.groupDescription = description;
+  if (Array.isArray(labels) && labels.length) opts.appData = labelsBlob(undefined, labels);
+
+  let group: GroupLike;
+  if (addrs.length) {
+    // createGroupWithIdentifiers takes the Ethereum identifiers; any inboxId-only
+    // members are added after via addMembers (node-sdk Group.addMembers(inboxIds)).
+    const created = await acct.client.conversations.createGroupWithIdentifiers(
+      addrs.map(a => ({ identifier: a, identifierKind: IdentifierKind.Ethereum })),
+      opts as unknown as Parameters<typeof acct.client.conversations.createGroupWithIdentifiers>[1]);
+    group = created as unknown as GroupLike;
+    if (inboxes.length) {
+      await (created as unknown as { addMembers: (ids: string[]) => Promise<unknown> }).addMembers(inboxes);
+    }
+  } else {
+    // inboxId-only path: createGroup(inboxIds, options).
+    const created = await acct.client.conversations.createGroup(
+      inboxes, opts as unknown as Parameters<typeof acct.client.conversations.createGroup>[1]);
+    group = created as unknown as GroupLike;
+  }
+
+  respond(id, { result: {
+    line: lineOf(acct.cfg.id, group.id), id: group.id, account: acct.cfg.id,
+    name, description: description ?? '', labels: cleanLabels(labels ?? []) } });
+}
+
+/** Update a group's status labels (and optionally name/description). Loads the
+ *  group, merges {v:1, labels} into existing appData, writes via updateAppData. */
+async function setLabels(id: string, args: Args): Promise<void> {
+  const { line, labels, setName, setDescription } = args as {
+    line?: string; groupId?: string; labels: string[]; setName?: string; setDescription?: string };
+  let resolvedLine = line;
+  if (!resolvedLine && (args as { groupId?: string }).groupId) {
+    const acct = accountForCall(args as { account?: string });
+    resolvedLine = lineOf(acct.cfg.id, (args as { groupId: string }).groupId);
+  }
+  if (!resolvedLine) throw new Error('setLabels requires `line` or `groupId`');
+  if (!Array.isArray(labels)) throw new Error('setLabels requires a `labels` array');
+  const { acct, conv } = await convOf(resolvedLine);
+  if (!conv) throw new Error(`conversation not found for ${resolvedLine}`);
+  const group = conv as unknown as GroupLike;
+  if (typeof group.updateAppData !== 'function') {
+    throw new Error('setLabels target is not a group (no updateAppData)');
+  }
+  await group.sync?.().catch(() => undefined);
+  if (typeof setName === 'string' && setName && typeof group.updateName === 'function') {
+    await group.updateName(setName);
+  }
+  if (typeof setDescription === 'string' && typeof group.updateDescription === 'function') {
+    await group.updateDescription(setDescription);
+  }
+  const clean = cleanLabels(labels);
+  await group.updateAppData(labelsBlob(group.appData, clean));
+  respond(id, { result: { line: resolvedLine, id: group.id, account: acct.cfg.id, labels: clean } });
+}
+
 async function query(id: string, args: Args): Promise<void> {
   const { line, limit } = args as { line: string; limit?: number };
   const { conv } = await convOf(line);
@@ -146,7 +262,7 @@ async function unregisterPush(id: string, args: Args): Promise<void> {
 }
 
 export const convHandlers: Record<string, Handler> = {
-  newDm, newGroup, query, groupInfo, listConvs,
+  newDm, newGroup, createRequestGroup, setLabels, query, groupInfo, listConvs,
   'register-push': registerPush,
   'list-push': (id) => listPush(id),
   'test-push': testPush,
