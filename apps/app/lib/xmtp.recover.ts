@@ -56,12 +56,22 @@ export async function ensureActiveAccount(): Promise<void> {
   if (!existing) await addGeneratedAccount();
 }
 
+/** Sentinel message for the create timeout. Treated as a corruption-class signal
+ *  (see isStoreCorruption) because a native hang inside `Client.create` is, in
+ *  practice, a SQLCipher key/salt mismatch manifesting as an sqlite-open that
+ *  never returns rather than a thrown PRAGMA error. So the one-shot wipe+retry
+ *  must run on a timeout too — otherwise the account is a permanent dead spinner. */
+const CREATE_TIMEOUT_MESSAGE = 'XMTP.create timed out (native handshake hang)';
+
 /** GENUINE local-store corruption signatures: a stale db-encryption key that no
  *  longer matches the wiped/half-written sqlite store (e.g. clean reinstall where
- *  the Android keystore survived). These — and ONLY these — trigger a one-shot
- *  wipe + retry of THIS account's local store. NETWORK-side create rejections
- *  (installation limit, handshake) are deliberately NOT here. */
-const STORE_CORRUPTION = ['PRAGMA key', 'StorageError', 'incorrect value'];
+ *  the Android keystore survived), OR a create that hangs on sqlite-open (the
+ *  same key/salt mismatch surfacing as a hang → CREATE_TIMEOUT_MESSAGE). These —
+ *  and ONLY these — trigger a one-shot wipe + retry of THIS account's local store.
+ *  NETWORK-side create rejections (installation limit, handshake) are NOT here. */
+const STORE_CORRUPTION = [
+  'PRAGMA key', 'StorageError', 'incorrect value', CREATE_TIMEOUT_MESSAGE,
+];
 export function isStoreCorruption(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err);
   return STORE_CORRUPTION.some(sig => msg.includes(sig));
@@ -70,8 +80,8 @@ export function isStoreCorruption(err: unknown): boolean {
 /** A true native hang inside `Client.create` (MLS handshake / sqlite open never
  *  returns) would leave the account-switch promise pending forever → dead
  *  spinner. Race create against a 30s timeout so a hang REJECTS (then the
- *  HomeError UX path runs) instead of spinning. Mirrors the `Client.build`
- *  timeout in xmtp.client.ts. */
+ *  one-shot wipe+retry runs, then the HomeError UX path) instead of spinning.
+ *  Mirrors the `Client.build` timeout in xmtp.client.ts. */
 const CREATE_TIMEOUT_MS = 30_000;
 async function createWithTimeout(
   signer: Awaited<ReturnType<typeof signerForRecord>>, opts: CreateOpts,
@@ -79,7 +89,7 @@ async function createWithTimeout(
   let timer: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<never>((_, reject) => {
     timer = setTimeout(
-      () => reject(new Error('XMTP.create timed out (native handshake hang)')),
+      () => reject(new Error(CREATE_TIMEOUT_MESSAGE)),
       CREATE_TIMEOUT_MS,
     );
   });

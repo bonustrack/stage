@@ -3,7 +3,7 @@
  *  the client module. */
 
 import * as SecureStore from 'expo-secure-store';
-import { Directory, Paths } from 'expo-file-system';
+import { Directory, File, Paths } from 'expo-file-system';
 
 /** LEGACY single global key (pre per-account). Kept for graceful migration: the
  *  first account on an upgraded install adopts this key so its existing store
@@ -96,8 +96,9 @@ export async function deleteLegacyDbKey(): Promise<void> {
  *  so it is unaffected. We never delete the legacy key on behalf of an account
  *  that wasn't actually keyed by it. */
 export async function wipeXmtpStore(accountId: string, dbDirName: string): Promise<void> {
-  const dir = dbDirObj(dbDirName);
-  if (dir.exists) { try { dir.delete(); } catch { /* best-effort */ } }
+  /** Delete the on-disk store (db3 + -wal/-shm sidecars) robustly so no stale db3
+   *  encrypted with the OLD key survives at the path the fresh key will reopen. */
+  deleteDbFiles(dbDirName);
   /** Decide BEFORE deleting the per-account key whether it matched the legacy key. */
   const accountKey = await SecureStore.getItemAsync(dbKeyId(accountId)).catch(() => null);
   const legacyKey = await SecureStore.getItemAsync(LEGACY_DB_ENCRYPTION_KEY).catch(() => null);
@@ -110,6 +111,22 @@ export async function wipeXmtpStore(accountId: string, dbDirName: string): Promi
   if (legacyKey && (accountKey === legacyKey || accountKey === null)) {
     await deleteLegacyDbKey();
   }
+}
+
+/** Remove the on-disk sqlite store for one account: every file under its dbDir
+ *  (the SDK's `xmtp-*.db3` + the `-wal` / `-shm` SQLCipher sidecars), then the
+ *  dir itself. Deleting the dir alone removes the db3+sidecars inside it; we also
+ *  delete the files first so a busy-handle dir.delete() can't leave a stale db3
+ *  encrypted with the OLD key sitting at the path the fresh key will reopen. */
+export function deleteDbFiles(dbDirName: string): void {
+  const dir = dbDirObj(dbDirName);
+  if (!dir.exists) return;
+  try {
+    for (const entry of dir.list()) {
+      if (entry instanceof File) { try { entry.delete(); } catch { /* best-effort */ } }
+    }
+  } catch { /* list() can throw if the dir vanished mid-wipe — fine */ }
+  try { dir.delete(); } catch { /* best-effort: files above already gone */ }
 }
 
 /** XMTP needs a writable directory for its sqlite + key store. Document directory is

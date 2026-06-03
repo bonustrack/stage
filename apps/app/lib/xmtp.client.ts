@@ -28,7 +28,10 @@ import {
   getCachedXmtpClient, setCachedXmtpClient, resetClientScopedState,
 } from './xmtp.state';
 import { type XmtpEnv, convIdOfLine } from './xmtp.types';
-import { loadOrCreateDbKey, deleteDbKey, deleteLegacyDbKey, dbDirObj, ensureDbDir, wipeXmtpStore } from './xmtp.dbkey';
+import {
+  loadOrCreateDbKey, deleteDbKey, deleteLegacyDbKey, deleteDbFiles,
+  ensureDbDir, wipeXmtpStore,
+} from './xmtp.dbkey';
 import { createClientForAccount, isStoreCorruption } from './xmtp.recover';
 
 export { getCachedXmtpClient } from './xmtp.state';
@@ -130,10 +133,7 @@ export async function deleteAccount(id: string): Promise<void> {
   const list = await loadAccounts();
   const rec = list.find(a => a.id === id);
   await removeAccount(id);
-  if (rec) {
-    const dir = dbDirObj(rec.dbDir);
-    if (dir.exists) { try { dir.delete(); } catch { /* best-effort */ } }
-  }
+  if (rec) deleteDbFiles(rec.dbDir);
   await deleteDbKey(id);
   resetClientScopedState();
 }
@@ -149,10 +149,7 @@ export async function resetXmtpClient(): Promise<void> {
   await Promise.all(removed.map(a => deleteDbKey(a.id)));
   await deleteLegacyDbKey();
   const dirs = new Set<string>(['xmtp', ...removed.map(a => a.dbDir)]);
-  for (const name of dirs) {
-    const dir = dbDirObj(name);
-    if (dir.exists) { try { dir.delete(); } catch { /* best-effort */ } }
-  }
+  for (const name of dirs) deleteDbFiles(name);
 }
 
 /** Per-conv "last read at" timestamp (XMTP `sentNs` units) in SecureStore. Drives
