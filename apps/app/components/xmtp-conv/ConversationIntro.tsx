@@ -57,7 +57,7 @@ export function ConversationIntro({
     const name = groupName === null ? '' : (groupName || 'Untitled group');
     const desc = groupDescription.trim();
     return (
-      <Box style={{ alignItems: 'flex-start', paddingVertical: 24, paddingHorizontal: 24 }}>
+      <Box style={{ alignItems: 'flex-start', paddingVertical: 24, paddingHorizontal: 12 }}>
         <Avatar
           imageUri={groupImage || undefined}
           address={!groupImage && convId ? channelStampSeed(convId) : null}
@@ -66,7 +66,7 @@ export function ConversationIntro({
           style={{ backgroundColor: border }}
         />
         <Text
-          style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold', marginTop: 12, textAlign: 'left' }}
+          style={{ color: head, fontSize: 26, lineHeight: 30, fontFamily: 'Calibre-Semibold', marginTop: 12, textAlign: 'left' }}
           numberOfLines={2}
         >
           {name}
@@ -74,7 +74,7 @@ export function ConversationIntro({
         <IntroLabelChips labels={groupLabels} fg={fg} rowBg={rowBg} />
         {desc ? (
           <Text
-            style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium', marginTop: 10, textAlign: 'left', lineHeight: 20 }}
+            style={{ color: sub, fontSize: 16, fontFamily: 'Calibre-Medium', marginTop: 10, textAlign: 'left', lineHeight: 21 }}
           >
             {desc}
           </Text>
@@ -88,10 +88,10 @@ export function ConversationIntro({
   return (
     <Pressable
       onPress={() => onPressPeer(peerAddr)}
-      style={{ alignItems: 'flex-start', paddingVertical: 24, paddingHorizontal: 24 }}
+      style={{ alignItems: 'flex-start', paddingVertical: 24, paddingHorizontal: 12 }}
     >
       <Avatar address={peerAddr} imageUri={getPeerAvatar(peerAddr)} size="lg" style={{ backgroundColor: border }} />
-      <Text style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold', marginTop: 12 }} numberOfLines={1}>
+      <Text style={{ color: head, fontSize: 26, lineHeight: 30, fontFamily: 'Calibre-Semibold', marginTop: 12 }} numberOfLines={1}>
         {getPeerName(peerAddr) ?? shortAddress(peerAddr)}
       </Text>
       <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 2 }} numberOfLines={1}>
@@ -99,7 +99,7 @@ export function ConversationIntro({
       </Text>
       {about ? (
         <Text
-          style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium', marginTop: 10, textAlign: 'left', lineHeight: 20 }}
+          style={{ color: sub, fontSize: 16, fontFamily: 'Calibre-Medium', marginTop: 10, textAlign: 'left', lineHeight: 21 }}
         >
           {about}
         </Text>
