@@ -53,6 +53,12 @@ export function EdgeSwipeBack({ children }: { children: React.ReactNode }): Reac
     return unsub;
   }, [navigation]);
 
+  /** Pop guard: only `router.back()` when there's a screen beneath us. If the
+   *  stack is somehow at its root (no parent — e.g. a botched restore), popping
+   *  would crash on an empty stack, so we no-op the swipe and let the recognizer
+   *  stay disabled (`.enabled(canGoBack)` already gates activation). The
+   *  restore-last-route fix PUSHes the detail screen onto the (tabs) root, so a
+   *  restored deep screen always has a parent and this path stays valid. */
   const goBack = useCallback(() => {
     if (navigation.canGoBack()) router.back();
   }, [navigation, router]);

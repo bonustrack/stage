@@ -3,9 +3,19 @@
  *
  *  expo-router owns its own NavigationContainer, so there's no public
  *  `initialState` to hand it. The supported, framework-friendly path is to
- *  persist the live `usePathname()` and, after mount, `router.replace` to the
- *  saved location — a pragmatic restore that composes with the existing
+ *  persist the live `usePathname()` and, after mount, navigate to the saved
+ *  location — a pragmatic restore that composes with the existing
  *  NativeSwipeStack + deep-link routing rather than fighting the container.
+ *
+ *  BACK-STACK CORRECTNESS: every restorable route is a DETAIL screen that lives
+ *  in the ROOT stack as a sibling of `(tabs)` (xmtp/group/user/wallet/...). We
+ *  restore with `router.push`, NOT `router.replace`: at restore time we've just
+ *  asserted the app is still at the `(tabs)` root (see `atRoot` below), so a
+ *  PUSH lands the detail screen ON TOP of `(tabs)`, leaving the tab root as the
+ *  entry beneath it. That makes `canGoBack()` true after restore, so the header
+ *  back button / hardware back / edge-swipe all pop cleanly to the tab — instead
+ *  of a `replace`, which would make the detail screen the SOLE stack entry with
+ *  nothing beneath it (back then has nowhere to go → crash).
  *
  *  COORDINATION WITH DEEP LINKS: a deep link (push tap / universal link) resolves
  *  async right after mount and navigates AWAY from the tabs root. The restore only
@@ -69,7 +79,10 @@ export function useRestoreLastRoute(): void {
           const atRoot = cur === '/' || /^\/\(tabs\)/.test(cur);
           if (!atRoot) return; // a deep link already moved us off root → it wins
           if (!isRestorable(saved)) return;
-          router.replace(saved as Parameters<typeof router.replace>[0]);
+          // PUSH (not replace) so the detail screen sits ON TOP of the (tabs)
+          // root → canGoBack() is true → back pops to the tab, never an empty
+          // stack. See the back-stack note in the file header.
+          router.push(saved as Parameters<typeof router.push>[0]);
         } catch {
           hydrated.current = true; // fall back to the default route on any failure
         }
