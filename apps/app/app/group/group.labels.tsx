@@ -3,7 +3,7 @@
  *  add a label via the inline input or remove one by tapping its chip's x.
  *  Backed by lib/xmtp.labels (read → mutate → write to MLS-synced appData). */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, TextInput } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
@@ -14,6 +14,33 @@ import {
   getGroupLabels, addGroupLabel, removeGroupLabel,
   LabelPermissionError, MAX_LABEL_LEN, MAX_LABELS,
 } from '../../lib/xmtp.labels';
+import { suggestLabels } from '../../lib/xmtp.labels.suggest';
+
+/** How many suggestion chips to show at once (keeps the row compact). */
+const MAX_SUGGESTIONS = 8;
+
+/** One tappable suggestion pill — filled, borderless (matches the label chip
+ *  fill), with a leading + to read as "add this". */
+function SuggestionChip({ label, busy, onAdd, p }: {
+  label: string; busy: boolean; onAdd: () => void; p: Pal;
+}): React.ReactElement {
+  return (
+    <Pressable
+      onPress={onAdd}
+      disabled={busy}
+      hitSlop={6}
+      style={({ pressed }) => ({
+        flexDirection: 'row', alignItems: 'center', gap: 4,
+        paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999,
+        backgroundColor: p.rowBg,
+        opacity: busy ? 0.5 : pressed ? 0.7 : 1,
+      })}
+    >
+      <Icon name="plus" size={12} color={p.sub} />
+      <Text style={{ color: p.fg, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{label}</Text>
+    </Pressable>
+  );
+}
 
 interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; }
 
@@ -56,12 +83,12 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
     else flash('Could not update labels. Try again.');
   };
 
-  const add = async (): Promise<void> => {
-    const value = draft.trim();
-    if (!value || busy) return;
+  const add = async (value: string): Promise<void> => {
+    const clean = value.trim();
+    if (!clean || busy) return;
     setBusy(true);
     try {
-      const next = await addGroupLabel(line, value);
+      const next = await addGroupLabel(line, clean);
       setLabels(next);
       setDraft('');
     } catch (e) { reportError(e); } finally { setBusy(false); }
@@ -77,6 +104,14 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
   };
 
   const atCap = labels.length >= MAX_LABELS;
+
+  /** Distinct labels from the user's OTHER groups (in-memory channels cache),
+   *  filtered by the current draft + excluding ones already on this group.
+   *  Recomputed only when the draft or this group's labels change. */
+  const suggestions = useMemo(
+    () => suggestLabels(draft, labels).slice(0, MAX_SUGGESTIONS),
+    [draft, labels],
+  );
 
   return (
     <Box style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
@@ -104,7 +139,7 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
           <TextInput
             value={draft}
             onChangeText={setDraft}
-            onSubmitEditing={() => { void add(); }}
+            onSubmitEditing={() => { void add(draft); }}
             placeholder="Add a label"
             placeholderTextColor={sub}
             maxLength={MAX_LABEL_LEN}
@@ -117,7 +152,7 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
             }}
           />
           <Pressable
-            onPress={() => { void add(); }}
+            onPress={() => { void add(draft); }}
             disabled={busy || !draft.trim()}
             hitSlop={8}
             style={({ pressed }) => ({
@@ -137,6 +172,20 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
           Label limit reached ({MAX_LABELS}).
         </Text>
       )}
+
+      {!atCap && suggestions.length > 0 ? (
+        <Box style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+          {suggestions.map((label) => (
+            <SuggestionChip
+              key={label.toLowerCase()}
+              label={label}
+              busy={busy}
+              onAdd={() => { void add(label); }}
+              p={p}
+            />
+          ))}
+        </Box>
+      ) : null}
     </Box>
   );
 }
