@@ -1,14 +1,11 @@
 /** The inverted message FlatList for the XMTP conversation screen (lint split). */
 
-import { Pressable } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { FlatList } from 'react-native-gesture-handler';
 import { Box } from '../layout';
 import { MessengerBubble } from '../MessengerBubble';
-import { getPeerName, getPeerAvatar } from '../../lib/peerProfiles';
 import { Spinner } from '../Spinner';
-import { Avatar } from '../Avatar';
-import { shortAddress } from '../../lib/xmtp';
+import { ConversationIntro } from './ConversationIntro';
 import type { SignatureRequestContent } from '@metro-labs/client/xmtp/sign';
 import type { WalletSendCallsContent } from '@metro-labs/client/xmtp/tx';
 import { convScrollKey, saveScrollOffset } from '../../lib/scrollPos';
@@ -18,12 +15,12 @@ import type { useConversationState } from './useConversationState';
 type ConvState = ReturnType<typeof useConversationState>;
 
 export function ConversationFeed({
-  c, convId, dark, head, sub, border, insets, router,
+  c, convId, dark, head, sub, fg, border, rowBg, insets, router,
 }: {
   c: ConvState;
   convId: string;
   dark: boolean;
-  head: string; sub: string; border: string;
+  head: string; sub: string; fg: string; border: string; rowBg: string;
   insets: { top: number };
   router: { push: (h: { pathname: '/user/[address]'; params: { address: string } }) => void };
 }): React.ReactElement {
@@ -31,7 +28,8 @@ export function ConversationFeed({
     events, loadOlder, hasMore, loadingOlder, status, myUri,
     setShowJump, listEpoch, replyingTo, jumpHighlightId,
     confirmedIds, optimisticReactions, optimisticRemovals,
-    peerAddr, isGroup, senderEthOf, profilesVersion, listRef,
+    peerAddr, isGroup, groupName, groupImage, groupDescription, groupLabels,
+    senderEthOf, profilesVersion, listRef,
     savedScrollRef, savedScrollLoaded, didRestoreScroll,
     reactions, ownReactions, displayVotes, displayOwnVotes,
     allBubbles, jumpToMessage,
@@ -44,7 +42,7 @@ export function ConversationFeed({
       key={listEpoch}
       ref={listRef}
       data={allBubbles}
-      extraData={[profilesVersion, optimisticReactions, reactions, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, confirmedIds, selectedForCopy]}
+      extraData={[profilesVersion, optimisticReactions, reactions, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, confirmedIds, selectedForCopy, groupDescription, groupLabels]}
       inverted
       showsVerticalScrollIndicator={false}
       /** Anchor the bottom-visible item (= newest on inverted) so as new bubbles or the
@@ -163,9 +161,9 @@ export function ConversationFeed({
       }
       /** Inverted list → `ListFooterComponent` renders at the visual TOP (oldest
        *  end). Holds two things, top-to-bottom: a small "loading older" spinner
-       *  while a previous page is paginating in, then the DM intro banner.
-       *  The DM banner only shows once history is exhausted (`!hasMore`) so it
-       *  doesn't sit mid-scroll above still-unloaded messages. */
+       *  while a previous page is paginating in, then the conversation intro
+       *  header. The intro only shows once history is exhausted (`!hasMore`) so
+       *  it doesn't sit mid-scroll above still-unloaded messages. */
       ListFooterComponent={
         <>
           {loadingOlder ? (
@@ -173,24 +171,22 @@ export function ConversationFeed({
               <Spinner size={20} color={sub} />
             </Box>
           ) : null}
-          {!isGroup && peerAddr && hasMore === false ? (
-            <Pressable
-              onPress={() => router.push({ pathname: '/user/[address]', params: { address: peerAddr } })}
-              style={{ alignItems: 'center', paddingVertical: 24, paddingHorizontal: 24 }}
-            >
-              <Avatar
-                address={peerAddr}
-                imageUri={getPeerAvatar(peerAddr)}
-                size="lg"
-                style={{ backgroundColor: border }}
-              />
-              <Text style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold', marginTop: 12 }} numberOfLines={1}>
-                {getPeerName(peerAddr) ?? shortAddress(peerAddr)}
-              </Text>
-              <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 2 }} numberOfLines={1}>
-                {shortAddress(peerAddr)}
-              </Text>
-            </Pressable>
+          {hasMore === false ? (
+            <ConversationIntro
+              isGroup={isGroup}
+              peerAddr={peerAddr}
+              groupName={groupName}
+              groupImage={groupImage}
+              groupDescription={groupDescription}
+              groupLabels={groupLabels}
+              convId={convId}
+              head={head}
+              sub={sub}
+              fg={fg}
+              border={border}
+              rowBg={rowBg}
+              onPressPeer={(address) => router.push({ pathname: '/user/[address]', params: { address } })}
+            />
           ) : null}
         </>
       }
