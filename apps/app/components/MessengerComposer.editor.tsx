@@ -71,14 +71,20 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
           ? <Btn icon="x" onPress={p.onCancelRec} />
           : (
             <>
-              {/** Quick-access: re-trigger the last-used attachment type directly.
-               *   Negative marginRight pulls it tight against the + button — the 38px
-               *   Btns have wide internal padding, so this removes the visual slack
-               *   (the Row gap=4 below would otherwise leave the pair looking spread). */}
+              {/** + first (leftmost). Negative marginRight pulls the quick-access
+               *   icon tight against it — the 38px Btns have wide internal padding,
+               *   so this removes the visual slack (the Row gap=4 below would
+               *   otherwise leave the pair looking spread). Only apply the pull when
+               *   the quick icon is actually shown. */}
+              <Btn
+                icon={p.attachMenuOpen ? 'x' : 'plus'}
+                onPress={() => p.setAttachMenuOpen(o => !o)}
+                mr={!p.attachMenuOpen && p.quickIcon && p.onQuick ? -12 : undefined}
+              />
+              {/** Quick-access: re-trigger the last-used attachment type directly. */}
               {!p.attachMenuOpen && p.quickIcon && p.onQuick
-                ? <Btn icon={p.quickIcon} onPress={p.onQuick} mr={-12} />
+                ? <Btn icon={p.quickIcon} onPress={p.onQuick} />
                 : null}
-              <Btn icon={p.attachMenuOpen ? 'x' : 'plus'} onPress={() => p.setAttachMenuOpen(o => !o)} />
             </>
           )}
         <Box flex={1} />
