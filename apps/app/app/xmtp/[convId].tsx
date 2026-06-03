@@ -22,6 +22,7 @@ import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { HeaderAvatar, BubbleActionMenu } from '../../components/xmtp-conv/parts';
 import { previewOf } from '../../components/xmtp-conv/feed-helpers';
 import { ConversationFeed } from '../../components/xmtp-conv/ConversationFeed';
+import { BackSwipe } from '../../components/xmtp-conv/BackSwipe';
 import { useConversationState } from '../../components/xmtp-conv/useConversationState';
 
 export default function XmtpConversation(): React.ReactElement {
@@ -65,6 +66,8 @@ export default function XmtpConversation(): React.ReactElement {
       }}
     >
       <Reanimated.View style={[{ flex: 1 }, listWrapperStyle]}>
+      {/** In-screen edge-swipe-back (see BackSwipe) — mounted here, not the root overlay. */}
+      <BackSwipe listRef={c.listRef}>
       <ConversationFeed
         c={c}
         convId={convId}
@@ -75,10 +78,10 @@ export default function XmtpConversation(): React.ReactElement {
         insets={insets}
         router={router}
       />
+      </BackSwipe>
       </Reanimated.View>
-      {/** Top nav: solid bg strip mirrors the composer footer + extends UP to cover the
-       *  status-bar area, so content sliding up under the keyboard doesn't show through
-       *  behind the system icons. */}
+      {/** Top nav: solid bg strip mirrors the composer footer + extends UP over the
+       *  status-bar area so content sliding under the keyboard doesn't show through. */}
       <Box style={{
         position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
         height: 52 + insets.top, paddingTop: insets.top, backgroundColor: bg,
@@ -91,9 +94,8 @@ export default function XmtpConversation(): React.ReactElement {
         >
           <Icon name="arrowLeft" size={22} color={fg} />
         </Pressable>
-        {/** Everything right of the back arrow is one tap target → the
-         *   group/channel detail page (or the peer's profile for a DM).
-         *   Fills full height + to the right edge so 100% is clickable. */}
+        {/** Everything right of the back arrow is one tap target → group/channel
+         *   detail (or peer profile for a DM); fills full height + width. */}
         <Pressable
           onPress={() => {
             if (isGroup) router.push({ pathname: '/group/[convId]', params: { convId: convId ?? '' } });
@@ -118,18 +120,15 @@ export default function XmtpConversation(): React.ReactElement {
           <Icon name="dotsVertical" size={22} color={fg} />
         </Pressable>
       </Box>
-      {/** Fade strip below the top nav — mirrors the composer's top fade. The nav is
-       *  `52 + insets.top` tall; start the fade 1px higher so its solid-bg top edge
-       *  overlaps the nav bottom by 1px, closing the hairline seam between the two
-       *  absolute bg layers (the "1px missing"). The fade then ramps down to
-       *  transparent over the content beneath. */}
+      {/** Fade strip below the top nav — mirrors the composer's top fade. Start it 1px
+       *  higher so its solid-bg top edge overlaps the nav bottom, closing the hairline
+       *  seam between the two absolute bg layers, then ramps to transparent. */}
       <ComposerGradient bg={bg} direction="up" top={52 + insets.top - 1} height={24} />
       <KeyboardStickyView offset={{ opened: insets.bottom }}>
       <Box>
-      {/** Jump-to-bottom: anchored just above the composer (bottom:'100%') and inside
-       *   the KeyboardStickyView, so it tracks the composer's height + the keyboard
-       *   instead of a fixed offset that floated in the middle of a tall composer.
-       *   Bump the FlatList key to remount → inverted offset 0 = newest at the bottom. */}
+      {/** Jump-to-bottom: anchored above the composer (bottom:'100%') inside the
+       *   KeyboardStickyView so it tracks composer height + keyboard. Bumping the
+       *   FlatList key remounts → inverted offset 0 = newest at the bottom. */}
       {showJump ? (
         <Pressable
           onPress={() => { setListEpoch(e => e + 1); setShowJump(false); }}
