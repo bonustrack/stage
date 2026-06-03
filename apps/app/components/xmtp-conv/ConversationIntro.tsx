@@ -57,7 +57,7 @@ export function ConversationIntro({
     const name = groupName === null ? '' : (groupName || 'Untitled group');
     const desc = groupDescription.trim();
     return (
-      <Box style={{ alignItems: 'flex-start', paddingVertical: 24, paddingHorizontal: 24 }}>
+      <Box style={{ alignItems: 'flex-start', paddingVertical: 24, paddingHorizontal: 12 }}>
         <Avatar
           imageUri={groupImage || undefined}
           address={!groupImage && convId ? channelStampSeed(convId) : null}
@@ -88,7 +88,7 @@ export function ConversationIntro({
   return (
     <Pressable
       onPress={() => onPressPeer(peerAddr)}
-      style={{ alignItems: 'flex-start', paddingVertical: 24, paddingHorizontal: 24 }}
+      style={{ alignItems: 'flex-start', paddingVertical: 24, paddingHorizontal: 12 }}
     >
       <Avatar address={peerAddr} imageUri={getPeerAvatar(peerAddr)} size="lg" style={{ backgroundColor: border }} />
       <Text style={{ color: head, fontSize: 26, lineHeight: 30, fontFamily: 'Calibre-Semibold', marginTop: 12 }} numberOfLines={1}>
