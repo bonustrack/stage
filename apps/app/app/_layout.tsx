@@ -137,19 +137,25 @@ export default function RootLayout(): React.ReactElement {
       <GestureDetectorProvider>
       <KeyboardProvider>
       <StatusBar style={barStyle} translucent backgroundColor="transparent" />
-      {/** react-native-screens native-stack (via NativeSwipeStack/withLayoutContext)
-       *   instead of expo-router's default @react-navigation native-stack — only
-       *   rn-screens exposes the interactive finger-following edge swipe-back
-       *   (`goBackGesture: 'swipeRight'` + `screenEdgeGesture: true`) that reveals
-       *   the previous page sliding underneath on the native thread (real iOS/
-       *   Telegram parallax), which the old JS SwipeBack couldn't do.
+      {/** react-native-screens native-stack (via NativeSwipeStack/withLayoutContext).
        *
-       *   Pushed routes opt into the EDGE gesture (left ~50px catch zone). The
-       *   programmatic push/pop uses stackAnimation:'none' so the hardware back
-       *   button + router.back() pop INSTANTLY; the interactive edge swipe still
-       *   reveals the previous page underneath via goBackGesture's own
-       *   ScreenTransition.SwipeRight (independent of stackAnimation). The (tabs)
-       *   root disables the gesture (nothing to go back to).
+       *   STOCK back-swipe only. We deliberately do NOT set rn-screens'
+       *   `goBackGesture`/`screenEdgeGesture` here: those props mount rn-screens'
+       *   CUSTOM interactive screen-transition (`ScreenGestureDetector`), whose
+       *   Reanimated `onStart` worklet calls `measure()` on a mocked animated ref
+       *   (ScreenGestureDetector.tsx). When that view tag is undefined the worklet
+       *   throws "Value is undefined, expected an Object" (`global._measure`) and
+       *   CRASHES the app on the very first edge-swipe. That custom transition —
+       *   not the old hit-slop tweak — was the crash. The stock iOS back gesture
+       *   (`gestureEnabled`) is driven natively by UIKit's interactive pop and
+       *   never touches the `measure`/ScreenGestureDetector path, so it's safe.
+       *
+       *   `gestureEnabled: true` + `fullScreenSwipeEnabled: true` give a
+       *   wide native swipe-back; the standard slide animation is what the native
+       *   interactive pop drives (it needs a real transition, so no
+       *   `stackAnimation:'none'` on pushed routes). The header back button +
+       *   `router.back()` continue to pop normally. The (tabs) root disables the
+       *   gesture (bottom of the stack — nothing to go back to).
        *
        *   `statusBarStyle: barStyle` keeps white-on-dark status-bar icons; we also
        *   set it imperatively (effect above) + declaratively (<StatusBar>) so it
@@ -159,31 +165,17 @@ export default function RootLayout(): React.ReactElement {
           headerShown: false,
           contentStyle: { backgroundColor: dark ? '#0e0f10' : '#ffffff' },
           statusBarStyle: barStyle,
-          goBackGesture: 'swipeRight',
-          screenEdgeGesture: true,
-          /** INSTANT forward + interactive swipe-back.
-           *
-           *  `stackAnimation:'none'` makes the PROGRAMMATIC push/pop (router.push,
-           *  router.back, hardware back) play no transition → forward is instant on
-           *  BOTH platforms. (On Android `animationDuration` is a no-op — the native
-           *  ScreenViewManager.setTransitionDuration() is `= Unit` — so a fast-slide
-           *  trick can't make the forward push instant there; only 'none' does.)
-           *
-           *  The interactive edge swipe-back is a SEPARATE mechanism: rn-screens'
-           *  `goBackGesture` drives a Reanimated worklet (ScreenGestureDetector +
-           *  RNScreensTurboModule.startTransition/updateTransition/finishTransition,
-           *  with ScreenTransition.SwipeRight). That worklet NEVER reads
-           *  `stackAnimation`, so the finger-driven reveal-and-pop still works with
-           *  'none'. `screenEdgeGesture:true` arms the left-edge catch zone
-           *  (stock 50px hit-slop). The (tabs) root disables
-           *  the gesture (bottom of the stack — nothing to go back to). */
-          stackAnimation: 'none',
+          /** Stock native back-swipe (UIKit interactive pop). NO goBackGesture /
+           *  screenEdgeGesture → no crashing ScreenGestureDetector worklet.
+           *  fullScreenSwipeEnabled widens the catch zone beyond the left edge. */
+          gestureEnabled: true,
+          fullScreenSwipeEnabled: true,
         }}
       >
-        {/** Tab root: no back gesture (it's the bottom of the stack), instant. */}
+        {/** Tab root: no back gesture (it's the bottom of the stack). */}
         <NativeSwipeStack.Screen
           name="(tabs)"
-          options={{ gestureEnabled: false, screenEdgeGesture: false, stackAnimation: 'none' }}
+          options={{ gestureEnabled: false }}
         />
       </NativeSwipeStack>
       </KeyboardProvider>
