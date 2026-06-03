@@ -1,6 +1,6 @@
 /** Session-scoped cache of the LOCAL `file://` URIs for attachments the user just
- *  sent, keyed by message id. Bridges the optimistic→confirmed handoff for image
- *  (and other) attachments:
+ *  sent, keyed by the REAL XMTP message id. Bridges the optimistic→confirmed
+ *  handoff for image (and other) attachments:
  *
  *   - The optimistic bubble renders the local picker URI instantly (shows at once).
  *   - On confirm, that bubble is dropped and replaced by the LIVE message, whose
@@ -9,31 +9,62 @@
  *     trip left a blank/spinner gap for a few seconds → the image "disappeared"
  *     then "reappeared".
  *
- *  By remembering the local URI under the optimistic id and re-keying it to the
- *  real XMTP message id the moment `conv.send()` resolves, the resolver can paint
- *  the already-on-disk local file immediately (no blank, no spinner) while the
- *  remote download happens in the background — so there's zero flicker.
+ *  THE TIMING BUG this version fixes: `conv.send({ multiRemoteAttachment })`
+ *  encrypts + uploads to IPFS before its JS promise resolves, but the MLS message
+ *  commits (and can stream-echo into the live feed) BEFORE that promise returns.
+ *  So the echo bubble's `RemoteAttachmentResolver` frequently MOUNTED before
+ *  `rememberLocalAttachments(realId, …)` ran. The previous design only read the
+ *  cache in `useState(initial)`, so a late write was never observed → the bubble
+ *  sat on a spinner until the IPFS download finished (the persistent gap).
+ *
+ *  Fix: make the cache a tiny reactive store. The resolver subscribes; the moment
+ *  the local URI lands under its message id (whenever `conv.send` resolves), it
+ *  re-reads and paints the already-on-disk local file instantly — no blank, no
+ *  spinner — while the remote download finishes in the background.
  *
  *  The cache holds plain `file://` cache-dir URIs (already materialised by the
  *  picker / send path), so it costs nothing to keep for the app session; entries
- *  are dropped once the optimistic id is forgotten or on app restart. */
+ *  are dropped on app restart. */
+
+import { useSyncExternalStore } from 'react';
 
 /** messageId → ordered list of local `file://` URIs (one per attachment, in the
  *  same order the composer staged them). */
 const byMessageId = new Map<string, string[]>();
 
-/** Remember the local URIs for a freshly-staged optimistic send, keyed by its
- *  local id. Empty/falsey uris are skipped — only on-disk locals are useful. */
+/** Subscribers notified on every write so already-mounted resolvers re-read. */
+const listeners = new Set<() => void>();
+function emit(): void { for (const l of listeners) l(); }
+
+/** Remember the local URIs for a freshly-sent message, keyed by its REAL XMTP
+ *  message id (the id `conv.send()` resolved with — identical to the stream
+ *  echo's id). Empty/falsey uris are skipped — only on-disk locals are useful. */
 export function rememberLocalAttachments(messageId: string, uris: ReadonlyArray<string | undefined>): void {
   const locals = uris.map(u => u ?? '');
   if (locals.every(u => u === '')) return;
   byMessageId.set(messageId, [...locals]);
+  emit();
 }
 
 /** Local `file://` URI for the attachment at `index` of `messageId`, if one was
- *  cached for a send made this session. Used by the bubble renderer as the
- *  instant, blank-free image source while the remote copy downloads. */
+ *  cached for a send made this session. */
 export function getLocalAttachment(messageId: string, index: number): string | undefined {
   const uri = byMessageId.get(messageId)?.[index];
   return uri ? uri : undefined;
+}
+
+/** Reactive read of the cached local URI for `(messageId, index)`. Re-renders the
+ *  caller when the URI lands (e.g. `conv.send()` resolves AFTER the echo bubble
+ *  mounted) so the bubble swaps its spinner for the on-disk local file with zero
+ *  gap. Pass `undefined` ids/indexes to opt out (returns undefined, no subscribe
+ *  churn). */
+export function useLocalAttachment(messageId?: string, index?: number): string | undefined {
+  return useSyncExternalStore(
+    (cb) => {
+      if (messageId === undefined || index === undefined) return () => {};
+      listeners.add(cb);
+      return () => { listeners.delete(cb); };
+    },
+    () => (messageId !== undefined && index !== undefined ? getLocalAttachment(messageId, index) : undefined),
+  );
 }
