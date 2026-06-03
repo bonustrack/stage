@@ -24,9 +24,14 @@ const ARTIFACTS_DIR = path.join(DATA_ROOT, 'artifacts');
 /** Mainnet + Sepolia RPCs. Mirrors apps/app/lib/railgun/networks.ts. Public RPCs
  *  (no key needed for read-only engine polling); swap for keyed endpoints in a
  *  later hardening pass. NetworkName values come from shared-models at runtime. */
+/* getLogs-capable public RPCs ONLY — the merkletree scan does eth_getLogs over
+ * the RailgunSmartWallet address, and a non-getLogs proxy (e.g. brovider, ankr)
+ * silently fails the scan → no commitment found → balance stays 0. These mirror
+ * the vetted list in apps/app/lib/railgun/networks.ts. Need >= 2 per net for the
+ * SDK's fallback-provider quorum. */
 const RPC = {
-  mainnet: ['https://rpc.brovider.xyz/1', 'https://ethereum-rpc.publicnode.com'],
-  sepolia: ['https://rpc.ankr.com/eth_sepolia', 'https://ethereum-sepolia-rpc.publicnode.com'],
+  mainnet: ['https://ethereum-rpc.publicnode.com', 'https://eth.drpc.org'],
+  sepolia: ['https://ethereum-sepolia-rpc.publicnode.com', 'https://sepolia.drpc.org'],
 };
 
 let state = { ready: false, prover: false, networks: [], version: null, initPromise: null };
@@ -154,19 +159,64 @@ async function init(params) {
 let walletCacheKey = null; // `${encryptionKey}:${mnemonic}` of the loaded wallet
 let walletCacheId = null;
 
-/** Latest shielded ERC20 balances by `${chainId}:${walletID}` → [{tokenAddress,
- *  amount(decimal string)}]. Populated by the balance-update callback the engine
- *  fires after a scan; read synchronously by the `balances` handler. */
+/** Latest shielded ERC20 balances by `${chainId}:${walletID}:${bucket}` →
+ *  [{tokenAddress, amount(decimal string)}]. Populated by the balance-update
+ *  callback the engine fires after a scan; summed across owned buckets by the
+ *  `balances` handler.
+ *
+ *  WHY PER-BUCKET: when POI is REQUIRED for a network (it is for BOTH mainnet
+ *  AND Sepolia — see shared-models NETWORK_CONFIG[...].poi.launchBlock, already
+ *  in the past), the SDK's onBalancesUpdate fires the callback ONCE PER
+ *  RailgunWalletBalanceBucket (Spendable / ShieldPending / ShieldBlocked / …).
+ *  A freshly-shielded note starts in `ShieldPending` and only moves to
+ *  `Spendable` after the POI aggregator validates it — which may NEVER happen on
+ *  Sepolia (mainnet aggregators don't cover testnets). The old code keyed the
+ *  cache by chain+wallet only, so each bucket event CLOBBERED the previous one;
+ *  whichever fired last won — typically the empty `Spendable` bucket → balance
+ *  shows 0 forever even though the shield succeeded on-chain.
+ *
+ *  FIX: store each bucket separately and SUM all "owned" buckets (everything
+ *  except `Spent`) for display, so a shielded note appears immediately
+ *  regardless of POI status. */
 const balanceCache = new Map();
 let balanceCallbackWired = false;
 
-function chainKey(chainId, walletId) {
-  return chainId + ':' + walletId;
+/** Buckets whose notes the wallet still OWNS (should count toward the displayed
+ *  shielded balance). Excludes `Spent` (already unshielded / sent out). */
+const OWNED_BUCKETS = [
+  'Spendable', 'ShieldPending', 'ShieldBlocked',
+  'ProofSubmitted', 'MissingInternalPOI', 'MissingExternalPOI',
+];
+
+function bucketKey(chainId, walletId, bucket) {
+  return chainId + ':' + walletId + ':' + (bucket || 'Spendable');
+}
+
+/** Sum every owned bucket for a chain+wallet into one tokenAddress→amount list.
+ *  Read synchronously by the `balances` handler. */
+function summedRows(chainId, walletId) {
+  const totals = new Map(); // lowercased addr → bigint
+  for (const bucket of OWNED_BUCKETS) {
+    const rows = balanceCache.get(bucketKey(chainId, walletId, bucket));
+    if (!rows) continue;
+    for (const r of rows) {
+      const k = r.tokenAddress.toLowerCase();
+      let cur = totals.get(k) || 0n;
+      try { cur += BigInt(r.amount); } catch (_e) { /* skip malformed */ }
+      totals.set(k, cur);
+    }
+  }
+  const out = [];
+  totals.forEach((amount, tokenAddress) => {
+    if (amount > 0n) out.push({ tokenAddress: tokenAddress, amount: amount.toString() });
+  });
+  return out;
 }
 
 /** Register the engine's balance-update callback ONCE so background scans keep
  *  balanceCache fresh. RailgunBalancesEvent: { chain:{type,id}, railgunWalletID,
- *  erc20Amounts:[{tokenAddress, amount:bigint}], ... }. */
+ *  erc20Amounts:[{tokenAddress, amount:bigint}], balanceBucket }. Stored
+ *  per-bucket (see balanceCache doc) so POI-pending notes aren't clobbered. */
 function wireBalanceCallback(sdk) {
   if (balanceCallbackWired) return;
   balanceCallbackWired = true;
@@ -176,8 +226,9 @@ function wireBalanceCallback(sdk) {
         tokenAddress: a.tokenAddress,
         amount: a.amount == null ? '0' : a.amount.toString(),
       }));
-      balanceCache.set(chainKey(ev.chain.id, ev.railgunWalletID), rows);
-      emit('event:balanceUpdate', { chainId: ev.chain.id, walletId: ev.railgunWalletID, rows: rows });
+      balanceCache.set(bucketKey(ev.chain.id, ev.railgunWalletID, ev.balanceBucket), rows);
+      const summed = summedRows(ev.chain.id, ev.railgunWalletID);
+      emit('event:balanceUpdate', { chainId: ev.chain.id, walletId: ev.railgunWalletID, rows: summed });
     } catch (_e) {
       /* never let a malformed event sink the callback */
     }
@@ -238,7 +289,7 @@ async function balances(params) {
     } catch (_e) {
       /* network may not be loaded; skip */
     }
-    networks[t.net] = balanceCache.get(chainKey(t.chainId, walletId)) || [];
+    networks[t.net] = summedRows(t.chainId, walletId);
   }
   return { walletId: walletId, networks: networks, scanning: scanning };
 }
