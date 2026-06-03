@@ -44,6 +44,7 @@ export type BridgeEvent =
   | 'event:balanceUpdate'
   | 'event:proofProgress'
   | 'event:scanProgress'
+  | 'event:scanDebug'
   | 'event:uncaughtException';
 
 /** Engine bootstrap params. The encryption key + mnemonic are derived on the RN

@@ -15,12 +15,16 @@ import { Button } from '@metro-labs/kit/button';
 import { Col } from '../layout';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import {
+  bridgeListen,
   engineInit,
+  getBalances,
   isBridgeAvailable,
   pingBridge,
   sdkListMethods,
   setBridgeStatusListener,
+  walletInfo,
 } from '../../lib/railgun/bridge';
+import { deriveRailgunKeyMaterial } from '../../lib/railgun/deriveKeys';
 import { PingLog, type LogLine } from './WalletScreen.private.ping.log';
 
 type ProbeState =
@@ -49,6 +53,47 @@ export function BridgePingProbe({ sub, border }: {
       setLog((prev) => [...prev, { ms, line }]);
     });
     return () => setBridgeStatusListener(null);
+  }, []);
+
+  // Stream the engine's live scan diagnostics ('event:scanDebug') into the log
+  // so a screenshot shows WHY a scan returns 0 (getLogs range, commitment count,
+  // RPC error, scanned wallet id). No-op when the bridge isn't in this binary.
+  useEffect(() => {
+    if (!isBridgeAvailable()) return undefined;
+    return bridgeListen('event:scanDebug', (p) => {
+      const e = p as { t?: number; chain?: number; msg?: string } | undefined;
+      if (!e || !e.msg) return;
+      const ms = runStart.current ? Date.now() - runStart.current : 0;
+      setLog((prev) => [...prev, { ms, line: `scan[${e.chain ?? '?'}] ${e.msg}` }]);
+    });
+  }, []);
+
+  const onScan = useCallback(async (): Promise<void> => {
+    runStart.current = Date.now();
+    setLog([]);
+    if (!isBridgeAvailable()) {
+      setEngine({ kind: 'err', text: UNAVAILABLE });
+      return;
+    }
+    setEngine({ kind: 'running' });
+    try {
+      await engineInit();
+      const key = await deriveRailgunKeyMaterial();
+      const info = await walletInfo({
+        encryptionKey: key.encryptionKey,
+        mnemonic: key.mnemonic,
+        creationBlocks: key.creationBlocks,
+      });
+      const res = await getBalances(info.railgunWalletID);
+      const m = res.networks.mainnet.length;
+      const s = res.networks.sepolia.length;
+      setEngine({
+        kind: 'ok',
+        text: `wallet ${info.railgunAddress.slice(0, 12)}… mainnet=${m} rows sepolia=${s} rows scanning=${res.scanning} — watch scan[] lines below`,
+      });
+    } catch (e) {
+      setEngine({ kind: 'err', text: e instanceof Error ? e.message : String(e) });
+    }
   }, []);
 
   const onPress = useCallback(async (): Promise<void> => {
@@ -144,6 +189,13 @@ export function BridgePingProbe({ sub, border }: {
       <Text style={{ color: engineColor, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
         {engineText}
       </Text>
+      <Button
+        label="Scan balances + show diagnostics"
+        variant="secondary"
+        dark={dark}
+        loading={engine.kind === 'running'}
+        onPress={() => { void onScan(); }}
+      />
       <Button
         label="List SDK dispatcher methods"
         variant="secondary"

@@ -14,6 +14,33 @@
 const path = require('path');
 const fs = require('fs');
 
+/** Push a diagnostic event to the RN debug panel. main.js owns the rn-bridge
+ *  channel; we lazily grab its `emit` so engine.js stays import-safe in CI/lint
+ *  (where rn-bridge is absent). Falls back to a no-op + console. */
+let _emit = null;
+function emit(event, payload) {
+  try {
+    if (!_emit) {
+      // eslint-disable-next-line global-require
+      const main = require('./main');
+      _emit = (main && main.emit) || function () {};
+    }
+    _emit(event, payload);
+  } catch (_e) {
+    /* never let diagnostics throw */
+  }
+}
+
+/** Ring buffer of scan diagnostics, surfaced via engineStatus().scanDebug and
+ *  pushed live as 'event:scanDebug'. Each entry: { t, chain, msg }. Capped. */
+const scanLog = [];
+function scanDebug(chainId, msg) {
+  const entry = { t: Date.now(), chain: chainId, msg: String(msg) };
+  scanLog.push(entry);
+  if (scanLog.length > 80) scanLog.shift();
+  emit('event:scanDebug', entry);
+}
+
 /** Where the engine writes its LevelDB + downloaded circuit artifacts. We keep
  *  it under the Node project dir (writable in the nodejs-mobile sandbox). The RN
  *  side may later pass an explicit app-documents path via engineInit params. */
@@ -94,8 +121,9 @@ async function loadNetworks(sdk, NetworkName) {
       // eslint-disable-next-line no-await-in-loop
       await sdk.loadProvider(cfg, t.name, 1000 * 60 * 5);
       loaded.push(t.net);
+      scanDebug(t.chainId, 'provider loaded ✓ (' + t.net + ' rpcs: ' + t.urls.join(', ') + ')');
     } catch (err) {
-      // keep going — report only the networks that actually came up
+      scanDebug(t.chainId, 'provider load FAILED (' + t.net + '): ' + (err && err.message ? err.message : String(err)));
     }
   }
   return loaded;
@@ -131,6 +159,26 @@ async function init(params) {
       POI_NODE_URLS, // poiNodeURLs — REQUIRED (Sepolia/mainnet define NETWORK_CONFIG.poi)
       undefined, // customPOILists
     );
+    // Surface the engine's own UTXO merkletree scan lifecycle (Started/Updated/
+    // Complete/Incomplete + progress) to the RN debug panel. This is the DECISIVE
+    // signal: if the scan reaches Complete but no balanceUpdate ever fires with
+    // rows, the tree genuinely held zero commitments for this wallet/chain.
+    try {
+      if (sdk.setOnUTXOMerkletreeScanCallback) {
+        sdk.setOnUTXOMerkletreeScanCallback(function onUTXOScan(d) {
+          try {
+            scanDebug(d.chain && d.chain.id, 'UTXO scan ' + d.scanStatus + ' (' + Math.round((d.progress || 0) * 100) + '%)');
+          } catch (_e) { /* ignore */ }
+        });
+      }
+      if (sdk.setOnTXIDMerkletreeScanCallback) {
+        sdk.setOnTXIDMerkletreeScanCallback(function onTXIDScan(d) {
+          try {
+            scanDebug(d.chain && d.chain.id, 'TXID scan ' + d.scanStatus + ' (' + Math.round((d.progress || 0) * 100) + '%)');
+          } catch (_e) { /* ignore */ }
+        });
+      }
+    } catch (_e) { /* scan callbacks are best-effort instrumentation */ }
     state.prover = wireProver(sdk.getProver);
     state.networks = await loadNetworks(sdk, shared.NetworkName);
     state.version =
@@ -236,6 +284,11 @@ function wireBalanceCallback(sdk) {
       }));
       balanceCache.set(bucketKey(ev.chain.id, ev.railgunWalletID, ev.balanceBucket), rows);
       const summed = summedRows(ev.chain.id, ev.railgunWalletID);
+      scanDebug(
+        ev.chain.id,
+        'balanceUpdate bucket=' + ev.balanceBucket + ' wallet=' + String(ev.railgunWalletID).slice(0, 10) +
+          ' rows=' + rows.length + ' summedOwned=' + summed.length,
+      );
       emit('event:balanceUpdate', { chainId: ev.chain.id, walletId: ev.railgunWalletID, rows: summed });
     } catch (_e) {
       /* never let a malformed event sink the callback */
@@ -264,7 +317,50 @@ async function walletInfo(params) {
   const info = await sdk.createRailgunWallet(encryptionKey, mnemonic, creationBlocks);
   walletCacheKey = key;
   walletCacheId = info.id;
+  scanDebug(0, 'wallet loaded id=' + String(info.id).slice(0, 14) + ' addr=' + String(info.railgunAddress).slice(0, 12) + '… creationBlocks=' + JSON.stringify(creationBlocks || {}));
   return { railgunWalletID: info.id, railgunAddress: info.railgunAddress };
+}
+
+/** Chains for which we've already kicked the one-time FULL on-chain UTXO scan
+ *  (rescanFullUTXOMerkletreesAndWallets). Keyed `${chainId}:${walletId}`. */
+const fullScanKicked = new Set();
+
+/** Walk the chain logs + (re)build the UTXO merkletree for a wallet, in the
+ *  BACKGROUND. THE ROOT-CAUSE FIX: `refreshBalances` only re-DERIVES balances
+ *  from the merkletree the engine ALREADY has on disk — on a cold wallet that
+ *  tree was never synced, so it's empty and balances are always 0. The actual
+ *  on-chain eth_getLogs scan that POPULATES the tree is
+ *  `rescanFullUTXOMerkletreesAndWallets`. We run it ONCE per chain+wallet (it's
+ *  expensive), then rely on `refreshBalances` for cheap subsequent reads. The
+ *  scan callbacks (init) + balanceUpdate logging make the result visible. */
+function kickFullScan(sdk, chain, walletId) {
+  const k = chain.id + ':' + walletId;
+  if (fullScanKicked.has(k)) {
+    // Cheap re-derive from the already-synced tree.
+    Promise.resolve(sdk.refreshBalances(chain, [walletId])).catch((e) =>
+      scanDebug(chain.id, 'refreshBalances error: ' + (e && e.message ? e.message : String(e))),
+    );
+    return;
+  }
+  fullScanKicked.add(k);
+  scanDebug(chain.id, 'full UTXO rescan START wallet=' + String(walletId).slice(0, 10));
+  Promise.resolve()
+    .then(() => {
+      if (typeof sdk.rescanFullUTXOMerkletreesAndWallets === 'function') {
+        return sdk.rescanFullUTXOMerkletreesAndWallets(chain, [walletId]);
+      }
+      return sdk.refreshBalances(chain, [walletId]);
+    })
+    .then(() => {
+      scanDebug(chain.id, 'full UTXO rescan DONE wallet=' + String(walletId).slice(0, 10));
+      // After the tree is synced, derive balances (fires balanceUpdate).
+      return sdk.refreshBalances(chain, [walletId]);
+    })
+    .catch((e) => {
+      // CRITICAL: don't swallow — this is the message that explains a 0 balance.
+      fullScanKicked.delete(k); // allow a retry next refresh
+      scanDebug(chain.id, 'full UTXO rescan ERROR: ' + (e && e.message ? e.message : String(e)));
+    });
 }
 
 /** Trigger a scan for both networks and return currently-known balances. */
@@ -278,6 +374,7 @@ async function balances(params) {
 
   const walletId = params && params.walletId;
   if (!walletId) throw new Error('balances requires { walletId }');
+  scanDebug(0, 'balances() called wallet=' + String(walletId).slice(0, 14) + ' loadedNets=[' + state.networks.join(',') + ']');
 
   // ChainType.EVM === 0; ids: Ethereum=1, Sepolia=11155111.
   const targets = [
@@ -289,17 +386,17 @@ async function balances(params) {
   for (const t of targets) {
     const chain = { type: shared.ChainType ? shared.ChainType.EVM : 0, id: t.chainId };
     try {
-      // Fire-and-forget the scan: it can take a while; the callback fills the
-      // cache. We DON'T await it so the handler returns promptly with whatever
-      // is already known (may be empty on a cold wallet — that's expected).
-      Promise.resolve(sdk.refreshBalances(chain, [walletId])).catch(() => undefined);
+      // Kick the real on-chain scan in the background (full sync once, then
+      // cheap re-derive). The balanceUpdate callback fills the cache + the panel
+      // shows the scan lifecycle, so we still return promptly.
+      kickFullScan(sdk, chain, walletId);
       scanning = true;
-    } catch (_e) {
-      /* network may not be loaded; skip */
+    } catch (e) {
+      scanDebug(t.chainId, 'scan kick FAILED (' + t.net + '): ' + (e && e.message ? e.message : String(e)));
     }
     networks[t.net] = summedRows(t.chainId, walletId);
   }
-  return { walletId: walletId, networks: networks, scanning: scanning };
+  return { walletId: walletId, networks: networks, scanning: scanning, scanDebug: scanLog.slice(-40) };
 }
 
 function tryPkgVersion(name) {
@@ -318,6 +415,7 @@ function status() {
     networks: state.networks,
     version: state.version,
     dbPath: DB_PATH,
+    scanDebug: scanLog.slice(-40),
   };
 }
 
