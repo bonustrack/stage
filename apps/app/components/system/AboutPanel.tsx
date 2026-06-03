@@ -5,6 +5,7 @@
  *  bundles. */
 
 import Constants from 'expo-constants';
+import * as Application from 'expo-application';
 import { Box } from '../layout';
 import { Title } from '@metro-labs/kit/title';
 import { Text } from '@metro-labs/kit/text';
@@ -39,6 +40,10 @@ export function AboutPanel({ dark, head, sub, border, rowBg }: {
   const buildProfile = typeof extra.buildProfile === 'string' && extra.buildProfile.length > 0
     ? extra.buildProfile : 'dev';
   const pkgName = cfg?.name ?? 'Metro';
+  const nativeBuild = Application.nativeBuildVersion
+    ?? (Constants.expoConfig?.android?.versionCode != null
+      ? String(Constants.expoConfig.android.versionCode) : null);
+  const versionLabel = nativeBuild ? `${version} (build ${nativeBuild})` : version;
 
   return (
     <Box style={{ paddingTop: 18 }}>
@@ -48,7 +53,7 @@ export function AboutPanel({ dark, head, sub, border, rowBg }: {
         Build + runtime metadata for this install.
       </Text>
       <AboutRow label="App" value={pkgName} dark={dark} border={border} />
-      <AboutRow label="Version" value={version} dark={dark} border={border} />
+      <AboutRow label="Version" value={versionLabel} dark={dark} border={border} />
       <AboutRow label="Commit" value={shortHash} mono dark={dark} border={border} />
       <AboutRow label="Build profile" value={buildProfile} dark={dark} border={border} />
       <Text dark={dark} color={sub} variant="caption" weight="medium" style={{ marginTop: 14 }}>
