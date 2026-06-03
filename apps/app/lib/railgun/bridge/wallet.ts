@@ -34,6 +34,9 @@ export interface BalancesResult {
   walletId: string;
   networks: { mainnet: BridgeBalanceRow[]; sepolia: BridgeBalanceRow[] };
   scanning: boolean;
+  /** Recent engine scan diagnostics (provider load, full UTXO rescan lifecycle,
+   *  per-bucket balanceUpdate counts, RPC errors). Surfaced in the dev panel. */
+  scanDebug?: { t: number; chain: number; msg: string }[];
 }
 
 /** Create-or-load the active account's RAILGUN wallet in the Node host and

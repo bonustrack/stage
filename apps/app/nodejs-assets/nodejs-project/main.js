@@ -220,4 +220,6 @@ if (rnBridge) {
   emit('event:message', 'Railgun node host booted (scaffold; engine not wired).');
 }
 
-module.exports = { handlers: handlers };
+// Exposed so engine.js can push diagnostic events ('event:scanDebug', balance
+// updates) to the RN debug panel without holding its own rn-bridge handle.
+module.exports = { handlers: handlers, emit: emit };
