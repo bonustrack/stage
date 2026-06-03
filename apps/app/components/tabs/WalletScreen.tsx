@@ -163,10 +163,18 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
         </Col>
       ) : (
       /* Asset list — ONE flat list, no network section headers (each row
-         carries its own network badge). Public balances first, then the
-         shielded (Private-badged) rows. */
+         carries its own network badge). Public + shielded (Private-badged) rows
+         are merged then sorted by USD value (priceUsd × balance) DESCENDING, so
+         the highest-value holdings sit at the top. A high-value private token can
+         outrank a low-value public one — the list is ranked purely by $.
+         Rows with no price / zero balance compute usdValue 0 and sink to the
+         bottom; `.sort` is stable (V8/Hermes) so among equal-value rows the
+         original public-then-private order is preserved. */
       <Col mx={16}>
-        {[...rows, ...privateRows].map(r => (
+        {[...rows, ...privateRows]
+          .map(r => ({ r, usdValue: (r.priceUsd ?? 0) * Number(r.balance) }))
+          .sort((a, b) => b.usdValue - a.usdValue)
+          .map(({ r }) => (
           <TokenRow
             key={`${r.isPrivate ? 'priv' : 'pub'}:${r.chainId}:${r.symbol}`}
             r={r} head={head} sub={sub} border={border} bg={bg}
