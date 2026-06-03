@@ -2,9 +2,23 @@
  *  parsing) extracted from MessengerComposer.tsx for the lint line-budget.
  *  Behavior identical. */
 
-import { useEffect, useRef, type RefObject } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import type { TextInput } from 'react-native';
 import { loadDrafts, getDraft, setDraft } from '../lib/drafts';
+import { loadLastAttachment, getLastAttachment, subscribeLastAttachment } from '../lib/lastAttachment';
+
+/** Last-used attachment label, reactive: loads from storage on mount and updates
+ *  whenever the user picks a new attachment type. undefined until first use. */
+export function useLastAttachment(): string | undefined {
+  const [label, setLabel] = useState<string | undefined>(getLastAttachment);
+  useEffect(() => {
+    loadLastAttachment();
+    const sync = (): void => setLabel(getLastAttachment());
+    sync();
+    return subscribeLastAttachment(sync);
+  }, []);
+  return label;
+}
 
 /** Per-conversation draft: restore on mount, persist (debounced) on change,
  *  keyed by convId so each channel keeps its own unsent text. */

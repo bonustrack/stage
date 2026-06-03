@@ -10,6 +10,7 @@ import { Button } from '@metro-labs/kit/button';
 import { Box, Row, Col } from './layout';
 import { ComposerGradient } from './ComposerGradient';
 import { RecordingBar } from './MessengerComposer.parts';
+import { setLastAttachment } from '../lib/lastAttachment';
 
 interface EditorProps {
   dark: boolean; fg: string; head: string; sub: string; inputBg: string; chipBg: string;
@@ -21,6 +22,9 @@ interface EditorProps {
   textareaH: number; setTextareaH: (h: number) => void;
   inputRef: RefObject<TextInput | null>;
   attachMenuOpen: boolean; setAttachMenuOpen: (fn: (o: boolean) => boolean) => void;
+  /** Quick-access shortcut: icon of the last-used attachment type + its handler.
+   *  Both undefined until the user has picked an attachment once → button hidden. */
+  quickIcon?: HeroIconName; onQuick?: () => void;
   canSend: boolean;
   onCancelRec: () => void; onStopRec: () => void; onSend: () => void;
 }
@@ -66,7 +70,15 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
         {/** Left: cancel (✕) while recording, else the attach (+) menu toggle. */}
         {recording
           ? <Btn icon="x" onPress={p.onCancelRec} />
-          : <Btn icon={p.attachMenuOpen ? 'x' : 'plus'} onPress={() => p.setAttachMenuOpen(o => !o)} />}
+          : (
+            <>
+              {/** Quick-access: re-trigger the last-used attachment type directly. */}
+              {!p.attachMenuOpen && p.quickIcon && p.onQuick
+                ? <Btn icon={p.quickIcon} onPress={p.onQuick} />
+                : null}
+              <Btn icon={p.attachMenuOpen ? 'x' : 'plus'} onPress={() => p.setAttachMenuOpen(o => !o)} />
+            </>
+          )}
         <Box flex={1} />
         {/** Mic — both record flows, mounted across recording so the gesture survives. */}
         <Animated.View
@@ -106,6 +118,26 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
   );
 }
 
+export type AttachAction = [HeroIconName, string, () => void | Promise<void>];
+
+/** [icon, label, handler] for every + menu entry. Shared by the menu and the
+ *  quick-access shortcut so both stay in lock-step. */
+export function buildAttachActions(a: {
+  pickImage: () => Promise<void>; takePhoto: () => Promise<void>;
+  pickFile: () => Promise<void>; pickLocation: () => Promise<void>;
+  openPoll: () => void; openSig: () => void; openTx: () => void;
+}): AttachAction[] {
+  return [
+    ['photo', 'Image', a.pickImage],
+    ['camera', 'Camera', a.takePhoto],
+    ['paperClip', 'File', a.pickFile],
+    ['mapPin', 'Location', a.pickLocation],
+    ['chartBar', 'Poll', a.openPoll],
+    ['pencil', 'Sign', a.openSig],
+    ['wallet', 'Payment', a.openTx],
+  ];
+}
+
 export function AttachMenu({
   head, inputBg, chipBg, actions, onClose,
 }: {
@@ -123,7 +155,7 @@ export function AttachMenu({
       {actions.map(([icon, label, action]) => (
         <Col key={label} align="center" gap={6}>
           <Pressable
-            onPress={() => { onClose(); void action(); }}
+            onPress={() => { onClose(); setLastAttachment(label); void action(); }}
             style={({ pressed }) => ({
               width: 56, height: 56, borderRadius: 28,
               alignItems: 'center', justifyContent: 'center',

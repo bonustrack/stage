@@ -11,7 +11,8 @@ import { useComposerDrafts, useComposerFocus, computeMentions, applyMention } fr
 import { PollSheet } from './MessengerComposer.sheets';
 import { SignatureSheet, PaymentSheet } from './MessengerComposer.sheets-tx';
 import { ReplyBanner, MentionPopup, PendingRow } from './MessengerComposer.parts';
-import { ComposerEditor, AttachMenu } from './MessengerComposer.editor';
+import { ComposerEditor, AttachMenu, buildAttachActions } from './MessengerComposer.editor';
+import { useLastAttachment } from './MessengerComposer.hooks';
 
 interface Props {
   dark: boolean;
@@ -111,6 +112,15 @@ export function MessengerComposer({
     setSelection({ start: cursor, end: cursor });
   };
 
+  const attachActions = buildAttachActions({
+    pickImage: actions.pickImage, takePhoto: actions.takePhoto,
+    pickFile: actions.pickFile, pickLocation: actions.pickLocation,
+    openPoll: () => setPollOpen(true), openSig: () => setSigOpen(true), openTx: () => actions.openTx(),
+  });
+  /** Last-used type's icon → quick-access button left of "+"; hidden until first use. */
+  const lastLabel = useLastAttachment();
+  const quick = attachActions.find(([, label]) => label === lastLabel);
+
   const bg = dark ? '#0e0f10' : '#ffffff';
   return (
     <Col px={10} pt={0} pb={14} bg={bg}>
@@ -147,6 +157,8 @@ export function MessengerComposer({
         textareaH={textareaH} setTextareaH={setTextareaH}
         inputRef={inputRef}
         attachMenuOpen={attachMenuOpen} setAttachMenuOpen={setAttachMenuOpen}
+        quickIcon={quick?.[0]}
+        onQuick={quick ? () => void quick[2]() : undefined}
         canSend={canSend}
         onCancelRec={() => void actions.cancelRec()}
         onStopRec={() => void actions.stopRec()}
@@ -157,15 +169,7 @@ export function MessengerComposer({
         <AttachMenu
           head={head} inputBg={inputBg} chipBg={chipBg}
           onClose={() => setAttachMenuOpen(() => false)}
-          actions={[
-            ['photo', 'Image', actions.pickImage],
-            ['camera', 'Camera', actions.takePhoto],
-            ['paperClip', 'File', actions.pickFile],
-            ['mapPin', 'Location', actions.pickLocation],
-            ['chartBar', 'Poll', () => setPollOpen(true)],
-            ['pencil', 'Sign', () => setSigOpen(true)],
-            ['wallet', 'Payment', () => actions.openTx()],
-          ]}
+          actions={attachActions}
         />
       ) : null}
       <PollSheet
