@@ -11,7 +11,8 @@ import { router } from 'expo-router';
 import { ChannelRow } from './ChannelRow';
 import { Box } from './layout';
 import { useConvMeta } from '../lib/useConvMeta';
-import { usePeerProfiles, getPeerName, getPeerAvatar, getPeerAvatarCb } from '../lib/peerProfiles';
+import { usePeerProfiles, getPeerName, getPeerAvatar, getPeerAvatarCb, isPeerResolved } from '../lib/peerProfiles';
+import { channelStampSeed } from '@metro-labs/kit/avatar';
 import { usePalette } from '../lib/theme';
 import { shortAddress } from '../lib/xmtp';
 
@@ -30,8 +31,23 @@ export function ChannelCard({ convId }: { convId: string; dark?: boolean }): Rea
     ? (meta.memberAddrs.length ? `${meta.memberAddrs.length} members` : 'Channel')
     : (peer ? 'Direct message' : 'Open channel');
 
-  const avatarUri = isGroup ? (meta.groupImage || null) : (getPeerAvatar(peer) || null);
-  const avatarAddress = isGroup ? null : peer;
+  /** Mirror HomeScreen.helpers avatar resolution exactly so the card matches the
+   *  Home channel list:
+   *   - DM: peer's stamp (real eth address) + peer profile image if present.
+   *   - Group WITH uploaded image: that image via avatarUri (address ignored).
+   *   - Group WITHOUT image: a deterministic stamp seeded by the channel id. */
+  const avatarUri = isGroup ? (meta.groupImage?.trim() || null) : (getPeerAvatar(peer) || null);
+  const avatarSeed = isGroup
+    ? (avatarUri ? null : channelStampSeed(convId))
+    : peer;
+  /** Render-gate (mirrors HomeScreen.parts): groups render their seed directly;
+   *  DMs hold off until the peer profile resolves so we don't flash a
+   *  cache-buster-less stamp before the real URL lands. */
+  const avatarAddress = avatarUri || !avatarSeed
+    ? null
+    : isGroup || isPeerResolved(avatarSeed)
+      ? avatarSeed
+      : null;
 
   const open = (): void => {
     router.push({ pathname: '/xmtp/[convId]', params: { convId } });
@@ -44,7 +60,7 @@ export function ChannelCard({ convId }: { convId: string; dark?: boolean }): Rea
         subtitle={subtitle}
         avatarUri={avatarUri}
         avatarAddress={avatarAddress}
-        cacheBuster={getPeerAvatarCb(peer)}
+        cacheBuster={avatarSeed ? getPeerAvatarCb(avatarSeed) : undefined}
         square={isGroup}
         onPress={open}
         noBorder
