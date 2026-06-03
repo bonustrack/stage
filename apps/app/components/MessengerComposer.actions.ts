@@ -11,6 +11,7 @@ import {
   fileUriToBase64, xmtpReply, xmtpSendAttachment, xmtpSendMultiRemoteAttachment, xmtpSendText,
 } from '../lib/xmtp';
 import { type Attachment, mimeOf, INLINE_ATTACHMENT_MAX_BYTES } from './MessengerComposer.helpers';
+import { rememberLocalAttachments } from '../lib/localAttachmentCache';
 import { useVoiceRecorder, SLIDE_CANCEL_THRESHOLD_PX } from './MessengerComposer.voice';
 import { sendPoll, sendSignatureRequest, sendTxRequest } from './MessengerComposer.builders';
 
@@ -144,6 +145,12 @@ export function useComposerActions(a: ComposerActionsArgs) {
             filename: at.name ?? at.id,
           })),
         );
+        /** Keep the local `file://` URIs reachable by the REAL message id so the
+         *  bubble paints them instantly when the optimistic entry is replaced by
+         *  the live `multiRemoteAttachment` (whose bytes are still downloading) —
+         *  no blank/spinner gap. Indexed over `multiAtts` because that's the order
+         *  the live message's attachments arrive in (audio rides separate msgs). */
+        rememberLocalAttachments(multiId, multiAtts.map((at) => at.url));
         if (!sentId) sentId = multiId;
       }
       for (const at of audioAtts) {

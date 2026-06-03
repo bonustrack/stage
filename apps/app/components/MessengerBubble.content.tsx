@@ -73,7 +73,7 @@ export function BubbleContent({
         const key = a.id ?? `${entry.id}-att-${i}`;
         /** Multi-remote attachments carry encrypted bytes on IPFS — resolve lazily. */
         if (a.remote) {
-          return <RemoteAttachmentResolver key={key} att={a} fg={fg} sub={sub} dark={dark} />;
+          return <RemoteAttachmentResolver key={key} att={a} fg={fg} sub={sub} dark={dark} msgId={entry.id} index={i} />;
         }
         const fullUrl = a.dataB64
           ? `data:${a.mime ?? 'application/octet-stream'};base64,${a.dataB64}`
