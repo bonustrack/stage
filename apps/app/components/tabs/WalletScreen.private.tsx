@@ -17,6 +17,7 @@ import { isRailgunAvailable } from '../../lib/railgun/native';
 import { isBridgeAvailable } from '../../lib/railgun/bridge';
 import { usePrivateWallet } from '../../lib/railgun/usePrivateWallet';
 import { BridgePingProbe } from './WalletScreen.private.ping';
+import { RailgunDebugPanel } from './WalletScreen.private.debug';
 
 const short0zk = (a: string): string => (a.length > 14 ? `${a.slice(0, 8)}…${a.slice(-4)}` : a);
 
@@ -79,6 +80,10 @@ export function PrivateView({ head, sub, border }: {
           Tokens tab (merged public + shielded flat list). This view keeps
           autoStart:true so the engine still inits + scans, which populates the
           shared snapshot the Tokens tab reads. */}
+
+      {/* Raw balance-pipeline diagnostics — does the engine emit ANY balance
+          event, and what's in it? Disambiguates engine-side vs RN-side bugs. */}
+      <RailgunDebugPanel head={head} sub={sub} border={border} />
 
       {/* Dev: on-device round-trip check for the embedded Node bridge. */}
       <BridgePingProbe sub={sub} border={border} />

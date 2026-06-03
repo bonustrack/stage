@@ -22,6 +22,7 @@ import { getActiveAccountId } from '../accounts';
 import { waitForXmtpReady } from '../xmtp';
 import { snapshotStore, pendingStore, applyPending } from './cache';
 import { openPrivateWallet } from './wallet';
+import { startBalanceWatch } from './balanceWatch';
 import type { PrivateSnapshot, PendingAction } from './types';
 
 export interface PrivateWalletState {
@@ -41,6 +42,7 @@ export function usePrivateWallet(autoStart = false): PrivateWalletState {
   useEffect(() => {
     let unsub: (() => void) | undefined;
     let unsubP: (() => void) | undefined;
+    let stopWatch: (() => void) | undefined;
     let cancelled = false;
     void (async (): Promise<void> => {
       const id = await getActiveAccountId();
@@ -60,12 +62,15 @@ export function usePrivateWallet(autoStart = false): PrivateWalletState {
       }
       // Private-tab path: serialize behind XMTP onboarding so the heavy
       // nodejs-mobile/engine boot never races Client.create on first launch.
+      // Fold late-arriving engine balanceUpdate events into the store so a
+      // balance that lands AFTER the initial one-shot scan repaints the tab.
+      stopWatch = startBalanceWatch(id);
       await waitForXmtpReady();
       if (cancelled) return;
       const warm = await openPrivateWallet(id);
       if (warm && !cancelled) setSnapshot(warm);
     })();
-    return () => { cancelled = true; unsub?.(); unsubP?.(); };
+    return () => { cancelled = true; unsub?.(); unsubP?.(); stopWatch?.(); };
   }, [autoStart]);
 
   // Overlay optimistic deltas onto the cached balances for the instant-feel UI.
