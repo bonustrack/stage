@@ -13,7 +13,7 @@
  *  subscription, so an already-mounted Home updates live) and clears it so the
  *  same chip tap doesn't re-apply on a later remount. */
 
-import type { LabelFilterValue } from '../components/tabs/HomeScreen.filter';
+import type { LabelFilterValue } from '../components/tabs/HomeScreen.filter.types';
 
 /** The most recent pending request, or null when there's nothing to apply. A
  *  request carries a monotonically bumped `seq` so two taps of the SAME label

@@ -6,7 +6,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FlatList } from 'react-native-gesture-handler';
-import type { SimultaneousRefs } from '../SwipeTabs';
+import type { SimultaneousRefs } from '../SwipeTabs.types';
 import { useRouter } from 'expo-router';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { getCachedRows, setCachedRows, subscribeCachedRows } from '../../lib/channelsCache';

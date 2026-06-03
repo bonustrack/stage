@@ -9,7 +9,7 @@ import './cryptoShim';
 import * as SecureStore from 'expo-secure-store';
 import { mnemonicToAccount, privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts';
 import { bytesToHex, type Hex } from 'viem';
-import type { AccountRecord } from './accounts';
+import type { AccountRecord } from './accounts.types';
 
 export const PK_PREFIX = 'wallet.pk.';
 /** Pre-multi-account single-key location + its XMTP db dir. */

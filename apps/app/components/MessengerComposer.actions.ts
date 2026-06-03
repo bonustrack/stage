@@ -9,43 +9,14 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { xmtpSendText } from '../lib/xmtp';
 import { setLastAttachment } from '../lib/lastAttachment';
-import { type Attachment, mimeOf } from './MessengerComposer.helpers';
+import { mimeOf } from './MessengerComposer.helpers';
 import { rememberLocalAttachments, stashLocalAttachment } from '../lib/localAttachmentCache';
 import { useVoiceRecorder, SLIDE_CANCEL_THRESHOLD_PX } from './MessengerComposer.voice';
 import { sendPoll, sendSignatureRequest, sendTxRequest } from './MessengerComposer.builders';
 import { planSendSteps } from './MessengerComposer.send';
+import type { ComposerActionsArgs } from './MessengerComposer.types';
 
-interface OptimisticEntry { localId: string; text: string; attachments: Attachment[]; replyTo?: string; payload?: unknown }
-
-export interface ComposerActionsArgs {
-  xmtpLine: string;
-  text: string;
-  pending: Attachment[];
-  replyingTo?: { id: string };
-  mentionCandidates?: { address: string }[];
-  setPending: React.Dispatch<React.SetStateAction<Attachment[]>>;
-  setText: (v: string) => void;
-  setSending: (v: boolean) => void;
-  setUploading: (v: boolean) => void;
-  setErr: (v: string | null) => void;
-  setRecording: (v: boolean) => void;
-  setRecordSecs: React.Dispatch<React.SetStateAction<number>>;
-  setLevels: React.Dispatch<React.SetStateAction<number[]>>;
-  setPollOpen: (v: boolean) => void;
-  pollQuestion: string; pollHeader: string; pollOptions: string[]; pollMulti: boolean;
-  setPollQuestion: (v: string) => void; setPollHeader: (v: string) => void;
-  setPollOptions: (v: string[]) => void; setPollMulti: (v: boolean) => void;
-  setSigOpen: (v: boolean) => void;
-  sigKind: 'personal' | 'eip712'; sigDesc: string; sigMessage: string; sigJson: string;
-  setSigKind: (v: 'personal' | 'eip712') => void; setSigDesc: (v: string) => void;
-  setSigMessage: (v: string) => void; setSigJson: (v: string) => void;
-  setTxOpen: (v: boolean) => void;
-  txTo: string; txAmount: string; txNote: string;
-  setTxTo: (v: string) => void; setTxAmount: (v: string) => void; setTxNote: (v: string) => void;
-  onOptimistic?: (entry: OptimisticEntry) => void;
-  onSent?: (localId: string, error?: string, sentId?: string) => void;
-  onClearReply?: () => void;
-}
+export type { ComposerActionsArgs } from './MessengerComposer.types';
 
 export function useComposerActions(a: ComposerActionsArgs) {
   const upload = async (uri: string, mime: string, name?: string): Promise<void> => {

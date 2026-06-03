@@ -11,7 +11,7 @@
 import { useEffect, useState } from 'react';
 import { getCachedXmtpClient, getOrCreateXmtpClient } from '../../lib/xmtp';
 import { ProfileScreen } from '../ProfileScreen';
-import type { SimultaneousRefs } from '../SwipeTabs';
+import type { SimultaneousRefs } from '../SwipeTabs.types';
 
 export function ProfileTabScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const [address, setAddress] = useState<string>(

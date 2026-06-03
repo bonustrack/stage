@@ -1,7 +1,8 @@
 /** Whisper transcription of inbound voice/audio attachments → transcript event. */
 
 import { mintId, SELF_URI } from './wire.js';
-import { emitInbound } from './emit.js';
+
+type EmitInbound = (accountId: string, e: Record<string, unknown>) => void;
 
 const WHISPER_BIN = process.env.METRO_WHISPER_BIN ?? 'whisper-cli';
 const WHISPER_MODEL = process.env.METRO_WHISPER_MODEL ?? `${process.env.HOME}/.cache/whisper-cpp/ggml-base.bin`;
@@ -9,6 +10,7 @@ const FFMPEG_BIN = process.env.METRO_FFMPEG_BIN ?? 'ffmpeg';
 
 export async function transcribeAndEmit(
   audio: Uint8Array, line: string, accountId: string, sourceMsgId: string,
+  emitInbound: EmitInbound,
 ): Promise<void> {
   const { existsSync: ex, readFileSync: rf, writeFileSync: wf, unlinkSync, mkdtempSync } = await import('node:fs');
   const { tmpdir } = await import('node:os');

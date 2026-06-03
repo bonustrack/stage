@@ -15,7 +15,14 @@
  *  balances / engineStatus / listMethods) → engine.js; everything else → the
  *  whitelist. Unknown methods reject with a clear "needs a whitelist add" error
  *  so an unsupported primitive is a visible error, not a silent hang. */
-import { rawCall } from './index';
+/** Deferred to break the index ↔ sdk module cycle (index re-exports sdk; sdk
+ *  needs index's rawCall). Both wrappers are async, so the lazy import is invisible. */
+const rawCall = async (
+  call: string, params: unknown, timeoutMs?: number,
+): Promise<unknown> => {
+  const mod = await import('./index');
+  return mod.rawCall(call as Parameters<typeof mod.rawCall>[0], params, timeoutMs);
+};
 
 /** Engine-init + proof generation can be slow (a Groth16 proof is ~20-30s);
  *  give generic SDK calls generous headroom so a real op never false-times-out.

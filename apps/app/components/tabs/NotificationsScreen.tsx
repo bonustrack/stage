@@ -4,7 +4,7 @@
 
 import { ScrollView } from 'react-native-gesture-handler';
 import { useRouter } from 'expo-router';
-import type { SimultaneousRefs } from '../SwipeTabs';
+import type { SimultaneousRefs } from '../SwipeTabs.types';
 import { Text } from '@metro-labs/kit/text';
 import { Title } from '@metro-labs/kit/title';
 import { Col } from '../layout';

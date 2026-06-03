@@ -5,7 +5,12 @@
 import * as Notifications from 'expo-notifications';
 import { useEffect } from 'react';
 import { router } from 'expo-router';
-import { markConvRead } from './channelsCache';
+/** Deferred to break the deeplink → channelsCache → xmtp.client → push → … cycle.
+ *  The unread-clear is already async + best-effort, so the lazy import is invisible. */
+const markConvRead = async (convId: string): Promise<void> => {
+  const { markConvRead: fn } = await import('./channelsCache');
+  return fn(convId);
+};
 
 /** Extract the conversation id a notification points at. Both the foreground
  *  local notif (`presentInboundNotification`, data.convId) and the daemon's
