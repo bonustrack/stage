@@ -3,6 +3,7 @@
 import { Linking, Pressable } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from '../../components/layout';
+import { explorerTxUrl } from '../../lib/railgun/networks';
 
 interface Pal { fg: string; head: string; sub: string; border: string; inputBg: string }
 type Phase = 'idle' | 'working' | 'broadcasting' | 'done' | 'error';
@@ -59,8 +60,8 @@ export function ShieldRecipient({ pal, zkAddress }: {
 
 /** Progress + result line: working/broadcasting hint, the explorer tx link on
  *  success, and a clear error on failure. */
-export function ShieldPhaseLine({ pal, phase, txHash, err, bridgeOk }: {
-  pal: Pal; phase: Phase; txHash: string | null; err: string | null; bridgeOk: boolean;
+export function ShieldPhaseLine({ pal, phase, txHash, err, bridgeOk, chainId }: {
+  pal: Pal; phase: Phase; txHash: string | null; err: string | null; bridgeOk: boolean; chainId: number;
 }): React.ReactElement | null {
   const { sub } = pal;
   if (!bridgeOk) {
@@ -78,7 +79,7 @@ export function ShieldPhaseLine({ pal, phase, txHash, err, bridgeOk }: {
         <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>Broadcasting…</Text>
       ) : null}
       {txHash ? (
-        <Pressable onPress={() => Linking.openURL(`https://etherscan.io/tx/${txHash}`)} hitSlop={6}>
+        <Pressable onPress={() => Linking.openURL(explorerTxUrl(chainId, txHash))} hitSlop={6}>
           <Text style={{ color: '#c0a06e', fontSize: 13, fontFamily: 'Calibre-Medium' }}>
             {txHash.slice(0, 10)}…{txHash.slice(-8)}
           </Text>

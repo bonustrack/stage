@@ -102,7 +102,7 @@ export function ShieldForm({ pal, dark, zkAddress, initialSymbol, initialChainId
           : phase === 'done' ? 'Shielded ✓' : 'Shield to private'}
         style={{ marginTop: 4 }} />
 
-      <ShieldPhaseLine pal={pal} phase={phase} txHash={txHash} err={err} bridgeOk={isBridgeAvailable()} />
+      <ShieldPhaseLine pal={pal} phase={phase} txHash={txHash} err={err} bridgeOk={isBridgeAvailable()} chainId={chainId} />
     </Box>
   );
 }

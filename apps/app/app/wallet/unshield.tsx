@@ -111,7 +111,7 @@ export default function WalletUnshield(): React.ReactElement {
             : phase === 'done' ? 'Unshielded ✓' : 'Unshield to public'}
           style={{ marginTop: 4 }} />
 
-        <UnshieldPhaseLine pal={pal} phase={phase} txHash={txHash} err={err} bridgeOk={isBridgeAvailable()} />
+        <UnshieldPhaseLine pal={pal} phase={phase} txHash={txHash} err={err} bridgeOk={isBridgeAvailable()} chainId={chainId} />
       </ScrollView>
     </Box>
   );
