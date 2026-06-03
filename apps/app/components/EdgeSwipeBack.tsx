@@ -47,23 +47,26 @@ import { runOnJS } from 'react-native-reanimated';
 import { useRouter, useNavigation } from 'expo-router';
 import { Box } from './layout';
 
-/** Width of the left-edge catch strip (dp). The overlay view IS the activation
- *  zone — a touch must start within this strip to begin the gesture, mirroring
- *  the iOS interactive-pop edge feel. Generous enough to catch a thumb at the
- *  bezel, narrow enough to leave the rest of the screen fully interactive. */
-const EDGE_WIDTH = 24;
+/** Fraction of the screen width the catch zone spans. Less wanted a WIDE left
+ *  zone (≈80%) — not a thin bezel strip — so a lazy thumb anywhere on the left
+ *  ~80% of the screen begins the back-swipe. Because the overlay sits ON TOP of
+ *  whatever screen is presented, the pan owns the touch deterministically
+ *  regardless of the underlying FlatList/composer (which previously ate it). */
+const ZONE_FRACTION = 0.8;
 /** Horizontal travel (dp) OR min velocity required before we commit the pop. */
 const POP_THRESHOLD = 56;
 const POP_VELOCITY = 350;
-/** Arm the pan on a small rightward drag; let a clear vertical move fail it so a
- *  vertical scroll/list that overlaps the strip still wins. */
-const ACTIVE_X = 10;
-const FAIL_Y = 18;
+/** Arm the pan on a clearly-rightward drag so a normal tap (no movement) and a
+ *  vertical scroll (fails on Y) both pass through to the screen beneath instead
+ *  of being captured. A WIDE zone needs a firm horizontal threshold so it never
+ *  hijacks taps on message bubbles / buttons that live inside the zone. */
+const ACTIVE_X = 24;
+const FAIL_Y = 16;
 
 export function EdgeSwipeBack({ children }: { children: React.ReactNode }): React.ReactElement {
   const router = useRouter();
   const navigation = useNavigation();
-  const { height } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
 
   /** Reactive "is there a screen below us?" flag. At the stack root (the (tabs)
    *  page) there's nothing to pop, so we DON'T render the strip at all — the tab
@@ -85,8 +88,10 @@ export function EdgeSwipeBack({ children }: { children: React.ReactNode }): Reac
   }, [navigation, router]);
 
   const pan = Gesture.Pan()
-    /** Arm on a clearly-rightward drag from the edge; a vertical move fails it so
-     *  any overlapping vertical scroll keeps scrolling. */
+    /** Arm ONLY on a clearly-rightward drag; a vertical move fails it so any
+     *  overlapping vertical scroll keeps scrolling, and a stationary touch (tap)
+     *  never activates → it falls through to the screen beneath. This directional
+     *  gating is what lets a WIDE zone coexist with taps/scroll on the content. */
     .activeOffsetX(ACTIVE_X)
     .failOffsetY([-FAIL_Y, FAIL_Y])
     .onEnd((e) => {
@@ -99,17 +104,19 @@ export function EdgeSwipeBack({ children }: { children: React.ReactNode }): Reac
   return (
     <Box style={{ flex: 1 }}>
       {children}
-      {/** Sibling overlay strip painted ON TOP of the native stack — receives the
-       *   left-edge touch on whatever screen is presented (see header). Only
-       *   mounted when there's something to pop. */}
+      {/** Sibling overlay zone painted ON TOP of the native stack — receives the
+       *   left-zone touch on whatever screen is presented (see header). Only
+       *   mounted when there's something to pop.
+       *
+       *   No `pointerEvents="box-only"`: a bare View under a GestureDetector is
+       *   touch-transparent until the pan ACTIVATES. RNGH only steals the touch
+       *   stream once `activeOffsetX` is crossed (a rightward drag); plain taps
+       *   and vertical scrolls never activate the pan, so they pass through to the
+       *   FlatList / bubbles / composer beneath. A `box-only` (or otherwise
+       *   touch-grabbing) overlay this wide would have eaten every tap. */}
       {canGoBack ? (
         <GestureDetector gesture={pan}>
-          <Box
-            style={[styles.edge, { height, width: EDGE_WIDTH }]}
-            /** `box-only` would swallow children's touches; there are none here.
-             *  The strip itself is transparent and intercepts only its own area. */
-            pointerEvents="box-only"
-          />
+          <Box style={[styles.edge, { height, width: Math.round(width * ZONE_FRACTION) }]} />
         </GestureDetector>
       ) : null}
     </Box>
@@ -123,5 +130,9 @@ const styles = StyleSheet.create({
     top: 0,
     backgroundColor: 'transparent',
     zIndex: 9999,
+    /** Android: zIndex alone doesn't reliably raise a sibling above a
+     *  react-native-screens RNSScreen; elevation lifts it in the native
+     *  z-order so the overlay actually sits in front and gets the touch. */
+    elevation: 9999,
   },
 });
