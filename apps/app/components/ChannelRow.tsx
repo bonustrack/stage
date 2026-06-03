@@ -60,6 +60,9 @@ export interface ChannelRowProps {
   onLongPress?: () => void;
   /** Pressable style override (the channels tab insets the separator itself). */
   containerStyle?: StyleProp<ViewStyle>;
+  /** Hide the inner row's bottom separator (e.g. when embedded in a bordered
+   *  card where only the card's outer border should show). */
+  noBorder?: boolean;
 }
 
 /** Max label chips shown inline before collapsing the rest into "+N". Kept low
@@ -114,7 +117,7 @@ function ChannelRowBase({
   title, avatarAddress, avatarUri, cacheBuster, square,
   lastPreview, timestamp, subtitle, unreadCount = 0, markedUnread,
   pinned, hasDraft, showChevron, avatarSize = 40,
-  onPress, onLongPress, containerStyle, labels, onLabelPress,
+  onPress, onLongPress, containerStyle, labels, onLabelPress, noBorder,
 }: ChannelRowProps): React.ReactElement {
   const { head, sub, fg, bg, border, rowBg } = usePalette();
   const previewText = lastPreview && lastPreview.length > 0 ? lastPreview : subtitle ?? '';
@@ -132,7 +135,7 @@ function ChannelRowBase({
       {/* Inner row carries the separator: it starts at the avatar's left edge
           (inset by paddingHorizontal), not the full card width. */}
       <Row align="center" gap={12} py={14} style={{
-        borderBottomWidth: 1, borderBottomColor: border,
+        borderBottomWidth: noBorder ? 0 : 1, borderBottomColor: border,
       }}>
         <Avatar
           imageUri={avatarUri}

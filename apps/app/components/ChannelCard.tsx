@@ -1,25 +1,24 @@
 /** Inline channel card rendered inside a message bubble when the body contains a
- *  `metro://xmtp/<convId>` channel link. Shows the target conversation's avatar +
- *  name and, on tap, opens that conversation. Metadata resolves through
- *  `useConvMeta` (DM peer / group name + image); when the user isn't a member of
- *  the target conv `useConvMeta` returns EMPTY, so we fall back to a generic
- *  "Open channel" label keyed on the short convId — the tap still navigates to
- *  `/xmtp/[convId]` (which attempts a sync on arrival). */
+ *  `metro://xmtp/<convId>` channel link. Renders the SAME presentational row the
+ *  Home channel list uses (ChannelRow) wrapped in a fully-bordered card so it
+ *  reads as a tappable channel preview. Metadata resolves through `useConvMeta`
+ *  (DM peer / group name + image); when the user isn't a member of the target
+ *  conv `useConvMeta` returns EMPTY, so we fall back to a generic label keyed on
+ *  the short convId — the tap still navigates to `/xmtp/[convId]` (which attempts
+ *  a sync on arrival). */
 
 import { router } from 'expo-router';
-import { Text } from '@metro-labs/kit/text';
-import { Avatar } from './Avatar';
-import { MediaCard } from './MediaCard';
-import { Row, Col } from './layout';
+import { ChannelRow } from './ChannelRow';
+import { Box } from './layout';
 import { useConvMeta } from '../lib/useConvMeta';
 import { usePeerProfiles, getPeerName, getPeerAvatar, getPeerAvatarCb } from '../lib/peerProfiles';
+import { usePalette } from '../lib/theme';
 import { shortAddress } from '../lib/xmtp';
 
-export function ChannelCard({ convId, dark }: { convId: string; dark: boolean }): React.ReactElement {
+export function ChannelCard({ convId }: { convId: string; dark?: boolean }): React.ReactElement {
   const meta = useConvMeta(convId);
   usePeerProfiles([meta.peerAddr]);
-  const fg = dark ? '#e8e9ea' : '#1a1a1a';
-  const sub = dark ? '#9aa0a6' : '#65676b';
+  const { border } = usePalette();
 
   const isGroup = meta.isGroup;
   const peer = meta.peerAddr;
@@ -39,24 +38,17 @@ export function ChannelCard({ convId, dark }: { convId: string; dark: boolean })
   };
 
   return (
-    <MediaCard dark={dark} onPress={open}>
-      <Row align="center" gap={10} p={10}>
-        <Avatar
-          size="md"
-          square={isGroup}
-          imageUri={avatarUri}
-          address={avatarAddress}
-          cacheBuster={getPeerAvatarCb(peer)}
-        />
-        <Col style={{ flex: 1, minWidth: 0 }}>
-          <Text numberOfLines={1} style={{ color: fg, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>
-            {title}
-          </Text>
-          <Text numberOfLines={1} style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
-            {subtitle}
-          </Text>
-        </Col>
-      </Row>
-    </MediaCard>
+    <Box radius={14} style={{ borderWidth: 1, borderColor: border, overflow: 'hidden' }}>
+      <ChannelRow
+        title={title}
+        subtitle={subtitle}
+        avatarUri={avatarUri}
+        avatarAddress={avatarAddress}
+        cacheBuster={getPeerAvatarCb(peer)}
+        square={isGroup}
+        onPress={open}
+        noBorder
+      />
+    </Box>
   );
 }
