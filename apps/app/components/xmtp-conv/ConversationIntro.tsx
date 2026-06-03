@@ -19,14 +19,14 @@ import { channelStampSeed } from '@metro-labs/kit/avatar';
 import { shortAddress } from '../../lib/xmtp';
 
 /** Read-only label chips for the group intro — same rounded-pill look as the
- *  ChannelRow inline chips, just centred under the name. Renders nothing for an
- *  empty list. */
+ *  ChannelRow inline chips, just left-aligned under the name. Renders nothing for
+ *  an empty list. */
 function IntroLabelChips({ labels, fg, rowBg }: {
   labels: string[]; fg: string; rowBg: string;
 }): React.ReactElement | null {
   if (labels.length === 0) return null;
   return (
-    <Row align="center" gap={6} mt={8} style={{ flexWrap: 'wrap', justifyContent: 'center' }}>
+    <Row align="center" gap={6} mt={8} style={{ flexWrap: 'wrap', justifyContent: 'flex-start' }}>
       {labels.map(label => (
         <Box
           key={label.toLowerCase()}
@@ -57,7 +57,7 @@ export function ConversationIntro({
     const name = groupName === null ? '' : (groupName || 'Untitled group');
     const desc = groupDescription.trim();
     return (
-      <Box style={{ alignItems: 'center', paddingVertical: 24, paddingHorizontal: 24 }}>
+      <Box style={{ alignItems: 'flex-start', paddingVertical: 24, paddingHorizontal: 24 }}>
         <Avatar
           imageUri={groupImage || undefined}
           address={!groupImage && convId ? channelStampSeed(convId) : null}
@@ -66,7 +66,7 @@ export function ConversationIntro({
           style={{ backgroundColor: border }}
         />
         <Text
-          style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold', marginTop: 12, textAlign: 'center' }}
+          style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold', marginTop: 12, textAlign: 'left' }}
           numberOfLines={2}
         >
           {name}
@@ -74,7 +74,7 @@ export function ConversationIntro({
         <IntroLabelChips labels={groupLabels} fg={fg} rowBg={rowBg} />
         {desc ? (
           <Text
-            style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium', marginTop: 10, textAlign: 'center', lineHeight: 19 }}
+            style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium', marginTop: 10, textAlign: 'left', lineHeight: 20 }}
           >
             {desc}
           </Text>
@@ -88,7 +88,7 @@ export function ConversationIntro({
   return (
     <Pressable
       onPress={() => onPressPeer(peerAddr)}
-      style={{ alignItems: 'center', paddingVertical: 24, paddingHorizontal: 24 }}
+      style={{ alignItems: 'flex-start', paddingVertical: 24, paddingHorizontal: 24 }}
     >
       <Avatar address={peerAddr} imageUri={getPeerAvatar(peerAddr)} size="lg" style={{ backgroundColor: border }} />
       <Text style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold', marginTop: 12 }} numberOfLines={1}>
@@ -99,7 +99,7 @@ export function ConversationIntro({
       </Text>
       {about ? (
         <Text
-          style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium', marginTop: 10, textAlign: 'center', lineHeight: 19 }}
+          style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium', marginTop: 10, textAlign: 'left', lineHeight: 20 }}
         >
           {about}
         </Text>
