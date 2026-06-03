@@ -3,11 +3,12 @@
  *  fetched AssetRow[], the error string, and the pull-to-refresh spinner.
  *
  *  Pull-to-refresh kicks off BOTH the public balance fetch and (when a private
- *  account is known) a fresh Railgun shielded-snapshot scan as fire-and-forget
- *  background work, then dismisses the spinner on a short fixed delay (~700ms).
- *  The spinner is a brief visual ack only — it is NOT gated on any network call,
- *  so it can never linger. Rows update reactively: the public fetch calls
- *  setRows when it lands, and refreshSnapshot pushes into the cache store which
+ *  account is known) a fresh Railgun shielded-snapshot scan. The RefreshControl
+ *  spinner is tied to the public fetch in a try/finally and capped by an 8s
+ *  race, so it is dismissed by a real completion (sync with the native Android
+ *  controlled spinner) and can NEVER linger — even if the fetch throws or the
+ *  Railgun engine scan hangs (that scan is detached, the spinner never waits on
+ *  it). Rows update reactively: refreshSnapshot pushes into the cache store which
  *  the usePrivateWallet subscription picks up. */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -65,30 +66,42 @@ export function useWalletBalances(privAccountId: string | null): WalletBalances 
     if (!address) return;
     setRefreshing(true);
 
-    /** Fire the public balance fetch in the background — DON'T await it. When it
-     *  lands it updates the rows in place; the spinner is not gated on it. */
+    /** Always-resolving dismiss: the RefreshControl spinner is tied to the public
+     *  fetch (the only fast, bounded call) AND a hard 8s safety cap that races it,
+     *  so the spinner is dismissed by whichever lands first. The dismiss runs in a
+     *  `finally`, so a thrown/rejected fetch can never strand the spinner. We do
+     *  NOT free-run a bare setTimeout while leaving `refreshing` otherwise
+     *  uncontrolled — on Android that desyncs the native controlled spinner and
+     *  leaves it stuck on screen (the >10s ghost spinner). */
+    const stop = (): void => {
+      if (spinnerTimer.current) { clearTimeout(spinnerTimer.current); spinnerTimer.current = null; }
+      if (mounted.current) setRefreshing(false);
+    };
+
     void (async (): Promise<void> => {
       try {
-        const next = await fetchAssetRows(address);
+        const next = await Promise.race([
+          fetchAssetRows(address),
+          new Promise<never>((_, rej) =>
+            (spinnerTimer.current = setTimeout(() => rej(new Error('refresh timeout')), 8000))),
+        ]);
         if (!mounted.current) return;
         setRows(next);
         setErr('');
       } catch (e) {
-        if (mounted.current) setErr((e as Error).message);
+        // A timeout is a spinner-cap only, not a balance error — keep the last
+        // rows; surface a real fetch error string only for non-timeout failures.
+        if (mounted.current && (e as Error).message !== 'refresh timeout') setErr((e as Error).message);
+      } finally {
+        stop();
       }
     })();
 
-    /** Fire the shielded (Railgun) re-scan in the background too. The engine path
-     *  (nodejs-mobile bridge boot / Merkle scan) can be slow or hang; it updates
-     *  the cache store, which usePrivateWallet picks up. */
+    /** Fire the shielded (Railgun) re-scan as detached background work. The engine
+     *  path (nodejs-mobile bridge boot / Merkle scan) can be slow or HANG, so the
+     *  spinner is deliberately NEVER gated on it — it updates the cache store,
+     *  which usePrivateWallet picks up reactively if/when it lands. */
     if (privAccountId) void refreshSnapshot(privAccountId).catch(() => {});
-
-    /** Dismiss the spinner on a short fixed delay — purely a visual ack, never
-     *  gated on a network call, so it always settles fast and can't linger. */
-    if (spinnerTimer.current) clearTimeout(spinnerTimer.current);
-    spinnerTimer.current = setTimeout(() => {
-      if (mounted.current) setRefreshing(false);
-    }, 700);
   }, [address, privAccountId]);
 
   return { address, rows, err, refreshing, onRefresh };
