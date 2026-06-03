@@ -111,7 +111,7 @@ export function envelope(
       ...base, text: `[${kind}: ${a.filename ?? 'attachment'}]`,
       payload: { contentType: typeId, attachments: [{ kind, mime: a.mimeType, name: a.filename, dataB64 }] },
     };
-    if (kind === 'audio') void transcribeAndEmit(a.content, line, accountId, base.id);
+    if (kind === 'audio') void transcribeAndEmit(a.content, line, accountId, base.id, emitInbound);
     return out;
   }
   if (typeId === 'remoteStaticAttachment' && c && typeof c === 'object') {

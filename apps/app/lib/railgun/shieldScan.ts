@@ -30,24 +30,22 @@ export function watchShieldLanding(accountId: string, pendingId: string, chainId
   updatePending(accountId, pendingId, { phase: 'scanning' });
 
   let done = false;
-  let unsub: (() => void) | undefined;
-  let timer: ReturnType<typeof setTimeout> | undefined;
 
   const finish = (): void => {
     if (done) return;
     done = true;
-    if (timer) clearTimeout(timer);
-    unsub?.();
+    clearTimeout(timer);
+    unsub();
     updatePending(accountId, pendingId, { phase: 'confirmed' });
     void refreshSnapshot(accountId).then(() => removePending(accountId, pendingId));
   };
 
-  unsub = bridgeListen('event:balanceUpdate', (payload: unknown) => {
+  const unsub = bridgeListen('event:balanceUpdate', (payload: unknown) => {
     const p = payload as BalanceUpdatePayload;
     // A scan for this chain produced fresh balances — the shield has landed (or
     // is about to be reflected by the snapshot refresh). Resolve.
     if (p && (p.chainId == null || p.chainId === chainId)) finish();
   });
 
-  timer = setTimeout(finish, SCAN_TIMEOUT_MS);
+  const timer = setTimeout(finish, SCAN_TIMEOUT_MS);
 }

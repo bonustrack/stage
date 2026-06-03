@@ -3,6 +3,5 @@
  *  @metro-labs/client for cross-platform reuse. */
 
 export {
-  youtubeIdOf, mapCoordsOf, osmTileXY, osmTileUrl,
-  type MapCoords,
+  youtubeIdOf, mapCoordsOf, osmTileUrl,
 } from '@metro-labs/client/embed/detect';

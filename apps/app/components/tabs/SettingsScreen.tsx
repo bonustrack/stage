@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Alert, Pressable } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
-import type { SimultaneousRefs } from '../SwipeTabs';
+import type { SimultaneousRefs } from '../SwipeTabs.types';
 import { Text } from '@metro-labs/kit/text';
 import { Title } from '@metro-labs/kit/title';
 import * as Clipboard from 'expo-clipboard';

@@ -18,7 +18,7 @@ import { LabelFilterControl } from './HomeScreen.filter';
 import type { LabelFilterValue } from './HomeScreen.filter';
 
 interface ChannelsListProps {
-  panRef?: import('../SwipeTabs').SimultaneousRefs;
+  panRef?: import('../SwipeTabs.types').SimultaneousRefs;
   router: { push: (to: string | { pathname: string; params: Record<string, string> }) => void };
   myAddress: string | null;
   sortedRows: RowT[];

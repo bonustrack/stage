@@ -2,7 +2,6 @@
  *  expo-router hrefs, the mounted page bodies, the pathname→index map, and the
  *  swipe thresholds. Split out to keep SwipeTabs.tsx under the line cap. */
 
-import type { GestureType } from 'react-native-gesture-handler';
 import type { Href } from 'expo-router';
 
 import { HomeScreen } from './tabs/HomeScreen';
@@ -12,11 +11,11 @@ import { ProfileTabScreen } from './tabs/ProfileTab';
 import { NotificationsScreen } from './tabs/NotificationsScreen';
 
 /** The shape accepted by an inner scrollable's `simultaneousHandlers` prop and
- *  by each tab body's `panRef` prop. It's a React ref to the pager Pan gesture
- *  — handed DOWN so each page's primary FlatList/ScrollView declares an explicit
- *  SIMULTANEOUS relation with the horizontal pager Pan (RNGH composition), rather
- *  than the two gestures racing through the old heuristic activeOffset arbitration. */
-export type SimultaneousRefs = React.RefObject<GestureType | undefined>;
+ *  by each tab body's `panRef` prop. Defined in the leaf SwipeTabs.types.ts so
+ *  tab screens import it without cycling back into this config. Re-exported here
+ *  for the existing import sites. */
+export type { SimultaneousRefs } from './SwipeTabs.types';
+import type { SimultaneousRefs } from './SwipeTabs.types';
 
 /** Tab order = the order declared in `app/(tabs)/_layout.tsx`. Index 0..3. */
 export const TAB_ORDER = ['index', 'search', 'wallet', 'notifications', 'profile'] as const;

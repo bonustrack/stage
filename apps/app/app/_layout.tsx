@@ -168,16 +168,19 @@ export default function RootLayout(): React.ReactElement {
           statusBarStyle: barStyle,
           /** Pushed routes slide in from the right with the previous page
            *  parallaxing underneath; an interactive left-edge swipe pops them. */
-          stackAnimation: 'slide_from_right',
-          goBackGesture: 'swipeRight',
-          screenEdgeGesture: true,
+          animation: 'slide_from_right',
+          /** native-stack v7 interactive swipe-back: fullScreenGestureEnabled
+           *  gives the finger-following parallax pop (previous page slides under
+           *  on the native thread); gestureEnabled keeps the back gesture on. */
+          fullScreenGestureEnabled: true,
+          gestureEnabled: true,
         }}
       >
         {/** Tab root: no back gesture (it's the bottom of the stack — nothing to
          *  pop to) and no slide animation. */}
         <NativeSwipeStack.Screen
           name="(tabs)"
-          options={{ stackAnimation: 'none', goBackGesture: undefined, screenEdgeGesture: false }}
+          options={{ animation: 'none', gestureEnabled: false, fullScreenGestureEnabled: false }}
         />
       </NativeSwipeStack>
       </KeyboardProvider>

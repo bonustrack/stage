@@ -4,7 +4,7 @@ import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { errMsg, log } from './log.js';
 import { HISTORY_FILE, STATE_DIR } from './paths.js';
-import type { HistoryEntry } from './history.js';
+import type { HistoryEntry } from './history-types.js';
 
 // Append-only jsonl ⇒ byte offset is a stable monotonic cursor; one per line so
 // each reader re-parses only its unseen tail (O(new), not O(file)).

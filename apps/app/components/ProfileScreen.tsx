@@ -9,7 +9,7 @@
 import { useState } from 'react';
 import { Pressable } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
-import type { SimultaneousRefs } from './SwipeTabs';
+import type { SimultaneousRefs } from './SwipeTabs.types';
 import { Text } from '@metro-labs/kit/text';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

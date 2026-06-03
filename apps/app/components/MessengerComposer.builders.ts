@@ -15,7 +15,7 @@ import {
 } from '@metro-labs/client/xmtp/tx';
 import { getActiveAccount } from '../lib/accounts';
 import { setLastAttachment } from '../lib/lastAttachment';
-import type { ComposerActionsArgs } from './MessengerComposer.actions';
+import type { ComposerActionsArgs } from './MessengerComposer.types';
 
 const mintLocalId = (): string => `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 

@@ -13,7 +13,11 @@ import './cryptoShim';
 import * as SecureStore from 'expo-secure-store';
 import { generatePrivateKey, privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts';
 import type { Hex } from 'viem';
-import { setActiveAccountForCache } from './channelsCache';
+/** Deferred to break the accounts ↔ channelsCache module cycle; both call sites are async. */
+const setActiveAccountForCache = async (id: string | null): Promise<void> => {
+  const { setActiveAccountForCache: fn } = await import('./channelsCache');
+  fn(id);
+};
 import {
   LEGACY_DB_DIR, LEGACY_PK_KEY, PK_PREFIX,
   getViemAccount, normalizePk, privateKeyFromMnemonic,
@@ -21,21 +25,8 @@ import {
 
 export { canExportPrivateKey, getPrivateKey, getViemAccount } from './accounts.keys';
 
-export type AccountType = 'generated' | 'privateKey' | 'walletconnect';
-
-export interface AccountRecord {
-  /** Lowercased address — stable, SecureStore-key-safe identifier. */
-  id: string;
-  /** Checksummed address for display + signing. */
-  address: string;
-  type: AccountType;
-  label?: string;
-  /** Dir name under the document dir for this account's XMTP store. */
-  dbDir: string;
-  /** An XMTP installation has been created in dbDir (so we Client.build, not create). */
-  registered?: boolean;
-  createdAt: number;
-}
+export type { AccountType, AccountRecord } from './accounts.types';
+import type { AccountRecord } from './accounts.types';
 
 const LIST_KEY = 'accounts.list';
 const ACTIVE_KEY = 'accounts.active';
@@ -76,7 +67,7 @@ export async function getActiveAccountId(): Promise<string | null> {
   /** Boot init: point the channels cache at the active account's store so the
    *  Channels screen reads the right per-account rows on cold start (idempotent —
    *  no-ops when the pointer is already set; the switch path sets it directly). */
-  if (id) setActiveAccountForCache(id);
+  if (id) await setActiveAccountForCache(id);
   return id;
 }
 
@@ -86,7 +77,7 @@ export async function setActiveAccountId(id: string): Promise<void> {
    *  account keeps its own cached rows, so switching swaps to the target
    *  account's data instantly (instant 2nd open) and the stream revalidates in
    *  the background. */
-  setActiveAccountForCache(id);
+  await setActiveAccountForCache(id);
 }
 
 /** Active account, falling back to the first in the list when the pointer is
