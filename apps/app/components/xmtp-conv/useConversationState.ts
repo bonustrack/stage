@@ -138,16 +138,16 @@ export function useConversationState(convId: string | undefined, focus: string |
     return out;
   }, [isGroup, memberAddrs, peerAddr, profilesVersion]);
 
-  /** Per-conversation scroll persistence. INVERTED list → `contentOffset.y` is
-   *  distance scrolled UP from newest (0 = bottom). Restore once on first layout
-   *  if a saved offset exists; listEpoch remounts skip restore (land at bottom). */
+  /** Per-conversation scroll persistence. INVERTED list → offset 0 = bottom/newest.
+   *  Restore once on first layout if a saved offset exists; remounts land at bottom. */
   const savedScrollRef = useRef<number | undefined>(undefined);
   const savedScrollLoaded = useRef(false);
   const didRestoreScroll = useRef(false);
-  /** At-bottom flag, set on EVERY scroll (ConversationFeed.onScroll). The debounced
-   *  offset save can lose its final at-bottom frame to a fast back-nav; this ref
-   *  can't, so on unmount we force-persist sentinel 0 when at the bottom. Defaults
-   *  true (a fresh/never-scrolled conversation sits at the bottom). */
+  /** Deadline (ms epoch) the at-bottom mount keeps re-pinning to 0; 0 = unarmed. */
+  const pinBottomUntil = useRef(0);
+  /** At-bottom flag, set on EVERY scroll. The debounced offset save can lose its
+   *  final at-bottom frame to a fast back-nav; this ref can't, so on unmount we
+   *  force-persist sentinel 0 when at bottom. Defaults true (fresh conv = bottom). */
   const isAtBottomRef = useRef(true);
   useEffect(() => {
     if (!convId) return;
@@ -191,7 +191,7 @@ export function useConversationState(convId: string | undefined, focus: string |
     confirmedIds, optimisticReactions, optimisticRemovals,
     peerAddr, groupName, groupImage, groupDescription, groupLabels, isGroup, github, senderEthOf,
     profilesVersion, mentionCandidates, listRef,
-    savedScrollRef, savedScrollLoaded, didRestoreScroll, isAtBottomRef,
+    savedScrollRef, savedScrollLoaded, didRestoreScroll, pinBottomUntil, isAtBottomRef,
     reactions, ownReactions, displayVotes, displayOwnVotes,
     allBubbles, jumpToMessage,
     onReact, onSign, signingIds, onVote, onPay, payingIds, onAnswer,

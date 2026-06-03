@@ -8,7 +8,7 @@ import { Spinner } from '../Spinner';
 import { ConversationIntro } from './ConversationIntro';
 import type { SignatureRequestContent } from '@metro-labs/client/xmtp/sign';
 import type { WalletSendCallsContent } from '@metro-labs/client/xmtp/tx';
-import { AT_BOTTOM_THRESHOLD_PX, convScrollKey, saveScrollOffset } from '../../lib/scrollPos';
+import { AT_BOTTOM_THRESHOLD_PX, convScrollKey, planFeedRestore, saveScrollOffset } from '../../lib/scrollPos';
 import { previewOf } from './feed-helpers';
 import type { useConversationState } from './useConversationState';
 
@@ -30,7 +30,7 @@ export function ConversationFeed({
     confirmedIds, optimisticReactions, optimisticRemovals,
     peerAddr, isGroup, groupName, groupImage, groupDescription, groupLabels,
     senderEthOf, profilesVersion, listRef,
-    savedScrollRef, savedScrollLoaded, didRestoreScroll,
+    savedScrollRef, savedScrollLoaded, didRestoreScroll, pinBottomUntil,
     reactions, ownReactions, displayVotes, displayOwnVotes,
     allBubbles, jumpToMessage,
     onReact, onSign, signingIds, onVote, onPay, payingIds, onAnswer,
@@ -56,22 +56,16 @@ export function ConversationFeed({
       initialNumToRender={12}
       maxToRenderPerBatch={10}
       removeClippedSubviews
-      /** Inverted list: onEndReached fires near the visual TOP (the OLDEST end),
-       *  which is exactly when we want to page in older history. loadOlder() reads
-       *  the oldest loaded event's ts as a before-cursor and appends the next page
-       *  to the END of the data array — on an inverted list that adds rows above
-       *  the current view without moving the viewport. No-ops while loading or
-       *  once history is exhausted (guarded inside the hook). */
+      /** Inverted: onEndReached fires near the visual TOP (oldest end) → page in
+       *  older history. loadOlder appends to the data END (= above the view, no
+       *  viewport shift). No-ops while loading / once exhausted (guarded in hook). */
       onEndReached={() => { void loadOlder(); }}
       onEndReachedThreshold={0.5}
       /** Inverted: paddingTop = visual BOTTOM (composer side), paddingBottom = visual TOP
        *  (nav side). Bump the top so the oldest message clears the absolute top-nav strip. */
       contentContainerStyle={{ paddingTop: 24, paddingBottom: insets.top + 52 + 24 }}
-      /** Inverted list: `contentOffset.y` is ~0 at the visual bottom. Hide the
-       *  jump button within ~12px of the bottom (so it never lingers when the
-       *  user is already down) and show it the moment they scroll up past that.
-       *  `scrollEventThrottle={16}` (≈1 event/frame) keeps the show/hide snappy
-       *  instead of the laggy 32ms cadence. */
+      /** Inverted: `contentOffset.y` ~0 at the visual bottom. Hide the jump button
+       *  within ~12px of bottom, show it on scroll-up. 16ms throttle = ~1/frame. */
       onScroll={(ev) => {
         const y = ev.nativeEvent.contentOffset.y;
         const next = y > 12;
@@ -84,19 +78,23 @@ export function ConversationFeed({
         if (convId) saveScrollOffset(convScrollKey(convId), y <= AT_BOTTOM_THRESHOLD_PX ? 0 : y);
       }}
       scrollEventThrottle={16}
-      /** Restore the saved (inverted) offset once, after the first content
-       *  layout — only on the initial mount (epoch 0), only if a saved offset
-       *  was found, and only if the list has content. Clamp to content height
-       *  so a stale offset can't overscroll. Remounts (listEpoch > 0) skip
-       *  this and keep landing at the bottom. */
+      /** Initial-mount (epoch 0) scroll restore — see planFeedRestore. Restores a
+       *  concrete saved offset, or pins to bottom (newest) across a short settle
+       *  window for the at-bottom sentinel. Remounts (epoch > 0) skip → land bottom. */
       onContentSizeChange={(_w, h) => {
         if (didRestoreScroll.current || listEpoch !== 0) return;
-        if (!savedScrollLoaded.current) return; // saved offset not read yet
-        const want = savedScrollRef.current;
-        if (want == null || want <= 0) { didRestoreScroll.current = true; return; }
-        if (h <= 0 || allBubbles.length === 0) return; // wait for real content
-        didRestoreScroll.current = true;
-        const offset = Math.min(want, Math.max(0, h));
+        const plan = planFeedRestore({
+          loaded: savedScrollLoaded.current, contentHeight: h, itemCount: allBubbles.length,
+          savedOffset: savedScrollRef.current, now: Date.now(),
+          pinUntil: pinBottomUntil.current, setPinUntil: (t) => { pinBottomUntil.current = t; },
+        });
+        if (plan === 'skip') {
+          // Sentinel settle window elapsed → latch so later scrolls aren't yanked.
+          if (pinBottomUntil.current !== 0) didRestoreScroll.current = true;
+          return;
+        }
+        const offset = plan === 'bottom' ? 0 : plan.offset;
+        if (plan !== 'bottom') didRestoreScroll.current = true;
         requestAnimationFrame(() => {
           try { listRef.current?.scrollToOffset({ offset, animated: false }); } catch { /* reanimated #3670 / best-effort */ }
         });

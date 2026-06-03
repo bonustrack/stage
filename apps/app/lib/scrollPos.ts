@@ -57,6 +57,39 @@ export function saveScrollOffset(key: string, offset: number): void {
   }, WRITE_DEBOUNCE_MS));
 }
 
+/** Decide what the inverted conversation feed should do on each
+ *  `onContentSizeChange` during the initial (epoch-0) mount.
+ *
+ *  Returns:
+ *   - `'skip'`  — not ready / already done; do nothing.
+ *   - `'bottom'`— pin to offset 0 (newest). Used for the at-bottom sentinel
+ *     (null/<=0 saved offset): the feed is seeded synchronously from feedCache
+ *     (which may already hold a message that arrived while the user was away),
+ *     then the async local→sync→network refresh rewrites the slice — that churn
+ *     under `maintainVisibleContentPosition` drifts the inverted viewport
+ *     mid-feed. We keep re-pinning to 0 for a short settle window (caller's
+ *     `pinUntil`) to beat that drift. This is the "return after a new message
+ *     lands you mid-feed" fix.
+ *   - a number — clamped concrete offset to restore (user left mid-scroll).
+ *
+ *  The caller owns the latch refs (`didRestore`, `pinUntil`) and the actual
+ *  `scrollToOffset` call; this stays a pure decision so the component is thin. */
+export function planFeedRestore(args: {
+  loaded: boolean; contentHeight: number; itemCount: number;
+  savedOffset: number | undefined; now: number;
+  pinUntil: number; setPinUntil: (t: number) => void;
+}): 'skip' | 'bottom' | { offset: number; done: true } {
+  const { loaded, contentHeight, itemCount, savedOffset, now, pinUntil, setPinUntil } = args;
+  if (!loaded) return 'skip';
+  if (contentHeight <= 0 || itemCount === 0) return 'skip';
+  if (savedOffset == null || savedOffset <= 0) {
+    if (pinUntil === 0) { setPinUntil(now + 1200); return 'bottom'; }
+    if (now > pinUntil) return 'skip'; // settled — caller latches didRestore
+    return 'bottom';
+  }
+  return { offset: Math.min(savedOffset, Math.max(0, contentHeight)), done: true };
+}
+
 /** Cancel a pending debounced write for a key (e.g. on unmount) and flush the
  *  latest cached value synchronously-ish so a quick close doesn't lose it.
  *  Pass an `override` to FORCE-persist a definitive value (e.g. the at-bottom
