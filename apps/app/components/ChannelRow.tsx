@@ -73,14 +73,13 @@ function LabelChips({ labels, fg, sub, rowBg }: {
   const visible = labels.slice(0, MAX_VISIBLE_LABELS);
   const overflow = labels.length - visible.length;
   return (
-    <Row align="center" gap={4} style={{ flexWrap: 'nowrap', overflow: 'hidden', flexShrink: 1 }}>
+    <Row align="center" gap={4} style={{ flexWrap: 'nowrap', flexShrink: 0 }}>
       {visible.map(label => (
         <Box key={label.toLowerCase()} style={{
           paddingHorizontal: 6, paddingVertical: 1, borderRadius: 999,
-          backgroundColor: rowBg,
-          flexShrink: 1, maxWidth: 90,
+          backgroundColor: rowBg, flexShrink: 0,
         }}>
-          <Text numberOfLines={1} style={{ color: fg, fontSize: 11, fontFamily: 'Calibre-Medium' }}>
+          <Text style={{ color: fg, fontSize: 11, fontFamily: 'Calibre-Medium' }}>
             {label}
           </Text>
         </Box>
@@ -131,13 +130,12 @@ function ChannelRowBase({
           <Row align="center" gap={6}>
             {pinned ? <Icon name="mapPin" size={13} color={sub} /> : null}
             {hasDraft ? <Icon name="pencil" size={14} color={sub} /> : null}
-            <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', flexShrink: 1 }} numberOfLines={1}>
+            <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', flex: 1, flexShrink: 1, minWidth: 0 }} numberOfLines={1} ellipsizeMode="tail">
               {title}
             </Text>
             {labels && labels.length > 0 ? (
               <LabelChips labels={labels} fg={fg} sub={sub} rowBg={rowBg} />
             ) : null}
-            <Box style={{ flex: 1 }} />
             {timestamp ? (
               <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{timestamp}</Text>
             ) : null}
