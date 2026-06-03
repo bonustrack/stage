@@ -22,6 +22,7 @@ import type { Row as RowT } from './HomeScreen.helpers';
 import { HomeError, HomeSpinner, useChannelRowRenderer } from './HomeScreen.parts';
 import { ChannelsList, channelRowLayout } from './HomeScreen.list';
 import { useChannelsSync } from './HomeScreen.sync';
+import { LabelFilterSheet } from './HomeScreen.filter';
 
 /** Re-exported so existing import paths (`./HomeScreen`) stay unchanged. */
 export type { Row } from './HomeScreen.helpers';
@@ -74,6 +75,11 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
   /** Count of pending message requests ('unknown' consent convs). Drives the
    *  "Requests (N)" entry at the top of the list; hidden when 0. */
   const [requestCount, setRequestCount] = useState<number>(0);
+  /** Active label filter (null = show all). Drives both the topnav control's
+   *  highlighted state and the sortedRows filter below. The picker sheet's
+   *  open/closed state is local UI here. */
+  const [labelFilter, setLabelFilter] = useState<string | null>(null);
+  const [filterSheetOpen, setFilterSheetOpen] = useState<boolean>(false);
   /** Load the saved channels-list offset once on mount. The actual scroll
    *  happens in onContentSizeChange (below) once rows have laid out — restoring
    *  before content exists would clamp to 0. */
@@ -93,14 +99,20 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
    *  source `rows` state stays untouched so the stream-update logic (which
    *  prepends/reorders by recency) keeps working against the raw list. */
   const sortedRows = useMemo(() => {
-    const list = rows ?? [];
+    const all = rows ?? [];
+    /** Label filter: keep only groups whose labels[] (same source ChannelRow
+     *  renders as chips) include the active label, case-insensitively. null →
+     *  no filter. Reactive to `rows` so cache updates re-derive automatically. */
+    const list = labelFilter == null
+      ? all
+      : all.filter(r => (r.labels ?? []).some(l => l.toLowerCase() === labelFilter.toLowerCase()));
     return [...list].sort((a, b) => {
       const ap = pinned.has(a.convId) ? 1 : 0;
       const bp = pinned.has(b.convId) ? 1 : 0;
       if (ap !== bp) return bp - ap;
       return (b.lastTs ?? 0) - (a.lastTs ?? 0);
     });
-  }, [rows, pinned]);
+  }, [rows, pinned, labelFilter]);
 
   /** Batch-resolve the displayed peers' profiles → avatar cache-busters. */
   const channelProfilesVersion = usePeerProfiles(
@@ -146,6 +158,8 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
         myAddress={myAddress}
         sortedRows={sortedRows}
         requestCount={requestCount}
+        labelFilter={labelFilter}
+        onOpenFilter={() => setFilterSheetOpen(true)}
         head={head}
         sub={sub}
         border={border}
@@ -166,6 +180,12 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
         isUnread={rowMenu?.isUnread ?? false}
         isPinned={rowMenu ? pinned.has(rowMenu.convId) : false}
         onClose={() => setRowMenu(null)}
+      />
+      <LabelFilterSheet
+        visible={filterSheetOpen}
+        active={labelFilter}
+        onClose={() => setFilterSheetOpen(false)}
+        onSelect={setLabelFilter}
       />
     </Col>
   );
