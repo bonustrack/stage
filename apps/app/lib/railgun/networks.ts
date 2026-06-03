@@ -1,10 +1,11 @@
 /** Network registry for the Railgun SDK layer. Maps our two supported chains to
  *  the SDK's NetworkName + the RPC endpoints the engine polls.
  *
- *  Mainnet reuses Snapshot's brovider RPC (rpc.brovider.xyz/<chainId>) — the
- *  same endpoint lib/tx.ts / lib/ens.ts use. Sepolia isn't on brovider, so it
- *  points at public Sepolia RPCs (no key, rate-limited; swap for a keyed
- *  endpoint in a later pass). Sepolia is the default for testing. */
+ *  Every network uses Snapshot's brovider RPC (rpc.brovider.xyz/<chainId>) — the
+ *  same endpoint lib/tx.ts / lib/ens.ts / WalletScreen.data.ts use. brovider
+ *  serves both mainnet (1) and Sepolia (11155111); the public Sepolia RPCs were
+ *  rate-limited and broke the shield's loadProvider, so they're gone. Sepolia is
+ *  the default for testing. */
 
 import { NetworkName } from '@railgun-community/shared-models';
 
@@ -24,14 +25,14 @@ export const RAILGUN_NETWORKS: Record<RailgunNet, RailgunNetworkConfig> = {
     label: 'Sepolia',
     chainId: 11155111,
     networkName: NetworkName.EthereumSepolia,
-    rpcUrls: ['https://rpc.ankr.com/eth_sepolia', 'https://ethereum-sepolia-rpc.publicnode.com'],
+    rpcUrls: ['https://rpc.brovider.xyz/11155111'],
   },
   mainnet: {
     net: 'mainnet',
     label: 'Ethereum',
     chainId: 1,
     networkName: NetworkName.Ethereum,
-    rpcUrls: ['https://rpc.brovider.xyz/1', 'https://ethereum-rpc.publicnode.com'],
+    rpcUrls: ['https://rpc.brovider.xyz/1'],
   },
 };
 
