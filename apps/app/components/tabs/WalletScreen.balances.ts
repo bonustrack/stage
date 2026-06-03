@@ -2,15 +2,15 @@
  *  from WalletScreen for the lint line-budget. Owns the connected address, the
  *  fetched AssetRow[], the error string, and the pull-to-refresh spinner.
  *
- *  Pull-to-refresh re-runs the public balance fetch and (when a private account
- *  is known) kicks off a fresh Railgun shielded-snapshot scan. The spinner is
- *  settled on the FAST public fetch only (with an 8s hard cap) — the slow/hangy
- *  engine scan runs in the background so it can never freeze the spinner.
- *  refreshSnapshot pushes new balances into the cache store, which the
- *  usePrivateWallet subscription picks up — so the shielded rows update without
- *  this hook needing its return value. */
+ *  Pull-to-refresh kicks off BOTH the public balance fetch and (when a private
+ *  account is known) a fresh Railgun shielded-snapshot scan as fire-and-forget
+ *  background work, then dismisses the spinner on a short fixed delay (~700ms).
+ *  The spinner is a brief visual ack only — it is NOT gated on any network call,
+ *  so it can never linger. Rows update reactively: the public fetch calls
+ *  setRows when it lands, and refreshSnapshot pushes into the cache store which
+ *  the usePrivateWallet subscription picks up. */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { getOrCreateXmtpClient } from '../../lib/xmtp';
 import { refreshSnapshot } from '../../lib/railgun/wallet';
 import { fetchAssetRows } from './WalletScreen.data';
@@ -32,6 +32,16 @@ export function useWalletBalances(privAccountId: string | null): WalletBalances 
   const [rows, setRows] = useState<AssetRow[] | null>(null);
   const [err, setErr] = useState<string>('');
   const [refreshing, setRefreshing] = useState(false);
+  const mounted = useRef(true);
+  const spinnerTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      if (spinnerTimer.current) clearTimeout(spinnerTimer.current);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -55,30 +65,30 @@ export function useWalletBalances(privAccountId: string | null): WalletBalances 
     if (!address) return;
     setRefreshing(true);
 
-    /** Fire the shielded (Railgun) re-scan but DON'T let the spinner wait on it.
-     *  The engine path (nodejs-mobile bridge boot / Merkle scan) can be slow or
-     *  hang outright; awaiting it kept the spinner stuck on screen. It updates
-     *  the cache store in the background — usePrivateWallet picks it up. */
-    if (privAccountId) void refreshSnapshot(privAccountId).catch(() => {});
-
-    /** Settle the spinner on the FAST public fetch only, with an ~8s hard cap so
-     *  a hanging RPC can never freeze the spinner indefinitely. try/finally
-     *  guarantees setRefreshing(false) runs on success, error, AND timeout. */
+    /** Fire the public balance fetch in the background — DON'T await it. When it
+     *  lands it updates the rows in place; the spinner is not gated on it. */
     void (async (): Promise<void> => {
       try {
-        const next = await Promise.race([
-          fetchAssetRows(address),
-          new Promise<never>((_, rej) =>
-            setTimeout(() => rej(new Error('refresh timeout')), 8000)),
-        ]);
+        const next = await fetchAssetRows(address);
+        if (!mounted.current) return;
         setRows(next);
         setErr('');
       } catch (e) {
-        if ((e as Error).message !== 'refresh timeout') setErr((e as Error).message);
-      } finally {
-        setRefreshing(false);
+        if (mounted.current) setErr((e as Error).message);
       }
     })();
+
+    /** Fire the shielded (Railgun) re-scan in the background too. The engine path
+     *  (nodejs-mobile bridge boot / Merkle scan) can be slow or hang; it updates
+     *  the cache store, which usePrivateWallet picks up. */
+    if (privAccountId) void refreshSnapshot(privAccountId).catch(() => {});
+
+    /** Dismiss the spinner on a short fixed delay — purely a visual ack, never
+     *  gated on a network call, so it always settles fast and can't linger. */
+    if (spinnerTimer.current) clearTimeout(spinnerTimer.current);
+    spinnerTimer.current = setTimeout(() => {
+      if (mounted.current) setRefreshing(false);
+    }, 700);
   }, [address, privAccountId]);
 
   return { address, rows, err, refreshing, onRefresh };
