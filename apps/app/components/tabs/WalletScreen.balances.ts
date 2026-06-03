@@ -65,26 +65,26 @@ export function useWalletBalances(privAccountId: string | null): WalletBalances 
   const onRefresh = useCallback((): void => {
     if (!address) return;
     setRefreshing(true);
-
     /** Absolute backstop, fully independent of the fetch/race below: clear the
-     *  visible spinner within 9s no matter what. The real stuck-spinner cause was
-     *  the RNGH ScrollView wrapper dropping the controlled-prop update (fixed by
-     *  switching WalletScreen to RN-core ScrollView), but this guarantees the JS
-     *  state never lingers either. */
+     *  visible spinner within 9s no matter what. The pure-JS pull-to-refresh
+     *  overlay is bound to `refreshing`, but this guarantees the JS state never
+     *  lingers even if the fetch wedges. */
     const hardStop = setTimeout(() => { if (mounted.current) setRefreshing(false); }, 9000);
 
-    /** Always-resolving dismiss: the RefreshControl spinner is tied to the public
-     *  fetch (the only fast, bounded call) AND a hard 8s safety cap that races it,
-     *  so the spinner is dismissed by whichever lands first. The dismiss runs in a
-     *  `finally`, so a thrown/rejected fetch can never strand the spinner. We do
-     *  NOT free-run a bare setTimeout while leaving `refreshing` otherwise
-     *  uncontrolled — on Android that desyncs the native controlled spinner and
-     *  leaves it stuck on screen (the >10s ghost spinner). */
+    /** Always-resolving dismiss: the spinner is tied to the public fetch (the
+     *  only fast, bounded call) AND a hard 8s safety cap that races it, so the
+     *  spinner is dismissed by whichever lands first. The dismiss runs in a
+     *  `finally`, so a thrown/rejected fetch can never strand the spinner. */
     const stop = (): void => {
       clearTimeout(hardStop);
       if (spinnerTimer.current) { clearTimeout(spinnerTimer.current); spinnerTimer.current = null; }
       if (mounted.current) setRefreshing(false);
     };
+
+    /** Fire the Railgun shielded re-scan in the BACKGROUND (it can take many
+     *  seconds and pushes its result into the cache store the UI subscribes to)
+     *  so it never holds the spinner hostage. */
+    if (privAccountId) void refreshSnapshot(privAccountId).catch(() => {});
 
     void (async (): Promise<void> => {
       try {

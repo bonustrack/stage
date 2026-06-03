@@ -6,6 +6,10 @@ import { Text } from '@metro-labs/kit/text';
 import { Box } from '../../components/layout';
 import { Button } from '@metro-labs/kit/button';
 import { Icon } from '@metro-labs/kit/icon';
+import { explorerTxUrl } from '../../lib/railgun/networks';
+
+/** Public sends always broadcast on mainnet (send.public.ts pins chainId 1). */
+const PUBLIC_SEND_CHAIN = 1;
 
 type TxState = 'idle' | 'submitting' | 'pending' | 'confirmed';
 
@@ -61,7 +65,7 @@ export function TxStatus(props: {
           <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>
             {txState === 'confirmed' ? 'Confirmed' : 'Pending'}
           </Text>
-          <Pressable onPress={() => Linking.openURL(`https://etherscan.io/tx/${txHash}`)} hitSlop={6}>
+          <Pressable onPress={() => Linking.openURL(explorerTxUrl(PUBLIC_SEND_CHAIN, txHash))} hitSlop={6}>
             <Text style={{ color: '#c0a06e', fontSize: 13, fontFamily: 'Calibre-Medium' }}>
               {txHash.slice(0, 10)}…{txHash.slice(-8)}
             </Text>

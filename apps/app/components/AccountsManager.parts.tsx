@@ -1,12 +1,13 @@
 /** AccountsManager sub-components — account row + the bottom-sheet modal/button.
  *  Extracted for lint line-budget. Rendering identical. */
 
-import { Image, Modal, Pressable } from 'react-native';
+import { Modal, Pressable } from 'react-native';
 import { Box } from './layout';
+import { Stamp } from './Stamp';
 import { Text } from '@metro-labs/kit/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getPeerName } from '../lib/peerProfiles';
-import { stampBoxAvatarUrl, shortAddress } from '../lib/xmtp';
+import { shortAddress } from '../lib/xmtp';
 import { type AccountRecord } from '../lib/accounts';
 import { TYPE_LABEL } from './AccountsManager.helpers';
 
@@ -29,10 +30,7 @@ export function AccountRow({ rec, onPress, onLongPress, topBorder, trailing, hea
         backgroundColor: pressed ? border : 'transparent',
       })}
     >
-      <Image
-        source={{ uri: stampBoxAvatarUrl(rec.address, 28) }}
-        style={{ width: 28, height: 28, borderRadius: 999, backgroundColor: border }}
-      />
+      <Stamp address={rec.address} size={28} style={{ backgroundColor: border }} />
       <Box style={{ flex: 1, minWidth: 0 }}>
         <Text numberOfLines={1} style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>
           {getPeerName(rec.address) ?? rec.label ?? shortAddress(rec.address)}

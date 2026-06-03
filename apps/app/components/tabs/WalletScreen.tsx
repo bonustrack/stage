@@ -37,8 +37,10 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
   const { address, rows, err, refreshing, onRefresh } = useWalletBalances(privAccountId);
   usePeerProfiles([address]);
 
-  /** Custom JS-only pull-to-refresh (replaces RN's native RefreshControl, which
-   *  stranded its spinner on Android inside this nested-gesture ScrollView). */
+  /** Custom JS-only pull-to-refresh — replaces RN's native RefreshControl, which
+   *  stranded its spinner on Android inside this nested-gesture ScrollView. The
+   *  indicator's visibility is bound solely to `refreshing` (guaranteed to clear
+   *  via try/finally + 8s hardStop in balances.ts), so it can never wedge. */
   const pull = usePullToRefresh(refreshing, onRefresh, head);
 
   /** Watch the EOA's mempool/nonce for an in-flight shield to the Railgun proxy
@@ -49,6 +51,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
     if (!privAccountId || !address || !isBridgeAvailable()) return;
     return startEoaShieldWatch(privAccountId, address);
   }, [privAccountId, address]);
+
 
   /** Shielded (Railgun) balances — reuses the same instant-paint hook the
    *  Private tab uses (cached snapshot + pending overlay, no refetch). They're
@@ -120,11 +123,13 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
       simultaneousHandlers={panRef}
       style={{ flex: 1, backgroundColor: bg }}
       contentContainerStyle={{ paddingBottom: 24, flexGrow: 1 }}
-      /** alwaysBounceVertical + bounces + flexGrow:1 keep the list pullable even
-       *  when content is shorter than the viewport (else the pull isn't an
-       *  overscroll and the custom pull never fires). overScrollMode='always'
-       *  enables the Android overscroll the custom onScroll gesture reads.
-       *  nestedScrollEnabled = Android scroller. */
+      /** bounces + alwaysBounceVertical + flexGrow:1 keep the list pullable even
+       *  when content is shorter than the viewport — without bounce the swipe-down
+       *  isn't an overscroll so the custom pull-to-refresh never fires.
+       *  overScrollMode='always' enables Android overscroll; nestedScrollEnabled
+       *  makes Android treat this as the scroller. The pager Pan gates on
+       *  failOffsetY + simultaneous panRef, so the vertical pull is never
+       *  swallowed by the horizontal tab-swipe. */
       bounces
       alwaysBounceVertical
       overScrollMode="always"

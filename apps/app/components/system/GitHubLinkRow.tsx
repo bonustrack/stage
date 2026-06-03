@@ -1,11 +1,12 @@
-/** A reusable tappable row that opens a GitHub URL via Linking. Renders a
- *  code icon + title + subtitle and an externalLink chevron, matching the
+/** A reusable tappable row that opens a GitHub URL via Linking. Renders the
+ *  GitHub mark + title + subtitle and an externalLink chevron, matching the
  *  System-page link styling. Shared by the Kit page and the About page. */
 
 import { Linking, Pressable } from 'react-native';
 import { Box, Row } from '../layout';
 import { Icon } from '@metro-labs/kit/icon';
 import { Text } from '@metro-labs/kit/text';
+import { GithubLogo } from '../GithubLogo';
 
 export function GitHubLinkRow({ dark, head, sub, border, rowBg, url, title, subtitle }: {
   dark: boolean; head: string; sub: string; border: string; rowBg: string;
@@ -23,7 +24,7 @@ export function GitHubLinkRow({ dark, head, sub, border, rowBg, url, title, subt
         }}
       >
         <Row gap={12} style={{ alignItems: 'center' }}>
-          <Icon name="code" size={22} color={head} />
+          <GithubLogo size={22} color={head} />
           <Box style={{ flex: 1 }}>
             <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>
               {title}
