@@ -6,6 +6,7 @@ import { inboxEthCache, respond } from './wire.js';
 import { warmGroupName } from './conv-name.js';
 import { pushHandlers } from './actions-push.js';
 import { cleanLabels, labelsBlob, type GroupLike } from './labels.js';
+import { closeGroup } from './actions-close.js';
 
 type Args = Record<string, unknown>;
 type Handler = (id: string, args: Args) => Promise<void>;
@@ -189,6 +190,6 @@ async function listConvs(id: string, args: Args): Promise<void> {
 }
 
 export const convHandlers: Record<string, Handler> = {
-  newDm, newGroup, createRequestGroup, setLabels, query, groupInfo, listConvs,
+  newDm, newGroup, createRequestGroup, setLabels, closeGroup, query, groupInfo, listConvs,
   ...pushHandlers,
 };

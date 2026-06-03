@@ -8,6 +8,7 @@ export interface GroupLike {
   updateAppData?: (s: string) => Promise<void>;
   updateName?: (s: string) => Promise<void>;
   updateDescription?: (s: string) => Promise<void>;
+  removeMembers?: (inboxIds: string[]) => Promise<void>;
   sync?: () => Promise<unknown>;
 }
 

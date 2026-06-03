@@ -179,7 +179,7 @@ const handlers: Record<string, (id: string, args: Args) => Promise<void>> = {
 };
 
 const KNOWN = 'accounts, send, sendPoll, sendImage, sendTxRequest, react, reply, sendAttachment, '
-  + 'newDm, newGroup, createRequestGroup, setLabels, query, groupInfo, listConvs, '
+  + 'newDm, newGroup, createRequestGroup, setLabels, closeGroup, query, groupInfo, listConvs, '
   + 'register-push, list-push, test-push, unregister-push';
 
 type CallMsg = { op: 'call'; id: string; action: string; args: Args };
