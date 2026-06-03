@@ -10,6 +10,7 @@ import { isMetroControlBody } from '../../lib/push';
 import { previewOfXmtpContent } from '@metro-labs/client/xmtp/humanize';
 import { channelStampSeed } from '@metro-labs/kit/avatar';
 import { labelsOfSyncedGroup } from '../../lib/xmtp.labels';
+import { githubOfSyncedGroup } from '../../lib/xmtp.github';
 
 export interface Row {
   convId: string;
@@ -49,6 +50,10 @@ export interface Row {
    *  for DMs. Read in summarize() off the already-synced conv (no extra sync),
    *  so they refresh on every list refresh/poll. Rendered as chips on the card. */
   labels: string[];
+  /** Optional linked GitHub issue/PR URL from the group's synced appData,
+   *  GROUPS ONLY (undefined for DMs / unset). Read off the already-synced conv.
+   *  Drives the GitHub icon in the conversation topnav. */
+  github?: string;
   /** Make Row a structural superset of `CachedRow` so we can pass it
    *  straight through `setCachedRows` without casting. */
   [key: string]: unknown;
@@ -119,6 +124,7 @@ export async function summarize(conv: Conversation, selfInboxId: string): Promis
   /** Group labels (DMs have none). Read off the conv synced above at line ~77,
    *  so no extra group.sync() fires per row — refreshes on each list refresh. */
   const labels = peerAddress ? [] : await labelsOfSyncedGroup(conv);
+  const github = peerAddress ? undefined : await githubOfSyncedGroup(conv);
   const title = peerAddress
     ? shortAddress(peerAddress)
     : (groupMeta.name.trim()
@@ -171,5 +177,6 @@ export async function summarize(conv: Conversation, selfInboxId: string): Promis
     selfInboxId,
     markedUnread,
     labels,
+    github,
   };
 }

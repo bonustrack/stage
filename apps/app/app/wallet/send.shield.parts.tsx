@@ -3,9 +3,9 @@
 import { Linking, Pressable } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from '../../components/layout';
+import { txExplorerUrl } from '../../lib/railgun/explorer';
 
 interface Pal { fg: string; head: string; sub: string; border: string; inputBg: string }
-type Phase = 'idle' | 'working' | 'broadcasting' | 'done' | 'error';
 
 const short0zk = (a: string): string => (a.length > 18 ? `${a.slice(0, 10)}…${a.slice(-6)}` : a);
 
@@ -57,10 +57,12 @@ export function ShieldRecipient({ pal, zkAddress }: {
   );
 }
 
-/** Progress + result line: working/broadcasting hint, the explorer tx link on
- *  success, and a clear error on failure. */
-export function ShieldPhaseLine({ pal, phase, txHash, err, bridgeOk }: {
-  pal: Pal; phase: Phase; txHash: string | null; err: string | null; bridgeOk: boolean;
+/** Result line shown alongside the stepper: the "needs latest build" notice when
+ *  the bridge is absent, the chain-aware explorer tx link once broadcast, and a
+ *  clear error message on failure. The per-phase progress text now lives in the
+ *  <ShieldStepper>; this line carries only the link + error + bridge notice. */
+export function ShieldPhaseLine({ pal, txHash, err, bridgeOk, chainId }: {
+  pal: Pal; txHash: string | null; err: string | null; bridgeOk: boolean; chainId: number;
 }): React.ReactElement | null {
   const { sub } = pal;
   if (!bridgeOk) {
@@ -70,15 +72,11 @@ export function ShieldPhaseLine({ pal, phase, txHash, err, bridgeOk }: {
       </Text>
     );
   }
+  if (!txHash && !err) return null;
   return (
     <Box style={{ gap: 4, paddingHorizontal: 4 }}>
-      {phase === 'working' ? (
-        <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>Preparing shield…</Text>
-      ) : phase === 'broadcasting' ? (
-        <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>Broadcasting…</Text>
-      ) : null}
       {txHash ? (
-        <Pressable onPress={() => Linking.openURL(`https://etherscan.io/tx/${txHash}`)} hitSlop={6}>
+        <Pressable onPress={() => Linking.openURL(txExplorerUrl(chainId, txHash))} hitSlop={6}>
           <Text style={{ color: '#c0a06e', fontSize: 13, fontFamily: 'Calibre-Medium' }}>
             {txHash.slice(0, 10)}…{txHash.slice(-8)}
           </Text>

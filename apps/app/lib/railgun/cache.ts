@@ -32,15 +32,25 @@ export function addPending(accountId: string, action: PendingAction): void {
 export function updatePending(accountId: string, id: string, patch: Partial<PendingAction>): void {
   pendingStore.set(accountId, (pendingStore.get(accountId) ?? []).map(a => a.id === id ? { ...a, ...patch } : a));
 }
+/** Phases that are still in flight (kept in the store + drive optimistic UI). */
+export function isLivePending(p: PendingAction): boolean {
+  return p.phase === 'proving' || p.phase === 'broadcasting' || p.phase === 'scanning';
+}
+
 export function clearSettledPending(accountId: string): void {
-  pendingStore.set(accountId, (pendingStore.get(accountId) ?? []).filter(a => a.phase === 'proving' || a.phase === 'broadcasting'));
+  pendingStore.set(accountId, (pendingStore.get(accountId) ?? []).filter(isLivePending));
+}
+
+/** Drop a single pending action (e.g. once its shielded balance has landed). */
+export function removePending(accountId: string, id: string): void {
+  pendingStore.set(accountId, (pendingStore.get(accountId) ?? []).filter(a => a.id !== id));
 }
 
 /** Overlay in-flight optimistic deltas onto the cached balances so the rendered
  *  rows reflect pending shields/sends before they confirm. Pure — does not
  *  mutate the cache; the real numbers replace these on the next refresh. */
 export function applyPending(balances: PrivateBalance[], pending: PendingAction[]): PrivateBalance[] {
-  const live = pending.filter(p => p.phase === 'proving' || p.phase === 'broadcasting');
+  const live = pending.filter(isLivePending);
   if (!live.length) return balances;
   return balances.map(b => {
     const delta = live

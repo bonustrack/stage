@@ -18,6 +18,7 @@ import { getActiveAccountId } from '../accounts';
 import { engineInit, walletInfo } from './bridge';
 import { deriveRailgunKeyMaterial } from './deriveKeys';
 import { addPending, updatePending } from './cache';
+import { watchShieldLanding } from './shieldScan';
 import { populateShieldBaseToken, populateShieldErc20, ensureProviderLoaded } from './bridge/shieldCalls';
 import { getShieldSigner, deriveShieldPrivateKey, shieldNetForChainId } from './shieldClient';
 import { RAILGUN_TOKENS } from './tokens';
@@ -114,7 +115,12 @@ export async function shieldToPrivate(params: ShieldParams): Promise<ShieldResul
       value: tx.value ? BigInt(tx.value) : (params.symbol === 'ETH' ? amountWei : 0n),
     });
     await signer.publicClient.waitForTransactionReceipt({ hash: txHash });
-    updatePending(accountId, pendingId, { phase: 'confirmed', txHash });
+    // Tx mined — record the hash, then hand off to the merkle-scan watcher which
+    // moves the action scanning → confirmed once the note lands in the shielded
+    // balance (or after a timeout). Don't mark `confirmed` here: the private
+    // balance hasn't been scanned in yet.
+    updatePending(accountId, pendingId, { txHash });
+    watchShieldLanding(accountId, pendingId, params.chainId);
     return { txHash, zkAddress: info.railgunAddress };
   } catch (e) {
     updatePending(accountId, pendingId, { phase: 'failed', error: (e as Error).message });

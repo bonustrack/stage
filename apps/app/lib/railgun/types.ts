@@ -40,8 +40,10 @@ export interface PendingAction {
   /** Signed decimal delta applied optimistically to the matching balance row
    *  (+ for incoming shield, - for outgoing send/unshield). */
   delta: string;
-  /** Coarse progress for the non-blocking indicator. */
-  phase: 'proving' | 'broadcasting' | 'confirmed' | 'failed';
+  /** Coarse progress for the non-blocking indicator.
+   *  `scanning` = the on-chain tx confirmed, but the Railgun merkle scan hasn't
+   *  yet landed the note in the shielded balance (the slow tail of a shield). */
+  phase: 'proving' | 'broadcasting' | 'scanning' | 'confirmed' | 'failed';
   /** Set once broadcast; surfaced as the explorer link. */
   txHash?: string;
   error?: string;

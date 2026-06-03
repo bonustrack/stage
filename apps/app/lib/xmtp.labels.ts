@@ -9,10 +9,12 @@
 
 import { convOfLine } from './xmtp';
 
-/** Versioned shape we persist. Other keys may coexist in the same object. */
+/** Versioned shape we persist. Other keys may coexist in the same object.
+ *  `github` is an optional linked GitHub issue/PR URL (Linear-style). */
 interface LabelsBlob {
   v: 1;
   labels: string[];
+  github?: string;
 }
 
 /** Caps — keep the blob tiny so it stays well inside MLS message limits. */
@@ -35,7 +37,7 @@ interface GroupLike {
   updateAppData?: (appData: string) => Promise<void>;
 }
 
-function asGroup(conv: unknown): GroupLike | null {
+export function asGroup(conv: unknown): GroupLike | null {
   const g = conv as GroupLike;
   return g && typeof g.appData === 'function' && typeof g.updateAppData === 'function' ? g : null;
 }
@@ -46,7 +48,7 @@ function cleanLabel(raw: string): string {
 }
 
 /** Parse appData into a record, tolerating empty / malformed input. */
-function parseBlob(appData: string): Record<string, unknown> {
+export function parseBlob(appData: string): Record<string, unknown> {
   if (!appData || !appData.trim()) return {};
   try {
     const parsed: unknown = JSON.parse(appData);
@@ -59,7 +61,7 @@ function parseBlob(appData: string): Record<string, unknown> {
 }
 
 /** Pull a clean, deduped, capped label array out of a parsed blob. */
-function readLabels(blob: Record<string, unknown>): string[] {
+export function readLabels(blob: Record<string, unknown>): string[] {
   const raw = blob['labels'];
   if (!Array.isArray(raw)) return [];
   const out: string[] = [];

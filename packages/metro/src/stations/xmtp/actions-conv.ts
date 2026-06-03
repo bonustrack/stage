@@ -77,8 +77,9 @@ async function createRequestGroup(id: string, args: Args): Promise<void> {
 /** Update a group's status labels (and optionally name/description). Loads the
  *  group, merges {v:1, labels} into existing appData, writes via updateAppData. */
 async function setLabels(id: string, args: Args): Promise<void> {
-  const { line, labels, setName, setDescription } = args as {
-    line?: string; groupId?: string; labels: string[]; setName?: string; setDescription?: string };
+  const { line, labels, setName, setDescription, setGithub } = args as {
+    line?: string; groupId?: string; labels: string[];
+    setName?: string; setDescription?: string; setGithub?: string };
   let resolvedLine = line;
   if (!resolvedLine && (args as { groupId?: string }).groupId) {
     const acct = accountForCall(args as { account?: string });
@@ -101,7 +102,7 @@ async function setLabels(id: string, args: Args): Promise<void> {
     await group.updateDescription(setDescription);
   }
   const clean = cleanLabels(labels);
-  await group.updateAppData(labelsBlob(group.appData, clean));
+  await group.updateAppData(labelsBlob(group.appData, clean, setGithub));
   respond(id, { result: { line: resolvedLine, id: group.id, account: acct.cfg.id, labels: clean } });
 }
 

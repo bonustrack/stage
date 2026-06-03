@@ -1,6 +1,5 @@
 /** Group detail view — opened by tapping the conversation header title. Lists
- *  members (avatar + short address; tap → user profile), shows the group name
- *  inline-editable. DMs don't get this view (they have no group metadata). */
+ *  members, shows the inline-editable group name, labels + GitHub link. */
 
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -22,6 +21,7 @@ import { MemberRow, AddMemberModal, OverflowModal } from './group.parts';
 import { GroupProfileHeader, GroupNameEditor, GroupDescriptionEditor } from './group.editor';
 import { loadGroupDetail } from './group.helpers';
 import { GroupLabelsSection } from './group.labels';
+import { GroupGithubSection } from './group.github';
 import { useGroupActions } from './group.actions';
 
 export default function GroupDetail(): React.ReactElement {
@@ -34,8 +34,8 @@ export default function GroupDetail(): React.ReactElement {
   const { convId } = useLocalSearchParams<{ convId: string }>();
   const line = lineOfConv(convId ?? '');
   const queryClient = useQueryClient();
-  /** Invalidate cached conv metadata so the chat-view topnav (useConvMeta, a
-   *  5-min-stale query) picks up rename / new image / description without a reload. */
+  /** Invalidate cached conv metadata so the chat-view topnav picks up
+   *  rename / new image / description without a reload. */
   const invalidateConvMeta = (): void => {
     if (convId) void queryClient.invalidateQueries({ queryKey: ['convMeta', convId] });
   };
@@ -134,8 +134,8 @@ export default function GroupDetail(): React.ReactElement {
       />
 
       <GroupLabelsSection line={line} p={pal} />
-      {/** MEMBERS header: label left, add-member button (avatar + plus) top-right
-       *   → opens a modal to add by address (no inline input). */}
+      <GroupGithubSection line={line} p={pal} />
+      {/** MEMBERS header: label + add-member button → opens add-by-address modal. */}
       <Box style={{
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
         paddingHorizontal: 16, paddingBottom: 8,

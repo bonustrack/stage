@@ -33,9 +33,14 @@ export function cleanLabels(raw: unknown): string[] {
   return out;
 }
 
-/** Build the {v:1, labels} appData blob, MERGING into existing appData so we
- *  never clobber other keys. */
-export function labelsBlob(existingAppData: string | undefined, labels: string[]): string {
+/** Build the {v:1, labels, github?} appData blob, MERGING into existing appData
+ *  so we never clobber other keys. `github`: a string sets/replaces the linked
+ *  GitHub URL, '' clears it, undefined leaves any existing value untouched. */
+export function labelsBlob(
+  existingAppData: string | undefined,
+  labels: string[],
+  github?: string,
+): string {
   let existing: Record<string, unknown> = {};
   if (existingAppData && existingAppData.trim()) {
     try {
@@ -43,5 +48,10 @@ export function labelsBlob(existingAppData: string | undefined, labels: string[]
       if (p && typeof p === 'object' && !Array.isArray(p)) existing = p as Record<string, unknown>;
     } catch { /* tolerate malformed */ }
   }
-  return JSON.stringify({ ...existing, v: 1, labels: cleanLabels(labels) });
+  const blob: Record<string, unknown> = { ...existing, v: 1, labels: cleanLabels(labels) };
+  if (typeof github === 'string') {
+    if (github.trim()) blob['github'] = github.trim();
+    else delete blob['github'];
+  }
+  return JSON.stringify(blob);
 }

@@ -4,24 +4,45 @@
  *  recipient is ALWAYS the user's own 0zk address (locked, shown read-only) —
  *  never an arbitrary recipient. Defaults to Sepolia (testnet) for the first
  *  on-chain write. Token (ETH/USDC) + amount are user-chosen; confirm runs
- *  shieldToPrivate() and surfaces estimating → broadcasting → confirmed/failed.
+ *  shieldToPrivate() and surfaces a 4-stage stepper: submit → confirm → scan →
+ *  shielded ✓.
  *
- *  Presentational state is local; the heavy lifting is in lib/railgun/shield.ts.
- *  The pending-action chip on the Private tab also reflects the same flow. */
-import { useState } from 'react';
+ *  The stepper is driven off the SHARED pending-action store (cache.ts), which
+ *  shieldToPrivate() advances proving → broadcasting → scanning → confirmed; the
+ *  form subscribes to its own pending row and maps each phase to a stepper stage.
+ *  This way the 'scanning' tail (balance-landed watcher) is reflected even though
+ *  the awaited shieldToPrivate() call returns right after the receipt. */
+import { useEffect, useState } from 'react';
 import { Pressable, TextInput } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';
 import { Box } from '../../components/layout';
 import { shieldToPrivate } from '../../lib/railgun/shield';
 import { isBridgeAvailable } from '../../lib/railgun/bridge';
+import { getActiveAccountId } from '../../lib/accounts';
+import { pendingStore } from '../../lib/railgun/cache';
+import type { PendingAction } from '../../lib/railgun/types';
 import { ShieldRecipient, ShieldPhaseLine } from './send.shield.parts';
+import { ShieldStepper, type ShieldStage } from './send.shield.stepper';
 
 interface Pal { fg: string; head: string; sub: string; border: string; inputBg: string }
-type Phase = 'idle' | 'working' | 'broadcasting' | 'done' | 'error';
 
 const SYMBOLS = ['ETH', 'USDC'] as const;
 const NETS = [{ id: 11155111, label: 'Sepolia' }, { id: 1, label: 'Ethereum' }] as const;
+
+/** Map a pending-action phase to a stepper stage. `proving`/`broadcasting` are
+ *  the two on-chain stages; `scanning` is the merkle-scan tail; `confirmed`/
+ *  `failed` are terminal. */
+function phaseToStage(p?: PendingAction['phase']): ShieldStage {
+  switch (p) {
+    case 'proving': return 'submitting';
+    case 'broadcasting': return 'confirming';
+    case 'scanning': return 'scanning';
+    case 'confirmed': return 'done';
+    case 'failed': return 'error';
+    default: return 'idle';
+  }
+}
 
 export function ShieldForm({ pal, dark, zkAddress, initialSymbol, initialChainId }: {
   pal: Pal; dark: boolean; zkAddress: string | null;
@@ -32,23 +53,48 @@ export function ShieldForm({ pal, dark, zkAddress, initialSymbol, initialChainId
   const [symbol, setSymbol] = useState<'ETH' | 'USDC'>(initialSymbol ?? 'ETH');
   const [chainId, setChainId] = useState<number>(initialChainId ?? 11155111);
   const [amount, setAmount] = useState('');
-  const [phase, setPhase] = useState<Phase>('idle');
-  const [txHash, setTxHash] = useState<string | null>(null);
+  // Wall-clock of the latest submit; we track the shield pending row started at
+  // or after this, so the stepper follows THIS shield (not a stale prior one).
+  const [submittedAt, setSubmittedAt] = useState<number | null>(null);
+  const [action, setAction] = useState<PendingAction | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
+  // Subscribe to the pending store and track this shield's row (newest `shield`
+  // action at/after submit) so the stepper reflects every phase — including the
+  // post-receipt `scanning` tail driven by the balance-landed watcher.
+  useEffect(() => {
+    if (submittedAt == null) return;
+    let unsub: (() => void) | undefined;
+    let cancelled = false;
+    void (async (): Promise<void> => {
+      const id = await getActiveAccountId();
+      if (!id || cancelled) return;
+      const read = (list: PendingAction[] | undefined): void => {
+        const mine = (list ?? [])
+          .filter(a => a.kind === 'shield' && a.startedAt >= submittedAt - 2000)
+          .sort((a, b) => b.startedAt - a.startedAt)[0];
+        setAction(mine ?? null);
+      };
+      read(pendingStore.get(id));
+      unsub = pendingStore.subscribe(id, read);
+    })();
+    return () => { cancelled = true; unsub?.(); };
+  }, [submittedAt]);
+
+  const stage = err ? 'error' : phaseToStage(action?.phase);
+  const txHash = action?.txHash ?? null;
   const n = Number(amount);
-  const busy = phase === 'working' || phase === 'broadcasting';
+  const busy = stage === 'submitting' || stage === 'confirming' || stage === 'scanning';
   const canSubmit = !!zkAddress && isFinite(n) && n > 0 && !busy && isBridgeAvailable();
 
   const onSubmit = (): void => {
     if (!canSubmit) return;
-    setErr(null); setTxHash(null); setPhase('working');
+    setErr(null); setAction(null); setSubmittedAt(Date.now());
     void (async (): Promise<void> => {
       try {
-        const res = await shieldToPrivate({ chainId, symbol, amount: amount.trim() });
-        setTxHash(res.txHash); setPhase('done');
+        await shieldToPrivate({ chainId, symbol, amount: amount.trim() });
       } catch (e) {
-        setErr((e as Error).message ?? 'Shield failed'); setPhase('error');
+        setErr((e as Error).message ?? 'Shield failed');
       }
     })();
   };
@@ -98,11 +144,11 @@ export function ShieldForm({ pal, dark, zkAddress, initialSymbol, initialChainId
 
       <Button variant="primary" size="lg" fullWidth pill dark={dark} loading={busy}
         disabled={!canSubmit} onPress={onSubmit}
-        label={phase === 'working' ? 'Shielding…' : phase === 'broadcasting' ? 'Broadcasting…'
-          : phase === 'done' ? 'Shielded ✓' : 'Shield to private'}
+        label={busy ? 'Shielding…' : stage === 'done' ? 'Shielded ✓' : 'Shield to private'}
         style={{ marginTop: 4 }} />
 
-      <ShieldPhaseLine pal={pal} phase={phase} txHash={txHash} err={err} bridgeOk={isBridgeAvailable()} />
+      <ShieldStepper stage={stage} pal={pal} />
+      <ShieldPhaseLine pal={pal} txHash={txHash} err={err} bridgeOk={isBridgeAvailable()} chainId={chainId} />
     </Box>
   );
 }

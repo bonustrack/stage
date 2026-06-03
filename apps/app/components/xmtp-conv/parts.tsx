@@ -2,7 +2,7 @@
  *  from app/xmtp/[convId].tsx verbatim (phase-2 lint split). Behavior identical. */
 
 import { useEffect, useState } from 'react';
-import { Dimensions, Modal, Pressable, ScrollView } from 'react-native';
+import { Dimensions, Linking, Modal, Pressable, ScrollView } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from '../layout';
 import { Icon } from '@metro-labs/kit/icon';
@@ -11,6 +11,22 @@ import { getPeerAvatar } from '../../lib/peerProfiles';
 import { channelStampSeed } from '@metro-labs/kit/avatar';
 import { REACT_PRESETS } from '../MessengerBubble';
 import type { HistoryEntry } from '../../lib/types';
+
+/** Topnav GitHub button — opens the group's linked GitHub issue/PR (Linear-style)
+ *  externally. Rendered only when a link is set (caller gates on isGroup && url).
+ *  Uses the `code` glyph to match the existing GitHubLinkRow convention (the
+ *  Heroicons set has no octocat). Sits just before the ⋯ overflow button. */
+export function GithubNavButton({ url, color }: { url: string; color: string }): React.ReactElement {
+  return (
+    <Pressable
+      onPress={() => { void Linking.openURL(url); }}
+      hitSlop={8}
+      style={{ paddingHorizontal: 6, justifyContent: 'center' }}
+    >
+      <Icon name="code" size={22} color={color} />
+    </Pressable>
+  );
+}
 
 /** Topnav avatar — 1-1 conversations use the peer's identicon/custom avatar,
  *  groups show their uploaded image, and groups WITHOUT one fall back to a

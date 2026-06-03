@@ -61,7 +61,7 @@ export function Btn({ icon, label, onPress, head, dark }: {
 }
 
 export type WalletTab = 'tokens' | 'nfts' | 'private';
-const TAB_LABEL: Record<WalletTab, string> = { tokens: 'Tokens', nfts: 'NFTs', private: 'Private' };
+const TAB_LABEL: Record<WalletTab, string> = { tokens: 'Tokens', nfts: 'NFTs', private: 'Railgun' };
 
 /** Tokens | NFTs | Private underline tabs — Snapshot-treasury style. */
 export function WalletTabs({ tab, setTab, head, sub, border }: {

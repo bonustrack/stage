@@ -6,8 +6,8 @@
  *  on the left, USD value + amount/symbol on the right. */
 
 import { useEffect, useRef, useState } from 'react';
-import { RefreshControl, ScrollView } from 'react-native';
-import { NativeViewGestureHandler } from 'react-native-gesture-handler';
+import { ScrollView } from 'react-native-gesture-handler';
+import { usePullToRefresh } from './PullToRefresh';
 import { Spinner } from '../Spinner';
 import type { SimultaneousRefs } from '../SwipeTabs';
 import { Text } from '@metro-labs/kit/text';
@@ -17,11 +17,14 @@ import { usePeerProfiles } from '../../lib/peerProfiles';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { Col, Row } from '../layout';
 import { getNftsAcrossChains, type Nft } from '../../lib/opensea';
-import { Btn, WalletTabs, TokenRow, NftsView, fmtUsd, splitUsd, type WalletTab } from './WalletScreen.parts';
+import { Btn, WalletTabs, NftsView, fmtUsd, splitUsd, type WalletTab } from './WalletScreen.parts';
 import { PrivateView } from './WalletScreen.private';
 import { privateBalancesToRows, symbolPricesFromPublic } from './WalletScreen.private.rows';
 import { usePrivateWallet } from '../../lib/railgun/usePrivateWallet';
 import { prewarmRailgun } from '../../lib/railgun/engine';
+import { startEoaShieldWatch } from '../../lib/railgun/eoaShieldWatch';
+import { isBridgeAvailable } from '../../lib/railgun/bridge';
+import { TokensList } from './WalletScreen.tokens';
 import { useWalletBalances } from './WalletScreen.balances';
 
 export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
@@ -29,9 +32,22 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
   const { head, sub, bg, border } = usePalette();
   const dark = useEffectiveColorScheme() === 'dark';
 
-  const { snapshot: privSnapshot, accountId: privAccountId } = usePrivateWallet(true);
+  const { snapshot: privSnapshot, accountId: privAccountId, pending } = usePrivateWallet(true);
   const { address, rows, err, refreshing, onRefresh } = useWalletBalances(privAccountId);
   usePeerProfiles([address]);
+
+  /** Custom JS-only pull-to-refresh (replaces RN's native RefreshControl, which
+   *  stranded its spinner on Android inside this nested-gesture ScrollView). */
+  const pull = usePullToRefresh(refreshing, onRefresh, head);
+
+  /** Watch the EOA's mempool/nonce for an in-flight shield to the Railgun proxy
+   *  so a shield arriving from anywhere (incl. external/cross-session, no local
+   *  history) surfaces as a pending row. Cheap long-poll; only when the bridge is
+   *  present (otherwise the private wallet isn't active on this build). */
+  useEffect(() => {
+    if (!privAccountId || !address || !isBridgeAvailable()) return;
+    return startEoaShieldWatch(privAccountId, address);
+  }, [privAccountId, address]);
 
   /** Shielded (Railgun) balances — reuses the same instant-paint hook the
    *  Private tab uses (cached snapshot + pending overlay, no refetch). They're
@@ -92,35 +108,23 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
     : null;
 
   return (
-    /** RN-CORE ScrollView (NOT RNGH's). The RNGH ScrollView wrapper imperatively
-     *  reapplies native props and on Android DESYNCS a controlled RefreshControl:
-     *  `refreshing` flips back to false in JS but the wrapper drops the update, so
-     *  the native spinner stays stuck forever — the REAL root cause (not onRefresh
-     *  timing, which always cleared state). Core ScrollView forwards the controlled
-     *  prop; we restore the pager-Pan simultaneous relation via an explicit
-     *  NativeViewGestureHandler (core ScrollView has no simultaneousHandlers). */
-    <NativeViewGestureHandler simultaneousHandlers={panRef}>
+    /** RNGH ScrollView, simultaneous with the pager Pan (panRef). Pull-to-refresh
+     *  is a pure-JS onScroll gesture (usePullToRefresh) — RN's native
+     *  RefreshControl stranded its spinner on Android in this nested ScrollView. */
     <ScrollView
+      simultaneousHandlers={panRef}
       style={{ flex: 1, backgroundColor: bg }}
       contentContainerStyle={{ paddingBottom: 24, flexGrow: 1 }}
       /** alwaysBounceVertical + flexGrow:1 keep the list pullable even when
        *  content is shorter than the viewport (else the pull isn't an overscroll
-       *  and RefreshControl never fires). nestedScrollEnabled = Android scroller. */
+       *  and the custom pull never fires). nestedScrollEnabled = Android scroller. */
       alwaysBounceVertical
       nestedScrollEnabled
-      refreshControl={
-        <RefreshControl
-          /** key tied to `refreshing` force-remounts the control on each flip —
-           *  belt-and-suspenders against a dropped controlled-prop update. */
-          key={refreshing ? 'refreshing' : 'idle'}
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          tintColor={head}
-          colors={[head]}
-          progressBackgroundColor={bg}
-        />
-      }
+      onScroll={pull.onScroll}
+      onScrollEndDrag={pull.onScrollEndDrag}
+      scrollEventThrottle={pull.scrollEventThrottle}
     >
+      {pull.indicator}
       {/* Value card — compact, left-aligned. Just the big total USD value;
           the account header (avatar/name/address) and the "TOTAL VALUE ·
           ETHEREUM" label were dropped per review. Decimals render in the dim
@@ -167,34 +171,13 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
           <Spinner size={28} color={head} />
         </Col>
       ) : (
-      /* Asset list — ONE flat list, no network section headers (each row
-         carries its own network badge). Public + shielded (Private-badged) rows
-         are merged then sorted by USD value (priceUsd × balance) DESCENDING, so
-         the highest-value holdings sit at the top. A high-value private token can
-         outrank a low-value public one — the list is ranked purely by $.
-         Rows with no price / zero balance compute usdValue 0 and sink to the
-         bottom; `.sort` is stable (V8/Hermes) so among equal-value rows the
-         original public-then-private order is preserved. */
-      <Col mx={16}>
-        {[...rows, ...privateRows]
-          .map(r => ({ r, usdValue: (r.priceUsd ?? 0) * Number(r.balance) }))
-          .sort((a, b) => b.usdValue - a.usdValue)
-          .map(({ r }) => (
-          <TokenRow
-            key={`${r.isPrivate ? 'priv' : 'pub'}:${r.chainId}:${r.symbol}`}
-            r={r} head={head} sub={sub} border={border} bg={bg}
-            onPress={() => router.push({
-              pathname: '/wallet/token/[id]',
-              params: {
-                id: `${r.isPrivate ? 'priv' : 'pub'}:${r.chainId}:${r.symbol}`,
-                row: JSON.stringify(r),
-              },
-            })}
-          />
-        ))}
-      </Col>
+      /* Asset list — ONE flat list (see WalletScreen.tokens: merged public +
+         shielded rows, $-sorted, pending shields on top). */
+      <TokensList
+        rows={rows} privateRows={privateRows} pending={pending}
+        head={head} sub={sub} border={border} bg={bg}
+      />
       )}
     </ScrollView>
-    </NativeViewGestureHandler>
   );
 }
