@@ -1,15 +1,9 @@
 /** Local XMTP client lifecycle for the mobile app.
  *
- *  First launch:
- *    `Client.createRandom({env})` → native SDK generates a wallet, persists keys in its
- *    internal sqlite at `dbDirectory`. We capture the resulting address and stash it in
- *    expo-secure-store so subsequent launches know which inbox to rebuild.
- *
- *  Subsequent launches:
- *    `Client.build(address, {env, dbDirectory})` → reuses the on-disk wallet.
- *
- *  Key material never crosses the JS bridge — the SDK keeps it native side, backed by the
- *  device keystore on Android and the secure enclave on iOS.
+ *  First launch: `Client.create` registers an installation, persisting keys in
+ *  native sqlite at `dbDirectory`; we stash the address in expo-secure-store.
+ *  Later launches: `Client.build(address, {env, dbDirectory})` reuses the store.
+ *  Key material never crosses the JS bridge (native keystore / secure enclave).
  *
  *  Extracted from lib/xmtp.ts (phase-2 lint split); re-exported from there. */
 
@@ -48,11 +42,25 @@ const ENV_KEY = 'xmtp.env';
 export async function getOrCreateXmtpClient(env: XmtpEnv = 'production'): Promise<Client> {
   const cached = getCachedXmtpClient();
   if (cached) return cached;
-  /** Resolve the active account, minting + activating a generated one on the
-   *  very first launch (or after a full reset). */
-  const account = (await getActiveAccount()) ?? (await addGeneratedAccount());
-  return buildClientForAccount(account, env);
+  /** SINGLE-FLIGHT GUARD. Many screens (Wallet, Profile, Home.sync, group) mount
+   *  together and each call getOrCreate on first paint. Before the cache is warm
+   *  that's N concurrent create/build calls on the SAME dbDirectory — the native
+   *  SQLCipher store can't open twice at once, surfacing as the clean-install
+   *  cluster (`database is locked`, `disk I/O error`, `os error 13`, and a
+   *  half-written db3 whose salt sidecar is inconsistent → `PRAGMA key or salt
+   *  incorrect`). Coalesce all concurrent callers onto ONE in-flight promise. */
+  if (inFlightCreate) return inFlightCreate;
+  inFlightCreate = (async () => {
+    /** Resolve the active account, minting + activating a generated one on the
+     *  very first launch (or after a full reset). */
+    const account = (await getActiveAccount()) ?? (await addGeneratedAccount());
+    return buildClientForAccount(account, env);
+  })();
+  try { return await inFlightCreate; } finally { inFlightCreate = null; }
 }
+/** The one in-flight client bootstrap, shared by all concurrent first-paint
+ *  callers so we never open the same on-disk SQLCipher store twice at once. */
+let inFlightCreate: Promise<Client> | null = null;
 
 /** (Re)build the XMTP client for a specific account. Tries `Client.build`
  *  against that account's own db when we believe an installation exists, races
@@ -79,12 +87,10 @@ async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<
       }
       /** Build timed out — fall through to create() with a fresh registration. */
     } catch (e) {
-      /** A corrupt/key-mismatched store (the PRAGMA-key error on the legacy-migrated
-       *  account) makes `Client.build` throw; falling straight through to create()
-       *  would re-open the same dirty store and fail identically. Wipe this account's
-       *  store + db key (incl. the legacy global key when it was the one used) FIRST,
-       *  then rebuild opts against the clean dir + fresh key so create starts clean.
-       *  Non-corruption build failures fall through to create() unchanged. */
+      /** Corrupt/key-mismatched store makes `Client.build` throw; falling through
+       *  to create() would re-open the same dirty store and fail identically. Wipe
+       *  this account's store + key FIRST, then rebuild opts against the clean dir +
+       *  fresh key. Non-corruption failures fall through to create() unchanged. */
       if (isStoreCorruption(e)) {
         await wipeXmtpStore(rec.id, rec.dbDir);
         const dir = await ensureDbDir(rec.dbDir);
@@ -97,8 +103,7 @@ async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<
 }
 
 /** Switch the active account: drop the cached client and rebuild against the
- *  target account's db. Callers typically reload the app afterwards so every
- *  screen re-inits against the new inbox. */
+ *  target account's db. */
 export async function switchToAccount(id: string, env: XmtpEnv = 'production'): Promise<Client> {
   const list = await loadAccounts();
   const rec = list.find(a => a.id === id);
@@ -111,16 +116,13 @@ export async function switchToAccount(id: string, env: XmtpEnv = 'production'): 
   try {
     const client = await buildClientForAccount(rec, env);
     /** Bump the account epoch so every screen holding per-account XMTP state
-     *  (channels list, open conversation) re-inits against the new inbox without a
-     *  hard app reload. Callers used to DevSettings.reload() here. */
+     *  re-inits against the new inbox without a hard app reload. */
     bumpAccountEpoch();
     return client;
   } catch (e) {
-    /** XMTP build/create failed (after the one-shot wipe+retry in
-     *  createClientForAccount) — but the wallet is already switched. Bump the
-     *  epoch anyway so HomeScreen re-inits and its own init-catch surfaces the
-     *  recoverable HomeError ("Reset XMTP identity") instead of leaving the user
-     *  on a dead spinner. Re-throw so the caller can also surface a toast. */
+    /** XMTP build/create failed but the wallet is already switched. Bump the epoch
+     *  so HomeScreen re-inits and its init-catch surfaces the recoverable HomeError
+     *  instead of a dead spinner. Re-throw so the caller can also toast. */
     bumpAccountEpoch();
     throw e;
   }
@@ -139,8 +141,7 @@ export async function deleteAccount(id: string): Promise<void> {
 }
 
 /** Full wipe: drop the cached client, every account's on-disk XMTP store (plus
- *  the legacy `xmtp/` dir), the shared db key, and the whole account registry.
- *  Next call to `getOrCreateXmtpClient` mints a fresh wallet + inbox. */
+ *  the legacy `xmtp/` dir), the shared db key, and the account registry. */
 export async function resetXmtpClient(): Promise<void> {
   resetClientScopedState();
   await SecureStore.deleteItemAsync(ENV_KEY).catch(() => undefined);

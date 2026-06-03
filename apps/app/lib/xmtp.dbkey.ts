@@ -117,29 +117,14 @@ export async function wipeXmtpStore(accountId: string, dbDirName: string): Promi
 }
 
 /** Remove the on-disk sqlite store for one account, leaving an EMPTY, consistent
- *  dir so the next Client.create starts from nothing (libxmtp's "create new db +
- *  salt" path) and the fresh key, db3 header, and salt are all mutually
- *  consistent.
- *
- *  libxmtp/SQLCipher writes FOUR files per inbox into this dir:
- *    - `<name>.db3`                  the encrypted sqlite store
- *    - `<name>.db3-wal`, `-shm`      the WAL sidecars
- *    - `<name>.db3.sqlcipher_salt`   the 16-byte hex SALT sidecar, written
- *                                    READ-ONLY (chmod 0444). The db3 header is
- *                                    plaintext + the cipher salt lives ONLY in
- *                                    this sidecar, so a db3 WITHOUT its salt (or
- *                                    a salt WITHOUT its db3) makes every open
- *                                    fail with `PRAGMA key or salt has incorrect
- *                                    value`. A partial wipe is therefore fatal.
- *
- *  The old per-file loop was the bug: each `entry.delete()` swallowed its error
- *  and the trailing `dir.delete()` was best-effort too, so a half-deleted dir
- *  (db3 gone / salt left, or vice-versa) survived a "wipe" and poisoned the next
- *  create. We now wipe the WHOLE dir tree in ONE recursive native call (which
- *  also handles the read-only salt + any busy WAL handle far better than the JS
- *  loop), then recreate it empty. Only if the recursive delete throws do we fall
- *  back to the per-file sweep, and we ALWAYS recreate so the dir is left
- *  guaranteed-empty for the fresh create. */
+ *  dir so the next Client.create starts fresh (key, db3 header, salt all mutually
+ *  consistent). libxmtp/SQLCipher writes `<name>.db3` + `-wal`/`-shm` + the
+ *  read-only `<name>.db3.sqlcipher_salt` sidecar; a db3 without its salt (or vice
+ *  versa) makes every open fail with `PRAGMA key or salt has incorrect value`, so
+ *  a partial wipe is fatal. We wipe the WHOLE dir tree in ONE recursive native
+ *  call (handles the read-only salt + busy WAL handle far better than a JS loop),
+ *  falling back to a per-file sweep only if that throws, then ALWAYS recreate it
+ *  empty so the dir is guaranteed-clean for the fresh create. */
 export function deleteDbFiles(dbDirName: string): void {
   const dir = dbDirObj(dbDirName);
   if (!dir.exists) {
@@ -174,9 +159,42 @@ export function dbDirObj(name: string): Directory { return new Directory(Paths.d
 
 export async function ensureDbDir(name: string): Promise<string> {
   const dir = dbDirObj(name);
+  /** Create the dir (recursively) BEFORE create() so the native SQLCipher open
+   *  has a real, writable, app-private target. A missing dir is the classic cause
+   *  of `Permission denied (os error 13)` / `disk I/O error` on a clean install. */
   if (!dir.exists) dir.create({ intermediates: true });
-  /** XMTP wants a filesystem path (`/data/user/0/...`), not a URI (`file:///data/user/0/...`).
-   *  expo-file-system's `.uri` includes the scheme; strip it. Also drop any trailing slash —
-   *  the SDK appends its own file names. */
-  return dir.uri.replace(/^file:\/+/, '/').replace(/\/$/, '');
+  const path = toFsPath(dir);
+  if (__DEV__) assertWritableDir(dir, path);
+  return path;
+}
+
+/** Convert an expo-file-system directory URI into the absolute filesystem path
+ *  libxmtp expects (`/data/user/0/...`), NOT a `file://` URI and NOT a relative
+ *  path. `Paths.document.uri` is always an absolute `file://` URI on iOS/Android,
+ *  so we: (1) strip the `file:` scheme + ALL leading slashes and re-anchor to a
+ *  single leading `/` (handles both `file:///abs` and the rare `file:/abs`),
+ *  (2) collapse any accidental double slashes in the body, (3) drop the trailing
+ *  slash since the SDK appends `<inboxId>.db3` itself. A malformed/relative path
+ *  here is exactly what makes the native open fail with os error 13. */
+function toFsPath(dir: Directory): string {
+  const decoded = (() => { try { return decodeURI(dir.uri); } catch { return dir.uri; } })();
+  return '/' + decoded
+    .replace(/^file:\/+/i, '')   // drop scheme + every leading slash
+    .replace(/\/{2,}/g, '/')     // collapse any `//` in the body
+    .replace(/\/+$/, '');        // drop trailing slash(es)
+}
+
+/** DEV-ONLY sanity: confirm the dbDirectory exists and is writable BEFORE handing
+ *  it to Client.create, logging the PATH (never the key) so the os-error-13
+ *  cluster is diagnosable from logcat. Never throws — purely diagnostic. */
+function assertWritableDir(dir: Directory, path: string): void {
+  try {
+    const probe = new File(dir, '.xmtp_write_probe');
+    probe.write('1');
+    const ok = probe.exists;
+    try { probe.delete(); } catch { /* probe cleanup best-effort */ }
+    console.log(`[xmtp] dbDirectory ready path=${path} exists=${dir.exists} writable=${ok}`);
+  } catch (e) {
+    console.warn(`[xmtp] dbDirectory NOT writable path=${path} exists=${dir.exists} err=${String(e)}`);
+  }
 }
