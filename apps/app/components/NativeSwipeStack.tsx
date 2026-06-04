@@ -1,24 +1,24 @@
 /** Expo-Router layout bound to react-native-screens' OWN native-stack navigator
- *  (NOT @react-navigation/native-stack, which expo-router's default `<Stack>`
- *  uses). Only the rn-screens native-stack exposes the interactive,
- *  finger-following `goBackGesture` + `screenEdgeGesture` props that give the
- *  real iOS/Telegram edge swipe-back — previous page sliding underneath on the
- *  native thread (parallax), which a JS gesture can't reproduce.
+ *  (`react-native-screens/native-stack`, which resolves in rn-screens ~4.16).
+ *  It renders native screen containers + the slide_from_right transition that
+ *  composites the previous screen underneath during a pop (the visual "reveal").
  *
- *  This subpath (`react-native-screens/native-stack`) exists in rn-screens
- *  ~4.16 (it was REMOVED in 4.25 — the 4.16→4.25 bump is what broke the native
- *  reveal). We are pinned back to 4.16, so it resolves again.
+ *  SWIPE-BACK is NOT driven by rn-screens' `goBackGesture`/`screenEdgeGesture`
+ *  worklet. On Android (rn-screens 4.16 + reanimated 4.3.1) that worklet passes
+ *  a mock animated ref to reanimated 4's `measure()`, which resolves the screen
+ *  viewTag to `undefined` and crashes the first swipe with "Value is undefined,
+ *  expected an Object" (redbox in ScreenGestureDetector.tsx measure()) — the
+ *  reanimated 3→4 measure() API change broke that mock-ref path. Instead the app
+ *  uses JS RNGH Pan shims: <EdgeSwipeBack> wraps this navigator (left-edge →
+ *  router.back()) and the conversation screen mounts its own <BackSwipe>. The
+ *  stock pop still plays the native slide, so the previous screen is revealed.
  *
  *  `withLayoutContext` is the expo-router primitive that adapts any react-
  *  navigation navigator into a file-based-routing layout, so `<NativeSwipeStack>`
- *  + `<NativeSwipeStack.Screen>` work exactly like `<Stack>` / `<Stack.Screen>`
- *  while routing through rn-screens.
+ *  + `<NativeSwipeStack.Screen>` work exactly like `<Stack>` / `<Stack.Screen>`.
  *
  *  Must be rendered inside `GestureDetectorProvider`
- *  (react-native-screens/gesture-handler) — that provider wires the native edge
- *  gesture into the RNGH gesture tree so it arbitrates with the app's other RNGH
- *  gestures (swipe-to-reply, scroll) instead of fighting a separate touch
- *  system. */
+ *  (react-native-screens/gesture-handler). */
 
 import { withLayoutContext } from 'expo-router';
 import { createNativeStackNavigator } from 'react-native-screens/native-stack';
