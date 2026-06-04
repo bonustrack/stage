@@ -8,7 +8,7 @@ import { Text } from '@metro-labs/kit/text';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';
 import { Box, Row, Col } from './layout';
-import { usePalette, useBlockRadius } from '../lib/theme';
+import { usePalette, useBlockRadius, useRadius } from '../lib/theme';
 import { ComposerGradient } from './ComposerGradient';
 import { RecordingBar } from './MessengerComposer.parts';
 
@@ -158,6 +158,7 @@ export function AttachMenu({
   actions: [HeroIconName, string, () => void | Promise<void>][];
   onClose: () => void;
 }): React.ReactElement {
+  const btnRadius = useRadius();
   return (
     <ScrollView
       horizontal
@@ -170,7 +171,7 @@ export function AttachMenu({
           <Pressable
             onPress={() => { onClose(); void action(); }}
             style={({ pressed }) => ({
-              width: 56, height: 56, borderRadius: 28,
+              width: 56, height: 56, borderRadius: Math.min(btnRadius, 28),
               alignItems: 'center', justifyContent: 'center',
               backgroundColor: pressed ? chipBg : inputBg,
               borderWidth: 1, borderColor: chipBg,
