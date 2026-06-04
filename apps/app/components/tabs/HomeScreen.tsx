@@ -16,6 +16,7 @@ import { getActiveAccount } from '../../lib/accounts';
 import { useDraftsVersion } from '../../lib/drafts';
 import { Col } from '../layout';
 import { loadPinnedIds, subscribePins } from '../../lib/pins';
+import { loadArchivedIds, subscribeArchived } from '../../lib/archived';
 import { CHANNELS_SCROLL_KEY, getScrollOffset, flushScrollOffset } from '../../lib/scrollPos';
 import { ChannelMenu } from '../ChannelMenu';
 import type { Row as RowT } from './HomeScreen.helpers';
@@ -72,6 +73,10 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
   /** Device-only pinned conv ids. Loaded once on mount; `subscribePins` bumps
    *  this on every toggle so the display sort below re-derives + re-renders. */
   const [pinned, setPinned] = useState<Set<string>>(new Set());
+  /** Device-only archived conv ids. Loaded once; `subscribeArchived` bumps this
+   *  on every toggle so the list filter below re-derives + re-renders. Archived
+   *  convs are hidden from the main list and shown in the Archived view. */
+  const [archived, setArchived] = useState<Set<string>>(new Set());
   /** Active account's own address → topnav avatar. */
   const [myAddress, setMyAddress] = useState<string | null>(null);
   /** Count of pending message requests ('unknown' consent convs). Drives the
@@ -98,13 +103,20 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
      *  once loaded) into a fresh Set so React sees a new reference. */
     return subscribePins(() => { void loadPinnedIds().then(s => setPinned(new Set(s))); });
   }, []);
+  useEffect(() => {
+    void loadArchivedIds().then(setArchived);
+    return subscribeArchived(() => { void loadArchivedIds().then(s => setArchived(new Set(s))); });
+  }, []);
 
   /** Display ordering: pinned rows float to the top (keeping their own lastTs
    *  desc order), then the rest by lastTs desc. Derived for display only — the
    *  source `rows` state stays untouched so the stream-update logic (which
    *  prepends/reorders by recency) keeps working against the raw list. */
   const sortedRows = useMemo(() => {
-    const all = rows ?? [];
+    /** Archived convs are removed from the main list entirely (shown only in the
+     *  Archived view). Filtered first so the label filter + sort operate on the
+     *  visible set. */
+    const all = (rows ?? []).filter(r => !archived.has(r.convId));
     /** Label filter: null → no filter; UNLABELED → only channels with no
      *  labels[]; otherwise keep groups whose labels[] include the active label,
      *  case-insensitively. Reactive to `rows` so cache updates re-derive. */
@@ -119,7 +131,15 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
       if (ap !== bp) return bp - ap;
       return (b.lastTs ?? 0) - (a.lastTs ?? 0);
     });
-  }, [rows, pinned, labelFilter]);
+  }, [rows, pinned, labelFilter, archived]);
+
+  /** Count of archived convs that still exist in the loaded rows → drives the
+   *  "Archived (N)" entry row. Counts only known rows so a stale archived id
+   *  (conv since gone) doesn't inflate the badge. */
+  const archivedCount = useMemo(
+    () => (rows ?? []).filter(r => archived.has(r.convId)).length,
+    [rows, archived],
+  );
 
   /** Batch-resolve the displayed peers' profiles → avatar cache-busters. */
   const channelProfilesVersion = usePeerProfiles(
@@ -165,6 +185,7 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
         myAddress={myAddress}
         sortedRows={sortedRows}
         requestCount={requestCount}
+        archivedCount={archivedCount}
         labelFilter={labelFilter}
         onOpenFilter={() => setFilterSheetOpen(true)}
         head={head}
@@ -186,6 +207,7 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
         peerAddress={rowMenu?.peerAddress ?? null}
         isUnread={rowMenu?.isUnread ?? false}
         isPinned={rowMenu ? pinned.has(rowMenu.convId) : false}
+        isArchived={rowMenu ? archived.has(rowMenu.convId) : false}
         onClose={() => setRowMenu(null)}
       />
       <LabelFilterSheet
