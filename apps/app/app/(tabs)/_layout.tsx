@@ -8,7 +8,7 @@ import { Tabs, usePathname } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSharedValue } from 'react-native-reanimated';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
-import { useEffectiveColorScheme } from '../../lib/theme';
+import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { TabsPager } from '../../components/SwipeTabs';
 import { LeftDrawer } from '../../components/LeftDrawer';
 
@@ -23,10 +23,11 @@ export default function TabsLayout(): React.ReactElement {
   const pagerVisible = !pathname.startsWith('/settings');
   const dark = useEffectiveColorScheme() === 'dark';
   const insets = useSafeAreaInsets();
-  const bg = dark ? '#0e0f10' : '#ffffff';
-  const border = dark ? '#282a2d' : '#e4e4e5';
-  const active = dark ? '#ffffff' : '#000000';
-  const inactive = dark ? '#7a7a7e' : '#8a929d';
+  const pal = usePalette();
+  const bg = pal.bg; // #0e0f10 / #ffffff
+  const border = pal.border; // #282a2d / #e4e4e5
+  const active = pal.primary; // #ffffff / #000000
+  const inactive = dark ? '#7a7a7e' : '#8a929d'; // one-off sub-grey, no token
 
   const tabBarStyle = {
     backgroundColor: bg,

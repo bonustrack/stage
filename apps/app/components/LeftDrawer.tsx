@@ -26,7 +26,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
-import { useEffectiveColorScheme } from '../lib/theme';
+import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { usePeerProfiles } from '../lib/peerProfiles';
 import { switchToAccount } from '../lib/xmtp';
 import { loadAccounts, getActiveAccountId, type AccountRecord } from '../lib/accounts';
@@ -46,10 +46,11 @@ export function LeftDrawer({ progress }: { progress: SharedValue<number> }): Rea
   const { width } = useWindowDimensions();
   const W = Math.min(width * 0.82, 360);
 
-  const head = dark ? '#ffffff' : '#000000';
-  const sub = dark ? '#7a7a7e' : '#8a929d';
-  const border = dark ? '#282a2d' : '#e4e4e5';
-  const sheetBg = dark ? '#1a1b1d' : '#ffffff';
+  const pal = usePalette();
+  const head = pal.primary; // #ffffff / #000000
+  const sub = dark ? '#7a7a7e' : '#8a929d'; // one-off sub-grey, no token
+  const border = pal.border; // #282a2d / #e4e4e5
+  const sheetBg = dark ? '#1a1b1d' : '#ffffff'; // elevated sheet surface, no token
 
   const [accounts, setAccounts] = useState<AccountRecord[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
