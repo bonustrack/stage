@@ -3,12 +3,33 @@
 import type { Message, MessageReaction, User } from 'discord.js';
 import { accounts, lineOf } from './accounts.js';
 import { emit, mintId, SELF_URI } from './wire.js';
+import { saveDiscordAttachment } from './attachments.js';
 
 /** Stamp account into payload and (if configured) owner-route inbound `to`. */
 export function emitInbound(accountId: string, e: Record<string, unknown>): void {
   const owner = accounts.get(accountId)?.cfg.owner;
   const payload = { ...(e.payload as Record<string, unknown> | undefined), account: accountId };
   emit({ ...e, ...(owner ? { to: owner } : {}), account: accountId, payload });
+}
+
+/** Emit a follow-up `attachmentSaved` event once an inbound attachment is
+ *  downloaded + persisted, carrying the absolute path (payload.attachmentPath /
+ *  localPath). Mirrors the XMTP convention. Fires async; logs on failure. */
+function emitAttachmentSaved(
+  accountId: string, line: string, sourceMsgId: string, index: number,
+  ref: { url: string; name?: string | null; contentType?: string | null }, messageId: string,
+): void {
+  void saveDiscordAttachment(ref, messageId, index).then(saved => {
+    emitInbound(accountId, {
+      kind: 'inbound', id: mintId(), ts: new Date().toISOString(), station: 'discord', line,
+      from: SELF_URI, text: `📎 saved: ${saved.path}`,
+      payload: {
+        contentType: 'attachmentSaved', attachmentFor: sourceMsgId, index,
+        attachmentPath: saved.path, localPath: saved.path, mime: saved.mime, name: saved.name,
+        url: ref.url,
+      },
+    });
+  }).catch(err => process.stderr.write(`discord attachment save failed: ${(err as Error).message}\n`));
 }
 
 function tagFor(att: { contentType?: string | null; name?: string | null; url?: string }): string {
@@ -23,13 +44,24 @@ export function messageEnvelope(accountId: string, m: Message): Record<string, u
   const tags = m.attachments.map(a => tagFor({ contentType: a.contentType, name: a.name, url: a.url }));
   const stickerTags = m.stickers.map(s => `[sticker: ${s.name}]`);
   const text = [m.content.trim(), ...tags, ...stickerTags].filter(Boolean).join(' ');
+  const line = lineOf(accountId, m.channelId);
+  const envId = mintId();
+  // Carry the CDN URLs explicitly so they survive payload projection, and
+  // download each attachment to disk (follow-up `attachmentSaved` event with
+  // the absolute path) so the agent can read images on Discord too.
+  const attachments = [...m.attachments.values()].map(a => ({
+    id: a.id, url: a.url, proxyURL: a.proxyURL, name: a.name, contentType: a.contentType, size: a.size,
+  }));
+  attachments.forEach((a, i) =>
+    emitAttachmentSaved(accountId, line, envId, i, { url: a.url, name: a.name, contentType: a.contentType }, m.id));
   return {
-    kind: 'inbound', id: mintId(), ts: new Date(m.createdTimestamp).toISOString(),
-    station: 'discord', line: lineOf(accountId, m.channelId),
+    kind: 'inbound', id: envId, ts: new Date(m.createdTimestamp).toISOString(),
+    station: 'discord', line,
     line_name: 'name' in m.channel ? m.channel.name : undefined,
     from: `metro://discord/${accountId}/user/${m.author.id}`, from_name: m.author.username,
     message_id: m.id, text, is_private: m.guildId == null,
-    reply_to: m.reference?.messageId ?? undefined, payload: m.toJSON(),
+    reply_to: m.reference?.messageId ?? undefined,
+    payload: { ...m.toJSON(), attachments },
   };
 }
 
