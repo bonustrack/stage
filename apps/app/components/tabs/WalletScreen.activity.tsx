@@ -4,8 +4,10 @@
  *  Snapshot name when known, else shortened address), the relative time, and the
  *  signed ETH value. Mirrors the data-hook + row patterns of the Tokens tab.
  *
- *  Scope (v1): mainnet only — the wallet also tracks Sepolia, but day-to-day
- *  activity lives on mainnet; multi-chain merge is a later step. */
+ *  Scope: Ethereum mainnet + Sepolia, fetched in parallel and merged
+ *  newest-first. Each row carries a small chain badge ("Ethereum"/"Sepolia").
+ *  A chain that errors or has no history is skipped; empty only when BOTH
+ *  chains return nothing. */
 
 import { useEffect, useState } from 'react';
 import { Text } from '@metro-labs/kit/text';
@@ -15,7 +17,7 @@ import { Col, Row, Box } from '../layout';
 import { DANGER } from '../../lib/theme';
 import { shortAddress } from '../../lib/xmtp.types';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
-import { fetchActivity, type ActivityRow } from '../../lib/etherscan';
+import { fetchActivityAllChains, type ActivityRow } from '../../lib/etherscan';
 
 type Status = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -32,7 +34,7 @@ export function ActivityView({ address, head, sub, border, bg }: {
     setStatus('loading');
     void (async (): Promise<void> => {
       try {
-        const list = await fetchActivity(address, 1, 50);
+        const list = await fetchActivityAllChains(address, 50);
         if (cancelled) return;
         setRows(list);
         setStatus('ready');
@@ -111,9 +113,19 @@ function TxRow({ r, head, sub, border, bg }: {
         <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
           {title}
         </Text>
-        <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium', marginTop: 2 }} numberOfLines={1}>
-          {`${partyLabel} · ${relTime(r.timestamp)}`}
-        </Text>
+        <Row align="center" gap={6} style={{ marginTop: 2 }}>
+          <Box style={{
+            paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4,
+            backgroundColor: border,
+          }}>
+            <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
+              {r.chainLabel}
+            </Text>
+          </Box>
+          <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium', flex: 1 }} numberOfLines={1}>
+            {`${partyLabel} · ${relTime(r.timestamp)}`}
+          </Text>
+        </Row>
       </Col>
       <Col align="end">
         <Text style={{ color: valueColor, fontSize: 18, fontFamily: 'Calibre-Semibold' }}>

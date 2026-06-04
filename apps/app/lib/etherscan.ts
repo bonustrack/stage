@@ -27,6 +27,12 @@ export interface EtherscanTx {
   gasPrice: string;
 }
 
+/** Chains the Activity tab fetches, newest-first across all of them. */
+export const ACTIVITY_CHAINS = [
+  { id: 1, label: 'Ethereum' },
+  { id: 11155111, label: 'Sepolia' },
+] as const;
+
 /** Normalised row the Activity tab renders. */
 export interface ActivityRow {
   hash: string;
@@ -39,6 +45,8 @@ export interface ActivityRow {
   valueEth: string;           // decimal ETH string
   failed: boolean;
   functionName: string;       // decoded method name, or '' for plain transfer
+  chainId: number;            // source chain (1 mainnet, 11155111 Sepolia)
+  chainLabel: string;         // human label for the per-row badge
 }
 
 /** Fetch up to `limit` normal transactions for `address` on `chainId`,
@@ -49,6 +57,7 @@ export async function fetchActivity(
   address: string, chainId = 1, limit = 50,
 ): Promise<ActivityRow[]> {
   const addr = address.toLowerCase();
+  const label = ACTIVITY_CHAINS.find(c => c.id === chainId)?.label ?? `chain ${chainId}`;
   const url = `${V2_URL}?chainid=${chainId}&module=account&action=txlist`
     + `&address=${addr}&startblock=0&endblock=99999999&page=1&offset=${limit}`
     + `&sort=desc&apikey=${ETHERSCAN_API_KEY}`;
@@ -79,8 +88,30 @@ export async function fetchActivity(
       valueEth: weiToEth(tx.value),
       failed: tx.isError === '1',
       functionName: shortFn(tx.functionName ?? ''),
+      chainId,
+      chainLabel: label,
     };
   });
+}
+
+/** Fetch activity across ALL ACTIVITY_CHAINS in parallel, merged newest-first.
+ *  Each chain's errors are isolated — a failed/empty chain is skipped so the
+ *  other still renders. Rejects only if EVERY chain throws (so the caller can
+ *  show an error state); an all-empty result resolves to []. */
+export async function fetchActivityAllChains(
+  address: string, limit = 50,
+): Promise<ActivityRow[]> {
+  const settled = await Promise.allSettled(
+    ACTIVITY_CHAINS.map(c => fetchActivity(address, c.id, limit)),
+  );
+  const ok = settled.filter(
+    (r): r is PromiseFulfilledResult<ActivityRow[]> => r.status === 'fulfilled',
+  );
+  if (ok.length === 0) throw new Error('all chains failed');
+  return ok
+    .flatMap(r => r.value)
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .slice(0, limit);
 }
 
 /** wei (decimal string) → trimmed ETH decimal string. Avoids viem to keep this
