@@ -28,7 +28,7 @@ export default function GroupDetail(): React.ReactElement {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, primary: head, bg, border } = usePalette();
+  const { text: fg, link: head, bg, border } = usePalette();
   const sub = fg, rowBg = border;
   const pal = { fg, head, sub, border, rowBg };
 

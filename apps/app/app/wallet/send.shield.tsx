@@ -142,7 +142,7 @@ export function ShieldForm({ pal, dark, bg, zkAddress, initialSymbol, initialCha
         </Box>
       </Box>
 
-      <Button variant="primary" size="lg" fullWidth pill dark={dark} tintBg={head} tintFg={bg} loading={busy}
+      <Button variant="primary" size="lg" fullWidth pill dark={dark} loading={busy}
         disabled={!canSubmit} onPress={onSubmit}
         label={busy ? 'Shielding…' : stage === 'done' ? 'Shielded ✓' : 'Shield to private'}
         style={{ marginTop: 4 }} />

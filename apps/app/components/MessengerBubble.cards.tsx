@@ -19,7 +19,7 @@ export function SigRequestCard({ req, dark, sub, signing, onSign }: {
   const detailBg = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
   const detailBorder = dark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)';
   const pal = usePalette();
-  const head = pal.primary; // #ffffff / #000000
+  const head = pal.link; // #ffffff / #000000
 
   const domain = req.eip712?.domain as { name?: unknown; chainId?: unknown } | undefined;
   const domainName = domain?.name != null ? String(domain.name) : undefined;

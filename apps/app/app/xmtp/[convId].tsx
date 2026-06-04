@@ -28,7 +28,7 @@ import { BackSwipe } from '../../components/xmtp-conv/BackSwipe';
 export default function XmtpConversation(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, primary: head, bg, border } = usePalette();
+  const { text: fg, link: head, bg, border } = usePalette();
   const sub = fg, rowBg = border;
   const { convId, focus } = useLocalSearchParams<{ convId: string; focus?: string }>();
   const c = useConversationState(convId, focus);

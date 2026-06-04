@@ -47,7 +47,7 @@ export function LeftDrawer({ progress }: { progress: SharedValue<number> }): Rea
   const W = Math.min(width * 0.82, 360);
 
   const pal = usePalette();
-  const head = pal.primary; // #ffffff / #000000
+  const head = pal.link; // #ffffff / #000000
   // `sub` = muted secondary text; no `muted` token yet → map to `text`. TODO: muted token.
   const sub = pal.text;
   const border = pal.border; // #282a2d / #e4e4e5

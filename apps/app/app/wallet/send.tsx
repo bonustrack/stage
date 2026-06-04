@@ -28,7 +28,7 @@ export default function WalletSend(): React.ReactElement {
   /** `to` may be pre-populated by callers (e.g. the profile Send button passes
    *  `?to=<address>`) — seed the input so the user doesn't retype. */
   const params = useLocalSearchParams<{ to?: string; mode?: string; symbol?: string; chainId?: string }>();
-  const { text: fg, primary: head, bg, border } = usePalette();
+  const { text: fg, link: head, bg, border } = usePalette();
   const sub = fg;
   const inputBg = border;
   const dark = useEffectiveColorScheme() === 'dark';
@@ -80,7 +80,7 @@ export default function WalletSend(): React.ReactElement {
               onMax={p.onMax}
             />
 
-            <SubmitButton dark={dark} tintBg={head} tintFg={bg} busy={p.busy} canSubmit={p.canSubmit} txState={p.txState} onSubmit={p.onSubmit} />
+            <SubmitButton dark={dark} busy={p.busy} canSubmit={p.canSubmit} txState={p.txState} onSubmit={p.onSubmit} />
 
             <TxStatus sub={sub} txState={p.txState} txHash={p.txHash} txErr={p.txErr} />
           </>

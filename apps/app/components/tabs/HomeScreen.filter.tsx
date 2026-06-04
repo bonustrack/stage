@@ -62,7 +62,7 @@ export function LabelFilterControl({ active, onPress }: {
   active: LabelFilterValue;
   onPress: () => void;
 }): React.ReactElement {
-  const { primary: head, text: sub, border: rowBg } = usePalette();
+  const { link: head, text: sub, border: rowBg } = usePalette();
   const isOn = active != null;
   return (
     <Pressable onPress={onPress} hitSlop={8}>
@@ -96,7 +96,7 @@ export function LabelFilterSheet({ visible, active, onClose, onSelect }: {
   onClose: () => void;
   onSelect: (label: LabelFilterValue) => void;
 }): React.ReactElement {
-  const { primary: head, text: sub, border } = usePalette();
+  const { link: head, text: sub, border } = usePalette();
   const rowBg = border;  /** Snapshot the known labels when the sheet opens (the cache is stable while
    *  open; recomputed each open so newly-added labels appear). */
   const labels = useMemo(() => (visible ? getAllKnownLabels() : []), [visible]);

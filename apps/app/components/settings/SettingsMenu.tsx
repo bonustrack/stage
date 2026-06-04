@@ -21,7 +21,7 @@ const ROWS: { href: Href; label: string; sub: string; icon: HeroIconName }[] = [
 export function SettingsMenu(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, primary: head, bg, border } = usePalette();
+  const { text: fg, link: head, bg, border } = usePalette();
   const sub = fg;
   const insets = useSafeAreaInsets();
   const divider = border; // #282a2d / #e4e4e5

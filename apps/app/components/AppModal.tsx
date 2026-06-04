@@ -25,7 +25,7 @@ export function AppModal({
   const dark = useEffectiveColorScheme() === 'dark';
   const pal = usePalette();
   const sheetBg = pal.bg; // sheet surface → bg token (editable)
-  const head = pal.primary; // #ffffff / #000000
+  const head = pal.link; // #ffffff / #000000
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>

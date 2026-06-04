@@ -80,7 +80,8 @@ export function useEffectiveColorScheme(): 'light' | 'dark' {
 /** The 5-key scheme-aware palette shared by every screen's inline StyleSheet.
  *  Maps 1:1 to the canonical kit semantic tokens (single source of truth:
  *  @metro-labs/kit/tokens) — no app-local color forks. `text` = body text,
- *  `primary` = titles/strong (white/black), `link` = brand teal. */
+ *  `link` = emphasis (titles/names/active icons/accents — brand teal),
+ *  `primary` = primary-button background fill ONLY (white/black). */
 export interface Palette {
   bg: string; border: string; text: string; link: string; primary: string;
   danger: string; success: string;
