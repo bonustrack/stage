@@ -81,6 +81,14 @@ export function semanticPalette(scheme: 'light' | 'dark'): {
   };
 }
 
+/** Numeric design tokens (non-color). `radius` is the corner radius (px) applied
+ *  to every non-circular button across the app. Default 999 = fully-rounded
+ *  (the original pill look); editable + persisted via the app's radiusOverride
+ *  store and applied through the kit Button's `setDefaultButtonRadius`. */
+export const RADIUS_DEFAULT = 999;
+export const RADIUS_MIN = 0;
+export const RADIUS_MAX = 999;
+
 /** Font families used across both shells (Calibre is bundled in both apps). */
 export const fontFamily = {
   sans: ['Calibre-Medium', 'system-ui', 'sans-serif'],
