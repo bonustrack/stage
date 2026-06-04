@@ -6,13 +6,14 @@
  *  whole boot→reply sequence fits in one on-device screenshot. */
 import { Text } from '@metro-labs/kit/text';
 import { Col } from '../layout';
+import { DANGER, SUCCESS } from '../../lib/theme';
 
 /** One timestamped status line: ms elapsed since the run started + the text. */
 export interface LogLine { ms: number; line: string }
 
 function tone(line: string, sub: string): string {
-  if (line.includes('✗')) return '#ff5c5c';
-  if (line.includes('✓') || line.startsWith('reply ← pong')) return '#3fb950';
+  if (line.includes('✗')) return DANGER;
+  if (line.includes('✓') || line.startsWith('reply ← pong')) return SUCCESS;
   return sub;
 }
 

@@ -11,9 +11,15 @@ import {
   THEME_STORAGE_KEY as STORAGE_KEY, isThemePreference,
   type ThemePreference,
 } from '@metro-labs/kit/theme';
-import { semanticPalette } from '@metro-labs/kit/tokens';
+import { semanticColors, semanticPalette } from '@metro-labs/kit/tokens';
 
 export type { ThemePreference };
+
+/** Scheme-independent semantic constants (same hex in dark + light) for the
+ *  many sub-components that take a `dark` prop instead of the full palette.
+ *  Sourced from the kit tokens — no app-local fork. */
+export const DANGER = semanticColors.dangerColor.dark;
+export const SUCCESS = semanticColors.successColor.dark;
 
 /** Cached preference — populated on first hook mount from SecureStore. Subsequent reads
  *  return synchronously so screens never flash the wrong theme. */
@@ -73,6 +79,7 @@ export function useEffectiveColorScheme(): 'light' | 'dark' {
  *  `primary` = titles/strong (white/black), `link` = brand teal. */
 export interface Palette {
   bg: string; border: string; text: string; link: string; primary: string;
+  danger: string; success: string;
 }
 
 /** Resolve the shared palette for the effective color scheme, sourced entirely
@@ -85,5 +92,7 @@ export function usePalette(): Palette {
     text: s.textColor,
     link: s.linkColor,
     primary: s.primaryColor,
+    danger: s.dangerColor,
+    success: s.successColor,
   };
 }

@@ -23,7 +23,7 @@ import { Icon } from '@metro-labs/kit/icon';
 import { useRouter } from 'expo-router';
 import { Col } from './layout';
 import { AppModal } from './AppModal';
-import { useEffectiveColorScheme } from '../lib/theme';
+import { DANGER, useEffectiveColorScheme } from '../lib/theme';
 import { markConvRead, markConvUnread } from '../lib/channelsCache';
 import { togglePin } from '../lib/pins';
 import { leaveGroupConv, lineOfConv } from '../lib/xmtp';
@@ -60,7 +60,7 @@ export function ChannelMenu({
   const fg = dark ? '#9f9fa3' : '#57606a';
   const sub = dark ? '#7a7a7e' : '#8a929d';
   const head = dark ? '#ffffff' : '#000000';
-  const danger = dark ? '#ff6b80' : '#b91c1c';
+  const danger = DANGER;
 
   const run = (fn: () => void): void => { onClose(); fn(); };
 

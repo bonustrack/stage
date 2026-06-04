@@ -13,7 +13,7 @@ import { getOrCreateXmtpClient, resetXmtpClient, shortAddress } from '../../lib/
 import { resetAccount } from '../../lib/wallet';
 import { flash } from '../../lib/toast';
 import { useAccountEpoch } from '../../lib/accountEpoch';
-import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
+import { DANGER, useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { SystemHeader } from '../system/SystemHeader';
 
 function CopyRow({ label, value, display, c }: {
@@ -95,7 +95,7 @@ export function MessengerSettings(): React.ReactElement {
               borderWidth: 1, borderColor: dark ? '#5c2231' : '#e9bbc4',
             })}
           >
-            <Text style={{ color: dark ? '#ff6b80' : '#b91c1c', fontSize: 16, fontFamily: 'Calibre-Medium' }}>
+            <Text style={{ color: DANGER, fontSize: 16, fontFamily: 'Calibre-Medium' }}>
               Reset XMTP identity
             </Text>
           </Pressable>

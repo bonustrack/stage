@@ -14,10 +14,11 @@ import { Box, Row } from './layout';
 import { GithubLogo } from './GithubLogo';
 import { githubLinkOf } from '../lib/githubDetect';
 import { useGithubMeta } from '../lib/useGithubMeta';
+import { DANGER, SUCCESS } from '../lib/theme';
 
 /** state → dot color (open green, merged purple, closed red). */
 const DOT: Record<string, string> = {
-  open: '#3fb950', merged: '#a371f7', closed: '#f85149',
+  open: SUCCESS, merged: '#a371f7', closed: DANGER,
 };
 
 const fmt = (n: number): string => n.toLocaleString('en-US');
@@ -80,12 +81,12 @@ export function GitHubLinkCard({ url, dark }: {
             </Text>
           ) : null}
           {showLoc && meta.additions != null ? (
-            <Text style={{ color: '#3fb950', fontSize: 11, fontFamily: 'Calibre-Semibold', marginLeft: 8 }}>
+            <Text style={{ color: SUCCESS, fontSize: 11, fontFamily: 'Calibre-Semibold', marginLeft: 8 }}>
               +{fmt(meta.additions)}
             </Text>
           ) : null}
           {showLoc && meta.deletions != null ? (
-            <Text style={{ color: '#f85149', fontSize: 11, fontFamily: 'Calibre-Semibold', marginLeft: 6 }}>
+            <Text style={{ color: DANGER, fontSize: 11, fontFamily: 'Calibre-Semibold', marginLeft: 6 }}>
               −{fmt(meta.deletions)}
             </Text>
           ) : null}

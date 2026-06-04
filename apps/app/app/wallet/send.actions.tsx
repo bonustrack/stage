@@ -6,6 +6,7 @@ import { Text } from '@metro-labs/kit/text';
 import { Box } from '../../components/layout';
 import { Button } from '@metro-labs/kit/button';
 import { Icon } from '@metro-labs/kit/icon';
+import { DANGER } from '../../lib/theme';
 import { explorerTxUrl } from '../../lib/railgun/networks';
 
 /** Public sends always broadcast on mainnet (send.public.ts pins chainId 1). */
@@ -73,7 +74,7 @@ export function TxStatus(props: {
         </Box>
       ) : null}
       {txErr ? (
-        <Text style={{ color: '#d96868', fontSize: 13, fontFamily: 'Calibre-Medium', paddingHorizontal: 4 }}>
+        <Text style={{ color: DANGER, fontSize: 13, fontFamily: 'Calibre-Medium', paddingHorizontal: 4 }}>
           {txErr}
         </Text>
       ) : null}

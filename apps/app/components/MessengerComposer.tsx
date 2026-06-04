@@ -7,12 +7,12 @@ import { ComposerGradient } from './ComposerGradient';
 import { Col } from './layout';
 import { type Attachment } from './MessengerComposer.helpers';
 import { useComposerActions } from './MessengerComposer.actions';
-import { useComposerDrafts, useComposerFocus, computeMentions, applyMention } from './MessengerComposer.hooks';
+import { useComposerDrafts, useComposerFocus, computeMentions, applyMention, useLastAttachment } from './MessengerComposer.hooks';
 import { PollSheet } from './MessengerComposer.sheets';
 import { SignatureSheet, PaymentSheet } from './MessengerComposer.sheets-tx';
 import { ReplyBanner, MentionPopup, PendingRow } from './MessengerComposer.parts';
 import { ComposerEditor, AttachMenu, buildAttachActions } from './MessengerComposer.editor';
-import { useLastAttachment } from './MessengerComposer.hooks';
+import { DANGER } from '../lib/theme';
 
 interface Props {
   dark: boolean;
@@ -144,7 +144,7 @@ export function MessengerComposer({
         />
       ) : null}
       {uploading || err ? (
-        <Text style={{ color: err ? '#d96868' : sub, fontSize: 12, paddingHorizontal: 14, paddingBottom: 4 }}>
+        <Text style={{ color: err ? DANGER : sub, fontSize: 12, paddingHorizontal: 14, paddingBottom: 4 }}>
           {err ?? 'Uploading…'}
         </Text>
       ) : null}

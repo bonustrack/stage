@@ -8,6 +8,7 @@ import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';
 import { Col, Row, Box } from '../layout';
 import { NETWORK_LOGO, MAINNET_NETWORK_LOGO, type AssetRow } from './WalletScreen.assets';
+import { DANGER } from '../../lib/theme';
 
 /** Plain `$` (no `US`). `currencyDisplay: 'narrowSymbol'` still resolves to
  *  `US$` on `en-US` system locales (Android default) — we explicitly request
@@ -108,7 +109,7 @@ export function TokenRow({ r, head, sub, border, bg, onPress }: { r: AssetRow; o
   const valueUsd = r.priceUsd === null ? null : r.priceUsd * Number(r.balance);
   /** Up/down colour for the 24h change pill — green for non-negative,
    *  red for negative. Uses the same tones as Snapshot UI's treasury. */
-  const changeColor = r.change24h === null ? sub : r.change24h >= 0 ? '#22c55e' : '#d96868';
+  const changeColor = r.change24h === null ? sub : r.change24h >= 0 ? '#22c55e' : DANGER;
   const changeText = r.change24h === null ? '' :
     `${r.change24h >= 0 ? '+' : ''}${r.change24h.toFixed(2)}%`;
   return (

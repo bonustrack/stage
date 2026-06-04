@@ -24,7 +24,7 @@ import { SearchRow, getExistingPeers, looksLikeEns } from './search.helpers';
 
 export default function Search(): React.ReactElement {
   const router = useRouter();
-  const { text: fg, primary: head, bg, border } = usePalette();
+  const { text: fg, primary: head, bg, border, danger } = usePalette();
   const sub = fg;
   const rowBg = border;
   const insets = useSafeAreaInsets();
@@ -159,7 +159,7 @@ export default function Search(): React.ReactElement {
         ) : null}
 
         {resolveErr && !resolving ? (
-          <Text style={{ color: '#d96868', fontSize: 13, fontFamily: 'Calibre-Medium', paddingHorizontal: 16, paddingVertical: 10 }}>
+          <Text style={{ color: danger, fontSize: 13, fontFamily: 'Calibre-Medium', paddingHorizontal: 16, paddingVertical: 10 }}>
             {resolveErr}
           </Text>
         ) : null}

@@ -16,6 +16,7 @@ import { isPinned } from '../../lib/pins';
 import { requestLabelFilter } from '../../lib/labelFilterRequest';
 import type { Row as RowT } from './HomeScreen.helpers';
 import { fmtTs } from './HomeScreen.helpers';
+import { DANGER } from '../../lib/theme';
 
 type RowMenu = { convId: string; title: string; isUnread: boolean; isGroup: boolean; peerAddress: string | null };
 
@@ -112,7 +113,7 @@ export function HomeError({ error, dark, fg, bg }: {
           borderWidth: 1, borderColor: dark ? '#5c2231' : '#e9bbc4',
         })}
       >
-        <Text style={{ color: dark ? '#ff6b80' : '#b91c1c', fontSize: 14 , fontFamily: 'Calibre-Medium'}}>
+        <Text style={{ color: DANGER, fontSize: 14 , fontFamily: 'Calibre-Medium'}}>
           Reset XMTP identity
         </Text>
       </Pressable>

@@ -16,7 +16,7 @@ import { Text } from '@metro-labs/kit/text';
 import { useRouter } from 'expo-router';
 import { flash } from '../../lib/toast';
 import { usePeerProfiles } from '../../lib/peerProfiles';
-import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
+import { DANGER, useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { Box, Col, Row } from '../layout';
 import { getNftsAcrossChains, type Nft } from '../../lib/opensea';
 import { Btn, WalletTabs, NftsView, fmtUsd, splitUsd, type WalletTab } from './WalletScreen.parts';
@@ -146,7 +146,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
           Decimals render in the dim `sub` colour to keep the dollars prominent. */}
       <Col mx={16} pt={20} pb={16} align="start">
         {err ? (
-          <Text style={{ color: '#d96868', fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+          <Text style={{ color: DANGER, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
             Couldn’t load balances
           </Text>
         ) : totalUsd === null ? (
@@ -177,7 +177,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
         <NftsView status={nftStatus} nfts={nfts} head={head} sub={sub} border={border} />
       ) : err ? (
         <Col mx={16} py={40} align="center">
-          <Text style={{ color: '#d96868', fontSize: 15, fontFamily: 'Calibre-Medium' }}>
+          <Text style={{ color: DANGER, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
             Couldn’t load tokens
           </Text>
         </Col>

@@ -7,6 +7,7 @@ import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import { Col, Row, Box } from '../layout';
 import { type Nft } from '../../lib/opensea';
+import { DANGER } from '../../lib/theme';
 
 /** NFT grid view — 2-column grid of the account's NFTs from OpenSea. Shows a
  *  spinner while loading, an error line on failure, an empty state when the
@@ -29,7 +30,7 @@ export function NftsView({
   if (status === 'error') {
     return (
       <Col mx={16} py={40} align="center">
-        <Text style={{ color: '#d96868', fontSize: 15, fontFamily: 'Calibre-Medium' }}>
+        <Text style={{ color: DANGER, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
           Failed to load NFTs.
         </Text>
       </Col>

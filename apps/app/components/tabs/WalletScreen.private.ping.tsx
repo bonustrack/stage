@@ -16,7 +16,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';
 import { Col } from '../layout';
-import { useEffectiveColorScheme } from '../../lib/theme';
+import { DANGER, useEffectiveColorScheme } from '../../lib/theme';
 import { bridgeListen, isBridgeAvailable, setBridgeStatusListener } from '../../lib/railgun/bridge';
 import { PingLog, type LogLine } from './WalletScreen.private.ping.log';
 import { useProbeActions, type ProbeState } from './WalletScreen.private.ping.actions';
@@ -58,12 +58,12 @@ export function BridgePingProbe({ sub, border }: {
     });
   }, []);
 
-  const resultColor = state.kind === 'err' ? '#ff5c5c' : sub;
+  const resultColor = state.kind === 'err' ? DANGER : sub;
   const resultText =
     state.kind === 'idle' ? 'not run yet'
       : state.kind === 'running' ? 'pinging…'
         : state.text;
-  const engineColor = engine.kind === 'err' ? '#ff5c5c' : sub;
+  const engineColor = engine.kind === 'err' ? DANGER : sub;
   const engineText =
     engine.kind === 'idle' ? 'not run yet'
       : engine.kind === 'running' ? 'initializing engine…'

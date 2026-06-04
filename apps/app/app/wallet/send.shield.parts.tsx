@@ -3,6 +3,7 @@
 import { Linking, Pressable } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from '../../components/layout';
+import { DANGER } from '../../lib/theme';
 import { txExplorerUrl } from '../../lib/railgun/explorer';
 
 interface Pal { fg: string; head: string; sub: string; border: string; inputBg: string }
@@ -83,7 +84,7 @@ export function ShieldPhaseLine({ pal, txHash, err, bridgeOk, chainId }: {
         </Pressable>
       ) : null}
       {err ? (
-        <Text style={{ color: '#d96868', fontSize: 13, fontFamily: 'Calibre-Medium' }}>{err}</Text>
+        <Text style={{ color: DANGER, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{err}</Text>
       ) : null}
     </Box>
   );

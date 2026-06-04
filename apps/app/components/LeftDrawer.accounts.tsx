@@ -22,6 +22,7 @@ import { switchToAccount, shortAddress } from '../lib/xmtp';
 import { addGeneratedAccount, importWallet } from '../lib/accounts';
 import { AppModal } from './AppModal';
 import { DrawerRow } from './LeftDrawer.parts';
+import { DANGER } from '../lib/theme';
 
 /** Switch the active XMTP client to a freshly added account id. The wallet/EOA
  *  switch happens regardless (decoupled from XMTP), and switchToAccount bumps the
@@ -112,7 +113,7 @@ export function DrawerAccountActions({ head, sub, border, dark, onChanged }: {
           }}
         />
         {err ? (
-          <Text style={{ color: '#ff6b80', fontSize: 12, marginBottom: 8, fontFamily: 'Calibre-Medium' }}>{err}</Text>
+          <Text style={{ color: DANGER, fontSize: 12, marginBottom: 8, fontFamily: 'Calibre-Medium' }}>{err}</Text>
         ) : null}
         <Box style={{ flexDirection: 'row', gap: 8 }}>
           <Button
