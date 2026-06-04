@@ -12,7 +12,7 @@ import { ComposerGradient } from './ComposerGradient';
 import { RecordingBar } from './MessengerComposer.parts';
 
 interface EditorProps {
-  dark: boolean; fg: string; head: string; sub: string; inputBg: string; chipBg: string;
+  dark: boolean; fg: string; head: string; bg: string; sub: string; inputBg: string; chipBg: string;
   recording: boolean; levels: number[]; recordSecs: number;
   slideX: Animated.Value; slideThresholdPx: number; micPanResponder: PanResponderInstance;
   text: string; setText: (v: string) => void;
@@ -29,7 +29,7 @@ interface EditorProps {
 }
 
 export function ComposerEditor(p: EditorProps): React.ReactElement {
-  const { dark, fg, head, sub, inputBg, chipBg, recording } = p;
+  const { dark, fg, head, bg, sub, inputBg, chipBg, recording } = p;
   const Btn = ({ icon, onPress, mr }: { icon: HeroIconName; onPress: () => void; mr?: number }): React.ReactElement => (
     <Pressable onPress={onPress} style={({ pressed }) => ({
       width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
@@ -107,8 +107,10 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
             size="md"
             pill
             dark={dark}
+            tintBg={head}
+            tintFg={bg}
             onPress={p.onStopRec}
-            icon={<Icon name="check" size={20} color={dark ? '#000' : '#fff'} />}
+            icon={<Icon name="check" size={20} color={bg} />}
           />
         ) : (
           <Button
@@ -116,9 +118,11 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
             size="md"
             pill
             dark={dark}
+            tintBg={head}
+            tintFg={bg}
             disabled={!p.canSend}
             onPress={p.onSend}
-            icon={<Icon name="send" size={20} color={dark ? '#000' : '#fff'} />}
+            icon={<Icon name="send" size={20} color={bg} />}
           />
         )}
       </Row>

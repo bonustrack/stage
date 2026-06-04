@@ -11,6 +11,7 @@ import { Avatar } from '../Avatar';
 import { getPeerAvatar } from '../../lib/peerProfiles';
 import { channelStampSeed } from '@metro-labs/kit/avatar';
 import { REACT_PRESETS } from '../MessengerBubble';
+import { usePalette } from '../../lib/theme';
 import type { HistoryEntry } from '../../lib/types';
 
 /** Topnav GitHub button — opens the group's linked GitHub issue/PR (Linear-style)
@@ -71,11 +72,12 @@ export function BubbleActionMenu({
   const [expanded, setExpanded] = useState(false);
   useEffect(() => { if (!target) setExpanded(false); }, [target]);
 
-  const fg = dark ? '#e7e7ea' : '#1f2328';
-  const sub = dark ? '#7a7a7e' : '#8a929d';
-  const cardBg = dark ? '#21262b' : '#ffffff';
-  const stripBg = dark ? '#21262b' : '#ffffff';
-  const divider = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)';
+  const pal = usePalette();
+  const fg = pal.text;
+  const sub = dark ? '#7a7a7e' : '#8a929d'; // one-off chevron grey, no token
+  const cardBg = pal.bg;
+  const stripBg = pal.bg;
+  const divider = pal.border;
 
   const screenH = Dimensions.get('window').height;
   /** Strip + dropdown are ONE cohesive stacked unit rendered in a single absolute

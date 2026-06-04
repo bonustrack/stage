@@ -44,8 +44,8 @@ function phaseToStage(p?: PendingAction['phase']): ShieldStage {
   }
 }
 
-export function ShieldForm({ pal, dark, zkAddress, initialSymbol, initialChainId }: {
-  pal: Pal; dark: boolean; zkAddress: string | null;
+export function ShieldForm({ pal, dark, bg, zkAddress, initialSymbol, initialChainId }: {
+  pal: Pal; dark: boolean; bg: string; zkAddress: string | null;
   /** Pre-selected token/network (from the token detail page's Shield button). */
   initialSymbol?: 'ETH' | 'USDC'; initialChainId?: number;
 }): React.ReactElement {
@@ -142,7 +142,7 @@ export function ShieldForm({ pal, dark, zkAddress, initialSymbol, initialChainId
         </Box>
       </Box>
 
-      <Button variant="primary" size="lg" fullWidth pill dark={dark} loading={busy}
+      <Button variant="primary" size="lg" fullWidth pill dark={dark} tintBg={head} tintFg={bg} loading={busy}
         disabled={!canSubmit} onPress={onSubmit}
         label={busy ? 'Shielding…' : stage === 'done' ? 'Shielded ✓' : 'Shield to private'}
         style={{ marginTop: 4 }} />

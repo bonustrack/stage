@@ -54,7 +54,7 @@ export default function WalletSend(): React.ReactElement {
         <SendModeToggle pal={pal} mode={sendMode} setMode={setSendMode} />
 
         {sendMode === 'shield' ? (
-          <ShieldForm pal={pal} dark={dark} zkAddress={privSnapshot?.zkAddress ?? null}
+          <ShieldForm pal={pal} dark={dark} bg={bg} zkAddress={privSnapshot?.zkAddress ?? null}
             initialSymbol={initialSymbol} initialChainId={initialChainId && Number.isFinite(initialChainId) ? initialChainId : undefined} />
         ) : (
           <>
@@ -80,7 +80,7 @@ export default function WalletSend(): React.ReactElement {
               onMax={p.onMax}
             />
 
-            <SubmitButton dark={dark} busy={p.busy} canSubmit={p.canSubmit} txState={p.txState} onSubmit={p.onSubmit} />
+            <SubmitButton dark={dark} tintBg={head} tintFg={bg} busy={p.busy} canSubmit={p.canSubmit} txState={p.txState} onSubmit={p.onSubmit} />
 
             <TxStatus sub={sub} txState={p.txState} txHash={p.txHash} txErr={p.txErr} />
           </>

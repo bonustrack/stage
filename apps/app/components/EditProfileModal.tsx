@@ -140,6 +140,8 @@ export default function EditProfileModal({
             size="lg"
             fullWidth
             dark={dark}
+            tintBg={head}
+            tintFg={bg}
             disabled={saving || uploading}
             onPress={() => { void save(); }}
             label={saving ? 'Saving…' : 'Save'}

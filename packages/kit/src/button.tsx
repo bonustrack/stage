@@ -65,6 +65,13 @@ export interface ButtonProps
   iconRight?: ReactNode;
   /** Effective color scheme. Pass `useEffectiveColorScheme() === 'dark'`. */
   dark?: boolean;
+  /** Override the resting background — pass a live palette token (e.g. the
+   *  `primary` token) so the color editor re-themes the button. Falls back to
+   *  the variant default when omitted. */
+  tintBg?: string;
+  /** Override the label/icon colour — pass the contrasting palette token (e.g.
+   *  `bg`) so it tracks `tintBg`. Falls back to the variant default. */
+  tintFg?: string;
   /** Escape-hatch style merged onto the container last. */
   style?: ViewStyle;
   /** Escape-hatch style merged onto the label last. */
@@ -85,13 +92,22 @@ export function Button(props: ButtonProps): React.ReactElement {
     icon,
     iconRight,
     dark = false,
+    tintBg,
+    tintFg,
     style,
     textStyle,
     ...rest
   } = props;
 
   const spec = SIZES[size];
-  const c = useMemo(() => variantColors(variant, dark), [variant, dark]);
+  const c = useMemo(() => {
+    const base = variantColors(variant, dark);
+    return {
+      ...base,
+      bg: tintBg ?? base.bg,
+      text: tintFg ?? base.text,
+    };
+  }, [variant, dark, tintBg, tintFg]);
   const isDisabled = disabled || loading;
 
   const labelNode =
