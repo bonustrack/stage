@@ -18,7 +18,6 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { GestureDetectorProvider } from 'react-native-screens/gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { NativeSwipeStack } from '../components/NativeSwipeStack';
-import { EdgeSwipeBack } from '../components/EdgeSwipeBack';
 import { useEffectiveColorScheme, usePalette, useRadius } from '../lib/theme';
 import { useDeepLinks } from '../lib/deepLinks';
 import { useRestoreLastRoute } from '../lib/lastRoute';
@@ -136,39 +135,39 @@ export default function RootLayout(): React.ReactElement {
       <GestureDetectorProvider>
       <KeyboardProvider>
       <StatusBar style={barStyle} translucent backgroundColor="transparent" />
-      {/** react-native-screens native-stack (via NativeSwipeStack/withLayoutContext).
+      {/** native-stack (via NativeSwipeStack/withLayoutContext).
        *
-       *   SWIPE-BACK: handled by the JS <EdgeSwipeBack> wrapper (left-edge RNGH
-       *   Pan → router.back()) for pushed screens, plus an in-screen <BackSwipe>
-       *   on the conversation screen. We do NOT use rn-screens' own
-       *   `goBackGesture`/`screenEdgeGesture` worklet: on Android its `onStart`
-       *   worklet calls `measure()` on a mocked ScreenGestureDetector ref and
-       *   crashes with "Value is undefined, expected an Object" (redbox in
-       *   ScreenGestureDetector.tsx). The JS Pan shims never touch view tags, so
-       *   there's no crash and the native slide animation still plays via the
-       *   stock pop.
+       *   SWIPE-BACK: the NATIVE rn-screens finger-following edge gesture
+       *   (`goBackGesture: 'swipeRight'` + `screenEdgeGesture: true`) reveals the
+       *   previous page sliding underneath on the native thread (real iOS/
+       *   Telegram parallax). This is the c621da0 architecture. Its
+       *   ScreenGestureDetector `onStart` worklet calls reanimated's `measure()`;
+       *   on reanimated 4 that mock-ref path threw "Value is undefined, expected
+       *   an Object" (the 3→4 measure() API change), so #204 fell back to JS Pan
+       *   shims. With reanimated PINNED BACK TO 3.x the worklet measure() path
+       *   works again, so the native gesture is re-enabled and the JS shims are
+       *   removed. RNGH swipe-to-reply (MessengerBubble) + the gesture-handler
+       *   FlatList compose under GestureDetectorProvider.
        *
        *   `statusBarStyle: barStyle` keeps white-on-dark status-bar icons; we also
        *   set it imperatively (effect above) + declaratively (<StatusBar>) so it
        *   survives navigation. */}
-      <EdgeSwipeBack>
       <NativeSwipeStack
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: bg },
           statusBarStyle: barStyle,
-          /** Instant navigation — no push/pop transition animation (Less's
-           *  preference). <EdgeSwipeBack> still pops via the JS Pan shim. */
-          animation: 'none',
-          animationDuration: 0,
+          goBackGesture: 'swipeRight',
+          screenEdgeGesture: true,
+          stackAnimation: 'slide_from_right',
         }}
       >
+        {/** Tab root: no back gesture (it's the bottom of the stack), instant. */}
         <NativeSwipeStack.Screen
           name="(tabs)"
-          options={{ animation: 'none' }}
+          options={{ gestureEnabled: false, screenEdgeGesture: false, stackAnimation: 'none' }}
         />
       </NativeSwipeStack>
-      </EdgeSwipeBack>
       </KeyboardProvider>
       </GestureDetectorProvider>
     </GestureHandlerRootView>

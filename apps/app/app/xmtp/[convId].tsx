@@ -23,7 +23,6 @@ import { HeaderAvatar, BubbleActionMenu, GithubNavButton } from '../../component
 import { previewOf } from '../../components/xmtp-conv/feed-helpers';
 import { ConversationFeed } from '../../components/xmtp-conv/ConversationFeed';
 import { useConversationState } from '../../components/xmtp-conv/useConversationState';
-import { BackSwipe } from '../../components/xmtp-conv/BackSwipe';
 
 export default function XmtpConversation(): React.ReactElement {
   const router = useRouter();
@@ -38,7 +37,7 @@ export default function XmtpConversation(): React.ReactElement {
     replyingTo, setReplyingTo, setReplyTarget,
     menuFor, setMenuFor, menuAnchor, overflowOpen, setOverflowOpen, setSelectedForCopy,
     peerAddr, groupName, groupImage, isGroup, github, senderEthOf,
-    mentionCandidates, onReact, onOptimistic, onSent, jumpToMessage, markAtBottom, listRef,
+    mentionCandidates, onReact, onOptimistic, onSent, jumpToMessage, markAtBottom,
   } = c;
 
   const insets = useSafeAreaInsets();
@@ -62,10 +61,10 @@ export default function XmtpConversation(): React.ReactElement {
         flex: 1, backgroundColor: bg, paddingBottom: insets.bottom,
       }}
     >
-      {/** In-screen edge-swipe-back (BackSwipe): the root <EdgeSwipeBack> Pan
-       *   can't reach touches inside this screen's native FlatList subtree, so
-       *   the conversation owns its own whole-page swipe over the theme-bg. */}
-      <BackSwipe listRef={listRef}>
+      {/** Edge-swipe-back is the rn-screens NATIVE goBackGesture (re-enabled in
+       *   _layout once reanimated was pinned back to 3.x — the measure() worklet
+       *   no longer throws). The inverted RNGH FlatList composes with the native
+       *   edge gesture, so no in-screen JS BackSwipe shim is needed. */}
       <Reanimated.View style={[{ flex: 1 }, listWrapperStyle]}>
       <ConversationFeed
         c={c}
@@ -155,8 +154,7 @@ export default function XmtpConversation(): React.ReactElement {
       />
       </Box>
       </KeyboardStickyView>
-      </BackSwipe>
-      {/** Overlays live OUTSIDE BackSwipe — portals/bottom-sheets must NOT slide. */}
+      {/** Overlays — portals/bottom-sheets render here, outside the feed column. */}
       <ChannelMenu
         visible={overflowOpen}
         convId={convId ?? ''}

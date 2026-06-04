@@ -1,19 +1,17 @@
-/** Expo-Router layout bound to the native-stack navigator.
+/** Expo-Router layout bound to react-native-screens' OWN native-stack navigator
+ *  (`react-native-screens/native-stack`, which resolves in rn-screens ~4.16).
+ *  It renders native screen containers + the slide_from_right transition that
+ *  composites the previous screen underneath during a pop (the visual "reveal").
  *
- *  HISTORY: this used to import from `react-native-screens/native-stack`, but
- *  rn-screens v4 REMOVED its own native-stack JS API (it was deprecated in v6
- *  and v4 supports only `@react-navigation/native-stack` v7 — see rn-screens
- *  README). So the import is now `@react-navigation/native-stack`, which renders
- *  through rn-screens under the hood.
- *
- *  Swipe-back is NOT driven by rn-screens' own `goBackGesture`/`screenEdgeGesture`
- *  worklet — on Android that worklet calls `measure()` on a mocked
- *  ScreenGestureDetector ref and crashes ("Value is undefined, expected an
- *  Object"). Instead the app uses JS RNGH Pan shims: <EdgeSwipeBack> wraps this
- *  navigator (left-edge → router.back()) and the conversation screen mounts its
- *  own in-screen <BackSwipe>. The stock pop still plays the native slide.
- *  `GestureDetectorProvider` (mounted in _layout) arbitrates the gestures with
- *  the app's other RNGH gestures (swipe-to-reply, scroll).
+ *  SWIPE-BACK is the rn-screens NATIVE finger-following edge gesture
+ *  (`goBackGesture: 'swipeRight'` + `screenEdgeGesture: true`, set in _layout):
+ *  the previous screen slides underneath on the native thread (real iOS/Telegram
+ *  parallax). Its ScreenGestureDetector `onStart` worklet calls reanimated's
+ *  `measure()` — which threw "Value is undefined, expected an Object" on
+ *  reanimated 4 (the 3→4 measure() API change broke the mock-ref path), so #204
+ *  fell back to JS RNGH Pan shims. With reanimated PINNED BACK TO 3.x that
+ *  worklet path works again, so the native gesture is re-enabled and the JS
+ *  shims (EdgeSwipeBack / xmtp-conv/BackSwipe) were removed.
  *
  *  `withLayoutContext` is the expo-router primitive that adapts any react-
  *  navigation navigator into a file-based-routing layout, so `<NativeSwipeStack>`
@@ -23,7 +21,7 @@
  *  (react-native-screens/gesture-handler). */
 
 import { withLayoutContext } from 'expo-router';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createNativeStackNavigator } from 'react-native-screens/native-stack';
 
 const { Navigator } = createNativeStackNavigator();
 
