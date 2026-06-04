@@ -23,6 +23,7 @@ import { HeaderAvatar, BubbleActionMenu, GithubNavButton } from '../../component
 import { previewOf } from '../../components/xmtp-conv/feed-helpers';
 import { ConversationFeed } from '../../components/xmtp-conv/ConversationFeed';
 import { useConversationState } from '../../components/xmtp-conv/useConversationState';
+import { BackSwipe } from '../../components/xmtp-conv/BackSwipe';
 
 export default function XmtpConversation(): React.ReactElement {
   const router = useRouter();
@@ -37,7 +38,7 @@ export default function XmtpConversation(): React.ReactElement {
     replyingTo, setReplyingTo, setReplyTarget,
     menuFor, setMenuFor, menuAnchor, overflowOpen, setOverflowOpen, setSelectedForCopy,
     peerAddr, groupName, groupImage, isGroup, github, senderEthOf,
-    mentionCandidates, onReact, onOptimistic, onSent, jumpToMessage, markAtBottom,
+    mentionCandidates, onReact, onOptimistic, onSent, jumpToMessage, markAtBottom, listRef,
   } = c;
 
   const insets = useSafeAreaInsets();
@@ -61,9 +62,10 @@ export default function XmtpConversation(): React.ReactElement {
         flex: 1, backgroundColor: bg, paddingBottom: insets.bottom,
       }}
     >
-      {/** Swipe-back is handled NATIVELY by the rn-screens native-stack
-       *   (goBackGesture/screenEdgeGesture in app/_layout.tsx) — the previous
-       *   screen parallaxes in underneath the finger. No in-screen JS shim. */}
+      {/** In-screen edge-swipe-back (BackSwipe): the root <EdgeSwipeBack> Pan
+       *   can't reach touches inside this screen's native FlatList subtree, so
+       *   the conversation owns its own whole-page swipe over the theme-bg. */}
+      <BackSwipe listRef={listRef}>
       <Reanimated.View style={[{ flex: 1 }, listWrapperStyle]}>
       <ConversationFeed
         c={c}
@@ -153,7 +155,8 @@ export default function XmtpConversation(): React.ReactElement {
       />
       </Box>
       </KeyboardStickyView>
-      {/** Overlays: portals/bottom-sheets render above the page tree. */}
+      </BackSwipe>
+      {/** Overlays live OUTSIDE BackSwipe — portals/bottom-sheets must NOT slide. */}
       <ChannelMenu
         visible={overflowOpen}
         convId={convId ?? ''}
