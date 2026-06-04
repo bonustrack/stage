@@ -11,7 +11,7 @@ import '../lib/cryptoShim';
 import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import { useEffect } from 'react';
-import { LogBox, Text, TextInput } from 'react-native';
+import { LogBox, Platform, Text, TextInput } from 'react-native';
 import { Box } from '../components/layout';
 import { Spinner } from '../components/Spinner';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -138,15 +138,29 @@ export default function RootLayout(): React.ReactElement {
       <StatusBar style={barStyle} translucent backgroundColor="transparent" />
       {/** react-native-screens native-stack (via NativeSwipeStack/withLayoutContext).
        *
-       *   SWIPE-BACK: handled by the JS <EdgeSwipeBack> wrapper (left-edge RNGH
-       *   Pan → router.back()) for pushed screens, plus an in-screen <BackSwipe>
-       *   on the conversation screen. We do NOT use rn-screens' own
-       *   `goBackGesture`/`screenEdgeGesture` worklet: on Android its `onStart`
-       *   worklet calls `measure()` on a mocked ScreenGestureDetector ref and
-       *   crashes with "Value is undefined, expected an Object" (redbox in
-       *   ScreenGestureDetector.tsx). The JS Pan shims never touch view tags, so
-       *   there's no crash and the native slide animation still plays via the
-       *   stock pop.
+       *   SWIPE-BACK — PLATFORM-SPLIT (verified against rn-screens 4.16 source):
+       *
+       *   • iOS: we use the NATIVE-STACK's own interactive back gesture
+       *     (`gestureEnabled: true` + `fullScreenSwipeEnabled: true`). The native
+       *     stack composites the PREVIOUS screen during the drag automatically —
+       *     this is a REAL previous-screen reveal (RNSScreenStackAnimator /
+       *     interactivePopGesture in ios/RNSScreenStack.mm). It REQUIRES a push
+       *     animation (`slide_from_right`) — with `animation: 'none'` the
+       *     interactive transition has nothing to interpolate and the reveal does
+       *     not render. So on iOS we pay a short slide for the real reveal.
+       *
+       *   • Android: rn-screens 4.16 has NO native interactive back-swipe at all.
+       *     `gestureEnabled`/`fullScreenSwipeEnabled` are dead props on Android —
+       *     ScreenViewManager.kt stores `isGestureEnabled`/fullScreenSwipe but
+       *     NOTHING in the Android fragment layer ever reads them (no
+       *     GestureDetector / MotionEvent swipe handler in Screen.kt or
+       *     ScreenStackFragment.kt; the lone onTouchEvent is form-sheet dimming).
+       *     react-navigation also hard-forces `gestureEnabled={false}` on Android
+       *     (NativeStackView.native.tsx). And the custom `goBackGesture` worklet
+       *     crashes ("Value is undefined, expected an Object"). So Android keeps
+       *     the JS RNGH shims (<EdgeSwipeBack> + in-screen <BackSwipe>) and
+       *     `animation: 'none'` for instant nav (issue #198) — those only drag a
+       *     theme-bg backdrop, NOT a real reveal, but it's the best achievable.
        *
        *   `statusBarStyle: barStyle` keeps white-on-dark status-bar icons; we also
        *   set it imperatively (effect above) + declaratively (<StatusBar>) so it
@@ -157,15 +171,17 @@ export default function RootLayout(): React.ReactElement {
           headerShown: false,
           contentStyle: { backgroundColor: bg },
           statusBarStyle: barStyle,
-          /** Instant navigation — no push/pop transition animation (Less's
-           *  preference). <EdgeSwipeBack> still pops via the JS Pan shim. */
-          animation: 'none',
-          animationDuration: 0,
+          /** iOS: native interactive reveal needs a slide animation + the gesture
+           *  flags. Android: instant nav (no animation) + JS Pan shims. */
+          animation: Platform.OS === 'ios' ? 'slide_from_right' : 'none',
+          animationDuration: Platform.OS === 'ios' ? undefined : 0,
+          gestureEnabled: Platform.OS === 'ios',
+          fullScreenGestureEnabled: Platform.OS === 'ios',
         }}
       >
         <NativeSwipeStack.Screen
           name="(tabs)"
-          options={{ animation: 'none' }}
+          options={{ animation: 'none', gestureEnabled: false }}
         />
       </NativeSwipeStack>
       </EdgeSwipeBack>
