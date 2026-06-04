@@ -7,7 +7,6 @@ import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';
 import * as Clipboard from 'expo-clipboard';
 import { flash } from '../lib/toast';
-import { shortAddress } from '../lib/xmtp';
 import { canExportPrivateKey, type AccountRecord } from '../lib/accounts';
 import { SheetModal, SheetButton } from './AccountsManager.parts';
 import { DANGER, usePalette } from '../lib/theme';
@@ -19,7 +18,7 @@ export function AddSheet({ visible, onClose, onGenerate, onImport, onWalletConne
   onGenerate: () => void; onImport: () => void; onWalletConnect: () => void; p: Pal;
 }): React.ReactElement {
   return (
-    <SheetModal visible={visible} onClose={onClose} bg={p.sheetBg} border={p.border} title="Add account" head={p.head}>
+    <SheetModal visible={visible} onClose={onClose} bg={p.sheetBg} border={p.border}>
       <SheetButton label="Generate a new account" desc="Create a fresh wallet on this device" head={p.head} sub={p.sub} border={p.border} onPress={onGenerate} />
       <SheetButton label="Import private key" desc="Paste an existing wallet's private key" head={p.head} sub={p.sub} border={p.border} onPress={onImport} />
       <SheetButton label="Connect with WalletConnect" desc="Sign in with an existing wallet" head={p.head} sub={p.sub} border={p.border} onPress={onWalletConnect} />
@@ -34,7 +33,7 @@ export function ImportSheet({ visible, onClose, importText, setImportText, setIm
 }): React.ReactElement {
   const { primary, bg } = usePalette();
   return (
-    <SheetModal visible={visible} onClose={onClose} bg={p.sheetBg} border={p.border} title="Import private key" head={p.head}>
+    <SheetModal visible={visible} onClose={onClose} bg={p.sheetBg} border={p.border}>
       <TextInput
         value={importText}
         onChangeText={(t) => { setImportText(t); setImportErr(''); }}
@@ -86,8 +85,7 @@ export function ManageSheet({ manageRec, activeId, onClose, onSwitch, onExport, 
     <SheetModal
       visible={manageRec !== null}
       onClose={onClose}
-      bg={p.sheetBg} border={p.border} head={p.head}
-      title={manageRec ? (manageRec.label ?? shortAddress(manageRec.address)) : ''}
+      bg={p.sheetBg} border={p.border}
     >
       {manageRec && manageRec.id !== activeId ? (
         <SheetButton label="Switch to this account" head={p.head} sub={p.sub} border={p.border} onPress={() => { const id = manageRec.id; onClose(); onSwitch(id); }} />
@@ -107,7 +105,7 @@ export function ExportSheet({ revealPk, onClose, dark, p }: {
 }): React.ReactElement {
   const { primary, bg } = usePalette();
   return (
-    <SheetModal visible={revealPk !== null} onClose={onClose} bg={p.sheetBg} border={p.border} head={p.head} title="Private key">
+    <SheetModal visible={revealPk !== null} onClose={onClose} bg={p.sheetBg} border={p.border}>
       <Text style={{ color: DANGER, fontSize: 12, fontFamily: 'Calibre-Medium', marginBottom: 8 }}>
         Anyone with this key controls the account. Never share it.
       </Text>

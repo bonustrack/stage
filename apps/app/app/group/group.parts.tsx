@@ -91,7 +91,7 @@ export function AddMemberModal({
   const { fg, sub, border, rowBg } = p;
   const { primary, bg } = usePalette();
   return (
-    <AppModal visible={visible} onClose={onClose} title="Add member">
+    <AppModal visible={visible} onClose={onClose}>
       <Box>
         <TextInput
           value={addDraft}
@@ -124,10 +124,9 @@ export function AddMemberModal({
 }
 
 export function OverflowModal({
-  visible, onClose, leaving, onLeave, sub,
+  visible, onClose, leaving, onLeave,
 }: {
   visible: boolean; onClose: () => void; leaving: boolean; onLeave: () => void;
-  sub: string;
 }): React.ReactElement {
   return (
     <AppModal visible={visible} onClose={onClose}>
@@ -141,9 +140,6 @@ export function OverflowModal({
           <Text style={{ color: DANGER, fontSize: 16, fontFamily: 'Calibre-Medium' }}>
             {leaving ? 'Leaving…' : 'Leave group'}
           </Text>
-        </Pressable>
-        <Pressable onPress={onClose} style={{ paddingVertical: 10, alignItems: 'center' }}>
-          <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium' }}>Cancel</Text>
         </Pressable>
       </Box>
     </AppModal>

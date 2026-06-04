@@ -104,7 +104,7 @@ export function LabelFilterSheet({ visible, active, onClose, onSelect }: {
   const pick = (label: LabelFilterValue): void => { onSelect(label); onClose(); };
 
   return (
-    <AppModal visible={visible} onClose={onClose} title="Filter by label">
+    <AppModal visible={visible} onClose={onClose}>
       <Col gap={2}>
         <FilterRow
           label="All channels"

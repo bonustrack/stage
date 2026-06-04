@@ -79,7 +79,7 @@ function EditableSwatch({ name, tokenKey, value, scheme, p }: {
           }}
         />
       </Box>
-      <AppModal visible={picking} onClose={closePicker} title={name}>
+      <AppModal visible={picking} onClose={closePicker}>
         <ColorPicker value={pending ?? value} onChange={setPending} p={p} />
         <Row gap={12} mt={20} style={{ alignItems: 'center' }}>
           <Pressable
