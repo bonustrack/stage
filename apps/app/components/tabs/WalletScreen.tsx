@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ScrollView } from 'react-native-gesture-handler';
 import { usePullToRefresh } from './PullToRefresh';
 import { RefreshButton } from './WalletScreen.refreshButton';
+import { CopyButton } from './WalletScreen.copyButton';
 import { Spinner } from '../Spinner';
 import type { SimultaneousRefs } from '../SwipeTabs.types';
 import { Text } from '@metro-labs/kit/text';
@@ -118,6 +119,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
      *  Wrapped in a flex:1 Box so the tap-to-refresh icon button can anchor to
      *  the screen top-right (absolute), independent of scroll content. */
     <Box style={{ flex: 1, backgroundColor: bg }}>
+    <CopyButton address={address} color={head} />
     <RefreshButton refreshing={refreshing} onRefresh={onRefresh} color={head} />
     <ScrollView
       simultaneousHandlers={panRef}
@@ -140,10 +142,8 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
       scrollEventThrottle={pull.scrollEventThrottle}
     >
       {pull.indicator}
-      {/* Value card — compact, left-aligned. Just the big total USD value;
-          the account header (avatar/name/address) and the "TOTAL VALUE ·
-          ETHEREUM" label were dropped per review. Decimals render in the dim
-          `sub` colour to keep the leading dollars prominent. */}
+      {/* Value card — compact, left-aligned: just the big total USD value.
+          Decimals render in the dim `sub` colour to keep the dollars prominent. */}
       <Col mx={16} pt={20} pb={16} align="start">
         {err ? (
           <Text style={{ color: '#d96868', fontSize: 13, fontFamily: 'Calibre-Medium' }}>
