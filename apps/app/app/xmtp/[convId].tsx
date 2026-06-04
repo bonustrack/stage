@@ -23,7 +23,6 @@ import { HeaderAvatar, BubbleActionMenu, GithubNavButton } from '../../component
 import { previewOf } from '../../components/xmtp-conv/feed-helpers';
 import { ConversationFeed } from '../../components/xmtp-conv/ConversationFeed';
 import { useConversationState } from '../../components/xmtp-conv/useConversationState';
-import { BackSwipe } from '../../components/xmtp-conv/BackSwipe';
 
 export default function XmtpConversation(): React.ReactElement {
   const router = useRouter();
@@ -62,10 +61,12 @@ export default function XmtpConversation(): React.ReactElement {
         flex: 1, backgroundColor: bg, paddingBottom: insets.bottom,
       }}
     >
-      {/** In-screen edge-swipe-back (BackSwipe): the root <EdgeSwipeBack> Pan
-       *   can't reach touches inside this screen's native FlatList subtree, so
-       *   the conversation owns its own whole-page swipe over the theme-bg. */}
-      <BackSwipe listRef={listRef}>
+      {/** Edge-swipe-back is now the rn-screens 4.16 NATIVE gesture (configured in
+       *   _layout: goBackGesture/screenEdgeGesture). It reveals the REAL previous
+       *   screen sliding underneath, so the old JS <BackSwipe> backdrop shim is
+       *   gone. The native edge gesture (rightward, left ~50px) arbitrates with
+       *   the FlatList scroll (vertical) + bubble swipe-to-reply (leftward) by
+       *   direction under the shared GestureDetectorProvider. */}
       <Reanimated.View style={[{ flex: 1 }, listWrapperStyle]}>
       <ConversationFeed
         c={c}
@@ -155,8 +156,7 @@ export default function XmtpConversation(): React.ReactElement {
       />
       </Box>
       </KeyboardStickyView>
-      </BackSwipe>
-      {/** Overlays live OUTSIDE BackSwipe — portals/bottom-sheets must NOT slide. */}
+      {/** Overlays — portals/bottom-sheets render here, outside the feed column. */}
       <ChannelMenu
         visible={overflowOpen}
         convId={convId ?? ''}
