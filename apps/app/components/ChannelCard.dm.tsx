@@ -12,12 +12,13 @@ import { Box } from './layout';
 import {
   usePeerProfiles, getPeerName, getPeerAvatar, getPeerAvatarCb, isPeerResolved,
 } from '../lib/peerProfiles';
-import { usePalette } from '../lib/theme';
+import { usePalette, useBlockRadius } from '../lib/theme';
 import { openDmWithAddress, shortAddress } from '../lib/xmtp';
 
 export function DmPeerCard({ address }: { address: string }): React.ReactElement {
   usePeerProfiles([address]);
   const { border } = usePalette();
+  const blockRadius = useBlockRadius();
 
   const title = getPeerName(address) || shortAddress(address);
   const avatarUri = getPeerAvatar(address) || null;
@@ -35,7 +36,7 @@ export function DmPeerCard({ address }: { address: string }): React.ReactElement
   };
 
   return (
-    <Box radius={14} style={{ borderWidth: 1, borderColor: border, overflow: 'hidden' }}>
+    <Box radius={blockRadius} style={{ borderWidth: 1, borderColor: border, overflow: 'hidden' }}>
       <ChannelRow
         title={title}
         subtitle="Direct message"
