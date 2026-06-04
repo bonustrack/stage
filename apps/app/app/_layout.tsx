@@ -15,10 +15,9 @@ import { LogBox, Text, TextInput } from 'react-native';
 import { Box } from '../components/layout';
 import { Spinner } from '../components/Spinner';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { GestureDetectorProvider } from 'react-native-screens/gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
+import { TransitionPresets } from '@react-navigation/stack';
 import { NativeSwipeStack } from '../components/NativeSwipeStack';
-import { EdgeSwipeBack } from '../components/EdgeSwipeBack';
 import { useEffectiveColorScheme, usePalette, useRadius } from '../lib/theme';
 import { useDeepLinks } from '../lib/deepLinks';
 import { useRestoreLastRoute } from '../lib/lastRoute';
@@ -127,52 +126,42 @@ export default function RootLayout(): React.ReactElement {
     <QueryClientProvider client={queryClient}>
     <WalletConnectProvider>
     <GestureHandlerRootView style={{ flex: 1 }}>
-      {/** GestureDetectorProvider (react-native-screens/gesture-handler) wires the
-       *   native-stack's interactive edge swipe-back into the RNGH gesture tree, so
-       *   it arbitrates cleanly with the app's other RNGH gestures (MessengerBubble
-       *   swipe-to-reply, scroll) rather than fighting a separate touch system.
-       *   This is now safe because swipe-to-reply was migrated off PanResponder to
-       *   RNGH (commit 1e3a0e3) — the two systems compose under one provider. */}
-      <GestureDetectorProvider>
       <KeyboardProvider>
       <StatusBar style={barStyle} translucent backgroundColor="transparent" />
-      {/** native-stack (via NativeSwipeStack/withLayoutContext).
+      {/** @react-navigation/stack JS card stack (via NativeSwipeStack /
+       *   withLayoutContext).
        *
-       *   SWIPE-BACK: handled by the JS <EdgeSwipeBack> wrapper (left-edge RNGH
-       *   Pan → router.back()) for pushed screens, plus an in-screen <BackSwipe>
-       *   on the conversation screen. We do NOT use rn-screens' own
-       *   `goBackGesture`/`screenEdgeGesture` worklet: on Android (rn-screens
-       *   4.16 + reanimated 4.3.1) its `onStart` worklet passes a mock animated
-       *   ref to reanimated 4's `measure()`, which resolves the screen viewTag to
-       *   `undefined` and crashes the first swipe with "Value is undefined,
-       *   expected an Object" (redbox in ScreenGestureDetector.tsx measure()).
-       *   The reanimated 3→4 `measure()` API change broke that mock-ref path. The
-       *   JS Pan shims never touch view tags, so there's no crash and the native
-       *   slide animation still composites the previous screen via the stock pop.
+       *   SWIPE-BACK: the JS stack's own `gestureEnabled` interactive pan +
+       *   `TransitionPresets.SlideFromRightIOS` (CardStyleInterpolators.
+       *   forHorizontalIOS) finger-follow the back gesture AND render the
+       *   previous card behind the current one (it parallaxes in from the left
+       *   as the current card tracks the finger right), committing the pop past
+       *   the threshold or springing back. This replaces the old black-scrim
+       *   EdgeSwipeBack/BackSwipe shims, which never mounted the route below.
+       *   Works on Android (pure JS + RNGH + reanimated — no native module, no
+       *   APK rebuild). We do NOT use rn-screens' native goBackGesture worklet
+       *   (it crashes on reanimated 4's measure() API change).
        *
-       *   `statusBarStyle: barStyle` keeps white-on-dark status-bar icons; we also
-       *   set it imperatively (effect above) + declaratively (<StatusBar>) so it
-       *   survives navigation. */}
-      <EdgeSwipeBack>
+       *   gestureResponseDistance widens the edge catch-zone so a thumb at the
+       *   bezel arms it; the conversation screen's inverted FlatList + leftward
+       *   bubble swipe-to-reply coexist because the stack gesture arms on a
+       *   RIGHTWARD horizontal drag from the left edge only. */}
       <NativeSwipeStack
         screenOptions={{
           headerShown: false,
-          contentStyle: { backgroundColor: bg },
-          statusBarStyle: barStyle,
-          /** Pushed routes slide in from the right; <EdgeSwipeBack> pops them
-           *  (the slide-out reveals the previous screen). */
-          animation: 'slide_from_right',
+          cardStyle: { backgroundColor: bg },
+          gestureEnabled: true,
+          gestureResponseDistance: 60,
+          ...TransitionPresets.SlideFromRightIOS,
         }}
       >
-        {/** Tab root: no slide animation (it's the bottom of the stack). */}
+        {/** Tab root: no transition (it's the bottom of the stack). */}
         <NativeSwipeStack.Screen
           name="(tabs)"
-          options={{ animation: 'none' }}
+          options={{ animationEnabled: false, gestureEnabled: false }}
         />
       </NativeSwipeStack>
-      </EdgeSwipeBack>
       </KeyboardProvider>
-      </GestureDetectorProvider>
     </GestureHandlerRootView>
     </WalletConnectProvider>
     </QueryClientProvider>

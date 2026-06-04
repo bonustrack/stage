@@ -1,28 +1,32 @@
-/** Expo-Router layout bound to react-native-screens' OWN native-stack navigator
- *  (`react-native-screens/native-stack`, which resolves in rn-screens ~4.16).
- *  It renders native screen containers + the slide_from_right transition that
- *  composites the previous screen underneath during a pop (the visual "reveal").
+/** Expo-Router layout bound to @react-navigation/stack's JS card stack.
  *
- *  SWIPE-BACK is NOT driven by rn-screens' `goBackGesture`/`screenEdgeGesture`
- *  worklet. On Android (rn-screens 4.16 + reanimated 4.3.1) that worklet passes
- *  a mock animated ref to reanimated 4's `measure()`, which resolves the screen
- *  viewTag to `undefined` and crashes the first swipe with "Value is undefined,
- *  expected an Object" (redbox in ScreenGestureDetector.tsx measure()) — the
- *  reanimated 3→4 measure() API change broke that mock-ref path. Instead the app
- *  uses JS RNGH Pan shims: <EdgeSwipeBack> wraps this navigator (left-edge →
- *  router.back()) and the conversation screen mounts its own <BackSwipe>. The
- *  stock pop still plays the native slide, so the previous screen is revealed.
+ *  WHY THE JS STACK (not native-stack): the goal is a finger-following
+ *  swipe-back on Android that RENDERS THE PREVIOUS SCREEN behind the current
+ *  one (parallax reveal), committing the pop past a threshold. rn-screens'
+ *  native-stack only finger-follows on iOS; its Android `goBackGesture` worklet
+ *  crashes on reanimated 4 (measure() API change → "Value is undefined,
+ *  expected an Object"), and reanimated can't be downgraded (3.x doesn't compile
+ *  on RN 0.81 + New Arch). The previous JS shim (EdgeSwipeBack/BackSwipe) only
+ *  translateX-dragged the CURRENT screen over a scrim — it never mounted the
+ *  route below, so the user saw a black/blank backdrop.
+ *
+ *  @react-navigation/stack is the legacy PURE-JS card stack: it keeps multiple
+ *  cards mounted, and `CardStyleInterpolators.forHorizontalIOS` + the built-in
+ *  `gestureEnabled` interactive pan animate BOTH cards together (the previous
+ *  card parallaxes in from the left as the current card tracks the finger to the
+ *  right). Its gesture is driven by RNGH + reanimated and works on Android. It
+ *  has NO native module (deps are JS only: @react-navigation/elements, color,
+ *  use-latest-callback) — no APK rebuild needed.
  *
  *  `withLayoutContext` is the expo-router primitive that adapts any react-
  *  navigation navigator into a file-based-routing layout, so `<NativeSwipeStack>`
  *  + `<NativeSwipeStack.Screen>` work exactly like `<Stack>` / `<Stack.Screen>`.
  *
- *  Must be rendered inside `GestureDetectorProvider`
- *  (react-native-screens/gesture-handler). */
+ *  Must be rendered inside a GestureHandlerRootView (provided in _layout). */
 
 import { withLayoutContext } from 'expo-router';
-import { createNativeStackNavigator } from 'react-native-screens/native-stack';
+import { createStackNavigator } from '@react-navigation/stack';
 
-const { Navigator } = createNativeStackNavigator();
+const { Navigator } = createStackNavigator();
 
 export const NativeSwipeStack = withLayoutContext(Navigator);
