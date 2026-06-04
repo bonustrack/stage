@@ -169,18 +169,25 @@ export default function RootLayout(): React.ReactElement {
           /** Pushed routes slide in from the right with the previous page
            *  parallaxing underneath; an interactive left-edge swipe pops them. */
           animation: 'slide_from_right',
-          /** native-stack v7 interactive swipe-back: fullScreenGestureEnabled
-           *  gives the finger-following parallax pop (previous page slides under
-           *  on the native thread); gestureEnabled keeps the back gesture on. */
-          fullScreenGestureEnabled: true,
-          gestureEnabled: true,
+          /** TRUE interactive swipe-back on BOTH platforms. native-stack v7's
+           *  `gestureEnabled`/`fullScreenGestureEnabled` are iOS-ONLY (see the
+           *  @platform ios tags in its types) — they do nothing on Android,
+           *  which is why the gesture was dead. The interactive, finger-following
+           *  parallax (previous screen sliding under on the native thread) is
+           *  driven instead by rn-screens' OWN `goBackGesture` + `screenEdgeGesture`
+           *  props, which our patch on native-stack forwards to <ScreenStack>.
+           *  `screenEdgeGesture` scopes it to the left edge so it never fights
+           *  the in-screen swipe-to-reply. Wired into the RNGH tree by
+           *  GestureDetectorProvider (mounted above). */
+          goBackGesture: 'swipeRight',
+          screenEdgeGesture: true,
         }}
       >
         {/** Tab root: no back gesture (it's the bottom of the stack — nothing to
          *  pop to) and no slide animation. */}
         <NativeSwipeStack.Screen
           name="(tabs)"
-          options={{ animation: 'none', gestureEnabled: false, fullScreenGestureEnabled: false }}
+          options={{ animation: 'none', goBackGesture: undefined, screenEdgeGesture: false }}
         />
       </NativeSwipeStack>
       </KeyboardProvider>

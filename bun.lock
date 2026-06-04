@@ -160,6 +160,7 @@
   },
   "patchedDependencies": {
     "nodejs-mobile-react-native@18.20.4": "patches/nodejs-mobile-react-native@18.20.4.patch",
+    "@react-navigation/native-stack@7.15.1": "patches/@react-navigation%2Fnative-stack@7.15.1.patch",
   },
   "packages": {
     "@0no-co/graphql.web": ["@0no-co/graphql.web@1.2.0", "", { "peerDependencies": { "graphql": "^14.0.0 || ^15.0.0 || ^16.0.0" }, "optionalPeers": ["graphql"] }, "sha512-/1iHy9TTr63gE1YcR5idjx8UREz1s0kFhydf3bBLCXyqjhkIc6igAzTOx3zPifCwFR87tsh/4Pa9cNts6d2otw=="],

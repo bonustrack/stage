@@ -7,11 +7,16 @@
  *  through rn-screens under the hood.
  *
  *  The interactive, finger-following parallax swipe-back (previous page sliding
- *  underneath on the native thread — the real iOS/Telegram look) is still
- *  native: on native-stack v7 it's driven by `fullScreenGestureEnabled` +
- *  `gestureEnabled` (set in app/_layout.tsx), wired into the RNGH gesture tree
- *  by `GestureDetectorProvider` so it arbitrates cleanly with the app's other
- *  RNGH gestures (swipe-to-reply, scroll) instead of fighting a separate touch
+ *  underneath on the native thread — the real iOS/Telegram look, on BOTH
+ *  platforms incl. Android) is driven by rn-screens' OWN `goBackGesture` +
+ *  `screenEdgeGesture` props (set in app/_layout.tsx). native-stack v7's
+ *  `gestureEnabled`/`fullScreenGestureEnabled` are iOS-ONLY and never reach the
+ *  Android gesture, so a small patch on native-stack's NativeStackView forwards
+ *  `goBackGesture`/`screenEdgeGesture`/`transitionAnimation` (plus the required
+ *  screensRefs/currentScreenId) through to rn-screens' <ScreenStack>, which
+ *  wires the Reanimated interactive worklet. `GestureDetectorProvider`
+ *  (mounted in _layout) arbitrates it cleanly with the app's other RNGH
+ *  gestures (swipe-to-reply, scroll) instead of fighting a separate touch
  *  system.
  *
  *  `withLayoutContext` is the expo-router primitive that adapts any react-
