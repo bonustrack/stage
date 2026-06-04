@@ -69,6 +69,7 @@ function isDarkBg(hex: string): boolean {
 
 export default function RootLayout(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
+  const { bg } = usePalette();
 
   /** Status-bar icons must follow the RENDERED chrome, not just the
    *  color-scheme pref. The app paints a near-black surface in dark mode and so
@@ -79,7 +80,7 @@ export default function RootLayout(): React.ReactElement {
    *  imperatively (effect below) because under Android edge-to-edge the
    *  declarative <StatusBar> can be shadowed by the native baseline on first
    *  paint. */
-  const barStyle: 'light' | 'dark' = isDarkBg(usePalette().bg) ? 'light' : 'dark';
+  const barStyle: 'light' | 'dark' = isDarkBg(bg) ? 'light' : 'dark';
   useEffect(() => { setStatusBarStyle(barStyle, true); }, [barStyle]);
 
   /** Universal/deep links → screen navigation. `getInitialURL` resolves async
@@ -118,7 +119,7 @@ export default function RootLayout(): React.ReactElement {
 
   if (!loaded) {
     return (
-      <Box style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: dark ? '#0e0f10' : '#ffffff' }}>
+      <Box style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: bg }}>
         <Spinner size={28} color={dark ? '#ffffff' : '#000000'} />
       </Box>
     );
@@ -164,7 +165,7 @@ export default function RootLayout(): React.ReactElement {
       <NativeSwipeStack
         screenOptions={{
           headerShown: false,
-          contentStyle: { backgroundColor: dark ? '#0e0f10' : '#ffffff' },
+          contentStyle: { backgroundColor: bg },
           statusBarStyle: barStyle,
           /** Pushed routes slide in from the right with the previous page
            *  parallaxing underneath; an interactive left-edge swipe pops them. */
