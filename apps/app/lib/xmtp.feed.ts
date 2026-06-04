@@ -15,7 +15,7 @@ import { useAccountEpoch } from './accountEpoch';
 import { getOrCreateXmtpClient, convOfLine } from './xmtp.client';
 import { envelopeOfXmtpMessage } from './xmtp.messages';
 import { feedCache, activeFeedLines } from './xmtp.state';
-import { ensureGlobalStream, PAGE_SIZE } from './xmtp.stream';
+import { ensureGlobalStream, syncInboxOnce, PAGE_SIZE } from './xmtp.stream';
 import { type XmtpFeedStatus } from './xmtp.types';
 
 /** Hook: load the existing message history for an XMTP conversation, then subscribe
@@ -107,6 +107,14 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
         const local = await conv.messages({ limit: PAGE_SIZE });
         if (cancelled) return;
         applyMessages(local);
+        /** Catch-up: messages delivered while backgrounded / the conv was closed
+         *  arrive via MLS group commits the native stream drops. A bare
+         *  `conv.sync()` on this handle doesn't reliably land them — only the
+         *  inbox-wide sync does (it's why the channels list saw the latest
+         *  message this feed missed). Run it (coalesced) BEFORE the per-conv sync
+         *  so the re-read below reflects the true network tail. */
+        await syncInboxOnce();
+        if (cancelled) return;
         await conv.sync().catch(() => undefined);
         if (cancelled) return;
         const synced = await conv.messages({ limit: PAGE_SIZE });

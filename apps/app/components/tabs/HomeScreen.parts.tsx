@@ -13,8 +13,10 @@ import { resetAccount } from '../../lib/wallet';
 import { getPeerAvatarCb, getPeerName, isPeerResolved } from '../../lib/peerProfiles';
 import { hasDraft } from '../../lib/drafts';
 import { isPinned } from '../../lib/pins';
+import { requestLabelFilter } from '../../lib/labelFilterRequest';
 import type { Row as RowT } from './HomeScreen.helpers';
 import { fmtTs } from './HomeScreen.helpers';
+import { DANGER } from '../../lib/theme';
 
 type RowMenu = { convId: string; title: string; isUnread: boolean; isGroup: boolean; peerAddress: string | null };
 
@@ -40,8 +42,19 @@ export function useChannelRowRenderer(
     const preview = item.lastPreview
       ? `${senderPrefix}${item.lastPreview}`
       : '(no messages yet)';
-    const showAddr = !item.avatarUri && item.avatarAddress && isPeerResolved(item.avatarAddress)
-      ? item.avatarAddress : null;
+    /** Avatar address gate:
+     *   - GROUP (peerAddress == null): the address IS the deterministic
+     *     channel-id stamp seed — render it directly (no peer profile to
+     *     resolve, and we must NEVER blank a group avatar). Skipped only when
+     *     a group-uploaded image (avatarUri) takes precedence.
+     *   - DM (peerAddress set): hold off until the peer profile resolves so we
+     *     don't flash a cache-buster-less stamp before the real URL lands. */
+    const isGroup = !item.peerAddress;
+    const showAddr = item.avatarUri || !item.avatarAddress
+      ? null
+      : isGroup || isPeerResolved(item.avatarAddress)
+        ? item.avatarAddress
+        : null;
     return (
       <ChannelRow
         title={displayTitle}
@@ -55,6 +68,12 @@ export function useChannelRowRenderer(
         markedUnread={item.markedUnread}
         pinned={isPinned(item.convId)}
         hasDraft={hasDraft(item.convId)}
+        labels={isGroup ? item.labels : undefined}
+        /** Already on the Channels tab — requesting the filter fans out to this
+         *  screen's live subscription, which sets labelFilter. No navigation
+         *  needed; the nested chip Pressable swallows the tap so the row's
+         *  onPress (open conversation) doesn't also fire. */
+        onLabelPress={isGroup ? requestLabelFilter : undefined}
         onPress={() => router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } })}
         onLongPress={() => {
           /** Tiny haptic-style buzz when the long-press opens the row menu.
@@ -94,7 +113,7 @@ export function HomeError({ error, dark, fg, bg }: {
           borderWidth: 1, borderColor: dark ? '#5c2231' : '#e9bbc4',
         })}
       >
-        <Text style={{ color: dark ? '#ff6b80' : '#b91c1c', fontSize: 14 , fontFamily: 'Calibre-Medium'}}>
+        <Text style={{ color: DANGER, fontSize: 14 , fontFamily: 'Calibre-Medium'}}>
           Reset XMTP identity
         </Text>
       </Pressable>

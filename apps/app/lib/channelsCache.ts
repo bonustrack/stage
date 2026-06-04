@@ -48,6 +48,24 @@ const activeListeners = new Set<(rows: CachedRow[] | null) => void>();
  *  the active pointer moves. */
 let activeStoreUnsub: (() => void) | null = null;
 
+/** Deferred + coalesced fan-out. Cache mutators (setCachedRows / patchRowSent /
+ *  mark*) update the store value SYNCHRONOUSLY, but notifying subscribers
+ *  synchronously can fire a listener's setState while a DIFFERENT component is
+ *  mid-render (React warns: "Cannot update a component while rendering a
+ *  different component"). So we defer the listener invocation to a microtask.
+ *  A single scheduled flag coalesces rapid successive writes into ONE flush,
+ *  and the flush reads the LATEST rows once (no per-write replay, no loop). */
+let notifyScheduled = false;
+function notifyActive(): void {
+  if (notifyScheduled) return;
+  notifyScheduled = true;
+  queueMicrotask(() => {
+    notifyScheduled = false;
+    const v = activeStore().get();
+    for (const l of activeListeners) l(v);
+  });
+}
+
 function fileNameFor(id: string): string {
   /** Sanitise the id for a filename (account ids are lowercased addresses, but
    *  be defensive). The legacy single-account file name is preserved for the
@@ -76,9 +94,7 @@ export function getActiveAccountIdSync(): string { return activeId; }
  *  screen. Called whenever the active pointer changes. */
 function bindActiveStore(): void {
   if (activeStoreUnsub) { try { activeStoreUnsub(); } catch { /* ignore */ } activeStoreUnsub = null; }
-  activeStoreUnsub = activeStore().subscribe(v => {
-    for (const l of activeListeners) l(v);
-  });
+  activeStoreUnsub = activeStore().subscribe(() => { notifyActive(); });
 }
 bindActiveStore();
 
@@ -93,8 +109,9 @@ export function setActiveAccountForCache(id: string | null): void {
   activeId = next;
   bindActiveStore();
   const s = activeStore();
-  /** Immediate swap to whatever's already in memory for this account. */
-  for (const l of activeListeners) l(s.get());
+  /** Swap to whatever's already in memory for this account (deferred so it can
+   *  never land during another component's render). */
+  notifyActive();
   /** Lazy hydrate from this account's file; the store's own subscribe (bound
    *  above) re-notifies active listeners when the disk read lands. */
   void s.hydrate();

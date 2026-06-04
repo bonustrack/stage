@@ -23,7 +23,7 @@ import { Icon } from '@metro-labs/kit/icon';
 import { useRouter } from 'expo-router';
 import { Col } from './layout';
 import { AppModal } from './AppModal';
-import { useEffectiveColorScheme } from '../lib/theme';
+import { usePalette } from '../lib/theme';
 import { markConvRead, markConvUnread } from '../lib/channelsCache';
 import { togglePin } from '../lib/pins';
 import { leaveGroupConv, lineOfConv } from '../lib/xmtp';
@@ -56,11 +56,10 @@ export function ChannelMenu({
   visible, onClose, context = 'list', onAfterLeave,
 }: ChannelMenuProps): React.ReactElement {
   const router = useRouter();
-  const dark = useEffectiveColorScheme() === 'dark';
-  const fg = dark ? '#9f9fa3' : '#57606a';
-  const sub = dark ? '#7a7a7e' : '#8a929d';
-  const head = dark ? '#ffffff' : '#000000';
-  const danger = dark ? '#ff6b80' : '#b91c1c';
+  const pal = usePalette();
+  const fg = pal.text;
+  const head = pal.link;
+  const danger = pal.danger;
 
   const run = (fn: () => void): void => { onClose(); fn(); };
 
@@ -95,7 +94,7 @@ export function ChannelMenu({
       <Col gap={4}>
         {title ? (
           <Text
-            style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', paddingHorizontal: 4, paddingBottom: 6 }}
+            style={{ color: head, fontSize: 13, fontFamily: 'Calibre-Medium', paddingHorizontal: 4, paddingBottom: 6 }}
             numberOfLines={1}
           >
             {title}
@@ -162,7 +161,7 @@ function MenuRow({ icon, label, color, onPress }: {
   return (
     <Pressable onPress={onPress} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 }}>
       <Icon name={icon} size={20} color={color} />
-      <Text style={{ color, fontSize: 16, fontFamily: 'Calibre-Medium' }}>{label}</Text>
+      <Text style={{ color, fontSize: 18, fontFamily: 'Calibre-Medium' }}>{label}</Text>
     </Pressable>
   );
 }

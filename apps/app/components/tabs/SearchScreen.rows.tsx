@@ -99,8 +99,5 @@ export function MessageRow(props: {
     </Pressable>
   );
 }
-// Re-export layout pieces (split into SearchScreen.layout.tsx for the
-// <200-line cap) so existing import paths keep working.
-export {
-  SearchBar, SearchEmptyState, SearchResultsHeader, SearchNoMatches,
-} from './SearchScreen.layout';
+// Layout pieces live in SearchScreen.layout.tsx; consumers import them from
+// there directly (the re-export here was dropped to break the rows ↔ layout cycle).

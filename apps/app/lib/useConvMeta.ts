@@ -14,12 +14,14 @@ export interface ConvMeta {
   /** null = not resolved yet, '' = group with no name, else the name. */
   groupName: string | null;
   groupImage: string;
+  /** Group's XMTP-metadata description ('' = none). Empty for DMs. */
+  groupDescription: string;
   memberAddrs: string[];
   inboxToAddr: Record<string, string>;
 }
 
 const EMPTY: ConvMeta = {
-  peerAddr: null, isGroup: false, groupName: null, groupImage: '', memberAddrs: [], inboxToAddr: {},
+  peerAddr: null, isGroup: false, groupName: null, groupImage: '', groupDescription: '', memberAddrs: [], inboxToAddr: {},
 };
 
 async function fetchConvMeta(convId: string): Promise<ConvMeta> {
@@ -30,13 +32,21 @@ async function fetchConvMeta(convId: string): Promise<ConvMeta> {
     memberInboxToAddressMap(conv),
   ]);
   if (peer) return { ...EMPTY, peerAddr: peer, inboxToAddr };
-  const g = conv as unknown as { name?: () => Promise<string>; imageUrl?: () => Promise<string> };
-  const [members, name, image] = await Promise.all([
+  const g = conv as unknown as {
+    name?: () => Promise<string>;
+    imageUrl?: () => Promise<string>;
+    description?: () => Promise<string>;
+  };
+  const [members, name, image, description] = await Promise.all([
     groupMemberEthAddresses(conv),
     g.name?.() ?? Promise.resolve(''),
     g.imageUrl?.().catch(() => '') ?? Promise.resolve(''),
+    g.description?.().catch(() => '') ?? Promise.resolve(''),
   ]);
-  return { peerAddr: null, isGroup: true, groupName: name ?? '', groupImage: image ?? '', memberAddrs: members, inboxToAddr };
+  return {
+    peerAddr: null, isGroup: true, groupName: name ?? '', groupImage: image ?? '',
+    groupDescription: description ?? '', memberAddrs: members, inboxToAddr,
+  };
 }
 
 export function useConvMeta(convId?: string | null): ConvMeta {

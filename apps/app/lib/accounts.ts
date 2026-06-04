@@ -1,47 +1,32 @@
-/** Multi-account registry for the mobile app.
+/** Multi-account registry for the mobile app. The app holds several wallets at
+ *  once and switches without a logout. Each account is one of: 'generated' (a
+ *  random EOA minted in-app), 'privateKey' (imported from a pasted key/phrase),
+ *  or 'walletconnect' (remote — no key stored, signing delegated).
  *
- *  The app holds several wallets at once and switches between them without a
- *  logout. Each account is one of:
- *    - 'generated'      — a random EOA minted in-app (key in SecureStore)
- *    - 'privateKey'     — an EOA imported from a pasted private key
- *    - 'walletconnect'  — a remote wallet; we store no key, signing is delegated
- *
- *  Private keys for the two local types live in expo-secure-store keyed by
- *  address (`wallet.pk.<id>`); WalletConnect accounts have no stored key (so
- *  they can't export one). Each account gets its own XMTP sqlite store
- *  (`xmtp-<id>`) so inboxes stay isolated and switching is just a client rebuild.
- *
- *  Migration: the pre-multi-account build kept a single key under
- *  `wallet.privateKey` with its XMTP db in `xmtp/`. On first load here we fold
- *  that into the registry as a 'generated' account pointing at the legacy dir. */
+ *  Keys for the two local types live in expo-secure-store keyed by address
+ *  (`wallet.pk.<id>`); each account gets its own XMTP sqlite store (`xmtp-<id>`)
+ *  so inboxes stay isolated and switching is just a client rebuild. Migration:
+ *  a pre-multi-account single key under `wallet.privateKey` (db in `xmtp/`) is
+ *  folded in as a 'generated' account on first load. */
 
 import './cryptoShim';
 import * as SecureStore from 'expo-secure-store';
 import { generatePrivateKey, privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts';
 import type { Hex } from 'viem';
-import { setActiveAccountForCache } from './channelsCache';
+/** Deferred to break the accounts ↔ channelsCache module cycle; both call sites are async. */
+const setActiveAccountForCache = async (id: string | null): Promise<void> => {
+  const { setActiveAccountForCache: fn } = await import('./channelsCache');
+  fn(id);
+};
 import {
   LEGACY_DB_DIR, LEGACY_PK_KEY, PK_PREFIX,
-  getViemAccount, normalizePk,
+  getViemAccount, normalizePk, privateKeyFromMnemonic,
 } from './accounts.keys';
 
 export { canExportPrivateKey, getPrivateKey, getViemAccount } from './accounts.keys';
 
-export type AccountType = 'generated' | 'privateKey' | 'walletconnect';
-
-export interface AccountRecord {
-  /** Lowercased address — stable, SecureStore-key-safe identifier. */
-  id: string;
-  /** Checksummed address for display + signing. */
-  address: string;
-  type: AccountType;
-  label?: string;
-  /** Dir name under the document dir for this account's XMTP store. */
-  dbDir: string;
-  /** An XMTP installation has been created in dbDir (so we Client.build, not create). */
-  registered?: boolean;
-  createdAt: number;
-}
+export type { AccountType, AccountRecord } from './accounts.types';
+import type { AccountRecord } from './accounts.types';
 
 const LIST_KEY = 'accounts.list';
 const ACTIVE_KEY = 'accounts.active';
@@ -82,7 +67,7 @@ export async function getActiveAccountId(): Promise<string | null> {
   /** Boot init: point the channels cache at the active account's store so the
    *  Channels screen reads the right per-account rows on cold start (idempotent —
    *  no-ops when the pointer is already set; the switch path sets it directly). */
-  if (id) setActiveAccountForCache(id);
+  if (id) await setActiveAccountForCache(id);
   return id;
 }
 
@@ -92,7 +77,7 @@ export async function setActiveAccountId(id: string): Promise<void> {
    *  account keeps its own cached rows, so switching swaps to the target
    *  account's data instantly (instant 2nd open) and the stream revalidates in
    *  the background. */
-  setActiveAccountForCache(id);
+  await setActiveAccountForCache(id);
 }
 
 /** Active account, falling back to the first in the list when the pointer is
@@ -148,6 +133,13 @@ export async function addGeneratedAccount(): Promise<AccountRecord> {
 
 export async function importPrivateKey(input: string): Promise<AccountRecord> {
   return addLocalAccount(normalizePk(input), 'privateKey');
+}
+/** Import an existing wallet from one pasted string — a 0x private key (64 hex)
+ *  or a BIP-39 phrase (phrases have spaces, keys don't). A phrase is reduced to
+ *  its raw key and stored exactly like a pasted key. Throws on bad input. */
+export async function importWallet(input: string): Promise<AccountRecord> {
+  const pk = input.trim().includes(' ') ? privateKeyFromMnemonic(input) : normalizePk(input);
+  return addLocalAccount(pk, 'privateKey');
 }
 
 /** WalletConnect account — no private key stored locally. The address is the

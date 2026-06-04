@@ -26,11 +26,12 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
-import { useEffectiveColorScheme } from '../lib/theme';
+import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { usePeerProfiles } from '../lib/peerProfiles';
 import { switchToAccount } from '../lib/xmtp';
 import { loadAccounts, getActiveAccountId, type AccountRecord } from '../lib/accounts';
 import { DrawerAccounts, DrawerHeader, DrawerRow } from './LeftDrawer.parts';
+import { DrawerAccountActions } from './LeftDrawer.accounts';
 
 /** Spring used for both open + close settles. */
 const SETTLE = { damping: 22, stiffness: 240 } as const;
@@ -45,10 +46,12 @@ export function LeftDrawer({ progress }: { progress: SharedValue<number> }): Rea
   const { width } = useWindowDimensions();
   const W = Math.min(width * 0.82, 360);
 
-  const head = dark ? '#ffffff' : '#000000';
-  const sub = dark ? '#7a7a7e' : '#8a929d';
-  const border = dark ? '#282a2d' : '#e4e4e5';
-  const sheetBg = dark ? '#1a1b1d' : '#ffffff';
+  const pal = usePalette();
+  const head = pal.link; // #ffffff / #000000
+  // `sub` = muted secondary text; no `muted` token yet → map to `text`. TODO: muted token.
+  const sub = pal.text;
+  const border = pal.border; // #282a2d / #e4e4e5
+  const sheetBg = pal.bg; // sidebar surface → bg token (editable)
 
   const [accounts, setAccounts] = useState<AccountRecord[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -116,7 +119,7 @@ export function LeftDrawer({ progress }: { progress: SharedValue<number> }): Rea
     transform: [{ translateX: -W + progress.value * W }],
   }));
 
-  function go(href: '/profile' | '/settings' | '/system'): void {
+  function go(href: '/profile' | '/settings'): void {
     close();
     router.navigate(href);
   }
@@ -158,10 +161,12 @@ export function LeftDrawer({ progress }: { progress: SharedValue<number> }): Rea
           {/* Accounts — tap to switch. */}
           <DrawerAccounts accounts={accounts} activeId={activeId} onSwitch={onSwitch} c={{ head, sub, border }} />
 
+          {/* New account (generate) + Add account (import key/phrase). */}
+          <DrawerAccountActions head={head} sub={sub} border={border} dark={dark} onChanged={() => { void refresh(); }} />
+
           {/* Profile + Settings rows. */}
           <DrawerRow icon="user" label="Profile" head={head} sub={sub} border={border} onPress={() => go('/profile')} />
           <DrawerRow icon="cog" label="Settings" head={head} sub={sub} border={border} onPress={() => go('/settings')} />
-          <DrawerRow icon="desktop" label="System" head={head} sub={sub} border={border} onPress={() => go('/system')} />
         </Animated.View>
       </GestureDetector>
     </Box>

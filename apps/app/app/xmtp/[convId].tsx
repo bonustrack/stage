@@ -19,16 +19,17 @@ import { shortAddress } from '../../lib/xmtp';
 import { getCachedRows } from '../../lib/channelsCache';
 import { flash } from '../../lib/toast';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { HeaderAvatar, BubbleActionMenu } from '../../components/xmtp-conv/parts';
+import { HeaderAvatar, BubbleActionMenu, GithubNavButton } from '../../components/xmtp-conv/parts';
 import { previewOf } from '../../components/xmtp-conv/feed-helpers';
 import { ConversationFeed } from '../../components/xmtp-conv/ConversationFeed';
 import { useConversationState } from '../../components/xmtp-conv/useConversationState';
+import { BackSwipe } from '../../components/xmtp-conv/BackSwipe';
 
 export default function XmtpConversation(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { fg, head, sub, bg, border, rowBg } = usePalette();
-
+  const { text: fg, link: head, bg, border } = usePalette();
+  const sub = fg, rowBg = border;
   const { convId, focus } = useLocalSearchParams<{ convId: string; focus?: string }>();
   const c = useConversationState(convId, focus);
   const {
@@ -36,19 +37,16 @@ export default function XmtpConversation(): React.ReactElement {
     showJump, setShowJump, setListEpoch,
     replyingTo, setReplyingTo, setReplyTarget,
     menuFor, setMenuFor, menuAnchor, overflowOpen, setOverflowOpen, setSelectedForCopy,
-    peerAddr, groupName, groupImage, isGroup, senderEthOf,
-    mentionCandidates, onReact, onOptimistic, onSent, jumpToMessage,
+    peerAddr, groupName, groupImage, isGroup, github, senderEthOf,
+    mentionCandidates, onReact, onOptimistic, onSent, jumpToMessage, markAtBottom, listRef,
   } = c;
 
   const insets = useSafeAreaInsets();
-  /** Reanimated-driven keyboard offset shared with the composer's KeyboardStickyView,
-   *  so the FlatList wrapper lifts in lockstep (native thread) with the composer.
-   *  Match the composer's `height.value - insets.bottom` translate by subtracting
-   *  `insets.bottom` here too — otherwise the feed overshoots. Clamp ≥0. */
+  /** Reanimated keyboard offset shared with the composer's KeyboardStickyView so the
+   *  FlatList wrapper lifts in lockstep. Match the composer's `height - insets.bottom`
+   *  translate (subtract insets.bottom too) or the feed overshoots. Clamp ≥0. */
   const { height: kbHeightShared } = useReanimatedKeyboardAnimation();
-  const listWrapperStyle = useAnimatedStyle(() => ({
-    marginBottom: Math.max(0, -kbHeightShared.value - insets.bottom),
-  }));
+  const listWrapperStyle = useAnimatedStyle(() => ({ marginBottom: Math.max(0, -kbHeightShared.value - insets.bottom) }));
 
   if (!convId) {
     return (
@@ -64,6 +62,10 @@ export default function XmtpConversation(): React.ReactElement {
         flex: 1, backgroundColor: bg, paddingBottom: insets.bottom,
       }}
     >
+      {/** In-screen edge-swipe-back (BackSwipe): the root <EdgeSwipeBack> Pan
+       *   can't reach touches inside this screen's native FlatList subtree, so
+       *   the conversation owns its own whole-page swipe over the theme-bg. */}
+      <BackSwipe listRef={listRef}>
       <Reanimated.View style={[{ flex: 1 }, listWrapperStyle]}>
       <ConversationFeed
         c={c}
@@ -71,19 +73,20 @@ export default function XmtpConversation(): React.ReactElement {
         dark={dark}
         head={head}
         sub={sub}
+        fg={fg}
         border={border}
+        rowBg={rowBg}
         insets={insets}
         router={router}
       />
       </Reanimated.View>
-      {/** Top nav: solid bg strip mirrors the composer footer + extends UP to cover the
-       *  status-bar area, so content sliding up under the keyboard doesn't show through
-       *  behind the system icons. */}
+      {/** Top nav: solid bg strip mirrors the composer footer + extends UP over the
+       *  status-bar area so content sliding under the keyboard doesn't show through. */}
       <Box style={{
         position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
         height: 52 + insets.top, paddingTop: insets.top, backgroundColor: bg,
         flexDirection: 'row', alignItems: 'stretch',
-        borderBottomWidth: 1, borderBottomColor: dark ? '#282a2d' : '#e4e4e5',
+        borderBottomWidth: 1, borderBottomColor: border,
       }}>
         <Pressable
           onPress={() => router.replace('/')}
@@ -91,9 +94,8 @@ export default function XmtpConversation(): React.ReactElement {
         >
           <Icon name="arrowLeft" size={22} color={fg} />
         </Pressable>
-        {/** Everything right of the back arrow is one tap target → the
-         *   group/channel detail page (or the peer's profile for a DM).
-         *   Fills full height + to the right edge so 100% is clickable. */}
+        {/** Everything right of the back arrow is one tap target → group/channel
+         *   detail (or peer profile for a DM); fills full height + width. */}
         <Pressable
           onPress={() => {
             if (isGroup) router.push({ pathname: '/group/[convId]', params: { convId: convId ?? '' } });
@@ -101,15 +103,15 @@ export default function XmtpConversation(): React.ReactElement {
           }}
           style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 14 }}
         >
-          <HeaderAvatar peerAddr={peerAddr} groupImage={groupImage} border={dark ? '#282a2d' : '#e4e4e5'} />
-          <Text style={{ color: head, fontSize: 19, fontFamily: 'Calibre-Semibold', flex: 1 }} numberOfLines={1}>
+          <HeaderAvatar peerAddr={peerAddr} groupImage={groupImage} channelId={convId} isGroup={isGroup} border={border} />
+          <Text style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold', flex: 1 }} numberOfLines={1}>
             {isGroup ? (groupName === null ? '' : (groupName || 'Untitled group'))
               : peerAddr ? (getPeerName(peerAddr) ?? shortAddress(peerAddr)) : ''}
           </Text>
         </Pressable>
-        {/** Overflow (3-dot) menu — shared ChannelMenu. Always shown: every conv
-         *   has Mark read/unread + Pin/Unpin + Group info / Profile; groups add
-         *   Leave group, DMs add Open as bubble / Float as pill (pill module). */}
+        {/** Linked GitHub issue/PR (Linear-style) — groups with a link only. */}
+        {isGroup && github ? <GithubNavButton url={github} color={fg} /> : null}
+        {/** Overflow (3-dot) menu — shared ChannelMenu. Always shown. */}
         <Pressable
           onPress={() => setOverflowOpen(true)}
           hitSlop={8}
@@ -118,21 +120,18 @@ export default function XmtpConversation(): React.ReactElement {
           <Icon name="dotsVertical" size={22} color={fg} />
         </Pressable>
       </Box>
-      {/** Fade strip below the top nav — mirrors the composer's top fade. The nav is
-       *  `52 + insets.top` tall; start the fade 1px higher so its solid-bg top edge
-       *  overlaps the nav bottom by 1px, closing the hairline seam between the two
-       *  absolute bg layers (the "1px missing"). The fade then ramps down to
-       *  transparent over the content beneath. */}
+      {/** Fade strip below the top nav — mirrors the composer's top fade. Start it 1px
+       *  higher so its solid-bg top edge overlaps the nav bottom, closing the hairline
+       *  seam between the two absolute bg layers, then ramps to transparent. */}
       <ComposerGradient bg={bg} direction="up" top={52 + insets.top - 1} height={24} />
       <KeyboardStickyView offset={{ opened: insets.bottom }}>
       <Box>
-      {/** Jump-to-bottom: anchored just above the composer (bottom:'100%') and inside
-       *   the KeyboardStickyView, so it tracks the composer's height + the keyboard
-       *   instead of a fixed offset that floated in the middle of a tall composer.
-       *   Bump the FlatList key to remount → inverted offset 0 = newest at the bottom. */}
+      {/** Jump-to-bottom: anchored above the composer (bottom:'100%') inside the
+       *   KeyboardStickyView so it tracks composer height + keyboard. Bumping the
+       *   FlatList key remounts → inverted offset 0 = newest at the bottom. */}
       {showJump ? (
         <Pressable
-          onPress={() => { setListEpoch(e => e + 1); setShowJump(false); }}
+          onPress={() => { markAtBottom(); setListEpoch(e => e + 1); setShowJump(false); }}
           style={{
             position: 'absolute', alignSelf: 'center', bottom: '100%', marginBottom: 8, zIndex: 3,
             width: 36, height: 36, borderRadius: 999,
@@ -156,7 +155,8 @@ export default function XmtpConversation(): React.ReactElement {
       />
       </Box>
       </KeyboardStickyView>
-      {/** Topnav overflow menu — the shared ChannelMenu bottom sheet. */}
+      </BackSwipe>
+      {/** Overlays live OUTSIDE BackSwipe — portals/bottom-sheets must NOT slide. */}
       <ChannelMenu
         visible={overflowOpen}
         convId={convId ?? ''}

@@ -37,7 +37,7 @@ export async function fetchAssetRows(addr: string): Promise<AssetRow[]> {
   const cgIds = [...new Set(ASSETS.filter(a => a.cgId).map(a => a.cgId!))];
   const [simplePrices, ...platformPriceList] = await Promise.all([
     getSimplePrices(cgIds).catch(() => ({} as Record<string, Price>)),
-    ...platforms.map(p => getErc20UsdPrices(p, ASSETS.filter(a => a.cgPlatform === p).map(a => a.address!.toLowerCase()))
+    ...platforms.map(p => getErc20UsdPrices(p, ASSETS.filter(a => a.cgPlatform === p).map(a => (a.priceAddress ?? a.address!).toLowerCase()))
       .catch(() => ({} as Record<string, Price>))),
   ]);
   const tokenPricesByPlatform = new Map<string, Record<string, Price>>(
@@ -52,7 +52,7 @@ export async function fetchAssetRows(addr: string): Promise<AssetRow[]> {
       : formatUnits(raw, a.decimals);
     const priceRec: Price | undefined = a.address === null
       ? (a.cgId ? simplePrices[a.cgId] : undefined)
-      : (a.cgPlatform ? tokenPricesByPlatform.get(a.cgPlatform)?.[a.address.toLowerCase()] : undefined);
+      : (a.cgPlatform ? tokenPricesByPlatform.get(a.cgPlatform)?.[(a.priceAddress ?? a.address).toLowerCase()] : undefined);
     const priceUsd = priceRec?.usd ?? null;
     const change24h = typeof priceRec?.usd_24h_change === 'number' ? priceRec.usd_24h_change : null;
     return {

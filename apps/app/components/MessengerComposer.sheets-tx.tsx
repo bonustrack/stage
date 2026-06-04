@@ -7,6 +7,7 @@ import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';
 import { Row, Col } from './layout';
 import { AppModal } from './AppModal';
+import { usePalette, useBlockRadius } from '../lib/theme';
 import { type Palette } from './MessengerComposer.helpers';
 
 export function SignatureSheet({
@@ -21,6 +22,8 @@ export function SignatureSheet({
   onSend: () => void;
 }): React.ReactElement {
   const { fg, sub, inputBg, chipBg } = palette;
+  const { primary, bg } = usePalette();
+  const r = useBlockRadius();
   return (
     <AppModal visible={open} onClose={onClose} title="Request signature">
       <Col gap={12} pb={8}>
@@ -30,7 +33,7 @@ export function SignatureSheet({
               key={k}
               onPress={() => setKind(k)}
               style={{
-                flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 10,
+                flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: r,
                 borderWidth: 1, borderColor: kind === k ? '#c0a06e' : chipBg,
                 backgroundColor: kind === k ? 'rgba(192,160,110,0.15)' : inputBg,
               }}
@@ -44,7 +47,7 @@ export function SignatureSheet({
           onChangeText={setDesc}
           placeholder="Description (e.g. Sign in to dapp)"
           placeholderTextColor={sub}
-          style={{ color: fg, backgroundColor: inputBg, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 15 }}
+          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 15 }}
         />
         {kind === 'personal' ? (
           <TextInput
@@ -53,7 +56,7 @@ export function SignatureSheet({
             placeholder="Message to sign"
             placeholderTextColor={sub}
             multiline
-            style={{ color: fg, backgroundColor: inputBg, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, minHeight: 80, fontFamily: 'Calibre-Medium', fontSize: 15, textAlignVertical: 'top' }}
+            style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, minHeight: 80, fontFamily: 'Calibre-Medium', fontSize: 15, textAlignVertical: 'top' }}
           />
         ) : (
           <TextInput
@@ -64,7 +67,7 @@ export function SignatureSheet({
             multiline
             autoCapitalize="none"
             autoCorrect={false}
-            style={{ color: fg, backgroundColor: inputBg, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, minHeight: 160, fontFamily: 'Calibre-Medium', fontSize: 13, textAlignVertical: 'top' }}
+            style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, minHeight: 160, fontFamily: 'Calibre-Medium', fontSize: 13, textAlignVertical: 'top' }}
           />
         )}
         <Button
@@ -74,6 +77,8 @@ export function SignatureSheet({
           dark={dark}
           onPress={onSend}
           label="Send request"
+          tintBg={primary}
+          tintFg={bg}
           style={{ marginTop: 4 }}
         />
       </Col>
@@ -91,6 +96,8 @@ export function PaymentSheet({
   onSend: () => void;
 }): React.ReactElement {
   const { fg, sub, inputBg } = palette;
+  const { primary, bg } = usePalette();
+  const r = useBlockRadius();
   return (
     <AppModal visible={open} onClose={onClose} title="Request payment / Send">
       <Col gap={12} pb={8}>
@@ -101,7 +108,7 @@ export function PaymentSheet({
           placeholderTextColor={sub}
           autoCapitalize="none"
           autoCorrect={false}
-          style={{ color: fg, backgroundColor: inputBg, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 14 }}
+          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 14 }}
         />
         <TextInput
           value={amount}
@@ -109,14 +116,14 @@ export function PaymentSheet({
           placeholder="Amount (ETH)"
           placeholderTextColor={sub}
           keyboardType="decimal-pad"
-          style={{ color: fg, backgroundColor: inputBg, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 16 }}
+          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 16 }}
         />
         <TextInput
           value={note}
           onChangeText={setNote}
           placeholder="Note (optional)"
           placeholderTextColor={sub}
-          style={{ color: fg, backgroundColor: inputBg, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 16 }}
+          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 16 }}
         />
         <Button
           variant="primary"
@@ -125,6 +132,8 @@ export function PaymentSheet({
           dark={dark}
           onPress={onSend}
           label="Send request"
+          tintBg={primary}
+          tintFg={bg}
           style={{ marginTop: 4 }}
         />
       </Col>

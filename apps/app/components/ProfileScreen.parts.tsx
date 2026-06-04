@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { Modal, Pressable } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from './layout';
-import { usePalette, type Palette } from '../lib/theme';
+import { usePalette, useBlockRadius, type Palette } from '../lib/theme';
 import { getCachedXmtpClient, getOrCreateXmtpClient } from '../lib/xmtp';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';
@@ -57,14 +57,14 @@ export function ProfileHeader({ variant, insetTop, isSelf, onBack, onMenu, c }: 
     }}>
       {variant === 'route' ? (
         <Pressable onPress={onBack} hitSlop={10} style={{ padding: 6 }}>
-          <Icon name="arrowLeft" size={22} color={c.head} />
+          <Icon name="arrowLeft" size={22} color={c.link} />
         </Pressable>
       ) : (
-        <Text style={{ color: c.head, fontSize: 22, fontFamily: 'Calibre-Semibold' }}>Profile</Text>
+        <Text style={{ color: c.link, fontSize: 22, fontFamily: 'Calibre-Semibold' }}>Profile</Text>
       )}
       {isSelf ? (
         <Pressable onPress={onMenu} hitSlop={8} style={{ padding: 6 }}>
-          <Icon name="dotsHorizontal" size={22} color={c.head} />
+          <Icon name="dotsHorizontal" size={22} color={c.link} />
         </Pressable>
       ) : null}
     </Box>
@@ -75,19 +75,20 @@ export function ProfileHeader({ variant, insetTop, isSelf, onBack, onMenu, c }: 
 export function InfoRow({ label, value, onCopy, c }: {
   label: string; value: string; onCopy?: () => void; c: ProfileColors;
 }): React.ReactElement {
+  const blockRadius = useBlockRadius();
   return (
     <Box style={{
       marginHorizontal: 16, marginTop: 12, padding: 12,
-      borderRadius: 12, backgroundColor: c.rowBg, borderWidth: 1, borderColor: c.border,
+      borderRadius: blockRadius, backgroundColor: c.border, borderWidth: 1, borderColor: c.border,
       flexDirection: 'row', alignItems: 'center', gap: 8,
     }}>
       <Box style={{ flex: 1 }}>
-        <Text style={{ color: c.sub, fontSize: 11, fontFamily: 'Calibre-Medium' }}>{label.toUpperCase()}</Text>
-        <Text style={{ color: c.fg, fontSize: 14, marginTop: 4, fontFamily: 'Calibre-Medium' }} selectable>{value}</Text>
+        <Text style={{ color: c.text, fontSize: 11, fontFamily: 'Calibre-Medium' }}>{label.toUpperCase()}</Text>
+        <Text style={{ color: c.text, fontSize: 14, marginTop: 4, fontFamily: 'Calibre-Medium' }} selectable>{value}</Text>
       </Box>
       {onCopy ? (
         <Pressable onPress={onCopy} hitSlop={8} style={{ padding: 4 }}>
-          <Icon name="copy" size={18} color={c.sub} />
+          <Icon name="copy" size={18} color={c.text} />
         </Pressable>
       ) : null}
     </Box>
@@ -112,9 +113,13 @@ export function ProfileActions({ dark, opening, onMessage, onSend, c }: {
         dark={dark}
         onPress={onPress}
         disabled={disabled}
-        icon={<Icon name={icon} size={22} color={c.head} />}
+        icon={<Icon name={icon} size={22} color={c.link} />}
+        // Override the kit's static secondary fill with the live `border` palette
+        // token so the circle reacts to theme/colour overrides like the rest of
+        // the design system (ChannelRow rowBg = border).
+        style={{ backgroundColor: c.border, borderColor: c.border }}
       />
-      <Text style={{ color: c.head, fontSize: 14, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{label}</Text>
+      <Text style={{ color: c.link, fontSize: 14, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{label}</Text>
     </Box>
   );
   return (
@@ -130,12 +135,13 @@ export function ProfileActions({ dark, opening, onMessage, onSend, c }: {
 export function EditMenu({ visible, top, onClose, onEdit, c }: {
   visible: boolean; top: number; onClose: () => void; onEdit: () => void; c: ProfileColors;
 }): React.ReactElement {
+  const blockRadius = useBlockRadius();
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={{ flex: 1 }} onPress={onClose}>
         <Box style={{
           position: 'absolute', right: 12, top,
-          minWidth: 168, borderRadius: 12, overflow: 'hidden',
+          minWidth: 168, borderRadius: blockRadius, overflow: 'hidden',
           backgroundColor: c.bg, borderWidth: 1, borderColor: c.border,
         }}>
           <Pressable
@@ -143,11 +149,11 @@ export function EditMenu({ visible, top, onClose, onEdit, c }: {
             style={({ pressed }) => ({
               flexDirection: 'row', alignItems: 'center', gap: 10,
               paddingHorizontal: 14, paddingVertical: 12,
-              backgroundColor: pressed ? c.rowBg : 'transparent',
+              backgroundColor: pressed ? c.border : 'transparent',
             })}
           >
-            <Icon name="pencil" size={18} color={c.head} />
-            <Text style={{ color: c.head, fontSize: 15, fontFamily: 'Calibre-Medium' }}>Edit profile</Text>
+            <Icon name="pencil" size={18} color={c.link} />
+            <Text style={{ color: c.link, fontSize: 15, fontFamily: 'Calibre-Medium' }}>Edit profile</Text>
           </Pressable>
         </Box>
       </Pressable>

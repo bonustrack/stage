@@ -3,7 +3,12 @@
 import { IdentifierKind } from '@xmtp/node-sdk';
 import { accounts, accountForCall, convOf, lineOf, parseLine, type Account } from './accounts.js';
 import { inboxEthCache, respond } from './wire.js';
-import { fcmPushToAll, loadPushTokens, savePushTokens, storePushToken } from './push.js';
+import { warmGroupName } from './conv-name.js';
+import { pushHandlers } from './actions-push.js';
+import { cleanLabels, labelsBlob, readAppData, type GroupLike } from './labels.js';
+import { closeGroup } from './actions-close.js';
+import { setGithub } from './actions-github.js';
+import { updateChannelMeta, applyChannelMeta, resolveLine } from './actions-meta.js';
 
 type Args = Record<string, unknown>;
 type Handler = (id: string, args: Args) => Promise<void>;
@@ -25,7 +30,66 @@ async function newGroup(id: string, args: Args): Promise<void> {
   if (permissions === 'admin-only') opts.permissions = 1;
   const group = await acct.client.conversations.createGroupWithIdentifiers(
     addresses.map(a => ({ identifier: a, identifierKind: IdentifierKind.Ethereum })), opts);
+  warmGroupName(group.id, name);
   respond(id, { result: { line: lineOf(acct.cfg.id, group.id), id: group.id, account: acct.cfg.id } });
+}
+
+/** Create a "request" group (name + description + status label + members) in ONE
+ *  createGroup call. Members: Ethereum addrs (memberAddresses) and/or XMTP inboxIds
+ *  (memberInboxIds); at least one required (default = Less). */
+async function createRequestGroup(id: string, args: Args): Promise<void> {
+  const { memberAddresses, memberInboxIds, name, description, labels } = args as {
+    memberAddresses?: string[]; memberInboxIds?: string[];
+    name: string; description?: string; labels?: string[] };
+  const acct = accountForCall(args as { account?: string });
+  if (!name || typeof name !== 'string') throw new Error('createRequestGroup requires a `name`');
+  const addrs = (memberAddresses ?? []).filter(a => typeof a === 'string' && a.length > 0);
+  const inboxes = (memberInboxIds ?? []).filter(a => typeof a === 'string' && a.length > 0);
+  if (addrs.length === 0 && inboxes.length === 0) {
+    throw new Error('createRequestGroup requires memberAddresses[] or memberInboxIds[]');
+  }
+  const opts: { groupName: string; groupDescription?: string; appData?: string } = { groupName: name };
+  if (description) opts.groupDescription = description;
+  if (Array.isArray(labels) && labels.length) opts.appData = labelsBlob(undefined, labels);
+
+  let group: GroupLike;
+  if (addrs.length) {
+    // createGroupWithIdentifiers takes the Ethereum identifiers; any inboxId-only
+    // members are added after via addMembers (node-sdk Group.addMembers(inboxIds)).
+    const created = await acct.client.conversations.createGroupWithIdentifiers(
+      addrs.map(a => ({ identifier: a, identifierKind: IdentifierKind.Ethereum })),
+      opts as unknown as Parameters<typeof acct.client.conversations.createGroupWithIdentifiers>[1]);
+    group = created as unknown as GroupLike;
+    if (inboxes.length) {
+      await (created as unknown as { addMembers: (ids: string[]) => Promise<unknown> }).addMembers(inboxes);
+    }
+  } else {
+    // inboxId-only path: createGroup(inboxIds, options).
+    const created = await acct.client.conversations.createGroup(
+      inboxes, opts as unknown as Parameters<typeof acct.client.conversations.createGroup>[1]);
+    group = created as unknown as GroupLike;
+  }
+
+  warmGroupName(group.id, name);
+  respond(id, { result: {
+    line: lineOf(acct.cfg.id, group.id), id: group.id, account: acct.cfg.id,
+    name, description: description ?? '', labels: cleanLabels(labels ?? []) } });
+}
+
+/** Update a group's status labels (and optionally name/description/github). Thin
+ *  wrapper over applyChannelMeta — merges {v:1, labels, github?} into appData. */
+async function setLabels(id: string, args: Args): Promise<void> {
+  const { labels, setName, setDescription, setGithub } = args as {
+    line?: string; groupId?: string; labels: string[];
+    setName?: string; setDescription?: string; setGithub?: string };
+  const resolvedLine = resolveLine(args, 'setLabels');
+  if (!Array.isArray(labels)) throw new Error('setLabels requires a `labels` array');
+  const appData: Record<string, unknown> = { labels };
+  if (typeof setGithub === 'string') appData['github'] = setGithub;
+  const result = await applyChannelMeta(
+    { line: resolvedLine, name: setName, description: setDescription, appData }, 'setLabels');
+  respond(id, { result: {
+    line: result['line'], id: result['id'], account: result['account'], labels: result['labels'] } });
 }
 
 async function query(id: string, args: Args): Promise<void> {
@@ -75,8 +139,10 @@ async function groupInfo(id: string, args: Args): Promise<void> {
   const isDm = typeof (conv as unknown as { peerInboxId?: unknown }).peerInboxId === 'function';
   const groupName = (conv as unknown as { name?: string | (() => Promise<string>) }).name;
   const resolvedName = typeof groupName === 'function' ? await groupName() : (groupName ?? '');
+  // Readback: parse the labels + github we own out of the group's appData.
+  const { labels, github } = readAppData((conv as unknown as GroupLike).appData);
   respond(id, { result: { line, id: conv.id, account: acct.cfg.id, version: isDm ? 'dm' : 'group',
-    name: resolvedName ?? '', memberCount: inboxIds.length,
+    name: resolvedName ?? '', memberCount: inboxIds.length, labels, github,
     members: inboxIds.map(iid => ({ inboxId: iid, address: addresses[iid] ?? null })) } });
 }
 
@@ -112,43 +178,7 @@ async function listConvs(id: string, args: Args): Promise<void> {
   respond(id, { result: { count: summaries.length, conversations: summaries.slice(0, lim) } });
 }
 
-async function registerPush(id: string, args: Args): Promise<void> {
-  const { token, account, platform, inboxId } = args as {
-    token?: string; account?: string; platform?: string; inboxId?: string };
-  if (!token || typeof token !== 'string' || token.length < 20) {
-    throw new Error('register-push requires a non-empty FCM device token');
-  }
-  const total = storePushToken({ token, account, platform, inboxId });
-  respond(id, { result: { stored: true, total, account: account ?? null } });
-}
-
-async function listPush(id: string): Promise<void> {
-  const tokens = loadPushTokens();
-  respond(id, { result: { count: tokens.length, tokens: tokens.map(t => ({
-    token: `${t.token.slice(0, 12)}…${t.token.slice(-6)}`, registeredAt: t.registeredAt,
-    lastSeenAt: t.lastSeenAt ?? null, account: t.account ?? null,
-    platform: t.platform ?? null, inboxId: t.inboxId ?? null })) } });
-}
-
-async function testPush(id: string, args: Args): Promise<void> {
-  const { account } = args as { account?: string };
-  const acctId = account ?? (accounts.size === 1 ? [...accounts.keys()][0] : 'default');
-  // Contentless test push (no plaintext); the device renders its generic card.
-  await fcmPushToAll(acctId, { channelId: 'xmtp', source: 'test-push' });
-  const sent = loadPushTokens().filter(t => !t.account || t.account === acctId).length;
-  respond(id, { result: { sent, account: acctId } });
-}
-
-async function unregisterPush(id: string, args: Args): Promise<void> {
-  const { token } = args as { token: string };
-  savePushTokens(loadPushTokens().filter(t => t.token !== token));
-  respond(id, { result: { removed: true } });
-}
-
 export const convHandlers: Record<string, Handler> = {
-  newDm, newGroup, query, groupInfo, listConvs,
-  'register-push': registerPush,
-  'list-push': (id) => listPush(id),
-  'test-push': testPush,
-  'unregister-push': unregisterPush,
+  newDm, newGroup, createRequestGroup, setLabels, setGithub, updateChannelMeta, closeGroup, query, groupInfo, listConvs,
+  ...pushHandlers,
 };

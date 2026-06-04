@@ -25,6 +25,9 @@ export interface PrivateSnapshot {
   balances: PrivateBalance[];
   /** epoch ms of the last successful background refresh. */
   updatedAt: number;
+  /** True while a Merkle-tree scan is still running — the displayed amounts may
+   *  fill in as the engine's balance-update callback lands. */
+  scanning?: boolean;
 }
 
 /** Optimistic pending action overlaid on the cached snapshot so shield / send /
@@ -37,8 +40,10 @@ export interface PendingAction {
   /** Signed decimal delta applied optimistically to the matching balance row
    *  (+ for incoming shield, - for outgoing send/unshield). */
   delta: string;
-  /** Coarse progress for the non-blocking indicator. */
-  phase: 'proving' | 'broadcasting' | 'confirmed' | 'failed';
+  /** Coarse progress for the non-blocking indicator.
+   *  `scanning` = the on-chain tx confirmed, but the Railgun merkle scan hasn't
+   *  yet landed the note in the shielded balance (the slow tail of a shield). */
+  phase: 'proving' | 'broadcasting' | 'scanning' | 'confirmed' | 'failed';
   /** Set once broadcast; surfaced as the explorer link. */
   txHash?: string;
   error?: string;

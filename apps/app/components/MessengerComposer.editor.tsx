@@ -8,11 +8,12 @@ import { Text } from '@metro-labs/kit/text';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';
 import { Box, Row, Col } from './layout';
+import { usePalette, useBlockRadius, useRadius } from '../lib/theme';
 import { ComposerGradient } from './ComposerGradient';
 import { RecordingBar } from './MessengerComposer.parts';
 
 interface EditorProps {
-  dark: boolean; fg: string; head: string; sub: string; inputBg: string; chipBg: string;
+  dark: boolean; fg: string; head: string; bg: string; sub: string; inputBg: string; chipBg: string;
   recording: boolean; levels: number[]; recordSecs: number;
   slideX: Animated.Value; slideThresholdPx: number; micPanResponder: PanResponderInstance;
   text: string; setText: (v: string) => void;
@@ -21,22 +22,27 @@ interface EditorProps {
   textareaH: number; setTextareaH: (h: number) => void;
   inputRef: RefObject<TextInput | null>;
   attachMenuOpen: boolean; setAttachMenuOpen: (fn: (o: boolean) => boolean) => void;
+  /** Quick-access shortcut: icon of the last-used attachment type + its handler.
+   *  Both undefined until the user has picked an attachment once → button hidden. */
+  quickIcon?: HeroIconName; onQuick?: () => void;
   canSend: boolean;
   onCancelRec: () => void; onStopRec: () => void; onSend: () => void;
 }
 
 export function ComposerEditor(p: EditorProps): React.ReactElement {
-  const { dark, fg, head, sub, inputBg, chipBg, recording } = p;
-  const Btn = ({ icon, onPress }: { icon: HeroIconName; onPress: () => void }): React.ReactElement => (
+  const { dark, fg, head, bg, sub, inputBg, chipBg, recording } = p;
+  const { primary } = usePalette();
+  const blockRadius = useBlockRadius();
+  const Btn = ({ icon, onPress, mr }: { icon: HeroIconName; onPress: () => void; mr?: number }): React.ReactElement => (
     <Pressable onPress={onPress} style={({ pressed }) => ({
       width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
-      backgroundColor: pressed ? chipBg : 'transparent',
+      backgroundColor: pressed ? chipBg : 'transparent', marginRight: mr,
     })}>
       <Icon name={icon} size={22} color={fg} />
     </Pressable>
   );
   return (
-    <Col bg={inputBg} radius={10} p={10}>
+    <Col bg={inputBg} radius={blockRadius} p={10}>
       {/** Top slot: live waveform + timer while recording, else the textarea. The
        *   button row below stays mounted across both states. */}
       {recording ? (
@@ -66,7 +72,24 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
         {/** Left: cancel (✕) while recording, else the attach (+) menu toggle. */}
         {recording
           ? <Btn icon="x" onPress={p.onCancelRec} />
-          : <Btn icon={p.attachMenuOpen ? 'x' : 'plus'} onPress={() => p.setAttachMenuOpen(o => !o)} />}
+          : (
+            <>
+              {/** + first (leftmost). Negative marginRight pulls the quick-access
+               *   icon tight against it — the 38px Btns have wide internal padding,
+               *   so this removes the visual slack (the Row gap=4 below would
+               *   otherwise leave the pair looking spread). Only apply the pull when
+               *   the quick icon is actually shown. */}
+              <Btn
+                icon={p.attachMenuOpen ? 'x' : 'plus'}
+                onPress={() => p.setAttachMenuOpen(o => !o)}
+                mr={!p.attachMenuOpen && p.quickIcon && p.onQuick ? -12 : undefined}
+              />
+              {/** Quick-access: re-trigger the last-used attachment type directly. */}
+              {!p.attachMenuOpen && p.quickIcon && p.onQuick
+                ? <Btn icon={p.quickIcon} onPress={p.onQuick} />
+                : null}
+            </>
+          )}
         <Box flex={1} />
         {/** Mic — both record flows, mounted across recording so the gesture survives. */}
         <Animated.View
@@ -87,8 +110,9 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
             size="md"
             pill
             dark={dark}
+            tintBg={primary}
             onPress={p.onStopRec}
-            icon={<Icon name="check" size={20} color={dark ? '#000' : '#fff'} />}
+            icon={<Icon name="check" size={20} color={bg} />}
           />
         ) : (
           <Button
@@ -97,13 +121,34 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
             pill
             dark={dark}
             disabled={!p.canSend}
+            tintBg={primary}
             onPress={p.onSend}
-            icon={<Icon name="send" size={20} color={dark ? '#000' : '#fff'} />}
+            icon={<Icon name="send" size={20} color={bg} />}
           />
         )}
       </Row>
     </Col>
   );
+}
+
+export type AttachAction = [HeroIconName, string, () => void | Promise<void>];
+
+/** [icon, label, handler] for every + menu entry. Shared by the menu and the
+ *  quick-access shortcut so both stay in lock-step. */
+export function buildAttachActions(a: {
+  pickImage: () => Promise<void>; takePhoto: () => Promise<void>;
+  pickFile: () => Promise<void>; pickLocation: () => Promise<void>;
+  openPoll: () => void; openSig: () => void; openTx: () => void;
+}): AttachAction[] {
+  return [
+    ['photo', 'Image', a.pickImage],
+    ['camera', 'Camera', a.takePhoto],
+    ['paperClip', 'File', a.pickFile],
+    ['mapPin', 'Location', a.pickLocation],
+    ['chartBar', 'Poll', a.openPoll],
+    ['pencil', 'Sign', a.openSig],
+    ['wallet', 'Payment', a.openTx],
+  ];
 }
 
 export function AttachMenu({
@@ -113,6 +158,7 @@ export function AttachMenu({
   actions: [HeroIconName, string, () => void | Promise<void>][];
   onClose: () => void;
 }): React.ReactElement {
+  const btnRadius = useRadius();
   return (
     <ScrollView
       horizontal
@@ -125,7 +171,7 @@ export function AttachMenu({
           <Pressable
             onPress={() => { onClose(); void action(); }}
             style={({ pressed }) => ({
-              width: 56, height: 56, borderRadius: 28,
+              width: 56, height: 56, borderRadius: Math.min(btnRadius, 28),
               alignItems: 'center', justifyContent: 'center',
               backgroundColor: pressed ? chipBg : inputBg,
               borderWidth: 1, borderColor: chipBg,

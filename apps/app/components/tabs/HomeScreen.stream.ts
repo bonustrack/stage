@@ -97,10 +97,11 @@ export function makeMsgStreamHandler({ isCancelled, setRows, refresh }: MsgHandl
           fromSelf: msg.senderInboxId === cur.selfInboxId,
         };
         /** DM cards are pinned to the PEER's avatar — never the latest sender.
-         *  Otherwise a message from self (or the shared-inbox daemon) would
-         *  flip the card to the local user's own avatar. Groups still track the
-         *  latest sender's stamp. */
-        const newAvatar = cur.peerAddress ?? senderAddr ?? cur.avatarAddress;
+         *  GROUP cards are pinned to the group's OWN avatar (uploaded image via
+         *  avatarUri, else the channel-id stamp seed already set on the row) —
+         *  never a member's stamp. So a new inbound never flips the avatar:
+         *  DM keeps the peer, group keeps its stable seed (cur.avatarAddress). */
+        const newAvatar = cur.peerAddress ?? cur.avatarAddress;
         /** Attribute the preview to whoever SENT this message — including a
          *  reaction (its senderInboxId is the reactor). Without this the row
          *  keeps the stale lastSenderAddress from summarize(). */

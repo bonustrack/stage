@@ -18,10 +18,12 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { GestureDetectorProvider } from 'react-native-screens/gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { NativeSwipeStack } from '../components/NativeSwipeStack';
-import { useEffectiveColorScheme, usePalette } from '../lib/theme';
+import { EdgeSwipeBack } from '../components/EdgeSwipeBack';
+import { useEffectiveColorScheme, usePalette, useRadius } from '../lib/theme';
 import { useDeepLinks } from '../lib/deepLinks';
+import { useRestoreLastRoute } from '../lib/lastRoute';
 import { usePushDeepLinks } from '../lib/push';
-import { installPillAudioBridge } from '../lib/pill';
+import { ensureActiveAccount } from '../lib/xmtp';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WalletConnectProvider } from '../components/WalletConnectProvider';
 
@@ -67,6 +69,10 @@ function isDarkBg(hex: string): boolean {
 
 export default function RootLayout(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
+  const { bg } = usePalette();
+  // Wire the persisted button radius token into the kit Button default + repaint
+  // the whole tree when it changes. Mounted at the root so it's always live.
+  useRadius();
 
   /** Status-bar icons must follow the RENDERED chrome, not just the
    *  color-scheme pref. The app paints a near-black surface in dark mode and so
@@ -77,7 +83,7 @@ export default function RootLayout(): React.ReactElement {
    *  imperatively (effect below) because under Android edge-to-edge the
    *  declarative <StatusBar> can be shadowed by the native baseline on first
    *  paint. */
-  const barStyle: 'light' | 'dark' = isDarkBg(usePalette().bg) ? 'light' : 'dark';
+  const barStyle: 'light' | 'dark' = isDarkBg(bg) ? 'light' : 'dark';
   useEffect(() => { setStatusBarStyle(barStyle, true); }, [barStyle]);
 
   /** Universal/deep links → screen navigation. `getInitialURL` resolves async
@@ -85,15 +91,21 @@ export default function RootLayout(): React.ReactElement {
    *  links navigate immediately. */
   useDeepLinks();
 
+  /** Persist the active route on every navigation + restore it on a cold launch
+   *  (return the user to the last screen). Coordinates with useDeepLinks: a
+   *  cold-start deep link navigates first and the restore yields to it. */
+  useRestoreLastRoute();
+
   /** Notification taps → open that conversation + clear its unread badge.
    *  Handles both cold-start (app launched by the tap) and warm/background
    *  taps. Installed once for the app's lifetime. */
   usePushDeepLinks();
 
-  /** Wire the floating-pill's recorded-audio callback to the XMTP audio-send
-   *  pipeline (→ daemon "Tony" DM). Idempotent + Android-only; no-op when the
-   *  native module isn't linked. Installed once for the app's lifetime. */
-  useEffect(() => installPillAudioBridge(), []);
+  /** Mint the local EOA at boot, INDEPENDENT of XMTP. The wallet (Snapshot
+   *  signing) + Railgun (usePrivateWallet → getActiveAccountId) must always have
+   *  an account even when XMTP onboarding fails on a clean reinstall (stale db
+   *  key vs. wiped store). Idempotent — no-ops once an account exists. */
+  useEffect(() => { void ensureActiveAccount(); }, []);
 
   /** Calibre — matches sx-monorepo's typography. Two weights: medium (default) + semibold (headers/buttons).
    *  TTF (not WOFF2) so Android's native Typeface loader can pick it up — expo-font's WOFF2
@@ -105,7 +117,7 @@ export default function RootLayout(): React.ReactElement {
 
   if (!loaded) {
     return (
-      <Box style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: dark ? '#0e0f10' : '#ffffff' }}>
+      <Box style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: bg }}>
         <Spinner size={28} color={dark ? '#ffffff' : '#000000'} />
       </Box>
     );
@@ -124,55 +136,38 @@ export default function RootLayout(): React.ReactElement {
       <GestureDetectorProvider>
       <KeyboardProvider>
       <StatusBar style={barStyle} translucent backgroundColor="transparent" />
-      {/** react-native-screens native-stack (via NativeSwipeStack/withLayoutContext)
-       *   instead of expo-router's default @react-navigation native-stack — only
-       *   rn-screens exposes the interactive finger-following edge swipe-back
-       *   (`goBackGesture: 'swipeRight'` + `screenEdgeGesture: true`) that reveals
-       *   the previous page sliding underneath on the native thread (real iOS/
-       *   Telegram parallax), which the old JS SwipeBack couldn't do.
+      {/** react-native-screens native-stack (via NativeSwipeStack/withLayoutContext).
        *
-       *   Pushed routes opt into the EDGE gesture (left ~50px catch zone). The
-       *   programmatic push/pop uses stackAnimation:'none' so the hardware back
-       *   button + router.back() pop INSTANTLY; the interactive edge swipe still
-       *   reveals the previous page underneath via goBackGesture's own
-       *   ScreenTransition.SwipeRight (independent of stackAnimation). The (tabs)
-       *   root disables the gesture (nothing to go back to).
+       *   SWIPE-BACK: handled by the JS <EdgeSwipeBack> wrapper (left-edge RNGH
+       *   Pan → router.back()) for pushed screens, plus an in-screen <BackSwipe>
+       *   on the conversation screen. We do NOT use rn-screens' own
+       *   `goBackGesture`/`screenEdgeGesture` worklet: on Android its `onStart`
+       *   worklet calls `measure()` on a mocked ScreenGestureDetector ref and
+       *   crashes with "Value is undefined, expected an Object" (redbox in
+       *   ScreenGestureDetector.tsx). The JS Pan shims never touch view tags, so
+       *   there's no crash and the native slide animation still plays via the
+       *   stock pop.
        *
        *   `statusBarStyle: barStyle` keeps white-on-dark status-bar icons; we also
        *   set it imperatively (effect above) + declaratively (<StatusBar>) so it
        *   survives navigation. */}
+      <EdgeSwipeBack>
       <NativeSwipeStack
         screenOptions={{
           headerShown: false,
-          contentStyle: { backgroundColor: dark ? '#0e0f10' : '#ffffff' },
+          contentStyle: { backgroundColor: bg },
           statusBarStyle: barStyle,
-          goBackGesture: 'swipeRight',
-          screenEdgeGesture: true,
-          /** INSTANT forward + interactive swipe-back.
-           *
-           *  `stackAnimation:'none'` makes the PROGRAMMATIC push/pop (router.push,
-           *  router.back, hardware back) play no transition → forward is instant on
-           *  BOTH platforms. (On Android `animationDuration` is a no-op — the native
-           *  ScreenViewManager.setTransitionDuration() is `= Unit` — so a fast-slide
-           *  trick can't make the forward push instant there; only 'none' does.)
-           *
-           *  The interactive edge swipe-back is a SEPARATE mechanism: rn-screens'
-           *  `goBackGesture` drives a Reanimated worklet (ScreenGestureDetector +
-           *  RNScreensTurboModule.startTransition/updateTransition/finishTransition,
-           *  with ScreenTransition.SwipeRight). That worklet NEVER reads
-           *  `stackAnimation`, so the finger-driven reveal-and-pop still works with
-           *  'none'. `screenEdgeGesture:true` arms the left-edge catch zone (widened
-           *  to 120px hit-slop via the rn-screens patch). The (tabs) root disables
-           *  the gesture (bottom of the stack — nothing to go back to). */
-          stackAnimation: 'none',
+          /** Pushed routes slide in from the right; <EdgeSwipeBack> pops them. */
+          animation: 'slide_from_right',
         }}
       >
-        {/** Tab root: no back gesture (it's the bottom of the stack), instant. */}
+        {/** Tab root: no slide animation (it's the bottom of the stack). */}
         <NativeSwipeStack.Screen
           name="(tabs)"
-          options={{ gestureEnabled: false, screenEdgeGesture: false, stackAnimation: 'none' }}
+          options={{ animation: 'none' }}
         />
       </NativeSwipeStack>
+      </EdgeSwipeBack>
       </KeyboardProvider>
       </GestureDetectorProvider>
     </GestureHandlerRootView>

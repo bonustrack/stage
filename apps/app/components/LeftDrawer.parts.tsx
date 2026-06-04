@@ -2,12 +2,13 @@
  *  the line cap: the avatar header, the tap-to-switch accounts list, and the
  *  Profile/Settings nav row. Behaviour is identical to the inlined version. */
 
-import { Image, Pressable } from 'react-native';
+import { Pressable } from 'react-native';
 import { Box } from './layout';
+import { Stamp } from './Stamp';
 import { Text } from '@metro-labs/kit/text';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { getPeerName } from '../lib/peerProfiles';
-import { shortAddress, stampBoxAvatarUrl } from '../lib/xmtp';
+import { shortAddress } from '../lib/xmtp';
 import { type AccountRecord } from '../lib/accounts';
 
 export interface DrawerColors { head: string; sub: string; border: string }
@@ -20,10 +21,7 @@ export function DrawerHeader({ rec, c }: {
     <Box style={{ paddingHorizontal: 18, paddingBottom: 16 }}>
       {rec ? (
         <>
-          <Image
-            source={{ uri: stampBoxAvatarUrl(rec.address, 120) }}
-            style={{ width: 56, height: 56, borderRadius: 999, backgroundColor: c.border, marginBottom: 10 }}
-          />
+          <Stamp address={rec.address} size={56} style={{ backgroundColor: c.border, marginBottom: 10 }} />
           <Text numberOfLines={1} style={{ color: c.head, fontSize: 20, fontFamily: 'Calibre-Semibold' }}>
             {getPeerName(rec.address) ?? rec.label ?? shortAddress(rec.address)}
           </Text>
@@ -53,10 +51,7 @@ export function DrawerAccounts({ accounts, activeId, onSwitch, c }: {
             backgroundColor: pressed ? c.border : 'transparent',
           })}
         >
-          <Image
-            source={{ uri: stampBoxAvatarUrl(a.address, 56) }}
-            style={{ width: 30, height: 30, borderRadius: 999, backgroundColor: c.border }}
-          />
+          <Stamp address={a.address} size={30} style={{ backgroundColor: c.border }} />
           <Box style={{ flex: 1, minWidth: 0 }}>
             <Text numberOfLines={1} style={{ color: c.head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>
               {getPeerName(a.address) ?? a.label ?? shortAddress(a.address)}

@@ -100,14 +100,34 @@ async function fcmPushTo(
   });
   if (!res.ok) {
     const txt = await res.text().catch(() => '');
-    // Only UNREGISTERED / NOT_FOUND mean a dead token → prune. INVALID_ARGUMENT is a
-    // malformed-payload signal (e.g. bad image URL), NOT a stale token.
-    if (txt.includes('UNREGISTERED') || txt.includes('NOT_FOUND')) {
+    // Dead token (app uninstalled / rotated) → prune. Cover FCM v1 + legacy shapes:
+    // UNREGISTERED/NOT_FOUND/404/registration-token-not-registered/NotRegistered.
+    // (INVALID_ARGUMENT = bad payload, NOT a stale token — never prune on it.)
+    const dead = res.status === 404 || txt.includes('UNREGISTERED')
+      || txt.includes('NOT_FOUND') || txt.includes('registration-token-not-registered')
+      || txt.includes('NotRegistered');
+    if (dead) {
       savePushTokens(loadPushTokens().filter(t => t.token !== deviceToken));
       process.stderr.write(`fcm: pruned stale token ${deviceToken.slice(0, 12)}…\n`); return;
     }
     process.stderr.write(`fcm push ${res.status}: ${txt}\n`);
   }
+}
+
+/** ONE token per account: freshest by lastSeenAt → registeredAt. Two app variants
+ *  (Stage + Metro) on one phone share an account; sending to both = double push.
+ *  Unscoped rows (no `account`) can't be deduped, so they pass through as-is. */
+function freshestPerAccount(tokens: StoredPushToken[]): StoredPushToken[] {
+  const freshness = (t: StoredPushToken): number =>
+    new Date(t.lastSeenAt ?? t.registeredAt ?? 0).getTime();
+  const byAccount = new Map<string, StoredPushToken>();
+  const unscoped: StoredPushToken[] = [];
+  for (const t of tokens) {
+    if (!t.account) { unscoped.push(t); continue; }
+    const cur = byAccount.get(t.account);
+    if (!cur || freshness(t) >= freshness(cur)) byAccount.set(t.account, t);
+  }
+  return [...byAccount.values(), ...unscoped];
 }
 
 /** Push CONTENTLESS routing data to every token, or only those scoped to (or
@@ -122,8 +142,10 @@ export async function fcmPushToAll(
     if (excludeInboxId && (t.inboxId === excludeInboxId || t.inboxIds?.includes(excludeInboxId))) return false;
     return true;
   });
-  if (tokens.length === 0) return;
-  await Promise.all(tokens.map(
+  // Freshest token per account → exactly ONE notification per device (no doubles).
+  const deduped = freshestPerAccount(tokens);
+  if (deduped.length === 0) return;
+  await Promise.all(deduped.map(
     t => fcmPushTo(t.token, { ...data, account: accountId }).catch(() => undefined)));
 }
 

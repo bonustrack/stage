@@ -9,7 +9,7 @@
 import { useState } from 'react';
 import { Pressable } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
-import type { SimultaneousRefs } from './SwipeTabs';
+import type { SimultaneousRefs } from './SwipeTabs.types';
 import { Text } from '@metro-labs/kit/text';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -86,7 +86,7 @@ export function ProfileScreen({ address, variant, panRef }: {
             so the colour bleeds to y=0. Its bottom edge is FLAT — the black content
             sheet below rounds UP over it (inverted/scooped curve), so the gray no
             longer pokes down with rounded corners. */}
-        <Box bg={c.rowBg} style={{
+        <Box bg={c.border} style={{
           height: 140 + (variant === 'route' ? insets.top : 0),
         }} />
         {/* Content sheet: page-bg block pulled UP 18px to overlap the cover, with
@@ -109,12 +109,12 @@ export function ProfileScreen({ address, variant, panRef }: {
             imageUri={loaded ? profile?.avatar : null}
             size={88}
             style={{
-              backgroundColor: c.rowBg, marginTop: -88 * 0.8, zIndex: 1,
+              backgroundColor: c.border, marginTop: -88 * 0.8, zIndex: 1,
               borderWidth: 3, borderColor: c.bg,
             }}
             onPress={uri => { if (uri) setViewerUri(uri); }}
           />
-          <Text style={{ color: c.head, fontSize: 20, fontFamily: 'Calibre-Semibold', marginTop: 14 }}>
+          <Text style={{ color: c.link, fontSize: 20, fontFamily: 'Calibre-Semibold', marginTop: 14 }}>
             {displayName}
           </Text>
           {addr ? (
@@ -123,14 +123,14 @@ export function ProfileScreen({ address, variant, panRef }: {
               hitSlop={8}
               style={{ marginTop: 2 }}
             >
-              <Text style={{ color: c.sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
+              <Text style={{ color: c.text, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
                 {shortAddress(addr)}
               </Text>
             </Pressable>
           ) : null}
           {profile?.about?.trim() ? (
             <Text style={{
-              color: c.sub, fontSize: 14, marginTop: 6, textAlign: 'left',
+              color: c.text, fontSize: 14, marginTop: 6, textAlign: 'left',
               fontFamily: 'Calibre-Medium',
             }}>
               {profile.about}

@@ -1,7 +1,8 @@
 /** Telegram message types + projection into metro inbound envelopes. */
 
 import { accounts, lineOf } from './accounts.js';
-import { mintId } from './wire.js';
+import { mintId, SELF_URI } from './wire.js';
+import { mediaRefOf, saveTelegramMedia } from './attachments.js';
 
 export type TgMsg = {
   message_id: number; date: number;
@@ -85,4 +86,25 @@ export function emitInbound(emit: (e: unknown) => void, accountId: string, e: Re
   const owner = accounts.get(accountId)?.cfg.owner;
   const payload = { ...(e.payload as Record<string, unknown> | undefined), account: accountId };
   emit({ ...e, ...(owner ? { to: owner } : {}), account: accountId, payload });
+}
+
+/** If the message carries downloadable media, fetch it via the Bot API, write it
+ *  to disk, and emit a follow-up `attachmentSaved` event (payload.attachmentPath
+ *  / localPath). Mirrors the XMTP convention. Fires async; logs on failure. */
+export function saveMediaAndEmit(
+  emit: (e: unknown) => void, accountId: string, m: TgMsg, sourceEnvId: string,
+): void {
+  const ref = mediaRefOf(m);
+  if (!ref) return;
+  const line = lineForMsg(accountId, m).line;
+  void saveTelegramMedia(accountId, ref, String(m.message_id), 0).then(saved => {
+    emitInbound(emit, accountId, {
+      kind: 'inbound', id: mintId(), ts: new Date().toISOString(), station: 'telegram', line,
+      from: SELF_URI || `metro://telegram/${accountId}/self`, text: `📎 saved: ${saved.path}`,
+      payload: {
+        contentType: 'attachmentSaved', attachmentFor: sourceEnvId, index: 0,
+        attachmentPath: saved.path, localPath: saved.path, mime: saved.mime, name: saved.name,
+      },
+    });
+  }).catch(err => process.stderr.write(`telegram media save failed: ${(err as Error).message}\n`));
 }

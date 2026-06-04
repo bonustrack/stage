@@ -1,23 +1,29 @@
-/** Expo-Router layout bound to react-native-screens' OWN native-stack navigator
- *  (NOT @react-navigation/native-stack, which expo-router's default `<Stack>`
- *  uses). Only the rn-screens native-stack exposes the interactive,
- *  finger-following `goBackGesture` + `screenEdgeGesture` props that give the
- *  real iOS/Telegram edge swipe-back — previous page sliding underneath on the
- *  native thread (parallax), which a JS gesture can't reproduce.
+/** Expo-Router layout bound to the native-stack navigator.
+ *
+ *  HISTORY: this used to import from `react-native-screens/native-stack`, but
+ *  rn-screens v4 REMOVED its own native-stack JS API (it was deprecated in v6
+ *  and v4 supports only `@react-navigation/native-stack` v7 — see rn-screens
+ *  README). So the import is now `@react-navigation/native-stack`, which renders
+ *  through rn-screens under the hood.
+ *
+ *  Swipe-back is NOT driven by rn-screens' own `goBackGesture`/`screenEdgeGesture`
+ *  worklet — on Android that worklet calls `measure()` on a mocked
+ *  ScreenGestureDetector ref and crashes ("Value is undefined, expected an
+ *  Object"). Instead the app uses JS RNGH Pan shims: <EdgeSwipeBack> wraps this
+ *  navigator (left-edge → router.back()) and the conversation screen mounts its
+ *  own in-screen <BackSwipe>. The stock pop still plays the native slide.
+ *  `GestureDetectorProvider` (mounted in _layout) arbitrates the gestures with
+ *  the app's other RNGH gestures (swipe-to-reply, scroll).
  *
  *  `withLayoutContext` is the expo-router primitive that adapts any react-
  *  navigation navigator into a file-based-routing layout, so `<NativeSwipeStack>`
- *  + `<NativeSwipeStack.Screen>` work exactly like `<Stack>` / `<Stack.Screen>`
- *  while routing through rn-screens.
+ *  + `<NativeSwipeStack.Screen>` work exactly like `<Stack>` / `<Stack.Screen>`.
  *
  *  Must be rendered inside `GestureDetectorProvider`
- *  (react-native-screens/gesture-handler) — that provider is what wires the
- *  native edge gesture into the RNGH gesture tree so it arbitrates with the
- *  other RNGH gestures in the app (swipe-to-reply, scroll) instead of fighting a
- *  separate touch system. */
+ *  (react-native-screens/gesture-handler). */
 
 import { withLayoutContext } from 'expo-router';
-import { createNativeStackNavigator } from 'react-native-screens/native-stack';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 const { Navigator } = createNativeStackNavigator();
 

@@ -36,7 +36,9 @@ interface PickedImage { uri: string; mime: string; name: string }
 export default function NewGroup(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { fg, head, sub, bg, border, rowBg } = usePalette();
+  const { text: fg, link: head, bg, border, primary } = usePalette();
+  const sub = fg;
+  const rowBg = border;
   const insets = useSafeAreaInsets();
 
   const [name, setName] = useState('');
@@ -162,6 +164,8 @@ export default function NewGroup(): React.ReactElement {
           loading={creating}
           disabled={members.length === 0}
           onPress={() => { void onCreate(); }}
+          tintBg={primary}
+          tintFg={bg}
           label={members.length > 0 ? `Create group (${members.length})` : 'Create group'}
         />
       </Box>

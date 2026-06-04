@@ -131,7 +131,7 @@ export function PreviewStage({ p, children }: {
   return (
     <Box mt={16} style={{
       borderWidth: 1, borderColor: p.border, borderRadius: 14, padding: 18,
-      backgroundColor: p.rowBg, alignItems: 'flex-start', minHeight: 72, justifyContent: 'center',
+      backgroundColor: 'transparent', alignItems: 'flex-start', minHeight: 72, justifyContent: 'center',
     }}>
       {children}
     </Box>

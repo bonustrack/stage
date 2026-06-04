@@ -7,8 +7,9 @@ import { Box } from '../layout';
 import { Icon } from '@metro-labs/kit/icon';
 import { Title } from '@metro-labs/kit/title';
 
-export function SystemHeader({ title, dark, fg, head, border }: {
+export function SystemHeader({ title, dark, fg, head, border, right }: {
   title: string; dark: boolean; fg: string; head: string; border: string;
+  right?: React.ReactNode;
 }): React.ReactElement {
   const router = useRouter();
   return (
@@ -21,6 +22,7 @@ export function SystemHeader({ title, dark, fg, head, border }: {
         <Icon name="arrowLeft" size={22} color={fg} />
       </Pressable>
       <Title dark={dark} style={{ color: head, fontSize: 20 }}>{title}</Title>
+      {right ? <Box style={{ flex: 1, alignItems: 'flex-end' }}>{right}</Box> : null}
     </Box>
   );
 }

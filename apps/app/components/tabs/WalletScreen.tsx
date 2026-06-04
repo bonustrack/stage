@@ -7,31 +7,70 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { ScrollView } from 'react-native-gesture-handler';
+import { usePullToRefresh } from './PullToRefresh';
+import { RefreshButton } from './WalletScreen.refreshButton';
+import { CopyButton } from './WalletScreen.copyButton';
 import { Spinner } from '../Spinner';
-import type { SimultaneousRefs } from '../SwipeTabs';
+import type { SimultaneousRefs } from '../SwipeTabs.types';
 import { Text } from '@metro-labs/kit/text';
 import { useRouter } from 'expo-router';
-import { getOrCreateXmtpClient } from '../../lib/xmtp';
 import { flash } from '../../lib/toast';
 import { usePeerProfiles } from '../../lib/peerProfiles';
-import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { Col, Row } from '../layout';
+import { DANGER, useEffectiveColorScheme, usePalette } from '../../lib/theme';
+import { Box, Col, Row } from '../layout';
 import { getNftsAcrossChains, type Nft } from '../../lib/opensea';
-import { type AssetRow } from './WalletScreen.assets';
-import { fetchAssetRows } from './WalletScreen.data';
-import { Btn, WalletTabs, TokenRow, NftsView, fmtUsd, splitUsd, type WalletTab } from './WalletScreen.parts';
+import { Btn, WalletTabs, NftsView, fmtUsd, splitUsd, type WalletTab } from './WalletScreen.parts';
 import { PrivateView } from './WalletScreen.private';
+import { privateBalancesToRows, symbolPricesFromPublic } from './WalletScreen.private.rows';
+import { usePrivateWallet } from '../../lib/railgun/usePrivateWallet';
 import { prewarmRailgun } from '../../lib/railgun/engine';
+import { startEoaShieldWatch } from '../../lib/railgun/eoaShieldWatch';
+import { isBridgeAvailable } from '../../lib/railgun/bridge';
+import { TokensList } from './WalletScreen.tokens';
+import { useWalletBalances } from './WalletScreen.balances';
 
 export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const router = useRouter();
-  const { head, sub, bg, border } = usePalette();
+  const { link: head, text: sub, bg, border } = usePalette();
   const dark = useEffectiveColorScheme() === 'dark';
 
-  const [address, setAddress] = useState<string>('');
-  const [rows, setRows] = useState<AssetRow[] | null>(null);
-  const [err, setErr] = useState<string>('');
+  const { snapshot: privSnapshot, accountId: privAccountId, pending } = usePrivateWallet(true);
+  const { address, rows, err, refreshing, onRefresh } = useWalletBalances(privAccountId);
   usePeerProfiles([address]);
+
+  /** Custom JS-only pull-to-refresh — replaces RN's native RefreshControl, which
+   *  stranded its spinner on Android inside this nested-gesture ScrollView. The
+   *  indicator's visibility is bound solely to `refreshing` (guaranteed to clear
+   *  via try/finally + 8s hardStop in balances.ts), so it can never wedge. */
+  const pull = usePullToRefresh(refreshing, onRefresh, head);
+
+  /** Watch the EOA's mempool/nonce for an in-flight shield to the Railgun proxy
+   *  so a shield arriving from anywhere (incl. external/cross-session, no local
+   *  history) surfaces as a pending row. Cheap long-poll; only when the bridge is
+   *  present (otherwise the private wallet isn't active on this build). */
+  useEffect(() => {
+    if (!privAccountId || !address || !isBridgeAvailable()) return;
+    return startEoaShieldWatch(privAccountId, address);
+  }, [privAccountId, address]);
+
+
+  /** Shielded (Railgun) balances — reuses the same instant-paint hook the
+   *  Private tab uses (cached snapshot + pending overlay, no refetch). They're
+   *  merged into the public Tokens list below as `isPrivate` rows.
+   *
+   *  autoStart:true so the Tokens tab itself boots the Railgun engine and the
+   *  user sees private balances WITHOUT having to open the Private tab. This is
+   *  the SAME safe path the Private tab uses: usePrivateWallet gates the engine
+   *  boot behind waitForXmtpReady() (nodejs-mobile starts only AFTER XMTP's
+   *  Client.create settles), and the bridge's started/readyPromise guard keeps
+   *  the boot single-flight, so a prior Private-tab start makes this a no-op. */
+  // ALWAYS render the fixed private row set (ETH/USDC × mainnet/Sepolia), even
+  // pre-snapshot / pre-scan / at zero — pass the snapshot (may be null) so the
+  // mapper seeds zero rows from the token registry then overlays live amounts.
+  const privateRows = privateBalancesToRows(
+    privSnapshot,
+    symbolPricesFromPublic(rows ?? []),
+  );
 
   /** Tokens | NFTs segmented toggle. NFTs are lazy-loaded: we only fetch on
    *  the first switch to the NFTs tab, then cache in `nfts` so toggling back
@@ -69,37 +108,45 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
     return () => { cancelled = true; };
   }, [tab, address]);
 
-  useEffect(() => {
-    let cancelled = false;
-    void (async (): Promise<void> => {
-      try {
-        const client = await getOrCreateXmtpClient('production');
-        const addr = client.publicIdentity.identifier;
-        if (cancelled) return;
-        setAddress(addr);
-        const next = await fetchAssetRows(addr);
-        if (cancelled) return;
-        setRows(next);
-      } catch (e) {
-        if (!cancelled) setErr((e as Error).message);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
-
   const totalUsd = rows
     ? rows.reduce((s, r) => s + (r.priceUsd ?? 0) * Number(r.balance), 0)
     : null;
 
   return (
-    <ScrollView simultaneousHandlers={panRef} style={{ flex: 1, backgroundColor: bg }} contentContainerStyle={{ paddingBottom: 24 }}>
-      {/* Value card — compact, left-aligned. Just the big total USD value;
-          the account header (avatar/name/address) and the "TOTAL VALUE ·
-          ETHEREUM" label were dropped per review. Decimals render in the dim
-          `sub` colour to keep the leading dollars prominent. */}
+    /** RNGH ScrollView, simultaneous with the pager Pan (panRef). Pull-to-refresh
+     *  is a pure-JS onScroll gesture (usePullToRefresh) — RN's native
+     *  RefreshControl stranded its spinner on Android in this nested ScrollView.
+     *  Wrapped in a flex:1 Box so the tap-to-refresh icon button can anchor to
+     *  the screen top-right (absolute), independent of scroll content. */
+    <Box style={{ flex: 1, backgroundColor: bg }}>
+    <CopyButton address={address} color={head} />
+    <RefreshButton refreshing={refreshing} onRefresh={onRefresh} color={head} />
+    <ScrollView
+      simultaneousHandlers={panRef}
+      style={{ flex: 1, backgroundColor: bg }}
+      contentContainerStyle={{ paddingBottom: 24, flexGrow: 1 }}
+      /** bounces + alwaysBounceVertical + flexGrow:1 keep the list pullable even
+       *  when content is shorter than the viewport — without bounce the swipe-down
+       *  isn't an overscroll so the custom pull-to-refresh never fires.
+       *  overScrollMode='always' enables Android overscroll; nestedScrollEnabled
+       *  makes Android treat this as the scroller. The pager Pan gates on
+       *  failOffsetY + simultaneous panRef, so the vertical pull is never
+       *  swallowed by the horizontal tab-swipe. */
+      bounces
+      alwaysBounceVertical
+      overScrollMode="always"
+      nestedScrollEnabled
+      onScroll={pull.onScroll}
+      onScrollBeginDrag={pull.onScrollBeginDrag}
+      onScrollEndDrag={pull.onScrollEndDrag}
+      scrollEventThrottle={pull.scrollEventThrottle}
+    >
+      {pull.indicator}
+      {/* Value card — compact, left-aligned: just the big total USD value.
+          Decimals render in the dim `sub` colour to keep the dollars prominent. */}
       <Col mx={16} pt={20} pb={16} align="start">
         {err ? (
-          <Text style={{ color: '#d96868', fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+          <Text style={{ color: DANGER, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
             Couldn’t load balances
           </Text>
         ) : totalUsd === null ? (
@@ -116,10 +163,10 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
           Swap / Buy are placeholders (no on/off-ramp wired yet) and flash a
           "coming soon" toast. LEFT-aligned on a single row (icon-over-label). */}
       <Row justify="start" gap={12} mx={16} mt={12}>
-        <Btn icon="send" label="Send" onPress={() => router.push('/wallet/send')} head={head} dark={dark} />
-        <Btn icon="arrowDown" label="Receive" onPress={() => router.push('/wallet/receive')} head={head} dark={dark} />
-        <Btn icon="switchHorizontal" label="Swap" onPress={() => flash('Swap — coming soon')} head={head} dark={dark} />
-        <Btn icon="creditCard" label="Buy" onPress={() => flash('Buy — coming soon')} head={head} dark={dark} />
+        <Btn icon="send" label="Send" onPress={() => router.push('/wallet/send')} head={head} border={border} dark={dark} />
+        <Btn icon="arrowDown" label="Receive" onPress={() => router.push('/wallet/receive')} head={head} border={border} dark={dark} />
+        <Btn icon="switchHorizontal" label="Swap" onPress={() => flash('Swap — coming soon')} head={head} border={border} dark={dark} />
+        <Btn icon="creditCard" label="Buy" onPress={() => flash('Buy — coming soon')} head={head} border={border} dark={dark} />
       </Row>
 
       <WalletTabs tab={tab} setTab={setTab} head={head} sub={sub} border={border} />
@@ -130,7 +177,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
         <NftsView status={nftStatus} nfts={nfts} head={head} sub={sub} border={border} />
       ) : err ? (
         <Col mx={16} py={40} align="center">
-          <Text style={{ color: '#d96868', fontSize: 15, fontFamily: 'Calibre-Medium' }}>
+          <Text style={{ color: DANGER, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
             Couldn’t load tokens
           </Text>
         </Col>
@@ -139,13 +186,14 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
           <Spinner size={28} color={head} />
         </Col>
       ) : (
-      /* Asset list — Snapshot-treasury-style rows, border-bottom separators. */
-      <Col mx={16}>
-        {rows.map(r => (
-          <TokenRow key={`${r.chainId}:${r.symbol}`} r={r} head={head} sub={sub} border={border} bg={bg} />
-        ))}
-      </Col>
+      /* Asset list — ONE flat list (see WalletScreen.tokens: merged public +
+         shielded rows, $-sorted, pending shields on top). */
+      <TokensList
+        rows={rows} privateRows={privateRows} pending={pending}
+        head={head} sub={sub} border={border} bg={bg}
+      />
       )}
     </ScrollView>
+    </Box>
   );
 }

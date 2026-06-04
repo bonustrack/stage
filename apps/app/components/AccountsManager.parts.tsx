@@ -1,14 +1,16 @@
 /** AccountsManager sub-components — account row + the bottom-sheet modal/button.
  *  Extracted for lint line-budget. Rendering identical. */
 
-import { Image, Modal, Pressable } from 'react-native';
+import { Modal, Pressable } from 'react-native';
 import { Box } from './layout';
+import { Stamp } from './Stamp';
 import { Text } from '@metro-labs/kit/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getPeerName } from '../lib/peerProfiles';
-import { stampBoxAvatarUrl, shortAddress } from '../lib/xmtp';
+import { shortAddress } from '../lib/xmtp';
 import { type AccountRecord } from '../lib/accounts';
 import { TYPE_LABEL } from './AccountsManager.helpers';
+import { DANGER } from '../lib/theme';
 
 /** Single account row — avatar, name + short address/type, and a trailing slot
  *  (chevron on the active/collapsed row, ⋯ manage affordance on the others). */
@@ -29,10 +31,7 @@ export function AccountRow({ rec, onPress, onLongPress, topBorder, trailing, hea
         backgroundColor: pressed ? border : 'transparent',
       })}
     >
-      <Image
-        source={{ uri: stampBoxAvatarUrl(rec.address, 56) }}
-        style={{ width: 28, height: 28, borderRadius: 999, backgroundColor: border }}
-      />
+      <Stamp address={rec.address} size={28} style={{ backgroundColor: border }} />
       <Box style={{ flex: 1, minWidth: 0 }}>
         <Text numberOfLines={1} style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>
           {getPeerName(rec.address) ?? rec.label ?? shortAddress(rec.address)}
@@ -69,11 +68,11 @@ export function SheetModal({ visible, onClose, children, bg, border, title, head
   );
 }
 
-export function SheetButton({ label, desc, onPress, head, sub, border, danger, dark }: {
+export function SheetButton({ label, desc, onPress, head, sub, border, danger }: {
   label: string; desc?: string; onPress: () => void;
-  head: string; sub: string; border: string; danger?: boolean; dark?: boolean;
+  head: string; sub: string; border: string; danger?: boolean;
 }): React.ReactElement {
-  const labelColor = danger ? (dark ? '#ff6b80' : '#b91c1c') : head;
+  const labelColor = danger ? DANGER : head;
   return (
     <Pressable
       onPress={onPress}

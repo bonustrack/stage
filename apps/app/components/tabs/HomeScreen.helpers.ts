@@ -8,6 +8,9 @@ import {
 } from '../../lib/xmtp';
 import { isMetroControlBody } from '../../lib/push';
 import { previewOfXmtpContent } from '@metro-labs/client/xmtp/humanize';
+import { channelStampSeed } from '@metro-labs/kit/avatar';
+import { labelsOfSyncedGroup } from '../../lib/xmtp.labels';
+import { githubOfSyncedGroup } from '../../lib/xmtp.github';
 
 export interface Row {
   convId: string;
@@ -43,6 +46,14 @@ export interface Row {
   /** Own inbox id — also needed to filter own messages out of the unread
    *  recount on stream updates. */
   selfInboxId: string;
+  /** Group labels (from the group's synced XMTP appData), GROUPS ONLY — empty
+   *  for DMs. Read in summarize() off the already-synced conv (no extra sync),
+   *  so they refresh on every list refresh/poll. Rendered as chips on the card. */
+  labels: string[];
+  /** Optional linked GitHub issue/PR URL from the group's synced appData,
+   *  GROUPS ONLY (undefined for DMs / unset). Read off the already-synced conv.
+   *  Drives the GitHub icon in the conversation topnav. */
+  github?: string;
   /** Make Row a structural superset of `CachedRow` so we can pass it
    *  straight through `setCachedRows` without casting. */
   [key: string]: unknown;
@@ -59,7 +70,9 @@ export function convIdFromTopic(topic: string | undefined): string | null {
 }
 
 /** Fixed ChannelRow height: 14px vertical padding ×2 + ~48px content (title 22 +
- *  4 margin + 22 badge-reserve) + 1px separator. Used by getItemLayout (#5). */
+ *  4 margin + 22 badge-reserve) + 1px separator. Used by getItemLayout (#5).
+ *  Group label chips render INLINE on the name row (not a separate line), so
+ *  every row is uniform height regardless of labels. */
 export const CHANNEL_ROW_HEIGHT = 77;
 
 export function fmtTs(ts: number | null): string {
@@ -108,6 +121,10 @@ export async function summarize(conv: Conversation, selfInboxId: string): Promis
         ]);
         return { name: n ?? '', imageUrl: img ?? '' };
       })();
+  /** Group labels (DMs have none). Read off the conv synced above at line ~77,
+   *  so no extra group.sync() fires per row — refreshes on each list refresh. */
+  const labels = peerAddress ? [] : await labelsOfSyncedGroup(conv);
+  const github = peerAddress ? undefined : await githubOfSyncedGroup(conv);
   const title = peerAddress
     ? shortAddress(peerAddress)
     : (groupMeta.name.trim()
@@ -122,11 +139,14 @@ export async function summarize(conv: Conversation, selfInboxId: string): Promis
     ? inboxToAddr[last.senderInboxId] ?? null
     : null;
   const lastFromSelf = !!last && last.senderInboxId === selfInboxId;
-  const avatarAddress = peerAddress
-    ?? lastSenderAddress
-    ?? memberAddresses[0]
-    ?? null;
   const avatarUri = peerAddress ? null : (groupMeta.imageUrl.trim() || null);
+  /** Avatar seed precedence:
+   *   - DM: the peer's stamp (real eth address).
+   *   - Group WITH an uploaded image: handled by `avatarUri` (address ignored).
+   *   - Group WITHOUT an image: a deterministic stamp seeded by the channel id
+   *     so every channel gets its OWN stable identicon (not a member's). */
+  const avatarAddress = peerAddress
+    ?? (avatarUri ? null : channelStampSeed(conv.id));
   /** Unread count = msgs newer than the persisted lastReadNs not sent by us. */
   const lastReadNs = await getLastReadNs(conv.id);
   let unreadCount = 0;
@@ -156,5 +176,7 @@ export async function summarize(conv: Conversation, selfInboxId: string): Promis
     lastReadNs,
     selfInboxId,
     markedUnread,
+    labels,
+    github,
   };
 }

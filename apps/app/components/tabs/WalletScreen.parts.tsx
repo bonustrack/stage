@@ -8,6 +8,7 @@ import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';
 import { Col, Row, Box } from '../layout';
 import { NETWORK_LOGO, MAINNET_NETWORK_LOGO, type AssetRow } from './WalletScreen.assets';
+import { DANGER } from '../../lib/theme';
 
 /** Plain `$` (no `US`). `currencyDisplay: 'narrowSymbol'` still resolves to
  *  `US$` on `en-US` system locales (Android default) — we explicitly request
@@ -42,8 +43,9 @@ interface Palette { head: string; sub: string; border: string; bg: string; card:
  *  (`size="xl"`, `variant="secondary"` = rowBg fill + border), with the text
  *  label as a separate <Text> BELOW the circle. The four actions (Send /
  *  Receive / Swap / Buy) sit LEFT-aligned on a single row, centered columns. */
-export function Btn({ icon, label, onPress, head, dark }: {
-  icon: HeroIconName; label: string; onPress: () => void; head: string; dark: boolean;
+export function Btn({ icon, label, onPress, head, border, dark }: {
+  icon: HeroIconName; label: string; onPress: () => void;
+  head: string; border: string; dark: boolean;
 }): React.ReactElement {
   return (
     <Col align="center" gap={6}>
@@ -54,6 +56,10 @@ export function Btn({ icon, label, onPress, head, dark }: {
         dark={dark}
         onPress={onPress}
         icon={<Icon name={icon} size={26} color={head} />}
+        // Override the kit's static secondary fill with the live `border` palette
+        // token so the circle reacts to theme/colour overrides like the rest of
+        // the design system (ChannelRow rowBg = border).
+        style={{ backgroundColor: border, borderColor: border }}
       />
       <Text style={{ color: head, fontSize: 14, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{label}</Text>
     </Col>
@@ -61,7 +67,7 @@ export function Btn({ icon, label, onPress, head, dark }: {
 }
 
 export type WalletTab = 'tokens' | 'nfts' | 'private';
-const TAB_LABEL: Record<WalletTab, string> = { tokens: 'Tokens', nfts: 'NFTs', private: 'Private' };
+const TAB_LABEL: Record<WalletTab, string> = { tokens: 'Tokens', nfts: 'NFTs', private: 'Railgun' };
 
 /** Tokens | NFTs | Private underline tabs — Snapshot-treasury style. */
 export function WalletTabs({ tab, setTab, head, sub, border }: {
@@ -93,15 +99,26 @@ export function WalletTabs({ tab, setTab, head, sub, border }: {
   );
 }
 
-/** A single asset row — 4-corner layout with token avatar + network badge. */
-export function TokenRow({ r, head, sub, border, bg }: { r: AssetRow } & Omit<Palette, 'card'>): React.ReactElement {
+/** Small eye-off icon shown on Railgun-shielded token rows so they're visually
+ *  distinct from public balances. Subtle muted glyph in the secondary text
+ *  tone — quieter than a text pill, matches the app's metadata styling. */
+function PrivateBadge({ sub }: { sub: string }): React.ReactElement {
+  const name: HeroIconName = 'eyeOff';
+  return <Icon name={name} size={15} color={sub} />;
+}
+
+/** A single asset row — 4-corner layout with token avatar + network badge.
+ *  Tappable: `onPress` navigates to the token detail screen (wired by the
+ *  caller). Wrapped in a Pressable with a subtle pressed-opacity. */
+export function TokenRow({ r, head, sub, border, bg, onPress }: { r: AssetRow; onPress?: () => void } & Omit<Palette, 'card'>): React.ReactElement {
   const valueUsd = r.priceUsd === null ? null : r.priceUsd * Number(r.balance);
   /** Up/down colour for the 24h change pill — green for non-negative,
    *  red for negative. Uses the same tones as Snapshot UI's treasury. */
-  const changeColor = r.change24h === null ? sub : r.change24h >= 0 ? '#22c55e' : '#d96868';
+  const changeColor = r.change24h === null ? sub : r.change24h >= 0 ? '#22c55e' : DANGER;
   const changeText = r.change24h === null ? '' :
     `${r.change24h >= 0 ? '+' : ''}${r.change24h.toFixed(2)}%`;
   return (
+    <Pressable onPress={onPress} disabled={!onPress} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
     <Row
       align="center" gap={12} py={14}
       style={{
@@ -133,9 +150,13 @@ export function TokenRow({ r, head, sub, border, bg }: { r: AssetRow } & Omit<Pa
           />
         </Box>
       </Box>
-      {/* Left column — token NAME (top) over price + 24h change (bottom). */}
+      {/* Left column — token NAME (top) over price + 24h change (bottom).
+          Shielded rows carry a small "Private" pill next to the name. */}
       <Col flex={1} style={{ minWidth: 0 }}>
-        <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{r.name}</Text>
+        <Row align="center" gap={6} style={{ minWidth: 0 }}>
+          {r.isPrivate ? <PrivateBadge sub={sub} /> : null}
+          <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{r.name}</Text>
+        </Row>
         <Row align="center" gap={6} mt={2}>
           <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
             {r.priceUsd === null ? r.symbol : fmtUsd(r.priceUsd, r.priceUsd < 1 ? 4 : 2)}
@@ -157,6 +178,7 @@ export function TokenRow({ r, head, sub, border, bg }: { r: AssetRow } & Omit<Pa
         </Text>
       </Col>
     </Row>
+    </Pressable>
   );
 }
 

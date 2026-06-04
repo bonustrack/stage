@@ -24,7 +24,9 @@ import { SearchRow, getExistingPeers, looksLikeEns } from './search.helpers';
 
 export default function Search(): React.ReactElement {
   const router = useRouter();
-  const { fg, head, sub, bg, border, rowBg } = usePalette();
+  const { text: fg, link: head, bg, border, danger } = usePalette();
+  const sub = fg;
+  const rowBg = border;
   const insets = useSafeAreaInsets();
 
   const [query, setQuery] = useState('');
@@ -157,7 +159,7 @@ export default function Search(): React.ReactElement {
         ) : null}
 
         {resolveErr && !resolving ? (
-          <Text style={{ color: '#d96868', fontSize: 13, fontFamily: 'Calibre-Medium', paddingHorizontal: 16, paddingVertical: 10 }}>
+          <Text style={{ color: danger, fontSize: 13, fontFamily: 'Calibre-Medium', paddingHorizontal: 16, paddingVertical: 10 }}>
             {resolveErr}
           </Text>
         ) : null}

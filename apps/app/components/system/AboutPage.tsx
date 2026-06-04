@@ -10,7 +10,9 @@ import { AboutPanel } from './AboutPanel';
 
 export function AboutPage(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
-  const { fg, head, sub, bg, border, rowBg } = usePalette();
+  const { text: fg, link: head, bg, border } = usePalette();
+  const sub = fg;
+  const rowBg = border;
   const insets = useSafeAreaInsets();
 
   return (

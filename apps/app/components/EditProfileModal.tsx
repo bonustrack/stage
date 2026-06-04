@@ -4,7 +4,8 @@
  *  refreshes immediately. */
 
 import { useEffect, useState } from 'react';
-import { Alert, Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, TextInput } from 'react-native';
+import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, TextInput } from 'react-native';
+import { Stamp } from './Stamp';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from './layout';
 import { Button } from '@metro-labs/kit/button';
@@ -15,9 +16,8 @@ import {
   type SnapshotProfile, updateProfile, uploadAvatar,
 } from '../lib/profile';
 import { PROFILE_FIELD_LIMITS, getCacheHash } from '@metro-labs/client/profile/snapshot';
-import { stampBoxAvatarUrl } from '../lib/xmtp';
 import { setPeerProfile } from '../lib/peerProfiles';
-import { usePalette } from '../lib/theme';
+import { usePalette, useBlockRadius } from '../lib/theme';
 
 const AVATAR_SIZE = 96;
 
@@ -36,7 +36,10 @@ export default function EditProfileModal({
   onSaved: (next: SnapshotProfile) => void;
   address: string; initial: SnapshotProfile; dark: boolean;
 }): React.ReactElement {
-  const { fg, head, sub, bg, border, rowBg } = usePalette();
+  const { text: fg, link: head, bg, border, primary } = usePalette();
+  const blockRadius = useBlockRadius();
+  const sub = fg;
+  const rowBg = border;
   const insets = useSafeAreaInsets();
 
   const [form, setForm] = useState<SnapshotProfile>(initial);
@@ -99,9 +102,11 @@ export default function EditProfileModal({
         <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
           <Box style={{ alignItems: 'center', marginBottom: 20 }}>
             <Pressable onPress={pickAvatar} disabled={uploading}>
-              <Image
-                source={{ uri: stampBoxAvatarUrl(address, AVATAR_SIZE * 2, getCacheHash(form.avatar)) }}
-                style={{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: AVATAR_SIZE / 2, backgroundColor: rowBg, opacity: uploading ? 0.5 : 1 }}
+              <Stamp
+                address={address}
+                size={AVATAR_SIZE}
+                cacheBuster={getCacheHash(form.avatar)}
+                style={{ backgroundColor: rowBg, opacity: uploading ? 0.5 : 1 }}
               />
               {uploading ? (
                 <Box style={{ position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' }}>
@@ -123,7 +128,7 @@ export default function EditProfileModal({
                 multiline={f.multiline}
                 style={{
                   color: fg, backgroundColor: rowBg, borderColor: border, borderWidth: 1,
-                  borderRadius: 12, padding: 12, fontSize: 14,
+                  borderRadius: blockRadius, padding: 12, fontSize: 14,
                   minHeight: f.multiline ? 80 : undefined,
                   textAlignVertical: f.multiline ? 'top' : 'center',
                 }}
@@ -139,6 +144,8 @@ export default function EditProfileModal({
             disabled={saving || uploading}
             onPress={() => { void save(); }}
             label={saving ? 'Saving…' : 'Save'}
+            tintBg={primary}
+            tintFg={bg}
             style={{ marginTop: 16 }}
             textStyle={{ fontFamily: 'Calibre-Medium' }}
           />

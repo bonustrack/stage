@@ -2,26 +2,50 @@
  *  from app/xmtp/[convId].tsx verbatim (phase-2 lint split). Behavior identical. */
 
 import { useEffect, useState } from 'react';
-import { Dimensions, Modal, Pressable, ScrollView } from 'react-native';
+import { Dimensions, Linking, Modal, Pressable, ScrollView } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from '../layout';
 import { Icon } from '@metro-labs/kit/icon';
+import { GithubLogo } from '../GithubLogo';
 import { Avatar } from '../Avatar';
 import { getPeerAvatar } from '../../lib/peerProfiles';
+import { channelStampSeed } from '@metro-labs/kit/avatar';
 import { REACT_PRESETS } from '../MessengerBubble';
+import { usePalette } from '../../lib/theme';
 import type { HistoryEntry } from '../../lib/types';
+import { useBlockRadius } from '../../lib/theme';
+
+/** Topnav GitHub button — opens the group's linked GitHub issue/PR (Linear-style)
+ *  externally. Rendered only when a link is set (caller gates on isGroup && url).
+ *  Shows the real GitHub mark (GithubLogo). Sits just before the ⋯ overflow button. */
+export function GithubNavButton({ url, color }: { url: string; color: string }): React.ReactElement {
+  return (
+    <Pressable
+      onPress={() => { void Linking.openURL(url); }}
+      hitSlop={8}
+      style={{ paddingHorizontal: 6, justifyContent: 'center' }}
+    >
+      <GithubLogo size={20} color={color} />
+    </Pressable>
+  );
+}
 
 /** Topnav avatar — 1-1 conversations use the peer's identicon/custom avatar,
- *  groups show their uploaded image (none → render nothing, no per-member
- *  fallback stacking). Delegates rendering to the shared Avatar component. */
-export function HeaderAvatar({ peerAddr, groupImage, border }: {
-  peerAddr: string | null; groupImage: string; border: string;
+ *  groups show their uploaded image, and groups WITHOUT one fall back to a
+ *  deterministic stamp.fyi identicon seeded by the channel id (so every channel
+ *  gets its own stable avatar everywhere). Delegates rendering to the shared
+ *  Avatar component. */
+export function HeaderAvatar({ peerAddr, groupImage, channelId, isGroup, border }: {
+  peerAddr: string | null; groupImage: string; channelId: string; isGroup: boolean; border: string;
 }): React.ReactElement | null {
   if (peerAddr) {
     return <Avatar address={peerAddr} imageUri={getPeerAvatar(peerAddr)} size="sm" style={{ backgroundColor: border }} />;
   }
   if (groupImage) {
     return <Avatar imageUri={groupImage} size="sm" square style={{ backgroundColor: border }} />;
+  }
+  if (isGroup && channelId) {
+    return <Avatar address={channelStampSeed(channelId)} size="sm" square style={{ backgroundColor: border }} />;
   }
   return null;
 }
@@ -47,13 +71,15 @@ export function BubbleActionMenu({
   onShareLink: () => void;
 }): React.ReactElement {
   const [expanded, setExpanded] = useState(false);
+  const blockRadius = useBlockRadius();
   useEffect(() => { if (!target) setExpanded(false); }, [target]);
 
-  const fg = dark ? '#e7e7ea' : '#1f2328';
-  const sub = dark ? '#7a7a7e' : '#8a929d';
-  const cardBg = dark ? '#21262b' : '#ffffff';
-  const stripBg = dark ? '#21262b' : '#ffffff';
-  const divider = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)';
+  const pal = usePalette();
+  const fg = pal.text;
+  const sub = dark ? '#7a7a7e' : '#8a929d'; // one-off chevron grey, no token
+  const cardBg = pal.bg;
+  const stripBg = pal.bg;
+  const divider = pal.border;
 
   const screenH = Dimensions.get('window').height;
   /** Strip + dropdown are ONE cohesive stacked unit rendered in a single absolute
@@ -154,13 +180,14 @@ export function BubbleActionMenu({
           <Box
             style={{
               minWidth: 220, maxWidth: 320,
-              backgroundColor: cardBg, borderRadius: 14, paddingVertical: 4, overflow: 'hidden',
+              backgroundColor: cardBg, borderRadius: blockRadius, paddingVertical: 4, overflow: 'hidden',
               shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 8,
             }}
           >
             <ActionRow icon="reply" label="Reply" onPress={onReply} />
             {target?.text ? <Box style={{ height: 1, backgroundColor: divider, marginLeft: 16 }} /> : null}
             {target?.text ? <ActionRow icon="copy" label="Copy" onPress={onCopy} /> : null}
+            {target?.text ? <Box style={{ height: 1, backgroundColor: divider, marginLeft: 16 }} /> : null}
             {target?.text ? <ActionRow icon="document" label="Select" onPress={onSelect} /> : null}
             <Box style={{ height: 1, backgroundColor: divider, marginLeft: 16 }} />
             <ActionRow icon="send" label="Share link" onPress={onShareLink} />

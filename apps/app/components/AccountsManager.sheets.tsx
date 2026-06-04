@@ -10,6 +10,7 @@ import { flash } from '../lib/toast';
 import { shortAddress } from '../lib/xmtp';
 import { canExportPrivateKey, type AccountRecord } from '../lib/accounts';
 import { SheetModal, SheetButton } from './AccountsManager.parts';
+import { DANGER, usePalette } from '../lib/theme';
 
 interface Pal { head: string; sub: string; border: string; sheetBg: string; }
 
@@ -31,6 +32,7 @@ export function ImportSheet({ visible, onClose, importText, setImportText, setIm
   importText: string; setImportText: (t: string) => void; setImportErr: (e: string) => void;
   importErr: string; onImport: () => void; dark: boolean; p: Pal;
 }): React.ReactElement {
+  const { primary, bg } = usePalette();
   return (
     <SheetModal visible={visible} onClose={onClose} bg={p.sheetBg} border={p.border} title="Import private key" head={p.head}>
       <TextInput
@@ -47,7 +49,7 @@ export function ImportSheet({ visible, onClose, importText, setImportText, setIm
           paddingHorizontal: 12, paddingVertical: 10, marginBottom: 8,
         }}
       />
-      {importErr ? <Text style={{ color: '#ff6b80', fontSize: 12, marginBottom: 8, fontFamily: 'Calibre-Medium' }}>{importErr}</Text> : null}
+      {importErr ? <Text style={{ color: DANGER, fontSize: 12, marginBottom: 8, fontFamily: 'Calibre-Medium' }}>{importErr}</Text> : null}
       <Box style={{ flexDirection: 'row', gap: 8 }}>
         <Button
           variant="secondary"
@@ -66,6 +68,8 @@ export function ImportSheet({ visible, onClose, importText, setImportText, setIm
           disabled={!importText.trim()}
           onPress={onImport}
           label="Import"
+          tintBg={primary}
+          tintFg={bg}
           style={{ flex: 1 }}
         />
       </Box>
@@ -73,10 +77,10 @@ export function ImportSheet({ visible, onClose, importText, setImportText, setIm
   );
 }
 
-export function ManageSheet({ manageRec, activeId, onClose, onSwitch, onExport, onRemove, dark, p }: {
+export function ManageSheet({ manageRec, activeId, onClose, onSwitch, onExport, onRemove, p }: {
   manageRec: AccountRecord | null; activeId: string | null; onClose: () => void;
   onSwitch: (id: string) => void; onExport: (id: string) => void;
-  onRemove: (rec: AccountRecord) => void; dark: boolean; p: Pal;
+  onRemove: (rec: AccountRecord) => void; p: Pal;
 }): React.ReactElement {
   return (
     <SheetModal
@@ -92,7 +96,7 @@ export function ManageSheet({ manageRec, activeId, onClose, onSwitch, onExport, 
         <SheetButton label="Export private key" desc="Reveal + copy this account's key" head={p.head} sub={p.sub} border={p.border} onPress={() => { const id = manageRec.id; onClose(); onExport(id); }} />
       ) : null}
       {manageRec ? (
-        <SheetButton label="Remove account" desc="Delete from this device" danger dark={dark} head={p.head} sub={p.sub} border={p.border} onPress={() => onRemove(manageRec)} />
+        <SheetButton label="Remove account" desc="Delete from this device" danger head={p.head} sub={p.sub} border={p.border} onPress={() => onRemove(manageRec)} />
       ) : null}
     </SheetModal>
   );
@@ -101,9 +105,10 @@ export function ManageSheet({ manageRec, activeId, onClose, onSwitch, onExport, 
 export function ExportSheet({ revealPk, onClose, dark, p }: {
   revealPk: string | null; onClose: () => void; dark: boolean; p: Pal;
 }): React.ReactElement {
+  const { primary, bg } = usePalette();
   return (
     <SheetModal visible={revealPk !== null} onClose={onClose} bg={p.sheetBg} border={p.border} head={p.head} title="Private key">
-      <Text style={{ color: '#ff6b80', fontSize: 12, fontFamily: 'Calibre-Medium', marginBottom: 8 }}>
+      <Text style={{ color: DANGER, fontSize: 12, fontFamily: 'Calibre-Medium', marginBottom: 8 }}>
         Anyone with this key controls the account. Never share it.
       </Text>
       <Text selectable style={{
@@ -120,6 +125,8 @@ export function ExportSheet({ revealPk, onClose, dark, p }: {
         dark={dark}
         onPress={() => { if (revealPk) { void Clipboard.setStringAsync(revealPk); flash('Private key copied'); } }}
         label="Copy to clipboard"
+        tintBg={primary}
+        tintFg={bg}
       />
     </SheetModal>
   );

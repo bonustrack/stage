@@ -11,8 +11,26 @@ import {
   THEME_STORAGE_KEY as STORAGE_KEY, isThemePreference,
   type ThemePreference,
 } from '@metro-labs/kit/theme';
+import { semanticColors, semanticPalette } from '@metro-labs/kit/tokens';
+import { setDefaultButtonRadius } from '@metro-labs/kit/button';
+import {
+  getOverrides, loadOverrides, subscribe as subscribeOverrides,
+  type TokenKey,
+} from './colorOverrides';
+import {
+  getRadius, getBlockRadius, loadRadius, setRadius, setBlockRadius, resetRadius,
+  subscribe as subscribeRadius,
+} from './radiusOverride';
+
+export { setRadius, setBlockRadius, resetRadius } from './radiusOverride';
 
 export type { ThemePreference };
+
+/** Scheme-independent semantic constants (same hex in dark + light) for the
+ *  many sub-components that take a `dark` prop instead of the full palette.
+ *  Sourced from the kit tokens — no app-local fork. */
+export const DANGER = semanticColors.dangerColor.dark;
+export const SUCCESS = semanticColors.successColor.dark;
 
 /** Cached preference — populated on first hook mount from SecureStore. Subsequent reads
  *  return synchronously so screens never flash the wrong theme. */
@@ -66,21 +84,87 @@ export function useEffectiveColorScheme(): 'light' | 'dark' {
   return sys === 'dark' ? 'dark' : 'light';
 }
 
-/** The 6-key scheme-aware palette shared by every screen's inline StyleSheet.
- *  Single source of truth so the dark/light hex block isn't copy-pasted per file. */
+/** The 5-key scheme-aware palette shared by every screen's inline StyleSheet.
+ *  Maps 1:1 to the canonical kit semantic tokens (single source of truth:
+ *  @metro-labs/kit/tokens) — no app-local color forks. `text` = body text,
+ *  `link` = emphasis (titles/names/active icons/accents — brand teal),
+ *  `primary` = primary-button background fill ONLY (white/black). */
 export interface Palette {
-  fg: string; head: string; sub: string; bg: string; border: string; rowBg: string;
+  bg: string; border: string; text: string; link: string; primary: string;
+  danger: string; success: string;
 }
 
-/** Resolve the shared palette for the effective color scheme. */
+/** Subscribe a screen to color-override changes so edits on the Kit page
+ *  re-theme the whole app live. Returns a monotonically-bumped version that
+ *  forces a re-render whenever overrides load/change/reset. */
+function useOverridesVersion(): number {
+  const [v, setV] = useState(0);
+  useEffect(() => {
+    loadOverrides();
+    loadRadius();
+    const bump = (): void => setV((n) => n + 1);
+    // Radius edits also push into the kit Button default here so every palette
+    // consumer (i.e. every screen) repaints its buttons with the new radius.
+    const unsubColors = subscribeOverrides(bump);
+    const unsubRadius = subscribeRadius(() => { setDefaultButtonRadius(getRadius()); bump(); });
+    setDefaultButtonRadius(getRadius());
+    return () => { unsubColors(); unsubRadius(); };
+  }, []);
+  return v;
+}
+
+/** The persisted button corner-radius token (px), reactive to load/edit/reset.
+ *  Reading it also pushes the value into the kit Button's module-level default
+ *  (setDefaultButtonRadius) so EVERY button — even ones not re-rendered by this
+ *  hook — picks up the new radius on the next paint. Mount this once high in the
+ *  tree (e.g. the root layout) so the wiring is always live. */
+export function useRadius(): number {
+  const [r, setR] = useState(getRadius());
+  useEffect(() => {
+    loadRadius();
+    setDefaultButtonRadius(getRadius());
+    setR(getRadius());
+    const unsub = subscribeRadius(() => {
+      setDefaultButtonRadius(getRadius());
+      setR(getRadius());
+    });
+    return unsub;
+  }, []);
+  return r;
+}
+
+/** The persisted block corner-radius token (px) for non-button containers —
+ *  inputs/text fields, cards, modals/sheets and general bordered/filled blocks.
+ *  Reactive to load/edit/reset. Unlike the button radius this is read directly
+ *  at each container call site (there's no kit-wide module default to push). */
+export function useBlockRadius(): number {
+  const [r, setR] = useState(getBlockRadius());
+  useEffect(() => {
+    loadRadius();
+    setR(getBlockRadius());
+    const unsub = subscribeRadius(() => setR(getBlockRadius()));
+    return unsub;
+  }, []);
+  return r;
+}
+
+/** Resolve the shared palette for the effective color scheme. Each token is the
+ *  user's persisted override (if any, for the active scheme) layered OVER the
+ *  canonical kit default — making the whole app re-theme live when the Kit page
+ *  edits a token. Reactive to BOTH theme changes and override changes. */
 export function usePalette(): Palette {
-  const dark = useEffectiveColorScheme() === 'dark';
+  const scheme = useEffectiveColorScheme();
+  useOverridesVersion(); // re-render on override load/edit/reset
+  const s = semanticPalette(scheme);
+  const ov = getOverrides();
+  const pick = (key: TokenKey, def: string): string => ov[key]?.[scheme] ?? def;
   return {
-    fg: dark ? '#9f9fa3' : '#57606a',
-    head: dark ? '#ffffff' : '#000000',
-    sub: dark ? '#7a7a7e' : '#8a929d',
-    bg: dark ? '#0e0f10' : '#ffffff',
-    border: dark ? '#282a2d' : '#e4e4e5',
-    rowBg: dark ? '#282a2d' : '#e4e4e5',
+    bg: pick('bg', s.bgColor),
+    border: pick('border', s.borderColor),
+    text: pick('text', s.textColor),
+    link: pick('link', s.linkColor),
+    primary: pick('primary', s.primaryColor),
+    danger: pick('danger', s.dangerColor),
+    success: pick('success', s.successColor),
   };
 }

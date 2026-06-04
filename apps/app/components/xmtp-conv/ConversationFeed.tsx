@@ -1,38 +1,36 @@
 /** The inverted message FlatList for the XMTP conversation screen (lint split). */
 
-import { Pressable } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { FlatList } from 'react-native-gesture-handler';
 import { Box } from '../layout';
 import { MessengerBubble } from '../MessengerBubble';
-import { getPeerName, getPeerAvatar } from '../../lib/peerProfiles';
 import { Spinner } from '../Spinner';
-import { Avatar } from '../Avatar';
-import { shortAddress } from '../../lib/xmtp';
+import { ConversationIntro } from './ConversationIntro';
 import type { SignatureRequestContent } from '@metro-labs/client/xmtp/sign';
 import type { WalletSendCallsContent } from '@metro-labs/client/xmtp/tx';
-import { convScrollKey, saveScrollOffset } from '../../lib/scrollPos';
+import { AT_BOTTOM_THRESHOLD_PX, convScrollKey, planFeedRestore, saveScrollOffset } from '../../lib/scrollPos';
 import { previewOf } from './feed-helpers';
 import type { useConversationState } from './useConversationState';
 
 type ConvState = ReturnType<typeof useConversationState>;
 
 export function ConversationFeed({
-  c, convId, dark, head, sub, border, insets, router,
+  c, convId, dark, head, sub, fg, border, rowBg, insets, router,
 }: {
   c: ConvState;
   convId: string;
   dark: boolean;
-  head: string; sub: string; border: string;
+  head: string; sub: string; fg: string; border: string; rowBg: string;
   insets: { top: number };
   router: { push: (h: { pathname: '/user/[address]'; params: { address: string } }) => void };
 }): React.ReactElement {
   const {
     events, loadOlder, hasMore, loadingOlder, status, myUri,
-    setShowJump, listEpoch, replyingTo, jumpHighlightId,
+    setShowJump, listEpoch, replyingTo, jumpHighlightId, isAtBottomRef,
     confirmedIds, optimisticReactions, optimisticRemovals,
-    peerAddr, isGroup, senderEthOf, profilesVersion, listRef,
-    savedScrollRef, savedScrollLoaded, didRestoreScroll,
+    peerAddr, isGroup, groupName, groupImage, groupDescription, groupLabels,
+    senderEthOf, profilesVersion, listRef,
+    savedScrollRef, savedScrollLoaded, didRestoreScroll, pinBottomUntil,
     reactions, ownReactions, displayVotes, displayOwnVotes,
     allBubbles, jumpToMessage,
     onReact, onSign, signingIds, onVote, onPay, payingIds, onAnswer,
@@ -44,7 +42,7 @@ export function ConversationFeed({
       key={listEpoch}
       ref={listRef}
       data={allBubbles}
-      extraData={[profilesVersion, optimisticReactions, reactions, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, confirmedIds, selectedForCopy]}
+      extraData={[profilesVersion, optimisticReactions, reactions, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, confirmedIds, selectedForCopy, groupDescription, groupLabels]}
       inverted
       showsVerticalScrollIndicator={false}
       /** Anchor the bottom-visible item (= newest on inverted) so as new bubbles or the
@@ -58,43 +56,45 @@ export function ConversationFeed({
       initialNumToRender={12}
       maxToRenderPerBatch={10}
       removeClippedSubviews
-      /** Inverted list: onEndReached fires near the visual TOP (the OLDEST end),
-       *  which is exactly when we want to page in older history. loadOlder() reads
-       *  the oldest loaded event's ts as a before-cursor and appends the next page
-       *  to the END of the data array — on an inverted list that adds rows above
-       *  the current view without moving the viewport. No-ops while loading or
-       *  once history is exhausted (guarded inside the hook). */
+      /** Inverted: onEndReached fires near the visual TOP (oldest end) → page in
+       *  older history. loadOlder appends to the data END (= above the view, no
+       *  viewport shift). No-ops while loading / once exhausted (guarded in hook). */
       onEndReached={() => { void loadOlder(); }}
       onEndReachedThreshold={0.5}
       /** Inverted: paddingTop = visual BOTTOM (composer side), paddingBottom = visual TOP
        *  (nav side). Bump the top so the oldest message clears the absolute top-nav strip. */
       contentContainerStyle={{ paddingTop: 24, paddingBottom: insets.top + 52 + 24 }}
-      /** Inverted list: `contentOffset.y` is ~0 at the visual bottom. Hide the
-       *  jump button within ~12px of the bottom (so it never lingers when the
-       *  user is already down) and show it the moment they scroll up past that.
-       *  `scrollEventThrottle={16}` (≈1 event/frame) keeps the show/hide snappy
-       *  instead of the laggy 32ms cadence. */
+      /** Inverted: `contentOffset.y` ~0 at the visual bottom. Hide the jump button
+       *  within ~12px of bottom, show it on scroll-up. 16ms throttle = ~1/frame. */
       onScroll={(ev) => {
         const y = ev.nativeEvent.contentOffset.y;
         const next = y > 12;
         setShowJump(prev => (prev === next ? prev : next));
-        /** Persist the inverted offset (debounced) so reopening restores it. */
-        if (convId) saveScrollOffset(convScrollKey(convId), y);
+        /** Authoritative at-bottom flag for the unmount flush (beats the debounce race). */
+        isAtBottomRef.current = y <= AT_BOTTOM_THRESHOLD_PX;
+        /** Persist the inverted offset (debounced). At bottom store sentinel 0
+         *  (restore treats <=0 as "land at bottom") so returning shows the newest
+         *  even if msgs arrived while away; a concrete old offset would be stale. */
+        if (convId) saveScrollOffset(convScrollKey(convId), y <= AT_BOTTOM_THRESHOLD_PX ? 0 : y);
       }}
       scrollEventThrottle={16}
-      /** Restore the saved (inverted) offset once, after the first content
-       *  layout — only on the initial mount (epoch 0), only if a saved offset
-       *  was found, and only if the list has content. Clamp to content height
-       *  so a stale offset can't overscroll. Remounts (listEpoch > 0) skip
-       *  this and keep landing at the bottom. */
+      /** Initial-mount (epoch 0) scroll restore — see planFeedRestore. Restores a
+       *  concrete saved offset, or pins to bottom (newest) across a short settle
+       *  window for the at-bottom sentinel. Remounts (epoch > 0) skip → land bottom. */
       onContentSizeChange={(_w, h) => {
         if (didRestoreScroll.current || listEpoch !== 0) return;
-        if (!savedScrollLoaded.current) return; // saved offset not read yet
-        const want = savedScrollRef.current;
-        if (want == null || want <= 0) { didRestoreScroll.current = true; return; }
-        if (h <= 0 || allBubbles.length === 0) return; // wait for real content
-        didRestoreScroll.current = true;
-        const offset = Math.min(want, Math.max(0, h));
+        const plan = planFeedRestore({
+          loaded: savedScrollLoaded.current, contentHeight: h, itemCount: allBubbles.length,
+          savedOffset: savedScrollRef.current, now: Date.now(),
+          pinUntil: pinBottomUntil.current, setPinUntil: (t) => { pinBottomUntil.current = t; },
+        });
+        if (plan === 'skip') {
+          // Sentinel settle window elapsed → latch so later scrolls aren't yanked.
+          if (pinBottomUntil.current !== 0) didRestoreScroll.current = true;
+          return;
+        }
+        const offset = plan === 'bottom' ? 0 : plan.offset;
+        if (plan !== 'bottom') didRestoreScroll.current = true;
         requestAnimationFrame(() => {
           try { listRef.current?.scrollToOffset({ offset, animated: false }); } catch { /* reanimated #3670 / best-effort */ }
         });
@@ -163,9 +163,9 @@ export function ConversationFeed({
       }
       /** Inverted list → `ListFooterComponent` renders at the visual TOP (oldest
        *  end). Holds two things, top-to-bottom: a small "loading older" spinner
-       *  while a previous page is paginating in, then the DM intro banner.
-       *  The DM banner only shows once history is exhausted (`!hasMore`) so it
-       *  doesn't sit mid-scroll above still-unloaded messages. */
+       *  while a previous page is paginating in, then the conversation intro
+       *  header. The intro only shows once history is exhausted (`!hasMore`) so
+       *  it doesn't sit mid-scroll above still-unloaded messages. */
       ListFooterComponent={
         <>
           {loadingOlder ? (
@@ -173,24 +173,22 @@ export function ConversationFeed({
               <Spinner size={20} color={sub} />
             </Box>
           ) : null}
-          {!isGroup && peerAddr && hasMore === false ? (
-            <Pressable
-              onPress={() => router.push({ pathname: '/user/[address]', params: { address: peerAddr } })}
-              style={{ alignItems: 'center', paddingVertical: 24, paddingHorizontal: 24 }}
-            >
-              <Avatar
-                address={peerAddr}
-                imageUri={getPeerAvatar(peerAddr)}
-                size="lg"
-                style={{ backgroundColor: border }}
-              />
-              <Text style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold', marginTop: 12 }} numberOfLines={1}>
-                {getPeerName(peerAddr) ?? shortAddress(peerAddr)}
-              </Text>
-              <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 2 }} numberOfLines={1}>
-                {shortAddress(peerAddr)}
-              </Text>
-            </Pressable>
+          {hasMore === false ? (
+            <ConversationIntro
+              isGroup={isGroup}
+              peerAddr={peerAddr}
+              groupName={groupName}
+              groupImage={groupImage}
+              groupDescription={groupDescription}
+              groupLabels={groupLabels}
+              convId={convId}
+              head={head}
+              sub={sub}
+              fg={fg}
+              border={border}
+              rowBg={rowBg}
+              onPressPeer={(address) => router.push({ pathname: '/user/[address]', params: { address } })}
+            />
           ) : null}
         </>
       }

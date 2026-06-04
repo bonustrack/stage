@@ -12,6 +12,7 @@ import { MessengerImageAttachment } from './MessengerImageAttachment';
 import { MessengerVideoAttachment } from './MessengerVideoAttachment';
 import { Row } from './layout';
 import { resolveRemoteAttachment } from '../lib/xmtp';
+import { useLocalAttachment } from '../lib/localAttachmentCache';
 import type { Attachment } from './MessengerBubble.helpers';
 
 export function AttachmentView({ att, fullUrl, fg, dark }: {
@@ -42,22 +43,44 @@ export function AttachmentView({ att, fullUrl, fg, dark }: {
  *  decrypt on mount to a local `file://` URI, then hand off to the regular
  *  `AttachmentView`. Shows a spinner while resolving and a tappable retry chip
  *  on failure (gateway hiccup / decrypt error). */
-export function RemoteAttachmentResolver({ att, fg, sub, dark }: {
+export function RemoteAttachmentResolver({ att, fg, sub, dark, msgId, index }: {
   att: Attachment; fg: string; sub: string; dark: boolean;
+  /** Message id + attachment index used to look up a LOCAL `file://` URI cached
+   *  by the composer when this user just sent the attachment. Lets us paint the
+   *  already-on-disk local copy instantly (no blank/spinner) while the remote
+   *  ciphertext downloads + decrypts in the background. */
+  msgId?: string; index?: number;
 }): React.ReactElement {
-  const [uri, setUri] = useState<string | null>(null);
+  /** REACTIVE cached local URI (sender side). Critical for zero-gap: the live echo
+   *  bubble often mounts BEFORE `conv.send()` resolves and runs
+   *  `rememberLocalAttachments`, so a one-shot `useState(initial)` read missed it
+   *  and the bubble sat on a spinner until the IPFS download finished. Subscribing
+   *  to the cache means the moment the local URI lands (whenever send resolves)
+   *  this re-renders and paints the already-on-disk file instantly. */
+  const local = useLocalAttachment(msgId, index);
+  /** Decrypted remote URI, set once the IPFS round trip completes. */
+  const [remoteUri, setRemoteUri] = useState<string | null>(null);
   const [mime, setMime] = useState<string | undefined>(att.mime);
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  /** Prefer the local on-disk copy (same bytes, no download) whenever we have it;
+   *  fall back to the decrypted remote copy (recipient side / sender after a
+   *  restart when the session cache is gone). */
+  const uri = local ?? remoteUri;
   useEffect(() => {
     if (!att.remote) return;
     let cancelled = false;
     setFailed(false);
     void resolveRemoteAttachment(att.remote)
-      .then(r => { if (!cancelled) { setUri(r.fileUri); if (r.mimeType) setMime(r.mimeType); } })
-      .catch(() => { if (!cancelled) setFailed(true); });
+      .then(r => { if (!cancelled) { setRemoteUri(r.fileUri); if (r.mimeType) setMime(r.mimeType); } })
+      .catch(() => {
+        /** A local copy is (or may still become) on screen — a failed remote
+         *  resolve is harmless for the sender, so don't flip to the retry chip and
+         *  blank it out. Only surface failure with nothing to show. */
+        if (!cancelled && !local) setFailed(true);
+      });
     return () => { cancelled = true; };
-  }, [att.remote, attempt]);
+  }, [att.remote, attempt, local]);
 
   if (failed) {
     return (

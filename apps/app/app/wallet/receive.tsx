@@ -1,6 +1,7 @@
 /** Wallet → Receive screen — full-page QR of the logged-in address with the
- *  full address shown below, tap to copy. Replaces the old Alert-on-tap-Receive
- *  flow so users can scan the address into a sender app instead of typing it.
+ *  full address shown below, tap to copy. A Public/Private toggle at the top
+ *  switches between the public EOA address (0x…) and the shielded Railgun 0zk
+ *  address. Funds received to the 0zk address are private (shielded).
  *
  *  Uses `react-native-qrcode-svg` (pure JS, no native module — no APK rebuild
  *  needed) layered on react-native-svg which the app already depends on. */
@@ -14,33 +15,49 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import QRCode from 'react-native-qrcode-svg';
 import { getOrCreateXmtpClient } from '../../lib/xmtp';
+import { usePrivateWallet } from '../../lib/railgun/usePrivateWallet';
 import { usePalette } from '../../lib/theme';
 import { Icon } from '@metro-labs/kit/icon';
 import { flash } from '../../lib/toast';
+import { ReceiveModeToggle, type ReceiveMode } from '../../components/wallet/ReceiveModeToggle';
 
 export default function WalletReceive(): React.ReactElement {
   const router = useRouter();
-  const { fg, head, sub, bg, border, rowBg: card } = usePalette();
+  const { text: fg, link: head, bg, border } = usePalette();
+  const sub = fg;
+  const card = border;
   const insets = useSafeAreaInsets();
 
-  const [address, setAddress] = useState('');
+  const [mode, setMode] = useState<ReceiveMode>('public');
+  const [publicAddress, setPublicAddress] = useState('');
+  const { snapshot } = usePrivateWallet();
+  const privateAddress = snapshot?.zkAddress ?? '';
+  const privateReady = privateAddress.length > 0;
 
   useEffect(() => {
     let cancelled = false;
     void (async (): Promise<void> => {
       try {
         const client = await getOrCreateXmtpClient('production');
-        if (!cancelled) setAddress(client.publicIdentity.identifier);
+        if (!cancelled) setPublicAddress(client.publicIdentity.identifier);
       } catch { /* leave blank — the parent topnav handles back */ }
     })();
     return () => { cancelled = true; };
   }, []);
 
+  // Fall back to public if private was selected but the 0zk address vanished.
+  const activeMode: ReceiveMode = mode === 'private' && !privateReady ? 'public' : mode;
+  const address = activeMode === 'private' ? privateAddress : publicAddress;
+
   const copy = (): void => {
     if (!address) return;
     void Clipboard.setStringAsync(address);
-    flash('Address copied');
+    flash(activeMode === 'private' ? '0zk address copied' : 'Address copied');
   };
+
+  const hint = activeMode === 'private'
+    ? 'Shielded address. Funds sent here are private — the sender shields into Railgun.'
+    : 'Scan or share this address to receive ETH or tokens on Ethereum mainnet.';
 
   return (
     <Box style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
@@ -56,6 +73,12 @@ export default function WalletReceive(): React.ReactElement {
       </Box>
 
       <ScrollView contentContainerStyle={{ padding: 16, alignItems: 'center', gap: 16 }}>
+        <ReceiveModeToggle
+          mode={activeMode}
+          onChange={setMode}
+          privateReady={privateReady}
+        />
+
         {/* QR card — always white background so contrast is correct in dark mode too. */}
         <Box style={{
           backgroundColor: '#ffffff', padding: 16, borderRadius: 16,
@@ -75,7 +98,7 @@ export default function WalletReceive(): React.ReactElement {
         </Box>
 
         <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', marginTop: 4 }}>
-          WALLET ADDRESS (tap to copy)
+          {activeMode === 'private' ? 'SHIELDED 0ZK ADDRESS (tap to copy)' : 'WALLET ADDRESS (tap to copy)'}
         </Text>
         <Pressable
           onPress={copy}
@@ -91,7 +114,7 @@ export default function WalletReceive(): React.ReactElement {
         </Pressable>
 
         <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', textAlign: 'center', paddingHorizontal: 16, marginTop: 8 }}>
-          Scan or share this address to receive ETH or tokens on Ethereum mainnet.
+          {hint}
         </Text>
       </ScrollView>
     </Box>

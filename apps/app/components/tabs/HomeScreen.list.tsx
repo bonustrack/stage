@@ -14,13 +14,19 @@ import { useEffectiveColorScheme } from '../../lib/theme';
 import { CHANNEL_ROW_HEIGHT } from './HomeScreen.helpers';
 import type { Row as RowT } from './HomeScreen.helpers';
 import { HomeEmpty } from './HomeScreen.parts';
+import { LabelFilterControl } from './HomeScreen.filter';
+import type { LabelFilterValue } from './HomeScreen.filter';
 
 interface ChannelsListProps {
-  panRef?: import('../SwipeTabs').SimultaneousRefs;
+  panRef?: import('../SwipeTabs.types').SimultaneousRefs;
   router: { push: (to: string | { pathname: string; params: Record<string, string> }) => void };
   myAddress: string | null;
   sortedRows: RowT[];
   requestCount: number;
+  /** Active label filter (null = none) → drives the top-left control's state. */
+  labelFilter: LabelFilterValue;
+  /** Opens the label-picker sheet (owned by HomeScreen). */
+  onOpenFilter: () => void;
   head: string;
   sub: string;
   border: string;
@@ -34,7 +40,8 @@ interface ChannelsListProps {
 }
 
 export function ChannelsList({
-  panRef, router, myAddress, sortedRows, requestCount, head, sub, border,
+  panRef, router, myAddress, sortedRows, requestCount, labelFilter, onOpenFilter,
+  head, sub, border,
   listExtraData, listRef, savedOffsetRef, didRestoreRef, contentHeightRef,
   renderRow, getRowLayout,
 }: ChannelsListProps): React.ReactElement {
@@ -46,15 +53,18 @@ export function ChannelsList({
   const badgeFg = dark ? '#000000' : '#ffffff';
   return (
     <>
-      {/* Home topnav: avatar left, "+" right → opens the create-group screen.
-       *  (Search lives in its own tab now, so the old search icon here was
-       *  redundant and has been replaced.) */}
+      {/* Home topnav: avatar + label-filter control on the left, requests + "+"
+       *  on the right. Tapping the filter control opens the label picker sheet;
+       *  when a label is active the control highlights + shows the label text. */}
       <Row align="center" justify="between" px={16} pt={12} pb={10} style={{
         borderBottomWidth: 1, borderBottomColor: border,
       }}>
-        {/* Static avatar: the top-left no longer opens the account-switcher
-         *  page (account switching lives in Settings). */}
-        <Avatar address={myAddress} size={24} style={{ backgroundColor: border }} />
+        <Row align="center" gap={8}>
+          {/* Static avatar: the top-left no longer opens the account-switcher
+           *  page (account switching lives in Settings). */}
+          <Avatar address={myAddress} size={24} style={{ backgroundColor: border }} />
+          <LabelFilterControl active={labelFilter} onPress={onOpenFilter} />
+        </Row>
         <Row align="center" gap={18}>
           {/* Message requests: person icon + count badge (pending 'unknown'
            *  consent convs). Badge hidden when 0; tap opens the requests list. */}
@@ -117,9 +127,10 @@ export function ChannelsList({
   );
 }
 
-/** ChannelRow is fixed-height (#5) → getItemLayout lets the list skip
- *  measuring + jump-scroll without rendering intermediate rows. Keep in sync
- *  with ChannelRow's layout (avatar 40 / 14px vertical padding / 1px border). */
+/** getItemLayout lets the list skip measuring + jump-scroll without rendering
+ *  intermediate rows. Every row is uniform height (group label chips render
+ *  inline on the name row, not a separate line), so offsets are a flat
+ *  index × CHANNEL_ROW_HEIGHT. */
 export function channelRowLayout(_d: ArrayLike<RowT> | null | undefined, index: number): { length: number; offset: number; index: number } {
   return { length: CHANNEL_ROW_HEIGHT, offset: CHANNEL_ROW_HEIGHT * index, index };
 }

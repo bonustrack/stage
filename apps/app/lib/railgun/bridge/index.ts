@@ -1,62 +1,50 @@
 /** RN-side RAILGUN bridge client.
  *
- *  Sends typed RPC requests to the embedded Node process and awaits typed
- *  replies, and subscribes to push events. Replaces (when the native runtime is
- *  present) the lazy-guarded DIRECT SDK calls in lib/railgun/sdk*.ts — those
- *  cannot prove on Hermes because the prover is a Node N-API addon. See
- *  protocol.ts for the full rationale.
+ *  Typed RPC over the in-process nodejs-mobile channel (each call gets a
+ *  monotonic id the Node side echoes on the reply event). Replaces the
+ *  lazy-guarded direct SDK calls (sdk*.ts) which can't prove on Hermes.
  *
- *  GUARD CONTRACT (identical to lib/railgun/native.ts): when
- *  nodejs-mobile-react-native isn't in the binary, isBridgeAvailable() is false
- *  and every call rejects with a friendly error; nothing here throws on import
- *  and the Metro bundler never resolves the native module. Until the new APK
- *  (with the runtime + bundled nodejs-project) ships, this stays dormant and the
- *  existing UI degradation path is unchanged.
+ *  GUARD CONTRACT (like lib/railgun/native.ts): when the runtime isn't in the
+ *  binary, isBridgeAvailable() is false, every call rejects friendly, nothing
+ *  throws on import, and the bundler never resolves the native module.
  *
- *  TRANSPORT: we implement the minimal request/response correlation directly on
- *  the channel (each call gets a monotonic id; the Node side echoes it on the
- *  reply event), so we don't need the `nodejs-mobile-ipc2` dep on the RN side.
- *  The Node side may use ipc2 internally; the wire shape below is what matters.
- *
- *  SECURITY (key handling): the engine encryption key + mnemonic are derived on
- *  the RN side from the active account (lib/railgun/sdkWallet.ts) and passed in
- *  request payloads to the Node process. They cross only the in-process channel
- *  (no network, no disk on the RN side beyond the engine's own encrypted DB) and
- *  the Node process runs in the same app sandbox. The EOA private key NEVER
- *  leaves RN — shield/unshield sign on RN and pass only the resulting signature
- *  / populated tx. A password-gated key (vs derived) is a later hardening pass. */
-import {
-  isNodejsMobilePresent,
-  loadNodejsMobile,
-  type NodejsChannel,
-} from './nodejsMobile';
+ *  SECURITY: encryption key + mnemonic are derived on RN (deriveKeys.ts) and
+ *  passed in payloads over the in-process channel only (no network). The EOA
+ *  private key NEVER leaves RN — txs are signed on RN, populated tx passed in. */
+import { isNodejsMobilePresent, loadNodejsMobile, type NodejsChannel } from './nodejsMobile';
 import type { BridgeCall, BridgeEvent, CallParams, CallResult } from './protocol';
 import { attachRawProbe, fmtPayload, status } from './diagnostics';
+import { startReadinessHandshake } from './handshake';
 
 export { setBridgeStatusListener } from './diagnostics';
+export { walletInfo, getBalances } from './wallet';
+export type { WalletInfoResult, BalancesResult, BridgeBalanceRow } from './wallet';
+export { sdk, sdkListMethods } from './sdk';
 
-/** Wire envelopes. Requests carry a correlation id; replies echo it. */
-interface RequestEnvelope { id: number; call: BridgeCall | 'ping' | 'engineStatus' | 'engineInit'; params: unknown }
+/** Wire envelopes (requests carry a correlation id; replies echo it). ExtraCall
+ *  = non-BridgeCall host calls on the same channel (ping/engineInit/etc). */
+export type ExtraCall = 'ping' | 'engineStatus' | 'engineInit' | 'walletInfo' | 'balances' | 'sdk';
+interface RequestEnvelope { id: number; call: BridgeCall | ExtraCall; params: unknown }
 interface ReplyEnvelope { id: number; ok: boolean; result?: unknown; error?: string }
 
 const REQUEST_EVENT = 'rg:request';
 const REPLY_EVENT = 'rg:reply';
-/** main.js emits this once the Node host has booted + registered its request
- *  listener (main.js:101). We gate the first post on it to avoid the boot-race
- *  where an early request is dropped (post isn't buffered) and the call hangs. */
+/** Emitted once by main.js after it registers rg:request; one of two readiness
+ *  signals (see startReadinessHandshake). */
 const READY_EVENT = 'event:message';
-/** Keep tight so a genuine failure surfaces on-screen fast instead of a 2-minute
- *  spinner. A single proof can take ~30s, but the boot-await gate means we no
- *  longer need 120s of headroom for the dropped-first-request case. */
+let stopHandshake: (() => void) | null = null; // handshake.markReady
+/** Reply resolvers for handshake probe pings, keyed by id; checked by the
+ *  REPLY_EVENT listener before the pending map, bypassing the ready gate. */
+const readinessResolvers = new Map<number, () => void>();
+/** Tight so a genuine failure surfaces fast (the ready gate removes the need for
+ *  120s of dropped-first-request headroom). */
 const CALL_TIMEOUT_MS = 15_000;
-/** Engine init connects two RPC providers + loads the native prover; give it
- *  generous headroom so a slow public RPC doesn't trip a false timeout. */
-const ENGINE_INIT_TIMEOUT_MS = 90_000;
+export const ENGINE_INIT_TIMEOUT_MS = 90_000; // RPC providers + native prover
 
 let started = false;
 let nextId = 1;
-/** Resolves once the embedded Node host announces it has booted. Created in
- *  startBridge() before mod.start(); rawCall awaits it before posting. */
+/** Resolves once the host is ready (boot event OR ping reply), rejects after the
+ *  handshake cap; rawCall gates posts on it. */
 let readyPromise: Promise<void> | null = null;
 const pending = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void; timer: ReturnType<typeof setTimeout> }>();
 
@@ -69,8 +57,8 @@ function channel(): NodejsChannel | null {
   return loadNodejsMobile()?.channel ?? null;
 }
 
-/** Boot the Node process + wire the reply listener. Idempotent; no-op (returns
- *  false) when the runtime isn't present. Safe to call on every wallet open. */
+/** Boot the Node process + wire listeners. Idempotent (started guard); no-op
+ *  false when absent. Safe per wallet open. */
 export function startBridge(): boolean {
   if (started) return true;
   const mod = loadNodejsMobile();
@@ -82,6 +70,13 @@ export function startBridge(): boolean {
   mod.channel.addListener(REPLY_EVENT, (...args: unknown[]) => {
     const reply = args[0] as ReplyEnvelope | undefined;
     if (!reply || typeof reply.id !== 'number') return;
+    // Handshake probe replies resolve readiness directly (not real RPC calls).
+    const ready = readinessResolvers.get(reply.id);
+    if (ready) {
+      readinessResolvers.delete(reply.id);
+      ready();
+      return;
+    }
     const entry = pending.get(reply.id);
     if (!entry) return;
     pending.delete(reply.id);
@@ -94,11 +89,20 @@ export function startBridge(): boolean {
       entry.reject(new Error(reply.error ?? 'Railgun bridge error'));
     }
   });
-  readyPromise = new Promise<void>((resolve) => {
-    mod.channel.addListener(READY_EVENT, (...args: unknown[]) => {
-      status(`Node booted ✓ ${fmtPayload(args[0])}`);
-      resolve();
-    });
+  // Readiness resolves on EITHER the boot event or the retrying-ping handshake
+  // (first wins); the handshake rejects after its cap if the host never boots.
+  const handshake = startReadinessHandshake({
+    channel: mod.channel,
+    requestEvent: REQUEST_EVENT,
+    nextId: () => nextId++,
+    onReply: (id, resolve) => readinessResolvers.set(id, resolve),
+    offReply: (id) => readinessResolvers.delete(id),
+  });
+  stopHandshake = handshake.markReady;
+  readyPromise = handshake.promise;
+  mod.channel.addListener(READY_EVENT, (...args: unknown[]) => {
+    status(`Node booted ✓ ${fmtPayload(args[0])}`);
+    stopHandshake?.();
   });
   status('starting Node runtime…');
   mod.start('main.js');
@@ -106,12 +110,9 @@ export function startBridge(): boolean {
   return true;
 }
 
-/** Candidate channel event names main.js / the native layer might post the boot
- *  signal (or anything else) under — the raw probe listens on all of them. */
 const RAW_PROBE_EVENTS = ['message', 'event:message', 'event', READY_EVENT, REQUEST_EVENT, REPLY_EVENT];
 
-/** Issue a typed RPC call to the Node process. Rejects (never throws sync) when
- *  the runtime is absent so callers keep the existing degradation path. */
+/** Issue a typed RPC call to the Node process. */
 export async function bridgeCall<K extends BridgeCall>(
   call: K,
   params: CallParams<K>,
@@ -119,10 +120,8 @@ export async function bridgeCall<K extends BridgeCall>(
   return rawCall(call, params) as Promise<CallResult<K>>;
 }
 
-/** Untyped request/response primitive shared by bridgeCall + pingBridge. Sends
- *  one envelope, awaits the id-matched reply, rejects on timeout / absent
- *  runtime. Keeps the correlation logic in one place. */
-function rawCall(call: BridgeCall | 'ping' | 'engineStatus' | 'engineInit', params: unknown, timeoutMs = CALL_TIMEOUT_MS): Promise<unknown> {
+/** Send one envelope, await the id-matched reply; rejects on timeout/absent. */
+export function rawCall(call: BridgeCall | ExtraCall, params: unknown, timeoutMs = CALL_TIMEOUT_MS): Promise<unknown> {
   const ch = channel();
   if (!ch) throw new Error('Private wallet needs the new app build');
   if (!started && !startBridge()) throw new Error('Railgun bridge unavailable');
@@ -135,36 +134,37 @@ function rawCall(call: BridgeCall | 'ping' | 'engineStatus' | 'engineInit', para
       reject(new Error(`Railgun bridge call timed out: ${call}`));
     }, timeoutMs);
     pending.set(id, { resolve, reject, timer });
-    // Gate the post on the Node host being ready: the channel does NOT buffer,
-    // so posting before main.js registers its 'rg:request' listener drops the
-    // request and the call hangs until timeout. readyPromise resolves on the
-    // host's boot announcement (READY_EVENT).
-    void (readyPromise ?? Promise.resolve()).then(() => {
-      status(`request sent → ${call} (id ${id})`);
-      ch.post(REQUEST_EVENT, envelope);
-    });
+    // Gate posts on the ready handshake: the channel does NOT buffer, so a post
+    // before main.js registers rg:request is dropped. If the host never boots,
+    // readyPromise rejects after the cap so the call fails loudly, not silently.
+    (readyPromise ?? Promise.resolve()).then(
+      () => {
+        status(`request sent → ${call} (id ${id})`);
+        ch.post(REQUEST_EVENT, envelope);
+      },
+      (err: Error) => {
+        if (!pending.has(id)) return;
+        pending.delete(id);
+        clearTimeout(timer);
+        reject(err instanceof Error ? err : new Error(String(err)));
+      },
+    );
   });
 }
 
-/** Result of the embedded Node runtime liveness probe (handlers.ping in
- *  nodejs-assets/nodejs-project/main.js). */
-export interface PingResult {
+export interface PingResult { // handlers.ping liveness probe
   pong: boolean;
   echo: unknown;
   node: string;
   at: number;
 }
 
-/** Round-trip a 'ping' through the embedded Node runtime. The KEY on-device
- *  feasibility test: a successful resolve proves the APK shipped + booted the
- *  Node runtime and the bi-directional channel works. Rejects (never throws
- *  sync) when the runtime is absent so callers degrade gracefully. */
+/** Round-trip a 'ping' — proves the APK booted the Node runtime + channel. */
 export async function pingBridge(payload?: unknown): Promise<PingResult> {
   return (await rawCall('ping', payload ?? { hello: 'metro' })) as PingResult;
 }
 
-/** Result of the engine readiness probe (engine.js). `prover` true ⇒ Groth16
- *  native prover loaded; `networks` lists chains whose providers came up. */
+/** Engine readiness (engine.js). `prover` ⇒ Groth16 prover loaded. */
 export interface EngineStatusResult {
   ready: boolean;
   prover: boolean;
@@ -174,19 +174,17 @@ export interface EngineStatusResult {
   error?: string;
 }
 
-/** Read current engine status without forcing init (cheap, pollable). */
+/** Read engine status without forcing init (pollable). */
 export async function engineStatus(): Promise<EngineStatusResult> {
   return (await rawCall('engineStatus', undefined)) as EngineStatusResult;
 }
 
-/** Init the engine + native prover + mainnet/Sepolia providers in the Node host
- *  (idempotent), then resolve the status. Overrides the short call timeout. */
+/** Init engine + prover + providers (idempotent); overrides the short timeout. */
 export async function engineInit(dev = __DEV__): Promise<EngineStatusResult> {
   return (await rawCall('engineInit', { walletSource: 'metro', dev }, ENGINE_INIT_TIMEOUT_MS)) as EngineStatusResult;
 }
 
-/** Subscribe to an unsolicited Node push event (logs, balance/proof progress).
- *  Returns an unsubscribe fn; a no-op when the runtime is absent. */
+/** Subscribe to a Node push event; returns an unsubscribe fn (no-op if absent). */
 export function bridgeListen(
   event: BridgeEvent,
   cb: (payload: unknown) => void,

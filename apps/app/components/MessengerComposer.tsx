@@ -7,11 +7,12 @@ import { ComposerGradient } from './ComposerGradient';
 import { Col } from './layout';
 import { type Attachment } from './MessengerComposer.helpers';
 import { useComposerActions } from './MessengerComposer.actions';
-import { useComposerDrafts, useComposerFocus, computeMentions, applyMention } from './MessengerComposer.hooks';
+import { useComposerDrafts, useComposerFocus, computeMentions, applyMention, useLastAttachment } from './MessengerComposer.hooks';
 import { PollSheet } from './MessengerComposer.sheets';
 import { SignatureSheet, PaymentSheet } from './MessengerComposer.sheets-tx';
 import { ReplyBanner, MentionPopup, PendingRow } from './MessengerComposer.parts';
-import { ComposerEditor, AttachMenu } from './MessengerComposer.editor';
+import { ComposerEditor, AttachMenu, buildAttachActions } from './MessengerComposer.editor';
+import { DANGER, usePalette } from '../lib/theme';
 
 interface Props {
   dark: boolean;
@@ -45,11 +46,11 @@ interface Props {
 export function MessengerComposer({
   dark, xmtpLine, mentionCandidates, replyingTo, autoFocusNonce, onClearReply, onJumpToReply, onOptimistic, onSent,
 }: Props): React.ReactElement {
-  const fg = dark ? '#9f9fa3' : '#57606a';
-  const head = dark ? '#ffffff' : '#000000';
-  const sub = dark ? '#7a7a7e' : '#8a929d';
-  const inputBg = dark ? '#282a2d' : '#e4e4e5';
-  const chipBg = dark ? '#282a2d' : '#e4e4e5';
+  const pal = usePalette(); // text/primary/border/bg ← tokens
+  const fg = pal.text, head = pal.link, inputBg = pal.border, chipBg = pal.border;
+  // `sub` = muted/secondary text (placeholder, timestamps). No `muted` token
+  // exists yet, so map to `text` to keep it editable. TODO: dedicated muted token.
+  const sub = pal.text;
   const palette = { fg, sub, inputBg, chipBg };
 
   const [text, setText] = useState('');
@@ -111,7 +112,16 @@ export function MessengerComposer({
     setSelection({ start: cursor, end: cursor });
   };
 
-  const bg = dark ? '#0e0f10' : '#ffffff';
+  const attachActions = buildAttachActions({
+    pickImage: actions.pickImage, takePhoto: actions.takePhoto,
+    pickFile: actions.pickFile, pickLocation: actions.pickLocation,
+    openPoll: () => setPollOpen(true), openSig: () => setSigOpen(true), openTx: () => actions.openTx(),
+  });
+  /** Last-used type's icon → quick-access button left of "+"; hidden until first use. */
+  const lastLabel = useLastAttachment();
+  const quick = attachActions.find(([, label]) => label === lastLabel);
+
+  const bg = pal.bg; // #0e0f10 / #ffffff
   return (
     <Col px={10} pt={0} pb={14} bg={bg}>
       {/** 24px fade sits directly above the composer; left/right -10 cancels the
@@ -134,12 +144,12 @@ export function MessengerComposer({
         />
       ) : null}
       {uploading || err ? (
-        <Text style={{ color: err ? '#d96868' : sub, fontSize: 12, paddingHorizontal: 14, paddingBottom: 4 }}>
+        <Text style={{ color: err ? DANGER : sub, fontSize: 12, paddingHorizontal: 14, paddingBottom: 4 }}>
           {err ?? 'Uploading…'}
         </Text>
       ) : null}
       <ComposerEditor
-        dark={dark} fg={fg} head={head} sub={sub} inputBg={inputBg} chipBg={chipBg}
+        dark={dark} fg={fg} head={head} bg={bg} sub={sub} inputBg={inputBg} chipBg={chipBg}
         recording={recording} levels={levels} recordSecs={recordSecs}
         slideX={slideX} slideThresholdPx={SLIDE_CANCEL_THRESHOLD_PX} micPanResponder={micPanResponder}
         text={text} setText={setText}
@@ -147,6 +157,8 @@ export function MessengerComposer({
         textareaH={textareaH} setTextareaH={setTextareaH}
         inputRef={inputRef}
         attachMenuOpen={attachMenuOpen} setAttachMenuOpen={setAttachMenuOpen}
+        quickIcon={quick?.[0]}
+        onQuick={quick ? () => void quick[2]() : undefined}
         canSend={canSend}
         onCancelRec={() => void actions.cancelRec()}
         onStopRec={() => void actions.stopRec()}
@@ -157,15 +169,7 @@ export function MessengerComposer({
         <AttachMenu
           head={head} inputBg={inputBg} chipBg={chipBg}
           onClose={() => setAttachMenuOpen(() => false)}
-          actions={[
-            ['photo', 'Image', actions.pickImage],
-            ['camera', 'Camera', actions.takePhoto],
-            ['paperClip', 'File', actions.pickFile],
-            ['mapPin', 'Location', actions.pickLocation],
-            ['chartBar', 'Poll', () => setPollOpen(true)],
-            ['pencil', 'Sign', () => setSigOpen(true)],
-            ['wallet', 'Payment', () => actions.openTx()],
-          ]}
+          actions={attachActions}
         />
       ) : null}
       <PollSheet

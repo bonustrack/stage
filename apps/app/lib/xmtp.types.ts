@@ -42,10 +42,39 @@ export interface StreamMsg {
 /** Format a metro-style line URI for an XMTP conversation. Mirrors the daemon train. */
 export function lineOfConv(convId: string): string { return `metro://xmtp/${convId}`; }
 
+/** Shareable link for a 1-1 DM, addressed by the PEER's Ethereum address rather
+ *  than a conversation id. DM conversation ids are installation-local and mean
+ *  nothing to the recipient, so a DM is shared by peer address — each side
+ *  resolves it to their own local DM via `findOrCreateDmWithIdentity`. */
+export function lineOfDmPeer(address: string): string { return `${XMTP_USER_PREFIX}${address}`; }
+
+/** Extract the peer Ethereum address from a `metro://xmtp/user/<address>` DM
+ *  link found ANYWHERE in a block of text. Returns null when none is present.
+ *  Checked BEFORE `metroConvIdOf` so the literal "user" segment is never
+ *  mistaken for a conversation id. */
+export function metroDmPeerOf(text?: string | null): string | null {
+  if (!text) return null;
+  const m = text.match(/metro:\/\/xmtp\/user\/(0x[a-fA-F0-9]{40})/);
+  return m ? m[1] : null;
+}
+
 /** Extract the XMTP conversation id from a `metro://xmtp/<convId>` line URI.
  *  Returns null when the line doesn't match. */
 export function convIdOfLine(line: string): string | null {
   const m = line.match(/^metro:\/\/xmtp\/([^/]+)$/);
+  return m ? m[1] : null;
+}
+
+/** Find a `metro://xmtp/<convId>` channel link ANYWHERE in a block of text and
+ *  return the convId (vs `convIdOfLine` which anchors the whole string). Used by
+ *  the message renderer to surface an inline channel card. Returns null when the
+ *  text contains no metro channel link. */
+export function metroConvIdOf(text?: string | null): string | null {
+  if (!text) return null;
+  // Exclude the DM-by-address form `metro://xmtp/user/<addr>` — that's handled by
+  // `metroDmPeerOf`. Without the `(?!user/)` guard the `[^\s/]+` capture would
+  // grab the literal "user" and render a card that resolves nothing.
+  const m = text.match(/metro:\/\/xmtp\/(?!user\/)([^\s/]+)/);
   return m ? m[1] : null;
 }
 
@@ -60,12 +89,17 @@ export function shortAddress(addr: string): string {
  *  when no custom avatar is set, so callers can render this URL directly without
  *  needing a network-error fallback.
  *
+ *  Takes the DISPLAY px and internally requests `s = displayPx * 2` so every
+ *  call site renders a crisp retina (2×) identicon from a single source of truth
+ *  (mirrors `stampAvatarUrl` in @metro-labs/kit/avatar). Pass the on-screen size,
+ *  NOT a pre-doubled value.
+ *
  *  `cacheBust` is appended verbatim as `&cb=…` — pass a value that changes when
  *  the underlying avatar changes (e.g. the last few chars of the IPFS CID
  *  stored in profile.avatar) so the device + stamp CDN refetch instead of
  *  serving the previous image. */
-export function stampBoxAvatarUrl(address: string, size = 120, cacheBust?: string): string {
-  const base = `https://stamp.fyi/avatar/eth:${address.toLowerCase()}?s=${size}`;
+export function stampBoxAvatarUrl(address: string, displayPx = 60, cacheBust?: string): string {
+  const base = `https://stamp.fyi/avatar/eth:${address.toLowerCase()}?s=${displayPx * 2}`;
   return cacheBust ? `${base}&cb=${encodeURIComponent(cacheBust)}` : base;
 }
 

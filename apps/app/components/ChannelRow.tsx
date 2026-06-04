@@ -43,6 +43,16 @@ export interface ChannelRowProps {
   markedUnread?: boolean;
   pinned?: boolean;
   hasDraft?: boolean;
+  /** Group labels (from XMTP appData) to render as compact read-only chips
+   *  inline next to the title (same row as the group name). Groups only — DMs
+   *  pass none. Capped to a few visible with a "+N" overflow pill so the name
+   *  row never overflows; the name itself stays primary (truncates first). */
+  labels?: string[];
+  /** Tapping a label chip calls this with the chip's label (the caller
+   *  navigates to the Channels tab + applies it as the active filter). When
+   *  omitted the chips render non-interactive. The press is swallowed so it
+   *  never also fires the row's own onPress (opening the conversation). */
+  onLabelPress?: (label: string) => void;
   /** Trailing chevron (used in the boxed common-channels list). */
   showChevron?: boolean;
   avatarSize?: number;
@@ -50,6 +60,54 @@ export interface ChannelRowProps {
   onLongPress?: () => void;
   /** Pressable style override (the channels tab insets the separator itself). */
   containerStyle?: StyleProp<ViewStyle>;
+  /** Hide the inner row's bottom separator (e.g. when embedded in a bordered
+   *  card where only the card's outer border should show). */
+  noBorder?: boolean;
+}
+
+/** Max label chips shown inline before collapsing the rest into "+N". Kept low
+ *  (2) so the chips stay secondary to the group name on the same row. */
+const MAX_VISIBLE_LABELS = 2;
+
+/** Compact, read-only label chips shown INLINE on the name row, immediately to
+ *  the right of the group name (groups only). Matches the group-info LabelChip
+ *  pill style (rounded, bordered) minus the remove affordance, sized down to
+ *  fit beside the name. Caps at MAX_VISIBLE_LABELS + a "+N" pill, and shrinks
+ *  before the name does so the name stays the primary element. */
+function LabelChips({ labels, fg, sub, rowBg, onLabelPress }: {
+  labels: string[]; fg: string; sub: string; rowBg: string;
+  onLabelPress?: (label: string) => void;
+}): React.ReactElement | null {
+  if (labels.length === 0) return null;
+  const visible = labels.slice(0, MAX_VISIBLE_LABELS);
+  const overflow = labels.length - visible.length;
+  return (
+    <Row align="center" gap={4} style={{ flexWrap: 'nowrap', flexShrink: 0 }}>
+      {visible.map(label => (
+        <Pressable
+          key={label.toLowerCase()}
+          disabled={!onLabelPress}
+          /** Swallow the press so it doesn't bubble to the row's onPress (which
+           *  would open the conversation). onPressOut fires after the row's
+           *  Pressable would have, so we also gate via the dedicated handler. */
+          onPress={onLabelPress ? () => onLabelPress(label) : undefined}
+          hitSlop={6}
+          style={({ pressed }) => ({
+            paddingHorizontal: 6, paddingVertical: 1, borderRadius: 999,
+            backgroundColor: rowBg, flexShrink: 0,
+            opacity: pressed && onLabelPress ? 0.6 : 1,
+          })}
+        >
+          <Text style={{ color: fg, fontSize: 12, fontFamily: 'Calibre-Medium' }}>
+            {label}
+          </Text>
+        </Pressable>
+      ))}
+      {overflow > 0 ? (
+        <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>{`+${overflow}`}</Text>
+      ) : null}
+    </Row>
+  );
 }
 
 /** #6: memoised so a stream tick that re-renders the channels list only
@@ -59,9 +117,11 @@ function ChannelRowBase({
   title, avatarAddress, avatarUri, cacheBuster, square,
   lastPreview, timestamp, subtitle, unreadCount = 0, markedUnread,
   pinned, hasDraft, showChevron, avatarSize = 40,
-  onPress, onLongPress, containerStyle,
+  onPress, onLongPress, containerStyle, labels, onLabelPress, noBorder,
 }: ChannelRowProps): React.ReactElement {
-  const { head, sub, bg, border } = usePalette();
+  const { link: head, text: sub, bg, border } = usePalette();
+  const fg = sub;
+  const rowBg = border;
   const previewText = lastPreview && lastPreview.length > 0 ? lastPreview : subtitle ?? '';
 
   return (
@@ -77,7 +137,7 @@ function ChannelRowBase({
       {/* Inner row carries the separator: it starts at the avatar's left edge
           (inset by paddingHorizontal), not the full card width. */}
       <Row align="center" gap={12} py={14} style={{
-        borderBottomWidth: 1, borderBottomColor: border,
+        borderBottomWidth: noBorder ? 0 : 1, borderBottomColor: border,
       }}>
         <Avatar
           imageUri={avatarUri}
@@ -91,9 +151,20 @@ function ChannelRowBase({
           <Row align="center" gap={6}>
             {pinned ? <Icon name="mapPin" size={13} color={sub} /> : null}
             {hasDraft ? <Icon name="pencil" size={14} color={sub} /> : null}
-            <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', flex: 1 }} numberOfLines={1}>
+            {/* Name + labels hug each other on the left; name shrinks (and
+                ellipsizes) first, the label chip stays right beside it. */}
+            <Text
+              style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', flexShrink: 1, minWidth: 0 }}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {title}
             </Text>
+            {labels && labels.length > 0 ? (
+              <LabelChips labels={labels} fg={fg} sub={sub} rowBg={rowBg} onLabelPress={onLabelPress} />
+            ) : null}
+            {/* Flexible spacer pushes the timestamp to the far right edge. */}
+            <Box style={{ flex: 1 }} />
             {timestamp ? (
               <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{timestamp}</Text>
             ) : null}

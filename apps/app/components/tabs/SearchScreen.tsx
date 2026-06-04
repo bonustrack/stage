@@ -31,7 +31,7 @@ import type { TextInput } from 'react-native';
 import { FlatList } from 'react-native-gesture-handler';
 import { useRouter } from 'expo-router';
 import { isAddress } from 'viem';
-import type { SimultaneousRefs } from '../SwipeTabs';
+import type { SimultaneousRefs } from '../SwipeTabs.types';
 import { usePalette } from '../../lib/theme';
 import { openDmWithAddress } from '../../lib/xmtp';
 import { resolveEnsName } from '../../lib/ens';
@@ -40,15 +40,16 @@ import { Col } from '../layout';
 import {
   DEBOUNCE_MS, type MsgHit, looksLikeEns, readConvRows, searchMessageText,
 } from './SearchScreen.helpers';
+import { makeSectionHeader, MessageRow } from './SearchScreen.rows';
 import {
-  makeSectionHeader, MessageRow, SearchBar, SearchEmptyState,
-  SearchResultsHeader, SearchNoMatches,
-} from './SearchScreen.rows';
+  SearchBar, SearchEmptyState, SearchResultsHeader, SearchNoMatches,
+} from './SearchScreen.layout';
 
 export function SearchScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const router = useRouter();
-  const { fg, head, sub, bg, border, rowBg } = usePalette();
-
+  const { text: fg, link: head, bg, border } = usePalette();
+  const sub = fg;
+  const rowBg = border;
   /** The search TextInput ref (used to programmatically blur/clear). */
   const inputRef = useRef<TextInput>(null);
 

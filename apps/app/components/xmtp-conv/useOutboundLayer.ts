@@ -72,15 +72,18 @@ export function useOutboundLayer(
         const byId = liveBubbles.find(e => e.id === realId && !used.has(e.id));
         if (byId) { used.add(byId.id); confirmed.add(o.id); continue; }
       }
+      /** STRUCTURAL no-gap rule: confirm attachment sends ONLY by exact real id
+       *  (above), never the text/ts heuristic — that'd drop the optimistic local
+       *  thumbnail before `conv.send()` primes the id + cache → blank-gap echo. */
+      if (hasAttachments(o)) continue;
       const oTs = new Date(o.ts).getTime();
+      /** Text-only echo: match within a 1s-slack / 30s window so a new send never latches an older bubble. */
       const match = liveBubbles.find(e =>
         e.from === myUri
         && !used.has(e.id)
-        /** Echo must be no earlier than this send (1s slack for clock skew) and
-         *  within a tight 30s window — never a message that predates the send. */
         && new Date(e.ts).getTime() >= oTs - 1_000
         && new Date(e.ts).getTime() - oTs < 30_000
-        && (e.text === o.text || (hasAttachments(o) && hasAttachments(e))));
+        && e.text === o.text);
       if (match) { used.add(match.id); confirmed.add(o.id); }
     }
     return confirmed;

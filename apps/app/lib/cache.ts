@@ -127,6 +127,3 @@ export async function getSecure(key: string): Promise<string | null> {
 export async function setSecure(key: string, value: string): Promise<void> {
   try { await SecureStore.setItemAsync(key, value); } catch { /* best-effort */ }
 }
-export async function deleteSecure(key: string): Promise<void> {
-  try { await SecureStore.deleteItemAsync(key); } catch { /* best-effort */ }
-}

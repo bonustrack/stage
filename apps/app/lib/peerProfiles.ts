@@ -9,7 +9,7 @@
 import { useEffect, useReducer } from 'react';
 import { SNAPSHOT_HUB_GRAPHQL, getCacheHash } from '@metro-labs/client/profile/snapshot';
 
-interface PeerProfile { name?: string; avatar?: string }
+interface PeerProfile { name?: string; avatar?: string; about?: string }
 
 const store = new Map<string, PeerProfile>();
 const pending = new Set<string>();
@@ -17,7 +17,7 @@ const listeners = new Set<() => void>();
 
 async function fetchBatch(addrs: string[]): Promise<void> {
   const query =
-    'query($ids:[String]!){ users(where:{id_in:$ids}){ id name avatar } }';
+    'query($ids:[String]!){ users(where:{id_in:$ids}){ id name avatar about } }';
   try {
     const res = await fetch(SNAPSHOT_HUB_GRAPHQL, {
       method: 'POST',
@@ -25,12 +25,12 @@ async function fetchBatch(addrs: string[]): Promise<void> {
       body: JSON.stringify({ query, variables: { ids: addrs } }),
     });
     const json = await res.json();
-    const users: { id: string; name?: string | null; avatar?: string | null }[] =
+    const users: { id: string; name?: string | null; avatar?: string | null; about?: string | null }[] =
       json?.data?.users ?? [];
     const seen = new Set<string>();
     for (const u of users) {
       const id = (u.id ?? '').toLowerCase();
-      store.set(id, { name: u.name ?? undefined, avatar: u.avatar ?? undefined });
+      store.set(id, { name: u.name ?? undefined, avatar: u.avatar ?? undefined, about: u.about ?? undefined });
       seen.add(id);
     }
     /** Cache misses as empty so we don't refetch them every render. */
@@ -79,6 +79,14 @@ export function getPeerName(address?: string | null): string | undefined {
   if (!address) return undefined;
   const n = store.get(address.toLowerCase())?.name;
   return n && n.trim() ? n.trim() : undefined;
+}
+
+/** The peer's Snapshot profile bio/about text, or undefined if unset/whitespace.
+ *  Used by the DM conversation intro to show the peer's description under name. */
+export function getPeerAbout(address?: string | null): string | undefined {
+  if (!address) return undefined;
+  const a = store.get(address.toLowerCase())?.about;
+  return a && a.trim() ? a.trim() : undefined;
 }
 
 export function getPeerAvatarCb(address?: string | null): string | undefined {

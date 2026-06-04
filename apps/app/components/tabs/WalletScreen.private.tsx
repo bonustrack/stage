@@ -1,28 +1,40 @@
-/** Private (Railgun-shielded) balances view for the Wallet tab.
+/** Private (Railgun-shielded) tab for the Wallet — ADDRESS + ACTIONS only.
  *
- *  Renders INSTANTLY from the cached snapshot (no spinner on open): the cached
- *  0zk address + shielded balances paint immediately, optimistic pending
- *  shields/sends are overlaid live with a non-blocking progress chip, and a
- *  background refresh swaps in fresh numbers. On a build without the Railgun
- *  native module it shows a friendly "coming soon" rather than erroring. */
+ *  The shielded token BALANCES are not rendered here anymore; they're merged
+ *  into the Tokens tab's flat list (public + Private-badged rows). This view
+ *  shows the cached 0zk address (copyable, paints instantly), the live
+ *  pending-proof chips for in-flight shield/send/unshield actions, and the DEV
+ *  bridge ping probe. It still mounts usePrivateWallet(autoStart:true) so the
+ *  engine inits + scans on open — that populates the shared snapshot the Tokens
+ *  tab reads. On a build with neither the native prover nor the Node bridge it
+ *  shows a friendly "coming soon" rather than erroring. */
 import { Pressable } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { Text } from '@metro-labs/kit/text';
 import { Col, Row } from '../layout';
 import { flash } from '../../lib/toast';
 import { isRailgunAvailable } from '../../lib/railgun/native';
+import { isBridgeAvailable } from '../../lib/railgun/bridge';
 import { usePrivateWallet } from '../../lib/railgun/usePrivateWallet';
-import { fmtBalance } from './WalletScreen.parts';
 import { BridgePingProbe } from './WalletScreen.private.ping';
+import { RailgunDebugPanel } from './WalletScreen.private.debug';
 
 const short0zk = (a: string): string => (a.length > 14 ? `${a.slice(0, 8)}…${a.slice(-4)}` : a);
 
 export function PrivateView({ head, sub, border }: {
   head: string; sub: string; border: string;
 }): React.ReactElement {
-  const { snapshot, pending } = usePrivateWallet();
+  // autoStart:true — this view is mounted ONLY on an explicit Private-tab open
+  // (WalletScreen renders it behind `tab === 'private'`), so it's safe to boot
+  // the nodejs-mobile engine here; usePrivateWallet serializes it behind XMTP
+  // readiness so it never races Client.create on first launch.
+  const { snapshot, pending } = usePrivateWallet(true);
   const live = pending.filter(p => p.phase === 'proving' || p.phase === 'broadcasting');
 
-  if (!isRailgunAvailable()) {
+  // The real view needs EITHER the native prover (full proving) OR just the
+  // embedded Node bridge (engine init + 0zk address + balance scan — no proof
+  // needed for phase 1-2). Only a build with neither shows the placeholder.
+  if (!isRailgunAvailable() && !isBridgeAvailable()) {
     return (
       <Col mx={16} py={40} align="center" gap={6}>
         <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>Private balances</Text>
@@ -40,7 +52,9 @@ export function PrivateView({ head, sub, border }: {
     <Col mx={16} mt={4}>
       {/* 0zk address pill — copyable; rendered from cache so it's instant. */}
       <Pressable
-        onPress={() => { if (snapshot?.zkAddress) flash('0zk address copied'); }}
+        onPress={() => {
+          if (snapshot?.zkAddress) { void Clipboard.setStringAsync(snapshot.zkAddress); flash('0zk address copied'); }
+        }}
         style={{ paddingVertical: 10 }}
       >
         <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>PRIVATE ADDRESS</Text>
@@ -62,21 +76,14 @@ export function PrivateView({ head, sub, border }: {
         </Row>
       ))}
 
-      {snapshot?.balances.length
-        ? snapshot.balances.map(b => (
-          <Row key={`${b.chainId}:${b.symbol}`} align="center" justify="between" py={14}
-            style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-            <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold' }}>{b.name}</Text>
-            <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold' }}>
-              {`${fmtBalance(b.balance)} ${b.symbol}`}
-            </Text>
-          </Row>
-        ))
-        : (
-          <Col py={32} align="center">
-            <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium' }}>No shielded balances yet</Text>
-          </Col>
-        )}
+      {/* Token BALANCES are no longer rendered here — they live solely in the
+          Tokens tab (merged public + shielded flat list). This view keeps
+          autoStart:true so the engine still inits + scans, which populates the
+          shared snapshot the Tokens tab reads. */}
+
+      {/* Raw balance-pipeline diagnostics — does the engine emit ANY balance
+          event, and what's in it? Disambiguates engine-side vs RN-side bugs. */}
+      <RailgunDebugPanel head={head} sub={sub} border={border} />
 
       {/* Dev: on-device round-trip check for the embedded Node bridge. */}
       <BridgePingProbe sub={sub} border={border} />

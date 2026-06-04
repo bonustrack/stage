@@ -69,7 +69,8 @@ async function summarizeRequest(conv: Conversation): Promise<ReqRow> {
 export default function Requests(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { fg, head, sub, bg, border } = usePalette();
+  const { text: fg, link: head, bg, border, danger } = usePalette();
+  const sub = fg;
   const insets = useSafeAreaInsets();
   const [rows, setRows] = useState<ReqRow[] | null>(null);
 
@@ -121,7 +122,7 @@ export default function Requests(): React.ReactElement {
             hitSlop={6}
             style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: border }}
           >
-            <Icon name="x" size={18} color={dark ? '#ff6b80' : '#b91c1c'} />
+            <Icon name="x" size={18} color={danger} />
           </Pressable>
           <Pressable
             onPress={() => act(item.convId, true)}

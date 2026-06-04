@@ -8,27 +8,18 @@
  *  The native bridge stays guarded: when isBridgeAvailable() is false (the
  *  nodejs-mobile runtime isn't in this binary) we never call into it, so tsc /
  *  eslint / the bundler stay clean even though the native module isn't
- *  resolvable here. Any throw is caught and surfaced as text. */
-import { useCallback, useEffect, useRef, useState } from 'react';
+ *  resolvable here. Any throw is caught and surfaced as text.
+ *
+ *  The action callbacks live in ./WalletScreen.private.ping.actions (extracted
+ *  to keep this file under the 200-line cap). */
+import { useEffect, useRef, useState } from 'react';
 import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';
 import { Col } from '../layout';
-import { useEffectiveColorScheme } from '../../lib/theme';
-import {
-  engineInit,
-  isBridgeAvailable,
-  pingBridge,
-  setBridgeStatusListener,
-} from '../../lib/railgun/bridge';
+import { DANGER, useEffectiveColorScheme } from '../../lib/theme';
+import { bridgeListen, isBridgeAvailable, setBridgeStatusListener } from '../../lib/railgun/bridge';
 import { PingLog, type LogLine } from './WalletScreen.private.ping.log';
-
-type ProbeState =
-  | { kind: 'idle' }
-  | { kind: 'running' }
-  | { kind: 'ok'; text: string }
-  | { kind: 'err'; text: string };
-
-const UNAVAILABLE = 'bridge unavailable (need the nodejs-mobile build)';
+import { useProbeActions, type ProbeState } from './WalletScreen.private.ping.actions';
 
 export function BridgePingProbe({ sub, border }: {
   sub: string; border: string;
@@ -40,6 +31,10 @@ export function BridgePingProbe({ sub, border }: {
   const [log, setLog] = useState<LogLine[]>([]);
   const runStart = useRef(0);
 
+  const { onPress, onInit, onScan, onMethods } = useProbeActions({
+    count, setCount, setState, setEngine, setLog, runStart,
+  });
+
   // Mirror the bridge's lifecycle lines into component state so the full
   // boot→reply sequence renders on-device (no adb logcat). Cleared per run.
   useEffect(() => {
@@ -50,53 +45,25 @@ export function BridgePingProbe({ sub, border }: {
     return () => setBridgeStatusListener(null);
   }, []);
 
-  const onPress = useCallback(async (): Promise<void> => {
-    runStart.current = Date.now();
-    setLog([]);
-    if (!isBridgeAvailable()) {
-      setState({ kind: 'err', text: UNAVAILABLE });
-      setLog([{ ms: 0, line: 'native module not present ✗' }]);
-      return;
-    }
-    const at = count + 1;
-    setCount(at);
-    setState({ kind: 'running' });
-    const t0 = Date.now();
-    try {
-      const res = await pingBridge({ at });
-      const ms = Date.now() - t0;
-      setState({ kind: 'ok', text: `pong: ${JSON.stringify(res)} (${ms}ms)` });
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      setState({ kind: 'err', text: msg });
-    }
-  }, [count]);
-
-  const onInit = useCallback(async (): Promise<void> => {
-    runStart.current = Date.now();
-    setLog([]);
-    if (!isBridgeAvailable()) {
-      setEngine({ kind: 'err', text: UNAVAILABLE });
-      setLog([{ ms: 0, line: 'native module not present ✗' }]);
-      return;
-    }
-    setEngine({ kind: 'running' });
-    const t0 = Date.now();
-    try {
-      const res = await engineInit();
-      const ms = Date.now() - t0;
-      setEngine({ kind: 'ok', text: `engine: ${JSON.stringify(res)} (${ms}ms)` });
-    } catch (e) {
-      setEngine({ kind: 'err', text: e instanceof Error ? e.message : String(e) });
-    }
+  // Stream the engine's live scan diagnostics ('event:scanDebug') into the log
+  // so a screenshot shows WHY a scan returns 0 (getLogs range, commitment count,
+  // RPC error, scanned wallet id). No-op when the bridge isn't in this binary.
+  useEffect(() => {
+    if (!isBridgeAvailable()) return undefined;
+    return bridgeListen('event:scanDebug', (p) => {
+      const e = p as { t?: number; chain?: number; msg?: string } | undefined;
+      if (!e || !e.msg) return;
+      const ms = runStart.current ? Date.now() - runStart.current : 0;
+      setLog((prev) => [...prev, { ms, line: `scan[${e.chain ?? '?'}] ${e.msg}` }]);
+    });
   }, []);
 
-  const resultColor = state.kind === 'err' ? '#ff5c5c' : sub;
+  const resultColor = state.kind === 'err' ? DANGER : sub;
   const resultText =
     state.kind === 'idle' ? 'not run yet'
       : state.kind === 'running' ? 'pinging…'
         : state.text;
-  const engineColor = engine.kind === 'err' ? '#ff5c5c' : sub;
+  const engineColor = engine.kind === 'err' ? DANGER : sub;
   const engineText =
     engine.kind === 'idle' ? 'not run yet'
       : engine.kind === 'running' ? 'initializing engine…'
@@ -127,7 +94,20 @@ export function BridgePingProbe({ sub, border }: {
       <Text style={{ color: engineColor, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
         {engineText}
       </Text>
-      <PingLog lines={log} sub={sub} />
+      <Button
+        label="Scan balances + show diagnostics"
+        variant="secondary"
+        dark={dark}
+        loading={engine.kind === 'running'}
+        onPress={() => { void onScan(); }}
+      />
+      <Button
+        label="List SDK dispatcher methods"
+        variant="secondary"
+        dark={dark}
+        onPress={() => { void onMethods(); }}
+      />
+      <PingLog lines={log} sub={sub} border={border} />
     </Col>
   );
 }

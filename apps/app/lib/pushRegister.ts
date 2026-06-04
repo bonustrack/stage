@@ -55,7 +55,7 @@ import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Client } from '@xmtp/react-native-sdk';
 import { PublicIdentity } from '@xmtp/react-native-sdk';
-import { ensureNotificationReady, getDeviceFcmToken } from './push';
+import { ensureNotificationReady, getDeviceFcmToken } from './push.device';
 import { DAEMON_INBOX_ADDRESS, buildRegisterPushBody } from './pushRegister.control';
 
 // Re-export the control-DM wire-format surface so existing import paths keep

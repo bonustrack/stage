@@ -25,6 +25,11 @@ import { RAILGUN_NETWORKS, type RailgunNet } from './networks';
 const ARTIFACT_DIR = 'railgun-artifacts';
 const ENGINE_DB_DIR = 'railgun-db';
 const WALLET_SOURCE = 'metro';
+/** POI aggregator — REQUIRED at engine start for networks whose NETWORK_CONFIG
+ *  defines `poi` (Sepolia + mainnet). Without it loadProvider throws "This
+ *  network requires Proof Of Innocence". Public aggregator per the RAILGUN dev
+ *  guide; mirrors nodejs-project/engine.js POI_NODE_URLS. */
+const POI_NODE_URLS = ['https://ppoi-agg.horsewithsixlegs.xyz'];
 
 let engineReady = false;
 let initPromise: Promise<boolean> | null = null;
@@ -119,7 +124,7 @@ export async function initEngine(): Promise<boolean> {
         createArtifactStore(),
         false, // useNativeArtifacts
         false, // skipMerkletreeScans
-        undefined, // poiNodeURLs — SDK defaults
+        POI_NODE_URLS, // poiNodeURLs — REQUIRED (Sepolia/mainnet define NETWORK_CONFIG.poi)
         [], // customPOILists
         __DEV__, // verboseScanLogging
       );

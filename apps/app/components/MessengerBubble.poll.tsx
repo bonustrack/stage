@@ -5,6 +5,7 @@ import { Pressable } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Row, Box } from './layout';
 import type { Poll } from './MessengerBubble.helpers';
+import { usePalette } from '../lib/theme';
 
 /** PollView — clone of QuestionView, minus the Other / free-text affordance,
  *  plus live per-option vote counts, a filled result bar, and a checkmark on the
@@ -19,6 +20,7 @@ export function PollView({ poll, dark, sub, votes, ownVotes, onVote }: {
   ownVotes?: Set<number>;
   onVote: (optionIndex: number, action: 'added' | 'removed') => void;
 }): React.ReactElement {
+  const fg = usePalette().text; // #9f9fa3 / #57606a
   const multi = poll.multiSelect === true;
   const total = poll.options.reduce((n, _o, i) => n + (votes?.get(i)?.size ?? 0), 0);
   const tap = (idx: number): void => {
@@ -62,7 +64,7 @@ export function PollView({ poll, dark, sub, votes, ownVotes, onVote }: {
               }}
             />
             <Row align="center" justify="between">
-              <Text style={{ color: dark ? '#9f9fa3' : '#57606a', fontSize: 15, fontFamily: 'Calibre-Medium', flexShrink: 1 }}>
+              <Text style={{ color: fg, fontSize: 15, fontFamily: 'Calibre-Medium', flexShrink: 1 }}>
                 {isOn ? '✓  ' : (multi ? '☐  ' : '')}{opt.label}
               </Text>
               <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Semibold', marginLeft: 8 }}>

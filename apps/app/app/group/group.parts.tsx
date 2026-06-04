@@ -10,6 +10,7 @@ import { Icon } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';
 import { Avatar } from '../../components/Avatar';
 import { AppModal } from '../../components/AppModal';
+import { DANGER, usePalette } from '../../lib/theme';
 
 interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; }
 
@@ -55,7 +56,7 @@ export function MemberRow({
           paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999,
           backgroundColor: role === 'owner'
             ? (dark ? 'rgba(45,212,191,0.18)' : 'rgba(13,148,136,0.12)')
-            : (dark ? '#282a2d' : '#e4e4e5'),
+            : border, // #282a2d / #e4e4e5
         }}>
           <Text style={{
             fontSize: 11, fontFamily: 'Calibre-Medium',
@@ -73,7 +74,7 @@ export function MemberRow({
             backgroundColor: pressed ? (dark ? '#3a1820' : '#fbe3e8') : 'transparent',
           })}
         >
-          <Icon name="trash" size={18} color={dark ? '#ff6b80' : '#b91c1c'} />
+          <Icon name="trash" size={18} color={DANGER} />
         </Pressable>
       )}
     </Pressable>
@@ -88,6 +89,7 @@ export function AddMemberModal({
   dark: boolean; p: Pal;
 }): React.ReactElement {
   const { fg, sub, border, rowBg } = p;
+  const { primary, bg } = usePalette();
   return (
     <AppModal visible={visible} onClose={onClose} title="Add member">
       <Box>
@@ -112,6 +114,8 @@ export function AddMemberModal({
           dark={dark}
           disabled={adding || !addDraft.trim()}
           onPress={onAdd}
+          tintBg={primary}
+          tintFg={bg}
           label={adding ? 'Adding…' : 'Add member'}
         />
       </Box>
@@ -120,10 +124,10 @@ export function AddMemberModal({
 }
 
 export function OverflowModal({
-  visible, onClose, leaving, onLeave, dark, sub,
+  visible, onClose, leaving, onLeave, sub,
 }: {
   visible: boolean; onClose: () => void; leaving: boolean; onLeave: () => void;
-  dark: boolean; sub: string;
+  sub: string;
 }): React.ReactElement {
   return (
     <AppModal visible={visible} onClose={onClose}>
@@ -133,8 +137,8 @@ export function OverflowModal({
           disabled={leaving}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, opacity: leaving ? 0.5 : 1 }}
         >
-          <Icon name="arrowLeft" size={20} color={dark ? '#ff6b80' : '#b91c1c'} />
-          <Text style={{ color: dark ? '#ff6b80' : '#b91c1c', fontSize: 16, fontFamily: 'Calibre-Medium' }}>
+          <Icon name="arrowLeft" size={20} color={DANGER} />
+          <Text style={{ color: DANGER, fontSize: 16, fontFamily: 'Calibre-Medium' }}>
             {leaving ? 'Leaving…' : 'Leave group'}
           </Text>
         </Pressable>

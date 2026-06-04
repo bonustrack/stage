@@ -14,7 +14,8 @@ import {
   type WalletSendCallsContent, walletSendCallsFallbackText,
 } from '@metro-labs/client/xmtp/tx';
 import { getActiveAccount } from '../lib/accounts';
-import type { ComposerActionsArgs } from './MessengerComposer.actions';
+import { setLastAttachment } from '../lib/lastAttachment';
+import type { ComposerActionsArgs } from './MessengerComposer.types';
 
 const mintLocalId = (): string => `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
@@ -45,6 +46,7 @@ export async function sendSignatureRequest(a: ComposerActionsArgs): Promise<void
     };
   }
   const localId = mintLocalId();
+  setLastAttachment('Sign');
   a.onOptimistic?.({ localId, text: signatureRequestFallbackText(content), attachments: [], payload: { contentType: 'signatureRequest', signatureRequest: content } });
   a.setSigOpen(false);
   a.setSigDesc(''); a.setSigMessage(''); a.setSigJson(''); a.setSigKind('personal');
@@ -70,6 +72,7 @@ export async function sendPoll(a: ComposerActionsArgs): Promise<void> {
     ...(a.pollMulti ? { multiSelect: true } : {}),
   };
   const localId = mintLocalId();
+  setLastAttachment('Poll');
   a.onOptimistic?.({ localId, text: pollFallbackText(poll), attachments: [], payload: { contentType: 'poll', poll } });
   a.setPollOpen(false);
   a.setPollQuestion(''); a.setPollHeader(''); a.setPollOptions(['', '']); a.setPollMulti(false);
@@ -102,6 +105,7 @@ export async function sendTxRequest(a: ComposerActionsArgs): Promise<void> {
     }],
   };
   const localId = mintLocalId();
+  setLastAttachment('Payment');
   a.onOptimistic?.({ localId, text: walletSendCallsFallbackText(wsc), attachments: [], payload: { contentType: 'walletSendCalls', walletSendCalls: wsc } });
   a.setTxOpen(false);
   a.setTxTo(''); a.setTxAmount(''); a.setTxNote('');

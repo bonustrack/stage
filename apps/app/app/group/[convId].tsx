@@ -1,6 +1,5 @@
 /** Group detail view — opened by tapping the conversation header title. Lists
- *  members (avatar + short address; tap → user profile), shows the group name
- *  inline-editable. DMs don't get this view (they have no group metadata). */
+ *  members, shows the inline-editable group name, labels + GitHub link. */
 
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -21,21 +20,23 @@ import { ImageViewer } from '../../components/ImageViewer';
 import { MemberRow, AddMemberModal, OverflowModal } from './group.parts';
 import { GroupProfileHeader, GroupNameEditor, GroupDescriptionEditor } from './group.editor';
 import { loadGroupDetail } from './group.helpers';
+import { GroupLabelsSection } from './group.labels';
+import { GroupGithubSection } from './group.github';
 import { useGroupActions } from './group.actions';
 
 export default function GroupDetail(): React.ReactElement {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { fg, head, sub, bg, border, rowBg } = usePalette();
+  const { text: fg, link: head, bg, border } = usePalette();
+  const sub = fg, rowBg = border;
   const pal = { fg, head, sub, border, rowBg };
 
   const { convId } = useLocalSearchParams<{ convId: string }>();
   const line = lineOfConv(convId ?? '');
   const queryClient = useQueryClient();
-  /** Invalidate the cached conversation metadata so the chat-view topnav (which
-   *  reads `useConvMeta`, a 5-min-stale TanStack query) picks up a renamed group
-   *  / new group image / description without an app reload. */
+  /** Invalidate cached conv metadata so the chat-view topnav picks up
+   *  rename / new image / description without a reload. */
   const invalidateConvMeta = (): void => {
     if (convId) void queryClient.invalidateQueries({ queryKey: ['convMeta', convId] });
   };
@@ -55,8 +56,7 @@ export default function GroupDetail(): React.ReactElement {
   /** Role per member address: super-admin → owner, admin → admin, else member. */
   const [memberRoles, setMemberRoles] = useState<Record<string, 'owner' | 'admin' | 'member'>>({});
   const [addOpen, setAddOpen] = useState(false);
-  /** Lower-cased local wallet address — used to suppress the remove button
-   *  on the local user's own row. */
+  /** Lower-cased local wallet address — suppresses the remove button on self. */
   const [selfAddress, setSelfAddress] = useState<string>('');
   /** When set, the fullscreen ImageViewer shows the group image. */
   const [viewerOpen, setViewerOpen] = useState(false);
@@ -116,7 +116,7 @@ export default function GroupDetail(): React.ReactElement {
       </Box>
 
       <GroupProfileHeader
-        insetTop={insets.top} imageUrl={imageUrl} uploadingImage={uploadingImage}
+        insetTop={insets.top} imageUrl={imageUrl} channelId={convId ?? ''} uploadingImage={uploadingImage}
         fg={fg} sub={sub} bg={bg} rowBg={rowBg}
         onTap={() => { if (imageUrl) setViewerOpen(true); else void pickImage(); }}
         onPick={() => { void pickImage(); }}
@@ -134,8 +134,9 @@ export default function GroupDetail(): React.ReactElement {
         onSave={() => { void saveDescription(); }} dark={dark} p={pal}
       />
 
-      {/** MEMBERS header: label left, add-member button (avatar + plus) top-right
-       *   → opens a modal to add by address (no inline input). */}
+      <GroupLabelsSection line={line} p={pal} />
+      <GroupGithubSection line={line} p={pal} />
+      {/** MEMBERS header: label + add-member button → opens add-by-address modal. */}
       <Box style={{
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
         paddingHorizontal: 16, paddingBottom: 8,
@@ -187,9 +188,8 @@ export default function GroupDetail(): React.ReactElement {
         visible={overflowOpen}
         onClose={() => setOverflowOpen(false)}
         leaving={leaving} onLeave={() => leaveGroup(() => setOverflowOpen(false))}
-        dark={dark} sub={sub}
+        sub={sub}
       />
-
       <ImageViewer
         uri={imageUrl ? avatarRenderUrl('', imageUrl, 1024) : ''}
         visible={viewerOpen}

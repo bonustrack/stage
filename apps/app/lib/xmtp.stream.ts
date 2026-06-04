@@ -19,27 +19,17 @@
  *  ─────────────────────────────────────────────────────────────────────────── */
 
 import { AppState } from 'react-native';
-import type { ConsentState } from '@xmtp/react-native-sdk';
 import { setAppForeground } from '../modules/metro-pill';
-import type { HistoryEntry } from './types';
 import { isMetroControlBody } from './push';
-import { getCachedXmtpClient, getOrCreateXmtpClient, convOfLine } from './xmtp.client';
+import { getCachedXmtpClient, getOrCreateXmtpClient } from './xmtp.client';
 import { envelopeOfXmtpMessage } from './xmtp.messages';
-import { feedCache, activeFeedLines, registerGlobalStreamTeardown } from './xmtp.state';
+import { registerGlobalStreamTeardown } from './xmtp.state';
+import {
+  STREAM_CONSENT_STATES, pushToFeedSlice, resyncActiveFeeds,
+} from './xmtp.resync';
 import { lineOfConv, type StreamMsg } from './xmtp.types';
 
-/** First-page + per-scroll-up page size. Opening a conversation used to decode
- *  100 messages up front (~150–220ms on-device, on the critical path before first
- *  paint); a small first page paints fast and older pages stream in on scroll-up. */
-export const PAGE_SIZE = 20;
-
-/** Append a decoded message to a conv's cached slice (newest-first, deduped),
- *  notifying that slice's subscribers via the MemoryStore. Returns nothing. */
-export function pushToFeedSlice(line: string, env: HistoryEntry): void {
-  const prev = feedCache.get(line) ?? [];
-  if (prev.some(e => e.id === env.id)) return;
-  feedCache.set(line, [env, ...prev]);
-}
+export { PAGE_SIZE, syncInboxOnce } from './xmtp.resync';
 
 /** Channels-list subscribers to the SINGLE global stream (#1). index.tsx
  *  subscribes here instead of starting its own `streamAllMessages`, so each
@@ -53,11 +43,6 @@ export function subscribeAllMessages(cb: (m: StreamMsg) => void): () => void {
   return () => { streamSubscribers.delete(cb); };
 }
 
-/** Match the daemon's fan-out: deliver Allowed + Unknown conversations (skip
- *  explicitly denied). `ConsentState` is a string-literal union in the RN SDK
- *  (not a runtime enum), so we pass the literals with the type for clarity. */
-const STREAM_CONSENT_STATES: ConsentState[] = ['allowed', 'unknown'];
-
 let globalStreamCancel: (() => void) | null = null;
 let globalStreamStarting = false;
 // `number` (RN timer id): the Railgun SDK pulls @types/node into the app's type
@@ -65,23 +50,6 @@ let globalStreamStarting = false;
 let globalStreamRearmTimer: number | null = null;
 let globalResyncTimer: number | null = null;
 let globalAppStateSub: { remove: () => void } | null = null;
-
-/** Resync the currently-subscribed conv slices from the local store. Cheap
- *  backstop for anything the native stream dropped. */
-async function resyncActiveFeeds(): Promise<void> {
-  for (const line of activeFeedLines) {
-    try {
-      const conv = await convOfLine(line);
-      if (!conv) continue;
-      await conv.sync().catch(() => undefined);
-      const msgs = await conv.messages({ limit: PAGE_SIZE });
-      for (const m of msgs.reverse()) {
-        const env = envelopeOfXmtpMessage(m, line);
-        if (!isMetroControlBody(env.text)) pushToFeedSlice(line, env);
-      }
-    } catch { /* best-effort — next tick retries */ }
-  }
-}
 
 /** Re-arm the global stream after a short debounce. Used by `onClose` so a
  *  dropped native stream auto-restarts instead of silently degrading to the
@@ -101,8 +69,17 @@ async function startStream(client: Awaited<ReturnType<typeof getOrCreateXmtpClie
   await client.conversations.streamAllMessages(
     async (msg) => {
       if (!msg) return;
-      const convId = (msg as unknown as { conversationId?: string }).conversationId
-        ?? convIdFromTopicStr((msg as unknown as { topic?: string }).topic);
+      /** Derive the conv id TOPIC-FIRST (the `g-<hex>` group id), `conversationId`
+       *  only as fallback. MUST match the channels list (HomeScreen.stream's
+       *  topic-first `convIdFromTopic`) + the open feed (`lineOfConv(convId)`).
+       *  ROOT CAUSE of "open feed misses messages the list got": RN
+       *  `DecodedMessage.conversationId`, when present, isn't always the topic
+       *  `g-<hex>` id rows/lines use — preferring it made
+       *  `pushToFeedSlice(lineOfConv(id))` write a DIFFERENT feedCache key than
+       *  the one the open feed subscribed under, so its slice subscription never
+       *  fired (list still bumped, topic-first). */
+      const convId = convIdFromTopicStr((msg as unknown as { topic?: string }).topic)
+        ?? (msg as unknown as { conversationId?: string }).conversationId;
       /** Fan out the raw message to channels-list subscribers FIRST (#1) — they
        *  do their own control-DM filtering + need the raw msg for preview/sender.
        *  One decode, two consumers. */

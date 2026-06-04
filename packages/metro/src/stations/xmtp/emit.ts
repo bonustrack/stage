@@ -9,6 +9,7 @@ import { accounts, lineOf, parseLine } from './accounts.js';
 import { emit, mintId, rememberUid, SELF_URI } from './wire.js';
 import { fcmPushToAll } from './push.js';
 import { transcribeAndEmit } from './transcribe.js';
+import { saveInlineAttachment, saveRemoteAttachment, type RemoteEntry } from './attachments.js';
 
 /** Stamp account into payload and (if configured) owner-route inbound `to`. */
 export function emitInbound(accountId: string, e: Record<string, unknown>): void {
@@ -16,6 +17,26 @@ export function emitInbound(accountId: string, e: Record<string, unknown>): void
   const owner = acct?.cfg.owner;
   const payload = { ...(e.payload as Record<string, unknown> | undefined), account: accountId };
   emit({ kind: 'inbound', ...e, ...(owner ? { to: owner } : {}), account: accountId, payload });
+}
+
+/** Emit a follow-up event once an inbound attachment is fetched/decrypted and
+ *  persisted, carrying the absolute on-disk path so the agent can read the file.
+ *  Mirrors the transcribe pattern: the initial envelope ships immediately, this
+ *  fires async when the bytes land (or logs on failure). */
+function emitAttachmentSaved(
+  accountId: string, line: string, sourceMsgId: string,
+  index: number, save: Promise<{ path: string; mime?: string; name?: string }>,
+): void {
+  void save.then(saved => {
+    emitInbound(accountId, {
+      id: mintId(), ts: new Date().toISOString(), station: 'xmtp', line, from: SELF_URI,
+      text: `📎 saved: ${saved.path}`,
+      payload: {
+        contentType: 'attachmentSaved', attachmentFor: sourceMsgId, index,
+        attachmentPath: saved.path, localPath: saved.path, mime: saved.mime, name: saved.name,
+      },
+    });
+  }).catch(err => process.stderr.write(`xmtp attachment save failed: ${(err as Error).message}\n`));
 }
 
 function reactionPayload(base: Record<string, unknown>, r: Reaction): Record<string, unknown> {
@@ -111,17 +132,22 @@ export function envelope(
       ...base, text: `[${kind}: ${a.filename ?? 'attachment'}]`,
       payload: { contentType: typeId, attachments: [{ kind, mime: a.mimeType, name: a.filename, dataB64 }] },
     };
-    if (kind === 'audio') void transcribeAndEmit(a.content, line, accountId, base.id);
+    if (kind === 'audio') void transcribeAndEmit(a.content, line, accountId, base.id, emitInbound);
+    emitAttachmentSaved(accountId, line, base.id, 0, saveInlineAttachment(a, msg.id, 0));
     return out;
   }
   if (typeId === 'remoteStaticAttachment' && c && typeof c === 'object') {
     const r = c as RemoteAtt;
     const kind = IMG_RE.test(r.url) ? 'image' : 'file';
+    emitAttachmentSaved(accountId, line, base.id, 0, saveRemoteAttachment(r as RemoteEntry, msg.id, 0));
     return { ...base, text: `[${kind}: ${r.filename ?? r.url}]`,
       payload: { contentType: typeId, attachments: [remoteAtt(r, kind)] } };
   }
   if ((typeId === 'multiRemoteStaticAttachment' || typeId === 'multiRemoteAttachment')
     && c && typeof c === 'object') {
+    const m = c as { attachments?: RemoteEntry[] };
+    (Array.isArray(m.attachments) ? m.attachments : []).forEach((r, i) =>
+      emitAttachmentSaved(accountId, line, base.id, i, saveRemoteAttachment(r, msg.id, i)));
     return multiRemotePayload(base, typeId, c);
   }
   if (typeId === 'poll' && c && typeof c === 'object') {

@@ -6,7 +6,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FlatList } from 'react-native-gesture-handler';
-import type { SimultaneousRefs } from '../SwipeTabs';
+import type { SimultaneousRefs } from '../SwipeTabs.types';
 import { useRouter } from 'expo-router';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { getCachedRows, setCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
@@ -22,6 +22,8 @@ import type { Row as RowT } from './HomeScreen.helpers';
 import { HomeError, HomeSpinner, useChannelRowRenderer } from './HomeScreen.parts';
 import { ChannelsList, channelRowLayout } from './HomeScreen.list';
 import { useChannelsSync } from './HomeScreen.sync';
+import { LabelFilterSheet, UNLABELED, useIncomingLabelFilter } from './HomeScreen.filter';
+import type { LabelFilterValue } from './HomeScreen.filter';
 
 /** Re-exported so existing import paths (`./HomeScreen`) stay unchanged. */
 export type { Row } from './HomeScreen.helpers';
@@ -33,7 +35,8 @@ export type { Row } from './HomeScreen.helpers';
 export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { fg, head, sub, bg, border } = usePalette();
+  const { text: fg, link: head, bg, border } = usePalette();
+  const sub = fg;
   const [rows, setRowsState] = useState<RowT[] | null>(getCachedRows() as RowT[] | null);
   /** Wrap setRows so every state update also lands in the shared cache + fans
    *  out to subscribers (e.g. the conv view'​s markConvRead can mutate the
@@ -74,6 +77,14 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
   /** Count of pending message requests ('unknown' consent convs). Drives the
    *  "Requests (N)" entry at the top of the list; hidden when 0. */
   const [requestCount, setRequestCount] = useState<number>(0);
+  /** Active label filter (null = show all). Drives both the topnav control's
+   *  highlighted state and the sortedRows filter below. The picker sheet's
+   *  open/closed state is local UI here. */
+  const [labelFilter, setLabelFilter] = useState<LabelFilterValue>(null);
+  const [filterSheetOpen, setFilterSheetOpen] = useState<boolean>(false);
+  /** Apply cross-screen label-filter requests (a tapped channel-card label chip)
+   *  to the filter state — pending-on-mount + live while mounted. */
+  useIncomingLabelFilter(setLabelFilter);
   /** Load the saved channels-list offset once on mount. The actual scroll
    *  happens in onContentSizeChange (below) once rows have laid out — restoring
    *  before content exists would clamp to 0. */
@@ -93,14 +104,22 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
    *  source `rows` state stays untouched so the stream-update logic (which
    *  prepends/reorders by recency) keeps working against the raw list. */
   const sortedRows = useMemo(() => {
-    const list = rows ?? [];
+    const all = rows ?? [];
+    /** Label filter: null → no filter; UNLABELED → only channels with no
+     *  labels[]; otherwise keep groups whose labels[] include the active label,
+     *  case-insensitively. Reactive to `rows` so cache updates re-derive. */
+    const list = labelFilter == null
+      ? all
+      : labelFilter === UNLABELED
+        ? all.filter(r => (r.labels ?? []).length === 0)
+        : all.filter(r => (r.labels ?? []).some(l => l.toLowerCase() === labelFilter.toLowerCase()));
     return [...list].sort((a, b) => {
       const ap = pinned.has(a.convId) ? 1 : 0;
       const bp = pinned.has(b.convId) ? 1 : 0;
       if (ap !== bp) return bp - ap;
       return (b.lastTs ?? 0) - (a.lastTs ?? 0);
     });
-  }, [rows, pinned]);
+  }, [rows, pinned, labelFilter]);
 
   /** Batch-resolve the displayed peers' profiles → avatar cache-busters. */
   const channelProfilesVersion = usePeerProfiles(
@@ -146,6 +165,8 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
         myAddress={myAddress}
         sortedRows={sortedRows}
         requestCount={requestCount}
+        labelFilter={labelFilter}
+        onOpenFilter={() => setFilterSheetOpen(true)}
         head={head}
         sub={sub}
         border={border}
@@ -166,6 +187,12 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
         isUnread={rowMenu?.isUnread ?? false}
         isPinned={rowMenu ? pinned.has(rowMenu.convId) : false}
         onClose={() => setRowMenu(null)}
+      />
+      <LabelFilterSheet
+        visible={filterSheetOpen}
+        active={labelFilter}
+        onClose={() => setFilterSheetOpen(false)}
+        onSelect={setLabelFilter}
       />
     </Col>
   );
