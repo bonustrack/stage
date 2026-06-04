@@ -12,7 +12,7 @@
  *  friendly "needs the new app build") and never crashes.
  *
  *  The prover module is required LAZILY behind a try/catch (mirroring
- *  components/VoiceMessage.decode.ts + lib/pill.platform.ts) so the Metro
+ *  components/VoiceMessage.decode.ts + modules/metro-pill) so the Metro
  *  bundler never has to resolve a missing native module. The native prover
  *  exposes the engine's `setNativeProverGroth16(nativeProveRailgun,
  *  nativeProvePOI, CIRCUITS)` triple; the older snarkjs-style accessor is kept
