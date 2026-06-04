@@ -58,8 +58,30 @@ const ARTIFACTS_DIR = path.join(DATA_ROOT, 'artifacts');
  * SDK's fallback-provider quorum. */
 const RPC = {
   mainnet: ['https://ethereum-rpc.publicnode.com', 'https://eth.drpc.org'],
-  sepolia: ['https://ethereum-sepolia-rpc.publicnode.com', 'https://sepolia.drpc.org'],
+  sepolia: [
+    // Keyed dRPC Sepolia endpoint (PRIMARY) — reliably serves eth_getLogs so the
+    // RAILGUN merkletree historical-events scan completes (public RPCs stalled at
+    // the getLogs step → empty tree → $0 shielded balance). Public node kept as
+    // secondary fallback for the SDK's fallback-provider quorum.
+    'https://lb.drpc.org/ogrpc?network=sepolia&dkey=AqrKBDkAZkycokrrHI5M--EgA5HAYAQR8ZoW7sA_udJz',
+    'https://ethereum-sepolia-rpc.publicnode.com',
+    'https://sepolia.drpc.org',
+  ],
 };
+
+/** Per-provider getLogs/JSON-RPC tuning (from fix/railgun-scan-chunk).
+ *
+ *  WHY: the engine's UTXO merkletree scan walks the RailgunSmartWallet logs in
+ *  499-block chunks via an UNFILTERED `queryFilter('*', from, to)`. Each chunk
+ *  has a 5s timeout and retries up to 30× on timeout. Public Sepolia RPCs choke
+ *  on unfiltered `*` getLogs *batched together* over JSON-RPC, so every chunk
+ *  burns ~150s of silent retries → the scan freezes ("stuck at 50%").
+ *
+ *  FIX: `maxLogsPerBatch` maps to ethers' `batchMaxCount` on the underlying
+ *  JsonRpcProvider. Setting it to 1 DISABLES JSON-RPC request batching, so each
+ *  getLogs goes out as its own HTTP request — far more reliable on rate-limited
+ *  public testnet RPCs. `stallTimeout` lets the fallback provider fail over. */
+const MAX_LOGS_PER_BATCH = 1;
 
 /** Private Proof of Innocence aggregator node(s). REQUIRED at engine start for
  *  any network whose NETWORK_CONFIG defines `poi` (Sepolia + mainnet do) — else
@@ -68,6 +90,17 @@ const RPC = {
  *  RAILGUN developer guide; passing it makes WalletPOI.started true so shield
  *  populate/provider-load succeeds. Order = priority (fallback on failure). */
 const POI_NODE_URLS = ['https://ppoi-agg.horsewithsixlegs.xyz'];
+
+/** CHAINS WE ACTUALLY SCAN FOR BALANCES. The user shields on Sepolia only.
+ *  CRITICAL (fix/railgun-rescan-lock): the engine's
+ *  fullRescanUTXOMerkletreesAndWallets takes ONE GLOBAL rescan lock. If we kick a
+ *  rescan for mainnet (chainId 1), its eth_getLogs scan fails+retries forever
+ *  ("Scan query error … Retrying 29 times" / "Failed to scan V2 events") while
+ *  HOLDING that lock — so every subsequent Sepolia rescan returns "Full rescan
+ *  already in progress" and Sepolia parks at 50% (merkletree done, wallet-decrypt
+ *  phase 2 never starts). We therefore DO NOT scan mainnet at all. Add chainId 1
+ *  back here only once a mainnet RPC + scan-range is proven not to wedge. */
+const SCAN_CHAIN_IDS = new Set([11155111]);
 
 let state = { ready: false, prover: false, networks: [], version: null, initPromise: null };
 
@@ -116,8 +149,25 @@ async function loadNetworks(sdk, NetworkName) {
   ];
   const loaded = [];
   for (const t of targets) {
+    // Only load providers for chains we actually scan (Sepolia). Loading the
+    // mainnet provider is pointless if we never scan it, and its getLogs failures
+    // just spam the log — skip it entirely.
+    if (!SCAN_CHAIN_IDS.has(t.chainId)) {
+      scanDebug(t.chainId, 'provider load SKIPPED (' + t.net + ') — not in SCAN_CHAIN_IDS');
+      // eslint-disable-next-line no-continue
+      continue;
+    }
     try {
-      const cfg = { chainId: t.chainId, providers: t.urls.map((url, i) => ({ provider: url, priority: i + 1, weight: 1 })) };
+      const cfg = {
+        chainId: t.chainId,
+        providers: t.urls.map((url, i) => ({
+          provider: url,
+          priority: i + 1,
+          weight: 1,
+          stallTimeout: 5000,
+          maxLogsPerBatch: MAX_LOGS_PER_BATCH,
+        })),
+      };
       // eslint-disable-next-line no-await-in-loop
       await sdk.loadProvider(cfg, t.name, 1000 * 60 * 5);
       loaded.push(t.net);
@@ -148,16 +198,20 @@ async function init(params) {
       try { fs.unlinkSync(lock); } catch (_e) { /* ignore stale-lock cleanup */ }
     }
     const db = new LeveldownNodejsMobile(DB_PATH);
-    const dev = !!(params && params.dev);
+    // shouldDebug MUST be true for the engine to forward its internal scan logs
+    // (per-getLogs-chunk ranges + RPC errors) to our setLoggers handler below.
+    // verboseScanLogging (9th arg) is also gated on this. We force it on so the
+    // scan diagnostics reach the RN debug panel.
     await sdk.startRailgunEngine(
       (params && params.walletSource) || 'metro',
       db,
-      dev, // shouldDebug
+      true, // shouldDebug — REQUIRED so engine scan/getLogs logs reach setLoggers
       createArtifactStore(sdk.ArtifactStore),
       true, // useNativeArtifacts
       false, // skipMerkletreeScans
       POI_NODE_URLS, // poiNodeURLs — REQUIRED (Sepolia/mainnet define NETWORK_CONFIG.poi)
       undefined, // customPOILists
+      true, // verboseScanLogging — emit per-chunk "Scanning historical events from block X to Y"
     );
     // Surface the engine's own UTXO merkletree scan lifecycle (Started/Updated/
     // Complete/Incomplete + progress) to the RN debug panel. This is the DECISIVE
@@ -179,6 +233,28 @@ async function init(params) {
         });
       }
     } catch (_e) { /* scan callbacks are best-effort instrumentation */ }
+    // Forward the engine's INTERNAL debug logs (which include the per-getLogs-
+    // chunk scan ranges + RPC errors) into the scanDebug ring buffer. Without
+    // this, the wallet SDK swallows every "Scanning historical events from block
+    // X to Y", "Scan query error at block X. Retrying N times", and "Scan failed
+    // at block X" message — leaving only the useless "50%" progress spam. We
+    // filter to scan/log/provider-relevant lines so the panel isn't flooded.
+    // (from fix/railgun-scan-chunk: verboseScanLogging + SCAN_RE filter.)
+    try {
+      if (sdk.setLoggers) {
+        const SCAN_RE = /scan|block|getlogs|provider|merkle|quicksync|nullifier|commitment|shield|retry|fail|error/i;
+        sdk.setLoggers(
+          function engineLog(msg) {
+            const s = String(msg);
+            if (SCAN_RE.test(s)) scanDebug(-1, 'engine: ' + s.slice(0, 300));
+          },
+          function engineErr(err) {
+            const s = err && err.message ? err.message : String(err);
+            scanDebug(-1, 'engineERR: ' + s.slice(0, 300));
+          },
+        );
+      }
+    } catch (_e) { /* logger wiring is best-effort */ }
     state.prover = wireProver(sdk.getProver);
     state.networks = await loadNetworks(sdk, shared.NetworkName);
     state.version =
@@ -325,6 +401,14 @@ async function walletInfo(params) {
  *  (rescanFullUTXOMerkletreesAndWallets). Keyed `${chainId}:${walletId}`. */
 const fullScanKicked = new Set();
 
+/** GLOBAL rescan in-flight guard. The engine has ONE global rescan lock; calling
+ *  rescanFullUTXOMerkletreesAndWallets while another is running throws "Full
+ *  rescan already in progress". We serialize our own kicks so a single chain owns
+ *  the lock at a time and a failure always releases it (see catch in kickFullScan
+ *  → rescanInFlight is cleared). This is belt-and-suspenders on top of only
+ *  scanning Sepolia (SCAN_CHAIN_IDS). */
+let rescanInFlight = false;
+
 /** Walk the chain logs + (re)build the UTXO merkletree for a wallet, in the
  *  BACKGROUND. THE ROOT-CAUSE FIX: `refreshBalances` only re-DERIVES balances
  *  from the merkletree the engine ALREADY has on disk — on a cold wallet that
@@ -342,7 +426,20 @@ function kickFullScan(sdk, chain, walletId) {
     );
     return;
   }
+  // Serialize on the engine's single global rescan lock: never kick a second
+  // rescan while one is in flight (it would throw "Full rescan already in
+  // progress" and, worse, our caller would think it kicked). If something is
+  // already running we just do a cheap re-derive instead.
+  if (rescanInFlight) {
+    scanDebug(chain.id, 'rescan SKIPPED (another rescan in flight) — refreshBalances instead');
+    fullScanKicked.delete(k); // not actually kicked; let a later call retry
+    Promise.resolve(sdk.refreshBalances(chain, [walletId])).catch((e) =>
+      scanDebug(chain.id, 'refreshBalances error: ' + (e && e.message ? e.message : String(e))),
+    );
+    return;
+  }
   fullScanKicked.add(k);
+  rescanInFlight = true;
   scanDebug(chain.id, 'full UTXO rescan START wallet=' + String(walletId).slice(0, 10));
   Promise.resolve()
     .then(() => {
@@ -360,6 +457,11 @@ function kickFullScan(sdk, chain, walletId) {
       // CRITICAL: don't swallow — this is the message that explains a 0 balance.
       fullScanKicked.delete(k); // allow a retry next refresh
       scanDebug(chain.id, 'full UTXO rescan ERROR: ' + (e && e.message ? e.message : String(e)));
+    })
+    .finally(() => {
+      // ALWAYS release the lock-guard so a failing chain can never permanently
+      // wedge subsequent (Sepolia) rescans.
+      rescanInFlight = false;
     });
 }
 
@@ -385,14 +487,22 @@ async function balances(params) {
   const networks = {};
   for (const t of targets) {
     const chain = { type: shared.ChainType ? shared.ChainType.EVM : 0, id: t.chainId };
-    try {
-      // Kick the real on-chain scan in the background (full sync once, then
-      // cheap re-derive). The balanceUpdate callback fills the cache + the panel
-      // shows the scan lifecycle, so we still return promptly.
-      kickFullScan(sdk, chain, walletId);
-      scanning = true;
-    } catch (e) {
-      scanDebug(t.chainId, 'scan kick FAILED (' + t.net + '): ' + (e && e.message ? e.message : String(e)));
+    // ONLY scan chains in SCAN_CHAIN_IDS (Sepolia). Scanning mainnet here is what
+    // grabbed the global rescan lock and wedged Sepolia at 50% — so we skip it.
+    if (!SCAN_CHAIN_IDS.has(t.chainId)) {
+      scanDebug(t.chainId, 'scan SKIPPED (' + t.net + ') — not in SCAN_CHAIN_IDS; avoids global rescan-lock wedge');
+    } else if (state.networks.indexOf(t.net) === -1) {
+      scanDebug(t.chainId, 'scan SKIPPED (' + t.net + ') — provider not loaded');
+    } else {
+      try {
+        // Kick the real on-chain scan in the background (full sync once, then
+        // cheap re-derive). The balanceUpdate callback fills the cache + the panel
+        // shows the scan lifecycle, so we still return promptly.
+        kickFullScan(sdk, chain, walletId);
+        scanning = true;
+      } catch (e) {
+        scanDebug(t.chainId, 'scan kick FAILED (' + t.net + '): ' + (e && e.message ? e.message : String(e)));
+      }
     }
     networks[t.net] = summedRows(t.chainId, walletId);
   }

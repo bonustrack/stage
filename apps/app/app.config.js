@@ -75,6 +75,9 @@ const config = {
   },
   android: {
     package: variant.androidPackage,
+    // appVersionSource=local + autoIncrement off: versionCode is pinned here.
+    // Bumped to 23 for the consolidated Railgun engine build.
+    versionCode: 23,
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
       backgroundColor: '#0f1115',
