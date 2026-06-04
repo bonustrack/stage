@@ -163,10 +163,10 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
           Swap / Buy are placeholders (no on/off-ramp wired yet) and flash a
           "coming soon" toast. LEFT-aligned on a single row (icon-over-label). */}
       <Row justify="start" gap={12} mx={16} mt={12}>
-        <Btn icon="send" label="Send" onPress={() => router.push('/wallet/send')} head={head} dark={dark} />
-        <Btn icon="arrowDown" label="Receive" onPress={() => router.push('/wallet/receive')} head={head} dark={dark} />
-        <Btn icon="switchHorizontal" label="Swap" onPress={() => flash('Swap — coming soon')} head={head} dark={dark} />
-        <Btn icon="creditCard" label="Buy" onPress={() => flash('Buy — coming soon')} head={head} dark={dark} />
+        <Btn icon="send" label="Send" onPress={() => router.push('/wallet/send')} head={head} border={border} dark={dark} />
+        <Btn icon="arrowDown" label="Receive" onPress={() => router.push('/wallet/receive')} head={head} border={border} dark={dark} />
+        <Btn icon="switchHorizontal" label="Swap" onPress={() => flash('Swap — coming soon')} head={head} border={border} dark={dark} />
+        <Btn icon="creditCard" label="Buy" onPress={() => flash('Buy — coming soon')} head={head} border={border} dark={dark} />
       </Row>
 
       <WalletTabs tab={tab} setTab={setTab} head={head} sub={sub} border={border} />

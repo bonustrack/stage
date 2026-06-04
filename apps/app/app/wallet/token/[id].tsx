@@ -119,18 +119,18 @@ export default function TokenDetail(): React.ReactElement {
           flow pre-selected to this token; Shield opens send.tsx in shield
           mode pre-selected to this token. */}
       <Row justify="start" gap={36} mt={32} mx={16}>
-        <Btn icon="send" label="Send" head={head} dark={dark}
+        <Btn icon="send" label="Send" head={head} border={border} dark={dark}
           onPress={() => router.push({ pathname: '/wallet/send', params: sendParams })} />
         {r.isPrivate ? (
           /* Shielded holding → Unshield (private → public, back to own EOA). */
-          <Btn icon="eye" label="Unshield" head={head} dark={dark}
+          <Btn icon="eye" label="Unshield" head={head} border={border} dark={dark}
             onPress={() => router.push({
               pathname: '/wallet/unshield',
               params: { symbol: symbol ?? r.symbol, chainId: String(r.chainId) },
             })} />
         ) : (
           /* Public holding → Shield (public → own 0zk). */
-          <Btn icon="eyeOff" label="Shield" head={head} dark={dark}
+          <Btn icon="eyeOff" label="Shield" head={head} border={border} dark={dark}
             onPress={() => router.push({
               pathname: '/wallet/send',
               params: { mode: 'shield', symbol: symbol ?? r.symbol, chainId: String(r.chainId) },
