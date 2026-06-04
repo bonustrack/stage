@@ -36,7 +36,7 @@ export default function EditProfileModal({
   onSaved: (next: SnapshotProfile) => void;
   address: string; initial: SnapshotProfile; dark: boolean;
 }): React.ReactElement {
-  const { text: fg, link: head, bg, border } = usePalette();
+  const { text: fg, link: head, bg, border, primary } = usePalette();
   const sub = fg;
   const rowBg = border;
   const insets = useSafeAreaInsets();
@@ -143,6 +143,8 @@ export default function EditProfileModal({
             disabled={saving || uploading}
             onPress={() => { void save(); }}
             label={saving ? 'Saving…' : 'Save'}
+            tintBg={primary}
+            tintFg={bg}
             style={{ marginTop: 16 }}
             textStyle={{ fontFamily: 'Calibre-Medium' }}
           />

@@ -7,6 +7,7 @@ import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';
 import { Row, Col } from './layout';
 import { AppModal } from './AppModal';
+import { usePalette } from '../lib/theme';
 import { type Palette } from './MessengerComposer.helpers';
 
 export function SignatureSheet({
@@ -21,6 +22,7 @@ export function SignatureSheet({
   onSend: () => void;
 }): React.ReactElement {
   const { fg, sub, inputBg, chipBg } = palette;
+  const { primary, bg } = usePalette();
   return (
     <AppModal visible={open} onClose={onClose} title="Request signature">
       <Col gap={12} pb={8}>
@@ -74,6 +76,8 @@ export function SignatureSheet({
           dark={dark}
           onPress={onSend}
           label="Send request"
+          tintBg={primary}
+          tintFg={bg}
           style={{ marginTop: 4 }}
         />
       </Col>
@@ -91,6 +95,7 @@ export function PaymentSheet({
   onSend: () => void;
 }): React.ReactElement {
   const { fg, sub, inputBg } = palette;
+  const { primary, bg } = usePalette();
   return (
     <AppModal visible={open} onClose={onClose} title="Request payment / Send">
       <Col gap={12} pb={8}>
@@ -125,6 +130,8 @@ export function PaymentSheet({
           dark={dark}
           onPress={onSend}
           label="Send request"
+          tintBg={primary}
+          tintFg={bg}
           style={{ marginTop: 4 }}
         />
       </Col>

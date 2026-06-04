@@ -22,7 +22,7 @@ import { switchToAccount, shortAddress } from '../lib/xmtp';
 import { addGeneratedAccount, importWallet } from '../lib/accounts';
 import { AppModal } from './AppModal';
 import { DrawerRow } from './LeftDrawer.parts';
-import { DANGER } from '../lib/theme';
+import { DANGER, usePalette } from '../lib/theme';
 
 /** Switch the active XMTP client to a freshly added account id. The wallet/EOA
  *  switch happens regardless (decoupled from XMTP), and switchToAccount bumps the
@@ -44,6 +44,7 @@ export function DrawerAccountActions({ head, sub, border, dark, onChanged }: {
   /** Called after the registry changes so the drawer re-reads the list/active. */
   onChanged: () => void;
 }): React.ReactElement {
+  const { primary, bg } = usePalette();
   const [busy, setBusy] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [text, setText] = useState('');
@@ -124,7 +125,8 @@ export function DrawerAccountActions({ head, sub, border, dark, onChanged }: {
             })()}
           />
           <Button
-            variant="primary" size="md" fullWidth dark={dark} label="Import" style={{ flex: 1 }}
+            variant="primary" size="md" fullWidth dark={dark} label="Import"
+            tintBg={primary} tintFg={bg} style={{ flex: 1 }}
             disabled={!text.trim() || busy}
             onPress={onImport}
           />

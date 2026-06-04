@@ -8,6 +8,7 @@ import { Text } from '@metro-labs/kit/text';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';
 import { Box, Row, Col } from './layout';
+import { usePalette } from '../lib/theme';
 import { ComposerGradient } from './ComposerGradient';
 import { RecordingBar } from './MessengerComposer.parts';
 
@@ -30,6 +31,7 @@ interface EditorProps {
 
 export function ComposerEditor(p: EditorProps): React.ReactElement {
   const { dark, fg, head, bg, sub, inputBg, chipBg, recording } = p;
+  const { primary } = usePalette();
   const Btn = ({ icon, onPress, mr }: { icon: HeroIconName; onPress: () => void; mr?: number }): React.ReactElement => (
     <Pressable onPress={onPress} style={({ pressed }) => ({
       width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
@@ -107,6 +109,7 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
             size="md"
             pill
             dark={dark}
+            tintBg={primary}
             onPress={p.onStopRec}
             icon={<Icon name="check" size={20} color={bg} />}
           />
@@ -117,6 +120,7 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
             pill
             dark={dark}
             disabled={!p.canSend}
+            tintBg={primary}
             onPress={p.onSend}
             icon={<Icon name="send" size={20} color={bg} />}
           />

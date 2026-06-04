@@ -84,6 +84,8 @@ export function SigRequestCard({ req, dark, sub, signing, onSign }: {
           loading={signing}
           onPress={onSign}
           label="Sign"
+          tintBg={pal.primary}
+          tintFg={pal.bg}
           style={{ marginTop: 2 }}
         />
       ) : null}
@@ -125,6 +127,7 @@ export function TxRequestCard({ req, dark, sub, paying, onPay }: {
   req: TxRequest; dark: boolean; sub: string; paying?: boolean;
   onPay?: () => void;
 }): React.ReactElement {
+  const pal = usePalette();
   const call = req.calls[0];
   const desc = call?.metadata?.description ?? 'Payment request';
   const eth = ethFromWeiHex(call?.value);
@@ -163,6 +166,8 @@ export function TxRequestCard({ req, dark, sub, paying, onPay }: {
           loading={paying}
           onPress={onPay}
           label="Pay"
+          tintBg={pal.primary}
+          tintFg={pal.bg}
           style={{ marginTop: 2 }}
         />
       ) : null}

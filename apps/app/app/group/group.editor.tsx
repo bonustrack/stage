@@ -8,6 +8,7 @@ import { Spinner } from '../../components/Spinner';
 import { Button } from '@metro-labs/kit/button';
 import { avatarRenderUrl } from '@metro-labs/client/profile/snapshot';
 import { channelStampSeed, stampAvatarUrl } from '@metro-labs/kit/avatar';
+import { usePalette } from '../../lib/theme';
 
 /** Inline "Save" pill shared by the name + description editors. A small primary
  *  button matched to the prior bespoke pill: paddingHorizontal 14, the legacy
@@ -15,6 +16,7 @@ import { channelStampSeed, stampAvatarUrl } from '@metro-labs/kit/avatar';
 function SaveButton({ saving, disabled, onSave, dark }: {
   saving: boolean; disabled: boolean; onSave: () => void; dark: boolean;
 }): React.ReactElement {
+  const { primary, bg } = usePalette();
   return (
     <Button
       variant="primary"
@@ -23,6 +25,8 @@ function SaveButton({ saving, disabled, onSave, dark }: {
       disabled={disabled}
       onPress={onSave}
       label={saving ? 'Saving…' : 'Save'}
+      tintBg={primary}
+      tintFg={bg}
       style={{ paddingHorizontal: 14 }}
       textStyle={{ fontSize: 13, fontFamily: 'Calibre-Medium' }}
     />
