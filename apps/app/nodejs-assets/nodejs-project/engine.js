@@ -57,9 +57,30 @@ const ARTIFACTS_DIR = path.join(DATA_ROOT, 'artifacts');
  * the vetted list in apps/app/lib/railgun/networks.ts. Need >= 2 per net for the
  * SDK's fallback-provider quorum. */
 const RPC = {
-  mainnet: ['https://ethereum-rpc.publicnode.com', 'https://eth.drpc.org'],
-  sepolia: ['https://ethereum-sepolia-rpc.publicnode.com', 'https://sepolia.drpc.org'],
+  mainnet: ['https://ethereum-rpc.publicnode.com', 'https://eth.drpc.org', 'https://rpc.ankr.com/eth'],
+  sepolia: [
+    'https://ethereum-sepolia-rpc.publicnode.com',
+    'https://sepolia.drpc.org',
+    'https://rpc.sepolia.org',
+    'https://1rpc.io/sepolia',
+  ],
 };
+
+/** Per-provider getLogs/JSON-RPC tuning.
+ *
+ *  WHY: the engine's UTXO merkletree scan walks the RailgunSmartWallet logs in
+ *  499-block chunks via an UNFILTERED `queryFilter('*', from, to)` (no topic
+ *  filter — it asks for ALL events on the proxy). Each chunk has a 5s timeout
+ *  and retries up to 30× on timeout. Public Sepolia RPCs (publicnode / drpc)
+ *  choke on unfiltered `*` getLogs *batched together* over JSON-RPC, so every
+ *  chunk burns ~150s of silent retries → the scan freezes (the "stuck at 50%,
+ *  +0ms" spam) because the validated-merkletree block never advances.
+ *
+ *  FIX: `maxLogsPerBatch` maps to ethers' `batchMaxCount` on the underlying
+ *  JsonRpcProvider (see shared-models ConfiguredJsonRpcProvider). Setting it to
+ *  1 DISABLES JSON-RPC request batching, so each getLogs goes out as its own
+ *  HTTP request — far more reliable on rate-limited public testnet RPCs. */
+const MAX_LOGS_PER_BATCH = 1;
 
 /** Private Proof of Innocence aggregator node(s). REQUIRED at engine start for
  *  any network whose NETWORK_CONFIG defines `poi` (Sepolia + mainnet do) — else
@@ -117,7 +138,16 @@ async function loadNetworks(sdk, NetworkName) {
   const loaded = [];
   for (const t of targets) {
     try {
-      const cfg = { chainId: t.chainId, providers: t.urls.map((url, i) => ({ provider: url, priority: i + 1, weight: 1 })) };
+      const cfg = {
+        chainId: t.chainId,
+        providers: t.urls.map((url, i) => ({
+          provider: url,
+          priority: i + 1,
+          weight: 1,
+          stallTimeout: 5000,
+          maxLogsPerBatch: MAX_LOGS_PER_BATCH,
+        })),
+      };
       // eslint-disable-next-line no-await-in-loop
       await sdk.loadProvider(cfg, t.name, 1000 * 60 * 5);
       loaded.push(t.net);
@@ -143,21 +173,47 @@ async function init(params) {
     // eslint-disable-next-line global-require
     const LeveldownNodejsMobile = require('leveldown-nodejs-mobile');
 
+    // Forward the engine's INTERNAL debug logs (which include the per-getLogs-
+    // chunk scan ranges + RPC errors) into the scanDebug ring buffer. Without
+    // this, the wallet SDK swallows every "Scanning historical events from block
+    // X to Y", "Scan query error at block X. Retrying N times", and "Scan failed
+    // at block X" message — leaving only the useless "50%" progress spam. We
+    // filter to scan/log/provider-relevant lines so the panel isn't flooded.
+    try {
+      if (sdk.setLoggers) {
+        const SCAN_RE = /scan|block|getlogs|provider|merkle|quicksync|nullifier|commitment|shield|retry|fail|error/i;
+        sdk.setLoggers(
+          function engineLog(msg) {
+            const s = String(msg);
+            if (SCAN_RE.test(s)) scanDebug(-1, 'engine: ' + s.slice(0, 300));
+          },
+          function engineErr(err) {
+            const s = err && err.message ? err.message : String(err);
+            scanDebug(-1, 'engineERR: ' + s.slice(0, 300));
+          },
+        );
+      }
+    } catch (_e) { /* logger wiring is best-effort */ }
+
     const lock = path.join(DB_PATH, 'LOCK');
     if (fs.existsSync(lock)) {
       try { fs.unlinkSync(lock); } catch (_e) { /* ignore stale-lock cleanup */ }
     }
     const db = new LeveldownNodejsMobile(DB_PATH);
-    const dev = !!(params && params.dev);
+    // shouldDebug MUST be true for the engine to forward its internal scan logs
+    // (per-getLogs-chunk ranges + RPC errors) to our setLoggers handler above.
+    // verboseScanLogging (9th arg, below) is also gated on this. We force it on
+    // for now since the scan diagnostics are the whole point of this build.
     await sdk.startRailgunEngine(
       (params && params.walletSource) || 'metro',
       db,
-      dev, // shouldDebug
+      true, // shouldDebug — REQUIRED so engine scan/getLogs logs reach setLoggers
       createArtifactStore(sdk.ArtifactStore),
       true, // useNativeArtifacts
       false, // skipMerkletreeScans
       POI_NODE_URLS, // poiNodeURLs — REQUIRED (Sepolia/mainnet define NETWORK_CONFIG.poi)
       undefined, // customPOILists
+      true, // verboseScanLogging — emit per-chunk "Scanning historical events from block X to Y" so getLogs ranges are visible in scanDebug
     );
     // Surface the engine's own UTXO merkletree scan lifecycle (Started/Updated/
     // Complete/Incomplete + progress) to the RN debug panel. This is the DECISIVE
@@ -384,6 +440,13 @@ async function balances(params) {
   let scanning = false;
   const networks = {};
   for (const t of targets) {
+    // Only scan networks whose provider actually loaded — no point hammering a
+    // mainnet getLogs scan (slow, huge) if only Sepolia is configured/loaded.
+    if (!state.networks.includes(t.net)) {
+      scanDebug(t.chainId, 'skip scan (' + t.net + '): provider not loaded');
+      networks[t.net] = summedRows(t.chainId, walletId);
+      continue;
+    }
     const chain = { type: shared.ChainType ? shared.ChainType.EVM : 0, id: t.chainId };
     try {
       // Kick the real on-chain scan in the background (full sync once, then
