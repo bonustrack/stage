@@ -99,11 +99,11 @@ export function WalletTabs({ tab, setTab, head, sub, border }: {
   );
 }
 
-/** Small eye-off icon shown on Railgun-shielded token rows so they're visually
- *  distinct from public balances. Subtle muted glyph in the secondary text
- *  tone — quieter than a text pill, matches the app's metadata styling. */
+/** Small shield-check icon shown on Railgun-shielded token rows so they're
+ *  visually distinct from public balances. Subtle muted glyph in the secondary
+ *  text tone — quieter than a text pill, matches the app's metadata styling. */
 function PrivateBadge({ sub }: { sub: string }): React.ReactElement {
-  const name: HeroIconName = 'eyeOff';
+  const name: HeroIconName = 'shieldCheck';
   return <Icon name={name} size={15} color={sub} />;
 }
 
