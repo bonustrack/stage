@@ -98,13 +98,13 @@ function LabelChips({ labels, fg, sub, rowBg, onLabelPress }: {
             opacity: pressed && onLabelPress ? 0.6 : 1,
           })}
         >
-          <Text style={{ color: fg, fontSize: 11, fontFamily: 'Calibre-Medium' }}>
+          <Text style={{ color: fg, fontSize: 12, fontFamily: 'Calibre-Medium' }}>
             {label}
           </Text>
         </Pressable>
       ))}
       {overflow > 0 ? (
-        <Text style={{ color: sub, fontSize: 11, fontFamily: 'Calibre-Medium' }}>{`+${overflow}`}</Text>
+        <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>{`+${overflow}`}</Text>
       ) : null}
     </Row>
   );
