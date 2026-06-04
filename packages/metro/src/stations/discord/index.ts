@@ -42,6 +42,7 @@ function makeClient(): Client {
       GatewayIntentBits.GuildMessageReactions,
       GatewayIntentBits.DirectMessages,
       GatewayIntentBits.DirectMessageReactions,
+      GatewayIntentBits.GuildVoiceStates,
     ],
     partials: [Partials.Channel, Partials.Message, Partials.Reaction, Partials.User],
   });
