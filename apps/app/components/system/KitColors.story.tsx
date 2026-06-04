@@ -17,7 +17,9 @@ import { ColorPicker } from './ColorPicker';
 import {
   setOverride, resetOverrides, isHex, type TokenKey,
 } from '../../lib/colorOverrides';
-import { useRadius, setRadius, resetRadius } from '../../lib/theme';
+import {
+  useRadius, useBlockRadius, setRadius, setBlockRadius, resetRadius,
+} from '../../lib/theme';
 import { RADIUS_MIN, RADIUS_MAX } from '@metro-labs/kit/tokens';
 
 /** The 7 canonical palette keys in display order. `key` is both the Palette key
@@ -111,28 +113,29 @@ function EditableSwatch({ name, tokenKey, value, scheme, p }: {
   );
 }
 
-/** Editable numeric `radius` token row: a px text input + a live rounded preview
- *  box. Clamped to [RADIUS_MIN, RADIUS_MAX]; 999 = fully-rounded (default). */
-function RadiusRow({ p }: { p: ControlPalette }): React.ReactElement {
-  const radius = useRadius();
+/** Editable numeric radius token row: px input + live rounded preview. Clamped
+ *  to [MIN,MAX]. Used for both button-border-radius + border-radius tokens. */
+function RadiusRow({ p, name, value, onSet }: {
+  p: ControlPalette; name: string; value: number; onSet: (n: number) => void;
+}): React.ReactElement {
   const [draft, setDraft] = useState<string | null>(null);
-  const shown = draft ?? String(radius);
+  const shown = draft ?? String(value);
   return (
     <Row gap={14} mt={12} style={{ alignItems: 'center' }}>
       <Box style={{
-        width: 40, height: 40, borderRadius: Math.min(radius, 20),
+        width: 40, height: 40, borderRadius: Math.min(value, 20),
         backgroundColor: p.rowBg, borderWidth: 1, borderColor: p.head,
       }} />
       <Box style={{ flex: 1, minWidth: 0 }}>
         <Text style={{ color: p.head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>
-          button-radius
+          {name}
         </Text>
         <TextInput
           value={shown}
           onChangeText={(t) => {
             setDraft(t);
             const n = Number(t.replace(/[^0-9]/g, ''));
-            if (Number.isFinite(n) && t.trim() !== '') setRadius(n);
+            if (Number.isFinite(n) && t.trim() !== '') onSet(n);
           }}
           onBlur={() => setDraft(null)}
           keyboardType="numeric"
@@ -148,6 +151,18 @@ function RadiusRow({ p }: { p: ControlPalette }): React.ReactElement {
   );
 }
 
+/** Both radius token rows: button-border-radius + border-radius. */
+function RadiusRows({ p }: { p: ControlPalette }): React.ReactElement {
+  const buttonRadius = useRadius();
+  const blockRadius = useBlockRadius();
+  return (
+    <>
+      <RadiusRow p={p} name="button-border-radius" value={buttonRadius} onSet={setRadius} />
+      <RadiusRow p={p} name="border-radius" value={blockRadius} onSet={setBlockRadius} />
+    </>
+  );
+}
+
 export function KitColorsStory({ p }: { p: ControlPalette }): React.ReactElement {
   const palette = usePalette();
   const scheme = useEffectiveColorScheme();
@@ -155,7 +170,7 @@ export function KitColorsStory({ p }: { p: ControlPalette }): React.ReactElement
     <Box>
       <Row mt={16} align="center" justify="between">
         <Text dark={p.dark} color={p.sub} variant="caption" weight="medium">
-          {`${TOKEN_ROWS.length} tokens + radius · tap a swatch or hex · ${scheme}`}
+          {`${TOKEN_ROWS.length} tokens + 2 radii · tap a swatch or hex · ${scheme}`}
         </Text>
         <Pressable
           onPress={() => { resetOverrides(); resetRadius(); }}
@@ -178,7 +193,7 @@ export function KitColorsStory({ p }: { p: ControlPalette }): React.ReactElement
             value={palette[key]} scheme={scheme} p={p}
           />
         ))}
-        <RadiusRow p={p} />
+        <RadiusRows p={p} />
       </Box>
     </Box>
   );

@@ -81,13 +81,24 @@ export function semanticPalette(scheme: 'light' | 'dark'): {
   };
 }
 
-/** Numeric design tokens (non-color). `radius` is the corner radius (px) applied
- *  to every non-circular button across the app. Default 999 = fully-rounded
- *  (the original pill look); editable + persisted via the app's radiusOverride
- *  store and applied through the kit Button's `setDefaultButtonRadius`. */
+/** Numeric design tokens (non-color), both editable + persisted via the app's
+ *  radiusOverride store.
+ *
+ *  `button-border-radius` (BUTTON_RADIUS_DEFAULT) — corner radius (px) of every
+ *  non-circular button across the app. Default 999 = fully-rounded (the original
+ *  pill look); applied through the kit Button's `setDefaultButtonRadius`.
+ *
+ *  `border-radius` (BLOCK_RADIUS_DEFAULT) — corner radius (px) of every
+ *  non-button container surface: inputs/text fields, cards, modals/sheets and
+ *  general bordered/filled "blocks". Default 12 matches the prevailing container
+ *  look (inputs 10–12, cards 14). */
 export const RADIUS_DEFAULT = 999;
 export const RADIUS_MIN = 0;
 export const RADIUS_MAX = 999;
+/** Alias for the button radius default (clearer name; same value as legacy RADIUS_DEFAULT). */
+export const BUTTON_RADIUS_DEFAULT = 999;
+/** Default corner radius for non-button container "blocks". */
+export const BLOCK_RADIUS_DEFAULT = 12;
 
 /** Font families used across both shells (Calibre is bundled in both apps). */
 export const fontFamily = {

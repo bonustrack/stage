@@ -18,11 +18,11 @@ import {
   type TokenKey,
 } from './colorOverrides';
 import {
-  getRadius, loadRadius, setRadius, resetRadius,
+  getRadius, getBlockRadius, loadRadius, setRadius, setBlockRadius, resetRadius,
   subscribe as subscribeRadius,
 } from './radiusOverride';
 
-export { setRadius, resetRadius } from './radiusOverride';
+export { setRadius, setBlockRadius, resetRadius } from './radiusOverride';
 
 export type { ThemePreference };
 
@@ -128,6 +128,21 @@ export function useRadius(): number {
       setDefaultButtonRadius(getRadius());
       setR(getRadius());
     });
+    return unsub;
+  }, []);
+  return r;
+}
+
+/** The persisted block corner-radius token (px) for non-button containers —
+ *  inputs/text fields, cards, modals/sheets and general bordered/filled blocks.
+ *  Reactive to load/edit/reset. Unlike the button radius this is read directly
+ *  at each container call site (there's no kit-wide module default to push). */
+export function useBlockRadius(): number {
+  const [r, setR] = useState(getBlockRadius());
+  useEffect(() => {
+    loadRadius();
+    setR(getBlockRadius());
+    const unsub = subscribeRadius(() => setR(getBlockRadius()));
     return unsub;
   }, []);
   return r;
