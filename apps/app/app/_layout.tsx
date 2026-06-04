@@ -19,7 +19,7 @@ import { GestureDetectorProvider } from 'react-native-screens/gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { NativeSwipeStack } from '../components/NativeSwipeStack';
 import { EdgeSwipeBack } from '../components/EdgeSwipeBack';
-import { useEffectiveColorScheme, usePalette } from '../lib/theme';
+import { useEffectiveColorScheme, usePalette, useRadius } from '../lib/theme';
 import { useDeepLinks } from '../lib/deepLinks';
 import { useRestoreLastRoute } from '../lib/lastRoute';
 import { usePushDeepLinks } from '../lib/push';
@@ -70,6 +70,9 @@ function isDarkBg(hex: string): boolean {
 export default function RootLayout(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { bg } = usePalette();
+  // Wire the persisted button radius token into the kit Button default + repaint
+  // the whole tree when it changes. Mounted at the root so it's always live.
+  useRadius();
 
   /** Status-bar icons must follow the RENDERED chrome, not just the
    *  color-scheme pref. The app paints a near-black surface in dark mode and so
