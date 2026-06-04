@@ -21,9 +21,9 @@ import {
 } from '../../lib/xmtp';
 import { previewOfXmtpContent } from '@metro-labs/client/xmtp/humanize';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
+import { usePeerProfiles, getPeerName, getPeerAvatarCb } from '../../lib/peerProfiles';
 import { Icon } from '@metro-labs/kit/icon';
-import { Avatar } from '../../components/Avatar';
+import { ChannelRow } from '../../components/ChannelRow';
 import { Box, Col, Row } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
 
@@ -99,24 +99,21 @@ export default function Requests(): React.ReactElement {
   const renderRow = useCallback(({ item }: { item: ReqRow }): React.ReactElement => {
     const displayTitle = item.peerAddress ? (getPeerName(item.peerAddress) ?? item.title) : item.title;
     return (
-      <Pressable
-        onPress={() => router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } })}
-        style={{
-          flexDirection: 'row', alignItems: 'center', gap: 12,
-          paddingHorizontal: 16, paddingVertical: 12,
-          borderBottomWidth: 1, borderBottomColor: border,
-        }}
-      >
-        <Avatar address={item.avatarAddress} size={44} square={item.isGroup} style={{ backgroundColor: border }} />
-        <Col flex={1} gap={2}>
-          <Text numberOfLines={1} style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Medium' }}>
-            {displayTitle}
-          </Text>
-          <Text numberOfLines={1} style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
-            {item.preview || '(no messages yet)'}
-          </Text>
-        </Col>
-        <Row gap={8}>
+      /* Same channel card as the channels list, with an approve/reject cluster
+         pinned on the right. ChannelRow flexes to fill; the actions sit beside
+         it (paddingRight on the row keeps the buttons off the screen edge). */
+      <Row align="center" style={{ paddingRight: 12 }}>
+        <Box style={{ flex: 1, minWidth: 0 }}>
+          <ChannelRow
+            title={displayTitle}
+            avatarAddress={item.avatarAddress}
+            cacheBuster={item.avatarAddress ? getPeerAvatarCb(item.avatarAddress) : undefined}
+            square={item.isGroup}
+            lastPreview={item.preview || '(no messages yet)'}
+            onPress={() => router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } })}
+          />
+        </Box>
+        <Row gap={8} style={{ flexShrink: 0 }}>
           <Pressable
             onPress={() => act(item.convId, false)}
             hitSlop={6}
@@ -132,9 +129,9 @@ export default function Requests(): React.ReactElement {
             <Icon name="check" size={18} color={dark ? '#34d399' : '#15803d'} />
           </Pressable>
         </Row>
-      </Pressable>
+      </Row>
     );
-  }, [router, act, head, sub, border, dark]);
+  }, [router, act, border, danger, dark]);
 
   return (
     <Box style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
