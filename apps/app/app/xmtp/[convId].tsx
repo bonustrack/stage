@@ -22,7 +22,6 @@ import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { HeaderAvatar, BubbleActionMenu, GithubNavButton } from '../../components/xmtp-conv/parts';
 import { previewOf } from '../../components/xmtp-conv/feed-helpers';
 import { ConversationFeed } from '../../components/xmtp-conv/ConversationFeed';
-import { BackSwipe } from '../../components/xmtp-conv/BackSwipe';
 import { useConversationState } from '../../components/xmtp-conv/useConversationState';
 
 export default function XmtpConversation(): React.ReactElement {
@@ -38,7 +37,7 @@ export default function XmtpConversation(): React.ReactElement {
     replyingTo, setReplyingTo, setReplyTarget,
     menuFor, setMenuFor, menuAnchor, overflowOpen, setOverflowOpen, setSelectedForCopy,
     peerAddr, groupName, groupImage, isGroup, github, senderEthOf,
-    mentionCandidates, onReact, onOptimistic, onSent, jumpToMessage, markAtBottom, listRef,
+    mentionCandidates, onReact, onOptimistic, onSent, jumpToMessage, markAtBottom,
   } = c;
 
   const insets = useSafeAreaInsets();
@@ -62,14 +61,12 @@ export default function XmtpConversation(): React.ReactElement {
         flex: 1, backgroundColor: bg, paddingBottom: insets.bottom,
       }}
     >
-      {/** Edge-swipe-back: the rn-screens 4.16 NATIVE goBackGesture worklet
-       *   crashes on Android (reanimated 4 measure() mock-ref → "Value is
-       *   undefined, expected an Object"), so the conversation screen mounts its
-       *   own JS <BackSwipe> (rightward left-edge Pan → router.back(), composed
-       *   simultaneously with the inverted FlatList via listRef so scroll and
-       *   the back-pan don't deadlock). The stock pop still plays the native
-       *   slide, revealing the previous screen. */}
-      <BackSwipe listRef={listRef}>
+      {/** Swipe-back is now handled by the @react-navigation/stack JS card
+       *   stack (see app/_layout): its interactive horizontal gesture renders
+       *   the previous screen behind this one and finger-follows the pop. No
+       *   in-screen back shim needed — the stack's left-edge rightward gesture
+       *   composes with the inverted FlatList scroll + the leftward bubble
+       *   swipe-to-reply (opposite direction). */}
       <Reanimated.View style={[{ flex: 1 }, listWrapperStyle]}>
       <ConversationFeed
         c={c}
@@ -84,7 +81,6 @@ export default function XmtpConversation(): React.ReactElement {
         router={router}
       />
       </Reanimated.View>
-      </BackSwipe>
       {/** Top nav: solid bg strip mirrors the composer footer + extends UP over the
        *  status-bar area so content sliding under the keyboard doesn't show through. */}
       <Box style={{
