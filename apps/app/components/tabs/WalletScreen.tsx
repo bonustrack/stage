@@ -27,6 +27,7 @@ import { prewarmRailgun } from '../../lib/railgun/engine';
 import { startEoaShieldWatch } from '../../lib/railgun/eoaShieldWatch';
 import { isBridgeAvailable } from '../../lib/railgun/bridge';
 import { TokensList } from './WalletScreen.tokens';
+import { ActivityView } from './WalletScreen.activity';
 import { useWalletBalances } from './WalletScreen.balances';
 
 export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
@@ -175,6 +176,8 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
         <PrivateView head={head} sub={sub} border={border} />
       ) : tab === 'nfts' ? (
         <NftsView status={nftStatus} nfts={nfts} head={head} sub={sub} border={border} />
+      ) : tab === 'activity' ? (
+        <ActivityView address={address} head={head} sub={sub} border={border} bg={bg} />
       ) : err ? (
         <Col mx={16} py={40} align="center">
           <Text style={{ color: DANGER, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
