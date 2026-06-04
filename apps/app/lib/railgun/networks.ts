@@ -35,8 +35,10 @@ export const RAILGUN_NETWORKS: Record<RailgunNet, RailgunNetworkConfig> = {
     chainId: 11155111,
     networkName: NetworkName.EthereumSepolia,
     rpcUrls: [
+      // Keyed dRPC Sepolia endpoint (PRIMARY) — reliably serves eth_getLogs so
+      // the merkletree scan completes; public node kept as fallback for quorum.
+      'https://lb.drpc.org/ogrpc?network=sepolia&dkey=AqrKBDkAZkycokrrHI5M--EgA5HAYAQR8ZoW7sA_udJz',
       'https://ethereum-sepolia-rpc.publicnode.com',
-      'https://sepolia.drpc.org',
     ],
   },
   mainnet: {

@@ -58,7 +58,14 @@ const ARTIFACTS_DIR = path.join(DATA_ROOT, 'artifacts');
  * SDK's fallback-provider quorum. */
 const RPC = {
   mainnet: ['https://ethereum-rpc.publicnode.com', 'https://eth.drpc.org'],
-  sepolia: ['https://ethereum-sepolia-rpc.publicnode.com', 'https://sepolia.drpc.org'],
+  sepolia: [
+    // Keyed dRPC Sepolia endpoint (PRIMARY) — reliably serves eth_getLogs so the
+    // RAILGUN merkletree historical-events scan completes (public RPCs stalled at
+    // the getLogs step → empty tree → $0 shielded balance). Public node kept as
+    // secondary fallback for the SDK's fallback-provider quorum.
+    'https://lb.drpc.org/ogrpc?network=sepolia&dkey=AqrKBDkAZkycokrrHI5M--EgA5HAYAQR8ZoW7sA_udJz',
+    'https://ethereum-sepolia-rpc.publicnode.com',
+  ],
 };
 
 /** Private Proof of Innocence aggregator node(s). REQUIRED at engine start for
