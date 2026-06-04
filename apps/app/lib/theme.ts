@@ -11,6 +11,7 @@ import {
   THEME_STORAGE_KEY as STORAGE_KEY, isThemePreference,
   type ThemePreference,
 } from '@metro-labs/kit/theme';
+import { colors, semanticPalette } from '@metro-labs/kit/tokens';
 
 export type { ThemePreference };
 
@@ -70,17 +71,26 @@ export function useEffectiveColorScheme(): 'light' | 'dark' {
  *  Single source of truth so the dark/light hex block isn't copy-pasted per file. */
 export interface Palette {
   fg: string; head: string; sub: string; bg: string; border: string; rowBg: string;
+  /** Canonical semantic tokens (single source of truth: @metro-labs/kit/tokens).
+   *  `text` = body text (alias of `fg`); `link`/`primary` are the brand teal. */
+  text: string; link: string; primary: string;
 }
 
-/** Resolve the shared palette for the effective color scheme. */
+/** Resolve the shared palette for the effective color scheme. Hex values are
+ *  sourced from the kit tokens so the dark/light block is no longer duplicated. */
 export function usePalette(): Palette {
-  const dark = useEffectiveColorScheme() === 'dark';
+  const scheme = useEffectiveColorScheme();
+  const dark = scheme === 'dark';
+  const s = semanticPalette(scheme);
   return {
-    fg: dark ? '#9f9fa3' : '#57606a',
-    head: dark ? '#ffffff' : '#000000',
-    sub: dark ? '#7a7a7e' : '#8a929d',
-    bg: dark ? '#0e0f10' : '#ffffff',
-    border: dark ? '#282a2d' : '#e4e4e5',
-    rowBg: dark ? '#282a2d' : '#e4e4e5',
+    fg: dark ? colors['fg-dark'] : colors['fg-light'],
+    head: dark ? colors['head-dark'] : colors['head-light'],
+    sub: dark ? colors['sub-dark'] : colors['sub-light'],
+    bg: s.bgColor,
+    border: s.borderColor,
+    rowBg: dark ? colors['surface-dark'] : colors['surface-light'],
+    text: s.textColor,
+    link: s.linkColor,
+    primary: s.primaryColor,
   };
 }

@@ -86,7 +86,7 @@ export default function XmtpConversation(): React.ReactElement {
         position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
         height: 52 + insets.top, paddingTop: insets.top, backgroundColor: bg,
         flexDirection: 'row', alignItems: 'stretch',
-        borderBottomWidth: 1, borderBottomColor: dark ? '#282a2d' : '#e4e4e5',
+        borderBottomWidth: 1, borderBottomColor: border,
       }}>
         <Pressable
           onPress={() => router.replace('/')}
@@ -103,7 +103,7 @@ export default function XmtpConversation(): React.ReactElement {
           }}
           style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 14 }}
         >
-          <HeaderAvatar peerAddr={peerAddr} groupImage={groupImage} channelId={convId} isGroup={isGroup} border={dark ? '#282a2d' : '#e4e4e5'} />
+          <HeaderAvatar peerAddr={peerAddr} groupImage={groupImage} channelId={convId} isGroup={isGroup} border={border} />
           <Text style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold', flex: 1 }} numberOfLines={1}>
             {isGroup ? (groupName === null ? '' : (groupName || 'Untitled group'))
               : peerAddr ? (getPeerName(peerAddr) ?? shortAddress(peerAddr)) : ''}

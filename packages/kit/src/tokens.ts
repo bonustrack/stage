@@ -36,7 +36,39 @@ export const colors = {
   ok: '#83c989',
   warn: '#c0a06e',
   err: '#d96868',
+  /** Brand primary — Metro teal. The de-facto brand accent across both shells.
+   *  Links reuse the same hue so interactive text reads as "branded". */
+  'primary-dark': '#14b8a6',
+  'primary-light': '#14b8a6',
+  'link-dark': '#14b8a6',
+  'link-light': '#14b8a6',
 } as const;
+
+/** The 5 canonical semantic color tokens — the single source of truth consumed
+ *  by both shells via a scheme-aware lookup. Each maps to the palette values
+ *  above so adopting a token never changes a rendered color. */
+export const semanticColors = {
+  bgColor: { dark: colors['bg-dark'], light: colors['bg-light'] },
+  borderColor: { dark: colors['border-dark'], light: colors['border-light'] },
+  /** Body text (fg). Strong/heading text stays on `head`. */
+  textColor: { dark: colors['fg-dark'], light: colors['fg-light'] },
+  linkColor: { dark: colors['link-dark'], light: colors['link-light'] },
+  primaryColor: { dark: colors['primary-dark'], light: colors['primary-light'] },
+} as const;
+
+/** Resolve all 5 canonical tokens for an effective scheme. */
+export function semanticPalette(scheme: 'light' | 'dark'): {
+  bgColor: string; borderColor: string; textColor: string;
+  linkColor: string; primaryColor: string;
+} {
+  return {
+    bgColor: semanticColors.bgColor[scheme],
+    borderColor: semanticColors.borderColor[scheme],
+    textColor: semanticColors.textColor[scheme],
+    linkColor: semanticColors.linkColor[scheme],
+    primaryColor: semanticColors.primaryColor[scheme],
+  };
+}
 
 /** Font families used across both shells (Calibre is bundled in both apps). */
 export const fontFamily = {

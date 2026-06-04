@@ -15,9 +15,6 @@ import type { Contact } from '../../lib/useContacts';
 import { Avatar } from '../../components/Avatar';
 import { Col, Row } from '../../components/layout';
 
-/** Selection accent — Metro teal. */
-const ACCENT = '#14b8a6';
-
 export function ContactSuggestions({
   contacts, selected, onToggle,
 }: {
@@ -26,7 +23,7 @@ export function ContactSuggestions({
   selected: Set<string>;
   onToggle: (contact: Contact) => void;
 }): React.ReactElement | null {
-  const { head, sub, border } = usePalette();
+  const { head, sub, border, primary } = usePalette();
   if (contacts.length === 0) return null;
 
   return (
@@ -69,8 +66,8 @@ export function ContactSuggestions({
                 justify="center"
                 style={{
                   width: 24, height: 24, borderRadius: 12, borderWidth: 2,
-                  borderColor: isSelected ? ACCENT : border,
-                  backgroundColor: isSelected ? ACCENT : 'transparent',
+                  borderColor: isSelected ? primary : border,
+                  backgroundColor: isSelected ? primary : 'transparent',
                 }}
               >
                 {isSelected && <Icon name="check" size={14} color="#fff" />}
