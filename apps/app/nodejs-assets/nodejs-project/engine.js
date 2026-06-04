@@ -397,72 +397,108 @@ async function walletInfo(params) {
   return { railgunWalletID: info.id, railgunAddress: info.railgunAddress };
 }
 
-/** Chains for which we've already kicked the one-time FULL on-chain UTXO scan
- *  (rescanFullUTXOMerkletreesAndWallets). Keyed `${chainId}:${walletId}`. */
-const fullScanKicked = new Set();
+/* ──────────────────────────── SCAN SERIALIZATION ────────────────────────────
+ *
+ *  vc23 BUG: two near-simultaneous balances() pongs (ids 28/29) BOTH kicked
+ *  `rescanFullUTXOMerkletreesAndWallets` on the Sepolia wallet. The engine holds
+ *  ONE global rescan lock, so the second call threw "Full rescan already in
+ *  progress" — and the getLogs walk froze on the first 10k-event batch (block
+ *  5784866) at 50%, never advancing. Balance stayed 0.
+ *
+ *  vc24 FIX — three parts:
+ *   1. TRUE MUTEX: one in-flight scan promise PER chain+wallet (scanInFlight). A
+ *      duplicate balances() call RETURNS the existing promise (await/no-op) — it
+ *      never starts a second scan and never throws.
+ *   2. INCREMENTAL by default: use `refreshBalances` (→ engine.scanContractHistory,
+ *      which RESUMES from lastSyncedBlock) instead of the full rescan on every
+ *      load. The full rescan restarts the whole getLogs walk from genesis and is
+ *      what collided + stalled. A full rescan is used ONLY as an explicit
+ *      fallback (forceFullRescan, or last attempt on a never-completed
+ *      cold/corrupt tree).
+ *   3. getLogs HANG → TIMEOUT + RETRY: wrap each scan attempt in a timeout. If a
+ *      historical-events batch hangs (the dRPC should serve it, but a single
+ *      range can stall), the attempt is abandoned and re-kicked with backoff.
+ *      Because the scan is INCREMENTAL it resumes past the ranges it already
+ *      ingested, so a hung first range is retried rather than freezing at 50%. */
 
-/** GLOBAL rescan in-flight guard. The engine has ONE global rescan lock; calling
- *  rescanFullUTXOMerkletreesAndWallets while another is running throws "Full
- *  rescan already in progress". We serialize our own kicks so a single chain owns
- *  the lock at a time and a failure always releases it (see catch in kickFullScan
- *  → rescanInFlight is cleared). This is belt-and-suspenders on top of only
- *  scanning Sepolia (SCAN_CHAIN_IDS). */
-let rescanInFlight = false;
+/** In-flight scan promise per `${chainId}:${walletId}`. Presence == a scan is
+ *  running; concurrent callers await it instead of kicking a second (the mutex). */
+const scanInFlight = new Map();
+/** chain+wallet keys that have completed >=1 successful scan (tree populated). */
+const scanCompleted = new Set();
 
-/** Walk the chain logs + (re)build the UTXO merkletree for a wallet, in the
- *  BACKGROUND. THE ROOT-CAUSE FIX: `refreshBalances` only re-DERIVES balances
- *  from the merkletree the engine ALREADY has on disk — on a cold wallet that
- *  tree was never synced, so it's empty and balances are always 0. The actual
- *  on-chain eth_getLogs scan that POPULATES the tree is
- *  `rescanFullUTXOMerkletreesAndWallets`. We run it ONCE per chain+wallet (it's
- *  expensive), then rely on `refreshBalances` for cheap subsequent reads. The
- *  scan callbacks (init) + balanceUpdate logging make the result visible. */
-function kickFullScan(sdk, chain, walletId) {
+/** ms before a single scan attempt is considered hung and retried. The dRPC
+ *  Sepolia getLogs walk completes well inside this; a stuck batch will not. */
+const SCAN_ATTEMPT_TIMEOUT_MS = 90 * 1000;
+const SCAN_MAX_ATTEMPTS = 4;
+
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+/** Race a scan attempt against a timeout. The underlying engine scan keeps
+ *  running on timeout (we can't cancel it), but the next attempt is INCREMENTAL
+ *  and resumes from the furthest synced block — so a hung range is effectively
+ *  retried rather than wedging the whole walk at 50%. */
+function withTimeout(promise, ms, label) {
+  let to;
+  const timeout = new Promise((_resolve, reject) => {
+    to = setTimeout(() => reject(new Error(label + ' timed out after ' + ms + 'ms')), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(to));
+}
+
+/** Run a scan for one chain+wallet, with timeout + backoff retry, serialized via
+ *  scanInFlight so a duplicate balances() call awaits this SAME promise instead
+ *  of starting a second scan. Incremental by default (refreshBalances →
+ *  scanContractHistory); escalates to a ONE-SHOT full rescan only if forced, or
+ *  on the last attempt for a chain that has NEVER completed (cold/corrupt tree).
+ *  Returns the in-flight promise. */
+function runSerializedScan(sdk, chain, walletId, opts) {
   const k = chain.id + ':' + walletId;
-  if (fullScanKicked.has(k)) {
-    // Cheap re-derive from the already-synced tree.
-    Promise.resolve(sdk.refreshBalances(chain, [walletId])).catch((e) =>
-      scanDebug(chain.id, 'refreshBalances error: ' + (e && e.message ? e.message : String(e))),
-    );
-    return;
+  const existing = scanInFlight.get(k);
+  if (existing) {
+    scanDebug(chain.id, 'scan already in flight wallet=' + String(walletId).slice(0, 10) + ' — awaiting existing (NO second kick)');
+    return existing;
   }
-  // Serialize on the engine's single global rescan lock: never kick a second
-  // rescan while one is in flight (it would throw "Full rescan already in
-  // progress" and, worse, our caller would think it kicked). If something is
-  // already running we just do a cheap re-derive instead.
-  if (rescanInFlight) {
-    scanDebug(chain.id, 'rescan SKIPPED (another rescan in flight) — refreshBalances instead');
-    fullScanKicked.delete(k); // not actually kicked; let a later call retry
-    Promise.resolve(sdk.refreshBalances(chain, [walletId])).catch((e) =>
-      scanDebug(chain.id, 'refreshBalances error: ' + (e && e.message ? e.message : String(e))),
-    );
-    return;
-  }
-  fullScanKicked.add(k);
-  rescanInFlight = true;
-  scanDebug(chain.id, 'full UTXO rescan START wallet=' + String(walletId).slice(0, 10));
-  Promise.resolve()
-    .then(() => {
-      if (typeof sdk.rescanFullUTXOMerkletreesAndWallets === 'function') {
-        return sdk.rescanFullUTXOMerkletreesAndWallets(chain, [walletId]);
+  const forceFull = !!(opts && opts.forceFullRescan);
+
+  const p = (async () => {
+    let lastErr = null;
+    for (let attempt = 1; attempt <= SCAN_MAX_ATTEMPTS; attempt += 1) {
+      const useFull = (forceFull && attempt === 1) ||
+        (attempt === SCAN_MAX_ATTEMPTS && !scanCompleted.has(k) &&
+         typeof sdk.rescanFullUTXOMerkletreesAndWallets === 'function');
+      const kind = useFull ? 'FULL rescan' : 'incremental scan';
+      scanDebug(chain.id, kind + ' START (attempt ' + attempt + '/' + SCAN_MAX_ATTEMPTS + ') wallet=' + String(walletId).slice(0, 10));
+      try {
+        const call = useFull
+          ? sdk.rescanFullUTXOMerkletreesAndWallets(chain, [walletId])
+          : sdk.refreshBalances(chain, [walletId]);
+        // eslint-disable-next-line no-await-in-loop
+        await withTimeout(Promise.resolve(call), SCAN_ATTEMPT_TIMEOUT_MS, kind);
+        scanCompleted.add(k);
+        scanDebug(chain.id, kind + ' DONE wallet=' + String(walletId).slice(0, 10));
+        return;
+      } catch (e) {
+        lastErr = e;
+        const msg = e && e.message ? e.message : String(e);
+        scanDebug(chain.id, kind + ' attempt ' + attempt + ' FAILED: ' + msg.slice(0, 200));
+        if (attempt < SCAN_MAX_ATTEMPTS) {
+          const backoff = Math.min(2000 * Math.pow(2, attempt - 1), 15000);
+          scanDebug(chain.id, 'retrying scan in ' + backoff + 'ms (incremental resumes from last synced block)');
+          // eslint-disable-next-line no-await-in-loop
+          await sleep(backoff);
+        }
       }
-      return sdk.refreshBalances(chain, [walletId]);
-    })
-    .then(() => {
-      scanDebug(chain.id, 'full UTXO rescan DONE wallet=' + String(walletId).slice(0, 10));
-      // After the tree is synced, derive balances (fires balanceUpdate).
-      return sdk.refreshBalances(chain, [walletId]);
-    })
-    .catch((e) => {
-      // CRITICAL: don't swallow — this is the message that explains a 0 balance.
-      fullScanKicked.delete(k); // allow a retry next refresh
-      scanDebug(chain.id, 'full UTXO rescan ERROR: ' + (e && e.message ? e.message : String(e)));
-    })
-    .finally(() => {
-      // ALWAYS release the lock-guard so a failing chain can never permanently
-      // wedge subsequent (Sepolia) rescans.
-      rescanInFlight = false;
-    });
+    }
+    scanDebug(chain.id, 'scan GAVE UP after ' + SCAN_MAX_ATTEMPTS + ' attempts: ' + (lastErr && lastErr.message ? lastErr.message : String(lastErr)));
+  })().finally(() => {
+    scanInFlight.delete(k); // release the per-chain mutex
+  });
+
+  scanInFlight.set(k, p);
+  return p;
 }
 
 /** Trigger a scan for both networks and return currently-known balances. */
@@ -476,7 +512,8 @@ async function balances(params) {
 
   const walletId = params && params.walletId;
   if (!walletId) throw new Error('balances requires { walletId }');
-  scanDebug(0, 'balances() called wallet=' + String(walletId).slice(0, 14) + ' loadedNets=[' + state.networks.join(',') + ']');
+  const forceFullRescan = !!(params && params.forceFullRescan);
+  scanDebug(0, 'balances() called wallet=' + String(walletId).slice(0, 14) + ' loadedNets=[' + state.networks.join(',') + ']' + (forceFullRescan ? ' forceFullRescan' : ''));
 
   // ChainType.EVM === 0; ids: Ethereum=1, Sepolia=11155111.
   const targets = [
@@ -494,15 +531,16 @@ async function balances(params) {
     } else if (state.networks.indexOf(t.net) === -1) {
       scanDebug(t.chainId, 'scan SKIPPED (' + t.net + ') — provider not loaded');
     } else {
-      try {
-        // Kick the real on-chain scan in the background (full sync once, then
-        // cheap re-derive). The balanceUpdate callback fills the cache + the panel
-        // shows the scan lifecycle, so we still return promptly.
-        kickFullScan(sdk, chain, walletId);
-        scanning = true;
-      } catch (e) {
-        scanDebug(t.chainId, 'scan kick FAILED (' + t.net + '): ' + (e && e.message ? e.message : String(e)));
-      }
+      // Kick the SERIALIZED background scan (incremental by default, mutex per
+      // chain+wallet). A duplicate balances() call no-ops onto the in-flight
+      // promise — it never starts a second rescan, so the "Full rescan already
+      // in progress" collision (vc23) can't happen. We don't await it here: the
+      // balanceUpdate callback fills the cache + the panel shows scan lifecycle,
+      // so we still return promptly with whatever's cached.
+      runSerializedScan(sdk, chain, walletId, { forceFullRescan }).catch((e) =>
+        scanDebug(t.chainId, 'serialized scan rejected (' + t.net + '): ' + (e && e.message ? e.message : String(e))),
+      );
+      scanning = true;
     }
     networks[t.net] = summedRows(t.chainId, walletId);
   }
