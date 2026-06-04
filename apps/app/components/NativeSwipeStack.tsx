@@ -1,30 +1,30 @@
-/** Expo-Router layout bound to the native-stack navigator.
+/** Expo-Router native-stack layout used as the app's root navigator.
  *
- *  HISTORY: this used to import from `react-native-screens/native-stack`, but
- *  rn-screens v4 REMOVED its own native-stack JS API (it was deprecated in v6
- *  and v4 supports only `@react-navigation/native-stack` v7 — see rn-screens
- *  README). So the import is now `@react-navigation/native-stack`, which renders
- *  through rn-screens under the hood.
+ *  WHY THIS IS JUST `Stack`:
+ *  - It once imported `react-native-screens/native-stack` to use rn-screens' own
+ *    interactive `goBackGesture`/`screenEdgeGesture` worklet. On Android
+ *    (rn-screens 4.16 + reanimated 4.3.1) that worklet passes a mock animated ref
+ *    to reanimated 4's `measure()`, which resolves the screen viewTag to
+ *    `undefined` and crashes the first swipe with "Value is undefined, expected
+ *    an Object" (redbox in ScreenGestureDetector.tsx measure()). The reanimated
+ *    3->4 measure() API change broke that mock-ref path, so the native gesture
+ *    cannot run without crashing.
+ *  - It then imported the bare `@react-navigation/native-stack`, which is not a
+ *    declared dependency of this app and is not guaranteed to be installed at the
+ *    top level, so the bundle could fail to resolve it.
  *
- *  Swipe-back is NOT driven by rn-screens' own `goBackGesture`/`screenEdgeGesture`
- *  worklet — on Android that worklet calls `measure()` on a mocked
- *  ScreenGestureDetector ref and crashes ("Value is undefined, expected an
- *  Object"). Instead the app uses JS RNGH Pan shims: <EdgeSwipeBack> wraps this
- *  navigator (left-edge → router.back()) and the conversation screen mounts its
- *  own in-screen <BackSwipe>. The stock pop still plays the native slide.
- *  `GestureDetectorProvider` (mounted in _layout) arbitrates the gestures with
- *  the app's other RNGH gestures (swipe-to-reply, scroll).
+ *  expo-router's own `<Stack>` is a fork of `@react-navigation/native-stack`
+ *  (expo-router/build/fork/native-stack) that renders through react-native-screens
+ *  under the hood. It is always installed (it is how expo-router works), needs no
+ *  extra dependency, and gives the native slide transitions.
  *
- *  `withLayoutContext` is the expo-router primitive that adapts any react-
- *  navigation navigator into a file-based-routing layout, so `<NativeSwipeStack>`
- *  + `<NativeSwipeStack.Screen>` work exactly like `<Stack>` / `<Stack.Screen>`.
- *
- *  Must be rendered inside `GestureDetectorProvider`
- *  (react-native-screens/gesture-handler). */
+ *  SWIPE-BACK is NOT driven by rn-screens' crashing `goBackGesture` worklet.
+ *  Instead the app uses JS RNGH Pan shims: <EdgeSwipeBack> wraps this navigator
+ *  (left-edge -> router.back()) and the conversation screen mounts its own
+ *  in-screen <BackSwipe>. The stock pop still plays the native slide, so the
+ *  previous screen is revealed. `GestureDetectorProvider` (mounted in _layout)
+ *  arbitrates these with the app's other RNGH gestures (swipe-to-reply, scroll). */
 
-import { withLayoutContext } from 'expo-router';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Stack } from 'expo-router';
 
-const { Navigator } = createNativeStackNavigator();
-
-export const NativeSwipeStack = withLayoutContext(Navigator);
+export const NativeSwipeStack = Stack;
