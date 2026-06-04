@@ -32,7 +32,7 @@ function IntroLabelChips({ labels, fg, rowBg }: {
           key={label.toLowerCase()}
           style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, backgroundColor: rowBg }}
         >
-          <Text style={{ color: fg, fontSize: 12, fontFamily: 'Calibre-Medium' }}>{label}</Text>
+          <Text style={{ color: fg, fontSize: 15, fontFamily: 'Calibre-Medium' }}>{label}</Text>
         </Box>
       ))}
     </Row>
