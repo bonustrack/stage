@@ -27,9 +27,10 @@ export function AppModal({
   const sheetBg = pal.bg; // sheet surface → bg token (editable)
   const head = pal.link; // #ffffff / #000000
   // Sheets are "blocks" → top corners follow the border-radius token. Bumped up
-  // a touch (×1.4, capped) so the sheet edge stays visibly rounder than inline
-  // cards, preserving the bottom-sheet look at the 12px default.
-  const sheetRadius = Math.min(Math.round(useBlockRadius() * 1.4), 28);
+  // a touch (×1.4) so the sheet edge stays visibly rounder than inline cards,
+  // preserving the bottom-sheet look at the 12px default. No hard cap so the
+  // radius variable keeps applying when cranked up (channel-menu et al.).
+  const sheetRadius = Math.round(useBlockRadius() * 1.4);
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
