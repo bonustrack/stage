@@ -16,7 +16,7 @@ import { Box } from '../components/layout';
 import { Spinner } from '../components/Spinner';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
-import { TransitionPresets } from '@react-navigation/stack';
+import { TransitionPresets, TransitionSpecs } from '@react-navigation/stack';
 import { NativeSwipeStack } from '../components/NativeSwipeStack';
 import { useEffectiveColorScheme, usePalette, useRadius } from '../lib/theme';
 import { useDeepLinks } from '../lib/deepLinks';
@@ -153,6 +153,22 @@ export default function RootLayout(): React.ReactElement {
           gestureEnabled: true,
           gestureResponseDistance: 100,
           ...TransitionPresets.SlideFromRightIOS,
+          /** INSTANT PUSH + interactive swipe-back reveal. We keep the
+           *  SlideFromRightIOS preset (its `forHorizontalIOS` cardStyleInterpolator
+           *  is what makes the previous card parallax-in during a finger-follow
+           *  swipe) and gestureEnabled:true. We do NOT use `animation:'none'` —
+           *  in @react-navigation/stack v7 that swaps the interpolator to
+           *  `forNoAnimationCard` AND defaults gestureEnabled to false, which
+           *  would kill the reveal gesture entirely. Instead we override only the
+           *  `transitionSpec`: a 0ms `open` makes tapping a channel appear
+           *  instantly, while `close` keeps the iOS spring so a swipe-back release
+           *  (or programmatic pop) still animates smoothly. The gesture's
+           *  finger-tracking is driven directly by the pan, independent of the
+           *  open spec, so the reveal is preserved. */
+          transitionSpec: {
+            open: { animation: 'timing', config: { duration: 0 } },
+            close: TransitionSpecs.TransitionIOSSpec,
+          },
         }}
       >
         {/** Tab root: no transition (it's the bottom of the stack). */}
