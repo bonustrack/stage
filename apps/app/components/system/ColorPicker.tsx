@@ -1,11 +1,13 @@
 /** Pure-JS visual color picker — three draggable HSV sliders (Hue / Saturation
  *  / Value) plus a live preview swatch + the resulting hex, and a hex text
- *  field for typists. No native module: dragging uses react-native PanResponder
- *  and the geometry is computed in JS. Used by KitColors.story inside AppModal.
- *  Fonts: Calibre-Medium / Calibre-Semibold only. */
+ *  field for typists. No native module: dragging uses react-native-gesture-handler
+ *  (Pan + Tap) and the geometry is computed in JS. Used by KitColors.story
+ *  inside AppModal. Fonts: Calibre-Medium / Calibre-Semibold only. */
 
 import { useMemo, useRef, useState } from 'react';
-import { PanResponder, TextInput } from 'react-native';
+import { TextInput } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { runOnJS } from 'react-native-reanimated';
 import { Box, Row } from '../layout';
 import { Text } from '@metro-labs/kit/text';
 import type { ControlPalette } from './KitControls';
@@ -18,50 +20,53 @@ function Track({ colors, thumb, onFraction, p }: {
   colors: string[]; thumb: number;
   onFraction: (f: number) => void; p: ControlPalette;
 }): React.ReactElement {
+  // Track width measured once via onLayout; the gesture's `x` is relative to
+  // the GestureDetector view (the whole track), so fraction is reliable
+  // mid-drag — unlike PanResponder's per-child `locationX`.
   const widthRef = useRef(1);
-  const pan = useMemo(
-    () => PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: (e) => {
-        const x = e.nativeEvent.locationX;
-        onFraction(Math.max(0, Math.min(1, x / widthRef.current)));
-      },
-      onPanResponderMove: (e) => {
-        const x = e.nativeEvent.locationX;
-        onFraction(Math.max(0, Math.min(1, x / widthRef.current)));
-      },
-    }),
-    [onFraction],
-  );
+  const emit = (x: number): void => {
+    onFraction(Math.max(0, Math.min(1, x / widthRef.current)));
+  };
+  const gesture = useMemo(() => {
+    // activeOffsetX:0 claims the drag immediately so it works from rest and
+    // doesn't lose the first touch to a parent ScrollView in the modal.
+    const pan = Gesture.Pan()
+      .activeOffsetX(0)
+      .shouldCancelWhenOutside(false)
+      .onBegin((e) => { runOnJS(emit)(e.x); })
+      .onUpdate((e) => { runOnJS(emit)(e.x); });
+    const tap = Gesture.Tap().onEnd((e) => { runOnJS(emit)(e.x); });
+    return Gesture.Race(pan, tap);
+  }, [onFraction]);
   // Stepped gradient via N stacked flex slices (no native gradient dep).
   return (
-    <Box
-      onLayout={(e) => { widthRef.current = e.nativeEvent.layout.width || 1; }}
-      {...pan.panHandlers}
-      style={{ height: TRACK_H, borderRadius: TRACK_H / 2, overflow: 'hidden', justifyContent: 'center' }}
-    >
-      <Row style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}>
-        {colors.map((c, i) => (
-          <Box key={i} style={{ flex: 1, backgroundColor: c }} />
-        ))}
-      </Row>
+    <GestureDetector gesture={gesture}>
       <Box
-        pointerEvents="none"
-        style={{
-          position: 'absolute', left: `${thumb * 100}%`, marginLeft: -11,
-          width: 22, height: 22, borderRadius: 11,
-          borderWidth: 3, borderColor: '#ffffff',
-          backgroundColor: 'transparent',
-          shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 2,
-          elevation: 3,
-        }}
-      />
-      <Box pointerEvents="none" style={{
-        position: 'absolute', left: 0, right: 0, top: 0, bottom: 0,
-        borderRadius: TRACK_H / 2, borderWidth: 1, borderColor: p.border,
-      }} />
-    </Box>
+        onLayout={(e) => { widthRef.current = e.nativeEvent.layout.width || 1; }}
+        style={{ height: TRACK_H, borderRadius: TRACK_H / 2, overflow: 'hidden', justifyContent: 'center' }}
+      >
+        <Row style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}>
+          {colors.map((c, i) => (
+            <Box key={i} style={{ flex: 1, backgroundColor: c }} />
+          ))}
+        </Row>
+        <Box
+          pointerEvents="none"
+          style={{
+            position: 'absolute', left: `${thumb * 100}%`, marginLeft: -11,
+            width: 22, height: 22, borderRadius: 11,
+            borderWidth: 3, borderColor: '#ffffff',
+            backgroundColor: 'transparent',
+            shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 2,
+            elevation: 3,
+          }}
+        />
+        <Box pointerEvents="none" style={{
+          position: 'absolute', left: 0, right: 0, top: 0, bottom: 0,
+          borderRadius: TRACK_H / 2, borderWidth: 1, borderColor: p.border,
+        }} />
+      </Box>
+    </GestureDetector>
   );
 }
 
