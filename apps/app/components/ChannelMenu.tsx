@@ -52,12 +52,11 @@ export interface ChannelMenuProps {
 }
 
 export function ChannelMenu({
-  convId, title, isGroup, peerAddress, isUnread, isPinned,
+  convId, isGroup, peerAddress, isUnread, isPinned,
   visible, onClose, context = 'list', onAfterLeave,
 }: ChannelMenuProps): React.ReactElement {
   const router = useRouter();
   const pal = usePalette();
-  const fg = pal.text;
   const head = pal.link;
   const danger = pal.danger;
 
@@ -92,15 +91,6 @@ export function ChannelMenu({
   return (
     <AppModal visible={visible} onClose={onClose}>
       <Col gap={4}>
-        {title ? (
-          <Text
-            style={{ color: head, fontSize: 13, fontFamily: 'Calibre-Medium', paddingHorizontal: 4, paddingBottom: 6 }}
-            numberOfLines={1}
-          >
-            {title}
-          </Text>
-        ) : null}
-
         <MenuRow
           icon={isUnread ? 'check' : 'envelope'}
           label={isUnread ? 'Mark as read' : 'Mark as unread'}
@@ -143,10 +133,6 @@ export function ChannelMenu({
         {isGroup ? (
           <MenuRow icon="arrowLeft" label="Leave group" color={danger} onPress={onLeaveGroup} />
         ) : null}
-
-        <Pressable onPress={onClose} style={{ paddingVertical: 10, alignItems: 'center' }}>
-          <Text style={{ color: fg, fontSize: 14, fontFamily: 'Calibre-Medium' }}>Cancel</Text>
-        </Pressable>
       </Col>
     </AppModal>
   );
