@@ -101,8 +101,17 @@ async function startStream(client: Awaited<ReturnType<typeof getOrCreateXmtpClie
   await client.conversations.streamAllMessages(
     async (msg) => {
       if (!msg) return;
-      const convId = (msg as unknown as { conversationId?: string }).conversationId
-        ?? convIdFromTopicStr((msg as unknown as { topic?: string }).topic);
+      /** Derive the conv id TOPIC-FIRST (the `g-<hex>` group id), `conversationId`
+       *  only as fallback. MUST match the channels list (HomeScreen.stream's
+       *  topic-first `convIdFromTopic`) + the open feed (`lineOfConv(convId)`).
+       *  ROOT CAUSE of "open feed misses messages the list got": RN
+       *  `DecodedMessage.conversationId`, when present, isn't always the topic
+       *  `g-<hex>` id rows/lines use — preferring it made
+       *  `pushToFeedSlice(lineOfConv(id))` write a DIFFERENT feedCache key than
+       *  the one the open feed subscribed under, so its slice subscription never
+       *  fired (list still bumped, topic-first). */
+      const convId = convIdFromTopicStr((msg as unknown as { topic?: string }).topic)
+        ?? (msg as unknown as { conversationId?: string }).conversationId;
       /** Fan out the raw message to channels-list subscribers FIRST (#1) — they
        *  do their own control-DM filtering + need the raw msg for preview/sender.
        *  One decode, two consumers. */
