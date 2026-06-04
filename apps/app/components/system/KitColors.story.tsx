@@ -19,6 +19,8 @@ const TOKEN_ROWS: ReadonlyArray<readonly [label: string, key: keyof Palette]> = 
   ['text-color', 'text'],
   ['link-color', 'link'],
   ['primary-color', 'primary'],
+  ['danger-color', 'danger'],
+  ['success-color', 'success'],
 ];
 
 function Swatch({ name, value, p }: {

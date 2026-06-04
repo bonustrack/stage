@@ -10,6 +10,7 @@
 import { Text } from '@metro-labs/kit/text';
 import { Col, Row, Box } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
+import { DANGER } from '../../lib/theme';
 
 interface Pal { sub: string; head: string }
 
@@ -17,7 +18,7 @@ interface Pal { sub: string; head: string }
 export type ShieldStage = 'idle' | 'submitting' | 'confirming' | 'scanning' | 'done' | 'error';
 
 const ACCENT = '#c0a06e';
-const ERR = '#d96868';
+const ERR = DANGER;
 
 const STEPS: ReadonlyArray<readonly [ShieldStage, string]> = [
   ['submitting', 'Submitting transaction'],

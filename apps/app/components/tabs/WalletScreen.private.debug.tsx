@@ -11,6 +11,7 @@
 import { useEffect, useState } from 'react';
 import { Text } from '@metro-labs/kit/text';
 import { Col, Row } from '../layout';
+import { DANGER } from '../../lib/theme';
 import {
   getBalanceDebug,
   subscribeBalanceDebug,
@@ -59,10 +60,10 @@ export function RailgunDebugPanel({ head, sub, border }: {
       </Text>
       <DebugRow label="bridge available" value={String(d.bridgeAvailable)} sub={sub} head={head} />
       <DebugRow label="engine ready" value={d.engineReady == null ? '—' : String(d.engineReady)} sub={sub} head={head} />
-      {d.engineError ? <DebugRow label="engine error" value={d.engineError} sub={sub} head="#ff5c5c" /> : null}
+      {d.engineError ? <DebugRow label="engine error" value={d.engineError} sub={sub} head={DANGER} /> : null}
       <DebugRow label="refresh phase" value={d.phase} sub={sub} head={head} />
       <DebugRow label="last refresh" value={fmtTime(d.refreshAt)} sub={sub} head={head} />
-      {d.refreshError ? <DebugRow label="refresh error" value={d.refreshError} sub={sub} head="#ff5c5c" /> : null}
+      {d.refreshError ? <DebugRow label="refresh error" value={d.refreshError} sub={sub} head={DANGER} /> : null}
       <DebugRow label="getBalances rows" value={getRows} sub={sub} head={head} />
       <DebugRow label="balance events" value={String(d.eventCount)} sub={sub} head={head} />
       <DebugRow label="last event at" value={fmtTime(d.lastEventAt)} sub={sub} head={head} />

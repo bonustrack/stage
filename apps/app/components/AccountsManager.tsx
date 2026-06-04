@@ -60,7 +60,7 @@ export function AccountsManager({ dark, flat = false, onSwitched }: { dark: bool
         onSwitch={(id) => void m.onSwitch(id)}
         onExport={(id) => void m.onExport(id)}
         onRemove={m.onRemove}
-        dark={dark} p={pal}
+        p={pal}
       />
       <ExportSheet revealPk={m.revealPk} onClose={() => m.setRevealPk(null)} dark={dark} p={pal} />
     </Box>

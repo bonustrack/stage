@@ -10,6 +10,7 @@ import { getPeerName } from '../lib/peerProfiles';
 import { shortAddress } from '../lib/xmtp';
 import { type AccountRecord } from '../lib/accounts';
 import { TYPE_LABEL } from './AccountsManager.helpers';
+import { DANGER } from '../lib/theme';
 
 /** Single account row — avatar, name + short address/type, and a trailing slot
  *  (chevron on the active/collapsed row, ⋯ manage affordance on the others). */
@@ -67,11 +68,11 @@ export function SheetModal({ visible, onClose, children, bg, border, title, head
   );
 }
 
-export function SheetButton({ label, desc, onPress, head, sub, border, danger, dark }: {
+export function SheetButton({ label, desc, onPress, head, sub, border, danger }: {
   label: string; desc?: string; onPress: () => void;
-  head: string; sub: string; border: string; danger?: boolean; dark?: boolean;
+  head: string; sub: string; border: string; danger?: boolean;
 }): React.ReactElement {
-  const labelColor = danger ? (dark ? '#ff6b80' : '#b91c1c') : head;
+  const labelColor = danger ? DANGER : head;
   return (
     <Pressable
       onPress={onPress}

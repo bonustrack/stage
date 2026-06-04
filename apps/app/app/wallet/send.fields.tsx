@@ -8,6 +8,7 @@ import { Box } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
 import { Button } from '@metro-labs/kit/button';
 import { Icon } from '@metro-labs/kit/icon';
+import { DANGER } from '../../lib/theme';
 
 interface Palette {
   fg: string; head: string; sub: string; border: string; inputBg: string;
@@ -48,7 +49,7 @@ export function RecipientField(props: {
           → {props.resolved}
         </Text>
       ) : props.resolveErr ? (
-        <Text style={{ color: '#d96868', fontSize: 13, fontFamily: 'Calibre-Medium', paddingHorizontal: 4 }}>
+        <Text style={{ color: DANGER, fontSize: 13, fontFamily: 'Calibre-Medium', paddingHorizontal: 4 }}>
           {props.resolveErr}
         </Text>
       ) : null}

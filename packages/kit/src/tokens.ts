@@ -36,6 +36,11 @@ export const colors = {
   ok: '#83c989',
   warn: '#c0a06e',
   err: '#d96868',
+  /** Canonical semantic danger/success — same value in both schemes. */
+  'danger-dark': '#eb4c5b',
+  'danger-light': '#eb4c5b',
+  'success-dark': '#57b375',
+  'success-light': '#57b375',
   /** Brand primary — monochrome. White on dark, black on light so interactive
    *  text/primary surfaces read as high-contrast rather than a brand hue.
    *  Links reuse the same values. */
@@ -45,7 +50,7 @@ export const colors = {
   'link-light': '#000000',
 } as const;
 
-/** The 5 canonical semantic color tokens — the single source of truth consumed
+/** The 7 canonical semantic color tokens — the single source of truth consumed
  *  by both shells via a scheme-aware lookup. Each maps to the palette values
  *  above so adopting a token never changes a rendered color. */
 export const semanticColors = {
@@ -55,12 +60,15 @@ export const semanticColors = {
   textColor: { dark: colors['fg-dark'], light: colors['fg-light'] },
   linkColor: { dark: colors['link-dark'], light: colors['link-light'] },
   primaryColor: { dark: colors['primary-dark'], light: colors['primary-light'] },
+  dangerColor: { dark: colors['danger-dark'], light: colors['danger-light'] },
+  successColor: { dark: colors['success-dark'], light: colors['success-light'] },
 } as const;
 
-/** Resolve all 5 canonical tokens for an effective scheme. */
+/** Resolve all 7 canonical tokens for an effective scheme. */
 export function semanticPalette(scheme: 'light' | 'dark'): {
   bgColor: string; borderColor: string; textColor: string;
   linkColor: string; primaryColor: string;
+  dangerColor: string; successColor: string;
 } {
   return {
     bgColor: semanticColors.bgColor[scheme],
@@ -68,6 +76,8 @@ export function semanticPalette(scheme: 'light' | 'dark'): {
     textColor: semanticColors.textColor[scheme],
     linkColor: semanticColors.linkColor[scheme],
     primaryColor: semanticColors.primaryColor[scheme],
+    dangerColor: semanticColors.dangerColor[scheme],
+    successColor: semanticColors.successColor[scheme],
   };
 }
 
