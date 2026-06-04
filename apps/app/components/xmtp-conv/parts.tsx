@@ -13,6 +13,7 @@ import { channelStampSeed } from '@metro-labs/kit/avatar';
 import { REACT_PRESETS } from '../MessengerBubble';
 import { usePalette } from '../../lib/theme';
 import type { HistoryEntry } from '../../lib/types';
+import { useBlockRadius } from '../../lib/theme';
 
 /** Topnav GitHub button — opens the group's linked GitHub issue/PR (Linear-style)
  *  externally. Rendered only when a link is set (caller gates on isGroup && url).
@@ -70,6 +71,7 @@ export function BubbleActionMenu({
   onShareLink: () => void;
 }): React.ReactElement {
   const [expanded, setExpanded] = useState(false);
+  const blockRadius = useBlockRadius();
   useEffect(() => { if (!target) setExpanded(false); }, [target]);
 
   const pal = usePalette();
@@ -178,7 +180,7 @@ export function BubbleActionMenu({
           <Box
             style={{
               minWidth: 220, maxWidth: 320,
-              backgroundColor: cardBg, borderRadius: 14, paddingVertical: 4, overflow: 'hidden',
+              backgroundColor: cardBg, borderRadius: blockRadius, paddingVertical: 4, overflow: 'hidden',
               shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 8,
             }}
           >

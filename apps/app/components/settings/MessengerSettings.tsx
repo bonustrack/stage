@@ -13,18 +13,19 @@ import { getOrCreateXmtpClient, resetXmtpClient, shortAddress } from '../../lib/
 import { resetAccount } from '../../lib/wallet';
 import { flash } from '../../lib/toast';
 import { useAccountEpoch } from '../../lib/accountEpoch';
-import { DANGER, useEffectiveColorScheme, usePalette } from '../../lib/theme';
+import { DANGER, useBlockRadius, useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { SystemHeader } from '../system/SystemHeader';
 
 function CopyRow({ label, value, display, c }: {
   label: string; value: string; display: string;
   c: { fg: string; sub: string; border: string; rowBg: string };
 }): React.ReactElement {
+  const blockRadius = useBlockRadius();
   return (
     <Pressable
       onPress={() => { void Clipboard.setStringAsync(value); flash(`${label} copied`); }}
       style={{
-        marginHorizontal: 16, marginTop: 8, padding: 12, borderRadius: 12,
+        marginHorizontal: 16, marginTop: 8, padding: 12, borderRadius: blockRadius,
         backgroundColor: c.rowBg, borderWidth: 1, borderColor: c.border,
       }}
     >

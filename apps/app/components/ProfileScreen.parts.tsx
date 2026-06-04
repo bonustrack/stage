@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { Modal, Pressable } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from './layout';
-import { usePalette, type Palette } from '../lib/theme';
+import { usePalette, useBlockRadius, type Palette } from '../lib/theme';
 import { getCachedXmtpClient, getOrCreateXmtpClient } from '../lib/xmtp';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';
@@ -75,10 +75,11 @@ export function ProfileHeader({ variant, insetTop, isSelf, onBack, onMenu, c }: 
 export function InfoRow({ label, value, onCopy, c }: {
   label: string; value: string; onCopy?: () => void; c: ProfileColors;
 }): React.ReactElement {
+  const blockRadius = useBlockRadius();
   return (
     <Box style={{
       marginHorizontal: 16, marginTop: 12, padding: 12,
-      borderRadius: 12, backgroundColor: c.border, borderWidth: 1, borderColor: c.border,
+      borderRadius: blockRadius, backgroundColor: c.border, borderWidth: 1, borderColor: c.border,
       flexDirection: 'row', alignItems: 'center', gap: 8,
     }}>
       <Box style={{ flex: 1 }}>
@@ -134,12 +135,13 @@ export function ProfileActions({ dark, opening, onMessage, onSend, c }: {
 export function EditMenu({ visible, top, onClose, onEdit, c }: {
   visible: boolean; top: number; onClose: () => void; onEdit: () => void; c: ProfileColors;
 }): React.ReactElement {
+  const blockRadius = useBlockRadius();
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={{ flex: 1 }} onPress={onClose}>
         <Box style={{
           position: 'absolute', right: 12, top,
-          minWidth: 168, borderRadius: 12, overflow: 'hidden',
+          minWidth: 168, borderRadius: blockRadius, overflow: 'hidden',
           backgroundColor: c.bg, borderWidth: 1, borderColor: c.border,
         }}>
           <Pressable

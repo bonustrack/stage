@@ -12,7 +12,7 @@ import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import { Avatar } from '../Avatar';
 import { Box, Col, Row } from '../layout';
-import { usePalette } from '../../lib/theme';
+import { usePalette, useBlockRadius } from '../../lib/theme';
 import { usePeerProfiles, getPeerAvatarCb } from '../../lib/peerProfiles';
 import type { RequestPreviews } from './useRequestPreviews';
 
@@ -31,6 +31,7 @@ export function RequestsCard({
   onPress: () => void;
 }): React.ReactElement | null {
   const { link: head, text: sub, border, bg } = usePalette();
+  const blockRadius = useBlockRadius();
   const rowBg = border;
   const { count, previews } = data;
   // Resolve peer profiles so the cache-buster lands once an avatar is known.
@@ -46,7 +47,7 @@ export function RequestsCard({
       onPress={onPress}
       style={({ pressed }) => ({
         backgroundColor: pressed ? border : rowBg,
-        borderRadius: 16,
+        borderRadius: blockRadius,
         borderWidth: 1,
         borderColor: border,
       })}
