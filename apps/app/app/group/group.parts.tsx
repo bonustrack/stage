@@ -56,7 +56,7 @@ export function MemberRow({
           paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999,
           backgroundColor: role === 'owner'
             ? (dark ? 'rgba(45,212,191,0.18)' : 'rgba(13,148,136,0.12)')
-            : (dark ? '#282a2d' : '#e4e4e5'),
+            : border, // #282a2d / #e4e4e5
         }}>
           <Text style={{
             fontSize: 11, fontFamily: 'Calibre-Medium',

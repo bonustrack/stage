@@ -13,13 +13,15 @@ import { Spinner } from './Spinner';
 import { useAccountsManager } from './AccountsManager.hook';
 import { AccountList } from './AccountsManager.list';
 import { AddSheet, ImportSheet, ManageSheet, ExportSheet } from './AccountsManager.sheets';
+import { usePalette } from '../lib/theme';
 
 export function AccountsManager({ dark, flat = false, onSwitched }: { dark: boolean; flat?: boolean; onSwitched?: () => void }): React.ReactElement {
-  const head = dark ? '#ffffff' : '#000000';
-  const sub = dark ? '#7a7a7e' : '#8a929d';
-  const border = dark ? '#282a2d' : '#e4e4e5';
-  const rowBg = dark ? '#282a2d' : '#e4e4e5';
-  const sheetBg = dark ? '#1a1b1d' : '#ffffff';
+  const tokens = usePalette();
+  const head = tokens.primary; // #ffffff / #000000
+  const sub = dark ? '#7a7a7e' : '#8a929d'; // one-off sub-grey, no token
+  const border = tokens.border; // #282a2d / #e4e4e5
+  const rowBg = border;
+  const sheetBg = dark ? '#1a1b1d' : '#ffffff'; // elevated sheet surface, no token
   const pal = { head, sub, border, sheetBg };
 
   const m = useAccountsManager(onSwitched);

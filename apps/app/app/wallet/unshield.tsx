@@ -107,7 +107,7 @@ export default function WalletUnshield(): React.ReactElement {
           </Box>
         </Box>
 
-        <Button variant="primary" size="lg" fullWidth pill dark={dark} loading={busy}
+        <Button variant="primary" size="lg" fullWidth pill dark={dark} tintBg={head} tintFg={bg} loading={busy}
           disabled={!canSubmit} onPress={onSubmit}
           label={phase === 'proving' ? 'Proving…' : phase === 'broadcasting' ? 'Broadcasting…'
             : phase === 'done' ? 'Unshielded ✓' : 'Unshield to public'}

@@ -11,6 +11,7 @@ import { Text } from '@metro-labs/kit/text';
 import { Box } from './layout';
 import { MediaCard } from './MediaCard';
 import { osmTileUrl } from '../lib/embedDetect';
+import { usePalette } from '../lib/theme';
 
 /** YouTube preview card: hqdefault thumbnail with a play-button overlay.
  *  Tap → opens the YouTube app (or the browser fallback). 16:9 ratio. */
@@ -62,12 +63,13 @@ export function LocationEmbed({ lat, lng, sourceUrl, dark }: {
 }): React.ReactElement {
   const tileUrl = osmTileUrl(lat, lng, 14);
   const label = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  const tileBg = usePalette().border; // #282a2d / #e4e4e5 (loading placeholder tint)
   return (
     <MediaCard dark={dark} onPress={() => void Linking.openURL(sourceUrl)}>
       <Box style={{ aspectRatio: 1, position: 'relative' }}>
         <Image
           source={{ uri: tileUrl }}
-          style={{ width: '100%', height: '100%', backgroundColor: dark ? '#282a2d' : '#e4e4e5' }}
+          style={{ width: '100%', height: '100%', backgroundColor: tileBg }}
           resizeMode="cover"
         />
         <Box style={{

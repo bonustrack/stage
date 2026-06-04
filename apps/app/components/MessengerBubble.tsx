@@ -14,6 +14,7 @@ import { REACT_PRESETS } from './MessengerBubble.helpers';
 import type { MessengerBubbleProps } from './MessengerBubble.props';
 import { BubbleContent } from './MessengerBubble.content';
 import { ReactionsRow, ReactionPicker } from './MessengerBubble.reactions';
+import { usePalette } from '../lib/theme';
 
 export { REACT_PRESETS };
 
@@ -28,10 +29,13 @@ function MessengerBubbleBase({
   /** Group system events (rename / member add / image change) get a muted feed
    *  color — set when envelopeOfXmtpMessage stamps `payload.system: true`. */
   const isSystem = (entry.payload as { system?: boolean } | undefined)?.system === true;
-  const fg = isSystem ? (dark ? '#9f9fa3' : '#57606a') : (dark ? '#ffffff' : '#000000');
-  const sub = dark ? '#7a7a7e' : '#8a929d';
-  const pillBg = dark ? '#282a2d' : '#e4e4e5';
-  const avatarBg = dark ? '#282a2d' : '#e4e4e5';
+  const pal = usePalette();
+  // system → muted body text (#9f9fa3/#57606a); else → strong primary (#ffffff/#000000)
+  const fg = isSystem ? pal.text : pal.primary;
+  // `sub` = muted meta (date, 'Sending'); no `muted` token yet → map to `text`. TODO: muted token.
+  const sub = pal.text;
+  const pillBg = pal.border; // #282a2d / #e4e4e5
+  const avatarBg = pal.border;
   const [pickerOpen, setPickerOpen] = useState(false);
   /** Swipe-to-reply (right→left, Telegram-style) on react-native-gesture-handler so
    *  RNGH can arbitrate it against the back gesture + FlatList scroll by direction:

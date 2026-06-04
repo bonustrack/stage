@@ -32,7 +32,8 @@ export function SendHeader(props: {
 }
 
 export function SubmitButton(props: {
-  dark: boolean; busy: boolean; canSubmit: boolean; txState: TxState; onSubmit: () => void;
+  dark: boolean; tintBg: string; tintFg: string;
+  busy: boolean; canSubmit: boolean; txState: TxState; onSubmit: () => void;
 }): React.ReactElement {
   const { txState } = props;
   return (
@@ -42,6 +43,8 @@ export function SubmitButton(props: {
       fullWidth
       pill
       dark={props.dark}
+      tintBg={props.tintBg}
+      tintFg={props.tintFg}
       loading={props.busy}
       disabled={!props.canSubmit || txState === 'confirmed'}
       onPress={props.onSubmit}

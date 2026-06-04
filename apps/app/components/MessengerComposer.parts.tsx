@@ -10,6 +10,7 @@ import { Box, Row, Col } from './layout';
 import { shortAddress } from '../lib/xmtp';
 import { getPeerName } from '../lib/peerProfiles';
 import { type Attachment } from './MessengerComposer.helpers';
+import { usePalette } from '../lib/theme';
 
 const kindIcon = (kind: string): HeroIconName => (
   kind === 'image' ? 'photo' : kind === 'audio' ? 'microphone' : 'paperClip'
@@ -23,11 +24,11 @@ export function ReplyBanner({
   /** Tap the banner body → scroll the feed to the replied-to message. */
   onPress?: () => void;
 }): React.ReactElement {
-  /** Username color: white in dark theme, the light link/primary color otherwise. */
+  /** Username color: white in dark theme, the light brand blue otherwise (one-off,
+   *  no matching token — leave hardcoded). */
   const nameColor = dark ? '#ffffff' : '#2f6feb';
-  /** TopNav border value — identical literal the conversation header renders
-   *  (`dark ? '#282a2d' : '#e4e4e5'`), so the banner hairline matches it exactly. */
-  const borderColor = dark ? '#282a2d' : '#e4e4e5';
+  /** TopNav border value — matches the conversation header hairline exactly. */
+  const borderColor = usePalette().border; // #282a2d / #e4e4e5
   return (
     /** Outer container breaks out of the composer's `px={10}` with a -10 margin so
      *  the top border spans the full screen width edge-to-edge; the matching 10px
@@ -71,10 +72,11 @@ export function MentionPopup({
   matches: { address: string; name: string; cacheBuster?: number }[];
   onPick: (c: { address: string; name: string }) => void;
 }): React.ReactElement {
+  const border = usePalette().border; // #282a2d / #e4e4e5
   return (
     <Col mx={6} mb={8} radius={12} bg={dark ? '#1a1a1c' : '#ffffff'} style={{
       overflow: 'hidden',
-      borderWidth: 1, borderColor: dark ? '#282a2d' : '#e4e4e5',
+      borderWidth: 1, borderColor: border,
     }}>
       {matches.map((c, i) => (
         <Pressable
@@ -83,8 +85,8 @@ export function MentionPopup({
           style={({ pressed }) => ({
             flexDirection: 'row', alignItems: 'center', gap: 10,
             paddingHorizontal: 12, paddingVertical: 8,
-            backgroundColor: pressed ? (dark ? '#282a2d' : '#e4e4e5') : 'transparent',
-            borderTopWidth: i === 0 ? 0 : 1, borderTopColor: dark ? '#282a2d' : '#e4e4e5',
+            backgroundColor: pressed ? border : 'transparent',
+            borderTopWidth: i === 0 ? 0 : 1, borderTopColor: border,
           })}
         >
           <Avatar address={c.address} size="sm" cacheBuster={c.cacheBuster} />
