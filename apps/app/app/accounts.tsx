@@ -16,7 +16,7 @@ import { AccountsManager } from '../components/AccountsManager';
 export default function Accounts(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { fg, head, bg, border } = usePalette();
+  const { text: fg, primary: head, bg, border } = usePalette();
   const insets = useSafeAreaInsets();
 
   return (

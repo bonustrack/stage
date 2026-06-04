@@ -36,7 +36,9 @@ export default function EditProfileModal({
   onSaved: (next: SnapshotProfile) => void;
   address: string; initial: SnapshotProfile; dark: boolean;
 }): React.ReactElement {
-  const { fg, head, sub, bg, border, rowBg } = usePalette();
+  const { text: fg, primary: head, bg, border } = usePalette();
+  const sub = fg;
+  const rowBg = border;
   const insets = useSafeAreaInsets();
 
   const [form, setForm] = useState<SnapshotProfile>(initial);

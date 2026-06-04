@@ -11,7 +11,7 @@ import {
   THEME_STORAGE_KEY as STORAGE_KEY, isThemePreference,
   type ThemePreference,
 } from '@metro-labs/kit/theme';
-import { colors, semanticPalette } from '@metro-labs/kit/tokens';
+import { semanticPalette } from '@metro-labs/kit/tokens';
 
 export type { ThemePreference };
 
@@ -67,28 +67,21 @@ export function useEffectiveColorScheme(): 'light' | 'dark' {
   return sys === 'dark' ? 'dark' : 'light';
 }
 
-/** The 6-key scheme-aware palette shared by every screen's inline StyleSheet.
- *  Single source of truth so the dark/light hex block isn't copy-pasted per file. */
+/** The 5-key scheme-aware palette shared by every screen's inline StyleSheet.
+ *  Maps 1:1 to the canonical kit semantic tokens (single source of truth:
+ *  @metro-labs/kit/tokens) — no app-local color forks. `text` = body text,
+ *  `primary` = titles/strong (white/black), `link` = brand teal. */
 export interface Palette {
-  fg: string; head: string; sub: string; bg: string; border: string; rowBg: string;
-  /** Canonical semantic tokens (single source of truth: @metro-labs/kit/tokens).
-   *  `text` = body text (alias of `fg`); `link`/`primary` are the brand teal. */
-  text: string; link: string; primary: string;
+  bg: string; border: string; text: string; link: string; primary: string;
 }
 
-/** Resolve the shared palette for the effective color scheme. Hex values are
- *  sourced from the kit tokens so the dark/light block is no longer duplicated. */
+/** Resolve the shared palette for the effective color scheme, sourced entirely
+ *  from the kit semantic tokens. */
 export function usePalette(): Palette {
-  const scheme = useEffectiveColorScheme();
-  const dark = scheme === 'dark';
-  const s = semanticPalette(scheme);
+  const s = semanticPalette(useEffectiveColorScheme());
   return {
-    fg: dark ? colors['fg-dark'] : colors['fg-light'],
-    head: dark ? colors['head-dark'] : colors['head-light'],
-    sub: dark ? colors['sub-dark'] : colors['sub-light'],
     bg: s.bgColor,
     border: s.borderColor,
-    rowBg: dark ? colors['surface-dark'] : colors['surface-light'],
     text: s.textColor,
     link: s.linkColor,
     primary: s.primaryColor,

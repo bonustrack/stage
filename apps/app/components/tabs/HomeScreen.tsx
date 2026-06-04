@@ -35,7 +35,8 @@ export type { Row } from './HomeScreen.helpers';
 export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { fg, head, sub, bg, border } = usePalette();
+  const { text: fg, primary: head, bg, border } = usePalette();
+  const sub = fg;
   const [rows, setRowsState] = useState<RowT[] | null>(getCachedRows() as RowT[] | null);
   /** Wrap setRows so every state update also lands in the shared cache + fans
    *  out to subscribers (e.g. the conv view'​s markConvRead can mutate the
