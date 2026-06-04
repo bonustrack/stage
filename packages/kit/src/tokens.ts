@@ -36,12 +36,13 @@ export const colors = {
   ok: '#83c989',
   warn: '#c0a06e',
   err: '#d96868',
-  /** Brand primary — Metro teal. The de-facto brand accent across both shells.
-   *  Links reuse the same hue so interactive text reads as "branded". */
-  'primary-dark': '#14b8a6',
-  'primary-light': '#14b8a6',
-  'link-dark': '#14b8a6',
-  'link-light': '#14b8a6',
+  /** Brand primary — monochrome. White on dark, black on light so interactive
+   *  text/primary surfaces read as high-contrast rather than a brand hue.
+   *  Links reuse the same values. */
+  'primary-dark': '#ffffff',
+  'primary-light': '#000000',
+  'link-dark': '#ffffff',
+  'link-light': '#000000',
 } as const;
 
 /** The 5 canonical semantic color tokens — the single source of truth consumed
