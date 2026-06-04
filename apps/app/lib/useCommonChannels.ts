@@ -16,6 +16,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { getCachedRows, hydrateCachedRows, getActiveAccountIdSync, type CachedRow } from './channelsCache';
 import { convOfLine, groupMemberEthAddresses, lineOfConv } from './xmtp';
+import { channelStampSeed } from '@metro-labs/kit/avatar';
 import { getAccountEpoch } from './accountEpoch';
 import { MemoryStore } from './cache';
 
@@ -30,7 +31,9 @@ export interface CommonChannel {
   convId: string;
   title: string;
   avatarUri: string | null;
-  /** First other member's address — stamp fallback when there's no group image. */
+  /** The CHANNEL's own stamp seed (channelStampSeed(convId)) — stamp fallback
+   *  when there's no group image. Mirrors the channels tab so a profile's channel
+   *  cards render the CHANNEL avatar, not a member's (or the viewed peer's). */
   avatarAddress: string | null;
   memberCount: number;
   /** Homepage-parity fields, pulled from the SAME persisted channels cache the
@@ -81,7 +84,11 @@ async function resolveCommonChannels(peerAddress: string): Promise<CommonChannel
         title: typeof row.title === 'string' && row.title.trim()
           ? row.title.trim() : 'Group',
         avatarUri: typeof row.avatarUri === 'string' ? row.avatarUri : null,
-        avatarAddress: members[0] ?? null,
+        /** Mirror HomeScreen.helpers (avatarAddress): when there's no uploaded
+         *  group image, seed the stamp from the channel's own id so the row shows
+         *  the CHANNEL avatar — never a member's / the viewed peer's stamp. */
+        avatarAddress: (typeof row.avatarUri === 'string' && row.avatarUri)
+          ? null : channelStampSeed(row.convId),
         /** members excludes self → +1 for the local user. */
         memberCount: members.length + 1,
         lastTs: typeof row.lastTs === 'number' ? row.lastTs : null,
