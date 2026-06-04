@@ -31,7 +31,7 @@ const NET_LABEL: Record<number, string> = { 1: 'Ethereum', 11155111: 'Sepolia' }
 export default function WalletUnshield(): React.ReactElement {
   const router = useRouter();
   const params = useLocalSearchParams<{ symbol?: string; chainId?: string }>();
-  const { text: fg, primary: head, bg, border } = usePalette();
+  const { text: fg, link: head, bg, border, primary } = usePalette();
   const sub = fg;
   const inputBg = border;
   const dark = useEffectiveColorScheme() === 'dark';
@@ -111,7 +111,7 @@ export default function WalletUnshield(): React.ReactElement {
           disabled={!canSubmit} onPress={onSubmit}
           label={phase === 'proving' ? 'Proving…' : phase === 'broadcasting' ? 'Broadcasting…'
             : phase === 'done' ? 'Unshielded ✓' : 'Unshield to public'}
-          style={{ marginTop: 4 }} />
+          tintBg={primary} tintFg={bg} style={{ marginTop: 4 }} />
 
         <UnshieldPhaseLine pal={pal} phase={phase} txHash={txHash} err={err} bridgeOk={isBridgeAvailable()} chainId={chainId} />
       </ScrollView>

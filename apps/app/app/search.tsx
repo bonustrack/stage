@@ -24,7 +24,7 @@ import { SearchRow, getExistingPeers, looksLikeEns } from './search.helpers';
 
 export default function Search(): React.ReactElement {
   const router = useRouter();
-  const { text: fg, primary: head, bg, border, danger } = usePalette();
+  const { text: fg, link: head, bg, border, danger } = usePalette();
   const sub = fg;
   const rowBg = border;
   const insets = useSafeAreaInsets();

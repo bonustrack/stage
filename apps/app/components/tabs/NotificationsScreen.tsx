@@ -14,7 +14,7 @@ import { useRequestPreviews } from './useRequestPreviews';
 
 export function NotificationsScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
-  const { primary: head, text: sub, bg } = usePalette();
+  const { link: head, text: sub, bg } = usePalette();
   const router = useRouter();
   const requests = useRequestPreviews();
 

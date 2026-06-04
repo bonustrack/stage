@@ -6,7 +6,7 @@ import { Text } from '@metro-labs/kit/text';
 import { Box } from '../../components/layout';
 import { Button } from '@metro-labs/kit/button';
 import { Icon } from '@metro-labs/kit/icon';
-import { DANGER } from '../../lib/theme';
+import { DANGER, usePalette } from '../../lib/theme';
 import { explorerTxUrl } from '../../lib/railgun/networks';
 
 /** Public sends always broadcast on mainnet (send.public.ts pins chainId 1). */
@@ -32,12 +32,16 @@ export function SendHeader(props: {
 }
 
 export function SubmitButton(props: {
-  dark: boolean; busy: boolean; canSubmit: boolean; txState: TxState; onSubmit: () => void;
+  dark: boolean;
+  busy: boolean; canSubmit: boolean; txState: TxState; onSubmit: () => void;
 }): React.ReactElement {
   const { txState } = props;
+  const { primary, bg } = usePalette();
   return (
     <Button
       variant="primary"
+      tintBg={primary}
+      tintFg={bg}
       size="lg"
       fullWidth
       pill

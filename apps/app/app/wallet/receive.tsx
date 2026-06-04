@@ -23,7 +23,7 @@ import { ReceiveModeToggle, type ReceiveMode } from '../../components/wallet/Rec
 
 export default function WalletReceive(): React.ReactElement {
   const router = useRouter();
-  const { text: fg, primary: head, bg, border } = usePalette();
+  const { text: fg, link: head, bg, border } = usePalette();
   const sub = fg;
   const card = border;
   const insets = useSafeAreaInsets();

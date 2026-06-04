@@ -114,7 +114,7 @@ export function ProfileScreen({ address, variant, panRef }: {
             }}
             onPress={uri => { if (uri) setViewerUri(uri); }}
           />
-          <Text style={{ color: c.primary, fontSize: 20, fontFamily: 'Calibre-Semibold', marginTop: 14 }}>
+          <Text style={{ color: c.link, fontSize: 20, fontFamily: 'Calibre-Semibold', marginTop: 14 }}>
             {displayName}
           </Text>
           {addr ? (

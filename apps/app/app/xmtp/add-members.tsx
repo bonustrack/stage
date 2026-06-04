@@ -29,7 +29,7 @@ export default function AddMembers(): React.ReactElement {
   const router = useRouter();
   const { convId } = useLocalSearchParams<{ convId: string }>();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, primary: head, bg, border } = usePalette();
+  const { text: fg, link: head, bg, border, primary } = usePalette();
   const insets = useSafeAreaInsets();
 
   const picker = useMemberPicker();
@@ -86,6 +86,8 @@ export default function AddMembers(): React.ReactElement {
           loading={submitting}
           disabled={members.length === 0}
           onPress={() => { void onSubmit(); }}
+          tintBg={primary}
+          tintFg={bg}
           label={members.length > 0 ? `Add to group (${members.length})` : 'Add to group'}
         />
       </Box>

@@ -12,7 +12,7 @@ import { PollSheet } from './MessengerComposer.sheets';
 import { SignatureSheet, PaymentSheet } from './MessengerComposer.sheets-tx';
 import { ReplyBanner, MentionPopup, PendingRow } from './MessengerComposer.parts';
 import { ComposerEditor, AttachMenu, buildAttachActions } from './MessengerComposer.editor';
-import { DANGER } from '../lib/theme';
+import { DANGER, usePalette } from '../lib/theme';
 
 interface Props {
   dark: boolean;
@@ -46,11 +46,11 @@ interface Props {
 export function MessengerComposer({
   dark, xmtpLine, mentionCandidates, replyingTo, autoFocusNonce, onClearReply, onJumpToReply, onOptimistic, onSent,
 }: Props): React.ReactElement {
-  const fg = dark ? '#9f9fa3' : '#57606a';
-  const head = dark ? '#ffffff' : '#000000';
-  const sub = dark ? '#7a7a7e' : '#8a929d';
-  const inputBg = dark ? '#282a2d' : '#e4e4e5';
-  const chipBg = dark ? '#282a2d' : '#e4e4e5';
+  const pal = usePalette(); // text/primary/border/bg ← tokens
+  const fg = pal.text, head = pal.link, inputBg = pal.border, chipBg = pal.border;
+  // `sub` = muted/secondary text (placeholder, timestamps). No `muted` token
+  // exists yet, so map to `text` to keep it editable. TODO: dedicated muted token.
+  const sub = pal.text;
   const palette = { fg, sub, inputBg, chipBg };
 
   const [text, setText] = useState('');
@@ -121,7 +121,7 @@ export function MessengerComposer({
   const lastLabel = useLastAttachment();
   const quick = attachActions.find(([, label]) => label === lastLabel);
 
-  const bg = dark ? '#0e0f10' : '#ffffff';
+  const bg = pal.bg; // #0e0f10 / #ffffff
   return (
     <Col px={10} pt={0} pb={14} bg={bg}>
       {/** 24px fade sits directly above the composer; left/right -10 cancels the
@@ -149,7 +149,7 @@ export function MessengerComposer({
         </Text>
       ) : null}
       <ComposerEditor
-        dark={dark} fg={fg} head={head} sub={sub} inputBg={inputBg} chipBg={chipBg}
+        dark={dark} fg={fg} head={head} bg={bg} sub={sub} inputBg={inputBg} chipBg={chipBg}
         recording={recording} levels={levels} recordSecs={recordSecs}
         slideX={slideX} slideThresholdPx={SLIDE_CANCEL_THRESHOLD_PX} micPanResponder={micPanResponder}
         text={text} setText={setText}

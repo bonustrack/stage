@@ -57,8 +57,8 @@ export function CommonChannels({ peerAddress, enabled, c }: {
           rendered as a single tab. */}
       <Row justify="start" align="center" gap={24} mx={16} mb={6}
         style={{ borderBottomWidth: 1, borderBottomColor: c.border }}>
-        <Pressable style={{ paddingVertical: 10, marginBottom: -1, borderBottomWidth: 2, borderBottomColor: c.primary }}>
-          <Text style={{ color: c.primary, fontSize: 18, fontFamily: 'Calibre-Semibold' }}>
+        <Pressable style={{ paddingVertical: 10, marginBottom: -1, borderBottomWidth: 2, borderBottomColor: c.link }}>
+          <Text style={{ color: c.link, fontSize: 18, fontFamily: 'Calibre-Semibold' }}>
             Channels
           </Text>
         </Pressable>

@@ -8,11 +8,12 @@ import { Text } from '@metro-labs/kit/text';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';
 import { Box, Row, Col } from './layout';
+import { usePalette } from '../lib/theme';
 import { ComposerGradient } from './ComposerGradient';
 import { RecordingBar } from './MessengerComposer.parts';
 
 interface EditorProps {
-  dark: boolean; fg: string; head: string; sub: string; inputBg: string; chipBg: string;
+  dark: boolean; fg: string; head: string; bg: string; sub: string; inputBg: string; chipBg: string;
   recording: boolean; levels: number[]; recordSecs: number;
   slideX: Animated.Value; slideThresholdPx: number; micPanResponder: PanResponderInstance;
   text: string; setText: (v: string) => void;
@@ -29,7 +30,8 @@ interface EditorProps {
 }
 
 export function ComposerEditor(p: EditorProps): React.ReactElement {
-  const { dark, fg, head, sub, inputBg, chipBg, recording } = p;
+  const { dark, fg, head, bg, sub, inputBg, chipBg, recording } = p;
+  const { primary } = usePalette();
   const Btn = ({ icon, onPress, mr }: { icon: HeroIconName; onPress: () => void; mr?: number }): React.ReactElement => (
     <Pressable onPress={onPress} style={({ pressed }) => ({
       width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
@@ -107,8 +109,9 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
             size="md"
             pill
             dark={dark}
+            tintBg={primary}
             onPress={p.onStopRec}
-            icon={<Icon name="check" size={20} color={dark ? '#000' : '#fff'} />}
+            icon={<Icon name="check" size={20} color={bg} />}
           />
         ) : (
           <Button
@@ -117,8 +120,9 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
             pill
             dark={dark}
             disabled={!p.canSend}
+            tintBg={primary}
             onPress={p.onSend}
-            icon={<Icon name="send" size={20} color={dark ? '#000' : '#fff'} />}
+            icon={<Icon name="send" size={20} color={bg} />}
           />
         )}
       </Row>

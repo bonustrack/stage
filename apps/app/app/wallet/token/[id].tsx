@@ -43,7 +43,7 @@ function parseRow(raw: string | undefined): AssetRow | null {
 export default function TokenDetail(): React.ReactElement {
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string; row?: string }>();
-  const { primary: head, text: sub, bg, border } = usePalette();
+  const { link: head, text: sub, bg, border } = usePalette();
   const dark = useEffectiveColorScheme() === 'dark';
   const insets = useSafeAreaInsets();
 

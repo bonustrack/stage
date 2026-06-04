@@ -12,6 +12,10 @@ import {
   type ThemePreference,
 } from '@metro-labs/kit/theme';
 import { semanticColors, semanticPalette } from '@metro-labs/kit/tokens';
+import {
+  getOverrides, loadOverrides, subscribe as subscribeOverrides,
+  type TokenKey,
+} from './colorOverrides';
 
 export type { ThemePreference };
 
@@ -76,23 +80,43 @@ export function useEffectiveColorScheme(): 'light' | 'dark' {
 /** The 5-key scheme-aware palette shared by every screen's inline StyleSheet.
  *  Maps 1:1 to the canonical kit semantic tokens (single source of truth:
  *  @metro-labs/kit/tokens) — no app-local color forks. `text` = body text,
- *  `primary` = titles/strong (white/black), `link` = brand teal. */
+ *  `link` = emphasis (titles/names/active icons/accents — brand teal),
+ *  `primary` = primary-button background fill ONLY (white/black). */
 export interface Palette {
   bg: string; border: string; text: string; link: string; primary: string;
   danger: string; success: string;
 }
 
-/** Resolve the shared palette for the effective color scheme, sourced entirely
- *  from the kit semantic tokens. */
+/** Subscribe a screen to color-override changes so edits on the Kit page
+ *  re-theme the whole app live. Returns a monotonically-bumped version that
+ *  forces a re-render whenever overrides load/change/reset. */
+function useOverridesVersion(): number {
+  const [v, setV] = useState(0);
+  useEffect(() => {
+    loadOverrides();
+    const unsub = subscribeOverrides(() => setV((n) => n + 1));
+    return unsub;
+  }, []);
+  return v;
+}
+
+/** Resolve the shared palette for the effective color scheme. Each token is the
+ *  user's persisted override (if any, for the active scheme) layered OVER the
+ *  canonical kit default — making the whole app re-theme live when the Kit page
+ *  edits a token. Reactive to BOTH theme changes and override changes. */
 export function usePalette(): Palette {
-  const s = semanticPalette(useEffectiveColorScheme());
+  const scheme = useEffectiveColorScheme();
+  useOverridesVersion(); // re-render on override load/edit/reset
+  const s = semanticPalette(scheme);
+  const ov = getOverrides();
+  const pick = (key: TokenKey, def: string): string => ov[key]?.[scheme] ?? def;
   return {
-    bg: s.bgColor,
-    border: s.borderColor,
-    text: s.textColor,
-    link: s.linkColor,
-    primary: s.primaryColor,
-    danger: s.dangerColor,
-    success: s.successColor,
+    bg: pick('bg', s.bgColor),
+    border: pick('border', s.borderColor),
+    text: pick('text', s.textColor),
+    link: pick('link', s.linkColor),
+    primary: pick('primary', s.primaryColor),
+    danger: pick('danger', s.dangerColor),
+    success: pick('success', s.successColor),
   };
 }

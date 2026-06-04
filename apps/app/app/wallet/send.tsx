@@ -28,7 +28,7 @@ export default function WalletSend(): React.ReactElement {
   /** `to` may be pre-populated by callers (e.g. the profile Send button passes
    *  `?to=<address>`) — seed the input so the user doesn't retype. */
   const params = useLocalSearchParams<{ to?: string; mode?: string; symbol?: string; chainId?: string }>();
-  const { text: fg, primary: head, bg, border } = usePalette();
+  const { text: fg, link: head, bg, border } = usePalette();
   const sub = fg;
   const inputBg = border;
   const dark = useEffectiveColorScheme() === 'dark';
@@ -54,7 +54,7 @@ export default function WalletSend(): React.ReactElement {
         <SendModeToggle pal={pal} mode={sendMode} setMode={setSendMode} />
 
         {sendMode === 'shield' ? (
-          <ShieldForm pal={pal} dark={dark} zkAddress={privSnapshot?.zkAddress ?? null}
+          <ShieldForm pal={pal} dark={dark} bg={bg} zkAddress={privSnapshot?.zkAddress ?? null}
             initialSymbol={initialSymbol} initialChainId={initialChainId && Number.isFinite(initialChainId) ? initialChainId : undefined} />
         ) : (
           <>
