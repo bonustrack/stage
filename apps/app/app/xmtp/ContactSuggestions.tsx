@@ -23,7 +23,7 @@ export function ContactSuggestions({
   selected: Set<string>;
   onToggle: (contact: Contact) => void;
 }): React.ReactElement | null {
-  const { primary: head, text: sub, border, primary } = usePalette();
+  const { link: head, text: sub, border } = usePalette();
   if (contacts.length === 0) return null;
 
   return (
@@ -66,8 +66,8 @@ export function ContactSuggestions({
                 justify="center"
                 style={{
                   width: 24, height: 24, borderRadius: 12, borderWidth: 2,
-                  borderColor: isSelected ? primary : border,
-                  backgroundColor: isSelected ? primary : 'transparent',
+                  borderColor: isSelected ? head : border,
+                  backgroundColor: isSelected ? head : 'transparent',
                 }}
               >
                 {isSelected && <Icon name="check" size={14} color="#fff" />}

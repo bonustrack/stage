@@ -33,7 +33,7 @@ export function GitHubLinkCard({ url }: {
   const pal = usePalette();
   if (!ref || !meta) return null;
 
-  const fg = pal.primary; // #ffffff / #000000
+  const fg = pal.link; // #ffffff / #000000
   // muted metadata text; no `muted` token yet → map to `text`. TODO: muted token.
   const subColor = pal.text;
   const border = pal.border; // #282a2d / #e4e4e5

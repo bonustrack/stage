@@ -25,7 +25,7 @@ export default function TabsLayout(): React.ReactElement {
   const pal = usePalette();
   const bg = pal.bg; // #0e0f10 / #ffffff
   const border = pal.border; // #282a2d / #e4e4e5
-  const active = pal.primary; // #ffffff / #000000
+  const active = pal.link; // #ffffff / #000000
   // inactive nav icon = muted; no `muted` token yet → map to `text`. TODO: muted token.
   const inactive = pal.text;
 

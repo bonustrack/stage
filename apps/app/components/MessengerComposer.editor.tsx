@@ -107,8 +107,6 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
             size="md"
             pill
             dark={dark}
-            tintBg={head}
-            tintFg={bg}
             onPress={p.onStopRec}
             icon={<Icon name="check" size={20} color={bg} />}
           />
@@ -118,8 +116,6 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
             size="md"
             pill
             dark={dark}
-            tintBg={head}
-            tintFg={bg}
             disabled={!p.canSend}
             onPress={p.onSend}
             icon={<Icon name="send" size={20} color={bg} />}

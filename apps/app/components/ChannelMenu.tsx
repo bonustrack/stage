@@ -58,7 +58,7 @@ export function ChannelMenu({
   const router = useRouter();
   const pal = usePalette();
   const fg = pal.text;
-  const head = pal.primary;
+  const head = pal.link;
   const danger = pal.danger;
 
   const run = (fn: () => void): void => { onClose(); fn(); };

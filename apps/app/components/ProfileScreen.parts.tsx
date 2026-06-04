@@ -57,14 +57,14 @@ export function ProfileHeader({ variant, insetTop, isSelf, onBack, onMenu, c }: 
     }}>
       {variant === 'route' ? (
         <Pressable onPress={onBack} hitSlop={10} style={{ padding: 6 }}>
-          <Icon name="arrowLeft" size={22} color={c.primary} />
+          <Icon name="arrowLeft" size={22} color={c.link} />
         </Pressable>
       ) : (
-        <Text style={{ color: c.primary, fontSize: 22, fontFamily: 'Calibre-Semibold' }}>Profile</Text>
+        <Text style={{ color: c.link, fontSize: 22, fontFamily: 'Calibre-Semibold' }}>Profile</Text>
       )}
       {isSelf ? (
         <Pressable onPress={onMenu} hitSlop={8} style={{ padding: 6 }}>
-          <Icon name="dotsHorizontal" size={22} color={c.primary} />
+          <Icon name="dotsHorizontal" size={22} color={c.link} />
         </Pressable>
       ) : null}
     </Box>
@@ -112,13 +112,13 @@ export function ProfileActions({ dark, opening, onMessage, onSend, c }: {
         dark={dark}
         onPress={onPress}
         disabled={disabled}
-        icon={<Icon name={icon} size={22} color={c.primary} />}
+        icon={<Icon name={icon} size={22} color={c.link} />}
         // Override the kit's static secondary fill with the live `border` palette
         // token so the circle reacts to theme/colour overrides like the rest of
         // the design system (ChannelRow rowBg = border).
         style={{ backgroundColor: c.border, borderColor: c.border }}
       />
-      <Text style={{ color: c.primary, fontSize: 14, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{label}</Text>
+      <Text style={{ color: c.link, fontSize: 14, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{label}</Text>
     </Box>
   );
   return (
@@ -150,8 +150,8 @@ export function EditMenu({ visible, top, onClose, onEdit, c }: {
               backgroundColor: pressed ? c.border : 'transparent',
             })}
           >
-            <Icon name="pencil" size={18} color={c.primary} />
-            <Text style={{ color: c.primary, fontSize: 15, fontFamily: 'Calibre-Medium' }}>Edit profile</Text>
+            <Icon name="pencil" size={18} color={c.link} />
+            <Text style={{ color: c.link, fontSize: 15, fontFamily: 'Calibre-Medium' }}>Edit profile</Text>
           </Pressable>
         </Box>
       </Pressable>
