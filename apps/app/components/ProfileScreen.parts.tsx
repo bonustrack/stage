@@ -113,6 +113,10 @@ export function ProfileActions({ dark, opening, onMessage, onSend, c }: {
         onPress={onPress}
         disabled={disabled}
         icon={<Icon name={icon} size={22} color={c.primary} />}
+        // Override the kit's static secondary fill with the live `border` palette
+        // token so the circle reacts to theme/colour overrides like the rest of
+        // the design system (ChannelRow rowBg = border).
+        style={{ backgroundColor: c.border, borderColor: c.border }}
       />
       <Text style={{ color: c.primary, fontSize: 14, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{label}</Text>
     </Box>

@@ -43,8 +43,9 @@ interface Palette { head: string; sub: string; border: string; bg: string; card:
  *  (`size="xl"`, `variant="secondary"` = rowBg fill + border), with the text
  *  label as a separate <Text> BELOW the circle. The four actions (Send /
  *  Receive / Swap / Buy) sit LEFT-aligned on a single row, centered columns. */
-export function Btn({ icon, label, onPress, head, dark }: {
-  icon: HeroIconName; label: string; onPress: () => void; head: string; dark: boolean;
+export function Btn({ icon, label, onPress, head, border, dark }: {
+  icon: HeroIconName; label: string; onPress: () => void;
+  head: string; border: string; dark: boolean;
 }): React.ReactElement {
   return (
     <Col align="center" gap={6}>
@@ -55,6 +56,10 @@ export function Btn({ icon, label, onPress, head, dark }: {
         dark={dark}
         onPress={onPress}
         icon={<Icon name={icon} size={26} color={head} />}
+        // Override the kit's static secondary fill with the live `border` palette
+        // token so the circle reacts to theme/colour overrides like the rest of
+        // the design system (ChannelRow rowBg = border).
+        style={{ backgroundColor: border, borderColor: border }}
       />
       <Text style={{ color: head, fontSize: 14, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{label}</Text>
     </Col>
