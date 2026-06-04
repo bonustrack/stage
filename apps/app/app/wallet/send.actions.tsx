@@ -32,16 +32,12 @@ export function SendHeader(props: {
 }
 
 export function SubmitButton(props: {
-  dark: boolean;
-  busy: boolean; canSubmit: boolean; txState: TxState; onSubmit: () => void;
+  dark: boolean; busy: boolean; canSubmit: boolean; txState: TxState; onSubmit: () => void;
 }): React.ReactElement {
   const { txState } = props;
-  const { primary, bg } = usePalette();
   return (
     <Button
       variant="primary"
-      tintBg={primary}
-      tintFg={bg}
       size="lg"
       fullWidth
       pill
@@ -62,6 +58,7 @@ export function TxStatus(props: {
   sub: string; txState: TxState; txHash: Hex | null; txErr: string | null;
 }): React.ReactElement {
   const { sub, txState, txHash, txErr } = props;
+  const { link } = usePalette();
   return (
     <>
       {/* Tx status: hash link once broadcast, plus errors. */}
@@ -71,7 +68,7 @@ export function TxStatus(props: {
             {txState === 'confirmed' ? 'Confirmed' : 'Pending'}
           </Text>
           <Pressable onPress={() => Linking.openURL(explorerTxUrl(PUBLIC_SEND_CHAIN, txHash))} hitSlop={6}>
-            <Text style={{ color: '#c0a06e', fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+            <Text style={{ color: link, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
               {txHash.slice(0, 10)}…{txHash.slice(-8)}
             </Text>
           </Pressable>
