@@ -23,7 +23,7 @@ import { Icon } from '@metro-labs/kit/icon';
 import { useRouter } from 'expo-router';
 import { Col } from './layout';
 import { AppModal } from './AppModal';
-import { DANGER, useEffectiveColorScheme, usePalette } from '../lib/theme';
+import { usePalette } from '../lib/theme';
 import { markConvRead, markConvUnread } from '../lib/channelsCache';
 import { togglePin } from '../lib/pins';
 import { leaveGroupConv, lineOfConv } from '../lib/xmtp';
@@ -56,12 +56,10 @@ export function ChannelMenu({
   visible, onClose, context = 'list', onAfterLeave,
 }: ChannelMenuProps): React.ReactElement {
   const router = useRouter();
-  const dark = useEffectiveColorScheme() === 'dark';
   const pal = usePalette();
-  const fg = pal.text; // #9f9fa3 / #57606a
-  const sub = dark ? '#7a7a7e' : '#8a929d'; // one-off sub-grey, no token
-  const head = pal.primary; // #ffffff / #000000
-  const danger = DANGER;
+  const fg = pal.text;
+  const head = pal.primary;
+  const danger = pal.danger;
 
   const run = (fn: () => void): void => { onClose(); fn(); };
 
@@ -96,7 +94,7 @@ export function ChannelMenu({
       <Col gap={4}>
         {title ? (
           <Text
-            style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', paddingHorizontal: 4, paddingBottom: 6 }}
+            style={{ color: head, fontSize: 13, fontFamily: 'Calibre-Medium', paddingHorizontal: 4, paddingBottom: 6 }}
             numberOfLines={1}
           >
             {title}
