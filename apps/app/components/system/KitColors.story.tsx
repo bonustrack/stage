@@ -9,14 +9,10 @@ import { Text } from '@metro-labs/kit/text';
 import { usePalette, type Palette } from '../../lib/theme';
 import { type ControlPalette } from './KitControls';
 
-/** The palette keys in display order — typed against Palette so it can never
- *  drift from the actual shape (a missing/extra key fails the typecheck). */
-const COLOR_KEYS: ReadonlyArray<keyof Palette> = [
-  'fg', 'head', 'sub', 'bg', 'border', 'rowBg',
-];
-
-/** The 5 canonical semantic tokens (single source of truth in kit/tokens),
- *  shown with their public `*-color` names. */
+/** The 5 canonical palette keys in display order, with their public `*-color`
+ *  names — typed against Palette so it can never drift from the actual shape
+ *  (a missing/extra key fails the typecheck). Single source of truth lives in
+ *  @metro-labs/kit/tokens; lib/theme.ts `Palette` maps 1:1 onto it. */
 const TOKEN_ROWS: ReadonlyArray<readonly [label: string, key: keyof Palette]> = [
   ['bg-color', 'bg'],
   ['border-color', 'border'],
@@ -54,15 +50,7 @@ export function KitColorsStory({ p }: { p: ControlPalette }): React.ReactElement
   return (
     <Box>
       <Text dark={p.dark} color={p.sub} variant="caption" weight="medium" style={{ marginTop: 16 }}>
-        {`${COLOR_KEYS.length} palette colors · active theme`}
-      </Text>
-      <Box mt={2}>
-        {COLOR_KEYS.map((key) => (
-          <Swatch key={key} name={key} value={palette[key]} p={p} />
-        ))}
-      </Box>
-      <Text dark={p.dark} color={p.sub} variant="caption" weight="medium" style={{ marginTop: 24 }}>
-        {`${TOKEN_ROWS.length} canonical tokens · @metro-labs/kit`}
+        {`${TOKEN_ROWS.length} canonical tokens · @metro-labs/kit · active theme`}
       </Text>
       <Box mt={2}>
         {TOKEN_ROWS.map(([label, key]) => (
