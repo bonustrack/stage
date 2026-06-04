@@ -6,6 +6,7 @@
 
 import type { ReactNode } from 'react';
 import { Modal, Pressable, ScrollView } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Title } from '@metro-labs/kit/title';
 import { Box } from './layout';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -28,6 +29,10 @@ export function AppModal({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      {/* RN <Modal> renders in its OWN native window the app-root
+          GestureHandlerRootView does NOT cover — without this wrapper every
+          GestureDetector inside (the ColorPicker sliders) is silently dead. */}
+      <GestureHandlerRootView style={{ flex: 1 }}>
       <Pressable
         onPress={onClose}
         style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}
@@ -65,6 +70,7 @@ export function AppModal({
           </ScrollView>
         </Pressable>
       </Pressable>
+      </GestureHandlerRootView>
     </Modal>
   );
 }

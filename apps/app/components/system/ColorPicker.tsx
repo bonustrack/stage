@@ -20,23 +20,24 @@ function Track({ colors, thumb, onFraction, p }: {
   colors: string[]; thumb: number;
   onFraction: (f: number) => void; p: ControlPalette;
 }): React.ReactElement {
-  // Track width measured once via onLayout; the gesture's `x` is relative to
-  // the GestureDetector view (the whole track), so fraction is reliable
-  // mid-drag — unlike PanResponder's per-child `locationX`.
+  // Track width measured via onLayout; the gesture's `x` is relative to the
+  // GestureDetector view (the whole track), so fraction is reliable mid-drag.
+  // Default 1 (not 0) avoids a divide-by-zero no-move before first layout.
   const widthRef = useRef(1);
   const emit = (x: number): void => {
     onFraction(Math.max(0, Math.min(1, x / widthRef.current)));
   };
   const gesture = useMemo(() => {
-    // activeOffsetX:0 claims the drag immediately so it works from rest and
-    // doesn't lose the first touch to a parent ScrollView in the modal.
+    // minDistance(0) → the pan activates on the very first touch with zero
+    // threshold (works from rest, no "drag a bit first"). It also emits on
+    // onBegin so a plain tap registers. The parent ScrollView only scrolls
+    // vertically, so a horizontal/zero-distance pan here wins the first touch.
     const pan = Gesture.Pan()
-      .activeOffsetX(0)
+      .minDistance(0)
       .shouldCancelWhenOutside(false)
       .onBegin((e) => { runOnJS(emit)(e.x); })
       .onUpdate((e) => { runOnJS(emit)(e.x); });
-    const tap = Gesture.Tap().onEnd((e) => { runOnJS(emit)(e.x); });
-    return Gesture.Race(pan, tap);
+    return pan;
   }, [onFraction]);
   // Stepped gradient via N stacked flex slices (no native gradient dep).
   return (
