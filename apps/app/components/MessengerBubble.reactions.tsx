@@ -5,6 +5,7 @@ import { Pressable } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Row, Box } from './layout';
 import { REACT_PRESETS } from './MessengerBubble.helpers';
+import { usePalette } from '../lib/theme';
 
 /** Confirmed + optimistic reaction pills. Returns null when there's nothing to
  *  show. Tapping/long-pressing any pill toggles that emoji as the user's own. */
@@ -18,6 +19,7 @@ export function ReactionsRow({
   sub: string; pillBg: string; dark: boolean;
   onReact?: (emoji: string) => void;
 }): React.ReactElement | null {
+  const { link } = usePalette();
   /** Only show a pending pill for an emoji the live stream hasn't yet confirmed —
    *  guards the in-between frame so we never render confirmed + pending together. */
   const pendingEmojis = (pendingReactions ?? []).filter(e => !reactions?.has(e));
@@ -43,7 +45,7 @@ export function ReactionsRow({
           flexDirection: 'row' as const, alignItems: 'center' as const, gap: 4,
           paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, backgroundColor: pillBg,
           borderWidth: mine ? 1 : 0,
-          borderColor: mine ? (dark ? '#7aa2ff' : '#2f6feb') : 'transparent',
+          borderColor: mine ? link : 'transparent',
         };
         return onReact ? (
           <Pressable
