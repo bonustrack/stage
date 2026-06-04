@@ -19,7 +19,9 @@
 
 import { accounts, loadAccounts, tg, type Account } from './accounts.js';
 import { emit } from './wire.js';
-import { emitInbound, envelope, reactionEnvelope, type TgMsg, type TgReaction } from './format.js';
+import {
+  emitInbound, envelope, reactionEnvelope, saveMediaAndEmit, type TgMsg, type TgReaction,
+} from './format.js';
 import { handleCall } from './actions.js';
 
 let buf = '';
@@ -52,7 +54,11 @@ async function runAccount(acct: Account): Promise<void> {
         { offset: acct.offset, timeout: 25, allowed_updates: ['message', 'message_reaction'] }, 60_000);
       for (const u of updates) {
         acct.offset = u.update_id + 1;
-        if (u.message && !u.message.from?.is_bot) emitInbound(emit, id, envelope(id, u.message));
+        if (u.message && !u.message.from?.is_bot) {
+          const env = envelope(id, u.message);
+          emitInbound(emit, id, env);
+          saveMediaAndEmit(emit, id, u.message, env.id as string);
+        }
         if (u.message_reaction) {
           const env = reactionEnvelope(id, u.message_reaction);
           if (env) emitInbound(emit, id, env);
