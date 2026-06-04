@@ -139,18 +139,19 @@ export default function RootLayout(): React.ReactElement {
       <StatusBar style={barStyle} translucent backgroundColor="transparent" />
       {/** react-native-screens native-stack (via NativeSwipeStack/withLayoutContext).
        *
-       *   TRUE interactive swipe-back on BOTH platforms via rn-screens' own
+       *   TRUE interactive swipe-back on BOTH platforms via rn-screens' OWN
+       *   native-stack (`react-native-screens/native-stack`, grafted onto
+       *   expo-router in components/NativeSwipeStack) with
        *   `goBackGesture: 'swipeRight'` + `screenEdgeGesture: true`. This is a
        *   Reanimated worklet that natively parallaxes the PREVIOUS screen in
        *   underneath the finger (`ScreenTransition.SwipeRight`) — the real
        *   Telegram/iOS look, not a flat JS translate over a backdrop.
        *
-       *   HISTORY: on rn-screens 4.16 this worklet crashed on Android
-       *   (`measure()` on a mocked ScreenGestureDetector ref →
-       *   "Value is undefined, expected an Object"), so it was temporarily
-       *   replaced with JS Pan shims (EdgeSwipeBack + xmtp-conv/BackSwipe). That
-       *   crash was fixed upstream after 4.16; we're now on ~4.25.2, so the
-       *   native gesture is restored and the JS shims are removed.
+       *   This is the historical d3d2e29 setup on rn-screens 4.16: @react-
+       *   navigation/native-stack v7 does NOT wire `goBackGesture`, so it only
+       *   yields a non-interactive pop; rn-screens' own native-stack JS API
+       *   (present in 4.16, removed in v4.25+) is the only path to the
+       *   finger-tracking reveal.
        *
        *   `screenEdgeGesture: true` scopes the gesture to the left screen edge so
        *   it never competes with in-screen horizontal intent (the leftward
@@ -167,20 +168,18 @@ export default function RootLayout(): React.ReactElement {
           contentStyle: { backgroundColor: dark ? '#0e0f10' : '#ffffff' },
           statusBarStyle: barStyle,
           /** Pushed routes slide in from the right with the previous page
-           *  parallaxing underneath; an interactive left-edge swipe pops them. */
-          animation: 'slide_from_right',
-          /** native-stack v7 interactive swipe-back: fullScreenGestureEnabled
-           *  gives the finger-following parallax pop (previous page slides under
-           *  on the native thread); gestureEnabled keeps the back gesture on. */
-          fullScreenGestureEnabled: true,
-          gestureEnabled: true,
+           *  parallaxing in underneath; an interactive left-edge swipe pops them
+           *  with the previous screen revealed under the finger. */
+          stackAnimation: 'slide_from_right',
+          goBackGesture: 'swipeRight',
+          screenEdgeGesture: true,
         }}
       >
         {/** Tab root: no back gesture (it's the bottom of the stack — nothing to
          *  pop to) and no slide animation. */}
         <NativeSwipeStack.Screen
           name="(tabs)"
-          options={{ animation: 'none', gestureEnabled: false, fullScreenGestureEnabled: false }}
+          options={{ stackAnimation: 'none', goBackGesture: undefined, screenEdgeGesture: false }}
         />
       </NativeSwipeStack>
       </KeyboardProvider>

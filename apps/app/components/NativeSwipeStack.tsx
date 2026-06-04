@@ -1,29 +1,38 @@
-/** Expo-Router layout bound to the native-stack navigator.
+/** Interactive native-stack with a true swipe-back gesture.
  *
- *  HISTORY: this used to import from `react-native-screens/native-stack`, but
- *  rn-screens v4 REMOVED its own native-stack JS API (it was deprecated in v6
- *  and v4 supports only `@react-navigation/native-stack` v7 — see rn-screens
- *  README). So the import is now `@react-navigation/native-stack`, which renders
- *  through rn-screens under the hood.
+ *  expo-router's default `Stack` renders through @react-navigation/native-stack,
+ *  whose 7.x build does NOT wire react-native-screens' `goBackGesture` /
+ *  `screenEdgeGesture` — so there's no interactive, finger-tracking swipe-back
+ *  (the previous page sliding underneath your thumb).
  *
- *  The interactive, finger-following parallax swipe-back (previous page sliding
- *  underneath on the native thread — the real iOS/Telegram look) is still
- *  native: on native-stack v7 it's driven by `fullScreenGestureEnabled` +
- *  `gestureEnabled` (set in app/_layout.tsx), wired into the RNGH gesture tree
- *  by `GestureDetectorProvider` so it arbitrates cleanly with the app's other
- *  RNGH gestures (swipe-to-reply, scroll) instead of fighting a separate touch
- *  system.
+ *  react-native-screens ships its OWN native-stack navigator
+ *  (`react-native-screens/native-stack`) which DOES support those options. It's
+ *  marked "deprecated" upstream but remains fully functional in 4.16 and is the
+ *  only path to the reanimated-driven interactive pop. We graft it onto
+ *  expo-router via `withLayoutContext` — the exact mechanism expo-router
+ *  documents for swapping in a custom React Navigation navigator — so file-based
+ *  routing keeps working everywhere; only the underlying navigator changes.
  *
- *  `withLayoutContext` is the expo-router primitive that adapts any react-
- *  navigation navigator into a file-based-routing layout, so `<NativeSwipeStack>`
- *  + `<NativeSwipeStack.Screen>` work exactly like `<Stack>` / `<Stack.Screen>`.
- *
- *  Must be rendered inside `GestureDetectorProvider`
- *  (react-native-screens/gesture-handler). */
+ *  The gesture itself is a reanimated worklet (requires Fabric / new arch, which
+ *  this app enables) driven by `GestureDetectorProvider` mounted at the root.
+ *  `goBackGesture: 'swipeRight'` auto-selects `ScreenTransition.SwipeRight`, so
+ *  the previous screen parallaxes in underneath the finger natively. We scope it
+ *  to a left-edge zone via `screenEdgeGesture: true` so it never competes with
+ *  in-screen horizontal intent (e.g. the leftward swipe-to-reply on bubbles). */
 
+import { createNativeStackNavigator } from 'react-native-screens/native-stack';
 import { withLayoutContext } from 'expo-router';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 const { Navigator } = createNativeStackNavigator();
 
+/** expo-router-aware native-stack that honors `goBackGesture`/`screenEdgeGesture`.
+ *  Use exactly like expo-router's `<Stack>` (same `<Stack.Screen>` children).
+ *
+ *  Generics are left to inference: the react-navigation core packages
+ *  (`@react-navigation/native` etc.) live nested under expo-router/rn-screens in
+ *  the bun store and aren't directly resolvable from this workspace, so importing
+ *  their named types here would break module resolution. `withLayoutContext`
+ *  infers everything it needs from the `Navigator` component. `Screen.options`
+ *  (incl. `goBackGesture`/`screenEdgeGesture`/`stackAnimation`) is still fully
+ *  type-checked because those props come from the rn-screens Navigator itself. */
 export const NativeSwipeStack = withLayoutContext(Navigator);
