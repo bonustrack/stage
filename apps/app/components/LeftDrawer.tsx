@@ -48,9 +48,10 @@ export function LeftDrawer({ progress }: { progress: SharedValue<number> }): Rea
 
   const pal = usePalette();
   const head = pal.primary; // #ffffff / #000000
-  const sub = dark ? '#7a7a7e' : '#8a929d'; // one-off sub-grey, no token
+  // `sub` = muted secondary text; no `muted` token yet → map to `text`. TODO: muted token.
+  const sub = pal.text;
   const border = pal.border; // #282a2d / #e4e4e5
-  const sheetBg = dark ? '#1a1b1d' : '#ffffff'; // elevated sheet surface, no token
+  const sheetBg = pal.bg; // sidebar surface → bg token (editable)
 
   const [accounts, setAccounts] = useState<AccountRecord[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);

@@ -9,7 +9,7 @@ import { Modal, Pressable, ScrollView } from 'react-native';
 import { Title } from '@metro-labs/kit/title';
 import { Box } from './layout';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useEffectiveColorScheme } from '../lib/theme';
+import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { Icon } from '@metro-labs/kit/icon';
 
 export function AppModal({
@@ -22,9 +22,9 @@ export function AppModal({
 }): React.ReactElement {
   const insets = useSafeAreaInsets();
   const dark = useEffectiveColorScheme() === 'dark';
-  // Slightly elevated shade vs. the screen bg so the sheet reads as a surface.
-  const sheetBg = dark ? '#1a1b1d' : '#ffffff';
-  const head = dark ? '#ffffff' : '#000000';
+  const pal = usePalette();
+  const sheetBg = pal.bg; // sheet surface → bg token (editable)
+  const head = pal.primary; // #ffffff / #000000
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
