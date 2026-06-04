@@ -107,7 +107,7 @@ export function BridgePingProbe({ sub, border }: {
         dark={dark}
         onPress={() => { void onMethods(); }}
       />
-      <PingLog lines={log} sub={sub} />
+      <PingLog lines={log} sub={sub} border={border} />
     </Col>
   );
 }
