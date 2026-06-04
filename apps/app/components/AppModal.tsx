@@ -10,7 +10,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Title } from '@metro-labs/kit/title';
 import { Box } from './layout';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useEffectiveColorScheme, usePalette } from '../lib/theme';
+import { useEffectiveColorScheme, usePalette, useBlockRadius } from '../lib/theme';
 import { Icon } from '@metro-labs/kit/icon';
 
 export function AppModal({
@@ -25,7 +25,12 @@ export function AppModal({
   const dark = useEffectiveColorScheme() === 'dark';
   const pal = usePalette();
   const sheetBg = pal.bg; // sheet surface → bg token (editable)
-  const head = pal.primary; // #ffffff / #000000
+  const head = pal.link; // #ffffff / #000000
+  // Sheets are "blocks" → top corners follow the border-radius token. Bumped up
+  // a touch (×1.4) so the sheet edge stays visibly rounder than inline cards,
+  // preserving the bottom-sheet look at the 12px default. No hard cap so the
+  // radius variable keeps applying when cranked up (channel-menu et al.).
+  const sheetRadius = Math.round(useBlockRadius() * 1.4);
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -41,8 +46,8 @@ export function AppModal({
           onPress={e => e.stopPropagation()}
           style={{
             backgroundColor: sheetBg,
-            borderTopLeftRadius: 20,
-            borderTopRightRadius: 20,
+            borderTopLeftRadius: sheetRadius,
+            borderTopRightRadius: sheetRadius,
             paddingTop: title ? 14 : 18,
             paddingBottom: insets.bottom + 16,
             maxHeight: '88%',

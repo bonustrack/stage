@@ -17,6 +17,7 @@ import { Pressable, TextInput } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';
 import { Box } from '../../components/layout';
+import { usePalette } from '../../lib/theme';
 import { shieldToPrivate } from '../../lib/railgun/shield';
 import { isBridgeAvailable } from '../../lib/railgun/bridge';
 import { getActiveAccountId } from '../../lib/accounts';
@@ -50,6 +51,7 @@ export function ShieldForm({ pal, dark, bg, zkAddress, initialSymbol, initialCha
   initialSymbol?: 'ETH' | 'USDC'; initialChainId?: number;
 }): React.ReactElement {
   const { fg, head, sub, border, inputBg } = pal;
+  const { primary } = usePalette();
   const [symbol, setSymbol] = useState<'ETH' | 'USDC'>(initialSymbol ?? 'ETH');
   const [chainId, setChainId] = useState<number>(initialChainId ?? 11155111);
   const [amount, setAmount] = useState('');
@@ -142,10 +144,10 @@ export function ShieldForm({ pal, dark, bg, zkAddress, initialSymbol, initialCha
         </Box>
       </Box>
 
-      <Button variant="primary" size="lg" fullWidth pill dark={dark} tintBg={head} tintFg={bg} loading={busy}
+      <Button variant="primary" size="lg" fullWidth pill dark={dark} loading={busy}
         disabled={!canSubmit} onPress={onSubmit}
         label={busy ? 'Shielding…' : stage === 'done' ? 'Shielded ✓' : 'Shield to private'}
-        style={{ marginTop: 4 }} />
+        tintBg={primary} tintFg={bg} style={{ marginTop: 4 }} />
 
       <ShieldStepper stage={stage} pal={pal} />
       <ShieldPhaseLine pal={pal} txHash={txHash} err={err} bridgeOk={isBridgeAvailable()} chainId={chainId} />

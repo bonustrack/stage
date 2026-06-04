@@ -9,6 +9,7 @@ import { Icon } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';
 import { Box, Row, Col } from './layout';
 import { AppModal } from './AppModal';
+import { usePalette, useBlockRadius } from '../lib/theme';
 import { type Palette } from './MessengerComposer.helpers';
 
 export function PollSheet({
@@ -23,6 +24,8 @@ export function PollSheet({
   onSend: () => void;
 }): React.ReactElement {
   const { fg, sub, inputBg } = palette;
+  const { primary, bg } = usePalette();
+  const r = useBlockRadius();
   return (
     <AppModal visible={open} onClose={onClose} title="New poll">
       <Col gap={12} pb={8}>
@@ -31,7 +34,7 @@ export function PollSheet({
           onChangeText={setQuestion}
           placeholder="Question"
           placeholderTextColor={sub}
-          style={{ color: fg, backgroundColor: inputBg, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 16 }}
+          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 16 }}
         />
         <TextInput
           value={header}
@@ -40,7 +43,7 @@ export function PollSheet({
           placeholderTextColor={sub}
           maxLength={12}
           autoCapitalize="characters"
-          style={{ color: fg, backgroundColor: inputBg, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 14 }}
+          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 14 }}
         />
         {options.map((opt, i) => (
           <Row key={i} align="center" gap={8}>
@@ -49,7 +52,7 @@ export function PollSheet({
               onChangeText={t => setOptions(prev => prev.map((o, j) => (j === i ? t : o)))}
               placeholder={`Option ${i + 1}`}
               placeholderTextColor={sub}
-              style={{ flex: 1, color: fg, backgroundColor: inputBg, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 16 }}
+              style={{ flex: 1, color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 16 }}
             />
             {options.length > 2 ? (
               <Pressable onPress={() => setOptions(prev => prev.filter((_, j) => j !== i))} hitSlop={8}>
@@ -86,6 +89,8 @@ export function PollSheet({
           dark={dark}
           onPress={onSend}
           label="Send poll"
+          tintBg={primary}
+          tintFg={bg}
           style={{ marginTop: 4 }}
         />
       </Col>

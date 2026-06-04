@@ -43,6 +43,17 @@ import {
 
 export type { ButtonSize, ButtonVariant } from './button.styles';
 
+/** App-wide default corner radius for all buttons. Mutable module-level
+ *  state (framework-free, like the tint props pattern) so the app can wire the
+ *  persisted `radius` design token here once and have EVERY button follow it
+ *  without threading a prop through 20+ call sites. `pill` icon buttons follow
+ *  it too. Default 999 keeps the original fully-rounded/circular look. */
+let defaultButtonRadius = 999;
+export function setDefaultButtonRadius(r: number): void {
+  if (Number.isFinite(r) && r >= 0) defaultButtonRadius = r;
+}
+export function getDefaultButtonRadius(): number { return defaultButtonRadius; }
+
 export interface ButtonProps
   extends Omit<PressableProps, 'children' | 'style' | 'disabled'> {
   variant?: ButtonVariant;
@@ -55,9 +66,10 @@ export interface ButtonProps
   loading?: boolean;
   /** Stretch to the container width. */
   fullWidth?: boolean;
-  /** Circular icon-only button: square aspect (width = height for the size),
-   *  centered icon, no horizontal padding. For icon-only usage. All buttons are
-   *  fully rounded regardless; `pill` additionally forces the square aspect. */
+  /** Square icon-only button: square aspect (width = height for the size),
+   *  centered icon, no horizontal padding. For icon-only usage. Corners follow
+   *  the radius token like every button — at the default 999 it's a full circle;
+   *  lower the token and it becomes a rounded-square icon button. */
   pill?: boolean;
   /** Node rendered before the label. */
   icon?: ReactNode;
@@ -72,6 +84,10 @@ export interface ButtonProps
   /** Override the label/icon colour — pass the contrasting palette token (e.g.
    *  `bg`) so it tracks `tintBg`. Falls back to the variant default. */
   tintFg?: string;
+  /** Corner radius for the button (including `pill`). Falls back to the app-wide
+   *  default set via `setDefaultButtonRadius` (the persisted `radius` token).
+   *  At the default 999 a square `pill` stays a full circle. */
+  radius?: number;
   /** Escape-hatch style merged onto the container last. */
   style?: ViewStyle;
   /** Escape-hatch style merged onto the label last. */
@@ -94,6 +110,7 @@ export function Button(props: ButtonProps): React.ReactElement {
     dark = false,
     tintBg,
     tintFg,
+    radius,
     style,
     textStyle,
     ...rest
@@ -140,8 +157,11 @@ export function Button(props: ButtonProps): React.ReactElement {
           // `pill` = circular icon-only: square aspect, no horizontal padding.
           width: pill ? spec.height : fullWidth ? '100%' : undefined,
           paddingHorizontal: pill ? 0 : spec.paddingHorizontal,
-          // Always fully rounded; 999 fully rounds at any height. `pill` => circle.
-          borderRadius: 999,
+          // All buttons (including `pill` icon buttons) follow the explicit
+          // `radius` prop, else the app-wide token default (setDefaultButtonRadius).
+          // At the default 999 a square `pill` button stays a full circle; lower
+          // the token and pills become rounded-squares like every other button.
+          borderRadius: radius ?? defaultButtonRadius,
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'center',

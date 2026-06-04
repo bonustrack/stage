@@ -14,7 +14,7 @@ import { Box } from './layout';
 import { useConvMeta } from '../lib/useConvMeta';
 import { usePeerProfiles, getPeerName, getPeerAvatar, getPeerAvatarCb, isPeerResolved } from '../lib/peerProfiles';
 import { channelStampSeed } from '@metro-labs/kit/avatar';
-import { usePalette } from '../lib/theme';
+import { usePalette, useBlockRadius } from '../lib/theme';
 import { shortAddress } from '../lib/xmtp';
 
 /** When `peerAddress` is set the link is a DM-by-address share
@@ -33,6 +33,7 @@ function ConvIdCard({ convId }: { convId: string }): React.ReactElement {
   const meta = useConvMeta(convId);
   usePeerProfiles([meta.peerAddr]);
   const { border } = usePalette();
+  const blockRadius = useBlockRadius();
 
   const isGroup = meta.isGroup;
   const peer = meta.peerAddr;
@@ -67,7 +68,7 @@ function ConvIdCard({ convId }: { convId: string }): React.ReactElement {
   };
 
   return (
-    <Box radius={14} style={{ borderWidth: 1, borderColor: border, overflow: 'hidden' }}>
+    <Box radius={blockRadius} style={{ borderWidth: 1, borderColor: border, overflow: 'hidden' }}>
       <ChannelRow
         title={title}
         subtitle={subtitle}

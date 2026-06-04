@@ -17,7 +17,7 @@ import {
 } from '../lib/profile';
 import { PROFILE_FIELD_LIMITS, getCacheHash } from '@metro-labs/client/profile/snapshot';
 import { setPeerProfile } from '../lib/peerProfiles';
-import { usePalette } from '../lib/theme';
+import { usePalette, useBlockRadius } from '../lib/theme';
 
 const AVATAR_SIZE = 96;
 
@@ -36,7 +36,8 @@ export default function EditProfileModal({
   onSaved: (next: SnapshotProfile) => void;
   address: string; initial: SnapshotProfile; dark: boolean;
 }): React.ReactElement {
-  const { text: fg, primary: head, bg, border } = usePalette();
+  const { text: fg, link: head, bg, border, primary } = usePalette();
+  const blockRadius = useBlockRadius();
   const sub = fg;
   const rowBg = border;
   const insets = useSafeAreaInsets();
@@ -127,7 +128,7 @@ export default function EditProfileModal({
                 multiline={f.multiline}
                 style={{
                   color: fg, backgroundColor: rowBg, borderColor: border, borderWidth: 1,
-                  borderRadius: 12, padding: 12, fontSize: 14,
+                  borderRadius: blockRadius, padding: 12, fontSize: 14,
                   minHeight: f.multiline ? 80 : undefined,
                   textAlignVertical: f.multiline ? 'top' : 'center',
                 }}
@@ -140,11 +141,11 @@ export default function EditProfileModal({
             size="lg"
             fullWidth
             dark={dark}
-            tintBg={head}
-            tintFg={bg}
             disabled={saving || uploading}
             onPress={() => { void save(); }}
             label={saving ? 'Saving…' : 'Save'}
+            tintBg={primary}
+            tintFg={bg}
             style={{ marginTop: 16 }}
             textStyle={{ fontFamily: 'Calibre-Medium' }}
           />

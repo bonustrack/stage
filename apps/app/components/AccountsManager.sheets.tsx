@@ -10,7 +10,7 @@ import { flash } from '../lib/toast';
 import { shortAddress } from '../lib/xmtp';
 import { canExportPrivateKey, type AccountRecord } from '../lib/accounts';
 import { SheetModal, SheetButton } from './AccountsManager.parts';
-import { DANGER } from '../lib/theme';
+import { DANGER, usePalette } from '../lib/theme';
 
 interface Pal { head: string; sub: string; border: string; sheetBg: string; }
 
@@ -32,6 +32,7 @@ export function ImportSheet({ visible, onClose, importText, setImportText, setIm
   importText: string; setImportText: (t: string) => void; setImportErr: (e: string) => void;
   importErr: string; onImport: () => void; dark: boolean; p: Pal;
 }): React.ReactElement {
+  const { primary, bg } = usePalette();
   return (
     <SheetModal visible={visible} onClose={onClose} bg={p.sheetBg} border={p.border} title="Import private key" head={p.head}>
       <TextInput
@@ -67,6 +68,8 @@ export function ImportSheet({ visible, onClose, importText, setImportText, setIm
           disabled={!importText.trim()}
           onPress={onImport}
           label="Import"
+          tintBg={primary}
+          tintFg={bg}
           style={{ flex: 1 }}
         />
       </Box>
@@ -102,6 +105,7 @@ export function ManageSheet({ manageRec, activeId, onClose, onSwitch, onExport, 
 export function ExportSheet({ revealPk, onClose, dark, p }: {
   revealPk: string | null; onClose: () => void; dark: boolean; p: Pal;
 }): React.ReactElement {
+  const { primary, bg } = usePalette();
   return (
     <SheetModal visible={revealPk !== null} onClose={onClose} bg={p.sheetBg} border={p.border} head={p.head} title="Private key">
       <Text style={{ color: DANGER, fontSize: 12, fontFamily: 'Calibre-Medium', marginBottom: 8 }}>
@@ -121,6 +125,8 @@ export function ExportSheet({ revealPk, onClose, dark, p }: {
         dark={dark}
         onPress={() => { if (revealPk) { void Clipboard.setStringAsync(revealPk); flash('Private key copied'); } }}
         label="Copy to clipboard"
+        tintBg={primary}
+        tintFg={bg}
       />
     </SheetModal>
   );

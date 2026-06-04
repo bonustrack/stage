@@ -11,17 +11,24 @@ import { Text } from '@metro-labs/kit/text';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { SystemHeader } from '../system/SystemHeader';
 
-type Href = '/settings/display' | '/settings/messenger' | '/settings/security';
+type Href =
+  | '/settings/display'
+  | '/settings/messenger'
+  | '/settings/security'
+  | '/settings/kit'
+  | '/settings/about';
 const ROWS: { href: Href; label: string; sub: string; icon: HeroIconName }[] = [
   { href: '/settings/display', label: 'Display', sub: 'Theme — System, Light or Dark', icon: 'sun' },
   { href: '/settings/messenger', label: 'Messenger', sub: 'XMTP account & inbox', icon: 'chat' },
   { href: '/settings/security', label: 'Security', sub: 'Export or remove account', icon: 'wallet' },
+  { href: '/settings/kit', label: 'Kit', sub: 'Theme colors & component gallery', icon: 'cog' },
+  { href: '/settings/about', label: 'About', sub: 'App version & build metadata', icon: 'document' },
 ];
 
 export function SettingsMenu(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, primary: head, bg, border } = usePalette();
+  const { text: fg, link: head, bg, border } = usePalette();
   const sub = fg;
   const insets = useSafeAreaInsets();
   const divider = border; // #282a2d / #e4e4e5

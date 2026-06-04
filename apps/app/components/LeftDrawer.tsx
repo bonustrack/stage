@@ -47,7 +47,7 @@ export function LeftDrawer({ progress }: { progress: SharedValue<number> }): Rea
   const W = Math.min(width * 0.82, 360);
 
   const pal = usePalette();
-  const head = pal.primary; // #ffffff / #000000
+  const head = pal.link; // #ffffff / #000000
   // `sub` = muted secondary text; no `muted` token yet → map to `text`. TODO: muted token.
   const sub = pal.text;
   const border = pal.border; // #282a2d / #e4e4e5
@@ -119,7 +119,7 @@ export function LeftDrawer({ progress }: { progress: SharedValue<number> }): Rea
     transform: [{ translateX: -W + progress.value * W }],
   }));
 
-  function go(href: '/profile' | '/settings' | '/system'): void {
+  function go(href: '/profile' | '/settings'): void {
     close();
     router.navigate(href);
   }
@@ -167,7 +167,6 @@ export function LeftDrawer({ progress }: { progress: SharedValue<number> }): Rea
           {/* Profile + Settings rows. */}
           <DrawerRow icon="user" label="Profile" head={head} sub={sub} border={border} onPress={() => go('/profile')} />
           <DrawerRow icon="cog" label="Settings" head={head} sub={sub} border={border} onPress={() => go('/settings')} />
-          <DrawerRow icon="desktop" label="System" head={head} sub={sub} border={border} onPress={() => go('/system')} />
         </Animated.View>
       </GestureDetector>
     </Box>

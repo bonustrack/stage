@@ -31,7 +31,7 @@ function MessengerBubbleBase({
   const isSystem = (entry.payload as { system?: boolean } | undefined)?.system === true;
   const pal = usePalette();
   // system → muted body text (#9f9fa3/#57606a); else → strong primary (#ffffff/#000000)
-  const fg = isSystem ? pal.text : pal.primary;
+  const fg = isSystem ? pal.text : pal.link;
   // `sub` = muted meta (date, 'Sending'); no `muted` token yet → map to `text`. TODO: muted token.
   const sub = pal.text;
   const pillBg = pal.border; // #282a2d / #e4e4e5

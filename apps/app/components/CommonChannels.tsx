@@ -20,7 +20,7 @@ import { Box, Row } from './layout';
 import { Spinner } from './Spinner';
 import { useRouter } from 'expo-router';
 import { ChannelRow } from './ChannelRow';
-import { getPeerAvatarCb, getPeerName, isPeerResolved } from '../lib/peerProfiles';
+import { getPeerAvatarCb, getPeerName } from '../lib/peerProfiles';
 import { useCommonChannels } from '../lib/useCommonChannels';
 import { shortAddress } from '../lib/xmtp';
 import { hasDraft } from '../lib/drafts';
@@ -57,8 +57,8 @@ export function CommonChannels({ peerAddress, enabled, c }: {
           rendered as a single tab. */}
       <Row justify="start" align="center" gap={24} mx={16} mb={6}
         style={{ borderBottomWidth: 1, borderBottomColor: c.border }}>
-        <Pressable style={{ paddingVertical: 10, marginBottom: -1, borderBottomWidth: 2, borderBottomColor: c.primary }}>
-          <Text style={{ color: c.primary, fontSize: 18, fontFamily: 'Calibre-Semibold' }}>
+        <Pressable style={{ paddingVertical: 10, marginBottom: -1, borderBottomWidth: 2, borderBottomColor: c.link }}>
+          <Text style={{ color: c.link, fontSize: 18, fontFamily: 'Calibre-Semibold' }}>
             Channels
           </Text>
         </Pressable>
@@ -78,10 +78,11 @@ export function CommonChannels({ peerAddress, enabled, c }: {
         const preview = hasMsg
           ? `${ch.lastSenderAddress ? `${getPeerName(ch.lastSenderAddress) ?? shortAddress(ch.lastSenderAddress)}: ` : ''}${ch.lastPreview}`
           : null;
-        /** Group avatar stamp only once the address profile is resolved (same
-         *  guard the channels tab uses to avoid a flash of the wrong stamp). */
-        const showAddr = !ch.avatarUri && ch.avatarAddress && isPeerResolved(ch.avatarAddress)
-          ? ch.avatarAddress : null;
+        /** Mirror HomeScreen.helpers showAddr: an uploaded group image takes
+         *  precedence (avatarUri). Otherwise these are all GROUPS, so the
+         *  channel's own stamp seed (avatarAddress) renders immediately — no
+         *  peer-resolution gate (the seed isn't a member address). */
+        const showAddr = ch.avatarUri || !ch.avatarAddress ? null : ch.avatarAddress;
         return (
           <ChannelRow
             key={ch.convId}

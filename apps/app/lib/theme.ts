@@ -12,10 +12,17 @@ import {
   type ThemePreference,
 } from '@metro-labs/kit/theme';
 import { semanticColors, semanticPalette } from '@metro-labs/kit/tokens';
+import { setDefaultButtonRadius } from '@metro-labs/kit/button';
 import {
   getOverrides, loadOverrides, subscribe as subscribeOverrides,
   type TokenKey,
 } from './colorOverrides';
+import {
+  getRadius, getBlockRadius, loadRadius, setRadius, setBlockRadius, resetRadius,
+  subscribe as subscribeRadius,
+} from './radiusOverride';
+
+export { setRadius, setBlockRadius, resetRadius } from './radiusOverride';
 
 export type { ThemePreference };
 
@@ -80,7 +87,8 @@ export function useEffectiveColorScheme(): 'light' | 'dark' {
 /** The 5-key scheme-aware palette shared by every screen's inline StyleSheet.
  *  Maps 1:1 to the canonical kit semantic tokens (single source of truth:
  *  @metro-labs/kit/tokens) — no app-local color forks. `text` = body text,
- *  `primary` = titles/strong (white/black), `link` = brand teal. */
+ *  `link` = emphasis (titles/names/active icons/accents — brand teal),
+ *  `primary` = primary-button background fill ONLY (white/black). */
 export interface Palette {
   bg: string; border: string; text: string; link: string; primary: string;
   danger: string; success: string;
@@ -93,10 +101,51 @@ function useOverridesVersion(): number {
   const [v, setV] = useState(0);
   useEffect(() => {
     loadOverrides();
-    const unsub = subscribeOverrides(() => setV((n) => n + 1));
-    return unsub;
+    loadRadius();
+    const bump = (): void => setV((n) => n + 1);
+    // Radius edits also push into the kit Button default here so every palette
+    // consumer (i.e. every screen) repaints its buttons with the new radius.
+    const unsubColors = subscribeOverrides(bump);
+    const unsubRadius = subscribeRadius(() => { setDefaultButtonRadius(getRadius()); bump(); });
+    setDefaultButtonRadius(getRadius());
+    return () => { unsubColors(); unsubRadius(); };
   }, []);
   return v;
+}
+
+/** The persisted button corner-radius token (px), reactive to load/edit/reset.
+ *  Reading it also pushes the value into the kit Button's module-level default
+ *  (setDefaultButtonRadius) so EVERY button — even ones not re-rendered by this
+ *  hook — picks up the new radius on the next paint. Mount this once high in the
+ *  tree (e.g. the root layout) so the wiring is always live. */
+export function useRadius(): number {
+  const [r, setR] = useState(getRadius());
+  useEffect(() => {
+    loadRadius();
+    setDefaultButtonRadius(getRadius());
+    setR(getRadius());
+    const unsub = subscribeRadius(() => {
+      setDefaultButtonRadius(getRadius());
+      setR(getRadius());
+    });
+    return unsub;
+  }, []);
+  return r;
+}
+
+/** The persisted block corner-radius token (px) for non-button containers —
+ *  inputs/text fields, cards, modals/sheets and general bordered/filled blocks.
+ *  Reactive to load/edit/reset. Unlike the button radius this is read directly
+ *  at each container call site (there's no kit-wide module default to push). */
+export function useBlockRadius(): number {
+  const [r, setR] = useState(getBlockRadius());
+  useEffect(() => {
+    loadRadius();
+    setR(getBlockRadius());
+    const unsub = subscribeRadius(() => setR(getBlockRadius()));
+    return unsub;
+  }, []);
+  return r;
 }
 
 /** Resolve the shared palette for the effective color scheme. Each token is the

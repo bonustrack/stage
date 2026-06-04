@@ -47,7 +47,7 @@ export function MessengerComposer({
   dark, xmtpLine, mentionCandidates, replyingTo, autoFocusNonce, onClearReply, onJumpToReply, onOptimistic, onSent,
 }: Props): React.ReactElement {
   const pal = usePalette(); // text/primary/border/bg ← tokens
-  const fg = pal.text, head = pal.primary, inputBg = pal.border, chipBg = pal.border;
+  const fg = pal.text, head = pal.link, inputBg = pal.border, chipBg = pal.border;
   // `sub` = muted/secondary text (placeholder, timestamps). No `muted` token
   // exists yet, so map to `text` to keep it editable. TODO: dedicated muted token.
   const sub = pal.text;

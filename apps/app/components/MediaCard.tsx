@@ -4,7 +4,7 @@
 
 import { Pressable } from 'react-native';
 import { Box } from './layout';
-import { usePalette } from '../lib/theme';
+import { usePalette, useBlockRadius } from '../lib/theme';
 
 interface Props {
   dark: boolean;
@@ -19,10 +19,11 @@ interface Props {
 export function MediaCard({ onPress, width, children }: Props): React.ReactElement {
   const border = usePalette().border; // #282a2d / #e4e4e5
   const bg = border;
+  const blockRadius = useBlockRadius();
   const style = {
     width: width ?? undefined,
     maxWidth: 280,
-    borderRadius: 14,
+    borderRadius: blockRadius,
     borderWidth: 1,
     borderColor: border,
     backgroundColor: bg,

@@ -7,7 +7,7 @@ import { Row, Col, Box } from './layout';
 import { shortAddress } from '../lib/xmtp';
 import { fmtSigValue, explorerUrl, ethFromWeiHex } from './MessengerBubble.helpers';
 import type { SigRequest, SigReference, TxRequest, TxReceipt } from './MessengerBubble.helpers';
-import { usePalette } from '../lib/theme';
+import { usePalette, useBlockRadius } from '../lib/theme';
 
 /** SigRequestCard — signature-request bubble: description + message detail. */
 export function SigRequestCard({ req, dark, sub, signing, onSign }: {
@@ -18,8 +18,8 @@ export function SigRequestCard({ req, dark, sub, signing, onSign }: {
     || (req.kind === 'eip712' ? `Sign ${req.eip712?.primaryType ?? 'typed data'}` : 'Sign message');
   const detailBg = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
   const detailBorder = dark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)';
-  const pal = usePalette();
-  const head = pal.primary; // #ffffff / #000000
+  const pal = usePalette(); const blockRadius = useBlockRadius();
+  const head = pal.link; // #ffffff / #000000
 
   const domain = req.eip712?.domain as { name?: unknown; chainId?: unknown } | undefined;
   const domainName = domain?.name != null ? String(domain.name) : undefined;
@@ -29,7 +29,7 @@ export function SigRequestCard({ req, dark, sub, signing, onSign }: {
     : [];
   return (
     <Box style={{
-      alignSelf: 'stretch', gap: 8, marginTop: 8, padding: 12, borderRadius: 14,
+      alignSelf: 'stretch', gap: 8, marginTop: 8, padding: 12, borderRadius: blockRadius,
       backgroundColor: pal.border, // #282a2d / #e4e4e5
     }}>
       <Row align="center" gap={8}>
@@ -84,6 +84,8 @@ export function SigRequestCard({ req, dark, sub, signing, onSign }: {
           loading={signing}
           onPress={onSign}
           label="Sign"
+          tintBg={pal.primary}
+          tintFg={pal.bg}
           style={{ marginTop: 2 }}
         />
       ) : null}
@@ -95,10 +97,10 @@ export function SigRequestCard({ req, dark, sub, signing, onSign }: {
 export function SigReferenceCard({ ref, dark, sub }: {
   ref: SigReference; dark: boolean; sub: string;
 }): React.ReactElement {
-  const short = (h?: string): string => (h && h.length > 14 ? `${h.slice(0, 8)}…${h.slice(-4)}` : (h ?? ''));
+  const short = (h?: string): string => (h && h.length > 14 ? `${h.slice(0, 8)}…${h.slice(-4)}` : (h ?? '')); const blockRadius = useBlockRadius();
   return (
     <Box style={{
-      alignSelf: 'stretch', gap: 6, marginTop: 8, padding: 12, borderRadius: 14,
+      alignSelf: 'stretch', gap: 6, marginTop: 8, padding: 12, borderRadius: blockRadius,
       borderWidth: 1, borderColor: dark ? 'rgba(120,200,120,0.4)' : 'rgba(60,160,60,0.35)',
       backgroundColor: dark ? 'rgba(120,200,120,0.08)' : 'rgba(60,160,60,0.06)',
     }}>
@@ -125,6 +127,7 @@ export function TxRequestCard({ req, dark, sub, paying, onPay }: {
   req: TxRequest; dark: boolean; sub: string; paying?: boolean;
   onPay?: () => void;
 }): React.ReactElement {
+  const pal = usePalette(); const blockRadius = useBlockRadius();
   const call = req.calls[0];
   const desc = call?.metadata?.description ?? 'Payment request';
   const eth = ethFromWeiHex(call?.value);
@@ -133,7 +136,7 @@ export function TxRequestCard({ req, dark, sub, paying, onPay }: {
     : eth ? `${eth} ETH` : undefined;
   return (
     <Box style={{
-      alignSelf: 'stretch', gap: 8, marginTop: 8, padding: 12, borderRadius: 14,
+      alignSelf: 'stretch', gap: 8, marginTop: 8, padding: 12, borderRadius: blockRadius,
       borderWidth: 1, borderColor: '#c0a06e',
       backgroundColor: dark ? 'rgba(192,160,110,0.10)' : 'rgba(192,160,110,0.10)',
     }}>
@@ -163,6 +166,8 @@ export function TxRequestCard({ req, dark, sub, paying, onPay }: {
           loading={paying}
           onPress={onPay}
           label="Pay"
+          tintBg={pal.primary}
+          tintFg={pal.bg}
           style={{ marginTop: 2 }}
         />
       ) : null}
@@ -177,10 +182,10 @@ export function TxReceiptCard({ receipt, dark }: {
   const amountLabel = receipt.metadata?.amount != null
     ? `${receipt.metadata.amount} ${receipt.metadata.currency ?? 'ETH'}`
     : undefined;
-  const url = explorerUrl(receipt.networkId, receipt.reference);
+  const url = explorerUrl(receipt.networkId, receipt.reference); const blockRadius = useBlockRadius();
   return (
     <Box style={{
-      alignSelf: 'stretch', gap: 6, marginTop: 8, padding: 12, borderRadius: 14,
+      alignSelf: 'stretch', gap: 6, marginTop: 8, padding: 12, borderRadius: blockRadius,
       borderWidth: 1, borderColor: dark ? 'rgba(120,200,120,0.4)' : 'rgba(60,160,60,0.35)',
       backgroundColor: dark ? 'rgba(120,200,120,0.08)' : 'rgba(60,160,60,0.06)',
     }}>
