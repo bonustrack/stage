@@ -10,6 +10,7 @@ import { useState } from 'react';
 import { Pressable, TextInput } from 'react-native';
 import { Box, Row } from '../layout';
 import { Text } from '@metro-labs/kit/text';
+import { Button } from '@metro-labs/kit/button';
 import { usePalette, useEffectiveColorScheme, type Palette } from '../../lib/theme';
 import { type ControlPalette } from './KitControls';
 import { AppModal } from '../AppModal';
@@ -79,34 +80,26 @@ function EditableSwatch({ name, tokenKey, value, scheme, p }: {
           }}
         />
       </Box>
-      <AppModal visible={picking} onClose={closePicker} title={name}>
+      <AppModal visible={picking} onClose={closePicker}>
         <ColorPicker value={pending ?? value} onChange={setPending} p={p} />
         <Row gap={12} mt={20} style={{ alignItems: 'center' }}>
-          <Pressable
+          <Button
+            variant="secondary"
+            dark={p.dark}
             onPress={closePicker}
-            style={{
-              flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center',
-              borderWidth: 1, borderColor: p.border, backgroundColor: p.rowBg,
-            }}
-          >
-            <Text style={{ color: p.head, fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
-              Cancel
-            </Text>
-          </Pressable>
-          <Pressable
+            label="Cancel"
+            style={{ flex: 1 }}
+          />
+          <Button
+            variant="primary"
+            dark={p.dark}
             onPress={() => {
               if (pending != null && isHex(pending)) setOverride(tokenKey, scheme, pending);
               closePicker();
             }}
-            style={{
-              flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center',
-              backgroundColor: p.head,
-            }}
-          >
-            <Text style={{ color: p.rowBg, fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
-              Apply
-            </Text>
-          </Pressable>
+            label="Apply"
+            style={{ flex: 1 }}
+          />
         </Row>
       </AppModal>
     </Row>
@@ -172,19 +165,14 @@ export function KitColorsStory({ p }: { p: ControlPalette }): React.ReactElement
         <Text dark={p.dark} color={p.sub} variant="caption" weight="medium">
           {`${TOKEN_ROWS.length} tokens + 2 radii · tap a swatch or hex · ${scheme}`}
         </Text>
-        <Pressable
+        <Button
+          variant="secondary"
+          size="sm"
+          dark={p.dark}
           onPress={() => { resetOverrides(); resetRadius(); }}
-          hitSlop={8}
-          style={{
-            paddingVertical: 6, paddingHorizontal: 12, borderRadius: 10,
-            borderWidth: 1, borderColor: p.border, backgroundColor: p.rowBg,
-          }}
+          label="Reset"
           accessibilityLabel="Reset color tokens to defaults"
-        >
-          <Text style={{ color: p.head, fontSize: 14, fontFamily: 'Calibre-Semibold' }}>
-            Reset
-          </Text>
-        </Pressable>
+        />
       </Row>
       <Box mt={2}>
         {TOKEN_ROWS.map(([label, key]) => (
