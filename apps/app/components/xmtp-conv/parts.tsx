@@ -183,6 +183,7 @@ export function BubbleActionMenu({
             <ActionRow icon="reply" label="Reply" onPress={onReply} />
             {target?.text ? <Box style={{ height: 1, backgroundColor: divider, marginLeft: 16 }} /> : null}
             {target?.text ? <ActionRow icon="copy" label="Copy" onPress={onCopy} /> : null}
+            {target?.text ? <Box style={{ height: 1, backgroundColor: divider, marginLeft: 16 }} /> : null}
             {target?.text ? <ActionRow icon="document" label="Select" onPress={onSelect} /> : null}
             <Box style={{ height: 1, backgroundColor: divider, marginLeft: 16 }} />
             <ActionRow icon="send" label="Share link" onPress={onShareLink} />
