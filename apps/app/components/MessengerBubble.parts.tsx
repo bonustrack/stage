@@ -10,6 +10,7 @@ import { shortAddress } from '../lib/xmtp';
 import { useProfileQuery } from '../lib/useProfile';
 import { MENTION_RE } from './MessengerBubble.helpers';
 import type { Question } from './MessengerBubble.helpers';
+import { usePalette } from '../lib/theme';
 
 /** One tappable `@username` chip resolved from an address. Lives as its own
  *  component so the `useProfileQuery` hook is called exactly once per mention
@@ -68,6 +69,7 @@ export function QuestionView({ question, dark, sub, onAnswer }: {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [otherOpen, setOtherOpen] = useState(false);
   const [otherText, setOtherText] = useState('');
+  const fg = usePalette().text; // #9f9fa3 / #57606a
   const multi = question.multiSelect === true;
   const allowOther = question.allowOther !== false;
   const toggle = (label: string): void => {
@@ -118,7 +120,7 @@ export function QuestionView({ question, dark, sub, onAnswer }: {
                 : (dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.10)'),
             })}
           >
-            <Text style={{ color: dark ? '#9f9fa3' : '#57606a', fontSize: 15, fontFamily: 'Calibre-Medium' }}>
+            <Text style={{ color: fg, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
               {multi ? (isOn ? '☑︎  ' : '☐  ') : ''}{opt.label}
             </Text>
             {opt.description ? (
@@ -162,7 +164,7 @@ export function QuestionView({ question, dark, sub, onAnswer }: {
             onSubmitEditing={submit}
             blurOnSubmit
             style={{
-              color: dark ? '#9f9fa3' : '#57606a',
+              color: fg,
               fontFamily: 'Calibre-Medium', fontSize: 15, lineHeight: 22,
               minHeight: 22, padding: 0,
             }}

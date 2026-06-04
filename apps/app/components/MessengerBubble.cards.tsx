@@ -7,6 +7,7 @@ import { Row, Col, Box } from './layout';
 import { shortAddress } from '../lib/xmtp';
 import { fmtSigValue, explorerUrl, ethFromWeiHex } from './MessengerBubble.helpers';
 import type { SigRequest, SigReference, TxRequest, TxReceipt } from './MessengerBubble.helpers';
+import { usePalette } from '../lib/theme';
 
 /** SigRequestCard — signature-request bubble: description + message detail. */
 export function SigRequestCard({ req, dark, sub, signing, onSign }: {
@@ -17,7 +18,8 @@ export function SigRequestCard({ req, dark, sub, signing, onSign }: {
     || (req.kind === 'eip712' ? `Sign ${req.eip712?.primaryType ?? 'typed data'}` : 'Sign message');
   const detailBg = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
   const detailBorder = dark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)';
-  const head = dark ? '#ffffff' : '#000000';
+  const pal = usePalette();
+  const head = pal.primary; // #ffffff / #000000
 
   const domain = req.eip712?.domain as { name?: unknown; chainId?: unknown } | undefined;
   const domainName = domain?.name != null ? String(domain.name) : undefined;
@@ -28,7 +30,7 @@ export function SigRequestCard({ req, dark, sub, signing, onSign }: {
   return (
     <Box style={{
       alignSelf: 'stretch', gap: 8, marginTop: 8, padding: 12, borderRadius: 14,
-      backgroundColor: dark ? '#282a2d' : '#e4e4e5',
+      backgroundColor: pal.border, // #282a2d / #e4e4e5
     }}>
       <Row align="center" gap={8}>
         <Icon name="pencil" size={18} color={head} />

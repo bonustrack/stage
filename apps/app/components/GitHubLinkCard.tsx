@@ -14,7 +14,7 @@ import { Box, Row } from './layout';
 import { GithubLogo } from './GithubLogo';
 import { githubLinkOf } from '../lib/githubDetect';
 import { useGithubMeta } from '../lib/useGithubMeta';
-import { DANGER, SUCCESS } from '../lib/theme';
+import { DANGER, SUCCESS, usePalette } from '../lib/theme';
 
 /** state → dot color (open green, merged purple, closed red). */
 const DOT: Record<string, string> = {
@@ -28,11 +28,12 @@ export function GitHubLinkCard({ url, dark }: {
 }): React.ReactElement | null {
   const ref = githubLinkOf(url);
   const meta = useGithubMeta(ref);
+  const pal = usePalette();
   if (!ref || !meta) return null;
 
-  const fg = dark ? '#ffffff' : '#000000';
-  const subColor = dark ? '#7a7a7e' : '#8a929d';
-  const border = dark ? '#282a2d' : '#e4e4e5';
+  const fg = pal.primary; // #ffffff / #000000
+  const subColor = dark ? '#7a7a7e' : '#8a929d'; // one-off sub-grey, no token
+  const border = pal.border; // #282a2d / #e4e4e5
   const dot = DOT[meta.state];
   const numLabel = meta.number != null ? `#${meta.number}` : null;
   const showLoc = meta.kind === 'pull'

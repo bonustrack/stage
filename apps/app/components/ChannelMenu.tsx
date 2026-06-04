@@ -23,7 +23,7 @@ import { Icon } from '@metro-labs/kit/icon';
 import { useRouter } from 'expo-router';
 import { Col } from './layout';
 import { AppModal } from './AppModal';
-import { DANGER, useEffectiveColorScheme } from '../lib/theme';
+import { DANGER, useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { markConvRead, markConvUnread } from '../lib/channelsCache';
 import { togglePin } from '../lib/pins';
 import { leaveGroupConv, lineOfConv } from '../lib/xmtp';
@@ -57,9 +57,10 @@ export function ChannelMenu({
 }: ChannelMenuProps): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const fg = dark ? '#9f9fa3' : '#57606a';
-  const sub = dark ? '#7a7a7e' : '#8a929d';
-  const head = dark ? '#ffffff' : '#000000';
+  const pal = usePalette();
+  const fg = pal.text; // #9f9fa3 / #57606a
+  const sub = dark ? '#7a7a7e' : '#8a929d'; // one-off sub-grey, no token
+  const head = pal.primary; // #ffffff / #000000
   const danger = DANGER;
 
   const run = (fn: () => void): void => { onClose(); fn(); };
