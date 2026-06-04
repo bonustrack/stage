@@ -76,8 +76,10 @@ const config = {
   android: {
     package: variant.androidPackage,
     // appVersionSource=local + autoIncrement off: versionCode is pinned here.
-    // Bumped to 24 for serialized-single-scan + incremental + getLogs retry.
-    versionCode: 24,
+    // Bumped to 25 for the shrunk Sepolia getLogs chunk (SCAN_CHUNKS 499->200,
+    // EVENTS_SCAN_TIMEOUT 5s->20s) + real-RPC-error logging — see
+    // nodejs-project/scripts/patch-scan-chunk.js.
+    versionCode: 25,
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
       backgroundColor: '#0f1115',
