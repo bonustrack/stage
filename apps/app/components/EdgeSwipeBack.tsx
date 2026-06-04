@@ -35,7 +35,7 @@
  *  the wrap — stopped firing on every screen. Reverted to the wrap. */
 
 import { useCallback, useEffect, useState } from 'react';
-import { useWindowDimensions } from 'react-native';
+import { Platform, useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
 import { useRouter, useNavigation } from 'expo-router';
@@ -77,8 +77,11 @@ export function EdgeSwipeBack({ children }: { children: React.ReactNode }): Reac
 
   const pan = Gesture.Pan()
     /** Off at the stack root (see canGoBack above) — no conflict with the tab
-     *  root's own left-edge gestures. */
-    .enabled(canGoBack)
+     *  root's own left-edge gestures. Also OFF on iOS: there the native-stack's
+     *  own interactive gesture (gestureEnabled + fullScreenGestureEnabled in
+     *  _layout) owns swipe-back and reveals the real previous screen, so the JS
+     *  shim must not fight it. Android keeps this Pan (no native gesture exists). */
+    .enabled(canGoBack && Platform.OS === 'android')
     /** Confine activation to the left edge: a width-limited hit area means only
      *  the leftmost EDGE_WIDTH dp can begin the gesture. */
     .hitSlop({ left: 0, width: EDGE_WIDTH })

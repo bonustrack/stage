@@ -22,6 +22,7 @@
 
 import { useCallback } from 'react';
 import type { RefObject } from 'react';
+import { Platform } from 'react-native';
 import type { FlatList } from 'react-native-gesture-handler';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Reanimated, {
@@ -58,6 +59,13 @@ export function BackSwipe({
   }, [navigation, router]);
 
   const pan = Gesture.Pan()
+    /** iOS: OFF. The native-stack interactive gesture (fullScreenGestureEnabled,
+     *  set in _layout) owns swipe-back there and reveals the REAL previous
+     *  screen; this JS backdrop-only shim must not compete with it. Android: ON
+     *  (no native gesture exists in rn-screens 4.16 — see _layout note). The
+     *  bubble swipe-to-reply arms LEFTWARD, opposite this rightward pan, so they
+     *  never co-arm regardless. */
+    .enabled(Platform.OS === 'android')
     .activeOffsetX(ACTIVE_X)
     .failOffsetY([-FAIL_Y, FAIL_Y])
     /** RNGH wants `RefObject<ComponentType | undefined>`; our list ref is a
