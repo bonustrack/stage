@@ -12,6 +12,8 @@ import { Box, Row } from '../layout';
 import { Text } from '@metro-labs/kit/text';
 import { usePalette, useEffectiveColorScheme, type Palette } from '../../lib/theme';
 import { type ControlPalette } from './KitControls';
+import { AppModal } from '../AppModal';
+import { ColorPicker } from './ColorPicker';
 import {
   setOverride, resetOverrides, isHex, type TokenKey,
 } from '../../lib/colorOverrides';
@@ -33,11 +35,18 @@ function EditableSwatch({ name, tokenKey, value, scheme, p }: {
   scheme: 'light' | 'dark'; p: ControlPalette;
 }): React.ReactElement {
   const [draft, setDraft] = useState<string | null>(null);
+  const [picking, setPicking] = useState(false);
+  // While the picker is open, `pending` holds the un-applied color so Cancel
+  // can discard it. Apply commits via setOverride; Cancel restores `value`.
+  const [pending, setPending] = useState<string | null>(null);
   const shown = draft ?? value;
   const invalid = draft != null && !isHex(draft);
+  const closePicker = (): void => { setPicking(false); setPending(null); };
   return (
     <Row gap={14} mt={12} style={{ alignItems: 'center' }}>
-      <Box
+      <Pressable
+        onPress={() => { setPending(value); setPicking(true); }}
+        accessibilityLabel={`Pick ${name} color`}
         style={{
           width: 40, height: 40, borderRadius: 10,
           backgroundColor: value,
@@ -66,6 +75,36 @@ function EditableSwatch({ name, tokenKey, value, scheme, p }: {
           }}
         />
       </Box>
+      <AppModal visible={picking} onClose={closePicker} title={name}>
+        <ColorPicker value={pending ?? value} onChange={setPending} p={p} />
+        <Row gap={12} mt={20} style={{ alignItems: 'center' }}>
+          <Pressable
+            onPress={closePicker}
+            style={{
+              flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center',
+              borderWidth: 1, borderColor: p.border, backgroundColor: p.rowBg,
+            }}
+          >
+            <Text style={{ color: p.head, fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
+              Cancel
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => {
+              if (pending != null && isHex(pending)) setOverride(tokenKey, scheme, pending);
+              closePicker();
+            }}
+            style={{
+              flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center',
+              backgroundColor: p.head,
+            }}
+          >
+            <Text style={{ color: p.rowBg, fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
+              Apply
+            </Text>
+          </Pressable>
+        </Row>
+      </AppModal>
     </Row>
   );
 }
@@ -77,7 +116,7 @@ export function KitColorsStory({ p }: { p: ControlPalette }): React.ReactElement
     <Box>
       <Row mt={16} align="center" justify="between">
         <Text dark={p.dark} color={p.sub} variant="caption" weight="medium">
-          {`${TOKEN_ROWS.length} tokens · tap a hex to edit · ${scheme}`}
+          {`${TOKEN_ROWS.length} tokens · tap a swatch or hex · ${scheme}`}
         </Text>
         <Pressable
           onPress={() => resetOverrides()}

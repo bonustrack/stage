@@ -1,0 +1,145 @@
+/** Pure-JS visual color picker — three draggable HSV sliders (Hue / Saturation
+ *  / Value) plus a live preview swatch + the resulting hex, and a hex text
+ *  field for typists. No native module: dragging uses react-native PanResponder
+ *  and the geometry is computed in JS. Used by KitColors.story inside AppModal.
+ *  Fonts: Calibre-Medium / Calibre-Semibold only. */
+
+import { useMemo, useRef, useState } from 'react';
+import { PanResponder, TextInput } from 'react-native';
+import { Box, Row } from '../layout';
+import { Text } from '@metro-labs/kit/text';
+import type { ControlPalette } from './KitControls';
+import { isHex } from '../../lib/colorOverrides';
+import { hexToHsv, hsvToHex } from './colorMath';
+
+const TRACK_H = 26;
+
+function Track({ colors, thumb, onFraction, p }: {
+  colors: string[]; thumb: number;
+  onFraction: (f: number) => void; p: ControlPalette;
+}): React.ReactElement {
+  const widthRef = useRef(1);
+  const pan = useMemo(
+    () => PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: (e) => {
+        const x = e.nativeEvent.locationX;
+        onFraction(Math.max(0, Math.min(1, x / widthRef.current)));
+      },
+      onPanResponderMove: (e) => {
+        const x = e.nativeEvent.locationX;
+        onFraction(Math.max(0, Math.min(1, x / widthRef.current)));
+      },
+    }),
+    [onFraction],
+  );
+  // Stepped gradient via N stacked flex slices (no native gradient dep).
+  return (
+    <Box
+      onLayout={(e) => { widthRef.current = e.nativeEvent.layout.width || 1; }}
+      {...pan.panHandlers}
+      style={{ height: TRACK_H, borderRadius: TRACK_H / 2, overflow: 'hidden', justifyContent: 'center' }}
+    >
+      <Row style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}>
+        {colors.map((c, i) => (
+          <Box key={i} style={{ flex: 1, backgroundColor: c }} />
+        ))}
+      </Row>
+      <Box
+        pointerEvents="none"
+        style={{
+          position: 'absolute', left: `${thumb * 100}%`, marginLeft: -11,
+          width: 22, height: 22, borderRadius: 11,
+          borderWidth: 3, borderColor: '#ffffff',
+          backgroundColor: 'transparent',
+          shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 2,
+          elevation: 3,
+        }}
+      />
+      <Box pointerEvents="none" style={{
+        position: 'absolute', left: 0, right: 0, top: 0, bottom: 0,
+        borderRadius: TRACK_H / 2, borderWidth: 1, borderColor: p.border,
+      }} />
+    </Box>
+  );
+}
+
+function hueStops(): string[] {
+  return Array.from({ length: 24 }, (_, i) => hsvToHex((i / 23) * 360, 1, 1));
+}
+
+export function ColorPicker({ value, onChange, p }: {
+  value: string; onChange: (hex: string) => void; p: ControlPalette;
+}): React.ReactElement {
+  const [hsv, setHsv] = useState(() => hexToHsv(value));
+  const [text, setText] = useState<string | null>(null);
+  const hex = hsvToHex(hsv.h, hsv.s, hsv.v);
+
+  const apply = (h: number, s: number, v: number): void => {
+    setHsv({ h, s, v });
+    setText(null);
+    onChange(hsvToHex(h, s, v));
+  };
+
+  const satStops = Array.from({ length: 12 }, (_, i) => hsvToHex(hsv.h, i / 11, hsv.v));
+  const valStops = Array.from({ length: 12 }, (_, i) => hsvToHex(hsv.h, hsv.s, i / 11));
+
+  return (
+    <Box>
+      <Row gap={14} style={{ alignItems: 'center' }}>
+        <Box style={{
+          width: 64, height: 64, borderRadius: 14, backgroundColor: hex,
+          borderWidth: 1, borderColor: p.border,
+        }} />
+        <Box style={{ flex: 1 }}>
+          <Text style={{ color: p.head, fontSize: 22, fontFamily: 'Calibre-Semibold' }}>
+            {hex}
+          </Text>
+          <Text style={{ color: p.sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
+            live preview
+          </Text>
+        </Box>
+      </Row>
+
+      <Label text="Hue" p={p} />
+      <Track colors={hueStops()} thumb={hsv.h / 360} p={p}
+        onFraction={(f) => apply(f * 360, hsv.s, hsv.v)} />
+      <Label text="Saturation" p={p} />
+      <Track colors={satStops} thumb={hsv.s} p={p}
+        onFraction={(f) => apply(hsv.h, f, hsv.v)} />
+      <Label text="Value" p={p} />
+      <Track colors={valStops} thumb={hsv.v} p={p}
+        onFraction={(f) => apply(hsv.h, hsv.s, f)} />
+
+      <Label text="Hex" p={p} />
+      <TextInput
+        value={text ?? hex}
+        onChangeText={(t) => {
+          setText(t);
+          if (isHex(t)) { setHsv(hexToHsv(t)); onChange(t.trim().toLowerCase()); }
+        }}
+        autoCapitalize="none" autoCorrect={false}
+        placeholder="#rrggbb" placeholderTextColor={p.sub}
+        style={{
+          marginTop: 4, paddingVertical: 8, paddingHorizontal: 12,
+          borderRadius: 10, borderWidth: 1, borderColor: p.border,
+          backgroundColor: p.rowBg,
+          color: text != null && !isHex(text) ? '#eb4c5b' : p.head,
+          fontSize: 15, fontFamily: 'Calibre-Medium',
+        }}
+      />
+    </Box>
+  );
+}
+
+function Label({ text, p }: { text: string; p: ControlPalette }): React.ReactElement {
+  return (
+    <Text style={{
+      color: p.sub, fontSize: 13, fontFamily: 'Calibre-Semibold',
+      marginTop: 16, marginBottom: 6,
+    }}>
+      {text}
+    </Text>
+  );
+}
