@@ -28,7 +28,8 @@ export default function GroupDetail(): React.ReactElement {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { fg, head, sub, bg, border, rowBg } = usePalette();
+  const { text: fg, primary: head, bg, border } = usePalette();
+  const sub = fg, rowBg = border;
   const pal = { fg, head, sub, border, rowBg };
 
   const { convId } = useLocalSearchParams<{ convId: string }>();
@@ -189,7 +190,6 @@ export default function GroupDetail(): React.ReactElement {
         leaving={leaving} onLeave={() => leaveGroup(() => setOverflowOpen(false))}
         dark={dark} sub={sub}
       />
-
       <ImageViewer
         uri={imageUrl ? avatarRenderUrl('', imageUrl, 1024) : ''}
         visible={viewerOpen}

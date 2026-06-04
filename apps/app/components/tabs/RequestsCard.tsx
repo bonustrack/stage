@@ -30,7 +30,8 @@ export function RequestsCard({
   data: RequestPreviews;
   onPress: () => void;
 }): React.ReactElement | null {
-  const { head, sub, border, rowBg, bg } = usePalette();
+  const { primary: head, text: sub, border, bg } = usePalette();
+  const rowBg = border;
   const { count, previews } = data;
   // Resolve peer profiles so the cache-buster lands once an avatar is known.
   usePeerProfiles(previews.map(p => p.avatarAddress));

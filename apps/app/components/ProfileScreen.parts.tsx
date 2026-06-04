@@ -57,14 +57,14 @@ export function ProfileHeader({ variant, insetTop, isSelf, onBack, onMenu, c }: 
     }}>
       {variant === 'route' ? (
         <Pressable onPress={onBack} hitSlop={10} style={{ padding: 6 }}>
-          <Icon name="arrowLeft" size={22} color={c.head} />
+          <Icon name="arrowLeft" size={22} color={c.primary} />
         </Pressable>
       ) : (
-        <Text style={{ color: c.head, fontSize: 22, fontFamily: 'Calibre-Semibold' }}>Profile</Text>
+        <Text style={{ color: c.primary, fontSize: 22, fontFamily: 'Calibre-Semibold' }}>Profile</Text>
       )}
       {isSelf ? (
         <Pressable onPress={onMenu} hitSlop={8} style={{ padding: 6 }}>
-          <Icon name="dotsHorizontal" size={22} color={c.head} />
+          <Icon name="dotsHorizontal" size={22} color={c.primary} />
         </Pressable>
       ) : null}
     </Box>
@@ -78,16 +78,16 @@ export function InfoRow({ label, value, onCopy, c }: {
   return (
     <Box style={{
       marginHorizontal: 16, marginTop: 12, padding: 12,
-      borderRadius: 12, backgroundColor: c.rowBg, borderWidth: 1, borderColor: c.border,
+      borderRadius: 12, backgroundColor: c.border, borderWidth: 1, borderColor: c.border,
       flexDirection: 'row', alignItems: 'center', gap: 8,
     }}>
       <Box style={{ flex: 1 }}>
-        <Text style={{ color: c.sub, fontSize: 11, fontFamily: 'Calibre-Medium' }}>{label.toUpperCase()}</Text>
-        <Text style={{ color: c.fg, fontSize: 14, marginTop: 4, fontFamily: 'Calibre-Medium' }} selectable>{value}</Text>
+        <Text style={{ color: c.text, fontSize: 11, fontFamily: 'Calibre-Medium' }}>{label.toUpperCase()}</Text>
+        <Text style={{ color: c.text, fontSize: 14, marginTop: 4, fontFamily: 'Calibre-Medium' }} selectable>{value}</Text>
       </Box>
       {onCopy ? (
         <Pressable onPress={onCopy} hitSlop={8} style={{ padding: 4 }}>
-          <Icon name="copy" size={18} color={c.sub} />
+          <Icon name="copy" size={18} color={c.text} />
         </Pressable>
       ) : null}
     </Box>
@@ -112,9 +112,9 @@ export function ProfileActions({ dark, opening, onMessage, onSend, c }: {
         dark={dark}
         onPress={onPress}
         disabled={disabled}
-        icon={<Icon name={icon} size={22} color={c.head} />}
+        icon={<Icon name={icon} size={22} color={c.primary} />}
       />
-      <Text style={{ color: c.head, fontSize: 14, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{label}</Text>
+      <Text style={{ color: c.primary, fontSize: 14, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{label}</Text>
     </Box>
   );
   return (
@@ -143,11 +143,11 @@ export function EditMenu({ visible, top, onClose, onEdit, c }: {
             style={({ pressed }) => ({
               flexDirection: 'row', alignItems: 'center', gap: 10,
               paddingHorizontal: 14, paddingVertical: 12,
-              backgroundColor: pressed ? c.rowBg : 'transparent',
+              backgroundColor: pressed ? c.border : 'transparent',
             })}
           >
-            <Icon name="pencil" size={18} color={c.head} />
-            <Text style={{ color: c.head, fontSize: 15, fontFamily: 'Calibre-Medium' }}>Edit profile</Text>
+            <Icon name="pencil" size={18} color={c.primary} />
+            <Text style={{ color: c.primary, fontSize: 15, fontFamily: 'Calibre-Medium' }}>Edit profile</Text>
           </Pressable>
         </Box>
       </Pressable>

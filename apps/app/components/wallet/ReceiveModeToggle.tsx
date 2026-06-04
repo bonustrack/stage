@@ -15,8 +15,8 @@ export function ReceiveModeToggle({ mode, onChange, privateReady }: {
   onChange: (m: ReceiveMode) => void;
   privateReady: boolean;
 }): React.ReactElement {
-  const { head, sub, border, rowBg } = usePalette();
-
+  const { primary: head, text: sub, border } = usePalette();
+  const rowBg = border;
   const segment = (value: ReceiveMode, label: string, disabled: boolean): React.ReactElement => {
     const active = mode === value;
     return (

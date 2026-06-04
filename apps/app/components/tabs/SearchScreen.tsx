@@ -47,8 +47,9 @@ import {
 
 export function SearchScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const router = useRouter();
-  const { fg, head, sub, bg, border, rowBg } = usePalette();
-
+  const { text: fg, primary: head, bg, border } = usePalette();
+  const sub = fg;
+  const rowBg = border;
   /** The search TextInput ref (used to programmatically blur/clear). */
   const inputRef = useRef<TextInput>(null);
 

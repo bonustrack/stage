@@ -17,7 +17,9 @@ import { SystemHeader } from '../system/SystemHeader';
 export function DisplaySettings(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const pref = useThemePreference();
-  const { fg, head, sub, bg, border, rowBg } = usePalette();
+  const { text: fg, primary: head, bg, border } = usePalette();
+  const sub = fg;
+  const rowBg = border;
   const insets = useSafeAreaInsets();
 
   return (

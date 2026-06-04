@@ -27,8 +27,8 @@ import { useConversationState } from '../../components/xmtp-conv/useConversation
 export default function XmtpConversation(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { fg, head, sub, bg, border, rowBg } = usePalette();
-
+  const { text: fg, primary: head, bg, border } = usePalette();
+  const sub = fg, rowBg = border;
   const { convId, focus } = useLocalSearchParams<{ convId: string; focus?: string }>();
   const c = useConversationState(convId, focus);
   const {

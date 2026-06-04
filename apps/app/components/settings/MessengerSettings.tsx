@@ -14,7 +14,6 @@ import { resetAccount } from '../../lib/wallet';
 import { flash } from '../../lib/toast';
 import { useAccountEpoch } from '../../lib/accountEpoch';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { PillSection } from '../tabs/SettingsScreen.parts';
 import { SystemHeader } from '../system/SystemHeader';
 
 function CopyRow({ label, value, display, c }: {
@@ -37,7 +36,9 @@ function CopyRow({ label, value, display, c }: {
 
 export function MessengerSettings(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
-  const { fg, head, sub, bg, border, rowBg } = usePalette();
+  const { text: fg, primary: head, bg, border } = usePalette();
+  const sub = fg;
+  const rowBg = border;
   const insets = useSafeAreaInsets();
   const epoch = useAccountEpoch();
   const [addr, setAddr] = useState('');
@@ -69,8 +70,6 @@ export function MessengerSettings(): React.ReactElement {
         {addr ? <CopyRow label="Your XMTP address" value={addr} display={shortAddress(addr)} c={c} /> : null}
         {inbox ? <CopyRow label="Inbox id" value={inbox} display={inbox} c={c} /> : null}
         {install ? <CopyRow label="Installation id" value={install} display={shortAddress(install)} c={c} /> : null}
-
-        <PillSection c={{ fg, head, sub, border, rowBg }} />
 
         <Col mt={28} px={16}>
           <Pressable

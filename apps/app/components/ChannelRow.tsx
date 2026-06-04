@@ -119,7 +119,9 @@ function ChannelRowBase({
   pinned, hasDraft, showChevron, avatarSize = 40,
   onPress, onLongPress, containerStyle, labels, onLabelPress, noBorder,
 }: ChannelRowProps): React.ReactElement {
-  const { head, sub, fg, bg, border, rowBg } = usePalette();
+  const { primary: head, text: sub, bg, border } = usePalette();
+  const fg = sub;
+  const rowBg = border;
   const previewText = lastPreview && lastPreview.length > 0 ? lastPreview : subtitle ?? '';
 
   return (
