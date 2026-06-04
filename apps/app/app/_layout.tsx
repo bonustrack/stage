@@ -151,7 +151,7 @@ export default function RootLayout(): React.ReactElement {
           headerShown: false,
           cardStyle: { backgroundColor: bg },
           gestureEnabled: true,
-          gestureResponseDistance: 130,
+          gestureResponseDistance: 100,
           ...TransitionPresets.SlideFromRightIOS,
         }}
       >
