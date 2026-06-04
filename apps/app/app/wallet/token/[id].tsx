@@ -92,7 +92,7 @@ export default function TokenDetail(): React.ReactElement {
         </Box>
 
         <Row align="center" gap={6} mt={10}>
-          {r.isPrivate ? <Icon name="eyeOff" size={18} color={sub} /> : null}
+          {r.isPrivate ? <Icon name="shieldCheck" size={18} color={sub} /> : null}
           <Text style={{ color: head, fontSize: 24, fontFamily: 'Calibre-Semibold' }}>{r.name}</Text>
         </Row>
 
