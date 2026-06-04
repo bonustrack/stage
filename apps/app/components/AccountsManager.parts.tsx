@@ -46,9 +46,10 @@ export function AccountRow({ rec, onPress, onLongPress, topBorder, trailing, hea
 }
 
 /** Bottom-sheet style modal — dim backdrop, rounded card pinned to the bottom. */
-export function SheetModal({ visible, onClose, children, bg, border, title, head }: {
+export function SheetModal({ visible, onClose, children, bg, border }: {
   visible: boolean; onClose: () => void; children: React.ReactNode;
-  bg: string; border: string; title?: string; head: string;
+  /** title/head accepted for call-site compatibility; header chrome removed. */
+  bg: string; border: string; title?: string; head?: string;
 }): React.ReactElement {
   /** Pad the sheet past the Android nav bar so its last row isn't overlapped
    *  / cut off by the system navigation buttons. */
@@ -58,9 +59,6 @@ export function SheetModal({ visible, onClose, children, bg, border, title, head
       <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>
         <Pressable onPress={(e) => e.stopPropagation()} style={{ backgroundColor: bg, borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 16, paddingBottom: 28 + insets.bottom, borderTopWidth: 1, borderColor: border }}>
           <Box style={{ alignSelf: 'center', width: 36, height: 4, borderRadius: 2, backgroundColor: border, marginBottom: 12 }} />
-          {title ? (
-            <Text style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold', marginBottom: 12 }}>{title}</Text>
-          ) : null}
           {children}
         </Pressable>
       </Pressable>

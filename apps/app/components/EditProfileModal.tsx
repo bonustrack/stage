@@ -10,6 +10,7 @@ import { Text } from '@metro-labs/kit/text';
 import { Box } from './layout';
 import { Button } from '@metro-labs/kit/button';
 import { Spinner } from './Spinner';
+import { Icon } from '@metro-labs/kit/icon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import {
@@ -89,15 +90,15 @@ export default function EditProfileModal({
     <Modal visible={visible} onRequestClose={onClose} animationType="slide" transparent={false}>
       <KeyboardAvoidingView style={{ flex: 1, backgroundColor: bg }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        {/** No title / Cancel chrome — a single close X is the dismiss affordance
+         *  (this is a full-screen modal with no backdrop tap). */}
         <Box style={{
-          flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+          flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end',
           paddingHorizontal: 16, paddingTop: insets.top + 12, paddingBottom: 12,
-          borderBottomWidth: 1, borderBottomColor: border,
         }}>
-          <Pressable onPress={onClose} disabled={saving}><Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>Cancel</Text></Pressable>
-          <Text style={{ color: head, fontSize: 17, fontFamily: 'Calibre-Semibold' }}>Edit profile</Text>
-          {/** Spacer to balance the row — Save sits at the bottom as a pill now. */}
-          <Box style={{ width: 50 }} />
+          <Pressable onPress={onClose} disabled={saving} hitSlop={10}>
+            <Icon name="x" size={24} color={head} />
+          </Pressable>
         </Box>
         <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
           <Box style={{ alignItems: 'center', marginBottom: 20 }}>

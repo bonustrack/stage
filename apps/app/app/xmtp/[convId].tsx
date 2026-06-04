@@ -23,7 +23,6 @@ import { HeaderAvatar, BubbleActionMenu, GithubNavButton } from '../../component
 import { previewOf } from '../../components/xmtp-conv/feed-helpers';
 import { ConversationFeed } from '../../components/xmtp-conv/ConversationFeed';
 import { useConversationState } from '../../components/xmtp-conv/useConversationState';
-import { BackSwipe } from '../../components/xmtp-conv/BackSwipe';
 
 export default function XmtpConversation(): React.ReactElement {
   const router = useRouter();
@@ -38,7 +37,7 @@ export default function XmtpConversation(): React.ReactElement {
     replyingTo, setReplyingTo, setReplyTarget,
     menuFor, setMenuFor, menuAnchor, overflowOpen, setOverflowOpen, setSelectedForCopy,
     peerAddr, groupName, groupImage, isGroup, github, senderEthOf,
-    mentionCandidates, onReact, onOptimistic, onSent, jumpToMessage, markAtBottom, listRef,
+    mentionCandidates, onReact, onOptimistic, onSent, jumpToMessage, markAtBottom,
   } = c;
 
   const insets = useSafeAreaInsets();
@@ -62,10 +61,12 @@ export default function XmtpConversation(): React.ReactElement {
         flex: 1, backgroundColor: bg, paddingBottom: insets.bottom,
       }}
     >
-      {/** In-screen edge-swipe-back (BackSwipe): the root <EdgeSwipeBack> Pan
-       *   can't reach touches inside this screen's native FlatList subtree, so
-       *   the conversation owns its own whole-page swipe over the theme-bg. */}
-      <BackSwipe listRef={listRef}>
+      {/** Swipe-back is now handled by the @react-navigation/stack JS card
+       *   stack (see app/_layout): its interactive horizontal gesture renders
+       *   the previous screen behind this one and finger-follows the pop. No
+       *   in-screen back shim needed — the stack's left-edge rightward gesture
+       *   composes with the inverted FlatList scroll + the leftward bubble
+       *   swipe-to-reply (opposite direction). */}
       <Reanimated.View style={[{ flex: 1 }, listWrapperStyle]}>
       <ConversationFeed
         c={c}
@@ -155,8 +156,7 @@ export default function XmtpConversation(): React.ReactElement {
       />
       </Box>
       </KeyboardStickyView>
-      </BackSwipe>
-      {/** Overlays live OUTSIDE BackSwipe — portals/bottom-sheets must NOT slide. */}
+      {/** Overlays — portals/bottom-sheets render here, outside the feed column. */}
       <ChannelMenu
         visible={overflowOpen}
         convId={convId ?? ''}

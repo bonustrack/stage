@@ -7,25 +7,21 @@
 import type { ReactNode } from 'react';
 import { Modal, Pressable, ScrollView } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { Title } from '@metro-labs/kit/title';
-import { Box } from './layout';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useEffectiveColorScheme, usePalette, useBlockRadius } from '../lib/theme';
-import { Icon } from '@metro-labs/kit/icon';
+import { usePalette, useBlockRadius } from '../lib/theme';
 
 export function AppModal({
-  visible, onClose, title, children,
+  visible, onClose, children,
 }: {
   visible: boolean;
   onClose: () => void;
+  /** Accepted for call-site compatibility; no longer rendered (no title chrome). */
   title?: string;
   children: ReactNode;
 }): React.ReactElement {
   const insets = useSafeAreaInsets();
-  const dark = useEffectiveColorScheme() === 'dark';
   const pal = usePalette();
   const sheetBg = pal.bg; // sheet surface → bg token (editable)
-  const head = pal.link; // #ffffff / #000000
   // Sheets are "blocks" → top corners follow the border-radius token. Bumped up
   // a touch (×1.4) so the sheet edge stays visibly rounder than inline cards,
   // preserving the bottom-sheet look at the 12px default. No hard cap so the
@@ -48,27 +44,14 @@ export function AppModal({
             backgroundColor: sheetBg,
             borderTopLeftRadius: sheetRadius,
             borderTopRightRadius: sheetRadius,
-            paddingTop: title ? 14 : 18,
+            paddingTop: 18,
             paddingBottom: insets.bottom + 16,
             maxHeight: '88%',
           }}
         >
-          {title ? (
-            <Box style={{
-              flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-              paddingHorizontal: 16, paddingBottom: 4,
-            }}>
-              <Title dark={dark} style={{ color: head, fontSize: 20 }}>
-                {title}
-              </Title>
-              <Pressable onPress={onClose} hitSlop={10}>
-                <Icon name="x" size={22} color={head} />
-              </Pressable>
-            </Box>
-          ) : null}
           <ScrollView
             keyboardShouldPersistTaps="handled"
-            contentContainerStyle={{ paddingHorizontal: 16, paddingTop: title ? 8 : 0 }}
+            contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 0 }}
             showsVerticalScrollIndicator={false}
           >
             {children}

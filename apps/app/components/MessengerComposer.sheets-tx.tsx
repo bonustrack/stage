@@ -25,7 +25,7 @@ export function SignatureSheet({
   const { primary, bg } = usePalette();
   const r = useBlockRadius();
   return (
-    <AppModal visible={open} onClose={onClose} title="Request signature">
+    <AppModal visible={open} onClose={onClose}>
       <Col gap={12} pb={8}>
         <Row gap={8}>
           {([['personal', 'Message'], ['eip712', 'Typed data']] as const).map(([k, label]) => (
@@ -99,7 +99,7 @@ export function PaymentSheet({
   const { primary, bg } = usePalette();
   const r = useBlockRadius();
   return (
-    <AppModal visible={open} onClose={onClose} title="Request payment / Send">
+    <AppModal visible={open} onClose={onClose}>
       <Col gap={12} pb={8}>
         <TextInput
           value={to}

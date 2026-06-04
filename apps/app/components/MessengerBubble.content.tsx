@@ -64,7 +64,7 @@ export function BubbleContent({
             paddingLeft: 6, marginBottom: 4, opacity: pressed ? 0.45 : 0.7,
           })}
         >
-          <Text style={{ color: fg, fontSize: 14, fontStyle: 'italic' , fontFamily: 'Calibre-Medium'}} numberOfLines={2}>
+          <Text style={{ color: fg, fontSize: 17, fontFamily: 'Calibre-Medium' }} numberOfLines={2}>
             {replyPreview}
           </Text>
         </Pressable>
