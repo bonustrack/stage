@@ -46,9 +46,11 @@ interface Props {
 export function MessengerComposer({
   dark, xmtpLine, mentionCandidates, replyingTo, autoFocusNonce, onClearReply, onJumpToReply, onOptimistic, onSent,
 }: Props): React.ReactElement {
-  const pal = usePalette(); // text/primary/border/bg ← tokens; sub is a one-off grey
+  const pal = usePalette(); // text/primary/border/bg ← tokens
   const fg = pal.text, head = pal.primary, inputBg = pal.border, chipBg = pal.border;
-  const sub = dark ? '#7a7a7e' : '#8a929d';
+  // `sub` = muted/secondary text (placeholder, timestamps). No `muted` token
+  // exists yet, so map to `text` to keep it editable. TODO: dedicated muted token.
+  const sub = pal.text;
   const palette = { fg, sub, inputBg, chipBg };
 
   const [text, setText] = useState('');
@@ -147,7 +149,7 @@ export function MessengerComposer({
         </Text>
       ) : null}
       <ComposerEditor
-        dark={dark} fg={fg} head={head} sub={sub} inputBg={inputBg} chipBg={chipBg}
+        dark={dark} fg={fg} head={head} bg={bg} sub={sub} inputBg={inputBg} chipBg={chipBg}
         recording={recording} levels={levels} recordSecs={recordSecs}
         slideX={slideX} slideThresholdPx={SLIDE_CANCEL_THRESHOLD_PX} micPanResponder={micPanResponder}
         text={text} setText={setText}
