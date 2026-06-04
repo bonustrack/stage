@@ -5,15 +5,14 @@
  *  needed. Renders System / Light / Dark as a segmented pill, reusing the same
  *  option data as the Settings screen. */
 
-import { Pressable } from 'react-native';
 import { Box, Row } from '../layout';
-import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import { Title } from '@metro-labs/kit/title';
+import { Button } from '@metro-labs/kit/button';
 import { setThemePreference, useThemePreference } from '../../lib/theme';
 import { THEME_OPTIONS } from '../tabs/SettingsScreen.parts';
 
-export function ThemeSwitcher({ dark, head, sub, border, rowBg }: {
+export function ThemeSwitcher({ dark, head }: {
   dark: boolean; head: string; sub: string; border: string; rowBg: string;
 }): React.ReactElement {
   const pref = useThemePreference();
@@ -23,23 +22,19 @@ export function ThemeSwitcher({ dark, head, sub, border, rowBg }: {
       <Row gap={8} mt={10}>
         {THEME_OPTIONS.map((opt) => {
           const active = pref === opt.value;
+          // Primary (active) text is bg-contrasting (dark scheme → dark text);
+          // secondary (inactive) uses the head token. Mirror that for the icon.
+          const fg = active ? (dark ? '#000000' : '#ffffff') : head;
           return (
-            <Pressable
+            <Button
               key={opt.value}
+              dark={dark}
+              variant={active ? 'primary' : 'secondary'}
               onPress={() => { void setThemePreference(opt.value); }}
-              style={{
-                flex: 1, paddingVertical: 12, borderRadius: 11,
-                flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-                borderWidth: 1,
-                borderColor: active ? head : border,
-                backgroundColor: active ? rowBg : 'transparent',
-              }}
-            >
-              <Icon name={opt.icon} size={20} color={active ? head : sub} />
-              <Text style={{ color: active ? head : sub, fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
-                {opt.label}
-              </Text>
-            </Pressable>
+              style={{ flex: 1 }}
+              icon={<Icon name={opt.icon} size={20} color={fg} />}
+              label={opt.label}
+            />
           );
         })}
       </Row>
