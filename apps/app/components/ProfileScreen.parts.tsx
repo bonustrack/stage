@@ -112,6 +112,8 @@ export function ProfileActions({ dark, opening, onMessage, onSend, c }: {
         dark={dark}
         onPress={onPress}
         disabled={disabled}
+        tintBg={c.border}
+        tintFg={c.primary}
         icon={<Icon name={icon} size={22} color={c.primary} />}
       />
       <Text style={{ color: c.primary, fontSize: 14, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{label}</Text>
