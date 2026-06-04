@@ -31,7 +31,9 @@ const NET_LABEL: Record<number, string> = { 1: 'Ethereum', 11155111: 'Sepolia' }
 export default function WalletUnshield(): React.ReactElement {
   const router = useRouter();
   const params = useLocalSearchParams<{ symbol?: string; chainId?: string }>();
-  const { fg, head, sub, bg, border, rowBg: inputBg } = usePalette();
+  const { text: fg, primary: head, bg, border } = usePalette();
+  const sub = fg;
+  const inputBg = border;
   const dark = useEffectiveColorScheme() === 'dark';
   const insets = useSafeAreaInsets();
   const pal = { fg, head, sub, border, inputBg };

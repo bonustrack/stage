@@ -57,12 +57,12 @@ export function CommonChannels({ peerAddress, enabled, c }: {
           rendered as a single tab. */}
       <Row justify="start" align="center" gap={24} mx={16} mb={6}
         style={{ borderBottomWidth: 1, borderBottomColor: c.border }}>
-        <Pressable style={{ paddingVertical: 10, marginBottom: -1, borderBottomWidth: 2, borderBottomColor: c.head }}>
-          <Text style={{ color: c.head, fontSize: 18, fontFamily: 'Calibre-Semibold' }}>
+        <Pressable style={{ paddingVertical: 10, marginBottom: -1, borderBottomWidth: 2, borderBottomColor: c.primary }}>
+          <Text style={{ color: c.primary, fontSize: 18, fontFamily: 'Calibre-Semibold' }}>
             Channels
           </Text>
         </Pressable>
-        {loading ? <Spinner size={20} color={c.sub} /> : null}
+        {loading ? <Spinner size={20} color={c.text} /> : null}
       </Row>
 
       {/* Flat full-width rows — identical to the channels tab (index.tsx

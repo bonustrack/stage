@@ -23,7 +23,7 @@ export function ContactSuggestions({
   selected: Set<string>;
   onToggle: (contact: Contact) => void;
 }): React.ReactElement | null {
-  const { head, sub, border, primary } = usePalette();
+  const { primary: head, text: sub, border, primary } = usePalette();
   if (contacts.length === 0) return null;
 
   return (

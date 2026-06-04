@@ -11,7 +11,9 @@ import { KitGitHubLink } from './KitGitHubLink';
 
 export function KitPage(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
-  const { fg, head, sub, bg, border, rowBg } = usePalette();
+  const { text: fg, primary: head, bg, border } = usePalette();
+  const sub = fg;
+  const rowBg = border;
   const insets = useSafeAreaInsets();
 
   return (

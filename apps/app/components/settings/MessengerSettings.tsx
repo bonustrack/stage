@@ -35,7 +35,9 @@ function CopyRow({ label, value, display, c }: {
 
 export function MessengerSettings(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
-  const { fg, head, sub, bg, border, rowBg } = usePalette();
+  const { text: fg, primary: head, bg, border } = usePalette();
+  const sub = fg;
+  const rowBg = border;
   const insets = useSafeAreaInsets();
   const epoch = useAccountEpoch();
   const [addr, setAddr] = useState('');

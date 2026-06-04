@@ -31,7 +31,7 @@ import { useWalletBalances } from './WalletScreen.balances';
 
 export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const router = useRouter();
-  const { head, sub, bg, border } = usePalette();
+  const { primary: head, text: sub, bg, border } = usePalette();
   const dark = useEffectiveColorScheme() === 'dark';
 
   const { snapshot: privSnapshot, accountId: privAccountId, pending } = usePrivateWallet(true);

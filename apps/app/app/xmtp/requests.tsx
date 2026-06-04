@@ -69,7 +69,8 @@ async function summarizeRequest(conv: Conversation): Promise<ReqRow> {
 export default function Requests(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { fg, head, sub, bg, border } = usePalette();
+  const { text: fg, primary: head, bg, border } = usePalette();
+  const sub = fg;
   const insets = useSafeAreaInsets();
   const [rows, setRows] = useState<ReqRow[] | null>(null);
 
