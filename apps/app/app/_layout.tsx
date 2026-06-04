@@ -157,11 +157,12 @@ export default function RootLayout(): React.ReactElement {
           headerShown: false,
           contentStyle: { backgroundColor: bg },
           statusBarStyle: barStyle,
-          /** Pushed routes slide in from the right; <EdgeSwipeBack> pops them. */
-          animation: 'slide_from_right',
+          /** Instant navigation — no push/pop transition animation (Less's
+           *  preference). <EdgeSwipeBack> still pops via the JS Pan shim. */
+          animation: 'none',
+          animationDuration: 0,
         }}
       >
-        {/** Tab root: no slide animation (it's the bottom of the stack). */}
         <NativeSwipeStack.Screen
           name="(tabs)"
           options={{ animation: 'none' }}
