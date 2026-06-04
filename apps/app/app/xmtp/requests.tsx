@@ -23,6 +23,7 @@ import { previewOfXmtpContent } from '@metro-labs/client/xmtp/humanize';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { usePeerProfiles, getPeerName, getPeerAvatarCb } from '../../lib/peerProfiles';
 import { Icon } from '@metro-labs/kit/icon';
+import { channelStampSeed } from '@metro-labs/kit/avatar';
 import { ChannelRow } from '../../components/ChannelRow';
 import { Box, Col, Row } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
@@ -32,8 +33,11 @@ interface ReqRow {
   title: string;
   /** DM peer address (null for groups) → avatar + display-name resolution. */
   peerAddress: string | null;
-  /** Avatar address: peer for DMs, first other member for groups. */
+  /** Stamp seed: peer (DM, round) or the channel-id stamp (group, square).
+   *  Ignored when avatarUri is set. */
   avatarAddress: string | null;
+  /** Group-uploaded image — takes precedence over avatarAddress (groups only). */
+  avatarUri: string | null;
   preview: string;
   isGroup: boolean;
 }
@@ -43,8 +47,12 @@ async function summarizeRequest(conv: Conversation): Promise<ReqRow> {
   const peerAddress = await peerEthAddressOfDm(conv);
   const isGroup = !peerAddress;
   const memberAddresses = isGroup ? await groupMemberEthAddresses(conv) : [];
+  const g = conv as unknown as { name?: () => Promise<string>; imageUrl?: () => Promise<string> };
   const groupName = isGroup
-    ? await (conv as unknown as { name?: () => Promise<string> }).name?.().catch(() => '') ?? ''
+    ? await g.name?.().catch(() => '') ?? ''
+    : '';
+  const groupImage = isGroup
+    ? (await g.imageUrl?.().catch(() => '') ?? '').trim()
     : '';
   const recent: DecodedMessage[] = await conv.messages({ limit: 1 }).catch(() => []);
   const last = recent[0];
@@ -56,11 +64,18 @@ async function summarizeRequest(conv: Conversation): Promise<ReqRow> {
   const title = peerAddress
     ? shortAddress(peerAddress)
     : (groupName.trim() || `${memberAddresses.length + 1} members`);
+  /** Avatar precedence (mirrors Home channels list):
+   *   - DM: peer stamp (round).
+   *   - Group WITH image: avatarUri (square).
+   *   - Group WITHOUT image: deterministic channel stamp (square), NOT a member's. */
+  const avatarUri = isGroup ? (groupImage || null) : null;
+  const avatarAddress = peerAddress ?? (avatarUri ? null : channelStampSeed(conv.id));
   return {
     convId: conv.id,
     title,
     peerAddress,
-    avatarAddress: peerAddress ?? memberAddresses[0] ?? null,
+    avatarAddress,
+    avatarUri,
     preview: preview.slice(0, 80),
     isGroup,
   };
@@ -81,7 +96,7 @@ export default function Requests(): React.ReactElement {
   }, []);
 
   useEffect(() => { void load(); }, [load]);
-  usePeerProfiles((rows ?? []).flatMap(r => [r.avatarAddress, r.peerAddress]));
+  usePeerProfiles((rows ?? []).map(r => r.peerAddress));
 
   const act = useCallback((convId: string, accept: boolean): void => {
     /** Optimistic: drop the row immediately; the consent write + the channels
@@ -107,7 +122,8 @@ export default function Requests(): React.ReactElement {
           <ChannelRow
             title={displayTitle}
             avatarAddress={item.avatarAddress}
-            cacheBuster={item.avatarAddress ? getPeerAvatarCb(item.avatarAddress) : undefined}
+            avatarUri={item.avatarUri}
+            cacheBuster={!item.isGroup && item.peerAddress ? getPeerAvatarCb(item.peerAddress) : undefined}
             square={item.isGroup}
             lastPreview={item.preview || '(no messages yet)'}
             onPress={() => router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } })}
