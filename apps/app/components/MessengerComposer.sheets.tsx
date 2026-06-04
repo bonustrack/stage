@@ -9,6 +9,7 @@ import { Icon } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';
 import { Box, Row, Col } from './layout';
 import { AppModal } from './AppModal';
+import { usePalette } from '../lib/theme';
 import { type Palette } from './MessengerComposer.helpers';
 
 export function PollSheet({
@@ -23,6 +24,7 @@ export function PollSheet({
   onSend: () => void;
 }): React.ReactElement {
   const { fg, sub, inputBg } = palette;
+  const { primary, bg } = usePalette();
   return (
     <AppModal visible={open} onClose={onClose} title="New poll">
       <Col gap={12} pb={8}>
@@ -86,6 +88,8 @@ export function PollSheet({
           dark={dark}
           onPress={onSend}
           label="Send poll"
+          tintBg={primary}
+          tintFg={bg}
           style={{ marginTop: 4 }}
         />
       </Col>
