@@ -18,7 +18,7 @@ import { Col } from '../layout';
 import {
   setThemePreference, useEffectiveColorScheme, usePalette, useThemePreference,
 } from '../../lib/theme';
-import { PillSection, THEME_OPTIONS } from './SettingsScreen.parts';
+import { THEME_OPTIONS } from './SettingsScreen.parts';
 import { AccountSecuritySection } from './SettingsScreen.account';
 
 const APP_VERSION = Constants.expoConfig?.version ?? 'unknown';
@@ -127,8 +127,6 @@ export function SettingsScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): 
         c={{ fg, head, sub, border, rowBg }}
         danger={dark ? '#ff6b80' : '#b91c1c'}
       />
-
-      <PillSection c={{ fg, head, sub, border, rowBg }} />
 
       <Col mt={32} px={16}>
         <Pressable

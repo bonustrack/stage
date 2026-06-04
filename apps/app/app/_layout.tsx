@@ -22,7 +22,6 @@ import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { useDeepLinks } from '../lib/deepLinks';
 import { useRestoreLastRoute } from '../lib/lastRoute';
 import { usePushDeepLinks } from '../lib/push';
-import { installPillAudioBridge } from '../lib/pill';
 import { ensureActiveAccount } from '../lib/xmtp';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WalletConnectProvider } from '../components/WalletConnectProvider';
@@ -96,11 +95,6 @@ export default function RootLayout(): React.ReactElement {
    *  Handles both cold-start (app launched by the tap) and warm/background
    *  taps. Installed once for the app's lifetime. */
   usePushDeepLinks();
-
-  /** Wire the floating-pill's recorded-audio callback to the XMTP audio-send
-   *  pipeline (→ daemon "Tony" DM). Idempotent + Android-only; no-op when the
-   *  native module isn't linked. Installed once for the app's lifetime. */
-  useEffect(() => installPillAudioBridge(), []);
 
   /** Mint the local EOA at boot, INDEPENDENT of XMTP. The wallet (Snapshot
    *  signing) + Railgun (usePrivateWallet → getActiveAccountId) must always have
