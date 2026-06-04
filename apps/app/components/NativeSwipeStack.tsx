@@ -6,18 +6,14 @@
  *  README). So the import is now `@react-navigation/native-stack`, which renders
  *  through rn-screens under the hood.
  *
- *  The interactive, finger-following parallax swipe-back (previous page sliding
- *  underneath on the native thread — the real iOS/Telegram look, on BOTH
- *  platforms incl. Android) is driven by rn-screens' OWN `goBackGesture` +
- *  `screenEdgeGesture` props (set in app/_layout.tsx). native-stack v7's
- *  `gestureEnabled`/`fullScreenGestureEnabled` are iOS-ONLY and never reach the
- *  Android gesture, so a small patch on native-stack's NativeStackView forwards
- *  `goBackGesture`/`screenEdgeGesture`/`transitionAnimation` (plus the required
- *  screensRefs/currentScreenId) through to rn-screens' <ScreenStack>, which
- *  wires the Reanimated interactive worklet. `GestureDetectorProvider`
- *  (mounted in _layout) arbitrates it cleanly with the app's other RNGH
- *  gestures (swipe-to-reply, scroll) instead of fighting a separate touch
- *  system.
+ *  Swipe-back is NOT driven by rn-screens' own `goBackGesture`/`screenEdgeGesture`
+ *  worklet — on Android that worklet calls `measure()` on a mocked
+ *  ScreenGestureDetector ref and crashes ("Value is undefined, expected an
+ *  Object"). Instead the app uses JS RNGH Pan shims: <EdgeSwipeBack> wraps this
+ *  navigator (left-edge → router.back()) and the conversation screen mounts its
+ *  own in-screen <BackSwipe>. The stock pop still plays the native slide.
+ *  `GestureDetectorProvider` (mounted in _layout) arbitrates the gestures with
+ *  the app's other RNGH gestures (swipe-to-reply, scroll).
  *
  *  `withLayoutContext` is the expo-router primitive that adapts any react-
  *  navigation navigator into a file-based-routing layout, so `<NativeSwipeStack>`

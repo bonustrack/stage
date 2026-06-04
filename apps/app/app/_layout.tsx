@@ -18,6 +18,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { GestureDetectorProvider } from 'react-native-screens/gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { NativeSwipeStack } from '../components/NativeSwipeStack';
+import { EdgeSwipeBack } from '../components/EdgeSwipeBack';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { useDeepLinks } from '../lib/deepLinks';
 import { useRestoreLastRoute } from '../lib/lastRoute';
@@ -139,57 +140,36 @@ export default function RootLayout(): React.ReactElement {
       <StatusBar style={barStyle} translucent backgroundColor="transparent" />
       {/** react-native-screens native-stack (via NativeSwipeStack/withLayoutContext).
        *
-       *   TRUE interactive swipe-back on BOTH platforms via rn-screens' own
-       *   `goBackGesture: 'swipeRight'` + `screenEdgeGesture: true`. This is a
-       *   Reanimated worklet that natively parallaxes the PREVIOUS screen in
-       *   underneath the finger (`ScreenTransition.SwipeRight`) — the real
-       *   Telegram/iOS look, not a flat JS translate over a backdrop.
-       *
-       *   HISTORY: on rn-screens 4.16 this worklet crashed on Android
-       *   (`measure()` on a mocked ScreenGestureDetector ref →
-       *   "Value is undefined, expected an Object"), so it was temporarily
-       *   replaced with JS Pan shims (EdgeSwipeBack + xmtp-conv/BackSwipe). That
-       *   crash was fixed upstream after 4.16; we're now on ~4.25.2, so the
-       *   native gesture is restored and the JS shims are removed.
-       *
-       *   `screenEdgeGesture: true` scopes the gesture to the left screen edge so
-       *   it never competes with in-screen horizontal intent (the leftward
-       *   swipe-to-reply on message bubbles). `GestureDetectorProvider` (mounted
-       *   above) wires the worklet into the RNGH gesture tree so it arbitrates
-       *   cleanly with scroll + swipe-to-reply.
+       *   SWIPE-BACK: handled by the JS <EdgeSwipeBack> wrapper (left-edge RNGH
+       *   Pan → router.back()) for pushed screens, plus an in-screen <BackSwipe>
+       *   on the conversation screen. We do NOT use rn-screens' own
+       *   `goBackGesture`/`screenEdgeGesture` worklet: on Android its `onStart`
+       *   worklet calls `measure()` on a mocked ScreenGestureDetector ref and
+       *   crashes with "Value is undefined, expected an Object" (redbox in
+       *   ScreenGestureDetector.tsx). The JS Pan shims never touch view tags, so
+       *   there's no crash and the native slide animation still plays via the
+       *   stock pop.
        *
        *   `statusBarStyle: barStyle` keeps white-on-dark status-bar icons; we also
        *   set it imperatively (effect above) + declaratively (<StatusBar>) so it
        *   survives navigation. */}
+      <EdgeSwipeBack>
       <NativeSwipeStack
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: dark ? '#0e0f10' : '#ffffff' },
           statusBarStyle: barStyle,
-          /** Pushed routes slide in from the right with the previous page
-           *  parallaxing underneath; an interactive left-edge swipe pops them. */
+          /** Pushed routes slide in from the right; <EdgeSwipeBack> pops them. */
           animation: 'slide_from_right',
-          /** TRUE interactive swipe-back on BOTH platforms. native-stack v7's
-           *  `gestureEnabled`/`fullScreenGestureEnabled` are iOS-ONLY (see the
-           *  @platform ios tags in its types) — they do nothing on Android,
-           *  which is why the gesture was dead. The interactive, finger-following
-           *  parallax (previous screen sliding under on the native thread) is
-           *  driven instead by rn-screens' OWN `goBackGesture` + `screenEdgeGesture`
-           *  props, which our patch on native-stack forwards to <ScreenStack>.
-           *  `screenEdgeGesture` scopes it to the left edge so it never fights
-           *  the in-screen swipe-to-reply. Wired into the RNGH tree by
-           *  GestureDetectorProvider (mounted above). */
-          goBackGesture: 'swipeRight',
-          screenEdgeGesture: true,
         }}
       >
-        {/** Tab root: no back gesture (it's the bottom of the stack — nothing to
-         *  pop to) and no slide animation. */}
+        {/** Tab root: no slide animation (it's the bottom of the stack). */}
         <NativeSwipeStack.Screen
           name="(tabs)"
-          options={{ animation: 'none', goBackGesture: undefined, screenEdgeGesture: false }}
+          options={{ animation: 'none' }}
         />
       </NativeSwipeStack>
+      </EdgeSwipeBack>
       </KeyboardProvider>
       </GestureDetectorProvider>
     </GestureHandlerRootView>
