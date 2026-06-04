@@ -14,7 +14,7 @@ import { Box, Row } from './layout';
 import { GithubLogo } from './GithubLogo';
 import { githubLinkOf } from '../lib/githubDetect';
 import { useGithubMeta } from '../lib/useGithubMeta';
-import { DANGER, SUCCESS, usePalette } from '../lib/theme';
+import { DANGER, SUCCESS, usePalette, useBlockRadius } from '../lib/theme';
 
 /** state → dot color (open green, merged purple, closed red). */
 const DOT: Record<string, string> = {
@@ -31,6 +31,7 @@ export function GitHubLinkCard({ url }: {
   const ref = githubLinkOf(url);
   const meta = useGithubMeta(ref);
   const pal = usePalette();
+  const blockRadius = useBlockRadius();
   if (!ref || !meta) return null;
 
   const fg = pal.link; // #ffffff / #000000
@@ -44,7 +45,7 @@ export function GitHubLinkCard({ url }: {
 
   return (
     <Pressable onPress={() => void Linking.openURL(url)}>
-      <Box radius={14} style={{ borderWidth: 1, borderColor: border, backgroundColor: 'transparent', paddingHorizontal: 12, paddingVertical: 10 }}>
+      <Box radius={blockRadius} style={{ borderWidth: 1, borderColor: border, backgroundColor: 'transparent', paddingHorizontal: 12, paddingVertical: 10 }}>
         <Row align="center" justify="start" style={{ marginBottom: 4 }}>
           <GithubLogo size={16} color={fg} />
           <Text style={{ color: subColor, fontSize: 11, fontFamily: 'Calibre-Medium', marginLeft: 6 }}>

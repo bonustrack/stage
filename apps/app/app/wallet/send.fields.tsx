@@ -8,7 +8,7 @@ import { Box } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
 import { Button } from '@metro-labs/kit/button';
 import { Icon } from '@metro-labs/kit/icon';
-import { DANGER } from '../../lib/theme';
+import { DANGER, useBlockRadius } from '../../lib/theme';
 
 interface Palette {
   fg: string; head: string; sub: string; border: string; inputBg: string;
@@ -23,6 +23,7 @@ export function RecipientField(props: {
   resolveErr: string | null;
 }): React.ReactElement {
   const { fg, head, sub, inputBg } = props.pal;
+  const blockRadius = useBlockRadius();
   return (
     <Box style={{ gap: 6 }}>
       <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>RECIPIENT</Text>
@@ -35,7 +36,7 @@ export function RecipientField(props: {
         autoCorrect={false}
         style={{
           color: head, fontSize: 16, fontFamily: 'Calibre-Medium',
-          backgroundColor: inputBg, borderRadius: 12,
+          backgroundColor: inputBg, borderRadius: blockRadius,
           paddingHorizontal: 14, paddingVertical: 12,
         }}
       />
@@ -71,6 +72,7 @@ export function AmountField(props: {
 }): React.ReactElement {
   const { fg, head, sub, border, inputBg } = props.pal;
   const { amount, mode, ethPriceUsd, setAmount, setMode, ethBalance } = props;
+  const blockRadius = useBlockRadius();
   return (
     <Box style={{ gap: 6 }}>
       <Box style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -89,7 +91,7 @@ export function AmountField(props: {
 
       <Box style={{
         flexDirection: 'row', alignItems: 'center',
-        backgroundColor: inputBg, borderRadius: 12,
+        backgroundColor: inputBg, borderRadius: blockRadius,
         paddingHorizontal: 14, paddingVertical: 12, gap: 8,
       }}>
         <TextInput
