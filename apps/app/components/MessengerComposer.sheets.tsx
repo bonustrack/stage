@@ -27,7 +27,7 @@ export function PollSheet({
   const { primary, bg } = usePalette();
   const r = useBlockRadius();
   return (
-    <AppModal visible={open} onClose={onClose} title="New poll">
+    <AppModal visible={open} onClose={onClose}>
       <Col gap={12} pb={8}>
         <TextInput
           value={question}

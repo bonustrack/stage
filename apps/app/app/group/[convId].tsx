@@ -188,7 +188,6 @@ export default function GroupDetail(): React.ReactElement {
         visible={overflowOpen}
         onClose={() => setOverflowOpen(false)}
         leaving={leaving} onLeave={() => leaveGroup(() => setOverflowOpen(false))}
-        sub={sub}
       />
       <ImageViewer
         uri={imageUrl ? avatarRenderUrl('', imageUrl, 1024) : ''}
