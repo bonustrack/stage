@@ -1,6 +1,5 @@
 /**
  * Extends Expo's Metro config for the bun monorepo:
- * - accept `.woff2` as a bundled asset (Calibre fonts under assets/fonts/)
  * - watch the repo root so the workspace packages (@metro-labs/client,
  *   @metro-labs/kit under ../../packages/*) resolve and hot-reload
  * - resolve modules from both the app-local and the hoisted root node_modules
@@ -20,9 +19,6 @@ const projectRoot = __dirname;
 const workspaceRoot = path.resolve(projectRoot, '..', '..');
 
 const config = getDefaultConfig(projectRoot);
-if (!config.resolver.assetExts.includes('woff2')) {
-  config.resolver.assetExts.push('woff2');
-}
 config.watchFolders = [...(config.watchFolders ?? []), workspaceRoot];
 // Leave serverRoot at its default (the workspace root — the common ancestor of
 // projectRoot + watchFolders). The dev client on device resolves the app entry
