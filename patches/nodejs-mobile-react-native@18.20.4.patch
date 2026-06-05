@@ -1,5 +1,8 @@
+diff --git a/node_modules/nodejs-mobile-react-native/.bun-tag-455b1abe81a7cb8e b/.bun-tag-455b1abe81a7cb8e
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
 diff --git a/android/build.gradle b/android/build.gradle
-index 14be6078d34741856a4d4027b4497ea4966da0a7..a29ee9dba2a9f6f0ee38296b398349b0d702302e 100644
+index 14be6078d34741856a4d4027b4497ea4966da0a7..76f442ac76753c2699d9c011a495c3122d0916ef 100644
 --- a/android/build.gradle
 +++ b/android/build.gradle
 @@ -20,35 +20,23 @@ if (_compileNativeModulesSdkVersion<24) {
@@ -50,6 +53,18 @@ index 14be6078d34741856a4d4027b4497ea4966da0a7..a29ee9dba2a9f6f0ee38296b398349b0
      compileSdkVersion ((rootProject?.ext?.properties?.compileSdkVersion) ?: 24)
      buildToolsVersion ((rootProject?.ext?.properties?.buildToolsVersion) ?: "30.0.2")
  
+@@ -409,8 +397,9 @@ if ("1".equals(shouldRebuildNativeModules)) {
+             if (nodeVersionResult.exitValue != 0) {
+                 throw new GradleException("Failed to get node version: ${nodeVersionResult.errorOutput}")
+             }
+-            if (nodeVersionStdout.toString().trim() != "${_nodeVersionRequired}") {
+-                throw new GradleException("nodejs-mobile-react-native requires Node.js version ${_nodeVersionRequired}, but found ${nodeVersionStdout.toString().trim()}")
++            def _detectedNodeMajor = nodeVersionStdout.toString().trim()
++            if (!(_detectedNodeMajor in ["18", "20", "22"])) {
++                throw new GradleException("nodejs-mobile-react-native requires Node.js version ${_nodeVersionRequired} (18/20/22 accepted), but found ${_detectedNodeMajor}")
+             }
+             inputs.file "${rootProject.buildDir}/nodejs-native-assets-temp-build/nodejs-native-assets-${abi_name}/copy.timestamp"
+             outputs.dir "${rootProject.buildDir}/nodejs-native-assets-temp-build/nodejs-native-assets-${abi_name}/nodejs-project/"
 diff --git a/android/src/main/AndroidManifest.xml b/android/src/main/AndroidManifest.xml
 index 78cb6c572a0c30e6b1129d3378ed4a7418351a74..3c21b61c758c5d7a28b38a17848b0c94a337899b 100644
 --- a/android/src/main/AndroidManifest.xml
