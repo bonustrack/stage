@@ -10,3 +10,4 @@ export default function TabRoutePlaceholder(): null {
 }
 
 // preview smoke test — auto-deploy verification (remove)
+// second commit — synchronize redeploy check
