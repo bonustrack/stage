@@ -230,6 +230,44 @@ metro tunnel status                    # show current tunnel config
 A named tunnel gives webhook endpoints a stable public URL
 (`https://<hostname>/wh/<id>`). Without one, endpoints stay loopback-only.
 
+### Review (parallel PR review bundlers)
+
+```sh
+metro review <issue#|branch>            # start (or reuse) a bundler+tunnel for that branch
+metro review list                       # list running review bundlers
+metro review stop <issue#|branch|all>   # tear down bundler + tunnel + DNS + worktree
+```
+
+Lets you review many branches in parallel from **one** installed Expo dev-client
+app by switching the bundler URL at runtime — instead of every task piling onto
+the single served branch (served-main / `bundler.metro.box:8081`).
+
+For each review, `metro review`:
+
+1. Resolves the branch (an issue number → its linked open PR via
+   `gh pr list --search <#>`; or a branch name passed directly).
+2. Creates a dedicated git worktree under `.claude/worktrees/review-<key>/`
+   (the served-main worktree is never touched), symlinking `node_modules` from
+   an existing worktree so there is no `bun install` wait.
+3. Starts an Expo dev bundler on a free port (8082, 8083, …), with
+   `EXPO_PACKAGER_PROXY_URL` set to the tunnel host so the bundler advertises
+   the public URL for HMR/assets.
+4. Creates a Cloudflare named tunnel (`metro-review-<key>`) and a DNS CNAME
+   `pr<key>-bundler.metro.box` → that tunnel, on demand via the existing
+   `~/.cloudflared` cert (no wildcard DNS record required).
+5. Prints — and you DM to the device — an expo-dev-client deep link:
+   `metro://expo-development-client/?url=https%3A%2F%2Fpr<key>-bundler.metro.box`.
+   Tapping it loads that branch in the installed dev client.
+
+State (port / pids / tunnel / branch) persists in `reviews.json` so `list` and
+`stop` work across invocations. `stop` kills the bundler+tunnel, deletes the DNS
+record and the named tunnel, and removes the worktree (the branch is kept).
+
+> **Hostname note:** hosts are **one level deep** (`pr<key>-bundler.metro.box`,
+> not `pr<key>.bundler.metro.box`). The zone's Universal SSL cert covers
+> `*.metro.box` but not `*.bundler.metro.box`, so a two-level host fails the TLS
+> handshake. The one-level suffix is covered automatically — no cert/DNS setup.
+
 ### `metro update`
 
 Upgrade the installed package in place.

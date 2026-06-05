@@ -10,6 +10,7 @@ import { readHistory } from '../history.js';
 import { cmdDoctor, cmdSetup, cmdUpdate } from './config.js';
 import { cmdClaim, cmdClaims, cmdRelease, cmdTail } from './tail.js';
 import { cmdCall, cmdTrains, cmdTunnel, cmdWebhook } from './webhook.js';
+import { cmdReview } from './review.js';
 import {
   cmdDelete, cmdEdit, cmdRead, cmdReact, cmdReply, cmdSend, cmdUnreact,
 } from './messaging.js';
@@ -69,6 +70,11 @@ Usage:
   metro webhook list | remove <id>            List or remove webhook endpoints.
   metro tunnel setup <name> <hostname>        Configure a Cloudflare named tunnel.
   metro tunnel status                         Show current tunnel config.
+  metro review <issue#|branch>                Start (or reuse) a per-branch Expo dev bundler +
+                                              tunnel (pr<n>.bundler.metro.box) for parallel PR
+                                              review; prints a dev-client launch deep link.
+  metro review list                           List running review bundlers.
+  metro review stop <issue#|branch|all>       Tear down a review's bundler, tunnel, DNS, worktree.
   metro update                                Upgrade in place.
   metro --version | --help
 
@@ -147,7 +153,7 @@ const COMMANDS: Record<string, (positional: string[], flags: Flags) => Promise<v
   call: cmdCall, trains: cmdTrains,
   send: cmdSend, reply: cmdReply, react: cmdReact, unreact: cmdUnreact,
   edit: cmdEdit, delete: cmdDelete, read: cmdRead,
-  webhook: cmdWebhook, tunnel: cmdTunnel,
+  webhook: cmdWebhook, tunnel: cmdTunnel, review: cmdReview,
   history: cmdHistory, tail: cmdTail,
   claim: cmdClaim, release: cmdRelease, claims: cmdClaims,
   update: cmdUpdate,
