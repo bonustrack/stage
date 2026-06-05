@@ -8,9 +8,8 @@ const FCM_SVC_PATH = `${process.env.HOME}/.config/metro/firebase-service-account
 const FCM_TOKENS_PATH = `${process.env.HOME}/.cache/metro/xmtp-push-tokens.json`;
 interface FcmServiceAccount { client_email: string; private_key: string; project_id: string; token_uri: string }
 
-// Per-device push token. `account` scopes it to a daemon accountId; `inboxIds`
-// accumulates every inbox that registered this device so a multi-account phone is
-// "self" for all of them. Legacy rows may have only {token, registeredAt}.
+// Per-device token. `account` scopes to a daemon accountId; `inboxIds` = every inbox
+// that registered this device (legacy rows: {token,registeredAt}).
 interface StoredPushToken {
   token: string; registeredAt: string; account?: string;
   inboxId?: string; inboxIds?: string[]; platform?: string; lastSeenAt?: string;
@@ -23,30 +22,26 @@ function loadFcmSvc(): FcmServiceAccount | null {
 }
 export function loadPushTokens(): StoredPushToken[] {
   if (!existsSync(FCM_TOKENS_PATH)) return [];
-  try { return JSON.parse(readFileSync(FCM_TOKENS_PATH, 'utf8')) as StoredPushToken[]; }
-  catch { return []; }
+  try { return JSON.parse(readFileSync(FCM_TOKENS_PATH, 'utf8')) as StoredPushToken[]; } catch { return []; }
 }
 export function savePushTokens(tokens: StoredPushToken[]): void {
   mkdirSync(dirname(FCM_TOKENS_PATH), { recursive: true });
   writeFileSync(FCM_TOKENS_PATH, JSON.stringify(tokens, null, 2));
 }
 
-/** Upsert a device token (deduped by token); returns the new total count. */
-export function storePushToken(entry: {
-  token: string; account?: string; inboxId?: string; platform?: string;
-}): number {
+/** Upsert a device token (deduped by token); returns the new total count.
+ *  Carries forward every inbox this device registered (one FCM token) → never self-notify. */
+export function storePushToken(
+  entry: { token: string; account?: string; inboxId?: string; platform?: string },
+): number {
   const now = new Date().toISOString();
   const all = loadPushTokens();
   const existing = all.find(t => t.token === entry.token);
   const remaining = all.filter(t => t.token !== entry.token);
-  // Accumulate inbox ids across account switches on the same device: a phone keeps
-  // ONE FCM token, so carry forward every inbox it registered → never self-notify.
   const inboxIds = new Set<string>(existing?.inboxIds ?? []);
   if (existing?.inboxId) inboxIds.add(existing.inboxId);
   if (entry.inboxId) inboxIds.add(entry.inboxId);
-  const row: StoredPushToken = {
-    token: entry.token, registeredAt: existing?.registeredAt ?? now, lastSeenAt: now,
-  };
+  const row: StoredPushToken = { token: entry.token, registeredAt: existing?.registeredAt ?? now, lastSeenAt: now };
   if (entry.account) row.account = entry.account;
   if (entry.inboxId) row.inboxId = entry.inboxId;
   if (inboxIds.size) row.inboxIds = [...inboxIds];
@@ -58,8 +53,7 @@ export function storePushToken(entry: {
 
 let cachedAccessToken: { token: string; expiresAt: number } | null = null;
 async function fcmAccessToken(): Promise<string | null> {
-  const svc = loadFcmSvc();
-  if (!svc) return null;
+  const svc = loadFcmSvc(); if (!svc) return null;
   if (cachedAccessToken && cachedAccessToken.expiresAt > Date.now() + 60_000) return cachedAccessToken.token;
   const { createSign } = await import('node:crypto');
   const enc = (o: unknown): string => Buffer.from(JSON.stringify(o)).toString('base64url');
@@ -90,9 +84,7 @@ async function fcmPushTo(
   const svc = loadFcmSvc(); if (!svc) return;
   const at = await fcmAccessToken(); if (!at) return;
   const url = `https://fcm.googleapis.com/v1/projects/${svc.project_id}/messages:send`;
-  // CONTENTLESS DATA-ONLY high-priority message — NO `notification` block and NO
-  // plaintext (no title/body/avatar). The device decrypts locally + builds the
-  // card. Payload carries ONLY routing metadata; FCM/Google never see content.
+  // CONTENTLESS DATA-ONLY message — no `notification` block, no plaintext; device builds the card.
   const payloadData: Record<string, string> = { channelId: 'xmtp', ...data };
   const res = await fetch(url, {
     method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${at}` },
@@ -100,23 +92,18 @@ async function fcmPushTo(
   });
   if (!res.ok) {
     const txt = await res.text().catch(() => '');
-    // Dead token (app uninstalled / rotated) → prune. Cover FCM v1 + legacy shapes:
-    // UNREGISTERED/NOT_FOUND/404/registration-token-not-registered/NotRegistered.
-    // (INVALID_ARGUMENT = bad payload, NOT a stale token — never prune on it.)
+    // Dead token (uninstalled/rotated) → prune. (INVALID_ARGUMENT = bad payload, NOT stale.)
     const dead = res.status === 404 || txt.includes('UNREGISTERED')
       || txt.includes('NOT_FOUND') || txt.includes('registration-token-not-registered')
       || txt.includes('NotRegistered');
-    if (dead) {
-      savePushTokens(loadPushTokens().filter(t => t.token !== deviceToken));
-      process.stderr.write(`fcm: pruned stale token ${deviceToken.slice(0, 12)}…\n`); return;
-    }
+    if (dead) { removePushToken(deviceToken);
+      process.stderr.write(`fcm: pruned stale token ${deviceToken.slice(0, 12)}…\n`); return; }
     process.stderr.write(`fcm push ${res.status}: ${txt}\n`);
   }
 }
 
-/** ONE token per account: freshest by lastSeenAt → registeredAt. Two app variants
- *  (Stage + Metro) on one phone share an account; sending to both = double push.
- *  Unscoped rows (no `account`) can't be deduped, so they pass through as-is. */
+/** ONE token per account: freshest by lastSeenAt → registeredAt (two app variants
+ *  on one phone = double push). Unscoped rows pass through as-is. */
 function freshestPerAccount(tokens: StoredPushToken[]): StoredPushToken[] {
   const freshness = (t: StoredPushToken): number =>
     new Date(t.lastSeenAt ?? t.registeredAt ?? 0).getTime();
@@ -135,27 +122,32 @@ function freshestPerAccount(tokens: StoredPushToken[]): StoredPushToken[] {
 export async function fcmPushToAll(
   accountId: string, data: Record<string, string> = {}, excludeInboxId?: string,
 ): Promise<void> {
-  // Scope to the account and skip the sender's OWN device(s) (you don't get pushed
-  // for a message you just sent). Sender match is by stored inboxId/inboxIds.
+  // Scope to the account; skip the sender's OWN device(s) by inboxId/inboxIds.
   const tokens = loadPushTokens().filter(t => {
     if (t.account && t.account !== accountId) return false;
     if (excludeInboxId && (t.inboxId === excludeInboxId || t.inboxIds?.includes(excludeInboxId))) return false;
     return true;
   });
-  // Freshest token per account → exactly ONE notification per device (no doubles).
-  const deduped = freshestPerAccount(tokens);
+  const deduped = freshestPerAccount(tokens); // exactly ONE notification per device
   if (deduped.length === 0) return;
   await Promise.all(deduped.map(
     t => fcmPushTo(t.token, { ...data, account: accountId }).catch(() => undefined)));
 }
 
-// ──────────── control DM (inbound, F2) — wire format from PR #135 ────────────
-// SINGLE SOURCE OF TRUTH: apps/app/lib/pushRegister.ts. The app sends, from its
-// account to the daemon inbox, a plain-text DM body:
-//   METRO_CTRL:register-push:{json}
-// where {json} = { v, token, platform, address:<lowercased>, inboxId }.
+// control DM (inbound) — wire fmt: apps/app/lib/pushRegister.control.ts. Bodies:
+// METRO_CTRL:register-push:{v,token,platform,address,inboxId} | disable-push:{v,token,address,inboxId}
 const METRO_CTRL_PREFIX = 'METRO_CTRL:';
 const CTRL_REGISTER_PUSH = 'register-push';
+const CTRL_DISABLE_PUSH = 'disable-push';
+
+/** Drop a device token from the store (push OFF). Returns remaining count, or -1
+ *  if absent. Deletes the row so fan-out (reads loadPushTokens) instantly stops. */
+export function removePushToken(token: string): number {
+  const all = loadPushTokens();
+  const remaining = all.filter(t => t.token !== token);
+  if (remaining.length === all.length) return -1;
+  savePushTokens(remaining); return remaining.length;
+}
 
 /** Mirror of the app's `isMetroControlBody` (prefix-only test) so every control
  *  verb — current or future — is filtered out of chat/push. */
@@ -164,6 +156,7 @@ function isMetroControlBody(text: unknown): text is string {
 }
 
 interface RegisterPushPayload { v?: number; token: string; platform?: string; address?: string; inboxId?: string }
+interface DisablePushPayload { v?: number; token: string; address?: string; inboxId?: string }
 
 /** Handle an inbound control DM. Returns true iff it was a control DM (so it must
  *  NOT be surfaced as chat or pushed). Best-effort: never throws. */
@@ -187,6 +180,15 @@ export function handleControlDm(accountId: string, msg: DecodedMessage): boolean
       });
       process.stderr.write(`xmtp[${accountId}]: register-push (ctrl-dm) stored token ${obj.token.slice(0, 12)}… `
         + `from inbox ${msg.senderInboxId.slice(0, 10)}… (v=${obj.v ?? '?'}, ${total} total)\n`);
+    } else if (verb === CTRL_DISABLE_PUSH) {
+      const obj = JSON.parse(arg) as Partial<DisablePushPayload>;
+      if (!obj || typeof obj.token !== 'string' || obj.token.length < 20) {
+        process.stderr.write(`xmtp[${accountId}]: disable-push (ctrl-dm) ignored — bad/short token\n`);
+        return true;
+      }
+      const remaining = removePushToken(obj.token);
+      process.stderr.write(`xmtp[${accountId}]: disable-push (ctrl-dm) token ${obj.token.slice(0, 12)}… `
+        + (remaining === -1 ? 'not found (already gone)\n' : `removed (v=${obj.v ?? '?'}, ${remaining} remain)\n`));
     } else {
       process.stderr.write(`xmtp[${accountId}]: unknown control verb '${verb}' — swallowed\n`);
     }

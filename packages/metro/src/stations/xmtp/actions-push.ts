@@ -2,7 +2,7 @@
 
 import { accounts } from './accounts.js';
 import { respond } from './wire.js';
-import { fcmPushToAll, loadPushTokens, savePushTokens, storePushToken } from './push.js';
+import { fcmPushToAll, loadPushTokens, removePushToken, savePushTokens, storePushToken } from './push.js';
 
 type Args = Record<string, unknown>;
 type Handler = (id: string, args: Args) => Promise<void>;
@@ -40,9 +40,17 @@ async function unregisterPush(id: string, args: Args): Promise<void> {
   respond(id, { result: { removed: true } });
 }
 
+async function disablePush(id: string, args: Args): Promise<void> {
+  const { token } = args as { token?: string };
+  if (!token || typeof token !== 'string') throw new Error('disable-push requires a token');
+  const remaining = removePushToken(token);
+  respond(id, { result: { removed: remaining !== -1, remaining: remaining === -1 ? null : remaining } });
+}
+
 export const pushHandlers: Record<string, Handler> = {
   'register-push': registerPush,
   'list-push': (id) => listPush(id),
   'test-push': testPush,
   'unregister-push': unregisterPush,
+  'disable-push': disablePush,
 };
