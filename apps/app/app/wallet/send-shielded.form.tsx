@@ -1,9 +1,12 @@
-/** Form body for Send shielded token (private → private 0zk transfer).
+/** Shielded-send body for the unified Wallet → Send token page (private →
+ *  private 0zk transfer).
  *
- *  Recipient = any 0zk address; token/network = chosen; submit reuses
- *  runAction({ kind: 'send' }) which performs the privateTransfer (proof +
- *  broadcast) and drives the shared pending store. Tracks this transfer's
- *  pending row and reflects its phase via the shared stepper. */
+ *  Recipient = any 0zk address; the token/network are owned by the parent page
+ *  (the combined TokenSelector) and passed in, along with the selected token's
+ *  shielded balance. Submit reuses runAction({ kind: 'send' }) which performs
+ *  the privateTransfer (proof + broadcast) and drives the shared pending store.
+ *  Tracks this transfer's pending row and reflects its phase via the shared
+ *  stepper. Mounted only when the chosen token is a shielded balance. */
 import { useEffect, useState } from 'react';
 import { TextInput } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
@@ -18,7 +21,6 @@ import type { PendingAction } from '../../lib/railgun/types';
 import { ShieldPhaseLine } from './send.shield.parts';
 import { ShieldStepper, type ShieldStage } from './send.shield.stepper';
 import { AmountBox, type FormPal } from './wallet.form';
-import { TokenSelector, useSelectedBalance } from './TokenSelector';
 
 function phaseToStage(p?: PendingAction['phase']): ShieldStage {
   switch (p) {
@@ -36,14 +38,11 @@ function tokenAddress(chainId: number, symbol: 'ETH' | 'USDC'): string | undefin
   return RAILGUN_TOKENS[net].find(t => t.symbol === symbol)?.address;
 }
 
-export function SendShieldedForm({ pal, dark, initialSymbol, initialChainId }: {
-  pal: FormPal; dark: boolean; initialSymbol: 'ETH' | 'USDC'; initialChainId: number;
+export function SendShieldedBody({ pal, dark, symbol, chainId, balance }: {
+  pal: FormPal; dark: boolean; symbol: 'ETH' | 'USDC'; chainId: number; balance: string | null;
 }): React.ReactElement {
   const { head, sub, inputBg } = pal;
   const [to, setTo] = useState('');
-  const [symbol, setSymbol] = useState<'ETH' | 'USDC'>(initialSymbol);
-  const [chainId, setChainId] = useState<number>(initialChainId);
-  const balance = useSelectedBalance('shielded', { symbol, chainId });
   const [amount, setAmount] = useState('');
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [action, setAction] = useState<PendingAction | null>(null);
@@ -95,9 +94,6 @@ export function SendShieldedForm({ pal, dark, initialSymbol, initialChainId }: {
           style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Medium', backgroundColor: inputBg,
             borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12 }} />
       </Box>
-
-      <TokenSelector mode="shielded" value={{ symbol, chainId }}
-        onChange={(v) => { setSymbol(v.symbol as 'ETH' | 'USDC'); setChainId(v.chainId); }} />
 
       <AmountBox pal={pal} amount={amount} setAmount={setAmount} busy={busy}
         balance={balance} symbol={symbol} dark={dark} />

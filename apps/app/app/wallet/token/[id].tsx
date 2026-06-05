@@ -8,7 +8,8 @@
  *  TWO big rounded primary buttons reusing the Wallet page's action-button
  *  style (`Btn` from WalletScreen.parts):
  *  Public holding:  Send → /wallet/send,  Shield → /wallet/shield.
- *  Shielded holding: Send → /wallet/send-shielded (private 0zk transfer),
+ *  Shielded holding: Send → /wallet/send (unified page, pre-selected to the
+ *                    shielded token via ?private=1 → private 0zk transfer),
  *                    Unshield → /wallet/unshield.
  *  Pre-fill is via query params (symbol/chainId) read by each page. */
 
@@ -119,11 +120,12 @@ export default function TokenDetail(): React.ReactElement {
       <Row justify="start" gap={36} mt={32} mx={16}>
         {r.isPrivate ? (
           <>
-            {/* Shielded holding → Send shielded (private → another 0zk). */}
+            {/* Shielded holding → unified Send page, pre-selected to this
+                shielded token (private → another 0zk). */}
             <Btn icon="send" label="Send" head={head} border={border} dark={dark}
               onPress={() => router.push({
-                pathname: '/wallet/send-shielded',
-                params: { symbol: symbol ?? r.symbol, chainId: String(r.chainId) },
+                pathname: '/wallet/send',
+                params: { symbol: symbol ?? r.symbol, chainId: String(r.chainId), private: '1' },
               })} />
             {/* Shielded holding → Unshield (private → public, back to own EOA). */}
             <Btn icon="eye" label="Unshield" head={head} border={border} dark={dark}

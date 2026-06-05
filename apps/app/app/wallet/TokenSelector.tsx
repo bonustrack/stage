@@ -28,12 +28,16 @@ import { NETWORK_LOGO, MAINNET_NETWORK_LOGO, type AssetRow } from '../../compone
 import { privateBalancesToRows, symbolPricesFromPublic } from '../../components/tabs/WalletScreen.private.rows';
 import { usePrivateWallet } from '../../lib/railgun/usePrivateWallet';
 
-export type SelectorMode = 'public' | 'shielded';
-export interface TokenChoice { symbol: string; chainId: number }
+export type SelectorMode = 'public' | 'shielded' | 'combined';
+export interface TokenChoice { symbol: string; chainId: number; isPrivate?: boolean }
 
-/** Find the AssetRow matching the current selection (for the field + balance). */
+/** Find the AssetRow matching the current selection (for the field + balance).
+ *  Public ETH and shielded ETH share symbol+chainId, so the `isPrivate` flag is
+ *  part of the identity in combined mode. */
 function findRow(rows: AssetRow[], sel: TokenChoice): AssetRow | undefined {
-  return rows.find(r => r.symbol === sel.symbol && r.chainId === sel.chainId);
+  return rows.find(r =>
+    r.symbol === sel.symbol && r.chainId === sel.chainId && !!r.isPrivate === !!sel.isPrivate,
+  );
 }
 
 /** True when a row's decimal-string balance parses to a positive number. Used to
@@ -47,7 +51,7 @@ function hasBalance(r: AssetRow): boolean {
  *  SHIELDED = the active Railgun snapshot mapped to rows. */
 function useSelectorRows(mode: SelectorMode): { rows: AssetRow[]; loading: boolean } {
   const [publicRows, setPublicRows] = useState<AssetRow[] | null>(null);
-  const { snapshot } = usePrivateWallet(mode === 'shielded');
+  const { snapshot } = usePrivateWallet(mode === 'shielded' || mode === 'combined');
 
   useEffect(() => {
     let cancelled = false;
@@ -68,7 +72,14 @@ function useSelectorRows(mode: SelectorMode): { rows: AssetRow[]; loading: boole
   );
 
   if (mode === 'shielded') return { rows: shieldedRows.filter(hasBalance), loading: false };
-  return { rows: (publicRows ?? []).filter(hasBalance), loading: publicRows === null };
+  const pub = (publicRows ?? []).filter(hasBalance);
+  if (mode === 'combined') {
+    // Public rows first, then shielded rows with a positive balance. Each row
+    // already carries `isPrivate`, which the rows + selection identity use to
+    // distinguish a public token from its shielded twin.
+    return { rows: [...pub, ...shieldedRows.filter(hasBalance)], loading: publicRows === null };
+  }
+  return { rows: pub, loading: publicRows === null };
 }
 
 /** Tappable token field. Shows the selected token avatar + symbol + a chevron;
@@ -114,9 +125,12 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
           </Box>
         </Box>
         <Col flex={1} style={{ minWidth: 0 }}>
-          <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
-            {value.symbol}
-          </Text>
+          <Row align="center" gap={6} style={{ minWidth: 0 }}>
+            {value.isPrivate ? <Icon name="shieldCheck" size={14} color={sub} /> : null}
+            <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
+              {value.symbol}
+            </Text>
+          </Row>
           <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
             {selected ? `Balance: ${selected.balance}` : '—'}
           </Text>
@@ -141,7 +155,7 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
             <TokenRow
               key={`${r.isPrivate ? 'priv' : 'pub'}:${r.chainId}:${r.symbol}`}
               r={r} head={head} sub={sub} border={border} bg={bg}
-              onPress={() => { onChange({ symbol: r.symbol, chainId: r.chainId }); setOpen(false); }}
+              onPress={() => { onChange({ symbol: r.symbol, chainId: r.chainId, isPrivate: r.isPrivate }); setOpen(false); }}
             />
           ))
         )}
