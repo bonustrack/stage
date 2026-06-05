@@ -1,54 +1,14 @@
 /** Push registration + foreground local-notification helpers (option b).
+ *  Split from `lib/push.ts` so the channels list can pull `isMetroControlBody`
+ *  without dragging the XMTP client in; `lib/push.ts` re-exports the public API.
  *
- *  Lives separately from `lib/push.ts` because it imports the XMTP-client-typed
- *  surface (`@xmtp/react-native-sdk`); `lib/push.ts` stays free of that import so
- *  the channels-list / conversation view can pull `isMetroControlBody` without
- *  dragging the whole XMTP client into those modules. `lib/push.ts` re-exports
- *  the public symbols (`isMetroControlBody`, `presentInboundNotification`,
- *  `registerPushWithDaemon`) so callers import them from one place.
+ *  Two delivery paths: (1) BACKGROUND — `registerPushWithDaemon` sends a private
+ *  XMTP control DM with the device's FCM/APNs token; the daemon stores it per
+ *  account + fans out FCM. (2) FOREGROUND — `presentInboundNotification` posts a
+ *  local notif per inbound while the app runs (covers phone-only wallets too).
  *
- *  Two delivery paths:
- *  1. BACKGROUND push (daemon-run accounts). `registerPushWithDaemon` auto-
- *     registers this device's raw FCM/APNs token with the daemon by sending a
- *     PRIVATE XMTP control DM (magic-prefixed plain text) to the daemon's inbox;
- *     the daemon parses it, stores the token scoped to the account, and fans out
- *     FCM on inbound.
- *  2. FOREGROUND local notifications (any account, incl. phone-only wallets the
- *     daemon has no key for). While the app runs, the global XMTP stream calls
- *     `presentInboundNotification` per inbound message — no daemon involvement.
- *
- *  ─────────────────────────────────────────────────────────────────────────────
- *  CONTROL-DM WIRE FORMAT — the daemon train MUST parse the exact same thing.
- *  ─────────────────────────────────────────────────────────────────────────────
- *  The DM is a plain-text XMTP message (default content type, so no new codec)
- *  whose body is:
- *
- *      METRO_CTRL:register-push:{json}
- *
- *  where `{json}` is a single-line JSON object:
- *
- *      {
- *        "v": 1,                 // schema version
- *        "token": "<fcm/apns device token>",
- *        "platform": "android" | "ios",
- *        "address": "0x…",       // the phone's ACTIVE account address (lowercased)
- *        "inboxId": "<hex>"      // the phone's XMTP inboxId for that account
- *      }
- *
- *  Daemon side (to be added to ~/.metro/trains/xmtp.ts inbound handler):
- *   - Detect the body via the same prefix test as `isMetroControlBody`
- *     (startsWith `METRO_CTRL:`). When matched, do NOT surface it as a chat
- *     message / owner-feed event.
- *   - Split off `METRO_CTRL:register-push:` and `JSON.parse` the remainder.
- *   - Call the existing `register-push` storage logic with:
- *       token    = json.token
- *       platform = json.platform
- *       inboxId  = senderInboxId            (the phone's inbox — authoritative)
- *       account  = <the daemon accountId whose client received this DM>
- *     The daemon infers `account` from which of its own inboxes the DM arrived
- *     on, so the phone never needs to know the daemon's internal accountId — it
- *     only needs the daemon's address (DAEMON_INBOX_ADDRESS below). The
- *     `address`/`inboxId` in the payload are for verification + audit. */
+ *  Control-DM wire format (the daemon train parses the same string) lives in
+ *  pushRegister.control.ts — `METRO_CTRL:register-push:{json}` plain-text DM. */
 
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
