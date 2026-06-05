@@ -113,14 +113,6 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
     });
   }, [rows, pinned, labelFilter, archived]);
 
-  /** Count of archived convs that still exist in the loaded rows → drives the
-   *  "Archived (N)" entry row. Counts only known rows so a stale archived id
-   *  (conv since gone) doesn't inflate the badge. */
-  const archivedCount = useMemo(
-    () => (rows ?? []).filter(r => archived.has(r.convId)).length,
-    [rows, archived],
-  );
-
   /** Batch-resolve the displayed peers' profiles → avatar cache-busters. */
   const channelProfilesVersion = usePeerProfiles(
     (rows ?? []).flatMap(r => [r.avatarAddress, r.peerAddress, r.lastSenderAddress]),
@@ -163,7 +155,6 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
         myAddress={myAddress}
         sortedRows={sortedRows}
         requestCount={requestCount}
-        archivedCount={archivedCount}
         labelFilter={labelFilter}
         onOpenFilter={() => setFilterSheetOpen(true)}
         head={head}

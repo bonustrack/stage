@@ -23,9 +23,6 @@ interface ChannelsListProps {
   myAddress: string | null;
   sortedRows: RowT[];
   requestCount: number;
-  /** Count of archived convs → drives the "Archived (N)" footer row (hidden
-   *  when 0). Tapping it opens the dedicated Archived view. */
-  archivedCount: number;
   /** Active label filter (null = none) → drives the top-left control's state. */
   labelFilter: LabelFilterValue;
   /** Opens the label-picker sheet (owned by HomeScreen). */
@@ -43,7 +40,7 @@ interface ChannelsListProps {
 }
 
 export function ChannelsList({
-  panRef, router, myAddress, sortedRows, requestCount, archivedCount, labelFilter, onOpenFilter,
+  panRef, router, myAddress, sortedRows, requestCount, labelFilter, onOpenFilter,
   head, sub, border,
   listExtraData, listRef, savedOffsetRef, didRestoreRef, contentHeightRef,
   renderRow, getRowLayout,
@@ -72,6 +69,12 @@ export function ChannelsList({
            *  top-right icons), placed before the requests icon. Tap opens the
            *  label picker sheet. */}
           <LabelFilterControl active={labelFilter} onPress={onOpenFilter} />
+          {/* Archived channels: archive-box glyph, placed before the requests
+           *  icon. Tap opens the dedicated Archived view (the feed footer no
+           *  longer surfaces an "Archived (N)" row). */}
+          <Pressable onPress={() => router.push('/xmtp/archived')} hitSlop={8}>
+            <Icon name="archive" size={24} color={head} />
+          </Pressable>
           {/* Message requests: person icon + count badge (pending 'unknown'
            *  consent convs). Badge hidden when 0; tap opens the requests list. */}
           <Pressable onPress={() => router.push('/xmtp/requests')} hitSlop={8} style={{ position: 'relative' }}>
@@ -127,23 +130,6 @@ export function ChannelsList({
         removeClippedSubviews
         contentContainerStyle={{ paddingBottom: 24 }}
         ListEmptyComponent={<HomeEmpty sub={sub} />}
-        ListFooterComponent={
-          archivedCount > 0 ? (
-            <Pressable
-              onPress={() => router.push('/xmtp/archived')}
-              style={({ pressed }) => ({
-                flexDirection: 'row', alignItems: 'center', gap: 12,
-                paddingHorizontal: 16, paddingVertical: 16,
-                backgroundColor: pressed ? border : 'transparent',
-              })}
-            >
-              <Icon name="archive" size={20} color={sub} />
-              <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Medium' }}>
-                {`Archived (${archivedCount})`}
-              </Text>
-            </Pressable>
-          ) : null
-        }
         renderItem={renderRow}
       />
     </>
