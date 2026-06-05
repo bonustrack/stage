@@ -1,16 +1,14 @@
 /** Pure helpers, types, and shared module-scope constants for MessengerBubble.
  *  Extracted to keep the bubble component file under the phase-2 lint cap. */
 
-import { MarkdownIt } from 'react-native-markdown-display';
 import type { HistoryEntry } from '../lib/types';
 import type { RemoteAttachmentInfo } from '@xmtp/react-native-sdk';
 
 export const REACT_PRESETS = ['👍', '🔥', '👀', '🙏', '😁', '💯', '🫡'];
 
-/** `linkify` + `breaks` turn bare URLs into tappable links and treat `\n` as a line
- *  break, matching the markdown-it config on the web side. Constructed once at
- *  module scope — the lib re-parses input each render anyway. */
-export const mdParser = MarkdownIt({ typographer: false, linkify: true, breaks: true });
+/** Shared markdown-it instance (with metro://`/`stage://` deep-link schemes
+ *  registered). Re-exported here so existing importers keep working. */
+export { mdParser } from '../lib/mdParser';
 
 /** Matches an `@`-mention stored in the raw message as a bare lowercase address
  *  (the composer's wire form), e.g. `@0x1d8c…0b5b`. Capture group 1 is the
