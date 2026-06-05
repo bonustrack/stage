@@ -170,6 +170,9 @@ const config = {
       },
     ],
     './plugins/withMetroPill',
+    // Raise gradle daemon heap/metaspace so the triple-ABI app-bundle finalize
+    // (bundletool in :app:signReleaseBundle) does not OOM the daemon.
+    './plugins/withGradleMemory',
     // Embedded Node runtime (nodejs-mobile-react-native) that hosts the RAILGUN
     // engine + native Groth16 prover. Autolinking wires the module; this plugin
     // adds packagingOptions.pickFirst for the duplicate native libs. The AGP-8
