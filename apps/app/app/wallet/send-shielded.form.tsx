@@ -10,7 +10,6 @@
 import { useEffect, useState } from 'react';
 import { TextInput } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
-import { Button } from '@metro-labs/kit/button';
 import { Box } from '../../components/layout';
 import { getActiveAccountId } from '../../lib/accounts';
 import { isBridgeAvailable } from '../../lib/railgun/bridge';
@@ -20,7 +19,7 @@ import { RAILGUN_TOKENS } from '../../lib/railgun/tokens';
 import type { PendingAction } from '../../lib/railgun/types';
 import { ShieldPhaseLine } from './send.shield.parts';
 import { ShieldStepper, type ShieldStage } from './send.shield.stepper';
-import { AmountBox, type FormPal } from './wallet.form';
+import { AmountBox, type FormPal, type FooterState } from './wallet.form';
 
 function phaseToStage(p?: PendingAction['phase']): ShieldStage {
   switch (p) {
@@ -38,8 +37,10 @@ function tokenAddress(chainId: number, symbol: 'ETH' | 'USDC'): string | undefin
   return RAILGUN_TOKENS[net].find(t => t.symbol === symbol)?.address;
 }
 
-export function SendShieldedBody({ pal, dark, symbol, chainId, balance }: {
+export function SendShieldedBody({ pal, dark, symbol, chainId, balance, onFooter }: {
   pal: FormPal; dark: boolean; symbol: 'ETH' | 'USDC'; chainId: number; balance: string | null;
+  /** Report submit state up so the page renders the pinned footer button. */
+  onFooter?: (s: FooterState) => void;
 }): React.ReactElement {
   const { head, sub, inputBg } = pal;
   const [to, setTo] = useState('');
@@ -85,6 +86,11 @@ export function SendShieldedBody({ pal, dark, symbol, chainId, balance }: {
     })();
   };
 
+  const submitLabel = busy ? 'Sending…' : stage === 'done' ? 'Sent ✓' : 'Send';
+  useEffect(() => {
+    onFooter?.({ submitLabel, onSubmit, submitDisabled: !canSubmit, submitLoading: busy });
+  }, [onFooter, submitLabel, canSubmit, busy, onSubmit]);
+
   return (
     <Box style={{ gap: 16 }}>
       <Box style={{ gap: 6 }}>
@@ -97,11 +103,6 @@ export function SendShieldedBody({ pal, dark, symbol, chainId, balance }: {
 
       <AmountBox pal={pal} amount={amount} setAmount={setAmount} busy={busy}
         balance={balance} symbol={symbol} dark={dark} />
-
-      <Button variant="primary" size="lg" fullWidth pill dark={dark} loading={busy}
-        disabled={!canSubmit} onPress={onSubmit}
-        label={busy ? 'Sending…' : stage === 'done' ? 'Sent ✓' : 'Send privately'}
-        style={{ marginTop: 4 }} />
 
       <ShieldStepper stage={stage} pal={pal} />
       <ShieldPhaseLine pal={pal} txHash={txHash} err={err} bridgeOk={isBridgeAvailable()} chainId={chainId} />

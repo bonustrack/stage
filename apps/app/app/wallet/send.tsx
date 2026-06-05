@@ -19,7 +19,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { SendHeader } from './send.fields';
-import { useFormPal } from './wallet.form';
+import { WalletFooter, useFormPal, type FooterState } from './wallet.form';
 import { PublicSendBody } from './send.public.body';
 import { SendShieldedBody } from './send-shielded.form';
 import { TokenSelector, useSelectedBalance, useTopToken, type TokenChoice } from './TokenSelector';
@@ -64,20 +64,32 @@ export default function WalletSend(): React.ReactElement {
   // body on the selection identity.
   const bodyKey = `${token.isPrivate ? 'priv' : 'pub'}:${token.chainId}:${token.symbol}`;
 
+  // The mounted body (public or shielded) reports its submit state up so we can
+  // render it in the pinned footer alongside Cancel.
+  const [footer, setFooter] = useState<FooterState | null>(null);
+
   return (
     <Box style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
       <SendHeader fg={fg} head={head} border={border} onBack={() => router.back()} />
 
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 16, gap: 16 }}>
+      <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ padding: 16, gap: 16 }}>
         <TokenSelector mode="combined" value={token} onChange={onChange} />
 
         {token.isPrivate ? (
           <SendShieldedBody key={bodyKey} pal={formPal} dark={dark}
-            symbol={token.symbol === 'USDC' ? 'USDC' : 'ETH'} chainId={token.chainId} balance={balance} />
+            symbol={token.symbol === 'USDC' ? 'USDC' : 'ETH'} chainId={token.chainId} balance={balance}
+            onFooter={setFooter} />
         ) : (
-          <PublicSendBody key={bodyKey} token={token} initialTo={initialTo} />
+          <PublicSendBody key={bodyKey} token={token} initialTo={initialTo} onFooter={setFooter} />
         )}
       </ScrollView>
+
+      {footer ? (
+        <WalletFooter border={border} bg={bg} dark={dark} onCancel={() => router.back()}
+          submitLabel={footer.submitLabel} onSubmit={footer.onSubmit}
+          submitDisabled={footer.submitDisabled} submitLoading={footer.submitLoading} />
+      ) : null}
     </Box>
   );
 }
