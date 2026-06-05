@@ -47,6 +47,20 @@ function hasBalance(r: AssetRow): boolean {
   return Number.isFinite(n) && n > 0;
 }
 
+/** USD value of a row = balance × per-unit price. Rows with no price (CoinGecko
+ *  miss) contribute 0 so they sort to the bottom. Drives the highest-value-first
+ *  ordering of the selector list (and thus the page's default selection). */
+function usdValue(r: AssetRow): number {
+  const bal = Number.parseFloat(r.balance);
+  if (!Number.isFinite(bal) || r.priceUsd == null) return 0;
+  return bal * r.priceUsd;
+}
+
+/** Sort a copy of the rows descending by USD value (highest balance worth first). */
+function byValueDesc(rows: AssetRow[]): AssetRow[] {
+  return [...rows].sort((a, b) => usdValue(b) - usdValue(a));
+}
+
 /** Load the candidate token rows for the selector. PUBLIC = on-chain multicall;
  *  SHIELDED = the active Railgun snapshot mapped to rows. */
 function useSelectorRows(mode: SelectorMode): { rows: AssetRow[]; loading: boolean } {
@@ -71,15 +85,24 @@ function useSelectorRows(mode: SelectorMode): { rows: AssetRow[]; loading: boole
     [snapshot, publicRows],
   );
 
-  if (mode === 'shielded') return { rows: shieldedRows.filter(hasBalance), loading: false };
+  if (mode === 'shielded') return { rows: byValueDesc(shieldedRows.filter(hasBalance)), loading: false };
   const pub = (publicRows ?? []).filter(hasBalance);
   if (mode === 'combined') {
-    // Public rows first, then shielded rows with a positive balance. Each row
-    // already carries `isPrivate`, which the rows + selection identity use to
-    // distinguish a public token from its shielded twin.
-    return { rows: [...pub, ...shieldedRows.filter(hasBalance)], loading: publicRows === null };
+    // Combined public + positive-balance shielded rows, sorted highest USD value
+    // first (balance × price). Each row carries `isPrivate`, which the rows +
+    // selection identity use to distinguish a public token from its shielded twin.
+    return { rows: byValueDesc([...pub, ...shieldedRows.filter(hasBalance)]), loading: publicRows === null };
   }
-  return { rows: pub, loading: publicRows === null };
+  return { rows: byValueDesc(pub), loading: publicRows === null };
+}
+
+/** The highest-USD-value token in the list for `mode`, or null until rows load /
+ *  if the wallet holds nothing. Lets a page default-select the most valuable
+ *  holding instead of the hardcoded native token. */
+export function useTopToken(mode: SelectorMode): TokenChoice | null {
+  const { rows } = useSelectorRows(mode);
+  const top = rows[0];
+  return top ? { symbol: top.symbol, chainId: top.chainId, isPrivate: top.isPrivate } : null;
 }
 
 /** Tappable token field. Shows the selected token avatar + symbol + a chevron;
