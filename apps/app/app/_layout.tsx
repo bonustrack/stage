@@ -151,7 +151,13 @@ export default function RootLayout(): React.ReactElement {
           headerShown: false,
           cardStyle: { backgroundColor: bg },
           gestureEnabled: true,
-          gestureResponseDistance: 100,
+          /** Full-width back-swipe: a rightward horizontal drag can arm the pop
+           *  from ANYWHERE on screen (not just the bezel). gestureDirection stays
+           *  'horizontal' (the SlideFromRightIOS default) so only horizontal-
+           *  rightward drags arm it — vertical FlatList scroll and the LEFTWARD
+           *  bubble swipe-to-reply still win on their own axes/direction and
+           *  coexist. 9999 comfortably exceeds any screen width. */
+          gestureResponseDistance: 9999,
           ...TransitionPresets.SlideFromRightIOS,
           /** INSTANT PUSH + interactive swipe-back reveal. We keep the
            *  SlideFromRightIOS preset (its `forHorizontalIOS` cardStyleInterpolator
