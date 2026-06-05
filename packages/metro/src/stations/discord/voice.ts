@@ -1,12 +1,7 @@
-/** Discord voice — minimal JOIN/LEAVE (presence only, no audio playback yet).
- *
- * Uses @discordjs/voice joinVoiceChannel() with the guild's voiceAdapterCreator.
- * Audio streaming (TTS/opus) is a deliberate follow-up: it needs native opus +
- * a TTS pipeline. Right now the bot just appears in the channel.
- *
- * Requires the GuildVoiceStates intent (added in index.ts) so guild.voiceStates
- * is populated and we can resolve a user's current voice channel.
- */
+/** Discord voice — minimal JOIN/LEAVE (presence only, no audio playback yet). */
+// Uses @discordjs/voice joinVoiceChannel() with the guild's voiceAdapterCreator.
+// Audio streaming (TTS/opus) is a deliberate follow-up (needs native opus + TTS).
+// Requires the GuildVoiceStates intent (index.ts) to resolve a user's channel.
 
 import {
   joinVoiceChannel, getVoiceConnection, VoiceConnectionStatus, entersState,

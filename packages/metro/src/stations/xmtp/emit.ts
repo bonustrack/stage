@@ -21,8 +21,7 @@ export function emitInbound(accountId: string, e: Record<string, unknown>): void
 
 /** Emit a follow-up event once an inbound attachment is fetched/decrypted and
  *  persisted, carrying the absolute on-disk path so the agent can read the file.
- *  Mirrors the transcribe pattern: the initial envelope ships immediately, this
- *  fires async when the bytes land (or logs on failure). */
+ *  Fires async when the bytes land (or logs on failure). */
 function emitAttachmentSaved(
   accountId: string, line: string, sourceMsgId: string,
   index: number, save: Promise<{ path: string; mime?: string; name?: string }>,
