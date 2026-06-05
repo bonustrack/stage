@@ -103,11 +103,14 @@ export async function speak(id: string, rawArgs: Record<string, unknown>): Promi
     const player = createAudioPlayer({ behaviors: { noSubscriber: NoSubscriberBehavior.Play } });
     const resource = createAudioResource(ogg, { inputType: StreamType.OggOpus });
     conn.subscribe(player);
+    // joinVoice connects self-muted; unmute to actually broadcast, then restore.
+    try { (conn as { rejoin: (c: object) => void }).rejoin({ selfMute: false }); } catch { /* ignore */ }
     player.play(resource);
 
     await entersState(player, AudioPlayerStatus.Playing, 10_000);
     await entersState(player, AudioPlayerStatus.Idle, 120_000);
     player.stop();
+    try { (conn as { rejoin: (c: object) => void }).rejoin({ selfMute: true }); } catch { /* ignore */ }
 
     respond(id, { result: { ok: true, spoke: text, channelName, account: accountId } });
   } catch (err) {
