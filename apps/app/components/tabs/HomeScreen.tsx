@@ -35,7 +35,7 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
   const [rows, setRowsState] = useState<RowT[] | null>(getCachedRows() as RowT[] | null);
   /** Wrap setRows so every state update also lands in the shared cache + fans
    *  out to subscribers (e.g. the conv view's markConvRead). */
-  const setRows =(next: RowT[] | null | ((p: RowT[] | null) => RowT[] | null)): void => {
+  const setRows = (next: RowT[] | null | ((p: RowT[] | null) => RowT[] | null)): void => {
     if (typeof next === 'function') {
       setRowsState(prev => {
         const v = (next as (p: RowT[] | null) => RowT[] | null)(prev);
