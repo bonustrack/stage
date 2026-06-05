@@ -196,3 +196,5 @@ export default function RootLayout(): React.ReactElement {
     </QueryClientProvider>
   );
 }
+
+// pr-preview smoke test 2 — harmless comment, no-op
