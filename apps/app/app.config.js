@@ -63,6 +63,33 @@ const config = {
   // nodejs-mobile launch crash is fixed by extractNativeLibs + jniLibs pickFirst
   // (see plugins/withNodejsMobile.js), NOT by disabling the new architecture.
   newArchEnabled: true,
+  // ── expo-updates: the native enabler for per-PR JS-bundle previews (#236) ──
+  // The PR-preview GitHub Action publishes each PR's `expo export` bundle and
+  // the installed dev-client loads it via the deep link
+  //   metro://expo-development-client/?url=<manifest-url>
+  // That "load from URL" flow REQUIRES the expo-updates library on-device, so
+  // these keys take effect only in a NEW dev-client APK. Until that build ships,
+  // PR previews can't be tapped to load (the dev-client has no updates client).
+  //
+  // `runtimeVersion` is a FIXED string (not a policy) so the manifest the Action
+  // generates always matches the installed app on JS-only changes — bump it only
+  // when a native/runtime-incompatible change ships in a new APK. `updates.url`
+  // is left to EAS Update's default endpoint (channel/branch previews via
+  // `eas update`); the self-hosted static-manifest variant overrides the manifest
+  // URL at load time via the deep link, so no `updates.url` is needed for it.
+  runtimeVersion: '1.0.0',
+  updates: {
+    // Keep auto-fetch off: previews are loaded on demand via the dev-launcher,
+    // not silently applied on cold start. The installed dev-client + EXPO_TOKEN
+    // EAS project (extra.eas.projectId) back the EAS Update preview path.
+    enabled: true,
+    checkAutomatically: 'NEVER',
+    fallbackToCacheTimeout: 0,
+    // EAS Update endpoint for this Expo project (extra.eas.projectId). The
+    // PR-preview deep link is u.expo.dev/<projectId>/group/<groupId>; this is
+    // the same host. Required for `eas update` previews to resolve on-device.
+    url: 'https://u.expo.dev/1707f2db-c2b8-4c91-9341-27b1d57d355f',
+  },
   splash: {
     image: './assets/splash-icon.png',
     resizeMode: 'contain',
@@ -170,6 +197,8 @@ const config = {
       },
     ],
     './plugins/withMetroPill',
+    './plugins/withGradleMemory',
+    './plugins/withBouncyCastleDedup',
     // Embedded Node runtime (nodejs-mobile-react-native) that hosts the RAILGUN
     // engine + native Groth16 prover. Autolinking wires the module; this plugin
     // adds packagingOptions.pickFirst for the duplicate native libs. The AGP-8

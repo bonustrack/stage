@@ -1,0 +1,193 @@
+name: PR JS-bundle preview
+
+# Per-PR JS-bundle preview for the Metro dev-client (#236).
+#
+# What it does: builds the app's JS bundle with `expo export`, publishes it as an
+# EAS Update on a per-PR branch, and comments a tap-to-load dev-client deep link
+# + QR on the PR. Less taps the link on a device that has the dev-client APK and
+# the installed app swaps its JS for that PR's bundle — no new APK per PR.
+#
+# LIMITATION (guarded below): this ships JS ONLY. A PR that changes native code
+# (new/updated native modules, app.config native keys, Android/iOS dirs) needs a
+# fresh APK — the preview will run the OLD native code with the new JS and may
+# crash. The job detects native-touching diffs and posts a warning instead of a
+# bare link.
+#
+# TRIGGER: opt-in, to not burn CI/EAS quota on every push —
+#   • add the `preview` label to a PR, or
+#   • comment `/preview` on the PR.
+#
+# REQUIRES (native, one-time): the dev-client APK must include `expo-updates`
+# (added to apps/app/package.json + app.config.js `updates`/`runtimeVersion` in
+# this PR). Until that APK is installed, the deep link has no updates client to
+# load it. See docs/pr-preview.md.
+
+on:
+  pull_request:
+    types: [labeled]
+  issue_comment:
+    types: [created]
+
+concurrency:
+  # One preview build per PR at a time; newer trigger cancels the in-flight one.
+  group: pr-preview-${{ github.event.pull_request.number || github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  # Gate: only run on the `preview` label, or a `/preview` comment on a PR.
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.decide.outputs.run }}
+      pr: ${{ steps.decide.outputs.pr }}
+    steps:
+      - id: decide
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const ev = context.eventName;
+            if (ev === 'pull_request' && context.payload.label?.name === 'preview') {
+              core.setOutput('run', 'true');
+              core.setOutput('pr', String(context.payload.pull_request.number));
+              return;
+            }
+            if (ev === 'issue_comment'
+                && context.payload.issue.pull_request
+                && context.payload.comment.body.trim().startsWith('/preview')) {
+              core.setOutput('run', 'true');
+              core.setOutput('pr', String(context.payload.issue.number));
+              return;
+            }
+            core.setOutput('run', 'false');
+
+  preview:
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      PR: ${{ needs.gate.outputs.pr }}
+    steps:
+      - name: Resolve PR head ref
+        id: pr
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner, repo: context.repo.repo,
+              pull_number: Number(process.env.PR),
+            });
+            core.setOutput('ref', pr.head.ref);
+            core.setOutput('sha', pr.head.sha);
+            core.setOutput('repo', pr.head.repo.full_name);
+
+      - name: React 👀 on the trigger
+        if: github.event_name == 'issue_comment'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner, repo: context.repo.repo,
+              comment_id: context.payload.comment.id, content: 'eyes',
+            });
+
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.pr.outputs.sha }}
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.9
+
+      - name: Detect native changes (JS-only guard)
+        id: native
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const base = context.payload.pull_request?.base?.sha
+              || (await github.rest.pulls.get({
+                   owner: context.repo.owner, repo: context.repo.repo,
+                   pull_number: Number(process.env.PR) })).data.base.sha;
+            const { data: cmp } = await github.rest.repos.compareCommits({
+              owner: context.repo.owner, repo: context.repo.repo,
+              base, head: '${{ steps.pr.outputs.sha }}',
+            });
+            // Paths that change native code → a JS-only preview is unsafe/stale.
+            const re = new RegExp([
+              '(^|/)(android|ios)/',
+              'apps/app/plugins/',
+              'apps/app/modules/',
+              'apps/app/app\\.config\\.js',
+              'apps/app/eas\\.json',
+              '(^|/)package\\.json$',
+            ].join('|'));
+            const hits = (cmp.files || []).map(f => f.filename).filter(f => re.test(f));
+            core.setOutput('native', hits.length ? 'true' : 'false');
+            core.setOutput('files', hits.slice(0, 20).join('\n'));
+
+      - run: bun install --frozen-lockfile
+
+      - name: Publish EAS Update for this PR
+        id: update
+        working-directory: apps/app
+        run: |
+          set -euo pipefail
+          BRANCH="pr-${PR}"
+          # `eas update` runs `expo export` under the hood and uploads the same
+          # JS bundle + assets, auto-generating the expo-updates manifest the
+          # dev-client consumes. --non-interactive needs EXPO_TOKEN (set above).
+          bunx eas-cli@latest update \
+            --branch "$BRANCH" \
+            --message "PR #${PR} @ ${{ steps.pr.outputs.sha }}" \
+            --non-interactive --json > eas-update.json
+          node ../../scripts/pr-preview/eas-deeplink.mjs eas-update.json >> "$GITHUB_OUTPUT"
+
+      - name: Generate QR
+        id: qr
+        run: |
+          # QR encodes the dev-client deep link; rendered inline in the comment.
+          LINK='${{ steps.update.outputs.deeplink }}'
+          echo "img=https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=$(node -e "console.log(encodeURIComponent(process.argv[1]))" "$LINK")" >> "$GITHUB_OUTPUT"
+
+      - name: Comment preview link on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const link = `${{ steps.update.outputs.deeplink }}`;
+            const qr = `${{ steps.qr.outputs.img }}`;
+            const nativeWarn = `${{ steps.native.outputs.native }}` === 'true'
+              ? `\n> ⚠️ **Native changes detected** in this PR — a JS-only preview runs the **old** native code and may crash or behave wrong. This PR needs a fresh **APK**, not just this bundle.\n>\n> <details><summary>native-touching files</summary>\n>\n> \`\`\`\n${`${{ steps.native.outputs.files }}`}\n\`\`\`\n> </details>\n`
+              : '';
+            const body = [
+              '### 📱 PR JS-bundle preview',
+              '',
+              `Tap on a device that has the **Metro dev-client** installed to load this PR's JS bundle:`,
+              '',
+              `**[Open in Metro dev-client](${link})**`,
+              '',
+              `\`${link}\``,
+              '',
+              `<img src="${qr}" width="200" alt="QR to load preview" />`,
+              nativeWarn,
+              '',
+              `<sub>JS bundle only (EAS Update branch \`pr-${process.env.PR}\`). Needs the expo-updates-enabled dev-client APK. Re-run with the \`preview\` label or \`/preview\`.</sub>`,
+            ].join('\n');
+            // Upsert: replace our previous preview comment instead of stacking.
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: Number(process.env.PR),
+            });
+            const mine = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes('PR JS-bundle preview'));
+            if (mine) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                comment_id: mine.id, body });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: Number(process.env.PR), body });
+            }
