@@ -3,6 +3,7 @@
  *  (#c0a06e borders + rgba(192,160,110) fills) with the canonical palette:
  *  the selected state uses usePalette().link, the app's accent token, so these
  *  controls match the rest of the UI instead of a bespoke gold treatment. */
+import { useCallback, useRef, useState } from 'react';
 import { Pressable, ScrollView, TextInput } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
@@ -18,6 +19,39 @@ export interface FormPal { fg: string; head: string; sub: string; border: string
  *  primary's label + handler + disabled/loading. */
 export interface FooterState {
   submitLabel: string; onSubmit: () => void; submitDisabled: boolean; submitLoading: boolean;
+}
+
+/** Collect a child form's reported FooterState for a pinned <WalletFooter>.
+ *
+ *  The child re-calls `report` on EVERY render (its onSubmit/label closures are
+ *  fresh each time), so a naive `setState(footerObject)` would update the parent
+ *  on every render → re-render → child re-reports → "Maximum update depth
+ *  exceeded". This hook makes the report idempotent: it only commits new state
+ *  when a *displayed* field (label/disabled/loading) actually changed. onSubmit
+ *  is deliberately excluded from the equality check — it changes every render —
+ *  but the latest closure is kept in a ref and invoked via the returned
+ *  `onSubmit`, so the footer always runs the freshest handler. */
+export function useFooterReporter(): {
+  footer: FooterState | null;
+  report: (s: FooterState) => void;
+  onSubmit: () => void;
+} {
+  const [footer, setFooter] = useState<FooterState | null>(null);
+  const ref = useRef<FooterState | null>(null);
+  const report = useCallback((s: FooterState): void => {
+    ref.current = s;
+    setFooter(prev => {
+      if (prev
+        && prev.submitLabel === s.submitLabel
+        && prev.submitDisabled === s.submitDisabled
+        && prev.submitLoading === s.submitLoading) {
+        return prev;
+      }
+      return s;
+    });
+  }, []);
+  const onSubmit = useCallback((): void => { ref.current?.onSubmit(); }, []);
+  return { footer, report, onSubmit };
 }
 
 /** Build the form palette from the canonical app palette. */
