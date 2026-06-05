@@ -26,7 +26,7 @@ export default function WalletSendShielded(): React.ReactElement {
     ? Number(params.chainId) : 11155111;
 
   return (
-    <ActionPage title="Send shielded" head={head} bg={bg} border={border} onBack={() => router.back()}>
+    <ActionPage title="Send shielded token" head={head} bg={bg} border={border} onBack={() => router.back()}>
       <SendShieldedForm pal={pal} dark={dark}
         initialSymbol={initialSymbol} initialChainId={initialChainId} />
     </ActionPage>

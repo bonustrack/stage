@@ -26,7 +26,7 @@ export function SendHeader(props: {
       <Pressable onPress={props.onBack} hitSlop={8} style={{ padding: 4 }}>
         <Icon name="arrowLeft" size={22} color={props.fg} />
       </Pressable>
-      <Text style={{ color: props.head, fontSize: 18, fontFamily: 'Calibre-Semibold', flex: 1 }}>Send</Text>
+      <Text style={{ color: props.head, fontSize: 18, fontFamily: 'Calibre-Semibold', flex: 1 }}>Send token</Text>
     </Box>
   );
 }

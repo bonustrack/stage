@@ -22,7 +22,7 @@ export default function WalletShield(): React.ReactElement {
   const initialChainId = typeof params.chainId === 'string' ? Number(params.chainId) : undefined;
 
   return (
-    <ActionPage title="Shield" head={head} bg={bg} border={border} onBack={() => router.back()}>
+    <ActionPage title="Shield token" head={head} bg={bg} border={border} onBack={() => router.back()}>
       <ShieldForm pal={pal} dark={dark} zkAddress={snapshot?.zkAddress ?? null}
         initialSymbol={initialSymbol}
         initialChainId={initialChainId && Number.isFinite(initialChainId) ? initialChainId : undefined} />
