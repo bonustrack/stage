@@ -116,7 +116,11 @@ def('balance.awaitWalletScan', (sdk, _shared, a) => sdk.awaitWalletScan(a[0], a[
 // ── Gas estimation ────────────────────────────────────────────────────────────
 def('gas.estimateShield', (sdk, _shared, a) => sdk.gasEstimateForShield(a[0], a[1], a[2], a[3], a[4], a[5]));
 def('gas.estimateShieldBaseToken', (sdk, _shared, a) => sdk.gasEstimateForShieldBaseToken(a[0], a[1], a[2], a[3], a[4], a[5]));
-def('gas.estimateTransfer', (sdk, _shared, a) => sdk.gasEstimateForUnprovenTransfer(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7]));
+// gasEstimateForUnprovenTransfer takes 10 args: …, originalGasDetails (a[7]),
+// feeTokenDetails (a[8]), sendWithPublicWallet (a[9]). For a self-broadcast
+// transfer (no broadcaster) the trailing `sendWithPublicWallet` MUST be `true`
+// — a dropped 9th/10th arg arrives undefined → wrong (broadcaster-fee) path.
+def('gas.estimateTransfer', (sdk, _shared, a) => sdk.gasEstimateForUnprovenTransfer(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9]));
 // gasEstimateForUnprovenUnshield takes 9 args; the trailing `sendWithPublicWallet`
 // (a[8]) MUST be forwarded — for a self-broadcast unshield (no broadcaster) it is
 // `true`, and the SDK branches its dummy-proof broadcaster-fee iteration on it. A
@@ -131,7 +135,11 @@ def('gas.estimateUnshieldBaseToken', (sdk, _shared, a) => sdk.gasEstimateForUnpr
 // We inject a host-side no-op so the proof completes; RN drives its own progress
 // chips from the call lifecycle (proving → broadcasting → confirmed) instead.
 const NOOP_PROGRESS = () => {};
-def('proof.transfer', (sdk, _shared, a) => sdk.generateTransferProof(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10] || NOOP_PROGRESS));
+// generateTransferProof takes 12 args; the FINAL one (a[11]) is progressCallback.
+// Its extra leading args vs unshield are showSenderAddressToRecipient (a[4]) +
+// memoText (a[5]). overallBatchMinGasPrice (a[10]) must be forwarded, with the
+// host-injected no-op progress in slot 11.
+def('proof.transfer', (sdk, _shared, a) => sdk.generateTransferProof(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11] || NOOP_PROGRESS));
 def('proof.unshield', (sdk, _shared, a) => sdk.generateUnshieldProof(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9] || NOOP_PROGRESS));
 def('proof.unshieldBaseToken', (sdk, _shared, a) => sdk.generateUnshieldBaseTokenProof(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9] || NOOP_PROGRESS));
 
@@ -140,7 +148,10 @@ def('tx.populateShield', (sdk, _shared, a) => sdk.populateShield(a[0], a[1], a[2
   .then(serializePopulated));
 def('tx.populateShieldBaseToken', (sdk, _shared, a) => sdk.populateShieldBaseToken(a[0], a[1], a[2], a[3], a[4], a[5])
   .then(serializePopulated));
-def('tx.populateProvedTransfer', (sdk, _shared, a) => sdk.populateProvedTransfer(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9])
+// populateProvedTransfer takes 11 args; the FINAL one (a[10]) is gasDetails — a
+// dropped 11th arg leaves the populate with no gas → throws. Extra leading args
+// vs unshield: showSenderAddressToRecipient (a[3]) + memoText (a[4]).
+def('tx.populateProvedTransfer', (sdk, _shared, a) => sdk.populateProvedTransfer(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10])
   .then(serializePopulated));
 def('tx.populateProvedUnshield', (sdk, _shared, a) => sdk.populateProvedUnshield(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8])
   .then(serializePopulated));
