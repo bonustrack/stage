@@ -1,11 +1,7 @@
 /** The `useXmtpFeed` conversation-feed hook for the app's XMTP client lib.
  *  Extracted from lib/xmtp.ts (phase-2 lint split); re-exported from there.
- *
- *  `useXmtpFeed` no longer owns a stream or a poll — it subscribes to its conv's
- *  feedCache slice. The single app-wide stream + its backstops live in
- *  xmtp.stream.ts; the channels list keeps its own subscription via
- *  `subscribeAllMessages`, so this hook is scoped to the conversation-view feed
- *  only. */
+ *  Subscribes to its conv's feedCache slice — the single app-wide stream + its
+ *  backstops live in xmtp.stream.ts; scoped to the conversation-view feed only. */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { DecodedMessage } from '@xmtp/react-native-sdk';
@@ -98,6 +94,15 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
       feedCache.set(ln, [...additions, ...prev]);
     };
 
+    /** A short initial page (or empty conv) means the whole thread is already
+     *  loaded → flip `hasMore` to false NOW so the conversation intro/hero renders
+     *  immediately, without waiting for an `onEndReached` that a short list may
+     *  never fire (the intermittent missing-hero bug). */
+    const noteInitialPage = (count: number): void => {
+      if (cancelled) return;
+      hasMoreRef.current = count >= PAGE_SIZE; setHasMore(count >= PAGE_SIZE);
+    };
+
     /** Local-first open: paint whatever is already in the local MLS db
      *  IMMEDIATELY, before the network sync, then reconcile with the network. */
     const refresh = async (): Promise<void> => {
@@ -107,6 +112,7 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
         const local = await conv.messages({ limit: PAGE_SIZE });
         if (cancelled) return;
         applyMessages(local);
+        noteInitialPage(local.length);
         /** Catch-up: messages delivered while backgrounded / the conv was closed
          *  arrive via MLS group commits the native stream drops. A bare
          *  `conv.sync()` on this handle doesn't reliably land them — only the
@@ -120,6 +126,7 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
         const synced = await conv.messages({ limit: PAGE_SIZE });
         if (cancelled) return;
         applyMessages(synced);
+        noteInitialPage(synced.length);
       } catch { /* swallow — global resync backstop will retry */ }
     };
 
