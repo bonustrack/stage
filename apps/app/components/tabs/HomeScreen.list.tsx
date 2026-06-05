@@ -66,9 +66,12 @@ export function ChannelsList({
           {/* Static avatar: the top-left no longer opens the account-switcher
            *  page (account switching lives in Settings). */}
           <Avatar address={myAddress} size={24} style={{ backgroundColor: border }} />
-          <LabelFilterControl active={labelFilter} onPress={onOpenFilter} />
         </Row>
         <Row align="center" gap={18}>
+          {/* Label filter: link-colored filter glyph (size-matched to the other
+           *  top-right icons), placed before the requests icon. Tap opens the
+           *  label picker sheet. */}
+          <LabelFilterControl active={labelFilter} onPress={onOpenFilter} />
           {/* Message requests: person icon + count badge (pending 'unknown'
            *  consent convs). Badge hidden when 0; tap opens the requests list. */}
           <Pressable onPress={() => router.push('/xmtp/requests')} hitSlop={8} style={{ position: 'relative' }}>
