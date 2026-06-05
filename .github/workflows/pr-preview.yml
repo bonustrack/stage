@@ -2,148 +2,54 @@ name: PR JS-bundle preview
 
 # Per-PR JS-bundle preview for the Metro dev-client (#236).
 #
-# What it does: builds the app's JS bundle with `expo export`, publishes it as an
-# EAS Update on a per-PR branch, and comments a tap-to-load dev-client deep link
-# + QR on the PR. Less taps the link on a device that has the dev-client APK and
-# the installed app swaps its JS for that PR's bundle — no new APK per PR.
+# What it does: publishes the app's JS bundle as an EAS Update on a per-PR branch
+# and comments a tap-to-load dev-client deep link + QR on the PR. Less taps the
+# link on a device that has the dev-client APK; the installed app swaps its JS for
+# that PR's bundle — no new APK per PR.
 #
-# LIMITATION (guarded below): this ships JS ONLY. A PR that changes native code
-# (new/updated native modules, app.config native keys, Android/iOS dirs) needs a
-# fresh APK — the preview will run the OLD native code with the new JS and may
-# crash. The job detects native-touching diffs and posts a warning instead of a
-# bare link.
+# TRIGGER: fully automatic — deploys on every PR open/reopen and re-deploys on
+# every new commit pushed to the PR branch (synchronize). No comment, no label.
 #
-# TRIGGER: automatic — runs on every PR (opened/reopened) and re-deploys on every
-# new commit pushed to the PR branch (synchronize). A `/preview` comment still
-# forces a re-run on demand.
+# NOTE: this ships JS ONLY. A PR that changes native code (new native modules,
+# app.config native keys, android/ios dirs) needs a fresh APK — see the comment
+# footer. We do NOT gate/skip on native changes; the preview always deploys.
 #
-# COST/SAFETY:
+# SAFETY:
 #   • concurrency cancels in-flight runs on rapid pushes (one preview per PR).
-#   • fork PRs are skipped — they don't have access to EXPO_TOKEN, so the publish
-#     would hard-fail; the gate short-circuits before any work.
-#   • native-touching diffs still post a warning instead of a bare link.
+#   • fork PRs are skipped — they have no access to EXPO_TOKEN, so the publish
+#     would hard-fail; the job guard short-circuits before any work.
 #
-# REQUIRES (native, one-time): the dev-client APK must include `expo-updates`
-# (added to apps/app/package.json + app.config.js `updates`/`runtimeVersion` in
-# this PR). Until that APK is installed, the deep link has no updates client to
-# load it. See docs/pr-preview.md.
+# REQUIRES (native, one-time): the dev-client APK must include `expo-updates`.
+# Until that APK is installed, the deep link has no updates client to load it.
 
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-  issue_comment:
-    types: [created]
 
 concurrency:
   # One preview build per PR at a time; newer trigger cancels the in-flight one.
-  group: pr-preview-${{ github.event.pull_request.number || github.event.issue.number }}
+  group: pr-preview-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
-  # Gate: run automatically on every PR open/sync/reopen, or on a `/preview`
-  # comment. Fork PRs are skipped (no EXPO_TOKEN secret available to them).
-  gate:
-    runs-on: ubuntu-latest
-    outputs:
-      run: ${{ steps.decide.outputs.run }}
-      pr: ${{ steps.decide.outputs.pr }}
-    steps:
-      - id: decide
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const ev = context.eventName;
-            if (ev === 'pull_request') {
-              const pr = context.payload.pull_request;
-              // Forks can't read EXPO_TOKEN → skip rather than hard-fail.
-              if (pr.head.repo.full_name !== context.payload.repository.full_name) {
-                core.notice(`Skipping preview: fork PR (${pr.head.repo.full_name}) has no access to EXPO_TOKEN.`);
-                core.setOutput('run', 'false');
-                return;
-              }
-              core.setOutput('run', 'true');
-              core.setOutput('pr', String(pr.number));
-              return;
-            }
-            if (ev === 'issue_comment'
-                && context.payload.issue.pull_request
-                // Ignore bot comments (e.g. Netlify's deploy bot) so they can't
-                // spawn phantom runs that cancel the real build.
-                && context.payload.comment.user.type !== 'Bot'
-                && context.payload.comment.body.trim().startsWith('/preview')) {
-              core.setOutput('run', 'true');
-              core.setOutput('pr', String(context.payload.issue.number));
-              return;
-            }
-            core.setOutput('run', 'false');
-
   preview:
-    needs: gate
-    if: needs.gate.outputs.run == 'true'
+    # Forks can't read EXPO_TOKEN → skip rather than hard-fail.
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: write
     env:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-      PR: ${{ needs.gate.outputs.pr }}
+      PR: ${{ github.event.pull_request.number }}
     steps:
-      - name: Resolve PR head ref
-        id: pr
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const { data: pr } = await github.rest.pulls.get({
-              owner: context.repo.owner, repo: context.repo.repo,
-              pull_number: Number(process.env.PR),
-            });
-            core.setOutput('ref', pr.head.ref);
-            core.setOutput('sha', pr.head.sha);
-            core.setOutput('repo', pr.head.repo.full_name);
-
-      - name: React 👀 on the trigger
-        if: github.event_name == 'issue_comment'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            await github.rest.reactions.createForIssueComment({
-              owner: context.repo.owner, repo: context.repo.repo,
-              comment_id: context.payload.comment.id, content: 'eyes',
-            });
-
       - uses: actions/checkout@v6
         with:
-          ref: ${{ steps.pr.outputs.sha }}
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.9
-
-      - name: Detect native changes (JS-only guard)
-        id: native
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const base = context.payload.pull_request?.base?.sha
-              || (await github.rest.pulls.get({
-                   owner: context.repo.owner, repo: context.repo.repo,
-                   pull_number: Number(process.env.PR) })).data.base.sha;
-            const { data: cmp } = await github.rest.repos.compareCommits({
-              owner: context.repo.owner, repo: context.repo.repo,
-              base, head: '${{ steps.pr.outputs.sha }}',
-            });
-            // Paths that change native code → a JS-only preview is unsafe/stale.
-            const re = new RegExp([
-              '(^|/)(android|ios)/',
-              'apps/app/plugins/',
-              'apps/app/modules/',
-              'apps/app/app\\.config\\.js',
-              'apps/app/eas\\.json',
-              '(^|/)package\\.json$',
-            ].join('|'));
-            const hits = (cmp.files || []).map(f => f.filename).filter(f => re.test(f));
-            core.setOutput('native', hits.length ? 'true' : 'false');
-            core.setOutput('files', hits.slice(0, 20).join('\n'));
 
       - run: bun install --frozen-lockfile
 
@@ -158,7 +64,7 @@ jobs:
           # dev-client consumes. --non-interactive needs EXPO_TOKEN (set above).
           bunx eas-cli@latest update \
             --branch "$BRANCH" \
-            --message "PR #${PR} @ ${{ steps.pr.outputs.sha }}" \
+            --message "PR #${PR} @ ${{ github.event.pull_request.head.sha }}" \
             --non-interactive --json > eas-update.json
           node ../../scripts/pr-preview/eas-deeplink.mjs eas-update.json >> "$GITHUB_OUTPUT"
 
@@ -175,9 +81,6 @@ jobs:
           script: |
             const link = `${{ steps.update.outputs.deeplink }}`;
             const qr = `${{ steps.qr.outputs.img }}`;
-            const nativeWarn = `${{ steps.native.outputs.native }}` === 'true'
-              ? `\n> ⚠️ **Native changes detected** in this PR — a JS-only preview runs the **old** native code and may crash or behave wrong. This PR needs a fresh **APK**, not just this bundle.\n>\n> <details><summary>native-touching files</summary>\n>\n> \`\`\`\n${`${{ steps.native.outputs.files }}`}\n\`\`\`\n> </details>\n`
-              : '';
             const body = [
               '### 📱 PR JS-bundle preview',
               '',
@@ -188,9 +91,8 @@ jobs:
               `\`${link}\``,
               '',
               `<img src="${qr}" width="200" alt="QR to load preview" />`,
-              nativeWarn,
               '',
-              `<sub>JS bundle only (EAS Update branch \`pr-${process.env.PR}\`). Needs the expo-updates-enabled dev-client APK. Auto-redeploys on every push; comment \`/preview\` to force a re-run.</sub>`,
+              `<sub>JS bundle only (EAS Update branch \`pr-${process.env.PR}\`). Needs the expo-updates-enabled dev-client APK. Auto-redeploys on every push. PRs that change native code need a fresh APK.</sub>`,
             ].join('\n');
             // Upsert: replace our previous preview comment instead of stacking.
             const { data: comments } = await github.rest.issues.listComments({
