@@ -8,8 +8,7 @@ import { shortAddress } from '../lib/xmtp';
 import { fmtSigValue, explorerUrl, ethFromWeiHex } from './MessengerBubble.helpers';
 import type { SigRequest, SigReference, TxRequest, TxReceipt } from './MessengerBubble.helpers';
 import { usePalette, useBlockRadius } from '../lib/theme';
-
-/** SigRequestCard — signature-request bubble: description + message detail. */
+// SigRequestCard — signature-request bubble: description + message detail.
 export function SigRequestCard({ req, dark, sub, signing, onSign }: {
   req: SigRequest; dark: boolean; sub: string; signing?: boolean;
   onSign?: () => void;
@@ -20,7 +19,6 @@ export function SigRequestCard({ req, dark, sub, signing, onSign }: {
   const detailBorder = dark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)';
   const pal = usePalette(); const blockRadius = useBlockRadius();
   const head = pal.link; // #ffffff / #000000
-
   const domain = req.eip712?.domain as { name?: unknown; chainId?: unknown } | undefined;
   const domainName = domain?.name != null ? String(domain.name) : undefined;
   const chainId = domain?.chainId != null ? String(domain.chainId) : undefined;
@@ -92,7 +90,6 @@ export function SigRequestCard({ req, dark, sub, signing, onSign }: {
     </Box>
   );
 }
-
 /** SigReferenceCard — a completed signature: "Signed ✓" + signer + short sig. */
 export function SigReferenceCard({ ref, dark, sub }: {
   ref: SigReference; dark: boolean; sub: string;
@@ -121,7 +118,6 @@ export function SigReferenceCard({ ref, dark, sub }: {
     </Box>
   );
 }
-
 /** TxRequestCard — payment request bubble: description + amount + "Pay" button. */
 export function TxRequestCard({ req, dark, sub, paying, onPay }: {
   req: TxRequest; dark: boolean; sub: string; paying?: boolean;
@@ -174,7 +170,6 @@ export function TxRequestCard({ req, dark, sub, paying, onPay }: {
     </Box>
   );
 }
-
 /** TxReceiptCard — a confirmed payment: amount + tappable explorer link. */
 export function TxReceiptCard({ receipt, dark }: {
   receipt: TxReceipt; dark: boolean;

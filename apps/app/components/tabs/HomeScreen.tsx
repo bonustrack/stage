@@ -1,8 +1,6 @@
-/** Channels tab — XMTP conversations the local wallet is a member of.
- *  Tapping a row pushes into `/xmtp/[convId]` for the full chat view.
- *  Avatar = stamp.box `eth:<peer-address>` for DMs; stacked stamp avatars of
- *  the other members for groups (excluding the local user). Both are resolved
- *  once per conv during the initial list build and cached in component state. */
+/** Channels tab — XMTP conversations the local wallet is a member of. Tapping a
+ *  row pushes into `/xmtp/[convId]`. Avatars (stamp.box) resolved once per conv
+ *  on list build and cached in component state. */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FlatList } from 'react-native-gesture-handler';
@@ -29,10 +27,6 @@ import type { LabelFilterValue } from './HomeScreen.filter';
 /** Re-exported so existing import paths (`./HomeScreen`) stay unchanged. */
 export type { Row } from './HomeScreen.helpers';
 
-/** Channels-list cache lives in lib/channelsCache so the conversation view
- *  can reach in to clear unread on mount without an import cycle. The Row[]
- *  shape is a superset of CachedRow — write through directly. */
-
 export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
@@ -40,9 +34,8 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
   const sub = fg;
   const [rows, setRowsState] = useState<RowT[] | null>(getCachedRows() as RowT[] | null);
   /** Wrap setRows so every state update also lands in the shared cache + fans
-   *  out to subscribers (e.g. the conv view'​s markConvRead can mutate the
-   *  cache and we'll re-render via the subscription below). */
-  const setRows = (next: RowT[] | null | ((p: RowT[] | null) => RowT[] | null)): void => {
+   *  out to subscribers (e.g. the conv view's markConvRead). */
+  const setRows =(next: RowT[] | null | ((p: RowT[] | null) => RowT[] | null)): void => {
     if (typeof next === 'function') {
       setRowsState(prev => {
         const v = (next as (p: RowT[] | null) => RowT[] | null)(prev);
@@ -56,43 +49,30 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
   };
   useEffect(() => subscribeCachedRows(r => setRowsState(r as RowT[] | null)), []);
   const [error, setError] = useState<string>('');
-  /** Row long-pressed → opens the per-conversation action sheet (Mark as
-   *  read/unread). Holds the convId + whether it currently reads as unread. */
+  /** Row long-pressed → per-conversation action sheet (mark read/unread). */
   const [rowMenu, setRowMenu] = useState<{ convId: string; title: string; isUnread: boolean; isGroup: boolean; peerAddress: string | null } | null>(null);
-  /** Held across effect re-runs so AppState + poll backstops can call refresh
-   *  without re-binding to a stale client. */
+  /** Held across effect re-runs so AppState + poll backstops can refresh. */
   const refreshFromNetworkRef = useRef<(() => Promise<void>) | null>(null);
-  /** Channels-list scroll persistence: the FlatList ref to restore onto, the
-   *  saved offset (read once on mount), a one-shot flag so we only auto-restore
-   *  the first time content lays out, and the latest measured content height so a
-   *  saved offset can be clamped to it (never scroll past the end). */
+  /** Channels-list scroll persistence: ref, saved offset, one-shot restore flag,
+   *  measured content height (clamp the saved offset to it). */
   const listRef = useRef<FlatList<RowT>>(null);
   const savedOffsetRef = useRef<number | undefined>(undefined);
   const didRestoreRef = useRef(false);
   const contentHeightRef = useRef(0);
-  /** Device-only pinned conv ids. Loaded once on mount; `subscribePins` bumps
-   *  this on every toggle so the display sort below re-derives + re-renders. */
+  /** Device-only pinned conv ids; `subscribePins` re-derives the sort on toggle. */
   const [pinned, setPinned] = useState<Set<string>>(new Set());
-  /** Device-only archived conv ids. Loaded once; `subscribeArchived` bumps this
-   *  on every toggle so the list filter below re-derives + re-renders. Archived
-   *  convs are hidden from the main list and shown in the Archived view. */
+  /** Device-only archived conv ids; hidden from main list, shown in Archived. */
   const [archived, setArchived] = useState<Set<string>>(new Set());
   /** Active account's own address → topnav avatar. */
   const [myAddress, setMyAddress] = useState<string | null>(null);
-  /** Count of pending message requests ('unknown' consent convs). Drives the
-   *  "Requests (N)" entry at the top of the list; hidden when 0. */
+  /** Pending message-request count ('unknown' consent); drives "Requests (N)". */
   const [requestCount, setRequestCount] = useState<number>(0);
-  /** Active label filter (null = show all). Drives both the topnav control's
-   *  highlighted state and the sortedRows filter below. The picker sheet's
-   *  open/closed state is local UI here. */
+  /** Active label filter (null = show all); drives topnav + sortedRows filter. */
   const [labelFilter, setLabelFilter] = useState<LabelFilterValue>(null);
   const [filterSheetOpen, setFilterSheetOpen] = useState<boolean>(false);
-  /** Apply cross-screen label-filter requests (a tapped channel-card label chip)
-   *  to the filter state — pending-on-mount + live while mounted. */
+  /** Apply cross-screen label-filter requests (tapped label chip). */
   useIncomingLabelFilter(setLabelFilter);
-  /** Load the saved channels-list offset once on mount. The actual scroll
-   *  happens in onContentSizeChange (below) once rows have laid out — restoring
-   *  before content exists would clamp to 0. */
+  /** Load saved scroll offset once; actual scroll happens in onContentSizeChange. */
   useEffect(() => {
     void getScrollOffset(CHANNELS_SCROLL_KEY).then(o => { savedOffsetRef.current = o; });
     return () => { flushScrollOffset(CHANNELS_SCROLL_KEY); };
@@ -161,10 +141,8 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
     accountEpoch, rows, setRowsState, setRows, setError, setRequestCount, refreshFromNetworkRef,
   });
 
-/** #6: stable extraData (an array, identity changes only when one of these
-   *  versions does) instead of a freshly-built string every render — so the
-   *  FlatList doesn't treat every parent re-render as "data changed" and
-   *  re-render the whole window on each stream tick. */
+/** Stable extraData array (identity changes only when a version does) so the
+   *  FlatList doesn't re-render the whole window on each stream tick. */
   const listExtraData = useMemo(
     () => [channelProfilesVersion, draftsVersion, pinned] as const,
     [channelProfilesVersion, draftsVersion, pinned],

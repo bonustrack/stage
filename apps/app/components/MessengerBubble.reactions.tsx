@@ -10,13 +10,13 @@ import { usePalette } from '../lib/theme';
 /** Confirmed + optimistic reaction pills. Returns null when there's nothing to
  *  show. Tapping/long-pressing any pill toggles that emoji as the user's own. */
 export function ReactionsRow({
-  reactions, pendingReactions, pendingRemovals, ownEmojis, sub, pillBg, dark, onReact,
+  reactions, pendingReactions, pendingRemovals, ownEmojis, sub, pillBg, onReact,
 }: {
   reactions?: Map<string, number>;
   pendingReactions?: string[];
   pendingRemovals?: string[];
   ownEmojis?: Set<string>;
-  sub: string; pillBg: string; dark: boolean;
+  sub: string; pillBg: string;
   onReact?: (emoji: string) => void;
 }): React.ReactElement | null {
   const { link } = usePalette();

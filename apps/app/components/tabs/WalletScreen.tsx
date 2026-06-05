@@ -1,9 +1,7 @@
-/** Wallet tab — header with the logged-in identity, asset list (ETH +
- *  stablecoins) with live USD prices via CoinGecko Pro, and Send / Receive
- *  shortcuts. Balances are pulled in a single Multicall3 round-trip via the
- *  brovider RPC (the proxy Snapshot UI uses; viem's default public endpoint
- *  was failing in RN). Each row is a 4-corner layout: token name + price/24h-change
- *  on the left, USD value + amount/symbol on the right. */
+/** Wallet tab — identity header, asset list (ETH + stablecoins) with live USD
+ *  prices via CoinGecko Pro, and Send / Receive shortcuts. Balances come from a
+ *  single Multicall3 round-trip via the brovider RPC. Each row is 4-corner: name
+ *  + price/24h-change left, USD value + amount/symbol right. */
 
 import { useEffect, useRef, useState } from 'react';
 import { ScrollView } from 'react-native-gesture-handler';

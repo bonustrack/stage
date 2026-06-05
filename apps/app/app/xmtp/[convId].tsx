@@ -62,12 +62,9 @@ export default function XmtpConversation(): React.ReactElement {
         flex: 1, backgroundColor: bg, paddingBottom: insets.bottom,
       }}
     >
-      {/** Swipe-back is now handled by the @react-navigation/stack JS card
-       *   stack (see app/_layout): its interactive horizontal gesture renders
-       *   the previous screen behind this one and finger-follows the pop. No
-       *   in-screen back shim needed — the stack's left-edge rightward gesture
-       *   composes with the inverted FlatList scroll + the leftward bubble
-       *   swipe-to-reply (opposite direction). */}
+      {/** Swipe-back handled by the @react-navigation/stack JS card stack
+       *   (app/_layout): its left-edge rightward gesture pops + composes with
+       *   the inverted FlatList scroll + leftward bubble swipe-to-reply. */}
       <Reanimated.View style={[{ flex: 1 }, listWrapperStyle]}>
       <ConversationFeed
         c={c}

@@ -18,7 +18,7 @@ import {
   type TokenKey,
 } from './colorOverrides';
 import {
-  getRadius, getBlockRadius, loadRadius, setRadius, setBlockRadius, resetRadius,
+  getRadius, getBlockRadius, loadRadius,
   subscribe as subscribeRadius,
 } from './radiusOverride';
 
