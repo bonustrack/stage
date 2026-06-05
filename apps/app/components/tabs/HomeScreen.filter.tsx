@@ -62,23 +62,26 @@ export function LabelFilterControl({ active, onPress }: {
   active: LabelFilterValue;
   onPress: () => void;
 }): React.ReactElement {
-  const { link: head, text: sub, border: rowBg } = usePalette();
+  const { link, border: rowBg } = usePalette();
   const isOn = active != null;
   return (
     <Pressable onPress={onPress} hitSlop={8}>
       <Row
         align="center"
         gap={5}
-        px={isOn ? 10 : 8}
-        py={5}
+        px={isOn ? 8 : 0}
+        py={isOn ? 4 : 0}
         radius={999}
         style={{ backgroundColor: isOn ? rowBg : 'transparent' }}
       >
-        <Icon name="filter" size={18} color={isOn ? head : sub} />
+        {/* Filter glyph: link-colored, size-matched (24) to the requests/"+"
+         *  icons in the top-right cluster. When a filter is active it gains a
+         *  tinted pill + the active label text so the state stays visible. */}
+        <Icon name="filter" size={24} color={link} />
         {isOn ? (
           <Text
             numberOfLines={1}
-            style={{ color: head, fontSize: 14, fontFamily: 'Calibre-Semibold', maxWidth: 120 }}
+            style={{ color: link, fontSize: 14, fontFamily: 'Calibre-Semibold', maxWidth: 120 }}
           >
             {filterLabelText(active)}
           </Text>
