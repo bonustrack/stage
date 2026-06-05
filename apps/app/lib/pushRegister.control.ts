@@ -15,6 +15,11 @@ export const METRO_CTRL_PREFIX = 'METRO_CTRL:';
  *  `${METRO_CTRL_PREFIX}${CTRL_REGISTER_PUSH}:${json}`. */
 const CTRL_REGISTER_PUSH = 'register-push';
 
+/** The control-DM verb asking the daemon to STOP pushing to this device's token
+ *  (user turned push OFF in Settings → Notifications). Full body =
+ *  `${METRO_CTRL_PREFIX}${CTRL_DISABLE_PUSH}:${json}`. */
+const CTRL_DISABLE_PUSH = 'disable-push';
+
 /** Bump when the JSON shape below changes so the daemon can branch on `v`. */
 const CTRL_SCHEMA_VERSION = 1;
 
@@ -41,4 +46,20 @@ export function buildRegisterPushBody(payload: {
     inboxId: payload.inboxId,
   });
   return `${METRO_CTRL_PREFIX}${CTRL_REGISTER_PUSH}:${json}`;
+}
+
+/** Build the control-DM body telling the daemon to drop this device's token
+ *  (push turned OFF). The daemon removes `{token}` from the account's push set. */
+export function buildDisablePushBody(payload: {
+  token: string;
+  address: string;
+  inboxId: string;
+}): string {
+  const json = JSON.stringify({
+    v: CTRL_SCHEMA_VERSION,
+    token: payload.token,
+    address: payload.address.toLowerCase(),
+    inboxId: payload.inboxId,
+  });
+  return `${METRO_CTRL_PREFIX}${CTRL_DISABLE_PUSH}:${json}`;
 }

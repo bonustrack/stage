@@ -57,10 +57,12 @@ import type { Client } from '@xmtp/react-native-sdk';
 import { PublicIdentity } from '@xmtp/react-native-sdk';
 import { ensureNotificationReady, getDeviceFcmToken } from './push.device';
 import { DAEMON_INBOX_ADDRESS, buildRegisterPushBody } from './pushRegister.control';
+import { isPushEnabledSync, loadPushEnabled } from './pushPref';
 
 // Re-export the control-DM wire-format surface so existing import paths keep
 // working (extracted into pushRegister.control.ts for the <200-line cap).
 export { DAEMON_INBOX_ADDRESS, METRO_CTRL_PREFIX, isMetroControlBody, buildRegisterPushBody } from './pushRegister.control';
+import { buildDisablePushBody } from './pushRegister.control';
 // Re-export the notification-tap deep-link handler (extracted for line cap).
 export { usePushDeepLinks } from './pushRegister.deeplink';
 
@@ -99,6 +101,12 @@ export async function registerPushWithDaemon(client: PushClient): Promise<void> 
   try {
     const platform = platformTag();
     if (!platform) return;
+
+    // User-controlled kill switch (Settings → Notifications). When push is
+    // turned OFF we never (re-)register the token, so the daemon stops pushing
+    // for this device on next token rotation / TTL expiry.
+    await loadPushEnabled();
+    if (!isPushEnabledSync()) return;
 
     const address = client.publicIdentity?.identifier;
     const inboxId = client.inboxId;
@@ -155,6 +163,35 @@ export async function isDaemonPushRegistered(account: string): Promise<boolean> 
     const { token, at } = JSON.parse(prev) as { token?: string; at?: number };
     return !!token && typeof at === 'number' && Date.now() - at < REGISTER_TTL_MS;
   } catch { return false; }
+}
+
+/** Tell the daemon to STOP pushing to this device and clear the local
+ *  registration state so the TTL gate treats the device as unregistered. Called
+ *  when the user turns push OFF in Settings → Notifications. Best-effort: even if
+ *  the control DM fails, the local register-state key is cleared so the next
+ *  `registerPushWithDaemon` (now gated by the OFF preference) won't re-send. */
+export async function unregisterPushFromDaemon(client: PushClient): Promise<void> {
+  try {
+    const address = client.publicIdentity?.identifier;
+    const inboxId = client.inboxId;
+    if (!address || !inboxId) return;
+    const account = address.toLowerCase();
+    // Drop the local debounce state so a future re-enable always re-registers.
+    const prev = await AsyncStorage.getItem(lastRegisterKey(account)).catch(() => null);
+    await AsyncStorage.removeItem(lastRegisterKey(account)).catch(() => undefined);
+    // Best-effort: tell the daemon to forget this device's token (if we have one).
+    let token: string | null = null;
+    if (prev) { try { token = (JSON.parse(prev) as { token?: string }).token ?? null; } catch { /* ignore */ } }
+    if (!token) return;
+    const dm = await client.conversations.findOrCreateDmWithIdentity(
+      new PublicIdentity(DAEMON_INBOX_ADDRESS, 'ETHEREUM'),
+    );
+    await dm.send(buildDisablePushBody({ token, address, inboxId }));
+  } catch (err) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('unregisterPushFromDaemon failed', (err as Error).message);
+    }
+  }
 }
 
 /** Present a foreground local notification for an inbound XMTP message (option
