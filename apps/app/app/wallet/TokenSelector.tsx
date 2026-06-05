@@ -1,0 +1,151 @@
+/** Shared token-selector field + modal for the four Wallet action pages
+ *  (Send / Send-shielded / Shield / Unshield).
+ *
+ *  The selector is a tappable Kit-styled field that opens a bottom-sheet
+ *  (AppModal) listing the available tokens. Each row REUSES the exact same
+ *  `TokenRow` component the Wallet tab renders — avatar + network badge +
+ *  per-unit price + balance — so the picker matches the wallet list 1:1.
+ *
+ *  Rows come from the live wallet data: PUBLIC mode pulls `fetchAssetRows`
+ *  (on-chain multicall balances), SHIELDED mode derives rows from the active
+ *  Railgun snapshot via `privateBalancesToRows`. Selecting a row reports the
+ *  chosen { symbol, chainId } back up and the parent shows the same balance in
+ *  the amount field.
+ *
+ *  No bespoke/gold styling — Kit `Text`/`Icon` + the palette tokens only. */
+import { useEffect, useMemo, useState } from 'react';
+import { Image, Pressable } from 'react-native';
+import { Text } from '@metro-labs/kit/text';
+import { Icon } from '@metro-labs/kit/icon';
+import { Box, Row, Col } from '../../components/layout';
+import { AppModal } from '../../components/AppModal';
+import { Spinner } from '../../components/Spinner';
+import { usePalette } from '../../lib/theme';
+import { getActiveAccount } from '../../lib/accounts';
+import { fetchAssetRows } from '../../components/tabs/WalletScreen.data';
+import { TokenRow } from '../../components/tabs/WalletScreen.parts';
+import { NETWORK_LOGO, MAINNET_NETWORK_LOGO, type AssetRow } from '../../components/tabs/WalletScreen.assets';
+import { privateBalancesToRows, symbolPricesFromPublic } from '../../components/tabs/WalletScreen.private.rows';
+import { usePrivateWallet } from '../../lib/railgun/usePrivateWallet';
+
+export type SelectorMode = 'public' | 'shielded';
+export interface TokenChoice { symbol: string; chainId: number }
+
+/** Find the AssetRow matching the current selection (for the field + balance). */
+function findRow(rows: AssetRow[], sel: TokenChoice): AssetRow | undefined {
+  return rows.find(r => r.symbol === sel.symbol && r.chainId === sel.chainId);
+}
+
+/** Load the candidate token rows for the selector. PUBLIC = on-chain multicall;
+ *  SHIELDED = the active Railgun snapshot mapped to rows. */
+function useSelectorRows(mode: SelectorMode): { rows: AssetRow[]; loading: boolean } {
+  const [publicRows, setPublicRows] = useState<AssetRow[] | null>(null);
+  const { snapshot } = usePrivateWallet(mode === 'shielded');
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async (): Promise<void> => {
+      try {
+        const acct = await getActiveAccount();
+        if (!acct?.address || cancelled) return;
+        const next = await fetchAssetRows(acct.address);
+        if (!cancelled) setPublicRows(next);
+      } catch { /* leave null → spinner stays until retry/close */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const shieldedRows = useMemo(
+    () => privateBalancesToRows(snapshot, symbolPricesFromPublic(publicRows ?? [])),
+    [snapshot, publicRows],
+  );
+
+  if (mode === 'shielded') return { rows: shieldedRows, loading: false };
+  return { rows: publicRows ?? [], loading: publicRows === null };
+}
+
+/** Tappable token field. Shows the selected token avatar + symbol + a chevron;
+ *  opening it presents the modal list. */
+export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
+  mode: SelectorMode;
+  value: TokenChoice;
+  onChange: (v: TokenChoice) => void;
+  label?: string;
+}): React.ReactElement {
+  const { text: fg, link: head, border, bg } = usePalette();
+  const sub = fg;
+  const [open, setOpen] = useState(false);
+  const { rows, loading } = useSelectorRows(mode);
+  const selected = findRow(rows, value);
+
+  return (
+    <Box style={{ gap: 6 }}>
+      <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>{label}</Text>
+      <Pressable
+        onPress={() => setOpen(true)}
+        style={({ pressed }) => ({
+          flexDirection: 'row', alignItems: 'center', gap: 10,
+          backgroundColor: border, borderRadius: 12,
+          paddingHorizontal: 14, paddingVertical: 12,
+          opacity: pressed ? 0.7 : 1,
+        })}
+      >
+        <Box style={{ width: 28, height: 28 }}>
+          <Image
+            source={{ uri: selected?.logoUrl }}
+            style={{ width: 28, height: 28, borderRadius: 999, backgroundColor: bg }}
+          />
+          <Box style={{
+            position: 'absolute', right: -3, bottom: -3, width: 15, height: 15,
+            borderRadius: 999, borderWidth: 2, borderColor: border, backgroundColor: bg,
+            overflow: 'hidden',
+          }}>
+            <Image
+              source={{ uri: NETWORK_LOGO[value.chainId] ?? MAINNET_NETWORK_LOGO }}
+              resizeMode="cover" style={{ width: '100%', height: '100%' }}
+            />
+          </Box>
+        </Box>
+        <Col flex={1} style={{ minWidth: 0 }}>
+          <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
+            {value.symbol}
+          </Text>
+          <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
+            {selected ? `Balance: ${selected.balance}` : '—'}
+          </Text>
+        </Col>
+        <Icon name="chevronDown" size={18} color={fg} />
+      </Pressable>
+
+      <AppModal visible={open} onClose={() => setOpen(false)}>
+        <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', marginBottom: 8 }}>
+          Select token
+        </Text>
+        {loading ? (
+          <Row align="center" justify="center" py={24}>
+            <Spinner size={28} color={fg} />
+          </Row>
+        ) : rows.length === 0 ? (
+          <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium', paddingVertical: 16 }}>
+            No tokens available.
+          </Text>
+        ) : (
+          rows.map((r) => (
+            <TokenRow
+              key={`${r.isPrivate ? 'priv' : 'pub'}:${r.chainId}:${r.symbol}`}
+              r={r} head={head} sub={sub} border={border} bg={bg}
+              onPress={() => { onChange({ symbol: r.symbol, chainId: r.chainId }); setOpen(false); }}
+            />
+          ))
+        )}
+      </AppModal>
+    </Box>
+  );
+}
+
+/** Helper for the parent amount field — returns the selected token's balance
+ *  string (or null) so the page can render "Balance: …" and a Max button. */
+export function useSelectedBalance(mode: SelectorMode, value: TokenChoice): string | null {
+  const { rows } = useSelectorRows(mode);
+  return findRow(rows, value)?.balance ?? null;
+}

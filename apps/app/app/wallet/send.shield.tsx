@@ -13,11 +13,8 @@
  *  This way the 'scanning' tail (balance-landed watcher) is reflected even though
  *  the awaited shieldToPrivate() call returns right after the receipt. */
 import { useEffect, useState } from 'react';
-import { Pressable, TextInput } from 'react-native';
-import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';
 import { Box } from '../../components/layout';
-import { usePalette } from '../../lib/theme';
 import { shieldToPrivate } from '../../lib/railgun/shield';
 import { isBridgeAvailable } from '../../lib/railgun/bridge';
 import { getActiveAccountId } from '../../lib/accounts';
@@ -25,11 +22,10 @@ import { pendingStore } from '../../lib/railgun/cache';
 import type { PendingAction } from '../../lib/railgun/types';
 import { ShieldRecipient, ShieldPhaseLine } from './send.shield.parts';
 import { ShieldStepper, type ShieldStage } from './send.shield.stepper';
+import { AmountBox, type FormPal } from './wallet.form';
+import { TokenSelector, useSelectedBalance } from './TokenSelector';
 
-interface Pal { fg: string; head: string; sub: string; border: string; inputBg: string }
-
-const SYMBOLS = ['ETH', 'USDC'] as const;
-const NETS = [{ id: 11155111, label: 'Sepolia' }, { id: 1, label: 'Ethereum' }] as const;
+type Pal = FormPal;
 
 /** Map a pending-action phase to a stepper stage. `proving`/`broadcasting` are
  *  the two on-chain stages; `scanning` is the merkle-scan tail; `confirmed`/
@@ -45,15 +41,14 @@ function phaseToStage(p?: PendingAction['phase']): ShieldStage {
   }
 }
 
-export function ShieldForm({ pal, dark, bg, zkAddress, initialSymbol, initialChainId }: {
-  pal: Pal; dark: boolean; bg: string; zkAddress: string | null;
+export function ShieldForm({ pal, dark, zkAddress, initialSymbol, initialChainId }: {
+  pal: Pal; dark: boolean; zkAddress: string | null;
   /** Pre-selected token/network (from the token detail page's Shield button). */
   initialSymbol?: 'ETH' | 'USDC'; initialChainId?: number;
 }): React.ReactElement {
-  const { fg, head, sub, border, inputBg } = pal;
-  const { primary } = usePalette();
   const [symbol, setSymbol] = useState<'ETH' | 'USDC'>(initialSymbol ?? 'ETH');
   const [chainId, setChainId] = useState<number>(initialChainId ?? 11155111);
+  const balance = useSelectedBalance('public', { symbol, chainId });
   const [amount, setAmount] = useState('');
   // Wall-clock of the latest submit; we track the shield pending row started at
   // or after this, so the stepper follows THIS shield (not a stale prior one).
@@ -105,49 +100,16 @@ export function ShieldForm({ pal, dark, bg, zkAddress, initialSymbol, initialCha
     <Box style={{ gap: 16 }}>
       <ShieldRecipient pal={pal} zkAddress={zkAddress} />
 
-      <Box style={{ gap: 6 }}>
-        <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>NETWORK</Text>
-        <Box style={{ flexDirection: 'row', gap: 8 }}>
-          {NETS.map(net => (
-            <Pressable key={net.id} onPress={() => setChainId(net.id)} style={{
-              flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 10,
-              borderWidth: 1, borderColor: chainId === net.id ? '#c0a06e' : border,
-              backgroundColor: chainId === net.id ? 'rgba(192,160,110,0.15)' : inputBg,
-            }}>
-              <Text style={{ color: chainId === net.id ? '#c0a06e' : fg, fontSize: 14, fontFamily: 'Calibre-Semibold' }}>{net.label}</Text>
-            </Pressable>
-          ))}
-        </Box>
-      </Box>
+      <TokenSelector mode="public" value={{ symbol, chainId }}
+        onChange={(v) => { setSymbol(v.symbol as 'ETH' | 'USDC'); setChainId(v.chainId); }} />
 
-      <Box style={{ gap: 6 }}>
-        <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>TOKEN</Text>
-        <Box style={{ flexDirection: 'row', gap: 8 }}>
-          {SYMBOLS.map(s => (
-            <Pressable key={s} onPress={() => setSymbol(s)} style={{
-              flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 10,
-              borderWidth: 1, borderColor: symbol === s ? '#c0a06e' : border,
-              backgroundColor: symbol === s ? 'rgba(192,160,110,0.15)' : inputBg,
-            }}>
-              <Text style={{ color: symbol === s ? '#c0a06e' : fg, fontSize: 14, fontFamily: 'Calibre-Semibold' }}>{s}</Text>
-            </Pressable>
-          ))}
-        </Box>
-      </Box>
-
-      <Box style={{ gap: 6 }}>
-        <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>AMOUNT</Text>
-        <Box style={{ backgroundColor: inputBg, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12 }}>
-          <TextInput value={amount} onChangeText={setAmount} placeholder="0.0" placeholderTextColor={sub}
-            keyboardType="decimal-pad" editable={!busy}
-            style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', padding: 0 }} />
-        </Box>
-      </Box>
+      <AmountBox pal={pal} amount={amount} setAmount={setAmount} busy={busy}
+        balance={balance} symbol={symbol} dark={dark} />
 
       <Button variant="primary" size="lg" fullWidth pill dark={dark} loading={busy}
         disabled={!canSubmit} onPress={onSubmit}
         label={busy ? 'Shielding…' : stage === 'done' ? 'Shielded ✓' : 'Shield to private'}
-        tintBg={primary} tintFg={bg} style={{ marginTop: 4 }} />
+        style={{ marginTop: 4 }} />
 
       <ShieldStepper stage={stage} pal={pal} />
       <ShieldPhaseLine pal={pal} txHash={txHash} err={err} bridgeOk={isBridgeAvailable()} chainId={chainId} />

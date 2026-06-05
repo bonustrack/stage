@@ -7,12 +7,10 @@
  *  Shows the token (logo + network badge, name, symbol, balance + $ value) and
  *  TWO big rounded primary buttons reusing the Wallet page's action-button
  *  style (`Btn` from WalletScreen.parts):
- *    - Send  → /wallet/send pre-selected to this token's symbol/network.
- *    - Shield → /wallet/send?mode=shield pre-selected to this token (deposits
- *               the public token into the user's own 0zk shielded balance).
- *
- *  Both buttons route to the existing send.tsx; pre-fill is via query params
- *  (mode/symbol/chainId) read by send.tsx + ShieldForm. */
+ *  Public holding:  Send → /wallet/send,  Shield → /wallet/shield.
+ *  Shielded holding: Send → /wallet/send-shielded (private 0zk transfer),
+ *                    Unshield → /wallet/unshield.
+ *  Pre-fill is via query params (symbol/chainId) read by each page. */
 
 import { Image, Pressable } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
@@ -92,7 +90,7 @@ export default function TokenDetail(): React.ReactElement {
         </Box>
 
         <Row align="center" gap={6} mt={10}>
-          {r.isPrivate ? <Icon name="shieldCheck" size={18} color={sub} /> : null}
+          {r.isPrivate ? <Icon name="eyeOff" size={18} color={sub} /> : null}
           <Text style={{ color: head, fontSize: 24, fontFamily: 'Calibre-Semibold' }}>{r.name}</Text>
         </Row>
 
@@ -119,22 +117,33 @@ export default function TokenDetail(): React.ReactElement {
           flow pre-selected to this token; Shield opens send.tsx in shield
           mode pre-selected to this token. */}
       <Row justify="start" gap={36} mt={32} mx={16}>
-        <Btn icon="send" label="Send" head={head} border={border} dark={dark}
-          onPress={() => router.push({ pathname: '/wallet/send', params: sendParams })} />
         {r.isPrivate ? (
-          /* Shielded holding → Unshield (private → public, back to own EOA). */
-          <Btn icon="eye" label="Unshield" head={head} border={border} dark={dark}
-            onPress={() => router.push({
-              pathname: '/wallet/unshield',
-              params: { symbol: symbol ?? r.symbol, chainId: String(r.chainId) },
-            })} />
+          <>
+            {/* Shielded holding → Send shielded (private → another 0zk). */}
+            <Btn icon="send" label="Send" head={head} border={border} dark={dark}
+              onPress={() => router.push({
+                pathname: '/wallet/send-shielded',
+                params: { symbol: symbol ?? r.symbol, chainId: String(r.chainId) },
+              })} />
+            {/* Shielded holding → Unshield (private → public, back to own EOA). */}
+            <Btn icon="eye" label="Unshield" head={head} border={border} dark={dark}
+              onPress={() => router.push({
+                pathname: '/wallet/unshield',
+                params: { symbol: symbol ?? r.symbol, chainId: String(r.chainId) },
+              })} />
+          </>
         ) : (
-          /* Public holding → Shield (public → own 0zk). */
-          <Btn icon="eyeOff" label="Shield" head={head} border={border} dark={dark}
-            onPress={() => router.push({
-              pathname: '/wallet/send',
-              params: { mode: 'shield', symbol: symbol ?? r.symbol, chainId: String(r.chainId) },
-            })} />
+          <>
+            {/* Public holding → public Send. */}
+            <Btn icon="send" label="Send" head={head} border={border} dark={dark}
+              onPress={() => router.push({ pathname: '/wallet/send', params: sendParams })} />
+            {/* Public holding → Shield (public → own 0zk). */}
+            <Btn icon="eyeOff" label="Shield" head={head} border={border} dark={dark}
+              onPress={() => router.push({
+                pathname: '/wallet/shield',
+                params: { symbol: symbol ?? r.symbol, chainId: String(r.chainId) },
+              })} />
+          </>
         )}
       </Row>
     </Box>

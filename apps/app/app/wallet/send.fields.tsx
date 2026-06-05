@@ -8,7 +8,7 @@ import { Box } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
 import { Button } from '@metro-labs/kit/button';
 import { Icon } from '@metro-labs/kit/icon';
-import { DANGER, useBlockRadius } from '../../lib/theme';
+import { DANGER, usePalette } from '../../lib/theme';
 
 interface Palette {
   fg: string; head: string; sub: string; border: string; inputBg: string;
@@ -23,7 +23,6 @@ export function RecipientField(props: {
   resolveErr: string | null;
 }): React.ReactElement {
   const { fg, head, sub, inputBg } = props.pal;
-  const blockRadius = useBlockRadius();
   return (
     <Box style={{ gap: 6 }}>
       <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>RECIPIENT</Text>
@@ -36,7 +35,7 @@ export function RecipientField(props: {
         autoCorrect={false}
         style={{
           color: head, fontSize: 16, fontFamily: 'Calibre-Medium',
-          backgroundColor: inputBg, borderRadius: blockRadius,
+          backgroundColor: inputBg, borderRadius: 12,
           paddingHorizontal: 14, paddingVertical: 12,
         }}
       />
@@ -61,6 +60,8 @@ export function RecipientField(props: {
 export function AmountField(props: {
   pal: Palette;
   dark: boolean;
+  /** Symbol of the currently selected token — labels the amount toggle + balance. */
+  symbol: string;
   amount: string;
   setAmount: (v: string) => void;
   mode: 'eth' | 'usd';
@@ -72,7 +73,7 @@ export function AmountField(props: {
 }): React.ReactElement {
   const { fg, head, sub, border, inputBg } = props.pal;
   const { amount, mode, ethPriceUsd, setAmount, setMode, ethBalance } = props;
-  const blockRadius = useBlockRadius();
+  const { link } = usePalette();
   return (
     <Box style={{ gap: 6 }}>
       <Box style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -84,14 +85,14 @@ export function AmountField(props: {
           disabled={!ethBalance}
           onPress={props.onMax}
           label="MAX"
-          textStyle={{ color: ethBalance ? '#c0a06e' : sub, fontSize: 12 }}
+          textStyle={{ color: ethBalance ? link : sub, fontSize: 12 }}
           style={{ height: 24, paddingHorizontal: 8 }}
         />
       </Box>
 
       <Box style={{
         flexDirection: 'row', alignItems: 'center',
-        backgroundColor: inputBg, borderRadius: blockRadius,
+        backgroundColor: inputBg, borderRadius: 12,
         paddingHorizontal: 14, paddingVertical: 12, gap: 8,
       }}>
         <TextInput
@@ -128,7 +129,7 @@ export function AmountField(props: {
           })}
         >
           <Text style={{ color: head, fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
-            {mode === 'eth' ? 'ETH' : 'USD'}
+            {mode === 'eth' ? props.symbol : 'USD'}
           </Text>
           <Icon name="arrowDown" size={14} color={fg} />
         </Pressable>
@@ -141,7 +142,7 @@ export function AmountField(props: {
       ) : null}
       {ethBalance ? (
         <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', paddingHorizontal: 4 }}>
-          Balance: {Number(ethBalance).toLocaleString(undefined, { maximumFractionDigits: 6 })} ETH
+          Balance: {Number(ethBalance).toLocaleString(undefined, { maximumFractionDigits: 6 })} {props.symbol}
         </Text>
       ) : null}
     </Box>

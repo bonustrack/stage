@@ -12,12 +12,11 @@ import { Col, Row, Box } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
 import { DANGER } from '../../lib/theme';
 
-interface Pal { sub: string; head: string }
+interface Pal { sub: string; head: string; link: string }
 
 /** Where the shield is right now. `error` marks the in-progress stage failed. */
 export type ShieldStage = 'idle' | 'submitting' | 'confirming' | 'scanning' | 'done' | 'error';
 
-const ACCENT = '#c0a06e';
 const ERR = DANGER;
 
 const STEPS: ReadonlyArray<readonly [ShieldStage, string]> = [
@@ -37,14 +36,14 @@ function stageIndex(s: ShieldStage): number {
 function Step({ label, state, hint, pal }: {
   label: string; state: 'done' | 'active' | 'pending' | 'error'; hint?: string; pal: Pal;
 }): React.ReactElement {
-  const color = state === 'done' ? ACCENT : state === 'error' ? ERR
+  const color = state === 'done' ? pal.link : state === 'error' ? ERR
     : state === 'active' ? pal.head : pal.sub;
   return (
     <Col gap={2}>
       <Row align="center" gap={10}>
         <Box style={{ width: 18, height: 18, alignItems: 'center', justifyContent: 'center' }}>
-          {state === 'active' ? <Spinner size={14} color={ACCENT} />
-            : state === 'done' ? <Text style={{ color: ACCENT, fontSize: 15, fontFamily: 'Calibre-Semibold' }}>✓</Text>
+          {state === 'active' ? <Spinner size={14} color={pal.link} />
+            : state === 'done' ? <Text style={{ color: pal.link, fontSize: 15, fontFamily: 'Calibre-Semibold' }}>✓</Text>
             : state === 'error' ? <Text style={{ color: ERR, fontSize: 15, fontFamily: 'Calibre-Semibold' }}>✕</Text>
             : <Box style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: pal.sub, opacity: 0.5 }} />}
         </Box>
