@@ -1,6 +1,5 @@
 /** The inverted message FlatList for the XMTP conversation screen (lint split). */
 
-import { Text } from '@metro-labs/kit/text';
 import { FlatList } from 'react-native-gesture-handler';
 import { Box } from '../layout';
 import { Spinner } from '../Spinner';
@@ -32,6 +31,29 @@ export function ConversationFeed({
   /** Stable renderItem + extraData (id→event Map for O(1) reply lookup) —
    *  extracted to a hook so this file stays under the 200-line lint cap. */
   const { renderItem, extraData } = useFeedRenderItem(c, dark, router);
+
+  /** The empty-state intro/hero (avatar + name + bio/description). Shown at the
+   *  visual top of the thread once history is exhausted (`hasMore === false`).
+   *  Reused in BOTH the footer (non-empty thread) and the empty component
+   *  (brand-new channel with zero messages) so the hero always appears before the
+   *  first message — not just after a scroll-up happens to flip `hasMore`. */
+  const intro = (
+    <ConversationIntro
+      isGroup={isGroup}
+      peerAddr={peerAddr}
+      groupName={groupName}
+      groupImage={groupImage}
+      groupDescription={groupDescription}
+      groupLabels={groupLabels}
+      convId={convId}
+      head={head}
+      sub={sub}
+      fg={fg}
+      border={border}
+      rowBg={rowBg}
+      onPressPeer={(address) => router.push({ pathname: '/user/[address]', params: { address } })}
+    />
+  );
 
   return (
     <FlatList
@@ -100,12 +122,15 @@ export function ConversationFeed({
        *  bubble still highlights via `replyTarget`. */
       onScrollToIndexFailed={() => undefined}
       renderItem={renderItem}
+      /** Empty thread: still loading → spinner; loaded with zero history
+       *  (`hasMore === false`) → show the hero intro so a brand-new channel isn't
+       *  blank before its first message; otherwise a brief settling state. */
       ListEmptyComponent={
-        <Box style={{ padding: 32, alignItems: 'center' }}>
-          {status === 'open'
-            ? <Text style={{ color: sub }}>Type a message below to start chatting.</Text>
-            : <Spinner size={28} color={head} />}
-        </Box>
+        status !== 'open'
+          ? <Box style={{ padding: 32, alignItems: 'center' }}><Spinner size={28} color={head} /></Box>
+          : hasMore === false
+            ? intro
+            : <Box style={{ padding: 32, alignItems: 'center' }}><Spinner size={28} color={head} /></Box>
       }
       /** Inverted list → `ListFooterComponent` renders at the visual TOP (oldest
        *  end). Holds two things, top-to-bottom: a small "loading older" spinner
@@ -119,23 +144,7 @@ export function ConversationFeed({
               <Spinner size={20} color={sub} />
             </Box>
           ) : null}
-          {hasMore === false ? (
-            <ConversationIntro
-              isGroup={isGroup}
-              peerAddr={peerAddr}
-              groupName={groupName}
-              groupImage={groupImage}
-              groupDescription={groupDescription}
-              groupLabels={groupLabels}
-              convId={convId}
-              head={head}
-              sub={sub}
-              fg={fg}
-              border={border}
-              rowBg={rowBg}
-              onPressPeer={(address) => router.push({ pathname: '/user/[address]', params: { address } })}
-            />
-          ) : null}
+          {hasMore === false ? intro : null}
         </>
       }
       keyboardShouldPersistTaps="handled"
