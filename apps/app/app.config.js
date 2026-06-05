@@ -197,6 +197,8 @@ const config = {
       },
     ],
     './plugins/withMetroPill',
+    './plugins/withGradleMemory',
+    './plugins/withBouncyCastleDedup',
     // Embedded Node runtime (nodejs-mobile-react-native) that hosts the RAILGUN
     // engine + native Groth16 prover. Autolinking wires the module; this plugin
     // adds packagingOptions.pickFirst for the duplicate native libs. The AGP-8
