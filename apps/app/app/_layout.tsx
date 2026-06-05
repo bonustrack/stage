@@ -161,7 +161,7 @@ export default function RootLayout(): React.ReactElement {
           freezeOnBlur: true,
           cardStyle: { backgroundColor: bg },
           gestureEnabled: true,
-          gestureResponseDistance: 100,
+          gestureResponseDistance: 180,
           ...TransitionPresets.SlideFromRightIOS,
           /** INSTANT PUSH + interactive swipe-back reveal. We keep the
            *  SlideFromRightIOS preset (its `forHorizontalIOS` cardStyleInterpolator
