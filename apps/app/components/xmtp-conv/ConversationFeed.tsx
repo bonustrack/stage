@@ -3,13 +3,10 @@
 import { Text } from '@metro-labs/kit/text';
 import { FlatList } from 'react-native-gesture-handler';
 import { Box } from '../layout';
-import { MessengerBubble } from '../MessengerBubble';
 import { Spinner } from '../Spinner';
 import { ConversationIntro } from './ConversationIntro';
-import type { SignatureRequestContent } from '@metro-labs/client/xmtp/sign';
-import type { WalletSendCallsContent } from '@metro-labs/client/xmtp/tx';
 import { AT_BOTTOM_THRESHOLD_PX, convScrollKey, planFeedRestore, saveScrollOffset } from '../../lib/scrollPos';
-import { previewOf } from './feed-helpers';
+import { useFeedRenderItem } from './useFeedRenderItem';
 import type { useConversationState } from './useConversationState';
 
 type ConvState = ReturnType<typeof useConversationState>;
@@ -25,24 +22,23 @@ export function ConversationFeed({
   router: { push: (h: { pathname: '/user/[address]'; params: { address: string } }) => void };
 }): React.ReactElement {
   const {
-    events, loadOlder, hasMore, loadingOlder, status, myUri,
-    setShowJump, listEpoch, replyingTo, jumpHighlightId, isAtBottomRef,
-    confirmedIds, optimisticReactions, optimisticRemovals,
-    peerAddr, isGroup, groupName, groupImage, groupDescription, groupLabels,
-    senderEthOf, profilesVersion, listRef,
+    loadOlder, hasMore, loadingOlder, status,
+    setShowJump, listEpoch, isAtBottomRef,
+    peerAddr, isGroup, groupName, groupImage, groupDescription, groupLabels, listRef,
     savedScrollRef, savedScrollLoaded, didRestoreScroll, pinBottomUntil,
-    reactions, ownReactions, displayVotes, displayOwnVotes,
-    allBubbles, jumpToMessage,
-    onReact, onSign, signingIds, onVote, onPay, payingIds, onAnswer,
-    setMenuAnchor, setMenuFor, setReplyTarget, selectedForCopy,
+    allBubbles,
   } = c;
+
+  /** Stable renderItem + extraData (id→event Map for O(1) reply lookup) —
+   *  extracted to a hook so this file stays under the 200-line lint cap. */
+  const { renderItem, extraData } = useFeedRenderItem(c, dark, router);
 
   return (
     <FlatList
       key={listEpoch}
       ref={listRef}
       data={allBubbles}
-      extraData={[profilesVersion, optimisticReactions, reactions, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, confirmedIds, selectedForCopy, groupDescription, groupLabels]}
+      extraData={extraData}
       inverted
       showsVerticalScrollIndicator={false}
       /** Anchor the bottom-visible item (= newest on inverted) so as new bubbles or the
@@ -103,57 +99,7 @@ export function ConversationFeed({
        *  rendered; without this handler RN's red-screen pops on dev. No-op; the
        *  bubble still highlights via `replyTarget`. */
       onScrollToIndexFailed={() => undefined}
-      renderItem={({ item }) => (
-        <MessengerBubble
-          entry={item}
-          dark={dark}
-          myUri={myUri}
-          senderEthAddress={senderEthOf(item.from)}
-          onAvatarPress={(addr) => router.push({ pathname: '/user/[address]', params: { address: addr } })}
-          unread={false}
-          /** Dim ("sending") only while the send is still in flight: an optimistic
-           *  entry (id `tmp_…`) whose real id has NOT yet come back from conv.send().
-           *  The moment onSent resolves with a sentId we record it in confirmedIds,
-           *  which flips this to solid immediately — no waiting for the stream echo
-           *  (XMTP self-sends don't reliably replay, esp. in groups). The optimistic
-           *  entry is still dropped/merged by id when the live bubble lands, so this
-           *  never produces a duplicate. */
-          pending={item.id.startsWith('tmp_') && !confirmedIds.has(item.id)}
-          replyTarget={replyingTo?.id === item.id || jumpHighlightId === item.id}
-          reactions={reactions.get(item.id)}
-          pendingReactions={optimisticReactions.get(item.id)}
-          pendingRemovals={optimisticRemovals.get(item.id)}
-          ownEmojis={ownReactions.get(item.id)}
-          replyPreview={item.replyTo ? previewOf(events.find(e => e.id === item.replyTo) ?? item) : undefined}
-          /** Tap the quoted slab → jump+highlight the original message. */
-          onReplyPreviewPress={item.replyTo ? () => jumpToMessage(item.replyTo as string) : undefined}
-          votes={displayVotes.get(item.id)}
-          ownVotes={displayOwnVotes.get(item.id)}
-          onVote={(idx, action) => onVote(item.id, idx, action)}
-          signing={signingIds.has(item.id)}
-          /** Show "Sign" only on a request from the OTHER party — you don't
-           *  sign your own request. */
-          onSign={(() => {
-            const req = (item.payload as { signatureRequest?: SignatureRequestContent } | undefined)?.signatureRequest;
-            if (!req || item.from === myUri) return undefined;
-            return () => onSign(item.id, req);
-          })()}
-          paying={payingIds.has(item.id)}
-          /** Show "Pay" only on a payment request from the OTHER party — you
-           *  don't pay your own request. */
-          onPay={(() => {
-            const wsc = (item.payload as { walletSendCalls?: WalletSendCallsContent } | undefined)?.walletSendCalls;
-            if (!wsc || item.from === myUri) return undefined;
-            return () => onPay(item.id, wsc);
-          })()}
-          onReact={(emoji) => onReact(item.id, emoji)}
-          onReply={() => setReplyTarget(item.id, previewOf(item), senderEthOf(item.from))}
-          onOpenMenu={(anchor) => { setMenuAnchor(anchor); setMenuFor(item); }}
-          onCloseMenu={() => setMenuFor(null)}
-          selectable={selectedForCopy === item.id}
-          onAnswer={(label) => onAnswer(item.id, label)}
-        />
-      )}
+      renderItem={renderItem}
       ListEmptyComponent={
         <Box style={{ padding: 32, alignItems: 'center' }}>
           {status === 'open'
