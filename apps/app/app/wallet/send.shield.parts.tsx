@@ -38,8 +38,9 @@ export function ShieldRecipient({ pal, zkAddress }: {
  *  the bridge is absent, the chain-aware explorer tx link once broadcast, and a
  *  clear error message on failure. The per-phase progress text now lives in the
  *  <ShieldStepper>; this line carries only the link + error + bridge notice. */
-export function ShieldPhaseLine({ pal, txHash, err, bridgeOk, chainId }: {
-  pal: Pal; txHash: string | null; err: string | null; bridgeOk: boolean; chainId: number;
+export function ShieldPhaseLine({ pal, txHash, err, errPhase, bridgeOk, chainId }: {
+  pal: Pal; txHash: string | null; err: string | null; errPhase?: string | null;
+  bridgeOk: boolean; chainId: number;
 }): React.ReactElement | null {
   const { sub, link } = pal;
   if (!bridgeOk) {
@@ -60,7 +61,12 @@ export function ShieldPhaseLine({ pal, txHash, err, bridgeOk, chainId }: {
         </Pressable>
       ) : null}
       {err ? (
-        <Text style={{ color: DANGER, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{err}</Text>
+        <>
+          <Text style={{ color: DANGER, fontSize: 13, fontFamily: 'Calibre-Medium' }} selectable>{err}</Text>
+          {errPhase ? (
+            <Text style={{ color: sub, fontSize: 11, fontFamily: 'Calibre-Medium' }}>Failed at: {errPhase}</Text>
+          ) : null}
+        </>
       ) : null}
     </Box>
   );
