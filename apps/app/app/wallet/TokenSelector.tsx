@@ -36,6 +36,13 @@ function findRow(rows: AssetRow[], sel: TokenChoice): AssetRow | undefined {
   return rows.find(r => r.symbol === sel.symbol && r.chainId === sel.chainId);
 }
 
+/** True when a row's decimal-string balance parses to a positive number. Used to
+ *  hide zero/empty-balance tokens from the selector. */
+function hasBalance(r: AssetRow): boolean {
+  const n = Number.parseFloat(r.balance);
+  return Number.isFinite(n) && n > 0;
+}
+
 /** Load the candidate token rows for the selector. PUBLIC = on-chain multicall;
  *  SHIELDED = the active Railgun snapshot mapped to rows. */
 function useSelectorRows(mode: SelectorMode): { rows: AssetRow[]; loading: boolean } {
@@ -60,8 +67,8 @@ function useSelectorRows(mode: SelectorMode): { rows: AssetRow[]; loading: boole
     [snapshot, publicRows],
   );
 
-  if (mode === 'shielded') return { rows: shieldedRows, loading: false };
-  return { rows: publicRows ?? [], loading: publicRows === null };
+  if (mode === 'shielded') return { rows: shieldedRows.filter(hasBalance), loading: false };
+  return { rows: (publicRows ?? []).filter(hasBalance), loading: publicRows === null };
 }
 
 /** Tappable token field. Shows the selected token avatar + symbol + a chevron;
@@ -127,7 +134,7 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
           </Row>
         ) : rows.length === 0 ? (
           <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium', paddingVertical: 16 }}>
-            No tokens available.
+            No tokens.
           </Text>
         ) : (
           rows.map((r) => (
