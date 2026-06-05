@@ -5,7 +5,7 @@ import { accountFor, accounts, encodeEmoji, lineOf, rest, routeOf } from './acco
 import { emitOutbound, emitOutboundEdit, emitOutboundReact } from './format.js';
 import { respond } from './wire.js';
 import { normalizeDiscord } from '../messaging-normalize.js';
-import { joinVoice, leaveVoice } from './voice.js';
+import { joinVoice, leaveVoice, voiceTranscribe } from './voice.js';
 import { speak } from './voice-speak.js';
 
 async function sendMessage(
@@ -28,7 +28,7 @@ async function sendMessage(
 export type CallMsg = { op: 'call'; id: string; action: string; args: Record<string, unknown> };
 
 const KNOWN = 'accounts, send, reply, react, edit, delete, fetch, download, '
-  + 'thread_create, pin, typing, channel, set_presence, joinVoice, leaveVoice, speak';
+  + 'thread_create, pin, typing, channel, set_presence, joinVoice, leaveVoice, speak, voiceTranscribe';
 
 async function send(id: string, args: Record<string, unknown>): Promise<void> {
   // sticker_ids: default/custom-guild stickers. images/files: local paths uploaded
@@ -172,6 +172,8 @@ async function dispatch({ id, action, args }: CallMsg): Promise<void> {
     await leaveVoice(id, args);
   } else if (action === 'speak') {
     await speak(id, args);
+  } else if (action === 'voiceTranscribe') {
+    await voiceTranscribe(id, args);
   } else {
     respond(id, { error: `unknown action '${action}' (have: ${KNOWN})` });
   }
