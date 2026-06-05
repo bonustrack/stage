@@ -3,39 +3,25 @@
  *
  *  Recipient = any 0zk address; the token/network are owned by the parent page
  *  (the combined TokenSelector) and passed in, along with the selected token's
- *  shielded balance. Submit reuses runAction({ kind: 'send' }) which performs
- *  the privateTransfer (proof + broadcast) and drives the shared pending store.
- *  Tracks this transfer's pending row and reflects its phase via the shared
- *  stepper. Mounted only when the chosen token is a shielded balance. */
+ *  shielded balance. Submit runs the REAL bridge-backed private transfer
+ *  (sendShielded → lib/railgun/send.ts), which mirrors the working unshield flow:
+ *  estimate → Groth16 proof → populate → sign + broadcast via the embedded Node
+ *  host. Proving is the slow step (~10-30s); progress drives the shared stepper.
+ *  Mounted only when the chosen token is a shielded balance.
+ *
+ *  WHY NOT runAction: runAction()/sdkTx route the transfer through the Hermes
+ *  direct SDK, where the RAILGUN engine never inits on-device — so it failed
+ *  immediately at "Submitting transaction". The engine only lives in the Node
+ *  bridge, which is what send.ts uses (same path as shield/unshield). */
 import { useEffect, useState } from 'react';
 import { TextInput } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from '../../components/layout';
-import { getActiveAccountId } from '../../lib/accounts';
 import { isBridgeAvailable } from '../../lib/railgun/bridge';
-import { runAction } from '../../lib/railgun/wallet';
-import { pendingStore } from '../../lib/railgun/cache';
-import { RAILGUN_TOKENS } from '../../lib/railgun/tokens';
-import type { PendingAction } from '../../lib/railgun/types';
+import { sendShielded } from '../../lib/railgun/send';
 import { ShieldPhaseLine } from './send.shield.parts';
 import { ShieldStepper, type ShieldStage } from './send.shield.stepper';
 import { AmountBox, type FormPal, type FooterState } from './wallet.form';
-
-function phaseToStage(p?: PendingAction['phase']): ShieldStage {
-  switch (p) {
-    case 'proving': return 'submitting';
-    case 'broadcasting': return 'confirming';
-    case 'scanning': return 'scanning';
-    case 'confirmed': return 'done';
-    case 'failed': return 'error';
-    default: return 'idle';
-  }
-}
-
-function tokenAddress(chainId: number, symbol: 'ETH' | 'USDC'): string | undefined {
-  const net = chainId === 1 ? 'mainnet' : 'sepolia';
-  return RAILGUN_TOKENS[net].find(t => t.symbol === symbol)?.address;
-}
 
 export function SendShieldedBody({ pal, dark, symbol, chainId, balance, onFooter }: {
   pal: FormPal; dark: boolean; symbol: 'ETH' | 'USDC'; chainId: number; balance: string | null;
@@ -45,27 +31,10 @@ export function SendShieldedBody({ pal, dark, symbol, chainId, balance, onFooter
   const { head, sub, inputBg } = pal;
   const [to, setTo] = useState('');
   const [amount, setAmount] = useState('');
-  const [pendingId, setPendingId] = useState<string | null>(null);
-  const [action, setAction] = useState<PendingAction | null>(null);
+  const [stage, setStage] = useState<ShieldStage>('idle');
+  const [txHash, setTxHash] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!pendingId) return;
-    let unsub: (() => void) | undefined;
-    let cancelled = false;
-    void (async (): Promise<void> => {
-      const id = await getActiveAccountId();
-      if (!id || cancelled) return;
-      const read = (list: PendingAction[] | undefined): void =>
-        setAction((list ?? []).find(a => a.id === pendingId) ?? null);
-      read(pendingStore.get(id));
-      unsub = pendingStore.subscribe(id, read);
-    })();
-    return () => { cancelled = true; unsub?.(); };
-  }, [pendingId]);
-
-  const stage = err ? 'error' : phaseToStage(action?.phase);
-  const txHash = action?.txHash ?? null;
   const n = Number(amount);
   const busy = stage === 'submitting' || stage === 'confirming' || stage === 'scanning';
   const validTo = to.trim().toLowerCase().startsWith('0zk');
@@ -73,20 +42,21 @@ export function SendShieldedBody({ pal, dark, symbol, chainId, balance, onFooter
 
   const onSubmit = (): void => {
     if (!canSubmit) return;
-    setErr(null); setAction(null);
+    setErr(null); setTxHash(null); setStage('submitting');
     void (async (): Promise<void> => {
-      const id = await getActiveAccountId();
-      if (!id) { setErr('No active account'); return; }
-      const token = tokenAddress(chainId, symbol);
-      if (!token) { setErr(`Unsupported token: ${symbol}`); return; }
-      const pid = runAction(id, {
-        kind: 'send', symbol, chainId, delta: amount.trim(), recipient: to.trim(), token,
-      });
-      setPendingId(pid);
+      try {
+        // proving runs first; flip to confirming once it broadcasts.
+        const res = await sendShielded({ chainId, symbol, amount: amount.trim(), recipient: to.trim() });
+        setTxHash(res.txHash); setStage('done');
+      } catch (e) {
+        setErr((e as Error).message ?? 'Send failed'); setStage('error');
+      }
     })();
   };
 
-  const submitLabel = busy ? 'Sending…' : stage === 'done' ? 'Sent ✓' : 'Send';
+  const submitLabel = stage === 'submitting' ? 'Proving…'
+    : stage === 'confirming' || stage === 'scanning' ? 'Broadcasting…'
+    : stage === 'done' ? 'Sent ✓' : 'Send';
   useEffect(() => {
     onFooter?.({ submitLabel, onSubmit, submitDisabled: !canSubmit, submitLoading: busy });
   }, [onFooter, submitLabel, canSubmit, busy, onSubmit]);
