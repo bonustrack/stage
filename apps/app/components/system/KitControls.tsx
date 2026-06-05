@@ -5,9 +5,10 @@
  *  (ButtonVariant, TitleLevel, TextWeight, …) with no `any`. Fonts are
  *  Calibre-Medium / Calibre-Semibold only. */
 
-import { Pressable, Switch, TextInput } from 'react-native';
+import { Switch, TextInput } from 'react-native';
 import { Box, Row } from '../layout';
 import { Text } from '@metro-labs/kit/text';
+import { Button } from '@metro-labs/kit/button';
 
 export interface ControlPalette {
   dark: boolean; head: string; sub: string; border: string; rowBg: string;
@@ -36,19 +37,14 @@ export function Segmented<T extends string | number>({
         {options.map((opt) => {
           const active = opt === value;
           return (
-            <Pressable
+            <Button
               key={String(opt)}
+              dark={p.dark}
+              size="sm"
+              variant={active ? 'primary' : 'secondary'}
+              label={labelOf ? labelOf(opt) : String(opt)}
               onPress={() => onChange(opt)}
-              style={{
-                paddingVertical: 8, paddingHorizontal: 14, borderRadius: 10, borderWidth: 1,
-                borderColor: active ? p.head : p.border,
-                backgroundColor: active ? p.rowBg : 'transparent',
-              }}
-            >
-              <Text style={{ color: active ? p.head : p.sub, fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
-                {labelOf ? labelOf(opt) : String(opt)}
-              </Text>
-            </Pressable>
+            />
           );
         })}
       </Row>
