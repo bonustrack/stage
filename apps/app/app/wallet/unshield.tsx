@@ -62,7 +62,7 @@ export default function WalletUnshield(): React.ReactElement {
   };
 
   return (
-    <ActionPage title="Unshield" head={head} bg={bg} border={border} onBack={() => router.back()}>
+    <ActionPage title="Unshield token" head={head} bg={bg} border={border} onBack={() => router.back()}>
       <UnshieldRecipient pal={pal} eoa={eoa} network={NET_LABEL[chainId] ?? `Chain ${chainId}`} />
 
       <TokenSelector mode="shielded" value={{ symbol, chainId }}
