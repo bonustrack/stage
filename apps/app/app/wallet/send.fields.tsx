@@ -2,6 +2,7 @@
  *
  *  Extracted from send.tsx (mechanical split, behavior identical). Presentational
  *  only — all state + handlers are owned by the parent screen and passed in. */
+import { useState } from 'react';
 import { Pressable, TextInput } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from '../../components/layout';
@@ -9,6 +10,7 @@ import { Spinner } from '../../components/Spinner';
 import { Button } from '@metro-labs/kit/button';
 import { Icon } from '@metro-labs/kit/icon';
 import { DANGER, usePalette } from '../../lib/theme';
+import { RecipientRow, ContactsModal, ContactsButton } from './send.recipient';
 
 interface Palette {
   fg: string; head: string; sub: string; border: string; inputBg: string;
@@ -22,37 +24,55 @@ export function RecipientField(props: {
   resolved: string | null;
   resolveErr: string | null;
 }): React.ReactElement {
-  const { fg, head, sub, inputBg } = props.pal;
+  const { fg, head, sub, border, inputBg } = props.pal;
+  const [picking, setPicking] = useState(false);
+  const rowPal = { head, sub, border };
   return (
     <Box style={{ gap: 6 }}>
       <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>RECIPIENT</Text>
-      <TextInput
-        value={props.to}
-        onChangeText={props.setTo}
-        placeholder="0x… or name.eth"
-        placeholderTextColor={sub}
-        autoCapitalize="none"
-        autoCorrect={false}
-        style={{
-          color: head, fontSize: 16, fontFamily: 'Calibre-Medium',
-          backgroundColor: inputBg, borderRadius: 12,
-          paddingHorizontal: 14, paddingVertical: 12,
-        }}
-      />
+      {/* Input + a contacts-picker icon button on the right. */}
+      <Box style={{
+        flexDirection: 'row', alignItems: 'center', gap: 4,
+        backgroundColor: inputBg, borderRadius: 12,
+        paddingHorizontal: 6, paddingLeft: 14,
+      }}>
+        <TextInput
+          value={props.to}
+          onChangeText={props.setTo}
+          placeholder="0x… or name.eth"
+          placeholderTextColor={sub}
+          autoCapitalize="none"
+          autoCorrect={false}
+          style={{
+            flex: 1, color: head, fontSize: 16, fontFamily: 'Calibre-Medium',
+            paddingVertical: 12,
+          }}
+        />
+        <ContactsButton color={fg} border={border} onPress={() => setPicking(true)} />
+      </Box>
+
+      {/* Once a valid recipient is resolved, show them as a user row
+          (avatar + name + truncated address) — same row the rest of the app
+          uses. While resolving / on error, show the inline status line. */}
       {props.resolving ? (
         <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4 }}>
           <Spinner size={20} color={fg} />
           <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>Resolving…</Text>
         </Box>
       ) : props.resolved ? (
-        <Text style={{ color: fg, fontSize: 13, fontFamily: 'Calibre-Medium', paddingHorizontal: 4 }}>
-          → {props.resolved}
-        </Text>
+        <RecipientRow address={props.resolved} pal={rowPal} />
       ) : props.resolveErr ? (
         <Text style={{ color: DANGER, fontSize: 13, fontFamily: 'Calibre-Medium', paddingHorizontal: 4 }}>
           {props.resolveErr}
         </Text>
       ) : null}
+
+      <ContactsModal
+        visible={picking}
+        onClose={() => setPicking(false)}
+        onPick={(addr) => props.setTo(addr)}
+        pal={rowPal}
+      />
     </Box>
   );
 }
