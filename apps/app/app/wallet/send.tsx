@@ -12,7 +12,7 @@
  *  (public→private) and Unshield (private→public) remain their own pages.
  *  `?to=` pre-fills the public recipient; `?symbol=&chainId=&private=` pre-select
  *  a token (e.g. from a token detail page's Send button). */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView } from 'react-native';
 import { Box } from '../../components/layout';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -22,7 +22,7 @@ import { SendHeader } from './send.fields';
 import { useFormPal } from './wallet.form';
 import { PublicSendBody } from './send.public.body';
 import { SendShieldedBody } from './send-shielded.form';
-import { TokenSelector, useSelectedBalance, type TokenChoice } from './TokenSelector';
+import { TokenSelector, useSelectedBalance, useTopToken, type TokenChoice } from './TokenSelector';
 
 export default function WalletSend(): React.ReactElement {
   const router = useRouter();
@@ -32,15 +32,31 @@ export default function WalletSend(): React.ReactElement {
   const insets = useSafeAreaInsets();
   const formPal = useFormPal();
 
+  // A caller can pin a token via `?symbol=&chainId=&private=`; otherwise we
+  // default to the wallet's highest-USD-value holding once rows load (below).
+  const hasParamToken = typeof params.symbol === 'string' && params.symbol.length > 0;
   const initial = useMemo<TokenChoice>(() => {
     const isPrivate = params.private === '1' || params.private === 'true';
-    const symbol = typeof params.symbol === 'string' && params.symbol ? params.symbol : 'ETH';
+    const symbol = hasParamToken ? (params.symbol as string) : 'ETH';
     const chainId = typeof params.chainId === 'string' && Number.isFinite(Number(params.chainId))
       ? Number(params.chainId) : isPrivate ? 11155111 : 1;
     return { symbol, chainId, isPrivate };
-  }, [params.symbol, params.chainId, params.private]);
+  }, [params.symbol, params.chainId, params.private, hasParamToken]);
 
   const [token, setToken] = useState<TokenChoice>(initial);
+
+  // Default-select the highest-value token once the combined list loads — unless
+  // the caller pinned one via params or the user has already picked. `touched`
+  // latches on the first apply/user change so we don't override later refreshes.
+  const topToken = useTopToken('combined');
+  const touched = useRef(hasParamToken);
+  useEffect(() => {
+    if (touched.current || !topToken) return;
+    touched.current = true;
+    setToken(topToken);
+  }, [topToken]);
+  const onChange = (v: TokenChoice): void => { touched.current = true; setToken(v); };
+
   const balance = useSelectedBalance('combined', token);
   const initialTo = typeof params.to === 'string' ? params.to : '';
 
@@ -53,7 +69,7 @@ export default function WalletSend(): React.ReactElement {
       <SendHeader fg={fg} head={head} border={border} onBack={() => router.back()} />
 
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 16, gap: 16 }}>
-        <TokenSelector mode="combined" value={token} onChange={setToken} />
+        <TokenSelector mode="combined" value={token} onChange={onChange} />
 
         {token.isPrivate ? (
           <SendShieldedBody key={bodyKey} pal={formPal} dark={dark}
