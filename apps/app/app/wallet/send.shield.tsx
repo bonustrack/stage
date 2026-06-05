@@ -13,7 +13,6 @@
  *  This way the 'scanning' tail (balance-landed watcher) is reflected even though
  *  the awaited shieldToPrivate() call returns right after the receipt. */
 import { useEffect, useState } from 'react';
-import { Button } from '@metro-labs/kit/button';
 import { Box } from '../../components/layout';
 import { shieldToPrivate } from '../../lib/railgun/shield';
 import { isBridgeAvailable } from '../../lib/railgun/bridge';
@@ -22,7 +21,7 @@ import { pendingStore } from '../../lib/railgun/cache';
 import type { PendingAction } from '../../lib/railgun/types';
 import { ShieldRecipient, ShieldPhaseLine } from './send.shield.parts';
 import { ShieldStepper, type ShieldStage } from './send.shield.stepper';
-import { AmountBox, type FormPal } from './wallet.form';
+import { AmountBox, type FormPal, type FooterState } from './wallet.form';
 import { TokenSelector, useSelectedBalance } from './TokenSelector';
 
 type Pal = FormPal;
@@ -41,10 +40,12 @@ function phaseToStage(p?: PendingAction['phase']): ShieldStage {
   }
 }
 
-export function ShieldForm({ pal, dark, zkAddress, initialSymbol, initialChainId }: {
+export function ShieldForm({ pal, dark, zkAddress, initialSymbol, initialChainId, onFooter }: {
   pal: Pal; dark: boolean; zkAddress: string | null;
   /** Pre-selected token/network (from the token detail page's Shield button). */
   initialSymbol?: 'ETH' | 'USDC'; initialChainId?: number;
+  /** Report submit state up so the page can render the pinned footer button. */
+  onFooter?: (s: FooterState) => void;
 }): React.ReactElement {
   const [symbol, setSymbol] = useState<'ETH' | 'USDC'>(initialSymbol ?? 'ETH');
   const [chainId, setChainId] = useState<number>(initialChainId ?? 11155111);
@@ -96,6 +97,13 @@ export function ShieldForm({ pal, dark, zkAddress, initialSymbol, initialChainId
     })();
   };
 
+  // Report the primary-button state up so the page renders it in the pinned
+  // footer (keeps the form as the source of truth for label/disabled/loading).
+  const submitLabel = busy ? 'Shielding…' : stage === 'done' ? 'Shielded ✓' : 'Shield';
+  useEffect(() => {
+    onFooter?.({ submitLabel, onSubmit, submitDisabled: !canSubmit, submitLoading: busy });
+  }, [onFooter, submitLabel, canSubmit, busy, onSubmit]);
+
   return (
     <Box style={{ gap: 16 }}>
       <ShieldRecipient pal={pal} zkAddress={zkAddress} />
@@ -105,11 +113,6 @@ export function ShieldForm({ pal, dark, zkAddress, initialSymbol, initialChainId
 
       <AmountBox pal={pal} amount={amount} setAmount={setAmount} busy={busy}
         balance={balance} symbol={symbol} dark={dark} />
-
-      <Button variant="primary" size="lg" fullWidth pill dark={dark} loading={busy}
-        disabled={!canSubmit} onPress={onSubmit}
-        label={busy ? 'Shielding…' : stage === 'done' ? 'Shielded ✓' : 'Shield to private'}
-        style={{ marginTop: 4 }} />
 
       <ShieldStepper stage={stage} pal={pal} />
       <ShieldPhaseLine pal={pal} txHash={txHash} err={err} bridgeOk={isBridgeAvailable()} chainId={chainId} />

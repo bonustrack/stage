@@ -13,6 +13,13 @@ import { usePalette } from '../../lib/theme';
 
 export interface FormPal { fg: string; head: string; sub: string; border: string; inputBg: string; link: string }
 
+/** Submit-button state a form reports up to the page so the page can render the
+ *  pinned <WalletFooter>. The page owns Cancel (router.back); the form owns the
+ *  primary's label + handler + disabled/loading. */
+export interface FooterState {
+  submitLabel: string; onSubmit: () => void; submitDisabled: boolean; submitLoading: boolean;
+}
+
 /** Build the form palette from the canonical app palette. */
 export function useFormPal(): FormPal {
   const { text, link, border } = usePalette();
@@ -107,18 +114,51 @@ export function LockedRecipient({ pal, label, value, hint }: {
   );
 }
 
-/** Standard page shell: bg + safe-area + header + scroll body. */
-export function ActionPage({ title, head, bg, border, onBack, children }: {
+/** Pinned bottom footer with two equal half-width buttons: a secondary "Cancel"
+ *  (dismiss / router.back) on the left and the page's primary submit on the
+ *  right. Shared by the Send / Shield / Unshield pages so the action bar matches
+ *  across all three. Adds safe-area bottom padding + a top divider. */
+export function WalletFooter({
+  border, bg, dark, onCancel, submitLabel, onSubmit, submitDisabled, submitLoading,
+}: {
+  border: string; bg: string; dark: boolean;
+  onCancel: () => void;
+  submitLabel: string; onSubmit: () => void;
+  submitDisabled?: boolean; submitLoading?: boolean;
+}): React.ReactElement {
+  const insets = useSafeAreaInsets();
+  return (
+    <Row gap={12} px={16}
+      style={{
+        paddingTop: 12, paddingBottom: Math.max(insets.bottom, 12),
+        borderTopWidth: 1, borderTopColor: border, backgroundColor: bg,
+      }}>
+      <Button variant="secondary" size="lg" pill dark={dark} style={{ flex: 1 }}
+        onPress={onCancel} label="Cancel" />
+      <Button variant="primary" size="lg" pill dark={dark} style={{ flex: 1 }}
+        loading={!!submitLoading} disabled={!!submitDisabled}
+        onPress={onSubmit} label={submitLabel} />
+    </Row>
+  );
+}
+
+/** Standard page shell: bg + safe-area + header + scroll body + optional pinned
+ *  footer. When `footer` is given it renders below the scroll (not inside it) so
+ *  it stays pinned to the bottom of the screen. */
+export function ActionPage({ title, head, bg, border, onBack, footer, children }: {
   title: string; head: string; bg: string; border: string; onBack: () => void;
+  footer?: React.ReactNode;
   children: React.ReactNode;
 }): React.ReactElement {
   const insets = useSafeAreaInsets();
   return (
     <Box style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
       <ActionHeader title={title} head={head} border={border} onBack={onBack} />
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 16, gap: 16 }}>
+      <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ padding: 16, gap: 16 }}>
         {children}
       </ScrollView>
+      {footer ?? null}
     </Box>
   );
 }

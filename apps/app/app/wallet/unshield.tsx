@@ -10,14 +10,13 @@
  *  step (~10-30s); progress flows through the phase line + Private-tab chip.
  *  Recipient defaults to own EOA (kept simple, not editable). */
 import { useEffect, useState } from 'react';
-import { Button } from '@metro-labs/kit/button';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { getActiveAccount } from '../../lib/accounts';
 import { unshieldToPublic } from '../../lib/railgun/unshield';
 import { isBridgeAvailable } from '../../lib/railgun/bridge';
 import { UnshieldRecipient, UnshieldPhaseLine } from './unshield.parts';
-import { ActionPage, AmountBox, useFormPal } from './wallet.form';
+import { ActionPage, AmountBox, WalletFooter, useFormPal } from './wallet.form';
 import { TokenSelector, useSelectedBalance } from './TokenSelector';
 
 type Phase = 'idle' | 'proving' | 'broadcasting' | 'done' | 'error';
@@ -62,7 +61,13 @@ export default function WalletUnshield(): React.ReactElement {
   };
 
   return (
-    <ActionPage title="Unshield token" head={head} bg={bg} border={border} onBack={() => router.back()}>
+    <ActionPage title="Unshield token" head={head} bg={bg} border={border} onBack={() => router.back()}
+      footer={
+        <WalletFooter border={border} bg={bg} dark={dark} onCancel={() => router.back()}
+          submitDisabled={!canSubmit} submitLoading={busy} onSubmit={onSubmit}
+          submitLabel={phase === 'proving' ? 'Proving…' : phase === 'broadcasting' ? 'Broadcasting…'
+            : phase === 'done' ? 'Unshielded ✓' : 'Unshield'} />
+      }>
       <UnshieldRecipient pal={pal} eoa={eoa} network={NET_LABEL[chainId] ?? `Chain ${chainId}`} />
 
       <TokenSelector mode="shielded" value={{ symbol, chainId }}
@@ -70,12 +75,6 @@ export default function WalletUnshield(): React.ReactElement {
 
       <AmountBox pal={pal} amount={amount} setAmount={setAmount} busy={busy}
         balance={balance} symbol={symbol} dark={dark} />
-
-      <Button variant="primary" size="lg" fullWidth pill dark={dark} loading={busy}
-        disabled={!canSubmit} onPress={onSubmit}
-        label={phase === 'proving' ? 'Proving…' : phase === 'broadcasting' ? 'Broadcasting…'
-          : phase === 'done' ? 'Unshielded ✓' : 'Unshield to public'}
-        style={{ marginTop: 4 }} />
 
       <UnshieldPhaseLine pal={pal} phase={phase} txHash={txHash} err={err} bridgeOk={isBridgeAvailable()} chainId={chainId} />
     </ActionPage>
