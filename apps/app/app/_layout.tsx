@@ -198,3 +198,4 @@ export default function RootLayout(): React.ReactElement {
 }
 
 // pr-preview smoke test 2 — harmless comment, no-op
+// smoke2 follow-up push to test synchronize
