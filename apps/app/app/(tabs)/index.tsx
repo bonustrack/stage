@@ -8,3 +8,5 @@
 export default function TabRoutePlaceholder(): null {
   return null;
 }
+
+// preview smoke test — auto-deploy verification (remove)
