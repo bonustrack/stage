@@ -167,7 +167,6 @@ function MessengerBubbleBase({
           ownEmojis={ownEmojis}
           sub={sub}
           pillBg={pillBg}
-          dark={dark}
           onReact={onReact}
         />
       )}

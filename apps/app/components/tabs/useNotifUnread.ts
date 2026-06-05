@@ -26,7 +26,6 @@ export function useNotifUnread(): number {
     return () => { alive = false; unsub(); };
     // ids is rebuilt each render; join into a stable dep so we only recompute
     // when the actual set of pending request ids changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ids.join(',')]);
 
   return count;

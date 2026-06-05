@@ -4,7 +4,7 @@
  *  the choice on the Settings screen — without spinning up a full context
  *  provider just for one string. */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useColorScheme } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import {
@@ -18,7 +18,7 @@ import {
   type TokenKey,
 } from './colorOverrides';
 import {
-  getRadius, getBlockRadius, loadRadius, setRadius, setBlockRadius, resetRadius,
+  getRadius, getBlockRadius, loadRadius,
   subscribe as subscribeRadius,
 } from './radiusOverride';
 
@@ -154,17 +154,26 @@ export function useBlockRadius(): number {
  *  edits a token. Reactive to BOTH theme changes and override changes. */
 export function usePalette(): Palette {
   const scheme = useEffectiveColorScheme();
-  useOverridesVersion(); // re-render on override load/edit/reset
-  const s = semanticPalette(scheme);
-  const ov = getOverrides();
-  const pick = (key: TokenKey, def: string): string => ov[key]?.[scheme] ?? def;
-  return {
-    bg: pick('bg', s.bgColor),
-    border: pick('border', s.borderColor),
-    text: pick('text', s.textColor),
-    link: pick('link', s.linkColor),
-    primary: pick('primary', s.primaryColor),
-    danger: pick('danger', s.dangerColor),
-    success: pick('success', s.successColor),
-  };
+  const version = useOverridesVersion(); // re-render on override load/edit/reset
+  /** PERF: memoise the palette object so its IDENTITY is stable across unrelated
+   *  parent re-renders (it only changes when the scheme or an override version
+   *  bumps). usePalette is consumed by ~60 components; returning a fresh object
+   *  every render defeated every downstream useMemo/useCallback/React.memo that
+   *  closed over the palette, cascading re-renders on every stream tick and tap.
+   *  Now a stream tick that doesn't touch theme leaves the object referentially
+   *  identical, so memoised children/derivations are skipped. */
+  return useMemo(() => {
+    const s = semanticPalette(scheme);
+    const ov = getOverrides();
+    const pick = (key: TokenKey, def: string): string => ov[key]?.[scheme] ?? def;
+    return {
+      bg: pick('bg', s.bgColor),
+      border: pick('border', s.borderColor),
+      text: pick('text', s.textColor),
+      link: pick('link', s.linkColor),
+      primary: pick('primary', s.primaryColor),
+      danger: pick('danger', s.dangerColor),
+      success: pick('success', s.successColor),
+    };
+  }, [scheme, version]);
 }

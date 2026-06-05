@@ -1,12 +1,7 @@
-/** Persist inbound XMTP attachments to disk so the agent can read them.
- *
- *  Inline `attachment` content arrives already-decrypted ({filename, mimeType,
- *  data}). `remoteStaticAttachment` / `multiRemote*` content references encrypted
- *  bytes hosted off-network — we fetch the url + decrypt with the per-attachment
- *  secret/salt/nonce and verify the contentDigest via the XMTP SDK's
- *  `RemoteAttachmentCodec.load`. Either way we write the plaintext bytes to a
- *  stable file under ATT_DIR and hand back the absolute path so the emitted
- *  envelope can carry it (payload.attachments[].path) and reference it in text. */
+/** Persist inbound XMTP attachments to disk so the agent can read them. */
+// Inline `attachment` content arrives already-decrypted. Remote variants reference
+// encrypted bytes off-network — fetch + decrypt (secret/salt/nonce) + verify digest
+// via RemoteAttachmentCodec.load, then write plaintext to ATT_DIR and return the path.
 
 import { AttachmentCodec, RemoteAttachmentCodec, ContentTypeAttachment } from '@xmtp/content-type-remote-attachment';
 
