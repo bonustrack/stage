@@ -147,8 +147,18 @@ export default function RootLayout(): React.ReactElement {
        *   bubble swipe-to-reply coexist because the stack gesture arms on a
        *   RIGHTWARD horizontal drag from the left edge only. */}
       <NativeSwipeStack
+        /** Perf: stop the off-screen previous card from re-rendering / running
+         *  effects while it's fully blurred. `detachInactiveScreens` lets
+         *  react-native-screens detach the inactive card; `freezeOnBlur`
+         *  (react-native-screens enableFreeze) suspends its renders until it's
+         *  focused again. The swipe-back REVEAL is preserved: during an actual
+         *  swipe the card is transitioning (not blurred), so it's live; freeze
+         *  only kicks in once it's settled off-screen, and unfreezes the instant
+         *  the gesture/transition re-focuses it. */
+        detachInactiveScreens
         screenOptions={{
           headerShown: false,
+          freezeOnBlur: true,
           cardStyle: { backgroundColor: bg },
           gestureEnabled: true,
           gestureResponseDistance: 100,
