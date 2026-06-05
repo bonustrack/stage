@@ -10,17 +10,16 @@
  *  step (~10-30s); progress flows through the phase line + Private-tab chip.
  *  Recipient defaults to own EOA (kept simple, not editable). */
 import { useEffect, useState } from 'react';
-import { Button } from '@metro-labs/kit/button';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { getActiveAccount } from '../../lib/accounts';
 import { unshieldToPublic } from '../../lib/railgun/unshield';
 import { isBridgeAvailable } from '../../lib/railgun/bridge';
 import { UnshieldRecipient, UnshieldPhaseLine } from './unshield.parts';
-import { ActionPage, Segmented, AmountBox, useFormPal } from './wallet.form';
+import { ActionPage, AmountBox, WalletFooter, useFormPal } from './wallet.form';
+import { TokenSelector, useSelectedBalance } from './TokenSelector';
 
 type Phase = 'idle' | 'proving' | 'broadcasting' | 'done' | 'error';
-const SYMBOLS = ['ETH', 'USDC'] as const;
 const NET_LABEL: Record<number, string> = { 1: 'Ethereum', 11155111: 'Sepolia' };
 
 export default function WalletUnshield(): React.ReactElement {
@@ -37,7 +36,8 @@ export default function WalletUnshield(): React.ReactElement {
   const initialChainId = typeof params.chainId === 'string' && Number.isFinite(Number(params.chainId))
     ? Number(params.chainId) : 11155111;
   const [symbol, setSymbol] = useState<'ETH' | 'USDC'>(initialSymbol);
-  const [chainId] = useState<number>(initialChainId);
+  const [chainId, setChainId] = useState<number>(initialChainId);
+  const balance = useSelectedBalance('shielded', { symbol, chainId });
   const [amount, setAmount] = useState('');
   const [phase, setPhase] = useState<Phase>('idle');
   const [txHash, setTxHash] = useState<string | null>(null);
@@ -61,19 +61,20 @@ export default function WalletUnshield(): React.ReactElement {
   };
 
   return (
-    <ActionPage title="Unshield" head={head} bg={bg} border={border} onBack={() => router.back()}>
+    <ActionPage title="Unshield token" head={head} bg={bg} border={border} onBack={() => router.back()}
+      footer={
+        <WalletFooter border={border} bg={bg} dark={dark} onCancel={() => router.back()}
+          submitDisabled={!canSubmit} submitLoading={busy} onSubmit={onSubmit}
+          submitLabel={phase === 'proving' ? 'Proving…' : phase === 'broadcasting' ? 'Broadcasting…'
+            : phase === 'done' ? 'Unshielded ✓' : 'Unshield'} />
+      }>
       <UnshieldRecipient pal={pal} eoa={eoa} network={NET_LABEL[chainId] ?? `Chain ${chainId}`} />
 
-      <Segmented label="TOKEN" dark={dark} value={symbol} onChange={setSymbol}
-        options={SYMBOLS.map(s => [s, s] as const)} />
+      <TokenSelector mode="shielded" value={{ symbol, chainId }}
+        onChange={(v) => { setSymbol(v.symbol as 'ETH' | 'USDC'); setChainId(v.chainId); }} />
 
-      <AmountBox pal={pal} amount={amount} setAmount={setAmount} busy={busy} />
-
-      <Button variant="primary" size="lg" fullWidth pill dark={dark} loading={busy}
-        disabled={!canSubmit} onPress={onSubmit}
-        label={phase === 'proving' ? 'Proving…' : phase === 'broadcasting' ? 'Broadcasting…'
-          : phase === 'done' ? 'Unshielded ✓' : 'Unshield to public'}
-        style={{ marginTop: 4 }} />
+      <AmountBox pal={pal} amount={amount} setAmount={setAmount} busy={busy}
+        balance={balance} symbol={symbol} dark={dark} />
 
       <UnshieldPhaseLine pal={pal} phase={phase} txHash={txHash} err={err} bridgeOk={isBridgeAvailable()} chainId={chainId} />
     </ActionPage>

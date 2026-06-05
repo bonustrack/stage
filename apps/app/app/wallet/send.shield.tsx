@@ -13,7 +13,6 @@
  *  This way the 'scanning' tail (balance-landed watcher) is reflected even though
  *  the awaited shieldToPrivate() call returns right after the receipt. */
 import { useEffect, useState } from 'react';
-import { Button } from '@metro-labs/kit/button';
 import { Box } from '../../components/layout';
 import { shieldToPrivate } from '../../lib/railgun/shield';
 import { isBridgeAvailable } from '../../lib/railgun/bridge';
@@ -22,12 +21,10 @@ import { pendingStore } from '../../lib/railgun/cache';
 import type { PendingAction } from '../../lib/railgun/types';
 import { ShieldRecipient, ShieldPhaseLine } from './send.shield.parts';
 import { ShieldStepper, type ShieldStage } from './send.shield.stepper';
-import { Segmented, AmountBox, type FormPal } from './wallet.form';
+import { AmountBox, type FormPal, type FooterState } from './wallet.form';
+import { TokenSelector, useSelectedBalance } from './TokenSelector';
 
 type Pal = FormPal;
-
-const SYMBOLS = ['ETH', 'USDC'] as const;
-const NETS = [{ id: 11155111, label: 'Sepolia' }, { id: 1, label: 'Ethereum' }] as const;
 
 /** Map a pending-action phase to a stepper stage. `proving`/`broadcasting` are
  *  the two on-chain stages; `scanning` is the merkle-scan tail; `confirmed`/
@@ -43,13 +40,16 @@ function phaseToStage(p?: PendingAction['phase']): ShieldStage {
   }
 }
 
-export function ShieldForm({ pal, dark, zkAddress, initialSymbol, initialChainId }: {
+export function ShieldForm({ pal, dark, zkAddress, initialSymbol, initialChainId, onFooter }: {
   pal: Pal; dark: boolean; zkAddress: string | null;
   /** Pre-selected token/network (from the token detail page's Shield button). */
   initialSymbol?: 'ETH' | 'USDC'; initialChainId?: number;
+  /** Report submit state up so the page can render the pinned footer button. */
+  onFooter?: (s: FooterState) => void;
 }): React.ReactElement {
   const [symbol, setSymbol] = useState<'ETH' | 'USDC'>(initialSymbol ?? 'ETH');
   const [chainId, setChainId] = useState<number>(initialChainId ?? 11155111);
+  const balance = useSelectedBalance('public', { symbol, chainId });
   const [amount, setAmount] = useState('');
   // Wall-clock of the latest submit; we track the shield pending row started at
   // or after this, so the stepper follows THIS shield (not a stale prior one).
@@ -97,22 +97,22 @@ export function ShieldForm({ pal, dark, zkAddress, initialSymbol, initialChainId
     })();
   };
 
+  // Report the primary-button state up so the page renders it in the pinned
+  // footer (keeps the form as the source of truth for label/disabled/loading).
+  const submitLabel = busy ? 'Shielding…' : stage === 'done' ? 'Shielded ✓' : 'Shield';
+  useEffect(() => {
+    onFooter?.({ submitLabel, onSubmit, submitDisabled: !canSubmit, submitLoading: busy });
+  }, [onFooter, submitLabel, canSubmit, busy, onSubmit]);
+
   return (
     <Box style={{ gap: 16 }}>
       <ShieldRecipient pal={pal} zkAddress={zkAddress} />
 
-      <Segmented label="NETWORK" dark={dark} value={chainId} onChange={setChainId}
-        options={NETS.map(n => [n.id, n.label] as const)} />
+      <TokenSelector mode="public" value={{ symbol, chainId }}
+        onChange={(v) => { setSymbol(v.symbol as 'ETH' | 'USDC'); setChainId(v.chainId); }} />
 
-      <Segmented label="TOKEN" dark={dark} value={symbol} onChange={setSymbol}
-        options={SYMBOLS.map(s => [s, s] as const)} />
-
-      <AmountBox pal={pal} amount={amount} setAmount={setAmount} busy={busy} />
-
-      <Button variant="primary" size="lg" fullWidth pill dark={dark} loading={busy}
-        disabled={!canSubmit} onPress={onSubmit}
-        label={busy ? 'Shielding…' : stage === 'done' ? 'Shielded ✓' : 'Shield to private'}
-        style={{ marginTop: 4 }} />
+      <AmountBox pal={pal} amount={amount} setAmount={setAmount} busy={busy}
+        balance={balance} symbol={symbol} dark={dark} />
 
       <ShieldStepper stage={stage} pal={pal} />
       <ShieldPhaseLine pal={pal} txHash={txHash} err={err} bridgeOk={isBridgeAvailable()} chainId={chainId} />

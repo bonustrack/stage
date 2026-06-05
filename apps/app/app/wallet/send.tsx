@@ -1,65 +1,96 @@
-/** Wallet → Send token (public).
+/** Wallet → Send token (unified public + shielded).
  *
- *  Public send: address-or-ENS recipient (stamp.fyi/ENS resolution), ETH⇄USD
- *  amount with Max, submitted over the connected Reown/wagmi wallet (lib/tx.ts).
- *  State + lifecycle live in usePublicSend (send.public.ts).
+ *  ONE page for sending any token the wallet holds. The combined TokenSelector
+ *  modal lists EVERY positive-balance token — public AND Railgun-shielded — each
+ *  row tagged with the shielded badge so the kind is obvious. Picking a token
+ *  carries its `isPrivate` flag, and the page routes the send automatically:
  *
- *  This page does ONE thing — public send. Shielding (public→private) lives in
- *  shield.tsx, private transfers in send-shielded.tsx, unshield in unshield.tsx.
- *  `?to=<address>` may be pre-populated by callers (profile Send button). */
+ *    • public token  → PublicSendBody  → sendNativeOrToken / send.public
+ *    • shielded token → SendShieldedBody → runAction({ kind: 'send' }) (0zk→0zk)
+ *
+ *  There is NO manual public/shielded toggle — the chosen token decides. Shield
+ *  (public→private) and Unshield (private→public) remain their own pages.
+ *  `?to=` pre-fills the public recipient; `?symbol=&chainId=&private=` pre-select
+ *  a token (e.g. from a token detail page's Send button). */
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView } from 'react-native';
 import { Box } from '../../components/layout';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
-import {
-  RecipientField, AmountField, SendHeader, SubmitButton, TxStatus,
-} from './send.fields';
-import { usePublicSend } from './send.public';
+import { SendHeader } from './send.fields';
+import { WalletFooter, useFooterReporter, useFormPal } from './wallet.form';
+import { PublicSendBody } from './send.public.body';
+import { SendShieldedBody } from './send-shielded.form';
+import { TokenSelector, useSelectedBalance, useTopToken, type TokenChoice } from './TokenSelector';
 
 export default function WalletSend(): React.ReactElement {
   const router = useRouter();
-  const params = useLocalSearchParams<{ to?: string }>();
+  const params = useLocalSearchParams<{ to?: string; symbol?: string; chainId?: string; private?: string }>();
   const { text: fg, link: head, bg, border } = usePalette();
-  const sub = fg;
-  const inputBg = border;
   const dark = useEffectiveColorScheme() === 'dark';
   const insets = useSafeAreaInsets();
+  const formPal = useFormPal();
 
-  const p = usePublicSend(typeof params.to === 'string' ? params.to : '');
-  const pal = { fg, head, sub, border, inputBg };
+  // A caller can pin a token via `?symbol=&chainId=&private=`; otherwise we
+  // default to the wallet's highest-USD-value holding once rows load (below).
+  const hasParamToken = typeof params.symbol === 'string' && params.symbol.length > 0;
+  const initial = useMemo<TokenChoice>(() => {
+    const isPrivate = params.private === '1' || params.private === 'true';
+    const symbol = hasParamToken ? (params.symbol as string) : 'ETH';
+    const chainId = typeof params.chainId === 'string' && Number.isFinite(Number(params.chainId))
+      ? Number(params.chainId) : isPrivate ? 11155111 : 1;
+    return { symbol, chainId, isPrivate };
+  }, [params.symbol, params.chainId, params.private, hasParamToken]);
+
+  const [token, setToken] = useState<TokenChoice>(initial);
+
+  // Default-select the highest-value token once the combined list loads — unless
+  // the caller pinned one via params or the user has already picked. `touched`
+  // latches on the first apply/user change so we don't override later refreshes.
+  const topToken = useTopToken('combined');
+  const touched = useRef(hasParamToken);
+  useEffect(() => {
+    if (touched.current || !topToken) return;
+    touched.current = true;
+    setToken(topToken);
+  }, [topToken]);
+  const onChange = (v: TokenChoice): void => { touched.current = true; setToken(v); };
+
+  const balance = useSelectedBalance('combined', token);
+  const initialTo = typeof params.to === 'string' ? params.to : '';
+
+  // Reset per-token body state when the kind/symbol/chain changes by keying the
+  // body on the selection identity.
+  const bodyKey = `${token.isPrivate ? 'priv' : 'pub'}:${token.chainId}:${token.symbol}`;
+
+  // The mounted body (public or shielded) reports its submit state up so we can
+  // render it in the pinned footer alongside Cancel. useFooterReporter makes the
+  // report idempotent so the body re-reporting on every render doesn't loop.
+  const { footer, report: reportFooter, onSubmit: footerSubmit } = useFooterReporter();
 
   return (
     <Box style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
       <SendHeader fg={fg} head={head} border={border} onBack={() => router.back()} />
 
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 16, gap: 16 }}>
-        <RecipientField
-          pal={pal}
-          to={p.to}
-          setTo={p.setTo}
-          resolving={p.resolving}
-          resolved={p.resolved}
-          resolveErr={p.resolveErr}
-        />
+      <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ padding: 16, gap: 16 }}>
+        <TokenSelector mode="combined" value={token} onChange={onChange} />
 
-        <AmountField
-          pal={pal}
-          dark={dark}
-          amount={p.amount}
-          setAmount={p.setAmount}
-          mode={p.mode}
-          setMode={p.setMode}
-          ethBalance={p.ethBalance}
-          ethPriceUsd={p.ethPriceUsd}
-          secondaryLabel={p.secondaryLabel}
-          onMax={p.onMax}
-        />
-
-        <SubmitButton dark={dark} busy={p.busy} canSubmit={p.canSubmit} txState={p.txState} onSubmit={p.onSubmit} />
-
-        <TxStatus sub={sub} txState={p.txState} txHash={p.txHash} txErr={p.txErr} />
+        {token.isPrivate ? (
+          <SendShieldedBody key={bodyKey} pal={formPal} dark={dark}
+            symbol={token.symbol === 'USDC' ? 'USDC' : 'ETH'} chainId={token.chainId} balance={balance}
+            onFooter={reportFooter} />
+        ) : (
+          <PublicSendBody key={bodyKey} token={token} initialTo={initialTo} onFooter={reportFooter} />
+        )}
       </ScrollView>
+
+      {footer ? (
+        <WalletFooter border={border} bg={bg} dark={dark} onCancel={() => router.back()}
+          submitLabel={footer.submitLabel} onSubmit={footerSubmit}
+          submitDisabled={footer.submitDisabled} submitLoading={footer.submitLoading} />
+      ) : null}
     </Box>
   );
 }

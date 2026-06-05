@@ -6,7 +6,11 @@
  *  public one — the list is ranked purely by $. Rows with no price / zero
  *  balance compute usdValue 0 and sink to the bottom; `.sort` is stable
  *  (V8/Hermes) so among equal-value rows the original public-then-private order
- *  is preserved. Pending shield rows render above the sorted list. */
+ *  is preserved. Pending shield rows render above the sorted list.
+ *
+ *  Only positive-balance rows are shown: zero-balance public and shielded rows
+ *  (including the always-seeded fixed private set) are filtered out so the wallet
+ *  page lists only tokens the user actually holds. */
 
 import { useRouter } from 'expo-router';
 import { Col } from '../layout';
@@ -31,6 +35,7 @@ export function TokensList({
     <Col mx={16}>
       <PendingShieldRows pending={pending} pal={{ head, sub, border }} />
       {[...rows, ...privateRows]
+        .filter(r => Number(r.balance) > 0)
         .map(r => ({ r, usdValue: (r.priceUsd ?? 0) * Number(r.balance) }))
         .sort((a, b) => b.usdValue - a.usdValue)
         .map(({ r }) => {
