@@ -19,7 +19,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { SendHeader } from './send.fields';
-import { WalletFooter, useFormPal, type FooterState } from './wallet.form';
+import { WalletFooter, useFooterReporter, useFormPal } from './wallet.form';
 import { PublicSendBody } from './send.public.body';
 import { SendShieldedBody } from './send-shielded.form';
 import { TokenSelector, useSelectedBalance, useTopToken, type TokenChoice } from './TokenSelector';
@@ -65,8 +65,9 @@ export default function WalletSend(): React.ReactElement {
   const bodyKey = `${token.isPrivate ? 'priv' : 'pub'}:${token.chainId}:${token.symbol}`;
 
   // The mounted body (public or shielded) reports its submit state up so we can
-  // render it in the pinned footer alongside Cancel.
-  const [footer, setFooter] = useState<FooterState | null>(null);
+  // render it in the pinned footer alongside Cancel. useFooterReporter makes the
+  // report idempotent so the body re-reporting on every render doesn't loop.
+  const { footer, report: reportFooter, onSubmit: footerSubmit } = useFooterReporter();
 
   return (
     <Box style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
@@ -79,15 +80,15 @@ export default function WalletSend(): React.ReactElement {
         {token.isPrivate ? (
           <SendShieldedBody key={bodyKey} pal={formPal} dark={dark}
             symbol={token.symbol === 'USDC' ? 'USDC' : 'ETH'} chainId={token.chainId} balance={balance}
-            onFooter={setFooter} />
+            onFooter={reportFooter} />
         ) : (
-          <PublicSendBody key={bodyKey} token={token} initialTo={initialTo} onFooter={setFooter} />
+          <PublicSendBody key={bodyKey} token={token} initialTo={initialTo} onFooter={reportFooter} />
         )}
       </ScrollView>
 
       {footer ? (
         <WalletFooter border={border} bg={bg} dark={dark} onCancel={() => router.back()}
-          submitLabel={footer.submitLabel} onSubmit={footer.onSubmit}
+          submitLabel={footer.submitLabel} onSubmit={footerSubmit}
           submitDisabled={footer.submitDisabled} submitLoading={footer.submitLoading} />
       ) : null}
     </Box>
