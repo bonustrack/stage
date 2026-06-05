@@ -23,6 +23,9 @@ interface ChannelsListProps {
   myAddress: string | null;
   sortedRows: RowT[];
   requestCount: number;
+  /** Count of archived convs → drives the "Archived (N)" footer row (hidden
+   *  when 0). Tapping it opens the dedicated Archived view. */
+  archivedCount: number;
   /** Active label filter (null = none) → drives the top-left control's state. */
   labelFilter: LabelFilterValue;
   /** Opens the label-picker sheet (owned by HomeScreen). */
@@ -40,7 +43,7 @@ interface ChannelsListProps {
 }
 
 export function ChannelsList({
-  panRef, router, myAddress, sortedRows, requestCount, labelFilter, onOpenFilter,
+  panRef, router, myAddress, sortedRows, requestCount, archivedCount, labelFilter, onOpenFilter,
   head, sub, border,
   listExtraData, listRef, savedOffsetRef, didRestoreRef, contentHeightRef,
   renderRow, getRowLayout,
@@ -121,6 +124,23 @@ export function ChannelsList({
         removeClippedSubviews
         contentContainerStyle={{ paddingBottom: 24 }}
         ListEmptyComponent={<HomeEmpty sub={sub} />}
+        ListFooterComponent={
+          archivedCount > 0 ? (
+            <Pressable
+              onPress={() => router.push('/xmtp/archived')}
+              style={({ pressed }) => ({
+                flexDirection: 'row', alignItems: 'center', gap: 12,
+                paddingHorizontal: 16, paddingVertical: 16,
+                backgroundColor: pressed ? border : 'transparent',
+              })}
+            >
+              <Icon name="archive" size={20} color={sub} />
+              <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Medium' }}>
+                {`Archived (${archivedCount})`}
+              </Text>
+            </Pressable>
+          ) : null
+        }
         renderItem={renderRow}
       />
     </>

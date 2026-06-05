@@ -15,6 +15,7 @@ import { ComposerGradient } from '../../components/ComposerGradient';
 import { Icon } from '@metro-labs/kit/icon';
 import { ChannelMenu } from '../../components/ChannelMenu';
 import { isPinned } from '../../lib/pins';
+import { isArchived } from '../../lib/archived';
 import { shortAddress } from '../../lib/xmtp';
 import { getCachedRows } from '../../lib/channelsCache';
 import { flash } from '../../lib/toast';
@@ -165,6 +166,7 @@ export default function XmtpConversation(): React.ReactElement {
         peerAddress={peerAddr}
         isUnread={(getCachedRows()?.find(r => r.convId === convId)?.unreadCount ?? 0) > 0}
         isPinned={convId ? isPinned(convId) : false}
+        isArchived={convId ? isArchived(convId) : false}
         onClose={() => setOverflowOpen(false)}
         context="view"
         onAfterLeave={result => flash(result === 'left' ? 'Left group' : 'Group hidden')}

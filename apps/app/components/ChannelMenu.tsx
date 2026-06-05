@@ -26,6 +26,7 @@ import { AppModal } from './AppModal';
 import { usePalette } from '../lib/theme';
 import { markConvRead, markConvUnread } from '../lib/channelsCache';
 import { togglePin } from '../lib/pins';
+import { toggleArchived } from '../lib/archived';
 import { leaveGroupConv, lineOfConv } from '../lib/xmtp';
 
 export interface ChannelMenuProps {
@@ -41,6 +42,8 @@ export interface ChannelMenuProps {
   isUnread: boolean;
   /** Whether the conv is pinned → toggles the Pin/Unpin label. */
   isPinned: boolean;
+  /** Whether the conv is archived → toggles the Archive/Unarchive label. */
+  isArchived: boolean;
   /** Sheet visibility (controlled by the parent). */
   visible: boolean;
   onClose: () => void;
@@ -49,11 +52,14 @@ export interface ChannelMenuProps {
   context?: 'list' | 'view';
   /** Optional hook fired after a successful leave (e.g. toast / refresh). */
   onAfterLeave?: (result: 'left' | 'hidden') => void;
+  /** Optional hook fired after toggling archive (carries the new state). The
+   *  conversation view uses this to pop back to the list when archiving. */
+  onAfterArchive?: (archived: boolean) => void;
 }
 
 export function ChannelMenu({
-  convId, isGroup, peerAddress, isUnread, isPinned,
-  visible, onClose, context = 'list', onAfterLeave,
+  convId, isGroup, peerAddress, isUnread, isPinned, isArchived,
+  visible, onClose, context = 'list', onAfterLeave, onAfterArchive,
 }: ChannelMenuProps): React.ReactElement {
   const router = useRouter();
   const pal = usePalette();
@@ -103,6 +109,20 @@ export function ChannelMenu({
           label={isPinned ? 'Unpin' : 'Pin'}
           color={head}
           onPress={() => run(() => { void togglePin(convId); })}
+        />
+
+        {/* Archive / Unarchive — local archived store hides the conv from the
+            main inbox (reversible, distinct from block). On archive from the
+            conversation view, pop back to the list via onAfterArchive. */}
+        <MenuRow
+          icon={isArchived ? 'arrowUp' : 'archive'}
+          label={isArchived ? 'Unarchive' : 'Archive'}
+          color={head}
+          onPress={() => run(() => {
+            void toggleArchived(convId);
+            onAfterArchive?.(!isArchived);
+            if (!isArchived && context === 'view') router.replace('/');
+          })}
         />
 
         {isGroup ? (
