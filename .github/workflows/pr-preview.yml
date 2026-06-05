@@ -67,6 +67,9 @@ jobs:
             }
             if (ev === 'issue_comment'
                 && context.payload.issue.pull_request
+                // Ignore bot comments (e.g. Netlify's deploy bot) so they can't
+                // spawn phantom runs that cancel the real build.
+                && context.payload.comment.user.type !== 'Bot'
                 && context.payload.comment.body.trim().startsWith('/preview')) {
               core.setOutput('run', 'true');
               core.setOutput('pr', String(context.payload.issue.number));
