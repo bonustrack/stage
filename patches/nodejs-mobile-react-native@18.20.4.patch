@@ -2,7 +2,7 @@ diff --git a/node_modules/nodejs-mobile-react-native/.bun-tag-455b1abe81a7cb8e b
 new file mode 100644
 index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
 diff --git a/android/build.gradle b/android/build.gradle
-index 14be6078d34741856a4d4027b4497ea4966da0a7..76f442ac76753c2699d9c011a495c3122d0916ef 100644
+index 14be607..3929e2f 100644
 --- a/android/build.gradle
 +++ b/android/build.gradle
 @@ -20,35 +20,23 @@ if (_compileNativeModulesSdkVersion<24) {
@@ -53,7 +53,31 @@ index 14be6078d34741856a4d4027b4497ea4966da0a7..76f442ac76753c2699d9c011a495c312
      compileSdkVersion ((rootProject?.ext?.properties?.compileSdkVersion) ?: 24)
      buildToolsVersion ((rootProject?.ext?.properties?.buildToolsVersion) ?: "30.0.2")
  
-@@ -409,8 +397,9 @@ if ("1".equals(shouldRebuildNativeModules)) {
+@@ -102,6 +90,14 @@ task CopyNodeProjectAssetsFolder (type:Sync) {
+     exclude '**/*~' // temporary files
+     exclude '**/.*' // files and dirs starting with .
+     exclude '**/*.gz' // gzip files will cause errors on aapt when merging assets.
++    // PATCHED (Metro): bundletool rejects AAB asset directories whose name is '#'
++    // ("Cannot tokenize targeted directory '#'") because '#' is its config-split
++    // delimiter. es5-ext / es6-iterator (transitive via web3-providers-ws ->
++    // websocket, which the on-device RAILGUN host never uses — it talks RPC over
++    // ethers HTTP) ship prototype-method dirs literally named '#'. Drop them so
++    // packageReleaseBundle succeeds; they are never required at runtime here.
++    exclude '**/#'    // directories named exactly '#'
++    exclude '**/#/**' // and everything under them
+ }
+ 
+ task GenerateNodeProjectAssetsLists {
+@@ -123,6 +119,8 @@ task GenerateNodeProjectAssetsLists {
+         assets_tree.include('nodejs-project/**') // Include the node project.
+         assets_tree.exclude('**/.*') // Exclude files and dirs starting with .
+         assets_tree.exclude('**/*~') // Exclude temporary files.
++        assets_tree.exclude('**/#') // PATCHED (Metro): keep list in sync with the '#'-dir exclude above.
++        assets_tree.exclude('**/#/**')
+         assets_tree.visit { assetFile ->
+             if (assetFile.isDirectory()) {
+                 dir_list_arr.add("${assetFile.relativePath}\n");
+@@ -409,8 +407,9 @@ if ("1".equals(shouldRebuildNativeModules)) {
              if (nodeVersionResult.exitValue != 0) {
                  throw new GradleException("Failed to get node version: ${nodeVersionResult.errorOutput}")
              }
@@ -66,7 +90,7 @@ index 14be6078d34741856a4d4027b4497ea4966da0a7..76f442ac76753c2699d9c011a495c312
              inputs.file "${rootProject.buildDir}/nodejs-native-assets-temp-build/nodejs-native-assets-${abi_name}/copy.timestamp"
              outputs.dir "${rootProject.buildDir}/nodejs-native-assets-temp-build/nodejs-native-assets-${abi_name}/nodejs-project/"
 diff --git a/android/src/main/AndroidManifest.xml b/android/src/main/AndroidManifest.xml
-index 78cb6c572a0c30e6b1129d3378ed4a7418351a74..3c21b61c758c5d7a28b38a17848b0c94a337899b 100644
+index 78cb6c5..3c21b61 100644
 --- a/android/src/main/AndroidManifest.xml
 +++ b/android/src/main/AndroidManifest.xml
 @@ -1,6 +1,5 @@
@@ -79,7 +103,7 @@ index 78cb6c572a0c30e6b1129d3378ed4a7418351a74..3c21b61c758c5d7a28b38a17848b0c94
    
 \ No newline at end of file
 diff --git a/index.js b/index.js
-index fb09c487535de76e78b879bb31861b77c6a2434c..407b1631291462266b8959ec0280d11f4cf230c8 100644
+index fb09c48..407b163 100644
 --- a/index.js
 +++ b/index.js
 @@ -12,12 +12,25 @@ var channels = {};
@@ -119,7 +143,7 @@ index fb09c487535de76e78b879bb31861b77c6a2434c..407b1631291462266b8959ec0280d11f
      return envelope;
    };
 diff --git a/install/resources/nodejs-modules/builtin_modules/rn-bridge/index.js b/install/resources/nodejs-modules/builtin_modules/rn-bridge/index.js
-index c6280bf48d77eceed0498ac9cd192751182e1851..c13941d522eafb5db67b088efabcf93e2c6d3d5e 100644
+index c6280bf..c13941d 100644
 --- a/install/resources/nodejs-modules/builtin_modules/rn-bridge/index.js
 +++ b/install/resources/nodejs-modules/builtin_modules/rn-bridge/index.js
 @@ -21,12 +21,25 @@ const SYSTEM_CHANNEL = '_SYSTEM_';
