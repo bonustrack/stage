@@ -60,6 +60,8 @@ export function RecipientField(props: {
 export function AmountField(props: {
   pal: Palette;
   dark: boolean;
+  /** Symbol of the currently selected token — labels the amount toggle + balance. */
+  symbol: string;
   amount: string;
   setAmount: (v: string) => void;
   mode: 'eth' | 'usd';
@@ -127,7 +129,7 @@ export function AmountField(props: {
           })}
         >
           <Text style={{ color: head, fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
-            {mode === 'eth' ? 'ETH' : 'USD'}
+            {mode === 'eth' ? props.symbol : 'USD'}
           </Text>
           <Icon name="arrowDown" size={14} color={fg} />
         </Pressable>
@@ -140,7 +142,7 @@ export function AmountField(props: {
       ) : null}
       {ethBalance ? (
         <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', paddingHorizontal: 4 }}>
-          Balance: {Number(ethBalance).toLocaleString(undefined, { maximumFractionDigits: 6 })} ETH
+          Balance: {Number(ethBalance).toLocaleString(undefined, { maximumFractionDigits: 6 })} {props.symbol}
         </Text>
       ) : null}
     </Box>

@@ -17,10 +17,8 @@ import { RAILGUN_TOKENS } from '../../lib/railgun/tokens';
 import type { PendingAction } from '../../lib/railgun/types';
 import { ShieldPhaseLine } from './send.shield.parts';
 import { ShieldStepper, type ShieldStage } from './send.shield.stepper';
-import { Segmented, AmountBox, type FormPal } from './wallet.form';
-
-const SYMBOLS = ['ETH', 'USDC'] as const;
-const NETS = [{ id: 11155111, label: 'Sepolia' }, { id: 1, label: 'Ethereum' }] as const;
+import { AmountBox, type FormPal } from './wallet.form';
+import { TokenSelector, useSelectedBalance } from './TokenSelector';
 
 function phaseToStage(p?: PendingAction['phase']): ShieldStage {
   switch (p) {
@@ -45,6 +43,7 @@ export function SendShieldedForm({ pal, dark, initialSymbol, initialChainId }: {
   const [to, setTo] = useState('');
   const [symbol, setSymbol] = useState<'ETH' | 'USDC'>(initialSymbol);
   const [chainId, setChainId] = useState<number>(initialChainId);
+  const balance = useSelectedBalance('shielded', { symbol, chainId });
   const [amount, setAmount] = useState('');
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [action, setAction] = useState<PendingAction | null>(null);
@@ -97,13 +96,11 @@ export function SendShieldedForm({ pal, dark, initialSymbol, initialChainId }: {
             borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12 }} />
       </Box>
 
-      <Segmented label="NETWORK" dark={dark} value={chainId} onChange={setChainId}
-        options={NETS.map(net => [net.id, net.label] as const)} />
+      <TokenSelector mode="shielded" value={{ symbol, chainId }}
+        onChange={(v) => { setSymbol(v.symbol as 'ETH' | 'USDC'); setChainId(v.chainId); }} />
 
-      <Segmented label="TOKEN" dark={dark} value={symbol} onChange={setSymbol}
-        options={SYMBOLS.map(s => [s, s] as const)} />
-
-      <AmountBox pal={pal} amount={amount} setAmount={setAmount} busy={busy} />
+      <AmountBox pal={pal} amount={amount} setAmount={setAmount} busy={busy}
+        balance={balance} symbol={symbol} dark={dark} />
 
       <Button variant="primary" size="lg" fullWidth pill dark={dark} loading={busy}
         disabled={!canSubmit} onPress={onSubmit}

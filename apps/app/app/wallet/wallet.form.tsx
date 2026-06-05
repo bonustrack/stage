@@ -58,19 +58,35 @@ export function Segmented<T extends string | number>({ label, value, options, on
   );
 }
 
-/** Plain amount input box (Kit-styled). */
-export function AmountBox({ pal, amount, setAmount, busy }: {
+/** Plain amount input box (Kit-styled). Optionally shows the selected token's
+ *  balance with a Max button (when `balance` is provided, even "0"). */
+export function AmountBox({ pal, amount, setAmount, busy, balance, symbol, dark }: {
   pal: FormPal; amount: string; setAmount: (v: string) => void; busy: boolean;
+  balance?: string | null; symbol?: string; dark?: boolean;
 }): React.ReactElement {
-  const { head, sub, inputBg } = pal;
+  const { head, sub, inputBg, link } = pal;
+  const hasBal = balance != null && Number(balance) > 0;
   return (
     <Box style={{ gap: 6 }}>
-      <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>AMOUNT</Text>
+      <Row align="center">
+        <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', flex: 1 }}>AMOUNT</Text>
+        {balance != null ? (
+          <Button variant="ghost" size="sm" dark={!!dark} disabled={!hasBal || busy}
+            onPress={() => { if (hasBal) setAmount(String(balance)); }}
+            label="MAX" textStyle={{ color: hasBal ? link : sub, fontSize: 12 }}
+            style={{ height: 24, paddingHorizontal: 8 }} />
+        ) : null}
+      </Row>
       <Box style={{ backgroundColor: inputBg, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12 }}>
         <TextInput value={amount} onChangeText={setAmount} placeholder="0.0" placeholderTextColor={sub}
           keyboardType="decimal-pad" editable={!busy}
           style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', padding: 0 }} />
       </Box>
+      {balance != null ? (
+        <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', paddingHorizontal: 4 }}>
+          Balance: {Number(balance).toLocaleString(undefined, { maximumFractionDigits: 6 })}{symbol ? ` ${symbol}` : ''}
+        </Text>
+      ) : null}
     </Box>
   );
 }

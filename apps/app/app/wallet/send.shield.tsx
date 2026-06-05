@@ -22,12 +22,10 @@ import { pendingStore } from '../../lib/railgun/cache';
 import type { PendingAction } from '../../lib/railgun/types';
 import { ShieldRecipient, ShieldPhaseLine } from './send.shield.parts';
 import { ShieldStepper, type ShieldStage } from './send.shield.stepper';
-import { Segmented, AmountBox, type FormPal } from './wallet.form';
+import { AmountBox, type FormPal } from './wallet.form';
+import { TokenSelector, useSelectedBalance } from './TokenSelector';
 
 type Pal = FormPal;
-
-const SYMBOLS = ['ETH', 'USDC'] as const;
-const NETS = [{ id: 11155111, label: 'Sepolia' }, { id: 1, label: 'Ethereum' }] as const;
 
 /** Map a pending-action phase to a stepper stage. `proving`/`broadcasting` are
  *  the two on-chain stages; `scanning` is the merkle-scan tail; `confirmed`/
@@ -50,6 +48,7 @@ export function ShieldForm({ pal, dark, zkAddress, initialSymbol, initialChainId
 }): React.ReactElement {
   const [symbol, setSymbol] = useState<'ETH' | 'USDC'>(initialSymbol ?? 'ETH');
   const [chainId, setChainId] = useState<number>(initialChainId ?? 11155111);
+  const balance = useSelectedBalance('public', { symbol, chainId });
   const [amount, setAmount] = useState('');
   // Wall-clock of the latest submit; we track the shield pending row started at
   // or after this, so the stepper follows THIS shield (not a stale prior one).
@@ -101,13 +100,11 @@ export function ShieldForm({ pal, dark, zkAddress, initialSymbol, initialChainId
     <Box style={{ gap: 16 }}>
       <ShieldRecipient pal={pal} zkAddress={zkAddress} />
 
-      <Segmented label="NETWORK" dark={dark} value={chainId} onChange={setChainId}
-        options={NETS.map(n => [n.id, n.label] as const)} />
+      <TokenSelector mode="public" value={{ symbol, chainId }}
+        onChange={(v) => { setSymbol(v.symbol as 'ETH' | 'USDC'); setChainId(v.chainId); }} />
 
-      <Segmented label="TOKEN" dark={dark} value={symbol} onChange={setSymbol}
-        options={SYMBOLS.map(s => [s, s] as const)} />
-
-      <AmountBox pal={pal} amount={amount} setAmount={setAmount} busy={busy} />
+      <AmountBox pal={pal} amount={amount} setAmount={setAmount} busy={busy}
+        balance={balance} symbol={symbol} dark={dark} />
 
       <Button variant="primary" size="lg" fullWidth pill dark={dark} loading={busy}
         disabled={!canSubmit} onPress={onSubmit}

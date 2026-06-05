@@ -17,10 +17,10 @@ import { getActiveAccount } from '../../lib/accounts';
 import { unshieldToPublic } from '../../lib/railgun/unshield';
 import { isBridgeAvailable } from '../../lib/railgun/bridge';
 import { UnshieldRecipient, UnshieldPhaseLine } from './unshield.parts';
-import { ActionPage, Segmented, AmountBox, useFormPal } from './wallet.form';
+import { ActionPage, AmountBox, useFormPal } from './wallet.form';
+import { TokenSelector, useSelectedBalance } from './TokenSelector';
 
 type Phase = 'idle' | 'proving' | 'broadcasting' | 'done' | 'error';
-const SYMBOLS = ['ETH', 'USDC'] as const;
 const NET_LABEL: Record<number, string> = { 1: 'Ethereum', 11155111: 'Sepolia' };
 
 export default function WalletUnshield(): React.ReactElement {
@@ -37,7 +37,8 @@ export default function WalletUnshield(): React.ReactElement {
   const initialChainId = typeof params.chainId === 'string' && Number.isFinite(Number(params.chainId))
     ? Number(params.chainId) : 11155111;
   const [symbol, setSymbol] = useState<'ETH' | 'USDC'>(initialSymbol);
-  const [chainId] = useState<number>(initialChainId);
+  const [chainId, setChainId] = useState<number>(initialChainId);
+  const balance = useSelectedBalance('shielded', { symbol, chainId });
   const [amount, setAmount] = useState('');
   const [phase, setPhase] = useState<Phase>('idle');
   const [txHash, setTxHash] = useState<string | null>(null);
@@ -64,10 +65,11 @@ export default function WalletUnshield(): React.ReactElement {
     <ActionPage title="Unshield" head={head} bg={bg} border={border} onBack={() => router.back()}>
       <UnshieldRecipient pal={pal} eoa={eoa} network={NET_LABEL[chainId] ?? `Chain ${chainId}`} />
 
-      <Segmented label="TOKEN" dark={dark} value={symbol} onChange={setSymbol}
-        options={SYMBOLS.map(s => [s, s] as const)} />
+      <TokenSelector mode="shielded" value={{ symbol, chainId }}
+        onChange={(v) => { setSymbol(v.symbol as 'ETH' | 'USDC'); setChainId(v.chainId); }} />
 
-      <AmountBox pal={pal} amount={amount} setAmount={setAmount} busy={busy} />
+      <AmountBox pal={pal} amount={amount} setAmount={setAmount} busy={busy}
+        balance={balance} symbol={symbol} dark={dark} />
 
       <Button variant="primary" size="lg" fullWidth pill dark={dark} loading={busy}
         disabled={!canSubmit} onPress={onSubmit}
