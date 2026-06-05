@@ -13,9 +13,15 @@ name: PR JS-bundle preview
 # crash. The job detects native-touching diffs and posts a warning instead of a
 # bare link.
 #
-# TRIGGER: opt-in, to not burn CI/EAS quota on every push —
-#   • add the `preview` label to a PR, or
-#   • comment `/preview` on the PR.
+# TRIGGER: automatic — runs on every PR (opened/reopened) and re-deploys on every
+# new commit pushed to the PR branch (synchronize). A `/preview` comment still
+# forces a re-run on demand.
+#
+# COST/SAFETY:
+#   • concurrency cancels in-flight runs on rapid pushes (one preview per PR).
+#   • fork PRs are skipped — they don't have access to EXPO_TOKEN, so the publish
+#     would hard-fail; the gate short-circuits before any work.
+#   • native-touching diffs still post a warning instead of a bare link.
 #
 # REQUIRES (native, one-time): the dev-client APK must include `expo-updates`
 # (added to apps/app/package.json + app.config.js `updates`/`runtimeVersion` in
@@ -24,7 +30,7 @@ name: PR JS-bundle preview
 
 on:
   pull_request:
-    types: [labeled]
+    types: [opened, synchronize, reopened]
   issue_comment:
     types: [created]
 
@@ -34,7 +40,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Gate: only run on the `preview` label, or a `/preview` comment on a PR.
+  # Gate: run automatically on every PR open/sync/reopen, or on a `/preview`
+  # comment. Fork PRs are skipped (no EXPO_TOKEN secret available to them).
   gate:
     runs-on: ubuntu-latest
     outputs:
@@ -46,13 +53,23 @@ jobs:
         with:
           script: |
             const ev = context.eventName;
-            if (ev === 'pull_request' && context.payload.label?.name === 'preview') {
+            if (ev === 'pull_request') {
+              const pr = context.payload.pull_request;
+              // Forks can't read EXPO_TOKEN → skip rather than hard-fail.
+              if (pr.head.repo.full_name !== context.payload.repository.full_name) {
+                core.notice(`Skipping preview: fork PR (${pr.head.repo.full_name}) has no access to EXPO_TOKEN.`);
+                core.setOutput('run', 'false');
+                return;
+              }
               core.setOutput('run', 'true');
-              core.setOutput('pr', String(context.payload.pull_request.number));
+              core.setOutput('pr', String(pr.number));
               return;
             }
             if (ev === 'issue_comment'
                 && context.payload.issue.pull_request
+                // Ignore bot comments (e.g. Netlify's deploy bot) so they can't
+                // spawn phantom runs that cancel the real build.
+                && context.payload.comment.user.type !== 'Bot'
                 && context.payload.comment.body.trim().startsWith('/preview')) {
               core.setOutput('run', 'true');
               core.setOutput('pr', String(context.payload.issue.number));
@@ -173,7 +190,7 @@ jobs:
               `<img src="${qr}" width="200" alt="QR to load preview" />`,
               nativeWarn,
               '',
-              `<sub>JS bundle only (EAS Update branch \`pr-${process.env.PR}\`). Needs the expo-updates-enabled dev-client APK. Re-run with the \`preview\` label or \`/preview\`.</sub>`,
+              `<sub>JS bundle only (EAS Update branch \`pr-${process.env.PR}\`). Needs the expo-updates-enabled dev-client APK. Auto-redeploys on every push; comment \`/preview\` to force a re-run.</sub>`,
             ].join('\n');
             // Upsert: replace our previous preview comment instead of stacking.
             const { data: comments } = await github.rest.issues.listComments({
