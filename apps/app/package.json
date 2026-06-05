@@ -47,6 +47,7 @@
     "expo-secure-store": "~15.0.8",
     "expo-splash-screen": "~31.0.13",
     "expo-status-bar": "~3.0.9",
+    "expo-updates": "~29.0.18",
     "nodejs-mobile-react-native": "18.20.4",
     "path-browserify": "1.0.1",
     "querystring-es3": "0.2.1",
