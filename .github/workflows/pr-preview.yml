@@ -59,6 +59,12 @@ jobs:
     env:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
       PR: ${{ github.event.pull_request.number }}
+      # Kill Expo/EAS telemetry network round-trips (saves a few seconds + avoids
+      # flakey analytics calls). Pin the Metro transform cache to a workspace path
+      # (default is $TMPDIR/metro-cache, an ephemeral runner temp dir that never
+      # survives a run) so actions/cache below can persist + restore it.
+      EXPO_NO_TELEMETRY: '1'
+      TMPDIR: ${{ github.workspace }}/.metro-tmp
     steps:
       - uses: actions/checkout@v6
         with:
@@ -68,18 +74,60 @@ jobs:
         with:
           bun-version: 1.3.9
 
+      # TMPDIR is repointed at a workspace path (so the Metro cache survives via
+      # actions/cache); create it up front so every tool that calls mkdtemp has a
+      # real dir from the first step on.
+      - name: Prepare temp dir
+        run: mkdir -p "$TMPDIR"
+
+      # Warm the bun install: the global module cache (~/.bun/install/cache) AND
+      # the materialised node_modules trees (root + every workspace). bun.lock is
+      # the exact-dependency key, so a hit means `bun install --frozen-lockfile`
+      # below is a near-instant verify instead of a cold multi-minute download +
+      # link of the RN / Expo / Railgun dependency graph. restore-keys lets a
+      # stale-but-close cache still seed most packages when the lock changes.
+      - name: Cache bun dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+          key: bun-deps-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            bun-deps-${{ runner.os }}-
+
       - run: bun install --frozen-lockfile
+
+      # Warm the Metro transform cache. Cold-bundling ~7500 modules is the bulk of
+      # the export time; restoring this dir lets `expo export` (run under the hood
+      # by `eas update`) reuse already-transformed modules across PR runs, so only
+      # the files that actually changed get re-transformed. Keyed on the lockfile
+      # (dep graph) + source-file hashes so it invalidates only when needed;
+      # restore-keys falls back to the most recent cache so it stays warm.
+      - name: Cache Metro transform cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.metro-tmp/metro-cache
+          key: metro-cache-${{ runner.os }}-${{ hashFiles('bun.lock') }}-${{ hashFiles('apps/app/**/*.ts', 'apps/app/**/*.tsx', 'apps/app/**/*.js', 'packages/*/src/**/*.ts', 'packages/*/src/**/*.tsx') }}
+          restore-keys: |
+            metro-cache-${{ runner.os }}-${{ hashFiles('bun.lock') }}-
+            metro-cache-${{ runner.os }}-
 
       - name: Publish EAS Update for this PR
         id: update
         working-directory: apps/app
         run: |
           set -euo pipefail
+          mkdir -p "$TMPDIR"
           BRANCH="pr-${PR}"
           # `eas update` runs `expo export` under the hood and uploads the same
           # JS bundle + assets, auto-generating the expo-updates manifest the
           # dev-client consumes. --non-interactive needs EXPO_TOKEN (set above).
-          bunx eas-cli@latest update \
+          # eas-cli is pinned (not @latest) so bunx resolves a single cached
+          # version instead of re-checking the registry for the newest each run.
+          bunx eas-cli@20.1.0 update \
             --branch "$BRANCH" \
             --message "PR #${PR} @ ${{ github.event.pull_request.head.sha }}" \
             --non-interactive --json > eas-update.json
