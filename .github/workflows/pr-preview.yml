@@ -3,21 +3,25 @@ name: App preview
 # Per-PR JS-bundle preview for the Metro dev-client (#236, #256).
 #
 # What it does: publishes the app's JS bundle as an EAS Update on a per-PR branch
-# and surfaces ONE clickable "Preview" row in the PR's Checks. That row is a
-# custom Check Run (Checks API) whose `details_url` opens an https launcher page
-# (metro.box/preview-launcher.html — a tracked static file in apps/ui/public,
-# deployed durably via Netlify) that builds the dev-client deep link + QR. Less
-# taps it on a device that has the dev-client APK; the installed app swaps its JS
-# for that PR's bundle — no new APK per PR. No PR comment (keeps the feed clean).
+# and surfaces a clickable "Preview" row on the PR whose Details opens an https
+# launcher page (metro.box/preview-launcher.html — a tracked static file in
+# apps/ui/public, deployed durably via Netlify) that builds the dev-client deep
+# link + QR. Less taps it on a device that has the dev-client APK; the installed
+# app swaps its JS for that PR's bundle — no new APK per PR. No PR comment.
 #
-# CHECKS RENDERING (#256): a GitHub Actions job ALWAYS produces its own check
-# whose Details link points at the Actions run — that target can't be customised.
-# To give Less one row that clicks straight to the launcher we create a separate
-# custom Check Run named "Preview" with details_url = launcher (replaces the old
-# commit-status). GitHub still renders the unavoidable Actions job check, so to
-# keep it unobtrusive the workflow is named just "App preview" and the job below
-# is named "build" → its row reads "App preview / build" and points at the run
-# logs (useful when a preview fails), while "Preview" is the clean clickable one.
+# CHECKS RENDERING (#256) — what GitHub actually allows:
+#   • A GitHub Actions job ALWAYS emits its own check whose Details points at the
+#     Actions run; that target can't be customised.
+#   • Only a commit status (target_url) or a Check Run (details_url) can carry a
+#     custom link. BUT a Check Run created by the github-actions[bot] app has its
+#     details_url OVERRIDDEN to the internal /runs/<id> page — verified empirically
+#     on a throwaway PR — so it can't link straight to the launcher.
+#   • Therefore the clickable "Preview" row is a COMMIT STATUS (target_url is
+#     honored → Details opens the launcher directly). There's no way to render
+#     literally one row: the Actions job check always exists too. We minimise it
+#     by naming the workflow just "App preview" and the job "build", so its row
+#     reads "App preview / build" → run logs (useful when a preview fails), while
+#     "Preview" is the clean clickable one. (b) name is now simply "App preview".
 #
 # TRIGGER: fully automatic — deploys on every PR open/reopen and re-deploys on
 # every new commit pushed to the PR branch (synchronize). No comment, no label.
@@ -51,7 +55,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
-      checks: write
+      statuses: write
     env:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
       PR: ${{ github.event.pull_request.number }}
@@ -81,28 +85,26 @@ jobs:
             --non-interactive --json > eas-update.json
           node ../../scripts/pr-preview/eas-deeplink.mjs eas-update.json >> "$GITHUB_OUTPUT"
 
-      - name: Publish clickable "Preview" check on PR head
+      - name: Publish clickable "Preview" status on PR head
         uses: actions/github-script@v7
         with:
           script: |
             // The launcher page builds the dev-client deep link + QR from the EAS
-            // update manifest URL passed as ?u=. A custom Check Run with a
-            // details_url renders as a single clickable "Preview" row in the PR's
-            // Checks section — one line that opens the launcher directly. This
-            // replaces the old separate commit-status (#256). No PR comment.
+            // update manifest URL passed as ?u=. A commit status with a target_url
+            // renders as a clickable "Preview" row whose Details opens the launcher
+            // DIRECTLY — verified the only mechanism GitHub honors for a custom
+            // link target (#256): a Check Run created by the github-actions[bot]
+            // app has its details_url overridden to the internal /runs/<id> page,
+            // so it can't link straight to the launcher; a commit status can.
             const manifest = `${{ steps.update.outputs.manifest }}`;
             const target =
               'https://metro.box/preview-launcher.html?u=' + encodeURIComponent(manifest);
-            await github.rest.checks.create({
+            await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              head_sha: context.payload.pull_request.head.sha,
-              name: 'Preview',
-              status: 'completed',
-              conclusion: 'success',
-              details_url: target,
-              output: {
-                title: 'Open dev-client preview',
-                summary: 'Tap to open this PR\'s JS bundle in the Metro dev-client (deep link + QR).',
-              },
+              sha: context.payload.pull_request.head.sha,
+              state: 'success',
+              context: 'Preview',
+              target_url: target,
+              description: 'Open dev-client preview',
             });
