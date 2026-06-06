@@ -9,7 +9,8 @@ import { Title } from '@metro-labs/kit/title';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import { Box } from '../components/layout';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
+import { useLayoutEffect } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { githubLinkOf } from '../lib/githubDetect';
@@ -22,6 +23,16 @@ export default function Diff(): React.ReactElement {
   const p = usePalette();
   const insets = useSafeAreaInsets();
   const { url } = useLocalSearchParams<{ url?: string }>();
+
+  /** Disable the app's full-width swipe-back (the JS card stack's interactive
+   *  horizontal pan, armed from anywhere via gestureResponseDistance:9999 in
+   *  _layout). On this page it captured vertical pans and starved the diff
+   *  ScrollView, so the page wouldn't scroll. The header back arrow still pops
+   *  the route, so losing the gesture here is fine. */
+  const navigation = useNavigation();
+  useLayoutEffect(() => {
+    navigation.setOptions({ gestureEnabled: false });
+  }, [navigation]);
 
   const ref = githubLinkOf(url);
   const { diff, isLoading, isError } = useGithubDiff(ref);
