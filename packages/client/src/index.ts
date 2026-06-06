@@ -11,3 +11,8 @@ export * from './xmtp/humanize';
 export * from './xmtp/poll';
 export * from './embed/detect';
 export * from './stamp/resolve';
+
+// Stage SDK: typed `createStageClient` factory + dependency-inversion
+// interfaces. Pure TypeScript, zero react-native / expo. See ./stage.
+export * from './api';
+export * from './stage';
