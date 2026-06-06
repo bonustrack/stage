@@ -3,12 +3,12 @@
  *  line-budget. Rendering identical. */
 
 import { Pressable } from 'react-native';
-import { Image } from '@metro-labs/kit/image';
 import { Text } from '@metro-labs/kit/text';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';
-import { Col, Row, Box } from '../layout';
-import { NETWORK_LOGO, MAINNET_NETWORK_LOGO, type AssetRow } from './WalletScreen.assets';
+import { Col, Row } from '../layout';
+import { type AssetRow } from './WalletScreen.assets';
+import { TokenAvatar } from './WalletScreen.tokenAvatar';
 import { DANGER } from '../../lib/theme';
 
 /** Wallet value formatting (fmtUsd / splitUsd / fmtBalance) moved into the
@@ -105,31 +105,9 @@ export function TokenRow({ r, head, sub, border, bg, onPress }: { r: AssetRow; o
         borderBottomWidth: 1, borderBottomColor: border,
       }}
     >
-      {/* Token avatar with a small mainnet network-bullet overlay, like
-          Snapshot UI treasury. `resizeMode: contain` so the IPFS logo
-          isn't cropped/zoomed inside the small badge slot. */}
-      <Box style={{ width: 32, height: 32 }}>
-        <Image
-          src={r.logoUrl}
-          style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border }}
-        />
-        {/* Network badge — round chip with a page-bg border ring; the logo
-            FILLS the circle (cover) and is clipped to a full circle by the
-            chip's overflow, so a square logo (e.g. Base) renders as a circle
-            just like Ethereum — identical style for every network. */}
-        <Box style={{
-          position: 'absolute', right: -3, bottom: -3,
-          width: 18, height: 18, borderRadius: 999,
-          borderWidth: 2.5, borderColor: bg, backgroundColor: border,
-          overflow: 'hidden',
-        }}>
-          <Image
-            src={NETWORK_LOGO[r.chainId] ?? MAINNET_NETWORK_LOGO}
-            fit="cover"
-            style={{ width: '100%', height: '100%' }}
-          />
-        </Box>
-      </Box>
+      {/* Token avatar + network badge - shared TokenAvatar (Snapshot-treasury
+          style), reused by the private Activity rows so both read identically. */}
+      <TokenAvatar logoUrl={r.logoUrl} chainId={r.chainId} bg={bg} border={border} />
       {/* Left column — token NAME (top) over price + 24h change (bottom).
           Shielded rows carry a small "Private" pill next to the name. */}
       <Col flex={1} style={{ minWidth: 0 }}>

@@ -19,6 +19,7 @@ import { convOfLine, groupMemberEthAddresses, lineOfConv } from './xmtp';
 import { channelStampSeed } from '@metro-labs/kit/avatar';
 import { getAccountEpoch } from './accountEpoch';
 import { MemoryStore } from './cache';
+import { loadArchivedIds } from './archived';
 
 /** Member-set cache keyed by `${convId}:${accountEpoch}` (#7). Resolving a
  *  group's member eth addresses is the only per-group network work in the common-
@@ -67,10 +68,14 @@ async function memberSetOf(convId: string): Promise<string[]> {
 async function resolveCommonChannels(peerAddress: string): Promise<CommonChannel[]> {
   const peer = peerAddress.toLowerCase();
   await hydrateCachedRows().catch(() => undefined);
+  /** Reuse the SAME archived predicate the channels feed uses (lib/archived):
+   *  device-only archived set. Hide archived channels here too so the profile
+   *  Channels tab matches the home list (no archived rows). */
+  const archived = await loadArchivedIds().catch(() => new Set<string>());
   const rows = getCachedRows() ?? [];
-  /** Group rows only: DMs carry a non-null peerAddress in the cache. */
+  /** Group rows only (DMs carry a non-null peerAddress), minus archived ones. */
   const groups = rows.filter((r): r is CachedRow & { peerAddress: null } =>
-    r.peerAddress == null);
+    r.peerAddress == null && !archived.has(r.convId));
   /** #7: walk all candidate groups' member sets IN PARALLEL (was serial). */
   const resolved = await Promise.all(groups.map(async (row) => {
     try {
