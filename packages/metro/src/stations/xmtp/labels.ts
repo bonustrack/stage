@@ -58,7 +58,7 @@ export function labelsBlob(
 
 /** Parse the {labels, github} we own out of a raw appData string. Tolerant:
  *  empty / old / malformed → { labels: [], github: undefined }. */
-export function readAppData(appData: string | undefined): { labels: string[]; github?: string } {
+export function readAppData(appData: string | undefined): { labels: string[]; github?: string; preview?: string } {
   if (!appData || !appData.trim()) return { labels: [] };
   try {
     const p: unknown = JSON.parse(appData);
@@ -66,7 +66,9 @@ export function readAppData(appData: string | undefined): { labels: string[]; gi
     const rec = p as Record<string, unknown>;
     const github = typeof rec['github'] === 'string' && (rec['github'] as string).trim()
       ? (rec['github'] as string).trim() : undefined;
-    return { labels: cleanLabels(rec['labels']), github };
+    const preview = typeof rec['preview'] === 'string' && (rec['preview'] as string).trim()
+      ? (rec['preview'] as string).trim() : undefined;
+    return { labels: cleanLabels(rec['labels']), github, preview };
   } catch {
     return { labels: [] };
   }
@@ -94,6 +96,11 @@ export function mergeAppData(
       if (g) merged['github'] = g; else delete merged['github'];
       continue;
     }
+    if (k === 'preview') {
+      const p = normalizePreviewUrl(v); // throws on bad url; '' = clear
+      if (p) merged['preview'] = p; else delete merged['preview'];
+      continue;
+    }
     if (v === undefined || v === null) delete merged[k]; // null = clear over the wire
     else merged[k] = v;
   }
@@ -114,5 +121,16 @@ export function normalizeGithubUrl(url: unknown): string {
   if (parsed.hostname !== 'github.com' && parsed.hostname !== 'www.github.com') {
     throw new Error(`url must be a github.com URL: ${trimmed}`);
   }
+  return trimmed;
+}
+
+/** Validate a preview URL / deep link. Returns the normalised value, or throws.
+ *  Empty string is the caller's "clear" sentinel and is allowed through. Accepts
+ *  any parseable URL (http(s), metro://, expo-development-client, etc.). */
+export function normalizePreviewUrl(url: unknown): string {
+  if (typeof url !== 'string') throw new Error('setPreview requires a `preview` string');
+  const trimmed = url.trim();
+  if (!trimmed) return ''; // clear sentinel
+  try { new URL(trimmed); } catch { throw new Error(`invalid preview url: ${trimmed}`); }
   return trimmed;
 }
