@@ -23,6 +23,7 @@ import { ChannelsList, channelRowLayout } from './HomeScreen.list';
 import { useChannelsSync } from './HomeScreen.sync';
 import { LabelFilterSheet, UNLABELED, useIncomingLabelFilter } from './HomeScreen.filter';
 import type { LabelFilterValue } from './HomeScreen.filter';
+import { filterRowsByQuery } from './HomeScreen.search';
 
 /** Re-exported so existing import paths (`./HomeScreen`) stay unchanged. */
 export type { Row } from './HomeScreen.helpers';
@@ -70,6 +71,8 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
   /** Active label filter (null = show all); drives topnav + sortedRows filter. */
   const [labelFilter, setLabelFilter] = useState<LabelFilterValue>(null);
   const [filterSheetOpen, setFilterSheetOpen] = useState<boolean>(false);
+  /** Channels search query (client-side filter, empty = full list). */
+  const [query, setQuery] = useState<string>('');
   /** Apply cross-screen label-filter requests (tapped label chip). */
   useIncomingLabelFilter(setLabelFilter);
   /** Load saved scroll offset once; actual scroll happens in onContentSizeChange. */
@@ -113,6 +116,10 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
     });
   }, [rows, pinned, labelFilter, archived]);
 
+  /** Search query applied on top of the sorted/archived/label-filtered list
+   *  (so search never surfaces hidden channels). Empty query = full list. */
+  const visibleRows = useMemo(() => filterRowsByQuery(sortedRows, query), [sortedRows, query]);
+
   /** Batch-resolve the displayed peers' profiles → avatar cache-busters. */
   const channelProfilesVersion = usePeerProfiles(
     (rows ?? []).flatMap(r => [r.avatarAddress, r.peerAddress, r.lastSenderAddress]),
@@ -153,10 +160,12 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
         panRef={panRef}
         router={router}
         myAddress={myAddress}
-        sortedRows={sortedRows}
+        sortedRows={visibleRows}
         requestCount={requestCount}
         labelFilter={labelFilter}
         onOpenFilter={() => setFilterSheetOpen(true)}
+        query={query}
+        setQuery={setQuery}
         head={head}
         sub={sub}
         border={border}
