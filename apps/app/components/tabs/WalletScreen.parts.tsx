@@ -2,7 +2,8 @@
  *  button, the Tokens|NFTs tabs. Extracted from WalletScreen for lint
  *  line-budget. Rendering identical. */
 
-import { Image, Pressable } from 'react-native';
+import { Pressable } from 'react-native';
+import { Image } from '@metro-labs/kit/image';
 import { Text } from '@metro-labs/kit/text';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';
@@ -109,7 +110,7 @@ export function TokenRow({ r, head, sub, border, bg, onPress }: { r: AssetRow; o
           isn't cropped/zoomed inside the small badge slot. */}
       <Box style={{ width: 32, height: 32 }}>
         <Image
-          source={{ uri: r.logoUrl }}
+          src={r.logoUrl}
           style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border }}
         />
         {/* Network badge — round chip with a page-bg border ring; the logo
@@ -123,8 +124,8 @@ export function TokenRow({ r, head, sub, border, bg, onPress }: { r: AssetRow; o
           overflow: 'hidden',
         }}>
           <Image
-            source={{ uri: NETWORK_LOGO[r.chainId] ?? MAINNET_NETWORK_LOGO }}
-            resizeMode="cover"
+            src={NETWORK_LOGO[r.chainId] ?? MAINNET_NETWORK_LOGO}
+            fit="cover"
             style={{ width: '100%', height: '100%' }}
           />
         </Box>

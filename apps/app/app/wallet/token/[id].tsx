@@ -13,7 +13,8 @@
  *                    Unshield → /wallet/unshield.
  *  Pre-fill is via query params (symbol/chainId) read by each page. */
 
-import { Image, Pressable } from 'react-native';
+import { Pressable } from 'react-native';
+import { Image } from '@metro-labs/kit/image';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import { Box, Col, Row } from '../../../components/layout';
@@ -78,15 +79,15 @@ export default function TokenDetail(): React.ReactElement {
         <Box style={{ width: 72, height: 72 }}>
           {/* r.logoUrl is cached at the 32px LIST size (s=64); re-request it at
               2× the 72px detail size (s=144) so the big logo stays crisp. */}
-          <Image source={{ uri: withStampDisplayPx(r.logoUrl, 72) }}
+          <Image src={withStampDisplayPx(r.logoUrl, 72)}
             style={{ width: 72, height: 72, borderRadius: 999, backgroundColor: border }} />
           <Box style={{
             position: 'absolute', right: -2, bottom: -2,
             width: 30, height: 30, borderRadius: 999,
             borderWidth: 3, borderColor: bg, backgroundColor: border, overflow: 'hidden',
           }}>
-            <Image source={{ uri: NETWORK_LOGO[r.chainId] ?? MAINNET_NETWORK_LOGO }}
-              resizeMode="cover" style={{ width: '100%', height: '100%' }} />
+            <Image src={NETWORK_LOGO[r.chainId] ?? MAINNET_NETWORK_LOGO}
+              fit="cover" style={{ width: '100%', height: '100%' }} />
           </Box>
         </Box>
 

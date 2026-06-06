@@ -1,7 +1,8 @@
 /** Group-detail header editor — image picker, inline name + description editing.
  *  Extracted from group/[convId] for lint line-budget. Rendering identical. */
 
-import { Image, Pressable, TextInput } from 'react-native';
+import { Pressable, TextInput } from 'react-native';
+import { Image } from '@metro-labs/kit/image';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
@@ -63,7 +64,7 @@ export function GroupProfileHeader({ imageUrl, channelId, uploadingImage, insetT
         <Pressable onPress={onTap} onLongPress={onPick} disabled={uploadingImage} hitSlop={8}
           style={{ marginTop: -44, zIndex: 1 }}>
           <Image
-            source={{ uri: imageUrl ? avatarRenderUrl('', imageUrl, 256) : fallbackUri }}
+            src={imageUrl ? avatarRenderUrl('', imageUrl, 256) : fallbackUri}
             style={{
               width: 88, height: 88, borderRadius: Math.round(88 * 0.12),
               backgroundColor: rowBg, borderWidth: 3, borderColor: bg,
