@@ -10,7 +10,13 @@
  *                   exactly how the app presents a person (DmPeerCard style).
  *   - ChannelCard → ChannelRow in group mode (square avatar) inside a bordered
  *                   card, exactly how the app presents a channel (ConvIdCard).
- *   - TokenCard   → TokenRow (the wallet Tokens-tab asset row). */
+ *   - TokenCard   → TokenRow (the wallet Tokens-tab asset row).
+ *   - MessageRow  → MessengerBubble (the Discord-style chat message row used in
+ *                   the conversation feed), shown as an incoming + an outgoing
+ *                   message with sample text + reactions.
+ *   - Composer    → MessengerComposer (the two-line message input/editor),
+ *                   rendered in its default empty state with stubbed handlers so
+ *                   it shows statically without sending or recording. */
 
 import { Box } from '../layout';
 import { Text } from '@metro-labs/kit/text';
@@ -19,11 +25,48 @@ import { ThemeSwitcher } from './ThemeSwitcher';
 import { ChannelRow } from '../ChannelRow';
 import { TokenRow } from '../tabs/WalletScreen.parts';
 import type { AssetRow } from '../tabs/WalletScreen.assets';
+import { MessengerBubble } from '../MessengerBubble';
+import { MessengerComposer } from '../MessengerComposer';
+import type { HistoryEntry } from '../../lib/types';
 import { usePalette, useBlockRadius } from '../../lib/theme';
 
 /** Representative sample data — static, no network. Addresses are real-looking
  *  so the stamp.fyi identicon resolves a distinct avatar per card. */
 const SAMPLE_USER_ADDR = '0x42e167e6bff0a3a701d8fa14f96a0f840eb939df';
+const SAMPLE_SELF_ADDR = '0x2539a8b2bb4f2f0d8f1e9b5d4c3a2b1e0f9d8c7b';
+
+/** Self URI for the showcase — marks SAMPLE_OUTGOING as "the local user's own"
+ *  message (the Discord-style row doesn't restyle own messages, but the prop is
+ *  required by the bubble contract). */
+const SAMPLE_MY_URI = `metro://xmtp/user/self-showcase`;
+
+/** A non-real XMTP line — the composer keys its (async-storage) draft by this id,
+ *  so it stays isolated from any real conversation draft. */
+const SAMPLE_XMTP_LINE = 'metro://xmtp/0xshowcase-components-page';
+
+/** Two static chat messages — an incoming peer message and the local user's own
+ *  reply (with a couple of reactions) so the bubble shows text + reaction pills. */
+const SAMPLE_INCOMING: HistoryEntry = {
+  id: 'showcase-in-1',
+  ts: '2026-06-05T10:00:00.000Z',
+  station: 'xmtp',
+  line: SAMPLE_XMTP_LINE,
+  from: `metro://xmtp/user/${SAMPLE_USER_ADDR}`,
+  fromName: 'vitalik.eth',
+  to: SAMPLE_MY_URI,
+  text: 'gm! the new Components page is looking sharp 👀',
+};
+
+const SAMPLE_OUTGOING: HistoryEntry = {
+  id: 'showcase-out-1',
+  ts: '2026-06-05T10:01:00.000Z',
+  station: 'xmtp',
+  line: SAMPLE_XMTP_LINE,
+  from: SAMPLE_MY_URI,
+  fromName: 'you',
+  to: `metro://xmtp/user/${SAMPLE_USER_ADDR}`,
+  text: 'thanks — flip the theme above to preview every component across modes ✨',
+};
 
 const SAMPLE_TOKEN: AssetRow = {
   symbol: 'ETH',
@@ -113,6 +156,40 @@ export function ComponentsGallery({ dark, head, sub, border, rowBg }: {
           <Box style={{ paddingHorizontal: 14 }}>
             <TokenRow r={SAMPLE_TOKEN} head={head} sub={sub} border={border} bg={bg} onPress={() => {}} />
           </Box>
+        </Box>
+      </Section>
+
+      <Section
+        name="MessageRow"
+        maps="Chat message row (MessengerBubble) — used in the conversation feed"
+        head={head} sub={sub}
+      >
+        <Box radius={blockRadius} style={{ borderWidth: 1, borderColor: border, overflow: 'hidden', paddingVertical: 6 }}>
+          <MessengerBubble
+            entry={SAMPLE_INCOMING}
+            dark={dark}
+            unread={false}
+            myUri={SAMPLE_MY_URI}
+            senderEthAddress={SAMPLE_USER_ADDR}
+          />
+          <MessengerBubble
+            entry={SAMPLE_OUTGOING}
+            dark={dark}
+            unread={false}
+            myUri={SAMPLE_MY_URI}
+            senderEthAddress={SAMPLE_SELF_ADDR}
+            reactions={new Map([['👍', 2], ['🚀', 1]])}
+          />
+        </Box>
+      </Section>
+
+      <Section
+        name="Composer"
+        maps="Message composer (MessengerComposer) — default empty state"
+        head={head} sub={sub}
+      >
+        <Box radius={blockRadius} style={{ borderWidth: 1, borderColor: border, overflow: 'hidden' }}>
+          <MessengerComposer dark={dark} xmtpLine={SAMPLE_XMTP_LINE} />
         </Box>
       </Section>
     </Box>
