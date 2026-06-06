@@ -34,8 +34,9 @@ export function KitPage(): React.ReactElement {
         }
       />
       <ScrollView
+        style={{ flex: 1 }}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 + insets.bottom }}
       >
         <KitGallery dark={dark} head={head} sub={sub} border={border} rowBg={rowBg} />
       </ScrollView>
