@@ -6,6 +6,7 @@ import { Dimensions, Linking, Modal, Pressable, ScrollView } from 'react-native'
 import { Text } from '@metro-labs/kit/text';
 import { Box } from '../layout';
 import { Icon } from '@metro-labs/kit/icon';
+import { Divider } from '@metro-labs/kit/divider';
 import { GithubLogo } from '../GithubLogo';
 import { Avatar } from '../Avatar';
 import { getPeerAvatar } from '../../lib/peerProfiles';
@@ -185,11 +186,11 @@ export function BubbleActionMenu({
             }}
           >
             <ActionRow icon="reply" label="Reply" onPress={onReply} />
-            {target?.text ? <Box style={{ height: 1, backgroundColor: divider, marginLeft: 16 }} /> : null}
+            {target?.text ? <Divider dark={dark} color={divider} style={{ marginLeft: 16 }} /> : null}
             {target?.text ? <ActionRow icon="copy" label="Copy" onPress={onCopy} /> : null}
-            {target?.text ? <Box style={{ height: 1, backgroundColor: divider, marginLeft: 16 }} /> : null}
+            {target?.text ? <Divider dark={dark} color={divider} style={{ marginLeft: 16 }} /> : null}
             {target?.text ? <ActionRow icon="document" label="Select" onPress={onSelect} /> : null}
-            <Box style={{ height: 1, backgroundColor: divider, marginLeft: 16 }} />
+            <Divider dark={dark} color={divider} style={{ marginLeft: 16 }} />
             <ActionRow icon="send" label="Share link" onPress={onShareLink} />
           </Box>
         </Box>
