@@ -173,7 +173,7 @@ function ChannelRowBase({
           {/* Reserve the badge's height (22) regardless of whether one shows so
               rows with/without the unread indicator are the same total height. */}
           <Row align="center" gap={8} mt={4} style={{ minHeight: 22 }}>
-            <Text style={{ color: sub, fontSize: 16, fontFamily: 'Calibre-Medium', flex: 1 }} numberOfLines={1}>
+            <Text style={{ color: sub, fontSize: 17, fontFamily: 'Calibre-Medium', flex: 1 }} numberOfLines={1}>
               {previewText}
             </Text>
             {unreadCount > 0 ? (
