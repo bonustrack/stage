@@ -101,19 +101,26 @@ jobs:
       - run: bun install --frozen-lockfile
 
       # Warm the Metro transform cache. Cold-bundling ~7500 modules is the bulk of
-      # the export time; restoring this dir lets `expo export` (run under the hood
-      # by `eas update`) reuse already-transformed modules across PR runs, so only
-      # the files that actually changed get re-transformed. Keyed on the lockfile
-      # (dep graph) + source-file hashes so it invalidates only when needed;
-      # restore-keys falls back to the most recent cache so it stays warm.
+      # the export time (the Android bundle alone was ~91s); restoring this dir
+      # lets `expo export` reuse already-transformed modules across PR runs, so
+      # only the files that actually changed get re-transformed.
+      #
+      # STABLE KEY (the whole point): the key is the lockfile hash PLUS a constant
+      # epoch only — it deliberately does NOT embed a source-file hash. The old
+      # source-hashed key changed on every PR (different diff = different hash), so
+      # actions/cache never found an exact match and every run was a cold cache
+      # MISS that re-transformed all ~7500 modules. With a stable key the dir is
+      # reused run-to-run; Metro's own per-file content hashing inside the cache
+      # then re-transforms only the handful of files that changed. Bump the epoch
+      # to force a clean rebuild if the cache ever goes bad. restore-keys gives a
+      # lockfile-independent fallback so even a dep bump still seeds most modules.
       - name: Cache Metro transform cache
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/.metro-tmp/metro-cache
-          key: metro-cache-${{ runner.os }}-${{ hashFiles('bun.lock') }}-${{ hashFiles('apps/app/**/*.ts', 'apps/app/**/*.tsx', 'apps/app/**/*.js', 'packages/*/src/**/*.ts', 'packages/*/src/**/*.tsx') }}
+          key: metro-cache-v1-${{ runner.os }}-${{ hashFiles('bun.lock') }}
           restore-keys: |
-            metro-cache-${{ runner.os }}-${{ hashFiles('bun.lock') }}-
-            metro-cache-${{ runner.os }}-
+            metro-cache-v1-${{ runner.os }}-
 
       - name: Publish EAS Update for this PR
         id: update
@@ -122,13 +129,44 @@ jobs:
           set -euo pipefail
           mkdir -p "$TMPDIR"
           BRANCH="pr-${PR}"
-          # `eas update` runs `expo export` under the hood and uploads the same
-          # JS bundle + assets, auto-generating the expo-updates manifest the
-          # dev-client consumes. --non-interactive needs EXPO_TOKEN (set above).
-          # eas-cli is pinned (not @latest) so bunx resolves a single cached
-          # version instead of re-checking the registry for the newest each run.
+          # Two-step export instead of letting `eas update` bundle implicitly, so
+          # we can pass preview-only Metro flags that `eas update` does NOT expose:
+          #
+          #   1. `expo export` builds dist/ with:
+          #      --platform android  : the preview is consumed ONLY by the Android
+          #                            dev-client APK, so bundling iOS (and the web
+          #                            byproduct) is pure waste. (eas update defaults
+          #                            to --platform all = 2-3x the bundle work.)
+          #      --no-minify         : a dev-client preview swaps in this JS at
+          #                            runtime; it does not ship to users, so the
+          #                            terser/minify pass is wasted CPU. Skipping it
+          #                            cuts the export and leaves a larger-but-fine
+          #                            bundle that downloads over the same manifest.
+          #      --no-bytecode       : skip Hermes bytecode compilation (hermesc over
+          #                            the whole bundle). The dev-client loads plain
+          #                            JS for OTA updates; bytecode is a build-time
+          #                            cost with no preview benefit.
+          #      (source maps are OFF by default — we never pass -s — so no extra
+          #       sourcemap emit/upload either.)
+          #
+          #   2. `eas update --skip-bundler --input-dir dist` uploads the dist/ we
+          #      just built and auto-generates the expo-updates manifest the
+          #      dev-client consumes, WITHOUT re-bundling. --non-interactive needs
+          #      EXPO_TOKEN (set above). eas-cli is pinned (not @latest) so bunx
+          #      resolves one cached version instead of re-checking the registry.
+          #
+          # The deep link rides the shared update groupId, unchanged by these flags,
+          # so the launcher still resolves (eas-deeplink.mjs).
+          bunx expo export \
+            --platform android \
+            --no-minify \
+            --no-bytecode \
+            --output-dir dist
           bunx eas-cli@20.1.0 update \
             --branch "$BRANCH" \
+            --platform android \
+            --skip-bundler \
+            --input-dir dist \
             --message "PR #${PR} @ ${{ github.event.pull_request.head.sha }}" \
             --non-interactive --json > eas-update.json
           node ../../scripts/pr-preview/eas-deeplink.mjs eas-update.json >> "$GITHUB_OUTPUT"
@@ -156,5 +194,3 @@ jobs:
               target_url: target,
               description: 'Open dev-client preview',
             });
-
-# warm-cache CI timing probe (remove after measuring)
