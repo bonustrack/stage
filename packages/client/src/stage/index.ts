@@ -3,7 +3,7 @@
 
 export { createStageClient } from './client';
 export type {
-  StageClient, IdentityModule, ApiModule, WalletModule, MessagesModule,
+  StageClient, IdentityModule, ApiModule, WalletModule, MessagesModule, RailgunModule,
 } from './client';
 export type {
   Storage,
