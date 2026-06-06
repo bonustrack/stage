@@ -125,6 +125,10 @@ jobs:
       - name: Publish EAS Update for this PR
         id: update
         working-directory: apps/app
+        # Stamp the preview bundle with the PR head commit so the About page shows
+        # the exact previewed SHA. app.config.js (resolveGitHash) reads GIT_COMMIT.
+        env:
+          GIT_COMMIT: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
           mkdir -p "$TMPDIR"

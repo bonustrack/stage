@@ -1,5 +1,38 @@
 // @ts-check
 /**
+ * Resolve the short git commit SHA for the About page.
+ *
+ * Priority (most authoritative first):
+ *   1. EAS_BUILD_GIT_COMMIT_HASH - set automatically by EAS on cloud builds.
+ *   2. GIT_HASH / GIT_COMMIT     - explicit env from CI (the PR-preview Action
+ *                                  sets GIT_COMMIT to the PR head SHA before the
+ *                                  expo export, so previews carry the right SHA).
+ *   3. `git rev-parse --short HEAD` - local fallback so dev/local builds are
+ *                                     stamped with the working-tree commit.
+ *   4. 'dev' - last resort when none of the above resolve.
+ *
+ * Always normalised to a SHORT (7-char) sha so the About row stays compact.
+ */
+function resolveGitHash() {
+  const fromEnv =
+    process.env.EAS_BUILD_GIT_COMMIT_HASH ||
+    process.env.GIT_HASH ||
+    process.env.GIT_COMMIT;
+  if (fromEnv && fromEnv.length > 0) return fromEnv.slice(0, 7);
+  try {
+    const { execSync } = require('node:child_process');
+    const sha = execSync('git rev-parse --short=7 HEAD', {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+    if (sha.length > 0) return sha;
+  } catch {
+    // not a git checkout (e.g. shallow CI without .git) - fall through to 'dev'
+  }
+  return 'dev';
+}
+
+/**
  * Expo app config — TWO variants that install side-by-side on one device.
  *
  * Variant is selected by the APP_VARIANT env var:
@@ -230,11 +263,10 @@ const config = {
     eas: {
       projectId: '1707f2db-c2b8-4c91-9341-27b1d57d355f',
     },
-    // Git commit hash for the System → About page. EAS sets
-    // EAS_BUILD_GIT_COMMIT_HASH on cloud builds; falls back to a local GIT_HASH
-    // env or 'dev' when running an un-stamped dev bundle.
-    gitHash:
-      process.env.EAS_BUILD_GIT_COMMIT_HASH || process.env.GIT_HASH || 'dev',
+    // Git commit hash for the System -> About page. Resolved by resolveGitHash():
+    // EAS_BUILD_GIT_COMMIT_HASH (cloud builds) -> GIT_HASH / GIT_COMMIT (CI, incl.
+    // the PR-preview Action) -> local `git rev-parse --short HEAD` -> 'dev'.
+    gitHash: resolveGitHash(),
     // Active EAS build profile (development | preview | production), surfaced
     // on the About page when available.
     buildProfile: process.env.EAS_BUILD_PROFILE || 'dev',
