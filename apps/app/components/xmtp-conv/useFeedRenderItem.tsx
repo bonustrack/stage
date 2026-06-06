@@ -11,8 +11,8 @@
 import { useCallback, useMemo } from 'react';
 import { MessengerBubble } from '../MessengerBubble';
 import { previewOf } from './feed-helpers';
-import type { SignatureRequestContent } from '@metro-labs/client/xmtp/sign';
-import type { WalletSendCallsContent } from '@metro-labs/client/xmtp/tx';
+import type { SignatureRequestContent } from '@stage-labs/client/xmtp/sign';
+import type { WalletSendCallsContent } from '@stage-labs/client/xmtp/tx';
 import type { useConversationState } from './useConversationState';
 
 type ConvState = ReturnType<typeof useConversationState>;

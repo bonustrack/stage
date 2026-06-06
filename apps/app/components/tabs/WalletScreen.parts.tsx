@@ -11,9 +11,9 @@ import { NETWORK_LOGO, MAINNET_NETWORK_LOGO, type AssetRow } from './WalletScree
 import { DANGER } from '../../lib/theme';
 
 /** Wallet value formatting (fmtUsd / splitUsd / fmtBalance) moved into the
- *  framework-agnostic Stage SDK (@metro-labs/client). Imported here (this file
+ *  framework-agnostic Stage SDK (@stage-labs/client). Imported here (this file
  *  uses them) and re-exported so existing app imports stay stable. */
-import { fmtUsd, splitUsd, fmtBalance } from '@metro-labs/client/wallet/format';
+import { fmtUsd, splitUsd, fmtBalance } from '@stage-labs/client/wallet/format';
 export { fmtUsd, splitUsd, fmtBalance };
 
 interface Palette { head: string; sub: string; border: string; bg: string; card: string; }

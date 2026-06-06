@@ -1,5 +1,5 @@
 /** Wallet asset registry + network metadata moved into the framework-agnostic
- *  Stage SDK (@metro-labs/client). Re-exported so existing app imports stay
+ *  Stage SDK (@stage-labs/client). Re-exported so existing app imports stay
  *  stable. */
 export {
   MULTICALL3,
@@ -13,4 +13,4 @@ export {
   NATIVE_TOKEN_SENTINEL,
   type Asset,
   type AssetRow,
-} from '@metro-labs/client/wallet/assets';
+} from '@stage-labs/client/wallet/assets';

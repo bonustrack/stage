@@ -106,7 +106,7 @@ apps/app/
 ```
 
 Shared colours + glyphs come from `@metro-labs/kit`; shared client logic comes
-from `@metro-labs/client`.
+from `@stage-labs/client`.
 
 ## Boundaries
 
@@ -114,5 +114,5 @@ from `@metro-labs/client`.
   Less's phone at a new bundler branch.
 - XMTP V3 fresh installs do not automatically backfill old message bodies from
   another installation's local DB; test new messages first.
-- Keep framework-neutral logic in `@metro-labs/client` and design data in
+- Keep framework-neutral logic in `@stage-labs/client` and design data in
   `@metro-labs/kit`; keep React Native rendering in this app.

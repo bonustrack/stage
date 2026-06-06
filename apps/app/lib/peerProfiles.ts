@@ -1,5 +1,5 @@
 /** Peer Snapshot-profile cache. The framework-agnostic core (the batched store,
- *  fetch, and accessors) moved into the Stage SDK (@metro-labs/client); this
+ *  fetch, and accessors) moved into the Stage SDK (@stage-labs/client); this
  *  module re-exports it and keeps only the React `usePeerProfiles` hook, which
  *  subscribes via the SDK's subscribePeerProfiles + bumps a version counter so
  *  rows re-render (usable as FlatList `extraData`). */
@@ -8,7 +8,7 @@ import { useEffect, useReducer } from 'react';
 import {
   ensurePeerProfiles,
   subscribePeerProfiles,
-} from '@metro-labs/client/identity/peerProfiles';
+} from '@stage-labs/client/identity/peerProfiles';
 
 export {
   setPeerProfile,
@@ -19,7 +19,7 @@ export {
   getPeerAvatarCb,
   getPeerAvatar,
   type PeerProfile,
-} from '@metro-labs/client/identity/peerProfiles';
+} from '@stage-labs/client/identity/peerProfiles';
 
 /** Subscribe + fetch: re-renders the caller when the batch resolves. Returns a
  *  version counter usable as FlatList `extraData` so rows re-render too. */

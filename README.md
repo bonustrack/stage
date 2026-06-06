@@ -22,7 +22,7 @@ apps/
 - [`@metro-labs/metro`](packages/metro/README.md) — install with `npm i -g @metro-labs/metro`. Run `metro` to multiplex train events onto stdout, act on conversations with the standardized verbs (`metro send`/`reply`/`react`/`unreact`/`edit`/`delete`/`read`, routed by the line's station), or use the low-level `metro call <train> <action> <args>` / `POST /api/call/<train>/<action>` escape hatch.
 - [`app`](apps/app/README.md) — Expo / React Native companion. View live activity, filter lines, send replies from your phone via the daemon's bearer-token-gated monitor endpoints. Start with `bun --cwd apps/app start`.
 - [`ui`](apps/ui/README.md) — Vue 3 web companion with the same surface. `bun --cwd apps/ui dev` opens the dev server on `localhost:5173`; `bun --cwd apps/ui build` emits a static bundle in `apps/ui/dist/`.
-- [`@metro-labs/client`](packages/client/README.md) — pure shared logic for client apps.
+- [`@stage-labs/client`](packages/client/README.md) — pure shared logic for client apps.
 - [`@metro-labs/kit`](packages/kit/README.md) — shared visual tokens, icon data, and theme contracts.
 
 The monitor endpoints (`/api/state`, `/api/tail` SSE, `/api/call/<train>/<action>`) are documented in

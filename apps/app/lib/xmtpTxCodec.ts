@@ -19,11 +19,11 @@ import type {
 import {
   type WalletSendCallsContent, type TransactionReferenceContent,
   walletSendCallsFallbackText, transactionReferenceFallbackText,
-} from '@metro-labs/client/xmtp/tx';
+} from '@stage-labs/client/xmtp/tx';
 import {
   WALLET_SEND_CALLS_CONTENT_TYPE, TRANSACTION_REFERENCE_CONTENT_TYPE,
   encodeJsonContent, decodeJsonContent,
-} from '@metro-labs/client/xmtp/codecs';
+} from '@stage-labs/client/xmtp/codecs';
 
 export class WalletSendCallsCodec implements JSContentCodec<WalletSendCallsContent> {
   contentType: ContentTypeId = WALLET_SEND_CALLS_CONTENT_TYPE;

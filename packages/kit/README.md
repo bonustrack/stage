@@ -35,12 +35,12 @@ the codebases stay legible side-by-side:
 
 ## Shareable vs framework-specific
 
-**Shareable (lives here or in `@metro-labs/client`):**
+**Shareable (lives here or in `@stage-labs/client`):**
 - Colour tokens, font stacks, avatar-URL helpers
 - SVG path data (HeroIcons)
 - Pure types & prop-shape contracts
 - Pure logic with no UI: profile/Snapshot, XMTP humanisation, embed detection,
-  Stamp resolution → these live in `@metro-labs/client`.
+  Stamp resolution → these live in `@stage-labs/client`.
 
 **Framework-specific (stays in each app):**
 - Anything that renders: `.vue` SFCs, `.tsx` components, the `<svg>`/`<Svg>`

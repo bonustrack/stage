@@ -36,15 +36,15 @@ export interface StreamMsg {
 
 /** `metro://` line-URI helpers (XMTP_USER_PREFIX, lineOfConv, lineOfDmPeer,
  *  convIdOfLine, metroDmPeerOf, metroConvIdOf) moved into the framework-agnostic
- *  Stage SDK (@metro-labs/client). Re-exported so existing app imports stay
+ *  Stage SDK (@stage-labs/client). Re-exported so existing app imports stay
  *  stable. */
 export {
   XMTP_USER_PREFIX, lineOfConv, lineOfDmPeer, convIdOfLine, metroDmPeerOf, metroConvIdOf,
-} from '@metro-labs/client/xmtp/line';
+} from '@stage-labs/client/xmtp/line';
 
 /** Address-display + stamp.fyi avatar helpers (shortAddress, stampAvatarUrl)
- *  moved into the framework-agnostic Stage SDK (@metro-labs/client). Re-exported
+ *  moved into the framework-agnostic Stage SDK (@stage-labs/client). Re-exported
  *  so existing app imports stay stable. */
-export { shortAddress, stampAvatarUrl } from '@metro-labs/client/identity/format';
+export { shortAddress, stampAvatarUrl } from '@stage-labs/client/identity/format';
 
 export type { Conversation, DecodedMessage };

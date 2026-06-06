@@ -9,7 +9,7 @@ import {
   memberInboxToAddressMap, shortAddress,
 } from './xmtp';
 import { readProfile, uploadAvatar } from './profile';
-import type { SnapshotProfile } from '@metro-labs/client/profile/snapshot';
+import type { SnapshotProfile } from '@stage-labs/client/profile/snapshot';
 
 export interface GroupDetail {
   router: ReturnType<typeof useRouter>;

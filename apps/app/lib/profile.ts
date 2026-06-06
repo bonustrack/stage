@@ -8,7 +8,7 @@ import {
   SNAPSHOT_DOMAIN, UPDATE_USER_TYPES, PINEAPPLE_UPLOAD_URL,
   buildUpdateUserMessage, postSignedEnvelope, fetchSnapshotProfile,
   type SnapshotProfile,
-} from '@metro-labs/client/profile/snapshot';
+} from '@stage-labs/client/profile/snapshot';
 
 const PROFILE_CACHE_KEY = 'profile.cache';
 

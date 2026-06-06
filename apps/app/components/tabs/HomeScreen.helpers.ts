@@ -7,7 +7,7 @@ import {
   shortAddress, getLastReadNs,
 } from '../../lib/xmtp';
 import { isMetroControlBody } from '../../lib/push';
-import { previewOfXmtpContent } from '@metro-labs/client/xmtp/humanize';
+import { previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
 import { channelStampSeed } from '@metro-labs/kit/avatar';
 import { labelsOfSyncedGroup } from '../../lib/xmtp.labels';
 import { githubOfSyncedGroup } from '../../lib/xmtp.github';

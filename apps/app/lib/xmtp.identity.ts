@@ -6,7 +6,7 @@
 import { type Conversation } from '@xmtp/react-native-sdk';
 import {
   resolveInboxEthCached, primeInboxEthCache as primeInboxEthCacheRule,
-} from '@metro-labs/client/xmtp/inboxCache';
+} from '@stage-labs/client/xmtp/inboxCache';
 import { getCachedXmtpClient, inboxEthCache } from './xmtp.state';
 import { getOrCreateXmtpClient } from './xmtp.client';
 
@@ -14,7 +14,7 @@ import { getOrCreateXmtpClient } from './xmtp.client';
  *  call, projected to a `{ inboxId → ethAddress }` map. This is the ONLY part of
  *  the resolution that touches the native client; the cache-first RULE
  *  (collect-missing / prime / merge) lives in the Stage SDK
- *  (@metro-labs/client/xmtp/inboxCache) and is shared. */
+ *  (@stage-labs/client/xmtp/inboxCache) and is shared. */
 function inboxEthFetcher(
   client: Awaited<ReturnType<typeof getOrCreateXmtpClient>>,
 ): (ids: string[]) => Promise<Record<string, string>> {

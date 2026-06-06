@@ -1,4 +1,4 @@
-# @metro-labs/client
+# @stage-labs/client
 
 Framework-agnostic TypeScript SDK for the Metro / Stage app logic. It holds the
 shared, platform-independent core that both Metro clients use: the Vue web app
@@ -19,7 +19,7 @@ This is a private workspace package (`"private": true`). Inside the Metro
 monorepo it resolves via the workspace, so apps just import it by name:
 
 ```ts
-import { createStageClient, shortAddress } from '@metro-labs/client';
+import { createStageClient, shortAddress } from '@stage-labs/client';
 ```
 
 The package ships TypeScript source directly (`main`, `module`, and `types` all
@@ -32,34 +32,34 @@ Everything is available from the root entry, but narrow subpaths are exported so
 call sites can keep imports tight:
 
 ```
-@metro-labs/client                 // everything (barrel)
-@metro-labs/client/stage           // createStageClient + interfaces
-@metro-labs/client/types
-@metro-labs/client/api             // ens / etherscan / opensea / coingecko barrel
-@metro-labs/client/api/ens
-@metro-labs/client/api/etherscan
-@metro-labs/client/api/opensea
-@metro-labs/client/api/coingecko
-@metro-labs/client/identity/format        // shortAddress, stampAvatarUrl
-@metro-labs/client/identity/peerProfiles
-@metro-labs/client/profile/snapshot
-@metro-labs/client/stamp/resolve
-@metro-labs/client/wallet/format
-@metro-labs/client/wallet/assets
-@metro-labs/client/wallet/balances
-@metro-labs/client/accounts/types
-@metro-labs/client/accounts/keys
-@metro-labs/client/accounts/registry
-@metro-labs/client/xmtp/humanize
-@metro-labs/client/xmtp/poll
-@metro-labs/client/xmtp/sign
-@metro-labs/client/xmtp/tx
-@metro-labs/client/xmtp/line
-@metro-labs/client/xmtp/envelope
-@metro-labs/client/xmtp/builders
-@metro-labs/client/xmtp/codecs
-@metro-labs/client/xmtp/inboxCache
-@metro-labs/client/embed/detect
+@stage-labs/client                 // everything (barrel)
+@stage-labs/client/stage           // createStageClient + interfaces
+@stage-labs/client/types
+@stage-labs/client/api             // ens / etherscan / opensea / coingecko barrel
+@stage-labs/client/api/ens
+@stage-labs/client/api/etherscan
+@stage-labs/client/api/opensea
+@stage-labs/client/api/coingecko
+@stage-labs/client/identity/format        // shortAddress, stampAvatarUrl
+@stage-labs/client/identity/peerProfiles
+@stage-labs/client/profile/snapshot
+@stage-labs/client/stamp/resolve
+@stage-labs/client/wallet/format
+@stage-labs/client/wallet/assets
+@stage-labs/client/wallet/balances
+@stage-labs/client/accounts/types
+@stage-labs/client/accounts/keys
+@stage-labs/client/accounts/registry
+@stage-labs/client/xmtp/humanize
+@stage-labs/client/xmtp/poll
+@stage-labs/client/xmtp/sign
+@stage-labs/client/xmtp/tx
+@stage-labs/client/xmtp/line
+@stage-labs/client/xmtp/envelope
+@stage-labs/client/xmtp/builders
+@stage-labs/client/xmtp/codecs
+@stage-labs/client/xmtp/inboxCache
+@stage-labs/client/embed/detect
 ```
 
 ## createStageClient
@@ -69,7 +69,7 @@ hidden singletons: the returned client IS the state holder, so agents and tests
 can spin up isolated instances side by side.
 
 ```ts
-import { createStageClient } from '@metro-labs/client';
+import { createStageClient } from '@stage-labs/client';
 
 const stage = createStageClient({
   env: 'production',
@@ -146,7 +146,7 @@ browser ones, and a Node agent supplies its own.
 ### Injecting implementations
 
 ```ts
-import { createStageClient, type MessagingTransport } from '@metro-labs/client';
+import { createStageClient, type MessagingTransport } from '@stage-labs/client';
 
 const messaging: MessagingTransport = {
   selfInboxId: async () => nativeXmtp.inboxId,
@@ -185,7 +185,7 @@ optional `&cb=<cacheBust>` suffix to force a refetch when an avatar changes.
 `shortAddress` and `stampAvatarUrl` are also importable directly:
 
 ```ts
-import { shortAddress, stampAvatarUrl } from '@metro-labs/client/identity/format';
+import { shortAddress, stampAvatarUrl } from '@stage-labs/client/identity/format';
 ```
 
 Peer Snapshot profiles (lazy, batched cache keyed by lower-cased address) live
@@ -207,7 +207,7 @@ await stage.api.getSimplePrices(['ethereum']);           // by CoinGecko coin id
 ```
 
 The underlying clients (`ens`, `etherscan`, `opensea`, `coingecko`) are pure
-HTTP, so they can be imported directly too via `@metro-labs/client/api`.
+HTTP, so they can be imported directly too via `@stage-labs/client/api`.
 
 ### client.wallet
 
@@ -269,7 +269,7 @@ and calls typed methods. Read-only namespaces (`identity`, `api`, `wallet`)
 need only API keys; messaging needs a `MessagingTransport` you provide.
 
 ```ts
-import { createStageClient } from '@metro-labs/client';
+import { createStageClient } from '@stage-labs/client';
 
 const stage = createStageClient({
   env: 'production',

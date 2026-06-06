@@ -24,7 +24,7 @@ import {
 } from './accounts.keys';
 import {
   addLocalAccountToList, buildWalletConnectAccount, resolveActiveAccount,
-} from '@metro-labs/client/accounts/registry';
+} from '@stage-labs/client/accounts/registry';
 
 export { canExportPrivateKey, getPrivateKey, getViemAccount } from './accounts.keys';
 

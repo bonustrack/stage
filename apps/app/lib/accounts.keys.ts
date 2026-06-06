@@ -1,7 +1,7 @@
 /** Private-key STORAGE + signer resolution for the account registry
  *  (see accounts.ts). The pure key RULES (normalizePk, privateKeyFromMnemonic,
  *  canExportPrivateKey) + the storage-key constants moved into the
- *  framework-agnostic Stage SDK (@metro-labs/client); this module keeps only the
+ *  framework-agnostic Stage SDK (@stage-labs/client); this module keeps only the
  *  expo-secure-store-backed reads, re-exporting the pure pieces so call sites
  *  stay stable.
  *
@@ -13,12 +13,12 @@ import './cryptoShim';
 import * as SecureStore from 'expo-secure-store';
 import { privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts';
 import { type Hex } from 'viem';
-import { PK_PREFIX, LEGACY_PK_KEY } from '@metro-labs/client/accounts/keys';
+import { PK_PREFIX, LEGACY_PK_KEY } from '@stage-labs/client/accounts/keys';
 
 export {
   PK_PREFIX, LEGACY_PK_KEY, LEGACY_DB_DIR,
   normalizePk, privateKeyFromMnemonic, canExportPrivateKey,
-} from '@metro-labs/client/accounts/keys';
+} from '@stage-labs/client/accounts/keys';
 
 export async function getPrivateKey(id: string): Promise<Hex | null> {
   const pk = await SecureStore.getItemAsync(PK_PREFIX + id).catch(() => null);

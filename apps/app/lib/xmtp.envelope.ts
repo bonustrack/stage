@@ -1,14 +1,14 @@
 /** Map a decoded XMTP message → the app/daemon `HistoryEntry` envelope.
  *
  *  The pure shaping logic moved into the Stage SDK
- *  (@metro-labs/client/xmtp/envelope `mapDecodedToEnvelope`), which operates on a
+ *  (@stage-labs/client/xmtp/envelope `mapDecodedToEnvelope`), which operates on a
  *  structural `DecodedMessageView`. The native RN `DecodedMessage` satisfies that
  *  view, so this is a thin typed adapter kept for back-compat: every existing
  *  `from './xmtp'` import of `envelopeOfXmtpMessage` keeps resolving. */
 
 import { type DecodedMessage } from '@xmtp/react-native-sdk';
 import type { HistoryEntry } from './types';
-import { mapDecodedToEnvelope, type DecodedMessageView } from '@metro-labs/client/xmtp/envelope';
+import { mapDecodedToEnvelope, type DecodedMessageView } from '@stage-labs/client/xmtp/envelope';
 
 /** Convert a decoded XMTP message into the `HistoryEntry` envelope used by the
  *  daemon-side event log + the MessengerBubble renderer. Delegates to the SDK's

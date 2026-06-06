@@ -4,7 +4,7 @@
 import { getCachedRows } from '../../lib/channelsCache';
 import { getCachedXmtpClient } from '../../lib/xmtp';
 import { getPeerName } from '../../lib/peerProfiles';
-import { previewOfXmtpContent } from '@metro-labs/client/xmtp/humanize';
+import { previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
 
 /** How many recent messages to scan per conversation, and how many conversations
  *  to scan, so message search stays bounded regardless of inbox size. */

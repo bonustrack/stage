@@ -4,7 +4,7 @@
  *  account, POSTs to the Snapshot sequencer. */
 
 import { type SnapshotProfile, updateProfile, uploadAvatar } from '../lib/profile';
-import { PROFILE_FIELD_LIMITS } from '@metro-labs/client/profile/snapshot';
+import { PROFILE_FIELD_LIMITS } from '@stage-labs/client/profile/snapshot';
 import { stampAvatarUrl } from '../lib/xmtp';
 
 const props = defineProps<{ open: boolean; address: string; initial: SnapshotProfile }>();

@@ -20,7 +20,7 @@ import { Image, Pressable } from 'react-native';
 import { Box } from './layout';
 import type { ImageStyle, StyleProp } from 'react-native';
 import { stampAvatarUrl, AVATAR_SIZES, type AvatarSize } from '@metro-labs/kit/avatar';
-import { avatarRenderUrl } from '@metro-labs/client/profile/snapshot';
+import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
 
 /** Fetch size (px) requested when an avatar is opened large — independent of
  *  the displayed size so the fullscreen viewer gets a crisp image. */

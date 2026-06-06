@@ -19,11 +19,11 @@ import type {
 import {
   type SignatureRequestContent, type SignatureReferenceContent,
   signatureRequestFallbackText, signatureReferenceFallbackText,
-} from '@metro-labs/client/xmtp/sign';
+} from '@stage-labs/client/xmtp/sign';
 import {
   SIGNATURE_REQUEST_CONTENT_TYPE, SIGNATURE_REFERENCE_CONTENT_TYPE,
   encodeJsonContent, decodeJsonContent,
-} from '@metro-labs/client/xmtp/codecs';
+} from '@stage-labs/client/xmtp/codecs';
 
 export class SignatureRequestCodec implements JSContentCodec<SignatureRequestContent> {
   contentType: ContentTypeId = SIGNATURE_REQUEST_CONTENT_TYPE;

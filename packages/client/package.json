@@ -1,5 +1,5 @@
 {
-  "name": "@metro-labs/client",
+  "name": "@stage-labs/client",
   "version": "0.1.0",
   "private": true,
   "description": "Framework-agnostic shared logic for the Metro clients (web + mobile): Snapshot profiles, XMTP content humanisation, embed detection, Stamp resolution, and shared types. Pure TypeScript - no Vue / React / react-native.",

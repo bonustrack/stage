@@ -6,13 +6,13 @@
 import { Alert } from 'react-native';
 import { isAddress, parseUnits, toHex } from 'viem';
 import { xmtpSendPoll, xmtpSendTxRequest, xmtpSendSignatureRequest } from '../lib/xmtp';
-import { type PollContent, mintPollId, pollFallbackText } from '@metro-labs/client/xmtp/poll';
+import { type PollContent, mintPollId, pollFallbackText } from '@stage-labs/client/xmtp/poll';
 import {
   type SignatureRequestContent, mintSignatureRequestId, signatureRequestFallbackText,
-} from '@metro-labs/client/xmtp/sign';
+} from '@stage-labs/client/xmtp/sign';
 import {
   type WalletSendCallsContent, walletSendCallsFallbackText,
-} from '@metro-labs/client/xmtp/tx';
+} from '@stage-labs/client/xmtp/tx';
 import { getActiveAccount } from '../lib/accounts';
 import { setLastAttachment } from '../lib/lastAttachment';
 import type { ComposerActionsArgs } from './MessengerComposer.types';

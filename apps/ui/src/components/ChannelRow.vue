@@ -4,7 +4,7 @@
  *  per-file LOC cap. */
 
 import { stampAvatarUrl } from '../lib/xmtp';
-import { avatarRenderUrl } from '@metro-labs/client/profile/snapshot';
+import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
 import { Row, Col } from './layout';
 
 const props = defineProps<{

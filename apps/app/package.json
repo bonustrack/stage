@@ -13,7 +13,7 @@
     "eas-build-post-install": "node ./scripts/install-nodejs-project.js"
   },
   "dependencies": {
-    "@metro-labs/client": "workspace:*",
+    "@stage-labs/client": "workspace:*",
     "@metro-labs/kit": "workspace:*",
     "@railgun-community/shared-models": "7.6.1",
     "@railgun-community/wallet": "10.4.0",

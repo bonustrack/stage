@@ -4,14 +4,14 @@
 
 import {
   buildReaction, buildVote, buildReply, buildStaticAttachment,
-} from '@metro-labs/client/xmtp/builders';
-import { type PollContent } from '@metro-labs/client/xmtp/poll';
+} from '@stage-labs/client/xmtp/builders';
+import { type PollContent } from '@stage-labs/client/xmtp/poll';
 import {
   type SignatureRequestContent, type SignatureReferenceContent,
-} from '@metro-labs/client/xmtp/sign';
+} from '@stage-labs/client/xmtp/sign';
 import {
   type WalletSendCallsContent, type TransactionReferenceContent,
-} from '@metro-labs/client/xmtp/tx';
+} from '@stage-labs/client/xmtp/tx';
 import { convOfLine } from './xmtp.client';
 import {
   POLL_CODEC, SIGNATURE_REQUEST_CODEC, SIGNATURE_REFERENCE_CODEC,
