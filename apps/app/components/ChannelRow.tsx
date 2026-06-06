@@ -61,8 +61,7 @@ export interface ChannelRowProps {
   onLongPress?: () => void;
   /** Pressable style override (the channels tab insets the separator itself). */
   containerStyle?: StyleProp<ViewStyle>;
-  /** Hide the inner row's bottom separator (e.g. when embedded in a bordered
-   *  card where only the card's outer border should show). */
+  /** No-op: rows no longer render a bottom separator. Kept for caller compat. */
   noBorder?: boolean;
 }
 
@@ -118,7 +117,7 @@ function ChannelRowBase({
   title, avatarAddress, avatarUri, cacheBuster, square,
   lastPreview, timestamp, subtitle, unreadCount = 0, markedUnread,
   pinned, hasDraft, showChevron, avatarSize = 44,
-  onPress, onLongPress, containerStyle, labels, onLabelPress, noBorder,
+  onPress, onLongPress, containerStyle, labels, onLabelPress,
 }: ChannelRowProps): React.ReactElement {
   const { link: head, text: sub, bg, border } = usePalette();
   const fg = sub;
@@ -135,11 +134,8 @@ function ChannelRowBase({
         paddingHorizontal: 14,
       }))}
     >
-      {/* Inner row carries the separator: it starts at the avatar's left edge
-          (inset by paddingHorizontal), not the full card width. */}
-      <Row align="center" gap={12} py={9} style={{
-        borderBottomWidth: noBorder ? 0 : 1, borderBottomColor: border,
-      }}>
+      {/* Inner row: no divider line between rows. */}
+      <Row align="center" gap={12} py={9}>
         <Avatar
           imageUri={avatarUri}
           address={!avatarUri && avatarAddress ? avatarAddress : null}
