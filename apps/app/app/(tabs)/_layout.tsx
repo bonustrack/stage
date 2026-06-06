@@ -6,16 +6,11 @@
 import { Box } from '../../components/layout';
 import { Tabs, usePathname } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useSharedValue } from 'react-native-reanimated';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { usePalette } from '../../lib/theme';
 import { TabsPager } from '../../components/SwipeTabs';
-import { LeftDrawer } from '../../components/LeftDrawer';
 
 export default function TabsLayout(): React.ReactElement {
-  /** 0 = drawer closed, 1 = fully open. Shared by the pager (which drives it on a
-   *  Home rightward drag) and the LeftDrawer (which renders it + owns close). */
-  const drawerProgress = useSharedValue(0);
   const pathname = usePathname();
   /** The pager only mounts the five tab bodies (Home/Search/Wallet/Notifications/Profile).
    *  Settings is a non-pager route now → hide the pager overlay there so the real
@@ -83,8 +78,8 @@ export default function TabsLayout(): React.ReactElement {
             }}
           />
         ))}
-        {/* Settings is reachable only from the LeftDrawer now — keep the route
-            (so the drawer can navigate to /settings) but hide it from the bar. */}
+        {/* Settings is reachable only from the Menu page now - keep the route
+            (so /menu can navigate to /settings) but hide it from the bar. */}
         <Tabs.Screen name="settings" options={{ href: null }} />
       </Tabs>
       {/* Pager overlay — covers the scene area (status-bar inset at top, stops
@@ -100,13 +95,9 @@ export default function TabsLayout(): React.ReactElement {
             bottom: tabBarHeight,
           }}
         >
-          <TabsPager drawerProgress={drawerProgress} />
+          <TabsPager />
         </Box>
       ) : null}
-      {/* Left drawer overlay — full screen, ABOVE the pager + tab bar (X-style:
-          the panel + dim backdrop cover most of the screen). pointerEvents is
-          'none' while closed so it never steals taps from the tabs underneath. */}
-      <LeftDrawer progress={drawerProgress} />
     </Box>
   );
 }

@@ -65,9 +65,11 @@ export function ChannelsList({
        *  lives in a horizontal chip bar under the search bar (LabelFilterBar). */}
       <Row align="center" justify="between" px={16} pt={12} pb={10}>
         <Row align="center" gap={8}>
-          {/* Static avatar: the top-left no longer opens the account-switcher
-           *  page (account switching lives in Settings). */}
-          <Avatar address={myAddress} size={24} style={{ backgroundColor: border }} />
+          {/* Avatar opens the Menu page (account switcher + Profile/Settings),
+           *  replacing the former slide-out left sidebar. */}
+          <Pressable onPress={() => router.push('/menu')} hitSlop={8}>
+            <Avatar address={myAddress} size={24} style={{ backgroundColor: border }} />
+          </Pressable>
         </Row>
         <Row align="center" gap={18}>
           {/* Message requests: person icon + count badge (pending 'unknown'
