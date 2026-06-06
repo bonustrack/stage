@@ -2,7 +2,7 @@
  *
  *  Used by BOTH the channels tab (app/(tabs)/index.tsx) and the "Common
  *  channels" section on a peer's profile (CommonChannels.tsx) so the two
- *  surfaces stay visually identical. This component is PRESENTATION ONLY —
+ *  surfaces stay visually identical. This component is PRESENTATION ONLY -
  *  all data/state logic (unread recount, streaming updates, pin/draft state,
  *  profile-name resolution) lives in the caller, which passes the resolved
  *  values down as props.
@@ -27,7 +27,7 @@ export interface ChannelRowProps {
   title: string;
   /** Eth address whose stamp.fyi avatar should render (ignored if avatarUri set). */
   avatarAddress?: string | null;
-  /** Custom/group-uploaded image — takes precedence over avatarAddress. */
+  /** Custom/group-uploaded image - takes precedence over avatarAddress. */
   avatarUri?: string | null;
   /** Stamp cache-buster (pass getPeerAvatarCb(avatarAddress)). */
   cacheBuster?: number | string;
@@ -44,10 +44,10 @@ export interface ChannelRowProps {
   markedUnread?: boolean;
   pinned?: boolean;
   hasDraft?: boolean;
-  /** Group labels (from XMTP appData) to render as compact read-only chips
-   *  inline next to the title (same row as the group name). Groups only — DMs
-   *  pass none. Capped to a few visible with a "+N" overflow pill so the name
-   *  row never overflows; the name itself stays primary (truncates first). */
+  /** Group labels (from XMTP appData) rendered as compact read-only chips on
+   *  the LEFT of the preview line, before the last-message text (groups only;
+   *  DMs pass none). Capped to a few visible + a "+N" pill; the preview text
+   *  fills the remaining width and truncates first. */
   labels?: string[];
   /** Tapping a label chip calls this with the chip's label (the caller
    *  navigates to the Channels tab + applies it as the active filter). When
@@ -70,11 +70,11 @@ export interface ChannelRowProps {
  *  (2) so the chips stay secondary to the group name on the same row. */
 const MAX_VISIBLE_LABELS = 2;
 
-/** Compact, read-only label chips shown INLINE on the name row, immediately to
- *  the right of the group name (groups only). Matches the group-info LabelChip
+/** Compact, read-only label chips shown INLINE on the LEFT of the preview line,
+ *  before the last-message text (groups only). Matches the group-info LabelChip
  *  pill style (rounded, bordered) minus the remove affordance, sized down to
- *  fit beside the name. Caps at MAX_VISIBLE_LABELS + a "+N" pill, and shrinks
- *  before the name does so the name stays the primary element. */
+ *  fit beside the preview. Caps at MAX_VISIBLE_LABELS + a "+N" pill, and stays
+ *  fixed-width so the preview text fills the rest and truncates first. */
 function LabelChips({ labels, fg, sub, rowBg, onLabelPress }: {
   labels: string[]; fg: string; sub: string; rowBg: string;
   onLabelPress?: (label: string) => void;
@@ -161,9 +161,6 @@ function ChannelRowBase({
             >
               {title}
             </Text>
-            {labels && labels.length > 0 ? (
-              <LabelChips labels={labels} fg={fg} sub={sub} rowBg={rowBg} onLabelPress={onLabelPress} />
-            ) : null}
             {/* Flexible spacer pushes the timestamp to the far right edge. */}
             <Spacer />
             {timestamp ? (
@@ -173,6 +170,10 @@ function ChannelRowBase({
           {/* Reserve the badge's height (22) regardless of whether one shows so
               rows with/without the unread indicator are the same total height. */}
           <Row align="center" gap={8} mt={4} style={{ minHeight: 22 }}>
+            {/* Labels on the LEFT; preview text fills the rest, truncates first. */}
+            {labels && labels.length > 0 ? (
+              <LabelChips labels={labels} fg={fg} sub={sub} rowBg={rowBg} onLabelPress={onLabelPress} />
+            ) : null}
             <Text style={{ color: sub, fontSize: 17, fontFamily: 'Calibre-Medium', flex: 1 }} numberOfLines={1}>
               {previewText}
             </Text>
