@@ -16,6 +16,7 @@ import type { Row as RowT } from './HomeScreen.helpers';
 import { HomeEmpty } from './HomeScreen.parts';
 import { LabelFilterControl } from './HomeScreen.filter';
 import type { LabelFilterValue } from './HomeScreen.filter';
+import { ChannelsSearchBar } from './HomeScreen.search';
 
 interface ChannelsListProps {
   panRef?: import('../SwipeTabs.types').SimultaneousRefs;
@@ -27,6 +28,9 @@ interface ChannelsListProps {
   labelFilter: LabelFilterValue;
   /** Opens the label-picker sheet (owned by HomeScreen). */
   onOpenFilter: () => void;
+  /** Channels search query + setter (owned by HomeScreen) → search bar + filter. */
+  query: string;
+  setQuery: (v: string) => void;
   head: string;
   sub: string;
   border: string;
@@ -41,6 +45,7 @@ interface ChannelsListProps {
 
 export function ChannelsList({
   panRef, router, myAddress, sortedRows, requestCount, labelFilter, onOpenFilter,
+  query, setQuery,
   head, sub, border,
   listExtraData, listRef, savedOffsetRef, didRestoreRef, contentHeightRef,
   renderRow, getRowLayout,
@@ -99,6 +104,16 @@ export function ChannelsList({
           </Pressable>
         </Row>
       </Row>
+      {/* Search bar directly under the topnav: filters the rendered channel
+       *  list client-side (title / last message / DM address). */}
+      <ChannelsSearchBar
+        query={query}
+        setQuery={setQuery}
+        head={head}
+        sub={sub}
+        border={border}
+        rowBg={border}
+      />
       <FlatList
         ref={listRef}
         simultaneousHandlers={panRef}
@@ -129,7 +144,7 @@ export function ChannelsList({
         maxToRenderPerBatch={10}
         removeClippedSubviews
         contentContainerStyle={{ paddingBottom: 24 }}
-        ListEmptyComponent={<HomeEmpty sub={sub} />}
+        ListEmptyComponent={<HomeEmpty sub={sub} message={query.trim() ? 'No matches' : undefined} />}
         renderItem={renderRow}
       />
     </>
