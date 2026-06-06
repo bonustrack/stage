@@ -140,7 +140,7 @@ function ChannelRowBase({
           cacheBuster={cacheBuster}
           style={{ backgroundColor: border }}
         />
-        <Col flex={1} style={{ minWidth: 0 }}>
+        <Col flex={1} style={{ minWidth: 0, marginTop: -2 }}>
           <Row align="center" gap={6}>
             {pinned ? <Icon name="mapPin" size={13} color={sub} /> : null}
             {hasDraft ? <Icon name="pencil" size={14} color={sub} /> : null}
@@ -156,7 +156,7 @@ function ChannelRowBase({
             {/* Flexible spacer pushes the timestamp to the far right edge. */}
             <Spacer />
             {timestamp ? (
-              <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{timestamp}</Text>
+              <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium' }}>{timestamp}</Text>
             ) : null}
           </Row>
           {/* Reserve a FIXED 2-line preview block (PREVIEW_BLOCK = 44, i.e. 2
