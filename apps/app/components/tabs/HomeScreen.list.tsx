@@ -16,6 +16,7 @@ import type { Row as RowT } from './HomeScreen.helpers';
 import { HomeEmpty } from './HomeScreen.parts';
 import { LabelFilterBar } from './HomeScreen.labelbar';
 import { ChannelsSearchBar } from './HomeScreen.search';
+import { HomeOverflowMenu } from './HomeScreen.overflow';
 
 interface ChannelsListProps {
   panRef?: import('../SwipeTabs.types').SimultaneousRefs;
@@ -59,9 +60,9 @@ export function ChannelsList({
   const badgeFg = dark ? '#000000' : '#ffffff';
   return (
     <>
-      {/* Home topnav: avatar on the left, archived + requests + "+" on the
-       *  right. The label filter now lives in a horizontal chip bar under the
-       *  search bar (LabelFilterBar), not in the topnav. */}
+      {/* Home topnav: avatar on the left, requests + 3-dot overflow menu on the
+       *  right (Archived + New group moved into the overflow). The label filter
+       *  lives in a horizontal chip bar under the search bar (LabelFilterBar). */}
       <Row align="center" justify="between" px={16} pt={12} pb={10}>
         <Row align="center" gap={8}>
           {/* Static avatar: the top-left no longer opens the account-switcher
@@ -69,12 +70,6 @@ export function ChannelsList({
           <Avatar address={myAddress} size={24} style={{ backgroundColor: border }} />
         </Row>
         <Row align="center" gap={18}>
-          {/* Archived channels: archive-box glyph, placed before the requests
-           *  icon. Tap opens the dedicated Archived view (the feed footer no
-           *  longer surfaces an "Archived (N)" row). */}
-          <Pressable onPress={() => router.push('/xmtp/archived')} hitSlop={8}>
-            <Icon name="archive" size={24} color={head} />
-          </Pressable>
           {/* Message requests: person icon + count badge (pending 'unknown'
            *  consent convs). Badge hidden when 0; tap opens the requests list. */}
           <Pressable onPress={() => router.push('/xmtp/requests')} hitSlop={8} style={{ position: 'relative' }}>
@@ -94,9 +89,13 @@ export function ChannelsList({
               </Box>
             ) : null}
           </Pressable>
-          <Pressable onPress={() => router.push('/xmtp/new-group')} hitSlop={8}>
-            <Icon name="plus" size={26} color={head} />
-          </Pressable>
+          {/* Overflow (3-dot) menu: folds the former Archived + New-group icons
+           *  into a single kebab to declutter the topnav. */}
+          <HomeOverflowMenu
+            color={head}
+            onArchived={() => router.push('/xmtp/archived')}
+            onNewGroup={() => router.push('/xmtp/new-group')}
+          />
         </Row>
       </Row>
       {/* Search bar directly under the topnav: filters the rendered channel
