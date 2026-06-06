@@ -3,7 +3,17 @@ import vueParser from 'vue-eslint-parser';
 import vuePlugin from 'eslint-plugin-vue';
 
 export default tseslint.config(
-  { ignores: ['node_modules/**', 'dist/**', '.vite/**'] },
+  // Generated declaration files are not linted: auto-imports.d.ts and
+  // components.d.ts are emitted by unplugin-auto-import / unplugin-vue-components.
+  {
+    ignores: [
+      'node_modules/**',
+      'dist/**',
+      '.vite/**',
+      'src/auto-imports.d.ts',
+      'src/components.d.ts',
+    ],
+  },
   ...tseslint.configs.recommended,
   {
     files: ['src/**/*.{ts,tsx}'],
