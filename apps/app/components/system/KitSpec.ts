@@ -1,4 +1,4 @@
-/** Declarative prop-spec for the Kit page — the data-driven heart of the
+/** Declarative prop-spec for the Kit page - the data-driven heart of the
  *  Storybook explorer. TS types are erased at runtime, so true reflection is
  *  impossible; instead each kit component is described by an array of strongly
  *  typed control descriptors (a ControlSpec). The generic ControlsForm renders
@@ -17,6 +17,8 @@ import {
   type TextSizeToken, type TextVariant, type TextWeight,
 } from '@metro-labs/kit/text';
 import { type TitleLevel } from '@metro-labs/kit/title';
+import { type CardSize } from '@metro-labs/kit/card';
+import { type ListItemAlign } from '@metro-labs/kit/list-view';
 
 /** One control descriptor. Discriminated on `kind`; `K` is the prop key (keyed
  *  into the component state S), and the value type matches S[K]. */
@@ -135,4 +137,44 @@ export const ICON_SPEC: ControlSpec<IconState> = [
     options: ICON_SIZES, labelOf: (s) => `${s}px`,
   },
   { key: 'color', label: 'Colour', kind: 'enum', default: ICON_COLORS[0], options: ICON_COLORS },
+];
+
+/* -------------------------------------------------------------------- Card */
+
+export interface CardStoryState {
+  size: CardSize;
+  body: string;
+  statusText: string;
+  collapsed: boolean;
+  withActions: boolean;
+  pressable: boolean;
+}
+
+export const CARD_SPEC: ControlSpec<CardStoryState> = [
+  { key: 'size', label: 'Size', kind: 'enum', default: 'md', options: ['sm', 'md', 'lg'] },
+  { key: 'body', label: 'Body', kind: 'string', default: 'Card body text' },
+  { key: 'statusText', label: 'Status', kind: 'string', default: 'metro.box', placeholder: '(none)' },
+  { key: 'collapsed', label: 'Collapsed', kind: 'boolean', default: false },
+  { key: 'withActions', label: 'Confirm / cancel', kind: 'boolean', default: true },
+  { key: 'pressable', label: 'Pressable', kind: 'boolean', default: false },
+];
+
+/* ---------------------------------------------------------------- ListView */
+
+export interface ListViewStoryState {
+  rows: number;
+  align: ListItemAlign;
+  gap: number;
+  limit: number;
+  statusText: string;
+  pressable: boolean;
+}
+
+export const LIST_VIEW_SPEC: ControlSpec<ListViewStoryState> = [
+  { key: 'rows', label: 'Rows', kind: 'enum', default: 4, options: [2, 3, 4, 5], labelOf: (n) => `${n}` },
+  { key: 'align', label: 'Align', kind: 'enum', default: 'center', options: ['start', 'center', 'end'] },
+  { key: 'gap', label: 'Gap', kind: 'enum', default: 12, options: [8, 12, 16], labelOf: (n) => `${n}px` },
+  { key: 'limit', label: 'Limit', kind: 'enum', default: 0, options: [0, 2, 3], labelOf: (n) => (n ? `${n}` : 'none') },
+  { key: 'statusText', label: 'Status', kind: 'string', default: '', placeholder: '(none)' },
+  { key: 'pressable', label: 'Pressable', kind: 'boolean', default: true },
 ];

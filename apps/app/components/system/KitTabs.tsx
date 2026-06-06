@@ -1,4 +1,4 @@
-/** KitTabs — the Storybook-style explorer shell for the Kit page. An underline
+/** KitTabs - the Storybook-style explorer shell for the Kit page. An underline
  *  tab bar (Wallet-page style: bottom-border row, active item gets a 2px head-
  *  coloured underline) with one tab per kit component: Title · Text · Button ·
  *  Icons. Selecting a tab renders ONLY that component's story (live controls +
@@ -12,10 +12,12 @@ import { type ControlPalette } from './KitControls';
 import { KitTitleStory } from './KitTitle.story';
 import { KitTextStory } from './KitText.story';
 import { KitButtonStory } from './KitButton.story';
+import { KitCardStory } from './KitCard.story';
+import { KitListViewStory } from './KitListView.story';
 import { KitIconsStory } from './KitIcons.story';
 import { KitColorsStory } from './KitColors.story';
 
-const TABS = ['Title', 'Text', 'Button', 'Icons', 'Colors'] as const;
+const TABS = ['Title', 'Text', 'Button', 'Card', 'List', 'Icons', 'Colors'] as const;
 type KitTab = (typeof TABS)[number];
 
 function TabBar({ tab, setTab, p }: {
@@ -54,6 +56,8 @@ export function KitTabs({ p }: { p: ControlPalette }): React.ReactElement {
         {tab === 'Title' ? <KitTitleStory p={p} /> : null}
         {tab === 'Text' ? <KitTextStory p={p} /> : null}
         {tab === 'Button' ? <KitButtonStory p={p} /> : null}
+        {tab === 'Card' ? <KitCardStory p={p} /> : null}
+        {tab === 'List' ? <KitListViewStory p={p} /> : null}
         {tab === 'Icons' ? <KitIconsStory p={p} /> : null}
         {tab === 'Colors' ? <KitColorsStory p={p} /> : null}
       </Box>
