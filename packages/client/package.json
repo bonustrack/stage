@@ -17,7 +17,13 @@
     "./xmtp/sign": "./src/xmtp/sign.ts",
     "./xmtp/tx": "./src/xmtp/tx.ts",
     "./embed/detect": "./src/embed/detect.ts",
-    "./stamp/resolve": "./src/stamp/resolve.ts"
+    "./stamp/resolve": "./src/stamp/resolve.ts",
+    "./api": "./src/api/index.ts",
+    "./api/ens": "./src/api/ens.ts",
+    "./api/etherscan": "./src/api/etherscan.ts",
+    "./api/opensea": "./src/api/opensea.ts",
+    "./api/coingecko": "./src/api/coingecko.ts",
+    "./stage": "./src/stage/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
