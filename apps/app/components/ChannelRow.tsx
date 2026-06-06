@@ -70,6 +70,10 @@ export interface ChannelRowProps {
  *  (2) so the chips stay secondary to the group name on the same row. */
 const MAX_VISIBLE_LABELS = 2;
 
+/** Reserved preview height: 2 lines at lineHeight 22 (also clears the 22px
+ *  unread badge). Keeps every row a CONSTANT height for 1 or 2 preview lines. */
+const PREVIEW_BLOCK = 44;
+
 /** Build ROUNDED label chips as INLINE <View>s placed as the FIRST children
  *  INSIDE the preview <Text>. RN supports embedding a <View> inline in a <Text>;
  *  because it flows as inline content, the preview text wraps UNDERNEATH the
@@ -124,8 +128,10 @@ function ChannelRowBase({
         paddingHorizontal: 14,
       }))}
     >
-      {/* Inner row: no divider line between rows. */}
-      <Row align="center" gap={12} py={9}>
+      {/* No divider. Top-aligned (align="start"): avatar + text column pin to
+          the top of a CONSTANT-height row (reserved 2-line preview block keeps
+          every row the same height for 1 vs 2 lines; slack sits at bottom). */}
+      <Row align="start" gap={12} py={9}>
         <Avatar
           imageUri={avatarUri}
           address={!avatarUri && avatarAddress ? avatarAddress : null}
@@ -153,11 +159,11 @@ function ChannelRowBase({
               <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{timestamp}</Text>
             ) : null}
           </Row>
-          {/* Reserve the badge's height (22) regardless of whether one shows so
-              rows with/without the unread indicator are the same total height. */}
-          {/* align-start so the unread badge pins to the FIRST line when the
-              preview wraps to two lines. */}
-          <Row align="start" gap={7} mt={2} style={{ minHeight: 22 }}>
+          {/* Reserve a FIXED 2-line preview block (PREVIEW_BLOCK = 44, i.e. 2
+              lines at lineHeight 22) so a 1-line preview reserves the same
+              space as a 2-line one and the row never shrinks. align-start pins
+              the unread badge to the FIRST line when the preview wraps. */}
+          <Row align="start" gap={7} mt={2} style={{ minHeight: PREVIEW_BLOCK }}>
             {/* ROUNDED chip(s) are INLINE <View>s at the START of the preview
                 <Text>, so the preview flows around them and wraps UNDERNEATH the
                 chip on the 2nd line (single-line rounded pill, text under it). */}
