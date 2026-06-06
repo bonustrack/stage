@@ -11,8 +11,10 @@ import {
 } from '../../lib/xmtp';
 import { setActiveConversation } from '../../modules/metro-pill';
 import { setActiveConvId } from '../../lib/activeConv';
-import { markConvRead, getCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
+import { markConvRead, getCachedRows } from '../../lib/channelsCache';
 import { getGithubLink } from '../../lib/xmtp.github';
+import { getPreviewLink } from '../../lib/xmtp.preview';
+import { useCachedGroupString } from './useCachedGroupString';
 import { getGroupLabels } from '../../lib/xmtp.labels';
 import { convScrollKey, getScrollOffset, flushScrollOffset, markConvAtBottom } from '../../lib/scrollPos';
 import type { HistoryEntry } from '../../lib/types';
@@ -72,20 +74,11 @@ export function useConversationState(convId: string | undefined, focus: string |
   /** Conversation metadata via TanStack Query — cached by convId (groupName:
    *  null = not resolved, '' = no name; isGroup gates the title→/group). */
   const { peerAddr, memberAddrs, inboxToAddr, groupName, groupImage, groupDescription, isGroup } = useConvMeta(convId);
-  /** Linked GitHub issue/PR URL — seed from cache, sync, refresh appData on mount. */
-  const cachedGithub = (cid?: string): string | undefined => {
-    const v = getCachedRows()?.find(r => r.convId === cid)?.github;
-    return typeof v === 'string' && v ? v : undefined;
-  };
-  const [github, setGithub] = useState<string | undefined>(() => cachedGithub(convId));
-  useEffect(() => {
-    const apply = (): void => setGithub(cachedGithub(convId));
-    apply();
-    const unsub = subscribeCachedRows(apply);
-    let cancelled = false;
-    if (isGroup) void getGithubLink(activeLine).then(v => { if (!cancelled) setGithub(v); }).catch(() => undefined);
-    return () => { cancelled = true; unsub(); };
-  }, [convId, activeLine, isGroup]);
+  /** Synced-appData string fields (github link, preview deep link) — each seeds
+   *  from the cached row, then refreshes off the group's appData on mount. github
+   *  drives the topnav GitHub icon; preview drives the Play icon (groups only). */
+  const github = useCachedGroupString(convId, activeLine, isGroup, 'github', getGithubLink);
+  const preview = useCachedGroupString(convId, activeLine, isGroup, 'preview', getPreviewLink);
 
   /** Group label chips for the intro header — seed from cache, refresh on mount. */
   const cachedLabels = (cid?: string): string[] => {
@@ -188,7 +181,7 @@ export function useConversationState(convId: string | undefined, focus: string |
     menuFor, setMenuFor, menuAnchor, setMenuAnchor, overflowOpen, setOverflowOpen,
     selectedForCopy, setSelectedForCopy,
     confirmedIds, optimisticReactions, optimisticRemovals,
-    peerAddr, groupName, groupImage, groupDescription, groupLabels, isGroup, github, senderEthOf,
+    peerAddr, groupName, groupImage, groupDescription, groupLabels, isGroup, github, preview, senderEthOf,
     profilesVersion, mentionCandidates, listRef,
     savedScrollRef, savedScrollLoaded, didRestoreScroll, pinBottomUntil, isAtBottomRef,
     reactions, ownReactions, displayVotes, displayOwnVotes,
