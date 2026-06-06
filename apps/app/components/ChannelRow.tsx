@@ -69,6 +69,43 @@ export interface ChannelRowProps {
  *  (2) so the chips stay secondary to the group name on the same row. */
 const MAX_VISIBLE_LABELS = 2;
 
+/** Compact, read-only ROUNDED label chips on the LEFT of the preview line. A
+ *  real View/Pressable is required for rounded corners (RN ignores borderRadius
+ *  on inline Text), so the chips sit beside the preview. Rounded pill, small
+ *  padding, bg = row border tone, fg = sub. Caps at MAX_VISIBLE_LABELS + "+N". */
+function LabelChips({ labels, fg, sub, rowBg, onLabelPress }: {
+  labels: string[]; fg: string; sub: string; rowBg: string;
+  onLabelPress?: (label: string) => void;
+}): React.ReactElement | null {
+  if (labels.length === 0) return null;
+  const visible = labels.slice(0, MAX_VISIBLE_LABELS);
+  const overflow = labels.length - visible.length;
+  return (
+    <Row align="center" gap={4} style={{ flexWrap: 'nowrap', flexShrink: 0 }}>
+      {visible.map(label => (
+        <Pressable
+          key={label.toLowerCase()}
+          disabled={!onLabelPress}
+          onPress={onLabelPress ? () => onLabelPress(label) : undefined}
+          hitSlop={6}
+          style={({ pressed }) => ({
+            paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999,
+            backgroundColor: rowBg, flexShrink: 0,
+            opacity: pressed && onLabelPress ? 0.6 : 1,
+          })}
+        >
+          <Text style={{ color: fg, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+            {label}
+          </Text>
+        </Pressable>
+      ))}
+      {overflow > 0 ? (
+        <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{`+${overflow}`}</Text>
+      ) : null}
+    </Row>
+  );
+}
+
 /** #6: memoised so a stream tick that re-renders the channels list only
  *  re-renders the rows whose props actually changed (not the whole window).
  *  All props are primitives or stable callbacks (hoisted in the caller). */
@@ -82,8 +119,6 @@ function ChannelRowBase({
   const fg = sub;
   const rowBg = border;
   const previewText = lastPreview && lastPreview.length > 0 ? lastPreview : subtitle ?? '';
-  const visibleLabels = labels ? labels.slice(0, MAX_VISIBLE_LABELS) : [];
-  const labelOverflow = labels ? labels.length - visibleLabels.length : 0;
 
   return (
     <Pressable
@@ -128,28 +163,17 @@ function ChannelRowBase({
               rows with/without the unread indicator are the same total height. */}
           {/* align-start so the unread badge pins to the FIRST line when the
               preview wraps to two lines. */}
-          <Row align="start" gap={8} mt={2} style={{ minHeight: 22 }}>
-            {/* Labels render as a leading INLINE span inside the preview Text so
-                the preview text wraps UNDER the chip (true inline flow, not a
-                2-column row). Nested Text with a backgroundColor flows inline;
-                the chip stays a single line and following text wraps beneath. */}
-            <Text style={{ color: sub, fontSize: 17, fontFamily: 'Calibre-Medium', flex: 1 }} numberOfLines={2} ellipsizeMode="tail">
-              {visibleLabels.map(label => (
-                <Text
-                  key={label.toLowerCase()}
-                  onPress={onLabelPress ? () => onLabelPress(label) : undefined}
-                  style={{
-                    color: fg, fontSize: 13, fontFamily: 'Calibre-Medium',
-                    backgroundColor: rowBg,
-                  }}
-                >
-                  {` ${label} `}
-                </Text>
-              ))}
-              {labelOverflow > 0 ? (
-                <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{` +${labelOverflow}`}</Text>
-              ) : null}
-              {visibleLabels.length > 0 ? '  ' : ''}
+          <Row align="start" gap={7} mt={2} style={{ minHeight: 22 }}>
+            {/* ROUNDED chip(s) pin to the top-left first line (align-start); the
+                preview wraps to their right (BESIDE, not under - RN tradeoff). */}
+            {labels && labels.length > 0 ? (
+              <LabelChips labels={labels} fg={fg} sub={sub} rowBg={rowBg} onLabelPress={onLabelPress} />
+            ) : null}
+            <Text
+              style={{ color: sub, fontSize: 17, fontFamily: 'Calibre-Medium', flex: 1 }}
+              numberOfLines={2}
+              ellipsizeMode="tail"
+            >
               {previewText}
             </Text>
             {unreadCount > 0 ? (
