@@ -6,6 +6,7 @@ import { forwardRef } from 'react';
 import { Pressable, TextInput } from 'react-native';
 import { Icon } from '@metro-labs/kit/icon';
 import { Box, Row } from '../layout';
+import { useBlockRadius } from '../../lib/theme';
 import type { Row as RowT } from './HomeScreen.helpers';
 
 /** Filter the already-sorted (and archive/label-filtered) rows by a free-text
@@ -22,7 +23,7 @@ export function filterRowsByQuery(rows: RowT[], query: string): RowT[] {
   });
 }
 
-/** The search input bar: rounded surface with a leading search glyph and a
+/** The search input bar: block-radius surface with a leading search glyph and a
  *  trailing clear button when non-empty. Styled with app tokens + Calibre. */
 export const ChannelsSearchBar = forwardRef<TextInput, {
   query: string;
@@ -33,13 +34,14 @@ export const ChannelsSearchBar = forwardRef<TextInput, {
   rowBg: string;
 }>(function ChannelsSearchBar(props, ref): React.ReactElement {
   const { head, sub, border, rowBg } = props;
+  const blockRadius = useBlockRadius();
   return (
     <Row align="center" px={12} pt={10} pb={10} style={{
       borderBottomWidth: 1, borderBottomColor: border,
     }}>
       <Box style={{
         flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8,
-        backgroundColor: rowBg, borderRadius: 999,
+        backgroundColor: rowBg, borderRadius: blockRadius,
         paddingHorizontal: 14, paddingVertical: 8,
       }}>
         <Icon name="search" size={18} color={sub} />

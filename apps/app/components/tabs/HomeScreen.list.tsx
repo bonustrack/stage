@@ -61,9 +61,7 @@ export function ChannelsList({
       {/* Home topnav: avatar + label-filter control on the left, requests + "+"
        *  on the right. Tapping the filter control opens the label picker sheet;
        *  when a label is active the control highlights + shows the label text. */}
-      <Row align="center" justify="between" px={16} pt={12} pb={10} style={{
-        borderBottomWidth: 1, borderBottomColor: border,
-      }}>
+      <Row align="center" justify="between" px={16} pt={12} pb={10}>
         <Row align="center" gap={8}>
           {/* Static avatar: the top-left no longer opens the account-switcher
            *  page (account switching lives in Settings). */}
