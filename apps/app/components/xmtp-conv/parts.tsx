@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { Dimensions, Linking, Modal, Pressable, ScrollView } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from '../layout';
 import { Icon } from '@metro-labs/kit/icon';
@@ -16,13 +17,12 @@ import { usePalette } from '../../lib/theme';
 import type { HistoryEntry } from '../../lib/types';
 import { useBlockRadius } from '../../lib/theme';
 
-/** Topnav GitHub button — opens the group's linked GitHub issue/PR (Linear-style)
- *  externally. Rendered only when a link is set (caller gates on isGroup && url).
- *  Shows the real GitHub mark (GithubLogo). Sits just before the ⋯ overflow button. */
+/** Topnav GitHub button — opens the in-app PR diff viewer for the linked PR/issue. */
 export function GithubNavButton({ url, color }: { url: string; color: string }): React.ReactElement {
+  const router = useRouter();
   return (
     <Pressable
-      onPress={() => { void Linking.openURL(url); }}
+      onPress={() => router.push({ pathname: '/diff', params: { url } })}
       hitSlop={8}
       style={{ paddingHorizontal: 6, justifyContent: 'center' }}
     >
