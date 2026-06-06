@@ -10,32 +10,11 @@ import { Col, Row, Box } from '../layout';
 import { NETWORK_LOGO, MAINNET_NETWORK_LOGO, type AssetRow } from './WalletScreen.assets';
 import { DANGER } from '../../lib/theme';
 
-/** Plain `$` (no `US`). `currencyDisplay: 'narrowSymbol'` still resolves to
- *  `US$` on `en-US` system locales (Android default) — we explicitly request
- *  `en` to get the bare `$` symbol, then strip any stray `US` prefix as a
- *  belt-and-suspenders for locales that ignore the hint. */
-export const fmtUsd = (v: number, maxFrac = 2): string => {
-  const s = v.toLocaleString('en', {
-    style: 'currency', currency: 'USD',
-    currencyDisplay: 'narrowSymbol',
-    maximumFractionDigits: maxFrac,
-  });
-  return s.replace(/^US\$/, '$');
-};
-/** Split a formatted USD string into its integer part (incl. currency symbol +
- *  grouping) and its decimal fraction (incl. the leading `.`), so the decimals
- *  can render in a dimmer colour. Returns `dec: ''` when there are no decimals. */
-export const splitUsd = (s: string): { int: string; dec: string } => {
-  const i = s.lastIndexOf('.');
-  return i === -1 ? { int: s, dec: '' } : { int: s.slice(0, i), dec: s.slice(i) };
-};
-export const fmtBalance = (v: string): string => {
-  const n = Number(v);
-  /** Tighter precision for big numbers; more for dust. Keeps the row clean
-   *  without dropping informative digits on, say, 0.0034 ETH. */
-  const max = n >= 1 ? 4 : 6;
-  return n.toLocaleString(undefined, { maximumFractionDigits: max });
-};
+/** Wallet value formatting (fmtUsd / splitUsd / fmtBalance) moved into the
+ *  framework-agnostic Stage SDK (@metro-labs/client). Imported here (this file
+ *  uses them) and re-exported so existing app imports stay stable. */
+import { fmtUsd, splitUsd, fmtBalance } from '@metro-labs/client/wallet/format';
+export { fmtUsd, splitUsd, fmtBalance };
 
 interface Palette { head: string; sub: string; border: string; bg: string; card: string; }
 

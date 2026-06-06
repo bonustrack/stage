@@ -78,29 +78,9 @@ export function metroConvIdOf(text?: string | null): string | null {
   return m ? m[1] : null;
 }
 
-/** Pretty-print a wallet address as `0x1234…abcd`. */
-export function shortAddress(addr: string): string {
-  if (!addr) return '';
-  return addr.length > 10 ? `${addr.slice(0, 6)}…${addr.slice(-4)}` : addr;
-}
-
-/** stamp.fyi avatar URL for an Ethereum address. Matches the host sx-monorepo uses
- *  (`apps/ui/src/helpers/stamp.ts`). The CDN returns a 200 with a generic identicon
- *  when no custom avatar is set, so callers can render this URL directly without
- *  needing a network-error fallback.
- *
- *  Takes the DISPLAY px and internally requests `s = displayPx * 2` so every
- *  call site renders a crisp retina (2×) identicon from a single source of truth
- *  (mirrors `stampAvatarUrl` in @metro-labs/kit/avatar). Pass the on-screen size,
- *  NOT a pre-doubled value.
- *
- *  `cacheBust` is appended verbatim as `&cb=…` — pass a value that changes when
- *  the underlying avatar changes (e.g. the last few chars of the IPFS CID
- *  stored in profile.avatar) so the device + stamp CDN refetch instead of
- *  serving the previous image. */
-export function stampBoxAvatarUrl(address: string, displayPx = 60, cacheBust?: string): string {
-  const base = `https://stamp.fyi/avatar/eth:${address.toLowerCase()}?s=${displayPx * 2}`;
-  return cacheBust ? `${base}&cb=${encodeURIComponent(cacheBust)}` : base;
-}
+/** Address-display + stamp.fyi avatar helpers (shortAddress, stampBoxAvatarUrl)
+ *  moved into the framework-agnostic Stage SDK (@metro-labs/client). Re-exported
+ *  so existing app imports stay stable. */
+export { shortAddress, stampBoxAvatarUrl } from '@metro-labs/client/identity/format';
 
 export type { Conversation, DecodedMessage };

@@ -23,10 +23,21 @@
     "./api/etherscan": "./src/api/etherscan.ts",
     "./api/opensea": "./src/api/opensea.ts",
     "./api/coingecko": "./src/api/coingecko.ts",
-    "./stage": "./src/stage/index.ts"
+    "./stage": "./src/stage/index.ts",
+    "./identity/format": "./src/identity/format.ts",
+    "./identity/peerProfiles": "./src/identity/peerProfiles.ts",
+    "./wallet/format": "./src/wallet/format.ts",
+    "./wallet/assets": "./src/wallet/assets.ts",
+    "./wallet/balances": "./src/wallet/balances.ts",
+    "./accounts/types": "./src/accounts/types.ts",
+    "./accounts/keys": "./src/accounts/keys.ts",
+    "./accounts/registry": "./src/accounts/registry.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "viem": "^2.51.0"
   },
   "devDependencies": {
     "typescript": "~5.9.2"

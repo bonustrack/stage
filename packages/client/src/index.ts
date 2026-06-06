@@ -16,3 +16,13 @@ export * from './stamp/resolve';
 // interfaces. Pure TypeScript, zero react-native / expo. See ./stage.
 export * from './api';
 export * from './stage';
+
+// Stage 2: framework-agnostic identity glue + wallet/accounts pure logic.
+export * from './identity/format';
+export * from './identity/peerProfiles';
+export * from './wallet/format';
+export * from './wallet/assets';
+export * from './wallet/balances';
+export * from './accounts/types';
+export * from './accounts/keys';
+export * from './accounts/registry';

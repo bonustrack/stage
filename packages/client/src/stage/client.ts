@@ -31,6 +31,10 @@ import {
   isDomainLike,
   resolveSearchInputToAddress,
 } from '../stamp/resolve';
+import { shortAddress, stampBoxAvatarUrl } from '../identity/format';
+import { fetchAssetRows, type FetchAssetRowsOptions, type TokenLogoResolver } from '../wallet/balances';
+import { fmtUsd, fmtBalance, splitUsd } from '../wallet/format';
+import type { AssetRow } from '../wallet/assets';
 import type { StageApiKeys, StageClientOptions, StageEnv } from './interfaces';
 
 /** Identity resolution: turn names/domains into addresses and back. All pure
@@ -51,6 +55,10 @@ export interface IdentityModule {
   isAddressLike(input: string | undefined | null): input is string;
   /** True when the input looks like a tld'd handle stamp.fyi can resolve. */
   isDomainLike(input: string | undefined | null): input is string;
+  /** Pretty-print an address as `0x1234…abcd`. */
+  shortAddress(addr: string): string;
+  /** stamp.fyi identicon URL for an address (display px, optional cache-bust). */
+  avatarUrl(address: string, displayPx?: number, cacheBust?: string): string;
 }
 
 /** Read-only on-chain + market data the wallet surfaces use. API keys are
@@ -70,12 +78,28 @@ export interface ApiModule {
   getSimplePrices(ids: string[]): Promise<Record<string, CgPrice>>;
 }
 
+/** Wallet: framework-agnostic balance/asset shaping + value formatting. Key
+ *  storage + signing stay behind the injected SecureStorage / SignerTransport
+ *  interfaces (wired in a later stage); these methods need neither. */
+export interface WalletModule {
+  /** Fetch + shape every tracked asset's balance + USD price for an address.
+   *  The host injects a token-logo resolver (kit's stampTokenUrl on mobile). */
+  fetchAssetRows(address: string, tokenLogo: TokenLogoResolver): Promise<AssetRow[]>;
+  /** Format a USD number as a bare `$` string. */
+  fmtUsd(v: number, maxFrac?: number): string;
+  /** Format a decimal-string token balance for display. */
+  fmtBalance(v: string): string;
+  /** Split a formatted USD string into integer + decimal parts. */
+  splitUsd(s: string): { int: string; dec: string };
+}
+
 /** The Stage client. New namespaces are added as later stages migrate their
  *  modules; the shape stays additive. */
 export interface StageClient {
   readonly env: StageEnv;
   readonly identity: IdentityModule;
   readonly api: ApiModule;
+  readonly wallet: WalletModule;
 }
 
 export function createStageClient(options: StageClientOptions = {}): StageClient {
@@ -89,6 +113,18 @@ export function createStageClient(options: StageClientOptions = {}): StageClient
     resolveSearchInputToAddress,
     isAddressLike,
     isDomainLike,
+    shortAddress,
+    avatarUrl: stampBoxAvatarUrl,
+  };
+
+  const wallet: WalletModule = {
+    fetchAssetRows: (address, tokenLogo) => {
+      const o: FetchAssetRowsOptions = { tokenLogo, coingeckoKey: keys.coingecko };
+      return fetchAssetRows(address, o);
+    },
+    fmtUsd,
+    fmtBalance,
+    splitUsd,
   };
 
   const api: ApiModule = {
@@ -104,5 +140,5 @@ export function createStageClient(options: StageClientOptions = {}): StageClient
     getSimplePrices: ids => getSimplePrices(ids, keys.coingecko),
   };
 
-  return { env, identity, api };
+  return { env, identity, api, wallet };
 }
