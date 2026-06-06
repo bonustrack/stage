@@ -1,21 +1,30 @@
-name: PR JS-bundle preview
+name: App preview
 
-# Per-PR JS-bundle preview for the Metro dev-client (#236).
+# Per-PR JS-bundle preview for the Metro dev-client (#236, #256).
 #
 # What it does: publishes the app's JS bundle as an EAS Update on a per-PR branch
-# and posts a clickable "Preview" commit status on the PR. The status's "Details"
-# link opens an https launcher page (metro.box/preview-launcher.html — a tracked
-# static file in apps/ui/public, deployed durably via Netlify) that
-# builds the dev-client deep link + QR. Less taps Details on a device that has the
-# dev-client APK; the installed app swaps its JS for that PR's bundle — no new APK
-# per PR. No PR comment (keeps the PR feed clean).
+# and surfaces ONE clickable "Preview" row in the PR's Checks. That row is a
+# custom Check Run (Checks API) whose `details_url` opens an https launcher page
+# (metro.box/preview-launcher.html — a tracked static file in apps/ui/public,
+# deployed durably via Netlify) that builds the dev-client deep link + QR. Less
+# taps it on a device that has the dev-client APK; the installed app swaps its JS
+# for that PR's bundle — no new APK per PR. No PR comment (keeps the feed clean).
+#
+# CHECKS RENDERING (#256): a GitHub Actions job ALWAYS produces its own check
+# whose Details link points at the Actions run — that target can't be customised.
+# To give Less one row that clicks straight to the launcher we create a separate
+# custom Check Run named "Preview" with details_url = launcher (replaces the old
+# commit-status). GitHub still renders the unavoidable Actions job check, so to
+# keep it unobtrusive the workflow is named just "App preview" and the job below
+# is named "build" → its row reads "App preview / build" and points at the run
+# logs (useful when a preview fails), while "Preview" is the clean clickable one.
 #
 # TRIGGER: fully automatic — deploys on every PR open/reopen and re-deploys on
 # every new commit pushed to the PR branch (synchronize). No comment, no label.
 #
 # NOTE: this ships JS ONLY. A PR that changes native code (new native modules,
-# app.config native keys, android/ios dirs) needs a fresh APK — see the comment
-# footer. We do NOT gate/skip on native changes; the preview always deploys.
+# app.config native keys, android/ios dirs) needs a fresh APK. We do NOT
+# gate/skip on native changes; the preview always deploys.
 #
 # SAFETY:
 #   • concurrency cancels in-flight runs on rapid pushes (one preview per PR).
@@ -35,14 +44,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  preview:
+  build:
     # Forks can't read EXPO_TOKEN → skip rather than hard-fail.
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: read
-      statuses: write
+      checks: write
     env:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
       PR: ${{ github.event.pull_request.number }}
@@ -72,23 +81,28 @@ jobs:
             --non-interactive --json > eas-update.json
           node ../../scripts/pr-preview/eas-deeplink.mjs eas-update.json >> "$GITHUB_OUTPUT"
 
-      - name: Post clickable Preview status on PR head
+      - name: Publish clickable "Preview" check on PR head
         uses: actions/github-script@v7
         with:
           script: |
             // The launcher page builds the dev-client deep link + QR from the EAS
-            // update manifest URL passed as ?u=. A commit status with a target_url
-            // renders as a clickable "Details" in the PR's checks section — no PR
-            // comment, keeps the feed clean.
+            // update manifest URL passed as ?u=. A custom Check Run with a
+            // details_url renders as a single clickable "Preview" row in the PR's
+            // Checks section — one line that opens the launcher directly. This
+            // replaces the old separate commit-status (#256). No PR comment.
             const manifest = `${{ steps.update.outputs.manifest }}`;
             const target =
               'https://metro.box/preview-launcher.html?u=' + encodeURIComponent(manifest);
-            await github.rest.repos.createCommitStatus({
+            await github.rest.checks.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              sha: context.payload.pull_request.head.sha,
-              state: 'success',
-              context: 'Preview',
-              target_url: target,
-              description: 'Open dev-client preview',
+              head_sha: context.payload.pull_request.head.sha,
+              name: 'Preview',
+              status: 'completed',
+              conclusion: 'success',
+              details_url: target,
+              output: {
+                title: 'Open dev-client preview',
+                summary: 'Tap to open this PR\'s JS bundle in the Metro dev-client (deep link + QR).',
+              },
             });
