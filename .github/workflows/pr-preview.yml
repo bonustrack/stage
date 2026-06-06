@@ -127,8 +127,16 @@ jobs:
           # dev-client consumes. --non-interactive needs EXPO_TOKEN (set above).
           # eas-cli is pinned (not @latest) so bunx resolves a single cached
           # version instead of re-checking the registry for the newest each run.
+          # --platform android: the preview is consumed ONLY by the Android
+          # dev-client APK, so bundling iOS (and the web byproduct) is pure waste.
+          # `eas update` defaults to --platform all, which Metro-bundles every
+          # platform: that double-to-triple bundling of ~7500 modules each was the
+          # bulk of the ~5min export. Android-only roughly halves the bundle work.
+          # The deep link rides the shared update groupId, which is unchanged by a
+          # single-platform export, so the launcher still resolves (eas-deeplink.mjs).
           bunx eas-cli@20.1.0 update \
             --branch "$BRANCH" \
+            --platform android \
             --message "PR #${PR} @ ${{ github.event.pull_request.head.sha }}" \
             --non-interactive --json > eas-update.json
           node ../../scripts/pr-preview/eas-deeplink.mjs eas-update.json >> "$GITHUB_OUTPUT"
