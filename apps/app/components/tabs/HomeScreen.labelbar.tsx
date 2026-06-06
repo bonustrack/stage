@@ -39,7 +39,7 @@ function LabelChip({ label, enabled, onPress, link, fg, rowBg }: {
       onPress={onPress}
       hitSlop={6}
       style={({ pressed }) => ({
-        height: 20, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2,
+        height: 26, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 2,
         justifyContent: 'center',
         backgroundColor: enabled ? link : rowBg,
         opacity: pressed ? 0.7 : 1, flexShrink: 0,
@@ -49,7 +49,7 @@ function LabelChip({ label, enabled, onPress, link, fg, rowBg }: {
         numberOfLines={1}
         style={{
           color: enabled ? '#ffffff' : fg,
-          fontSize: 13,
+          fontSize: 15,
           fontFamily: 'Calibre-Medium',
         }}
       >
