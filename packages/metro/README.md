@@ -1,148 +1,87 @@
-# Metro
+# @metro-labs/metro
 
+> Event-interception wire: supervise train subprocesses, multiplex their JSON event streams, and route outbound actions back in.
+
+[![lines of code](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/bonustrack/metro/main/.github/badges/loc-metro.json)](https://github.com/bonustrack/metro)
 [![npm](https://img.shields.io/npm/v/@metro-labs/metro/beta?label=npm&color=cb3837)](https://www.npmjs.com/package/@metro-labs/metro)
-[![lines of code](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.codetabs.com%2Fv1%2Floc%2F%3Fgithub%3Dbonustrack%2Fmetro%26ignored%3Dapps%2Ctest&query=%24%5B0%5D.linesOfCode&label=lines%20of%20TypeScript&color=blue)](https://github.com/bonustrack/metro)
+[![license](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 
-> **Event-interception wire. Supervises train subprocesses, multiplexes their stdout into one
-> JSON event stream, routes outbound action calls back via stdin. Per-platform code lives in
-> train scripts under `~/.metro/trains/` — outside this repo — written by the user (or agent)
-> on demand.**
+## Overview
 
-Metro is not a framework with platform connectors. Metro is the wire.
+`metro` is the core of the [Metro](https://github.com/bonustrack/metro) monorepo: a small, pure-transport daemon and CLI. It supervises per-platform "train" subprocesses living in `~/.metro/trains/`, multiplexes the JSON events they emit onto a single stdout stream, and forwards outbound action calls back into the matching train's stdin.
 
-```
-[Claude Code session]
+The wire knows nothing about Telegram, Discord, or XMTP. Platform behaviour is written as train scripts (by the user or an agent) on top of the transport this package provides, which keeps the core stable while integrations evolve freely.
 
-$ metro &                              # backgrounded
-$ Monitor( … metro's stdout … )
+## Install
 
->>> {"station":"discord","line":"metro://discord/123…","message_id":"9876",
-     "text":"@metro 5xx spike on /v1/sync — look?",
-     "payload":{"channelId":"123…","guildId":"456…","content":"<@…> 5xx spike…",
-                "mentions":{"users":["<bot-id>"],"roles":[],"everyone":false},…}}
-
-  [I'd grep services/sync.ts, then…]
-  Bash: metro call discord send '{"line":"metro://discord/123…","text":"three deploys in the last 24h…","replyTo":"9876"}'
+```sh
+npm install -g @metro-labs/metro
+# or, from a clone of the monorepo:
+bun install
 ```
 
-You own streaming, tool calls, and reply timing. Metro is the wire.
+## Usage
 
----
+Run the daemon and watch the multiplexed event stream:
 
-## Quickstart
-
-```bash
-npm install -g @metro-labs/metro@beta    # or: bun add -g @metro-labs/metro@beta
-
-# One-time train setup (Telegram — no npm deps needed; uses native fetch)
-mkdir -p ~/.metro && cd ~/.metro && bun init -y
-cp $(npm root -g)/@metro-labs/metro/examples/telegram.ts ~/.metro/trains/
-echo 'TELEGRAM_BOT_TOKEN=your-token' >> ~/.metro/.env
-
-metro doctor                                # verify
-metro                                       # run the daemon
+```sh
+metro
 ```
 
-For Discord, copy the same `telegram.ts` and port it — swap the API base for
-`https://discord.com/api/v10` with `Authorization: Bot $TOKEN`, install
-`discord.js` for the gateway (`cd ~/.metro && bun add discord.js`), and keep
-the same envelope + `op:"call"` ↔ `op:"response"` protocol. See
-[`examples/README.md`](./examples/README.md) for the wire-format reference.
+Send an outbound action to a train via the CLI:
 
-Requires **Bun ≥ 1.3** (trains run under `bun run`). Metro core itself works under Node ≥ 22.
-
----
-
-## Architecture
-
-```
-~/.metro/trains/discord.ts ──> stdout JSON ──┐
-~/.metro/trains/telegram.ts ─> stdout JSON ──┤
-~/.metro/trains/<anything>.ts ─> stdout ─────┼──>  metro daemon ──>  stdout (Monitor / Codex push)
-                                             │                       history.jsonl
-HTTP /wh/<id>  (builtin webhook receiver) ───┤
-IPC `notify`   (builtin cross-user event) ───┘
-
-metro call discord send {…}  ──>  IPC ──>  daemon  ──>  train stdin  ──>  response  ──> CLI stdout
+```sh
+metro send "metro://xmtp/<account>/<conversation>" "hello"
+metro react "metro://xmtp/<account>/<conversation>" <messageId> 👍
+metro call xmtp newGroup '{"addresses":["0x..."],"name":"my group"}'
 ```
 
-Every event metro emits is a `HistoryEntry`. Trains produce the full envelope; metro
-enriches `id`/`display` and appends to `history.jsonl`. Outbound action calls are
-train-defined — metro core knows the protocol (`{op:"call", id, action, args}` → `{op:"response", id, result|error}`),
-not what any specific action does.
+Define a train with the helper:
 
----
+```ts
+import { defineTrain } from '@metro-labs/metro/define-train';
 
-## Train protocol
-
-**Inbound (train → metro stdout)** — one JSON line per event (wire fields are `snake_case`):
-
-```json
-{"station":"discord","line":"metro://discord/123","from":"metro://discord/user/456","from_name":"alice","message_id":"789","text":"hi","is_private":false,"ts":"2026-05-17T18:00:00Z","payload":{...}}
+export default defineTrain({
+  station: 'example',
+  async start({ emit }) {
+    emit({ line: 'metro://example/demo', from: 'someone', text: 'hi' });
+  },
+  actions: {
+    async send({ line, text }) {
+      // deliver `text` to `line` on your platform
+    },
+  },
+});
 ```
 
-**Outbound (metro → train stdin)** — one JSON line per action call:
-
-```json
-{"op":"call","id":"req_abc","action":"send","args":{"line":"metro://discord/123","text":"hi"}}
-```
-
-Train responds on stdout:
-
-```json
-{"op":"response","id":"req_abc","result":{"messageId":"999"}}
-```
-
-See [`examples/telegram.ts`](./examples/telegram.ts) (a self-contained ~110 LOC reference train) and [`examples/README.md`](./examples/README.md) for the full protocol + Discord port notes.
-
----
-
-## CLI
+## Project structure
 
 ```
-metro                                    # start the daemon (foreground)
-metro trains list                        # supervised trains + state
-metro trains new <name>                  # scaffold ~/.metro/trains/<name>.ts from the example
-metro trains restart <name>              # kill + respawn a train (resets backoff)
-metro send  <line> <text> [--reply <id>] [--attach <path|url> ...]   # send (text: inline / @file / -)
-metro reply <line> <msgId> <text>        # reply (sugar for send --reply)
-metro react   <line> <msgId> <emoji>     # add a reaction
-metro unreact <line> <msgId> <emoji>     # remove a reaction
-metro edit   <line> <msgId> <text>       # edit a sent message
-metro delete <line> <msgId>              # delete a message
-metro read   <line> [--limit N] [--before <id>] [--since <ts>]      # read recent messages
-metro call <train> <action> <args>       # low-level escape hatch; args = JSON / @file / - / string
-metro tail [--as=<user-uri>] [--follow]  # subscribe to the event log; claim-aware
-metro history [--limit=50] [--line=…]    # recent history (newest first), filterable
-metro lines                              # recently-seen conversations
-metro claim <line>                       # take exclusive ownership of a line
-metro release <line>                     # release
-metro claims                             # print the claims map
-metro webhook add <label> [--secret=…]   # add an HTTP receive endpoint
-metro webhook list | remove <id>         # manage endpoints
-metro tunnel setup <name> <hostname>     # configure a Cloudflare named tunnel
-metro tunnel status                      # show current tunnel config
-metro setup [skill [clear]]              # status; or install/remove the skill into ~/.claude / ~/.codex
-metro doctor                             # health check (trains, deps, tunnel, webhooks, env vars)
-metro update                             # upgrade in place
+src/
+  cli/            # the `metro` command (send, react, monitor, webhook, tunnel)
+  trains/         # train supervisor + the train<->daemon protocol
+  stations/       # built-in station normalizers (discord, telegram, xmtp)
+  broker/         # claims + history streaming between daemon and clients
+  codex-rc/       # codex bridge (protocol, client)
+  dispatcher/     # outbound action routing
+  schema.ts       # the event + action envelope contract
+  define-train.ts # public helper for authoring trains
+docs/             # protocol + usage docs (shipped with the package)
+examples/         # example train scripts
 ```
 
-The messaging verbs (`send`/`reply`/`react`/`unreact`/`edit`/`delete`/`read`) share
-one canonical envelope and route by the line's station (xmtp/discord/telegram).
-`metro call <train> <action> <args>` stays as the low-level escape hatch for any
-station-specific action the verbs do not cover.
+## Scripts
 
----
+| Script              | Description                                  |
+| ------------------- | -------------------------------------------- |
+| `bun run build`     | Compile `src/` to `dist/` with `tsc`.        |
+| `bun run typecheck` | Type-check without emitting.                 |
+| `bun run lint`      | Lint `src/` and `examples/`.                 |
+| `bun run lint:fix`  | Lint and auto-fix.                           |
+| `bun test`          | Run the test suite in an isolated state dir. |
 
-## State
+## Links
 
-- `~/.metro/trains/` — your train scripts
-- `~/.metro/.env` — your credentials (trains read these)
-- `~/.metro/package.json` — `bun add` here for train deps
-- `$METRO_STATE_DIR` (default `~/.cache/metro/`) — history, claims, cursors, monitor data
-
----
-
-## License
-
-MIT
+- Monorepo: [bonustrack/metro](https://github.com/bonustrack/metro)
+- Consumer: [`apps/api`](../../apps/api) shells the `metro` CLI to create daemon-owned groups
