@@ -14,7 +14,8 @@
  *  that context (common channels) can omit them gracefully. */
 
 import { memo } from 'react';
-import { Pressable } from 'react-native';
+// eslint-disable-next-line no-restricted-imports -- raw View is required as an INLINE element inside <Text> (Box/Row/Col carry layout flex and don't embed inline in text flow)
+import { Pressable, View } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { Avatar } from './Avatar';
@@ -69,41 +70,30 @@ export interface ChannelRowProps {
  *  (2) so the chips stay secondary to the group name on the same row. */
 const MAX_VISIBLE_LABELS = 2;
 
-/** Compact, read-only ROUNDED label chips on the LEFT of the preview line. A
- *  real View/Pressable is required for rounded corners (RN ignores borderRadius
- *  on inline Text), so the chips sit beside the preview. Rounded pill, small
- *  padding, bg = row border tone, fg = sub. Caps at MAX_VISIBLE_LABELS + "+N". */
-function LabelChips({ labels, fg, sub, rowBg, onLabelPress }: {
-  labels: string[]; fg: string; sub: string; rowBg: string;
-  onLabelPress?: (label: string) => void;
-}): React.ReactElement | null {
-  if (labels.length === 0) return null;
+/** Build ROUNDED label chips as INLINE <View>s placed as the FIRST children
+ *  INSIDE the preview <Text>. RN supports embedding a <View> inline in a <Text>;
+ *  because it flows as inline content, the preview text wraps UNDERNEATH the
+ *  chip(s) on the 2nd line (not in a 2-column row beside it). Each chip is a real
+ *  rounded pill (borderRadius 999) so corners render; explicit height + small
+ *  marginRight keeps the baseline/spacing sane on Android. Caps at
+ *  MAX_VISIBLE_LABELS visible + a "+N" pill. */
+function buildLabelChips({ labels, fg, rowBg }: {
+  labels: string[]; fg: string; rowBg: string;
+}): React.ReactNode[] {
   const visible = labels.slice(0, MAX_VISIBLE_LABELS);
   const overflow = labels.length - visible.length;
-  return (
-    <Row align="center" gap={4} style={{ flexWrap: 'nowrap', flexShrink: 0 }}>
-      {visible.map(label => (
-        <Pressable
-          key={label.toLowerCase()}
-          disabled={!onLabelPress}
-          onPress={onLabelPress ? () => onLabelPress(label) : undefined}
-          hitSlop={6}
-          style={({ pressed }) => ({
-            paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999,
-            backgroundColor: rowBg, flexShrink: 0,
-            opacity: pressed && onLabelPress ? 0.6 : 1,
-          })}
-        >
-          <Text style={{ color: fg, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
-            {label}
-          </Text>
-        </Pressable>
-      ))}
-      {overflow > 0 ? (
-        <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{`+${overflow}`}</Text>
-      ) : null}
-    </Row>
-  );
+  const chips = overflow > 0 ? [...visible, `+${overflow}`] : visible;
+  return chips.map((label, i) => (
+    <View
+      key={`${label.toLowerCase()}-${i}`}
+      style={{
+        height: 20, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2,
+        backgroundColor: rowBg, marginRight: 5, justifyContent: 'center',
+      }}
+    >
+      <Text style={{ color: fg, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{label}</Text>
+    </View>
+  ));
 }
 
 /** #6: memoised so a stream tick that re-renders the channels list only
@@ -113,7 +103,7 @@ function ChannelRowBase({
   title, avatarAddress, avatarUri, cacheBuster, square,
   lastPreview, timestamp, subtitle, unreadCount = 0, markedUnread,
   pinned, hasDraft, showChevron, avatarSize = 44,
-  onPress, onLongPress, containerStyle, labels, onLabelPress,
+  onPress, onLongPress, containerStyle, labels,
 }: ChannelRowProps): React.ReactElement {
   const { link: head, text: sub, bg, border } = usePalette();
   const fg = sub;
@@ -164,16 +154,17 @@ function ChannelRowBase({
           {/* align-start so the unread badge pins to the FIRST line when the
               preview wraps to two lines. */}
           <Row align="start" gap={7} mt={2} style={{ minHeight: 22 }}>
-            {/* ROUNDED chip(s) pin to the top-left first line (align-start); the
-                preview wraps to their right (BESIDE, not under - RN tradeoff). */}
-            {labels && labels.length > 0 ? (
-              <LabelChips labels={labels} fg={fg} sub={sub} rowBg={rowBg} onLabelPress={onLabelPress} />
-            ) : null}
+            {/* ROUNDED chip(s) are INLINE <View>s at the START of the preview
+                <Text>, so the preview flows around them and wraps UNDERNEATH the
+                chip on the 2nd line (single-line rounded pill, text under it). */}
             <Text
               style={{ color: sub, fontSize: 17, fontFamily: 'Calibre-Medium', flex: 1 }}
               numberOfLines={2}
               ellipsizeMode="tail"
             >
+              {labels && labels.length > 0
+                ? buildLabelChips({ labels, fg, rowBg })
+                : null}
               {previewText}
             </Text>
             {unreadCount > 0 ? (
