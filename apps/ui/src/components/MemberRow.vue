@@ -3,7 +3,7 @@
  *  button. Extracted from GroupDetail.vue to keep that file under the
  *  per-file LOC cap. */
 
-import { shortAddress, stampBoxAvatarUrl } from '../lib/xmtp';
+import { shortAddress, stampAvatarUrl } from '../lib/xmtp';
 import { Row } from './layout';
 
 const props = defineProps<{
@@ -29,7 +29,7 @@ const emit = defineEmits<{ (e: 'open'): void; (e: 'remove'): void }>();
     :class="{ 'opacity-50': props.removing }"
   >
     <button type="button" class="flex items-center gap-3 flex-1 min-w-0 text-left" @click="emit('open')">
-      <img :src="stampBoxAvatarUrl(props.address, 64)" alt="" class="w-8 h-8 rounded-full bg-metro-border-dark" />
+      <img :src="stampAvatarUrl(props.address, 64)" alt="" class="w-8 h-8 rounded-full bg-metro-border-dark" />
       <div class="flex-1 min-w-0">
         <div class="text-sm text-metro-head-light dark:text-metro-head-dark truncate font-head">
           {{ props.name || shortAddress(props.address) }}{{ props.isSelf ? ' (you)' : '' }}

@@ -12,7 +12,7 @@
  *       so a profile-avatar change cracks the browser cache.
  *    3. Neither → solid placeholder circle (same colour as a loading row).
  *
- *  Replaces ~10 ad-hoc `<Image source={{ uri: stampBoxAvatarUrl(...) }} />`
+ *  Replaces ~10 ad-hoc `<Image source={{ uri: stampAvatarUrl(...) }} />`
  *  call sites that all picked their own size constants and forgot the
  *  cache-buster half the time. */
 

@@ -24,7 +24,7 @@ export function shortAddress(addr: string): string {
  *  the underlying avatar changes (e.g. the last few chars of the IPFS CID
  *  stored in profile.avatar) so the device + stamp CDN refetch instead of
  *  serving the previous image. */
-export function stampBoxAvatarUrl(address: string, displayPx = 60, cacheBust?: string): string {
+export function stampAvatarUrl(address: string, displayPx = 60, cacheBust?: string): string {
   const base = `https://stamp.fyi/avatar/eth:${address.toLowerCase()}?s=${displayPx * 2}`;
   return cacheBust ? `${base}&cb=${encodeURIComponent(cacheBust)}` : base;
 }

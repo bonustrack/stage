@@ -4,7 +4,7 @@
  *  messages. Mirrors apps/app/components/MessengerBubble.tsx so the two
  *  clients look identical. */
 
-import { stampBoxAvatarUrl, XMTP_USER_PREFIX } from '../lib/xmtp';
+import { stampAvatarUrl, XMTP_USER_PREFIX } from '../lib/xmtp';
 import type { HistoryEntry } from '../lib/types';
 import { mapCoordsOf, youtubeIdOf } from '../lib/embedDetect';
 import { renderMarkdown } from '../lib/renderMarkdown';
@@ -113,7 +113,7 @@ function onAvatar(): void {
       @click="onAvatar"
     >
       <img
-        :src="stampBoxAvatarUrl(senderAddress, 48)"
+        :src="stampAvatarUrl(senderAddress, 48)"
         alt=""
         class="w-6 h-6 rounded-full bg-metro-border-dark"
       />

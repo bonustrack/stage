@@ -31,7 +31,7 @@ import {
   isDomainLike,
   resolveSearchInputToAddress,
 } from '../stamp/resolve';
-import { shortAddress, stampBoxAvatarUrl } from '../identity/format';
+import { shortAddress, stampAvatarUrl } from '../identity/format';
 import { fetchAssetRows, type FetchAssetRowsOptions, type TokenLogoResolver } from '../wallet/balances';
 import { fmtUsd, fmtBalance, splitUsd } from '../wallet/format';
 import type { AssetRow } from '../wallet/assets';
@@ -165,7 +165,7 @@ export function createStageClient(options: StageClientOptions = {}): StageClient
     isAddressLike,
     isDomainLike,
     shortAddress,
-    avatarUrl: stampBoxAvatarUrl,
+    avatarUrl: stampAvatarUrl,
   };
 
   const wallet: WalletModule = {

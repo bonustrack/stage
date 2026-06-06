@@ -42,9 +42,9 @@ export {
   XMTP_USER_PREFIX, lineOfConv, lineOfDmPeer, convIdOfLine, metroDmPeerOf, metroConvIdOf,
 } from '@metro-labs/client/xmtp/line';
 
-/** Address-display + stamp.fyi avatar helpers (shortAddress, stampBoxAvatarUrl)
+/** Address-display + stamp.fyi avatar helpers (shortAddress, stampAvatarUrl)
  *  moved into the framework-agnostic Stage SDK (@metro-labs/client). Re-exported
  *  so existing app imports stay stable. */
-export { shortAddress, stampBoxAvatarUrl } from '@metro-labs/client/identity/format';
+export { shortAddress, stampAvatarUrl } from '@metro-labs/client/identity/format';
 
 export type { Conversation, DecodedMessage };
