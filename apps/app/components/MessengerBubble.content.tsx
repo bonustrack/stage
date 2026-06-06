@@ -21,6 +21,7 @@ import { AttachmentView, RemoteAttachmentResolver } from './MessengerBubble.atta
 import { MentionBody, QuestionView } from './MessengerBubble.parts';
 import { PollView } from './MessengerBubble.poll';
 import { SigRequestCard, SigReferenceCard, TxRequestCard, TxReceiptCard } from './MessengerBubble.cards';
+import { headingRules } from './MessengerBubble.headings';
 
 export function BubbleContent({
   entry, dark, pending, fg, sub, replyPreview, onReplyPreviewPress, transcript,
@@ -48,6 +49,9 @@ export function BubbleContent({
     onLinkPress: (url: string): boolean => { void Linking.openURL(url); return false; },
     /** Discord-style: all messages render with the same typography regardless of sender. */
     style: markdownStyles(fg, dark, false),
+    /** Render h1/h2/h3 (and h4-h6) via the Kit Title component so headings use the
+     *  app's heading type scale instead of markdown-display's near-body default. */
+    rules: headingRules(fg, dark),
   };
   return (
     <>
