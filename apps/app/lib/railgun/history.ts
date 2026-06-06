@@ -26,6 +26,7 @@
  *  throws: a chain that errors or has no shielded history is skipped, mirroring
  *  the balance refresh's best-effort posture. */
 import { formatUnits } from 'viem';
+import { stampTokenUrl } from '@metro-labs/kit/avatar';
 import { isBridgeAvailable, engineInit, walletInfo } from './bridge';
 import { sdk } from './bridge/sdk';
 import { deriveRailgunKeyMaterial } from './deriveKeys';
@@ -44,6 +45,9 @@ export interface PrivateActivityRow {
   direction: 'in' | 'out';
   /** Display symbol (ETH / USDC) when known, else a shortened token address. */
   symbol: string;
+  /** stamp.fyi token logo URL (same resolver the wallet token rows use); empty
+   *  string for an unknown token so the avatar renders just its border circle. */
+  logoUrl: string;
   /** Decimal-string amount (formatUnits output), e.g. "1.25". */
   amount: string;
   chainId: number;
@@ -114,6 +118,7 @@ function rowsForItem(net: RailgunNet, item: HistoryItem): PrivateActivityRow[] {
       kind,
       direction,
       symbol: meta?.symbol ?? shortToken(a.tokenAddress),
+      logoUrl: meta ? stampTokenUrl(meta.logoChainId, meta.logoAddress, 32) : '',
       amount,
       chainId: cfg.chainId,
       chainLabel: cfg.label,
