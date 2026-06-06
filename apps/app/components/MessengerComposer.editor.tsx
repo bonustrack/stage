@@ -7,6 +7,7 @@ import { Animated, Pressable, ScrollView, TextInput, type PanResponderInstance }
 import { Text } from '@metro-labs/kit/text';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';
+import { Spacer } from '@metro-labs/kit/spacer';
 import { Box, Row, Col } from './layout';
 import { usePalette, useBlockRadius, useRadius } from '../lib/theme';
 import { ComposerGradient } from './ComposerGradient';
@@ -90,7 +91,7 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
                 : null}
             </>
           )}
-        <Box flex={1} />
+        <Spacer />
         {/** Mic — both record flows, mounted across recording so the gesture survives. */}
         <Animated.View
           {...p.micPanResponder.panHandlers}

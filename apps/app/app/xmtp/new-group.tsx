@@ -12,7 +12,8 @@
  */
 
 import { useCallback, useState } from 'react';
-import { Image, Pressable, TextInput, ScrollView } from 'react-native';
+import { Pressable, TextInput, ScrollView } from 'react-native';
+import { Image } from '@metro-labs/kit/image';
 import * as ImagePicker from 'expo-image-picker';
 import { Text } from '@metro-labs/kit/text';
 import { Title } from '@metro-labs/kit/title';
@@ -107,7 +108,7 @@ export default function NewGroup(): React.ReactElement {
           <Pressable onPress={() => { void pickImage(); }} disabled={creating} hitSlop={8}>
             {image ? (
               <Image
-                source={{ uri: image.uri }}
+                src={image.uri}
                 style={{
                   width: 88, height: 88, borderRadius: Math.round(88 * 0.12),
                   backgroundColor: rowBg, opacity: creating ? 0.5 : 1,

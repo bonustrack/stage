@@ -14,7 +14,8 @@
  *
  *  No bespoke/gold styling — Kit `Text`/`Icon` + the palette tokens only. */
 import { useEffect, useMemo, useState } from 'react';
-import { Image, Pressable } from 'react-native';
+import { Pressable } from 'react-native';
+import { Image } from '@metro-labs/kit/image';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import { Box, Row, Col } from '../../components/layout';
@@ -133,7 +134,7 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
       >
         <Box style={{ width: 28, height: 28 }}>
           <Image
-            source={{ uri: selected?.logoUrl }}
+            src={selected?.logoUrl ?? ''}
             style={{ width: 28, height: 28, borderRadius: 999, backgroundColor: bg }}
           />
           <Box style={{
@@ -142,8 +143,8 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
             overflow: 'hidden',
           }}>
             <Image
-              source={{ uri: NETWORK_LOGO[value.chainId] ?? MAINNET_NETWORK_LOGO }}
-              resizeMode="cover" style={{ width: '100%', height: '100%' }}
+              src={NETWORK_LOGO[value.chainId] ?? MAINNET_NETWORK_LOGO}
+              fit="cover" style={{ width: '100%', height: '100%' }}
             />
           </Box>
         </Box>

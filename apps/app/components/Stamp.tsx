@@ -13,7 +13,8 @@
  *  Round by default (borderRadius = size / 2); pass `borderRadius` to override
  *  (e.g. 0 for a square, or a small radius for a rounded square). */
 
-import { Image, PixelRatio } from 'react-native';
+import { PixelRatio } from 'react-native';
+import { Image } from '@metro-labs/kit/image';
 import type { ImageStyle, StyleProp } from 'react-native';
 
 interface Props {
@@ -50,8 +51,8 @@ export function stampUrl(address: string, size: number, cacheBuster?: number | s
 export function Stamp({ address, size, borderRadius, cacheBuster, style }: Props): React.ReactElement {
   return (
     <Image
-      source={{ uri: stampUrl(address, size, cacheBuster) }}
-      style={[{ width: size, height: size, borderRadius: borderRadius ?? size / 2 }, style]}
+      src={stampUrl(address, size, cacheBuster)}
+      style={[{ width: size, height: size, borderRadius: borderRadius ?? size / 2 }, style] as ImageStyle[]}
     />
   );
 }

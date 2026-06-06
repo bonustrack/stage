@@ -6,7 +6,8 @@
  *  only renders given the pre-extracted id/coords. Keeps the bubble simple
  *  and lets the detection logic stay unit-testable. */
 
-import { Image, Linking } from 'react-native';
+import { Linking } from 'react-native';
+import { Image } from '@metro-labs/kit/image';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from './layout';
 import { MediaCard } from './MediaCard';
@@ -26,9 +27,9 @@ export function YouTubeEmbed({ videoId, dark }: {
     <MediaCard dark={dark} onPress={() => void Linking.openURL(watchUrl)}>
       <Box style={{ aspectRatio: 16 / 9, position: 'relative' }}>
         <Image
-          source={{ uri: thumbUrl }}
+          src={thumbUrl}
+          fit="cover"
           style={{ width: '100%', height: '100%', backgroundColor: '#000000' }}
-          resizeMode="cover"
         />
         {/** Play-button overlay — semi-opaque dark scrim + a centered "▶" so
          *   the thumbnail reads as "tap to watch" at a glance. */}
@@ -68,9 +69,9 @@ export function LocationEmbed({ lat, lng, sourceUrl, dark }: {
     <MediaCard dark={dark} onPress={() => void Linking.openURL(sourceUrl)}>
       <Box style={{ aspectRatio: 1, position: 'relative' }}>
         <Image
-          source={{ uri: tileUrl }}
+          src={tileUrl}
+          fit="cover"
           style={{ width: '100%', height: '100%', backgroundColor: tileBg }}
-          resizeMode="cover"
         />
         <Box style={{
           position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center',

@@ -19,6 +19,7 @@ import { Text } from '@metro-labs/kit/text';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { Avatar } from './Avatar';
 import { Icon } from '@metro-labs/kit/icon';
+import { Spacer } from '@metro-labs/kit/spacer';
 import { Row, Col, Box } from './layout';
 import { usePalette } from '../lib/theme';
 
@@ -164,7 +165,7 @@ function ChannelRowBase({
               <LabelChips labels={labels} fg={fg} sub={sub} rowBg={rowBg} onLabelPress={onLabelPress} />
             ) : null}
             {/* Flexible spacer pushes the timestamp to the far right edge. */}
-            <Box style={{ flex: 1 }} />
+            <Spacer />
             {timestamp ? (
               <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{timestamp}</Text>
             ) : null}
