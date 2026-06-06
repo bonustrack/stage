@@ -1,0 +1,111 @@
+name: Play Store auto-release
+
+# Auto-ships the Stage app (applicationId box.stage) to the Google Play
+# INTERNAL TESTING track on every merge to main that touches app code (#254).
+#
+# What it does, end to end:
+#   1. Builds a signed Android App Bundle (AAB) via EAS cloud build using the
+#      `production` profile (APP_VARIANT=prod = the Stage variant).
+#   2. Submits that AAB to Play internal testing via `eas submit`, using a
+#      Google Play service-account JSON supplied as a CI secret.
+#
+# COST / SPEED WARNING:
+#   This is a FULL NATIVE cloud build (~30–40 min) and consumes EAS build
+#   minutes (free-tier monthly cap, then pay-as-you-go). It is therefore
+#   path-filtered to `apps/app/**` so docs-only, ci-only, or backend-only
+#   commits do NOT trigger a build. It is NOT a JS-only OTA update — for that
+#   see pr-preview.yml / EAS Update.
+#
+# versionCode:
+#   eas.json sets `cli.appVersionSource: "remote"`, so EAS owns versionCode and
+#   auto-increments it on every `production` build (autoIncrement: true). No
+#   manual bump, no app.config edit per release. (First remote build seeds from
+#   the local versionCode in app.config.js, then increments.)
+#
+# PREREQUISITE (one-time manual setup — see PR/issue #254):
+#   Add repo secret GOOGLE_PLAY_SERVICE_ACCOUNT_JSON = the full JSON of a Google
+#   Play service account granted "Release to testing tracks" perms. Without it,
+#   the submit step fails. EXPO_TOKEN already exists in the repo.
+
+on:
+  push:
+    branches: [main]
+    # Only rebuild when the app itself changes — native builds are expensive.
+    paths:
+      - 'apps/app/**'
+  workflow_dispatch:
+
+# Never let two merges submit overlapping builds to the same track. Queue them
+# (cancel-in-progress: false) so an in-flight release finishes before the next.
+concurrency:
+  group: play-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      APP_VARIANT: prod
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.9
+
+      - run: bun install --frozen-lockfile
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Guard — require Play service-account secret
+        env:
+          SA_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -z "${SA_JSON:-}" ]; then
+            echo "::error::GOOGLE_PLAY_SERVICE_ACCOUNT_JSON secret is not set."
+            echo "::error::Add it in repo Settings → Secrets → Actions (see issue #254). Skipping release."
+            exit 1
+          fi
+
+      - name: Write Play service-account key
+        env:
+          SA_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+        # eas.json submit.production.android.serviceAccountKeyPath points at
+        # ./play-service-account.json relative to apps/app (the working dir of
+        # the submit step), so write it there.
+        run: |
+          printf '%s' "$SA_JSON" > apps/app/play-service-account.json
+          # Sanity: must be valid JSON or eas submit will fail cryptically.
+          jq empty apps/app/play-service-account.json
+
+      - name: Build signed AAB (EAS cloud, Stage variant)
+        id: build
+        working-directory: apps/app
+        run: |
+          set -euo pipefail
+          # production profile = AAB (default buildType for production), prod
+          # variant via APP_VARIANT. --wait blocks until the cloud build is done.
+          OUT=$(eas build --platform android --profile production --non-interactive --json --wait)
+          echo "$OUT"
+          ID=$(echo "$OUT" | jq -r '.[0].id')
+          if [ -z "$ID" ] || [ "$ID" = "null" ]; then
+            echo "::error::EAS build produced no build id"; exit 1
+          fi
+          echo "build_id=$ID" >> "$GITHUB_OUTPUT"
+
+      - name: Submit AAB to Play internal track
+        working-directory: apps/app
+        run: |
+          set -euo pipefail
+          # Submit the build we just produced (by id) to the internal track.
+          # Track + serviceAccountKeyPath come from eas.json submit.production.
+          eas submit --platform android --profile production \
+            --id "${{ steps.build.outputs.build_id }}" --non-interactive
+
+      - name: Scrub service-account key
+        if: always()
+        run: rm -f apps/app/play-service-account.json

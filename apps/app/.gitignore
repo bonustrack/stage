@@ -39,3 +39,6 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Google Play service-account key written at CI runtime (play-release.yml)
+play-service-account.json
