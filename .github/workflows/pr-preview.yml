@@ -1,56 +1,38 @@
-name: App preview
+name: App preview (manual fallback)
 
 # Per-PR JS-bundle preview for the Metro dev-client (#236, #256).
 #
-# What it does: publishes the app's JS bundle as an EAS Update on a per-PR branch
-# and surfaces a clickable "Preview" row on the PR whose Details opens an https
-# launcher page (metro.box/preview-launcher.html — a tracked static file in
-# apps/ui/public, deployed durably via Netlify) that builds the dev-client deep
-# link + QR. Less taps it on a device that has the dev-client APK; the installed
-# app swaps its JS for that PR's bundle — no new APK per PR. No PR comment.
+# ⚠️ NO LONGER THE PRIMARY PATH (#256). The single-row preview now runs on the
+# metro DAEMON (scripts/pr-preview/daemon-watcher.mjs), triggered by the existing
+# GitHub webhook — exactly like Netlify, which builds off-Actions and reports a
+# single GitHub check. Running the build as a GitHub Actions workflow ALWAYS adds
+# a second, uncustomisable Actions-job check row to the PR; moving it onto the
+# daemon eliminates that row, leaving only the clean clickable "Preview" commit
+# status. See scripts/pr-preview/daemon-watcher.mjs for the design + run docs.
 #
-# CHECKS RENDERING (#256) — what GitHub actually allows:
-#   • A GitHub Actions job ALWAYS emits its own check whose Details points at the
-#     Actions run; that target can't be customised.
-#   • Only a commit status (target_url) or a Check Run (details_url) can carry a
-#     custom link. BUT a Check Run created by the github-actions[bot] app has its
-#     details_url OVERRIDDEN to the internal /runs/<id> page — verified empirically
-#     on a throwaway PR — so it can't link straight to the launcher.
-#   • Therefore the clickable "Preview" row is a COMMIT STATUS (target_url is
-#     honored → Details opens the launcher directly). There's no way to render
-#     literally one row: the Actions job check always exists too. We minimise it
-#     by naming the workflow just "App preview" and the job "build", so its row
-#     reads "App preview / build" → run logs (useful when a preview fails), while
-#     "Preview" is the clean clickable one. (b) name is now simply "App preview".
+# This workflow is KEPT as a MANUAL fallback only (workflow_dispatch): if the
+# daemon is down, you can publish a PR's preview by dispatching this with the PR
+# number. It no longer runs automatically on pull_request events, so it adds NO
+# extra check row to PRs in normal operation.
 #
-# TRIGGER: fully automatic — deploys on every PR open/reopen and re-deploys on
-# every new commit pushed to the PR branch (synchronize). No comment, no label.
+# What it does: publishes the app's JS bundle as an EAS Update on branch pr-<n>
+# and POSTs a clickable "Preview" COMMIT STATUS whose Details opens the https
+# launcher (metro.box/preview-launcher.html?u=<manifest>) — same contract the
+# daemon watcher uses, so manual + automatic produce identical results.
 #
-# NOTE: this ships JS ONLY. A PR that changes native code (new native modules,
-# app.config native keys, android/ios dirs) needs a fresh APK. We do NOT
-# gate/skip on native changes; the preview always deploys.
-#
-# SAFETY:
-#   • concurrency cancels in-flight runs on rapid pushes (one preview per PR).
-#   • fork PRs are skipped — they have no access to EXPO_TOKEN, so the publish
-#     would hard-fail; the job guard short-circuits before any work.
-#
-# REQUIRES (native, one-time): the dev-client APK must include `expo-updates`.
-# Until that APK is installed, the deep link has no updates client to load it.
+# NOTE: JS ONLY. Native changes still need a fresh APK. Requires (native,
+# one-time): the dev-client APK must include `expo-updates`.
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
-
-concurrency:
-  # One preview build per PR at a time; newer trigger cancels the in-flight one.
-  group: pr-preview-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: PR number to publish a preview for
+        required: true
+        type: string
 
 jobs:
   build:
-    # Forks can't read EXPO_TOKEN → skip rather than hard-fail.
-    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -58,11 +40,22 @@ jobs:
       statuses: write
     env:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-      PR: ${{ github.event.pull_request.number }}
+      PR: ${{ github.event.inputs.pr }}
     steps:
+      - name: Resolve PR head sha
+        id: head
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner, repo: context.repo.repo,
+              pull_number: Number(process.env.PR),
+            });
+            core.setOutput('sha', pr.head.sha);
+
       - uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ steps.head.outputs.sha }}
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -81,7 +74,7 @@ jobs:
           # dev-client consumes. --non-interactive needs EXPO_TOKEN (set above).
           bunx eas-cli@latest update \
             --branch "$BRANCH" \
-            --message "PR #${PR} @ ${{ github.event.pull_request.head.sha }}" \
+            --message "PR #${PR} @ ${{ steps.head.outputs.sha }}" \
             --non-interactive --json > eas-update.json
           node ../../scripts/pr-preview/eas-deeplink.mjs eas-update.json >> "$GITHUB_OUTPUT"
 
@@ -102,7 +95,7 @@ jobs:
             await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              sha: context.payload.pull_request.head.sha,
+              sha: `${{ steps.head.outputs.sha }}`,
               state: 'success',
               context: 'Preview',
               target_url: target,

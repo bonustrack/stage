@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  launchd unit for the single-row PR-preview watcher (#256).
+  Install:
+    cp scripts/pr-preview/com.metro.preview-watcher.plist ~/Library/LaunchAgents/
+    # edit WorkingDirectory below to your metro checkout, then:
+    launchctl load ~/Library/LaunchAgents/com.metro.preview-watcher.plist
+  Logs: /tmp/metro-preview-watcher.{out,err}.log
+  EXPO_TOKEN is read from ~/.config/metro/.env by the script; GITHUB_TOKEN falls
+  back to `gh auth token`. Both `node` and `metro` + `gh` + `bunx` must be on PATH.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.metro.preview-watcher</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/env</string>
+    <string>node</string>
+    <string>scripts/pr-preview/daemon-watcher.mjs</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>/Users/tony/work/metro</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/tmp/metro-preview-watcher.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/metro-preview-watcher.err.log</string>
+</dict>
+</plist>
