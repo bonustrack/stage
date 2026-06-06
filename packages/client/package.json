@@ -36,7 +36,8 @@
     "./wallet/balances": "./src/wallet/balances.ts",
     "./accounts/types": "./src/accounts/types.ts",
     "./accounts/keys": "./src/accounts/keys.ts",
-    "./accounts/registry": "./src/accounts/registry.ts"
+    "./accounts/registry": "./src/accounts/registry.ts",
+    "./railgun": "./src/railgun/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
