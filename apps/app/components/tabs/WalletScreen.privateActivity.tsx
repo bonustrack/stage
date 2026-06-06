@@ -19,12 +19,18 @@
 
 import { useEffect, useState } from 'react';
 import { Text } from '@metro-labs/kit/text';
-import { Icon } from '@metro-labs/kit/icon';
+import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Col, Row, Box } from '../layout';
+import { TokenAvatar } from './WalletScreen.tokenAvatar';
 import {
   fetchPrivateActivity,
   type PrivateActivityRow,
 } from '../../lib/railgun/history';
+
+/** The shield-check glyph the app already uses to mark Railgun-shielded tokens
+ *  (see WalletScreen.parts PrivateBadge). Overlaid on each activity row's token
+ *  avatar so a private/Railgun tx is unmistakable. */
+const SHIELD_ICON: HeroIconName = 'shieldCheck';
 
 type Status = 'loading' | 'ready';
 
@@ -33,8 +39,8 @@ const PRIVATE_GREEN = '#22c55e';
 /** Fetch + render the private fund-movement rows. Once the bridge is present the
  *  header always renders, with a loading line, the rows, or an empty state - so
  *  the section is discoverable even before / without any private history. */
-export function PrivateActivitySection({ head, sub, border }: {
-  head: string; sub: string; border: string;
+export function PrivateActivitySection({ head, sub, border, bg }: {
+  head: string; sub: string; border: string; bg: string;
 }): React.ReactElement | null {
   const [rows, setRows] = useState<PrivateActivityRow[]>([]);
   const [available, setAvailable] = useState(false);
@@ -85,7 +91,7 @@ export function PrivateActivitySection({ head, sub, border }: {
         </Text>
       ) : (
         rows.map(r => (
-          <PrivateTxRow key={r.key} r={r} head={head} sub={sub} border={border} />
+          <PrivateTxRow key={r.key} r={r} head={head} sub={sub} border={border} bg={bg} />
         ))
       )}
     </Col>
@@ -103,20 +109,23 @@ function rowTitle(r: PrivateActivityRow): string {
 /** A single private-movement row. Layout matches the public TxRow: a circular
  *  direction icon, a title over the chain + time meta, and the signed amount
  *  with a "Private" tag. */
-function PrivateTxRow({ r, head, sub, border }: {
-  r: PrivateActivityRow; head: string; sub: string; border: string;
+function PrivateTxRow({ r, head, sub, border, bg }: {
+  r: PrivateActivityRow; head: string; sub: string; border: string; bg: string;
 }): React.ReactElement {
   const prefix = r.direction === 'in' ? '+' : '−';
   const valueColor = r.direction === 'in' ? PRIVATE_GREEN : head;
   return (
     <Row align="center" gap={12} py={14}
       style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-      <Box style={{
-        width: 32, height: 32, borderRadius: 999, backgroundColor: border,
-        alignItems: 'center', justifyContent: 'center',
-      }}>
-        <Icon name={r.direction === 'in' ? 'arrowDown' : 'arrowUp'} size={18} color={head} />
-      </Box>
+      {/* Token + network image, identical to the wallet token rows, with the
+          Railgun shield glyph overlaid so the tx is unmistakably private. */}
+      <TokenAvatar
+        logoUrl={r.logoUrl}
+        chainId={r.chainId}
+        bg={bg}
+        border={border}
+        badge={<Icon name={SHIELD_ICON} size={11} color={sub} />}
+      />
       <Col flex={1} style={{ minWidth: 0 }}>
         <Row align="center" gap={6}>
           <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
@@ -125,7 +134,7 @@ function PrivateTxRow({ r, head, sub, border }: {
           <Row align="center" gap={3} style={{
             paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4, backgroundColor: border,
           }}>
-            <Icon name="lockClosed" size={10} color={sub} />
+            <Icon name={SHIELD_ICON} size={10} color={sub} />
             <Text style={{ color: sub, fontSize: 11, fontFamily: 'Calibre-Semibold' }}>
               Private
             </Text>

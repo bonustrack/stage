@@ -52,7 +52,7 @@ export function ActivityView({ address, head, sub, border, bg }: {
   // The private (shielded 0zk) transfer section paints independently of the
   // public Etherscan fetch: it always renders above the public list when it has
   // rows, so a wallet with only private history still shows something.
-  const priv = <PrivateActivitySection head={head} sub={sub} border={border} />;
+  const priv = <PrivateActivitySection head={head} sub={sub} border={border} bg={bg} />;
 
   if (status === 'error') {
     return (
