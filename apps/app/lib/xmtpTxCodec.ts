@@ -13,7 +13,6 @@
  *  vanilla XMTP clients (and any client missing this codec) show a readable
  *  string instead of a blank/error bubble. */
 
-import { Buffer } from 'buffer';
 import type {
   JSContentCodec, ContentTypeId, EncodedContent,
 } from '@xmtp/react-native-sdk';
@@ -21,26 +20,20 @@ import {
   type WalletSendCallsContent, type TransactionReferenceContent,
   walletSendCallsFallbackText, transactionReferenceFallbackText,
 } from '@metro-labs/client/xmtp/tx';
+import {
+  WALLET_SEND_CALLS_CONTENT_TYPE, TRANSACTION_REFERENCE_CONTENT_TYPE,
+  encodeJsonContent, decodeJsonContent,
+} from '@metro-labs/client/xmtp/codecs';
 
 export class WalletSendCallsCodec implements JSContentCodec<WalletSendCallsContent> {
-  contentType: ContentTypeId = {
-    authorityId: 'xmtp.org',
-    typeId: 'walletSendCalls',
-    versionMajor: 1,
-    versionMinor: 0,
-  };
+  contentType: ContentTypeId = WALLET_SEND_CALLS_CONTENT_TYPE;
 
   encode(content: WalletSendCallsContent): EncodedContent {
-    return {
-      type: this.contentType,
-      parameters: {},
-      fallback: walletSendCallsFallbackText(content),
-      content: new Uint8Array(Buffer.from(JSON.stringify(content), 'utf8')),
-    };
+    return encodeJsonContent(this.contentType, content, walletSendCallsFallbackText(content)) as EncodedContent;
   }
 
   decode(encoded: EncodedContent): WalletSendCallsContent {
-    return JSON.parse(Buffer.from(encoded.content).toString('utf8')) as WalletSendCallsContent;
+    return decodeJsonContent<WalletSendCallsContent>(encoded.content);
   }
 
   fallback(content: WalletSendCallsContent): string | undefined {
@@ -54,24 +47,14 @@ export class WalletSendCallsCodec implements JSContentCodec<WalletSendCallsConte
 }
 
 export class TransactionReferenceCodec implements JSContentCodec<TransactionReferenceContent> {
-  contentType: ContentTypeId = {
-    authorityId: 'xmtp.org',
-    typeId: 'transactionReference',
-    versionMajor: 1,
-    versionMinor: 0,
-  };
+  contentType: ContentTypeId = TRANSACTION_REFERENCE_CONTENT_TYPE;
 
   encode(content: TransactionReferenceContent): EncodedContent {
-    return {
-      type: this.contentType,
-      parameters: {},
-      fallback: transactionReferenceFallbackText(content),
-      content: new Uint8Array(Buffer.from(JSON.stringify(content), 'utf8')),
-    };
+    return encodeJsonContent(this.contentType, content, transactionReferenceFallbackText(content)) as EncodedContent;
   }
 
   decode(encoded: EncodedContent): TransactionReferenceContent {
-    return JSON.parse(Buffer.from(encoded.content).toString('utf8')) as TransactionReferenceContent;
+    return decodeJsonContent<TransactionReferenceContent>(encoded.content);
   }
 
   fallback(content: TransactionReferenceContent): string | undefined {

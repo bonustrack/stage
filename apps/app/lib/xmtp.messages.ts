@@ -3,8 +3,8 @@
  *  mapper lives in xmtp.envelope.ts and is re-exported here for back-compat. */
 
 import {
-  type ReactionContent, type ReplyContent, type StaticAttachmentContent,
-} from '@xmtp/react-native-sdk';
+  buildReaction, buildVote, buildReply, buildStaticAttachment,
+} from '@metro-labs/client/xmtp/builders';
 import { type PollContent } from '@metro-labs/client/xmtp/poll';
 import {
   type SignatureRequestContent, type SignatureReferenceContent,
@@ -34,8 +34,7 @@ export async function xmtpReact(
 ): Promise<string> {
   const conv = await convOfLine(line);
   if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
-  const payload: ReactionContent = { reference: messageId, action, content: emoji, schema: 'unicode' };
-  return await conv.send({ reaction: payload });
+  return await conv.send({ reaction: buildReaction(messageId, emoji, action) });
 }
 
 /** Send a Metro poll (`metro.box/poll:1.0`). The poll is encoded by PollCodec
@@ -96,18 +95,14 @@ export async function xmtpVote(
 ): Promise<string> {
   const conv = await convOfLine(line);
   if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
-  const payload: ReactionContent = {
-    reference: pollMessageId, action, content: String(optionIndex), schema: 'custom',
-  };
-  return await conv.send({ reaction: payload });
+  return await conv.send({ reaction: buildVote(pollMessageId, optionIndex, action) });
 }
 
 /** Send an XMTP reply (text body referencing an earlier message id). */
 export async function xmtpReply(line: string, replyTo: string, text: string): Promise<string> {
   const conv = await convOfLine(line);
   if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
-  const payload: ReplyContent = { reference: replyTo, content: { text } };
-  return await conv.send({ reply: payload });
+  return await conv.send({ reply: buildReply(replyTo, text) });
 }
 
 /** Send an inline (static) XMTP attachment. `dataB64` is the raw bytes base64-encoded
@@ -118,12 +113,12 @@ export async function xmtpSendAttachment(
 ): Promise<string> {
   const conv = await convOfLine(line);
   if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
-  const payload: StaticAttachmentContent = { filename, mimeType, data: dataB64 };
+  const payload = buildStaticAttachment(filename, mimeType, dataB64);
   /** Use the typed `sendAttachment` helper (not the generic `send({attachment})`) so the
    *  native side runs the codec's full encode + size-validation path and surfaces real
    *  errors instead of silently dropping payloads that exceed libxmtp's per-message limit. */
 
-  const c = conv as unknown as { sendAttachment?: (p: StaticAttachmentContent) => Promise<string> };
+  const c = conv as unknown as { sendAttachment?: (p: typeof payload) => Promise<string> };
   if (typeof c.sendAttachment === 'function') return await c.sendAttachment(payload);
   return await conv.send({ attachment: payload });
 }

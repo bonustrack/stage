@@ -58,15 +58,24 @@ export interface SignerTransport {
   sendTransaction?(tx: TxRequest): Promise<{ hash: string }>;
 }
 
-/** The SDK owns conversation/message SHAPING; the transport owns the encrypted
- *  network + the native client (@xmtp/react-native-sdk on RN). The SDK never
- *  sees keys.
+/** The SDK owns conversation/message SHAPING (line URIs, envelope mapping,
+ *  outbound payload builders, the inbox->eth cache RULE); the transport owns the
+ *  encrypted network + the native client (@xmtp/react-native-sdk on RN). The SDK
+ *  never sees keys and never imports the native client.
  *
- *  NOTE: not wired in Stage 1. Methods will be added one at a time as the
- *  messaging module is migrated, matching what the app calls. */
+ *  Only methods the app actually drives through the SDK are declared — the rest
+ *  of the native XMTP surface (streaming, consent, group admin, swarm
+ *  attachments) stays entirely in apps/app, which holds the native client. */
 export interface MessagingTransport {
+  /** The local user's inbox id. */
   selfInboxId(): Promise<string>;
+  /** The local user's primary ETH address. */
   selfAddress(): Promise<string>;
+  /** Batch-resolve inbox ids -> ETH address over the network (one call). Backs
+   *  the SDK's cache-first `client.messages.resolveInboxEth`; missing ids may be
+   *  absent from the returned map. Implemented on the native client's
+   *  `inboxStates(true, ids)`. */
+  inboxEthAddresses(inboxIds: string[]): Promise<Record<string, string>>;
 }
 
 /** The Railgun nodejs-mobile bridge. The SDK builds the request frames (pure

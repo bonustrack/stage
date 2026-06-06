@@ -9,6 +9,13 @@ export * from './types';
 export * from './profile/snapshot';
 export * from './xmtp/humanize';
 export * from './xmtp/poll';
+// Stage 3: framework-agnostic messaging logic (line URIs, envelope mapping,
+// outbound payload builders, codec wire helpers, inbox->eth cache rule).
+export * from './xmtp/line';
+export * from './xmtp/envelope';
+export * from './xmtp/builders';
+export * from './xmtp/codecs';
+export * from './xmtp/inboxCache';
 export * from './embed/detect';
 export * from './stamp/resolve';
 
