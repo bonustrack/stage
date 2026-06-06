@@ -2,7 +2,7 @@
  *  from app/xmtp/[convId].tsx verbatim (phase-2 lint split). Behavior identical. */
 
 import { useEffect, useState } from 'react';
-import { Dimensions, Linking, Modal, Pressable, ScrollView } from 'react-native';
+import { Dimensions, Modal, Pressable, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from '../layout';

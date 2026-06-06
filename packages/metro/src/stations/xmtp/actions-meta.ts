@@ -55,10 +55,11 @@ export async function applyChannelMeta(
 
   const labels = Array.isArray(merged['labels']) ? (merged['labels'] as string[]) : [];
   const github = typeof merged['github'] === 'string' ? (merged['github'] as string) : undefined;
+  const preview = typeof merged['preview'] === 'string' ? (merged['preview'] as string) : undefined;
   return {
     line, id: group.id, account: acct.cfg.id,
     ...(typeof name === 'string' && name ? { name } : {}),
-    labels, github, appData: merged,
+    labels, github, preview, appData: merged,
   };
 }
 
