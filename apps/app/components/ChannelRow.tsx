@@ -137,7 +137,7 @@ function ChannelRowBase({
     >
       {/* Inner row carries the separator: it starts at the avatar's left edge
           (inset by paddingHorizontal), not the full card width. */}
-      <Row align="center" gap={12} py={14} style={{
+      <Row align="center" gap={12} py={9} style={{
         borderBottomWidth: noBorder ? 0 : 1, borderBottomColor: border,
       }}>
         <Avatar
