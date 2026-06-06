@@ -89,6 +89,10 @@ function buildLabelChips({ labels, fg, rowBg }: {
       style={{
         height: 20, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2,
         backgroundColor: rowBg, marginRight: 5, justifyContent: 'center',
+        // RN aligns an inline <View> by its BOTTOM edge to the text baseline,
+        // so a 20px chip sits low vs the fontSize-17/lineHeight-22 preview text.
+        // Lift it up so the chip's vertical center matches the text line center.
+        transform: [{ translateY: -4 }],
       }}
     >
       <Text style={{ color: fg, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{label}</Text>
@@ -158,7 +162,7 @@ function ChannelRowBase({
                 <Text>, so the preview flows around them and wraps UNDERNEATH the
                 chip on the 2nd line (single-line rounded pill, text under it). */}
             <Text
-              style={{ color: sub, fontSize: 17, fontFamily: 'Calibre-Medium', flex: 1 }}
+              style={{ color: sub, fontSize: 17, lineHeight: 22, fontFamily: 'Calibre-Medium', flex: 1 }}
               numberOfLines={2}
               ellipsizeMode="tail"
             >
