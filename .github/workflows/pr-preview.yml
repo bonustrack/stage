@@ -194,5 +194,3 @@ jobs:
               target_url: target,
               description: 'Open dev-client preview',
             });
-
-# warm-cache timing probe (remove after measuring)
