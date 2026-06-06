@@ -1,4 +1,4 @@
-/** Settings menu — a System-page-style list whose rows push their own
+/** Settings menu - a System-page-style list whose rows push their own
  *  sub-pages: Display (theme), Messenger (XMTP account + settings), Security
  *  (export / remove account). Reached from the LeftDrawer's "Settings" row. */
 
@@ -18,14 +18,16 @@ type Href =
   | '/settings/security'
   | '/settings/kit'
   | '/settings/components'
+  | '/settings/developer'
   | '/settings/about';
 const ROWS: { href: Href; label: string; sub: string; icon: HeroIconName }[] = [
-  { href: '/settings/display', label: 'Display', sub: 'Theme — System, Light or Dark', icon: 'sun' },
+  { href: '/settings/display', label: 'Display', sub: 'Theme - System, Light or Dark', icon: 'sun' },
   { href: '/settings/messenger', label: 'Messenger', sub: 'XMTP account & inbox', icon: 'chat' },
   { href: '/settings/notifications', label: 'Notifications', sub: 'Enable or disable push notifications', icon: 'bell' },
   { href: '/settings/security', label: 'Security', sub: 'Export or remove account', icon: 'wallet' },
   { href: '/settings/kit', label: 'Kit', sub: 'Theme colors & component gallery', icon: 'colorSwatch' },
-  { href: '/settings/components', label: 'Components', sub: 'App UI components — UserCard, ChannelCard, TokenCard', icon: 'viewGrid' },
+  { href: '/settings/components', label: 'Components', sub: 'App UI components - UserCard, ChannelCard, TokenCard', icon: 'viewGrid' },
+  { href: '/settings/developer', label: 'Developer', sub: 'Railgun debug console & diagnostics', icon: 'beaker' },
   { href: '/settings/about', label: 'About', sub: 'App version & build metadata', icon: 'questionMarkCircle' },
 ];
 
