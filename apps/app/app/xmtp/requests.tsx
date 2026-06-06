@@ -19,7 +19,7 @@ import {
   peerEthAddressOfDm, groupMemberEthAddresses, shortAddress,
   getCachedXmtpClient,
 } from '../../lib/xmtp';
-import { previewOfXmtpContent } from '@metro-labs/client/xmtp/humanize';
+import { previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { usePeerProfiles, getPeerName, getPeerAvatarCb } from '../../lib/peerProfiles';
 import { Icon } from '@metro-labs/kit/icon';

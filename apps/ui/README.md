@@ -37,4 +37,4 @@ toggling the `dark` class on `<html>`.
 ## Shared assets
 
 Shared tokens and icon definitions live in `@metro-labs/kit`; pure client logic
-lives in `@metro-labs/client`.
+lives in `@stage-labs/client`.

@@ -35,7 +35,7 @@ export type {
 } from './xmtp.types';
 export {
   XMTP_USER_PREFIX, lineOfConv, lineOfDmPeer, convIdOfLine, metroConvIdOf, metroDmPeerOf,
-  shortAddress, stampBoxAvatarUrl,
+  shortAddress, stampAvatarUrl,
 } from './xmtp.types';
 
 export {

@@ -4,7 +4,7 @@
  *  stack on the right. Mirrors apps/app/app/xmtp/[convId].tsx. Extracted from
  *  XmtpConversation.vue to keep that file under the per-file LOC cap. */
 
-import { shortAddress, stampBoxAvatarUrl } from '../lib/xmtp';
+import { shortAddress, stampAvatarUrl } from '../lib/xmtp';
 import type { XmtpFeedStatus } from '../lib/xmtpFeed';
 import { runningInIframe, postCloseToParent } from '../lib/embedBridge';
 import { Row } from './layout';
@@ -51,13 +51,13 @@ const embedded = runningInIframe();
           {{ props.status === 'loading' ? '…' : props.status === 'error' ? '!' : '·' }}
         </span>
       </Row>
-      <img v-else-if="props.peerAddress" :src="stampBoxAvatarUrl(props.peerAddress, 48)" alt=""
+      <img v-else-if="props.peerAddress" :src="stampAvatarUrl(props.peerAddress, 48)" alt=""
         class="w-6 h-6 rounded-full bg-metro-border-dark shrink-0" />
       <Row v-else-if="visibleMembers.length" align="center" class="shrink-0">
         <img
           v-for="(addr, i) in visibleMembers"
           :key="addr.toLowerCase()"
-          :src="stampBoxAvatarUrl(addr, 48)"
+          :src="stampAvatarUrl(addr, 48)"
           alt=""
           class="w-6 h-6 rounded-full bg-metro-border-dark border-2
             border-metro-bg-light dark:border-metro-bg-dark"

@@ -31,11 +31,21 @@ import {
   isDomainLike,
   resolveSearchInputToAddress,
 } from '../stamp/resolve';
-import { shortAddress, stampBoxAvatarUrl } from '../identity/format';
+import { shortAddress, stampAvatarUrl } from '../identity/format';
 import { fetchAssetRows, type FetchAssetRowsOptions, type TokenLogoResolver } from '../wallet/balances';
 import { fmtUsd, fmtBalance, splitUsd } from '../wallet/format';
 import type { AssetRow } from '../wallet/assets';
-import type { StageApiKeys, StageClientOptions, StageEnv } from './interfaces';
+import {
+  XMTP_USER_PREFIX, lineOfConv, lineOfDmPeer, convIdOfLine, metroDmPeerOf, metroConvIdOf,
+} from '../xmtp/line';
+import { mapDecodedToEnvelope, type DecodedMessageView } from '../xmtp/envelope';
+import {
+  buildReaction, buildVote, buildReply, buildStaticAttachment,
+  type ReactionPayload, type ReplyPayload, type StaticAttachmentPayload,
+} from '../xmtp/builders';
+import { InboxEthCache, resolveInboxEthCached, primeInboxEthCache } from '../xmtp/inboxCache';
+import type { HistoryEntry } from '../types';
+import type { MessagingTransport, StageApiKeys, StageClientOptions, StageEnv } from './interfaces';
 
 /** Identity resolution: turn names/domains into addresses and back. All pure
  *  stamp.fyi-backed calls, available on every platform. */
@@ -93,6 +103,46 @@ export interface WalletModule {
   splitUsd(s: string): { int: string; dec: string };
 }
 
+/** Messaging: the framework-agnostic XMTP logic — `metro://` line URIs, the
+ *  decoded-message -> HistoryEntry envelope mapper, outbound payload builders,
+ *  and the cache-first inbox->eth resolver. The native @xmtp/react-native-sdk
+ *  client stays in apps/app behind the injected MessagingTransport; this module
+ *  is the pure orchestration the app re-uses. The line/envelope/builder helpers
+ *  are pure and available even when no transport is injected; `resolveInboxEth`
+ *  / `primeInboxEthCache` require the transport (they hit the network). */
+export interface MessagesModule {
+  /** Inbound "from" / DM-by-address URI prefix (`metro://xmtp/user/`). */
+  readonly userPrefix: string;
+  /** Build a `metro://xmtp/<convId>` conversation line. */
+  lineOfConv(convId: string): string;
+  /** Build a `metro://xmtp/user/<address>` DM-by-peer line. */
+  lineOfDmPeer(address: string): string;
+  /** Parse a conversation id out of an anchored `metro://xmtp/<convId>` line. */
+  convIdOfLine(line: string): string | null;
+  /** Find a DM peer address anywhere in a block of text, or null. */
+  metroDmPeerOf(text?: string | null): string | null;
+  /** Find a conversation id anywhere in a block of text, or null. */
+  metroConvIdOf(text?: string | null): string | null;
+  /** Map a decoded XMTP message (structural view) -> a HistoryEntry envelope. */
+  envelopeOf(msg: DecodedMessageView, line: string): HistoryEntry;
+  /** Build a reaction payload to hand to the native conv.send. */
+  buildReaction(messageId: string, emoji: string, action?: 'added' | 'removed'): ReactionPayload;
+  /** Build a poll-vote payload (reaction, schema:'custom'). */
+  buildVote(pollMessageId: string, optionIndex: number, action?: 'added' | 'removed'): ReactionPayload;
+  /** Build a text-reply payload. */
+  buildReply(replyTo: string, text: string): ReplyPayload;
+  /** Build a static (inline) attachment payload. */
+  buildStaticAttachment(filename: string, mimeType: string, dataB64: string): StaticAttachmentPayload;
+  /** Cache-first batch resolve of inbox ids -> ETH address (uses the transport
+   *  for uncached ids only). Throws if no messaging transport was injected. */
+  resolveInboxEth(inboxIds: string[]): Promise<Record<string, string>>;
+  /** Pre-warm the inbox->eth cache for many ids in one transport call. No-op for
+   *  already-cached ids; best-effort on fetch failure. Throws if no transport. */
+  primeInboxEthCache(inboxIds: string[]): Promise<void>;
+  /** Drop the inbox->eth cache (e.g. on account switch). */
+  clearInboxEthCache(): void;
+}
+
 /** The Stage client. New namespaces are added as later stages migrate their
  *  modules; the shape stays additive. */
 export interface StageClient {
@@ -100,6 +150,7 @@ export interface StageClient {
   readonly identity: IdentityModule;
   readonly api: ApiModule;
   readonly wallet: WalletModule;
+  readonly messages: MessagesModule;
 }
 
 export function createStageClient(options: StageClientOptions = {}): StageClient {
@@ -114,7 +165,7 @@ export function createStageClient(options: StageClientOptions = {}): StageClient
     isAddressLike,
     isDomainLike,
     shortAddress,
-    avatarUrl: stampBoxAvatarUrl,
+    avatarUrl: stampAvatarUrl,
   };
 
   const wallet: WalletModule = {
@@ -140,5 +191,33 @@ export function createStageClient(options: StageClientOptions = {}): StageClient
     getSimplePrices: ids => getSimplePrices(ids, keys.coingecko),
   };
 
-  return { env, identity, api, wallet };
+  const messagingTransport: MessagingTransport | undefined = options.transports?.messaging;
+  const inboxEthCache = new InboxEthCache();
+  const requireMessaging = (): MessagingTransport => {
+    if (!messagingTransport) {
+      throw new Error('Stage client: no messaging transport injected (transports.messaging).');
+    }
+    return messagingTransport;
+  };
+
+  const messages: MessagesModule = {
+    userPrefix: XMTP_USER_PREFIX,
+    lineOfConv,
+    lineOfDmPeer,
+    convIdOfLine,
+    metroDmPeerOf,
+    metroConvIdOf,
+    envelopeOf: mapDecodedToEnvelope,
+    buildReaction,
+    buildVote,
+    buildReply,
+    buildStaticAttachment,
+    resolveInboxEth: ids =>
+      resolveInboxEthCached(inboxEthCache, requireMessaging().inboxEthAddresses, ids),
+    primeInboxEthCache: ids =>
+      primeInboxEthCache(inboxEthCache, requireMessaging().inboxEthAddresses, ids),
+    clearInboxEthCache: () => inboxEthCache.clear(),
+  };
+
+  return { env, identity, api, wallet, messages };
 }

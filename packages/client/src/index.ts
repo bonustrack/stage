@@ -1,14 +1,21 @@
-/** @metro-labs/client — framework-agnostic shared logic for the Metro
+/** @stage-labs/client — framework-agnostic shared logic for the Metro
  *  clients (apps/ui Vue web + apps/app React Native). Pure TypeScript only:
  *  no Vue, no React, no react-native, no browser-only globals beyond `fetch`.
  *
- *  Subpath exports are also available (e.g. `@metro-labs/client/profile`)
+ *  Subpath exports are also available (e.g. `@stage-labs/client/profile`)
  *  for call-sites that want to keep imports narrow. */
 
 export * from './types';
 export * from './profile/snapshot';
 export * from './xmtp/humanize';
 export * from './xmtp/poll';
+// Stage 3: framework-agnostic messaging logic (line URIs, envelope mapping,
+// outbound payload builders, codec wire helpers, inbox->eth cache rule).
+export * from './xmtp/line';
+export * from './xmtp/envelope';
+export * from './xmtp/builders';
+export * from './xmtp/codecs';
+export * from './xmtp/inboxCache';
 export * from './embed/detect';
 export * from './stamp/resolve';
 

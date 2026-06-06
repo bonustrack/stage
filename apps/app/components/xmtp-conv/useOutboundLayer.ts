@@ -4,7 +4,7 @@
  *  jump-to-bottom / sticky-bottom remount logic, and the reply-jump highlight. */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { attachmentEmojiPreview } from '@metro-labs/client/xmtp/humanize';
+import { attachmentEmojiPreview } from '@stage-labs/client/xmtp/humanize';
 import { patchRowSent } from '../../lib/channelsCache';
 import type { HistoryEntry } from '../../lib/types';
 import type { FlatList } from 'react-native-gesture-handler';

@@ -3,7 +3,7 @@
  *  Mirrors apps/app/app/(tabs)/contacts.tsx. */
 
 import {
-  getOrCreateXmtpClient, peerEthAddressOfDm, stampBoxAvatarUrl, shortAddress,
+  getOrCreateXmtpClient, peerEthAddressOfDm, stampAvatarUrl, shortAddress,
 } from '../lib/xmtp';
 import { useSearchResolution } from '../lib/useSearchResolution';
 import { Col } from '../components/layout';
@@ -92,7 +92,7 @@ onMounted(async () => {
           @click="router.push(`/xmtp/${c.convId}`)"
         >
           <img
-            :src="stampBoxAvatarUrl(c.address, 72)"
+            :src="stampAvatarUrl(c.address, 72)"
             alt=""
             class="w-9 h-9 rounded-full bg-metro-border-dark shrink-0"
           />

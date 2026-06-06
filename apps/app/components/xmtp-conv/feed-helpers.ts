@@ -1,8 +1,8 @@
 /** Pure feed-derivation helpers for the XMTP conversation screen — extracted
  *  from app/xmtp/[convId].tsx verbatim (phase-2 lint split). Behavior identical. */
 
-import { votesByPoll as tallyVotes, ownVotes as tallyOwnVotes, type VoteEvent } from '@metro-labs/client/xmtp/poll';
-import { stripMentionMarkup, attachmentEmojiPreview } from '@metro-labs/client/xmtp/humanize';
+import { votesByPoll as tallyVotes, ownVotes as tallyOwnVotes, type VoteEvent } from '@stage-labs/client/xmtp/poll';
+import { stripMentionMarkup, attachmentEmojiPreview } from '@stage-labs/client/xmtp/humanize';
 import type { HistoryEntry } from '../../lib/types';
 
 /** Whether an entry carries attachments — used to dedup an optimistic

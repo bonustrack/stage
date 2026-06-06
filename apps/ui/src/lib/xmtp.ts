@@ -124,7 +124,7 @@ export function shortAddress(addr: string): string {
  *  host. Returns a 200 identicon when no custom avatar exists. `cacheBust` is
  *  appended as `&cb=…` (pass `getCacheHash(profile.avatar)`) so stamp refetches
  *  when the avatar changes instead of serving the previously-cached image. */
-export function stampBoxAvatarUrl(address: string, size = 120, cacheBust?: string): string {
+export function stampAvatarUrl(address: string, size = 120, cacheBust?: string): string {
   const base = `https://stamp.fyi/avatar/eth:${address.toLowerCase()}?s=${size}`;
   return cacheBust ? `${base}&cb=${encodeURIComponent(cacheBust)}` : base;
 }

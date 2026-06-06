@@ -1,6 +1,6 @@
 /**
  * Extends Expo's Metro config for the bun monorepo:
- * - watch the repo root so the workspace packages (@metro-labs/client,
+ * - watch the repo root so the workspace packages (@stage-labs/client,
  *   @metro-labs/kit under ../../packages/*) resolve and hot-reload
  * - resolve modules from both the app-local and the hoisted root node_modules
  * - pin react / react-native / react-native-svg to the app's SINGLE copy so the

@@ -18,11 +18,6 @@ export type { ConversationVersion };
 
 export type XmtpFeedStatus = 'idle' | 'loading' | 'open' | 'error';
 
-/** URI prefix used for inbound XMTP "from" addresses. Mirrors the daemon-side train
- *  (`packages/metro/examples/xmtp.ts`) so the rest of the app can rely on a single
- *  convention. */
-export const XMTP_USER_PREFIX = 'metro://xmtp/user/';
-
 /** A locally-staged attachment ready to bundle into a multi-remote message.
  *  `fileUri` may be `file://`, `content://` (Android gallery) or `blob:` (web) —
  *  `materializeFileUri` normalises it to the `file://` URI the native
@@ -39,48 +34,17 @@ export interface StreamMsg {
   msg: DecodedMessage;
 }
 
-/** Format a metro-style line URI for an XMTP conversation. Mirrors the daemon train. */
-export function lineOfConv(convId: string): string { return `metro://xmtp/${convId}`; }
+/** `metro://` line-URI helpers (XMTP_USER_PREFIX, lineOfConv, lineOfDmPeer,
+ *  convIdOfLine, metroDmPeerOf, metroConvIdOf) moved into the framework-agnostic
+ *  Stage SDK (@stage-labs/client). Re-exported so existing app imports stay
+ *  stable. */
+export {
+  XMTP_USER_PREFIX, lineOfConv, lineOfDmPeer, convIdOfLine, metroDmPeerOf, metroConvIdOf,
+} from '@stage-labs/client/xmtp/line';
 
-/** Shareable link for a 1-1 DM, addressed by the PEER's Ethereum address rather
- *  than a conversation id. DM conversation ids are installation-local and mean
- *  nothing to the recipient, so a DM is shared by peer address — each side
- *  resolves it to their own local DM via `findOrCreateDmWithIdentity`. */
-export function lineOfDmPeer(address: string): string { return `${XMTP_USER_PREFIX}${address}`; }
-
-/** Extract the peer Ethereum address from a `metro://xmtp/user/<address>` DM
- *  link found ANYWHERE in a block of text. Returns null when none is present.
- *  Checked BEFORE `metroConvIdOf` so the literal "user" segment is never
- *  mistaken for a conversation id. */
-export function metroDmPeerOf(text?: string | null): string | null {
-  if (!text) return null;
-  const m = text.match(/metro:\/\/xmtp\/user\/(0x[a-fA-F0-9]{40})/);
-  return m ? m[1] : null;
-}
-
-/** Extract the XMTP conversation id from a `metro://xmtp/<convId>` line URI.
- *  Returns null when the line doesn't match. */
-export function convIdOfLine(line: string): string | null {
-  const m = line.match(/^metro:\/\/xmtp\/([^/]+)$/);
-  return m ? m[1] : null;
-}
-
-/** Find a `metro://xmtp/<convId>` channel link ANYWHERE in a block of text and
- *  return the convId (vs `convIdOfLine` which anchors the whole string). Used by
- *  the message renderer to surface an inline channel card. Returns null when the
- *  text contains no metro channel link. */
-export function metroConvIdOf(text?: string | null): string | null {
-  if (!text) return null;
-  // Exclude the DM-by-address form `metro://xmtp/user/<addr>` — that's handled by
-  // `metroDmPeerOf`. Without the `(?!user/)` guard the `[^\s/]+` capture would
-  // grab the literal "user" and render a card that resolves nothing.
-  const m = text.match(/metro:\/\/xmtp\/(?!user\/)([^\s/]+)/);
-  return m ? m[1] : null;
-}
-
-/** Address-display + stamp.fyi avatar helpers (shortAddress, stampBoxAvatarUrl)
- *  moved into the framework-agnostic Stage SDK (@metro-labs/client). Re-exported
+/** Address-display + stamp.fyi avatar helpers (shortAddress, stampAvatarUrl)
+ *  moved into the framework-agnostic Stage SDK (@stage-labs/client). Re-exported
  *  so existing app imports stay stable. */
-export { shortAddress, stampBoxAvatarUrl } from '@metro-labs/client/identity/format';
+export { shortAddress, stampAvatarUrl } from '@stage-labs/client/identity/format';
 
 export type { Conversation, DecodedMessage };

@@ -2,7 +2,9 @@
  *  and the dependency-inversion interfaces hosts implement. */
 
 export { createStageClient } from './client';
-export type { StageClient, IdentityModule, ApiModule, WalletModule } from './client';
+export type {
+  StageClient, IdentityModule, ApiModule, WalletModule, MessagesModule,
+} from './client';
 export type {
   Storage,
   SecureStorage,

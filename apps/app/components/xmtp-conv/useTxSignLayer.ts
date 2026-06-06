@@ -5,10 +5,10 @@ import { useCallback, useState } from 'react';
 import { xmtpSendTxReference, xmtpSendSignatureReference } from '../../lib/xmtp';
 import {
   type WalletSendCallsContent, type TransactionReferenceContent, chainIdToNumber,
-} from '@metro-labs/client/xmtp/tx';
+} from '@stage-labs/client/xmtp/tx';
 import {
   type SignatureRequestContent, type SignatureReferenceContent,
-} from '@metro-labs/client/xmtp/sign';
+} from '@stage-labs/client/xmtp/sign';
 import { sendNativeOrToken } from '../../lib/tx';
 import { flash } from '../../lib/toast';
 import { signTypedData, signMessage, getAccount } from 'wagmi/actions';

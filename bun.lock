@@ -18,7 +18,6 @@
       "name": "app",
       "version": "0.1.0",
       "dependencies": {
-        "@metro-labs/client": "workspace:*",
         "@metro-labs/kit": "workspace:*",
         "@railgun-community/shared-models": "7.6.1",
         "@railgun-community/wallet": "10.4.0",
@@ -26,6 +25,7 @@
         "@react-native-community/netinfo": "11.4.1",
         "@react-navigation/stack": "^7.9.3",
         "@reown/appkit-wagmi-react-native": "1.3.2",
+        "@stage-labs/client": "workspace:*",
         "@tanstack/react-query": "^5.100.14",
         "@walletconnect/react-native-compat": "^2.23.9",
         "@xmtp/react-native-sdk": "^5.7.0",
@@ -90,8 +90,8 @@
       "name": "ui",
       "version": "0.1.0",
       "dependencies": {
-        "@metro-labs/client": "workspace:*",
         "@metro-labs/kit": "workspace:*",
+        "@stage-labs/client": "workspace:*",
         "@tanstack/vue-query": "^5.100.14",
         "@xmtp/browser-sdk": "^7.0.0",
         "markdown-it": "^14.1.1",
@@ -118,7 +118,7 @@
       },
     },
     "packages/client": {
-      "name": "@metro-labs/client",
+      "name": "@stage-labs/client",
       "version": "0.1.0",
       "dependencies": {
         "viem": "^2.51.0",
@@ -695,8 +695,6 @@
 
     "@metamask/utils": ["@metamask/utils@11.11.0", "", { "dependencies": { "@ethereumjs/tx": "^4.2.0", "@metamask/superstruct": "^3.1.0", "@noble/hashes": "^1.3.1", "@scure/base": "^1.1.3", "@types/debug": "^4.1.7", "@types/lodash": "^4.17.20", "debug": "^4.3.4", "lodash": "^4.17.21", "pony-cause": "^2.1.10", "semver": "^7.5.4", "uuid": "^9.0.1" } }, "sha512-0nF2CWjWQr/m0Y2t2lJnBTU1/CZPPTvKvcESLplyWe/tyeb8zFOi/FeneDmaFnML6LYRIGZU6f+xR0jKAIUZfw=="],
 
-    "@metro-labs/client": ["@metro-labs/client@workspace:packages/client"],
-
     "@metro-labs/kit": ["@metro-labs/kit@workspace:packages/kit"],
 
     "@metro-labs/metro": ["@metro-labs/metro@workspace:packages/metro"],
@@ -1124,6 +1122,8 @@
     "@solana/transaction-messages": ["@solana/transaction-messages@5.5.1", "", { "dependencies": { "@solana/addresses": "5.5.1", "@solana/codecs-core": "5.5.1", "@solana/codecs-data-structures": "5.5.1", "@solana/codecs-numbers": "5.5.1", "@solana/errors": "5.5.1", "@solana/functional": "5.5.1", "@solana/instructions": "5.5.1", "@solana/nominal-types": "5.5.1", "@solana/rpc-types": "5.5.1" }, "peerDependencies": { "typescript": "^5.0.0" }, "optionalPeers": ["typescript"] }, "sha512-aXyhMCEaAp3M/4fP0akwBBQkFPr4pfwoC5CLDq999r/FUwDax2RE/h4Ic7h2Xk+JdcUwsb+rLq85Y52hq84XvQ=="],
 
     "@solana/transactions": ["@solana/transactions@5.5.1", "", { "dependencies": { "@solana/addresses": "5.5.1", "@solana/codecs-core": "5.5.1", "@solana/codecs-data-structures": "5.5.1", "@solana/codecs-numbers": "5.5.1", "@solana/codecs-strings": "5.5.1", "@solana/errors": "5.5.1", "@solana/functional": "5.5.1", "@solana/instructions": "5.5.1", "@solana/keys": "5.5.1", "@solana/nominal-types": "5.5.1", "@solana/rpc-types": "5.5.1", "@solana/transaction-messages": "5.5.1" }, "peerDependencies": { "typescript": "^5.0.0" }, "optionalPeers": ["typescript"] }, "sha512-8hHtDxtqalZ157pnx6p8k10D7J/KY/biLzfgh9R09VNLLY3Fqi7kJvJCr7M2ik3oRll56pxhraAGCC9yIT6eOA=="],
+
+    "@stage-labs/client": ["@stage-labs/client@workspace:packages/client"],
 
     "@szmarczak/http-timer": ["@szmarczak/http-timer@5.0.1", "", { "dependencies": { "defer-to-connect": "^2.0.1" } }, "sha512-+PmQX0PiAYPMeVYe237LJAYvOMYW1j2rH5YROyS3b4CTVJum34HfRvKvAzozHAQG0TnHNdUfY9nCeUyRAs//cw=="],
 
