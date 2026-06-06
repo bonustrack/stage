@@ -1,23 +1,30 @@
-/** Private Railgun transfer history for the Activity tab.
+/** Private Railgun fund-movement history for the Activity tab.
  *
- *  Surfaces the shielded (0zk) transfer history alongside the public Etherscan
- *  activity: incoming receives (someone shielded-sent to our 0zk address) and
- *  outgoing 0zk->0zk transfers. This is the SAME read path that feeds balances:
- *  the embedded Node bridge's whitelisted `wallet.getTransactionHistory` SDK
- *  method (sdkDispatch.js → getWalletTransactionHistory), so it is PURE RN
- *  orchestration on the installed APK - no native change, hot-reloadable.
+ *  Surfaces the wallet's private (0zk) fund movements alongside the public
+ *  Etherscan activity. This is the user's PRIVATE money trail: shields (funds
+ *  entering the shielded balance from the public EOA), unshields (funds leaving
+ *  back to a public address), and 0zk->0zk transfers (private receives + sends).
  *
- *  Flow per chain: derive key material (deriveKeys.ts) → engineInit (cheap when
- *  warm) → walletInfo (load-or-create the 0zk wallet, returns the walletID) →
- *  sdk('wallet.getTransactionHistory', [chain, walletID, undefined]). The SDK
- *  returns TransactionHistoryItem[]; we flatten each item's receive/transfer
- *  ERC20 amounts into one display row per token movement, tagged in/out.
+ *  Earlier this view showed ONLY 0zk->0zk transfers and deliberately excluded
+ *  shields/unshields - but for almost every user the private activity IS the
+ *  shield/unshield legs (pure 0zk transfers are rare), so the section read empty.
+ *  We now include all four categories the SDK reports.
  *
- *  Shields (deposits from the EOA) and unshields (withdrawals back to the EOA)
- *  are intentionally NOT surfaced here - this is the PRIVATE transfer view, and
- *  those legs already appear in the public Etherscan activity. Never throws:
- *  a chain that errors or has no shielded history is skipped, mirroring the
- *  balance refresh's best-effort posture. */
+ *  Same read path that feeds balances: the embedded Node bridge's whitelisted
+ *  `wallet.getTransactionHistory` SDK method (sdkDispatch.js ->
+ *  getWalletTransactionHistory), so it is PURE RN orchestration on the installed
+ *  APK - no native change, hot-reloadable. The SDK returns
+ *  TransactionHistoryItem[]; each item carries receiveERC20Amounts (in),
+ *  transferERC20Amounts (out), unshieldERC20Amounts (unshield out) and a
+ *  `category` enum + per-leg shieldFee marker that distinguishes a shield-in
+ *  receive from a plain transfer-in receive. The bridge serializes bigints to
+ *  decimal strings, so amounts and the category string survive JSON intact.
+ *
+ *  Flow per chain: derive key material (deriveKeys.ts) -> engineInit (cheap when
+ *  warm) -> walletInfo (load-or-create the 0zk wallet, returns the walletID) ->
+ *  sdk('wallet.getTransactionHistory', [chain, walletID, undefined]). Never
+ *  throws: a chain that errors or has no shielded history is skipped, mirroring
+ *  the balance refresh's best-effort posture. */
 import { formatUnits } from 'viem';
 import { isBridgeAvailable, engineInit, walletInfo } from './bridge';
 import { sdk } from './bridge/sdk';
@@ -25,10 +32,15 @@ import { deriveRailgunKeyMaterial } from './deriveKeys';
 import { RAILGUN_NETWORKS, type RailgunNet } from './networks';
 import { RAILGUN_TOKENS, type TokenMeta } from './tokens';
 
-/** One shielded transfer movement, pre-formatted for the Activity row. */
+/** Kind of private fund movement, used to pick the row label + icon. */
+export type PrivateActivityKind = 'shield' | 'unshield' | 'transfer';
+
+/** One private fund movement, pre-formatted for the Activity row. */
 export interface PrivateActivityRow {
-  /** Stable key: txid + direction + token (one item can have several). */
+  /** Stable key: txid + kind + direction + token (one item can have several). */
   key: string;
+  /** Shield (in), unshield (out), or 0zk->0zk transfer (in/out). */
+  kind: PrivateActivityKind;
   direction: 'in' | 'out';
   /** Display symbol (ETH / USDC) when known, else a shortened token address. */
   symbol: string;
@@ -42,13 +54,21 @@ export interface PrivateActivityRow {
 }
 
 /** Minimal slice of the SDK's TransactionHistoryItem we consume. The bridge
- *  serializes bigints to decimal strings, so `amount` arrives as a string. */
-interface HistoryErc20Amount { tokenAddress: string; amount: string }
+ *  serializes bigints to decimal strings, so `amount`/`shieldFee` arrive as
+ *  strings and `category` arrives as its enum string value. */
+interface HistoryErc20Amount {
+  tokenAddress: string;
+  amount: string;
+  /** Present (and non-undefined) on a receive leg that is a shield-in. */
+  shieldFee?: string | null;
+}
 interface HistoryItem {
   txid: string;
   timestamp?: number | null;
+  category?: string;
   receiveERC20Amounts?: HistoryErc20Amount[];
   transferERC20Amounts?: HistoryErc20Amount[];
+  unshieldERC20Amounts?: HistoryErc20Amount[];
 }
 
 /** Resolve token meta for a chain by ERC20 address (case-insensitive). */
@@ -62,18 +82,36 @@ function shortToken(address: string): string {
   return address.length > 10 ? `${address.slice(0, 6)}…${address.slice(-4)}` : address;
 }
 
-/** Flatten one history item's receive + transfer ERC20 legs into rows. Change
- *  outputs (self-change from a spend) and shield/unshield legs are excluded by
- *  only reading receiveERC20Amounts (in) and transferERC20Amounts (out). */
+/** A receive leg is a shield-in (vs a 0zk transfer-in) when it carries a
+ *  shieldFee marker, or when the item category is the shield category. */
+function isShieldReceive(item: HistoryItem, leg: HistoryErc20Amount): boolean {
+  if (leg.shieldFee !== undefined && leg.shieldFee !== null) return true;
+  return item.category === 'ShieldERC20s';
+}
+
+/** Flatten one history item's ERC20 legs into private-activity rows.
+ *
+ *  - receiveERC20Amounts -> shield-in (if shieldFee present) else transfer-in
+ *  - unshieldERC20Amounts -> unshield-out
+ *  - transferERC20Amounts -> transfer-out (0zk->0zk send)
+ *
+ *  changeERC20Amounts (self-change from a spend) and broadcasterFeeERC20Amount
+ *  are intentionally not surfaced - they are accounting artifacts, not movements
+ *  the user initiated. */
 function rowsForItem(net: RailgunNet, item: HistoryItem): PrivateActivityRow[] {
   const cfg = RAILGUN_NETWORKS[net];
   const ts = typeof item.timestamp === 'number' ? item.timestamp : 0;
-  const map = (a: HistoryErc20Amount, direction: 'in' | 'out'): PrivateActivityRow => {
+  const map = (
+    a: HistoryErc20Amount,
+    kind: PrivateActivityKind,
+    direction: 'in' | 'out',
+  ): PrivateActivityRow => {
     const meta = tokenForAddress(net, a.tokenAddress);
     let amount = a.amount;
     try { amount = formatUnits(BigInt(a.amount), meta?.decimals ?? 18); } catch { /* keep raw */ }
     return {
-      key: `${item.txid}-${direction}-${a.tokenAddress}`,
+      key: `${item.txid}-${kind}-${direction}-${a.tokenAddress}`,
+      kind,
       direction,
       symbol: meta?.symbol ?? shortToken(a.tokenAddress),
       amount,
@@ -84,13 +122,15 @@ function rowsForItem(net: RailgunNet, item: HistoryItem): PrivateActivityRow[] {
     };
   };
   return [
-    ...(item.receiveERC20Amounts ?? []).map((a) => map(a, 'in')),
-    ...(item.transferERC20Amounts ?? []).map((a) => map(a, 'out')),
+    ...(item.receiveERC20Amounts ?? []).map((a) =>
+      map(a, isShieldReceive(item, a) ? 'shield' : 'transfer', 'in')),
+    ...(item.unshieldERC20Amounts ?? []).map((a) => map(a, 'unshield', 'out')),
+    ...(item.transferERC20Amounts ?? []).map((a) => map(a, 'transfer', 'out')),
   ];
 }
 
-/** Fetch the shielded transfer history for one network. Best-effort: returns []
- *  on any failure (engine not warm, scan not ready, RPC hiccup). */
+/** Fetch the private fund-movement history for one network. Best-effort: returns
+ *  [] on any failure (engine not warm, scan not ready, RPC hiccup). */
 async function historyForNet(net: RailgunNet, walletID: string): Promise<PrivateActivityRow[]> {
   const cfg = RAILGUN_NETWORKS[net];
   try {
@@ -105,12 +145,20 @@ async function historyForNet(net: RailgunNet, walletID: string): Promise<Private
   }
 }
 
-/** Resolve the private (0zk) transfer history across both supported chains,
- *  newest-first. Returns [] when the bridge isn't in this binary. Never throws.
- *  Reuses the balance read path's boot (engineInit + walletInfo); when the
- *  Private tab already booted the engine these calls are cheap. */
-export async function fetchPrivateActivity(): Promise<PrivateActivityRow[]> {
-  if (!isBridgeAvailable()) return [];
+/** Outcome of a private-activity fetch. `available` is false only when the
+ *  bridge isn't in this binary (web / non-Railgun build); the caller uses it to
+ *  decide whether to render the section + its empty state at all. */
+export interface PrivateActivityResult {
+  available: boolean;
+  rows: PrivateActivityRow[];
+}
+
+/** Resolve the private (0zk) fund-movement history across both supported chains,
+ *  newest-first. Returns { available:false } when the bridge isn't in this
+ *  binary. Never throws. Reuses the balance read path's boot (engineInit +
+ *  walletInfo); when the Private tab already booted the engine these are cheap. */
+export async function fetchPrivateActivity(): Promise<PrivateActivityResult> {
+  if (!isBridgeAvailable()) return { available: false, rows: [] };
   const key = await deriveRailgunKeyMaterial();
   try { await engineInit(); } catch { /* keep going; history call will no-op */ }
   const info = await walletInfo({
@@ -120,5 +168,6 @@ export async function fetchPrivateActivity(): Promise<PrivateActivityRow[]> {
   });
   const nets = Object.keys(RAILGUN_NETWORKS) as RailgunNet[];
   const perNet = await Promise.all(nets.map((n) => historyForNet(n, info.railgunWalletID)));
-  return perNet.flat().sort((a, b) => b.timestamp - a.timestamp);
+  const rows = perNet.flat().sort((a, b) => b.timestamp - a.timestamp);
+  return { available: true, rows };
 }
