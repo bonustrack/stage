@@ -44,7 +44,7 @@ export const ChannelsSearchBar = forwardRef<TextInput, {
         backgroundColor: rowBg, borderRadius: blockRadius,
         paddingHorizontal: 14, paddingVertical: 8,
       }}>
-        <Icon name="search" size={18} color={sub} />
+        <Icon name="search" size={22} color={sub} />
         <TextInput
           ref={ref}
           value={props.query}
@@ -54,7 +54,7 @@ export const ChannelsSearchBar = forwardRef<TextInput, {
           autoCapitalize="none"
           autoCorrect={false}
           returnKeyType="search"
-          style={{ flex: 1, color: head, fontSize: 16, fontFamily: 'Calibre-Medium', padding: 0 }}
+          style={{ flex: 1, color: head, fontSize: 19, lineHeight: 23, fontFamily: 'Calibre-Medium', padding: 0 }}
         />
         {props.query.length > 0 ? (
           <Pressable onPress={() => props.setQuery('')} hitSlop={8}>
