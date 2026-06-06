@@ -18,6 +18,7 @@ import { DANGER } from '../../lib/theme';
 import { shortAddress } from '../../lib/xmtp.types';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { fetchActivityAllChains, type ActivityRow } from '../../lib/etherscan';
+import { PrivateActivitySection } from './WalletScreen.privateActivity';
 
 type Status = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -48,33 +49,48 @@ export function ActivityView({ address, head, sub, border, bg }: {
   // Pre-resolve the counterparties' Snapshot names for nicer rows.
   usePeerProfiles(rows.map(r => r.counterparty));
 
+  // The private (shielded 0zk) transfer section paints independently of the
+  // public Etherscan fetch: it always renders above the public list when it has
+  // rows, so a wallet with only private history still shows something.
+  const priv = <PrivateActivitySection head={head} sub={sub} border={border} />;
+
   if (status === 'error') {
     return (
-      <Col mx={16} py={40} align="center">
-        <Text style={{ color: DANGER, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
-          Couldn’t load activity
-        </Text>
+      <Col mx={16}>
+        {priv}
+        <Col py={40} align="center">
+          <Text style={{ color: DANGER, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
+            Couldn’t load activity
+          </Text>
+        </Col>
       </Col>
     );
   }
   if (status === 'loading' || status === 'idle') {
     return (
-      <Col mx={16} py={40} align="center">
-        <Spinner size={28} color={head} />
+      <Col mx={16}>
+        {priv}
+        <Col py={40} align="center">
+          <Spinner size={28} color={head} />
+        </Col>
       </Col>
     );
   }
   if (rows.length === 0) {
     return (
-      <Col mx={16} py={40} align="center">
-        <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
-          No transactions yet
-        </Text>
+      <Col mx={16}>
+        {priv}
+        <Col py={40} align="center">
+          <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
+            No transactions yet
+          </Text>
+        </Col>
       </Col>
     );
   }
   return (
     <Col mx={16}>
+      {priv}
       {rows.map(r => (
         <TxRow key={r.hash} r={r} head={head} sub={sub} border={border} bg={bg} />
       ))}
