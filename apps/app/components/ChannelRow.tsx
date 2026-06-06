@@ -147,7 +147,7 @@ function ChannelRowBase({
             {/* Name + labels hug each other on the left; name shrinks (and
                 ellipsizes) first, the label chip stays right beside it. */}
             <Text
-              style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold', flexShrink: 1, minWidth: 0 }}
+              style={{ color: head, fontSize: 19, fontFamily: 'Calibre-Semibold', flexShrink: 1, minWidth: 0 }}
               numberOfLines={1}
               ellipsizeMode="tail"
             >
