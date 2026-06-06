@@ -17,6 +17,7 @@ type Href =
   | '/settings/notifications'
   | '/settings/security'
   | '/settings/kit'
+  | '/settings/components'
   | '/settings/about';
 const ROWS: { href: Href; label: string; sub: string; icon: HeroIconName }[] = [
   { href: '/settings/display', label: 'Display', sub: 'Theme — System, Light or Dark', icon: 'sun' },
@@ -24,6 +25,7 @@ const ROWS: { href: Href; label: string; sub: string; icon: HeroIconName }[] = [
   { href: '/settings/notifications', label: 'Notifications', sub: 'Enable or disable push notifications', icon: 'bell' },
   { href: '/settings/security', label: 'Security', sub: 'Export or remove account', icon: 'wallet' },
   { href: '/settings/kit', label: 'Kit', sub: 'Theme colors & component gallery', icon: 'colorSwatch' },
+  { href: '/settings/components', label: 'Components', sub: 'App UI components — UserCard, ChannelCard, TokenCard', icon: 'viewGrid' },
   { href: '/settings/about', label: 'About', sub: 'App version & build metadata', icon: 'questionMarkCircle' },
 ];
 
