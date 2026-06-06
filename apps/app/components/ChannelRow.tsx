@@ -169,7 +169,7 @@ function ChannelRowBase({
           </Row>
           {/* Reserve the badge's height (22) regardless of whether one shows so
               rows with/without the unread indicator are the same total height. */}
-          <Row align="center" gap={8} mt={4} style={{ minHeight: 22 }}>
+          <Row align="center" gap={8} mt={2} style={{ minHeight: 22 }}>
             {/* Labels on the LEFT; preview text fills the rest, truncates first. */}
             {labels && labels.length > 0 ? (
               <LabelChips labels={labels} fg={fg} sub={sub} rowBg={rowBg} onLabelPress={onLabelPress} />
