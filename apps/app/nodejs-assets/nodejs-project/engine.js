@@ -213,6 +213,20 @@ async function init(params) {
       undefined, // customPOILists
       true, // verboseScanLogging — emit per-chunk "Scanning historical events from block X to Y"
     );
+    // ROOT-CAUSE FIX (issue #261): startRailgunEngine hardcodes the graphql-mesh
+    // quick-sync, which throws inside nodejs-mobile ("Failed to quick sync" /
+    // "Failed to sync Railgun transactions V2") and forces a ~25k-call eth_getLogs
+    // slow scan that stalls -> balances stay 0. Swap ONLY the transport to a plain
+    // https POST (reusing the SDK's own GraphQL documents + formatters) so the fast
+    // subgraph path works on-device. Non-fatal: if patching fails we keep the SDK
+    // default (and the existing full-rescan fallback in kickFullScan).
+    try {
+      // eslint-disable-next-line global-require
+      const { installRawHttpQuickSync } = require('./quicksync');
+      installRawHttpQuickSync(sdk, scanDebug);
+    } catch (e) {
+      scanDebug(0, 'rawQuickSync install error (using SDK default): ' + (e && e.message ? e.message : String(e)));
+    }
     // Surface the engine's own UTXO merkletree scan lifecycle (Started/Updated/
     // Complete/Incomplete + progress) to the RN debug panel. This is the DECISIVE
     // signal: if the scan reaches Complete but no balanceUpdate ever fires with
