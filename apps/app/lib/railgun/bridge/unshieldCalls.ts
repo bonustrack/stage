@@ -1,118 +1,33 @@
-/** RN-side typed bridge wrappers for the RAILGUN UNSHIELD primitives.
- *
- *  Unshield is private→public: it moves funds from the user's shielded balance
- *  back to a PUBLIC address (the user's own EOA by default). Unlike shield it
- *  REQUIRES a Groth16 proof, so the flow is three whitelisted dispatcher calls:
- *    gas.estimateUnshield → proof.unshield → tx.populateProvedUnshield
- *  (the base-token variant unwraps WETH→native ETH on the way out).
- *
- *  All three are already whitelisted in sdkDispatch.js. bigint amounts are
- *  wire-encoded ({ __bigint }) so they survive the JSON channel and are revived
- *  to real bigints in the Node host. We only ever populate (no broadcaster) —
- *  the EOA signs + broadcasts the returned tx on RN, so sendWithPublicWallet is
- *  always `true` and broadcasterFeeERC20AmountRecipient is undefined. */
+/** RN-side UNSHIELD bridge wrappers - thin shims over the pure frame builders in
+ *  @stage-labs/client/railgun, bound to THIS binary's native `sdk()` dispatcher.
+ *  No logic is duplicated: the wire protocol lives in the SDK; the native channel
+ *  (nodejsMobile) stays here. The call sites keep their no-dispatch signatures. */
 import { sdk } from './sdk';
-import { bn } from './wire';
-import type { PopulateResult } from './shieldCalls';
+import {
+  gasEstimateUnshield as gasEstimateUnshieldSdk,
+  generateUnshieldProof as generateUnshieldProofSdk,
+  populateProvedUnshield as populateProvedUnshieldSdk,
+} from '@stage-labs/client/railgun';
 
-/** EIP-1559 (Type2) gas details — both Ethereum + Sepolia default to Type2.
- *  Fees are decimal-string wei (wire-encoded to bigint in the host). */
-export interface UnshieldGasDetails {
-  /** EVMGasType enum value; 2 = Type2 (EIP-1559). */
-  evmGasType: 0 | 1 | 2;
-  gasEstimate: string;
-  maxFeePerGas: string;
-  maxPriorityFeePerGas: string;
+export type { UnshieldGasDetails, UnshieldErc20Recipient } from '@stage-labs/client/railgun';
+
+/** Gas estimate for an unproven unshield (self-broadcast). */
+export function gasEstimateUnshield(
+  params: Parameters<typeof gasEstimateUnshieldSdk>[1],
+): ReturnType<typeof gasEstimateUnshieldSdk> {
+  return gasEstimateUnshieldSdk(sdk, params);
 }
 
-/** One shielded ERC20 amount to unshield to a public recipient. */
-export interface UnshieldErc20Recipient {
-  tokenAddress: string;
-  /** Decimal-string wei amount. */
-  amountWei: string;
-  /** Public recipient (the user's own EOA by default). */
-  recipientAddress: string;
-}
-
-/** Gas estimate for an unproven unshield. `sendWithPublicWallet` is `true`
- *  (self-broadcast, no broadcaster). Resolves the gasEstimate (decimal string). */
-export async function gasEstimateUnshield(params: {
-  txidVersion: string;
-  networkName: string;
-  railgunWalletID: string;
-  encryptionKey: string;
-  erc20Recipients: UnshieldErc20Recipient[];
-  originalGasDetails: UnshieldGasDetails;
-}): Promise<{ gasEstimate: string }> {
-  return sdk<{ gasEstimate: string }>('gas.estimateUnshield', [
-    params.txidVersion,
-    params.networkName,
-    params.railgunWalletID,
-    params.encryptionKey,
-    params.erc20Recipients.map(r => ({
-      tokenAddress: r.tokenAddress, amount: bn(r.amountWei), recipientAddress: r.recipientAddress,
-    })),
-    [], // nftAmountRecipients
-    wireGasDetails(params.originalGasDetails),
-    undefined, // feeTokenDetails (self-broadcast)
-    true, // sendWithPublicWallet
-  ]);
-}
-
-/** Generate the Groth16 unshield proof (caches it in the host for the populate
- *  step). Resolves void; the heavy proving runs in the embedded prover. */
-export async function generateUnshieldProof(params: {
-  txidVersion: string;
-  networkName: string;
-  railgunWalletID: string;
-  encryptionKey: string;
-  erc20Recipients: UnshieldErc20Recipient[];
-}): Promise<void> {
-  await sdk<void>('proof.unshield', [
-    params.txidVersion,
-    params.networkName,
-    params.railgunWalletID,
-    params.encryptionKey,
-    params.erc20Recipients.map(r => ({
-      tokenAddress: r.tokenAddress, amount: bn(r.amountWei), recipientAddress: r.recipientAddress,
-    })),
-    [], // nftAmountRecipients
-    undefined, // broadcasterFeeERC20AmountRecipient (self-broadcast)
-    true, // sendWithPublicWallet
-    bn('0'), // overallBatchMinGasPrice
-    // progressCallback injected host-side (functions can't cross the channel)
-  ]);
+/** Generate the Groth16 unshield proof (cached in the host for the populate step). */
+export function generateUnshieldProof(
+  params: Parameters<typeof generateUnshieldProofSdk>[1],
+): ReturnType<typeof generateUnshieldProofSdk> {
+  return generateUnshieldProofSdk(sdk, params);
 }
 
 /** Populate the proved unshield into a signable tx (uses the cached proof). */
-export async function populateProvedUnshield(params: {
-  txidVersion: string;
-  networkName: string;
-  railgunWalletID: string;
-  erc20Recipients: UnshieldErc20Recipient[];
-  gasDetails: UnshieldGasDetails;
-}): Promise<PopulateResult> {
-  return sdk<PopulateResult>('tx.populateProvedUnshield', [
-    params.txidVersion,
-    params.networkName,
-    params.railgunWalletID,
-    params.erc20Recipients.map(r => ({
-      tokenAddress: r.tokenAddress, amount: bn(r.amountWei), recipientAddress: r.recipientAddress,
-    })),
-    [], // nftAmountRecipients
-    undefined, // broadcasterFeeERC20AmountRecipient
-    true, // sendWithPublicWallet
-    bn('0'), // overallBatchMinGasPrice
-    wireGasDetails(params.gasDetails),
-  ]);
-}
-
-/** Wire-encode the bigint fields of an UnshieldGasDetails for the channel. */
-function wireGasDetails(g: UnshieldGasDetails): Record<string, unknown> {
-  return {
-    evmGasType: g.evmGasType,
-    gasEstimate: bn(g.gasEstimate),
-    maxFeePerGas: bn(g.maxFeePerGas),
-    maxPriorityFeePerGas: bn(g.maxPriorityFeePerGas),
-  };
+export function populateProvedUnshield(
+  params: Parameters<typeof populateProvedUnshieldSdk>[1],
+): ReturnType<typeof populateProvedUnshieldSdk> {
+  return populateProvedUnshieldSdk(sdk, params);
 }

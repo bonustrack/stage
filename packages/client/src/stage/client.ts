@@ -44,8 +44,17 @@ import {
   type ReactionPayload, type ReplyPayload, type StaticAttachmentPayload,
 } from '../xmtp/builders';
 import { InboxEthCache, resolveInboxEthCached, primeInboxEthCache } from '../xmtp/inboxCache';
+import {
+  shieldPrivateKeyMessage, ensureProviderLoaded,
+  populateShieldBaseToken, populateShieldErc20,
+  gasEstimateTransfer, generateTransferProof, populateProvedTransfer,
+  gasEstimateUnshield, generateUnshieldProof, populateProvedUnshield,
+  type FallbackProviderConfig, type PopulateResult,
+  type TransferGasDetails, type TransferErc20Recipient,
+  type UnshieldGasDetails, type UnshieldErc20Recipient,
+} from '../railgun';
 import type { HistoryEntry } from '../types';
-import type { MessagingTransport, StageApiKeys, StageClientOptions, StageEnv } from './interfaces';
+import type { MessagingTransport, RailgunTransport, StageApiKeys, StageClientOptions, StageEnv } from './interfaces';
 
 /** Identity resolution: turn names/domains into addresses and back. All pure
  *  stamp.fyi-backed calls, available on every platform. */
@@ -143,6 +152,68 @@ export interface MessagesModule {
   clearInboxEthCache(): void;
 }
 
+/** Railgun: the framework-agnostic private-balances logic - the typed bridge
+ *  FRAME builders for shield / private-transfer / unshield. The SDK builds the
+ *  whitelisted-SDK request frames (positional args + bigint wire-encoding) and
+ *  interprets the host-serialized responses; the native nodejs-mobile bridge
+ *  (engine boot, the embedded Groth16 prover, the channel) stays in apps/app
+ *  behind the injected RailgunTransport. Every method ships its frame through
+ *  `transport.dispatch`; all require the transport (they hit the bridge). The EOA
+ *  signing + broadcast of the returned populated tx stays in apps/app (the SDK
+ *  never sees the key). */
+export interface RailgunModule {
+  /** Resolves once the embedded Node runtime can serve calls (the boot-race
+   *  ready-gate). Throws if no railgun transport was injected. */
+  ready(): Promise<void>;
+  /** The shield-private-key derivation message, signed by the EOA -> keccak. */
+  shieldPrivateKeyMessage(): Promise<string>;
+  /** Load the RPC provider + register the merkletree for `networkName` (idempotent
+   *  per chainId for the session) before a shield. */
+  ensureProviderLoaded(cfg: FallbackProviderConfig, networkName: string): Promise<void>;
+  /** Populate a native-ETH (base-token) shield to the user's own 0zk. */
+  populateShieldBaseToken(params: {
+    txidVersion: string; networkName: string; railgunAddress: string;
+    shieldPrivateKey: string; wrappedTokenAddress: string; amountWei: string;
+  }): Promise<PopulateResult>;
+  /** Populate an ERC20 shield to the user's own 0zk (needs a prior approve). */
+  populateShieldErc20(params: {
+    txidVersion: string; networkName: string; shieldPrivateKey: string;
+    tokenAddress: string; amountWei: string; recipientAddress: string;
+  }): Promise<PopulateResult>;
+  /** Gas estimate for an unproven private transfer (self-broadcast). */
+  gasEstimateTransfer(params: {
+    txidVersion: string; networkName: string; railgunWalletID: string;
+    encryptionKey: string; erc20Recipients: TransferErc20Recipient[];
+    originalGasDetails: TransferGasDetails;
+  }): Promise<{ gasEstimate: string }>;
+  /** Generate the Groth16 transfer proof (cached in the host for populate). */
+  generateTransferProof(params: {
+    txidVersion: string; networkName: string; railgunWalletID: string;
+    encryptionKey: string; erc20Recipients: TransferErc20Recipient[];
+  }): Promise<void>;
+  /** Populate the proved transfer into a signable tx (uses the cached proof). */
+  populateProvedTransfer(params: {
+    txidVersion: string; networkName: string; railgunWalletID: string;
+    erc20Recipients: TransferErc20Recipient[]; gasDetails: TransferGasDetails;
+  }): Promise<PopulateResult>;
+  /** Gas estimate for an unproven unshield (self-broadcast). */
+  gasEstimateUnshield(params: {
+    txidVersion: string; networkName: string; railgunWalletID: string;
+    encryptionKey: string; erc20Recipients: UnshieldErc20Recipient[];
+    originalGasDetails: UnshieldGasDetails;
+  }): Promise<{ gasEstimate: string }>;
+  /** Generate the Groth16 unshield proof (cached in the host for populate). */
+  generateUnshieldProof(params: {
+    txidVersion: string; networkName: string; railgunWalletID: string;
+    encryptionKey: string; erc20Recipients: UnshieldErc20Recipient[];
+  }): Promise<void>;
+  /** Populate the proved unshield into a signable tx (uses the cached proof). */
+  populateProvedUnshield(params: {
+    txidVersion: string; networkName: string; railgunWalletID: string;
+    erc20Recipients: UnshieldErc20Recipient[]; gasDetails: UnshieldGasDetails;
+  }): Promise<PopulateResult>;
+}
+
 /** The Stage client. New namespaces are added as later stages migrate their
  *  modules; the shape stays additive. */
 export interface StageClient {
@@ -151,6 +222,7 @@ export interface StageClient {
   readonly api: ApiModule;
   readonly wallet: WalletModule;
   readonly messages: MessagesModule;
+  readonly railgun: RailgunModule;
 }
 
 export function createStageClient(options: StageClientOptions = {}): StageClient {
@@ -219,5 +291,30 @@ export function createStageClient(options: StageClientOptions = {}): StageClient
     clearInboxEthCache: () => inboxEthCache.clear(),
   };
 
-  return { env, identity, api, wallet, messages };
+  const railgunTransport: RailgunTransport | undefined = options.transports?.railgun;
+  const requireRailgun = (): RailgunTransport => {
+    if (!railgunTransport) {
+      throw new Error('Stage client: no railgun transport injected (transports.railgun).');
+    }
+    return railgunTransport;
+  };
+  /** Bind the injected native dispatcher to the pure frame builders. */
+  const dispatch = <T = unknown>(method: string, args?: readonly unknown[]): Promise<T> =>
+    requireRailgun().dispatch<T>(method, args);
+
+  const railgun: RailgunModule = {
+    ready: () => requireRailgun().ready(),
+    shieldPrivateKeyMessage: () => shieldPrivateKeyMessage(dispatch),
+    ensureProviderLoaded: (cfg, networkName) => ensureProviderLoaded(dispatch, cfg, networkName),
+    populateShieldBaseToken: params => populateShieldBaseToken(dispatch, params),
+    populateShieldErc20: params => populateShieldErc20(dispatch, params),
+    gasEstimateTransfer: params => gasEstimateTransfer(dispatch, params),
+    generateTransferProof: params => generateTransferProof(dispatch, params),
+    populateProvedTransfer: params => populateProvedTransfer(dispatch, params),
+    gasEstimateUnshield: params => gasEstimateUnshield(dispatch, params),
+    generateUnshieldProof: params => generateUnshieldProof(dispatch, params),
+    populateProvedUnshield: params => populateProvedUnshield(dispatch, params),
+  };
+
+  return { env, identity, api, wallet, messages, railgun };
 }

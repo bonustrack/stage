@@ -1,105 +1,45 @@
-/** RN-side typed bridge wrappers for the RAILGUN SHIELD primitives.
- *
- *  Thin typed shells over the generic `sdk()` dispatcher: each composes one
- *  whitelisted @railgun-community/wallet call. bigint amounts are wire-encoded
- *  ({ __bigint }) so they survive the JSON channel and are revived to real
- *  bigints in the Node host before the SDK runs its commitment arithmetic.
- *
- *  Native ETH shields via the BASE-TOKEN path (populateShieldBaseToken — the
- *  contract wraps to WETH, tx carries `value`, no approve). ERC20 shields via
- *  populateShield (needs a prior approve to the proxy contract). We only ever
- *  populate (no broadcaster) — the EOA signs + broadcasts the returned tx on RN. */
+/** RN-side SHIELD bridge wrappers - thin shims over the pure frame builders in
+ *  @stage-labs/client/railgun. The builders are framework-agnostic (they take an
+ *  injected dispatcher); here we bind them to THIS binary's native `sdk()`
+ *  dispatcher so the existing call sites keep their no-dispatch signatures and no
+ *  logic is duplicated. The wire protocol lives in the SDK; the native channel
+ *  (nodejsMobile) stays here. */
 import { sdk } from './sdk';
-import { bn } from './wire';
+import {
+  shieldPrivateKeyMessage as shieldPrivateKeyMessageSdk,
+  ensureProviderLoaded as ensureProviderLoadedSdk,
+  populateShieldBaseToken as populateShieldBaseTokenSdk,
+  populateShieldErc20 as populateShieldErc20Sdk,
+} from '@stage-labs/client/railgun';
 
-/** The shield-private-key derivation message, signed by the EOA → keccak → key. */
-export async function shieldPrivateKeyMessage(): Promise<string> {
-  return sdk<string>('tx.getShieldPrivateKeySignatureMessage');
+export type {
+  FallbackProviderConfig, PopulatedTx, PopulateResult,
+} from '@stage-labs/client/railgun';
+
+/** The shield-private-key derivation message, signed by the EOA -> keccak -> key. */
+export function shieldPrivateKeyMessage(): Promise<string> {
+  return shieldPrivateKeyMessageSdk(sdk);
 }
 
-/** Fallback-provider JSON config the engine's loadProvider expects:
- *  { chainId, providers:[{ provider:url, priority, weight }] }. */
-export interface FallbackProviderConfig {
-  chainId: number;
-  providers: { provider: string; priority: number; weight: number }[];
-}
-
-/** Chains whose RPC provider has already been loaded into the embedded engine
- *  this session, so repeat shields don't reload (the SDK is idempotent, but a
- *  reload re-spins the polling provider — skip the round-trip). */
-const providerLoaded = new Set<number>();
-
-/** Load the RPC provider + register the merkletree for `networkName` into the
- *  embedded engine, via the already-whitelisted `engine.loadProvider` dispatch.
- *
- *  WHY: the bridge `engineInit` (engine.js) attempts both networks' providers
- *  but swallows per-network RPC failures — so if the target chain's public RPC
- *  was rate-limited/down at boot, no merkletree is registered and a later
- *  `populateShield` fails with the cryptic "No value found for txidVersion=null
- *  and chain=0:<id>". We re-load it here, BEFORE shielding, and let any RPC/load
- *  error surface with a clear message instead of that null-merkletree error.
- *
- *  Idempotent per chainId for the session; errors are NOT swallowed. */
-export async function ensureProviderLoaded(
-  cfg: FallbackProviderConfig,
+/** Load the RPC provider + register the merkletree before shielding (idempotent
+ *  per chainId for the session; errors are NOT swallowed). */
+export function ensureProviderLoaded(
+  cfg: Parameters<typeof ensureProviderLoadedSdk>[1],
   networkName: string,
 ): Promise<void> {
-  if (providerLoaded.has(cfg.chainId)) return;
-  try {
-    await sdk<boolean>('engine.loadProvider', [cfg, networkName, 1000 * 60 * 5]);
-  } catch (e) {
-    const msg = (e as Error)?.message ?? String(e);
-    throw new Error(`Couldn't connect to the ${networkName} RPC for shielding: ${msg}`);
-  }
-  providerLoaded.add(cfg.chainId);
+  return ensureProviderLoadedSdk(sdk, cfg, networkName);
 }
 
-/** An ethers-style populated tx returned by populate*; bigints arrive as decimal
- *  strings (the host serialized them). `to`/`data`/`value` are what we sign. */
-export interface PopulatedTx {
-  to?: string;
-  data?: string;
-  value?: string;
-  chainId?: string | number;
-}
-export interface PopulateResult {
-  transaction: PopulatedTx;
+/** Populate a native-ETH (base-token) shield to the user's OWN 0zk. */
+export function populateShieldBaseToken(
+  params: Parameters<typeof populateShieldBaseTokenSdk>[1],
+): ReturnType<typeof populateShieldBaseTokenSdk> {
+  return populateShieldBaseTokenSdk(sdk, params);
 }
 
-/** Populate a native-ETH (base-token) shield: wraps to the network WETH and
- *  shields it to `railgunAddress` (the user's OWN 0zk). `amountWei` is decimal. */
-export async function populateShieldBaseToken(params: {
-  txidVersion: string;
-  networkName: string;
-  railgunAddress: string;
-  shieldPrivateKey: string;
-  wrappedTokenAddress: string;
-  amountWei: string;
-}): Promise<PopulateResult> {
-  return sdk<PopulateResult>('tx.populateShieldBaseToken', [
-    params.txidVersion,
-    params.networkName,
-    params.railgunAddress,
-    params.shieldPrivateKey,
-    { tokenAddress: params.wrappedTokenAddress, amount: bn(params.amountWei) },
-  ]);
-}
-
-/** Populate an ERC20 shield to the user's OWN 0zk (`recipientAddress`). Requires
- *  a prior ERC20 approve of `amountWei` to the network proxy contract. */
-export async function populateShieldErc20(params: {
-  txidVersion: string;
-  networkName: string;
-  shieldPrivateKey: string;
-  tokenAddress: string;
-  amountWei: string;
-  recipientAddress: string;
-}): Promise<PopulateResult> {
-  return sdk<PopulateResult>('tx.populateShield', [
-    params.txidVersion,
-    params.networkName,
-    params.shieldPrivateKey,
-    [{ tokenAddress: params.tokenAddress, amount: bn(params.amountWei), recipientAddress: params.recipientAddress }],
-    [],
-  ]);
+/** Populate an ERC20 shield to the user's OWN 0zk (needs a prior approve). */
+export function populateShieldErc20(
+  params: Parameters<typeof populateShieldErc20Sdk>[1],
+): ReturnType<typeof populateShieldErc20Sdk> {
+  return populateShieldErc20Sdk(sdk, params);
 }

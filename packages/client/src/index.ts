@@ -33,3 +33,9 @@ export * from './wallet/balances';
 export * from './accounts/types';
 export * from './accounts/keys';
 export * from './accounts/registry';
+
+// Stage 4: framework-agnostic Railgun bridge protocol - typed request/response
+// FRAME builders for shield / private-transfer / unshield + bigint wire-encoding.
+// The native nodejs-mobile bridge (engine boot, embedded Groth16 prover, the
+// channel) stays in apps/app behind the injected RailgunTransport.
+export * from './railgun';

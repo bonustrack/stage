@@ -78,13 +78,22 @@ export interface MessagingTransport {
   inboxEthAddresses(inboxIds: string[]): Promise<Record<string, string>>;
 }
 
-/** The Railgun nodejs-mobile bridge. The SDK builds the request frames (pure
- *  wire protocol); the transport ships them over the platform bridge and
- *  returns responses.
+/** The Railgun nodejs-mobile bridge. The SDK owns the typed request FRAMES (the
+ *  pure wire protocol - shield / transfer / unshield call shapes, bigint
+ *  wire-encoding); the transport ships them over the platform bridge and returns
+ *  the host-serialized responses. The native pieces (engine boot, the embedded
+ *  Node Groth16 prover, the nodejs-mobile channel) stay entirely in apps/app
+ *  behind this interface - the SDK never imports the native module.
  *
- *  NOTE: not wired in Stage 1. */
+ *  `dispatch` is the generic whitelisted-SDK invoker (apps/app backs it with its
+ *  bridge `sdk(method, args)` over `rawCall`); `ready` resolves once the embedded
+ *  Node runtime can serve calls (the boot-race ready-gate). Only the surface the
+ *  app actually drives through the SDK is declared. */
 export interface RailgunTransport {
-  call<TReq, TRes>(method: string, payload: TReq): Promise<TRes>;
+  /** Invoke a whitelisted @railgun-community/wallet method by name with
+   *  positional args; result is the host-serialized return (bigint -> string). */
+  dispatch<T = unknown>(method: string, args?: readonly unknown[]): Promise<T>;
+  /** Resolves once the embedded Node runtime is ready to serve calls. */
   ready(): Promise<void>;
 }
 
