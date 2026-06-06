@@ -1,11 +1,11 @@
-/** Home label-filter bar — a horizontally scrollable row of chips rendered
+/** Home label-filter bar - a horizontally scrollable row of chips rendered
  *  directly under the search bar. One chip per UNIQUE label collected across all
  *  NON-ARCHIVED channels. Each chip toggles a filter on/off; when one or more is
  *  enabled the channels list narrows to chats carrying ANY of the enabled labels
  *  (OR semantics). Enabled chips are filled (link-tinted) to stay visible.
  *
  *  Reuses the compact rounded chip styling from ChannelRow's read-only label
- *  chips for visual consistency. Presentation only — the enabled set is owned by
+ *  chips for visual consistency. Presentation only - the enabled set is owned by
  *  HomeScreen and passed down. */
 
 import { ScrollView, Pressable } from 'react-native';
@@ -39,7 +39,8 @@ function LabelChip({ label, enabled, onPress, link, fg, rowBg }: {
       onPress={onPress}
       hitSlop={6}
       style={({ pressed }) => ({
-        paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999,
+        height: 20, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2,
+        justifyContent: 'center',
         backgroundColor: enabled ? link : rowBg,
         opacity: pressed ? 0.7 : 1, flexShrink: 0,
       })}
@@ -49,7 +50,7 @@ function LabelChip({ label, enabled, onPress, link, fg, rowBg }: {
         style={{
           color: enabled ? '#ffffff' : fg,
           fontSize: 13,
-          fontFamily: enabled ? 'Calibre-Semibold' : 'Calibre-Medium',
+          fontFamily: 'Calibre-Medium',
         }}
       >
         {label}
@@ -71,7 +72,7 @@ export function LabelFilterBar({ labels, enabled, onToggle }: {
       horizontal
       showsHorizontalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
-      contentContainerStyle={{ gap: 8, paddingHorizontal: 16, paddingVertical: 10 }}
+      contentContainerStyle={{ gap: 8, paddingHorizontal: 16, paddingVertical: 10, alignItems: 'center' }}
     >
       {labels.map(label => (
         <LabelChip

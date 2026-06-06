@@ -34,8 +34,8 @@ export function HomeOverflowMenu({ color, onArchived, onNewGroup }: HomeOverflow
       </Pressable>
       <AppModal visible={open} onClose={close}>
         <Col gap={4}>
-          <OverflowRow icon="archive" label="Archived" color={color} onPress={() => run(onArchived)} />
           <OverflowRow icon="plus" label="New group" color={color} onPress={() => run(onNewGroup)} />
+          <OverflowRow icon="archive" label="Archived" color={color} onPress={() => run(onArchived)} />
         </Col>
       </AppModal>
     </>

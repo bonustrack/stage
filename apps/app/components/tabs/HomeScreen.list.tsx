@@ -1,4 +1,4 @@
-/** HomeScreen list view — the topnav (avatar + "+") and the channels FlatList
+/** HomeScreen list view - the topnav (avatar + "+") and the channels FlatList
  *  (scroll persistence, requests header, empty state), extracted from
  *  HomeScreen.tsx (phase-2 lint, rendering identical). */
 
@@ -126,7 +126,7 @@ export function ChannelsList({
           if (didRestoreRef.current) return;
           const want = savedOffsetRef.current;
           if (want == null || want <= 0) { didRestoreRef.current = true; return; }
-          if (h <= 0) return; // not laid out yet — wait for the next size change
+          if (h <= 0) return; // not laid out yet - wait for the next size change
           didRestoreRef.current = true;
           const offset = Math.min(want, Math.max(0, h));
           requestAnimationFrame(() => {

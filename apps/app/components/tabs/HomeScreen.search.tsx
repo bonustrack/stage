@@ -33,12 +33,10 @@ export const ChannelsSearchBar = forwardRef<TextInput, {
   border: string;
   rowBg: string;
 }>(function ChannelsSearchBar(props, ref): React.ReactElement {
-  const { head, sub, border, rowBg } = props;
+  const { head, sub, rowBg } = props;
   const blockRadius = useBlockRadius();
   return (
-    <Row align="center" px={12} pt={10} pb={10} style={{
-      borderBottomWidth: 1, borderBottomColor: border,
-    }}>
+    <Row align="center" px={12} pt={10} pb={10}>
       <Box style={{
         flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8,
         backgroundColor: rowBg, borderRadius: blockRadius,
