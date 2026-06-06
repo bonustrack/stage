@@ -2,10 +2,7 @@
 
 > Event-interception wire: supervise train subprocesses, multiplex their JSON event streams, and route outbound actions back in.
 
-[![lines of code](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/bonustrack/metro/main/.github/badges/loc-metro.json)](https://github.com/bonustrack/metro)
-[![npm](https://img.shields.io/npm/v/@metro-labs/metro/beta?label=npm&color=cb3837)](https://www.npmjs.com/package/@metro-labs/metro)
-[![license](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![lines of code](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.codetabs.com%2Fv1%2Floc%2F%3Fgithub%3Dbonustrack%2Fmetro&query=%24%5B%3F(%40.language%3D%3D%27Total%27)%5D.linesOfCode&label=lines%20of%20code&color=blue)](https://github.com/bonustrack/metro)
 
 ## Overview
 

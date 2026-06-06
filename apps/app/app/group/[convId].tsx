@@ -12,7 +12,7 @@ import { Box } from '../../components/layout';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getCachedXmtpClient, getOrCreateXmtpClient, lineOfConv } from '../../lib/xmtp';
-import { avatarRenderUrl } from '@metro-labs/client/profile/snapshot';
+import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
 import { usePeerProfiles } from '../../lib/peerProfiles';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { Icon } from '@metro-labs/kit/icon';

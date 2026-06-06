@@ -1,57 +1,65 @@
 # @metro-labs/kit
 
-Shared design-system primitives for the Metro clients.
+> Shared design-system primitives for the Metro clients: tokens, icon data, and theme contracts.
 
-## Why this is data, not components
+[![lines of code](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.codetabs.com%2Fv1%2Floc%2F%3Fgithub%3Dbonustrack%2Fmetro&query=%24%5B%3F(%40.language%3D%3D%27Total%27)%5D.linesOfCode&label=lines%20of%20code&color=blue)](https://github.com/bonustrack/metro)
 
-`apps/ui` is **Vue 3** and `apps/app` is **React Native**. There are no literal
-cross-framework shared components — a `.vue` SFC cannot render inside React
-Native, and an RN `View` cannot mount in the DOM. So "shared UI" here means the
-**framework-agnostic data** that the per-framework components render against,
-plus a documented contract for keeping the two implementations visually in sync.
+## Overview
 
-## What's in here
+`@metro-labs/kit` is the single source of truth for how Metro looks. It ships the colour and spacing tokens, HeroIcon path data, station icon definitions, avatar helpers, and the theme-preference contract shared by the Vue web app ([`apps/ui`](../../apps/ui)) and the React Native app ([`apps/app`](../../apps/app)).
 
-| Module | Exports | Consumed by |
-| --- | --- | --- |
-| `tokens` | `colors` (the `metro.*` palette), `fontFamily` | `apps/ui/tailwind.config.ts` (palette source of truth), `apps/app/**` StyleSheet colours |
-| `icons` | `HERO_ICON_PATHS` (union of both shells' icons), `HeroIconName`, `HERO_ICON_DEFAULTS` | `apps/ui/src/components/HeroIcon.vue`, `apps/app/components/HeroIcon.tsx` |
-| `avatar` | `AvatarSize`, `AVATAR_SIZES`, `stampAvatarUrl()`, `stampTokenUrl()`, `NATIVE_TOKEN_SENTINEL` | avatar renderers in both apps |
-| `theme` | `ThemePreference`, `THEME_STORAGE_KEY`, `THEME_PREFERENCES`, `isThemePreference()` | `apps/ui/src/lib/theme.ts`, `apps/app/lib/theme.ts` |
+Most of the package is framework-agnostic data so both clients stay visually identical from one place. The few primitive components it exports (`button`, `text`, `title`, `icon`) target React / React Native via peer dependencies; the web renderers stay in `apps/ui`.
 
-Import either from the root (`@metro-labs/kit`) or a subpath
-(`@metro-labs/kit/icons`).
+## Install
 
-## Component-naming convention
+The package is consumed inside the monorepo via `workspace:*`; no separate install is needed.
 
-Components that exist in **both** shells share a name and a public prop shape so
-the codebases stay legible side-by-side:
+```sh
+bun install            # from the repo root
+```
 
-- `HeroIcon` — `apps/ui/src/components/HeroIcon.vue` ≙ `apps/app/components/HeroIcon.tsx`.
-  Props: `{ name: HeroIconName; size?: number; color?: string; focused?: boolean }`
-  (Vue omits `color`/`focused` today — `currentColor` is inherited from CSS).
-- `MessengerBubble`, `ChannelRow`, `EditProfileModal`, `GroupAvatarEditor`, … —
-  same names, framework-native implementations.
+```jsonc
+// in a consuming workspace's package.json
+"dependencies": { "@metro-labs/kit": "workspace:*" }
+```
 
-## Shareable vs framework-specific
+## Usage
 
-**Shareable (lives here or in `@metro-labs/client`):**
-- Colour tokens, font stacks, avatar-URL helpers
-- SVG path data (HeroIcons)
-- Pure types & prop-shape contracts
-- Pure logic with no UI: profile/Snapshot, XMTP humanisation, embed detection,
-  Stamp resolution → these live in `@metro-labs/client`.
+```ts
+import { colors, spacing } from '@metro-labs/kit/tokens';
+import { resolveTheme } from '@metro-labs/kit/theme';
+import { stationIcons } from '@metro-labs/kit/icons';
+```
 
-**Framework-specific (stays in each app):**
-- Anything that renders: `.vue` SFCs, `.tsx` components, the `<svg>`/`<Svg>`
-  element choice
-- Reactivity & storage: Vue `ref`/`computed` + `localStorage` vs React
-  hooks + `expo-secure-store`
-- Platform APIs: `react-native-svg`, `expo-*`, `window`/`document`,
-  `react-native-markdown-display` vs `markdown-it`
+```tsx
+// React Native primitive components (peer deps: react, react-native, react-native-svg)
+import { Button } from '@metro-labs/kit/button';
+import { Text } from '@metro-labs/kit/text';
+```
 
-## No build step
+## Project structure
 
-Exports point at `.ts` source. Both consumers bundle TypeScript directly
-(Vite + `vue-tsc` for web, Metro + `babel-preset-expo` for mobile), so there's
-no `dist/` to keep in sync.
+```
+src/
+  tokens.ts          # colour + spacing tokens
+  theme.ts           # theme-preference contract + resolution
+  icons.ts           # station icon definitions
+  heroicons.data.ts  # HeroIcon path data
+  avatar.ts          # avatar helpers
+  layout.ts          # layout constants
+  button.tsx         # RN primitives: button (+ button.styles)
+  text.tsx / title.tsx / icon.tsx
+  index.ts           # root barrel
+```
+
+## Scripts
+
+| Script              | Description                  |
+| ------------------- | --------------------------- |
+| `bun run typecheck` | Type-check without emitting. |
+| `bun run lint`      | Lint `src/`.                |
+
+## Links
+
+- Consumed by [`apps/ui`](../../apps/ui) and [`apps/app`](../../apps/app)
+- Shared logic lives in [`@stage-labs/client`](../client)

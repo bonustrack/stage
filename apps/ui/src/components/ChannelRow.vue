@@ -3,8 +3,8 @@
  *  unread badge. Extracted from Channels.vue to keep that file under the
  *  per-file LOC cap. */
 
-import { stampBoxAvatarUrl } from '../lib/xmtp';
-import { avatarRenderUrl } from '@metro-labs/client/profile/snapshot';
+import { stampAvatarUrl } from '../lib/xmtp';
+import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
 import { Row, Col } from './layout';
 
 const props = defineProps<{
@@ -20,7 +20,7 @@ const emit = defineEmits<{ (e: 'open'): void; (e: 'menu', ev: MouseEvent): void 
 
 const renderedAvatar = computed(() => {
   if (props.avatarUri) return avatarRenderUrl('', props.avatarUri, 64);
-  if (props.avatarAddress) return stampBoxAvatarUrl(props.avatarAddress, 64);
+  if (props.avatarAddress) return stampAvatarUrl(props.avatarAddress, 64);
   return null;
 });
 

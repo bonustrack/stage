@@ -96,7 +96,7 @@ declare global {
   const shallowReadonly: typeof import('vue').shallowReadonly
   const shallowRef: typeof import('vue').shallowRef
   const shortAddress: typeof import('./lib/xmtp').shortAddress
-  const stampBoxAvatarUrl: typeof import('./lib/xmtp').stampBoxAvatarUrl
+  const stampAvatarUrl: typeof import('./lib/xmtp').stampAvatarUrl
   const startChannelStream: typeof import('./lib/useChannelStream').startChannelStream
   const streamConvConsent: typeof import('./lib/xmtpConsent').streamConvConsent
   const summarizeConv: typeof import('./lib/channelsSummarize').summarizeConv
@@ -278,7 +278,7 @@ declare module 'vue' {
     readonly shallowReadonly: UnwrapRef<typeof import('vue')['shallowReadonly']>
     readonly shallowRef: UnwrapRef<typeof import('vue')['shallowRef']>
     readonly shortAddress: UnwrapRef<typeof import('./lib/xmtp')['shortAddress']>
-    readonly stampBoxAvatarUrl: UnwrapRef<typeof import('./lib/xmtp')['stampBoxAvatarUrl']>
+    readonly stampAvatarUrl: UnwrapRef<typeof import('./lib/xmtp')['stampAvatarUrl']>
     readonly startChannelStream: UnwrapRef<typeof import('./lib/useChannelStream')['startChannelStream']>
     readonly streamConvConsent: UnwrapRef<typeof import('./lib/xmtpConsent')['streamConvConsent']>
     readonly summarizeConv: UnwrapRef<typeof import('./lib/channelsSummarize')['summarizeConv']>

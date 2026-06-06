@@ -73,9 +73,14 @@ export async function sendShielded(params: SendParams): Promise<SendResult> {
     delta: `-${params.amount}`, phase: 'proving', startedAt: Date.now(),
   });
 
+  // Track the current sub-step so a failure carries WHERE it died — the bare
+  // red X with no text was impossible to diagnose otherwise. The phase string is
+  // attached to the thrown error (see SendError) and console.error'd below.
+  let step = 'init';
   try {
     const key = await deriveRailgunKeyMaterial();
-    await engineInit();
+    step = 'engineInit'; await engineInit();
+    step = 'providerLoad';
     await ensureProviderLoaded(
       {
         chainId: cfg.chainId,
@@ -83,6 +88,7 @@ export async function sendShielded(params: SendParams): Promise<SendResult> {
       },
       cfg.networkName,
     );
+    step = 'walletInfo';
     const info = await walletInfo({
       encryptionKey: key.encryptionKey, mnemonic: key.mnemonic, creationBlocks: key.creationBlocks,
     });
@@ -95,6 +101,7 @@ export async function sendShielded(params: SendParams): Promise<SendResult> {
     // EIP-1559 gas details (both Ethereum + Sepolia default to Type2). The
     // gasEstimate is a placeholder for the estimate call; the SDK returns the
     // real estimate which we feed into the populate step.
+    step = 'estimateFees';
     const fees = await signer.publicClient.estimateFeesPerGas();
     const baseGas: TransferGasDetails = {
       evmGasType: 2,
@@ -103,18 +110,21 @@ export async function sendShielded(params: SendParams): Promise<SendResult> {
       maxPriorityFeePerGas: fees.maxPriorityFeePerGas.toString(),
     };
 
+    step = 'gasEstimateTransfer';
     const est = await gasEstimateTransfer({
       txidVersion: TXID_VERSION, networkName: cfg.networkName,
       railgunWalletID: info.railgunWalletID, encryptionKey: key.encryptionKey,
       erc20Recipients: recipients, originalGasDetails: baseGas,
     });
 
+    step = 'generateTransferProof';
     await generateTransferProof({
       txidVersion: TXID_VERSION, networkName: cfg.networkName,
       railgunWalletID: info.railgunWalletID, encryptionKey: key.encryptionKey,
       erc20Recipients: recipients,
     });
 
+    step = 'populateProvedTransfer';
     const populated = await populateProvedTransfer({
       txidVersion: TXID_VERSION, networkName: cfg.networkName,
       railgunWalletID: info.railgunWalletID, erc20Recipients: recipients,
@@ -123,17 +133,26 @@ export async function sendShielded(params: SendParams): Promise<SendResult> {
 
     updatePending(accountId, pendingId, { phase: 'broadcasting' });
     const tx = populated.transaction;
+    step = 'broadcast';
     const txHash = await signer.walletClient.sendTransaction({
       account: signer.account, chain: signer.chain,
       to: tx.to as Hex,
       data: (tx.data ?? '0x') as Hex,
       value: tx.value ? BigInt(tx.value) : 0n,
     });
+    step = 'waitReceipt';
     await signer.publicClient.waitForTransactionReceipt({ hash: txHash });
     updatePending(accountId, pendingId, { phase: 'confirmed', txHash });
     return { txHash, recipient };
   } catch (e) {
-    updatePending(accountId, pendingId, { phase: 'failed', error: (e as Error).message });
-    throw e;
+    const raw = e instanceof Error ? e.message : String(e);
+    const msg = raw && raw.trim() ? raw : `Unknown error (no message) at step "${step}"`;
+    // Surface to the bundler/metro logs so we can read it off-device too.
+    console.error(`[sendShielded] failed at step="${step}":`, e);
+    updatePending(accountId, pendingId, { phase: 'failed', error: msg });
+    const wrapped = new Error(`${msg} (at ${step})`) as Error & { step?: string; cause?: unknown };
+    wrapped.step = step;
+    wrapped.cause = e;
+    throw wrapped;
   }
 }

@@ -1,7 +1,7 @@
-/** Discord voice — minimal JOIN/LEAVE (presence only, no audio playback yet). */
-// Uses @discordjs/voice joinVoiceChannel() with the guild's voiceAdapterCreator.
-// Audio streaming (TTS/opus) is a deliberate follow-up (needs native opus + TTS).
-// Requires the GuildVoiceStates intent (index.ts) to resolve a user's channel.
+// Discord voice — JOIN/LEAVE + live transcription (see voice-transcribe.ts).
+// Uses @discordjs/voice joinVoiceChannel() with the guild's voiceAdapterCreator; on Ready we
+// arm receive-side transcription. Requires the GuildVoiceStates intent (index.ts) to resolve a
+// user's current voice channel from guild.voiceStates.
 
 import {
   joinVoiceChannel, getVoiceConnection, VoiceConnectionStatus, entersState,
@@ -10,7 +10,7 @@ import {
 import type { Client, Guild, VoiceBasedChannel } from 'discord.js';
 import { accountFor, accounts } from './accounts.js';
 import { respond } from './wire.js';
-import { startTranscription, setTranscription, stopTranscription } from './voice-transcribe.js';
+import { startTranscription, stopTranscription, setTranscription } from './voice-transcribe.js';
 
 /** bonustrack_ (Less) — default target when joinVoice gets no explicit user/channel. */
 const DEFAULT_USERNAME = 'bonustrack_';
@@ -88,42 +88,37 @@ export async function joinVoice(id: string, rawArgs: Record<string, unknown>): P
     throw new Error(`voice connection failed to become Ready: ${(err as Error).message}`);
   }
 
-  // Auto-arm live transcription on the Ready connection (receiving is independent
-  // of selfMute — the bot stays muted for output yet still hears speakers).
-  let transcribing = false;
-  try {
-    startTranscription(guild.id, channel.id, accountId, client, connection);
-    transcribing = true;
-  } catch (err) {
-    process.stderr.write(`discord[${accountId}] transcription arm failed: ${(err as Error).message}\n`);
-  }
+  // Arm live transcription: subscribe to speakers → whisper → inbound envelopes.
+  try { startTranscription(guild.id, channel.id, accountId, client, connection); }
+  catch (err) { process.stderr.write(`voice transcription arm failed: ${(err as Error).message}\n`); }
 
   respond(id, { result: {
     ok: true, account: accountId,
     guildId: guild.id, guildName: guild.name,
     channelId: channel.id, channelName: channel.name,
-    status: connection.state.status, transcribing,
+    status: connection.state.status, transcribing: true,
   } });
 }
 
-/** Toggle live transcription on/off for the bot's active voice session. */
-export async function voiceTranscribe(id: string, rawArgs: Record<string, unknown>): Promise<void> {
-  const args = rawArgs as { account?: string; guildId?: string; on?: boolean };
+/** TEMP diagnostic: list voice channels + occupants across shared guilds. */
+export async function voiceDebug(id: string, rawArgs: Record<string, unknown>): Promise<void> {
+  const args = rawArgs as { account?: string };
   const { accountId, client } = clientFor(args.account);
-  const on = args.on !== false;
-  const guildIds = args.guildId ? [args.guildId] : [...client.guilds.cache.keys()];
-  const toggled: string[] = [];
-  for (const gid of guildIds) {
-    const conn = getVoiceConnection(gid);
-    if (!conn) continue;
-    if (on && !setTranscription(gid, true)) {
-      const ch = conn.joinConfig.channelId;
-      if (ch) { startTranscription(gid, ch, accountId, client, conn); toggled.push(gid); }
-    } else if (setTranscription(gid, on)) {
-      toggled.push(gid);
-    }
-  }
-  respond(id, { result: { ok: true, account: accountId, on, guilds: toggled } });
+  const guilds = [...client.guilds.cache.values()].map(g => {
+    const voiceChannels = [...g.channels.cache.values()]
+      .filter(c => c.isVoiceBased())
+      .map(c => ({ id: c.id, name: c.name }));
+    const occupants = [...g.voiceStates.cache.values()]
+      .filter(vs => vs.channelId)
+      .map(vs => ({
+        channelId: vs.channelId,
+        channelName: vs.channel?.name ?? null,
+        userId: vs.id,
+        username: vs.member?.user.username ?? null,
+      }));
+    return { id: g.id, name: g.name, voiceChannels, occupants };
+  });
+  respond(id, { result: { ok: true, account: accountId, ready: client.isReady(), guilds } });
 }
 
 export async function leaveVoice(id: string, rawArgs: Record<string, unknown>): Promise<void> {
@@ -139,4 +134,15 @@ export async function leaveVoice(id: string, rawArgs: Record<string, unknown>): 
     if (conn) { stopTranscription(gid); conn.destroy(); left.push(gid); }
   }
   respond(id, { result: { ok: true, account: accountId, leftGuilds: left } });
+}
+
+/** Toggle live transcription on/off for an active session without leaving the call. */
+export async function voiceTranscribe(id: string, rawArgs: Record<string, unknown>): Promise<void> {
+  const args = rawArgs as { account?: string; guildId?: string; on?: boolean };
+  const { accountId, client } = clientFor(args.account);
+  const on = args.on !== false;
+  const guildIds = args.guildId ? [args.guildId] : [...client.guilds.cache.keys()];
+  const toggled: string[] = [];
+  for (const gid of guildIds) if (setTranscription(gid, on)) toggled.push(gid);
+  respond(id, { result: { ok: true, account: accountId, on, toggledGuilds: toggled } });
 }

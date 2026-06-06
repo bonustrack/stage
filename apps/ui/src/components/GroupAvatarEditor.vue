@@ -4,7 +4,7 @@
  *  file under the per-file LOC cap. Calls the parent on file selection;
  *  parent handles the IPFS upload + XMTP `updateImageUrl`. */
 
-import { avatarRenderUrl } from '@metro-labs/client/profile/snapshot';
+import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
 
 const props = defineProps<{
   imageUrl: string;

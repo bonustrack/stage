@@ -8,7 +8,7 @@
     "node": "18"
   },
   "scripts": {
-    "postinstall": "node ./scripts/patch-native-prover.js"
+    "postinstall": "node ./scripts/patch-native-prover.js && node ./scripts/patch-scan-chunk.js && node ./scripts/patch-getlogs-topics.js"
   },
   "dependencies": {
     "@railgun-community/shared-models": "8.0.1",

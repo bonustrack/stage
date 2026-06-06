@@ -92,6 +92,6 @@ export function signatureRequestPreviewText(c: SignatureRequestContent): string 
   const desc = c?.description?.trim();
   return desc ? `Signature request: ${desc}` : 'Signature request';
 }
-export function signatureReferencePreviewText(_c: SignatureReferenceContent): string {
+export function signatureReferencePreviewText(): string {
   return 'Signature';
 }

@@ -2,7 +2,7 @@
   "name": "@metro-labs/kit",
   "version": "0.1.0",
   "private": true,
-  "description": "Shared design-system primitives for the Metro clients (web + mobile): colour/spacing tokens, HeroIcon path data, station icon definitions, theme-preference contract. Framework-agnostic data — the renderers stay per-framework.",
+  "description": "Shared design-system primitives for the Metro clients (web + mobile): colour/spacing tokens, HeroIcon path data, station icon definitions, theme-preference contract. Framework-agnostic data - the renderers stay per-framework.",
   "license": "MIT",
   "type": "module",
   "types": "./src/index.ts",
@@ -18,7 +18,13 @@
     "./button": "./src/button.tsx",
     "./text": "./src/text.tsx",
     "./title": "./src/title.tsx",
-    "./icon": "./src/icon.tsx"
+    "./icon": "./src/icon.tsx",
+    "./card": "./src/card.tsx",
+    "./list-view": "./src/list-view.tsx",
+    "./badge": "./src/badge.tsx",
+    "./divider": "./src/divider.tsx",
+    "./caption": "./src/caption.tsx",
+    "./select": "./src/select.tsx"
   },
   "peerDependencies": {
     "react": "*",

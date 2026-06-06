@@ -58,7 +58,7 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
             onContentSizeChange={(e) => p.setTextareaH(e.nativeEvent.contentSize.height)}
             selection={p.selection}
             onSelectionChange={(e) => p.setSelection(e.nativeEvent.selection)}
-            style={{ color: head, fontFamily: 'Calibre-Medium', fontSize: 18, lineHeight: 23, minHeight: 24, maxHeight: 140, paddingHorizontal: 8, paddingTop: 4, paddingBottom: 8, textAlignVertical: 'top' }}
+            style={{ color: head, fontFamily: 'Calibre-Medium', fontSize: 19, lineHeight: 23, minHeight: 24, maxHeight: 140, paddingHorizontal: 8, paddingTop: 4, paddingBottom: 8, textAlignVertical: 'top' }}
           />
           {p.textareaH > 132 ? (
             <>

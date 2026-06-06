@@ -16,6 +16,7 @@ import * as Notifications from 'expo-notifications';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box, Col, Row } from '../layout';
 import { Text } from '@metro-labs/kit/text';
+import { Caption } from '@metro-labs/kit/caption';
 import { useBlockRadius, useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { SystemHeader } from '../system/SystemHeader';
 import { loadPushEnabled, setPushEnabled, subscribePushPref, isPushEnabledSync } from '../../lib/pushPref';
@@ -61,9 +62,9 @@ export function NotificationsSettings(): React.ReactElement {
     <Box style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
       <SystemHeader title="Notifications" dark={dark} fg={fg} head={head} border={border} />
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
-        <Text style={{ color: sub, fontSize: 13, paddingHorizontal: 16, paddingTop: 20, fontFamily: 'Calibre-Medium' }}>
+        <Caption dark={dark} color={sub} style={{ paddingHorizontal: 16, paddingTop: 20 }}>
           PUSH NOTIFICATIONS
-        </Text>
+        </Caption>
         <Box
           style={{
             marginHorizontal: 16, marginTop: 8, padding: 14, borderRadius: blockRadius,
@@ -73,16 +74,16 @@ export function NotificationsSettings(): React.ReactElement {
           <Row align="center" gap={12}>
             <Col flex={1} style={{ minWidth: 0 }}>
               <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>Push notifications</Text>
-              <Text style={{ color: sub, fontSize: 13, marginTop: 2, fontFamily: 'Calibre-Medium' }}>
+              <Caption dark={dark} color={sub} style={{ marginTop: 2 }}>
                 Get notified about new messages even when Metro is closed.
-              </Text>
+              </Caption>
             </Col>
             <Switch value={enabled} onValueChange={onToggle} />
           </Row>
         </Box>
-        <Text style={{ color: sub, fontSize: 13, paddingHorizontal: 16, paddingTop: 12, fontFamily: 'Calibre-Medium' }}>
+        <Caption dark={dark} color={sub} style={{ paddingHorizontal: 16, paddingTop: 12 }}>
           {permLabel}
-        </Text>
+        </Caption>
       </ScrollView>
     </Box>
   );

@@ -1,12 +1,16 @@
-/** Kit sub-page of the System menu — back-arrow header + the KitGallery body.
- *  Reached via /system → "Kit" row → /system/kit. */
+/** Kit sub-page of Settings - back-arrow header + theme switcher, then the kit
+ *  primitives rendered directly (KitSections) and the live color/radius editor
+ *  (ColorTokens). Reached via /settings -> "Kit" row -> /settings/kit. */
 
 import { Linking, Pressable, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box } from '../layout';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { SystemHeader } from './SystemHeader';
-import { KitGallery } from './KitGallery';
+import { ThemeSwitcher } from './ThemeSwitcher';
+import { KitSections } from './KitSections';
+import { ColorTokens } from './ColorTokens';
+import { Title } from '@metro-labs/kit/title';
 import { GithubLogo } from '../GithubLogo';
 
 const KIT_GITHUB_URL = 'https://github.com/bonustrack/metro/tree/main/packages/kit';
@@ -34,10 +38,16 @@ export function KitPage(): React.ReactElement {
         }
       />
       <ScrollView
+        style={{ flex: 1 }}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 + insets.bottom }}
       >
-        <KitGallery dark={dark} head={head} sub={sub} border={border} rowBg={rowBg} />
+        <ThemeSwitcher dark={dark} head={head} sub={sub} border={border} rowBg={rowBg} />
+        <KitSections dark={dark} head={head} sub={sub} border={border} rowBg={rowBg} />
+        <Box style={{ paddingHorizontal: 16, paddingTop: 24 }}>
+          <Title dark={dark} level={3} color={head}>Colors</Title>
+          <ColorTokens p={{ dark, head, sub, border, rowBg }} />
+        </Box>
       </ScrollView>
     </Box>
   );

@@ -45,7 +45,7 @@ bun --cwd apps/ui preview
 
 ## Shared Packages
 
-`@metro-labs/client` contains pure shared logic:
+`@stage-labs/client` contains pure shared logic:
 
 - Snapshot profile helpers
 - XMTP content humanization

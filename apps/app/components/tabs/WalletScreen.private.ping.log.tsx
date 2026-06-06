@@ -4,7 +4,7 @@
  *  sink (starting Node runtime…, Node booted ✓, request sent →, reply ← pong,
  *  rx event: <name>, timed out / error ✗) as a compact monospace list so the
  *  whole boot→reply sequence fits in one on-device screenshot. */
-import { Pressable } from 'react-native';
+import { FlatList, Pressable } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { Text } from '@metro-labs/kit/text';
 import { Col, Row } from '../layout';
@@ -50,19 +50,26 @@ export function PingLog({ lines, sub, head, border }: {
           </Text>
         </Pressable>
       </Row>
-      {lines.map((l, i) => (
-        <Text
-          key={`${i}-${l.ms}`}
-          selectable
-          style={{
-            color: tone(l.line, sub),
-            fontSize: 11,
-            fontFamily: 'Calibre-Medium',
-          }}
-        >
-          {fmtLine(l)}
-        </Text>
-      ))}
+      <FlatList
+        data={lines}
+        keyExtractor={(l, i) => `${i}-${l.ms}`}
+        style={{ maxHeight: 280 }}
+        initialNumToRender={20}
+        windowSize={5}
+        removeClippedSubviews
+        renderItem={({ item }) => (
+          <Text
+            selectable
+            style={{
+              color: tone(item.line, sub),
+              fontSize: 11,
+              fontFamily: 'Calibre-Medium',
+            }}
+          >
+            {fmtLine(item)}
+          </Text>
+        )}
+      />
     </Col>
   );
 }

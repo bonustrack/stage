@@ -19,9 +19,10 @@ import {
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import type { HeroIconName } from '@metro-labs/kit/icon';
-import { Box, Col, Row } from '../layout';
+import { Col, Row } from '../layout';
 import { AppModal } from '../AppModal';
-import { usePalette } from '../../lib/theme';
+import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
+import { Divider } from '@metro-labs/kit/divider';
 import { getAllKnownLabels } from '../../lib/xmtp.labels.suggest';
 
 /** Sentinel for the "only channels with no labels" filter. A distinct symbol-ish
@@ -100,6 +101,7 @@ export function LabelFilterSheet({ visible, active, onClose, onSelect }: {
   onSelect: (label: LabelFilterValue) => void;
 }): React.ReactElement {
   const { link: head, text: sub, border } = usePalette();
+  const dark = useEffectiveColorScheme() === 'dark';
   const rowBg = border;  /** Snapshot the known labels when the sheet opens (the cache is stable while
    *  open; recomputed each open so newly-added labels appear). */
   const labels = useMemo(() => (visible ? getAllKnownLabels() : []), [visible]);
@@ -127,7 +129,7 @@ export function LabelFilterSheet({ visible, active, onClose, onSelect }: {
           onPress={() => pick(UNLABELED)}
         />
         {labels.length > 0 ? (
-          <Box style={{ height: 1, backgroundColor: border, marginVertical: 6 }} />
+          <Divider dark={dark} color={border} spacing={6} />
         ) : null}
         <ScrollView style={{ maxHeight: 320 }} keyboardShouldPersistTaps="handled">
           {labels.length === 0 ? (

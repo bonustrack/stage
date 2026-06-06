@@ -34,6 +34,7 @@ export function SendShieldedBody({ pal, dark, symbol, chainId, balance, onFooter
   const [stage, setStage] = useState<ShieldStage>('idle');
   const [txHash, setTxHash] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [errPhase, setErrPhase] = useState<string | null>(null);
 
   const n = Number(amount);
   const busy = stage === 'submitting' || stage === 'confirming' || stage === 'scanning';
@@ -42,14 +43,23 @@ export function SendShieldedBody({ pal, dark, symbol, chainId, balance, onFooter
 
   const onSubmit = (): void => {
     if (!canSubmit) return;
-    setErr(null); setTxHash(null); setStage('submitting');
+    setErr(null); setErrPhase(null); setTxHash(null); setStage('submitting');
     void (async (): Promise<void> => {
       try {
         // proving runs first; flip to confirming once it broadcasts.
         const res = await sendShielded({ chainId, symbol, amount: amount.trim(), recipient: to.trim() });
         setTxHash(res.txHash); setStage('done');
       } catch (e) {
-        setErr((e as Error).message ?? 'Send failed'); setStage('error');
+        // Robustly extract a message: handle non-Error rejections, empty
+        // messages, and the wrapped { step } from sendShielded so the user
+        // ALWAYS sees real text instead of a bare red X.
+        const we = e as { message?: unknown; step?: unknown } | undefined;
+        const raw = typeof we?.message === 'string' ? we.message : '';
+        const msg = raw.trim() ? raw : `Send failed: ${String(e)}`;
+        console.error('[SendShieldedBody] private send failed:', e);
+        setErr(msg);
+        setErrPhase(typeof we?.step === 'string' ? we.step : null);
+        setStage('error');
       }
     })();
   };
@@ -75,7 +85,8 @@ export function SendShieldedBody({ pal, dark, symbol, chainId, balance, onFooter
         balance={balance} symbol={symbol} dark={dark} />
 
       <ShieldStepper stage={stage} pal={pal} />
-      <ShieldPhaseLine pal={pal} txHash={txHash} err={err} bridgeOk={isBridgeAvailable()} chainId={chainId} />
+      <ShieldPhaseLine pal={pal} txHash={txHash} err={err} errPhase={errPhase}
+        bridgeOk={isBridgeAvailable()} chainId={chainId} />
     </Box>
   );
 }

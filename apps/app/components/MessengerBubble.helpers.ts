@@ -169,7 +169,7 @@ export function txReceiptOf(entry: HistoryEntry): TxReceipt | undefined {
 }
 
 /** Block-explorer URL for a chain id (decimal/hex/number) + tx hash. Mirrors
- *  explorerTxUrl in @metro-labs/client/xmtp/tx (re-stated to avoid pulling the
+ *  explorerTxUrl in @stage-labs/client/xmtp/tx (re-stated to avoid pulling the
  *  helper through a separate import in the bubble). */
 export function explorerUrl(networkId: number | string, txHash: string): string {
   const id = typeof networkId === 'number' ? networkId

@@ -8,7 +8,7 @@ import {
   SNAPSHOT_DOMAIN, UPDATE_USER_TYPES, PINEAPPLE_UPLOAD_URL,
   buildUpdateUserMessage, postSignedEnvelope, fetchSnapshotProfile,
   type SnapshotProfile,
-} from '@metro-labs/client/profile/snapshot';
+} from '@stage-labs/client/profile/snapshot';
 
 /** Mirrors `xmtp.ts`'s storage key. Read-only here — the XMTP boot creates it
  *  first; if it's missing we throw rather than silently mint a divergent EOA. */

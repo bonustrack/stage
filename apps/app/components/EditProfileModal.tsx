@@ -16,7 +16,7 @@ import * as ImagePicker from 'expo-image-picker';
 import {
   type SnapshotProfile, updateProfile, uploadAvatar,
 } from '../lib/profile';
-import { PROFILE_FIELD_LIMITS, getCacheHash } from '@metro-labs/client/profile/snapshot';
+import { PROFILE_FIELD_LIMITS, getCacheHash } from '@stage-labs/client/profile/snapshot';
 import { setPeerProfile } from '../lib/peerProfiles';
 import { usePalette, useBlockRadius } from '../lib/theme';
 

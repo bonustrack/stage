@@ -1,8 +1,8 @@
 {
-  "name": "@metro-labs/client",
+  "name": "@stage-labs/client",
   "version": "0.1.0",
   "private": true,
-  "description": "Framework-agnostic shared logic for the Metro clients (web + mobile): Snapshot profiles, XMTP content humanisation, embed detection, Stamp resolution, and shared types. Pure TypeScript — no Vue / React / react-native.",
+  "description": "Framework-agnostic shared logic for the Metro clients (web + mobile): Snapshot profiles, XMTP content humanisation, embed detection, Stamp resolution, and shared types. Pure TypeScript - no Vue / React / react-native.",
   "license": "MIT",
   "type": "module",
   "types": "./src/index.ts",
@@ -16,13 +16,39 @@
     "./xmtp/poll": "./src/xmtp/poll.ts",
     "./xmtp/sign": "./src/xmtp/sign.ts",
     "./xmtp/tx": "./src/xmtp/tx.ts",
+    "./xmtp/line": "./src/xmtp/line.ts",
+    "./xmtp/envelope": "./src/xmtp/envelope.ts",
+    "./xmtp/builders": "./src/xmtp/builders.ts",
+    "./xmtp/codecs": "./src/xmtp/codecs.ts",
+    "./xmtp/inboxCache": "./src/xmtp/inboxCache.ts",
     "./embed/detect": "./src/embed/detect.ts",
-    "./stamp/resolve": "./src/stamp/resolve.ts"
+    "./stamp/resolve": "./src/stamp/resolve.ts",
+    "./api": "./src/api/index.ts",
+    "./api/ens": "./src/api/ens.ts",
+    "./api/etherscan": "./src/api/etherscan.ts",
+    "./api/opensea": "./src/api/opensea.ts",
+    "./api/coingecko": "./src/api/coingecko.ts",
+    "./stage": "./src/stage/index.ts",
+    "./identity/format": "./src/identity/format.ts",
+    "./identity/peerProfiles": "./src/identity/peerProfiles.ts",
+    "./wallet/format": "./src/wallet/format.ts",
+    "./wallet/assets": "./src/wallet/assets.ts",
+    "./wallet/balances": "./src/wallet/balances.ts",
+    "./accounts/types": "./src/accounts/types.ts",
+    "./accounts/keys": "./src/accounts/keys.ts",
+    "./accounts/registry": "./src/accounts/registry.ts",
+    "./railgun": "./src/railgun/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "viem": "^2.51.0"
   },
   "devDependencies": {
-    "typescript": "~5.9.2"
+    "eslint": "^10.3.0",
+    "typescript": "~5.9.2",
+    "typescript-eslint": "^8.59.2"
   }
 }

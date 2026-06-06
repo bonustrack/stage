@@ -13,7 +13,7 @@
     "eas-build-post-install": "node ./scripts/install-nodejs-project.js"
   },
   "dependencies": {
-    "@metro-labs/client": "workspace:*",
+    "@stage-labs/client": "workspace:*",
     "@metro-labs/kit": "workspace:*",
     "@railgun-community/shared-models": "7.6.1",
     "@railgun-community/wallet": "10.4.0",
@@ -47,6 +47,7 @@
     "expo-secure-store": "~15.0.8",
     "expo-splash-screen": "~31.0.13",
     "expo-status-bar": "~3.0.9",
+    "expo-updates": "~29.0.18",
     "nodejs-mobile-react-native": "18.20.4",
     "path-browserify": "1.0.1",
     "querystring-es3": "0.2.1",
@@ -58,6 +59,7 @@
     "react-native-get-random-values": "~1.11.0",
     "react-native-keyboard-controller": "^1.21.8",
     "react-native-markdown-display": "^7.0.2",
+    "react-native-modal": "^14.0.0-rc.1",
     "react-native-qrcode-svg": "^6",
     "react-native-reanimated": "^4.3.1",
     "react-native-safe-area-context": "~5.6.0",

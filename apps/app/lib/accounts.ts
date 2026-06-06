@@ -22,6 +22,9 @@ import {
   LEGACY_DB_DIR, LEGACY_PK_KEY, PK_PREFIX,
   getViemAccount, normalizePk, privateKeyFromMnemonic,
 } from './accounts.keys';
+import {
+  addLocalAccountToList, buildWalletConnectAccount, resolveActiveAccount,
+} from '@stage-labs/client/accounts/registry';
 
 export { canExportPrivateKey, getPrivateKey, getViemAccount } from './accounts.keys';
 
@@ -86,7 +89,7 @@ export async function getActiveAccount(): Promise<AccountRecord | null> {
   const list = await loadAccounts();
   if (!list.length) return null;
   const id = await getActiveAccountId();
-  return list.find(a => a.id === id) ?? list[0];
+  return resolveActiveAccount(list, id);
 }
 
 /** The ACTIVE account as a viem signer, or null when it can't sign in-app
@@ -103,28 +106,15 @@ async function addLocalAccount(pk: Hex, type: 'generated' | 'privateKey'): Promi
   const acct = privateKeyToAccount(pk);
   const id = acct.address.toLowerCase();
   const list = await loadAccounts();
-  const existing = list.find(a => a.id === id);
-  if (existing) {
-    /** Importing a key for an address we already had as a WalletConnect account
-     *  must UPGRADE it to a local signer: store the key and flip the type, so
-     *  getActiveViemAccount resolves it (in-app signing) instead of bouncing to WC. */
-    await SecureStore.setItemAsync(PK_PREFIX + id, pk);
-    if (existing.type === 'walletconnect') {
-      const upgraded: AccountRecord = { ...existing, type };
-      await persist(list.map(a => (a.id === id ? upgraded : a)));
-      await setActiveAccountId(id);
-      return upgraded;
-    }
-    await setActiveAccountId(id);
-    return existing;
-  }
+  /** The list-mutation RULES (new / upgrade-WC / re-activate-existing) live in
+   *  the Stage SDK; this adapter handles the I/O: the key write is unconditional
+   *  (also UPGRADES a prior WalletConnect address to an in-app signer), and we
+   *  persist only when the list actually changed. */
+  const { list: next, record, upgraded } = addLocalAccountToList(list, id, acct.address, type);
   await SecureStore.setItemAsync(PK_PREFIX + id, pk);
-  const rec: AccountRecord = {
-    id, address: acct.address, type, dbDir: `xmtp-${id}`, registered: false, createdAt: Date.now(),
-  };
-  await persist([...list, rec]);
+  if (next !== list || upgraded) await persist(next);
   await setActiveAccountId(id);
-  return rec;
+  return record;
 }
 
 export async function addGeneratedAccount(): Promise<AccountRecord> {
@@ -149,9 +139,7 @@ export async function addWalletConnectAccount(address: string): Promise<AccountR
   const list = await loadAccounts();
   const existing = list.find(a => a.id === id);
   if (existing) { await setActiveAccountId(id); return existing; }
-  const rec: AccountRecord = {
-    id, address, type: 'walletconnect', dbDir: `xmtp-${id}`, registered: false, createdAt: Date.now(),
-  };
+  const rec = buildWalletConnectAccount(address);
   await persist([...list, rec]);
   await setActiveAccountId(id);
   return rec;

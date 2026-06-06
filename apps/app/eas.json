@@ -5,7 +5,7 @@
   },
   "build": {
     "development": {
-      "autoIncrement": true,
+      "autoIncrement": false,
       "developmentClient": true,
       "distribution": "internal",
       "node": "18.20.4",
@@ -45,7 +45,9 @@
     "production": {
       "android": {
         "track": "internal",
-        "applicationId": "box.stage"
+        "releaseStatus": "completed",
+        "applicationId": "box.stage",
+        "serviceAccountKeyPath": "./play-service-account.json"
       }
     }
   }

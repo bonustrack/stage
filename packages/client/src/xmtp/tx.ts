@@ -110,7 +110,7 @@ export function walletSendCallsPreviewText(c: WalletSendCallsContent): string {
   const desc = c.calls?.[0]?.metadata?.description;
   return desc ? `Payment request: ${desc}` : 'Payment request';
 }
-export function transactionReferencePreviewText(_c: TransactionReferenceContent): string {
+export function transactionReferencePreviewText(): string {
   return 'Transaction';
 }
 

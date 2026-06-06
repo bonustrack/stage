@@ -13,34 +13,27 @@
  *  rendering so vanilla XMTP clients (and any client missing this codec) show a
  *  readable string instead of a blank/error bubble. */
 
-import { Buffer } from 'buffer';
 import type {
   JSContentCodec, ContentTypeId, EncodedContent,
 } from '@xmtp/react-native-sdk';
 import {
   type SignatureRequestContent, type SignatureReferenceContent,
   signatureRequestFallbackText, signatureReferenceFallbackText,
-} from '@metro-labs/client/xmtp/sign';
+} from '@stage-labs/client/xmtp/sign';
+import {
+  SIGNATURE_REQUEST_CONTENT_TYPE, SIGNATURE_REFERENCE_CONTENT_TYPE,
+  encodeJsonContent, decodeJsonContent,
+} from '@stage-labs/client/xmtp/codecs';
 
 export class SignatureRequestCodec implements JSContentCodec<SignatureRequestContent> {
-  contentType: ContentTypeId = {
-    authorityId: 'metro.box',
-    typeId: 'signatureRequest',
-    versionMajor: 1,
-    versionMinor: 0,
-  };
+  contentType: ContentTypeId = SIGNATURE_REQUEST_CONTENT_TYPE;
 
   encode(content: SignatureRequestContent): EncodedContent {
-    return {
-      type: this.contentType,
-      parameters: {},
-      fallback: signatureRequestFallbackText(content),
-      content: new Uint8Array(Buffer.from(JSON.stringify(content), 'utf8')),
-    };
+    return encodeJsonContent(this.contentType, content, signatureRequestFallbackText(content)) as EncodedContent;
   }
 
   decode(encoded: EncodedContent): SignatureRequestContent {
-    return JSON.parse(Buffer.from(encoded.content).toString('utf8')) as SignatureRequestContent;
+    return decodeJsonContent<SignatureRequestContent>(encoded.content);
   }
 
   fallback(content: SignatureRequestContent): string | undefined {
@@ -54,24 +47,14 @@ export class SignatureRequestCodec implements JSContentCodec<SignatureRequestCon
 }
 
 export class SignatureReferenceCodec implements JSContentCodec<SignatureReferenceContent> {
-  contentType: ContentTypeId = {
-    authorityId: 'metro.box',
-    typeId: 'signatureReference',
-    versionMajor: 1,
-    versionMinor: 0,
-  };
+  contentType: ContentTypeId = SIGNATURE_REFERENCE_CONTENT_TYPE;
 
   encode(content: SignatureReferenceContent): EncodedContent {
-    return {
-      type: this.contentType,
-      parameters: {},
-      fallback: signatureReferenceFallbackText(content),
-      content: new Uint8Array(Buffer.from(JSON.stringify(content), 'utf8')),
-    };
+    return encodeJsonContent(this.contentType, content, signatureReferenceFallbackText(content)) as EncodedContent;
   }
 
   decode(encoded: EncodedContent): SignatureReferenceContent {
-    return JSON.parse(Buffer.from(encoded.content).toString('utf8')) as SignatureReferenceContent;
+    return decodeJsonContent<SignatureReferenceContent>(encoded.content);
   }
 
   fallback(content: SignatureReferenceContent): string | undefined {

@@ -3,7 +3,7 @@
  *  Mirrors apps/app/app/(tabs)/index.tsx (search, stamp avatars, unread
  *  badges, persisted cache so the list renders before XMTP boots). */
 
-import { ASK_QUESTION_MEMBERS, stampBoxAvatarUrl } from '../lib/xmtp';
+import { ASK_QUESTION_MEMBERS, stampAvatarUrl } from '../lib/xmtp';
 import { postCloseToParent } from '../lib/embedBridge';
 import { useChannels } from '../lib/useChannels';
 import { Row as LayoutRow, Col } from '../components/layout';
@@ -57,7 +57,7 @@ const {
           <img
             v-for="(addr, i) in ASK_QUESTION_MEMBERS"
             :key="addr"
-            :src="stampBoxAvatarUrl(addr, 56)"
+            :src="stampAvatarUrl(addr, 56)"
             alt=""
             class="w-7 h-7 rounded-full bg-metro-border-light dark:bg-metro-border-dark
               border-2 border-metro-bg-light dark:border-metro-bg-dark"

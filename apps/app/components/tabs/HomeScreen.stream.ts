@@ -3,7 +3,7 @@
  *  (phase-2 lint, behaviour identical). */
 
 import { isMetroControlBody, presentInboundNotification } from '../../lib/push';
-import { previewOfXmtpContent } from '@metro-labs/client/xmtp/humanize';
+import { previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
 import { getPeerName } from '../../lib/peerProfiles';
 import { isActiveConv } from '../../lib/activeConv';
 import { shortAddress } from '../../lib/xmtp';

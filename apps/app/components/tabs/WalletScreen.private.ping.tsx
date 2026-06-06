@@ -2,7 +2,7 @@
  *
  *  Renders a clearly-labeled "Test Node bridge" button in the private-wallet
  *  view. On press it round-trips a 'ping' through pingBridge() and shows the
- *  result on screen so it can be eyeballed on-device — the KEY check that a
+ *  result on screen so it can be eyeballed on-device - the KEY check that a
  *  build shipped + booted the Node runtime and the channel works both ways.
  *
  *  The native bridge stays guarded: when isBridgeAvailable() is false (the
@@ -20,6 +20,7 @@ import { DANGER, useEffectiveColorScheme } from '../../lib/theme';
 import { bridgeListen, isBridgeAvailable, setBridgeStatusListener } from '../../lib/railgun/bridge';
 import { PingLog, type LogLine } from './WalletScreen.private.ping.log';
 import { useProbeActions, type ProbeState } from './WalletScreen.private.ping.actions';
+import { useBatchedLog } from './WalletScreen.private.ping.log.buffer';
 
 export function BridgePingProbe({ sub, border }: {
   sub: string; border: string;
@@ -28,35 +29,41 @@ export function BridgePingProbe({ sub, border }: {
   const [state, setState] = useState<ProbeState>({ kind: 'idle' });
   const [engine, setEngine] = useState<ProbeState>({ kind: 'idle' });
   const [count, setCount] = useState(0);
-  const [log, setLog] = useState<LogLine[]>([]);
+  // Batched + capped log: render-free appends coalesced into one render per tick,
+  // bounded to the last N lines. `replace` clears the log at the start of a run.
+  const { lines: log, append, replace } = useBatchedLog();
   const runStart = useRef(0);
+
+  // The action callbacks only ever set the log to [] or a single line (clear /
+  // seed), so `replace` is the right SetState shape for them.
+  const setLog = replace as React.Dispatch<React.SetStateAction<LogLine[]>>;
 
   const { onPress, onInit, onScan, onMethods } = useProbeActions({
     count, setCount, setState, setEngine, setLog, runStart,
   });
 
-  // Mirror the bridge's lifecycle lines into component state so the full
+  // Mirror the bridge's lifecycle lines into the batched buffer so the full
   // boot→reply sequence renders on-device (no adb logcat). Cleared per run.
   useEffect(() => {
     setBridgeStatusListener((line) => {
       const ms = runStart.current ? Date.now() - runStart.current : 0;
-      setLog((prev) => [...prev, { ms, line }]);
+      append({ ms, line });
     });
     return () => setBridgeStatusListener(null);
-  }, []);
+  }, [append]);
 
-  // Stream the engine's live scan diagnostics ('event:scanDebug') into the log
-  // so a screenshot shows WHY a scan returns 0 (getLogs range, commitment count,
-  // RPC error, scanned wallet id). No-op when the bridge isn't in this binary.
+  // Stream the engine's live scan diagnostics ('event:scanDebug') into the
+  // buffer so a screenshot shows WHY a scan returns 0 (getLogs range, commitment
+  // count, RPC error, scanned wallet id). No-op when the bridge isn't present.
   useEffect(() => {
     if (!isBridgeAvailable()) return undefined;
     return bridgeListen('event:scanDebug', (p) => {
       const e = p as { t?: number; chain?: number; msg?: string } | undefined;
       if (!e || !e.msg) return;
       const ms = runStart.current ? Date.now() - runStart.current : 0;
-      setLog((prev) => [...prev, { ms, line: `scan[${e.chain ?? '?'}] ${e.msg}` }]);
+      append({ ms, line: `scan[${e.chain ?? '?'}] ${e.msg}` });
     });
-  }, []);
+  }, [append]);
 
   const resultColor = state.kind === 'err' ? DANGER : sub;
   const resultText =

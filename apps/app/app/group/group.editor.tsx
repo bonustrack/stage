@@ -6,7 +6,7 @@ import { Text } from '@metro-labs/kit/text';
 import { Box } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
 import { Button } from '@metro-labs/kit/button';
-import { avatarRenderUrl } from '@metro-labs/client/profile/snapshot';
+import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
 import { channelStampSeed, stampAvatarUrl } from '@metro-labs/kit/avatar';
 import { usePalette } from '../../lib/theme';
 
