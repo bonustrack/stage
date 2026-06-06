@@ -21,8 +21,9 @@ export function ComponentsPage(): React.ReactElement {
     <Box style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
       <SystemHeader title="Components" dark={dark} fg={fg} head={head} border={border} />
       <ScrollView
+        style={{ flex: 1 }}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 + insets.bottom }}
       >
         <ComponentsGallery dark={dark} head={head} sub={sub} border={border} rowBg={rowBg} />
       </ScrollView>
