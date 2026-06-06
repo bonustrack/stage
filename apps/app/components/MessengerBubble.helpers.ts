@@ -52,12 +52,15 @@ export function markdownStyles(fg: string, dark: boolean, mine: boolean): Record
   /** Tighter leading on the user's own bubble — Less prefers a snugger look there.
    *  Assistant text keeps 23 for comfortable reading on long replies. */
   const lh = mine ? 21 : 23;
+  /** Heading sizes MUST live here: the lib flattens styles.headingN into the leaf
+   *  <Text>'s inheritedStyles, and that fontSize wins over a wrapping Text (RN: nearest
+   *  Text wins), so a <Title> rule wrapper never sized the glyphs. */
+  const h = (fontSize: number, lineHeight: number): object =>
+    ({ color: fg, fontSize, lineHeight, fontFamily: 'Calibre-Semibold', marginTop: 6, marginBottom: 2 });
   return {
     body: { color: fg, fontSize: 19, lineHeight: lh, fontFamily: 'Calibre-Medium' },
     paragraph: { marginTop: 0, marginBottom: 0 },
-    heading1: { color: fg, fontSize: 20, fontFamily: 'Calibre-Semibold', marginTop: 4, marginBottom: 2 },
-    heading2: { color: fg, fontSize: 18, fontFamily: 'Calibre-Semibold', marginTop: 4, marginBottom: 2 },
-    heading3: { color: fg, fontSize: 16, fontFamily: 'Calibre-Semibold', marginTop: 4, marginBottom: 2 },
+    heading1: h(30, 34), heading2: h(24, 28), heading3: h(21, 25), heading4: h(21, 25), heading5: h(21, 25), heading6: h(21, 25),
     /** Pin family/weight/size/lineHeight on inline marks. The lib defaults strong to
      *  fontWeight:'bold', which makes RN miss the Calibre-Semibold family (registered
      *  as its own family, not a weight); fontWeight:'normal' lets the family win. */
