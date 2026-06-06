@@ -117,7 +117,7 @@ function LabelChips({ labels, fg, sub, rowBg, onLabelPress }: {
 function ChannelRowBase({
   title, avatarAddress, avatarUri, cacheBuster, square,
   lastPreview, timestamp, subtitle, unreadCount = 0, markedUnread,
-  pinned, hasDraft, showChevron, avatarSize = 40,
+  pinned, hasDraft, showChevron, avatarSize = 44,
   onPress, onLongPress, containerStyle, labels, onLabelPress, noBorder,
 }: ChannelRowProps): React.ReactElement {
   const { link: head, text: sub, bg, border } = usePalette();
