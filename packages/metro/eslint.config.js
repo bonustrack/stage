@@ -35,18 +35,4 @@ export default tseslint.config(
       "local/max-comment-lines": ["error", 3],
     },
   },
-  {
-    // Examples are standalone reference train scripts (not shipped src): exempt them
-    // from the library's structural caps + the import-style rule — they teach setup in
-    // long header doc-blocks, are intentionally self-contained (one file = one train),
-    // and use require() for optional deps. Correctness rules (unused vars, no-explicit-any)
-    // still apply.
-    files: ["examples/**/*.ts"],
-    rules: {
-      "local/max-comment-lines": "off",
-      "max-lines": "off",
-      "max-len": "off",
-      "@typescript-eslint/no-require-imports": "off",
-    },
-  },
 );

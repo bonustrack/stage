@@ -1,15 +1,6 @@
-/**
- * Reference train built on the defineTrain SDK (#13).
- *
- * This is a self-contained "echo" platform with no external service — it proves
- * the SDK end-to-end in ~50 lines (vs ~120 for the hand-rolled telegram.ts).
- * Every `send`/`react`/`reply` is echoed straight back as an inbound event, and
- * a heartbeat fires once a second. Copy this shape and swap the inbound loop +
- * actions for a real platform (Telegram long-poll, Discord gateway, XMTP stream).
- *
- *   cp examples/echo.ts ~/.metro/trains/echo.ts
- *   metro call echo send '{"line":"metro://echo/demo","text":"hi"}'
- */
+// Reference train on the defineTrain SDK (#13): a self-contained 'echo'
+// platform with no external service. Every send/react/reply is echoed back
+// as inbound, and a heartbeat fires once a second. See README for usage.
 
 import { defineTrain } from '@metro-labs/metro/define-train';
 
