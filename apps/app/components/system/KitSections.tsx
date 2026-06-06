@@ -16,6 +16,8 @@ import { Badge } from '@metro-labs/kit/badge';
 import { Divider } from '@metro-labs/kit/divider';
 import { Caption } from '@metro-labs/kit/caption';
 import { Select } from '@metro-labs/kit/select';
+import { Image } from '@metro-labs/kit/image';
+import { Spacer } from '@metro-labs/kit/spacer';
 import { GallerySection } from './GallerySection';
 import type { GalleryPalette } from './galleryPalette';
 
@@ -27,6 +29,7 @@ const SELECT_OPTIONS = [
 
 const SAMPLE_ICONS = ['cog', 'bell', 'wallet', 'chat', 'user', 'check'] as const;
 const LIST_ROWS = ['Display', 'Messenger', 'Notifications', 'Security'];
+const SAMPLE_IMAGE = 'https://stamp.fyi/avatar/eth:0x2539f6dd5e4ab2c3a30c2b9a0a8a8a8a8a8a79d5?s=160';
 
 export function KitSections({ dark, head, sub, border }: GalleryPalette): React.ReactElement {
   const sec = { head, sub, border };
@@ -133,6 +136,22 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
           onChange={setSelectValue}
           placeholder="Choose a theme"
         />
+      </GallerySection>
+
+      <GallerySection name="Image" note="Unified image - fit / radius / frame" {...sec} innerPadH={14} innerPadV={14}>
+        <Row gap={12} style={{ alignItems: 'center', flexWrap: 'wrap' }}>
+          <Image src={SAMPLE_IMAGE} size={56} radius="full" fit="cover" alt="Round avatar" />
+          <Image src={SAMPLE_IMAGE} size={56} radius="lg" fit="cover" alt="Rounded square" />
+          <Image src={SAMPLE_IMAGE} size={56} radius="lg" frame fit="contain" alt="Framed contain" />
+        </Row>
+      </GallerySection>
+
+      <GallerySection name="Spacer" note="Flexible gap - pushes siblings apart" {...sec} innerPadH={14} innerPadV={14}>
+        <Row style={{ alignItems: 'center' }}>
+          <Text dark={dark} color={head}>Start</Text>
+          <Spacer />
+          <Text dark={dark} color={sub}>End</Text>
+        </Row>
       </GallerySection>
     </Box>
   );

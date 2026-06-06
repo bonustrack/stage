@@ -2,7 +2,8 @@
  *  popup, staged-attachment row, recording waveform bar), extracted for the lint
  *  line-budget. JSX + behavior identical — state owned by the parent. */
 
-import { Animated, Image, Pressable, StyleSheet } from 'react-native';
+import { Animated, Pressable, StyleSheet } from 'react-native';
+import { Image } from '@metro-labs/kit/image';
 import { Text } from '@metro-labs/kit/text';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Avatar } from './Avatar';
@@ -115,11 +116,7 @@ export function PendingRow({
           /** Image attachments: 72px square + filename label, x-to-remove pinned. */
           <Col key={a.id} align="center" gap={4} style={{ width: 72 }}>
             <Box>
-              <Image
-                source={{ uri: a.url }}
-                style={{ width: 72, height: 72, borderRadius: 8 }}
-                resizeMode="cover"
-              />
+              <Image src={a.url} size={72} radius={8} fit="cover" />
               <Pressable
                 onPress={() => onRemove(i)}
                 hitSlop={6}

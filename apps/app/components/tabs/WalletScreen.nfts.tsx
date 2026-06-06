@@ -1,7 +1,8 @@
 /** Wallet NFT grid view — extracted from WalletScreen.parts for lint
  *  line-budget. Rendering identical. */
 
-import { Image, Linking, Pressable } from 'react-native';
+import { Linking, Pressable } from 'react-native';
+import { Image } from '@metro-labs/kit/image';
 import { Spinner } from '../Spinner';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
@@ -55,8 +56,8 @@ export function NftsView({
           >
             {nft.image ? (
               <Image
-                source={{ uri: nft.image }}
-                resizeMode="cover"
+                src={nft.image}
+                fit="cover"
                 style={{ width: '100%', aspectRatio: 1, borderRadius: 12, backgroundColor: border }}
               />
             ) : (

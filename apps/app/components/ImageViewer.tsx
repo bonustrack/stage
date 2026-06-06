@@ -17,7 +17,8 @@
  *  patterns — there's no iOS toast primitive). */
 
 import { useState } from 'react';
-import { Alert, Image, Modal, Platform, Pressable } from 'react-native';
+import { Alert, Modal, Platform, Pressable } from 'react-native';
+import { Image } from '@metro-labs/kit/image';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from './layout';
 import { Spinner } from './Spinner';
@@ -105,7 +106,7 @@ export function ImageViewer({ uri, visible, onClose }: {
           style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
         >
           {uri ? (
-            <Image source={{ uri }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
+            <Image src={uri} style={{ width: '100%', height: '100%' }} fit="contain" />
           ) : null}
         </Pressable>
 
