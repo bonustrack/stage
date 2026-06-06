@@ -72,7 +72,11 @@ export function LabelFilterBar({ labels, enabled, onToggle }: {
       horizontal
       showsHorizontalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
-      contentContainerStyle={{ gap: 8, paddingHorizontal: 16, paddingVertical: 10, alignItems: 'center' }}
+      /** flexGrow:0 + alignSelf:flex-start keep the bar hugging its single chip
+       *  row; without them the horizontal ScrollView stretches to fill the column
+       *  and the chips drift to the vertical middle of the empty list area. */
+      style={{ flexGrow: 0, alignSelf: 'stretch' }}
+      contentContainerStyle={{ gap: 8, paddingHorizontal: 16, paddingVertical: 7, alignItems: 'center' }}
     >
       {labels.map(label => (
         <LabelChip
