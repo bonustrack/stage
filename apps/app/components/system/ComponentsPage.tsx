@@ -1,6 +1,6 @@
-/** Components sub-page of Settings — back-arrow header + the ComponentsGallery
- *  body. Reached via /settings → "Components" row → /settings/components.
- *  Mirrors KitPage's structure (SystemHeader + ScrollView + gallery), but
+/** Components sub-page of Settings - back-arrow header + theme switcher, then the
+ *  app-level components rendered directly (ComponentsSections) with sample data.
+ *  Reached via /settings -> "Components" row. Mirrors KitPage's structure but
  *  showcases the APP-level components instead of the @metro-labs/kit primitives. */
 
 import { ScrollView } from 'react-native';
@@ -8,7 +8,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box } from '../layout';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { SystemHeader } from './SystemHeader';
-import { ComponentsGallery } from './ComponentsGallery';
+import { ThemeSwitcher } from './ThemeSwitcher';
+import { ComponentsSections } from './ComponentsSections';
 
 export function ComponentsPage(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
@@ -25,7 +26,8 @@ export function ComponentsPage(): React.ReactElement {
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 + insets.bottom }}
       >
-        <ComponentsGallery dark={dark} head={head} sub={sub} border={border} rowBg={rowBg} />
+        <ThemeSwitcher dark={dark} head={head} sub={sub} border={border} rowBg={rowBg} />
+        <ComponentsSections dark={dark} head={head} sub={sub} border={border} rowBg={rowBg} />
       </ScrollView>
     </Box>
   );

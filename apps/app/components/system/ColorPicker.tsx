@@ -1,7 +1,7 @@
-/** Pure-JS visual color picker — three draggable HSV sliders (Hue / Saturation
+/** Pure-JS visual color picker - three draggable HSV sliders (Hue / Saturation
  *  / Value) plus a live preview swatch + the resulting hex, and a hex text
  *  field for typists. No native module: dragging uses react-native-gesture-handler
- *  (Pan + Tap) and the geometry is computed in JS. Used by KitColors.story
+ *  (Pan + Tap) and the geometry is computed in JS. Used by the ColorTokens editor
  *  inside AppModal. Fonts: Calibre-Medium / Calibre-Semibold only. */
 
 import { useMemo, useRef, useState } from 'react';
@@ -10,7 +10,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
 import { Box, Row } from '../layout';
 import { Text } from '@metro-labs/kit/text';
-import type { ControlPalette } from './KitControls';
+import type { GalleryPalette } from './galleryPalette';
 import { isHex } from '../../lib/colorOverrides';
 import { hexToHsv, hsvToHex } from './colorMath';
 
@@ -18,7 +18,7 @@ const TRACK_H = 26;
 
 function Track({ colors, thumb, onFraction, p }: {
   colors: string[]; thumb: number;
-  onFraction: (f: number) => void; p: ControlPalette;
+  onFraction: (f: number) => void; p: GalleryPalette;
 }): React.ReactElement {
   // Track width measured via onLayout; the gesture's `x` is relative to the
   // GestureDetector view (the whole track), so fraction is reliable mid-drag.
@@ -76,7 +76,7 @@ function hueStops(): string[] {
 }
 
 export function ColorPicker({ value, onChange, p }: {
-  value: string; onChange: (hex: string) => void; p: ControlPalette;
+  value: string; onChange: (hex: string) => void; p: GalleryPalette;
 }): React.ReactElement {
   const [hsv, setHsv] = useState(() => hexToHsv(value));
   const [text, setText] = useState<string | null>(null);
@@ -139,7 +139,7 @@ export function ColorPicker({ value, onChange, p }: {
   );
 }
 
-function Label({ text, p }: { text: string; p: ControlPalette }): React.ReactElement {
+function Label({ text, p }: { text: string; p: GalleryPalette }): React.ReactElement {
   return (
     <Text style={{
       color: p.sub, fontSize: 13, fontFamily: 'Calibre-Semibold',
