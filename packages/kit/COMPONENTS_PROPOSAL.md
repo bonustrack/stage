@@ -1,404 +1,427 @@
-# Kit components proposal: reduce app complexity via reusable primitives
+# Kit components proposal: mirror OpenAI ChatKit's real widget primitives
 
 Issue: https://github.com/bonustrack/metro/issues/280
 
-Status: PROPOSAL ONLY. Nothing here is implemented. This doc ranks the
-highest-leverage components to add to `@metro-labs/kit` so apps/app stops
-re-implementing the same row/card/sheet/field/header scaffolds inline. Sign-off
-required before any implementation.
+Status: PROPOSAL ONLY. Nothing here is implemented. Sign-off required before any
+implementation.
 
 No em-dashes anywhere in this doc (hyphens only), per Less's preference.
 
----
+## 0. Constraint and the honest premise
 
-## 1. What Kit provides today
+Less's constraint: only propose Kit components that ACTUALLY EXIST in OpenAI
+ChatKit, and follow ChatKit's same prop API. Drop anything that is not a real
+ChatKit component.
 
-Pure-data + a small set of real RN components, all hook-free (caller passes
-`dark`), all ChatKit-flavored:
+This forced a re-read of what ChatKit is. ChatKit is NOT a general-purpose
+mobile component library. It is two things:
 
-- `tokens.ts` - color scale, 7 semantic tokens + `semanticPalette(scheme)`,
-  radius tokens (`BUTTON_RADIUS_DEFAULT`, `BLOCK_RADIUS_DEFAULT`), `fontFamily`.
-- `layout.ts` + `apps/app/components/layout/Box.tsx` - the shared `Box`/`Row`/`Col`
-  prop contract (`direction`, `gap`, padding/margin shorthands, `align`,
-  `justify`, `flex`, `wrap`, `bg`, `radius`) mapped by `boxStyleEntries`.
-- `button.tsx` - `Button` (variants primary/secondary/ghost/danger, sizes,
-  `pill`, `icon`/`iconRight`, `loading`, `tintBg`/`tintFg`, radius token).
-- `text.tsx` - `Text` (variants body/secondary/caption/mono, size tokens, weight).
-- `title.tsx` - `Title` (levels 1-3).
-- `icon.tsx` - `Icon` (HeroIcon path data, named).
+1. An embeddable chat widget (`<openai-chatkit>` web component / `ChatKit` +
+   `useChatKit` React bindings) configured by an OPTIONS object (theme,
+   composer, startScreen, threads, header, entities, history, locale). These are
+   configuration keys, not reusable components.
+2. A server-driven WIDGET system: the assistant streams a tree of widget nodes
+   that ChatKit renders inside assistant messages. THIS is where ChatKit's
+   granular, prop-bearing components live (Card, ListView, Box, Text, Button,
+   Badge, etc).
 
-The kit already mirrors ChatKit's leaf nodes (Box/Row/Col, Text, Title, Button,
-Icon). What is MISSING is ChatKit's container + compound layer: `Card`
-(bounded container with status/confirm/cancel slots), `ListView` + `Row`
-(compound list), `Badge`, `Field`/`Form`, `Select`, `Divider`, plus a screen
-scaffold. apps/app re-implements all of these inline, dozens of times.
+So the only place ChatKit exposes a "kit of components with props" is its widget
+node set. That set is the accurate source of truth for this proposal. Everything
+we mirror below is a real ChatKit widget node or container, copied with its
+documented prop names. Anything not in that set has been dropped or demoted to
+an honest note (Section 4).
 
-## 2. ChatKit patterns we are adopting
+Because ChatKit's widget set is chat-message-rendering oriented, only a SUBSET
+generalizes to a generic mobile app. We do not pad the list. The realistic
+scope is small: roughly 6 components that both exist in ChatKit AND map to real
+repetition in apps/app, plus 3 we already have.
 
-Distilled from OpenAI ChatKit docs (chatkit-widgets, chatkit-themes):
+Sources (all fetched from official OpenAI docs):
+- Widget components + props: https://developers.openai.com/api/docs/guides/chatkit-widgets
+- Theme / options config: https://developers.openai.com/api/docs/guides/chatkit-themes
+- Web component / React options interface: https://openai.github.io/chatkit-js/api/openai/chatkit/interfaces/openaichatkit/
+- ChatKit.js docs root: https://openai.github.io/chatkit-js/
 
-- **Container + node hierarchy.** A `WidgetRoot` (Card or ListView) wraps many
-  `WidgetNode` children. We mirror this with compound components:
-  `<List>...<List.Item/>...</List>`, `<Card><Card.Status/><Card.Actions/></Card>`.
-- **Slots.** ChatKit's Card exposes `status`, `confirm`, `cancel` slots below the
-  body. We expose named slot sub-components / render-prop slots rather than a
-  pile of optional props.
-- **Theme tokens, not literals.** ChatKit drives everything from
-  `colorScheme` + `radius` (pill/round/soft/sharp) + `density`
-  (compact/normal/spacious) + typography. Our equivalent: the `dark` boolean +
-  `usePalette()` tokens + the radius tokens already in `tokens.ts`. New
-  components take a `density` prop where padding currently varies by call site.
-- **Controlled, typed props.** Single typed prop objects, controlled value +
-  onChange (no inline ad-hoc state where it should be lifted).
-- **Headless logic vs styled presentation.** Where a component carries real
-  behavior (a sheet's gesture/backdrop/safe-area, a field's focus/validation,
-  tabs' selection state), split a headless hook (`useSheet`, `useField`,
-  `useTabs`) from the styled view, so screens can reuse the logic without the
-  chrome. Pure-presentation components (Card, Badge, ListRow) stay styled-only.
+## 1. Accurate ChatKit inventory (with props, cited)
 
-## 3. Audit: measured repetition in apps/app
+Source for this whole section:
+https://developers.openai.com/api/docs/guides/chatkit-widgets
 
-Counts from `grep -r` over `apps/app/components` + `apps/app/app`:
+### 1a. Containers (WidgetRoot)
 
-| Signal | Count |
-| --- | --- |
-| `flexDirection: 'row'` inline | 76 |
-| `Pressable` usages | 351 |
-| `borderRadius` inline | 141 |
-| Inline `<TextInput>` (hand-styled fields) | 37 |
-| `Pressable` rows with `pressed ?` bg | 45 |
-| `paddingTop: insets.top` screen scaffolds | 24 |
-| `paddingBottom: ... insets.bottom` scaffolds | 28 |
-| Tiny uppercase section labels (fontSize 12/13 Medium) | 48 |
-| `999`-radius pill/chip/badge | 45 |
-| `<Modal>` sheets | 6 |
-| Distinct inline empty-state blocks | 6+ |
+- `Card` - props: `children`, `size`, `padding`, `background`, `status`,
+  `collapsed`, `asForm`, `confirm`, `cancel`, `theme`, `key`.
+- `ListView` - props: `children`, `limit`, `status`, `theme`, `key`.
 
-These cluster into a handful of missing primitives. The settings screens alone
-(`components/settings/*.tsx` + `SystemHeader.tsx`) are 448 lines, the large
-majority of which is repeated scaffold + row markup.
+### 1b. Components (WidgetNode)
 
-## 4. Ranked proposal (impact = LOC saved x reuse count x complexity reduced)
+- `Box` - `children`, `direction`, `align`, `justify`, `wrap`, `flex`,
+  `height`, `width`, `minHeight`, `minWidth`, `maxHeight`, `maxWidth`, `size`,
+  `minSize`, `maxSize`, `gap`, `padding`, `margin`, `border`, `radius`,
+  `background`, `aspectRatio`, `key`.
+- `Row` - same layout props as Box (no `direction`; it is the row).
+- `Col` - same layout props as Box (no `direction`; it is the column).
+- `Button` - `submit`, `style`, `label`, `onClickAction`, `iconStart`,
+  `iconEnd`, `color`, `variant`, `size`, `pill`, `block`, `uniform`,
+  `iconSize`, `key`.
+- `Caption` - `value`, `size`, `weight`, `textAlign`, `color`, `truncate`,
+  `maxLines`, `key`.
+- `Text` - `value`, `color`, `width`, `size`, `weight`, `textAlign`, `italic`,
+  `lineThrough`, `truncate`, `minLines`, `maxLines`, `streaming`, `editable`,
+  `key`.
+- `Title` - `value`, `size`, `weight`, `textAlign`, `color`, `truncate`,
+  `maxLines`, `key`.
+- `Badge` - `label`, `color`, `variant`, `pill`, `size`, `key`.
+- `Icon` - `name`, `color`, `size`, `key`.
+- `Image` - `src`, `alt`, `fit`, `position`, `frame`, `flush`, `size`,
+  `height`, `width`, `min/max` size props, `radius`, `background`, `margin`,
+  `aspectRatio`, `flex`, `key`.
+- `Markdown` - `value`, `streaming`, `key`.
+- `Divider` - `spacing`, `color`, `size`, `flush`, `key`.
+- `Select` - `options`, `onChangeAction`, `name`, `placeholder`,
+  `defaultValue`, `variant`, `size`, `pill`, `block`, `clearable`, `disabled`,
+  `key`.
+- `DatePicker` - `onChangeAction`, `name`, `min`, `max`, `side`, `align`,
+  `placeholder`, `defaultValue`, `variant`, `size`, `pill`, `block`,
+  `clearable`, `disabled`, `key`.
+- `ListViewItem` - `children`, `onClickAction`, `gap`, `align`, `key`.
+- `Form` - `onSubmitAction`, `children`, layout props (`align`, `justify`,
+  `flex`, `gap`, sizing, `padding`, `margin`, `border`, `radius`,
+  `background`), `key`.
+- `Spacer` - `minSize`, `key`.
+- `Transition` - `children`, `key`.
 
-### #1 - `ListRow` (compound `List` + `List.Item`) [styled, with headless option]
+Important: there is NO `Input` / text-field widget, NO `Sheet` / modal, NO
+`Tabs`, NO `Header`, NO `Screen`, NO `EmptyState`, NO `List.Item` (it is
+`ListViewItem`, child of `ListView`), and NO `IdentityRow` in ChatKit. The
+composer (text input) is part of the embed OPTIONS, not a widget component.
 
-The single biggest win. The icon/label/sub/chevron row and the
-avatar/title/subtitle/trailing row are re-implemented in nearly every list:
-`settings/SettingsMenu.tsx`, `settings/DisplaySettings.tsx`,
-`settings/NotificationsSettings.tsx`, `settings/MessengerSettings.tsx`,
-`settings/SecuritySettings.tsx`, `ChannelRow.tsx`, `tabs/SearchScreen.rows.tsx`,
-`send.recipient.tsx`, `LeftDrawer.parts.tsx`, `AccountsManager.list.tsx`. Each
-hand-rolls a `Pressable` + pressed-bg + `Row` + leading icon/avatar +
-title/subtitle `Col` + trailing chevron/check/badge + bottom border.
+### 1c. Embed options (config, not components)
 
-Replaces: ~45 pressed-row blocks, the bulk of the 48 section labels, the grouped
-bordered-card list wrapper. ChatKit `ListView` + items.
+Source: https://developers.openai.com/api/docs/guides/chatkit-themes and the
+options interface. These are configuration keys, useful as naming references for
+our theme, but they are NOT reusable components:
 
-Proposed API (compound + slots, ChatKit ListView style):
+- `theme`: `colorScheme` (`light`/`dark`), `color.accent.primary` + `.level`,
+  `radius` (`round`/`pill`/`soft`/`sharp`), `density`
+  (`compact`/`normal`/`spacious`), `typography.fontFamily`.
+- `composer`: `placeholder`, `attachments` (`uploadStrategy`/`maxSize`/
+  `maxCount`/`accept`), `tools` (`id`/`label`/`icon`/`pinned`).
+- `startScreen`: `greeting`, `prompts` (`name`/`prompt`/`icon`).
+- `header`: `enabled`, `customButtonLeft`/`customButtonRight` (`icon`/`onClick`).
+- `threads`, `history.enabled`, `locale`, `entities`
+  (`onTagSearch`/`onClick`/`onRequestPreview`).
 
-```ts
-// Grouped/inset container. radius + border from block-radius token; renders
-// dividers between items; optional section label header.
-interface ListProps {
-  label?: string;            // uppercase section header (replaces 48 inline labels)
-  inset?: boolean;           // bordered rounded "card" group vs flush list
-  dark: boolean;
-  children: ReactNode;       // <List.Item/>s
-}
+We already align with `theme` here: kit `tokens.ts` has the color scale,
+`radius` tokens, and `fontFamily`; our `dark` boolean maps to `colorScheme`.
 
-interface ListItemProps {
-  leading?: ReactNode;       // slot: Icon | Avatar
-  title: string;
-  subtitle?: string;
-  trailing?: ReactNode;      // slot: chevron | check | Badge | timestamp
-  selected?: boolean;        // renders a check in trailing when no trailing given
-  onPress?: () => void;
-  onLongPress?: () => void;
-  destructive?: boolean;     // danger token for title (Security "Remove account")
-  density?: 'compact' | 'normal';
-  noBorder?: boolean;
-  dark: boolean;
-}
+## 2. What Kit already mirrors today
 
-function List(p: ListProps): ReactElement;
-List.Item = function ListItem(p: ListItemProps): ReactElement;
-```
+Kit already has hook-free RN versions of these ChatKit nodes (caller passes
+`dark`):
 
-Before (SettingsMenu, per row, ~18 lines x 8 rows):
+- `Box`/`Row`/`Col` (via `layout.ts` + the app `Box`) - matches ChatKit
+  `Box`/`Row`/`Col` layout props (`direction`, `gap`, `align`, `justify`,
+  `flex`, `wrap`, `radius`, `background`).
+- `Text` - matches ChatKit `Text` (`value` as children, `color`, `size`,
+  `weight`, `textAlign`). Our `mono` variant is an extra; ChatKit has no mono.
+- `Title` - matches ChatKit `Title` (`size`/level, `weight`, `color`).
+- `Button` - matches ChatKit `Button` (`variant`, `size`, `pill`, icon slots).
+  Our names differ slightly (`icon`/`iconRight` vs `iconStart`/`iconEnd`); see
+  Section 3 for an alignment note.
+- `Icon` - matches ChatKit `Icon` (`name`, `color`, `size`).
 
-```tsx
-<Pressable onPress={...} style={({pressed})=>({backgroundColor: pressed?divider:'transparent'})}>
-  <Box style={{marginHorizontal:16,paddingVertical:16,flexDirection:'row',alignItems:'center',gap:12,borderBottomWidth:1,borderBottomColor:divider}}>
-    <Icon name={row.icon} size={22} color={head} />
-    <Box style={{flex:1}}>
-      <Text style={{color:head,fontSize:18,fontFamily:'Calibre-Medium'}}>{row.label}</Text>
-      <Text style={{color:sub,fontSize:13,marginTop:1,fontFamily:'Calibre-Medium'}}>{row.sub}</Text>
-    </Box>
-    <Icon name="chevronRight" size={18} color={sub} />
-  </Box>
-</Pressable>
-```
+So the existing kit is already a faithful partial mirror. The gaps below are
+the ChatKit nodes we have NOT yet built that also recur in apps/app.
 
-After:
+## 3. Proposed additions (real ChatKit nodes only, ChatKit prop names)
 
-```tsx
-<List.Item dark={dark} leading={<Icon name={row.icon} size={22} />}
-  title={row.label} subtitle={row.sub} onPress={() => router.push(row.href)}
-  trailing={<Icon name="chevronRight" size={18} />} />
-```
+Ranked by impact (repetition in apps/app x how cleanly the ChatKit node maps).
+Each entry cites the ChatKit node it mirrors and copies its prop names. Where
+RN forces a difference from ChatKit (web), it is called out explicitly.
 
-Estimated reduction: ~600-750 LOC across the listed files. Highest reuse count
-in the app.
+### #1 - `Card` (ChatKit `Card`)
 
-### #2 - `Screen` scaffold + `Header` [styled; `Header` already partly exists as SystemHeader]
+ChatKit `Card`: `children`, `size`, `padding`, `background`, `status`,
+`collapsed`, `asForm`, `confirm`, `cancel`, `theme`.
 
-Every settings/system/sub-page repeats: `Box flex:1 + bg + paddingTop:insets.top`
-then `SystemHeader` then `ScrollView contentContainerStyle paddingBottom:32+insets.bottom`.
-24 `insets.top` scaffolds + 28 `insets.bottom` scaffolds. `SystemHeader` is
-already a good shared header but lives in apps/app and takes 5 manual color props
-(`fg`, `head`, `border`...) that should come from the palette internally.
+apps/app hand-rolls bordered rounded surfaces with an optional status line and
+confirm/cancel actions in `ChannelCard.tsx`, `MediaCard.tsx`,
+`GitHubLinkCard.tsx`, `MessengerBubble.cards.tsx`, grouped settings boxes, and
+wallet token cards (part of the 141 inline `borderRadius` uses). ChatKit's
+`status` + `confirm` + `cancel` props map directly onto our confirm/cancel
+surfaces.
 
-Replaces: the 24/28 scaffold pairs + 10 `SystemHeader` call sites' prop-drilling.
-
-Proposed API (ChatKit container + safe-area aware):
-
-```ts
-interface ScreenProps {
-  title?: string;            // renders the Header when set
-  onBack?: () => void;       // default router.back via headless useScreenBack()
-  right?: ReactNode;         // header trailing slot
-  scroll?: boolean;          // wrap children in a padded ScrollView (default true)
-  dark: boolean;
-  children: ReactNode;
-}
-function Screen(p: ScreenProps): ReactElement;
-
-// Header alone, palette-driven (promote + simplify SystemHeader):
-interface HeaderProps { title: string; onBack?: () => void; right?: ReactNode; dark: boolean; }
-function Header(p: HeaderProps): ReactElement;
-```
-
-Before: 8-12 lines of scaffold per screen. After: `<Screen title="Display" dark={dark}>...`.
-
-Estimated reduction: ~250-350 LOC; removes 5-color prop drilling at 10 sites.
-
-### #3 - `Field` (`Input` + `Field.Label` + `Field.Error`) [headless `useField` + styled]
-
-37 inline `<TextInput>` blocks, each re-styling bg/radius/padding/font +
-placeholder color + a label row + sometimes an error line + sometimes a trailing
-icon button. See `send.fields.tsx` (RecipientField/AmountField),
-`EditProfileModal.tsx`, `group.editor.tsx`, `SearchScreen.tsx`,
-`MessengerComposer` inputs, `send-shielded.form.tsx`.
-
-Proposed API (ChatKit Form/Input style; headless split for focus + validation):
-
-```ts
-interface FieldProps {
-  label?: string;            // uppercase label slot
-  value: string;
-  onChangeText: (v: string) => void;
-  placeholder?: string;
-  error?: string | null;     // renders Field.Error in danger token
-  trailing?: ReactNode;      // slot: contacts/MAX/clear button
-  multiline?: boolean;
-  status?: ReactNode;        // slot: "Resolving..." / resolved row
-  dark: boolean;
-}
-function Field(p: FieldProps): ReactElement;
-
-// headless: focus state + (optional) async validation/resolution
-function useField(opts?: { validate?: (v: string) => string | null }): {
-  value: string; setValue: (v: string) => void; error: string | null; focused: boolean;
-  bind: { value: string; onChangeText: (v: string) => void; onFocus(): void; onBlur(): void };
-};
-```
-
-Estimated reduction: ~300-400 LOC; standardizes input look + the label/error/
-status slots that are copy-pasted today.
-
-### #4 - `Card` (container + `Card.Status` / `Card.Actions` slots) [styled]
-
-ChatKit's flagship container: a bounded surface with optional status line and
-confirm/cancel actions below. apps/app hand-rolls bordered rounded surfaces in
-`ChannelCard.tsx`, `MediaCard.tsx`, `GitHubLinkCard.tsx`,
-`MessengerBubble.cards.tsx`, the grouped settings boxes, wallet token cards.
-141 inline `borderRadius` uses, many are this card surface.
-
-Proposed API (direct ChatKit Card mapping):
+Proposed API (ChatKit prop names kept; `dark` added because kit is hook-free,
+`onPress` added because RN has no `onClickAction` dispatcher):
 
 ```ts
 interface CardProps {
-  padding?: number;          // density-aware default
-  onPress?: () => void;
-  dark: boolean;
   children: ReactNode;
+  size?: 'sm' | 'md' | 'lg';           // ChatKit: size
+  padding?: number | string;            // ChatKit: padding
+  background?: string;                  // ChatKit: background
+  status?: { text: string; favicon?: string };  // ChatKit: status
+  collapsed?: boolean;                  // ChatKit: collapsed
+  asForm?: boolean;                     // ChatKit: asForm
+  confirm?: { label: string; onPress(): void };  // ChatKit: confirm
+  cancel?: { label: string; onPress(): void };   // ChatKit: cancel
+  onPress?: () => void;                 // RN addition (ChatKit uses actions)
+  dark: boolean;                        // kit is hook-free
 }
 function Card(p: CardProps): ReactElement;
-Card.Status  = (p: { text: string; tone?: 'default'|'danger'|'success'; dark: boolean }) => ReactElement;
-Card.Actions = (p: { confirm?: { label: string; onPress(): void }; cancel?: { label: string; onPress(): void }; dark: boolean }) => ReactElement;
 ```
 
-Estimated reduction: ~200-300 LOC; gives the confirm/cancel pattern one home.
+Estimated reduction: ~200-300 LOC; one home for the bordered-surface +
+status + confirm/cancel pattern.
 
-### #5 - `Badge` / `Chip` [styled]
+### #2 - `ListView` + `ListViewItem` (ChatKit `ListView` / `ListViewItem`)
 
-45 `999`-radius pill blocks: unread counts (ChannelRow), label chips
-(ChannelRow `LabelChips`, group.labels), status pills. Each re-implements the
-min-width/height/center/pill/color math.
+ChatKit `ListView`: `children`, `limit`, `status`, `theme`. ChatKit
+`ListViewItem`: `children`, `onClickAction`, `gap`, `align`.
 
-Proposed API:
+This is the biggest repetition win and it maps to a REAL ChatKit container.
+Note ChatKit's `ListViewItem` is intentionally minimal: it is just a clickable
+row wrapper (`children` + `onClickAction` + `gap` + `align`). It does NOT have
+`title`/`subtitle`/`leading`/`trailing` props. So we mirror it faithfully and
+let callers compose the row body from `Row`/`Icon`/`Text` (which we already
+have), rather than inventing a richer item API that ChatKit does not expose.
+
+apps/app re-implements clickable bordered rows in `settings/SettingsMenu.tsx`,
+`settings/DisplaySettings.tsx`, `NotificationsSettings.tsx`,
+`MessengerSettings.tsx`, `SecuritySettings.tsx`, `ChannelRow.tsx`,
+`SearchScreen.rows.tsx`, `send.recipient.tsx`, `LeftDrawer.parts.tsx`,
+`AccountsManager.list.tsx` (the ~45 pressed-row blocks).
+
+Proposed API (ChatKit prop names; `dark` added; `onPress` replaces
+`onClickAction`):
+
+```ts
+interface ListViewProps {
+  children: ReactNode;                  // ListViewItem children
+  limit?: number;                       // ChatKit: limit (max rows shown)
+  status?: { text: string };            // ChatKit: status
+  dark: boolean;
+}
+function ListView(p: ListViewProps): ReactElement;
+
+interface ListViewItemProps {
+  children: ReactNode;                  // caller composes Row/Icon/Text
+  onPress?: () => void;                 // RN form of onClickAction
+  gap?: number;                         // ChatKit: gap
+  align?: 'start' | 'center' | 'end';  // ChatKit: align
+  dark: boolean;
+}
+function ListViewItem(p: ListViewItemProps): ReactElement;
+```
+
+This is honest about ChatKit's shape. It saves the wrapper/pressed-bg/border/
+divider scaffolding (the bulk of the 45 row blocks), but row CONTENT stays
+composed from existing primitives, because ChatKit does the same.
+
+Estimated reduction: ~350-500 LOC (wrapper + dividers + pressed-state, not the
+content markup, since ChatKit does not abstract content).
+
+### #3 - `Badge` (ChatKit `Badge`)
+
+ChatKit `Badge`: `label`, `color`, `variant`, `pill`, `size`.
+
+45 `999`-radius pill blocks in apps/app: unread counts (ChannelRow), label
+chips (`ChannelRow` LabelChips, group.labels), status pills.
+
+Proposed API (ChatKit prop names verbatim; `dark` added):
 
 ```ts
 interface BadgeProps {
-  label: string | number;
-  tone?: 'neutral' | 'primary' | 'danger' | 'success';
-  variant?: 'solid' | 'soft' | 'outline';   // ChatKit badge styles
-  onPress?: () => void;                       // interactive chip (label filter)
+  label: string | number;              // ChatKit: label
+  color?: string;                      // ChatKit: color (token name or hex)
+  variant?: 'solid' | 'soft' | 'outline';  // ChatKit: variant
+  pill?: boolean;                      // ChatKit: pill
+  size?: 'sm' | 'md' | 'lg';           // ChatKit: size
   dark: boolean;
 }
 function Badge(p: BadgeProps): ReactElement;
-// Count convenience for unread: <Badge.Count value={n} max={99} dark={dark} />
 ```
 
-Estimated reduction: ~120-180 LOC; collapses ChannelRow's `LabelChips` (~40 LOC)
-+ the unread-badge block + scattered status pills.
+Estimated reduction: ~120-180 LOC.
 
-### #6 - `Sheet` (bottom-sheet, headless `useSheet` + styled) [headless + styled]
+### #4 - `Divider` (ChatKit `Divider`)
 
-`AppModal` is a good start but 6 components hand-roll `<Modal>` +
-GestureHandlerRootView + dim backdrop + safe-area + rounded-top sheet:
-`AppModal.tsx`, `EditProfileModal.tsx`, `ImageViewer.tsx`,
-`AccountsManager.parts.tsx`, `ProfileScreen.parts.tsx`, `xmtp-conv/parts.tsx`.
+ChatKit `Divider`: `spacing`, `color`, `size`, `flush`.
 
-Proposed API (promote AppModal into kit, add header slot + headless open state):
+The 1px border-token line recurs throughout (absorbed partly by ListView, but
+needed standalone outside lists).
 
 ```ts
-interface SheetProps {
-  visible: boolean;
-  onClose: () => void;
-  title?: string;            // header slot with close X
-  actions?: ReactNode;       // footer slot (confirm/cancel)
-  dark: boolean;
-  children: ReactNode;
-}
-function Sheet(p: SheetProps): ReactElement;
-
-function useSheet(): { visible: boolean; open(): void; close(): void; bind: { visible: boolean; onClose(): void } };
-```
-
-Estimated reduction: ~150-250 LOC; one correct backdrop/safe-area/gesture-root
-implementation instead of 6.
-
-### #7 - `EmptyState` [styled]
-
-6+ inline "centered Col + Spinner or message" blocks: `HomeScreen.parts.tsx`
-(HomeEmpty/HomeSpinner), `WalletScreen.activity.tsx`, `HomeScreen.filter.tsx`,
-`AccountsManager.list.tsx`, `send.recipient.tsx`.
-
-Proposed API:
-
-```ts
-interface EmptyStateProps {
-  icon?: HeroIconName;
-  message: string;
-  action?: { label: string; onPress(): void };  // ChatKit primary-action slot
-  loading?: boolean;          // renders the Spinner instead of the message
+interface DividerProps {
+  spacing?: number;     // ChatKit: spacing
+  color?: string;       // ChatKit: color
+  size?: number;        // ChatKit: size (thickness)
+  flush?: boolean;      // ChatKit: flush (ignore container padding)
   dark: boolean;
 }
-function EmptyState(p: EmptyStateProps): ReactElement;
+function Divider(p: DividerProps): ReactElement;
 ```
 
-Estimated reduction: ~80-120 LOC; one consistent empty/loading affordance.
+Estimated reduction: ~40-80 LOC.
 
-### #8 - `Tabs` (underline segmented, headless `useTabs` + styled) [headless + styled]
+### #5 - `Caption` (ChatKit `Caption`)
 
-The underline tab bar is duplicated: `system/KitTabs.tsx` (TabBar),
-`WalletScreen.tsx` (Wallet tabs), and the wallet send stepper. Active-underline
-+ selection state re-implemented each time.
+ChatKit `Caption`: `value`, `size`, `weight`, `textAlign`, `color`, `truncate`,
+`maxLines`.
 
-Proposed API (ChatKit-ish controlled segmented control):
+The tiny uppercase section labels and secondary captions (48 occurrences of
+fontSize 12/13 Medium labels) are exactly ChatKit's `Caption` role. Today we
+fake them with `<Text variant="caption">`; ChatKit treats `Caption` as a real
+distinct node, so promoting it matches ChatKit and removes the per-call font
+styling.
 
 ```ts
-interface TabsProps<T extends string> {
-  tabs: readonly T[];
-  value: T;
-  onChange: (t: T) => void;
+interface CaptionProps {
+  value: string;                       // ChatKit: value (children allowed too)
+  size?: 'sm' | 'md';                  // ChatKit: size
+  weight?: 'normal' | 'medium' | 'semibold';  // ChatKit: weight
+  textAlign?: 'start' | 'center' | 'end';     // ChatKit: textAlign
+  color?: string;                      // ChatKit: color
+  truncate?: boolean;                  // ChatKit: truncate
+  maxLines?: number;                   // ChatKit: maxLines
   dark: boolean;
 }
-function Tabs<T extends string>(p: TabsProps<T>): ReactElement;
-function useTabs<T extends string>(tabs: readonly T[], initial?: T): { value: T; setValue: (t: T) => void };
+function Caption(p: CaptionProps): ReactElement;
 ```
 
-Estimated reduction: ~80-120 LOC.
+Estimated reduction: ~60-120 LOC (the inline section-label styling).
 
-### #9 - `Divider` + `SectionLabel` [styled, small]
+### #6 - `Select` (ChatKit `Select`)
 
-The smallest but most pervasive: a 1px border-token line and the tiny uppercase
-section label (48 occurrences). Mostly absorbed by `List`/`Screen` above, but a
-standalone `Divider` and `SectionLabel` cover the cases outside lists.
+ChatKit `Select`: `options`, `onChangeAction`, `name`, `placeholder`,
+`defaultValue`, `variant`, `size`, `pill`, `block`, `clearable`, `disabled`.
+
+apps/app has a few hand-rolled dropdown/picker rows (display options, network
+picker, label picker). Lower count than the above but it is a real ChatKit node
+and removes ad-hoc picker styling.
 
 ```ts
-function Divider(p: { dark: boolean; inset?: number }): ReactElement;
-function SectionLabel(p: { children: string; dark: boolean }): ReactElement;
+interface SelectProps {
+  options: { value: string; label: string }[];  // ChatKit: options
+  value?: string;                       // controlled (ChatKit: defaultValue)
+  onChange: (v: string) => void;        // RN form of onChangeAction
+  name?: string;                        // ChatKit: name
+  placeholder?: string;                 // ChatKit: placeholder
+  variant?: 'solid' | 'soft' | 'outline';  // ChatKit: variant
+  size?: 'sm' | 'md' | 'lg';            // ChatKit: size
+  pill?: boolean;                       // ChatKit: pill
+  block?: boolean;                      // ChatKit: block (full width)
+  clearable?: boolean;                  // ChatKit: clearable
+  disabled?: boolean;                   // ChatKit: disabled
+  dark: boolean;
+}
+function Select(p: SelectProps): ReactElement;
 ```
 
-Estimated reduction: ~60-100 LOC (net of overlap with #1/#2).
+Estimated reduction: ~80-140 LOC (only where real pickers exist; do not force
+it onto toggle rows).
 
-### #10 (optional) - `AvatarLabelRow` headless data layer [headless]
+### Lower priority real nodes (optional, only if a real need shows up)
 
-`Avatar` exists in apps/app; the repeated bit is the avatar + resolved-name +
-truncated-address presentation (`send.recipient` RecipientRow,
-`SearchScreen.rows`, `ConversationIntro`, member pickers). A thin
-presentational `IdentityRow` + a headless `useIdentity(address)` (name/avatar/
-truncation resolution) would dedupe the resolution glue. Lower priority because
-the data resolution is app-specific (XMTP/Snapshot), so likely only the
-PRESENTATION moves to kit and the headless hook stays in apps/app.
+These ARE real ChatKit nodes but map weakly to current apps/app surfaces, so
+they are listed but not recommended for the first pass:
 
-Estimated reduction: ~60-100 LOC presentational.
+- `Image` (ChatKit) - apps/app already has avatar/media handling; only adopt if
+  we want ChatKit's `fit`/`frame`/`aspectRatio` semantics.
+- `Markdown` (ChatKit) - relevant only for rendering rich message bodies; we
+  already render messages elsewhere.
+- `Form` (ChatKit) - a layout+submit wrapper; only useful once we have multiple
+  multi-field forms worth standardizing.
+- `Spacer`, `Transition`, `DatePicker` - real ChatKit nodes, no clear current
+  use in apps/app. Skip until needed.
 
-## 5. Estimated total impact
+### Optional alignment: Button icon prop names
 
-| Component | Est. LOC saved | Reuse sites | Headless split |
-| --- | --- | --- | --- |
-| #1 List / List.Item | 600-750 | ~10 files | optional |
-| #2 Screen / Header | 250-350 | ~10 sites | useScreenBack |
-| #3 Field / useField | 300-400 | ~12 sites | yes |
-| #4 Card + slots | 200-300 | ~6 files | no |
-| #5 Badge / Chip | 120-180 | ~8 sites | no |
-| #6 Sheet / useSheet | 150-250 | 6 files | yes |
-| #7 EmptyState | 80-120 | 6+ sites | no |
-| #8 Tabs / useTabs | 80-120 | 3 sites | yes |
-| #9 Divider / SectionLabel | 60-100 | many | no |
-| #10 IdentityRow (opt) | 60-100 | ~5 sites | partial |
-| TOTAL | ~1,900-2,650 | | |
+Our existing `Button` uses `icon`/`iconRight`; ChatKit uses
+`iconStart`/`iconEnd`. To follow ChatKit's prop API exactly we could add
+`iconStart`/`iconEnd` as the canonical names (keeping the old ones as
+deprecated aliases). Non-breaking, optional.
 
-Conservative net app reduction after accounting for new imports and overlap:
-roughly 1,500-2,000 lines removed from apps/app, concentrated in the settings,
-list, and form surfaces, plus a large drop in inline-style surface area
-(`borderRadius`/`flexDirection`/pressed-bg counts) which is where most of the
-visual-inconsistency bugs come from.
+## 4. Dropped from the previous proposal (NOT real ChatKit components)
+
+The earlier draft invented a mobile component library and labeled it
+"ChatKit-flavored". These are removed because ChatKit has no such component:
+
+- `Screen` scaffold - not a ChatKit component. (Screen layout in ChatKit is the
+  embed host, configured via options, not a node.) Keep as an app-local helper
+  if wanted, but it is not part of a ChatKit mirror.
+- `Header` - not a ChatKit component. ChatKit's `header` is an EMBED OPTION
+  (`enabled` + `customButtonLeft/Right`), not a reusable RN component. Keep
+  `SystemHeader` app-local.
+- `Field` / `useField` / text `Input` - ChatKit has NO input/text-field widget.
+  Text entry is the COMPOSER, an embed option, not a widget node. Dropped.
+- `Sheet` / `useSheet` - not a ChatKit component. Keep `AppModal` app-local.
+- `Tabs` / `useTabs` - not a ChatKit component. Keep app-local.
+- `EmptyState` - not a ChatKit component. ChatKit's equivalent is the
+  `startScreen` embed OPTION (greeting + prompts), not a node. Keep app-local.
+- `SectionLabel` - not a distinct ChatKit node; its role is covered by the real
+  `Caption` node (see #5). Folded into Caption.
+- `List.Item` with `title`/`subtitle`/`leading`/`trailing` - ChatKit's item is
+  `ListViewItem` (`children`/`onClickAction`/`gap`/`align`) with no such props.
+  Reframed to the real `ListViewItem` shape (see #2).
+- `IdentityRow` / `useIdentity` - fully invented; no ChatKit equivalent.
+  Dropped. Identity rows stay app-local, composed from `ListViewItem` + `Row` +
+  `Icon`/`Avatar` + `Text`.
+
+Also note: the previous draft's claim that kit "already mirrors ChatKit's leaf
+nodes" was mostly right for Box/Row/Col/Text/Title/Button/Icon, but it then
+listed `Field`, `Sheet`, `Tabs` as ChatKit's "container + compound layer",
+which is false. Corrected above.
+
+## 5. Realistic scope assessment
+
+ChatKit is chat-domain-specific. Its only granular, prop-bearing component set
+is the widget-node system for rendering assistant-message UI. Of that set, the
+nodes that both (a) exist in ChatKit and (b) map to real, measured repetition in
+apps/app are: `Card`, `ListView`/`ListViewItem`, `Badge`, `Divider`, `Caption`,
+and `Select`. We already have faithful mirrors of `Box`/`Row`/`Col`, `Text`,
+`Title`, `Button`, `Icon`.
+
+That is the entire honest list. Six new components, not ten-plus. The previous
+total (1,900-2,650 LOC) was inflated by invented components (Field, Sheet,
+Tabs, Screen, Header, EmptyState, IdentityRow). The accurate estimate for the
+real ChatKit-backed set:
+
+| Component (ChatKit node) | Est. LOC saved | Reuse sites |
+| --- | --- | --- |
+| #1 Card | 200-300 | ~6 files |
+| #2 ListView / ListViewItem | 350-500 | ~10 files |
+| #3 Badge | 120-180 | ~8 sites |
+| #4 Divider | 40-80 | many |
+| #5 Caption | 60-120 | ~48 labels |
+| #6 Select | 80-140 | a few pickers |
+| TOTAL | ~850-1,320 | |
+
+Recommendation: scope the work to these six. The big remaining repetition in
+apps/app (inputs/fields, sheets, tabs, screen scaffolds, empty states) is real
+and worth deduping, but it should be tracked as an APP-LOCAL shared-components
+effort, NOT framed as a ChatKit mirror, because ChatKit genuinely has no
+equivalent. Conflating the two is what produced the inaccurate first draft.
 
 ## 6. Suggested implementation order (post sign-off)
 
-1. `Divider` + `SectionLabel` + `Badge` (leaf, zero behavior, unblock #1).
-2. `List` + `List.Item` (biggest win; migrate settings screens first).
-3. `Screen` + promote/simplify `Header` (migrate settings + system pages).
-4. `Field` + `useField` (migrate send + edit-profile + group editor).
-5. `Card` + slots, `EmptyState`, `Tabs` + `useTabs`.
-6. Promote `AppModal` to `Sheet` + `useSheet`; migrate the 6 modals.
-7. Optional `IdentityRow`.
+1. `Divider` + `Caption` + `Badge` (leaf nodes, zero behavior).
+2. `Card` (with `status`/`confirm`/`cancel`).
+3. `ListView` + `ListViewItem` (migrate settings screens first).
+4. `Select` (only where real pickers exist).
+5. Optional: `Button` `iconStart`/`iconEnd` alias for full ChatKit parity.
 
 Each step is its own PR off main, JS-only (no native deps), behavior-identical,
-verified against the Kit gallery (`apps/app/components/system/*`) plus tsc + lint.
+verified against the Kit gallery plus tsc + lint.
 
 ## 7. Risks / notes
 
-- Kit components stay hook-free re: the app's theme (caller passes `dark` +
-  palette), matching the existing Button/Text/Title contract. Headless hooks
-  (`useField`, `useSheet`, `useTabs`) are framework-only (React) and carry no
-  app-specific data deps.
+- Kit stays hook-free re: theme (caller passes `dark` + palette), matching the
+  existing Button/Text/Title contract. The only ChatKit-prop deviations are the
+  added `dark` and the RN `onPress` in place of ChatKit's `onClickAction`/
+  `onChangeAction` action-dispatch model (ChatKit dispatches server actions; RN
+  calls a local handler). Both are called out per component.
 - No native modules introduced; safe for the served branch + hot-reload.
-- Migrations must be behavior-identical and verified per-surface; do them
-  incrementally, not as one mega-PR.
-- Do NOT bump `packages/metro/package.json`. Kit version bumps are fine
-  (private package) but coordinate before tagging.
+- Migrations must be behavior-identical and verified per-surface.
+- Do NOT bump `packages/metro/package.json`.
