@@ -130,12 +130,13 @@ export function HomeSpinner({ head, bg }: { head: string; bg: string }): React.R
   );
 }
 
-/** Empty-list placeholder (no conversations yet). */
-export function HomeEmpty({ sub }: { sub: string }): React.ReactElement {
+/** Empty-list placeholder. Default copy is "no conversations yet"; pass a
+ *  message (e.g. the search "No matches" state) to override it. */
+export function HomeEmpty({ sub, message }: { sub: string; message?: string }): React.ReactElement {
   return (
     <Col p={32} align="center">
       <Text style={{ color: sub, textAlign: 'center' }}>
-        No conversations yet. Share your address from Settings to start one.
+        {message ?? 'No conversations yet. Share your address from Settings to start one.'}
       </Text>
     </Col>
   );
