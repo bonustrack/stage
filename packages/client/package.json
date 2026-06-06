@@ -36,6 +36,9 @@
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
+  "dependencies": {
+    "viem": "^2.51.0"
+  },
   "devDependencies": {
     "typescript": "~5.9.2"
   }
