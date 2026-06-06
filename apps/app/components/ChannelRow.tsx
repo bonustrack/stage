@@ -92,7 +92,7 @@ function buildLabelChips({ labels, fg, rowBg }: {
         // RN aligns an inline <View> by its BOTTOM edge to the text baseline,
         // so a 20px chip sits high vs the fontSize-17/lineHeight-22 preview text.
         // Drop it down so the chip's vertical center matches the text line center.
-        transform: [{ translateY: 3 }],
+        transform: [{ translateY: 5 }],
       }}
     >
       <Text style={{ color: fg, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{label}</Text>
