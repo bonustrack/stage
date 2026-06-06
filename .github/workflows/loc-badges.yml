@@ -1,0 +1,46 @@
+name: loc-badges
+
+# Regenerate the per-workspace lines-of-code shields.io endpoint JSONs whenever
+# source changes land on main, so the README badges always reflect real counts.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'scripts/loc-badge.mjs'
+      - '.github/workflows/loc-badges.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: loc-badges
+  cancel-in-progress: true
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Generate LOC badges
+        run: node scripts/loc-badge.mjs
+
+      - name: Commit if changed
+        run: |
+          if [ -n "$(git status --porcelain .github/badges)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add .github/badges
+            git commit -m "chore(badges): refresh lines-of-code counts [skip ci]"
+            git push
+          else
+            echo "LOC badges already up to date."
+          fi
