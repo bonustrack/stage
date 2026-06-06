@@ -170,7 +170,7 @@ function ChannelRowBase({
             {labels && labels.length > 0 ? (
               <LabelChips labels={labels} fg={fg} sub={sub} rowBg={rowBg} onLabelPress={onLabelPress} />
             ) : null}
-            <Text style={{ color: sub, fontSize: 17, fontFamily: 'Calibre-Medium', flex: 1 }} numberOfLines={1}>
+            <Text style={{ color: sub, fontSize: 17, fontFamily: 'Calibre-Medium', flex: 1 }} numberOfLines={2} ellipsizeMode="tail">
               {previewText}
             </Text>
             {unreadCount > 0 ? (
