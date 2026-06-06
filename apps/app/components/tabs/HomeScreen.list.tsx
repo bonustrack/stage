@@ -14,8 +14,7 @@ import { useEffectiveColorScheme } from '../../lib/theme';
 import { CHANNEL_ROW_HEIGHT } from './HomeScreen.helpers';
 import type { Row as RowT } from './HomeScreen.helpers';
 import { HomeEmpty } from './HomeScreen.parts';
-import { LabelFilterControl } from './HomeScreen.filter';
-import type { LabelFilterValue } from './HomeScreen.filter';
+import { LabelFilterBar } from './HomeScreen.labelbar';
 import { ChannelsSearchBar } from './HomeScreen.search';
 
 interface ChannelsListProps {
@@ -24,10 +23,12 @@ interface ChannelsListProps {
   myAddress: string | null;
   sortedRows: RowT[];
   requestCount: number;
-  /** Active label filter (null = none) → drives the top-left control's state. */
-  labelFilter: LabelFilterValue;
-  /** Opens the label-picker sheet (owned by HomeScreen). */
-  onOpenFilter: () => void;
+  /** Unique labels across non-archived channels → the filter bar chips. */
+  barLabels: string[];
+  /** Enabled label keys (lowercased); empty = no filter. */
+  enabledLabels: Set<string>;
+  /** Toggle a label's enabled state. */
+  onToggleLabel: (label: string) => void;
   /** Channels search query + setter (owned by HomeScreen) → search bar + filter. */
   query: string;
   setQuery: (v: string) => void;
@@ -44,7 +45,7 @@ interface ChannelsListProps {
 }
 
 export function ChannelsList({
-  panRef, router, myAddress, sortedRows, requestCount, labelFilter, onOpenFilter,
+  panRef, router, myAddress, sortedRows, requestCount, barLabels, enabledLabels, onToggleLabel,
   query, setQuery,
   head, sub, border,
   listExtraData, listRef, savedOffsetRef, didRestoreRef, contentHeightRef,
@@ -58,9 +59,9 @@ export function ChannelsList({
   const badgeFg = dark ? '#000000' : '#ffffff';
   return (
     <>
-      {/* Home topnav: avatar + label-filter control on the left, requests + "+"
-       *  on the right. Tapping the filter control opens the label picker sheet;
-       *  when a label is active the control highlights + shows the label text. */}
+      {/* Home topnav: avatar on the left, archived + requests + "+" on the
+       *  right. The label filter now lives in a horizontal chip bar under the
+       *  search bar (LabelFilterBar), not in the topnav. */}
       <Row align="center" justify="between" px={16} pt={12} pb={10}>
         <Row align="center" gap={8}>
           {/* Static avatar: the top-left no longer opens the account-switcher
@@ -68,10 +69,6 @@ export function ChannelsList({
           <Avatar address={myAddress} size={24} style={{ backgroundColor: border }} />
         </Row>
         <Row align="center" gap={18}>
-          {/* Label filter: link-colored filter glyph (size-matched to the other
-           *  top-right icons), placed before the requests icon. Tap opens the
-           *  label picker sheet. */}
-          <LabelFilterControl active={labelFilter} onPress={onOpenFilter} />
           {/* Archived channels: archive-box glyph, placed before the requests
            *  icon. Tap opens the dedicated Archived view (the feed footer no
            *  longer surfaces an "Archived (N)" row). */}
@@ -112,6 +109,9 @@ export function ChannelsList({
         border={border}
         rowBg={border}
       />
+      {/* Horizontal label-filter bar under the search bar: one toggle chip per
+       *  unique label across non-archived channels. Hidden when no labels. */}
+      <LabelFilterBar labels={barLabels} enabled={enabledLabels} onToggle={onToggleLabel} />
       <FlatList
         ref={listRef}
         simultaneousHandlers={panRef}
