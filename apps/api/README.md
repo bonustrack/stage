@@ -1,26 +1,54 @@
-# metro-api (api.metro.box)
+# api
 
-Daemon-backed HTTP API. Currently powers the website's "Ask a question" button:
-the **daemon** creates the XMTP group (daemon = super-admin/owner) and adds the
-requesting user as a member, so the user doesn't own it.
+> Daemon-backed HTTP service behind api.metro.box.
 
-## Endpoints
-- `GET  /health` → `ok`
-- `POST /ask-question { address }` → `{ conversationId, line }` — creates a
-  daemon-owned group via `metro call xmtp newGroup`.
+[![lines of code](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/bonustrack/metro/main/.github/badges/loc-api.json)](https://github.com/bonustrack/metro)
+[![Bun](https://img.shields.io/badge/runtime-Bun-000000?logo=bun&logoColor=white)](https://bun.sh)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 
-## Run (on the daemon's Mac)
+## Overview
+
+A small standalone Bun HTTP server that exposes the Metro daemon to the public web at `api.metro.box`. It currently powers the website's "Ask a question" button: rather than the visitor creating an XMTP group, the API shells `metro call xmtp newGroup` so the **daemon** creates and owns the group as super-admin, and the requesting user joins as a plain member.
+
+It is kept out of `~/.metro/trains/` on purpose, so the metro daemon does not supervise or restart it and bounce the other trains.
+
+## Setup
+
 ```sh
-# 1. API server on :8500 (from this app)
-nohup bun apps/api/src/index.ts > /tmp/metro-api.log 2>&1 &   # or: bun --cwd apps/api start
-
-# 2. Cloudflare tunnel api.metro.box → :8500
-#    (tunnel "metro-api", id 12772a09-df11-4e29-b880-1dc63a09bad1, DNS routed on the metro.box zone)
-nohup cloudflared tunnel --no-autoupdate run --url http://127.0.0.1:8500 metro-api \
-  > /tmp/metro-api-tunnel.log 2>&1 &
+bun install            # from the repo root
 ```
 
-## TODO: durability
-Both processes are `nohup`'d, so they survive the session but **not a reboot**.
-For production, wrap each in a launchd LaunchAgent (or fold the server into a
-supervised metro train once a daemon restart is convenient). CORS is `*`.
+The server shells the global `metro` CLI, so the daemon must be running and `metro` must be on `PATH`.
+
+## Usage
+
+Run the server (listens on `METRO_API_PORT`, default `8500`):
+
+```sh
+cd apps/api && bun run start
+```
+
+Endpoints:
+
+| Method | Path            | Description                                                       |
+| ------ | --------------- | ---------------------------------------------------------------- |
+| `GET`  | `/health`       | Liveness check, returns `ok`.                                    |
+| `POST` | `/ask-question` | Body `{ address }`; creates a daemon-owned XMTP group, returns `{ conversationId, line }`. |
+
+## Project structure
+
+```
+src/
+  index.ts   # the entire HTTP server: routing, CORS, daemon group creation
+```
+
+## Scripts
+
+| Script            | Description                       |
+| ----------------- | --------------------------------- |
+| `bun run start`   | Run the HTTP server (`src/index.ts`). |
+
+## Links
+
+- Shells the [`@metro-labs/metro`](../../packages/metro) CLI to create daemon-owned groups
+- Serves the web client [`apps/ui`](../ui)
