@@ -2,7 +2,7 @@
  *
  *  Used by BOTH the channels tab (app/(tabs)/index.tsx) and the "Common
  *  channels" section on a peer's profile (CommonChannels.tsx) so the two
- *  surfaces stay visually identical. This component is PRESENTATION ONLY —
+ *  surfaces stay visually identical. This component is PRESENTATION ONLY -
  *  all data/state logic (unread recount, streaming updates, pin/draft state,
  *  profile-name resolution) lives in the caller, which passes the resolved
  *  values down as props.
@@ -14,7 +14,8 @@
  *  that context (common channels) can omit them gracefully. */
 
 import { memo } from 'react';
-import { Pressable } from 'react-native';
+// eslint-disable-next-line no-restricted-imports -- raw View is required as an INLINE element inside <Text> (Box/Row/Col carry layout flex and don't embed inline in text flow)
+import { Pressable, View } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { Avatar } from './Avatar';
@@ -27,7 +28,7 @@ export interface ChannelRowProps {
   title: string;
   /** Eth address whose stamp.fyi avatar should render (ignored if avatarUri set). */
   avatarAddress?: string | null;
-  /** Custom/group-uploaded image — takes precedence over avatarAddress. */
+  /** Custom/group-uploaded image - takes precedence over avatarAddress. */
   avatarUri?: string | null;
   /** Stamp cache-buster (pass getPeerAvatarCb(avatarAddress)). */
   cacheBuster?: number | string;
@@ -44,10 +45,10 @@ export interface ChannelRowProps {
   markedUnread?: boolean;
   pinned?: boolean;
   hasDraft?: boolean;
-  /** Group labels (from XMTP appData) to render as compact read-only chips
-   *  inline next to the title (same row as the group name). Groups only — DMs
-   *  pass none. Capped to a few visible with a "+N" overflow pill so the name
-   *  row never overflows; the name itself stays primary (truncates first). */
+  /** Group labels (from XMTP appData) rendered as compact read-only chips on
+   *  the LEFT of the preview line, before the last-message text (groups only;
+   *  DMs pass none). Capped to a few visible + a "+N" pill; the preview text
+   *  fills the remaining width and truncates first. */
   labels?: string[];
   /** Tapping a label chip calls this with the chip's label (the caller
    *  navigates to the Channels tab + applies it as the active filter). When
@@ -61,8 +62,7 @@ export interface ChannelRowProps {
   onLongPress?: () => void;
   /** Pressable style override (the channels tab insets the separator itself). */
   containerStyle?: StyleProp<ViewStyle>;
-  /** Hide the inner row's bottom separator (e.g. when embedded in a bordered
-   *  card where only the card's outer border should show). */
+  /** No-op: rows no longer render a bottom separator. Kept for caller compat. */
   noBorder?: boolean;
 }
 
@@ -70,45 +70,34 @@ export interface ChannelRowProps {
  *  (2) so the chips stay secondary to the group name on the same row. */
 const MAX_VISIBLE_LABELS = 2;
 
-/** Compact, read-only label chips shown INLINE on the name row, immediately to
- *  the right of the group name (groups only). Matches the group-info LabelChip
- *  pill style (rounded, bordered) minus the remove affordance, sized down to
- *  fit beside the name. Caps at MAX_VISIBLE_LABELS + a "+N" pill, and shrinks
- *  before the name does so the name stays the primary element. */
-function LabelChips({ labels, fg, sub, rowBg, onLabelPress }: {
-  labels: string[]; fg: string; sub: string; rowBg: string;
-  onLabelPress?: (label: string) => void;
-}): React.ReactElement | null {
-  if (labels.length === 0) return null;
+/** Build ROUNDED label chips as INLINE <View>s placed as the FIRST children
+ *  INSIDE the preview <Text>. RN supports embedding a <View> inline in a <Text>;
+ *  because it flows as inline content, the preview text wraps UNDERNEATH the
+ *  chip(s) on the 2nd line (not in a 2-column row beside it). Each chip is a real
+ *  rounded pill (borderRadius 999) so corners render; explicit height + small
+ *  marginRight keeps the baseline/spacing sane on Android. Caps at
+ *  MAX_VISIBLE_LABELS visible + a "+N" pill. */
+function buildLabelChips({ labels, fg, rowBg }: {
+  labels: string[]; fg: string; rowBg: string;
+}): React.ReactNode[] {
   const visible = labels.slice(0, MAX_VISIBLE_LABELS);
   const overflow = labels.length - visible.length;
-  return (
-    <Row align="center" gap={4} style={{ flexWrap: 'nowrap', flexShrink: 0 }}>
-      {visible.map(label => (
-        <Pressable
-          key={label.toLowerCase()}
-          disabled={!onLabelPress}
-          /** Swallow the press so it doesn't bubble to the row's onPress (which
-           *  would open the conversation). onPressOut fires after the row's
-           *  Pressable would have, so we also gate via the dedicated handler. */
-          onPress={onLabelPress ? () => onLabelPress(label) : undefined}
-          hitSlop={6}
-          style={({ pressed }) => ({
-            paddingHorizontal: 6, paddingVertical: 1, borderRadius: 999,
-            backgroundColor: rowBg, flexShrink: 0,
-            opacity: pressed && onLabelPress ? 0.6 : 1,
-          })}
-        >
-          <Text style={{ color: fg, fontSize: 12, fontFamily: 'Calibre-Medium' }}>
-            {label}
-          </Text>
-        </Pressable>
-      ))}
-      {overflow > 0 ? (
-        <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>{`+${overflow}`}</Text>
-      ) : null}
-    </Row>
-  );
+  const chips = overflow > 0 ? [...visible, `+${overflow}`] : visible;
+  return chips.map((label, i) => (
+    <View
+      key={`${label.toLowerCase()}-${i}`}
+      style={{
+        height: 20, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2,
+        backgroundColor: rowBg, marginRight: 12, justifyContent: 'center',
+        // RN aligns an inline <View> by its BOTTOM edge to the text baseline,
+        // so a 20px chip sits high vs the fontSize-17/lineHeight-22 preview text.
+        // Drop it down so the chip's vertical center matches the text line center.
+        transform: [{ translateY: 3 }],
+      }}
+    >
+      <Text style={{ color: fg, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{label}</Text>
+    </View>
+  ));
 }
 
 /** #6: memoised so a stream tick that re-renders the channels list only
@@ -117,8 +106,8 @@ function LabelChips({ labels, fg, sub, rowBg, onLabelPress }: {
 function ChannelRowBase({
   title, avatarAddress, avatarUri, cacheBuster, square,
   lastPreview, timestamp, subtitle, unreadCount = 0, markedUnread,
-  pinned, hasDraft, showChevron, avatarSize = 40,
-  onPress, onLongPress, containerStyle, labels, onLabelPress, noBorder,
+  pinned, hasDraft, showChevron, avatarSize = 44,
+  onPress, onLongPress, containerStyle, labels,
 }: ChannelRowProps): React.ReactElement {
   const { link: head, text: sub, bg, border } = usePalette();
   const fg = sub;
@@ -135,11 +124,8 @@ function ChannelRowBase({
         paddingHorizontal: 14,
       }))}
     >
-      {/* Inner row carries the separator: it starts at the avatar's left edge
-          (inset by paddingHorizontal), not the full card width. */}
-      <Row align="center" gap={12} py={14} style={{
-        borderBottomWidth: noBorder ? 0 : 1, borderBottomColor: border,
-      }}>
+      {/* Inner row: no divider line between rows. */}
+      <Row align="center" gap={12} py={9}>
         <Avatar
           imageUri={avatarUri}
           address={!avatarUri && avatarAddress ? avatarAddress : null}
@@ -155,15 +141,12 @@ function ChannelRowBase({
             {/* Name + labels hug each other on the left; name shrinks (and
                 ellipsizes) first, the label chip stays right beside it. */}
             <Text
-              style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', flexShrink: 1, minWidth: 0 }}
+              style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold', flexShrink: 1, minWidth: 0 }}
               numberOfLines={1}
               ellipsizeMode="tail"
             >
               {title}
             </Text>
-            {labels && labels.length > 0 ? (
-              <LabelChips labels={labels} fg={fg} sub={sub} rowBg={rowBg} onLabelPress={onLabelPress} />
-            ) : null}
             {/* Flexible spacer pushes the timestamp to the far right edge. */}
             <Spacer />
             {timestamp ? (
@@ -172,8 +155,20 @@ function ChannelRowBase({
           </Row>
           {/* Reserve the badge's height (22) regardless of whether one shows so
               rows with/without the unread indicator are the same total height. */}
-          <Row align="center" gap={8} mt={4} style={{ minHeight: 22 }}>
-            <Text style={{ color: sub, fontSize: 16, fontFamily: 'Calibre-Medium', flex: 1 }} numberOfLines={1}>
+          {/* align-start so the unread badge pins to the FIRST line when the
+              preview wraps to two lines. */}
+          <Row align="start" gap={7} mt={2} style={{ minHeight: 22 }}>
+            {/* ROUNDED chip(s) are INLINE <View>s at the START of the preview
+                <Text>, so the preview flows around them and wraps UNDERNEATH the
+                chip on the 2nd line (single-line rounded pill, text under it). */}
+            <Text
+              style={{ color: sub, fontSize: 17, lineHeight: 22, fontFamily: 'Calibre-Medium', flex: 1 }}
+              numberOfLines={2}
+              ellipsizeMode="tail"
+            >
+              {labels && labels.length > 0
+                ? buildLabelChips({ labels, fg, rowBg })
+                : null}
               {previewText}
             </Text>
             {unreadCount > 0 ? (

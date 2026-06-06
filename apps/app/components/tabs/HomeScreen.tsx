@@ -21,8 +21,8 @@ import type { Row as RowT } from './HomeScreen.helpers';
 import { HomeError, HomeSpinner, useChannelRowRenderer } from './HomeScreen.parts';
 import { ChannelsList, channelRowLayout } from './HomeScreen.list';
 import { useChannelsSync } from './HomeScreen.sync';
-import { LabelFilterSheet, UNLABELED, useIncomingLabelFilter } from './HomeScreen.filter';
-import type { LabelFilterValue } from './HomeScreen.filter';
+import { useIncomingLabelFilter } from './HomeScreen.filter';
+import { deriveLabels } from './HomeScreen.labelbar';
 import { filterRowsByQuery } from './HomeScreen.search';
 
 /** Re-exported so existing import paths (`./HomeScreen`) stay unchanged. */
@@ -68,13 +68,18 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
   const [myAddress, setMyAddress] = useState<string | null>(null);
   /** Pending message-request count ('unknown' consent); drives "Requests (N)". */
   const [requestCount, setRequestCount] = useState<number>(0);
-  /** Active label filter (null = show all); drives topnav + sortedRows filter. */
-  const [labelFilter, setLabelFilter] = useState<LabelFilterValue>(null);
-  const [filterSheetOpen, setFilterSheetOpen] = useState<boolean>(false);
+  /** Enabled label filters (lowercased); empty = show all. ANY/OR: a channel is
+   *  kept if it carries at least one enabled label. */
+  const [enabledLabels, setEnabledLabels] = useState<Set<string>>(new Set());
+  const toggleLabel = (label: string): void => setEnabledLabels(prev => {
+    const next = new Set(prev), key = label.toLowerCase();
+    if (next.has(key)) next.delete(key); else next.add(key);
+    return next;
+  });
   /** Channels search query (client-side filter, empty = full list). */
   const [query, setQuery] = useState<string>('');
-  /** Apply cross-screen label-filter requests (tapped label chip). */
-  useIncomingLabelFilter(setLabelFilter);
+  /** Apply cross-screen label-filter requests (tapped label chip on a row). */
+  useIncomingLabelFilter(toggleLabel);
   /** Load saved scroll offset once; actual scroll happens in onContentSizeChange. */
   useEffect(() => {
     void getScrollOffset(CHANNELS_SCROLL_KEY).then(o => { savedOffsetRef.current = o; });
@@ -100,21 +105,22 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
      *  Archived view). Filtered first so the label filter + sort operate on the
      *  visible set. */
     const all = (rows ?? []).filter(r => !archived.has(r.convId));
-    /** Label filter: null → no filter; UNLABELED → only channels with no
-     *  labels[]; otherwise keep groups whose labels[] include the active label,
-     *  case-insensitively. Reactive to `rows` so cache updates re-derive. */
-    const list = labelFilter == null
+    /** Label filter (ANY/OR): no enabled labels → show all; otherwise keep
+     *  channels carrying at least one enabled label (case-insensitive).
+     *  Reactive to `rows` so cache updates re-derive. */
+    const list = enabledLabels.size === 0
       ? all
-      : labelFilter === UNLABELED
-        ? all.filter(r => (r.labels ?? []).length === 0)
-        : all.filter(r => (r.labels ?? []).some(l => l.toLowerCase() === labelFilter.toLowerCase()));
+      : all.filter(r => (r.labels ?? []).some(l => enabledLabels.has(l.toLowerCase())));
     return [...list].sort((a, b) => {
       const ap = pinned.has(a.convId) ? 1 : 0;
       const bp = pinned.has(b.convId) ? 1 : 0;
       if (ap !== bp) return bp - ap;
       return (b.lastTs ?? 0) - (a.lastTs ?? 0);
     });
-  }, [rows, pinned, labelFilter, archived]);
+  }, [rows, pinned, enabledLabels, archived]);
+
+  /** Unique label set across NON-ARCHIVED channels → drives the filter bar. */
+  const barLabels = useMemo(() => deriveLabels((rows ?? []).filter(r => !archived.has(r.convId))), [rows, archived]);
 
   /** Search query applied on top of the sorted/archived/label-filtered list
    *  (so search never surfaces hidden channels). Empty query = full list. */
@@ -162,8 +168,9 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
         myAddress={myAddress}
         sortedRows={visibleRows}
         requestCount={requestCount}
-        labelFilter={labelFilter}
-        onOpenFilter={() => setFilterSheetOpen(true)}
+        barLabels={barLabels}
+        enabledLabels={enabledLabels}
+        onToggleLabel={toggleLabel}
         query={query}
         setQuery={setQuery}
         head={head}
@@ -187,12 +194,6 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
         isPinned={rowMenu ? pinned.has(rowMenu.convId) : false}
         isArchived={rowMenu ? archived.has(rowMenu.convId) : false}
         onClose={() => setRowMenu(null)}
-      />
-      <LabelFilterSheet
-        visible={filterSheetOpen}
-        active={labelFilter}
-        onClose={() => setFilterSheetOpen(false)}
-        onSelect={setLabelFilter}
       />
     </Col>
   );

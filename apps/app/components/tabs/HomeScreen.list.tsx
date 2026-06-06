@@ -1,4 +1,4 @@
-/** HomeScreen list view — the topnav (avatar + "+") and the channels FlatList
+/** HomeScreen list view - the topnav (avatar + "+") and the channels FlatList
  *  (scroll persistence, requests header, empty state), extracted from
  *  HomeScreen.tsx (phase-2 lint, rendering identical). */
 
@@ -14,9 +14,9 @@ import { useEffectiveColorScheme } from '../../lib/theme';
 import { CHANNEL_ROW_HEIGHT } from './HomeScreen.helpers';
 import type { Row as RowT } from './HomeScreen.helpers';
 import { HomeEmpty } from './HomeScreen.parts';
-import { LabelFilterControl } from './HomeScreen.filter';
-import type { LabelFilterValue } from './HomeScreen.filter';
+import { LabelFilterBar } from './HomeScreen.labelbar';
 import { ChannelsSearchBar } from './HomeScreen.search';
+import { HomeOverflowMenu } from './HomeScreen.overflow';
 
 interface ChannelsListProps {
   panRef?: import('../SwipeTabs.types').SimultaneousRefs;
@@ -24,10 +24,12 @@ interface ChannelsListProps {
   myAddress: string | null;
   sortedRows: RowT[];
   requestCount: number;
-  /** Active label filter (null = none) → drives the top-left control's state. */
-  labelFilter: LabelFilterValue;
-  /** Opens the label-picker sheet (owned by HomeScreen). */
-  onOpenFilter: () => void;
+  /** Unique labels across non-archived channels → the filter bar chips. */
+  barLabels: string[];
+  /** Enabled label keys (lowercased); empty = no filter. */
+  enabledLabels: Set<string>;
+  /** Toggle a label's enabled state. */
+  onToggleLabel: (label: string) => void;
   /** Channels search query + setter (owned by HomeScreen) → search bar + filter. */
   query: string;
   setQuery: (v: string) => void;
@@ -44,7 +46,7 @@ interface ChannelsListProps {
 }
 
 export function ChannelsList({
-  panRef, router, myAddress, sortedRows, requestCount, labelFilter, onOpenFilter,
+  panRef, router, myAddress, sortedRows, requestCount, barLabels, enabledLabels, onToggleLabel,
   query, setQuery,
   head, sub, border,
   listExtraData, listRef, savedOffsetRef, didRestoreRef, contentHeightRef,
@@ -58,9 +60,9 @@ export function ChannelsList({
   const badgeFg = dark ? '#000000' : '#ffffff';
   return (
     <>
-      {/* Home topnav: avatar + label-filter control on the left, requests + "+"
-       *  on the right. Tapping the filter control opens the label picker sheet;
-       *  when a label is active the control highlights + shows the label text. */}
+      {/* Home topnav: avatar on the left, requests + 3-dot overflow menu on the
+       *  right (Archived + New group moved into the overflow). The label filter
+       *  lives in a horizontal chip bar under the search bar (LabelFilterBar). */}
       <Row align="center" justify="between" px={16} pt={12} pb={10}>
         <Row align="center" gap={8}>
           {/* Static avatar: the top-left no longer opens the account-switcher
@@ -68,16 +70,6 @@ export function ChannelsList({
           <Avatar address={myAddress} size={24} style={{ backgroundColor: border }} />
         </Row>
         <Row align="center" gap={18}>
-          {/* Label filter: link-colored filter glyph (size-matched to the other
-           *  top-right icons), placed before the requests icon. Tap opens the
-           *  label picker sheet. */}
-          <LabelFilterControl active={labelFilter} onPress={onOpenFilter} />
-          {/* Archived channels: archive-box glyph, placed before the requests
-           *  icon. Tap opens the dedicated Archived view (the feed footer no
-           *  longer surfaces an "Archived (N)" row). */}
-          <Pressable onPress={() => router.push('/xmtp/archived')} hitSlop={8}>
-            <Icon name="archive" size={24} color={head} />
-          </Pressable>
           {/* Message requests: person icon + count badge (pending 'unknown'
            *  consent convs). Badge hidden when 0; tap opens the requests list. */}
           <Pressable onPress={() => router.push('/xmtp/requests')} hitSlop={8} style={{ position: 'relative' }}>
@@ -97,9 +89,13 @@ export function ChannelsList({
               </Box>
             ) : null}
           </Pressable>
-          <Pressable onPress={() => router.push('/xmtp/new-group')} hitSlop={8}>
-            <Icon name="plus" size={26} color={head} />
-          </Pressable>
+          {/* Overflow (3-dot) menu: folds the former Archived + New-group icons
+           *  into a single kebab to declutter the topnav. */}
+          <HomeOverflowMenu
+            color={head}
+            onArchived={() => router.push('/xmtp/archived')}
+            onNewGroup={() => router.push('/xmtp/new-group')}
+          />
         </Row>
       </Row>
       {/* Search bar directly under the topnav: filters the rendered channel
@@ -112,6 +108,9 @@ export function ChannelsList({
         border={border}
         rowBg={border}
       />
+      {/* Horizontal label-filter bar under the search bar: one toggle chip per
+       *  unique label across non-archived channels. Hidden when no labels. */}
+      <LabelFilterBar labels={barLabels} enabled={enabledLabels} onToggle={onToggleLabel} />
       <FlatList
         ref={listRef}
         simultaneousHandlers={panRef}
@@ -127,7 +126,7 @@ export function ChannelsList({
           if (didRestoreRef.current) return;
           const want = savedOffsetRef.current;
           if (want == null || want <= 0) { didRestoreRef.current = true; return; }
-          if (h <= 0) return; // not laid out yet — wait for the next size change
+          if (h <= 0) return; // not laid out yet - wait for the next size change
           didRestoreRef.current = true;
           const offset = Math.min(want, Math.max(0, h));
           requestAnimationFrame(() => {
