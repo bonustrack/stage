@@ -39,7 +39,7 @@ export interface ChannelRowProps {
   markedUnread?: boolean;
   pinned?: boolean;
   hasDraft?: boolean;
-  /** Unsent composer draft; with hasDraft it replaces the preview (accent icon + text). */
+  /** Unsent composer draft; with hasDraft it replaces the preview (pencil icon + "You: " text). */
   draftText?: string | null;
   /** Group labels (from XMTP appData) rendered as compact read-only chips on
    *  the LEFT of the preview line, before the last-message text (groups only;
@@ -115,7 +115,7 @@ function ChannelRowBase({
   const { link: head, text: sub, bg, border } = usePalette();
   const fg = sub, rowBg = border;
   const draft = hasDraft && draftText && draftText.trim().length > 0 ? draftText.trim() : null;
-  const previewText = draft ?? (lastPreview && lastPreview.length > 0 ? lastPreview : subtitle ?? '');
+  const previewText = draft ? `You: ${draft}` : (lastPreview && lastPreview.length > 0 ? lastPreview : subtitle ?? '');
 
   return (
     <Pressable
@@ -164,11 +164,12 @@ function ChannelRowBase({
               center within the fixed-height row. align-start pins the unread
               badge to the FIRST line when the preview wraps. */}
           <Row align="start" gap={7} mt={2}>
-            {/* Draft: accent pencil + draft text replaces the preview. Else the
-                rounded label chip(s) are INLINE at the START of the preview Text. */}
+            {/* Draft: pencil glyph + "You: " draft text (normal preview color)
+                replaces the preview. Else the rounded label chip(s) are INLINE
+                at the START of the preview Text. */}
             {draft ? <Icon name="pencil" size={14} color={head} /> : null}
             <Text
-              style={{ color: draft ? head : sub, fontSize: 16, lineHeight: 21, fontFamily: 'Calibre-Medium', flex: 1 }}
+              style={{ color: sub, fontSize: 16, lineHeight: 21, fontFamily: 'Calibre-Medium', flex: 1 }}
               numberOfLines={2}
               ellipsizeMode="tail"
             >
