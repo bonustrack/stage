@@ -120,10 +120,12 @@ export function TabsPager(): React.ReactElement {
       'worklet';
       const base = -index.value * width;
       let drag = e.translationX;
-      /** Rubber-band at the edges (no page before the first / after the last). */
-      const atStart = index.value === 0 && drag > 0;
-      const atEnd = index.value === TAB_ORDER.length - 1 && drag < 0;
-      if (atStart || atEnd) drag *= 0.25;
+      /** HARD-LOCK the leading edge: on the first tab (Home) a rightward drag has
+       *  nowhere to go, so clamp it to zero — no rubber-band, no overscroll, the
+       *  strip cannot move right of the first page even slightly. */
+      if (index.value === 0 && drag > 0) drag = 0;
+      /** Rubber-band only at the trailing edge (no page after the last). */
+      else if (index.value === TAB_ORDER.length - 1 && drag < 0) drag *= 0.25;
       tx.value = base + drag;
     })
     .onEnd((e) => {
