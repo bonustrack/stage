@@ -9,12 +9,5 @@
   "exports": {
     ".": "./src/index.ts",
     "./plugin": "./plugin/index.js"
-  },
-  "scripts": {
-    "gen-methods": "node ../../apps/app/scripts/gen-railgun-methods.mjs",
-    "typecheck": "tsc --noEmit"
-  },
-  "peerDependencies": {
-    "@stage-labs/client": "*"
   }
 }
