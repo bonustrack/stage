@@ -75,7 +75,7 @@ async function fetchViaProxy(ref: GithubRef): Promise<GithubDiff> {
   const out = (await res.json()) as ProxyResult;
   if (out.error) throw new Error(out.error);
   if (out.kind === 'no-pr')
-    return { kind: 'no-pr', owner: out.owner, repo: out.repo, body: out.body, files: [], additions: 0, deletions: 0 };
+    return { kind: 'no-pr', owner: out.owner, repo: out.repo, title: out.title, body: out.body, files: [], additions: 0, deletions: 0 };
   const files = (out.files ?? []).map(toDiffFile);
   const summed = totalsOf(files);
   return {
@@ -106,7 +106,14 @@ async function resolvePrNumber(ref: GithubRef): Promise<number | null> {
 /** Fallback path: hit GitHub directly (unauthenticated, 60 req/hr/IP). */
 async function fetchDirect(ref: GithubRef): Promise<GithubDiff> {
   const prNumber = await resolvePrNumber(ref);
-  if (prNumber == null) return { kind: 'no-pr', owner: ref.owner, repo: ref.repo, files: [], additions: 0, deletions: 0 };
+  if (prNumber == null) {
+    let issue: { title?: string; body?: string } = {};
+    if (ref.kind === 'issue' && ref.number) {
+      const iRes = await fetch(`${GH}/repos/${ref.owner}/${ref.repo}/issues/${ref.number}`, { headers: HEADERS });
+      if (iRes.ok) issue = (await iRes.json()) as { title?: string; body?: string };
+    }
+    return { kind: 'no-pr', owner: ref.owner, repo: ref.repo, title: issue.title, body: issue.body, files: [], additions: 0, deletions: 0 };
+  }
   const base = `${GH}/repos/${ref.owner}/${ref.repo}/pulls/${prNumber}`;
   const [metaRes, filesRes] = await Promise.all([
     fetch(base, { headers: HEADERS }),

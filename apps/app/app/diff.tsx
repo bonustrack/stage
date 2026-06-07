@@ -65,9 +65,16 @@ export default function Diff(): React.ReactElement {
           <Text style={{ color: p.text, opacity: 0.7 }}>Could not load the diff (private repo or GitHub rate limit). Open it on GitHub below.</Text>
         ) : diff?.kind === 'no-pr' ? (
           <>
-            {diff.body?.trim() ? (
+            {(diff.title || diff.body?.trim()) ? (
               <Box style={{ borderWidth: 1, borderColor: p.border, borderRadius: 8, padding: 12, marginBottom: 10 }}>
-                <Text style={{ color: p.text, fontSize: 14, lineHeight: 20 }}>{diff.body.trim()}</Text>
+                {diff.title ? (
+                  <Text style={{ color: p.text, fontFamily: 'Calibre-Semibold', fontSize: 19, lineHeight: 24, marginBottom: diff.body?.trim() ? 8 : 0 }}>
+                    {diff.title}
+                  </Text>
+                ) : null}
+                {diff.body?.trim() ? (
+                  <Text style={{ color: p.text, fontSize: 14, lineHeight: 20 }}>{diff.body.trim()}</Text>
+                ) : null}
               </Box>
             ) : null}
             <Text style={{ color: p.text, opacity: 0.7 }}>This link points to an issue with no linked pull request yet.</Text>
@@ -76,14 +83,21 @@ export default function Diff(): React.ReactElement {
           <Text style={{ color: p.text, opacity: 0.7 }}>No file changes in this pull request.</Text>
         ) : (
           <>
-            {diff?.body?.trim() ? (
+            {(diff?.title || diff?.body?.trim()) ? (
               <Box style={{
                 borderWidth: 1, borderColor: p.border, borderRadius: 8,
                 padding: 12, marginBottom: 10,
               }}>
-                <Text style={{ color: p.text, fontSize: 14, lineHeight: 20 }}>
-                  {diff.body.trim()}
-                </Text>
+                {diff?.title ? (
+                  <Text style={{ color: p.text, fontFamily: 'Calibre-Semibold', fontSize: 19, lineHeight: 24, marginBottom: diff?.body?.trim() ? 8 : 0 }}>
+                    {diff.title}
+                  </Text>
+                ) : null}
+                {diff?.body?.trim() ? (
+                  <Text style={{ color: p.text, fontSize: 14, lineHeight: 20 }}>
+                    {diff.body.trim()}
+                  </Text>
+                ) : null}
               </Box>
             ) : null}
             <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12, paddingHorizontal: 2 }}>
