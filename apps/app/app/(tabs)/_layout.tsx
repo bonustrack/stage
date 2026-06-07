@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { usePalette } from '../../lib/theme';
 import { TabsPager } from '../../components/SwipeTabs';
+import { ComposerGradient } from '../../components/ComposerGradient';
 
 export default function TabsLayout(): React.ReactElement {
   const pathname = usePathname();
@@ -95,6 +96,10 @@ export default function TabsLayout(): React.ReactElement {
           <TabsPager />
         </Box>
       ) : null}
+      {/* Footer fade — transparent at top → solid bg where it meets the tab bar,
+          so scrolling content fades out under the nav (mirrors the composer
+          gradient at the bottom of the message list). pointerEvents none. */}
+      <ComposerGradient bg={bg} direction="down" height={24} bottom={tabBarHeight} />
     </Box>
   );
 }
