@@ -58,7 +58,7 @@ export function MessengerComposer({
    *  mention detector knows where the user is typing. */
   const [selection, setSelection] = useState<{ start: number; end: number }>({ start: 0, end: 0 });
   const [pending, setPending] = useState<Attachment[]>([]);
-  const [sending, setSending] = useState(false);
+  const [, setSending] = useState(false); // set by send loop; button hides on clear, not via disabled
   const [uploading, setUploading] = useState(false);
   /** Textarea content height — drives the scroll fades. */
   const [textareaH, setTextareaH] = useState(0);
@@ -102,7 +102,7 @@ export function MessengerComposer({
   useComposerDrafts(convId, text, setText);
   useComposerFocus(inputRef, replyingTo?.id, replyingTo?.nonce, autoFocusNonce);
 
-  const canSend = !sending && (text.trim().length > 0 || pending.length > 0);
+  const hasContent = text.trim().length > 0 || pending.length > 0; // text or any pending attachment
 
   const { matches: mentionMatches, range: mentionRange } = computeMentions(text, selection.start, mentionCandidates);
   const pickMention = (c: { address: string; name: string }): void => {
@@ -159,7 +159,7 @@ export function MessengerComposer({
         attachMenuOpen={attachMenuOpen} setAttachMenuOpen={setAttachMenuOpen}
         quickIcon={quick?.[0]}
         onQuick={quick ? () => void quick[2]() : undefined}
-        canSend={canSend}
+        hasContent={hasContent}
         onCancelRec={() => void actions.cancelRec()}
         onStopRec={() => void actions.stopRec()}
         onSend={() => void actions.send()}

@@ -94,6 +94,11 @@ export function useComposerActions(a: ComposerActionsArgs) {
   const send = async (): Promise<void> => {
     const body = a.text.trim();
     if (!body && a.pending.length === 0) return;
+    /** Snapshot the raw input so a failed send can restore it (see the catch
+     *  below). We clear the composer optimistically before any await, so without
+     *  this the message bytes would be gone if the network send throws. */
+    const originalText = a.text;
+    const originalPending = a.pending;
     /** Copy each picked local image/video/file into a STABLE app-cache path up
      *  front (synchronous, cheap on-disk copy). The picker's temp URI can be
      *  evicted while the send is in flight, which would blank the dimmed pending
@@ -123,27 +128,41 @@ export function useComposerActions(a: ComposerActionsArgs) {
     a.setSending(true); a.setErr(null);
 
     /** Send sequentially (preserves on-wire order = display order). Confirm each
-     *  entry by its own real id; on failure, drop the remaining unsent entries. */
+     *  entry by its own real id; on failure, drop the remaining unsent entries.
+     *  The whole loop is wrapped in try/finally so `sending` is ALWAYS reset -
+     *  if any callback (onOptimistic/onSent/remember…) throws, the button would
+     *  otherwise stay disabled forever and wedge the composer. */
     let sendErr: string | undefined;
-    for (let i = 0; i < steps.length; i++) {
-      const s = steps[i]!;
-      if (sendErr) { a.onSent?.(s.localId, sendErr); continue; }
-      try {
-        const id = await s.run();
-        /** Map the real msg id → the step's local image/video/file URIs so the
-         *  live bubble paints the stashed bytes instantly when the optimistic
-         *  entry is replaced by the still-downloading remote attachment. Audio
-         *  rides an inline path with no thumbnail, so skip it. */
-        const localUris = s.attachments.filter((at) => at.kind !== 'audio').map((at) => at.url);
-        if (localUris.length > 0) rememberLocalAttachments(id, localUris);
-        a.onSent?.(s.localId, undefined, id);
-      } catch (e) {
-        sendErr = (e as Error).message;
-        a.setErr(sendErr);
-        a.onSent?.(s.localId, sendErr);
+    try {
+      for (let i = 0; i < steps.length; i++) {
+        const s = steps[i]!;
+        if (sendErr) { a.onSent?.(s.localId, sendErr); continue; }
+        try {
+          const id = await s.run();
+          /** Map the real msg id → the step's local image/video/file URIs so the
+           *  live bubble paints the stashed bytes instantly when the optimistic
+           *  entry is replaced by the still-downloading remote attachment. Audio
+           *  rides an inline path with no thumbnail, so skip it. */
+          const localUris = s.attachments.filter((at) => at.kind !== 'audio').map((at) => at.url);
+          if (localUris.length > 0) rememberLocalAttachments(id, localUris);
+          a.onSent?.(s.localId, undefined, id);
+        } catch (e) {
+          sendErr = (e as Error).message;
+          a.setErr(sendErr);
+          a.onSent?.(s.localId, sendErr);
+        }
       }
+    } finally {
+      a.setSending(false);
     }
-    a.setSending(false);
+    /** Send failed: the optimistic bubble is dropped downstream, so put the
+     *  original text + attachments back in the composer (only if the user hasn't
+     *  already typed something new) so the message isn't silently lost. The send
+     *  button reappears (content present) and the user can retry. */
+    if (sendErr && a.text.trim().length === 0 && a.pending.length === 0) {
+      a.setText(originalText);
+      a.setPending(originalPending);
+    }
   };
 
   return {
