@@ -36,8 +36,6 @@ export interface ConversationView {
   labels: string[];
   /** Linked GitHub issue/PR URL (groups only, optional). */
   github?: string;
-  /** Preview / deep link (groups only, optional). */
-  preview?: string;
 }
 
 /** Just the avatar fields of a message request - the lightest projection, used

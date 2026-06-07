@@ -21,7 +21,6 @@ import { getCachedRows } from '../../modules/messaging';
 import { flash } from '../../lib/toast';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { HeaderAvatar, BubbleActionMenu, GithubNavButton } from '../../components/xmtp-conv/parts';
-import { PreviewNavButton } from '../../components/xmtp-conv/PreviewNavButton';
 import { previewOf } from '../../components/xmtp-conv/feed-helpers';
 import { ConversationFeed } from '../../components/xmtp-conv/ConversationFeed';
 import { useConversationState } from '../../components/xmtp-conv/useConversationState';
@@ -38,7 +37,7 @@ export default function XmtpConversation(): React.ReactElement {
     showJump, setShowJump, setListEpoch,
     replyingTo, setReplyingTo, setReplyTarget,
     menuFor, setMenuFor, menuAnchor, overflowOpen, setOverflowOpen, setSelectedForCopy,
-    peerAddr, groupName, groupImage, isGroup, github, preview, senderEthOf,
+    peerAddr, groupName, groupImage, isGroup, github, senderEthOf,
     mentionCandidates, onReact, onOptimistic, onSent, jumpToMessage, markAtBottom,
   } = c;
 
@@ -109,9 +108,8 @@ export default function XmtpConversation(): React.ReactElement {
               : peerAddr ? (getPeerName(peerAddr) ?? shortAddress(peerAddr)) : ''}
           </Text>
         </Pressable>
-        {/** Topnav links (groups only): GitHub issue/PR, then preview deep link, then overflow. */}
+        {/** Topnav links (groups only): GitHub issue/PR, then overflow. */}
         {isGroup && github ? <GithubNavButton url={github} color={fg} /> : null}
-        {isGroup && preview ? <PreviewNavButton url={preview} color={fg} /> : null}
         <Pressable
           onPress={() => setOverflowOpen(true)}
           hitSlop={8}

@@ -22,7 +22,6 @@ import {
 } from '../../lib/xmtp';
 import { labelsOfSyncedGroup } from '../../lib/xmtp.labels';
 import { githubOfSyncedGroup } from '../../lib/xmtp.github';
-import { previewOfSyncedGroup } from '../../lib/xmtp.preview';
 import { isMetroControlBody } from '../../lib/push';
 import { previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
 import { channelStampSeed } from '@metro-labs/kit/avatar';
@@ -73,7 +72,6 @@ export async function summarizeConversation(
   /** Group labels (DMs have none). Read off the conv synced above. */
   const labels = peerAddress ? [] : await labelsOfSyncedGroup(conv);
   const github = peerAddress ? undefined : await githubOfSyncedGroup(conv);
-  const previewLink = peerAddress ? undefined : await previewOfSyncedGroup(conv);
   const title = peerAddress
     ? shortAddress(peerAddress)
     : (groupMeta.name.trim()
@@ -114,7 +112,6 @@ export async function summarizeConversation(
     markedUnread,
     labels,
     github,
-    preview: previewLink,
   };
 }
 
