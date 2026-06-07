@@ -1,0 +1,31 @@
+name: served-drift-guard
+
+# served-main is the long-lived branch the bundler serves for hot-reload. It is
+# meant to stay a thin layer over origin/main. This guard compares the pushed
+# origin/served-main branch against origin/main and fails if any non-allowlisted
+# file content diverges, so drift surfaces in the Actions tab instead of silently
+# piling up. (CI cannot see the local served WORKTREE, only the pushed branch.)
+
+on:
+  schedule:
+    # Daily at 07:00 UTC.
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: served-drift-guard
+  cancel-in-progress: true
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compare served-main against main
+        run: bash scripts/served-drift-check.sh origin/main origin/served-main

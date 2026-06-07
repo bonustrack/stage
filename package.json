@@ -21,7 +21,10 @@
     "lint:fix": "turbo run lint:fix",
     "madge": "madge --circular --extensions ts,tsx apps/app/app apps/app/components apps/app/lib apps/app/modules apps/api/src packages/client/src packages/kit/src packages/metro/src",
     "knip": "knip",
-    "check": "turbo run lint typecheck && bun run madge && bun run knip"
+    "check": "turbo run lint typecheck && bun run madge && bun run knip",
+    "served:reset": "bash scripts/served-reset.sh",
+    "served:drift-check": "bash scripts/served-drift-check.sh",
+    "worktree:prune": "bash scripts/worktree-prune.sh"
   },
   "devDependencies": {
     "knip": "^6.15.0",
