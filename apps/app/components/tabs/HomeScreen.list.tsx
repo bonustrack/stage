@@ -18,6 +18,8 @@ import { LabelFilterBar } from './HomeScreen.labelbar';
 import { ChannelsSearchBar } from './HomeScreen.search';
 import { HomeContactResults } from './HomeScreen.contacts';
 import { HomeOverflowMenu } from './HomeScreen.overflow';
+import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
+import { shortAddress } from '../../lib/xmtp';
 
 interface ChannelsListProps {
   panRef?: import('../SwipeTabs.types').SimultaneousRefs;
@@ -60,6 +62,11 @@ export function ChannelsList({
   const dark = useEffectiveColorScheme() === 'dark';
   const badgeBg = dark ? '#ffffff' : '#000000';
   const badgeFg = dark ? '#000000' : '#ffffff';
+  // Resolve the active account's display name (ENS / profile) the same way the
+  // Menu account header does (getPeerName ?? shortAddress); usePeerProfiles
+  // re-renders this row once the batch resolves.
+  usePeerProfiles([myAddress]);
+  const myName = myAddress ? (getPeerName(myAddress) ?? shortAddress(myAddress)) : '';
   return (
     <>
       {/* Home topnav: avatar on the left, requests + 3-dot overflow menu on the
@@ -70,7 +77,17 @@ export function ChannelsList({
           {/* Avatar opens the Menu page (account switcher + Profile/Settings),
            *  replacing the former slide-out left sidebar. */}
           <Pressable onPress={() => router.push('/menu')} hitSlop={8}>
-            <Avatar address={myAddress} size={24} style={{ backgroundColor: border }} />
+            <Row align="center" gap={8}>
+              <Avatar address={myAddress} size={28} style={{ backgroundColor: border }} />
+              {myName ? (
+                <Text
+                  numberOfLines={1}
+                  style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold', maxWidth: 200 }}
+                >
+                  {myName}
+                </Text>
+              ) : null}
+            </Row>
           </Pressable>
         </Row>
         <Row align="center" gap={18}>
