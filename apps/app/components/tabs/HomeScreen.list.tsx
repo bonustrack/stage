@@ -113,6 +113,7 @@ export function ChannelsList({
         sub={sub}
         border={border}
         rowBg={inputBg}
+        toolbarBg={toolbarBg}
       />
       <FlatList
         ref={listRef}
