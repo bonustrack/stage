@@ -76,10 +76,10 @@ function PollQuestionBlock({ q, qi, sub, dark, votes, own, onVote, openAnswers, 
               }}
             />
             <Row align="center" justify="between">
-              <Text style={{ color: pal.text, fontSize: 17, fontFamily: 'Calibre-Medium', flexShrink: 1 }}>
+              <Text style={{ color: isOn ? '#fff' : pal.text, fontSize: 17, fontFamily: 'Calibre-Medium', flexShrink: 1 }}>
                 {isOn ? '✓  ' : (multi ? '☐  ' : '')}{opt.label}
               </Text>
-              <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Semibold', marginLeft: 8 }}>
+              <Text style={{ color: isOn ? '#fff' : sub, fontSize: 15, fontFamily: 'Calibre-Semibold', marginLeft: 8 }}>
                 {count}
               </Text>
             </Row>
