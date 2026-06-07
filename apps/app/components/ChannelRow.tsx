@@ -66,18 +66,16 @@ export interface ChannelRowProps {
  *  (2) so the chips stay secondary to the group name on the same row. */
 const MAX_VISIBLE_LABELS = 2;
 
-/** Constant content height reserved on the OUTER row so a 1-line and a 2-line
- *  preview render the SAME total height: title line (~23) + 2 preview lines
- *  (2 * 21 = 42) ~= 67, which also exceeds the 44px avatar. The text column has
- *  NO internal blank reservation, so the title+preview group centers as a unit
- *  next to the centered avatar (no empty gap stuck at the bottom). */
+/** Constant content height on the OUTER row so a 1-line and a 2-line preview
+ *  render the SAME total height (title ~23 + 2 * 21 lines ~= 67, also > the 44px
+ *  avatar). No internal blank reservation, so the title+preview group centers as
+ *  a unit next to the centered avatar. */
 const ROW_CONTENT_HEIGHT = 67;
 
 /** Build ROUNDED label chips as INLINE <View>s placed as the FIRST children
- *  INSIDE the preview <Text>; the preview text flows around them and wraps
- *  UNDERNEATH on the 2nd line. Each chip is a rounded pill (borderRadius 999).
- *  marginRight on an inline <View> is NOT honored by RN, so the visible gap
- *  comes from a sibling inline <Text> spacer. Caps at MAX_VISIBLE + a "+N". */
+ *  INSIDE the preview <Text>; the preview text flows around them. marginRight on
+ *  an inline <View> is NOT honored by RN, so the gap comes from a sibling inline
+ *  <Text> spacer. Caps at MAX_VISIBLE + a "+N". */
 function buildLabelChips({ labels, fg, rowBg }: {
   labels: string[]; fg: string; rowBg: string;
 }): React.ReactNode[] {
@@ -127,11 +125,9 @@ function ChannelRowBase({
         paddingHorizontal: 14,
       }))}
     >
-      {/* No divider. Center-aligned (align="center"): avatar + text column
-          center vertically as a group within a CONSTANT-height row. The fixed
-          height lives on the ROW (ROW_CONTENT_HEIGHT, the 2-line case), NOT
-          inside the preview block, so 1-line and 2-line rows are the same total
-          height and the content is truly centered (no bottom gap). */}
+      {/* align-center: avatar + text column center as a group within a
+          CONSTANT-height row. Fixed height lives on the ROW (ROW_CONTENT_HEIGHT,
+          the 2-line case), so 1- and 2-line rows match (no bottom gap). */}
       <Row align="center" gap={12} py={9} style={{ minHeight: ROW_CONTENT_HEIGHT }}>
         <Avatar
           imageUri={avatarUri}
@@ -160,16 +156,13 @@ function ChannelRowBase({
             ) : null}
           </Row>
           {/* No internal height reservation: the preview block is only as tall
-              as its actual content (1 or 2 lines) so the title+preview group can
-              center within the fixed-height row. align-start pins the unread
-              badge to the FIRST line when the preview wraps. */}
+              as its content (1-2 lines) so the title+preview group centers in the
+              fixed-height row. align-start pins the badge to line 1 on wrap. */}
           <Row align="start" gap={7} mt={2}>
-            {/* Draft: pencil glyph + "You: " draft text (normal preview color).
-                Else the rounded label chip(s) are INLINE at the preview start. */}
+            {/* Draft pencil + "You: " text replaces the preview. Row stays
+                align-start (badge on line 1 when preview wraps), so nudge the
+                14px glyph down (lineHeight 21 - 14)/2 to center it on line 1. */}
             {draft ? (
-              // Center the 14px pencil on the first preview line (lineHeight 21):
-              // the outer Row stays align-start (so a wrapped preview keeps the
-              // unread badge on line 1), so nudge the glyph down by (21-14)/2.
               <Box style={{ marginTop: 3.5 }}>
                 <Icon name="pencil" size={14} color={head} />
               </Box>
