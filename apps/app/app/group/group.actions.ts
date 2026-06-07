@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import { leaveGroupConv, shortAddress } from '../../lib/xmtp';
+import { leaveGroupConv, shortAddress } from '../../modules/messaging';
 import { flash } from '../../lib/toast';
 import { uploadAvatar } from '../../lib/profile';
 import {

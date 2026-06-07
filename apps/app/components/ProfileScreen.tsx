@@ -15,7 +15,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
-import { openDmWithAddress, shortAddress } from '../lib/xmtp';
+import { openDmWithAddress, shortAddress } from '../modules/messaging';
 import { flash } from '../lib/toast';
 import { useEffectiveColorScheme } from '../lib/theme';
 import { useProfileQuery } from '../lib/useProfile';

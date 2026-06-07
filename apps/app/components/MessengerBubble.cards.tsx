@@ -4,7 +4,7 @@ import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';
 import { Row, Col, Box } from './layout';
-import { shortAddress } from '../lib/xmtp';
+import { shortAddress } from '../modules/messaging';
 import { fmtSigValue, explorerUrl, ethFromWeiHex } from './MessengerBubble.helpers';
 import type { SigRequest, SigReference, TxRequest, TxReceipt } from './MessengerBubble.helpers';
 import { usePalette, useBlockRadius } from '../lib/theme';

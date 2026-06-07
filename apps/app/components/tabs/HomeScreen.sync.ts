@@ -9,7 +9,7 @@ import {
   syncPreferences,
   primeInboxEthCache, subscribeAllMessages,
   listRequestConvs, streamConvConsent, syncConsent,
-} from '../../lib/xmtp';
+} from '../../modules/messaging';
 import { hydrateCachedRows } from '../../lib/channelsCache';
 import type { Row as RowT } from './HomeScreen.helpers';
 import { summarize } from './HomeScreen.helpers';

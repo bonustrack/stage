@@ -1,7 +1,7 @@
 /** Group-detail SDK action helpers — pure async fns operating on an XMTP line.
  *  Extracted from group/[convId] for lint line-budget. Behaviour identical. */
 
-import { convOfLine, memberInboxToAddressMap } from '../../lib/xmtp';
+import { convOfLine, memberInboxToAddressMap } from '../../modules/messaging';
 import { PublicIdentity } from '@xmtp/react-native-sdk';
 
 /** Re-fetch the member list (sorted addresses) for a conversation. */

@@ -12,7 +12,7 @@
  *  the usePrivateWallet subscription picks up. */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getOrCreateXmtpClient } from '../../lib/xmtp';
+import { getOrCreateXmtpClient } from '../../modules/messaging';
 import { refreshSnapshot } from '../../lib/railgun/wallet';
 import { fetchAssetRows } from './WalletScreen.data';
 import { type AssetRow } from './WalletScreen.assets';

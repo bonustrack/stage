@@ -18,7 +18,7 @@ import {
   listRequestConvs, acceptRequestConv, blockRequestConv,
   peerEthAddressOfDm, groupMemberEthAddresses, shortAddress,
   getCachedXmtpClient,
-} from '../../lib/xmtp';
+} from '../../modules/messaging';
 import { previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { usePeerProfiles, getPeerName, getPeerAvatarCb } from '../../lib/peerProfiles';

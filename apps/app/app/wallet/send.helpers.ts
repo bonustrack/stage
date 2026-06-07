@@ -3,7 +3,7 @@
  *  Extracted from send.tsx (mechanical split, behavior identical). */
 import { createPublicClient, http, formatEther, type Hex } from 'viem';
 import { mainnet } from 'viem/chains';
-import { getOrCreateXmtpClient } from '../../lib/xmtp';
+import { getOrCreateXmtpClient } from '../../modules/messaging';
 import { getSimplePrices } from '../../lib/coingecko';
 
 export const MULTICALL3 = '0xcA11bde05977b3631167028862bE2a173976CA11' as const;

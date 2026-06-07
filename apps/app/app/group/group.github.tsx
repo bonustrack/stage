@@ -10,8 +10,8 @@ import { Icon } from '@metro-labs/kit/icon';
 import { Box } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
 import { flash } from '../../lib/toast';
-import { LabelPermissionError } from '../../lib/xmtp.labels';
-import { getGithubLink, setGithubLink } from '../../lib/xmtp.github';
+import { LabelPermissionError } from '../../modules/messaging';
+import { getGithubLink, setGithubLink } from '../../modules/messaging';
 
 interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; }
 

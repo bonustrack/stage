@@ -28,7 +28,7 @@ import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { markConvRead, markConvUnread } from '../lib/channelsCache';
 import { togglePin } from '../lib/pins';
 import { toggleArchived } from '../lib/archived';
-import { leaveGroupConv, lineOfConv } from '../lib/xmtp';
+import { leaveGroupConv, lineOfConv } from '../modules/messaging';
 
 export interface ChannelMenuProps {
   /** Conversation id the actions operate on. */

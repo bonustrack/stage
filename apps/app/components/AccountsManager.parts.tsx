@@ -8,7 +8,7 @@ import { Text } from '@metro-labs/kit/text';
 import { ListViewItem } from '@metro-labs/kit/list-view';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getPeerName } from '../lib/peerProfiles';
-import { shortAddress } from '../lib/xmtp';
+import { shortAddress } from '../modules/messaging';
 import { type AccountRecord } from '../lib/accounts';
 import { TYPE_LABEL } from './AccountsManager.helpers';
 import { DANGER } from '../lib/theme';

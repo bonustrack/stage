@@ -5,7 +5,7 @@
 
 import { Alert } from 'react-native';
 import { isAddress, parseUnits, toHex } from 'viem';
-import { xmtpSendPoll, xmtpSendTxRequest, xmtpSendSignatureRequest } from '../lib/xmtp';
+import { xmtpSendPoll, xmtpSendTxRequest, xmtpSendSignatureRequest } from '../modules/messaging';
 import { type PollContent, mintPollId, pollFallbackText } from '@stage-labs/client/xmtp/poll';
 import {
   type SignatureRequestContent, mintSignatureRequestId, signatureRequestFallbackText,

@@ -13,7 +13,7 @@ import {
   usePeerProfiles, getPeerName, getPeerAvatar, getPeerAvatarCb, isPeerResolved,
 } from '../lib/peerProfiles';
 import { usePalette, useBlockRadius } from '../lib/theme';
-import { openDmWithAddress, shortAddress } from '../lib/xmtp';
+import { openDmWithAddress, shortAddress } from '../modules/messaging';
 
 export function DmPeerCard({ address }: { address: string }): React.ReactElement {
   usePeerProfiles([address]);

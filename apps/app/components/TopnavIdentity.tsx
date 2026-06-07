@@ -15,7 +15,7 @@ import { usePalette } from '../lib/theme';
 import { useAccountEpoch } from '../lib/accountEpoch';
 import { getActiveAccount } from '../lib/accounts';
 import { usePeerProfiles, getPeerName } from '../lib/peerProfiles';
-import { shortAddress } from '../lib/xmtp';
+import { shortAddress } from '../modules/messaging';
 
 export function TopnavIdentity(): React.ReactElement {
   const router = useRouter();

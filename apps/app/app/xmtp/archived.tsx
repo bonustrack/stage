@@ -20,7 +20,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
 import type { Row as RowT } from '../../components/tabs/HomeScreen.helpers';
 import { loadArchivedIds, subscribeArchived, toggleArchived } from '../../lib/archived';
-import { shortAddress } from '../../lib/xmtp';
+import { shortAddress } from '../../modules/messaging';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { usePeerProfiles, getPeerName, getPeerAvatarCb } from '../../lib/peerProfiles';
 import { ChannelRow } from '../../components/ChannelRow';

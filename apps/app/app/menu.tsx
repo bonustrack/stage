@@ -21,7 +21,7 @@ import { ListView } from '@metro-labs/kit/list-view';
 import { Box } from '../components/layout';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { usePeerProfiles } from '../lib/peerProfiles';
-import { switchToAccount } from '../lib/xmtp';
+import { switchToAccount } from '../modules/messaging';
 import { loadAccounts, getActiveAccountId, type AccountRecord } from '../lib/accounts';
 import { drawerAccountRows, DrawerHeader, DrawerRow } from '../components/LeftDrawer.parts';
 import { useDrawerAccountActions } from '../components/LeftDrawer.accounts';

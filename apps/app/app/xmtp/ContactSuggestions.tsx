@@ -10,7 +10,7 @@ import { Pressable } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import { usePalette } from '../../lib/theme';
-import { shortAddress } from '../../lib/xmtp';
+import { shortAddress } from '../../modules/messaging';
 import type { Contact } from '../../lib/useContacts';
 import { Avatar } from '../../components/Avatar';
 import { Col, Row } from '../../components/layout';

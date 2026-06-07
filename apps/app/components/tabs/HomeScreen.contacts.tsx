@@ -17,7 +17,7 @@ import { isAddress } from 'viem';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from '../layout';
 import { ChannelRow } from '../ChannelRow';
-import { openDmWithAddress, shortAddress } from '../../lib/xmtp';
+import { openDmWithAddress, shortAddress } from '../../modules/messaging';
 import { resolveEnsName } from '../../lib/ens';
 import { usePeerProfiles, getPeerName, getPeerAvatarCb } from '../../lib/peerProfiles';
 import { getCachedRows } from '../../lib/channelsCache';

@@ -8,7 +8,7 @@ import { Text } from '@metro-labs/kit/text';
 import { Col } from '../layout';
 import { Spinner } from '../Spinner';
 import { ChannelRow } from '../ChannelRow';
-import { resetXmtpClient, shortAddress } from '../../lib/xmtp';
+import { resetXmtpClient, shortAddress } from '../../modules/messaging';
 import { resetAccount } from '../../lib/wallet';
 import { getPeerAvatarCb, getPeerName, isPeerResolved } from '../../lib/peerProfiles';
 import { hasDraft } from '../../lib/drafts';

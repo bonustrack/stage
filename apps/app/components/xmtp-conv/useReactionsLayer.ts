@@ -2,7 +2,7 @@
  *  extracted from app/xmtp/[convId].tsx verbatim (phase-2 lint split). */
 
 import { useCallback, useEffect, useState } from 'react';
-import { xmtpReact } from '../../lib/xmtp';
+import { xmtpReact } from '../../modules/messaging';
 
 export function useReactionsLayer(
   activeLine: string,

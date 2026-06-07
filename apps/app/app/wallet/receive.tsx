@@ -14,7 +14,7 @@ import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import QRCode from 'react-native-qrcode-svg';
-import { getOrCreateXmtpClient } from '../../lib/xmtp';
+import { getOrCreateXmtpClient } from '../../modules/messaging';
 import { usePrivateWallet } from '../../lib/railgun/usePrivateWallet';
 import { usePalette } from '../../lib/theme';
 import { Icon } from '@metro-labs/kit/icon';

@@ -11,7 +11,7 @@ import { VoiceMessage } from './VoiceMessage';
 import { MessengerImageAttachment } from './MessengerImageAttachment';
 import { MessengerVideoAttachment } from './MessengerVideoAttachment';
 import { Row } from './layout';
-import { resolveRemoteAttachment } from '../lib/xmtp';
+import { resolveRemoteAttachment } from '../modules/messaging';
 import { useLocalAttachment } from '../lib/localAttachmentCache';
 import type { Attachment } from './MessengerBubble.helpers';
 

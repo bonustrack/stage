@@ -9,7 +9,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint app/ components/ lib/",
+    "lint": "eslint app/ components/ lib/ modules/",
     "test": "bun test test/",
     "eas-build-post-install": "node ./scripts/install-nodejs-project.js"
   },
