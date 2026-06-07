@@ -10,6 +10,7 @@ import { usePalette, useBlockRadius, type Palette } from '../lib/theme';
 import { getCachedXmtpClient, getOrCreateXmtpClient } from '../lib/xmtp';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';
+import { TopnavIdentity } from './TopnavIdentity';
 
 export type ProfileColors = Palette;
 
@@ -60,7 +61,8 @@ export function ProfileHeader({ variant, insetTop, isSelf, onBack, onMenu, c }: 
           <Icon name="arrowLeft" size={22} color={c.link} />
         </Pressable>
       ) : (
-        <Text style={{ color: c.link, fontSize: 22, fontFamily: 'Calibre-Semibold' }}>Profile</Text>
+        // Tab variant: avatar + name → Menu, matching the Home topnav identity.
+        <TopnavIdentity />
       )}
       {isSelf ? (
         <Pressable onPress={onMenu} hitSlop={8} style={{ padding: 6 }}>

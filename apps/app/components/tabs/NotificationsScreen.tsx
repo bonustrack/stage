@@ -11,6 +11,7 @@ import type { SimultaneousRefs } from '../SwipeTabs.types';
 import { Text } from '@metro-labs/kit/text';
 import { Title } from '@metro-labs/kit/title';
 import { Box, Col, Row } from '../layout';
+import { TopnavIdentity } from '../TopnavIdentity';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { NotificationsList } from './NotificationsList';
 import { useRequestPreviews } from './useRequestPreviews';
@@ -33,7 +34,11 @@ export function NotificationsScreen({ panRef }: { panRef?: SimultaneousRefs } = 
 
   return (
     <ScrollView simultaneousHandlers={panRef} style={{ flex: 1, backgroundColor: bg }} contentContainerStyle={{ flexGrow: 1 }}>
-      <Col px={16} pt={16} pb={8}>
+      {/* Topnav identity (avatar + name → Menu), left-aligned to match Home. */}
+      <Row align="center" px={16} pt={12} pb={4}>
+        <TopnavIdentity />
+      </Row>
+      <Col px={16} pt={4} pb={8}>
         <Row align="center" gap={10}>
           <Title dark={dark} style={{ color: head, fontSize: 22 }}>Notifications</Title>
           {unread > 0 ? (

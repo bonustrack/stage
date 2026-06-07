@@ -10,7 +10,6 @@ import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { getCachedRows, setCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
 import { usePeerProfiles } from '../../lib/peerProfiles';
 import { useAccountEpoch } from '../../lib/accountEpoch';
-import { getActiveAccount } from '../../lib/accounts';
 import { useDraftsVersion } from '../../lib/drafts';
 import { Col } from '../layout';
 import { loadPinnedIds, subscribePins } from '../../lib/pins';
@@ -64,8 +63,6 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
   const [pinned, setPinned] = useState<Set<string>>(new Set());
   /** Device-only archived conv ids; hidden from main list, shown in Archived. */
   const [archived, setArchived] = useState<Set<string>>(new Set());
-  /** Active account's own address → topnav avatar. */
-  const [myAddress, setMyAddress] = useState<string | null>(null);
   /** Pending message-request count ('unknown' consent); drives "Requests (N)". */
   const [requestCount, setRequestCount] = useState<number>(0);
   /** Enabled label filters (lowercased); empty = show all. ANY/OR: a channel is
@@ -133,14 +130,6 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
   const draftsVersion = useDraftsVersion();
   /** Re-runs the XMTP init below when the active account changes (in-place switch). */
   const accountEpoch = useAccountEpoch();
-  /** Re-resolve the active account's address for the topnav avatar on switch. */
-  useEffect(() => {
-    let cancelled = false;
-    void getActiveAccount().then(acct => {
-      if (!cancelled) setMyAddress(acct?.address ?? null);
-    });
-    return () => { cancelled = true; };
-  }, [accountEpoch]);
 
   useChannelsSync({
     accountEpoch, rows, setRowsState, setRows, setError, setRequestCount, refreshFromNetworkRef,
@@ -164,7 +153,6 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
       <ChannelsList
         panRef={panRef}
         router={router}
-        myAddress={myAddress}
         sortedRows={visibleRows}
         requestCount={requestCount}
         barLabels={barLabels}
