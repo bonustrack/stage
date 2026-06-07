@@ -12,7 +12,7 @@ import { Text } from '@metro-labs/kit/text';
 import { Avatar } from './Avatar';
 import { Row } from './layout';
 import { usePalette } from '../lib/theme';
-import { useAccountEpoch } from '../lib/accountEpoch';
+import { useActiveAccount } from '../modules/messaging';
 import { getActiveAccount } from '../lib/accounts';
 import { usePeerProfiles, getPeerName } from '../lib/peerProfiles';
 import { shortAddress } from '../modules/messaging';
@@ -22,7 +22,7 @@ export function TopnavIdentity(): React.ReactElement {
   const { link: head, border } = usePalette();
   /** Active account's own address → topnav avatar; re-resolved on account switch. */
   const [myAddress, setMyAddress] = useState<string | null>(null);
-  const accountEpoch = useAccountEpoch();
+  const accountEpoch = useActiveAccount();
   useEffect(() => {
     let cancelled = false;
     void getActiveAccount().then(acct => {

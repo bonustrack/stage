@@ -9,35 +9,16 @@
 
 import { useEffect, useState } from 'react';
 import { AppState } from 'react-native';
-import type { Conversation } from '@xmtp/react-native-sdk';
-import { listRequestConvs, streamConvConsent, peerEthAddressOfDm } from '../../modules/messaging';
-import { channelStampSeed } from '@metro-labs/kit/avatar';
+import { listRequestConvs, streamConvConsent, requestAvatarDescriptor } from '../../modules/messaging';
+import type { ConversationRequestView } from '../../modules/messaging';
 import { ensurePeerProfiles } from '../../lib/peerProfiles';
 
-/** One requester's avatar descriptor — feeds the Avatar component directly. */
-export interface RequestPreview {
-  convId: string;
-  /** DM peer / group seed eth address for the stamp.fyi identicon. */
-  avatarAddress: string | null;
-  /** Group-uploaded image (takes precedence over the seed). */
-  avatarUri: string | null;
-  isGroup: boolean;
-}
-
-async function describe(conv: Conversation): Promise<RequestPreview> {
-  const peerAddress = await peerEthAddressOfDm(conv).catch(() => null);
-  if (peerAddress) {
-    return { convId: conv.id, avatarAddress: peerAddress, avatarUri: null, isGroup: false };
-  }
-  const g = conv as unknown as { imageUrl?: () => Promise<string> };
-  const imageUrl = (await g.imageUrl?.().catch(() => '') ?? '').trim();
-  return {
-    convId: conv.id,
-    avatarAddress: imageUrl ? null : channelStampSeed(conv.id),
-    avatarUri: imageUrl || null,
-    isGroup: true,
-  };
-}
+/** One requester's avatar descriptor - feeds the Avatar component directly. The
+ *  avatar fields are projected from the facade's `ConversationRequestView`. */
+export type RequestPreview = Pick<
+  ConversationRequestView,
+  'convId' | 'avatarAddress' | 'avatarUri' | 'isGroup'
+>;
 
 export interface RequestPreviews {
   count: number;
@@ -55,7 +36,7 @@ export function useRequestPreviews(): RequestPreviews {
     const refresh = async (): Promise<void> => {
       try {
         const convs = await listRequestConvs();
-        const previews = await Promise.all(convs.map(describe));
+        const previews = await Promise.all(convs.map(requestAvatarDescriptor));
         if (cancelled) return;
         ensurePeerProfiles(previews.map(p => p.avatarAddress));
         setState({ count: previews.length, previews });

@@ -9,10 +9,9 @@ import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box, Col } from '../layout';
 import { Text } from '@metro-labs/kit/text';
-import { getOrCreateXmtpClient, resetXmtpClient, shortAddress } from '../../modules/messaging';
+import { getOrCreateXmtpClient, resetXmtpClient, shortAddress, useActiveAccount } from '../../modules/messaging';
 import { resetAccount } from '../../lib/wallet';
 import { flash } from '../../lib/toast';
-import { useAccountEpoch } from '../../lib/accountEpoch';
 import { DANGER, useBlockRadius, useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { SystemHeader } from '../system/SystemHeader';
 
@@ -41,7 +40,7 @@ export function MessengerSettings(): React.ReactElement {
   const sub = fg;
   const rowBg = border;
   const insets = useSafeAreaInsets();
-  const epoch = useAccountEpoch();
+  const epoch = useActiveAccount();
   const [addr, setAddr] = useState('');
   const [inbox, setInbox] = useState('');
   const [install, setInstall] = useState('');

@@ -11,7 +11,7 @@ import {
 } from '../../modules/messaging';
 import { setActiveConversation } from '../../modules/metro-pill';
 import { setActiveConvId } from '../../lib/activeConv';
-import { markConvRead, getCachedRows } from '../../lib/channelsCache';
+import { markConvRead, getCachedRows } from '../../modules/messaging';
 import { getGithubLink } from '../../modules/messaging';
 import { getPreviewLink } from '../../modules/messaging';
 import { useCachedGroupString } from './useCachedGroupString';

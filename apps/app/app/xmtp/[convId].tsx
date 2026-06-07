@@ -17,7 +17,7 @@ import { ChannelMenu } from '../../components/ChannelMenu';
 import { isPinned } from '../../lib/pins';
 import { isArchived } from '../../lib/archived';
 import { shortAddress } from '../../modules/messaging';
-import { getCachedRows } from '../../lib/channelsCache';
+import { getCachedRows } from '../../modules/messaging';
 import { flash } from '../../lib/toast';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { HeaderAvatar, BubbleActionMenu, GithubNavButton } from '../../components/xmtp-conv/parts';

@@ -21,7 +21,7 @@ import { ListView } from '@metro-labs/kit/list-view';
 import { Box } from '../components/layout';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { usePeerProfiles } from '../lib/peerProfiles';
-import { switchToAccount } from '../modules/messaging';
+import { AccountManager } from '../modules/messaging';
 import { loadAccounts, getActiveAccountId, type AccountRecord } from '../lib/accounts';
 import { drawerAccountRows, DrawerHeader, DrawerRow } from '../components/LeftDrawer.parts';
 import { useDrawerAccountActions } from '../components/LeftDrawer.accounts';
@@ -60,7 +60,7 @@ export default function Menu(): React.ReactElement {
   function onSwitch(id: string): void {
     if (id === activeId) { router.back(); return; }
     void (async () => {
-      try { await switchToAccount(id); } catch { /* surfaced elsewhere */ }
+      try { await AccountManager.switch(id); } catch { /* surfaced elsewhere */ }
       router.back();
     })();
   }

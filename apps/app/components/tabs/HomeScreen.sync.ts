@@ -10,7 +10,7 @@ import {
   primeInboxEthCache, subscribeAllMessages,
   listRequestConvs, streamConvConsent, syncConsent,
 } from '../../modules/messaging';
-import { hydrateCachedRows } from '../../lib/channelsCache';
+import { hydrateCachedRows } from '../../modules/messaging';
 import type { Row as RowT } from './HomeScreen.helpers';
 import { summarize } from './HomeScreen.helpers';
 import { makeMsgStreamHandler } from './HomeScreen.stream';

@@ -6,7 +6,7 @@ import { Alert } from 'react-native';
 import { useAppKit } from '@reown/appkit-wagmi-react-native';
 import { useAccount, useSignMessage } from 'wagmi';
 import { usePeerProfiles } from '../lib/peerProfiles';
-import { deleteAccount, switchToAccount, shortAddress } from '../modules/messaging';
+import { deleteAccount, AccountManager, shortAddress } from '../modules/messaging';
 import {
   loadAccounts, getActiveAccountId, addGeneratedAccount,
   importPrivateKey, addWalletConnectAccount, getPrivateKey, canExportPrivateKey,
@@ -64,7 +64,7 @@ export function useAccountsManager(onSwitched?: () => void): {
         /** Build + register this account's XMTP installation now (wallet prompts
          *  personal_sign once). After the reload it's registered → Client.build,
          *  no further prompts. */
-        await switchToAccount(rec.id);
+        await AccountManager.switch(rec.id);
         if (!cancelled) { setWcPending(false); reloadApp(); }
       } catch (e) {
         if (!cancelled) {
@@ -106,7 +106,7 @@ export function useAccountsManager(onSwitched?: () => void): {
        *  account keeps its own rows, so the target account's channels render
        *  instantly from cache (instant 2nd open) and the stream revalidates in the
        *  background. Far snappier than reloadApp(). */
-      await switchToAccount(id);
+      await AccountManager.switch(id);
       await refresh();
       setExpanded(() => false);
       /** Let the host dismiss itself after a switch (the full-page /accounts

@@ -20,7 +20,7 @@ import { ChannelRow } from '../ChannelRow';
 import { openDmWithAddress, shortAddress } from '../../modules/messaging';
 import { resolveEnsName } from '../../lib/ens';
 import { usePeerProfiles, getPeerName, getPeerAvatarCb } from '../../lib/peerProfiles';
-import { getCachedRows } from '../../lib/channelsCache';
+import { getCachedRows } from '../../modules/messaging';
 
 /** Cheap pre-flight - accept any `*.eth` (single or multi-label) as resolvable. */
 function looksLikeEns(s: string): boolean {

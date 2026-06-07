@@ -17,7 +17,7 @@ import { Title } from '@metro-labs/kit/title';
 import { Icon } from '@metro-labs/kit/icon';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
+import { getCachedRows, subscribeCachedRows } from '../../modules/messaging';
 import type { Row as RowT } from '../../components/tabs/HomeScreen.helpers';
 import { loadArchivedIds, subscribeArchived, toggleArchived } from '../../lib/archived';
 import { shortAddress } from '../../modules/messaging';
