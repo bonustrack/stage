@@ -26,9 +26,11 @@ export default function TabsLayout(): React.ReactElement {
 
   const tabBarStyle = {
     backgroundColor: bg,
-    /** No top border on the footer nav - keep it borderless. Also kill Android's
-     *  default elevation shadow so no hairline/line shows above the bar. */
-    borderTopWidth: 0,
+    /** Crisp 1px top border on the footer nav (the gradient above is the fade,
+     *  this is the hard line where the bar starts). Kill Android's default
+     *  elevation shadow so only our border shows above the bar. */
+    borderTopWidth: 1,
+    borderTopColor: pal.border,
     elevation: 0,
     shadowOpacity: 0,
     height: 60 + insets.bottom,

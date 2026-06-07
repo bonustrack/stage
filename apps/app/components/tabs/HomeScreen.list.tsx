@@ -66,7 +66,14 @@ export function ChannelsList({
       {/* Home topnav: avatar on the left, requests + 3-dot overflow menu on the
        *  right (Archived + New group moved into the overflow). The label filter
        *  lives in a horizontal chip bar under the search bar (LabelFilterBar). */}
-      <Row align="center" justify="between" px={16} pt={12} pb={10}>
+      <Row
+        align="center"
+        justify="between"
+        px={16}
+        pt={12}
+        pb={10}
+        style={{ borderBottomWidth: 1, borderBottomColor: border }}
+      >
         <Row align="center" gap={8}>
           {/* Avatar + name → Menu page; shared TopnavIdentity (also on the
            *  wallet / notifications / profile tabs for a consistent identity). */}
