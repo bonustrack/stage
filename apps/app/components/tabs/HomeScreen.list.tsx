@@ -96,6 +96,8 @@ export function ChannelsList({
             color={head}
             onArchived={() => router.push('/xmtp/archived')}
             onNewGroup={() => router.push('/xmtp/new-group')}
+            onEditProfile={() => router.push('/profile')}
+            onSettings={() => router.push('/settings')}
           />
         </Row>
       </Row>
