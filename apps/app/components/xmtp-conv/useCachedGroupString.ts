@@ -4,7 +4,7 @@
  *  via `read(line)`. Returns undefined for DMs / unset / read errors. */
 
 import { useEffect, useState } from 'react';
-import { getCachedRows, subscribeCachedRows } from '../../modules/messaging';
+import { useChannelsQuery } from '../../modules/messaging';
 
 export function useCachedGroupString(
   convId: string | undefined,
@@ -13,18 +13,26 @@ export function useCachedGroupString(
   field: string,
   read: (line: string) => Promise<string | undefined>,
 ): string | undefined {
-  const cached = (cid?: string): string | undefined => {
-    const v = (getCachedRows()?.find(r => r.convId === cid) as Record<string, unknown> | undefined)?.[field];
+  /** Seed from the channels Query (the channelsCache read-mirror) instead of a
+   *  bespoke subscribeCachedRows subscription; the row's `field` updates flow
+   *  through the same Query entry. */
+  const rows = useChannelsQuery();
+  const cachedValue = ((): string | undefined => {
+    const v = (rows?.find(r => r.convId === convId) as Record<string, unknown> | undefined)?.[field];
     return typeof v === 'string' && v ? v : undefined;
-  };
-  const [value, setValue] = useState<string | undefined>(() => cached(convId));
+  })();
+  /** Live appData read can override the cached seed; once set it wins until the
+   *  conv changes. Re-seed from cache whenever the cached value moves. */
+  const [fresh, setFresh] = useState<string | undefined>(undefined);
   useEffect(() => {
-    const apply = (): void => setValue(cached(convId));
-    apply();
-    const unsub = subscribeCachedRows(apply);
+    setFresh(undefined);
+    if (!isGroup) return;
     let cancelled = false;
-    if (isGroup) void read(activeLine).then(v => { if (!cancelled) setValue(v); }).catch(() => undefined);
-    return () => { cancelled = true; unsub(); };
+    void read(activeLine).then(v => { if (!cancelled) setFresh(v); }).catch(() => undefined);
+    return () => { cancelled = true; };
   }, [convId, activeLine, isGroup]);
-  return value;
+  /** Cache is the persisted truth (the live read result is written back to it),
+   *  so prefer it when present; the fresh read only fills the gap before the
+   *  cache catches up. */
+  return cachedValue ?? fresh;
 }

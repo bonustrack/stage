@@ -19,6 +19,7 @@ import {
   getActiveAccountIdSync, type CachedRow,
 } from '../../lib/channelsCache';
 import { getQueryClient } from '../../lib/queryClient';
+import { useAccountEpoch } from '../../lib/accountEpoch';
 import { messagingKeys } from './queries';
 
 /** Push the cache's current rows into the active account's Query entry. Called
@@ -47,6 +48,10 @@ export function ensureChannelsQueryBridge(): void {
  *  rows array (or null before the first hydrate lands). */
 export function useChannelsQuery(): CachedRow[] | null {
   useEffect(() => { ensureChannelsQueryBridge(); }, []);
+  /** Re-render on account switch so the query key re-resolves to the new
+   *  account's entry (the bridge re-mirrors under that key on switch). Without
+   *  this the key would be stale until some other state change re-rendered. */
+  useAccountEpoch();
   const account = getActiveAccountIdSync();
   const { data } = useQuery({
     queryKey: messagingKeys.channels(account),

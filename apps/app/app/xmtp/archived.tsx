@@ -17,7 +17,7 @@ import { Title } from '@metro-labs/kit/title';
 import { Icon } from '@metro-labs/kit/icon';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getCachedRows, subscribeCachedRows } from '../../modules/messaging';
+import { useChannelsQuery } from '../../modules/messaging';
 import type { Row as RowT } from '../../components/tabs/HomeScreen.helpers';
 import { loadArchivedIds, subscribeArchived, toggleArchived } from '../../lib/archived';
 import { shortAddress } from '../../modules/messaging';
@@ -33,13 +33,12 @@ export default function Archived(): React.ReactElement {
   const sub = fg;
   const insets = useSafeAreaInsets();
   const [archived, setArchived] = useState<Set<string>>(new Set());
-  const [rows, setRows] = useState<RowT[]>((getCachedRows() as RowT[] | null) ?? []);
+  const rows = (useChannelsQuery() as RowT[] | null) ?? [];
 
   useEffect(() => {
     void loadArchivedIds().then(setArchived);
     return subscribeArchived(() => { void loadArchivedIds().then(s => setArchived(new Set(s))); });
   }, []);
-  useEffect(() => subscribeCachedRows(r => setRows((r as RowT[] | null) ?? [])), []);
 
   const data = rows.filter(r => archived.has(r.convId));
   usePeerProfiles(data.map(r => r.peerAddress));

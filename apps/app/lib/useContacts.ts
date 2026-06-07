@@ -12,11 +12,9 @@
  *  `exclude` set (self, already-staged members, current group members) removed
  *  and an optional case-insensitive `query` filter applied. */
 
-import { useEffect, useMemo, useState } from 'react';
-import {
-  getCachedRows, subscribeCachedRows, getActiveAccountIdSync,
-  type CachedRow,
-} from './channelsCache';
+import { useMemo } from 'react';
+import { getActiveAccountIdSync, type CachedRow } from './channelsCache';
+import { useChannelsQuery } from '../modules/messaging/channelsQuery';
 import {
   usePeerProfiles, getPeerName, getPeerAvatar, getPeerAvatarCb,
 } from './peerProfiles';
@@ -54,8 +52,7 @@ function peerAddressesFromRows(rows: CachedRow[] | null): string[] {
  *  @param query   case-insensitive filter over name + address; '' shows all.
  */
 export function useContacts(exclude: string[], query: string): Contact[] {
-  const [rows, setRows] = useState<CachedRow[] | null>(() => getCachedRows());
-  useEffect(() => subscribeCachedRows(setRows), []);
+  const rows = useChannelsQuery();
 
   const peers = useMemo(() => peerAddressesFromRows(rows), [rows]);
   /** Fetch (and re-render on) the peers' profiles — name + avatar. */
