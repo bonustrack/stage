@@ -99,7 +99,7 @@ export interface MessagesModule {
   /** Build a reaction payload to hand to the native conv.send. */
   buildReaction(messageId: string, emoji: string, action?: 'added' | 'removed'): ReactionPayload;
   /** Build a poll-vote payload (reaction, schema:'custom'). */
-  buildVote(pollMessageId: string, optionIndex: number, action?: 'added' | 'removed'): ReactionPayload;
+  buildVote(pollMessageId: string, optionIndex: number, action?: 'added' | 'removed', questionIndex?: number): ReactionPayload;
   /** Build a text-reply payload. */
   buildReply(replyTo: string, text: string): ReplyPayload;
   /** Build a static (inline) attachment payload. */

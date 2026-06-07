@@ -9,7 +9,7 @@ import { convOf } from './accounts.js';
 import { resolveMsgId, respond } from './wire.js';
 import { emitOutbound } from './emit.js';
 import {
-  PollCodec, SignatureRequestCodec, type PollContent, type SignatureRequestContent,
+  PollCodec, buildPollContent, SignatureRequestCodec, type SignatureRequestContent,
 } from './codecs.js';
 import { convHandlers } from './actions-conv.js';
 import { normalizeXmtp } from '../messaging-normalize.js';
@@ -26,23 +26,18 @@ async function send(id: string, args: Args): Promise<void> {
   respond(id, { result: { messageId } });
 }
 
+/** Send a poll. Accepts a SINGLE question ({ question, options[], header?,
+ *  multiSelect? }) OR a MULTI-question array ({ questions: [{ question,
+ *  options[], header?, multiSelect? }] }). See buildPollContent in codecs.ts. */
 async function sendPoll(id: string, args: Args): Promise<void> {
-  const { line, question, options, header, multiSelect, pollId } = args as {
-    line: string; question: string; options: (string | { label: string; description?: string })[];
-    header?: string; multiSelect?: boolean; pollId?: string };
+  const { line, pollId } = args as { line: string; pollId?: string };
   const { acct, conv } = await convOf(line);
   if (!conv) throw new Error(`conversation not found for ${line}`);
-  if (!question || typeof question !== 'string') throw new Error('sendPoll requires a question');
-  if (!Array.isArray(options) || options.length === 0) throw new Error('sendPoll requires a non-empty options array');
-  const normOptions = options.map(o =>
-    typeof o === 'string' ? { label: o } : { label: o.label, description: o.description });
   const fallbackId = `poll_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
   const mintedId = pollId ?? (typeof crypto?.randomUUID === 'function' ? crypto.randomUUID() : fallbackId);
-  const pollContent: PollContent = {
-    question, options: normOptions, multiSelect: !!multiSelect, pollId: mintedId,
-    ...(header ? { header } : {}) };
-  const sentId = await conv.send(new PollCodec().encode(pollContent));
-  emitOutbound(acct.cfg.id, line, sentId, `📊 Poll: ${question}`);
+  const { poll, title } = buildPollContent(args, mintedId);
+  const sentId = await conv.send(new PollCodec().encode(poll));
+  emitOutbound(acct.cfg.id, line, sentId, `📊 Poll: ${title}`);
   respond(id, { result: { messageId: sentId, pollId: mintedId } });
 }
 

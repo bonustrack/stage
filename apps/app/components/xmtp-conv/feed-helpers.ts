@@ -1,7 +1,10 @@
 /** Pure feed-derivation helpers for the XMTP conversation screen — extracted
  *  from app/xmtp/[convId].tsx verbatim (phase-2 lint split). Behavior identical. */
 
-import { votesByPoll as tallyVotes, ownVotes as tallyOwnVotes, type VoteEvent } from '@stage-labs/client/xmtp/poll';
+import {
+  votesByPoll as tallyVotes, ownVotes as tallyOwnVotes,
+  normalizeQuestions, type VoteEvent, type PollContent, type PollQuestion,
+} from '@stage-labs/client/xmtp/poll';
 import { stripMentionMarkup, attachmentEmojiPreview } from '@stage-labs/client/xmtp/humanize';
 import type { HistoryEntry } from '../../lib/types';
 
@@ -97,46 +100,63 @@ export function voteEventsOf(events: HistoryEntry[]): VoteEvent[] {
   return out;
 }
 
-/** Poll message ids → option count, derived from the poll bubbles in the feed.
- *  Used to tell a vote (content = a valid option index) from a genuine emoji
- *  reaction on a poll, when the vote's `schema:'custom'` tag didn't survive decode. */
+/** Poll message ids → normalized `PollQuestion[]` (legacy single-question polls
+ *  fold to a one-element array; option strings coerce to {label}). The single
+ *  source of truth the vote tally + isPollVote use to reason about a poll. */
+export function pollQuestionsInFeed(events: HistoryEntry[]): Map<string, PollQuestion[]> {
+  const out = new Map<string, PollQuestion[]>();
+  for (const e of events) {
+    const p = e.payload as { contentType?: string; poll?: PollContent } | undefined;
+    if (p?.contentType !== 'poll' || !p.poll) continue;
+    const qs = normalizeQuestions(p.poll);
+    if (qs.length > 0) out.set(e.id, qs);
+  }
+  return out;
+}
+
+/** Poll message ids → q0 option count. Used by isPollVote to tell a bare-integer
+ *  vote (legacy / question-0 form) from a genuine emoji reaction on a poll. */
 export function pollOptionCountsInFeed(events: HistoryEntry[]): Map<string, number> {
   const out = new Map<string, number>();
-  for (const e of events) {
-    const p = e.payload as { contentType?: string; poll?: { options?: unknown[] } } | undefined;
-    if (p?.contentType === 'poll' && Array.isArray(p.poll?.options)) out.set(e.id, p.poll.options.length);
-  }
+  for (const [id, qs] of pollQuestionsInFeed(events)) out.set(id, qs[0].options.length);
   return out;
 }
 
-/** Poll message ids → multiSelect flag, derived from the poll bubbles in the feed
- *  (single-select tallies dedupe differently than multi). */
+/** Poll message ids → q0 multiSelect flag (single-select tallies dedupe
+ *  differently than multi). Used by useVotesLayer for the question-0 fast path. */
 export function pollsInFeed(events: HistoryEntry[]): Map<string, boolean> {
   const out = new Map<string, boolean>();
-  for (const e of events) {
-    const p = e.payload as { contentType?: string; poll?: { multiSelect?: boolean } } | undefined;
-    if (p?.contentType === 'poll' && p.poll) out.set(e.id, p.poll.multiSelect === true);
+  for (const [id, qs] of pollQuestionsInFeed(events)) out.set(id, qs[0].multiSelect === true);
+  return out;
+}
+
+/** Build `pollMessageId -> (questionIndex -> (optionIndex -> Set<voterUri>))` for
+ *  every poll in the feed. Each question is tallied independently with its own
+ *  multiSelect rule; the vote key (q, o) is decoded by the shared tally. */
+export function votesByMessage(events: HistoryEntry[]): Map<string, Map<number, Map<number, Set<string>>>> {
+  const polls = pollQuestionsInFeed(events);
+  if (polls.size === 0) return new Map();
+  const voteEvents = voteEventsOf(events);
+  const out = new Map<string, Map<number, Map<number, Set<string>>>>();
+  for (const [pollId, qs] of polls) {
+    const byQ = new Map<number, Map<number, Set<string>>>();
+    qs.forEach((q, qi) => byQ.set(qi, tallyVotes(voteEvents, pollId, q.multiSelect === true, qi)));
+    out.set(pollId, byQ);
   }
   return out;
 }
 
-/** Build `pollMessageId → (optionIndex → Set<voterUri>)` for every poll in the feed. */
-export function votesByMessage(events: HistoryEntry[]): Map<string, Map<number, Set<string>>> {
-  const polls = pollsInFeed(events);
+/** Option indices the local user has selected, per poll then per question. */
+export function ownVotesByMessage(events: HistoryEntry[], myUri: string): Map<string, Map<number, Set<number>>> {
+  const polls = pollQuestionsInFeed(events);
   if (polls.size === 0) return new Map();
   const voteEvents = voteEventsOf(events);
-  const out = new Map<string, Map<number, Set<string>>>();
-  for (const [pollId, multi] of polls) out.set(pollId, tallyVotes(voteEvents, pollId, multi));
-  return out;
-}
-
-/** Option indices the local user has selected, per poll message id. */
-export function ownVotesByMessage(events: HistoryEntry[], myUri: string): Map<string, Set<number>> {
-  const polls = pollsInFeed(events);
-  if (polls.size === 0) return new Map();
-  const voteEvents = voteEventsOf(events);
-  const out = new Map<string, Set<number>>();
-  for (const [pollId, multi] of polls) out.set(pollId, tallyOwnVotes(voteEvents, myUri, pollId, multi));
+  const out = new Map<string, Map<number, Set<number>>>();
+  for (const [pollId, qs] of polls) {
+    const byQ = new Map<number, Set<number>>();
+    qs.forEach((q, qi) => byQ.set(qi, tallyOwnVotes(voteEvents, myUri, pollId, q.multiSelect === true, qi)));
+    out.set(pollId, byQ);
+  }
   return out;
 }
 

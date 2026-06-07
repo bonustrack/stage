@@ -3,6 +3,7 @@
 
 import type { HistoryEntry } from '../lib/types';
 import type { RemoteAttachmentInfo } from '@xmtp/react-native-sdk';
+import { normalizeQuestions, type PollContent } from '@stage-labs/client/xmtp/poll';
 
 export const REACT_PRESETS = ['👍', '🔥', '👀', '🙏', '😁', '💯', '🫡'];
 
@@ -93,17 +94,17 @@ export function questionOf(entry: HistoryEntry): Question | undefined {
 }
 
 export interface PollOption { label: string; description?: string }
-export interface Poll {
-  pollId?: string; question?: string; header?: string;
-  options: PollOption[]; multiSelect?: boolean;
-}
+export interface PollQuestion { question: string; header?: string; options: PollOption[]; multiSelect?: boolean }
+/** Normalized poll: non-empty `questions[]`; `question` is the bubble title (q0). */
+export interface Poll { pollId?: string; question?: string; questions: PollQuestion[] }
 
 export function pollOf(entry: HistoryEntry): Poll | undefined {
-  const raw = (entry.payload as { poll?: Omit<Poll, 'options'> & { options: (PollOption | string)[] } })?.poll;
-  if (!raw || !Array.isArray(raw.options)) return undefined;
-  // Backward-compat: legacy polls encoded options as plain strings; normalize to
-  // the AskUserQuestion {label} shape so the render never hits opt.label === undefined.
-  return { ...raw, options: raw.options.map(o => (typeof o === 'string' ? { label: o } : o)) };
+  const raw = (entry.payload as { poll?: PollContent })?.poll;
+  if (!raw) return undefined;
+  // normalizeQuestions folds BOTH shapes into one array (option strings -> {label}).
+  const questions = normalizeQuestions(raw);
+  if (questions.length === 0) return undefined;
+  return { pollId: raw.pollId, question: questions[0].question, questions };
 }
 
 export interface SigRequest {

@@ -69,7 +69,7 @@ export function useFeedRenderItem(
       onReplyPreviewPress={item.replyTo ? () => jumpToMessage(item.replyTo as string) : undefined}
       votes={displayVotes.get(item.id)}
       ownVotes={displayOwnVotes.get(item.id)}
-      onVote={(idx, action) => onVote(item.id, idx, action)}
+      onVote={(qIdx, idx, action) => onVote(item.id, qIdx, idx, action)}
       signing={signingIds.has(item.id)}
       onSign={(() => {
         const req = (item.payload as { signatureRequest?: SignatureRequestContent } | undefined)?.signatureRequest;
