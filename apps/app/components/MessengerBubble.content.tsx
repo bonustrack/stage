@@ -8,8 +8,10 @@ import Markdown from 'react-native-markdown-display';
 import { YouTubeEmbed, LocationEmbed } from './MediaEmbeds';
 import { ChannelCard } from './ChannelCard';
 import { GitHubLinkCard } from './GitHubLinkCard';
+import { PreviewLinkCard } from './PreviewLinkCard';
 import { mapCoordsOf, youtubeIdOf } from '../lib/embedDetect';
 import { githubLinkOf } from '../lib/githubDetect';
+import { previewLinkOf } from '../lib/previewLinkDetect';
 import { metroConvIdOf, metroDmPeerOf } from '../modules/messaging';
 import { Box, Row } from './layout';
 import type { HistoryEntry } from '../lib/types';
@@ -108,8 +110,10 @@ export function BubbleContent({
           const dmPeer = metroDmPeerOf(t);
           const cid = metroConvIdOf(t);
           // Whole-body channel/DM link → render the card alone (no raw URL).
+          const preview = previewLinkOf(t);
           const isBareLink = (dmPeer && t === `metro://xmtp/user/${dmPeer}`)
-            || (cid && t === `metro://xmtp/${cid}`);
+            || (cid && t === `metro://xmtp/${cid}`)
+            || (preview != null && t === preview.url);
           return isBareLink;
         })() ? null : (
           <Box style={{ alignSelf: 'stretch' }}>
@@ -133,6 +137,8 @@ export function BubbleContent({
         if (coords) return <Box style={{ alignSelf: 'stretch', marginTop: 6 }}><LocationEmbed lat={coords.lat} lng={coords.lng} sourceUrl={coords.sourceUrl} dark={dark} /></Box>;
         const gh = githubLinkOf(entry.text);
         if (gh) return <Box style={{ alignSelf: 'stretch', marginTop: 6 }}><GitHubLinkCard url={gh.url} dark={dark} /></Box>;
+        const preview = previewLinkOf(entry.text);
+        if (preview) return <Box style={{ alignSelf: 'stretch', marginTop: 6 }}><PreviewLinkCard url={preview.url} dark={dark} /></Box>;
         return null;
       })()}
       {question && onAnswer ? (
