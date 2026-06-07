@@ -1,17 +1,11 @@
-/** Shared presentational row for a channel/conversation card.
- *
- *  Used by BOTH the channels tab (app/(tabs)/index.tsx) and the "Common
- *  channels" section on a peer's profile (CommonChannels.tsx) so the two
- *  surfaces stay visually identical. This component is PRESENTATION ONLY -
- *  all data/state logic (unread recount, streaming updates, pin/draft state,
- *  profile-name resolution) lives in the caller, which passes the resolved
- *  values down as props.
- *
+/** Shared presentational row for a channel/conversation card. Used by BOTH the
+ *  channels tab (app/(tabs)/index.tsx) and "Common channels" on a peer profile
+ *  (CommonChannels.tsx) so the two surfaces stay identical. PRESENTATION ONLY:
+ *  all data/state logic lives in the caller and is passed down as props.
  *  Layout: avatar (square for groups/channels, circle for DMs) + a title row
  *  (optional pin/draft glyphs, title, right-aligned timestamp) + a subtitle row
- *  (last-message preview or member count, with an optional unread badge/dot).
- *  Timestamp, preview, and unread props are all optional so callers without
- *  that context (common channels) can omit them gracefully. */
+ *  (preview or member count, optional unread badge/dot). Timestamp/preview/
+ *  unread props are optional so callers without context can omit them. */
 
 import { memo } from 'react';
 // eslint-disable-next-line no-restricted-imports -- raw View is required as an INLINE element inside <Text> (Box/Row/Col carry layout flex and don't embed inline in text flow)
@@ -70,9 +64,12 @@ export interface ChannelRowProps {
  *  (2) so the chips stay secondary to the group name on the same row. */
 const MAX_VISIBLE_LABELS = 2;
 
-/** Reserved preview height: 2 lines at lineHeight 21 (also clears the 22px
- *  unread badge). Keeps every row a CONSTANT height for 1 or 2 preview lines. */
-const PREVIEW_BLOCK = 42;
+/** Constant content height reserved on the OUTER row so a 1-line and a 2-line
+ *  preview render the SAME total height: title line (~23) + 2 preview lines
+ *  (2 * 21 = 42) ~= 67, which also exceeds the 44px avatar. The text column has
+ *  NO internal blank reservation, so the title+preview group centers as a unit
+ *  next to the centered avatar (no empty gap stuck at the bottom). */
+const ROW_CONTENT_HEIGHT = 67;
 
 /** Build ROUNDED label chips as INLINE <View>s placed as the FIRST children
  *  INSIDE the preview <Text>; the preview text flows around them and wraps
@@ -129,9 +126,11 @@ function ChannelRowBase({
       }))}
     >
       {/* No divider. Center-aligned (align="center"): avatar + text column
-          center vertically within a CONSTANT-height row (reserved 2-line
-          preview block keeps every row the same height for 1 vs 2 lines). */}
-      <Row align="center" gap={12} py={9}>
+          center vertically as a group within a CONSTANT-height row. The fixed
+          height lives on the ROW (ROW_CONTENT_HEIGHT, the 2-line case), NOT
+          inside the preview block, so 1-line and 2-line rows are the same total
+          height and the content is truly centered (no bottom gap). */}
+      <Row align="center" gap={12} py={9} style={{ minHeight: ROW_CONTENT_HEIGHT }}>
         <Avatar
           imageUri={avatarUri}
           address={!avatarUri && avatarAddress ? avatarAddress : null}
@@ -159,11 +158,11 @@ function ChannelRowBase({
               <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium' }}>{timestamp}</Text>
             ) : null}
           </Row>
-          {/* Reserve a FIXED 2-line preview block (PREVIEW_BLOCK = 42, i.e. 2
-              lines at lineHeight 21) so a 1-line preview reserves the same
-              space as a 2-line one and the row never shrinks. align-start pins
-              the unread badge to the FIRST line when the preview wraps. */}
-          <Row align="start" gap={7} mt={2} style={{ minHeight: PREVIEW_BLOCK }}>
+          {/* No internal height reservation: the preview block is only as tall
+              as its actual content (1 or 2 lines) so the title+preview group can
+              center within the fixed-height row. align-start pins the unread
+              badge to the FIRST line when the preview wraps. */}
+          <Row align="start" gap={7} mt={2}>
             {/* ROUNDED chip(s) are INLINE <View>s at the START of the preview
                 <Text>, so the preview flows around them and wraps UNDERNEATH the
                 chip on the 2nd line (single-line rounded pill, text under it). */}
