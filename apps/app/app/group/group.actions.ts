@@ -57,6 +57,7 @@ export function useGroupActions(line: string, invalidateConvMeta: () => void): {
       setAddDraft('');
       onSuccess?.();
       setMembers(next);
+      invalidateConvMeta();
     } catch (e) {
       Alert.alert('Add member failed', (e as Error).message ?? 'Unknown error');
     } finally { setAdding(false); }
@@ -74,6 +75,7 @@ export function useGroupActions(line: string, invalidateConvMeta: () => void): {
               setRemoving(addr.toLowerCase());
               try {
                 setMembers(await removeGroupMember(line, addr));
+                invalidateConvMeta();
               } catch (e) {
                 Alert.alert('Remove member failed', (e as Error).message ?? 'Unknown error');
               } finally { setRemoving(null); }

@@ -34,3 +34,10 @@ export * from '../../lib/xmtp.preview';
 export * from './account';
 export * from './cache';
 export * from './conversation';
+
+/** Stage-1 cache unification: typed Query key factory + the convMeta / channels
+ *  hooks backed by TanStack Query. The old stores (channelsCache / feedCache)
+ *  stay alive alongside; this is a parallel-path migration. */
+export * from './queries';
+export * from './channelsQuery';
+export * from './streamSync';

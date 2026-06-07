@@ -19,7 +19,8 @@ import { Icon } from '@metro-labs/kit/icon';
 import { ImageViewer } from '../../components/ImageViewer';
 import { MemberRow, AddMemberModal, OverflowModal } from './group.parts';
 import { GroupProfileHeader, GroupNameEditor, GroupDescriptionEditor } from './group.editor';
-import { loadGroupDetail } from './group.helpers';
+import { messagingKeys } from '../../modules/messaging';
+import { useGroupDetail } from './group.detail';
 import { GroupLabelsSection } from './group.labels';
 import { GroupGithubSection } from './group.github';
 import { useGroupActions } from './group.actions';
@@ -35,10 +36,11 @@ export default function GroupDetail(): React.ReactElement {
   const { convId } = useLocalSearchParams<{ convId: string }>();
   const line = lineOfConv(convId ?? '');
   const queryClient = useQueryClient();
-  /** Invalidate cached conv metadata so the chat-view topnav picks up
-   *  rename / new image / description without a reload. */
+  /** Invalidate cached conv metadata so the chat-view topnav (and this screen,
+   *  which also reads useConvMeta) picks up rename / new image / description
+   *  without a reload. Keyed via the shared messaging key factory. */
   const invalidateConvMeta = (): void => {
-    if (convId) void queryClient.invalidateQueries({ queryKey: ['convMeta', convId] });
+    if (convId) void queryClient.invalidateQueries({ queryKey: messagingKeys.convMeta(convId) });
   };
 
   const a = useGroupActions(line, invalidateConvMeta);
@@ -51,10 +53,9 @@ export default function GroupDetail(): React.ReactElement {
     leaving, leaveGroup,
   } = a;
 
-  /** Snapshot profile name per address. null = no profile / no name. */
-  const [memberNames, setMemberNames] = useState<Record<string, string | null>>({});
-  /** Role per member address: super-admin → owner, admin → admin, else member. */
-  const [memberRoles, setMemberRoles] = useState<Record<string, 'owner' | 'admin' | 'member'>>({});
+  /** Shared metadata seeding (convMeta query, deduped) + group-only roles/names,
+   *  extracted to a hook for the line cap. */
+  const { memberNames, memberRoles } = useGroupDetail(convId, a);
   const [addOpen, setAddOpen] = useState(false);
   /** Lower-cased local wallet address — suppresses the remove button on self. */
   const [selfAddress, setSelfAddress] = useState<string>('');
@@ -73,31 +74,6 @@ export default function GroupDetail(): React.ReactElement {
       setSelfAddress(client.publicIdentity.identifier.toLowerCase());
     }).catch(() => undefined);
   }, []);
-
-  useEffect(() => {
-    if (!convId) return;
-    let cancelled = false;
-    void (async (): Promise<void> => {
-      const d = await loadGroupDetail(line);
-      if (cancelled || !d) return;
-      a.setName(d.name);
-      a.setDraft(d.name);
-      a.setImageUrl(d.imageUrl);
-      a.setDescription(d.description);
-      a.setDescriptionDraft(d.description);
-      a.setMembers(d.members);
-      setMemberRoles(d.roles);
-      /** Fetch Snapshot profile names — each row falls back to the address when
-       *  the lookup misses, so this is a pure enrichment. */
-      const { readProfile } = await import('../../lib/profile');
-      const profiles = await Promise.all(d.members.map(a => readProfile(a).catch(() => null)));
-      if (cancelled) return;
-      const next: Record<string, string | null> = {};
-      for (let i = 0; i < d.members.length; i++) next[d.members[i]!] = profiles[i]?.name?.trim() || null;
-      setMemberNames(next);
-    })();
-    return (): void => { cancelled = true; };
-  }, [convId, line]);
 
   return (
     <Box style={{ flex: 1, backgroundColor: bg }}>

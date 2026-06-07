@@ -1,0 +1,82 @@
+/** Conversation-metadata fetcher (the queryFn behind ['xmtp','convMeta',convId]).
+ *
+ *  Moved here from lib/useConvMeta so BOTH the chat-view topnav hook and the
+ *  group-info screen read the same fetcher through one Query key, killing the
+ *  duplicate fetch (the group screen used to run its own Promise.all in
+ *  loadGroupDetail that re-resolved name/image/description/members). The group
+ *  screen now reads this for those shared fields and fetches ONLY its extra
+ *  admin-roles map separately. */
+
+import {
+  lineOfConv, convOfLine, peerEthAddressOfDm,
+  groupMemberEthAddresses, memberInboxToAddressMap,
+} from '../../lib/xmtp';
+
+export interface ConvMeta {
+  peerAddr: string | null;
+  isGroup: boolean;
+  /** null = not resolved yet, '' = group with no name, else the name. */
+  groupName: string | null;
+  groupImage: string;
+  /** Group's XMTP-metadata description ('' = none). Empty for DMs. */
+  groupDescription: string;
+  memberAddrs: string[];
+  inboxToAddr: Record<string, string>;
+}
+
+export const EMPTY_CONV_META: ConvMeta = {
+  peerAddr: null, isGroup: false, groupName: null, groupImage: '',
+  groupDescription: '', memberAddrs: [], inboxToAddr: {},
+};
+
+export async function fetchConvMeta(convId: string): Promise<ConvMeta> {
+  const conv = await convOfLine(lineOfConv(convId));
+  if (!conv) return EMPTY_CONV_META;
+  const [peer, inboxToAddr] = await Promise.all([
+    peerEthAddressOfDm(conv),
+    memberInboxToAddressMap(conv),
+  ]);
+  if (peer) return { ...EMPTY_CONV_META, peerAddr: peer, inboxToAddr };
+  const g = conv as unknown as {
+    name?: () => Promise<string>;
+    imageUrl?: () => Promise<string>;
+    description?: () => Promise<string>;
+  };
+  const [members, name, image, description] = await Promise.all([
+    groupMemberEthAddresses(conv),
+    g.name?.() ?? Promise.resolve(''),
+    g.imageUrl?.().catch(() => '') ?? Promise.resolve(''),
+    g.description?.().catch(() => '') ?? Promise.resolve(''),
+  ]);
+  return {
+    peerAddr: null, isGroup: true, groupName: name ?? '', groupImage: image ?? '',
+    groupDescription: description ?? '', memberAddrs: members, inboxToAddr,
+  };
+}
+
+/** The group-info screen's EXTRA, non-shared data: per-member admin roles, keyed
+ *  by lower-cased eth address. Derived from the SDK admin lists + the already-
+ *  resolved inbox->addr map (passed in so we don't re-fetch members here). */
+export async function fetchGroupRoles(
+  convId: string,
+  inboxToAddr: Record<string, string>,
+): Promise<Record<string, 'owner' | 'admin' | 'member'>> {
+  const conv = await convOfLine(lineOfConv(convId));
+  if (!conv) return {};
+  const group = conv as unknown as {
+    listSuperAdmins?: () => Promise<string[]>;
+    listAdmins?: () => Promise<string[]>;
+  };
+  const [supers, admins] = await Promise.all([
+    group.listSuperAdmins?.().catch(() => [] as string[]) ?? Promise.resolve([] as string[]),
+    group.listAdmins?.().catch(() => [] as string[]) ?? Promise.resolve([] as string[]),
+  ]);
+  const superSet = new Set(supers.map(s => s.toLowerCase()));
+  const adminSet = new Set(admins.map(a => a.toLowerCase()));
+  const roles: Record<string, 'owner' | 'admin' | 'member'> = {};
+  for (const [inboxId, addr] of Object.entries(inboxToAddr)) {
+    const iid = inboxId.toLowerCase();
+    roles[addr] = superSet.has(iid) ? 'owner' : adminSet.has(iid) ? 'admin' : 'member';
+  }
+  return roles;
+}

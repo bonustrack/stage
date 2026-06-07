@@ -1,60 +1,8 @@
-/** TanStack Query for a conversation's metadata (DM peer / group name + image +
- *  members). Cached by convId so the topnav title + avatar appear instantly on
- *  the second open instead of resolving from scratch each time. */
+/** Back-compat shim. The conversation-metadata query moved behind the messaging
+ *  facade in stage 1 of the cache unification (key + fetcher live in
+ *  modules/messaging/queries + convMeta.fetch). Existing call sites still import
+ *  `useConvMeta` / `ConvMeta` from here; this re-exports the facade version so
+ *  the dedup (chat-view topnav + group screen share ONE query) takes effect
+ *  without touching every consumer. */
 
-import { useQuery } from '@tanstack/react-query';
-import {
-  lineOfConv, convOfLine, peerEthAddressOfDm,
-  groupMemberEthAddresses, memberInboxToAddressMap,
-} from './xmtp';
-
-export interface ConvMeta {
-  peerAddr: string | null;
-  isGroup: boolean;
-  /** null = not resolved yet, '' = group with no name, else the name. */
-  groupName: string | null;
-  groupImage: string;
-  /** Group's XMTP-metadata description ('' = none). Empty for DMs. */
-  groupDescription: string;
-  memberAddrs: string[];
-  inboxToAddr: Record<string, string>;
-}
-
-const EMPTY: ConvMeta = {
-  peerAddr: null, isGroup: false, groupName: null, groupImage: '', groupDescription: '', memberAddrs: [], inboxToAddr: {},
-};
-
-async function fetchConvMeta(convId: string): Promise<ConvMeta> {
-  const conv = await convOfLine(lineOfConv(convId));
-  if (!conv) return EMPTY;
-  const [peer, inboxToAddr] = await Promise.all([
-    peerEthAddressOfDm(conv),
-    memberInboxToAddressMap(conv),
-  ]);
-  if (peer) return { ...EMPTY, peerAddr: peer, inboxToAddr };
-  const g = conv as unknown as {
-    name?: () => Promise<string>;
-    imageUrl?: () => Promise<string>;
-    description?: () => Promise<string>;
-  };
-  const [members, name, image, description] = await Promise.all([
-    groupMemberEthAddresses(conv),
-    g.name?.() ?? Promise.resolve(''),
-    g.imageUrl?.().catch(() => '') ?? Promise.resolve(''),
-    g.description?.().catch(() => '') ?? Promise.resolve(''),
-  ]);
-  return {
-    peerAddr: null, isGroup: true, groupName: name ?? '', groupImage: image ?? '',
-    groupDescription: description ?? '', memberAddrs: members, inboxToAddr,
-  };
-}
-
-export function useConvMeta(convId?: string | null): ConvMeta {
-  const { data } = useQuery({
-    queryKey: ['convMeta', convId ?? ''],
-    queryFn: () => fetchConvMeta(convId as string),
-    enabled: !!convId,
-    staleTime: 5 * 60_000,
-  });
-  return data ?? EMPTY;
-}
+export { useConvMeta, type ConvMeta } from '../modules/messaging/queries';
