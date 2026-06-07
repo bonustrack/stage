@@ -29,9 +29,6 @@ interface EditorProps {
   /** Any staged content (text or attachment): the send button is rendered only
    *  when true, and when rendered it is always enabled/tappable. */
   hasContent: boolean;
-  /** A send is in-flight: keep the button shown but non-interactive so a
-   *  double-tap can't fire two sends. */
-  sending: boolean;
   onCancelRec: () => void; onStopRec: () => void; onSend: () => void;
 }
 
@@ -121,14 +118,18 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
             icon={<Icon name="check" size={20} color={bg} />}
           />
         ) : p.hasContent ? (
-          /** Shown only when there is content to send; always tappable. While a
-           *  send is in-flight we keep it visible but block re-taps. */
+          /** Shown only when there is content to send, and always enabled. Tapping
+           *  send clears the text + attachments synchronously, so hasContent flips
+           *  false and this button unmounts INSTANTLY (no greyed/disabled frame) -
+           *  the send itself continues in the background. Rapid double-taps are a
+           *  no-op: the second tap sees empty content (the send() guard returns
+           *  early). We deliberately do NOT gate on `sending` here, since that path
+           *  is what produced the brief disabled flash after tap. */
           <Button
             variant="primary"
             size="md"
             pill
             dark={dark}
-            disabled={p.sending}
             tintBg={primary}
             onPress={p.onSend}
             icon={<Icon name="send" size={20} color={bg} />}
