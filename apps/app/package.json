@@ -10,6 +10,7 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "lint": "eslint app/ components/ lib/",
+    "test": "bun test test/",
     "eas-build-post-install": "node ./scripts/install-nodejs-project.js"
   },
   "dependencies": {

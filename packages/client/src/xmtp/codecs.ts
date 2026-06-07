@@ -13,6 +13,9 @@
  *  (TextEncoder / TextDecoder) so the byte round-trip is platform-neutral; the
  *  RN app's Buffer polyfill is no longer needed for these bodies. */
 
+import type { ZodType } from 'zod';
+import { parseOrThrow, type BoundaryName } from '../validate';
+
 /** A content-type descriptor — structurally the RN SDK's `ContentTypeId`, but
  *  declared here so the package never imports the native type. The app's codec
  *  classes assign one of these to their `contentType` field. */
@@ -72,7 +75,17 @@ export function encodeJsonContent<T>(
 }
 
 /** Decode a JSON-bodied EncodedContent back into its content shape. Accepts the
- *  bytes off the EncodedContent (`encoded.content`). */
-export function decodeJsonContent<T>(bytes: Uint8Array): T {
-  return JSON.parse(new TextDecoder().decode(bytes)) as T;
+ *  bytes off the EncodedContent (`encoded.content`).
+ *
+ *  When a `schema` is supplied the decoded body is validated at this boundary:
+ *  a malformed / drifted wire body throws loudly (with a logged reason) instead
+ *  of being `as`-cast into a wrong-but-typed value. Without a schema it keeps
+ *  the legacy `as`-cast behaviour so existing callers are unaffected. */
+export function decodeJsonContent<T>(
+  bytes: Uint8Array,
+  schema?: ZodType<T>,
+  where: BoundaryName = 'xmtp.codec',
+): T {
+  const data: unknown = JSON.parse(new TextDecoder().decode(bytes));
+  return schema ? parseOrThrow(where, schema, data) : (data as T);
 }
