@@ -32,7 +32,7 @@ export function PreviewLinkCard({ url }: {
         <Row align="center" justify="start">
           <Icon name="play" size={18} color={fg} />
           <Box style={{ marginLeft: 8, flexShrink: 1 }}>
-            <Text style={{ color: fg, fontSize: 15, fontFamily: 'Calibre-Semibold', lineHeight: 19 }}>
+            <Text style={{ color: fg, fontSize: 19, fontFamily: 'Calibre-Semibold' }}>
               Open preview build
             </Text>
             <Text style={{ color: subColor, fontSize: 11, fontFamily: 'Calibre-Medium', marginTop: 2 }}>

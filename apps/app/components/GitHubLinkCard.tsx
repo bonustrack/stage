@@ -53,7 +53,7 @@ export function GitHubLinkCard({ url }: {
           </Text>
         </Row>
         <Text
-          style={{ color: fg, fontSize: 15, fontFamily: 'Calibre-Semibold', lineHeight: 19 }}
+          style={{ color: fg, fontSize: 19, fontFamily: 'Calibre-Semibold' }}
           numberOfLines={2}
         >
           {meta.title}
