@@ -21,7 +21,9 @@ export function AddSheet({ visible, onClose, onGenerate, onImport, onWalletConne
   const dark = useEffectiveColorScheme() === 'dark';
   return (
     <SheetModal visible={visible} onClose={onClose} bg={p.sheetBg} border={p.border}>
-      <ListView dark={dark}>
+      {/* Cancel SheetModal's 16px padding so the list spans edge-to-edge and the
+          row content inset (ROW_INSET 16) matches the Settings page. */}
+      <ListView dark={dark} style={{ marginHorizontal: -16 }}>
         <SheetRow label="Generate a new account" desc="Create a fresh wallet on this device" head={p.head} sub={p.sub} dark={dark} onPress={onGenerate} />
         <SheetRow label="Import private key" desc="Paste an existing wallet's private key" head={p.head} sub={p.sub} dark={dark} onPress={onImport} />
         <SheetRow label="Connect with WalletConnect" desc="Sign in with an existing wallet" head={p.head} sub={p.sub} dark={dark} onPress={onWalletConnect} />
@@ -92,7 +94,9 @@ export function ManageSheet({ manageRec, activeId, onClose, onSwitch, onExport, 
       onClose={onClose}
       bg={p.sheetBg} border={p.border}
     >
-      <ListView dark={dark}>
+      {/* Cancel SheetModal's 16px padding so the list spans edge-to-edge and the
+          row content inset (ROW_INSET 16) matches the Settings page. */}
+      <ListView dark={dark} style={{ marginHorizontal: -16 }}>
         {manageRec && manageRec.id !== activeId ? (
           <SheetRow label="Switch to this account" head={p.head} sub={p.sub} dark={dark} onPress={() => { const id = manageRec.id; onClose(); onSwitch(id); }} />
         ) : null}

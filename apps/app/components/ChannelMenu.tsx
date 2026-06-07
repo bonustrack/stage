@@ -98,7 +98,9 @@ export function ChannelMenu({
 
   return (
     <AppModal visible={visible} onClose={onClose}>
-      <ListView dark={dark}>
+      {/* Cancel AppModal's 16px ScrollView padding so the list spans edge-to-edge
+          and the row content inset (ROW_INSET 16) matches the Settings page. */}
+      <ListView dark={dark} style={{ marginHorizontal: -16 }}>
         <MenuRow
           icon={isUnread ? 'check' : 'envelope'}
           label={isUnread ? 'Mark as read' : 'Mark as unread'}

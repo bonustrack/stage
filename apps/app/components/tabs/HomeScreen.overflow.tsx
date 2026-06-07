@@ -42,7 +42,9 @@ export function HomeOverflowMenu({ color, onArchived, onNewGroup, onEditProfile,
         <Icon name="dotsVertical" size={24} color={color} />
       </Pressable>
       <AppModal visible={open} onClose={close}>
-        <ListView dark={dark}>
+        {/* Cancel AppModal's 16px ScrollView padding so the list spans edge-to-edge
+            and the row content inset (ROW_INSET 16) matches the Settings page. */}
+        <ListView dark={dark} style={{ marginHorizontal: -16 }}>
           <OverflowRow icon="plus" label="New group" color={color} dark={dark} onPress={() => run(onNewGroup)} />
           <OverflowRow icon="archive" label="Archived" color={color} dark={dark} onPress={() => run(onArchived)} />
           <OverflowRow icon="pencil" label="Edit profile" color={color} dark={dark} onPress={() => run(onEditProfile)} />
