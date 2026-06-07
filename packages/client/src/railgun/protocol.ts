@@ -43,6 +43,7 @@ export type BridgeEvent =
   | 'event:proofProgress'
   | 'event:scanProgress'
   | 'event:scanDebug'
+  | 'event:heartbeat'
   | 'event:uncaughtException';
 
 /** Engine bootstrap params. The encryption key + mnemonic are derived on the

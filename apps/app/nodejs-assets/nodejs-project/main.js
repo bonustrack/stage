@@ -108,6 +108,22 @@ handlers['ping'] = function ping(params) {
   };
 };
 
+/* hello: the readiness handshake (RN bridge/handshake.ts). Its reply proves the
+ * host channel + rg:request listener are live → the bridge is ready. We ALSO
+ * re-emit the boot event so that if the RN side missed the original one-shot boot
+ * emit (the boot race), this request-driven re-emit recovers it. Dependency-free
+ * so it answers the instant the listener is registered, before any engine load. */
+handlers['hello'] = function hello(params) {
+  emit('event:message', 'Railgun node host re-ready (hello).');
+  return {
+    pong: true,
+    hello: true,
+    echo: params == null ? null : params,
+    node: typeof process !== 'undefined' && process.version ? process.version : 'unknown',
+    at: Date.now(),
+  };
+};
+
 /* Lazily-loaded RAILGUN engine module. Required on first engine call (not at
  * boot) so a failure to load the heavy native deps surfaces as a bridge error
  * the probe can show, instead of crashing the host before the channel is up. */

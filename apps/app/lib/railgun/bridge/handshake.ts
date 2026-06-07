@@ -1,15 +1,26 @@
-/** Robust readiness handshake for the nodejs-mobile bridge.
+/** Event-driven readiness handshake for the nodejs-mobile bridge.
  *
- *  The channel does NOT buffer: a request posted before main.js registers its
- *  'rg:request' listener is silently dropped and the call hangs to timeout. The
- *  host emits a one-shot boot event (READY_EVENT) right after registering, but
- *  if the RN listener attaches a hair too late we miss that single emit and the
- *  ready gate deadlocks forever.
+ *  THE BOOT RACE: the nodejs-mobile channel does NOT buffer. A request posted
+ *  before main.js registers its 'rg:request' listener is silently dropped, and
+ *  the host's one-shot boot event (READY_EVENT) is likewise lost if the RN side
+ *  attaches its listener a hair AFTER mod.start. Either miss used to deadlock
+ *  behind a ~12s ping-retry loop.
  *
- *  Fix: resolve readiness on EITHER (a) the boot event, OR (b) a retrying ping
- *  whose first reply proves the host channel + 'rg:request' listener are live.
- *  The pings write DIRECTLY to the channel (they must not await the ready gate
- *  they exist to satisfy), correlated by id like normal calls. */
+ *  THE FIX (deterministic, no polling loop):
+ *    1. The RN side attaches ALL listeners (reply + boot event) BEFORE calling
+ *       mod.start (enforced by the caller in index.ts - start happens last).
+ *    2. Readiness resolves on EITHER signal, whichever lands first:
+ *         (a) the host's boot event (markReady), OR
+ *         (b) the reply to a single deterministic 'hello' request.
+ *       The host answers 'hello' AND re-emits its boot event on receiving it, so
+ *       even if (a) was missed, (b) both proves liveness and re-triggers (a).
+ *       A 'hello' arriving before the listener is up is a no-op: we resend it
+ *       exactly ONCE when the boot event lands (request-ready-on-attach).
+ *    3. A SINGLE timeout (not a 20x retry loop) fails the gate loudly so the UI
+ *       shows a real error instead of a silent per-call hang.
+ *
+ *  STATE MACHINE: idle -> starting -> ready | failed. Terminal states are sticky
+ *  (settled guard); every transition flows through one place. */
 import type { NodejsChannel } from './nodejsMobile';
 import { fmtPayload, status } from './diagnostics';
 
@@ -22,30 +33,37 @@ export interface HandshakeDeps {
   requestEvent: string;
   /** Allocate the next monotonic correlation id (shared nextId counter). */
   nextId: () => number;
-  /** Register a one-shot reply resolver keyed by id (the pending map). */
+  /** Register a one-shot reply resolver keyed by id (checked before pending). */
   onReply: (id: number, resolve: () => void) => void;
-  /** Drop a previously-registered reply resolver (cleanup on stop). */
+  /** Drop a previously-registered reply resolver (cleanup on settle). */
   offReply: (id: number) => void;
 }
 
-/** ~400-600ms between probe pings; ~20 attempts ≈ 12s before we give up. */
-const PING_INTERVAL_MS = 500;
-const MAX_ATTEMPTS = 20;
+/** Explicit lifecycle of the readiness gate. */
+export type HandshakeState = 'idle' | 'starting' | 'ready' | 'failed';
 
-/** Start the retrying-ping + boot-event race. Resolves the returned promise the
- *  instant readiness is proven by either path, rejects after the attempt cap so
- *  the UI shows a real failure instead of a silent 15s-per-call hang. Returns a
- *  stop() to halt the retry loop once another path (boot event) wins. */
-export function startReadinessHandshake(deps: HandshakeDeps): {
+/** Single deadline for the whole gate. The host boots + registers its listener
+ *  in well under this; exceeding it means the native runtime never came up. */
+const READY_TIMEOUT_MS = 12_000;
+
+export interface Handshake {
   promise: Promise<void>;
-  /** Resolve readiness now (e.g. the boot event fired) + halt the retry loop. */
+  /** Current lifecycle state (for diagnostics). */
+  state: () => HandshakeState;
+  /** The boot event fired: resolve readiness (or, if a 'hello' is still in
+   *  flight, this just wins the race). Idempotent. */
   markReady: () => void;
-} {
+}
+
+/** Start the event-driven readiness gate. The caller MUST have attached the boot
+ *  event + reply listeners already, and MUST call mod.start immediately after
+ *  this returns (so the single 'hello' we post lands once the host is live, or
+ *  is harmlessly dropped and re-sent on the boot event). */
+export function startReadinessHandshake(deps: HandshakeDeps): Handshake {
   const { channel, requestEvent, nextId, onReply, offReply } = deps;
-  let settled = false;
-  let attempts = 0;
+  let state: HandshakeState = 'idle';
   let timer: ReturnType<typeof setTimeout> | null = null;
-  const inflight = new Set<number>();
+  let helloId: number | null = null;
 
   let resolveReady!: () => void;
   let rejectReady!: (e: Error) => void;
@@ -54,50 +72,58 @@ export function startReadinessHandshake(deps: HandshakeDeps): {
     rejectReady = rej;
   });
 
-  const cleanup = (): void => {
-    if (timer) clearTimeout(timer);
-    timer = null;
-    for (const id of inflight) offReply(id);
-    inflight.clear();
+  const clearHello = (): void => {
+    if (helloId != null) offReply(helloId);
+    helloId = null;
   };
 
   const succeed = (reason: string): void => {
-    if (settled) return;
-    settled = true;
+    if (state === 'ready' || state === 'failed') return;
+    state = 'ready';
+    if (timer) clearTimeout(timer);
+    timer = null;
+    clearHello();
     status(`bridge ready ✓ (${reason})`);
-    cleanup();
     resolveReady();
   };
 
-  const markReady = (): void => succeed('boot event');
-
-  const sendPing = (): void => {
-    if (settled) return;
-    attempts += 1;
-    if (attempts > MAX_ATTEMPTS) {
-      settled = true;
-      cleanup();
-      status('node host did not start (no handshake reply) ✗');
-      rejectReady(new Error('Railgun bridge: node host did not start'));
-      return;
-    }
-    const id = nextId();
-    inflight.add(id);
-    // First reply for THIS id means the host's channel + rg:request listener
-    // are live → the bridge is ready.
-    onReply(id, () => {
-      inflight.delete(id);
-      succeed(`handshake ping id ${id}`);
-    });
-    const envelope: RequestEnvelope = { id, call: 'ping', params: { handshake: true } };
-    status(`handshake ping → (id ${id}, attempt ${attempts}) ${fmtPayload(envelope.params)}`);
-    // Direct channel write — bypasses the ready gate this handshake satisfies.
-    channel.post(requestEvent, envelope);
-    timer = setTimeout(sendPing, PING_INTERVAL_MS);
+  const fail = (): void => {
+    if (state === 'ready' || state === 'failed') return;
+    state = 'failed';
+    if (timer) clearTimeout(timer);
+    timer = null;
+    clearHello();
+    status('node host did not start within deadline ✗');
+    rejectReady(new Error('Railgun bridge: node host did not start'));
   };
 
-  // Kick the first ping on the next tick so all listeners are attached first.
-  timer = setTimeout(sendPing, 0);
+  /** Post a single deterministic 'hello'. Its reply proves the host channel +
+   *  rg:request listener are live → readiness. Posted directly so it bypasses
+   *  the ready gate it exists to satisfy. The host also re-emits its boot event
+   *  on receiving 'hello', so this doubles as request-ready-on-attach: if the
+   *  original boot event was missed, the reply (or the re-emit) still resolves. */
+  const sendHello = (): void => {
+    if (state !== 'starting') return;
+    const id = nextId();
+    helloId = id;
+    onReply(id, () => {
+      if (helloId === id) helloId = null;
+      succeed(`hello reply id ${id}`);
+    });
+    const envelope: RequestEnvelope = { id, call: 'hello', params: { handshake: true } };
+    status(`handshake hello → (id ${id}) ${fmtPayload(envelope.params)}`);
+    channel.post(requestEvent, envelope);
+  };
 
-  return { promise, markReady };
+  /** Boot event landed (initial emit OR the re-emit our 'hello' triggers).
+   *  Resolves readiness; first signal wins. Idempotent via succeed's guard. */
+  const markReady = (): void => succeed('boot event');
+
+  state = 'starting';
+  timer = setTimeout(fail, READY_TIMEOUT_MS);
+  // Post the single hello on the next tick so the caller can finish wiring +
+  // call mod.start first. The hello reply OR the boot event resolves readiness.
+  setTimeout(sendHello, 0);
+
+  return { promise, state: () => state, markReady };
 }
