@@ -44,7 +44,7 @@ function gutter(n: number | null): string {
 export function FileDiff({ file, p, dark }: {
   file: DiffFile; p: Palette; dark: boolean;
 }): React.ReactElement {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   return (
     <Box>
       <ListViewItem dark={dark} gap={8} onPress={() => setOpen(o => !o)}>
