@@ -39,6 +39,8 @@ export interface ChannelRowProps {
   markedUnread?: boolean;
   pinned?: boolean;
   hasDraft?: boolean;
+  /** Unsent composer draft; with hasDraft it replaces the preview (pencil icon + "You: " text). */
+  draftText?: string | null;
   /** Group labels (from XMTP appData) rendered as compact read-only chips on
    *  the LEFT of the preview line, before the last-message text (groups only;
    *  DMs pass none). Capped to a few visible + a "+N" pill; the preview text
@@ -64,18 +66,16 @@ export interface ChannelRowProps {
  *  (2) so the chips stay secondary to the group name on the same row. */
 const MAX_VISIBLE_LABELS = 2;
 
-/** Constant content height reserved on the OUTER row so a 1-line and a 2-line
- *  preview render the SAME total height: title line (~23) + 2 preview lines
- *  (2 * 21 = 42) ~= 67, which also exceeds the 44px avatar. The text column has
- *  NO internal blank reservation, so the title+preview group centers as a unit
- *  next to the centered avatar (no empty gap stuck at the bottom). */
+/** Constant content height on the OUTER row so a 1-line and a 2-line preview
+ *  render the SAME total height (title ~23 + 2 * 21 lines ~= 67, also > the 44px
+ *  avatar). No internal blank reservation, so the title+preview group centers as
+ *  a unit next to the centered avatar. */
 const ROW_CONTENT_HEIGHT = 67;
 
 /** Build ROUNDED label chips as INLINE <View>s placed as the FIRST children
- *  INSIDE the preview <Text>; the preview text flows around them and wraps
- *  UNDERNEATH on the 2nd line. Each chip is a rounded pill (borderRadius 999).
- *  marginRight on an inline <View> is NOT honored by RN, so the visible gap
- *  comes from a sibling inline <Text> spacer. Caps at MAX_VISIBLE + a "+N". */
+ *  INSIDE the preview <Text>; the preview text flows around them. marginRight on
+ *  an inline <View> is NOT honored by RN, so the gap comes from a sibling inline
+ *  <Text> spacer. Caps at MAX_VISIBLE + a "+N". */
 function buildLabelChips({ labels, fg, rowBg }: {
   labels: string[]; fg: string; rowBg: string;
 }): React.ReactNode[] {
@@ -107,13 +107,13 @@ function buildLabelChips({ labels, fg, rowBg }: {
 function ChannelRowBase({
   title, avatarAddress, avatarUri, cacheBuster, square,
   lastPreview, timestamp, subtitle, unreadCount = 0, markedUnread,
-  pinned, hasDraft, showChevron, avatarSize = 44,
+  pinned, hasDraft, draftText, showChevron, avatarSize = 44,
   onPress, onLongPress, containerStyle, labels,
 }: ChannelRowProps): React.ReactElement {
   const { link: head, text: sub, bg, border } = usePalette();
-  const fg = sub;
-  const rowBg = border;
-  const previewText = lastPreview && lastPreview.length > 0 ? lastPreview : subtitle ?? '';
+  const fg = sub, rowBg = border;
+  const draft = hasDraft && draftText && draftText.trim().length > 0 ? draftText.trim() : null;
+  const previewText = draft ? `You: ${draft}` : (lastPreview && lastPreview.length > 0 ? lastPreview : subtitle ?? '');
 
   return (
     <Pressable
@@ -125,11 +125,9 @@ function ChannelRowBase({
         paddingHorizontal: 14,
       }))}
     >
-      {/* No divider. Center-aligned (align="center"): avatar + text column
-          center vertically as a group within a CONSTANT-height row. The fixed
-          height lives on the ROW (ROW_CONTENT_HEIGHT, the 2-line case), NOT
-          inside the preview block, so 1-line and 2-line rows are the same total
-          height and the content is truly centered (no bottom gap). */}
+      {/* align-center: avatar + text column center as a group within a
+          CONSTANT-height row. Fixed height lives on the ROW (ROW_CONTENT_HEIGHT,
+          the 2-line case), so 1- and 2-line rows match (no bottom gap). */}
       <Row align="center" gap={12} py={9} style={{ minHeight: ROW_CONTENT_HEIGHT }}>
         <Avatar
           imageUri={avatarUri}
@@ -142,7 +140,6 @@ function ChannelRowBase({
         <Col flex={1} style={{ minWidth: 0 }}>
           <Row align="center" gap={6}>
             {pinned ? <Icon name="mapPin" size={13} color={sub} /> : null}
-            {hasDraft ? <Icon name="pencil" size={14} color={sub} /> : null}
             {/* Name + labels hug each other on the left; name shrinks (and
                 ellipsizes) first, the label chip stays right beside it. */}
             <Text
@@ -159,19 +156,23 @@ function ChannelRowBase({
             ) : null}
           </Row>
           {/* No internal height reservation: the preview block is only as tall
-              as its actual content (1 or 2 lines) so the title+preview group can
-              center within the fixed-height row. align-start pins the unread
-              badge to the FIRST line when the preview wraps. */}
+              as its content (1-2 lines) so the title+preview group centers in the
+              fixed-height row. align-start pins the badge to line 1 on wrap. */}
           <Row align="start" gap={7} mt={2}>
-            {/* ROUNDED chip(s) are INLINE <View>s at the START of the preview
-                <Text>, so the preview flows around them and wraps UNDERNEATH the
-                chip on the 2nd line (single-line rounded pill, text under it). */}
+            {/* Draft pencil + "You: " text replaces the preview. Row stays
+                align-start (badge on line 1 when preview wraps), so nudge the
+                14px glyph down (lineHeight 21 - 14)/2 to center it on line 1. */}
+            {draft ? (
+              <Box style={{ marginTop: 3.5 }}>
+                <Icon name="pencil" size={14} color={sub} />
+              </Box>
+            ) : null}
             <Text
               style={{ color: sub, fontSize: 16, lineHeight: 21, fontFamily: 'Calibre-Medium', flex: 1 }}
               numberOfLines={2}
               ellipsizeMode="tail"
             >
-              {labels && labels.length > 0
+              {!draft && labels && labels.length > 0
                 ? buildLabelChips({ labels, fg, rowBg })
                 : null}
               {previewText}

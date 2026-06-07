@@ -23,7 +23,7 @@ import { ChannelRow } from './ChannelRow';
 import { getPeerAvatarCb, getPeerName } from '../lib/peerProfiles';
 import { useCommonChannels } from '../lib/useCommonChannels';
 import { shortAddress } from '../modules/messaging';
-import { hasDraft } from '../lib/drafts';
+import { hasDraft, getDraft } from '../lib/drafts';
 import { isPinned } from '../lib/pins';
 import type { ProfileColors } from './ProfileScreen.parts';
 
@@ -98,6 +98,7 @@ export function CommonChannels({ peerAddress, enabled, c }: {
             markedUnread={ch.markedUnread}
             pinned={isPinned(ch.convId)}
             hasDraft={hasDraft(ch.convId)}
+            draftText={getDraft(ch.convId)}
             onPress={() => router.push({ pathname: '/xmtp/[convId]', params: { convId: ch.convId } })}
           />
         );
