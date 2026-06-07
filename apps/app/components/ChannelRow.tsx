@@ -140,7 +140,7 @@ function ChannelRowBase({
           cacheBuster={cacheBuster}
           style={{ backgroundColor: border }}
         />
-        <Col flex={1} style={{ minWidth: 0, marginTop: -2 }}>
+        <Col flex={1} style={{ minWidth: 0, marginTop: -4 }}>
           <Row align="center" gap={6}>
             {pinned ? <Icon name="mapPin" size={13} color={sub} /> : null}
             {hasDraft ? <Icon name="pencil" size={14} color={sub} /> : null}
