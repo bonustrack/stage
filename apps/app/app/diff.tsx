@@ -18,6 +18,9 @@ import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { githubLinkOf } from '../lib/githubDetect';
 import { useGithubDiff } from '../lib/useGithubDiff';
 import { FileDiff } from '../components/FileDiff';
+import Markdown from 'react-native-markdown-display';
+import { mdParser } from '../lib/mdParser';
+import { diffMarkdownStyles } from '../lib/diffMarkdownStyles';
 
 export default function Diff(): React.ReactElement {
   const router = useRouter();
@@ -38,6 +41,12 @@ export default function Diff(): React.ReactElement {
 
   const ref = githubLinkOf(url);
   const { diff, isLoading, isError } = useGithubDiff(ref);
+  const mdStyle = diffMarkdownStyles(p, dark);
+  const mdProps = {
+    markdownit: mdParser,
+    style: mdStyle,
+    onLinkPress: (href: string) => { void Linking.openURL(href); return false; },
+  };
   const prUrl = diff?.kind === 'ok' && diff.prNumber
     ? `https://github.com/${diff.owner}/${diff.repo}/pull/${diff.prNumber}`
     : (url ?? '');
@@ -73,12 +82,14 @@ export default function Diff(): React.ReactElement {
         ) : diff?.kind === 'no-pr' ? (
           <Box style={{ paddingHorizontal: 12 }}>
             {diff.title ? (
-              <Text style={{ color: p.text, fontFamily: 'Calibre-Semibold', fontSize: 22, lineHeight: 27, marginBottom: diff.body?.trim() ? 8 : 10 }}>
+              <Text style={{ color: p.text, fontFamily: 'Calibre-Semibold', fontSize: 26, lineHeight: 32, marginBottom: diff.body?.trim() ? 10 : 10 }}>
                 {diff.title}
               </Text>
             ) : null}
             {diff.body?.trim() ? (
-              <Text style={{ color: p.text, fontSize: 14, lineHeight: 20, marginBottom: 10, fontFamily: 'Calibre-Medium' }}>{diff.body.trim()}</Text>
+              <Box style={{ marginBottom: 10 }}>
+                <Markdown {...mdProps}>{diff.body.trim()}</Markdown>
+              </Box>
             ) : null}
             <Text style={{ color: p.text, opacity: 0.7, fontFamily: 'Calibre-Medium' }}>This link points to an issue with no linked pull request yet.</Text>
           </Box>
@@ -88,14 +99,14 @@ export default function Diff(): React.ReactElement {
           <>
             <Box style={{ paddingHorizontal: 12 }}>
               {diff?.title ? (
-                <Text style={{ color: p.text, fontFamily: 'Calibre-Semibold', fontSize: 22, lineHeight: 27, marginBottom: diff?.body?.trim() ? 8 : 12 }}>
+                <Text style={{ color: p.text, fontFamily: 'Calibre-Semibold', fontSize: 26, lineHeight: 32, marginBottom: diff?.body?.trim() ? 10 : 12 }}>
                   {diff.title}
                 </Text>
               ) : null}
               {diff?.body?.trim() ? (
-                <Text style={{ color: p.text, fontSize: 14, lineHeight: 20, marginBottom: 12, fontFamily: 'Calibre-Medium' }}>
-                  {diff.body.trim()}
-                </Text>
+                <Box style={{ marginBottom: 12 }}>
+                  <Markdown {...mdProps}>{diff.body.trim()}</Markdown>
+                </Box>
               ) : null}
               <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12, paddingHorizontal: 2 }}>
                 <Text style={{ color: p.text, opacity: 0.6, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
