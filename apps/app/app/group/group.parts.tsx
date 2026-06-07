@@ -88,7 +88,7 @@ export function AddMemberModal({
   addDraft: string; setAddDraft: (s: string) => void; adding: boolean; onAdd: () => void;
   dark: boolean; p: Pal;
 }): React.ReactElement {
-  const { fg, sub, border, rowBg, inputBg } = p;
+  const { fg, sub, border, inputBg } = p;
   const { primary, bg } = usePalette();
   return (
     <AppModal visible={visible} onClose={onClose}>

@@ -16,7 +16,7 @@ import { getGithubLink, setGithubLink } from '../../modules/messaging';
 interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; inputBg: string; }
 
 export function GroupGithubSection({ line, p }: { line: string; p: Pal }): React.ReactElement {
-  const { fg, sub, border, rowBg, inputBg } = p;
+  const { fg, sub, border, inputBg } = p;
   const [url, setUrl] = useState<string | undefined>(undefined);
   const [draft, setDraft] = useState('');
   const [editing, setEditing] = useState(false);

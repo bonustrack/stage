@@ -90,7 +90,7 @@ export function GroupNameEditor({ name, draft, setDraft, editing, setEditing, sa
   editing: boolean; setEditing: (b: boolean) => void; saving: boolean; onSave: () => void;
   dark: boolean; p: Pal;
 }): React.ReactElement {
-  const { fg, head, sub, border, rowBg, inputBg } = p;
+  const { fg, head, sub, border, inputBg } = p;
   return (
     <Box style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
       {editing ? (
@@ -126,7 +126,7 @@ export function GroupDescriptionEditor({ description, descriptionDraft, setDescr
   editing: boolean; setEditing: (b: boolean) => void; saving: boolean; onSave: () => void;
   dark: boolean; p: Pal;
 }): React.ReactElement {
-  const { fg, sub, border, rowBg, inputBg } = p;
+  const { fg, sub, border, inputBg } = p;
   return (
     <Box style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
       <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>DESCRIPTION</Text>

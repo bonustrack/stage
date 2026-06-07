@@ -64,7 +64,7 @@ function LabelChip({ label, busy, onRemove, p }: {
 }
 
 export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React.ReactElement {
-  const { fg, sub, border, rowBg, inputBg } = p;
+  const { fg, sub, border, inputBg } = p;
   const [labels, setLabels] = useState<string[]>([]);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
