@@ -26,10 +26,9 @@ async function send(id: string, args: Args): Promise<void> {
   respond(id, { result: { messageId } });
 }
 
-/** Send a poll. Accepts a SINGLE question ({ question, options[], header?,
- *  multiSelect? }) OR a MULTI-question array ({ questions: [{ question,
- *  options[], header?, multiSelect? }] }). See buildPollContent in codecs.ts. */
-async function sendPoll(id: string, args: Args): Promise<void> {
+/** Ask (poll, mirrors Claude AskUserQuestion). Single { question, options[], header?,
+ *  multiSelect? } OR multi { questions: [...] }. See buildPollContent. Alias: sendPoll. */
+async function ask(id: string, args: Args): Promise<void> {
   const { line, pollId } = args as { line: string; pollId?: string };
   const { acct, conv } = await convOf(line);
   if (!conv) throw new Error(`conversation not found for ${line}`);
@@ -167,13 +166,13 @@ async function unsupportedVerb(id: string, verb: string): Promise<void> {
 
 const handlers: Record<string, (id: string, args: Args) => Promise<void>> = {
   accounts: (id) => accountsAction(id),
-  send, sendPoll, react, reply, sendAttachment, sendImage, sendTxRequest, sendSignatureRequest,
+  send, ask, sendPoll: ask, react, reply, sendAttachment, sendImage, sendTxRequest, sendSignatureRequest,
   edit: (id) => unsupportedVerb(id, 'edit'),
   delete: (id) => unsupportedVerb(id, 'delete'),
   ...convHandlers,
 };
 
-const KNOWN = 'accounts, send, sendPoll, sendImage, sendTxRequest, react, reply, sendAttachment, '
+const KNOWN = 'accounts, send, ask, sendImage, sendTxRequest, react, reply, sendAttachment, '
   + 'newDm, newGroup, createRequestGroup, setLabels, setGithub, setPreview, updateChannelMeta, closeGroup, query, groupInfo, listConvs, '
   + 'register-push, list-push, test-push, unregister-push';
 

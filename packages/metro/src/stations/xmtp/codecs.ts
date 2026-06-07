@@ -58,9 +58,9 @@ export class PollCodec implements ContentCodec<PollContent> {
 const normOpts = (o: (string | PollOption)[]): PollOption[] =>
   o.map(x => (typeof x === 'string' ? { label: x } : { label: x.label, description: x.description }));
 
-/** Validate + normalize sendPoll args into a PollContent. Accepts either the
+/** Validate + normalize ask/poll args into a PollContent. Accepts either the
  *  multi-question `questions[]` form or the legacy single-question fields (see
- *  sendPoll). Returns the content plus the title line for the outbound preview. */
+ *  the `ask` action). Returns the content plus the title line for the outbound preview. */
 export function buildPollContent(
   args: Record<string, unknown>, pollId: string,
 ): { poll: PollContent; title: string } {
@@ -69,8 +69,8 @@ export function buildPollContent(
     header?: string; multiSelect?: boolean; questions?: PollQuestion[] };
   if (Array.isArray(questions) && questions.length > 0) {
     const norm: PollQuestion[] = questions.map((q, i) => {
-      if (!q || typeof q.question !== 'string' || !q.question) throw new Error(`sendPoll questions[${i}] requires a question`);
-      if (!Array.isArray(q.options) || q.options.length === 0) throw new Error(`sendPoll questions[${i}] requires a non-empty options array`);
+      if (!q || typeof q.question !== 'string' || !q.question) throw new Error(`ask questions[${i}] requires a question`);
+      if (!Array.isArray(q.options) || q.options.length === 0) throw new Error(`ask questions[${i}] requires a non-empty options array`);
       return {
         question: q.question, options: normOpts(q.options),
         multiSelect: !!q.multiSelect, ...(q.header ? { header: q.header } : {}),
@@ -78,8 +78,8 @@ export function buildPollContent(
     });
     return { poll: { questions: norm, pollId }, title: norm[0].question };
   }
-  if (!question || typeof question !== 'string') throw new Error('sendPoll requires a question (or a questions[] array)');
-  if (!Array.isArray(options) || options.length === 0) throw new Error('sendPoll requires a non-empty options array');
+  if (!question || typeof question !== 'string') throw new Error('ask requires a question (or a questions[] array)');
+  if (!Array.isArray(options) || options.length === 0) throw new Error('ask requires a non-empty options array');
   return {
     poll: { question, options: normOpts(options), multiSelect: !!multiSelect, pollId, ...(header ? { header } : {}) },
     title: question,
