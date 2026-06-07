@@ -2,7 +2,9 @@
  *  bottom-sheet it opens. Declutters the topnav by folding the former
  *  Archived + New-group icons into a single overflow menu, presented as the
  *  app's standard AppModal sheet (same surface + MenuRow pattern as the
- *  per-conversation ChannelMenu). The requests icon stays in the topnav. */
+ *  per-conversation ChannelMenu). The requests icon stays in the topnav.
+ *  Also surfaces the two common account actions (Edit profile + Settings)
+ *  that otherwise live behind the avatar Menu page. */
 
 import { useState } from 'react';
 import { Pressable } from 'react-native';
@@ -18,11 +20,15 @@ interface HomeOverflowMenuProps {
   onArchived: () => void;
   /** Start the new-group flow (former "+" icon action). */
   onNewGroup: () => void;
+  /** Open the active account's profile page (where Edit profile lives). */
+  onEditProfile: () => void;
+  /** Open the Settings page. */
+  onSettings: () => void;
 }
 
 /** Topnav kebab button + its overflow sheet. Owns its own open/close state so
- *  the list view only passes the two actions. */
-export function HomeOverflowMenu({ color, onArchived, onNewGroup }: HomeOverflowMenuProps): React.ReactElement {
+ *  the list view only passes the actions. */
+export function HomeOverflowMenu({ color, onArchived, onNewGroup, onEditProfile, onSettings }: HomeOverflowMenuProps): React.ReactElement {
   const [open, setOpen] = useState(false);
   const close = (): void => setOpen(false);
   const run = (fn: () => void): void => { close(); fn(); };
@@ -36,6 +42,8 @@ export function HomeOverflowMenu({ color, onArchived, onNewGroup }: HomeOverflow
         <Col gap={4}>
           <OverflowRow icon="plus" label="New group" color={color} onPress={() => run(onNewGroup)} />
           <OverflowRow icon="archive" label="Archived" color={color} onPress={() => run(onArchived)} />
+          <OverflowRow icon="pencil" label="Edit profile" color={color} onPress={() => run(onEditProfile)} />
+          <OverflowRow icon="cog" label="Settings" color={color} onPress={() => run(onSettings)} />
         </Col>
       </AppModal>
     </>
