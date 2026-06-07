@@ -70,9 +70,9 @@ export interface ChannelRowProps {
  *  (2) so the chips stay secondary to the group name on the same row. */
 const MAX_VISIBLE_LABELS = 2;
 
-/** Reserved preview height: 2 lines at lineHeight 22 (also clears the 22px
+/** Reserved preview height: 2 lines at lineHeight 21 (also clears the 22px
  *  unread badge). Keeps every row a CONSTANT height for 1 or 2 preview lines. */
-const PREVIEW_BLOCK = 44;
+const PREVIEW_BLOCK = 42;
 
 /** Build ROUNDED label chips as INLINE <View>s placed as the FIRST children
  *  INSIDE the preview <Text>; the preview text flows around them and wraps
@@ -138,7 +138,7 @@ function ChannelRowBase({
           size={avatarSize}
           square={square}
           cacheBuster={cacheBuster}
-          style={{ backgroundColor: border }}
+          style={{ backgroundColor: border, alignSelf: 'center' }}
         />
         <Col flex={1} style={{ minWidth: 0, marginTop: -4 }}>
           <Row align="center" gap={6}>
@@ -159,8 +159,8 @@ function ChannelRowBase({
               <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium' }}>{timestamp}</Text>
             ) : null}
           </Row>
-          {/* Reserve a FIXED 2-line preview block (PREVIEW_BLOCK = 44, i.e. 2
-              lines at lineHeight 22) so a 1-line preview reserves the same
+          {/* Reserve a FIXED 2-line preview block (PREVIEW_BLOCK = 42, i.e. 2
+              lines at lineHeight 21) so a 1-line preview reserves the same
               space as a 2-line one and the row never shrinks. align-start pins
               the unread badge to the FIRST line when the preview wraps. */}
           <Row align="start" gap={7} mt={2} style={{ minHeight: PREVIEW_BLOCK }}>
@@ -168,7 +168,7 @@ function ChannelRowBase({
                 <Text>, so the preview flows around them and wraps UNDERNEATH the
                 chip on the 2nd line (single-line rounded pill, text under it). */}
             <Text
-              style={{ color: sub, fontSize: 17, lineHeight: 22, fontFamily: 'Calibre-Medium', flex: 1 }}
+              style={{ color: sub, fontSize: 16, lineHeight: 21, fontFamily: 'Calibre-Medium', flex: 1 }}
               numberOfLines={2}
               ellipsizeMode="tail"
             >
