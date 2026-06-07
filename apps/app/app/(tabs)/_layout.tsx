@@ -19,17 +19,15 @@ export default function TabsLayout(): React.ReactElement {
   const insets = useSafeAreaInsets();
   const pal = usePalette();
   const bg = pal.bg; // #0e0f10 / #ffffff
-  const border = pal.border; // #282a2d / #e4e4e5
   const active = pal.link; // #ffffff / #000000
   // inactive nav icon = muted; no `muted` token yet → map to `text`. TODO: muted token.
   const inactive = pal.text;
 
   const tabBarStyle = {
     backgroundColor: bg,
-    borderTopColor: border,
-    borderTopWidth: 1,
-    /** Kill Android'​s default elevation shadow on the tab bar — use only the
-     *  1px top border for the separator. */
+    /** No top border on the footer nav - keep it borderless. Also kill Android's
+     *  default elevation shadow so no hairline/line shows above the bar. */
+    borderTopWidth: 0,
     elevation: 0,
     shadowOpacity: 0,
     height: 60 + insets.bottom,
