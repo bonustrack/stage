@@ -23,7 +23,7 @@ export function voteKey(questionIndex: number, optionIndex: number): string {
 }
 
 /** base64 encode/decode that works in both RN (Hermes has btoa/atob via the app's
- *  polyfills) and Node — falls back to a Buffer when the globals are missing.
+ *  polyfills) and Node - falls back to a Buffer when the globals are missing.
  *  Used so a free-text answer (which may contain `:`) survives the flat vote
  *  `content` string round-trip. UTF-8 safe via encodeURIComponent. */
 const b64enc = (s: string): string => {
