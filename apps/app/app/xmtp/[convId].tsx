@@ -29,7 +29,7 @@ import { useConversationState } from '../../components/xmtp-conv/useConversation
 export default function XmtpConversation(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border } = usePalette();
+  const { text: fg, link: head, bg, border, toolbarBg } = usePalette();
   const sub = fg, rowBg = border;
   const { convId, focus } = useLocalSearchParams<{ convId: string; focus?: string }>();
   const c = useConversationState(convId, focus);
@@ -84,7 +84,7 @@ export default function XmtpConversation(): React.ReactElement {
        *  status-bar area so content sliding under the keyboard doesn't show through. */}
       <Box style={{
         position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
-        height: 52 + insets.top, paddingTop: insets.top, backgroundColor: bg,
+        height: 52 + insets.top, paddingTop: insets.top, backgroundColor: toolbarBg,
         flexDirection: 'row', alignItems: 'stretch',
         borderBottomWidth: 1, borderBottomColor: border,
       }}>

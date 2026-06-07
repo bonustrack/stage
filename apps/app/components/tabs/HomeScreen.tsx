@@ -29,7 +29,7 @@ export type { Row } from './HomeScreen.helpers';
 export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border } = usePalette();
+  const { text: fg, link: head, bg, border, inputBg, toolbarBg } = usePalette();
   const sub = fg;
   const [rows, setRowsState] = useState<RowT[] | null>(getCachedRows() as RowT[] | null);
   /** Wrap setRows so every state update also lands in the shared cache + fans
@@ -167,6 +167,8 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
         head={head}
         sub={sub}
         border={border}
+        inputBg={inputBg}
+        toolbarBg={toolbarBg}
         listExtraData={listExtraData}
         listRef={listRef}
         savedOffsetRef={savedOffsetRef}

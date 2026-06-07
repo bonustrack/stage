@@ -12,7 +12,7 @@ import { Avatar } from '../../components/Avatar';
 import { AppModal } from '../../components/AppModal';
 import { DANGER, usePalette } from '../../lib/theme';
 
-interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; }
+interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; inputBg: string; }
 
 export function MemberRow({
   item, isSelf, isRemovingThis, role, name, dark, p, onPress, onRemove,
@@ -88,7 +88,7 @@ export function AddMemberModal({
   addDraft: string; setAddDraft: (s: string) => void; adding: boolean; onAdd: () => void;
   dark: boolean; p: Pal;
 }): React.ReactElement {
-  const { fg, sub, border, rowBg } = p;
+  const { fg, sub, border, rowBg, inputBg } = p;
   const { primary, bg } = usePalette();
   return (
     <AppModal visible={visible} onClose={onClose}>
@@ -102,7 +102,7 @@ export function AddMemberModal({
           autoCapitalize="none"
           autoFocus
           style={{
-            color: fg, backgroundColor: rowBg,
+            color: fg, backgroundColor: inputBg,
             borderWidth: 1, borderColor: border, borderRadius: 10,
             paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, marginBottom: 10,
           }}

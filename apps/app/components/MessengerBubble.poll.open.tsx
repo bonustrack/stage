@@ -22,7 +22,7 @@ export function OpenAnswerBlock({ qi, sub, dark, answers, mine, onSubmit }: {
   const submit = (): void => { onSubmit(draft); setDraft(''); };
   // Borderless input: neutral overlay fill + radius so it still reads as an
   // input, but no visible outline. Body text in the palette text token.
-  const inputBg = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
+  const inputBg = pal.inputBg;
   return (
     <Box style={{ alignSelf: 'stretch', gap: 6, marginTop: 2 }}>
       <Row align="center" gap={8} style={{ alignSelf: 'stretch' }}>

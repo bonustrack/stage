@@ -110,7 +110,7 @@ export function MemberPicker({ state, dark, exclude = [] }: {
    *  a checkmark so a tap removes them. */
   exclude?: string[];
 }): React.ReactElement {
-  const { link: head, text: sub, border } = usePalette();
+  const { link: head, text: sub, border, inputBg } = usePalette();
   const rowBg = border;
   const {
     members, entry, setEntry, adding, addMember, removeMember,
@@ -137,7 +137,7 @@ export function MemberPicker({ state, dark, exclude = [] }: {
             returnKeyType="done"
             style={{
               flex: 1, color: head, fontSize: 16, fontFamily: 'Calibre-Medium',
-              backgroundColor: rowBg, borderRadius: 12, paddingHorizontal: 14,
+              backgroundColor: inputBg, borderRadius: 12, paddingHorizontal: 14,
               paddingVertical: 12, borderWidth: 1, borderColor: border,
             }}
           />

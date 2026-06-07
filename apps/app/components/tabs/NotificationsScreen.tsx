@@ -20,7 +20,7 @@ import { markNotifsRead } from '../../lib/notifReadState';
 
 export function NotificationsScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
-  const { link: head, text: sub, bg } = usePalette();
+  const { link: head, text: sub, bg, toolbarBg } = usePalette();
   const router = useRouter();
   const { previews } = useRequestPreviews();
   const unread = useNotifUnread();
@@ -35,7 +35,7 @@ export function NotificationsScreen({ panRef }: { panRef?: SimultaneousRefs } = 
   return (
     <ScrollView simultaneousHandlers={panRef} style={{ flex: 1, backgroundColor: bg }} contentContainerStyle={{ flexGrow: 1 }}>
       {/* Topnav identity (avatar + name → Menu), left-aligned to match Home. */}
-      <Row align="center" px={16} pt={12} pb={4}>
+      <Row align="center" px={16} pt={12} pb={4} bg={toolbarBg}>
         <TopnavIdentity />
       </Row>
       <Col px={16} pt={4} pb={8}>

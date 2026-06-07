@@ -37,6 +37,8 @@ interface ChannelsListProps {
   head: string;
   sub: string;
   border: string;
+  inputBg: string;
+  toolbarBg: string;
   listExtraData: readonly unknown[];
   listRef: RefObject<FlatList<RowT> | null>;
   savedOffsetRef: MutableRefObject<number | undefined>;
@@ -49,7 +51,7 @@ interface ChannelsListProps {
 export function ChannelsList({
   panRef, router, sortedRows, requestCount, barLabels, enabledLabels, onToggleLabel,
   query, setQuery,
-  fg, head, sub, border,
+  fg, head, sub, border, inputBg, toolbarBg,
   listExtraData, listRef, savedOffsetRef, didRestoreRef, contentHeightRef,
   renderRow, getRowLayout,
 }: ChannelsListProps): React.ReactElement {
@@ -65,7 +67,7 @@ export function ChannelsList({
        *  right (Archived + New group moved into the overflow). The label filter
        *  lives in a horizontal chip bar that scrolls with the feed (the list's
        *  ListHeaderComponent), not pinned to the header. */}
-      <Row align="center" justify="between" px={16} pt={12} pb={10}>
+      <Row align="center" justify="between" px={16} pt={12} pb={10} bg={toolbarBg}>
         <Row align="center" gap={8}>
           {/* Avatar + name → Menu page; shared TopnavIdentity (also on the
            *  wallet / notifications / profile tabs for a consistent identity). */}
@@ -110,7 +112,7 @@ export function ChannelsList({
         head={head}
         sub={sub}
         border={border}
-        rowBg={border}
+        rowBg={inputBg}
       />
       <FlatList
         ref={listRef}

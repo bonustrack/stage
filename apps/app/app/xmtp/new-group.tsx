@@ -37,7 +37,7 @@ interface PickedImage { uri: string; mime: string; name: string }
 export default function NewGroup(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border, primary } = usePalette();
+  const { text: fg, link: head, bg, border, primary, inputBg } = usePalette();
   const sub = fg;
   const rowBg = border;
   const insets = useSafeAreaInsets();
@@ -145,7 +145,7 @@ export default function NewGroup(): React.ReactElement {
             placeholderTextColor={sub}
             style={{
               color: head, fontSize: 16, fontFamily: 'Calibre-Medium',
-              backgroundColor: rowBg, borderRadius: 12, paddingHorizontal: 14,
+              backgroundColor: inputBg, borderRadius: 12, paddingHorizontal: 14,
               paddingVertical: 12, borderWidth: 1, borderColor: border,
             }}
           />

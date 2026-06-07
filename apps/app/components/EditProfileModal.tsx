@@ -37,7 +37,7 @@ export default function EditProfileModal({
   onSaved: (next: SnapshotProfile) => void;
   address: string; initial: SnapshotProfile; dark: boolean;
 }): React.ReactElement {
-  const { text: fg, link: head, bg, border, primary } = usePalette();
+  const { text: fg, link: head, bg, border, primary, inputBg } = usePalette();
   const blockRadius = useBlockRadius();
   const sub = fg;
   const rowBg = border;
@@ -128,7 +128,7 @@ export default function EditProfileModal({
                 placeholderTextColor={sub}
                 multiline={f.multiline}
                 style={{
-                  color: fg, backgroundColor: rowBg, borderColor: border, borderWidth: 1,
+                  color: fg, backgroundColor: inputBg, borderColor: border, borderWidth: 1,
                   borderRadius: blockRadius, padding: 12, fontSize: 14,
                   minHeight: f.multiline ? 80 : undefined,
                   textAlignVertical: f.multiline ? 'top' : 'center',

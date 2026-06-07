@@ -13,10 +13,10 @@ import { flash } from '../../lib/toast';
 import { LabelPermissionError } from '../../modules/messaging';
 import { getGithubLink, setGithubLink } from '../../modules/messaging';
 
-interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; }
+interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; inputBg: string; }
 
 export function GroupGithubSection({ line, p }: { line: string; p: Pal }): React.ReactElement {
-  const { fg, sub, border, rowBg } = p;
+  const { fg, sub, border, rowBg, inputBg } = p;
   const [url, setUrl] = useState<string | undefined>(undefined);
   const [draft, setDraft] = useState('');
   const [editing, setEditing] = useState(false);
@@ -83,7 +83,7 @@ export function GroupGithubSection({ line, p }: { line: string; p: Pal }): React
             returnKeyType="done"
             editable={!busy}
             style={{
-              flex: 1, color: fg, backgroundColor: rowBg,
+              flex: 1, color: fg, backgroundColor: inputBg,
               borderWidth: 1, borderColor: border, borderRadius: 10,
               paddingHorizontal: 10, paddingVertical: 8, fontSize: 14,
             }}

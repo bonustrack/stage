@@ -31,6 +31,8 @@ const TOKEN_ROWS: ReadonlyArray<readonly [label: string, key: keyof Palette]> = 
   ['primary-color', 'primary'],
   ['danger-color', 'danger'],
   ['success-color', 'success'],
+  ['input-bg-color', 'inputBg'],
+  ['toolbar-bg-color', 'toolbarBg'],
 ];
 
 function EditableSwatch({ name, tokenKey, value, scheme, p }: {

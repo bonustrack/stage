@@ -34,7 +34,7 @@ function SaveButton({ saving, disabled, onSave, dark }: {
   );
 }
 
-interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; }
+interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; inputBg: string; }
 
 /** Group header — mirrors the user ProfileScreen layout exactly: a full-bleed
  *  cover banner (rowBg), then a page-bg sheet pulled UP 18px with rounded top
@@ -90,7 +90,7 @@ export function GroupNameEditor({ name, draft, setDraft, editing, setEditing, sa
   editing: boolean; setEditing: (b: boolean) => void; saving: boolean; onSave: () => void;
   dark: boolean; p: Pal;
 }): React.ReactElement {
-  const { fg, head, sub, border, rowBg } = p;
+  const { fg, head, sub, border, rowBg, inputBg } = p;
   return (
     <Box style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
       {editing ? (
@@ -102,7 +102,7 @@ export function GroupNameEditor({ name, draft, setDraft, editing, setEditing, sa
             placeholderTextColor={sub}
             autoFocus
             style={{
-              flex: 1, color: fg, backgroundColor: rowBg,
+              flex: 1, color: fg, backgroundColor: inputBg,
               borderWidth: 1, borderColor: border, borderRadius: 10,
               paddingHorizontal: 10, paddingVertical: 8, fontSize: 16,
             }}
@@ -126,7 +126,7 @@ export function GroupDescriptionEditor({ description, descriptionDraft, setDescr
   editing: boolean; setEditing: (b: boolean) => void; saving: boolean; onSave: () => void;
   dark: boolean; p: Pal;
 }): React.ReactElement {
-  const { fg, sub, border, rowBg } = p;
+  const { fg, sub, border, rowBg, inputBg } = p;
   return (
     <Box style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
       <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>DESCRIPTION</Text>
@@ -140,7 +140,7 @@ export function GroupDescriptionEditor({ description, descriptionDraft, setDescr
             multiline
             autoFocus
             style={{
-              flex: 1, color: fg, backgroundColor: rowBg,
+              flex: 1, color: fg, backgroundColor: inputBg,
               borderWidth: 1, borderColor: border, borderRadius: 10,
               paddingHorizontal: 10, paddingVertical: 8, fontSize: 14,
               minHeight: 60, textAlignVertical: 'top',

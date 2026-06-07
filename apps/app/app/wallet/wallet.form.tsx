@@ -56,8 +56,8 @@ export function useFooterReporter(): {
 
 /** Build the form palette from the canonical app palette. */
 export function useFormPal(): FormPal {
-  const { text, link, border } = usePalette();
-  return { fg: text, head: link, sub: text, border, inputBg: border, link };
+  const { text, link, border, inputBg } = usePalette();
+  return { fg: text, head: link, sub: text, border, inputBg, link };
 }
 
 /** Back header used by all four wallet-action pages. */
