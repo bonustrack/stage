@@ -16,6 +16,7 @@ export type TokenKey =
 export type ColorOverrides = Partial<Record<TokenKey, Partial<Record<Scheme, string>>>>;
 
 const KEY = 'theme:colorOverrides';
+const CUSTOM_KEY = 'theme:custom';
 const HEX_RE = /^#([0-9a-fA-F]{6})$/;
 
 /** True for a valid `#rrggbb` string. */
@@ -24,6 +25,9 @@ export function isHex(v: string): boolean { return HEX_RE.test(v.trim()); }
 /** In-memory mirror so usePalette can read synchronously after the one-time
  *  load, and edits repaint instantly. */
 let cache: ColorOverrides = {};
+/** Whether the user has opted into the Custom theme. When false, usePalette
+ *  ignores every override and renders the plain kit light/dark palette. */
+let customEnabled = false;
 let loaded = false;
 const listeners = new Set<() => void>();
 
@@ -37,17 +41,37 @@ function persist(): void {
 export function loadOverrides(): void {
   if (loaded) return;
   loaded = true;
-  void AsyncStorage.getItem(KEY)
-    .then((raw) => {
-      if (raw == null) return;
-      const parsed = JSON.parse(raw) as unknown;
-      if (parsed && typeof parsed === 'object') { cache = parsed as ColorOverrides; emit(); }
+  void AsyncStorage.multiGet([KEY, CUSTOM_KEY])
+    .then((pairs) => {
+      let changed = false;
+      for (const [k, raw] of pairs) {
+        if (raw == null) continue;
+        if (k === KEY) {
+          const parsed = JSON.parse(raw) as unknown;
+          if (parsed && typeof parsed === 'object') { cache = parsed as ColorOverrides; changed = true; }
+        } else if (k === CUSTOM_KEY) {
+          customEnabled = raw === '1';
+          changed = true;
+        }
+      }
+      if (changed) emit();
     })
     .catch(() => { /* best-effort: keep empty */ });
 }
 
 /** Synchronous snapshot of the current overrides. */
 export function getOverrides(): ColorOverrides { return cache; }
+
+/** Whether the Custom theme is currently active. */
+export function isCustomTheme(): boolean { return customEnabled; }
+
+/** Toggle the Custom theme on/off, then persist + notify so the app repaints. */
+export function setCustomTheme(on: boolean): void {
+  if (customEnabled === on) return;
+  customEnabled = on;
+  emit();
+  void AsyncStorage.setItem(CUSTOM_KEY, on ? '1' : '0').catch(() => { /* best-effort */ });
+}
 
 /** Set (valid hex) or clear (invalid/empty) a single token override for a
  *  scheme, then persist + notify. Invalid hex clears that entry. */

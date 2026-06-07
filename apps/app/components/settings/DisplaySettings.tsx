@@ -1,7 +1,11 @@
-/** Settings → Display - switch the app theme between System / Light / Dark.
+/** Settings → Display - switch the app theme between System / Light / Dark, or
+ *  pick Custom to edit the palette color + radius tokens inline.
  *  Reuses the existing theme store (lib/theme: setThemePreference +
  *  useThemePreference, a module-level pub/sub that re-themes the whole app
- *  instantly) and the shared THEME_OPTIONS data. No new store. */
+ *  instantly) and the shared THEME_OPTIONS data. Custom is an orthogonal flag
+ *  (useCustomTheme/setCustomTheme): when on, the saved color overrides apply
+ *  and the ColorTokens editor (moved here from the Kit page) is revealed. No
+ *  new store. */
 
 import { ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,14 +15,17 @@ import { Text } from '@metro-labs/kit/text';
 import { Card } from '@metro-labs/kit/card';
 import { ListView, ListViewItem } from '@metro-labs/kit/list-view';
 import {
-  setThemePreference, useEffectiveColorScheme, usePalette, useThemePreference,
+  setThemePreference, setCustomTheme, useCustomTheme,
+  useEffectiveColorScheme, usePalette, useThemePreference,
 } from '../../lib/theme';
 import { THEME_OPTIONS } from '../tabs/SettingsScreen.parts';
 import { SystemHeader } from '../system/SystemHeader';
+import { ColorTokens } from '../system/ColorTokens';
 
 export function DisplaySettings(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const pref = useThemePreference();
+  const custom = useCustomTheme();
   const { text: fg, link: head, bg, border } = usePalette();
   const sub = fg;
   const rowBg = border;
@@ -27,7 +34,10 @@ export function DisplaySettings(): React.ReactElement {
   return (
     <Box style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
       <SystemHeader title="Display" dark={dark} fg={fg} head={head} border={border} />
-      <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}
+      >
         <Text style={{ color: sub, fontSize: 13, paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8, fontFamily: 'Calibre-Medium' }}>
           THEME
         </Text>
@@ -35,12 +45,12 @@ export function DisplaySettings(): React.ReactElement {
           <Card dark={dark} background={rowBg} padding={0}>
             <ListView dark={dark}>
               {THEME_OPTIONS.map((opt) => {
-                const selected = pref === opt.value;
+                const selected = !custom && pref === opt.value;
                 return (
                   <ListViewItem
                     key={opt.value}
                     dark={dark}
-                    onPress={() => { void setThemePreference(opt.value); }}
+                    onPress={() => { setCustomTheme(false); void setThemePreference(opt.value); }}
                     style={{ paddingHorizontal: 14, paddingVertical: 14 }}
                   >
                     <Icon name={opt.icon} size={22} color={head} />
@@ -49,9 +59,28 @@ export function DisplaySettings(): React.ReactElement {
                   </ListViewItem>
                 );
               })}
+              <ListViewItem
+                key="custom"
+                dark={dark}
+                onPress={() => setCustomTheme(true)}
+                style={{ paddingHorizontal: 14, paddingVertical: 14 }}
+              >
+                <Icon name="colorSwatch" size={22} color={head} />
+                <Text style={{ color: fg, fontSize: 18, fontFamily: 'Calibre-Medium', flex: 1 }}>Custom</Text>
+                {custom ? <Icon name="check" size={20} color={head} /> : null}
+              </ListViewItem>
             </ListView>
           </Card>
         </Box>
+
+        {custom ? (
+          <Box style={{ paddingHorizontal: 16, paddingTop: 24 }}>
+            <Text style={{ color: sub, fontSize: 13, paddingBottom: 4, fontFamily: 'Calibre-Medium' }}>
+              CUSTOM COLORS
+            </Text>
+            <ColorTokens p={{ dark, head, sub, border, rowBg }} />
+          </Box>
+        ) : null}
       </ScrollView>
     </Box>
   );
