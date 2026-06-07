@@ -94,7 +94,7 @@ export function questionOf(entry: HistoryEntry): Question | undefined {
 }
 
 export interface PollOption { label: string; description?: string }
-export interface PollQuestion { question: string; header?: string; options: PollOption[]; multiSelect?: boolean }
+export interface PollQuestion { question: string; header?: string; options: PollOption[]; multiSelect?: boolean; open?: boolean }
 /** Normalized poll: non-empty `questions[]`; `question` is the bubble title (q0). */
 export interface Poll { pollId?: string; question?: string; questions: PollQuestion[] }
 

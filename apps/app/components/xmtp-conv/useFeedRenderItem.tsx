@@ -30,8 +30,8 @@ export function useFeedRenderItem(
     events, myUri, replyingTo, jumpHighlightId,
     confirmedIds, optimisticReactions, optimisticRemovals,
     groupDescription, groupLabels, senderEthOf, profilesVersion,
-    reactions, ownReactions, displayVotes, displayOwnVotes, jumpToMessage,
-    onReact, onSign, signingIds, onVote, onPay, payingIds, onAnswer,
+    reactions, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, jumpToMessage,
+    onReact, onSign, signingIds, onVote, onOpenAnswer, onPay, payingIds, onAnswer,
     setMenuAnchor, setMenuFor, setReplyTarget, selectedForCopy,
   } = c;
 
@@ -39,8 +39,8 @@ export function useFeedRenderItem(
    *  value actually changes, so the list doesn't re-render the whole window on
    *  every parent re-render. Mirrors the prior inline list. */
   const extraData = useMemo(
-    () => [profilesVersion, optimisticReactions, reactions, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, confirmedIds, selectedForCopy, groupDescription, groupLabels],
-    [profilesVersion, optimisticReactions, reactions, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, confirmedIds, selectedForCopy, groupDescription, groupLabels],
+    () => [profilesVersion, optimisticReactions, reactions, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, confirmedIds, selectedForCopy, groupDescription, groupLabels],
+    [profilesVersion, optimisticReactions, reactions, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, confirmedIds, selectedForCopy, groupDescription, groupLabels],
   );
 
   /** id → event map, built once per `events` change → O(1) reply-preview lookup
@@ -70,6 +70,8 @@ export function useFeedRenderItem(
       votes={displayVotes.get(item.id)}
       ownVotes={displayOwnVotes.get(item.id)}
       onVote={(qIdx, idx, action) => onVote(item.id, qIdx, idx, action)}
+      openAnswers={displayOpenAnswers.get(item.id)}
+      onOpenAnswer={(qIdx, text) => onOpenAnswer(item.id, qIdx, text)}
       signing={signingIds.has(item.id)}
       onSign={(() => {
         const req = (item.payload as { signatureRequest?: SignatureRequestContent } | undefined)?.signatureRequest;
@@ -92,7 +94,7 @@ export function useFeedRenderItem(
   ), [
     dark, myUri, senderEthOf, router, confirmedIds, replyingTo?.id, jumpHighlightId,
     reactions, optimisticReactions, optimisticRemovals, ownReactions, eventsById, jumpToMessage,
-    displayVotes, displayOwnVotes, onVote, signingIds, onSign, payingIds, onPay, onReact,
+    displayVotes, displayOwnVotes, displayOpenAnswers, onVote, onOpenAnswer, signingIds, onSign, payingIds, onPay, onReact,
     setReplyTarget, setMenuAnchor, setMenuFor, selectedForCopy, onAnswer,
   ]);
 

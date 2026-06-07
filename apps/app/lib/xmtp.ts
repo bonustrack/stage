@@ -58,7 +58,7 @@ export { createGroup, addGroupMembers, leaveGroupConv } from './xmtp.groups';
 export {
   envelopeOfXmtpMessage, xmtpSendText, xmtpReact, xmtpSendPoll,
   xmtpSendSignatureRequest, xmtpSendSignatureReference, xmtpSendTxRequest,
-  xmtpSendTxReference, xmtpVote, xmtpReply, xmtpSendAttachment,
+  xmtpSendTxReference, xmtpVote, xmtpOpenAnswer, xmtpReply, xmtpSendAttachment,
 } from './xmtp.messages';
 
 export {

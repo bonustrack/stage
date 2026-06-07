@@ -3,9 +3,9 @@
  *  mapper lives in xmtp.envelope.ts and is re-exported here for back-compat. */
 
 import {
-  buildReaction, buildVote, buildReply, buildStaticAttachment,
+  buildReaction, buildVote, buildOpenAnswer, buildReply, buildStaticAttachment,
 } from '@stage-labs/client/xmtp/builders';
-import { type PollContent } from '@stage-labs/client/xmtp/poll';
+import { openVoteKey, type PollContent } from '@stage-labs/client/xmtp/poll';
 import {
   type SignatureRequestContent, type SignatureReferenceContent,
 } from '@stage-labs/client/xmtp/sign';
@@ -96,6 +96,20 @@ export async function xmtpVote(
   const conv = await convOfLine(line);
   if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
   return await conv.send({ reaction: buildVote(pollMessageId, optionIndex, action, questionIndex) });
+}
+
+/** Submit (or retract) a FREE-TEXT answer to an open poll question. Rides the
+ *  vote pipeline: a custom-schema reaction whose content is `open:<q>:<base64>`.
+ *  An empty `text` retracts the voter's prior answer. */
+export async function xmtpOpenAnswer(
+  line: string, pollMessageId: string, questionIndex: number, text: string,
+): Promise<string> {
+  const conv = await convOfLine(line);
+  if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
+  const trimmed = text.trim();
+  const action = trimmed ? 'added' : 'removed';
+  const content = openVoteKey(questionIndex, trimmed);
+  return await conv.send({ reaction: buildOpenAnswer(pollMessageId, content, action) });
 }
 
 /** Send an XMTP reply (text body referencing an earlier message id). */

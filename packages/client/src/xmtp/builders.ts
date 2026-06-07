@@ -58,6 +58,19 @@ export function buildVote(
   return { reference: pollMessageId, action, content, schema: 'custom' };
 }
 
+/** Build a FREE-TEXT (open) answer to a poll question. Like a vote it's a
+ *  custom-schema reaction on the poll bubble, but its `content` carries the
+ *  encoded answer text (`open:<q>:<base64>`) instead of an option index, so it
+ *  rides the same cross-device sync + tally pipeline. `action:'removed'` (or an
+ *  empty text) retracts the voter's answer. */
+export function buildOpenAnswer(
+  pollMessageId: string,
+  content: string,
+  action: 'added' | 'removed' = 'added',
+): ReactionPayload {
+  return { reference: pollMessageId, action, content, schema: 'custom' };
+}
+
 /** Build a text reply referencing an earlier message id. */
 export function buildReply(replyTo: string, text: string): ReplyPayload {
   return { reference: replyTo, content: { text } };

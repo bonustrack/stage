@@ -22,6 +22,69 @@ export function voteKey(questionIndex: number, optionIndex: number): string {
   return questionIndex === 0 ? String(optionIndex) : `${questionIndex}:${optionIndex}`;
 }
 
+/** base64 encode/decode that works in both RN (Hermes has btoa/atob via the app's
+ *  polyfills) and Node - falls back to a Buffer when the globals are missing.
+ *  Used so a free-text answer (which may contain `:`) survives the flat vote
+ *  `content` string round-trip. UTF-8 safe via encodeURIComponent. */
+const b64enc = (s: string): string => {
+  const g = globalThis as { btoa?: (x: string) => string; Buffer?: { from(x: string, e: string): { toString(e: string): string } } };
+  const bytes = encodeURIComponent(s).replace(/%([0-9A-F]{2})/g, (_, h) => String.fromCharCode(parseInt(h, 16)));
+  if (g.btoa) return g.btoa(bytes);
+  if (g.Buffer) return g.Buffer.from(s, 'utf-8').toString('base64');
+  return s;
+};
+const b64dec = (s: string): string => {
+  const g = globalThis as { atob?: (x: string) => string; Buffer?: { from(x: string, e: string): { toString(e: string): string } } };
+  try {
+    if (g.atob) {
+      const bin = g.atob(s);
+      return decodeURIComponent(Array.from(bin).map(c => `%${c.charCodeAt(0).toString(16).padStart(2, '0')}`).join(''));
+    }
+    if (g.Buffer) return g.Buffer.from(s, 'base64').toString('utf-8');
+  } catch { /* fall through */ }
+  return s;
+};
+
+/** Build the vote `content` for a FREE-TEXT (open) answer to a question. The
+ *  text is base64-encoded so an answer containing `:` can't break the key. The
+ *  `open:` prefix makes it unambiguous against a choice key. */
+export function openVoteKey(questionIndex: number, text: string): string {
+  return `open:${questionIndex}:${b64enc(text)}`;
+}
+
+/** Parse an open-answer vote `content`. Returns the question index + decoded
+ *  text, or null when the string is not an open-vote key. */
+export function parseOpenVote(content: string): { q: number; text: string } | null {
+  const m = /^open:(\d+):([\s\S]*)$/.exec(content);
+  if (!m) return null;
+  const q = Number(m[1]);
+  if (!Number.isInteger(q)) return null;
+  return { q, text: b64dec(m[2]) };
+}
+
+/** Latest free-text answer per voter for one (poll, question). A `removed` event
+ *  (or empty text) clears the voter's answer. Returns voterUri -> {text, ts}. */
+export function openAnswersByPoll(
+  events: VoteEvent[],
+  pollMessageId: string,
+  questionIndex = 0,
+): Map<string, { text: string; ts: string }> {
+  const latest = new Map<string, { ts: string; removed: boolean; text: string }>();
+  for (const e of events) {
+    if (e.reference !== pollMessageId || e.schema !== 'custom') continue;
+    const k = parseOpenVote(e.content);
+    if (!k || k.q !== questionIndex) continue;
+    const cur = latest.get(e.voter);
+    if (!cur || cur.ts < e.ts) latest.set(e.voter, { ts: e.ts, removed: !!e.removed, text: k.text });
+  }
+  const out = new Map<string, { text: string; ts: string }>();
+  for (const [voter, v] of latest) {
+    if (v.removed || !v.text) continue;
+    out.set(voter, { text: v.text, ts: v.ts });
+  }
+  return out;
+}
+
 /** A normalized vote event. The minimal shape the tally needs. Both the app
  *  envelope (`payload.reactTo`/`emoji`/`removed`/`schema`) and the web client
  *  can adapt their reaction events into this. */

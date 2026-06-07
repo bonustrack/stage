@@ -23,6 +23,9 @@ export type PollOption = { label: string; description?: string };
  *  `questions[]` entry. */
 export type PollQuestion = {
   question: string; header?: string; multiSelect?: boolean;
+  /** true => accepts a FREE-TEXT answer (AskUserQuestion "Other"). When true the
+   *  options array may be empty (pure free-text question). */
+  open?: boolean;
   options?: (PollOption | string)[];
 };
 export type PollContent = {
@@ -70,10 +73,15 @@ export function buildPollContent(
   if (Array.isArray(questions) && questions.length > 0) {
     const norm: PollQuestion[] = questions.map((q, i) => {
       if (!q || typeof q.question !== 'string' || !q.question) throw new Error(`ask questions[${i}] requires a question`);
-      if (!Array.isArray(q.options) || q.options.length === 0) throw new Error(`ask questions[${i}] requires a non-empty options array`);
+      const open = q.open === true;
+      const opts = Array.isArray(q.options) ? q.options : [];
+      // An OPEN question may carry no options (pure free-text); a CHOICE question
+      // still requires a non-empty options array.
+      if (!open && opts.length === 0) throw new Error(`ask questions[${i}] requires a non-empty options array (or open:true for free-text)`);
       return {
-        question: q.question, options: normOpts(q.options),
-        multiSelect: !!q.multiSelect, ...(q.header ? { header: q.header } : {}),
+        question: q.question, options: normOpts(opts),
+        multiSelect: !!q.multiSelect, ...(open ? { open: true } : {}),
+        ...(q.header ? { header: q.header } : {}),
       };
     });
     return { poll: { questions: norm, pollId }, title: norm[0].question };
