@@ -91,11 +91,11 @@ export async function xmtpSendTxReference(line: string, ref: TransactionReferenc
  *  cross-device sync with zero new content type. */
 export async function xmtpVote(
   line: string, pollMessageId: string, optionIndex: number,
-  action: 'added' | 'removed' = 'added',
+  action: 'added' | 'removed' = 'added', questionIndex = 0,
 ): Promise<string> {
   const conv = await convOfLine(line);
   if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
-  return await conv.send({ reaction: buildVote(pollMessageId, optionIndex, action) });
+  return await conv.send({ reaction: buildVote(pollMessageId, optionIndex, action, questionIndex) });
 }
 
 /** Send an XMTP reply (text body referencing an earlier message id). */

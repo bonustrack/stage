@@ -9,7 +9,7 @@ import { convOf } from './accounts.js';
 import { resolveMsgId, respond } from './wire.js';
 import { emitOutbound } from './emit.js';
 import {
-  PollCodec, SignatureRequestCodec, type PollContent, type SignatureRequestContent,
+  PollCodec, buildPollContent, SignatureRequestCodec, type SignatureRequestContent,
 } from './codecs.js';
 import { convHandlers } from './actions-conv.js';
 import { normalizeXmtp } from '../messaging-normalize.js';
@@ -26,23 +26,17 @@ async function send(id: string, args: Args): Promise<void> {
   respond(id, { result: { messageId } });
 }
 
-async function sendPoll(id: string, args: Args): Promise<void> {
-  const { line, question, options, header, multiSelect, pollId } = args as {
-    line: string; question: string; options: (string | { label: string; description?: string })[];
-    header?: string; multiSelect?: boolean; pollId?: string };
+/** Ask (poll, mirrors Claude AskUserQuestion). Single { question, options[], header?,
+ *  multiSelect? } OR multi { questions: [...] }. See buildPollContent. Alias: sendPoll. */
+async function ask(id: string, args: Args): Promise<void> {
+  const { line, pollId } = args as { line: string; pollId?: string };
   const { acct, conv } = await convOf(line);
   if (!conv) throw new Error(`conversation not found for ${line}`);
-  if (!question || typeof question !== 'string') throw new Error('sendPoll requires a question');
-  if (!Array.isArray(options) || options.length === 0) throw new Error('sendPoll requires a non-empty options array');
-  const normOptions = options.map(o =>
-    typeof o === 'string' ? { label: o } : { label: o.label, description: o.description });
   const fallbackId = `poll_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
   const mintedId = pollId ?? (typeof crypto?.randomUUID === 'function' ? crypto.randomUUID() : fallbackId);
-  const pollContent: PollContent = {
-    question, options: normOptions as unknown as string[], multiSelect: !!multiSelect, pollId: mintedId,
-    ...(header ? { header } : {}) };
-  const sentId = await conv.send(new PollCodec().encode(pollContent));
-  emitOutbound(acct.cfg.id, line, sentId, `📊 Poll: ${question}`);
+  const { poll, title } = buildPollContent(args, mintedId);
+  const sentId = await conv.send(new PollCodec().encode(poll));
+  emitOutbound(acct.cfg.id, line, sentId, `📊 Poll: ${title}`);
   respond(id, { result: { messageId: sentId, pollId: mintedId } });
 }
 
@@ -172,13 +166,13 @@ async function unsupportedVerb(id: string, verb: string): Promise<void> {
 
 const handlers: Record<string, (id: string, args: Args) => Promise<void>> = {
   accounts: (id) => accountsAction(id),
-  send, sendPoll, react, reply, sendAttachment, sendImage, sendTxRequest, sendSignatureRequest,
+  send, ask, sendPoll: ask, react, reply, sendAttachment, sendImage, sendTxRequest, sendSignatureRequest,
   edit: (id) => unsupportedVerb(id, 'edit'),
   delete: (id) => unsupportedVerb(id, 'delete'),
   ...convHandlers,
 };
 
-const KNOWN = 'accounts, send, sendPoll, sendImage, sendTxRequest, react, reply, sendAttachment, '
+const KNOWN = 'accounts, send, ask, sendImage, sendTxRequest, react, reply, sendAttachment, '
   + 'newDm, newGroup, createRequestGroup, setLabels, setGithub, setPreview, updateChannelMeta, closeGroup, query, groupInfo, listConvs, '
   + 'register-push, list-push, test-push, unregister-push';
 

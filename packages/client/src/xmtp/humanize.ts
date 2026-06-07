@@ -77,8 +77,9 @@ export function previewOfXmtpContent(decoded: unknown, contentTypeId: string | u
     return r.content ?? '👍';
   }
   if (typeId === 'poll') {
-    const p = decoded as { question?: string };
-    return p.question ? `Poll: ${p.question}` : '[poll]';
+    const p = decoded as { question?: string; questions?: { question?: string }[] };
+    const title = p.questions?.[0]?.question ?? p.question;
+    return title ? `Poll: ${title}` : '[poll]';
   }
   if (typeId === 'reply') {
     const r = decoded as { content?: { text?: string } | string };

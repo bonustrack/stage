@@ -43,13 +43,13 @@ export interface MessengerBubbleProps {
   /** Tap on the avatar — parent routes to the per-user profile view. Skipped
    *  when undefined (e.g. legacy callers that don't wire it). */
   onAvatarPress?: (address: string) => void;
-  /** Poll tally: option index → set of voter URIs. Drives the per-option count
-   *  + result bar. Undefined for non-poll bubbles. */
-  votes?: Map<number, Set<string>>;
-  /** Option indices the local user currently has selected on this poll. */
-  ownVotes?: Set<number>;
-  /** Cast/retract a vote on this poll's option. */
-  onVote?: (optionIndex: number, action: 'added' | 'removed') => void;
+  /** Poll tally, per question: questionIndex -> (optionIndex -> set of voter
+   *  URIs). Drives the per-option count + result bar. Undefined for non-polls. */
+  votes?: Map<number, Map<number, Set<string>>>;
+  /** Option indices the local user currently has selected, per question index. */
+  ownVotes?: Map<number, Set<number>>;
+  /** Cast/retract a vote on a given question's option. */
+  onVote?: (questionIndex: number, optionIndex: number, action: 'added' | 'removed') => void;
   /** Pay an in-chat payment request (WalletSendCalls). The parent broadcasts the
    *  call via the phase-3 sendTx helper and posts a TransactionReference back.
    *  Undefined => the Pay button is hidden (e.g. it's the user's own request). */

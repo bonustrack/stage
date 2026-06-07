@@ -50,8 +50,12 @@ export function buildVote(
   pollMessageId: string,
   optionIndex: number,
   action: 'added' | 'removed' = 'added',
+  questionIndex = 0,
 ): ReactionPayload {
-  return { reference: pollMessageId, action, content: String(optionIndex), schema: 'custom' };
+  // Vote key: `"q:o"`, or a BARE option index for question 0 so legacy
+  // single-question clients (and the existing tally) keep decoding it.
+  const content = questionIndex === 0 ? String(optionIndex) : `${questionIndex}:${optionIndex}`;
+  return { reference: pollMessageId, action, content, schema: 'custom' };
 }
 
 /** Build a text reply referencing an earlier message id. */

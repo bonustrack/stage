@@ -14,11 +14,25 @@ const optionSchema = z.object({
   description: z.string().optional(),
 });
 
-/** Validates the on-wire poll shape: a stable id, a question, and >= 2 options. */
-export const pollContentSchema: ZodType<PollContent> = z.object({
-  pollId: z.string().min(1),
+const questionSchema = z.object({
   question: z.string().min(1),
   header: z.string().optional(),
   options: z.array(optionSchema).min(2),
   multiSelect: z.boolean().optional(),
-}) as unknown as ZodType<PollContent>;
+});
+
+/** Validates the on-wire poll shape. Accepts BOTH forms: the multi-question
+ *  `questions[]` array (AskUserQuestion shape) and the legacy single-question
+ *  top-level fields. A poll must satisfy at least one of the two via the
+ *  refinement so `normalizeQuestions()` always yields a non-empty array. */
+export const pollContentSchema: ZodType<PollContent> = z.object({
+  pollId: z.string().min(1),
+  questions: z.array(questionSchema).min(1).optional(),
+  question: z.string().min(1).optional(),
+  header: z.string().optional(),
+  options: z.array(optionSchema).min(2).optional(),
+  multiSelect: z.boolean().optional(),
+}).refine(
+  p => (p.questions && p.questions.length > 0) || (typeof p.question === 'string' && (p.options?.length ?? 0) >= 2),
+  { message: 'poll needs either questions[] or a question + options' },
+) as unknown as ZodType<PollContent>;

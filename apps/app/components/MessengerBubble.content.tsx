@@ -29,8 +29,8 @@ export function BubbleContent({
   entry: HistoryEntry; dark: boolean; pending?: boolean; fg: string; sub: string;
   replyPreview?: string; onReplyPreviewPress?: () => void; transcript?: string;
   onAnswer?: (label: string) => void;
-  votes?: Map<number, Set<string>>; ownVotes?: Set<number>;
-  onVote?: (optionIndex: number, action: 'added' | 'removed') => void;
+  votes?: Map<number, Map<number, Set<string>>>; ownVotes?: Map<number, Set<number>>;
+  onVote?: (questionIndex: number, optionIndex: number, action: 'added' | 'removed') => void;
   onPay?: () => void; paying?: boolean; onSign?: () => void; signing?: boolean;
   /** When true, render the body in a plain selectable <Text> so OS text-selection
    *  handles appear for partial copy (Markdown's nested Texts don't select cleanly). */
