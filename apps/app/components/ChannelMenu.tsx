@@ -101,6 +101,16 @@ export function ChannelMenu({
       {/* Cancel AppModal's 16px ScrollView padding so the list spans edge-to-edge
           and the row content inset (ROW_INSET 16) matches the Settings page. */}
       <ListView dark={dark} style={{ marginHorizontal: -16 }}>
+        {isGroup ? (
+          <MenuRow
+            icon="plus"
+            label="Add members"
+            color={head}
+            dark={dark}
+            onPress={() => run(() => router.push({ pathname: '/xmtp/add-members', params: { convId } }))}
+          />
+        ) : null}
+
         <MenuRow
           icon={isUnread ? 'check' : 'envelope'}
           label={isUnread ? 'Mark as read' : 'Mark as unread'}
@@ -115,21 +125,6 @@ export function ChannelMenu({
           color={head}
           dark={dark}
           onPress={() => run(() => { void togglePin(convId); })}
-        />
-
-        {/* Archive / Unarchive — local archived store hides the conv from the
-            main inbox (reversible, distinct from block). On archive from the
-            conversation view, pop back to the list via onAfterArchive. */}
-        <MenuRow
-          icon={isArchived ? 'arrowUp' : 'archive'}
-          label={isArchived ? 'Unarchive' : 'Archive'}
-          color={head}
-          dark={dark}
-          onPress={() => run(() => {
-            void toggleArchived(convId);
-            onAfterArchive?.(!isArchived);
-            if (!isArchived && context === 'view') router.replace('/');
-          })}
         />
 
         {isGroup ? (
@@ -150,15 +145,21 @@ export function ChannelMenu({
           />
         ) : null}
 
-        {isGroup ? (
-          <MenuRow
-            icon="plus"
-            label="Add members"
-            color={head}
-            dark={dark}
-            onPress={() => run(() => router.push({ pathname: '/xmtp/add-members', params: { convId } }))}
-          />
-        ) : null}
+        {/* Archive / Unarchive — local archived store hides the conv from the
+            main inbox (reversible, distinct from block). Shown in destructive red
+            and placed just before Leave group. On archive from the conversation
+            view, pop back to the list via onAfterArchive. */}
+        <MenuRow
+          icon={isArchived ? 'arrowUp' : 'archive'}
+          label={isArchived ? 'Unarchive' : 'Archive'}
+          color={danger}
+          dark={dark}
+          onPress={() => run(() => {
+            void toggleArchived(convId);
+            onAfterArchive?.(!isArchived);
+            if (!isArchived && context === 'view') router.replace('/');
+          })}
+        />
 
         {isGroup ? (
           <MenuRow icon="arrowLeft" label="Leave group" color={danger} dark={dark} onPress={onLeaveGroup} />
