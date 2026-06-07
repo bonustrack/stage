@@ -7,7 +7,7 @@ import type { FlatList } from 'react-native-gesture-handler';
 import type { SimultaneousRefs } from '../SwipeTabs.types';
 import { useRouter } from 'expo-router';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { getCachedRows, setCachedRows, subscribeCachedRows, useActiveAccount } from '../../modules/messaging';
+import { getCachedRows, setCachedRows, subscribeCachedRows, useActiveAccount, ensureChannelsQueryBridge } from '../../modules/messaging';
 import { usePeerProfiles } from '../../lib/peerProfiles';
 import { useDraftsVersion } from '../../lib/drafts';
 import { Col } from '../layout';
@@ -47,6 +47,10 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
     }
   };
   useEffect(() => subscribeCachedRows(r => setRowsState(r as RowT[] | null)), []);
+  /** Mirror the channels cache into TanStack Query (stage-1 cache unification) so
+   *  read-only consumers dedupe off one entry. The cache stays the writer; this
+   *  screen's own state path above is unchanged. */
+  useEffect(() => { ensureChannelsQueryBridge(); }, []);
   const [error, setError] = useState<string>('');
   /** Row long-pressed → per-conversation action sheet (mark read/unread). */
   const [rowMenu, setRowMenu] = useState<{ convId: string; title: string; isUnread: boolean; isGroup: boolean; peerAddress: string | null } | null>(null);

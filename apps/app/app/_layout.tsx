@@ -22,18 +22,16 @@ import { useEffectiveColorScheme, usePalette, useRadius } from '../lib/theme';
 import { useDeepLinks } from '../lib/deepLinks';
 import { useRestoreLastRoute } from '../lib/lastRoute';
 import { usePushDeepLinks } from '../lib/push';
-import { ensureActiveAccount } from '../modules/messaging';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ensureActiveAccount, ensureMessagingStreamSync } from '../modules/messaging';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { getQueryClient } from '../lib/queryClient';
 import { WalletConnectProvider } from '../components/WalletConnectProvider';
 
-/** App-wide TanStack Query client — caches request/response data (profiles,
+/** App-wide TanStack Query client: caches request/response data (profiles,
  *  message history) with stale-while-revalidate + dedup. Live XMTP streams stay
- *  outside Query (they're push, not fetch). */
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: { staleTime: 60_000, gcTime: 30 * 60_000, retry: 1, refetchOnWindowFocus: false },
-  },
-});
+ *  outside Query (they're push, not fetch). The instance lives in lib/queryClient
+ *  so non-React code (stream wiring) writes the SAME cache. */
+const queryClient = getQueryClient();
 
 /** Silence WalletConnect's benign "emitting session_request … without any
  *  listeners" notice — a stale-session lifecycle log from @walletconnect/sign-client
@@ -105,6 +103,9 @@ export default function RootLayout(): React.ReactElement {
    *  an account even when XMTP onboarding fails on a clean reinstall (stale db
    *  key vs. wiped store). Idempotent — no-ops once an account exists. */
   useEffect(() => { void ensureActiveAccount(); }, []);
+  /** Wire streamed group-metadata events into Query (invalidate convMeta) so the
+   *  topnav / group screen refresh on rename/image/desc without a reload. */
+  useEffect(() => { ensureMessagingStreamSync(); }, []);
 
   /** Calibre — matches sx-monorepo's typography. Two weights: medium (default) + semibold (headers/buttons).
    *  TTF (not WOFF2) so Android's native Typeface loader can pick it up — expo-font's WOFF2
