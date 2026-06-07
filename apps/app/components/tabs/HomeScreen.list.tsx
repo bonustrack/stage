@@ -82,7 +82,7 @@ export function ChannelsList({
               {myName ? (
                 <Text
                   numberOfLines={1}
-                  style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', maxWidth: 200 }}
+                  style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold', maxWidth: 200 }}
                 >
                   {myName}
                 </Text>
