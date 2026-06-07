@@ -35,7 +35,7 @@ export function OpenAnswerBlock({ qi, sub, dark, answers, mine, onSubmit }: {
           placeholderTextColor={sub}
           returnKeyType="send"
           style={{
-            flex: 1, color: pal.text, fontSize: 15, fontFamily: 'Calibre-Medium',
+            flex: 1, color: pal.text, fontSize: 17, fontFamily: 'Calibre-Medium',
             paddingHorizontal: 12, paddingVertical: 9, borderRadius: radius,
             borderWidth: 1, borderColor: inputBorder, backgroundColor: inputBg,
           }}
@@ -59,7 +59,7 @@ export function OpenAnswerBlock({ qi, sub, dark, answers, mine, onSubmit }: {
               : (dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'),
           }}
         >
-          <Text style={{ color: pal.text, fontSize: 14, fontFamily: 'Calibre-Medium' }}>
+          <Text style={{ color: pal.text, fontSize: 16, fontFamily: 'Calibre-Medium' }}>
             {voter === mine ? 'You: ' : ''}{a.text}
           </Text>
         </Box>

@@ -46,7 +46,7 @@ function PollQuestionBlock({ q, qi, sub, dark, votes, own, onVote, openAnswers, 
   return (
     <Box style={{ alignSelf: 'stretch', gap: 6 }}>
       {q.header ? (
-        <Text style={{ color: sub, fontSize: 11, fontFamily: 'Calibre-Semibold', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+        <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Semibold', textTransform: 'uppercase', letterSpacing: 0.5 }}>
           {q.header}{multi ? ' · multi-select' : ''}{q.open ? ' · open' : ''}
         </Text>
       ) : null}
@@ -76,15 +76,15 @@ function PollQuestionBlock({ q, qi, sub, dark, votes, own, onVote, openAnswers, 
               }}
             />
             <Row align="center" justify="between">
-              <Text style={{ color: pal.text, fontSize: 15, fontFamily: 'Calibre-Medium', flexShrink: 1 }}>
+              <Text style={{ color: pal.text, fontSize: 17, fontFamily: 'Calibre-Medium', flexShrink: 1 }}>
                 {isOn ? '✓  ' : (multi ? '☐  ' : '')}{opt.label}
               </Text>
-              <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Semibold', marginLeft: 8 }}>
+              <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Semibold', marginLeft: 8 }}>
                 {count}
               </Text>
             </Row>
             {opt.description ? (
-              <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
+              <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
                 {opt.description}
               </Text>
             ) : null}
@@ -92,7 +92,7 @@ function PollQuestionBlock({ q, qi, sub, dark, votes, own, onVote, openAnswers, 
         );
       })}
       {options.length > 0 ? (
-        <Text style={{ color: sub, fontSize: 11, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
+        <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
           {total} vote{total === 1 ? '' : 's'}{q.open ? ' · or type your own' : ''}
         </Text>
       ) : null}
@@ -115,14 +115,15 @@ export function PollView({ poll, dark, sub, votes, ownVotes, onVote, openAnswers
   onOpenAnswer?: (questionIndex: number, text: string) => void;
   myUri?: string;
 }): React.ReactElement {
-  const fg = usePalette().text;
+  const pal = usePalette();
+  const fg = pal.link;
   const multiQuestion = poll.questions.length > 1;
   return (
     <Box style={{ alignSelf: 'stretch', gap: 12, marginTop: 8 }}>
       {poll.questions.map((q, qi) => (
         <Box key={`q-${qi}`} style={{ alignSelf: 'stretch', gap: 6 }}>
           {multiQuestion && qi > 0 ? (
-            <Text style={{ color: fg, fontSize: 17, fontFamily: 'Calibre-Semibold' }}>{q.question}</Text>
+            <Text style={{ color: fg, fontSize: 19, fontFamily: 'Calibre-Semibold' }}>{q.question}</Text>
           ) : null}
           <PollQuestionBlock
             q={q} qi={qi} sub={sub} dark={dark}
