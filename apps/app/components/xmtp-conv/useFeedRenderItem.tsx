@@ -10,6 +10,8 @@
 
 import { useCallback, useMemo } from 'react';
 import { MessengerBubble } from '../MessengerBubble';
+import { BubbleErrorBoundary } from '../MessengerBubble.boundary';
+import { usePalette } from '../../lib/theme';
 import { previewOf } from './feed-helpers';
 import type { SignatureRequestContent } from '@stage-labs/client/xmtp/sign';
 import type { WalletSendCallsContent } from '@stage-labs/client/xmtp/tx';
@@ -35,6 +37,10 @@ export function useFeedRenderItem(
     setMenuAnchor, setMenuFor, setReplyTarget, selectedForCopy,
   } = c;
 
+  /** Muted color for the per-bubble error fallback (see BubbleErrorBoundary).
+   *  Mirrors MessengerBubble's `sub = pal.text` (no muted token yet). */
+  const sub = usePalette().text;
+
   /** Referentially-stable extraData — only a NEW array when a render-affecting
    *  value actually changes, so the list doesn't re-render the whole window on
    *  every parent re-render. Mirrors the prior inline list. */
@@ -52,6 +58,7 @@ export function useFeedRenderItem(
   }, [events]);
 
   const renderItem = useCallback(({ item }: { item: Bubble }) => (
+    <BubbleErrorBoundary sub={sub}>
     <MessengerBubble
       entry={item}
       dark={dark}
@@ -91,11 +98,12 @@ export function useFeedRenderItem(
       selectable={selectedForCopy === item.id}
       onAnswer={(label) => onAnswer(item.id, label)}
     />
+    </BubbleErrorBoundary>
   ), [
     dark, myUri, senderEthOf, router, confirmedIds, replyingTo?.id, jumpHighlightId,
     reactions, optimisticReactions, optimisticRemovals, ownReactions, eventsById, jumpToMessage,
     displayVotes, displayOwnVotes, displayOpenAnswers, onVote, onOpenAnswer, signingIds, onSign, payingIds, onPay, onReact,
-    setReplyTarget, setMenuAnchor, setMenuFor, selectedForCopy, onAnswer,
+    setReplyTarget, setMenuAnchor, setMenuFor, selectedForCopy, onAnswer, sub,
   ]);
 
   return { renderItem, extraData };
