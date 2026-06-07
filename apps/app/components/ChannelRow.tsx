@@ -75,24 +75,22 @@ const MAX_VISIBLE_LABELS = 2;
 const PREVIEW_BLOCK = 44;
 
 /** Build ROUNDED label chips as INLINE <View>s placed as the FIRST children
- *  INSIDE the preview <Text>. RN supports embedding a <View> inline in a <Text>;
- *  because it flows as inline content, the preview text wraps UNDERNEATH the
- *  chip(s) on the 2nd line (not in a 2-column row beside it). Each chip is a real
- *  rounded pill (borderRadius 999) so corners render; explicit height + small
- *  marginRight keeps the baseline/spacing sane on Android. Caps at
- *  MAX_VISIBLE_LABELS visible + a "+N" pill. */
+ *  INSIDE the preview <Text>; the preview text flows around them and wraps
+ *  UNDERNEATH on the 2nd line. Each chip is a rounded pill (borderRadius 999).
+ *  marginRight on an inline <View> is NOT honored by RN, so the visible gap
+ *  comes from a sibling inline <Text> spacer. Caps at MAX_VISIBLE + a "+N". */
 function buildLabelChips({ labels, fg, rowBg }: {
   labels: string[]; fg: string; rowBg: string;
 }): React.ReactNode[] {
   const visible = labels.slice(0, MAX_VISIBLE_LABELS);
   const overflow = labels.length - visible.length;
   const chips = overflow > 0 ? [...visible, `+${overflow}`] : visible;
-  return chips.map((label, i) => (
+  return chips.flatMap((label, i) => [
     <View
       key={`${label.toLowerCase()}-${i}`}
       style={{
         height: 20, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2,
-        backgroundColor: rowBg, marginRight: 16, justifyContent: 'center',
+        backgroundColor: rowBg, justifyContent: 'center',
         // RN aligns an inline <View> by its BOTTOM edge to the text baseline,
         // so a 20px chip sits high vs the fontSize-17/lineHeight-22 preview text.
         // Drop it down so the chip's vertical center matches the text line center.
@@ -100,8 +98,10 @@ function buildLabelChips({ labels, fg, rowBg }: {
       }}
     >
       <Text style={{ color: fg, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{label}</Text>
-    </View>
-  ));
+    </View>,
+    // Real, rendered gap (inline-View margin is NOT honored by RN).
+    <Text key={`gap-${i}`} style={{ fontSize: 13 }}>{'  '}</Text>,
+  ]);
 }
 
 /** #6: memoised so a stream tick that re-renders the channels list only
