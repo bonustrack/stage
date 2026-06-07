@@ -1,0 +1,97 @@
+name: Main preview
+
+# Stable, always-current preview of main.
+#
+# On every push to main, publish the app's JS bundle as an EAS Update to a FIXED
+# branch (main-preview) so a known deep link / channel always resolves to the
+# latest main build, with no manual publishing. Complements pr-preview.yml (which
+# publishes a per-PR branch on pull_request); this one publishes the merged
+# result of main to a single stable branch.
+#
+# Auth + toolchain mirror pr-preview.yml exactly: EXPO_TOKEN secret, bun 1.3.9
+# via oven-sh/setup-bun, frozen-lockfile install, and bunx eas-cli pinned, run
+# from apps/app. JS-only update (no APK); the dev-client APK must already include
+# expo-updates for the deep link to load it.
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  # One main-preview publish at a time; a newer push cancels the in-flight one.
+  group: main-preview
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      EXPO_NO_TELEMETRY: '1'
+      TMPDIR: ${{ github.workspace }}/.metro-tmp
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.9
+
+      - name: Prepare temp dir
+        run: mkdir -p "$TMPDIR"
+
+      - name: Cache bun dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+          key: bun-deps-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            bun-deps-${{ runner.os }}-
+
+      - run: bun install --frozen-lockfile
+
+      - name: Cache Metro transform cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.metro-tmp/metro-cache
+          key: metro-cache-v1-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            metro-cache-v1-${{ runner.os }}-
+
+      - name: Publish EAS Update to main-preview
+        id: update
+        working-directory: apps/app
+        run: |
+          set -euo pipefail
+          mkdir -p "$TMPDIR"
+          # Same two-step export + skip-bundler publish as pr-preview.yml so we can
+          # pass the preview-only Metro flags eas update does not expose (android
+          # only, no minify, no bytecode), then upload the prebuilt dist/.
+          bunx expo export \
+            --platform android \
+            --no-minify \
+            --no-bytecode \
+            --output-dir dist
+          bunx eas-cli@20.1.0 update \
+            --branch main-preview \
+            --platform android \
+            --skip-bundler \
+            --input-dir dist \
+            --message "main ${{ github.sha }}" \
+            --non-interactive --json > eas-update.json
+          node ../../scripts/pr-preview/eas-deeplink.mjs eas-update.json >> "$GITHUB_OUTPUT"
+
+      - name: Summarise the preview link
+        run: |
+          {
+            echo "### Main preview published"
+            echo ""
+            echo "EAS branch: \`main-preview\`"
+            echo "Commit: \`${{ github.sha }}\`"
+            echo "Manifest: ${{ steps.update.outputs.manifest }}"
+          } >> "$GITHUB_STEP_SUMMARY"
