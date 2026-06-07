@@ -92,7 +92,7 @@ function buildLabelChips({ labels, fg, rowBg }: {
       key={`${label.toLowerCase()}-${i}`}
       style={{
         height: 20, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2,
-        backgroundColor: rowBg, marginRight: 12, justifyContent: 'center',
+        backgroundColor: rowBg, marginRight: 16, justifyContent: 'center',
         // RN aligns an inline <View> by its BOTTOM edge to the text baseline,
         // so a 20px chip sits high vs the fontSize-17/lineHeight-22 preview text.
         // Drop it down so the chip's vertical center matches the text line center.
