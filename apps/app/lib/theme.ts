@@ -137,6 +137,27 @@ export function useRadius(): number {
  *  inputs/text fields, cards, modals/sheets and general bordered/filled blocks.
  *  Reactive to load/edit/reset. Unlike the button radius this is read directly
  *  at each container call site (there's no kit-wide module default to push). */
+/** Apply an alpha (0..1) to a palette token, returning an rgba() string. Handles
+ *  #rgb / #rrggbb hex and rgb()/rgba() inputs (the forms palette tokens take,
+ *  including user overrides). Falls back to the input unchanged if it can't be
+ *  parsed, so a malformed override never crashes a render. Used for accent tints
+ *  (e.g. the poll result bar / selected-row fill) that must track `link`. */
+export function withAlpha(color: string, alpha: number): string {
+  const a = Math.max(0, Math.min(1, alpha));
+  const hex = color.trim().match(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/);
+  if (hex) {
+    let h = hex[1];
+    if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+    const r = parseInt(h.slice(0, 2), 16);
+    const g = parseInt(h.slice(2, 4), 16);
+    const b = parseInt(h.slice(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${a})`;
+  }
+  const rgb = color.trim().match(/^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)/);
+  if (rgb) return `rgba(${rgb[1]}, ${rgb[2]}, ${rgb[3]}, ${a})`;
+  return color;
+}
+
 export function useBlockRadius(): number {
   const [r, setR] = useState(getBlockRadius());
   useEffect(() => {
