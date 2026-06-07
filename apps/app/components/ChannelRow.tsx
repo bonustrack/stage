@@ -164,10 +164,16 @@ function ChannelRowBase({
               center within the fixed-height row. align-start pins the unread
               badge to the FIRST line when the preview wraps. */}
           <Row align="start" gap={7} mt={2}>
-            {/* Draft: pencil glyph + "You: " draft text (normal preview color)
-                replaces the preview. Else the rounded label chip(s) are INLINE
-                at the START of the preview Text. */}
-            {draft ? <Icon name="pencil" size={14} color={head} /> : null}
+            {/* Draft: pencil glyph + "You: " draft text (normal preview color).
+                Else the rounded label chip(s) are INLINE at the preview start. */}
+            {draft ? (
+              // Center the 14px pencil on the first preview line (lineHeight 21):
+              // the outer Row stays align-start (so a wrapped preview keeps the
+              // unread badge on line 1), so nudge the glyph down by (21-14)/2.
+              <Box style={{ marginTop: 3.5 }}>
+                <Icon name="pencil" size={14} color={head} />
+              </Box>
+            ) : null}
             <Text
               style={{ color: sub, fontSize: 16, lineHeight: 21, fontFamily: 'Calibre-Medium', flex: 1 }}
               numberOfLines={2}
