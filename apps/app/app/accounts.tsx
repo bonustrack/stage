@@ -16,16 +16,18 @@ import { AccountsManager } from '../components/AccountsManager';
 export default function Accounts(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border } = usePalette();
+  const { text: fg, link: head, bg, border, toolbarBg } = usePalette();
   const insets = useSafeAreaInsets();
 
   return (
-    <Box style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
-      {/* Topnav: back + title, mirroring the search page. */}
+    <Box style={{ flex: 1, backgroundColor: bg }}>
+      {/* Topnav: back + title, mirroring the search page. Paints toolbarBg +
+          absorbs the top inset so the bar reaches the screen edge. */}
       <Box style={{
         flexDirection: 'row', alignItems: 'center', gap: 8,
-        paddingHorizontal: 12, paddingTop: 8, paddingBottom: 10,
+        paddingHorizontal: 12, paddingTop: 8 + insets.top, paddingBottom: 10,
         borderBottomWidth: 1, borderBottomColor: border,
+        backgroundColor: toolbarBg,
       }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg} />

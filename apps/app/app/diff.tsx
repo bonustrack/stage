@@ -41,11 +41,12 @@ export default function Diff(): React.ReactElement {
     : (url ?? '');
 
   return (
-    <Box style={{ flex: 1, backgroundColor: p.bg, paddingTop: insets.top }}>
+    <Box style={{ flex: 1, backgroundColor: p.bg }}>
       <Box style={{
         flexDirection: 'row', alignItems: 'center', gap: 8,
-        paddingHorizontal: 12, paddingTop: 8, paddingBottom: 10,
+        paddingHorizontal: 12, paddingTop: 8 + insets.top, paddingBottom: 10,
         borderBottomWidth: 1, borderBottomColor: p.border,
+        backgroundColor: p.toolbarBg,
       }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={p.text} />

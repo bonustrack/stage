@@ -35,6 +35,7 @@ export default function Menu(): React.ReactElement {
   const sub = pal.text; // no `muted` token yet -> map to `text`.
   const border = pal.border;
   const bg = pal.bg;
+  const toolbarBg = pal.toolbarBg;
 
   const [accounts, setAccounts] = useState<AccountRecord[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -66,12 +67,14 @@ export default function Menu(): React.ReactElement {
   }
 
   return (
-    <Box style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
-      {/* Topnav: back + title, mirroring the Accounts / Search pages. */}
+    <Box style={{ flex: 1, backgroundColor: bg }}>
+      {/* Topnav: back + title, mirroring the Accounts / Search pages.
+          Paints toolbarBg + absorbs the top inset so the bar reaches the edge. */}
       <Box style={{
         flexDirection: 'row', alignItems: 'center', gap: 8,
-        paddingHorizontal: 12, paddingTop: 8, paddingBottom: 10,
+        paddingHorizontal: 12, paddingTop: 8 + insets.top, paddingBottom: 10,
         borderBottomWidth: 1, borderBottomColor: border,
+        backgroundColor: toolbarBg,
       }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={head} />

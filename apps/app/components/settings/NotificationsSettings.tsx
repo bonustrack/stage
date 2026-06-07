@@ -59,7 +59,7 @@ export function NotificationsSettings(): React.ReactElement {
       : 'System permission will be requested when you enable push.';
 
   return (
-    <Box style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
+    <Box style={{ flex: 1, backgroundColor: bg }}>
       <SystemHeader title="Notifications" dark={dark} fg={fg} head={head} border={border} />
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <Caption dark={dark} color={sub} style={{ paddingHorizontal: 16, paddingTop: 20 }}>

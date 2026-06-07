@@ -16,7 +16,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView } from 'react-native';
 import { Box } from '../../components/layout';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { SendHeader } from './send.fields';
 import { WalletFooter, useFooterReporter, useFormPal } from './wallet.form';
@@ -29,7 +28,6 @@ export default function WalletSend(): React.ReactElement {
   const params = useLocalSearchParams<{ to?: string; symbol?: string; chainId?: string; private?: string }>();
   const { text: fg, link: head, bg, border } = usePalette();
   const dark = useEffectiveColorScheme() === 'dark';
-  const insets = useSafeAreaInsets();
   const formPal = useFormPal();
 
   // A caller can pin a token via `?symbol=&chainId=&private=`; otherwise we
@@ -70,7 +68,7 @@ export default function WalletSend(): React.ReactElement {
   const { footer, report: reportFooter, onSubmit: footerSubmit } = useFooterReporter();
 
   return (
-    <Box style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
+    <Box style={{ flex: 1, backgroundColor: bg }}>
       <SendHeader fg={fg} head={head} border={border} onBack={() => router.back()} />
 
       <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled"

@@ -64,9 +64,13 @@ export function useFormPal(): FormPal {
 export function ActionHeader({ title, head, border, onBack }: {
   title: string; head: string; border: string; onBack: () => void;
 }): React.ReactElement {
+  const insets = useSafeAreaInsets();
+  const { toolbarBg } = usePalette();
   return (
-    <Row align="center" gap={8} px={12} py={8}
-      style={{ borderBottomWidth: 1, borderBottomColor: border }}>
+    <Row align="center" gap={8} px={12} style={{
+      borderBottomWidth: 1, borderBottomColor: border,
+      backgroundColor: toolbarBg, paddingTop: 8 + insets.top, paddingBottom: 8,
+    }}>
       <Pressable onPress={onBack} hitSlop={8} style={{ padding: 4 }}>
         <Icon name="arrowLeft" size={22} color={head} />
       </Pressable>
@@ -176,17 +180,15 @@ export function WalletFooter({
   );
 }
 
-/** Standard page shell: bg + safe-area + header + scroll body + optional pinned
- *  footer. When `footer` is given it renders below the scroll (not inside it) so
- *  it stays pinned to the bottom of the screen. */
+/** Standard page shell: bg + header + scroll body + optional pinned footer.
+ *  When `footer` is given it renders below the scroll so it stays pinned. */
 export function ActionPage({ title, head, bg, border, onBack, footer, children }: {
   title: string; head: string; bg: string; border: string; onBack: () => void;
   footer?: React.ReactNode;
   children: React.ReactNode;
 }): React.ReactElement {
-  const insets = useSafeAreaInsets();
   return (
-    <Box style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
+    <Box style={{ flex: 1, backgroundColor: bg }}>
       <ActionHeader title={title} head={head} border={border} onBack={onBack} />
       <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ padding: 16, gap: 16 }}>

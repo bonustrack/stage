@@ -22,7 +22,7 @@ export function KitPage(): React.ReactElement {
   const insets = useSafeAreaInsets();
 
   return (
-    <Box style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
+    <Box style={{ flex: 1, backgroundColor: bg }}>
       <SystemHeader
         title="Kit" dark={dark} fg={fg} head={head} border={border}
         right={

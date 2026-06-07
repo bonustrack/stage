@@ -45,13 +45,12 @@ export default function TokenDetail(): React.ReactElement {
   const params = useLocalSearchParams<{ id?: string; row?: string }>();
   const { link: head, text: sub, bg, border } = usePalette();
   const dark = useEffectiveColorScheme() === 'dark';
-  const insets = useSafeAreaInsets();
 
   const r = parseRow(params.row);
 
   if (!r) {
     return (
-      <Box style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
+      <Box style={{ flex: 1, backgroundColor: bg }}>
         <Header head={head} border={border} onBack={() => router.back()} title="Token" />
         <Col mx={16} py={40} align="center">
           <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>Token not found</Text>
@@ -69,7 +68,7 @@ export default function TokenDetail(): React.ReactElement {
   };
 
   return (
-    <Box style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
+    <Box style={{ flex: 1, backgroundColor: bg }}>
       <Header head={head} border={border} onBack={() => router.back()} title={r.name} />
 
       {/* Token identity card — large logo with network badge, name + symbol,
@@ -157,9 +156,14 @@ export default function TokenDetail(): React.ReactElement {
 function Header({ head, border, onBack, title }: {
   head: string; border: string; onBack: () => void; title: string;
 }): React.ReactElement {
+  const insets = useSafeAreaInsets();
+  const { toolbarBg } = usePalette();
   return (
-    <Row align="center" gap={8} px={12} py={8}
-      style={{ borderBottomWidth: 1, borderBottomColor: border }}>
+    <Row align="center" gap={8} px={12}
+      style={{
+        borderBottomWidth: 1, borderBottomColor: border,
+        backgroundColor: toolbarBg, paddingTop: 8 + insets.top, paddingBottom: 8,
+      }}>
       <Pressable onPress={onBack} hitSlop={8} style={{ padding: 4 }}>
         <Icon name="arrowLeft" size={22} color={head} />
       </Pressable>
