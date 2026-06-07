@@ -23,7 +23,7 @@ import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { usePeerProfiles } from '../lib/peerProfiles';
 import { switchToAccount } from '../lib/xmtp';
 import { loadAccounts, getActiveAccountId, type AccountRecord } from '../lib/accounts';
-import { DrawerAccounts, DrawerHeader, DrawerRow } from '../components/LeftDrawer.parts';
+import { drawerAccountRows, DrawerHeader, DrawerRow } from '../components/LeftDrawer.parts';
 import { useDrawerAccountActions } from '../components/LeftDrawer.accounts';
 
 export default function Menu(): React.ReactElement {
@@ -87,10 +87,10 @@ export default function Menu(): React.ReactElement {
       >
         <DrawerHeader rec={activeRec} c={{ head, sub, border }} />
         <ListView dark={dark}>
-          <DrawerAccounts accounts={accounts} activeId={activeId} onSwitch={onSwitch} c={{ head, sub, border }} dark={dark} />
+          {drawerAccountRows({ accounts, activeId, onSwitch, c: { head, sub, border }, dark })}
           {actions.rows}
-          <DrawerRow icon="user" label="Profile" head={head} sub={sub} border={border} dark={dark} onPress={() => go('/profile')} />
-          <DrawerRow icon="cog" label="Settings" head={head} sub={sub} border={border} dark={dark} onPress={() => go('/settings')} />
+          <DrawerRow rowKey="profile" icon="user" label="Profile" head={head} sub={sub} border={border} dark={dark} onPress={() => go('/profile')} />
+          <DrawerRow rowKey="settings" icon="cog" label="Settings" head={head} sub={sub} border={border} dark={dark} onPress={() => go('/settings')} />
         </ListView>
       </ScrollView>
       {actions.modal}

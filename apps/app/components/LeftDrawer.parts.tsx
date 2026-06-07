@@ -13,7 +13,7 @@ import { type AccountRecord } from '../lib/accounts';
 
 export interface DrawerColors { head: string; sub: string; border: string }
 
-/** Avatar header — active account's stamp avatar + name + short address. */
+/** Avatar header - active account's stamp avatar + name + short address. */
 export function DrawerHeader({ rec, c }: {
   rec: AccountRecord | null; c: DrawerColors;
 }): React.ReactElement {
@@ -34,43 +34,43 @@ export function DrawerHeader({ rec, c }: {
   );
 }
 
-/** Tap-to-switch accounts list — emits one ListViewItem per account so the
- *  caller can drop them straight into a shared Kit ListView. */
-export function DrawerAccounts({ accounts, activeId, onSwitch, c, dark }: {
+/** Tap-to-switch accounts list - returns a flat array of ListViewItems (one per
+ *  account) so the caller spreads them as DIRECT ListView children, letting the
+ *  Kit ListView draw its inset divider between every row. */
+export function drawerAccountRows({ accounts, activeId, onSwitch, c, dark }: {
   accounts: AccountRecord[]; activeId: string | null;
   onSwitch: (id: string) => void; c: DrawerColors; dark: boolean;
-}): React.ReactElement {
-  return (
-    <>
-      {accounts.map((a) => (
-        <ListViewItem key={a.id} dark={dark} onPress={() => onSwitch(a.id)}>
-          <Stamp address={a.address} size={30} style={{ backgroundColor: c.border }} />
-          <Box style={{ flex: 1, minWidth: 0 }}>
-            <Text numberOfLines={1} style={{ color: c.head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>
-              {getPeerName(a.address) ?? a.label ?? shortAddress(a.address)}
-            </Text>
-            <Text numberOfLines={1} style={{ color: c.sub, fontSize: 12, fontFamily: 'Calibre-Medium', marginTop: 1 }}>
-              {shortAddress(a.address)}
-            </Text>
-          </Box>
-          {a.id === activeId ? <Icon name="check" size={20} color={c.head} /> : null}
-        </ListViewItem>
-      ))}
-    </>
-  );
+}): React.ReactElement[] {
+  return accounts.map((a) => (
+    <ListViewItem key={a.id} dark={dark} onPress={() => onSwitch(a.id)}>
+      <Stamp address={a.address} size={30} style={{ backgroundColor: c.border }} />
+      <Box style={{ flex: 1, minWidth: 0 }}>
+        <Text numberOfLines={1} style={{ color: c.head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>
+          {getPeerName(a.address) ?? a.label ?? shortAddress(a.address)}
+        </Text>
+        <Text numberOfLines={1} style={{ color: c.sub, fontSize: 12, fontFamily: 'Calibre-Medium', marginTop: 1 }}>
+          {shortAddress(a.address)}
+        </Text>
+      </Box>
+      {a.id === activeId ? <Icon name="check" size={20} color={c.head} /> : null}
+    </ListViewItem>
+  ));
 }
 
-/** A single Kit ListView row for the Menu page (account actions + nav). */
-export function DrawerRow({ icon, label, onPress, head, sub, dark }: {
-  icon: HeroIconName; label: string; onPress: () => void;
+/** A single Kit ListView row for the Menu page (account actions + nav), styled
+ *  to match the canonical Settings list: head-colored leading icon, Calibre-
+ *  Medium 18px label, trailing chevron. */
+export function DrawerRow({ rowKey, icon, label, onPress, head, sub, dark }: {
+  rowKey?: string; icon: HeroIconName; label: string; onPress: () => void;
   head: string; sub: string; border: string; dark: boolean;
 }): React.ReactElement {
   return (
-    <ListViewItem dark={dark} onPress={onPress}>
-      <Icon name={icon} size={22} color={sub} />
+    <ListViewItem key={rowKey} dark={dark} onPress={onPress}>
+      <Icon name={icon} size={22} color={head} />
       <Box style={{ flex: 1 }}>
-        <Text style={{ color: head, fontSize: 17, fontFamily: 'Calibre-Semibold' }}>{label}</Text>
+        <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Medium' }}>{label}</Text>
       </Box>
+      <Icon name="chevronRight" size={18} color={sub} />
     </ListViewItem>
   );
 }
