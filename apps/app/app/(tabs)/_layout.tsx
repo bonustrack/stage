@@ -9,9 +9,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { usePalette } from '../../lib/theme';
 import { TabsPager } from '../../components/SwipeTabs';
+import { useTotalUnread } from '../../lib/useTotalUnread';
 
 export default function TabsLayout(): React.ReactElement {
   const pathname = usePathname();
+  /** Total unread across all non-archived convs - drives the badge on the
+   *  Messenger (index) tab. Live: updates as messages arrive / are read. */
+  const unread = useTotalUnread();
+  const unreadBadge = unread > 0 ? (unread > 99 ? '99+' : String(unread)) : undefined;
   /** The pager only mounts the four tab bodies (Home/Wallet/Notifications/Profile).
    *  Settings is a non-pager route now → hide the pager overlay there so the real
    *  SettingsScreen rendered by the route shows through. */
@@ -72,6 +77,21 @@ export default function TabsLayout(): React.ReactElement {
               tabBarIcon: ({ color, focused }) => (
                 <Icon name={icon} size={26} color={color} focused={focused} />
               ),
+              // Messenger tab (index) shows the total unread-count badge.
+              ...(name === 'index'
+                ? {
+                    tabBarBadge: unreadBadge,
+                    tabBarBadgeStyle: {
+                      backgroundColor: pal.link,
+                      color: pal.bg,
+                      fontSize: 11,
+                      fontFamily: 'Calibre-Semibold',
+                      minWidth: 18,
+                      height: 18,
+                      lineHeight: 18,
+                    },
+                  }
+                : {}),
             }}
           />
         ))}
