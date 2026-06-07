@@ -7,10 +7,11 @@ import { Pressable } from 'react-native';
 import { FlatList } from 'react-native-gesture-handler';
 import { Icon } from '@metro-labs/kit/icon';
 import { TopnavIdentity } from '../TopnavIdentity';
-import { Box, Row } from '../layout';
+import { ComposerGradient } from '../ComposerGradient';
+import { Box, Col, Row } from '../layout';
 import { Text } from '@metro-labs/kit/text';
 import { CHANNELS_SCROLL_KEY, saveScrollOffset } from '../../lib/scrollPos';
-import { useEffectiveColorScheme } from '../../lib/theme';
+import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { CHANNEL_ROW_HEIGHT } from './HomeScreen.helpers';
 import type { Row as RowT } from './HomeScreen.helpers';
 import { HomeEmpty } from './HomeScreen.parts';
@@ -57,6 +58,7 @@ export function ChannelsList({
   // white badge would vanish on the light topnav, so flip to a dark bg + white
   // text there to stay legible.
   const dark = useEffectiveColorScheme() === 'dark';
+  const { bg } = usePalette();
   const badgeBg = dark ? '#ffffff' : '#000000';
   const badgeFg = dark ? '#000000' : '#ffffff';
   return (
@@ -114,6 +116,11 @@ export function ChannelsList({
       {/* Horizontal label-filter bar under the search bar: one toggle chip per
        *  unique label across non-archived channels. Hidden when no labels. */}
       <LabelFilterBar labels={barLabels} enabled={enabledLabels} onToggle={onToggleLabel} />
+      {/* Wrap the scrolling list so an absolute top-fade gradient can sit at the
+       *  boundary between the fixed header (topnav + search + label bar) and the
+       *  list: rows fade out as they scroll up under the header (solid bg at top
+       *  → transparent below), matching the channel-page topnav feel. */}
+      <Col flex={1} style={{ position: 'relative' }}>
       <FlatList
         ref={listRef}
         simultaneousHandlers={panRef}
@@ -152,6 +159,8 @@ export function ChannelsList({
         }
         renderItem={renderRow}
       />
+      <ComposerGradient bg={bg} direction="up" top={0} height={24} />
+      </Col>
     </>
   );
 }
