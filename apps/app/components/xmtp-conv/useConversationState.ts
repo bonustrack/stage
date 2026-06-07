@@ -20,7 +20,7 @@ import { convScrollKey, getScrollOffset, flushScrollOffset, markConvAtBottom } f
 import type { HistoryEntry } from '../../lib/types';
 import {
   reactionsByMessage, ownReactionsByMessage,
-  pollOptionCountsInFeed, votesByMessage, ownVotesByMessage,
+  pollOptionCountsInFeed, votesByMessage, ownVotesByMessage, openAnswersByMessage,
 } from './feed-helpers';
 import { useReactionsLayer } from './useReactionsLayer';
 import { useVotesLayer } from './useVotesLayer';
@@ -151,9 +151,11 @@ export function useConversationState(convId: string | undefined, focus: string |
   const ownReactions = useMemo(() => ownReactionsByMessage(events, myUri, pollOptionCounts), [events, myUri, pollOptionCounts]);
   const votes = useMemo(() => votesByMessage(events), [events]);
   const ownVotes = useMemo(() => ownVotesByMessage(events, myUri), [events, myUri]);
+  const openAnswers = useMemo(() => openAnswersByMessage(events), [events]);
 
   const { optimisticReactions, optimisticRemovals, onReact } = useReactionsLayer(activeLine, reactions, ownReactions);
-  const { displayVotes, displayOwnVotes, onVote } = useVotesLayer(activeLine, events, votes, ownVotes, myUri);
+  const { displayVotes, displayOwnVotes, onVote, displayOpenAnswers, onOpenAnswer } =
+    useVotesLayer(activeLine, events, votes, ownVotes, openAnswers, myUri);
   const { signingIds, onSign, payingIds, onPay } = useTxSignLayer(activeLine);
 
   /** Optimistic outbound + inverted-list scroll/jump layer. */
@@ -184,9 +186,9 @@ export function useConversationState(convId: string | undefined, focus: string |
     peerAddr, groupName, groupImage, groupDescription, groupLabels, isGroup, github, preview, senderEthOf,
     profilesVersion, mentionCandidates, listRef,
     savedScrollRef, savedScrollLoaded, didRestoreScroll, pinBottomUntil, isAtBottomRef,
-    reactions, ownReactions, displayVotes, displayOwnVotes,
+    reactions, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers,
     allBubbles, jumpToMessage,
-    onReact, onSign, signingIds, onVote, onPay, payingIds, onAnswer,
+    onReact, onSign, signingIds, onVote, onOpenAnswer, onPay, payingIds, onAnswer,
     onOptimistic, onSent, markAtBottom,
   };
 }

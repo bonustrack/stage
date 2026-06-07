@@ -50,6 +50,12 @@ export interface MessengerBubbleProps {
   ownVotes?: Map<number, Set<number>>;
   /** Cast/retract a vote on a given question's option. */
   onVote?: (questionIndex: number, optionIndex: number, action: 'added' | 'removed') => void;
+  /** Free-text answers for OPEN questions, per question: questionIndex ->
+   *  (voterUri -> {text, ts}). Drives the submitted-answers list. */
+  openAnswers?: Map<number, Map<string, { text: string; ts: string }>>;
+  /** Submit (or, with empty text, retract) the local user's free-text answer to
+   *  an open question. */
+  onOpenAnswer?: (questionIndex: number, text: string) => void;
   /** Pay an in-chat payment request (WalletSendCalls). The parent broadcasts the
    *  call via the phase-3 sendTx helper and posts a TransactionReference back.
    *  Undefined => the Pay button is hidden (e.g. it's the user's own request). */

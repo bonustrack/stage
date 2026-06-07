@@ -17,9 +17,15 @@ const optionSchema = z.object({
 const questionSchema = z.object({
   question: z.string().min(1),
   header: z.string().optional(),
-  options: z.array(optionSchema).min(2),
+  // A CHOICE question needs >=2 options; an OPEN (free-text) question may carry
+  // 0 options (pure free-text) or any number alongside the text input.
+  options: z.array(optionSchema).optional(),
   multiSelect: z.boolean().optional(),
-});
+  open: z.boolean().optional(),
+}).refine(
+  q => q.open === true || (q.options?.length ?? 0) >= 2,
+  { message: 'a choice question needs >=2 options (or set open:true for free-text)' },
+);
 
 /** Validates the on-wire poll shape. Accepts BOTH forms: the multi-question
  *  `questions[]` array (AskUserQuestion shape) and the legacy single-question

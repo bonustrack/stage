@@ -27,7 +27,8 @@ async function send(id: string, args: Args): Promise<void> {
 }
 
 /** Ask (poll, mirrors Claude AskUserQuestion). Single { question, options[], header?,
- *  multiSelect? } OR multi { questions: [...] }. See buildPollContent. Alias: sendPoll. */
+ *  multiSelect? } OR multi { questions: [...] }; a question may set `open:true` for a
+ *  FREE-TEXT answer (options then optional). See buildPollContent. Alias: sendPoll. */
 async function ask(id: string, args: Args): Promise<void> {
   const { line, pollId } = args as { line: string; pollId?: string };
   const { acct, conv } = await convOf(line);

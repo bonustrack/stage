@@ -5,7 +5,10 @@
 import { describe, expect, test } from 'bun:test';
 import { encodeJsonContent, decodeJsonContent, POLL_CONTENT_TYPE } from '../src/xmtp/codecs';
 import { pollContentSchema } from '../src/xmtp/poll.schema';
-import type { PollContent } from '../src/xmtp/poll';
+import {
+  normalizeQuestions, openVoteKey, parseOpenVote, openAnswersByPoll,
+  parseVoteKey, type PollContent, type VoteEvent,
+} from '../src/xmtp/poll';
 
 const poll: PollContent = {
   pollId: 'poll_abc',
@@ -43,5 +46,51 @@ describe('decode with zod schema boundary', () => {
   test('only-one-option poll is rejected (>= 2 required)', () => {
     const bad = encodeJsonContent(POLL_CONTENT_TYPE, { pollId: 'x', question: 'q', options: [{ label: 'a' }] });
     expect(() => decodeJsonContent(bad.content, pollContentSchema)).toThrow();
+  });
+});
+
+describe('open (free-text) question type', () => {
+  test('schema accepts a pure free-text question (no options)', () => {
+    const open: PollContent = { pollId: 'p', questions: [{ question: 'Why?', open: true, options: [] }] };
+    const enc = encodeJsonContent(POLL_CONTENT_TYPE, open);
+    expect(decodeJsonContent(enc.content, pollContentSchema)).toEqual(open);
+  });
+
+  test('schema accepts options + open together (pick or type your own)', () => {
+    const mixed: PollContent = { pollId: 'p', questions: [{ question: 'Pick', open: true, options: [{ label: 'a' }, { label: 'b' }] }] };
+    const enc = encodeJsonContent(POLL_CONTENT_TYPE, mixed);
+    expect(decodeJsonContent(enc.content, pollContentSchema)).toEqual(mixed);
+  });
+
+  test('a non-open question with <2 options still throws', () => {
+    const bad = encodeJsonContent(POLL_CONTENT_TYPE, { pollId: 'p', questions: [{ question: 'q', options: [{ label: 'a' }] }] });
+    expect(() => decodeJsonContent(bad.content, pollContentSchema)).toThrow();
+  });
+
+  test('normalizeQuestions keeps an open question with no options + carries the flag', () => {
+    const qs = normalizeQuestions({ pollId: 'p', questions: [{ question: 'Why?', open: true, options: [] }] });
+    expect(qs).toHaveLength(1);
+    expect(qs[0].open).toBe(true);
+    expect(qs[0].options).toEqual([]);
+  });
+
+  test('open vote key round-trips text containing colons + unicode', () => {
+    const text = 'edge: 1:2:3 café 🚀';
+    const key = openVoteKey(2, text);
+    expect(parseOpenVote(key)).toEqual({ q: 2, text });
+    // An open key must NOT decode as a choice vote (distinct namespaces).
+    expect(parseVoteKey(key)).toBeNull();
+  });
+
+  test('openAnswersByPoll: latest per voter wins; removal clears', () => {
+    const evs: VoteEvent[] = [
+      { reference: 'm', schema: 'custom', voter: 'a', ts: '1', content: openVoteKey(0, 'first') },
+      { reference: 'm', schema: 'custom', voter: 'a', ts: '2', content: openVoteKey(0, 'second') },
+      { reference: 'm', schema: 'custom', voter: 'b', ts: '1', content: openVoteKey(0, 'keep') },
+      { reference: 'm', schema: 'custom', voter: 'b', ts: '2', removed: true, content: openVoteKey(0, '') },
+    ];
+    const out = openAnswersByPoll(evs, 'm', 0);
+    expect(out.get('a')?.text).toBe('second');
+    expect(out.has('b')).toBe(false);
   });
 });

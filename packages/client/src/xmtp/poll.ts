@@ -27,10 +27,17 @@ export interface PollQuestion {
   question: string;
   /** Optional short ALL-CAPS eyebrow (AskUserQuestion `header`), <= ~12 chars. */
   header?: string;
-  /** 2..n choices. The option INDEX is the canonical vote key. */
+  /** 2..n choices. The option INDEX is the canonical vote key. May be EMPTY for
+   *  a pure free-text (`open`) question. */
   options: PollOption[];
   /** Default false. true => multi-select for THIS question. */
   multiSelect?: boolean;
+  /** Default false. true => this question accepts a FREE-TEXT answer (mirrors
+   *  AskUserQuestion's always-available "Other"). May stand alone (no options =
+   *  pure free-text) or accompany options (pick one, or type your own). Open
+   *  answers are NOT option-index votes; they are carried as custom-schema vote
+   *  events whose content is `open:<q>:<text>` (see poll-tally). */
+  open?: boolean;
 }
 
 export interface PollContent {
@@ -65,6 +72,7 @@ export function normalizeQuestions(poll: PollContent | undefined): PollQuestion[
     return qs.map(q => ({
       question: q.question, ...(q.header ? { header: q.header } : {}),
       multiSelect: q.multiSelect === true,
+      ...(q.open === true ? { open: true } : {}),
       options: coerce(q.options as (PollOption | string)[] | undefined),
     }));
   }
@@ -99,10 +107,12 @@ export function pollFallbackText(poll: PollContent): string {
   const lines = [`📊 Poll: ${title}`];
   if (qs.length <= 1) {
     (qs[0]?.options ?? []).forEach((o, i) => lines.push(`${i + 1}. ${o.label}`));
+    if (qs[0]?.open) lines.push('(or type your own answer)');
   } else {
     qs.forEach((q, qi) => {
       lines.push(`Q${qi + 1}. ${q.question}`);
-      q.options.forEach((o, i) => lines.push(`  ${i + 1}. ${o.label}`));
+      (q.options ?? []).forEach((o, i) => lines.push(`  ${i + 1}. ${o.label}`));
+      if (q.open) lines.push('  (or type your own answer)');
     });
   }
   lines.push('Reply with a number to vote.');
@@ -116,4 +126,8 @@ export function pollPreviewText(poll: PollContent): string {
   return qs.length > 1 ? `Poll: ${title} (+${qs.length - 1} more)` : `Poll: ${title}`;
 }
 
-export { parseVoteKey, voteKey, votesByPoll, ownVotes, type VoteEvent } from './poll-tally';
+export {
+  parseVoteKey, voteKey, votesByPoll, ownVotes,
+  openVoteKey, parseOpenVote, openAnswersByPoll,
+  type VoteEvent,
+} from './poll-tally';

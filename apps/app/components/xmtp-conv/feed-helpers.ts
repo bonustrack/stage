@@ -3,6 +3,7 @@
 
 import {
   votesByPoll as tallyVotes, ownVotes as tallyOwnVotes,
+  openAnswersByPoll as tallyOpenAnswers,
   normalizeQuestions, type VoteEvent, type PollContent, type PollQuestion,
 } from '@stage-labs/client/xmtp/poll';
 import { stripMentionMarkup, attachmentEmojiPreview } from '@stage-labs/client/xmtp/humanize';
@@ -156,6 +157,24 @@ export function ownVotesByMessage(events: HistoryEntry[], myUri: string): Map<st
     const byQ = new Map<number, Set<number>>();
     qs.forEach((q, qi) => byQ.set(qi, tallyOwnVotes(voteEvents, myUri, pollId, q.multiSelect === true, qi)));
     out.set(pollId, byQ);
+  }
+  return out;
+}
+
+/** Free-text (open) answers per poll then per question: pollId -> (questionIndex
+ *  -> (voterUri -> {text, ts})). Mirrors votesByMessage for the open-question
+ *  path. Only questions flagged `open` are tallied. */
+export function openAnswersByMessage(
+  events: HistoryEntry[],
+): Map<string, Map<number, Map<string, { text: string; ts: string }>>> {
+  const polls = pollQuestionsInFeed(events);
+  if (polls.size === 0) return new Map();
+  const voteEvents = voteEventsOf(events);
+  const out = new Map<string, Map<number, Map<string, { text: string; ts: string }>>>();
+  for (const [pollId, qs] of polls) {
+    const byQ = new Map<number, Map<string, { text: string; ts: string }>>();
+    qs.forEach((q, qi) => { if (q.open) byQ.set(qi, tallyOpenAnswers(voteEvents, pollId, qi)); });
+    if (byQ.size > 0) out.set(pollId, byQ);
   }
   return out;
 }

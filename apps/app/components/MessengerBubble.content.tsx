@@ -24,13 +24,17 @@ import { SigRequestCard, SigReferenceCard, TxRequestCard, TxReceiptCard } from '
 
 export function BubbleContent({
   entry, dark, pending, fg, sub, replyPreview, onReplyPreviewPress, transcript,
-  onAnswer, votes, ownVotes, onVote, onPay, paying, onSign, signing, selectable,
+  onAnswer, votes, ownVotes, onVote, openAnswers, onOpenAnswer, myUri,
+  onPay, paying, onSign, signing, selectable,
 }: {
   entry: HistoryEntry; dark: boolean; pending?: boolean; fg: string; sub: string;
   replyPreview?: string; onReplyPreviewPress?: () => void; transcript?: string;
   onAnswer?: (label: string) => void;
   votes?: Map<number, Map<number, Set<string>>>; ownVotes?: Map<number, Set<number>>;
   onVote?: (questionIndex: number, optionIndex: number, action: 'added' | 'removed') => void;
+  openAnswers?: Map<number, Map<string, { text: string; ts: string }>>;
+  onOpenAnswer?: (questionIndex: number, text: string) => void;
+  myUri?: string;
   onPay?: () => void; paying?: boolean; onSign?: () => void; signing?: boolean;
   /** When true, render the body in a plain selectable <Text> so OS text-selection
    *  handles appear for partial copy (Markdown's nested Texts don't select cleanly). */
@@ -135,7 +139,10 @@ export function BubbleContent({
         <QuestionView question={question} dark={dark} sub={sub} onAnswer={onAnswer} />
       ) : null}
       {poll && onVote ? (
-        <PollView poll={poll} dark={dark} sub={sub} votes={votes} ownVotes={ownVotes} onVote={onVote} />
+        <PollView
+          poll={poll} dark={dark} sub={sub} votes={votes} ownVotes={ownVotes} onVote={onVote}
+          openAnswers={openAnswers} onOpenAnswer={onOpenAnswer} myUri={myUri}
+        />
       ) : null}
       {sigReq ? (
         <SigRequestCard req={sigReq} dark={dark} sub={sub} signing={signing} onSign={onSign} />
