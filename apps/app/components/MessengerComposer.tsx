@@ -102,7 +102,7 @@ export function MessengerComposer({
   useComposerDrafts(convId, text, setText);
   useComposerFocus(inputRef, replyingTo?.id, replyingTo?.nonce, autoFocusNonce);
 
-  const canSend = !sending && (text.trim().length > 0 || pending.length > 0);
+  const hasContent = text.trim().length > 0 || pending.length > 0; // text or any pending attachment
 
   const { matches: mentionMatches, range: mentionRange } = computeMentions(text, selection.start, mentionCandidates);
   const pickMention = (c: { address: string; name: string }): void => {
@@ -159,7 +159,7 @@ export function MessengerComposer({
         attachMenuOpen={attachMenuOpen} setAttachMenuOpen={setAttachMenuOpen}
         quickIcon={quick?.[0]}
         onQuick={quick ? () => void quick[2]() : undefined}
-        canSend={canSend}
+        hasContent={hasContent} sending={sending}
         onCancelRec={() => void actions.cancelRec()}
         onStopRec={() => void actions.stopRec()}
         onSend={() => void actions.send()}
