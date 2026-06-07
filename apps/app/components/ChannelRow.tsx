@@ -128,19 +128,19 @@ function ChannelRowBase({
         paddingHorizontal: 14,
       }))}
     >
-      {/* No divider. Top-aligned (align="start"): avatar + text column pin to
-          the top of a CONSTANT-height row (reserved 2-line preview block keeps
-          every row the same height for 1 vs 2 lines; slack sits at bottom). */}
-      <Row align="start" gap={12} py={9}>
+      {/* No divider. Center-aligned (align="center"): avatar + text column
+          center vertically within a CONSTANT-height row (reserved 2-line
+          preview block keeps every row the same height for 1 vs 2 lines). */}
+      <Row align="center" gap={12} py={9}>
         <Avatar
           imageUri={avatarUri}
           address={!avatarUri && avatarAddress ? avatarAddress : null}
           size={avatarSize}
           square={square}
           cacheBuster={cacheBuster}
-          style={{ backgroundColor: border, alignSelf: 'center' }}
+          style={{ backgroundColor: border }}
         />
-        <Col flex={1} style={{ minWidth: 0, marginTop: -4 }}>
+        <Col flex={1} style={{ minWidth: 0 }}>
           <Row align="center" gap={6}>
             {pinned ? <Icon name="mapPin" size={13} color={sub} /> : null}
             {hasDraft ? <Icon name="pencil" size={14} color={sub} /> : null}
