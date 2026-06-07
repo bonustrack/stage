@@ -230,6 +230,10 @@ const config = {
       },
     ],
     './plugins/withMetroPill',
+    // withGradleMemory / withNodejsMobile stay as thin app-local wrappers (they
+    // need expo/config-plugins, which only resolves from the app's node_modules
+    // under the non-hoisted bun workspace). The substantive, testable transforms
+    // they call live in @metro-labs/railgun-mobile/plugin/nodejsMobileConfig.
     './plugins/withGradleMemory',
     './plugins/withBouncyCastleDedup',
     // Embedded Node runtime (nodejs-mobile-react-native) that hosts the RAILGUN

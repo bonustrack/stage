@@ -14,7 +14,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { getActiveAccount } from '../../lib/accounts';
 import { unshieldToPublic } from '../../lib/railgun/unshield';
-import { isBridgeAvailable } from '../../lib/railgun/bridge';
+import { isBridgeAvailable } from '@metro-labs/railgun-mobile';
 import { UnshieldRecipient, UnshieldPhaseLine } from './unshield.parts';
 import { ActionPage, AmountBox, WalletFooter, useFormPal } from './wallet.form';
 import { TokenSelector, useSelectedBalance } from './TokenSelector';

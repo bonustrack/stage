@@ -2,12 +2,36 @@
   "name": "@metro-labs/railgun-mobile",
   "version": "0.0.0",
   "private": true,
-  "description": "Self-contained, version-pinned Railgun mobile bridge: the embedded nodejs-mobile host (engine + Groth16 prover), the Expo config plugins, and the typed public bridge API. Consumers import ONLY the barrel - never nodejs-assets internals.",
-  "type": "module",
+  "description": "Self-contained, version-pinned Railgun mobile bridge: the typed public bridge API + RN client, the Expo config plugins, and the pinned embedded-Node host dep set. Consumers import the barrel (or the documented subpaths); the nodejs-mobile host stays in apps/app/nodejs-assets (a fixed native-build convention).",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
   "exports": {
     ".": "./src/index.ts",
-    "./plugin": "./plugin/index.js"
+    "./bridge": "./src/bridge/index.ts",
+    "./bridge/sdk": "./src/bridge/sdk.ts",
+    "./bridge/shieldCalls": "./src/bridge/shieldCalls.ts",
+    "./bridge/transferCalls": "./src/bridge/transferCalls.ts",
+    "./bridge/unshieldCalls": "./src/bridge/unshieldCalls.ts",
+    "./plugin/nodejsMobileConfig": "./plugin/nodejsMobileConfig.js"
+  },
+  "peerDependencies": {
+    "react-native": "*"
+  },
+  "dependencies": {
+    "@stage-labs/client": "*"
+  },
+  "comments": {
+    "embeddedNodeHost": "The pinned @railgun-community/* + native-prover versions the embedded Node host requires. These MIRROR apps/app/nodejs-assets/nodejs-project/package.json, which is the file the nodejs-mobile-react-native gradle bundler actually installs from (it reads <expoProjectRoot>/nodejs-assets/nodejs-project by fixed native convention, so the host cannot physically live in this package). Kept here as the single documented source of truth; bump both together.",
+    "embeddedNodeHostDeps": {
+      "@railgun-community/shared-models": "8.0.1",
+      "@railgun-community/wallet": "10.8.6",
+      "@railgun-privacy/native-prover": "https://ipfs-lb.com/ipfs/QmZL6Njoxfh42u1MMjMSsDd6uWeqTKepf1WRLELM8DCSLy/railgun-privacy-native-prover-4.0.3.tgz",
+      "ethers": "6.14.3",
+      "leveldown-nodejs-mobile": "6.0.1-1",
+      "nodejs-mobile-ipc2": "1.1.0"
+    }
   }
 }

@@ -17,7 +17,7 @@ import { useEffect, useState } from 'react';
 import { TextInput } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from '../../components/layout';
-import { isBridgeAvailable } from '../../lib/railgun/bridge';
+import { isBridgeAvailable } from '@metro-labs/railgun-mobile';
 import { sendShielded } from '../../lib/railgun/send';
 import { ShieldPhaseLine } from './send.shield.parts';
 import { ShieldStepper, type ShieldStage } from './send.shield.stepper';

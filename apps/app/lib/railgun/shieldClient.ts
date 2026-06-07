@@ -14,7 +14,7 @@ import { mainnet, sepolia } from 'viem/chains';
 import { getActiveAccountId } from '../accounts';
 import { getViemAccount } from '../accounts.keys';
 import { RAILGUN_NETWORKS, type RailgunNetworkConfig } from './networks';
-import { shieldPrivateKeyMessage } from './bridge/shieldCalls';
+import { shieldPrivateKeyMessage } from '@metro-labs/railgun-mobile/bridge/shieldCalls';
 
 const VIEM_CHAIN: Record<number, Chain> = { 1: mainnet, 11155111: sepolia };
 

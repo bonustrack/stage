@@ -15,7 +15,7 @@
 import { useEffect, useState } from 'react';
 import { Box } from '../../components/layout';
 import { shieldToPrivate } from '../../lib/railgun/shield';
-import { isBridgeAvailable } from '../../lib/railgun/bridge';
+import { isBridgeAvailable } from '@metro-labs/railgun-mobile';
 import { getActiveAccountId } from '../../lib/accounts';
 import { pendingStore } from '../../lib/railgun/cache';
 import type { PendingAction } from '../../lib/railgun/types';

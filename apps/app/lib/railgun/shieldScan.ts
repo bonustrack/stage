@@ -11,7 +11,7 @@
  *  NOTE: there is no real scan-PROGRESS % across the bridge today (it would need
  *  setOnUTXOMerkletreeScanCallback wired in engine.js + a new APK). So the
  *  'Scanning' stage is an indeterminate state that resolves on balance-landed. */
-import { bridgeListen } from './bridge';
+import { bridgeListen } from '@metro-labs/railgun-mobile/bridge';
 import { updatePending, removePending } from './cache';
 import { refreshSnapshot } from './wallet';
 

@@ -17,7 +17,7 @@ import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';
 import { Col } from '../layout';
 import { DANGER, useEffectiveColorScheme } from '../../lib/theme';
-import { bridgeListen, isBridgeAvailable, setBridgeStatusListener } from '../../lib/railgun/bridge';
+import { bridgeListen, isBridgeAvailable, setBridgeStatusListener } from '@metro-labs/railgun-mobile';
 import { PingLog, type LogLine } from './WalletScreen.private.ping.log';
 import { useProbeActions, type ProbeState } from './WalletScreen.private.ping.actions';
 import { useBatchedLog } from './WalletScreen.private.ping.log.buffer';

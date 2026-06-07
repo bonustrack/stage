@@ -24,7 +24,7 @@ import { privateBalancesToRows, symbolPricesFromPublic } from './WalletScreen.pr
 import { usePrivateWallet } from '../../lib/railgun/usePrivateWallet';
 import { prewarmRailgun } from '../../lib/railgun/engine';
 import { startEoaShieldWatch } from '../../lib/railgun/eoaShieldWatch';
-import { isBridgeAvailable } from '../../lib/railgun/bridge';
+import { isBridgeAvailable } from '@metro-labs/railgun-mobile';
 import { TokensList } from './WalletScreen.tokens';
 import { ActivityView } from './WalletScreen.activity';
 import { useWalletBalances } from './WalletScreen.balances';

@@ -15,11 +15,11 @@
 import { parseUnits, erc20Abi, type Hex } from 'viem';
 import { NETWORK_CONFIG } from '@railgun-community/shared-models';
 import { getActiveAccountId } from '../accounts';
-import { engineInit, walletInfo } from './bridge';
+import { engineInit, walletInfo } from '@metro-labs/railgun-mobile/bridge';
 import { deriveRailgunKeyMaterial } from './deriveKeys';
 import { addPending, updatePending } from './cache';
 import { watchShieldLanding } from './shieldScan';
-import { populateShieldBaseToken, populateShieldErc20, ensureProviderLoaded } from './bridge/shieldCalls';
+import { populateShieldBaseToken, populateShieldErc20, ensureProviderLoaded } from '@metro-labs/railgun-mobile/bridge/shieldCalls';
 import { getShieldSigner, deriveShieldPrivateKey, shieldNetForChainId } from './shieldClient';
 import { RAILGUN_TOKENS } from './tokens';
 import type { TokenMeta } from './tokens';

@@ -5,7 +5,7 @@
 const { withGradleProperties } = require('expo/config-plugins');
 // Pure transform (testable without the expo runtime) — see nodejsMobileConfig.js
 // + test/railgunPluginConfig.test.ts.
-const { setGradleMemory } = require('./nodejsMobileConfig');
+const { setGradleMemory } = require('@metro-labs/railgun-mobile/plugin/nodejsMobileConfig');
 
 module.exports = function withGradleMemory(config) {
   return withGradleProperties(config, (cfg) => {

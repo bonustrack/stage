@@ -19,7 +19,7 @@
 
 import { describe, expect, test } from 'bun:test';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const cfg = require('../plugins/nodejsMobileConfig.js') as {
+const cfg = require('@metro-labs/railgun-mobile/plugin/nodejsMobileConfig') as {
   transformAppBuildGradle(src: string): string;
   setExtractNativeLibs(m: { application?: { $?: Record<string, string> }[] }): unknown;
   setGradleMemory(p: { type: string; key: string; value: string }[]): unknown;

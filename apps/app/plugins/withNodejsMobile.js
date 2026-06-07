@@ -66,7 +66,7 @@ const path = require('path');
 const {
   transformAppBuildGradle,
   setExtractNativeLibs,
-} = require('./nodejsMobileConfig');
+} = require('@metro-labs/railgun-mobile/plugin/nodejsMobileConfig');
 
 /** Insert the libnode.so pickFirst block AND make aapt package every asset
  *  nodejs-mobile lists, by editing the Groovy build.gradle Expo prebuild emits.

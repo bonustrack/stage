@@ -14,7 +14,7 @@ import { Text } from '@metro-labs/kit/text';
 import { Col, Row } from '../layout';
 import { flash } from '../../lib/toast';
 import { isRailgunAvailable } from '../../lib/railgun/native';
-import { isBridgeAvailable } from '../../lib/railgun/bridge';
+import { isBridgeAvailable } from '@metro-labs/railgun-mobile';
 import { usePrivateWallet } from '../../lib/railgun/usePrivateWallet';
 import { useDebugConsole } from '../../lib/railgun/debugConsole';
 import { BridgePingProbe } from './WalletScreen.private.ping';

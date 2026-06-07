@@ -12,7 +12,7 @@ import {
   pingBridge,
   sdkListMethods,
   walletInfo,
-} from '../../lib/railgun/bridge';
+} from '@metro-labs/railgun-mobile';
 import { deriveRailgunKeyMaterial } from '../../lib/railgun/deriveKeys';
 import type { LogLine } from './WalletScreen.private.ping.log';
 

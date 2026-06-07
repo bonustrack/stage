@@ -13,11 +13,11 @@
  *  fold each payload's rows straight into the snapshot store, so a balance that
  *  lands after the initial scan repaints the tab without any user action. Also
  *  mirrors every event into balanceDebug for the on-screen diagnostics. */
-import { bridgeListen } from './bridge';
+import { bridgeListen } from '@metro-labs/railgun-mobile/bridge';
 import { snapshotStore } from './cache';
 import { mapEventRows } from './bridgeWallet';
 import { recordBalanceEvent } from './balanceDebug';
-import type { BridgeBalanceRow } from './bridge';
+import type { BridgeBalanceRow } from '@metro-labs/railgun-mobile/bridge';
 
 interface BalanceUpdatePayload {
   chainId?: number;

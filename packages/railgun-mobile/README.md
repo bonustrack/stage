@@ -1,24 +1,48 @@
 # @metro-labs/railgun-mobile
 
-Self-contained, version-pinned Railgun mobile bridge. Phase 2 (this PR) lands the
-**typed contract seam**; the physical code move is a follow-up that needs an APK
-to validate (native build graph), so it is intentionally deferred.
+Self-contained, version-pinned Railgun mobile bridge. Phase 2 landed the **typed
+contract seam**; phase 3 (this package) executed the **physical move** of the RN
+bridge client and the Expo native-build plugins into the package. The one piece
+that stays in `apps/app` is the embedded-Node host - a fixed native-build
+convention, see "What stays in apps/app" below.
 
-## What this package exposes today (phase 2)
+## What this package exposes
 
-The public typed barrel (`src/index.ts`) re-exports the single bridge contract
-and the shared method registry:
+The public typed barrel (`src/index.ts`):
 
-- `RailgunBridgeAPI` - the one interface enumerating the whole bridge surface
-  (engine lifecycle, wallet, balances, shield / transfer / unshield flows).
-- `SDK_METHODS` / `SDK_METHOD()` - the single source of truth for the dispatch
-  method names. The RN frame builders reference these as typed literals (a typo
-  is a compile error); the Node host validates its whitelist against the
-  generated manifest, so the contract and the host **cannot desync**.
+- `RailgunBridgeAPI` + `SDK_METHODS` / `SDK_METHOD()` - the single source of
+  truth for the dispatch method names (re-exported from the pure
+  `@stage-labs/client/railgun`). RN frame builders reference these as typed
+  literals (a typo is a compile error); the Node host validates its whitelist
+  against the generated manifest, so the contract and the host **cannot desync**.
+- the RN bridge client runtime (`./bridge`): `isBridgeAvailable`, `startBridge`,
+  `bridgeCall` / `rawCall`, `pingBridge`, `engineStatus`, `engineInit`,
+  `bridgeListen`, `walletInfo`, `getBalances`, `sdk`, the shield / transfer /
+  unshield call builders, and `DEFAULT_SCAN_CONFIG`. App UI imports the barrel;
+  the `apps/app/lib/railgun/*` orchestration layer imports the documented
+  subpaths (`@metro-labs/railgun-mobile/bridge`, `.../bridge/shieldCalls`, etc.).
 
-The contract + registry physically live in `@stage-labs/client/railgun` (the
-pure, framework-agnostic module both the RN client and the Node host already
-import); this barrel is the stable public name the app will migrate to.
+The pure, unit-tested Expo plugin transforms live under `./plugin`
+(`nodejsMobileConfig`: the libnode.so pickFirst block, the aapt
+ignoreAssetsPattern, `extractNativeLibs`, and the gradle heap args).
+`apps/app/test/railgunPluginConfig.test.ts` asserts them. The thin
+`@expo/config-plugins` runtime wrappers (`withNodejsMobile`, `withGradleMemory`)
+stay in `apps/app/plugins/` and `require` these transforms from the package:
+`expo/config-plugins` only resolves from the app's `node_modules` under the
+non-hoisted bun workspace, so the wrappers must run in the app's resolution
+context. They are one-liners; all the load-bearing, regression-prone logic is in
+the package.
+
+## What stays in apps/app (and why it MUST)
+
+`apps/app/nodejs-assets/nodejs-project/*` (main.js / engine.js / sdkDispatch.js /
+railgun-methods.json / scripts) is **not** moved. `nodejs-mobile-react-native`'s
+gradle (`CopyNodeProjectAssetsFolder` -> `GenerateNodeProjectAssetsLists`) reads
+the host from `<expoProjectRoot>/nodejs-assets/nodejs-project` by a fixed native
+convention - the path is not configurable. Relocating it would make the native
+build bundle an empty host. This package's `package.json` (`comments.embedded
+NodeHostDeps`) mirrors the host's pinned `@railgun-community/*` + native-prover
+versions as the single documented source of truth; bump both files together.
 
 ## The desync-proof pipeline
 
@@ -37,22 +61,23 @@ Adding a bridge method = add it to `SDK_METHODS`, run the codegen, add the host
 whitelist entry. Forgetting the host side fails the parity test in CI instead of
 shipping a primitive that only rejects at proof time on a device.
 
-## Remaining for the physical move (follow-up + APK)
+## Physical-move status (phase 3)
 
-1. Move `apps/app/nodejs-assets/nodejs-project/*` (main.js, engine.js,
-   sdkDispatch.js, railgun-methods.json, scripts) into this package.
-2. Move the Expo plugins (`withNodejsMobile.js`, `nodejsMobileConfig.js`,
-   `withGradleMemory.js`) here behind `./plugin`.
-3. Move the RN client (`apps/app/lib/railgun/bridge/*`) here as the concrete
-   `RailgunBridgeAPI` implementation; the app imports the barrel only.
-4. Re-point `apps/app/metro.config.js` blockList, `app.config.js` plugin paths,
-   and `scripts/install-nodejs-project.js` at the new location.
-5. Pin the `@railgun-community/*` + `@railgun-privacy/native-prover` versions in
-   this package's `package.json` (today they live in nodejs-project/package.json).
+- [x] RN client (`apps/app/lib/railgun/bridge/*`) moved to `src/bridge/*`; app +
+      `lib/railgun/*` re-pointed to the barrel / documented subpaths.
+- [x] Pure Expo plugin transforms (`nodejsMobileConfig`) moved to `./plugin`; the
+      plugin-config test re-pointed. The thin `withNodejsMobile` /
+      `withGradleMemory` config-plugin wrappers stay in `apps/app/plugins/` and
+      `require` the package transforms (expo/config-plugins is app-local only).
+- [x] `@railgun-community/*` + native-prover versions mirrored into this
+      package's `package.json` (`comments.embeddedNodeHostDeps`).
+- [ ] `nodejs-assets/nodejs-project/*` intentionally **not** moved (fixed native
+      convention - see "What stays in apps/app"). `metro.config.js` blockList is
+      a path-relative `/nodejs-assets/` regex that needs no change.
 
-Each step touches the native build graph, so they ship with a matching APK
-rebuild (native-dep / APK sequencing rule). Do NOT point the served bundler at a
-branch with these moves before the APK is installed.
+These touch the native build graph, so this lands with a matching APK rebuild
+(native-dep / APK sequencing rule). Do NOT point the served bundler at this
+branch before the APK is installed.
 
 ## Also deferred: stateless engine
 

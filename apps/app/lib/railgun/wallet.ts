@@ -13,7 +13,7 @@
  *  to safe empty/unavailable states (see native.ts). */
 import { parseUnits } from 'viem';
 import { isRailgunAvailable } from './native';
-import { isBridgeAvailable } from './bridge';
+import { isBridgeAvailable } from '@metro-labs/railgun-mobile/bridge';
 import { bridgeRefreshSnapshot } from './bridgeWallet';
 import { ensureRailgunForChain } from './engine';
 import { deriveRailgunWallet } from './sdkWallet';

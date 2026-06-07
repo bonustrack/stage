@@ -15,14 +15,14 @@
  *  private key is never logged. Sepolia-first. */
 import { parseUnits, type Hex } from 'viem';
 import { getActiveAccountId } from '../accounts';
-import { engineInit, walletInfo } from './bridge';
+import { engineInit, walletInfo } from '@metro-labs/railgun-mobile/bridge';
 import { deriveRailgunKeyMaterial } from './deriveKeys';
 import { addPending, updatePending } from './cache';
-import { ensureProviderLoaded } from './bridge/shieldCalls';
+import { ensureProviderLoaded } from '@metro-labs/railgun-mobile/bridge/shieldCalls';
 import {
   gasEstimateUnshield, generateUnshieldProof, populateProvedUnshield,
   type UnshieldGasDetails, type UnshieldErc20Recipient,
-} from './bridge/unshieldCalls';
+} from '@metro-labs/railgun-mobile/bridge/unshieldCalls';
 import { getShieldSigner, shieldNetForChainId } from './shieldClient';
 import { RAILGUN_TOKENS, type TokenMeta } from './tokens';
 

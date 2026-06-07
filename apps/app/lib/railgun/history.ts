@@ -27,8 +27,8 @@
  *  the balance refresh's best-effort posture. */
 import { formatUnits } from 'viem';
 import { stampTokenUrl } from '@metro-labs/kit/avatar';
-import { isBridgeAvailable, engineInit, walletInfo } from './bridge';
-import { sdk } from './bridge/sdk';
+import { isBridgeAvailable, engineInit, walletInfo } from '@metro-labs/railgun-mobile/bridge';
+import { sdk } from '@metro-labs/railgun-mobile/bridge/sdk';
 import { deriveRailgunKeyMaterial } from './deriveKeys';
 import { RAILGUN_NETWORKS, type RailgunNet } from './networks';
 import { RAILGUN_TOKENS, type TokenMeta } from './tokens';

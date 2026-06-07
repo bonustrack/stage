@@ -18,7 +18,7 @@ import {
   walletInfo,
   getBalances,
   type BridgeBalanceRow,
-} from './bridge';
+} from '@metro-labs/railgun-mobile/bridge';
 import { deriveRailgunKeyMaterial } from './deriveKeys';
 import { RAILGUN_NETWORKS, type RailgunNet } from './networks';
 import { RAILGUN_TOKENS } from './tokens';

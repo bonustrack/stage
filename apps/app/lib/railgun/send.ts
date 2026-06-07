@@ -16,14 +16,14 @@
  *  recipient is a 0zk address (required) and the transfer primitives. */
 import { parseUnits, type Hex } from 'viem';
 import { getActiveAccountId } from '../accounts';
-import { engineInit, walletInfo } from './bridge';
+import { engineInit, walletInfo } from '@metro-labs/railgun-mobile/bridge';
 import { deriveRailgunKeyMaterial } from './deriveKeys';
 import { addPending, updatePending } from './cache';
-import { ensureProviderLoaded } from './bridge/shieldCalls';
+import { ensureProviderLoaded } from '@metro-labs/railgun-mobile/bridge/shieldCalls';
 import {
   gasEstimateTransfer, generateTransferProof, populateProvedTransfer,
   type TransferGasDetails, type TransferErc20Recipient,
-} from './bridge/transferCalls';
+} from '@metro-labs/railgun-mobile/bridge/transferCalls';
 import { getShieldSigner, shieldNetForChainId } from './shieldClient';
 import { RAILGUN_TOKENS, type TokenMeta } from './tokens';
 
