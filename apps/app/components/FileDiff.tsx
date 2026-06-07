@@ -1,7 +1,7 @@
 /** One collapsible per-file section for the in-app PR diff viewer. Renders a
  *  GitHub-style header (status dot + filename + +adds/-dels counts) that toggles
  *  the patch body, and the patch lines colored by kind (green add, red delete,
- *  neutral context, muted hunk header). Monospace, horizontally scrollable so
+ *  neutral context, muted hunk header). Calibre font, horizontally scrollable so
  *  long lines do not wrap. Pure presentational - data comes from diffParse. */
 
 import { useState } from 'react';
@@ -12,7 +12,7 @@ import { Box } from './layout';
 import type { Palette } from '../lib/theme';
 import type { DiffFile, DiffLine } from '../lib/diffParse';
 
-const MONO = 'Menlo';
+const FONT = 'Calibre-Medium';
 
 function lineBg(kind: DiffLine['kind'], dark: boolean): string {
   if (kind === 'add') return dark ? 'rgba(63,185,80,0.15)' : 'rgba(46,160,67,0.12)';
@@ -45,7 +45,7 @@ export function FileDiff({ file, p, dark }: {
         style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: dark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}
       >
         <Icon name={open ? 'chevronDown' : 'chevronRight'} size={16} color={p.text} />
-        <Text numberOfLines={1} style={{ flex: 1, color: p.text, fontFamily: MONO, fontSize: 13 }}>
+        <Text numberOfLines={1} style={{ flex: 1, color: p.text, fontFamily: FONT, fontSize: 13 }}>
           {file.filename}
         </Text>
         <Text style={{ color: p.success, fontFamily: 'Calibre-Medium', fontSize: 13 }}>+{file.additions}</Text>
@@ -54,7 +54,7 @@ export function FileDiff({ file, p, dark }: {
       {open ? (
         file.noPatch ? (
           <Box style={{ paddingHorizontal: 12, paddingVertical: 10 }}>
-            <Text style={{ color: p.text, opacity: 0.6, fontSize: 13 }}>
+            <Text style={{ color: p.text, opacity: 0.6, fontSize: 13, fontFamily: FONT }}>
               No textual diff (binary or too large to display).
             </Text>
           </Box>
@@ -63,10 +63,10 @@ export function FileDiff({ file, p, dark }: {
             <Box>
               {file.lines.map((ln, i) => (
                 <Box key={i} style={{ flexDirection: 'row', backgroundColor: lineBg(ln.kind, dark), paddingHorizontal: 10, minWidth: '100%' }}>
-                  <Text style={{ width: 12, color: lineColor(ln.kind, p), fontFamily: MONO, fontSize: 12.5, lineHeight: 18 }}>
+                  <Text style={{ width: 12, color: lineColor(ln.kind, p), fontFamily: FONT, fontSize: 12.5, lineHeight: 18 }}>
                     {marker(ln.kind)}
                   </Text>
-                  <Text style={{ color: lineColor(ln.kind, p), fontFamily: MONO, fontSize: 12.5, lineHeight: 18 }}>
+                  <Text style={{ color: lineColor(ln.kind, p), fontFamily: FONT, fontSize: 12.5, lineHeight: 18 }}>
                     {ln.text || ' '}
                   </Text>
                 </Box>

@@ -1,8 +1,9 @@
 /** In-app PR diff viewer - opened by tapping a channel topnav's GitHub icon.
  *  Receives the channel's linked GitHub URL (`url` param), parses it to an
  *  owner/repo + PR (or issue -> linked PR) ref, fetches the per-file diff from
- *  the GitHub REST API and renders it GitHub-style via FileDiff. A footer links
- *  out to the PR on GitHub. Issues with no linked PR show a graceful message. */
+ *  the GitHub REST API and renders it GitHub-style via FileDiff. A link icon in
+ *  the top-right of the topnav opens the PR on GitHub. Issues with no linked PR
+ *  show a graceful message. All text uses the Calibre font family. */
 
 import { ActivityIndicator, Linking, Pressable, ScrollView } from 'react-native';
 import { Title } from '@metro-labs/kit/title';
@@ -54,15 +55,20 @@ export default function Diff(): React.ReactElement {
         <Title dark={dark} style={{ color: p.link, fontSize: 20, flex: 1 }} numberOfLines={1}>
           Changes
         </Title>
+        {prUrl ? (
+          <Pressable onPress={() => { void Linking.openURL(prUrl); }} hitSlop={8} style={{ padding: 4 }}>
+            <Icon name="link" size={20} color={p.link} />
+          </Pressable>
+        ) : null}
       </Box>
 
       <ScrollView contentContainerStyle={{ padding: 12, paddingBottom: 24 + insets.bottom }}>
         {!ref ? (
-          <Text style={{ color: p.text, opacity: 0.7 }}>No GitHub link is set for this channel.</Text>
+          <Text style={{ color: p.text, opacity: 0.7, fontFamily: 'Calibre-Medium' }}>No GitHub link is set for this channel.</Text>
         ) : isLoading ? (
           <Box style={{ paddingVertical: 40, alignItems: 'center' }}><ActivityIndicator color={p.link} /></Box>
         ) : isError ? (
-          <Text style={{ color: p.text, opacity: 0.7 }}>Could not load the diff (private repo or GitHub rate limit). Open it on GitHub below.</Text>
+          <Text style={{ color: p.text, opacity: 0.7, fontFamily: 'Calibre-Medium' }}>Could not load the diff (private repo or GitHub rate limit). Open it on GitHub from the link icon above.</Text>
         ) : diff?.kind === 'no-pr' ? (
           <>
             {diff.title ? (
@@ -71,12 +77,12 @@ export default function Diff(): React.ReactElement {
               </Text>
             ) : null}
             {diff.body?.trim() ? (
-              <Text style={{ color: p.text, fontSize: 14, lineHeight: 20, marginBottom: 10 }}>{diff.body.trim()}</Text>
+              <Text style={{ color: p.text, fontSize: 14, lineHeight: 20, marginBottom: 10, fontFamily: 'Calibre-Medium' }}>{diff.body.trim()}</Text>
             ) : null}
-            <Text style={{ color: p.text, opacity: 0.7 }}>This link points to an issue with no linked pull request yet.</Text>
+            <Text style={{ color: p.text, opacity: 0.7, fontFamily: 'Calibre-Medium' }}>This link points to an issue with no linked pull request yet.</Text>
           </>
         ) : diff && diff.files.length === 0 ? (
-          <Text style={{ color: p.text, opacity: 0.7 }}>No file changes in this pull request.</Text>
+          <Text style={{ color: p.text, opacity: 0.7, fontFamily: 'Calibre-Medium' }}>No file changes in this pull request.</Text>
         ) : (
           <>
             {diff?.title ? (
@@ -85,7 +91,7 @@ export default function Diff(): React.ReactElement {
               </Text>
             ) : null}
             {diff?.body?.trim() ? (
-              <Text style={{ color: p.text, fontSize: 14, lineHeight: 20, marginBottom: 12 }}>
+              <Text style={{ color: p.text, fontSize: 14, lineHeight: 20, marginBottom: 12, fontFamily: 'Calibre-Medium' }}>
                 {diff.body.trim()}
               </Text>
             ) : null}
@@ -100,20 +106,6 @@ export default function Diff(): React.ReactElement {
           </>
         )}
       </ScrollView>
-
-      {prUrl ? (
-        <Pressable
-          onPress={() => { void Linking.openURL(prUrl); }}
-          style={{
-            flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-            paddingVertical: 14, paddingBottom: 14 + insets.bottom,
-            borderTopWidth: 1, borderTopColor: p.border,
-          }}
-        >
-          <Icon name="link" size={18} color={p.link} />
-          <Text style={{ color: p.link, fontFamily: 'Calibre-Semibold', fontSize: 15 }}>View on GitHub</Text>
-        </Pressable>
-      ) : null}
     </Box>
   );
 }
