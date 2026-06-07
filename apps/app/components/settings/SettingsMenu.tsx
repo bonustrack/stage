@@ -21,15 +21,15 @@ type Href =
   | '/settings/components'
   | '/settings/developer'
   | '/settings/about';
-const ROWS: { href: Href; label: string; sub: string; icon: HeroIconName }[] = [
-  { href: '/settings/display', label: 'Display', sub: 'Theme - System, Light or Dark', icon: 'sun' },
-  { href: '/settings/messenger', label: 'Messenger', sub: 'XMTP account & inbox', icon: 'chat' },
-  { href: '/settings/notifications', label: 'Notifications', sub: 'Enable or disable push notifications', icon: 'bell' },
-  { href: '/settings/security', label: 'Security', sub: 'Export or remove account', icon: 'wallet' },
-  { href: '/settings/kit', label: 'Kit', sub: 'Theme colors & component gallery', icon: 'colorSwatch' },
-  { href: '/settings/components', label: 'Components', sub: 'App UI components - UserCard, ChannelCard, TokenCard', icon: 'viewGrid' },
-  { href: '/settings/developer', label: 'Developer', sub: 'Railgun debug console & diagnostics', icon: 'beaker' },
-  { href: '/settings/about', label: 'About', sub: 'App version & build metadata', icon: 'questionMarkCircle' },
+const ROWS: { href: Href; label: string; icon: HeroIconName }[] = [
+  { href: '/settings/display', label: 'Display', icon: 'sun' },
+  { href: '/settings/messenger', label: 'Messenger', icon: 'chat' },
+  { href: '/settings/notifications', label: 'Notifications', icon: 'bell' },
+  { href: '/settings/security', label: 'Security', icon: 'wallet' },
+  { href: '/settings/kit', label: 'Kit', icon: 'colorSwatch' },
+  { href: '/settings/components', label: 'Components', icon: 'viewGrid' },
+  { href: '/settings/developer', label: 'Developer', icon: 'beaker' },
+  { href: '/settings/about', label: 'About', icon: 'questionMarkCircle' },
 ];
 
 export function SettingsMenu(): React.ReactElement {
@@ -49,7 +49,6 @@ export function SettingsMenu(): React.ReactElement {
               <Icon name={row.icon} size={22} color={head} />
               <Box style={{ flex: 1 }}>
                 <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Medium' }}>{row.label}</Text>
-                <Text style={{ color: sub, fontSize: 13, marginTop: 1, fontFamily: 'Calibre-Medium' }}>{row.sub}</Text>
               </Box>
               <Icon name="chevronRight" size={18} color={sub} />
             </ListViewItem>

@@ -39,11 +39,14 @@ async function activate(id: string, onChanged: () => void): Promise<void> {
   onChanged();
 }
 
-export function DrawerAccountActions({ head, sub, border, dark, onChanged }: {
+/** Account-action rows + their import sheet. Returns the rows (to drop inside
+ *  the shared Menu ListView) and the modal (rendered as a sibling, OUTSIDE the
+ *  list so it never becomes a stray divider row). */
+export function useDrawerAccountActions({ head, sub, border, dark, onChanged }: {
   head: string; sub: string; border: string; dark: boolean;
   /** Called after the registry changes so the drawer re-reads the list/active. */
   onChanged: () => void;
-}): React.ReactElement {
+}): { rows: React.ReactElement; modal: React.ReactElement } {
   const { primary, bg } = usePalette();
   const [busy, setBusy] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
@@ -85,15 +88,18 @@ export function DrawerAccountActions({ head, sub, border, dark, onChanged }: {
     })();
   };
 
-  return (
+  const rows = (
     <>
-      <DrawerRow icon="userAdd" label="New account" head={head} sub={sub} border={border} onPress={onNew} />
+      <DrawerRow icon="userAdd" label="New account" head={head} sub={sub} border={border} dark={dark} onPress={onNew} />
       <DrawerRow
-        icon="download" label="Add account" head={head} sub={sub} border={border}
+        icon="download" label="Add account" head={head} sub={sub} border={border} dark={dark}
         onPress={() => { setErr(''); setText(''); setImportOpen(true); }}
       />
+    </>
+  );
 
-      <AppModal visible={importOpen} onClose={() => setImportOpen(false)} title="Add account">
+  const modal = (
+    <AppModal visible={importOpen} onClose={() => setImportOpen(false)} title="Add account">
         <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginBottom: 10 }}>
           Paste an existing wallet&apos;s private key (0x… 64 hex) or its 12–24 word recovery phrase.
         </Text>
@@ -132,6 +138,7 @@ export function DrawerAccountActions({ head, sub, border, dark, onChanged }: {
           />
         </Box>
       </AppModal>
-    </>
   );
+
+  return { rows, modal };
 }

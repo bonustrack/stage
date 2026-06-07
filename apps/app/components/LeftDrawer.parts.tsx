@@ -2,11 +2,11 @@
  *  the line cap: the avatar header, the tap-to-switch accounts list, and the
  *  Profile/Settings nav row. Behaviour is identical to the inlined version. */
 
-import { Pressable } from 'react-native';
 import { Box } from './layout';
 import { Stamp } from './Stamp';
 import { Text } from '@metro-labs/kit/text';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
+import { ListViewItem } from '@metro-labs/kit/list-view';
 import { getPeerName } from '../lib/peerProfiles';
 import { shortAddress } from '../lib/xmtp';
 import { type AccountRecord } from '../lib/accounts';
@@ -34,23 +34,16 @@ export function DrawerHeader({ rec, c }: {
   );
 }
 
-/** Tap-to-switch accounts list. */
-export function DrawerAccounts({ accounts, activeId, onSwitch, c }: {
+/** Tap-to-switch accounts list — emits one ListViewItem per account so the
+ *  caller can drop them straight into a shared Kit ListView. */
+export function DrawerAccounts({ accounts, activeId, onSwitch, c, dark }: {
   accounts: AccountRecord[]; activeId: string | null;
-  onSwitch: (id: string) => void; c: DrawerColors;
+  onSwitch: (id: string) => void; c: DrawerColors; dark: boolean;
 }): React.ReactElement {
   return (
-    <Box style={{ paddingVertical: 6 }}>
+    <>
       {accounts.map((a) => (
-        <Pressable
-          key={a.id}
-          onPress={() => onSwitch(a.id)}
-          style={({ pressed }) => ({
-            paddingHorizontal: 18, paddingVertical: 11,
-            flexDirection: 'row', alignItems: 'center', gap: 12,
-            backgroundColor: pressed ? c.border : 'transparent',
-          })}
-        >
+        <ListViewItem key={a.id} dark={dark} onPress={() => onSwitch(a.id)}>
           <Stamp address={a.address} size={30} style={{ backgroundColor: c.border }} />
           <Box style={{ flex: 1, minWidth: 0 }}>
             <Text numberOfLines={1} style={{ color: c.head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>
@@ -61,27 +54,23 @@ export function DrawerAccounts({ accounts, activeId, onSwitch, c }: {
             </Text>
           </Box>
           {a.id === activeId ? <Icon name="check" size={20} color={c.head} /> : null}
-        </Pressable>
+        </ListViewItem>
       ))}
-    </Box>
+    </>
   );
 }
 
-export function DrawerRow({ icon, label, onPress, head, sub, border }: {
+/** A single Kit ListView row for the Menu page (account actions + nav). */
+export function DrawerRow({ icon, label, onPress, head, sub, dark }: {
   icon: HeroIconName; label: string; onPress: () => void;
-  head: string; sub: string; border: string;
+  head: string; sub: string; border: string; dark: boolean;
 }): React.ReactElement {
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        paddingHorizontal: 18, paddingVertical: 14,
-        flexDirection: 'row', alignItems: 'center', gap: 14,
-        backgroundColor: pressed ? border : 'transparent',
-      })}
-    >
+    <ListViewItem dark={dark} onPress={onPress}>
       <Icon name={icon} size={22} color={sub} />
-      <Text style={{ color: head, fontSize: 17, fontFamily: 'Calibre-Semibold' }}>{label}</Text>
-    </Pressable>
+      <Box style={{ flex: 1 }}>
+        <Text style={{ color: head, fontSize: 17, fontFamily: 'Calibre-Semibold' }}>{label}</Text>
+      </Box>
+    </ListViewItem>
   );
 }
