@@ -229,10 +229,38 @@ async function dispatch(envelope) {
   }
 }
 
+/* contractParity: assert the host's SDK whitelist matches the generated contract
+ * manifest (railgun-methods.json) at boot. This requires only the JSON (no heavy
+ * native deps), so it is safe to run before any engine load. A desync surfaces
+ * as a loud boot event the RN debug panel shows, instead of a single primitive
+ * silently rejecting at proof time on a real device. Also exposed as a callable
+ * handler for an explicit RN-side probe. */
+function checkContractParity() {
+  try {
+    return getSdkDispatch().assertWhitelistParity();
+  } catch (err) {
+    emit('event:error', 'Railgun method desync: ' + (err && err.message ? err.message : String(err)));
+    throw err;
+  }
+}
+handlers['contractParity'] = function contractParity() {
+  return checkContractParity();
+};
+
 if (rnBridge) {
   rnBridge.channel.addListener(REQUEST_EVENT, function onRequest(envelope) {
     void dispatch(envelope);
   });
+  // Boot-time anti-desync gate (JSON-only; never throws the boot down - logs the
+  // desync as an error event so the RN panel shows it but the host stays up so
+  // ping/hello still answer and the failure is diagnosable).
+  try {
+    const parity = checkContractParity();
+    if (parity && parity.skipped) emit('event:message', 'Railgun contract manifest absent (parity skipped).');
+    else emit('event:message', 'Railgun bridge method contract verified.');
+  } catch (_e) {
+    // already emitted event:error above
+  }
   emit('event:message', 'Railgun node host booted (scaffold; engine not wired).');
 }
 

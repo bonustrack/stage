@@ -59,13 +59,14 @@ const path = require('path');
  *  MLS lib (libuniffi_xmtpv3.so) was built against → instant crash at XMTP.create.
  *  If a future build still reports a libc++_shared.so merge dup, add it back as a
  *  pickFirst — it will now pick RN's (the only remaining one). */
-const PICK_FIRST = [
-  'lib/**/libnode.so',
-];
-
-/** The aapt ignoreAssetsPattern we force onto the FINAL (winning) androidResources
- *  block. See the long rationale below where it is applied. */
-const NODEJS_IGNORE_ASSETS_PATTERN = '.*:*~';
+// PURE transforms (PICK_FIRST list, aapt pattern, the groovy/manifest edits)
+// live in ./nodejsMobileConfig so they are unit-testable without the expo
+// plugin runtime — see test/railgunPluginConfig.test.ts. This plugin only wraps
+// them in the @expo/config-plugins mod runners.
+const {
+  transformAppBuildGradle,
+  setExtractNativeLibs,
+} = require('./nodejsMobileConfig');
 
 /** Insert the libnode.so pickFirst block AND make aapt package every asset
  *  nodejs-mobile lists, by editing the Groovy build.gradle Expo prebuild emits.
@@ -100,46 +101,7 @@ const NODEJS_IGNORE_ASSETS_PATTERN = '.*:*~';
 function withNodejsMobileGradle(config) {
   return withAppBuildGradle(config, (cfg) => {
     if (cfg.modResults.language !== 'groovy') return cfg;
-    let src = cfg.modResults.contents;
-    if (src.includes('// nodejs-mobile-pickFirst')) return cfg;
-    const picks = PICK_FIRST.map((p) => `            pickFirst '${p}'`).join('\n');
-    const block = [
-      '    // nodejs-mobile-pickFirst — resolve duplicate libnode.so the embedded',
-      '    // Node runtime bundles. (libc++_shared.so is no longer emitted by the',
-      '    // module — see the bun patch — so it is intentionally NOT pick-first.)',
-      '    packagingOptions {',
-      '        jniLibs {',
-      picks,
-      '        }',
-      '    }',
-    ].join('\n');
-    // Inject the pickFirst block as the first statement inside the top-level
-    // `android {` block.
-    src = src.replace(/android\s*\{/, (m) => `${m}\n${block}\n`);
-
-    // nodejs-mobile-aaptIgnore: force the WINNING ignoreAssetsPattern. Replace the
-    // value of an existing (template-emitted) ignoreAssetsPattern assignment so our
-    // value is the one in effect; if none exists, append a block before android{}'s
-    // close. See the function doc for the set-theory rationale.
-    const ignoreRe = /ignoreAssetsPattern\s+'[^']*'/g;
-    if (ignoreRe.test(src)) {
-      src = src.replace(
-        ignoreRe,
-        `ignoreAssetsPattern '${NODEJS_IGNORE_ASSETS_PATTERN}' // nodejs-mobile-aaptIgnore: keep _-prefixed assets (file.list excludes only .* and *~)`,
-      );
-    } else {
-      const aaptBlock = [
-        '    // nodejs-mobile-aaptIgnore — package every asset nodejs-mobile lists.',
-        '    androidResources {',
-        `        ignoreAssetsPattern '${NODEJS_IGNORE_ASSETS_PATTERN}'`,
-        '    }',
-        '}',
-      ].join('\n');
-      // Replace the FIRST top-level android{} closing brace. The android{} block is
-      // emitted before the first standalone `}` at column 0.
-      src = src.replace(/\n\}\n/, `\n${aaptBlock}\n`);
-    }
-    cfg.modResults.contents = src;
+    cfg.modResults.contents = transformAppBuildGradle(cfg.modResults.contents);
     return cfg;
   });
 }
@@ -172,8 +134,7 @@ function withNodejsAssetsGuard(config) {
  *  UnsatisfiedLinkError in a static block → SIGABRT on launch. Force extraction. */
 function withExtractNativeLibs(config) {
   return withAndroidManifest(config, (cfg) => {
-    const app = cfg.modResults.manifest.application?.[0];
-    if (app) app.$['android:extractNativeLibs'] = 'true';
+    setExtractNativeLibs(cfg.modResults.manifest);
     return cfg;
   });
 }

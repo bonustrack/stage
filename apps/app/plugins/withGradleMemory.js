@@ -3,21 +3,13 @@
 // which OOMs during R8/signing on this app (nodejs-mobile + railgun + many
 // native modules). Bump heap + metaspace so the local build completes.
 const { withGradleProperties } = require('expo/config-plugins');
+// Pure transform (testable without the expo runtime) — see nodejsMobileConfig.js
+// + test/railgunPluginConfig.test.ts.
+const { setGradleMemory } = require('./nodejsMobileConfig');
 
 module.exports = function withGradleMemory(config) {
   return withGradleProperties(config, (cfg) => {
-    const props = cfg.modResults;
-    const set = (key, value) => {
-      const existing = props.find(
-        (p) => p.type === 'property' && p.key === key,
-      );
-      if (existing) existing.value = value;
-      else props.push({ type: 'property', key, value });
-    };
-    set(
-      'org.gradle.jvmargs',
-      '-Xmx6144m -XX:MaxMetaspaceSize=2048m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8',
-    );
+    setGradleMemory(cfg.modResults);
     return cfg;
   });
 };

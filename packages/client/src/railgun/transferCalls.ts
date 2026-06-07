@@ -14,6 +14,7 @@
  *
  *  PURE: no native imports. The dispatcher that ships these frames is injected. */
 import type { RailgunDispatch } from './dispatch';
+import { SDK_METHOD } from './methods';
 import { bn } from './wire';
 import type { PopulateResult } from './shieldCalls';
 
@@ -46,7 +47,7 @@ export async function gasEstimateTransfer(dispatch: RailgunDispatch, params: {
   erc20Recipients: TransferErc20Recipient[];
   originalGasDetails: TransferGasDetails;
 }): Promise<{ gasEstimate: string }> {
-  return dispatch<{ gasEstimate: string }>('gas.estimateTransfer', [
+  return dispatch<{ gasEstimate: string }>(SDK_METHOD('gas.estimateTransfer'), [
     params.txidVersion,
     params.networkName,
     params.railgunWalletID,
@@ -71,7 +72,7 @@ export async function generateTransferProof(dispatch: RailgunDispatch, params: {
   encryptionKey: string;
   erc20Recipients: TransferErc20Recipient[];
 }): Promise<void> {
-  await dispatch<void>('proof.transfer', [
+  await dispatch<void>(SDK_METHOD('proof.transfer'), [
     params.txidVersion,
     params.networkName,
     params.railgunWalletID,
@@ -97,7 +98,7 @@ export async function populateProvedTransfer(dispatch: RailgunDispatch, params: 
   erc20Recipients: TransferErc20Recipient[];
   gasDetails: TransferGasDetails;
 }): Promise<PopulateResult> {
-  return dispatch<PopulateResult>('tx.populateProvedTransfer', [
+  return dispatch<PopulateResult>(SDK_METHOD('tx.populateProvedTransfer'), [
     params.txidVersion,
     params.networkName,
     params.railgunWalletID,

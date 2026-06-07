@@ -8,6 +8,7 @@
         "modules/**/*.{ts,tsx}",
         "plugins/**/*.{js,ts}",
         "scripts/**/*.js",
+        "scripts/**/*.mjs",
         "nodejs-assets/**/*.js"
       ],
       "project": ["app/**", "components/**", "lib/**", "modules/**"],
@@ -36,6 +37,10 @@
       "project": ["src/**"]
     },
     "packages/kit": {
+      "project": ["src/**"]
+    },
+    "packages/railgun-mobile": {
+      "entry": ["src/index.ts"],
       "project": ["src/**"]
     },
     "packages/metro": {

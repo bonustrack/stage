@@ -15,6 +15,7 @@
  *
  *  PURE: no native imports. The dispatcher that ships these frames is injected. */
 import type { RailgunDispatch } from './dispatch';
+import { SDK_METHOD } from './methods';
 import { bn } from './wire';
 import type { PopulateResult } from './shieldCalls';
 
@@ -47,7 +48,7 @@ export async function gasEstimateUnshield(dispatch: RailgunDispatch, params: {
   erc20Recipients: UnshieldErc20Recipient[];
   originalGasDetails: UnshieldGasDetails;
 }): Promise<{ gasEstimate: string }> {
-  return dispatch<{ gasEstimate: string }>('gas.estimateUnshield', [
+  return dispatch<{ gasEstimate: string }>(SDK_METHOD('gas.estimateUnshield'), [
     params.txidVersion,
     params.networkName,
     params.railgunWalletID,
@@ -71,7 +72,7 @@ export async function generateUnshieldProof(dispatch: RailgunDispatch, params: {
   encryptionKey: string;
   erc20Recipients: UnshieldErc20Recipient[];
 }): Promise<void> {
-  await dispatch<void>('proof.unshield', [
+  await dispatch<void>(SDK_METHOD('proof.unshield'), [
     params.txidVersion,
     params.networkName,
     params.railgunWalletID,
@@ -95,7 +96,7 @@ export async function populateProvedUnshield(dispatch: RailgunDispatch, params: 
   erc20Recipients: UnshieldErc20Recipient[];
   gasDetails: UnshieldGasDetails;
 }): Promise<PopulateResult> {
-  return dispatch<PopulateResult>('tx.populateProvedUnshield', [
+  return dispatch<PopulateResult>(SDK_METHOD('tx.populateProvedUnshield'), [
     params.txidVersion,
     params.networkName,
     params.railgunWalletID,
