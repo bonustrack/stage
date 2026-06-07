@@ -7,9 +7,8 @@ import type { FlatList } from 'react-native-gesture-handler';
 import type { SimultaneousRefs } from '../SwipeTabs.types';
 import { useRouter } from 'expo-router';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { getCachedRows, setCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
+import { getCachedRows, setCachedRows, subscribeCachedRows, useActiveAccount } from '../../modules/messaging';
 import { usePeerProfiles } from '../../lib/peerProfiles';
-import { useAccountEpoch } from '../../lib/accountEpoch';
 import { useDraftsVersion } from '../../lib/drafts';
 import { Col } from '../layout';
 import { loadPinnedIds, subscribePins } from '../../lib/pins';
@@ -129,7 +128,7 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
   );
   const draftsVersion = useDraftsVersion();
   /** Re-runs the XMTP init below when the active account changes (in-place switch). */
-  const accountEpoch = useAccountEpoch();
+  const accountEpoch = useActiveAccount();
 
   useChannelsSync({
     accountEpoch, rows, setRowsState, setRows, setError, setRequestCount, refreshFromNetworkRef,

@@ -25,7 +25,7 @@ import { useRouter } from 'expo-router';
 import { Box } from './layout';
 import { AppModal } from './AppModal';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
-import { markConvRead, markConvUnread } from '../lib/channelsCache';
+import { markConvRead, markConvUnread } from '../modules/messaging';
 import { togglePin } from '../lib/pins';
 import { toggleArchived } from '../lib/archived';
 import { leaveGroupConv, lineOfConv } from '../modules/messaging';

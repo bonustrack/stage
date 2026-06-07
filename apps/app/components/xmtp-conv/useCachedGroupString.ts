@@ -4,7 +4,7 @@
  *  via `read(line)`. Returns undefined for DMs / unset / read errors. */
 
 import { useEffect, useState } from 'react';
-import { getCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
+import { getCachedRows, subscribeCachedRows } from '../../modules/messaging';
 
 export function useCachedGroupString(
   convId: string | undefined,

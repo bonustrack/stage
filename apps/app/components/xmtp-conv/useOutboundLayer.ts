@@ -5,7 +5,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { attachmentEmojiPreview } from '@stage-labs/client/xmtp/humanize';
-import { patchRowSent } from '../../lib/channelsCache';
+import { patchRowSent } from '../../modules/messaging';
 import type { HistoryEntry } from '../../lib/types';
 import type { FlatList } from 'react-native-gesture-handler';
 import { hasAttachments, isReaction } from './feed-helpers';

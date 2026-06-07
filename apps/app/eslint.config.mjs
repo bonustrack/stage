@@ -61,9 +61,24 @@ export default tseslint.config(
           ],
           patterns: [
             {
+              // lib/xmtp.* covers the client lifecycle + the xmtp.state caches
+              // (feedCache / activeFeedLines / inboxEthCache).
               group: ["**/lib/xmtp", "**/lib/xmtp.*"],
               message:
                 "Import messaging via the '@/modules/messaging' facade barrel, not the lib/xmtp.* internals.",
+            },
+            {
+              // The account-switch epoch signal: use useActiveAccount() /
+              // AccountManager from the facade, not lib/accountEpoch directly.
+              group: ["**/lib/accountEpoch"],
+              message:
+                "Use useActiveAccount() / AccountManager from '@/modules/messaging', not lib/accountEpoch.",
+            },
+            {
+              // The channels-list cache: import the cache surface from the facade.
+              group: ["**/lib/channelsCache"],
+              message:
+                "Import the channels cache via the '@/modules/messaging' facade barrel, not lib/channelsCache.",
             },
           ],
         },

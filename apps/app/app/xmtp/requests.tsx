@@ -11,75 +11,24 @@ import { useCallback, useEffect, useState } from 'react';
 import { FlatList, Pressable } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Title } from '@metro-labs/kit/title';
-import type { Conversation, DecodedMessage } from '@xmtp/react-native-sdk';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   listRequestConvs, acceptRequestConv, blockRequestConv,
-  peerEthAddressOfDm, groupMemberEthAddresses, shortAddress,
-  getCachedXmtpClient,
+  getCachedXmtpClient, summarizeConversationRequest,
 } from '../../modules/messaging';
-import { previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
+import type { ConversationRequestView } from '../../modules/messaging';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { usePeerProfiles, getPeerName, getPeerAvatarCb } from '../../lib/peerProfiles';
 import { Icon } from '@metro-labs/kit/icon';
-import { channelStampSeed } from '@metro-labs/kit/avatar';
 import { ChannelRow } from '../../components/ChannelRow';
 import { Box, Col, Row } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
 
-interface ReqRow {
-  convId: string;
-  title: string;
-  /** DM peer address (null for groups) → avatar + display-name resolution. */
-  peerAddress: string | null;
-  /** Stamp seed: peer (DM, round) or the channel-id stamp (group, square).
-   *  Ignored when avatarUri is set. */
-  avatarAddress: string | null;
-  /** Group-uploaded image — takes precedence over avatarAddress (groups only). */
-  avatarUri: string | null;
-  preview: string;
-  isGroup: boolean;
-}
-
-async function summarizeRequest(conv: Conversation): Promise<ReqRow> {
-  await conv.sync().catch(() => undefined);
-  const peerAddress = await peerEthAddressOfDm(conv);
-  const isGroup = !peerAddress;
-  const memberAddresses = isGroup ? await groupMemberEthAddresses(conv) : [];
-  const g = conv as unknown as { name?: () => Promise<string>; imageUrl?: () => Promise<string> };
-  const groupName = isGroup
-    ? await g.name?.().catch(() => '') ?? ''
-    : '';
-  const groupImage = isGroup
-    ? (await g.imageUrl?.().catch(() => '') ?? '').trim()
-    : '';
-  const recent: DecodedMessage[] = await conv.messages({ limit: 1 }).catch(() => []);
-  const last = recent[0];
-  let preview = '';
-  if (last) {
-    try { preview = previewOfXmtpContent(last.content(), last.contentTypeId); }
-    catch { preview = `[${last.contentTypeId ?? 'unknown'}]`; }
-  }
-  const title = peerAddress
-    ? shortAddress(peerAddress)
-    : (groupName.trim() || `${memberAddresses.length + 1} members`);
-  /** Avatar precedence (mirrors Home channels list):
-   *   - DM: peer stamp (round).
-   *   - Group WITH image: avatarUri (square).
-   *   - Group WITHOUT image: deterministic channel stamp (square), NOT a member's. */
-  const avatarUri = isGroup ? (groupImage || null) : null;
-  const avatarAddress = peerAddress ?? (avatarUri ? null : channelStampSeed(conv.id));
-  return {
-    convId: conv.id,
-    title,
-    peerAddress,
-    avatarAddress,
-    avatarUri,
-    preview: preview.slice(0, 80),
-    isGroup,
-  };
-}
+/** Message-request row view-model. The shape lives on the facade's
+ *  `ConversationRequestView` domain type (built by `summarizeConversationRequest`,
+ *  which owns the SDK access + summarise logic, unchanged). */
+type ReqRow = ConversationRequestView;
 
 export default function Requests(): React.ReactElement {
   const router = useRouter();
@@ -91,7 +40,7 @@ export default function Requests(): React.ReactElement {
 
   const load = useCallback(async (): Promise<void> => {
     const convs = await listRequestConvs();
-    const summarized = await Promise.all(convs.map(summarizeRequest));
+    const summarized = await Promise.all(convs.map(summarizeConversationRequest));
     setRows(summarized);
   }, []);
 

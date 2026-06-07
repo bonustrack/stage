@@ -16,8 +16,7 @@ import { flash } from '../../lib/toast';
 import {
   getActiveAccount, getPrivateKey, canExportPrivateKey, type AccountRecord,
 } from '../../lib/accounts';
-import { deleteAccount, shortAddress } from '../../modules/messaging';
-import { useAccountEpoch } from '../../lib/accountEpoch';
+import { deleteAccount, shortAddress, useActiveAccount } from '../../modules/messaging';
 import { reloadApp } from '../AccountsManager.helpers';
 
 interface SectionColors { fg: string; head: string; sub: string; border: string; rowBg: string }
@@ -25,7 +24,7 @@ interface SectionColors { fg: string; head: string; sub: string; border: string;
 export function AccountSecuritySection(
   { c, danger, dark }: { c: SectionColors; danger: string; dark: boolean },
 ): React.ReactElement | null {
-  const epoch = useAccountEpoch();
+  const epoch = useActiveAccount();
   const [rec, setRec] = useState<AccountRecord | null>(null);
   const [revealed, setRevealed] = useState<string | null>(null);
 

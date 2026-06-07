@@ -18,7 +18,7 @@ import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';
 import * as Clipboard from 'expo-clipboard';
 import { flash } from '../lib/toast';
-import { switchToAccount, shortAddress } from '../modules/messaging';
+import { AccountManager, shortAddress } from '../modules/messaging';
 import { addGeneratedAccount, importWallet } from '../lib/accounts';
 import { AppModal } from './AppModal';
 import { DrawerRow } from './LeftDrawer.parts';
@@ -32,7 +32,7 @@ import { DANGER, usePalette } from '../lib/theme';
  *  wallet switch (don't re-throw). The drawer still closes via onChanged(). */
 async function activate(id: string, onChanged: () => void): Promise<void> {
   try {
-    await switchToAccount(id);
+    await AccountManager.switch(id);
   } catch {
     flash('Switched account - XMTP messaging needs a reset (see Home)');
   }
