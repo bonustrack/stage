@@ -27,6 +27,11 @@ export const messagingKeys = {
   convMeta: (convId: string | null | undefined) =>
     ['xmtp', 'convMeta', convId ?? ''] as const,
   channels: (account: string) => ['xmtp', 'channels', account] as const,
+  /** Per-conversation message feed (stage 2). Keyed by convId; mirrors the
+   *  feedCache slice so every feed READ dedupes through Query while feedCache
+   *  stays the write-through source of truth (stream/sends/reactions/history). */
+  messages: (convId: string | null | undefined) =>
+    ['xmtp', 'messages', convId ?? ''] as const,
 } as const;
 
 export type { ConvMeta };

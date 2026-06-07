@@ -41,3 +41,4 @@ export * from './conversation';
 export * from './queries';
 export * from './channelsQuery';
 export * from './streamSync';
+export * from './feedQuery';

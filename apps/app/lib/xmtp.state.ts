@@ -54,6 +54,13 @@ export const activeFeedLines = new Set<string>();
 let globalStreamTeardown: (() => void) | null = null;
 export function registerGlobalStreamTeardown(fn: () => void): void { globalStreamTeardown = fn; }
 
+/** The feed-query bridge (modules/messaging/feedQuery) registers its
+ *  `resetAllFeedQueries` here so resetClientScopedState can drop the mirrored
+ *  TanStack-Query feed entries on account switch without importing the bridge
+ *  (which imports this module - that would be a cycle). No-op until registered. */
+let feedQueriesReset: (() => void) | null = null;
+export function registerFeedQueriesReset(fn: () => void): void { feedQueriesReset = fn; }
+
 /** Drop all client-scoped in-memory state on an account change: the cached
  *  client, the single global message stream + its backstops, and every session
  *  cache that's keyed to the previous inbox (per-conv feeds, inbox→eth). The
@@ -66,5 +73,6 @@ export function resetClientScopedState(): void {
   globalStreamTeardown?.();
   activeFeedLines.clear();
   feedCache.clear();
+  feedQueriesReset?.();
   inboxEthCache.clear();
 }
