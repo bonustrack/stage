@@ -1,51 +1,50 @@
-/** Helpers + the result/contact row for the Search screen, split out to keep
- *  search.tsx under the line cap. Behaviour is identical to the inlined version. */
+/** Row + helpers for the Home contact-search results (HomeScreen.contacts).
+ *  Split out to keep the line cap. Ported from the former search.helpers. */
 
 import { Pressable } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
-import { Box } from '../components/layout';
-import { Spinner } from '../components/Spinner';
-import { Avatar } from '../components/Avatar';
-import { shortAddress } from '../lib/xmtp';
-import { getPeerAvatarCb } from '../lib/peerProfiles';
-import { getCachedRows } from '../lib/channelsCache';
+import { Box } from '../layout';
+import { Spinner } from '../Spinner';
+import { Avatar } from '../Avatar';
+import { shortAddress } from '../../lib/xmtp';
+import { getPeerAvatarCb } from '../../lib/peerProfiles';
+import { getCachedRows } from '../../lib/channelsCache';
 
-/** Cheap pre-flight — accept any *.eth (or longer multi-label) as ENS-resolvable. */
+/** Cheap pre-flight — accept any `*.eth` (single or multi-label) as resolvable. */
 export function looksLikeEns(s: string): boolean {
-  return /^[a-z0-9-]+(\.[a-z0-9-]+)+\.eth$|^[a-z0-9-]+\.eth$/i.test(s.trim());
+  return /^[a-z0-9-]+(\.[a-z0-9-]+)*\.eth$/i.test(s.trim());
 }
 
-/** Existing DM peers (address-keyed) pulled straight from the cached channels list. */
+/** Existing DM peers (address-keyed) pulled from the cached channels list. */
 export function getExistingPeers(): { address: string; convId: string }[] {
   const rows = getCachedRows() ?? [];
   const seen = new Set<string>();
   const peers: { address: string; convId: string }[] = [];
   for (const r of rows) {
     const a = (r as { peerAddress?: string | null; convId?: string }).peerAddress;
-    const c = (r as { peerAddress?: string | null; convId?: string }).convId;
-    if (!a || !c) continue;
+    const cid = (r as { peerAddress?: string | null; convId?: string }).convId;
+    if (!a || !cid) continue;
     const k = a.toLowerCase();
     if (seen.has(k)) continue;
     seen.add(k);
-    peers.push({ address: a, convId: c });
+    peers.push({ address: a, convId: cid });
   }
   return peers;
 }
 
-export interface SearchRowColors { fg: string; head: string; sub: string; border: string }
+interface RowColors { fg: string; head: string; sub: string; border: string }
 
-/** One tappable address row — used for both the resolved result and existing
- *  contacts. `trailing` is the right-side affordance (chat icon / nothing). */
-export function SearchRow({
+/** One tappable contact row — resolved result OR existing contact. `trailing`
+ *  is the right-side affordance (chat icon for a start-a-chat result). */
+export function ContactRow({
   address, title, opening, trailing, onPress, c,
 }: {
   address: string;
   title: string;
-  /** Optional secondary line (short address); omitted when it'd duplicate title. */
   opening: boolean;
   trailing?: React.ReactNode;
   onPress: () => void;
-  c: SearchRowColors;
+  c: RowColors;
 }): React.ReactElement {
   const showSub = title !== shortAddress(address);
   return (

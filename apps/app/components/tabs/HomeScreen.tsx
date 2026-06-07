@@ -146,13 +146,12 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
     accountEpoch, rows, setRowsState, setRows, setError, setRequestCount, refreshFromNetworkRef,
   });
 
-/** Stable extraData array (identity changes only when a version does) so the
-   *  FlatList doesn't re-render the whole window on each stream tick. */
+  /** Stable extraData array (identity only changes when a version does) so the
+   *  FlatList doesn't re-render the whole window each stream tick. */
   const listExtraData = useMemo(
     () => [channelProfilesVersion, draftsVersion, pinned] as const,
     [channelProfilesVersion, draftsVersion, pinned],
   );
-
   const renderRow = useChannelRowRenderer(router, setRowMenu, {
     channelProfilesVersion, draftsVersion, pinned,
   });
@@ -173,6 +172,7 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
         onToggleLabel={toggleLabel}
         query={query}
         setQuery={setQuery}
+        fg={fg}
         head={head}
         sub={sub}
         border={border}
