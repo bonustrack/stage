@@ -39,6 +39,8 @@ export interface ChannelRowProps {
   markedUnread?: boolean;
   pinned?: boolean;
   hasDraft?: boolean;
+  /** Unsent composer draft; with hasDraft it replaces the preview (accent icon + text). */
+  draftText?: string | null;
   /** Group labels (from XMTP appData) rendered as compact read-only chips on
    *  the LEFT of the preview line, before the last-message text (groups only;
    *  DMs pass none). Capped to a few visible + a "+N" pill; the preview text
@@ -107,13 +109,13 @@ function buildLabelChips({ labels, fg, rowBg }: {
 function ChannelRowBase({
   title, avatarAddress, avatarUri, cacheBuster, square,
   lastPreview, timestamp, subtitle, unreadCount = 0, markedUnread,
-  pinned, hasDraft, showChevron, avatarSize = 44,
+  pinned, hasDraft, draftText, showChevron, avatarSize = 44,
   onPress, onLongPress, containerStyle, labels,
 }: ChannelRowProps): React.ReactElement {
   const { link: head, text: sub, bg, border } = usePalette();
-  const fg = sub;
-  const rowBg = border;
-  const previewText = lastPreview && lastPreview.length > 0 ? lastPreview : subtitle ?? '';
+  const fg = sub, rowBg = border;
+  const draft = hasDraft && draftText && draftText.trim().length > 0 ? draftText.trim() : null;
+  const previewText = draft ?? (lastPreview && lastPreview.length > 0 ? lastPreview : subtitle ?? '');
 
   return (
     <Pressable
@@ -142,7 +144,6 @@ function ChannelRowBase({
         <Col flex={1} style={{ minWidth: 0 }}>
           <Row align="center" gap={6}>
             {pinned ? <Icon name="mapPin" size={13} color={sub} /> : null}
-            {hasDraft ? <Icon name="pencil" size={14} color={sub} /> : null}
             {/* Name + labels hug each other on the left; name shrinks (and
                 ellipsizes) first, the label chip stays right beside it. */}
             <Text
@@ -163,15 +164,15 @@ function ChannelRowBase({
               center within the fixed-height row. align-start pins the unread
               badge to the FIRST line when the preview wraps. */}
           <Row align="start" gap={7} mt={2}>
-            {/* ROUNDED chip(s) are INLINE <View>s at the START of the preview
-                <Text>, so the preview flows around them and wraps UNDERNEATH the
-                chip on the 2nd line (single-line rounded pill, text under it). */}
+            {/* Draft: accent pencil + draft text replaces the preview. Else the
+                rounded label chip(s) are INLINE at the START of the preview Text. */}
+            {draft ? <Icon name="pencil" size={14} color={head} /> : null}
             <Text
-              style={{ color: sub, fontSize: 16, lineHeight: 21, fontFamily: 'Calibre-Medium', flex: 1 }}
+              style={{ color: draft ? head : sub, fontSize: 16, lineHeight: 21, fontFamily: 'Calibre-Medium', flex: 1 }}
               numberOfLines={2}
               ellipsizeMode="tail"
             >
-              {labels && labels.length > 0
+              {!draft && labels && labels.length > 0
                 ? buildLabelChips({ labels, fg, rowBg })
                 : null}
               {previewText}

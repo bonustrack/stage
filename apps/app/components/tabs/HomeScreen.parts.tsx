@@ -11,7 +11,7 @@ import { ChannelRow } from '../ChannelRow';
 import { resetXmtpClient, shortAddress } from '../../modules/messaging';
 import { resetAccount } from '../../lib/wallet';
 import { getPeerAvatarCb, getPeerName, isPeerResolved } from '../../lib/peerProfiles';
-import { hasDraft } from '../../lib/drafts';
+import { hasDraft, getDraft } from '../../lib/drafts';
 import { isPinned } from '../../lib/pins';
 import { requestLabelFilter } from '../../lib/labelFilterRequest';
 import type { Row as RowT } from './HomeScreen.helpers';
@@ -68,6 +68,7 @@ export function useChannelRowRenderer(
         markedUnread={item.markedUnread}
         pinned={isPinned(item.convId)}
         hasDraft={hasDraft(item.convId)}
+        draftText={getDraft(item.convId)}
         labels={isGroup ? item.labels : undefined}
         /** Already on the Channels tab — requesting the filter fans out to this
          *  screen's live subscription, which sets labelFilter. No navigation
