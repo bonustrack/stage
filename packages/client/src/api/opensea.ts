@@ -8,6 +8,8 @@
  *  through. Pure `fetch` (uses AbortController, available in RN + browser +
  *  Node 18+). */
 
+import { parseOpenseaResponse } from './opensea.schema';
+
 const DEFAULT_KEY =
   process.env.EXPO_PUBLIC_OPENSEA_API_KEY ?? '51754bb53b324552ba4741c5b7298096';
 
@@ -30,7 +32,7 @@ const NETWORKS: Record<string, ChainItem> = {
 
 const SUPPORTED_ABIS = ['erc721', 'erc1155'];
 
-interface ApiNft {
+export interface ApiNft {
   identifier: string;
   collection: string;
   contract: string;
@@ -85,8 +87,11 @@ export async function getNfts(
   }
   if (!res.ok) return []; // rate-limited / not found - degrade gracefully
 
-  const result = (await res.json()) as { nfts?: ApiNft[] };
-  const nfts = result.nfts ?? [];
+  // Boundary: validate the response envelope. On drift the helper logs and
+  // returns null, so we degrade to [] (matching the non-200 path) WITHOUT the
+  // bad shape silently flowing through as typed data.
+  const result = parseOpenseaResponse(await res.json());
+  const nfts = result?.nfts ?? [];
 
   return nfts
     .filter(a => SUPPORTED_ABIS.includes(a.token_standard))

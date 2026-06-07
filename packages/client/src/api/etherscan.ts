@@ -7,6 +7,8 @@
  *  Returns the account's normal transactions sorted newest-first (sort=desc),
  *  which for a single EOA corresponds to NONCE DESCENDING. Pure `fetch`. */
 
+import { parseEtherscanResponse } from './etherscan.schema';
+
 const DEFAULT_KEY =
   process.env.EXPO_PUBLIC_ETHERSCAN_API_KEY ?? '2UAJBTBZRQTSZUF9JW953W9XMGDM3YAZWY';
 
@@ -68,11 +70,9 @@ export async function fetchActivity(
     `&sort=desc&apikey=${apiKey}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`etherscan ${res.status}`);
-  const json = (await res.json()) as {
-    status: string;
-    message: string;
-    result: EtherscanTx[] | string;
-  };
+  // Boundary: validate the response envelope so a drifted/garbage body throws
+  // loudly with a logged reason instead of being cast into a wrong shape.
+  const json = parseEtherscanResponse(await res.json());
   // status "0" with message "No transactions found" + array result = empty (not an error).
   if (json.status !== '1') {
     if (Array.isArray(json.result) && json.result.length === 0) return [];
