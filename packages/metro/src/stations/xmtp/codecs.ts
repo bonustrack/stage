@@ -12,7 +12,25 @@ const dec = <T>(e: EncodedContent): T => JSON.parse(new TextDecoder().decode(e.c
 
 export const ContentTypePoll = new ContentTypeId(
   { authorityId: 'metro.box', typeId: 'poll', versionMajor: 1, versionMinor: 0 });
-export type PollContent = { question: string; options?: string[]; [k: string]: unknown };
+// Poll wire schema modeled on Claude Code's AskUserQuestion tool: a question
+// plus a short `header` chip, a `multiSelect` flag, and `options` as
+// {label, description}. Kept structurally compatible with the shared schema in
+// @stage-labs/client/xmtp/poll (defined inline here so the daemon train has no
+// cross-package import to resolve). Backward-compat: the optional `string[]`
+// member of the union still decodes legacy flat-option polls without throwing.
+export type PollOption = { label: string; description?: string };
+export type PollContent = {
+  question: string;
+  /** Short ALL-CAPS eyebrow, <= ~12 chars (AskUserQuestion `header`). */
+  header?: string;
+  /** true => voters may select multiple options. */
+  multiSelect?: boolean;
+  /** Stable id minted at creation so votes can reference the poll. */
+  pollId?: string;
+  /** AskUserQuestion-shaped options. Legacy polls may carry plain strings. */
+  options?: (PollOption | string)[];
+  [k: string]: unknown;
+};
 export class PollCodec implements ContentCodec<PollContent> {
   get contentType() { return ContentTypePoll; }
   encode(c: PollContent): EncodedContent {

@@ -39,7 +39,7 @@ async function sendPoll(id: string, args: Args): Promise<void> {
   const fallbackId = `poll_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
   const mintedId = pollId ?? (typeof crypto?.randomUUID === 'function' ? crypto.randomUUID() : fallbackId);
   const pollContent: PollContent = {
-    question, options: normOptions as unknown as string[], multiSelect: !!multiSelect, pollId: mintedId,
+    question, options: normOptions, multiSelect: !!multiSelect, pollId: mintedId,
     ...(header ? { header } : {}) };
   const sentId = await conv.send(new PollCodec().encode(pollContent));
   emitOutbound(acct.cfg.id, line, sentId, `📊 Poll: ${question}`);

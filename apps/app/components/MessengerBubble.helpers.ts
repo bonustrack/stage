@@ -94,17 +94,16 @@ export function questionOf(entry: HistoryEntry): Question | undefined {
 
 export interface PollOption { label: string; description?: string }
 export interface Poll {
-  pollId?: string;
-  question?: string;
-  header?: string;
-  options: PollOption[];
-  multiSelect?: boolean;
+  pollId?: string; question?: string; header?: string;
+  options: PollOption[]; multiSelect?: boolean;
 }
 
 export function pollOf(entry: HistoryEntry): Poll | undefined {
-  const p = entry.payload as { poll?: Poll } | undefined;
-  if (!p?.poll || !Array.isArray(p.poll.options)) return undefined;
-  return p.poll;
+  const raw = (entry.payload as { poll?: Omit<Poll, 'options'> & { options: (PollOption | string)[] } })?.poll;
+  if (!raw || !Array.isArray(raw.options)) return undefined;
+  // Backward-compat: legacy polls encoded options as plain strings; normalize to
+  // the AskUserQuestion {label} shape so the render never hits opt.label === undefined.
+  return { ...raw, options: raw.options.map(o => (typeof o === 'string' ? { label: o } : o)) };
 }
 
 export interface SigRequest {
