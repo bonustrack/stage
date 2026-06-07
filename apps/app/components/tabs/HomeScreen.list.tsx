@@ -6,7 +6,7 @@ import type { MutableRefObject, RefObject } from 'react';
 import { Pressable } from 'react-native';
 import { FlatList } from 'react-native-gesture-handler';
 import { Icon } from '@metro-labs/kit/icon';
-import { Avatar } from '../Avatar';
+import { TopnavIdentity } from '../TopnavIdentity';
 import { Box, Row } from '../layout';
 import { Text } from '@metro-labs/kit/text';
 import { CHANNELS_SCROLL_KEY, saveScrollOffset } from '../../lib/scrollPos';
@@ -18,13 +18,10 @@ import { LabelFilterBar } from './HomeScreen.labelbar';
 import { ChannelsSearchBar } from './HomeScreen.search';
 import { HomeContactResults } from './HomeScreen.contacts';
 import { HomeOverflowMenu } from './HomeScreen.overflow';
-import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
-import { shortAddress } from '../../lib/xmtp';
 
 interface ChannelsListProps {
   panRef?: import('../SwipeTabs.types').SimultaneousRefs;
   router: { push: (to: string | { pathname: string; params: Record<string, string> }) => void };
-  myAddress: string | null;
   sortedRows: RowT[];
   requestCount: number;
   /** Unique labels across non-archived channels → the filter bar chips. */
@@ -50,7 +47,7 @@ interface ChannelsListProps {
 }
 
 export function ChannelsList({
-  panRef, router, myAddress, sortedRows, requestCount, barLabels, enabledLabels, onToggleLabel,
+  panRef, router, sortedRows, requestCount, barLabels, enabledLabels, onToggleLabel,
   query, setQuery,
   fg, head, sub, border,
   listExtraData, listRef, savedOffsetRef, didRestoreRef, contentHeightRef,
@@ -62,11 +59,6 @@ export function ChannelsList({
   const dark = useEffectiveColorScheme() === 'dark';
   const badgeBg = dark ? '#ffffff' : '#000000';
   const badgeFg = dark ? '#000000' : '#ffffff';
-  // Resolve the active account's display name (ENS / profile) the same way the
-  // Menu account header does (getPeerName ?? shortAddress); usePeerProfiles
-  // re-renders this row once the batch resolves.
-  usePeerProfiles([myAddress]);
-  const myName = myAddress ? (getPeerName(myAddress) ?? shortAddress(myAddress)) : '';
   return (
     <>
       {/* Home topnav: avatar on the left, requests + 3-dot overflow menu on the
@@ -74,21 +66,9 @@ export function ChannelsList({
        *  lives in a horizontal chip bar under the search bar (LabelFilterBar). */}
       <Row align="center" justify="between" px={16} pt={12} pb={10}>
         <Row align="center" gap={8}>
-          {/* Avatar opens the Menu page (account switcher + Profile/Settings),
-           *  replacing the former slide-out left sidebar. */}
-          <Pressable onPress={() => router.push('/menu')} hitSlop={8}>
-            <Row align="center" gap={8}>
-              <Avatar address={myAddress} size={28} style={{ backgroundColor: border }} />
-              {myName ? (
-                <Text
-                  numberOfLines={1}
-                  style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold', maxWidth: 200 }}
-                >
-                  {myName}
-                </Text>
-              ) : null}
-            </Row>
-          </Pressable>
+          {/* Avatar + name → Menu page; shared TopnavIdentity (also on the
+           *  wallet / notifications / profile tabs for a consistent identity). */}
+          <TopnavIdentity />
         </Row>
         <Row align="center" gap={18}>
           {/* Message requests: person icon + count badge (pending 'unknown'

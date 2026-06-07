@@ -16,6 +16,7 @@ import { flash } from '../../lib/toast';
 import { usePeerProfiles } from '../../lib/peerProfiles';
 import { DANGER, useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { Box, Col, Row } from '../layout';
+import { TopnavIdentity } from '../TopnavIdentity';
 import { getNftsAcrossChains, type Nft } from '../../lib/opensea';
 import { Btn, WalletTabs, NftsView, fmtUsd, splitUsd, type WalletTab } from './WalletScreen.parts';
 import { PrivateView } from './WalletScreen.private';
@@ -53,16 +54,12 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
   }, [privAccountId, address]);
 
 
-  /** Shielded (Railgun) balances — reuses the same instant-paint hook the
-   *  Private tab uses (cached snapshot + pending overlay, no refetch). They're
-   *  merged into the public Tokens list below as `isPrivate` rows.
-   *
-   *  autoStart:true so the Tokens tab itself boots the Railgun engine and the
-   *  user sees private balances WITHOUT having to open the Private tab. This is
-   *  the SAME safe path the Private tab uses: usePrivateWallet gates the engine
-   *  boot behind waitForXmtpReady() (nodejs-mobile starts only AFTER XMTP's
-   *  Client.create settles), and the bridge's started/readyPromise guard keeps
-   *  the boot single-flight, so a prior Private-tab start makes this a no-op. */
+  /** Shielded (Railgun) balances — reuses the Private tab's instant-paint hook
+   *  (cached snapshot + pending overlay, no refetch), merged into the public
+   *  Tokens list below as `isPrivate` rows. autoStart:true boots the Railgun
+   *  engine here so private balances show without opening the Private tab — the
+   *  SAME guarded path the Private tab uses (waitForXmtpReady + single-flight
+   *  started/readyPromise), so a prior start makes this a no-op. */
   // ALWAYS render the fixed private row set (ETH/USDC × mainnet/Sepolia), even
   // pre-snapshot / pre-scan / at zero — pass the snapshot (may be null) so the
   // mapper seeds zero rows from the token registry then overlays live amounts.
@@ -141,6 +138,8 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
       scrollEventThrottle={pull.scrollEventThrottle}
     >
       {pull.indicator}
+      {/* Topnav identity (avatar + name → Menu), left-aligned to match Home. */}
+      <Row align="center" px={16} pt={12} pb={4}><TopnavIdentity /></Row>
       {/* Value card — compact, left-aligned: just the big total USD value.
           Decimals render in the dim `sub` colour to keep the dollars prominent. */}
       <Col mx={16} pt={20} pb={16} align="start">
