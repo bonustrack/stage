@@ -17,13 +17,14 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Title } from '@metro-labs/kit/title';
 import { Icon } from '@metro-labs/kit/icon';
+import { ListView } from '@metro-labs/kit/list-view';
 import { Box } from '../components/layout';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { usePeerProfiles } from '../lib/peerProfiles';
 import { switchToAccount } from '../lib/xmtp';
 import { loadAccounts, getActiveAccountId, type AccountRecord } from '../lib/accounts';
-import { DrawerAccounts, DrawerHeader, DrawerRow } from '../components/LeftDrawer.parts';
-import { DrawerAccountActions } from '../components/LeftDrawer.accounts';
+import { drawerAccountRows, DrawerHeader, DrawerRow } from '../components/LeftDrawer.parts';
+import { useDrawerAccountActions } from '../components/LeftDrawer.accounts';
 
 export default function Menu(): React.ReactElement {
   const router = useRouter();
@@ -47,6 +48,10 @@ export default function Menu(): React.ReactElement {
   usePeerProfiles(accounts.map(a => a.address));
 
   const activeRec = accounts.find(a => a.id === activeId) ?? accounts[0] ?? null;
+
+  const actions = useDrawerAccountActions({
+    head, sub, border, dark, onChanged: () => { void refresh(); },
+  });
 
   function go(href: '/profile' | '/settings'): void {
     router.navigate(href);
@@ -81,11 +86,14 @@ export default function Menu(): React.ReactElement {
         contentContainerStyle={{ paddingTop: 14, paddingBottom: 24 + insets.bottom }}
       >
         <DrawerHeader rec={activeRec} c={{ head, sub, border }} />
-        <DrawerAccounts accounts={accounts} activeId={activeId} onSwitch={onSwitch} c={{ head, sub, border }} />
-        <DrawerAccountActions head={head} sub={sub} border={border} dark={dark} onChanged={() => { void refresh(); }} />
-        <DrawerRow icon="user" label="Profile" head={head} sub={sub} border={border} onPress={() => go('/profile')} />
-        <DrawerRow icon="cog" label="Settings" head={head} sub={sub} border={border} onPress={() => go('/settings')} />
+        <ListView dark={dark}>
+          {drawerAccountRows({ accounts, activeId, onSwitch, c: { head, sub, border }, dark })}
+          {actions.rows}
+          <DrawerRow rowKey="profile" icon="user" label="Profile" head={head} sub={sub} border={border} dark={dark} onPress={() => go('/profile')} />
+          <DrawerRow rowKey="settings" icon="cog" label="Settings" head={head} sub={sub} border={border} dark={dark} onPress={() => go('/settings')} />
+        </ListView>
       </ScrollView>
+      {actions.modal}
     </Box>
   );
 }

@@ -24,6 +24,7 @@ export function SecuritySettings(): React.ReactElement {
         <AccountSecuritySection
           c={{ fg, head, sub, border, rowBg }}
           danger={DANGER}
+          dark={dark}
         />
       </ScrollView>
     </Box>

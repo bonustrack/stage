@@ -5,6 +5,7 @@ import { Modal, Pressable } from 'react-native';
 import { Box } from './layout';
 import { Stamp } from './Stamp';
 import { Text } from '@metro-labs/kit/text';
+import { ListViewItem } from '@metro-labs/kit/list-view';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getPeerName } from '../lib/peerProfiles';
 import { shortAddress } from '../lib/xmtp';
@@ -66,22 +67,19 @@ export function SheetModal({ visible, onClose, children, bg, border }: {
   );
 }
 
-export function SheetButton({ label, desc, onPress, head, sub, border, danger }: {
+/** Option row for the account bottom-sheets, on the shared Kit ListView style
+ *  (drop inside a <ListView>). Label + optional description; danger tint. */
+export function SheetRow({ label, desc, onPress, head, sub, danger, dark }: {
   label: string; desc?: string; onPress: () => void;
-  head: string; sub: string; border: string; danger?: boolean;
+  head: string; sub: string; danger?: boolean; dark: boolean;
 }): React.ReactElement {
   const labelColor = danger ? DANGER : head;
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        paddingHorizontal: 14, paddingVertical: 12, borderRadius: 12, marginTop: 8,
-        borderWidth: 1, borderColor: border,
-        backgroundColor: pressed ? border : 'transparent',
-      })}
-    >
-      <Text style={{ color: labelColor, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>{label}</Text>
-      {desc ? <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 2 }}>{desc}</Text> : null}
-    </Pressable>
+    <ListViewItem dark={dark} onPress={onPress}>
+      <Box style={{ flex: 1 }}>
+        <Text style={{ color: labelColor, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>{label}</Text>
+        {desc ? <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 2 }}>{desc}</Text> : null}
+      </Box>
+    </ListViewItem>
   );
 }

@@ -17,12 +17,19 @@
  *  ListView draws 1px dividers BETWEEN items (not after the last one), honours
  *  `limit` (max rows shown), and renders an optional muted `status` line at the
  *  foot. Each ListViewItem owns its pressed-bg + horizontal padding so the row
- *  fill spans the full width while the divider stays inset. */
+ *  fill spans the full width, while the divider is inset by ROW_INSET on both
+ *  sides so it starts where the row content (icon) starts and ends with equal
+ *  spacing on the right. */
 
 import { Children, isValidElement, type ReactNode } from 'react';
 import { Pressable, View, Text as RNText, type ViewStyle } from 'react-native';
 
 export type ListItemAlign = 'start' | 'center' | 'end';
+
+/** Horizontal content inset shared by the row padding and the divider, so the
+ *  divider starts where the row content (icon) starts and ends with equal
+ *  spacing on the right. */
+const ROW_INSET = 16;
 
 const ALIGN: Record<ListItemAlign, ViewStyle['alignItems']> = {
   start: 'flex-start',
@@ -60,15 +67,17 @@ export function ListView(props: ListViewProps): React.ReactElement {
   return (
     <View style={style}>
       {shown.map((child, i) => (
-        <View
-          key={child.key ?? i}
-          style={
-            i < shown.length - 1
-              ? { borderBottomWidth: 1, borderBottomColor: c.border }
-              : undefined
-          }
-        >
+        <View key={child.key ?? i}>
           {child}
+          {i < shown.length - 1 ? (
+            <View
+              style={{
+                height: 1,
+                backgroundColor: c.border,
+                marginHorizontal: ROW_INSET,
+              }}
+            />
+          ) : null}
         </View>
       ))}
       {status ? (
@@ -114,7 +123,7 @@ export function ListViewItem(props: ListViewItemProps): React.ReactElement {
     alignItems: ALIGN[align],
     gap,
     paddingVertical: 16,
-    paddingHorizontal: 16,
+    paddingHorizontal: ROW_INSET,
   };
 
   if (onPress) {

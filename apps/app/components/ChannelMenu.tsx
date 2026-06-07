@@ -17,13 +17,14 @@
  *    - Leave group       — ALL groups, both contexts (built-in confirm + leave)
  */
 
-import { Alert, Pressable } from 'react-native';
+import { Alert } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
+import { ListView, ListViewItem } from '@metro-labs/kit/list-view';
 import { useRouter } from 'expo-router';
-import { Col } from './layout';
+import { Box } from './layout';
 import { AppModal } from './AppModal';
-import { usePalette } from '../lib/theme';
+import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { markConvRead, markConvUnread } from '../lib/channelsCache';
 import { togglePin } from '../lib/pins';
 import { toggleArchived } from '../lib/archived';
@@ -63,6 +64,7 @@ export function ChannelMenu({
 }: ChannelMenuProps): React.ReactElement {
   const router = useRouter();
   const pal = usePalette();
+  const dark = useEffectiveColorScheme() === 'dark';
   const head = pal.link;
   const danger = pal.danger;
 
@@ -96,11 +98,14 @@ export function ChannelMenu({
 
   return (
     <AppModal visible={visible} onClose={onClose}>
-      <Col gap={4}>
+      {/* Cancel AppModal's 16px ScrollView padding so the list spans edge-to-edge
+          and the row content inset (ROW_INSET 16) matches the Settings page. */}
+      <ListView dark={dark} style={{ marginHorizontal: -16 }}>
         <MenuRow
           icon={isUnread ? 'check' : 'envelope'}
           label={isUnread ? 'Mark as read' : 'Mark as unread'}
           color={head}
+          dark={dark}
           onPress={() => run(() => { void (isUnread ? markConvRead(convId) : markConvUnread(convId)); })}
         />
 
@@ -108,6 +113,7 @@ export function ChannelMenu({
           icon="mapPin"
           label={isPinned ? 'Unpin' : 'Pin'}
           color={head}
+          dark={dark}
           onPress={() => run(() => { void togglePin(convId); })}
         />
 
@@ -118,6 +124,7 @@ export function ChannelMenu({
           icon={isArchived ? 'arrowUp' : 'archive'}
           label={isArchived ? 'Unarchive' : 'Archive'}
           color={head}
+          dark={dark}
           onPress={() => run(() => {
             void toggleArchived(convId);
             onAfterArchive?.(!isArchived);
@@ -130,6 +137,7 @@ export function ChannelMenu({
             icon="users"
             label="Group info"
             color={head}
+            dark={dark}
             onPress={() => run(() => router.push({ pathname: '/group/[convId]', params: { convId } }))}
           />
         ) : peerAddress ? (
@@ -137,6 +145,7 @@ export function ChannelMenu({
             icon="user"
             label="Profile"
             color={head}
+            dark={dark}
             onPress={() => run(() => router.push({ pathname: '/user/[address]', params: { address: peerAddress } }))}
           />
         ) : null}
@@ -146,28 +155,32 @@ export function ChannelMenu({
             icon="plus"
             label="Add members"
             color={head}
+            dark={dark}
             onPress={() => run(() => router.push({ pathname: '/xmtp/add-members', params: { convId } }))}
           />
         ) : null}
 
         {isGroup ? (
-          <MenuRow icon="arrowLeft" label="Leave group" color={danger} onPress={onLeaveGroup} />
+          <MenuRow icon="arrowLeft" label="Leave group" color={danger} dark={dark} onPress={onLeaveGroup} />
         ) : null}
-      </Col>
+      </ListView>
     </AppModal>
   );
 }
 
-function MenuRow({ icon, label, color, onPress }: {
+function MenuRow({ icon, label, color, dark, onPress }: {
   icon: React.ComponentProps<typeof Icon>['name'];
   label: string;
   color: string;
+  dark: boolean;
   onPress: () => void;
 }): React.ReactElement {
   return (
-    <Pressable onPress={onPress} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 }}>
+    <ListViewItem dark={dark} onPress={onPress}>
       <Icon name={icon} size={20} color={color} />
-      <Text style={{ color, fontSize: 18, fontFamily: 'Calibre-Medium' }}>{label}</Text>
-    </Pressable>
+      <Box style={{ flex: 1 }}>
+        <Text style={{ color, fontSize: 18, fontFamily: 'Calibre-Medium' }}>{label}</Text>
+      </Box>
+    </ListViewItem>
   );
 }

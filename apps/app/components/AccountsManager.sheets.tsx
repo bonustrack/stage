@@ -5,11 +5,12 @@ import { TextInput } from 'react-native';
 import { Box } from './layout';
 import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';
+import { ListView } from '@metro-labs/kit/list-view';
 import * as Clipboard from 'expo-clipboard';
 import { flash } from '../lib/toast';
 import { canExportPrivateKey, type AccountRecord } from '../lib/accounts';
-import { SheetModal, SheetButton } from './AccountsManager.parts';
-import { DANGER, usePalette } from '../lib/theme';
+import { SheetModal, SheetRow } from './AccountsManager.parts';
+import { DANGER, useEffectiveColorScheme, usePalette } from '../lib/theme';
 
 interface Pal { head: string; sub: string; border: string; sheetBg: string; }
 
@@ -17,11 +18,16 @@ export function AddSheet({ visible, onClose, onGenerate, onImport, onWalletConne
   visible: boolean; onClose: () => void;
   onGenerate: () => void; onImport: () => void; onWalletConnect: () => void; p: Pal;
 }): React.ReactElement {
+  const dark = useEffectiveColorScheme() === 'dark';
   return (
     <SheetModal visible={visible} onClose={onClose} bg={p.sheetBg} border={p.border}>
-      <SheetButton label="Generate a new account" desc="Create a fresh wallet on this device" head={p.head} sub={p.sub} border={p.border} onPress={onGenerate} />
-      <SheetButton label="Import private key" desc="Paste an existing wallet's private key" head={p.head} sub={p.sub} border={p.border} onPress={onImport} />
-      <SheetButton label="Connect with WalletConnect" desc="Sign in with an existing wallet" head={p.head} sub={p.sub} border={p.border} onPress={onWalletConnect} />
+      {/* Cancel SheetModal's 16px padding so the list spans edge-to-edge and the
+          row content inset (ROW_INSET 16) matches the Settings page. */}
+      <ListView dark={dark} style={{ marginHorizontal: -16 }}>
+        <SheetRow label="Generate a new account" desc="Create a fresh wallet on this device" head={p.head} sub={p.sub} dark={dark} onPress={onGenerate} />
+        <SheetRow label="Import private key" desc="Paste an existing wallet's private key" head={p.head} sub={p.sub} dark={dark} onPress={onImport} />
+        <SheetRow label="Connect with WalletConnect" desc="Sign in with an existing wallet" head={p.head} sub={p.sub} dark={dark} onPress={onWalletConnect} />
+      </ListView>
     </SheetModal>
   );
 }
@@ -81,21 +87,26 @@ export function ManageSheet({ manageRec, activeId, onClose, onSwitch, onExport, 
   onSwitch: (id: string) => void; onExport: (id: string) => void;
   onRemove: (rec: AccountRecord) => void; p: Pal;
 }): React.ReactElement {
+  const dark = useEffectiveColorScheme() === 'dark';
   return (
     <SheetModal
       visible={manageRec !== null}
       onClose={onClose}
       bg={p.sheetBg} border={p.border}
     >
-      {manageRec && manageRec.id !== activeId ? (
-        <SheetButton label="Switch to this account" head={p.head} sub={p.sub} border={p.border} onPress={() => { const id = manageRec.id; onClose(); onSwitch(id); }} />
-      ) : null}
-      {manageRec && canExportPrivateKey(manageRec) ? (
-        <SheetButton label="Export private key" desc="Reveal + copy this account's key" head={p.head} sub={p.sub} border={p.border} onPress={() => { const id = manageRec.id; onClose(); onExport(id); }} />
-      ) : null}
-      {manageRec ? (
-        <SheetButton label="Remove account" desc="Delete from this device" danger head={p.head} sub={p.sub} border={p.border} onPress={() => onRemove(manageRec)} />
-      ) : null}
+      {/* Cancel SheetModal's 16px padding so the list spans edge-to-edge and the
+          row content inset (ROW_INSET 16) matches the Settings page. */}
+      <ListView dark={dark} style={{ marginHorizontal: -16 }}>
+        {manageRec && manageRec.id !== activeId ? (
+          <SheetRow label="Switch to this account" head={p.head} sub={p.sub} dark={dark} onPress={() => { const id = manageRec.id; onClose(); onSwitch(id); }} />
+        ) : null}
+        {manageRec && canExportPrivateKey(manageRec) ? (
+          <SheetRow label="Export private key" desc="Reveal + copy this account's key" head={p.head} sub={p.sub} dark={dark} onPress={() => { const id = manageRec.id; onClose(); onExport(id); }} />
+        ) : null}
+        {manageRec ? (
+          <SheetRow label="Remove account" desc="Delete from this device" danger head={p.head} sub={p.sub} dark={dark} onPress={() => onRemove(manageRec)} />
+        ) : null}
+      </ListView>
     </SheetModal>
   );
 }

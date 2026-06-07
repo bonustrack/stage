@@ -26,7 +26,7 @@ import { DANGER, usePalette } from '../lib/theme';
 
 /** Switch the active XMTP client to a freshly added account id. The wallet/EOA
  *  switch happens regardless (decoupled from XMTP), and switchToAccount bumps the
- *  account epoch even when its XMTP inbox fails to build — so HomeScreen re-inits
+ *  account epoch even when its XMTP inbox fails to build - so HomeScreen re-inits
  *  onto the recoverable HomeError screen instead of a dead spinner. We surface a
  *  toast here so the user knows messaging needs a reset, but never block the
  *  wallet switch (don't re-throw). The drawer still closes via onChanged(). */
@@ -34,16 +34,20 @@ async function activate(id: string, onChanged: () => void): Promise<void> {
   try {
     await switchToAccount(id);
   } catch {
-    flash('Switched account — XMTP messaging needs a reset (see Home)');
+    flash('Switched account - XMTP messaging needs a reset (see Home)');
   }
   onChanged();
 }
 
-export function DrawerAccountActions({ head, sub, border, dark, onChanged }: {
+/** Account-action rows + their import sheet. Returns the rows as a flat array
+ *  (so the caller spreads them as DIRECT ListView children and the Kit ListView
+ *  draws its inset divider under every row, including "New account") and the
+ *  modal (rendered as a sibling, OUTSIDE the list so it is never a stray row). */
+export function useDrawerAccountActions({ head, sub, border, dark, onChanged }: {
   head: string; sub: string; border: string; dark: boolean;
   /** Called after the registry changes so the drawer re-reads the list/active. */
   onChanged: () => void;
-}): React.ReactElement {
+}): { rows: React.ReactElement[]; modal: React.ReactElement } {
   const { primary, bg } = usePalette();
   const [busy, setBusy] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
@@ -85,15 +89,20 @@ export function DrawerAccountActions({ head, sub, border, dark, onChanged }: {
     })();
   };
 
-  return (
-    <>
-      <DrawerRow icon="userAdd" label="New account" head={head} sub={sub} border={border} onPress={onNew} />
-      <DrawerRow
-        icon="download" label="Add account" head={head} sub={sub} border={border}
-        onPress={() => { setErr(''); setText(''); setImportOpen(true); }}
-      />
+  const rows = [
+    <DrawerRow
+      key="new-account" rowKey="new-account" icon="userAdd" label="New account"
+      head={head} sub={sub} border={border} dark={dark} onPress={onNew}
+    />,
+    <DrawerRow
+      key="add-account" rowKey="add-account" icon="download" label="Add account"
+      head={head} sub={sub} border={border} dark={dark}
+      onPress={() => { setErr(''); setText(''); setImportOpen(true); }}
+    />,
+  ];
 
-      <AppModal visible={importOpen} onClose={() => setImportOpen(false)} title="Add account">
+  const modal = (
+    <AppModal visible={importOpen} onClose={() => setImportOpen(false)} title="Add account">
         <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginBottom: 10 }}>
           Paste an existing wallet&apos;s private key (0x… 64 hex) or its 12–24 word recovery phrase.
         </Text>
@@ -132,6 +141,7 @@ export function DrawerAccountActions({ head, sub, border, dark, onChanged }: {
           />
         </Box>
       </AppModal>
-    </>
   );
+
+  return { rows, modal };
 }

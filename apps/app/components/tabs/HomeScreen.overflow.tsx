@@ -10,8 +10,10 @@ import { useState } from 'react';
 import { Pressable } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
-import { Col } from '../layout';
+import { ListView, ListViewItem } from '@metro-labs/kit/list-view';
+import { Box } from '../layout';
 import { AppModal } from '../AppModal';
+import { useEffectiveColorScheme } from '../../lib/theme';
 
 interface HomeOverflowMenuProps {
   /** Topnav glyph color (matches the sibling requests icon). */
@@ -30,6 +32,7 @@ interface HomeOverflowMenuProps {
  *  the list view only passes the actions. */
 export function HomeOverflowMenu({ color, onArchived, onNewGroup, onEditProfile, onSettings }: HomeOverflowMenuProps): React.ReactElement {
   const [open, setOpen] = useState(false);
+  const dark = useEffectiveColorScheme() === 'dark';
   const close = (): void => setOpen(false);
   const run = (fn: () => void): void => { close(); fn(); };
 
@@ -39,27 +42,32 @@ export function HomeOverflowMenu({ color, onArchived, onNewGroup, onEditProfile,
         <Icon name="dotsVertical" size={24} color={color} />
       </Pressable>
       <AppModal visible={open} onClose={close}>
-        <Col gap={4}>
-          <OverflowRow icon="plus" label="New group" color={color} onPress={() => run(onNewGroup)} />
-          <OverflowRow icon="archive" label="Archived" color={color} onPress={() => run(onArchived)} />
-          <OverflowRow icon="pencil" label="Edit profile" color={color} onPress={() => run(onEditProfile)} />
-          <OverflowRow icon="cog" label="Settings" color={color} onPress={() => run(onSettings)} />
-        </Col>
+        {/* Cancel AppModal's 16px ScrollView padding so the list spans edge-to-edge
+            and the row content inset (ROW_INSET 16) matches the Settings page. */}
+        <ListView dark={dark} style={{ marginHorizontal: -16 }}>
+          <OverflowRow icon="plus" label="New group" color={color} dark={dark} onPress={() => run(onNewGroup)} />
+          <OverflowRow icon="archive" label="Archived" color={color} dark={dark} onPress={() => run(onArchived)} />
+          <OverflowRow icon="pencil" label="Edit profile" color={color} dark={dark} onPress={() => run(onEditProfile)} />
+          <OverflowRow icon="cog" label="Settings" color={color} dark={dark} onPress={() => run(onSettings)} />
+        </ListView>
       </AppModal>
     </>
   );
 }
 
-function OverflowRow({ icon, label, color, onPress }: {
+function OverflowRow({ icon, label, color, dark, onPress }: {
   icon: React.ComponentProps<typeof Icon>['name'];
   label: string;
   color: string;
+  dark: boolean;
   onPress: () => void;
 }): React.ReactElement {
   return (
-    <Pressable onPress={onPress} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 }}>
+    <ListViewItem dark={dark} onPress={onPress}>
       <Icon name={icon} size={20} color={color} />
-      <Text style={{ color, fontSize: 18, fontFamily: 'Calibre-Medium' }}>{label}</Text>
-    </Pressable>
+      <Box style={{ flex: 1 }}>
+        <Text style={{ color, fontSize: 18, fontFamily: 'Calibre-Medium' }}>{label}</Text>
+      </Box>
+    </ListViewItem>
   );
 }
