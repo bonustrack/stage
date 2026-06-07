@@ -57,7 +57,7 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
         <Box style={{ position: 'relative' }}>
           <TextInput
             ref={p.inputRef}
-            value={p.text} onChangeText={p.setText} placeholder="Ask Metro" placeholderTextColor={sub} multiline
+            value={p.text} onChangeText={p.setText} placeholder="Message" placeholderTextColor={sub} multiline
             onContentSizeChange={(e) => p.setTextareaH(e.nativeEvent.contentSize.height)}
             selection={p.selection}
             onSelectionChange={(e) => p.setSelection(e.nativeEvent.selection)}
