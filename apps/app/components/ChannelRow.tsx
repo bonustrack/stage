@@ -1,17 +1,11 @@
-/** Shared presentational row for a channel/conversation card.
- *
- *  Used by BOTH the channels tab (app/(tabs)/index.tsx) and the "Common
- *  channels" section on a peer's profile (CommonChannels.tsx) so the two
- *  surfaces stay visually identical. This component is PRESENTATION ONLY -
- *  all data/state logic (unread recount, streaming updates, pin/draft state,
- *  profile-name resolution) lives in the caller, which passes the resolved
- *  values down as props.
- *
+/** Shared presentational row for a channel/conversation card. Used by BOTH the
+ *  channels tab (app/(tabs)/index.tsx) and "Common channels" on a peer profile
+ *  (CommonChannels.tsx) so the two surfaces stay identical. PRESENTATION ONLY:
+ *  all data/state logic lives in the caller and is passed down as props.
  *  Layout: avatar (square for groups/channels, circle for DMs) + a title row
  *  (optional pin/draft glyphs, title, right-aligned timestamp) + a subtitle row
- *  (last-message preview or member count, with an optional unread badge/dot).
- *  Timestamp, preview, and unread props are all optional so callers without
- *  that context (common channels) can omit them gracefully. */
+ *  (preview or member count, optional unread badge/dot). Timestamp/preview/
+ *  unread props are optional so callers without context can omit them. */
 
 import { memo } from 'react';
 // eslint-disable-next-line no-restricted-imports -- raw View is required as an INLINE element inside <Text> (Box/Row/Col carry layout flex and don't embed inline in text flow)
@@ -70,25 +64,30 @@ export interface ChannelRowProps {
  *  (2) so the chips stay secondary to the group name on the same row. */
 const MAX_VISIBLE_LABELS = 2;
 
+/** Constant content height reserved on the OUTER row so a 1-line and a 2-line
+ *  preview render the SAME total height: title line (~23) + 2 preview lines
+ *  (2 * 21 = 42) ~= 67, which also exceeds the 44px avatar. The text column has
+ *  NO internal blank reservation, so the title+preview group centers as a unit
+ *  next to the centered avatar (no empty gap stuck at the bottom). */
+const ROW_CONTENT_HEIGHT = 67;
+
 /** Build ROUNDED label chips as INLINE <View>s placed as the FIRST children
- *  INSIDE the preview <Text>. RN supports embedding a <View> inline in a <Text>;
- *  because it flows as inline content, the preview text wraps UNDERNEATH the
- *  chip(s) on the 2nd line (not in a 2-column row beside it). Each chip is a real
- *  rounded pill (borderRadius 999) so corners render; explicit height + small
- *  marginRight keeps the baseline/spacing sane on Android. Caps at
- *  MAX_VISIBLE_LABELS visible + a "+N" pill. */
+ *  INSIDE the preview <Text>; the preview text flows around them and wraps
+ *  UNDERNEATH on the 2nd line. Each chip is a rounded pill (borderRadius 999).
+ *  marginRight on an inline <View> is NOT honored by RN, so the visible gap
+ *  comes from a sibling inline <Text> spacer. Caps at MAX_VISIBLE + a "+N". */
 function buildLabelChips({ labels, fg, rowBg }: {
   labels: string[]; fg: string; rowBg: string;
 }): React.ReactNode[] {
   const visible = labels.slice(0, MAX_VISIBLE_LABELS);
   const overflow = labels.length - visible.length;
   const chips = overflow > 0 ? [...visible, `+${overflow}`] : visible;
-  return chips.map((label, i) => (
+  return chips.flatMap((label, i) => [
     <View
       key={`${label.toLowerCase()}-${i}`}
       style={{
         height: 20, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2,
-        backgroundColor: rowBg, marginRight: 12, justifyContent: 'center',
+        backgroundColor: rowBg, justifyContent: 'center',
         // RN aligns an inline <View> by its BOTTOM edge to the text baseline,
         // so a 20px chip sits high vs the fontSize-17/lineHeight-22 preview text.
         // Drop it down so the chip's vertical center matches the text line center.
@@ -96,8 +95,10 @@ function buildLabelChips({ labels, fg, rowBg }: {
       }}
     >
       <Text style={{ color: fg, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{label}</Text>
-    </View>
-  ));
+    </View>,
+    // Real, rendered gap (inline-View margin is NOT honored by RN).
+    <Text key={`gap-${i}`} style={{ fontSize: 13 }}>{'  '}</Text>,
+  ]);
 }
 
 /** #6: memoised so a stream tick that re-renders the channels list only
@@ -124,8 +125,12 @@ function ChannelRowBase({
         paddingHorizontal: 14,
       }))}
     >
-      {/* Inner row: no divider line between rows. */}
-      <Row align="center" gap={12} py={9}>
+      {/* No divider. Center-aligned (align="center"): avatar + text column
+          center vertically as a group within a CONSTANT-height row. The fixed
+          height lives on the ROW (ROW_CONTENT_HEIGHT, the 2-line case), NOT
+          inside the preview block, so 1-line and 2-line rows are the same total
+          height and the content is truly centered (no bottom gap). */}
+      <Row align="center" gap={12} py={9} style={{ minHeight: ROW_CONTENT_HEIGHT }}>
         <Avatar
           imageUri={avatarUri}
           address={!avatarUri && avatarAddress ? avatarAddress : null}
@@ -141,7 +146,7 @@ function ChannelRowBase({
             {/* Name + labels hug each other on the left; name shrinks (and
                 ellipsizes) first, the label chip stays right beside it. */}
             <Text
-              style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold', flexShrink: 1, minWidth: 0 }}
+              style={{ color: head, fontSize: 19, fontFamily: 'Calibre-Semibold', flexShrink: 1, minWidth: 0 }}
               numberOfLines={1}
               ellipsizeMode="tail"
             >
@@ -150,19 +155,19 @@ function ChannelRowBase({
             {/* Flexible spacer pushes the timestamp to the far right edge. */}
             <Spacer />
             {timestamp ? (
-              <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{timestamp}</Text>
+              <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium' }}>{timestamp}</Text>
             ) : null}
           </Row>
-          {/* Reserve the badge's height (22) regardless of whether one shows so
-              rows with/without the unread indicator are the same total height. */}
-          {/* align-start so the unread badge pins to the FIRST line when the
-              preview wraps to two lines. */}
-          <Row align="start" gap={7} mt={2} style={{ minHeight: 22 }}>
+          {/* No internal height reservation: the preview block is only as tall
+              as its actual content (1 or 2 lines) so the title+preview group can
+              center within the fixed-height row. align-start pins the unread
+              badge to the FIRST line when the preview wraps. */}
+          <Row align="start" gap={7} mt={2}>
             {/* ROUNDED chip(s) are INLINE <View>s at the START of the preview
                 <Text>, so the preview flows around them and wraps UNDERNEATH the
                 chip on the 2nd line (single-line rounded pill, text under it). */}
             <Text
-              style={{ color: sub, fontSize: 17, lineHeight: 22, fontFamily: 'Calibre-Medium', flex: 1 }}
+              style={{ color: sub, fontSize: 16, lineHeight: 21, fontFamily: 'Calibre-Medium', flex: 1 }}
               numberOfLines={2}
               ellipsizeMode="tail"
             >
