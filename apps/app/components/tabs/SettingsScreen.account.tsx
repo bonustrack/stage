@@ -5,11 +5,13 @@
  *  XMTP store). The key is never logged. */
 
 import { useEffect, useState } from 'react';
-import { Alert, Pressable } from 'react-native';
+import { Alert } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
-import { Col } from '../layout';
+import { Card } from '@metro-labs/kit/card';
+import { ListView, ListViewItem } from '@metro-labs/kit/list-view';
+import { Box, Col } from '../layout';
 import { flash } from '../../lib/toast';
 import {
   getActiveAccount, getPrivateKey, canExportPrivateKey, type AccountRecord,
@@ -21,7 +23,7 @@ import { reloadApp } from '../AccountsManager.helpers';
 interface SectionColors { fg: string; head: string; sub: string; border: string; rowBg: string }
 
 export function AccountSecuritySection(
-  { c, danger }: { c: SectionColors; danger: string },
+  { c, danger, dark }: { c: SectionColors; danger: string; dark: boolean },
 ): React.ReactElement | null {
   const epoch = useAccountEpoch();
   const [rec, setRec] = useState<AccountRecord | null>(null);
@@ -82,46 +84,46 @@ export function AccountSecuritySection(
       <Text style={{ color: c.sub, fontSize: 13, paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8, fontFamily: 'Calibre-Medium' }}>
         ACCOUNT
       </Text>
-      <Col mx={16} radius={12} bg={c.rowBg} style={{ overflow: 'hidden', borderWidth: 1, borderColor: c.border }}>
-        {exportable ? (
-          <Pressable
-            onPress={revealed ? () => { void Clipboard.setStringAsync(revealed); flash('Private key copied'); } : confirmExport}
-            style={({ pressed }) => ({
-              paddingHorizontal: 14, paddingVertical: 14,
-              flexDirection: 'row', alignItems: 'center', gap: 12,
-              backgroundColor: pressed ? c.border : 'transparent',
-            })}
-          >
-            <Icon name="wallet" size={22} color={c.head} />
-            <Col flex={1}>
-              <Text style={{ color: c.fg, fontSize: 18, fontFamily: 'Calibre-Medium' }}>
-                {revealed ? 'Tap to copy private key' : 'Export private key'}
-              </Text>
-              {revealed ? (
-                <Text selectable style={{ color: c.sub, fontSize: 12, marginTop: 4, fontFamily: 'Calibre-Medium' }}>
-                  {revealed}
-                </Text>
-              ) : null}
-            </Col>
-            <Icon name={revealed ? 'copy' : 'chevronDown'} size={20} color={c.head} />
-          </Pressable>
-        ) : null}
+      <Box mx={16} style={{ overflow: 'hidden' }}>
+        <Card dark={dark} background={c.rowBg} padding={0}>
+          <ListView dark={dark}>
+            {exportable ? (
+              <ListViewItem
+                dark={dark}
+                align={revealed ? 'start' : 'center'}
+                onPress={revealed
+                  ? () => { void Clipboard.setStringAsync(revealed); flash('Private key copied'); }
+                  : confirmExport}
+                style={{ paddingHorizontal: 14, paddingVertical: 14 }}
+              >
+                <Icon name="wallet" size={22} color={c.head} />
+                <Col flex={1}>
+                  <Text style={{ color: c.fg, fontSize: 18, fontFamily: 'Calibre-Medium' }}>
+                    {revealed ? 'Tap to copy private key' : 'Export private key'}
+                  </Text>
+                  {revealed ? (
+                    <Text selectable style={{ color: c.sub, fontSize: 12, marginTop: 4, fontFamily: 'Calibre-Medium' }}>
+                      {revealed}
+                    </Text>
+                  ) : null}
+                </Col>
+                <Icon name={revealed ? 'copy' : 'chevronDown'} size={20} color={c.head} />
+              </ListViewItem>
+            ) : null}
 
-        <Pressable
-          onPress={confirmRemove}
-          style={({ pressed }) => ({
-            paddingHorizontal: 14, paddingVertical: 14,
-            flexDirection: 'row', alignItems: 'center', gap: 12,
-            borderTopWidth: exportable ? 1 : 0, borderTopColor: c.border,
-            backgroundColor: pressed ? c.border : 'transparent',
-          })}
-        >
-          <Icon name="trash" size={22} color={danger} />
-          <Text style={{ color: danger, fontSize: 18, fontFamily: 'Calibre-Medium', flex: 1 }}>
-            Remove account
-          </Text>
-        </Pressable>
-      </Col>
+            <ListViewItem
+              dark={dark}
+              onPress={confirmRemove}
+              style={{ paddingHorizontal: 14, paddingVertical: 14 }}
+            >
+              <Icon name="trash" size={22} color={danger} />
+              <Text style={{ color: danger, fontSize: 18, fontFamily: 'Calibre-Medium', flex: 1 }}>
+                Remove account
+              </Text>
+            </ListViewItem>
+          </ListView>
+        </Card>
+      </Box>
     </>
   );
 }
