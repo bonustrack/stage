@@ -101,9 +101,6 @@ export function TokenRow({ r, head, sub, border, bg, onPress }: { r: AssetRow; o
     <Pressable onPress={onPress} disabled={!onPress} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
     <Row
       align="center" gap={12} py={14}
-      style={{
-        borderBottomWidth: 1, borderBottomColor: border,
-      }}
     >
       {/* Token avatar + network badge - shared TokenAvatar (Snapshot-treasury
           style), reused by the private Activity rows so both read identically. */}
@@ -113,7 +110,7 @@ export function TokenRow({ r, head, sub, border, bg, onPress }: { r: AssetRow; o
       <Col flex={1} style={{ minWidth: 0 }}>
         <Row align="center" gap={6} style={{ minWidth: 0 }}>
           {r.isPrivate ? <PrivateBadge sub={sub} /> : null}
-          <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{r.name}</Text>
+          <Text style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{r.name}</Text>
         </Row>
         <Row align="center" gap={6} mt={2}>
           <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
@@ -128,7 +125,7 @@ export function TokenRow({ r, head, sub, border, bg, onPress }: { r: AssetRow; o
       </Col>
       {/* Right column — USD VALUE (top, big/white) over amount + symbol (bottom). */}
       <Col align="end">
-        <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold' }}>
+        <Text style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold' }}>
           {valueUsd === null ? '—' : fmtUsd(valueUsd)}
         </Text>
         <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
