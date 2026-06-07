@@ -65,6 +65,19 @@ function totalsOf(files: DiffFile[]): { additions: number; deletions: number } {
   );
 }
 
+/** The daemon proxy returns title + files but omits the PR/issue body, so the
+ *  description renders blank. Fetch it directly from GitHub as a best-effort
+ *  fill (unauthenticated; failures are swallowed and leave body undefined). */
+async function fetchBody(owner: string, repo: string, kind: 'pull' | 'issue', n: number): Promise<string | undefined> {
+  const path = kind === 'pull' ? 'pulls' : 'issues';
+  try {
+    const res = await fetch(`${GH}/repos/${owner}/${repo}/${path}/${n}`, { headers: HEADERS });
+    if (!res.ok) return undefined;
+    const j = (await res.json()) as { body?: string };
+    return j.body ?? undefined;
+  } catch { return undefined; }
+}
+
 /** Primary path: one authenticated round trip through the daemon proxy. */
 async function fetchViaProxy(ref: GithubRef): Promise<GithubDiff> {
   const qs = new URLSearchParams({
@@ -74,13 +87,17 @@ async function fetchViaProxy(ref: GithubRef): Promise<GithubDiff> {
   if (!res.ok) throw new Error(`proxy ${res.status}`);
   const out = (await res.json()) as ProxyResult;
   if (out.error) throw new Error(out.error);
-  if (out.kind === 'no-pr')
-    return { kind: 'no-pr', owner: out.owner, repo: out.repo, title: out.title, body: out.body, files: [], additions: 0, deletions: 0 };
+  if (out.kind === 'no-pr') {
+    const body = out.body ?? (ref.number ? await fetchBody(out.owner, out.repo, 'issue', ref.number) : undefined);
+    return { kind: 'no-pr', owner: out.owner, repo: out.repo, title: out.title, body, files: [], additions: 0, deletions: 0 };
+  }
   const files = (out.files ?? []).map(toDiffFile);
   const summed = totalsOf(files);
+  // Proxy omits body; backfill from the resolved PR number when missing.
+  const body = out.body ?? (out.prNumber ? await fetchBody(out.owner, out.repo, 'pull', out.prNumber) : undefined);
   return {
     kind: 'ok', owner: out.owner, repo: out.repo, prNumber: out.prNumber,
-    title: out.title, body: out.body, files,
+    title: out.title, body, files,
     additions: typeof out.additions === 'number' ? out.additions : summed.additions,
     deletions: typeof out.deletions === 'number' ? out.deletions : summed.deletions,
   };

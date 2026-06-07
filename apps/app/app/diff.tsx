@@ -52,7 +52,7 @@ export default function Diff(): React.ReactElement {
           <Icon name="arrowLeft" size={22} color={p.text} />
         </Pressable>
         <Title dark={dark} style={{ color: p.link, fontSize: 20, flex: 1 }} numberOfLines={1}>
-          {diff?.title ?? 'Changes'}
+          Changes
         </Title>
       </Box>
 
@@ -65,17 +65,13 @@ export default function Diff(): React.ReactElement {
           <Text style={{ color: p.text, opacity: 0.7 }}>Could not load the diff (private repo or GitHub rate limit). Open it on GitHub below.</Text>
         ) : diff?.kind === 'no-pr' ? (
           <>
-            {(diff.title || diff.body?.trim()) ? (
-              <Box style={{ borderWidth: 1, borderColor: p.border, borderRadius: 8, padding: 12, marginBottom: 10 }}>
-                {diff.title ? (
-                  <Text style={{ color: p.text, fontFamily: 'Calibre-Semibold', fontSize: 19, lineHeight: 24, marginBottom: diff.body?.trim() ? 8 : 0 }}>
-                    {diff.title}
-                  </Text>
-                ) : null}
-                {diff.body?.trim() ? (
-                  <Text style={{ color: p.text, fontSize: 14, lineHeight: 20 }}>{diff.body.trim()}</Text>
-                ) : null}
-              </Box>
+            {diff.title ? (
+              <Text style={{ color: p.text, fontFamily: 'Calibre-Semibold', fontSize: 22, lineHeight: 27, marginBottom: diff.body?.trim() ? 8 : 10 }}>
+                {diff.title}
+              </Text>
+            ) : null}
+            {diff.body?.trim() ? (
+              <Text style={{ color: p.text, fontSize: 14, lineHeight: 20, marginBottom: 10 }}>{diff.body.trim()}</Text>
             ) : null}
             <Text style={{ color: p.text, opacity: 0.7 }}>This link points to an issue with no linked pull request yet.</Text>
           </>
@@ -83,22 +79,15 @@ export default function Diff(): React.ReactElement {
           <Text style={{ color: p.text, opacity: 0.7 }}>No file changes in this pull request.</Text>
         ) : (
           <>
-            {(diff?.title || diff?.body?.trim()) ? (
-              <Box style={{
-                borderWidth: 1, borderColor: p.border, borderRadius: 8,
-                padding: 12, marginBottom: 10,
-              }}>
-                {diff?.title ? (
-                  <Text style={{ color: p.text, fontFamily: 'Calibre-Semibold', fontSize: 19, lineHeight: 24, marginBottom: diff?.body?.trim() ? 8 : 0 }}>
-                    {diff.title}
-                  </Text>
-                ) : null}
-                {diff?.body?.trim() ? (
-                  <Text style={{ color: p.text, fontSize: 14, lineHeight: 20 }}>
-                    {diff.body.trim()}
-                  </Text>
-                ) : null}
-              </Box>
+            {diff?.title ? (
+              <Text style={{ color: p.text, fontFamily: 'Calibre-Semibold', fontSize: 22, lineHeight: 27, marginBottom: diff?.body?.trim() ? 8 : 12 }}>
+                {diff.title}
+              </Text>
+            ) : null}
+            {diff?.body?.trim() ? (
+              <Text style={{ color: p.text, fontSize: 14, lineHeight: 20, marginBottom: 12 }}>
+                {diff.body.trim()}
+              </Text>
             ) : null}
             <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12, paddingHorizontal: 2 }}>
               <Text style={{ color: p.text, opacity: 0.6, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
