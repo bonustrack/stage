@@ -26,7 +26,13 @@ export interface GithubDiff {
   /** Resolved PR number (present when kind === 'ok'). */
   prNumber?: number;
   title?: string;
+  /** PR (or linked issue) description body, markdown/plain. */
+  body?: string;
   files: DiffFile[];
+  /** Total additions across the whole diff. */
+  additions: number;
+  /** Total deletions across the whole diff. */
+  deletions: number;
 }
 
 /** Authenticated daemon proxy: keeps the GitHub token server-side and lifts the
@@ -43,8 +49,20 @@ interface ProxyResult {
   repo: string;
   prNumber?: number;
   title?: string;
+  body?: string;
+  additions?: number;
+  deletions?: number;
   files?: Array<Record<string, unknown>>;
   error?: string;
+}
+
+/** Sum per-file additions/deletions as a fallback when the source omits the
+ *  aggregate PR-level totals. */
+function totalsOf(files: DiffFile[]): { additions: number; deletions: number } {
+  return files.reduce(
+    (acc, f) => ({ additions: acc.additions + f.additions, deletions: acc.deletions + f.deletions }),
+    { additions: 0, deletions: 0 },
+  );
 }
 
 /** Primary path: one authenticated round trip through the daemon proxy. */
@@ -56,10 +74,15 @@ async function fetchViaProxy(ref: GithubRef): Promise<GithubDiff> {
   if (!res.ok) throw new Error(`proxy ${res.status}`);
   const out = (await res.json()) as ProxyResult;
   if (out.error) throw new Error(out.error);
-  if (out.kind === 'no-pr') return { kind: 'no-pr', owner: out.owner, repo: out.repo, files: [] };
+  if (out.kind === 'no-pr')
+    return { kind: 'no-pr', owner: out.owner, repo: out.repo, body: out.body, files: [], additions: 0, deletions: 0 };
+  const files = (out.files ?? []).map(toDiffFile);
+  const summed = totalsOf(files);
   return {
     kind: 'ok', owner: out.owner, repo: out.repo, prNumber: out.prNumber,
-    title: out.title, files: (out.files ?? []).map(toDiffFile),
+    title: out.title, body: out.body, files,
+    additions: typeof out.additions === 'number' ? out.additions : summed.additions,
+    deletions: typeof out.deletions === 'number' ? out.deletions : summed.deletions,
   };
 }
 
@@ -83,17 +106,25 @@ async function resolvePrNumber(ref: GithubRef): Promise<number | null> {
 /** Fallback path: hit GitHub directly (unauthenticated, 60 req/hr/IP). */
 async function fetchDirect(ref: GithubRef): Promise<GithubDiff> {
   const prNumber = await resolvePrNumber(ref);
-  if (prNumber == null) return { kind: 'no-pr', owner: ref.owner, repo: ref.repo, files: [] };
+  if (prNumber == null) return { kind: 'no-pr', owner: ref.owner, repo: ref.repo, files: [], additions: 0, deletions: 0 };
   const base = `${GH}/repos/${ref.owner}/${ref.repo}/pulls/${prNumber}`;
   const [metaRes, filesRes] = await Promise.all([
     fetch(base, { headers: HEADERS }),
     fetch(`${base}/files?per_page=100`, { headers: HEADERS }),
   ]);
-  const title = metaRes.ok ? ((await metaRes.json()) as { title?: string }).title : undefined;
+  const meta = metaRes.ok
+    ? ((await metaRes.json()) as { title?: string; body?: string; additions?: number; deletions?: number })
+    : {};
   const files = filesRes.ok
     ? ((await filesRes.json()) as Array<Record<string, unknown>>).map(toDiffFile)
     : [];
-  return { kind: 'ok', owner: ref.owner, repo: ref.repo, prNumber, title, files };
+  const summed = totalsOf(files);
+  return {
+    kind: 'ok', owner: ref.owner, repo: ref.repo, prNumber,
+    title: meta.title, body: meta.body, files,
+    additions: typeof meta.additions === 'number' ? meta.additions : summed.additions,
+    deletions: typeof meta.deletions === 'number' ? meta.deletions : summed.deletions,
+  };
 }
 
 async function fetchGithubDiff(ref: GithubRef): Promise<GithubDiff> {

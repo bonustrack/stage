@@ -64,11 +64,37 @@ export default function Diff(): React.ReactElement {
         ) : isError ? (
           <Text style={{ color: p.text, opacity: 0.7 }}>Could not load the diff (private repo or GitHub rate limit). Open it on GitHub below.</Text>
         ) : diff?.kind === 'no-pr' ? (
-          <Text style={{ color: p.text, opacity: 0.7 }}>This link points to an issue with no linked pull request yet.</Text>
+          <>
+            {diff.body?.trim() ? (
+              <Box style={{ borderWidth: 1, borderColor: p.border, borderRadius: 8, padding: 12, marginBottom: 10 }}>
+                <Text style={{ color: p.text, fontSize: 14, lineHeight: 20 }}>{diff.body.trim()}</Text>
+              </Box>
+            ) : null}
+            <Text style={{ color: p.text, opacity: 0.7 }}>This link points to an issue with no linked pull request yet.</Text>
+          </>
         ) : diff && diff.files.length === 0 ? (
           <Text style={{ color: p.text, opacity: 0.7 }}>No file changes in this pull request.</Text>
         ) : (
-          diff?.files.map(f => <FileDiff key={f.filename} file={f} p={p} dark={dark} />)
+          <>
+            {diff?.body?.trim() ? (
+              <Box style={{
+                borderWidth: 1, borderColor: p.border, borderRadius: 8,
+                padding: 12, marginBottom: 10,
+              }}>
+                <Text style={{ color: p.text, fontSize: 14, lineHeight: 20 }}>
+                  {diff.body.trim()}
+                </Text>
+              </Box>
+            ) : null}
+            <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12, paddingHorizontal: 2 }}>
+              <Text style={{ color: p.text, opacity: 0.6, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+                {diff?.files.length} {diff?.files.length === 1 ? 'file' : 'files'} changed
+              </Text>
+              <Text style={{ color: p.success, fontFamily: 'Calibre-Semibold', fontSize: 14 }}>+{diff?.additions ?? 0}</Text>
+              <Text style={{ color: p.danger, fontFamily: 'Calibre-Semibold', fontSize: 14 }}>-{diff?.deletions ?? 0}</Text>
+            </Box>
+            {diff?.files.map(f => <FileDiff key={f.filename} file={f} p={p} dark={dark} />)}
+          </>
         )}
       </ScrollView>
 
