@@ -76,7 +76,7 @@ export function LabelFilterBar({ labels, enabled, onToggle }: {
        *  row; without them the horizontal ScrollView stretches to fill the column
        *  and the chips drift to the vertical middle of the empty list area. */
       style={{ flexGrow: 0, alignSelf: 'stretch' }}
-      contentContainerStyle={{ gap: 8, paddingHorizontal: 16, paddingVertical: 7, alignItems: 'center' }}
+      contentContainerStyle={{ gap: 8, paddingHorizontal: 16, paddingTop: 3, paddingBottom: 7, alignItems: 'center' }}
     >
       {labels.map(label => (
         <LabelChip
