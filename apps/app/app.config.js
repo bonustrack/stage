@@ -135,7 +135,7 @@ const config = {
   },
   android: {
     package: variant.androidPackage,
-    versionCode: 26,
+    versionCode: 27,
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
       backgroundColor: '#0f1115',
