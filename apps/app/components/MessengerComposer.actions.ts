@@ -123,27 +123,33 @@ export function useComposerActions(a: ComposerActionsArgs) {
     a.setSending(true); a.setErr(null);
 
     /** Send sequentially (preserves on-wire order = display order). Confirm each
-     *  entry by its own real id; on failure, drop the remaining unsent entries. */
+     *  entry by its own real id; on failure, drop the remaining unsent entries.
+     *  The whole loop is wrapped in try/finally so `sending` is ALWAYS reset —
+     *  if any callback (onOptimistic/onSent/remember…) throws, the button would
+     *  otherwise stay disabled forever and wedge the composer. */
     let sendErr: string | undefined;
-    for (let i = 0; i < steps.length; i++) {
-      const s = steps[i]!;
-      if (sendErr) { a.onSent?.(s.localId, sendErr); continue; }
-      try {
-        const id = await s.run();
-        /** Map the real msg id → the step's local image/video/file URIs so the
-         *  live bubble paints the stashed bytes instantly when the optimistic
-         *  entry is replaced by the still-downloading remote attachment. Audio
-         *  rides an inline path with no thumbnail, so skip it. */
-        const localUris = s.attachments.filter((at) => at.kind !== 'audio').map((at) => at.url);
-        if (localUris.length > 0) rememberLocalAttachments(id, localUris);
-        a.onSent?.(s.localId, undefined, id);
-      } catch (e) {
-        sendErr = (e as Error).message;
-        a.setErr(sendErr);
-        a.onSent?.(s.localId, sendErr);
+    try {
+      for (let i = 0; i < steps.length; i++) {
+        const s = steps[i]!;
+        if (sendErr) { a.onSent?.(s.localId, sendErr); continue; }
+        try {
+          const id = await s.run();
+          /** Map the real msg id → the step's local image/video/file URIs so the
+           *  live bubble paints the stashed bytes instantly when the optimistic
+           *  entry is replaced by the still-downloading remote attachment. Audio
+           *  rides an inline path with no thumbnail, so skip it. */
+          const localUris = s.attachments.filter((at) => at.kind !== 'audio').map((at) => at.url);
+          if (localUris.length > 0) rememberLocalAttachments(id, localUris);
+          a.onSent?.(s.localId, undefined, id);
+        } catch (e) {
+          sendErr = (e as Error).message;
+          a.setErr(sendErr);
+          a.onSent?.(s.localId, sendErr);
+        }
       }
+    } finally {
+      a.setSending(false);
     }
-    a.setSending(false);
   };
 
   return {
