@@ -30,7 +30,7 @@ export interface VoteEvent {
   reference: string;
   /** The chosen option index, as the raw reaction `content` string. */
   content: string;
-  /** Vote schema — only `custom` events are treated as votes. */
+  /** Vote schema: only `custom` events are treated as votes. */
   schema?: string;
   /** true => retract (action:'removed'); false/undefined => cast. */
   removed?: boolean;
@@ -43,7 +43,7 @@ export interface VoteEvent {
 /** Build `Map<optionIndex, Set<voterUri>>` for one poll from raw vote events.
  *  - single-select: each voter's latest `added` content wins (one option/voter).
  *  - multiSelect: latest add/remove state per (voter, optionIndex).
- *  Only `schema === 'custom'` events referencing `pollMessageId` count — a real
+ *  Only `schema === 'custom'` events referencing `pollMessageId` count; a real
  *  emoji reaction on the same bubble is ignored. */
 export function votesByPoll(
   events: VoteEvent[],
@@ -76,7 +76,7 @@ export function votesByPoll(
     }
     return out;
   }
-  // single-select: latest 'added' option per voter wins (ignore removals — a
+  // single-select: latest 'added' option per voter wins (ignore removals; a
   // bare removal just clears, a switch is the newer 'added').
   const latest = new Map<string, { ts: string; removed: boolean; idx: number }>();
   for (const e of events) {
