@@ -14,8 +14,8 @@ import {
 import { semanticColors, semanticPalette } from '@metro-labs/kit/tokens';
 import { setDefaultButtonRadius } from '@metro-labs/kit/button';
 import {
-  getOverrides, loadOverrides, subscribe as subscribeOverrides,
-  type TokenKey,
+  getOverrides, loadOverrides, isCustomTheme,
+  subscribe as subscribeOverrides, type TokenKey,
 } from './colorOverrides';
 import {
   getRadius, getBlockRadius, loadRadius,
@@ -23,6 +23,8 @@ import {
 } from './radiusOverride';
 
 export { setRadius, setBlockRadius, resetRadius } from './radiusOverride';
+export { setCustomTheme } from './colorOverrides';
+export { useCustomTheme } from './useCustomTheme';
 
 export type { ThemePreference };
 
@@ -176,16 +178,14 @@ export function useBlockRadius(): number {
 export function usePalette(): Palette {
   const scheme = useEffectiveColorScheme();
   const version = useOverridesVersion(); // re-render on override load/edit/reset
-  /** PERF: memoise the palette object so its IDENTITY is stable across unrelated
-   *  parent re-renders (it only changes when the scheme or an override version
-   *  bumps). usePalette is consumed by ~60 components; returning a fresh object
-   *  every render defeated every downstream useMemo/useCallback/React.memo that
-   *  closed over the palette, cascading re-renders on every stream tick and tap.
-   *  Now a stream tick that doesn't touch theme leaves the object referentially
-   *  identical, so memoised children/derivations are skipped. */
+  /** PERF: memoise so the palette object IDENTITY stays stable across unrelated
+   *  re-renders (only changes when scheme/override version bumps). usePalette is
+   *  consumed by ~60 components; a fresh object every render defeated every
+   *  downstream memo that closed over the palette. */
   return useMemo(() => {
     const s = semanticPalette(scheme);
-    const ov = getOverrides();
+    // Overrides only apply under the Custom theme; Light/Dark/System ignore them.
+    const ov = isCustomTheme() ? getOverrides() : {};
     const pick = (key: TokenKey, def: string): string => ov[key]?.[scheme] ?? def;
     return {
       bg: pick('bg', s.bgColor),
