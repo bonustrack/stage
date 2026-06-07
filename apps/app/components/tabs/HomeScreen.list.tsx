@@ -63,7 +63,8 @@ export function ChannelsList({
     <>
       {/* Home topnav: avatar on the left, requests + 3-dot overflow menu on the
        *  right (Archived + New group moved into the overflow). The label filter
-       *  lives in a horizontal chip bar under the search bar (LabelFilterBar). */}
+       *  lives in a horizontal chip bar that scrolls with the feed (the list's
+       *  ListHeaderComponent), not pinned to the header. */}
       <Row align="center" justify="between" px={16} pt={12} pb={10}>
         <Row align="center" gap={8}>
           {/* Avatar + name → Menu page; shared TopnavIdentity (also on the
@@ -111,9 +112,6 @@ export function ChannelsList({
         border={border}
         rowBg={border}
       />
-      {/* Horizontal label-filter bar under the search bar: one toggle chip per
-       *  unique label across non-archived channels. Hidden when no labels. */}
-      <LabelFilterBar labels={barLabels} enabled={enabledLabels} onToggle={onToggleLabel} />
       <FlatList
         ref={listRef}
         simultaneousHandlers={panRef}
@@ -144,6 +142,13 @@ export function ChannelsList({
         maxToRenderPerBatch={10}
         removeClippedSubviews
         contentContainerStyle={{ paddingBottom: 24 }}
+        /* Label-filter bar rides as the list header so it scrolls away with the
+         *  feed instead of staying pinned under the (fixed) search bar. One
+         *  toggle chip per unique label across non-archived channels; hidden
+         *  when there are no labels. */
+        ListHeaderComponent={
+          <LabelFilterBar labels={barLabels} enabled={enabledLabels} onToggle={onToggleLabel} />
+        }
         ListEmptyComponent={query.trim() ? null : <HomeEmpty sub={sub} />}
         ListFooterComponent={
           query.trim()
