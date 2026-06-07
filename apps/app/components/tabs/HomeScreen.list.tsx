@@ -70,7 +70,7 @@ export function ChannelsList({
           {/* Avatar opens the Menu page (account switcher + Profile/Settings),
            *  replacing the former slide-out left sidebar. */}
           <Pressable onPress={() => router.push('/menu')} hitSlop={8}>
-            <Avatar address={myAddress} size={24} style={{ backgroundColor: border }} />
+            <Avatar address={myAddress} size={32} style={{ backgroundColor: border }} />
           </Pressable>
         </Row>
         <Row align="center" gap={18}>
