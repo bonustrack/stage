@@ -6,7 +6,7 @@ import { Alert } from 'react-native';
 import { useAppKit } from '@reown/appkit-wagmi-react-native';
 import { useAccount, useSignMessage } from 'wagmi';
 import { usePeerProfiles } from '../lib/peerProfiles';
-import { deleteAccount, switchToAccount, shortAddress } from '../lib/xmtp';
+import { deleteAccount, switchToAccount, shortAddress } from '../modules/messaging';
 import {
   loadAccounts, getActiveAccountId, addGeneratedAccount,
   importPrivateKey, addWalletConnectAccount, getPrivateKey, canExportPrivateKey,

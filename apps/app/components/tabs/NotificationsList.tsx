@@ -13,7 +13,7 @@ import { Avatar } from '../Avatar';
 import { Box, Col, Row } from '../layout';
 import { usePalette, useBlockRadius } from '../../lib/theme';
 import { usePeerProfiles, getPeerAvatarCb, getPeerName } from '../../lib/peerProfiles';
-import { shortAddress } from '../../lib/xmtp';
+import { shortAddress } from '../../modules/messaging';
 import { loadNotifReadState, subscribeNotifReadState } from '../../lib/notifReadState';
 import type { RequestPreview } from './useRequestPreviews';
 

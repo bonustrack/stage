@@ -13,8 +13,8 @@ import { flash } from '../../lib/toast';
 import {
   getGroupLabels, addGroupLabel, removeGroupLabel,
   LabelPermissionError, MAX_LABEL_LEN, MAX_LABELS,
-} from '../../lib/xmtp.labels';
-import { suggestLabels } from '../../lib/xmtp.labels.suggest';
+} from '../../modules/messaging';
+import { suggestLabels } from '../../modules/messaging';
 
 /** How many suggestion chips to show at once (keeps the row compact). */
 const MAX_SUGGESTIONS = 8;

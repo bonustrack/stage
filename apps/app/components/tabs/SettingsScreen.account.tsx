@@ -16,7 +16,7 @@ import { flash } from '../../lib/toast';
 import {
   getActiveAccount, getPrivateKey, canExportPrivateKey, type AccountRecord,
 } from '../../lib/accounts';
-import { deleteAccount, shortAddress } from '../../lib/xmtp';
+import { deleteAccount, shortAddress } from '../../modules/messaging';
 import { useAccountEpoch } from '../../lib/accountEpoch';
 import { reloadApp } from '../AccountsManager.helpers';
 

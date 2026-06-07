@@ -15,7 +15,7 @@ import { useConvMeta } from '../lib/useConvMeta';
 import { usePeerProfiles, getPeerName, getPeerAvatar, getPeerAvatarCb, isPeerResolved } from '../lib/peerProfiles';
 import { channelStampSeed } from '@metro-labs/kit/avatar';
 import { usePalette, useBlockRadius } from '../lib/theme';
-import { shortAddress } from '../lib/xmtp';
+import { shortAddress } from '../modules/messaging';
 
 /** When `peerAddress` is set the link is a DM-by-address share
  *  (`metro://xmtp/user/<addr>`): render the peer card + open-on-tap path that

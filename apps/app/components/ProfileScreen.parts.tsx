@@ -7,7 +7,7 @@ import { Modal, Pressable } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from './layout';
 import { usePalette, useBlockRadius, type Palette } from '../lib/theme';
-import { getCachedXmtpClient, getOrCreateXmtpClient } from '../lib/xmtp';
+import { getCachedXmtpClient, getOrCreateXmtpClient } from '../modules/messaging';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';
 import { TopnavIdentity } from './TopnavIdentity';

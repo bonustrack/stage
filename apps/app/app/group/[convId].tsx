@@ -11,7 +11,7 @@ import { FlatList } from 'react-native-gesture-handler';
 import { Box } from '../../components/layout';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getCachedXmtpClient, getOrCreateXmtpClient, lineOfConv } from '../../lib/xmtp';
+import { getCachedXmtpClient, getOrCreateXmtpClient, lineOfConv } from '../../modules/messaging';
 import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
 import { usePeerProfiles } from '../../lib/peerProfiles';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';

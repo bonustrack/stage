@@ -17,7 +17,7 @@ import { Icon } from '@metro-labs/kit/icon';
 import { Avatar } from '../../components/Avatar';
 import { AppModal } from '../../components/AppModal';
 import { Box } from '../../components/layout';
-import { shortAddress } from '../../lib/xmtp';
+import { shortAddress } from '../../modules/messaging';
 import {
   usePeerProfiles, getPeerName, getPeerAvatar, getPeerAvatarCb,
 } from '../../lib/peerProfiles';

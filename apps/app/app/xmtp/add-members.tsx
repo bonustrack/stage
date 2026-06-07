@@ -18,7 +18,7 @@ import { Icon } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { addGroupMembers } from '../../lib/xmtp';
+import { addGroupMembers } from '../../modules/messaging';
 import { flash } from '../../lib/toast';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { Box } from '../../components/layout';

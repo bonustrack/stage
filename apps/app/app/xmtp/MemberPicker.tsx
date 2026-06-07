@@ -12,7 +12,7 @@ import { Pressable, TextInput } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';
 import { Icon } from '@metro-labs/kit/icon';
-import { shortAddress } from '../../lib/xmtp';
+import { shortAddress } from '../../modules/messaging';
 import { resolveEnsName } from '../../lib/ens';
 import { flash } from '../../lib/toast';
 import { usePalette } from '../../lib/theme';

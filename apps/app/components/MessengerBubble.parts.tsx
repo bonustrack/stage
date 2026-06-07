@@ -6,7 +6,7 @@ import { Pressable, TextInput } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { useRouter } from 'expo-router';
 import { Box } from './layout';
-import { shortAddress } from '../lib/xmtp';
+import { shortAddress } from '../modules/messaging';
 import { useProfileQuery } from '../lib/useProfile';
 import { MENTION_RE } from './MessengerBubble.helpers';
 import type { Question } from './MessengerBubble.helpers';

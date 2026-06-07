@@ -8,7 +8,7 @@ import { Text } from '@metro-labs/kit/text';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Avatar } from './Avatar';
 import { Box, Row, Col } from './layout';
-import { shortAddress } from '../lib/xmtp';
+import { shortAddress } from '../modules/messaging';
 import { getPeerName } from '../lib/peerProfiles';
 import { type Attachment } from './MessengerComposer.helpers';
 import { usePalette } from '../lib/theme';

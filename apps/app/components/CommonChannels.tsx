@@ -22,7 +22,7 @@ import { useRouter } from 'expo-router';
 import { ChannelRow } from './ChannelRow';
 import { getPeerAvatarCb, getPeerName } from '../lib/peerProfiles';
 import { useCommonChannels } from '../lib/useCommonChannels';
-import { shortAddress } from '../lib/xmtp';
+import { shortAddress } from '../modules/messaging';
 import { hasDraft } from '../lib/drafts';
 import { isPinned } from '../lib/pins';
 import type { ProfileColors } from './ProfileScreen.parts';

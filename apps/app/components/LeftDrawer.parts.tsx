@@ -8,7 +8,7 @@ import { Text } from '@metro-labs/kit/text';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { ListViewItem } from '@metro-labs/kit/list-view';
 import { getPeerName } from '../lib/peerProfiles';
-import { shortAddress } from '../lib/xmtp';
+import { shortAddress } from '../modules/messaging';
 import { type AccountRecord } from '../lib/accounts';
 
 export interface DrawerColors { head: string; sub: string; border: string }

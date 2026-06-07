@@ -2,7 +2,7 @@
  *  — extracted from app/xmtp/[convId].tsx verbatim (phase-2 lint split). */
 
 import { useCallback, useState } from 'react';
-import { xmtpSendTxReference, xmtpSendSignatureReference } from '../../lib/xmtp';
+import { xmtpSendTxReference, xmtpSendSignatureReference } from '../../modules/messaging';
 import {
   type WalletSendCallsContent, type TransactionReferenceContent, chainIdToNumber,
 } from '@stage-labs/client/xmtp/tx';

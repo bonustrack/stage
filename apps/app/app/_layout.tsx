@@ -22,7 +22,7 @@ import { useEffectiveColorScheme, usePalette, useRadius } from '../lib/theme';
 import { useDeepLinks } from '../lib/deepLinks';
 import { useRestoreLastRoute } from '../lib/lastRoute';
 import { usePushDeepLinks } from '../lib/push';
-import { ensureActiveAccount } from '../lib/xmtp';
+import { ensureActiveAccount } from '../modules/messaging';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WalletConnectProvider } from '../components/WalletConnectProvider';
 

@@ -10,7 +10,7 @@ import { ChannelCard } from './ChannelCard';
 import { GitHubLinkCard } from './GitHubLinkCard';
 import { mapCoordsOf, youtubeIdOf } from '../lib/embedDetect';
 import { githubLinkOf } from '../lib/githubDetect';
-import { metroConvIdOf, metroDmPeerOf } from '../lib/xmtp';
+import { metroConvIdOf, metroDmPeerOf } from '../modules/messaging';
 import { Box, Row } from './layout';
 import type { HistoryEntry } from '../lib/types';
 import {

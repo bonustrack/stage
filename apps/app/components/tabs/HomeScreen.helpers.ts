@@ -5,13 +5,13 @@ import type { Conversation, DecodedMessage } from '@xmtp/react-native-sdk';
 import {
   peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap,
   shortAddress, getLastReadNs,
-} from '../../lib/xmtp';
+} from '../../modules/messaging';
 import { isMetroControlBody } from '../../lib/push';
 import { previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
 import { channelStampSeed } from '@metro-labs/kit/avatar';
-import { labelsOfSyncedGroup } from '../../lib/xmtp.labels';
-import { githubOfSyncedGroup } from '../../lib/xmtp.github';
-import { previewOfSyncedGroup } from '../../lib/xmtp.preview';
+import { labelsOfSyncedGroup } from '../../modules/messaging';
+import { githubOfSyncedGroup } from '../../modules/messaging';
+import { previewOfSyncedGroup } from '../../modules/messaging';
 
 export interface Row {
   convId: string;

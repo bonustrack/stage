@@ -7,7 +7,7 @@ import { Alert } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
-import { xmtpSendText } from '../lib/xmtp';
+import { xmtpSendText } from '../modules/messaging';
 import { setLastAttachment } from '../lib/lastAttachment';
 import { mimeOf } from './MessengerComposer.helpers';
 import { rememberLocalAttachments, stashLocalAttachment } from '../lib/localAttachmentCache';

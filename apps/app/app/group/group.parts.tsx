@@ -4,7 +4,7 @@
 import { Pressable, TextInput } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from '../../components/layout';
-import { shortAddress } from '../../lib/xmtp';
+import { shortAddress } from '../../modules/messaging';
 import { getPeerAvatar, getPeerAvatarCb } from '../../lib/peerProfiles';
 import { Icon } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';

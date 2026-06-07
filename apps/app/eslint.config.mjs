@@ -40,6 +40,37 @@ export default tseslint.config(
     },
   },
   {
+    // Messaging boundary: component code must import the XMTP messaging surface
+    // through the `modules/messaging` facade, never by reaching into the
+    // `lib/xmtp.*` internals directly. The facade barrel itself and the lib
+    // internals are exempt (they aren't under components/). This re-declares the
+    // full no-restricted-imports rule (View + the messaging pattern) because a
+    // later flat-config block fully overrides an earlier one for matched files.
+    files: ["components/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "react-native",
+              importNames: ["View"],
+              message:
+                "Use Box/Row/Col from '@/components/layout' instead of View for layout containers.",
+            },
+          ],
+          patterns: [
+            {
+              group: ["**/lib/xmtp", "**/lib/xmtp.*"],
+              message:
+                "Import messaging via the '@/modules/messaging' facade barrel, not the lib/xmtp.* internals.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     // The Box/Row/Col primitives wrap View — they must be allowed to import it.
     files: ["components/layout/**"],
     rules: {

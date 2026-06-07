@@ -21,7 +21,7 @@ import { Icon } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { createGroup } from '../../lib/xmtp';
+import { createGroup } from '../../modules/messaging';
 import { uploadAvatar } from '../../lib/profile';
 import { flash } from '../../lib/toast';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';

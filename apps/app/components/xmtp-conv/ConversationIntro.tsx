@@ -16,7 +16,7 @@ import { Box, Row } from '../layout';
 import { Avatar } from '../Avatar';
 import { getPeerName, getPeerAvatar, getPeerAbout } from '../../lib/peerProfiles';
 import { channelStampSeed } from '@metro-labs/kit/avatar';
-import { shortAddress } from '../../lib/xmtp';
+import { shortAddress } from '../../modules/messaging';
 
 /** Read-only label chips for the group intro — same rounded-pill look as the
  *  ChannelRow inline chips, just left-aligned under the name. Renders nothing for

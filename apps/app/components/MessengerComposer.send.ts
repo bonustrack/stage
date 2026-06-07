@@ -6,7 +6,7 @@
 
 import {
   fileUriToBase64, xmtpReply, xmtpSendAttachment, xmtpSendMultiRemoteAttachment, xmtpSendText,
-} from '../lib/xmtp';
+} from '../modules/messaging';
 import { type Attachment, mimeOf, INLINE_ATTACHMENT_MAX_BYTES } from './MessengerComposer.helpers';
 
 let seq = 0;

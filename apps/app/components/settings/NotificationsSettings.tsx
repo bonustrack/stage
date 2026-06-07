@@ -20,7 +20,7 @@ import { Caption } from '@metro-labs/kit/caption';
 import { useBlockRadius, useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { SystemHeader } from '../system/SystemHeader';
 import { loadPushEnabled, setPushEnabled, subscribePushPref, isPushEnabledSync } from '../../lib/pushPref';
-import { getOrCreateXmtpClient } from '../../lib/xmtp';
+import { getOrCreateXmtpClient } from '../../modules/messaging';
 import { registerPushWithDaemon, unregisterPushFromDaemon } from '../../lib/push';
 
 export function NotificationsSettings(): React.ReactElement {

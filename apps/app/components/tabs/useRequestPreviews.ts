@@ -10,7 +10,7 @@
 import { useEffect, useState } from 'react';
 import { AppState } from 'react-native';
 import type { Conversation } from '@xmtp/react-native-sdk';
-import { listRequestConvs, streamConvConsent, peerEthAddressOfDm } from '../../lib/xmtp';
+import { listRequestConvs, streamConvConsent, peerEthAddressOfDm } from '../../modules/messaging';
 import { channelStampSeed } from '@metro-labs/kit/avatar';
 import { ensurePeerProfiles } from '../../lib/peerProfiles';
 

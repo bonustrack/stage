@@ -8,14 +8,14 @@ import { usePeerProfiles, getPeerName, getPeerAvatar } from '../../lib/peerProfi
 import { useConvMeta } from '../../lib/useConvMeta';
 import {
   XMTP_USER_PREFIX, lineOfConv, useXmtpFeed, xmtpReply, shortAddress,
-} from '../../lib/xmtp';
+} from '../../modules/messaging';
 import { setActiveConversation } from '../../modules/metro-pill';
 import { setActiveConvId } from '../../lib/activeConv';
 import { markConvRead, getCachedRows } from '../../lib/channelsCache';
-import { getGithubLink } from '../../lib/xmtp.github';
-import { getPreviewLink } from '../../lib/xmtp.preview';
+import { getGithubLink } from '../../modules/messaging';
+import { getPreviewLink } from '../../modules/messaging';
 import { useCachedGroupString } from './useCachedGroupString';
-import { getGroupLabels } from '../../lib/xmtp.labels';
+import { getGroupLabels } from '../../modules/messaging';
 import { convScrollKey, getScrollOffset, flushScrollOffset, markConvAtBottom } from '../../lib/scrollPos';
 import type { HistoryEntry } from '../../lib/types';
 import {

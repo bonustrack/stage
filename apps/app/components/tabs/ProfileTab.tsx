@@ -9,7 +9,7 @@
  *  branch, so the manual-copy card no longer has a home. */
 
 import { useEffect, useState } from 'react';
-import { getCachedXmtpClient, getOrCreateXmtpClient } from '../../lib/xmtp';
+import { getCachedXmtpClient, getOrCreateXmtpClient } from '../../modules/messaging';
 import { ProfileScreen } from '../ProfileScreen';
 import type { SimultaneousRefs } from '../SwipeTabs.types';
 
