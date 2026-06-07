@@ -164,7 +164,7 @@ function ChannelRowBase({
                 14px glyph down (lineHeight 21 - 14)/2 to center it on line 1. */}
             {draft ? (
               <Box style={{ marginTop: 3.5 }}>
-                <Icon name="pencil" size={14} color={head} />
+                <Icon name="pencil" size={14} color={sub} />
               </Box>
             ) : null}
             <Text
