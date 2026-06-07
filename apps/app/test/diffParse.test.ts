@@ -18,9 +18,10 @@ describe('parsePatch', () => {
   test('classifies hunk / context / del / add / meta lines and strips markers', () => {
     const lines = parsePatch(patch);
     expect(lines.map(l => l.kind)).toEqual(['hunk', 'context', 'del', 'add', 'add', 'meta']);
-    expect(lines[1]).toEqual({ kind: 'context', text: 'context line' });
-    expect(lines[2]).toEqual({ kind: 'del', text: 'removed line' });
-    expect(lines[3]).toEqual({ kind: 'add', text: 'added line one' });
+    expect(lines[1]).toEqual({ kind: 'context', text: 'context line', oldLine: 1, newLine: 1 });
+    expect(lines[2]).toEqual({ kind: 'del', text: 'removed line', oldLine: 2, newLine: null });
+    expect(lines[3]).toEqual({ kind: 'add', text: 'added line one', oldLine: null, newLine: 2 });
+    expect(lines[4]).toEqual({ kind: 'add', text: 'added line two', oldLine: null, newLine: 3 });
   });
 
   test('empty patch yields no lines', () => {

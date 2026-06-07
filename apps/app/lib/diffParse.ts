@@ -10,6 +10,10 @@ export interface DiffLine {
   kind: DiffLineKind;
   /** The raw line text WITHOUT the leading +/-/space marker. */
   text: string;
+  /** Old-file line number (del/context lines). Null for adds, hunk, meta. */
+  oldLine: number | null;
+  /** New-file line number (add/context lines). Null for dels, hunk, meta. */
+  newLine: number | null;
 }
 
 export interface DiffFile {
@@ -31,18 +35,26 @@ export interface DiffFile {
 export function parsePatch(patch: string): DiffLine[] {
   if (!patch) return [];
   const out: DiffLine[] = [];
+  // Running old/new line counters, (re)seeded by each @@ -a,b +c,d @@ header.
+  let oldNo = 0;
+  let newNo = 0;
   for (const raw of patch.split('\n')) {
     if (raw.startsWith('@@')) {
-      out.push({ kind: 'hunk', text: raw });
+      const m = /@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(raw);
+      if (m) {
+        oldNo = Number(m[1]);
+        newNo = Number(m[2]);
+      }
+      out.push({ kind: 'hunk', text: raw, oldLine: null, newLine: null });
     } else if (raw.startsWith('+')) {
-      out.push({ kind: 'add', text: raw.slice(1) });
+      out.push({ kind: 'add', text: raw.slice(1), oldLine: null, newLine: newNo++ });
     } else if (raw.startsWith('-')) {
-      out.push({ kind: 'del', text: raw.slice(1) });
+      out.push({ kind: 'del', text: raw.slice(1), oldLine: oldNo++, newLine: null });
     } else if (raw.startsWith('\\')) {
-      out.push({ kind: 'meta', text: raw });
+      out.push({ kind: 'meta', text: raw, oldLine: null, newLine: null });
     } else {
       // Leading space = context; a bare empty line is also context.
-      out.push({ kind: 'context', text: raw.startsWith(' ') ? raw.slice(1) : raw });
+      out.push({ kind: 'context', text: raw.startsWith(' ') ? raw.slice(1) : raw, oldLine: oldNo++, newLine: newNo++ });
     }
   }
   return out;
