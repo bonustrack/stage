@@ -15,12 +15,34 @@
 import { useEffect, useMemo, useState } from 'react';
 import { isAddress } from 'viem';
 import { Text } from '@metro-labs/kit/text';
-import { Icon } from '@metro-labs/kit/icon';
 import { Box } from '../layout';
+import { ChannelRow } from '../ChannelRow';
 import { openDmWithAddress, shortAddress } from '../../lib/xmtp';
 import { resolveEnsName } from '../../lib/ens';
-import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
-import { ContactRow, getExistingPeers, looksLikeEns } from './HomeScreen.contacts.row';
+import { usePeerProfiles, getPeerName, getPeerAvatarCb } from '../../lib/peerProfiles';
+import { getCachedRows } from '../../lib/channelsCache';
+
+/** Cheap pre-flight - accept any `*.eth` (single or multi-label) as resolvable. */
+function looksLikeEns(s: string): boolean {
+  return /^[a-z0-9-]+(\.[a-z0-9-]+)*\.eth$/i.test(s.trim());
+}
+
+/** Existing DM peers (address-keyed) pulled from the cached channels list. */
+function getExistingPeers(): { address: string; convId: string }[] {
+  const rows = getCachedRows() ?? [];
+  const seen = new Set<string>();
+  const peers: { address: string; convId: string }[] = [];
+  for (const r of rows) {
+    const a = (r as { peerAddress?: string | null; convId?: string }).peerAddress;
+    const cid = (r as { peerAddress?: string | null; convId?: string }).convId;
+    if (!a || !cid) continue;
+    const k = a.toLowerCase();
+    if (seen.has(k)) continue;
+    seen.add(k);
+    peers.push({ address: a, convId: cid });
+  }
+  return peers;
+}
 
 interface Colors { fg: string; head: string; sub: string; border: string }
 
@@ -82,7 +104,7 @@ export function HomeContactResults(
   const showResolved = resolved && !filtered.some(p => p.address.toLowerCase() === resolved.address);
   if (!q) return null;
   if (!showResolved && filtered.length === 0) {
-    /** Nothing matched here — only show a combined "No matches" line when the
+    /** Nothing matched here - only show a combined "No matches" line when the
      *  channel list also came up empty (so it isn't shown beside channel hits). */
     if (!noChannels) return null;
     return (
@@ -98,23 +120,24 @@ export function HomeContactResults(
         PEOPLE
       </Text>
       {showResolved ? (
-        <ContactRow
-          address={resolved.address}
+        <ChannelRow
           title={getPeerName(resolved.address) ?? (resolved.source === 'ens' ? q : shortAddress(resolved.address))}
-          opening={opening === resolved.address.toLowerCase()}
-          trailing={<Icon name="chatRect" size={18} color={c.fg} />}
+          avatarAddress={resolved.address}
+          cacheBuster={getPeerAvatarCb(resolved.address)}
+          square={false}
+          subtitle="Start chat"
           onPress={() => open(resolved.address)}
-          c={c}
         />
       ) : null}
       {filtered.map(p => (
-        <ContactRow
+        <ChannelRow
           key={p.address.toLowerCase()}
-          address={p.address}
           title={getPeerName(p.address) ?? shortAddress(p.address)}
-          opening={opening === p.address.toLowerCase()}
+          avatarAddress={p.address}
+          cacheBuster={getPeerAvatarCb(p.address)}
+          square={false}
+          subtitle={getPeerName(p.address) ? shortAddress(p.address) : null}
           onPress={() => open(p.address, p.convId)}
-          c={c}
         />
       ))}
     </Box>
