@@ -9,6 +9,7 @@ import { ActivityIndicator, Linking, Pressable, ScrollView } from 'react-native'
 import { Title } from '@metro-labs/kit/title';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
+import { ListView } from '@metro-labs/kit/list-view';
 import { Box } from '../components/layout';
 import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import { useLayoutEffect } from 'react';
@@ -62,15 +63,15 @@ export default function Diff(): React.ReactElement {
         ) : null}
       </Box>
 
-      <ScrollView contentContainerStyle={{ padding: 12, paddingBottom: 24 + insets.bottom }}>
+      <ScrollView contentContainerStyle={{ paddingTop: 12, paddingBottom: 24 + insets.bottom }}>
         {!ref ? (
-          <Text style={{ color: p.text, opacity: 0.7, fontFamily: 'Calibre-Medium' }}>No GitHub link is set for this channel.</Text>
+          <Text style={{ color: p.text, opacity: 0.7, fontFamily: 'Calibre-Medium', paddingHorizontal: 12 }}>No GitHub link is set for this channel.</Text>
         ) : isLoading ? (
           <Box style={{ paddingVertical: 40, alignItems: 'center' }}><ActivityIndicator color={p.link} /></Box>
         ) : isError ? (
-          <Text style={{ color: p.text, opacity: 0.7, fontFamily: 'Calibre-Medium' }}>Could not load the diff (private repo or GitHub rate limit). Open it on GitHub from the link icon above.</Text>
+          <Text style={{ color: p.text, opacity: 0.7, fontFamily: 'Calibre-Medium', paddingHorizontal: 12 }}>Could not load the diff (private repo or GitHub rate limit). Open it on GitHub from the link icon above.</Text>
         ) : diff?.kind === 'no-pr' ? (
-          <>
+          <Box style={{ paddingHorizontal: 12 }}>
             {diff.title ? (
               <Text style={{ color: p.text, fontFamily: 'Calibre-Semibold', fontSize: 22, lineHeight: 27, marginBottom: diff.body?.trim() ? 8 : 10 }}>
                 {diff.title}
@@ -80,29 +81,33 @@ export default function Diff(): React.ReactElement {
               <Text style={{ color: p.text, fontSize: 14, lineHeight: 20, marginBottom: 10, fontFamily: 'Calibre-Medium' }}>{diff.body.trim()}</Text>
             ) : null}
             <Text style={{ color: p.text, opacity: 0.7, fontFamily: 'Calibre-Medium' }}>This link points to an issue with no linked pull request yet.</Text>
-          </>
+          </Box>
         ) : diff && diff.files.length === 0 ? (
-          <Text style={{ color: p.text, opacity: 0.7, fontFamily: 'Calibre-Medium' }}>No file changes in this pull request.</Text>
+          <Text style={{ color: p.text, opacity: 0.7, fontFamily: 'Calibre-Medium', paddingHorizontal: 12 }}>No file changes in this pull request.</Text>
         ) : (
           <>
-            {diff?.title ? (
-              <Text style={{ color: p.text, fontFamily: 'Calibre-Semibold', fontSize: 22, lineHeight: 27, marginBottom: diff?.body?.trim() ? 8 : 12 }}>
-                {diff.title}
-              </Text>
-            ) : null}
-            {diff?.body?.trim() ? (
-              <Text style={{ color: p.text, fontSize: 14, lineHeight: 20, marginBottom: 12, fontFamily: 'Calibre-Medium' }}>
-                {diff.body.trim()}
-              </Text>
-            ) : null}
-            <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12, paddingHorizontal: 2 }}>
-              <Text style={{ color: p.text, opacity: 0.6, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
-                {diff?.files.length} {diff?.files.length === 1 ? 'file' : 'files'} changed
-              </Text>
-              <Text style={{ color: p.success, fontFamily: 'Calibre-Semibold', fontSize: 14 }}>+{diff?.additions ?? 0}</Text>
-              <Text style={{ color: p.danger, fontFamily: 'Calibre-Semibold', fontSize: 14 }}>-{diff?.deletions ?? 0}</Text>
+            <Box style={{ paddingHorizontal: 12 }}>
+              {diff?.title ? (
+                <Text style={{ color: p.text, fontFamily: 'Calibre-Semibold', fontSize: 22, lineHeight: 27, marginBottom: diff?.body?.trim() ? 8 : 12 }}>
+                  {diff.title}
+                </Text>
+              ) : null}
+              {diff?.body?.trim() ? (
+                <Text style={{ color: p.text, fontSize: 14, lineHeight: 20, marginBottom: 12, fontFamily: 'Calibre-Medium' }}>
+                  {diff.body.trim()}
+                </Text>
+              ) : null}
+              <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12, paddingHorizontal: 2 }}>
+                <Text style={{ color: p.text, opacity: 0.6, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+                  {diff?.files.length} {diff?.files.length === 1 ? 'file' : 'files'} changed
+                </Text>
+                <Text style={{ color: p.success, fontFamily: 'Calibre-Semibold', fontSize: 14 }}>+{diff?.additions ?? 0}</Text>
+                <Text style={{ color: p.danger, fontFamily: 'Calibre-Semibold', fontSize: 14 }}>-{diff?.deletions ?? 0}</Text>
+              </Box>
             </Box>
-            {diff?.files.map(f => <FileDiff key={f.filename} file={f} p={p} dark={dark} />)}
+            <ListView dark={dark} style={{ borderTopWidth: 1, borderTopColor: p.border }}>
+              {(diff?.files ?? []).map(f => <FileDiff key={f.filename} file={f} p={p} dark={dark} />)}
+            </ListView>
           </>
         )}
       </ScrollView>
