@@ -16,6 +16,7 @@ import type { Row as RowT } from './HomeScreen.helpers';
 import { HomeEmpty } from './HomeScreen.parts';
 import { LabelFilterBar } from './HomeScreen.labelbar';
 import { ChannelsSearchBar } from './HomeScreen.search';
+import { HomeContactResults } from './HomeScreen.contacts';
 import { HomeOverflowMenu } from './HomeScreen.overflow';
 
 interface ChannelsListProps {
@@ -33,6 +34,7 @@ interface ChannelsListProps {
   /** Channels search query + setter (owned by HomeScreen) → search bar + filter. */
   query: string;
   setQuery: (v: string) => void;
+  fg: string;
   head: string;
   sub: string;
   border: string;
@@ -48,7 +50,7 @@ interface ChannelsListProps {
 export function ChannelsList({
   panRef, router, myAddress, sortedRows, requestCount, barLabels, enabledLabels, onToggleLabel,
   query, setQuery,
-  head, sub, border,
+  fg, head, sub, border,
   listExtraData, listRef, savedOffsetRef, didRestoreRef, contentHeightRef,
   renderRow, getRowLayout,
 }: ChannelsListProps): React.ReactElement {
@@ -143,7 +145,12 @@ export function ChannelsList({
         maxToRenderPerBatch={10}
         removeClippedSubviews
         contentContainerStyle={{ paddingBottom: 24 }}
-        ListEmptyComponent={<HomeEmpty sub={sub} message={query.trim() ? 'No matches' : undefined} />}
+        ListEmptyComponent={query.trim() ? null : <HomeEmpty sub={sub} />}
+        ListFooterComponent={
+          query.trim()
+            ? <HomeContactResults query={query} c={{ fg, head, sub, border }} noChannels={sortedRows.length === 0} />
+            : null
+        }
         renderItem={renderRow}
       />
     </>

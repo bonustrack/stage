@@ -12,7 +12,7 @@ import { TabsPager } from '../../components/SwipeTabs';
 
 export default function TabsLayout(): React.ReactElement {
   const pathname = usePathname();
-  /** The pager only mounts the five tab bodies (Home/Search/Wallet/Notifications/Profile).
+  /** The pager only mounts the four tab bodies (Home/Wallet/Notifications/Profile).
    *  Settings is a non-pager route now → hide the pager overlay there so the real
    *  SettingsScreen rendered by the route shows through. */
   const pagerVisible = !pathname.startsWith('/settings');
@@ -62,7 +62,6 @@ export default function TabsLayout(): React.ReactElement {
         {(
           [
             ['index', 'chatBubble'],
-            ['search', 'search'],
             ['wallet', 'wallet'],
             ['notifications', 'bell'],
             ['profile', 'user'],
