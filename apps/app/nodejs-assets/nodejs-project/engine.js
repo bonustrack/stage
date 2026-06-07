@@ -56,18 +56,79 @@ const ARTIFACTS_DIR = path.join(DATA_ROOT, 'artifacts');
  * silently fails the scan → no commitment found → balance stays 0. These mirror
  * the vetted list in apps/app/lib/railgun/networks.ts. Need >= 2 per net for the
  * SDK's fallback-provider quorum. */
-const RPC = {
-  mainnet: ['https://ethereum-rpc.publicnode.com', 'https://eth.drpc.org'],
-  sepolia: [
-    // Keyed dRPC Sepolia endpoint (PRIMARY) — reliably serves eth_getLogs so the
-    // RAILGUN merkletree historical-events scan completes (public RPCs stalled at
-    // the getLogs step → empty tree → $0 shielded balance). Public node kept as
-    // secondary fallback for the SDK's fallback-provider quorum.
-    'https://lb.drpc.org/ogrpc?network=sepolia&dkey=AqrKBDkAZkycokrrHI5M--EgA5HAYAQR8ZoW7sA_udJz',
-    'https://ethereum-sepolia-rpc.publicnode.com',
-    'https://sepolia.drpc.org',
-  ],
+/* ───────────────────────── RUNTIME SCAN CONFIG ───────────────────────────────
+ *
+ *  Phase 1: the scan/RPC policy (RPC urls, per-chain enable, batch size, stall +
+ *  attempt timeouts, heartbeat cadence) is now PASSED FROM RN at engineInit
+ *  (params.scanConfig - see apps/app/lib/railgun/bridge/scanConfig.ts) instead of
+ *  living as hardcoded consts here. The DEFAULTS below mirror the previous
+ *  hardcoded values 1:1, so omitting scanConfig is behavior-identical. applyScan
+ *  Config() overlays whatever RN sent over these defaults at init time. */
+const DEFAULT_CFG = {
+  rpc: {
+    mainnet: ['https://ethereum-rpc.publicnode.com', 'https://eth.drpc.org'],
+    sepolia: [
+      // Keyed dRPC Sepolia endpoint (PRIMARY) - reliably serves eth_getLogs so the
+      // RAILGUN merkletree historical-events scan completes (public RPCs stalled at
+      // the getLogs step → empty tree → $0 shielded balance). Public node kept as
+      // secondary fallback for the SDK's fallback-provider quorum.
+      'https://lb.drpc.org/ogrpc?network=sepolia&dkey=AqrKBDkAZkycokrrHI5M--EgA5HAYAQR8ZoW7sA_udJz',
+      'https://ethereum-sepolia-rpc.publicnode.com',
+      'https://sepolia.drpc.org',
+    ],
+  },
+  // Sepolia ONLY (mainnet getLogs failures grab the global rescan lock + wedge
+  // Sepolia at 50% - see SCAN_CHAIN_IDS doc below).
+  scanChainIds: [11155111],
+  maxLogsPerBatch: 1,
+  stallTimeoutMs: 5000,
+  scanAttemptTimeoutMs: 90 * 1000,
+  scanMaxAttempts: 4,
+  heartbeatIntervalMs: 5000,
 };
+
+/** Live config, mutated once by applyScanConfig() at init. Starts as defaults so
+ *  anything reading it before init still sees identical behavior. */
+const cfg = {
+  rpc: { mainnet: DEFAULT_CFG.rpc.mainnet.slice(), sepolia: DEFAULT_CFG.rpc.sepolia.slice() },
+  scanChainIds: new Set(DEFAULT_CFG.scanChainIds),
+  maxLogsPerBatch: DEFAULT_CFG.maxLogsPerBatch,
+  stallTimeoutMs: DEFAULT_CFG.stallTimeoutMs,
+  scanAttemptTimeoutMs: DEFAULT_CFG.scanAttemptTimeoutMs,
+  scanMaxAttempts: DEFAULT_CFG.scanMaxAttempts,
+  heartbeatIntervalMs: DEFAULT_CFG.heartbeatIntervalMs,
+};
+
+/** Overlay the RN-supplied scanConfig onto `cfg`. Every field is optional; a
+ *  missing field keeps the default. `chains[].enabled` drives scanChainIds and
+ *  per-net RPC urls. Tolerant of malformed input (keeps defaults on any error). */
+function applyScanConfig(sc) {
+  if (!sc || typeof sc !== 'object') return;
+  try {
+    if (Array.isArray(sc.chains)) {
+      const ids = new Set();
+      for (const c of sc.chains) {
+        if (!c || typeof c.chainId !== 'number') continue;
+        if (c.enabled) ids.add(c.chainId);
+        if (Array.isArray(c.rpcUrls) && c.rpcUrls.length && (c.net === 'mainnet' || c.net === 'sepolia')) {
+          cfg.rpc[c.net] = c.rpcUrls.slice();
+        }
+      }
+      if (ids.size) cfg.scanChainIds = ids;
+    }
+    if (Number.isFinite(sc.maxLogsPerBatch)) cfg.maxLogsPerBatch = sc.maxLogsPerBatch;
+    if (Number.isFinite(sc.stallTimeoutMs)) cfg.stallTimeoutMs = sc.stallTimeoutMs;
+    if (Number.isFinite(sc.scanAttemptTimeoutMs)) cfg.scanAttemptTimeoutMs = sc.scanAttemptTimeoutMs;
+    if (Number.isFinite(sc.scanMaxAttempts)) cfg.scanMaxAttempts = sc.scanMaxAttempts;
+    if (Number.isFinite(sc.heartbeatIntervalMs)) cfg.heartbeatIntervalMs = sc.heartbeatIntervalMs;
+    scanDebug(0, 'scanConfig applied: scanChains=[' + Array.from(cfg.scanChainIds).join(',') +
+      '] maxLogsPerBatch=' + cfg.maxLogsPerBatch + ' stall=' + cfg.stallTimeoutMs +
+      ' attemptTimeout=' + cfg.scanAttemptTimeoutMs + ' maxAttempts=' + cfg.scanMaxAttempts +
+      ' heartbeat=' + cfg.heartbeatIntervalMs);
+  } catch (e) {
+    scanDebug(0, 'scanConfig apply error (using defaults): ' + (e && e.message ? e.message : String(e)));
+  }
+}
 
 /** Per-provider getLogs/JSON-RPC tuning (from fix/railgun-scan-chunk).
  *
@@ -80,8 +141,8 @@ const RPC = {
  *  FIX: `maxLogsPerBatch` maps to ethers' `batchMaxCount` on the underlying
  *  JsonRpcProvider. Setting it to 1 DISABLES JSON-RPC request batching, so each
  *  getLogs goes out as its own HTTP request — far more reliable on rate-limited
- *  public testnet RPCs. `stallTimeout` lets the fallback provider fail over. */
-const MAX_LOGS_PER_BATCH = 1;
+ *  public testnet RPCs. `stallTimeout` lets the fallback provider fail over.
+ *  Both are now runtime-tunable via cfg.maxLogsPerBatch / cfg.stallTimeoutMs. */
 
 /** Private Proof of Innocence aggregator node(s). REQUIRED at engine start for
  *  any network whose NETWORK_CONFIG defines `poi` (Sepolia + mainnet do) — else
@@ -99,8 +160,8 @@ const POI_NODE_URLS = ['https://ppoi-agg.horsewithsixlegs.xyz'];
  *  HOLDING that lock — so every subsequent Sepolia rescan returns "Full rescan
  *  already in progress" and Sepolia parks at 50% (merkletree done, wallet-decrypt
  *  phase 2 never starts). We therefore DO NOT scan mainnet at all. Add chainId 1
- *  back here only once a mainnet RPC + scan-range is proven not to wedge. */
-const SCAN_CHAIN_IDS = new Set([11155111]);
+ *  back here only once a mainnet RPC + scan-range is proven not to wedge.
+ *  RUNTIME: now driven by cfg.scanChainIds (set from RN scanConfig). */
 
 let state = { ready: false, prover: false, networks: [], version: null, initPromise: null };
 
@@ -144,32 +205,32 @@ function wireProver(getProver) {
  *  (a dead public RPC shouldn't sink the whole init); we record which loaded. */
 async function loadNetworks(sdk, NetworkName) {
   const targets = [
-    { net: 'mainnet', chainId: 1, name: NetworkName.Ethereum, urls: RPC.mainnet },
-    { net: 'sepolia', chainId: 11155111, name: NetworkName.EthereumSepolia, urls: RPC.sepolia },
+    { net: 'mainnet', chainId: 1, name: NetworkName.Ethereum, urls: cfg.rpc.mainnet },
+    { net: 'sepolia', chainId: 11155111, name: NetworkName.EthereumSepolia, urls: cfg.rpc.sepolia },
   ];
   const loaded = [];
   for (const t of targets) {
     // Only load providers for chains we actually scan (Sepolia). Loading the
     // mainnet provider is pointless if we never scan it, and its getLogs failures
     // just spam the log — skip it entirely.
-    if (!SCAN_CHAIN_IDS.has(t.chainId)) {
-      scanDebug(t.chainId, 'provider load SKIPPED (' + t.net + ') — not in SCAN_CHAIN_IDS');
+    if (!cfg.scanChainIds.has(t.chainId)) {
+      scanDebug(t.chainId, 'provider load SKIPPED (' + t.net + ') - not in scanChainIds');
       // eslint-disable-next-line no-continue
       continue;
     }
     try {
-      const cfg = {
+      const providerConfig = {
         chainId: t.chainId,
         providers: t.urls.map((url, i) => ({
           provider: url,
           priority: i + 1,
           weight: 1,
-          stallTimeout: 5000,
-          maxLogsPerBatch: MAX_LOGS_PER_BATCH,
+          stallTimeout: cfg.stallTimeoutMs,
+          maxLogsPerBatch: cfg.maxLogsPerBatch,
         })),
       };
       // eslint-disable-next-line no-await-in-loop
-      await sdk.loadProvider(cfg, t.name, 1000 * 60 * 5);
+      await sdk.loadProvider(providerConfig, t.name, 1000 * 60 * 5);
       loaded.push(t.net);
       scanDebug(t.chainId, 'provider loaded ✓ (' + t.net + ' rpcs: ' + t.urls.join(', ') + ')');
     } catch (err) {
@@ -184,6 +245,9 @@ async function loadNetworks(sdk, NetworkName) {
 async function init(params) {
   if (state.ready) return status();
   if (state.initPromise) return state.initPromise;
+  // Overlay RN-supplied scan/RPC config (behavior-identical when omitted) BEFORE
+  // we load providers or start the heartbeat, so both see the final policy.
+  applyScanConfig(params && params.scanConfig);
   state.initPromise = (async () => {
     ensureDirs();
     // eslint-disable-next-line global-require
@@ -235,6 +299,7 @@ async function init(params) {
       if (sdk.setOnUTXOMerkletreeScanCallback) {
         sdk.setOnUTXOMerkletreeScanCallback(function onUTXOScan(d) {
           try {
+            markScanProgress(d.chain && d.chain.id);
             scanDebug(d.chain && d.chain.id, 'UTXO scan ' + d.scanStatus + ' (' + Math.round((d.progress || 0) * 100) + '%)');
           } catch (_e) { /* ignore */ }
         });
@@ -242,6 +307,7 @@ async function init(params) {
       if (sdk.setOnTXIDMerkletreeScanCallback) {
         sdk.setOnTXIDMerkletreeScanCallback(function onTXIDScan(d) {
           try {
+            markScanProgress(d.chain && d.chain.id);
             scanDebug(d.chain && d.chain.id, 'TXID scan ' + d.scanStatus + ' (' + Math.round((d.progress || 0) * 100) + '%)');
           } catch (_e) { /* ignore */ }
         });
@@ -275,6 +341,7 @@ async function init(params) {
       (shared.RAILGUN_VERSION && String(shared.RAILGUN_VERSION)) ||
       tryPkgVersion('@railgun-community/wallet');
     state.ready = true;
+    startHeartbeat();
     return status();
   })();
   try {
@@ -372,6 +439,7 @@ function wireBalanceCallback(sdk) {
         tokenAddress: a.tokenAddress,
         amount: a.amount == null ? '0' : a.amount.toString(),
       }));
+      markScanProgress(ev.chain && ev.chain.id);
       balanceCache.set(bucketKey(ev.chain.id, ev.railgunWalletID, ev.balanceBucket), rows);
       const summed = summedRows(ev.chain.id, ev.railgunWalletID);
       scanDebug(
@@ -442,12 +510,53 @@ const scanInFlight = new Map();
 const scanCompleted = new Set();
 
 /** ms before a single scan attempt is considered hung and retried. The dRPC
- *  Sepolia getLogs walk completes well inside this; a stuck batch will not. */
-const SCAN_ATTEMPT_TIMEOUT_MS = 90 * 1000;
-const SCAN_MAX_ATTEMPTS = 4;
+ *  Sepolia getLogs walk completes well inside this; a stuck batch will not.
+ *  RUNTIME: cfg.scanAttemptTimeoutMs / cfg.scanMaxAttempts (from RN scanConfig). */
 
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
+}
+
+/* ───────────────────────────── STATUS HEARTBEAT ──────────────────────────────
+ *
+ *  Phase 1: a fixed-cadence 'event:heartbeat' lets the RN side detect a stalled
+ *  scan and kick it (balances forceFullRescan). We track per-chain scan liveness:
+ *  `scanning` = a scan is in flight, `lastProgressAt` = last UTXO/TXID merkletree
+ *  progress callback or balanceUpdate, `stalled` = scanning but no progress for
+ *  > 2x the attempt timeout. lastProgressAt is bumped by markScanProgress(), wired
+ *  into the existing scan callbacks (no behavior change to the scan itself). */
+const chainProgress = new Map(); // chainId → last-progress epoch ms
+let heartbeatTimer = null;
+
+function markScanProgress(chainId) {
+  if (chainId != null && chainId !== -1) chainProgress.set(chainId, Date.now());
+}
+
+function buildHeartbeatChains() {
+  const out = {};
+  const scanningChains = new Set();
+  scanInFlight.forEach((_p, k) => {
+    const id = Number(String(k).split(':')[0]);
+    if (Number.isFinite(id)) scanningChains.add(id);
+  });
+  const stalledAfter = cfg.scanAttemptTimeoutMs * 2;
+  cfg.scanChainIds.forEach((id) => {
+    const scanning = scanningChains.has(id);
+    const last = chainProgress.has(id) ? chainProgress.get(id) : null;
+    const stalled = scanning && last != null && Date.now() - last > stalledAfter;
+    out[String(id)] = { scanning: scanning, lastProgressAt: last, stalled: stalled };
+  });
+  return out;
+}
+
+function startHeartbeat() {
+  if (heartbeatTimer || !cfg.heartbeatIntervalMs) return;
+  heartbeatTimer = setInterval(() => {
+    try {
+      emit('event:heartbeat', { at: Date.now(), ready: state.ready, chains: buildHeartbeatChains() });
+    } catch (_e) { /* never let the heartbeat throw */ }
+  }, cfg.heartbeatIntervalMs);
+  if (heartbeatTimer && typeof heartbeatTimer.unref === 'function') heartbeatTimer.unref();
 }
 
 /** Race a scan attempt against a timeout. The underlying engine scan keeps
@@ -477,28 +586,31 @@ function runSerializedScan(sdk, chain, walletId, opts) {
   }
   const forceFull = !!(opts && opts.forceFullRescan);
 
+  const maxAttempts = cfg.scanMaxAttempts;
   const p = (async () => {
+    markScanProgress(chain.id); // a scan is starting → reset the stall clock
     let lastErr = null;
-    for (let attempt = 1; attempt <= SCAN_MAX_ATTEMPTS; attempt += 1) {
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
       const useFull = (forceFull && attempt === 1) ||
-        (attempt === SCAN_MAX_ATTEMPTS && !scanCompleted.has(k) &&
+        (attempt === maxAttempts && !scanCompleted.has(k) &&
          typeof sdk.rescanFullUTXOMerkletreesAndWallets === 'function');
       const kind = useFull ? 'FULL rescan' : 'incremental scan';
-      scanDebug(chain.id, kind + ' START (attempt ' + attempt + '/' + SCAN_MAX_ATTEMPTS + ') wallet=' + String(walletId).slice(0, 10));
+      scanDebug(chain.id, kind + ' START (attempt ' + attempt + '/' + maxAttempts + ') wallet=' + String(walletId).slice(0, 10));
       try {
         const call = useFull
           ? sdk.rescanFullUTXOMerkletreesAndWallets(chain, [walletId])
           : sdk.refreshBalances(chain, [walletId]);
         // eslint-disable-next-line no-await-in-loop
-        await withTimeout(Promise.resolve(call), SCAN_ATTEMPT_TIMEOUT_MS, kind);
+        await withTimeout(Promise.resolve(call), cfg.scanAttemptTimeoutMs, kind);
         scanCompleted.add(k);
+        markScanProgress(chain.id);
         scanDebug(chain.id, kind + ' DONE wallet=' + String(walletId).slice(0, 10));
         return;
       } catch (e) {
         lastErr = e;
         const msg = e && e.message ? e.message : String(e);
         scanDebug(chain.id, kind + ' attempt ' + attempt + ' FAILED: ' + msg.slice(0, 200));
-        if (attempt < SCAN_MAX_ATTEMPTS) {
+        if (attempt < maxAttempts) {
           const backoff = Math.min(2000 * Math.pow(2, attempt - 1), 15000);
           scanDebug(chain.id, 'retrying scan in ' + backoff + 'ms (incremental resumes from last synced block)');
           // eslint-disable-next-line no-await-in-loop
@@ -506,7 +618,7 @@ function runSerializedScan(sdk, chain, walletId, opts) {
         }
       }
     }
-    scanDebug(chain.id, 'scan GAVE UP after ' + SCAN_MAX_ATTEMPTS + ' attempts: ' + (lastErr && lastErr.message ? lastErr.message : String(lastErr)));
+    scanDebug(chain.id, 'scan GAVE UP after ' + maxAttempts + ' attempts: ' + (lastErr && lastErr.message ? lastErr.message : String(lastErr)));
   })().finally(() => {
     scanInFlight.delete(k); // release the per-chain mutex
   });
@@ -538,10 +650,10 @@ async function balances(params) {
   const networks = {};
   for (const t of targets) {
     const chain = { type: shared.ChainType ? shared.ChainType.EVM : 0, id: t.chainId };
-    // ONLY scan chains in SCAN_CHAIN_IDS (Sepolia). Scanning mainnet here is what
+    // ONLY scan chains in cfg.scanChainIds (Sepolia). Scanning mainnet here is what
     // grabbed the global rescan lock and wedged Sepolia at 50% — so we skip it.
-    if (!SCAN_CHAIN_IDS.has(t.chainId)) {
-      scanDebug(t.chainId, 'scan SKIPPED (' + t.net + ') — not in SCAN_CHAIN_IDS; avoids global rescan-lock wedge');
+    if (!cfg.scanChainIds.has(t.chainId)) {
+      scanDebug(t.chainId, 'scan SKIPPED (' + t.net + ') - not in scanChainIds; avoids global rescan-lock wedge');
     } else if (state.networks.indexOf(t.net) === -1) {
       scanDebug(t.chainId, 'scan SKIPPED (' + t.net + ') — provider not loaded');
     } else {
