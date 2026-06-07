@@ -66,7 +66,7 @@ function isDarkBg(hex: string): boolean {
 
 export default function RootLayout(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
-  const { bg } = usePalette();
+  const { bg, toolbarBg } = usePalette();
   // Wire the persisted button radius token into the kit Button default + repaint
   // the whole tree when it changes. Mounted at the root so it's always live.
   useRadius();
@@ -76,11 +76,12 @@ export default function RootLayout(): React.ReactElement {
    *  needs LIGHT (white) icons. The previous `dark ? 'light' : 'dark'` showed
    *  dark, invisible icons whenever the OS was in light mode but pref='system'
    *  (→ useEffectiveColorScheme 'light') while the app still rendered a dark
-   *  surface. Drive the style off the real palette bg luminance, and ALSO set it
-   *  imperatively (effect below) because under Android edge-to-edge the
+   *  surface. The status-bar inset now renders `toolbarBg` (the nav fill extends
+   *  to the top edge), so drive the icon style off toolbarBg luminance, and ALSO
+   *  set it imperatively (effect below) because under Android edge-to-edge the
    *  declarative <StatusBar> can be shadowed by the native baseline on first
    *  paint. */
-  const barStyle: 'light' | 'dark' = isDarkBg(bg) ? 'light' : 'dark';
+  const barStyle: 'light' | 'dark' = isDarkBg(toolbarBg) ? 'light' : 'dark';
   useEffect(() => { setStatusBarStyle(barStyle, true); }, [barStyle]);
 
   /** Universal/deep links → screen navigation. `getInitialURL` resolves async

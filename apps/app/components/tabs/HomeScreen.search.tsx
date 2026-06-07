@@ -23,8 +23,9 @@ export function filterRowsByQuery(rows: RowT[], query: string): RowT[] {
   });
 }
 
-/** The search input bar: block-radius surface with a leading search glyph and a
- *  trailing clear button when non-empty. Styled with app tokens + Calibre. */
+/** The search section: a toolbarBg band (continuous with the topnav) holding an
+ *  inset inputBg field with a leading search glyph and a trailing clear button
+ *  when non-empty. Styled with app tokens + Calibre. */
 export const ChannelsSearchBar = forwardRef<TextInput, {
   query: string;
   setQuery: (v: string) => void;
@@ -32,11 +33,12 @@ export const ChannelsSearchBar = forwardRef<TextInput, {
   sub: string;
   border: string;
   rowBg: string;
+  toolbarBg: string;
 }>(function ChannelsSearchBar(props, ref): React.ReactElement {
-  const { head, sub, rowBg } = props;
+  const { head, sub, rowBg, toolbarBg } = props;
   const blockRadius = useBlockRadius();
   return (
-    <Row align="center" px={12} pt={10} pb={10}>
+    <Row align="center" px={12} pt={10} pb={10} bg={toolbarBg}>
       <Box style={{
         flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8,
         backgroundColor: rowBg, borderRadius: blockRadius,

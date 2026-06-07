@@ -61,7 +61,7 @@ export function MessengerSettings(): React.ReactElement {
 
   const c = { fg, sub, border, rowBg };
   return (
-    <Box style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
+    <Box style={{ flex: 1, backgroundColor: bg }}>
       <SystemHeader title="Messenger" dark={dark} fg={fg} head={head} border={border} />
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <Text style={{ color: sub, fontSize: 13, paddingHorizontal: 16, paddingTop: 20, fontFamily: 'Calibre-Medium' }}>

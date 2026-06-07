@@ -37,7 +37,7 @@ interface PickedImage { uri: string; mime: string; name: string }
 export default function NewGroup(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border, primary } = usePalette();
+  const { text: fg, link: head, bg, border, primary, inputBg, toolbarBg } = usePalette();
   const sub = fg;
   const rowBg = border;
   const insets = useSafeAreaInsets();
@@ -84,12 +84,13 @@ export default function NewGroup(): React.ReactElement {
   }, [members, name, image, creating, router]);
 
   return (
-    <Box style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
+    <Box style={{ flex: 1, backgroundColor: bg }}>
       {/* Header — back button + title, consistent with other pushed screens. */}
       <Box style={{
         flexDirection: 'row', alignItems: 'center', gap: 8,
-        paddingHorizontal: 12, paddingTop: 8, paddingBottom: 10,
+        paddingHorizontal: 12, paddingTop: 8 + insets.top, paddingBottom: 10,
         borderBottomWidth: 1, borderBottomColor: border,
+        backgroundColor: toolbarBg,
       }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg} />
@@ -145,7 +146,7 @@ export default function NewGroup(): React.ReactElement {
             placeholderTextColor={sub}
             style={{
               color: head, fontSize: 16, fontFamily: 'Calibre-Medium',
-              backgroundColor: rowBg, borderRadius: 12, paddingHorizontal: 14,
+              backgroundColor: inputBg, borderRadius: 12, paddingHorizontal: 14,
               paddingVertical: 12, borderWidth: 1, borderColor: border,
             }}
           />

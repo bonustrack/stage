@@ -17,6 +17,12 @@ export const colors = {
   /** Inputs/surfaces share the border colour per the palette spec. */
   'surface-dark': '#282a2d',
   'surface-light': '#e4e4e5',
+  /** Input/dropdown fill: a subtle surface distinct from bg. */
+  'input-bg-dark': '#1c1d1f',
+  'input-bg-light': '#f2f2f3',
+  /** Toolbar/nav fill: solid bg behind the gradient/border navs. */
+  'toolbar-bg-dark': '#0e0f10',
+  'toolbar-bg-light': '#ffffff',
   'hover-dark': '#1c1d1f',
   'hover-light': '#f2f2f3',
   /** Body / default text */
@@ -62,6 +68,8 @@ export const semanticColors = {
   primaryColor: { dark: colors['primary-dark'], light: colors['primary-light'] },
   dangerColor: { dark: colors['danger-dark'], light: colors['danger-light'] },
   successColor: { dark: colors['success-dark'], light: colors['success-light'] },
+  inputBgColor: { dark: colors['input-bg-dark'], light: colors['input-bg-light'] },
+  toolbarBgColor: { dark: colors['toolbar-bg-dark'], light: colors['toolbar-bg-light'] },
 } as const;
 
 /** Resolve all 7 canonical tokens for an effective scheme. */
@@ -69,6 +77,7 @@ export function semanticPalette(scheme: 'light' | 'dark'): {
   bgColor: string; borderColor: string; textColor: string;
   linkColor: string; primaryColor: string;
   dangerColor: string; successColor: string;
+  inputBgColor: string; toolbarBgColor: string;
 } {
   return {
     bgColor: semanticColors.bgColor[scheme],
@@ -78,6 +87,8 @@ export function semanticPalette(scheme: 'light' | 'dark'): {
     primaryColor: semanticColors.primaryColor[scheme],
     dangerColor: semanticColors.dangerColor[scheme],
     successColor: semanticColors.successColor[scheme],
+    inputBgColor: semanticColors.inputBgColor[scheme],
+    toolbarBgColor: semanticColors.toolbarBgColor[scheme],
   };
 }
 

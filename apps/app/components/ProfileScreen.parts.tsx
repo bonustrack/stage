@@ -53,7 +53,7 @@ export function ProfileHeader({ variant, insetTop, isSelf, onBack, onMenu, c }: 
           position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
           height: 44 + insetTop, paddingTop: insetTop, paddingHorizontal: 14,
         }
-        : { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 }),
+        : { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8, backgroundColor: c.toolbarBg }),
       flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     }}>
       {variant === 'route' ? (

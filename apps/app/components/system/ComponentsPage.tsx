@@ -19,7 +19,7 @@ export function ComponentsPage(): React.ReactElement {
   const insets = useSafeAreaInsets();
 
   return (
-    <Box style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
+    <Box style={{ flex: 1, backgroundColor: bg }}>
       <SystemHeader title="Components" dark={dark} fg={fg} head={head} border={border} />
       <ScrollView
         style={{ flex: 1 }}

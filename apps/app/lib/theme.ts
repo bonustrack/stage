@@ -86,14 +86,13 @@ export function useEffectiveColorScheme(): 'light' | 'dark' {
   return sys === 'dark' ? 'dark' : 'light';
 }
 
-/** The 5-key scheme-aware palette shared by every screen's inline StyleSheet.
- *  Maps 1:1 to the canonical kit semantic tokens (single source of truth:
- *  @metro-labs/kit/tokens) — no app-local color forks. `text` = body text,
- *  `link` = emphasis (titles/names/active icons/accents — brand teal),
- *  `primary` = primary-button background fill ONLY (white/black). */
+/** Scheme-aware palette shared by every screen's inline StyleSheet. Maps 1:1 to
+ *  the canonical kit semantic tokens (@metro-labs/kit/tokens, no app-local
+ *  forks): `text` body text, `link` emphasis, `primary` primary-button fill,
+ *  `inputBg` input/dropdown fill, `toolbarBg` solid nav fill. */
 export interface Palette {
   bg: string; border: string; text: string; link: string; primary: string;
-  danger: string; success: string;
+  danger: string; success: string; inputBg: string; toolbarBg: string;
 }
 
 /** Subscribe a screen to color-override changes so edits on the Kit page
@@ -195,6 +194,7 @@ export function usePalette(): Palette {
       primary: pick('primary', s.primaryColor),
       danger: pick('danger', s.dangerColor),
       success: pick('success', s.successColor),
+      inputBg: pick('inputBg', s.inputBgColor), toolbarBg: pick('toolbarBg', s.toolbarBgColor),
     };
   }, [scheme, version]);
 }

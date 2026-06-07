@@ -1,6 +1,7 @@
 /** Header + submit button + tx-status sub-components for the Wallet → Send
  *  screen. Extracted from send.fields.tsx (mechanical split, behavior identical). */
 import { Linking, Pressable } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Hex } from 'viem';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from '../../components/layout';
@@ -17,11 +18,14 @@ type TxState = 'idle' | 'submitting' | 'pending' | 'confirmed';
 export function SendHeader(props: {
   fg: string; head: string; border: string; onBack: () => void;
 }): React.ReactElement {
+  const insets = useSafeAreaInsets();
+  const { toolbarBg } = usePalette();
   return (
     <Box style={{
       flexDirection: 'row', alignItems: 'center', gap: 8,
-      paddingHorizontal: 12, paddingTop: 8, paddingBottom: 10,
+      paddingHorizontal: 12, paddingTop: 8 + insets.top, paddingBottom: 10,
       borderBottomWidth: 1, borderBottomColor: props.border,
+      backgroundColor: toolbarBg,
     }}>
       <Pressable onPress={props.onBack} hitSlop={8} style={{ padding: 4 }}>
         <Icon name="arrowLeft" size={22} color={props.fg} />

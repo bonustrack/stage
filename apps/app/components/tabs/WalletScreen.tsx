@@ -31,7 +31,7 @@ import { useWalletBalances } from './WalletScreen.balances';
 
 export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const router = useRouter();
-  const { link: head, text: sub, bg, border } = usePalette();
+  const { link: head, text: sub, bg, border, toolbarBg } = usePalette();
   const dark = useEffectiveColorScheme() === 'dark';
 
   const { snapshot: privSnapshot, accountId: privAccountId, pending } = usePrivateWallet(true);
@@ -139,7 +139,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
     >
       {pull.indicator}
       {/* Topnav identity (avatar + name → Menu), left-aligned to match Home. */}
-      <Row align="center" px={16} pt={12} pb={4}><TopnavIdentity /></Row>
+      <Row align="center" px={16} pt={12} pb={4} bg={toolbarBg}><TopnavIdentity /></Row>
       {/* Value card — compact, left-aligned: just the big total USD value.
           Decimals render in the dim `sub` colour to keep the dollars prominent. */}
       <Col mx={16} pt={20} pb={16} align="start">

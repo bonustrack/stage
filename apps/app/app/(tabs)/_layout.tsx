@@ -29,7 +29,7 @@ export default function TabsLayout(): React.ReactElement {
   const inactive = pal.text;
 
   const tabBarStyle = {
-    backgroundColor: bg,
+    backgroundColor: pal.toolbarBg,
     /** No top border on the footer nav - keep it borderless. Also kill Android's
      *  default elevation shadow so no hairline/line shows above the bar. */
     borderTopWidth: 0,
@@ -46,6 +46,17 @@ export default function TabsLayout(): React.ReactElement {
 
   return (
     <Box style={{ flex: 1, backgroundColor: bg }}>
+      {/* Status-bar inset filler: paint the top safe-area (behind the Android
+          system icons) with toolbarBg so the tab topnavs - which start below
+          insets.top - extend seamlessly to the very top edge. Sits under the
+          pager overlay; toolbarBg matches the topnav fill below it. */}
+      <Box
+        pointerEvents="none"
+        style={{
+          position: 'absolute', top: 0, left: 0, right: 0,
+          height: insets.top, backgroundColor: pal.toolbarBg, zIndex: 1,
+        }}
+      />
       {/* `Tabs` stays mounted as the ROUTING + tab-bar source of truth: deep
           links to /wallet etc. resolve, the URL is correct, and the active
           highlight is router-driven. The route scenes themselves render

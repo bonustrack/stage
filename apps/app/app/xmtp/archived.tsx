@@ -29,7 +29,7 @@ import { Box, Col, Row } from '../../components/layout';
 export default function Archived(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border } = usePalette();
+  const { text: fg, link: head, bg, border, toolbarBg } = usePalette();
   const sub = fg;
   const insets = useSafeAreaInsets();
   const [archived, setArchived] = useState<Set<string>>(new Set());
@@ -77,11 +77,12 @@ export default function Archived(): React.ReactElement {
   }, [router, head]);
 
   return (
-    <Box style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top }}>
+    <Box style={{ flex: 1, backgroundColor: bg }}>
       <Box style={{
         flexDirection: 'row', alignItems: 'center', gap: 8,
-        paddingHorizontal: 12, paddingTop: 8, paddingBottom: 10,
+        paddingHorizontal: 12, paddingTop: 8 + insets.top, paddingBottom: 10,
         borderBottomWidth: 1, borderBottomColor: border,
+        backgroundColor: toolbarBg,
       }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg} />

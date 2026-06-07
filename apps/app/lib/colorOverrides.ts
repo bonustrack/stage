@@ -11,7 +11,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type Scheme = 'light' | 'dark';
 export type TokenKey =
-  'bg' | 'border' | 'text' | 'link' | 'primary' | 'danger' | 'success';
+  'bg' | 'border' | 'text' | 'link' | 'primary' | 'danger' | 'success'
+  | 'inputBg' | 'toolbarBg';
 
 export type ColorOverrides = Partial<Record<TokenKey, Partial<Record<Scheme, string>>>>;
 

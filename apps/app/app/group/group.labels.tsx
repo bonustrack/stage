@@ -42,7 +42,7 @@ function SuggestionChip({ label, busy, onAdd, p }: {
   );
 }
 
-interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; }
+interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; inputBg: string; }
 
 /** One label pill: text + a tappable x to remove. */
 function LabelChip({ label, busy, onRemove, p }: {
@@ -64,7 +64,7 @@ function LabelChip({ label, busy, onRemove, p }: {
 }
 
 export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React.ReactElement {
-  const { fg, sub, border, rowBg } = p;
+  const { fg, sub, border, inputBg } = p;
   const [labels, setLabels] = useState<string[]>([]);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
@@ -146,7 +146,7 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
             returnKeyType="done"
             editable={!busy}
             style={{
-              flex: 1, color: fg, backgroundColor: rowBg,
+              flex: 1, color: fg, backgroundColor: inputBg,
               borderWidth: 1, borderColor: border, borderRadius: 10,
               paddingHorizontal: 10, paddingVertical: 8, fontSize: 14,
             }}
