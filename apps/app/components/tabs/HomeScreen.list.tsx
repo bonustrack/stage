@@ -30,6 +30,11 @@ interface ChannelsListProps {
   enabledLabels: Set<string>;
   /** Toggle a label's enabled state. */
   onToggleLabel: (label: string) => void;
+  /** Built-in "Unread" chip state + toggle (only-unread filter). */
+  unreadOnly: boolean;
+  onToggleUnread: () => void;
+  /** Built-in "All" chip: clears every active filter. */
+  onClearAll: () => void;
   /** Channels search query + setter (owned by HomeScreen) → search bar + filter. */
   query: string;
   setQuery: (v: string) => void;
@@ -50,6 +55,7 @@ interface ChannelsListProps {
 
 export function ChannelsList({
   panRef, router, sortedRows, requestCount, barLabels, enabledLabels, onToggleLabel,
+  unreadOnly, onToggleUnread, onClearAll,
   query, setQuery,
   fg, head, sub, border, inputBg, toolbarBg,
   listExtraData, listRef, savedOffsetRef, didRestoreRef, contentHeightRef,
@@ -150,7 +156,14 @@ export function ChannelsList({
          *  toggle chip per unique label across non-archived channels; hidden
          *  when there are no labels. */
         ListHeaderComponent={
-          <LabelFilterBar labels={barLabels} enabled={enabledLabels} onToggle={onToggleLabel} />
+          <LabelFilterBar
+            labels={barLabels}
+            enabled={enabledLabels}
+            unreadOnly={unreadOnly}
+            onToggle={onToggleLabel}
+            onToggleUnread={onToggleUnread}
+            onClearAll={onClearAll}
+          />
         }
         ListEmptyComponent={query.trim() ? null : <HomeEmpty sub={sub} />}
         ListFooterComponent={

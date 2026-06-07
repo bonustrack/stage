@@ -20,7 +20,7 @@ import { HomeError, HomeSpinner, useChannelRowRenderer } from './HomeScreen.part
 import { ChannelsList, channelRowLayout } from './HomeScreen.list';
 import { useChannelsSync } from './HomeScreen.sync';
 import { useIncomingLabelFilter } from './HomeScreen.filter';
-import { deriveLabels } from './HomeScreen.labelbar';
+import { deriveLabels, useHomeFilters } from './HomeScreen.labelbar';
 import { filterRowsByQuery } from './HomeScreen.search';
 
 /** Re-exported so existing import paths (`./HomeScreen`) stay unchanged. */
@@ -68,14 +68,10 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
   const [archived, setArchived] = useState<Set<string>>(new Set());
   /** Pending message-request count ('unknown' consent); drives "Requests (N)". */
   const [requestCount, setRequestCount] = useState<number>(0);
-  /** Enabled label filters (lowercased); empty = show all. ANY/OR: a channel is
-   *  kept if it carries at least one enabled label. */
-  const [enabledLabels, setEnabledLabels] = useState<Set<string>>(new Set());
-  const toggleLabel = (label: string): void => setEnabledLabels(prev => {
-    const next = new Set(prev), key = label.toLowerCase();
-    if (next.has(key)) next.delete(key); else next.add(key);
-    return next;
-  });
+  /** Filter chip state: enabled label set (OR-filter) + the built-in "Unread"
+   *  toggle, with the "All" clear-all handler. unreadOnly AND-narrows to
+   *  conversations with unread messages (unreadCount > 0 OR markedUnread). */
+  const { enabledLabels, toggleLabel, unreadOnly, toggleUnread, clearAllFilters } = useHomeFilters();
   /** Channels search query (client-side filter, empty = full list). */
   const [query, setQuery] = useState<string>('');
   /** Apply cross-screen label-filter requests (tapped label chip on a row). */
@@ -108,16 +104,20 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
     /** Label filter (ANY/OR): no enabled labels → show all; otherwise keep
      *  channels carrying at least one enabled label (case-insensitive).
      *  Reactive to `rows` so cache updates re-derive. */
-    const list = enabledLabels.size === 0
+    const byLabel = enabledLabels.size === 0
       ? all
       : all.filter(r => (r.labels ?? []).some(l => enabledLabels.has(l.toLowerCase())));
+    /** Unread chip: AND-narrow to conversations with unread messages. */
+    const list = unreadOnly
+      ? byLabel.filter(r => r.unreadCount > 0 || r.markedUnread)
+      : byLabel;
     return [...list].sort((a, b) => {
       const ap = pinned.has(a.convId) ? 1 : 0;
       const bp = pinned.has(b.convId) ? 1 : 0;
       if (ap !== bp) return bp - ap;
       return (b.lastTs ?? 0) - (a.lastTs ?? 0);
     });
-  }, [rows, pinned, enabledLabels, archived]);
+  }, [rows, pinned, enabledLabels, unreadOnly, archived]);
 
   /** Unique label set across NON-ARCHIVED channels → drives the filter bar. */
   const barLabels = useMemo(() => deriveLabels((rows ?? []).filter(r => !archived.has(r.convId))), [rows, archived]);
@@ -161,6 +161,9 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
         barLabels={barLabels}
         enabledLabels={enabledLabels}
         onToggleLabel={toggleLabel}
+        unreadOnly={unreadOnly}
+        onToggleUnread={toggleUnread}
+        onClearAll={clearAllFilters}
         query={query}
         setQuery={setQuery}
         fg={fg}
