@@ -1,0 +1,49 @@
+{
+  "sdkMethods": [
+    "balance.awaitWalletScan",
+    "balance.forERC20",
+    "balance.getSerializedERC20",
+    "balance.refresh",
+    "balance.rescanFull",
+    "engine.get",
+    "engine.has",
+    "engine.loadProvider",
+    "engine.unloadProvider",
+    "gas.estimateShield",
+    "gas.estimateShieldBaseToken",
+    "gas.estimateTransfer",
+    "gas.estimateUnshield",
+    "gas.estimateUnshieldBaseToken",
+    "proof.transfer",
+    "proof.unshield",
+    "proof.unshieldBaseToken",
+    "tx.getShieldPrivateKeySignatureMessage",
+    "tx.populateProvedTransfer",
+    "tx.populateProvedUnshield",
+    "tx.populateShield",
+    "tx.populateShieldBaseToken",
+    "wallet.create",
+    "wallet.createViewOnly",
+    "wallet.deleteByID",
+    "wallet.getAddress",
+    "wallet.getAddressData",
+    "wallet.getMnemonic",
+    "wallet.getShareableViewingKey",
+    "wallet.getTransactionHistory",
+    "wallet.loadByID"
+  ],
+  "engineOps": [
+    "balances",
+    "createWallet",
+    "engineStatus",
+    "getAddress",
+    "initEngine",
+    "listMethods"
+  ],
+  "compositeOps": [
+    "privateTransfer",
+    "shield",
+    "unshield"
+  ],
+  "__generated": "apps/app/scripts/gen-railgun-methods.mjs — do not edit by hand"
+}

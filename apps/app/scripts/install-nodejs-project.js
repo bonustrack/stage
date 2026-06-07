@@ -269,11 +269,31 @@ function countSymlinks(dir) {
   return n;
 }
 
+/* Regenerate the bridge method manifest (railgun-methods.json) from the single
+ * source-of-truth contract (packages/client/src/railgun/methods.ts) so a build
+ * always ships the host whitelist parity check against the current contract.
+ * Cheap + pure (a JSON projection, no native deps). Non-fatal — a mismatch is
+ * caught by the CI parity test, not here. */
+function regenMethodManifest() {
+  try {
+    execSync('node ' + JSON.stringify(path.join(appDir, 'scripts', 'gen-railgun-methods.mjs')), {
+      cwd: appDir,
+      stdio: 'inherit',
+    });
+  } catch (err) {
+    process.stderr.write(
+      '[install-nodejs-project] gen-railgun-methods failed (non-fatal): ' +
+        (err && err.message ? err.message : String(err)) + '\n',
+    );
+  }
+}
+
 function main() {
   if (!fs.existsSync(path.join(projDir, 'package.json'))) {
     process.stdout.write('[install-nodejs-project] no nodejs-project — skipping\n');
     return;
   }
+  regenMethodManifest();
   if (fs.existsSync(marker)) {
     process.stdout.write('[install-nodejs-project] deps already installed — skipping install\n');
   } else {

@@ -14,11 +14,12 @@
  *
  *  PURE: no native imports. The dispatcher that ships these frames is injected. */
 import type { RailgunDispatch } from './dispatch';
+import { SDK_METHOD } from './methods';
 import { bn } from './wire';
 
 /** The shield-private-key derivation message, signed by the EOA -> keccak -> key. */
 export async function shieldPrivateKeyMessage(dispatch: RailgunDispatch): Promise<string> {
-  return dispatch<string>('tx.getShieldPrivateKeySignatureMessage');
+  return dispatch<string>(SDK_METHOD('tx.getShieldPrivateKeySignatureMessage'));
 }
 
 /** Fallback-provider JSON config the engine's loadProvider expects:
@@ -51,7 +52,7 @@ export async function ensureProviderLoaded(
 ): Promise<void> {
   if (providerLoaded.has(cfg.chainId)) return;
   try {
-    await dispatch<boolean>('engine.loadProvider', [cfg, networkName, 1000 * 60 * 5]);
+    await dispatch<boolean>(SDK_METHOD('engine.loadProvider'), [cfg, networkName, 1000 * 60 * 5]);
   } catch (e) {
     const msg = (e as Error)?.message ?? String(e);
     throw new Error(`Couldn't connect to the ${networkName} RPC for shielding: ${msg}`);
@@ -81,7 +82,7 @@ export async function populateShieldBaseToken(dispatch: RailgunDispatch, params:
   wrappedTokenAddress: string;
   amountWei: string;
 }): Promise<PopulateResult> {
-  return dispatch<PopulateResult>('tx.populateShieldBaseToken', [
+  return dispatch<PopulateResult>(SDK_METHOD('tx.populateShieldBaseToken'), [
     params.txidVersion,
     params.networkName,
     params.railgunAddress,
@@ -100,7 +101,7 @@ export async function populateShieldErc20(dispatch: RailgunDispatch, params: {
   amountWei: string;
   recipientAddress: string;
 }): Promise<PopulateResult> {
-  return dispatch<PopulateResult>('tx.populateShield', [
+  return dispatch<PopulateResult>(SDK_METHOD('tx.populateShield'), [
     params.txidVersion,
     params.networkName,
     params.shieldPrivateKey,
