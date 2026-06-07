@@ -66,10 +66,10 @@ const MAX_VISIBLE_LABELS = 2;
 
 /** Constant content height reserved on the OUTER row so a 1-line and a 2-line
  *  preview render the SAME total height: title line (~23) + 2 preview lines
- *  (2 * 21 = 42) ~= 67, which also exceeds the 44px avatar. The text column has
+ *  (2 * 19 = 38) ~= 63, which also exceeds the 44px avatar. The text column has
  *  NO internal blank reservation, so the title+preview group centers as a unit
  *  next to the centered avatar (no empty gap stuck at the bottom). */
-const ROW_CONTENT_HEIGHT = 67;
+const ROW_CONTENT_HEIGHT = 63;
 
 /** Build ROUNDED label chips as INLINE <View>s placed as the FIRST children
  *  INSIDE the preview <Text>; the preview text flows around them and wraps
@@ -94,7 +94,7 @@ function buildLabelChips({ labels, fg, rowBg }: {
         transform: [{ translateY: 5 }],
       }}
     >
-      <Text style={{ color: fg, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{label}</Text>
+      <Text style={{ color: fg, fontSize: 13, lineHeight: 15, fontFamily: 'Calibre-Medium' }}>{label}</Text>
     </View>,
     // Real, rendered gap (inline-View margin is NOT honored by RN).
     <Text key={`gap-${i}`} style={{ fontSize: 13 }}>{'  '}</Text>,
@@ -167,7 +167,7 @@ function ChannelRowBase({
                 <Text>, so the preview flows around them and wraps UNDERNEATH the
                 chip on the 2nd line (single-line rounded pill, text under it). */}
             <Text
-              style={{ color: sub, fontSize: 16, lineHeight: 21, fontFamily: 'Calibre-Medium', flex: 1 }}
+              style={{ color: sub, fontSize: 16, lineHeight: 19, fontFamily: 'Calibre-Medium', flex: 1 }}
               numberOfLines={2}
               ellipsizeMode="tail"
             >
