@@ -35,7 +35,7 @@ export function PreviewLinkCard({ url }: {
             <Text style={{ color: fg, fontSize: 19, fontFamily: 'Calibre-Semibold' }}>
               Open preview build
             </Text>
-            <Text style={{ color: subColor, fontSize: 11, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
+            <Text style={{ color: subColor, fontSize: 16, lineHeight: 21, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
               EAS Update · {ref.shortGroup}
             </Text>
           </Box>
