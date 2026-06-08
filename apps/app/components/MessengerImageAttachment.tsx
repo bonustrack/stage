@@ -3,10 +3,14 @@
  *  for visual parity with other embeds (YouTube, location, video). */
 
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet } from 'react-native';
+import type { ImageStyle } from 'react-native';
 import { Image } from '@metro-labs/kit/image';
 import { MediaCard } from './MediaCard';
 import { ImageViewer } from './ImageViewer';
+
+/** Absolute-fill as an ImageStyle (StyleSheet.absoluteFill is typed for View,
+ *  not Image — Kit Image's style prop is ImageStyle). */
+const ABSOLUTE_FILL: ImageStyle = { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 };
 
 export function MessengerImageAttachment({ uri, dark = true }: {
   uri: string; dark?: boolean;
@@ -28,7 +32,7 @@ export function MessengerImageAttachment({ uri, dark = true }: {
     <>
       <MediaCard dark={dark} onPress={() => setOpen(true)} width={220}>
         {prevUri && prevUri !== uri ? (
-          <Image src={prevUri} style={StyleSheet.absoluteFill} fit="cover" />
+          <Image src={prevUri} style={ABSOLUTE_FILL} fit="cover" />
         ) : null}
         <Image
           src={uri}
