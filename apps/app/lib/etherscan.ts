@@ -3,9 +3,6 @@
  *  app imports stay stable. EXPO_PUBLIC_ETHERSCAN_API_KEY still overrides the
  *  default read key. */
 export {
-  fetchActivity,
   fetchActivityAllChains,
-  ACTIVITY_CHAINS,
-  type EtherscanTx,
   type ActivityRow,
 } from '@stage-labs/client/api/etherscan';
