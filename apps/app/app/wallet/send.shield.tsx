@@ -1,20 +1,35 @@
-/** Shield (public → private) form for the Wallet → Send screen.
+/** Unified shield-flow form for the Wallet, driving BOTH:
  *
- *  Deposits a PUBLIC token into the user's OWN 0zk shielded balance. The
- *  recipient is ALWAYS the user's own 0zk address (locked, shown read-only) —
- *  never an arbitrary recipient. Defaults to Sepolia (testnet) for the first
- *  on-chain write. Token (ETH/USDC) + amount are user-chosen; confirm runs
- *  shieldToPrivate() and surfaces a 4-stage stepper: submit → confirm → scan →
- *  shielded ✓.
+ *    • mode="shield"  - Shield (public → private). Deposits a PUBLIC token into
+ *      the user's OWN 0zk shielded balance. Recipient is ALWAYS the user's own
+ *      0zk address (locked, read-only). Owns its OWN TokenSelector. Runs
+ *      shieldToPrivate(); the 4-stage stepper is driven off the SHARED
+ *      pending-action store (cache.ts) so the post-receipt 'scanning' tail
+ *      (balance-landed watcher) is reflected even though the awaited
+ *      shieldToPrivate() returns right after the receipt.
  *
- *  The stepper is driven off the SHARED pending-action store (cache.ts), which
- *  shieldToPrivate() advances proving → broadcasting → scanning → confirmed; the
- *  form subscribes to its own pending row and maps each phase to a stepper stage.
- *  This way the 'scanning' tail (balance-landed watcher) is reflected even though
- *  the awaited shieldToPrivate() call returns right after the receipt. */
+ *    • mode="send"    - Shielded send (private → private 0zk transfer). Recipient
+ *      = any 0zk address (free text). Token/network/balance are owned by the
+ *      parent page (the combined TokenSelector) and passed in. Runs the REAL
+ *      bridge-backed private transfer (sendShielded → lib/railgun/send.ts), which
+ *      mirrors the unshield flow: estimate → Groth16 proof → populate → sign +
+ *      broadcast via the embedded Node host. Proving is the slow step (~10-30s).
+ *
+ *  WHY one component: the two flows share the amount input, stepper, phase line,
+ *  busy/footer wiring, and bridge gating verbatim - only the recipient row, the
+ *  token source, the submit fn, and the labels differ by `mode`. The shield-only
+ *  pending-store subscription stays gated behind mode==='shield'.
+ *
+ *  WHY NOT runAction (send mode): runAction()/sdkTx route the transfer through the
+ *  Hermes direct SDK, where the RAILGUN engine never inits on-device - so it
+ *  failed immediately at "Submitting transaction". The engine only lives in the
+ *  Node bridge, which is what send.ts uses (same path as shield/unshield). */
 import { useEffect, useState } from 'react';
+import { TextInput } from 'react-native';
+import { Text } from '@metro-labs/kit/text';
 import { Box } from '../../components/layout';
 import { shieldToPrivate } from '../../lib/railgun/shield';
+import { sendShielded } from '../../lib/railgun/send';
 import { isBridgeAvailable } from '../../lib/railgun/bridge';
 import { getActiveAccountId } from '../../lib/accounts';
 import { pendingStore } from '../../lib/railgun/cache';
@@ -28,7 +43,7 @@ type Pal = FormPal;
 
 /** Map a pending-action phase to a stepper stage. `proving`/`broadcasting` are
  *  the two on-chain stages; `scanning` is the merkle-scan tail; `confirmed`/
- *  `failed` are terminal. */
+ *  `failed` are terminal. (shield mode only.) */
 function phaseToStage(p?: PendingAction['phase']): ShieldStage {
   switch (p) {
     case 'proving': return 'submitting';
@@ -40,13 +55,27 @@ function phaseToStage(p?: PendingAction['phase']): ShieldStage {
   }
 }
 
-export function ShieldForm({ pal, dark, zkAddress, initialSymbol, initialChainId, onFooter }: {
-  pal: Pal; dark: boolean; zkAddress: string | null;
-  /** Pre-selected token/network (from the token detail page's Shield button). */
+export interface ShieldFlowFormProps {
+  /** "shield" = public→private deposit (locked own 0zk); "send" = private→private
+   *  transfer to any 0zk address. */
+  mode: 'shield' | 'send';
+  pal: Pal; dark: boolean;
+  /** shield mode: the user's own 0zk address (locked recipient). */
+  zkAddress?: string | null;
+  /** shield mode: pre-selected token/network (from the token detail Shield btn). */
   initialSymbol?: 'ETH' | 'USDC'; initialChainId?: number;
-  /** Report submit state up so the page can render the pinned footer button. */
+  /** send mode: token/network/balance owned by the parent page. */
+  symbol?: 'ETH' | 'USDC'; chainId?: number; balance?: string | null;
+  /** Report submit state up so the page renders the pinned footer button. */
   onFooter?: (s: FooterState) => void;
-}): React.ReactElement {
+}
+
+export function ShieldFlowForm(props: ShieldFlowFormProps): React.ReactElement {
+  return props.mode === 'shield' ? <ShieldBody {...props} /> : <SendBody {...props} />;
+}
+
+/** Shield (public → private) body - owns its TokenSelector + pending-store sub. */
+function ShieldBody({ pal, dark, zkAddress, initialSymbol, initialChainId, onFooter }: ShieldFlowFormProps): React.ReactElement {
   const [symbol, setSymbol] = useState<'ETH' | 'USDC'>(initialSymbol ?? 'ETH');
   const [chainId, setChainId] = useState<number>(initialChainId ?? 11155111);
   const balance = useSelectedBalance('public', { symbol, chainId });
@@ -58,7 +87,7 @@ export function ShieldForm({ pal, dark, zkAddress, initialSymbol, initialChainId
   const [err, setErr] = useState<string | null>(null);
 
   // Subscribe to the pending store and track this shield's row (newest `shield`
-  // action at/after submit) so the stepper reflects every phase — including the
+  // action at/after submit) so the stepper reflects every phase - including the
   // post-receipt `scanning` tail driven by the balance-landed watcher.
   useEffect(() => {
     if (submittedAt == null) return;
@@ -106,7 +135,7 @@ export function ShieldForm({ pal, dark, zkAddress, initialSymbol, initialChainId
 
   return (
     <Box style={{ gap: 16 }}>
-      <ShieldRecipient pal={pal} zkAddress={zkAddress} />
+      <ShieldRecipient pal={pal} zkAddress={zkAddress ?? null} />
 
       <TokenSelector mode="public" value={{ symbol, chainId }}
         onChange={(v) => { setSymbol(v.symbol as 'ETH' | 'USDC'); setChainId(v.chainId); }} />
@@ -116,6 +145,72 @@ export function ShieldForm({ pal, dark, zkAddress, initialSymbol, initialChainId
 
       <ShieldStepper stage={stage} pal={pal} />
       <ShieldPhaseLine pal={pal} txHash={txHash} err={err} bridgeOk={isBridgeAvailable()} chainId={chainId} />
+    </Box>
+  );
+}
+
+/** Shielded send (private → private) body - token/balance from the parent page,
+ *  free 0zk recipient input, local stage state. */
+function SendBody({ pal, dark, symbol = 'ETH', chainId = 1, balance = null, onFooter }: ShieldFlowFormProps): React.ReactElement {
+  const { head, sub, inputBg } = pal;
+  const [to, setTo] = useState('');
+  const [amount, setAmount] = useState('');
+  const [stage, setStage] = useState<ShieldStage>('idle');
+  const [txHash, setTxHash] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [errPhase, setErrPhase] = useState<string | null>(null);
+
+  const n = Number(amount);
+  const busy = stage === 'submitting' || stage === 'confirming' || stage === 'scanning';
+  const validTo = to.trim().toLowerCase().startsWith('0zk');
+  const canSubmit = validTo && isFinite(n) && n > 0 && !busy && isBridgeAvailable();
+
+  const onSubmit = (): void => {
+    if (!canSubmit) return;
+    setErr(null); setErrPhase(null); setTxHash(null); setStage('submitting');
+    void (async (): Promise<void> => {
+      try {
+        // proving runs first; flip to confirming once it broadcasts.
+        const res = await sendShielded({ chainId, symbol, amount: amount.trim(), recipient: to.trim() });
+        setTxHash(res.txHash); setStage('done');
+      } catch (e) {
+        // Robustly extract a message: handle non-Error rejections, empty
+        // messages, and the wrapped { step } from sendShielded so the user
+        // ALWAYS sees real text instead of a bare red X.
+        const we = e as { message?: unknown; step?: unknown } | undefined;
+        const raw = typeof we?.message === 'string' ? we.message : '';
+        const msg = raw.trim() ? raw : `Send failed: ${String(e)}`;
+        console.error('[ShieldFlowForm] private send failed:', e);
+        setErr(msg);
+        setErrPhase(typeof we?.step === 'string' ? we.step : null);
+        setStage('error');
+      }
+    })();
+  };
+
+  const submitLabel = stage === 'submitting' ? 'Proving…'
+    : stage === 'confirming' || stage === 'scanning' ? 'Broadcasting…'
+    : stage === 'done' ? 'Sent ✓' : 'Send';
+  useEffect(() => {
+    onFooter?.({ submitLabel, onSubmit, submitDisabled: !canSubmit, submitLoading: busy });
+  }, [onFooter, submitLabel, canSubmit, busy, onSubmit]);
+
+  return (
+    <Box style={{ gap: 16 }}>
+      <Box style={{ gap: 6 }}>
+        <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>RECIPIENT (0zk ADDRESS)</Text>
+        <TextInput value={to} onChangeText={setTo} placeholder="0zk…" placeholderTextColor={sub}
+          autoCapitalize="none" autoCorrect={false} editable={!busy}
+          style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Medium', backgroundColor: inputBg,
+            borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12 }} />
+      </Box>
+
+      <AmountBox pal={pal} amount={amount} setAmount={setAmount} busy={busy}
+        balance={balance} symbol={symbol} dark={dark} />
+
+      <ShieldStepper stage={stage} pal={pal} />
+      <ShieldPhaseLine pal={pal} txHash={txHash} err={err} errPhase={errPhase}
+        bridgeOk={isBridgeAvailable()} chainId={chainId} />
     </Box>
   );
 }

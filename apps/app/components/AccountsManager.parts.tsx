@@ -3,7 +3,7 @@
 
 import { Modal, Pressable } from 'react-native';
 import { Box } from './layout';
-import { Stamp } from './Stamp';
+import { Avatar } from './Avatar';
 import { Text } from '@metro-labs/kit/text';
 import { ListViewItem } from '@metro-labs/kit/list-view';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,7 +32,7 @@ export function AccountRow({ rec, onPress, onLongPress, topBorder, trailing, hea
         backgroundColor: pressed ? border : 'transparent',
       })}
     >
-      <Stamp address={rec.address} size={28} style={{ backgroundColor: border }} />
+      <Avatar address={rec.address} size={28} style={{ backgroundColor: border }} />
       <Box style={{ flex: 1, minWidth: 0 }}>
         <Text numberOfLines={1} style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>
           {getPeerName(rec.address) ?? rec.label ?? shortAddress(rec.address)}

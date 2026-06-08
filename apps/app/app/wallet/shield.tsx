@@ -8,7 +8,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { usePrivateWallet } from '../../lib/railgun/usePrivateWallet';
 import { ActionPage, WalletFooter, useFooterReporter, useFormPal } from './wallet.form';
-import { ShieldForm } from './send.shield';
+import { ShieldFlowForm } from './send.shield';
 
 export default function WalletShield(): React.ReactElement {
   const router = useRouter();
@@ -29,7 +29,7 @@ export default function WalletShield(): React.ReactElement {
           submitLabel={footer.submitLabel} onSubmit={footerSubmit}
           submitDisabled={footer.submitDisabled} submitLoading={footer.submitLoading} />
       ) : null}>
-      <ShieldForm pal={pal} dark={dark} zkAddress={snapshot?.zkAddress ?? null}
+      <ShieldFlowForm mode="shield" pal={pal} dark={dark} zkAddress={snapshot?.zkAddress ?? null}
         initialSymbol={initialSymbol}
         initialChainId={initialChainId && Number.isFinite(initialChainId) ? initialChainId : undefined}
         onFooter={reportFooter} />

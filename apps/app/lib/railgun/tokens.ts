@@ -11,6 +11,7 @@
  *  We display a FIXED set (ETH + USDC) per network, even at zero, so the tab is
  *  predictable — a row shows the formatted shielded balance, defaulting to 0
  *  when the scan hasn't surfaced an amount yet. */
+import { NATIVE_TOKEN_SENTINEL } from '@stage-labs/client/wallet/assets';
 import type { RailgunNet } from './networks';
 
 export interface TokenMeta {
@@ -34,7 +35,7 @@ export interface TokenMeta {
   logoChainId: number;
 }
 
-const ETH_SENTINEL = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
+const ETH_SENTINEL = NATIVE_TOKEN_SENTINEL;
 const USDC_MAINNET = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
 
 /** Ordered token list per network — drives both the row order and the

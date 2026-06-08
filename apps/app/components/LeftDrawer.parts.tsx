@@ -3,7 +3,7 @@
  *  Profile/Settings nav row. Behaviour is identical to the inlined version. */
 
 import { Box } from './layout';
-import { Stamp } from './Stamp';
+import { Avatar } from './Avatar';
 import { Text } from '@metro-labs/kit/text';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { ListViewItem } from '@metro-labs/kit/list-view';
@@ -21,7 +21,7 @@ export function DrawerHeader({ rec, c }: {
     <Box style={{ paddingHorizontal: 18, paddingBottom: 16 }}>
       {rec ? (
         <>
-          <Stamp address={rec.address} size={56} style={{ backgroundColor: c.border, marginBottom: 10 }} />
+          <Avatar address={rec.address} size={56} style={{ backgroundColor: c.border, marginBottom: 10 }} />
           <Text numberOfLines={1} style={{ color: c.head, fontSize: 20, fontFamily: 'Calibre-Semibold' }}>
             {getPeerName(rec.address) ?? rec.label ?? shortAddress(rec.address)}
           </Text>
@@ -43,7 +43,7 @@ export function drawerAccountRows({ accounts, activeId, onSwitch, c, dark }: {
 }): React.ReactElement[] {
   return accounts.map((a) => (
     <ListViewItem key={a.id} dark={dark} onPress={() => onSwitch(a.id)}>
-      <Stamp address={a.address} size={30} style={{ backgroundColor: c.border }} />
+      <Avatar address={a.address} size={30} style={{ backgroundColor: c.border }} />
       <Box style={{ flex: 1, minWidth: 0 }}>
         <Text numberOfLines={1} style={{ color: c.head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>
           {getPeerName(a.address) ?? a.label ?? shortAddress(a.address)}
