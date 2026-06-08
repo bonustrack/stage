@@ -19,6 +19,7 @@ import Svg, { Path, Circle, G } from 'react-native-svg';
 import Animated, {
   useSharedValue,
   useAnimatedProps,
+  useAnimatedStyle,
   useDerivedValue,
   withRepeat,
   withTiming,
@@ -28,7 +29,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import { CENTER, SEGMENTS, PALETTE, flowerPath } from './kaleidoscope-geometry';
 
-const AnimatedG = Animated.createAnimatedComponent(G);
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
 /** Petals reach past the corners of a 100x100 viewBox (half-diagonal ~= 70.7)
@@ -59,7 +59,10 @@ export function KaleidoscopeSplash({ bg }: { bg: string }): React.ReactElement {
     return REACH_MIN + (REACH_MAX - REACH_MIN) * morph.value;
   });
 
-  const wheelProps = useAnimatedProps(() => {
+  // Rotation is driven on the RN view layer (the proven pattern in this repo:
+  // Spinner / PullToRefresh). Animating an SVG <G> transform via animatedProps
+  // does not repaint on the installed react-native-svg, so the wheel froze.
+  const wheelStyle = useAnimatedStyle(() => {
     'worklet';
     return { transform: [{ rotate: `${spin.value * 360}deg` }] };
   });
@@ -101,6 +104,10 @@ export function KaleidoscopeSplash({ bg }: { bg: string }): React.ReactElement {
 
   const flower = flowerPath(13, 8);
 
+  // The wheel <Svg> is square (max edge) so view-layer rotation keeps it
+  // centred and still bleeds past the corners with `slice`.
+  const edge = Math.max(width, height) * 1.5;
+
   return (
     <Box style={[StyleSheet.absoluteFill, { backgroundColor: bg }]}>
       <Svg
@@ -108,17 +115,30 @@ export function KaleidoscopeSplash({ bg }: { bg: string }): React.ReactElement {
         height={height}
         viewBox="0 0 100 100"
         preserveAspectRatio="xMidYMid slice"
+        style={StyleSheet.absoluteFill}
       >
         <Circle cx={CENTER} cy={CENTER} r={71} fill={PALETTE.field} />
-        <AnimatedG animatedProps={wheelProps} origin={`${CENTER}, ${CENTER}`}>
-          {Array.from({ length: SEGMENTS }).map((_, i) => (
-            <G key={i} rotation={(i / SEGMENTS) * 360} origin={`${CENTER}, ${CENTER}`}>
-              <AnimatedPath animatedProps={triProps} />
-              <AnimatedPath animatedProps={triAltProps} opacity={0.85} />
-              <AnimatedPath animatedProps={shardProps} opacity={0.9} />
-            </G>
-          ))}
-        </AnimatedG>
+      </Svg>
+      <Box style={styles.center} pointerEvents="none">
+        <Animated.View style={[{ width: edge, height: edge }, wheelStyle]}>
+          <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+            {Array.from({ length: SEGMENTS }).map((_, i) => (
+              <G key={i} rotation={(i / SEGMENTS) * 360} origin={`${CENTER}, ${CENTER}`}>
+                <AnimatedPath animatedProps={triProps} />
+                <AnimatedPath animatedProps={triAltProps} opacity={0.85} />
+                <AnimatedPath animatedProps={shardProps} opacity={0.9} />
+              </G>
+            ))}
+          </Svg>
+        </Animated.View>
+      </Box>
+      <Svg
+        width={width}
+        height={height}
+        viewBox="0 0 100 100"
+        preserveAspectRatio="xMidYMid slice"
+        style={StyleSheet.absoluteFill}
+      >
         <Circle cx={CENTER} cy={CENTER} r={20} fill={PALETTE.field} opacity={0.9} />
         <AnimatedPath d={flower} animatedProps={flowerProps} opacity={0.95} />
         <Circle cx={CENTER} cy={CENTER} r={6} fill={PALETTE.field} />
@@ -126,5 +146,9 @@ export function KaleidoscopeSplash({ bg }: { bg: string }): React.ReactElement {
     </Box>
   );
 }
+
+const styles = StyleSheet.create({
+  center: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
+});
 
 export default KaleidoscopeSplash;
