@@ -12,15 +12,14 @@ import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import { useEffect } from 'react';
 import { LogBox, Text, TextInput } from 'react-native';
-import { Box } from '../components/layout';
-import { Spinner } from '../components/Spinner';
 import { Onboarding } from '../components/onboarding/Onboarding';
 import { useOnboardingGate } from '../lib/onboardingSeen';
+import { KaleidoscopeSplash } from '../components/KaleidoscopeSplash';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { TransitionPresets, TransitionSpecs } from '@react-navigation/stack';
 import { NativeSwipeStack } from '../components/NativeSwipeStack';
-import { useEffectiveColorScheme, usePalette, useRadius } from '../lib/theme';
+import { usePalette, useRadius } from '../lib/theme';
 import { useDeepLinks } from '../lib/deepLinks';
 import { useRestoreLastRoute } from '../lib/lastRoute';
 import { usePushDeepLinks } from '../lib/push';
@@ -67,7 +66,6 @@ function isDarkBg(hex: string): boolean {
 }
 
 export default function RootLayout(): React.ReactElement {
-  const dark = useEffectiveColorScheme() === 'dark';
   const { bg, toolbarBg } = usePalette();
   // Wire the persisted button radius token into the kit Button default + repaint
   // the whole tree when it changes. Mounted at the root so it's always live.
@@ -120,14 +118,12 @@ export default function RootLayout(): React.ReactElement {
 
   /** FIRST-LAUNCH GATE: render Onboarding INSTEAD of the app until the persisted
    *  `onboarding.seen` flag is true; `ready` gates on its load so a returning
-   *  user never flashes onboarding (see lib/onboardingSeen). */
+   *  user never flashes onboarding (see lib/onboardingSeen). The animated
+   *  kaleidoscope splash covers the whole boot-loading window (fonts +
+   *  onboarding-flag hydration). */
   const onboarding = useOnboardingGate();
   if (!loaded || !onboarding.ready) {
-    return (
-      <Box style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: bg }}>
-        <Spinner size={28} color={dark ? '#ffffff' : '#000000'} />
-      </Box>
-    );
+    return <KaleidoscopeSplash bg={bg} />;
   }
   if (!onboarding.seen) return <Onboarding onDone={onboarding.finish} />;
 
