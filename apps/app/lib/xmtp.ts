@@ -30,7 +30,7 @@ export {
 
 export {
   openDmWithAddress, listRequestConvs, acceptRequestConv, blockRequestConv,
-  streamConvConsent, syncConsent,
+  getConvConsentState, streamConvConsent, syncConsent,
 } from './xmtp.conv';
 
 export { createGroup, addGroupMembers, leaveGroupConv } from './xmtp.groups';
