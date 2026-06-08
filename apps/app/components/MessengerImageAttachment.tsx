@@ -3,11 +3,10 @@
  *  for visual parity with other embeds (YouTube, location, video). */
 
 import { useEffect, useRef, useState } from 'react';
-import { Image, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { Image } from '@metro-labs/kit/image';
 import { MediaCard } from './MediaCard';
 import { ImageViewer } from './ImageViewer';
-
-const IMG_STYLE = { width: '100%', aspectRatio: 1 } as const;
 
 export function MessengerImageAttachment({ uri, dark = true }: {
   uri: string; dark?: boolean;
@@ -29,12 +28,13 @@ export function MessengerImageAttachment({ uri, dark = true }: {
     <>
       <MediaCard dark={dark} onPress={() => setOpen(true)} width={220}>
         {prevUri && prevUri !== uri ? (
-          <Image source={{ uri: prevUri }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+          <Image src={prevUri} style={StyleSheet.absoluteFill} fit="cover" />
         ) : null}
         <Image
-          source={{ uri }}
-          style={IMG_STYLE}
-          resizeMode="cover"
+          src={uri}
+          width="100%"
+          aspectRatio={1}
+          fit="cover"
           onLoad={() => { loadedUri.current = uri; if (prevUri) setPrevUri(null); }}
         />
       </MediaCard>

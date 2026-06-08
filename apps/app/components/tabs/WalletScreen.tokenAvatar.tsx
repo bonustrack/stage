@@ -10,7 +10,7 @@
  *  An optional `badge` overlays the TOP-right corner (e.g. a Railgun shield) so
  *  callers can mark a row as private without touching the avatar geometry. */
 
-import { Image } from 'react-native';
+import { Image } from '@metro-labs/kit/image';
 import { Box } from '../layout';
 import { NETWORK_LOGO, MAINNET_NETWORK_LOGO } from './WalletScreen.assets';
 
@@ -28,8 +28,10 @@ export function TokenAvatar({ logoUrl, chainId, bg, border, badge }: {
   return (
     <Box style={{ width: 32, height: 32 }}>
       <Image
-        source={{ uri: logoUrl }}
-        style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border }}
+        src={logoUrl}
+        size={32}
+        radius="full"
+        background={border}
       />
       {/* Network badge - round chip clipped to a circle, page-bg ring. */}
       <Box style={{
@@ -39,9 +41,10 @@ export function TokenAvatar({ logoUrl, chainId, bg, border, badge }: {
         overflow: 'hidden',
       }}>
         <Image
-          source={{ uri: NETWORK_LOGO[chainId] ?? MAINNET_NETWORK_LOGO }}
-          resizeMode="cover"
-          style={{ width: '100%', height: '100%' }}
+          src={NETWORK_LOGO[chainId] ?? MAINNET_NETWORK_LOGO}
+          fit="cover"
+          width="100%"
+          height="100%"
         />
       </Box>
       {badge ? (

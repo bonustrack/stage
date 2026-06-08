@@ -23,6 +23,8 @@ export default tseslint.config(
       // is genuinely required (onLayout/ref measurement, overlays, MaskedView
       // children, etc.), add a targeted
       // `// eslint-disable-next-line no-restricted-imports` at the import site.
+      // ERROR: raw RN primitives that have a Kit equivalent AND are fully
+      // migrated in apps/app. View -> Box/Row/Col; Image -> @metro-labs/kit/image.
       "no-restricted-imports": [
         "error",
         {
@@ -32,6 +34,54 @@ export default tseslint.config(
               importNames: ["View"],
               message:
                 "Use Box/Row/Col from '@/components/layout' instead of View for layout containers.",
+            },
+            {
+              name: "react-native",
+              importNames: ["Image"],
+              message:
+                "Import Image from '@metro-labs/kit/image' instead of react-native.",
+            },
+          ],
+        },
+      ],
+      // WARN: raw RN primitives not yet migrated. These track the remaining
+      // Kit-only rollout (cheapest-first: TextInput -> ScrollView -> Pressable
+      // -> Text; FlatList has no Kit wrapper yet). Flip each to ERROR (move to
+      // the rule above) once its apps/app file count hits 0. Runs as a separate
+      // typescript-eslint rule so ERROR + WARN severities coexist.
+      "@typescript-eslint/no-restricted-imports": [
+        "warn",
+        {
+          paths: [
+            {
+              name: "react-native",
+              importNames: ["Text"],
+              message:
+                "Prefer Text from '@metro-labs/kit/text' instead of react-native (Kit-only rollout).",
+            },
+            {
+              name: "react-native",
+              importNames: ["Pressable"],
+              message:
+                "Prefer Kit Button (ghost) or a Kit Pressable instead of react-native Pressable (Kit-only rollout).",
+            },
+            {
+              name: "react-native",
+              importNames: ["ScrollView"],
+              message:
+                "Prefer Scroll from Kit instead of react-native ScrollView (Kit-only rollout).",
+            },
+            {
+              name: "react-native",
+              importNames: ["TextInput"],
+              message:
+                "Prefer Input/Textarea from Kit instead of react-native TextInput (Kit-only rollout).",
+            },
+            {
+              name: "react-native",
+              importNames: ["FlatList"],
+              message:
+                "FlatList has no Kit wrapper yet; tracked for the Kit-only rollout (no migration available).",
             },
           ],
         },
@@ -56,6 +106,12 @@ export default tseslint.config(
               importNames: ["View"],
               message:
                 "Use Box/Row/Col from '@/components/layout' instead of View for layout containers.",
+            },
+            {
+              name: "react-native",
+              importNames: ["Image"],
+              message:
+                "Import Image from '@metro-labs/kit/image' instead of react-native.",
             },
           ],
           patterns: [
@@ -89,6 +145,7 @@ export default tseslint.config(
     files: ["components/layout/**"],
     rules: {
       "no-restricted-imports": "off",
+      "@typescript-eslint/no-restricted-imports": "off",
     },
   },
   {
