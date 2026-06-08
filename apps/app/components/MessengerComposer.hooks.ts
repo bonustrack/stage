@@ -2,8 +2,8 @@
  *  parsing) extracted from MessengerComposer.tsx for the lint line-budget.
  *  Behavior identical. */
 
-import { useEffect, useRef, useState, type RefObject } from 'react';
-import type { TextInput } from 'react-native';
+import { useEffect, useRef, useState, type ComponentRef, type RefObject } from 'react';
+import type { Textarea } from '@metro-labs/kit/textarea';
 import { loadDrafts, getDraft, setDraft } from '../lib/drafts';
 import { loadLastAttachment, getLastAttachment, subscribeLastAttachment } from '../lib/lastAttachment';
 
@@ -45,7 +45,7 @@ export function useComposerDrafts(convId: string, text: string, setText: (v: str
  *  bumped on EVERY reply action — blur→focus re-raises reliably) or a reply-less
  *  autofocus signal. */
 export function useComposerFocus(
-  inputRef: RefObject<TextInput | null>,
+  inputRef: RefObject<ComponentRef<typeof Textarea> | null>,
   replyTargetId: string | undefined,
   replyNonce: number | undefined,
   autoFocusNonce: number | undefined,

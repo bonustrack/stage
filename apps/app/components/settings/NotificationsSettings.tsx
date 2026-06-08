@@ -11,7 +11,8 @@
  *  if the system has blocked notifications regardless of the in-app preference. */
 
 import { useEffect, useState } from 'react';
-import { ScrollView, Switch } from 'react-native';
+import { Switch } from 'react-native';
+import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import * as Notifications from 'expo-notifications';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box, Col, Row } from '../layout';

@@ -5,7 +5,9 @@
  *  global navigation bar (the reported overlap bug). */
 
 import type { ReactNode } from 'react';
-import { Modal, Pressable, ScrollView } from 'react-native';
+import { Modal } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
+import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePalette, useBlockRadius } from '../lib/theme';

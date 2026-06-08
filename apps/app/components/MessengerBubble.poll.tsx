@@ -9,7 +9,7 @@
  *  ChatKit components), so the result bar is an absolutely-positioned fill tinted
  *  from the `link` token rather than a hardcoded color. */
 
-import { Pressable } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Row, Box } from './layout';
 import type { Poll, PollQuestion } from './MessengerBubble.helpers';

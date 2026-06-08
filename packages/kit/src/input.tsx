@@ -9,12 +9,13 @@
  *  every text-field call site can migrate behind one primitive. `inputType` maps
  *  onto RN keyboardType + secureTextEntry. */
 
-import { useState } from 'react';
+import { forwardRef, useState } from 'react';
 import {
   TextInput,
   type TextInputProps,
   type KeyboardTypeOptions,
-  type ViewStyle,
+  type StyleProp,
+  type TextStyle,
 } from 'react-native';
 import {
   controlBoxStyle,
@@ -72,17 +73,21 @@ export interface InputProps {
   onSubmit?: (text: string) => void;
   /** Effective color scheme. Pass useEffectiveColorScheme() === 'dark'. */
   dark?: boolean;
-  /** Escape-hatch style merged last onto the box. */
-  style?: ViewStyle | ViewStyle[];
-  /** Extra RN TextInput props (refs, returnKeyType, etc.). */
+  /** Override the placeholder colour (else derived from variant/scheme). */
+  placeholderTextColor?: string;
+  /** Escape-hatch style merged last onto the box (accepts text + view style). */
+  style?: StyleProp<TextStyle>;
+  /** Extra RN TextInput props (refs, returnKeyType, selection, etc.). Its
+   *  onFocus/onBlur are chained after the kit focus tracking. */
   inputProps?: Omit<
     TextInputProps,
     'value' | 'defaultValue' | 'onChangeText' | 'style' | 'placeholder' | 'editable'
   >;
 }
 
-/** ChatKit-style RN single-line input. */
-export function Input(props: InputProps): React.ReactElement {
+/** ChatKit-style RN single-line input. Forwards a ref to the underlying
+ *  RN TextInput so call sites can focus/blur it. */
+export const Input = forwardRef<TextInput, InputProps>(function Input(props, ref) {
   const {
     name,
     defaultValue,
@@ -99,6 +104,7 @@ export function Input(props: InputProps): React.ReactElement {
     onChangeText,
     onSubmit,
     dark = false,
+    placeholderTextColor,
     style,
     inputProps,
   } = props;
@@ -112,22 +118,32 @@ export function Input(props: InputProps): React.ReactElement {
   return (
     <TextInput
       {...inputProps}
+      ref={ref}
       nativeID={name ? `input-${name}` : undefined}
       accessibilityLabelledBy={name ? `label-${name}` : undefined}
       value={value}
       defaultValue={defaultValue}
       placeholder={placeholder}
-      placeholderTextColor={colors.placeholder}
+      placeholderTextColor={placeholderTextColor ?? colors.placeholder}
       editable={!disabled}
       autoFocus={autoFocus}
       selectTextOnFocus={autoSelect}
       keyboardType={KEYBOARD[inputType]}
       secureTextEntry={inputType === 'password'}
       onChangeText={onChangeText}
-      onSubmitEditing={(e) => onSubmit?.(e.nativeEvent.text)}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
-      style={[box, text, disabled && { opacity: 0.5 }, ...(style ? (Array.isArray(style) ? style : [style]) : [])]}
+      onSubmitEditing={(e) => {
+        onSubmit?.(e.nativeEvent.text);
+        inputProps?.onSubmitEditing?.(e);
+      }}
+      onFocus={(e) => {
+        setFocused(true);
+        inputProps?.onFocus?.(e);
+      }}
+      onBlur={(e) => {
+        setFocused(false);
+        inputProps?.onBlur?.(e);
+      }}
+      style={[box, text, disabled && { opacity: 0.5 }, style]}
     />
   );
-}
+});

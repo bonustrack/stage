@@ -2,7 +2,8 @@
  *  Extracted to keep the bubble file under the phase-2 lint cap. */
 
 import { useState } from 'react';
-import { Pressable, TextInput } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
+import { Textarea } from '@metro-labs/kit/textarea';
 import { Text } from '@metro-labs/kit/text';
 import { useRouter } from 'expo-router';
 import { Box } from './layout';
@@ -154,19 +155,18 @@ export function QuestionView({ question, dark, sub, onAnswer }: {
           backgroundColor: dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
           borderWidth: 1, borderColor: dark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.14)',
         }}>
-          <TextInput
+          <Textarea
             value={otherText}
             onChangeText={setOtherText}
             placeholder="Type your answer…"
             placeholderTextColor={sub}
-            multiline
             autoFocus
-            onSubmitEditing={submit}
-            blurOnSubmit
+            dark={dark}
+            inputProps={{ onSubmitEditing: submit, blurOnSubmit: true }}
             style={{
               color: fg,
               fontFamily: 'Calibre-Medium', fontSize: 15, lineHeight: 22,
-              minHeight: 22, padding: 0,
+              minHeight: 22, padding: 0, backgroundColor: 'transparent', borderWidth: 0, height: undefined,
             }}
           />
         </Box>

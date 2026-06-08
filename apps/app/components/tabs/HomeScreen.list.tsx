@@ -3,7 +3,7 @@
  *  HomeScreen.tsx (phase-2 lint, rendering identical). */
 
 import type { MutableRefObject, RefObject } from 'react';
-import { Pressable } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { FlatList } from 'react-native-gesture-handler';
 import { Icon } from '@metro-labs/kit/icon';
 import { TopnavIdentity } from '../TopnavIdentity';

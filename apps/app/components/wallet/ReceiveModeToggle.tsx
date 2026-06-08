@@ -3,7 +3,7 @@
  *  When the private address isn't ready yet the Private segment shows a subtle
  *  "loading…" label and is disabled so the screen never lands on a blank QR. */
 
-import { Pressable } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from '../layout';
 import { usePalette } from '../../lib/theme';

@@ -5,7 +5,9 @@
  *  the top-right of the topnav opens the PR on GitHub. Issues with no linked PR
  *  show a graceful message. All text uses the Calibre font family. */
 
-import { ActivityIndicator, Linking, Pressable, ScrollView } from 'react-native';
+import { ActivityIndicator, Linking } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
+import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { Title } from '@metro-labs/kit/title';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';

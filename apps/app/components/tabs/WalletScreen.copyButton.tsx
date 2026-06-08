@@ -5,7 +5,7 @@
  *  refresh button's size / hit-target / absolute top-right anchoring — only the
  *  `right` offset is larger so the two icons sit side by side. */
 
-import { Pressable } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Icon } from '@metro-labs/kit/icon';
 import * as Clipboard from 'expo-clipboard';
 import { flash } from '../../lib/toast';

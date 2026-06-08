@@ -4,7 +4,7 @@
  *  MessengerBubble.poll.tsx to keep each file under the lint line cap. */
 
 import { useState } from 'react';
-import { TextInput } from 'react-native';
+import { Input } from '@metro-labs/kit/input';
 import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';
 import { Row, Box } from './layout';
@@ -26,17 +26,18 @@ export function OpenAnswerBlock({ qi, sub, dark, answers, mine, onSubmit }: {
   return (
     <Box style={{ alignSelf: 'stretch', gap: 6, marginTop: 2 }}>
       <Row align="center" gap={8} style={{ alignSelf: 'stretch' }}>
-        <TextInput
+        <Input
           value={draft}
           onChangeText={setDraft}
-          onSubmitEditing={submit}
+          onSubmit={submit}
           placeholder="Type your answer"
           placeholderTextColor={sub}
-          returnKeyType="send"
+          dark={dark}
+          inputProps={{ returnKeyType: 'send' }}
           style={{
             flex: 1, color: pal.text, fontSize: 17, fontFamily: 'Calibre-Medium',
             paddingHorizontal: 12, paddingVertical: 9, borderRadius: radius,
-            borderWidth: 0, backgroundColor: inputBg,
+            borderWidth: 0, backgroundColor: inputBg, minHeight: 0,
           }}
         />
         <Button

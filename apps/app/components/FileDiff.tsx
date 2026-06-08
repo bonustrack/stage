@@ -7,7 +7,7 @@
  *  be composed inside a Kit ListView in diff.tsx. */
 
 import { useState } from 'react';
-import { ScrollView } from 'react-native';
+import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import { ListViewItem } from '@metro-labs/kit/list-view';

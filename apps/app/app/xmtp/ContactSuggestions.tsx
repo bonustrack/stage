@@ -6,7 +6,7 @@
  *  as selected and tapping removes them. The list is hidden when empty (e.g. a
  *  brand-new account with no DMs, or a query that matches no contact). */
 
-import { Pressable } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import { usePalette } from '../../lib/theme';

@@ -1,7 +1,8 @@
 /** Group-detail sub-components — member row + add-member / overflow modals.
  *  Extracted from group/[convId] for lint line-budget. Rendering identical. */
 
-import { Pressable, TextInput } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
+import { Input } from '@metro-labs/kit/input';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from '../../components/layout';
 import { shortAddress } from '../../modules/messaging';
@@ -93,14 +94,14 @@ export function AddMemberModal({
   return (
     <AppModal visible={visible} onClose={onClose}>
       <Box>
-        <TextInput
+        <Input
           value={addDraft}
           onChangeText={setAddDraft}
           placeholder="0x… Ethereum address"
           placeholderTextColor={sub}
-          autoCorrect={false}
-          autoCapitalize="none"
           autoFocus
+          dark={dark}
+          inputProps={{ autoCorrect: false, autoCapitalize: 'none' }}
           style={{
             color: fg, backgroundColor: inputBg,
             borderWidth: 1, borderColor: border, borderRadius: 10,

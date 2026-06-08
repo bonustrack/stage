@@ -2,7 +2,8 @@
  *  attachments, body text / embeds, and the interactive question/poll/sig/tx
  *  cards + transcription line. Extracted to keep the row component under the cap. */
 
-import { Linking, Pressable } from 'react-native';
+import { Linking } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import Markdown from 'react-native-markdown-display';
 import { YouTubeEmbed, LocationEmbed } from './MediaEmbeds';

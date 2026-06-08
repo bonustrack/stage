@@ -12,7 +12,7 @@
  *  used by every other local account. */
 
 import { useState } from 'react';
-import { TextInput } from 'react-native';
+import { Textarea } from '@metro-labs/kit/textarea';
 import { Box } from './layout';
 import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';
@@ -106,20 +106,18 @@ export function useDrawerAccountActions({ head, sub, border, dark, onChanged }: 
         <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginBottom: 10 }}>
           Paste an existing wallet&apos;s private key (0x… 64 hex) or its 12–24 word recovery phrase.
         </Text>
-        <TextInput
+        <Textarea
           value={text}
           onChangeText={(t) => { setText(t); setErr(''); }}
           placeholder="0x… or word1 word2 word3 …"
           placeholderTextColor={sub}
-          autoCapitalize="none"
-          autoCorrect={false}
-          multiline
-          secureTextEntry={!text.includes(' ')}
+          dark={dark}
+          inputProps={{ autoCapitalize: 'none', autoCorrect: false, secureTextEntry: !text.includes(' ') }}
           style={{
-            color: head, fontFamily: 'Menlo', fontSize: 13, minHeight: 64,
+            color: head, fontFamily: 'Menlo', fontSize: 13, minHeight: 64, height: undefined,
             borderWidth: 1, borderColor: border, borderRadius: 10,
             paddingHorizontal: 12, paddingVertical: 10, marginBottom: 8,
-            textAlignVertical: 'top',
+            textAlignVertical: 'top', backgroundColor: 'transparent',
           }}
         />
         {err ? (

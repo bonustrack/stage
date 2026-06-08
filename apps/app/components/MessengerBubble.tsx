@@ -2,7 +2,8 @@
  *  no colored bubble even for the local user's own messages. */
 
 import { memo, useMemo, useRef, useState } from 'react';
-import { Pressable, Vibration } from 'react-native';
+import { Vibration } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 // eslint-disable-next-line no-restricted-imports -- type-only: rowRef measureInWindow() ref typing
 import type { View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';

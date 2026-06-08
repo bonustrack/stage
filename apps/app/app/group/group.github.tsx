@@ -4,7 +4,9 @@
  *  (merge-preserving write so labels survive). */
 
 import { useEffect, useState } from 'react';
-import { Linking, Pressable, TextInput } from 'react-native';
+import { Linking } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
+import { Input } from '@metro-labs/kit/input';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import { Box } from '../../components/layout';
@@ -71,17 +73,15 @@ export function GroupGithubSection({ line, p }: { line: string; p: Pal }): React
         </Box>
       ) : (
         <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 }}>
-          <TextInput
+          <Input
             value={draft}
             onChangeText={setDraft}
-            onSubmitEditing={() => { void save(); }}
+            onSubmit={() => { void save(); }}
             placeholder="Link a github.com issue or PR"
             placeholderTextColor={sub}
-            autoCapitalize="none"
-            autoCorrect={false}
-            keyboardType="url"
-            returnKeyType="done"
-            editable={!busy}
+            inputType="url"
+            disabled={busy}
+            inputProps={{ autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'done' }}
             style={{
               flex: 1, color: fg, backgroundColor: inputBg,
               borderWidth: 1, borderColor: border, borderRadius: 10,

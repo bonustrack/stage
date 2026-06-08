@@ -2,7 +2,8 @@
  *  live in useConversationState; presentational pieces in components/xmtp-conv. */
 
 import { useCallback, useState } from 'react';
-import { Animated as RNAnimated, Pressable, Share } from 'react-native';
+import { Animated as RNAnimated, Share } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from '../../components/layout';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';

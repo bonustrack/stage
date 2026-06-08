@@ -6,7 +6,8 @@
  *  needs a dedicated header row. */
 
 import { useEffect, useRef } from 'react';
-import { Animated, Easing, Pressable } from 'react-native';
+import { Animated, Easing } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Icon } from '@metro-labs/kit/icon';
 
 export function RefreshButton({

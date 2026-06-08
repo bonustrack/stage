@@ -4,7 +4,11 @@
  *  refreshes immediately. */
 
 import { useEffect, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, TextInput } from 'react-native';
+import { Alert, KeyboardAvoidingView, Modal, Platform } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
+import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
+import { Input } from '@metro-labs/kit/input';
+import { Textarea } from '@metro-labs/kit/textarea';
 import { Avatar } from './Avatar';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from './layout';
@@ -121,19 +125,33 @@ export default function EditProfileModal({
           {FIELDS.map(f => (
             <Box key={f.key} style={{ marginBottom: 14 }}>
               <Text style={{ color: sub, fontSize: 11, marginBottom: 4, fontFamily: 'Calibre-Medium' }}>{f.label.toUpperCase()}</Text>
-              <TextInput
-                value={(form[f.key] ?? '') as string}
-                onChangeText={t => update(f.key, t)}
-                placeholder={f.placeholder}
-                placeholderTextColor={sub}
-                multiline={f.multiline}
-                style={{
-                  color: fg, backgroundColor: inputBg, borderColor: border, borderWidth: 1,
-                  borderRadius: blockRadius, padding: 12, fontSize: 14,
-                  minHeight: f.multiline ? 80 : undefined,
-                  textAlignVertical: f.multiline ? 'top' : 'center',
-                }}
-              />
+              {f.multiline ? (
+                <Textarea
+                  value={(form[f.key] ?? '') as string}
+                  onChangeText={t => update(f.key, t)}
+                  placeholder={f.placeholder}
+                  placeholderTextColor={sub}
+                  dark={dark}
+                  style={{
+                    color: fg, backgroundColor: inputBg, borderColor: border, borderWidth: 1,
+                    borderRadius: blockRadius, padding: 12, fontSize: 14,
+                    minHeight: 80, height: undefined, textAlignVertical: 'top',
+                  }}
+                />
+              ) : (
+                <Input
+                  value={(form[f.key] ?? '') as string}
+                  onChangeText={t => update(f.key, t)}
+                  placeholder={f.placeholder}
+                  placeholderTextColor={sub}
+                  dark={dark}
+                  style={{
+                    color: fg, backgroundColor: inputBg, borderColor: border, borderWidth: 1,
+                    borderRadius: blockRadius, padding: 12, fontSize: 14,
+                    minHeight: 0, textAlignVertical: 'center',
+                  }}
+                />
+              )}
             </Box>
           ))}
 

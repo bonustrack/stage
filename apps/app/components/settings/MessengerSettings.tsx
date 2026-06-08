@@ -4,7 +4,9 @@
  *  Settings tab; no invented toggles. */
 
 import { useEffect, useState } from 'react';
-import { Alert, DevSettings, Pressable, ScrollView } from 'react-native';
+import { Alert, DevSettings } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
+import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box, Col } from '../layout';

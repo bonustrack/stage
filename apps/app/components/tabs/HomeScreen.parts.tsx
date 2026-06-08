@@ -3,7 +3,8 @@
  *  rendering identical). */
 
 import { useCallback } from 'react';
-import { DevSettings, Pressable, Vibration } from 'react-native';
+import { DevSettings, Vibration } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Col } from '../layout';
 import { Spinner } from '../Spinner';

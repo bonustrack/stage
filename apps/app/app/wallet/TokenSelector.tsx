@@ -14,7 +14,7 @@
  *
  *  No bespoke/gold styling — Kit `Text`/`Icon` + the palette tokens only. */
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Image } from '@metro-labs/kit/image';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';

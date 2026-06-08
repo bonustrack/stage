@@ -8,7 +8,8 @@
  *  phone laggy - they are now opt-in here. */
 
 import { useEffect, useState } from 'react';
-import { ScrollView, Switch } from 'react-native';
+import { Switch } from 'react-native';
+import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box, Col, Row } from '../layout';
 import { Text } from '@metro-labs/kit/text';

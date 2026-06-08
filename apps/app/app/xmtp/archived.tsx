@@ -11,7 +11,8 @@
  *  reconcile live via subscribeArchived. */
 
 import { useCallback, useEffect, useState } from 'react';
-import { FlatList, Pressable } from 'react-native';
+import { FlatList } from '@metro-labs/kit/flat-list';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Title } from '@metro-labs/kit/title';
 import { Icon } from '@metro-labs/kit/icon';

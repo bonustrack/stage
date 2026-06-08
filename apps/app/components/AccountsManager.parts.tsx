@@ -1,7 +1,8 @@
 /** AccountsManager sub-components — account row + the bottom-sheet modal/button.
  *  Extracted for lint line-budget. Rendering identical. */
 
-import { Modal, Pressable } from 'react-native';
+import { Modal } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Box } from './layout';
 import { Avatar } from './Avatar';
 import { Text } from '@metro-labs/kit/text';

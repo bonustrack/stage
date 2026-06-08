@@ -2,7 +2,7 @@
  *  sub-pages: Display (theme), Messenger (XMTP account + settings), Security
  *  (export / remove account). Reached from the LeftDrawer's "Settings" row. */
 
-import { ScrollView } from 'react-native';
+import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box } from '../layout';

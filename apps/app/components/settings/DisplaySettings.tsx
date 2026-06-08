@@ -7,7 +7,7 @@
  *  and the ColorTokens editor (moved here from the Kit page) is revealed. No
  *  new store. */
 
-import { ScrollView } from 'react-native';
+import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box } from '../layout';
 import { Icon } from '@metro-labs/kit/icon';

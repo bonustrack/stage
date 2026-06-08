@@ -7,7 +7,8 @@
  *  Fonts: Calibre-Medium / Calibre-Semibold only. */
 
 import { useState } from 'react';
-import { Pressable, TextInput } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
+import { Input } from '@metro-labs/kit/input';
 import { Box, Row } from '../layout';
 import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';
@@ -57,14 +58,15 @@ function EditableSwatch({ name, tokenKey, value, scheme, p }: {
       />
       <Box style={{ flex: 1, minWidth: 0 }}>
         <Text style={{ color: p.head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>{name}</Text>
-        <TextInput
+        <Input
           value={shown}
           onChangeText={(t) => { setDraft(t); if (isHex(t)) setOverride(tokenKey, scheme, t); }}
-          onBlur={() => setDraft(null)}
-          autoCapitalize="none" autoCorrect={false}
+          dark={p.dark}
+          inputProps={{ onBlur: () => setDraft(null), autoCapitalize: 'none', autoCorrect: false }}
           placeholder="#rrggbb" placeholderTextColor={p.sub}
           style={{
-            marginTop: 2, paddingVertical: 2, paddingHorizontal: 0,
+            marginTop: 2, paddingVertical: 2, paddingHorizontal: 0, minHeight: 0,
+            backgroundColor: 'transparent', borderWidth: 0,
             color: invalid ? '#eb4c5b' : p.sub, fontSize: 13, fontFamily: 'Calibre-Medium',
           }}
         />
@@ -101,18 +103,20 @@ function RadiusRow({ p, name, value, onSet }: {
       }} />
       <Box style={{ flex: 1, minWidth: 0 }}>
         <Text style={{ color: p.head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>{name}</Text>
-        <TextInput
+        <Input
           value={shown}
           onChangeText={(t) => {
             setDraft(t);
             const n = Number(t.replace(/[^0-9]/g, ''));
             if (Number.isFinite(n) && t.trim() !== '') onSet(n);
           }}
-          onBlur={() => setDraft(null)}
-          keyboardType="numeric"
+          inputType="number"
+          dark={p.dark}
+          inputProps={{ onBlur: () => setDraft(null), keyboardType: 'numeric' }}
           placeholder={`${RADIUS_MIN}-${RADIUS_MAX} px`} placeholderTextColor={p.sub}
           style={{
-            marginTop: 2, paddingVertical: 2, paddingHorizontal: 0,
+            marginTop: 2, paddingVertical: 2, paddingHorizontal: 0, minHeight: 0,
+            backgroundColor: 'transparent', borderWidth: 0,
             color: p.sub, fontSize: 13, fontFamily: 'Calibre-Medium',
           }}
         />

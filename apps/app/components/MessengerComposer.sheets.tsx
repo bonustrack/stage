@@ -3,7 +3,9 @@
  *  JSX + behavior are identical — state is owned by the parent and threaded via
  *  props. */
 
-import { Pressable, TextInput } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
+import { Input } from '@metro-labs/kit/input';
+import { Textarea } from '@metro-labs/kit/textarea';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';
@@ -29,30 +31,32 @@ export function PollSheet({
   return (
     <AppModal visible={open} onClose={onClose}>
       <Col gap={12} pb={8}>
-        <TextInput
+        <Input
           value={question}
           onChangeText={setQuestion}
           placeholder="Question"
           placeholderTextColor={sub}
-          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 16 }}
+          dark={dark}
+          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 16, minHeight: 0 }}
         />
-        <TextInput
+        <Input
           value={header}
           onChangeText={setHeader}
           placeholder="Header (optional, e.g. LUNCH)"
           placeholderTextColor={sub}
-          maxLength={12}
-          autoCapitalize="characters"
-          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 14 }}
+          dark={dark}
+          inputProps={{ maxLength: 12, autoCapitalize: 'characters' }}
+          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 14, minHeight: 0 }}
         />
         {options.map((opt, i) => (
           <Row key={i} align="center" gap={8}>
-            <TextInput
+            <Input
               value={opt}
               onChangeText={t => setOptions(prev => prev.map((o, j) => (j === i ? t : o)))}
               placeholder={`Option ${i + 1}`}
               placeholderTextColor={sub}
-              style={{ flex: 1, color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 16 }}
+              dark={dark}
+              style={{ flex: 1, color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 16, minHeight: 0 }}
             />
             {options.length > 2 ? (
               <Pressable onPress={() => setOptions(prev => prev.filter((_, j) => j !== i))} hitSlop={8}>
@@ -130,32 +134,32 @@ export function SignatureSheet({
             </Pressable>
           ))}
         </Row>
-        <TextInput
+        <Input
           value={desc}
           onChangeText={setDesc}
           placeholder="Description (e.g. Sign in to dapp)"
           placeholderTextColor={sub}
-          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 15 }}
+          dark={dark}
+          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 15, minHeight: 0 }}
         />
         {kind === 'personal' ? (
-          <TextInput
+          <Textarea
             value={message}
             onChangeText={setMessage}
             placeholder="Message to sign"
             placeholderTextColor={sub}
-            multiline
-            style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, minHeight: 80, fontFamily: 'Calibre-Medium', fontSize: 15, textAlignVertical: 'top' }}
+            dark={dark}
+            style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, minHeight: 80, height: undefined, fontFamily: 'Calibre-Medium', fontSize: 15, textAlignVertical: 'top' }}
           />
         ) : (
-          <TextInput
+          <Textarea
             value={json}
             onChangeText={setJson}
             placeholder={'EIP-712 typed data JSON\n{ "domain": {…}, "types": {…}, "primaryType": "…", "message": {…} }'}
             placeholderTextColor={sub}
-            multiline
-            autoCapitalize="none"
-            autoCorrect={false}
-            style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, minHeight: 160, fontFamily: 'Calibre-Medium', fontSize: 13, textAlignVertical: 'top' }}
+            dark={dark}
+            inputProps={{ autoCapitalize: 'none', autoCorrect: false }}
+            style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, minHeight: 160, height: undefined, fontFamily: 'Calibre-Medium', fontSize: 13, textAlignVertical: 'top' }}
           />
         )}
         <Button
@@ -189,29 +193,32 @@ export function PaymentSheet({
   return (
     <AppModal visible={open} onClose={onClose}>
       <Col gap={12} pb={8}>
-        <TextInput
+        <Input
           value={to}
           onChangeText={setTo}
           placeholder="Recipient address (0x…)"
           placeholderTextColor={sub}
-          autoCapitalize="none"
-          autoCorrect={false}
-          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 14 }}
+          dark={dark}
+          inputProps={{ autoCapitalize: 'none', autoCorrect: false }}
+          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 14, minHeight: 0 }}
         />
-        <TextInput
+        <Input
           value={amount}
           onChangeText={setAmount}
           placeholder="Amount (ETH)"
           placeholderTextColor={sub}
-          keyboardType="decimal-pad"
-          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 16 }}
+          inputType="number"
+          dark={dark}
+          inputProps={{ keyboardType: 'decimal-pad' }}
+          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 16, minHeight: 0 }}
         />
-        <TextInput
+        <Input
           value={note}
           onChangeText={setNote}
           placeholder="Note (optional)"
           placeholderTextColor={sub}
-          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 16 }}
+          dark={dark}
+          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 16, minHeight: 0 }}
         />
         <Button
           variant="primary"

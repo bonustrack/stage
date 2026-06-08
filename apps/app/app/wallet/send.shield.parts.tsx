@@ -1,6 +1,7 @@
 /** Presentational sub-parts for the Shield form (locked 0zk recipient + the
  *  phase/result line) — split out of send.shield.tsx for the <200-line cap. */
-import { Linking, Pressable } from 'react-native';
+import { Linking } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from '../../components/layout';
 import { DANGER } from '../../lib/theme';

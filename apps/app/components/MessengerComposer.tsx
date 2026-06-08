@@ -1,8 +1,8 @@
 /** Floating two-line composer (Claude-mobile-style): textarea on top, [+ / mic / send] below. */
 
-import { useRef, useState } from 'react';
-import { TextInput } from 'react-native';
+import { useRef, useState, type ComponentRef } from 'react';
 import { Text } from '@metro-labs/kit/text';
+import { Textarea } from '@metro-labs/kit/textarea';
 import { ComposerGradient } from './ComposerGradient';
 import { Col } from './layout';
 import { type Attachment } from './MessengerComposer.helpers';
@@ -82,7 +82,7 @@ export function MessengerComposer({
   const [txAmount, setTxAmount] = useState('');
   const [txNote, setTxNote] = useState('');
   /** Composer text input — focused programmatically when a reply target is set. */
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<ComponentRef<typeof Textarea>>(null);
 
   const actions = useComposerActions({
     xmtpLine, text, pending, replyingTo, mentionCandidates,

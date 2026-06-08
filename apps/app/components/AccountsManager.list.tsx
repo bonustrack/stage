@@ -2,7 +2,7 @@
  *  expanded modes + the "Add account" row + footer hint). Extracted from
  *  AccountsManager for lint line-budget. Rendering identical. */
 
-import { Pressable } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Box } from './layout';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';

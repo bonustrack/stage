@@ -3,7 +3,7 @@
  *  reuses getPrivateKey behind a warning Alert (key never logged), remove reuses
  *  deleteAccount. No new key handling. */
 
-import { ScrollView } from 'react-native';
+import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box } from '../layout';
 import { DANGER, useEffectiveColorScheme, usePalette } from '../../lib/theme';

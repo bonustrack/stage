@@ -1,7 +1,8 @@
 /** Wallet NFT grid view — extracted from WalletScreen.parts for lint
  *  line-budget. Rendering identical. */
 
-import { Linking, Pressable } from 'react-native';
+import { Linking } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Image } from '@metro-labs/kit/image';
 import { Spinner } from '../Spinner';
 import { Text } from '@metro-labs/kit/text';

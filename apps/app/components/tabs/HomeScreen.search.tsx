@@ -3,8 +3,9 @@
  *  preview, or DM peer address. Empty query returns the list unchanged. */
 
 import { forwardRef } from 'react';
-import { Pressable, TextInput } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Icon } from '@metro-labs/kit/icon';
+import { Input } from '@metro-labs/kit/input';
 import { Box, Row } from '../layout';
 import type { Row as RowT } from './HomeScreen.helpers';
 
@@ -25,7 +26,7 @@ export function filterRowsByQuery(rows: RowT[], query: string): RowT[] {
 /** The search section: a toolbarBg band (continuous with the topnav) holding an
  *  inset inputBg field with a leading search glyph and a trailing clear button
  *  when non-empty. Styled with app tokens + Calibre. */
-export const ChannelsSearchBar = forwardRef<TextInput, {
+export const ChannelsSearchBar = forwardRef<React.ComponentRef<typeof Input>, {
   query: string;
   setQuery: (v: string) => void;
   head: string;
@@ -43,16 +44,15 @@ export const ChannelsSearchBar = forwardRef<TextInput, {
         paddingHorizontal: 14, paddingVertical: 10,
       }}>
         <Icon name="search" size={22} color={sub} />
-        <TextInput
+        <Input
           ref={ref}
           value={props.query}
           onChangeText={props.setQuery}
           placeholder="Search"
           placeholderTextColor={sub}
-          autoCapitalize="none"
-          autoCorrect={false}
-          returnKeyType="search"
-          style={{ flex: 1, color: head, fontSize: 19, lineHeight: 23, fontFamily: 'Calibre-Medium', padding: 0 }}
+          inputProps={{ autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'search' }}
+          style={{ flex: 1, color: head, fontSize: 19, lineHeight: 23, fontFamily: 'Calibre-Medium', padding: 0,
+            backgroundColor: 'transparent', minHeight: 0, borderWidth: 0 }}
         />
         {props.query.length > 0 ? (
           <Pressable onPress={() => props.setQuery('')} hitSlop={8}>

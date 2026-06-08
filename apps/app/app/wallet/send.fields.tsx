@@ -3,7 +3,9 @@
  *  Extracted from send.tsx (mechanical split, behavior identical). Presentational
  *  only — all state + handlers are owned by the parent screen and passed in. */
 import { useState } from 'react';
-import { Linking, Pressable, TextInput } from 'react-native';
+import { Linking } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
+import { Input } from '@metro-labs/kit/input';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Hex } from 'viem';
 import { Text } from '@metro-labs/kit/text';
@@ -39,16 +41,16 @@ export function RecipientField(props: {
         backgroundColor: inputBg, borderRadius: 12,
         paddingHorizontal: 6, paddingLeft: 14,
       }}>
-        <TextInput
+        <Input
           value={props.to}
           onChangeText={props.setTo}
           placeholder="0x… or name.eth"
           placeholderTextColor={sub}
-          autoCapitalize="none"
-          autoCorrect={false}
+          inputProps={{ autoCapitalize: 'none', autoCorrect: false }}
           style={{
             flex: 1, color: head, fontSize: 16, fontFamily: 'Calibre-Medium',
-            paddingVertical: 12,
+            paddingVertical: 12, paddingHorizontal: 0, backgroundColor: 'transparent',
+            minHeight: 0, borderWidth: 0,
           }}
         />
         <ContactsButton color={fg} border={border} onPress={() => setPicking(true)} />
@@ -118,15 +120,17 @@ export function AmountField(props: {
         backgroundColor: inputBg, borderRadius: 12,
         paddingHorizontal: 14, paddingVertical: 12, gap: 8,
       }}>
-        <TextInput
+        <Input
           value={amount}
           onChangeText={setAmount}
           placeholder="0.0"
           placeholderTextColor={sub}
-          keyboardType="decimal-pad"
+          inputType="number"
+          dark={props.dark}
+          inputProps={{ keyboardType: 'decimal-pad' }}
           style={{
             flex: 1, color: head, fontSize: 18, fontFamily: 'Calibre-Semibold',
-            padding: 0,
+            padding: 0, backgroundColor: 'transparent', minHeight: 0, borderWidth: 0,
           }}
         />
         {/* Mode toggle — pressing it flips ETH↔USD and converts the
