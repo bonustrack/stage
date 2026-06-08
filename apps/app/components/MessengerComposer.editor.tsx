@@ -132,7 +132,7 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
             dark={dark}
             tintBg={primary}
             onPress={p.onSend}
-            icon={<Icon name="send" size={20} color={bg} />}
+            icon={<Icon name="arrowUp" size={20} color={bg} />}
           />
         ) : null}
       </Row>
