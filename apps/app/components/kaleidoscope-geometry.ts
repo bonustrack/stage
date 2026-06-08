@@ -1,88 +1,85 @@
-/** Geometry helpers for KaleidoscopeSplash.
+/** Geometry + defaults for KaleidoscopeSplash.
  *
- *  All paths live in a 100x100 viewBox centred at (50,50). A single wedge is
- *  drawn once and rotated N times to build the radial, mirror-symmetric bloom.
+ *  FAITHFUL PORT of bloom.mocha.app (the Mocha kaleidoscope generator). The
+ *  source is a client-side canvas/SVG app; its renderer tiles a single vector
+ *  "logo" path into N mirror-symmetric wedge sectors around the centre. We
+ *  reproduce the exact geometry, the exact default graphic path, and the exact
+ *  default palette extracted from the app's JS bundle.
+ *
+ *  Mocha render algorithm (per sector i in [0, sectors)):
+ *    translate(cx, cy)
+ *    rotate(i * 2*PI / sectors)
+ *    clip to a wedge spanning [-d/2, d/2] where d = 2*PI / sectors
+ *    if (i % 2 === 0) scale(-1, 1)            // mirror -> kaleidoscope symmetry
+ *    translate(offsetDistance, 0)
+ *    rotate(rotation deg)
+ *    scale(scale * logoSize)
+ *    draw the logo path centred on the local origin
+ *
+ *  Mocha defaults (verbatim from the bundle):
+ *    graphicColor #B5FF6B, bgColor #056117, scale 1.4, logoSize 1,
+ *    rotation 62, tilingRotation 0, globalRotation 0, sectors 14,
+ *    offsetDistance 0, repeat 1, circularMask false.
+ *
  *  Pure math, no react-native deps, so it is trivially testable / reusable. */
 
-export const CENTER = 50;
-export const SEGMENTS = 16; // N-fold rotational symmetry (mirrored bloom)
+/** The default graphic path tiled by the kaleidoscope, lifted verbatim from the
+ *  Mocha bundle. Authored in a 734x422 box; we centre it on its own bbox so the
+ *  per-sector transforms rotate/scale it about its middle (as the app does by
+ *  drawing the image centred). */
+export const LOGO_PATH =
+  'M451.156 29.1278C480.858 -22.3151 559.5 -1.24308 559.503 58.1586V158.421C560.164 215.271 634.276 235.918 664.529 188.921L700.664 126.338C705.597 117.794 716.523 114.865 725.067 119.798C733.61 124.731 736.536 135.656 731.604 144.2L651.144 283.565H651.137L588.062 392.815C558.36 444.26 479.717 423.191 479.715 363.788V263.397C478.967 208.072 408.622 187.129 377.073 229.606L345.923 283.561H345.919L282.84 392.819C253.138 444.262 174.495 423.19 174.494 363.788L174.49 263.34C173.675 206.665 99.7917 186.103 69.5317 232.926L33.3388 295.612C28.4053 304.156 17.4807 307.084 8.93626 302.153C0.3917 297.219 -2.53708 286.291 2.39603 277.746L145.935 29.1278C175.636 -22.3139 254.273 -1.24515 254.277 58.1551V158.303C254.823 213.798 325.305 234.866 356.909 192.359L451.156 29.1278Z';
 
-/** Flat, vivid bloom palette. Keeps Less's teal in rotation. No gradients. */
-export const PALETTE = {
-  field: '#0E1726', // flat deep navy backdrop, fills the whole screen
-  petalA: ['#19C2B0', '#FF4FB6', '#FFC24B'], // teal -> hot pink -> amber
-  petalB: ['#5BE0FF', '#A24BFF', '#FF6B6B'], // cyan -> violet -> coral
-  shard: ['#FFFFFF', '#19C2B0', '#FF4FB6'], // bright -> teal -> pink
-};
+/** Native size of the logo path's authoring box (from the source <svg>). */
+export const LOGO_W = 734;
+export const LOGO_H = 422;
 
-/** Scalloped flower centre: a ring of bulging arcs forming a petal-edged disc.
- *  Computed once on the JS thread (the flower is static; only its fill animates),
- *  so this helper is intentionally NOT a worklet. */
-/** Petals reach past the corners of a 100x100 viewBox (half-diagonal ~= 70.7)
- *  so the bloom bleeds edge to edge with `slice`. The reach breathes between
- *  these bounds to drive the morph. */
-export const REACH_MIN = 60;
-export const REACH_MAX = 78;
+/** Faithful Mocha default settings (verbatim from the bundle). */
+export const MOCHA_DEFAULTS = {
+  graphicColor: '#B5FF6B',
+  bgColor: '#056117',
+  scale: 1.4,
+  logoSize: 1,
+  rotation: 62,
+  tilingRotation: 0,
+  globalRotation: 0,
+  sectors: 14,
+  offsetDistance: 0,
+  repeat: 1,
+  circularMask: false,
+} as const;
 
-/** Pure-JS hex colour lerp. `t` in 0..1 across a [a, mid, b] 3-stop palette.
- *  Replaces reanimated interpolateColor so the colour cycle runs on the JS
- *  thread (no worklet, works regardless of the native reanimated module). */
-function lerpHex(a: string, b: string, t: number): string {
-  const ai = parseInt(a.slice(1), 16);
-  const bi = parseInt(b.slice(1), 16);
-  const ar = (ai >> 16) & 255;
-  const ag = (ai >> 8) & 255;
-  const ab = ai & 255;
-  const br = (bi >> 16) & 255;
-  const bg = (bi >> 8) & 255;
-  const bb = bi & 255;
-  const r = Math.round(ar + (br - ar) * t);
-  const g = Math.round(ag + (bg - ag) * t);
-  const bl = Math.round(ab + (bb - ab) * t);
-  return `#${((1 << 24) | (r << 16) | (g << 8) | bl).toString(16).slice(1)}`;
-}
+/** The 16 flat palette swatches the app ships (name + hex), in app order. Less's
+ *  teal (#006161) is one of them, so the splash already carries his colour. */
+export const MOCHA_PALETTE = [
+  '#F9F8F0', // Off White
+  '#000000', // Black
+  '#FFFFFF', // Pure White
+  '#E6DBC1', // Cream
+  '#056117', // Green
+  '#B5FF6B', // Lime
+  '#006161', // Teal
+  '#60E2E2', // Cyan
+  '#003980', // Blue
+  '#61A8FF', // Sky Blue
+  '#7E1660', // Purple
+  '#FF75F8', // Pink
+  '#6D2225', // Red
+  '#FF7575', // Coral
+  '#AD5A00', // Orange
+  '#FFC180', // Peach
+] as const;
 
-/** Interpolate a flat colour across a 3-stop [a, mid, b] palette by t (0..1). */
-export function cycleColor(stops: string[], t: number): string {
-  const clamped = t <= 0 ? 0 : t >= 1 ? 1 : t;
-  if (clamped < 0.5) return lerpHex(stops[0], stops[1], clamped * 2);
-  return lerpHex(stops[1], stops[2], (clamped - 0.5) * 2);
-}
-
-/** Build the three wedge path strings (sharp petal, shorter petal, slim shard)
- *  for a given reach. Plain math computed each frame on the JS thread. */
-export function wedgePaths(reach: number): { tri: string; triAlt: string; shard: string } {
-  const tipFor = (r: number): string => {
-    const tip = CENTER - r;
-    const hw = r * 0.22;
-    return `M${CENTER} ${CENTER} L${CENTER + hw} ${tip} L${CENTER - hw} ${tip} Z`;
-  };
-  const sr = reach;
-  const shTip = CENTER - sr * 0.62;
-  const shCtrl = CENTER - sr * 0.3;
-  const shW = sr * 0.06;
-  return {
-    tri: tipFor(reach),
-    triAlt: tipFor(reach * 0.82),
-    shard: `M${CENTER} ${CENTER} L${CENTER + shW} ${shCtrl} Q${CENTER} ${shTip} ${CENTER - shW} ${shCtrl} Z`,
-  };
-}
-
-export function flowerPath(r: number, petals: number): string {
-  let d = '';
-  for (let i = 0; i < petals; i++) {
-    const a0 = (i / petals) * Math.PI * 2;
-    const a1 = ((i + 1) / petals) * Math.PI * 2;
-    const am = (a0 + a1) / 2;
-    const x0 = CENTER + r * Math.cos(a0);
-    const y0 = CENTER + r * Math.sin(a0);
-    const x1 = CENTER + r * Math.cos(a1);
-    const y1 = CENTER + r * Math.sin(a1);
-    const bulge = r * 1.32;
-    const xm = CENTER + bulge * Math.cos(am);
-    const ym = CENTER + bulge * Math.sin(am);
-    d += i === 0 ? `M${x0.toFixed(2)} ${y0.toFixed(2)} ` : '';
-    d += `Q${xm.toFixed(2)} ${ym.toFixed(2)} ${x1.toFixed(2)} ${y1.toFixed(2)} `;
-  }
-  return `${d}Z`;
+/** A wedge clip path for one sector, in the sector's local frame (origin at the
+ *  centre, +x to the right). Spans the half-angle each side and reaches out to
+ *  `radius` so it covers the full screen. Mirrors the app's createWedgeClip:
+ *  moveTo(0,0); arc(0,0,R,-d/2,d/2); closePath. We approximate the arc with two
+ *  straight edges plus an SVG arc command. */
+export function wedgeClipPath(sectors: number, radius: number): string {
+  const half = Math.PI / sectors;
+  const x0 = radius * Math.cos(-half);
+  const y0 = radius * Math.sin(-half);
+  const x1 = radius * Math.cos(half);
+  const y1 = radius * Math.sin(half);
+  return `M0 0 L${x0.toFixed(3)} ${y0.toFixed(3)} A${radius} ${radius} 0 0 1 ${x1.toFixed(3)} ${y1.toFixed(3)} Z`;
 }
