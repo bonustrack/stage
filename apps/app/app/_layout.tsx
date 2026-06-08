@@ -14,6 +14,8 @@ import { useEffect } from 'react';
 import { LogBox, Text, TextInput } from 'react-native';
 import { Box } from '../components/layout';
 import { Spinner } from '../components/Spinner';
+import { Onboarding } from '../components/onboarding/Onboarding';
+import { useOnboardingGate } from '../lib/onboardingSeen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { TransitionPresets, TransitionSpecs } from '@react-navigation/stack';
@@ -116,13 +118,18 @@ export default function RootLayout(): React.ReactElement {
     'Calibre-Semibold': require('../assets/fonts/Calibre-Semibold-Custom.ttf'),
   });
 
-  if (!loaded) {
+  /** FIRST-LAUNCH GATE: render Onboarding INSTEAD of the app until the persisted
+   *  `onboarding.seen` flag is true; `ready` gates on its load so a returning
+   *  user never flashes onboarding (see lib/onboardingSeen). */
+  const onboarding = useOnboardingGate();
+  if (!loaded || !onboarding.ready) {
     return (
       <Box style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: bg }}>
         <Spinner size={28} color={dark ? '#ffffff' : '#000000'} />
       </Box>
     );
   }
+  if (!onboarding.seen) return <Onboarding onDone={onboarding.finish} />;
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -131,23 +138,14 @@ export default function RootLayout(): React.ReactElement {
       <KeyboardProvider>
       <StatusBar style={barStyle} translucent backgroundColor="transparent" />
       {/** @react-navigation/stack JS card stack (via NativeSwipeStack /
-       *   withLayoutContext).
-       *
-       *   SWIPE-BACK: the JS stack's own `gestureEnabled` interactive pan +
-       *   `TransitionPresets.SlideFromRightIOS` (CardStyleInterpolators.
-       *   forHorizontalIOS) finger-follow the back gesture AND render the
-       *   previous card behind the current one (it parallaxes in from the left
-       *   as the current card tracks the finger right), committing the pop past
-       *   the threshold or springing back. This replaces the old black-scrim
-       *   EdgeSwipeBack/BackSwipe shims, which never mounted the route below.
-       *   Works on Android (pure JS + RNGH + reanimated — no native module, no
-       *   APK rebuild). We do NOT use rn-screens' native goBackGesture worklet
-       *   (it crashes on reanimated 4's measure() API change).
-       *
-       *   gestureResponseDistance widens the edge catch-zone so a thumb at the
-       *   bezel arms it; the conversation screen's inverted FlatList + leftward
-       *   bubble swipe-to-reply coexist because the stack gesture arms on a
-       *   RIGHTWARD horizontal drag from the left edge only. */}
+       *   withLayoutContext). SWIPE-BACK: the JS stack's `gestureEnabled` pan +
+       *   `TransitionPresets.SlideFromRightIOS` (forHorizontalIOS) finger-follow
+       *   the back gesture and parallax the previous card in from the left (pure
+       *   JS + RNGH + reanimated, no native module / APK rebuild; we do NOT use
+       *   rn-screens' goBackGesture worklet - it crashes on reanimated 4's
+       *   measure()). gestureResponseDistance widens the edge catch-zone; the
+       *   conversation screen's leftward reply-swipe coexists because the stack
+       *   gesture arms only on a RIGHTWARD drag. */}
       <NativeSwipeStack
         /** Perf: stop the off-screen previous card from re-rendering / running
          *  effects while it's fully blurred. `detachInactiveScreens` lets

@@ -11,6 +11,7 @@ import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Text } from '@metro-labs/kit/text';
 import { ListView, ListViewItem } from '@metro-labs/kit/list-view';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
+import { setOnboardingSeen } from '../../lib/onboardingSeen';
 import { SystemHeader } from '../system/SystemHeader';
 
 type Href = '/settings/kit' | '/settings/components' | '/settings/developer';
@@ -41,6 +42,16 @@ export function ExperimentalSettings(): React.ReactElement {
               <Icon name="chevronRight" size={18} color={sub} />
             </ListViewItem>
           ))}
+          {/** Reset the first-launch onboarding flag so the carousel shows again on
+            *  the next render of the root layout - the gate (app/_layout.tsx)
+            *  re-evaluates `onboarding.seen` reactively, so flipping it here
+            *  immediately swaps the app for the Onboarding flow. */}
+          <ListViewItem dark={dark} onPress={() => { void setOnboardingSeen(false); }}>
+            <Icon name="sparkles" size={22} color={head} />
+            <Box style={{ flex: 1 }}>
+              <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Medium' }}>Replay onboarding</Text>
+            </Box>
+          </ListViewItem>
         </ListView>
       </ScrollView>
     </Box>
