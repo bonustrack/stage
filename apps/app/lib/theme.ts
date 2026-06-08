@@ -11,7 +11,11 @@ import {
   THEME_STORAGE_KEY as STORAGE_KEY, isThemePreference,
   type ThemePreference,
 } from '@metro-labs/kit/theme';
-import { semanticColors, semanticPalette } from '@metro-labs/kit/tokens';
+import {
+  semanticColors, semanticPalette, kitTheme,
+  type KitTheme, type KitThemeOptions,
+  type RadiusName, type Density, type BaseSize,
+} from '@metro-labs/kit/tokens';
 import { setDefaultButtonRadius } from '@metro-labs/kit/button';
 import {
   getOverrides, loadOverrides, isCustomTheme,
@@ -27,6 +31,12 @@ export { setCustomTheme } from './colorOverrides';
 export { useCustomTheme } from './useCustomTheme';
 
 export type { ThemePreference };
+
+/** ChatKit-shaped theme alignment (PR1), re-exported from the kit tokens so the
+ *  app imports them from one place. Additive only: existing usePalette consumers
+ *  are untouched. ChatKit `accent` maps to our `link` (NOT `primary`). */
+export { kitTheme };
+export type { KitTheme, KitThemeOptions, RadiusName, Density, BaseSize };
 
 /** Scheme-independent semantic constants (same hex in dark + light) for the
  *  many sub-components that take a `dark` prop instead of the full palette.
@@ -197,4 +207,12 @@ export function usePalette(): Palette {
       inputBg: pick('inputBg', s.inputBgColor), toolbarBg: pick('toolbarBg', s.toolbarBgColor),
     };
   }, [scheme, version]);
+}
+
+/** ChatKit-shaped theme object for the effective scheme (PR1). Additive helper
+ *  alongside usePalette; reactive to theme changes. Defaults reproduce today's
+ *  values, so adopting it is non-breaking. */
+export function useKitTheme(opts?: KitThemeOptions): KitTheme {
+  const scheme = useEffectiveColorScheme();
+  return useMemo(() => kitTheme(scheme, opts), [scheme, opts?.radius, opts?.density, opts?.baseSize, opts?.accentLevel]);
 }
