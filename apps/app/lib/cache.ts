@@ -79,6 +79,10 @@ export class MemoryStore<K, V> {
   /** Keyed listeners (notified for a specific key's changes) + global listeners
    *  (notified for any change). */
   private readonly keyed = new Map<K, Set<(v: V | undefined) => void>>();
+  /** Global listeners notified for ANY key's change. The feed→TanStack-Query
+   *  bridge uses this to mirror every feedCache slice write into the shared
+   *  query cache without wrapping each individual `set` call site. */
+  private readonly global = new Set<(key: K, v: V | undefined) => void>();
 
   get(key: K): V | undefined { return this.map.get(key); }
   has(key: K): boolean { return this.map.has(key); }
@@ -87,6 +91,13 @@ export class MemoryStore<K, V> {
     this.map.set(key, value);
     const ls = this.keyed.get(key);
     if (ls) for (const l of ls) l(value);
+    for (const l of this.global) l(key, value);
+  }
+
+  /** Subscribe to changes for ANY key. Returns an unsubscribe fn. */
+  subscribeAll(l: (key: K, v: V | undefined) => void): () => void {
+    this.global.add(l);
+    return () => { this.global.delete(l); };
   }
 
   /** Subscribe to changes for one key. Returns an unsubscribe fn. */
@@ -99,11 +110,12 @@ export class MemoryStore<K, V> {
 
   /** Wipe everything (e.g. on account switch) + notify all keyed listeners. */
   clear(): void {
-    const keys = [...this.keyed.keys()];
+    const keys = new Set<K>([...this.keyed.keys(), ...this.map.keys()]);
     this.map.clear();
     for (const k of keys) {
       const ls = this.keyed.get(k);
       if (ls) for (const l of ls) l(undefined);
+      for (const l of this.global) l(k, undefined);
     }
   }
 }
