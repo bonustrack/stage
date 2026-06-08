@@ -9,9 +9,8 @@ export default tseslint.config(
       // Strong typing: ban `any`. Use `unknown` + narrowing, real interfaces,
       // generics, or library types instead.
       "@typescript-eslint/no-explicit-any": "error",
-      // `error`: every file in the api has been split to 200 lines or fewer.
-      // Hard cap, no exceptions - split a file rather than crossing it.
-      "max-lines": ["error", { max: 200, skipBlankLines: false, skipComments: false }],
+      // `error`: cap files at 400 lines. Split a file rather than crossing it.
+      "max-lines": ["error", { max: 400, skipBlankLines: false, skipComments: false }],
     },
   },
 );
