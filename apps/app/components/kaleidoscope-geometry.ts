@@ -15,25 +15,9 @@ export const PALETTE = {
   shard: ['#FFFFFF', '#19C2B0', '#FF4FB6'], // bright -> teal -> pink
 };
 
-/** Sharp outer triangular petal radiating from centre to the rim. `reach`
- *  drives the morph (the petal grows / shrinks as the wheel breathes). */
-export function wedgeTriangle(reach: number): string {
-  'worklet';
-  const tip = CENTER - reach;
-  const halfWidth = reach * 0.22;
-  return `M${CENTER} ${CENTER} L${CENTER + halfWidth} ${tip} L${CENTER - halfWidth} ${tip} Z`;
-}
-
-/** Slim inner shard, a thinner counter-petal for depth between the triangles. */
-export function wedgeShard(reach: number): string {
-  'worklet';
-  const tip = CENTER - reach * 0.62;
-  const ctrl = CENTER - reach * 0.3;
-  const w = reach * 0.06;
-  return `M${CENTER} ${CENTER} L${CENTER + w} ${ctrl} Q${CENTER} ${tip} ${CENTER - w} ${ctrl} Z`;
-}
-
-/** Scalloped flower centre: a ring of bulging arcs forming a petal-edged disc. */
+/** Scalloped flower centre: a ring of bulging arcs forming a petal-edged disc.
+ *  Computed once on the JS thread (the flower is static; only its fill animates),
+ *  so this helper is intentionally NOT a worklet. */
 export function flowerPath(r: number, petals: number): string {
   let d = '';
   for (let i = 0; i < petals; i++) {

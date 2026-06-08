@@ -26,14 +26,7 @@ import Animated, {
   Easing,
   cancelAnimation,
 } from 'react-native-reanimated';
-import {
-  CENTER,
-  SEGMENTS,
-  PALETTE,
-  wedgeTriangle,
-  wedgeShard,
-  flowerPath,
-} from './kaleidoscope-geometry';
+import { CENTER, SEGMENTS, PALETTE, flowerPath } from './kaleidoscope-geometry';
 
 const AnimatedG = Animated.createAnimatedComponent(G);
 const AnimatedPath = Animated.createAnimatedComponent(Path);
@@ -61,26 +54,50 @@ export function KaleidoscopeSplash({ bg }: { bg: string }): React.ReactElement {
     };
   }, [spin, hue, morph]);
 
-  const reach = useDerivedValue(() => REACH_MIN + (REACH_MAX - REACH_MIN) * morph.value);
+  const reach = useDerivedValue(() => {
+    'worklet';
+    return REACH_MIN + (REACH_MAX - REACH_MIN) * morph.value;
+  });
 
-  const wheelProps = useAnimatedProps(() => ({
-    transform: [{ rotate: `${spin.value * 360}deg` }],
-  }));
-  const triProps = useAnimatedProps(() => ({
-    d: wedgeTriangle(reach.value),
-    fill: interpolateColor(hue.value, [0, 0.5, 1], PALETTE.petalA),
-  }));
-  const triAltProps = useAnimatedProps(() => ({
-    d: wedgeTriangle(reach.value * 0.82),
-    fill: interpolateColor(hue.value, [0, 0.5, 1], PALETTE.petalB),
-  }));
-  const shardProps = useAnimatedProps(() => ({
-    d: wedgeShard(reach.value),
-    fill: interpolateColor(hue.value, [0, 0.5, 1], PALETTE.shard),
-  }));
-  const flowerProps = useAnimatedProps(() => ({
-    fill: interpolateColor(hue.value, [0, 0.5, 1], PALETTE.shard),
-  }));
+  const wheelProps = useAnimatedProps(() => {
+    'worklet';
+    return { transform: [{ rotate: `${spin.value * 360}deg` }] };
+  });
+  const triProps = useAnimatedProps(() => {
+    'worklet';
+    const r = reach.value;
+    const tip = CENTER - r;
+    const hw = r * 0.22;
+    return {
+      d: `M${CENTER} ${CENTER} L${CENTER + hw} ${tip} L${CENTER - hw} ${tip} Z`,
+      fill: interpolateColor(hue.value, [0, 0.5, 1], PALETTE.petalA),
+    };
+  });
+  const triAltProps = useAnimatedProps(() => {
+    'worklet';
+    const r = reach.value * 0.82;
+    const tip = CENTER - r;
+    const hw = r * 0.22;
+    return {
+      d: `M${CENTER} ${CENTER} L${CENTER + hw} ${tip} L${CENTER - hw} ${tip} Z`,
+      fill: interpolateColor(hue.value, [0, 0.5, 1], PALETTE.petalB),
+    };
+  });
+  const shardProps = useAnimatedProps(() => {
+    'worklet';
+    const r = reach.value;
+    const tip = CENTER - r * 0.62;
+    const ctrl = CENTER - r * 0.3;
+    const w = r * 0.06;
+    return {
+      d: `M${CENTER} ${CENTER} L${CENTER + w} ${ctrl} Q${CENTER} ${tip} ${CENTER - w} ${ctrl} Z`,
+      fill: interpolateColor(hue.value, [0, 0.5, 1], PALETTE.shard),
+    };
+  });
+  const flowerProps = useAnimatedProps(() => {
+    'worklet';
+    return { fill: interpolateColor(hue.value, [0, 0.5, 1], PALETTE.shard) };
+  });
 
   const flower = flowerPath(13, 8);
 
