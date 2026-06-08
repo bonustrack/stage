@@ -1,116 +1,86 @@
 /** Animated kaleidoscope splash - the launch / app-loading screen.
  *
  *  A full-bleed, N-fold mirror-symmetric vector bloom (react-native-svg) that
- *  slowly rotates and morphs (reanimated). Bloom-style: sharp triangular petals
- *  + slim shards radiating from a scalloped flower centre, cycling through flat
- *  vivid colours with Less's teal kept in the palette. No gradients, no shadows.
+ *  slowly rotates and morphs. Bloom-style: sharp triangular petals + slim
+ *  shards radiating from a scalloped flower centre, cycling through flat vivid
+ *  colours with Less's teal kept in the palette. No gradients, no shadows.
  *
- *  The SVG covers the ENTIRE viewport edge to edge (xMidYMid slice + petals that
- *  reach past the corners), including behind the status bar / notch. Pure JS +
- *  svg + reanimated - no native module, so it hot-reloads (no APK rebuild).
+ *  The SVG covers the ENTIRE viewport edge to edge (xMidYMid slice + petals
+ *  that reach past the corners), including behind the status bar / notch.
+ *
+ *  Driven by a PURE-JS requestAnimationFrame loop (NO react-native-reanimated):
+ *  each frame updates React state and re-renders the SVG on the JS thread, so
+ *  the animation runs regardless of the native reanimated module (the installed
+ *  dev-client had a reanimated native/JS mismatch that froze every worklet).
+ *  Rotation is a plain `rotation` prop on the <G> wheel; because the component
+ *  re-renders from state every frame, the prop actually updates. Morph + colour
+ *  are recomputed in plain JS each frame. Hot-reloads, no APK rebuild.
  *
  *  Rendered by app/_layout.tsx while fonts load (the `!loaded` branch); it
  *  unmounts the instant fonts resolve. Loops forever, so it is also safe to drop
  *  into a standalone preview page. */
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, useWindowDimensions } from 'react-native';
 import { Box } from './layout';
 import Svg, { Path, Circle, G } from 'react-native-svg';
-import Animated, {
-  useSharedValue,
-  useAnimatedProps,
-  useAnimatedStyle,
-  useDerivedValue,
-  withRepeat,
-  withTiming,
-  interpolateColor,
-  Easing,
-  cancelAnimation,
-} from 'react-native-reanimated';
-import { CENTER, SEGMENTS, PALETTE, flowerPath } from './kaleidoscope-geometry';
+import {
+  CENTER,
+  SEGMENTS,
+  PALETTE,
+  REACH_MIN,
+  REACH_MAX,
+  cycleColor,
+  wedgePaths,
+  flowerPath,
+} from './kaleidoscope-geometry';
 
-const AnimatedPath = Animated.createAnimatedComponent(Path);
-
-/** Petals reach past the corners of a 100x100 viewBox (half-diagonal ~= 70.7)
- *  so the bloom bleeds edge to edge with `slice`. The reach breathes between
- *  these bounds to drive the morph. */
-const REACH_MIN = 60;
-const REACH_MAX = 78;
+const SPIN_MS = 16000; // one full rotation
+const MORPH_MS = 5200; // reach breathe period (ping-pong)
+const HUE_MS = 4200; // colour cycle period (ping-pong)
+const FRAME_MS = 33; // ~30fps re-render; plenty smooth for a splash
 
 export function KaleidoscopeSplash({ bg }: { bg: string }): React.ReactElement {
   const { width, height } = useWindowDimensions();
-  const spin = useSharedValue(0);
-  const hue = useSharedValue(0);
-  const morph = useSharedValue(0);
+  // Single frame counter -> drives angle / morph / colour, all derived below.
+  const [now, setNow] = useState(0);
+  const startRef = useRef(0);
+  const lastRef = useRef(0);
 
   useEffect(() => {
-    spin.value = withRepeat(withTiming(1, { duration: 16000, easing: Easing.linear }), -1, false);
-    hue.value = withRepeat(withTiming(1, { duration: 4200, easing: Easing.inOut(Easing.ease) }), -1, true);
-    morph.value = withRepeat(withTiming(1, { duration: 5200, easing: Easing.inOut(Easing.ease) }), -1, true);
-    return () => {
-      cancelAnimation(spin);
-      cancelAnimation(hue);
-      cancelAnimation(morph);
+    let raf = 0;
+    const tick = (t: number): void => {
+      if (!startRef.current) startRef.current = t;
+      // Throttle re-renders to ~FRAME_MS while still using rAF for smoothness.
+      if (t - lastRef.current >= FRAME_MS) {
+        lastRef.current = t;
+        setNow(t - startRef.current);
+      }
+      raf = requestAnimationFrame(tick);
     };
-  }, [spin, hue, morph]);
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
-  const reach = useDerivedValue(() => {
-    'worklet';
-    return REACH_MIN + (REACH_MAX - REACH_MIN) * morph.value;
-  });
+  // Continuous rotation 0..360 (plain prop -> updates because we re-render).
+  const angle = ((now % SPIN_MS) / SPIN_MS) * 360;
+  // Ping-pong 0..1 for morph + colour via a triangle-ish wave from sin.
+  const morphT = (Math.sin((now / MORPH_MS) * Math.PI * 2) + 1) / 2;
+  const hueT = (Math.sin((now / HUE_MS) * Math.PI * 2) + 1) / 2;
 
-  // Rotation is driven on the RN view layer (the proven pattern in this repo:
-  // Spinner / PullToRefresh). Animating an SVG <G> transform via animatedProps
-  // does not repaint on the installed react-native-svg, so the wheel froze.
-  const wheelStyle = useAnimatedStyle(() => {
-    'worklet';
-    return { transform: [{ rotate: `${spin.value * 360}deg` }] };
-  });
-  const triProps = useAnimatedProps(() => {
-    'worklet';
-    const r = reach.value;
-    const tip = CENTER - r;
-    const hw = r * 0.22;
-    return {
-      d: `M${CENTER} ${CENTER} L${CENTER + hw} ${tip} L${CENTER - hw} ${tip} Z`,
-      fill: interpolateColor(hue.value, [0, 0.5, 1], PALETTE.petalA),
-    };
-  });
-  const triAltProps = useAnimatedProps(() => {
-    'worklet';
-    const r = reach.value * 0.82;
-    const tip = CENTER - r;
-    const hw = r * 0.22;
-    return {
-      d: `M${CENTER} ${CENTER} L${CENTER + hw} ${tip} L${CENTER - hw} ${tip} Z`,
-      fill: interpolateColor(hue.value, [0, 0.5, 1], PALETTE.petalB),
-    };
-  });
-  const shardProps = useAnimatedProps(() => {
-    'worklet';
-    const r = reach.value;
-    const tip = CENTER - r * 0.62;
-    const ctrl = CENTER - r * 0.3;
-    const w = r * 0.06;
-    return {
-      d: `M${CENTER} ${CENTER} L${CENTER + w} ${ctrl} Q${CENTER} ${tip} ${CENTER - w} ${ctrl} Z`,
-      fill: interpolateColor(hue.value, [0, 0.5, 1], PALETTE.shard),
-    };
-  });
-  const flowerProps = useAnimatedProps(() => {
-    'worklet';
-    return { fill: interpolateColor(hue.value, [0, 0.5, 1], PALETTE.shard) };
-  });
-
+  const reach = REACH_MIN + (REACH_MAX - REACH_MIN) * morphT;
+  const { tri, triAlt, shard } = wedgePaths(reach);
+  const triFill = cycleColor(PALETTE.petalA, hueT);
+  const triAltFill = cycleColor(PALETTE.petalB, hueT);
+  const shardFill = cycleColor(PALETTE.shard, hueT);
   const flower = flowerPath(13, 8);
 
   // One square stage sized to the LARGER screen dimension and absolutely
-  // centred (negative offsets). The square's centre == the exact screen
-  // centre on any aspect ratio, and since the edge >= both dims it still
-  // covers the screen edge to edge (flat bg shows in any thin margin). Every
-  // layer shares the same square + viewBox 0 0 100 100, so the field, the
-  // wheel's rotation origin, and the flower centre all collapse onto (50,50)
-  // == screen centre. The wheel spins around that same point (no orbit).
+  // centred (negative offsets). The square's centre == the exact screen centre
+  // on any aspect ratio, and since the edge >= both dims it still covers the
+  // screen edge to edge (flat bg shows in any thin margin). Every layer shares
+  // the same square + viewBox 0 0 100 100, so the field, the wheel's rotation
+  // origin, and the flower centre all collapse onto (50,50) == screen centre.
+  // The wheel spins around that same point (no orbit).
   const edge = Math.max(width, height);
   const stage = { width: edge, height: edge, left: (width - edge) / 2, top: (height - edge) / 2 };
 
@@ -119,27 +89,17 @@ export function KaleidoscopeSplash({ bg }: { bg: string }): React.ReactElement {
       <Box style={[styles.stage, stage]}>
         <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
           <Circle cx={CENTER} cy={CENTER} r={71} fill={PALETTE.field} />
-        </Svg>
-        <Animated.View style={[StyleSheet.absoluteFill, wheelStyle]}>
-          <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+          <G rotation={angle} origin={`${CENTER}, ${CENTER}`}>
             {Array.from({ length: SEGMENTS }).map((_, i) => (
               <G key={i} rotation={(i / SEGMENTS) * 360} origin={`${CENTER}, ${CENTER}`}>
-                <AnimatedPath animatedProps={triProps} />
-                <AnimatedPath animatedProps={triAltProps} opacity={0.85} />
-                <AnimatedPath animatedProps={shardProps} opacity={0.9} />
+                <Path d={tri} fill={triFill} />
+                <Path d={triAlt} fill={triAltFill} opacity={0.85} />
+                <Path d={shard} fill={shardFill} opacity={0.9} />
               </G>
             ))}
-          </Svg>
-        </Animated.View>
-        <Svg
-          width="100%"
-          height="100%"
-          viewBox="0 0 100 100"
-          preserveAspectRatio="xMidYMid meet"
-          style={StyleSheet.absoluteFill}
-        >
+          </G>
           <Circle cx={CENTER} cy={CENTER} r={20} fill={PALETTE.field} opacity={0.9} />
-          <AnimatedPath d={flower} animatedProps={flowerProps} opacity={0.95} />
+          <Path d={flower} fill={shardFill} opacity={0.95} />
           <Circle cx={CENTER} cy={CENTER} r={6} fill={PALETTE.field} />
         </Svg>
       </Box>
