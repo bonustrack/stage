@@ -10,7 +10,6 @@ import { Button } from '@metro-labs/kit/button';
 import { Spacer } from '@metro-labs/kit/spacer';
 import { Box, Row, Col } from './layout';
 import { usePalette, useBlockRadius, useRadius } from '../lib/theme';
-import { ComposerGradient } from './ComposerGradient';
 import { RecordingBar } from './MessengerComposer.parts';
 
 interface EditorProps {
@@ -57,18 +56,12 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
         <Box style={{ position: 'relative' }}>
           <TextInput
             ref={p.inputRef}
-            value={p.text} onChangeText={p.setText} placeholder="Ask Metro" placeholderTextColor={sub} multiline
+            value={p.text} onChangeText={p.setText} placeholder="Message" placeholderTextColor={sub} multiline
             onContentSizeChange={(e) => p.setTextareaH(e.nativeEvent.contentSize.height)}
             selection={p.selection}
             onSelectionChange={(e) => p.setSelection(e.nativeEvent.selection)}
-            style={{ color: head, fontFamily: 'Calibre-Medium', fontSize: 19, lineHeight: 23, minHeight: 24, maxHeight: 140, paddingHorizontal: 8, paddingTop: 4, paddingBottom: 8, textAlignVertical: 'top' }}
+            style={{ color: head, fontFamily: 'Calibre-Medium', fontSize: 19, lineHeight: 23, minHeight: 24, maxHeight: 210, paddingHorizontal: 8, paddingTop: 4, paddingBottom: 8, textAlignVertical: 'top' }}
           />
-          {p.textareaH > 132 ? (
-            <>
-              <ComposerGradient bg={inputBg} direction="up" top={0} height={24} />
-              <ComposerGradient bg={inputBg} direction="down" bottom={0} height={24} />
-            </>
-          ) : null}
         </Box>
       )}
       <Row align="center" gap={4}>
