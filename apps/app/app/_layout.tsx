@@ -12,7 +12,8 @@ import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import { useEffect } from 'react';
 // eslint-disable-next-line no-restricted-imports -- raw TextInput required: this sets TextInput.defaultProps app-wide for the default font (Kit Input wraps TextInput, so the global default must target the RN primitive itself).
-import { LogBox, Text, TextInput } from 'react-native';
+import { LogBox, Platform, Text, TextInput } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box } from '../components/layout';
 import { Spinner } from '../components/Spinner';
 import { Onboarding } from '../components/onboarding/Onboarding';
@@ -70,6 +71,12 @@ function isDarkBg(hex: string): boolean {
 export default function RootLayout(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { bg, toolbarBg } = usePalette();
+  /** Android system nav-bar (gesture/3-button) area: under edge-to-edge the bar
+   *  is transparent and content draws behind it, so the bottom safe-area inset
+   *  would otherwise expose the platform default. Paint it with the app `bg`
+   *  token (theme-aware) so the global footer blends with the app. Pure JS /
+   *  hot-reloadable - no native module. iOS keeps its own home-indicator area. */
+  const insets = useSafeAreaInsets();
   // Wire the persisted button radius token into the kit Button default + repaint
   // the whole tree when it changes. Mounted at the root so it's always live.
   useRadius();
@@ -138,6 +145,19 @@ export default function RootLayout(): React.ReactElement {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <KeyboardProvider>
       <StatusBar style={barStyle} translucent backgroundColor="transparent" />
+      {/* Android system-nav-bar filler: paint the bottom safe-area (behind the
+          transparent gesture / 3-button bar) with the app `bg` token so the
+          global footer area matches the app theme instead of a platform
+          default. Non-interactive, sits under everything. */}
+      {Platform.OS === 'android' && insets.bottom > 0 ? (
+        <Box
+          pointerEvents="none"
+          style={{
+            position: 'absolute', bottom: 0, left: 0, right: 0,
+            height: insets.bottom, backgroundColor: bg, zIndex: 0,
+          }}
+        />
+      ) : null}
       {/** @react-navigation/stack JS card stack (via NativeSwipeStack /
        *   withLayoutContext). SWIPE-BACK: the JS stack's `gestureEnabled` pan +
        *   `TransitionPresets.SlideFromRightIOS` (forHorizontalIOS) finger-follow
