@@ -123,14 +123,6 @@ export function pollOptionCountsInFeed(events: HistoryEntry[]): Map<string, numb
   return out;
 }
 
-/** Poll message ids → q0 multiSelect flag (single-select tallies dedupe
- *  differently than multi). Used by useVotesLayer for the question-0 fast path. */
-export function pollsInFeed(events: HistoryEntry[]): Map<string, boolean> {
-  const out = new Map<string, boolean>();
-  for (const [id, qs] of pollQuestionsInFeed(events)) out.set(id, qs[0].multiSelect === true);
-  return out;
-}
-
 /** Build `pollMessageId -> (questionIndex -> (optionIndex -> Set<voterUri>))` for
  *  every poll in the feed. Each question is tallied independently with its own
  *  multiSelect rule; the vote key (q, o) is decoded by the shared tally. */
