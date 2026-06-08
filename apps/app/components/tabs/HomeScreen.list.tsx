@@ -106,6 +106,12 @@ export function ChannelsList({
             <TopnavIdentity />
           </Row>
           <Row align="center" gap={18}>
+            {/* Search sits just before the requests icon: opens the full-width
+             *  search field over the topnav (tap-to-expand + back chevron
+             *  behavior unchanged). */}
+            <Pressable onPress={() => setSearchOpen(true)} hitSlop={8}>
+              <Icon name="search" size={24} color={head} />
+            </Pressable>
             {/* Message requests: inbox icon + count badge (pending 'unknown'
              *  consent convs). Badge hidden when 0; tap opens the requests list. */}
             <Pressable onPress={() => router.push('/xmtp/requests')} hitSlop={8} style={{ position: 'relative' }}>
@@ -134,11 +140,6 @@ export function ChannelsList({
               onEditProfile={() => router.push('/profile')}
               onSettings={() => router.push('/settings')}
             />
-            {/* Search sits far top-right: opens the full-width search field over
-             *  the topnav (tap-to-expand + back chevron behavior unchanged). */}
-            <Pressable onPress={() => setSearchOpen(true)} hitSlop={8}>
-              <Icon name="search" size={24} color={head} />
-            </Pressable>
           </Row>
         </Row>
       )}
