@@ -17,6 +17,14 @@ export const messagingKeys = {
   convMeta: (convId: string | null | undefined) =>
     ['xmtp', 'convMeta', convId ?? ''] as const,
   channels: (account: string) => ['xmtp', 'channels', account] as const,
+  /** A conversation's message feed, scoped to the active account (epoch) + the
+   *  conv line. The in-channel feed AND the channels-list last-message preview
+   *  both read this ONE cache, so a streamed message that lands here surfaces in
+   *  both atomically (the desync class #375 patched at open-time). The epoch is
+   *  part of the key so an in-place account switch (which clears feedCache)
+   *  cannot leak the previous inbox's slice into the new account's view. */
+  messages: (account: number, line: string) =>
+    ['xmtp', 'messages', account, line] as const,
 } as const;
 
 export type { ConvMeta };
