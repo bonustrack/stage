@@ -22,21 +22,80 @@ function contains(buf: Uint8Array, ascii: string): boolean {
   return false;
 }
 
-/** Build a tiny valid-shaped JPEG: SOI, APP0(JFIF), APP1(EXIF w/ GPS marker),
- *  a DQT segment standing in for image tables, SOS + 1 byte scan, EOI. */
+/** Build a realistic JPEG carrying a genuine little-endian TIFF EXIF block:
+ *  IFD0 with Orientation(=6) + a Make string ("iPhone") + an Exif-subIFD pointer,
+ *  and an Exif sub-IFD with a LightSource tag - i.e. the exact stub shape Less saw
+ *  surviving. Plus an APP2 ICC_PROFILE. The ASCII leaks (GPS/Model/LightSource)
+ *  are embedded so the test can prove they are gone, and Orientation=6 lets us
+ *  prove it is preserved. SOI, APP0(JFIF kept), APP1(EXIF drop), APP2(ICC drop),
+ *  DQT, SOS + scan, EOI. */
+const ORIENT = 6;
 function makeJpegWithExif(): Uint8Array {
-  const app1Payload = [...'Exif\0\0GPSLatitude 51.5074 GPSLongitude -0.1278 Model iPhone'].map((c) => c.charCodeAt(0));
+  // TIFF: II, magic 42, IFD0 @8. IFD0 has 3 entries, then Exif sub-IFD.
+  const ifd0Off = 8;
+  const ifd0EntryCount = 3;
+  const ifd0End = ifd0Off + 2 + ifd0EntryCount * 12 + 4; // entries + next-IFD ptr
+  const makeStr = 'iPhone\0'; // device leak, count 7
+  const makeOff = ifd0End; // ASCII data sits after IFD0
+  const exifIfdOff = makeOff + makeStr.length;
+  const tiff: number[] = [];
+  const w16 = (v: number): number[] => [v & 0xff, (v >> 8) & 0xff];
+  const w32 = (v: number): number[] => [v & 0xff, (v >> 8) & 0xff, (v >> 16) & 0xff, (v >> 24) & 0xff];
+  tiff.push(0x49, 0x49, 0x2a, 0x00, ...w32(ifd0Off)); // header
+  tiff.push(...w16(ifd0EntryCount));
+  tiff.push(...w16(0x0112), ...w16(3), ...w32(1), ...w16(ORIENT), 0, 0); // Orientation SHORT
+  tiff.push(...w16(0x010f), ...w16(2), ...w32(makeStr.length), ...w32(makeOff)); // Make ASCII -> "iPhone"
+  tiff.push(...w16(0x8769), ...w16(4), ...w32(1), ...w32(exifIfdOff)); // ExifIFDPointer
+  tiff.push(...w32(0)); // next IFD = 0
+  for (const c of makeStr) tiff.push(c.charCodeAt(0)); // Make string data
+  // Exif sub-IFD: 1 entry LightSource, then an ASCII breadcrumb so the test can grep it.
+  const lightStr = 'LightSource\0';
+  const lightOff = exifIfdOff + 2 + 1 * 12 + 4;
+  tiff.push(...w16(1));
+  tiff.push(...w16(0x9208), ...w16(2), ...w32(lightStr.length), ...w32(lightOff)); // LightSource as ASCII breadcrumb
+  tiff.push(...w32(0));
+  for (const c of lightStr) tiff.push(c.charCodeAt(0));
+  // Drop in obvious GPS/timestamp ASCII leaks at the tail so contains() can find them pre-strip.
+  for (const c of 'GPSLatitude 51.5074 GPSLongitude -0.1278 2026:06:08 12:00:00') tiff.push(c.charCodeAt(0));
+  const app1Payload = [...'Exif\0\0'].map((c) => c.charCodeAt(0)).concat(tiff);
   const app1Len = app1Payload.length + 2;
-  const dqt = [0xff, 0xdb, 0x00, 0x04, 0x00, 0x00]; // marker + len(4) + 2 data bytes
+  const iccPayload = [...'ICC_PROFILE\0'].map((c) => c.charCodeAt(0)).concat([1, 1, ...Array(32).fill(0x5a)]);
+  const iccLen = iccPayload.length + 2;
+  const dqt = [0xff, 0xdb, 0x00, 0x04, 0x00, 0x00];
   return Uint8Array.from([
     0xff, 0xd8, // SOI
     0xff, 0xe0, 0x00, 0x04, 0x00, 0x00, // APP0 JFIF-ish (kept)
-    0xff, 0xe1, (app1Len >> 8) & 0xff, app1Len & 0xff, ...app1Payload, // APP1 EXIF (drop)
+    0xff, 0xe1, (app1Len >> 8) & 0xff, app1Len & 0xff, ...app1Payload, // APP1 EXIF (drop, keep orientation)
+    0xff, 0xe2, (iccLen >> 8) & 0xff, iccLen & 0xff, ...iccPayload, // APP2 ICC (drop)
     ...dqt,
     0xff, 0xda, 0x00, 0x03, 0x00, // SOS marker + len(3) + 1 byte
     0xaa, // scan data
     0xff, 0xd9, // EOI
   ]);
+}
+
+/** Read the Orientation tag back out of a stripped JPEG's APP1 (if any). Returns
+ *  undefined when there is no APP1 at all. */
+function readOrientation(b: Uint8Array): number | undefined {
+  let i = 2;
+  while (i + 4 < b.length) {
+    if (b[i] !== 0xff) { i += 1; continue; }
+    const m = b[i + 1];
+    if (m === 0xda || m === 0xd9) break;
+    const len = (b[i + 2] << 8) | b[i + 3];
+    if (m === 0xe1) {
+      const p = b.subarray(i + 4, i + 2 + len);
+      // "Exif\0\0" + II + magic + IFD0@8
+      const ifd0 = 6 + 8;
+      const count = p[ifd0] | (p[ifd0 + 1] << 8);
+      for (let k = 0; k < count; k += 1) {
+        const e = ifd0 + 2 + k * 12;
+        if ((p[e] | (p[e + 1] << 8)) === 0x0112) return p[e + 8] | (p[e + 9] << 8);
+      }
+    }
+    i += 2 + len;
+  }
+  return undefined;
 }
 
 /** Build a tiny valid-shaped PNG: signature, IHDR, tEXt(comment), eXIf, IDAT,
@@ -82,22 +141,60 @@ function makeWebpWithExif(): Uint8Array {
 }
 
 describe('stripMetadataBytes - JPEG', () => {
-  test('removes APP1 EXIF/GPS while keeping image data + EOI', () => {
+  test('removes ALL EXIF (GPS/device/timestamp/LightSource) + ICC, keeps only orientation', () => {
     const input = makeJpegWithExif();
-    expect(contains(input, 'GPSLatitude')).toBe(true); // sanity: input is dirty
+    // sanity: input carries every sensitive marker + an ICC profile
+    expect(contains(input, 'GPSLatitude')).toBe(true);
+    expect(contains(input, 'GPSLongitude')).toBe(true);
+    expect(contains(input, 'iPhone')).toBe(true);
+    expect(contains(input, '2026:06:08')).toBe(true);
+    expect(contains(input, 'LightSource')).toBe(true);
+    expect(contains(input, 'ICC_PROFILE')).toBe(true);
+
     const { bytes, stripped, format } = stripMetadataBytes(input);
     expect(format).toBe('jpeg');
     expect(stripped).toBe(true);
+
+    // NO residual sensitive metadata of any kind
     expect(contains(bytes, 'GPSLatitude')).toBe(false);
     expect(contains(bytes, 'GPSLongitude')).toBe(false);
-    expect(contains(bytes, 'Model')).toBe(false);
     expect(contains(bytes, 'iPhone')).toBe(false);
+    expect(contains(bytes, '2026:06:08')).toBe(false); // timestamp gone
+    expect(contains(bytes, 'LightSource')).toBe(false); // stray sub-IFD tag gone
+    expect(contains(bytes, 'ICC_PROFILE')).toBe(false); // APP2 ICC gone
+
+    // Orientation IS preserved (non-default 6) via a rebuilt minimal APP1.
+    expect(readOrientation(bytes)).toBe(ORIENT);
+
     // image survives: still starts with SOI and ends with EOI, smaller than input
     expect(bytes[0]).toBe(0xff);
     expect(bytes[1]).toBe(0xd8);
     expect(bytes[bytes.length - 2]).toBe(0xff);
     expect(bytes[bytes.length - 1]).toBe(0xd9);
     expect(bytes.length).toBeLessThan(input.length);
+  });
+
+  test('default orientation (1) leaves NO EXIF APP1 at all', () => {
+    // Same fixture but with orientation patched to the default 1: we should emit
+    // ZERO APP1 (no point re-inserting a no-op orientation marker).
+    const input = makeJpegWithExif();
+    // The first IFD0 entry is Orientation; its value sits at the marker offset.
+    // Find the "Exif\0\0" + II header, then patch the Orientation value to 1.
+    const exifAt = (() => {
+      for (let i = 0; i + 6 < input.length; i += 1) {
+        if (input[i] === 0x45 && input[i + 1] === 0x78 && input[i + 2] === 0x69 && input[i + 3] === 0x66) return i;
+      }
+      return -1;
+    })();
+    const tiff = exifAt + 6;
+    const ifd0 = tiff + 8;
+    // entry 0 is Orientation (we wrote it first); SHORT value at entry+8.
+    const valueAt = ifd0 + 2 + 8;
+    input[valueAt] = 1; input[valueAt + 1] = 0;
+    const { bytes } = stripMetadataBytes(input);
+    expect(contains(bytes, 'ICC_PROFILE')).toBe(false);
+    expect(contains(bytes, 'iPhone')).toBe(false);
+    expect(readOrientation(bytes)).toBeUndefined(); // no APP1 emitted at all
   });
 });
 
