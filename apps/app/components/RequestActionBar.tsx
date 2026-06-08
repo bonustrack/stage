@@ -39,17 +39,21 @@ function syncConsentBestEffort(): void {
 export interface RequestActionBarProps {
   convId: string;
   dark: boolean;
-  /** Called once consent resolves to `'allowed'` (either because the user tapped
-   *  Approve here, or it was accepted elsewhere) so the parent can swap this bar
-   *  out for the normal composer. */
-  onAllowed: () => void;
+  /** Reports whether the open conversation is a pending message request. The
+   *  parent defaults to showing the composer and only hides it (swapping in this
+   *  bar) when this fires `true`. Fired `false` when consent is allowed/denied,
+   *  resolution fails, or the user approves here, so the composer (re)appears.
+   *  Defaulting the parent to composer-visible avoids flashing the composer in
+   *  late for the common already-accepted case. */
+  onPending: (pending: boolean) => void;
 }
 
 /** Bottom action row for a pending message request. Renders nothing until it has
- *  confirmed the conversation is actually a pending request; once allowed, it
- *  calls `onAllowed` and renders nothing (the parent shows the composer). */
+ *  confirmed the conversation is actually a pending request; while pending it
+ *  reports `onPending(true)` and renders the Approve/Reject row. Once allowed it
+ *  reports `onPending(false)` and renders nothing (the parent shows composer). */
 export function RequestActionBar(props: RequestActionBarProps): React.ReactElement | null {
-  const { convId, dark, onAllowed } = props;
+  const { convId, dark, onPending } = props;
   const router = useRouter();
   const { bg, border, text: fg, link, danger, toolbarBg } = usePalette();
   const [pending, setPending] = useState<boolean | null>(null);
@@ -63,10 +67,10 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
       try {
         const state = await getConvConsentState(convId);
         if (cancelled) return;
-        if (state === 'unknown') setPending(true);
-        else { setPending(false); onAllowed(); }
+        if (state === 'unknown') { setPending(true); onPending(true); }
+        else { setPending(false); onPending(false); }
       } catch {
-        if (!cancelled) { setPending(false); onAllowed(); }
+        if (!cancelled) { setPending(false); onPending(false); }
       }
     };
     void resolve();
@@ -78,15 +82,15 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
       cancelled = true;
       if (cancelConsent) try { cancelConsent(); } catch { /* ignore */ }
     };
-  }, [convId, onAllowed]);
+  }, [convId, onPending]);
 
   const onApprove = useCallback((): void => {
     if (busy) return;
     setBusy(true);
     void acceptRequestConv(convId)
-      .then(() => { syncConsentBestEffort(); setPending(false); onAllowed(); })
+      .then(() => { syncConsentBestEffort(); setPending(false); onPending(false); })
       .catch(() => { setBusy(false); });
-  }, [busy, convId, onAllowed]);
+  }, [busy, convId, onPending]);
 
   const onReject = useCallback((): void => {
     if (busy) return;
