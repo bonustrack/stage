@@ -39,28 +39,42 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
         <Title dark={dark} level={3} color={head}>Level 3 title</Title>
       </GallerySection>
 
-      <GallerySection name="Text" note="Body / secondary / caption / mono variants" {...sec} innerPadH={14} innerPadV={12}>
-        <Text dark={dark} variant="body">Body text - the default paragraph style.</Text>
-        <Text dark={dark} variant="secondary">Secondary text - muted supporting copy.</Text>
-        <Text dark={dark} variant="caption">Caption text - smallest label.</Text>
-        <Text dark={dark} variant="mono">0xabc...1234</Text>
+      <GallerySection name="Text" note="ChatKit value / size / weight / textAlign" {...sec} innerPadH={14} innerPadV={12}>
+        <Text dark={dark} value="Body text - the default paragraph style." />
+        <Text dark={dark} color={sub} value="Secondary text - muted supporting copy." />
+        <Text dark={dark} color={sub} size="sm" value="Caption text - smallest label." />
+        <Text dark={dark} weight="semibold" textAlign="center" value="Semibold, centered." />
+        <Text dark={dark} italic lineThrough value="Italic + line-through." />
+        <Text dark={dark} variant="mono" value="0xabc...1234" />
       </GallerySection>
 
-      <GallerySection name="Button" note="Variants + sizes + icon / pill" {...sec} innerPadH={14} innerPadV={12}>
+      <GallerySection name="Button" note="ChatKit color + variant + size + iconStart/iconEnd" {...sec} innerPadH={14} innerPadV={12}>
         <Row gap={8} style={{ flexWrap: 'wrap' }}>
-          <Button dark={dark} variant="primary" label="Primary" />
-          <Button dark={dark} variant="secondary" label="Secondary" />
-          <Button dark={dark} variant="ghost" label="Ghost" />
-          <Button dark={dark} variant="danger" label="Danger" />
+          <Button dark={dark} color="primary" label="Primary" />
+          <Button dark={dark} color="secondary" label="Secondary" />
+          <Button dark={dark} color="primary" variant="ghost" label="Ghost" />
+          <Button dark={dark} color="danger" label="Danger" />
+        </Row>
+        <Row gap={8} mt={10} style={{ flexWrap: 'wrap' }}>
+          <Button dark={dark} color="info" variant="soft" label="Soft" />
+          <Button dark={dark} color="success" variant="outline" label="Outline" />
+          <Button dark={dark} color="warning" label="Warning" />
         </Row>
         <Row gap={8} mt={10} style={{ alignItems: 'center', flexWrap: 'wrap' }}>
           <Button dark={dark} size="sm" label="Small" />
           <Button dark={dark} size="lg" label="Large" />
+          <Button dark={dark} block label="Block" />
+        </Row>
+        <Row gap={8} mt={10} style={{ alignItems: 'center', flexWrap: 'wrap' }}>
           <Button
-            dark={dark} variant="primary"
-            label="With icon" icon={<Icon name="check" size={18} color={dark ? '#000' : '#fff'} />}
+            dark={dark} color="primary"
+            label="iconStart" iconStart={<Icon name="check" size={18} color={dark ? '#000' : '#fff'} />}
           />
-          <Button dark={dark} variant="secondary" pill icon={<Icon name="cog" size={18} color={head} />} />
+          <Button
+            dark={dark} color="secondary"
+            label="iconEnd" iconEnd={<Icon name="check" size={18} color={head} />}
+          />
+          <Button dark={dark} color="secondary" pill iconStart={<Icon name="cog" size={18} color={head} />} />
         </Row>
       </GallerySection>
 

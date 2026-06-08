@@ -1,11 +1,47 @@
-/** Button styling internals — size specs, variant colour resolution, and the
- *  label text style. Split out of button.tsx to keep each module ≤200 lines.
- *  Mirrors the palette convention in apps/app/lib/theme.ts (head/bg/rowBg/border). */
+/** Button styling internals - size specs, colour resolution, and the label
+ *  text style. Split out of button.tsx to keep each module small.
+ *  Mirrors the palette convention in apps/app/lib/theme.ts (head/bg/rowBg/border).
+ *
+ *  ChatKit reconciliation: the canonical API mirrors OpenAI ChatKit's Button:
+ *  `color` (semantic palette: primary/secondary/info/discovery/success/caution/
+ *  warning/danger) + `variant` (solid/soft/outline/ghost). The legacy app prop
+ *  `variant` historically carried COLOUR names (primary/secondary/ghost/danger);
+ *  those still resolve, mapped onto the new colour+variant model, so the 20+
+ *  existing call sites keep working unchanged. */
 
 import type { TextStyle } from 'react-native';
 
+/** ChatKit semantic colour. The canonical `color` prop. */
+export type ButtonColor =
+  | 'primary'
+  | 'secondary'
+  | 'info'
+  | 'discovery'
+  | 'success'
+  | 'caution'
+  | 'warning'
+  | 'danger';
+
+/** ChatKit control variant - the visual treatment of the colour. */
+export type ButtonControlVariant = 'solid' | 'soft' | 'outline' | 'ghost';
+
+/** ChatKit control size scale. The canonical `size` prop accepts the full
+ *  scale; the four legacy tokens (sm/md/lg/xl) keep their exact dimensions. */
+export type ButtonSize =
+  | '3xs'
+  | '2xs'
+  | 'xs'
+  | 'sm'
+  | 'md'
+  | 'lg'
+  | 'xl'
+  | '2xl'
+  | '3xl';
+
+/** @deprecated Legacy app `variant` values. These carried colour names AND an
+ *  implied treatment (ghost = transparent). Kept as aliases so existing call
+ *  sites compile and render identically. Prefer `color` + `variant`. */
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
-export type ButtonSize = 'sm' | 'md' | 'lg' | 'xl';
 
 export interface SizeSpec {
   height: number;
@@ -16,12 +52,17 @@ export interface SizeSpec {
 }
 
 export const SIZES: Record<ButtonSize, SizeSpec> = {
+  '3xs': { height: 24, paddingHorizontal: 8, fontSize: 12, gap: 4, spinner: 'small' },
+  '2xs': { height: 28, paddingHorizontal: 10, fontSize: 13, gap: 6, spinner: 'small' },
+  xs: { height: 30, paddingHorizontal: 11, fontSize: 13, gap: 6, spinner: 'small' },
   sm: { height: 32, paddingHorizontal: 12, fontSize: 14, gap: 6, spinner: 'small' },
   md: { height: 40, paddingHorizontal: 16, fontSize: 15, gap: 8, spinner: 'small' },
   lg: { height: 48, paddingHorizontal: 20, fontSize: 16, gap: 8, spinner: 'small' },
-  // `xl` is sized so a `pill` icon-only Button renders a 56×56 circle — the
+  // `xl` is sized so a `pill` icon-only Button renders a 56x56 circle - the
   // original wallet/profile action-circle size. Used icon-only (label below).
   xl: { height: 56, paddingHorizontal: 24, fontSize: 16, gap: 8, spinner: 'small' },
+  '2xl': { height: 64, paddingHorizontal: 28, fontSize: 18, gap: 10, spinner: 'large' },
+  '3xl': { height: 72, paddingHorizontal: 32, fontSize: 20, gap: 12, spinner: 'large' },
 };
 
 export interface VariantColors {
@@ -38,27 +79,95 @@ export interface VariantColors {
 const DANGER = '#d6453d';
 const DANGER_PRESSED = '#bf3a33';
 
-/** Resolve the colour set for a variant under the given scheme, mirroring the
- *  palette convention in apps/app/lib/theme.ts (head/bg/rowBg/border). */
-export function variantColors(variant: ButtonVariant, dark: boolean): VariantColors {
+/** Semantic accent hue per ChatKit colour (used as the solid background). */
+function accent(
+  color: ButtonColor,
+  dark: boolean,
+): { bg: string; pressed: string; on: string } {
   const head = dark ? '#ffffff' : '#000000';
   const bg = dark ? '#0e0f10' : '#ffffff';
-  const rowBg = dark ? '#282a2d' : '#e4e4e5';
-  const border = dark ? '#282a2d' : '#e4e4e5';
-  switch (variant) {
+  switch (color) {
     case 'primary':
-      return { bg: head, text: bg };
-    case 'secondary':
-      return { bg: rowBg, text: head, borderColor: border };
-    case 'ghost':
+      return { bg: head, pressed: head, on: bg };
+    case 'secondary': {
+      const rowBg = dark ? '#282a2d' : '#e4e4e5';
+      return { bg: rowBg, pressed: rowBg, on: head };
+    }
+    case 'info':
+      return { bg: '#2f6df6', pressed: '#285fd6', on: '#ffffff' };
+    case 'discovery':
+      return { bg: '#8b5cf6', pressed: '#7a4de0', on: '#ffffff' };
+    case 'success':
+      return { bg: '#1f9d57', pressed: '#1b894c', on: '#ffffff' };
+    case 'caution':
+      return { bg: '#e0a106', pressed: '#c78d05', on: '#1a1300' };
+    case 'warning':
+      return { bg: '#e07a0c', pressed: '#c76a0a', on: '#ffffff' };
+    case 'danger':
+      return { bg: DANGER, pressed: DANGER_PRESSED, on: '#ffffff' };
+  }
+}
+
+/** Resolve a colour set from the canonical ChatKit `color` + `variant` model. */
+export function resolveColors(
+  color: ButtonColor,
+  variant: ButtonControlVariant,
+  dark: boolean,
+): VariantColors {
+  const a = accent(color, dark);
+  const border = dark ? '#282a2d' : '#e4e4e5';
+  const ghostPressedBg = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+  const neutralText = dark ? '#ffffff' : '#000000';
+  const isNeutral = color === 'primary' || color === 'secondary';
+  switch (variant) {
+    case 'solid':
+      return {
+        bg: a.bg,
+        pressedBg: a.pressed,
+        text: a.on,
+        // secondary solid keeps its hairline border (legacy look).
+        borderColor: color === 'secondary' ? border : undefined,
+      };
+    case 'soft': {
+      // tinted, low-emphasis fill on the page background.
+      const soft = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)';
+      return { bg: soft, text: isNeutral ? neutralText : a.bg, ghostPressedBg };
+    }
+    case 'outline':
       return {
         bg: 'transparent',
-        text: head,
-        ghostPressedBg: dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+        text: isNeutral ? neutralText : a.bg,
+        borderColor: isNeutral ? border : a.bg,
+        ghostPressedBg,
       };
-    case 'danger':
-      return { bg: DANGER, pressedBg: DANGER_PRESSED, text: '#ffffff' };
+    case 'ghost':
+      return { bg: 'transparent', text: isNeutral ? neutralText : a.bg, ghostPressedBg };
   }
+}
+
+/** @deprecated Map a legacy app `variant` (colour-name) onto the canonical
+ *  `color` + `variant` model so old usages render exactly as before. */
+export function legacyVariantToColor(v: ButtonVariant): {
+  color: ButtonColor;
+  variant: ButtonControlVariant;
+} {
+  switch (v) {
+    case 'primary':
+      return { color: 'primary', variant: 'solid' };
+    case 'secondary':
+      return { color: 'secondary', variant: 'solid' };
+    case 'ghost':
+      return { color: 'primary', variant: 'ghost' };
+    case 'danger':
+      return { color: 'danger', variant: 'solid' };
+  }
+}
+
+/** @deprecated Back-compat shim: resolve colours straight from a legacy
+ *  `variant`. Retained for any external importer. */
+export function variantColors(variant: ButtonVariant, dark: boolean): VariantColors {
+  const { color, variant: cv } = legacyVariantToColor(variant);
+  return resolveColors(color, cv, dark);
 }
 
 export function textLabelStyle(spec: SizeSpec, color: string): TextStyle {
