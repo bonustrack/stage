@@ -12,7 +12,7 @@ import {
 import { getCachedXmtpClient, getOrCreateXmtpClient, convOfLine } from './xmtp.client';
 import { type LocalAttachmentInput } from './xmtp.types';
 import {
-  EXT_MIME, materializeFileUri, uploadEncryptedToIpfs, swarmToHttp,
+  EXT_MIME, materializeFileUri, sanitizeFileUri, uploadEncryptedToIpfs, swarmToHttp,
 } from './xmtp.swarm';
 
 export { swarmToHttp } from './xmtp.swarm';
@@ -50,8 +50,13 @@ export async function xmtpSendMultiRemoteAttachment(
     const mimeType = f.mimeType && f.mimeType.includes('/')
       ? f.mimeType
       : (EXT_MIME[f.filename.split('.').pop()?.toLowerCase() ?? ''] ?? 'application/octet-stream');
+    /** Force-strip embedded metadata (EXIF/GPS/XMP/ICC/timestamps) from images
+     *  BEFORE encryption so the recipient never receives a photo carrying the
+     *  sender's location or device fingerprint. Non-image / unsupported formats
+     *  pass through unchanged (see sanitizeFileUri). */
+    const cleanUri = await sanitizeFileUri(fileUri, mimeType, f.filename);
     const encrypted = await client.encryptAttachment({
-      fileUri, mimeType, filename: f.filename,
+      fileUri: cleanUri, mimeType, filename: f.filename,
     });
     const url = await uploadEncryptedToIpfs(encrypted.encryptedLocalFileUri, f.filename);
     /** `buildMultiRemoteAttachmentInfo` stitches the upload URL onto the encryption

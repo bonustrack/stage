@@ -4,6 +4,7 @@
  *  behavior byte-identical. */
 
 import { File, Paths } from 'expo-file-system';
+import { stripMetadataBytes, isStrippableImage } from './stripMetadata';
 
 /** Pineapple = Snapshot's IPFS pinning gateway. Reused from the avatar-upload
  *  path (`lib/profile.ts`); attachments are encrypted client-side before upload,
@@ -62,6 +63,38 @@ export async function materializeFileUri(src: string): Promise<string> {
   dest.create();
   dest.write(buf);
   return dest.uri.startsWith('file://') ? dest.uri : `file://${dest.uri.replace(/^file:\/+/, '/')}`;
+}
+
+/** Force-strip embedded metadata (EXIF/GPS/XMP/ICC/timestamps) from a staged
+ *  `file://` image before it is encrypted and uploaded. Reads the bytes off disk,
+ *  runs them through the pure-JS container rewriter (`stripMetadataBytes`), and -
+ *  if anything changed - writes the sanitised bytes to a fresh cache file whose
+ *  uri is returned. Non-image / unsupported formats (video, docs, HEIC) return
+ *  the input uri UNCHANGED: we never claim a file is clean when we cannot strip
+ *  it. Failures fall back to the original uri so a send is never blocked.
+ *
+ *  This is the single chokepoint: `xmtpSendMultiRemoteAttachment` calls it for
+ *  every non-audio attachment, so EVERY image send is sanitised, not optionally. */
+export async function sanitizeFileUri(
+  uri: string, mimeType: string | undefined, filename: string | undefined,
+): Promise<string> {
+  if (!isStrippableImage(mimeType, filename)) return uri;
+  try {
+    const blob = await (await fetch(uri)).blob();
+    const input = new Uint8Array(await blob.arrayBuffer());
+    const { bytes, stripped } = stripMetadataBytes(input);
+    if (!stripped || bytes.length === input.length && bytes.every((v, k) => v === input[k])) {
+      return uri; // nothing removed (no metadata present) - keep original file
+    }
+    const ext = (filename ?? uri).split('?')[0]?.split('.').pop()?.toLowerCase() ?? 'img';
+    const dest = new File(Paths.cache, `xmtp-clean-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext.length <= 5 ? ext : 'img'}`);
+    if (dest.exists) try { dest.delete(); } catch { /* overwrite below */ }
+    dest.create();
+    dest.write(bytes);
+    return dest.uri.startsWith('file://') ? dest.uri : `file://${dest.uri.replace(/^file:\/+/, '/')}`;
+  } catch {
+    return uri; // never block a send on a strip failure
+  }
 }
 
 /** Upload an encrypted attachment's ciphertext to Swarm (via the Metro daemon
