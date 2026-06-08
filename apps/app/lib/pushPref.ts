@@ -3,61 +3,38 @@
  *  A single persisted boolean gating whether this device registers its push
  *  token with the daemon. The auto-registration path (`registerPushWithDaemon`,
  *  called on client-ready / account switch) consults `isPushEnabled()` and
- *  no-ops when the user has turned push OFF — so disabling stops the device
+ *  no-ops when the user has turned push OFF, so disabling stops the device
  *  from re-registering its token. Default is ON (push works out of the box,
  *  matching prior behaviour).
  *
- *  Dependency-free pub/sub (same shape as lib/pins.ts) so the Settings toggle
- *  re-renders the instant the preference flips, and an in-memory cache so the
- *  registration path can read it synchronously after a one-time load. */
+ *  Built on the shared lib/persistedStore.ts value-store factory; the in-memory
+ *  mirror lets the registration path read synchronously after a one-time load,
+ *  and the pub/sub repaints the Settings toggle the instant it flips. */
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createValueStore } from './persistedStore';
 
 const STORAGE_KEY = 'push.enabled';
 
-/** In-memory mirror. Defaults to enabled until the persisted value loads. */
-let cache = true;
-let loaded = false;
-
-const subscribers = new Set<() => void>();
-
-function notify(): void {
-  for (const cb of subscribers) {
-    try { cb(); } catch { /* a bad subscriber shouldn't break the rest */ }
-  }
-}
+/** Stored as '1' / '0'. Missing or unrecognised -> default ON. The historical
+ *  loader also treated the legacy string 'false' as off. */
+const store = createValueStore<boolean>({
+  key: STORAGE_KEY,
+  default: true,
+  serialize: (v) => (v ? '1' : '0'),
+  deserialize: (raw) => (raw === '0' || raw === 'false' ? false : true),
+  alwaysNotify: true,
+});
 
 /** Read the persisted preference once and cache it. Subsequent calls return the
- *  cached value without touching storage. Missing → enabled (default ON). */
-export async function loadPushEnabled(): Promise<boolean> {
-  if (loaded) return cache;
-  try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
-    if (raw === '0' || raw === 'false') cache = false;
-    else cache = true;
-  } catch { /* corrupt/missing → default ON */ }
-  loaded = true;
-  return cache;
-}
+ *  cached value without touching storage. Missing -> enabled (default ON). */
+export const loadPushEnabled = (): Promise<boolean> => store.load();
 
 /** Synchronous read from the in-memory cache. Returns the default (true) until
  *  `loadPushEnabled` has run. */
-export function isPushEnabledSync(): boolean {
-  return cache;
-}
+export const isPushEnabledSync = (): boolean => store.get();
 
 /** Persist + apply a new preference, update the cache, and notify subscribers. */
-export async function setPushEnabled(enabled: boolean): Promise<void> {
-  cache = enabled;
-  loaded = true;
-  notify();
-  try {
-    await AsyncStorage.setItem(STORAGE_KEY, enabled ? '1' : '0');
-  } catch { /* best-effort — the in-memory cache still reflects the toggle */ }
-}
+export const setPushEnabled = (enabled: boolean): Promise<void> => store.setAsync(enabled);
 
 /** Subscribe to preference changes. Returns an unsubscribe fn. */
-export function subscribePushPref(cb: () => void): () => void {
-  subscribers.add(cb);
-  return () => { subscribers.delete(cb); };
-}
+export const subscribePushPref = (cb: () => void): () => void => store.subscribe(cb);
