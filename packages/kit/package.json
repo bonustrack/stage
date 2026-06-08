@@ -24,7 +24,12 @@
     "./divider": "./src/divider.tsx",
     "./caption": "./src/caption.tsx",
     "./image": "./src/image.tsx",
-    "./spacer": "./src/spacer.tsx"
+    "./spacer": "./src/spacer.tsx",
+    "./label": "./src/label.tsx",
+    "./input": "./src/input.tsx",
+    "./textarea": "./src/textarea.tsx",
+    "./checkbox": "./src/checkbox.tsx",
+    "./radio-group": "./src/radio-group.tsx"
   },
   "peerDependencies": {
     "react": "*",
