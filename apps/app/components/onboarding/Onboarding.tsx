@@ -16,6 +16,7 @@
  *  resets the flag so this shows again for testing. */
 
 import { useCallback, useRef, useState } from 'react';
+import { fontSize } from '@metro-labs/kit/tokens';
 import {
   FlatList,
   Pressable,
@@ -125,7 +126,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
             <Text
               style={{
                 color: fg,
-                fontSize: 28,
+                fontSize: fontSize('xxxl'),
                 fontFamily: 'Calibre-Semibold',
                 textAlign: 'center',
                 marginBottom: 14,
@@ -136,7 +137,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
             <Text
               style={{
                 color: withAlpha(fg, 0.7),
-                fontSize: 17,
+                fontSize: fontSize('lg'),
                 lineHeight: 24,
                 fontFamily: 'Calibre-Medium',
                 textAlign: 'center',
@@ -188,7 +189,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
           style={{ alignItems: 'center', paddingVertical: 8, opacity: isLast ? 0 : 1 }}
           disabled={isLast}
         >
-          <Text style={{ color: withAlpha(fg, 0.6), fontSize: 16, fontFamily: 'Calibre-Medium' }}>
+          <Text style={{ color: withAlpha(fg, 0.6), fontSize: fontSize('md'), fontFamily: 'Calibre-Medium' }}>
             Skip
           </Text>
         </Pressable>

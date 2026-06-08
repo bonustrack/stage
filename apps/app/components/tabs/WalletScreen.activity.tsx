@@ -10,6 +10,7 @@
  *  chains return nothing. */
 
 import { useEffect, useState } from 'react';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Text } from '@metro-labs/kit/text';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Spinner } from '../Spinner';
@@ -59,7 +60,7 @@ export function ActivityView({ address, head, sub, border, bg }: {
       <Col mx={16}>
         {priv}
         <Col py={40} align="center">
-          <Text style={{ color: DANGER, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
+          <Text style={{ color: DANGER, fontSize: fontSize('md'), fontFamily: 'Calibre-Medium' }}>
             Couldn’t load activity
           </Text>
         </Col>
@@ -81,7 +82,7 @@ export function ActivityView({ address, head, sub, border, bg }: {
       <Col mx={16}>
         {priv}
         <Col py={40} align="center">
-          <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
+          <Text style={{ color: sub, fontSize: fontSize('md'), fontFamily: 'Calibre-Medium' }}>
             No transactions yet
           </Text>
         </Col>
@@ -126,7 +127,7 @@ function TxRow({ r, head, sub, border, bg }: {
         <Icon name={DIR_ICON[r.direction]} size={18} color={r.failed ? DANGER : head} />
       </Box>
       <Col flex={1} style={{ minWidth: 0 }}>
-        <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
+        <Text style={{ color: head, fontSize: fontSize('lg'), fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
           {title}
         </Text>
         <Row align="center" gap={6} style={{ marginTop: 2 }}>
@@ -134,20 +135,20 @@ function TxRow({ r, head, sub, border, bg }: {
             paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4,
             backgroundColor: border,
           }}>
-            <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
+            <Text style={{ color: sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
               {r.chainLabel}
             </Text>
           </Box>
-          <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium', flex: 1 }} numberOfLines={1}>
+          <Text style={{ color: sub, fontSize: fontSize('md'), fontFamily: 'Calibre-Medium', flex: 1 }} numberOfLines={1}>
             {`${partyLabel} · ${relTime(r.timestamp)}`}
           </Text>
         </Row>
       </Col>
       <Col align="end">
-        <Text style={{ color: valueColor, fontSize: 18, fontFamily: 'Calibre-Semibold' }}>
+        <Text style={{ color: valueColor, fontSize: fontSize('lg'), fontFamily: 'Calibre-Semibold' }}>
           {r.valueEth === '0' ? '—' : `${prefix}${r.valueEth} ETH`}
         </Text>
-        <Text style={{ color: r.failed ? DANGER : sub, fontSize: 15, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
+        <Text style={{ color: r.failed ? DANGER : sub, fontSize: fontSize('md'), fontFamily: 'Calibre-Medium', marginTop: 2 }}>
           {r.failed ? 'Failed' : `#${r.nonce}`}
         </Text>
       </Col>

@@ -4,6 +4,7 @@
  *  (merge-preserving write so labels survive). */
 
 import { useEffect, useState } from 'react';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Linking } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Input } from '@metro-labs/kit/input';
@@ -54,7 +55,7 @@ export function GroupGithubSection({ line, p }: { line: string; p: Pal }): React
     <Box style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
       <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
         <Icon name="code" size={13} color={sub} />
-        <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>GITHUB</Text>
+        <Text style={{ color: sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium' }}>GITHUB</Text>
       </Box>
 
       {url && !editing ? (
@@ -63,7 +64,7 @@ export function GroupGithubSection({ line, p }: { line: string; p: Pal }): React
             onPress={() => { void Linking.openURL(url); }}
             style={({ pressed }) => ({ flex: 1, opacity: pressed ? 0.6 : 1 })}
           >
-            <Text numberOfLines={1} style={{ color: fg, fontSize: 14, fontFamily: 'Calibre-Medium' }}>
+            <Text numberOfLines={1} style={{ color: fg, fontSize: fontSize('md'), fontFamily: 'Calibre-Medium' }}>
               {url.replace(/^https?:\/\/(www\.)?github\.com\//, '')}
             </Text>
           </Pressable>
@@ -85,7 +86,7 @@ export function GroupGithubSection({ line, p }: { line: string; p: Pal }): React
             style={{
               flex: 1, color: fg, backgroundColor: inputBg,
               borderWidth: 1, borderColor: border, borderRadius: 10,
-              paddingHorizontal: 10, paddingVertical: 8, fontSize: 14,
+              paddingHorizontal: 10, paddingVertical: 8, fontSize: fontSize('md'),
             }}
           />
           <Pressable
@@ -101,7 +102,7 @@ export function GroupGithubSection({ line, p }: { line: string; p: Pal }): React
             })}
           >
             {busy ? <Spinner size={14} color={fg} /> : <Icon name="check" size={14} color={fg} />}
-            <Text style={{ color: fg, fontSize: 13, fontFamily: 'Calibre-Medium' }}>Save</Text>
+            <Text style={{ color: fg, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium' }}>Save</Text>
           </Pressable>
         </Box>
       )}

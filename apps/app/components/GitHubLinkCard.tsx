@@ -9,6 +9,7 @@
  *  broken/empty card. Detection is done by the caller via `githubLinkOf`. */
 
 import { Linking } from 'react-native';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Box, Row } from './layout';
@@ -49,19 +50,19 @@ export function GitHubLinkCard({ url }: {
       <Box radius={blockRadius} style={{ borderWidth: 1, borderColor: border, backgroundColor: 'transparent', paddingHorizontal: 12, paddingVertical: 10 }}>
         <Row align="center" justify="start" style={{ marginBottom: 4 }}>
           <GithubLogo size={16} color={fg} />
-          <Text style={{ color: subColor, fontSize: 11, fontFamily: 'Calibre-Medium', marginLeft: 6 }}>
+          <Text style={{ color: subColor, fontSize: fontSize('xs'), fontFamily: 'Calibre-Medium', marginLeft: 6 }}>
             {meta.repo}{numLabel ? ` · ${numLabel}` : ''}
           </Text>
         </Row>
         <Text
-          style={{ color: fg, fontSize: 19, fontFamily: 'Calibre-Semibold' }}
+          style={{ color: fg, fontSize: fontSize('xl'), fontFamily: 'Calibre-Semibold' }}
           numberOfLines={2}
         >
           {meta.title}
         </Text>
         {meta.description ? (
           <Text
-            style={{ color: subColor, fontSize: 16, lineHeight: 21, fontFamily: 'Calibre-Medium', marginTop: 3 }}
+            style={{ color: subColor, fontSize: fontSize('md'), lineHeight: 21, fontFamily: 'Calibre-Medium', marginTop: 3 }}
             numberOfLines={2}
           >
             {meta.description}
@@ -72,27 +73,27 @@ export function GitHubLinkCard({ url }: {
             <Box style={{ width: 8, height: 8, borderRadius: 999, backgroundColor: dot, marginRight: 6 }} />
           ) : null}
           {meta.state ? (
-            <Text style={{ color: subColor, fontSize: 11, fontFamily: 'Calibre-Medium', textTransform: 'capitalize' }}>
+            <Text style={{ color: subColor, fontSize: fontSize('xs'), fontFamily: 'Calibre-Medium', textTransform: 'capitalize' }}>
               {meta.state}
             </Text>
           ) : null}
           {meta.kind === 'repo' && meta.stars != null ? (
-            <Text style={{ color: subColor, fontSize: 11, fontFamily: 'Calibre-Medium' }}>
+            <Text style={{ color: subColor, fontSize: fontSize('xs'), fontFamily: 'Calibre-Medium' }}>
               ★ {meta.stars}
             </Text>
           ) : null}
           {meta.author ? (
-            <Text style={{ color: subColor, fontSize: 11, fontFamily: 'Calibre-Medium', marginLeft: meta.state ? 8 : 0 }}>
+            <Text style={{ color: subColor, fontSize: fontSize('xs'), fontFamily: 'Calibre-Medium', marginLeft: meta.state ? 8 : 0 }}>
               {meta.author}
             </Text>
           ) : null}
           {showLoc && meta.additions != null ? (
-            <Text style={{ color: SUCCESS, fontSize: 11, fontFamily: 'Calibre-Semibold', marginLeft: 8 }}>
+            <Text style={{ color: SUCCESS, fontSize: fontSize('xs'), fontFamily: 'Calibre-Semibold', marginLeft: 8 }}>
               +{fmt(meta.additions)}
             </Text>
           ) : null}
           {showLoc && meta.deletions != null ? (
-            <Text style={{ color: DANGER, fontSize: 11, fontFamily: 'Calibre-Semibold', marginLeft: 6 }}>
+            <Text style={{ color: DANGER, fontSize: fontSize('xs'), fontFamily: 'Calibre-Semibold', marginLeft: 6 }}>
               −{fmt(meta.deletions)}
             </Text>
           ) : null}

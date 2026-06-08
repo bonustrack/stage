@@ -3,6 +3,7 @@
  *  Profile/Settings nav row. Behaviour is identical to the inlined version. */
 
 import { Box } from './layout';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Avatar } from './Avatar';
 import { Text } from '@metro-labs/kit/text';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
@@ -22,10 +23,10 @@ export function DrawerHeader({ rec, c }: {
       {rec ? (
         <>
           <Avatar address={rec.address} size={56} style={{ backgroundColor: c.border, marginBottom: 10 }} />
-          <Text numberOfLines={1} style={{ color: c.head, fontSize: 20, fontFamily: 'Calibre-Semibold' }}>
+          <Text numberOfLines={1} style={{ color: c.head, fontSize: fontSize('xl'), fontFamily: 'Calibre-Semibold' }}>
             {getPeerName(rec.address) ?? rec.label ?? shortAddress(rec.address)}
           </Text>
-          <Text numberOfLines={1} style={{ color: c.sub, fontSize: 14, fontFamily: 'Calibre-Medium', marginTop: 1 }}>
+          <Text numberOfLines={1} style={{ color: c.sub, fontSize: fontSize('md'), fontFamily: 'Calibre-Medium', marginTop: 1 }}>
             {shortAddress(rec.address)}
           </Text>
         </>
@@ -45,10 +46,10 @@ export function drawerAccountRows({ accounts, activeId, onSwitch, c, dark }: {
     <ListViewItem key={a.id} dark={dark} onPress={() => onSwitch(a.id)}>
       <Avatar address={a.address} size={30} style={{ backgroundColor: c.border }} />
       <Box style={{ flex: 1, minWidth: 0 }}>
-        <Text numberOfLines={1} style={{ color: c.head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>
+        <Text numberOfLines={1} style={{ color: c.head, fontSize: fontSize('md'), fontFamily: 'Calibre-Semibold' }}>
           {getPeerName(a.address) ?? a.label ?? shortAddress(a.address)}
         </Text>
-        <Text numberOfLines={1} style={{ color: c.sub, fontSize: 12, fontFamily: 'Calibre-Medium', marginTop: 1 }}>
+        <Text numberOfLines={1} style={{ color: c.sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium', marginTop: 1 }}>
           {shortAddress(a.address)}
         </Text>
       </Box>
@@ -68,7 +69,7 @@ export function DrawerRow({ rowKey, icon, label, onPress, head, sub, dark }: {
     <ListViewItem key={rowKey} dark={dark} onPress={onPress}>
       <Icon name={icon} size={22} color={head} />
       <Box style={{ flex: 1 }}>
-        <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Medium' }}>{label}</Text>
+        <Text style={{ color: head, fontSize: fontSize('lg'), fontFamily: 'Calibre-Medium' }}>{label}</Text>
       </Box>
       <Icon name="chevronRight" size={18} color={sub} />
     </ListViewItem>

@@ -4,6 +4,7 @@
  *  Backed by lib/xmtp.labels (read → mutate → write to MLS-synced appData). */
 
 import { useEffect, useMemo, useState } from 'react';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Input } from '@metro-labs/kit/input';
 import { Text } from '@metro-labs/kit/text';
@@ -38,7 +39,7 @@ function SuggestionChip({ label, busy, onAdd, p }: {
       })}
     >
       <Icon name="plus" size={12} color={p.sub} />
-      <Text style={{ color: p.fg, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{label}</Text>
+      <Text style={{ color: p.fg, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium' }}>{label}</Text>
     </Pressable>
   );
 }
@@ -56,7 +57,7 @@ function LabelChip({ label, busy, onRemove, p }: {
       backgroundColor: p.rowBg,
       opacity: busy ? 0.5 : 1,
     }}>
-      <Text style={{ color: p.fg, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{label}</Text>
+      <Text style={{ color: p.fg, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium' }}>{label}</Text>
       <Pressable onPress={onRemove} disabled={busy} hitSlop={8} style={{ padding: 2 }}>
         <Icon name="x" size={14} color={p.sub} />
       </Pressable>
@@ -118,7 +119,7 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
     <Box style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
       <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
         <Icon name="tag" size={13} color={sub} />
-        <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>LABELS</Text>
+        <Text style={{ color: sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium' }}>LABELS</Text>
       </Box>
 
       {labels.length > 0 ? (
@@ -148,7 +149,7 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
             style={{
               flex: 1, color: fg, backgroundColor: inputBg,
               borderWidth: 1, borderColor: border, borderRadius: 10,
-              paddingHorizontal: 10, paddingVertical: 8, fontSize: 14,
+              paddingHorizontal: 10, paddingVertical: 8, fontSize: fontSize('md'),
             }}
           />
           <Pressable
@@ -164,11 +165,11 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
             })}
           >
             {busy ? <Spinner size={14} color={fg} /> : <Icon name="plus" size={14} color={fg} />}
-            <Text style={{ color: fg, fontSize: 13, fontFamily: 'Calibre-Medium' }}>Add</Text>
+            <Text style={{ color: fg, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium' }}>Add</Text>
           </Pressable>
         </Box>
       ) : (
-        <Text style={{ color: sub, fontSize: 12, marginTop: 8, fontFamily: 'Calibre-Medium' }}>
+        <Text style={{ color: sub, fontSize: fontSize('sm'), marginTop: 8, fontFamily: 'Calibre-Medium' }}>
           Label limit reached ({MAX_LABELS}).
         </Text>
       )}

@@ -4,6 +4,7 @@
  *  diagnostics console. Reached via /settings → "Experimental" row. */
 
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box } from '../layout';
@@ -37,7 +38,7 @@ export function ExperimentalSettings(): React.ReactElement {
             <ListViewItem key={row.href} dark={dark} onPress={() => router.push(row.href)}>
               <Icon name={row.icon} size={22} color={head} />
               <Box style={{ flex: 1 }}>
-                <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Medium' }}>{row.label}</Text>
+                <Text style={{ color: head, fontSize: fontSize('lg'), fontFamily: 'Calibre-Medium' }}>{row.label}</Text>
               </Box>
               <Icon name="chevronRight" size={18} color={sub} />
             </ListViewItem>
@@ -49,7 +50,7 @@ export function ExperimentalSettings(): React.ReactElement {
           <ListViewItem dark={dark} onPress={() => { void setOnboardingSeen(false); }}>
             <Icon name="sparkles" size={22} color={head} />
             <Box style={{ flex: 1 }}>
-              <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Medium' }}>Replay onboarding</Text>
+              <Text style={{ color: head, fontSize: fontSize('lg'), fontFamily: 'Calibre-Medium' }}>Replay onboarding</Text>
             </Box>
           </ListViewItem>
         </ListView>

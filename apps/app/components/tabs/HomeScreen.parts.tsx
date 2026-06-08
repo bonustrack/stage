@@ -3,6 +3,7 @@
  *  rendering identical). */
 
 import { useCallback } from 'react';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { DevSettings, Vibration } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
@@ -100,7 +101,7 @@ export function HomeError({ error, dark, fg, bg }: {
 }): React.ReactElement {
   return (
     <Col flex={1} align="center" justify="center" p={24} bg={bg}>
-      <Text style={{ color: fg, fontSize: 15, textAlign: 'center', marginBottom: 16 , fontFamily: 'Calibre-Medium'}}>{error}</Text>
+      <Text style={{ color: fg, fontSize: fontSize('md'), textAlign: 'center', marginBottom: 16 , fontFamily: 'Calibre-Medium'}}>{error}</Text>
       <Pressable
         onPress={() => {
           void (async (): Promise<void> => {
@@ -115,7 +116,7 @@ export function HomeError({ error, dark, fg, bg }: {
           borderWidth: 1, borderColor: dark ? '#5c2231' : '#e9bbc4',
         })}
       >
-        <Text style={{ color: DANGER, fontSize: 14 , fontFamily: 'Calibre-Medium'}}>
+        <Text style={{ color: DANGER, fontSize: fontSize('md') , fontFamily: 'Calibre-Medium'}}>
           Reset XMTP identity
         </Text>
       </Pressable>

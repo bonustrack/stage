@@ -7,6 +7,7 @@
  *  Presentational pieces live in ./ProfileScreen.parts to keep this under cap. */
 
 import { useState } from 'react';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { ScrollView } from 'react-native-gesture-handler';
 import type { SimultaneousRefs } from './SwipeTabs.types';
@@ -115,7 +116,7 @@ export function ProfileScreen({ address, variant, panRef }: {
             }}
             onPress={uri => { if (uri) setViewerUri(uri); }}
           />
-          <Text style={{ color: c.link, fontSize: 20, fontFamily: 'Calibre-Semibold', marginTop: 14 }}>
+          <Text style={{ color: c.link, fontSize: fontSize('xl'), fontFamily: 'Calibre-Semibold', marginTop: 14 }}>
             {displayName}
           </Text>
           {addr ? (
@@ -124,14 +125,14 @@ export function ProfileScreen({ address, variant, panRef }: {
               hitSlop={8}
               style={{ marginTop: 2 }}
             >
-              <Text style={{ color: c.text, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
+              <Text style={{ color: c.text, fontSize: fontSize('md'), fontFamily: 'Calibre-Medium' }}>
                 {shortAddress(addr)}
               </Text>
             </Pressable>
           ) : null}
           {profile?.about?.trim() ? (
             <Text style={{
-              color: c.text, fontSize: 14, marginTop: 6, textAlign: 'left',
+              color: c.text, fontSize: fontSize('md'), marginTop: 6, textAlign: 'left',
               fontFamily: 'Calibre-Medium',
             }}>
               {profile.about}

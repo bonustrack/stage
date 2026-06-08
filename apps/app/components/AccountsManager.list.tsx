@@ -3,6 +3,7 @@
  *  AccountsManager for lint line-budget. Rendering identical. */
 
 import { Pressable } from '@metro-labs/kit/pressable';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Box } from './layout';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
@@ -21,14 +22,14 @@ export function AccountList({
 }): React.ReactElement {
   const manageTrailing = (id: string): React.ReactElement => (
     <Pressable hitSlop={10} onPress={() => setManageId(id)}>
-      <Text style={{ color: sub, fontSize: 20, fontFamily: 'Calibre-Semibold', paddingHorizontal: 4 }}>⋯</Text>
+      <Text style={{ color: sub, fontSize: fontSize('xl'), fontFamily: 'Calibre-Semibold', paddingHorizontal: 4 }}>⋯</Text>
     </Pressable>
   );
 
   return (
     <>
       {!flat ? (
-        <Text style={{ color: sub, fontSize: 13, paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8, fontFamily: 'Calibre-Medium' }}>
+        <Text style={{ color: sub, fontSize: fontSize('sm'), paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8, fontFamily: 'Calibre-Medium' }}>
           ACCOUNTS
         </Text>
       ) : null}
@@ -42,7 +43,7 @@ export function AccountList({
           /* Flat mode (modal) — EVERY account as a row, all visible at once,
              active one highlighted. No collapse/dropdown. */
           accounts.length === 0 ? (
-            <Text style={{ color: sub, fontSize: 13, padding: 14, fontFamily: 'Calibre-Medium' }}>
+            <Text style={{ color: sub, fontSize: fontSize('sm'), padding: 14, fontFamily: 'Calibre-Medium' }}>
               No accounts yet.
             </Text>
           ) : (
@@ -76,7 +77,7 @@ export function AccountList({
               trailing={<Icon name={expanded ? 'chevronUp' : 'chevronDown'} size={20} color={sub} />}
             />
           ) : accounts.length === 0 ? (
-            <Text style={{ color: sub, fontSize: 13, padding: 14, fontFamily: 'Calibre-Medium' }}>
+            <Text style={{ color: sub, fontSize: fontSize('sm'), padding: 14, fontFamily: 'Calibre-Medium' }}>
               No accounts yet.
             </Text>
           ) : null
@@ -109,13 +110,13 @@ export function AccountList({
               <Box style={{ width: 28, height: 28, borderRadius: 999, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: sub, borderStyle: 'dashed' }}>
                 <Icon name="plus" size={16} color={sub} />
               </Box>
-              <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>Add account</Text>
+              <Text style={{ color: head, fontSize: fontSize('md'), fontFamily: 'Calibre-Semibold' }}>Add account</Text>
             </Pressable>
           </>
         ) : null}
       </Box>
       {!flat ? (
-        <Text style={{ color: sub, fontSize: 13, paddingHorizontal: 16, paddingTop: 8, fontFamily: 'Calibre-Medium' }}>
+        <Text style={{ color: sub, fontSize: fontSize('sm'), paddingHorizontal: 16, paddingTop: 8, fontFamily: 'Calibre-Medium' }}>
           {expanded ? 'Tap an account to switch · long-press for options' : 'Tap to switch or add accounts'}
         </Text>
       ) : null}

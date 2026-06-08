@@ -9,6 +9,7 @@
  *
  *  Clearly labeled + diagnostic; subscribes to the in-memory balanceDebug store. */
 import { useEffect, useState } from 'react';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Text } from '@metro-labs/kit/text';
 import { Col, Row } from '../layout';
 import { DANGER } from '../../lib/theme';
@@ -35,8 +36,8 @@ function DebugRow({ label, value, sub, head }: {
 }): React.ReactElement {
   return (
     <Row gap={12} py={2} style={{ justifyContent: 'space-between' }}>
-      <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>{label}</Text>
-      <Text style={{ color: head, fontSize: 12, fontFamily: 'Calibre-Semibold', flexShrink: 1, textAlign: 'right' }}>
+      <Text style={{ color: sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium' }}>{label}</Text>
+      <Text style={{ color: head, fontSize: fontSize('sm'), fontFamily: 'Calibre-Semibold', flexShrink: 1, textAlign: 'right' }}>
         {value}
       </Text>
     </Row>
@@ -55,7 +56,7 @@ export function RailgunDebugPanel({ head, sub, border }: {
 
   return (
     <Col mt={20} pt={16} gap={4} style={{ borderTopWidth: 1, borderTopColor: border }}>
-      <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Semibold' }}>
+      <Text style={{ color: sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Semibold' }}>
         RAILGUN DEBUG · BALANCE PIPELINE
       </Text>
       <DebugRow label="bridge available" value={String(d.bridgeAvailable)} sub={sub} head={head} />
@@ -67,10 +68,10 @@ export function RailgunDebugPanel({ head, sub, border }: {
       <DebugRow label="getBalances rows" value={getRows} sub={sub} head={head} />
       <DebugRow label="balance events" value={String(d.eventCount)} sub={sub} head={head} />
       <DebugRow label="last event at" value={fmtTime(d.lastEventAt)} sub={sub} head={head} />
-      <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', marginTop: 6 }}>
+      <Text style={{ color: sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium', marginTop: 6 }}>
         last balanceUpdate payload
       </Text>
-      <Text style={{ color: head, fontSize: 11, fontFamily: 'Calibre-Medium' }} selectable>
+      <Text style={{ color: head, fontSize: fontSize('xs'), fontFamily: 'Calibre-Medium' }} selectable>
         {fmtEvent(d)}
       </Text>
     </Col>

@@ -5,6 +5,7 @@
  *  XMTP store). The key is never logged. */
 
 import { useEffect, useState } from 'react';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Alert } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { Text } from '@metro-labs/kit/text';
@@ -80,7 +81,7 @@ export function AccountSecuritySection(
 
   return (
     <>
-      <Text style={{ color: c.sub, fontSize: 13, paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8, fontFamily: 'Calibre-Medium' }}>
+      <Text style={{ color: c.sub, fontSize: fontSize('sm'), paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8, fontFamily: 'Calibre-Medium' }}>
         ACCOUNT
       </Text>
       <Box mx={16} style={{ overflow: 'hidden' }}>
@@ -97,11 +98,11 @@ export function AccountSecuritySection(
               >
                 <Icon name="wallet" size={22} color={c.head} />
                 <Col flex={1}>
-                  <Text style={{ color: c.fg, fontSize: 18, fontFamily: 'Calibre-Medium' }}>
+                  <Text style={{ color: c.fg, fontSize: fontSize('lg'), fontFamily: 'Calibre-Medium' }}>
                     {revealed ? 'Tap to copy private key' : 'Export private key'}
                   </Text>
                   {revealed ? (
-                    <Text selectable style={{ color: c.sub, fontSize: 12, marginTop: 4, fontFamily: 'Calibre-Medium' }}>
+                    <Text selectable style={{ color: c.sub, fontSize: fontSize('sm'), marginTop: 4, fontFamily: 'Calibre-Medium' }}>
                       {revealed}
                     </Text>
                   ) : null}
@@ -116,7 +117,7 @@ export function AccountSecuritySection(
               style={{ paddingHorizontal: 14, paddingVertical: 14 }}
             >
               <Icon name="trash" size={22} color={danger} />
-              <Text style={{ color: danger, fontSize: 18, fontFamily: 'Calibre-Medium', flex: 1 }}>
+              <Text style={{ color: danger, fontSize: fontSize('lg'), fontFamily: 'Calibre-Medium', flex: 1 }}>
                 Remove account
               </Text>
             </ListViewItem>

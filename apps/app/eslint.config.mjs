@@ -13,6 +13,21 @@ export default tseslint.config(
       // Strong typing: ban `any`. Use `unknown` + narrowing, real interfaces,
       // generics, or library types instead.
       "@typescript-eslint/no-explicit-any": "error",
+      // Size tokens: forbid raw numeric `fontSize` in StyleSheet/inline styles.
+      // Text sizing must come from the named Kit size scale (the Text `size`
+      // prop, e.g. size="sm", or `fontSize('md')` / FONT_SIZE.md from
+      // '@metro-labs/kit/tokens'), not magic px numbers, so the whole UI scales
+      // in lock-step. ERROR: the full backlog (~364 sites) has been migrated to
+      // the named scale, so raw numeric fontSize is hard-banned.
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "Property[key.name='fontSize'] > Literal[value=type(number)]",
+          message:
+            "use a named Kit size token (Text size=\"sm|md|lg|...\" prop, or fontSize('md')/FONT_SIZE.md from '@metro-labs/kit/tokens') instead of a raw fontSize number.",
+        },
+      ],
       // `error`: cap files at 400 lines. Split a file rather than crossing it.
       "max-lines": ["error", { max: 400, skipBlankLines: false, skipComments: false }],
       /** React Native bundles assets via require() — exempt. */

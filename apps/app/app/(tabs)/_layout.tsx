@@ -4,6 +4,7 @@
  *  so individual screens don't have to reach for `useSafeAreaInsets` themselves. */
 
 import { Box } from '../../components/layout';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Tabs, usePathname } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
@@ -96,7 +97,7 @@ export default function TabsLayout(): React.ReactElement {
                     tabBarBadgeStyle: {
                       backgroundColor: pal.link,
                       color: pal.bg,
-                      fontSize: 11,
+                      fontSize: fontSize('xs'),
                       fontFamily: 'Calibre-Semibold',
                       minWidth: 18,
                       height: 18,

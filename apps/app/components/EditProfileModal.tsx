@@ -4,6 +4,7 @@
  *  refreshes immediately. */
 
 import { useEffect, useState } from 'react';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Alert, KeyboardAvoidingView, Modal, Platform } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
@@ -119,12 +120,12 @@ export default function EditProfileModal({
                 </Box>
               ) : null}
             </Pressable>
-            <Text style={{ color: sub, fontSize: 12, marginTop: 8, fontFamily: 'Calibre-Medium' }}>Tap to change avatar</Text>
+            <Text style={{ color: sub, fontSize: fontSize('sm'), marginTop: 8, fontFamily: 'Calibre-Medium' }}>Tap to change avatar</Text>
           </Box>
 
           {FIELDS.map(f => (
             <Box key={f.key} style={{ marginBottom: 14 }}>
-              <Text style={{ color: sub, fontSize: 11, marginBottom: 4, fontFamily: 'Calibre-Medium' }}>{f.label.toUpperCase()}</Text>
+              <Text style={{ color: sub, fontSize: fontSize('xs'), marginBottom: 4, fontFamily: 'Calibre-Medium' }}>{f.label.toUpperCase()}</Text>
               {f.multiline ? (
                 <Textarea
                   value={(form[f.key] ?? '') as string}
@@ -134,7 +135,7 @@ export default function EditProfileModal({
                   dark={dark}
                   style={{
                     color: fg, backgroundColor: inputBg, borderColor: border, borderWidth: 1,
-                    borderRadius: blockRadius, padding: 12, fontSize: 14,
+                    borderRadius: blockRadius, padding: 12, fontSize: fontSize('md'),
                     minHeight: 80, height: undefined, textAlignVertical: 'top',
                   }}
                 />
@@ -147,7 +148,7 @@ export default function EditProfileModal({
                   dark={dark}
                   style={{
                     color: fg, backgroundColor: inputBg, borderColor: border, borderWidth: 1,
-                    borderRadius: blockRadius, padding: 12, fontSize: 14,
+                    borderRadius: blockRadius, padding: 12, fontSize: fontSize('md'),
                     minHeight: 0, textAlignVertical: 'center',
                   }}
                 />

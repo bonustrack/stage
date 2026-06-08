@@ -24,6 +24,7 @@ import {
   type SetStateAction,
 } from 'react';
 import { FlatList } from '@metro-labs/kit/flat-list';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Pressable } from '@metro-labs/kit/pressable';
 import * as Clipboard from 'expo-clipboard';
 import { Text } from '@metro-labs/kit/text';
@@ -81,7 +82,7 @@ function PingLog({ lines, sub, head, border }: {
             borderWidth: 1, borderColor: border ?? sub,
           }}
         >
-          <Text style={{ color: head ?? sub, fontSize: 12, fontFamily: 'Calibre-Semibold' }}>
+          <Text style={{ color: head ?? sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Semibold' }}>
             Copy
           </Text>
         </Pressable>
@@ -98,7 +99,7 @@ function PingLog({ lines, sub, head, border }: {
             selectable
             style={{
               color: tone(item.line, sub),
-              fontSize: 11,
+              fontSize: fontSize('xs'),
               fontFamily: 'Calibre-Medium',
             }}
           >
@@ -355,7 +356,7 @@ export function BridgePingProbe({ sub, border }: {
 
   return (
     <Col mt={20} pt={16} gap={8} style={{ borderTopWidth: 1, borderTopColor: border }}>
-      <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+      <Text style={{ color: sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium' }}>
         DEV · NODE BRIDGE FEASIBILITY
       </Text>
       <Button
@@ -365,7 +366,7 @@ export function BridgePingProbe({ sub, border }: {
         loading={state.kind === 'running'}
         onPress={() => { void onPress(); }}
       />
-      <Text style={{ color: resultColor, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+      <Text style={{ color: resultColor, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium' }}>
         {resultText}
       </Text>
       <Button
@@ -375,7 +376,7 @@ export function BridgePingProbe({ sub, border }: {
         loading={engine.kind === 'running'}
         onPress={() => { void onInit(); }}
       />
-      <Text style={{ color: engineColor, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+      <Text style={{ color: engineColor, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium' }}>
         {engineText}
       </Text>
       <Button

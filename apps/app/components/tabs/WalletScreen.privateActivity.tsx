@@ -18,6 +18,7 @@
  *  privately). */
 
 import { useEffect, useState } from 'react';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Text } from '@metro-labs/kit/text';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Col, Row, Box } from '../layout';
@@ -71,7 +72,7 @@ export function PrivateActivitySection({ head, sub, border, bg }: {
       <Row align="center" gap={6} style={{ paddingTop: 14, paddingBottom: 4 }}>
         <Icon name="lockClosed" size={13} color={sub} />
         <Text style={{
-          color: sub, fontSize: 13, fontFamily: 'Calibre-Semibold',
+          color: sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Semibold',
           letterSpacing: 0.5, textTransform: 'uppercase',
         }}>
           Private activity
@@ -79,13 +80,13 @@ export function PrivateActivitySection({ head, sub, border, bg }: {
       </Row>
       {status === 'loading' ? (
         <Text style={{
-          color: sub, fontSize: 15, fontFamily: 'Calibre-Medium', paddingVertical: 14,
+          color: sub, fontSize: fontSize('md'), fontFamily: 'Calibre-Medium', paddingVertical: 14,
         }}>
           Loading private activity…
         </Text>
       ) : rows.length === 0 ? (
         <Text style={{
-          color: sub, fontSize: 15, fontFamily: 'Calibre-Medium', paddingVertical: 14,
+          color: sub, fontSize: fontSize('md'), fontFamily: 'Calibre-Medium', paddingVertical: 14,
         }}>
           No private activity yet
         </Text>
@@ -128,14 +129,14 @@ function PrivateTxRow({ r, head, sub, border, bg }: {
       />
       <Col flex={1} style={{ minWidth: 0 }}>
         <Row align="center" gap={6}>
-          <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
+          <Text style={{ color: head, fontSize: fontSize('lg'), fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
             {rowTitle(r)}
           </Text>
           <Row align="center" gap={3} style={{
             paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4, backgroundColor: border,
           }}>
             <Icon name={SHIELD_ICON} size={10} color={sub} />
-            <Text style={{ color: sub, fontSize: 11, fontFamily: 'Calibre-Semibold' }}>
+            <Text style={{ color: sub, fontSize: fontSize('xs'), fontFamily: 'Calibre-Semibold' }}>
               Private
             </Text>
           </Row>
@@ -144,17 +145,17 @@ function PrivateTxRow({ r, head, sub, border, bg }: {
           <Box style={{
             paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4, backgroundColor: border,
           }}>
-            <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
+            <Text style={{ color: sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
               {r.chainLabel}
             </Text>
           </Box>
-          <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium', flex: 1 }} numberOfLines={1}>
+          <Text style={{ color: sub, fontSize: fontSize('md'), fontFamily: 'Calibre-Medium', flex: 1 }} numberOfLines={1}>
             {r.timestamp > 0 ? relTime(r.timestamp) : 'Confirmed'}
           </Text>
         </Row>
       </Col>
       <Col align="end">
-        <Text style={{ color: valueColor, fontSize: 18, fontFamily: 'Calibre-Semibold' }}>
+        <Text style={{ color: valueColor, fontSize: fontSize('lg'), fontFamily: 'Calibre-Semibold' }}>
           {`${prefix}${r.amount} ${r.symbol}`}
         </Text>
       </Col>

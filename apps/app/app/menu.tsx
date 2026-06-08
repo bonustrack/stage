@@ -12,6 +12,7 @@
  *  the Accounts + Search pages' header style. */
 
 import { useCallback, useEffect, useState } from 'react';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { useRouter } from 'expo-router';
@@ -80,7 +81,7 @@ export default function Menu(): React.ReactElement {
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={head} />
         </Pressable>
-        <Title dark={dark} style={{ color: head, fontSize: 20 }}>
+        <Title dark={dark} style={{ color: head, fontSize: fontSize('xl') }}>
           Menu
         </Title>
       </Box>

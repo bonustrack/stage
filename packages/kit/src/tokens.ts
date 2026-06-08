@@ -111,6 +111,54 @@ export const BUTTON_RADIUS_DEFAULT = 999;
 /** Default corner radius for non-button container "blocks". */
 export const BLOCK_RADIUS_DEFAULT = 12;
 
+/* ------------------------------------------------------------------------- *
+ * Named font-size scale (single source of truth for text sizing).
+ *
+ * A t-shirt scale that covers every text size used across apps/app. Raw numeric
+ * fontSize is banned by lint - callers use a named step, either via the Kit
+ * Text `size` prop (xs..xxxl) or, for plain StyleSheet objects, the
+ * `FONT_SIZE.<name>` value (or `fontSize(name)` helper).
+ *
+ * Snapping: the app historically used ~19 distinct px values; these collapse to
+ * the 7 named steps below by nearest-neighbour rounding (Less: "need to match
+ * everything" = standardize). See FONT_SIZE_SNAP for the px -> name mapping.
+ * ------------------------------------------------------------------------- */
+
+/** Named text sizes (xs..xxxl). */
+export type FontSizeName = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl' | 'xxxl';
+
+/** Named font-size scale -> px. The canonical set of text sizes. */
+export const FONT_SIZE: Record<FontSizeName, number> = {
+  xs: 11,
+  sm: 13,
+  md: 15,
+  lg: 17,
+  xl: 20,
+  xxl: 24,
+  xxxl: 32,
+} as const;
+
+/** Default body size (matches the Kit Text default of 15 = md). */
+export const FONT_SIZE_DEFAULT: FontSizeName = 'md';
+
+/** Resolve a named size to px. Use for plain StyleSheet objects:
+ *  `fontSize: fontSize('sm')`. For Kit Text prefer the `size="sm"` prop. */
+export function fontSize(name: FontSizeName): number {
+  return FONT_SIZE[name];
+}
+
+/** Documented nearest-neighbour mapping of every legacy raw px to a named step.
+ *  Kept for reference / migration audit (not used at runtime). */
+export const FONT_SIZE_SNAP: Record<string, FontSizeName> = {
+  '10': 'xs', '11': 'xs', '11.5': 'xs',
+  '12': 'sm', '12.5': 'sm', '13': 'sm',
+  '14': 'md', '15': 'md', '16': 'md',
+  '17': 'lg', '18': 'lg',
+  '19': 'xl', '20': 'xl',
+  '22': 'xxl', '24': 'xxl', '26': 'xxl',
+  '28': 'xxxl', '34': 'xxxl', '38': 'xxxl',
+} as const;
+
 /** Font families used across both shells (Calibre is bundled in both apps). */
 export const fontFamily = {
   sans: ['Calibre-Medium', 'system-ui', 'sans-serif'],

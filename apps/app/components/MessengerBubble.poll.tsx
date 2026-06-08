@@ -10,6 +10,7 @@
  *  from the `link` token rather than a hardcoded color. */
 
 import { Pressable } from '@metro-labs/kit/pressable';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Text } from '@metro-labs/kit/text';
 import { Row, Box } from './layout';
 import type { Poll, PollQuestion } from './MessengerBubble.helpers';
@@ -46,7 +47,7 @@ function PollQuestionBlock({ q, qi, sub, dark, votes, own, onVote, openAnswers, 
   return (
     <Box style={{ alignSelf: 'stretch', gap: 6 }}>
       {q.header ? (
-        <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Semibold', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+        <Text style={{ color: sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Semibold', textTransform: 'uppercase', letterSpacing: 0.5 }}>
           {q.header}{multi ? ' · multi-select' : ''}{q.open ? ' · open' : ''}
         </Text>
       ) : null}
@@ -76,15 +77,15 @@ function PollQuestionBlock({ q, qi, sub, dark, votes, own, onVote, openAnswers, 
               }}
             />
             <Row align="center" justify="between">
-              <Text style={{ color: isOn ? '#fff' : pal.text, fontSize: 17, fontFamily: 'Calibre-Medium', flexShrink: 1 }}>
+              <Text style={{ color: isOn ? '#fff' : pal.text, fontSize: fontSize('lg'), fontFamily: 'Calibre-Medium', flexShrink: 1 }}>
                 {isOn ? '✓  ' : (multi ? '☐  ' : '')}{opt.label}
               </Text>
-              <Text style={{ color: isOn ? '#fff' : sub, fontSize: 15, fontFamily: 'Calibre-Semibold', marginLeft: 8 }}>
+              <Text style={{ color: isOn ? '#fff' : sub, fontSize: fontSize('md'), fontFamily: 'Calibre-Semibold', marginLeft: 8 }}>
                 {count}
               </Text>
             </Row>
             {opt.description ? (
-              <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
+              <Text style={{ color: sub, fontSize: fontSize('md'), fontFamily: 'Calibre-Medium', marginTop: 2 }}>
                 {opt.description}
               </Text>
             ) : null}
@@ -92,7 +93,7 @@ function PollQuestionBlock({ q, qi, sub, dark, votes, own, onVote, openAnswers, 
         );
       })}
       {options.length > 0 ? (
-        <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
+        <Text style={{ color: sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium', marginTop: 2 }}>
           {total} vote{total === 1 ? '' : 's'}{q.open ? ' · or type your own' : ''}
         </Text>
       ) : null}
@@ -123,7 +124,7 @@ export function PollView({ poll, dark, sub, votes, ownVotes, onVote, openAnswers
       {poll.questions.map((q, qi) => (
         <Box key={`q-${qi}`} style={{ alignSelf: 'stretch', gap: 6 }}>
           {multiQuestion && qi > 0 ? (
-            <Text style={{ color: fg, fontSize: 19, fontFamily: 'Calibre-Semibold' }}>{q.question}</Text>
+            <Text style={{ color: fg, fontSize: fontSize('xl'), fontFamily: 'Calibre-Semibold' }}>{q.question}</Text>
           ) : null}
           <PollQuestionBlock
             q={q} qi={qi} sub={sub} dark={dark}

@@ -6,6 +6,7 @@
  *  show a graceful message. All text uses the Calibre font family. */
 
 import { ActivityIndicator, Linking } from 'react-native';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { Title } from '@metro-labs/kit/title';
@@ -64,7 +65,7 @@ export default function Diff(): React.ReactElement {
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={p.text} />
         </Pressable>
-        <Title dark={dark} style={{ color: p.link, fontSize: 20, flex: 1 }} numberOfLines={1}>
+        <Title dark={dark} style={{ color: p.link, fontSize: fontSize('xl'), flex: 1 }} numberOfLines={1}>
           Changes
         </Title>
         {prUrl ? (
@@ -84,7 +85,7 @@ export default function Diff(): React.ReactElement {
         ) : diff?.kind === 'no-pr' ? (
           <Box style={{ paddingHorizontal: 12 }}>
             {diff.title ? (
-              <Text style={{ color: p.text, fontFamily: 'Calibre-Semibold', fontSize: 26, lineHeight: 32, marginBottom: diff.body?.trim() ? 10 : 10 }}>
+              <Text style={{ color: p.text, fontFamily: 'Calibre-Semibold', fontSize: fontSize('xxl'), lineHeight: 32, marginBottom: diff.body?.trim() ? 10 : 10 }}>
                 {diff.title}
               </Text>
             ) : null}
@@ -101,7 +102,7 @@ export default function Diff(): React.ReactElement {
           <>
             <Box style={{ paddingHorizontal: 12 }}>
               {diff?.title ? (
-                <Text style={{ color: p.text, fontFamily: 'Calibre-Semibold', fontSize: 26, lineHeight: 32, marginBottom: diff?.body?.trim() ? 10 : 12 }}>
+                <Text style={{ color: p.text, fontFamily: 'Calibre-Semibold', fontSize: fontSize('xxl'), lineHeight: 32, marginBottom: diff?.body?.trim() ? 10 : 12 }}>
                   {diff.title}
                 </Text>
               ) : null}
@@ -111,11 +112,11 @@ export default function Diff(): React.ReactElement {
                 </Box>
               ) : null}
               <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12, paddingHorizontal: 2 }}>
-                <Text style={{ color: p.text, opacity: 0.6, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+                <Text style={{ color: p.text, opacity: 0.6, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium' }}>
                   {diff?.files.length} {diff?.files.length === 1 ? 'file' : 'files'} changed
                 </Text>
-                <Text style={{ color: p.success, fontFamily: 'Calibre-Semibold', fontSize: 14 }}>+{diff?.additions ?? 0}</Text>
-                <Text style={{ color: p.danger, fontFamily: 'Calibre-Semibold', fontSize: 14 }}>-{diff?.deletions ?? 0}</Text>
+                <Text style={{ color: p.success, fontFamily: 'Calibre-Semibold', fontSize: fontSize('md') }}>+{diff?.additions ?? 0}</Text>
+                <Text style={{ color: p.danger, fontFamily: 'Calibre-Semibold', fontSize: fontSize('md') }}>-{diff?.deletions ?? 0}</Text>
               </Box>
             </Box>
             <ListView dark={dark} style={{ borderTopWidth: 1, borderTopColor: p.border }}>

@@ -104,7 +104,7 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
             <ListViewItem key={label} dark={dark} onPress={() => {}}>
               <Icon name="cog" size={22} color={head} />
               <Box style={{ flex: 1 }}>
-                <Text dark={dark} color={head} weight="medium" size={18}>{label}</Text>
+                <Text dark={dark} color={head} weight="medium" size="lg">{label}</Text>
               </Box>
               <Icon name="chevronRight" size={18} color={sub} />
             </ListViewItem>

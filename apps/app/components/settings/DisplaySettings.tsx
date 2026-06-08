@@ -8,6 +8,7 @@
  *  new store. */
 
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box } from '../layout';
 import { Icon } from '@metro-labs/kit/icon';
@@ -38,7 +39,7 @@ export function DisplaySettings(): React.ReactElement {
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}
       >
-        <Text style={{ color: sub, fontSize: 13, paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8, fontFamily: 'Calibre-Medium' }}>
+        <Text style={{ color: sub, fontSize: fontSize('sm'), paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8, fontFamily: 'Calibre-Medium' }}>
           THEME
         </Text>
         <Box mx={16} style={{ overflow: 'hidden' }}>
@@ -54,7 +55,7 @@ export function DisplaySettings(): React.ReactElement {
                     style={{ paddingHorizontal: 14, paddingVertical: 14 }}
                   >
                     <Icon name={opt.icon} size={22} color={head} />
-                    <Text style={{ color: fg, fontSize: 18, fontFamily: 'Calibre-Medium', flex: 1 }}>{opt.label}</Text>
+                    <Text style={{ color: fg, fontSize: fontSize('lg'), fontFamily: 'Calibre-Medium', flex: 1 }}>{opt.label}</Text>
                     {selected ? <Icon name="check" size={20} color={head} /> : null}
                   </ListViewItem>
                 );
@@ -66,7 +67,7 @@ export function DisplaySettings(): React.ReactElement {
                 style={{ paddingHorizontal: 14, paddingVertical: 14 }}
               >
                 <Icon name="colorSwatch" size={22} color={head} />
-                <Text style={{ color: fg, fontSize: 18, fontFamily: 'Calibre-Medium', flex: 1 }}>Custom</Text>
+                <Text style={{ color: fg, fontSize: fontSize('lg'), fontFamily: 'Calibre-Medium', flex: 1 }}>Custom</Text>
                 {custom ? <Icon name="check" size={20} color={head} /> : null}
               </ListViewItem>
             </ListView>
@@ -75,7 +76,7 @@ export function DisplaySettings(): React.ReactElement {
 
         {custom ? (
           <Box style={{ paddingHorizontal: 16, paddingTop: 24 }}>
-            <Text style={{ color: sub, fontSize: 13, paddingBottom: 4, fontFamily: 'Calibre-Medium' }}>
+            <Text style={{ color: sub, fontSize: fontSize('sm'), paddingBottom: 4, fontFamily: 'Calibre-Medium' }}>
               CUSTOM COLORS
             </Text>
             <ColorTokens p={{ dark, head, sub, border, rowBg }} />

@@ -3,6 +3,7 @@
  *  System-page link styling. Shared by the Kit page and the About page. */
 
 import { Linking } from 'react-native';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Box, Row } from '../layout';
 import { Icon } from '@metro-labs/kit/icon';
@@ -27,7 +28,7 @@ export function GitHubLinkRow({ dark, head, sub, border, rowBg, url, title, subt
         <Row gap={12} style={{ alignItems: 'center' }}>
           <GithubLogo size={22} color={head} />
           <Box style={{ flex: 1 }}>
-            <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>
+            <Text style={{ color: head, fontSize: fontSize('md'), fontFamily: 'Calibre-Semibold' }}>
               {title}
             </Text>
             <Text dark={dark} color={sub} variant="caption" weight="medium"

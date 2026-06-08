@@ -12,6 +12,7 @@
  *  live via subscribeArchived. */
 
 import { useCallback, useEffect, useState } from 'react';
+import { fontSize } from '@metro-labs/kit/tokens';
 // FlatList from gesture-handler (not react-native): the plain RN list can be
 // blocked from scrolling by the swipe-back pan handler at the screen root.
 import { FlatList } from 'react-native-gesture-handler';
@@ -79,7 +80,7 @@ export default function Archived(): React.ReactElement {
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg} />
         </Pressable>
-        <Title dark={dark} style={{ color: head, fontSize: 20 }}>Archived</Title>
+        <Title dark={dark} style={{ color: head, fontSize: fontSize('xl') }}>Archived</Title>
       </Box>
       <FlatList
         style={{ flex: 1 }}

@@ -5,6 +5,7 @@
  *  inside AppModal. Fonts: Calibre-Medium / Calibre-Semibold only. */
 
 import { useMemo, useRef, useState } from 'react';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Input } from '@metro-labs/kit/input';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
@@ -99,10 +100,10 @@ export function ColorPicker({ value, onChange, p }: {
           borderWidth: 1, borderColor: p.border,
         }} />
         <Box style={{ flex: 1 }}>
-          <Text style={{ color: p.head, fontSize: 22, fontFamily: 'Calibre-Semibold' }}>
+          <Text style={{ color: p.head, fontSize: fontSize('xxl'), fontFamily: 'Calibre-Semibold' }}>
             {hex}
           </Text>
-          <Text style={{ color: p.sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
+          <Text style={{ color: p.sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium', marginTop: 2 }}>
             live preview
           </Text>
         </Box>
@@ -133,7 +134,7 @@ export function ColorPicker({ value, onChange, p }: {
           borderRadius: 10, borderWidth: 1, borderColor: p.border,
           backgroundColor: p.rowBg,
           color: text != null && !isHex(text) ? '#eb4c5b' : p.head,
-          fontSize: 15, fontFamily: 'Calibre-Medium',
+          fontSize: fontSize('md'), fontFamily: 'Calibre-Medium',
         }}
       />
     </Box>
@@ -143,7 +144,7 @@ export function ColorPicker({ value, onChange, p }: {
 function Label({ text, p }: { text: string; p: GalleryPalette }): React.ReactElement {
   return (
     <Text style={{
-      color: p.sub, fontSize: 13, fontFamily: 'Calibre-Semibold',
+      color: p.sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Semibold',
       marginTop: 16, marginBottom: 6,
     }}>
       {text}

@@ -4,6 +4,7 @@
  *  the selected state uses usePalette().link, the app's accent token, so these
  *  controls match the rest of the UI instead of a bespoke gold treatment. */
 import { useCallback, useRef, useState } from 'react';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { Input } from '@metro-labs/kit/input';
@@ -76,7 +77,7 @@ export function ActionHeader({ title, head, border, onBack }: {
       <Pressable onPress={onBack} hitSlop={8} style={{ padding: 4 }}>
         <Icon name="arrowLeft" size={22} color={head} />
       </Pressable>
-      <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', flex: 1 }} numberOfLines={1}>
+      <Text style={{ color: head, fontSize: fontSize('lg'), fontFamily: 'Calibre-Semibold', flex: 1 }} numberOfLines={1}>
         {title}
       </Text>
     </Row>
@@ -93,7 +94,7 @@ export function Segmented<T extends string | number>({ label, value, options, on
   const { sub } = useFormPal();
   return (
     <Box style={{ gap: 6 }}>
-      {label ? <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>{label}</Text> : null}
+      {label ? <Text style={{ color: sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium' }}>{label}</Text> : null}
       <Row gap={8}>
         {options.map(([id, text]) => (
           <Button key={String(id)} variant={value === id ? 'primary' : 'secondary'}
@@ -116,11 +117,11 @@ export function AmountBox({ pal, amount, setAmount, busy, balance, symbol, dark 
   return (
     <Box style={{ gap: 6 }}>
       <Row align="center">
-        <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', flex: 1 }}>AMOUNT</Text>
+        <Text style={{ color: sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium', flex: 1 }}>AMOUNT</Text>
         {balance != null ? (
           <Button variant="ghost" size="sm" dark={!!dark} disabled={!hasBal || busy}
             onPress={() => { if (hasBal) setAmount(String(balance)); }}
-            label="MAX" textStyle={{ color: hasBal ? link : sub, fontSize: 12 }}
+            label="MAX" textStyle={{ color: hasBal ? link : sub, fontSize: fontSize('sm') }}
             style={{ height: 24, paddingHorizontal: 8 }} />
         ) : null}
       </Row>
@@ -128,11 +129,11 @@ export function AmountBox({ pal, amount, setAmount, busy, balance, symbol, dark 
         <Input value={amount} onChangeText={setAmount} placeholder="0.0" placeholderTextColor={sub}
           inputType="number" disabled={busy} dark={!!dark}
           inputProps={{ keyboardType: 'decimal-pad' }}
-          style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', padding: 0,
+          style={{ color: head, fontSize: fontSize('lg'), fontFamily: 'Calibre-Semibold', padding: 0,
             backgroundColor: 'transparent', minHeight: 0, paddingHorizontal: 0, paddingVertical: 0, borderWidth: 0 }} />
       </Box>
       {balance != null ? (
-        <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', paddingHorizontal: 4 }}>
+        <Text style={{ color: sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium', paddingHorizontal: 4 }}>
           Balance: {Number(balance).toLocaleString(undefined, { maximumFractionDigits: 6 })}{symbol ? ` ${symbol}` : ''}
         </Text>
       ) : null}
@@ -147,10 +148,10 @@ export function LockedRecipient({ pal, label, value, hint }: {
   const { head, sub, border, inputBg } = pal;
   return (
     <Box style={{ gap: 6 }}>
-      <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>{label}</Text>
+      <Text style={{ color: sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium' }}>{label}</Text>
       <Box style={{ backgroundColor: inputBg, borderRadius: 12, borderWidth: 1, borderColor: border, paddingHorizontal: 14, paddingVertical: 12 }}>
-        <Text style={{ color: head, fontSize: 15, fontFamily: 'Calibre-Semibold' }}>{value}</Text>
-        <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', marginTop: 2 }}>{hint}</Text>
+        <Text style={{ color: head, fontSize: fontSize('md'), fontFamily: 'Calibre-Semibold' }}>{value}</Text>
+        <Text style={{ color: sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium', marginTop: 2 }}>{hint}</Text>
       </Box>
     </Box>
   );

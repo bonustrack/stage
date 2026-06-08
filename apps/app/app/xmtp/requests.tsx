@@ -8,6 +8,7 @@
  *  live (streamConvConsent) so accepted requests appear there without a reload. */
 
 import { useCallback, useEffect, useState } from 'react';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { FlatList } from '@metro-labs/kit/flat-list';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
@@ -110,7 +111,7 @@ export default function Requests(): React.ReactElement {
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg} />
         </Pressable>
-        <Title dark={dark} style={{ color: head, fontSize: 20 }}>
+        <Title dark={dark} style={{ color: head, fontSize: fontSize('xl') }}>
           Message requests
         </Title>
       </Box>

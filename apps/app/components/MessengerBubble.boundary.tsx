@@ -10,6 +10,7 @@
  *  place of that one bubble and the rest of the feed renders normally. */
 
 import { Component } from 'react';
+import { fontSize } from '@metro-labs/kit/tokens';
 import type { ReactNode } from 'react';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from './layout';
@@ -37,7 +38,7 @@ export class BubbleErrorBoundary extends Component<Props, State> {
     if (this.state.failed) {
       return (
         <Box style={{ paddingHorizontal: 16, paddingVertical: 6 }}>
-          <Text style={{ color: this.props.sub, fontSize: 13, fontStyle: 'italic', fontFamily: 'Calibre-Medium' }}>
+          <Text style={{ color: this.props.sub, fontSize: fontSize('sm'), fontStyle: 'italic', fontFamily: 'Calibre-Medium' }}>
             (this message could not be displayed)
           </Text>
         </Box>

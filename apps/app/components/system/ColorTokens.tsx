@@ -20,7 +20,7 @@ import { setOverride, resetOverrides, isHex, type TokenKey } from '../../lib/col
 import {
   useRadius, useBlockRadius, setRadius, setBlockRadius, resetRadius,
 } from '../../lib/theme';
-import { RADIUS_MIN, RADIUS_MAX } from '@metro-labs/kit/tokens';
+import { RADIUS_MIN, RADIUS_MAX, fontSize } from '@metro-labs/kit/tokens';
 
 /** The 7 canonical palette keys in display order. `key` is both the Palette key
  *  and the override TokenKey (they share the same union). */
@@ -57,7 +57,7 @@ function EditableSwatch({ name, tokenKey, value, scheme, p }: {
         }}
       />
       <Box style={{ flex: 1, minWidth: 0 }}>
-        <Text style={{ color: p.head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>{name}</Text>
+        <Text style={{ color: p.head, fontSize: fontSize('md'), fontFamily: 'Calibre-Semibold' }}>{name}</Text>
         <Input
           value={shown}
           onChangeText={(t) => { setDraft(t); if (isHex(t)) setOverride(tokenKey, scheme, t); }}
@@ -67,7 +67,7 @@ function EditableSwatch({ name, tokenKey, value, scheme, p }: {
           style={{
             marginTop: 2, paddingVertical: 2, paddingHorizontal: 0, minHeight: 0,
             backgroundColor: 'transparent', borderWidth: 0,
-            color: invalid ? '#eb4c5b' : p.sub, fontSize: 13, fontFamily: 'Calibre-Medium',
+            color: invalid ? '#eb4c5b' : p.sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium',
           }}
         />
       </Box>
@@ -102,7 +102,7 @@ function RadiusRow({ p, name, value, onSet }: {
         backgroundColor: p.rowBg, borderWidth: 1, borderColor: p.head,
       }} />
       <Box style={{ flex: 1, minWidth: 0 }}>
-        <Text style={{ color: p.head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>{name}</Text>
+        <Text style={{ color: p.head, fontSize: fontSize('md'), fontFamily: 'Calibre-Semibold' }}>{name}</Text>
         <Input
           value={shown}
           onChangeText={(t) => {
@@ -117,7 +117,7 @@ function RadiusRow({ p, name, value, onSet }: {
           style={{
             marginTop: 2, paddingVertical: 2, paddingHorizontal: 0, minHeight: 0,
             backgroundColor: 'transparent', borderWidth: 0,
-            color: p.sub, fontSize: 13, fontFamily: 'Calibre-Medium',
+            color: p.sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium',
           }}
         />
       </Box>

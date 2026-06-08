@@ -25,6 +25,7 @@
  *  failed immediately at "Submitting transaction". The engine only lives in the
  *  Node bridge, which is what send.ts uses (same path as shield/unshield). */
 import { useEffect, useState } from 'react';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Input } from '@metro-labs/kit/input';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from '../../components/layout';
@@ -198,11 +199,11 @@ function SendBody({ pal, dark, symbol = 'ETH', chainId = 1, balance = null, onFo
   return (
     <Box style={{ gap: 16 }}>
       <Box style={{ gap: 6 }}>
-        <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>RECIPIENT (0zk ADDRESS)</Text>
+        <Text style={{ color: sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium' }}>RECIPIENT (0zk ADDRESS)</Text>
         <Input value={to} onChangeText={setTo} placeholder="0zk…" placeholderTextColor={sub}
           disabled={busy} dark={dark}
           inputProps={{ autoCapitalize: 'none', autoCorrect: false }}
-          style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Medium', backgroundColor: inputBg,
+          style={{ color: head, fontSize: fontSize('md'), fontFamily: 'Calibre-Medium', backgroundColor: inputBg,
             borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, minHeight: 0, borderWidth: 0 }} />
       </Box>
 

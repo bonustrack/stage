@@ -2,6 +2,7 @@
  *  live in useConversationState; presentational pieces in components/xmtp-conv. */
 
 import { useCallback, useEffect, useState } from 'react';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Animated as RNAnimated, Share } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
@@ -124,7 +125,7 @@ export default function XmtpConversation(): React.ReactElement {
           style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 14 }}
         >
           <HeaderAvatar peerAddr={peerAddr} groupImage={groupImage} channelId={convId} isGroup={isGroup} border={border} />
-          <Text style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold', flex: 1 }} numberOfLines={1}>
+          <Text style={{ color: head, fontSize: fontSize('xl'), fontFamily: 'Calibre-Semibold', flex: 1 }} numberOfLines={1}>
             {isGroup ? (groupName === null ? '' : (groupName || 'Untitled group'))
               : peerAddr ? (getPeerName(peerAddr) ?? shortAddress(peerAddr)) : ''}
           </Text>

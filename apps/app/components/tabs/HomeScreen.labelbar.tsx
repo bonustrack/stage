@@ -14,6 +14,7 @@
  *  HomeScreen and passed down. */
 
 import { useState } from 'react';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { Text } from '@metro-labs/kit/text';
@@ -80,7 +81,7 @@ function Chip({ label, selected, onPress, link, fg, bg, rowBg }: {
         numberOfLines={1}
         style={{
           color: selected ? bg : fg,
-          fontSize: 15,
+          fontSize: fontSize('md'),
           fontFamily: 'Calibre-Medium',
         }}
       >

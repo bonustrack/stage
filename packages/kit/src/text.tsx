@@ -20,6 +20,7 @@ import {
   type TextProps as RNTextProps,
   type TextStyle,
 } from 'react-native';
+import { FONT_SIZE, type FontSizeName } from './tokens';
 
 /** @deprecated Legacy role-name `variant`. Mapped onto colour + font family. */
 export type TextVariant = 'body' | 'secondary' | 'caption' | 'mono';
@@ -27,8 +28,8 @@ export type TextVariant = 'body' | 'secondary' | 'caption' | 'mono';
 /** ChatKit font weight, plus the legacy `regular` alias of `normal`. */
 export type TextWeight = 'normal' | 'medium' | 'semibold' | 'bold' | 'regular';
 
-/** ChatKit TextSize scale. Legacy `sm|md|lg` overlap and keep their px values. */
-export type TextSizeToken = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+/** Named TextSize scale (xs..xxxl). Single source of truth in tokens.ts. */
+export type TextSizeToken = FontSizeName;
 
 /** ChatKit text alignment. */
 export type TextAlign = 'start' | 'center' | 'end';
@@ -38,9 +39,10 @@ export interface TextProps extends Omit<RNTextProps, 'style'> {
   value?: string;
   /** @deprecated Legacy role variant (body/secondary/caption/mono). */
   variant?: TextVariant;
-  /** ChatKit TextSize token (xs..xl) or a numeric px. Default 15 (md), or 13
-   *  when the legacy `caption` variant is used. */
-  size?: number | TextSizeToken;
+  /** Named TextSize token (xs..xxxl). Default md (15), or sm (13) when the
+   *  legacy `caption` variant is used. Raw px is no longer accepted - use a
+   *  named step from the kit FONT_SIZE scale. */
+  size?: TextSizeToken;
   /** ChatKit font weight. `regular` is a deprecated alias of `normal`. */
   weight?: TextWeight;
   /** Override colour; wins over the variant/palette colour. */
@@ -61,14 +63,8 @@ export interface TextProps extends Omit<RNTextProps, 'style'> {
   style?: TextStyle | TextStyle[];
 }
 
-/** ChatKit TextSize px values; legacy sm/md/lg keep their original px. */
-const SIZE_TOKENS: Record<TextSizeToken, number> = {
-  xs: 11,
-  sm: 13,
-  md: 15,
-  lg: 17,
-  xl: 20,
-};
+/** Named TextSize px values - the kit FONT_SIZE scale. */
+const SIZE_TOKENS = FONT_SIZE;
 
 const FONTS: Record<'normal' | 'medium' | 'semibold' | 'bold', string> = {
   normal: 'Calibre-Regular',
@@ -83,12 +79,11 @@ function normalizeWeight(w: TextWeight): keyof typeof FONTS {
 }
 
 function resolveSize(
-  size: number | TextSizeToken | undefined,
+  size: TextSizeToken | undefined,
   variant: TextVariant,
 ): number {
-  if (typeof size === 'number') return size;
   if (size) return SIZE_TOKENS[size];
-  return variant === 'caption' ? 13 : 15;
+  return variant === 'caption' ? SIZE_TOKENS.sm : SIZE_TOKENS.md;
 }
 
 function variantColor(variant: TextVariant, dark: boolean): string {
