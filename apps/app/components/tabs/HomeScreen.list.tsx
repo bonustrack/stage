@@ -80,10 +80,10 @@ export function ChannelsList({
           <TopnavIdentity />
         </Row>
         <Row align="center" gap={18}>
-          {/* Message requests: person icon + count badge (pending 'unknown'
+          {/* Message requests: inbox icon + count badge (pending 'unknown'
            *  consent convs). Badge hidden when 0; tap opens the requests list. */}
           <Pressable onPress={() => router.push('/xmtp/requests')} hitSlop={8} style={{ position: 'relative' }}>
-            <Icon name="user" size={24} color={head} />
+            <Icon name="inbox" size={24} color={head} />
             {requestCount > 0 ? (
               <Box
                 px={5}
