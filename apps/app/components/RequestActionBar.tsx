@@ -25,7 +25,7 @@ import {
   getCachedXmtpClient, streamConvConsent,
 } from '../modules/messaging';
 import { usePalette } from '../lib/theme';
-import { Box, Col, Row } from './layout';
+import { Box, Col } from './layout';
 
 /** Force a synced-prefs refresh so other surfaces (channels list, Requests list,
  *  other devices) converge after an in-channel accept/reject. Mirrors the
@@ -110,38 +110,32 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
         <Text style={{ color: fg, textAlign: 'center', opacity: 0.8 }}>
           This is a message request. Approve to reply, or reject to decline.
         </Text>
-        <Row gap={10}>
-          <Box style={{ flex: 1 }}>
-            <Button
-              variant="danger"
-              size="lg"
-              pill
-              dark={dark}
-              fullWidth
-              loading={busy}
-              disabled={busy}
-              label="Reject"
-              tintBg={danger}
-              tintFg={bg}
-              onPress={onReject}
-            />
-          </Box>
-          <Box style={{ flex: 1 }}>
-            <Button
-              variant="primary"
-              size="lg"
-              pill
-              dark={dark}
-              fullWidth
-              loading={busy}
-              disabled={busy}
-              label="Approve"
-              tintBg={link}
-              tintFg={bg}
-              onPress={onApprove}
-            />
-          </Box>
-        </Row>
+        <Button
+          variant="primary"
+          size="lg"
+          pill
+          dark={dark}
+          fullWidth
+          loading={busy}
+          disabled={busy}
+          label="Approve"
+          tintBg={link}
+          tintFg={bg}
+          onPress={onApprove}
+        />
+        <Button
+          variant="danger"
+          size="lg"
+          pill
+          dark={dark}
+          fullWidth
+          loading={busy}
+          disabled={busy}
+          label="Reject"
+          tintBg={danger}
+          tintFg={bg}
+          onPress={onReject}
+        />
       </Col>
     </Box>
   );
