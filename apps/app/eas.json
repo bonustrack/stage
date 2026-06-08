@@ -1,23 +1,23 @@
 {
   "cli": {
     "version": ">= 14.0.0",
-    "appVersionSource": "remote"
+    "appVersionSource": "local"
   },
   "build": {
     "development": {
       "autoIncrement": false,
       "developmentClient": true,
       "distribution": "internal",
-      "node": "18.20.4",
+      "node": "20.18.0",
       "android": {
         "buildType": "apk",
         "gradleCommand": ":app:assembleDebug -PreactNativeArchitectures=arm64-v8a"
       }
     },
     "preview": {
-      "autoIncrement": true,
+      "autoIncrement": false,
       "distribution": "internal",
-      "node": "18.20.4",
+      "node": "20.18.0",
       "android": {
         "buildType": "apk",
         "gradleCommand": ":app:assembleRelease -PreactNativeArchitectures=arm64-v8a"
@@ -25,7 +25,7 @@
     },
     "production": {
       "autoIncrement": true,
-      "node": "18.20.4",
+      "node": "20.18.0",
       "env": { "APP_VARIANT": "prod" }
     },
     "development-prod": {
