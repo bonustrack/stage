@@ -9,7 +9,7 @@ import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';
 import { Spacer } from '@metro-labs/kit/spacer';
 import { Box, Row, Col } from './layout';
-import { usePalette, useBlockRadius, useRadius } from '../lib/theme';
+import { usePalette, useRadius } from '../lib/theme';
 import { RecordingBar } from './MessengerComposer.parts';
 
 interface EditorProps {
@@ -34,7 +34,6 @@ interface EditorProps {
 export function ComposerEditor(p: EditorProps): React.ReactElement {
   const { dark, fg, head, bg, sub, inputBg, chipBg, recording } = p;
   const { primary } = usePalette();
-  const blockRadius = useBlockRadius();
   const Btn = ({ icon, onPress, mr }: { icon: HeroIconName; onPress: () => void; mr?: number }): React.ReactElement => (
     <Pressable onPress={onPress} style={({ pressed }) => ({
       width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
@@ -44,7 +43,7 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
     </Pressable>
   );
   return (
-    <Col bg={inputBg} radius={blockRadius} p={10}>
+    <Col bg={inputBg} radius={0} p={10}>
       {/** Top slot: live waveform + timer while recording, else the textarea. The
        *   button row below stays mounted across both states. */}
       {recording ? (

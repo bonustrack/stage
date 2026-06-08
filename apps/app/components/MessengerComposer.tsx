@@ -122,10 +122,10 @@ export function MessengerComposer({
 
   const bg = pal.bg; // #0e0f10 / #ffffff
   return (
-    <Col px={10} pt={0} pb={14} bg={bg}>
-      {/** 24px fade sits directly above the composer; left/right -10 cancels the
-       *   paddingHorizontal:10 so the fade bleeds to the screen edges. */}
-      <ComposerGradient bg={bg} direction="down" top={-24} height={24} left={-10} right={-10} />
+    <Col px={0} pt={0} pb={0} bg={bg}>
+      {/** 24px fade sits directly above the composer; bleeds full-width to the
+       *   screen edges (composer is edge-to-edge, no horizontal inset). */}
+      <ComposerGradient bg={bg} direction="down" top={-24} height={24} left={0} right={0} />
       {replyingTo ? (
         <ReplyBanner
           dark={dark} sub={sub} sender={replyingTo.sender} onClear={onClearReply}

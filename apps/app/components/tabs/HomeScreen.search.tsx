@@ -6,7 +6,6 @@ import { forwardRef } from 'react';
 import { Pressable, TextInput } from 'react-native';
 import { Icon } from '@metro-labs/kit/icon';
 import { Box, Row } from '../layout';
-import { useBlockRadius } from '../../lib/theme';
 import type { Row as RowT } from './HomeScreen.helpers';
 
 /** Filter the already-sorted (and archive/label-filtered) rows by a free-text
@@ -36,13 +35,12 @@ export const ChannelsSearchBar = forwardRef<TextInput, {
   toolbarBg: string;
 }>(function ChannelsSearchBar(props, ref): React.ReactElement {
   const { head, sub, rowBg, toolbarBg } = props;
-  const blockRadius = useBlockRadius();
   return (
-    <Row align="center" px={12} pt={10} pb={10} bg={toolbarBg}>
+    <Row align="center" px={0} pt={0} pb={0} bg={toolbarBg}>
       <Box style={{
         flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8,
-        backgroundColor: rowBg, borderRadius: blockRadius,
-        paddingHorizontal: 14, paddingVertical: 8,
+        backgroundColor: rowBg, borderRadius: 0,
+        paddingHorizontal: 14, paddingVertical: 10,
       }}>
         <Icon name="search" size={22} color={sub} />
         <TextInput
