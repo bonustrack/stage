@@ -52,21 +52,36 @@ Key points, grounded in current code:
 
 ---
 
-## 3. Account Lifecycle
+## 3. Account & Agent Lifecycle
+
+### Identity model: one derived key = one unified agent
+
+The mnemonic is **the agent's wallet seed, not just an XMTP secret**. Deriving index `N` produces one ethereum key that *is* the agent's wallet; the XMTP account is created **from that same key** (the XMTP identity/inbox is signed into existence by the wallet). So there is no separate "XMTP key" vs "wallet key" — one derived key yields one unified agent identity: an ethereum wallet **plus** the XMTP account bound to it.
+
+Consequences:
+- **"Create an agent" = derive the next mnemonic index → that wallet → its bound XMTP account → attach to a session.** This is the high-level, everyday operation, surfaced as `metro agent new`.
+- `metro account` stays as the **lower-level primitive**: it manages a single credential entry for a single station (derive/import/list/remove). `metro agent new` composes it (derive the wallet key, create the XMTP account from it, optionally other stations, create + bind a session) so callers never wire the pieces by hand.
+- The derived ETH address is the agent's fundable/shareable wallet address **and** the address that owns its XMTP inbox — same address, one identity to fund, recover, and reason about.
 
 ### Storage & security
 - `~/.metro/sessions.json` — binding (no secrets), `0600`.
 - `~/.metro/<station>-accounts.json` — credentials. **Enforce `0600` on every write** (fixes the current `0644` on `xmtp-accounts.json` that exposes tony's raw key). `mkdir ~/.metro 0700`.
-- `~/.metro/xmtp-mnemonic` — single BIP39 mnemonic, `0600`, never overwritten once present. All derived accounts share it; it is the only on-disk secret for derived accounts.
-- **HD path fix:** new derived accounts use the BIP-44 *account* level `m/44'/60'/<n>'/0/0` (the correct axis for independent identities). Already-provisioned accounts keep `addressIndex` derivation behind a per-account `deriveLegacy:true` flag, because their MLS db3 + on-network XMTP associations are bound to the old key. Index 0 stays reserved for the daemon key. Record the `index→id` assignment in `sessions.json` (recovery depends on it).
+- `~/.metro/xmtp-mnemonic` — single BIP39 mnemonic; despite the name it is **the agent-wallet seed**, `0600`, never overwritten once present. Every derived agent's wallet (and the XMTP account created from that wallet) comes from it; it is the only on-disk secret for derived agents.
+- **HD path fix:** new derived agents use the BIP-44 *account* level `m/44'/60'/<n>'/0/0` (the correct axis for independent wallet identities). The key at index `N` is the agent's wallet; its XMTP account is signed in from that key. Already-provisioned accounts keep `addressIndex` derivation behind a per-account `deriveLegacy:true` flag, because their MLS db3 + on-network XMTP associations are bound to the old key. Index 0 stays reserved for the daemon wallet. Record the `index→agent` assignment in `sessions.json` (wallet + XMTP recovery depends on it).
 
-### The three flows + exact commands
+### The flows + exact commands
 
-**Generate new (derive index N, on demand for an agent):**
+**Create an agent (the everyday verb — derive next index → wallet + bound XMTP account → session):**
+```
+metro agent new agent3 [--also-discord tony]
+```
+Picks the next free index = `max(existing derive)+1`, derives the wallet key at `m/44'/60'/<n>'/0/0`, creates the XMTP account **from that same key**, appends `{id:"agent3", derive:<n>}` to `xmtp-accounts.json` at `0600`, writes a `sessions.json` entry binding `xmtp=agent3` (plus any `--also-<station>`), and prints the agent's ETH wallet address (to fund/share — it owns both the wallet and the XMTP inbox). No raw key ever hits disk. Refuses to overwrite an existing id. Then triggers `trains restart xmtp` (or hot-attach, below). Internally this composes the `metro account new xmtp` + `metro session new` primitives below.
+
+**Lower-level: provision a single XMTP credential (derive index N for one station only):**
 ```
 metro account new xmtp --name agent3 [--session agent3 --create-session]
 ```
-Reads `xmtp-accounts.json`, picks next free index = `max(existing derive)+1`, appends `{id:"agent3", derive:<n>}` at `0600`, prints the derived ETH address (to fund/share). No raw key ever hits disk. With `--create-session` it also writes a `sessions.json` entry and binds `xmtp=agent3`. Refuses to overwrite an existing id. Then triggers `trains restart xmtp` (or hot-attach, below).
+The primitive `metro agent new` builds on: reads `xmtp-accounts.json`, picks next free index, appends `{id:"agent3", derive:<n>}` at `0600`, prints the derived wallet/XMTP address. With `--create-session` it also writes a `sessions.json` entry and binds `xmtp=agent3`. Use `metro agent new` instead unless you specifically need to manage one station's credential in isolation.
 
 **Login with a stored/existing account:**
 ```
@@ -98,12 +113,15 @@ metro mnemonic init                             # generate BIP39 only if absent
 
 **Grammar:** `metro <noun> <verb> <target> [--flags]`. Messaging stays sugared as top-level verbs (the hot path); everything accepts the same global flags: `--session/-s <id>`, `--account/-a <id>`, `--json`, `--quiet`, `--raw '{...}'`.
 
-### Identity & sessions
+### Identity, agents & sessions
 ```
-metro whoami                 # session, owner URI, account-per-station, --strict cmd to use
+metro agent new agent3 [--also-discord tony]    # everyday verb: derive wallet + XMTP from one key, bind a session
+metro agent list                                # agents = sessions with their wallet/XMTP address
+metro whoami                 # session, owner URI, wallet+account-per-station, --strict cmd to use
 metro session list
 metro tail --session tony --strict --follow     # replaces --as metro://claude/user/<uuid>
 ```
+`metro agent new` is the composed high-level verb (one derived key → wallet + bound XMTP account → session); `metro account`/`metro session` (below) are the primitives it builds on.
 `whoami` kills the "which account am I / what's my `--as` URI" gap (today you read `xmtp-accounts.json` by hand).
 
 ### Messaging (sugared, account-aware)
@@ -158,7 +176,7 @@ The trains are symlinks into the working tree, so every PR is live on the served
 1. **PR1 — typed `Line`.** One parser/serializer in `lines.ts` understanding the optional account segment; have `xmtp/accounts.ts:parseLine` and `send-guard.ts:targetAccount` import it. Pure refactor, no behavior change — kills the 3-way drift. Ship + verify served worktree.
 2. **PR2 — file perms + `metro account list/address/import`.** Read-only + import over existing JSON; chmod everything `0600`; `metro doctor` flags non-`0600` files and raw-key-when-mnemonic-exists. No routing change. (Quietly fixes the live `0644` leak.)
 3. **PR3 — `sessions.json` + `sessions.ts`, read path only.** Loader derives `owner` from sessions; if `sessions.json` absent, fall back to per-account `owner` (today's behavior). `metro whoami`/`metro session list`/`metro tail --session`. Nothing breaks because the fallback is the current code path.
-4. **PR4 — `metro account new` (derive) + mnemonic init**, new accounts use `m/44'/60'/<n>'/0/0`; existing accounts pinned `deriveLegacy:true` (no key change to live tony/codex). Triggers `trains restart`.
+4. **PR4 — `metro account new` (derive) + `metro agent new` (compose: wallet + XMTP from one derived key + session) + mnemonic init**, new agents use `m/44'/60'/<n>'/0/0` for the wallet key and create the XMTP account from it; existing accounts pinned `deriveLegacy:true` (no key change to live tony/codex). Triggers `trains restart`.
 5. **PR5 — per-account outbound `from`** + default `excludeFrom=[self]` under `--strict`. Behind `METRO_PER_ACCOUNT_FROM=1` first, flip default after a day of dogfooding.
 6. **PR6 — promote verbs** (`channel`/`group`/`dm`) + uniform output + `--json` envelope + arg-source flags (`--body-file`/`--args-json`) with the old `@`/JSON-guess behavior behind a deprecation warning for one release.
 7. **PR7 — generalize send-guard** to all stations via sessions; **PR8 — webhook owner/session**; **PR9 — N-session in-daemon fan-out** (generalize Codex bridge); **PR10 — discord NDJSON reader rename**; **PR11 — `--since`/`--cursor` split**.
@@ -170,7 +188,7 @@ Time-box and delete `LEGACY_DEFAULT_LINES` only after a one-shot migration rewri
 
 ## 6. Risks & Open Questions for Less
 
-1. **HD path change is identity-bearing.** Switching to `m/44'/60'/<n>'/0/0` means *new* derived accounts get different addresses than the old `addressIndex` scheme would have. Live tony/codex stay legacy-pinned. OK to adopt the BIP-44-correct path for new accounts going forward, or do you want everything on one scheme even if it means re-provisioning?
+1. **HD path change is identity-bearing — and it's the agent's wallet.** Since the derived key is the agent's wallet (with its XMTP account created from it), switching to `m/44'/60'/<n>'/0/0` means *new* agents get different wallet addresses than the old `addressIndex` scheme would have. Live tony/codex stay legacy-pinned. OK to adopt the BIP-44-correct path for new agents going forward, or do you want everything on one scheme even if it means re-provisioning wallets + XMTP inboxes?
 2. **Session = process or logical?** Default plan keeps logical isolation over one shared daemon (cheap, hot-reload-friendly). True per-session processes are an opt-in escape hatch. Is logical isolation enough for the parallel-agent use you have in mind, or do you want hard process boundaries by default?
 3. **`owner` source of truth.** Moving `owner` derivation into `sessions.json` means the per-account `owner` fields become legacy/fallback. Fine to deprecate them, or keep both writable?
 4. **Hot-attach vs restart.** `metro account new` via `trains restart xmtp` briefly drops all XMTP streams for that train. Worth building the `account.add` hot-boot action now, or is a ~few-second restart acceptable for provisioning?
