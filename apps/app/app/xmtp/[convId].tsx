@@ -43,11 +43,14 @@ export default function XmtpConversation(): React.ReactElement {
     mentionCandidates, onReact, onOptimistic, onSent, jumpToMessage, markAtBottom,
   } = c;
 
-  /** Message-request gate: until RequestActionBar confirms this conversation is
-   *  allowed (already allowed, or just approved here) we show the Approve/Reject
-   *  bar in place of the composer. `onAllowed` flips to the normal composer. */
-  const [requestAllowed, setRequestAllowed] = useState(false);
-  const onRequestAllowed = useCallback(() => setRequestAllowed(true), []);
+  /** Message-request gate. The overwhelmingly common case is an already-accepted
+   *  channel, so we DEFAULT to showing the composer immediately on open (no
+   *  flash). Consent resolves asynchronously; only if it comes back as a pending
+   *  request ('unknown') do we hide the composer and swap in the Approve/Reject
+   *  bar. A rare incoming request may briefly show the composer before the bar
+   *  appears, an acceptable tradeoff to never flash the common case. */
+  const [requestPending, setRequestPending] = useState(false);
+  const onRequestPending = useCallback((pending: boolean) => setRequestPending(pending), []);
 
   const insets = useSafeAreaInsets();
   /** Reanimated keyboard offset shared with the composer's KeyboardStickyView so the
@@ -149,11 +152,11 @@ export default function XmtpConversation(): React.ReactElement {
         </Pressable>
       ) : null}
       {/** Message-request gate: RequestActionBar resolves the conversation's
-       *   consent state. While it's a pending request it renders the
-       *   Approve/Reject row (composer hidden); once allowed it calls onAllowed
-       *   and the normal composer takes over. */}
-      <RequestActionBar convId={convId ?? ''} dark={dark} onAllowed={onRequestAllowed} />
-      {requestAllowed ? (
+       *   consent state async and reports it via onPending. Composer shows by
+       *   default; only a confirmed pending request hides it + renders the
+       *   Approve/Reject row in its place. */}
+      <RequestActionBar convId={convId ?? ''} dark={dark} onPending={onRequestPending} />
+      {!requestPending ? (
         <MessengerComposer
           dark={dark}
           xmtpLine={activeLine}
