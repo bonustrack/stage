@@ -34,6 +34,20 @@ export async function listRequestConvs(): Promise<Conversation[]> {
   return client.conversations.list(undefined, undefined, ['unknown']).catch(() => []);
 }
 
+/** Read a single conversation's current consent state (`'allowed'`,
+ *  `'denied'`, or `'unknown'`). Used by the in-channel request action bar to
+ *  decide whether the open conversation is still a pending request. Returns
+ *  `null` if the conversation can't be resolved. */
+export async function getConvConsentState(convId: string): Promise<XmtpConsent | null> {
+  const conv = await convOfLine(lineOfConv(convId));
+  if (!conv) return null;
+  try {
+    return await (conv as unknown as { consentState: () => Promise<XmtpConsent> }).consentState();
+  } catch {
+    return null;
+  }
+}
+
 /** Accept a pending message request: set consent to `'allowed'` so it moves
  *  from the Requests list into the main inbox. */
 export async function acceptRequestConv(convId: string): Promise<void> {

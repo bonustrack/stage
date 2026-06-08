@@ -1,6 +1,7 @@
 /** XMTP conversation view — opened from the messenger tab list. State + handlers
  *  live in useConversationState; presentational pieces in components/xmtp-conv. */
 
+import { useCallback, useState } from 'react';
 import { Animated as RNAnimated, Pressable, Share } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from '../../components/layout';
@@ -24,6 +25,7 @@ import { HeaderAvatar, BubbleActionMenu, GithubNavButton } from '../../component
 import { previewOf } from '../../components/xmtp-conv/feed-helpers';
 import { ConversationFeed } from '../../components/xmtp-conv/ConversationFeed';
 import { useConversationState } from '../../components/xmtp-conv/useConversationState';
+import { RequestActionBar } from '../../components/RequestActionBar';
 
 export default function XmtpConversation(): React.ReactElement {
   const router = useRouter();
@@ -40,6 +42,12 @@ export default function XmtpConversation(): React.ReactElement {
     peerAddr, groupName, groupImage, isGroup, github, senderEthOf,
     mentionCandidates, onReact, onOptimistic, onSent, jumpToMessage, markAtBottom,
   } = c;
+
+  /** Message-request gate: until RequestActionBar confirms this conversation is
+   *  allowed (already allowed, or just approved here) we show the Approve/Reject
+   *  bar in place of the composer. `onAllowed` flips to the normal composer. */
+  const [requestAllowed, setRequestAllowed] = useState(false);
+  const onRequestAllowed = useCallback(() => setRequestAllowed(true), []);
 
   const insets = useSafeAreaInsets();
   /** Reanimated keyboard offset shared with the composer's KeyboardStickyView so the
@@ -140,17 +148,24 @@ export default function XmtpConversation(): React.ReactElement {
           <Icon name="arrowDown" size={18} color="#ffffff" />
         </Pressable>
       ) : null}
-      <MessengerComposer
-        dark={dark}
-        xmtpLine={activeLine}
-        mentionCandidates={mentionCandidates}
-        replyingTo={replyingTo ?? undefined}
-        autoFocusNonce={autoFocusNonce}
-        onClearReply={() => setReplyingTo(null)}
-        onJumpToReply={jumpToMessage}
-        onOptimistic={onOptimistic}
-        onSent={onSent}
-      />
+      {/** Message-request gate: RequestActionBar resolves the conversation's
+       *   consent state. While it's a pending request it renders the
+       *   Approve/Reject row (composer hidden); once allowed it calls onAllowed
+       *   and the normal composer takes over. */}
+      <RequestActionBar convId={convId ?? ''} dark={dark} onAllowed={onRequestAllowed} />
+      {requestAllowed ? (
+        <MessengerComposer
+          dark={dark}
+          xmtpLine={activeLine}
+          mentionCandidates={mentionCandidates}
+          replyingTo={replyingTo ?? undefined}
+          autoFocusNonce={autoFocusNonce}
+          onClearReply={() => setReplyingTo(null)}
+          onJumpToReply={jumpToMessage}
+          onOptimistic={onOptimistic}
+          onSent={onSent}
+        />
+      ) : null}
       </Box>
       </KeyboardStickyView>
       {/** Overlays — portals/bottom-sheets render here, outside the feed column. */}
