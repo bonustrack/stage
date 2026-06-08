@@ -1,17 +1,10 @@
-/** Text — ChatKit-styled body text for the Metro mobile client.
- *
- *  A real RN component (imports `react-native` directly) living alongside
- *  Button. Only apps/app (RN) imports `@metro-labs/kit/text`. Hook-free: the
- *  caller passes `dark` (read from useEffectiveColorScheme / usePalette) so the
- *  kit stays free of the app's hooks while colours track the palette
- *  convention in apps/app/lib/theme.ts (head / sub).
- *
- *  Maps the app's Calibre font families + palette colours:
- *    - body       → head colour, Calibre-Regular (default)
- *    - secondary  → sub colour
- *    - caption    → sub colour, smaller
- *    - mono       → head colour, monospace (addresses / hashes)
- *  Default size ~15 matches current bubble/row body text. */
+/** Text - ChatKit-styled body text. Hook-free: caller passes `dark` so colours
+ *  track the palette convention in apps/app/lib/theme.ts (head / sub). Variants
+ *  map onto Calibre families + palette colours:
+ *    - body       head colour, Calibre-Regular (default)
+ *    - secondary  sub colour
+ *    - caption    sub colour, smaller
+ *    - mono       head colour, monospace (addresses / hashes) */
 
 import { Text as RNText, type TextProps as RNTextProps, type TextStyle } from 'react-native';
 

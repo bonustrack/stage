@@ -1,15 +1,7 @@
-/** Divider - a ChatKit-styled separator line for the Metro mobile client.
- *
- *  Mirrors OpenAI ChatKit's `Divider` widget node (WidgetNode). Real ChatKit
- *  props kept verbatim: `spacing`, `color`, `size`, `flush`. The only deviation
- *  is the `dark` boolean (kit is hook-free, the caller passes the effective
- *  scheme), matching the Button/Text/Title contract.
- *
- *  Visual: a 1px border-token hairline with symmetric vertical `spacing`. By
- *  default it inherits the container's horizontal padding; `flush` makes it span
- *  edge-to-edge (negative margin escape from a 16px-padded container, matching
- *  the inset/full-bleed divider distinction ListView already draws between
- *  rows). `size` overrides the hairline thickness. */
+/** Divider - a ChatKit-styled separator line. Mirrors ChatKit's `Divider`
+ *  widget; deviation: `dark` boolean (kit is hook-free). A border-token hairline
+ *  with symmetric vertical `spacing`; `flush` spans edge-to-edge via a negative
+ *  margin escape from a 16px-padded container. `size` overrides thickness. */
 
 import { View, type ViewStyle } from 'react-native';
 

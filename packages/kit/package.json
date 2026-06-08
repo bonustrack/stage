@@ -21,10 +21,8 @@
     "./icon": "./src/icon.tsx",
     "./card": "./src/card.tsx",
     "./list-view": "./src/list-view.tsx",
-    "./badge": "./src/badge.tsx",
     "./divider": "./src/divider.tsx",
     "./caption": "./src/caption.tsx",
-    "./select": "./src/select.tsx",
     "./image": "./src/image.tsx",
     "./spacer": "./src/spacer.tsx"
   },

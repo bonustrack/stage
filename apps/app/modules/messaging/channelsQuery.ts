@@ -1,4 +1,4 @@
-/** Channels-list backed by TanStack Query (stage 1 of the cache unification).
+/** Channels-list backed by TanStack Query.
  *
  *  The existing per-account `channelsCache` (lib/channelsCache) stays ALIVE as
  *  the source of truth + fetcher: the Channels screen still owns the network

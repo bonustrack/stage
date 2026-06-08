@@ -1,21 +1,17 @@
-/** Metro in-chat signature content types — shared between the RN app
- *  (apps/app), the web client, and the daemon. Pure TypeScript: the wire
- *  shapes, the content-type id constants, and the plain-text fallback builders.
+/** Metro in-chat signature content types - shared between the RN app, web
+ *  client, and daemon. Pure TS: wire shapes, content-type id constants, and
+ *  plain-text fallback builders.
  *
- *  There is NO official XMTP signature-request content type (the only finalized
- *  transaction-adjacent XIPs are `xmtp.org/walletSendCalls:1.0` and XIP-21's
- *  `xmtp.org/transactionReference:1.0`, both for BROADCASTING txs — neither
- *  carries an arbitrary message-to-sign). So this is a CUSTOM Metro content type
- *  under our own `metro.box` authority, mirroring the poll codec convention. We
- *  hand-roll JSContentCodecs in RN + Node codecs in the daemon (see
- *  apps/app/lib/xmtpSignatureCodec.ts and ~/.metro/trains/xmtp.ts).
+ *  There is NO official XMTP signature-request content type (the finalized
+ *  tx-adjacent XIPs are walletSendCalls + transactionReference, both for
+ *  BROADCASTING, neither carries an arbitrary message-to-sign), so this is a
+ *  CUSTOM Metro content type under our own `metro.box` authority, mirroring the
+ *  poll codec convention. Hand-rolled JSContentCodecs in RN + Node codecs in the
+ *  daemon (see apps/app/lib/xmtpSignatureCodec.ts and ~/.metro/trains/xmtp.ts).
  *
- *  DESIGN: a signature is a two-message handshake, like the tx pair.
- *   1. The requester posts a SignatureRequest — either a full EIP-712 typed-data
- *      payload (eth_signTypedData_v4 shape) or a plain personal_sign string.
- *   2. The signer signs it (wagmi `signTypedData` / `signMessage`) and posts a
- *      SignatureReference back into the SAME conversation, so the request card
- *      flips to a "Signed ✓" receipt for everyone. */
+ *  Two-message handshake like the tx pair: a SignatureRequest (EIP-712
+ *  typed-data or personal_sign string), then a SignatureReference receipt posted
+ *  back into the SAME conv once signed. */
 
 // ---------------------------------------------------------------------------
 // SignatureRequest — `metro.box/signatureRequest:1.0`

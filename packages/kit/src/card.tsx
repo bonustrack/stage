@@ -1,23 +1,8 @@
 /** Card - a ChatKit-styled bordered surface for the Metro mobile client.
- *
- *  Mirrors OpenAI ChatKit's `Card` widget node (containers / WidgetRoot). Real
- *  ChatKit props kept verbatim: `children`, `size`, `padding`, `background`,
- *  `status`, `collapsed`, `asForm`, `confirm`, `cancel`. The only deviations are
- *  the two the proposal calls out: a `dark` boolean (kit is hook-free, the
- *  caller passes the effective scheme) and `onPress` in place of ChatKit's
- *  server `onClickAction` (RN dispatches a local handler, not a server action).
- *
- *  Visual: a rounded, 1px-bordered surface on the row/surface fill. `status`
- *  renders a muted line above the body (optional favicon dot reserved as an
- *  Image slot the caller can fill). `confirm`/`cancel` render an actions row at
- *  the foot, mapping onto the app's existing confirm/cancel surfaces. With
- *  `collapsed` the body is hidden and only `status` + actions show. `asForm` is
- *  a semantic hint (ChatKit groups inputs); on RN it is a passthrough flag that
- *  callers may read, it does not change layout.
- *
- *  The button styling for confirm/cancel reuses the kit Button so corners track
- *  the radius token. Variant/size colours live inline to stay within the kit's
- *  <=200-line cap. */
+ *  Mirrors ChatKit's `Card` widget; deviations: `dark` boolean (kit is
+ *  hook-free) and local `onPress` in place of ChatKit's server `onClickAction`.
+ *  `collapsed` hides the body (status + actions only); `asForm` is a passthrough
+ *  hint that does not change RN layout. */
 
 import { type ReactNode } from 'react';
 import { Pressable, View, Text as RNText, type ViewStyle } from 'react-native';

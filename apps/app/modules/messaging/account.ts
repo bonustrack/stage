@@ -1,15 +1,7 @@
-/** Account switching, behind the messaging facade.
- *
- *  Stage 2. The atomic account-switch primitive (`switchToAccount`) and the
- *  account-epoch signal (`bumpAccountEpoch` / `useAccountEpoch` / `getAccountEpoch`)
- *  used to be imported by components directly from `lib/xmtp.client` and
- *  `lib/accountEpoch`. That spread the messaging internals across the component
- *  tree. This module re-exposes both through one named surface so component code
- *  switches accounts + observes the active account via the facade.
- *
- *  Zero logic change: `AccountManager.switch` is `switchToAccount` and
- *  `useActiveAccount` is `useAccountEpoch`, both forwarded unchanged. The
- *  underlying `switchToAccount` already bundles `resetClientScopedState` +
+/** Account switching, behind the messaging facade. Re-exposes the atomic
+ *  account-switch primitive (`switchToAccount`) and the account-epoch signal
+ *  (`bumpAccountEpoch` / `useAccountEpoch` / `getAccountEpoch`) through one named
+ *  surface. `switchToAccount` bundles `resetClientScopedState` +
  *  `setActiveAccountId` + `bumpAccountEpoch` atomically (see lib/xmtp.client). */
 
 import type { Client } from '@xmtp/react-native-sdk';

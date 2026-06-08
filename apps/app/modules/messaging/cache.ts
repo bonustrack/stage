@@ -1,21 +1,8 @@
-/** Messaging caches, behind the facade.
- *
- *  Stage 2, MOVE/re-export only (NOT the TanStack-Query rewrite - that is a
- *  later proposal). Component code used to reach directly into two lib modules
- *  for the messaging caches:
- *
- *    - `lib/channelsCache`  the per-account channels-list cache (rows + unread
- *                           markers): getCachedRows / setCachedRows /
- *                           subscribeCachedRows / hydrateCachedRows /
- *                           markConvRead / markConvUnread / patchRowSent / etc.
- *    - `lib/xmtp.state`     the session caches keyed to the active inbox
- *                           (feedCache / activeFeedLines / inboxEthCache).
- *
- *  This barrel re-exposes that cache surface through the facade so components
- *  import the caches from `@/modules/messaging` instead of the lib internals.
- *  Logic is byte-identical - these are pure re-exports; the lib-internal
- *  consumers (xmtp.feed / xmtp.stream / xmtp.client) keep importing the lib
- *  modules directly. */
+/** Messaging caches behind the facade. Re-exposes the channelsCache
+ *  (per-account channels list + unread markers) and xmtp.state session caches
+ *  (feedCache / activeFeedLines / inboxEthCache) so components import them from
+ *  `@/modules/messaging` instead of lib. The lib-internal consumers (xmtp.feed /
+ *  xmtp.stream / xmtp.client) keep importing the lib modules directly. */
 
 export {
   type CachedRow,

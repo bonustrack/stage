@@ -1,22 +1,11 @@
-/** Unified client/cache persistence layer.
- *
- *  Before this module there were ~4 ad-hoc stores, each re-implementing the same
- *  "render instantly from a warm copy, refresh from the network in the background"
- *  pattern with copy-pasted disk/SecureStore plumbing + listener sets:
- *    - the channels-list cache (channels-cache.json on disk)
- *    - the per-conversation message cache (feedCache, in-memory only)
- *    - the inbox-id → ETH address cache (inboxEthCache, in-memory only)
- *    - the per-conv "last read at" markers (unread.lastRead.* SecureStore keys)
- *
- *  They all now sit on two small primitives here:
- *    - `PersistentStore<T>`  — an in-memory value mirrored to a JSON file in the
- *                              app document dir, with pub/sub + lazy hydration.
- *    - `MemoryStore<K,V>`    — an in-memory Map (no disk) with pub/sub, for
- *                              session caches that don't need to survive a reload.
- *    - SecureStore helpers   — `getSecure / setSecure` for the small string keys
- *                              that must live in the device keystore.
- *
- *  Keep behavior identical — this is a consolidation, not a semantics change. */
+/** Unified client/cache persistence layer. The app's caches sit on three small
+ *  primitives defined here:
+ *    - `PersistentStore<T>`  in-memory value mirrored to a JSON file in the app
+ *                            document dir, with pub/sub + lazy hydration.
+ *    - `MemoryStore<K,V>`    in-memory Map (no disk) with pub/sub, for session
+ *                            caches that don't need to survive a reload.
+ *    - SecureStore helpers   `getSecure / setSecure` for small string keys that
+ *                            must live in the device keystore. */
 
 import { Directory, File, Paths } from 'expo-file-system';
 import * as SecureStore from 'expo-secure-store';

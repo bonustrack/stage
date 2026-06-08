@@ -1,33 +1,13 @@
-/** Local XMTP client lifecycle for the mobile app — public barrel.
+/** Local XMTP client lifecycle for the mobile app - public barrel. Re-exports
+ *  the cohesive `xmtp.*` siblings so existing `./xmtp` import sites resolve
+ *  unchanged.
  *
- *  This module was split (phase-2 lint hardening) into cohesive siblings under
- *  `lib/`; every symbol the app imports from `./xmtp` is re-exported here so the
- *  ~40 existing import sites keep resolving unchanged:
- *
- *    - xmtp.types.ts        types + pure string helpers (lineOfConv, shortAddress…)
- *    - xmtp.state.ts        shared client-scoped mutable state + caches (internal)
- *    - xmtp.codecs.ts       XMTP_CODECS registry + Signer adapters (internal)
- *    - xmtp.client.ts       client create/cache/build + db key + convOfLine
- *    - xmtp.identity.ts     inbox→eth resolution + member-address helpers
- *    - xmtp.conv.ts         openDm / message-request + consent helpers
- *    - xmtp.groups.ts       createGroup / addGroupMembers / leaveGroupConv
- *    - xmtp.envelope.ts     envelopeOfXmtpMessage (decoded message → HistoryEntry)
- *    - xmtp.messages.ts     send helpers (+ re-exports the envelope mapper)
- *    - xmtp.swarm.ts        swarm gateway plumbing + file materialisation
- *    - xmtp.attachments.ts  remote-attachment send / resolve (+ swarmToHttp)
- *    - xmtp.stream.ts       single global message stream + backstops
- *    - xmtp.feed.ts         useXmtpFeed
- *
- *  First launch:
- *    `Client.createRandom({env})` → native SDK generates a wallet, persists keys in its
- *    internal sqlite at `dbDirectory`. We capture the resulting address and stash it in
- *    expo-secure-store so subsequent launches know which inbox to rebuild.
- *
- *  Subsequent launches:
- *    `Client.build(address, {env, dbDirectory})` → reuses the on-disk wallet.
- *
- *  Key material never crosses the JS bridge — the SDK keeps it native side, backed by the
- *  device keystore on Android and the secure enclave on iOS. */
+ *  Lifecycle: first launch `Client.createRandom({env})` has the native SDK
+ *  generate a wallet + persist keys in its sqlite at `dbDirectory`; we stash the
+ *  resulting address in expo-secure-store. Subsequent launches
+ *  `Client.build(address, {env, dbDirectory})` reuse the on-disk wallet. Key
+ *  material never crosses the JS bridge - the SDK keeps it native side, backed
+ *  by the device keystore (Android) / secure enclave (iOS). */
 
 export type {
   XmtpEnv, XmtpConsent, ConversationVersion, XmtpFeedStatus,

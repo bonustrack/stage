@@ -1,19 +1,8 @@
-/** Conversation-list domain type + adapters, behind the facade.
- *
- *  Stage 2, the real type work. The conversation-LIST and message-REQUEST
- *  helpers used to live in component files and reach straight into the XMTP SDK:
- *  they imported `Conversation` / `DecodedMessage` from
- *  `@xmtp/react-native-sdk` and drove `conv.sync()` / `conv.messages()` /
- *  `conv.consentState()` imperatively to build their row view-models. That
- *  leaked raw SDK types into the component tree.
- *
- *  This module owns a `ConversationView` domain type (everything the channels
- *  list needs to render a row) + a `ConversationRequestView` (the lighter
- *  message-request row) and two adapters that summarise a raw `Conversation`
- *  into those domain shapes. The summarise logic is MOVED here UNCHANGED from
- *  HomeScreen.helpers / app/xmtp/requests; components now import the adapters +
- *  domain types from the facade and no longer touch the SDK types. Zero behavior
- *  change. */
+/** Conversation-list domain types + adapters, behind the facade. Owns
+ *  `ConversationView` (channels-list row) + `ConversationRequestView` (lighter
+ *  message-request row) and adapters that summarise a raw XMTP `Conversation`
+ *  into those shapes, so components consume domain types instead of leaking raw
+ *  SDK types (`Conversation` / `DecodedMessage`) into the component tree. */
 
 import type { Conversation, DecodedMessage } from '@xmtp/react-native-sdk';
 import {

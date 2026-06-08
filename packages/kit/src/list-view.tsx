@@ -1,25 +1,9 @@
-/** ListView + ListViewItem - ChatKit-styled list primitives for the Metro
- *  mobile client.
- *
- *  Mirrors OpenAI ChatKit's `ListView` (container / WidgetRoot) and
- *  `ListViewItem` (WidgetNode) widget nodes. Real ChatKit props kept verbatim:
- *    - ListView: `children`, `limit`, `status`.
- *    - ListViewItem: `children`, `gap`, `align`.
- *  Deviations are the two the proposal calls out: a `dark` boolean (kit is
- *  hook-free) and `onPress` in place of ChatKit's server `onClickAction`.
- *
- *  ChatKit's `ListViewItem` is intentionally minimal: a clickable row wrapper
- *  with no title/subtitle/leading/trailing props. We mirror that faithfully -
- *  callers compose the row body from Row/Icon/Text (already in the kit), so this
- *  abstracts only the wrapper/pressed-bg/border/divider scaffolding, exactly as
- *  ChatKit does.
- *
- *  ListView draws 1px dividers BETWEEN items (not after the last one), honours
- *  `limit` (max rows shown), and renders an optional muted `status` line at the
- *  foot. Each ListViewItem owns its pressed-bg + horizontal padding so the row
- *  fill spans the full width, while the divider is inset by ROW_INSET on both
- *  sides so it starts where the row content (icon) starts and ends with equal
- *  spacing on the right. */
+/** ListView + ListViewItem - ChatKit-styled list primitives. Mirrors ChatKit's
+ *  ListView/ListViewItem; deviations: `dark` boolean (kit is hook-free) and
+ *  local `onPress` in place of server `onClickAction`. Dividers are drawn
+ *  BETWEEN items only (not after the last) and inset by ROW_INSET on both sides
+ *  so they align with the row content; each item owns its own pressed-bg +
+ *  horizontal padding so the fill spans full width. */
 
 import { Children, isValidElement, type ReactNode } from 'react';
 import { Pressable, View, Text as RNText, type ViewStyle } from 'react-native';
