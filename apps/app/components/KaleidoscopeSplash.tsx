@@ -104,23 +104,23 @@ export function KaleidoscopeSplash({ bg }: { bg: string }): React.ReactElement {
 
   const flower = flowerPath(13, 8);
 
-  // The wheel <Svg> is square (max edge) so view-layer rotation keeps it
-  // centred and still bleeds past the corners with `slice`.
-  const edge = Math.max(width, height) * 1.5;
+  // One square stage sized to the LARGER screen dimension and absolutely
+  // centred (negative offsets). The square's centre == the exact screen
+  // centre on any aspect ratio, and since the edge >= both dims it still
+  // covers the screen edge to edge (flat bg shows in any thin margin). Every
+  // layer shares the same square + viewBox 0 0 100 100, so the field, the
+  // wheel's rotation origin, and the flower centre all collapse onto (50,50)
+  // == screen centre. The wheel spins around that same point (no orbit).
+  const edge = Math.max(width, height);
+  const stage = { width: edge, height: edge, left: (width - edge) / 2, top: (height - edge) / 2 };
 
   return (
-    <Box style={[StyleSheet.absoluteFill, { backgroundColor: bg }]}>
-      <Svg
-        width={width}
-        height={height}
-        viewBox="0 0 100 100"
-        preserveAspectRatio="xMidYMid slice"
-        style={StyleSheet.absoluteFill}
-      >
-        <Circle cx={CENTER} cy={CENTER} r={71} fill={PALETTE.field} />
-      </Svg>
-      <Box style={styles.center} pointerEvents="none">
-        <Animated.View style={[{ width: edge, height: edge }, wheelStyle]}>
+    <Box style={[StyleSheet.absoluteFill, { backgroundColor: bg }]} pointerEvents="none">
+      <Box style={[styles.stage, stage]}>
+        <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+          <Circle cx={CENTER} cy={CENTER} r={71} fill={PALETTE.field} />
+        </Svg>
+        <Animated.View style={[StyleSheet.absoluteFill, wheelStyle]}>
           <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
             {Array.from({ length: SEGMENTS }).map((_, i) => (
               <G key={i} rotation={(i / SEGMENTS) * 360} origin={`${CENTER}, ${CENTER}`}>
@@ -131,24 +131,24 @@ export function KaleidoscopeSplash({ bg }: { bg: string }): React.ReactElement {
             ))}
           </Svg>
         </Animated.View>
+        <Svg
+          width="100%"
+          height="100%"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="xMidYMid meet"
+          style={StyleSheet.absoluteFill}
+        >
+          <Circle cx={CENTER} cy={CENTER} r={20} fill={PALETTE.field} opacity={0.9} />
+          <AnimatedPath d={flower} animatedProps={flowerProps} opacity={0.95} />
+          <Circle cx={CENTER} cy={CENTER} r={6} fill={PALETTE.field} />
+        </Svg>
       </Box>
-      <Svg
-        width={width}
-        height={height}
-        viewBox="0 0 100 100"
-        preserveAspectRatio="xMidYMid slice"
-        style={StyleSheet.absoluteFill}
-      >
-        <Circle cx={CENTER} cy={CENTER} r={20} fill={PALETTE.field} opacity={0.9} />
-        <AnimatedPath d={flower} animatedProps={flowerProps} opacity={0.95} />
-        <Circle cx={CENTER} cy={CENTER} r={6} fill={PALETTE.field} />
-      </Svg>
     </Box>
   );
 }
 
 const styles = StyleSheet.create({
-  center: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
+  stage: { position: 'absolute' },
 });
 
 export default KaleidoscopeSplash;
