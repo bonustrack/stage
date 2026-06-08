@@ -19,6 +19,7 @@
  *    - `autoStart:false` (default) reads the warm cache only and never boots. */
 import { useEffect, useState } from 'react';
 import { getActiveAccountId } from '../accounts';
+import { useAccountEpoch } from '../accountEpoch';
 import { waitForXmtpReady } from '../xmtp';
 import { snapshotStore, pendingStore, applyPending } from './cache';
 import { openPrivateWallet } from './wallet';
@@ -39,6 +40,11 @@ export function usePrivateWallet(autoStart = false): PrivateWalletState {
   const [snapshot, setSnapshot] = useState<PrivateSnapshot | null>(null);
   const [pending, setPending] = useState<PendingAction[]>([]);
 
+  /** Re-run the per-account init when the active account changes (switchToAccount
+   *  bumps this epoch). Without it the hook captures the boot account's id once
+   *  and the shielded snapshot/pending stay stale after a switch. */
+  const accountEpoch = useAccountEpoch();
+
   useEffect(() => {
     let unsub: (() => void) | undefined;
     let unsubP: (() => void) | undefined;
@@ -48,7 +54,9 @@ export function usePrivateWallet(autoStart = false): PrivateWalletState {
       const id = await getActiveAccountId();
       if (!id || cancelled) return;
       setAccountId(id);
-      // Synchronous warm read first, then hydrate + (optionally) refresh.
+      // Synchronous warm read first, then hydrate + (optionally) refresh. Read
+      // straight from THIS account's store so a switch repaints to its rows (or
+      // null) immediately rather than leaving the previous account's snapshot.
       setSnapshot(snapshotStore(id).get());
       unsub = snapshotStore(id).subscribe(setSnapshot);
       unsubP = pendingStore.subscribe(id, v => setPending(v ?? []));
@@ -71,7 +79,7 @@ export function usePrivateWallet(autoStart = false): PrivateWalletState {
       if (warm && !cancelled) setSnapshot(warm);
     })();
     return () => { cancelled = true; unsub?.(); unsubP?.(); stopWatch?.(); };
-  }, [autoStart]);
+  }, [autoStart, accountEpoch]);
 
   // Overlay optimistic deltas onto the cached balances for the instant-feel UI.
   const merged = snapshot

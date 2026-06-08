@@ -12,7 +12,8 @@
  *  the usePrivateWallet subscription picks up. */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getOrCreateXmtpClient } from '../../modules/messaging';
+import { getActiveAccount } from '../../lib/accounts';
+import { useActiveAccount } from '../../modules/messaging';
 import { refreshSnapshot } from '../../lib/railgun/wallet';
 import { fetchAssetRows } from './WalletScreen.data';
 import { type AssetRow } from './WalletScreen.assets';
@@ -36,6 +37,11 @@ export function useWalletBalances(privAccountId: string | null): WalletBalances 
   const mounted = useRef(true);
   const spinnerTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  /** Re-derive on account switch (switchToAccount bumps this epoch). The address
+   *  + balances were captured once on mount, so without this the Wallet tab kept
+   *  showing the PREVIOUS account after a switch. */
+  const accountEpoch = useActiveAccount();
+
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -48,10 +54,19 @@ export function useWalletBalances(privAccountId: string | null): WalletBalances 
     let cancelled = false;
     void (async (): Promise<void> => {
       try {
-        const client = await getOrCreateXmtpClient('production');
-        const addr = client.publicIdentity.identifier;
+        /** Derive the EOA address straight from the active account record (NOT the
+         *  XMTP client): the local wallet is decoupled from XMTP, switchToAccount
+         *  repoints the active id before the inbox rebuilds, and this never hangs
+         *  on a slow/failed Client.create. */
+        const rec = await getActiveAccount();
+        const addr = rec?.address ?? '';
         if (cancelled) return;
         setAddress(addr);
+        // Clear the prior account's rows so we paint the spinner, not stale
+        // balances, while the new account's balances load.
+        setRows(null);
+        setErr('');
+        if (!addr) return;
         const next = await fetchAssetRows(addr);
         if (cancelled) return;
         setRows(next);
@@ -60,7 +75,7 @@ export function useWalletBalances(privAccountId: string | null): WalletBalances 
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [accountEpoch]);
 
   const onRefresh = useCallback((): void => {
     if (!address) return;
