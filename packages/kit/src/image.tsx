@@ -5,7 +5,14 @@
  *  only change needed to migrate every call site). `fit` maps onto RN
  *  resizeMode. */
 
-import { Image as RNImage, type ImageStyle, type ViewStyle, type DimensionValue } from 'react-native';
+import {
+  Image as RNImage,
+  type ImageStyle,
+  type ViewStyle,
+  type DimensionValue,
+  type ImageLoadEventData,
+  type NativeSyntheticEvent,
+} from 'react-native';
 import { BLOCK_RADIUS_DEFAULT } from './tokens';
 
 export type ImageFit = 'none' | 'cover' | 'contain' | 'fill' | 'scale-down';
@@ -73,6 +80,10 @@ export interface ImageProps {
   margin?: number;
   /** Escape-hatch style merged onto the image last. */
   style?: ImageStyle | ImageStyle[];
+  /** Fires when the image finishes loading (RN Image onLoad passthrough). */
+  onLoad?: (event: NativeSyntheticEvent<ImageLoadEventData>) => void;
+  /** Fires when the image fails to load (RN Image onError passthrough). */
+  onError?: () => void;
 }
 
 /** ChatKit-style RN image. */
@@ -80,7 +91,7 @@ export function Image(props: ImageProps): React.ReactElement {
   const {
     src, alt, fit = 'cover', frame, flush, radius, size, aspectRatio,
     width, height, minWidth, maxWidth, minHeight, maxHeight,
-    background, margin, style,
+    background, margin, style, onLoad, onError,
   } = props;
 
   const bleed = flush === true ? 16 : typeof flush === 'number' ? flush : 0;
@@ -114,6 +125,8 @@ export function Image(props: ImageProps): React.ReactElement {
       accessibilityLabel={alt}
       accessible={alt !== undefined}
       style={flattened}
+      onLoad={onLoad}
+      onError={onError}
     />
   );
 }
