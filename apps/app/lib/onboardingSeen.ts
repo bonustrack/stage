@@ -70,9 +70,6 @@ export const isOnboardingSeenSync = (): boolean => store.get();
 /** Persist that onboarding has been seen and notify subscribers. */
 export const setOnboardingSeen = (seen: boolean): Promise<void> => store.setAsync(seen);
 
-/** Subscribe to changes. Returns an unsubscribe fn. */
-export const subscribeOnboardingSeen = (cb: () => void): () => void => store.subscribe(cb);
-
 export interface OnboardingGate {
   /** False until the persisted flag's one-time load has resolved - the gate
    *  should render the boot spinner (not onboarding) while this is false. */
