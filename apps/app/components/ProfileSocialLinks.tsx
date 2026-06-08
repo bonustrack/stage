@@ -33,10 +33,10 @@ function urlFor(key: SocialKey, raw: string): string {
   }
 }
 
-/** Display label next to the icon: X shows @handle, GitHub the bare username. */
-function labelFor(key: SocialKey, raw: string): string {
-  const h = clean(raw);
-  return key === 'twitter' ? `@${h}` : h;
+/** Display label next to the icon: the bare handle for every network (the link
+ *  still resolves to the canonical profile URL). */
+function labelFor(_key: SocialKey, raw: string): string {
+  return clean(raw);
 }
 
 export function ProfileSocialLinks({ profile, c }: {
@@ -58,7 +58,7 @@ export function ProfileSocialLinks({ profile, c }: {
         >
           <Row style={{ alignItems: 'center', gap: 8 }}>
             <BrandIcon name={ICON[k]} size={18} color={c.text} />
-            <Text style={{ color: c.text }}>{labelFor(k, profile[k] as string)}</Text>
+            <Text style={{ color: c.text, fontFamily: 'Calibre-Medium' }}>{labelFor(k, profile[k] as string)}</Text>
           </Row>
         </Pressable>
       ))}
