@@ -117,3 +117,113 @@ export const fontFamily = {
   head: ['Calibre-Semibold', 'system-ui', 'sans-serif'],
   mono: ['Menlo', 'ui-monospace', 'monospace'],
 } as const;
+
+/* ------------------------------------------------------------------------- *
+ * ChatKit-shaped theme alignment (additive, non-breaking).
+ *
+ * The app-facing palette stays the short 7 keys (bg/text/link/...) consumed by
+ * 60+ usePalette callers. This block adds a ChatKit ThemeOption-shaped view of
+ * the SAME source-of-truth `semanticColors`, so naming aligns without a rename.
+ *
+ * KEY mapping gotcha (per CHATKIT_PLAN.md): ChatKit `color.accent.primary`
+ * maps to OUR `linkColor` (brand emphasis), NOT our `primaryColor`. Our
+ * `primaryColor` is the button-fill (white on dark / black on light), which
+ * ChatKit has no direct equivalent for. Do not mix these up.
+ * ------------------------------------------------------------------------- */
+
+/** ChatKit `radius` option. Default 'pill'. */
+export type RadiusName = 'pill' | 'round' | 'soft' | 'sharp';
+
+/** Named-radius -> px map. `pill` reproduces today's BUTTON_RADIUS_DEFAULT and
+ *  `soft` reproduces BLOCK_RADIUS_DEFAULT, so defaults are visually unchanged.
+ *  The fine-grained px overrides (radiusOverride store) remain the lower layer. */
+export const RADIUS_SCALE: Record<RadiusName, number> = {
+  pill: 999,
+  round: 16,
+  soft: 12,
+  sharp: 0,
+} as const;
+
+/** Default named radius (ChatKit default). Resolves to BUTTON_RADIUS_DEFAULT. */
+export const RADIUS_NAME_DEFAULT: RadiusName = 'pill';
+
+/** ChatKit `density` option. Default 'normal'. */
+export type Density = 'compact' | 'normal' | 'spacious';
+
+/** Per-density padding scale (px) for Button/Card/ListView. `normal` reproduces
+ *  today's spacing so the default render is unchanged. */
+export const DENSITY_SCALE: Record<Density, { paddingX: number; paddingY: number; gap: number }> = {
+  compact: { paddingX: 10, paddingY: 6, gap: 6 },
+  normal: { paddingX: 14, paddingY: 10, gap: 10 },
+  spacious: { paddingX: 18, paddingY: 14, gap: 14 },
+} as const;
+
+/** Default density (ChatKit default). */
+export const DENSITY_DEFAULT: Density = 'normal';
+
+/** ChatKit `typography.baseSize`. Today's Text default is 15. */
+export type BaseSize = 14 | 15 | 16 | 17 | 18;
+
+/** Default base font size (matches today's Text default of 15). */
+export const BASE_SIZE_DEFAULT: BaseSize = 15;
+
+/** A ChatKit ThemeOption-shaped object derived from `semanticColors`. Returned
+ *  by `kitTheme`. Naming mirrors `@openai/chatkit` ThemeOption so a future
+ *  ChatKit-aligned consumer reads naturally; values come from our tokens. */
+export interface KitTheme {
+  colorScheme: 'light' | 'dark';
+  color: {
+    surface: { background: string; foreground: string };
+    /** `accent` == our brand `link` (NOT our button-fill `primary`). */
+    accent: { primary: string; level: 0 | 1 | 2 | 3 };
+  };
+  /** Status extensions with no ChatKit equivalent; kept as Metro additions. */
+  status: { danger: string; success: string };
+  border: string;
+  radius: { name: RadiusName; px: number };
+  density: { name: Density; paddingX: number; paddingY: number; gap: number };
+  typography: { baseSize: BaseSize; fontFamily: string; fontFamilyMono: string };
+}
+
+/** Options for `kitTheme` (all optional; defaults reproduce today's values). */
+export interface KitThemeOptions {
+  radius?: RadiusName;
+  density?: Density;
+  baseSize?: BaseSize;
+  /** Accent intensity 0-3 (hover/pressed). Cosmetic only in PR1. */
+  accentLevel?: 0 | 1 | 2 | 3;
+}
+
+/** Derive a ChatKit-shaped theme object for an effective scheme from the same
+ *  `semanticColors` source of truth. Pure data; no framework deps. With default
+ *  options the result reproduces today's rendered values (non-breaking). */
+export function kitTheme(scheme: 'light' | 'dark', opts: KitThemeOptions = {}): KitTheme {
+  const radiusName = opts.radius ?? RADIUS_NAME_DEFAULT;
+  const densityName = opts.density ?? DENSITY_DEFAULT;
+  const density = DENSITY_SCALE[densityName];
+  return {
+    colorScheme: scheme,
+    color: {
+      surface: {
+        background: semanticColors.bgColor[scheme],
+        foreground: semanticColors.textColor[scheme],
+      },
+      accent: {
+        primary: semanticColors.linkColor[scheme],
+        level: opts.accentLevel ?? 0,
+      },
+    },
+    status: {
+      danger: semanticColors.dangerColor[scheme],
+      success: semanticColors.successColor[scheme],
+    },
+    border: semanticColors.borderColor[scheme],
+    radius: { name: radiusName, px: RADIUS_SCALE[radiusName] },
+    density: { name: densityName, ...density },
+    typography: {
+      baseSize: opts.baseSize ?? BASE_SIZE_DEFAULT,
+      fontFamily: fontFamily.sans[0],
+      fontFamilyMono: fontFamily.mono[0],
+    },
+  };
+}
