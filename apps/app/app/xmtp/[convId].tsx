@@ -1,7 +1,7 @@
 /** XMTP conversation view — opened from the messenger tab list. State + handlers
  *  live in useConversationState; presentational pieces in components/xmtp-conv. */
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Animated as RNAnimated, Share } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
@@ -17,7 +17,7 @@ import { ComposerGradient } from '../../components/ComposerGradient';
 import { Icon } from '@metro-labs/kit/icon';
 import { ChannelMenu } from '../../components/ChannelMenu';
 import { isPinned } from '../../lib/pins';
-import { isArchived } from '../../lib/archived';
+import { isArchived, loadArchivedIds, subscribeArchived } from '../../lib/archived';
 import { shortAddress } from '../../modules/messaging';
 import { getCachedRows } from '../../modules/messaging';
 import { flash } from '../../lib/toast';
@@ -52,6 +52,15 @@ export default function XmtpConversation(): React.ReactElement {
    *  appears, an acceptable tradeoff to never flash the common case. */
   const [requestPending, setRequestPending] = useState(false);
   const onRequestPending = useCallback((pending: boolean) => setRequestPending(pending), []);
+
+  /** Reactive archived flag so the overflow menu shows Unarchive immediately
+   *  (the store loads async; a bare sync read can miss the first paint). */
+  const [archived, setArchived] = useState(convId ? isArchived(convId) : false);
+  useEffect(() => {
+    const sync = (): void => setArchived(convId ? isArchived(convId) : false);
+    void loadArchivedIds().then(sync);
+    return subscribeArchived(sync);
+  }, [convId]);
 
   const insets = useSafeAreaInsets();
   /** Reanimated keyboard offset shared with the composer's KeyboardStickyView so the
@@ -181,7 +190,7 @@ export default function XmtpConversation(): React.ReactElement {
         peerAddress={peerAddr}
         isUnread={(getCachedRows()?.find(r => r.convId === convId)?.unreadCount ?? 0) > 0}
         isPinned={convId ? isPinned(convId) : false}
-        isArchived={convId ? isArchived(convId) : false}
+        isArchived={archived}
         onClose={() => setOverflowOpen(false)}
         context="view"
         onAfterLeave={result => flash(result === 'left' ? 'Left group' : 'Group hidden')}
