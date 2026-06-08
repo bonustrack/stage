@@ -3,7 +3,8 @@
  *  lint line-budget. JSX + behavior identical — state owned by the parent. */
 
 import type { RefObject } from 'react';
-import { Animated, Pressable, ScrollView, TextInput, type PanResponderInstance } from 'react-native';
+import { Animated, Pressable, ScrollView, type PanResponderInstance } from 'react-native';
+import { Textarea } from '@metro-labs/kit/textarea';
 import { Text } from '@metro-labs/kit/text';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';
@@ -21,7 +22,7 @@ interface EditorProps {
   selection: { start: number; end: number };
   setSelection: (s: { start: number; end: number }) => void;
   textareaH: number; setTextareaH: (h: number) => void;
-  inputRef: RefObject<TextInput | null>;
+  inputRef: RefObject<React.ComponentRef<typeof Textarea> | null>;
   attachMenuOpen: boolean; setAttachMenuOpen: (fn: (o: boolean) => boolean) => void;
   /** Quick-access shortcut: icon of the last-used attachment type + its handler.
    *  Both undefined until the user has picked an attachment once → button hidden. */
@@ -55,13 +56,16 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
         />
       ) : (
         <Box style={{ position: 'relative' }}>
-          <TextInput
+          <Textarea
             ref={p.inputRef}
-            value={p.text} onChangeText={p.setText} placeholder="Ask Metro" placeholderTextColor={sub} multiline
-            onContentSizeChange={(e) => p.setTextareaH(e.nativeEvent.contentSize.height)}
-            selection={p.selection}
-            onSelectionChange={(e) => p.setSelection(e.nativeEvent.selection)}
-            style={{ color: head, fontFamily: 'Calibre-Medium', fontSize: 19, lineHeight: 23, minHeight: 24, maxHeight: 140, paddingHorizontal: 8, paddingTop: 4, paddingBottom: 8, textAlignVertical: 'top' }}
+            value={p.text} onChangeText={p.setText} placeholder="Ask Metro" placeholderTextColor={sub}
+            autoResize={false} dark={dark}
+            inputProps={{
+              onContentSizeChange: (e) => p.setTextareaH(e.nativeEvent.contentSize.height),
+              selection: p.selection,
+              onSelectionChange: (e) => p.setSelection(e.nativeEvent.selection),
+            }}
+            style={{ color: head, fontFamily: 'Calibre-Medium', fontSize: 19, lineHeight: 23, minHeight: 24, maxHeight: 140, height: undefined, paddingHorizontal: 8, paddingTop: 4, paddingBottom: 8, textAlignVertical: 'top', backgroundColor: 'transparent', borderWidth: 0 }}
           />
           {p.textareaH > 132 ? (
             <>

@@ -1,7 +1,9 @@
 /** Group-detail header editor — image picker, inline name + description editing.
  *  Extracted from group/[convId] for lint line-budget. Rendering identical. */
 
-import { Pressable, TextInput } from 'react-native';
+import { Pressable } from 'react-native';
+import { Input } from '@metro-labs/kit/input';
+import { Textarea } from '@metro-labs/kit/textarea';
 import { Image } from '@metro-labs/kit/image';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from '../../components/layout';
@@ -95,12 +97,13 @@ export function GroupNameEditor({ name, draft, setDraft, editing, setEditing, sa
     <Box style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
       {editing ? (
         <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 }}>
-          <TextInput
+          <Input
             value={draft}
             onChangeText={setDraft}
             placeholder="Group name"
             placeholderTextColor={sub}
             autoFocus
+            dark={dark}
             style={{
               flex: 1, color: fg, backgroundColor: inputBg,
               borderWidth: 1, borderColor: border, borderRadius: 10,
@@ -132,13 +135,13 @@ export function GroupDescriptionEditor({ description, descriptionDraft, setDescr
       <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>DESCRIPTION</Text>
       {editing ? (
         <Box style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 6 }}>
-          <TextInput
+          <Textarea
             value={descriptionDraft}
             onChangeText={setDescriptionDraft}
             placeholder="What is this group about?"
             placeholderTextColor={sub}
-            multiline
             autoFocus
+            dark={dark}
             style={{
               flex: 1, color: fg, backgroundColor: inputBg,
               borderWidth: 1, borderColor: border, borderRadius: 10,

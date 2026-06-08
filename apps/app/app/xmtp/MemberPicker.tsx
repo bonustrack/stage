@@ -8,7 +8,8 @@
  *  0x / .eth entry still works for peers not in the contact list. */
 
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, TextInput } from 'react-native';
+import { Pressable } from 'react-native';
+import { Input } from '@metro-labs/kit/input';
 import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';
 import { Icon } from '@metro-labs/kit/icon';
@@ -126,19 +127,18 @@ export function MemberPicker({ state, dark, exclude = [] }: {
           Add members
         </Text>
         <Row gap={8} align="center">
-          <TextInput
+          <Input
             value={entry}
             onChangeText={setEntry}
-            onSubmitEditing={() => { void addMember(); }}
+            onSubmit={() => { void addMember(); }}
             placeholder="0x… or name.eth"
             placeholderTextColor={sub}
-            autoCapitalize="none"
-            autoCorrect={false}
-            returnKeyType="done"
+            dark={dark}
+            inputProps={{ autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'done' }}
             style={{
               flex: 1, color: head, fontSize: 16, fontFamily: 'Calibre-Medium',
               backgroundColor: inputBg, borderRadius: 12, paddingHorizontal: 14,
-              paddingVertical: 12, borderWidth: 1, borderColor: border,
+              paddingVertical: 12, borderWidth: 1, borderColor: border, minHeight: 0,
             }}
           />
           <Button

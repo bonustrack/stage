@@ -4,7 +4,8 @@
  *  the selected state uses usePalette().link, the app's accent token, so these
  *  controls match the rest of the UI instead of a bespoke gold treatment. */
 import { useCallback, useRef, useState } from 'react';
-import { Pressable, ScrollView, TextInput } from 'react-native';
+import { Pressable, ScrollView } from 'react-native';
+import { Input } from '@metro-labs/kit/input';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import { Box, Row } from '../../components/layout';
@@ -123,9 +124,11 @@ export function AmountBox({ pal, amount, setAmount, busy, balance, symbol, dark 
         ) : null}
       </Row>
       <Box style={{ backgroundColor: inputBg, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12 }}>
-        <TextInput value={amount} onChangeText={setAmount} placeholder="0.0" placeholderTextColor={sub}
-          keyboardType="decimal-pad" editable={!busy}
-          style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', padding: 0 }} />
+        <Input value={amount} onChangeText={setAmount} placeholder="0.0" placeholderTextColor={sub}
+          inputType="number" disabled={busy} dark={!!dark}
+          inputProps={{ keyboardType: 'decimal-pad' }}
+          style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', padding: 0,
+            backgroundColor: 'transparent', minHeight: 0, paddingHorizontal: 0, paddingVertical: 0, borderWidth: 0 }} />
       </Box>
       {balance != null ? (
         <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', paddingHorizontal: 4 }}>

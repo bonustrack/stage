@@ -25,7 +25,7 @@
  *  failed immediately at "Submitting transaction". The engine only lives in the
  *  Node bridge, which is what send.ts uses (same path as shield/unshield). */
 import { useEffect, useState } from 'react';
-import { TextInput } from 'react-native';
+import { Input } from '@metro-labs/kit/input';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from '../../components/layout';
 import { shieldToPrivate } from '../../lib/railgun/shield';
@@ -199,10 +199,11 @@ function SendBody({ pal, dark, symbol = 'ETH', chainId = 1, balance = null, onFo
     <Box style={{ gap: 16 }}>
       <Box style={{ gap: 6 }}>
         <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>RECIPIENT (0zk ADDRESS)</Text>
-        <TextInput value={to} onChangeText={setTo} placeholder="0zk…" placeholderTextColor={sub}
-          autoCapitalize="none" autoCorrect={false} editable={!busy}
+        <Input value={to} onChangeText={setTo} placeholder="0zk…" placeholderTextColor={sub}
+          disabled={busy} dark={dark}
+          inputProps={{ autoCapitalize: 'none', autoCorrect: false }}
           style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Medium', backgroundColor: inputBg,
-            borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12 }} />
+            borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, minHeight: 0, borderWidth: 0 }} />
       </Box>
 
       <AmountBox pal={pal} amount={amount} setAmount={setAmount} busy={busy}

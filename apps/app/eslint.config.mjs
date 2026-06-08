@@ -41,13 +41,19 @@ export default tseslint.config(
               message:
                 "Import Image from '@metro-labs/kit/image' instead of react-native.",
             },
+            {
+              name: "react-native",
+              importNames: ["TextInput"],
+              message:
+                "Use Input/Textarea from '@metro-labs/kit/input' | '@metro-labs/kit/textarea' instead of react-native TextInput.",
+            },
           ],
         },
       ],
       // WARN: raw RN primitives not yet migrated. These track the remaining
-      // Kit-only rollout (cheapest-first: TextInput -> ScrollView -> Pressable
-      // -> Text; FlatList has no Kit wrapper yet). Flip each to ERROR (move to
-      // the rule above) once its apps/app file count hits 0. Runs as a separate
+      // Kit-only rollout (cheapest-first: ScrollView -> Pressable -> Text;
+      // FlatList has no Kit wrapper yet). Flip each to ERROR (move to the rule
+      // above) once its apps/app file count hits 0. Runs as a separate
       // typescript-eslint rule so ERROR + WARN severities coexist.
       "@typescript-eslint/no-restricted-imports": [
         "warn",
@@ -70,12 +76,6 @@ export default tseslint.config(
               importNames: ["ScrollView"],
               message:
                 "Prefer Scroll from Kit instead of react-native ScrollView (Kit-only rollout).",
-            },
-            {
-              name: "react-native",
-              importNames: ["TextInput"],
-              message:
-                "Prefer Input/Textarea from Kit instead of react-native TextInput (Kit-only rollout).",
             },
             {
               name: "react-native",
@@ -112,6 +112,12 @@ export default tseslint.config(
               importNames: ["Image"],
               message:
                 "Import Image from '@metro-labs/kit/image' instead of react-native.",
+            },
+            {
+              name: "react-native",
+              importNames: ["TextInput"],
+              message:
+                "Use Input/Textarea from '@metro-labs/kit/input' | '@metro-labs/kit/textarea' instead of react-native TextInput.",
             },
           ],
           patterns: [

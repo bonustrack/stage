@@ -1,7 +1,7 @@
 /** AccountsManager bottom sheets — add picker, import-key, per-account manage,
  *  and export-reveal. Extracted for lint line-budget. Rendering identical. */
 
-import { TextInput } from 'react-native';
+import { Input } from '@metro-labs/kit/input';
 import { Box } from './layout';
 import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';
@@ -40,18 +40,18 @@ export function ImportSheet({ visible, onClose, importText, setImportText, setIm
   const { primary, bg } = usePalette();
   return (
     <SheetModal visible={visible} onClose={onClose} bg={p.sheetBg} border={p.border}>
-      <TextInput
+      <Input
         value={importText}
         onChangeText={(t) => { setImportText(t); setImportErr(''); }}
         placeholder="0x… (64 hex characters)"
         placeholderTextColor={p.sub}
-        autoCapitalize="none"
-        autoCorrect={false}
-        secureTextEntry
+        inputType="password"
+        dark={dark}
+        inputProps={{ autoCapitalize: 'none', autoCorrect: false }}
         style={{
           color: p.head, fontFamily: 'Menlo', fontSize: 13,
           borderWidth: 1, borderColor: p.border, borderRadius: 10,
-          paddingHorizontal: 12, paddingVertical: 10, marginBottom: 8,
+          paddingHorizontal: 12, paddingVertical: 10, marginBottom: 8, minHeight: 0,
         }}
       />
       {importErr ? <Text style={{ color: DANGER, fontSize: 12, marginBottom: 8, fontFamily: 'Calibre-Medium' }}>{importErr}</Text> : null}

@@ -4,7 +4,8 @@
  *  Backed by lib/xmtp.labels (read → mutate → write to MLS-synced appData). */
 
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, TextInput } from 'react-native';
+import { Pressable } from 'react-native';
+import { Input } from '@metro-labs/kit/input';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import { Box } from '../../components/layout';
@@ -136,15 +137,14 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
 
       {!atCap ? (
         <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 }}>
-          <TextInput
+          <Input
             value={draft}
             onChangeText={setDraft}
-            onSubmitEditing={() => { void add(draft); }}
+            onSubmit={() => { void add(draft); }}
             placeholder="Add a label"
             placeholderTextColor={sub}
-            maxLength={MAX_LABEL_LEN}
-            returnKeyType="done"
-            editable={!busy}
+            disabled={busy}
+            inputProps={{ maxLength: MAX_LABEL_LEN, returnKeyType: 'done' }}
             style={{
               flex: 1, color: fg, backgroundColor: inputBg,
               borderWidth: 1, borderColor: border, borderRadius: 10,

@@ -5,7 +5,7 @@
  *  inside AppModal. Fonts: Calibre-Medium / Calibre-Semibold only. */
 
 import { useMemo, useRef, useState } from 'react';
-import { TextInput } from 'react-native';
+import { Input } from '@metro-labs/kit/input';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
 import { Box, Row } from '../layout';
@@ -119,16 +119,17 @@ export function ColorPicker({ value, onChange, p }: {
         onFraction={(f) => apply(hsv.h, hsv.s, f)} />
 
       <Label text="Hex" p={p} />
-      <TextInput
+      <Input
         value={text ?? hex}
         onChangeText={(t) => {
           setText(t);
           if (isHex(t)) { setHsv(hexToHsv(t)); onChange(t.trim().toLowerCase()); }
         }}
-        autoCapitalize="none" autoCorrect={false}
+        dark={p.dark}
+        inputProps={{ autoCapitalize: 'none', autoCorrect: false }}
         placeholder="#rrggbb" placeholderTextColor={p.sub}
         style={{
-          marginTop: 4, paddingVertical: 8, paddingHorizontal: 12,
+          marginTop: 4, paddingVertical: 8, paddingHorizontal: 12, minHeight: 0,
           borderRadius: 10, borderWidth: 1, borderColor: p.border,
           backgroundColor: p.rowBg,
           color: text != null && !isHex(text) ? '#eb4c5b' : p.head,

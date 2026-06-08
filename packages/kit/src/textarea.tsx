@@ -6,8 +6,8 @@
  *  substitute for ChatKit's onChangeAction) and a `dark` boolean. `rows`/`maxRows`
  *  bound the height; `autoResize` lets it grow with content up to `maxRows`. */
 
-import { useState } from 'react';
-import { TextInput, type TextInputProps, type ViewStyle } from 'react-native';
+import { forwardRef, useState } from 'react';
+import { TextInput, type TextInputProps, type StyleProp, type TextStyle } from 'react-native';
 import {
   CONTROL_SIZES,
   controlBoxStyle,
@@ -58,17 +58,21 @@ export interface TextareaProps {
   onChangeText?: (text: string) => void;
   /** Effective color scheme. */
   dark?: boolean;
-  /** Escape-hatch style merged last onto the box. */
-  style?: ViewStyle | ViewStyle[];
-  /** Extra RN TextInput props. */
+  /** Override the placeholder colour (else derived from variant/scheme). */
+  placeholderTextColor?: string;
+  /** Escape-hatch style merged last onto the box (accepts text + view style). */
+  style?: StyleProp<TextStyle>;
+  /** Extra RN TextInput props. Its onFocus/onBlur/onContentSizeChange are
+   *  chained after the kit handlers. */
   inputProps?: Omit<
     TextInputProps,
     'value' | 'defaultValue' | 'onChangeText' | 'style' | 'placeholder' | 'editable' | 'multiline'
   >;
 }
 
-/** ChatKit-style RN multi-line input. */
-export function Textarea(props: TextareaProps): React.ReactElement {
+/** ChatKit-style RN multi-line input. Forwards a ref to the underlying
+ *  RN TextInput so call sites can focus/blur it. */
+export const Textarea = forwardRef<TextInput, TextareaProps>(function Textarea(props, ref) {
   const {
     name,
     defaultValue,
@@ -85,6 +89,7 @@ export function Textarea(props: TextareaProps): React.ReactElement {
     radius,
     onChangeText,
     dark = false,
+    placeholderTextColor,
     style,
     inputProps,
   } = props;
@@ -106,30 +111,32 @@ export function Textarea(props: TextareaProps): React.ReactElement {
   return (
     <TextInput
       {...inputProps}
+      ref={ref}
       multiline
       nativeID={name ? `input-${name}` : undefined}
       accessibilityLabelledBy={name ? `label-${name}` : undefined}
       value={value}
       defaultValue={defaultValue}
       placeholder={placeholder}
-      placeholderTextColor={colors.placeholder}
+      placeholderTextColor={placeholderTextColor ?? colors.placeholder}
       editable={!disabled}
       autoFocus={autoFocus}
       selectTextOnFocus={autoSelect}
       onChangeText={onChangeText}
-      onContentSizeChange={
-        autoResize ? (e) => setContentHeight(e.nativeEvent.contentSize.height) : undefined
-      }
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
+      onContentSizeChange={(e) => {
+        if (autoResize) setContentHeight(e.nativeEvent.contentSize.height);
+        inputProps?.onContentSizeChange?.(e);
+      }}
+      onFocus={(e) => {
+        setFocused(true);
+        inputProps?.onFocus?.(e);
+      }}
+      onBlur={(e) => {
+        setFocused(false);
+        inputProps?.onBlur?.(e);
+      }}
       textAlignVertical="top"
-      style={[
-        box,
-        text,
-        { height: resolvedH },
-        disabled && { opacity: 0.5 },
-        ...(style ? (Array.isArray(style) ? style : [style]) : []),
-      ]}
+      style={[box, text, { height: resolvedH }, disabled && { opacity: 0.5 }, style]}
     />
   );
-}
+});

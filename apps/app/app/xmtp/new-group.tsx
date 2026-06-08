@@ -12,7 +12,8 @@
  */
 
 import { useCallback, useState } from 'react';
-import { Pressable, TextInput, ScrollView } from 'react-native';
+import { Pressable, ScrollView } from 'react-native';
+import { Input } from '@metro-labs/kit/input';
 import { Image } from '@metro-labs/kit/image';
 import * as ImagePicker from 'expo-image-picker';
 import { Text } from '@metro-labs/kit/text';
@@ -139,15 +140,16 @@ export default function NewGroup(): React.ReactElement {
           <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
             Group name (optional)
           </Text>
-          <TextInput
+          <Input
             value={name}
             onChangeText={setName}
             placeholder="e.g. Metro builders"
             placeholderTextColor={sub}
+            dark={dark}
             style={{
               color: head, fontSize: 16, fontFamily: 'Calibre-Medium',
               backgroundColor: inputBg, borderRadius: 12, paddingHorizontal: 14,
-              paddingVertical: 12, borderWidth: 1, borderColor: border,
+              paddingVertical: 12, borderWidth: 1, borderColor: border, minHeight: 0,
             }}
           />
         </Col>
