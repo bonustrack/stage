@@ -8,7 +8,7 @@
  *  engine inits + scans on open - that populates the shared snapshot the Tokens
  *  tab reads. On a build with neither the native prover nor the Node bridge it
  *  shows a friendly "coming soon" rather than erroring. */
-import { Pressable } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import * as Clipboard from 'expo-clipboard';
 import { Text } from '@metro-labs/kit/text';
 import { Col, Row } from '../layout';

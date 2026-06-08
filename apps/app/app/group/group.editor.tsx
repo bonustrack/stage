@@ -1,7 +1,7 @@
 /** Group-detail header editor — image picker, inline name + description editing.
  *  Extracted from group/[convId] for lint line-budget. Rendering identical. */
 
-import { Pressable } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Input } from '@metro-labs/kit/input';
 import { Textarea } from '@metro-labs/kit/textarea';
 import { Image } from '@metro-labs/kit/image';

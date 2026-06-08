@@ -8,7 +8,8 @@
  *  returns null and we render NOTHING - the plain text link stays as-is, never a
  *  broken/empty card. Detection is done by the caller via `githubLinkOf`. */
 
-import { Linking, Pressable } from 'react-native';
+import { Linking } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Box, Row } from './layout';
 import { GithubLogo } from './GithubLogo';

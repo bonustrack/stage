@@ -4,7 +4,8 @@
  *  Switching is in-place (epoch bump) so the channels list re-inits without a
  *  full reload; the user taps back to return. */
 
-import { Pressable, ScrollView } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
+import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { Title } from '@metro-labs/kit/title';
 import { Box } from '../components/layout';
 import { useRouter } from 'expo-router';

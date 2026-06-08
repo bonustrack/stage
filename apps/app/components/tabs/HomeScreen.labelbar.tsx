@@ -14,7 +14,8 @@
  *  HomeScreen and passed down. */
 
 import { useState } from 'react';
-import { ScrollView, Pressable } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
+import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { Text } from '@metro-labs/kit/text';
 import { usePalette } from '../../lib/theme';
 

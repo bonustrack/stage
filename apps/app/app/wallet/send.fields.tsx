@@ -3,7 +3,8 @@
  *  Extracted from send.tsx (mechanical split, behavior identical). Presentational
  *  only — all state + handlers are owned by the parent screen and passed in. */
 import { useState } from 'react';
-import { Linking, Pressable } from 'react-native';
+import { Linking } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Input } from '@metro-labs/kit/input';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Hex } from 'viem';

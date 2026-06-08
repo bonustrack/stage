@@ -1,7 +1,7 @@
 /** Reaction pills row (confirmed + optimistic) and the preset reaction picker
  *  for MessengerBubble. Extracted to keep the component file under the lint cap. */
 
-import { Pressable } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Row, Box } from './layout';
 import { REACT_PRESETS } from './MessengerBubble.helpers';

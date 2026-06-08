@@ -3,7 +3,9 @@
  *  lint line-budget. JSX + behavior identical — state owned by the parent. */
 
 import type { RefObject } from 'react';
-import { Animated, Pressable, ScrollView, type PanResponderInstance } from 'react-native';
+import { Animated, type PanResponderInstance } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
+import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { Textarea } from '@metro-labs/kit/textarea';
 import { Text } from '@metro-labs/kit/text';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';

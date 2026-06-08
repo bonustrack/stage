@@ -2,7 +2,7 @@
  *  Extracted to keep the bubble file under the phase-2 lint cap. */
 
 import { useState } from 'react';
-import { Pressable } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Textarea } from '@metro-labs/kit/textarea';
 import { Text } from '@metro-labs/kit/text';
 import { useRouter } from 'expo-router';

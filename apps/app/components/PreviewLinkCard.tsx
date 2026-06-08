@@ -5,7 +5,8 @@
  *  deep link via `Linking.openURL`, which launches the matching dev-client build.
  *  Detection is done by the caller via `previewLinkOf`. */
 
-import { Linking, Pressable } from 'react-native';
+import { Linking } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from './layout';
 import { previewLinkOf } from '../lib/previewLinkDetect';

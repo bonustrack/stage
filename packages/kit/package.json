@@ -38,7 +38,8 @@
     "./markdown": "./src/markdown.tsx",
     "./table": "./src/table.tsx",
     "./scroll": "./src/scroll.tsx",
-    "./pressable": "./src/pressable.tsx"
+    "./pressable": "./src/pressable.tsx",
+    "./flat-list": "./src/flat-list.tsx"
   },
   "peerDependencies": {
     "react": "*",

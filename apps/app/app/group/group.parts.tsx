@@ -1,7 +1,7 @@
 /** Group-detail sub-components — member row + add-member / overflow modals.
  *  Extracted from group/[convId] for lint line-budget. Rendering identical. */
 
-import { Pressable } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Input } from '@metro-labs/kit/input';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from '../../components/layout';

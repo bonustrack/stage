@@ -4,7 +4,8 @@
  *  (merge-preserving write so labels survive). */
 
 import { useEffect, useState } from 'react';
-import { Linking, Pressable } from 'react-native';
+import { Linking } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Input } from '@metro-labs/kit/input';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';

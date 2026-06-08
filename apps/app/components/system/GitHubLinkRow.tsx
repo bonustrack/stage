@@ -2,7 +2,8 @@
  *  GitHub mark + title + subtitle and an externalLink chevron, matching the
  *  System-page link styling. Shared by the Kit page and the About page. */
 
-import { Linking, Pressable } from 'react-native';
+import { Linking } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Box, Row } from '../layout';
 import { Icon } from '@metro-labs/kit/icon';
 import { Text } from '@metro-labs/kit/text';

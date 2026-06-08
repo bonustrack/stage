@@ -7,7 +7,7 @@
  *  that otherwise live behind the avatar Menu page. */
 
 import { useState } from 'react';
-import { Pressable } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import { ListView, ListViewItem } from '@metro-labs/kit/list-view';

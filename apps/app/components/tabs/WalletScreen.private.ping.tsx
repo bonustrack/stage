@@ -23,7 +23,8 @@ import {
   type MutableRefObject,
   type SetStateAction,
 } from 'react';
-import { FlatList, Pressable } from 'react-native';
+import { FlatList } from '@metro-labs/kit/flat-list';
+import { Pressable } from '@metro-labs/kit/pressable';
 import * as Clipboard from 'expo-clipboard';
 import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';

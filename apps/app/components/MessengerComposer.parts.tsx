@@ -2,7 +2,8 @@
  *  popup, staged-attachment row, recording waveform bar), extracted for the lint
  *  line-budget. JSX + behavior identical — state owned by the parent. */
 
-import { Animated, Pressable, StyleSheet } from 'react-native';
+import { Animated, StyleSheet } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Image } from '@metro-labs/kit/image';
 import { Text } from '@metro-labs/kit/text';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';

@@ -10,7 +10,7 @@
  *  useConvMeta / peerProfiles) and passed in. Kept in its own file so
  *  ConversationFeed stays under the 200-line cap. */
 
-import { Pressable } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Box, Row } from '../layout';
 import { Avatar } from '../Avatar';

@@ -3,7 +3,8 @@
  *  state of their own beyond what the parent passes down. */
 
 import { useEffect, useState } from 'react';
-import { Modal, Pressable } from 'react-native';
+import { Modal } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from './layout';
 import { usePalette, useBlockRadius, type Palette } from '../lib/theme';

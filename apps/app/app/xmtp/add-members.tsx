@@ -12,7 +12,8 @@
  */
 
 import { useCallback, useState } from 'react';
-import { Pressable, ScrollView } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
+import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { Title } from '@metro-labs/kit/title';
 import { Icon } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';

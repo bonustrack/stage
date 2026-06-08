@@ -12,7 +12,8 @@
  *  the Accounts + Search pages' header style. */
 
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, ScrollView } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
+import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Title } from '@metro-labs/kit/title';

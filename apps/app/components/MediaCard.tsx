@@ -2,7 +2,7 @@
  *  attachment (image, video, map, YouTube thumbnail) a consistent frame so
  *  they feel like discrete cards rather than free-floating images. */
 
-import { Pressable } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Box } from './layout';
 import { usePalette, useBlockRadius } from '../lib/theme';
 

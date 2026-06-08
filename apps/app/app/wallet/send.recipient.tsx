@@ -11,7 +11,7 @@
  *    via `useContacts` — as the same user-row. Tapping one fills the recipient.
  *
  *  No bespoke/gold styling — Kit `Text`/`Icon` + palette tokens only. */
-import { Pressable } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import { Avatar } from '../../components/Avatar';

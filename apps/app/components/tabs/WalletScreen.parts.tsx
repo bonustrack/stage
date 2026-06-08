@@ -2,7 +2,7 @@
  *  button, the Tokens|NFTs tabs. Extracted from WalletScreen for lint
  *  line-budget. Rendering identical. */
 
-import { Pressable } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';

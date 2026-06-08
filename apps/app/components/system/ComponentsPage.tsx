@@ -3,7 +3,7 @@
  *  Reached via /settings -> "Components" row. Mirrors KitPage's structure but
  *  showcases the APP-level components instead of the @metro-labs/kit primitives. */
 
-import { ScrollView } from 'react-native';
+import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box } from '../layout';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';

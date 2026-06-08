@@ -4,7 +4,8 @@
  *  the selected state uses usePalette().link, the app's accent token, so these
  *  controls match the rest of the UI instead of a bespoke gold treatment. */
 import { useCallback, useRef, useState } from 'react';
-import { Pressable, ScrollView } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
+import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { Input } from '@metro-labs/kit/input';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';

@@ -1,7 +1,8 @@
 /** Presentational sub-parts for the Unshield screen (the public EOA recipient
  *  card + the phase/result line) — split out for the <200-line cap. Mirrors
  *  send.shield.parts.tsx. */
-import { Linking, Pressable } from 'react-native';
+import { Linking } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from '../../components/layout';
 import { DANGER } from '../../lib/theme';

@@ -14,7 +14,7 @@
  *  When the cache has no entry for a group yet, it falls back to the member
  *  count subtitle. */
 
-import { Pressable } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Box, Row } from './layout';
 import { Spinner } from './Spinner';

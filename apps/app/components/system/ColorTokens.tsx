@@ -7,7 +7,7 @@
  *  Fonts: Calibre-Medium / Calibre-Semibold only. */
 
 import { useState } from 'react';
-import { Pressable } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Input } from '@metro-labs/kit/input';
 import { Box, Row } from '../layout';
 import { Text } from '@metro-labs/kit/text';

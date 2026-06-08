@@ -3,7 +3,7 @@
  *  preview, or DM peer address. Empty query returns the list unchanged. */
 
 import { forwardRef } from 'react';
-import { Pressable } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Icon } from '@metro-labs/kit/icon';
 import { Input } from '@metro-labs/kit/input';
 import { Box, Row } from '../layout';

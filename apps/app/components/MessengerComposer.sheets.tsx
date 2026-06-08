@@ -3,7 +3,7 @@
  *  JSX + behavior are identical — state is owned by the parent and threaded via
  *  props. */
 
-import { Pressable } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Input } from '@metro-labs/kit/input';
 import { Textarea } from '@metro-labs/kit/textarea';
 import { Text } from '@metro-labs/kit/text';

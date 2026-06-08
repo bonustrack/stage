@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Pressable } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 /** RNGH gesture-aware FlatList so vertical scroll composes with the native-stack
  *  edge swipe-back under GestureDetectorProvider (see xmtp/[convId] for rationale). */

@@ -3,7 +3,9 @@
  *  row -> /settings/kit. The live color/radius editor moved to Settings ->
  *  Display under the Custom theme. */
 
-import { Linking, Pressable, ScrollView } from 'react-native';
+import { Linking } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
+import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box } from '../layout';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';

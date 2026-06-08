@@ -17,7 +17,8 @@
  *  patterns — there's no iOS toast primitive). */
 
 import { useState } from 'react';
-import { Alert, Modal, Platform, Pressable } from 'react-native';
+import { Alert, Modal, Platform } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Image } from '@metro-labs/kit/image';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from './layout';

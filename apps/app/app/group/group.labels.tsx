@@ -4,7 +4,7 @@
  *  Backed by lib/xmtp.labels (read → mutate → write to MLS-synced appData). */
 
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Input } from '@metro-labs/kit/input';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';

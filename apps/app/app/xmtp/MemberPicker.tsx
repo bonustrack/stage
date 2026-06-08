@@ -8,7 +8,7 @@
  *  0x / .eth entry still works for peers not in the contact list. */
 
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Input } from '@metro-labs/kit/input';
 import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';

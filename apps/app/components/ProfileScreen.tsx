@@ -7,7 +7,7 @@
  *  Presentational pieces live in ./ProfileScreen.parts to keep this under cap. */
 
 import { useState } from 'react';
-import { Pressable } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { ScrollView } from 'react-native-gesture-handler';
 import type { SimultaneousRefs } from './SwipeTabs.types';
 import { Text } from '@metro-labs/kit/text';

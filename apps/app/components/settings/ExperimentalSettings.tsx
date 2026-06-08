@@ -3,7 +3,7 @@
  *  theme/component gallery, the app Components gallery, and the Developer
  *  diagnostics console. Reached via /settings → "Experimental" row. */
 
-import { ScrollView } from 'react-native';
+import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box } from '../layout';

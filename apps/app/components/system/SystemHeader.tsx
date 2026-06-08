@@ -4,7 +4,7 @@
  *  the status-bar icons). Consumers should NOT add their own `paddingTop:
  *  insets.top` wrapper; this header owns the top inset now. */
 
-import { Pressable } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box } from '../layout';

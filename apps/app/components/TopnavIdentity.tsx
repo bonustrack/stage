@@ -6,7 +6,7 @@
  *  Profile/Settings), matching the Home topnav exactly. */
 
 import { useEffect, useState } from 'react';
-import { Pressable } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { useRouter } from 'expo-router';
 import { Text } from '@metro-labs/kit/text';
 import { Avatar } from './Avatar';

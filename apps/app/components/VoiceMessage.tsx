@@ -5,7 +5,7 @@
  *  recorder uses). Any audio attachment renders through this. */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import { Audio, AVPlaybackStatus } from 'expo-av';

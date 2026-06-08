@@ -4,7 +4,9 @@
  *  refreshes immediately. */
 
 import { useEffect, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView } from 'react-native';
+import { Alert, KeyboardAvoidingView, Modal, Platform } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
+import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { Input } from '@metro-labs/kit/input';
 import { Textarea } from '@metro-labs/kit/textarea';
 import { Avatar } from './Avatar';

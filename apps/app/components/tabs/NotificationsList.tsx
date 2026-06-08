@@ -7,7 +7,7 @@
  *  lib/notifReadState (the page marks all visible rows read on open). */
 
 import { useEffect, useState } from 'react';
-import { Pressable } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Avatar } from '../Avatar';
 import { Box, Col, Row } from '../layout';

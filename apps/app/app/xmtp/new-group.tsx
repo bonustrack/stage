@@ -12,7 +12,8 @@
  */
 
 import { useCallback, useState } from 'react';
-import { Pressable, ScrollView } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
+import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { Input } from '@metro-labs/kit/input';
 import { Image } from '@metro-labs/kit/image';
 import * as ImagePicker from 'expo-image-picker';

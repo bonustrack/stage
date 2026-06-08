@@ -13,7 +13,7 @@
  *  `?to=` pre-fills the public recipient; `?symbol=&chainId=&private=` pre-select
  *  a token (e.g. from a token detail page's Send button). */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ScrollView } from 'react-native';
+import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { Box } from '../../components/layout';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';

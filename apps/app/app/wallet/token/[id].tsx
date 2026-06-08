@@ -13,7 +13,7 @@
  *                    Unshield → /wallet/unshield.
  *  Pre-fill is via query params (symbol/chainId) read by each page. */
 
-import { Pressable } from 'react-native';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { Image } from '@metro-labs/kit/image';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
