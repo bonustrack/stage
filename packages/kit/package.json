@@ -40,7 +40,6 @@
   "peerDependencies": {
     "react": "*",
     "react-native": "*",
-    "react-native-markdown-display": "*",
     "react-native-svg": "*"
   },
   "scripts": {
