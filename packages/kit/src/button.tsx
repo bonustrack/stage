@@ -1,8 +1,19 @@
-/** Button - a ChatKit-styled RN button. Imports react-native directly (declared
- *  as a peerDependency); fine since only apps/app imports it. Hook-free: caller
- *  passes `dark` so the kit stays importable anywhere while colours track the
- *  palette convention in apps/app/lib/theme.ts. Size specs / variant colours /
- *  label style live in ./button.styles. */
+/** Button - an OpenAI ChatKit-API RN button. Imports react-native directly
+ *  (declared as a peerDependency); fine since only apps/app imports it.
+ *  Hook-free: caller passes `dark` so the kit stays importable anywhere while
+ *  colours track the palette convention in apps/app/lib/theme.ts.
+ *
+ *  CANONICAL API (mirrors ChatKit's Button widget 1:1):
+ *    color       primary|secondary|info|discovery|success|caution|warning|danger
+ *    variant     solid|soft|outline|ghost  (ChatKit ControlVariant)
+ *    style       primary|secondary         (ChatKit Button.style sugar)
+ *    size        3xs..3xl                  (ChatKit ControlSize)
+ *    label / children, iconStart, iconEnd, block, pill, uniform, disabled
+ *
+ *  BACK-COMPAT ALIASES (deprecated, kept so existing apps/app call sites work):
+ *    variant="primary|secondary|ghost|danger"  legacy colour-name form, mapped
+ *    fullWidth  -> block      icon -> iconStart      iconRight -> iconEnd
+ *  Size specs / colour resolution / label style live in ./button.styles. */
 
 import { useMemo, type ReactNode } from 'react';
 import {
@@ -14,14 +25,29 @@ import {
   type ViewStyle,
 } from 'react-native';
 import {
+  legacyVariantToColor,
+  resolveColors,
   SIZES,
   textLabelStyle,
-  variantColors,
+  type ButtonColor,
+  type ButtonControlVariant,
   type ButtonSize,
   type ButtonVariant,
 } from './button.styles';
 
-export type { ButtonSize, ButtonVariant } from './button.styles';
+export type {
+  ButtonColor,
+  ButtonControlVariant,
+  ButtonSize,
+  ButtonVariant,
+} from './button.styles';
+
+/** Legacy colour-name variant values - distinguished from ChatKit control
+ *  variants so an overloaded `variant` prop routes to the right model. Note
+ *  `ghost` is the one value common to both; it is treated as the ChatKit ghost
+ *  treatment over the current `color` (default primary), which matches the
+ *  legacy ghost look. */
+const LEGACY_VARIANTS = new Set<ButtonVariant>(['primary', 'secondary', 'danger']);
 
 /** App-wide default corner radius for all buttons. Mutable module-level
  *  state (framework-free, like the tint props pattern) so the app can wire the
@@ -32,11 +58,24 @@ let defaultButtonRadius = 999;
 export function setDefaultButtonRadius(r: number): void {
   if (Number.isFinite(r) && r >= 0) defaultButtonRadius = r;
 }
-export function getDefaultButtonRadius(): number { return defaultButtonRadius; }
+export function getDefaultButtonRadius(): number {
+  return defaultButtonRadius;
+}
 
 export interface ButtonProps
   extends Omit<PressableProps, 'children' | 'style' | 'disabled'> {
-  variant?: ButtonVariant;
+  /** ChatKit semantic colour. Default `primary`. */
+  color?: ButtonColor;
+  /** ChatKit control variant (visual treatment). Default `solid`. Also accepts
+   *  the legacy colour-name values (primary/secondary/ghost/danger) for
+   *  back-compat, which are mapped onto `color` + treatment. */
+  variant?: ButtonControlVariant | ButtonVariant;
+  /** ChatKit `style` sugar (primary/secondary). Sets `color` when `color` is
+   *  not explicitly provided. */
+  style?: ViewStyle;
+  /** ChatKit Button.style: convenience colour shorthand. */
+  styleColor?: 'primary' | 'secondary';
+  /** ChatKit control size (3xs..3xl). Default `md`. */
   size?: ButtonSize;
   /** Text label. Ignored if `children` is provided. */
   label?: string;
@@ -44,47 +83,75 @@ export interface ButtonProps
   disabled?: boolean;
   /** Shows a spinner and blocks press. */
   loading?: boolean;
-  /** Stretch to the container width. */
+  /** ChatKit `block`: stretch to the container width. */
+  block?: boolean;
+  /** @deprecated Alias of `block`. */
   fullWidth?: boolean;
   /** Square icon-only button: square aspect (width = height for the size),
-   *  centered icon, no horizontal padding. For icon-only usage. Corners follow
-   *  the radius token like every button — at the default 999 it's a full circle;
-   *  lower the token and it becomes a rounded-square icon button. */
+   *  centered icon, no horizontal padding. ChatKit `pill` + `uniform`. */
   pill?: boolean;
-  /** Node rendered before the label. */
+  /** ChatKit `uniform`: equal padding so the button is square for its size. */
+  uniform?: boolean;
+  /** ChatKit `iconStart`: node rendered before the label. */
+  iconStart?: ReactNode;
+  /** ChatKit `iconEnd`: node rendered after the label. */
+  iconEnd?: ReactNode;
+  /** @deprecated Alias of `iconStart`. */
   icon?: ReactNode;
-  /** Node rendered after the label. */
+  /** @deprecated Alias of `iconEnd`. */
   iconRight?: ReactNode;
   /** Effective color scheme. Pass `useEffectiveColorScheme() === 'dark'`. */
   dark?: boolean;
-  /** Override the resting background — pass a live palette token (e.g. the
+  /** Override the resting background - pass a live palette token (e.g. the
    *  `primary` token) so the color editor re-themes the button. Falls back to
-   *  the variant default when omitted. */
+   *  the resolved colour default when omitted. */
   tintBg?: string;
-  /** Override the label/icon colour — pass the contrasting palette token (e.g.
-   *  `bg`) so it tracks `tintBg`. Falls back to the variant default. */
+  /** Override the label/icon colour - pass the contrasting palette token (e.g.
+   *  `bg`) so it tracks `tintBg`. Falls back to the resolved colour default. */
   tintFg?: string;
   /** Corner radius for the button (including `pill`). Falls back to the app-wide
-   *  default set via `setDefaultButtonRadius` (the persisted `radius` token).
-   *  At the default 999 a square `pill` stays a full circle. */
+   *  default set via `setDefaultButtonRadius` (the persisted `radius` token). */
   radius?: number;
-  /** Escape-hatch style merged onto the container last. */
-  style?: ViewStyle;
   /** Escape-hatch style merged onto the label last. */
   textStyle?: TextStyle;
 }
 
-/** ChatKit-style RN button. Accessible (role=button, busy/disabled state). */
+/** Resolve the canonical `color` + ChatKit `variant` from the (possibly
+ *  overloaded / legacy) props. */
+function resolveModel(
+  color: ButtonColor | undefined,
+  variant: ButtonControlVariant | ButtonVariant | undefined,
+  styleColor: 'primary' | 'secondary' | undefined,
+): { color: ButtonColor; variant: ButtonControlVariant } {
+  // Legacy colour-name variant (primary/secondary/danger) takes the legacy path.
+  if (variant && LEGACY_VARIANTS.has(variant as ButtonVariant) && !color) {
+    return legacyVariantToColor(variant as ButtonVariant);
+  }
+  const baseColor: ButtonColor = color ?? styleColor ?? 'primary';
+  const treatment: ButtonControlVariant =
+    variant && (['solid', 'soft', 'outline', 'ghost'] as string[]).includes(variant)
+      ? (variant as ButtonControlVariant)
+      : 'solid';
+  return { color: baseColor, variant: treatment };
+}
+
+/** OpenAI ChatKit-API RN button. Accessible (role=button, busy/disabled state). */
 export function Button(props: ButtonProps): React.ReactElement {
   const {
-    variant = 'primary',
+    color,
+    variant,
+    styleColor,
     size = 'md',
     label,
     children,
     disabled = false,
     loading = false,
+    block = false,
     fullWidth = false,
     pill = false,
+    uniform = false,
+    iconStart,
+    iconEnd,
     icon,
     iconRight,
     dark = false,
@@ -96,24 +163,27 @@ export function Button(props: ButtonProps): React.ReactElement {
     ...rest
   } = props;
 
+  const startIcon = iconStart ?? icon;
+  const endIcon = iconEnd ?? iconRight;
+  const stretch = block || fullWidth;
+  const square = pill || uniform;
+
   const spec = SIZES[size];
   const c = useMemo(() => {
-    const base = variantColors(variant, dark);
+    const model = resolveModel(color, variant, styleColor);
+    const base = resolveColors(model.color, model.variant, dark);
     return {
       ...base,
       bg: tintBg ?? base.bg,
       text: tintFg ?? base.text,
     };
-  }, [variant, dark, tintBg, tintFg]);
+  }, [color, variant, styleColor, dark, tintBg, tintFg]);
   const isDisabled = disabled || loading;
 
   const labelNode =
     children !== undefined ? (
       typeof children === 'string' ? (
-        <Text
-          style={[textLabelStyle(spec, c.text), textStyle]}
-          numberOfLines={1}
-        >
+        <Text style={[textLabelStyle(spec, c.text), textStyle]} numberOfLines={1}>
           {children}
         </Text>
       ) : (
@@ -134,13 +204,12 @@ export function Button(props: ButtonProps): React.ReactElement {
         const usePressedBg = pressed && !isDisabled;
         const base: ViewStyle = {
           height: spec.height,
-          // `pill` = circular icon-only: square aspect, no horizontal padding.
-          width: pill ? spec.height : fullWidth ? '100%' : undefined,
-          paddingHorizontal: pill ? 0 : spec.paddingHorizontal,
-          // All buttons (including `pill` icon buttons) follow the explicit
-          // `radius` prop, else the app-wide token default (setDefaultButtonRadius).
-          // At the default 999 a square `pill` button stays a full circle; lower
-          // the token and pills become rounded-squares like every other button.
+          // square (`pill`/`uniform`) = icon-only: square aspect, no h-padding.
+          width: square ? spec.height : stretch ? '100%' : undefined,
+          paddingHorizontal: square ? 0 : spec.paddingHorizontal,
+          // All buttons follow the explicit `radius` prop, else the app-wide
+          // token default (setDefaultButtonRadius). At 999 a square button stays
+          // a full circle; lower the token and it becomes a rounded-square.
           borderRadius: radius ?? defaultButtonRadius,
           flexDirection: 'row',
           alignItems: 'center',
@@ -154,7 +223,7 @@ export function Button(props: ButtonProps): React.ReactElement {
                 : c.bg,
           borderWidth: c.borderColor ? 1 : 0,
           borderColor: c.borderColor,
-          alignSelf: fullWidth && !pill ? 'stretch' : 'flex-start',
+          alignSelf: stretch && !square ? 'stretch' : 'flex-start',
           opacity: isDisabled
             ? 0.4
             : usePressedBg && !c.pressedBg && !c.ghostPressedBg
@@ -169,9 +238,9 @@ export function Button(props: ButtonProps): React.ReactElement {
         <ActivityIndicator size={spec.spinner} color={c.text} />
       ) : (
         <>
-          {icon}
+          {startIcon}
           {labelNode}
-          {iconRight}
+          {endIcon}
         </>
       )}
     </Pressable>
