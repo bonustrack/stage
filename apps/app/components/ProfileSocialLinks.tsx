@@ -1,23 +1,22 @@
-/** Compact row of tappable social brand icons for the VIEW profile (snapshot.box
- *  style). Renders only the socials the user has set; each opens the canonical
- *  profile URL for its network. Read-only - the EDIT form (EditProfileModal) owns
- *  input. Handles are stored bare (no @ / no URL), so we normalise + build the
- *  link per network here. */
+/** Social links for the VIEW profile (snapshot.box style). Renders only the
+ *  socials the user has set; each is a tappable brand icon + handle that opens
+ *  the canonical profile URL for its network. Read-only - the EDIT form
+ *  (EditProfileModal) owns input. Handles are stored bare (no @ / no URL), so we
+ *  normalise + build the link per network here. */
 
 import { Linking } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { BrandIcon, type BrandIconName } from '@metro-labs/kit/icon';
-import { Box } from './layout';
+import { Text } from '@metro-labs/kit/text';
+import { Box, Row } from './layout';
 import type { Palette } from '../lib/theme';
 import type { SnapshotProfile } from '@stage-labs/client/profile/snapshot';
 
-type SocialKey = 'twitter' | 'github' | 'lens' | 'farcaster';
+type SocialKey = 'twitter' | 'github';
 
 const ICON: Record<SocialKey, BrandIconName> = {
   twitter: 'brandX',
   github: 'brandGithub',
-  lens: 'brandLens',
-  farcaster: 'brandFarcaster',
 };
 
 /** Strip a leading @ and any surrounding whitespace from a stored handle. */
@@ -25,16 +24,19 @@ function clean(handle: string): string {
   return handle.trim().replace(/^@+/, '');
 }
 
-/** Build the canonical outbound URL for a network handle. Lens drops a trailing
- *  `.lens` for the hey.xyz path; Farcaster uses Warpcast. */
+/** Build the canonical outbound URL for a network handle. */
 function urlFor(key: SocialKey, raw: string): string {
   const h = clean(raw);
   switch (key) {
     case 'twitter': return `https://x.com/${h}`;
     case 'github': return `https://github.com/${h}`;
-    case 'lens': return `https://hey.xyz/u/${h.replace(/\.lens$/i, '')}`;
-    case 'farcaster': return `https://warpcast.com/${h}`;
   }
+}
+
+/** Display label next to the icon: X shows @handle, GitHub the bare username. */
+function labelFor(key: SocialKey, raw: string): string {
+  const h = clean(raw);
+  return key === 'twitter' ? `@${h}` : h;
 }
 
 export function ProfileSocialLinks({ profile, c }: {
@@ -42,23 +44,22 @@ export function ProfileSocialLinks({ profile, c }: {
   c: Palette;
 }): React.ReactElement | null {
   if (!profile) return null;
-  const keys: SocialKey[] = ['twitter', 'github', 'lens', 'farcaster'];
+  const keys: SocialKey[] = ['twitter', 'github'];
   const present = keys.filter(k => profile[k]?.trim());
   if (present.length === 0) return null;
 
   return (
-    <Box style={{
-      flexDirection: 'row', alignItems: 'center', gap: 18,
-      marginHorizontal: 16, marginTop: 16,
-    }}>
+    <Box style={{ gap: 10, marginHorizontal: 16, marginTop: 16 }}>
       {present.map(k => (
         <Pressable
           key={k}
           hitSlop={8}
           onPress={() => { void Linking.openURL(urlFor(k, profile[k] as string)); }}
-          style={{ padding: 2 }}
         >
-          <BrandIcon name={ICON[k]} size={22} color={c.text} />
+          <Row style={{ alignItems: 'center', gap: 8 }}>
+            <BrandIcon name={ICON[k]} size={18} color={c.text} />
+            <Text style={{ color: c.text }}>{labelFor(k, profile[k] as string)}</Text>
+          </Row>
         </Pressable>
       ))}
     </Box>
