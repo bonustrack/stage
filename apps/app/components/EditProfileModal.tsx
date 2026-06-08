@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, TextInput } from 'react-native';
-import { Stamp } from './Stamp';
+import { Avatar } from './Avatar';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from './layout';
 import { Button } from '@metro-labs/kit/button';
@@ -103,7 +103,7 @@ export default function EditProfileModal({
         <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
           <Box style={{ alignItems: 'center', marginBottom: 20 }}>
             <Pressable onPress={pickAvatar} disabled={uploading}>
-              <Stamp
+              <Avatar
                 address={address}
                 size={AVATAR_SIZE}
                 cacheBuster={getCacheHash(form.avatar)}

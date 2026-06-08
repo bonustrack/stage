@@ -20,7 +20,7 @@ import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { SendHeader } from './send.fields';
 import { WalletFooter, useFooterReporter, useFormPal } from './wallet.form';
 import { PublicSendBody } from './send.public.body';
-import { SendShieldedBody } from './send-shielded.form';
+import { ShieldFlowForm } from './send.shield';
 import { TokenSelector, useSelectedBalance, useTopToken, type TokenChoice } from './TokenSelector';
 
 export default function WalletSend(): React.ReactElement {
@@ -76,7 +76,7 @@ export default function WalletSend(): React.ReactElement {
         <TokenSelector mode="combined" value={token} onChange={onChange} />
 
         {token.isPrivate ? (
-          <SendShieldedBody key={bodyKey} pal={formPal} dark={dark}
+          <ShieldFlowForm key={bodyKey} mode="send" pal={formPal} dark={dark}
             symbol={token.symbol === 'USDC' ? 'USDC' : 'ETH'} chainId={token.chainId} balance={balance}
             onFooter={reportFooter} />
         ) : (
