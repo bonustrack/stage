@@ -46,26 +46,36 @@ const SILENT_TYPES = new Set([
 
 /** Run one account's sync timer + message stream, isolated so a crash in one
  *  account doesn't down the whole train. */
-async function runAccount(acct: Account): Promise<void> {
+async function runAccount(acct: Account, idx: number): Promise<void> {
   const { id } = acct.cfg;
   try {
-    await acct.client.conversations.syncAll([ConsentState.Allowed, ConsentState.Unknown]);
+    await acct.client.conversations.syncAll([ConsentState.Allowed]);
     const initial = await acct.client.conversations.list();
     process.stderr.write(`xmtp[${id}]: synced ${initial.length} conversation(s) at boot\n`);
   } catch (err) { process.stderr.write(`xmtp[${id}] boot sync error: ${(err as Error).message}\n`); }
 
+  // Per-account jitter (derived from account index, NOT random) so the accounts'
+  // periodic syncAll calls do not fire simultaneously and double the load.
+  const jitter = (idx % 6) * 5000;
   setInterval(async () => {
-    try { await acct.client.conversations.syncAll([ConsentState.Allowed, ConsentState.Unknown]); }
+    try { await acct.client.conversations.syncAll([ConsentState.Allowed]); }
     catch (err) { process.stderr.write(`xmtp[${id}] sync error: ${(err as Error).message}\n`); }
-  }, SYNC_MS).unref();
+  }, SYNC_MS + jitter).unref();
 
-  // Message stream with reconnect: on stream throw, log + retry after 5s rather
-  // than letting the rejection bubble and exit the process.
+  // Message stream with reconnect + EXPONENTIAL BACKOFF: on stream throw, log and
+  // retry with a delay that starts at 5s and doubles per consecutive failure up
+  // to a 60s cap. Reset to 5s after a clean (re)subscribe or a received message,
+  // so a transient throttle does not become a self-amplifying re-subscribe storm.
+  const MIN_DELAY = 5000;
+  const MAX_DELAY = 60000;
+  let delay = MIN_DELAY;
   for (;;) {
     try {
       const stream = await acct.client.conversations.streamAllMessages({
-        consentStates: [ConsentState.Allowed, ConsentState.Unknown] });
+        consentStates: [ConsentState.Allowed] });
+      delay = MIN_DELAY; // clean (re)subscribe - reset backoff
       for await (const msg of stream) {
+        delay = MIN_DELAY; // received a message - reset backoff
         if (!msg) continue;
         if (msg.senderInboxId === acct.client.inboxId) continue;        // own/echo
         if (SILENT_TYPES.has(msg.contentType?.typeId ?? '')) continue;  // silent types
@@ -90,9 +100,10 @@ async function runAccount(acct: Account): Promise<void> {
         pushInbound(id, env, msg, conv);
       }
     } catch (err) {
-      process.stderr.write(`xmtp[${id}] stream error (retry 5s): ${(err as Error).message}\n`);
+      process.stderr.write(`xmtp[${id}] stream error (retry ${delay / 1000}s): ${(err as Error).message}\n`);
     }
-    await new Promise(r => setTimeout(r, 5000));
+    await new Promise(r => setTimeout(r, delay));
+    delay = Math.min(delay * 2, MAX_DELAY); // backoff on consecutive failures
   }
 }
 
@@ -104,4 +115,5 @@ for (const cfg of cfgs) {
 if (accounts.size === 0) { process.stderr.write('xmtp: no accounts booted, exiting\n'); process.exit(2); }
 process.stderr.write(`xmtp train ready — ${accounts.size} account(s): ${[...accounts.keys()].join(', ')}\n`);
 
-for (const acct of accounts.values()) void runAccount(acct);
+let acctIdx = 0;
+for (const acct of accounts.values()) void runAccount(acct, acctIdx++);
