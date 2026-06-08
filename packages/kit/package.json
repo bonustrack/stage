@@ -29,7 +29,13 @@
     "./input": "./src/input.tsx",
     "./textarea": "./src/textarea.tsx",
     "./checkbox": "./src/checkbox.tsx",
-    "./radio-group": "./src/radio-group.tsx"
+    "./radio-group": "./src/radio-group.tsx",
+    "./box": "./src/box.tsx",
+    "./avatar-view": "./src/avatar.tsx",
+    "./markdown": "./src/markdown.tsx",
+    "./table": "./src/table.tsx",
+    "./scroll": "./src/scroll.tsx",
+    "./pressable": "./src/pressable.tsx"
   },
   "peerDependencies": {
     "react": "*",

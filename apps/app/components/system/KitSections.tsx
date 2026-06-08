@@ -18,6 +18,10 @@ import { Input } from '@metro-labs/kit/input';
 import { Textarea } from '@metro-labs/kit/textarea';
 import { Checkbox } from '@metro-labs/kit/checkbox';
 import { RadioGroup } from '@metro-labs/kit/radio-group';
+import { Markdown } from '@metro-labs/kit/markdown';
+import { Table } from '@metro-labs/kit/table';
+import { Scroll } from '@metro-labs/kit/scroll';
+import { Pressable } from '@metro-labs/kit/pressable';
 import { GallerySection } from './GallerySection';
 import type { GalleryPalette } from './galleryPalette';
 
@@ -156,6 +160,48 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
             { label: 'Team', value: 'team' },
           ]}
         />
+      </GallerySection>
+
+      <GallerySection name="Markdown" note="ChatKit value - headings / code / links" {...sec} innerPadH={14} innerPadV={12}>
+        <Markdown
+          dark={dark}
+          value={'## Markdown\nRenders **bold**, _italic_, `inline code`, and [links](https://metro.box).\n\n- Bulleted item\n- Second item\n\n```\ncode fence\n```'}
+        />
+      </GallerySection>
+
+      <GallerySection name="Table" note="ChatKit Table / Row / Cell - header + data" {...sec} framed={false}>
+        <Table dark={dark}>
+          <Table.Row header>
+            <Table.Cell><Text dark={dark} weight="semibold">Token</Text></Table.Cell>
+            <Table.Cell align="end"><Text dark={dark} weight="semibold">Balance</Text></Table.Cell>
+          </Table.Row>
+          <Table.Row>
+            <Table.Cell><Text dark={dark}>ETH</Text></Table.Cell>
+            <Table.Cell align="end"><Text dark={dark} variant="mono">1.42</Text></Table.Cell>
+          </Table.Row>
+          <Table.Row>
+            <Table.Cell><Text dark={dark}>USDC</Text></Table.Cell>
+            <Table.Cell align="end"><Text dark={dark} variant="mono">980.00</Text></Table.Cell>
+          </Table.Row>
+        </Table>
+      </GallerySection>
+
+      <GallerySection name="Scroll" note="Kit ScrollView wrapper - padding / gap shorthands" {...sec} innerPadH={14} innerPadV={12}>
+        <Scroll horizontal gap={8} style={{ maxHeight: 48 }} showsHorizontalScrollIndicator={false}>
+          {['One', 'Two', 'Three', 'Four', 'Five'].map((n) => (
+            <Box key={n} px={12} py={8} radius={8} bg={dark ? '#1c1c1e' : '#f0f0f2'}>
+              <Text dark={dark}>{n}</Text>
+            </Box>
+          ))}
+        </Scroll>
+      </GallerySection>
+
+      <GallerySection name="Pressable" note="Kit Pressable wrapper - pressedOpacity feedback" {...sec} innerPadH={14} innerPadV={12}>
+        <Pressable pressedOpacity={0.5} onPress={() => {}}>
+          <Box px={12} py={10} radius={8} bg={dark ? '#1c1c1e' : '#f0f0f2'}>
+            <Text dark={dark}>Tap me - dims on press</Text>
+          </Box>
+        </Pressable>
       </GallerySection>
     </Box>
   );
