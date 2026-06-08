@@ -6,6 +6,19 @@
 import { File, Paths } from 'expo-file-system';
 import { stripMetadataBytes, isStrippableImage } from './stripMetadata';
 
+/** Compile-time guarantee that the outbound file-metadata strip cannot be
+ *  bypassed. `SanitizedFileUri` is a NOMINAL (branded) string: a plain `string`
+ *  is NOT assignable to it. The ONLY function that produces one is
+ *  `sanitizeFileUri` below - it runs the strip, then brands the result. The
+ *  encrypt boundary (`encryptSanitizedAttachment`) accepts ONLY this type, so a
+ *  future send path that hands a raw, un-sanitised uri to the encoder is a TYPE
+ *  ERROR. Bypassing the strip therefore requires a deliberate, reviewable `as
+ *  SanitizedFileUri` cast - it can no longer happen by accident. The brand is a
+ *  phantom field (a `unique symbol`); it has zero runtime footprint - at runtime
+ *  a `SanitizedFileUri` is just the string uri. */
+declare const sanitizedBrand: unique symbol;
+export type SanitizedFileUri = string & { readonly [sanitizedBrand]: true };
+
 /** Pineapple = Snapshot's IPFS pinning gateway. Reused from the avatar-upload
  *  path (`lib/profile.ts`); attachments are encrypted client-side before upload,
  *  so the public CID only ever exposes ciphertext. */
@@ -74,26 +87,34 @@ export async function materializeFileUri(src: string): Promise<string> {
  *  it. Failures fall back to the original uri so a send is never blocked.
  *
  *  This is the single chokepoint: `xmtpSendMultiRemoteAttachment` calls it for
- *  every non-audio attachment, so EVERY image send is sanitised, not optionally. */
+ *  every non-audio attachment, so EVERY image send is sanitised, not optionally.
+ *
+ *  Returns a branded `SanitizedFileUri` - the ONLY producer of that type. The
+ *  encrypt boundary requires it, so the strip cannot be skipped (see the
+ *  `SanitizedFileUri` doc). The non-strippable / unchanged / failure branches
+ *  brand the ORIGINAL uri: that is correct because those formats are not a
+ *  metadata-leak vector we can strip in pure JS (video/doc/HEIC) - the brand
+ *  asserts "this uri has been through the strip gate", not "bytes were removed". */
 export async function sanitizeFileUri(
   uri: string, mimeType: string | undefined, filename: string | undefined,
-): Promise<string> {
-  if (!isStrippableImage(mimeType, filename)) return uri;
+): Promise<SanitizedFileUri> {
+  if (!isStrippableImage(mimeType, filename)) return uri as SanitizedFileUri;
   try {
     const blob = await (await fetch(uri)).blob();
     const input = new Uint8Array(await blob.arrayBuffer());
     const { bytes, stripped } = stripMetadataBytes(input);
     if (!stripped || bytes.length === input.length && bytes.every((v, k) => v === input[k])) {
-      return uri; // nothing removed (no metadata present) - keep original file
+      return uri as SanitizedFileUri; // nothing removed (no metadata present) - keep original file
     }
     const ext = (filename ?? uri).split('?')[0]?.split('.').pop()?.toLowerCase() ?? 'img';
     const dest = new File(Paths.cache, `xmtp-clean-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext.length <= 5 ? ext : 'img'}`);
     if (dest.exists) try { dest.delete(); } catch { /* overwrite below */ }
     dest.create();
     dest.write(bytes);
-    return dest.uri.startsWith('file://') ? dest.uri : `file://${dest.uri.replace(/^file:\/+/, '/')}`;
+    const clean = dest.uri.startsWith('file://') ? dest.uri : `file://${dest.uri.replace(/^file:\/+/, '/')}`;
+    return clean as SanitizedFileUri;
   } catch {
-    return uri; // never block a send on a strip failure
+    return uri as SanitizedFileUri; // never block a send on a strip failure
   }
 }
 

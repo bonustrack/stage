@@ -13,9 +13,29 @@ import { getCachedXmtpClient, getOrCreateXmtpClient, convOfLine } from './xmtp.c
 import { type LocalAttachmentInput } from './xmtp.types';
 import {
   EXT_MIME, materializeFileUri, sanitizeFileUri, uploadEncryptedToIpfs, swarmToHttp,
+  type SanitizedFileUri,
 } from './xmtp.swarm';
 
 export { swarmToHttp } from './xmtp.swarm';
+
+/** Compile-time chokepoint for the metadata strip. This is the ONLY function in
+ *  the send path that calls the native `encryptAttachment`, and its `fileUri`
+ *  param is typed `SanitizedFileUri` (a branded string only `sanitizeFileUri`
+ *  can produce). So you physically cannot encrypt a file that has not been
+ *  through the strip gate without a deliberate, reviewable `as SanitizedFileUri`
+ *  cast. Behaviour is identical to calling `client.encryptAttachment` directly -
+ *  this wrapper is purely a type fence. */
+type AttachmentEncryptor = {
+  encryptAttachment: (file: {
+    fileUri: string; mimeType?: string; filename?: string;
+  }) => Promise<EncryptedLocalAttachment>;
+};
+export async function encryptSanitizedAttachment(
+  client: AttachmentEncryptor,
+  file: { fileUri: SanitizedFileUri; mimeType?: string; filename?: string },
+): Promise<EncryptedLocalAttachment> {
+  return await client.encryptAttachment(file);
+}
 
 /** Send several attachments as ONE XMTP message using the multi-remote-attachment
  *  content type. Each file is encrypted on-device (native `encryptAttachment`),
@@ -55,7 +75,10 @@ export async function xmtpSendMultiRemoteAttachment(
      *  sender's location or device fingerprint. Non-image / unsupported formats
      *  pass through unchanged (see sanitizeFileUri). */
     const cleanUri = await sanitizeFileUri(fileUri, mimeType, f.filename);
-    const encrypted = await client.encryptAttachment({
+    /** Encrypt through the branded boundary: `cleanUri` is a `SanitizedFileUri`,
+     *  the only type `encryptSanitizedAttachment` accepts. Threading a raw
+     *  `string` here would not compile. */
+    const encrypted = await encryptSanitizedAttachment(client, {
       fileUri: cleanUri, mimeType, filename: f.filename,
     });
     const url = await uploadEncryptedToIpfs(encrypted.encryptedLocalFileUri, f.filename);
