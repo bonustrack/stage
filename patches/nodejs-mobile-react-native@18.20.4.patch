@@ -1,5 +1,5 @@
 diff --git a/android/build.gradle b/android/build.gradle
-index 14be6078d34741856a4d4027b4497ea4966da0a7..a29ee9dba2a9f6f0ee38296b398349b0d702302e 100644
+index 14be607..bf1d90a 100644
 --- a/android/build.gradle
 +++ b/android/build.gradle
 @@ -20,35 +20,23 @@ if (_compileNativeModulesSdkVersion<24) {
@@ -37,7 +37,7 @@ index 14be6078d34741856a4d4027b4497ea4966da0a7..a29ee9dba2a9f6f0ee38296b398349b0
 +    // its OWN NDK-24 libc++_shared.so. That shadows RN/Expo's libc++_shared.so and
 +    // breaks XMTP's Rust MLS lib (libuniffi_xmtpv3.so) → instant native crash at
 +    // XMTP.create. We are on RN 0.81, which always defines the wanted STL
-+    // (c++_shared), so the app already provides it — return true unconditionally.
++    // (c++_shared), so the app already provides it - return true unconditionally.
 +    return true
  }
  
@@ -50,8 +50,25 @@ index 14be6078d34741856a4d4027b4497ea4966da0a7..a29ee9dba2a9f6f0ee38296b398349b0
      compileSdkVersion ((rootProject?.ext?.properties?.compileSdkVersion) ?: 24)
      buildToolsVersion ((rootProject?.ext?.properties?.buildToolsVersion) ?: "30.0.2")
  
+@@ -409,8 +397,14 @@ if ("1".equals(shouldRebuildNativeModules)) {
+             if (nodeVersionResult.exitValue != 0) {
+                 throw new GradleException("Failed to get node version: ${nodeVersionResult.errorOutput}")
+             }
+-            if (nodeVersionStdout.toString().trim() != "${_nodeVersionRequired}") {
+-                throw new GradleException("nodejs-mobile-react-native requires Node.js version ${_nodeVersionRequired}, but found ${nodeVersionStdout.toString().trim()}")
++            // Patched: accept Node >= required (was strict ==). Expo SDK 54's
++            // Metro bundle phase needs Node 20+ (Array.prototype.toReversed),
++            // so the whole EAS build runs Node 20. The nodejs-mobile native
++            // modules are DOWNLOADED prebuilds (DetectCorrectPrebuilds), not
++            // host-compiled, so the build-host Node major only orchestrates -
++            // Node 20 is safe. Strict == 18 here blocked the production AAB.
++            if (nodeVersionStdout.toString().trim().toInteger() < _nodeVersionRequired) {
++                throw new GradleException("nodejs-mobile-react-native requires Node.js version >= ${_nodeVersionRequired}, but found ${nodeVersionStdout.toString().trim()}")
+             }
+             inputs.file "${rootProject.buildDir}/nodejs-native-assets-temp-build/nodejs-native-assets-${abi_name}/copy.timestamp"
+             outputs.dir "${rootProject.buildDir}/nodejs-native-assets-temp-build/nodejs-native-assets-${abi_name}/nodejs-project/"
 diff --git a/android/src/main/AndroidManifest.xml b/android/src/main/AndroidManifest.xml
-index 78cb6c572a0c30e6b1129d3378ed4a7418351a74..3c21b61c758c5d7a28b38a17848b0c94a337899b 100644
+index 78cb6c5..3c21b61 100644
 --- a/android/src/main/AndroidManifest.xml
 +++ b/android/src/main/AndroidManifest.xml
 @@ -1,6 +1,5 @@
@@ -64,7 +81,7 @@ index 78cb6c572a0c30e6b1129d3378ed4a7418351a74..3c21b61c758c5d7a28b38a17848b0c94
    
 \ No newline at end of file
 diff --git a/index.js b/index.js
-index fb09c487535de76e78b879bb31861b77c6a2434c..407b1631291462266b8959ec0280d11f4cf230c8 100644
+index fb09c48..407b163 100644
 --- a/index.js
 +++ b/index.js
 @@ -12,12 +12,25 @@ var channels = {};
@@ -104,7 +121,7 @@ index fb09c487535de76e78b879bb31861b77c6a2434c..407b1631291462266b8959ec0280d11f
      return envelope;
    };
 diff --git a/install/resources/nodejs-modules/builtin_modules/rn-bridge/index.js b/install/resources/nodejs-modules/builtin_modules/rn-bridge/index.js
-index c6280bf48d77eceed0498ac9cd192751182e1851..c13941d522eafb5db67b088efabcf93e2c6d3d5e 100644
+index c6280bf..c13941d 100644
 --- a/install/resources/nodejs-modules/builtin_modules/rn-bridge/index.js
 +++ b/install/resources/nodejs-modules/builtin_modules/rn-bridge/index.js
 @@ -21,12 +21,25 @@ const SYSTEM_CHANNEL = '_SYSTEM_';
