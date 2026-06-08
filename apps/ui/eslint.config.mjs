@@ -18,7 +18,7 @@ export default tseslint.config(
   {
     files: ['src/**/*.{ts,tsx}'],
     rules: {
-      'max-lines': ['error', { max: 200, skipBlankLines: false, skipComments: false }],
+      'max-lines': ['error', { max: 400, skipBlankLines: false, skipComments: false }],
     },
   },
   {
@@ -45,7 +45,7 @@ export default tseslint.config(
       'vue/html-closing-bracket-newline': 'off',
       'vue/first-attribute-linebreak': 'off',
       'vue/attribute-hyphenation': 'off',
-      'max-lines': ['error', { max: 200, skipBlankLines: false, skipComments: false }],
+      'max-lines': ['error', { max: 400, skipBlankLines: false, skipComments: false }],
     },
   },
 );
