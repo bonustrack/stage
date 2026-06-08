@@ -13,6 +13,11 @@ import { Divider } from '@metro-labs/kit/divider';
 import { Caption } from '@metro-labs/kit/caption';
 import { Image } from '@metro-labs/kit/image';
 import { Spacer } from '@metro-labs/kit/spacer';
+import { Label } from '@metro-labs/kit/label';
+import { Input } from '@metro-labs/kit/input';
+import { Textarea } from '@metro-labs/kit/textarea';
+import { Checkbox } from '@metro-labs/kit/checkbox';
+import { RadioGroup } from '@metro-labs/kit/radio-group';
 import { GallerySection } from './GallerySection';
 import type { GalleryPalette } from './galleryPalette';
 
@@ -114,6 +119,43 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
           <Spacer />
           <Text dark={dark} color={sub}>End</Text>
         </Row>
+      </GallerySection>
+
+      <GallerySection name="Label" note="Form-field label - size / weight / align" {...sec} innerPadH={14} innerPadV={14}>
+        <Label dark={dark} fieldName="email" value="Email address" />
+        <Label dark={dark} value="Semibold large label" size="lg" weight="semibold" />
+      </GallerySection>
+
+      <GallerySection name="Input" note="Single-line field - soft / outline / pill" {...sec} innerPadH={14} innerPadV={14}>
+        <Box style={{ gap: 10 }}>
+          <Input dark={dark} name="soft" placeholder="Soft input" variant="soft" />
+          <Input dark={dark} name="outline" placeholder="Outline input" variant="outline" />
+          <Input dark={dark} name="pill" placeholder="Pill input" variant="soft" pill />
+        </Box>
+      </GallerySection>
+
+      <GallerySection name="Textarea" note="Multi-line field - rows / auto-resize" {...sec} innerPadH={14} innerPadV={14}>
+        <Textarea dark={dark} name="bio" placeholder="Tell us about yourself..." rows={3} maxRows={6} />
+      </GallerySection>
+
+      <GallerySection name="Checkbox" note="Boolean control - label / checked" {...sec} innerPadH={14} innerPadV={14}>
+        <Box style={{ gap: 10 }}>
+          <Checkbox dark={dark} name="terms" label="Accept the terms" defaultChecked />
+          <Checkbox dark={dark} name="news" label="Subscribe to updates" />
+        </Box>
+      </GallerySection>
+
+      <GallerySection name="RadioGroup" note="Single-select - options / direction" {...sec} innerPadH={14} innerPadV={14}>
+        <RadioGroup
+          dark={dark}
+          name="plan"
+          defaultValue="pro"
+          options={[
+            { label: 'Free', value: 'free' },
+            { label: 'Pro', value: 'pro' },
+            { label: 'Team', value: 'team' },
+          ]}
+        />
       </GallerySection>
     </Box>
   );
