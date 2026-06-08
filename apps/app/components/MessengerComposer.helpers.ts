@@ -1,6 +1,13 @@
 /** Shared types + pure helpers for the MessengerComposer (extracted for lint
  *  line-budget; behavior identical). */
 
+/** Canonical EXT_MIME lives in lib/xmtp.swarm (the lower-level attachment lib),
+ *  surfaced through the messaging facade barrel; re-exported here so existing
+ *  composer-side importers keep their path. */
+import { EXT_MIME } from '../modules/messaging';
+
+export { EXT_MIME };
+
 /** Composer-local representation of a staged attachment. `url` is a `file://` URI in xmtp
  *  mode (the only mode the mobile composer supports now). `id` is a client-side dedupe key. */
 export interface Attachment {
@@ -9,17 +16,6 @@ export interface Attachment {
 
 /** Shared color palette threaded into the composer's builder sheets. */
 export interface Palette { fg: string; sub: string; inputBg: string; chipBg: string }
-
-/** Map a file extension → MIME type for the formats the composer can stage. The
- *  voice recorder writes `.m4a` (AAC) and image pickers can hand back HEIC/PNG
- *  etc. with a missing `mimeType`, so we need a deterministic fallback. */
-export const EXT_MIME: Record<string, string> = {
-  jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif',
-  webp: 'image/webp', heic: 'image/heic', heif: 'image/heif', bmp: 'image/bmp',
-  m4a: 'audio/m4a', mp3: 'audio/mpeg', wav: 'audio/wav', aac: 'audio/aac',
-  ogg: 'audio/ogg', caf: 'audio/x-caf', mp4: 'video/mp4', mov: 'video/quicktime',
-  webm: 'video/webm', pdf: 'application/pdf',
-};
 
 /** Resolve a usable MIME for a staged file. Prefers the picker/recorder-supplied
  *  `mime`, but pickers frequently return `''`/`undefined` (HEIC screenshots,

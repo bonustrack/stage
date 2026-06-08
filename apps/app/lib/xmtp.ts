@@ -44,6 +44,7 @@ export {
 export {
   swarmToHttp, xmtpSendMultiRemoteAttachment, resolveRemoteAttachment, fileUriToBase64,
 } from './xmtp.attachments';
+export { EXT_MIME } from './xmtp.swarm';
 
 export { subscribeAllMessages } from './xmtp.stream';
 export { useXmtpFeed } from './xmtp.feed';

@@ -45,9 +45,10 @@ export function swarmToHttp(url: string): string {
   return `${SWARM_GATEWAY}${ref}/`;
 }
 
-/** Extension → MIME fallback for the formats the composer can stage. Mirrors the
- *  composer's table; used as a last resort when a picker/recorder hands back an
- *  empty MIME so the native encoder never receives `''`. */
+/** Canonical extension → MIME fallback for the formats the composer can stage.
+ *  Used as a last resort when a picker/recorder hands back an empty MIME so the
+ *  native encoder never receives `''`. Re-exported from
+ *  components/MessengerComposer.helpers for the composer-side import path. */
 export const EXT_MIME: Record<string, string> = {
   jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif',
   webp: 'image/webp', heic: 'image/heic', heif: 'image/heif', bmp: 'image/bmp',
