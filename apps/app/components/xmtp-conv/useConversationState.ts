@@ -13,7 +13,6 @@ import { setActiveConversation } from '../../modules/metro-pill';
 import { setActiveConvId } from '../../lib/activeConv';
 import { markConvRead, getCachedRows } from '../../modules/messaging';
 import { getGithubLink } from '../../modules/messaging';
-import { getPreviewLink } from '../../modules/messaging';
 import { useCachedGroupString } from './useCachedGroupString';
 import { getGroupLabels } from '../../modules/messaging';
 import { convScrollKey, getScrollOffset, flushScrollOffset, markConvAtBottom } from '../../lib/scrollPos';
@@ -74,11 +73,9 @@ export function useConversationState(convId: string | undefined, focus: string |
   /** Conversation metadata via TanStack Query — cached by convId (groupName:
    *  null = not resolved, '' = no name; isGroup gates the title→/group). */
   const { peerAddr, memberAddrs, inboxToAddr, groupName, groupImage, groupDescription, isGroup } = useConvMeta(convId);
-  /** Synced-appData string fields (github link, preview deep link) — each seeds
-   *  from the cached row, then refreshes off the group's appData on mount. github
-   *  drives the topnav GitHub icon; preview drives the Play icon (groups only). */
+  /** Synced-appData string field (github link). Seeds from the cached row, then
+   *  refreshes off the group's appData on mount; drives the topnav GitHub icon. */
   const github = useCachedGroupString(convId, activeLine, isGroup, 'github', getGithubLink);
-  const preview = useCachedGroupString(convId, activeLine, isGroup, 'preview', getPreviewLink);
 
   /** Group label chips for the intro header — seed from cache, refresh on mount. */
   const cachedLabels = (cid?: string): string[] => {
@@ -183,7 +180,7 @@ export function useConversationState(convId: string | undefined, focus: string |
     menuFor, setMenuFor, menuAnchor, setMenuAnchor, overflowOpen, setOverflowOpen,
     selectedForCopy, setSelectedForCopy,
     confirmedIds, optimisticReactions, optimisticRemovals,
-    peerAddr, groupName, groupImage, groupDescription, groupLabels, isGroup, github, preview, senderEthOf,
+    peerAddr, groupName, groupImage, groupDescription, groupLabels, isGroup, github, senderEthOf,
     profilesVersion, mentionCandidates, listRef,
     savedScrollRef, savedScrollLoaded, didRestoreScroll, pinBottomUntil, isAtBottomRef,
     reactions, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers,

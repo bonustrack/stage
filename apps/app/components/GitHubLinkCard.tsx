@@ -1,11 +1,11 @@
 /** Rich preview card for a github.com repo / PR / issue link found in a message
  *  body. Rendered as a bordered, transparent container (matching the metro://
- *  channel card look — 1px theme border, rounded, no background fill), with the
+ *  channel card look - 1px theme border, rounded, no background fill), with the
  *  real GitHub mark via `GithubLogo`.
  *
  *  Metadata is fetched (unauthenticated) through `useGithubMeta`; while it's
  *  loading OR on any failure (private 404, rate-limit 403, network) the hook
- *  returns null and we render NOTHING — the plain text link stays as-is, never a
+ *  returns null and we render NOTHING - the plain text link stays as-is, never a
  *  broken/empty card. Detection is done by the caller via `githubLinkOf`. */
 
 import { Linking, Pressable } from 'react-native';
@@ -24,7 +24,7 @@ const DOT: Record<string, string> = {
 const fmt = (n: number): string => n.toLocaleString('en-US');
 
 export function GitHubLinkCard({ url }: {
-  /** `dark` is accepted for call-site symmetry but no longer needed — all colors
+  /** `dark` is accepted for call-site symmetry but no longer needed - all colors
    *  now come from the live palette tokens. */
   url: string; dark?: boolean;
 }): React.ReactElement | null {
@@ -53,14 +53,14 @@ export function GitHubLinkCard({ url }: {
           </Text>
         </Row>
         <Text
-          style={{ color: fg, fontSize: 15, fontFamily: 'Calibre-Semibold', lineHeight: 19 }}
+          style={{ color: fg, fontSize: 19, fontFamily: 'Calibre-Semibold' }}
           numberOfLines={2}
         >
           {meta.title}
         </Text>
         {meta.description ? (
           <Text
-            style={{ color: subColor, fontSize: 12, fontFamily: 'Calibre-Medium', marginTop: 3 }}
+            style={{ color: subColor, fontSize: 16, lineHeight: 21, fontFamily: 'Calibre-Medium', marginTop: 3 }}
             numberOfLines={2}
           >
             {meta.description}

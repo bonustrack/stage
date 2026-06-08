@@ -17,14 +17,12 @@
  *    - lib/xmtp.labels         group label read/write + permission error
  *    - lib/xmtp.labels.suggest label suggestions
  *    - lib/xmtp.github         group GitHub link read/write
- *    - lib/xmtp.preview        group preview link read/write
  */
 
 export * from '../../lib/xmtp';
 export * from '../../lib/xmtp.labels';
 export * from '../../lib/xmtp.labels.suggest';
 export * from '../../lib/xmtp.github';
-export * from '../../lib/xmtp.preview';
 
 /** Stage 2 facade surfaces. These move the corresponding lib internals behind
  *  the facade with zero behavior change; see each module's header.
