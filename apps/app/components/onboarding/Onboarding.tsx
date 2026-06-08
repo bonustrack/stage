@@ -40,7 +40,7 @@ interface Slide {
 const SLIDES: Slide[] = [
   {
     icon: 'chatBubble',
-    title: 'Welcome to Metro',
+    title: 'Welcome to Stage',
     body: 'Private, end-to-end encrypted messaging - wallet to wallet, no phone number, no email.',
   },
   {
