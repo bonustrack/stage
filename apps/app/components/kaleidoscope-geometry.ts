@@ -18,6 +18,7 @@ export const PALETTE = {
 /** Sharp outer triangular petal radiating from centre to the rim. `reach`
  *  drives the morph (the petal grows / shrinks as the wheel breathes). */
 export function wedgeTriangle(reach: number): string {
+  'worklet';
   const tip = CENTER - reach;
   const halfWidth = reach * 0.22;
   return `M${CENTER} ${CENTER} L${CENTER + halfWidth} ${tip} L${CENTER - halfWidth} ${tip} Z`;
@@ -25,6 +26,7 @@ export function wedgeTriangle(reach: number): string {
 
 /** Slim inner shard, a thinner counter-petal for depth between the triangles. */
 export function wedgeShard(reach: number): string {
+  'worklet';
   const tip = CENTER - reach * 0.62;
   const ctrl = CENTER - reach * 0.3;
   const w = reach * 0.06;
