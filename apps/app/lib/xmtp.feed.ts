@@ -117,13 +117,32 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
          *  arrive via MLS group commits the native stream drops. A bare
          *  `conv.sync()` on this handle doesn't reliably land them — only the
          *  inbox-wide sync does (it's why the channels list saw the latest
-         *  message this feed missed). Run it (coalesced) BEFORE the per-conv sync
-         *  so the re-read below reflects the true network tail. */
-        await syncInboxOnce();
+         *  message this feed missed). Run it BEFORE the per-conv sync so the
+         *  re-read below reflects the true network tail.
+         *
+         *  FORCE it (maxAge 0): an explicit conversation OPEN must not be
+         *  short-circuited by `syncInboxOnce`'s freshness window. The 7s resync
+         *  backstop keeps `activeFeedLines` warm by calling the WINDOWED variant,
+         *  so by the time the user taps a row the window is usually "fresh" and a
+         *  plain `syncInboxOnce()` no-ops — leaving the just-arrived message
+         *  (which the channels list rendered straight off the live stream, in
+         *  memory, without a DB round-trip) absent from this conv's local tail.
+         *  Forcing the sync here is the one place we pay the cost: it's a single
+         *  user-initiated open, not a poll, so the rate-limit blast radius the
+         *  window protects stays intact. */
+        await syncInboxOnce(0);
         if (cancelled) return;
         await conv.sync().catch(() => undefined);
         if (cancelled) return;
-        const synced = await conv.messages({ limit: PAGE_SIZE });
+        /** Re-acquire the conversation handle AFTER the inbox-wide sync. The
+         *  handle opened above came from `findConversation` BEFORE the sync; its
+         *  `.messages()` can lag the freshly-synced local DB (the channels list
+         *  avoids this by re-listing conversations post-sync). A fresh handle
+         *  reads the true tail. Fall back to the original handle if re-resolve
+         *  fails. */
+        const fresh = (await convOfLine(ln)) ?? conv;
+        if (cancelled) return;
+        const synced = await fresh.messages({ limit: PAGE_SIZE });
         if (cancelled) return;
         applyMessages(synced);
         noteInitialPage(synced.length);
