@@ -23,8 +23,9 @@ import EditProfileModal from './EditProfileModal';
 import { Avatar } from './Avatar';
 import { Box, Col } from './layout';
 import { ImageViewer } from './ImageViewer';
+import { ProfileSocialLinks } from './ProfileSocialLinks';
 import {
-  EditMenu, InfoRow, ProfileActions, ProfileHeader, useProfileColors, useSelfAddress,
+  EditMenu, ProfileActions, ProfileHeader, useProfileColors, useSelfAddress,
 } from './ProfileScreen.parts';
 import { CommonChannels } from './CommonChannels';
 
@@ -147,10 +148,10 @@ export function ProfileScreen({ address, variant, panRef }: {
           ) : null}
         </Box>
 
-        {profile?.github?.trim() ? <InfoRow label="GitHub" value={profile.github} c={c} /> : null}
-        {profile?.twitter?.trim() ? <InfoRow label="X (Twitter)" value={profile.twitter} c={c} /> : null}
-        {profile?.lens?.trim() ? <InfoRow label="Lens" value={profile.lens} c={c} /> : null}
-        {profile?.farcaster?.trim() ? <InfoRow label="Farcaster" value={profile.farcaster} c={c} /> : null}
+        {/* Socials - compact row of tappable brand icons (snapshot.box style),
+            shown only for the networks the user has set. Read-only; the edit
+            form (EditProfileModal) still owns input. */}
+        <ProfileSocialLinks profile={profile} c={c} />
 
         {/* Common channels — groups the local user + this peer are BOTH in.
             Only for OTHER users; resolves async so it never blocks the render. */}
