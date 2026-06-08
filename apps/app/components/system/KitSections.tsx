@@ -18,6 +18,9 @@ import { Input } from '@metro-labs/kit/input';
 import { Textarea } from '@metro-labs/kit/textarea';
 import { Checkbox } from '@metro-labs/kit/checkbox';
 import { RadioGroup } from '@metro-labs/kit/radio-group';
+import { Select } from '@metro-labs/kit/select';
+import { DatePicker } from '@metro-labs/kit/date-picker';
+import { Form } from '@metro-labs/kit/form';
 import { Markdown } from '@metro-labs/kit/markdown';
 import { Table } from '@metro-labs/kit/table';
 import { Scroll } from '@metro-labs/kit/scroll';
@@ -160,6 +163,57 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
             { label: 'Team', value: 'team' },
           ]}
         />
+      </GallerySection>
+
+      <GallerySection name="Select" note="Dropdown - options / placeholder / clearable" {...sec} innerPadH={14} innerPadV={14}>
+        <Box style={{ gap: 10 }}>
+          <Select
+            dark={dark}
+            name="network"
+            placeholder="Choose a network"
+            clearable
+            options={[
+              { label: 'Ethereum', value: 'eth' },
+              { label: 'Base', value: 'base' },
+              { label: 'Optimism', value: 'op' },
+              { label: 'Arbitrum', value: 'arb' },
+            ]}
+          />
+          <Select
+            dark={dark}
+            name="role"
+            variant="outline"
+            defaultValue="admin"
+            options={[
+              { label: 'Admin', value: 'admin' },
+              { label: 'Member', value: 'member' },
+            ]}
+          />
+        </Box>
+      </GallerySection>
+
+      <GallerySection name="DatePicker" note="Calendar field - defaultValue / min / clearable" {...sec} innerPadH={14} innerPadV={14}>
+        <Box style={{ gap: 10 }}>
+          <DatePicker dark={dark} name="when" placeholder="Pick a date" clearable />
+          <DatePicker dark={dark} name="dob" variant="outline" defaultValue="2026-01-15" />
+        </Box>
+      </GallerySection>
+
+      <GallerySection name="Form" note="Groups controls + onSubmit" {...sec} innerPadH={14} innerPadV={14}>
+        <Form onSubmit={() => {}}>
+          <Label dark={dark} fieldName="name" value="Display name" />
+          <Input dark={dark} name="name" placeholder="Satoshi" />
+          <Select
+            dark={dark}
+            name="plan"
+            placeholder="Select a plan"
+            options={[
+              { label: 'Free', value: 'free' },
+              { label: 'Pro', value: 'pro' },
+            ]}
+          />
+          <Button dark={dark} variant="primary" label="Submit" />
+        </Form>
       </GallerySection>
 
       <GallerySection name="Markdown" note="ChatKit value - headings / code / links" {...sec} innerPadH={14} innerPadV={12}>

@@ -1,0 +1,198 @@
+/** Select - a ChatKit-styled dropdown. Mirrors ChatKit's `Select` widget.
+ *  Faithful prop names: `name`, `options` ({ label, value }[]), `defaultValue`,
+ *  `placeholder`, `variant` ('soft' | 'outline'), `size` (ControlSize), `pill`,
+ *  `block`, `clearable`, `disabled`. Deviation (kit is interactive RN, not
+ *  server-streamed): ChatKit's `onChangeAction` (a server ActionConfig) is
+ *  replaced by an `onChange(value)` callback, and a controlled `value` prop is
+ *  accepted so the app can drive the field. `dark` boolean keeps the kit
+ *  hook-free. Implemented as a Pressable trigger that opens an RN Modal sheet of
+ *  options, drawn with kit tokens + the shared control box style (no native
+ *  picker dependency). */
+
+import { useState } from 'react';
+import {
+  Modal,
+  Pressable,
+  ScrollView,
+  Text as RNText,
+  View,
+  type ViewStyle,
+} from 'react-native';
+import {
+  controlBoxStyle,
+  controlColors,
+  type ControlSize,
+  type ControlVariant,
+} from './control.styles';
+import { BLOCK_RADIUS_DEFAULT } from './tokens';
+import { Icon } from './icon';
+
+/** ChatKit Select option shape. */
+export interface SelectOption {
+  label: string;
+  value: string;
+}
+
+export interface SelectProps {
+  /** ChatKit: name. Form field name (required). */
+  name?: string;
+  /** ChatKit: options. The selectable choices. */
+  options?: SelectOption[];
+  /** ChatKit: defaultValue. Initial selection (uncontrolled). */
+  defaultValue?: string;
+  /** Controlled selected value (kit extension; pair with onChange). */
+  value?: string;
+  /** ChatKit: placeholder. Shown when no value is selected. */
+  placeholder?: string;
+  /** ChatKit: variant. 'soft' (filled) | 'outline'. Default 'soft'. */
+  variant?: ControlVariant;
+  /** ChatKit: size. ControlSize scale. Default 'md'. */
+  size?: ControlSize;
+  /** ChatKit: pill. Fully-rounded corners. */
+  pill?: boolean;
+  /** ChatKit: block. Stretch to the container width. */
+  block?: boolean;
+  /** ChatKit: clearable. Show a clear ('x') affordance when a value is set. */
+  clearable?: boolean;
+  /** ChatKit: disabled. */
+  disabled?: boolean;
+  /** Corner radius (px). Falls back to the block radius token (or pill). */
+  radius?: number;
+  /** RN substitute for ChatKit's onChangeAction. */
+  onChange?: (value: string) => void;
+  /** Effective color scheme. Pass useEffectiveColorScheme() === 'dark'. */
+  dark?: boolean;
+  /** Escape-hatch style merged last onto the trigger box. */
+  style?: ViewStyle | ViewStyle[];
+}
+
+/** ChatKit-style RN select / dropdown. */
+export function Select(props: SelectProps): React.ReactElement {
+  const {
+    name,
+    options = [],
+    defaultValue,
+    value: controlled,
+    placeholder = 'Select...',
+    variant = 'soft',
+    size = 'md',
+    pill,
+    block,
+    clearable,
+    disabled,
+    radius,
+    onChange,
+    dark = false,
+    style,
+  } = props;
+
+  const [internal, setInternal] = useState<string | undefined>(defaultValue);
+  const [open, setOpen] = useState(false);
+  const selected = controlled ?? internal;
+
+  const colors = controlColors(variant, dark);
+  const corner = radius ?? (pill ? 999 : BLOCK_RADIUS_DEFAULT);
+  const box = controlBoxStyle(size, variant, colors, corner, false);
+  const head = dark ? '#ffffff' : '#000000';
+  const sheetBg = dark ? '#1b1c1e' : '#ffffff';
+  const rowBorder = dark ? '#282a2d' : '#e4e4e5';
+
+  const current = options.find((o) => o.value === selected);
+
+  function pick(v: string): void {
+    if (controlled === undefined) setInternal(v);
+    onChange?.(v);
+    setOpen(false);
+  }
+
+  function clear(): void {
+    if (controlled === undefined) setInternal(undefined);
+    onChange?.('');
+  }
+
+  return (
+    <>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={name}
+        accessibilityState={{ disabled, expanded: open }}
+        disabled={disabled}
+        onPress={() => setOpen(true)}
+        style={[
+          box,
+          {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 8,
+            alignSelf: block ? 'stretch' : 'flex-start',
+            opacity: disabled ? 0.5 : 1,
+          },
+          ...(style ? (Array.isArray(style) ? style : [style]) : []),
+        ]}
+      >
+        <RNText
+          numberOfLines={1}
+          style={{
+            flex: 1,
+            color: current ? head : colors.placeholder,
+            fontSize: 15,
+            fontFamily: 'Calibre-Medium',
+          }}
+        >
+          {current ? current.label : placeholder}
+        </RNText>
+        {clearable && current ? (
+          <Pressable accessibilityRole="button" accessibilityLabel="Clear" onPress={clear} hitSlop={8}>
+            <Icon name="x" size={16} color={colors.placeholder} />
+          </Pressable>
+        ) : null}
+        <Icon name="selector" size={16} color={colors.placeholder} />
+      </Pressable>
+
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+        <Pressable
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 24 }}
+          onPress={() => setOpen(false)}
+        >
+          <Pressable
+            style={{ backgroundColor: sheetBg, borderRadius: 14, overflow: 'hidden', maxHeight: '70%' }}
+            onPress={() => {}}
+          >
+            <ScrollView>
+              {options.map((opt) => {
+                const isSel = opt.value === selected;
+                return (
+                  <Pressable
+                    key={opt.value}
+                    accessibilityRole="menuitem"
+                    accessibilityState={{ selected: isSel }}
+                    onPress={() => pick(opt.value)}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 10,
+                      paddingHorizontal: 16,
+                      paddingVertical: 13,
+                      borderBottomWidth: 1,
+                      borderBottomColor: rowBorder,
+                    }}
+                  >
+                    <RNText style={{ flex: 1, color: head, fontSize: 16, fontFamily: 'Calibre-Medium' }}>
+                      {opt.label}
+                    </RNText>
+                    {isSel ? <Icon name="check" size={18} color={head} /> : null}
+                  </Pressable>
+                );
+              })}
+              {options.length === 0 ? (
+                <View style={{ padding: 16 }}>
+                  <RNText style={{ color: colors.placeholder, fontFamily: 'Calibre-Medium' }}>No options</RNText>
+                </View>
+              ) : null}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </>
+  );
+}
