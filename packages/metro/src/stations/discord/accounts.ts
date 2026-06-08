@@ -1,9 +1,9 @@
 /** Discord multi-bot account config + per-account REST client + line routing. */
 
 import { Client } from 'discord.js';
-import { existsSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { makeAccountStore } from '../account-store.js';
 
 export const API = 'https://discord.com/api/v10';
 
@@ -22,19 +22,11 @@ export interface AccountConfig {
 // metro://discord/<channelId> lines (zero migration). Auto-on in single-token mode.
 export const legacy = { defaultLines: process.env.DISCORD_LEGACY_DEFAULT_LINES === '1' };
 
-const ACCOUNT_ALLOWLIST = new Set(
-  (process.env.DISCORD_ONLY_ACCOUNTS ?? process.env.DISCORD_ACCOUNTS ?? '')
-    .split(',').map(s => s.trim()).filter(Boolean),
-);
-
-const die = (msg: string): never => { process.stderr.write(`discord: ${msg}\n`); process.exit(2); };
-
-export function loadAccounts(): AccountConfig[] {
-  if (existsSync(ACCOUNTS_FILE)) {
-    let raw: AccountConfig[];
-    try { raw = JSON.parse(readFileSync(ACCOUNTS_FILE, 'utf8')) as AccountConfig[]; }
-    catch (e) { return die(`bad ${ACCOUNTS_FILE}: ${(e as Error).message}`); }
-    if (!Array.isArray(raw) || raw.length === 0) die(`${ACCOUNTS_FILE} must be a non-empty array`);
+export const { loadAccounts } = makeAccountStore<AccountConfig>({
+  prefix: 'discord',
+  file: ACCOUNTS_FILE,
+  allowlistEnv: ['DISCORD_ONLY_ACCOUNTS', 'DISCORD_ACCOUNTS'],
+  validate(raw, die) {
     const seen = new Set<string>();
     for (const a of raw) {
       if (!a.id) die('account missing id');
@@ -42,16 +34,15 @@ export function loadAccounts(): AccountConfig[] {
       if (seen.has(a.id)) die(`duplicate account id '${a.id}'`);
       seen.add(a.id);
     }
-    const selected = ACCOUNT_ALLOWLIST.size ? raw.filter(a => ACCOUNT_ALLOWLIST.has(a.id)) : raw;
-    if (selected.length === 0) die(`no accounts match DISCORD_ONLY_ACCOUNTS (${[...ACCOUNT_ALLOWLIST].join(', ')})`);
-    return selected;
-  }
+  },
   /** Back-compat: single account from env, legacy lines so existing claims keep working. */
-  const tok = process.env.DISCORD_BOT_TOKEN;
-  if (!tok) return die(`no ${ACCOUNTS_FILE} and DISCORD_BOT_TOKEN unset`);
-  legacy.defaultLines = true;
-  return [{ id: 'default', token: tok }];
-}
+  fallback(die) {
+    const tok = process.env.DISCORD_BOT_TOKEN;
+    if (!tok) return die(`no ${ACCOUNTS_FILE} and DISCORD_BOT_TOKEN unset`);
+    legacy.defaultLines = true;
+    return [{ id: 'default', token: tok }];
+  },
+});
 
 export interface Account {
   cfg: AccountConfig;

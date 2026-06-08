@@ -7,6 +7,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { CODECS } from './codecs.js';
+import { makeAccountStore } from '../account-store.js';
 
 const ACCOUNTS_FILE = process.env.XMTP_ACCOUNTS_FILE ?? join(homedir(), '.metro', 'xmtp-accounts.json');
 
@@ -25,7 +26,32 @@ export interface AccountConfig {
 }
 
 const MNEMONIC_FILE = process.env.XMTP_MNEMONIC_FILE ?? join(homedir(), '.metro', 'xmtp-mnemonic');
-const die = (msg: string): never => { process.stderr.write(`xmtp: ${msg}\n`); process.exit(2); };
+
+export const { die, loadAccounts } = makeAccountStore<AccountConfig>({
+  prefix: 'xmtp',
+  file: ACCOUNTS_FILE,
+  allowlistEnv: ['XMTP_ONLY_ACCOUNTS', 'XMTP_ACCOUNTS'],
+  validate(raw, die) {
+    const seen = new Set<string>();
+    for (const a of raw) {
+      if (!a.id) die('account missing id');
+      const hasKey = typeof a.privateKey === 'string' && a.privateKey.length > 0;
+      const hasDerive = typeof a.derive === 'number';
+      if (hasKey === hasDerive) die(`account '${a.id}' must set EXACTLY ONE of privateKey or derive`);
+      if (hasDerive && (a.derive! < 0 || !Number.isInteger(a.derive))) {
+        die(`account '${a.id}' derive must be a non-negative integer`);
+      }
+      if (seen.has(a.id)) die(`duplicate account id '${a.id}'`);
+      seen.add(a.id);
+    }
+  },
+  /** Back-compat: single account from env. */
+  fallback(die) {
+    const pk = process.env.XMTP_PRIVATE_KEY;
+    if (!pk) die(`no ${ACCOUNTS_FILE} and XMTP_PRIVATE_KEY unset`);
+    return [{ id: 'default', privateKey: pk, env: (process.env.XMTP_ENV as XmtpEnv) ?? 'production' }];
+  },
+});
 
 let cachedMnemonic: string | null = null;
 function loadMnemonic(): string {
@@ -54,42 +80,6 @@ function resolvePrivateKey(cfg: AccountConfig): string {
 // Set XMTP_LEGACY_DEFAULT_LINES=1 to keep the default account emitting legacy
 // metro://xmtp/<conv> lines (zero migration for existing claims/deep-links).
 const LEGACY_DEFAULT_LINES = process.env.XMTP_LEGACY_DEFAULT_LINES === '1';
-const ACCOUNT_ALLOWLIST = new Set(
-  (process.env.XMTP_ONLY_ACCOUNTS ?? process.env.XMTP_ACCOUNTS ?? '')
-    .split(',').map(s => s.trim()).filter(Boolean),
-);
-
-function validate(raw: AccountConfig[]): void {
-  const seen = new Set<string>();
-  for (const a of raw) {
-    if (!a.id) die('account missing id');
-    const hasKey = typeof a.privateKey === 'string' && a.privateKey.length > 0;
-    const hasDerive = typeof a.derive === 'number';
-    if (hasKey === hasDerive) die(`account '${a.id}' must set EXACTLY ONE of privateKey or derive`);
-    if (hasDerive && (a.derive! < 0 || !Number.isInteger(a.derive))) {
-      die(`account '${a.id}' derive must be a non-negative integer`);
-    }
-    if (seen.has(a.id)) die(`duplicate account id '${a.id}'`);
-    seen.add(a.id);
-  }
-}
-
-export function loadAccounts(): AccountConfig[] {
-  if (existsSync(ACCOUNTS_FILE)) {
-    let raw: AccountConfig[];
-    try { raw = JSON.parse(readFileSync(ACCOUNTS_FILE, 'utf8')) as AccountConfig[]; }
-    catch (e) { return die(`bad ${ACCOUNTS_FILE}: ${(e as Error).message}`); }
-    if (!Array.isArray(raw) || raw.length === 0) die(`${ACCOUNTS_FILE} must be a non-empty array`);
-    validate(raw);
-    const selected = ACCOUNT_ALLOWLIST.size ? raw.filter(a => ACCOUNT_ALLOWLIST.has(a.id)) : raw;
-    if (selected.length === 0) die(`no accounts match XMTP_ONLY_ACCOUNTS (${[...ACCOUNT_ALLOWLIST].join(', ')})`);
-    return selected;
-  }
-  /** Back-compat: single account from env. */
-  const pk = process.env.XMTP_PRIVATE_KEY;
-  if (!pk) die(`no ${ACCOUNTS_FILE} and XMTP_PRIVATE_KEY unset`);
-  return [{ id: 'default', privateKey: pk, env: (process.env.XMTP_ENV as XmtpEnv) ?? 'production' }];
-}
 
 const expandHome = (p: string): string => p.startsWith('~') ? join(homedir(), p.slice(1)) : p;
 
