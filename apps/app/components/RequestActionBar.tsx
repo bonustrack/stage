@@ -25,7 +25,7 @@ import {
   getCachedXmtpClient, streamConvConsent,
 } from '../modules/messaging';
 import { usePalette } from '../lib/theme';
-import { Box, Col } from './layout';
+import { Box, Col, Row } from './layout';
 
 /** Force a synced-prefs refresh so other surfaces (channels list, Requests list,
  *  other devices) converge after an in-channel accept/reject. Mirrors the
@@ -106,36 +106,48 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
     <Box style={{
       backgroundColor: toolbarBg, borderTopWidth: 1, borderTopColor: border,
     }}>
-      <Col style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12, gap: 10 }}>
+      <Col style={{
+        width: '100%', alignSelf: 'stretch', alignItems: 'stretch',
+        paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12, gap: 10,
+      }}>
         <Text style={{ color: fg, textAlign: 'center', opacity: 0.8 }}>
           This is a message request. Approve to reply, or reject to decline.
         </Text>
-        <Button
-          variant="primary"
-          size="lg"
-          pill
-          dark={dark}
-          fullWidth
-          loading={busy}
-          disabled={busy}
-          label="Approve"
-          tintBg={link}
-          tintFg={bg}
-          onPress={onApprove}
-        />
-        <Button
-          variant="danger"
-          size="lg"
-          pill
-          dark={dark}
-          fullWidth
-          loading={busy}
-          disabled={busy}
-          label="Reject"
-          tintBg={danger}
-          tintFg={bg}
-          onPress={onReject}
-        />
+        {/* Full-bleed row: each half flexes to fill the width. NOTE: do NOT use
+         *  the Button `pill` prop here - `pill` forces a fixed square (width =
+         *  height) circular icon button, which collapses these to tiny circles
+         *  regardless of `fullWidth`. We want full-width rounded buttons, so we
+         *  rely on `fullWidth` (alignSelf:'stretch' + width:'100%') instead. */}
+        <Row gap={10} style={{ width: '100%', alignSelf: 'stretch' }}>
+          <Box style={{ flex: 1, alignSelf: 'stretch' }}>
+            <Button
+              variant="danger"
+              size="lg"
+              dark={dark}
+              fullWidth
+              loading={busy}
+              disabled={busy}
+              label="Reject"
+              tintBg={danger}
+              tintFg={bg}
+              onPress={onReject}
+            />
+          </Box>
+          <Box style={{ flex: 1, alignSelf: 'stretch' }}>
+            <Button
+              variant="primary"
+              size="lg"
+              dark={dark}
+              fullWidth
+              loading={busy}
+              disabled={busy}
+              label="Approve"
+              tintBg={link}
+              tintFg={bg}
+              onPress={onApprove}
+            />
+          </Box>
+        </Row>
       </Col>
     </Box>
   );
