@@ -10,66 +10,33 @@
  *  number of currently-pending request ids NOT in the read set. Opening the
  *  Notifications page marks every currently-visible notification read.
  *
- *  Same dependency-free AsyncStorage + pub/sub shape as lib/pins.ts so the tab
- *  badge / header pill re-render the instant read-state changes. */
+ *  Built on the shared lib/persistedStore.ts set-store factory; the add-only
+ *  `markNotifsRead` / `unreadCount` helpers layer on top of it. */
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createSetStore } from './persistedStore';
 
-const STORAGE_KEY = 'notifications.read';
-
-/** In-memory mirror of the persisted read-id set. */
-let cache: Set<string> = new Set();
-let loaded = false;
-
-const subscribers = new Set<() => void>();
-
-function notify(): void {
-  for (const cb of subscribers) {
-    try { cb(); } catch { /* a bad subscriber shouldn't break the rest */ }
-  }
-}
-
-async function persist(): Promise<void> {
-  try {
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify([...cache]));
-  } catch { /* best-effort — in-memory cache still reflects the change */ }
-}
+const store = createSetStore('notifications.read');
 
 /** Read the persisted read-id set once and cache it. */
-export async function loadNotifReadState(): Promise<Set<string>> {
-  if (loaded) return cache;
-  try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
-    const ids: string[] = raw ? JSON.parse(raw) : [];
-    if (Array.isArray(ids)) cache = new Set(ids.filter(x => typeof x === 'string'));
-  } catch { /* corrupt/missing → start empty */ }
-  loaded = true;
-  return cache;
-}
+export const loadNotifReadState = (): Promise<Set<string>> => store.load();
 
 /** Count of `ids` not yet marked read. Synchronous (uses the in-memory cache);
  *  returns `ids.length` until `loadNotifReadState` has run. */
 export function unreadCount(ids: readonly string[]): number {
   let n = 0;
-  for (const id of ids) if (!cache.has(id)) n += 1;
+  for (const id of ids) if (!store.has(id)) n += 1;
   return n;
 }
 
-/** Mark the given notification ids read (idempotent). Prunes nothing — stale
+/** Mark the given notification ids read (idempotent). Prunes nothing, stale
  *  ids in the read set are harmless (they simply never match a pending id). */
 export async function markNotifsRead(ids: readonly string[]): Promise<void> {
-  let changed = false;
-  const next = new Set(cache);
-  for (const id of ids) if (!next.has(id)) { next.add(id); changed = true; }
-  if (!changed) return;
-  cache = next;
-  loaded = true;
-  notify();
-  await persist();
+  const cur = store.get();
+  const next = new Set(cur);
+  for (const id of ids) next.add(id);
+  if (next.size === cur.size) return;
+  await store.set(next);
 }
 
 /** Subscribe to read-state changes. Returns an unsubscribe fn. */
-export function subscribeNotifReadState(cb: () => void): () => void {
-  subscribers.add(cb);
-  return () => { subscribers.delete(cb); };
-}
+export const subscribeNotifReadState = (cb: () => void): () => void => store.subscribe(cb);
