@@ -11,7 +11,8 @@
     "baseUrl": ".",
     "paths": {
       "react-native": ["../../apps/app/node_modules/react-native"],
-      "react-native-svg": ["../../apps/app/node_modules/react-native-svg"]
+      "react-native-svg": ["../../apps/app/node_modules/react-native-svg"],
+      "react-native-markdown-display": ["../../apps/app/node_modules/react-native-markdown-display"]
     },
     "resolveJsonModule": true,
     "esModuleInterop": true,

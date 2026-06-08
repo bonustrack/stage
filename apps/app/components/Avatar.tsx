@@ -16,9 +16,8 @@
  *  call sites that all picked their own size constants and forgot the
  *  cache-buster half the time. */
 
-import { Pressable } from 'react-native';
-import { Image } from '@metro-labs/kit/image';
-import { Box } from './layout';
+import { Pressable } from '@metro-labs/kit/pressable';
+import { AvatarView } from '@metro-labs/kit/avatar-view';
 import type { ImageStyle, StyleProp } from 'react-native';
 import { stampAvatarUrl, AVATAR_SIZES, type AvatarSize } from '@metro-labs/kit/avatar';
 import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
@@ -60,22 +59,14 @@ export function Avatar({
   address, imageUri, size = 'md', cacheBuster, square, style, onPress,
 }: Props): React.ReactElement {
   const px = typeof size === 'number' ? size : SIZE_PX[size];
-  const placeholderBg = '#282a2d';
   /** stamp.fyi serves doubled-pixel WebPs by convention — keeps retina rows
    *  crisp without bumping the displayed dimension. */
   const fetchPx = px * 2;
-  /** Circle (users) vs rounded square (groups/channels). Radius scales with size
-   *  so the corner rounding looks consistent across sm/md/lg. */
-  const baseStyle: StyleProp<ImageStyle> = {
-    width: px, height: px, borderRadius: square ? Math.round(px * 0.12) : 999, backgroundColor: placeholderBg,
-  };
   let uri: string | null = null;
   if (imageUri && imageUri.trim()) uri = avatarRenderUrl(address ?? '', imageUri, fetchPx);
   else if (address) uri = stampAvatarUrl(address, px, cacheBuster);
 
-  const inner = uri
-    ? <Image src={uri} style={[baseStyle, style] as ImageStyle[]} />
-    : <Box style={[baseStyle, style]} />;
+  const inner = <AvatarView src={uri} size={px} square={square} style={style} />;
 
   if (!onPress) return inner;
 
