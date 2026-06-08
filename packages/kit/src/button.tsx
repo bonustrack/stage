@@ -1,28 +1,8 @@
-/** Button — a ChatKit-styled React Native button for the Metro mobile client.
- *
- *  Lives in @metro-labs/kit (alongside layout.ts) but, unlike the pure-data
- *  primitives, this is a real RN component — it imports `react-native` directly,
- *  which is fine because only apps/app (RN) imports `@metro-labs/kit/button`.
- *  react-native is declared as a peerDependency.
- *
- *  Aesthetic (OpenAI ChatKit): clean, restrained, fully-rounded (pill) corners
- *  on every size/variant. `pill` additionally makes a circular icon-only button.
- *  Variants:
- *    - primary   solid; follows the app convention — dark scheme → white bg /
- *                dark text, light scheme → black bg / white text.
- *    - secondary subtle filled (rowBg fill + border, head text).
- *    - ghost     transparent, head text, faint pressed bg.
- *    - danger    solid red.
- *  Pressed = opacity 0.85 (solid) / faint bg (ghost). Disabled = opacity 0.4.
- *  Loading = ActivityIndicator in the text colour, label dimmed, press disabled.
- *
- *  Theme: the caller passes `dark` (read from the app's useEffectiveColorScheme
- *  / usePalette). The kit stays free of the app's hook so it remains importable
- *  from anywhere; the single boolean keeps colours in lock-step with the palette
- *  convention in apps/app/lib/theme.ts.
- *
- *  Size specs, variant colours, and the label style live in ./button.styles to
- *  keep this module within the kit's ≤200-line cap. */
+/** Button - a ChatKit-styled RN button. Imports react-native directly (declared
+ *  as a peerDependency); fine since only apps/app imports it. Hook-free: caller
+ *  passes `dark` so the kit stays importable anywhere while colours track the
+ *  palette convention in apps/app/lib/theme.ts. Size specs / variant colours /
+ *  label style live in ./button.styles. */
 
 import { useMemo, type ReactNode } from 'react';
 import {

@@ -1,30 +1,17 @@
 /** Private Railgun fund-movement history for the Activity tab.
  *
- *  Surfaces the wallet's private (0zk) fund movements alongside the public
- *  Etherscan activity. This is the user's PRIVATE money trail: shields (funds
- *  entering the shielded balance from the public EOA), unshields (funds leaving
- *  back to a public address), and 0zk->0zk transfers (private receives + sends).
+ *  Surfaces the wallet's private (0zk) fund movements (shields, unshields,
+ *  0zk->0zk transfers) alongside the public Etherscan activity. We include ALL
+ *  four categories the SDK reports: for most users the private activity IS the
+ *  shield/unshield legs (pure 0zk transfers are rare), so excluding them read
+ *  empty.
  *
- *  Earlier this view showed ONLY 0zk->0zk transfers and deliberately excluded
- *  shields/unshields - but for almost every user the private activity IS the
- *  shield/unshield legs (pure 0zk transfers are rare), so the section read empty.
- *  We now include all four categories the SDK reports.
- *
- *  Same read path that feeds balances: the embedded Node bridge's whitelisted
- *  `wallet.getTransactionHistory` SDK method (sdkDispatch.js ->
- *  getWalletTransactionHistory), so it is PURE RN orchestration on the installed
- *  APK - no native change, hot-reloadable. The SDK returns
- *  TransactionHistoryItem[]; each item carries receiveERC20Amounts (in),
- *  transferERC20Amounts (out), unshieldERC20Amounts (unshield out) and a
- *  `category` enum + per-leg shieldFee marker that distinguishes a shield-in
- *  receive from a plain transfer-in receive. The bridge serializes bigints to
- *  decimal strings, so amounts and the category string survive JSON intact.
- *
- *  Flow per chain: derive key material (deriveKeys.ts) -> engineInit (cheap when
- *  warm) -> walletInfo (load-or-create the 0zk wallet, returns the walletID) ->
- *  sdk('wallet.getTransactionHistory', [chain, walletID, undefined]). Never
- *  throws: a chain that errors or has no shielded history is skipped, mirroring
- *  the balance refresh's best-effort posture. */
+ *  Same read path that feeds balances: the Node bridge's whitelisted
+ *  `wallet.getTransactionHistory` (PURE RN orchestration on the installed APK,
+ *  hot-reloadable). A per-leg shieldFee marker distinguishes a shield-in receive
+ *  from a plain transfer-in receive; the bridge serializes bigints to decimal
+ *  strings so amounts survive JSON intact. Never throws: a chain that errors or
+ *  has no shielded history is skipped (best-effort, like the balance refresh). */
 import { formatUnits } from 'viem';
 import { stampTokenUrl } from '@metro-labs/kit/avatar';
 import { isBridgeAvailable, engineInit, walletInfo } from './bridge';

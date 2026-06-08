@@ -1,15 +1,11 @@
-/** Public JS API for the MetroPill native module.
- *
- *  Now scoped to the push-notification plumbing only (the floating voice pill
- *  feature was removed). The native `MetroPill` module also hosts the custom
- *  FCM service (rich foreground notifications); these two calls feed it the
- *  state it needs to suppress duplicate / already-seen pushes.
+/** Public JS API for the MetroPill native module. Scoped to push-notification
+ *  plumbing: the native module hosts the custom FCM service (rich foreground
+ *  notifications), and these calls feed it the state to suppress duplicate /
+ *  already-seen pushes.
  *
  *  Android-only. Every entry point degrades gracefully when the native module
- *  isn't linked (iOS, web, or a dev client built before this module shipped) so
- *  the app's JS keeps working — `isAvailable()` returns false and the action
- *  no-ops.
- */
+ *  isn't linked (iOS, web, or a dev client built before this module shipped):
+ *  `isAvailable()` returns false and the action no-ops. */
 import { Platform } from 'react-native';
 
 import nativeModule from './src/MetroPillModule';

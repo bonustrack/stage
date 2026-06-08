@@ -1,19 +1,10 @@
-/** Typed TanStack-Query key factory + hooks for the messaging data sources
- *  (stage 1 of the cache unification). Aligns the key style with the existing
- *  profiles queries and gives the stream/cache bridges ONE place to look up the
- *  keys they invalidate / setQueryData against.
- *
- *  Stage 1 migrates the LOW-RISK sources only:
- *    - convMeta  (['xmtp','convMeta',convId]) - DM peer / group name+image+desc+
- *                members. Previously fetched TWICE (useConvMeta AND the group
- *                screen's loadGroupDetail); now both read this one query.
- *    - channels  (['xmtp','channels',account]) - the per-account channels list,
- *                backed by the existing channelsCache (kept ALIVE as the fetcher/
- *                source of truth) but exposed through Query so reads dedupe + get
- *                stale-while-revalidate.
- *
- *  The message FEED + store retirement are deferred to stage 2; railgun caches
- *  are out of scope (proposal #5). The old stores stay live alongside this. */
+/** Typed TanStack-Query key factory + hooks for the messaging data sources.
+ *  Gives the stream/cache bridges ONE place to look up the keys they invalidate
+ *  / setQueryData against. Keys:
+ *    - convMeta  ['xmtp','convMeta',convId]  DM peer / group name+image+desc+members
+ *    - channels  ['xmtp','channels',account] per-account channels list, backed by
+ *                channelsCache (the fetcher / source of truth), exposed through
+ *                Query so reads dedupe + get stale-while-revalidate. */
 
 import { useQuery } from '@tanstack/react-query';
 import { getQueryClient } from '../../lib/queryClient';

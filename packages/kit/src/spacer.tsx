@@ -1,14 +1,8 @@
-/** Spacer - a ChatKit-styled flexible spacer for the Metro mobile client.
- *
- *  Mirrors OpenAI ChatKit's `Spacer` widget node (WidgetNode). Real ChatKit
- *  prop kept verbatim: `minSize`. No `dark` deviation (a spacer draws nothing).
- *
- *  Behaviour: a flexible gap that grows to fill the free space along the
- *  parent's main axis (flex:1 by default), pushing siblings apart - replacing
- *  the app's ad-hoc `<View style={{ flex: 1 }} />` spacer pattern with one named
- *  primitive. `minSize` floors both dimensions so the spacer keeps a minimum
- *  gap even when there is no free space to flex into (e.g. inside a scroll
- *  view). Pass `flex={0}` for a pure fixed `minSize` gap. */
+/** Spacer - a ChatKit-styled flexible spacer. Mirrors ChatKit's `Spacer`
+ *  widget. A gap that grows to fill free space on the parent's main axis (flex:1
+ *  default), pushing siblings apart. `minSize` floors both dimensions so it
+ *  keeps a minimum gap when there is no free space to flex into (e.g. in a
+ *  scroll view); pass `flex={0}` for a pure fixed `minSize` gap. */
 
 import { View, type ViewStyle, type DimensionValue } from 'react-native';
 

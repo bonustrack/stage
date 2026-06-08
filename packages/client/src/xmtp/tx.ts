@@ -1,22 +1,18 @@
-/** Metro in-chat transaction content types — shared between the RN app
- *  (apps/app) and the web client / daemon. Pure TypeScript: the wire shapes,
- *  the content-type id constants, and the plain-text fallback builders.
+/** Metro in-chat transaction content types - shared between the RN app, web
+ *  client, and daemon. Pure TS: wire shapes, content-type id constants, and
+ *  plain-text fallback builders.
  *
  *  These mirror the official XMTP content types
  *  (`xmtp.org/walletSendCalls:1.0` and `xmtp.org/transactionReference:1.0`)
- *  byte-for-byte, BUT we re-declare the interfaces + register hand-rolled
- *  JSContentCodecs in RN — the npm `@xmtp/content-type-*` packages assume the
- *  Node SDK's `ContentCodec`/`EncodedContent` (`Uint8Array` content, class
- *  `ContentTypeId`) which is shape-incompatible with the RN SDK's
- *  `JSContentCodec`. See apps/app/lib/xmtpTxCodec.ts for the RN codecs and
- *  ~/.metro/trains/xmtp.ts for the daemon (Node) codecs.
+ *  byte-for-byte, BUT we re-declare the interfaces + hand-roll JSContentCodecs in
+ *  RN: the npm `@xmtp/content-type-*` packages assume the Node SDK's
+ *  `ContentCodec`/`EncodedContent` (`Uint8Array` content, class `ContentTypeId`)
+ *  which is shape-incompatible with the RN SDK's `JSContentCodec`. See
+ *  apps/app/lib/xmtpTxCodec.ts (RN) and ~/.metro/trains/xmtp.ts (daemon).
  *
- *  DESIGN: a payment is a two-message handshake.
- *   1. The requester (or sender) posts a WalletSendCalls — an EIP-5792
- *      `wallet_sendCalls`-shaped batch describing the transfer(s) to make.
- *   2. The payer signs + broadcasts the call(s) via the phase-3 sendTx helper,
- *      then posts a TransactionReference back into the SAME conversation so the
- *      original card flips to a receipt with an explorer link. */
+ *  Payment is a two-message handshake: a WalletSendCalls (EIP-5792 batch)
+ *  request, then a TransactionReference receipt posted back into the SAME conv
+ *  once the payer broadcasts. */
 
 // ---------------------------------------------------------------------------
 // WalletSendCalls — `xmtp.org/walletSendCalls:1.0`

@@ -1,4 +1,4 @@
-/** Wire the single app-wide XMTP message stream into TanStack Query (stage 1).
+/** Wire the single app-wide XMTP message stream into TanStack Query.
  *
  *  The stream is push, not fetch, so it stays OUTSIDE Query - but it FEEDS Query:
  *  when a group-metadata-change event (`group_updated`) streams in for a conv, we

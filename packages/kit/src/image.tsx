@@ -1,21 +1,9 @@
-/** Image - a ChatKit-styled image node for the Metro mobile client.
- *
- *  Mirrors OpenAI ChatKit's `Image` widget node (WidgetNode). Real ChatKit
- *  props kept verbatim: `src`, `alt`, `fit`, `position`, `frame`, `flush`,
- *  `radius`, `size`, `aspectRatio`, `width`, `height`, `minWidth`, `maxWidth`,
- *  `minHeight`, `maxHeight`, `background`, `margin`. There is no `dark`
- *  deviation here (image fill/tint do not branch on scheme); `frame` borders
- *  use a neutral hairline that reads on either scheme.
- *
- *  Purpose: unify the app's raw `react-native` Image call sites behind one Kit
- *  primitive so the RN-Image vs expo-image split can be swapped in ONE place
- *  later (the renderer is internal). Today it renders over RN Image (expo-image
- *  is not an app dependency yet); switching the import below is the only change
- *  needed to migrate every call site to expo-image for caching.
- *
- *  `fit` maps onto RN resizeMode (cover/contain/stretch/center). `radius` takes
- *  ChatKit's named scale or a raw number. Sizing accepts ChatKit's number|string
- *  dimensions verbatim. Kept <=200 lines. */
+/** Image - a ChatKit-styled image node. Mirrors ChatKit's `Image` widget; no
+ *  `dark` deviation (fill/tint do not branch on scheme). Unifies the app's raw
+ *  RN Image call sites behind one primitive so the RN-Image vs expo-image
+ *  renderer can be swapped in ONE place later (switching the import below is the
+ *  only change needed to migrate every call site). `fit` maps onto RN
+ *  resizeMode. */
 
 import { Image as RNImage, type ImageStyle, type ViewStyle, type DimensionValue } from 'react-native';
 import { BLOCK_RADIUS_DEFAULT } from './tokens';

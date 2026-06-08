@@ -1,22 +1,11 @@
-/** Heroicons v1 outline path data — the shared icon vocabulary for both the
- *  Vue web client (apps/ui/src/components/HeroIcon.vue) and the React Native
- *  app (apps/app/components/HeroIcon.tsx).
+/** Heroicons v1 outline path data - shared icon vocabulary for the Vue web
+ *  client and the RN app. The full v1.0.6 `optimized/outline` set + custom
+ *  aliases live in generated `heroicons.data.ts`. Each value is a single SVG
+ *  path `d` string, or an array of `d` strings for multi-path glyphs (renderers
+ *  iterate, same stroke attrs per sub-path).
  *
- *  The full tailwindlabs/heroicons@v1.0.6 `optimized/outline` set (24×24)
- *  lives in the generated `heroicons.data.ts` module, alongside the kit's
- *  hand-tuned custom-named aliases (send=paper-airplane, list=inbox,
- *  faceSmile=emoji-happy, copy=duplicate, etc.) so every existing
- *  `<Icon name="…"/>` call-site keeps working while the whole v1 catalogue is
- *  now addressable app-wide and auto-listed in the Kit Icons gallery.
- *
- *  Each value is either a single SVG path `d` string or — for multi-path
- *  glyphs (cog, camera, eye, fire, academicCap, …) — an array of `d` strings.
- *  The renderers iterate, drawing each sub-path with the same stroke attrs.
- *
- *  Convention: stroke is currentColor, fill is transparent, viewBox is the v1
- *  outline standard 24×24 (do NOT mix in the 20×20 "solid" variant — it
- *  produces glitched icons). Default stroke-width is 1.8; an "active/focused"
- *  state can be signalled by thickening to ~2.4. */
+ *  Convention: stroke currentColor, fill transparent, viewBox 24x24. Do NOT mix
+ *  in the 20x20 "solid" variant - it produces glitched icons. */
 
 import { HERO_ICON_DATA } from './heroicons.data';
 

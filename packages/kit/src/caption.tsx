@@ -1,16 +1,7 @@
-/** Caption - a ChatKit-styled small label for the Metro mobile client.
- *
- *  Mirrors OpenAI ChatKit's `Caption` widget node (WidgetNode). Real ChatKit
- *  props kept verbatim: `value`, `size`, `weight`, `textAlign`, `color`,
- *  `truncate`, `maxLines`. The only deviation is the `dark` boolean (kit is
- *  hook-free, the caller passes the effective scheme).
- *
- *  Caption is ChatKit's distinct node for tiny secondary labels (the uppercase
- *  section headers + muted captions that apps/app fakes with
- *  <Text variant="caption">). It defaults to the muted `sub` color and a small
- *  size so promoting a label to Caption removes the per-call font styling.
- *  `value` is the text; children are accepted too for parity with the other
- *  text nodes. */
+/** Caption - a ChatKit-styled small label. Mirrors ChatKit's `Caption` widget;
+ *  deviation: `dark` boolean (kit is hook-free). Tiny secondary labels (section
+ *  headers / muted captions); defaults to muted `sub` colour + small size.
+ *  `value` is the text; children are accepted too for parity. */
 
 import { Text as RNText, type TextStyle } from 'react-native';
 import { type ReactNode } from 'react';

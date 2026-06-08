@@ -1,4 +1,4 @@
-/** Metro poll content type — `metro.box/poll:1.0`. Shared between the RN app
+/** Metro poll content type - `metro.box/poll:1.0`. Shared between the RN app
  *  (apps/app) and the web client. Pure TypeScript: the interfaces, the wire
  *  constants, the plain-text fallback builder, and the pure tally helpers.
  *
@@ -7,7 +7,7 @@
  *  stable `pollId` so votes can reference the poll across edits/resends.
  *
  *  DESIGN: a poll is its own content type, but VOTES reuse the existing
- *  `xmtp.org/reaction:2.0` codec — a vote is a reaction whose `reference` is the
+ *  `xmtp.org/reaction:2.0` codec - a vote is a reaction whose `reference` is the
  *  poll's XMTP message id and whose `content` is the chosen option INDEX
  *  (`schema:'custom'`). That means votes decode on every client, sync
  *  cross-device, and reuse the whole reaction tally + optimistic-UI machinery
