@@ -17,7 +17,6 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { getQueryClient } from '../../lib/queryClient';
-import { getActiveAccountIdSync } from '../../lib/channelsCache';
 import { fetchConvMeta, fetchGroupRoles, type ConvMeta, EMPTY_CONV_META } from './convMeta.fetch';
 
 /** Key factory. Reference these instead of hand-writing array literals so a key
@@ -44,20 +43,8 @@ export function useConvMeta(convId?: string | null): ConvMeta {
   return data ?? EMPTY_CONV_META;
 }
 
-/** Imperative read of cached conv metadata (no subscription). Used by non-render
- *  call sites that want whatever Query already has without triggering a fetch. */
-export function getCachedConvMeta(convId: string): ConvMeta | undefined {
-  return getQueryClient().getQueryData<ConvMeta>(messagingKeys.convMeta(convId));
-}
-
 /** Invalidate a conv's metadata so the next observer refetches (group rename /
  *  image / description change, or a streamed group-updated event). */
 export function invalidateConvMeta(convId: string): void {
   void getQueryClient().invalidateQueries({ queryKey: messagingKeys.convMeta(convId) });
-}
-
-/** The active account's channels-list key. Channels are scoped per account so
- *  switching back to an account hits its own Query cache entry. */
-export function activeChannelsKey(): readonly [string, string, string] {
-  return messagingKeys.channels(getActiveAccountIdSync());
 }

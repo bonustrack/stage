@@ -19,10 +19,7 @@ export * from './xmtp/inboxCache';
 export * from './embed/detect';
 export * from './stamp/resolve';
 
-// Stage SDK: typed `createStageClient` factory + dependency-inversion
-// interfaces. Pure TypeScript, zero react-native / expo. See ./stage.
 export * from './api';
-export * from './stage';
 
 // Stage 2: framework-agnostic identity glue + wallet/accounts pure logic.
 export * from './identity/format';

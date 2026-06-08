@@ -4,14 +4,6 @@
 
 import { Line } from './lines.js';
 
-/** The canonical verbs every messaging-capable train should understand. */
-export const MESSAGING_VERBS = [
-  'send', 'reply', 'react', 'unreact', 'edit', 'delete', 'read',
-] as const;
-export type MessagingVerb = (typeof MESSAGING_VERBS)[number];
-export const isMessagingVerb = (s: string): s is MessagingVerb =>
-  (MESSAGING_VERBS as readonly string[]).includes(s);
-
 /** A normalized attachment: either a local/remote `url` or inline base64 `data`. */
 export interface Attachment {
   kind: 'image' | 'file' | 'voice' | 'sticker';

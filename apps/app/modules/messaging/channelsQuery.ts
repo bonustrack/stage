@@ -12,8 +12,6 @@
  *  account id (getActiveAccountIdSync), and setActiveAccountForCache re-notifies
  *  the cache subscription, which re-mirrors under the new account's key. */
 
-import { useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import {
   getCachedRows, subscribeCachedRows, hydrateCachedRows,
   getActiveAccountIdSync, type CachedRow,
@@ -39,25 +37,4 @@ export function ensureChannelsQueryBridge(): void {
   mirrorRows(getCachedRows());
   void hydrateCachedRows().then(mirrorRows);
   subscribeCachedRows(mirrorRows);
-}
-
-/** Read the active account's channels list through Query (dedup + SWR). The
- *  channelsCache stays the writer; this just exposes its rows as a Query so
- *  read-only consumers don't each re-implement the subscription. Returns the
- *  rows array (or null before the first hydrate lands). */
-export function useChannelsQuery(): CachedRow[] | null {
-  useEffect(() => { ensureChannelsQueryBridge(); }, []);
-  const account = getActiveAccountIdSync();
-  const { data } = useQuery({
-    queryKey: messagingKeys.channels(account),
-    /** The cache is the fetcher: resolve to whatever it currently holds (sync
-     *  in-memory snapshot, or the hydrated disk value). Live updates arrive via
-     *  the cache-bridge setQueryData, not by re-running this. */
-    queryFn: async () => getCachedRows() ?? (await hydrateCachedRows()),
-    staleTime: 60_000,
-    /** Keep the previous account's data off the screen on switch: the key change
-     *  swaps to the new account's entry, mirrored by the cache bridge. */
-    initialData: () => getCachedRows(),
-  });
-  return data ?? null;
 }

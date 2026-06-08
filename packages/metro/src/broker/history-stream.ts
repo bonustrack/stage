@@ -63,7 +63,7 @@ export function historySize(): number {
 }
 
 /** Yield each complete JSONL line from `offset` to EOF; the returned offset is the position right after the `\n`. */
-export function* readEntriesFrom(offset: number): Generator<{ entry: HistoryEntry; offset: number }> {
+function* readEntriesFrom(offset: number): Generator<{ entry: HistoryEntry; offset: number }> {
   if (!existsSync(HISTORY_FILE)) return;
   const fd = openSync(HISTORY_FILE, 'r');
   try {

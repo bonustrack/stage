@@ -38,9 +38,3 @@ export const AccountManager = {
 export function useActiveAccount(): number {
   return useAccountEpoch();
 }
-
-/** Non-hook read of the active-account epoch, for react-query keys / other
- *  non-render call sites that must scope a cached value to the active account. */
-export function getActiveAccountEpoch(): number {
-  return getAccountEpoch();
-}
