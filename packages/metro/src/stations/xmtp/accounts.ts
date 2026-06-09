@@ -9,6 +9,7 @@ import { join } from 'node:path';
 import { CODECS } from './codecs.js';
 import { makeAccountStore } from '../account-store.js';
 import { chmodIfExists } from '../../secure-fs.js';
+import { Line } from '../../lines.js';
 
 const ACCOUNTS_FILE = process.env.XMTP_ACCOUNTS_FILE ?? join(homedir(), '.metro', 'xmtp-accounts.json');
 
@@ -125,13 +126,12 @@ export function lineOf(accountId: string, convId: string): string {
   return `metro://xmtp/${accountId}/${convId}`;
 }
 
-/** Parse a line back to {accountId, convId}. Accepts new + legacy forms. */
+/** Parse a line back to {accountId, convId}. Accepts new + legacy forms.
+ *  Delegates to the canonical `Line.parseXmtp` (single source of truth for the
+ *  metro:// scheme); convId is the account-scoped `resource` segment. */
 export function parseLine(line: string): { accountId: string; convId: string } | null {
-  const mNew = line.match(/^metro:\/\/xmtp\/([^/]+)\/([^/]+)$/);
-  if (mNew) return { accountId: mNew[1], convId: mNew[2] };
-  const mLegacy = line.match(/^metro:\/\/xmtp\/([^/]+)$/);
-  if (mLegacy) return { accountId: 'default', convId: mLegacy[1] };
-  return null;
+  const p = Line.parseXmtp(line);
+  return p ? { accountId: p.accountId, convId: p.resource } : null;
 }
 
 export function accountForCall(args: { account?: string; line?: string }): Account {

@@ -4,6 +4,7 @@ import { Client } from 'discord.js';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { makeAccountStore } from '../account-store.js';
+import { Line } from '../../lines.js';
 
 export const API = 'https://discord.com/api/v10';
 
@@ -84,11 +85,8 @@ export function lineOf(accountId: string, channelId: string): string {
 /** Parse a line back to {accountId, channelId}. Accepts new + legacy forms.
  *  channelId is an all-digit snowflake; a non-numeric accountId disambiguates. */
 export function parseLine(line: string): { accountId: string; channelId: string } | null {
-  const mNew = line.match(/^metro:\/\/discord\/([^/]+)\/(\d+)$/);
-  if (mNew) return { accountId: mNew[1], channelId: mNew[2] };
-  const mLegacy = line.match(/^metro:\/\/discord\/(\d+)$/);
-  if (mLegacy) return { accountId: 'default', channelId: mLegacy[1] };
-  return null;
+  const p = Line.parseDiscord(line);
+  return p ? { accountId: p.accountId, channelId: p.resource } : null;
 }
 
 /** Resolve which account to use: explicit arg → from line → sole/default. */
