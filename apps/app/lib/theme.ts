@@ -18,17 +18,36 @@ import {
 } from '@metro-labs/kit/tokens';
 import { setDefaultButtonRadius } from '@metro-labs/kit/button';
 import {
-  getOverrides, loadOverrides, isCustomTheme,
-  subscribe as subscribeOverrides, type TokenKey,
+  getSeeds, loadOverrides, isCustomTheme,
+  subscribe as subscribeOverrides,
 } from './colorOverrides';
+import { derivePalette } from '@metro-labs/kit/theme-derive';
 import {
   getRadius, getBlockRadius, loadRadius,
   subscribe as subscribeRadius,
 } from './radiusOverride';
 
 export { setRadius, setBlockRadius, resetRadius } from './radiusOverride';
-export { setCustomTheme } from './colorOverrides';
+export {
+  setCustomTheme, getSeeds, resetOverrides,
+  setSeedColor, setSeedDensity, setSeedRadius, setSeedBaseSize,
+  type SeedColorKey, type ThemeSeeds,
+} from './colorOverrides';
 export { useCustomTheme } from './useCustomTheme';
+
+/** Reactive snapshot of the current Custom-theme seeds. Re-renders the caller
+ *  whenever any seed/custom flag changes (load/edit/reset). Used by the seed
+ *  editor so its controls reflect + drive the live theme. */
+export function useThemeSeeds(): import('./colorOverrides').ThemeSeeds {
+  const [s, setS] = useState(getSeeds());
+  useEffect(() => {
+    loadOverrides();
+    setS(getSeeds());
+    const unsub = subscribeOverrides(() => setS(getSeeds()));
+    return unsub;
+  }, []);
+  return s;
+}
 
 export type { ThemePreference };
 
@@ -193,22 +212,24 @@ export function usePalette(): Palette {
    *  consumed by ~60 components; a fresh object every render defeated every
    *  downstream memo that closed over the palette. */
   return useMemo(() => {
+    // The Custom theme DERIVES the whole palette from the user's seed (grayscale
+    // base + accent + surface bg/fg) via the kit `derivePalette`. The default
+    // seed reproduces the canonical kit palette pixel-for-pixel, so the non-
+    // custom path (plain Light/Dark/System) stays on `semanticPalette`.
+    if (isCustomTheme()) {
+      const d = derivePalette(getSeeds()[scheme], scheme);
+      return {
+        bg: d.bg, border: d.border, text: d.text, sub: d.sub, link: d.link,
+        primary: d.primary, danger: d.danger, success: d.success,
+        inputBg: d.inputBg, toolbarBg: d.toolbarBg,
+      };
+    }
     const s = semanticPalette(scheme);
-    // Overrides only apply under the Custom theme; Light/Dark/System ignore them.
-    const ov = isCustomTheme() ? getOverrides() : {};
-    const pick = (key: TokenKey, def: string): string => ov[key]?.[scheme] ?? def;
     return {
-      bg: pick('bg', s.bgColor),
-      border: pick('border', s.borderColor),
-      text: pick('text', s.textColor),
-      // Secondary/muted text grey (de-forked from the Kit Text/Caption hardcoded
-      // #7a7a7e/#8a929d). No override key yet -> always the canonical default.
-      sub: s.subColor,
-      link: pick('link', s.linkColor),
-      primary: pick('primary', s.primaryColor),
-      danger: pick('danger', s.dangerColor),
-      success: pick('success', s.successColor),
-      inputBg: pick('inputBg', s.inputBgColor), toolbarBg: pick('toolbarBg', s.toolbarBgColor),
+      bg: s.bgColor, border: s.borderColor, text: s.textColor, sub: s.subColor,
+      link: s.linkColor, primary: s.primaryColor,
+      danger: s.dangerColor, success: s.successColor,
+      inputBg: s.inputBgColor, toolbarBg: s.toolbarBgColor,
     };
   }, [scheme, version]);
 }

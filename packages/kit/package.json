@@ -11,6 +11,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./tokens": "./src/tokens.ts",
+    "./theme-derive": "./src/theme-derive.ts",
     "./icons": "./src/icons.ts",
     "./theme": "./src/theme.ts",
     "./theme-context": "./src/theme-context.tsx",

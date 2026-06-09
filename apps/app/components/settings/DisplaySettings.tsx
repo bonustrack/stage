@@ -36,8 +36,9 @@ export function DisplaySettings(): React.ReactElement {
     <Col surface="surface" flex={1}>
       <SystemHeader title="Display" dark={dark} fg={fg} head={head} border={border}/>
       <ScrollView
+        style={{ flex: 1 }}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 + insets.bottom }}
 >
         <Text size="xs" color={sub} style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
           THEME
