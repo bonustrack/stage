@@ -66,10 +66,10 @@ export function NotificationsList({
               style={{ backgroundColor: border }}
             />
             <Col flex={1} style={{ minWidth: 0 }}>
-              <Text weight="semibold" size="md" style={{ color: head }} numberOfLines={1}>
+              <Text weight="semibold" size="md" color={head} numberOfLines={1}>
                 {labelFor(p)}
               </Text>
-              <Text size="sm" style={{ color: sub }} numberOfLines={1}>
+              <Text size="xs" color={sub} numberOfLines={1}>
                 Tap to review the request
               </Text>
             </Col>

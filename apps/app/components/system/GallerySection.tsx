@@ -16,9 +16,9 @@ export function GallerySection({ name, note, head, sub, border, framed = true, i
   const blockRadius = useBlockRadius();
   return (
     <Box style={{ paddingHorizontal: 16, paddingTop: 22 }}>
-      <Text weight="semibold" size="lg" style={{ color: head }}>{name}</Text>
+      <Text weight="semibold" size="xl" color={head}>{name}</Text>
       {note ? (
-        <Text size="sm" style={{ color: sub, marginTop: 1 }}>{note}</Text>
+        <Text size="xs" color={sub} style={{ marginTop: 1 }}>{note}</Text>
       ) : null}
       <Box
         mt={12}

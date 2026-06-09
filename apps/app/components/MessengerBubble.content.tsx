@@ -61,7 +61,7 @@ export function BubbleContent({
     <>
       {/** Timestamp / "Sending" header above the body. */}
       <Row align="center" justify="start" style={{ alignSelf: 'stretch' }}>
-        <Text size="xs" style={{ color: sub}}>{pending ? 'Sending' : fmtTs(entry.ts)}</Text>
+        <Text size="3xs" color={sub}>{pending ? 'Sending' : fmtTs(entry.ts)}</Text>
       </Row>
       {replyPreview ? (
         <Pressable
@@ -72,7 +72,7 @@ export function BubbleContent({
             paddingLeft: 6, marginBottom: 4, opacity: pressed ? 0.45 : 0.7,
           })}
         >
-          <Text size="lg" style={{ color: fg }} numberOfLines={2}>
+          <Text size="xl" color={fg} numberOfLines={2}>
             {replyPreview}
           </Text>
         </Pressable>
@@ -120,7 +120,7 @@ export function BubbleContent({
         })() ? null : (
           <Box style={{ alignSelf: 'stretch' }}>
             {selectable
-              ? <Text size="xl-" selectable style={{ color: fg, lineHeight: 23 }}>{entry.text}</Text>
+              ? <Text size="3xl" selectable color={fg} style={{ lineHeight: 23 }}>{entry.text}</Text>
               : hasMention(entry.text)
                 ? <MentionBody text={entry.text} fg={fg} dark={dark} />
                 : <Markdown {...markdownProps}>{entry.text}</Markdown>}
@@ -165,10 +165,10 @@ export function BubbleContent({
         <TxReceiptCard receipt={txReceipt} dark={dark} />
       ) : null}
       {transcript ? (
-        <Text size="sm" style={{ color: sub, opacity: 0.85, fontStyle: 'italic', marginTop: atts.length ? 4 : 0 }}>“{transcript}”</Text>
+        <Text size="xs" color={sub} style={{ opacity: 0.85, fontStyle: 'italic', marginTop: atts.length ? 4 : 0 }}>“{transcript}”</Text>
       ) : atts.some(a => a.kind === 'audio') && Date.now() - new Date(entry.ts).getTime() < 30_000 ? (
         /** Fresh audio bubble + transcription still running; old audio gets nothing. */
-        <Text size="sm" style={{ color: sub, opacity: 0.6, fontStyle: 'italic', marginTop: 4 }}>
+        <Text size="xs" color={sub} style={{ opacity: 0.6, fontStyle: 'italic', marginTop: 4 }}>
           transcribing…
         </Text>
       ) : null}

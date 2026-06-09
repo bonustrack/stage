@@ -34,7 +34,7 @@ export function SigRequestCard({ req, dark, sub, signing, onSign }: {
     }}>
       <Row align="center" gap={8}>
         <Icon name="pencil" size={18} color={head} />
-        <Text weight="semibold" size="md" style={{ color: head, flexShrink: 1 }}>
+        <Text weight="semibold" size="md" color={head} style={{ flexShrink: 1 }}>
           {desc}
         </Text>
       </Row>
@@ -44,21 +44,21 @@ export function SigRequestCard({ req, dark, sub, signing, onSign }: {
           borderColor: detailBorder, backgroundColor: detailBg,
         }}>
           {(domainName || chainId) ? (
-            <Text size="sm" style={{ color: sub }}>
+            <Text size="xs" color={sub}>
               {domainName ?? 'Domain'}{chainId ? ` · chain ${chainId}` : ''}
             </Text>
           ) : null}
           {req.eip712?.primaryType ? (
-            <Text weight="semibold" size="sm" style={{ color: head }}>
+            <Text weight="semibold" size="xs" color={head}>
               {req.eip712.primaryType}
             </Text>
           ) : null}
           {fields.map(([k, v]) => (
             <Row key={k} align="start" gap={8}>
-              <Text size="sm" style={{ color: sub, minWidth: 80, flexShrink: 0 }}>
+              <Text size="xs" color={sub} style={{ minWidth: 80, flexShrink: 0 }}>
                 {k}
               </Text>
-              <Text variant="mono" size="sm" numberOfLines={4} style={{ color: head, flexShrink: 1, flex: 1 }}>
+              <Text variant="mono" size="xs" numberOfLines={4} color={head} style={{ flexShrink: 1, flex: 1 }}>
                 {fmtSigValue(v)}
               </Text>
             </Row>
@@ -69,7 +69,7 @@ export function SigRequestCard({ req, dark, sub, signing, onSign }: {
           padding: 10, borderRadius: 10, borderWidth: 1,
           borderColor: detailBorder, backgroundColor: detailBg,
         }}>
-          <Text variant="mono" size="sm" numberOfLines={20} style={{ color: head, lineHeight: 18 }}>
+          <Text variant="mono" size="xs" numberOfLines={20} color={head} style={{ lineHeight: 18 }}>
             {req.message}
           </Text>
         </Box>
@@ -105,16 +105,16 @@ export function SigReferenceCard({ ref, dark, sub }: {
     }}>
       <Row align="center" gap={8}>
         <Icon name="check" size={18} color={dark ? '#7fd07f' : '#2f9e44'} />
-        <Text weight="semibold" size="md" style={{ color: dark ? '#ffffff' : '#000000' }}>
+        <Text weight="semibold" size="md" color={dark ? '#ffffff' : '#000000'}>
           Signed ✓
         </Text>
       </Row>
       {ref.signer ? (
-        <Text size="sm" style={{ color: sub }}>
+        <Text size="xs" color={sub}>
           by {shortAddress(ref.signer)}
         </Text>
       ) : null}
-      <Text size="sm" style={{ color: '#c0a06e' }}>
+      <Text size="xs" color={'#c0a06e'}>
         {short(ref.signature)}
       </Text>
     </Box>
@@ -140,17 +140,17 @@ export function TxRequestCard({ req, dark, sub, paying, onPay }: {
     }}>
       <Row align="center" gap={8}>
         <Icon name="wallet" size={18} color="#c0a06e" />
-        <Text weight="semibold" size="md" style={{ color: dark ? '#ffffff' : '#000000', flexShrink: 1 }}>
+        <Text weight="semibold" size="md" color={dark ? '#ffffff' : '#000000'} style={{ flexShrink: 1 }}>
           {desc}
         </Text>
       </Row>
       {amountLabel ? (
-        <Text weight="semibold" size="xxl" style={{ color: dark ? '#ffffff' : '#000000' }}>
+        <Text weight="semibold" size="5xl" color={dark ? '#ffffff' : '#000000'}>
           {amountLabel}
         </Text>
       ) : null}
       {call?.to ? (
-        <Text size="sm" style={{ color: sub }}>
+        <Text size="xs" color={sub}>
           To {shortAddress(call.to)}
         </Text>
       ) : null}
@@ -188,12 +188,12 @@ export function TxReceiptCard({ receipt, dark }: {
     }}>
       <Row align="center" gap={8}>
         <Icon name="check" size={18} color={dark ? '#7fd07f' : '#2f9e44'} />
-        <Text weight="semibold" size="md" style={{ color: dark ? '#ffffff' : '#000000' }}>
+        <Text weight="semibold" size="md" color={dark ? '#ffffff' : '#000000'}>
           Payment sent{amountLabel ? ` · ${amountLabel}` : ''}
         </Text>
       </Row>
       <Pressable onPress={() => void Linking.openURL(url)}>
-        <Text size="sm" style={{ color: '#c0a06e' }}>
+        <Text size="xs" color={'#c0a06e'}>
           {shortAddress(receipt.reference)} · View on explorer
         </Text>
       </Pressable>

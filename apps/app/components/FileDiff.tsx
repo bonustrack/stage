@@ -49,16 +49,16 @@ export function FileDiff({ file, p, dark }: {
     <Box>
       <ListViewItem dark={dark} gap={8} onPress={() => setOpen(o => !o)}>
         <Icon name={open ? 'chevronDown' : 'chevronRight'} size={16} color={p.text} />
-        <Text size="sm" numberOfLines={1} style={{ flex: 1, color: p.text }}>
+        <Text size="xs" numberOfLines={1} color={p.text} style={{ flex: 1}}>
           {file.filename}
         </Text>
-        <Text size="sm" style={{ color: p.success }}>+{file.additions}</Text>
-        <Text size="sm" style={{ color: p.danger }}>-{file.deletions}</Text>
+        <Text size="xs" color={p.success}>+{file.additions}</Text>
+        <Text size="xs" color={p.danger}>-{file.deletions}</Text>
       </ListViewItem>
       {open ? (
         file.noPatch ? (
           <Box style={{ paddingHorizontal: 16, paddingBottom: 10 }}>
-            <Text size="sm" style={{ color: p.text, opacity: 0.6 }}>
+            <Text size="xs" color={p.text} style={{ opacity: 0.6 }}>
               No textual diff (binary or too large to display).
             </Text>
           </Box>
@@ -69,18 +69,18 @@ export function FileDiff({ file, p, dark }: {
                 <Box key={i} style={{ flexDirection: 'row', backgroundColor: lineBg(ln.kind, dark), minWidth: '100%' }}>
                   {ln.kind === 'hunk' ? null : (
                     <Box style={{ flexDirection: 'row', borderRightWidth: 1, borderRightColor: p.border }}>
-                      <Text size="xs" style={{ width: 36, textAlign: 'right', color: p.text, opacity: 0.4, lineHeight: 18, paddingRight: 4 }}>
+                      <Text size="3xs" color={p.text} style={{ width: 36, textAlign: 'right', opacity: 0.4, lineHeight: 18, paddingRight: 4 }}>
                         {gutter(ln.oldLine)}
                       </Text>
-                      <Text size="xs" style={{ width: 36, textAlign: 'right', color: p.text, opacity: 0.4, lineHeight: 18, paddingRight: 4 }}>
+                      <Text size="3xs" color={p.text} style={{ width: 36, textAlign: 'right', opacity: 0.4, lineHeight: 18, paddingRight: 4 }}>
                         {gutter(ln.newLine)}
                       </Text>
                     </Box>
                   )}
-                  <Text size="sm" style={{ width: 12, marginLeft: 6, color: lineColor(ln.kind, p), lineHeight: 18 }}>
+                  <Text size="xs" color={lineColor(ln.kind, p)} style={{ width: 12, marginLeft: 6, lineHeight: 18 }}>
                     {marker(ln.kind)}
                   </Text>
-                  <Text size="sm" style={{ color: lineColor(ln.kind, p), lineHeight: 18, paddingRight: 12 }}>
+                  <Text size="xs" color={lineColor(ln.kind, p)} style={{ lineHeight: 18, paddingRight: 12 }}>
                     {ln.text || ' '}
                   </Text>
                 </Box>

@@ -73,7 +73,7 @@ export default function XmtpConversation(): React.ReactElement {
   if (!convId) {
     return (
       <Box style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: bg }}>
-        <Text style={{ color: sub }}>Missing conversation id.</Text>
+        <Text color={sub}>Missing conversation id.</Text>
       </Box>
     );
   }
@@ -125,7 +125,7 @@ export default function XmtpConversation(): React.ReactElement {
           style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 14 }}
         >
           <HeaderAvatar peerAddr={peerAddr} groupImage={groupImage} channelId={convId} isGroup={isGroup} border={border} />
-          <Text weight="semibold" size="xl" style={{ color: head, flex: 1 }} numberOfLines={1}>
+          <Text weight="semibold" size="4xl" color={head} style={{ flex: 1 }} numberOfLines={1}>
             {isGroup ? (groupName === null ? '' : (groupName || 'Untitled group'))
               : peerAddr ? (getPeerName(peerAddr) ?? shortAddress(peerAddr)) : ''}
           </Text>

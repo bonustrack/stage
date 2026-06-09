@@ -123,14 +123,10 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
             >
               <Icon name={item.icon} size={56} color={accent} />
             </Box>
-            <Text weight="semibold" size="xxxl"
-              style={{ color: fg, textAlign: 'center', marginBottom: 14 }}
-            >
+            <Text weight="semibold" size="6xl" color={fg} style={{ textAlign: 'center', marginBottom: 14 }}>
               {item.title}
             </Text>
-            <Text size="lg"
-              style={{ color: withAlpha(fg, 0.7), lineHeight: 24, textAlign: 'center' }}
-            >
+            <Text size="xl" color={withAlpha(fg, 0.7)} style={{ lineHeight: 24, textAlign: 'center' }}>
               {item.body}
             </Text>
           </Box>
@@ -177,7 +173,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
           style={{ alignItems: 'center', paddingVertical: 8, opacity: isLast ? 0 : 1 }}
           disabled={isLast}
         >
-          <Text size="md" style={{ color: withAlpha(fg, 0.6) }}>
+          <Text size="md" color={withAlpha(fg, 0.6)}>
             Skip
           </Text>
         </Pressable>

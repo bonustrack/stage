@@ -92,6 +92,39 @@ export function semanticPalette(scheme: 'light' | 'dark'): {
   };
 }
 
+/** Semantic text-colour token names taken by the Kit content components'
+ *  `color` prop. Each resolves (scheme-aware) to the canonical palette default
+ *  via `resolveColorToken`, so a token never changes a rendered colour. A raw
+ *  hex/rgb string is still accepted on the prop as the escape hatch (used where
+ *  the colour is a live `usePalette()` value carrying the user's overrides). */
+export type ColorToken =
+  | 'text'
+  | 'link'
+  | 'primary'
+  | 'danger'
+  | 'success'
+  | 'border';
+
+const COLOR_TOKEN_MAP: Record<ColorToken, keyof typeof semanticColors> = {
+  text: 'textColor',
+  link: 'linkColor',
+  primary: 'primaryColor',
+  danger: 'dangerColor',
+  success: 'successColor',
+  border: 'borderColor',
+};
+
+/** True if `c` is one of the semantic ColorToken names (vs a raw colour string). */
+export function isColorToken(c: string): c is ColorToken {
+  return c in COLOR_TOKEN_MAP;
+}
+
+/** Resolve a `color` prop value: a semantic ColorToken name -> the canonical
+ *  scheme default; any other string passes through unchanged (escape hatch). */
+export function resolveColorToken(c: string, scheme: 'light' | 'dark'): string {
+  return isColorToken(c) ? semanticColors[COLOR_TOKEN_MAP[c]][scheme] : c;
+}
+
 /** Numeric design tokens (non-color), both editable + persisted via the app's
  *  radiusOverride store.
  *
@@ -116,55 +149,54 @@ export const BLOCK_RADIUS_DEFAULT = 12;
  *
  * A t-shirt scale that covers every text size used across apps/app. Raw numeric
  * fontSize is banned by lint - callers use a named step, either via the Kit
- * Text `size` prop (xs..xxxl) or, for plain StyleSheet objects, the
+ * Text `size` prop (3xs..6xl) or, for plain StyleSheet objects, the
  * `FONT_SIZE.<name>` value (or `fontSize(name)` helper).
  *
  * Snapping: the app historically used ~19 distinct px values; these collapse to
- * the 7 named steps below by nearest-neighbour rounding (Less: "need to match
+ * the named steps below by nearest-neighbour rounding (Less: "need to match
  * everything" = standardize). See FONT_SIZE_SNAP for the px -> name mapping.
  * ------------------------------------------------------------------------- */
 
-/** Named text sizes. The t-shirt steps (xs..xxxl) are the headline scale;
- *  the interstitial `*-` / `*+` half-steps fill the gaps so the real px values
- *  the app uses (11..20) each have an EXACT named token. This makes adopting a
- *  named size lossless for the key surfaces (channel rows, topnavs, messenger
- *  feed + composer) - they render at their original px, not a snapped value. */
+/** Named text sizes - a clean t-shirt scale with NO `+`/`-` half-step names.
+ *  Every px the app uses (11..20, plus 24/32) maps to one named step, so the
+ *  key surfaces (channel rows, topnavs, messenger feed + composer) render at
+ *  their original px, not a snapped value. */
 export type FontSizeName =
-  | 'xs'   // 11
-  | 'xs+'  // 12
-  | 'sm'   // 13
-  | 'sm+'  // 14
-  | 'md'   // 15
-  | 'md+'  // 16
-  | 'lg'   // 17
-  | 'lg+'  // 18
-  | 'xl-'  // 19
-  | 'xl'   // 20
-  | 'xxl'  // 24
-  | 'xxxl'; // 32
+  | '3xs' // 11
+  | '2xs' // 12
+  | 'xs'  // 13
+  | 'sm'  // 14
+  | 'md'  // 15
+  | 'lg'  // 16
+  | 'xl'  // 17
+  | '2xl' // 18
+  | '3xl' // 19
+  | '4xl' // 20
+  | '5xl' // 24
+  | '6xl'; // 32
 
 /** Named font-size scale -> px. The canonical set of text sizes. Every px the
  *  key surfaces use (11..20) is an exact step so snapping is lossless there. */
 export const FONT_SIZE: Record<FontSizeName, number> = {
-  xs: 11,
-  'xs+': 12,
-  sm: 13,
-  'sm+': 14,
+  '3xs': 11,
+  '2xs': 12,
+  xs: 13,
+  sm: 14,
   md: 15,
-  'md+': 16,
-  lg: 17,
-  'lg+': 18,
-  'xl-': 19,
-  xl: 20,
-  xxl: 24,
-  xxxl: 32,
+  lg: 16,
+  xl: 17,
+  '2xl': 18,
+  '3xl': 19,
+  '4xl': 20,
+  '5xl': 24,
+  '6xl': 32,
 } as const;
 
 /** Default body size (matches the Kit Text default of 15 = md). */
 export const FONT_SIZE_DEFAULT: FontSizeName = 'md';
 
 /** Resolve a named size to px. Use for plain StyleSheet objects:
- *  `fontSize: fontSize('sm')`. For Kit Text prefer the `size="sm"` prop. */
+ *  `fontSize: fontSize('3xs')`. For Kit Text prefer the `size="xs"` prop. */
 export function fontSize(name: FontSizeName): number {
   return FONT_SIZE[name];
 }
@@ -172,18 +204,18 @@ export function fontSize(name: FontSizeName): number {
 /** Documented nearest-neighbour mapping of every legacy raw px to a named step.
  *  Kept for reference / migration audit (not used at runtime). */
 export const FONT_SIZE_SNAP: Record<string, FontSizeName> = {
-  '10': 'xs', '11': 'xs',
-  '12': 'xs+',
-  '13': 'sm',
-  '14': 'sm+',
+  '10': '3xs', '11': '3xs',
+  '12': '2xs',
+  '13': 'xs',
+  '14': 'sm',
   '15': 'md',
-  '16': 'md+',
-  '17': 'lg',
-  '18': 'lg+',
-  '19': 'xl-',
-  '20': 'xl',
-  '22': 'xxl', '24': 'xxl', '26': 'xxl',
-  '28': 'xxxl', '34': 'xxxl', '38': 'xxxl',
+  '16': 'lg',
+  '17': 'xl',
+  '18': '2xl',
+  '19': '3xl',
+  '20': '4xl',
+  '22': '5xl', '24': '5xl', '26': '5xl',
+  '28': '6xl', '34': '6xl', '38': '6xl',
 } as const;
 
 /** Font families used across both shells (Calibre is bundled in both apps). */

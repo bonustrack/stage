@@ -114,7 +114,7 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
         width: '100%', alignSelf: 'stretch', alignItems: 'stretch',
         paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12, gap: 10,
       }}>
-        <Text style={{ color: fg, textAlign: 'center', opacity: 0.8 }}>
+        <Text color={fg} style={{ textAlign: 'center', opacity: 0.8 }}>
           This is a message request. Approve to reply, or reject to decline.
         </Text>
         {/* Full-bleed row: each half flexes to fill the width. NOTE: do NOT use

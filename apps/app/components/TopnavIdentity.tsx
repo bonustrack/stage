@@ -45,10 +45,8 @@ export function TopnavIdentity(): React.ReactElement {
       <Row align="center" gap={8}>
         <Avatar address={myAddress} size={28} style={{ backgroundColor: border }} />
         {myName ? (
-          <Text weight="semibold" size="xl"
-            numberOfLines={1}
-            style={{ color: head, maxWidth: 200 }}
-          >
+          <Text weight="semibold" size="4xl"
+            numberOfLines={1} color={head} style={{ maxWidth: 200 }}>
             {myName}
           </Text>
         ) : null}

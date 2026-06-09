@@ -4,7 +4,7 @@
  *
  *  CANONICAL API (mirrors ChatKit's Text widget / BaseTextProps 1:1):
  *    value          string (or `children`)
- *    size           xs|sm|md|lg|xl  (ChatKit TextSize) - or a numeric px
+ *    size           3xs..6xl  (named t-shirt step from the kit FONT_SIZE scale)
  *    weight         normal|medium|semibold|bold
  *    color          override colour
  *    textAlign      start|center|end
@@ -20,7 +20,7 @@ import {
   type TextProps as RNTextProps,
   type TextStyle,
 } from 'react-native';
-import { FONT_SIZE, type FontSizeName } from './tokens';
+import { FONT_SIZE, type FontSizeName, resolveColorToken, type ColorToken } from './tokens';
 
 /** @deprecated Legacy role-name `variant`. Mapped onto colour + font family. */
 export type TextVariant = 'body' | 'secondary' | 'caption' | 'mono';
@@ -28,7 +28,7 @@ export type TextVariant = 'body' | 'secondary' | 'caption' | 'mono';
 /** ChatKit font weight, plus the legacy `regular` alias of `normal`. */
 export type TextWeight = 'normal' | 'medium' | 'semibold' | 'bold' | 'regular';
 
-/** Named TextSize scale (xs..xxxl). Single source of truth in tokens.ts. */
+/** Named TextSize scale (3xs..6xl). Single source of truth in tokens.ts. */
 export type TextSizeToken = FontSizeName;
 
 /** ChatKit text alignment. */
@@ -39,14 +39,16 @@ export interface TextProps extends Omit<RNTextProps, 'style'> {
   value?: string;
   /** @deprecated Legacy role variant (body/secondary/caption/mono). */
   variant?: TextVariant;
-  /** Named TextSize token (xs..xxxl). Default md (15), or sm (13) when the
+  /** Named TextSize token (3xs..6xl). Default md (15), or sm (13) when the
    *  legacy `caption` variant is used. Raw px is no longer accepted - use a
    *  named step from the kit FONT_SIZE scale. */
   size?: TextSizeToken;
   /** ChatKit font weight. `regular` is a deprecated alias of `normal`. */
   weight?: TextWeight;
-  /** Override colour; wins over the variant/palette colour. */
-  color?: string;
+  /** Text colour. A semantic ColorToken name (text/link/primary/danger/
+   *  success/border) resolves scheme-aware via the kit palette; any other
+   *  string is used as a raw colour (escape hatch). Wins over the variant. */
+  color?: ColorToken | (string & {});
   /** ChatKit `textAlign` (start/center/end). */
   textAlign?: TextAlign;
   /** ChatKit `italic`. */
@@ -88,7 +90,7 @@ function resolveSize(
   variant: TextVariant,
 ): number {
   if (size) return SIZE_TOKENS[size];
-  return variant === 'caption' ? SIZE_TOKENS.sm : SIZE_TOKENS.md;
+  return variant === 'caption' ? SIZE_TOKENS.xs : SIZE_TOKENS.md;
 }
 
 function variantColor(variant: TextVariant, dark: boolean): string {
@@ -123,7 +125,9 @@ export function Text(props: TextProps): React.ReactElement {
   } = props;
 
   const base: TextStyle = {
-    color: color ?? variantColor(variant, dark),
+    color: color != null
+      ? resolveColorToken(color, dark ? 'dark' : 'light')
+      : variantColor(variant, dark),
     fontSize: resolveSize(size, variant),
     fontFamily: variant === 'mono' ? 'Menlo' : FONTS[normalizeWeight(weight)],
   };

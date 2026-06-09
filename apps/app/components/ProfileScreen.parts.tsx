@@ -87,8 +87,8 @@ export function InfoRow({ label, value, onCopy, c }: {
       flexDirection: 'row', alignItems: 'center', gap: 8,
     }}>
       <Box style={{ flex: 1 }}>
-        <Text size="xs" style={{ color: c.text }}>{label.toUpperCase()}</Text>
-        <Text size="md" style={{ color: c.text, marginTop: 4 }} selectable>{value}</Text>
+        <Text size="3xs" color={c.text}>{label.toUpperCase()}</Text>
+        <Text size="md" color={c.text} style={{ marginTop: 4 }} selectable>{value}</Text>
       </Box>
       {onCopy ? (
         <Pressable onPress={onCopy} hitSlop={8} style={{ padding: 4 }}>
@@ -123,7 +123,7 @@ export function ProfileActions({ dark, opening, onMessage, onSend, c }: {
         // the design system (ChannelRow rowBg = border).
         style={{ backgroundColor: c.border, borderColor: c.border }}
       />
-      <Text weight="semibold" size="md" style={{ color: c.link }} numberOfLines={1}>{label}</Text>
+      <Text weight="semibold" size="md" color={c.link} numberOfLines={1}>{label}</Text>
     </Box>
   );
   return (
@@ -157,7 +157,7 @@ export function EditMenu({ visible, top, onClose, onEdit, c }: {
             })}
           >
             <Icon name="pencil" size={18} color={c.link} />
-            <Text size="md" style={{ color: c.link }}>Edit profile</Text>
+            <Text size="md" color={c.link}>Edit profile</Text>
           </Pressable>
         </Box>
       </Pressable>

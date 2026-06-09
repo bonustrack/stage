@@ -36,10 +36,10 @@ export function AccountRow({ rec, onPress, onLongPress, topBorder, trailing, hea
     >
       <Avatar address={rec.address} size={28} style={{ backgroundColor: border }} />
       <Box style={{ flex: 1, minWidth: 0 }}>
-        <Text weight="semibold" size="md" numberOfLines={1} style={{ color: head }}>
+        <Text weight="semibold" size="md" numberOfLines={1} color={head}>
           {getPeerName(rec.address) ?? rec.label ?? shortAddress(rec.address)}
         </Text>
-        <Text size="sm" numberOfLines={1} style={{ color: sub, marginTop: 1 }}>
+        <Text size="xs" numberOfLines={1} color={sub} style={{ marginTop: 1 }}>
           {shortAddress(rec.address)} · {TYPE_LABEL[rec.type]}
         </Text>
       </Box>
@@ -79,8 +79,8 @@ export function SheetRow({ label, desc, onPress, head, sub, danger, dark }: {
   return (
     <ListViewItem dark={dark} onPress={onPress}>
       <Box style={{ flex: 1 }}>
-        <Text weight="semibold" size="md" style={{ color: labelColor }}>{label}</Text>
-        {desc ? <Text size="sm" style={{ color: sub, marginTop: 2 }}>{desc}</Text> : null}
+        <Text weight="semibold" size="md" color={labelColor}>{label}</Text>
+        {desc ? <Text size="xs" color={sub} style={{ marginTop: 2 }}>{desc}</Text> : null}
       </Box>
     </ListViewItem>
   );

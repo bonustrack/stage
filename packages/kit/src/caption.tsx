@@ -5,6 +5,7 @@
 
 import { Text as RNText, type TextStyle } from 'react-native';
 import { type ReactNode } from 'react';
+import { resolveColorToken, type ColorToken } from './tokens';
 
 export type CaptionSize = 'sm' | 'md';
 export type CaptionWeight = 'normal' | 'medium' | 'semibold';
@@ -32,8 +33,10 @@ export interface CaptionProps {
   weight?: CaptionWeight;
   /** ChatKit: textAlign. Default 'start'. */
   textAlign?: CaptionAlign;
-  /** ChatKit: color. Token/hex; falls back to the scheme sub color. */
-  color?: string;
+  /** ChatKit: color. A semantic ColorToken name resolves scheme-aware via the
+   *  kit palette; any other string is a raw colour (escape hatch). Falls back to
+   *  the scheme sub colour. */
+  color?: ColorToken | (string & {});
   /** ChatKit: truncate. Single line with ellipsis. */
   truncate?: boolean;
   /** ChatKit: maxLines. Caps the line count. */
@@ -64,7 +67,9 @@ export function Caption(props: CaptionProps): React.ReactElement {
   } = props;
 
   const base: TextStyle = {
-    color: color ?? subColor(dark),
+    color: color != null
+      ? resolveColorToken(color, dark ? 'dark' : 'light')
+      : subColor(dark),
     fontSize: SIZE[size],
     fontFamily: FONT[weight],
     textAlign: ALIGN[textAlign],

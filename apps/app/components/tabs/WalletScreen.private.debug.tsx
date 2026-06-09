@@ -36,8 +36,8 @@ function DebugRow({ label, value, sub, head }: {
 }): React.ReactElement {
   return (
     <Row gap={12} py={2} style={{ justifyContent: 'space-between' }}>
-      <Text size="sm" style={{ color: sub }}>{label}</Text>
-      <Text weight="semibold" size="sm" style={{ color: head, flexShrink: 1, textAlign: 'right' }}>
+      <Text size="xs" color={sub}>{label}</Text>
+      <Text weight="semibold" size="xs" color={head} style={{ flexShrink: 1, textAlign: 'right' }}>
         {value}
       </Text>
     </Row>
@@ -56,7 +56,7 @@ export function RailgunDebugPanel({ head, sub, border }: {
 
   return (
     <Col mt={20} pt={16} gap={4} style={{ borderTopWidth: 1, borderTopColor: border }}>
-      <Text weight="semibold" size="sm" style={{ color: sub }}>
+      <Text weight="semibold" size="xs" color={sub}>
         RAILGUN DEBUG · BALANCE PIPELINE
       </Text>
       <DebugRow label="bridge available" value={String(d.bridgeAvailable)} sub={sub} head={head} />
@@ -68,10 +68,10 @@ export function RailgunDebugPanel({ head, sub, border }: {
       <DebugRow label="getBalances rows" value={getRows} sub={sub} head={head} />
       <DebugRow label="balance events" value={String(d.eventCount)} sub={sub} head={head} />
       <DebugRow label="last event at" value={fmtTime(d.lastEventAt)} sub={sub} head={head} />
-      <Text size="sm" style={{ color: sub, marginTop: 6 }}>
+      <Text size="xs" color={sub} style={{ marginTop: 6 }}>
         last balanceUpdate payload
       </Text>
-      <Text size="xs" style={{ color: head }} selectable>
+      <Text size="3xs" color={head} selectable>
         {fmtEvent(d)}
       </Text>
     </Col>

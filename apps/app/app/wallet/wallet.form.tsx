@@ -77,7 +77,7 @@ export function ActionHeader({ title, head, border, onBack }: {
       <Pressable onPress={onBack} hitSlop={8} style={{ padding: 4 }}>
         <Icon name="arrowLeft" size={22} color={head} />
       </Pressable>
-      <Text weight="semibold" size="lg" style={{ color: head, flex: 1 }} numberOfLines={1}>
+      <Text weight="semibold" size="xl" color={head} style={{ flex: 1 }} numberOfLines={1}>
         {title}
       </Text>
     </Row>
@@ -94,7 +94,7 @@ export function Segmented<T extends string | number>({ label, value, options, on
   const { sub } = useFormPal();
   return (
     <Box style={{ gap: 6 }}>
-      {label ? <Text size="sm" style={{ color: sub }}>{label}</Text> : null}
+      {label ? <Text size="xs" color={sub}>{label}</Text> : null}
       <Row gap={8}>
         {options.map(([id, text]) => (
           <Button key={String(id)} variant={value === id ? 'primary' : 'secondary'}
@@ -117,11 +117,11 @@ export function AmountBox({ pal, amount, setAmount, busy, balance, symbol, dark 
   return (
     <Box style={{ gap: 6 }}>
       <Row align="center">
-        <Text size="sm" style={{ color: sub, flex: 1 }}>AMOUNT</Text>
+        <Text size="xs" color={sub} style={{ flex: 1 }}>AMOUNT</Text>
         {balance != null ? (
           <Button variant="ghost" size="sm" dark={!!dark} disabled={!hasBal || busy}
             onPress={() => { if (hasBal) setAmount(String(balance)); }}
-            label="MAX" textStyle={{ color: hasBal ? link : sub, fontSize: fontSize('sm') }}
+            label="MAX" textStyle={{ color: hasBal ? link : sub, fontSize: fontSize('xs') }}
             style={{ height: 24, paddingHorizontal: 8 }} />
         ) : null}
       </Row>
@@ -129,11 +129,11 @@ export function AmountBox({ pal, amount, setAmount, busy, balance, symbol, dark 
         <Input value={amount} onChangeText={setAmount} placeholder="0.0" placeholderTextColor={sub}
           inputType="number" disabled={busy} dark={!!dark}
           inputProps={{ keyboardType: 'decimal-pad' }}
-          style={{ color: head, fontSize: fontSize('lg'), fontFamily: 'Calibre-Semibold', padding: 0,
+          style={{ color: head, fontSize: fontSize('xl'), fontFamily: 'Calibre-Semibold', padding: 0,
             backgroundColor: 'transparent', minHeight: 0, paddingHorizontal: 0, paddingVertical: 0, borderWidth: 0 }} />
       </Box>
       {balance != null ? (
-        <Text size="sm" style={{ color: sub, paddingHorizontal: 4 }}>
+        <Text size="xs" color={sub} style={{ paddingHorizontal: 4 }}>
           Balance: {Number(balance).toLocaleString(undefined, { maximumFractionDigits: 6 })}{symbol ? ` ${symbol}` : ''}
         </Text>
       ) : null}
@@ -148,10 +148,10 @@ export function LockedRecipient({ pal, label, value, hint }: {
   const { head, sub, border, inputBg } = pal;
   return (
     <Box style={{ gap: 6 }}>
-      <Text size="sm" style={{ color: sub }}>{label}</Text>
+      <Text size="xs" color={sub}>{label}</Text>
       <Box style={{ backgroundColor: inputBg, borderRadius: 12, borderWidth: 1, borderColor: border, paddingHorizontal: 14, paddingVertical: 12 }}>
-        <Text weight="semibold" size="md" style={{ color: head }}>{value}</Text>
-        <Text size="sm" style={{ color: sub, marginTop: 2 }}>{hint}</Text>
+        <Text weight="semibold" size="md" color={head}>{value}</Text>
+        <Text size="xs" color={sub} style={{ marginTop: 2 }}>{hint}</Text>
       </Box>
     </Box>
   );

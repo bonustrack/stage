@@ -34,7 +34,7 @@ export default function Accounts(): React.ReactElement {
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg} />
         </Pressable>
-        <Title size="sm" dark={dark} style={{ color: head }}>
+        <Title size="sm" dark={dark} color={head}>
           Accounts
         </Title>
       </Box>

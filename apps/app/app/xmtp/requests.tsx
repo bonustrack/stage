@@ -111,7 +111,7 @@ export default function Requests(): React.ReactElement {
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg} />
         </Pressable>
-        <Title size="sm" dark={dark} style={{ color: head }}>
+        <Title size="sm" dark={dark} color={head}>
           Message requests
         </Title>
       </Box>
@@ -128,7 +128,7 @@ export default function Requests(): React.ReactElement {
           contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}
           ListEmptyComponent={
             <Col p={32} align="center">
-              <Text style={{ color: sub, textAlign: 'center' }}>
+              <Text color={sub} style={{ textAlign: 'center' }}>
                 No message requests.
               </Text>
             </Col>

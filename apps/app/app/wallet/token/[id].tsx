@@ -54,7 +54,7 @@ export default function TokenDetail(): React.ReactElement {
       <Box style={{ flex: 1, backgroundColor: bg }}>
         <Header head={head} border={border} onBack={() => router.back()} title="Token" />
         <Col mx={16} py={40} align="center">
-          <Text size="md" style={{ color: sub }}>Token not found</Text>
+          <Text size="md" color={sub}>Token not found</Text>
         </Col>
       </Box>
     );
@@ -93,7 +93,7 @@ export default function TokenDetail(): React.ReactElement {
 
         <Row align="center" gap={6} mt={10}>
           {r.isPrivate ? <Icon name="eyeOff" size={18} color={sub} /> : null}
-          <Text weight="semibold" size="xxl" style={{ color: head }}>{r.name}</Text>
+          <Text weight="semibold" size="5xl" color={head}>{r.name}</Text>
         </Row>
 
         {/* Network badge pill */}
@@ -101,15 +101,15 @@ export default function TokenDetail(): React.ReactElement {
           paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999,
           borderWidth: 1, borderColor: border,
         }}>
-          <Text size="sm" style={{ color: sub }}>
+          <Text size="xs" color={sub}>
             {NETWORK_LABEL[r.chainId] ?? `Chain ${r.chainId}`}
           </Text>
         </Box>
 
-        <Text weight="semibold" size="xxxl" style={{ color: head, marginTop: 14 }}>
+        <Text weight="semibold" size="6xl" color={head} style={{ marginTop: 14 }}>
           {`${fmtBalance(r.balance)} ${r.symbol}`}
         </Text>
-        <Text size="md" style={{ color: sub }}>
+        <Text size="md" color={sub}>
           {valueUsd === null ? '—' : fmtUsd(valueUsd)}
         </Text>
       </Col>
@@ -168,7 +168,7 @@ function Header({ head, border, onBack, title }: {
       <Pressable onPress={onBack} hitSlop={8} style={{ padding: 4 }}>
         <Icon name="arrowLeft" size={22} color={head} />
       </Pressable>
-      <Text weight="semibold" size="lg" style={{ color: head, flex: 1 }} numberOfLines={1}>
+      <Text weight="semibold" size="xl" color={head} style={{ flex: 1 }} numberOfLines={1}>
         {title}
       </Text>
     </Row>

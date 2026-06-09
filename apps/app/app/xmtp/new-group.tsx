@@ -98,7 +98,7 @@ export default function NewGroup(): React.ReactElement {
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg} />
         </Pressable>
-        <Title size="sm" dark={dark} style={{ color: head }}>
+        <Title size="sm" dark={dark} color={head}>
           New group
         </Title>
       </Box>
@@ -123,7 +123,7 @@ export default function NewGroup(): React.ReactElement {
                 width: 88, height: 88, borderRadius: Math.round(88 * 0.12), backgroundColor: rowBg,
                 borderWidth: 1, borderColor: border, alignItems: 'center', justifyContent: 'center',
               }}>
-                <Text size="xxxl" style={{ color: sub }}>＋</Text>
+                <Text size="6xl" color={sub}>＋</Text>
               </Box>
             )}
             {creating && image ? (
@@ -132,14 +132,14 @@ export default function NewGroup(): React.ReactElement {
               </Box>
             ) : null}
           </Pressable>
-          <Text size="sm" style={{ color: sub }}>
+          <Text size="xs" color={sub}>
             {image ? 'Tap to change image' : 'Tap to add a group image'}
           </Text>
         </Box>
 
         {/* Group name (optional) */}
         <Col gap={6}>
-          <Text size="sm" style={{ color: sub }}>
+          <Text size="xs" color={sub}>
             Group name (optional)
           </Text>
           <Input

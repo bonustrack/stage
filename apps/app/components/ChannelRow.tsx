@@ -96,10 +96,10 @@ function buildLabelChips({ labels, fg, rowBg }: {
         transform: [{ translateY: 5 }],
       }}
     >
-      <Text size="sm" style={{ color: fg }}>{label}</Text>
+      <Text size="xs" color={fg}>{label}</Text>
     </View>,
     // Real, rendered gap (inline-View margin is NOT honored by RN).
-    <Text size="sm" key={`gap-${i}`}>{'  '}</Text>,
+    <Text size="xs" key={`gap-${i}`}>{'  '}</Text>,
   ]);
 }
 
@@ -144,17 +144,15 @@ function ChannelRowBase({
             {pinned ? <Icon name="mapPin" size={13} color={sub} /> : null}
             {/* Name + labels hug each other on the left; name shrinks (and
                 ellipsizes) first, the label chip stays right beside it. */}
-            <Text weight="semibold" size="xl-"
-              style={{ color: head, flexShrink: 1, minWidth: 0 }}
+            <Text weight="semibold" size="3xl" color={head} style={{ flexShrink: 1, minWidth: 0 }}
               numberOfLines={1}
-              ellipsizeMode="tail"
-            >
+              ellipsizeMode="tail">
               {title}
             </Text>
             {/* Flexible spacer pushes the timestamp to the far right edge. */}
             <Spacer />
             {timestamp ? (
-              <Text size="sm+" style={{ color: sub }}>{timestamp}</Text>
+              <Text size="sm" color={sub}>{timestamp}</Text>
             ) : null}
           </Row>
           {/* No internal height reservation: the preview block is only as tall
@@ -169,11 +167,9 @@ function ChannelRowBase({
                 <Icon name="pencil" size={14} color={sub} />
               </Box>
             ) : null}
-            <Text size="md+"
-              style={{ color: sub, lineHeight: 21, flex: 1 }}
+            <Text size="lg" color={sub} style={{ lineHeight: 21, flex: 1 }}
               numberOfLines={2}
-              ellipsizeMode="tail"
-            >
+              ellipsizeMode="tail">
               {!draft && labels && labels.length > 0
                 ? buildLabelChips({ labels, fg, rowBg })
                 : null}
@@ -183,14 +179,14 @@ function ChannelRowBase({
               <Row align="center" justify="center" px={7} radius={999} bg={head} style={{
                 minWidth: 22, height: 22,
               }}>
-                <Text weight="semibold" size="xs+" style={{ color: bg }}>
+                <Text weight="semibold" size="2xs" color={bg}>
                   {unreadCount > 99 ? '99+' : unreadCount}
                 </Text>
               </Row>
             ) : markedUnread ? (
               <Box style={{ width: 12, height: 12, borderRadius: 999, backgroundColor: head }} />
             ) : showChevron ? (
-              <Text size="lg+" style={{ color: sub }}>›</Text>
+              <Text size="2xl" color={sub}>›</Text>
             ) : null}
           </Row>
         </Col>

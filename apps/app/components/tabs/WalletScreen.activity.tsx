@@ -60,7 +60,7 @@ export function ActivityView({ address, head, sub, border, bg }: {
       <Col mx={16}>
         {priv}
         <Col py={40} align="center">
-          <Text size="md" style={{ color: DANGER }}>
+          <Text size="md" color={DANGER}>
             Couldn’t load activity
           </Text>
         </Col>
@@ -82,7 +82,7 @@ export function ActivityView({ address, head, sub, border, bg }: {
       <Col mx={16}>
         {priv}
         <Col py={40} align="center">
-          <Text size="md" style={{ color: sub }}>
+          <Text size="md" color={sub}>
             No transactions yet
           </Text>
         </Col>
@@ -127,7 +127,7 @@ function TxRow({ r, head, sub, border, bg }: {
         <Icon name={DIR_ICON[r.direction]} size={18} color={r.failed ? DANGER : head} />
       </Box>
       <Col flex={1} style={{ minWidth: 0 }}>
-        <Text weight="semibold" size="lg" style={{ color: head }} numberOfLines={1}>
+        <Text weight="semibold" size="xl" color={head} numberOfLines={1}>
           {title}
         </Text>
         <Row align="center" gap={6} style={{ marginTop: 2 }}>
@@ -135,20 +135,20 @@ function TxRow({ r, head, sub, border, bg }: {
             paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4,
             backgroundColor: border,
           }}>
-            <Text size="sm" style={{ color: sub }} numberOfLines={1}>
+            <Text size="xs" color={sub} numberOfLines={1}>
               {r.chainLabel}
             </Text>
           </Box>
-          <Text size="md" style={{ color: sub, flex: 1 }} numberOfLines={1}>
+          <Text size="md" color={sub} style={{ flex: 1 }} numberOfLines={1}>
             {`${partyLabel} · ${relTime(r.timestamp)}`}
           </Text>
         </Row>
       </Col>
       <Col align="end">
-        <Text weight="semibold" size="lg" style={{ color: valueColor }}>
+        <Text weight="semibold" size="xl" color={valueColor}>
           {r.valueEth === '0' ? '—' : `${prefix}${r.valueEth} ETH`}
         </Text>
-        <Text size="md" style={{ color: r.failed ? DANGER : sub, marginTop: 2 }}>
+        <Text size="md" color={r.failed ? DANGER : sub} style={{ marginTop: 2 }}>
           {r.failed ? 'Failed' : `#${r.nonce}`}
         </Text>
       </Col>

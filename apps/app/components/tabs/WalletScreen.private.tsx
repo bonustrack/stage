@@ -43,8 +43,8 @@ export function PrivateView({ head, sub, border }: {
   if (!isRailgunAvailable() && !isBridgeAvailable()) {
     return (
       <Col mx={16} py={40} align="center" gap={6}>
-        <Text weight="semibold" size="md" style={{ color: head }}>Private balances</Text>
-        <Text size="md" style={{ color: sub, textAlign: 'center' }}>
+        <Text weight="semibold" size="md" color={head}>Private balances</Text>
+        <Text size="md" color={sub} style={{ textAlign: 'center' }}>
           Shielded transfers arrive in the next app build.
         </Text>
         {/* Bridge ping works without the native prover - let Less test the
@@ -64,8 +64,8 @@ export function PrivateView({ head, sub, border }: {
         }}
         style={{ paddingVertical: 10 }}
       >
-        <Text size="sm" style={{ color: sub }}>PRIVATE ADDRESS</Text>
-        <Text weight="semibold" size="md" style={{ color: head, marginTop: 2 }}>
+        <Text size="xs" color={sub}>PRIVATE ADDRESS</Text>
+        <Text weight="semibold" size="md" color={head} style={{ marginTop: 2 }}>
           {snapshot?.zkAddress ? short0zk(snapshot.zkAddress) : '…'}
         </Text>
       </Pressable>
@@ -74,10 +74,10 @@ export function PrivateView({ head, sub, border }: {
           ~20-30s proof; each in-flight action shows its phase here. */}
       {live.map(p => (
         <Row key={p.id} align="center" gap={8} py={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-          <Text weight="semibold" size="md" style={{ color: head }}>
+          <Text weight="semibold" size="md" color={head}>
             {p.kind === 'shield' ? 'Shielding' : p.kind === 'unshield' ? 'Unshielding' : 'Sending'} {p.symbol}
           </Text>
-          <Text size="sm" style={{ color: sub }}>
+          <Text size="xs" color={sub}>
             {p.phase === 'proving' ? 'generating proof…' : 'broadcasting…'}
           </Text>
         </Row>

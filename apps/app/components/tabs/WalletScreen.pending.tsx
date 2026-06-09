@@ -33,15 +33,15 @@ export function PendingShieldRow({ p, pal }: { p: PendingAction; pal: Pal }): Re
         <Spinner size={16} color={sub} />
       </Box>
       <Col flex={1} style={{ minWidth: 0 }}>
-        <Text weight="semibold" size="lg" style={{ color: head }} numberOfLines={1}>
+        <Text weight="semibold" size="xl" color={head} numberOfLines={1}>
           {p.symbol}
         </Text>
-        <Text size="md" style={{ color: sub, marginTop: 2 }}>
+        <Text size="md" color={sub} style={{ marginTop: 2 }}>
           Pending shield · {phaseLabel(p.phase)}
         </Text>
       </Col>
       <Col align="end">
-        <Text size="md" style={{ color: sub }}>
+        <Text size="md" color={sub}>
           +{p.delta} {p.symbol}
         </Text>
       </Col>

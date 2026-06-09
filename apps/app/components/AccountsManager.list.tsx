@@ -22,14 +22,14 @@ export function AccountList({
 }): React.ReactElement {
   const manageTrailing = (id: string): React.ReactElement => (
     <Pressable hitSlop={10} onPress={() => setManageId(id)}>
-      <Text weight="semibold" size="xl" style={{ color: sub, paddingHorizontal: 4 }}>⋯</Text>
+      <Text weight="semibold" size="4xl" color={sub} style={{ paddingHorizontal: 4 }}>⋯</Text>
     </Pressable>
   );
 
   return (
     <>
       {!flat ? (
-        <Text size="sm" style={{ color: sub, paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8 }}>
+        <Text size="xs" color={sub} style={{ paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8 }}>
           ACCOUNTS
         </Text>
       ) : null}
@@ -43,7 +43,7 @@ export function AccountList({
           /* Flat mode (modal) — EVERY account as a row, all visible at once,
              active one highlighted. No collapse/dropdown. */
           accounts.length === 0 ? (
-            <Text size="sm" style={{ color: sub, padding: 14 }}>
+            <Text size="xs" color={sub} style={{ padding: 14 }}>
               No accounts yet.
             </Text>
           ) : (
@@ -77,7 +77,7 @@ export function AccountList({
               trailing={<Icon name={expanded ? 'chevronUp' : 'chevronDown'} size={20} color={sub} />}
             />
           ) : accounts.length === 0 ? (
-            <Text size="sm" style={{ color: sub, padding: 14 }}>
+            <Text size="xs" color={sub} style={{ padding: 14 }}>
               No accounts yet.
             </Text>
           ) : null
@@ -110,13 +110,13 @@ export function AccountList({
               <Box style={{ width: 28, height: 28, borderRadius: 999, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: sub, borderStyle: 'dashed' }}>
                 <Icon name="plus" size={16} color={sub} />
               </Box>
-              <Text weight="semibold" size="md" style={{ color: head }}>Add account</Text>
+              <Text weight="semibold" size="md" color={head}>Add account</Text>
             </Pressable>
           </>
         ) : null}
       </Box>
       {!flat ? (
-        <Text size="sm" style={{ color: sub, paddingHorizontal: 16, paddingTop: 8 }}>
+        <Text size="xs" color={sub} style={{ paddingHorizontal: 16, paddingTop: 8 }}>
           {expanded ? 'Tap an account to switch · long-press for options' : 'Tap to switch or add accounts'}
         </Text>
       ) : null}

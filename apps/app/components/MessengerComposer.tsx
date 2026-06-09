@@ -144,7 +144,7 @@ export function MessengerComposer({
         />
       ) : null}
       {uploading || err ? (
-        <Text size="xs+" style={{ color: err ? DANGER : sub, paddingHorizontal: 14, paddingBottom: 4 }}>
+        <Text size="2xs" color={err ? DANGER : sub} style={{ paddingHorizontal: 14, paddingBottom: 4 }}>
           {err ?? 'Uploading…'}
         </Text>
       ) : null}

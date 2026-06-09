@@ -33,7 +33,7 @@ function IntroLabelChips({ labels, fg, rowBg }: {
           key={label.toLowerCase()}
           style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, backgroundColor: rowBg }}
         >
-          <Text size="md" style={{ color: fg }}>{label}</Text>
+          <Text size="md" color={fg}>{label}</Text>
         </Box>
       ))}
     </Row>
@@ -66,16 +66,12 @@ export function ConversationIntro({
           square
           style={{ backgroundColor: border }}
         />
-        <Text weight="semibold" size="xxl"
-          style={{ color: head, lineHeight: 30, marginTop: 12, textAlign: 'left', flexShrink: 1 }}
-        >
+        <Text weight="semibold" size="5xl" color={head} style={{ lineHeight: 30, marginTop: 12, textAlign: 'left', flexShrink: 1 }}>
           {name}
         </Text>
         <IntroLabelChips labels={groupLabels} fg={fg} rowBg={rowBg} />
         {desc ? (
-          <Text size="xl"
-            style={{ color: sub, marginTop: 10, textAlign: 'left', lineHeight: 23 }}
-          >
+          <Text size="4xl" color={sub} style={{ marginTop: 10, textAlign: 'left', lineHeight: 23 }}>
             {desc}
           </Text>
         ) : null}
@@ -91,16 +87,14 @@ export function ConversationIntro({
       style={{ alignItems: 'flex-start', paddingVertical: 24, paddingHorizontal: 12 }}
     >
       <Avatar address={peerAddr} imageUri={getPeerAvatar(peerAddr)} size="lg" style={{ backgroundColor: border }} />
-      <Text weight="semibold" size="xxl" style={{ color: head, lineHeight: 30, marginTop: 12, flexShrink: 1 }}>
+      <Text weight="semibold" size="5xl" color={head} style={{ lineHeight: 30, marginTop: 12, flexShrink: 1 }}>
         {getPeerName(peerAddr) ?? shortAddress(peerAddr)}
       </Text>
-      <Text size="sm" style={{ color: sub, marginTop: 2 }} numberOfLines={1}>
+      <Text size="xs" color={sub} style={{ marginTop: 2 }} numberOfLines={1}>
         {shortAddress(peerAddr)}
       </Text>
       {about ? (
-        <Text size="xl"
-          style={{ color: sub, marginTop: 10, textAlign: 'left', lineHeight: 23 }}
-        >
+        <Text size="4xl" color={sub} style={{ marginTop: 10, textAlign: 'left', lineHeight: 23 }}>
           {about}
         </Text>
       ) : null}

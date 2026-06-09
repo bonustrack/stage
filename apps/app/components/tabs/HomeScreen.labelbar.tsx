@@ -78,9 +78,7 @@ function Chip({ label, selected, onPress, link, fg, bg, rowBg }: {
       })}
     >
       <Text size="md"
-        numberOfLines={1}
-        style={{ color: selected ? bg : fg }}
-      >
+        numberOfLines={1} color={selected ? bg : fg}>
         {label}
       </Text>
     </Pressable>

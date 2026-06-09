@@ -45,7 +45,7 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
       <GallerySection name="Text" note="ChatKit value / size / weight / textAlign" {...sec} innerPadH={14} innerPadV={12}>
         <Text dark={dark} value="Body text - the default paragraph style." />
         <Text dark={dark} color={sub} value="Secondary text - muted supporting copy." />
-        <Text dark={dark} color={sub} size="sm" value="Caption text - smallest label." />
+        <Text dark={dark} color={sub} size="xs" value="Caption text - smallest label." />
         <Text dark={dark} weight="semibold" textAlign="center" value="Semibold, centered." />
         <Text dark={dark} italic lineThrough value="Italic + line-through." />
         <Text dark={dark} variant="mono" value="0xabc...1234" />
@@ -104,7 +104,7 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
             <ListViewItem key={label} dark={dark} onPress={() => {}}>
               <Icon name="cog" size={22} color={head} />
               <Box style={{ flex: 1 }}>
-                <Text dark={dark} color={head} weight="medium" size="lg">{label}</Text>
+                <Text dark={dark} color={head} weight="medium" size="xl">{label}</Text>
               </Box>
               <Icon name="chevronRight" size={18} color={sub} />
             </ListViewItem>

@@ -30,10 +30,10 @@ export function PreviewLinkCard({ url }: {
   return (
     <Pressable onPress={() => void Linking.openURL(ref.url)}>
       <Box radius={blockRadius} style={{ borderWidth: 1, borderColor: border, backgroundColor: 'transparent', paddingHorizontal: 12, paddingVertical: 10 }}>
-        <Text weight="semibold" size="xl" style={{ color: fg }}>
+        <Text weight="semibold" size="4xl" color={fg}>
           Open preview build
         </Text>
-        <Text size="md" style={{ color: subColor, lineHeight: 21, marginTop: 2 }}>
+        <Text size="md" color={subColor} style={{ lineHeight: 21, marginTop: 2 }}>
           EAS Update · {ref.shortGroup}
         </Text>
       </Box>

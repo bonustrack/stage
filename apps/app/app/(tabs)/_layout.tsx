@@ -97,7 +97,7 @@ export default function TabsLayout(): React.ReactElement {
                     tabBarBadgeStyle: {
                       backgroundColor: pal.link,
                       color: pal.bg,
-                      fontSize: fontSize('xs'),
+                      fontSize: fontSize('3xs'),
                       fontFamily: 'Calibre-Semibold',
                       minWidth: 18,
                       height: 18,

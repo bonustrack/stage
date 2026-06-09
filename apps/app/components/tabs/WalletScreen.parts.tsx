@@ -42,7 +42,7 @@ export function Btn({ icon, label, onPress, head, border, dark }: {
         // the design system (ChannelRow rowBg = border).
         style={{ backgroundColor: border, borderColor: border }}
       />
-      <Text weight="semibold" size="md" style={{ color: head }} numberOfLines={1}>{label}</Text>
+      <Text weight="semibold" size="md" color={head} numberOfLines={1}>{label}</Text>
     </Col>
   );
 }
@@ -70,7 +70,7 @@ export function WalletTabs({ tab, setTab, head, sub, border }: {
               borderBottomColor: active ? head : 'transparent',
             }}
           >
-            <Text weight="semibold" size="lg" style={{ color: active ? head : sub }}>
+            <Text weight="semibold" size="xl" color={active ? head : sub}>
               {TAB_LABEL[t]}
             </Text>
           </Pressable>
@@ -111,14 +111,14 @@ export function TokenRow({ r, head, sub, border, bg, onPress }: { r: AssetRow; o
       <Col flex={1} style={{ minWidth: 0 }}>
         <Row align="center" gap={6} style={{ minWidth: 0 }}>
           {r.isPrivate ? <PrivateBadge sub={sub} /> : null}
-          <Text weight="semibold" size="xl" style={{ color: head }} numberOfLines={1}>{r.name}</Text>
+          <Text weight="semibold" size="4xl" color={head} numberOfLines={1}>{r.name}</Text>
         </Row>
         <Row align="center" gap={6} mt={2}>
-          <Text size="md" style={{ color: sub }}>
+          <Text size="md" color={sub}>
             {r.priceUsd === null ? r.symbol : fmtUsd(r.priceUsd, r.priceUsd < 1 ? 4 : 2)}
           </Text>
           {changeText ? (
-            <Text size="md" style={{ color: changeColor }}>
+            <Text size="md" color={changeColor}>
               {changeText}
             </Text>
           ) : null}
@@ -126,10 +126,10 @@ export function TokenRow({ r, head, sub, border, bg, onPress }: { r: AssetRow; o
       </Col>
       {/* Right column — USD VALUE (top, big/white) over amount + symbol (bottom). */}
       <Col align="end">
-        <Text weight="semibold" size="xl" style={{ color: head }}>
+        <Text weight="semibold" size="4xl" color={head}>
           {valueUsd === null ? '—' : fmtUsd(valueUsd)}
         </Text>
-        <Text size="md" style={{ color: sub, marginTop: 2 }}>
+        <Text size="md" color={sub} style={{ marginTop: 2 }}>
           {`${fmtBalance(r.balance)} ${r.symbol}`}
         </Text>
       </Col>

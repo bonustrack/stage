@@ -58,6 +58,18 @@ export default tseslint.config(
           message:
             "Kit Text/Title/Caption apply Calibre internally - do not set fontFamily in style. Use the `weight` prop (normal/medium/semibold/bold) for the face, or variant=\"mono\" for monospace.",
         },
+        {
+          // (4) Kit CONTENT components take their text colour via the `color`
+          //     PROP (color={pal.text}), never a `color` in the style/textStyle
+          //     escape-hatch. A style color would bury the colour decision in
+          //     styling instead of the component params, so it is banned on
+          //     these tags. Non-content surfaces have no color prop and keep an
+          //     explicit style color - they are not matched here.
+          selector:
+            "JSXElement[openingElement.name.name=/^(Text|Title|Caption)$/] JSXAttribute[name.name=/^(style|textStyle)$/] Property[key.name='color']",
+          message:
+            "Kit Text/Title/Caption must take their colour via the `color` prop (color={pal.text}), not a color in style. Remove color from the style and pass color= instead.",
+        },
       ],
       // `error`: cap files at 400 lines. Split a file rather than crossing it.
       "max-lines": ["error", { max: 400, skipBlankLines: false, skipComments: false }],

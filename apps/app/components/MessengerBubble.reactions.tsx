@@ -38,8 +38,8 @@ export function ReactionsRow({
         const mine = !!ownEmojis?.has(emoji);
         const inner = (
           <>
-            <Text size="sm">{emoji}</Text>
-            <Text size="xs" style={{ color: sub }}>{count}</Text>
+            <Text size="xs">{emoji}</Text>
+            <Text size="3xs" color={sub}>{count}</Text>
           </>
         );
         const pillStyle = {
@@ -67,8 +67,8 @@ export function ReactionsRow({
         <Row key={`pending-${emoji}`} align="center" gap={4} px={8} py={2} radius={999} bg={pillBg} style={{
           opacity: 0.45,
         }}>
-          <Text size="sm">{emoji}</Text>
-          <Text size="xs" style={{ color: sub }}>1</Text>
+          <Text size="xs">{emoji}</Text>
+          <Text size="3xs" color={sub}>1</Text>
         </Row>
       ))}
     </Row>
@@ -86,11 +86,11 @@ export function ReactionPicker({ dark, sub, onPick, onClose }: {
     }}>
       {REACT_PRESETS.map(e => (
         <Pressable key={e} onPress={() => onPick(e)}>
-          <Text size="xxl">{e}</Text>
+          <Text size="5xl">{e}</Text>
         </Pressable>
       ))}
       <Pressable onPress={onClose}>
-        <Text size="md+" style={{ color: sub, paddingHorizontal: 4 }}>✕</Text>
+        <Text size="lg" color={sub} style={{ paddingHorizontal: 4 }}>✕</Text>
       </Pressable>
     </Row>
   );

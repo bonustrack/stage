@@ -39,7 +39,7 @@ function SuggestionChip({ label, busy, onAdd, p }: {
       })}
     >
       <Icon name="plus" size={12} color={p.sub} />
-      <Text size="sm" style={{ color: p.fg }}>{label}</Text>
+      <Text size="xs" color={p.fg}>{label}</Text>
     </Pressable>
   );
 }
@@ -57,7 +57,7 @@ function LabelChip({ label, busy, onRemove, p }: {
       backgroundColor: p.rowBg,
       opacity: busy ? 0.5 : 1,
     }}>
-      <Text size="sm" style={{ color: p.fg }}>{label}</Text>
+      <Text size="xs" color={p.fg}>{label}</Text>
       <Pressable onPress={onRemove} disabled={busy} hitSlop={8} style={{ padding: 2 }}>
         <Icon name="x" size={14} color={p.sub} />
       </Pressable>
@@ -119,7 +119,7 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
     <Box style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
       <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
         <Icon name="tag" size={13} color={sub} />
-        <Text size="sm" style={{ color: sub }}>LABELS</Text>
+        <Text size="xs" color={sub}>LABELS</Text>
       </Box>
 
       {labels.length > 0 ? (
@@ -165,11 +165,11 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
             })}
           >
             {busy ? <Spinner size={14} color={fg} /> : <Icon name="plus" size={14} color={fg} />}
-            <Text size="sm" style={{ color: fg }}>Add</Text>
+            <Text size="xs" color={fg}>Add</Text>
           </Pressable>
         </Box>
       ) : (
-        <Text size="sm" style={{ color: sub, marginTop: 8 }}>
+        <Text size="xs" color={sub} style={{ marginTop: 8 }}>
           Label limit reached ({MAX_LABELS}).
         </Text>
       )}

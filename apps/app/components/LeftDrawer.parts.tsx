@@ -23,10 +23,10 @@ export function DrawerHeader({ rec, c }: {
       {rec ? (
         <>
           <Avatar address={rec.address} size={56} style={{ backgroundColor: c.border, marginBottom: 10 }} />
-          <Text weight="semibold" size="xl" numberOfLines={1} style={{ color: c.head }}>
+          <Text weight="semibold" size="4xl" numberOfLines={1} color={c.head}>
             {getPeerName(rec.address) ?? rec.label ?? shortAddress(rec.address)}
           </Text>
-          <Text size="md" numberOfLines={1} style={{ color: c.sub, marginTop: 1 }}>
+          <Text size="md" numberOfLines={1} color={c.sub} style={{ marginTop: 1 }}>
             {shortAddress(rec.address)}
           </Text>
         </>
@@ -46,10 +46,10 @@ export function drawerAccountRows({ accounts, activeId, onSwitch, c, dark }: {
     <ListViewItem key={a.id} dark={dark} onPress={() => onSwitch(a.id)}>
       <Avatar address={a.address} size={30} style={{ backgroundColor: c.border }} />
       <Box style={{ flex: 1, minWidth: 0 }}>
-        <Text weight="semibold" size="md" numberOfLines={1} style={{ color: c.head }}>
+        <Text weight="semibold" size="md" numberOfLines={1} color={c.head}>
           {getPeerName(a.address) ?? a.label ?? shortAddress(a.address)}
         </Text>
-        <Text size="sm" numberOfLines={1} style={{ color: c.sub, marginTop: 1 }}>
+        <Text size="xs" numberOfLines={1} color={c.sub} style={{ marginTop: 1 }}>
           {shortAddress(a.address)}
         </Text>
       </Box>
@@ -69,7 +69,7 @@ export function DrawerRow({ rowKey, icon, label, onPress, head, sub, dark }: {
     <ListViewItem key={rowKey} dark={dark} onPress={onPress}>
       <Icon name={icon} size={22} color={head} />
       <Box style={{ flex: 1 }}>
-        <Text size="lg" style={{ color: head }}>{label}</Text>
+        <Text size="xl" color={head}>{label}</Text>
       </Box>
       <Icon name="chevronRight" size={18} color={sub} />
     </ListViewItem>

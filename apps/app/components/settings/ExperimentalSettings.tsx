@@ -38,7 +38,7 @@ export function ExperimentalSettings(): React.ReactElement {
             <ListViewItem key={row.href} dark={dark} onPress={() => router.push(row.href)}>
               <Icon name={row.icon} size={22} color={head} />
               <Box style={{ flex: 1 }}>
-                <Text size="lg" style={{ color: head }}>{row.label}</Text>
+                <Text size="xl" color={head}>{row.label}</Text>
               </Box>
               <Icon name="chevronRight" size={18} color={sub} />
             </ListViewItem>
@@ -50,7 +50,7 @@ export function ExperimentalSettings(): React.ReactElement {
           <ListViewItem dark={dark} onPress={() => { void setOnboardingSeen(false); }}>
             <Icon name="sparkles" size={22} color={head} />
             <Box style={{ flex: 1 }}>
-              <Text size="lg" style={{ color: head }}>Replay onboarding</Text>
+              <Text size="xl" color={head}>Replay onboarding</Text>
             </Box>
           </ListViewItem>
         </ListView>

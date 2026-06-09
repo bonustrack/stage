@@ -199,7 +199,7 @@ function SendBody({ pal, dark, symbol = 'ETH', chainId = 1, balance = null, onFo
   return (
     <Box style={{ gap: 16 }}>
       <Box style={{ gap: 6 }}>
-        <Text size="sm" style={{ color: sub }}>RECIPIENT (0zk ADDRESS)</Text>
+        <Text size="xs" color={sub}>RECIPIENT (0zk ADDRESS)</Text>
         <Input value={to} onChangeText={setTo} placeholder="0zk…" placeholderTextColor={sub}
           disabled={busy} dark={dark}
           inputProps={{ autoCapitalize: 'none', autoCorrect: false }}

@@ -81,7 +81,7 @@ export function AccountSecuritySection(
 
   return (
     <>
-      <Text size="sm" style={{ color: c.sub, paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8 }}>
+      <Text size="xs" color={c.sub} style={{ paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8 }}>
         ACCOUNT
       </Text>
       <Box mx={16} style={{ overflow: 'hidden' }}>
@@ -98,11 +98,11 @@ export function AccountSecuritySection(
               >
                 <Icon name="wallet" size={22} color={c.head} />
                 <Col flex={1}>
-                  <Text size="lg" style={{ color: c.fg }}>
+                  <Text size="xl" color={c.fg}>
                     {revealed ? 'Tap to copy private key' : 'Export private key'}
                   </Text>
                   {revealed ? (
-                    <Text size="sm" selectable style={{ color: c.sub, marginTop: 4 }}>
+                    <Text size="xs" selectable color={c.sub} style={{ marginTop: 4 }}>
                       {revealed}
                     </Text>
                   ) : null}
@@ -117,7 +117,7 @@ export function AccountSecuritySection(
               style={{ paddingHorizontal: 14, paddingVertical: 14 }}
             >
               <Icon name="trash" size={22} color={danger} />
-              <Text size="lg" style={{ color: danger, flex: 1 }}>
+              <Text size="xl" color={danger} style={{ flex: 1 }}>
                 Remove account
               </Text>
             </ListViewItem>

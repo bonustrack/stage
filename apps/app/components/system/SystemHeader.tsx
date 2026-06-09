@@ -30,7 +30,7 @@ export function SystemHeader({ title, dark, fg, head, border, right }: {
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg} />
         </Pressable>
-        <Title size="sm" dark={dark} style={{ color: head }}>{title}</Title>
+        <Title size="sm" dark={dark} color={head}>{title}</Title>
         {right ? <Box style={{ flex: 1, alignItems: 'flex-end' }}>{right}</Box> : null}
       </Box>
     </Box>

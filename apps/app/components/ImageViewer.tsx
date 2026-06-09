@@ -136,7 +136,7 @@ export function ImageViewer({ uri, visible, onClose }: {
             {saving
               ? <Spinner size={20} color="#ffffff" />
               : <Icon name="arrowDownTray" size={18} color="#ffffff" />}
-            <Text weight="semibold" size="md" style={{ color: '#ffffff' }}>
+            <Text weight="semibold" size="md" color={'#ffffff'}>
               {saving ? 'Saving…' : 'Download'}
             </Text>
           </Pressable>

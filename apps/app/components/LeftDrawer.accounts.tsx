@@ -104,7 +104,7 @@ export function useDrawerAccountActions({ head, sub, border, dark, onChanged }: 
 
   const modal = (
     <AppModal visible={importOpen} onClose={() => setImportOpen(false)} title="Add account">
-        <Text size="sm" style={{ color: sub, marginBottom: 10 }}>
+        <Text size="xs" color={sub} style={{ marginBottom: 10 }}>
           Paste an existing wallet&apos;s private key (0x… 64 hex) or its 12–24 word recovery phrase.
         </Text>
         <Textarea
@@ -115,14 +115,14 @@ export function useDrawerAccountActions({ head, sub, border, dark, onChanged }: 
           dark={dark}
           inputProps={{ autoCapitalize: 'none', autoCorrect: false, secureTextEntry: !text.includes(' ') }}
           style={{
-            color: head, fontFamily: 'Menlo', fontSize: fontSize('sm'), minHeight: 64, height: undefined,
+            color: head, fontFamily: 'Menlo', fontSize: fontSize('xs'), minHeight: 64, height: undefined,
             borderWidth: 1, borderColor: border, borderRadius: 10,
             paddingHorizontal: 12, paddingVertical: 10, marginBottom: 8,
             textAlignVertical: 'top', backgroundColor: 'transparent',
           }}
         />
         {err ? (
-          <Text size="sm" style={{ color: DANGER, marginBottom: 8 }}>{err}</Text>
+          <Text size="xs" color={DANGER} style={{ marginBottom: 8 }}>{err}</Text>
         ) : null}
         <Box style={{ flexDirection: 'row', gap: 8 }}>
           <Button

@@ -65,7 +65,7 @@ export default function Diff(): React.ReactElement {
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={p.text} />
         </Pressable>
-        <Title size="sm" dark={dark} style={{ color: p.link, flex: 1 }} numberOfLines={1}>
+        <Title size="sm" dark={dark} color={p.link} style={{ flex: 1 }} numberOfLines={1}>
           Changes
         </Title>
         {prUrl ? (
@@ -77,15 +77,15 @@ export default function Diff(): React.ReactElement {
 
       <ScrollView contentContainerStyle={{ paddingTop: 12, paddingBottom: 24 + insets.bottom }}>
         {!ref ? (
-          <Text style={{ color: p.text, opacity: 0.7, paddingHorizontal: 12 }}>No GitHub link is set for this channel.</Text>
+          <Text color={p.text} style={{ opacity: 0.7, paddingHorizontal: 12 }}>No GitHub link is set for this channel.</Text>
         ) : isLoading ? (
           <Box style={{ paddingVertical: 40, alignItems: 'center' }}><ActivityIndicator color={p.link} /></Box>
         ) : isError ? (
-          <Text style={{ color: p.text, opacity: 0.7, paddingHorizontal: 12 }}>Could not load the diff (private repo or GitHub rate limit). Open it on GitHub from the link icon above.</Text>
+          <Text color={p.text} style={{ opacity: 0.7, paddingHorizontal: 12 }}>Could not load the diff (private repo or GitHub rate limit). Open it on GitHub from the link icon above.</Text>
         ) : diff?.kind === 'no-pr' ? (
           <Box style={{ paddingHorizontal: 12 }}>
             {diff.title ? (
-              <Text weight="semibold" size="xxl" style={{ color: p.text, lineHeight: 32, marginBottom: diff.body?.trim() ? 10 : 10 }}>
+              <Text weight="semibold" size="5xl" color={p.text} style={{ lineHeight: 32, marginBottom: diff.body?.trim() ? 10 : 10 }}>
                 {diff.title}
               </Text>
             ) : null}
@@ -94,15 +94,15 @@ export default function Diff(): React.ReactElement {
                 <Markdown {...mdProps}>{diff.body.trim()}</Markdown>
               </Box>
             ) : null}
-            <Text style={{ color: p.text, opacity: 0.7 }}>This link points to an issue with no linked pull request yet.</Text>
+            <Text color={p.text} style={{ opacity: 0.7 }}>This link points to an issue with no linked pull request yet.</Text>
           </Box>
         ) : diff && diff.files.length === 0 ? (
-          <Text style={{ color: p.text, opacity: 0.7, paddingHorizontal: 12 }}>No file changes in this pull request.</Text>
+          <Text color={p.text} style={{ opacity: 0.7, paddingHorizontal: 12 }}>No file changes in this pull request.</Text>
         ) : (
           <>
             <Box style={{ paddingHorizontal: 12 }}>
               {diff?.title ? (
-                <Text weight="semibold" size="xxl" style={{ color: p.text, lineHeight: 32, marginBottom: diff?.body?.trim() ? 10 : 12 }}>
+                <Text weight="semibold" size="5xl" color={p.text} style={{ lineHeight: 32, marginBottom: diff?.body?.trim() ? 10 : 12 }}>
                   {diff.title}
                 </Text>
               ) : null}
@@ -112,11 +112,11 @@ export default function Diff(): React.ReactElement {
                 </Box>
               ) : null}
               <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12, paddingHorizontal: 2 }}>
-                <Text size="sm" style={{ color: p.text, opacity: 0.6 }}>
+                <Text size="xs" color={p.text} style={{ opacity: 0.6 }}>
                   {diff?.files.length} {diff?.files.length === 1 ? 'file' : 'files'} changed
                 </Text>
-                <Text weight="semibold" size="md" style={{ color: p.success }}>+{diff?.additions ?? 0}</Text>
-                <Text weight="semibold" size="md" style={{ color: p.danger }}>-{diff?.deletions ?? 0}</Text>
+                <Text weight="semibold" size="md" color={p.success}>+{diff?.additions ?? 0}</Text>
+                <Text weight="semibold" size="md" color={p.danger}>-{diff?.deletions ?? 0}</Text>
               </Box>
             </Box>
             <ListView dark={dark} style={{ borderTopWidth: 1, borderTopColor: p.border }}>

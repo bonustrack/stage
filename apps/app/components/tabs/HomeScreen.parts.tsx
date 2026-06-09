@@ -101,7 +101,7 @@ export function HomeError({ error, dark, fg, bg }: {
 }): React.ReactElement {
   return (
     <Col flex={1} align="center" justify="center" p={24} bg={bg}>
-      <Text size="md" style={{ color: fg, textAlign: 'center', marginBottom: 16 }}>{error}</Text>
+      <Text size="md" color={fg} style={{ textAlign: 'center', marginBottom: 16 }}>{error}</Text>
       <Pressable
         onPress={() => {
           void (async (): Promise<void> => {
@@ -116,7 +116,7 @@ export function HomeError({ error, dark, fg, bg }: {
           borderWidth: 1, borderColor: dark ? '#5c2231' : '#e9bbc4',
         })}
       >
-        <Text size="md" style={{ color: DANGER}}>
+        <Text size="md" color={DANGER}>
           Reset XMTP identity
         </Text>
       </Pressable>
@@ -138,7 +138,7 @@ export function HomeSpinner({ head, bg }: { head: string; bg: string }): React.R
 export function HomeEmpty({ sub, message }: { sub: string; message?: string }): React.ReactElement {
   return (
     <Col p={32} align="center">
-      <Text style={{ color: sub, textAlign: 'center' }}>
+      <Text color={sub} style={{ textAlign: 'center' }}>
         {message ?? 'No conversations yet. Share your address from Settings to start one.'}
       </Text>
     </Col>

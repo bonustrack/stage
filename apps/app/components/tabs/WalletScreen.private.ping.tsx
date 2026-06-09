@@ -82,7 +82,7 @@ function PingLog({ lines, sub, head, border }: {
             borderWidth: 1, borderColor: border ?? sub,
           }}
         >
-          <Text weight="semibold" size="sm" style={{ color: head ?? sub }}>
+          <Text weight="semibold" size="xs" color={head ?? sub}>
             Copy
           </Text>
         </Pressable>
@@ -95,10 +95,8 @@ function PingLog({ lines, sub, head, border }: {
         windowSize={5}
         removeClippedSubviews
         renderItem={({ item }) => (
-          <Text size="xs"
-            selectable
-            style={{ color: tone(item.line, sub) }}
-          >
+          <Text size="3xs"
+            selectable color={tone(item.line, sub)}>
             {fmtLine(item)}
           </Text>
         )}
@@ -352,7 +350,7 @@ export function BridgePingProbe({ sub, border }: {
 
   return (
     <Col mt={20} pt={16} gap={8} style={{ borderTopWidth: 1, borderTopColor: border }}>
-      <Text size="sm" style={{ color: sub }}>
+      <Text size="xs" color={sub}>
         DEV · NODE BRIDGE FEASIBILITY
       </Text>
       <Button
@@ -362,7 +360,7 @@ export function BridgePingProbe({ sub, border }: {
         loading={state.kind === 'running'}
         onPress={() => { void onPress(); }}
       />
-      <Text size="sm" style={{ color: resultColor }}>
+      <Text size="xs" color={resultColor}>
         {resultText}
       </Text>
       <Button
@@ -372,7 +370,7 @@ export function BridgePingProbe({ sub, border }: {
         loading={engine.kind === 'running'}
         onPress={() => { void onInit(); }}
       />
-      <Text size="sm" style={{ color: engineColor }}>
+      <Text size="xs" color={engineColor}>
         {engineText}
       </Text>
       <Button

@@ -44,14 +44,14 @@ function Step({ label, state, hint, pal }: {
       <Row align="center" gap={10}>
         <Box style={{ width: 18, height: 18, alignItems: 'center', justifyContent: 'center' }}>
           {state === 'active' ? <Spinner size={14} color={pal.link} />
-            : state === 'done' ? <Text weight="semibold" size="md" style={{ color: pal.link }}>✓</Text>
-            : state === 'error' ? <Text weight="semibold" size="md" style={{ color: ERR }}>✕</Text>
+            : state === 'done' ? <Text weight="semibold" size="md" color={pal.link}>✓</Text>
+            : state === 'error' ? <Text weight="semibold" size="md" color={ERR}>✕</Text>
             : <Box style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: pal.sub, opacity: 0.5 }} />}
         </Box>
-        <Text weight="semibold" size="md" style={{ color }}>{label}</Text>
+        <Text weight="semibold" size="md" color={color}>{label}</Text>
       </Row>
       {hint ? (
-        <Text size="sm" style={{ color: pal.sub, paddingLeft: 28 }}>{hint}</Text>
+        <Text size="xs" color={pal.sub} style={{ paddingLeft: 28 }}>{hint}</Text>
       ) : null}
     </Col>
   );

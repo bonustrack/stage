@@ -80,7 +80,7 @@ export default function Archived(): React.ReactElement {
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg} />
         </Pressable>
-        <Title size="sm" dark={dark} style={{ color: head }}>Archived</Title>
+        <Title size="sm" dark={dark} color={head}>Archived</Title>
       </Box>
       <FlatList
         style={{ flex: 1 }}
@@ -90,7 +90,7 @@ export default function Archived(): React.ReactElement {
         contentContainerStyle={data.length === 0 ? { flexGrow: 1 } : { paddingBottom: 24 + insets.bottom }}
         ListEmptyComponent={
           <Col p={32} align="center">
-            <Text style={{ color: sub, textAlign: 'center' }}>No archived conversations.</Text>
+            <Text color={sub} style={{ textAlign: 'center' }}>No archived conversations.</Text>
           </Col>
         }
       />

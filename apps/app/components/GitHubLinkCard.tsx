@@ -50,21 +50,17 @@ export function GitHubLinkCard({ url }: {
       <Box radius={blockRadius} style={{ borderWidth: 1, borderColor: border, backgroundColor: 'transparent', paddingHorizontal: 12, paddingVertical: 10 }}>
         <Row align="center" justify="start" style={{ marginBottom: 4 }}>
           <GithubLogo size={16} color={fg} />
-          <Text size="xs" style={{ color: subColor, marginLeft: 6 }}>
+          <Text size="3xs" color={subColor} style={{ marginLeft: 6 }}>
             {meta.repo}{numLabel ? ` · ${numLabel}` : ''}
           </Text>
         </Row>
-        <Text weight="semibold" size="xl"
-          style={{ color: fg }}
-          numberOfLines={2}
-        >
+        <Text weight="semibold" size="4xl" color={fg}
+          numberOfLines={2}>
           {meta.title}
         </Text>
         {meta.description ? (
-          <Text size="md"
-            style={{ color: subColor, lineHeight: 21, marginTop: 3 }}
-            numberOfLines={2}
-          >
+          <Text size="md" color={subColor} style={{ lineHeight: 21, marginTop: 3 }}
+            numberOfLines={2}>
             {meta.description}
           </Text>
         ) : null}
@@ -73,27 +69,27 @@ export function GitHubLinkCard({ url }: {
             <Box style={{ width: 8, height: 8, borderRadius: 999, backgroundColor: dot, marginRight: 6 }} />
           ) : null}
           {meta.state ? (
-            <Text size="xs" style={{ color: subColor, textTransform: 'capitalize' }}>
+            <Text size="3xs" color={subColor} style={{ textTransform: 'capitalize' }}>
               {meta.state}
             </Text>
           ) : null}
           {meta.kind === 'repo' && meta.stars != null ? (
-            <Text size="xs" style={{ color: subColor }}>
+            <Text size="3xs" color={subColor}>
               ★ {meta.stars}
             </Text>
           ) : null}
           {meta.author ? (
-            <Text size="xs" style={{ color: subColor, marginLeft: meta.state ? 8 : 0 }}>
+            <Text size="3xs" color={subColor} style={{ marginLeft: meta.state ? 8 : 0 }}>
               {meta.author}
             </Text>
           ) : null}
           {showLoc && meta.additions != null ? (
-            <Text weight="semibold" size="xs" style={{ color: SUCCESS, marginLeft: 8 }}>
+            <Text weight="semibold" size="3xs" color={SUCCESS} style={{ marginLeft: 8 }}>
               +{fmt(meta.additions)}
             </Text>
           ) : null}
           {showLoc && meta.deletions != null ? (
-            <Text weight="semibold" size="xs" style={{ color: DANGER, marginLeft: 6 }}>
+            <Text weight="semibold" size="3xs" color={DANGER} style={{ marginLeft: 6 }}>
               −{fmt(meta.deletions)}
             </Text>
           ) : null}

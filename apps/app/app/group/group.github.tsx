@@ -55,7 +55,7 @@ export function GroupGithubSection({ line, p }: { line: string; p: Pal }): React
     <Box style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
       <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
         <Icon name="code" size={13} color={sub} />
-        <Text size="sm" style={{ color: sub }}>GITHUB</Text>
+        <Text size="xs" color={sub}>GITHUB</Text>
       </Box>
 
       {url && !editing ? (
@@ -64,7 +64,7 @@ export function GroupGithubSection({ line, p }: { line: string; p: Pal }): React
             onPress={() => { void Linking.openURL(url); }}
             style={({ pressed }) => ({ flex: 1, opacity: pressed ? 0.6 : 1 })}
           >
-            <Text size="md" numberOfLines={1} style={{ color: fg }}>
+            <Text size="md" numberOfLines={1} color={fg}>
               {url.replace(/^https?:\/\/(www\.)?github\.com\//, '')}
             </Text>
           </Pressable>
@@ -102,7 +102,7 @@ export function GroupGithubSection({ line, p }: { line: string; p: Pal }): React
             })}
           >
             {busy ? <Spinner size={14} color={fg} /> : <Icon name="check" size={14} color={fg} />}
-            <Text size="sm" style={{ color: fg }}>Save</Text>
+            <Text size="xs" color={fg}>Save</Text>
           </Pressable>
         </Box>
       )}
