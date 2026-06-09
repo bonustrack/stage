@@ -2,6 +2,7 @@
  *  Extracted to keep the bubble component file under the phase-2 lint cap. */
 
 import type { HistoryEntry } from '../lib/types';
+import { fontSize } from '@metro-labs/kit/tokens';
 import type { RemoteAttachmentInfo } from '@xmtp/react-native-sdk';
 import { normalizeQuestions, type PollContent } from '@stage-labs/client/xmtp/poll';
 
@@ -59,18 +60,18 @@ export function markdownStyles(fg: string, dark: boolean, mine: boolean): Record
   const h = (fontSize: number, lineHeight: number): object =>
     ({ color: fg, fontSize, lineHeight, fontFamily: 'Calibre-Semibold', marginTop: 6, marginBottom: 2 });
   return {
-    body: { color: fg, fontSize: 19, lineHeight: lh, fontFamily: 'Calibre-Medium' },
+    body: { color: fg, fontSize: fontSize('3xl'), lineHeight: lh, fontFamily: 'Calibre-Medium' },
     paragraph: { marginTop: 0, marginBottom: 0 },
     heading1: h(30, 34), heading2: h(24, 28), heading3: h(21, 25), heading4: h(21, 25), heading5: h(21, 25), heading6: h(21, 25),
     /** Pin family/weight/size/lineHeight on inline marks. The lib defaults strong to
      *  fontWeight:'bold', which makes RN miss the Calibre-Semibold family (registered
      *  as its own family, not a weight); fontWeight:'normal' lets the family win. */
-    strong: { fontFamily: 'Calibre-Semibold', fontWeight: 'normal', fontSize: 15, lineHeight: lh },
-    em: { fontFamily: 'Calibre-Medium', fontStyle: 'italic', fontWeight: 'normal', fontSize: 15, lineHeight: lh },
+    strong: { fontFamily: 'Calibre-Semibold', fontWeight: 'normal', fontSize: fontSize('md'), lineHeight: lh },
+    em: { fontFamily: 'Calibre-Medium', fontStyle: 'italic', fontWeight: 'normal', fontSize: fontSize('md'), lineHeight: lh },
     link: { color: fg, textDecorationLine: 'underline' },
     /** Menlo's em-square is wider than Calibre's, so size down to match. */
-    code_inline: { backgroundColor: codeBg, paddingHorizontal: 4, borderRadius: 4, fontFamily: 'Menlo', fontSize: 13, lineHeight: lh },
-    fence: { backgroundColor: codeBg, padding: 8, borderRadius: 6, fontFamily: 'Menlo', fontSize: 12, lineHeight: 18 },
+    code_inline: { backgroundColor: codeBg, paddingHorizontal: 4, borderRadius: 4, fontFamily: 'Menlo', fontSize: fontSize('xs'), lineHeight: lh },
+    fence: { backgroundColor: codeBg, padding: 8, borderRadius: 6, fontFamily: 'Menlo', fontSize: fontSize('2xs'), lineHeight: 18 },
     bullet_list: { marginTop: 2, marginBottom: 2 },
     ordered_list: { marginTop: 2, marginBottom: 2 },
     blockquote: { borderLeftWidth: 3, borderLeftColor: codeBg, paddingLeft: 8, marginVertical: 4 },

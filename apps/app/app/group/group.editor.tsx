@@ -2,11 +2,12 @@
  *  Extracted from group/[convId] for lint line-budget. Rendering identical. */
 
 import { Pressable } from '@metro-labs/kit/pressable';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Input } from '@metro-labs/kit/input';
 import { Textarea } from '@metro-labs/kit/textarea';
 import { Image } from '@metro-labs/kit/image';
 import { Text } from '@metro-labs/kit/text';
-import { Box } from '../../components/layout';
+import { Box, Row } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
 import { Button } from '@metro-labs/kit/button';
 import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
@@ -31,8 +32,8 @@ function SaveButton({ saving, disabled, onSave, dark }: {
       tintBg={primary}
       tintFg={bg}
       style={{ paddingHorizontal: 14 }}
-      textStyle={{ fontSize: 13, fontFamily: 'Calibre-Medium' }}
-    />
+      textStyle={{ fontSize: fontSize('xs'), fontFamily: 'Calibre-Medium' }}
+/>
   );
 }
 
@@ -57,12 +58,8 @@ export function GroupProfileHeader({ imageUrl, channelId, uploadingImage, insetT
     <>
       {/* Cover extends up behind the floating topnav/status bar so the colour
           bleeds to y=0 (height += insetTop), exactly like ProfileScreen route. */}
-      <Box bg={rowBg} style={{ height: 140 + insetTop }} />
-      <Box style={{
-        alignItems: 'flex-start', paddingHorizontal: 16,
-        backgroundColor: bg, marginTop: -18,
-        borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'visible',
-      }}>
+      <Box height={140 + insetTop} surface="raised"/>
+      <Box surface="surface" padding={{ x: 16 }} margin={{ top: -18 }} align="start" style={{ borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'visible' }}>
         <Pressable onPress={onTap} onLongPress={onPick} disabled={uploadingImage} hitSlop={8}
           style={{ marginTop: -44, zIndex: 1 }}>
           <Image
@@ -72,14 +69,14 @@ export function GroupProfileHeader({ imageUrl, channelId, uploadingImage, insetT
               backgroundColor: rowBg, borderWidth: 3, borderColor: bg,
               opacity: uploadingImage ? 0.5 : 1,
             }}
-          />
+/>
           {uploadingImage ? (
-            <Box style={{ position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' }}>
-              <Spinner size={20} color={fg} />
+            <Box align="center" justify="center" style={{ position: 'absolute', inset: 0 }}>
+              <Spinner size={20} color={fg}/>
             </Box>
           ) : null}
         </Pressable>
-        <Text style={{ color: sub, fontSize: 12, marginTop: 6, fontFamily: 'Calibre-Medium' }}>
+        <Text size="xs" color={sub} style={{ marginTop: 6 }}>
           {uploadingImage ? 'Uploading…' : imageUrl ? 'Tap to view · hold to change' : 'Tap to add image'}
         </Text>
       </Box>
@@ -94,9 +91,9 @@ export function GroupNameEditor({ name, draft, setDraft, editing, setEditing, sa
 }): React.ReactElement {
   const { fg, head, sub, border, inputBg } = p;
   return (
-    <Box style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
+    <Box padding={{ x: 16, bottom: 16 }}>
       {editing ? (
-        <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 }}>
+        <Row margin={{ top: 6 }} align="center" gap={8}>
           <Input
             value={draft}
             onChangeText={setDraft}
@@ -107,17 +104,17 @@ export function GroupNameEditor({ name, draft, setDraft, editing, setEditing, sa
             style={{
               flex: 1, color: fg, backgroundColor: inputBg,
               borderWidth: 1, borderColor: border, borderRadius: 10,
-              paddingHorizontal: 10, paddingVertical: 8, fontSize: 16,
+              paddingHorizontal: 10, paddingVertical: 8, fontSize: fontSize('md'),
             }}
-          />
-          <SaveButton saving={saving} disabled={saving || !draft.trim()} onSave={onSave} dark={dark} />
-        </Box>
+/>
+          <SaveButton saving={saving} disabled={saving || !draft.trim()} onSave={onSave} dark={dark}/>
+        </Row>
       ) : (
         <Pressable onPress={() => setEditing(true)} hitSlop={6} style={{ marginTop: 6, alignItems: 'flex-start' }}>
-          <Text style={{ color: head, fontSize: 22, fontFamily: 'Calibre-Semibold', textAlign: 'left' }}>
+          <Text weight="semibold" size="5xl" color={head} style={{ textAlign: 'left' }}>
             {name && name.trim() ? name : 'Untitled group'}
           </Text>
-          <Text style={{ color: sub, fontSize: 12, marginTop: 4, fontFamily: 'Calibre-Medium' }}>Tap to rename</Text>
+          <Text size="xs" color={sub} style={{ marginTop: 4 }}>Tap to rename</Text>
         </Pressable>
       )}
     </Box>
@@ -131,10 +128,10 @@ export function GroupDescriptionEditor({ description, descriptionDraft, setDescr
 }): React.ReactElement {
   const { fg, sub, border, inputBg } = p;
   return (
-    <Box style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
-      <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>DESCRIPTION</Text>
+    <Box padding={{ x: 16, bottom: 16 }}>
+      <Text size="xs" color={sub}>DESCRIPTION</Text>
       {editing ? (
-        <Box style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 6 }}>
+        <Row margin={{ top: 6 }} align="start" gap={8}>
           <Textarea
             value={descriptionDraft}
             onChangeText={setDescriptionDraft}
@@ -145,15 +142,15 @@ export function GroupDescriptionEditor({ description, descriptionDraft, setDescr
             style={{
               flex: 1, color: fg, backgroundColor: inputBg,
               borderWidth: 1, borderColor: border, borderRadius: 10,
-              paddingHorizontal: 10, paddingVertical: 8, fontSize: 14,
+              paddingHorizontal: 10, paddingVertical: 8, fontSize: fontSize('md'),
               minHeight: 60, textAlignVertical: 'top',
             }}
-          />
-          <SaveButton saving={saving} disabled={saving} onSave={onSave} dark={dark} />
-        </Box>
+/>
+          <SaveButton saving={saving} disabled={saving} onSave={onSave} dark={dark}/>
+        </Row>
       ) : (
         <Pressable onPress={() => setEditing(true)} hitSlop={6} style={{ marginTop: 6 }}>
-          <Text style={{ color: description.trim() ? fg : sub, fontSize: 14, fontFamily: 'Calibre-Medium' }}>
+          <Text size="md" color={description.trim() ? fg : sub}>
             {description.trim() || 'Tap to add a description'}
           </Text>
         </Pressable>

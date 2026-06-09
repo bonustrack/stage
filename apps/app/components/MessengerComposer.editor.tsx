@@ -3,6 +3,7 @@
  *  lint line-budget. JSX + behavior identical — state owned by the parent. */
 
 import type { RefObject } from 'react';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Animated, type PanResponderInstance } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
@@ -35,25 +36,25 @@ interface EditorProps {
 }
 
 export function ComposerEditor(p: EditorProps): React.ReactElement {
-  const { dark, fg, head, bg, sub, inputBg, chipBg, recording } = p;
+  const { dark, fg, head, bg, sub, chipBg, recording } = p;
   const { primary } = usePalette();
   const Btn = ({ icon, onPress, mr }: { icon: HeroIconName; onPress: () => void; mr?: number }): React.ReactElement => (
     <Pressable onPress={onPress} style={({ pressed }) => ({
       width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
       backgroundColor: pressed ? chipBg : 'transparent', marginRight: mr,
     })}>
-      <Icon name={icon} size={22} color={fg} />
+      <Icon name={icon} size={22} color={fg}/>
     </Pressable>
   );
   return (
-    <Col bg={inputBg} radius={0} p={10}>
+    <Col padding={10} surface="raised" radius="none">
       {/** Top slot: live waveform + timer while recording, else the textarea. The
        *   button row below stays mounted across both states. */}
       {recording ? (
         <RecordingBar
           head={head} sub={sub} levels={p.levels} recordSecs={p.recordSecs}
           slideX={p.slideX} slideThresholdPx={p.slideThresholdPx}
-        />
+/>
       ) : (
         <Box style={{ position: 'relative' }}>
           <Textarea
@@ -65,14 +66,14 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
               selection: p.selection,
               onSelectionChange: (e) => p.setSelection(e.nativeEvent.selection),
             }}
-            style={{ color: head, fontFamily: 'Calibre-Medium', fontSize: 19, lineHeight: 23, minHeight: 24, maxHeight: 210, height: undefined, paddingHorizontal: 8, paddingTop: 4, paddingBottom: 8, textAlignVertical: 'top', backgroundColor: 'transparent', borderWidth: 0 }}
-          />
+            style={{ color: head, fontFamily: 'Calibre-Medium', fontSize: fontSize('3xl'), lineHeight: 23, minHeight: 24, maxHeight: 210, height: undefined, paddingHorizontal: 8, paddingTop: 4, paddingBottom: 8, textAlignVertical: 'top', backgroundColor: 'transparent', borderWidth: 0 }}
+/>
         </Box>
       )}
       <Row align="center" gap={4}>
         {/** Left: cancel (✕) while recording, else the attach (+) menu toggle. */}
         {recording
-          ? <Btn icon="x" onPress={p.onCancelRec} />
+          ? <Btn icon="x" onPress={p.onCancelRec}/>
           : (
             <>
               {/** + first (leftmost). Negative marginRight pulls the quick-access
@@ -84,14 +85,14 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
                 icon={p.attachMenuOpen ? 'x' : 'plus'}
                 onPress={() => p.setAttachMenuOpen(o => !o)}
                 mr={!p.attachMenuOpen && p.quickIcon && p.onQuick ? -12 : undefined}
-              />
+/>
               {/** Quick-access: re-trigger the last-used attachment type directly. */}
               {!p.attachMenuOpen && p.quickIcon && p.onQuick
-                ? <Btn icon={p.quickIcon} onPress={p.onQuick} />
+                ? <Btn icon={p.quickIcon} onPress={p.onQuick}/>
                 : null}
             </>
           )}
-        <Spacer />
+        <Spacer/>
         {/** Mic — both record flows, mounted across recording so the gesture survives. */}
         <Animated.View
           {...p.micPanResponder.panHandlers}
@@ -100,8 +101,8 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
             backgroundColor: recording ? '#e2622f' : 'transparent',
             transform: [{ translateX: p.slideX }],
           }}
-        >
-          <Icon name="microphone" size={22} color={recording ? '#ffffff' : fg} />
+>
+          <Icon name="microphone" size={22} color={recording ? '#ffffff' : fg}/>
         </Animated.View>
         {/** Right: ✓ confirm (stop+stage) while recording, else send. A circular
          *   icon-only kit pill (primary) — black/white solid per scheme. */}
@@ -114,7 +115,7 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
             tintBg={primary}
             onPress={p.onStopRec}
             icon={<Icon name="check" size={20} color={bg} />}
-          />
+/>
         ) : p.hasContent ? (
           /** Shown only when there is content to send, and always enabled. Tapping
            *  send clears the text + attachments synchronously, so hasContent flips
@@ -131,7 +132,7 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
             tintBg={primary}
             onPress={p.onSend}
             icon={<Icon name="arrowSmUp" size={20} color={bg} />}
-          />
+/>
         ) : null}
       </Row>
     </Col>
@@ -172,7 +173,7 @@ export function AttachMenu({
       showsHorizontalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={{ gap: 16, paddingHorizontal: 6, paddingTop: 12, paddingBottom: 2 }}
-    >
+>
       {actions.map(([icon, label, action]) => (
         <Col key={label} align="center" gap={6}>
           <Pressable
@@ -183,10 +184,10 @@ export function AttachMenu({
               backgroundColor: pressed ? chipBg : inputBg,
               borderWidth: 1, borderColor: chipBg,
             })}
-          >
-            <Icon name={icon} size={26} color={head} />
+>
+            <Icon name={icon} size={26} color={head}/>
           </Pressable>
-          <Text style={{ color: head, fontSize: 14, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{label}</Text>
+          <Text weight="semibold" size="sm" color={head} numberOfLines={1}>{label}</Text>
         </Col>
       ))}
     </ScrollView>

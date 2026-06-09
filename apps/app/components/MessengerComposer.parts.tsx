@@ -3,6 +3,7 @@
  *  line-budget. JSX + behavior identical — state owned by the parent. */
 
 import { Animated, StyleSheet } from 'react-native';
+
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Image } from '@metro-labs/kit/image';
 import { Text } from '@metro-labs/kit/text';
@@ -35,15 +36,12 @@ export function ReplyBanner({
     /** Outer container breaks out of the composer's `px={10}` with a -10 margin so
      *  the top border spans the full screen width edge-to-edge; the matching 10px
      *  paddingHorizontal keeps the inner content at its original inset. */
-    <Box style={{
-      marginHorizontal: -10, paddingHorizontal: 10,
-      borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: borderColor,
-    }}>
+    <Box padding={{ x: 10 }} margin={{ x: -10 }} style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: borderColor }}>
       <Pressable onPress={onPress} disabled={!onPress}>
         {/** No extra left inset → the outer Box paddingHorizontal:10 alone places the
          *   ✕ at x≈10, flush with the composer's own left content edge (Col px:10),
          *   rather than the text glyph origin (x≈28). */}
-        <Row align="center" gap={10} pl={0} pr={14} py={8}>
+        <Row padding={{ y: 8, right: 14, left: 0 }} align="center" gap={10}>
           <Pressable
             onPress={onClear}
             hitSlop={8}
@@ -52,12 +50,12 @@ export function ReplyBanner({
               alignItems: 'center', justifyContent: 'center',
               backgroundColor: '#ffffff',
             }}
-          >
-            <Icon name="x" size={14} color="#000000" />
+>
+            <Icon name="x" size={14} color="#000000"/>
           </Pressable>
-          <Text style={{ fontSize: 16, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
-            <Text style={{ color: sub, fontSize: 16, fontFamily: 'Calibre-Medium' }}>Replying to </Text>
-            <Text style={{ color: nameColor, fontSize: 16, fontFamily: 'Calibre-Medium' }}>
+          <Text size="lg" numberOfLines={1}>
+            <Text size="lg" color={sub}>Replying to </Text>
+            <Text size="lg" color={nameColor}>
               {(sender ? getPeerName(sender) : undefined) ?? (sender ? shortAddress(sender) : 'message')}
             </Text>
           </Text>
@@ -76,7 +74,7 @@ export function MentionPopup({
 }): React.ReactElement {
   const border = usePalette().border; // #282a2d / #e4e4e5
   return (
-    <Col mx={6} mb={8} radius={12} bg={dark ? '#1a1a1c' : '#ffffff'} style={{
+    <Col margin={{ x: 6, bottom: 8 }} radius="lg" background={dark ? '#1a1a1c' : '#ffffff'} style={{
       overflow: 'hidden',
       borderWidth: 1, borderColor: border,
     }}>
@@ -90,12 +88,12 @@ export function MentionPopup({
             backgroundColor: pressed ? border : 'transparent',
             borderTopWidth: i === 0 ? 0 : 1, borderTopColor: border,
           })}
-        >
-          <Avatar address={c.address} size="sm" cacheBuster={c.cacheBuster} />
-          <Text style={{ color: head, fontSize: 15, fontFamily: 'Calibre-Semibold', flex: 1 }} numberOfLines={1}>
+>
+          <Avatar address={c.address} size="sm" cacheBuster={c.cacheBuster}/>
+          <Text weight="semibold" size="md" color={head} style={{ flex: 1 }} numberOfLines={1}>
             {c.name}
           </Text>
-          <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
+          <Text size="2xs" color={sub} numberOfLines={1}>
             {shortAddress(c.address)}
           </Text>
         </Pressable>
@@ -111,13 +109,13 @@ export function PendingRow({
   pending: Attachment[]; onRemove: (index: number) => void;
 }): React.ReactElement {
   return (
-    <Row wrap gap={8} px={6} pb={6}>
+    <Row padding={{ x: 6, bottom: 6 }} wrap gap={8}>
       {pending.map((a, i) => (
         a.kind === 'image' ? (
           /** Image attachments: 72px square + filename label, x-to-remove pinned. */
-          <Col key={a.id} align="center" gap={4} style={{ width: 72 }}>
+          <Col width={72} key={a.id} align="center" gap={4}>
             <Box>
-              <Image src={a.url} size={72} radius={8} fit="cover" />
+              <Image src={a.url} size={72} radius={8} fit="cover"/>
               <Pressable
                 onPress={() => onRemove(i)}
                 hitSlop={6}
@@ -125,21 +123,21 @@ export function PendingRow({
                   position: 'absolute', top: -4, right: -4,
                   backgroundColor: '#000', borderRadius: 999, padding: 2,
                 }}
-              >
-                <Icon name="x" size={12} color="#ffffff" />
+>
+                <Icon name="x" size={12} color="#ffffff"/>
               </Pressable>
             </Box>
-            <Text style={{ color: fg, fontSize: 11, width: 72, textAlign: 'center' , fontFamily: 'Calibre-Medium'}} numberOfLines={1}>
+            <Text size="3xs" color={fg} style={{ width: 72, textAlign: 'center' }} numberOfLines={1}>
               {a.name ?? a.id}
             </Text>
           </Col>
         ) : (
           /** Non-image attachments keep the inline chip layout. */
-          <Row key={a.id} align="center" gap={6} px={8} py={4} radius={12} bg={chipBg}>
-            <Icon name={kindIcon(a.kind)} size={14} color={fg} />
-            <Text style={{ color: fg, fontSize: 12, maxWidth: 140 , fontFamily: 'Calibre-Medium'}} numberOfLines={1}>{a.name ?? a.id}</Text>
+          <Row padding={{ x: 8, y: 4 }} key={a.id} align="center" gap={6} radius="lg" background={chipBg}>
+            <Icon name={kindIcon(a.kind)} size={14} color={fg}/>
+            <Text size="2xs" color={fg} style={{ maxWidth: 140 }} numberOfLines={1}>{a.name ?? a.id}</Text>
             <Pressable onPress={() => onRemove(i)} hitSlop={6}>
-              <Icon name="x" size={14} color={sub} />
+              <Icon name="x" size={14} color={sub}/>
             </Pressable>
           </Row>
         )
@@ -155,7 +153,7 @@ export function RecordingBar({
   slideX: Animated.Value; slideThresholdPx: number;
 }): React.ReactElement {
   return (
-    <Row align="center" px={4} style={{ height: 28 }}>
+    <Row height={28} padding={{ x: 4 }} align="center">
       {/** "← Slide to cancel" hint — fades in as the user drags the mic left. */}
       <Animated.View style={{
         flexDirection: 'row', alignItems: 'center', gap: 6,
@@ -166,17 +164,17 @@ export function RecordingBar({
           extrapolate: 'clamp',
         }),
       }}>
-        <Icon name="arrowLeft" size={14} color={sub} />
-        <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+        <Icon name="arrowLeft" size={14} color={sub}/>
+        <Text size="xs" color={sub}>
           Slide to cancel
         </Text>
       </Animated.View>
-      <Row flex={1} align="center" justify="end" style={{ height: 28, overflow: 'hidden' }}>
+      <Row height={28} flex={1} align="center" justify="end" style={{ overflow: 'hidden' }}>
         {[...Array(Math.max(0, 40 - levels.length)).fill(0.05), ...levels].slice(-40).map((lvl, i) => (
-          <Box key={i} style={{ width: 3, marginHorizontal: 1, borderRadius: 2, height: Math.max(3, Math.round(lvl * 26)), backgroundColor: head, opacity: 0.85 }} />
+          <Box width={3} radius="2xs" height={Math.max(3, Math.round(lvl * 26))} background={head} margin={{ x: 1 }} key={i} style={{ opacity: 0.85 }}/>
         ))}
       </Row>
-      <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', minWidth: 40, textAlign: 'center' }}>
+      <Text size="xs" color={sub} style={{ minWidth: 40, textAlign: 'center' }}>
         {Math.floor(recordSecs / 60)}:{(recordSecs % 60).toString().padStart(2, '0')}
       </Text>
     </Row>

@@ -4,12 +4,13 @@
  *  Settings tab; no invented toggles. */
 
 import { useEffect, useState } from 'react';
+
 import { Alert, DevSettings } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Box, Col } from '../layout';
+import { Col } from '../layout';
 import { Text } from '@metro-labs/kit/text';
 import { getOrCreateXmtpClient, resetXmtpClient, shortAddress, useActiveAccount } from '../../modules/messaging';
 import { resetAccount } from '../../lib/wallet';
@@ -29,16 +30,16 @@ function CopyRow({ label, value, display, c }: {
         marginHorizontal: 16, marginTop: 8, padding: 12, borderRadius: blockRadius,
         backgroundColor: c.rowBg, borderWidth: 1, borderColor: c.border,
       }}
-    >
-      <Text style={{ color: c.sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{label.toUpperCase()} (tap to copy)</Text>
-      <Text style={{ color: c.fg, fontSize: 16, marginTop: 2, fontFamily: 'Calibre-Medium' }}>{display}</Text>
+>
+      <Text size="xs" color={c.sub}>{label.toUpperCase()} (tap to copy)</Text>
+      <Text size="md" color={c.fg} style={{ marginTop: 2 }}>{display}</Text>
     </Pressable>
   );
 }
 
 export function MessengerSettings(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border } = usePalette();
+  const { text: fg, link: head, border } = usePalette();
   const sub = fg;
   const rowBg = border;
   const insets = useSafeAreaInsets();
@@ -63,17 +64,17 @@ export function MessengerSettings(): React.ReactElement {
 
   const c = { fg, sub, border, rowBg };
   return (
-    <Box style={{ flex: 1, backgroundColor: bg }}>
-      <SystemHeader title="Messenger" dark={dark} fg={fg} head={head} border={border} />
+    <Col surface="surface" flex={1}>
+      <SystemHeader title="Messenger" dark={dark} fg={fg} head={head} border={border}/>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
-        <Text style={{ color: sub, fontSize: 13, paddingHorizontal: 16, paddingTop: 20, fontFamily: 'Calibre-Medium' }}>
+        <Text size="xs" color={sub} style={{ paddingHorizontal: 16, paddingTop: 20 }}>
           XMTP ACCOUNT
         </Text>
         {addr ? <CopyRow label="Your XMTP address" value={addr} display={shortAddress(addr)} c={c} /> : null}
         {inbox ? <CopyRow label="Inbox id" value={inbox} display={inbox} c={c} /> : null}
         {install ? <CopyRow label="Installation id" value={install} display={shortAddress(install)} c={c} /> : null}
 
-        <Col mt={28} px={16}>
+        <Col padding={{ x: 16 }} margin={{ top: 28 }}>
           <Pressable
             onPress={() => {
               Alert.alert(
@@ -96,13 +97,13 @@ export function MessengerSettings(): React.ReactElement {
               backgroundColor: pressed ? '#3a2530' : 'transparent',
               borderWidth: 1, borderColor: dark ? '#5c2231' : '#e9bbc4',
             })}
-          >
-            <Text style={{ color: DANGER, fontSize: 16, fontFamily: 'Calibre-Medium' }}>
+>
+            <Text size="md" color={DANGER}>
               Reset XMTP identity
             </Text>
           </Pressable>
         </Col>
       </ScrollView>
-    </Box>
+    </Col>
   );
 }

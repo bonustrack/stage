@@ -4,12 +4,13 @@
  *  (merge-preserving write so labels survive). */
 
 import { useEffect, useState } from 'react';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Linking } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Input } from '@metro-labs/kit/input';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
-import { Box } from '../../components/layout';
+import { Box, Row } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
 import { flash } from '../../lib/toast';
 import { LabelPermissionError } from '../../modules/messaging';
@@ -51,28 +52,28 @@ export function GroupGithubSection({ line, p }: { line: string; p: Pal }): React
   };
 
   return (
-    <Box style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
-      <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+    <Box padding={{ x: 16, bottom: 16 }}>
+      <Row align="center" gap={6}>
         <Icon name="code" size={13} color={sub} />
-        <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>GITHUB</Text>
-      </Box>
+        <Text size="xs" color={sub}>GITHUB</Text>
+      </Row>
 
       {url && !editing ? (
-        <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 }}>
+        <Row margin={{ top: 10 }} align="center" gap={8}>
           <Pressable
             onPress={() => { void Linking.openURL(url); }}
             style={({ pressed }) => ({ flex: 1, opacity: pressed ? 0.6 : 1 })}
           >
-            <Text numberOfLines={1} style={{ color: fg, fontSize: 14, fontFamily: 'Calibre-Medium' }}>
+            <Text size="md" numberOfLines={1} color={fg}>
               {url.replace(/^https?:\/\/(www\.)?github\.com\//, '')}
             </Text>
           </Pressable>
           <Pressable onPress={() => { setDraft(url); setEditing(true); }} hitSlop={8} style={{ padding: 4 }}>
             <Icon name="pencil" size={16} color={sub} />
           </Pressable>
-        </Box>
+        </Row>
       ) : (
-        <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 }}>
+        <Row margin={{ top: 10 }} align="center" gap={8}>
           <Input
             value={draft}
             onChangeText={setDraft}
@@ -85,7 +86,7 @@ export function GroupGithubSection({ line, p }: { line: string; p: Pal }): React
             style={{
               flex: 1, color: fg, backgroundColor: inputBg,
               borderWidth: 1, borderColor: border, borderRadius: 10,
-              paddingHorizontal: 10, paddingVertical: 8, fontSize: 14,
+              paddingHorizontal: 10, paddingVertical: 8, fontSize: fontSize('md'),
             }}
           />
           <Pressable
@@ -101,9 +102,9 @@ export function GroupGithubSection({ line, p }: { line: string; p: Pal }): React
             })}
           >
             {busy ? <Spinner size={14} color={fg} /> : <Icon name="check" size={14} color={fg} />}
-            <Text style={{ color: fg, fontSize: 13, fontFamily: 'Calibre-Medium' }}>Save</Text>
+            <Text size="xs" color={fg}>Save</Text>
           </Pressable>
-        </Box>
+        </Row>
       )}
     </Box>
   );

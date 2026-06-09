@@ -8,6 +8,7 @@
  *  Styled to match TokenRow but muted: dimmed text, a small spinner in place of
  *  the avatar, and an "arriving" sub-line. Tapping does nothing (no detail yet). */
 import { Text } from '@metro-labs/kit/text';
+
 import { Col, Row, Box } from '../layout';
 import { Spinner } from '../Spinner';
 import type { PendingAction } from '../../lib/railgun/types';
@@ -27,20 +28,20 @@ const phaseLabel = (p: PendingAction['phase']): string => {
 export function PendingShieldRow({ p, pal }: { p: PendingAction; pal: Pal }): React.ReactElement {
   const { head, sub, border } = pal;
   return (
-    <Row align="center" gap={12} py={14} style={{ borderBottomWidth: 1, borderBottomColor: border, opacity: 0.7 }}>
-      <Box style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border, alignItems: 'center', justifyContent: 'center' }}>
-        <Spinner size={16} color={sub} />
+    <Row padding={{ y: 14 }} align="center" gap={12} style={{ borderBottomWidth: 1, borderBottomColor: border, opacity: 0.7 }}>
+      <Box width={32} height={32} radius="full" background={border} align="center" justify="center">
+        <Spinner size={16} color={sub}/>
       </Box>
-      <Col flex={1} style={{ minWidth: 0 }}>
-        <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
+      <Col minWidth={0} flex={1}>
+        <Text weight="semibold" size="xl" color={head} numberOfLines={1}>
           {p.symbol}
         </Text>
-        <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
+        <Text size="md" color={sub} style={{ marginTop: 2 }}>
           Pending shield · {phaseLabel(p.phase)}
         </Text>
       </Col>
       <Col align="end">
-        <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
+        <Text size="md" color={sub}>
           +{p.delta} {p.symbol}
         </Text>
       </Col>

@@ -12,6 +12,7 @@
  */
 
 import { useCallback, useState } from 'react';
+
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { Title } from '@metro-labs/kit/title';
@@ -22,7 +23,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { addGroupMembers } from '../../modules/messaging';
 import { flash } from '../../lib/toast';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { Box } from '../../components/layout';
+import { Box, Row, Col } from '../../components/layout';
 import { useConvMeta } from '../../lib/useConvMeta';
 import { MemberPicker, useMemberPicker } from './MemberPicker';
 
@@ -30,7 +31,7 @@ export default function AddMembers(): React.ReactElement {
   const router = useRouter();
   const { convId } = useLocalSearchParams<{ convId: string }>();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border, primary, toolbarBg } = usePalette();
+  const { text: fg, link: head, bg, border, primary } = usePalette();
   const insets = useSafeAreaInsets();
 
   const picker = useMemberPicker();
@@ -54,31 +55,26 @@ export default function AddMembers(): React.ReactElement {
   }, [members, submitting, convId, router]);
 
   return (
-    <Box style={{ flex: 1, backgroundColor: bg }}>
+    <Col surface="surface" flex={1}>
       {/* Header — back button + title, consistent with other pushed screens. */}
-      <Box style={{
-        flexDirection: 'row', alignItems: 'center', gap: 8,
-        paddingHorizontal: 12, paddingTop: 8 + insets.top, paddingBottom: 10,
-        borderBottomWidth: 1, borderBottomColor: border,
-        backgroundColor: toolbarBg,
-      }}>
+      <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
-          <Icon name="arrowLeft" size={22} color={fg} />
+          <Icon name="arrowLeft" size={22} color={fg}/>
         </Pressable>
-        <Title dark={dark} style={{ color: head, fontSize: 20 }}>
+        <Title size="sm" color={head}>
           Add members
         </Title>
-      </Box>
+      </Row>
 
       <ScrollView
         contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 24 + insets.bottom }}
         keyboardShouldPersistTaps="handled"
-      >
-        <MemberPicker state={picker} dark={dark} exclude={memberAddrs} />
+>
+        <MemberPicker state={picker} dark={dark} exclude={memberAddrs}/>
       </ScrollView>
 
       {/* Add */}
-      <Box style={{ padding: 16, paddingBottom: 16 + insets.bottom, borderTopWidth: 1, borderTopColor: border }}>
+      <Box padding={{ top: 16, right: 16, bottom: 16 + insets.bottom, left: 16 }} style={{ borderTopWidth: 1, borderTopColor: border }}>
         <Button
           variant="primary"
           size="lg"
@@ -90,9 +86,9 @@ export default function AddMembers(): React.ReactElement {
           onPress={() => { void onSubmit(); }}
           tintBg={primary}
           tintFg={bg}
-          label={members.length > 0 ? `Add to group (${members.length})` : 'Add to group'}
-        />
+          label={members.length> 0 ? `Add to group (${members.length})` : 'Add to group'}
+/>
       </Box>
-    </Box>
+    </Col>
   );
 }

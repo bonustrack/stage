@@ -1,12 +1,14 @@
-/** Text - an OpenAI ChatKit-API RN text component. Hook-free: caller passes
- *  `dark` so colours track the palette convention in apps/app/lib/theme.ts
- *  (head / sub).
+/** Text - an OpenAI ChatKit-API RN text component. THEME-NATIVE: it resolves its
+ *  colour by semantic ROLE from the Kit theme provider (useKitPalette), so most
+ *  call sites pass no colour at all. The global theme supplies the colour; a
+ *  per-instance `color` is just an override (ChatKit model).
  *
  *  CANONICAL API (mirrors ChatKit's Text widget / BaseTextProps 1:1):
  *    value          string (or `children`)
- *    size           xs|sm|md|lg|xl  (ChatKit TextSize) - or a numeric px
+ *    role           default|secondary|muted|link|primary|danger|success
+ *    size           3xs..6xl  (named t-shirt step from the kit FONT_SIZE scale)
  *    weight         normal|medium|semibold|bold
- *    color          override colour
+ *    color          override colour (escape hatch; wins over role)
  *    textAlign      start|center|end
  *    italic, lineThrough, truncate, maxLines
  *
@@ -20,31 +22,49 @@ import {
   type TextProps as RNTextProps,
   type TextStyle,
 } from 'react-native';
+import { FONT_SIZE, type FontSizeName, resolveColorToken, type ColorToken } from './tokens';
+import { useKitPalette, useKitScheme, type KitPalette } from './theme-context';
 
 /** @deprecated Legacy role-name `variant`. Mapped onto colour + font family. */
 export type TextVariant = 'body' | 'secondary' | 'caption' | 'mono';
 
+/** Semantic text role - resolved scheme-aware from the Kit theme palette.
+ *  `default` is today's body text colour exactly (lossless). */
+export type TextRole =
+  | 'default'
+  | 'secondary'
+  | 'muted'
+  | 'link'
+  | 'primary'
+  | 'danger'
+  | 'success';
+
 /** ChatKit font weight, plus the legacy `regular` alias of `normal`. */
 export type TextWeight = 'normal' | 'medium' | 'semibold' | 'bold' | 'regular';
 
-/** ChatKit TextSize scale. Legacy `sm|md|lg` overlap and keep their px values. */
-export type TextSizeToken = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+/** Named TextSize scale (3xs..6xl). Single source of truth in tokens.ts. */
+export type TextSizeToken = FontSizeName;
 
 /** ChatKit text alignment. */
 export type TextAlign = 'start' | 'center' | 'end';
 
-export interface TextProps extends Omit<RNTextProps, 'style'> {
+export interface TextProps extends Omit<RNTextProps, 'style' | 'role'> {
   /** ChatKit `value`. Ignored if `children` is provided. */
   value?: string;
-  /** @deprecated Legacy role variant (body/secondary/caption/mono). */
+  /** Semantic text role - resolves scheme-aware from the theme palette.
+   *  Default `default` = body text. */
+  role?: TextRole;
+  /** @deprecated Legacy role variant (body/secondary/caption/mono). Maps onto
+   *  the new `role` (secondary/caption -> secondary). */
   variant?: TextVariant;
-  /** ChatKit TextSize token (xs..xl) or a numeric px. Default 15 (md), or 13
-   *  when the legacy `caption` variant is used. */
-  size?: number | TextSizeToken;
+  /** Named TextSize token (3xs..6xl). Default md (15), or sm (13) when the
+   *  legacy `caption` variant is used. */
+  size?: TextSizeToken;
   /** ChatKit font weight. `regular` is a deprecated alias of `normal`. */
   weight?: TextWeight;
-  /** Override colour; wins over the variant/palette colour. */
-  color?: string;
+  /** Override colour (escape hatch). A semantic ColorToken name resolves
+   *  scheme-aware; any other string is a raw colour. Wins over `role`. */
+  color?: ColorToken | (string & {});
   /** ChatKit `textAlign` (start/center/end). */
   textAlign?: TextAlign;
   /** ChatKit `italic`. */
@@ -55,26 +75,21 @@ export interface TextProps extends Omit<RNTextProps, 'style'> {
   truncate?: boolean;
   /** ChatKit `maxLines`: clamp to N lines. */
   maxLines?: number;
-  /** Effective color scheme. Pass `useEffectiveColorScheme() === 'dark'`. */
-  dark?: boolean;
   /** Escape-hatch style merged last. */
   style?: TextStyle | TextStyle[];
 }
 
-/** ChatKit TextSize px values; legacy sm/md/lg keep their original px. */
-const SIZE_TOKENS: Record<TextSizeToken, number> = {
-  xs: 11,
-  sm: 13,
-  md: 15,
-  lg: 17,
-  xl: 20,
-};
+/** Named TextSize px values - the kit FONT_SIZE scale. */
+const SIZE_TOKENS = FONT_SIZE;
 
+// Only two Calibre faces are bundled in apps/app: Calibre-Medium and
+// Calibre-Semibold. Weight -> face:
+//   normal / medium -> Calibre-Medium
+//   semibold / bold -> Calibre-Semibold
 const FONTS: Record<'normal' | 'medium' | 'semibold' | 'bold', string> = {
-  normal: 'Calibre-Regular',
+  normal: 'Calibre-Medium',
   medium: 'Calibre-Medium',
   semibold: 'Calibre-Semibold',
-  // Only Calibre-Medium/Semibold are loaded; map ChatKit `bold` to Semibold.
   bold: 'Calibre-Semibold',
 };
 
@@ -83,18 +98,42 @@ function normalizeWeight(w: TextWeight): keyof typeof FONTS {
 }
 
 function resolveSize(
-  size: number | TextSizeToken | undefined,
-  variant: TextVariant,
+  size: TextSizeToken | undefined,
+  variant: TextVariant | undefined,
 ): number {
-  if (typeof size === 'number') return size;
   if (size) return SIZE_TOKENS[size];
-  return variant === 'caption' ? 13 : 15;
+  return variant === 'caption' ? SIZE_TOKENS.xs : SIZE_TOKENS.md;
 }
 
-function variantColor(variant: TextVariant, dark: boolean): string {
-  const head = dark ? '#ffffff' : '#000000';
-  const sub = dark ? '#7a7a7e' : '#8a929d';
-  return variant === 'secondary' || variant === 'caption' ? sub : head;
+/** Map the legacy `variant` onto a semantic role. */
+function variantRole(variant: TextVariant | undefined): TextRole {
+  if (variant === 'secondary' || variant === 'caption') return 'secondary';
+  return 'default';
+}
+
+/** Resolve a role to a palette colour.
+ *  LOSSLESS NOTE: today's Kit Text default (`variant="body"`) rendered the
+ *  `head` colour (#ffffff/#000000), which in the app palette is `link`
+ *  (link-* === head-* hexes), NOT the `fg` body-grey `text`. So `default`
+ *  resolves to `palette.link` to stay pixel-identical to today. (The design
+ *  brief labelled default `=text`; that would have re-coloured every default
+ *  Text from white/black to grey, so it is intentionally mapped to `link`.) */
+function roleColor(role: TextRole, palette: KitPalette): string {
+  switch (role) {
+    case 'secondary':
+    case 'muted':
+      return palette.sub;
+    case 'link':
+      return palette.link;
+    case 'primary':
+      return palette.primary;
+    case 'danger':
+      return palette.danger;
+    case 'success':
+      return palette.success;
+    default:
+      return palette.link;
+  }
 }
 
 const ALIGN_MAP: Record<TextAlign, TextStyle['textAlign']> = {
@@ -107,7 +146,8 @@ const ALIGN_MAP: Record<TextAlign, TextStyle['textAlign']> = {
 export function Text(props: TextProps): React.ReactElement {
   const {
     value,
-    variant = 'body',
+    role,
+    variant,
     size,
     weight = 'normal',
     color,
@@ -116,14 +156,19 @@ export function Text(props: TextProps): React.ReactElement {
     lineThrough = false,
     truncate = false,
     maxLines,
-    dark = false,
     style,
     children,
     ...rest
   } = props;
 
+  const palette = useKitPalette();
+  const scheme = useKitScheme();
+  const effectiveRole: TextRole = role ?? variantRole(variant);
+
   const base: TextStyle = {
-    color: color ?? variantColor(variant, dark),
+    color: color != null
+      ? resolveColorToken(color, scheme)
+      : roleColor(effectiveRole, palette),
     fontSize: resolveSize(size, variant),
     fontFamily: variant === 'mono' ? 'Menlo' : FONTS[normalizeWeight(weight)],
   };

@@ -3,6 +3,7 @@
  *  HomeScreen.tsx (phase-2 lint, rendering identical). */
 
 import type { MutableRefObject, RefObject } from 'react';
+import { useState } from 'react';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { FlatList } from 'react-native-gesture-handler';
 import { Icon } from '@metro-labs/kit/icon';
@@ -67,60 +68,81 @@ export function ChannelsList({
   const dark = useEffectiveColorScheme() === 'dark';
   const badgeBg = dark ? '#ffffff' : '#000000';
   const badgeFg = dark ? '#000000' : '#ffffff';
+  // Search is collapsed by default: a search icon sits in the topnav, and
+  // tapping it swaps the whole topnav for a full-width search field. Closing
+  // clears the query so the list returns to its full state.
+  const [searchOpen, setSearchOpen] = useState(false);
+  const closeSearch = () => { setSearchOpen(false); setQuery(''); };
   return (
     <>
-      {/* Home topnav: avatar on the left, requests + 3-dot overflow menu on the
-       *  right (Archived + New group moved into the overflow). The label filter
-       *  lives in a horizontal chip bar that scrolls with the feed (the list's
-       *  ListHeaderComponent), not pinned to the header. */}
-      <Row align="center" justify="between" px={16} pt={12} pb={10} bg={toolbarBg}>
-        <Row align="center" gap={8}>
-          {/* Avatar + name → Menu page; shared TopnavIdentity (also on the
-           *  wallet / notifications / profile tabs for a consistent identity). */}
-          <TopnavIdentity />
+      {/* Home topnav: collapsed shows avatar + search/requests/overflow icons;
+       *  expanded (search open) the whole bar becomes a full-width search field
+       *  with a back chevron. A bottom border separates it from the feed. The
+       *  label filter rides in a chip bar that scrolls with the feed. */}
+      {searchOpen ? (
+        <Box style={{ borderBottomWidth: 1, borderBottomColor: border }}>
+          <ChannelsSearchBar
+            query={query}
+            setQuery={setQuery}
+            onClose={closeSearch}
+            head={head}
+            sub={sub}
+            inputBg={inputBg}
+            toolbarBg={toolbarBg}
+/>
+        </Box>
+      ) : (
+        <Row padding={{ x: 16, top: 12, bottom: 10 }}
+          align="center"
+          justify="between"
+          
+          
+          
+          surface="toolbar"
+          style={{ borderBottomWidth: 1, borderBottomColor: border }}
+>
+          <Row align="center" gap={8}>
+            {/* Avatar + name → Menu page; shared TopnavIdentity. */}
+            <TopnavIdentity/>
+          </Row>
+          <Row align="center" gap={18}>
+            {/* Search sits just before the requests icon: opens the full-width
+             *  search field over the topnav (tap-to-expand + back chevron
+             *  behavior unchanged). */}
+            <Pressable onPress={() => setSearchOpen(true)} hitSlop={8}>
+              <Icon name="search" size={24} color={head}/>
+            </Pressable>
+            {/* Message requests: inbox icon + count badge (pending 'unknown'
+             *  consent convs). Badge hidden when 0; tap opens the requests list. */}
+            <Pressable onPress={() => router.push('/xmtp/requests')} hitSlop={8} style={{ position: 'relative' }}>
+              <Icon name="inbox" size={24} color={head}/>
+              {requestCount> 0 ? (
+                <Box minWidth={16} height={16} padding={{ x: 5 }}
+                  
+                  radius="full"
+                  background={badgeBg}
+                  align="center"
+                  justify="center"
+                  style={{ position: 'absolute', top: -6, right: -8 }}
+>
+                  <Text weight="semibold" size="3xs" color={badgeFg}>
+                    {requestCount> 99 ? '99+' : requestCount}
+                  </Text>
+                </Box>
+              ) : null}
+            </Pressable>
+            {/* Overflow (3-dot) menu: folds the former Archived + New-group icons
+             *  into a single kebab to declutter the topnav. */}
+            <HomeOverflowMenu
+              color={head}
+              onArchived={() => router.push('/xmtp/archived')}
+              onNewGroup={() => router.push('/xmtp/new-group')}
+              onEditProfile={() => router.push('/profile')}
+              onSettings={() => router.push('/settings')}
+/>
+          </Row>
         </Row>
-        <Row align="center" gap={18}>
-          {/* Message requests: inbox icon + count badge (pending 'unknown'
-           *  consent convs). Badge hidden when 0; tap opens the requests list. */}
-          <Pressable onPress={() => router.push('/xmtp/requests')} hitSlop={8} style={{ position: 'relative' }}>
-            <Icon name="inbox" size={24} color={head} />
-            {requestCount > 0 ? (
-              <Box
-                px={5}
-                radius={999}
-                bg={badgeBg}
-                align="center"
-                justify="center"
-                style={{ position: 'absolute', top: -6, right: -8, minWidth: 16, height: 16 }}
-              >
-                <Text style={{ color: badgeFg, fontSize: 10, fontFamily: 'Calibre-Semibold' }}>
-                  {requestCount > 99 ? '99+' : requestCount}
-                </Text>
-              </Box>
-            ) : null}
-          </Pressable>
-          {/* Overflow (3-dot) menu: folds the former Archived + New-group icons
-           *  into a single kebab to declutter the topnav. */}
-          <HomeOverflowMenu
-            color={head}
-            onArchived={() => router.push('/xmtp/archived')}
-            onNewGroup={() => router.push('/xmtp/new-group')}
-            onEditProfile={() => router.push('/profile')}
-            onSettings={() => router.push('/settings')}
-          />
-        </Row>
-      </Row>
-      {/* Search bar directly under the topnav: filters the rendered channel
-       *  list client-side (title / last message / DM address). */}
-      <ChannelsSearchBar
-        query={query}
-        setQuery={setQuery}
-        head={head}
-        sub={sub}
-        border={border}
-        rowBg={inputBg}
-        toolbarBg={toolbarBg}
-      />
+      )}
       <FlatList
         ref={listRef}
         simultaneousHandlers={panRef}
@@ -163,16 +185,16 @@ export function ChannelsList({
             onToggle={onToggleLabel}
             onToggleUnread={onToggleUnread}
             onClearAll={onClearAll}
-          />
+/>
         }
         ListEmptyComponent={query.trim() ? null : <HomeEmpty sub={sub} />}
         ListFooterComponent={
           query.trim()
-            ? <HomeContactResults query={query} c={{ fg, head, sub, border }} noChannels={sortedRows.length === 0} />
+            ? <HomeContactResults query={query} c={{ fg, head, sub, border }} noChannels={sortedRows.length === 0}/>
             : null
         }
         renderItem={renderRow}
-      />
+/>
     </>
   );
 }

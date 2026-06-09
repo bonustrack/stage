@@ -8,6 +8,7 @@
  *  unread props are optional so callers without context can omit them. */
 
 import { memo } from 'react';
+
 // eslint-disable-next-line no-restricted-imports -- raw View is required as an INLINE element inside <Text> (Box/Row/Col carry layout flex and don't embed inline in text flow)
 import { View } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
@@ -68,7 +69,7 @@ export interface ChannelRowProps {
 const MAX_VISIBLE_LABELS = 2;
 
 /** Constant content height on the OUTER row so a 1-line and a 2-line preview
- *  render the SAME total height (title ~23 + 2 * 21 lines ~= 67, also > the 44px
+ *  render the SAME total height (title ~23 + 2 * 21 lines ~= 67, also> the 44px
  *  avatar). No internal blank reservation, so the title+preview group centers as
  *  a unit next to the centered avatar. */
 const ROW_CONTENT_HEIGHT = 67;
@@ -82,7 +83,7 @@ function buildLabelChips({ labels, fg, rowBg }: {
 }): React.ReactNode[] {
   const visible = labels.slice(0, MAX_VISIBLE_LABELS);
   const overflow = labels.length - visible.length;
-  const chips = overflow > 0 ? [...visible, `+${overflow}`] : visible;
+  const chips = overflow> 0 ? [...visible, `+${overflow}`] : visible;
   return chips.flatMap((label, i) => [
     <View
       key={`${label.toLowerCase()}-${i}`}
@@ -94,11 +95,11 @@ function buildLabelChips({ labels, fg, rowBg }: {
         // Drop it down so the chip's vertical center matches the text line center.
         transform: [{ translateY: 5 }],
       }}
-    >
-      <Text style={{ color: fg, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{label}</Text>
+>
+      <Text size="xs" color={fg}>{label}</Text>
     </View>,
     // Real, rendered gap (inline-View margin is NOT honored by RN).
-    <Text key={`gap-${i}`} style={{ fontSize: 13 }}>{'  '}</Text>,
+    <Text size="xs" key={`gap-${i}`}>{'  '}</Text>,
   ]);
 }
 
@@ -113,8 +114,8 @@ function ChannelRowBase({
 }: ChannelRowProps): React.ReactElement {
   const { link: head, text: sub, bg, border } = usePalette();
   const fg = sub, rowBg = border;
-  const draft = hasDraft && draftText && draftText.trim().length > 0 ? draftText.trim() : null;
-  const previewText = draft ? `You: ${draft}` : (lastPreview && lastPreview.length > 0 ? lastPreview : subtitle ?? '');
+  const draft = hasDraft && draftText && draftText.trim().length> 0 ? draftText.trim() : null;
+  const previewText = draft ? `You: ${draft}` : (lastPreview && lastPreview.length> 0 ? lastPreview : subtitle ?? '');
 
   return (
     <Pressable
@@ -125,11 +126,11 @@ function ChannelRowBase({
         backgroundColor: pressed ? border : 'transparent',
         paddingHorizontal: 14,
       }))}
-    >
+>
       {/* align-center: avatar + text column center as a group within a
           CONSTANT-height row. Fixed height lives on the ROW (ROW_CONTENT_HEIGHT,
           the 2-line case), so 1- and 2-line rows match (no bottom gap). */}
-      <Row align="center" gap={12} py={9} style={{ minHeight: ROW_CONTENT_HEIGHT }}>
+      <Row minHeight={ROW_CONTENT_HEIGHT} padding={{ y: 9 }} align="center" gap={12}>
         <Avatar
           imageUri={avatarUri}
           address={!avatarUri && avatarAddress ? avatarAddress : null}
@@ -137,59 +138,53 @@ function ChannelRowBase({
           square={square}
           cacheBuster={cacheBuster}
           style={{ backgroundColor: border }}
-        />
-        <Col flex={1} style={{ minWidth: 0 }}>
+/>
+        <Col minWidth={0} flex={1}>
           <Row align="center" gap={6}>
             {pinned ? <Icon name="mapPin" size={13} color={sub} /> : null}
             {/* Name + labels hug each other on the left; name shrinks (and
                 ellipsizes) first, the label chip stays right beside it. */}
-            <Text
-              style={{ color: head, fontSize: 19, fontFamily: 'Calibre-Semibold', flexShrink: 1, minWidth: 0 }}
+            <Text weight="semibold" size="3xl" color={head} style={{ flexShrink: 1, minWidth: 0 }}
               numberOfLines={1}
-              ellipsizeMode="tail"
-            >
+              ellipsizeMode="tail">
               {title}
             </Text>
             {/* Flexible spacer pushes the timestamp to the far right edge. */}
-            <Spacer />
+            <Spacer/>
             {timestamp ? (
-              <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium' }}>{timestamp}</Text>
+              <Text size="sm" color={sub}>{timestamp}</Text>
             ) : null}
           </Row>
           {/* No internal height reservation: the preview block is only as tall
               as its content (1-2 lines) so the title+preview group centers in the
               fixed-height row. align-start pins the badge to line 1 on wrap. */}
-          <Row align="start" gap={7} mt={2}>
+          <Row margin={{ top: 2 }} align="start" gap={7}>
             {/* Draft pencil + "You: " text replaces the preview. Row stays
                 align-start (badge on line 1 when preview wraps), so nudge the
                 14px glyph down (lineHeight 21 - 14)/2 to center it on line 1. */}
             {draft ? (
-              <Box style={{ marginTop: 3.5 }}>
-                <Icon name="pencil" size={14} color={sub} />
+              <Box margin={{ top: 3.5 }}>
+                <Icon name="pencil" size={14} color={sub}/>
               </Box>
             ) : null}
-            <Text
-              style={{ color: sub, fontSize: 16, lineHeight: 21, fontFamily: 'Calibre-Medium', flex: 1 }}
+            <Text size="lg" color={sub} style={{ lineHeight: 21, flex: 1 }}
               numberOfLines={2}
-              ellipsizeMode="tail"
-            >
-              {!draft && labels && labels.length > 0
+              ellipsizeMode="tail">
+              {!draft && labels && labels.length> 0
                 ? buildLabelChips({ labels, fg, rowBg })
                 : null}
               {previewText}
             </Text>
-            {unreadCount > 0 ? (
-              <Row align="center" justify="center" px={7} radius={999} bg={head} style={{
-                minWidth: 22, height: 22,
-              }}>
-                <Text style={{ color: bg, fontSize: 12, fontFamily: 'Calibre-Semibold' }}>
-                  {unreadCount > 99 ? '99+' : unreadCount}
+            {unreadCount> 0 ? (
+              <Row minWidth={22} height={22} padding={{ x: 7 }} align="center" justify="center" radius="full" background={head}>
+                <Text weight="semibold" size="2xs" color={bg}>
+                  {unreadCount> 99 ? '99+' : unreadCount}
                 </Text>
               </Row>
             ) : markedUnread ? (
-              <Box style={{ width: 12, height: 12, borderRadius: 999, backgroundColor: head }} />
+              <Box width={12} height={12} radius="full" background={head}/>
             ) : showChevron ? (
-              <Text style={{ color: sub, fontSize: 18 }}>›</Text>
+              <Text size="2xl" color={sub}>›</Text>
             ) : null}
           </Row>
         </Col>

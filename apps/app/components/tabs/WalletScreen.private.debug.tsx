@@ -9,6 +9,7 @@
  *
  *  Clearly labeled + diagnostic; subscribes to the in-memory balanceDebug store. */
 import { useEffect, useState } from 'react';
+
 import { Text } from '@metro-labs/kit/text';
 import { Col, Row } from '../layout';
 import { DANGER } from '../../lib/theme';
@@ -24,7 +25,7 @@ function fmtEvent(d: BalanceDebug): string {
   if (d.lastEvent == null) return 'none received yet';
   try {
     const s = JSON.stringify(d.lastEvent);
-    return s.length > 600 ? `${s.slice(0, 600)}…` : s;
+    return s.length> 600 ? `${s.slice(0, 600)}…` : s;
   } catch {
     return String(d.lastEvent);
   }
@@ -34,9 +35,9 @@ function DebugRow({ label, value, sub, head }: {
   label: string; value: string; sub: string; head: string;
 }): React.ReactElement {
   return (
-    <Row gap={12} py={2} style={{ justifyContent: 'space-between' }}>
-      <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>{label}</Text>
-      <Text style={{ color: head, fontSize: 12, fontFamily: 'Calibre-Semibold', flexShrink: 1, textAlign: 'right' }}>
+    <Row padding={{ y: 2 }} gap={12} justify="between">
+      <Text size="xs" color={sub}>{label}</Text>
+      <Text weight="semibold" size="xs" color={head} style={{ flexShrink: 1, textAlign: 'right' }}>
         {value}
       </Text>
     </Row>
@@ -54,8 +55,8 @@ export function RailgunDebugPanel({ head, sub, border }: {
     : '—';
 
   return (
-    <Col mt={20} pt={16} gap={4} style={{ borderTopWidth: 1, borderTopColor: border }}>
-      <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Semibold' }}>
+    <Col padding={{ top: 16 }} margin={{ top: 20 }} gap={4} style={{ borderTopWidth: 1, borderTopColor: border }}>
+      <Text weight="semibold" size="xs" color={sub}>
         RAILGUN DEBUG · BALANCE PIPELINE
       </Text>
       <DebugRow label="bridge available" value={String(d.bridgeAvailable)} sub={sub} head={head} />
@@ -67,10 +68,10 @@ export function RailgunDebugPanel({ head, sub, border }: {
       <DebugRow label="getBalances rows" value={getRows} sub={sub} head={head} />
       <DebugRow label="balance events" value={String(d.eventCount)} sub={sub} head={head} />
       <DebugRow label="last event at" value={fmtTime(d.lastEventAt)} sub={sub} head={head} />
-      <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', marginTop: 6 }}>
+      <Text size="xs" color={sub} style={{ marginTop: 6 }}>
         last balanceUpdate payload
       </Text>
-      <Text style={{ color: head, fontSize: 11, fontFamily: 'Calibre-Medium' }} selectable>
+      <Text size="3xs" color={head} selectable>
         {fmtEvent(d)}
       </Text>
     </Col>

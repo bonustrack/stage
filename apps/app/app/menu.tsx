@@ -12,6 +12,7 @@
  *  the Accounts + Search pages' header style. */
 
 import { useCallback, useEffect, useState } from 'react';
+
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { useRouter } from 'expo-router';
@@ -19,7 +20,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Title } from '@metro-labs/kit/title';
 import { Icon } from '@metro-labs/kit/icon';
 import { ListView } from '@metro-labs/kit/list-view';
-import { Box } from '../components/layout';
+import { Row, Col } from '../components/layout';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { usePeerProfiles } from '../lib/peerProfiles';
 import { AccountManager } from '../modules/messaging';
@@ -35,8 +36,6 @@ export default function Menu(): React.ReactElement {
   const head = pal.link;
   const sub = pal.text; // no `muted` token yet -> map to `text`.
   const border = pal.border;
-  const bg = pal.bg;
-  const toolbarBg = pal.toolbarBg;
 
   const [accounts, setAccounts] = useState<AccountRecord[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -68,36 +67,31 @@ export default function Menu(): React.ReactElement {
   }
 
   return (
-    <Box style={{ flex: 1, backgroundColor: bg }}>
+    <Col surface="surface" flex={1}>
       {/* Topnav: back + title, mirroring the Accounts / Search pages.
           Paints toolbarBg + absorbs the top inset so the bar reaches the edge. */}
-      <Box style={{
-        flexDirection: 'row', alignItems: 'center', gap: 8,
-        paddingHorizontal: 12, paddingTop: 8 + insets.top, paddingBottom: 10,
-        borderBottomWidth: 1, borderBottomColor: border,
-        backgroundColor: toolbarBg,
-      }}>
+      <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
-          <Icon name="arrowLeft" size={22} color={head} />
+          <Icon name="arrowLeft" size={22} color={head}/>
         </Pressable>
-        <Title dark={dark} style={{ color: head, fontSize: 20 }}>
+        <Title size="sm">
           Menu
         </Title>
-      </Box>
+      </Row>
 
       <ScrollView
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ paddingTop: 14, paddingBottom: 24 + insets.bottom }}
-      >
-        <DrawerHeader rec={activeRec} c={{ head, sub, border }} />
+>
+        <DrawerHeader rec={activeRec} c={{ head, sub, border }}/>
         <ListView dark={dark}>
           {drawerAccountRows({ accounts, activeId, onSwitch, c: { head, sub, border }, dark })}
           {actions.rows}
-          <DrawerRow rowKey="profile" icon="user" label="Profile" head={head} sub={sub} border={border} dark={dark} onPress={() => go('/profile')} />
-          <DrawerRow rowKey="settings" icon="cog" label="Settings" head={head} sub={sub} border={border} dark={dark} onPress={() => go('/settings')} />
+          <DrawerRow rowKey="profile" icon="user" label="Profile" head={head} sub={sub} border={border} dark={dark} onPress={() => go('/profile')}/>
+          <DrawerRow rowKey="settings" icon="cog" label="Settings" head={head} sub={sub} border={border} dark={dark} onPress={() => go('/settings')}/>
         </ListView>
       </ScrollView>
       {actions.modal}
-    </Box>
+    </Col>
   );
 }

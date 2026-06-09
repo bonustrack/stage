@@ -4,9 +4,10 @@
  *  diagnostics console. Reached via /settings → "Experimental" row. */
 
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
+
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Box } from '../layout';
+import { Col } from '../layout';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Text } from '@metro-labs/kit/text';
 import { ListView, ListViewItem } from '@metro-labs/kit/list-view';
@@ -24,22 +25,22 @@ const ROWS: { href: Href; label: string; icon: HeroIconName }[] = [
 export function ExperimentalSettings(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border } = usePalette();
+  const { text: fg, link: head, border } = usePalette();
   const sub = fg;
   const insets = useSafeAreaInsets();
 
   return (
-    <Box style={{ flex: 1, backgroundColor: bg }}>
-      <SystemHeader title="Experimental" dark={dark} fg={fg} head={head} border={border} />
+    <Col surface="surface" flex={1}>
+      <SystemHeader title="Experimental" dark={dark} fg={fg} head={head} border={border}/>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <ListView dark={dark}>
           {ROWS.map((row) => (
             <ListViewItem key={row.href} dark={dark} onPress={() => router.push(row.href)}>
-              <Icon name={row.icon} size={22} color={head} />
-              <Box style={{ flex: 1 }}>
-                <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Medium' }}>{row.label}</Text>
-              </Box>
-              <Icon name="chevronRight" size={18} color={sub} />
+              <Icon name={row.icon} size={22} color={head}/>
+              <Col flex={1}>
+                <Text size="xl" color={head}>{row.label}</Text>
+              </Col>
+              <Icon name="chevronRight" size={18} color={sub}/>
             </ListViewItem>
           ))}
           {/** Reset the first-launch onboarding flag so the carousel shows again on
@@ -47,13 +48,13 @@ export function ExperimentalSettings(): React.ReactElement {
             *  re-evaluates `onboarding.seen` reactively, so flipping it here
             *  immediately swaps the app for the Onboarding flow. */}
           <ListViewItem dark={dark} onPress={() => { void setOnboardingSeen(false); }}>
-            <Icon name="sparkles" size={22} color={head} />
-            <Box style={{ flex: 1 }}>
-              <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Medium' }}>Replay onboarding</Text>
-            </Box>
+            <Icon name="sparkles" size={22} color={head}/>
+            <Col flex={1}>
+              <Text size="xl" color={head}>Replay onboarding</Text>
+            </Col>
           </ListViewItem>
         </ListView>
       </ScrollView>
-    </Box>
+    </Col>
   );
 }

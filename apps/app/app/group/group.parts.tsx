@@ -2,9 +2,10 @@
  *  Extracted from group/[convId] for lint line-budget. Rendering identical. */
 
 import { Pressable } from '@metro-labs/kit/pressable';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Input } from '@metro-labs/kit/input';
 import { Text } from '@metro-labs/kit/text';
-import { Box } from '../../components/layout';
+import { Box, Col } from '../../components/layout';
 import { shortAddress } from '../../modules/messaging';
 import { getPeerAvatar, getPeerAvatarCb } from '../../lib/peerProfiles';
 import { Icon } from '@metro-labs/kit/icon';
@@ -34,35 +35,29 @@ export function MemberRow({
         borderBottomWidth: 1, borderBottomColor: border,
         opacity: isRemovingThis ? 0.5 : 1,
       })}
-    >
+>
       <Avatar
         address={item}
         imageUri={getPeerAvatar(item)}
         cacheBuster={getPeerAvatarCb(item)}
         size="md"
         style={{ backgroundColor: border }}
-      />
-      <Box style={{ flex: 1, minWidth: 0 }}>
-        <Text style={{ color: head, fontSize: 15, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
+/>
+      <Col minWidth={0} flex={1}>
+        <Text weight="semibold" size="md" color={head} numberOfLines={1}>
           {name || shortAddress(item)}{isSelf ? ' (you)' : ''}
         </Text>
         {name ? (
-          <Text style={{ color: sub, fontSize: 12, marginTop: 2, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
+          <Text size="xs" color={sub} style={{ marginTop: 2 }} numberOfLines={1}>
             {shortAddress(item)}
           </Text>
         ) : null}
-      </Box>
+      </Col>
       {role && role !== 'member' ? (
-        <Box style={{
-          paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999,
-          backgroundColor: role === 'owner'
+        <Box radius="full" background={role === 'owner'
             ? (dark ? 'rgba(45,212,191,0.18)' : 'rgba(13,148,136,0.12)')
-            : border, // #282a2d / #e4e4e5
-        }}>
-          <Text style={{
-            fontSize: 11, fontFamily: 'Calibre-Medium',
-            color: role === 'owner' ? (dark ? '#2dd4bf' : '#0d9488') : sub,
-          }}>{role === 'owner' ? 'Owner' : 'Admin'}</Text>
+            : border} padding={{ x: 8, y: 2 }}>
+          <Text size="3xs" color={role === 'owner' ? (dark ? '#2dd4bf' : '#0d9488') : sub}>{role === 'owner' ? 'Owner' : 'Admin'}</Text>
         </Box>
       ) : null}
       {isSelf ? null : (
@@ -74,8 +69,8 @@ export function MemberRow({
             padding: 6, borderRadius: 999,
             backgroundColor: pressed ? (dark ? '#3a1820' : '#fbe3e8') : 'transparent',
           })}
-        >
-          <Icon name="trash" size={18} color={DANGER} />
+>
+          <Icon name="trash" size={18} color={DANGER}/>
         </Pressable>
       )}
     </Pressable>
@@ -105,9 +100,9 @@ export function AddMemberModal({
           style={{
             color: fg, backgroundColor: inputBg,
             borderWidth: 1, borderColor: border, borderRadius: 10,
-            paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, marginBottom: 10,
+            paddingHorizontal: 12, paddingVertical: 10, fontSize: fontSize('md'), marginBottom: 10,
           }}
-        />
+/>
         <Button
           variant="primary"
           size="md"
@@ -118,7 +113,7 @@ export function AddMemberModal({
           tintBg={primary}
           tintFg={bg}
           label={adding ? 'Adding…' : 'Add member'}
-        />
+/>
       </Box>
     </AppModal>
   );
@@ -131,14 +126,14 @@ export function OverflowModal({
 }): React.ReactElement {
   return (
     <AppModal visible={visible} onClose={onClose}>
-      <Box style={{ gap: 4 }}>
+      <Box gap={4}>
         <Pressable
           onPress={onLeave}
           disabled={leaving}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, opacity: leaving ? 0.5 : 1 }}
-        >
-          <Icon name="arrowLeft" size={20} color={DANGER} />
-          <Text style={{ color: DANGER, fontSize: 16, fontFamily: 'Calibre-Medium' }}>
+>
+          <Icon name="arrowLeft" size={20} color={DANGER}/>
+          <Text size="md" color={DANGER}>
             {leaving ? 'Leaving…' : 'Leave group'}
           </Text>
         </Pressable>

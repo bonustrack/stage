@@ -4,6 +4,7 @@
  *  refreshes immediately. */
 
 import { useEffect, useState } from 'react';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Alert, KeyboardAvoidingView, Modal, Platform } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
@@ -11,7 +12,7 @@ import { Input } from '@metro-labs/kit/input';
 import { Textarea } from '@metro-labs/kit/textarea';
 import { Avatar } from './Avatar';
 import { Text } from '@metro-labs/kit/text';
-import { Box } from './layout';
+import { Box, Row } from './layout';
 import { Button } from '@metro-labs/kit/button';
 import { Spinner } from './Spinner';
 import { Icon } from '@metro-labs/kit/icon';
@@ -96,16 +97,13 @@ export default function EditProfileModal({
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {/** No title / Cancel chrome — a single close X is the dismiss affordance
          *  (this is a full-screen modal with no backdrop tap). */}
-        <Box style={{
-          flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end',
-          paddingHorizontal: 16, paddingTop: insets.top + 12, paddingBottom: 12,
-        }}>
+        <Row padding={{ x: 16, top: insets.top + 12, bottom: 12 }} align="center" justify="end">
           <Pressable onPress={onClose} disabled={saving} hitSlop={10}>
             <Icon name="x" size={24} color={head} />
           </Pressable>
-        </Box>
+        </Row>
         <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
-          <Box style={{ alignItems: 'center', marginBottom: 20 }}>
+          <Box margin={{ bottom: 20 }} align="center">
             <Pressable onPress={pickAvatar} disabled={uploading}>
               <Avatar
                 address={address}
@@ -114,17 +112,17 @@ export default function EditProfileModal({
                 style={{ backgroundColor: rowBg, opacity: uploading ? 0.5 : 1 }}
               />
               {uploading ? (
-                <Box style={{ position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' }}>
+                <Box align="center" justify="center" style={{ position: 'absolute', inset: 0 }}>
                   <Spinner size={20} color={fg} />
                 </Box>
               ) : null}
             </Pressable>
-            <Text style={{ color: sub, fontSize: 12, marginTop: 8, fontFamily: 'Calibre-Medium' }}>Tap to change avatar</Text>
+            <Text size="xs" color={sub} style={{ marginTop: 8 }}>Tap to change avatar</Text>
           </Box>
 
           {FIELDS.map(f => (
-            <Box key={f.key} style={{ marginBottom: 14 }}>
-              <Text style={{ color: sub, fontSize: 11, marginBottom: 4, fontFamily: 'Calibre-Medium' }}>{f.label.toUpperCase()}</Text>
+            <Box margin={{ bottom: 14 }} key={f.key}>
+              <Text size="3xs" color={sub} style={{ marginBottom: 4 }}>{f.label.toUpperCase()}</Text>
               {f.multiline ? (
                 <Textarea
                   value={(form[f.key] ?? '') as string}
@@ -134,7 +132,7 @@ export default function EditProfileModal({
                   dark={dark}
                   style={{
                     color: fg, backgroundColor: inputBg, borderColor: border, borderWidth: 1,
-                    borderRadius: blockRadius, padding: 12, fontSize: 14,
+                    borderRadius: blockRadius, padding: 12, fontSize: fontSize('md'),
                     minHeight: 80, height: undefined, textAlignVertical: 'top',
                   }}
                 />
@@ -147,7 +145,7 @@ export default function EditProfileModal({
                   dark={dark}
                   style={{
                     color: fg, backgroundColor: inputBg, borderColor: border, borderWidth: 1,
-                    borderRadius: blockRadius, padding: 12, fontSize: 14,
+                    borderRadius: blockRadius, padding: 12, fontSize: fontSize('md'),
                     minHeight: 0, textAlignVertical: 'center',
                   }}
                 />

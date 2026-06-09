@@ -14,6 +14,7 @@
  *
  *  No bespoke/gold styling — Kit `Text`/`Icon` + the palette tokens only. */
 import { useEffect, useMemo, useState } from 'react';
+
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Image } from '@metro-labs/kit/image';
 import { Text } from '@metro-labs/kit/text';
@@ -45,7 +46,7 @@ function findRow(rows: AssetRow[], sel: TokenChoice): AssetRow | undefined {
  *  hide zero/empty-balance tokens from the selector. */
 function hasBalance(r: AssetRow): boolean {
   const n = Number.parseFloat(r.balance);
-  return Number.isFinite(n) && n > 0;
+  return Number.isFinite(n) && n> 0;
 }
 
 /** USD value of a row = balance × per-unit price. Rows with no price (CoinGecko
@@ -121,8 +122,8 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
   const selected = findRow(rows, value);
 
   return (
-    <Box style={{ gap: 6 }}>
-      <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>{label}</Text>
+    <Box gap={6}>
+      <Text size="xs" color={sub}>{label}</Text>
       <Pressable
         onPress={() => setOpen(true)}
         style={({ pressed }) => ({
@@ -131,47 +132,43 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
           paddingHorizontal: 14, paddingVertical: 12,
           opacity: pressed ? 0.7 : 1,
         })}
-      >
-        <Box style={{ width: 28, height: 28 }}>
+>
+        <Box width={28} height={28}>
           <Image
             src={selected?.logoUrl ?? ''}
             style={{ width: 28, height: 28, borderRadius: 999, backgroundColor: bg }}
-          />
-          <Box style={{
-            position: 'absolute', right: -3, bottom: -3, width: 15, height: 15,
-            borderRadius: 999, borderWidth: 2, borderColor: border, backgroundColor: bg,
-            overflow: 'hidden',
-          }}>
+/>
+          <Box width={15} height={15} radius="full" surface="surface" style={{ position: 'absolute', right: -3, bottom: -3, borderWidth: 2, borderColor: border, overflow: 'hidden' }}>
             <Image
               src={NETWORK_LOGO[value.chainId] ?? MAINNET_NETWORK_LOGO}
               fit="cover" style={{ width: '100%', height: '100%' }}
-            />
+/>
           </Box>
         </Box>
-        <Col flex={1} style={{ minWidth: 0 }}>
-          <Row align="center" gap={6} style={{ minWidth: 0 }}>
+        <Col minWidth={0} flex={1}>
+          <Row minWidth={0} align="center" gap={6}>
             {value.isPrivate ? <Icon name="shieldCheck" size={14} color={sub} /> : null}
-            <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
+            <Text weight="semibold" size="md" color={head} numberOfLines={1}>
               {value.symbol}
             </Text>
           </Row>
-          <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
+          <Text size="xs" color={sub} numberOfLines={1}>
             {selected ? `Balance: ${selected.balance}` : '—'}
           </Text>
         </Col>
-        <Icon name="chevronDown" size={18} color={fg} />
+        <Icon name="chevronDown" size={18} color={fg}/>
       </Pressable>
 
       <AppModal visible={open} onClose={() => setOpen(false)}>
-        <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', marginBottom: 8 }}>
+        <Text weight="semibold" size="xl" color={head} style={{ marginBottom: 8 }}>
           Select token
         </Text>
         {loading ? (
-          <Row align="center" justify="center" py={24}>
-            <Spinner size={28} color={fg} />
+          <Row padding={{ y: 24 }} align="center" justify="center">
+            <Spinner size={28} color={fg}/>
           </Row>
         ) : rows.length === 0 ? (
-          <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium', paddingVertical: 16 }}>
+          <Text size="md" color={sub} style={{ paddingVertical: 16 }}>
             No tokens.
           </Text>
         ) : (
@@ -180,7 +177,7 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
               key={`${r.isPrivate ? 'priv' : 'pub'}:${r.chainId}:${r.symbol}`}
               r={r} head={head} sub={sub} border={border} bg={bg}
               onPress={() => { onChange({ symbol: r.symbol, chainId: r.chainId, isPrivate: r.isPrivate }); setOpen(false); }}
-            />
+/>
           ))
         )}
       </AppModal>

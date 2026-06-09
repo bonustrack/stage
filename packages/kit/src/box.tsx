@@ -10,66 +10,105 @@
  *  full Box API. */
 
 import { View, type ViewProps, type ViewStyle } from 'react-native';
-import { boxStyleEntries, type Align, type BoxBaseProps, type Justify } from './layout';
+import {
+  boxStyleEntries,
+  type Align,
+  type BoxBaseProps,
+  type Justify,
+} from './layout';
+import { isColorToken, resolveColorToken } from './tokens';
+import { useKitPalette, useKitScheme, type KitPalette } from './theme-context';
 
 export type { Align, Justify };
 
-export type BoxProps = ViewProps & BoxBaseProps;
+/** Semantic surface variant - resolved from the theme palette.
+ *    none    transparent (default - most Box)
+ *    surface palette `bg`
+ *    raised  palette `inputBg` (cards / inputs / sheets / dropdowns)
+ *    sunken  palette `bg`      (pressed / well - recessed under a raised surface)
+ *    toolbar palette `toolbarBg` */
+export type Surface = 'none' | 'surface' | 'raised' | 'sunken' | 'toolbar';
+
+export type BoxProps = ViewProps &
+  BoxBaseProps & {
+    /** Semantic surface variant - resolves a background from the theme palette.
+     *  Default `none` (transparent). A `background` override wins over it. */
+    surface?: Surface;
+  };
+
+/** Resolve a surface variant to a palette background. `none` -> undefined. */
+function surfaceColor(surface: Surface, palette: KitPalette): string | undefined {
+  switch (surface) {
+    case 'surface':
+      return palette.bg;
+    case 'raised':
+      return palette.inputBg;
+    case 'sunken':
+      // No dedicated pressed/well token in the app palette; the recessed look
+      // reads as the base bg sitting under a raised surface.
+      return palette.bg;
+    case 'toolbar':
+      return palette.toolbarBg;
+    default:
+      return undefined;
+  }
+}
 
 export function Box({
   direction,
   gap,
   padding,
-  p,
-  px,
-  py,
-  pt,
-  pr,
-  pb,
-  pl,
   margin,
-  m,
-  mx,
-  my,
-  mt,
-  mr,
-  mb,
-  ml,
   align,
   justify,
   flex,
   wrap,
-  bg,
+  background,
+  surface = 'none',
   radius,
+  width,
+  height,
+  size,
+  minWidth,
+  minHeight,
+  maxWidth,
+  maxHeight,
+  aspectRatio,
   style,
   children,
   ...rest
 }: BoxProps) {
+  const palette = useKitPalette();
+  const scheme = useKitScheme();
+
+  // Precedence: explicit `background` override > semantic `surface` variant.
+  // A semantic ColorToken background resolves scheme-aware here (the pure mapper
+  // has no scheme); kit `colors` keys + raw strings are resolved in the mapper.
+  const override =
+    background !== undefined && isColorToken(background)
+      ? resolveColorToken(background, scheme)
+      : background;
+  const bg = override !== undefined ? override : surfaceColor(surface, palette);
+
   const computed = boxStyleEntries({
     direction,
     gap,
     padding,
-    p,
-    px,
-    py,
-    pt,
-    pr,
-    pb,
-    pl,
     margin,
-    m,
-    mx,
-    my,
-    mt,
-    mr,
-    mb,
-    ml,
     align,
     justify,
     flex,
     wrap,
-    bg,
+    background: bg,
     radius,
+    width,
+    height,
+    size,
+    minWidth,
+    minHeight,
+    maxWidth,
+    maxHeight,
+    aspectRatio,
   }) as ViewStyle;
 
   return (

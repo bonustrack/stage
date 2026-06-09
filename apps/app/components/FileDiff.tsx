@@ -7,15 +7,15 @@
  *  be composed inside a Kit ListView in diff.tsx. */
 
 import { useState } from 'react';
+
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import { ListViewItem } from '@metro-labs/kit/list-view';
-import { Box } from './layout';
+import { Box, Row } from './layout';
 import type { Palette } from '../lib/theme';
 import type { DiffFile, DiffLine } from '../lib/diffParse';
 
-const FONT = 'Calibre-Medium';
 
 function lineBg(kind: DiffLine['kind'], dark: boolean): string {
   if (kind === 'add') return dark ? 'rgba(63,185,80,0.15)' : 'rgba(46,160,67,0.12)';
@@ -48,17 +48,17 @@ export function FileDiff({ file, p, dark }: {
   return (
     <Box>
       <ListViewItem dark={dark} gap={8} onPress={() => setOpen(o => !o)}>
-        <Icon name={open ? 'chevronDown' : 'chevronRight'} size={16} color={p.text} />
-        <Text numberOfLines={1} style={{ flex: 1, color: p.text, fontFamily: FONT, fontSize: 13 }}>
+        <Icon name={open ? 'chevronDown' : 'chevronRight'} size={16} color={p.text}/>
+        <Text size="xs" numberOfLines={1} color={p.text} style={{ flex: 1}}>
           {file.filename}
         </Text>
-        <Text style={{ color: p.success, fontFamily: FONT, fontSize: 13 }}>+{file.additions}</Text>
-        <Text style={{ color: p.danger, fontFamily: FONT, fontSize: 13 }}>-{file.deletions}</Text>
+        <Text size="xs" role="success">+{file.additions}</Text>
+        <Text size="xs" role="danger">-{file.deletions}</Text>
       </ListViewItem>
       {open ? (
         file.noPatch ? (
-          <Box style={{ paddingHorizontal: 16, paddingBottom: 10 }}>
-            <Text style={{ color: p.text, opacity: 0.6, fontSize: 13, fontFamily: FONT }}>
+          <Box padding={{ x: 16, bottom: 10 }}>
+            <Text size="xs" color={p.text} style={{ opacity: 0.6 }}>
               No textual diff (binary or too large to display).
             </Text>
           </Box>
@@ -66,24 +66,24 @@ export function FileDiff({ file, p, dark }: {
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <Box>
               {file.lines.map((ln, i) => (
-                <Box key={i} style={{ flexDirection: 'row', backgroundColor: lineBg(ln.kind, dark), minWidth: '100%' }}>
+                <Row background={lineBg(ln.kind, dark)} minWidth={'100%'} key={i}>
                   {ln.kind === 'hunk' ? null : (
-                    <Box style={{ flexDirection: 'row', borderRightWidth: 1, borderRightColor: p.border }}>
-                      <Text style={{ width: 36, textAlign: 'right', color: p.text, opacity: 0.4, fontFamily: FONT, fontSize: 11.5, lineHeight: 18, paddingRight: 4 }}>
+                    <Row style={{ borderRightWidth: 1, borderRightColor: p.border }}>
+                      <Text size="3xs" color={p.text} style={{ width: 36, textAlign: 'right', opacity: 0.4, lineHeight: 18, paddingRight: 4 }}>
                         {gutter(ln.oldLine)}
                       </Text>
-                      <Text style={{ width: 36, textAlign: 'right', color: p.text, opacity: 0.4, fontFamily: FONT, fontSize: 11.5, lineHeight: 18, paddingRight: 4 }}>
+                      <Text size="3xs" color={p.text} style={{ width: 36, textAlign: 'right', opacity: 0.4, lineHeight: 18, paddingRight: 4 }}>
                         {gutter(ln.newLine)}
                       </Text>
-                    </Box>
+                    </Row>
                   )}
-                  <Text style={{ width: 12, marginLeft: 6, color: lineColor(ln.kind, p), fontFamily: FONT, fontSize: 12.5, lineHeight: 18 }}>
+                  <Text size="xs" color={lineColor(ln.kind, p)} style={{ width: 12, marginLeft: 6, lineHeight: 18 }}>
                     {marker(ln.kind)}
                   </Text>
-                  <Text style={{ color: lineColor(ln.kind, p), fontFamily: FONT, fontSize: 12.5, lineHeight: 18, paddingRight: 12 }}>
+                  <Text size="xs" color={lineColor(ln.kind, p)} style={{ lineHeight: 18, paddingRight: 12 }}>
                     {ln.text || ' '}
                   </Text>
-                </Box>
+                </Row>
               ))}
             </Box>
           </ScrollView>

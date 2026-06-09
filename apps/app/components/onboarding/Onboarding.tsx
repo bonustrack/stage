@@ -16,6 +16,7 @@
  *  resets the flag so this shows again for testing. */
 
 import { useCallback, useRef, useState } from 'react';
+
 import {
   FlatList,
   Pressable,
@@ -27,7 +28,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';
-import { Box } from '../layout';
+import { Box, Row, Col } from '../layout';
 import { useEffectiveColorScheme, usePalette, withAlpha } from '../../lib/theme';
 
 interface Slide {
@@ -89,7 +90,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
   }, [index, isLast, onDone, width]);
 
   return (
-    <Box style={{ flex: 1, backgroundColor: bg }}>
+    <Col surface="surface" flex={1}>
       <FlatList
         ref={listRef}
         data={SLIDES}
@@ -100,78 +101,38 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
         onScroll={onScroll}
         scrollEventThrottle={16}
         renderItem={({ item }) => (
-          <Box
-            style={{
-              width,
-              flex: 1,
-              alignItems: 'center',
-              justifyContent: 'center',
-              paddingHorizontal: 36,
-            }}
-          >
-            <Box
-              style={{
-                width: 128,
-                height: 128,
-                borderRadius: 64,
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: withAlpha(accent, 0.12),
-                marginBottom: 40,
-              }}
-            >
-              <Icon name={item.icon} size={56} color={accent} />
+          <Col width={width} padding={{ x: 36 }} flex={1}
+            align="center" justify="center" 
+>
+            <Box width={128} height={128} radius="4xl" background={withAlpha(accent, 0.12)} margin={{ bottom: 40 }}
+              align="center" justify="center" 
+>
+              <Icon name={item.icon} size={56} color={accent}/>
             </Box>
-            <Text
-              style={{
-                color: fg,
-                fontSize: 28,
-                fontFamily: 'Calibre-Semibold',
-                textAlign: 'center',
-                marginBottom: 14,
-              }}
-            >
+            <Text weight="semibold" size="6xl" color={fg} style={{ textAlign: 'center', marginBottom: 14 }}>
               {item.title}
             </Text>
-            <Text
-              style={{
-                color: withAlpha(fg, 0.7),
-                fontSize: 17,
-                lineHeight: 24,
-                fontFamily: 'Calibre-Medium',
-                textAlign: 'center',
-              }}
-            >
+            <Text size="xl" color={withAlpha(fg, 0.7)} style={{ lineHeight: 24, textAlign: 'center' }}>
               {item.body}
             </Text>
-          </Box>
+          </Col>
         )}
-      />
+/>
 
       {/* Page dots */}
-      <Box
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'center',
-          gap: 8,
-          marginBottom: 24,
-        }}
-      >
+      <Row margin={{ bottom: 24 }}
+        justify="center" gap={8} 
+>
         {SLIDES.map((s, i) => (
-          <Box
+          <Box width={i === index ? 22 : 8} height={8} radius="xs" background={i === index ? accent : withAlpha(fg, 0.2)}
             key={s.title}
-            style={{
-              width: i === index ? 22 : 8,
-              height: 8,
-              borderRadius: 4,
-              backgroundColor: i === index ? accent : withAlpha(fg, 0.2),
-            }}
-          />
+            
+/>
         ))}
-      </Box>
+      </Row>
 
       {/* Footer: Get started (last) / Next, plus Skip until the last slide */}
-      <Box style={{ paddingHorizontal: 24, paddingBottom: 16 + insets.bottom, gap: 12 }}>
+      <Box padding={{ x: 24, bottom: 16 + insets.bottom }} gap={12}>
         <Button
           dark={dark}
           variant="primary"
@@ -181,18 +142,18 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
           tintFg={bg}
           label={isLast ? 'Get started' : 'Next'}
           onPress={goNext}
-        />
+/>
         <Pressable
           onPress={onDone}
           accessibilityRole="button"
           style={{ alignItems: 'center', paddingVertical: 8, opacity: isLast ? 0 : 1 }}
           disabled={isLast}
-        >
-          <Text style={{ color: withAlpha(fg, 0.6), fontSize: 16, fontFamily: 'Calibre-Medium' }}>
+>
+          <Text size="md" color={withAlpha(fg, 0.6)}>
             Skip
           </Text>
         </Pressable>
       </Box>
-    </Box>
+    </Col>
   );
 }

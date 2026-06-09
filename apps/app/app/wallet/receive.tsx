@@ -7,10 +7,11 @@
  *  needed) layered on react-native-svg which the app already depends on. */
 
 import { useEffect, useState } from 'react';
+
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { Text } from '@metro-labs/kit/text';
-import { Box } from '../../components/layout';
+import { Box, Row, Col } from '../../components/layout';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,7 +25,7 @@ import { ReceiveModeToggle, type ReceiveMode } from '../../components/wallet/Rec
 
 export default function WalletReceive(): React.ReactElement {
   const router = useRouter();
-  const { text: fg, link: head, bg, border, toolbarBg } = usePalette();
+  const { text: fg, link: head, border } = usePalette();
   const sub = fg;
   const card = border;
   const insets = useSafeAreaInsets();
@@ -33,7 +34,7 @@ export default function WalletReceive(): React.ReactElement {
   const [publicAddress, setPublicAddress] = useState('');
   const { snapshot } = usePrivateWallet();
   const privateAddress = snapshot?.zkAddress ?? '';
-  const privateReady = privateAddress.length > 0;
+  const privateReady = privateAddress.length> 0;
 
   useEffect(() => {
     let cancelled = false;
@@ -61,45 +62,36 @@ export default function WalletReceive(): React.ReactElement {
     : 'Scan or share this address to receive ETH or tokens on Ethereum mainnet.';
 
   return (
-    <Box style={{ flex: 1, backgroundColor: bg }}>
-      <Box style={{
-        flexDirection: 'row', alignItems: 'center', gap: 8,
-        paddingHorizontal: 12, paddingTop: 8 + insets.top, paddingBottom: 10,
-        borderBottomWidth: 1, borderBottomColor: border,
-        backgroundColor: toolbarBg,
-      }}>
+    <Col surface="surface" flex={1}>
+      <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
-          <Icon name="arrowLeft" size={22} color={fg} />
+          <Icon name="arrowLeft" size={22} color={fg}/>
         </Pressable>
-        <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', flex: 1 }}>Receive</Text>
-      </Box>
+        <Text weight="semibold" size="xl" color={head} style={{ flex: 1 }}>Receive</Text>
+      </Row>
 
       <ScrollView contentContainerStyle={{ padding: 16, alignItems: 'center', gap: 16 }}>
         <ReceiveModeToggle
           mode={activeMode}
           onChange={setMode}
           privateReady={privateReady}
-        />
+/>
 
         {/* QR card — always white background so contrast is correct in dark mode too. */}
-        <Box style={{
-          backgroundColor: '#ffffff', padding: 16, borderRadius: 16,
-          borderWidth: 1, borderColor: border,
-          alignItems: 'center', justifyContent: 'center',
-        }}>
+        <Box background={'#ffffff'} radius="xl" padding={16} align="center" justify="center" style={{ borderWidth: 1, borderColor: border }}>
           {address ? (
             <QRCode
               value={address}
               size={240}
               color="#000000"
               backgroundColor="#ffffff"
-            />
+/>
           ) : (
-            <Box style={{ width: 240, height: 240, backgroundColor: '#f4f4f5' }} />
+            <Box width={240} height={240} background={'#f4f4f5'}/>
           )}
         </Box>
 
-        <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', marginTop: 4 }}>
+        <Text size="xs" color={sub} style={{ marginTop: 4 }}>
           {activeMode === 'private' ? 'SHIELDED 0ZK ADDRESS (tap to copy)' : 'WALLET ADDRESS (tap to copy)'}
         </Text>
         <Pressable
@@ -109,16 +101,16 @@ export default function WalletReceive(): React.ReactElement {
             backgroundColor: pressed ? border : card,
             borderWidth: 1, borderColor: border,
           })}
-        >
-          <Text style={{ color: head, fontSize: 14, fontFamily: 'Calibre-Medium', textAlign: 'center' }} selectable>
+>
+          <Text size="md" color={head} style={{ textAlign: 'center' }} selectable>
             {address || '—'}
           </Text>
         </Pressable>
 
-        <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', textAlign: 'center', paddingHorizontal: 16, marginTop: 8 }}>
+        <Text size="xs" color={sub} style={{ textAlign: 'center', paddingHorizontal: 16, marginTop: 8 }}>
           {hint}
         </Text>
       </ScrollView>
-    </Box>
+    </Col>
   );
 }

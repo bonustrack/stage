@@ -1,12 +1,15 @@
-/** Channels search bar (rendered directly under the home topnav) + the pure
- *  client-side row filter it drives. Matches a channel by title, last-message
- *  preview, or DM peer address. Empty query returns the list unchanged. */
+/** Channels search: the pure client-side row filter + the expanding search
+ *  field that overlays the home topnav. A search icon in the topnav opens a
+ *  full-width input (with a leading back chevron); closing it clears the query
+ *  and collapses back to the normal topnav. */
 
 import { forwardRef } from 'react';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Icon } from '@metro-labs/kit/icon';
 import { Input } from '@metro-labs/kit/input';
-import { Box, Row } from '../layout';
+import { Row } from '../layout';
+import { useBlockRadius } from '../../lib/theme';
 import type { Row as RowT } from './HomeScreen.helpers';
 
 /** Filter the already-sorted (and archive/label-filtered) rows by a free-text
@@ -23,43 +26,45 @@ export function filterRowsByQuery(rows: RowT[], query: string): RowT[] {
   });
 }
 
-/** The search section: a toolbarBg band (continuous with the topnav) holding an
- *  inset inputBg field with a leading search glyph and a trailing clear button
- *  when non-empty. Styled with app tokens + Calibre. */
+/** The expanded search bar: occupies the entire topnav width. A back chevron on
+ *  the left collapses search (clearing the query); an inset inputBg field holds
+ *  the query with a leading search glyph + trailing clear button. Autofocuses
+ *  on mount (the parent only renders it while search is open). */
 export const ChannelsSearchBar = forwardRef<React.ComponentRef<typeof Input>, {
   query: string;
   setQuery: (v: string) => void;
+  onClose: () => void;
   head: string;
   sub: string;
-  border: string;
-  rowBg: string;
+  inputBg: string;
   toolbarBg: string;
 }>(function ChannelsSearchBar(props, ref): React.ReactElement {
-  const { head, sub, rowBg, toolbarBg } = props;
+  const { head, sub } = props;
+  const blockRadius = useBlockRadius();
   return (
-    <Row align="center" px={0} pt={0} pb={0} bg={toolbarBg}>
-      <Box style={{
-        flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8,
-        backgroundColor: rowBg, borderRadius: 0,
-        paddingHorizontal: 14, paddingVertical: 10,
-      }}>
-        <Icon name="search" size={22} color={sub} />
+    <Row padding={{ x: 12, top: 12, bottom: 10 }} align="center" gap={8} surface="toolbar">
+      <Pressable onPress={props.onClose} hitSlop={8}>
+        <Icon name="arrowLeft" size={22} color={head}/>
+      </Pressable>
+      <Row surface="raised" radius={blockRadius} padding={{ x: 14, y: 8 }} flex={1} align="center" gap={8}>
+        <Icon name="search" size={22} color={sub}/>
         <Input
           ref={ref}
+          autoFocus
           value={props.query}
           onChangeText={props.setQuery}
           placeholder="Search"
           placeholderTextColor={sub}
           inputProps={{ autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'search' }}
-          style={{ flex: 1, color: head, fontSize: 19, lineHeight: 23, fontFamily: 'Calibre-Medium', padding: 0,
+          style={{ flex: 1, color: head, fontSize: fontSize('4xl'), lineHeight: 23, fontFamily: 'Calibre-Medium', padding: 0,
             backgroundColor: 'transparent', minHeight: 0, borderWidth: 0 }}
-        />
-        {props.query.length > 0 ? (
+/>
+        {props.query.length> 0 ? (
           <Pressable onPress={() => props.setQuery('')} hitSlop={8}>
-            <Icon name="x" size={16} color={sub} />
+            <Icon name="x" size={16} color={sub}/>
           </Pressable>
         ) : null}
-      </Box>
+      </Row>
     </Row>
   );
 });

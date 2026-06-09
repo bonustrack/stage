@@ -55,7 +55,7 @@ export interface RequestActionBarProps {
 export function RequestActionBar(props: RequestActionBarProps): React.ReactElement | null {
   const { convId, dark, onPending } = props;
   const router = useRouter();
-  const { bg, border, text: fg, link, danger, toolbarBg } = usePalette();
+  const { bg, border, text: fg, link, danger } = usePalette();
   const [pending, setPending] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -107,14 +107,9 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
   if (pending !== true) return null;
 
   return (
-    <Box style={{
-      backgroundColor: toolbarBg, borderTopWidth: 1, borderTopColor: border,
-    }}>
-      <Col style={{
-        width: '100%', alignSelf: 'stretch', alignItems: 'stretch',
-        paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12, gap: 10,
-      }}>
-        <Text style={{ color: fg, textAlign: 'center', opacity: 0.8 }}>
+    <Box surface="toolbar" style={{ borderTopWidth: 1, borderTopColor: border }}>
+      <Col width={'100%'} padding={{ x: 16, top: 12, bottom: 12 }} align="stretch" gap={10} style={{ alignSelf: 'stretch' }}>
+        <Text color={fg} style={{ textAlign: 'center', opacity: 0.8 }}>
           This is a message request. Approve to reply, or reject to decline.
         </Text>
         {/* Full-bleed row: each half flexes to fill the width. NOTE: do NOT use
@@ -122,8 +117,8 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
          *  height) circular icon button, which collapses these to tiny circles
          *  regardless of `fullWidth`. We want full-width rounded buttons, so we
          *  rely on `fullWidth` (alignSelf:'stretch' + width:'100%') instead. */}
-        <Row gap={10} style={{ width: '100%', alignSelf: 'stretch' }}>
-          <Box style={{ flex: 1, alignSelf: 'stretch' }}>
+        <Row width={'100%'} gap={10} style={{ alignSelf: 'stretch' }}>
+          <Col flex={1} style={{ alignSelf: 'stretch' }}>
             <Button
               variant="danger"
               size="lg"
@@ -135,9 +130,9 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
               tintBg={danger}
               tintFg={bg}
               onPress={onReject}
-            />
-          </Box>
-          <Box style={{ flex: 1, alignSelf: 'stretch' }}>
+/>
+          </Col>
+          <Col flex={1} style={{ alignSelf: 'stretch' }}>
             <Button
               variant="primary"
               size="lg"
@@ -149,8 +144,8 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
               tintBg={link}
               tintFg={bg}
               onPress={onApprove}
-            />
-          </Box>
+/>
+          </Col>
         </Row>
       </Col>
     </Box>

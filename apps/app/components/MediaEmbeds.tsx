@@ -7,6 +7,7 @@
  *  and lets the detection logic stay unit-testable. */
 
 import { Linking } from 'react-native';
+
 import { Image } from '@metro-labs/kit/image';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from './layout';
@@ -25,29 +26,22 @@ export function YouTubeEmbed({ videoId, dark }: {
   const thumbUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
   return (
     <MediaCard dark={dark} onPress={() => void Linking.openURL(watchUrl)}>
-      <Box style={{ aspectRatio: 16 / 9, position: 'relative' }}>
+      <Box aspectRatio={16 / 9} style={{ position: 'relative' }}>
         <Image
           src={thumbUrl}
           fit="cover"
           style={{ width: '100%', height: '100%', backgroundColor: '#000000' }}
-        />
+/>
         {/** Play-button overlay — semi-opaque dark scrim + a centered "▶" so
          *   the thumbnail reads as "tap to watch" at a glance. */}
-        <Box style={{
-          position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center',
-          backgroundColor: 'rgba(0,0,0,0.25)',
-        }}>
-          <Box style={{
-            width: 48, height: 48, borderRadius: 999,
-            backgroundColor: 'rgba(0,0,0,0.7)',
-            alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Text style={{ color: '#ffffff', fontSize: 22, marginLeft: 3 }}>▶</Text>
+        <Box background={'rgba(0,0,0,0.25)'} align="center" justify="center" style={{ position: 'absolute', inset: 0 }}>
+          <Box width={48} height={48} radius="full" background={'rgba(0,0,0,0.7)'} align="center" justify="center">
+            <Text size="5xl" color={'#ffffff'} style={{ marginLeft: 3 }}>▶</Text>
           </Box>
         </Box>
       </Box>
-      <Box style={{ paddingHorizontal: 10, paddingVertical: 6 }}>
-        <Text style={{ color: dark ? '#7a7a7e' : '#8a929d', fontSize: 11, fontFamily: 'Calibre-Medium' }}>
+      <Box padding={{ x: 10, y: 6 }}>
+        <Text size="3xs" role="secondary">
           YouTube
         </Text>
       </Box>
@@ -67,23 +61,21 @@ export function LocationEmbed({ lat, lng, sourceUrl, dark }: {
   const tileBg = usePalette().border; // #282a2d / #e4e4e5 (loading placeholder tint)
   return (
     <MediaCard dark={dark} onPress={() => void Linking.openURL(sourceUrl)}>
-      <Box style={{ aspectRatio: 1, position: 'relative' }}>
+      <Box aspectRatio={1} style={{ position: 'relative' }}>
         <Image
           src={tileUrl}
           fit="cover"
           style={{ width: '100%', height: '100%', backgroundColor: tileBg }}
-        />
-        <Box style={{
-          position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center',
-        }}>
-          <Text style={{ fontSize: 28 }}>📍</Text>
+/>
+        <Box align="center" justify="center" style={{ position: 'absolute', inset: 0 }}>
+          <Text size="6xl">📍</Text>
         </Box>
       </Box>
-      <Box style={{ paddingHorizontal: 10, paddingVertical: 6 }}>
-        <Text style={{ color: dark ? '#ffffff' : '#000000', fontSize: 12, fontFamily: 'Calibre-Semibold' }}>
+      <Box padding={{ x: 10, y: 6 }}>
+        <Text weight="semibold" size="xs" color={dark ? '#ffffff' : '#000000'}>
           Location
         </Text>
-        <Text style={{ color: dark ? '#7a7a7e' : '#8a929d', fontSize: 11, fontFamily: 'Calibre-Medium' }}>
+        <Text size="3xs" role="secondary">
           {label} · tap to open
         </Text>
       </Box>

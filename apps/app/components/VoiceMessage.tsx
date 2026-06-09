@@ -5,11 +5,12 @@
  *  recorder uses). Any audio attachment renders through this. */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import { Audio, AVPlaybackStatus } from 'expo-av';
-import { Box } from './layout';
+import { Row, Col } from './layout';
 import { waveformBars } from './VoiceMessage.bars';
 import { useDecodedBars } from './VoiceMessage.barsCache';
 
@@ -79,52 +80,36 @@ export function VoiceMessage({ uri }: Props): React.ReactElement {
   };
 
   /** 0..1 playback progress; controls how many bars are "filled". */
-  const progress = duration > 0 ? Math.min(position / duration, 1) : 0;
+  const progress = duration> 0 ? Math.min(position / duration, 1) : 0;
   /** Show elapsed while playing, otherwise total (mirrors Messenger). */
-  const label = playing || position > 0 ? fmt(position) : fmt(duration);
+  const label = playing || position> 0 ? fmt(position) : fmt(duration);
 
   return (
-    <Box style={{
-      flexDirection: 'row', alignItems: 'center', gap: 10,
-      paddingVertical: 7, paddingHorizontal: 9, borderRadius: 22,
-      backgroundColor: ACCENT, marginBottom: 6, alignSelf: 'flex-start',
-      maxWidth: 280, minWidth: 200,
-    }}>
+    <Row radius="2xl" background={ACCENT} maxWidth={280} minWidth={200} padding={{ x: 9, y: 7 }} margin={{ bottom: 6 }} align="center" gap={10} style={{ alignSelf: 'flex-start' }}>
       <Pressable onPress={() => void toggle()} hitSlop={8} style={{
         width: 34, height: 34, borderRadius: 17, backgroundColor: ON_ACCENT,
         alignItems: 'center', justifyContent: 'center',
       }}>
-        <Icon name={playing ? 'pause' : 'play'} size={18} color={ACCENT} />
+        <Icon name={playing ? 'pause' : 'play'} size={18} color={ACCENT}/>
       </Pressable>
       <Pressable
         style={{ flex: 1, height: TRACK_H, justifyContent: 'center' }}
         onLayout={(ev) => setBarWidth(ev.nativeEvent.layout.width)}
         onPress={(ev) => seekTo(ev.nativeEvent.locationX)}
-      >
-        <Box style={{
-          flexDirection: 'row', alignItems: 'center', height: TRACK_H, gap: 2,
-        }}>
+>
+        <Row height={TRACK_H} align="center" gap={2}>
           {bars.map((h, i) => {
             const filled = i / bars.length <= progress;
             return (
-              <Box
+              <Col height={Math.max(3, h * TRACK_H)} radius="2xs" background={ON_ACCENT} flex={1}
                 key={i}
-                style={{
-                  flex: 1,
-                  height: Math.max(3, h * TRACK_H),
-                  borderRadius: 2,
-                  backgroundColor: ON_ACCENT,
-                  opacity: filled ? 1 : 0.45,
-                }}
-              />
+                style={{ opacity: filled ? 1 : 0.45 }}
+/>
             );
           })}
-        </Box>
+        </Row>
       </Pressable>
-      <Text style={{
-        color: ON_ACCENT, fontSize: 12, minWidth: 34, textAlign: 'right',
-        fontFamily: 'Calibre-Medium',
-      }}>{label}</Text>
-    </Box>
+      <Text size="xs" color={ON_ACCENT} style={{ minWidth: 34, textAlign: 'right' }}>{label}</Text>
+    </Row>
   );
 }

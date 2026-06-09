@@ -5,6 +5,7 @@
  *  back to an empty state when there's nothing to show. */
 
 import { useCallback } from 'react';
+
 import { ScrollView } from 'react-native-gesture-handler';
 import { useFocusEffect, useRouter } from 'expo-router';
 import type { SimultaneousRefs } from '../SwipeTabs.types';
@@ -12,15 +13,14 @@ import { Text } from '@metro-labs/kit/text';
 import { Title } from '@metro-labs/kit/title';
 import { Box, Col, Row } from '../layout';
 import { TopnavIdentity } from '../TopnavIdentity';
-import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
+import { usePalette } from '../../lib/theme';
 import { NotificationsList } from './NotificationsList';
 import { useRequestPreviews } from './useRequestPreviews';
 import { useNotifUnread } from './useNotifUnread';
 import { markNotifsRead } from '../../lib/notifReadState';
 
 export function NotificationsScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
-  const dark = useEffectiveColorScheme() === 'dark';
-  const { link: head, text: sub, bg, toolbarBg } = usePalette();
+  const { link: head, text: sub, bg } = usePalette();
   const router = useRouter();
   const { previews } = useRequestPreviews();
   const unread = useNotifUnread();
@@ -28,32 +28,32 @@ export function NotificationsScreen({ panRef }: { panRef?: SimultaneousRefs } = 
   // Mark everything currently visible as read whenever the tab gains focus.
   useFocusEffect(
     useCallback(() => {
-      if (previews.length > 0) void markNotifsRead(previews.map(p => p.convId));
+      if (previews.length> 0) void markNotifsRead(previews.map(p => p.convId));
     }, [previews]),
   );
 
   return (
     <ScrollView simultaneousHandlers={panRef} style={{ flex: 1, backgroundColor: bg }} contentContainerStyle={{ flexGrow: 1 }}>
       {/* Topnav identity (avatar + name → Menu), left-aligned to match Home. */}
-      <Row align="center" px={16} pt={12} pb={4} bg={toolbarBg}>
-        <TopnavIdentity />
+      <Row padding={{ x: 16, top: 12, bottom: 4 }} align="center" surface="toolbar">
+        <TopnavIdentity/>
       </Row>
-      <Col px={16} pt={4} pb={8}>
+      <Col padding={{ x: 16, top: 4, bottom: 8 }}>
         <Row align="center" gap={10}>
-          <Title dark={dark} style={{ color: head, fontSize: 22 }}>Notifications</Title>
-          {unread > 0 ? (
-            <Box style={{ minWidth: 22, height: 22, paddingHorizontal: 7, borderRadius: 999, backgroundColor: head, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: bg, fontSize: 12, fontFamily: 'Calibre-Semibold' }}>{unread}</Text>
+          <Title size="md" color={head}>Notifications</Title>
+          {unread> 0 ? (
+            <Box minWidth={22} height={22} radius="full" background={head} padding={{ x: 7 }} align="center" justify="center">
+              <Text weight="semibold" size="xs" color={bg}>{unread}</Text>
             </Box>
           ) : null}
         </Row>
       </Col>
-      <Col px={16} pt={8} gap={12}>
-        <NotificationsList previews={previews} onPress={() => router.push('/xmtp/requests')} />
+      <Col padding={{ x: 16, top: 8 }} gap={12}>
+        <NotificationsList previews={previews} onPress={() => router.push('/xmtp/requests')}/>
       </Col>
       {previews.length === 0 ? (
-        <Col flex={1} px={16} style={{ alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>Nothing yet</Text>
+        <Col padding={{ x: 16 }} flex={1} align="center" justify="center">
+          <Text size="md" color={sub}>Nothing yet</Text>
         </Col>
       ) : null}
     </ScrollView>

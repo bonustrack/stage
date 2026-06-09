@@ -3,6 +3,7 @@
  *  line-budget. Rendering identical. */
 
 import { Pressable } from '@metro-labs/kit/pressable';
+
 import { Text } from '@metro-labs/kit/text';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';
@@ -40,8 +41,8 @@ export function Btn({ icon, label, onPress, head, border, dark }: {
         // token so the circle reacts to theme/colour overrides like the rest of
         // the design system (ChannelRow rowBg = border).
         style={{ backgroundColor: border, borderColor: border }}
-      />
-      <Text style={{ color: head, fontSize: 14, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{label}</Text>
+/>
+      <Text weight="semibold" size="md" color={head} numberOfLines={1}>{label}</Text>
     </Col>
   );
 }
@@ -54,7 +55,7 @@ export function WalletTabs({ tab, setTab, head, sub, border }: {
   tab: WalletTab; setTab: (t: WalletTab) => void; head: string; sub: string; border: string;
 }): React.ReactElement {
   return (
-    <Row justify="start" gap={24} mx={16} mt={22} mb={6}
+    <Row margin={{ x: 16, top: 22, bottom: 6 }} justify="start" gap={24} 
       style={{ borderBottomWidth: 1, borderBottomColor: border }}>
       {(['tokens', 'nfts', 'activity', 'private'] as const).map(t => {
         const active = tab === t;
@@ -68,8 +69,8 @@ export function WalletTabs({ tab, setTab, head, sub, border }: {
               borderBottomWidth: 2,
               borderBottomColor: active ? head : 'transparent',
             }}
-          >
-            <Text style={{ color: active ? head : sub, fontSize: 18, fontFamily: 'Calibre-Semibold' }}>
+>
+            <Text weight="semibold" size="xl" color={active ? head : sub}>
               {TAB_LABEL[t]}
             </Text>
           </Pressable>
@@ -99,25 +100,25 @@ export function TokenRow({ r, head, sub, border, bg, onPress }: { r: AssetRow; o
     `${r.change24h >= 0 ? '+' : ''}${r.change24h.toFixed(2)}%`;
   return (
     <Pressable onPress={onPress} disabled={!onPress} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
-    <Row
-      align="center" gap={12} py={14}
-    >
+    <Row padding={{ y: 14 }}
+      align="center" gap={12} 
+>
       {/* Token avatar + network badge - shared TokenAvatar (Snapshot-treasury
           style), reused by the private Activity rows so both read identically. */}
-      <TokenAvatar logoUrl={r.logoUrl} chainId={r.chainId} bg={bg} border={border} />
+      <TokenAvatar logoUrl={r.logoUrl} chainId={r.chainId} bg={bg} border={border}/>
       {/* Left column — token NAME (top) over price + 24h change (bottom).
           Shielded rows carry a small "Private" pill next to the name. */}
-      <Col flex={1} style={{ minWidth: 0 }}>
-        <Row align="center" gap={6} style={{ minWidth: 0 }}>
+      <Col minWidth={0} flex={1}>
+        <Row minWidth={0} align="center" gap={6}>
           {r.isPrivate ? <PrivateBadge sub={sub} /> : null}
-          <Text style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{r.name}</Text>
+          <Text weight="semibold" size="4xl" color={head} numberOfLines={1}>{r.name}</Text>
         </Row>
-        <Row align="center" gap={6} mt={2}>
-          <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
+        <Row margin={{ top: 2 }} align="center" gap={6}>
+          <Text size="md" color={sub}>
             {r.priceUsd === null ? r.symbol : fmtUsd(r.priceUsd, r.priceUsd < 1 ? 4 : 2)}
           </Text>
           {changeText ? (
-            <Text style={{ color: changeColor, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
+            <Text size="md" color={changeColor}>
               {changeText}
             </Text>
           ) : null}
@@ -125,10 +126,10 @@ export function TokenRow({ r, head, sub, border, bg, onPress }: { r: AssetRow; o
       </Col>
       {/* Right column — USD VALUE (top, big/white) over amount + symbol (bottom). */}
       <Col align="end">
-        <Text style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold' }}>
+        <Text weight="semibold" size="4xl" color={head}>
           {valueUsd === null ? '—' : fmtUsd(valueUsd)}
         </Text>
-        <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
+        <Text size="md" color={sub} style={{ marginTop: 2 }}>
           {`${fmtBalance(r.balance)} ${r.symbol}`}
         </Text>
       </Col>
@@ -136,7 +137,6 @@ export function TokenRow({ r, head, sub, border, bg, onPress }: { r: AssetRow; o
     </Pressable>
   );
 }
-
 
 // NftsView lives in its own module; re-export so import paths are unchanged.
 export { NftsView } from './WalletScreen.nfts';

@@ -2,7 +2,8 @@
  *  and export-reveal. Extracted for lint line-budget. Rendering identical. */
 
 import { Input } from '@metro-labs/kit/input';
-import { Box } from './layout';
+import { fontSize } from '@metro-labs/kit/tokens';
+import { Row } from './layout';
 import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';
 import { ListView } from '@metro-labs/kit/list-view';
@@ -49,13 +50,13 @@ export function ImportSheet({ visible, onClose, importText, setImportText, setIm
         dark={dark}
         inputProps={{ autoCapitalize: 'none', autoCorrect: false }}
         style={{
-          color: p.head, fontFamily: 'Menlo', fontSize: 13,
+          color: p.head, fontFamily: 'Menlo', fontSize: fontSize('xs'),
           borderWidth: 1, borderColor: p.border, borderRadius: 10,
           paddingHorizontal: 12, paddingVertical: 10, marginBottom: 8, minHeight: 0,
         }}
       />
-      {importErr ? <Text style={{ color: DANGER, fontSize: 12, marginBottom: 8, fontFamily: 'Calibre-Medium' }}>{importErr}</Text> : null}
-      <Box style={{ flexDirection: 'row', gap: 8 }}>
+      {importErr ? <Text size="xs" color={DANGER} style={{ marginBottom: 8 }}>{importErr}</Text> : null}
+      <Row gap={8}>
         <Button
           variant="secondary"
           size="md"
@@ -77,7 +78,7 @@ export function ImportSheet({ visible, onClose, importText, setImportText, setIm
           tintFg={bg}
           style={{ flex: 1 }}
         />
-      </Box>
+      </Row>
     </SheetModal>
   );
 }
@@ -117,14 +118,10 @@ export function ExportSheet({ revealPk, onClose, dark, p }: {
   const { primary, bg } = usePalette();
   return (
     <SheetModal visible={revealPk !== null} onClose={onClose} bg={p.sheetBg} border={p.border}>
-      <Text style={{ color: DANGER, fontSize: 12, fontFamily: 'Calibre-Medium', marginBottom: 8 }}>
+      <Text size="xs" color={DANGER} style={{ marginBottom: 8 }}>
         Anyone with this key controls the account. Never share it.
       </Text>
-      <Text selectable style={{
-        color: p.head, fontFamily: 'Menlo', fontSize: 13, lineHeight: 18,
-        borderWidth: 1, borderColor: p.border, borderRadius: 10,
-        padding: 12, marginBottom: 8,
-      }}>
+      <Text variant="mono" size="xs" selectable color={p.head} style={{ lineHeight: 18, borderWidth: 1, borderColor: p.border, borderRadius: 10, padding: 12, marginBottom: 8 }}>
         {revealPk}
       </Text>
       <Button

@@ -9,7 +9,7 @@ import Constants from 'expo-constants';
 import * as Application from 'expo-application';
 import { Linking } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
-import { Box } from '../layout';
+import { Box, Row } from '../layout';
 import { Title } from '@metro-labs/kit/title';
 import { Text } from '@metro-labs/kit/text';
 import { GitHubLinkRow } from './GitHubLinkRow';
@@ -21,16 +21,13 @@ interface AboutRowProps {
   href?: string; head?: string;
 }
 
-function AboutRow({ label, value, mono, dark, border, href, head }: AboutRowProps): React.ReactElement {
+function AboutRow({ label, value, mono, border, href, head }: AboutRowProps): React.ReactElement {
   const valueColor = href ? head : undefined;
   const row = (
-    <Box style={{
-      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-      paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: border, gap: 16,
-    }}>
-      <Text dark={dark} variant="secondary" weight="medium" size="md">{label}</Text>
+    <Row padding={{ y: 14 }} align="center" justify="between" gap={16} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
+      <Text variant="secondary" weight="medium" size="md">{label}</Text>
       <Text
-        dark={dark}
+       
         variant={mono ? 'mono' : 'body'}
         weight="semibold"
         size="md"
@@ -39,7 +36,7 @@ function AboutRow({ label, value, mono, dark, border, href, head }: AboutRowProp
       >
         {value}
       </Text>
-    </Box>
+    </Row>
   );
   if (!href) return row;
   return (
@@ -58,9 +55,9 @@ export function AboutPanel({ dark, head, sub, border, rowBg }: {
   const cfg = Constants.expoConfig;
   const version = cfg?.version ?? 'unknown';
   const extra = (cfg?.extra ?? {}) as { gitHash?: unknown; buildProfile?: unknown };
-  const gitHash = typeof extra.gitHash === 'string' && extra.gitHash.length > 0 ? extra.gitHash : 'dev';
+  const gitHash = typeof extra.gitHash === 'string' && extra.gitHash.length> 0 ? extra.gitHash : 'dev';
   const shortHash = gitHash === 'dev' ? 'dev' : gitHash.slice(0, 12);
-  const buildProfile = typeof extra.buildProfile === 'string' && extra.buildProfile.length > 0
+  const buildProfile = typeof extra.buildProfile === 'string' && extra.buildProfile.length> 0
     ? extra.buildProfile : 'dev';
   const pkgName = cfg?.name ?? 'Metro';
   const nativeBuild = Application.nativeBuildVersion
@@ -69,10 +66,10 @@ export function AboutPanel({ dark, head, sub, border, rowBg }: {
   const versionLabel = nativeBuild ? `${version} (build ${nativeBuild})` : version;
 
   return (
-    <Box style={{ paddingTop: 18 }}>
-      <Box style={{ paddingHorizontal: 16 }}>
-      <Title dark={dark} level={2} color={head}>About</Title>
-      <Text dark={dark} variant="secondary" weight="medium" size="sm" style={{ marginTop: 4, marginBottom: 8 }}>
+    <Box padding={{ top: 18 }}>
+      <Box padding={{ x: 16 }}>
+      <Title level={2} color={head}>About</Title>
+      <Text variant="secondary" weight="medium" size="xs" style={{ marginTop: 4, marginBottom: 8 }}>
         Build + runtime metadata for this install.
       </Text>
       <AboutRow label="App" value={pkgName} dark={dark} border={border} />
@@ -83,7 +80,7 @@ export function AboutPanel({ dark, head, sub, border, rowBg }: {
         head={head}
       />
       <AboutRow label="Build profile" value={buildProfile} dark={dark} border={border} />
-      <Text dark={dark} color={sub} variant="caption" weight="medium" style={{ marginTop: 14 }}>
+      <Text color={sub} variant="caption" weight="medium" style={{ marginTop: 14 }}>
         Commit shows "dev" only when the build could not resolve a git SHA. Tap it to open the commit on GitHub.
       </Text>
       </Box>

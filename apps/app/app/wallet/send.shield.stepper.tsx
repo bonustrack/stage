@@ -8,6 +8,7 @@
  *  terminal success. A failure paints the active stage red. Purely
  *  presentational: the caller maps its phase to a `ShieldStage`. */
 import { Text } from '@metro-labs/kit/text';
+
 import { Col, Row, Box } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
 import { DANGER } from '../../lib/theme';
@@ -41,16 +42,16 @@ function Step({ label, state, hint, pal }: {
   return (
     <Col gap={2}>
       <Row align="center" gap={10}>
-        <Box style={{ width: 18, height: 18, alignItems: 'center', justifyContent: 'center' }}>
-          {state === 'active' ? <Spinner size={14} color={pal.link} />
-            : state === 'done' ? <Text style={{ color: pal.link, fontSize: 15, fontFamily: 'Calibre-Semibold' }}>✓</Text>
-            : state === 'error' ? <Text style={{ color: ERR, fontSize: 15, fontFamily: 'Calibre-Semibold' }}>✕</Text>
-            : <Box style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: pal.sub, opacity: 0.5 }} />}
+        <Box width={18} height={18} align="center" justify="center">
+          {state === 'active' ? <Spinner size={14} color={pal.link}/>
+            : state === 'done' ? <Text weight="semibold" size="md">✓</Text>
+            : state === 'error' ? <Text weight="semibold" size="md" color={ERR}>✕</Text>
+            : <Box width={8} height={8} radius="xs" background={pal.sub} style={{ opacity: 0.5 }} />}
         </Box>
-        <Text style={{ color, fontSize: 14, fontFamily: 'Calibre-Semibold' }}>{label}</Text>
+        <Text weight="semibold" size="md" color={color}>{label}</Text>
       </Row>
       {hint ? (
-        <Text style={{ color: pal.sub, fontSize: 12, fontFamily: 'Calibre-Medium', paddingLeft: 28 }}>{hint}</Text>
+        <Text size="xs" color={pal.sub} style={{ paddingLeft: 28 }}>{hint}</Text>
       ) : null}
     </Col>
   );
@@ -64,7 +65,7 @@ export function ShieldStepper({ stage, pal, errorAt = 0 }: {
   if (stage === 'idle') return null;
   const cur = stageIndex(stage);
   return (
-    <Col gap={12} style={{ paddingHorizontal: 4, paddingTop: 4 }}>
+    <Col padding={{ x: 4, top: 4 }} gap={12}>
       {STEPS.map(([id, label]) => {
         const idx = ORDER.indexOf(id);
         let state: 'done' | 'active' | 'pending' | 'error';

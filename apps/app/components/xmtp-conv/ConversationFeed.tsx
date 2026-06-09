@@ -86,7 +86,7 @@ export function ConversationFeed({
        *  within ~12px of bottom, show it on scroll-up. 16ms throttle = ~1/frame. */
       onScroll={(ev) => {
         const y = ev.nativeEvent.contentOffset.y;
-        const next = y > 12;
+        const next = y> 12;
         setShowJump(prev => (prev === next ? prev : next));
         /** Authoritative at-bottom flag for the unmount flush (beats the debounce race). */
         isAtBottomRef.current = y <= AT_BOTTOM_THRESHOLD_PX;
@@ -98,7 +98,7 @@ export function ConversationFeed({
       scrollEventThrottle={16}
       /** Initial-mount (epoch 0) scroll restore — see planFeedRestore. Restores a
        *  concrete saved offset, or pins to bottom (newest) across a short settle
-       *  window for the at-bottom sentinel. Remounts (epoch > 0) skip → land bottom. */
+       *  window for the at-bottom sentinel. Remounts (epoch> 0) skip → land bottom. */
       onContentSizeChange={(_w, h) => {
         if (didRestoreScroll.current || listEpoch !== 0) return;
         const plan = planFeedRestore({
@@ -127,10 +127,10 @@ export function ConversationFeed({
        *  blank before its first message; otherwise a brief settling state. */
       ListEmptyComponent={
         status !== 'open'
-          ? <Box style={{ padding: 32, alignItems: 'center' }}><Spinner size={28} color={head} /></Box>
+          ? <Box padding={32} align="center"><Spinner size={28} color={head} /></Box>
           : hasMore === false
             ? intro
-            : <Box style={{ padding: 32, alignItems: 'center' }}><Spinner size={28} color={head} /></Box>
+            : <Box padding={32} align="center"><Spinner size={28} color={head} /></Box>
       }
       /** Inverted list → `ListFooterComponent` renders at the visual TOP (oldest
        *  end). Holds two things, top-to-bottom: a small "loading older" spinner
@@ -140,7 +140,7 @@ export function ConversationFeed({
       ListFooterComponent={
         <>
           {loadingOlder ? (
-            <Box style={{ paddingVertical: 16, alignItems: 'center' }}>
+            <Box padding={{ y: 16 }} align="center">
               <Spinner size={20} color={sub} />
             </Box>
           ) : null}

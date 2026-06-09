@@ -24,6 +24,7 @@ import {
   type SetStateAction,
 } from 'react';
 import { FlatList } from '@metro-labs/kit/flat-list';
+
 import { Pressable } from '@metro-labs/kit/pressable';
 import * as Clipboard from 'expo-clipboard';
 import { Text } from '@metro-labs/kit/text';
@@ -70,8 +71,8 @@ function PingLog({ lines, sub, head, border }: {
 }): React.ReactElement | null {
   if (lines.length === 0) return null;
   return (
-    <Col gap={2} mt={4}>
-      <Row mt={2} mb={2} style={{ justifyContent: 'flex-end' }}>
+    <Col margin={{ top: 4 }} gap={2}>
+      <Row margin={{ top: 2, bottom: 2 }} justify="end">
         <Pressable
           onPress={() => copyAll(lines)}
           hitSlop={8}
@@ -81,7 +82,7 @@ function PingLog({ lines, sub, head, border }: {
             borderWidth: 1, borderColor: border ?? sub,
           }}
         >
-          <Text style={{ color: head ?? sub, fontSize: 12, fontFamily: 'Calibre-Semibold' }}>
+          <Text weight="semibold" size="xs" color={head ?? sub}>
             Copy
           </Text>
         </Pressable>
@@ -94,14 +95,8 @@ function PingLog({ lines, sub, head, border }: {
         windowSize={5}
         removeClippedSubviews
         renderItem={({ item }) => (
-          <Text
-            selectable
-            style={{
-              color: tone(item.line, sub),
-              fontSize: 11,
-              fontFamily: 'Calibre-Medium',
-            }}
-          >
+          <Text size="3xs"
+            selectable color={tone(item.line, sub)}>
             {fmtLine(item)}
           </Text>
         )}
@@ -165,7 +160,7 @@ function useBatchedLog(): BatchedLog {
   const append = useCallback((line: LogLine) => {
     const next = buf.current;
     next.push(line);
-    if (next.length > CAP) next.splice(0, next.length - CAP);
+    if (next.length> CAP) next.splice(0, next.length - CAP);
     dirty.current = true;
   }, []);
 
@@ -354,8 +349,8 @@ export function BridgePingProbe({ sub, border }: {
         : engine.text;
 
   return (
-    <Col mt={20} pt={16} gap={8} style={{ borderTopWidth: 1, borderTopColor: border }}>
-      <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+    <Col padding={{ top: 16 }} margin={{ top: 20 }} gap={8} style={{ borderTopWidth: 1, borderTopColor: border }}>
+      <Text size="xs" color={sub}>
         DEV · NODE BRIDGE FEASIBILITY
       </Text>
       <Button
@@ -365,7 +360,7 @@ export function BridgePingProbe({ sub, border }: {
         loading={state.kind === 'running'}
         onPress={() => { void onPress(); }}
       />
-      <Text style={{ color: resultColor, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+      <Text size="xs" color={resultColor}>
         {resultText}
       </Text>
       <Button
@@ -375,7 +370,7 @@ export function BridgePingProbe({ sub, border }: {
         loading={engine.kind === 'running'}
         onPress={() => { void onInit(); }}
       />
-      <Text style={{ color: engineColor, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+      <Text size="xs" color={engineColor}>
         {engineText}
       </Text>
       <Button

@@ -11,6 +11,7 @@
  *  ConversationFeed stays under the 200-line cap. */
 
 import { Pressable } from '@metro-labs/kit/pressable';
+
 import { Text } from '@metro-labs/kit/text';
 import { Box, Row } from '../layout';
 import { Avatar } from '../Avatar';
@@ -21,18 +22,18 @@ import { shortAddress } from '../../modules/messaging';
 /** Read-only label chips for the group intro — same rounded-pill look as the
  *  ChannelRow inline chips, just left-aligned under the name. Renders nothing for
  *  an empty list. */
-function IntroLabelChips({ labels, fg, rowBg }: {
+function IntroLabelChips({ labels, fg }: {
   labels: string[]; fg: string; rowBg: string;
 }): React.ReactElement | null {
   if (labels.length === 0) return null;
   return (
-    <Row align="center" gap={6} mt={8} style={{ flexWrap: 'wrap', justifyContent: 'flex-start' }}>
+    <Row margin={{ top: 8 }} align="center" gap={6} justify="start" style={{ flexWrap: 'wrap' }}>
       {labels.map(label => (
-        <Box
+        <Box radius="full" surface="raised" padding={{ x: 8, y: 2 }}
           key={label.toLowerCase()}
-          style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, backgroundColor: rowBg }}
-        >
-          <Text style={{ color: fg, fontSize: 15, fontFamily: 'Calibre-Medium' }}>{label}</Text>
+          
+>
+          <Text size="md" color={fg}>{label}</Text>
         </Box>
       ))}
     </Row>
@@ -57,24 +58,20 @@ export function ConversationIntro({
     const name = groupName === null ? '' : (groupName || 'Untitled group');
     const desc = groupDescription.trim();
     return (
-      <Box style={{ alignItems: 'flex-start', paddingVertical: 24, paddingHorizontal: 12 }}>
+      <Box padding={{ x: 12, y: 24 }} align="start">
         <Avatar
           imageUri={groupImage || undefined}
           address={!groupImage && convId ? channelStampSeed(convId) : null}
           size="lg"
           square
           style={{ backgroundColor: border }}
-        />
-        <Text
-          style={{ color: head, fontSize: 26, lineHeight: 30, fontFamily: 'Calibre-Semibold', marginTop: 12, textAlign: 'left', flexShrink: 1 }}
-        >
+/>
+        <Text weight="semibold" size="5xl" color={head} style={{ lineHeight: 30, marginTop: 12, textAlign: 'left', flexShrink: 1 }}>
           {name}
         </Text>
-        <IntroLabelChips labels={groupLabels} fg={fg} rowBg={rowBg} />
+        <IntroLabelChips labels={groupLabels} fg={fg} rowBg={rowBg}/>
         {desc ? (
-          <Text
-            style={{ color: sub, fontSize: 19, fontFamily: 'Calibre-Medium', marginTop: 10, textAlign: 'left', lineHeight: 23 }}
-          >
+          <Text size="4xl" color={sub} style={{ marginTop: 10, textAlign: 'left', lineHeight: 23 }}>
             {desc}
           </Text>
         ) : null}
@@ -88,18 +85,16 @@ export function ConversationIntro({
     <Pressable
       onPress={() => onPressPeer(peerAddr)}
       style={{ alignItems: 'flex-start', paddingVertical: 24, paddingHorizontal: 12 }}
-    >
-      <Avatar address={peerAddr} imageUri={getPeerAvatar(peerAddr)} size="lg" style={{ backgroundColor: border }} />
-      <Text style={{ color: head, fontSize: 26, lineHeight: 30, fontFamily: 'Calibre-Semibold', marginTop: 12, flexShrink: 1 }}>
+>
+      <Avatar address={peerAddr} imageUri={getPeerAvatar(peerAddr)} size="lg" style={{ backgroundColor: border }}/>
+      <Text weight="semibold" size="5xl" color={head} style={{ lineHeight: 30, marginTop: 12, flexShrink: 1 }}>
         {getPeerName(peerAddr) ?? shortAddress(peerAddr)}
       </Text>
-      <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 2 }} numberOfLines={1}>
+      <Text size="xs" color={sub} style={{ marginTop: 2 }} numberOfLines={1}>
         {shortAddress(peerAddr)}
       </Text>
       {about ? (
-        <Text
-          style={{ color: sub, fontSize: 19, fontFamily: 'Calibre-Medium', marginTop: 10, textAlign: 'left', lineHeight: 23 }}
-        >
+        <Text size="4xl" color={sub} style={{ marginTop: 10, textAlign: 'left', lineHeight: 23 }}>
           {about}
         </Text>
       ) : null}

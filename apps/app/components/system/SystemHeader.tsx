@@ -5,33 +5,28 @@
  *  insets.top` wrapper; this header owns the top inset now. */
 
 import { Pressable } from '@metro-labs/kit/pressable';
+
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Box } from '../layout';
+import { Box, Row, Col } from '../layout';
 import { Icon } from '@metro-labs/kit/icon';
 import { Title } from '@metro-labs/kit/title';
-import { usePalette } from '../../lib/theme';
 
-export function SystemHeader({ title, dark, fg, head, border, right }: {
+export function SystemHeader({ title, fg, head, border, right }: {
   title: string; dark: boolean; fg: string; head: string; border: string;
   right?: React.ReactNode;
 }): React.ReactElement {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { toolbarBg } = usePalette();
   return (
-    <Box style={{ backgroundColor: toolbarBg, paddingTop: insets.top }}>
-      <Box style={{
-        flexDirection: 'row', alignItems: 'center', gap: 8,
-        paddingHorizontal: 12, paddingTop: 8, paddingBottom: 10,
-        borderBottomWidth: 1, borderBottomColor: border,
-      }}>
+    <Box surface="toolbar" padding={{ top: insets.top }}>
+      <Row padding={{ x: 12, top: 8, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
-          <Icon name="arrowLeft" size={22} color={fg} />
+          <Icon name="arrowLeft" size={22} color={fg}/>
         </Pressable>
-        <Title dark={dark} style={{ color: head, fontSize: 20 }}>{title}</Title>
-        {right ? <Box style={{ flex: 1, alignItems: 'flex-end' }}>{right}</Box> : null}
-      </Box>
+        <Title size="sm" color={head}>{title}</Title>
+        {right ? <Col flex={1} align="end">{right}</Col> : null}
+      </Row>
     </Box>
   );
 }

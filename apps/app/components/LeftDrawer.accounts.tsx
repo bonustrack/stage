@@ -12,8 +12,9 @@
  *  used by every other local account. */
 
 import { useState } from 'react';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Textarea } from '@metro-labs/kit/textarea';
-import { Box } from './layout';
+import { Row } from './layout';
 import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';
 import * as Clipboard from 'expo-clipboard';
@@ -103,7 +104,7 @@ export function useDrawerAccountActions({ head, sub, border, dark, onChanged }: 
 
   const modal = (
     <AppModal visible={importOpen} onClose={() => setImportOpen(false)} title="Add account">
-        <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginBottom: 10 }}>
+        <Text size="xs" color={sub} style={{ marginBottom: 10 }}>
           Paste an existing wallet&apos;s private key (0x… 64 hex) or its 12–24 word recovery phrase.
         </Text>
         <Textarea
@@ -114,16 +115,16 @@ export function useDrawerAccountActions({ head, sub, border, dark, onChanged }: 
           dark={dark}
           inputProps={{ autoCapitalize: 'none', autoCorrect: false, secureTextEntry: !text.includes(' ') }}
           style={{
-            color: head, fontFamily: 'Menlo', fontSize: 13, minHeight: 64, height: undefined,
+            color: head, fontFamily: 'Menlo', fontSize: fontSize('xs'), minHeight: 64, height: undefined,
             borderWidth: 1, borderColor: border, borderRadius: 10,
             paddingHorizontal: 12, paddingVertical: 10, marginBottom: 8,
             textAlignVertical: 'top', backgroundColor: 'transparent',
           }}
         />
         {err ? (
-          <Text style={{ color: DANGER, fontSize: 12, marginBottom: 8, fontFamily: 'Calibre-Medium' }}>{err}</Text>
+          <Text size="xs" color={DANGER} style={{ marginBottom: 8 }}>{err}</Text>
         ) : null}
-        <Box style={{ flexDirection: 'row', gap: 8 }}>
+        <Row gap={8}>
           <Button
             variant="secondary" size="md" fullWidth dark={dark} label="Paste" style={{ flex: 1 }}
             onPress={() => void (async () => {
@@ -137,7 +138,7 @@ export function useDrawerAccountActions({ head, sub, border, dark, onChanged }: 
             disabled={!text.trim() || busy}
             onPress={onImport}
           />
-        </Box>
+        </Row>
       </AppModal>
   );
 

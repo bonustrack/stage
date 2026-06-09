@@ -5,7 +5,7 @@
 
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Box } from '../layout';
+import { Col } from '../layout';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { SystemHeader } from './SystemHeader';
 import { ThemeSwitcher } from './ThemeSwitcher';
@@ -13,22 +13,22 @@ import { ComponentsSections } from './ComponentsSections';
 
 export function ComponentsPage(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border } = usePalette();
+  const { text: fg, link: head, border } = usePalette();
   const sub = fg;
   const rowBg = border;
   const insets = useSafeAreaInsets();
 
   return (
-    <Box style={{ flex: 1, backgroundColor: bg }}>
-      <SystemHeader title="Components" dark={dark} fg={fg} head={head} border={border} />
+    <Col surface="surface" flex={1}>
+      <SystemHeader title="Components" dark={dark} fg={fg} head={head} border={border}/>
       <ScrollView
         style={{ flex: 1 }}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 + insets.bottom }}
-      >
-        <ThemeSwitcher dark={dark} head={head} sub={sub} border={border} rowBg={rowBg} />
-        <ComponentsSections dark={dark} head={head} sub={sub} border={border} rowBg={rowBg} />
+>
+        <ThemeSwitcher dark={dark} head={head} sub={sub} border={border} rowBg={rowBg}/>
+        <ComponentsSections dark={dark} head={head} sub={sub} border={border} rowBg={rowBg}/>
       </ScrollView>
-    </Box>
+    </Col>
   );
 }

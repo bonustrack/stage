@@ -4,6 +4,7 @@
  *  component directly with sample props. Fonts: Calibre-Medium / Calibre-Semibold. */
 
 import { Box } from '../layout';
+
 import { Text } from '@metro-labs/kit/text';
 import { useBlockRadius } from '../../lib/theme';
 
@@ -14,18 +15,15 @@ export function GallerySection({ name, note, head, sub, border, framed = true, i
 }): React.ReactElement {
   const blockRadius = useBlockRadius();
   return (
-    <Box style={{ paddingHorizontal: 16, paddingTop: 22 }}>
-      <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold' }}>{name}</Text>
+    <Box padding={{ x: 16, top: 22 }}>
+      <Text weight="semibold" size="xl" color={head}>{name}</Text>
       {note ? (
-        <Text style={{ color: sub, fontSize: 13, marginTop: 1, fontFamily: 'Calibre-Medium' }}>{note}</Text>
+        <Text size="xs" color={sub} style={{ marginTop: 1 }}>{note}</Text>
       ) : null}
-      <Box
-        mt={12}
+      <Box padding={{ x: innerPadH, y: innerPadV }} margin={{ top: 12 }}
+        
         radius={framed ? blockRadius : 0}
-        style={{
-          ...(framed ? { borderWidth: 1, borderColor: border, overflow: 'hidden' as const } : {}),
-          paddingHorizontal: innerPadH, paddingVertical: innerPadV,
-        }}
+        style={{ ...(framed ? { borderWidth: 1, borderColor: border, overflow: 'hidden' as const } : {}) }}
       >
         {children}
       </Box>

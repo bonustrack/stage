@@ -6,6 +6,7 @@
  *  Profile/Settings), matching the Home topnav exactly. */
 
 import { useEffect, useState } from 'react';
+
 import { Pressable } from '@metro-labs/kit/pressable';
 import { useRouter } from 'expo-router';
 import { Text } from '@metro-labs/kit/text';
@@ -44,10 +45,8 @@ export function TopnavIdentity(): React.ReactElement {
       <Row align="center" gap={8}>
         <Avatar address={myAddress} size={28} style={{ backgroundColor: border }} />
         {myName ? (
-          <Text
-            numberOfLines={1}
-            style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold', maxWidth: 200 }}
-          >
+          <Text weight="semibold" size="4xl"
+            numberOfLines={1} color={head} style={{ maxWidth: 200 }}>
             {myName}
           </Text>
         ) : null}

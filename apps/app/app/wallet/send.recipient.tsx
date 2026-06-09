@@ -12,11 +12,12 @@
  *
  *  No bespoke/gold styling — Kit `Text`/`Icon` + palette tokens only. */
 import { Pressable } from '@metro-labs/kit/pressable';
+
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import { Avatar } from '../../components/Avatar';
 import { AppModal } from '../../components/AppModal';
-import { Box } from '../../components/layout';
+import { Row, Col } from '../../components/layout';
 import { shortAddress } from '../../modules/messaging';
 import {
   usePeerProfiles, getPeerName, getPeerAvatar, getPeerAvatarCb,
@@ -48,30 +49,26 @@ export function RecipientRow({ address, pal, right, onPress }: {
         imageUri={getPeerAvatar(address)}
         cacheBuster={getPeerAvatarCb(address)}
         style={{ backgroundColor: border }}
-      />
-      <Box style={{ flex: 1, minWidth: 0 }}>
-        <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
+/>
+      <Col minWidth={0} flex={1}>
+        <Text weight="semibold" size="md" color={head} numberOfLines={1}>
           {name}
         </Text>
         {showAddrLine ? (
-          <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 2 }} numberOfLines={1}>
+          <Text size="xs" color={sub} style={{ marginTop: 2 }} numberOfLines={1}>
             {shortAddress(address)}
           </Text>
         ) : null}
-      </Box>
+      </Col>
       {right}
     </>
   );
 
   if (!onPress) {
     return (
-      <Box style={{
-        flexDirection: 'row', alignItems: 'center', gap: 12,
-        backgroundColor: border, borderRadius: 12,
-        paddingHorizontal: 14, paddingVertical: 10,
-      }}>
+      <Row background={border} radius="lg" padding={{ x: 14, y: 10 }} align="center" gap={12}>
         {inner}
-      </Box>
+      </Row>
     );
   }
   return (
@@ -82,7 +79,7 @@ export function RecipientRow({ address, pal, right, onPress }: {
         backgroundColor: pressed ? border : 'transparent', borderRadius: 12,
         paddingHorizontal: 14, paddingVertical: 10,
       })}
-    >
+>
       {inner}
     </Pressable>
   );
@@ -101,11 +98,11 @@ export function ContactsModal({ visible, onClose, onPick, pal }: {
 
   return (
     <AppModal visible={visible} onClose={onClose}>
-      <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', marginBottom: 8 }}>
+      <Text weight="semibold" size="xl" color={head} style={{ marginBottom: 8 }}>
         Contacts
       </Text>
       {contacts.length === 0 ? (
-        <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium', paddingVertical: 16 }}>
+        <Text size="md" color={sub} style={{ paddingVertical: 16 }}>
           No contacts yet — start a DM to build your list.
         </Text>
       ) : (
@@ -115,7 +112,7 @@ export function ContactsModal({ visible, onClose, onPick, pal }: {
             address={c.address}
             pal={pal}
             onPress={() => { onPick(c.address); onClose(); }}
-          />
+/>
         ))
       )}
     </AppModal>
@@ -136,8 +133,8 @@ export function ContactsButton({ color, border, onPress }: {
         alignItems: 'center', justifyContent: 'center',
         backgroundColor: pressed ? border : 'transparent',
       })}
-    >
-      <Icon name="users" size={20} color={color} />
+>
+      <Icon name="users" size={20} color={color}/>
     </Pressable>
   );
 }

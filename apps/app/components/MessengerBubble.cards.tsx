@@ -1,5 +1,6 @@
 /** In-chat signature + transaction cards for MessengerBubble (phase-2 split). */
 import { Linking } from 'react-native';
+
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
@@ -27,48 +28,39 @@ export function SigRequestCard({ req, dark, sub, signing, onSign }: {
     ? Object.entries(req.eip712.message)
     : [];
   return (
-    <Box style={{
-      alignSelf: 'stretch', gap: 8, marginTop: 8, padding: 12, borderRadius: blockRadius,
-      backgroundColor: pal.border, // #282a2d / #e4e4e5
-    }}>
+    <Box radius={blockRadius} background={pal.border} padding={12} margin={{ top: 8 }} gap={8} style={{ alignSelf: 'stretch' }}>
       <Row align="center" gap={8}>
-        <Icon name="pencil" size={18} color={head} />
-        <Text style={{ color: head, fontSize: 15, fontFamily: 'Calibre-Semibold', flexShrink: 1 }}>
+        <Icon name="pencil" size={18} color={head}/>
+        <Text weight="semibold" size="md" style={{ flexShrink: 1 }}>
           {desc}
         </Text>
       </Row>
       {req.kind === 'eip712' ? (
-        <Col gap={6} style={{
-          padding: 10, borderRadius: 10, borderWidth: 1,
-          borderColor: detailBorder, backgroundColor: detailBg,
-        }}>
+        <Col radius="md" background={detailBg} padding={10} gap={6} style={{ borderWidth: 1, borderColor: detailBorder }}>
           {(domainName || chainId) ? (
-            <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>
+            <Text size="xs" color={sub}>
               {domainName ?? 'Domain'}{chainId ? ` · chain ${chainId}` : ''}
             </Text>
           ) : null}
           {req.eip712?.primaryType ? (
-            <Text style={{ color: head, fontSize: 13, fontFamily: 'Calibre-Semibold' }}>
+            <Text weight="semibold" size="xs">
               {req.eip712.primaryType}
             </Text>
           ) : null}
           {fields.map(([k, v]) => (
             <Row key={k} align="start" gap={8}>
-              <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', minWidth: 80, flexShrink: 0 }}>
+              <Text size="xs" color={sub} style={{ minWidth: 80, flexShrink: 0 }}>
                 {k}
               </Text>
-              <Text numberOfLines={4} style={{ color: head, fontSize: 12, fontFamily: 'Menlo', flexShrink: 1, flex: 1 }}>
+              <Text variant="mono" size="xs" numberOfLines={4} style={{ flexShrink: 1, flex: 1 }}>
                 {fmtSigValue(v)}
               </Text>
             </Row>
           ))}
         </Col>
       ) : req.message ? (
-        <Box style={{
-          padding: 10, borderRadius: 10, borderWidth: 1,
-          borderColor: detailBorder, backgroundColor: detailBg,
-        }}>
-          <Text numberOfLines={20} style={{ color: head, fontSize: 12, fontFamily: 'Menlo', lineHeight: 18 }}>
+        <Box radius="md" background={detailBg} padding={10} style={{ borderWidth: 1, borderColor: detailBorder }}>
+          <Text variant="mono" size="xs" numberOfLines={20} style={{ lineHeight: 18 }}>
             {req.message}
           </Text>
         </Box>
@@ -86,7 +78,7 @@ export function SigRequestCard({ req, dark, sub, signing, onSign }: {
           tintBg={pal.primary}
           tintFg={pal.bg}
           style={{ marginTop: 2 }}
-        />
+/>
       ) : null}
     </Box>
   );
@@ -95,25 +87,21 @@ export function SigRequestCard({ req, dark, sub, signing, onSign }: {
 export function SigReferenceCard({ ref, dark, sub }: {
   ref: SigReference; dark: boolean; sub: string;
 }): React.ReactElement {
-  const short = (h?: string): string => (h && h.length > 14 ? `${h.slice(0, 8)}…${h.slice(-4)}` : (h ?? '')); const blockRadius = useBlockRadius();
+  const short = (h?: string): string => (h && h.length> 14 ? `${h.slice(0, 8)}…${h.slice(-4)}` : (h ?? '')); const blockRadius = useBlockRadius();
   return (
-    <Box style={{
-      alignSelf: 'stretch', gap: 6, marginTop: 8, padding: 12, borderRadius: blockRadius,
-      borderWidth: 1, borderColor: dark ? 'rgba(120,200,120,0.4)' : 'rgba(60,160,60,0.35)',
-      backgroundColor: dark ? 'rgba(120,200,120,0.08)' : 'rgba(60,160,60,0.06)',
-    }}>
+    <Box radius={blockRadius} background={dark ? 'rgba(120,200,120,0.08)' : 'rgba(60,160,60,0.06)'} padding={12} margin={{ top: 8 }} gap={6} style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: dark ? 'rgba(120,200,120,0.4)' : 'rgba(60,160,60,0.35)' }}>
       <Row align="center" gap={8}>
-        <Icon name="check" size={18} color={dark ? '#7fd07f' : '#2f9e44'} />
-        <Text style={{ color: dark ? '#ffffff' : '#000000', fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
+        <Icon name="check" size={18} color={dark ? '#7fd07f' : '#2f9e44'}/>
+        <Text weight="semibold" size="md" color={dark ? '#ffffff' : '#000000'}>
           Signed ✓
         </Text>
       </Row>
       {ref.signer ? (
-        <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>
+        <Text size="xs" color={sub}>
           by {shortAddress(ref.signer)}
         </Text>
       ) : null}
-      <Text style={{ color: '#c0a06e', fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+      <Text size="xs" color={'#c0a06e'}>
         {short(ref.signature)}
       </Text>
     </Box>
@@ -132,24 +120,20 @@ export function TxRequestCard({ req, dark, sub, paying, onPay }: {
     ? `${call.metadata.amount} ${call.metadata.currency ?? 'ETH'}`
     : eth ? `${eth} ETH` : undefined;
   return (
-    <Box style={{
-      alignSelf: 'stretch', gap: 8, marginTop: 8, padding: 12, borderRadius: blockRadius,
-      borderWidth: 1, borderColor: '#c0a06e',
-      backgroundColor: dark ? 'rgba(192,160,110,0.10)' : 'rgba(192,160,110,0.10)',
-    }}>
+    <Box radius={blockRadius} background={dark ? 'rgba(192,160,110,0.10)' : 'rgba(192,160,110,0.10)'} padding={12} margin={{ top: 8 }} gap={8} style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: '#c0a06e' }}>
       <Row align="center" gap={8}>
-        <Icon name="wallet" size={18} color="#c0a06e" />
-        <Text style={{ color: dark ? '#ffffff' : '#000000', fontSize: 15, fontFamily: 'Calibre-Semibold', flexShrink: 1 }}>
+        <Icon name="wallet" size={18} color="#c0a06e"/>
+        <Text weight="semibold" size="md" color={dark ? '#ffffff' : '#000000'} style={{ flexShrink: 1 }}>
           {desc}
         </Text>
       </Row>
       {amountLabel ? (
-        <Text style={{ color: dark ? '#ffffff' : '#000000', fontSize: 22, fontFamily: 'Calibre-Semibold' }}>
+        <Text weight="semibold" size="5xl" color={dark ? '#ffffff' : '#000000'}>
           {amountLabel}
         </Text>
       ) : null}
       {call?.to ? (
-        <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>
+        <Text size="xs" color={sub}>
           To {shortAddress(call.to)}
         </Text>
       ) : null}
@@ -166,7 +150,7 @@ export function TxRequestCard({ req, dark, sub, paying, onPay }: {
           tintBg={pal.primary}
           tintFg={pal.bg}
           style={{ marginTop: 2 }}
-        />
+/>
       ) : null}
     </Box>
   );
@@ -180,19 +164,15 @@ export function TxReceiptCard({ receipt, dark }: {
     : undefined;
   const url = explorerUrl(receipt.networkId, receipt.reference); const blockRadius = useBlockRadius();
   return (
-    <Box style={{
-      alignSelf: 'stretch', gap: 6, marginTop: 8, padding: 12, borderRadius: blockRadius,
-      borderWidth: 1, borderColor: dark ? 'rgba(120,200,120,0.4)' : 'rgba(60,160,60,0.35)',
-      backgroundColor: dark ? 'rgba(120,200,120,0.08)' : 'rgba(60,160,60,0.06)',
-    }}>
+    <Box radius={blockRadius} background={dark ? 'rgba(120,200,120,0.08)' : 'rgba(60,160,60,0.06)'} padding={12} margin={{ top: 8 }} gap={6} style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: dark ? 'rgba(120,200,120,0.4)' : 'rgba(60,160,60,0.35)' }}>
       <Row align="center" gap={8}>
-        <Icon name="check" size={18} color={dark ? '#7fd07f' : '#2f9e44'} />
-        <Text style={{ color: dark ? '#ffffff' : '#000000', fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
+        <Icon name="check" size={18} color={dark ? '#7fd07f' : '#2f9e44'}/>
+        <Text weight="semibold" size="md" color={dark ? '#ffffff' : '#000000'}>
           Payment sent{amountLabel ? ` · ${amountLabel}` : ''}
         </Text>
       </Row>
       <Pressable onPress={() => void Linking.openURL(url)}>
-        <Text style={{ color: '#c0a06e', fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+        <Text size="xs" color={'#c0a06e'}>
           {shortAddress(receipt.reference)} · View on explorer
         </Text>
       </Pressable>

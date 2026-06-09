@@ -10,6 +10,7 @@
  *  existing call sites keep working unchanged. */
 
 import type { TextStyle } from 'react-native';
+import { FONT_SIZE, colors, schemePalette } from './tokens';
 
 /** ChatKit semantic colour. The canonical `color` prop. */
 export type ButtonColor =
@@ -52,17 +53,17 @@ export interface SizeSpec {
 }
 
 export const SIZES: Record<ButtonSize, SizeSpec> = {
-  '3xs': { height: 24, paddingHorizontal: 8, fontSize: 12, gap: 4, spinner: 'small' },
-  '2xs': { height: 28, paddingHorizontal: 10, fontSize: 13, gap: 6, spinner: 'small' },
-  xs: { height: 30, paddingHorizontal: 11, fontSize: 13, gap: 6, spinner: 'small' },
-  sm: { height: 32, paddingHorizontal: 12, fontSize: 14, gap: 6, spinner: 'small' },
-  md: { height: 40, paddingHorizontal: 16, fontSize: 15, gap: 8, spinner: 'small' },
-  lg: { height: 48, paddingHorizontal: 20, fontSize: 16, gap: 8, spinner: 'small' },
+  '3xs': { height: 24, paddingHorizontal: 8, fontSize: FONT_SIZE['2xs'], gap: 4, spinner: 'small' },
+  '2xs': { height: 28, paddingHorizontal: 10, fontSize: FONT_SIZE.xs, gap: 6, spinner: 'small' },
+  xs: { height: 30, paddingHorizontal: 11, fontSize: FONT_SIZE.xs, gap: 6, spinner: 'small' },
+  sm: { height: 32, paddingHorizontal: 12, fontSize: FONT_SIZE.sm, gap: 6, spinner: 'small' },
+  md: { height: 40, paddingHorizontal: 16, fontSize: FONT_SIZE.md, gap: 8, spinner: 'small' },
+  lg: { height: 48, paddingHorizontal: 20, fontSize: FONT_SIZE.lg, gap: 8, spinner: 'small' },
   // `xl` is sized so a `pill` icon-only Button renders a 56x56 circle - the
   // original wallet/profile action-circle size. Used icon-only (label below).
-  xl: { height: 56, paddingHorizontal: 24, fontSize: 16, gap: 8, spinner: 'small' },
-  '2xl': { height: 64, paddingHorizontal: 28, fontSize: 18, gap: 10, spinner: 'large' },
-  '3xl': { height: 72, paddingHorizontal: 32, fontSize: 20, gap: 12, spinner: 'large' },
+  xl: { height: 56, paddingHorizontal: 24, fontSize: FONT_SIZE.lg, gap: 8, spinner: 'small' },
+  '2xl': { height: 64, paddingHorizontal: 28, fontSize: FONT_SIZE['2xl'], gap: 10, spinner: 'large' },
+  '3xl': { height: 72, paddingHorizontal: 32, fontSize: FONT_SIZE['4xl'], gap: 12, spinner: 'large' },
 };
 
 export interface VariantColors {
@@ -84,13 +85,13 @@ function accent(
   color: ButtonColor,
   dark: boolean,
 ): { bg: string; pressed: string; on: string } {
-  const head = dark ? '#ffffff' : '#000000';
-  const bg = dark ? '#0e0f10' : '#ffffff';
+  const head = schemePalette(dark).head;
+  const bg = dark ? colors['bg-dark'] : colors['bg-light'];
   switch (color) {
     case 'primary':
       return { bg: head, pressed: head, on: bg };
     case 'secondary': {
-      const rowBg = dark ? '#282a2d' : '#e4e4e5';
+      const rowBg = schemePalette(dark).border;
       return { bg: rowBg, pressed: rowBg, on: head };
     }
     case 'info':
@@ -115,9 +116,9 @@ export function resolveColors(
   dark: boolean,
 ): VariantColors {
   const a = accent(color, dark);
-  const border = dark ? '#282a2d' : '#e4e4e5';
+  const border = schemePalette(dark).border;
   const ghostPressedBg = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
-  const neutralText = dark ? '#ffffff' : '#000000';
+  const neutralText = schemePalette(dark).head;
   const isNeutral = color === 'primary' || color === 'secondary';
   switch (variant) {
     case 'solid':

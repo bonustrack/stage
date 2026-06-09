@@ -5,6 +5,7 @@
  *  XMTP store). The key is never logged. */
 
 import { useEffect, useState } from 'react';
+
 import { Alert } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { Text } from '@metro-labs/kit/text';
@@ -80,10 +81,10 @@ export function AccountSecuritySection(
 
   return (
     <>
-      <Text style={{ color: c.sub, fontSize: 13, paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8, fontFamily: 'Calibre-Medium' }}>
+      <Text size="xs" color={c.sub} style={{ paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8 }}>
         ACCOUNT
       </Text>
-      <Box mx={16} style={{ overflow: 'hidden' }}>
+      <Box margin={{ x: 16 }} style={{ overflow: 'hidden' }}>
         <Card dark={dark} background={c.rowBg} padding={0}>
           <ListView dark={dark}>
             {exportable ? (
@@ -97,11 +98,11 @@ export function AccountSecuritySection(
               >
                 <Icon name="wallet" size={22} color={c.head} />
                 <Col flex={1}>
-                  <Text style={{ color: c.fg, fontSize: 18, fontFamily: 'Calibre-Medium' }}>
+                  <Text size="xl" color={c.fg}>
                     {revealed ? 'Tap to copy private key' : 'Export private key'}
                   </Text>
                   {revealed ? (
-                    <Text selectable style={{ color: c.sub, fontSize: 12, marginTop: 4, fontFamily: 'Calibre-Medium' }}>
+                    <Text size="xs" selectable color={c.sub} style={{ marginTop: 4 }}>
                       {revealed}
                     </Text>
                   ) : null}
@@ -116,7 +117,7 @@ export function AccountSecuritySection(
               style={{ paddingHorizontal: 14, paddingVertical: 14 }}
             >
               <Icon name="trash" size={22} color={danger} />
-              <Text style={{ color: danger, fontSize: 18, fontFamily: 'Calibre-Medium', flex: 1 }}>
+              <Text size="xl" color={danger} style={{ flex: 1 }}>
                 Remove account
               </Text>
             </ListViewItem>

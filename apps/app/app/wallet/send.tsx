@@ -14,7 +14,7 @@
  *  a token (e.g. from a token detail page's Send button). */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
-import { Box } from '../../components/layout';
+import { Col } from '../../components/layout';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { SendHeader } from './send.fields';
@@ -26,7 +26,7 @@ import { TokenSelector, useSelectedBalance, useTopToken, type TokenChoice } from
 export default function WalletSend(): React.ReactElement {
   const router = useRouter();
   const params = useLocalSearchParams<{ to?: string; symbol?: string; chainId?: string; private?: string }>();
-  const { text: fg, link: head, bg, border } = usePalette();
+  const { text: fg, link: head, border } = usePalette();
   const dark = useEffectiveColorScheme() === 'dark';
   const formPal = useFormPal();
 
@@ -68,27 +68,27 @@ export default function WalletSend(): React.ReactElement {
   const { footer, report: reportFooter, onSubmit: footerSubmit } = useFooterReporter();
 
   return (
-    <Box style={{ flex: 1, backgroundColor: bg }}>
-      <SendHeader fg={fg} head={head} border={border} onBack={() => router.back()} />
+    <Col surface="surface" flex={1}>
+      <SendHeader fg={fg} head={head} border={border} onBack={() => router.back()}/>
 
       <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ padding: 16, gap: 16 }}>
-        <TokenSelector mode="combined" value={token} onChange={onChange} />
+        <TokenSelector mode="combined" value={token} onChange={onChange}/>
 
         {token.isPrivate ? (
           <ShieldFlowForm key={bodyKey} mode="send" pal={formPal} dark={dark}
             symbol={token.symbol === 'USDC' ? 'USDC' : 'ETH'} chainId={token.chainId} balance={balance}
-            onFooter={reportFooter} />
+            onFooter={reportFooter}/>
         ) : (
-          <PublicSendBody key={bodyKey} token={token} initialTo={initialTo} onFooter={reportFooter} />
+          <PublicSendBody key={bodyKey} token={token} initialTo={initialTo} onFooter={reportFooter}/>
         )}
       </ScrollView>
 
       {footer ? (
-        <WalletFooter border={border} bg={bg} dark={dark} onCancel={() => router.back()}
+        <WalletFooter border={border} dark={dark} onCancel={() => router.back()}
           submitLabel={footer.submitLabel} onSubmit={footerSubmit}
-          submitDisabled={footer.submitDisabled} submitLoading={footer.submitLoading} />
+          submitDisabled={footer.submitDisabled} submitLoading={footer.submitLoading}/>
       ) : null}
-    </Box>
+    </Col>
   );
 }

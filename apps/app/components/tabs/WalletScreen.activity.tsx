@@ -10,6 +10,7 @@
  *  chains return nothing. */
 
 import { useEffect, useState } from 'react';
+
 import { Text } from '@metro-labs/kit/text';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Spinner } from '../Spinner';
@@ -56,10 +57,10 @@ export function ActivityView({ address, head, sub, border, bg }: {
 
   if (status === 'error') {
     return (
-      <Col mx={16}>
+      <Col margin={{ x: 16 }}>
         {priv}
-        <Col py={40} align="center">
-          <Text style={{ color: DANGER, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
+        <Col padding={{ y: 40 }} align="center">
+          <Text size="md" color={DANGER}>
             Couldn’t load activity
           </Text>
         </Col>
@@ -68,20 +69,20 @@ export function ActivityView({ address, head, sub, border, bg }: {
   }
   if (status === 'loading' || status === 'idle') {
     return (
-      <Col mx={16}>
+      <Col margin={{ x: 16 }}>
         {priv}
-        <Col py={40} align="center">
-          <Spinner size={28} color={head} />
+        <Col padding={{ y: 40 }} align="center">
+          <Spinner size={28} color={head}/>
         </Col>
       </Col>
     );
   }
   if (rows.length === 0) {
     return (
-      <Col mx={16}>
+      <Col margin={{ x: 16 }}>
         {priv}
-        <Col py={40} align="center">
-          <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
+        <Col padding={{ y: 40 }} align="center">
+          <Text size="md" color={sub}>
             No transactions yet
           </Text>
         </Col>
@@ -89,10 +90,10 @@ export function ActivityView({ address, head, sub, border, bg }: {
     );
   }
   return (
-    <Col mx={16}>
+    <Col margin={{ x: 16 }}>
       {priv}
       {rows.map(r => (
-        <TxRow key={r.hash} r={r} head={head} sub={sub} border={border} bg={bg} />
+        <TxRow key={r.hash} r={r} head={head} sub={sub} border={border} bg={bg}/>
       ))}
     </Col>
   );
@@ -117,37 +118,31 @@ function TxRow({ r, head, sub, border, bg }: {
   const valueColor = r.failed ? DANGER : r.direction === 'receive' ? '#22c55e' : head;
   const partyLabel = r.direction === 'receive' ? `From ${name}` : `To ${name}`;
   return (
-    <Row align="center" gap={12} py={14}
+    <Row padding={{ y: 14 }} align="center" gap={12} 
       style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-      <Box style={{
-        width: 32, height: 32, borderRadius: 999, backgroundColor: border,
-        alignItems: 'center', justifyContent: 'center',
-      }}>
-        <Icon name={DIR_ICON[r.direction]} size={18} color={r.failed ? DANGER : head} />
+      <Box width={32} height={32} radius="full" background={border} align="center" justify="center">
+        <Icon name={DIR_ICON[r.direction]} size={18} color={r.failed ? DANGER : head}/>
       </Box>
-      <Col flex={1} style={{ minWidth: 0 }}>
-        <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
+      <Col minWidth={0} flex={1}>
+        <Text weight="semibold" size="xl" color={head} numberOfLines={1}>
           {title}
         </Text>
-        <Row align="center" gap={6} style={{ marginTop: 2 }}>
-          <Box style={{
-            paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4,
-            backgroundColor: border,
-          }}>
-            <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
+        <Row margin={{ top: 2 }} align="center" gap={6}>
+          <Box radius="xs" background={border} padding={{ x: 6, y: 1 }}>
+            <Text size="xs" color={sub} numberOfLines={1}>
               {r.chainLabel}
             </Text>
           </Box>
-          <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium', flex: 1 }} numberOfLines={1}>
+          <Text size="md" color={sub} style={{ flex: 1 }} numberOfLines={1}>
             {`${partyLabel} · ${relTime(r.timestamp)}`}
           </Text>
         </Row>
       </Col>
       <Col align="end">
-        <Text style={{ color: valueColor, fontSize: 18, fontFamily: 'Calibre-Semibold' }}>
+        <Text weight="semibold" size="xl" color={valueColor}>
           {r.valueEth === '0' ? '—' : `${prefix}${r.valueEth} ETH`}
         </Text>
-        <Text style={{ color: r.failed ? DANGER : sub, fontSize: 15, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
+        <Text size="md" color={r.failed ? DANGER : sub} style={{ marginTop: 2 }}>
           {r.failed ? 'Failed' : `#${r.nonce}`}
         </Text>
       </Col>

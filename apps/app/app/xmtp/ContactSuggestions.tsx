@@ -7,6 +7,7 @@
  *  brand-new account with no DMs, or a query that matches no contact). */
 
 import { Pressable } from '@metro-labs/kit/pressable';
+
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import { usePalette } from '../../lib/theme';
@@ -28,7 +29,7 @@ export function ContactSuggestions({
 
   return (
     <Col gap={6}>
-      <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+      <Text size="xs" color={sub}>
         Suggested contacts
       </Text>
       <Col gap={2}>
@@ -43,33 +44,29 @@ export function ContactSuggestions({
                 borderRadius: 12, paddingHorizontal: 8, paddingVertical: 8,
                 backgroundColor: pressed ? border : 'transparent',
               })}
-            >
+>
               <Avatar
                 address={c.address}
                 imageUri={c.avatar}
                 size="md"
                 cacheBuster={c.cacheBuster}
                 style={{ backgroundColor: border }}
-              />
+/>
               <Col flex={1} gap={1}>
-                <Text numberOfLines={1} style={{ color: head, fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
+                <Text weight="semibold" size="md" numberOfLines={1} color={head}>
                   {c.name}
                 </Text>
                 {c.name !== shortAddress(c.address) && (
-                  <Text numberOfLines={1} style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>
+                  <Text size="xs" numberOfLines={1} color={sub}>
                     {shortAddress(c.address)}
                   </Text>
                 )}
               </Col>
-              <Row
+              <Row width={24} height={24} radius="lg" background={isSelected ? head : 'transparent'}
                 align="center"
                 justify="center"
-                style={{
-                  width: 24, height: 24, borderRadius: 12, borderWidth: 2,
-                  borderColor: isSelected ? head : border,
-                  backgroundColor: isSelected ? head : 'transparent',
-                }}
-              >
+                style={{ borderWidth: 2, borderColor: isSelected ? head : border }}
+>
                 {isSelected && <Icon name="check" size={14} color="#fff" />}
               </Row>
             </Pressable>

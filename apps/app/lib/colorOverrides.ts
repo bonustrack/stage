@@ -1,33 +1,59 @@
-/** Per-token, per-scheme color overrides for the 7 canonical palette tokens.
- *  Lets the Kit page edit any token's hex; overrides are layered OVER the kit
- *  defaults by usePalette() and re-theme the whole app live. Device-only,
- *  persisted to AsyncStorage. Same in-memory-mirror + pub/sub pattern as
- *  lastAttachment.ts/scrollPos.ts; no new dependency.
+/** ChatKit SEED-based theme store (per-scheme) + the Custom-theme flag.
  *
- *  Shape: { [tokenKey]: { light?: hex, dark?: hex } }. tokenKey is one of the
- *  7 Palette keys (bg/border/text/link/primary/danger/success). */
+ *  Replaces the old 9-flat-hex per-token override model with ChatKit's SEED
+ *  model: the user sets a few SEEDS (grayscale base, accent, surface
+ *  background/foreground) plus density/radius/typography, and the full palette
+ *  is DERIVED by @metro-labs/kit `derivePalette`. usePalette() layers the
+ *  derived palette OVER the kit default; the default seed reproduces today's
+ *  palette pixel-for-pixel (lossless).
+ *
+ *  Device-only, persisted to AsyncStorage. Same in-memory-mirror + pub/sub
+ *  pattern as before; no new dependency.
+ *
+ *  UPGRADE: a user with no saved seed (`theme:seed`) starts on the default seed
+ *  (which is lossless: reproduces today's palette pixel-for-pixel). The old
+ *  per-token hex override key (`theme:colorOverrides`) is NOT read or migrated -
+ *  everyone gets a clean default seed and can re-customize from the editor. The
+ *  old key is left in storage untouched (non-destructive); we just ignore it.
+ */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  DEFAULT_SEED, type ThemeSeed, type Scheme,
+  type RadiusName, type Density, type BaseSize,
+  RADIUS_NAME_DEFAULT, DENSITY_DEFAULT, BASE_SIZE_DEFAULT,
+} from '@metro-labs/kit';
 
-export type Scheme = 'light' | 'dark';
-export type TokenKey =
-  'bg' | 'border' | 'text' | 'link' | 'primary' | 'danger' | 'success'
-  | 'inputBg' | 'toolbarBg';
+export type { Scheme };
 
-export type ColorOverrides = Partial<Record<TokenKey, Partial<Record<Scheme, string>>>>;
+/** The persisted Custom theme: a seed per scheme + shared non-color knobs. */
+export interface ThemeSeeds {
+  light: ThemeSeed;
+  dark: ThemeSeed;
+  density: Density;
+  radius: RadiusName;
+  baseSize: BaseSize;
+}
 
-const KEY = 'theme:colorOverrides';
+const SEED_KEY = 'theme:seed';
 const CUSTOM_KEY = 'theme:custom';
 const HEX_RE = /^#([0-9a-fA-F]{6})$/;
 
 /** True for a valid `#rrggbb` string. */
 export function isHex(v: string): boolean { return HEX_RE.test(v.trim()); }
 
-/** In-memory mirror so usePalette can read synchronously after the one-time
- *  load, and edits repaint instantly. */
-let cache: ColorOverrides = {};
-/** Whether the user has opted into the Custom theme. When false, usePalette
- *  ignores every override and renders the plain kit light/dark palette. */
+/** The clean default seeds (lossless: reproduces today's palette exactly). */
+export function defaultSeeds(): ThemeSeeds {
+  return {
+    light: { ...DEFAULT_SEED.light, surface: { ...DEFAULT_SEED.light.surface } },
+    dark: { ...DEFAULT_SEED.dark, surface: { ...DEFAULT_SEED.dark.surface } },
+    density: DENSITY_DEFAULT,
+    radius: RADIUS_NAME_DEFAULT,
+    baseSize: BASE_SIZE_DEFAULT,
+  };
+}
+
+let cache: ThemeSeeds = defaultSeeds();
 let customEnabled = false;
 let loaded = false;
 const listeners = new Set<() => void>();
@@ -35,33 +61,36 @@ const listeners = new Set<() => void>();
 function emit(): void { for (const l of listeners) l(); }
 
 function persist(): void {
-  void AsyncStorage.setItem(KEY, JSON.stringify(cache)).catch(() => { /* best-effort */ });
+  void AsyncStorage.setItem(SEED_KEY, JSON.stringify(cache)).catch(() => { /* best-effort */ });
 }
 
-/** Kick off the one-time load from storage; notify subscribers when it lands. */
+/** Kick off the one-time load from storage; notify subscribers when it lands.
+ *  No saved seed -> keep the default seed (lossless). The old per-token override
+ *  key is intentionally not read: everyone upgrades onto a clean default seed. */
 export function loadOverrides(): void {
   if (loaded) return;
   loaded = true;
-  void AsyncStorage.multiGet([KEY, CUSTOM_KEY])
+  void AsyncStorage.multiGet([SEED_KEY, CUSTOM_KEY])
     .then((pairs) => {
       let changed = false;
-      for (const [k, raw] of pairs) {
-        if (raw == null) continue;
-        if (k === KEY) {
-          const parsed = JSON.parse(raw) as unknown;
-          if (parsed && typeof parsed === 'object') { cache = parsed as ColorOverrides; changed = true; }
-        } else if (k === CUSTOM_KEY) {
-          customEnabled = raw === '1';
+      const map = new Map(pairs);
+      const seedRaw = map.get(SEED_KEY);
+      if (seedRaw != null) {
+        const parsed = JSON.parse(seedRaw) as Partial<ThemeSeeds>;
+        if (parsed && typeof parsed === 'object' && parsed.light && parsed.dark) {
+          cache = { ...defaultSeeds(), ...parsed } as ThemeSeeds;
           changed = true;
         }
       }
+      const customRaw = map.get(CUSTOM_KEY);
+      if (customRaw != null) { customEnabled = customRaw === '1'; changed = true; }
       if (changed) emit();
     })
-    .catch(() => { /* best-effort: keep empty */ });
+    .catch(() => { /* best-effort: keep default seed */ });
 }
 
-/** Synchronous snapshot of the current overrides. */
-export function getOverrides(): ColorOverrides { return cache; }
+/** Synchronous snapshot of the current seeds. */
+export function getSeeds(): ThemeSeeds { return cache; }
 
 /** Whether the Custom theme is currently active. */
 export function isCustomTheme(): boolean { return customEnabled; }
@@ -74,29 +103,51 @@ export function setCustomTheme(on: boolean): void {
   void AsyncStorage.setItem(CUSTOM_KEY, on ? '1' : '0').catch(() => { /* best-effort */ });
 }
 
-/** Set (valid hex) or clear (invalid/empty) a single token override for a
- *  scheme, then persist + notify. Invalid hex clears that entry. */
-export function setOverride(tokenKey: TokenKey, scheme: Scheme, hex: string): void {
-  const valid = isHex(hex);
-  const next: ColorOverrides = { ...cache };
-  const entry = { ...(next[tokenKey] ?? {}) };
-  if (valid) entry[scheme] = hex.trim().toLowerCase();
-  else delete entry[scheme];
-  if (Object.keys(entry).length === 0) delete next[tokenKey];
-  else next[tokenKey] = entry;
+/** Set one seed COLOR (grayscale|accent|background|foreground) for a scheme.
+ *  Invalid hex is ignored. Persists + notifies so the app re-themes live. */
+export type SeedColorKey = 'grayscale' | 'accent' | 'background' | 'foreground';
+export function setSeedColor(scheme: Scheme, key: SeedColorKey, hex: string): void {
+  if (!isHex(hex)) return;
+  const v = hex.trim().toLowerCase();
+  const next: ThemeSeeds = { ...cache, [scheme]: { ...cache[scheme], surface: { ...cache[scheme].surface } } };
+  const s = next[scheme];
+  if (key === 'background') s.surface.background = v;
+  else if (key === 'foreground') s.surface.foreground = v;
+  else s[key] = v;
   cache = next;
   emit();
   persist();
 }
 
-/** Wipe all overrides → back to kit defaults. */
-export function resetOverrides(): void {
-  cache = {};
+/** Set the shared density seed. */
+export function setSeedDensity(d: Density): void {
+  cache = { ...cache, density: d };
   emit();
   persist();
 }
 
-/** Subscribe to override changes (load/edit/reset). Returns an unsubscribe fn. */
+/** Set the shared radius (name) seed. */
+export function setSeedRadius(r: RadiusName): void {
+  cache = { ...cache, radius: r };
+  emit();
+  persist();
+}
+
+/** Set the shared base font size seed. */
+export function setSeedBaseSize(b: BaseSize): void {
+  cache = { ...cache, baseSize: b };
+  emit();
+  persist();
+}
+
+/** Reset to the default seed -> back to today's exact palette. */
+export function resetOverrides(): void {
+  cache = defaultSeeds();
+  emit();
+  persist();
+}
+
+/** Subscribe to seed/custom changes (load/edit/reset). Returns an unsubscribe fn. */
 export function subscribe(fn: () => void): () => void {
   listeners.add(fn);
   return () => { listeners.delete(fn); };

@@ -5,9 +5,10 @@
  *  full reload; the user taps back to return. */
 
 import { Pressable } from '@metro-labs/kit/pressable';
+
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { Title } from '@metro-labs/kit/title';
-import { Box } from '../components/layout';
+import { Row, Col } from '../components/layout';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
@@ -17,30 +18,25 @@ import { AccountsManager } from '../components/AccountsManager';
 export default function Accounts(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border, toolbarBg } = usePalette();
+  const { text: fg, link: head, border } = usePalette();
   const insets = useSafeAreaInsets();
 
   return (
-    <Box style={{ flex: 1, backgroundColor: bg }}>
+    <Col surface="surface" flex={1}>
       {/* Topnav: back + title, mirroring the search page. Paints toolbarBg +
           absorbs the top inset so the bar reaches the screen edge. */}
-      <Box style={{
-        flexDirection: 'row', alignItems: 'center', gap: 8,
-        paddingHorizontal: 12, paddingTop: 8 + insets.top, paddingBottom: 10,
-        borderBottomWidth: 1, borderBottomColor: border,
-        backgroundColor: toolbarBg,
-      }}>
+      <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
-          <Icon name="arrowLeft" size={22} color={fg} />
+          <Icon name="arrowLeft" size={22} color={fg}/>
         </Pressable>
-        <Title dark={dark} style={{ color: head, fontSize: 20 }}>
+        <Title size="sm" color={head}>
           Accounts
         </Title>
-      </Box>
+      </Row>
 
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}>
-        <AccountsManager dark={dark} flat onSwitched={() => router.back()} />
+        <AccountsManager dark={dark} flat onSwitched={() => router.back()}/>
       </ScrollView>
-    </Box>
+    </Col>
   );
 }

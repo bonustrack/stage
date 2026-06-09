@@ -2,8 +2,9 @@
  *  Extracted for lint line-budget. Rendering identical. */
 
 import { Modal } from 'react-native';
+
 import { Pressable } from '@metro-labs/kit/pressable';
-import { Box } from './layout';
+import { Box, Col } from './layout';
 import { Avatar } from './Avatar';
 import { Text } from '@metro-labs/kit/text';
 import { ListViewItem } from '@metro-labs/kit/list-view';
@@ -32,16 +33,16 @@ export function AccountRow({ rec, onPress, onLongPress, topBorder, trailing, hea
         borderTopWidth: topBorder ? 1 : 0, borderTopColor: border,
         backgroundColor: pressed ? border : 'transparent',
       })}
-    >
-      <Avatar address={rec.address} size={28} style={{ backgroundColor: border }} />
-      <Box style={{ flex: 1, minWidth: 0 }}>
-        <Text numberOfLines={1} style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>
+>
+      <Avatar address={rec.address} size={28} style={{ backgroundColor: border }}/>
+      <Col minWidth={0} flex={1}>
+        <Text weight="semibold" size="md" numberOfLines={1} color={head}>
           {getPeerName(rec.address) ?? rec.label ?? shortAddress(rec.address)}
         </Text>
-        <Text numberOfLines={1} style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 1 }}>
+        <Text size="xs" numberOfLines={1} color={sub} style={{ marginTop: 1 }}>
           {shortAddress(rec.address)} · {TYPE_LABEL[rec.type]}
         </Text>
-      </Box>
+      </Col>
       {trailing}
     </Pressable>
   );
@@ -60,7 +61,7 @@ export function SheetModal({ visible, onClose, children, bg, border }: {
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>
         <Pressable onPress={(e) => e.stopPropagation()} style={{ backgroundColor: bg, borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 16, paddingBottom: 28 + insets.bottom, borderTopWidth: 1, borderColor: border }}>
-          <Box style={{ alignSelf: 'center', width: 36, height: 4, borderRadius: 2, backgroundColor: border, marginBottom: 12 }} />
+          <Box width={36} height={4} radius="2xs" background={border} margin={{ bottom: 12 }} style={{ alignSelf: 'center' }}/>
           {children}
         </Pressable>
       </Pressable>
@@ -77,10 +78,10 @@ export function SheetRow({ label, desc, onPress, head, sub, danger, dark }: {
   const labelColor = danger ? DANGER : head;
   return (
     <ListViewItem dark={dark} onPress={onPress}>
-      <Box style={{ flex: 1 }}>
-        <Text style={{ color: labelColor, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>{label}</Text>
-        {desc ? <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 2 }}>{desc}</Text> : null}
-      </Box>
+      <Col flex={1}>
+        <Text weight="semibold" size="md" color={labelColor}>{label}</Text>
+        {desc ? <Text size="xs" color={sub} style={{ marginTop: 2 }}>{desc}</Text> : null}
+      </Col>
     </ListViewItem>
   );
 }

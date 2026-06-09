@@ -118,15 +118,15 @@ export function usePullToRefresh(
   });
 
   const indicator = (
-    <Box pointerEvents="none" style={{ height: 0, alignItems: 'center', zIndex: 10 }}>
+    <Box height={0} pointerEvents="none" align="center" style={{ zIndex: 10 }}>
       <Animated.View
         style={{
           position: 'absolute',
           opacity,
           transform: [{ translateY }, { rotate }],
         }}
-      >
-        <Spinner size={24} color={color} />
+>
+        <Spinner size={24} color={color}/>
       </Animated.View>
     </Box>
   );

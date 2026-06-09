@@ -4,8 +4,9 @@
  *  "loading…" label and is disabled so the screen never lands on a blank QR. */
 
 import { Pressable } from '@metro-labs/kit/pressable';
+
 import { Text } from '@metro-labs/kit/text';
-import { Box } from '../layout';
+import { Row } from '../layout';
 import { usePalette } from '../../lib/theme';
 
 export type ReceiveMode = 'public' | 'private';
@@ -29,11 +30,8 @@ export function ReceiveModeToggle({ mode, onChange, privateReady }: {
           backgroundColor: active ? rowBg : 'transparent',
           opacity: disabled ? 0.45 : 1,
         }}
-      >
-        <Text style={{
-          color: active ? head : sub, fontSize: 14,
-          fontFamily: active ? 'Calibre-Semibold' : 'Calibre-Medium',
-        }}>
+>
+        <Text size="md" weight={active ? 'semibold' : 'normal'} color={active ? head : sub}>
           {label}
         </Text>
       </Pressable>
@@ -41,12 +39,9 @@ export function ReceiveModeToggle({ mode, onChange, privateReady }: {
   };
 
   return (
-    <Box style={{
-      flexDirection: 'row', width: '100%', padding: 3, gap: 3,
-      borderRadius: 12, borderWidth: 1, borderColor: border,
-    }}>
+    <Row width={'100%'} radius="lg" padding={3} gap={3} style={{ borderWidth: 1, borderColor: border }}>
       {segment('public', 'Public', false)}
       {segment('private', privateReady ? 'Private' : 'Private (loading…)', !privateReady)}
-    </Box>
+    </Row>
   );
 }

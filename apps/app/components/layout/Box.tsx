@@ -7,4 +7,4 @@
  *  directly. */
 
 export { Box, Row, Col } from '@metro-labs/kit/box';
-export type { Align, Justify, BoxProps, RowColProps } from '@metro-labs/kit/box';
+export type { Align, Justify, BoxProps, RowColProps, Surface } from '@metro-labs/kit/box';

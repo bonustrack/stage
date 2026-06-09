@@ -8,6 +8,7 @@
  *  live (streamConvConsent) so accepted requests appear there without a reload. */
 
 import { useCallback, useEffect, useState } from 'react';
+
 import { FlatList } from '@metro-labs/kit/flat-list';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
@@ -23,7 +24,7 @@ import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { usePeerProfiles, getPeerName, getPeerAvatarCb } from '../../lib/peerProfiles';
 import { Icon } from '@metro-labs/kit/icon';
 import { ChannelRow } from '../../components/ChannelRow';
-import { Box, Col, Row } from '../../components/layout';
+import { Col, Row } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
 
 /** Message-request row view-model. The shape lives on the facade's
@@ -34,7 +35,7 @@ type ReqRow = ConversationRequestView;
 export default function Requests(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border, danger, toolbarBg } = usePalette();
+  const { text: fg, link: head, border, danger } = usePalette();
   const sub = fg;
   const insets = useSafeAreaInsets();
   const [rows, setRows] = useState<ReqRow[] | null>(null);
@@ -67,8 +68,8 @@ export default function Requests(): React.ReactElement {
       /* Same channel card as the channels list, with an approve/reject cluster
          pinned on the right. ChannelRow flexes to fill; the actions sit beside
          it (paddingRight on the row keeps the buttons off the screen edge). */
-      <Row align="center" style={{ paddingRight: 12 }}>
-        <Box style={{ flex: 1, minWidth: 0 }}>
+      <Row padding={{ right: 12 }} align="center">
+        <Col minWidth={0} flex={1}>
           <ChannelRow
             title={displayTitle}
             avatarAddress={item.avatarAddress}
@@ -77,22 +78,22 @@ export default function Requests(): React.ReactElement {
             square={item.isGroup}
             lastPreview={item.preview || '(no messages yet)'}
             onPress={() => router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } })}
-          />
-        </Box>
+/>
+        </Col>
         <Row gap={8} style={{ flexShrink: 0 }}>
           <Pressable
             onPress={() => act(item.convId, false)}
             hitSlop={6}
             style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: border }}
-          >
-            <Icon name="x" size={18} color={danger} />
+>
+            <Icon name="x" size={18} color={danger}/>
           </Pressable>
           <Pressable
             onPress={() => act(item.convId, true)}
             hitSlop={6}
             style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: dark ? '#15321f' : '#dcf5e6' }}
-          >
-            <Icon name="check" size={18} color={dark ? '#34d399' : '#15803d'} />
+>
+            <Icon name="check" size={18} color={dark ? '#34d399' : '#15803d'}/>
           </Pressable>
         </Row>
       </Row>
@@ -100,24 +101,19 @@ export default function Requests(): React.ReactElement {
   }, [router, act, border, danger, dark]);
 
   return (
-    <Box style={{ flex: 1, backgroundColor: bg }}>
-      <Box style={{
-        flexDirection: 'row', alignItems: 'center', gap: 8,
-        paddingHorizontal: 12, paddingTop: 8 + insets.top, paddingBottom: 10,
-        borderBottomWidth: 1, borderBottomColor: border,
-        backgroundColor: toolbarBg,
-      }}>
+    <Col surface="surface" flex={1}>
+      <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
-          <Icon name="arrowLeft" size={22} color={fg} />
+          <Icon name="arrowLeft" size={22} color={fg}/>
         </Pressable>
-        <Title dark={dark} style={{ color: head, fontSize: 20 }}>
+        <Title size="sm" color={head}>
           Message requests
         </Title>
-      </Box>
+      </Row>
 
       {!rows ? (
         <Col flex={1} align="center" justify="center">
-          <Spinner size={28} color={head} />
+          <Spinner size={28} color={head}/>
         </Col>
       ) : (
         <FlatList
@@ -126,14 +122,14 @@ export default function Requests(): React.ReactElement {
           renderItem={renderRow}
           contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}
           ListEmptyComponent={
-            <Col p={32} align="center">
-              <Text style={{ color: sub, textAlign: 'center' }}>
+            <Col padding={32} align="center">
+              <Text color={sub} style={{ textAlign: 'center' }}>
                 No message requests.
               </Text>
             </Col>
           }
-        />
+/>
       )}
-    </Box>
+    </Col>
   );
 }

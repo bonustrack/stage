@@ -7,7 +7,7 @@ import { Linking } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Box } from '../layout';
+import { Col } from '../layout';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { SystemHeader } from './SystemHeader';
 import { ThemeSwitcher } from './ThemeSwitcher';
@@ -18,13 +18,13 @@ const KIT_GITHUB_URL = 'https://github.com/bonustrack/metro/tree/main/packages/k
 
 export function KitPage(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border } = usePalette();
+  const { text: fg, link: head, border } = usePalette();
   const sub = fg;
   const rowBg = border;
   const insets = useSafeAreaInsets();
 
   return (
-    <Box style={{ flex: 1, backgroundColor: bg }}>
+    <Col surface="surface" flex={1}>
       <SystemHeader
         title="Kit" dark={dark} fg={fg} head={head} border={border}
         right={
@@ -33,19 +33,19 @@ export function KitPage(): React.ReactElement {
             hitSlop={8}
             style={{ padding: 4 }}
             accessibilityLabel="View @metro-labs/kit on GitHub"
-          >
-            <GithubLogo size={22} color={fg} />
+>
+            <GithubLogo size={22} color={fg}/>
           </Pressable>
         }
-      />
+/>
       <ScrollView
         style={{ flex: 1 }}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 + insets.bottom }}
-      >
-        <ThemeSwitcher dark={dark} head={head} sub={sub} border={border} rowBg={rowBg} />
-        <KitSections dark={dark} head={head} sub={sub} border={border} rowBg={rowBg} />
+>
+        <ThemeSwitcher dark={dark} head={head} sub={sub} border={border} rowBg={rowBg}/>
+        <KitSections dark={dark} head={head} sub={sub} border={border} rowBg={rowBg}/>
       </ScrollView>
-    </Box>
+    </Col>
   );
 }
