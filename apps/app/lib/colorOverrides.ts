@@ -10,13 +10,11 @@
  *  Device-only, persisted to AsyncStorage. Same in-memory-mirror + pub/sub
  *  pattern as before; no new dependency.
  *
- *  MIGRATION: a user with the OLD `theme:colorOverrides` (per-token hex) map is
- *  migrated best-effort into a seed on load: bg->surface.background,
- *  text->surface.foreground, link->accent, border->grayscale (the seed roles
- *  those tokens map to). Tokens with no seed slot (inputBg/sub/etc) are dropped
- *  - the seed re-derives them. If no old data exists we start from the default
- *  seed (which is lossless). The old key is left in storage untouched (read-only
- *  migration) so nothing is destroyed.
+ *  UPGRADE: a user with no saved seed (`theme:seed`) starts on the default seed
+ *  (which is lossless: reproduces today's palette pixel-for-pixel). The old
+ *  per-token hex override key (`theme:colorOverrides`) is NOT read or migrated -
+ *  everyone gets a clean default seed and can re-customize from the editor. The
+ *  old key is left in storage untouched (non-destructive); we just ignore it.
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -27,10 +25,6 @@ import {
 } from '@metro-labs/kit';
 
 export type { Scheme };
-/** Re-exported for editor/consumers that still reference the union. */
-export type TokenKey =
-  'bg' | 'border' | 'text' | 'link' | 'primary' | 'danger' | 'success'
-  | 'inputBg' | 'toolbarBg';
 
 /** The persisted Custom theme: a seed per scheme + shared non-color knobs. */
 export interface ThemeSeeds {
@@ -42,7 +36,6 @@ export interface ThemeSeeds {
 }
 
 const SEED_KEY = 'theme:seed';
-const LEGACY_KEY = 'theme:colorOverrides';
 const CUSTOM_KEY = 'theme:custom';
 const HEX_RE = /^#([0-9a-fA-F]{6})$/;
 
@@ -71,34 +64,13 @@ function persist(): void {
   void AsyncStorage.setItem(SEED_KEY, JSON.stringify(cache)).catch(() => { /* best-effort */ });
 }
 
-/** Map an OLD per-token hex map into a seed (best-effort migration). Only the
- *  tokens that have a seed role are honored; the rest are re-derived. */
-function migrateLegacy(raw: string): ThemeSeeds | null {
-  try {
-    const parsed = JSON.parse(raw) as Record<string, Partial<Record<Scheme, string>>>;
-    if (!parsed || typeof parsed !== 'object') return null;
-    const seeds = defaultSeeds();
-    let any = false;
-    for (const scheme of ['light', 'dark'] as const) {
-      const s = seeds[scheme];
-      const bg = parsed.bg?.[scheme];
-      const text = parsed.text?.[scheme];
-      const link = parsed.link?.[scheme];
-      const border = parsed.border?.[scheme];
-      if (bg && isHex(bg)) { s.surface.background = bg; any = true; }
-      if (text && isHex(text)) { s.surface.foreground = text; any = true; }
-      if (link && isHex(link)) { s.accent = link; any = true; }
-      if (border && isHex(border)) { s.grayscale = border; any = true; }
-    }
-    return any ? seeds : null;
-  } catch { return null; }
-}
-
-/** Kick off the one-time load from storage; notify subscribers when it lands. */
+/** Kick off the one-time load from storage; notify subscribers when it lands.
+ *  No saved seed -> keep the default seed (lossless). The old per-token override
+ *  key is intentionally not read: everyone upgrades onto a clean default seed. */
 export function loadOverrides(): void {
   if (loaded) return;
   loaded = true;
-  void AsyncStorage.multiGet([SEED_KEY, LEGACY_KEY, CUSTOM_KEY])
+  void AsyncStorage.multiGet([SEED_KEY, CUSTOM_KEY])
     .then((pairs) => {
       let changed = false;
       const map = new Map(pairs);
@@ -108,12 +80,6 @@ export function loadOverrides(): void {
         if (parsed && typeof parsed === 'object' && parsed.light && parsed.dark) {
           cache = { ...defaultSeeds(), ...parsed } as ThemeSeeds;
           changed = true;
-        }
-      } else {
-        const legacyRaw = map.get(LEGACY_KEY);
-        if (legacyRaw != null) {
-          const migrated = migrateLegacy(legacyRaw);
-          if (migrated) { cache = migrated; persist(); changed = true; }
         }
       }
       const customRaw = map.get(CUSTOM_KEY);
