@@ -163,6 +163,15 @@ jobs:
           RAW_BRANCH='${{ github.ref_name }}'
           BRANCH="$(echo "$RAW_BRANCH" | tr '/' '-' | tr -cd 'a-zA-Z0-9._-')"
           echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+          # Git short-hash: the unambiguous identity of the previewed commit. We
+          # keep a per-BRANCH EAS channel (the update groupId already makes each
+          # publish a unique, immutable deep link, so the manifest URL maps 1:1 to
+          # a commit) and surface the short-sha prominently in the update message,
+          # job summary and Preview status so the running version is never in
+          # doubt. A per-commit channel was rejected: it would create an unbounded
+          # set of stale, never-cleaned channels (one per push, forever).
+          SHORT_SHA="$(git rev-parse --short HEAD)"
+          echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
           # Two-step export instead of letting `eas update` bundle implicitly, so
           # we can pass preview-only Metro flags that `eas update` does NOT expose:
           #
@@ -201,7 +210,7 @@ jobs:
             --platform android \
             --skip-bundler \
             --input-dir dist \
-            --message "${RAW_BRANCH} @ ${{ github.sha }}" \
+            --message "${RAW_BRANCH}@${SHORT_SHA} (${{ github.sha }})" \
             --non-interactive --json > eas-update.json
           node ../../scripts/pr-preview/eas-deeplink.mjs eas-update.json >> "$GITHUB_OUTPUT"
 
@@ -211,10 +220,13 @@ jobs:
           MANIFEST='${{ steps.update.outputs.manifest }}'
           DEEPLINK='${{ steps.update.outputs.deeplink }}'
           BRANCH='${{ steps.update.outputs.branch }}'
+          SHORT_SHA='${{ steps.update.outputs.short_sha }}'
           LAUNCHER="https://metro.box/preview-launcher.html?u=$(node -e "process.stdout.write(encodeURIComponent(process.argv[1]))" "$MANIFEST")"
           QR="https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=$(node -e "process.stdout.write(encodeURIComponent(process.argv[1]))" "$DEEPLINK")"
           {
-            echo "## App preview — \`${{ github.ref_name }}\`"
+            echo "## App preview - \`${{ github.ref_name }}\` @ \`$SHORT_SHA\`"
+            echo ""
+            echo "**commit \`$SHORT_SHA\`** (\`${{ github.sha }}\`)"
             echo ""
             if [ '${{ steps.native.outputs.native }}' = 'true' ]; then
               echo "> [!WARNING]"
@@ -223,11 +235,11 @@ jobs:
               echo "> The JS update below is still published (it just won't include the native delta)."
               echo ""
             fi
-            echo "**Channel:** \`$BRANCH\`"
+            echo "**Channel:** \`$BRANCH\` &nbsp;·&nbsp; **commit:** \`$SHORT_SHA\`"
             echo ""
-            echo "[Open dev-client preview]($LAUNCHER)"
+            echo "[Open dev-client preview ($SHORT_SHA)]($LAUNCHER)"
             echo ""
-            echo "Raw deep link (tap on device):"
+            echo "Raw deep link (tap on device) - commit \`$SHORT_SHA\`:"
             echo ""
             echo "\`$DEEPLINK\`"
             echo ""
@@ -246,9 +258,10 @@ jobs:
             const target =
               'https://metro.box/preview-launcher.html?u=' + encodeURIComponent(manifest);
             const native = `${{ steps.native.outputs.native }}` === 'true';
+            const shortSha = `${{ steps.update.outputs.short_sha }}`;
             const description = native
-              ? 'Open preview (native changed — APK needed)'
-              : 'Open dev-client preview';
+              ? `Open preview commit ${shortSha} (native changed - APK needed)`
+              : `Open dev-client preview commit ${shortSha}`;
             await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
