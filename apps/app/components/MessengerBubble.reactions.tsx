@@ -90,7 +90,7 @@ export function ReactionPicker({ dark, sub, onPick, onClose }: {
         </Pressable>
       ))}
       <Pressable onPress={onClose}>
-        <Text size="md" style={{ color: sub, paddingHorizontal: 4 }}>✕</Text>
+        <Text size="md+" style={{ color: sub, paddingHorizontal: 4 }}>✕</Text>
       </Pressable>
     </Row>
   );

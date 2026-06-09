@@ -85,8 +85,8 @@ function PollQuestionBlock({ q, qi, sub, dark, votes, own, onVote, openAnswers, 
               </Text>
             </Row>
             {opt.description ? (
-              <Text size="md" style={{ color: sub, marginTop: 2 }}>
-                {opt.description}
+              <Text size="sm+" style={{ color: sub, marginTop: 2 }}>
+
               </Text>
             ) : null}
           </Pressable>
@@ -124,7 +124,7 @@ export function PollView({ poll, dark, sub, votes, ownVotes, onVote, openAnswers
       {poll.questions.map((q, qi) => (
         <Box key={`q-${qi}`} style={{ alignSelf: 'stretch', gap: 6 }}>
           {multiQuestion && qi > 0 ? (
-            <Text weight="semibold" size="xl" style={{ color: fg }}>{q.question}</Text>
+            <Text weight="semibold" size="xl-" style={{ color: fg }}>{q.question}</Text>
           ) : null}
           <PollQuestionBlock
             q={q} qi={qi} sub={sub} dark={dark}

@@ -124,15 +124,37 @@ export const BLOCK_RADIUS_DEFAULT = 12;
  * everything" = standardize). See FONT_SIZE_SNAP for the px -> name mapping.
  * ------------------------------------------------------------------------- */
 
-/** Named text sizes (xs..xxxl). */
-export type FontSizeName = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl' | 'xxxl';
+/** Named text sizes. The t-shirt steps (xs..xxxl) are the headline scale;
+ *  the interstitial `*-` / `*+` half-steps fill the gaps so the real px values
+ *  the app uses (11..20) each have an EXACT named token. This makes adopting a
+ *  named size lossless for the key surfaces (channel rows, topnavs, messenger
+ *  feed + composer) - they render at their original px, not a snapped value. */
+export type FontSizeName =
+  | 'xs'   // 11
+  | 'xs+'  // 12
+  | 'sm'   // 13
+  | 'sm+'  // 14
+  | 'md'   // 15
+  | 'md+'  // 16
+  | 'lg'   // 17
+  | 'lg+'  // 18
+  | 'xl-'  // 19
+  | 'xl'   // 20
+  | 'xxl'  // 24
+  | 'xxxl'; // 32
 
-/** Named font-size scale -> px. The canonical set of text sizes. */
+/** Named font-size scale -> px. The canonical set of text sizes. Every px the
+ *  key surfaces use (11..20) is an exact step so snapping is lossless there. */
 export const FONT_SIZE: Record<FontSizeName, number> = {
   xs: 11,
+  'xs+': 12,
   sm: 13,
+  'sm+': 14,
   md: 15,
+  'md+': 16,
   lg: 17,
+  'lg+': 18,
+  'xl-': 19,
   xl: 20,
   xxl: 24,
   xxxl: 32,
@@ -150,11 +172,16 @@ export function fontSize(name: FontSizeName): number {
 /** Documented nearest-neighbour mapping of every legacy raw px to a named step.
  *  Kept for reference / migration audit (not used at runtime). */
 export const FONT_SIZE_SNAP: Record<string, FontSizeName> = {
-  '10': 'xs', '11': 'xs', '11.5': 'xs',
-  '12': 'sm', '12.5': 'sm', '13': 'sm',
-  '14': 'md', '15': 'md', '16': 'md',
-  '17': 'lg', '18': 'lg',
-  '19': 'xl', '20': 'xl',
+  '10': 'xs', '11': 'xs',
+  '12': 'xs+',
+  '13': 'sm',
+  '14': 'sm+',
+  '15': 'md',
+  '16': 'md+',
+  '17': 'lg',
+  '18': 'lg+',
+  '19': 'xl-',
+  '20': 'xl',
   '22': 'xxl', '24': 'xxl', '26': 'xxl',
   '28': 'xxxl', '34': 'xxxl', '38': 'xxxl',
 } as const;

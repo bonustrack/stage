@@ -38,7 +38,7 @@ export function PollSheet({
           placeholder="Question"
           placeholderTextColor={sub}
           dark={dark}
-          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: fontSize('md'), minHeight: 0 }}
+          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: fontSize('md+'), minHeight: 0 }}
         />
         <Input
           value={header}
@@ -47,7 +47,7 @@ export function PollSheet({
           placeholderTextColor={sub}
           dark={dark}
           inputProps={{ maxLength: 12, autoCapitalize: 'characters' }}
-          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: fontSize('md'), minHeight: 0 }}
+          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: fontSize('sm+'), minHeight: 0 }}
         />
         {options.map((opt, i) => (
           <Row key={i} align="center" gap={8}>
@@ -57,7 +57,7 @@ export function PollSheet({
               placeholder={`Option ${i + 1}`}
               placeholderTextColor={sub}
               dark={dark}
-              style={{ flex: 1, color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: fontSize('md'), minHeight: 0 }}
+              style={{ flex: 1, color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: fontSize('md+'), minHeight: 0 }}
             />
             {options.length > 2 ? (
               <Pressable onPress={() => setOptions(prev => prev.filter((_, j) => j !== i))} hitSlop={8}>
@@ -131,7 +131,7 @@ export function SignatureSheet({
                 backgroundColor: kind === k ? 'rgba(192,160,110,0.15)' : inputBg,
               }}
             >
-              <Text weight="semibold" size="md" style={{ color: kind === k ? '#c0a06e' : fg }}>{label}</Text>
+              <Text weight="semibold" size="sm+" style={{ color: kind === k ? '#c0a06e' : fg }}>{label}</Text>
             </Pressable>
           ))}
         </Row>
@@ -201,7 +201,7 @@ export function PaymentSheet({
           placeholderTextColor={sub}
           dark={dark}
           inputProps={{ autoCapitalize: 'none', autoCorrect: false }}
-          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: fontSize('md'), minHeight: 0 }}
+          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: fontSize('sm+'), minHeight: 0 }}
         />
         <Input
           value={amount}
@@ -211,7 +211,7 @@ export function PaymentSheet({
           inputType="number"
           dark={dark}
           inputProps={{ keyboardType: 'decimal-pad' }}
-          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: fontSize('md'), minHeight: 0 }}
+          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: fontSize('md+'), minHeight: 0 }}
         />
         <Input
           value={note}
@@ -219,7 +219,7 @@ export function PaymentSheet({
           placeholder="Note (optional)"
           placeholderTextColor={sub}
           dark={dark}
-          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: fontSize('md'), minHeight: 0 }}
+          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: fontSize('md+'), minHeight: 0 }}
         />
         <Button
           variant="primary"

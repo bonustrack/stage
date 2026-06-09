@@ -66,7 +66,7 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
               selection: p.selection,
               onSelectionChange: (e) => p.setSelection(e.nativeEvent.selection),
             }}
-            style={{ color: head, fontFamily: 'Calibre-Medium', fontSize: fontSize('xl'), lineHeight: 23, minHeight: 24, maxHeight: 210, height: undefined, paddingHorizontal: 8, paddingTop: 4, paddingBottom: 8, textAlignVertical: 'top', backgroundColor: 'transparent', borderWidth: 0 }}
+            style={{ color: head, fontFamily: 'Calibre-Medium', fontSize: fontSize('xl-'), lineHeight: 23, minHeight: 24, maxHeight: 210, height: undefined, paddingHorizontal: 8, paddingTop: 4, paddingBottom: 8, textAlignVertical: 'top', backgroundColor: 'transparent', borderWidth: 0 }}
           />
         </Box>
       )}
@@ -187,7 +187,7 @@ export function AttachMenu({
           >
             <Icon name={icon} size={26} color={head} />
           </Pressable>
-          <Text weight="semibold" size="md" style={{ color: head }} numberOfLines={1}>{label}</Text>
+          <Text weight="semibold" size="sm+" style={{ color: head }} numberOfLines={1}>{label}</Text>
         </Col>
       ))}
     </ScrollView>

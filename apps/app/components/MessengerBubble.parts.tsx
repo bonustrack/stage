@@ -55,7 +55,7 @@ export function MentionBody({ text, fg, dark, selectable }: { text: string; fg: 
   }
   if (last < text.length) runs.push(text.slice(last));
   return (
-    <Text size="xl" selectable={selectable} style={{ color: fg, lineHeight: 23 }}>
+    <Text size="xl-" selectable={selectable} style={{ color: fg, lineHeight: 23 }}>
       {runs}
     </Text>
   );
@@ -126,7 +126,7 @@ export function QuestionView({ question, dark, sub, onAnswer }: {
               {multi ? (isOn ? '☑︎  ' : '☐  ') : ''}{opt.label}
             </Text>
             {opt.description ? (
-              <Text size="sm" style={{ color: sub, marginTop: 2 }}>
+              <Text size="xs+" style={{ color: sub, marginTop: 2 }}>
                 {opt.description}
               </Text>
             ) : null}
@@ -190,7 +190,7 @@ export function QuestionView({ question, dark, sub, onAnswer }: {
             };
           }}
         >
-          <Text weight="semibold" size="md" style={{ color: '#000' }}>
+          <Text weight="semibold" size="sm+" style={{ color: '#000' }}>
             Submit{multi && selected.size > 0 ? ` (${selected.size}${otherText.trim() ? '+1' : ''})` : ''}
           </Text>
         </Pressable>

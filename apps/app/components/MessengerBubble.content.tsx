@@ -120,7 +120,7 @@ export function BubbleContent({
         })() ? null : (
           <Box style={{ alignSelf: 'stretch' }}>
             {selectable
-              ? <Text size="xl" selectable style={{ color: fg, lineHeight: 23 }}>{entry.text}</Text>
+              ? <Text size="xl-" selectable style={{ color: fg, lineHeight: 23 }}>{entry.text}</Text>
               : hasMention(entry.text)
                 ? <MentionBody text={entry.text} fg={fg} dark={dark} />
                 : <Markdown {...markdownProps}>{entry.text}</Markdown>}
