@@ -55,17 +55,17 @@ export default function Diff(): React.ReactElement {
     : (url ?? '');
 
   return (
-    <Col flex={1} style={{ backgroundColor: p.bg }}>
-      <Row padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: p.border, backgroundColor: p.toolbarBg }}>
+    <Col background={p.bg} flex={1}>
+      <Row background={p.toolbarBg} padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: p.border }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
-          <Icon name="arrowLeft" size={22} color={p.text} />
+          <Icon name="arrowLeft" size={22} color={p.text}/>
         </Pressable>
         <Title size="sm" dark={dark} color={p.link} style={{ flex: 1 }} numberOfLines={1}>
           Changes
         </Title>
         {prUrl ? (
           <Pressable onPress={() => { void Linking.openURL(prUrl); }} hitSlop={8} style={{ padding: 4 }}>
-            <Icon name="link" size={20} color={p.link} />
+            <Icon name="link" size={20} color={p.link}/>
           </Pressable>
         ) : null}
       </Row>

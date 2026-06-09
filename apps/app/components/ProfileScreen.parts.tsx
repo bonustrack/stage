@@ -60,18 +60,18 @@ export function ProfileHeader({ variant, insetTop, isSelf, onBack, onMenu, c }: 
         }
         : { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8, backgroundColor: c.toolbarBg }) }}
       /* eslint-enable no-restricted-syntax */
-    >
+>
       {variant === 'route' ? (
         <Pressable onPress={onBack} hitSlop={10} style={{ padding: 6 }}>
-          <Icon name="arrowLeft" size={22} color={c.link} />
+          <Icon name="arrowLeft" size={22} color={c.link}/>
         </Pressable>
       ) : (
         // Tab variant: avatar + name → Menu, matching the Home topnav identity.
-        <TopnavIdentity />
+        <TopnavIdentity/>
       )}
       {isSelf ? (
         <Pressable onPress={onMenu} hitSlop={8} style={{ padding: 6 }}>
-          <Icon name="dotsHorizontal" size={22} color={c.link} />
+          <Icon name="dotsHorizontal" size={22} color={c.link}/>
         </Pressable>
       ) : null}
     </Row>
@@ -84,14 +84,14 @@ export function InfoRow({ label, value, onCopy, c }: {
 }): React.ReactElement {
   const blockRadius = useBlockRadius();
   return (
-    <Row padding={12} margin={{ x: 16, top: 12 }} align="center" gap={8} style={{ borderRadius: blockRadius, backgroundColor: c.border, borderWidth: 1, borderColor: c.border }}>
+    <Row radius={blockRadius} background={c.border} padding={12} margin={{ x: 16, top: 12 }} align="center" gap={8} style={{ borderWidth: 1, borderColor: c.border }}>
       <Col flex={1}>
         <Text size="3xs" color={c.text}>{label.toUpperCase()}</Text>
         <Text size="md" color={c.text} style={{ marginTop: 4 }} selectable>{value}</Text>
       </Col>
       {onCopy ? (
         <Pressable onPress={onCopy} hitSlop={8} style={{ padding: 4 }}>
-          <Icon name="copy" size={18} color={c.text} />
+          <Icon name="copy" size={18} color={c.text}/>
         </Pressable>
       ) : null}
     </Row>
@@ -121,14 +121,14 @@ export function ProfileActions({ dark, opening, onMessage, onSend, c }: {
         // token so the circle reacts to theme/colour overrides like the rest of
         // the design system (ChannelRow rowBg = border).
         style={{ backgroundColor: c.border, borderColor: c.border }}
-      />
+/>
       <Text weight="semibold" size="md" color={c.link} numberOfLines={1}>{label}</Text>
     </Box>
   );
   return (
     <Row margin={{ top: 18 }} gap={12} justify="start">
-      <Btn icon="chatRect" label={opening ? 'Opening…' : 'Message'} onPress={onMessage} disabled={opening} />
-      <Btn icon="send" label="Send" onPress={onSend} />
+      <Btn icon="chatRect" label={opening ? 'Opening…' : 'Message'} onPress={onMessage} disabled={opening}/>
+      <Btn icon="send" label="Send" onPress={onSend}/>
     </Row>
   );
 }
@@ -142,11 +142,7 @@ export function EditMenu({ visible, top, onClose, onEdit, c }: {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={{ flex: 1 }} onPress={onClose}>
-        <Box style={{
-          position: 'absolute', right: 12, top,
-          minWidth: 168, borderRadius: blockRadius, overflow: 'hidden',
-          backgroundColor: c.bg, borderWidth: 1, borderColor: c.border,
-        }}>
+        <Box minWidth={168} radius={blockRadius} background={c.bg} style={{ position: 'absolute', right: 12, top, overflow: 'hidden', borderWidth: 1, borderColor: c.border }}>
           <Pressable
             onPress={onEdit}
             style={({ pressed }) => ({
@@ -154,8 +150,8 @@ export function EditMenu({ visible, top, onClose, onEdit, c }: {
               paddingHorizontal: 14, paddingVertical: 12,
               backgroundColor: pressed ? c.border : 'transparent',
             })}
-          >
-            <Icon name="pencil" size={18} color={c.link} />
+>
+            <Icon name="pencil" size={18} color={c.link}/>
             <Text size="md" color={c.link}>Edit profile</Text>
           </Pressable>
         </Box>

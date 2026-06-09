@@ -70,9 +70,9 @@ export function ActionHeader({ title, head, border, onBack }: {
   const insets = useSafeAreaInsets();
   const { toolbarBg } = usePalette();
   return (
-    <Row padding={{ x: 12, top: 8 + insets.top, bottom: 8 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border, backgroundColor: toolbarBg }}>
+    <Row background={toolbarBg} padding={{ x: 12, top: 8 + insets.top, bottom: 8 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
       <Pressable onPress={onBack} hitSlop={8} style={{ padding: 4 }}>
-        <Icon name="arrowLeft" size={22} color={head} />
+        <Icon name="arrowLeft" size={22} color={head}/>
       </Pressable>
       <Text weight="semibold" size="xl" color={head} style={{ flex: 1 }} numberOfLines={1}>
         {title}
@@ -96,7 +96,7 @@ export function Segmented<T extends string | number>({ label, value, options, on
         {options.map(([id, text]) => (
           <Button key={String(id)} variant={value === id ? 'primary' : 'secondary'}
             size="md" dark={dark} pill style={{ flex: 1 }}
-            onPress={() => onChange(id)} label={text} />
+            onPress={() => onChange(id)} label={text}/>
         ))}
       </Row>
     </Box>
@@ -119,15 +119,15 @@ export function AmountBox({ pal, amount, setAmount, busy, balance, symbol, dark 
           <Button variant="ghost" size="sm" dark={!!dark} disabled={!hasBal || busy}
             onPress={() => { if (hasBal) setAmount(String(balance)); }}
             label="MAX" textStyle={{ color: hasBal ? link : sub, fontSize: fontSize('xs') }}
-            style={{ height: 24, paddingHorizontal: 8 }} />
+            style={{ height: 24, paddingHorizontal: 8 }}/>
         ) : null}
       </Row>
-      <Box padding={{ x: 14, y: 12 }} style={{ backgroundColor: inputBg, borderRadius: 12 }}>
+      <Box background={inputBg} radius="lg" padding={{ x: 14, y: 12 }}>
         <Input value={amount} onChangeText={setAmount} placeholder="0.0" placeholderTextColor={sub}
           inputType="number" disabled={busy} dark={!!dark}
           inputProps={{ keyboardType: 'decimal-pad' }}
           style={{ color: head, fontSize: fontSize('xl'), fontFamily: 'Calibre-Semibold', padding: 0,
-            backgroundColor: 'transparent', minHeight: 0, paddingHorizontal: 0, paddingVertical: 0, borderWidth: 0 }} />
+            backgroundColor: 'transparent', minHeight: 0, paddingHorizontal: 0, paddingVertical: 0, borderWidth: 0 }}/>
       </Box>
       {balance != null ? (
         <Text size="xs" color={sub} style={{ paddingHorizontal: 4 }}>
@@ -146,7 +146,7 @@ export function LockedRecipient({ pal, label, value, hint }: {
   return (
     <Box gap={6}>
       <Text size="xs" color={sub}>{label}</Text>
-      <Box padding={{ x: 14, y: 12 }} style={{ backgroundColor: inputBg, borderRadius: 12, borderWidth: 1, borderColor: border }}>
+      <Box background={inputBg} radius="lg" padding={{ x: 14, y: 12 }} style={{ borderWidth: 1, borderColor: border }}>
         <Text weight="semibold" size="md" color={head}>{value}</Text>
         <Text size="xs" color={sub} style={{ marginTop: 2 }}>{hint}</Text>
       </Box>
@@ -168,13 +168,13 @@ export function WalletFooter({
 }): React.ReactElement {
   const insets = useSafeAreaInsets();
   return (
-    <Row padding={{ x: 16, top: 12, bottom: Math.max(insets.bottom, 12) }} gap={12} 
-      style={{ borderTopWidth: 1, borderTopColor: border, backgroundColor: bg }}>
+    <Row background={bg} padding={{ x: 16, top: 12, bottom: Math.max(insets.bottom, 12) }} gap={12} 
+      style={{ borderTopWidth: 1, borderTopColor: border }}>
       <Button variant="secondary" size="lg" pill dark={dark} style={{ flex: 1 }}
-        onPress={onCancel} label="Cancel" />
+        onPress={onCancel} label="Cancel"/>
       <Button variant="primary" size="lg" pill dark={dark} style={{ flex: 1 }}
         loading={!!submitLoading} disabled={!!submitDisabled}
-        onPress={onSubmit} label={submitLabel} />
+        onPress={onSubmit} label={submitLabel}/>
     </Row>
   );
 }
@@ -187,8 +187,8 @@ export function ActionPage({ title, head, bg, border, onBack, footer, children }
   children: React.ReactNode;
 }): React.ReactElement {
   return (
-    <Col flex={1} style={{ backgroundColor: bg }}>
-      <ActionHeader title={title} head={head} border={border} onBack={onBack} />
+    <Col background={bg} flex={1}>
+      <ActionHeader title={title} head={head} border={border} onBack={onBack}/>
       <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ padding: 16, gap: 16 }}>
         {children}

@@ -21,10 +21,10 @@ export function SystemHeader({ title, dark, fg, head, border, right }: {
   const insets = useSafeAreaInsets();
   const { toolbarBg } = usePalette();
   return (
-    <Box padding={{ top: insets.top }} style={{ backgroundColor: toolbarBg }}>
+    <Box background={toolbarBg} padding={{ top: insets.top }}>
       <Row padding={{ x: 12, top: 8, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
-          <Icon name="arrowLeft" size={22} color={fg} />
+          <Icon name="arrowLeft" size={22} color={fg}/>
         </Pressable>
         <Title size="sm" dark={dark} color={head}>{title}</Title>
         {right ? <Col flex={1} align="end">{right}</Col> : null}

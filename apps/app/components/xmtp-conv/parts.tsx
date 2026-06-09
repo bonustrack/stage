@@ -28,8 +28,8 @@ export function GithubNavButton({ url, color }: { url: string; color: string }):
       onPress={() => router.push({ pathname: '/diff', params: { url } })}
       hitSlop={8}
       style={{ paddingHorizontal: 6, justifyContent: 'center' }}
-    >
-      <GithubLogo size={20} color={color} />
+>
+      <GithubLogo size={20} color={color}/>
     </Pressable>
   );
 }
@@ -117,8 +117,8 @@ export function BubbleActionMenu({
         paddingVertical: 13, paddingHorizontal: 16,
         backgroundColor: pressed ? (dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)') : 'transparent',
       })}
-    >
-      <Icon name={icon} size={20} color={color ?? fg} />
+>
+      <Icon name={icon} size={20} color={color ?? fg}/>
       <Text size="md" color={color ?? fg}>{label}</Text>
     </Pressable>
   );
@@ -129,15 +129,15 @@ export function BubbleActionMenu({
       <Pressable
         onPress={onClose}
         style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }}
-      >
+>
         {/** Strip + dropdown as one absolute column. The dropdown sits directly
           *  below the strip's REAL height + a literal GAP spacer — no stripH math. */}
         <Box
           align="start" style={{ position: 'absolute', left: 12, right: 12, top: stripTop }}
           pointerEvents="box-none"
-        >
+>
           {/** Emoji reaction strip — rounded pill floating above the message. */}
-          <Row padding={{ x: 10, y: 6 }} align="center" gap={4} style={{ backgroundColor: stripBg, borderRadius: 999, shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 6, maxWidth: '100%' }}>
+          <Row background={stripBg} radius="full" maxWidth={'100%'} padding={{ x: 10, y: 6 }} align="center" gap={4} style={{ shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 6 }}>
             {expanded ? (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingRight: 4 }}>
                 {[...REACT_PRESETS, ...MORE_EMOJIS].map(e => (
@@ -161,27 +161,27 @@ export function BubbleActionMenu({
                     alignItems: 'center', justifyContent: 'center',
                     backgroundColor: dark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.06)',
                   }}
-                >
-                  <Icon name="chevronDown" size={16} color={sub} />
+>
+                  <Icon name="chevronDown" size={16} color={sub}/>
                 </Pressable>
               </>
             )}
           </Row>
 
           {/** Literal gap — the ONLY vertical space between strip and dropdown. */}
-          <Box style={{ height: GAP }} pointerEvents="none" />
+          <Box height={GAP}  pointerEvents="none"/>
 
           {/** Action dropdown — rounded card directly below the strip. */}
-          <Box padding={{ y: 4 }}
-            style={{ minWidth: 220, maxWidth: 320, backgroundColor: cardBg, borderRadius: blockRadius, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 8 }}
-          >
-            <ActionRow icon="reply" label="Reply" onPress={onReply} />
+          <Box minWidth={220} maxWidth={320} background={cardBg} radius={blockRadius} padding={{ y: 4 }}
+            style={{ overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 8 }}
+>
+            <ActionRow icon="reply" label="Reply" onPress={onReply}/>
             {target?.text ? <Divider dark={dark} color={divider} style={{ marginLeft: 16 }} /> : null}
             {target?.text ? <ActionRow icon="copy" label="Copy" onPress={onCopy} /> : null}
             {target?.text ? <Divider dark={dark} color={divider} style={{ marginLeft: 16 }} /> : null}
             {target?.text ? <ActionRow icon="document" label="Select" onPress={onSelect} /> : null}
-            <Divider dark={dark} color={divider} style={{ marginLeft: 16 }} />
-            <ActionRow icon="send" label="Share link" onPress={onShareLink} />
+            <Divider dark={dark} color={divider} style={{ marginLeft: 16 }}/>
+            <ActionRow icon="send" label="Share link" onPress={onShareLink}/>
           </Box>
         </Box>
       </Pressable>

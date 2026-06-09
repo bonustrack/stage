@@ -49,8 +49,8 @@ export function RecipientRow({ address, pal, right, onPress }: {
         imageUri={getPeerAvatar(address)}
         cacheBuster={getPeerAvatarCb(address)}
         style={{ backgroundColor: border }}
-      />
-      <Col flex={1} style={{ minWidth: 0 }}>
+/>
+      <Col minWidth={0} flex={1}>
         <Text weight="semibold" size="md" color={head} numberOfLines={1}>
           {name}
         </Text>
@@ -66,7 +66,7 @@ export function RecipientRow({ address, pal, right, onPress }: {
 
   if (!onPress) {
     return (
-      <Row padding={{ x: 14, y: 10 }} align="center" gap={12} style={{ backgroundColor: border, borderRadius: 12 }}>
+      <Row background={border} radius="lg" padding={{ x: 14, y: 10 }} align="center" gap={12}>
         {inner}
       </Row>
     );
@@ -79,7 +79,7 @@ export function RecipientRow({ address, pal, right, onPress }: {
         backgroundColor: pressed ? border : 'transparent', borderRadius: 12,
         paddingHorizontal: 14, paddingVertical: 10,
       })}
-    >
+>
       {inner}
     </Pressable>
   );
@@ -112,7 +112,7 @@ export function ContactsModal({ visible, onClose, onPick, pal }: {
             address={c.address}
             pal={pal}
             onPress={() => { onPick(c.address); onClose(); }}
-          />
+/>
         ))
       )}
     </AppModal>
@@ -133,8 +133,8 @@ export function ContactsButton({ color, border, onPress }: {
         alignItems: 'center', justifyContent: 'center',
         backgroundColor: pressed ? border : 'transparent',
       })}
-    >
-      <Icon name="users" size={20} color={color} />
+>
+      <Icon name="users" size={20} color={color}/>
     </Pressable>
   );
 }

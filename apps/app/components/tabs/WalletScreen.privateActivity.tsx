@@ -70,7 +70,7 @@ export function PrivateActivitySection({ head, sub, border, bg }: {
   return (
     <Col>
       <Row padding={{ top: 14, bottom: 4 }} align="center" gap={6}>
-        <Icon name="lockClosed" size={13} color={sub} />
+        <Icon name="lockClosed" size={13} color={sub}/>
         <Text weight="semibold" size="xs" color={sub} style={{ letterSpacing: 0.5, textTransform: 'uppercase' }}>
           Private activity
         </Text>
@@ -85,7 +85,7 @@ export function PrivateActivitySection({ head, sub, border, bg }: {
         </Text>
       ) : (
         rows.map(r => (
-          <PrivateTxRow key={r.key} r={r} head={head} sub={sub} border={border} bg={bg} />
+          <PrivateTxRow key={r.key} r={r} head={head} sub={sub} border={border} bg={bg}/>
         ))
       )}
     </Col>
@@ -119,21 +119,21 @@ function PrivateTxRow({ r, head, sub, border, bg }: {
         bg={bg}
         border={border}
         badge={<Icon name={SHIELD_ICON} size={11} color={sub} />}
-      />
-      <Col flex={1} style={{ minWidth: 0 }}>
+/>
+      <Col minWidth={0} flex={1}>
         <Row align="center" gap={6}>
           <Text weight="semibold" size="xl" color={head} numberOfLines={1}>
             {rowTitle(r)}
           </Text>
-          <Row padding={{ x: 6, y: 1 }} align="center" gap={3} style={{ borderRadius: 4, backgroundColor: border }}>
-            <Icon name={SHIELD_ICON} size={10} color={sub} />
+          <Row radius="xs" background={border} padding={{ x: 6, y: 1 }} align="center" gap={3}>
+            <Icon name={SHIELD_ICON} size={10} color={sub}/>
             <Text weight="semibold" size="3xs" color={sub}>
               Private
             </Text>
           </Row>
         </Row>
         <Row margin={{ top: 2 }} align="center" gap={6}>
-          <Box padding={{ x: 6, y: 1 }} style={{ borderRadius: 4, backgroundColor: border }}>
+          <Box radius="xs" background={border} padding={{ x: 6, y: 1 }}>
             <Text size="xs" color={sub} numberOfLines={1}>
               {r.chainLabel}
             </Text>

@@ -18,12 +18,12 @@ export function GitHubLinkRow({ dark, head, sub, border, rowBg, url, title, subt
     <Pressable
       onPress={() => { void Linking.openURL(url); }}
       style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
-    >
-      <Box padding={{ x: 14, y: 14 }} margin={{ x: 16, top: 16 }}
-        style={{ borderRadius: 12, borderWidth: 1, borderColor: border, backgroundColor: rowBg }}
-      >
+>
+      <Box radius="lg" background={rowBg} padding={{ x: 14, y: 14 }} margin={{ x: 16, top: 16 }}
+        style={{ borderWidth: 1, borderColor: border }}
+>
         <Row gap={12} align="center">
-          <GithubLogo size={22} color={head} />
+          <GithubLogo size={22} color={head}/>
           <Col flex={1}>
             <Text weight="semibold" size="md" color={head}>
               {title}
@@ -33,7 +33,7 @@ export function GitHubLinkRow({ dark, head, sub, border, rowBg, url, title, subt
               {subtitle}
             </Text>
           </Col>
-          <Icon name="externalLink" size={18} color={sub} />
+          <Icon name="externalLink" size={18} color={sub}/>
         </Row>
       </Box>
     </Pressable>

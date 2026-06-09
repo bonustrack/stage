@@ -125,8 +125,8 @@ export default function RootLayout(): React.ReactElement {
   const onboarding = useOnboardingGate();
   if (!loaded || !onboarding.ready) {
     return (
-      <Col flex={1} align="center" justify="center" style={{ backgroundColor: bg }}>
-        <Spinner size={28} color={dark ? '#ffffff' : '#000000'} />
+      <Col background={bg} flex={1} align="center" justify="center">
+        <Spinner size={28} color={dark ? '#ffffff' : '#000000'}/>
       </Col>
     );
   }
@@ -137,7 +137,7 @@ export default function RootLayout(): React.ReactElement {
     <WalletConnectProvider>
     <GestureHandlerRootView style={{ flex: 1 }}>
       <KeyboardProvider>
-      <StatusBar style={barStyle} translucent backgroundColor="transparent" />
+      <StatusBar style={barStyle} translucent backgroundColor="transparent"/>
       {/** @react-navigation/stack JS card stack (via NativeSwipeStack /
        *   withLayoutContext). SWIPE-BACK: the JS stack's `gestureEnabled` pan +
        *   `TransitionPresets.SlideFromRightIOS` (forHorizontalIOS) finger-follow
@@ -184,12 +184,12 @@ export default function RootLayout(): React.ReactElement {
             close: TransitionSpecs.TransitionIOSSpec,
           },
         }}
-      >
+>
         {/** Tab root: no transition (it's the bottom of the stack). */}
         <NativeSwipeStack.Screen
           name="(tabs)"
           options={{ animationEnabled: false, gestureEnabled: false }}
-        />
+/>
       </NativeSwipeStack>
       </KeyboardProvider>
     </GestureHandlerRootView>

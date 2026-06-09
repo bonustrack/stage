@@ -30,7 +30,7 @@ export function ReceiveModeToggle({ mode, onChange, privateReady }: {
           backgroundColor: active ? rowBg : 'transparent',
           opacity: disabled ? 0.45 : 1,
         }}
-      >
+>
         <Text size="md" weight={active ? 'semibold' : 'normal'} color={active ? head : sub}>
           {label}
         </Text>
@@ -39,7 +39,7 @@ export function ReceiveModeToggle({ mode, onChange, privateReady }: {
   };
 
   return (
-    <Row padding={3} gap={3} style={{ width: '100%', borderRadius: 12, borderWidth: 1, borderColor: border }}>
+    <Row width={'100%'} radius="lg" padding={3} gap={3} style={{ borderWidth: 1, borderColor: border }}>
       {segment('public', 'Public', false)}
       {segment('private', privateReady ? 'Private' : 'Private (loading…)', !privateReady)}
     </Row>

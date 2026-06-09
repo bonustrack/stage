@@ -6,9 +6,10 @@
  *  of CSS-ish keys; the Vue renderer stringifies numeric values to `${n}px`,
  *  while a RN renderer would pass the numbers straight into a ViewStyle. */
 
-import { colors } from '@metro-labs/kit';
+import { colors, resolveBoxRadius, type RadiusValue } from '@metro-labs/kit';
 
 export type Direction = 'row' | 'col';
+export type Size = number | string;
 export type Align = 'start' | 'center' | 'end' | 'stretch' | 'baseline';
 export type Justify =
   | 'start'
@@ -41,9 +42,19 @@ export interface BoxProps {
   justify?: Justify;
   flex?: number;
   wrap?: boolean;
-  /** raw color string, or a key from kit `colors` (e.g. 'bg-dark') */
-  bg?: string;
-  radius?: number;
+  /** ChatKit `background`: a kit `colors` key (resolved to hex) or a raw colour. */
+  background?: string;
+  /** ChatKit `radius` token enum ('none'|'2xs'|..|'4xl'|'full'|'100%'). */
+  radius?: RadiusValue | (string & {});
+  /** ChatKit BlockProps sizing. */
+  width?: Size;
+  height?: Size;
+  size?: Size;
+  minWidth?: Size;
+  minHeight?: Size;
+  maxWidth?: Size;
+  maxHeight?: Size;
+  aspectRatio?: number | string;
 }
 
 const ALIGN_MAP: Record<Align, string> = {
@@ -126,8 +137,21 @@ export function boxStyleEntries(
     out.justifyContent = JUSTIFY_MAP[props.justify];
   if (props.flex !== undefined) out.flex = props.flex;
   if (props.wrap !== undefined) out.flexWrap = props.wrap ? 'wrap' : 'nowrap';
-  if (props.bg !== undefined) out.backgroundColor = resolveBg(props.bg);
-  if (props.radius !== undefined) out.borderRadius = props.radius;
+  if (props.background !== undefined)
+    out.backgroundColor = resolveBg(props.background);
+  if (props.radius !== undefined) out.borderRadius = resolveBoxRadius(props.radius);
+
+  if (props.size !== undefined) {
+    out.width = props.size;
+    out.height = props.size;
+  }
+  if (props.width !== undefined) out.width = props.width;
+  if (props.height !== undefined) out.height = props.height;
+  if (props.minWidth !== undefined) out.minWidth = props.minWidth;
+  if (props.minHeight !== undefined) out.minHeight = props.minHeight;
+  if (props.maxWidth !== undefined) out.maxWidth = props.maxWidth;
+  if (props.maxHeight !== undefined) out.maxHeight = props.maxHeight;
+  if (props.aspectRatio !== undefined) out.aspectRatio = props.aspectRatio;
 
   return out;
 }

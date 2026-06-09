@@ -13,7 +13,17 @@
  *  / 'row'); it never bakes units and never emits `display` (RN Views are flex
  *  by default; web must add display:flex itself — each renderer owns that). */
 
-import { colors } from './tokens';
+import {
+  colors,
+  resolveBoxRadius,
+  type ColorToken,
+  type RadiusValue,
+} from './tokens';
+
+export type { RadiusValue };
+
+/** ChatKit BlockProps sizing value: a number (px) or a string ('50%', 'auto'). */
+export type Size = number | string;
 
 export type Align = 'start' | 'center' | 'end' | 'stretch' | 'baseline';
 export type Justify =
@@ -59,10 +69,27 @@ export interface BoxBaseProps {
   flex?: number;
   /** wrap children (default false). */
   wrap?: boolean;
-  /** background colour — a key from kit `colors` (resolved to hex) or a literal colour. */
-  bg?: string;
-  /** border radius, px. */
-  radius?: number;
+  /** ChatKit `background`: a semantic ColorToken (resolved scheme-aware via the
+   *  Box renderer), a kit `colors` scale key (resolved to hex), or a raw colour
+   *  string (escape hatch). Maps to style.backgroundColor. */
+  background?: ColorToken | (string & {});
+  /** ChatKit `radius`: a token from the corner-radius scale
+   *  ('none'|'2xs'|..|'4xl'|'full'|'100%'). Maps to style.borderRadius. A raw
+   *  string ('12px') OR a raw number passes through as the escape hatch - used
+   *  for the app's live, user-overridable `blockRadius` (radiusOverride store),
+   *  whose px value is dynamic and has no fixed token. Mirrors how `background`
+   *  / Text `color` accept a raw value alongside the token. */
+  radius?: RadiusValue | number | (string & {});
+  /** ChatKit BlockProps sizing (number=px | string='50%'/'auto'). */
+  width?: Size;
+  height?: Size;
+  /** `size` sets BOTH width and height (ChatKit semantics). */
+  size?: Size;
+  minWidth?: Size;
+  minHeight?: Size;
+  maxWidth?: Size;
+  maxHeight?: Size;
+  aspectRatio?: number | string;
 }
 
 const ALIGN: Record<Align, string> = {
@@ -82,8 +109,10 @@ const JUSTIFY: Record<Justify, string> = {
   evenly: 'space-evenly',
 };
 
-/** Resolve `bg`: if it matches a key in kit `colors`, return the hex;
- *  otherwise pass through as a literal colour string. */
+/** Resolve a `background` value's `colors`-scale layer: a kit `colors` key ->
+ *  hex, otherwise pass through. (Semantic ColorToken -> scheme colour is done
+ *  upstream in the Box renderer, which knows the active scheme; this pure module
+ *  has no scheme.) */
 export function resolveBg(bg: string): string {
   return (colors as Record<string, string>)[bg] ?? bg;
 }
@@ -148,8 +177,21 @@ export function boxStyleEntries(props: BoxBaseProps): BoxStyleEntries {
   if (props.justify !== undefined) s.justifyContent = JUSTIFY[props.justify];
   if (props.flex !== undefined) s.flex = props.flex;
   if (props.wrap !== undefined) s.flexWrap = props.wrap ? 'wrap' : 'nowrap';
-  if (props.bg !== undefined) s.backgroundColor = resolveBg(props.bg);
-  if (props.radius !== undefined) s.borderRadius = props.radius;
+  if (props.background !== undefined) s.backgroundColor = resolveBg(props.background);
+  if (props.radius !== undefined) s.borderRadius = resolveBoxRadius(props.radius);
+
+  // ChatKit BlockProps sizing. `size` sets both axes; explicit width/height win.
+  if (props.size !== undefined) {
+    s.width = props.size;
+    s.height = props.size;
+  }
+  if (props.width !== undefined) s.width = props.width;
+  if (props.height !== undefined) s.height = props.height;
+  if (props.minWidth !== undefined) s.minWidth = props.minWidth;
+  if (props.minHeight !== undefined) s.minHeight = props.minHeight;
+  if (props.maxWidth !== undefined) s.maxWidth = props.maxWidth;
+  if (props.maxHeight !== undefined) s.maxHeight = props.maxHeight;
+  if (props.aspectRatio !== undefined) s.aspectRatio = props.aspectRatio;
 
   return s;
 }

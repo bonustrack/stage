@@ -50,8 +50,8 @@ export function ReplyBanner({
               alignItems: 'center', justifyContent: 'center',
               backgroundColor: '#ffffff',
             }}
-          >
-            <Icon name="x" size={14} color="#000000" />
+>
+            <Icon name="x" size={14} color="#000000"/>
           </Pressable>
           <Text size="lg" numberOfLines={1}>
             <Text size="lg" color={sub}>Replying to </Text>
@@ -74,7 +74,7 @@ export function MentionPopup({
 }): React.ReactElement {
   const border = usePalette().border; // #282a2d / #e4e4e5
   return (
-    <Col margin={{ x: 6, bottom: 8 }} radius={12} bg={dark ? '#1a1a1c' : '#ffffff'} style={{
+    <Col margin={{ x: 6, bottom: 8 }} radius="lg" background={dark ? '#1a1a1c' : '#ffffff'} style={{
       overflow: 'hidden',
       borderWidth: 1, borderColor: border,
     }}>
@@ -88,8 +88,8 @@ export function MentionPopup({
             backgroundColor: pressed ? border : 'transparent',
             borderTopWidth: i === 0 ? 0 : 1, borderTopColor: border,
           })}
-        >
-          <Avatar address={c.address} size="sm" cacheBuster={c.cacheBuster} />
+>
+          <Avatar address={c.address} size="sm" cacheBuster={c.cacheBuster}/>
           <Text weight="semibold" size="md" color={head} style={{ flex: 1 }} numberOfLines={1}>
             {c.name}
           </Text>
@@ -113,9 +113,9 @@ export function PendingRow({
       {pending.map((a, i) => (
         a.kind === 'image' ? (
           /** Image attachments: 72px square + filename label, x-to-remove pinned. */
-          <Col key={a.id} align="center" gap={4} style={{ width: 72 }}>
+          <Col width={72} key={a.id} align="center" gap={4}>
             <Box>
-              <Image src={a.url} size={72} radius={8} fit="cover" />
+              <Image src={a.url} size={72} radius={8} fit="cover"/>
               <Pressable
                 onPress={() => onRemove(i)}
                 hitSlop={6}
@@ -123,8 +123,8 @@ export function PendingRow({
                   position: 'absolute', top: -4, right: -4,
                   backgroundColor: '#000', borderRadius: 999, padding: 2,
                 }}
-              >
-                <Icon name="x" size={12} color="#ffffff" />
+>
+                <Icon name="x" size={12} color="#ffffff"/>
               </Pressable>
             </Box>
             <Text size="3xs" color={fg} style={{ width: 72, textAlign: 'center' }} numberOfLines={1}>
@@ -133,11 +133,11 @@ export function PendingRow({
           </Col>
         ) : (
           /** Non-image attachments keep the inline chip layout. */
-          <Row padding={{ x: 8, y: 4 }} key={a.id} align="center" gap={6} radius={12} bg={chipBg}>
-            <Icon name={kindIcon(a.kind)} size={14} color={fg} />
+          <Row padding={{ x: 8, y: 4 }} key={a.id} align="center" gap={6} radius="lg" background={chipBg}>
+            <Icon name={kindIcon(a.kind)} size={14} color={fg}/>
             <Text size="2xs" color={fg} style={{ maxWidth: 140 }} numberOfLines={1}>{a.name ?? a.id}</Text>
             <Pressable onPress={() => onRemove(i)} hitSlop={6}>
-              <Icon name="x" size={14} color={sub} />
+              <Icon name="x" size={14} color={sub}/>
             </Pressable>
           </Row>
         )
@@ -153,7 +153,7 @@ export function RecordingBar({
   slideX: Animated.Value; slideThresholdPx: number;
 }): React.ReactElement {
   return (
-    <Row padding={{ x: 4 }} align="center" style={{ height: 28 }}>
+    <Row height={28} padding={{ x: 4 }} align="center">
       {/** "← Slide to cancel" hint — fades in as the user drags the mic left. */}
       <Animated.View style={{
         flexDirection: 'row', alignItems: 'center', gap: 6,
@@ -164,14 +164,14 @@ export function RecordingBar({
           extrapolate: 'clamp',
         }),
       }}>
-        <Icon name="arrowLeft" size={14} color={sub} />
+        <Icon name="arrowLeft" size={14} color={sub}/>
         <Text size="xs" color={sub}>
           Slide to cancel
         </Text>
       </Animated.View>
-      <Row flex={1} align="center" justify="end" style={{ height: 28, overflow: 'hidden' }}>
+      <Row height={28} flex={1} align="center" justify="end" style={{ overflow: 'hidden' }}>
         {[...Array(Math.max(0, 40 - levels.length)).fill(0.05), ...levels].slice(-40).map((lvl, i) => (
-          <Box margin={{ x: 1 }} key={i} style={{ width: 3, borderRadius: 2, height: Math.max(3, Math.round(lvl * 26)), backgroundColor: head, opacity: 0.85 }} />
+          <Box width={3} radius="2xs" height={Math.max(3, Math.round(lvl * 26))} background={head} margin={{ x: 1 }} key={i} style={{ opacity: 0.85 }}/>
         ))}
       </Row>
       <Text size="xs" color={sub} style={{ minWidth: 40, textAlign: 'center' }}>

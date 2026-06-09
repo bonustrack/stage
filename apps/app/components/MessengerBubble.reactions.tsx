@@ -56,7 +56,7 @@ export function ReactionsRow({
             delayLongPress={300}
             hitSlop={6}
             style={pillStyle}
-          >
+>
             {inner}
           </Pressable>
         ) : (
@@ -64,7 +64,7 @@ export function ReactionsRow({
         );
       })}
       {pendingEmojis.map(emoji => (
-        <Row padding={{ x: 8, y: 2 }} key={`pending-${emoji}`} align="center" gap={4} radius={999} bg={pillBg} style={{
+        <Row padding={{ x: 8, y: 2 }} key={`pending-${emoji}`} align="center" gap={4} radius="full" background={pillBg} style={{
           opacity: 0.45,
         }}>
           <Text size="xs">{emoji}</Text>
@@ -80,7 +80,7 @@ export function ReactionPicker({ dark, sub, onPick, onClose }: {
   dark: boolean; sub: string; onPick: (emoji: string) => void; onClose: () => void;
 }): React.ReactElement {
   return (
-    <Row padding={{ x: 10, y: 6 }} margin={{ top: 6 }} gap={8} radius={999} bg={dark ? '#282a2d' : '#ffffff'} style={{
+    <Row padding={{ x: 10, y: 6 }} margin={{ top: 6 }} gap={8} radius="full" background={dark ? '#282a2d' : '#ffffff'} style={{
       shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 8, elevation: 4,
       alignSelf: 'flex-start',
     }}>

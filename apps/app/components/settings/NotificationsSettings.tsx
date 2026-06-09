@@ -61,23 +61,23 @@ export function NotificationsSettings(): React.ReactElement {
       : 'System permission will be requested when you enable push.';
 
   return (
-    <Col flex={1} style={{ backgroundColor: bg }}>
-      <SystemHeader title="Notifications" dark={dark} fg={fg} head={head} border={border} />
+    <Col background={bg} flex={1}>
+      <SystemHeader title="Notifications" dark={dark} fg={fg} head={head} border={border}/>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <Caption dark={dark} color={sub} style={{ paddingHorizontal: 16, paddingTop: 20 }}>
           PUSH NOTIFICATIONS
         </Caption>
-        <Box padding={14} margin={{ x: 16, top: 8 }}
-          style={{ borderRadius: blockRadius, backgroundColor: rowBg, borderWidth: 1, borderColor: border }}
-        >
+        <Box radius={blockRadius} background={rowBg} padding={14} margin={{ x: 16, top: 8 }}
+          style={{ borderWidth: 1, borderColor: border }}
+>
           <Row align="center" gap={12}>
-            <Col flex={1} style={{ minWidth: 0 }}>
+            <Col minWidth={0} flex={1}>
               <Text weight="semibold" size="md" color={head}>Push notifications</Text>
               <Caption dark={dark} color={sub} style={{ marginTop: 2 }}>
                 Get notified about new messages even when Metro is closed.
               </Caption>
             </Col>
-            <Switch value={enabled} onValueChange={onToggle} />
+            <Switch value={enabled} onValueChange={onToggle}/>
           </Row>
         </Box>
         <Caption dark={dark} color={sub} style={{ paddingHorizontal: 16, paddingTop: 12 }}>

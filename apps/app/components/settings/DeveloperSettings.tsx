@@ -40,23 +40,23 @@ export function DeveloperSettings(): React.ReactElement {
   };
 
   return (
-    <Col flex={1} style={{ backgroundColor: bg }}>
-      <SystemHeader title="Developer" dark={dark} fg={fg} head={head} border={border} />
+    <Col background={bg} flex={1}>
+      <SystemHeader title="Developer" dark={dark} fg={fg} head={head} border={border}/>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <Text size="xs" color={sub} style={{ paddingHorizontal: 16, paddingTop: 20 }}>
           DIAGNOSTICS
         </Text>
-        <Box padding={14} margin={{ x: 16, top: 8 }}
-          style={{ borderRadius: blockRadius, backgroundColor: rowBg, borderWidth: 1, borderColor: border }}
-        >
+        <Box radius={blockRadius} background={rowBg} padding={14} margin={{ x: 16, top: 8 }}
+          style={{ borderWidth: 1, borderColor: border }}
+>
           <Row align="center" gap={12}>
-            <Col flex={1} style={{ minWidth: 0 }}>
+            <Col minWidth={0} flex={1}>
               <Text weight="semibold" size="md" color={head}>Railgun debug console</Text>
               <Text size="xs" color={sub} style={{ marginTop: 2 }}>
                 Show the live Railgun bridge logs + balance-pipeline diagnostics on the Private wallet tab. Off by default - leaving it on can slow the app down.
               </Text>
             </Col>
-            <Switch value={enabled} onValueChange={onToggle} />
+            <Switch value={enabled} onValueChange={onToggle}/>
           </Row>
         </Box>
       </ScrollView>

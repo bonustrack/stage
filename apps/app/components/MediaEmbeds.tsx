@@ -26,16 +26,16 @@ export function YouTubeEmbed({ videoId, dark }: {
   const thumbUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
   return (
     <MediaCard dark={dark} onPress={() => void Linking.openURL(watchUrl)}>
-      <Box style={{ aspectRatio: 16 / 9, position: 'relative' }}>
+      <Box aspectRatio={16 / 9} style={{ position: 'relative' }}>
         <Image
           src={thumbUrl}
           fit="cover"
           style={{ width: '100%', height: '100%', backgroundColor: '#000000' }}
-        />
+/>
         {/** Play-button overlay — semi-opaque dark scrim + a centered "▶" so
          *   the thumbnail reads as "tap to watch" at a glance. */}
-        <Box align="center" justify="center" style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.25)' }}>
-          <Box align="center" justify="center" style={{ width: 48, height: 48, borderRadius: 999, backgroundColor: 'rgba(0,0,0,0.7)' }}>
+        <Box background={'rgba(0,0,0,0.25)'} align="center" justify="center" style={{ position: 'absolute', inset: 0 }}>
+          <Box width={48} height={48} radius="full" background={'rgba(0,0,0,0.7)'} align="center" justify="center">
             <Text size="5xl" color={'#ffffff'} style={{ marginLeft: 3 }}>▶</Text>
           </Box>
         </Box>
@@ -61,12 +61,12 @@ export function LocationEmbed({ lat, lng, sourceUrl, dark }: {
   const tileBg = usePalette().border; // #282a2d / #e4e4e5 (loading placeholder tint)
   return (
     <MediaCard dark={dark} onPress={() => void Linking.openURL(sourceUrl)}>
-      <Box style={{ aspectRatio: 1, position: 'relative' }}>
+      <Box aspectRatio={1} style={{ position: 'relative' }}>
         <Image
           src={tileUrl}
           fit="cover"
           style={{ width: '100%', height: '100%', backgroundColor: tileBg }}
-        />
+/>
         <Box align="center" justify="center" style={{ position: 'absolute', inset: 0 }}>
           <Text size="6xl">📍</Text>
         </Box>

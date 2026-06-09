@@ -107,10 +107,8 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
   if (pending !== true) return null;
 
   return (
-    <Box style={{
-      backgroundColor: toolbarBg, borderTopWidth: 1, borderTopColor: border,
-    }}>
-      <Col padding={{ x: 16, top: 12, bottom: 12 }} align="stretch" gap={10} style={{ width: '100%', alignSelf: 'stretch' }}>
+    <Box background={toolbarBg} style={{ borderTopWidth: 1, borderTopColor: border }}>
+      <Col width={'100%'} padding={{ x: 16, top: 12, bottom: 12 }} align="stretch" gap={10} style={{ alignSelf: 'stretch' }}>
         <Text color={fg} style={{ textAlign: 'center', opacity: 0.8 }}>
           This is a message request. Approve to reply, or reject to decline.
         </Text>
@@ -119,7 +117,7 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
          *  height) circular icon button, which collapses these to tiny circles
          *  regardless of `fullWidth`. We want full-width rounded buttons, so we
          *  rely on `fullWidth` (alignSelf:'stretch' + width:'100%') instead. */}
-        <Row gap={10} style={{ width: '100%', alignSelf: 'stretch' }}>
+        <Row width={'100%'} gap={10} style={{ alignSelf: 'stretch' }}>
           <Col flex={1} style={{ alignSelf: 'stretch' }}>
             <Button
               variant="danger"
@@ -132,7 +130,7 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
               tintBg={danger}
               tintFg={bg}
               onPress={onReject}
-            />
+/>
           </Col>
           <Col flex={1} style={{ alignSelf: 'stretch' }}>
             <Button
@@ -146,7 +144,7 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
               tintBg={link}
               tintFg={bg}
               onPress={onApprove}
-            />
+/>
           </Col>
         </Row>
       </Col>

@@ -33,19 +33,15 @@ export function ComposerGradient({ bg, direction = 'down', height = 24, top, bot
   const id = 'cg' + useId().replace(/[^a-zA-Z0-9]/g, '');
   const [o0, o1] = direction === 'down' ? [0, 1] : [1, 0];
   return (
-    <Box pointerEvents="none" style={{
-      position: 'absolute', left, right, height,
-      ...(top !== undefined ? { top } : {}),
-      ...(bottom !== undefined ? { bottom } : {}),
-    }}>
+    <Box height={height} pointerEvents="none" style={{ position: 'absolute', left, right, ...(top !== undefined ? { top } : {}), ...(bottom !== undefined ? { bottom } : {}) }}>
       <Svg width="100%" height={height}>
         <Defs>
           <LinearGradient id={id} x1="0" y1="0" x2="0" y2={height} gradientUnits="userSpaceOnUse">
-            <Stop offset="0" stopColor={bg} stopOpacity={o0} />
-            <Stop offset="1" stopColor={bg} stopOpacity={o1} />
+            <Stop offset="0" stopColor={bg} stopOpacity={o0}/>
+            <Stop offset="1" stopColor={bg} stopOpacity={o1}/>
           </LinearGradient>
         </Defs>
-        <Rect x="0" y="0" width="100%" height={height} fill={`url(#${id})`} />
+        <Rect x="0" y="0" width="100%" height={height} fill={`url(#${id})`}/>
       </Svg>
     </Box>
   );

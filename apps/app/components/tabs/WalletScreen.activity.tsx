@@ -72,7 +72,7 @@ export function ActivityView({ address, head, sub, border, bg }: {
       <Col margin={{ x: 16 }}>
         {priv}
         <Col padding={{ y: 40 }} align="center">
-          <Spinner size={28} color={head} />
+          <Spinner size={28} color={head}/>
         </Col>
       </Col>
     );
@@ -93,7 +93,7 @@ export function ActivityView({ address, head, sub, border, bg }: {
     <Col margin={{ x: 16 }}>
       {priv}
       {rows.map(r => (
-        <TxRow key={r.hash} r={r} head={head} sub={sub} border={border} bg={bg} />
+        <TxRow key={r.hash} r={r} head={head} sub={sub} border={border} bg={bg}/>
       ))}
     </Col>
   );
@@ -120,15 +120,15 @@ function TxRow({ r, head, sub, border, bg }: {
   return (
     <Row padding={{ y: 14 }} align="center" gap={12} 
       style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-      <Box align="center" justify="center" style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border }}>
-        <Icon name={DIR_ICON[r.direction]} size={18} color={r.failed ? DANGER : head} />
+      <Box width={32} height={32} radius="full" background={border} align="center" justify="center">
+        <Icon name={DIR_ICON[r.direction]} size={18} color={r.failed ? DANGER : head}/>
       </Box>
-      <Col flex={1} style={{ minWidth: 0 }}>
+      <Col minWidth={0} flex={1}>
         <Text weight="semibold" size="xl" color={head} numberOfLines={1}>
           {title}
         </Text>
         <Row margin={{ top: 2 }} align="center" gap={6}>
-          <Box padding={{ x: 6, y: 1 }} style={{ borderRadius: 4, backgroundColor: border }}>
+          <Box radius="xs" background={border} padding={{ x: 6, y: 1 }}>
             <Text size="xs" color={sub} numberOfLines={1}>
               {r.chainLabel}
             </Text>

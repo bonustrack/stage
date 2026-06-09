@@ -55,11 +55,11 @@ export default function AddMembers(): React.ReactElement {
   }, [members, submitting, convId, router]);
 
   return (
-    <Col flex={1} style={{ backgroundColor: bg }}>
+    <Col background={bg} flex={1}>
       {/* Header — back button + title, consistent with other pushed screens. */}
-      <Row padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border, backgroundColor: toolbarBg }}>
+      <Row background={toolbarBg} padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
-          <Icon name="arrowLeft" size={22} color={fg} />
+          <Icon name="arrowLeft" size={22} color={fg}/>
         </Pressable>
         <Title size="sm" dark={dark} color={head}>
           Add members
@@ -69,8 +69,8 @@ export default function AddMembers(): React.ReactElement {
       <ScrollView
         contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 24 + insets.bottom }}
         keyboardShouldPersistTaps="handled"
-      >
-        <MemberPicker state={picker} dark={dark} exclude={memberAddrs} />
+>
+        <MemberPicker state={picker} dark={dark} exclude={memberAddrs}/>
       </ScrollView>
 
       {/* Add */}
@@ -87,7 +87,7 @@ export default function AddMembers(): React.ReactElement {
           tintBg={primary}
           tintFg={bg}
           label={members.length> 0 ? `Add to group (${members.length})` : 'Add to group'}
-        />
+/>
       </Box>
     </Col>
   );

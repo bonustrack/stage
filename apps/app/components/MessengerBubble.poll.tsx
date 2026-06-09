@@ -67,15 +67,11 @@ function PollQuestionBlock({ q, qi, sub, dark, votes, own, onVote, openAnswers, 
               borderWidth: 1,
               borderColor: isOn ? pal.link : restBorder,
             })}
-          >
-            <Box
+>
+            <Box width={`${pct}%`} background={withAlpha(pal.link, dark ? 0.16 : 0.12)}
               pointerEvents="none"
-              style={{
-                position: 'absolute', left: 0, top: 0, bottom: 0,
-                width: `${pct}%`,
-                backgroundColor: withAlpha(pal.link, dark ? 0.16 : 0.12),
-              }}
-            />
+              style={{ position: 'absolute', left: 0, top: 0, bottom: 0 }}
+/>
             <Row align="center" justify="between">
               <Text size="xl" color={isOn ? '#fff' : pal.text} style={{ flexShrink: 1 }}>
                 {isOn ? '✓  ' : (multi ? '☐  ' : '')}{opt.label}
@@ -98,7 +94,7 @@ function PollQuestionBlock({ q, qi, sub, dark, votes, own, onVote, openAnswers, 
         </Text>
       ) : null}
       {q.open && onOpenAnswer ? (
-        <OpenAnswerBlock qi={qi} sub={sub} dark={dark} answers={openAnswers} mine={mine} onSubmit={onOpenAnswer} />
+        <OpenAnswerBlock qi={qi} sub={sub} dark={dark} answers={openAnswers} mine={mine} onSubmit={onOpenAnswer}/>
       ) : null}
     </Box>
   );
@@ -134,7 +130,7 @@ export function PollView({ poll, dark, sub, votes, ownVotes, onVote, openAnswers
             openAnswers={openAnswers?.get(qi)}
             mine={myUri}
             onOpenAnswer={onOpenAnswer ? (text) => onOpenAnswer(qi, text) : undefined}
-          />
+/>
         </Box>
       ))}
     </Box>

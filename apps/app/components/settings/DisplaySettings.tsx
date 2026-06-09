@@ -33,12 +33,12 @@ export function DisplaySettings(): React.ReactElement {
   const insets = useSafeAreaInsets();
 
   return (
-    <Col flex={1} style={{ backgroundColor: bg }}>
-      <SystemHeader title="Display" dark={dark} fg={fg} head={head} border={border} />
+    <Col background={bg} flex={1}>
+      <SystemHeader title="Display" dark={dark} fg={fg} head={head} border={border}/>
       <ScrollView
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}
-      >
+>
         <Text size="xs" color={sub} style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
           THEME
         </Text>
@@ -53,8 +53,8 @@ export function DisplaySettings(): React.ReactElement {
                     dark={dark}
                     onPress={() => { setCustomTheme(false); void setThemePreference(opt.value); }}
                     style={{ paddingHorizontal: 14, paddingVertical: 14 }}
-                  >
-                    <Icon name={opt.icon} size={22} color={head} />
+>
+                    <Icon name={opt.icon} size={22} color={head}/>
                     <Text size="xl" color={fg} style={{ flex: 1 }}>{opt.label}</Text>
                     {selected ? <Icon name="check" size={20} color={head} /> : null}
                   </ListViewItem>
@@ -65,8 +65,8 @@ export function DisplaySettings(): React.ReactElement {
                 dark={dark}
                 onPress={() => setCustomTheme(true)}
                 style={{ paddingHorizontal: 14, paddingVertical: 14 }}
-              >
-                <Icon name="colorSwatch" size={22} color={head} />
+>
+                <Icon name="colorSwatch" size={22} color={head}/>
                 <Text size="xl" color={fg} style={{ flex: 1 }}>Custom</Text>
                 {custom ? <Icon name="check" size={20} color={head} /> : null}
               </ListViewItem>
@@ -79,7 +79,7 @@ export function DisplaySettings(): React.ReactElement {
             <Text size="xs" color={sub} style={{ paddingBottom: 4 }}>
               CUSTOM COLORS
             </Text>
-            <ColorTokens p={{ dark, head, sub, border, rowBg }} />
+            <ColorTokens p={{ dark, head, sub, border, rowBg }}/>
           </Box>
         ) : null}
       </ScrollView>

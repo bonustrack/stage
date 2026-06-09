@@ -51,8 +51,8 @@ export default function TokenDetail(): React.ReactElement {
 
   if (!r) {
     return (
-      <Col flex={1} style={{ backgroundColor: bg }}>
-        <Header head={head} border={border} onBack={() => router.back()} title="Token" />
+      <Col background={bg} flex={1}>
+        <Header head={head} border={border} onBack={() => router.back()} title="Token"/>
         <Col padding={{ y: 40 }} margin={{ x: 16 }} align="center">
           <Text size="md" color={sub}>Token not found</Text>
         </Col>
@@ -69,25 +69,21 @@ export default function TokenDetail(): React.ReactElement {
   };
 
   return (
-    <Col flex={1} style={{ backgroundColor: bg }}>
-      <Header head={head} border={border} onBack={() => router.back()} title={r.name} />
+    <Col background={bg} flex={1}>
+      <Header head={head} border={border} onBack={() => router.back()} title={r.name}/>
 
       {/* Token identity card — large logo with network badge, name + symbol,
           balance and its USD value. Mirrors the list row's data, scaled up.
           LEFT-aligned to match the Wallet page's left-aligned value card. */}
       <Col padding={{ top: 28 }} margin={{ x: 16 }} align="start" gap={6}>
-        <Box style={{ width: 72, height: 72 }}>
+        <Box width={72} height={72}>
           {/* r.logoUrl is cached at the 32px LIST size (s=64); re-request it at
               2× the 72px detail size (s=144) so the big logo stays crisp. */}
           <Image src={withStampDisplayPx(r.logoUrl, 72)}
-            style={{ width: 72, height: 72, borderRadius: 999, backgroundColor: border }} />
-          <Box style={{
-            position: 'absolute', right: -2, bottom: -2,
-            width: 30, height: 30, borderRadius: 999,
-            borderWidth: 3, borderColor: bg, backgroundColor: border, overflow: 'hidden',
-          }}>
+            style={{ width: 72, height: 72, borderRadius: 999, backgroundColor: border }}/>
+          <Box width={30} height={30} radius="full" background={border} style={{ position: 'absolute', right: -2, bottom: -2, borderWidth: 3, borderColor: bg, overflow: 'hidden' }}>
             <Image src={NETWORK_LOGO[r.chainId] ?? MAINNET_NETWORK_LOGO}
-              fit="cover" style={{ width: '100%', height: '100%' }} />
+              fit="cover" style={{ width: '100%', height: '100%' }}/>
           </Box>
         </Box>
 
@@ -97,7 +93,7 @@ export default function TokenDetail(): React.ReactElement {
         </Row>
 
         {/* Network badge pill */}
-        <Box padding={{ x: 10, y: 3 }} style={{ borderRadius: 999, borderWidth: 1, borderColor: border }}>
+        <Box radius="full" padding={{ x: 10, y: 3 }} style={{ borderWidth: 1, borderColor: border }}>
           <Text size="xs" color={sub}>
             {NETWORK_LABEL[r.chainId] ?? `Chain ${r.chainId}`}
           </Text>
@@ -124,25 +120,25 @@ export default function TokenDetail(): React.ReactElement {
               onPress={() => router.push({
                 pathname: '/wallet/send',
                 params: { symbol: symbol ?? r.symbol, chainId: String(r.chainId), private: '1' },
-              })} />
+              })}/>
             {/* Shielded holding → Unshield (private → public, back to own EOA). */}
             <Btn icon="eye" label="Unshield" head={head} border={border} dark={dark}
               onPress={() => router.push({
                 pathname: '/wallet/unshield',
                 params: { symbol: symbol ?? r.symbol, chainId: String(r.chainId) },
-              })} />
+              })}/>
           </>
         ) : (
           <>
             {/* Public holding → public Send. */}
             <Btn icon="send" label="Send" head={head} border={border} dark={dark}
-              onPress={() => router.push({ pathname: '/wallet/send', params: sendParams })} />
+              onPress={() => router.push({ pathname: '/wallet/send', params: sendParams })}/>
             {/* Public holding → Shield (public → own 0zk). */}
             <Btn icon="eyeOff" label="Shield" head={head} border={border} dark={dark}
               onPress={() => router.push({
                 pathname: '/wallet/shield',
                 params: { symbol: symbol ?? r.symbol, chainId: String(r.chainId) },
-              })} />
+              })}/>
           </>
         )}
       </Row>
@@ -157,10 +153,10 @@ function Header({ head, border, onBack, title }: {
   const insets = useSafeAreaInsets();
   const { toolbarBg } = usePalette();
   return (
-    <Row padding={{ x: 12, top: 8 + insets.top, bottom: 8 }} align="center" gap={8} 
-      style={{ borderBottomWidth: 1, borderBottomColor: border, backgroundColor: toolbarBg }}>
+    <Row background={toolbarBg} padding={{ x: 12, top: 8 + insets.top, bottom: 8 }} align="center" gap={8} 
+      style={{ borderBottomWidth: 1, borderBottomColor: border }}>
       <Pressable onPress={onBack} hitSlop={8} style={{ padding: 4 }}>
-        <Icon name="arrowLeft" size={22} color={head} />
+        <Icon name="arrowLeft" size={22} color={head}/>
       </Pressable>
       <Text weight="semibold" size="xl" color={head} style={{ flex: 1 }} numberOfLines={1}>
         {title}

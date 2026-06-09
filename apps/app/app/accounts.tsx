@@ -22,12 +22,12 @@ export default function Accounts(): React.ReactElement {
   const insets = useSafeAreaInsets();
 
   return (
-    <Col flex={1} style={{ backgroundColor: bg }}>
+    <Col background={bg} flex={1}>
       {/* Topnav: back + title, mirroring the search page. Paints toolbarBg +
           absorbs the top inset so the bar reaches the screen edge. */}
-      <Row padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border, backgroundColor: toolbarBg }}>
+      <Row background={toolbarBg} padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
-          <Icon name="arrowLeft" size={22} color={fg} />
+          <Icon name="arrowLeft" size={22} color={fg}/>
         </Pressable>
         <Title size="sm" dark={dark} color={head}>
           Accounts
@@ -35,7 +35,7 @@ export default function Accounts(): React.ReactElement {
       </Row>
 
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}>
-        <AccountsManager dark={dark} flat onSwitched={() => router.back()} />
+        <AccountsManager dark={dark} flat onSwitched={() => router.back()}/>
       </ScrollView>
     </Col>
   );

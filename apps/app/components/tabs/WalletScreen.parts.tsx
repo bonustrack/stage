@@ -41,7 +41,7 @@ export function Btn({ icon, label, onPress, head, border, dark }: {
         // token so the circle reacts to theme/colour overrides like the rest of
         // the design system (ChannelRow rowBg = border).
         style={{ backgroundColor: border, borderColor: border }}
-      />
+/>
       <Text weight="semibold" size="md" color={head} numberOfLines={1}>{label}</Text>
     </Col>
   );
@@ -69,7 +69,7 @@ export function WalletTabs({ tab, setTab, head, sub, border }: {
               borderBottomWidth: 2,
               borderBottomColor: active ? head : 'transparent',
             }}
-          >
+>
             <Text weight="semibold" size="xl" color={active ? head : sub}>
               {TAB_LABEL[t]}
             </Text>
@@ -102,14 +102,14 @@ export function TokenRow({ r, head, sub, border, bg, onPress }: { r: AssetRow; o
     <Pressable onPress={onPress} disabled={!onPress} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
     <Row padding={{ y: 14 }}
       align="center" gap={12} 
-    >
+>
       {/* Token avatar + network badge - shared TokenAvatar (Snapshot-treasury
           style), reused by the private Activity rows so both read identically. */}
-      <TokenAvatar logoUrl={r.logoUrl} chainId={r.chainId} bg={bg} border={border} />
+      <TokenAvatar logoUrl={r.logoUrl} chainId={r.chainId} bg={bg} border={border}/>
       {/* Left column — token NAME (top) over price + 24h change (bottom).
           Shielded rows carry a small "Private" pill next to the name. */}
-      <Col flex={1} style={{ minWidth: 0 }}>
-        <Row align="center" gap={6} style={{ minWidth: 0 }}>
+      <Col minWidth={0} flex={1}>
+        <Row minWidth={0} align="center" gap={6}>
           {r.isPrivate ? <PrivateBadge sub={sub} /> : null}
           <Text weight="semibold" size="4xl" color={head} numberOfLines={1}>{r.name}</Text>
         </Row>

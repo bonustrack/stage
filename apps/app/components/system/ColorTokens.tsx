@@ -55,8 +55,8 @@ function EditableSwatch({ name, tokenKey, value, scheme, p }: {
           width: 40, height: 40, borderRadius: 10, backgroundColor: value,
           borderWidth: 1, borderColor: p.border,
         }}
-      />
-      <Col flex={1} style={{ minWidth: 0 }}>
+/>
+      <Col minWidth={0} flex={1}>
         <Text weight="semibold" size="md" color={p.head}>{name}</Text>
         <Input
           value={shown}
@@ -69,12 +69,12 @@ function EditableSwatch({ name, tokenKey, value, scheme, p }: {
             backgroundColor: 'transparent', borderWidth: 0,
             color: invalid ? '#eb4c5b' : p.sub, fontSize: fontSize('xs'), fontFamily: 'Calibre-Medium',
           }}
-        />
+/>
       </Col>
       <AppModal visible={picking} onClose={closePicker}>
-        <ColorPicker value={pending ?? value} onChange={setPending} p={p} />
+        <ColorPicker value={pending ?? value} onChange={setPending} p={p}/>
         <Row margin={{ top: 20 }} gap={12} align="center">
-          <Button variant="secondary" dark={p.dark} onPress={closePicker} label="Cancel" style={{ flex: 1 }} />
+          <Button variant="secondary" dark={p.dark} onPress={closePicker} label="Cancel" style={{ flex: 1 }}/>
           <Button
             variant="primary" dark={p.dark}
             onPress={() => {
@@ -82,7 +82,7 @@ function EditableSwatch({ name, tokenKey, value, scheme, p }: {
               closePicker();
             }}
             label="Apply" style={{ flex: 1 }}
-          />
+/>
         </Row>
       </AppModal>
     </Row>
@@ -97,11 +97,8 @@ function RadiusRow({ p, name, value, onSet }: {
   const shown = draft ?? String(value);
   return (
     <Row margin={{ top: 12 }} gap={14} align="center">
-      <Box style={{
-        width: 40, height: 40, borderRadius: Math.min(value, 20),
-        backgroundColor: p.rowBg, borderWidth: 1, borderColor: p.head,
-      }} />
-      <Col flex={1} style={{ minWidth: 0 }}>
+      <Box width={40} height={40} radius={Math.min(value, 20)} background={p.rowBg} style={{ borderWidth: 1, borderColor: p.head }}/>
+      <Col minWidth={0} flex={1}>
         <Text weight="semibold" size="md" color={p.head}>{name}</Text>
         <Input
           value={shown}
@@ -119,7 +116,7 @@ function RadiusRow({ p, name, value, onSet }: {
             backgroundColor: 'transparent', borderWidth: 0,
             color: p.sub, fontSize: fontSize('xs'), fontFamily: 'Calibre-Medium',
           }}
-        />
+/>
       </Col>
     </Row>
   );
@@ -140,14 +137,14 @@ export function ColorTokens({ p }: { p: GalleryPalette }): React.ReactElement {
           variant="secondary" size="sm" dark={p.dark}
           onPress={() => { resetOverrides(); resetRadius(); }}
           label="Reset" accessibilityLabel="Reset color tokens to defaults"
-        />
+/>
       </Row>
       <Box margin={{ top: 2 }}>
         {TOKEN_ROWS.map(([label, key]) => (
-          <EditableSwatch key={label} name={label} tokenKey={key} value={palette[key]} scheme={scheme} p={p} />
+          <EditableSwatch key={label} name={label} tokenKey={key} value={palette[key]} scheme={scheme} p={p}/>
         ))}
-        <RadiusRow p={p} name="button-border-radius" value={buttonRadius} onSet={setRadius} />
-        <RadiusRow p={p} name="border-radius" value={blockRadius} onSet={setBlockRadius} />
+        <RadiusRow p={p} name="button-border-radius" value={buttonRadius} onSet={setRadius}/>
+        <RadiusRow p={p} name="border-radius" value={blockRadius} onSet={setBlockRadius}/>
       </Box>
     </Box>
   );

@@ -87,11 +87,11 @@ export default function NewGroup(): React.ReactElement {
   }, [members, name, image, creating, router]);
 
   return (
-    <Col flex={1} style={{ backgroundColor: bg }}>
+    <Col background={bg} flex={1}>
       {/* Header — back button + title, consistent with other pushed screens. */}
-      <Row padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border, backgroundColor: toolbarBg }}>
+      <Row background={toolbarBg} padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
-          <Icon name="arrowLeft" size={22} color={fg} />
+          <Icon name="arrowLeft" size={22} color={fg}/>
         </Pressable>
         <Title size="sm" dark={dark} color={head}>
           New group
@@ -101,7 +101,7 @@ export default function NewGroup(): React.ReactElement {
       <ScrollView
         contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 24 + insets.bottom }}
         keyboardShouldPersistTaps="handled"
-      >
+>
         {/* Group image (optional) — tap to pick, square preview. */}
         <Box align="center" gap={8}>
           <Pressable onPress={() => { void pickImage(); }} disabled={creating} hitSlop={8}>
@@ -112,15 +112,15 @@ export default function NewGroup(): React.ReactElement {
                   width: 88, height: 88, borderRadius: Math.round(88 * 0.12),
                   backgroundColor: rowBg, opacity: creating ? 0.5 : 1,
                 }}
-              />
+/>
             ) : (
-              <Box align="center" justify="center" style={{ width: 88, height: 88, borderRadius: Math.round(88 * 0.12), backgroundColor: rowBg, borderWidth: 1, borderColor: border }}>
+              <Box width={88} height={88} radius={Math.round(88 * 0.12)} background={rowBg} align="center" justify="center" style={{ borderWidth: 1, borderColor: border }}>
                 <Text size="6xl" color={sub}>＋</Text>
               </Box>
             )}
             {creating && image ? (
               <Box align="center" justify="center" style={{ position: 'absolute', inset: 0 }}>
-                <Spinner size={20} color={fg} />
+                <Spinner size={20} color={fg}/>
               </Box>
             ) : null}
           </Pressable>
@@ -145,10 +145,10 @@ export default function NewGroup(): React.ReactElement {
               backgroundColor: inputBg, borderRadius: 12, paddingHorizontal: 14,
               paddingVertical: 12, borderWidth: 1, borderColor: border, minHeight: 0,
             }}
-          />
+/>
         </Col>
 
-        <MemberPicker state={picker} dark={dark} />
+        <MemberPicker state={picker} dark={dark}/>
       </ScrollView>
 
       {/* Create */}
@@ -165,7 +165,7 @@ export default function NewGroup(): React.ReactElement {
           tintBg={primary}
           tintFg={bg}
           label={members.length> 0 ? `Create group (${members.length})` : 'Create group'}
-        />
+/>
       </Box>
     </Col>
   );

@@ -288,6 +288,16 @@ export const RADIUS_SCALE: Record<RadiusName, number> = {
 /** Default named radius (ChatKit default). Resolves to BUTTON_RADIUS_DEFAULT. */
 export const RADIUS_NAME_DEFAULT: RadiusName = 'pill';
 
+// Box/Row/Col `radius` token enum + scale (BlockProps.radius). Lives in
+// ./radius to keep this file under the 400-line cap; re-exported so the
+// import surface (./tokens and the package index) is unchanged.
+export {
+  type RadiusValue,
+  BOX_RADIUS_SCALE,
+  isRadiusValue,
+  resolveBoxRadius,
+} from './radius';
+
 /** ChatKit `density` option. Default 'normal'. */
 export type Density = 'compact' | 'normal' | 'spacious';
 

@@ -18,14 +18,14 @@ export function SecuritySettings(): React.ReactElement {
   const insets = useSafeAreaInsets();
 
   return (
-    <Col flex={1} style={{ backgroundColor: bg }}>
-      <SystemHeader title="Security" dark={dark} fg={fg} head={head} border={border} />
+    <Col background={bg} flex={1}>
+      <SystemHeader title="Security" dark={dark} fg={fg} head={head} border={border}/>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <AccountSecuritySection
           c={{ fg, head, sub, border, rowBg }}
           danger={DANGER}
           dark={dark}
-        />
+/>
       </ScrollView>
     </Col>
   );

@@ -37,8 +37,8 @@ function SuggestionChip({ label, busy, onAdd, p }: {
         backgroundColor: p.rowBg,
         opacity: busy ? 0.5 : pressed ? 0.7 : 1,
       })}
-    >
-      <Icon name="plus" size={12} color={p.sub} />
+>
+      <Icon name="plus" size={12} color={p.sub}/>
       <Text size="xs" color={p.fg}>{label}</Text>
     </Pressable>
   );
@@ -51,10 +51,10 @@ function LabelChip({ label, busy, onRemove, p }: {
   label: string; busy: boolean; onRemove: () => void; p: Pal;
 }): React.ReactElement {
   return (
-    <Row padding={{ y: 6, right: 8, left: 12 }} align="center" gap={6} style={{ borderRadius: 999, backgroundColor: p.rowBg, opacity: busy ? 0.5 : 1 }}>
+    <Row radius="full" background={p.rowBg} padding={{ y: 6, right: 8, left: 12 }} align="center" gap={6} style={{ opacity: busy ? 0.5 : 1 }}>
       <Text size="xs" color={p.fg}>{label}</Text>
       <Pressable onPress={onRemove} disabled={busy} hitSlop={8} style={{ padding: 2 }}>
-        <Icon name="x" size={14} color={p.sub} />
+        <Icon name="x" size={14} color={p.sub}/>
       </Pressable>
     </Row>
   );
@@ -113,7 +113,7 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
   return (
     <Box padding={{ x: 16, bottom: 16 }}>
       <Row align="center" gap={6}>
-        <Icon name="tag" size={13} color={sub} />
+        <Icon name="tag" size={13} color={sub}/>
         <Text size="xs" color={sub}>LABELS</Text>
       </Row>
 
@@ -126,7 +126,7 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
               busy={removing === label}
               onRemove={() => { void remove(label); }}
               p={p}
-            />
+/>
           ))}
         </Row>
       ) : null}
@@ -146,7 +146,7 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
               borderWidth: 1, borderColor: border, borderRadius: 10,
               paddingHorizontal: 10, paddingVertical: 8, fontSize: fontSize('md'),
             }}
-          />
+/>
           <Pressable
             onPress={() => { void add(draft); }}
             disabled={busy || !draft.trim()}
@@ -158,7 +158,7 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
               opacity: busy || !draft.trim() ? 0.5 : 1,
               backgroundColor: pressed ? border : 'transparent',
             })}
-          >
+>
             {busy ? <Spinner size={14} color={fg} /> : <Icon name="plus" size={14} color={fg} />}
             <Text size="xs" color={fg}>Add</Text>
           </Pressable>
@@ -178,7 +178,7 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
               busy={busy}
               onAdd={() => { void add(label); }}
               p={p}
-            />
+/>
           ))}
         </Row>
       ) : null}

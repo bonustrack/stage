@@ -68,26 +68,26 @@ export default function WalletSend(): React.ReactElement {
   const { footer, report: reportFooter, onSubmit: footerSubmit } = useFooterReporter();
 
   return (
-    <Col flex={1} style={{ backgroundColor: bg }}>
-      <SendHeader fg={fg} head={head} border={border} onBack={() => router.back()} />
+    <Col background={bg} flex={1}>
+      <SendHeader fg={fg} head={head} border={border} onBack={() => router.back()}/>
 
       <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ padding: 16, gap: 16 }}>
-        <TokenSelector mode="combined" value={token} onChange={onChange} />
+        <TokenSelector mode="combined" value={token} onChange={onChange}/>
 
         {token.isPrivate ? (
           <ShieldFlowForm key={bodyKey} mode="send" pal={formPal} dark={dark}
             symbol={token.symbol === 'USDC' ? 'USDC' : 'ETH'} chainId={token.chainId} balance={balance}
-            onFooter={reportFooter} />
+            onFooter={reportFooter}/>
         ) : (
-          <PublicSendBody key={bodyKey} token={token} initialTo={initialTo} onFooter={reportFooter} />
+          <PublicSendBody key={bodyKey} token={token} initialTo={initialTo} onFooter={reportFooter}/>
         )}
       </ScrollView>
 
       {footer ? (
         <WalletFooter border={border} bg={bg} dark={dark} onCancel={() => router.back()}
           submitLabel={footer.submitLabel} onSubmit={footerSubmit}
-          submitDisabled={footer.submitDisabled} submitLoading={footer.submitLoading} />
+          submitDisabled={footer.submitDisabled} submitLoading={footer.submitLoading}/>
       ) : null}
     </Col>
   );

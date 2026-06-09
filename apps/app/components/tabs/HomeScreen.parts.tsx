@@ -90,7 +90,7 @@ export function useChannelRowRenderer(
             peerAddress: item.peerAddress,
           });
         }}
-      />
+/>
     );
   }, [router, setRowMenu, channelProfilesVersion, draftsVersion, pinned]);
 }
@@ -100,7 +100,7 @@ export function HomeError({ error, dark, fg, bg }: {
   error: string; dark: boolean; fg: string; bg: string;
 }): React.ReactElement {
   return (
-    <Col padding={24} flex={1} align="center" justify="center" bg={bg}>
+    <Col padding={24} flex={1} align="center" justify="center" background={bg}>
       <Text size="md" color={fg} style={{ textAlign: 'center', marginBottom: 16 }}>{error}</Text>
       <Pressable
         onPress={() => {
@@ -115,7 +115,7 @@ export function HomeError({ error, dark, fg, bg }: {
           backgroundColor: pressed ? '#5c2231' : 'transparent',
           borderWidth: 1, borderColor: dark ? '#5c2231' : '#e9bbc4',
         })}
-      >
+>
         <Text size="md" color={DANGER}>
           Reset XMTP identity
         </Text>
@@ -127,8 +127,8 @@ export function HomeError({ error, dark, fg, bg }: {
 /** Centred spinner shown while the cache is cold + XMTP is booting. */
 export function HomeSpinner({ head, bg }: { head: string; bg: string }): React.ReactElement {
   return (
-    <Col flex={1} align="center" justify="center" bg={bg}>
-      <Spinner size={28} color={head} />
+    <Col flex={1} align="center" justify="center" background={bg}>
+      <Spinner size={28} color={head}/>
     </Col>
   );
 }

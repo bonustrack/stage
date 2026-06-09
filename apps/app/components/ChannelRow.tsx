@@ -95,7 +95,7 @@ function buildLabelChips({ labels, fg, rowBg }: {
         // Drop it down so the chip's vertical center matches the text line center.
         transform: [{ translateY: 5 }],
       }}
-    >
+>
       <Text size="xs" color={fg}>{label}</Text>
     </View>,
     // Real, rendered gap (inline-View margin is NOT honored by RN).
@@ -126,11 +126,11 @@ function ChannelRowBase({
         backgroundColor: pressed ? border : 'transparent',
         paddingHorizontal: 14,
       }))}
-    >
+>
       {/* align-center: avatar + text column center as a group within a
           CONSTANT-height row. Fixed height lives on the ROW (ROW_CONTENT_HEIGHT,
           the 2-line case), so 1- and 2-line rows match (no bottom gap). */}
-      <Row padding={{ y: 9 }} align="center" gap={12} style={{ minHeight: ROW_CONTENT_HEIGHT }}>
+      <Row minHeight={ROW_CONTENT_HEIGHT} padding={{ y: 9 }} align="center" gap={12}>
         <Avatar
           imageUri={avatarUri}
           address={!avatarUri && avatarAddress ? avatarAddress : null}
@@ -138,8 +138,8 @@ function ChannelRowBase({
           square={square}
           cacheBuster={cacheBuster}
           style={{ backgroundColor: border }}
-        />
-        <Col flex={1} style={{ minWidth: 0 }}>
+/>
+        <Col minWidth={0} flex={1}>
           <Row align="center" gap={6}>
             {pinned ? <Icon name="mapPin" size={13} color={sub} /> : null}
             {/* Name + labels hug each other on the left; name shrinks (and
@@ -150,7 +150,7 @@ function ChannelRowBase({
               {title}
             </Text>
             {/* Flexible spacer pushes the timestamp to the far right edge. */}
-            <Spacer />
+            <Spacer/>
             {timestamp ? (
               <Text size="sm" color={sub}>{timestamp}</Text>
             ) : null}
@@ -164,7 +164,7 @@ function ChannelRowBase({
                 14px glyph down (lineHeight 21 - 14)/2 to center it on line 1. */}
             {draft ? (
               <Box margin={{ top: 3.5 }}>
-                <Icon name="pencil" size={14} color={sub} />
+                <Icon name="pencil" size={14} color={sub}/>
               </Box>
             ) : null}
             <Text size="lg" color={sub} style={{ lineHeight: 21, flex: 1 }}
@@ -176,15 +176,13 @@ function ChannelRowBase({
               {previewText}
             </Text>
             {unreadCount> 0 ? (
-              <Row padding={{ x: 7 }} align="center" justify="center" radius={999} bg={head} style={{
-                minWidth: 22, height: 22,
-              }}>
+              <Row minWidth={22} height={22} padding={{ x: 7 }} align="center" justify="center" radius="full" background={head}>
                 <Text weight="semibold" size="2xs" color={bg}>
                   {unreadCount> 99 ? '99+' : unreadCount}
                 </Text>
               </Row>
             ) : markedUnread ? (
-              <Box style={{ width: 12, height: 12, borderRadius: 999, backgroundColor: head }} />
+              <Box width={12} height={12} radius="full" background={head}/>
             ) : showChevron ? (
               <Text size="2xl" color={sub}>›</Text>
             ) : null}

@@ -62,10 +62,10 @@ export default function WalletReceive(): React.ReactElement {
     : 'Scan or share this address to receive ETH or tokens on Ethereum mainnet.';
 
   return (
-    <Col flex={1} style={{ backgroundColor: bg }}>
-      <Row padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border, backgroundColor: toolbarBg }}>
+    <Col background={bg} flex={1}>
+      <Row background={toolbarBg} padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
-          <Icon name="arrowLeft" size={22} color={fg} />
+          <Icon name="arrowLeft" size={22} color={fg}/>
         </Pressable>
         <Text weight="semibold" size="xl" color={head} style={{ flex: 1 }}>Receive</Text>
       </Row>
@@ -75,19 +75,19 @@ export default function WalletReceive(): React.ReactElement {
           mode={activeMode}
           onChange={setMode}
           privateReady={privateReady}
-        />
+/>
 
         {/* QR card — always white background so contrast is correct in dark mode too. */}
-        <Box padding={16} align="center" justify="center" style={{ backgroundColor: '#ffffff', borderRadius: 16, borderWidth: 1, borderColor: border }}>
+        <Box background={'#ffffff'} radius="xl" padding={16} align="center" justify="center" style={{ borderWidth: 1, borderColor: border }}>
           {address ? (
             <QRCode
               value={address}
               size={240}
               color="#000000"
               backgroundColor="#ffffff"
-            />
+/>
           ) : (
-            <Box style={{ width: 240, height: 240, backgroundColor: '#f4f4f5' }} />
+            <Box width={240} height={240} background={'#f4f4f5'}/>
           )}
         </Box>
 
@@ -101,7 +101,7 @@ export default function WalletReceive(): React.ReactElement {
             backgroundColor: pressed ? border : card,
             borderWidth: 1, borderColor: border,
           })}
-        >
+>
           <Text size="md" color={head} style={{ textAlign: 'center' }} selectable>
             {address || '—'}
           </Text>

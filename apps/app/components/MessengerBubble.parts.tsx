@@ -119,7 +119,7 @@ export function QuestionView({ question, dark, sub, onAnswer }: {
                 ? '#c0a06e'
                 : (dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.10)'),
             })}
-          >
+>
             <Text size="md" color={fg}>
               {multi ? (isOn ? '☑︎  ' : '☐  ') : ''}{opt.label}
             </Text>
@@ -142,14 +142,14 @@ export function QuestionView({ question, dark, sub, onAnswer }: {
             borderWidth: 1, borderStyle: 'dashed',
             borderColor: dark ? 'rgba(255,255,255,0.20)' : 'rgba(0,0,0,0.18)',
           })}
-        >
+>
           <Text size="md" color={sub}>
             Other…
           </Text>
         </Pressable>
       ) : null}
       {otherOpen ? (
-        <Box padding={{ x: 12, y: 8 }} style={{ borderRadius: 12, backgroundColor: dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)', borderWidth: 1, borderColor: dark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.14)' }}>
+        <Box radius="lg" background={dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)'} padding={{ x: 12, y: 8 }} style={{ borderWidth: 1, borderColor: dark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.14)' }}>
           <Textarea
             value={otherText}
             onChangeText={setOtherText}
@@ -163,7 +163,7 @@ export function QuestionView({ question, dark, sub, onAnswer }: {
               fontFamily: 'Calibre-Medium', fontSize: fontSize('md'), lineHeight: 22,
               minHeight: 22, padding: 0, backgroundColor: 'transparent', borderWidth: 0, height: undefined,
             }}
-          />
+/>
         </Box>
       ) : null}
       {needSubmitButton ? (
@@ -183,7 +183,7 @@ export function QuestionView({ question, dark, sub, onAnswer }: {
               opacity: disabled ? 0.5 : 1,
             };
           }}
-        >
+>
           <Text weight="semibold" size="sm" color={'#000'}>
             Submit{multi && selected.size> 0 ? ` (${selected.size}${otherText.trim() ? '+1' : ''})` : ''}
           </Text>

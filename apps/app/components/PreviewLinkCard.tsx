@@ -29,7 +29,7 @@ export function PreviewLinkCard({ url }: {
 
   return (
     <Pressable onPress={() => void Linking.openURL(ref.url)}>
-      <Box padding={{ x: 12, y: 10 }} radius={blockRadius} style={{ borderWidth: 1, borderColor: border, backgroundColor: 'transparent' }}>
+      <Box background={'transparent'} padding={{ x: 12, y: 10 }} radius={blockRadius} style={{ borderWidth: 1, borderColor: border }}>
         <Text weight="semibold" size="4xl" color={fg}>
           Open preview build
         </Text>

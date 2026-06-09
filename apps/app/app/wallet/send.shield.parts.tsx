@@ -21,7 +21,7 @@ export function ShieldRecipient({ pal, zkAddress }: {
   return (
     <Box gap={6}>
       <Text size="xs" color={sub}>TO YOUR PRIVATE WALLET</Text>
-      <Box padding={{ x: 14, y: 12 }} style={{ backgroundColor: inputBg, borderRadius: 12, borderWidth: 1, borderColor: border }}>
+      <Box background={inputBg} radius="lg" padding={{ x: 14, y: 12 }} style={{ borderWidth: 1, borderColor: border }}>
         <Text weight="semibold" size="md" color={head}>
           {zkAddress ? short0zk(zkAddress) : 'Loading 0zk address…'}
         </Text>

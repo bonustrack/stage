@@ -10,11 +10,22 @@
  *  full Box API. */
 
 import { View, type ViewProps, type ViewStyle } from 'react-native';
-import { boxStyleEntries, type Align, type BoxBaseProps, type Justify } from './layout';
+import {
+  boxStyleEntries,
+  type Align,
+  type BoxBaseProps,
+  type Justify,
+} from './layout';
+import { isColorToken, resolveColorToken } from './tokens';
 
 export type { Align, Justify };
 
-export type BoxProps = ViewProps & BoxBaseProps;
+export type BoxProps = ViewProps &
+  BoxBaseProps & {
+    /** Effective color scheme. Pass `useEffectiveColorScheme() === 'dark'`.
+     *  Used to resolve a semantic ColorToken `background` scheme-aware. */
+    dark?: boolean;
+  };
 
 export function Box({
   direction,
@@ -25,12 +36,28 @@ export function Box({
   justify,
   flex,
   wrap,
-  bg,
+  background,
   radius,
+  width,
+  height,
+  size,
+  minWidth,
+  minHeight,
+  maxWidth,
+  maxHeight,
+  aspectRatio,
+  dark,
   style,
   children,
   ...rest
 }: BoxProps) {
+  // Resolve a semantic ColorToken background scheme-aware here (the pure mapper
+  // has no scheme); kit `colors` keys + raw strings are resolved in the mapper.
+  const bg =
+    background !== undefined && isColorToken(background)
+      ? resolveColorToken(background, dark ? 'dark' : 'light')
+      : background;
+
   const computed = boxStyleEntries({
     direction,
     gap,
@@ -40,8 +67,16 @@ export function Box({
     justify,
     flex,
     wrap,
-    bg,
+    background: bg,
     radius,
+    width,
+    height,
+    size,
+    minWidth,
+    minHeight,
+    maxWidth,
+    maxHeight,
+    aspectRatio,
   }) as ViewStyle;
 
   return (

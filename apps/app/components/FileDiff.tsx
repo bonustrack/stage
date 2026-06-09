@@ -48,7 +48,7 @@ export function FileDiff({ file, p, dark }: {
   return (
     <Box>
       <ListViewItem dark={dark} gap={8} onPress={() => setOpen(o => !o)}>
-        <Icon name={open ? 'chevronDown' : 'chevronRight'} size={16} color={p.text} />
+        <Icon name={open ? 'chevronDown' : 'chevronRight'} size={16} color={p.text}/>
         <Text size="xs" numberOfLines={1} color={p.text} style={{ flex: 1}}>
           {file.filename}
         </Text>
@@ -66,7 +66,7 @@ export function FileDiff({ file, p, dark }: {
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <Box>
               {file.lines.map((ln, i) => (
-                <Row key={i} style={{ backgroundColor: lineBg(ln.kind, dark), minWidth: '100%' }}>
+                <Row background={lineBg(ln.kind, dark)} minWidth={'100%'} key={i}>
                   {ln.kind === 'hunk' ? null : (
                     <Row style={{ borderRightWidth: 1, borderRightColor: p.border }}>
                       <Text size="3xs" color={p.text} style={{ width: 36, textAlign: 'right', opacity: 0.4, lineHeight: 18, paddingRight: 4 }}>

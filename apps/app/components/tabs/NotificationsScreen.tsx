@@ -36,21 +36,21 @@ export function NotificationsScreen({ panRef }: { panRef?: SimultaneousRefs } = 
   return (
     <ScrollView simultaneousHandlers={panRef} style={{ flex: 1, backgroundColor: bg }} contentContainerStyle={{ flexGrow: 1 }}>
       {/* Topnav identity (avatar + name → Menu), left-aligned to match Home. */}
-      <Row padding={{ x: 16, top: 12, bottom: 4 }} align="center" bg={toolbarBg}>
-        <TopnavIdentity />
+      <Row padding={{ x: 16, top: 12, bottom: 4 }} align="center" background={toolbarBg}>
+        <TopnavIdentity/>
       </Row>
       <Col padding={{ x: 16, top: 4, bottom: 8 }}>
         <Row align="center" gap={10}>
           <Title size="md" dark={dark} color={head}>Notifications</Title>
           {unread> 0 ? (
-            <Box padding={{ x: 7 }} align="center" justify="center" style={{ minWidth: 22, height: 22, borderRadius: 999, backgroundColor: head }}>
+            <Box minWidth={22} height={22} radius="full" background={head} padding={{ x: 7 }} align="center" justify="center">
               <Text weight="semibold" size="xs" color={bg}>{unread}</Text>
             </Box>
           ) : null}
         </Row>
       </Col>
       <Col padding={{ x: 16, top: 8 }} gap={12}>
-        <NotificationsList previews={previews} onPress={() => router.push('/xmtp/requests')} />
+        <NotificationsList previews={previews} onPress={() => router.push('/xmtp/requests')}/>
       </Col>
       {previews.length === 0 ? (
         <Col padding={{ x: 16 }} flex={1} align="center" justify="center">

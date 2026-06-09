@@ -22,7 +22,7 @@ export function DrawerHeader({ rec, c }: {
     <Box padding={{ x: 18, bottom: 16 }}>
       {rec ? (
         <>
-          <Avatar address={rec.address} size={56} style={{ backgroundColor: c.border, marginBottom: 10 }} />
+          <Avatar address={rec.address} size={56} style={{ backgroundColor: c.border, marginBottom: 10 }}/>
           <Text weight="semibold" size="4xl" numberOfLines={1} color={c.head}>
             {getPeerName(rec.address) ?? rec.label ?? shortAddress(rec.address)}
           </Text>
@@ -44,8 +44,8 @@ export function drawerAccountRows({ accounts, activeId, onSwitch, c, dark }: {
 }): React.ReactElement[] {
   return accounts.map((a) => (
     <ListViewItem key={a.id} dark={dark} onPress={() => onSwitch(a.id)}>
-      <Avatar address={a.address} size={30} style={{ backgroundColor: c.border }} />
-      <Col flex={1} style={{ minWidth: 0 }}>
+      <Avatar address={a.address} size={30} style={{ backgroundColor: c.border }}/>
+      <Col minWidth={0} flex={1}>
         <Text weight="semibold" size="md" numberOfLines={1} color={c.head}>
           {getPeerName(a.address) ?? a.label ?? shortAddress(a.address)}
         </Text>
@@ -67,11 +67,11 @@ export function DrawerRow({ rowKey, icon, label, onPress, head, sub, dark }: {
 }): React.ReactElement {
   return (
     <ListViewItem key={rowKey} dark={dark} onPress={onPress}>
-      <Icon name={icon} size={22} color={head} />
+      <Icon name={icon} size={22} color={head}/>
       <Col flex={1}>
         <Text size="xl" color={head}>{label}</Text>
       </Col>
-      <Icon name="chevronRight" size={18} color={sub} />
+      <Icon name="chevronRight" size={18} color={sub}/>
     </ListViewItem>
   );
 }

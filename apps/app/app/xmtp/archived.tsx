@@ -65,15 +65,15 @@ export default function Archived(): React.ReactElement {
         square={!item.peerAddress}
         lastPreview={item.lastPreview || preview || '(no messages yet)'}
         onPress={() => router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } })}
-      />
+/>
     );
   }, [router]);
 
   return (
-    <Col flex={1} style={{ backgroundColor: bg }}>
-      <Row padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border, backgroundColor: toolbarBg }}>
+    <Col background={bg} flex={1}>
+      <Row background={toolbarBg} padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
-          <Icon name="arrowLeft" size={22} color={fg} />
+          <Icon name="arrowLeft" size={22} color={fg}/>
         </Pressable>
         <Title size="sm" dark={dark} color={head}>Archived</Title>
       </Row>
@@ -88,7 +88,7 @@ export default function Archived(): React.ReactElement {
             <Text color={sub} style={{ textAlign: 'center' }}>No archived conversations.</Text>
           </Col>
         }
-      />
+/>
     </Col>
   );
 }

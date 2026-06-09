@@ -29,10 +29,10 @@ function IntroLabelChips({ labels, fg, rowBg }: {
   return (
     <Row margin={{ top: 8 }} align="center" gap={6} justify="start" style={{ flexWrap: 'wrap' }}>
       {labels.map(label => (
-        <Box padding={{ x: 8, y: 2 }}
+        <Box radius="full" background={rowBg} padding={{ x: 8, y: 2 }}
           key={label.toLowerCase()}
-          style={{ borderRadius: 999, backgroundColor: rowBg }}
-        >
+          
+>
           <Text size="md" color={fg}>{label}</Text>
         </Box>
       ))}
@@ -65,11 +65,11 @@ export function ConversationIntro({
           size="lg"
           square
           style={{ backgroundColor: border }}
-        />
+/>
         <Text weight="semibold" size="5xl" color={head} style={{ lineHeight: 30, marginTop: 12, textAlign: 'left', flexShrink: 1 }}>
           {name}
         </Text>
-        <IntroLabelChips labels={groupLabels} fg={fg} rowBg={rowBg} />
+        <IntroLabelChips labels={groupLabels} fg={fg} rowBg={rowBg}/>
         {desc ? (
           <Text size="4xl" color={sub} style={{ marginTop: 10, textAlign: 'left', lineHeight: 23 }}>
             {desc}
@@ -85,8 +85,8 @@ export function ConversationIntro({
     <Pressable
       onPress={() => onPressPeer(peerAddr)}
       style={{ alignItems: 'flex-start', paddingVertical: 24, paddingHorizontal: 12 }}
-    >
-      <Avatar address={peerAddr} imageUri={getPeerAvatar(peerAddr)} size="lg" style={{ backgroundColor: border }} />
+>
+      <Avatar address={peerAddr} imageUri={getPeerAvatar(peerAddr)} size="lg" style={{ backgroundColor: border }}/>
       <Text weight="semibold" size="5xl" color={head} style={{ lineHeight: 30, marginTop: 12, flexShrink: 1 }}>
         {getPeerName(peerAddr) ?? shortAddress(peerAddr)}
       </Text>
