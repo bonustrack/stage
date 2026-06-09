@@ -56,10 +56,7 @@ export default function Diff(): React.ReactElement {
 
   return (
     <Col flex={1} style={{ backgroundColor: p.bg }}>
-      <Row style={{ alignItems: 'center', gap: 8,
-        paddingHorizontal: 12, paddingTop: 8 + insets.top, paddingBottom: 10,
-        borderBottomWidth: 1, borderBottomColor: p.border,
-        backgroundColor: p.toolbarBg, }}>
+      <Row align="center" gap={8} px={12} pt={8 + insets.top} pb={10} style={{ borderBottomWidth: 1, borderBottomColor: p.border, backgroundColor: p.toolbarBg }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={p.text} />
         </Pressable>
@@ -77,18 +74,18 @@ export default function Diff(): React.ReactElement {
         {!ref ? (
           <Text color={p.text} style={{ opacity: 0.7, paddingHorizontal: 12 }}>No GitHub link is set for this channel.</Text>
         ) : isLoading ? (
-          <Box style={{ paddingVertical: 40, alignItems: 'center' }}><ActivityIndicator color={p.link} /></Box>
+          <Box py={40} align="center"><ActivityIndicator color={p.link} /></Box>
         ) : isError ? (
           <Text color={p.text} style={{ opacity: 0.7, paddingHorizontal: 12 }}>Could not load the diff (private repo or GitHub rate limit). Open it on GitHub from the link icon above.</Text>
         ) : diff?.kind === 'no-pr' ? (
-          <Box style={{ paddingHorizontal: 12 }}>
+          <Box px={12}>
             {diff.title ? (
               <Text weight="semibold" size="5xl" color={p.text} style={{ lineHeight: 32, marginBottom: diff.body?.trim() ? 10 : 10 }}>
                 {diff.title}
               </Text>
             ) : null}
             {diff.body?.trim() ? (
-              <Box style={{ marginBottom: 10 }}>
+              <Box mb={10}>
                 <Markdown {...mdProps}>{diff.body.trim()}</Markdown>
               </Box>
             ) : null}
@@ -98,18 +95,18 @@ export default function Diff(): React.ReactElement {
           <Text color={p.text} style={{ opacity: 0.7, paddingHorizontal: 12 }}>No file changes in this pull request.</Text>
         ) : (
           <>
-            <Box style={{ paddingHorizontal: 12 }}>
+            <Box px={12}>
               {diff?.title ? (
                 <Text weight="semibold" size="5xl" color={p.text} style={{ lineHeight: 32, marginBottom: diff?.body?.trim() ? 10 : 12 }}>
                   {diff.title}
                 </Text>
               ) : null}
               {diff?.body?.trim() ? (
-                <Box style={{ marginBottom: 12 }}>
+                <Box mb={12}>
                   <Markdown {...mdProps}>{diff.body.trim()}</Markdown>
                 </Box>
               ) : null}
-              <Row style={{ alignItems: 'center', gap: 12, marginBottom: 12, paddingHorizontal: 2 }}>
+              <Row align="center" gap={12} mb={12} px={2}>
                 <Text size="xs" color={p.text} style={{ opacity: 0.6 }}>
                   {diff?.files.length} {diff?.files.length === 1 ? 'file' : 'files'} changed
                 </Text>

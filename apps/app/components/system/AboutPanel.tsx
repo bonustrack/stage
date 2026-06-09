@@ -24,8 +24,7 @@ interface AboutRowProps {
 function AboutRow({ label, value, mono, dark, border, href, head }: AboutRowProps): React.ReactElement {
   const valueColor = href ? head : undefined;
   const row = (
-    <Row style={{ alignItems: 'center', justifyContent: 'space-between',
-      paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: border, gap: 16, }}>
+    <Row align="center" justify="between" py={14} gap={16} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
       <Text dark={dark} variant="secondary" weight="medium" size="md">{label}</Text>
       <Text
         dark={dark}
@@ -67,8 +66,8 @@ export function AboutPanel({ dark, head, sub, border, rowBg }: {
   const versionLabel = nativeBuild ? `${version} (build ${nativeBuild})` : version;
 
   return (
-    <Box style={{ paddingTop: 18 }}>
-      <Box style={{ paddingHorizontal: 16 }}>
+    <Box pt={18}>
+      <Box px={16}>
       <Title dark={dark} level={2} color={head}>About</Title>
       <Text dark={dark} variant="secondary" weight="medium" size="xs" style={{ marginTop: 4, marginBottom: 8 }}>
         Build + runtime metadata for this install.

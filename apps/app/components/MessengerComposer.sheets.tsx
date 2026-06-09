@@ -79,11 +79,7 @@ export function PollSheet({
           style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 }}
         >
           <Text size="md" color={fg}>Allow multiple choices</Text>
-          <Box style={{
-            width: 44, height: 26, borderRadius: 999, padding: 3,
-            backgroundColor: multi ? '#c0a06e' : inputBg,
-            alignItems: multi ? 'flex-end' : 'flex-start',
-          }}>
+          <Box p={3} align={multi ? 'end' : 'start'} style={{ width: 44, height: 26, borderRadius: 999, backgroundColor: multi ? '#c0a06e' : inputBg }}>
             <Box style={{ width: 20, height: 20, borderRadius: 999, backgroundColor: '#ffffff' }} />
           </Box>
         </Pressable>

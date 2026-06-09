@@ -45,7 +45,7 @@ function Track({ colors, thumb, onFraction, p }: {
     <GestureDetector gesture={gesture}>
       <Box
         onLayout={(e) => { widthRef.current = e.nativeEvent.layout.width || 1; }}
-        style={{ height: TRACK_H, borderRadius: TRACK_H / 2, overflow: 'hidden', justifyContent: 'center' }}
+        justify="center" style={{ height: TRACK_H, borderRadius: TRACK_H / 2, overflow: 'hidden' }}
       >
         <Row style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}>
           {colors.map((c, i) => (
@@ -54,14 +54,7 @@ function Track({ colors, thumb, onFraction, p }: {
         </Row>
         <Box
           pointerEvents="none"
-          style={{
-            position: 'absolute', left: `${thumb * 100}%`, marginLeft: -11,
-            width: 22, height: 22, borderRadius: 11,
-            borderWidth: 3, borderColor: '#ffffff',
-            backgroundColor: 'transparent',
-            shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 2,
-            elevation: 3,
-          }}
+          ml={-11} style={{ position: 'absolute', left: `${thumb * 100}%`, width: 22, height: 22, borderRadius: 11, borderWidth: 3, borderColor: '#ffffff', backgroundColor: 'transparent', shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 2, elevation: 3 }}
         />
         <Box pointerEvents="none" style={{
           position: 'absolute', left: 0, right: 0, top: 0, bottom: 0,
@@ -94,7 +87,7 @@ export function ColorPicker({ value, onChange, p }: {
 
   return (
     <Box>
-      <Row gap={14} style={{ alignItems: 'center' }}>
+      <Row gap={14} align="center">
         <Box style={{
           width: 64, height: 64, borderRadius: 14, backgroundColor: hex,
           borderWidth: 1, borderColor: p.border,

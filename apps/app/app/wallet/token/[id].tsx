@@ -97,10 +97,7 @@ export default function TokenDetail(): React.ReactElement {
         </Row>
 
         {/* Network badge pill */}
-        <Box style={{
-          paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999,
-          borderWidth: 1, borderColor: border,
-        }}>
+        <Box px={10} py={3} style={{ borderRadius: 999, borderWidth: 1, borderColor: border }}>
           <Text size="xs" color={sub}>
             {NETWORK_LABEL[r.chainId] ?? `Chain ${r.chainId}`}
           </Text>
@@ -161,10 +158,7 @@ function Header({ head, border, onBack, title }: {
   const { toolbarBg } = usePalette();
   return (
     <Row align="center" gap={8} px={12}
-      style={{
-        borderBottomWidth: 1, borderBottomColor: border,
-        backgroundColor: toolbarBg, paddingTop: 8 + insets.top, paddingBottom: 8,
-      }}>
+      pt={8 + insets.top} pb={8} style={{ borderBottomWidth: 1, borderBottomColor: border, backgroundColor: toolbarBg }}>
       <Pressable onPress={onBack} hitSlop={8} style={{ padding: 4 }}>
         <Icon name="arrowLeft" size={22} color={head} />
       </Pressable>

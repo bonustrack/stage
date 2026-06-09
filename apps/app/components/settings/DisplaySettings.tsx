@@ -75,7 +75,7 @@ export function DisplaySettings(): React.ReactElement {
         </Box>
 
         {custom ? (
-          <Box style={{ paddingHorizontal: 16, paddingTop: 24 }}>
+          <Box px={16} pt={24}>
             <Text size="xs" color={sub} style={{ paddingBottom: 4 }}>
               CUSTOM COLORS
             </Text>

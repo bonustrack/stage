@@ -120,21 +120,15 @@ function TxRow({ r, head, sub, border, bg }: {
   return (
     <Row align="center" gap={12} py={14}
       style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-      <Box style={{
-        width: 32, height: 32, borderRadius: 999, backgroundColor: border,
-        alignItems: 'center', justifyContent: 'center',
-      }}>
+      <Box align="center" justify="center" style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border }}>
         <Icon name={DIR_ICON[r.direction]} size={18} color={r.failed ? DANGER : head} />
       </Box>
       <Col flex={1} style={{ minWidth: 0 }}>
         <Text weight="semibold" size="xl" color={head} numberOfLines={1}>
           {title}
         </Text>
-        <Row align="center" gap={6} style={{ marginTop: 2 }}>
-          <Box style={{
-            paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4,
-            backgroundColor: border,
-          }}>
+        <Row align="center" gap={6} mt={2}>
+          <Box px={6} py={1} style={{ borderRadius: 4, backgroundColor: border }}>
             <Text size="xs" color={sub} numberOfLines={1}>
               {r.chainLabel}
             </Text>

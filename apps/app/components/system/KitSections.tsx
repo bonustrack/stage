@@ -63,12 +63,12 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
           <Button dark={dark} color="success" variant="outline" label="Outline" />
           <Button dark={dark} color="warning" label="Warning" />
         </Row>
-        <Row gap={8} mt={10} style={{ alignItems: 'center', flexWrap: 'wrap' }}>
+        <Row gap={8} mt={10} align="center" style={{ flexWrap: 'wrap' }}>
           <Button dark={dark} size="sm" label="Small" />
           <Button dark={dark} size="lg" label="Large" />
           <Button dark={dark} block label="Block" />
         </Row>
-        <Row gap={8} mt={10} style={{ alignItems: 'center', flexWrap: 'wrap' }}>
+        <Row gap={8} mt={10} align="center" style={{ flexWrap: 'wrap' }}>
           <Button
             dark={dark} color="primary"
             label="iconStart" iconStart={<Icon name="check" size={18} color={dark ? '#000' : '#fff'} />}
@@ -127,7 +127,7 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
       </GallerySection>
 
       <GallerySection name="Image" note="Unified image - fit / radius / frame" {...sec} innerPadH={14} innerPadV={14}>
-        <Row gap={12} style={{ alignItems: 'center', flexWrap: 'wrap' }}>
+        <Row gap={12} align="center" style={{ flexWrap: 'wrap' }}>
           <Image src={SAMPLE_IMAGE} size={56} radius="full" fit="cover" alt="Round avatar" />
           <Image src={SAMPLE_IMAGE} size={56} radius="lg" fit="cover" alt="Rounded square" />
           <Image src={SAMPLE_IMAGE} size={56} radius="lg" frame fit="contain" alt="Framed contain" />
@@ -135,7 +135,7 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
       </GallerySection>
 
       <GallerySection name="Spacer" note="Flexible gap - pushes siblings apart" {...sec} innerPadH={14} innerPadV={14}>
-        <Row style={{ alignItems: 'center' }}>
+        <Row align="center">
           <Text dark={dark} color={head}>Start</Text>
           <Spacer />
           <Text dark={dark} color={sub}>End</Text>
@@ -148,7 +148,7 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
       </GallerySection>
 
       <GallerySection name="Input" note="Single-line field - soft / outline / pill" {...sec} innerPadH={14} innerPadV={14}>
-        <Box style={{ gap: 10 }}>
+        <Box gap={10}>
           <Input dark={dark} name="soft" placeholder="Soft input" variant="soft" />
           <Input dark={dark} name="outline" placeholder="Outline input" variant="outline" />
           <Input dark={dark} name="pill" placeholder="Pill input" variant="soft" pill />
@@ -160,7 +160,7 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
       </GallerySection>
 
       <GallerySection name="Checkbox" note="Boolean control - label / checked" {...sec} innerPadH={14} innerPadV={14}>
-        <Box style={{ gap: 10 }}>
+        <Box gap={10}>
           <Checkbox dark={dark} name="terms" label="Accept the terms" defaultChecked />
           <Checkbox dark={dark} name="news" label="Subscribe to updates" />
         </Box>
@@ -180,7 +180,7 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
       </GallerySection>
 
       <GallerySection name="Select" note="Dropdown - options / placeholder / clearable" {...sec} innerPadH={14} innerPadV={14}>
-        <Box style={{ gap: 10 }}>
+        <Box gap={10}>
           <Select
             dark={dark}
             name="network"
@@ -207,7 +207,7 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
       </GallerySection>
 
       <GallerySection name="DatePicker" note="Calendar field - defaultValue / min / clearable" {...sec} innerPadH={14} innerPadV={14}>
-        <Box style={{ gap: 10 }}>
+        <Box gap={10}>
           <DatePicker dark={dark} name="when" placeholder="Pick a date" clearable />
           <DatePicker dark={dark} name="dob" variant="outline" defaultValue="2026-01-15" />
         </Box>

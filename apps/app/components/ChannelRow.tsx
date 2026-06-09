@@ -163,7 +163,7 @@ function ChannelRowBase({
                 align-start (badge on line 1 when preview wraps), so nudge the
                 14px glyph down (lineHeight 21 - 14)/2 to center it on line 1. */}
             {draft ? (
-              <Box style={{ marginTop: 3.5 }}>
+              <Box mt={3.5}>
                 <Icon name="pencil" size={14} color={sub} />
               </Box>
             ) : null}

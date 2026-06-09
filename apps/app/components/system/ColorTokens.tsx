@@ -47,7 +47,7 @@ function EditableSwatch({ name, tokenKey, value, scheme, p }: {
   const invalid = draft != null && !isHex(draft);
   const closePicker = (): void => { setPicking(false); setPending(null); };
   return (
-    <Row gap={14} mt={12} style={{ alignItems: 'center' }}>
+    <Row gap={14} mt={12} align="center">
       <Pressable
         onPress={() => { setPending(value); setPicking(true); }}
         accessibilityLabel={`Pick ${name} color`}
@@ -73,7 +73,7 @@ function EditableSwatch({ name, tokenKey, value, scheme, p }: {
       </Col>
       <AppModal visible={picking} onClose={closePicker}>
         <ColorPicker value={pending ?? value} onChange={setPending} p={p} />
-        <Row gap={12} mt={20} style={{ alignItems: 'center' }}>
+        <Row gap={12} mt={20} align="center">
           <Button variant="secondary" dark={p.dark} onPress={closePicker} label="Cancel" style={{ flex: 1 }} />
           <Button
             variant="primary" dark={p.dark}
@@ -96,7 +96,7 @@ function RadiusRow({ p, name, value, onSet }: {
   const [draft, setDraft] = useState<string | null>(null);
   const shown = draft ?? String(value);
   return (
-    <Row gap={14} mt={12} style={{ alignItems: 'center' }}>
+    <Row gap={14} mt={12} align="center">
       <Box style={{
         width: 40, height: 40, borderRadius: Math.min(value, 20),
         backgroundColor: p.rowBg, borderWidth: 1, borderColor: p.head,

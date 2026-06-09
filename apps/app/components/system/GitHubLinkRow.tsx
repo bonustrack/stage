@@ -20,12 +20,9 @@ export function GitHubLinkRow({ dark, head, sub, border, rowBg, url, title, subt
       style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
     >
       <Box
-        style={{
-          marginHorizontal: 16, marginTop: 16, paddingVertical: 14, paddingHorizontal: 14,
-          borderRadius: 12, borderWidth: 1, borderColor: border, backgroundColor: rowBg,
-        }}
+        mx={16} mt={16} py={14} px={14} style={{ borderRadius: 12, borderWidth: 1, borderColor: border, backgroundColor: rowBg }}
       >
-        <Row gap={12} style={{ alignItems: 'center' }}>
+        <Row gap={12} align="center">
           <GithubLogo size={22} color={head} />
           <Col flex={1}>
             <Text weight="semibold" size="md" color={head}>

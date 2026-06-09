@@ -19,12 +19,9 @@ export function ShieldRecipient({ pal, zkAddress }: {
 }): React.ReactElement {
   const { head, sub, border, inputBg } = pal;
   return (
-    <Box style={{ gap: 6 }}>
+    <Box gap={6}>
       <Text size="xs" color={sub}>TO YOUR PRIVATE WALLET</Text>
-      <Box style={{
-        backgroundColor: inputBg, borderRadius: 12, borderWidth: 1, borderColor: border,
-        paddingHorizontal: 14, paddingVertical: 12,
-      }}>
+      <Box px={14} py={12} style={{ backgroundColor: inputBg, borderRadius: 12, borderWidth: 1, borderColor: border }}>
         <Text weight="semibold" size="md" color={head}>
           {zkAddress ? short0zk(zkAddress) : 'Loading 0zk address…'}
         </Text>
@@ -54,7 +51,7 @@ export function ShieldPhaseLine({ pal, txHash, err, errPhase, bridgeOk, chainId 
   }
   if (!txHash && !err) return null;
   return (
-    <Box style={{ gap: 4, paddingHorizontal: 4 }}>
+    <Box gap={4} px={4}>
       {txHash ? (
         <Pressable onPress={() => Linking.openURL(txExplorerUrl(chainId, txHash))} hitSlop={6}>
           <Text size="xs" color={link}>

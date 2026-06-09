@@ -118,7 +118,7 @@ export function usePullToRefresh(
   });
 
   const indicator = (
-    <Box pointerEvents="none" style={{ height: 0, alignItems: 'center', zIndex: 10 }}>
+    <Box pointerEvents="none" align="center" style={{ height: 0, zIndex: 10 }}>
       <Animated.View
         style={{
           position: 'absolute',

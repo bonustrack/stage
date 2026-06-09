@@ -36,10 +36,7 @@ export function ReplyBanner({
     /** Outer container breaks out of the composer's `px={10}` with a -10 margin so
      *  the top border spans the full screen width edge-to-edge; the matching 10px
      *  paddingHorizontal keeps the inner content at its original inset. */
-    <Box style={{
-      marginHorizontal: -10, paddingHorizontal: 10,
-      borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: borderColor,
-    }}>
+    <Box mx={-10} px={10} style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: borderColor }}>
       <Pressable onPress={onPress} disabled={!onPress}>
         {/** No extra left inset → the outer Box paddingHorizontal:10 alone places the
          *   ✕ at x≈10, flush with the composer's own left content edge (Col px:10),
@@ -174,7 +171,7 @@ export function RecordingBar({
       </Animated.View>
       <Row flex={1} align="center" justify="end" style={{ height: 28, overflow: 'hidden' }}>
         {[...Array(Math.max(0, 40 - levels.length)).fill(0.05), ...levels].slice(-40).map((lvl, i) => (
-          <Box key={i} style={{ width: 3, marginHorizontal: 1, borderRadius: 2, height: Math.max(3, Math.round(lvl * 26)), backgroundColor: head, opacity: 0.85 }} />
+          <Box key={i} mx={1} style={{ width: 3, borderRadius: 2, height: Math.max(3, Math.round(lvl * 26)), backgroundColor: head, opacity: 0.85 }} />
         ))}
       </Row>
       <Text size="xs" color={sub} style={{ minWidth: 40, textAlign: 'center' }}>

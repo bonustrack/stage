@@ -110,10 +110,7 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
     <Box style={{
       backgroundColor: toolbarBg, borderTopWidth: 1, borderTopColor: border,
     }}>
-      <Col style={{
-        width: '100%', alignSelf: 'stretch', alignItems: 'stretch',
-        paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12, gap: 10,
-      }}>
+      <Col align="stretch" px={16} pt={12} pb={12} gap={10} style={{ width: '100%', alignSelf: 'stretch' }}>
         <Text color={fg} style={{ textAlign: 'center', opacity: 0.8 }}>
           This is a message request. Approve to reply, or reject to decline.
         </Text>

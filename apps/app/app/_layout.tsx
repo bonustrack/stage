@@ -125,7 +125,7 @@ export default function RootLayout(): React.ReactElement {
   const onboarding = useOnboardingGate();
   if (!loaded || !onboarding.ready) {
     return (
-      <Col flex={1} style={{ alignItems: 'center', justifyContent: 'center', backgroundColor: bg }}>
+      <Col flex={1} align="center" justify="center" style={{ backgroundColor: bg }}>
         <Spinner size={28} color={dark ? '#ffffff' : '#000000'} />
       </Col>
     );

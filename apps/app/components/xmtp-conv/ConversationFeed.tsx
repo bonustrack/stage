@@ -127,10 +127,10 @@ export function ConversationFeed({
        *  blank before its first message; otherwise a brief settling state. */
       ListEmptyComponent={
         status !== 'open'
-          ? <Box style={{ padding: 32, alignItems: 'center' }}><Spinner size={28} color={head} /></Box>
+          ? <Box p={32} align="center"><Spinner size={28} color={head} /></Box>
           : hasMore === false
             ? intro
-            : <Box style={{ padding: 32, alignItems: 'center' }}><Spinner size={28} color={head} /></Box>
+            : <Box p={32} align="center"><Spinner size={28} color={head} /></Box>
       }
       /** Inverted list → `ListFooterComponent` renders at the visual TOP (oldest
        *  end). Holds two things, top-to-bottom: a small "loading older" spinner
@@ -140,7 +140,7 @@ export function ConversationFeed({
       ListFooterComponent={
         <>
           {loadingOlder ? (
-            <Box style={{ paddingVertical: 16, alignItems: 'center' }}>
+            <Box py={16} align="center">
               <Spinner size={20} color={sub} />
             </Box>
           ) : null}

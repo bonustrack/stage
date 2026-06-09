@@ -64,10 +64,7 @@ export function NftsView({
               />
             ) : (
               <Box
-                style={{
-                  width: '100%', aspectRatio: 1, borderRadius: 12,
-                  backgroundColor: border, alignItems: 'center', justifyContent: 'center',
-                }}
+                align="center" justify="center" style={{ width: '100%', aspectRatio: 1, borderRadius: 12, backgroundColor: border }}
               >
                 <Icon name="photo" size={28} color={sub} />
               </Box>

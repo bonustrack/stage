@@ -69,7 +69,7 @@ export function PrivateActivitySection({ head, sub, border, bg }: {
 
   return (
     <Col>
-      <Row align="center" gap={6} style={{ paddingTop: 14, paddingBottom: 4 }}>
+      <Row align="center" gap={6} pt={14} pb={4}>
         <Icon name="lockClosed" size={13} color={sub} />
         <Text weight="semibold" size="xs" color={sub} style={{ letterSpacing: 0.5, textTransform: 'uppercase' }}>
           Private activity
@@ -125,19 +125,15 @@ function PrivateTxRow({ r, head, sub, border, bg }: {
           <Text weight="semibold" size="xl" color={head} numberOfLines={1}>
             {rowTitle(r)}
           </Text>
-          <Row align="center" gap={3} style={{
-            paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4, backgroundColor: border,
-          }}>
+          <Row align="center" gap={3} px={6} py={1} style={{ borderRadius: 4, backgroundColor: border }}>
             <Icon name={SHIELD_ICON} size={10} color={sub} />
             <Text weight="semibold" size="3xs" color={sub}>
               Private
             </Text>
           </Row>
         </Row>
-        <Row align="center" gap={6} style={{ marginTop: 2 }}>
-          <Box style={{
-            paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4, backgroundColor: border,
-          }}>
+        <Row align="center" gap={6} mt={2}>
+          <Box px={6} py={1} style={{ borderRadius: 4, backgroundColor: border }}>
             <Text size="xs" color={sub} numberOfLines={1}>
               {r.chainLabel}
             </Text>

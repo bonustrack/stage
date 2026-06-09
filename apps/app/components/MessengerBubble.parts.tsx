@@ -95,7 +95,7 @@ export function QuestionView({ question, dark, sub, onAnswer }: {
   };
   const needSubmitButton = multi || otherOpen;
   return (
-    <Box style={{ alignSelf: 'stretch', gap: 6, marginTop: 8 }}>
+    <Box gap={6} mt={8} style={{ alignSelf: 'stretch' }}>
       {question.header ? (
         <Text weight="semibold" size="3xs" color={sub} style={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
           {question.header}{multi ? ' · multi-select' : ''}
@@ -149,11 +149,7 @@ export function QuestionView({ question, dark, sub, onAnswer }: {
         </Pressable>
       ) : null}
       {otherOpen ? (
-        <Box style={{
-          paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12,
-          backgroundColor: dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
-          borderWidth: 1, borderColor: dark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.14)',
-        }}>
+        <Box px={12} py={8} style={{ borderRadius: 12, backgroundColor: dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)', borderWidth: 1, borderColor: dark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.14)' }}>
           <Textarea
             value={otherText}
             onChangeText={setOtherText}

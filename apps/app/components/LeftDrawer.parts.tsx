@@ -19,7 +19,7 @@ export function DrawerHeader({ rec, c }: {
   rec: AccountRecord | null; c: DrawerColors;
 }): React.ReactElement {
   return (
-    <Box style={{ paddingHorizontal: 18, paddingBottom: 16 }}>
+    <Box px={18} pb={16}>
       {rec ? (
         <>
           <Avatar address={rec.address} size={56} style={{ backgroundColor: c.border, marginBottom: 10 }} />

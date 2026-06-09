@@ -59,11 +59,7 @@ export function GroupProfileHeader({ imageUrl, channelId, uploadingImage, insetT
       {/* Cover extends up behind the floating topnav/status bar so the colour
           bleeds to y=0 (height += insetTop), exactly like ProfileScreen route. */}
       <Box bg={rowBg} style={{ height: 140 + insetTop }} />
-      <Box style={{
-        alignItems: 'flex-start', paddingHorizontal: 16,
-        backgroundColor: bg, marginTop: -18,
-        borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'visible',
-      }}>
+      <Box align="start" px={16} mt={-18} style={{ backgroundColor: bg, borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'visible' }}>
         <Pressable onPress={onTap} onLongPress={onPick} disabled={uploadingImage} hitSlop={8}
           style={{ marginTop: -44, zIndex: 1 }}>
           <Image
@@ -75,7 +71,7 @@ export function GroupProfileHeader({ imageUrl, channelId, uploadingImage, insetT
             }}
           />
           {uploadingImage ? (
-            <Box style={{ position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' }}>
+            <Box align="center" justify="center" style={{ position: 'absolute', inset: 0 }}>
               <Spinner size={20} color={fg} />
             </Box>
           ) : null}
@@ -95,9 +91,9 @@ export function GroupNameEditor({ name, draft, setDraft, editing, setEditing, sa
 }): React.ReactElement {
   const { fg, head, sub, border, inputBg } = p;
   return (
-    <Box style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
+    <Box px={16} pb={16}>
       {editing ? (
-        <Row style={{ alignItems: 'center', gap: 8, marginTop: 6 }}>
+        <Row align="center" gap={8} mt={6}>
           <Input
             value={draft}
             onChangeText={setDraft}
@@ -132,10 +128,10 @@ export function GroupDescriptionEditor({ description, descriptionDraft, setDescr
 }): React.ReactElement {
   const { fg, sub, border, inputBg } = p;
   return (
-    <Box style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
+    <Box px={16} pb={16}>
       <Text size="xs" color={sub}>DESCRIPTION</Text>
       {editing ? (
-        <Row style={{ alignItems: 'flex-start', gap: 8, marginTop: 6 }}>
+        <Row align="start" gap={8} mt={6}>
           <Textarea
             value={descriptionDraft}
             onChangeText={setDescriptionDraft}

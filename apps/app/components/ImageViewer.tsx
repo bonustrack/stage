@@ -122,7 +122,7 @@ export function ImageViewer({ uri, visible, onClose }: {
         </Pressable>
 
         {/* Download — bottom-center pill. */}
-        <Box style={{ position: 'absolute', bottom: 48, left: 0, right: 0, alignItems: 'center' }}>
+        <Box align="center" style={{ position: 'absolute', bottom: 48, left: 0, right: 0 }}>
           <Pressable
             onPress={() => { void onDownload(); }}
             disabled={saving}

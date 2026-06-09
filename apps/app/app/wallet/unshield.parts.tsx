@@ -21,12 +21,9 @@ export function UnshieldRecipient({ pal, eoa, network }: {
 }): React.ReactElement {
   const { head, sub, border, inputBg } = pal;
   return (
-    <Box style={{ gap: 6 }}>
+    <Box gap={6}>
       <Text size="xs" color={sub}>TO YOUR PUBLIC WALLET</Text>
-      <Box style={{
-        backgroundColor: inputBg, borderRadius: 12, borderWidth: 1, borderColor: border,
-        paddingHorizontal: 14, paddingVertical: 12,
-      }}>
+      <Box px={14} py={12} style={{ backgroundColor: inputBg, borderRadius: 12, borderWidth: 1, borderColor: border }}>
         <Text weight="semibold" size="md" color={head}>
           {eoa ? shortAddr(eoa) : 'Loading address…'}
         </Text>
@@ -52,7 +49,7 @@ export function UnshieldPhaseLine({ pal, phase, txHash, err, bridgeOk, chainId }
     );
   }
   return (
-    <Box style={{ gap: 4, paddingHorizontal: 4 }}>
+    <Box gap={4} px={4}>
       {phase === 'proving' ? (
         <Text size="xs" color={sub}>Generating proof… (this can take ~10-30s)</Text>
       ) : phase === 'broadcasting' ? (

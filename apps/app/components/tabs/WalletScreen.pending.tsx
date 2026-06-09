@@ -29,7 +29,7 @@ export function PendingShieldRow({ p, pal }: { p: PendingAction; pal: Pal }): Re
   const { head, sub, border } = pal;
   return (
     <Row align="center" gap={12} py={14} style={{ borderBottomWidth: 1, borderBottomColor: border, opacity: 0.7 }}>
-      <Box style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border, alignItems: 'center', justifyContent: 'center' }}>
+      <Box align="center" justify="center" style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border }}>
         <Spinner size={16} color={sub} />
       </Box>
       <Col flex={1} style={{ minWidth: 0 }}>

@@ -35,7 +35,7 @@ function DebugRow({ label, value, sub, head }: {
   label: string; value: string; sub: string; head: string;
 }): React.ReactElement {
   return (
-    <Row gap={12} py={2} style={{ justifyContent: 'space-between' }}>
+    <Row gap={12} py={2} justify="between">
       <Text size="xs" color={sub}>{label}</Text>
       <Text weight="semibold" size="xs" color={head} style={{ flexShrink: 1, textAlign: 'right' }}>
         {value}

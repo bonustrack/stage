@@ -51,10 +51,7 @@ function LabelChip({ label, busy, onRemove, p }: {
   label: string; busy: boolean; onRemove: () => void; p: Pal;
 }): React.ReactElement {
   return (
-    <Row style={{ alignItems: 'center', gap: 6,
-      paddingLeft: 12, paddingRight: 8, paddingVertical: 6, borderRadius: 999,
-      backgroundColor: p.rowBg,
-      opacity: busy ? 0.5 : 1, }}>
+    <Row align="center" gap={6} pl={12} pr={8} py={6} style={{ borderRadius: 999, backgroundColor: p.rowBg, opacity: busy ? 0.5 : 1 }}>
       <Text size="xs" color={p.fg}>{label}</Text>
       <Pressable onPress={onRemove} disabled={busy} hitSlop={8} style={{ padding: 2 }}>
         <Icon name="x" size={14} color={p.sub} />
@@ -114,14 +111,14 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
   );
 
   return (
-    <Box style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
-      <Row style={{ alignItems: 'center', gap: 6 }}>
+    <Box px={16} pb={16}>
+      <Row align="center" gap={6}>
         <Icon name="tag" size={13} color={sub} />
         <Text size="xs" color={sub}>LABELS</Text>
       </Row>
 
       {labels.length > 0 ? (
-        <Row style={{ flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+        <Row gap={8} mt={10} style={{ flexWrap: 'wrap' }}>
           {labels.map((label) => (
             <LabelChip
               key={label.toLowerCase()}
@@ -135,7 +132,7 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
       ) : null}
 
       {!atCap ? (
-        <Row style={{ alignItems: 'center', gap: 8, marginTop: 10 }}>
+        <Row align="center" gap={8} mt={10}>
           <Input
             value={draft}
             onChangeText={setDraft}
@@ -173,7 +170,7 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
       )}
 
       {!atCap && suggestions.length > 0 ? (
-        <Row style={{ flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+        <Row gap={8} mt={10} style={{ flexWrap: 'wrap' }}>
           {suggestions.map((label) => (
             <SuggestionChip
               key={label.toLowerCase()}

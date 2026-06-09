@@ -49,13 +49,18 @@ export function ProfileHeader({ variant, insetTop, isSelf, onBack, onMenu, c }: 
   onBack: () => void; onMenu: () => void; c: ProfileColors;
 }): React.ReactElement {
   return (
-    <Row style={{ ...(variant === 'route'
+    <Row
+      align="center"
+      justify="between"
+      /* eslint-disable no-restricted-syntax -- spread of a variant-conditional style branch; padding can't be a static layout prop here. */
+      style={{ ...(variant === 'route'
         ? {
           position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
           height: 44 + insetTop, paddingTop: insetTop, paddingHorizontal: 14,
         }
-        : { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8, backgroundColor: c.toolbarBg }),
-      alignItems: 'center', justifyContent: 'space-between', }}>
+        : { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8, backgroundColor: c.toolbarBg }) }}
+      /* eslint-enable no-restricted-syntax */
+    >
       {variant === 'route' ? (
         <Pressable onPress={onBack} hitSlop={10} style={{ padding: 6 }}>
           <Icon name="arrowLeft" size={22} color={c.link} />
@@ -79,9 +84,7 @@ export function InfoRow({ label, value, onCopy, c }: {
 }): React.ReactElement {
   const blockRadius = useBlockRadius();
   return (
-    <Row style={{ marginHorizontal: 16, marginTop: 12, padding: 12,
-      borderRadius: blockRadius, backgroundColor: c.border, borderWidth: 1, borderColor: c.border,
-      alignItems: 'center', gap: 8, }}>
+    <Row mx={16} mt={12} p={12} align="center" gap={8} style={{ borderRadius: blockRadius, backgroundColor: c.border, borderWidth: 1, borderColor: c.border }}>
       <Col flex={1}>
         <Text size="3xs" color={c.text}>{label.toUpperCase()}</Text>
         <Text size="md" color={c.text} style={{ marginTop: 4 }} selectable>{value}</Text>
@@ -105,7 +108,7 @@ export function ProfileActions({ dark, opening, onMessage, onSend, c }: {
   const Btn = ({ icon, label, onPress, disabled }: {
     icon: HeroIconName; label: string; onPress: () => void; disabled?: boolean;
   }): React.ReactElement => (
-    <Box style={{ alignItems: 'center', gap: 6 }}>
+    <Box align="center" gap={6}>
       <Button
         variant="secondary"
         size="xl"
@@ -123,7 +126,7 @@ export function ProfileActions({ dark, opening, onMessage, onSend, c }: {
     </Box>
   );
   return (
-    <Row style={{ gap: 12, marginTop: 18, justifyContent: 'flex-start' }}>
+    <Row gap={12} mt={18} justify="start">
       <Btn icon="chatRect" label={opening ? 'Opening…' : 'Message'} onPress={onMessage} disabled={opening} />
       <Btn icon="send" label="Send" onPress={onSend} />
     </Row>

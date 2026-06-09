@@ -122,7 +122,7 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
   const selected = findRow(rows, value);
 
   return (
-    <Box style={{ gap: 6 }}>
+    <Box gap={6}>
       <Text size="xs" color={sub}>{label}</Text>
       <Pressable
         onPress={() => setOpen(true)}

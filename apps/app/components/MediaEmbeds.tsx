@@ -34,20 +34,13 @@ export function YouTubeEmbed({ videoId, dark }: {
         />
         {/** Play-button overlay — semi-opaque dark scrim + a centered "▶" so
          *   the thumbnail reads as "tap to watch" at a glance. */}
-        <Box style={{
-          position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center',
-          backgroundColor: 'rgba(0,0,0,0.25)',
-        }}>
-          <Box style={{
-            width: 48, height: 48, borderRadius: 999,
-            backgroundColor: 'rgba(0,0,0,0.7)',
-            alignItems: 'center', justifyContent: 'center',
-          }}>
+        <Box align="center" justify="center" style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.25)' }}>
+          <Box align="center" justify="center" style={{ width: 48, height: 48, borderRadius: 999, backgroundColor: 'rgba(0,0,0,0.7)' }}>
             <Text size="5xl" color={'#ffffff'} style={{ marginLeft: 3 }}>▶</Text>
           </Box>
         </Box>
       </Box>
-      <Box style={{ paddingHorizontal: 10, paddingVertical: 6 }}>
+      <Box px={10} py={6}>
         <Text size="3xs" color={dark ? '#7a7a7e' : '#8a929d'}>
           YouTube
         </Text>
@@ -74,13 +67,11 @@ export function LocationEmbed({ lat, lng, sourceUrl, dark }: {
           fit="cover"
           style={{ width: '100%', height: '100%', backgroundColor: tileBg }}
         />
-        <Box style={{
-          position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center',
-        }}>
+        <Box align="center" justify="center" style={{ position: 'absolute', inset: 0 }}>
           <Text size="6xl">📍</Text>
         </Box>
       </Box>
-      <Box style={{ paddingHorizontal: 10, paddingVertical: 6 }}>
+      <Box px={10} py={6}>
         <Text weight="semibold" size="xs" color={dark ? '#ffffff' : '#000000'}>
           Location
         </Text>

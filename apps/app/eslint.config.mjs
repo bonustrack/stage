@@ -82,6 +82,23 @@ export default tseslint.config(
           message:
             "Box must not set flex/flexDirection in style. Use Row (flexDirection:'row') or Col (column, the default), and pass flex-grow via the `flex` prop (<Col flex={1}>) instead of a style flex.",
         },
+        {
+          // Layout params: Box/Row/Col expose first-class props for alignment,
+          // distribution, gap, padding, and margin (see kit/src/layout.ts). The
+          // raw RN style equivalents must NOT be set inline in the element's own
+          // top-level `style={{...}}` - pass the prop so layout stays
+          // declarative and the single mapper owns the prop->style translation:
+          //   alignItems -> align, justifyContent -> justify, gap -> gap,
+          //   padding* -> p/px/py/pt/pr/pb/pl, margin* -> m/mx/my/mt/mr/mb/ml.
+          // Scoped to the DIRECT-child style object literal of Box/Row/Col only
+          // (same chain as the Box flex rule above), so nested objects and child
+          // elements are never matched. Overlapping-side combos that one prop
+          // can't express (e.g. padding + paddingTop) may keep a key in style.
+          selector:
+            "JSXOpeningElement[name.name=/^(Box|Row|Col)$/] > JSXAttribute[name.name='style'] > JSXExpressionContainer ObjectExpression > Property[key.name=/^(alignItems|justifyContent|gap|padding|paddingHorizontal|paddingVertical|paddingTop|paddingRight|paddingBottom|paddingLeft|margin|marginHorizontal|marginVertical|marginTop|marginRight|marginBottom|marginLeft)$/]",
+          message:
+            "Box/Row/Col: use the layout prop instead of a style entry - alignItems->align, justifyContent->justify, gap->gap, padding*->p/px/py/pt/pr/pb/pl, margin*->m/mx/my/mt/mr/mb/ml (see kit/src/layout.ts).",
+        },
       ],
       // `error`: cap files at 400 lines. Split a file rather than crossing it.
       "max-lines": ["error", { max: 400, skipBlankLines: false, skipComments: false }],

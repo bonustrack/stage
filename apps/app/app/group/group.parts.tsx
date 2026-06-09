@@ -54,12 +54,9 @@ export function MemberRow({
         ) : null}
       </Col>
       {role && role !== 'member' ? (
-        <Box style={{
-          paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999,
-          backgroundColor: role === 'owner'
+        <Box px={8} py={2} style={{ borderRadius: 999, backgroundColor: role === 'owner'
             ? (dark ? 'rgba(45,212,191,0.18)' : 'rgba(13,148,136,0.12)')
-            : border, // #282a2d / #e4e4e5
-        }}>
+            : border }}>
           <Text size="3xs" color={role === 'owner' ? (dark ? '#2dd4bf' : '#0d9488') : sub}>{role === 'owner' ? 'Owner' : 'Admin'}</Text>
         </Box>
       ) : null}
@@ -129,7 +126,7 @@ export function OverflowModal({
 }): React.ReactElement {
   return (
     <AppModal visible={visible} onClose={onClose}>
-      <Box style={{ gap: 4 }}>
+      <Box gap={4}>
         <Pressable
           onPress={onLeave}
           disabled={leaving}

@@ -79,9 +79,7 @@ export default function GroupDetail(): React.ReactElement {
   return (
     <Col flex={1} style={{ backgroundColor: bg }}>
       {/* Floating topnav over the cover banner — mirrors ProfileScreen `route`. */}
-      <Row style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
-        height: 44 + insets.top, paddingTop: insets.top, paddingHorizontal: 14,
-        alignItems: 'center', justifyContent: 'space-between', }}>
+      <Row pt={insets.top} px={14} align="center" justify="between" style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2, height: 44 + insets.top }}>
         <Pressable onPress={() => router.back()} hitSlop={10} style={{ padding: 6 }}>
           <Icon name="arrowLeft" size={22} color={fg} />
         </Pressable>
@@ -112,8 +110,7 @@ export default function GroupDetail(): React.ReactElement {
       <GroupLabelsSection line={line} p={pal} />
       <GroupGithubSection line={line} p={pal} />
       {/** MEMBERS header: label + add-member button → opens add-by-address modal. */}
-      <Row style={{ alignItems: 'center', justifyContent: 'space-between',
-        paddingHorizontal: 16, paddingBottom: 8, }}>
+      <Row align="center" justify="between" px={16} pb={8}>
         <Text size="xs" color={sub}>
           MEMBERS ({members.length})
         </Text>

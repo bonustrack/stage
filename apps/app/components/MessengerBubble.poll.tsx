@@ -45,7 +45,7 @@ function PollQuestionBlock({ q, qi, sub, dark, votes, own, onVote, openAnswers, 
   const pressBg = dark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.08)';
   const restBorder = dark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)';
   return (
-    <Box style={{ alignSelf: 'stretch', gap: 6 }}>
+    <Box gap={6} style={{ alignSelf: 'stretch' }}>
       {q.header ? (
         <Text weight="semibold" size="xs" color={sub} style={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
           {q.header}{multi ? ' · multi-select' : ''}{q.open ? ' · open' : ''}
@@ -120,9 +120,9 @@ export function PollView({ poll, dark, sub, votes, ownVotes, onVote, openAnswers
   const fg = pal.link;
   const multiQuestion = poll.questions.length > 1;
   return (
-    <Box style={{ alignSelf: 'stretch', gap: 12, marginTop: 8 }}>
+    <Box gap={12} mt={8} style={{ alignSelf: 'stretch' }}>
       {poll.questions.map((q, qi) => (
-        <Box key={`q-${qi}`} style={{ alignSelf: 'stretch', gap: 6 }}>
+        <Box key={`q-${qi}`} gap={6} style={{ alignSelf: 'stretch' }}>
           {multiQuestion && qi > 0 ? (
             <Text weight="semibold" size="3xl" color={fg}>{q.question}</Text>
           ) : null}

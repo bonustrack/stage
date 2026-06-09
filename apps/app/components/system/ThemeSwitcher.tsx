@@ -17,7 +17,7 @@ export function ThemeSwitcher({ dark, head }: {
 }): React.ReactElement {
   const pref = useThemePreference();
   return (
-    <Box style={{ paddingHorizontal: 16, paddingTop: 18 }}>
+    <Box px={16} pt={18}>
       <Title dark={dark} level={3} color={head}>Theme</Title>
       <Row gap={8} mt={10}>
         {THEME_OPTIONS.map((opt) => {

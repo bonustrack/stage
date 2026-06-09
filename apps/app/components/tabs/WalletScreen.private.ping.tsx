@@ -72,7 +72,7 @@ function PingLog({ lines, sub, head, border }: {
   if (lines.length === 0) return null;
   return (
     <Col gap={2} mt={4}>
-      <Row mt={2} mb={2} style={{ justifyContent: 'flex-end' }}>
+      <Row mt={2} mb={2} justify="end">
         <Pressable
           onPress={() => copyAll(lines)}
           hitSlop={8}

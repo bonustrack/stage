@@ -102,21 +102,10 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
         scrollEventThrottle={16}
         renderItem={({ item }) => (
           <Col flex={1}
-            style={{ width,
-              alignItems: 'center',
-              justifyContent: 'center',
-              paddingHorizontal: 36, }}
+            align="center" justify="center" px={36} style={{ width }}
           >
             <Box
-              style={{
-                width: 128,
-                height: 128,
-                borderRadius: 64,
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: withAlpha(accent, 0.12),
-                marginBottom: 40,
-              }}
+              align="center" justify="center" mb={40} style={{ width: 128, height: 128, borderRadius: 64, backgroundColor: withAlpha(accent, 0.12) }}
             >
               <Icon name={item.icon} size={56} color={accent} />
             </Box>
@@ -132,9 +121,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
 
       {/* Page dots */}
       <Row
-        style={{ justifyContent: 'center',
-          gap: 8,
-          marginBottom: 24, }}
+        justify="center" gap={8} mb={24}
       >
         {SLIDES.map((s, i) => (
           <Box
@@ -150,7 +137,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
       </Row>
 
       {/* Footer: Get started (last) / Next, plus Skip until the last slide */}
-      <Box style={{ paddingHorizontal: 24, paddingBottom: 16 + insets.bottom, gap: 12 }}>
+      <Box px={24} pb={16 + insets.bottom} gap={12}>
         <Button
           dark={dark}
           variant="primary"

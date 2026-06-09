@@ -169,10 +169,7 @@ export function MemberPicker({ state, dark, exclude = [] }: {
               key={m.address}
               align="center"
               gap={10}
-              style={{
-                backgroundColor: rowBg, borderRadius: 12, padding: 8,
-                borderWidth: 1, borderColor: border,
-              }}
+              p={8} style={{ backgroundColor: rowBg, borderRadius: 12, borderWidth: 1, borderColor: border }}
             >
               <Avatar address={m.address} size={32} style={{ backgroundColor: border }} />
               <Col flex={1} gap={1}>

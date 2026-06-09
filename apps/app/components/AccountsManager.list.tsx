@@ -33,12 +33,16 @@ export function AccountList({
           ACCOUNTS
         </Text>
       ) : null}
-      <Box style={flat ? {
-        backgroundColor: 'transparent',
-      } : {
-        marginHorizontal: 16, borderRadius: 12, overflow: 'hidden',
-        borderWidth: 1, borderColor: border, backgroundColor: rowBg,
-      }}>
+      <Box
+        /* eslint-disable no-restricted-syntax -- conditional style branch (flat ? ... : ...); marginHorizontal can't be a static layout prop here. */
+        style={flat ? {
+          backgroundColor: 'transparent',
+        } : {
+          marginHorizontal: 16, borderRadius: 12, overflow: 'hidden',
+          borderWidth: 1, borderColor: border, backgroundColor: rowBg,
+        }}
+        /* eslint-enable no-restricted-syntax */
+      >
         {flat ? (
           /* Flat mode (modal) — EVERY account as a row, all visible at once,
              active one highlighted. No collapse/dropdown. */
@@ -107,7 +111,7 @@ export function AccountList({
                 backgroundColor: pressed ? border : 'transparent',
               })}
             >
-              <Box style={{ width: 28, height: 28, borderRadius: 999, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: sub, borderStyle: 'dashed' }}>
+              <Box align="center" justify="center" style={{ width: 28, height: 28, borderRadius: 999, borderWidth: 1, borderColor: sub, borderStyle: 'dashed' }}>
                 <Icon name="plus" size={16} color={sub} />
               </Box>
               <Text weight="semibold" size="md" color={head}>Add account</Text>

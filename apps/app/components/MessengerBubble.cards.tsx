@@ -28,10 +28,7 @@ export function SigRequestCard({ req, dark, sub, signing, onSign }: {
     ? Object.entries(req.eip712.message)
     : [];
   return (
-    <Box style={{
-      alignSelf: 'stretch', gap: 8, marginTop: 8, padding: 12, borderRadius: blockRadius,
-      backgroundColor: pal.border, // #282a2d / #e4e4e5
-    }}>
+    <Box gap={8} mt={8} p={12} style={{ alignSelf: 'stretch', borderRadius: blockRadius, backgroundColor: pal.border }}>
       <Row align="center" gap={8}>
         <Icon name="pencil" size={18} color={head} />
         <Text weight="semibold" size="md" color={head} style={{ flexShrink: 1 }}>
@@ -39,10 +36,7 @@ export function SigRequestCard({ req, dark, sub, signing, onSign }: {
         </Text>
       </Row>
       {req.kind === 'eip712' ? (
-        <Col gap={6} style={{
-          padding: 10, borderRadius: 10, borderWidth: 1,
-          borderColor: detailBorder, backgroundColor: detailBg,
-        }}>
+        <Col gap={6} p={10} style={{ borderRadius: 10, borderWidth: 1, borderColor: detailBorder, backgroundColor: detailBg }}>
           {(domainName || chainId) ? (
             <Text size="xs" color={sub}>
               {domainName ?? 'Domain'}{chainId ? ` · chain ${chainId}` : ''}
@@ -65,10 +59,7 @@ export function SigRequestCard({ req, dark, sub, signing, onSign }: {
           ))}
         </Col>
       ) : req.message ? (
-        <Box style={{
-          padding: 10, borderRadius: 10, borderWidth: 1,
-          borderColor: detailBorder, backgroundColor: detailBg,
-        }}>
+        <Box p={10} style={{ borderRadius: 10, borderWidth: 1, borderColor: detailBorder, backgroundColor: detailBg }}>
           <Text variant="mono" size="xs" numberOfLines={20} color={head} style={{ lineHeight: 18 }}>
             {req.message}
           </Text>
@@ -98,11 +89,7 @@ export function SigReferenceCard({ ref, dark, sub }: {
 }): React.ReactElement {
   const short = (h?: string): string => (h && h.length > 14 ? `${h.slice(0, 8)}…${h.slice(-4)}` : (h ?? '')); const blockRadius = useBlockRadius();
   return (
-    <Box style={{
-      alignSelf: 'stretch', gap: 6, marginTop: 8, padding: 12, borderRadius: blockRadius,
-      borderWidth: 1, borderColor: dark ? 'rgba(120,200,120,0.4)' : 'rgba(60,160,60,0.35)',
-      backgroundColor: dark ? 'rgba(120,200,120,0.08)' : 'rgba(60,160,60,0.06)',
-    }}>
+    <Box gap={6} mt={8} p={12} style={{ alignSelf: 'stretch', borderRadius: blockRadius, borderWidth: 1, borderColor: dark ? 'rgba(120,200,120,0.4)' : 'rgba(60,160,60,0.35)', backgroundColor: dark ? 'rgba(120,200,120,0.08)' : 'rgba(60,160,60,0.06)' }}>
       <Row align="center" gap={8}>
         <Icon name="check" size={18} color={dark ? '#7fd07f' : '#2f9e44'} />
         <Text weight="semibold" size="md" color={dark ? '#ffffff' : '#000000'}>
@@ -133,11 +120,7 @@ export function TxRequestCard({ req, dark, sub, paying, onPay }: {
     ? `${call.metadata.amount} ${call.metadata.currency ?? 'ETH'}`
     : eth ? `${eth} ETH` : undefined;
   return (
-    <Box style={{
-      alignSelf: 'stretch', gap: 8, marginTop: 8, padding: 12, borderRadius: blockRadius,
-      borderWidth: 1, borderColor: '#c0a06e',
-      backgroundColor: dark ? 'rgba(192,160,110,0.10)' : 'rgba(192,160,110,0.10)',
-    }}>
+    <Box gap={8} mt={8} p={12} style={{ alignSelf: 'stretch', borderRadius: blockRadius, borderWidth: 1, borderColor: '#c0a06e', backgroundColor: dark ? 'rgba(192,160,110,0.10)' : 'rgba(192,160,110,0.10)' }}>
       <Row align="center" gap={8}>
         <Icon name="wallet" size={18} color="#c0a06e" />
         <Text weight="semibold" size="md" color={dark ? '#ffffff' : '#000000'} style={{ flexShrink: 1 }}>
@@ -181,11 +164,7 @@ export function TxReceiptCard({ receipt, dark }: {
     : undefined;
   const url = explorerUrl(receipt.networkId, receipt.reference); const blockRadius = useBlockRadius();
   return (
-    <Box style={{
-      alignSelf: 'stretch', gap: 6, marginTop: 8, padding: 12, borderRadius: blockRadius,
-      borderWidth: 1, borderColor: dark ? 'rgba(120,200,120,0.4)' : 'rgba(60,160,60,0.35)',
-      backgroundColor: dark ? 'rgba(120,200,120,0.08)' : 'rgba(60,160,60,0.06)',
-    }}>
+    <Box gap={6} mt={8} p={12} style={{ alignSelf: 'stretch', borderRadius: blockRadius, borderWidth: 1, borderColor: dark ? 'rgba(120,200,120,0.4)' : 'rgba(60,160,60,0.35)', backgroundColor: dark ? 'rgba(120,200,120,0.08)' : 'rgba(60,160,60,0.06)' }}>
       <Row align="center" gap={8}>
         <Icon name="check" size={18} color={dark ? '#7fd07f' : '#2f9e44'} />
         <Text weight="semibold" size="md" color={dark ? '#ffffff' : '#000000'}>

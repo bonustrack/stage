@@ -42,7 +42,7 @@ function Step({ label, state, hint, pal }: {
   return (
     <Col gap={2}>
       <Row align="center" gap={10}>
-        <Box style={{ width: 18, height: 18, alignItems: 'center', justifyContent: 'center' }}>
+        <Box align="center" justify="center" style={{ width: 18, height: 18 }}>
           {state === 'active' ? <Spinner size={14} color={pal.link} />
             : state === 'done' ? <Text weight="semibold" size="md" color={pal.link}>✓</Text>
             : state === 'error' ? <Text weight="semibold" size="md" color={ERR}>✕</Text>
@@ -65,7 +65,7 @@ export function ShieldStepper({ stage, pal, errorAt = 0 }: {
   if (stage === 'idle') return null;
   const cur = stageIndex(stage);
   return (
-    <Col gap={12} style={{ paddingHorizontal: 4, paddingTop: 4 }}>
+    <Col gap={12} px={4} pt={4}>
       {STEPS.map(([id, label]) => {
         const idx = ORDER.indexOf(id);
         let state: 'done' | 'active' | 'pending' | 'error';

@@ -43,7 +43,7 @@ export function NotificationsScreen({ panRef }: { panRef?: SimultaneousRefs } = 
         <Row align="center" gap={10}>
           <Title size="md" dark={dark} color={head}>Notifications</Title>
           {unread > 0 ? (
-            <Box style={{ minWidth: 22, height: 22, paddingHorizontal: 7, borderRadius: 999, backgroundColor: head, alignItems: 'center', justifyContent: 'center' }}>
+            <Box px={7} align="center" justify="center" style={{ minWidth: 22, height: 22, borderRadius: 999, backgroundColor: head }}>
               <Text weight="semibold" size="xs" color={bg}>{unread}</Text>
             </Box>
           ) : null}
@@ -53,7 +53,7 @@ export function NotificationsScreen({ panRef }: { panRef?: SimultaneousRefs } = 
         <NotificationsList previews={previews} onPress={() => router.push('/xmtp/requests')} />
       </Col>
       {previews.length === 0 ? (
-        <Col flex={1} px={16} style={{ alignItems: 'center', justifyContent: 'center' }}>
+        <Col flex={1} px={16} align="center" justify="center">
           <Text size="md" color={sub}>Nothing yet</Text>
         </Col>
       ) : null}

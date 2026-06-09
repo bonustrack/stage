@@ -46,9 +46,7 @@ export const ChannelsSearchBar = forwardRef<React.ComponentRef<typeof Input>, {
       <Pressable onPress={props.onClose} hitSlop={8}>
         <Icon name="arrowLeft" size={22} color={head} />
       </Pressable>
-      <Row flex={1} style={{ alignItems: 'center', gap: 8,
-        backgroundColor: inputBg, borderRadius: blockRadius,
-        paddingHorizontal: 14, paddingVertical: 8, }}>
+      <Row flex={1} align="center" gap={8} px={14} py={8} style={{ backgroundColor: inputBg, borderRadius: blockRadius }}>
         <Icon name="search" size={22} color={sub} />
         <Input
           ref={ref}

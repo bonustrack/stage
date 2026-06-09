@@ -34,12 +34,10 @@ export function RecipientField(props: {
   const [picking, setPicking] = useState(false);
   const rowPal = { head, sub, border };
   return (
-    <Box style={{ gap: 6 }}>
+    <Box gap={6}>
       <Text size="xs" color={sub}>RECIPIENT</Text>
       {/* Input + a contacts-picker icon button on the right. */}
-      <Row style={{ alignItems: 'center', gap: 4,
-        backgroundColor: inputBg, borderRadius: 12,
-        paddingHorizontal: 6, paddingLeft: 14, }}>
+      <Row align="center" gap={4} px={6} pl={14} style={{ backgroundColor: inputBg, borderRadius: 12 }}>
         <Input
           value={props.to}
           onChangeText={props.setTo}
@@ -59,7 +57,7 @@ export function RecipientField(props: {
           (avatar + name + truncated address) — same row the rest of the app
           uses. While resolving / on error, show the inline status line. */}
       {props.resolving ? (
-        <Row style={{ alignItems: 'center', gap: 8, paddingHorizontal: 4 }}>
+        <Row align="center" gap={8} px={4}>
           <Spinner size={20} color={fg} />
           <Text size="xs" color={sub}>Resolving…</Text>
         </Row>
@@ -99,8 +97,8 @@ export function AmountField(props: {
   const { amount, mode, ethPriceUsd, setAmount, setMode, ethBalance } = props;
   const { link } = usePalette();
   return (
-    <Box style={{ gap: 6 }}>
-      <Row style={{ alignItems: 'center' }}>
+    <Box gap={6}>
+      <Row align="center">
         <Text size="xs" color={sub} style={{ flex: 1 }}>AMOUNT</Text>
         <Button
           variant="ghost"
@@ -114,9 +112,7 @@ export function AmountField(props: {
         />
       </Row>
 
-      <Row style={{ alignItems: 'center',
-        backgroundColor: inputBg, borderRadius: 12,
-        paddingHorizontal: 14, paddingVertical: 12, gap: 8, }}>
+      <Row align="center" px={14} py={12} gap={8} style={{ backgroundColor: inputBg, borderRadius: 12 }}>
         <Input
           value={amount}
           onChangeText={setAmount}
@@ -184,10 +180,7 @@ export function SendHeader(props: {
   const insets = useSafeAreaInsets();
   const { toolbarBg } = usePalette();
   return (
-    <Row style={{ alignItems: 'center', gap: 8,
-      paddingHorizontal: 12, paddingTop: 8 + insets.top, paddingBottom: 10,
-      borderBottomWidth: 1, borderBottomColor: props.border,
-      backgroundColor: toolbarBg, }}>
+    <Row align="center" gap={8} px={12} pt={8 + insets.top} pb={10} style={{ borderBottomWidth: 1, borderBottomColor: props.border, backgroundColor: toolbarBg }}>
       <Pressable onPress={props.onBack} hitSlop={8} style={{ padding: 4 }}>
         <Icon name="arrowLeft" size={22} color={props.fg} />
       </Pressable>
@@ -228,7 +221,7 @@ export function TxStatus(props: {
     <>
       {/* Tx status: hash link once broadcast, plus errors. */}
       {txHash ? (
-        <Box style={{ gap: 4, paddingHorizontal: 4 }}>
+        <Box gap={4} px={4}>
           <Text size="xs" color={sub}>
             {txState === 'confirmed' ? 'Confirmed' : 'Pending'}
           </Text>

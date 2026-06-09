@@ -57,10 +57,7 @@ export default function AddMembers(): React.ReactElement {
   return (
     <Col flex={1} style={{ backgroundColor: bg }}>
       {/* Header — back button + title, consistent with other pushed screens. */}
-      <Row style={{ alignItems: 'center', gap: 8,
-        paddingHorizontal: 12, paddingTop: 8 + insets.top, paddingBottom: 10,
-        borderBottomWidth: 1, borderBottomColor: border,
-        backgroundColor: toolbarBg, }}>
+      <Row align="center" gap={8} px={12} pt={8 + insets.top} pb={10} style={{ borderBottomWidth: 1, borderBottomColor: border, backgroundColor: toolbarBg }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg} />
         </Pressable>
@@ -77,7 +74,7 @@ export default function AddMembers(): React.ReactElement {
       </ScrollView>
 
       {/* Add */}
-      <Box style={{ padding: 16, paddingBottom: 16 + insets.bottom, borderTopWidth: 1, borderTopColor: border }}>
+      <Box p={16} pb={16 + insets.bottom} style={{ borderTopWidth: 1, borderTopColor: border }}>
         <Button
           variant="primary"
           size="lg"

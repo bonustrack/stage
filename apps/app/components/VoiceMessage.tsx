@@ -85,10 +85,7 @@ export function VoiceMessage({ uri }: Props): React.ReactElement {
   const label = playing || position > 0 ? fmt(position) : fmt(duration);
 
   return (
-    <Row style={{ alignItems: 'center', gap: 10,
-      paddingVertical: 7, paddingHorizontal: 9, borderRadius: 22,
-      backgroundColor: ACCENT, marginBottom: 6, alignSelf: 'flex-start',
-      maxWidth: 280, minWidth: 200, }}>
+    <Row align="center" gap={10} py={7} px={9} mb={6} style={{ borderRadius: 22, backgroundColor: ACCENT, alignSelf: 'flex-start', maxWidth: 280, minWidth: 200 }}>
       <Pressable onPress={() => void toggle()} hitSlop={8} style={{
         width: 34, height: 34, borderRadius: 17, backgroundColor: ON_ACCENT,
         alignItems: 'center', justifyContent: 'center',
@@ -100,7 +97,7 @@ export function VoiceMessage({ uri }: Props): React.ReactElement {
         onLayout={(ev) => setBarWidth(ev.nativeEvent.layout.width)}
         onPress={(ev) => seekTo(ev.nativeEvent.locationX)}
       >
-        <Row style={{ alignItems: 'center', height: TRACK_H, gap: 2, }}>
+        <Row align="center" gap={2} style={{ height: TRACK_H }}>
           {bars.map((h, i) => {
             const filled = i / bars.length <= progress;
             return (

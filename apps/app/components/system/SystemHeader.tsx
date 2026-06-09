@@ -21,15 +21,13 @@ export function SystemHeader({ title, dark, fg, head, border, right }: {
   const insets = useSafeAreaInsets();
   const { toolbarBg } = usePalette();
   return (
-    <Box style={{ backgroundColor: toolbarBg, paddingTop: insets.top }}>
-      <Row style={{ alignItems: 'center', gap: 8,
-        paddingHorizontal: 12, paddingTop: 8, paddingBottom: 10,
-        borderBottomWidth: 1, borderBottomColor: border, }}>
+    <Box pt={insets.top} style={{ backgroundColor: toolbarBg }}>
+      <Row align="center" gap={8} px={12} pt={8} pb={10} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg} />
         </Pressable>
         <Title size="sm" dark={dark} color={head}>{title}</Title>
-        {right ? <Col flex={1} style={{ alignItems: 'flex-end' }}>{right}</Col> : null}
+        {right ? <Col flex={1} align="end">{right}</Col> : null}
       </Row>
     </Box>
   );

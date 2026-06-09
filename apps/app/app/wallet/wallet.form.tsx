@@ -70,10 +70,7 @@ export function ActionHeader({ title, head, border, onBack }: {
   const insets = useSafeAreaInsets();
   const { toolbarBg } = usePalette();
   return (
-    <Row align="center" gap={8} px={12} style={{
-      borderBottomWidth: 1, borderBottomColor: border,
-      backgroundColor: toolbarBg, paddingTop: 8 + insets.top, paddingBottom: 8,
-    }}>
+    <Row align="center" gap={8} px={12} pt={8 + insets.top} pb={8} style={{ borderBottomWidth: 1, borderBottomColor: border, backgroundColor: toolbarBg }}>
       <Pressable onPress={onBack} hitSlop={8} style={{ padding: 4 }}>
         <Icon name="arrowLeft" size={22} color={head} />
       </Pressable>
@@ -93,7 +90,7 @@ export function Segmented<T extends string | number>({ label, value, options, on
 }): React.ReactElement {
   const { sub } = useFormPal();
   return (
-    <Box style={{ gap: 6 }}>
+    <Box gap={6}>
       {label ? <Text size="xs" color={sub}>{label}</Text> : null}
       <Row gap={8}>
         {options.map(([id, text]) => (
@@ -115,7 +112,7 @@ export function AmountBox({ pal, amount, setAmount, busy, balance, symbol, dark 
   const { head, sub, inputBg, link } = pal;
   const hasBal = balance != null && Number(balance) > 0;
   return (
-    <Box style={{ gap: 6 }}>
+    <Box gap={6}>
       <Row align="center">
         <Text size="xs" color={sub} style={{ flex: 1 }}>AMOUNT</Text>
         {balance != null ? (
@@ -125,7 +122,7 @@ export function AmountBox({ pal, amount, setAmount, busy, balance, symbol, dark 
             style={{ height: 24, paddingHorizontal: 8 }} />
         ) : null}
       </Row>
-      <Box style={{ backgroundColor: inputBg, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12 }}>
+      <Box px={14} py={12} style={{ backgroundColor: inputBg, borderRadius: 12 }}>
         <Input value={amount} onChangeText={setAmount} placeholder="0.0" placeholderTextColor={sub}
           inputType="number" disabled={busy} dark={!!dark}
           inputProps={{ keyboardType: 'decimal-pad' }}
@@ -147,9 +144,9 @@ export function LockedRecipient({ pal, label, value, hint }: {
 }): React.ReactElement {
   const { head, sub, border, inputBg } = pal;
   return (
-    <Box style={{ gap: 6 }}>
+    <Box gap={6}>
       <Text size="xs" color={sub}>{label}</Text>
-      <Box style={{ backgroundColor: inputBg, borderRadius: 12, borderWidth: 1, borderColor: border, paddingHorizontal: 14, paddingVertical: 12 }}>
+      <Box px={14} py={12} style={{ backgroundColor: inputBg, borderRadius: 12, borderWidth: 1, borderColor: border }}>
         <Text weight="semibold" size="md" color={head}>{value}</Text>
         <Text size="xs" color={sub} style={{ marginTop: 2 }}>{hint}</Text>
       </Box>
@@ -172,10 +169,7 @@ export function WalletFooter({
   const insets = useSafeAreaInsets();
   return (
     <Row gap={12} px={16}
-      style={{
-        paddingTop: 12, paddingBottom: Math.max(insets.bottom, 12),
-        borderTopWidth: 1, borderTopColor: border, backgroundColor: bg,
-      }}>
+      pt={12} pb={Math.max(insets.bottom, 12)} style={{ borderTopWidth: 1, borderTopColor: border, backgroundColor: bg }}>
       <Button variant="secondary" size="lg" pill dark={dark} style={{ flex: 1 }}
         onPress={onCancel} label="Cancel" />
       <Button variant="primary" size="lg" pill dark={dark} style={{ flex: 1 }}

@@ -56,7 +56,7 @@ export function ImportSheet({ visible, onClose, importText, setImportText, setIm
         }}
       />
       {importErr ? <Text size="xs" color={DANGER} style={{ marginBottom: 8 }}>{importErr}</Text> : null}
-      <Row style={{ gap: 8 }}>
+      <Row gap={8}>
         <Button
           variant="secondary"
           size="md"

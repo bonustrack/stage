@@ -72,7 +72,7 @@ export default function XmtpConversation(): React.ReactElement {
 
   if (!convId) {
     return (
-      <Col flex={1} style={{ alignItems: 'center', justifyContent: 'center', backgroundColor: bg }}>
+      <Col flex={1} align="center" justify="center" style={{ backgroundColor: bg }}>
         <Text color={sub}>Missing conversation id.</Text>
       </Col>
     );
@@ -103,10 +103,7 @@ export default function XmtpConversation(): React.ReactElement {
       </Reanimated.View>
       {/** Top nav: solid bg strip mirrors the composer footer + extends UP over the
        *  status-bar area so content sliding under the keyboard doesn't show through. */}
-      <Row style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
-        height: 52 + insets.top, paddingTop: insets.top, backgroundColor: toolbarBg,
-        alignItems: 'stretch',
-        borderBottomWidth: 1, borderBottomColor: border, }}>
+      <Row pt={insets.top} align="stretch" style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2, height: 52 + insets.top, backgroundColor: toolbarBg, borderBottomWidth: 1, borderBottomColor: border }}>
         <Pressable
           onPress={() => router.replace('/')}
           style={{ paddingLeft: 14, paddingRight: 8, justifyContent: 'center' }}

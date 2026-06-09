@@ -37,7 +37,7 @@ export function AccountsManager({ dark, flat = false, onSwitched }: { dark: bool
       />
 
       {m.busy ? (
-        <Box style={{ paddingTop: 12, alignItems: 'center' }}>
+        <Box pt={12} align="center">
           <Spinner size={20} color={head} />
         </Box>
       ) : null}

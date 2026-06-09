@@ -133,18 +133,11 @@ export function BubbleActionMenu({
         {/** Strip + dropdown as one absolute column. The dropdown sits directly
           *  below the strip's REAL height + a literal GAP spacer — no stripH math. */}
         <Box
-          style={{
-            position: 'absolute', left: 12, right: 12, top: stripTop,
-            alignItems: 'flex-start',
-          }}
+          align="start" style={{ position: 'absolute', left: 12, right: 12, top: stripTop }}
           pointerEvents="box-none"
         >
           {/** Emoji reaction strip — rounded pill floating above the message. */}
-          <Row style={{ alignItems: 'center', gap: 4,
-            backgroundColor: stripBg, borderRadius: 999,
-            paddingHorizontal: 10, paddingVertical: 6,
-            shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 6,
-            maxWidth: '100%', }}>
+          <Row align="center" gap={4} px={10} py={6} style={{ backgroundColor: stripBg, borderRadius: 999, shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 6, maxWidth: '100%' }}>
             {expanded ? (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingRight: 4 }}>
                 {[...REACT_PRESETS, ...MORE_EMOJIS].map(e => (
@@ -180,11 +173,7 @@ export function BubbleActionMenu({
 
           {/** Action dropdown — rounded card directly below the strip. */}
           <Box
-            style={{
-              minWidth: 220, maxWidth: 320,
-              backgroundColor: cardBg, borderRadius: blockRadius, paddingVertical: 4, overflow: 'hidden',
-              shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 8,
-            }}
+            py={4} style={{ minWidth: 220, maxWidth: 320, backgroundColor: cardBg, borderRadius: blockRadius, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 8 }}
           >
             <ActionRow icon="reply" label="Reply" onPress={onReply} />
             {target?.text ? <Divider dark={dark} color={divider} style={{ marginLeft: 16 }} /> : null}

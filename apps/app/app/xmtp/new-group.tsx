@@ -89,10 +89,7 @@ export default function NewGroup(): React.ReactElement {
   return (
     <Col flex={1} style={{ backgroundColor: bg }}>
       {/* Header — back button + title, consistent with other pushed screens. */}
-      <Row style={{ alignItems: 'center', gap: 8,
-        paddingHorizontal: 12, paddingTop: 8 + insets.top, paddingBottom: 10,
-        borderBottomWidth: 1, borderBottomColor: border,
-        backgroundColor: toolbarBg, }}>
+      <Row align="center" gap={8} px={12} pt={8 + insets.top} pb={10} style={{ borderBottomWidth: 1, borderBottomColor: border, backgroundColor: toolbarBg }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg} />
         </Pressable>
@@ -106,7 +103,7 @@ export default function NewGroup(): React.ReactElement {
         keyboardShouldPersistTaps="handled"
       >
         {/* Group image (optional) — tap to pick, square preview. */}
-        <Box style={{ alignItems: 'center', gap: 8 }}>
+        <Box align="center" gap={8}>
           <Pressable onPress={() => { void pickImage(); }} disabled={creating} hitSlop={8}>
             {image ? (
               <Image
@@ -117,15 +114,12 @@ export default function NewGroup(): React.ReactElement {
                 }}
               />
             ) : (
-              <Box style={{
-                width: 88, height: 88, borderRadius: Math.round(88 * 0.12), backgroundColor: rowBg,
-                borderWidth: 1, borderColor: border, alignItems: 'center', justifyContent: 'center',
-              }}>
+              <Box align="center" justify="center" style={{ width: 88, height: 88, borderRadius: Math.round(88 * 0.12), backgroundColor: rowBg, borderWidth: 1, borderColor: border }}>
                 <Text size="6xl" color={sub}>＋</Text>
               </Box>
             )}
             {creating && image ? (
-              <Box style={{ position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' }}>
+              <Box align="center" justify="center" style={{ position: 'absolute', inset: 0 }}>
                 <Spinner size={20} color={fg} />
               </Box>
             ) : null}
@@ -158,7 +152,7 @@ export default function NewGroup(): React.ReactElement {
       </ScrollView>
 
       {/* Create */}
-      <Box style={{ padding: 16, paddingBottom: 16 + insets.bottom, borderTopWidth: 1, borderTopColor: border }}>
+      <Box p={16} pb={16 + insets.bottom} style={{ borderTopWidth: 1, borderTopColor: border }}>
         <Button
           variant="primary"
           size="lg"

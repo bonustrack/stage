@@ -130,17 +130,17 @@ export function BubbleContent({
       {/** Inline embeds — metro channel card + YouTube + location, below the text so a URL stays tappable. */}
       {(() => {
         const dmPeer = metroDmPeerOf(entry.text);
-        if (dmPeer) return <Box style={{ alignSelf: 'stretch', marginTop: 6 }}><ChannelCard peerAddress={dmPeer} dark={dark} /></Box>;
+        if (dmPeer) return <Box mt={6} style={{ alignSelf: 'stretch' }}><ChannelCard peerAddress={dmPeer} dark={dark} /></Box>;
         const convId = metroConvIdOf(entry.text);
-        if (convId) return <Box style={{ alignSelf: 'stretch', marginTop: 6 }}><ChannelCard convId={convId} dark={dark} /></Box>;
+        if (convId) return <Box mt={6} style={{ alignSelf: 'stretch' }}><ChannelCard convId={convId} dark={dark} /></Box>;
         const ytId = youtubeIdOf(entry.text);
-        if (ytId) return <Box style={{ alignSelf: 'stretch', marginTop: 6 }}><YouTubeEmbed videoId={ytId} dark={dark} /></Box>;
+        if (ytId) return <Box mt={6} style={{ alignSelf: 'stretch' }}><YouTubeEmbed videoId={ytId} dark={dark} /></Box>;
         const coords = mapCoordsOf(entry.text);
-        if (coords) return <Box style={{ alignSelf: 'stretch', marginTop: 6 }}><LocationEmbed lat={coords.lat} lng={coords.lng} sourceUrl={coords.sourceUrl} dark={dark} /></Box>;
+        if (coords) return <Box mt={6} style={{ alignSelf: 'stretch' }}><LocationEmbed lat={coords.lat} lng={coords.lng} sourceUrl={coords.sourceUrl} dark={dark} /></Box>;
         const gh = githubLinkOf(entry.text);
-        if (gh) return <Box style={{ alignSelf: 'stretch', marginTop: 6 }}><GitHubLinkCard url={gh.url} dark={dark} /></Box>;
+        if (gh) return <Box mt={6} style={{ alignSelf: 'stretch' }}><GitHubLinkCard url={gh.url} dark={dark} /></Box>;
         const preview = previewLinkOf(entry.text);
-        if (preview) return <Box style={{ alignSelf: 'stretch', marginTop: 6 }}><PreviewLinkCard url={preview.url} dark={dark} /></Box>;
+        if (preview) return <Box mt={6} style={{ alignSelf: 'stretch' }}><PreviewLinkCard url={preview.url} dark={dark} /></Box>;
         return null;
       })()}
       {question && onAnswer ? (

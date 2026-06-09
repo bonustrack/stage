@@ -52,7 +52,7 @@ export function CommonChannels({ peerAddress, enabled, c }: {
   if (channels.length === 0 && !loading) return null;
 
   return (
-    <Box style={{ marginTop: 20 }}>
+    <Box mt={20}>
       {/* Underline-tab header — mirrors the Wallet page's WalletTabs visual
           treatment (active bottom-border, 18px Calibre-Semibold, head colour),
           rendered as a single tab. */}

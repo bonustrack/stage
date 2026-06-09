@@ -48,12 +48,7 @@ export function TokenAvatar({ logoUrl, chainId, bg, border, badge }: {
         />
       </Box>
       {badge ? (
-        <Box style={{
-          position: 'absolute', right: -5, top: -5,
-          width: 18, height: 18, borderRadius: 999,
-          borderWidth: 2, borderColor: bg, backgroundColor: bg,
-          alignItems: 'center', justifyContent: 'center',
-        }}>
+        <Box align="center" justify="center" style={{ position: 'absolute', right: -5, top: -5, width: 18, height: 18, borderRadius: 999, borderWidth: 2, borderColor: bg, backgroundColor: bg }}>
           {badge}
         </Box>
       ) : null}
