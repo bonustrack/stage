@@ -26,6 +26,10 @@
     "production": {
       "autoIncrement": true,
       "node": "18.20.4",
+      "android": {
+        "buildType": "app-bundle",
+        "resourceClass": "large"
+      },
       "env": { "APP_VARIANT": "prod" }
     },
     "development-prod": {
@@ -45,6 +49,14 @@
     "production": {
       "android": {
         "track": "internal",
+        "releaseStatus": "completed",
+        "applicationId": "box.stage",
+        "serviceAccountKeyPath": "./play-service-account.json"
+      }
+    },
+    "production-public": {
+      "android": {
+        "track": "production",
         "releaseStatus": "completed",
         "applicationId": "box.stage",
         "serviceAccountKeyPath": "./play-service-account.json"
