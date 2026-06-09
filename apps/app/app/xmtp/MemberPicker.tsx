@@ -124,7 +124,7 @@ export function MemberPicker({ state, dark, exclude = [] }: {
     <>
       {/* Member entry */}
       <Col gap={6}>
-        <Text size="sm" style={{ color: sub, fontFamily: 'Calibre-Medium' }}>
+        <Text size="sm" style={{ color: sub }}>
           Add members
         </Text>
         <Row gap={8} align="center">
@@ -176,11 +176,11 @@ export function MemberPicker({ state, dark, exclude = [] }: {
             >
               <Avatar address={m.address} size={32} style={{ backgroundColor: border }} />
               <Col flex={1} gap={1}>
-                <Text size="md" numberOfLines={1} style={{ color: head, fontFamily: 'Calibre-Medium' }}>
+                <Text size="md" numberOfLines={1} style={{ color: head }}>
                   {m.label}
                 </Text>
                 {m.label !== shortAddress(m.address) && (
-                  <Text size="sm" numberOfLines={1} style={{ color: sub, fontFamily: 'Calibre-Medium' }}>
+                  <Text size="sm" numberOfLines={1} style={{ color: sub }}>
                     {shortAddress(m.address)}
                   </Text>
                 )}

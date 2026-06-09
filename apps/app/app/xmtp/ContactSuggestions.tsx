@@ -29,7 +29,7 @@ export function ContactSuggestions({
 
   return (
     <Col gap={6}>
-      <Text size="sm" style={{ color: sub, fontFamily: 'Calibre-Medium' }}>
+      <Text size="sm" style={{ color: sub }}>
         Suggested contacts
       </Text>
       <Col gap={2}>
@@ -53,11 +53,11 @@ export function ContactSuggestions({
                 style={{ backgroundColor: border }}
               />
               <Col flex={1} gap={1}>
-                <Text size="md" numberOfLines={1} style={{ color: head, fontFamily: 'Calibre-Semibold' }}>
+                <Text weight="semibold" size="md" numberOfLines={1} style={{ color: head }}>
                   {c.name}
                 </Text>
                 {c.name !== shortAddress(c.address) && (
-                  <Text size="sm" numberOfLines={1} style={{ color: sub, fontFamily: 'Calibre-Medium' }}>
+                  <Text size="sm" numberOfLines={1} style={{ color: sub }}>
                     {shortAddress(c.address)}
                   </Text>
                 )}

@@ -122,7 +122,7 @@ export function VoiceMessage({ uri }: Props): React.ReactElement {
           })}
         </Box>
       </Pressable>
-      <Text size="sm" style={{ color: ON_ACCENT, minWidth: 34, textAlign: 'right', fontFamily: 'Calibre-Medium' }}>{label}</Text>
+      <Text size="sm" style={{ color: ON_ACCENT, minWidth: 34, textAlign: 'right' }}>{label}</Text>
     </Box>
   );
 }

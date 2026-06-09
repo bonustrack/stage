@@ -181,7 +181,7 @@ function MenuRow({ icon, label, color, dark, onPress }: {
     <ListViewItem dark={dark} onPress={onPress}>
       <Icon name={icon} size={20} color={color} />
       <Box style={{ flex: 1 }}>
-        <Text size="lg" style={{ color, fontFamily: 'Calibre-Medium' }}>{label}</Text>
+        <Text size="lg" style={{ color }}>{label}</Text>
       </Box>
     </ListViewItem>
   );

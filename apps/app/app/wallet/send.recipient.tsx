@@ -51,11 +51,11 @@ export function RecipientRow({ address, pal, right, onPress }: {
         style={{ backgroundColor: border }}
       />
       <Box style={{ flex: 1, minWidth: 0 }}>
-        <Text size="md" style={{ color: head, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
+        <Text weight="semibold" size="md" style={{ color: head }} numberOfLines={1}>
           {name}
         </Text>
         {showAddrLine ? (
-          <Text size="sm" style={{ color: sub, fontFamily: 'Calibre-Medium', marginTop: 2 }} numberOfLines={1}>
+          <Text size="sm" style={{ color: sub, marginTop: 2 }} numberOfLines={1}>
             {shortAddress(address)}
           </Text>
         ) : null}
@@ -102,11 +102,11 @@ export function ContactsModal({ visible, onClose, onPick, pal }: {
 
   return (
     <AppModal visible={visible} onClose={onClose}>
-      <Text size="lg" style={{ color: head, fontFamily: 'Calibre-Semibold', marginBottom: 8 }}>
+      <Text weight="semibold" size="lg" style={{ color: head, marginBottom: 8 }}>
         Contacts
       </Text>
       {contacts.length === 0 ? (
-        <Text size="md" style={{ color: sub, fontFamily: 'Calibre-Medium', paddingVertical: 16 }}>
+        <Text size="md" style={{ color: sub, paddingVertical: 16 }}>
           No contacts yet — start a DM to build your list.
         </Text>
       ) : (

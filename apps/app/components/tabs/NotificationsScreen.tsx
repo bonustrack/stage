@@ -44,7 +44,7 @@ export function NotificationsScreen({ panRef }: { panRef?: SimultaneousRefs } = 
           <Title size="md" dark={dark} style={{ color: head }}>Notifications</Title>
           {unread > 0 ? (
             <Box style={{ minWidth: 22, height: 22, paddingHorizontal: 7, borderRadius: 999, backgroundColor: head, alignItems: 'center', justifyContent: 'center' }}>
-              <Text size="sm" style={{ color: bg, fontFamily: 'Calibre-Semibold' }}>{unread}</Text>
+              <Text weight="semibold" size="sm" style={{ color: bg }}>{unread}</Text>
             </Box>
           ) : null}
         </Row>
@@ -54,7 +54,7 @@ export function NotificationsScreen({ panRef }: { panRef?: SimultaneousRefs } = 
       </Col>
       {previews.length === 0 ? (
         <Col flex={1} px={16} style={{ alignItems: 'center', justifyContent: 'center' }}>
-          <Text size="md" style={{ color: sub, fontFamily: 'Calibre-Medium' }}>Nothing yet</Text>
+          <Text size="md" style={{ color: sub }}>Nothing yet</Text>
         </Col>
       ) : null}
     </ScrollView>

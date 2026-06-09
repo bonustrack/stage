@@ -144,15 +144,15 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
           Decimals render in the dim `sub` colour to keep the dollars prominent. */}
       <Col mx={16} pt={20} pb={16} align="start">
         {err ? (
-          <Text size="sm" style={{ color: DANGER, fontFamily: 'Calibre-Medium' }}>
+          <Text size="sm" style={{ color: DANGER }}>
             Couldn’t load balances
           </Text>
         ) : totalUsd === null ? (
-          <Text size="xxxl" style={{ color: head, fontFamily: 'Calibre-Semibold' }}>…</Text>
+          <Text weight="semibold" size="xxxl" style={{ color: head }}>…</Text>
         ) : (
-          <Text size="xxxl" style={{ color: head, fontFamily: 'Calibre-Semibold' }}>
+          <Text weight="semibold" size="xxxl" style={{ color: head }}>
             {splitUsd(fmtUsd(totalUsd)).int}
-            <Text size="xxxl" style={{ color: sub, fontFamily: 'Calibre-Semibold' }}>{splitUsd(fmtUsd(totalUsd)).dec}</Text>
+            <Text weight="semibold" size="xxxl" style={{ color: sub }}>{splitUsd(fmtUsd(totalUsd)).dec}</Text>
           </Text>
         )}
       </Col>
@@ -177,7 +177,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
         <ActivityView address={address} head={head} sub={sub} border={border} bg={bg} />
       ) : err ? (
         <Col mx={16} py={40} align="center">
-          <Text size="md" style={{ color: DANGER, fontFamily: 'Calibre-Medium' }}>
+          <Text size="md" style={{ color: DANGER }}>
             Couldn’t load tokens
           </Text>
         </Col>

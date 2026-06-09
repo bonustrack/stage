@@ -66,11 +66,16 @@ export interface TextProps extends Omit<RNTextProps, 'style'> {
 /** Named TextSize px values - the kit FONT_SIZE scale. */
 const SIZE_TOKENS = FONT_SIZE;
 
+// Only two Calibre faces are bundled in apps/app: Calibre-Medium and
+// Calibre-Semibold. 'Calibre-Regular' is NOT loaded and silently falls back to
+// the system font, so it must never be emitted. Weight -> face:
+//   normal / medium -> Calibre-Medium
+//   semibold / bold -> Calibre-Semibold
+// Every Kit Text therefore renders in Calibre with no caller styling.
 const FONTS: Record<'normal' | 'medium' | 'semibold' | 'bold', string> = {
-  normal: 'Calibre-Regular',
+  normal: 'Calibre-Medium',
   medium: 'Calibre-Medium',
   semibold: 'Calibre-Semibold',
-  // Only Calibre-Medium/Semibold are loaded; map ChatKit `bold` to Semibold.
   bold: 'Calibre-Semibold',
 };
 

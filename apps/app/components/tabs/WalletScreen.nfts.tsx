@@ -33,7 +33,7 @@ export function NftsView({
   if (status === 'error') {
     return (
       <Col mx={16} py={40} align="center">
-        <Text size="md" style={{ color: DANGER, fontFamily: 'Calibre-Medium' }}>
+        <Text size="md" style={{ color: DANGER }}>
           Failed to load NFTs.
         </Text>
       </Col>
@@ -42,7 +42,7 @@ export function NftsView({
   if (!nfts || nfts.length === 0) {
     return (
       <Col mx={16} py={40} align="center">
-        <Text size="md" style={{ color: sub, fontFamily: 'Calibre-Medium' }}>
+        <Text size="md" style={{ color: sub }}>
           There are no NFTs in this wallet.
         </Text>
       </Col>
@@ -72,14 +72,14 @@ export function NftsView({
                 <Icon name="photo" size={28} color={sub} />
               </Box>
             )}
-            <Text size="md"
+            <Text weight="semibold" size="md"
               numberOfLines={1}
-              style={{ color: head, fontFamily: 'Calibre-Semibold', marginTop: 6 }}
+              style={{ color: head, marginTop: 6 }}
             >
               {nft.title}
             </Text>
             {nft.collection ? (
-              <Text size="sm" numberOfLines={1} style={{ color: sub, fontFamily: 'Calibre-Medium' }}>
+              <Text size="sm" numberOfLines={1} style={{ color: sub }}>
                 {nft.collection}
               </Text>
             ) : null}

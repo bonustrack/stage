@@ -116,7 +116,7 @@ export function ProfileScreen({ address, variant, panRef }: {
             }}
             onPress={uri => { if (uri) setViewerUri(uri); }}
           />
-          <Text size="xl" style={{ color: c.link, fontFamily: 'Calibre-Semibold', marginTop: 14 }}>
+          <Text weight="semibold" size="xl" style={{ color: c.link, marginTop: 14 }}>
             {displayName}
           </Text>
           {addr ? (
@@ -125,13 +125,13 @@ export function ProfileScreen({ address, variant, panRef }: {
               hitSlop={8}
               style={{ marginTop: 2 }}
             >
-              <Text size="md" style={{ color: c.text, fontFamily: 'Calibre-Medium' }}>
+              <Text size="md" style={{ color: c.text }}>
                 {shortAddress(addr)}
               </Text>
             </Pressable>
           ) : null}
           {profile?.about?.trim() ? (
-            <Text size="md" style={{ color: c.text, marginTop: 6, textAlign: 'left', fontFamily: 'Calibre-Medium' }}>
+            <Text size="md" style={{ color: c.text, marginTop: 6, textAlign: 'left' }}>
               {profile.about}
             </Text>
           ) : null}

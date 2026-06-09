@@ -78,7 +78,7 @@ export function PollSheet({
           onPress={() => setMulti(m => !m)}
           style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 }}
         >
-          <Text size="md" style={{ color: fg, fontFamily: 'Calibre-Medium' }}>Allow multiple choices</Text>
+          <Text size="md" style={{ color: fg }}>Allow multiple choices</Text>
           <Box style={{
             width: 44, height: 26, borderRadius: 999, padding: 3,
             backgroundColor: multi ? '#c0a06e' : inputBg,
@@ -131,7 +131,7 @@ export function SignatureSheet({
                 backgroundColor: kind === k ? 'rgba(192,160,110,0.15)' : inputBg,
               }}
             >
-              <Text size="md" style={{ color: kind === k ? '#c0a06e' : fg, fontFamily: 'Calibre-Semibold' }}>{label}</Text>
+              <Text weight="semibold" size="md" style={{ color: kind === k ? '#c0a06e' : fg }}>{label}</Text>
             </Pressable>
           ))}
         </Row>

@@ -45,7 +45,7 @@ export function SettingsMenu(): React.ReactElement {
             <ListViewItem key={row.href} dark={dark} onPress={() => router.push(row.href)}>
               <Icon name={row.icon} size={22} color={head} />
               <Box style={{ flex: 1 }}>
-                <Text size="lg" style={{ color: head, fontFamily: 'Calibre-Medium' }}>{row.label}</Text>
+                <Text size="lg" style={{ color: head }}>{row.label}</Text>
               </Box>
               <Icon name="chevronRight" size={18} color={sub} />
             </ListViewItem>

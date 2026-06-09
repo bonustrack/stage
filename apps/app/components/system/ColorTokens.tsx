@@ -57,7 +57,7 @@ function EditableSwatch({ name, tokenKey, value, scheme, p }: {
         }}
       />
       <Box style={{ flex: 1, minWidth: 0 }}>
-        <Text size="md" style={{ color: p.head, fontFamily: 'Calibre-Semibold' }}>{name}</Text>
+        <Text weight="semibold" size="md" style={{ color: p.head }}>{name}</Text>
         <Input
           value={shown}
           onChangeText={(t) => { setDraft(t); if (isHex(t)) setOverride(tokenKey, scheme, t); }}
@@ -102,7 +102,7 @@ function RadiusRow({ p, name, value, onSet }: {
         backgroundColor: p.rowBg, borderWidth: 1, borderColor: p.head,
       }} />
       <Box style={{ flex: 1, minWidth: 0 }}>
-        <Text size="md" style={{ color: p.head, fontFamily: 'Calibre-Semibold' }}>{name}</Text>
+        <Text weight="semibold" size="md" style={{ color: p.head }}>{name}</Text>
         <Input
           value={shown}
           onChangeText={(t) => {

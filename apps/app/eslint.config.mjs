@@ -13,7 +13,8 @@ export default tseslint.config(
       // Strong typing: ban `any`. Use `unknown` + narrowing, real interfaces,
       // generics, or library types instead.
       "@typescript-eslint/no-explicit-any": "error",
-      // Size tokens: two ERRORs keep text sizing on the named Kit scale.
+      // Typography: three ERRORs keep text sizing on the named Kit scale and
+      // the font family inside the Kit content components.
       // (1) No raw numeric `fontSize` anywhere - use a named step
       //     (fontSize('md')/FONT_SIZE.md), or the Kit `size` prop.
       // (2) No `fontSize` in a style/textStyle on the Kit CONTENT components
@@ -41,6 +42,21 @@ export default tseslint.config(
             "JSXElement[openingElement.name.name=/^(Text|Title|Caption)$/] JSXAttribute[name.name=/^(style|textStyle)$/] Property[key.name='fontSize']",
           message:
             "Kit Text/Title/Caption must size via the `size` prop (size=\"sm|md|lg|...\"), not a fontSize in style. Remove fontSize from the style and pass size= instead.",
+        },
+        {
+          // (3) Kit CONTENT components apply the Calibre font family INTERNALLY
+          //     (chosen by the `weight` prop: normal/medium -> Calibre-Medium,
+          //     semibold/bold -> Calibre-Semibold; only those two faces are
+          //     bundled). Callers must NOT set fontFamily in the style/textStyle
+          //     escape-hatch - it is redundant and re-introduces magic styling.
+          //     Use weight= for the face, or variant="mono" for monospace.
+          //     Non-content surfaces (Input/Textarea text style, markdown style
+          //     maps) have no weight prop and keep an explicit fontFamily - they
+          //     are not matched here.
+          selector:
+            "JSXElement[openingElement.name.name=/^(Text|Title|Caption)$/] JSXAttribute[name.name=/^(style|textStyle)$/] Property[key.name='fontFamily']",
+          message:
+            "Kit Text/Title/Caption apply Calibre internally - do not set fontFamily in style. Use the `weight` prop (normal/medium/semibold/bold) for the face, or variant=\"mono\" for monospace.",
         },
       ],
       // `error`: cap files at 400 lines. Split a file rather than crossing it.

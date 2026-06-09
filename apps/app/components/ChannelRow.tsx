@@ -96,7 +96,7 @@ function buildLabelChips({ labels, fg, rowBg }: {
         transform: [{ translateY: 5 }],
       }}
     >
-      <Text size="sm" style={{ color: fg, fontFamily: 'Calibre-Medium' }}>{label}</Text>
+      <Text size="sm" style={{ color: fg }}>{label}</Text>
     </View>,
     // Real, rendered gap (inline-View margin is NOT honored by RN).
     <Text size="sm" key={`gap-${i}`}>{'  '}</Text>,
@@ -144,8 +144,8 @@ function ChannelRowBase({
             {pinned ? <Icon name="mapPin" size={13} color={sub} /> : null}
             {/* Name + labels hug each other on the left; name shrinks (and
                 ellipsizes) first, the label chip stays right beside it. */}
-            <Text size="xl"
-              style={{ color: head, fontFamily: 'Calibre-Semibold', flexShrink: 1, minWidth: 0 }}
+            <Text weight="semibold" size="xl"
+              style={{ color: head, flexShrink: 1, minWidth: 0 }}
               numberOfLines={1}
               ellipsizeMode="tail"
             >
@@ -154,7 +154,7 @@ function ChannelRowBase({
             {/* Flexible spacer pushes the timestamp to the far right edge. */}
             <Spacer />
             {timestamp ? (
-              <Text size="md" style={{ color: sub, fontFamily: 'Calibre-Medium' }}>{timestamp}</Text>
+              <Text size="md" style={{ color: sub }}>{timestamp}</Text>
             ) : null}
           </Row>
           {/* No internal height reservation: the preview block is only as tall
@@ -170,7 +170,7 @@ function ChannelRowBase({
               </Box>
             ) : null}
             <Text size="md"
-              style={{ color: sub, lineHeight: 21, fontFamily: 'Calibre-Medium', flex: 1 }}
+              style={{ color: sub, lineHeight: 21, flex: 1 }}
               numberOfLines={2}
               ellipsizeMode="tail"
             >
@@ -183,7 +183,7 @@ function ChannelRowBase({
               <Row align="center" justify="center" px={7} radius={999} bg={head} style={{
                 minWidth: 22, height: 22,
               }}>
-                <Text size="sm" style={{ color: bg, fontFamily: 'Calibre-Semibold' }}>
+                <Text weight="semibold" size="sm" style={{ color: bg }}>
                   {unreadCount > 99 ? '99+' : unreadCount}
                 </Text>
               </Row>

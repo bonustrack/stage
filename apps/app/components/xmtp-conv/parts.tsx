@@ -119,7 +119,7 @@ export function BubbleActionMenu({
       })}
     >
       <Icon name={icon} size={20} color={color ?? fg} />
-      <Text size="md" style={{ color: color ?? fg, fontFamily: 'Calibre-Medium' }}>{label}</Text>
+      <Text size="md" style={{ color: color ?? fg }}>{label}</Text>
     </Pressable>
   );
 

@@ -123,7 +123,7 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
 
   return (
     <Box style={{ gap: 6 }}>
-      <Text size="sm" style={{ color: sub, fontFamily: 'Calibre-Medium' }}>{label}</Text>
+      <Text size="sm" style={{ color: sub }}>{label}</Text>
       <Pressable
         onPress={() => setOpen(true)}
         style={({ pressed }) => ({
@@ -152,11 +152,11 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
         <Col flex={1} style={{ minWidth: 0 }}>
           <Row align="center" gap={6} style={{ minWidth: 0 }}>
             {value.isPrivate ? <Icon name="shieldCheck" size={14} color={sub} /> : null}
-            <Text size="md" style={{ color: head, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
+            <Text weight="semibold" size="md" style={{ color: head }} numberOfLines={1}>
               {value.symbol}
             </Text>
           </Row>
-          <Text size="sm" style={{ color: sub, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
+          <Text size="sm" style={{ color: sub }} numberOfLines={1}>
             {selected ? `Balance: ${selected.balance}` : '—'}
           </Text>
         </Col>
@@ -164,7 +164,7 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
       </Pressable>
 
       <AppModal visible={open} onClose={() => setOpen(false)}>
-        <Text size="lg" style={{ color: head, fontFamily: 'Calibre-Semibold', marginBottom: 8 }}>
+        <Text weight="semibold" size="lg" style={{ color: head, marginBottom: 8 }}>
           Select token
         </Text>
         {loading ? (
@@ -172,7 +172,7 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
             <Spinner size={28} color={fg} />
           </Row>
         ) : rows.length === 0 ? (
-          <Text size="md" style={{ color: sub, fontFamily: 'Calibre-Medium', paddingVertical: 16 }}>
+          <Text size="md" style={{ color: sub, paddingVertical: 16 }}>
             No tokens.
           </Text>
         ) : (

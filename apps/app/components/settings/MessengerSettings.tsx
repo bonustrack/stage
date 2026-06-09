@@ -31,8 +31,8 @@ function CopyRow({ label, value, display, c }: {
         backgroundColor: c.rowBg, borderWidth: 1, borderColor: c.border,
       }}
     >
-      <Text size="sm" style={{ color: c.sub, fontFamily: 'Calibre-Medium' }}>{label.toUpperCase()} (tap to copy)</Text>
-      <Text size="md" style={{ color: c.fg, marginTop: 2, fontFamily: 'Calibre-Medium' }}>{display}</Text>
+      <Text size="sm" style={{ color: c.sub }}>{label.toUpperCase()} (tap to copy)</Text>
+      <Text size="md" style={{ color: c.fg, marginTop: 2 }}>{display}</Text>
     </Pressable>
   );
 }
@@ -67,7 +67,7 @@ export function MessengerSettings(): React.ReactElement {
     <Box style={{ flex: 1, backgroundColor: bg }}>
       <SystemHeader title="Messenger" dark={dark} fg={fg} head={head} border={border} />
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
-        <Text size="sm" style={{ color: sub, paddingHorizontal: 16, paddingTop: 20, fontFamily: 'Calibre-Medium' }}>
+        <Text size="sm" style={{ color: sub, paddingHorizontal: 16, paddingTop: 20 }}>
           XMTP ACCOUNT
         </Text>
         {addr ? <CopyRow label="Your XMTP address" value={addr} display={shortAddress(addr)} c={c} /> : null}
@@ -98,7 +98,7 @@ export function MessengerSettings(): React.ReactElement {
               borderWidth: 1, borderColor: dark ? '#5c2231' : '#e9bbc4',
             })}
           >
-            <Text size="md" style={{ color: DANGER, fontFamily: 'Calibre-Medium' }}>
+            <Text size="md" style={{ color: DANGER }}>
               Reset XMTP identity
             </Text>
           </Pressable>

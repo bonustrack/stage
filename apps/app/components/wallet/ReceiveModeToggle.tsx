@@ -31,7 +31,7 @@ export function ReceiveModeToggle({ mode, onChange, privateReady }: {
           opacity: disabled ? 0.45 : 1,
         }}
       >
-        <Text size="md" style={{ color: active ? head : sub, fontFamily: active ? 'Calibre-Semibold' : 'Calibre-Medium' }}>
+        <Text size="md" weight={active ? 'semibold' : 'normal'} style={{ color: active ? head : sub }}>
           {label}
         </Text>
       </Pressable>

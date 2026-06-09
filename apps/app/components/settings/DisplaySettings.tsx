@@ -39,7 +39,7 @@ export function DisplaySettings(): React.ReactElement {
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}
       >
-        <Text size="sm" style={{ color: sub, paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8, fontFamily: 'Calibre-Medium' }}>
+        <Text size="sm" style={{ color: sub, paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
           THEME
         </Text>
         <Box mx={16} style={{ overflow: 'hidden' }}>
@@ -55,7 +55,7 @@ export function DisplaySettings(): React.ReactElement {
                     style={{ paddingHorizontal: 14, paddingVertical: 14 }}
                   >
                     <Icon name={opt.icon} size={22} color={head} />
-                    <Text size="lg" style={{ color: fg, fontFamily: 'Calibre-Medium', flex: 1 }}>{opt.label}</Text>
+                    <Text size="lg" style={{ color: fg, flex: 1 }}>{opt.label}</Text>
                     {selected ? <Icon name="check" size={20} color={head} /> : null}
                   </ListViewItem>
                 );
@@ -67,7 +67,7 @@ export function DisplaySettings(): React.ReactElement {
                 style={{ paddingHorizontal: 14, paddingVertical: 14 }}
               >
                 <Icon name="colorSwatch" size={22} color={head} />
-                <Text size="lg" style={{ color: fg, fontFamily: 'Calibre-Medium', flex: 1 }}>Custom</Text>
+                <Text size="lg" style={{ color: fg, flex: 1 }}>Custom</Text>
                 {custom ? <Icon name="check" size={20} color={head} /> : null}
               </ListViewItem>
             </ListView>
@@ -76,7 +76,7 @@ export function DisplaySettings(): React.ReactElement {
 
         {custom ? (
           <Box style={{ paddingHorizontal: 16, paddingTop: 24 }}>
-            <Text size="sm" style={{ color: sub, paddingBottom: 4, fontFamily: 'Calibre-Medium' }}>
+            <Text size="sm" style={{ color: sub, paddingBottom: 4 }}>
               CUSTOM COLORS
             </Text>
             <ColorTokens p={{ dark, head, sub, border, rowBg }} />

@@ -50,19 +50,19 @@ export function GitHubLinkCard({ url }: {
       <Box radius={blockRadius} style={{ borderWidth: 1, borderColor: border, backgroundColor: 'transparent', paddingHorizontal: 12, paddingVertical: 10 }}>
         <Row align="center" justify="start" style={{ marginBottom: 4 }}>
           <GithubLogo size={16} color={fg} />
-          <Text size="xs" style={{ color: subColor, fontFamily: 'Calibre-Medium', marginLeft: 6 }}>
+          <Text size="xs" style={{ color: subColor, marginLeft: 6 }}>
             {meta.repo}{numLabel ? ` · ${numLabel}` : ''}
           </Text>
         </Row>
-        <Text size="xl"
-          style={{ color: fg, fontFamily: 'Calibre-Semibold' }}
+        <Text weight="semibold" size="xl"
+          style={{ color: fg }}
           numberOfLines={2}
         >
           {meta.title}
         </Text>
         {meta.description ? (
           <Text size="md"
-            style={{ color: subColor, lineHeight: 21, fontFamily: 'Calibre-Medium', marginTop: 3 }}
+            style={{ color: subColor, lineHeight: 21, marginTop: 3 }}
             numberOfLines={2}
           >
             {meta.description}
@@ -73,27 +73,27 @@ export function GitHubLinkCard({ url }: {
             <Box style={{ width: 8, height: 8, borderRadius: 999, backgroundColor: dot, marginRight: 6 }} />
           ) : null}
           {meta.state ? (
-            <Text size="xs" style={{ color: subColor, fontFamily: 'Calibre-Medium', textTransform: 'capitalize' }}>
+            <Text size="xs" style={{ color: subColor, textTransform: 'capitalize' }}>
               {meta.state}
             </Text>
           ) : null}
           {meta.kind === 'repo' && meta.stars != null ? (
-            <Text size="xs" style={{ color: subColor, fontFamily: 'Calibre-Medium' }}>
+            <Text size="xs" style={{ color: subColor }}>
               ★ {meta.stars}
             </Text>
           ) : null}
           {meta.author ? (
-            <Text size="xs" style={{ color: subColor, fontFamily: 'Calibre-Medium', marginLeft: meta.state ? 8 : 0 }}>
+            <Text size="xs" style={{ color: subColor, marginLeft: meta.state ? 8 : 0 }}>
               {meta.author}
             </Text>
           ) : null}
           {showLoc && meta.additions != null ? (
-            <Text size="xs" style={{ color: SUCCESS, fontFamily: 'Calibre-Semibold', marginLeft: 8 }}>
+            <Text weight="semibold" size="xs" style={{ color: SUCCESS, marginLeft: 8 }}>
               +{fmt(meta.additions)}
             </Text>
           ) : null}
           {showLoc && meta.deletions != null ? (
-            <Text size="xs" style={{ color: DANGER, fontFamily: 'Calibre-Semibold', marginLeft: 6 }}>
+            <Text weight="semibold" size="xs" style={{ color: DANGER, marginLeft: 6 }}>
               −{fmt(meta.deletions)}
             </Text>
           ) : null}

@@ -82,7 +82,7 @@ function PingLog({ lines, sub, head, border }: {
             borderWidth: 1, borderColor: border ?? sub,
           }}
         >
-          <Text size="sm" style={{ color: head ?? sub, fontFamily: 'Calibre-Semibold' }}>
+          <Text weight="semibold" size="sm" style={{ color: head ?? sub }}>
             Copy
           </Text>
         </Pressable>
@@ -97,7 +97,7 @@ function PingLog({ lines, sub, head, border }: {
         renderItem={({ item }) => (
           <Text size="xs"
             selectable
-            style={{ color: tone(item.line, sub), fontFamily: 'Calibre-Medium' }}
+            style={{ color: tone(item.line, sub) }}
           >
             {fmtLine(item)}
           </Text>
@@ -352,7 +352,7 @@ export function BridgePingProbe({ sub, border }: {
 
   return (
     <Col mt={20} pt={16} gap={8} style={{ borderTopWidth: 1, borderTopColor: border }}>
-      <Text size="sm" style={{ color: sub, fontFamily: 'Calibre-Medium' }}>
+      <Text size="sm" style={{ color: sub }}>
         DEV · NODE BRIDGE FEASIBILITY
       </Text>
       <Button
@@ -362,7 +362,7 @@ export function BridgePingProbe({ sub, border }: {
         loading={state.kind === 'running'}
         onPress={() => { void onPress(); }}
       />
-      <Text size="sm" style={{ color: resultColor, fontFamily: 'Calibre-Medium' }}>
+      <Text size="sm" style={{ color: resultColor }}>
         {resultText}
       </Text>
       <Button
@@ -372,7 +372,7 @@ export function BridgePingProbe({ sub, border }: {
         loading={engine.kind === 'running'}
         onPress={() => { void onInit(); }}
       />
-      <Text size="sm" style={{ color: engineColor, fontFamily: 'Calibre-Medium' }}>
+      <Text size="sm" style={{ color: engineColor }}>
         {engineText}
       </Text>
       <Button

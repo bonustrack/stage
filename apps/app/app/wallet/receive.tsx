@@ -72,7 +72,7 @@ export default function WalletReceive(): React.ReactElement {
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg} />
         </Pressable>
-        <Text size="lg" style={{ color: head, fontFamily: 'Calibre-Semibold', flex: 1 }}>Receive</Text>
+        <Text weight="semibold" size="lg" style={{ color: head, flex: 1 }}>Receive</Text>
       </Box>
 
       <ScrollView contentContainerStyle={{ padding: 16, alignItems: 'center', gap: 16 }}>
@@ -100,7 +100,7 @@ export default function WalletReceive(): React.ReactElement {
           )}
         </Box>
 
-        <Text size="sm" style={{ color: sub, fontFamily: 'Calibre-Medium', marginTop: 4 }}>
+        <Text size="sm" style={{ color: sub, marginTop: 4 }}>
           {activeMode === 'private' ? 'SHIELDED 0ZK ADDRESS (tap to copy)' : 'WALLET ADDRESS (tap to copy)'}
         </Text>
         <Pressable
@@ -111,12 +111,12 @@ export default function WalletReceive(): React.ReactElement {
             borderWidth: 1, borderColor: border,
           })}
         >
-          <Text size="md" style={{ color: head, fontFamily: 'Calibre-Medium', textAlign: 'center' }} selectable>
+          <Text size="md" style={{ color: head, textAlign: 'center' }} selectable>
             {address || '—'}
           </Text>
         </Pressable>
 
-        <Text size="sm" style={{ color: sub, fontFamily: 'Calibre-Medium', textAlign: 'center', paddingHorizontal: 16, marginTop: 8 }}>
+        <Text size="sm" style={{ color: sub, textAlign: 'center', paddingHorizontal: 16, marginTop: 8 }}>
           {hint}
         </Text>
       </ScrollView>

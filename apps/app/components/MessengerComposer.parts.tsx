@@ -56,9 +56,9 @@ export function ReplyBanner({
           >
             <Icon name="x" size={14} color="#000000" />
           </Pressable>
-          <Text size="md" style={{ fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
-            <Text size="md" style={{ color: sub, fontFamily: 'Calibre-Medium' }}>Replying to </Text>
-            <Text size="md" style={{ color: nameColor, fontFamily: 'Calibre-Medium' }}>
+          <Text size="md" numberOfLines={1}>
+            <Text size="md" style={{ color: sub }}>Replying to </Text>
+            <Text size="md" style={{ color: nameColor }}>
               {(sender ? getPeerName(sender) : undefined) ?? (sender ? shortAddress(sender) : 'message')}
             </Text>
           </Text>
@@ -93,10 +93,10 @@ export function MentionPopup({
           })}
         >
           <Avatar address={c.address} size="sm" cacheBuster={c.cacheBuster} />
-          <Text size="md" style={{ color: head, fontFamily: 'Calibre-Semibold', flex: 1 }} numberOfLines={1}>
+          <Text weight="semibold" size="md" style={{ color: head, flex: 1 }} numberOfLines={1}>
             {c.name}
           </Text>
-          <Text size="sm" style={{ color: sub, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
+          <Text size="sm" style={{ color: sub }} numberOfLines={1}>
             {shortAddress(c.address)}
           </Text>
         </Pressable>
@@ -130,7 +130,7 @@ export function PendingRow({
                 <Icon name="x" size={12} color="#ffffff" />
               </Pressable>
             </Box>
-            <Text size="xs" style={{ color: fg, width: 72, textAlign: 'center' , fontFamily: 'Calibre-Medium'}} numberOfLines={1}>
+            <Text size="xs" style={{ color: fg, width: 72, textAlign: 'center' }} numberOfLines={1}>
               {a.name ?? a.id}
             </Text>
           </Col>
@@ -138,7 +138,7 @@ export function PendingRow({
           /** Non-image attachments keep the inline chip layout. */
           <Row key={a.id} align="center" gap={6} px={8} py={4} radius={12} bg={chipBg}>
             <Icon name={kindIcon(a.kind)} size={14} color={fg} />
-            <Text size="sm" style={{ color: fg, maxWidth: 140 , fontFamily: 'Calibre-Medium'}} numberOfLines={1}>{a.name ?? a.id}</Text>
+            <Text size="sm" style={{ color: fg, maxWidth: 140 }} numberOfLines={1}>{a.name ?? a.id}</Text>
             <Pressable onPress={() => onRemove(i)} hitSlop={6}>
               <Icon name="x" size={14} color={sub} />
             </Pressable>
@@ -168,7 +168,7 @@ export function RecordingBar({
         }),
       }}>
         <Icon name="arrowLeft" size={14} color={sub} />
-        <Text size="sm" style={{ color: sub, fontFamily: 'Calibre-Medium' }}>
+        <Text size="sm" style={{ color: sub }}>
           Slide to cancel
         </Text>
       </Animated.View>
@@ -177,7 +177,7 @@ export function RecordingBar({
           <Box key={i} style={{ width: 3, marginHorizontal: 1, borderRadius: 2, height: Math.max(3, Math.round(lvl * 26)), backgroundColor: head, opacity: 0.85 }} />
         ))}
       </Row>
-      <Text size="sm" style={{ color: sub, fontFamily: 'Calibre-Medium', minWidth: 40, textAlign: 'center' }}>
+      <Text size="sm" style={{ color: sub, minWidth: 40, textAlign: 'center' }}>
         {Math.floor(recordSecs / 60)}:{(recordSecs % 60).toString().padStart(2, '0')}
       </Text>
     </Row>

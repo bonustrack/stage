@@ -101,7 +101,7 @@ export function HomeError({ error, dark, fg, bg }: {
 }): React.ReactElement {
   return (
     <Col flex={1} align="center" justify="center" p={24} bg={bg}>
-      <Text size="md" style={{ color: fg, textAlign: 'center', marginBottom: 16 , fontFamily: 'Calibre-Medium'}}>{error}</Text>
+      <Text size="md" style={{ color: fg, textAlign: 'center', marginBottom: 16 }}>{error}</Text>
       <Pressable
         onPress={() => {
           void (async (): Promise<void> => {
@@ -116,7 +116,7 @@ export function HomeError({ error, dark, fg, bg }: {
           borderWidth: 1, borderColor: dark ? '#5c2231' : '#e9bbc4',
         })}
       >
-        <Text size="md" style={{ color: DANGER, fontFamily: 'Calibre-Medium'}}>
+        <Text size="md" style={{ color: DANGER}}>
           Reset XMTP identity
         </Text>
       </Pressable>

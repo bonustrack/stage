@@ -35,7 +35,7 @@ export function RecipientField(props: {
   const rowPal = { head, sub, border };
   return (
     <Box style={{ gap: 6 }}>
-      <Text size="sm" style={{ color: sub, fontFamily: 'Calibre-Medium' }}>RECIPIENT</Text>
+      <Text size="sm" style={{ color: sub }}>RECIPIENT</Text>
       {/* Input + a contacts-picker icon button on the right. */}
       <Box style={{
         flexDirection: 'row', alignItems: 'center', gap: 4,
@@ -63,12 +63,12 @@ export function RecipientField(props: {
       {props.resolving ? (
         <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4 }}>
           <Spinner size={20} color={fg} />
-          <Text size="sm" style={{ color: sub, fontFamily: 'Calibre-Medium' }}>Resolving…</Text>
+          <Text size="sm" style={{ color: sub }}>Resolving…</Text>
         </Box>
       ) : props.resolved ? (
         <RecipientRow address={props.resolved} pal={rowPal} />
       ) : props.resolveErr ? (
-        <Text size="sm" style={{ color: DANGER, fontFamily: 'Calibre-Medium', paddingHorizontal: 4 }}>
+        <Text size="sm" style={{ color: DANGER, paddingHorizontal: 4 }}>
           {props.resolveErr}
         </Text>
       ) : null}
@@ -103,7 +103,7 @@ export function AmountField(props: {
   return (
     <Box style={{ gap: 6 }}>
       <Box style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <Text size="sm" style={{ color: sub, fontFamily: 'Calibre-Medium', flex: 1 }}>AMOUNT</Text>
+        <Text size="sm" style={{ color: sub, flex: 1 }}>AMOUNT</Text>
         <Button
           variant="ghost"
           size="sm"
@@ -156,7 +156,7 @@ export function AmountField(props: {
             backgroundColor: pressed ? border : 'transparent',
           })}
         >
-          <Text size="md" style={{ color: head, fontFamily: 'Calibre-Semibold' }}>
+          <Text weight="semibold" size="md" style={{ color: head }}>
             {mode === 'eth' ? props.symbol : 'USD'}
           </Text>
           <Icon name="arrowDown" size={14} color={fg} />
@@ -164,12 +164,12 @@ export function AmountField(props: {
       </Box>
 
       {props.secondaryLabel ? (
-        <Text size="sm" style={{ color: sub, fontFamily: 'Calibre-Medium', paddingHorizontal: 4 }}>
+        <Text size="sm" style={{ color: sub, paddingHorizontal: 4 }}>
           {props.secondaryLabel}
         </Text>
       ) : null}
       {ethBalance ? (
-        <Text size="sm" style={{ color: sub, fontFamily: 'Calibre-Medium', paddingHorizontal: 4 }}>
+        <Text size="sm" style={{ color: sub, paddingHorizontal: 4 }}>
           Balance: {Number(ethBalance).toLocaleString(undefined, { maximumFractionDigits: 6 })} {props.symbol}
         </Text>
       ) : null}
@@ -197,7 +197,7 @@ export function SendHeader(props: {
       <Pressable onPress={props.onBack} hitSlop={8} style={{ padding: 4 }}>
         <Icon name="arrowLeft" size={22} color={props.fg} />
       </Pressable>
-      <Text size="lg" style={{ color: props.head, fontFamily: 'Calibre-Semibold', flex: 1 }}>Send token</Text>
+      <Text weight="semibold" size="lg" style={{ color: props.head, flex: 1 }}>Send token</Text>
     </Box>
   );
 }
@@ -235,18 +235,18 @@ export function TxStatus(props: {
       {/* Tx status: hash link once broadcast, plus errors. */}
       {txHash ? (
         <Box style={{ gap: 4, paddingHorizontal: 4 }}>
-          <Text size="sm" style={{ color: sub, fontFamily: 'Calibre-Medium' }}>
+          <Text size="sm" style={{ color: sub }}>
             {txState === 'confirmed' ? 'Confirmed' : 'Pending'}
           </Text>
           <Pressable onPress={() => Linking.openURL(explorerTxUrl(PUBLIC_SEND_CHAIN, txHash))} hitSlop={6}>
-            <Text size="sm" style={{ color: link, fontFamily: 'Calibre-Medium' }}>
+            <Text size="sm" style={{ color: link }}>
               {txHash.slice(0, 10)}…{txHash.slice(-8)}
             </Text>
           </Pressable>
         </Box>
       ) : null}
       {txErr ? (
-        <Text size="sm" style={{ color: DANGER, fontFamily: 'Calibre-Medium', paddingHorizontal: 4 }}>
+        <Text size="sm" style={{ color: DANGER, paddingHorizontal: 4 }}>
           {txErr}
         </Text>
       ) : null}

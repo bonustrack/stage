@@ -38,8 +38,8 @@ export function ReactionsRow({
         const mine = !!ownEmojis?.has(emoji);
         const inner = (
           <>
-            <Text size="sm" style={{ fontFamily: 'Calibre-Medium' }}>{emoji}</Text>
-            <Text size="xs" style={{ color: sub, fontFamily: 'Calibre-Medium' }}>{count}</Text>
+            <Text size="sm">{emoji}</Text>
+            <Text size="xs" style={{ color: sub }}>{count}</Text>
           </>
         );
         const pillStyle = {
@@ -67,8 +67,8 @@ export function ReactionsRow({
         <Row key={`pending-${emoji}`} align="center" gap={4} px={8} py={2} radius={999} bg={pillBg} style={{
           opacity: 0.45,
         }}>
-          <Text size="sm" style={{ fontFamily: 'Calibre-Medium'}}>{emoji}</Text>
-          <Text size="xs" style={{ color: sub , fontFamily: 'Calibre-Medium'}}>1</Text>
+          <Text size="sm">{emoji}</Text>
+          <Text size="xs" style={{ color: sub }}>1</Text>
         </Row>
       ))}
     </Row>

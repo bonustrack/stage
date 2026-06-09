@@ -55,7 +55,7 @@ export function ImportSheet({ visible, onClose, importText, setImportText, setIm
           paddingHorizontal: 12, paddingVertical: 10, marginBottom: 8, minHeight: 0,
         }}
       />
-      {importErr ? <Text size="sm" style={{ color: DANGER, marginBottom: 8, fontFamily: 'Calibre-Medium' }}>{importErr}</Text> : null}
+      {importErr ? <Text size="sm" style={{ color: DANGER, marginBottom: 8 }}>{importErr}</Text> : null}
       <Box style={{ flexDirection: 'row', gap: 8 }}>
         <Button
           variant="secondary"
@@ -118,10 +118,10 @@ export function ExportSheet({ revealPk, onClose, dark, p }: {
   const { primary, bg } = usePalette();
   return (
     <SheetModal visible={revealPk !== null} onClose={onClose} bg={p.sheetBg} border={p.border}>
-      <Text size="sm" style={{ color: DANGER, fontFamily: 'Calibre-Medium', marginBottom: 8 }}>
+      <Text size="sm" style={{ color: DANGER, marginBottom: 8 }}>
         Anyone with this key controls the account. Never share it.
       </Text>
-      <Text size="sm" selectable style={{ color: p.head, fontFamily: 'Menlo', lineHeight: 18, borderWidth: 1, borderColor: p.border, borderRadius: 10, padding: 12, marginBottom: 8 }}>
+      <Text variant="mono" size="sm" selectable style={{ color: p.head, lineHeight: 18, borderWidth: 1, borderColor: p.border, borderRadius: 10, padding: 12, marginBottom: 8 }}>
         {revealPk}
       </Text>
       <Button

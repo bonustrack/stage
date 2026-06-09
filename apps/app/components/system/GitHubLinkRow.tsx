@@ -28,7 +28,7 @@ export function GitHubLinkRow({ dark, head, sub, border, rowBg, url, title, subt
         <Row gap={12} style={{ alignItems: 'center' }}>
           <GithubLogo size={22} color={head} />
           <Box style={{ flex: 1 }}>
-            <Text size="md" style={{ color: head, fontFamily: 'Calibre-Semibold' }}>
+            <Text weight="semibold" size="md" style={{ color: head }}>
               {title}
             </Text>
             <Text dark={dark} color={sub} variant="caption" weight="medium"

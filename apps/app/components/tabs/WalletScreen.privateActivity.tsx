@@ -71,16 +71,16 @@ export function PrivateActivitySection({ head, sub, border, bg }: {
     <Col>
       <Row align="center" gap={6} style={{ paddingTop: 14, paddingBottom: 4 }}>
         <Icon name="lockClosed" size={13} color={sub} />
-        <Text size="sm" style={{ color: sub, fontFamily: 'Calibre-Semibold', letterSpacing: 0.5, textTransform: 'uppercase' }}>
+        <Text weight="semibold" size="sm" style={{ color: sub, letterSpacing: 0.5, textTransform: 'uppercase' }}>
           Private activity
         </Text>
       </Row>
       {status === 'loading' ? (
-        <Text size="md" style={{ color: sub, fontFamily: 'Calibre-Medium', paddingVertical: 14 }}>
+        <Text size="md" style={{ color: sub, paddingVertical: 14 }}>
           Loading private activity…
         </Text>
       ) : rows.length === 0 ? (
-        <Text size="md" style={{ color: sub, fontFamily: 'Calibre-Medium', paddingVertical: 14 }}>
+        <Text size="md" style={{ color: sub, paddingVertical: 14 }}>
           No private activity yet
         </Text>
       ) : (
@@ -122,14 +122,14 @@ function PrivateTxRow({ r, head, sub, border, bg }: {
       />
       <Col flex={1} style={{ minWidth: 0 }}>
         <Row align="center" gap={6}>
-          <Text size="lg" style={{ color: head, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
+          <Text weight="semibold" size="lg" style={{ color: head }} numberOfLines={1}>
             {rowTitle(r)}
           </Text>
           <Row align="center" gap={3} style={{
             paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4, backgroundColor: border,
           }}>
             <Icon name={SHIELD_ICON} size={10} color={sub} />
-            <Text size="xs" style={{ color: sub, fontFamily: 'Calibre-Semibold' }}>
+            <Text weight="semibold" size="xs" style={{ color: sub }}>
               Private
             </Text>
           </Row>
@@ -138,17 +138,17 @@ function PrivateTxRow({ r, head, sub, border, bg }: {
           <Box style={{
             paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4, backgroundColor: border,
           }}>
-            <Text size="sm" style={{ color: sub, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
+            <Text size="sm" style={{ color: sub }} numberOfLines={1}>
               {r.chainLabel}
             </Text>
           </Box>
-          <Text size="md" style={{ color: sub, fontFamily: 'Calibre-Medium', flex: 1 }} numberOfLines={1}>
+          <Text size="md" style={{ color: sub, flex: 1 }} numberOfLines={1}>
             {r.timestamp > 0 ? relTime(r.timestamp) : 'Confirmed'}
           </Text>
         </Row>
       </Col>
       <Col align="end">
-        <Text size="lg" style={{ color: valueColor, fontFamily: 'Calibre-Semibold' }}>
+        <Text weight="semibold" size="lg" style={{ color: valueColor }}>
           {`${prefix}${r.amount} ${r.symbol}`}
         </Text>
       </Col>

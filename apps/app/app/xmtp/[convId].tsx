@@ -125,7 +125,7 @@ export default function XmtpConversation(): React.ReactElement {
           style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 14 }}
         >
           <HeaderAvatar peerAddr={peerAddr} groupImage={groupImage} channelId={convId} isGroup={isGroup} border={border} />
-          <Text size="xl" style={{ color: head, fontFamily: 'Calibre-Semibold', flex: 1 }} numberOfLines={1}>
+          <Text weight="semibold" size="xl" style={{ color: head, flex: 1 }} numberOfLines={1}>
             {isGroup ? (groupName === null ? '' : (groupName || 'Untitled group'))
               : peerAddr ? (getPeerName(peerAddr) ?? shortAddress(peerAddr)) : ''}
           </Text>

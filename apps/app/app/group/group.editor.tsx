@@ -80,7 +80,7 @@ export function GroupProfileHeader({ imageUrl, channelId, uploadingImage, insetT
             </Box>
           ) : null}
         </Pressable>
-        <Text size="sm" style={{ color: sub, marginTop: 6, fontFamily: 'Calibre-Medium' }}>
+        <Text size="sm" style={{ color: sub, marginTop: 6 }}>
           {uploadingImage ? 'Uploading…' : imageUrl ? 'Tap to view · hold to change' : 'Tap to add image'}
         </Text>
       </Box>
@@ -115,10 +115,10 @@ export function GroupNameEditor({ name, draft, setDraft, editing, setEditing, sa
         </Box>
       ) : (
         <Pressable onPress={() => setEditing(true)} hitSlop={6} style={{ marginTop: 6, alignItems: 'flex-start' }}>
-          <Text size="xxl" style={{ color: head, fontFamily: 'Calibre-Semibold', textAlign: 'left' }}>
+          <Text weight="semibold" size="xxl" style={{ color: head, textAlign: 'left' }}>
             {name && name.trim() ? name : 'Untitled group'}
           </Text>
-          <Text size="sm" style={{ color: sub, marginTop: 4, fontFamily: 'Calibre-Medium' }}>Tap to rename</Text>
+          <Text size="sm" style={{ color: sub, marginTop: 4 }}>Tap to rename</Text>
         </Pressable>
       )}
     </Box>
@@ -133,7 +133,7 @@ export function GroupDescriptionEditor({ description, descriptionDraft, setDescr
   const { fg, sub, border, inputBg } = p;
   return (
     <Box style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
-      <Text size="sm" style={{ color: sub, fontFamily: 'Calibre-Medium' }}>DESCRIPTION</Text>
+      <Text size="sm" style={{ color: sub }}>DESCRIPTION</Text>
       {editing ? (
         <Box style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 6 }}>
           <Textarea
@@ -154,7 +154,7 @@ export function GroupDescriptionEditor({ description, descriptionDraft, setDescr
         </Box>
       ) : (
         <Pressable onPress={() => setEditing(true)} hitSlop={6} style={{ marginTop: 6 }}>
-          <Text size="md" style={{ color: description.trim() ? fg : sub, fontFamily: 'Calibre-Medium' }}>
+          <Text size="md" style={{ color: description.trim() ? fg : sub }}>
             {description.trim() || 'Tap to add a description'}
           </Text>
         </Pressable>

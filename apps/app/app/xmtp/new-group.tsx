@@ -132,14 +132,14 @@ export default function NewGroup(): React.ReactElement {
               </Box>
             ) : null}
           </Pressable>
-          <Text size="sm" style={{ color: sub, fontFamily: 'Calibre-Medium' }}>
+          <Text size="sm" style={{ color: sub }}>
             {image ? 'Tap to change image' : 'Tap to add a group image'}
           </Text>
         </Box>
 
         {/* Group name (optional) */}
         <Col gap={6}>
-          <Text size="sm" style={{ color: sub, fontFamily: 'Calibre-Medium' }}>
+          <Text size="sm" style={{ color: sub }}>
             Group name (optional)
           </Text>
           <Input

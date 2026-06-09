@@ -118,7 +118,7 @@ export default function GroupDetail(): React.ReactElement {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
         paddingHorizontal: 16, paddingBottom: 8,
       }}>
-        <Text size="sm" style={{ color: sub, fontFamily: 'Calibre-Medium' }}>
+        <Text size="sm" style={{ color: sub }}>
           MEMBERS ({members.length})
         </Text>
         <Pressable
