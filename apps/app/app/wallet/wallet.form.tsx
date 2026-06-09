@@ -10,7 +10,7 @@ import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { Input } from '@metro-labs/kit/input';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
-import { Box, Row } from '../../components/layout';
+import { Box, Row, Col } from '../../components/layout';
 import { Button } from '@metro-labs/kit/button';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePalette } from '../../lib/theme';
@@ -193,13 +193,13 @@ export function ActionPage({ title, head, bg, border, onBack, footer, children }
   children: React.ReactNode;
 }): React.ReactElement {
   return (
-    <Box style={{ flex: 1, backgroundColor: bg }}>
+    <Col flex={1} style={{ backgroundColor: bg }}>
       <ActionHeader title={title} head={head} border={border} onBack={onBack} />
       <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ padding: 16, gap: 16 }}>
         {children}
       </ScrollView>
       {footer ?? null}
-    </Box>
+    </Col>
   );
 }

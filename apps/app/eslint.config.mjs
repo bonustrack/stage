@@ -70,6 +70,18 @@ export default tseslint.config(
           message:
             "Kit Text/Title/Caption must take their colour via the `color` prop (color={pal.text}), not a color in style. Remove color from the style and pass color= instead.",
         },
+        {
+          // Layout: a `<Box>` is direction-neutral - it must NOT set `flex` or
+          // `flexDirection` in its style. Use the Row/Col primitives instead
+          // (Row = flexDirection 'row', Col = column = the default View axis),
+          // and pass flex-grow via the `flex` PROP (<Col flex={1}>), never a
+          // style flex. Only `<Box>` is matched - Row/Col legitimately set
+          // flexDirection internally and are exempt.
+          selector:
+            "JSXOpeningElement[name.name='Box'] > JSXAttribute[name.name='style'] > JSXExpressionContainer ObjectExpression > Property[key.name=/^(flex|flexDirection)$/]",
+          message:
+            "Box must not set flex/flexDirection in style. Use Row (flexDirection:'row') or Col (column, the default), and pass flex-grow via the `flex` prop (<Col flex={1}>) instead of a style flex.",
+        },
       ],
       // `error`: cap files at 400 lines. Split a file rather than crossing it.
       "max-lines": ["error", { max: 400, skipBlankLines: false, skipComments: false }],

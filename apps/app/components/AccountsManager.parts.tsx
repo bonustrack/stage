@@ -4,7 +4,7 @@
 import { Modal } from 'react-native';
 
 import { Pressable } from '@metro-labs/kit/pressable';
-import { Box } from './layout';
+import { Box, Col } from './layout';
 import { Avatar } from './Avatar';
 import { Text } from '@metro-labs/kit/text';
 import { ListViewItem } from '@metro-labs/kit/list-view';
@@ -35,14 +35,14 @@ export function AccountRow({ rec, onPress, onLongPress, topBorder, trailing, hea
       })}
     >
       <Avatar address={rec.address} size={28} style={{ backgroundColor: border }} />
-      <Box style={{ flex: 1, minWidth: 0 }}>
+      <Col flex={1} style={{ minWidth: 0 }}>
         <Text weight="semibold" size="md" numberOfLines={1} color={head}>
           {getPeerName(rec.address) ?? rec.label ?? shortAddress(rec.address)}
         </Text>
         <Text size="xs" numberOfLines={1} color={sub} style={{ marginTop: 1 }}>
           {shortAddress(rec.address)} · {TYPE_LABEL[rec.type]}
         </Text>
-      </Box>
+      </Col>
       {trailing}
     </Pressable>
   );
@@ -78,10 +78,10 @@ export function SheetRow({ label, desc, onPress, head, sub, danger, dark }: {
   const labelColor = danger ? DANGER : head;
   return (
     <ListViewItem dark={dark} onPress={onPress}>
-      <Box style={{ flex: 1 }}>
+      <Col flex={1}>
         <Text weight="semibold" size="md" color={labelColor}>{label}</Text>
         {desc ? <Text size="xs" color={sub} style={{ marginTop: 2 }}>{desc}</Text> : null}
-      </Box>
+      </Col>
     </ListViewItem>
   );
 }

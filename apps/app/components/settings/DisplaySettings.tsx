@@ -10,7 +10,7 @@
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Box } from '../layout';
+import { Box, Col } from '../layout';
 import { Icon } from '@metro-labs/kit/icon';
 import { Text } from '@metro-labs/kit/text';
 import { Card } from '@metro-labs/kit/card';
@@ -33,7 +33,7 @@ export function DisplaySettings(): React.ReactElement {
   const insets = useSafeAreaInsets();
 
   return (
-    <Box style={{ flex: 1, backgroundColor: bg }}>
+    <Col flex={1} style={{ backgroundColor: bg }}>
       <SystemHeader title="Display" dark={dark} fg={fg} head={head} border={border} />
       <ScrollView
         keyboardShouldPersistTaps="handled"
@@ -83,6 +83,6 @@ export function DisplaySettings(): React.ReactElement {
           </Box>
         ) : null}
       </ScrollView>
-    </Box>
+    </Col>
   );
 }

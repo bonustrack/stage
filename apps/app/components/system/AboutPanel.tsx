@@ -9,7 +9,7 @@ import Constants from 'expo-constants';
 import * as Application from 'expo-application';
 import { Linking } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
-import { Box } from '../layout';
+import { Box, Row } from '../layout';
 import { Title } from '@metro-labs/kit/title';
 import { Text } from '@metro-labs/kit/text';
 import { GitHubLinkRow } from './GitHubLinkRow';
@@ -24,10 +24,8 @@ interface AboutRowProps {
 function AboutRow({ label, value, mono, dark, border, href, head }: AboutRowProps): React.ReactElement {
   const valueColor = href ? head : undefined;
   const row = (
-    <Box style={{
-      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-      paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: border, gap: 16,
-    }}>
+    <Row style={{ alignItems: 'center', justifyContent: 'space-between',
+      paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: border, gap: 16, }}>
       <Text dark={dark} variant="secondary" weight="medium" size="md">{label}</Text>
       <Text
         dark={dark}
@@ -39,7 +37,7 @@ function AboutRow({ label, value, mono, dark, border, href, head }: AboutRowProp
       >
         {value}
       </Text>
-    </Box>
+    </Row>
   );
   if (!href) return row;
   return (

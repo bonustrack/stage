@@ -3,7 +3,7 @@
 
 import { Input } from '@metro-labs/kit/input';
 import { fontSize } from '@metro-labs/kit/tokens';
-import { Box } from './layout';
+import { Row } from './layout';
 import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';
 import { ListView } from '@metro-labs/kit/list-view';
@@ -56,7 +56,7 @@ export function ImportSheet({ visible, onClose, importText, setImportText, setIm
         }}
       />
       {importErr ? <Text size="xs" color={DANGER} style={{ marginBottom: 8 }}>{importErr}</Text> : null}
-      <Box style={{ flexDirection: 'row', gap: 8 }}>
+      <Row style={{ gap: 8 }}>
         <Button
           variant="secondary"
           size="md"
@@ -78,7 +78,7 @@ export function ImportSheet({ visible, onClose, importText, setImportText, setIm
           tintFg={bg}
           style={{ flex: 1 }}
         />
-      </Box>
+      </Row>
     </SheetModal>
   );
 }

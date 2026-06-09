@@ -10,7 +10,7 @@ import { Input } from '@metro-labs/kit/input';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Hex } from 'viem';
 import { Text } from '@metro-labs/kit/text';
-import { Box } from '../../components/layout';
+import { Box, Row } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
 import { Button } from '@metro-labs/kit/button';
 import { Icon } from '@metro-labs/kit/icon';
@@ -37,11 +37,9 @@ export function RecipientField(props: {
     <Box style={{ gap: 6 }}>
       <Text size="xs" color={sub}>RECIPIENT</Text>
       {/* Input + a contacts-picker icon button on the right. */}
-      <Box style={{
-        flexDirection: 'row', alignItems: 'center', gap: 4,
+      <Row style={{ alignItems: 'center', gap: 4,
         backgroundColor: inputBg, borderRadius: 12,
-        paddingHorizontal: 6, paddingLeft: 14,
-      }}>
+        paddingHorizontal: 6, paddingLeft: 14, }}>
         <Input
           value={props.to}
           onChangeText={props.setTo}
@@ -55,16 +53,16 @@ export function RecipientField(props: {
           }}
         />
         <ContactsButton color={fg} border={border} onPress={() => setPicking(true)} />
-      </Box>
+      </Row>
 
       {/* Once a valid recipient is resolved, show them as a user row
           (avatar + name + truncated address) — same row the rest of the app
           uses. While resolving / on error, show the inline status line. */}
       {props.resolving ? (
-        <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4 }}>
+        <Row style={{ alignItems: 'center', gap: 8, paddingHorizontal: 4 }}>
           <Spinner size={20} color={fg} />
           <Text size="xs" color={sub}>Resolving…</Text>
-        </Box>
+        </Row>
       ) : props.resolved ? (
         <RecipientRow address={props.resolved} pal={rowPal} />
       ) : props.resolveErr ? (
@@ -102,7 +100,7 @@ export function AmountField(props: {
   const { link } = usePalette();
   return (
     <Box style={{ gap: 6 }}>
-      <Box style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <Row style={{ alignItems: 'center' }}>
         <Text size="xs" color={sub} style={{ flex: 1 }}>AMOUNT</Text>
         <Button
           variant="ghost"
@@ -114,13 +112,11 @@ export function AmountField(props: {
           textStyle={{ color: ethBalance ? link : sub, fontSize: fontSize('xs') }}
           style={{ height: 24, paddingHorizontal: 8 }}
         />
-      </Box>
+      </Row>
 
-      <Box style={{
-        flexDirection: 'row', alignItems: 'center',
+      <Row style={{ alignItems: 'center',
         backgroundColor: inputBg, borderRadius: 12,
-        paddingHorizontal: 14, paddingVertical: 12, gap: 8,
-      }}>
+        paddingHorizontal: 14, paddingVertical: 12, gap: 8, }}>
         <Input
           value={amount}
           onChangeText={setAmount}
@@ -161,7 +157,7 @@ export function AmountField(props: {
           </Text>
           <Icon name="arrowDown" size={14} color={fg} />
         </Pressable>
-      </Box>
+      </Row>
 
       {props.secondaryLabel ? (
         <Text size="xs" color={sub} style={{ paddingHorizontal: 4 }}>
@@ -188,17 +184,15 @@ export function SendHeader(props: {
   const insets = useSafeAreaInsets();
   const { toolbarBg } = usePalette();
   return (
-    <Box style={{
-      flexDirection: 'row', alignItems: 'center', gap: 8,
+    <Row style={{ alignItems: 'center', gap: 8,
       paddingHorizontal: 12, paddingTop: 8 + insets.top, paddingBottom: 10,
       borderBottomWidth: 1, borderBottomColor: props.border,
-      backgroundColor: toolbarBg,
-    }}>
+      backgroundColor: toolbarBg, }}>
       <Pressable onPress={props.onBack} hitSlop={8} style={{ padding: 4 }}>
         <Icon name="arrowLeft" size={22} color={props.fg} />
       </Pressable>
       <Text weight="semibold" size="xl" color={props.head} style={{ flex: 1 }}>Send token</Text>
-    </Box>
+    </Row>
   );
 }
 

@@ -20,7 +20,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Title } from '@metro-labs/kit/title';
 import { Icon } from '@metro-labs/kit/icon';
 import { ListView } from '@metro-labs/kit/list-view';
-import { Box } from '../components/layout';
+import { Row, Col } from '../components/layout';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { usePeerProfiles } from '../lib/peerProfiles';
 import { AccountManager } from '../modules/messaging';
@@ -69,22 +69,20 @@ export default function Menu(): React.ReactElement {
   }
 
   return (
-    <Box style={{ flex: 1, backgroundColor: bg }}>
+    <Col flex={1} style={{ backgroundColor: bg }}>
       {/* Topnav: back + title, mirroring the Accounts / Search pages.
           Paints toolbarBg + absorbs the top inset so the bar reaches the edge. */}
-      <Box style={{
-        flexDirection: 'row', alignItems: 'center', gap: 8,
+      <Row style={{ alignItems: 'center', gap: 8,
         paddingHorizontal: 12, paddingTop: 8 + insets.top, paddingBottom: 10,
         borderBottomWidth: 1, borderBottomColor: border,
-        backgroundColor: toolbarBg,
-      }}>
+        backgroundColor: toolbarBg, }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={head} />
         </Pressable>
         <Title size="sm" dark={dark} color={head}>
           Menu
         </Title>
-      </Box>
+      </Row>
 
       <ScrollView
         keyboardShouldPersistTaps="handled"
@@ -99,6 +97,6 @@ export default function Menu(): React.ReactElement {
         </ListView>
       </ScrollView>
       {actions.modal}
-    </Box>
+    </Col>
   );
 }

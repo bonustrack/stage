@@ -17,7 +17,7 @@ import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import { Avatar } from '../../components/Avatar';
 import { AppModal } from '../../components/AppModal';
-import { Box } from '../../components/layout';
+import { Row, Col } from '../../components/layout';
 import { shortAddress } from '../../modules/messaging';
 import {
   usePeerProfiles, getPeerName, getPeerAvatar, getPeerAvatarCb,
@@ -50,7 +50,7 @@ export function RecipientRow({ address, pal, right, onPress }: {
         cacheBuster={getPeerAvatarCb(address)}
         style={{ backgroundColor: border }}
       />
-      <Box style={{ flex: 1, minWidth: 0 }}>
+      <Col flex={1} style={{ minWidth: 0 }}>
         <Text weight="semibold" size="md" color={head} numberOfLines={1}>
           {name}
         </Text>
@@ -59,20 +59,18 @@ export function RecipientRow({ address, pal, right, onPress }: {
             {shortAddress(address)}
           </Text>
         ) : null}
-      </Box>
+      </Col>
       {right}
     </>
   );
 
   if (!onPress) {
     return (
-      <Box style={{
-        flexDirection: 'row', alignItems: 'center', gap: 12,
+      <Row style={{ alignItems: 'center', gap: 12,
         backgroundColor: border, borderRadius: 12,
-        paddingHorizontal: 14, paddingVertical: 10,
-      }}>
+        paddingHorizontal: 14, paddingVertical: 10, }}>
         {inner}
-      </Box>
+      </Row>
     );
   }
   return (

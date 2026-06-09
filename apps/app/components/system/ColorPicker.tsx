@@ -9,7 +9,7 @@ import { fontSize } from '@metro-labs/kit/tokens';
 import { Input } from '@metro-labs/kit/input';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
-import { Box, Row } from '../layout';
+import { Box, Row, Col } from '../layout';
 import { Text } from '@metro-labs/kit/text';
 import type { GalleryPalette } from './galleryPalette';
 import { isHex } from '../../lib/colorOverrides';
@@ -49,7 +49,7 @@ function Track({ colors, thumb, onFraction, p }: {
       >
         <Row style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}>
           {colors.map((c, i) => (
-            <Box key={i} style={{ flex: 1, backgroundColor: c }} />
+            <Col flex={1} key={i} style={{ backgroundColor: c }} />
           ))}
         </Row>
         <Box
@@ -99,14 +99,14 @@ export function ColorPicker({ value, onChange, p }: {
           width: 64, height: 64, borderRadius: 14, backgroundColor: hex,
           borderWidth: 1, borderColor: p.border,
         }} />
-        <Box style={{ flex: 1 }}>
+        <Col flex={1}>
           <Text weight="semibold" size="5xl" color={p.head}>
             {hex}
           </Text>
           <Text size="xs" color={p.sub} style={{ marginTop: 2 }}>
             live preview
           </Text>
-        </Box>
+        </Col>
       </Row>
 
       <Label text="Hue" p={p} />

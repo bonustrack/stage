@@ -9,7 +9,7 @@ import { Text } from '@metro-labs/kit/text';
 /** RNGH gesture-aware FlatList so vertical scroll composes with the native-stack
  *  edge swipe-back under GestureDetectorProvider (see xmtp/[convId] for rationale). */
 import { FlatList } from 'react-native-gesture-handler';
-import { Box } from '../../components/layout';
+import { Row, Col } from '../../components/layout';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getCachedXmtpClient, getOrCreateXmtpClient, lineOfConv } from '../../modules/messaging';
@@ -77,20 +77,18 @@ export default function GroupDetail(): React.ReactElement {
   }, []);
 
   return (
-    <Box style={{ flex: 1, backgroundColor: bg }}>
+    <Col flex={1} style={{ backgroundColor: bg }}>
       {/* Floating topnav over the cover banner — mirrors ProfileScreen `route`. */}
-      <Box style={{
-        position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
+      <Row style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
         height: 44 + insets.top, paddingTop: insets.top, paddingHorizontal: 14,
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-      }}>
+        alignItems: 'center', justifyContent: 'space-between', }}>
         <Pressable onPress={() => router.back()} hitSlop={10} style={{ padding: 6 }}>
           <Icon name="arrowLeft" size={22} color={fg} />
         </Pressable>
         <Pressable onPress={() => setOverflowOpen(true)} hitSlop={10} style={{ padding: 6 }}>
           <Icon name="dotsHorizontal" size={22} color={fg} />
         </Pressable>
-      </Box>
+      </Row>
 
       <GroupProfileHeader
         insetTop={insets.top} imageUrl={imageUrl} channelId={convId ?? ''} uploadingImage={uploadingImage}
@@ -114,10 +112,8 @@ export default function GroupDetail(): React.ReactElement {
       <GroupLabelsSection line={line} p={pal} />
       <GroupGithubSection line={line} p={pal} />
       {/** MEMBERS header: label + add-member button → opens add-by-address modal. */}
-      <Box style={{
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        paddingHorizontal: 16, paddingBottom: 8,
-      }}>
+      <Row style={{ alignItems: 'center', justifyContent: 'space-between',
+        paddingHorizontal: 16, paddingBottom: 8, }}>
         <Text size="xs" color={sub}>
           MEMBERS ({members.length})
         </Text>
@@ -134,7 +130,7 @@ export default function GroupDetail(): React.ReactElement {
           <Icon name="users" size={16} color={fg} />
           <Icon name="plus" size={14} color={fg} />
         </Pressable>
-      </Box>
+      </Row>
       <FlatList
         data={members}
         extraData={profilesVersion}
@@ -171,6 +167,6 @@ export default function GroupDetail(): React.ReactElement {
         visible={viewerOpen}
         onClose={() => setViewerOpen(false)}
       />
-    </Box>
+    </Col>
   );
 }

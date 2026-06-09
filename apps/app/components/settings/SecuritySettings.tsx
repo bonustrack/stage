@@ -5,7 +5,7 @@
 
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Box } from '../layout';
+import { Col } from '../layout';
 import { DANGER, useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { AccountSecuritySection } from '../tabs/SettingsScreen.account';
 import { SystemHeader } from '../system/SystemHeader';
@@ -18,7 +18,7 @@ export function SecuritySettings(): React.ReactElement {
   const insets = useSafeAreaInsets();
 
   return (
-    <Box style={{ flex: 1, backgroundColor: bg }}>
+    <Col flex={1} style={{ backgroundColor: bg }}>
       <SystemHeader title="Security" dark={dark} fg={fg} head={head} border={border} />
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <AccountSecuritySection
@@ -27,6 +27,6 @@ export function SecuritySettings(): React.ReactElement {
           dark={dark}
         />
       </ScrollView>
-    </Box>
+    </Col>
   );
 }

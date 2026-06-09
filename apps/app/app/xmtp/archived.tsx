@@ -29,7 +29,7 @@ import { shortAddress } from '../../modules/messaging';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { usePeerProfiles, getPeerName, getPeerAvatarCb } from '../../lib/peerProfiles';
 import { ChannelRow } from '../../components/ChannelRow';
-import { Box, Col } from '../../components/layout';
+import { Col, Row } from '../../components/layout';
 
 export default function Archived(): React.ReactElement {
   const router = useRouter();
@@ -70,18 +70,16 @@ export default function Archived(): React.ReactElement {
   }, [router]);
 
   return (
-    <Box style={{ flex: 1, backgroundColor: bg }}>
-      <Box style={{
-        flexDirection: 'row', alignItems: 'center', gap: 8,
+    <Col flex={1} style={{ backgroundColor: bg }}>
+      <Row style={{ alignItems: 'center', gap: 8,
         paddingHorizontal: 12, paddingTop: 8 + insets.top, paddingBottom: 10,
         borderBottomWidth: 1, borderBottomColor: border,
-        backgroundColor: toolbarBg,
-      }}>
+        backgroundColor: toolbarBg, }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg} />
         </Pressable>
         <Title size="sm" dark={dark} color={head}>Archived</Title>
-      </Box>
+      </Row>
       <FlatList
         style={{ flex: 1 }}
         data={data}
@@ -94,6 +92,6 @@ export default function Archived(): React.ReactElement {
           </Col>
         }
       />
-    </Box>
+    </Col>
   );
 }

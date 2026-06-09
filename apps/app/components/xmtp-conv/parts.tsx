@@ -8,7 +8,7 @@ import { Pressable } from '@metro-labs/kit/pressable';
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { useRouter } from 'expo-router';
 import { Text } from '@metro-labs/kit/text';
-import { Box } from '../layout';
+import { Box, Row } from '../layout';
 import { Icon } from '@metro-labs/kit/icon';
 import { Divider } from '@metro-labs/kit/divider';
 import { GithubLogo } from '../GithubLogo';
@@ -140,13 +140,11 @@ export function BubbleActionMenu({
           pointerEvents="box-none"
         >
           {/** Emoji reaction strip — rounded pill floating above the message. */}
-          <Box style={{
-            flexDirection: 'row', alignItems: 'center', gap: 4,
+          <Row style={{ alignItems: 'center', gap: 4,
             backgroundColor: stripBg, borderRadius: 999,
             paddingHorizontal: 10, paddingVertical: 6,
             shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 6,
-            maxWidth: '100%',
-          }}>
+            maxWidth: '100%', }}>
             {expanded ? (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingRight: 4 }}>
                 {[...REACT_PRESETS, ...MORE_EMOJIS].map(e => (
@@ -175,7 +173,7 @@ export function BubbleActionMenu({
                 </Pressable>
               </>
             )}
-          </Box>
+          </Row>
 
           {/** Literal gap — the ONLY vertical space between strip and dropdown. */}
           <Box style={{ height: GAP }} pointerEvents="none" />

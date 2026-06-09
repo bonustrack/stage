@@ -13,7 +13,7 @@ import { useFonts } from 'expo-font';
 import { useEffect } from 'react';
 // eslint-disable-next-line no-restricted-imports -- raw TextInput required: this sets TextInput.defaultProps app-wide for the default font (Kit Input wraps TextInput, so the global default must target the RN primitive itself).
 import { LogBox, Text, TextInput } from 'react-native';
-import { Box } from '../components/layout';
+import { Col } from '../components/layout';
 import { Spinner } from '../components/Spinner';
 import { Onboarding } from '../components/onboarding/Onboarding';
 import { useOnboardingGate } from '../lib/onboardingSeen';
@@ -125,9 +125,9 @@ export default function RootLayout(): React.ReactElement {
   const onboarding = useOnboardingGate();
   if (!loaded || !onboarding.ready) {
     return (
-      <Box style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: bg }}>
+      <Col flex={1} style={{ alignItems: 'center', justifyContent: 'center', backgroundColor: bg }}>
         <Spinner size={28} color={dark ? '#ffffff' : '#000000'} />
-      </Box>
+      </Col>
     );
   }
   if (!onboarding.seen) return <Onboarding onDone={onboarding.finish} />;

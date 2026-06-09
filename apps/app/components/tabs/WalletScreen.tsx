@@ -16,7 +16,7 @@ import { useRouter } from 'expo-router';
 import { flash } from '../../lib/toast';
 import { usePeerProfiles } from '../../lib/peerProfiles';
 import { DANGER, useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { Box, Col, Row } from '../layout';
+import { Col, Row } from '../layout';
 import { TopnavIdentity } from '../TopnavIdentity';
 import { getNftsAcrossChains, type Nft } from '../../lib/opensea';
 import { Btn, WalletTabs, NftsView, fmtUsd, splitUsd, type WalletTab } from './WalletScreen.parts';
@@ -112,9 +112,9 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
     /** RNGH ScrollView, simultaneous with the pager Pan (panRef). Pull-to-refresh
      *  is a pure-JS onScroll gesture (usePullToRefresh) — RN's native
      *  RefreshControl stranded its spinner on Android in this nested ScrollView.
-     *  Wrapped in a flex:1 Box so the tap-to-refresh icon button can anchor to
+     *  Wrapped in a flex:1 Col so the tap-to-refresh icon button can anchor to
      *  the screen top-right (absolute), independent of scroll content. */
-    <Box style={{ flex: 1, backgroundColor: bg }}>
+    <Col flex={1} style={{ backgroundColor: bg }}>
     <CopyButton address={address} color={head} />
     <RefreshButton refreshing={refreshing} onRefresh={onRefresh} color={head} />
     <ScrollView
@@ -194,6 +194,6 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
       />
       )}
     </ScrollView>
-    </Box>
+    </Col>
   );
 }

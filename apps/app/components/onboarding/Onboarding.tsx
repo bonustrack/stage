@@ -28,7 +28,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';
-import { Box } from '../layout';
+import { Box, Row, Col } from '../layout';
 import { useEffectiveColorScheme, usePalette, withAlpha } from '../../lib/theme';
 
 interface Slide {
@@ -90,7 +90,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
   }, [index, isLast, onDone, width]);
 
   return (
-    <Box style={{ flex: 1, backgroundColor: bg }}>
+    <Col flex={1} style={{ backgroundColor: bg }}>
       <FlatList
         ref={listRef}
         data={SLIDES}
@@ -101,14 +101,11 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
         onScroll={onScroll}
         scrollEventThrottle={16}
         renderItem={({ item }) => (
-          <Box
-            style={{
-              width,
-              flex: 1,
+          <Col flex={1}
+            style={{ width,
               alignItems: 'center',
               justifyContent: 'center',
-              paddingHorizontal: 36,
-            }}
+              paddingHorizontal: 36, }}
           >
             <Box
               style={{
@@ -129,18 +126,15 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
             <Text size="xl" color={withAlpha(fg, 0.7)} style={{ lineHeight: 24, textAlign: 'center' }}>
               {item.body}
             </Text>
-          </Box>
+          </Col>
         )}
       />
 
       {/* Page dots */}
-      <Box
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'center',
+      <Row
+        style={{ justifyContent: 'center',
           gap: 8,
-          marginBottom: 24,
-        }}
+          marginBottom: 24, }}
       >
         {SLIDES.map((s, i) => (
           <Box
@@ -153,7 +147,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
             }}
           />
         ))}
-      </Box>
+      </Row>
 
       {/* Footer: Get started (last) / Next, plus Skip until the last slide */}
       <Box style={{ paddingHorizontal: 24, paddingBottom: 16 + insets.bottom, gap: 12 }}>
@@ -178,6 +172,6 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
           </Text>
         </Pressable>
       </Box>
-    </Box>
+    </Col>
   );
 }

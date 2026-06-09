@@ -5,7 +5,7 @@
 import { Linking } from 'react-native';
 
 import { Pressable } from '@metro-labs/kit/pressable';
-import { Box, Row } from '../layout';
+import { Box, Row, Col } from '../layout';
 import { Icon } from '@metro-labs/kit/icon';
 import { Text } from '@metro-labs/kit/text';
 import { GithubLogo } from '../GithubLogo';
@@ -27,7 +27,7 @@ export function GitHubLinkRow({ dark, head, sub, border, rowBg, url, title, subt
       >
         <Row gap={12} style={{ alignItems: 'center' }}>
           <GithubLogo size={22} color={head} />
-          <Box style={{ flex: 1 }}>
+          <Col flex={1}>
             <Text weight="semibold" size="md" color={head}>
               {title}
             </Text>
@@ -35,7 +35,7 @@ export function GitHubLinkRow({ dark, head, sub, border, rowBg, url, title, subt
               style={{ marginTop: 2 }}>
               {subtitle}
             </Text>
-          </Box>
+          </Col>
           <Icon name="externalLink" size={18} color={sub} />
         </Row>
       </Box>

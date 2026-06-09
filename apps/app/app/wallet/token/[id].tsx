@@ -51,12 +51,12 @@ export default function TokenDetail(): React.ReactElement {
 
   if (!r) {
     return (
-      <Box style={{ flex: 1, backgroundColor: bg }}>
+      <Col flex={1} style={{ backgroundColor: bg }}>
         <Header head={head} border={border} onBack={() => router.back()} title="Token" />
         <Col mx={16} py={40} align="center">
           <Text size="md" color={sub}>Token not found</Text>
         </Col>
-      </Box>
+      </Col>
     );
   }
 
@@ -69,7 +69,7 @@ export default function TokenDetail(): React.ReactElement {
   };
 
   return (
-    <Box style={{ flex: 1, backgroundColor: bg }}>
+    <Col flex={1} style={{ backgroundColor: bg }}>
       <Header head={head} border={border} onBack={() => router.back()} title={r.name} />
 
       {/* Token identity card — large logo with network badge, name + symbol,
@@ -149,7 +149,7 @@ export default function TokenDetail(): React.ReactElement {
           </>
         )}
       </Row>
-    </Box>
+    </Col>
   );
 }
 

@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Animated as RNAnimated, Share } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
-import { Box } from '../../components/layout';
+import { Box, Row, Col } from '../../components/layout';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardStickyView, useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
@@ -72,9 +72,9 @@ export default function XmtpConversation(): React.ReactElement {
 
   if (!convId) {
     return (
-      <Box style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: bg }}>
+      <Col flex={1} style={{ alignItems: 'center', justifyContent: 'center', backgroundColor: bg }}>
         <Text color={sub}>Missing conversation id.</Text>
-      </Box>
+      </Col>
     );
   }
 
@@ -103,12 +103,10 @@ export default function XmtpConversation(): React.ReactElement {
       </Reanimated.View>
       {/** Top nav: solid bg strip mirrors the composer footer + extends UP over the
        *  status-bar area so content sliding under the keyboard doesn't show through. */}
-      <Box style={{
-        position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
+      <Row style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
         height: 52 + insets.top, paddingTop: insets.top, backgroundColor: toolbarBg,
-        flexDirection: 'row', alignItems: 'stretch',
-        borderBottomWidth: 1, borderBottomColor: border,
-      }}>
+        alignItems: 'stretch',
+        borderBottomWidth: 1, borderBottomColor: border, }}>
         <Pressable
           onPress={() => router.replace('/')}
           style={{ paddingLeft: 14, paddingRight: 8, justifyContent: 'center' }}
@@ -139,7 +137,7 @@ export default function XmtpConversation(): React.ReactElement {
         >
           <Icon name="dotsVertical" size={22} color={fg} />
         </Pressable>
-      </Box>
+      </Row>
       {/** Fade strip below the top nav — mirrors the composer's top fade. Start it 1px
        *  higher so its solid-bg top edge overlaps the nav bottom, closing the hairline
        *  seam between the two absolute bg layers, then ramps to transparent. */}

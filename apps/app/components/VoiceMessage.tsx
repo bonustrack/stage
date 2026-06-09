@@ -10,7 +10,7 @@ import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import { Audio, AVPlaybackStatus } from 'expo-av';
-import { Box } from './layout';
+import { Row, Col } from './layout';
 import { waveformBars } from './VoiceMessage.bars';
 import { useDecodedBars } from './VoiceMessage.barsCache';
 
@@ -85,12 +85,10 @@ export function VoiceMessage({ uri }: Props): React.ReactElement {
   const label = playing || position > 0 ? fmt(position) : fmt(duration);
 
   return (
-    <Box style={{
-      flexDirection: 'row', alignItems: 'center', gap: 10,
+    <Row style={{ alignItems: 'center', gap: 10,
       paddingVertical: 7, paddingHorizontal: 9, borderRadius: 22,
       backgroundColor: ACCENT, marginBottom: 6, alignSelf: 'flex-start',
-      maxWidth: 280, minWidth: 200,
-    }}>
+      maxWidth: 280, minWidth: 200, }}>
       <Pressable onPress={() => void toggle()} hitSlop={8} style={{
         width: 34, height: 34, borderRadius: 17, backgroundColor: ON_ACCENT,
         alignItems: 'center', justifyContent: 'center',
@@ -102,27 +100,22 @@ export function VoiceMessage({ uri }: Props): React.ReactElement {
         onLayout={(ev) => setBarWidth(ev.nativeEvent.layout.width)}
         onPress={(ev) => seekTo(ev.nativeEvent.locationX)}
       >
-        <Box style={{
-          flexDirection: 'row', alignItems: 'center', height: TRACK_H, gap: 2,
-        }}>
+        <Row style={{ alignItems: 'center', height: TRACK_H, gap: 2, }}>
           {bars.map((h, i) => {
             const filled = i / bars.length <= progress;
             return (
-              <Box
+              <Col flex={1}
                 key={i}
-                style={{
-                  flex: 1,
-                  height: Math.max(3, h * TRACK_H),
+                style={{ height: Math.max(3, h * TRACK_H),
                   borderRadius: 2,
                   backgroundColor: ON_ACCENT,
-                  opacity: filled ? 1 : 0.45,
-                }}
+                  opacity: filled ? 1 : 0.45, }}
               />
             );
           })}
-        </Box>
+        </Row>
       </Pressable>
       <Text size="xs" color={ON_ACCENT} style={{ minWidth: 34, textAlign: 'right' }}>{label}</Text>
-    </Box>
+    </Row>
   );
 }

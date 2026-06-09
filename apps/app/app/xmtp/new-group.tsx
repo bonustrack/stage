@@ -28,7 +28,7 @@ import { createGroup } from '../../modules/messaging';
 import { uploadAvatar } from '../../lib/profile';
 import { flash } from '../../lib/toast';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { Box, Col } from '../../components/layout';
+import { Box, Col, Row } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
 import { MemberPicker, useMemberPicker } from './MemberPicker';
 
@@ -87,21 +87,19 @@ export default function NewGroup(): React.ReactElement {
   }, [members, name, image, creating, router]);
 
   return (
-    <Box style={{ flex: 1, backgroundColor: bg }}>
+    <Col flex={1} style={{ backgroundColor: bg }}>
       {/* Header — back button + title, consistent with other pushed screens. */}
-      <Box style={{
-        flexDirection: 'row', alignItems: 'center', gap: 8,
+      <Row style={{ alignItems: 'center', gap: 8,
         paddingHorizontal: 12, paddingTop: 8 + insets.top, paddingBottom: 10,
         borderBottomWidth: 1, borderBottomColor: border,
-        backgroundColor: toolbarBg,
-      }}>
+        backgroundColor: toolbarBg, }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg} />
         </Pressable>
         <Title size="sm" dark={dark} color={head}>
           New group
         </Title>
-      </Box>
+      </Row>
 
       <ScrollView
         contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 24 + insets.bottom }}
@@ -175,6 +173,6 @@ export default function NewGroup(): React.ReactElement {
           label={members.length > 0 ? `Create group (${members.length})` : 'Create group'}
         />
       </Box>
-    </Box>
+    </Col>
   );
 }
