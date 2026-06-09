@@ -59,7 +59,7 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
         <Box style={{ position: 'relative' }}>
           <Textarea
             ref={p.inputRef}
-            value={p.text} onChangeText={p.setText} placeholder="Ask Metro" placeholderTextColor={sub}
+            value={p.text} onChangeText={p.setText} placeholder="Message" placeholderTextColor={sub}
             autoResize={false} dark={dark}
             inputProps={{
               onContentSizeChange: (e) => p.setTextareaH(e.nativeEvent.contentSize.height),
