@@ -10,7 +10,7 @@ import { Box, Row, Col } from '../../components/layout';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardStickyView, useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { getPeerName } from '../../lib/peerProfiles';
 import { MessengerComposer } from '../../components/MessengerComposer';
@@ -31,6 +31,20 @@ import { RequestActionBar } from '../../components/RequestActionBar';
 
 export default function XmtpConversation(): React.ReactElement {
   const router = useRouter();
+  const navigation = useNavigation();
+  /** ROOT CAUSE of "swipe-to-reply doesn't follow the finger": the app-wide JS
+   *  card-stack back-gesture (app/_layout) is armed full-screen via
+   *  `gestureResponseDistance: 9999`. @react-navigation/stack's interactive pan
+   *  registers a horizontal PanGestureHandler that claims the touch on ANY
+   *  horizontal movement (it samples both directions before deciding to pop),
+   *  so on Android it swallows the bubble's leftward `Gesture.Pan()` and the
+   *  bubble never tracks the finger. Scope the back-gesture to a thin LEFT-EDGE
+   *  band on this screen only: edge swipe-back still pops, but the rest of each
+   *  row is free for the leftward swipe-to-reply pan. Restored to full-screen on
+   *  blur is unnecessary (each screen sets its own; the tab root disables it). */
+  useEffect(() => {
+    navigation.setOptions({ gestureResponseDistance: 40 });
+  }, [navigation]);
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head, bg, border } = usePalette();
   const sub = fg, rowBg = border;
