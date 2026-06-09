@@ -12,9 +12,9 @@
 import { useEffect, useState } from 'react';
 import { Text } from '@metro-labs/kit/text';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
-import { Spinner } from '../Spinner';
 import { Col, Row, Box } from '../layout';
 import { DANGER } from '../../lib/theme';
+import { WalletSpinner, WalletStatusText, WalletStatusWell } from './WalletScreen.status';
 import { shortAddress } from '../../modules/messaging';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { fetchActivityAllChains, type ActivityRow } from '../../lib/etherscan';
@@ -58,11 +58,9 @@ export function ActivityView({ address, head, sub, border, bg }: {
     return (
       <Col mx={16}>
         {priv}
-        <Col py={40} align="center">
-          <Text style={{ color: DANGER, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
-            Couldn’t load activity
-          </Text>
-        </Col>
+        <WalletStatusWell>
+          <WalletStatusText sub={sub} tone="danger">Couldn’t load activity</WalletStatusText>
+        </WalletStatusWell>
       </Col>
     );
   }
@@ -70,9 +68,9 @@ export function ActivityView({ address, head, sub, border, bg }: {
     return (
       <Col mx={16}>
         {priv}
-        <Col py={40} align="center">
-          <Spinner size={28} color={head} />
-        </Col>
+        <WalletStatusWell>
+          <WalletSpinner color={head} />
+        </WalletStatusWell>
       </Col>
     );
   }
@@ -80,11 +78,9 @@ export function ActivityView({ address, head, sub, border, bg }: {
     return (
       <Col mx={16}>
         {priv}
-        <Col py={40} align="center">
-          <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
-            No transactions yet
-          </Text>
-        </Col>
+        <WalletStatusWell>
+          <WalletStatusText sub={sub}>No transactions yet</WalletStatusText>
+        </WalletStatusWell>
       </Col>
     );
   }

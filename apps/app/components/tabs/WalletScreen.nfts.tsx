@@ -4,12 +4,11 @@
 import { Linking } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Image } from '@metro-labs/kit/image';
-import { Spinner } from '../Spinner';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import { Col, Row, Box } from '../layout';
 import { type Nft } from '../../lib/opensea';
-import { DANGER } from '../../lib/theme';
+import { WalletSpinner, WalletStatusText, WalletStatusWell } from './WalletScreen.status';
 
 /** NFT grid view — 2-column grid of the account's NFTs from OpenSea. Shows a
  *  spinner while loading, an error line on failure, an empty state when the
@@ -24,26 +23,26 @@ export function NftsView({
 }): React.ReactElement {
   if (status === 'loading' || status === 'idle') {
     return (
-      <Col mx={16} py={40} align="center">
-        <Spinner size={28} color={head} />
+      <Col mx={16}>
+        <WalletStatusWell><WalletSpinner color={head} /></WalletStatusWell>
       </Col>
     );
   }
   if (status === 'error') {
     return (
-      <Col mx={16} py={40} align="center">
-        <Text style={{ color: DANGER, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
-          Failed to load NFTs.
-        </Text>
+      <Col mx={16}>
+        <WalletStatusWell>
+          <WalletStatusText sub={sub} tone="danger">Failed to load NFTs.</WalletStatusText>
+        </WalletStatusWell>
       </Col>
     );
   }
   if (!nfts || nfts.length === 0) {
     return (
-      <Col mx={16} py={40} align="center">
-        <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
-          There are no NFTs in this wallet.
-        </Text>
+      <Col mx={16}>
+        <WalletStatusWell>
+          <WalletStatusText sub={sub}>There are no NFTs in this wallet.</WalletStatusText>
+        </WalletStatusWell>
       </Col>
     );
   }
