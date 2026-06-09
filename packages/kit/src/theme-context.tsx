@@ -10,7 +10,7 @@
  *  fallback (light) sourced from semanticPalette, so a Kit primitive rendered
  *  OUTSIDE the provider never crashes. */
 
-import { createContext, useContext, type ReactNode } from 'react';
+import { createContext, createElement, useContext, type ReactNode } from 'react';
 import { semanticPalette } from './tokens';
 
 /** The resolved palette Kit primitives read by role. Mirrors apps/app's
@@ -65,11 +65,9 @@ export interface KitThemeProviderProps {
 /** Mount once near the app root. Supplies the role-resolved palette + scheme to
  *  every Kit primitive below it. */
 export function KitThemeProvider({ value, scheme, children }: KitThemeProviderProps): React.ReactElement {
-  return (
-    <KitThemeContext.Provider value={{ palette: value, scheme }}>
-      {children}
-    </KitThemeContext.Provider>
-  );
+  // Use createElement (not JSX) so vue-tsc, which type-checks this shared kit
+  // file from apps/ui, never tries to resolve a JSX runtime ('vue/jsx-runtime').
+  return createElement(KitThemeContext.Provider, { value: { palette: value, scheme } }, children);
 }
 
 /** Read the active Kit palette + scheme. Outside a provider it falls back to the
