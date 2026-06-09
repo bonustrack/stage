@@ -8,6 +8,7 @@ import { Icon } from '@metro-labs/kit/icon';
 // eslint-disable-next-line no-restricted-imports -- type-only: rowRef measureInWindow() ref typing
 import type { View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { useGestureHandlerRef } from '@react-navigation/stack';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, runOnJS, interpolate, Extrapolation } from 'react-native-reanimated';
 import { getPeerAvatarCb } from '../lib/peerProfiles';
 import { Avatar } from './Avatar';
@@ -59,10 +60,28 @@ function MessengerBubbleBase({
    *  release. Reset on each gesture begin. */
   const crossed = useSharedValue(false);
   const fireReply = (): void => { if (!pending) onReply?.(); };
+  /** The navigator's full-screen back-pan (@react-navigation/stack, armed via
+   *  `gestureResponseDistance: 9999` in app/_layout) is an ANCESTOR
+   *  PanGestureHandler. By RNGH's default arbitration it competes with this
+   *  child reply pan and, being an ancestor that samples horizontal movement
+   *  first, cancels the bubble's leftward drag before `activeOffsetX(-15)` can
+   *  arm it - that's why swipe-to-reply stopped firing once back went
+   *  full-screen. react-navigation/stack exposes its PanGestureHandler ref via
+   *  `useGestureHandlerRef()` precisely so children can COMPOSE with it. We mark
+   *  the reply pan `.simultaneousWithExternalGesture(navGestureRef)` so RNGH lets
+   *  both run together instead of one cancelling the other. They then separate
+   *  cleanly by sign: rightward arms only the navigator back-pan
+   *  (`failOffsetX(15)` bails reply), leftward arms only this reply pan, vertical
+   *  goes to the list (`failOffsetY`). */
+  /** `useGestureHandlerRef()` is typed as the broad `React.Ref` union (callback |
+   *  object | null), but the Stack provider always supplies a RefObject; narrow it
+   *  to the object form RNGH's `simultaneousWithExternalGesture` accepts. */
+  const navGestureRef = useGestureHandlerRef() as React.RefObject<React.ComponentType | undefined>;
   const replyPan = useMemo(() => Gesture.Pan()
     .activeOffsetX(-15)
     .failOffsetX(15)
     .failOffsetY([-12, 12])
+    .simultaneousWithExternalGesture(navGestureRef)
     .onBegin(() => { crossed.value = false; })
     .onChange(e => {
       // Bubble follows the finger leftward; clamp at the trigger then add
@@ -84,7 +103,7 @@ function MessengerBubbleBase({
       swipeX.value = withSpring(0, { damping: 18, stiffness: 220 });
     }),
     // fireReply/lightHaptic close over onReply+pending; recreate when they change.
-    [onReply, pending, swipeX, crossed]);
+    [onReply, pending, swipeX, crossed, navGestureRef]);
   const swipeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: swipeX.value }] }));
   /** Reply arrow that fades + scales in behind the bubble as it's pulled left,
    *  reaching full opacity at the trigger point (Telegram-style affordance). */
