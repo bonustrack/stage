@@ -13,6 +13,7 @@ import { cmdCall, cmdTrains, cmdTunnel, cmdWebhook } from './webhook.js';
 import {
   cmdDelete, cmdEdit, cmdRead, cmdReact, cmdReply, cmdSend, cmdUnreact,
 } from './messaging.js';
+import { cmdSessions, cmdWhoami } from './whoami.js';
 import {
   flagOne, isJson, parseArgs, writeJson, type ExitErr, type Flags,
 } from './util.js';
@@ -39,6 +40,9 @@ Usage:
   metro setup skill [clear]                   Install/remove the metro skill into ~/.claude / ~/.codex.
   metro doctor                                Health check.
   metro lines                                 List recently-seen conversations.
+  metro whoami [--json]                       Show the resolved identity: owner URI, account
+                                              per station, and the --strict tail command.
+  metro session list [--json]                 List sessions.json bindings (read-only).
   metro trains [list]                         List supervised trains (running, pid, fail count).
   metro trains restart <name>                 Kill + respawn a train (resets backoff).
   metro trains new <name>                     Scaffold ~/.metro/trains/<name>.ts from the example.
@@ -142,8 +146,17 @@ function fmtActor(uri: string, name?: string): string {
 const shortId = (s: string): string => s.length <= 12 ? s : `${s.slice(0, 5)}…${s.slice(-4)}`;
 const pad = (s: string, n: number): string => (s.length > n ? `${s.slice(0, n - 1)}…` : s.padEnd(n));
 
+/** `metro session list` (read-only). Only `list` is supported in this layer — no */
+/** mutation commands, so live routing can't change. */
+async function cmdSession(p: string[], f: Flags): Promise<void> {
+  const sub = p[0] ?? 'list';
+  if (sub !== 'list') { process.stderr.write(`unknown 'metro session ${sub}' — only 'list' is supported\n`); process.exit(1); }
+  await cmdSessions(p.slice(1), f);
+}
+
 const COMMANDS: Record<string, (positional: string[], flags: Flags) => Promise<void>> = {
   setup: cmdSetup, doctor: cmdDoctor, lines: cmdLines,
+  whoami: cmdWhoami, session: cmdSession,
   call: cmdCall, trains: cmdTrains,
   send: cmdSend, reply: cmdReply, react: cmdReact, unreact: cmdUnreact,
   edit: cmdEdit, delete: cmdDelete, read: cmdRead,
