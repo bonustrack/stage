@@ -17,7 +17,7 @@ import { flash } from '../../lib/toast';
 import { usePeerProfiles } from '../../lib/peerProfiles';
 import { DANGER, useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { Col, Row } from '../layout';
-import { TopnavIdentity } from '../TopnavIdentity';
+import { Topnav } from '../Topnav';
 import { getNftsAcrossChains, type Nft } from '../../lib/opensea';
 import { Btn, WalletTabs, NftsView, fmtUsd, splitUsd, type WalletTab } from './WalletScreen.parts';
 import { PrivateView } from './WalletScreen.private';
@@ -115,8 +115,16 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
      *  Wrapped in a flex:1 Col so the tap-to-refresh icon button can anchor to
      *  the screen top-right (absolute), independent of scroll content. */
     <Col surface="surface" flex={1}>
-    <CopyButton address={address} color={head}/>
-    <RefreshButton refreshing={refreshing} onRefresh={onRefresh} color={head}/>
+    {/* Sticky shared Topnav: identity left, wallet actions (copy / refresh) right.
+        Lives OUTSIDE the ScrollView so it stays pinned while balances scroll. */}
+    <Topnav
+      right={
+        <>
+          <CopyButton address={address} color={head}/>
+          <RefreshButton refreshing={refreshing} onRefresh={onRefresh} color={head}/>
+        </>
+      }
+/>
     <ScrollView
       simultaneousHandlers={panRef}
       style={{ flex: 1, backgroundColor: bg }}
@@ -138,8 +146,6 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
       scrollEventThrottle={pull.scrollEventThrottle}
 >
       {pull.indicator}
-      {/* Topnav identity (avatar + name → Menu), left-aligned to match Home. */}
-      <Row padding={{ x: 16, top: 12, bottom: 4 }} align="center" surface="toolbar"><TopnavIdentity /></Row>
       {/* Value card — compact, left-aligned: just the big total USD value.
           Decimals render in the dim `sub` colour to keep the dollars prominent. */}
       <Col padding={{ top: 20, bottom: 16 }} margin={{ x: 16 }} align="start">

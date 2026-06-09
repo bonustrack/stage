@@ -7,8 +7,8 @@ import { useState } from 'react';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { FlatList } from 'react-native-gesture-handler';
 import { Icon } from '@metro-labs/kit/icon';
-import { TopnavIdentity } from '../TopnavIdentity';
-import { Box, Row } from '../layout';
+import { Topnav } from '../Topnav';
+import { Box } from '../layout';
 import { Text } from '@metro-labs/kit/text';
 import { CHANNELS_SCROLL_KEY, saveScrollOffset } from '../../lib/scrollPos';
 import { useEffectiveColorScheme } from '../../lib/theme';
@@ -92,56 +92,46 @@ export function ChannelsList({
 />
         </Box>
       ) : (
-        <Row padding={{ x: 16, top: 12, bottom: 10 }}
-          align="center"
-          justify="between"
-          
-          
-          
-          surface="toolbar"
-          style={{ borderBottomWidth: 1, borderBottomColor: border }}
+        // Shared Topnav bar (identity left) with Home's contextual actions right.
+        <Topnav
+          right={
+            <>
+              {/* Search sits just before the requests icon: opens the full-width
+               *  search field over the topnav (tap-to-expand + back chevron
+               *  behavior unchanged). */}
+              <Pressable onPress={() => setSearchOpen(true)} hitSlop={8}>
+                <Icon name="search" size={24} color={head}/>
+              </Pressable>
+              {/* Message requests: inbox icon + count badge (pending 'unknown'
+               *  consent convs). Badge hidden when 0; tap opens the requests list. */}
+              <Pressable onPress={() => router.push('/xmtp/requests')} hitSlop={8} style={{ position: 'relative' }}>
+                <Icon name="inbox" size={24} color={head}/>
+                {requestCount> 0 ? (
+                  <Box minWidth={16} height={16} padding={{ x: 5 }}
+                    radius="full"
+                    background={badgeBg}
+                    align="center"
+                    justify="center"
+                    style={{ position: 'absolute', top: -6, right: -8 }}
 >
-          <Row align="center" gap={8}>
-            {/* Avatar + name → Menu page; shared TopnavIdentity. */}
-            <TopnavIdentity/>
-          </Row>
-          <Row align="center" gap={18}>
-            {/* Search sits just before the requests icon: opens the full-width
-             *  search field over the topnav (tap-to-expand + back chevron
-             *  behavior unchanged). */}
-            <Pressable onPress={() => setSearchOpen(true)} hitSlop={8}>
-              <Icon name="search" size={24} color={head}/>
-            </Pressable>
-            {/* Message requests: inbox icon + count badge (pending 'unknown'
-             *  consent convs). Badge hidden when 0; tap opens the requests list. */}
-            <Pressable onPress={() => router.push('/xmtp/requests')} hitSlop={8} style={{ position: 'relative' }}>
-              <Icon name="inbox" size={24} color={head}/>
-              {requestCount> 0 ? (
-                <Box minWidth={16} height={16} padding={{ x: 5 }}
-                  
-                  radius="full"
-                  background={badgeBg}
-                  align="center"
-                  justify="center"
-                  style={{ position: 'absolute', top: -6, right: -8 }}
->
-                  <Text weight="semibold" size="3xs" color={badgeFg}>
-                    {requestCount> 99 ? '99+' : requestCount}
-                  </Text>
-                </Box>
-              ) : null}
-            </Pressable>
-            {/* Overflow (3-dot) menu: folds the former Archived + New-group icons
-             *  into a single kebab to declutter the topnav. */}
-            <HomeOverflowMenu
-              color={head}
-              onArchived={() => router.push('/xmtp/archived')}
-              onNewGroup={() => router.push('/xmtp/new-group')}
-              onEditProfile={() => router.push('/profile')}
-              onSettings={() => router.push('/settings')}
+                    <Text weight="semibold" size="3xs" color={badgeFg}>
+                      {requestCount> 99 ? '99+' : requestCount}
+                    </Text>
+                  </Box>
+                ) : null}
+              </Pressable>
+              {/* Overflow (3-dot) menu: folds the former Archived + New-group icons
+               *  into a single kebab to declutter the topnav. */}
+              <HomeOverflowMenu
+                color={head}
+                onArchived={() => router.push('/xmtp/archived')}
+                onNewGroup={() => router.push('/xmtp/new-group')}
+                onEditProfile={() => router.push('/profile')}
+                onSettings={() => router.push('/settings')}
 />
-          </Row>
-        </Row>
+            </>
+          }
+/>
       )}
       <FlatList
         ref={listRef}

@@ -12,7 +12,7 @@ import type { SimultaneousRefs } from '../SwipeTabs.types';
 import { Text } from '@metro-labs/kit/text';
 import { Title } from '@metro-labs/kit/title';
 import { Box, Col, Row } from '../layout';
-import { TopnavIdentity } from '../TopnavIdentity';
+import { Topnav } from '../Topnav';
 import { usePalette } from '../../lib/theme';
 import { NotificationsList } from './NotificationsList';
 import { useRequestPreviews } from './useRequestPreviews';
@@ -33,12 +33,12 @@ export function NotificationsScreen({ panRef }: { panRef?: SimultaneousRefs } = 
   );
 
   return (
+    <Col surface="surface" flex={1}>
+    {/* Sticky shared Topnav (identity → Menu). Outside the ScrollView so it
+        stays pinned while the notifications list scrolls underneath. */}
+    <Topnav/>
     <ScrollView simultaneousHandlers={panRef} style={{ flex: 1, backgroundColor: bg }} contentContainerStyle={{ flexGrow: 1 }}>
-      {/* Topnav identity (avatar + name → Menu), left-aligned to match Home. */}
-      <Row padding={{ x: 16, top: 12, bottom: 4 }} align="center" surface="toolbar">
-        <TopnavIdentity/>
-      </Row>
-      <Col padding={{ x: 16, top: 4, bottom: 8 }}>
+      <Col padding={{ x: 16, top: 12, bottom: 8 }}>
         <Row align="center" gap={10}>
           <Title size="md" color={head}>Notifications</Title>
           {unread> 0 ? (
@@ -57,5 +57,6 @@ export function NotificationsScreen({ panRef }: { panRef?: SimultaneousRefs } = 
         </Col>
       ) : null}
     </ScrollView>
+    </Col>
   );
 }

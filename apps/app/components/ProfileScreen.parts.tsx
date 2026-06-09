@@ -12,7 +12,7 @@ import { usePalette, useBlockRadius, type Palette } from '../lib/theme';
 import { getCachedXmtpClient, getOrCreateXmtpClient } from '../modules/messaging';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';
-import { TopnavIdentity } from './TopnavIdentity';
+import { Topnav } from './Topnav';
 
 export type ProfileColors = Palette;
 
@@ -48,27 +48,34 @@ export function ProfileHeader({ variant, insetTop, isSelf, onBack, onMenu, c }: 
   variant: 'tab' | 'route'; insetTop: number; isSelf: boolean;
   onBack: () => void; onMenu: () => void; c: ProfileColors;
 }): React.ReactElement {
+  /** Tab variant uses the shared Topnav (identity left, edit-menu kebab right) so
+   *  its bar/structure/height/border match Home and the other tabs exactly. The
+   *  route variant stays a floating absolute header over the full-bleed cover. */
+  if (variant === 'tab') {
+    return (
+      <Topnav
+        right={isSelf ? (
+          <Pressable onPress={onMenu} hitSlop={8}>
+            <Icon name="dotsHorizontal" size={24} color={c.link}/>
+          </Pressable>
+        ) : undefined}
+/>
+    );
+  }
   return (
     <Row
       align="center"
       justify="between"
-      /* eslint-disable no-restricted-syntax -- spread of a variant-conditional style branch; padding can't be a static layout prop here. */
-      style={{ ...(variant === 'route'
-        ? {
-          position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
-          height: 44 + insetTop, paddingTop: insetTop, paddingHorizontal: 14,
-        }
-        : { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8, backgroundColor: c.toolbarBg }) }}
+      /* eslint-disable no-restricted-syntax -- absolute floating header over the cover; offsets can't be static layout props. */
+      style={{
+        position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
+        height: 44 + insetTop, paddingTop: insetTop, paddingHorizontal: 14,
+      }}
       /* eslint-enable no-restricted-syntax */
 >
-      {variant === 'route' ? (
-        <Pressable onPress={onBack} hitSlop={10} style={{ padding: 6 }}>
-          <Icon name="arrowLeft" size={22} color={c.link}/>
-        </Pressable>
-      ) : (
-        // Tab variant: avatar + name → Menu, matching the Home topnav identity.
-        <TopnavIdentity/>
-      )}
+      <Pressable onPress={onBack} hitSlop={10} style={{ padding: 6 }}>
+        <Icon name="arrowLeft" size={22} color={c.link}/>
+      </Pressable>
       {isSelf ? (
         <Pressable onPress={onMenu} hitSlop={8} style={{ padding: 6 }}>
           <Icon name="dotsHorizontal" size={22} color={c.link}/>
