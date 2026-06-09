@@ -13,6 +13,7 @@
     "./tokens": "./src/tokens.ts",
     "./icons": "./src/icons.ts",
     "./theme": "./src/theme.ts",
+    "./theme-context": "./src/theme-context.tsx",
     "./avatar": "./src/avatar.ts",
     "./layout": "./src/layout.ts",
     "./button": "./src/button.tsx",

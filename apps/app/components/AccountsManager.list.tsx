@@ -33,12 +33,16 @@ export function AccountList({
           ACCOUNTS
         </Text>
       ) : null}
-      <Box style={flat ? {
-        backgroundColor: 'transparent',
-      } : {
-        marginHorizontal: 16, borderRadius: 12, overflow: 'hidden',
-        borderWidth: 1, borderColor: border, backgroundColor: rowBg,
-      }}>
+      <Box
+        /* eslint-disable no-restricted-syntax -- conditional style branch (flat ? ... : ...); marginHorizontal can't be a static layout prop here. */
+        style={flat ? {
+          backgroundColor: 'transparent',
+        } : {
+          marginHorizontal: 16, borderRadius: 12, overflow: 'hidden',
+          borderWidth: 1, borderColor: border, backgroundColor: rowBg,
+        }}
+        /* eslint-enable no-restricted-syntax */
+>
         {flat ? (
           /* Flat mode (modal) — EVERY account as a row, all visible at once,
              active one highlighted. No collapse/dropdown. */
@@ -48,7 +52,7 @@ export function AccountList({
             </Text>
           ) : (
             accounts.map((a, i) => (
-              <Box key={a.id} style={{ backgroundColor: a.id === activeId ? border : 'transparent' }}>
+              <Box background={a.id === activeId ? border : 'transparent'} key={a.id}>
                 <AccountRow
                   rec={a}
                   topBorder={i > 0}
@@ -57,10 +61,10 @@ export function AccountList({
                   head={head} sub={sub} border={border}
                   trailing={
                     a.id === activeId
-                      ? <Icon name="check" size={20} color={head} />
+                      ? <Icon name="check" size={20} color={head}/>
                       : manageTrailing(a.id)
                   }
-                />
+/>
               </Box>
             ))
           )
@@ -75,7 +79,7 @@ export function AccountList({
               onLongPress={() => setManageId(activeRec.id)}
               head={head} sub={sub} border={border}
               trailing={<Icon name={expanded ? 'chevronUp' : 'chevronDown'} size={20} color={sub} />}
-            />
+/>
           ) : accounts.length === 0 ? (
             <Text size="xs" color={sub} style={{ padding: 14 }}>
               No accounts yet.
@@ -96,7 +100,7 @@ export function AccountList({
                 onLongPress={() => setManageId(a.id)}
                 head={head} sub={sub} border={border}
                 trailing={manageTrailing(a.id)}
-              />
+/>
             )) : null}
             <Pressable
               onPress={() => setAddOpen(true)}
@@ -106,9 +110,9 @@ export function AccountList({
                 borderTopWidth: 1, borderTopColor: border,
                 backgroundColor: pressed ? border : 'transparent',
               })}
-            >
-              <Box style={{ width: 28, height: 28, borderRadius: 999, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: sub, borderStyle: 'dashed' }}>
-                <Icon name="plus" size={16} color={sub} />
+>
+              <Box width={28} height={28} radius="full" align="center" justify="center" style={{ borderWidth: 1, borderColor: sub, borderStyle: 'dashed' }}>
+                <Icon name="plus" size={16} color={sub}/>
               </Box>
               <Text weight="semibold" size="md" color={head}>Add account</Text>
             </Pressable>

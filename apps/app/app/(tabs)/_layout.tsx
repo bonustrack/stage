@@ -24,7 +24,6 @@ export default function TabsLayout(): React.ReactElement {
   const pagerVisible = !pathname.startsWith('/settings');
   const insets = useSafeAreaInsets();
   const pal = usePalette();
-  const bg = pal.bg; // #0e0f10 / #ffffff
   const active = pal.link; // #ffffff / #000000
   // inactive nav icon = muted; no `muted` token yet → map to `text`. TODO: muted token.
   const inactive = pal.text;
@@ -47,18 +46,15 @@ export default function TabsLayout(): React.ReactElement {
   const tabBarHeight = 60 + insets.bottom;
 
   return (
-    <Col flex={1} style={{ backgroundColor: bg }}>
+    <Col surface="surface" flex={1}>
       {/* Status-bar inset filler: paint the top safe-area (behind the Android
           system icons) with toolbarBg so the tab topnavs - which start below
           insets.top - extend seamlessly to the very top edge. Sits under the
           pager overlay; toolbarBg matches the topnav fill below it. */}
-      <Box
+      <Box height={insets.top} surface="toolbar"
         pointerEvents="none"
-        style={{
-          position: 'absolute', top: 0, left: 0, right: 0,
-          height: insets.top, backgroundColor: pal.toolbarBg, zIndex: 1,
-        }}
-      />
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 1 }}
+/>
       {/* `Tabs` stays mounted as the ROUTING + tab-bar source of truth: deep
           links to /wallet etc. resolve, the URL is correct, and the active
           highlight is router-driven. The route scenes themselves render
@@ -74,7 +70,7 @@ export default function TabsLayout(): React.ReactElement {
           tabBarInactiveTintColor: inactive,
           tabBarShowLabel: false,
         }}
-      >
+>
         {(
           [
             ['index', 'chatBubble'],
@@ -88,7 +84,7 @@ export default function TabsLayout(): React.ReactElement {
             name={name}
             options={{
               tabBarIcon: ({ color, focused }) => (
-                <Icon name={icon} size={26} color={color} focused={focused} />
+                <Icon name={icon} size={26} color={color} focused={focused}/>
               ),
               // Messenger tab (index) shows the total unread-count badge.
               ...(name === 'index'
@@ -106,11 +102,11 @@ export default function TabsLayout(): React.ReactElement {
                   }
                 : {}),
             }}
-          />
+/>
         ))}
         {/* Settings is reachable only from the Menu page now - keep the route
             (so /menu can navigate to /settings) but hide it from the bar. */}
-        <Tabs.Screen name="settings" options={{ href: null }} />
+        <Tabs.Screen name="settings" options={{ href: null }}/>
       </Tabs>
       {/* Pager overlay — covers the scene area (status-bar inset at top, stops
           above the tab bar at the bottom) so the tab bar keeps its taps. */}
@@ -124,8 +120,8 @@ export default function TabsLayout(): React.ReactElement {
             right: 0,
             bottom: tabBarHeight,
           }}
-        >
-          <TabsPager />
+>
+          <TabsPager/>
         </Box>
       ) : null}
     </Col>

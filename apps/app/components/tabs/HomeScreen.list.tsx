@@ -89,44 +89,44 @@ export function ChannelsList({
             sub={sub}
             inputBg={inputBg}
             toolbarBg={toolbarBg}
-          />
+/>
         </Box>
       ) : (
-        <Row
+        <Row padding={{ x: 16, top: 12, bottom: 10 }}
           align="center"
           justify="between"
-          px={16}
-          pt={12}
-          pb={10}
-          bg={toolbarBg}
+          
+          
+          
+          surface="toolbar"
           style={{ borderBottomWidth: 1, borderBottomColor: border }}
-        >
+>
           <Row align="center" gap={8}>
             {/* Avatar + name → Menu page; shared TopnavIdentity. */}
-            <TopnavIdentity />
+            <TopnavIdentity/>
           </Row>
           <Row align="center" gap={18}>
             {/* Search sits just before the requests icon: opens the full-width
              *  search field over the topnav (tap-to-expand + back chevron
              *  behavior unchanged). */}
             <Pressable onPress={() => setSearchOpen(true)} hitSlop={8}>
-              <Icon name="search" size={24} color={head} />
+              <Icon name="search" size={24} color={head}/>
             </Pressable>
             {/* Message requests: inbox icon + count badge (pending 'unknown'
              *  consent convs). Badge hidden when 0; tap opens the requests list. */}
             <Pressable onPress={() => router.push('/xmtp/requests')} hitSlop={8} style={{ position: 'relative' }}>
-              <Icon name="inbox" size={24} color={head} />
-              {requestCount > 0 ? (
-                <Box
-                  px={5}
-                  radius={999}
-                  bg={badgeBg}
+              <Icon name="inbox" size={24} color={head}/>
+              {requestCount> 0 ? (
+                <Box minWidth={16} height={16} padding={{ x: 5 }}
+                  
+                  radius="full"
+                  background={badgeBg}
                   align="center"
                   justify="center"
-                  style={{ position: 'absolute', top: -6, right: -8, minWidth: 16, height: 16 }}
-                >
+                  style={{ position: 'absolute', top: -6, right: -8 }}
+>
                   <Text weight="semibold" size="3xs" color={badgeFg}>
-                    {requestCount > 99 ? '99+' : requestCount}
+                    {requestCount> 99 ? '99+' : requestCount}
                   </Text>
                 </Box>
               ) : null}
@@ -139,7 +139,7 @@ export function ChannelsList({
               onNewGroup={() => router.push('/xmtp/new-group')}
               onEditProfile={() => router.push('/profile')}
               onSettings={() => router.push('/settings')}
-            />
+/>
           </Row>
         </Row>
       )}
@@ -185,16 +185,16 @@ export function ChannelsList({
             onToggle={onToggleLabel}
             onToggleUnread={onToggleUnread}
             onClearAll={onClearAll}
-          />
+/>
         }
         ListEmptyComponent={query.trim() ? null : <HomeEmpty sub={sub} />}
         ListFooterComponent={
           query.trim()
-            ? <HomeContactResults query={query} c={{ fg, head, sub, border }} noChannels={sortedRows.length === 0} />
+            ? <HomeContactResults query={query} c={{ fg, head, sub, border }} noChannels={sortedRows.length === 0}/>
             : null
         }
         renderItem={renderRow}
-      />
+/>
     </>
   );
 }

@@ -35,15 +35,15 @@ export function MemberRow({
         borderBottomWidth: 1, borderBottomColor: border,
         opacity: isRemovingThis ? 0.5 : 1,
       })}
-    >
+>
       <Avatar
         address={item}
         imageUri={getPeerAvatar(item)}
         cacheBuster={getPeerAvatarCb(item)}
         size="md"
         style={{ backgroundColor: border }}
-      />
-      <Col flex={1} style={{ minWidth: 0 }}>
+/>
+      <Col minWidth={0} flex={1}>
         <Text weight="semibold" size="md" color={head} numberOfLines={1}>
           {name || shortAddress(item)}{isSelf ? ' (you)' : ''}
         </Text>
@@ -54,12 +54,9 @@ export function MemberRow({
         ) : null}
       </Col>
       {role && role !== 'member' ? (
-        <Box style={{
-          paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999,
-          backgroundColor: role === 'owner'
+        <Box radius="full" background={role === 'owner'
             ? (dark ? 'rgba(45,212,191,0.18)' : 'rgba(13,148,136,0.12)')
-            : border, // #282a2d / #e4e4e5
-        }}>
+            : border} padding={{ x: 8, y: 2 }}>
           <Text size="3xs" color={role === 'owner' ? (dark ? '#2dd4bf' : '#0d9488') : sub}>{role === 'owner' ? 'Owner' : 'Admin'}</Text>
         </Box>
       ) : null}
@@ -72,8 +69,8 @@ export function MemberRow({
             padding: 6, borderRadius: 999,
             backgroundColor: pressed ? (dark ? '#3a1820' : '#fbe3e8') : 'transparent',
           })}
-        >
-          <Icon name="trash" size={18} color={DANGER} />
+>
+          <Icon name="trash" size={18} color={DANGER}/>
         </Pressable>
       )}
     </Pressable>
@@ -105,7 +102,7 @@ export function AddMemberModal({
             borderWidth: 1, borderColor: border, borderRadius: 10,
             paddingHorizontal: 12, paddingVertical: 10, fontSize: fontSize('md'), marginBottom: 10,
           }}
-        />
+/>
         <Button
           variant="primary"
           size="md"
@@ -116,7 +113,7 @@ export function AddMemberModal({
           tintBg={primary}
           tintFg={bg}
           label={adding ? 'Adding…' : 'Add member'}
-        />
+/>
       </Box>
     </AppModal>
   );
@@ -129,13 +126,13 @@ export function OverflowModal({
 }): React.ReactElement {
   return (
     <AppModal visible={visible} onClose={onClose}>
-      <Box style={{ gap: 4 }}>
+      <Box gap={4}>
         <Pressable
           onPress={onLeave}
           disabled={leaving}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, opacity: leaving ? 0.5 : 1 }}
-        >
-          <Icon name="arrowLeft" size={20} color={DANGER} />
+>
+          <Icon name="arrowLeft" size={20} color={DANGER}/>
           <Text size="md" color={DANGER}>
             {leaving ? 'Leaving…' : 'Leave group'}
           </Text>

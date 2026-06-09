@@ -18,27 +18,24 @@ import { AccountsManager } from '../components/AccountsManager';
 export default function Accounts(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border, toolbarBg } = usePalette();
+  const { text: fg, link: head, border } = usePalette();
   const insets = useSafeAreaInsets();
 
   return (
-    <Col flex={1} style={{ backgroundColor: bg }}>
+    <Col surface="surface" flex={1}>
       {/* Topnav: back + title, mirroring the search page. Paints toolbarBg +
           absorbs the top inset so the bar reaches the screen edge. */}
-      <Row style={{ alignItems: 'center', gap: 8,
-        paddingHorizontal: 12, paddingTop: 8 + insets.top, paddingBottom: 10,
-        borderBottomWidth: 1, borderBottomColor: border,
-        backgroundColor: toolbarBg, }}>
+      <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
-          <Icon name="arrowLeft" size={22} color={fg} />
+          <Icon name="arrowLeft" size={22} color={fg}/>
         </Pressable>
-        <Title size="sm" dark={dark} color={head}>
+        <Title size="sm" color={head}>
           Accounts
         </Title>
       </Row>
 
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}>
-        <AccountsManager dark={dark} flat onSwitched={() => router.back()} />
+        <AccountsManager dark={dark} flat onSwitched={() => router.back()}/>
       </ScrollView>
     </Col>
   );

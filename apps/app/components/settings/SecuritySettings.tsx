@@ -12,20 +12,20 @@ import { SystemHeader } from '../system/SystemHeader';
 
 export function SecuritySettings(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border } = usePalette();
+  const { text: fg, link: head, border } = usePalette();
   const sub = fg;
   const rowBg = border;
   const insets = useSafeAreaInsets();
 
   return (
-    <Col flex={1} style={{ backgroundColor: bg }}>
-      <SystemHeader title="Security" dark={dark} fg={fg} head={head} border={border} />
+    <Col surface="surface" flex={1}>
+      <SystemHeader title="Security" dark={dark} fg={fg} head={head} border={border}/>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <AccountSecuritySection
           c={{ fg, head, sub, border, rowBg }}
           danger={DANGER}
           dark={dark}
-        />
+/>
       </ScrollView>
     </Col>
   );

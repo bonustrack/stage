@@ -102,7 +102,7 @@ export function MessengerComposer({
   useComposerDrafts(convId, text, setText);
   useComposerFocus(inputRef, replyingTo?.id, replyingTo?.nonce, autoFocusNonce);
 
-  const hasContent = text.trim().length > 0 || pending.length > 0; // text or any pending attachment
+  const hasContent = text.trim().length> 0 || pending.length> 0; // text or any pending attachment
 
   const { matches: mentionMatches, range: mentionRange } = computeMentions(text, selection.start, mentionCandidates);
   const pickMention = (c: { address: string; name: string }): void => {
@@ -123,25 +123,25 @@ export function MessengerComposer({
 
   const bg = pal.bg; // #0e0f10 / #ffffff
   return (
-    <Col px={0} pt={0} pb={0} bg={bg}>
+    <Col padding={{ x: 0, top: 0, bottom: 0 }} surface="surface">
       {/** 24px fade sits directly above the composer; bleeds full-width to the
        *   screen edges (composer is edge-to-edge, no horizontal inset). */}
-      <ComposerGradient bg={bg} direction="down" top={-24} height={24} left={0} right={0} />
+      <ComposerGradient bg={bg} direction="down" top={-24} height={24} left={0} right={0}/>
       {replyingTo ? (
         <ReplyBanner
           dark={dark} sub={sub} sender={replyingTo.sender} onClear={onClearReply}
           onPress={onJumpToReply ? () => onJumpToReply(replyingTo.id) : undefined}
-        />
+/>
       ) : null}
       {/** @-mention popup — Discord-style, stacked above the composer. */}
-      {mentionRange && mentionMatches.length > 0 ? (
-        <MentionPopup dark={dark} head={head} sub={sub} matches={mentionMatches} onPick={pickMention} />
+      {mentionRange && mentionMatches.length> 0 ? (
+        <MentionPopup dark={dark} head={head} sub={sub} matches={mentionMatches} onPick={pickMention}/>
       ) : null}
-      {pending.length > 0 ? (
+      {pending.length> 0 ? (
         <PendingRow
           fg={fg} sub={sub} chipBg={chipBg} pending={pending}
           onRemove={(i) => setPending(prev => prev.filter((_, j) => j !== i))}
-        />
+/>
       ) : null}
       {uploading || err ? (
         <Text size="2xs" color={err ? DANGER : sub} style={{ paddingHorizontal: 14, paddingBottom: 4 }}>
@@ -163,14 +163,14 @@ export function MessengerComposer({
         onCancelRec={() => void actions.cancelRec()}
         onStopRec={() => void actions.stopRec()}
         onSend={() => void actions.send()}
-      />
+/>
       {/** Attach menu — horizontally-scrollable row of circular icon+label buttons. */}
       {attachMenuOpen ? (
         <AttachMenu
           head={head} inputBg={inputBg} chipBg={chipBg}
           onClose={() => setAttachMenuOpen(() => false)}
           actions={attachActions}
-        />
+/>
       ) : null}
       <PollSheet
         open={pollOpen} onClose={() => setPollOpen(false)} palette={palette} dark={dark}
@@ -179,7 +179,7 @@ export function MessengerComposer({
         options={pollOptions} setOptions={setPollOptions}
         multi={pollMulti} setMulti={setPollMulti}
         onSend={() => void actions.sendPoll()}
-      />
+/>
       <SignatureSheet
         open={sigOpen} onClose={() => setSigOpen(false)} palette={palette} dark={dark}
         kind={sigKind} setKind={setSigKind}
@@ -187,14 +187,14 @@ export function MessengerComposer({
         message={sigMessage} setMessage={setSigMessage}
         json={sigJson} setJson={setSigJson}
         onSend={() => void actions.sendSignatureRequest()}
-      />
+/>
       <PaymentSheet
         open={txOpen} onClose={() => setTxOpen(false)} palette={palette} dark={dark}
         to={txTo} setTo={setTxTo}
         amount={txAmount} setAmount={setTxAmount}
         note={txNote} setNote={setTxNote}
         onSend={() => void actions.sendTxRequest()}
-      />
+/>
     </Col>
   );
 }

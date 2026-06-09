@@ -43,30 +43,20 @@ function Track({ colors, thumb, onFraction, p }: {
   // Stepped gradient via N stacked flex slices (no native gradient dep).
   return (
     <GestureDetector gesture={gesture}>
-      <Box
+      <Box height={TRACK_H} radius={TRACK_H / 2}
         onLayout={(e) => { widthRef.current = e.nativeEvent.layout.width || 1; }}
-        style={{ height: TRACK_H, borderRadius: TRACK_H / 2, overflow: 'hidden', justifyContent: 'center' }}
-      >
+        justify="center" style={{ overflow: 'hidden' }}
+>
         <Row style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}>
           {colors.map((c, i) => (
-            <Col flex={1} key={i} style={{ backgroundColor: c }} />
+            <Col background={c} flex={1} key={i}/>
           ))}
         </Row>
-        <Box
+        <Box width={22} height={22} radius="md" background={'transparent'} margin={{ left: -11 }}
           pointerEvents="none"
-          style={{
-            position: 'absolute', left: `${thumb * 100}%`, marginLeft: -11,
-            width: 22, height: 22, borderRadius: 11,
-            borderWidth: 3, borderColor: '#ffffff',
-            backgroundColor: 'transparent',
-            shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 2,
-            elevation: 3,
-          }}
-        />
-        <Box pointerEvents="none" style={{
-          position: 'absolute', left: 0, right: 0, top: 0, bottom: 0,
-          borderRadius: TRACK_H / 2, borderWidth: 1, borderColor: p.border,
-        }} />
+          style={{ position: 'absolute', left: `${thumb * 100}%`, borderWidth: 3, borderColor: '#ffffff', shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 2, elevation: 3 }}
+/>
+        <Box radius={TRACK_H / 2} pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderWidth: 1, borderColor: p.border }}/>
       </Box>
     </GestureDetector>
   );
@@ -94,11 +84,8 @@ export function ColorPicker({ value, onChange, p }: {
 
   return (
     <Box>
-      <Row gap={14} style={{ alignItems: 'center' }}>
-        <Box style={{
-          width: 64, height: 64, borderRadius: 14, backgroundColor: hex,
-          borderWidth: 1, borderColor: p.border,
-        }} />
+      <Row gap={14} align="center">
+        <Box width={64} height={64} radius="lg" background={hex} style={{ borderWidth: 1, borderColor: p.border }}/>
         <Col flex={1}>
           <Text weight="semibold" size="5xl" color={p.head}>
             {hex}
@@ -109,17 +96,17 @@ export function ColorPicker({ value, onChange, p }: {
         </Col>
       </Row>
 
-      <Label text="Hue" p={p} />
+      <Label text="Hue" p={p}/>
       <Track colors={hueStops()} thumb={hsv.h / 360} p={p}
-        onFraction={(f) => apply(f * 360, hsv.s, hsv.v)} />
-      <Label text="Saturation" p={p} />
+        onFraction={(f) => apply(f * 360, hsv.s, hsv.v)}/>
+      <Label text="Saturation" p={p}/>
       <Track colors={satStops} thumb={hsv.s} p={p}
-        onFraction={(f) => apply(hsv.h, f, hsv.v)} />
-      <Label text="Value" p={p} />
+        onFraction={(f) => apply(hsv.h, f, hsv.v)}/>
+      <Label text="Value" p={p}/>
       <Track colors={valStops} thumb={hsv.v} p={p}
-        onFraction={(f) => apply(hsv.h, hsv.s, f)} />
+        onFraction={(f) => apply(hsv.h, hsv.s, f)}/>
 
-      <Label text="Hex" p={p} />
+      <Label text="Hex" p={p}/>
       <Input
         value={text ?? hex}
         onChangeText={(t) => {
@@ -136,7 +123,7 @@ export function ColorPicker({ value, onChange, p }: {
           color: text != null && !isHex(text) ? '#eb4c5b' : p.head,
           fontSize: fontSize('md'), fontFamily: 'Calibre-Medium',
         }}
-      />
+/>
     </Box>
   );
 }

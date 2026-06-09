@@ -49,14 +49,14 @@ export function ProfileSocialLinks({ profile, c }: {
   if (present.length === 0) return null;
 
   return (
-    <Box style={{ gap: 10, marginHorizontal: 16, marginTop: 16 }}>
+    <Box margin={{ x: 16, top: 16 }} gap={10}>
       {present.map(k => (
         <Pressable
           key={k}
           hitSlop={8}
           onPress={() => { void Linking.openURL(urlFor(k, profile[k] as string)); }}
         >
-          <Row style={{ alignItems: 'center', gap: 8 }}>
+          <Row align="center" gap={8}>
             <BrandIcon name={ICON[k]} size={18} color={c.text} />
             <Text color={c.text}>{labelFor(k, profile[k] as string)}</Text>
           </Row>

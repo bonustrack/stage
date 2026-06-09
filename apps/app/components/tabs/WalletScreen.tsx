@@ -32,7 +32,7 @@ import { useWalletBalances } from './WalletScreen.balances';
 
 export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const router = useRouter();
-  const { link: head, text: sub, bg, border, toolbarBg } = usePalette();
+  const { link: head, text: sub, bg, border } = usePalette();
   const dark = useEffectiveColorScheme() === 'dark';
 
   const { snapshot: privSnapshot, accountId: privAccountId, pending } = usePrivateWallet(true);
@@ -114,9 +114,9 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
      *  RefreshControl stranded its spinner on Android in this nested ScrollView.
      *  Wrapped in a flex:1 Col so the tap-to-refresh icon button can anchor to
      *  the screen top-right (absolute), independent of scroll content. */
-    <Col flex={1} style={{ backgroundColor: bg }}>
-    <CopyButton address={address} color={head} />
-    <RefreshButton refreshing={refreshing} onRefresh={onRefresh} color={head} />
+    <Col surface="surface" flex={1}>
+    <CopyButton address={address} color={head}/>
+    <RefreshButton refreshing={refreshing} onRefresh={onRefresh} color={head}/>
     <ScrollView
       simultaneousHandlers={panRef}
       style={{ flex: 1, backgroundColor: bg }}
@@ -136,13 +136,13 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
       onScrollBeginDrag={pull.onScrollBeginDrag}
       onScrollEndDrag={pull.onScrollEndDrag}
       scrollEventThrottle={pull.scrollEventThrottle}
-    >
+>
       {pull.indicator}
       {/* Topnav identity (avatar + name → Menu), left-aligned to match Home. */}
-      <Row align="center" px={16} pt={12} pb={4} bg={toolbarBg}><TopnavIdentity /></Row>
+      <Row padding={{ x: 16, top: 12, bottom: 4 }} align="center" surface="toolbar"><TopnavIdentity /></Row>
       {/* Value card — compact, left-aligned: just the big total USD value.
           Decimals render in the dim `sub` colour to keep the dollars prominent. */}
-      <Col mx={16} pt={20} pb={16} align="start">
+      <Col padding={{ top: 20, bottom: 16 }} margin={{ x: 16 }} align="start">
         {err ? (
           <Text size="xs" color={DANGER}>
             Couldn’t load balances
@@ -160,30 +160,30 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
       {/* Four action circles — Send / Receive route to existing screens;
           Swap / Buy are placeholders (no on/off-ramp wired yet) and flash a
           "coming soon" toast. LEFT-aligned on a single row (icon-over-label). */}
-      <Row justify="start" gap={12} mx={16} mt={12}>
-        <Btn icon="send" label="Send" onPress={() => router.push('/wallet/send')} head={head} border={border} dark={dark} />
-        <Btn icon="arrowDown" label="Receive" onPress={() => router.push('/wallet/receive')} head={head} border={border} dark={dark} />
-        <Btn icon="switchHorizontal" label="Swap" onPress={() => flash('Swap — coming soon')} head={head} border={border} dark={dark} />
-        <Btn icon="creditCard" label="Buy" onPress={() => flash('Buy — coming soon')} head={head} border={border} dark={dark} />
+      <Row margin={{ x: 16, top: 12 }} justify="start" gap={12}>
+        <Btn icon="send" label="Send" onPress={() => router.push('/wallet/send')} head={head} border={border} dark={dark}/>
+        <Btn icon="arrowDown" label="Receive" onPress={() => router.push('/wallet/receive')} head={head} border={border} dark={dark}/>
+        <Btn icon="switchHorizontal" label="Swap" onPress={() => flash('Swap — coming soon')} head={head} border={border} dark={dark}/>
+        <Btn icon="creditCard" label="Buy" onPress={() => flash('Buy — coming soon')} head={head} border={border} dark={dark}/>
       </Row>
 
-      <WalletTabs tab={tab} setTab={setTab} head={head} sub={sub} border={border} />
+      <WalletTabs tab={tab} setTab={setTab} head={head} sub={sub} border={border}/>
 
       {tab === 'private' ? (
-        <PrivateView head={head} sub={sub} border={border} />
+        <PrivateView head={head} sub={sub} border={border}/>
       ) : tab === 'nfts' ? (
-        <NftsView status={nftStatus} nfts={nfts} head={head} sub={sub} border={border} />
+        <NftsView status={nftStatus} nfts={nfts} head={head} sub={sub} border={border}/>
       ) : tab === 'activity' ? (
-        <ActivityView address={address} head={head} sub={sub} border={border} bg={bg} />
+        <ActivityView address={address} head={head} sub={sub} border={border} bg={bg}/>
       ) : err ? (
-        <Col mx={16} py={40} align="center">
+        <Col padding={{ y: 40 }} margin={{ x: 16 }} align="center">
           <Text size="md" color={DANGER}>
             Couldn’t load tokens
           </Text>
         </Col>
       ) : rows === null ? (
-        <Col mx={16} py={40} align="center">
-          <Spinner size={28} color={head} />
+        <Col padding={{ y: 40 }} margin={{ x: 16 }} align="center">
+          <Spinner size={28} color={head}/>
         </Col>
       ) : (
       /* Asset list — ONE flat list (see WalletScreen.tokens: merged public +
@@ -191,7 +191,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
       <TokensList
         rows={rows} privateRows={privateRows} pending={pending}
         head={head} sub={sub} border={border} bg={bg}
-      />
+/>
       )}
     </ScrollView>
     </Col>

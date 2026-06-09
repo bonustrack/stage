@@ -124,7 +124,7 @@ export function useDrawerAccountActions({ head, sub, border, dark, onChanged }: 
         {err ? (
           <Text size="xs" color={DANGER} style={{ marginBottom: 8 }}>{err}</Text>
         ) : null}
-        <Row style={{ gap: 8 }}>
+        <Row gap={8}>
           <Button
             variant="secondary" size="md" fullWidth dark={dark} label="Paste" style={{ flex: 1 }}
             onPress={() => void (async () => {

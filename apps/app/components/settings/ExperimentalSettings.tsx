@@ -25,22 +25,22 @@ const ROWS: { href: Href; label: string; icon: HeroIconName }[] = [
 export function ExperimentalSettings(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border } = usePalette();
+  const { text: fg, link: head, border } = usePalette();
   const sub = fg;
   const insets = useSafeAreaInsets();
 
   return (
-    <Col flex={1} style={{ backgroundColor: bg }}>
-      <SystemHeader title="Experimental" dark={dark} fg={fg} head={head} border={border} />
+    <Col surface="surface" flex={1}>
+      <SystemHeader title="Experimental" dark={dark} fg={fg} head={head} border={border}/>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <ListView dark={dark}>
           {ROWS.map((row) => (
             <ListViewItem key={row.href} dark={dark} onPress={() => router.push(row.href)}>
-              <Icon name={row.icon} size={22} color={head} />
+              <Icon name={row.icon} size={22} color={head}/>
               <Col flex={1}>
                 <Text size="xl" color={head}>{row.label}</Text>
               </Col>
-              <Icon name="chevronRight" size={18} color={sub} />
+              <Icon name="chevronRight" size={18} color={sub}/>
             </ListViewItem>
           ))}
           {/** Reset the first-launch onboarding flag so the carousel shows again on
@@ -48,7 +48,7 @@ export function ExperimentalSettings(): React.ReactElement {
             *  re-evaluates `onboarding.seen` reactively, so flipping it here
             *  immediately swaps the app for the Onboarding flow. */}
           <ListViewItem dark={dark} onPress={() => { void setOnboardingSeen(false); }}>
-            <Icon name="sparkles" size={22} color={head} />
+            <Icon name="sparkles" size={22} color={head}/>
             <Col flex={1}>
               <Text size="xl" color={head}>Replay onboarding</Text>
             </Col>

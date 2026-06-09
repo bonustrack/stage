@@ -37,8 +37,8 @@ function SuggestionChip({ label, busy, onAdd, p }: {
         backgroundColor: p.rowBg,
         opacity: busy ? 0.5 : pressed ? 0.7 : 1,
       })}
-    >
-      <Icon name="plus" size={12} color={p.sub} />
+>
+      <Icon name="plus" size={12} color={p.sub}/>
       <Text size="xs" color={p.fg}>{label}</Text>
     </Pressable>
   );
@@ -51,13 +51,10 @@ function LabelChip({ label, busy, onRemove, p }: {
   label: string; busy: boolean; onRemove: () => void; p: Pal;
 }): React.ReactElement {
   return (
-    <Row style={{ alignItems: 'center', gap: 6,
-      paddingLeft: 12, paddingRight: 8, paddingVertical: 6, borderRadius: 999,
-      backgroundColor: p.rowBg,
-      opacity: busy ? 0.5 : 1, }}>
+    <Row radius="full" surface="raised" padding={{ y: 6, right: 8, left: 12 }} align="center" gap={6} style={{ opacity: busy ? 0.5 : 1 }}>
       <Text size="xs" color={p.fg}>{label}</Text>
       <Pressable onPress={onRemove} disabled={busy} hitSlop={8} style={{ padding: 2 }}>
-        <Icon name="x" size={14} color={p.sub} />
+        <Icon name="x" size={14} color={p.sub}/>
       </Pressable>
     </Row>
   );
@@ -114,14 +111,14 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
   );
 
   return (
-    <Box style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
-      <Row style={{ alignItems: 'center', gap: 6 }}>
-        <Icon name="tag" size={13} color={sub} />
+    <Box padding={{ x: 16, bottom: 16 }}>
+      <Row align="center" gap={6}>
+        <Icon name="tag" size={13} color={sub}/>
         <Text size="xs" color={sub}>LABELS</Text>
       </Row>
 
-      {labels.length > 0 ? (
-        <Row style={{ flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+      {labels.length> 0 ? (
+        <Row margin={{ top: 10 }} gap={8} style={{ flexWrap: 'wrap' }}>
           {labels.map((label) => (
             <LabelChip
               key={label.toLowerCase()}
@@ -129,13 +126,13 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
               busy={removing === label}
               onRemove={() => { void remove(label); }}
               p={p}
-            />
+/>
           ))}
         </Row>
       ) : null}
 
       {!atCap ? (
-        <Row style={{ alignItems: 'center', gap: 8, marginTop: 10 }}>
+        <Row margin={{ top: 10 }} align="center" gap={8}>
           <Input
             value={draft}
             onChangeText={setDraft}
@@ -149,7 +146,7 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
               borderWidth: 1, borderColor: border, borderRadius: 10,
               paddingHorizontal: 10, paddingVertical: 8, fontSize: fontSize('md'),
             }}
-          />
+/>
           <Pressable
             onPress={() => { void add(draft); }}
             disabled={busy || !draft.trim()}
@@ -161,7 +158,7 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
               opacity: busy || !draft.trim() ? 0.5 : 1,
               backgroundColor: pressed ? border : 'transparent',
             })}
-          >
+>
             {busy ? <Spinner size={14} color={fg} /> : <Icon name="plus" size={14} color={fg} />}
             <Text size="xs" color={fg}>Add</Text>
           </Pressable>
@@ -172,8 +169,8 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
         </Text>
       )}
 
-      {!atCap && suggestions.length > 0 ? (
-        <Row style={{ flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+      {!atCap && suggestions.length> 0 ? (
+        <Row margin={{ top: 10 }} gap={8} style={{ flexWrap: 'wrap' }}>
           {suggestions.map((label) => (
             <SuggestionChip
               key={label.toLowerCase()}
@@ -181,7 +178,7 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
               busy={busy}
               onAdd={() => { void add(label); }}
               p={p}
-            />
+/>
           ))}
         </Row>
       ) : null}

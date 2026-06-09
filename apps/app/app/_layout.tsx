@@ -22,6 +22,7 @@ import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { TransitionPresets, TransitionSpecs } from '@react-navigation/stack';
 import { NativeSwipeStack } from '../components/NativeSwipeStack';
 import { useEffectiveColorScheme, usePalette, useRadius } from '../lib/theme';
+import { KitThemeProvider } from '@metro-labs/kit/theme-context';
 import { useDeepLinks } from '../lib/deepLinks';
 import { useRestoreLastRoute } from '../lib/lastRoute';
 import { usePushDeepLinks } from '../lib/push';
@@ -67,7 +68,21 @@ function isDarkBg(hex: string): boolean {
   return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.5;
 }
 
+/** THEME-NATIVE root: mount the Kit theme provider ONCE here (alongside the
+ *  existing useRadius/useOverridesVersion wiring) so every Kit primitive below
+ *  resolves its colours by role from the live palette. Reuses the SAME
+ *  usePalette() global-variable source (overrides included) - no fork. */
 export default function RootLayout(): React.ReactElement {
+  const scheme = useEffectiveColorScheme();
+  const palette = usePalette();
+  return (
+    <KitThemeProvider value={palette} scheme={scheme}>
+      <RootLayoutInner />
+    </KitThemeProvider>
+  );
+}
+
+function RootLayoutInner(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { bg, toolbarBg } = usePalette();
   // Wire the persisted button radius token into the kit Button default + repaint
@@ -125,8 +140,8 @@ export default function RootLayout(): React.ReactElement {
   const onboarding = useOnboardingGate();
   if (!loaded || !onboarding.ready) {
     return (
-      <Col flex={1} style={{ alignItems: 'center', justifyContent: 'center', backgroundColor: bg }}>
-        <Spinner size={28} color={dark ? '#ffffff' : '#000000'} />
+      <Col surface="surface" flex={1} align="center" justify="center">
+        <Spinner size={28} color={dark ? '#ffffff' : '#000000'}/>
       </Col>
     );
   }
@@ -137,7 +152,7 @@ export default function RootLayout(): React.ReactElement {
     <WalletConnectProvider>
     <GestureHandlerRootView style={{ flex: 1 }}>
       <KeyboardProvider>
-      <StatusBar style={barStyle} translucent backgroundColor="transparent" />
+      <StatusBar style={barStyle} translucent backgroundColor="transparent"/>
       {/** @react-navigation/stack JS card stack (via NativeSwipeStack /
        *   withLayoutContext). SWIPE-BACK: the JS stack's `gestureEnabled` pan +
        *   `TransitionPresets.SlideFromRightIOS` (forHorizontalIOS) finger-follow
@@ -184,12 +199,12 @@ export default function RootLayout(): React.ReactElement {
             close: TransitionSpecs.TransitionIOSSpec,
           },
         }}
-      >
+>
         {/** Tab root: no transition (it's the bottom of the stack). */}
         <NativeSwipeStack.Screen
           name="(tabs)"
           options={{ animationEnabled: false, gestureEnabled: false }}
-        />
+/>
       </NativeSwipeStack>
       </KeyboardProvider>
     </GestureHandlerRootView>

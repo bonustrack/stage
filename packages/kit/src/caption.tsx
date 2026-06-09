@@ -6,6 +6,7 @@
 import { Text as RNText, type TextStyle } from 'react-native';
 import { type ReactNode } from 'react';
 import { resolveColorToken, type ColorToken } from './tokens';
+import { useKitPalette, useKitScheme } from './theme-context';
 
 export type CaptionSize = 'sm' | 'md';
 export type CaptionWeight = 'normal' | 'medium' | 'semibold';
@@ -41,17 +42,12 @@ export interface CaptionProps {
   truncate?: boolean;
   /** ChatKit: maxLines. Caps the line count. */
   maxLines?: number;
-  /** Effective color scheme. Pass useEffectiveColorScheme() === 'dark'. */
-  dark: boolean;
   /** Escape-hatch style merged last. */
   style?: TextStyle | TextStyle[];
 }
 
-function subColor(dark: boolean): string {
-  return dark ? '#7a7a7e' : '#8a929d';
-}
-
-/** ChatKit-style RN caption / section label. */
+/** ChatKit-style RN caption / section label. THEME-NATIVE: defaults to the
+ *  palette `sub` (secondary grey) from the Kit theme provider. */
 export function Caption(props: CaptionProps): React.ReactElement {
   const {
     value,
@@ -62,14 +58,16 @@ export function Caption(props: CaptionProps): React.ReactElement {
     color,
     truncate,
     maxLines,
-    dark,
     style,
   } = props;
 
+  const palette = useKitPalette();
+  const scheme = useKitScheme();
+
   const base: TextStyle = {
     color: color != null
-      ? resolveColorToken(color, dark ? 'dark' : 'light')
-      : subColor(dark),
+      ? resolveColorToken(color, scheme)
+      : palette.sub,
     fontSize: SIZE[size],
     fontFamily: FONT[weight],
     textAlign: ALIGN[textAlign],

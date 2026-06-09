@@ -80,37 +80,31 @@ export function VoiceMessage({ uri }: Props): React.ReactElement {
   };
 
   /** 0..1 playback progress; controls how many bars are "filled". */
-  const progress = duration > 0 ? Math.min(position / duration, 1) : 0;
+  const progress = duration> 0 ? Math.min(position / duration, 1) : 0;
   /** Show elapsed while playing, otherwise total (mirrors Messenger). */
-  const label = playing || position > 0 ? fmt(position) : fmt(duration);
+  const label = playing || position> 0 ? fmt(position) : fmt(duration);
 
   return (
-    <Row style={{ alignItems: 'center', gap: 10,
-      paddingVertical: 7, paddingHorizontal: 9, borderRadius: 22,
-      backgroundColor: ACCENT, marginBottom: 6, alignSelf: 'flex-start',
-      maxWidth: 280, minWidth: 200, }}>
+    <Row radius="2xl" background={ACCENT} maxWidth={280} minWidth={200} padding={{ x: 9, y: 7 }} margin={{ bottom: 6 }} align="center" gap={10} style={{ alignSelf: 'flex-start' }}>
       <Pressable onPress={() => void toggle()} hitSlop={8} style={{
         width: 34, height: 34, borderRadius: 17, backgroundColor: ON_ACCENT,
         alignItems: 'center', justifyContent: 'center',
       }}>
-        <Icon name={playing ? 'pause' : 'play'} size={18} color={ACCENT} />
+        <Icon name={playing ? 'pause' : 'play'} size={18} color={ACCENT}/>
       </Pressable>
       <Pressable
         style={{ flex: 1, height: TRACK_H, justifyContent: 'center' }}
         onLayout={(ev) => setBarWidth(ev.nativeEvent.layout.width)}
         onPress={(ev) => seekTo(ev.nativeEvent.locationX)}
-      >
-        <Row style={{ alignItems: 'center', height: TRACK_H, gap: 2, }}>
+>
+        <Row height={TRACK_H} align="center" gap={2}>
           {bars.map((h, i) => {
             const filled = i / bars.length <= progress;
             return (
-              <Col flex={1}
+              <Col height={Math.max(3, h * TRACK_H)} radius="2xs" background={ON_ACCENT} flex={1}
                 key={i}
-                style={{ height: Math.max(3, h * TRACK_H),
-                  borderRadius: 2,
-                  backgroundColor: ON_ACCENT,
-                  opacity: filled ? 1 : 0.45, }}
-              />
+                style={{ opacity: filled ? 1 : 0.45 }}
+/>
             );
           })}
         </Row>

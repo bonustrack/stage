@@ -101,14 +101,14 @@ export function ImageViewer({ uri, visible, onClose }: {
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Col flex={1} style={{ backgroundColor: 'rgba(0,0,0,0.97)' }}>
+      <Col background={'rgba(0,0,0,0.97)'} flex={1}>
         {/* Tap the backdrop (anywhere not on a control) to dismiss. */}
         <Pressable
           onPress={onClose}
           style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
-        >
+>
           {uri ? (
-            <Image src={uri} style={{ width: '100%', height: '100%' }} fit="contain" />
+            <Image src={uri} style={{ width: '100%', height: '100%' }} fit="contain"/>
           ) : null}
         </Pressable>
 
@@ -117,12 +117,12 @@ export function ImageViewer({ uri, visible, onClose }: {
           onPress={onClose}
           style={{ position: 'absolute', top: 48, right: 20, padding: 10 }}
           hitSlop={10}
-        >
-          <Icon name="x" size={28} color="#ffffff" />
+>
+          <Icon name="x" size={28} color="#ffffff"/>
         </Pressable>
 
         {/* Download — bottom-center pill. */}
-        <Box style={{ position: 'absolute', bottom: 48, left: 0, right: 0, alignItems: 'center' }}>
+        <Box align="center" style={{ position: 'absolute', bottom: 48, left: 0, right: 0 }}>
           <Pressable
             onPress={() => { void onDownload(); }}
             disabled={saving}
@@ -132,9 +132,9 @@ export function ImageViewer({ uri, visible, onClose }: {
               backgroundColor: 'rgba(255,255,255,0.14)',
               opacity: pressed ? 0.7 : saving ? 0.6 : 1,
             })}
-          >
+>
             {saving
-              ? <Spinner size={20} color="#ffffff" />
+              ? <Spinner size={20} color="#ffffff"/>
               : <Icon name="arrowDownTray" size={18} color="#ffffff" />}
             <Text weight="semibold" size="md" color={'#ffffff'}>
               {saving ? 'Saving…' : 'Download'}

@@ -113,7 +113,6 @@ export function MemberPicker({ state, dark, exclude = [] }: {
   exclude?: string[];
 }): React.ReactElement {
   const { link: head, text: sub, border, inputBg } = usePalette();
-  const rowBg = border;
   const {
     members, entry, setEntry, adding, addMember, removeMember,
     toggleContact, selectedAddresses,
@@ -141,7 +140,7 @@ export function MemberPicker({ state, dark, exclude = [] }: {
               backgroundColor: inputBg, borderRadius: 12, paddingHorizontal: 14,
               paddingVertical: 12, borderWidth: 1, borderColor: border, minHeight: 0,
             }}
-          />
+/>
           <Button
             variant="secondary"
             size="md"
@@ -150,7 +149,7 @@ export function MemberPicker({ state, dark, exclude = [] }: {
             disabled={!entry.trim()}
             onPress={() => { void addMember(); }}
             label="Add"
-          />
+/>
         </Row>
       </Col>
 
@@ -159,22 +158,19 @@ export function MemberPicker({ state, dark, exclude = [] }: {
         contacts={contacts}
         selected={selectedAddresses}
         onToggle={toggleContact}
-      />
+/>
 
       {/* Member chips */}
-      {members.length > 0 && (
+      {members.length> 0 && (
         <Col gap={8}>
           {members.map(m => (
-            <Row
+            <Row surface="raised" radius="lg" padding={8}
               key={m.address}
               align="center"
               gap={10}
-              style={{
-                backgroundColor: rowBg, borderRadius: 12, padding: 8,
-                borderWidth: 1, borderColor: border,
-              }}
-            >
-              <Avatar address={m.address} size={32} style={{ backgroundColor: border }} />
+              style={{ borderWidth: 1, borderColor: border }}
+>
+              <Avatar address={m.address} size={32} style={{ backgroundColor: border }}/>
               <Col flex={1} gap={1}>
                 <Text size="md" numberOfLines={1} color={head}>
                   {m.label}
@@ -189,8 +185,8 @@ export function MemberPicker({ state, dark, exclude = [] }: {
                 onPress={() => removeMember(m.address)}
                 hitSlop={6}
                 style={{ width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: border }}
-              >
-                <Icon name="x" size={16} color={sub} />
+>
+                <Icon name="x" size={16} color={sub}/>
               </Pressable>
             </Row>
           ))}

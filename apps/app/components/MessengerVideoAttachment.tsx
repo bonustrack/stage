@@ -8,14 +8,14 @@ import { Box } from './layout';
 
 export function MessengerVideoAttachment({ uri }: { uri: string }): React.ReactElement {
   return (
-    <Box style={{ width: 220, borderRadius: 10, overflow: 'hidden', marginBottom: 6, backgroundColor: '#000' }}>
+    <Box width={220} radius="md" background={'#000'} margin={{ bottom: 6 }} style={{ overflow: 'hidden' }}>
       <Video
         source={{ uri }}
         style={{ width: '100%', height: 280 }}
         useNativeControls
         resizeMode={ResizeMode.CONTAIN}
         shouldPlay={false}
-      />
+/>
     </Box>
   );
 }

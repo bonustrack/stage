@@ -90,7 +90,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
   }, [index, isLast, onDone, width]);
 
   return (
-    <Col flex={1} style={{ backgroundColor: bg }}>
+    <Col surface="surface" flex={1}>
       <FlatList
         ref={listRef}
         data={SLIDES}
@@ -101,24 +101,13 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
         onScroll={onScroll}
         scrollEventThrottle={16}
         renderItem={({ item }) => (
-          <Col flex={1}
-            style={{ width,
-              alignItems: 'center',
-              justifyContent: 'center',
-              paddingHorizontal: 36, }}
-          >
-            <Box
-              style={{
-                width: 128,
-                height: 128,
-                borderRadius: 64,
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: withAlpha(accent, 0.12),
-                marginBottom: 40,
-              }}
-            >
-              <Icon name={item.icon} size={56} color={accent} />
+          <Col width={width} padding={{ x: 36 }} flex={1}
+            align="center" justify="center" 
+>
+            <Box width={128} height={128} radius="4xl" background={withAlpha(accent, 0.12)} margin={{ bottom: 40 }}
+              align="center" justify="center" 
+>
+              <Icon name={item.icon} size={56} color={accent}/>
             </Box>
             <Text weight="semibold" size="6xl" color={fg} style={{ textAlign: 'center', marginBottom: 14 }}>
               {item.title}
@@ -128,29 +117,22 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
             </Text>
           </Col>
         )}
-      />
+/>
 
       {/* Page dots */}
-      <Row
-        style={{ justifyContent: 'center',
-          gap: 8,
-          marginBottom: 24, }}
-      >
+      <Row margin={{ bottom: 24 }}
+        justify="center" gap={8} 
+>
         {SLIDES.map((s, i) => (
-          <Box
+          <Box width={i === index ? 22 : 8} height={8} radius="xs" background={i === index ? accent : withAlpha(fg, 0.2)}
             key={s.title}
-            style={{
-              width: i === index ? 22 : 8,
-              height: 8,
-              borderRadius: 4,
-              backgroundColor: i === index ? accent : withAlpha(fg, 0.2),
-            }}
-          />
+            
+/>
         ))}
       </Row>
 
       {/* Footer: Get started (last) / Next, plus Skip until the last slide */}
-      <Box style={{ paddingHorizontal: 24, paddingBottom: 16 + insets.bottom, gap: 12 }}>
+      <Box padding={{ x: 24, bottom: 16 + insets.bottom }} gap={12}>
         <Button
           dark={dark}
           variant="primary"
@@ -160,13 +142,13 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
           tintFg={bg}
           label={isLast ? 'Get started' : 'Next'}
           onPress={goNext}
-        />
+/>
         <Pressable
           onPress={onDone}
           accessibilityRole="button"
           style={{ alignItems: 'center', paddingVertical: 8, opacity: isLast ? 0 : 1 }}
           disabled={isLast}
-        >
+>
           <Text size="md" color={withAlpha(fg, 0.6)}>
             Skip
           </Text>

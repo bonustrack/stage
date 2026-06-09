@@ -46,7 +46,7 @@ function findRow(rows: AssetRow[], sel: TokenChoice): AssetRow | undefined {
  *  hide zero/empty-balance tokens from the selector. */
 function hasBalance(r: AssetRow): boolean {
   const n = Number.parseFloat(r.balance);
-  return Number.isFinite(n) && n > 0;
+  return Number.isFinite(n) && n> 0;
 }
 
 /** USD value of a row = balance × per-unit price. Rows with no price (CoinGecko
@@ -122,7 +122,7 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
   const selected = findRow(rows, value);
 
   return (
-    <Box style={{ gap: 6 }}>
+    <Box gap={6}>
       <Text size="xs" color={sub}>{label}</Text>
       <Pressable
         onPress={() => setOpen(true)}
@@ -132,25 +132,21 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
           paddingHorizontal: 14, paddingVertical: 12,
           opacity: pressed ? 0.7 : 1,
         })}
-      >
-        <Box style={{ width: 28, height: 28 }}>
+>
+        <Box width={28} height={28}>
           <Image
             src={selected?.logoUrl ?? ''}
             style={{ width: 28, height: 28, borderRadius: 999, backgroundColor: bg }}
-          />
-          <Box style={{
-            position: 'absolute', right: -3, bottom: -3, width: 15, height: 15,
-            borderRadius: 999, borderWidth: 2, borderColor: border, backgroundColor: bg,
-            overflow: 'hidden',
-          }}>
+/>
+          <Box width={15} height={15} radius="full" surface="surface" style={{ position: 'absolute', right: -3, bottom: -3, borderWidth: 2, borderColor: border, overflow: 'hidden' }}>
             <Image
               src={NETWORK_LOGO[value.chainId] ?? MAINNET_NETWORK_LOGO}
               fit="cover" style={{ width: '100%', height: '100%' }}
-            />
+/>
           </Box>
         </Box>
-        <Col flex={1} style={{ minWidth: 0 }}>
-          <Row align="center" gap={6} style={{ minWidth: 0 }}>
+        <Col minWidth={0} flex={1}>
+          <Row minWidth={0} align="center" gap={6}>
             {value.isPrivate ? <Icon name="shieldCheck" size={14} color={sub} /> : null}
             <Text weight="semibold" size="md" color={head} numberOfLines={1}>
               {value.symbol}
@@ -160,7 +156,7 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
             {selected ? `Balance: ${selected.balance}` : '—'}
           </Text>
         </Col>
-        <Icon name="chevronDown" size={18} color={fg} />
+        <Icon name="chevronDown" size={18} color={fg}/>
       </Pressable>
 
       <AppModal visible={open} onClose={() => setOpen(false)}>
@@ -168,8 +164,8 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
           Select token
         </Text>
         {loading ? (
-          <Row align="center" justify="center" py={24}>
-            <Spinner size={28} color={fg} />
+          <Row padding={{ y: 24 }} align="center" justify="center">
+            <Spinner size={28} color={fg}/>
           </Row>
         ) : rows.length === 0 ? (
           <Text size="md" color={sub} style={{ paddingVertical: 16 }}>
@@ -181,7 +177,7 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
               key={`${r.isPrivate ? 'priv' : 'pub'}:${r.chainId}:${r.symbol}`}
               r={r} head={head} sub={sub} border={border} bg={bg}
               onPress={() => { onChange({ symbol: r.symbol, chainId: r.chainId, isPrivate: r.isPrivate }); setOpen(false); }}
-            />
+/>
           ))
         )}
       </AppModal>

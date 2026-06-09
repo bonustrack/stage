@@ -40,7 +40,7 @@ interface PickedImage { uri: string; mime: string; name: string }
 export default function NewGroup(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border, primary, inputBg, toolbarBg } = usePalette();
+  const { text: fg, link: head, bg, border, primary, inputBg } = usePalette();
   const sub = fg;
   const rowBg = border;
   const insets = useSafeAreaInsets();
@@ -87,16 +87,13 @@ export default function NewGroup(): React.ReactElement {
   }, [members, name, image, creating, router]);
 
   return (
-    <Col flex={1} style={{ backgroundColor: bg }}>
+    <Col surface="surface" flex={1}>
       {/* Header — back button + title, consistent with other pushed screens. */}
-      <Row style={{ alignItems: 'center', gap: 8,
-        paddingHorizontal: 12, paddingTop: 8 + insets.top, paddingBottom: 10,
-        borderBottomWidth: 1, borderBottomColor: border,
-        backgroundColor: toolbarBg, }}>
+      <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
-          <Icon name="arrowLeft" size={22} color={fg} />
+          <Icon name="arrowLeft" size={22} color={fg}/>
         </Pressable>
-        <Title size="sm" dark={dark} color={head}>
+        <Title size="sm" color={head}>
           New group
         </Title>
       </Row>
@@ -104,9 +101,9 @@ export default function NewGroup(): React.ReactElement {
       <ScrollView
         contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 24 + insets.bottom }}
         keyboardShouldPersistTaps="handled"
-      >
+>
         {/* Group image (optional) — tap to pick, square preview. */}
-        <Box style={{ alignItems: 'center', gap: 8 }}>
+        <Box align="center" gap={8}>
           <Pressable onPress={() => { void pickImage(); }} disabled={creating} hitSlop={8}>
             {image ? (
               <Image
@@ -115,18 +112,15 @@ export default function NewGroup(): React.ReactElement {
                   width: 88, height: 88, borderRadius: Math.round(88 * 0.12),
                   backgroundColor: rowBg, opacity: creating ? 0.5 : 1,
                 }}
-              />
+/>
             ) : (
-              <Box style={{
-                width: 88, height: 88, borderRadius: Math.round(88 * 0.12), backgroundColor: rowBg,
-                borderWidth: 1, borderColor: border, alignItems: 'center', justifyContent: 'center',
-              }}>
+              <Box width={88} height={88} radius={Math.round(88 * 0.12)} surface="raised" align="center" justify="center" style={{ borderWidth: 1, borderColor: border }}>
                 <Text size="6xl" color={sub}>＋</Text>
               </Box>
             )}
             {creating && image ? (
-              <Box style={{ position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' }}>
-                <Spinner size={20} color={fg} />
+              <Box align="center" justify="center" style={{ position: 'absolute', inset: 0 }}>
+                <Spinner size={20} color={fg}/>
               </Box>
             ) : null}
           </Pressable>
@@ -151,14 +145,14 @@ export default function NewGroup(): React.ReactElement {
               backgroundColor: inputBg, borderRadius: 12, paddingHorizontal: 14,
               paddingVertical: 12, borderWidth: 1, borderColor: border, minHeight: 0,
             }}
-          />
+/>
         </Col>
 
-        <MemberPicker state={picker} dark={dark} />
+        <MemberPicker state={picker} dark={dark}/>
       </ScrollView>
 
       {/* Create */}
-      <Box style={{ padding: 16, paddingBottom: 16 + insets.bottom, borderTopWidth: 1, borderTopColor: border }}>
+      <Box padding={{ top: 16, right: 16, bottom: 16 + insets.bottom, left: 16 }} style={{ borderTopWidth: 1, borderTopColor: border }}>
         <Button
           variant="primary"
           size="lg"
@@ -170,8 +164,8 @@ export default function NewGroup(): React.ReactElement {
           onPress={() => { void onCreate(); }}
           tintBg={primary}
           tintFg={bg}
-          label={members.length > 0 ? `Create group (${members.length})` : 'Create group'}
-        />
+          label={members.length> 0 ? `Create group (${members.length})` : 'Create group'}
+/>
       </Box>
     </Col>
   );

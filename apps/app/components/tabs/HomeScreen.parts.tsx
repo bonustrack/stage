@@ -85,22 +85,22 @@ export function useChannelRowRenderer(
           setRowMenu({
             convId: item.convId,
             title: item.peerAddress ? (getPeerName(item.peerAddress) ?? item.title) : item.title,
-            isUnread: item.unreadCount > 0 || !!item.markedUnread,
+            isUnread: item.unreadCount> 0 || !!item.markedUnread,
             isGroup: !item.peerAddress,
             peerAddress: item.peerAddress,
           });
         }}
-      />
+/>
     );
   }, [router, setRowMenu, channelProfilesVersion, draftsVersion, pinned]);
 }
 
 /** XMTP-init failure recovery screen — message + "Reset XMTP identity" button. */
-export function HomeError({ error, dark, fg, bg }: {
+export function HomeError({ error, dark, fg }: {
   error: string; dark: boolean; fg: string; bg: string;
 }): React.ReactElement {
   return (
-    <Col flex={1} align="center" justify="center" p={24} bg={bg}>
+    <Col padding={24} flex={1} align="center" justify="center" surface="surface">
       <Text size="md" color={fg} style={{ textAlign: 'center', marginBottom: 16 }}>{error}</Text>
       <Pressable
         onPress={() => {
@@ -115,7 +115,7 @@ export function HomeError({ error, dark, fg, bg }: {
           backgroundColor: pressed ? '#5c2231' : 'transparent',
           borderWidth: 1, borderColor: dark ? '#5c2231' : '#e9bbc4',
         })}
-      >
+>
         <Text size="md" color={DANGER}>
           Reset XMTP identity
         </Text>
@@ -125,10 +125,10 @@ export function HomeError({ error, dark, fg, bg }: {
 }
 
 /** Centred spinner shown while the cache is cold + XMTP is booting. */
-export function HomeSpinner({ head, bg }: { head: string; bg: string }): React.ReactElement {
+export function HomeSpinner({ head }: { head: string; bg: string }): React.ReactElement {
   return (
-    <Col flex={1} align="center" justify="center" bg={bg}>
-      <Spinner size={28} color={head} />
+    <Col flex={1} align="center" justify="center" surface="surface">
+      <Spinner size={28} color={head}/>
     </Col>
   );
 }
@@ -137,7 +137,7 @@ export function HomeSpinner({ head, bg }: { head: string; bg: string }): React.R
  *  message (e.g. the search "No matches" state) to override it. */
 export function HomeEmpty({ sub, message }: { sub: string; message?: string }): React.ReactElement {
   return (
-    <Col p={32} align="center">
+    <Col padding={32} align="center">
       <Text color={sub} style={{ textAlign: 'center' }}>
         {message ?? 'No conversations yet. Share your address from Settings to start one.'}
       </Text>

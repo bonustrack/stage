@@ -152,7 +152,7 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
   if (!rows) return <HomeSpinner head={head} bg={bg} />;
 
   return (
-    <Col flex={1} bg={bg}>
+    <Col flex={1} surface="surface">
       <ChannelsList
         panRef={panRef}
         router={router}
@@ -179,7 +179,7 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
         contentHeightRef={contentHeightRef}
         renderRow={renderRow}
         getRowLayout={channelRowLayout}
-      />
+/>
       <ChannelMenu
         visible={!!rowMenu}
         convId={rowMenu?.convId ?? ''}
@@ -190,7 +190,7 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
         isPinned={rowMenu ? pinned.has(rowMenu.convId) : false}
         isArchived={rowMenu ? archived.has(rowMenu.convId) : false}
         onClose={() => setRowMenu(null)}
-      />
+/>
     </Col>
   );
 }

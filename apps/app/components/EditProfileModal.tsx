@@ -97,14 +97,13 @@ export default function EditProfileModal({
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {/** No title / Cancel chrome — a single close X is the dismiss affordance
          *  (this is a full-screen modal with no backdrop tap). */}
-        <Row style={{ alignItems: 'center', justifyContent: 'flex-end',
-          paddingHorizontal: 16, paddingTop: insets.top + 12, paddingBottom: 12, }}>
+        <Row padding={{ x: 16, top: insets.top + 12, bottom: 12 }} align="center" justify="end">
           <Pressable onPress={onClose} disabled={saving} hitSlop={10}>
             <Icon name="x" size={24} color={head} />
           </Pressable>
         </Row>
         <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
-          <Box style={{ alignItems: 'center', marginBottom: 20 }}>
+          <Box margin={{ bottom: 20 }} align="center">
             <Pressable onPress={pickAvatar} disabled={uploading}>
               <Avatar
                 address={address}
@@ -113,7 +112,7 @@ export default function EditProfileModal({
                 style={{ backgroundColor: rowBg, opacity: uploading ? 0.5 : 1 }}
               />
               {uploading ? (
-                <Box style={{ position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' }}>
+                <Box align="center" justify="center" style={{ position: 'absolute', inset: 0 }}>
                   <Spinner size={20} color={fg} />
                 </Box>
               ) : null}
@@ -122,7 +121,7 @@ export default function EditProfileModal({
           </Box>
 
           {FIELDS.map(f => (
-            <Box key={f.key} style={{ marginBottom: 14 }}>
+            <Box margin={{ bottom: 14 }} key={f.key}>
               <Text size="3xs" color={sub} style={{ marginBottom: 4 }}>{f.label.toUpperCase()}</Text>
               {f.multiline ? (
                 <Textarea

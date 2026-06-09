@@ -30,16 +30,14 @@ export function RecipientField(props: {
   resolved: string | null;
   resolveErr: string | null;
 }): React.ReactElement {
-  const { fg, head, sub, border, inputBg } = props.pal;
+  const { fg, head, sub, border } = props.pal;
   const [picking, setPicking] = useState(false);
   const rowPal = { head, sub, border };
   return (
-    <Box style={{ gap: 6 }}>
+    <Box gap={6}>
       <Text size="xs" color={sub}>RECIPIENT</Text>
       {/* Input + a contacts-picker icon button on the right. */}
-      <Row style={{ alignItems: 'center', gap: 4,
-        backgroundColor: inputBg, borderRadius: 12,
-        paddingHorizontal: 6, paddingLeft: 14, }}>
+      <Row surface="raised" radius="lg" padding={{ x: 6, left: 14 }} align="center" gap={4}>
         <Input
           value={props.to}
           onChangeText={props.setTo}
@@ -51,20 +49,20 @@ export function RecipientField(props: {
             paddingVertical: 12, paddingHorizontal: 0, backgroundColor: 'transparent',
             minHeight: 0, borderWidth: 0,
           }}
-        />
-        <ContactsButton color={fg} border={border} onPress={() => setPicking(true)} />
+/>
+        <ContactsButton color={fg} border={border} onPress={() => setPicking(true)}/>
       </Row>
 
       {/* Once a valid recipient is resolved, show them as a user row
           (avatar + name + truncated address) — same row the rest of the app
           uses. While resolving / on error, show the inline status line. */}
       {props.resolving ? (
-        <Row style={{ alignItems: 'center', gap: 8, paddingHorizontal: 4 }}>
-          <Spinner size={20} color={fg} />
+        <Row padding={{ x: 4 }} align="center" gap={8}>
+          <Spinner size={20} color={fg}/>
           <Text size="xs" color={sub}>Resolving…</Text>
         </Row>
       ) : props.resolved ? (
-        <RecipientRow address={props.resolved} pal={rowPal} />
+        <RecipientRow address={props.resolved} pal={rowPal}/>
       ) : props.resolveErr ? (
         <Text size="xs" color={DANGER} style={{ paddingHorizontal: 4 }}>
           {props.resolveErr}
@@ -76,7 +74,7 @@ export function RecipientField(props: {
         onClose={() => setPicking(false)}
         onPick={(addr) => props.setTo(addr)}
         pal={rowPal}
-      />
+/>
     </Box>
   );
 }
@@ -95,12 +93,12 @@ export function AmountField(props: {
   secondaryLabel: string;
   onMax: () => void;
 }): React.ReactElement {
-  const { fg, head, sub, border, inputBg } = props.pal;
+  const { fg, head, sub, border } = props.pal;
   const { amount, mode, ethPriceUsd, setAmount, setMode, ethBalance } = props;
   const { link } = usePalette();
   return (
-    <Box style={{ gap: 6 }}>
-      <Row style={{ alignItems: 'center' }}>
+    <Box gap={6}>
+      <Row align="center">
         <Text size="xs" color={sub} style={{ flex: 1 }}>AMOUNT</Text>
         <Button
           variant="ghost"
@@ -111,12 +109,10 @@ export function AmountField(props: {
           label="MAX"
           textStyle={{ color: ethBalance ? link : sub, fontSize: fontSize('xs') }}
           style={{ height: 24, paddingHorizontal: 8 }}
-        />
+/>
       </Row>
 
-      <Row style={{ alignItems: 'center',
-        backgroundColor: inputBg, borderRadius: 12,
-        paddingHorizontal: 14, paddingVertical: 12, gap: 8, }}>
+      <Row surface="raised" radius="lg" padding={{ x: 14, y: 12 }} align="center" gap={8}>
         <Input
           value={amount}
           onChangeText={setAmount}
@@ -129,7 +125,7 @@ export function AmountField(props: {
             flex: 1, color: head, fontSize: fontSize('xl'), fontFamily: 'Calibre-Semibold',
             padding: 0, backgroundColor: 'transparent', minHeight: 0, borderWidth: 0,
           }}
-        />
+/>
         {/* Mode toggle — pressing it flips ETH↔USD and converts the
             current value so the user doesn't lose what they typed. */}
         <Pressable
@@ -151,11 +147,11 @@ export function AmountField(props: {
             paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999,
             backgroundColor: pressed ? border : 'transparent',
           })}
-        >
+>
           <Text weight="semibold" size="md" color={head}>
             {mode === 'eth' ? props.symbol : 'USD'}
           </Text>
-          <Icon name="arrowDown" size={14} color={fg} />
+          <Icon name="arrowDown" size={14} color={fg}/>
         </Pressable>
       </Row>
 
@@ -182,14 +178,10 @@ export function SendHeader(props: {
   fg: string; head: string; border: string; onBack: () => void;
 }): React.ReactElement {
   const insets = useSafeAreaInsets();
-  const { toolbarBg } = usePalette();
   return (
-    <Row style={{ alignItems: 'center', gap: 8,
-      paddingHorizontal: 12, paddingTop: 8 + insets.top, paddingBottom: 10,
-      borderBottomWidth: 1, borderBottomColor: props.border,
-      backgroundColor: toolbarBg, }}>
+    <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: props.border }}>
       <Pressable onPress={props.onBack} hitSlop={8} style={{ padding: 4 }}>
-        <Icon name="arrowLeft" size={22} color={props.fg} />
+        <Icon name="arrowLeft" size={22} color={props.fg}/>
       </Pressable>
       <Text weight="semibold" size="xl" color={props.head} style={{ flex: 1 }}>Send token</Text>
     </Row>
@@ -215,7 +207,7 @@ export function SubmitButton(props: {
         : txState === 'confirmed' ? 'Sent ✓'
         : 'Send'}
       style={{ marginTop: 8 }}
-    />
+/>
   );
 }
 
@@ -228,7 +220,7 @@ export function TxStatus(props: {
     <>
       {/* Tx status: hash link once broadcast, plus errors. */}
       {txHash ? (
-        <Box style={{ gap: 4, paddingHorizontal: 4 }}>
+        <Box padding={{ x: 4 }} gap={4}>
           <Text size="xs" color={sub}>
             {txState === 'confirmed' ? 'Confirmed' : 'Pending'}
           </Text>

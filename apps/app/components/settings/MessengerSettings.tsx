@@ -30,7 +30,7 @@ function CopyRow({ label, value, display, c }: {
         marginHorizontal: 16, marginTop: 8, padding: 12, borderRadius: blockRadius,
         backgroundColor: c.rowBg, borderWidth: 1, borderColor: c.border,
       }}
-    >
+>
       <Text size="xs" color={c.sub}>{label.toUpperCase()} (tap to copy)</Text>
       <Text size="md" color={c.fg} style={{ marginTop: 2 }}>{display}</Text>
     </Pressable>
@@ -39,7 +39,7 @@ function CopyRow({ label, value, display, c }: {
 
 export function MessengerSettings(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border } = usePalette();
+  const { text: fg, link: head, border } = usePalette();
   const sub = fg;
   const rowBg = border;
   const insets = useSafeAreaInsets();
@@ -64,8 +64,8 @@ export function MessengerSettings(): React.ReactElement {
 
   const c = { fg, sub, border, rowBg };
   return (
-    <Col flex={1} style={{ backgroundColor: bg }}>
-      <SystemHeader title="Messenger" dark={dark} fg={fg} head={head} border={border} />
+    <Col surface="surface" flex={1}>
+      <SystemHeader title="Messenger" dark={dark} fg={fg} head={head} border={border}/>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <Text size="xs" color={sub} style={{ paddingHorizontal: 16, paddingTop: 20 }}>
           XMTP ACCOUNT
@@ -74,7 +74,7 @@ export function MessengerSettings(): React.ReactElement {
         {inbox ? <CopyRow label="Inbox id" value={inbox} display={inbox} c={c} /> : null}
         {install ? <CopyRow label="Installation id" value={install} display={shortAddress(install)} c={c} /> : null}
 
-        <Col mt={28} px={16}>
+        <Col padding={{ x: 16 }} margin={{ top: 28 }}>
           <Pressable
             onPress={() => {
               Alert.alert(
@@ -97,7 +97,7 @@ export function MessengerSettings(): React.ReactElement {
               backgroundColor: pressed ? '#3a2530' : 'transparent',
               borderWidth: 1, borderColor: dark ? '#5c2231' : '#e9bbc4',
             })}
-          >
+>
             <Text size="md" color={DANGER}>
               Reset XMTP identity
             </Text>

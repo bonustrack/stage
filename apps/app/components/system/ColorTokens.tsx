@@ -12,7 +12,7 @@ import { Input } from '@metro-labs/kit/input';
 import { Box, Row, Col } from '../layout';
 import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';
-import { usePalette, useEffectiveColorScheme, type Palette } from '../../lib/theme';
+import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import type { GalleryPalette } from './galleryPalette';
 import { AppModal } from '../AppModal';
 import { ColorPicker } from './ColorPicker';
@@ -24,7 +24,7 @@ import { RADIUS_MIN, RADIUS_MAX, fontSize } from '@metro-labs/kit/tokens';
 
 /** The 7 canonical palette keys in display order. `key` is both the Palette key
  *  and the override TokenKey (they share the same union). */
-const TOKEN_ROWS: ReadonlyArray<readonly [label: string, key: keyof Palette]> = [
+const TOKEN_ROWS: ReadonlyArray<readonly [label: string, key: TokenKey]> = [
   ['bg-color', 'bg'],
   ['border-color', 'border'],
   ['text-color', 'text'],
@@ -47,7 +47,7 @@ function EditableSwatch({ name, tokenKey, value, scheme, p }: {
   const invalid = draft != null && !isHex(draft);
   const closePicker = (): void => { setPicking(false); setPending(null); };
   return (
-    <Row gap={14} mt={12} style={{ alignItems: 'center' }}>
+    <Row margin={{ top: 12 }} gap={14} align="center">
       <Pressable
         onPress={() => { setPending(value); setPicking(true); }}
         accessibilityLabel={`Pick ${name} color`}
@@ -55,8 +55,8 @@ function EditableSwatch({ name, tokenKey, value, scheme, p }: {
           width: 40, height: 40, borderRadius: 10, backgroundColor: value,
           borderWidth: 1, borderColor: p.border,
         }}
-      />
-      <Col flex={1} style={{ minWidth: 0 }}>
+/>
+      <Col minWidth={0} flex={1}>
         <Text weight="semibold" size="md" color={p.head}>{name}</Text>
         <Input
           value={shown}
@@ -69,12 +69,12 @@ function EditableSwatch({ name, tokenKey, value, scheme, p }: {
             backgroundColor: 'transparent', borderWidth: 0,
             color: invalid ? '#eb4c5b' : p.sub, fontSize: fontSize('xs'), fontFamily: 'Calibre-Medium',
           }}
-        />
+/>
       </Col>
       <AppModal visible={picking} onClose={closePicker}>
-        <ColorPicker value={pending ?? value} onChange={setPending} p={p} />
-        <Row gap={12} mt={20} style={{ alignItems: 'center' }}>
-          <Button variant="secondary" dark={p.dark} onPress={closePicker} label="Cancel" style={{ flex: 1 }} />
+        <ColorPicker value={pending ?? value} onChange={setPending} p={p}/>
+        <Row margin={{ top: 20 }} gap={12} align="center">
+          <Button variant="secondary" dark={p.dark} onPress={closePicker} label="Cancel" style={{ flex: 1 }}/>
           <Button
             variant="primary" dark={p.dark}
             onPress={() => {
@@ -82,7 +82,7 @@ function EditableSwatch({ name, tokenKey, value, scheme, p }: {
               closePicker();
             }}
             label="Apply" style={{ flex: 1 }}
-          />
+/>
         </Row>
       </AppModal>
     </Row>
@@ -96,12 +96,9 @@ function RadiusRow({ p, name, value, onSet }: {
   const [draft, setDraft] = useState<string | null>(null);
   const shown = draft ?? String(value);
   return (
-    <Row gap={14} mt={12} style={{ alignItems: 'center' }}>
-      <Box style={{
-        width: 40, height: 40, borderRadius: Math.min(value, 20),
-        backgroundColor: p.rowBg, borderWidth: 1, borderColor: p.head,
-      }} />
-      <Col flex={1} style={{ minWidth: 0 }}>
+    <Row margin={{ top: 12 }} gap={14} align="center">
+      <Box width={40} height={40} radius={Math.min(value, 20)} surface="raised" style={{ borderWidth: 1, borderColor: p.head }}/>
+      <Col minWidth={0} flex={1}>
         <Text weight="semibold" size="md" color={p.head}>{name}</Text>
         <Input
           value={shown}
@@ -119,7 +116,7 @@ function RadiusRow({ p, name, value, onSet }: {
             backgroundColor: 'transparent', borderWidth: 0,
             color: p.sub, fontSize: fontSize('xs'), fontFamily: 'Calibre-Medium',
           }}
-        />
+/>
       </Col>
     </Row>
   );
@@ -132,22 +129,22 @@ export function ColorTokens({ p }: { p: GalleryPalette }): React.ReactElement {
   const blockRadius = useBlockRadius();
   return (
     <Box>
-      <Row mt={16} align="center" justify="between">
-        <Text dark={p.dark} color={p.sub} variant="caption" weight="medium">
+      <Row margin={{ top: 16 }} align="center" justify="between">
+        <Text color={p.sub} variant="caption" weight="medium">
           {`${TOKEN_ROWS.length} tokens + 2 radii - tap a swatch or hex - ${scheme}`}
         </Text>
         <Button
           variant="secondary" size="sm" dark={p.dark}
           onPress={() => { resetOverrides(); resetRadius(); }}
           label="Reset" accessibilityLabel="Reset color tokens to defaults"
-        />
+/>
       </Row>
-      <Box mt={2}>
+      <Box margin={{ top: 2 }}>
         {TOKEN_ROWS.map(([label, key]) => (
-          <EditableSwatch key={label} name={label} tokenKey={key} value={palette[key]} scheme={scheme} p={p} />
+          <EditableSwatch key={label} name={label} tokenKey={key} value={palette[key]} scheme={scheme} p={p}/>
         ))}
-        <RadiusRow p={p} name="button-border-radius" value={buttonRadius} onSet={setRadius} />
-        <RadiusRow p={p} name="border-radius" value={blockRadius} onSet={setBlockRadius} />
+        <RadiusRow p={p} name="button-border-radius" value={buttonRadius} onSet={setRadius}/>
+        <RadiusRow p={p} name="border-radius" value={blockRadius} onSet={setBlockRadius}/>
       </Box>
     </Box>
   );

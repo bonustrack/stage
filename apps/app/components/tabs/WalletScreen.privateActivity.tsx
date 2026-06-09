@@ -69,8 +69,8 @@ export function PrivateActivitySection({ head, sub, border, bg }: {
 
   return (
     <Col>
-      <Row align="center" gap={6} style={{ paddingTop: 14, paddingBottom: 4 }}>
-        <Icon name="lockClosed" size={13} color={sub} />
+      <Row padding={{ top: 14, bottom: 4 }} align="center" gap={6}>
+        <Icon name="lockClosed" size={13} color={sub}/>
         <Text weight="semibold" size="xs" color={sub} style={{ letterSpacing: 0.5, textTransform: 'uppercase' }}>
           Private activity
         </Text>
@@ -85,7 +85,7 @@ export function PrivateActivitySection({ head, sub, border, bg }: {
         </Text>
       ) : (
         rows.map(r => (
-          <PrivateTxRow key={r.key} r={r} head={head} sub={sub} border={border} bg={bg} />
+          <PrivateTxRow key={r.key} r={r} head={head} sub={sub} border={border} bg={bg}/>
         ))
       )}
     </Col>
@@ -109,7 +109,7 @@ function PrivateTxRow({ r, head, sub, border, bg }: {
   const prefix = r.direction === 'in' ? '+' : '−';
   const valueColor = r.direction === 'in' ? PRIVATE_GREEN : head;
   return (
-    <Row align="center" gap={12} py={14}
+    <Row padding={{ y: 14 }} align="center" gap={12} 
       style={{ borderBottomWidth: 1, borderBottomColor: border }}>
       {/* Token + network image, identical to the wallet token rows, with the
           Railgun shield glyph overlaid so the tx is unmistakably private. */}
@@ -119,31 +119,27 @@ function PrivateTxRow({ r, head, sub, border, bg }: {
         bg={bg}
         border={border}
         badge={<Icon name={SHIELD_ICON} size={11} color={sub} />}
-      />
-      <Col flex={1} style={{ minWidth: 0 }}>
+/>
+      <Col minWidth={0} flex={1}>
         <Row align="center" gap={6}>
           <Text weight="semibold" size="xl" color={head} numberOfLines={1}>
             {rowTitle(r)}
           </Text>
-          <Row align="center" gap={3} style={{
-            paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4, backgroundColor: border,
-          }}>
-            <Icon name={SHIELD_ICON} size={10} color={sub} />
+          <Row radius="xs" background={border} padding={{ x: 6, y: 1 }} align="center" gap={3}>
+            <Icon name={SHIELD_ICON} size={10} color={sub}/>
             <Text weight="semibold" size="3xs" color={sub}>
               Private
             </Text>
           </Row>
         </Row>
-        <Row align="center" gap={6} style={{ marginTop: 2 }}>
-          <Box style={{
-            paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4, backgroundColor: border,
-          }}>
+        <Row margin={{ top: 2 }} align="center" gap={6}>
+          <Box radius="xs" background={border} padding={{ x: 6, y: 1 }}>
             <Text size="xs" color={sub} numberOfLines={1}>
               {r.chainLabel}
             </Text>
           </Box>
           <Text size="md" color={sub} style={{ flex: 1 }} numberOfLines={1}>
-            {r.timestamp > 0 ? relTime(r.timestamp) : 'Confirmed'}
+            {r.timestamp> 0 ? relTime(r.timestamp) : 'Confirmed'}
           </Text>
         </Row>
       </Col>

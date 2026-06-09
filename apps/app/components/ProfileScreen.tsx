@@ -76,11 +76,11 @@ export function ProfileScreen({ address, variant, panRef }: {
   const headerTop = variant === 'route' ? 44 + insets.top : 56;
 
   return (
-    <Col flex={1} bg={c.bg}>
+    <Col flex={1} surface="surface">
       <ProfileHeader
         variant={variant} insetTop={insets.top} isSelf={isSelf} c={c}
         onBack={() => router.back()} onMenu={() => setMenuOpen(true)}
-      />
+/>
 
       <ScrollView simultaneousHandlers={panRef} contentContainerStyle={{ paddingBottom: 32 }}>
         {/* Full-bleed cover banner (input-bg). For the `route` variant the cover
@@ -88,19 +88,12 @@ export function ProfileScreen({ address, variant, panRef }: {
             so the colour bleeds to y=0. Its bottom edge is FLAT — the black content
             sheet below rounds UP over it (inverted/scooped curve), so the gray no
             longer pokes down with rounded corners. */}
-        <Box bg={c.border} style={{
-          height: 140 + (variant === 'route' ? insets.top : 0),
-        }} />
+        <Box height={140 + (variant === 'route' ? insets.top : 0)} background={c.border}/>
         {/* Content sheet: page-bg block pulled UP 18px to overlap the cover, with
             rounded TOP corners so the black curves over the gray banner (bottom-sheet
             look). overflow:'visible' + avatar zIndex keep the avatar from being
             clipped by the rounding. */}
-        <Box style={{
-          alignItems: 'flex-start', paddingHorizontal: 16, paddingBottom: 8,
-          backgroundColor: c.bg, marginTop: -18,
-          borderTopLeftRadius: 18, borderTopRightRadius: 18,
-          overflow: 'visible',
-        }}>
+        <Box surface="surface" padding={{ x: 16, bottom: 8 }} margin={{ top: -18 }} align="start" style={{ borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'visible' }}>
           {/* Wait for the profile so we render the real avatar directly (no
               blockie→real flash); custom avatars resolve via IPFS, not stamp.
               marginTop -88*0.8 pulls the avatar UP by 80% of its height: ~80%
@@ -115,7 +108,7 @@ export function ProfileScreen({ address, variant, panRef }: {
               borderWidth: 3, borderColor: c.bg,
             }}
             onPress={uri => { if (uri) setViewerUri(uri); }}
-          />
+/>
           <Text weight="semibold" size="4xl" color={c.link} style={{ marginTop: 14 }}>
             {displayName}
           </Text>
@@ -124,7 +117,7 @@ export function ProfileScreen({ address, variant, panRef }: {
               onPress={() => copy(addr, 'Address')}
               hitSlop={8}
               style={{ marginTop: 2 }}
-            >
+>
               <Text size="md" color={c.text}>
                 {shortAddress(addr)}
               </Text>
@@ -142,14 +135,14 @@ export function ProfileScreen({ address, variant, panRef }: {
               dark={dark} opening={openingDm} c={c}
               onMessage={() => { void onMessage(); }}
               onSend={() => router.push({ pathname: '/wallet/send', params: { to: addr } })}
-            />
+/>
           ) : null}
         </Box>
 
         {/* Socials - compact row of tappable brand icons (snapshot.box style),
             shown only for the networks the user has set. Read-only; the edit
             form (EditProfileModal) still owns input. */}
-        <ProfileSocialLinks profile={profile} c={c} />
+        <ProfileSocialLinks profile={profile} c={c}/>
 
         {/* Common channels — groups the local user + this peer are BOTH in.
             Only for OTHER users; resolves async so it never blocks the render. */}
@@ -161,7 +154,7 @@ export function ProfileScreen({ address, variant, panRef }: {
           visible={menuOpen} top={headerTop + 4} c={c}
           onClose={() => setMenuOpen(false)}
           onEdit={() => { setMenuOpen(false); setEditing(true); }}
-        />
+/>
       ) : null}
 
       <EditProfileModal
@@ -173,8 +166,8 @@ export function ProfileScreen({ address, variant, panRef }: {
           void queryClient.invalidateQueries({ queryKey: ['profile', addr.toLowerCase()] });
         }}
         address={addr} initial={profile ?? {}} dark={dark}
-      />
-      <ImageViewer uri={viewerUri ?? ''} visible={viewerUri !== null} onClose={() => setViewerUri(null)} />
+/>
+      <ImageViewer uri={viewerUri ?? ''} visible={viewerUri !== null} onClose={() => setViewerUri(null)}/>
     </Col>
   );
 }

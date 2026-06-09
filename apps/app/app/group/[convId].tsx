@@ -77,16 +77,14 @@ export default function GroupDetail(): React.ReactElement {
   }, []);
 
   return (
-    <Col flex={1} style={{ backgroundColor: bg }}>
+    <Col surface="surface" flex={1}>
       {/* Floating topnav over the cover banner — mirrors ProfileScreen `route`. */}
-      <Row style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
-        height: 44 + insets.top, paddingTop: insets.top, paddingHorizontal: 14,
-        alignItems: 'center', justifyContent: 'space-between', }}>
+      <Row height={44 + insets.top} padding={{ x: 14, top: insets.top }} align="center" justify="between" style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2 }}>
         <Pressable onPress={() => router.back()} hitSlop={10} style={{ padding: 6 }}>
-          <Icon name="arrowLeft" size={22} color={fg} />
+          <Icon name="arrowLeft" size={22} color={fg}/>
         </Pressable>
         <Pressable onPress={() => setOverflowOpen(true)} hitSlop={10} style={{ padding: 6 }}>
-          <Icon name="dotsHorizontal" size={22} color={fg} />
+          <Icon name="dotsHorizontal" size={22} color={fg}/>
         </Pressable>
       </Row>
 
@@ -95,25 +93,24 @@ export default function GroupDetail(): React.ReactElement {
         fg={fg} sub={sub} bg={bg} rowBg={rowBg}
         onTap={() => { if (imageUrl) setViewerOpen(true); else void pickImage(); }}
         onPick={() => { void pickImage(); }}
-      />
+/>
 
       <GroupNameEditor
         name={name} draft={draft} setDraft={setDraft}
         editing={editing} setEditing={setEditing} saving={saving}
         onSave={() => { void saveName(); }} dark={dark} p={pal}
-      />
+/>
 
       <GroupDescriptionEditor
         description={description} descriptionDraft={descriptionDraft} setDescriptionDraft={setDescriptionDraft}
         editing={editingDescription} setEditing={setEditingDescription} saving={savingDescription}
         onSave={() => { void saveDescription(); }} dark={dark} p={pal}
-      />
+/>
 
-      <GroupLabelsSection line={line} p={pal} />
-      <GroupGithubSection line={line} p={pal} />
+      <GroupLabelsSection line={line} p={pal}/>
+      <GroupGithubSection line={line} p={pal}/>
       {/** MEMBERS header: label + add-member button → opens add-by-address modal. */}
-      <Row style={{ alignItems: 'center', justifyContent: 'space-between',
-        paddingHorizontal: 16, paddingBottom: 8, }}>
+      <Row padding={{ x: 16, bottom: 8 }} align="center" justify="between">
         <Text size="xs" color={sub}>
           MEMBERS ({members.length})
         </Text>
@@ -126,9 +123,9 @@ export default function GroupDetail(): React.ReactElement {
             borderWidth: 1, borderColor: border,
             backgroundColor: pressed ? border : 'transparent',
           })}
-        >
-          <Icon name="users" size={16} color={fg} />
-          <Icon name="plus" size={14} color={fg} />
+>
+          <Icon name="users" size={16} color={fg}/>
+          <Icon name="plus" size={14} color={fg}/>
         </Pressable>
       </Row>
       <FlatList
@@ -146,9 +143,9 @@ export default function GroupDetail(): React.ReactElement {
             p={pal}
             onPress={() => router.push({ pathname: '/user/[address]', params: { address: item } })}
             onRemove={() => removeMember(item)}
-          />
+/>
         )}
-      />
+/>
 
       <AddMemberModal
         visible={addOpen}
@@ -156,17 +153,17 @@ export default function GroupDetail(): React.ReactElement {
         addDraft={addDraft} setAddDraft={setAddDraft} adding={adding}
         onAdd={() => { void addMember(() => setAddOpen(false)); }}
         dark={dark} p={pal}
-      />
+/>
       <OverflowModal
         visible={overflowOpen}
         onClose={() => setOverflowOpen(false)}
         leaving={leaving} onLeave={() => leaveGroup(() => setOverflowOpen(false))}
-      />
+/>
       <ImageViewer
         uri={imageUrl ? avatarRenderUrl('', imageUrl, 1024) : ''}
         visible={viewerOpen}
         onClose={() => setViewerOpen(false)}
-      />
+/>
     </Col>
   );
 }

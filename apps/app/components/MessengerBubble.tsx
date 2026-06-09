@@ -114,7 +114,7 @@ function MessengerBubbleBase({
           ? (dark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.05)')
           : (unread ? (dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)') : 'transparent'),
       }]}
-    >
+>
       {/** Discord-style row avatar — `sm` (24px). Tapping surfaces the sender's profile. */}
       {senderEthAddress ? (
         <Pressable onPress={() => onAvatarPress?.(senderEthAddress)} hitSlop={6} style={{ marginTop: 2 }}>
@@ -123,13 +123,13 @@ function MessengerBubbleBase({
             size="sm"
             cacheBuster={getPeerAvatarCb(senderEthAddress)}
             style={{ backgroundColor: avatarBg }}
-          />
+/>
         </Pressable>
       ) : (
-        <Avatar size="sm" style={{ backgroundColor: avatarBg, marginTop: 2 }} />
+        <Avatar size="sm" style={{ backgroundColor: avatarBg, marginTop: 2 }}/>
       )}
       {/** Right column: message content + reactions + reaction picker stacked. */}
-      <Col flex={1} style={{ minWidth: 0, opacity: pending ? 0.5 : 1 }}>
+      <Col minWidth={0} flex={1} style={{ opacity: pending ? 0.5 : 1 }}>
       {/** Tap/double-tap/long-press all live on the outer GestureDetector now; this is
         *  just the content wrapper carrying the unread outline. */}
       <Col
@@ -139,7 +139,7 @@ function MessengerBubbleBase({
           borderWidth: unread ? 1.5 : 0,
           borderColor: unread ? (dark ? '#ffffff' : '#000000') : 'transparent',
         }}
-      >
+>
         <BubbleContent
           entry={entry}
           dark={dark}
@@ -161,7 +161,7 @@ function MessengerBubbleBase({
           onSign={onSign}
           signing={signing}
           selectable={selectable}
-        />
+/>
       </Col>
       {pending ? null : (
         <ReactionsRow
@@ -172,7 +172,7 @@ function MessengerBubbleBase({
           sub={sub}
           pillBg={pillBg}
           onReact={onReact}
-        />
+/>
       )}
       {pickerOpen && !pending ? (
         <ReactionPicker
@@ -180,7 +180,7 @@ function MessengerBubbleBase({
           sub={sub}
           onPick={e => { onReact?.(e); setPickerOpen(false); }}
           onClose={() => setPickerOpen(false)}
-        />
+/>
       ) : null}
       </Col>
     </Animated.View>

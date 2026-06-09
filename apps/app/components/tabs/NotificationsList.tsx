@@ -55,8 +55,8 @@ export function NotificationsList({
             borderWidth: 1,
             borderColor: border,
           })}
-        >
-          <Row align="center" gap={12} px={12} py={12}>
+>
+          <Row padding={{ x: 12, y: 12 }} align="center" gap={12}>
             <Avatar
               imageUri={p.avatarUri}
               address={!p.avatarUri ? p.avatarAddress : null}
@@ -64,8 +64,8 @@ export function NotificationsList({
               square={p.isGroup}
               cacheBuster={p.avatarAddress ? getPeerAvatarCb(p.avatarAddress) : undefined}
               style={{ backgroundColor: border }}
-            />
-            <Col flex={1} style={{ minWidth: 0 }}>
+/>
+            <Col minWidth={0} flex={1}>
               <Text weight="semibold" size="md" color={head} numberOfLines={1}>
                 {labelFor(p)}
               </Text>
@@ -73,7 +73,7 @@ export function NotificationsList({
                 Tap to review the request
               </Text>
             </Col>
-            <Box style={{ width: 9, height: 9, borderRadius: 999, backgroundColor: head, borderWidth: 2, borderColor: bg }} />
+            <Box width={9} height={9} radius="full" background={head} style={{ borderWidth: 2, borderColor: bg }}/>
           </Row>
         </Pressable>
       ))}

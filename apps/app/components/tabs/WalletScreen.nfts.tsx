@@ -25,14 +25,14 @@ export function NftsView({
 }): React.ReactElement {
   if (status === 'loading' || status === 'idle') {
     return (
-      <Col mx={16} py={40} align="center">
-        <Spinner size={28} color={head} />
+      <Col padding={{ y: 40 }} margin={{ x: 16 }} align="center">
+        <Spinner size={28} color={head}/>
       </Col>
     );
   }
   if (status === 'error') {
     return (
-      <Col mx={16} py={40} align="center">
+      <Col padding={{ y: 40 }} margin={{ x: 16 }} align="center">
         <Text size="md" color={DANGER}>
           Failed to load NFTs.
         </Text>
@@ -41,7 +41,7 @@ export function NftsView({
   }
   if (!nfts || nfts.length === 0) {
     return (
-      <Col mx={16} py={40} align="center">
+      <Col padding={{ y: 40 }} margin={{ x: 16 }} align="center">
         <Text size="md" color={sub}>
           There are no NFTs in this wallet.
         </Text>
@@ -49,27 +49,24 @@ export function NftsView({
     );
   }
   return (
-    <Row mx={16} mt={6} style={{ flexWrap: 'wrap' }}>
+    <Row margin={{ x: 16, top: 6 }} style={{ flexWrap: 'wrap' }}>
       {nfts.map(nft => (
-        <Box key={`${nft.chainId}:${nft.id}`} style={{ width: '50%' }}>
+        <Box width={'50%'} key={`${nft.chainId}:${nft.id}`}>
           <Pressable
             onPress={() => { if (nft.openseaUrl) void Linking.openURL(nft.openseaUrl); }}
             style={({ pressed }) => ({ padding: 6, opacity: pressed ? 0.7 : 1 })}
-          >
+>
             {nft.image ? (
               <Image
                 src={nft.image}
                 fit="cover"
                 style={{ width: '100%', aspectRatio: 1, borderRadius: 12, backgroundColor: border }}
-              />
+/>
             ) : (
-              <Box
-                style={{
-                  width: '100%', aspectRatio: 1, borderRadius: 12,
-                  backgroundColor: border, alignItems: 'center', justifyContent: 'center',
-                }}
-              >
-                <Icon name="photo" size={28} color={sub} />
+              <Box width={'100%'} aspectRatio={1} radius="lg" background={border}
+                align="center" justify="center" 
+>
+                <Icon name="photo" size={28} color={sub}/>
               </Box>
             )}
             <Text weight="semibold" size="md"

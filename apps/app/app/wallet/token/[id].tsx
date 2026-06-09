@@ -51,9 +51,9 @@ export default function TokenDetail(): React.ReactElement {
 
   if (!r) {
     return (
-      <Col flex={1} style={{ backgroundColor: bg }}>
-        <Header head={head} border={border} onBack={() => router.back()} title="Token" />
-        <Col mx={16} py={40} align="center">
+      <Col surface="surface" flex={1}>
+        <Header head={head} border={border} onBack={() => router.back()} title="Token"/>
+        <Col padding={{ y: 40 }} margin={{ x: 16 }} align="center">
           <Text size="md" color={sub}>Token not found</Text>
         </Col>
       </Col>
@@ -69,38 +69,31 @@ export default function TokenDetail(): React.ReactElement {
   };
 
   return (
-    <Col flex={1} style={{ backgroundColor: bg }}>
-      <Header head={head} border={border} onBack={() => router.back()} title={r.name} />
+    <Col surface="surface" flex={1}>
+      <Header head={head} border={border} onBack={() => router.back()} title={r.name}/>
 
       {/* Token identity card — large logo with network badge, name + symbol,
           balance and its USD value. Mirrors the list row's data, scaled up.
           LEFT-aligned to match the Wallet page's left-aligned value card. */}
-      <Col mx={16} pt={28} align="start" gap={6}>
-        <Box style={{ width: 72, height: 72 }}>
+      <Col padding={{ top: 28 }} margin={{ x: 16 }} align="start" gap={6}>
+        <Box width={72} height={72}>
           {/* r.logoUrl is cached at the 32px LIST size (s=64); re-request it at
               2× the 72px detail size (s=144) so the big logo stays crisp. */}
           <Image src={withStampDisplayPx(r.logoUrl, 72)}
-            style={{ width: 72, height: 72, borderRadius: 999, backgroundColor: border }} />
-          <Box style={{
-            position: 'absolute', right: -2, bottom: -2,
-            width: 30, height: 30, borderRadius: 999,
-            borderWidth: 3, borderColor: bg, backgroundColor: border, overflow: 'hidden',
-          }}>
+            style={{ width: 72, height: 72, borderRadius: 999, backgroundColor: border }}/>
+          <Box width={30} height={30} radius="full" background={border} style={{ position: 'absolute', right: -2, bottom: -2, borderWidth: 3, borderColor: bg, overflow: 'hidden' }}>
             <Image src={NETWORK_LOGO[r.chainId] ?? MAINNET_NETWORK_LOGO}
-              fit="cover" style={{ width: '100%', height: '100%' }} />
+              fit="cover" style={{ width: '100%', height: '100%' }}/>
           </Box>
         </Box>
 
-        <Row align="center" gap={6} mt={10}>
+        <Row margin={{ top: 10 }} align="center" gap={6}>
           {r.isPrivate ? <Icon name="eyeOff" size={18} color={sub} /> : null}
           <Text weight="semibold" size="5xl" color={head}>{r.name}</Text>
         </Row>
 
         {/* Network badge pill */}
-        <Box style={{
-          paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999,
-          borderWidth: 1, borderColor: border,
-        }}>
+        <Box radius="full" padding={{ x: 10, y: 3 }} style={{ borderWidth: 1, borderColor: border }}>
           <Text size="xs" color={sub}>
             {NETWORK_LABEL[r.chainId] ?? `Chain ${r.chainId}`}
           </Text>
@@ -118,7 +111,7 @@ export default function TokenDetail(): React.ReactElement {
           page's Send/Receive/Swap/Buy circles. Send opens the public send
           flow pre-selected to this token; Shield opens send.tsx in shield
           mode pre-selected to this token. */}
-      <Row justify="start" gap={36} mt={32} mx={16}>
+      <Row margin={{ x: 16, top: 32 }} justify="start" gap={36}>
         {r.isPrivate ? (
           <>
             {/* Shielded holding → unified Send page, pre-selected to this
@@ -127,25 +120,25 @@ export default function TokenDetail(): React.ReactElement {
               onPress={() => router.push({
                 pathname: '/wallet/send',
                 params: { symbol: symbol ?? r.symbol, chainId: String(r.chainId), private: '1' },
-              })} />
+              })}/>
             {/* Shielded holding → Unshield (private → public, back to own EOA). */}
             <Btn icon="eye" label="Unshield" head={head} border={border} dark={dark}
               onPress={() => router.push({
                 pathname: '/wallet/unshield',
                 params: { symbol: symbol ?? r.symbol, chainId: String(r.chainId) },
-              })} />
+              })}/>
           </>
         ) : (
           <>
             {/* Public holding → public Send. */}
             <Btn icon="send" label="Send" head={head} border={border} dark={dark}
-              onPress={() => router.push({ pathname: '/wallet/send', params: sendParams })} />
+              onPress={() => router.push({ pathname: '/wallet/send', params: sendParams })}/>
             {/* Public holding → Shield (public → own 0zk). */}
             <Btn icon="eyeOff" label="Shield" head={head} border={border} dark={dark}
               onPress={() => router.push({
                 pathname: '/wallet/shield',
                 params: { symbol: symbol ?? r.symbol, chainId: String(r.chainId) },
-              })} />
+              })}/>
           </>
         )}
       </Row>
@@ -158,15 +151,11 @@ function Header({ head, border, onBack, title }: {
   head: string; border: string; onBack: () => void; title: string;
 }): React.ReactElement {
   const insets = useSafeAreaInsets();
-  const { toolbarBg } = usePalette();
   return (
-    <Row align="center" gap={8} px={12}
-      style={{
-        borderBottomWidth: 1, borderBottomColor: border,
-        backgroundColor: toolbarBg, paddingTop: 8 + insets.top, paddingBottom: 8,
-      }}>
+    <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 8 }} align="center" gap={8} 
+      style={{ borderBottomWidth: 1, borderBottomColor: border }}>
       <Pressable onPress={onBack} hitSlop={8} style={{ padding: 4 }}>
-        <Icon name="arrowLeft" size={22} color={head} />
+        <Icon name="arrowLeft" size={22} color={head}/>
       </Pressable>
       <Text weight="semibold" size="xl" color={head} style={{ flex: 1 }} numberOfLines={1}>
         {title}

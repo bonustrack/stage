@@ -25,7 +25,7 @@ function fmtEvent(d: BalanceDebug): string {
   if (d.lastEvent == null) return 'none received yet';
   try {
     const s = JSON.stringify(d.lastEvent);
-    return s.length > 600 ? `${s.slice(0, 600)}…` : s;
+    return s.length> 600 ? `${s.slice(0, 600)}…` : s;
   } catch {
     return String(d.lastEvent);
   }
@@ -35,7 +35,7 @@ function DebugRow({ label, value, sub, head }: {
   label: string; value: string; sub: string; head: string;
 }): React.ReactElement {
   return (
-    <Row gap={12} py={2} style={{ justifyContent: 'space-between' }}>
+    <Row padding={{ y: 2 }} gap={12} justify="between">
       <Text size="xs" color={sub}>{label}</Text>
       <Text weight="semibold" size="xs" color={head} style={{ flexShrink: 1, textAlign: 'right' }}>
         {value}
@@ -55,7 +55,7 @@ export function RailgunDebugPanel({ head, sub, border }: {
     : '—';
 
   return (
-    <Col mt={20} pt={16} gap={4} style={{ borderTopWidth: 1, borderTopColor: border }}>
+    <Col padding={{ top: 16 }} margin={{ top: 20 }} gap={4} style={{ borderTopWidth: 1, borderTopColor: border }}>
       <Text weight="semibold" size="xs" color={sub}>
         RAILGUN DEBUG · BALANCE PIPELINE
       </Text>

@@ -32,7 +32,7 @@ import { RequestActionBar } from '../../components/RequestActionBar';
 export default function XmtpConversation(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border, toolbarBg } = usePalette();
+  const { text: fg, link: head, bg, border } = usePalette();
   const sub = fg, rowBg = border;
   const { convId, focus } = useLocalSearchParams<{ convId: string; focus?: string }>();
   const c = useConversationState(convId, focus);
@@ -72,7 +72,7 @@ export default function XmtpConversation(): React.ReactElement {
 
   if (!convId) {
     return (
-      <Col flex={1} style={{ alignItems: 'center', justifyContent: 'center', backgroundColor: bg }}>
+      <Col surface="surface" flex={1} align="center" justify="center">
         <Text color={sub}>Missing conversation id.</Text>
       </Col>
     );
@@ -83,7 +83,7 @@ export default function XmtpConversation(): React.ReactElement {
       style={{
         flex: 1, backgroundColor: bg, paddingBottom: insets.bottom,
       }}
-    >
+>
       {/** Swipe-back handled by the @react-navigation/stack JS card stack
        *   (app/_layout): its left-edge rightward gesture pops + composes with
        *   the inverted FlatList scroll + leftward bubble swipe-to-reply. */}
@@ -99,19 +99,16 @@ export default function XmtpConversation(): React.ReactElement {
         rowBg={rowBg}
         insets={insets}
         router={router}
-      />
+/>
       </Reanimated.View>
       {/** Top nav: solid bg strip mirrors the composer footer + extends UP over the
        *  status-bar area so content sliding under the keyboard doesn't show through. */}
-      <Row style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
-        height: 52 + insets.top, paddingTop: insets.top, backgroundColor: toolbarBg,
-        alignItems: 'stretch',
-        borderBottomWidth: 1, borderBottomColor: border, }}>
+      <Row height={52 + insets.top} surface="toolbar" padding={{ top: insets.top }} align="stretch" style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2, borderBottomWidth: 1, borderBottomColor: border }}>
         <Pressable
           onPress={() => router.replace('/')}
           style={{ paddingLeft: 14, paddingRight: 8, justifyContent: 'center' }}
-        >
-          <Icon name="arrowLeft" size={22} color={fg} />
+>
+          <Icon name="arrowLeft" size={22} color={fg}/>
         </Pressable>
         {/** Everything right of the back arrow is one tap target → group/channel
          *   detail (or peer profile for a DM); fills full height + width. */}
@@ -121,8 +118,8 @@ export default function XmtpConversation(): React.ReactElement {
             else if (peerAddr) router.push({ pathname: '/user/[address]', params: { address: peerAddr } });
           }}
           style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 14 }}
-        >
-          <HeaderAvatar peerAddr={peerAddr} groupImage={groupImage} channelId={convId} isGroup={isGroup} border={border} />
+>
+          <HeaderAvatar peerAddr={peerAddr} groupImage={groupImage} channelId={convId} isGroup={isGroup} border={border}/>
           <Text weight="semibold" size="4xl" color={head} style={{ flex: 1 }} numberOfLines={1}>
             {isGroup ? (groupName === null ? '' : (groupName || 'Untitled group'))
               : peerAddr ? (getPeerName(peerAddr) ?? shortAddress(peerAddr)) : ''}
@@ -134,14 +131,14 @@ export default function XmtpConversation(): React.ReactElement {
           onPress={() => setOverflowOpen(true)}
           hitSlop={8}
           style={{ paddingHorizontal: 14, justifyContent: 'center' }}
-        >
-          <Icon name="dotsVertical" size={22} color={fg} />
+>
+          <Icon name="dotsVertical" size={22} color={fg}/>
         </Pressable>
       </Row>
       {/** Fade strip below the top nav — mirrors the composer's top fade. Start it 1px
        *  higher so its solid-bg top edge overlaps the nav bottom, closing the hairline
        *  seam between the two absolute bg layers, then ramps to transparent. */}
-      <ComposerGradient bg={bg} direction="up" top={52 + insets.top - 1} height={24} />
+      <ComposerGradient bg={bg} direction="up" top={52 + insets.top - 1} height={24}/>
       <KeyboardStickyView offset={{ opened: insets.bottom }}>
       <Box>
       {/** Jump-to-bottom: anchored above the composer (bottom:'100%') inside the
@@ -156,15 +153,15 @@ export default function XmtpConversation(): React.ReactElement {
             backgroundColor: dark ? rowBg : '#000000',
             alignItems: 'center', justifyContent: 'center',
           }}
-        >
-          <Icon name="arrowDown" size={18} color="#ffffff" />
+>
+          <Icon name="arrowDown" size={18} color="#ffffff"/>
         </Pressable>
       ) : null}
       {/** Message-request gate: RequestActionBar resolves the conversation's
        *   consent state async and reports it via onPending. Composer shows by
        *   default; only a confirmed pending request hides it + renders the
        *   Approve/Reject row in its place. */}
-      <RequestActionBar convId={convId ?? ''} dark={dark} onPending={onRequestPending} />
+      <RequestActionBar convId={convId ?? ''} dark={dark} onPending={onRequestPending}/>
       {!requestPending ? (
         <MessengerComposer
           dark={dark}
@@ -176,7 +173,7 @@ export default function XmtpConversation(): React.ReactElement {
           onJumpToReply={jumpToMessage}
           onOptimistic={onOptimistic}
           onSent={onSent}
-        />
+/>
       ) : null}
       </Box>
       </KeyboardStickyView>
@@ -193,7 +190,7 @@ export default function XmtpConversation(): React.ReactElement {
         onClose={() => setOverflowOpen(false)}
         context="view"
         onAfterLeave={result => flash(result === 'left' ? 'Left group' : 'Group hidden')}
-      />
+/>
       <BubbleActionMenu
         target={menuFor}
         anchor={menuAnchor}
@@ -219,7 +216,7 @@ export default function XmtpConversation(): React.ReactElement {
           if (menuFor) void Share.share({ message: `https://metro.box/#/xmtp/${convId}?m=${menuFor.id}` });
           setMenuFor(null);
         }}
-      />
+/>
     </RNAnimated.View>
   );
 }

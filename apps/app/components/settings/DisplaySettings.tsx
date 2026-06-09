@@ -27,22 +27,22 @@ export function DisplaySettings(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const pref = useThemePreference();
   const custom = useCustomTheme();
-  const { text: fg, link: head, bg, border } = usePalette();
+  const { text: fg, link: head, border } = usePalette();
   const sub = fg;
   const rowBg = border;
   const insets = useSafeAreaInsets();
 
   return (
-    <Col flex={1} style={{ backgroundColor: bg }}>
-      <SystemHeader title="Display" dark={dark} fg={fg} head={head} border={border} />
+    <Col surface="surface" flex={1}>
+      <SystemHeader title="Display" dark={dark} fg={fg} head={head} border={border}/>
       <ScrollView
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}
-      >
+>
         <Text size="xs" color={sub} style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
           THEME
         </Text>
-        <Box mx={16} style={{ overflow: 'hidden' }}>
+        <Box margin={{ x: 16 }} style={{ overflow: 'hidden' }}>
           <Card dark={dark} background={rowBg} padding={0}>
             <ListView dark={dark}>
               {THEME_OPTIONS.map((opt) => {
@@ -53,8 +53,8 @@ export function DisplaySettings(): React.ReactElement {
                     dark={dark}
                     onPress={() => { setCustomTheme(false); void setThemePreference(opt.value); }}
                     style={{ paddingHorizontal: 14, paddingVertical: 14 }}
-                  >
-                    <Icon name={opt.icon} size={22} color={head} />
+>
+                    <Icon name={opt.icon} size={22} color={head}/>
                     <Text size="xl" color={fg} style={{ flex: 1 }}>{opt.label}</Text>
                     {selected ? <Icon name="check" size={20} color={head} /> : null}
                   </ListViewItem>
@@ -65,8 +65,8 @@ export function DisplaySettings(): React.ReactElement {
                 dark={dark}
                 onPress={() => setCustomTheme(true)}
                 style={{ paddingHorizontal: 14, paddingVertical: 14 }}
-              >
-                <Icon name="colorSwatch" size={22} color={head} />
+>
+                <Icon name="colorSwatch" size={22} color={head}/>
                 <Text size="xl" color={fg} style={{ flex: 1 }}>Custom</Text>
                 {custom ? <Icon name="check" size={20} color={head} /> : null}
               </ListViewItem>
@@ -75,11 +75,11 @@ export function DisplaySettings(): React.ReactElement {
         </Box>
 
         {custom ? (
-          <Box style={{ paddingHorizontal: 16, paddingTop: 24 }}>
+          <Box padding={{ x: 16, top: 24 }}>
             <Text size="xs" color={sub} style={{ paddingBottom: 4 }}>
               CUSTOM COLORS
             </Text>
-            <ColorTokens p={{ dark, head, sub, border, rowBg }} />
+            <ColorTokens p={{ dark, head, sub, border, rowBg }}/>
           </Box>
         ) : null}
       </ScrollView>

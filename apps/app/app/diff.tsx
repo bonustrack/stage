@@ -55,20 +55,17 @@ export default function Diff(): React.ReactElement {
     : (url ?? '');
 
   return (
-    <Col flex={1} style={{ backgroundColor: p.bg }}>
-      <Row style={{ alignItems: 'center', gap: 8,
-        paddingHorizontal: 12, paddingTop: 8 + insets.top, paddingBottom: 10,
-        borderBottomWidth: 1, borderBottomColor: p.border,
-        backgroundColor: p.toolbarBg, }}>
+    <Col surface="surface" flex={1}>
+      <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: p.border }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
-          <Icon name="arrowLeft" size={22} color={p.text} />
+          <Icon name="arrowLeft" size={22} color={p.text}/>
         </Pressable>
-        <Title size="sm" dark={dark} color={p.link} style={{ flex: 1 }} numberOfLines={1}>
+        <Title size="sm" style={{ flex: 1 }} numberOfLines={1}>
           Changes
         </Title>
         {prUrl ? (
           <Pressable onPress={() => { void Linking.openURL(prUrl); }} hitSlop={8} style={{ padding: 4 }}>
-            <Icon name="link" size={20} color={p.link} />
+            <Icon name="link" size={20} color={p.link}/>
           </Pressable>
         ) : null}
       </Row>
@@ -77,18 +74,18 @@ export default function Diff(): React.ReactElement {
         {!ref ? (
           <Text color={p.text} style={{ opacity: 0.7, paddingHorizontal: 12 }}>No GitHub link is set for this channel.</Text>
         ) : isLoading ? (
-          <Box style={{ paddingVertical: 40, alignItems: 'center' }}><ActivityIndicator color={p.link} /></Box>
+          <Box padding={{ y: 40 }} align="center"><ActivityIndicator color={p.link} /></Box>
         ) : isError ? (
           <Text color={p.text} style={{ opacity: 0.7, paddingHorizontal: 12 }}>Could not load the diff (private repo or GitHub rate limit). Open it on GitHub from the link icon above.</Text>
         ) : diff?.kind === 'no-pr' ? (
-          <Box style={{ paddingHorizontal: 12 }}>
+          <Box padding={{ x: 12 }}>
             {diff.title ? (
               <Text weight="semibold" size="5xl" color={p.text} style={{ lineHeight: 32, marginBottom: diff.body?.trim() ? 10 : 10 }}>
                 {diff.title}
               </Text>
             ) : null}
             {diff.body?.trim() ? (
-              <Box style={{ marginBottom: 10 }}>
+              <Box margin={{ bottom: 10 }}>
                 <Markdown {...mdProps}>{diff.body.trim()}</Markdown>
               </Box>
             ) : null}
@@ -98,23 +95,23 @@ export default function Diff(): React.ReactElement {
           <Text color={p.text} style={{ opacity: 0.7, paddingHorizontal: 12 }}>No file changes in this pull request.</Text>
         ) : (
           <>
-            <Box style={{ paddingHorizontal: 12 }}>
+            <Box padding={{ x: 12 }}>
               {diff?.title ? (
                 <Text weight="semibold" size="5xl" color={p.text} style={{ lineHeight: 32, marginBottom: diff?.body?.trim() ? 10 : 12 }}>
                   {diff.title}
                 </Text>
               ) : null}
               {diff?.body?.trim() ? (
-                <Box style={{ marginBottom: 12 }}>
+                <Box margin={{ bottom: 12 }}>
                   <Markdown {...mdProps}>{diff.body.trim()}</Markdown>
                 </Box>
               ) : null}
-              <Row style={{ alignItems: 'center', gap: 12, marginBottom: 12, paddingHorizontal: 2 }}>
+              <Row padding={{ x: 2 }} margin={{ bottom: 12 }} align="center" gap={12}>
                 <Text size="xs" color={p.text} style={{ opacity: 0.6 }}>
                   {diff?.files.length} {diff?.files.length === 1 ? 'file' : 'files'} changed
                 </Text>
-                <Text weight="semibold" size="md" color={p.success}>+{diff?.additions ?? 0}</Text>
-                <Text weight="semibold" size="md" color={p.danger}>-{diff?.deletions ?? 0}</Text>
+                <Text weight="semibold" size="md" role="success">+{diff?.additions ?? 0}</Text>
+                <Text weight="semibold" size="md" role="danger">-{diff?.deletions ?? 0}</Text>
               </Row>
             </Box>
             <ListView dark={dark} style={{ borderTopWidth: 1, borderTopColor: p.border }}>

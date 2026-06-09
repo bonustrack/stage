@@ -84,7 +84,7 @@ export function AccountSecuritySection(
       <Text size="xs" color={c.sub} style={{ paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8 }}>
         ACCOUNT
       </Text>
-      <Box mx={16} style={{ overflow: 'hidden' }}>
+      <Box margin={{ x: 16 }} style={{ overflow: 'hidden' }}>
         <Card dark={dark} background={c.rowBg} padding={0}>
           <ListView dark={dark}>
             {exportable ? (

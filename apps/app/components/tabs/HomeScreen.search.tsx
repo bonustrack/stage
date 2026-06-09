@@ -39,17 +39,15 @@ export const ChannelsSearchBar = forwardRef<React.ComponentRef<typeof Input>, {
   inputBg: string;
   toolbarBg: string;
 }>(function ChannelsSearchBar(props, ref): React.ReactElement {
-  const { head, sub, inputBg, toolbarBg } = props;
+  const { head, sub } = props;
   const blockRadius = useBlockRadius();
   return (
-    <Row align="center" gap={8} px={12} pt={12} pb={10} bg={toolbarBg}>
+    <Row padding={{ x: 12, top: 12, bottom: 10 }} align="center" gap={8} surface="toolbar">
       <Pressable onPress={props.onClose} hitSlop={8}>
-        <Icon name="arrowLeft" size={22} color={head} />
+        <Icon name="arrowLeft" size={22} color={head}/>
       </Pressable>
-      <Row flex={1} style={{ alignItems: 'center', gap: 8,
-        backgroundColor: inputBg, borderRadius: blockRadius,
-        paddingHorizontal: 14, paddingVertical: 8, }}>
-        <Icon name="search" size={22} color={sub} />
+      <Row surface="raised" radius={blockRadius} padding={{ x: 14, y: 8 }} flex={1} align="center" gap={8}>
+        <Icon name="search" size={22} color={sub}/>
         <Input
           ref={ref}
           autoFocus
@@ -60,10 +58,10 @@ export const ChannelsSearchBar = forwardRef<React.ComponentRef<typeof Input>, {
           inputProps={{ autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'search' }}
           style={{ flex: 1, color: head, fontSize: fontSize('4xl'), lineHeight: 23, fontFamily: 'Calibre-Medium', padding: 0,
             backgroundColor: 'transparent', minHeight: 0, borderWidth: 0 }}
-        />
-        {props.query.length > 0 ? (
+/>
+        {props.query.length> 0 ? (
           <Pressable onPress={() => props.setQuery('')} hitSlop={8}>
-            <Icon name="x" size={16} color={sub} />
+            <Icon name="x" size={16} color={sub}/>
           </Pressable>
         ) : null}
       </Row>

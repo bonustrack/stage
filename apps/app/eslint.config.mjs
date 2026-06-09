@@ -1,5 +1,55 @@
 import tseslint from "typescript-eslint";
 
+/** Inline plugin: a WARNING (not error) that nudges per-call `color=`/`background=`
+ *  on the theme-native Kit primitives toward the semantic variant when the value
+ *  is a bare palette-role identifier. It runs as its OWN rule id so it can be a
+ *  warning alongside the error-level structural bans (a single `no-restricted-syntax`
+ *  can only carry one severity). It deliberately only fires on bare identifiers
+ *  whose name is a known role, so escape-hatch one-offs (withAlpha tints, raw hex,
+ *  computed expressions, brand swatches, the color-editor page) never warn. */
+const TEXT_ROLE_HINT = {
+  link: 'role="link" (or drop it - default text is already the head colour)',
+  danger: 'role="danger"',
+  success: 'role="success"',
+  sub: 'role="secondary"',
+};
+const BOX_SURFACE_HINT = {
+  bg: 'surface="surface"',
+  inputBg: 'surface="raised"',
+  rowBg: 'surface="raised"',
+  toolbarBg: 'surface="toolbar"',
+};
+const TEXT_TAGS = new Set(["Text", "Title", "Caption"]);
+const BOX_TAGS = new Set(["Box", "Row", "Col"]);
+const metroThemeNative = {
+  rules: {
+    "prefer-role-variant": {
+      meta: { type: "suggestion", docs: { description: "prefer theme-native role/surface variants over per-call color/background palette idents" }, schema: [] },
+      create(context) {
+        return {
+          JSXAttribute(node) {
+            const attr = node.name && node.name.name;
+            if (attr !== "color" && attr !== "background") return;
+            const open = node.parent;
+            const tag = open && open.name && open.name.name;
+            if (!tag) return;
+            const val = node.value;
+            if (!val || val.type !== "JSXExpressionContainer") return;
+            const expr = val.expression;
+            if (!expr || expr.type !== "Identifier") return; // bare ident only
+            const name = expr.name;
+            if (attr === "color" && TEXT_TAGS.has(tag) && TEXT_ROLE_HINT[name]) {
+              context.report({ node, message: `theme-native: prefer ${TEXT_ROLE_HINT[name]} over color={${name}} on <${tag}> (color is an override escape hatch).` });
+            } else if (attr === "background" && BOX_TAGS.has(tag) && BOX_SURFACE_HINT[name]) {
+              context.report({ node, message: `theme-native: prefer ${BOX_SURFACE_HINT[name]} over background={${name}} on <${tag}> (background is an override escape hatch).` });
+            }
+          },
+        };
+      },
+    },
+  },
+};
+
 export default tseslint.config(
   // nodejs-assets/ is the embedded-Node host (runs inside nodejs-mobile, not
   // Hermes). It's node-only JS with its own runtime/globals + an N-API prover;
@@ -9,7 +59,11 @@ export default tseslint.config(
   ...tseslint.configs.recommended,
   {
     files: ["app/**/*.{ts,tsx}", "components/**/*.{ts,tsx}", "lib/**/*.{ts,tsx}"],
+    plugins: { metro: metroThemeNative },
     rules: {
+      // THEME-NATIVE: WARNING nudging per-call color=/background= palette idents
+      // toward the semantic role/surface variant (escape-hatch one-offs never fire).
+      "metro/prefer-role-variant": "warn",
       // Strong typing: ban `any`. Use `unknown` + narrowing, real interfaces,
       // generics, or library types instead.
       "@typescript-eslint/no-explicit-any": "error",
@@ -81,6 +135,35 @@ export default tseslint.config(
             "JSXOpeningElement[name.name='Box'] > JSXAttribute[name.name='style'] > JSXExpressionContainer ObjectExpression > Property[key.name=/^(flex|flexDirection)$/]",
           message:
             "Box must not set flex/flexDirection in style. Use Row (flexDirection:'row') or Col (column, the default), and pass flex-grow via the `flex` prop (<Col flex={1}>) instead of a style flex.",
+        },
+        {
+          // Layout params: Box/Row/Col expose first-class props for alignment,
+          // distribution, gap, padding, and margin (see kit/src/layout.ts). The
+          // raw RN style equivalents must NOT be set inline in the element's own
+          // top-level `style={{...}}` - pass the prop so layout stays
+          // declarative and the single mapper owns the prop->style translation:
+          //   alignItems -> align, justifyContent -> justify, gap -> gap,
+          //   padding* -> padding (scalar or {x,y,top,right,bottom,left}),
+          //   margin* -> margin (same ChatKit Spacing shape).
+          // Scoped to the DIRECT-child style object literal of Box/Row/Col only
+          // (same chain as the Box flex rule above), so nested objects and child
+          // elements are never matched. Overlapping-side combos that one prop
+          // can't express (e.g. padding + paddingTop) may keep a key in style.
+          selector:
+            "JSXOpeningElement[name.name=/^(Box|Row|Col)$/] > JSXAttribute[name.name='style'] > JSXExpressionContainer ObjectExpression > Property[key.name=/^(alignItems|justifyContent|gap|padding|paddingHorizontal|paddingVertical|paddingTop|paddingRight|paddingBottom|paddingLeft|margin|marginHorizontal|marginVertical|marginTop|marginRight|marginBottom|marginLeft)$/]",
+          message:
+            "Box/Row/Col: use the layout prop instead of a style entry - alignItems->align, justifyContent->justify, gap->gap, padding*->padding (scalar or {x,y,top,right,bottom,left}), margin*->margin (same Spacing shape) (see kit/src/layout.ts).",
+        },
+        {
+          // THEME-NATIVE: Box/Row/Col take their fill via the semantic `surface`
+          // variant (surface/raised/sunken/toolbar) or the `background` override
+          // prop - NEVER a `backgroundColor` in the element's own style. A style
+          // backgroundColor buries the surface decision in styling and dodges the
+          // theme-native role resolution, so it is banned on these tags.
+          selector:
+            "JSXOpeningElement[name.name=/^(Box|Row|Col)$/] > JSXAttribute[name.name='style'] > JSXExpressionContainer ObjectExpression > Property[key.name='backgroundColor']",
+          message:
+            "Box/Row/Col: use the `surface` variant (surface/raised/sunken/toolbar) or the `background` override prop, not a backgroundColor in style.",
         },
       ],
       // `error`: cap files at 400 lines. Split a file rather than crossing it.

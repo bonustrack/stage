@@ -44,14 +44,14 @@ export function ContactSuggestions({
                 borderRadius: 12, paddingHorizontal: 8, paddingVertical: 8,
                 backgroundColor: pressed ? border : 'transparent',
               })}
-            >
+>
               <Avatar
                 address={c.address}
                 imageUri={c.avatar}
                 size="md"
                 cacheBuster={c.cacheBuster}
                 style={{ backgroundColor: border }}
-              />
+/>
               <Col flex={1} gap={1}>
                 <Text weight="semibold" size="md" numberOfLines={1} color={head}>
                   {c.name}
@@ -62,15 +62,11 @@ export function ContactSuggestions({
                   </Text>
                 )}
               </Col>
-              <Row
+              <Row width={24} height={24} radius="lg" background={isSelected ? head : 'transparent'}
                 align="center"
                 justify="center"
-                style={{
-                  width: 24, height: 24, borderRadius: 12, borderWidth: 2,
-                  borderColor: isSelected ? head : border,
-                  backgroundColor: isSelected ? head : 'transparent',
-                }}
-              >
+                style={{ borderWidth: 2, borderColor: isSelected ? head : border }}
+>
                 {isSelected && <Icon name="check" size={14} color="#fff" />}
               </Row>
             </Pressable>

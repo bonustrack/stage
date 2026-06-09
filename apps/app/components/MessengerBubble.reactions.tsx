@@ -29,10 +29,10 @@ export function ReactionsRow({
   const confirmedEntries = reactions
     ? [...reactions.entries()].filter(([emoji]) => !removed.has(emoji))
     : [];
-  const hasConfirmed = confirmedEntries.length > 0;
+  const hasConfirmed = confirmedEntries.length> 0;
   if (!hasConfirmed && pendingEmojis.length === 0) return null;
   return (
-    <Row wrap gap={4} mt={4}>
+    <Row margin={{ top: 4 }} wrap gap={4}>
       {confirmedEntries.map(([emoji, count]) => {
         /** Own pills get a subtle outline; tap toggles add/remove via onReact. */
         const mine = !!ownEmojis?.has(emoji);
@@ -56,7 +56,7 @@ export function ReactionsRow({
             delayLongPress={300}
             hitSlop={6}
             style={pillStyle}
-          >
+>
             {inner}
           </Pressable>
         ) : (
@@ -64,7 +64,7 @@ export function ReactionsRow({
         );
       })}
       {pendingEmojis.map(emoji => (
-        <Row key={`pending-${emoji}`} align="center" gap={4} px={8} py={2} radius={999} bg={pillBg} style={{
+        <Row padding={{ x: 8, y: 2 }} key={`pending-${emoji}`} align="center" gap={4} radius="full" background={pillBg} style={{
           opacity: 0.45,
         }}>
           <Text size="xs">{emoji}</Text>
@@ -80,7 +80,7 @@ export function ReactionPicker({ dark, sub, onPick, onClose }: {
   dark: boolean; sub: string; onPick: (emoji: string) => void; onClose: () => void;
 }): React.ReactElement {
   return (
-    <Row gap={8} mt={6} px={10} py={6} radius={999} bg={dark ? '#282a2d' : '#ffffff'} style={{
+    <Row padding={{ x: 10, y: 6 }} margin={{ top: 6 }} gap={8} radius="full" background={dark ? '#282a2d' : '#ffffff'} style={{
       shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 8, elevation: 4,
       alignSelf: 'flex-start',
     }}>

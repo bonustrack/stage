@@ -22,9 +22,8 @@ import {
 
 export function DeveloperSettings(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border } = usePalette();
+  const { text: fg, link: head, border } = usePalette();
   const sub = fg;
-  const rowBg = border;
   const insets = useSafeAreaInsets();
   const blockRadius = useBlockRadius();
   const [enabled, setEnabled] = useState(isDebugConsoleEnabled());
@@ -40,26 +39,23 @@ export function DeveloperSettings(): React.ReactElement {
   };
 
   return (
-    <Col flex={1} style={{ backgroundColor: bg }}>
-      <SystemHeader title="Developer" dark={dark} fg={fg} head={head} border={border} />
+    <Col surface="surface" flex={1}>
+      <SystemHeader title="Developer" dark={dark} fg={fg} head={head} border={border}/>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <Text size="xs" color={sub} style={{ paddingHorizontal: 16, paddingTop: 20 }}>
           DIAGNOSTICS
         </Text>
-        <Box
-          style={{
-            marginHorizontal: 16, marginTop: 8, padding: 14, borderRadius: blockRadius,
-            backgroundColor: rowBg, borderWidth: 1, borderColor: border,
-          }}
-        >
+        <Box radius={blockRadius} surface="raised" padding={14} margin={{ x: 16, top: 8 }}
+          style={{ borderWidth: 1, borderColor: border }}
+>
           <Row align="center" gap={12}>
-            <Col flex={1} style={{ minWidth: 0 }}>
+            <Col minWidth={0} flex={1}>
               <Text weight="semibold" size="md" color={head}>Railgun debug console</Text>
               <Text size="xs" color={sub} style={{ marginTop: 2 }}>
                 Show the live Railgun bridge logs + balance-pipeline diagnostics on the Private wallet tab. Off by default - leaving it on can slow the app down.
               </Text>
             </Col>
-            <Switch value={enabled} onValueChange={onToggle} />
+            <Switch value={enabled} onValueChange={onToggle}/>
           </Row>
         </Box>
       </ScrollView>

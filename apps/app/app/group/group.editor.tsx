@@ -33,7 +33,7 @@ function SaveButton({ saving, disabled, onSave, dark }: {
       tintFg={bg}
       style={{ paddingHorizontal: 14 }}
       textStyle={{ fontSize: fontSize('xs'), fontFamily: 'Calibre-Medium' }}
-    />
+/>
   );
 }
 
@@ -58,12 +58,8 @@ export function GroupProfileHeader({ imageUrl, channelId, uploadingImage, insetT
     <>
       {/* Cover extends up behind the floating topnav/status bar so the colour
           bleeds to y=0 (height += insetTop), exactly like ProfileScreen route. */}
-      <Box bg={rowBg} style={{ height: 140 + insetTop }} />
-      <Box style={{
-        alignItems: 'flex-start', paddingHorizontal: 16,
-        backgroundColor: bg, marginTop: -18,
-        borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'visible',
-      }}>
+      <Box height={140 + insetTop} surface="raised"/>
+      <Box surface="surface" padding={{ x: 16 }} margin={{ top: -18 }} align="start" style={{ borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'visible' }}>
         <Pressable onPress={onTap} onLongPress={onPick} disabled={uploadingImage} hitSlop={8}
           style={{ marginTop: -44, zIndex: 1 }}>
           <Image
@@ -73,10 +69,10 @@ export function GroupProfileHeader({ imageUrl, channelId, uploadingImage, insetT
               backgroundColor: rowBg, borderWidth: 3, borderColor: bg,
               opacity: uploadingImage ? 0.5 : 1,
             }}
-          />
+/>
           {uploadingImage ? (
-            <Box style={{ position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' }}>
-              <Spinner size={20} color={fg} />
+            <Box align="center" justify="center" style={{ position: 'absolute', inset: 0 }}>
+              <Spinner size={20} color={fg}/>
             </Box>
           ) : null}
         </Pressable>
@@ -95,9 +91,9 @@ export function GroupNameEditor({ name, draft, setDraft, editing, setEditing, sa
 }): React.ReactElement {
   const { fg, head, sub, border, inputBg } = p;
   return (
-    <Box style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
+    <Box padding={{ x: 16, bottom: 16 }}>
       {editing ? (
-        <Row style={{ alignItems: 'center', gap: 8, marginTop: 6 }}>
+        <Row margin={{ top: 6 }} align="center" gap={8}>
           <Input
             value={draft}
             onChangeText={setDraft}
@@ -110,8 +106,8 @@ export function GroupNameEditor({ name, draft, setDraft, editing, setEditing, sa
               borderWidth: 1, borderColor: border, borderRadius: 10,
               paddingHorizontal: 10, paddingVertical: 8, fontSize: fontSize('md'),
             }}
-          />
-          <SaveButton saving={saving} disabled={saving || !draft.trim()} onSave={onSave} dark={dark} />
+/>
+          <SaveButton saving={saving} disabled={saving || !draft.trim()} onSave={onSave} dark={dark}/>
         </Row>
       ) : (
         <Pressable onPress={() => setEditing(true)} hitSlop={6} style={{ marginTop: 6, alignItems: 'flex-start' }}>
@@ -132,10 +128,10 @@ export function GroupDescriptionEditor({ description, descriptionDraft, setDescr
 }): React.ReactElement {
   const { fg, sub, border, inputBg } = p;
   return (
-    <Box style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
+    <Box padding={{ x: 16, bottom: 16 }}>
       <Text size="xs" color={sub}>DESCRIPTION</Text>
       {editing ? (
-        <Row style={{ alignItems: 'flex-start', gap: 8, marginTop: 6 }}>
+        <Row margin={{ top: 6 }} align="start" gap={8}>
           <Textarea
             value={descriptionDraft}
             onChangeText={setDescriptionDraft}
@@ -149,8 +145,8 @@ export function GroupDescriptionEditor({ description, descriptionDraft, setDescr
               paddingHorizontal: 10, paddingVertical: 8, fontSize: fontSize('md'),
               minHeight: 60, textAlignVertical: 'top',
             }}
-          />
-          <SaveButton saving={saving} disabled={saving} onSave={onSave} dark={dark} />
+/>
+          <SaveButton saving={saving} disabled={saving} onSave={onSave} dark={dark}/>
         </Row>
       ) : (
         <Pressable onPress={() => setEditing(true)} hitSlop={6} style={{ marginTop: 6 }}>
