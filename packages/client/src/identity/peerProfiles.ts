@@ -28,16 +28,24 @@ function notify(): void {
   listeners.forEach(l => l());
 }
 
-/** Resolve display names from stamp.fyi (`lookup_addresses` → ENS), the same
- *  source Snapshot's own UI uses. Returns a lower-cased `{ address → name }`
- *  map; addresses with no ENS are simply absent. */
-async function lookupNames(addrs: string[]): Promise<Record<string, string>> {
+/** stamp.fyi `lookup_addresses` rejects (HTTP 500) when asked for more than ~50
+ *  addresses at once, so we split every request into chunks below that cap. */
+const STAMP_LOOKUP_CHUNK = 50;
+
+/** Resolve display names for ONE chunk (<= STAMP_LOOKUP_CHUNK addrs) from
+ *  stamp.fyi (`lookup_addresses` → ENS), the same source Snapshot's own UI
+ *  uses. Returns a lower-cased `{ address → name }` map; addresses with no ENS
+ *  are simply absent. Returns `null` (NOT `{}`) on a failed request so the
+ *  caller can leave those addresses unresolved and retry, rather than caching a
+ *  false "no name" that would hide a real ENS forever. */
+async function lookupNamesChunk(addrs: string[]): Promise<Record<string, string> | null> {
   try {
     const res = await fetch(STAMP_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ method: 'lookup_addresses', params: addrs }),
     });
+    if (!res.ok) return null;
     const json = await res.json();
     const result: Record<string, string> = json?.result ?? {};
     const out: Record<string, string> = {};
@@ -46,20 +54,29 @@ async function lookupNames(addrs: string[]): Promise<Record<string, string>> {
     }
     return out;
   } catch {
-    return {};
+    return null;
   }
 }
 
 async function fetchBatch(addrs: string[]): Promise<void> {
   try {
-    const names = await lookupNames(addrs);
-    /** Cache an entry for every requested address (empty {} when no ENS) so each
-     *  address resolves once; avatars come from the stamp identicon fallback. */
-    for (const a of addrs) {
-      store.set(a, { name: names[a] });
+    for (let i = 0; i < addrs.length; i += STAMP_LOOKUP_CHUNK) {
+      const chunk = addrs.slice(i, i + STAMP_LOOKUP_CHUNK);
+      const names = await lookupNamesChunk(chunk);
+      if (!names) {
+        /* This chunk failed — drop it from `pending` so a later ensure() can
+         * retry; do NOT cache a miss (that would hide real ENS names). */
+        chunk.forEach(a => pending.delete(a));
+        continue;
+      }
+      /** Cache an entry for every requested address (name undefined when no
+       *  ENS) so each address resolves once; consumers fall back to the
+       *  truncated address, and avatars to the stamp identicon. */
+      for (const a of chunk) {
+        store.set(a, { name: names[a] });
+        pending.delete(a);
+      }
     }
-  } catch {
-    /* leave unresolved — a later ensure() retries */
   } finally {
     addrs.forEach(a => pending.delete(a));
     notify();
