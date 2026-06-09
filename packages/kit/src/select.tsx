@@ -24,7 +24,7 @@ import {
   type ControlSize,
   type ControlVariant,
 } from './control.styles';
-import { BLOCK_RADIUS_DEFAULT } from './tokens';
+import { BLOCK_RADIUS_DEFAULT, FONT_SIZE, schemePalette } from './tokens';
 import { Icon } from './icon';
 
 /** ChatKit Select option shape. */
@@ -93,9 +93,11 @@ export function Select(props: SelectProps): React.ReactElement {
   const colors = controlColors(variant, dark);
   const corner = radius ?? (pill ? 999 : BLOCK_RADIUS_DEFAULT);
   const box = controlBoxStyle(size, variant, colors, corner, false);
-  const head = dark ? '#ffffff' : '#000000';
+  const p = schemePalette(dark);
+  const head = p.head;
+  // Sheet fill has no semantic token equivalent (kept literal).
   const sheetBg = dark ? '#1b1c1e' : '#ffffff';
-  const rowBorder = dark ? '#282a2d' : '#e4e4e5';
+  const rowBorder = p.border;
 
   const current = options.find((o) => o.value === selected);
 
@@ -135,7 +137,7 @@ export function Select(props: SelectProps): React.ReactElement {
           style={{
             flex: 1,
             color: current ? head : colors.placeholder,
-            fontSize: 15,
+            fontSize: FONT_SIZE.md,
             fontFamily: 'Calibre-Medium',
           }}
         >
@@ -177,7 +179,7 @@ export function Select(props: SelectProps): React.ReactElement {
                       borderBottomColor: rowBorder,
                     }}
                   >
-                    <RNText style={{ flex: 1, color: head, fontSize: 16, fontFamily: 'Calibre-Medium' }}>
+                    <RNText style={{ flex: 1, color: head, fontSize: FONT_SIZE.lg, fontFamily: 'Calibre-Medium' }}>
                       {opt.label}
                     </RNText>
                     {isSel ? <Icon name="check" size={18} color={head} /> : null}

@@ -125,6 +125,40 @@ export function resolveColorToken(c: string, scheme: 'light' | 'dark'): string {
   return isColorToken(c) ? semanticColors[COLOR_TOKEN_MAP[c]][scheme] : c;
 }
 
+/** Scheme-resolved surface palette shared by the Kit component internals,
+ *  sourced from the `colors` scale so no component hard-codes a hex. Additive
+ *  on top of the #394 token set: it reuses the SAME `colors` literals, so a
+ *  component adopting it renders the identical pixels. `head`/`text`/`sub` are
+ *  text colours, `surface`/`pressed` the hover/row fills, `border` the divider.
+ *
+ *  Reproduces the per-component hexes the Kit primitives used:
+ *    head  = #ffffff / #000000   (head-*)
+ *    text  = #9f9fa3 / #57606a   (fg-*)
+ *    sub   = #7a7a7e / #8a929d   (sub-*)
+ *    surface/pressed = #1c1d1f / #f2f2f3 (hover-*)
+ *    border = #282a2d / #e4e4e5  (border-*) */
+export interface SchemePalette {
+  head: string;
+  text: string;
+  sub: string;
+  surface: string;
+  pressed: string;
+  border: string;
+}
+
+/** Resolve the shared surface palette for an effective scheme from `colors`. */
+export function schemePalette(dark: boolean): SchemePalette {
+  const k = dark ? 'dark' : 'light';
+  return {
+    head: colors[`head-${k}`],
+    text: colors[`fg-${k}`],
+    sub: colors[`sub-${k}`],
+    surface: colors[`hover-${k}`],
+    pressed: colors[`hover-${k}`],
+    border: colors[`border-${k}`],
+  };
+}
+
 /** Numeric design tokens (non-color), both editable + persisted via the app's
  *  radiusOverride store.
  *

@@ -5,6 +5,7 @@
  *  convention in apps/app/lib/theme.ts (head / sub / input-bg / border). */
 
 import type { ViewStyle, TextStyle } from 'react-native';
+import { FONT_SIZE, schemePalette } from './tokens';
 
 /** ChatKit ControlSize. */
 export type ControlSize = '3xs' | '2xs' | 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
@@ -20,15 +21,15 @@ export interface ControlSizeSpec {
 
 /** ControlSize -> box metrics. `md` reproduces today's input sizing. */
 export const CONTROL_SIZES: Record<ControlSize, ControlSizeSpec> = {
-  '3xs': { minHeight: 24, paddingHorizontal: 8, paddingVertical: 3, fontSize: 12 },
-  '2xs': { minHeight: 28, paddingHorizontal: 9, paddingVertical: 4, fontSize: 13 },
-  xs: { minHeight: 32, paddingHorizontal: 10, paddingVertical: 5, fontSize: 14 },
-  sm: { minHeight: 36, paddingHorizontal: 11, paddingVertical: 6, fontSize: 14 },
-  md: { minHeight: 40, paddingHorizontal: 12, paddingVertical: 8, fontSize: 15 },
-  lg: { minHeight: 48, paddingHorizontal: 14, paddingVertical: 10, fontSize: 16 },
-  xl: { minHeight: 56, paddingHorizontal: 16, paddingVertical: 12, fontSize: 17 },
-  '2xl': { minHeight: 64, paddingHorizontal: 18, paddingVertical: 14, fontSize: 18 },
-  '3xl': { minHeight: 72, paddingHorizontal: 20, paddingVertical: 16, fontSize: 20 },
+  '3xs': { minHeight: 24, paddingHorizontal: 8, paddingVertical: 3, fontSize: FONT_SIZE['2xs'] },
+  '2xs': { minHeight: 28, paddingHorizontal: 9, paddingVertical: 4, fontSize: FONT_SIZE.xs },
+  xs: { minHeight: 32, paddingHorizontal: 10, paddingVertical: 5, fontSize: FONT_SIZE.sm },
+  sm: { minHeight: 36, paddingHorizontal: 11, paddingVertical: 6, fontSize: FONT_SIZE.sm },
+  md: { minHeight: 40, paddingHorizontal: 12, paddingVertical: 8, fontSize: FONT_SIZE.md },
+  lg: { minHeight: 48, paddingHorizontal: 14, paddingVertical: 10, fontSize: FONT_SIZE.lg },
+  xl: { minHeight: 56, paddingHorizontal: 16, paddingVertical: 12, fontSize: FONT_SIZE.xl },
+  '2xl': { minHeight: 64, paddingHorizontal: 18, paddingVertical: 14, fontSize: FONT_SIZE['2xl'] },
+  '3xl': { minHeight: 72, paddingHorizontal: 20, paddingVertical: 16, fontSize: FONT_SIZE['4xl'] },
 };
 
 export interface ControlColors {
@@ -41,10 +42,12 @@ export interface ControlColors {
 
 /** Resolve control colours for a variant under the given scheme. */
 export function controlColors(variant: ControlVariant, dark: boolean): ControlColors {
-  const head = dark ? '#ffffff' : '#000000';
-  const sub = dark ? '#7a7a7e' : '#8a929d';
+  const p = schemePalette(dark);
+  const head = p.head;
+  const sub = p.sub;
+  // Input fill + focus accent have no semantic token equivalent (kept literal).
   const inputBg = dark ? '#1b1c1e' : '#f4f4f5';
-  const border = dark ? '#282a2d' : '#e4e4e5';
+  const border = p.border;
   const accent = dark ? '#4f9cf9' : '#2f6fed';
   return {
     bg: variant === 'soft' ? inputBg : 'transparent',
