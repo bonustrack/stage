@@ -136,6 +136,14 @@ const config = {
   android: {
     package: variant.androidPackage,
     versionCode: 26,
+    // P2P calls: camera + mic are added by the @config-plugins/react-native-webrtc
+    // plugin; the FOREGROUND_SERVICE* perms below are what Android 14+ requires to
+    // run getDisplayMedia screen-capture as a mediaProjection foreground service
+    // (without them screenshare throws SecurityException on capture start).
+    permissions: [
+      'android.permission.FOREGROUND_SERVICE',
+      'android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION',
+    ],
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
       backgroundColor: '#0f1115',
@@ -238,6 +246,18 @@ const config = {
     // namespace fix lives in patches/nodejs-mobile-react-native@18.20.4.patch
     // (bun). Requires a NEW APK before the embedded runtime exists on-device.
     './plugins/withNodejsMobile',
+    // react-native-webrtc - NATIVE module powering P2P video/voice/screenshare
+    // calls. The config plugin wires the Android/iOS build (camera + mic
+    // permissions, Gradle/Podfile glue). Requires a NEW dev-client/preview APK
+    // before getUserMedia / RTCPeerConnection / RTCView work; until then
+    // lib/webrtc.ts gates and the UI shows "WebRTC needs the dev build".
+    [
+      '@config-plugins/react-native-webrtc',
+      {
+        cameraPermission: 'Metro uses your camera for video calls.',
+        microphonePermission: 'Metro uses your microphone for calls.',
+      },
+    ],
     // Native audio-decode module — powers TRUE voice-message waveforms
     // (decodeAudioData → PCM). Requires a new dev-client build to take effect.
     'react-native-audio-api',

@@ -24,6 +24,7 @@ import { getCachedRows } from '../../modules/messaging';
 import { flash } from '../../lib/toast';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { HeaderAvatar, BubbleActionMenu, GithubNavButton } from '../../components/xmtp-conv/parts';
+import { CallHeaderButtons } from '../../components/call/CallHeaderButtons';
 import { previewOf } from '../../components/xmtp-conv/feed-helpers';
 import { ConversationFeed } from '../../components/xmtp-conv/ConversationFeed';
 import { useConversationState } from '../../components/xmtp-conv/useConversationState';
@@ -79,8 +80,7 @@ export default function XmtpConversation(): React.ReactElement {
 
   const insets = useSafeAreaInsets();
   /** Reanimated keyboard offset shared with the composer's KeyboardStickyView so the
-   *  FlatList wrapper lifts in lockstep. Match the composer's `height - insets.bottom`
-   *  translate (subtract insets.bottom too) or the feed overshoots. Clamp ≥0. */
+   *  FlatList wrapper lifts in lockstep (composer `height - insets.bottom`, clamp ≥0). */
   const { height: kbHeightShared } = useReanimatedKeyboardAnimation();
   const listWrapperStyle = useAnimatedStyle(() => ({ marginBottom: Math.max(0, -kbHeightShared.value - insets.bottom) }));
 
@@ -141,6 +141,8 @@ export default function XmtpConversation(): React.ReactElement {
         </Pressable>
         {/** Topnav links (groups only): GitHub issue/PR, then overflow. */}
         {isGroup && github ? <GithubNavButton url={github} color={fg} /> : null}
+        {/* P2P call entry (1:1 DMs only): voice + video, gated on native WebRTC. */}
+        {!isGroup && peerAddr ? <CallHeaderButtons line={activeLine} peerName={getPeerName(peerAddr) ?? shortAddress(peerAddr)} color={fg} /> : null}
         <Pressable
           onPress={() => setOverflowOpen(true)}
           hitSlop={8}

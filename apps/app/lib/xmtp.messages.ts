@@ -12,10 +12,11 @@ import {
 import {
   type WalletSendCallsContent, type TransactionReferenceContent,
 } from '@stage-labs/client/xmtp/tx';
+import type { CallSignal } from './call.types';
 import { convOfLine } from './xmtp.client';
 import {
   POLL_CODEC, SIGNATURE_REQUEST_CODEC, SIGNATURE_REFERENCE_CODEC,
-  WALLET_SEND_CALLS_CODEC, TRANSACTION_REFERENCE_CODEC,
+  WALLET_SEND_CALLS_CODEC, TRANSACTION_REFERENCE_CODEC, CALL_CODEC,
 } from './xmtp.codecs';
 
 export { envelopeOfXmtpMessage } from './xmtp.envelope';
@@ -46,6 +47,15 @@ export async function xmtpSendPoll(line: string, poll: PollContent): Promise<str
   const conv = await convOfLine(line);
   if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
   return await conv.send(poll, { contentType: POLL_CODEC.contentType });
+}
+
+/** Send a P2P call signal (`metro.box/call:1.0`) — invite / accept / reject /
+ *  offer / answer / ice / media / hangup. Routed through the JS-codec send path
+ *  via CALL_CODEC.contentType. Mirrors xmtpSendPoll. Returns the message id. */
+export async function xmtpSendCallSignal(line: string, signal: CallSignal): Promise<string> {
+  const conv = await convOfLine(line);
+  if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
+  return await conv.send(signal, { contentType: CALL_CODEC.contentType });
 }
 
 /** Send a signature REQUEST (`metro.box/signatureRequest:1.0`) — either EIP-712

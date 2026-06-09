@@ -11,6 +11,7 @@ import type { PrivateKeyAccount } from 'viem/accounts';
 import { PollCodec } from './xmtpPollCodec';
 import { SignatureRequestCodec, SignatureReferenceCodec } from './xmtpSignatureCodec';
 import { WalletSendCallsCodec, TransactionReferenceCodec } from './xmtpTxCodec';
+import { CALL_CODEC } from './callCodec';
 import { getViemAccount, type AccountRecord } from './accounts';
 import { getWcSign } from './wcSigner';
 
@@ -71,7 +72,17 @@ export const XMTP_CODECS = [
    *  placeholder. */
   WALLET_SEND_CALLS_CODEC,
   TRANSACTION_REFERENCE_CODEC,
+  /** Metro P2P call signaling `metro.box/call:1.0` — WebRTC SDP offer/answer +
+   *  trickled ICE + the invite/accept/reject/hangup control verbs, carried as
+   *  custom XMTP messages on the chat conversation. Pure-JS JSContentCodec
+   *  (UTF-8 JSON body) — NO native module / dev-client rebuild for the SIGNALING
+   *  layer (the native react-native-webrtc dep is only for media). Required on
+   *  both encode (xmtpSendCallSignal) and decode (the useCall stream consumer);
+   *  without it msg.content() throws on inbound signals. */
+  CALL_CODEC,
 ];
+
+export { CALL_CODEC };
 
 /** Build the XMTP-RN `Signer` adapter for a viem `PrivateKeyAccount`.
  *  Shape pulled from `node_modules/@xmtp/react-native-sdk/src/lib/Signer.ts`:
