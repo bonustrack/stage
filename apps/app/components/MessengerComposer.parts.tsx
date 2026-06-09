@@ -33,16 +33,16 @@ export function ReplyBanner({
   /** TopNav border value — matches the conversation header hairline exactly. */
   const borderColor = usePalette().border; // #282a2d / #e4e4e5
   return (
-    /** Outer container breaks out to full screen width (margin x:-22 cancels the
-     *  px:22) so the top border spans edge-to-edge, while the px:22 inset matches
-     *  the composer's horizontal frame. The composer input sits at Col padding 10 +
-     *  the Textarea's intrinsic `md` paddingHorizontal 12 = 22px from the screen
-     *  edge. Both the reply glyph (left) and the ✕ (right) sit at this 22px inset,
-     *  symmetric, lining the bar up with the composer content. The bar's background
-     *  uses the same `surface` token as the composer so it blends in. */
-    <Box padding={{ x: 22 }} margin={{ x: -22 }} surface="surface" style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: borderColor }}>
+    /** The parent composer Col is already edge-to-edge (padding x:0), so the Box
+     *  itself spans the full screen width — its `surface` bg and top hairline run
+     *  edge-to-edge automatically. The px:22 here is a REAL inset (no negative
+     *  margin breakout), pushing the content 22px in from each screen edge to line
+     *  up with the composer input (Col padding 10 + Textarea `md` paddingHorizontal
+     *  12 = 22px). Both the reply glyph (left) and the ✕ (right) sit at this 22px
+     *  inset, symmetric. The bg uses the same `surface` token as the composer. */
+    <Box padding={{ x: 22 }} surface="surface" style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: borderColor }}>
       <Pressable onPress={onPress} disabled={!onPress}>
-        {/** No extra inset → the outer Box px:18 alone supplies the full composer-
+        {/** No extra inset → the outer Box px:22 alone supplies the full composer-
          *   matched inset on both sides. */}
         <Row padding={{ y: 11, x: 0 }} align="center" gap={10}>
           {/** Reply glyph leading the label (the swipe-to-reply icon). */}
