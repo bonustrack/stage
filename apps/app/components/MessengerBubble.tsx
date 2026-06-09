@@ -43,7 +43,9 @@ function MessengerBubbleBase({
    *  RNGH can arbitrate it against the back gesture + FlatList scroll by direction:
    *    - reply  = LEFTWARD  → `.activeOffsetX(-15)` (arms only on a clear left drag).
    *    - scroll = VERTICAL  → `.failOffsetY([-12,12])` (hands a vertical drag to the list).
-   *    - back   = RIGHTWARD → opposite sign, never claimed here.
+   *    - back   = RIGHTWARD → `.failOffsetX(15)` BAILS this gesture on a rightward
+   *      drag so the touch falls through to the navigator's full-screen swipe-back
+   *      (app/_layout `gestureResponseDistance: 9999`); reply never claims rightward.
    *  translateX tracks the finger on the UI thread (rubber-band past the trigger);
    *  a light haptic fires once when crossing the -64px trigger, and on release past
    *  it onReply sets that message as the reply target + focuses the composer, then
@@ -59,6 +61,7 @@ function MessengerBubbleBase({
   const fireReply = (): void => { if (!pending) onReply?.(); };
   const replyPan = useMemo(() => Gesture.Pan()
     .activeOffsetX(-15)
+    .failOffsetX(15)
     .failOffsetY([-12, 12])
     .onBegin(() => { crossed.value = false; })
     .onChange(e => {

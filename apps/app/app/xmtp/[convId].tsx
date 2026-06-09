@@ -10,7 +10,7 @@ import { Box, Row, Col } from '../../components/layout';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardStickyView, useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
-import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { getPeerName } from '../../lib/peerProfiles';
 import { MessengerComposer } from '../../components/MessengerComposer';
@@ -31,20 +31,18 @@ import { RequestActionBar } from '../../components/RequestActionBar';
 
 export default function XmtpConversation(): React.ReactElement {
   const router = useRouter();
-  const navigation = useNavigation();
-  /** ROOT CAUSE of "swipe-to-reply doesn't follow the finger": the app-wide JS
-   *  card-stack back-gesture (app/_layout) is armed full-screen via
-   *  `gestureResponseDistance: 9999`. @react-navigation/stack's interactive pan
-   *  registers a horizontal PanGestureHandler that claims the touch on ANY
-   *  horizontal movement (it samples both directions before deciding to pop),
-   *  so on Android it swallows the bubble's leftward `Gesture.Pan()` and the
-   *  bubble never tracks the finger. Scope the back-gesture to a thin LEFT-EDGE
-   *  band on this screen only: edge swipe-back still pops, but the rest of each
-   *  row is free for the leftward swipe-to-reply pan. Restored to full-screen on
-   *  blur is unnecessary (each screen sets its own; the tab root disables it). */
-  useEffect(() => {
-    navigation.setOptions({ gestureResponseDistance: 40 });
-  }, [navigation]);
+  /** FULL-SCREEN swipe-back coexists with the bubble's swipe-to-reply by
+   *  DIRECTION, not by a thin edge band. The app-wide JS card-stack back-gesture
+   *  (app/_layout, `gestureResponseDistance: 9999`) arms only on a RIGHTWARD drag
+   *  (@react-navigation/stack's horizontal criteria use `minOffsetX: 5`), while
+   *  the bubble's reply pan arms only on a LEFTWARD drag (`activeOffsetX(-15)` +
+   *  `failOffsetX(15)` so a rightward drag immediately fails it and falls through
+   *  to the back gesture). Opposite signs = mutually exclusive, so back works
+   *  across the whole screen on rightward + reply works across the whole row on
+   *  leftward. A previous `gestureResponseDistance: 40` override narrowed back to
+   *  a thin left-edge band to dodge an activation race; the direction-exclusive
+   *  arming makes that band unnecessary, so we inherit the global full-screen
+   *  distance here (no per-screen override). */
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head, bg, border } = usePalette();
   const sub = fg, rowBg = border;
