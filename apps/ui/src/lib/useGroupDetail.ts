@@ -8,8 +8,7 @@ import {
   convOfLine, getCachedXmtpClient, getOrCreateXmtpClient, lineOfConv,
   memberInboxToAddressMap, shortAddress,
 } from './xmtp';
-import { readProfile, uploadAvatar } from './profile';
-import type { SnapshotProfile } from '@stage-labs/client/profile/snapshot';
+import { readProfile, uploadAvatar, type SnapshotProfile } from './profile';
 
 export interface GroupDetail {
   router: ReturnType<typeof useRouter>;

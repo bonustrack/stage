@@ -1,6 +1,6 @@
 <script setup lang="ts">
-/** Profile tab — wallet identity + Snapshot-hub profile (display name, bio,
- *  custom avatar, socials). Tap Edit to open the EIP-712 update sheet. */
+/** Profile tab — wallet identity + read-only display name/avatar resolved from
+ *  stamp.fyi / ENS. No in-app profile editing and no Snapshot hub. */
 
 import { getOrCreateXmtpClient, shortAddress } from '../lib/xmtp';
 import { loadCachedProfile, readProfile, type SnapshotProfile } from '../lib/profile';
@@ -12,7 +12,6 @@ const address = ref('');
 const inboxId = ref('');
 const profile = ref<SnapshotProfile>({});
 const loaded = ref(false);
-const editing = ref(false);
 const copyHint = ref<'address' | 'inboxId' | null>(null);
 
 const displayName = computed(() =>
@@ -48,11 +47,6 @@ async function copy(value: string, label: 'address' | 'inboxId'): Promise<void> 
   <div class="min-h-screen">
     <div class="flex items-center justify-between px-4 pt-4 pb-2">
       <h1 class="font-head text-xl text-metro-head-light dark:text-metro-head-dark">Profile</h1>
-      <button
-        v-if="address" type="button"
-        class="font-head text-sm text-metro-head-light dark:text-metro-head-dark"
-        @click="editing = true"
-      >Edit</button>
     </div>
 
     <div class="flex flex-col items-center pt-6 pb-4">
@@ -102,11 +96,5 @@ async function copy(value: string, label: 'address' | 'inboxId'): Promise<void> 
         {{ inboxId }}
       </div>
     </button>
-
-    <EditProfileModal
-      :open="editing" :address="address" :initial="profile"
-      @close="editing = false"
-      @saved="next => profile = next"
-    />
   </div>
 </template>
