@@ -12,7 +12,7 @@ import { Spinner } from '../Spinner';
 import { ChannelRow } from '../ChannelRow';
 import { resetXmtpClient, shortAddress } from '../../modules/messaging';
 import { resetAccount } from '../../lib/wallet';
-import { getPeerAvatarCb, getPeerName, isPeerResolved } from '../../lib/peerProfiles';
+import { getPeerName, isPeerResolved } from '../../lib/peerProfiles';
 import { hasDraft, getDraft } from '../../lib/drafts';
 import { isPinned } from '../../lib/pins';
 import { requestLabelFilter } from '../../lib/labelFilterRequest';
@@ -62,7 +62,6 @@ export function useChannelRowRenderer(
         title={displayTitle}
         avatarUri={item.avatarUri}
         avatarAddress={showAddr}
-        cacheBuster={item.avatarAddress ? getPeerAvatarCb(item.avatarAddress) : undefined}
         square={!item.peerAddress}
         lastPreview={preview}
         timestamp={fmtTs(item.lastTs)}

@@ -7,7 +7,6 @@ import { Input } from '@metro-labs/kit/input';
 import { Text } from '@metro-labs/kit/text';
 import { Box, Col } from '../../components/layout';
 import { shortAddress } from '../../modules/messaging';
-import { getPeerAvatar, getPeerAvatarCb } from '../../lib/peerProfiles';
 import { Icon } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';
 import { Avatar } from '../../components/Avatar';
@@ -38,8 +37,6 @@ export function MemberRow({
 >
       <Avatar
         address={item}
-        imageUri={getPeerAvatar(item)}
-        cacheBuster={getPeerAvatarCb(item)}
         size="md"
         style={{ backgroundColor: border }}
 />

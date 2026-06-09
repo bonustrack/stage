@@ -15,7 +15,7 @@ import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Box, Row } from '../layout';
 import { Avatar } from '../Avatar';
-import { getPeerName, getPeerAvatar } from '../../lib/peerProfiles';
+import { getPeerName } from '../../lib/peerProfiles';
 import { channelStampSeed } from '@metro-labs/kit/avatar';
 import { shortAddress } from '../../modules/messaging';
 
@@ -84,8 +84,8 @@ export function ConversationIntro({
     <Pressable
       onPress={() => onPressPeer(peerAddr)}
       style={{ alignItems: 'flex-start', paddingVertical: 24, paddingHorizontal: 12 }}
->
-      <Avatar address={peerAddr} imageUri={getPeerAvatar(peerAddr)} size="lg" style={{ backgroundColor: border }}/>
+    >
+      <Avatar address={peerAddr} size="lg" style={{ backgroundColor: border }} />
       <Text weight="semibold" size="5xl" color={head} style={{ lineHeight: 30, marginTop: 12, flexShrink: 1 }}>
         {getPeerName(peerAddr) ?? shortAddress(peerAddr)}
       </Text>

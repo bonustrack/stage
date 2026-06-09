@@ -27,7 +27,7 @@ import type { Row as RowT } from '../../components/tabs/HomeScreen.helpers';
 import { loadArchivedIds, subscribeArchived } from '../../lib/archived';
 import { shortAddress } from '../../modules/messaging';
 import { usePalette } from '../../lib/theme';
-import { usePeerProfiles, getPeerName, getPeerAvatarCb } from '../../lib/peerProfiles';
+import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { ChannelRow } from '../../components/ChannelRow';
 import { Col, Row } from '../../components/layout';
 
@@ -60,7 +60,6 @@ export default function Archived(): React.ReactElement {
         title={displayTitle}
         avatarAddress={item.avatarUri ? null : item.avatarAddress}
         avatarUri={item.avatarUri}
-        cacheBuster={item.avatarAddress ? getPeerAvatarCb(item.avatarAddress) : undefined}
         square={!item.peerAddress}
         lastPreview={item.lastPreview || preview || '(no messages yet)'}
         onPress={() => router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } })}

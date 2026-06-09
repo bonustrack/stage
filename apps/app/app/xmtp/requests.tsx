@@ -21,7 +21,7 @@ import {
 } from '../../modules/messaging';
 import type { ConversationRequestView } from '../../modules/messaging';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { usePeerProfiles, getPeerName, getPeerAvatarCb } from '../../lib/peerProfiles';
+import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { Icon } from '@metro-labs/kit/icon';
 import { ChannelRow } from '../../components/ChannelRow';
 import { Col, Row } from '../../components/layout';
@@ -74,7 +74,6 @@ export default function Requests(): React.ReactElement {
             title={displayTitle}
             avatarAddress={item.avatarAddress}
             avatarUri={item.avatarUri}
-            cacheBuster={!item.isGroup && item.peerAddress ? getPeerAvatarCb(item.peerAddress) : undefined}
             square={item.isGroup}
             lastPreview={item.preview || '(no messages yet)'}
             onPress={() => router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } })}

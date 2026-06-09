@@ -8,6 +8,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useConvMeta, fetchGroupRoles } from '../../modules/messaging';
+import { ensurePeerProfiles, getPeerName, subscribePeerProfiles } from '@stage-labs/client/identity/peerProfiles';
 
 type Roles = Record<string, 'owner' | 'admin' | 'member'>;
 type Names = Record<string, string | null>;
@@ -58,21 +59,19 @@ export function useGroupDetail(
     return (): void => { cancelled = true; };
   }, [convId, inboxToAddr]);
 
-  /** Snapshot profile names (pure enrichment; rows fall back to the address). */
+  /** Member display names from stamp.fyi / ENS (read-only identity; pure
+   *  enrichment - rows fall back to the short address). Recomputes whenever the
+   *  shared stamp cache resolves. */
   useEffect(() => {
     if (sortedMembers.length === 0) return;
-    let cancelled = false;
-    void (async (): Promise<void> => {
-      const { readProfile } = await import('../../lib/profile');
-      const profiles = await Promise.all(sortedMembers.map(m => readProfile(m).catch(() => null)));
-      if (cancelled) return;
+    const recompute = (): void => {
       const next: Names = {};
-      for (let i = 0; i < sortedMembers.length; i++) {
-        next[sortedMembers[i]!] = profiles[i]?.name?.trim() || null;
-      }
+      for (const m of sortedMembers) next[m] = getPeerName(m) ?? null;
       setMemberNames(next);
-    })();
-    return (): void => { cancelled = true; };
+    };
+    ensurePeerProfiles(sortedMembers);
+    recompute();
+    return subscribePeerProfiles(recompute);
   }, [sortedMembers]);
 
   return { memberNames, memberRoles };

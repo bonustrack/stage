@@ -1,15 +1,12 @@
-/** Lazy, batched cache of peer identities (name + avatar) keyed by lower-cased
+/** Lazy, batched cache of peer identities (display name) keyed by lower-cased
  *  address. Lets the channels list, conversation header, and message bubbles
- *  show a user's display name (instead of the raw 0x… address) and a cache-buster
- *  (&cb=hash(avatar)) on their stamp avatar so an updated avatar shows immediately.
+ *  show a user's display name (instead of the raw 0x… address).
  *
  *  Identity is resolved ENTIRELY from stamp.fyi (the same source Snapshot's own
  *  UI uses): names via `lookup_addresses` (ENS) and avatars via the stamp.fyi
- *  identicon endpoint (handled by the Avatar component's address fallback). The
- *  Snapshot hub GraphQL is NOT used here. A peer's `avatar` is only ever set by
- *  the local optimistic update after the signed-in user edits their own profile
- *  (see setPeerProfile); for everyone else it stays undefined and the renderer
- *  falls back to the stamp identicon.
+ *  identicon endpoint (handled by the Avatar component's address fallback).
+ *  There is no in-app profile editing and no Snapshot hub usage — identity is
+ *  read-only for the local user and every peer alike.
  *
  *  One stamp round-trip per batch of unseen addresses; resolved values (incl.
  *  "no name" → {}) are cached for the session so repeated renders are free.
@@ -17,11 +14,10 @@
  *  This is the framework-agnostic core. The React `usePeerProfiles` hook stays
  *  in apps/app and subscribes via {@link subscribePeerProfiles}. */
 
-import { STAMP_URL, getCacheHash } from '../profile/snapshot';
+import { STAMP_URL } from '../profile/snapshot';
 
 export interface PeerProfile {
   name?: string;
-  avatar?: string;
 }
 
 const store = new Map<string, PeerProfile>();
@@ -70,20 +66,6 @@ async function fetchBatch(addrs: string[]): Promise<void> {
   }
 }
 
-/** Overwrite a single peer's cached profile + notify subscribers. Used after
- *  the local user edits their own Snapshot profile (name/avatar) so every
- *  surface reading from this cache picks up the change (incl. a fresh avatar
- *  cache-buster) without an app reload. `null` fields clear that part. */
-export function setPeerProfile(
-  address: string,
-  profile: { name?: string | null; avatar?: string | null },
-): void {
-  const id = address.toLowerCase();
-  store.set(id, { name: profile.name ?? undefined, avatar: profile.avatar ?? undefined });
-  pending.delete(id);
-  notify();
-}
-
 /** Queue any not-yet-known addresses for a batched fetch. Safe to call often. */
 export function ensurePeerProfiles(addresses: (string | null | undefined)[]): void {
   const todo = [
@@ -104,19 +86,6 @@ export function getPeerName(address?: string | null): string | undefined {
   if (!address) return undefined;
   const n = store.get(address.toLowerCase())?.name;
   return n && n.trim() ? n.trim() : undefined;
-}
-
-export function getPeerAvatarCb(address?: string | null): string | undefined {
-  if (!address) return undefined;
-  return getCacheHash(store.get(address.toLowerCase())?.avatar);
-}
-
-/** The raw stored avatar value (ipfs://… or URL), or undefined if unset. Only
- *  set for the local user's own address; peers fall back to the stamp identicon. */
-export function getPeerAvatar(address?: string | null): string | undefined {
-  if (!address) return undefined;
-  const a = store.get(address.toLowerCase())?.avatar;
-  return a && a.trim() ? a : undefined;
 }
 
 /** Subscribe to cache changes. Returns an unsubscribe fn. The host's React hook

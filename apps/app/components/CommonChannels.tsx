@@ -21,7 +21,7 @@ import { Box, Row } from './layout';
 import { Spinner } from './Spinner';
 import { useRouter } from 'expo-router';
 import { ChannelRow } from './ChannelRow';
-import { getPeerAvatarCb, getPeerName } from '../lib/peerProfiles';
+import { getPeerName } from '../lib/peerProfiles';
 import { useCommonChannels } from '../lib/useCommonChannels';
 import { shortAddress } from '../modules/messaging';
 import { hasDraft, getDraft } from '../lib/drafts';
@@ -90,7 +90,6 @@ export function CommonChannels({ peerAddress, enabled, c }: {
             title={ch.title}
             avatarUri={ch.avatarUri}
             avatarAddress={showAddr}
-            cacheBuster={ch.avatarAddress ? getPeerAvatarCb(ch.avatarAddress) : undefined}
             square
             lastPreview={preview}
             subtitle={`${ch.memberCount} member${ch.memberCount === 1 ? '' : 's'}`}

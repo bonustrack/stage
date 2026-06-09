@@ -1,10 +1,12 @@
 /** Shared profile screen — renders BOTH the logged-in user's own profile and
- *  any peer's public profile. Own-vs-other is decided by comparing the viewed
- *  `address` to the active account's address (resolved from the XMTP client).
- *  Own → overflow "Edit profile" menu, no Message/Send. Other → Message + Send,
- *  no edit menu. `variant`: `tab` (footer Profile, no back button — inset baked
- *  into the tab scene) vs `route` (/user/[address], own back button + inset).
- *  Presentational pieces live in ./ProfileScreen.parts to keep this under cap. */
+ *  any peer's public profile. Identity is READ-ONLY and resolved entirely from
+ *  stamp.fyi / ENS (display name) + the stamp.fyi identicon (avatar), the same
+ *  source used for peers everywhere else. There is no in-app profile editing.
+ *  Own-vs-other is decided by comparing the viewed `address` to the active
+ *  account's address (resolved from the XMTP client). Own → no Message/Send
+ *  (can't message yourself). Other → Message + Send. `variant`: `tab` (footer
+ *  Profile, no back button) vs `route` (/user/[address], own back button +
+ *  inset). Presentational pieces live in ./ProfileScreen.parts. */
 
 import { useState } from 'react';
 
@@ -14,19 +16,16 @@ import type { SimultaneousRefs } from './SwipeTabs.types';
 import { Text } from '@metro-labs/kit/text';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useQueryClient } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
 import { openDmWithAddress, shortAddress } from '../modules/messaging';
 import { flash } from '../lib/toast';
 import { useEffectiveColorScheme } from '../lib/theme';
-import { useProfileQuery } from '../lib/useProfile';
-import EditProfileModal from './EditProfileModal';
+import { usePeerProfiles, getPeerName } from '../lib/peerProfiles';
 import { Avatar } from './Avatar';
 import { Box, Col } from './layout';
 import { ImageViewer } from './ImageViewer';
-import { ProfileSocialLinks } from './ProfileSocialLinks';
 import {
-  EditMenu, ProfileActions, ProfileHeader, useProfileColors, useSelfAddress,
+  ProfileActions, ProfileHeader, useProfileColors, useSelfAddress,
 } from './ProfileScreen.parts';
 import { CommonChannels } from './CommonChannels';
 
@@ -41,7 +40,6 @@ export function ProfileScreen({ address, variant, panRef }: {
 }): React.ReactElement {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const queryClient = useQueryClient();
   const dark = useEffectiveColorScheme() === 'dark';
   const c = useProfileColors();
 
@@ -49,10 +47,9 @@ export function ProfileScreen({ address, variant, panRef }: {
   const self = useSelfAddress();
   const isSelf = !!addr && !!self && addr.toLowerCase() === self.toLowerCase();
 
-  const { data: profile, isSuccess: loaded } = useProfileQuery(addr);
+  /** Resolve the display name from stamp.fyi (ENS), same as every peer row. */
+  usePeerProfiles([addr]);
 
-  const [editing, setEditing] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [openingDm, setOpeningDm] = useState(false);
   const [viewerUri, setViewerUri] = useState<string | null>(null);
 
@@ -72,15 +69,15 @@ export function ProfileScreen({ address, variant, panRef }: {
     flash(`${label} copied`);
   };
 
-  const displayName = profile?.name?.trim() || (addr ? shortAddress(addr) : 'Loading…');
-  const headerTop = variant === 'route' ? 44 + insets.top : 56;
+  const displayName = (addr ? getPeerName(addr) : undefined)
+    ?? (addr ? shortAddress(addr) : 'Loading…');
 
   return (
     <Col flex={1} surface="surface">
       <ProfileHeader
-        variant={variant} insetTop={insets.top} isSelf={isSelf} c={c}
-        onBack={() => router.back()} onMenu={() => setMenuOpen(true)}
-/>
+        variant={variant} insetTop={insets.top} c={c}
+        onBack={() => router.back()}
+      />
 
       <ScrollView simultaneousHandlers={panRef} contentContainerStyle={{ paddingBottom: 32 }}>
         {/* Full-bleed cover banner (input-bg). For the `route` variant the cover
@@ -94,14 +91,11 @@ export function ProfileScreen({ address, variant, panRef }: {
             look). overflow:'visible' + avatar zIndex keep the avatar from being
             clipped by the rounding. */}
         <Box surface="surface" padding={{ x: 16, bottom: 8 }} margin={{ top: -18 }} align="start" style={{ borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'visible' }}>
-          {/* Wait for the profile so we render the real avatar directly (no
-              blockie→real flash); custom avatars resolve via IPFS, not stamp.
-              marginTop -88*0.8 pulls the avatar UP by 80% of its height: ~80%
-              over cover / ~20% below the cover's bottom edge.
-              zIndex:1 keeps it above the sheet. */}
+          {/* Avatar resolves from the stamp.fyi identicon (address fallback) —
+              read-only, identical to peer rows. marginTop -88*0.8 pulls it UP by
+              80% of its height; zIndex:1 keeps it above the sheet. */}
           <Avatar
-            address={loaded && addr ? addr : null}
-            imageUri={loaded ? profile?.avatar : null}
+            address={addr || null}
             size={88}
             style={{
               backgroundColor: c.border, marginTop: -88 * 0.8, zIndex: 1,
@@ -123,11 +117,6 @@ export function ProfileScreen({ address, variant, panRef }: {
               </Text>
             </Pressable>
           ) : null}
-          {profile?.about?.trim() ? (
-            <Text size="md" color={c.text} style={{ marginTop: 6, textAlign: 'left' }}>
-              {profile.about}
-            </Text>
-          ) : null}
 
           {/* Message + Send — only for OTHER users (can't message yourself). */}
           {!isSelf && addr ? (
@@ -139,34 +128,11 @@ export function ProfileScreen({ address, variant, panRef }: {
           ) : null}
         </Box>
 
-        {/* Socials - compact row of tappable brand icons (snapshot.box style),
-            shown only for the networks the user has set. Read-only; the edit
-            form (EditProfileModal) still owns input. */}
-        <ProfileSocialLinks profile={profile} c={c}/>
-
         {/* Common channels — groups the local user + this peer are BOTH in.
             Only for OTHER users; resolves async so it never blocks the render. */}
         {!isSelf && addr ? <CommonChannels peerAddress={addr} enabled={!isSelf} c={c} /> : null}
       </ScrollView>
 
-      {isSelf ? (
-        <EditMenu
-          visible={menuOpen} top={headerTop + 4} c={c}
-          onClose={() => setMenuOpen(false)}
-          onEdit={() => { setMenuOpen(false); setEditing(true); }}
-/>
-      ) : null}
-
-      <EditProfileModal
-        visible={editing} onClose={() => setEditing(false)}
-        onSaved={next => {
-          /* Seed the query cache so the unified screen reflects the edit
-             immediately, then revalidate against the hub in the background. */
-          queryClient.setQueryData(['profile', addr.toLowerCase()], next);
-          void queryClient.invalidateQueries({ queryKey: ['profile', addr.toLowerCase()] });
-        }}
-        address={addr} initial={profile ?? {}} dark={dark}
-/>
       <ImageViewer uri={viewerUri ?? ''} visible={viewerUri !== null} onClose={() => setViewerUri(null)}/>
     </Col>
   );

@@ -9,20 +9,20 @@ import { Text } from '@metro-labs/kit/text';
 import { useRouter } from 'expo-router';
 import { Box } from './layout';
 import { shortAddress } from '../modules/messaging';
-import { useProfileQuery } from '../lib/useProfile';
+import { usePeerProfiles, getPeerName } from '../lib/peerProfiles';
 import { MENTION_RE } from './MessengerBubble.helpers';
 import type { Question } from './MessengerBubble.helpers';
 import { usePalette } from '../lib/theme';
 
 /** One tappable `@username` chip resolved from an address. Lives as its own
- *  component so the `useProfileQuery` hook is called exactly once per mention
- *  (never inside a loop in the parent) — react-query dedupes/caches the lookup
- *  across every chip pointing at the same address. Falls back to the short
- *  address while the profile is loading or has no username. */
+ *  component so the `usePeerProfiles` hook is called exactly once per mention
+ *  (never inside a loop in the parent) — the shared stamp cache dedupes the
+ *  ENS lookup across every chip pointing at the same address. Falls back to the
+ *  short address while the name resolves or when there's no ENS name. */
 function MentionLink({ address, dark }: { address: string; dark: boolean }): React.ReactElement {
   const router = useRouter();
-  const { data: profile } = useProfileQuery(address);
-  const display = profile?.name?.trim() || shortAddress(address);
+  usePeerProfiles([address]);
+  const display = getPeerName(address) ?? shortAddress(address);
   const linkColor = dark ? '#7aa2ff' : '#2f6feb';
   return (
     <Text weight="semibold"

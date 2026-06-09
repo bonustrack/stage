@@ -9,9 +9,7 @@
 import { router } from 'expo-router';
 import { ChannelRow } from './ChannelRow';
 import { Box } from './layout';
-import {
-  usePeerProfiles, getPeerName, getPeerAvatar, getPeerAvatarCb, isPeerResolved,
-} from '../lib/peerProfiles';
+import { usePeerProfiles, getPeerName, isPeerResolved } from '../lib/peerProfiles';
 import { usePalette, useBlockRadius } from '../lib/theme';
 import { openDmWithAddress, shortAddress } from '../modules/messaging';
 
@@ -21,10 +19,9 @@ export function DmPeerCard({ address }: { address: string }): React.ReactElement
   const blockRadius = useBlockRadius();
 
   const title = getPeerName(address) || shortAddress(address);
-  const avatarUri = getPeerAvatar(address) || null;
-  /** Hold the stamp back until the peer profile resolves so we don't flash a
-   *  cache-buster-less identicon before the real URL lands (mirrors ChannelCard). */
-  const avatarAddress = avatarUri || !isPeerResolved(address) ? null : address;
+  /** Hold the stamp back until the peer profile resolves so we don't flash an
+   *  identicon before the name lands (mirrors ChannelCard). */
+  const avatarAddress = !isPeerResolved(address) ? null : address;
 
   const open = (): void => {
     void (async () => {
@@ -40,9 +37,7 @@ export function DmPeerCard({ address }: { address: string }): React.ReactElement
       <ChannelRow
         title={title}
         subtitle="Direct message"
-        avatarUri={avatarUri}
         avatarAddress={avatarAddress}
-        cacheBuster={getPeerAvatarCb(address)}
         onPress={open}
         noBorder
       />

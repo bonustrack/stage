@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import { useFocusEffect } from 'expo-router';
-import { usePeerProfiles, getPeerName, getPeerAvatar } from '../../lib/peerProfiles';
+import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { useConvMeta } from '../../lib/useConvMeta';
 import {
   XMTP_USER_PREFIX, lineOfConv, useXmtpFeed, xmtpReply, shortAddress,
@@ -104,7 +104,7 @@ export function useConversationState(convId: string | undefined, focus: string |
    *  the lone DM peer, from the resolved peerProfiles cache. */
   const mentionCandidates = useMemo(() => {
     const seen = new Set<string>();
-    const out: { address: string; name: string; cacheBuster: number }[] = [];
+    const out: { address: string; name: string }[] = [];
     const add = (addr: string | null): void => {
       if (!addr) return;
       const k = addr.toLowerCase();
@@ -113,7 +113,6 @@ export function useConversationState(convId: string | undefined, focus: string |
       out.push({
         address: addr,
         name: getPeerName(addr) ?? shortAddress(addr),
-        cacheBuster: getPeerAvatar(addr) ? 1 : 0,
       });
     };
     if (isGroup) memberAddrs.forEach(add);

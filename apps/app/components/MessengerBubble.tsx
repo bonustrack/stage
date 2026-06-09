@@ -8,7 +8,6 @@ import { Pressable } from '@metro-labs/kit/pressable';
 import type { View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, runOnJS } from 'react-native-reanimated';
-import { getPeerAvatarCb } from '../lib/peerProfiles';
 import { Avatar } from './Avatar';
 import { Col } from './layout';
 import { REACT_PRESETS } from './MessengerBubble.helpers';
@@ -121,7 +120,6 @@ function MessengerBubbleBase({
           <Avatar
             address={senderEthAddress}
             size="sm"
-            cacheBuster={getPeerAvatarCb(senderEthAddress)}
             style={{ backgroundColor: avatarBg }}
 />
         </Pressable>
