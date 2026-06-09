@@ -33,17 +33,18 @@ export function ReplyBanner({
   /** TopNav border value — matches the conversation header hairline exactly. */
   const borderColor = usePalette().border; // #282a2d / #e4e4e5
   return (
-    /** Outer container breaks out of the composer's `px={10}` with a -10 margin so
-     *  the top border spans the full screen width edge-to-edge; the matching 10px
-     *  paddingHorizontal keeps the inner content at its original inset. The bar's
-     *  background uses the same `surface` token as the composer so it blends in. */
-    <Box padding={{ x: 10 }} margin={{ x: -10 }} surface="surface" style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: borderColor }}>
+    /** Outer container breaks out to full screen width (margin x:-22 cancels the
+     *  px:22) so the top border spans edge-to-edge, while the px:22 inset matches
+     *  the composer's horizontal frame. The composer input sits at Col padding 10 +
+     *  the Textarea's intrinsic `md` paddingHorizontal 12 = 22px from the screen
+     *  edge. Both the reply glyph (left) and the ✕ (right) sit at this 22px inset,
+     *  symmetric, lining the bar up with the composer content. The bar's background
+     *  uses the same `surface` token as the composer so it blends in. */
+    <Box padding={{ x: 22 }} margin={{ x: -22 }} surface="surface" style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: borderColor }}>
       <Pressable onPress={onPress} disabled={!onPress}>
-        {/** Content inset = 8px so the bar text lines up with the composer input
-         *   text: the editor sits at Col padding 10 + TextInput paddingHorizontal 8
-         *   = 18px from the screen edge, and the outer Box already supplies 10px
-         *   here (after the -10 full-width-border breakout), so 8 more = 18px. */}
-        <Row padding={{ y: 8, x: 8 }} align="center" gap={10}>
+        {/** No extra inset → the outer Box px:18 alone supplies the full composer-
+         *   matched inset on both sides. */}
+        <Row padding={{ y: 8, x: 0 }} align="center" gap={10}>
           {/** Reply glyph leading the label (the swipe-to-reply icon). */}
           <Icon name="reply" size={16} color={sub}/>
           <Text size="xl" numberOfLines={1} style={{ flex: 1 }}>
