@@ -1,21 +1,27 @@
-/** Lazy, batched cache of peer Snapshot profiles (name + avatar + about) keyed
- *  by lower-cased address. Lets the channels list, conversation header, and
- *  message bubbles show a user's display name (instead of the raw 0x… address)
- *  and append a cache-buster (&cb=hash(avatar)) to their stamp avatar so an
- *  updated avatar shows immediately.
+/** Lazy, batched cache of peer identities (name + avatar) keyed by lower-cased
+ *  address. Lets the channels list, conversation header, and message bubbles
+ *  show a user's display name (instead of the raw 0x… address) and a cache-buster
+ *  (&cb=hash(avatar)) on their stamp avatar so an updated avatar shows immediately.
  *
- *  One GraphQL round-trip per batch of unseen addresses; resolved values (incl.
- *  "no profile" → {}) are cached for the session so repeated renders are free.
+ *  Identity is resolved ENTIRELY from stamp.fyi (the same source Snapshot's own
+ *  UI uses): names via `lookup_addresses` (ENS) and avatars via the stamp.fyi
+ *  identicon endpoint (handled by the Avatar component's address fallback). The
+ *  Snapshot hub GraphQL is NOT used here. A peer's `avatar` is only ever set by
+ *  the local optimistic update after the signed-in user edits their own profile
+ *  (see setPeerProfile); for everyone else it stays undefined and the renderer
+ *  falls back to the stamp identicon.
+ *
+ *  One stamp round-trip per batch of unseen addresses; resolved values (incl.
+ *  "no name" → {}) are cached for the session so repeated renders are free.
  *
  *  This is the framework-agnostic core. The React `usePeerProfiles` hook stays
  *  in apps/app and subscribes via {@link subscribePeerProfiles}. */
 
-import { SNAPSHOT_HUB_GRAPHQL, STAMP_URL, getCacheHash } from '../profile/snapshot';
+import { STAMP_URL, getCacheHash } from '../profile/snapshot';
 
 export interface PeerProfile {
   name?: string;
   avatar?: string;
-  about?: string;
 }
 
 const store = new Map<string, PeerProfile>();
@@ -27,9 +33,8 @@ function notify(): void {
 }
 
 /** Resolve display names from stamp.fyi (`lookup_addresses` → ENS), the same
- *  source Snapshot's own UI uses. The hub `users.name` field stopped being
- *  populated, so names MUST come from here now. Returns a lower-cased
- *  `{ address → name }` map; addresses with no ENS are simply absent. */
+ *  source Snapshot's own UI uses. Returns a lower-cased `{ address → name }`
+ *  map; addresses with no ENS are simply absent. */
 async function lookupNames(addrs: string[]): Promise<Record<string, string>> {
   try {
     const res = await fetch(STAMP_URL, {
@@ -50,35 +55,12 @@ async function lookupNames(addrs: string[]): Promise<Record<string, string>> {
 }
 
 async function fetchBatch(addrs: string[]): Promise<void> {
-  /** Names come from stamp/ENS; avatar + about still come from the Snapshot hub
-   *  profile. Run both in parallel and merge per address. */
-  const query =
-    'query($ids:[String]!){ users(where:{id_in:$ids}){ id avatar about } }';
   try {
-    const [names, json] = await Promise.all([
-      lookupNames(addrs),
-      fetch(SNAPSHOT_HUB_GRAPHQL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ query, variables: { ids: addrs } }),
-      }).then(r => r.json()).catch(() => null),
-    ]);
-    const users: {
-      id: string;
-      avatar?: string | null;
-      about?: string | null;
-    }[] = json?.data?.users ?? [];
-    const hub = new Map<string, { avatar?: string | null; about?: string | null }>();
-    for (const u of users) hub.set((u.id ?? '').toLowerCase(), u);
-    /** Merge name (stamp) + avatar/about (hub) for every requested address, so
-     *  every address resolves to a cached entry (empty {} when nothing found). */
+    const names = await lookupNames(addrs);
+    /** Cache an entry for every requested address (empty {} when no ENS) so each
+     *  address resolves once; avatars come from the stamp identicon fallback. */
     for (const a of addrs) {
-      const u = hub.get(a);
-      store.set(a, {
-        name: names[a],
-        avatar: u?.avatar ?? undefined,
-        about: u?.about ?? undefined,
-      });
+      store.set(a, { name: names[a] });
     }
   } catch {
     /* leave unresolved — a later ensure() retries */
@@ -124,19 +106,13 @@ export function getPeerName(address?: string | null): string | undefined {
   return n && n.trim() ? n.trim() : undefined;
 }
 
-/** The peer's Snapshot profile bio/about text, or undefined if unset. */
-export function getPeerAbout(address?: string | null): string | undefined {
-  if (!address) return undefined;
-  const a = store.get(address.toLowerCase())?.about;
-  return a && a.trim() ? a.trim() : undefined;
-}
-
 export function getPeerAvatarCb(address?: string | null): string | undefined {
   if (!address) return undefined;
   return getCacheHash(store.get(address.toLowerCase())?.avatar);
 }
 
-/** The raw stored avatar value (ipfs://… or URL), or undefined if unset. */
+/** The raw stored avatar value (ipfs://… or URL), or undefined if unset. Only
+ *  set for the local user's own address; peers fall back to the stamp identicon. */
 export function getPeerAvatar(address?: string | null): string | undefined {
   if (!address) return undefined;
   const a = store.get(address.toLowerCase())?.avatar;

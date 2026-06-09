@@ -15,7 +15,6 @@ export {
   ensurePeerProfiles,
   isPeerResolved,
   getPeerName,
-  getPeerAbout,
   getPeerAvatarCb,
   getPeerAvatar,
   type PeerProfile,

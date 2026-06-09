@@ -15,7 +15,7 @@ import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Box, Row } from '../layout';
 import { Avatar } from '../Avatar';
-import { getPeerName, getPeerAvatar, getPeerAbout } from '../../lib/peerProfiles';
+import { getPeerName, getPeerAvatar } from '../../lib/peerProfiles';
 import { channelStampSeed } from '@metro-labs/kit/avatar';
 import { shortAddress } from '../../modules/messaging';
 
@@ -80,7 +80,6 @@ export function ConversationIntro({
   }
 
   if (!peerAddr) return null;
-  const about = getPeerAbout(peerAddr);
   return (
     <Pressable
       onPress={() => onPressPeer(peerAddr)}
@@ -93,11 +92,6 @@ export function ConversationIntro({
       <Text size="xs" color={sub} style={{ marginTop: 2 }} numberOfLines={1}>
         {shortAddress(peerAddr)}
       </Text>
-      {about ? (
-        <Text size="4xl" color={sub} style={{ marginTop: 10, textAlign: 'left', lineHeight: 23 }}>
-          {about}
-        </Text>
-      ) : null}
     </Pressable>
   );
 }
