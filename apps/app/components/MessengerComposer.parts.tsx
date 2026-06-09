@@ -44,7 +44,7 @@ export function ReplyBanner({
       <Pressable onPress={onPress} disabled={!onPress}>
         {/** No extra inset → the outer Box px:18 alone supplies the full composer-
          *   matched inset on both sides. */}
-        <Row padding={{ y: 8, x: 0 }} align="center" gap={10}>
+        <Row padding={{ y: 11, x: 0 }} align="center" gap={10}>
           {/** Reply glyph leading the label (the swipe-to-reply icon). */}
           <Icon name="reply" size={16} color={sub}/>
           <Text size="xl" numberOfLines={1} style={{ flex: 1 }}>
