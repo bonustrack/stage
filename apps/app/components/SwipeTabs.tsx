@@ -162,7 +162,7 @@ export function TabsPager(): React.ReactElement {
         {TAB_ORDER.map((name) => {
           const Body = PAGES[name];
           return (
-            <Box width={width} key={name}>
+            <Box width={width} key={name} style={{ height: '100%' }}>
               <Body panRef={panRef}/>
             </Box>
           );
