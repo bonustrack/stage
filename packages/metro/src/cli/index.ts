@@ -16,6 +16,7 @@ import {
 import {
   flagOne, isJson, parseArgs, writeJson, type ExitErr, type Flags,
 } from './util.js';
+import { cmdAccount } from './account.js';
 
 /** True if another live process owns the dispatcher lockfile. Mirrors */
 /** paths.acquireLock's detection but as a peek — no claim, no exit. */
@@ -65,6 +66,11 @@ Usage:
   metro claim <line> [--as=<user-uri>]        Take exclusive ownership of a line.
   metro release <line>                        Release a line (it returns to broadcast).
   metro claims                                Print the current claims map.
+  metro account list [<station>]              List configured accounts (id, eth address, key source).
+  metro account address [<id>]               Print an account's fundable eth address.
+  metro account import <station> <privkey> --id <name>
+                                              Import a raw-key account (xmtp), written 0600.
+                                              Needs \`metro trains restart <station>\` to take effect.
   metro webhook add <label> [--secret=…]      Register an HTTP receive endpoint (GitHub, Intercom, …).
   metro webhook list | remove <id>            List or remove webhook endpoints.
   metro tunnel setup <name> <hostname>        Configure a Cloudflare named tunnel.
@@ -150,6 +156,7 @@ const COMMANDS: Record<string, (positional: string[], flags: Flags) => Promise<v
   webhook: cmdWebhook, tunnel: cmdTunnel,
   history: cmdHistory, tail: cmdTail,
   claim: cmdClaim, release: cmdRelease, claims: cmdClaims,
+  account: cmdAccount,
   update: cmdUpdate,
 };
 
