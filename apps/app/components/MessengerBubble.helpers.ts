@@ -19,6 +19,34 @@ export { mdParser } from '../lib/mdParser';
  *  case-insensitive so a hand-typed mixed-case address still links. */
 export const MENTION_RE = /@(0x[0-9a-fA-F]{40})\b/g;
 
+/** Matches a fenced or inline code span so `unescapeBody` can leave its literal
+ *  `\n` untouched (a backslash-n inside code is intentional source, not a broken
+ *  line break). Fences first (``` … ```), then inline `` `…` ``. */
+const CODE_SPAN_RE = /```[\s\S]*?```|`[^`\n]*`/g;
+
+/** Some senders (a daemon/CLI that JSON-escaped the body, or an agent reply that
+ *  was double-stringified) deliver line breaks as the literal 2-char sequence
+ *  `\n` (backslash + n) instead of a real newline, so the bubble shows `\n` mid
+ *  sentence. Convert those escaped whitespace sequences back to real characters
+ *  for display — but ONLY outside code spans, where a literal `\n`/`\t` is part of
+ *  the content the author typed. A body with no literal backslash-escape is
+ *  returned unchanged (fast path), so correctly-formatted messages are untouched. */
+export function unescapeBody(text: string): string {
+  if (!text.includes('\\n') && !text.includes('\\t') && !text.includes('\\r')) return text;
+  const unescapeRun = (s: string): string =>
+    s.replace(/\\r\\n|\\n|\\r/g, '\n').replace(/\\t/g, '\t');
+  let out = '';
+  let last = 0;
+  CODE_SPAN_RE.lastIndex = 0;
+  let m: RegExpExecArray | null;
+  while ((m = CODE_SPAN_RE.exec(text)) !== null) {
+    out += unescapeRun(text.slice(last, m.index)) + m[0];
+    last = m.index + m[0].length;
+  }
+  out += unescapeRun(text.slice(last));
+  return out;
+}
+
 /** Cheap test for the slow (mention-aware) body path. Resets the shared regex's
  *  `lastIndex` (the `g` flag makes `.test()` stateful) so a no-match leaves it at
  *  0 for the next caller. */
