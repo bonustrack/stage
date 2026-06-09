@@ -7,6 +7,7 @@
 
 import { Children, isValidElement, type ReactNode } from 'react';
 import { Pressable, View, Text as RNText, type ViewStyle } from 'react-native';
+import { FONT_SIZE, schemePalette } from './tokens';
 
 export type ListItemAlign = 'start' | 'center' | 'end';
 
@@ -22,9 +23,9 @@ const ALIGN: Record<ListItemAlign, ViewStyle['alignItems']> = {
 };
 
 function palette(dark: boolean): { border: string; pressed: string; sub: string } {
-  return dark
-    ? { border: '#282a2d', pressed: '#1c1d1f', sub: '#7a7a7e' }
-    : { border: '#e4e4e5', pressed: '#f2f2f3', sub: '#8a929d' };
+  // Pressed row fill = the hover surface in both schemes (#1c1d1f / #f2f2f3).
+  const p = schemePalette(dark);
+  return { border: p.border, pressed: p.pressed, sub: p.sub };
 }
 
 export interface ListViewProps {
@@ -68,7 +69,7 @@ export function ListView(props: ListViewProps): React.ReactElement {
         <RNText
           style={{
             color: c.sub,
-            fontSize: 13,
+            fontSize: FONT_SIZE.xs,
             fontFamily: 'Calibre-Medium',
             paddingVertical: 10,
             paddingHorizontal: 16,

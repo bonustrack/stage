@@ -7,7 +7,7 @@
 import { type ReactNode } from 'react';
 import { Pressable, View, Text as RNText, type ViewStyle } from 'react-native';
 import { Button } from './button';
-import { BLOCK_RADIUS_DEFAULT } from './tokens';
+import { BLOCK_RADIUS_DEFAULT, FONT_SIZE, schemePalette } from './tokens';
 
 export type CardSize = 'sm' | 'md' | 'lg';
 
@@ -50,12 +50,15 @@ export interface CardProps {
 }
 
 const PADDING: Record<CardSize, number> = { sm: 10, md: 14, lg: 18 };
-const STATUS_SIZE: Record<CardSize, number> = { sm: 12, md: 13, lg: 14 };
+const STATUS_SIZE: Record<CardSize, number> = {
+  sm: FONT_SIZE['2xs'],
+  md: FONT_SIZE.xs,
+  lg: FONT_SIZE.sm,
+};
 
 function palette(dark: boolean): { surface: string; border: string; sub: string } {
-  return dark
-    ? { surface: '#1c1d1f', border: '#282a2d', sub: '#7a7a7e' }
-    : { surface: '#f2f2f3', border: '#e4e4e5', sub: '#8a929d' };
+  const p = schemePalette(dark);
+  return { surface: p.surface, border: p.border, sub: p.sub };
 }
 
 /** ChatKit-style RN card. */
