@@ -80,7 +80,7 @@ export function BubbleActionMenu({
 
   const pal = usePalette();
   const fg = pal.text;
-  const sub = dark ? '#7a7a7e' : '#8a929d'; // one-off chevron grey, no token
+  const sub = pal.sub; // de-forked onto the palette secondary grey
   const cardBg = pal.bg;
   const stripBg = pal.bg;
   const divider = pal.border;

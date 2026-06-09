@@ -36,8 +36,6 @@ export default function Menu(): React.ReactElement {
   const head = pal.link;
   const sub = pal.text; // no `muted` token yet -> map to `text`.
   const border = pal.border;
-  const bg = pal.bg;
-  const toolbarBg = pal.toolbarBg;
 
   const [accounts, setAccounts] = useState<AccountRecord[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -69,14 +67,14 @@ export default function Menu(): React.ReactElement {
   }
 
   return (
-    <Col background={bg} flex={1}>
+    <Col surface="surface" flex={1}>
       {/* Topnav: back + title, mirroring the Accounts / Search pages.
           Paints toolbarBg + absorbs the top inset so the bar reaches the edge. */}
-      <Row background={toolbarBg} padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
+      <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={head}/>
         </Pressable>
-        <Title size="sm" dark={dark} color={head}>
+        <Title size="sm">
           Menu
         </Title>
       </Row>

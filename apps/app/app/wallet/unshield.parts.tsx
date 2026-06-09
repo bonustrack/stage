@@ -19,11 +19,11 @@ const shortAddr = (a: string): string => (a.length> 12 ? `${a.slice(0, 6)}…${a
 export function UnshieldRecipient({ pal, eoa, network }: {
   pal: Pal; eoa: string | null; network: string;
 }): React.ReactElement {
-  const { head, sub, border, inputBg } = pal;
+  const { head, sub, border } = pal;
   return (
     <Box gap={6}>
       <Text size="xs" color={sub}>TO YOUR PUBLIC WALLET</Text>
-      <Box background={inputBg} radius="lg" padding={{ x: 14, y: 12 }} style={{ borderWidth: 1, borderColor: border }}>
+      <Box surface="raised" radius="lg" padding={{ x: 14, y: 12 }} style={{ borderWidth: 1, borderColor: border }}>
         <Text weight="semibold" size="md" color={head}>
           {eoa ? shortAddr(eoa) : 'Loading address…'}
         </Text>
@@ -40,7 +40,7 @@ export function UnshieldRecipient({ pal, eoa, network }: {
 export function UnshieldPhaseLine({ pal, phase, txHash, err, bridgeOk, chainId }: {
   pal: Pal; phase: Phase; txHash: string | null; err: string | null; bridgeOk: boolean; chainId: number;
 }): React.ReactElement | null {
-  const { sub, link } = pal;
+  const { sub } = pal;
   if (!bridgeOk) {
     return (
       <Text size="xs" color={sub} style={{ paddingHorizontal: 4 }}>
@@ -57,7 +57,7 @@ export function UnshieldPhaseLine({ pal, phase, txHash, err, bridgeOk, chainId }
       ) : null}
       {txHash ? (
         <Pressable onPress={() => Linking.openURL(explorerTxUrl(chainId, txHash))} hitSlop={6}>
-          <Text size="xs" color={link}>
+          <Text size="xs">
             {txHash.slice(0, 10)}…{txHash.slice(-8)}
           </Text>
         </Pressable>

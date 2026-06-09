@@ -44,7 +44,7 @@ function Step({ label, state, hint, pal }: {
       <Row align="center" gap={10}>
         <Box width={18} height={18} align="center" justify="center">
           {state === 'active' ? <Spinner size={14} color={pal.link}/>
-            : state === 'done' ? <Text weight="semibold" size="md" color={pal.link}>✓</Text>
+            : state === 'done' ? <Text weight="semibold" size="md">✓</Text>
             : state === 'error' ? <Text weight="semibold" size="md" color={ERR}>✕</Text>
             : <Box width={8} height={8} radius="xs" background={pal.sub} style={{ opacity: 0.5 }} />}
         </Box>

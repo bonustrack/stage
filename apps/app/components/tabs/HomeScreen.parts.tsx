@@ -96,11 +96,11 @@ export function useChannelRowRenderer(
 }
 
 /** XMTP-init failure recovery screen — message + "Reset XMTP identity" button. */
-export function HomeError({ error, dark, fg, bg }: {
+export function HomeError({ error, dark, fg }: {
   error: string; dark: boolean; fg: string; bg: string;
 }): React.ReactElement {
   return (
-    <Col padding={24} flex={1} align="center" justify="center" background={bg}>
+    <Col padding={24} flex={1} align="center" justify="center" surface="surface">
       <Text size="md" color={fg} style={{ textAlign: 'center', marginBottom: 16 }}>{error}</Text>
       <Pressable
         onPress={() => {
@@ -125,9 +125,9 @@ export function HomeError({ error, dark, fg, bg }: {
 }
 
 /** Centred spinner shown while the cache is cold + XMTP is booting. */
-export function HomeSpinner({ head, bg }: { head: string; bg: string }): React.ReactElement {
+export function HomeSpinner({ head }: { head: string; bg: string }): React.ReactElement {
   return (
-    <Col flex={1} align="center" justify="center" background={bg}>
+    <Col flex={1} align="center" justify="center" surface="surface">
       <Spinner size={28} color={head}/>
     </Col>
   );

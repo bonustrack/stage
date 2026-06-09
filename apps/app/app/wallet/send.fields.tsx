@@ -30,14 +30,14 @@ export function RecipientField(props: {
   resolved: string | null;
   resolveErr: string | null;
 }): React.ReactElement {
-  const { fg, head, sub, border, inputBg } = props.pal;
+  const { fg, head, sub, border } = props.pal;
   const [picking, setPicking] = useState(false);
   const rowPal = { head, sub, border };
   return (
     <Box gap={6}>
       <Text size="xs" color={sub}>RECIPIENT</Text>
       {/* Input + a contacts-picker icon button on the right. */}
-      <Row background={inputBg} radius="lg" padding={{ x: 6, left: 14 }} align="center" gap={4}>
+      <Row surface="raised" radius="lg" padding={{ x: 6, left: 14 }} align="center" gap={4}>
         <Input
           value={props.to}
           onChangeText={props.setTo}
@@ -93,7 +93,7 @@ export function AmountField(props: {
   secondaryLabel: string;
   onMax: () => void;
 }): React.ReactElement {
-  const { fg, head, sub, border, inputBg } = props.pal;
+  const { fg, head, sub, border } = props.pal;
   const { amount, mode, ethPriceUsd, setAmount, setMode, ethBalance } = props;
   const { link } = usePalette();
   return (
@@ -112,7 +112,7 @@ export function AmountField(props: {
 />
       </Row>
 
-      <Row background={inputBg} radius="lg" padding={{ x: 14, y: 12 }} align="center" gap={8}>
+      <Row surface="raised" radius="lg" padding={{ x: 14, y: 12 }} align="center" gap={8}>
         <Input
           value={amount}
           onChangeText={setAmount}
@@ -178,9 +178,8 @@ export function SendHeader(props: {
   fg: string; head: string; border: string; onBack: () => void;
 }): React.ReactElement {
   const insets = useSafeAreaInsets();
-  const { toolbarBg } = usePalette();
   return (
-    <Row background={toolbarBg} padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: props.border }}>
+    <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: props.border }}>
       <Pressable onPress={props.onBack} hitSlop={8} style={{ padding: 4 }}>
         <Icon name="arrowLeft" size={22} color={props.fg}/>
       </Pressable>

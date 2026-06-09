@@ -26,7 +26,7 @@ import { TokenSelector, useSelectedBalance, useTopToken, type TokenChoice } from
 export default function WalletSend(): React.ReactElement {
   const router = useRouter();
   const params = useLocalSearchParams<{ to?: string; symbol?: string; chainId?: string; private?: string }>();
-  const { text: fg, link: head, bg, border } = usePalette();
+  const { text: fg, link: head, border } = usePalette();
   const dark = useEffectiveColorScheme() === 'dark';
   const formPal = useFormPal();
 
@@ -68,7 +68,7 @@ export default function WalletSend(): React.ReactElement {
   const { footer, report: reportFooter, onSubmit: footerSubmit } = useFooterReporter();
 
   return (
-    <Col background={bg} flex={1}>
+    <Col surface="surface" flex={1}>
       <SendHeader fg={fg} head={head} border={border} onBack={() => router.back()}/>
 
       <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled"
@@ -85,7 +85,7 @@ export default function WalletSend(): React.ReactElement {
       </ScrollView>
 
       {footer ? (
-        <WalletFooter border={border} bg={bg} dark={dark} onCancel={() => router.back()}
+        <WalletFooter border={border} dark={dark} onCancel={() => router.back()}
           submitLabel={footer.submitLabel} onSubmit={footerSubmit}
           submitDisabled={footer.submitDisabled} submitLoading={footer.submitLoading}/>
       ) : null}

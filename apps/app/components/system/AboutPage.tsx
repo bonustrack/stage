@@ -10,13 +10,13 @@ import { AboutPanel } from './AboutPanel';
 
 export function AboutPage(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border } = usePalette();
+  const { text: fg, link: head, border } = usePalette();
   const sub = fg;
   const rowBg = border;
   const insets = useSafeAreaInsets();
 
   return (
-    <Col background={bg} flex={1}>
+    <Col surface="surface" flex={1}>
       <SystemHeader title="About" dark={dark} fg={fg} head={head} border={border}/>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <AboutPanel dark={dark} head={head} sub={sub} border={border} rowBg={rowBg}/>

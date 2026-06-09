@@ -138,7 +138,7 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
             src={selected?.logoUrl ?? ''}
             style={{ width: 28, height: 28, borderRadius: 999, backgroundColor: bg }}
 />
-          <Box width={15} height={15} radius="full" background={bg} style={{ position: 'absolute', right: -3, bottom: -3, borderWidth: 2, borderColor: border, overflow: 'hidden' }}>
+          <Box width={15} height={15} radius="full" surface="surface" style={{ position: 'absolute', right: -3, bottom: -3, borderWidth: 2, borderColor: border, overflow: 'hidden' }}>
             <Image
               src={NETWORK_LOGO[value.chainId] ?? MAINNET_NETWORK_LOGO}
               fit="cover" style={{ width: '100%', height: '100%' }}

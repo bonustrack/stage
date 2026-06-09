@@ -112,15 +112,13 @@ export function PollView({ poll, dark, sub, votes, ownVotes, onVote, openAnswers
   onOpenAnswer?: (questionIndex: number, text: string) => void;
   myUri?: string;
 }): React.ReactElement {
-  const pal = usePalette();
-  const fg = pal.link;
   const multiQuestion = poll.questions.length> 1;
   return (
     <Box margin={{ top: 8 }} gap={12} style={{ alignSelf: 'stretch' }}>
       {poll.questions.map((q, qi) => (
         <Box key={`q-${qi}`} gap={6} style={{ alignSelf: 'stretch' }}>
           {multiQuestion && qi> 0 ? (
-            <Text weight="semibold" size="3xl" color={fg}>{q.question}</Text>
+            <Text weight="semibold" size="3xl">{q.question}</Text>
           ) : null}
           <PollQuestionBlock
             q={q} qi={qi} sub={sub} dark={dark}

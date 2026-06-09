@@ -77,7 +77,7 @@ export default function GroupDetail(): React.ReactElement {
   }, []);
 
   return (
-    <Col background={bg} flex={1}>
+    <Col surface="surface" flex={1}>
       {/* Floating topnav over the cover banner — mirrors ProfileScreen `route`. */}
       <Row height={44 + insets.top} padding={{ x: 14, top: insets.top }} align="center" justify="between" style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2 }}>
         <Pressable onPress={() => router.back()} hitSlop={10} style={{ padding: 6 }}>

@@ -25,7 +25,7 @@ export default function WalletShield(): React.ReactElement {
   return (
     <ActionPage title="Shield token" head={head} bg={bg} border={border} onBack={() => router.back()}
       footer={footer ? (
-        <WalletFooter border={border} bg={bg} dark={dark} onCancel={() => router.back()}
+        <WalletFooter border={border} dark={dark} onCancel={() => router.back()}
           submitLabel={footer.submitLabel} onSubmit={footerSubmit}
           submitDisabled={footer.submitDisabled} submitLoading={footer.submitLoading} />
       ) : null}>

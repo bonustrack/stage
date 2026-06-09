@@ -98,7 +98,7 @@ export function ChannelsList({
           
           
           
-          background={toolbarBg}
+          surface="toolbar"
           style={{ borderBottomWidth: 1, borderBottomColor: border }}
 >
           <Row align="center" gap={8}>

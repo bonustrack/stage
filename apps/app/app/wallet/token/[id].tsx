@@ -51,7 +51,7 @@ export default function TokenDetail(): React.ReactElement {
 
   if (!r) {
     return (
-      <Col background={bg} flex={1}>
+      <Col surface="surface" flex={1}>
         <Header head={head} border={border} onBack={() => router.back()} title="Token"/>
         <Col padding={{ y: 40 }} margin={{ x: 16 }} align="center">
           <Text size="md" color={sub}>Token not found</Text>
@@ -69,7 +69,7 @@ export default function TokenDetail(): React.ReactElement {
   };
 
   return (
-    <Col background={bg} flex={1}>
+    <Col surface="surface" flex={1}>
       <Header head={head} border={border} onBack={() => router.back()} title={r.name}/>
 
       {/* Token identity card — large logo with network badge, name + symbol,
@@ -151,9 +151,8 @@ function Header({ head, border, onBack, title }: {
   head: string; border: string; onBack: () => void; title: string;
 }): React.ReactElement {
   const insets = useSafeAreaInsets();
-  const { toolbarBg } = usePalette();
   return (
-    <Row background={toolbarBg} padding={{ x: 12, top: 8 + insets.top, bottom: 8 }} align="center" gap={8} 
+    <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 8 }} align="center" gap={8} 
       style={{ borderBottomWidth: 1, borderBottomColor: border }}>
       <Pressable onPress={onBack} hitSlop={8} style={{ padding: 4 }}>
         <Icon name="arrowLeft" size={22} color={head}/>

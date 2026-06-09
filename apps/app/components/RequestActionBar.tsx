@@ -55,7 +55,7 @@ export interface RequestActionBarProps {
 export function RequestActionBar(props: RequestActionBarProps): React.ReactElement | null {
   const { convId, dark, onPending } = props;
   const router = useRouter();
-  const { bg, border, text: fg, link, danger, toolbarBg } = usePalette();
+  const { bg, border, text: fg, link, danger } = usePalette();
   const [pending, setPending] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -107,7 +107,7 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
   if (pending !== true) return null;
 
   return (
-    <Box background={toolbarBg} style={{ borderTopWidth: 1, borderTopColor: border }}>
+    <Box surface="toolbar" style={{ borderTopWidth: 1, borderTopColor: border }}>
       <Col width={'100%'} padding={{ x: 16, top: 12, bottom: 12 }} align="stretch" gap={10} style={{ alignSelf: 'stretch' }}>
         <Text color={fg} style={{ textAlign: 'center', opacity: 0.8 }}>
           This is a message request. Approve to reply, or reject to decline.

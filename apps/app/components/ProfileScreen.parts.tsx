@@ -142,7 +142,7 @@ export function EditMenu({ visible, top, onClose, onEdit, c }: {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={{ flex: 1 }} onPress={onClose}>
-        <Box minWidth={168} radius={blockRadius} background={c.bg} style={{ position: 'absolute', right: 12, top, overflow: 'hidden', borderWidth: 1, borderColor: c.border }}>
+        <Box minWidth={168} radius={blockRadius} surface="surface" style={{ position: 'absolute', right: 12, top, overflow: 'hidden', borderWidth: 1, borderColor: c.border }}>
           <Pressable
             onPress={onEdit}
             style={({ pressed }) => ({

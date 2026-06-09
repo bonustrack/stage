@@ -39,14 +39,14 @@ export const ChannelsSearchBar = forwardRef<React.ComponentRef<typeof Input>, {
   inputBg: string;
   toolbarBg: string;
 }>(function ChannelsSearchBar(props, ref): React.ReactElement {
-  const { head, sub, inputBg, toolbarBg } = props;
+  const { head, sub } = props;
   const blockRadius = useBlockRadius();
   return (
-    <Row padding={{ x: 12, top: 12, bottom: 10 }} align="center" gap={8} background={toolbarBg}>
+    <Row padding={{ x: 12, top: 12, bottom: 10 }} align="center" gap={8} surface="toolbar">
       <Pressable onPress={props.onClose} hitSlop={8}>
         <Icon name="arrowLeft" size={22} color={head}/>
       </Pressable>
-      <Row background={inputBg} radius={blockRadius} padding={{ x: 14, y: 8 }} flex={1} align="center" gap={8}>
+      <Row surface="raised" radius={blockRadius} padding={{ x: 14, y: 8 }} flex={1} align="center" gap={8}>
         <Icon name="search" size={22} color={sub}/>
         <Input
           ref={ref}

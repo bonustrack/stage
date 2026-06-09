@@ -152,7 +152,7 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
   if (!rows) return <HomeSpinner head={head} bg={bg} />;
 
   return (
-    <Col flex={1} background={bg}>
+    <Col flex={1} surface="surface">
       <ChannelsList
         panRef={panRef}
         router={router}

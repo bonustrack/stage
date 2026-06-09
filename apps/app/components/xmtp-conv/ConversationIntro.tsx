@@ -22,14 +22,14 @@ import { shortAddress } from '../../modules/messaging';
 /** Read-only label chips for the group intro — same rounded-pill look as the
  *  ChannelRow inline chips, just left-aligned under the name. Renders nothing for
  *  an empty list. */
-function IntroLabelChips({ labels, fg, rowBg }: {
+function IntroLabelChips({ labels, fg }: {
   labels: string[]; fg: string; rowBg: string;
 }): React.ReactElement | null {
   if (labels.length === 0) return null;
   return (
     <Row margin={{ top: 8 }} align="center" gap={6} justify="start" style={{ flexWrap: 'wrap' }}>
       {labels.map(label => (
-        <Box radius="full" background={rowBg} padding={{ x: 8, y: 2 }}
+        <Box radius="full" surface="raised" padding={{ x: 8, y: 2 }}
           key={label.toLowerCase()}
           
 >

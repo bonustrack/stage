@@ -54,7 +54,7 @@ export function GitHubLinkCard({ url }: {
             {meta.repo}{numLabel ? ` · ${numLabel}` : ''}
           </Text>
         </Row>
-        <Text weight="semibold" size="4xl" color={fg}
+        <Text weight="semibold" size="4xl"
           numberOfLines={2}>
           {meta.title}
         </Text>

@@ -113,7 +113,6 @@ export function MemberPicker({ state, dark, exclude = [] }: {
   exclude?: string[];
 }): React.ReactElement {
   const { link: head, text: sub, border, inputBg } = usePalette();
-  const rowBg = border;
   const {
     members, entry, setEntry, adding, addMember, removeMember,
     toggleContact, selectedAddresses,
@@ -165,7 +164,7 @@ export function MemberPicker({ state, dark, exclude = [] }: {
       {members.length> 0 && (
         <Col gap={8}>
           {members.map(m => (
-            <Row background={rowBg} radius="lg" padding={8}
+            <Row surface="raised" radius="lg" padding={8}
               key={m.address}
               align="center"
               gap={10}

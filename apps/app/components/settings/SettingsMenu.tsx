@@ -32,12 +32,12 @@ const ROWS: { href: Href; label: string; icon: HeroIconName }[] = [
 export function SettingsMenu(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border } = usePalette();
+  const { text: fg, link: head, border } = usePalette();
   const sub = fg;
   const insets = useSafeAreaInsets();
 
   return (
-    <Col background={bg} flex={1}>
+    <Col surface="surface" flex={1}>
       <SystemHeader title="Settings" dark={dark} fg={fg} head={head} border={border}/>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <ListView dark={dark}>

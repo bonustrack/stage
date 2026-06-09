@@ -101,8 +101,9 @@ export function useEffectiveColorScheme(): 'light' | 'dark' {
  *  forks): `text` body text, `link` emphasis, `primary` primary-button fill,
  *  `inputBg` input/dropdown fill, `toolbarBg` solid nav fill. */
 export interface Palette {
-  bg: string; border: string; text: string; link: string; primary: string;
-  danger: string; success: string; inputBg: string; toolbarBg: string;
+  bg: string; border: string; text: string; sub: string; link: string;
+  primary: string; danger: string; success: string;
+  inputBg: string; toolbarBg: string;
 }
 
 /** Subscribe a screen to color-override changes so edits on the Kit page
@@ -200,6 +201,9 @@ export function usePalette(): Palette {
       bg: pick('bg', s.bgColor),
       border: pick('border', s.borderColor),
       text: pick('text', s.textColor),
+      // Secondary/muted text grey (de-forked from the Kit Text/Caption hardcoded
+      // #7a7a7e/#8a929d). No override key yet -> always the canonical default.
+      sub: s.subColor,
       link: pick('link', s.linkColor),
       primary: pick('primary', s.primaryColor),
       danger: pick('danger', s.dangerColor),

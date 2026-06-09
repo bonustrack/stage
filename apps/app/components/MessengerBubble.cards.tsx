@@ -31,7 +31,7 @@ export function SigRequestCard({ req, dark, sub, signing, onSign }: {
     <Box radius={blockRadius} background={pal.border} padding={12} margin={{ top: 8 }} gap={8} style={{ alignSelf: 'stretch' }}>
       <Row align="center" gap={8}>
         <Icon name="pencil" size={18} color={head}/>
-        <Text weight="semibold" size="md" color={head} style={{ flexShrink: 1 }}>
+        <Text weight="semibold" size="md" style={{ flexShrink: 1 }}>
           {desc}
         </Text>
       </Row>
@@ -43,7 +43,7 @@ export function SigRequestCard({ req, dark, sub, signing, onSign }: {
             </Text>
           ) : null}
           {req.eip712?.primaryType ? (
-            <Text weight="semibold" size="xs" color={head}>
+            <Text weight="semibold" size="xs">
               {req.eip712.primaryType}
             </Text>
           ) : null}
@@ -52,7 +52,7 @@ export function SigRequestCard({ req, dark, sub, signing, onSign }: {
               <Text size="xs" color={sub} style={{ minWidth: 80, flexShrink: 0 }}>
                 {k}
               </Text>
-              <Text variant="mono" size="xs" numberOfLines={4} color={head} style={{ flexShrink: 1, flex: 1 }}>
+              <Text variant="mono" size="xs" numberOfLines={4} style={{ flexShrink: 1, flex: 1 }}>
                 {fmtSigValue(v)}
               </Text>
             </Row>
@@ -60,7 +60,7 @@ export function SigRequestCard({ req, dark, sub, signing, onSign }: {
         </Col>
       ) : req.message ? (
         <Box radius="md" background={detailBg} padding={10} style={{ borderWidth: 1, borderColor: detailBorder }}>
-          <Text variant="mono" size="xs" numberOfLines={20} color={head} style={{ lineHeight: 18 }}>
+          <Text variant="mono" size="xs" numberOfLines={20} style={{ lineHeight: 18 }}>
             {req.message}
           </Text>
         </Box>

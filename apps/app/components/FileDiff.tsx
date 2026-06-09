@@ -52,8 +52,8 @@ export function FileDiff({ file, p, dark }: {
         <Text size="xs" numberOfLines={1} color={p.text} style={{ flex: 1}}>
           {file.filename}
         </Text>
-        <Text size="xs" color={p.success}>+{file.additions}</Text>
-        <Text size="xs" color={p.danger}>-{file.deletions}</Text>
+        <Text size="xs" role="success">+{file.additions}</Text>
+        <Text size="xs" role="danger">-{file.deletions}</Text>
       </ListViewItem>
       {open ? (
         file.noPatch ? (

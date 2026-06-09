@@ -31,7 +31,7 @@ export default function AddMembers(): React.ReactElement {
   const router = useRouter();
   const { convId } = useLocalSearchParams<{ convId: string }>();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border, primary, toolbarBg } = usePalette();
+  const { text: fg, link: head, bg, border, primary } = usePalette();
   const insets = useSafeAreaInsets();
 
   const picker = useMemberPicker();
@@ -55,13 +55,13 @@ export default function AddMembers(): React.ReactElement {
   }, [members, submitting, convId, router]);
 
   return (
-    <Col background={bg} flex={1}>
+    <Col surface="surface" flex={1}>
       {/* Header — back button + title, consistent with other pushed screens. */}
-      <Row background={toolbarBg} padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
+      <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg}/>
         </Pressable>
-        <Title size="sm" dark={dark} color={head}>
+        <Title size="sm" color={head}>
           Add members
         </Title>
       </Row>

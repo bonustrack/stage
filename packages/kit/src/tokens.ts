@@ -64,6 +64,10 @@ export const semanticColors = {
   borderColor: { dark: colors['border-dark'], light: colors['border-light'] },
   /** Body text (fg). Strong/heading text stays on `head`. */
   textColor: { dark: colors['fg-dark'], light: colors['fg-light'] },
+  /** Secondary / muted text grey (sub). The value the Kit Text component used
+   *  to hard-code as #7a7a7e/#8a929d - now sourced here so `secondary`/`muted`
+   *  text roles + the AccountsManager/xmtp-conv one-offs de-fork onto it. */
+  subColor: { dark: colors['sub-dark'], light: colors['sub-light'] },
   linkColor: { dark: colors['link-dark'], light: colors['link-light'] },
   primaryColor: { dark: colors['primary-dark'], light: colors['primary-light'] },
   dangerColor: { dark: colors['danger-dark'], light: colors['danger-light'] },
@@ -74,7 +78,7 @@ export const semanticColors = {
 
 /** Resolve all 7 canonical tokens for an effective scheme. */
 export function semanticPalette(scheme: 'light' | 'dark'): {
-  bgColor: string; borderColor: string; textColor: string;
+  bgColor: string; borderColor: string; textColor: string; subColor: string;
   linkColor: string; primaryColor: string;
   dangerColor: string; successColor: string;
   inputBgColor: string; toolbarBgColor: string;
@@ -83,6 +87,7 @@ export function semanticPalette(scheme: 'light' | 'dark'): {
     bgColor: semanticColors.bgColor[scheme],
     borderColor: semanticColors.borderColor[scheme],
     textColor: semanticColors.textColor[scheme],
+    subColor: semanticColors.subColor[scheme],
     linkColor: semanticColors.linkColor[scheme],
     primaryColor: semanticColors.primaryColor[scheme],
     dangerColor: semanticColors.dangerColor[scheme],
@@ -99,6 +104,8 @@ export function semanticPalette(scheme: 'light' | 'dark'): {
  *  the colour is a live `usePalette()` value carrying the user's overrides). */
 export type ColorToken =
   | 'text'
+  | 'secondary'
+  | 'muted'
   | 'link'
   | 'primary'
   | 'danger'
@@ -107,6 +114,11 @@ export type ColorToken =
 
 const COLOR_TOKEN_MAP: Record<ColorToken, keyof typeof semanticColors> = {
   text: 'textColor',
+  /** Secondary + muted both resolve to the `sub` grey (today's only
+   *  secondary-text colour); muted is a reserved dimmer that currently renders
+   *  identically, so adopting it is lossless. */
+  secondary: 'subColor',
+  muted: 'subColor',
   link: 'linkColor',
   primary: 'primaryColor',
   danger: 'dangerColor',

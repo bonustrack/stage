@@ -32,7 +32,7 @@ import { RequestActionBar } from '../../components/RequestActionBar';
 export default function XmtpConversation(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border, toolbarBg } = usePalette();
+  const { text: fg, link: head, bg, border } = usePalette();
   const sub = fg, rowBg = border;
   const { convId, focus } = useLocalSearchParams<{ convId: string; focus?: string }>();
   const c = useConversationState(convId, focus);
@@ -72,7 +72,7 @@ export default function XmtpConversation(): React.ReactElement {
 
   if (!convId) {
     return (
-      <Col background={bg} flex={1} align="center" justify="center">
+      <Col surface="surface" flex={1} align="center" justify="center">
         <Text color={sub}>Missing conversation id.</Text>
       </Col>
     );
@@ -103,7 +103,7 @@ export default function XmtpConversation(): React.ReactElement {
       </Reanimated.View>
       {/** Top nav: solid bg strip mirrors the composer footer + extends UP over the
        *  status-bar area so content sliding under the keyboard doesn't show through. */}
-      <Row height={52 + insets.top} background={toolbarBg} padding={{ top: insets.top }} align="stretch" style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2, borderBottomWidth: 1, borderBottomColor: border }}>
+      <Row height={52 + insets.top} surface="toolbar" padding={{ top: insets.top }} align="stretch" style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2, borderBottomWidth: 1, borderBottomColor: border }}>
         <Pressable
           onPress={() => router.replace('/')}
           style={{ paddingLeft: 14, paddingRight: 8, justifyContent: 'center' }}

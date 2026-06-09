@@ -12,7 +12,7 @@ import { Input } from '@metro-labs/kit/input';
 import { Box, Row, Col } from '../layout';
 import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';
-import { usePalette, useEffectiveColorScheme, type Palette } from '../../lib/theme';
+import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import type { GalleryPalette } from './galleryPalette';
 import { AppModal } from '../AppModal';
 import { ColorPicker } from './ColorPicker';
@@ -24,7 +24,7 @@ import { RADIUS_MIN, RADIUS_MAX, fontSize } from '@metro-labs/kit/tokens';
 
 /** The 7 canonical palette keys in display order. `key` is both the Palette key
  *  and the override TokenKey (they share the same union). */
-const TOKEN_ROWS: ReadonlyArray<readonly [label: string, key: keyof Palette]> = [
+const TOKEN_ROWS: ReadonlyArray<readonly [label: string, key: TokenKey]> = [
   ['bg-color', 'bg'],
   ['border-color', 'border'],
   ['text-color', 'text'],
@@ -97,7 +97,7 @@ function RadiusRow({ p, name, value, onSet }: {
   const shown = draft ?? String(value);
   return (
     <Row margin={{ top: 12 }} gap={14} align="center">
-      <Box width={40} height={40} radius={Math.min(value, 20)} background={p.rowBg} style={{ borderWidth: 1, borderColor: p.head }}/>
+      <Box width={40} height={40} radius={Math.min(value, 20)} surface="raised" style={{ borderWidth: 1, borderColor: p.head }}/>
       <Col minWidth={0} flex={1}>
         <Text weight="semibold" size="md" color={p.head}>{name}</Text>
         <Input
@@ -130,7 +130,7 @@ export function ColorTokens({ p }: { p: GalleryPalette }): React.ReactElement {
   return (
     <Box>
       <Row margin={{ top: 16 }} align="center" justify="between">
-        <Text dark={p.dark} color={p.sub} variant="caption" weight="medium">
+        <Text color={p.sub} variant="caption" weight="medium">
           {`${TOKEN_ROWS.length} tokens + 2 radii - tap a swatch or hex - ${scheme}`}
         </Text>
         <Button

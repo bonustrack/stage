@@ -22,9 +22,8 @@ import {
 
 export function DeveloperSettings(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border } = usePalette();
+  const { text: fg, link: head, border } = usePalette();
   const sub = fg;
-  const rowBg = border;
   const insets = useSafeAreaInsets();
   const blockRadius = useBlockRadius();
   const [enabled, setEnabled] = useState(isDebugConsoleEnabled());
@@ -40,13 +39,13 @@ export function DeveloperSettings(): React.ReactElement {
   };
 
   return (
-    <Col background={bg} flex={1}>
+    <Col surface="surface" flex={1}>
       <SystemHeader title="Developer" dark={dark} fg={fg} head={head} border={border}/>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <Text size="xs" color={sub} style={{ paddingHorizontal: 16, paddingTop: 20 }}>
           DIAGNOSTICS
         </Text>
-        <Box radius={blockRadius} background={rowBg} padding={14} margin={{ x: 16, top: 8 }}
+        <Box radius={blockRadius} surface="raised" padding={14} margin={{ x: 16, top: 8 }}
           style={{ borderWidth: 1, borderColor: border }}
 >
           <Row align="center" gap={12}>

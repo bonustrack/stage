@@ -18,7 +18,7 @@ export function ThemeSwitcher({ dark, head }: {
   const pref = useThemePreference();
   return (
     <Box padding={{ x: 16, top: 18 }}>
-      <Title dark={dark} level={3} color={head}>Theme</Title>
+      <Title level={3} color={head}>Theme</Title>
       <Row margin={{ top: 10 }} gap={8}>
         {THEME_OPTIONS.map((opt) => {
           const active = pref === opt.value;

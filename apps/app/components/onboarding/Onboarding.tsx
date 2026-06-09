@@ -90,7 +90,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
   }, [index, isLast, onDone, width]);
 
   return (
-    <Col background={bg} flex={1}>
+    <Col surface="surface" flex={1}>
       <FlatList
         ref={listRef}
         data={SLIDES}

@@ -76,7 +76,7 @@ export function ProfileScreen({ address, variant, panRef }: {
   const headerTop = variant === 'route' ? 44 + insets.top : 56;
 
   return (
-    <Col flex={1} background={c.bg}>
+    <Col flex={1} surface="surface">
       <ProfileHeader
         variant={variant} insetTop={insets.top} isSelf={isSelf} c={c}
         onBack={() => router.back()} onMenu={() => setMenuOpen(true)}
@@ -93,7 +93,7 @@ export function ProfileScreen({ address, variant, panRef }: {
             rounded TOP corners so the black curves over the gray banner (bottom-sheet
             look). overflow:'visible' + avatar zIndex keep the avatar from being
             clipped by the rounding. */}
-        <Box background={c.bg} padding={{ x: 16, bottom: 8 }} margin={{ top: -18 }} align="start" style={{ borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'visible' }}>
+        <Box surface="surface" padding={{ x: 16, bottom: 8 }} margin={{ top: -18 }} align="start" style={{ borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'visible' }}>
           {/* Wait for the profile so we render the real avatar directly (no
               blockie→real flash); custom avatars resolve via IPFS, not stamp.
               marginTop -88*0.8 pulls the avatar UP by 80% of its height: ~80%

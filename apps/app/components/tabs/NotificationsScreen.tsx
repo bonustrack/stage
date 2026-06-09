@@ -13,15 +13,14 @@ import { Text } from '@metro-labs/kit/text';
 import { Title } from '@metro-labs/kit/title';
 import { Box, Col, Row } from '../layout';
 import { TopnavIdentity } from '../TopnavIdentity';
-import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
+import { usePalette } from '../../lib/theme';
 import { NotificationsList } from './NotificationsList';
 import { useRequestPreviews } from './useRequestPreviews';
 import { useNotifUnread } from './useNotifUnread';
 import { markNotifsRead } from '../../lib/notifReadState';
 
 export function NotificationsScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
-  const dark = useEffectiveColorScheme() === 'dark';
-  const { link: head, text: sub, bg, toolbarBg } = usePalette();
+  const { link: head, text: sub, bg } = usePalette();
   const router = useRouter();
   const { previews } = useRequestPreviews();
   const unread = useNotifUnread();
@@ -36,12 +35,12 @@ export function NotificationsScreen({ panRef }: { panRef?: SimultaneousRefs } = 
   return (
     <ScrollView simultaneousHandlers={panRef} style={{ flex: 1, backgroundColor: bg }} contentContainerStyle={{ flexGrow: 1 }}>
       {/* Topnav identity (avatar + name → Menu), left-aligned to match Home. */}
-      <Row padding={{ x: 16, top: 12, bottom: 4 }} align="center" background={toolbarBg}>
+      <Row padding={{ x: 16, top: 12, bottom: 4 }} align="center" surface="toolbar">
         <TopnavIdentity/>
       </Row>
       <Col padding={{ x: 16, top: 4, bottom: 8 }}>
         <Row align="center" gap={10}>
-          <Title size="md" dark={dark} color={head}>Notifications</Title>
+          <Title size="md" color={head}>Notifications</Title>
           {unread> 0 ? (
             <Box minWidth={22} height={22} radius="full" background={head} padding={{ x: 7 }} align="center" justify="center">
               <Text weight="semibold" size="xs" color={bg}>{unread}</Text>

@@ -17,11 +17,11 @@ const short0zk = (a: string): string => (a.length> 18 ? `${a.slice(0, 10)}…${a
 export function ShieldRecipient({ pal, zkAddress }: {
   pal: Pal; zkAddress: string | null;
 }): React.ReactElement {
-  const { head, sub, border, inputBg } = pal;
+  const { head, sub, border } = pal;
   return (
     <Box gap={6}>
       <Text size="xs" color={sub}>TO YOUR PRIVATE WALLET</Text>
-      <Box background={inputBg} radius="lg" padding={{ x: 14, y: 12 }} style={{ borderWidth: 1, borderColor: border }}>
+      <Box surface="raised" radius="lg" padding={{ x: 14, y: 12 }} style={{ borderWidth: 1, borderColor: border }}>
         <Text weight="semibold" size="md" color={head}>
           {zkAddress ? short0zk(zkAddress) : 'Loading 0zk address…'}
         </Text>
@@ -41,7 +41,7 @@ export function ShieldPhaseLine({ pal, txHash, err, errPhase, bridgeOk, chainId 
   pal: Pal; txHash: string | null; err: string | null; errPhase?: string | null;
   bridgeOk: boolean; chainId: number;
 }): React.ReactElement | null {
-  const { sub, link } = pal;
+  const { sub } = pal;
   if (!bridgeOk) {
     return (
       <Text size="xs" color={sub} style={{ paddingHorizontal: 4 }}>
@@ -54,7 +54,7 @@ export function ShieldPhaseLine({ pal, txHash, err, errPhase, bridgeOk, chainId 
     <Box padding={{ x: 4 }} gap={4}>
       {txHash ? (
         <Pressable onPress={() => Linking.openURL(txExplorerUrl(chainId, txHash))} hitSlop={6}>
-          <Text size="xs" color={link}>
+          <Text size="xs">
             {txHash.slice(0, 10)}…{txHash.slice(-8)}
           </Text>
         </Pressable>

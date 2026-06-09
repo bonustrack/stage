@@ -25,7 +25,7 @@ import { ReceiveModeToggle, type ReceiveMode } from '../../components/wallet/Rec
 
 export default function WalletReceive(): React.ReactElement {
   const router = useRouter();
-  const { text: fg, link: head, bg, border, toolbarBg } = usePalette();
+  const { text: fg, link: head, border } = usePalette();
   const sub = fg;
   const card = border;
   const insets = useSafeAreaInsets();
@@ -62,8 +62,8 @@ export default function WalletReceive(): React.ReactElement {
     : 'Scan or share this address to receive ETH or tokens on Ethereum mainnet.';
 
   return (
-    <Col background={bg} flex={1}>
-      <Row background={toolbarBg} padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
+    <Col surface="surface" flex={1}>
+      <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg}/>
         </Pressable>

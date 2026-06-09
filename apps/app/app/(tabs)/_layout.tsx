@@ -24,7 +24,6 @@ export default function TabsLayout(): React.ReactElement {
   const pagerVisible = !pathname.startsWith('/settings');
   const insets = useSafeAreaInsets();
   const pal = usePalette();
-  const bg = pal.bg; // #0e0f10 / #ffffff
   const active = pal.link; // #ffffff / #000000
   // inactive nav icon = muted; no `muted` token yet → map to `text`. TODO: muted token.
   const inactive = pal.text;
@@ -47,12 +46,12 @@ export default function TabsLayout(): React.ReactElement {
   const tabBarHeight = 60 + insets.bottom;
 
   return (
-    <Col background={bg} flex={1}>
+    <Col surface="surface" flex={1}>
       {/* Status-bar inset filler: paint the top safe-area (behind the Android
           system icons) with toolbarBg so the tab topnavs - which start below
           insets.top - extend seamlessly to the very top edge. Sits under the
           pager overlay; toolbarBg matches the topnav fill below it. */}
-      <Box height={insets.top} background={pal.toolbarBg}
+      <Box height={insets.top} surface="toolbar"
         pointerEvents="none"
         style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 1 }}
 />

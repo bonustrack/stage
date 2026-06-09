@@ -18,13 +18,13 @@ const KIT_GITHUB_URL = 'https://github.com/bonustrack/metro/tree/main/packages/k
 
 export function KitPage(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border } = usePalette();
+  const { text: fg, link: head, border } = usePalette();
   const sub = fg;
   const rowBg = border;
   const insets = useSafeAreaInsets();
 
   return (
-    <Col background={bg} flex={1}>
+    <Col surface="surface" flex={1}>
       <SystemHeader
         title="Kit" dark={dark} fg={fg} head={head} border={border}
         right={

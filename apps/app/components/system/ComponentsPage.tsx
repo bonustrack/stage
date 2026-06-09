@@ -13,13 +13,13 @@ import { ComponentsSections } from './ComponentsSections';
 
 export function ComponentsPage(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border } = usePalette();
+  const { text: fg, link: head, border } = usePalette();
   const sub = fg;
   const rowBg = border;
   const insets = useSafeAreaInsets();
 
   return (
-    <Col background={bg} flex={1}>
+    <Col surface="surface" flex={1}>
       <SystemHeader title="Components" dark={dark} fg={fg} head={head} border={border}/>
       <ScrollView
         style={{ flex: 1 }}

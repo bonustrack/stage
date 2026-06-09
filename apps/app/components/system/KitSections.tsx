@@ -37,18 +37,18 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
   return (
     <Box>
       <GallerySection name="Title" note="Heading typography, levels 1-3" {...sec} innerPadH={14} innerPadV={12}>
-        <Title dark={dark} level={1} color={head}>Level 1 title</Title>
-        <Title dark={dark} level={2} color={head}>Level 2 title</Title>
-        <Title dark={dark} level={3} color={head}>Level 3 title</Title>
+        <Title level={1} color={head}>Level 1 title</Title>
+        <Title level={2} color={head}>Level 2 title</Title>
+        <Title level={3} color={head}>Level 3 title</Title>
       </GallerySection>
 
       <GallerySection name="Text" note="ChatKit value / size / weight / textAlign" {...sec} innerPadH={14} innerPadV={12}>
-        <Text dark={dark} value="Body text - the default paragraph style."/>
-        <Text dark={dark} color={sub} value="Secondary text - muted supporting copy."/>
-        <Text dark={dark} color={sub} size="xs" value="Caption text - smallest label."/>
-        <Text dark={dark} weight="semibold" textAlign="center" value="Semibold, centered."/>
-        <Text dark={dark} italic lineThrough value="Italic + line-through."/>
-        <Text dark={dark} variant="mono" value="0xabc...1234"/>
+        <Text value="Body text - the default paragraph style."/>
+        <Text color={sub} value="Secondary text - muted supporting copy."/>
+        <Text color={sub} size="xs" value="Caption text - smallest label."/>
+        <Text weight="semibold" textAlign="center" value="Semibold, centered."/>
+        <Text italic lineThrough value="Italic + line-through."/>
+        <Text variant="mono" value="0xabc...1234"/>
       </GallerySection>
 
       <GallerySection name="Button" note="ChatKit color + variant + size + iconStart/iconEnd" {...sec} innerPadH={14} innerPadV={12}>
@@ -94,7 +94,7 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
           confirm={{ label: 'Confirm', onPress: () => {} }}
           cancel={{ label: 'Cancel', onPress: () => {} }}
 >
-          <Text dark={dark}>A bordered Card surface holding arbitrary body content.</Text>
+          <Text>A bordered Card surface holding arbitrary body content.</Text>
         </Card>
       </GallerySection>
 
@@ -104,7 +104,7 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
             <ListViewItem key={label} dark={dark} onPress={() => {}}>
               <Icon name="cog" size={22} color={head}/>
               <Col flex={1}>
-                <Text dark={dark} color={head} weight="medium" size="xl">{label}</Text>
+                <Text color={head} weight="medium" size="xl">{label}</Text>
               </Col>
               <Icon name="chevronRight" size={18} color={sub}/>
             </ListViewItem>
@@ -113,17 +113,17 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
       </GallerySection>
 
       <GallerySection name="Divider" note="Hairline separator - spacing / flush / thickness" {...sec} innerPadH={14} innerPadV={14}>
-        <Text dark={dark}>Above the divider</Text>
+        <Text>Above the divider</Text>
         <Divider dark={dark} spacing={12}/>
-        <Text dark={dark}>Between two dividers</Text>
+        <Text>Between two dividers</Text>
         <Divider dark={dark} spacing={12} size={2}/>
-        <Text dark={dark}>Below the thick divider</Text>
+        <Text>Below the thick divider</Text>
       </GallerySection>
 
       <GallerySection name="Caption" note="Section labels / muted secondary text" {...sec} innerPadH={14} innerPadV={14}>
-        <Caption dark={dark} value="DEFAULT CAPTION"/>
-        <Caption dark={dark} value="Semibold caption" weight="semibold"/>
-        <Caption dark={dark} value="Small centered caption" size="sm" textAlign="center"/>
+        <Caption value="DEFAULT CAPTION"/>
+        <Caption value="Semibold caption" weight="semibold"/>
+        <Caption value="Small centered caption" size="sm" textAlign="center"/>
       </GallerySection>
 
       <GallerySection name="Image" note="Unified image - fit / radius / frame" {...sec} innerPadH={14} innerPadV={14}>
@@ -136,9 +136,9 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
 
       <GallerySection name="Spacer" note="Flexible gap - pushes siblings apart" {...sec} innerPadH={14} innerPadV={14}>
         <Row align="center">
-          <Text dark={dark} color={head}>Start</Text>
+          <Text color={head}>Start</Text>
           <Spacer/>
-          <Text dark={dark} color={sub}>End</Text>
+          <Text color={sub}>End</Text>
         </Row>
       </GallerySection>
 
@@ -240,16 +240,16 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
       <GallerySection name="Table" note="ChatKit Table / Row / Cell - header + data" {...sec} framed={false}>
         <Table dark={dark}>
           <Table.Row header>
-            <Table.Cell><Text dark={dark} weight="semibold">Token</Text></Table.Cell>
-            <Table.Cell align="end"><Text dark={dark} weight="semibold">Balance</Text></Table.Cell>
+            <Table.Cell><Text weight="semibold">Token</Text></Table.Cell>
+            <Table.Cell align="end"><Text weight="semibold">Balance</Text></Table.Cell>
           </Table.Row>
           <Table.Row>
-            <Table.Cell><Text dark={dark}>ETH</Text></Table.Cell>
-            <Table.Cell align="end"><Text dark={dark} variant="mono">1.42</Text></Table.Cell>
+            <Table.Cell><Text>ETH</Text></Table.Cell>
+            <Table.Cell align="end"><Text variant="mono">1.42</Text></Table.Cell>
           </Table.Row>
           <Table.Row>
-            <Table.Cell><Text dark={dark}>USDC</Text></Table.Cell>
-            <Table.Cell align="end"><Text dark={dark} variant="mono">980.00</Text></Table.Cell>
+            <Table.Cell><Text>USDC</Text></Table.Cell>
+            <Table.Cell align="end"><Text variant="mono">980.00</Text></Table.Cell>
           </Table.Row>
         </Table>
       </GallerySection>
@@ -258,7 +258,7 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
         <Scroll horizontal gap={8} style={{ maxHeight: 48 }} showsHorizontalScrollIndicator={false}>
           {['One', 'Two', 'Three', 'Four', 'Five'].map((n) => (
             <Box padding={{ x: 12, y: 8 }} key={n} radius="sm" background={dark ? '#1c1c1e' : '#f0f0f2'}>
-              <Text dark={dark}>{n}</Text>
+              <Text>{n}</Text>
             </Box>
           ))}
         </Scroll>
@@ -267,7 +267,7 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
       <GallerySection name="Pressable" note="Kit Pressable wrapper - pressedOpacity feedback" {...sec} innerPadH={14} innerPadV={12}>
         <Pressable pressedOpacity={0.5} onPress={() => {}}>
           <Box padding={{ x: 12, y: 10 }} radius="sm" background={dark ? '#1c1c1e' : '#f0f0f2'}>
-            <Text dark={dark}>Tap me - dims on press</Text>
+            <Text>Tap me - dims on press</Text>
           </Box>
         </Pressable>
       </GallerySection>

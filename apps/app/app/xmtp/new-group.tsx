@@ -40,7 +40,7 @@ interface PickedImage { uri: string; mime: string; name: string }
 export default function NewGroup(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border, primary, inputBg, toolbarBg } = usePalette();
+  const { text: fg, link: head, bg, border, primary, inputBg } = usePalette();
   const sub = fg;
   const rowBg = border;
   const insets = useSafeAreaInsets();
@@ -87,13 +87,13 @@ export default function NewGroup(): React.ReactElement {
   }, [members, name, image, creating, router]);
 
   return (
-    <Col background={bg} flex={1}>
+    <Col surface="surface" flex={1}>
       {/* Header — back button + title, consistent with other pushed screens. */}
-      <Row background={toolbarBg} padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
+      <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg}/>
         </Pressable>
-        <Title size="sm" dark={dark} color={head}>
+        <Title size="sm" color={head}>
           New group
         </Title>
       </Row>
@@ -114,7 +114,7 @@ export default function NewGroup(): React.ReactElement {
                 }}
 />
             ) : (
-              <Box width={88} height={88} radius={Math.round(88 * 0.12)} background={rowBg} align="center" justify="center" style={{ borderWidth: 1, borderColor: border }}>
+              <Box width={88} height={88} radius={Math.round(88 * 0.12)} surface="raised" align="center" justify="center" style={{ borderWidth: 1, borderColor: border }}>
                 <Text size="6xl" color={sub}>＋</Text>
               </Box>
             )}

@@ -58,8 +58,8 @@ export function GroupProfileHeader({ imageUrl, channelId, uploadingImage, insetT
     <>
       {/* Cover extends up behind the floating topnav/status bar so the colour
           bleeds to y=0 (height += insetTop), exactly like ProfileScreen route. */}
-      <Box height={140 + insetTop} background={rowBg}/>
-      <Box background={bg} padding={{ x: 16 }} margin={{ top: -18 }} align="start" style={{ borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'visible' }}>
+      <Box height={140 + insetTop} surface="raised"/>
+      <Box surface="surface" padding={{ x: 16 }} margin={{ top: -18 }} align="start" style={{ borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'visible' }}>
         <Pressable onPress={onTap} onLongPress={onPick} disabled={uploadingImage} hitSlop={8}
           style={{ marginTop: -44, zIndex: 1 }}>
           <Image

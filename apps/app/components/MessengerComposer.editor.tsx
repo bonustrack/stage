@@ -36,7 +36,7 @@ interface EditorProps {
 }
 
 export function ComposerEditor(p: EditorProps): React.ReactElement {
-  const { dark, fg, head, bg, sub, inputBg, chipBg, recording } = p;
+  const { dark, fg, head, bg, sub, chipBg, recording } = p;
   const { primary } = usePalette();
   const Btn = ({ icon, onPress, mr }: { icon: HeroIconName; onPress: () => void; mr?: number }): React.ReactElement => (
     <Pressable onPress={onPress} style={({ pressed }) => ({
@@ -47,7 +47,7 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
     </Pressable>
   );
   return (
-    <Col padding={10} background={inputBg} radius="none">
+    <Col padding={10} surface="raised" radius="none">
       {/** Top slot: live waveform + timer while recording, else the textarea. The
        *   button row below stays mounted across both states. */}
       {recording ? (

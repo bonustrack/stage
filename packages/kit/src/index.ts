@@ -10,4 +10,5 @@
 export * from './tokens';
 export * from './icons';
 export * from './theme';
+export * from './theme-context';
 export * from './avatar';

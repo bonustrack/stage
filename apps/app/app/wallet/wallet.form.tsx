@@ -68,9 +68,8 @@ export function ActionHeader({ title, head, border, onBack }: {
   title: string; head: string; border: string; onBack: () => void;
 }): React.ReactElement {
   const insets = useSafeAreaInsets();
-  const { toolbarBg } = usePalette();
   return (
-    <Row background={toolbarBg} padding={{ x: 12, top: 8 + insets.top, bottom: 8 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
+    <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 8 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
       <Pressable onPress={onBack} hitSlop={8} style={{ padding: 4 }}>
         <Icon name="arrowLeft" size={22} color={head}/>
       </Pressable>
@@ -109,7 +108,7 @@ export function AmountBox({ pal, amount, setAmount, busy, balance, symbol, dark 
   pal: FormPal; amount: string; setAmount: (v: string) => void; busy: boolean;
   balance?: string | null; symbol?: string; dark?: boolean;
 }): React.ReactElement {
-  const { head, sub, inputBg, link } = pal;
+  const { head, sub, link } = pal;
   const hasBal = balance != null && Number(balance) > 0;
   return (
     <Box gap={6}>
@@ -122,7 +121,7 @@ export function AmountBox({ pal, amount, setAmount, busy, balance, symbol, dark 
             style={{ height: 24, paddingHorizontal: 8 }}/>
         ) : null}
       </Row>
-      <Box background={inputBg} radius="lg" padding={{ x: 14, y: 12 }}>
+      <Box surface="raised" radius="lg" padding={{ x: 14, y: 12 }}>
         <Input value={amount} onChangeText={setAmount} placeholder="0.0" placeholderTextColor={sub}
           inputType="number" disabled={busy} dark={!!dark}
           inputProps={{ keyboardType: 'decimal-pad' }}
@@ -142,11 +141,11 @@ export function AmountBox({ pal, amount, setAmount, busy, balance, symbol, dark 
 export function LockedRecipient({ pal, label, value, hint }: {
   pal: FormPal; label: string; value: string; hint: string;
 }): React.ReactElement {
-  const { head, sub, border, inputBg } = pal;
+  const { head, sub, border } = pal;
   return (
     <Box gap={6}>
       <Text size="xs" color={sub}>{label}</Text>
-      <Box background={inputBg} radius="lg" padding={{ x: 14, y: 12 }} style={{ borderWidth: 1, borderColor: border }}>
+      <Box surface="raised" radius="lg" padding={{ x: 14, y: 12 }} style={{ borderWidth: 1, borderColor: border }}>
         <Text weight="semibold" size="md" color={head}>{value}</Text>
         <Text size="xs" color={sub} style={{ marginTop: 2 }}>{hint}</Text>
       </Box>
@@ -159,16 +158,16 @@ export function LockedRecipient({ pal, label, value, hint }: {
  *  right. Shared by the Send / Shield / Unshield pages so the action bar matches
  *  across all three. Adds safe-area bottom padding + a top divider. */
 export function WalletFooter({
-  border, bg, dark, onCancel, submitLabel, onSubmit, submitDisabled, submitLoading,
+  border, dark, onCancel, submitLabel, onSubmit, submitDisabled, submitLoading,
 }: {
-  border: string; bg: string; dark: boolean;
+  border: string; dark: boolean;
   onCancel: () => void;
   submitLabel: string; onSubmit: () => void;
   submitDisabled?: boolean; submitLoading?: boolean;
 }): React.ReactElement {
   const insets = useSafeAreaInsets();
   return (
-    <Row background={bg} padding={{ x: 16, top: 12, bottom: Math.max(insets.bottom, 12) }} gap={12} 
+    <Row surface="surface" padding={{ x: 16, top: 12, bottom: Math.max(insets.bottom, 12) }} gap={12} 
       style={{ borderTopWidth: 1, borderTopColor: border }}>
       <Button variant="secondary" size="lg" pill dark={dark} style={{ flex: 1 }}
         onPress={onCancel} label="Cancel"/>
@@ -181,13 +180,13 @@ export function WalletFooter({
 
 /** Standard page shell: bg + header + scroll body + optional pinned footer.
  *  When `footer` is given it renders below the scroll so it stays pinned. */
-export function ActionPage({ title, head, bg, border, onBack, footer, children }: {
+export function ActionPage({ title, head, border, onBack, footer, children }: {
   title: string; head: string; bg: string; border: string; onBack: () => void;
   footer?: React.ReactNode;
   children: React.ReactNode;
 }): React.ReactElement {
   return (
-    <Col background={bg} flex={1}>
+    <Col surface="surface" flex={1}>
       <ActionHeader title={title} head={head} border={border} onBack={onBack}/>
       <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ padding: 16, gap: 16 }}>

@@ -26,15 +26,14 @@ import { getCachedRows, subscribeCachedRows } from '../../modules/messaging';
 import type { Row as RowT } from '../../components/tabs/HomeScreen.helpers';
 import { loadArchivedIds, subscribeArchived } from '../../lib/archived';
 import { shortAddress } from '../../modules/messaging';
-import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
+import { usePalette } from '../../lib/theme';
 import { usePeerProfiles, getPeerName, getPeerAvatarCb } from '../../lib/peerProfiles';
 import { ChannelRow } from '../../components/ChannelRow';
 import { Col, Row } from '../../components/layout';
 
 export default function Archived(): React.ReactElement {
   const router = useRouter();
-  const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border, toolbarBg } = usePalette();
+  const { text: fg, link: head, border } = usePalette();
   const sub = fg;
   const insets = useSafeAreaInsets();
   const [archived, setArchived] = useState<Set<string>>(new Set());
@@ -70,12 +69,12 @@ export default function Archived(): React.ReactElement {
   }, [router]);
 
   return (
-    <Col background={bg} flex={1}>
-      <Row background={toolbarBg} padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
+    <Col surface="surface" flex={1}>
+      <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg}/>
         </Pressable>
-        <Title size="sm" dark={dark} color={head}>Archived</Title>
+        <Title size="sm" color={head}>Archived</Title>
       </Row>
       <FlatList
         style={{ flex: 1 }}

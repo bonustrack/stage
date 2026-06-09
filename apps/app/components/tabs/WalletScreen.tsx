@@ -32,7 +32,7 @@ import { useWalletBalances } from './WalletScreen.balances';
 
 export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const router = useRouter();
-  const { link: head, text: sub, bg, border, toolbarBg } = usePalette();
+  const { link: head, text: sub, bg, border } = usePalette();
   const dark = useEffectiveColorScheme() === 'dark';
 
   const { snapshot: privSnapshot, accountId: privAccountId, pending } = usePrivateWallet(true);
@@ -114,7 +114,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
      *  RefreshControl stranded its spinner on Android in this nested ScrollView.
      *  Wrapped in a flex:1 Col so the tap-to-refresh icon button can anchor to
      *  the screen top-right (absolute), independent of scroll content. */
-    <Col background={bg} flex={1}>
+    <Col surface="surface" flex={1}>
     <CopyButton address={address} color={head}/>
     <RefreshButton refreshing={refreshing} onRefresh={onRefresh} color={head}/>
     <ScrollView
@@ -139,7 +139,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
 >
       {pull.indicator}
       {/* Topnav identity (avatar + name → Menu), left-aligned to match Home. */}
-      <Row padding={{ x: 16, top: 12, bottom: 4 }} align="center" background={toolbarBg}><TopnavIdentity /></Row>
+      <Row padding={{ x: 16, top: 12, bottom: 4 }} align="center" surface="toolbar"><TopnavIdentity /></Row>
       {/* Value card — compact, left-aligned: just the big total USD value.
           Decimals render in the dim `sub` colour to keep the dollars prominent. */}
       <Col padding={{ top: 20, bottom: 16 }} margin={{ x: 16 }} align="start">

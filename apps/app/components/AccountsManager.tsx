@@ -18,7 +18,7 @@ import { usePalette } from '../lib/theme';
 export function AccountsManager({ dark, flat = false, onSwitched }: { dark: boolean; flat?: boolean; onSwitched?: () => void }): React.ReactElement {
   const tokens = usePalette();
   const head = tokens.link; // #ffffff / #000000
-  const sub = dark ? '#7a7a7e' : '#8a929d'; // one-off sub-grey, no token
+  const sub = tokens.sub; // de-forked onto the palette secondary grey
   const border = tokens.border; // #282a2d / #e4e4e5
   const rowBg = border;
   const sheetBg = dark ? '#1a1b1d' : '#ffffff'; // elevated sheet surface, no token

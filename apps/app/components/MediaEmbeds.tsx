@@ -41,7 +41,7 @@ export function YouTubeEmbed({ videoId, dark }: {
         </Box>
       </Box>
       <Box padding={{ x: 10, y: 6 }}>
-        <Text size="3xs" color={dark ? '#7a7a7e' : '#8a929d'}>
+        <Text size="3xs" role="secondary">
           YouTube
         </Text>
       </Box>
@@ -75,7 +75,7 @@ export function LocationEmbed({ lat, lng, sourceUrl, dark }: {
         <Text weight="semibold" size="xs" color={dark ? '#ffffff' : '#000000'}>
           Location
         </Text>
-        <Text size="3xs" color={dark ? '#7a7a7e' : '#8a929d'}>
+        <Text size="3xs" role="secondary">
           {label} · tap to open
         </Text>
       </Box>
