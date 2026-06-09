@@ -39,12 +39,16 @@ export function ReplyBanner({
      *  background uses the same `surface` token as the composer so it blends in. */
     <Box padding={{ x: 10 }} margin={{ x: -10 }} surface="surface" style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: borderColor }}>
       <Pressable onPress={onPress} disabled={!onPress}>
-        <Row padding={{ y: 8, x: 0 }} align="center" gap={10}>
+        {/** Content inset = 8px so the bar text lines up with the composer input
+         *   text: the editor sits at Col padding 10 + TextInput paddingHorizontal 8
+         *   = 18px from the screen edge, and the outer Box already supplies 10px
+         *   here (after the -10 full-width-border breakout), so 8 more = 18px. */}
+        <Row padding={{ y: 8, x: 8 }} align="center" gap={10}>
           {/** Reply glyph leading the label (the swipe-to-reply icon). */}
           <Icon name="reply" size={16} color={sub}/>
-          <Text size="lg" numberOfLines={1} style={{ flex: 1 }}>
-            <Text size="lg" color={sub}>Replying to </Text>
-            <Text size="lg" color={nameColor}>
+          <Text size="xl" numberOfLines={1} style={{ flex: 1 }}>
+            <Text size="xl" color={sub}>Replying to </Text>
+            <Text size="xl" color={nameColor}>
               {(sender ? getPeerName(sender) : undefined) ?? (sender ? shortAddress(sender) : 'message')}
             </Text>
           </Text>
