@@ -2,7 +2,7 @@
  *  members, shows the inline-editable group name, labels + GitHub link. */
 
 import { useEffect, useState } from 'react';
-import { fontSize } from '@metro-labs/kit/tokens';
+
 import { useQueryClient } from '@tanstack/react-query';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
@@ -118,7 +118,7 @@ export default function GroupDetail(): React.ReactElement {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
         paddingHorizontal: 16, paddingBottom: 8,
       }}>
-        <Text style={{ color: sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium' }}>
+        <Text size="sm" style={{ color: sub, fontFamily: 'Calibre-Medium' }}>
           MEMBERS ({members.length})
         </Text>
         <Pressable

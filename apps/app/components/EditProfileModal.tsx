@@ -120,12 +120,12 @@ export default function EditProfileModal({
                 </Box>
               ) : null}
             </Pressable>
-            <Text style={{ color: sub, fontSize: fontSize('sm'), marginTop: 8, fontFamily: 'Calibre-Medium' }}>Tap to change avatar</Text>
+            <Text size="sm" style={{ color: sub, marginTop: 8, fontFamily: 'Calibre-Medium' }}>Tap to change avatar</Text>
           </Box>
 
           {FIELDS.map(f => (
             <Box key={f.key} style={{ marginBottom: 14 }}>
-              <Text style={{ color: sub, fontSize: fontSize('xs'), marginBottom: 4, fontFamily: 'Calibre-Medium' }}>{f.label.toUpperCase()}</Text>
+              <Text size="xs" style={{ color: sub, marginBottom: 4, fontFamily: 'Calibre-Medium' }}>{f.label.toUpperCase()}</Text>
               {f.multiline ? (
                 <Textarea
                   value={(form[f.key] ?? '') as string}

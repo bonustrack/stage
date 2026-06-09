@@ -15,7 +15,7 @@
  *  count subtitle. */
 
 import { Pressable } from '@metro-labs/kit/pressable';
-import { fontSize } from '@metro-labs/kit/tokens';
+
 import { Text } from '@metro-labs/kit/text';
 import { Box, Row } from './layout';
 import { Spinner } from './Spinner';
@@ -59,7 +59,7 @@ export function CommonChannels({ peerAddress, enabled, c }: {
       <Row justify="start" align="center" gap={24} mx={16} mb={6}
         style={{ borderBottomWidth: 1, borderBottomColor: c.border }}>
         <Pressable style={{ paddingVertical: 10, marginBottom: -1, borderBottomWidth: 2, borderBottomColor: c.link }}>
-          <Text style={{ color: c.link, fontSize: fontSize('lg'), fontFamily: 'Calibre-Semibold' }}>
+          <Text size="lg" style={{ color: c.link, fontFamily: 'Calibre-Semibold' }}>
             Channels
           </Text>
         </Pressable>

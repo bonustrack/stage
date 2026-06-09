@@ -7,7 +7,7 @@
  *  and lets the detection logic stay unit-testable. */
 
 import { Linking } from 'react-native';
-import { fontSize } from '@metro-labs/kit/tokens';
+
 import { Image } from '@metro-labs/kit/image';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from './layout';
@@ -43,12 +43,12 @@ export function YouTubeEmbed({ videoId, dark }: {
             backgroundColor: 'rgba(0,0,0,0.7)',
             alignItems: 'center', justifyContent: 'center',
           }}>
-            <Text style={{ color: '#ffffff', fontSize: fontSize('xxl'), marginLeft: 3 }}>▶</Text>
+            <Text size="xxl" style={{ color: '#ffffff', marginLeft: 3 }}>▶</Text>
           </Box>
         </Box>
       </Box>
       <Box style={{ paddingHorizontal: 10, paddingVertical: 6 }}>
-        <Text style={{ color: dark ? '#7a7a7e' : '#8a929d', fontSize: fontSize('xs'), fontFamily: 'Calibre-Medium' }}>
+        <Text size="xs" style={{ color: dark ? '#7a7a7e' : '#8a929d', fontFamily: 'Calibre-Medium' }}>
           YouTube
         </Text>
       </Box>
@@ -77,14 +77,14 @@ export function LocationEmbed({ lat, lng, sourceUrl, dark }: {
         <Box style={{
           position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center',
         }}>
-          <Text style={{ fontSize: fontSize('xxxl') }}>📍</Text>
+          <Text size="xxxl">📍</Text>
         </Box>
       </Box>
       <Box style={{ paddingHorizontal: 10, paddingVertical: 6 }}>
-        <Text style={{ color: dark ? '#ffffff' : '#000000', fontSize: fontSize('sm'), fontFamily: 'Calibre-Semibold' }}>
+        <Text size="sm" style={{ color: dark ? '#ffffff' : '#000000', fontFamily: 'Calibre-Semibold' }}>
           Location
         </Text>
-        <Text style={{ color: dark ? '#7a7a7e' : '#8a929d', fontSize: fontSize('xs'), fontFamily: 'Calibre-Medium' }}>
+        <Text size="xs" style={{ color: dark ? '#7a7a7e' : '#8a929d', fontFamily: 'Calibre-Medium' }}>
           {label} · tap to open
         </Text>
       </Box>

@@ -5,7 +5,7 @@
  *  back to an empty state when there's nothing to show. */
 
 import { useCallback } from 'react';
-import { fontSize } from '@metro-labs/kit/tokens';
+
 import { ScrollView } from 'react-native-gesture-handler';
 import { useFocusEffect, useRouter } from 'expo-router';
 import type { SimultaneousRefs } from '../SwipeTabs.types';
@@ -41,10 +41,10 @@ export function NotificationsScreen({ panRef }: { panRef?: SimultaneousRefs } = 
       </Row>
       <Col px={16} pt={4} pb={8}>
         <Row align="center" gap={10}>
-          <Title dark={dark} style={{ color: head, fontSize: fontSize('xxl') }}>Notifications</Title>
+          <Title size="md" dark={dark} style={{ color: head }}>Notifications</Title>
           {unread > 0 ? (
             <Box style={{ minWidth: 22, height: 22, paddingHorizontal: 7, borderRadius: 999, backgroundColor: head, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: bg, fontSize: fontSize('sm'), fontFamily: 'Calibre-Semibold' }}>{unread}</Text>
+              <Text size="sm" style={{ color: bg, fontFamily: 'Calibre-Semibold' }}>{unread}</Text>
             </Box>
           ) : null}
         </Row>
@@ -54,7 +54,7 @@ export function NotificationsScreen({ panRef }: { panRef?: SimultaneousRefs } = 
       </Col>
       {previews.length === 0 ? (
         <Col flex={1} px={16} style={{ alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ color: sub, fontSize: fontSize('md'), fontFamily: 'Calibre-Medium' }}>Nothing yet</Text>
+          <Text size="md" style={{ color: sub, fontFamily: 'Calibre-Medium' }}>Nothing yet</Text>
         </Col>
       ) : null}
     </ScrollView>

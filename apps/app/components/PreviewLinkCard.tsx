@@ -6,7 +6,7 @@
  *  Detection is done by the caller via `previewLinkOf`. */
 
 import { Linking } from 'react-native';
-import { fontSize } from '@metro-labs/kit/tokens';
+
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from './layout';
@@ -30,10 +30,10 @@ export function PreviewLinkCard({ url }: {
   return (
     <Pressable onPress={() => void Linking.openURL(ref.url)}>
       <Box radius={blockRadius} style={{ borderWidth: 1, borderColor: border, backgroundColor: 'transparent', paddingHorizontal: 12, paddingVertical: 10 }}>
-        <Text style={{ color: fg, fontSize: fontSize('xl'), fontFamily: 'Calibre-Semibold' }}>
+        <Text size="xl" style={{ color: fg, fontFamily: 'Calibre-Semibold' }}>
           Open preview build
         </Text>
-        <Text style={{ color: subColor, fontSize: fontSize('md'), lineHeight: 21, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
+        <Text size="md" style={{ color: subColor, lineHeight: 21, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
           EAS Update · {ref.shortGroup}
         </Text>
       </Box>

@@ -24,7 +24,7 @@ import {
   type SetStateAction,
 } from 'react';
 import { FlatList } from '@metro-labs/kit/flat-list';
-import { fontSize } from '@metro-labs/kit/tokens';
+
 import { Pressable } from '@metro-labs/kit/pressable';
 import * as Clipboard from 'expo-clipboard';
 import { Text } from '@metro-labs/kit/text';
@@ -82,7 +82,7 @@ function PingLog({ lines, sub, head, border }: {
             borderWidth: 1, borderColor: border ?? sub,
           }}
         >
-          <Text style={{ color: head ?? sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Semibold' }}>
+          <Text size="sm" style={{ color: head ?? sub, fontFamily: 'Calibre-Semibold' }}>
             Copy
           </Text>
         </Pressable>
@@ -95,13 +95,9 @@ function PingLog({ lines, sub, head, border }: {
         windowSize={5}
         removeClippedSubviews
         renderItem={({ item }) => (
-          <Text
+          <Text size="xs"
             selectable
-            style={{
-              color: tone(item.line, sub),
-              fontSize: fontSize('xs'),
-              fontFamily: 'Calibre-Medium',
-            }}
+            style={{ color: tone(item.line, sub), fontFamily: 'Calibre-Medium' }}
           >
             {fmtLine(item)}
           </Text>
@@ -356,7 +352,7 @@ export function BridgePingProbe({ sub, border }: {
 
   return (
     <Col mt={20} pt={16} gap={8} style={{ borderTopWidth: 1, borderTopColor: border }}>
-      <Text style={{ color: sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium' }}>
+      <Text size="sm" style={{ color: sub, fontFamily: 'Calibre-Medium' }}>
         DEV · NODE BRIDGE FEASIBILITY
       </Text>
       <Button
@@ -366,7 +362,7 @@ export function BridgePingProbe({ sub, border }: {
         loading={state.kind === 'running'}
         onPress={() => { void onPress(); }}
       />
-      <Text style={{ color: resultColor, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium' }}>
+      <Text size="sm" style={{ color: resultColor, fontFamily: 'Calibre-Medium' }}>
         {resultText}
       </Text>
       <Button
@@ -376,7 +372,7 @@ export function BridgePingProbe({ sub, border }: {
         loading={engine.kind === 'running'}
         onPress={() => { void onInit(); }}
       />
-      <Text style={{ color: engineColor, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium' }}>
+      <Text size="sm" style={{ color: engineColor, fontFamily: 'Calibre-Medium' }}>
         {engineText}
       </Text>
       <Button

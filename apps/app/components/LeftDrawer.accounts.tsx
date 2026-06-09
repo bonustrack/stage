@@ -104,7 +104,7 @@ export function useDrawerAccountActions({ head, sub, border, dark, onChanged }: 
 
   const modal = (
     <AppModal visible={importOpen} onClose={() => setImportOpen(false)} title="Add account">
-        <Text style={{ color: sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium', marginBottom: 10 }}>
+        <Text size="sm" style={{ color: sub, fontFamily: 'Calibre-Medium', marginBottom: 10 }}>
           Paste an existing wallet&apos;s private key (0x… 64 hex) or its 12–24 word recovery phrase.
         </Text>
         <Textarea
@@ -122,7 +122,7 @@ export function useDrawerAccountActions({ head, sub, border, dark, onChanged }: 
           }}
         />
         {err ? (
-          <Text style={{ color: DANGER, fontSize: fontSize('sm'), marginBottom: 8, fontFamily: 'Calibre-Medium' }}>{err}</Text>
+          <Text size="sm" style={{ color: DANGER, marginBottom: 8, fontFamily: 'Calibre-Medium' }}>{err}</Text>
         ) : null}
         <Box style={{ flexDirection: 'row', gap: 8 }}>
           <Button

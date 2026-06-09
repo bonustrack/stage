@@ -8,7 +8,7 @@
  *  terminal success. A failure paints the active stage red. Purely
  *  presentational: the caller maps its phase to a `ShieldStage`. */
 import { Text } from '@metro-labs/kit/text';
-import { fontSize } from '@metro-labs/kit/tokens';
+
 import { Col, Row, Box } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
 import { DANGER } from '../../lib/theme';
@@ -44,14 +44,14 @@ function Step({ label, state, hint, pal }: {
       <Row align="center" gap={10}>
         <Box style={{ width: 18, height: 18, alignItems: 'center', justifyContent: 'center' }}>
           {state === 'active' ? <Spinner size={14} color={pal.link} />
-            : state === 'done' ? <Text style={{ color: pal.link, fontSize: fontSize('md'), fontFamily: 'Calibre-Semibold' }}>✓</Text>
-            : state === 'error' ? <Text style={{ color: ERR, fontSize: fontSize('md'), fontFamily: 'Calibre-Semibold' }}>✕</Text>
+            : state === 'done' ? <Text size="md" style={{ color: pal.link, fontFamily: 'Calibre-Semibold' }}>✓</Text>
+            : state === 'error' ? <Text size="md" style={{ color: ERR, fontFamily: 'Calibre-Semibold' }}>✕</Text>
             : <Box style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: pal.sub, opacity: 0.5 }} />}
         </Box>
-        <Text style={{ color, fontSize: fontSize('md'), fontFamily: 'Calibre-Semibold' }}>{label}</Text>
+        <Text size="md" style={{ color, fontFamily: 'Calibre-Semibold' }}>{label}</Text>
       </Row>
       {hint ? (
-        <Text style={{ color: pal.sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium', paddingLeft: 28 }}>{hint}</Text>
+        <Text size="sm" style={{ color: pal.sub, fontFamily: 'Calibre-Medium', paddingLeft: 28 }}>{hint}</Text>
       ) : null}
     </Col>
   );

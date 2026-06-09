@@ -12,7 +12,7 @@
  */
 
 import { useCallback, useState } from 'react';
-import { fontSize } from '@metro-labs/kit/tokens';
+
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { Title } from '@metro-labs/kit/title';
@@ -66,7 +66,7 @@ export default function AddMembers(): React.ReactElement {
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg} />
         </Pressable>
-        <Title dark={dark} style={{ color: head, fontSize: fontSize('xl') }}>
+        <Title size="sm" dark={dark} style={{ color: head }}>
           Add members
         </Title>
       </Box>

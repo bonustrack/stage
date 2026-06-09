@@ -60,7 +60,7 @@ export function OpenAnswerBlock({ qi, sub, dark, answers, mine, onSubmit }: {
               : (dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'),
           }}
         >
-          <Text style={{ color: pal.text, fontSize: fontSize('md'), fontFamily: 'Calibre-Medium' }}>
+          <Text size="md" style={{ color: pal.text, fontFamily: 'Calibre-Medium' }}>
             {voter === mine ? 'You: ' : ''}{a.text}
           </Text>
         </Box>

@@ -187,7 +187,7 @@ export function AttachMenu({
           >
             <Icon name={icon} size={26} color={head} />
           </Pressable>
-          <Text style={{ color: head, fontSize: fontSize('md'), fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{label}</Text>
+          <Text size="md" style={{ color: head, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{label}</Text>
         </Col>
       ))}
     </ScrollView>

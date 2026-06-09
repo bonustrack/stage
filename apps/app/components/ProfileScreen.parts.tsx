@@ -3,7 +3,7 @@
  *  state of their own beyond what the parent passes down. */
 
 import { useEffect, useState } from 'react';
-import { fontSize } from '@metro-labs/kit/tokens';
+
 import { Modal } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
@@ -87,8 +87,8 @@ export function InfoRow({ label, value, onCopy, c }: {
       flexDirection: 'row', alignItems: 'center', gap: 8,
     }}>
       <Box style={{ flex: 1 }}>
-        <Text style={{ color: c.text, fontSize: fontSize('xs'), fontFamily: 'Calibre-Medium' }}>{label.toUpperCase()}</Text>
-        <Text style={{ color: c.text, fontSize: fontSize('md'), marginTop: 4, fontFamily: 'Calibre-Medium' }} selectable>{value}</Text>
+        <Text size="xs" style={{ color: c.text, fontFamily: 'Calibre-Medium' }}>{label.toUpperCase()}</Text>
+        <Text size="md" style={{ color: c.text, marginTop: 4, fontFamily: 'Calibre-Medium' }} selectable>{value}</Text>
       </Box>
       {onCopy ? (
         <Pressable onPress={onCopy} hitSlop={8} style={{ padding: 4 }}>
@@ -123,7 +123,7 @@ export function ProfileActions({ dark, opening, onMessage, onSend, c }: {
         // the design system (ChannelRow rowBg = border).
         style={{ backgroundColor: c.border, borderColor: c.border }}
       />
-      <Text style={{ color: c.link, fontSize: fontSize('md'), fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{label}</Text>
+      <Text size="md" style={{ color: c.link, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{label}</Text>
     </Box>
   );
   return (
@@ -157,7 +157,7 @@ export function EditMenu({ visible, top, onClose, onEdit, c }: {
             })}
           >
             <Icon name="pencil" size={18} color={c.link} />
-            <Text style={{ color: c.link, fontSize: fontSize('md'), fontFamily: 'Calibre-Medium' }}>Edit profile</Text>
+            <Text size="md" style={{ color: c.link, fontFamily: 'Calibre-Medium' }}>Edit profile</Text>
           </Pressable>
         </Box>
       </Pressable>

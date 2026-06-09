@@ -100,10 +100,10 @@ export function ColorPicker({ value, onChange, p }: {
           borderWidth: 1, borderColor: p.border,
         }} />
         <Box style={{ flex: 1 }}>
-          <Text style={{ color: p.head, fontSize: fontSize('xxl'), fontFamily: 'Calibre-Semibold' }}>
+          <Text size="xxl" style={{ color: p.head, fontFamily: 'Calibre-Semibold' }}>
             {hex}
           </Text>
-          <Text style={{ color: p.sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium', marginTop: 2 }}>
+          <Text size="sm" style={{ color: p.sub, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
             live preview
           </Text>
         </Box>
@@ -143,10 +143,7 @@ export function ColorPicker({ value, onChange, p }: {
 
 function Label({ text, p }: { text: string; p: GalleryPalette }): React.ReactElement {
   return (
-    <Text style={{
-      color: p.sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Semibold',
-      marginTop: 16, marginBottom: 6,
-    }}>
+    <Text size="sm" style={{ color: p.sub, fontFamily: 'Calibre-Semibold', marginTop: 16, marginBottom: 6 }}>
       {text}
     </Text>
   );

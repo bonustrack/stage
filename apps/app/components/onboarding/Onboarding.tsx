@@ -16,7 +16,7 @@
  *  resets the flag so this shows again for testing. */
 
 import { useCallback, useRef, useState } from 'react';
-import { fontSize } from '@metro-labs/kit/tokens';
+
 import {
   FlatList,
   Pressable,
@@ -123,25 +123,13 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
             >
               <Icon name={item.icon} size={56} color={accent} />
             </Box>
-            <Text
-              style={{
-                color: fg,
-                fontSize: fontSize('xxxl'),
-                fontFamily: 'Calibre-Semibold',
-                textAlign: 'center',
-                marginBottom: 14,
-              }}
+            <Text size="xxxl"
+              style={{ color: fg, fontFamily: 'Calibre-Semibold', textAlign: 'center', marginBottom: 14 }}
             >
               {item.title}
             </Text>
-            <Text
-              style={{
-                color: withAlpha(fg, 0.7),
-                fontSize: fontSize('lg'),
-                lineHeight: 24,
-                fontFamily: 'Calibre-Medium',
-                textAlign: 'center',
-              }}
+            <Text size="lg"
+              style={{ color: withAlpha(fg, 0.7), lineHeight: 24, fontFamily: 'Calibre-Medium', textAlign: 'center' }}
             >
               {item.body}
             </Text>
@@ -189,7 +177,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
           style={{ alignItems: 'center', paddingVertical: 8, opacity: isLast ? 0 : 1 }}
           disabled={isLast}
         >
-          <Text style={{ color: withAlpha(fg, 0.6), fontSize: fontSize('md'), fontFamily: 'Calibre-Medium' }}>
+          <Text size="md" style={{ color: withAlpha(fg, 0.6), fontFamily: 'Calibre-Medium' }}>
             Skip
           </Text>
         </Pressable>

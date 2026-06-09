@@ -7,7 +7,7 @@
  *  brand-new account with no DMs, or a query that matches no contact). */
 
 import { Pressable } from '@metro-labs/kit/pressable';
-import { fontSize } from '@metro-labs/kit/tokens';
+
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import { usePalette } from '../../lib/theme';
@@ -29,7 +29,7 @@ export function ContactSuggestions({
 
   return (
     <Col gap={6}>
-      <Text style={{ color: sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium' }}>
+      <Text size="sm" style={{ color: sub, fontFamily: 'Calibre-Medium' }}>
         Suggested contacts
       </Text>
       <Col gap={2}>
@@ -53,11 +53,11 @@ export function ContactSuggestions({
                 style={{ backgroundColor: border }}
               />
               <Col flex={1} gap={1}>
-                <Text numberOfLines={1} style={{ color: head, fontSize: fontSize('md'), fontFamily: 'Calibre-Semibold' }}>
+                <Text size="md" numberOfLines={1} style={{ color: head, fontFamily: 'Calibre-Semibold' }}>
                   {c.name}
                 </Text>
                 {c.name !== shortAddress(c.address) && (
-                  <Text numberOfLines={1} style={{ color: sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium' }}>
+                  <Text size="sm" numberOfLines={1} style={{ color: sub, fontFamily: 'Calibre-Medium' }}>
                     {shortAddress(c.address)}
                   </Text>
                 )}

@@ -13,12 +13,14 @@ export default tseslint.config(
       // Strong typing: ban `any`. Use `unknown` + narrowing, real interfaces,
       // generics, or library types instead.
       "@typescript-eslint/no-explicit-any": "error",
-      // Size tokens: forbid raw numeric `fontSize` in StyleSheet/inline styles.
-      // Text sizing must come from the named Kit size scale (the Text `size`
-      // prop, e.g. size="sm", or `fontSize('md')` / FONT_SIZE.md from
-      // '@metro-labs/kit/tokens'), not magic px numbers, so the whole UI scales
-      // in lock-step. ERROR: the full backlog (~364 sites) has been migrated to
-      // the named scale, so raw numeric fontSize is hard-banned.
+      // Size tokens: two ERRORs keep text sizing on the named Kit scale.
+      // (1) No raw numeric `fontSize` anywhere - use a named step
+      //     (fontSize('md')/FONT_SIZE.md), or the Kit `size` prop.
+      // (2) No `fontSize` in a style/textStyle on the Kit CONTENT components
+      //     (Text/Title/Caption) - those MUST size via their `size` prop so the
+      //     prop stays authoritative (a style fontSize would override it).
+      //     Non-content surfaces (Input/Textarea/markdown) have no size prop and
+      //     keep fontSize('name') from the scale.
       "no-restricted-syntax": [
         "error",
         {
@@ -26,6 +28,19 @@ export default tseslint.config(
             "Property[key.name='fontSize'] > Literal[value=type(number)]",
           message:
             "use a named Kit size token (Text size=\"sm|md|lg|...\" prop, or fontSize('md')/FONT_SIZE.md from '@metro-labs/kit/tokens') instead of a raw fontSize number.",
+        },
+        {
+          // Kit CONTENT components (Text/Title/Caption) must size via their named
+          // `size` PROP (size="md"), never a fontSize in the style/textStyle
+          // escape-hatch. A style fontSize would silently override the prop and
+          // re-introduce magic sizing, so it is banned outright on these tags.
+          // Non-content surfaces (Input/Textarea text style, markdown style maps)
+          // have no size prop and keep using fontSize('name') from the scale -
+          // they are not matched here.
+          selector:
+            "JSXElement[openingElement.name.name=/^(Text|Title|Caption)$/] JSXAttribute[name.name=/^(style|textStyle)$/] Property[key.name='fontSize']",
+          message:
+            "Kit Text/Title/Caption must size via the `size` prop (size=\"sm|md|lg|...\"), not a fontSize in style. Remove fontSize from the style and pass size= instead.",
         },
       ],
       // `error`: cap files at 400 lines. Split a file rather than crossing it.

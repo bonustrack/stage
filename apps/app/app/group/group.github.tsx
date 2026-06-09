@@ -55,7 +55,7 @@ export function GroupGithubSection({ line, p }: { line: string; p: Pal }): React
     <Box style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
       <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
         <Icon name="code" size={13} color={sub} />
-        <Text style={{ color: sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium' }}>GITHUB</Text>
+        <Text size="sm" style={{ color: sub, fontFamily: 'Calibre-Medium' }}>GITHUB</Text>
       </Box>
 
       {url && !editing ? (
@@ -64,7 +64,7 @@ export function GroupGithubSection({ line, p }: { line: string; p: Pal }): React
             onPress={() => { void Linking.openURL(url); }}
             style={({ pressed }) => ({ flex: 1, opacity: pressed ? 0.6 : 1 })}
           >
-            <Text numberOfLines={1} style={{ color: fg, fontSize: fontSize('md'), fontFamily: 'Calibre-Medium' }}>
+            <Text size="md" numberOfLines={1} style={{ color: fg, fontFamily: 'Calibre-Medium' }}>
               {url.replace(/^https?:\/\/(www\.)?github\.com\//, '')}
             </Text>
           </Pressable>
@@ -102,7 +102,7 @@ export function GroupGithubSection({ line, p }: { line: string; p: Pal }): React
             })}
           >
             {busy ? <Spinner size={14} color={fg} /> : <Icon name="check" size={14} color={fg} />}
-            <Text style={{ color: fg, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium' }}>Save</Text>
+            <Text size="sm" style={{ color: fg, fontFamily: 'Calibre-Medium' }}>Save</Text>
           </Pressable>
         </Box>
       )}

@@ -2,7 +2,7 @@
  *  Extracted for lint line-budget. Rendering identical. */
 
 import { Modal } from 'react-native';
-import { fontSize } from '@metro-labs/kit/tokens';
+
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Box } from './layout';
 import { Avatar } from './Avatar';
@@ -36,10 +36,10 @@ export function AccountRow({ rec, onPress, onLongPress, topBorder, trailing, hea
     >
       <Avatar address={rec.address} size={28} style={{ backgroundColor: border }} />
       <Box style={{ flex: 1, minWidth: 0 }}>
-        <Text numberOfLines={1} style={{ color: head, fontSize: fontSize('md'), fontFamily: 'Calibre-Semibold' }}>
+        <Text size="md" numberOfLines={1} style={{ color: head, fontFamily: 'Calibre-Semibold' }}>
           {getPeerName(rec.address) ?? rec.label ?? shortAddress(rec.address)}
         </Text>
-        <Text numberOfLines={1} style={{ color: sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium', marginTop: 1 }}>
+        <Text size="sm" numberOfLines={1} style={{ color: sub, fontFamily: 'Calibre-Medium', marginTop: 1 }}>
           {shortAddress(rec.address)} · {TYPE_LABEL[rec.type]}
         </Text>
       </Box>
@@ -79,8 +79,8 @@ export function SheetRow({ label, desc, onPress, head, sub, danger, dark }: {
   return (
     <ListViewItem dark={dark} onPress={onPress}>
       <Box style={{ flex: 1 }}>
-        <Text style={{ color: labelColor, fontSize: fontSize('md'), fontFamily: 'Calibre-Semibold' }}>{label}</Text>
-        {desc ? <Text style={{ color: sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium', marginTop: 2 }}>{desc}</Text> : null}
+        <Text size="md" style={{ color: labelColor, fontFamily: 'Calibre-Semibold' }}>{label}</Text>
+        {desc ? <Text size="sm" style={{ color: sub, fontFamily: 'Calibre-Medium', marginTop: 2 }}>{desc}</Text> : null}
       </Box>
     </ListViewItem>
   );

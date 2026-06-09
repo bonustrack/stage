@@ -3,7 +3,7 @@
  *  cards + transcription line. Extracted to keep the row component under the cap. */
 
 import { Linking } from 'react-native';
-import { fontSize } from '@metro-labs/kit/tokens';
+
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import Markdown from 'react-native-markdown-display';
@@ -61,7 +61,7 @@ export function BubbleContent({
     <>
       {/** Timestamp / "Sending" header above the body. */}
       <Row align="center" justify="start" style={{ alignSelf: 'stretch' }}>
-        <Text style={{ color: sub, fontSize: fontSize('xs') , fontFamily: 'Calibre-Medium'}}>{pending ? 'Sending' : fmtTs(entry.ts)}</Text>
+        <Text size="xs" style={{ color: sub, fontFamily: 'Calibre-Medium'}}>{pending ? 'Sending' : fmtTs(entry.ts)}</Text>
       </Row>
       {replyPreview ? (
         <Pressable
@@ -72,7 +72,7 @@ export function BubbleContent({
             paddingLeft: 6, marginBottom: 4, opacity: pressed ? 0.45 : 0.7,
           })}
         >
-          <Text style={{ color: fg, fontSize: fontSize('lg'), fontFamily: 'Calibre-Medium' }} numberOfLines={2}>
+          <Text size="lg" style={{ color: fg, fontFamily: 'Calibre-Medium' }} numberOfLines={2}>
             {replyPreview}
           </Text>
         </Pressable>
@@ -120,7 +120,7 @@ export function BubbleContent({
         })() ? null : (
           <Box style={{ alignSelf: 'stretch' }}>
             {selectable
-              ? <Text selectable style={{ color: fg, fontSize: fontSize('xl'), lineHeight: 23, fontFamily: 'Calibre-Medium' }}>{entry.text}</Text>
+              ? <Text size="xl" selectable style={{ color: fg, lineHeight: 23, fontFamily: 'Calibre-Medium' }}>{entry.text}</Text>
               : hasMention(entry.text)
                 ? <MentionBody text={entry.text} fg={fg} dark={dark} />
                 : <Markdown {...markdownProps}>{entry.text}</Markdown>}
@@ -165,13 +165,10 @@ export function BubbleContent({
         <TxReceiptCard receipt={txReceipt} dark={dark} />
       ) : null}
       {transcript ? (
-        <Text style={{
-          color: sub, opacity: 0.85, fontSize: fontSize('sm'), fontStyle: 'italic',
-          marginTop: atts.length ? 4 : 0,
-        }}>“{transcript}”</Text>
+        <Text size="sm" style={{ color: sub, opacity: 0.85, fontStyle: 'italic', marginTop: atts.length ? 4 : 0 }}>“{transcript}”</Text>
       ) : atts.some(a => a.kind === 'audio') && Date.now() - new Date(entry.ts).getTime() < 30_000 ? (
         /** Fresh audio bubble + transcription still running; old audio gets nothing. */
-        <Text style={{ color: sub, opacity: 0.6, fontSize: fontSize('sm'), fontStyle: 'italic', marginTop: 4 , fontFamily: 'Calibre-Medium'}}>
+        <Text size="sm" style={{ color: sub, opacity: 0.6, fontStyle: 'italic', marginTop: 4 , fontFamily: 'Calibre-Medium'}}>
           transcribing…
         </Text>
       ) : null}

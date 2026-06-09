@@ -18,7 +18,7 @@
  */
 
 import { Alert } from 'react-native';
-import { fontSize } from '@metro-labs/kit/tokens';
+
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import { ListView, ListViewItem } from '@metro-labs/kit/list-view';
@@ -181,7 +181,7 @@ function MenuRow({ icon, label, color, dark, onPress }: {
     <ListViewItem dark={dark} onPress={onPress}>
       <Icon name={icon} size={20} color={color} />
       <Box style={{ flex: 1 }}>
-        <Text style={{ color, fontSize: fontSize('lg'), fontFamily: 'Calibre-Medium' }}>{label}</Text>
+        <Text size="lg" style={{ color, fontFamily: 'Calibre-Medium' }}>{label}</Text>
       </Box>
     </ListViewItem>
   );

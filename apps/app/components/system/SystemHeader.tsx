@@ -5,7 +5,7 @@
  *  insets.top` wrapper; this header owns the top inset now. */
 
 import { Pressable } from '@metro-labs/kit/pressable';
-import { fontSize } from '@metro-labs/kit/tokens';
+
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box } from '../layout';
@@ -30,7 +30,7 @@ export function SystemHeader({ title, dark, fg, head, border, right }: {
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg} />
         </Pressable>
-        <Title dark={dark} style={{ color: head, fontSize: fontSize('xl') }}>{title}</Title>
+        <Title size="sm" dark={dark} style={{ color: head }}>{title}</Title>
         {right ? <Box style={{ flex: 1, alignItems: 'flex-end' }}>{right}</Box> : null}
       </Box>
     </Box>

@@ -11,7 +11,7 @@
  *  ConversationFeed stays under the 200-line cap. */
 
 import { Pressable } from '@metro-labs/kit/pressable';
-import { fontSize } from '@metro-labs/kit/tokens';
+
 import { Text } from '@metro-labs/kit/text';
 import { Box, Row } from '../layout';
 import { Avatar } from '../Avatar';
@@ -33,7 +33,7 @@ function IntroLabelChips({ labels, fg, rowBg }: {
           key={label.toLowerCase()}
           style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, backgroundColor: rowBg }}
         >
-          <Text style={{ color: fg, fontSize: fontSize('md'), fontFamily: 'Calibre-Medium' }}>{label}</Text>
+          <Text size="md" style={{ color: fg, fontFamily: 'Calibre-Medium' }}>{label}</Text>
         </Box>
       ))}
     </Row>
@@ -66,15 +66,15 @@ export function ConversationIntro({
           square
           style={{ backgroundColor: border }}
         />
-        <Text
-          style={{ color: head, fontSize: fontSize('xxl'), lineHeight: 30, fontFamily: 'Calibre-Semibold', marginTop: 12, textAlign: 'left', flexShrink: 1 }}
+        <Text size="xxl"
+          style={{ color: head, lineHeight: 30, fontFamily: 'Calibre-Semibold', marginTop: 12, textAlign: 'left', flexShrink: 1 }}
         >
           {name}
         </Text>
         <IntroLabelChips labels={groupLabels} fg={fg} rowBg={rowBg} />
         {desc ? (
-          <Text
-            style={{ color: sub, fontSize: fontSize('xl'), fontFamily: 'Calibre-Medium', marginTop: 10, textAlign: 'left', lineHeight: 23 }}
+          <Text size="xl"
+            style={{ color: sub, fontFamily: 'Calibre-Medium', marginTop: 10, textAlign: 'left', lineHeight: 23 }}
           >
             {desc}
           </Text>
@@ -91,15 +91,15 @@ export function ConversationIntro({
       style={{ alignItems: 'flex-start', paddingVertical: 24, paddingHorizontal: 12 }}
     >
       <Avatar address={peerAddr} imageUri={getPeerAvatar(peerAddr)} size="lg" style={{ backgroundColor: border }} />
-      <Text style={{ color: head, fontSize: fontSize('xxl'), lineHeight: 30, fontFamily: 'Calibre-Semibold', marginTop: 12, flexShrink: 1 }}>
+      <Text size="xxl" style={{ color: head, lineHeight: 30, fontFamily: 'Calibre-Semibold', marginTop: 12, flexShrink: 1 }}>
         {getPeerName(peerAddr) ?? shortAddress(peerAddr)}
       </Text>
-      <Text style={{ color: sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium', marginTop: 2 }} numberOfLines={1}>
+      <Text size="sm" style={{ color: sub, fontFamily: 'Calibre-Medium', marginTop: 2 }} numberOfLines={1}>
         {shortAddress(peerAddr)}
       </Text>
       {about ? (
-        <Text
-          style={{ color: sub, fontSize: fontSize('xl'), fontFamily: 'Calibre-Medium', marginTop: 10, textAlign: 'left', lineHeight: 23 }}
+        <Text size="xl"
+          style={{ color: sub, fontFamily: 'Calibre-Medium', marginTop: 10, textAlign: 'left', lineHeight: 23 }}
         >
           {about}
         </Text>

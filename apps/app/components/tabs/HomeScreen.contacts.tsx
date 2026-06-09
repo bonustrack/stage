@@ -13,7 +13,7 @@
  *  mirrors the old search page (Avatar + name + short address rows). */
 
 import { useEffect, useMemo, useState } from 'react';
-import { fontSize } from '@metro-labs/kit/tokens';
+
 import { isAddress } from 'viem';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from '../layout';
@@ -109,7 +109,7 @@ export function HomeContactResults(
      *  channel list also came up empty (so it isn't shown beside channel hits). */
     if (!noChannels) return null;
     return (
-      <Text style={{ color: c.sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium', textAlign: 'center', paddingVertical: 24, paddingHorizontal: 24 }}>
+      <Text size="sm" style={{ color: c.sub, fontFamily: 'Calibre-Medium', textAlign: 'center', paddingVertical: 24, paddingHorizontal: 24 }}>
         No matches. Paste a full address or a {'name.eth'} to start a chat.
       </Text>
     );
@@ -117,7 +117,7 @@ export function HomeContactResults(
 
   return (
     <Box>
-      <Text style={{ color: c.sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 6 }}>
+      <Text size="sm" style={{ color: c.sub, fontFamily: 'Calibre-Medium', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 6 }}>
         PEOPLE
       </Text>
       {showResolved ? (

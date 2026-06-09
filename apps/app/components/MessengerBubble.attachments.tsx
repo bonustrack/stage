@@ -3,7 +3,7 @@
  *  under the phase-2 lint cap. */
 
 import { useEffect, useState } from 'react';
-import { fontSize } from '@metro-labs/kit/tokens';
+
 import { Linking } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
@@ -36,7 +36,7 @@ export function AttachmentView({ att, fullUrl, fg, dark }: {
       }}
     >
       <Icon name="paperClip" size={16} color={fg} />
-      <Text style={{ color: fg, fontSize: fontSize('sm'), flexShrink: 1 , fontFamily: 'Calibre-Medium'}} numberOfLines={1}>{label}</Text>
+      <Text size="sm" style={{ color: fg, flexShrink: 1 , fontFamily: 'Calibre-Medium'}} numberOfLines={1}>{label}</Text>
     </Pressable>
   );
 }
@@ -95,7 +95,7 @@ export function RemoteAttachmentResolver({ att, fg, sub, dark, msgId, index }: {
         }}
       >
         <Icon name="paperClip" size={16} color={fg} />
-        <Text style={{ color: fg, fontSize: fontSize('sm'), flexShrink: 1, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
+        <Text size="sm" style={{ color: fg, flexShrink: 1, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
           {att.name ?? 'attachment'} — tap to retry
         </Text>
       </Pressable>
@@ -105,7 +105,7 @@ export function RemoteAttachmentResolver({ att, fg, sub, dark, msgId, index }: {
     return (
       <Row align="center" gap={8} px={10} py={8} radius={8} bg="rgba(0,0,0,0.12)" mb={6}>
         <Spinner size={20} color={fg} />
-        <Text style={{ color: sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
+        <Text size="sm" style={{ color: sub, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
           {att.name ?? 'attachment'}
         </Text>
       </Row>

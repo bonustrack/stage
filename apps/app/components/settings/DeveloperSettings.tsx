@@ -8,7 +8,7 @@
  *  phone laggy - they are now opt-in here. */
 
 import { useEffect, useState } from 'react';
-import { fontSize } from '@metro-labs/kit/tokens';
+
 import { Switch } from 'react-native';
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -43,7 +43,7 @@ export function DeveloperSettings(): React.ReactElement {
     <Box style={{ flex: 1, backgroundColor: bg }}>
       <SystemHeader title="Developer" dark={dark} fg={fg} head={head} border={border} />
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
-        <Text style={{ color: sub, fontSize: fontSize('sm'), paddingHorizontal: 16, paddingTop: 20, fontFamily: 'Calibre-Medium' }}>
+        <Text size="sm" style={{ color: sub, paddingHorizontal: 16, paddingTop: 20, fontFamily: 'Calibre-Medium' }}>
           DIAGNOSTICS
         </Text>
         <Box
@@ -54,8 +54,8 @@ export function DeveloperSettings(): React.ReactElement {
         >
           <Row align="center" gap={12}>
             <Col flex={1} style={{ minWidth: 0 }}>
-              <Text style={{ color: head, fontSize: fontSize('md'), fontFamily: 'Calibre-Semibold' }}>Railgun debug console</Text>
-              <Text style={{ color: sub, fontSize: fontSize('sm'), marginTop: 2, fontFamily: 'Calibre-Medium' }}>
+              <Text size="md" style={{ color: head, fontFamily: 'Calibre-Semibold' }}>Railgun debug console</Text>
+              <Text size="sm" style={{ color: sub, marginTop: 2, fontFamily: 'Calibre-Medium' }}>
                 Show the live Railgun bridge logs + balance-pipeline diagnostics on the Private wallet tab. Off by default - leaving it on can slow the app down.
               </Text>
             </Col>

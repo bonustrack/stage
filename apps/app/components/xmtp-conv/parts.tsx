@@ -2,7 +2,7 @@
  *  from app/xmtp/[convId].tsx verbatim (phase-2 lint split). Behavior identical. */
 
 import { useEffect, useState } from 'react';
-import { fontSize } from '@metro-labs/kit/tokens';
+
 import { Dimensions, Modal } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
@@ -119,7 +119,7 @@ export function BubbleActionMenu({
       })}
     >
       <Icon name={icon} size={20} color={color ?? fg} />
-      <Text style={{ color: color ?? fg, fontSize: fontSize('md'), fontFamily: 'Calibre-Medium' }}>{label}</Text>
+      <Text size="md" style={{ color: color ?? fg, fontFamily: 'Calibre-Medium' }}>{label}</Text>
     </Pressable>
   );
 
@@ -151,7 +151,7 @@ export function BubbleActionMenu({
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingRight: 4 }}>
                 {[...REACT_PRESETS, ...MORE_EMOJIS].map(e => (
                   <Pressable key={e} onPress={() => reactAndClose(e)} hitSlop={4}>
-                    <Text style={{ fontSize: fontSize('xxl') }}>{e}</Text>
+                    <Text size="xxl">{e}</Text>
                   </Pressable>
                 ))}
               </ScrollView>
@@ -159,7 +159,7 @@ export function BubbleActionMenu({
               <>
                 {REACT_PRESETS.map(e => (
                   <Pressable key={e} onPress={() => reactAndClose(e)} hitSlop={4} style={{ paddingHorizontal: 2 }}>
-                    <Text style={{ fontSize: fontSize('xxl') }}>{e}</Text>
+                    <Text size="xxl">{e}</Text>
                   </Pressable>
                 ))}
                 <Pressable

@@ -39,7 +39,7 @@ function SuggestionChip({ label, busy, onAdd, p }: {
       })}
     >
       <Icon name="plus" size={12} color={p.sub} />
-      <Text style={{ color: p.fg, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium' }}>{label}</Text>
+      <Text size="sm" style={{ color: p.fg, fontFamily: 'Calibre-Medium' }}>{label}</Text>
     </Pressable>
   );
 }
@@ -57,7 +57,7 @@ function LabelChip({ label, busy, onRemove, p }: {
       backgroundColor: p.rowBg,
       opacity: busy ? 0.5 : 1,
     }}>
-      <Text style={{ color: p.fg, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium' }}>{label}</Text>
+      <Text size="sm" style={{ color: p.fg, fontFamily: 'Calibre-Medium' }}>{label}</Text>
       <Pressable onPress={onRemove} disabled={busy} hitSlop={8} style={{ padding: 2 }}>
         <Icon name="x" size={14} color={p.sub} />
       </Pressable>
@@ -119,7 +119,7 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
     <Box style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
       <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
         <Icon name="tag" size={13} color={sub} />
-        <Text style={{ color: sub, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium' }}>LABELS</Text>
+        <Text size="sm" style={{ color: sub, fontFamily: 'Calibre-Medium' }}>LABELS</Text>
       </Box>
 
       {labels.length > 0 ? (
@@ -165,11 +165,11 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
             })}
           >
             {busy ? <Spinner size={14} color={fg} /> : <Icon name="plus" size={14} color={fg} />}
-            <Text style={{ color: fg, fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium' }}>Add</Text>
+            <Text size="sm" style={{ color: fg, fontFamily: 'Calibre-Medium' }}>Add</Text>
           </Pressable>
         </Box>
       ) : (
-        <Text style={{ color: sub, fontSize: fontSize('sm'), marginTop: 8, fontFamily: 'Calibre-Medium' }}>
+        <Text size="sm" style={{ color: sub, marginTop: 8, fontFamily: 'Calibre-Medium' }}>
           Label limit reached ({MAX_LABELS}).
         </Text>
       )}

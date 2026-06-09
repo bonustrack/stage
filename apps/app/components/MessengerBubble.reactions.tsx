@@ -2,7 +2,7 @@
  *  for MessengerBubble. Extracted to keep the component file under the lint cap. */
 
 import { Pressable } from '@metro-labs/kit/pressable';
-import { fontSize } from '@metro-labs/kit/tokens';
+
 import { Text } from '@metro-labs/kit/text';
 import { Row, Box } from './layout';
 import { REACT_PRESETS } from './MessengerBubble.helpers';
@@ -38,8 +38,8 @@ export function ReactionsRow({
         const mine = !!ownEmojis?.has(emoji);
         const inner = (
           <>
-            <Text style={{ fontSize: fontSize('sm'), fontFamily: 'Calibre-Medium' }}>{emoji}</Text>
-            <Text style={{ fontSize: fontSize('xs'), color: sub, fontFamily: 'Calibre-Medium' }}>{count}</Text>
+            <Text size="sm" style={{ fontFamily: 'Calibre-Medium' }}>{emoji}</Text>
+            <Text size="xs" style={{ color: sub, fontFamily: 'Calibre-Medium' }}>{count}</Text>
           </>
         );
         const pillStyle = {
@@ -67,8 +67,8 @@ export function ReactionsRow({
         <Row key={`pending-${emoji}`} align="center" gap={4} px={8} py={2} radius={999} bg={pillBg} style={{
           opacity: 0.45,
         }}>
-          <Text style={{ fontSize: fontSize('sm') , fontFamily: 'Calibre-Medium'}}>{emoji}</Text>
-          <Text style={{ fontSize: fontSize('xs'), color: sub , fontFamily: 'Calibre-Medium'}}>1</Text>
+          <Text size="sm" style={{ fontFamily: 'Calibre-Medium'}}>{emoji}</Text>
+          <Text size="xs" style={{ color: sub , fontFamily: 'Calibre-Medium'}}>1</Text>
         </Row>
       ))}
     </Row>
@@ -86,11 +86,11 @@ export function ReactionPicker({ dark, sub, onPick, onClose }: {
     }}>
       {REACT_PRESETS.map(e => (
         <Pressable key={e} onPress={() => onPick(e)}>
-          <Text style={{ fontSize: fontSize('xxl') }}>{e}</Text>
+          <Text size="xxl">{e}</Text>
         </Pressable>
       ))}
       <Pressable onPress={onClose}>
-        <Text style={{ fontSize: fontSize('md'), color: sub, paddingHorizontal: 4 }}>✕</Text>
+        <Text size="md" style={{ color: sub, paddingHorizontal: 4 }}>✕</Text>
       </Pressable>
     </Row>
   );
