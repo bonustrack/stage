@@ -5,7 +5,7 @@
  *  Moved out of apps/app's accounts.keys for the Stage SDK; the app re-exports
  *  these so call sites stay stable. */
 
-import { mnemonicToAccount, privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts';
+import { mnemonicToAccount } from 'viem/accounts';
 import { bytesToHex, type Hex } from 'viem';
 import type { AccountRecord } from './types';
 
@@ -45,16 +45,6 @@ export function privateKeyFromMnemonic(input: string): Hex {
   }
   if (!key) throw new Error('Could not derive a key from that phrase.');
   return bytesToHex(key);
-}
-
-/** A viem signer from a raw private key. */
-export function viemAccountFromPk(pk: Hex): PrivateKeyAccount {
-  return privateKeyToAccount(pk);
-}
-
-/** The lowercased account id (storage key + record id) for a private key. */
-export function accountIdFromPk(pk: Hex): string {
-  return privateKeyToAccount(pk).address.toLowerCase();
 }
 
 export function canExportPrivateKey(rec: AccountRecord): boolean {

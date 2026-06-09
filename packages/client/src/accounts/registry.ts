@@ -7,7 +7,7 @@
  *  the host (apps/app's accounts.ts) which calls these rules and persists the
  *  results behind the injected SecureStorage interface. Logic lives here ONCE. */
 
-import type { AccountRecord, AccountType } from './types';
+import type { AccountRecord } from './types';
 
 /** Per-account XMTP sqlite dir name. Each account gets its own store so inboxes
  *  stay isolated and switching is just a client rebuild. */
@@ -81,10 +81,4 @@ export function resolveActiveAccount(
 ): AccountRecord | null {
   if (!list.length) return null;
   return list.find(a => a.id === activeId) ?? list[0];
-}
-
-/** Whether an account can sign in-app (has, or can have, a local key). A
- *  WalletConnect account signs remotely → false. */
-export function canSignInApp(type: AccountType): boolean {
-  return type !== 'walletconnect';
 }
