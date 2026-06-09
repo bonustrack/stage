@@ -52,9 +52,9 @@ function Track({ colors, thumb, onFraction, p }: {
             <Col flex={1} key={i} style={{ backgroundColor: c }} />
           ))}
         </Row>
-        <Box
+        <Box margin={{ left: -11 }}
           pointerEvents="none"
-          ml={-11} style={{ position: 'absolute', left: `${thumb * 100}%`, width: 22, height: 22, borderRadius: 11, borderWidth: 3, borderColor: '#ffffff', backgroundColor: 'transparent', shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 2, elevation: 3 }}
+          style={{ position: 'absolute', left: `${thumb * 100}%`, width: 22, height: 22, borderRadius: 11, borderWidth: 3, borderColor: '#ffffff', backgroundColor: 'transparent', shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 2, elevation: 3 }}
         />
         <Box pointerEvents="none" style={{
           position: 'absolute', left: 0, right: 0, top: 0, bottom: 0,

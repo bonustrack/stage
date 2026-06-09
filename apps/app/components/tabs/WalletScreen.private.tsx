@@ -21,7 +21,7 @@ import { useDebugConsole } from '../../lib/railgun/debugConsole';
 import { BridgePingProbe } from './WalletScreen.private.ping';
 import { RailgunDebugPanel } from './WalletScreen.private.debug';
 
-const short0zk = (a: string): string => (a.length > 14 ? `${a.slice(0, 8)}…${a.slice(-4)}` : a);
+const short0zk = (a: string): string => (a.length> 14 ? `${a.slice(0, 8)}…${a.slice(-4)}` : a);
 
 export function PrivateView({ head, sub, border }: {
   head: string; sub: string; border: string;
@@ -42,7 +42,7 @@ export function PrivateView({ head, sub, border }: {
   // needed for phase 1-2). Only a build with neither shows the placeholder.
   if (!isRailgunAvailable() && !isBridgeAvailable()) {
     return (
-      <Col mx={16} py={40} align="center" gap={6}>
+      <Col padding={{ y: 40 }} margin={{ x: 16 }} align="center" gap={6}>
         <Text weight="semibold" size="md" color={head}>Private balances</Text>
         <Text size="md" color={sub} style={{ textAlign: 'center' }}>
           Shielded transfers arrive in the next app build.
@@ -56,7 +56,7 @@ export function PrivateView({ head, sub, border }: {
   }
 
   return (
-    <Col mx={16} mt={4}>
+    <Col margin={{ x: 16, top: 4 }}>
       {/* 0zk address pill - copyable; rendered from cache so it's instant. */}
       <Pressable
         onPress={() => {
@@ -73,7 +73,7 @@ export function PrivateView({ head, sub, border }: {
       {/* Non-blocking pending indicator - the screen never freezes during the
           ~20-30s proof; each in-flight action shows its phase here. */}
       {live.map(p => (
-        <Row key={p.id} align="center" gap={8} py={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
+        <Row padding={{ y: 8 }} key={p.id} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
           <Text weight="semibold" size="md" color={head}>
             {p.kind === 'shield' ? 'Shielding' : p.kind === 'unshield' ? 'Unshielding' : 'Sending'} {p.symbol}
           </Text>

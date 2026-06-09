@@ -102,7 +102,7 @@ export function MessengerComposer({
   useComposerDrafts(convId, text, setText);
   useComposerFocus(inputRef, replyingTo?.id, replyingTo?.nonce, autoFocusNonce);
 
-  const hasContent = text.trim().length > 0 || pending.length > 0; // text or any pending attachment
+  const hasContent = text.trim().length> 0 || pending.length> 0; // text or any pending attachment
 
   const { matches: mentionMatches, range: mentionRange } = computeMentions(text, selection.start, mentionCandidates);
   const pickMention = (c: { address: string; name: string }): void => {
@@ -123,7 +123,7 @@ export function MessengerComposer({
 
   const bg = pal.bg; // #0e0f10 / #ffffff
   return (
-    <Col px={0} pt={0} pb={0} bg={bg}>
+    <Col padding={{ x: 0, top: 0, bottom: 0 }} bg={bg}>
       {/** 24px fade sits directly above the composer; bleeds full-width to the
        *   screen edges (composer is edge-to-edge, no horizontal inset). */}
       <ComposerGradient bg={bg} direction="down" top={-24} height={24} left={0} right={0} />
@@ -134,10 +134,10 @@ export function MessengerComposer({
         />
       ) : null}
       {/** @-mention popup — Discord-style, stacked above the composer. */}
-      {mentionRange && mentionMatches.length > 0 ? (
+      {mentionRange && mentionMatches.length> 0 ? (
         <MentionPopup dark={dark} head={head} sub={sub} matches={mentionMatches} onPick={pickMention} />
       ) : null}
-      {pending.length > 0 ? (
+      {pending.length> 0 ? (
         <PendingRow
           fg={fg} sub={sub} chipBg={chipBg} pending={pending}
           onRemove={(i) => setPending(prev => prev.filter((_, j) => j !== i))}

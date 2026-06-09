@@ -10,7 +10,7 @@ import { txExplorerUrl } from '../../lib/railgun/explorer';
 
 interface Pal { fg: string; head: string; sub: string; border: string; inputBg: string; link: string }
 
-const short0zk = (a: string): string => (a.length > 18 ? `${a.slice(0, 10)}…${a.slice(-6)}` : a);
+const short0zk = (a: string): string => (a.length> 18 ? `${a.slice(0, 10)}…${a.slice(-6)}` : a);
 
 /** The shield recipient is ALWAYS the user's own 0zk — shown read-only/locked
  *  so it can never be a third party. */
@@ -21,7 +21,7 @@ export function ShieldRecipient({ pal, zkAddress }: {
   return (
     <Box gap={6}>
       <Text size="xs" color={sub}>TO YOUR PRIVATE WALLET</Text>
-      <Box px={14} py={12} style={{ backgroundColor: inputBg, borderRadius: 12, borderWidth: 1, borderColor: border }}>
+      <Box padding={{ x: 14, y: 12 }} style={{ backgroundColor: inputBg, borderRadius: 12, borderWidth: 1, borderColor: border }}>
         <Text weight="semibold" size="md" color={head}>
           {zkAddress ? short0zk(zkAddress) : 'Loading 0zk address…'}
         </Text>
@@ -51,7 +51,7 @@ export function ShieldPhaseLine({ pal, txHash, err, errPhase, bridgeOk, chainId 
   }
   if (!txHash && !err) return null;
   return (
-    <Box gap={4} px={4}>
+    <Box padding={{ x: 4 }} gap={4}>
       {txHash ? (
         <Pressable onPress={() => Linking.openURL(txExplorerUrl(chainId, txHash))} hitSlop={6}>
           <Text size="xs" color={link}>

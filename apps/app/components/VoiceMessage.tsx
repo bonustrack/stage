@@ -80,12 +80,12 @@ export function VoiceMessage({ uri }: Props): React.ReactElement {
   };
 
   /** 0..1 playback progress; controls how many bars are "filled". */
-  const progress = duration > 0 ? Math.min(position / duration, 1) : 0;
+  const progress = duration> 0 ? Math.min(position / duration, 1) : 0;
   /** Show elapsed while playing, otherwise total (mirrors Messenger). */
-  const label = playing || position > 0 ? fmt(position) : fmt(duration);
+  const label = playing || position> 0 ? fmt(position) : fmt(duration);
 
   return (
-    <Row align="center" gap={10} py={7} px={9} mb={6} style={{ borderRadius: 22, backgroundColor: ACCENT, alignSelf: 'flex-start', maxWidth: 280, minWidth: 200 }}>
+    <Row padding={{ x: 9, y: 7 }} margin={{ bottom: 6 }} align="center" gap={10} style={{ borderRadius: 22, backgroundColor: ACCENT, alignSelf: 'flex-start', maxWidth: 280, minWidth: 200 }}>
       <Pressable onPress={() => void toggle()} hitSlop={8} style={{
         width: 34, height: 34, borderRadius: 17, backgroundColor: ON_ACCENT,
         alignItems: 'center', justifyContent: 'center',

@@ -34,7 +34,7 @@ export default function WalletReceive(): React.ReactElement {
   const [publicAddress, setPublicAddress] = useState('');
   const { snapshot } = usePrivateWallet();
   const privateAddress = snapshot?.zkAddress ?? '';
-  const privateReady = privateAddress.length > 0;
+  const privateReady = privateAddress.length> 0;
 
   useEffect(() => {
     let cancelled = false;
@@ -63,7 +63,7 @@ export default function WalletReceive(): React.ReactElement {
 
   return (
     <Col flex={1} style={{ backgroundColor: bg }}>
-      <Row align="center" gap={8} px={12} pt={8 + insets.top} pb={10} style={{ borderBottomWidth: 1, borderBottomColor: border, backgroundColor: toolbarBg }}>
+      <Row padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border, backgroundColor: toolbarBg }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg} />
         </Pressable>
@@ -78,7 +78,7 @@ export default function WalletReceive(): React.ReactElement {
         />
 
         {/* QR card — always white background so contrast is correct in dark mode too. */}
-        <Box p={16} align="center" justify="center" style={{ backgroundColor: '#ffffff', borderRadius: 16, borderWidth: 1, borderColor: border }}>
+        <Box padding={16} align="center" justify="center" style={{ backgroundColor: '#ffffff', borderRadius: 16, borderWidth: 1, borderColor: border }}>
           {address ? (
             <QRCode
               value={address}

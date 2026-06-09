@@ -28,7 +28,7 @@ const phaseLabel = (p: PendingAction['phase']): string => {
 export function PendingShieldRow({ p, pal }: { p: PendingAction; pal: Pal }): React.ReactElement {
   const { head, sub, border } = pal;
   return (
-    <Row align="center" gap={12} py={14} style={{ borderBottomWidth: 1, borderBottomColor: border, opacity: 0.7 }}>
+    <Row padding={{ y: 14 }} align="center" gap={12} style={{ borderBottomWidth: 1, borderBottomColor: border, opacity: 0.7 }}>
       <Box align="center" justify="center" style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border }}>
         <Spinner size={16} color={sub} />
       </Box>

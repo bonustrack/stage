@@ -57,7 +57,7 @@ export function FileDiff({ file, p, dark }: {
       </ListViewItem>
       {open ? (
         file.noPatch ? (
-          <Box px={16} pb={10}>
+          <Box padding={{ x: 16, bottom: 10 }}>
             <Text size="xs" color={p.text} style={{ opacity: 0.6 }}>
               No textual diff (binary or too large to display).
             </Text>

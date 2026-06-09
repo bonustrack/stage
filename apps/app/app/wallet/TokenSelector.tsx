@@ -46,7 +46,7 @@ function findRow(rows: AssetRow[], sel: TokenChoice): AssetRow | undefined {
  *  hide zero/empty-balance tokens from the selector. */
 function hasBalance(r: AssetRow): boolean {
   const n = Number.parseFloat(r.balance);
-  return Number.isFinite(n) && n > 0;
+  return Number.isFinite(n) && n> 0;
 }
 
 /** USD value of a row = balance × per-unit price. Rows with no price (CoinGecko
@@ -168,7 +168,7 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
           Select token
         </Text>
         {loading ? (
-          <Row align="center" justify="center" py={24}>
+          <Row padding={{ y: 24 }} align="center" justify="center">
             <Spinner size={28} color={fg} />
           </Row>
         ) : rows.length === 0 ? (

@@ -59,7 +59,7 @@ export function GroupProfileHeader({ imageUrl, channelId, uploadingImage, insetT
       {/* Cover extends up behind the floating topnav/status bar so the colour
           bleeds to y=0 (height += insetTop), exactly like ProfileScreen route. */}
       <Box bg={rowBg} style={{ height: 140 + insetTop }} />
-      <Box align="start" px={16} mt={-18} style={{ backgroundColor: bg, borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'visible' }}>
+      <Box padding={{ x: 16 }} margin={{ top: -18 }} align="start" style={{ backgroundColor: bg, borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'visible' }}>
         <Pressable onPress={onTap} onLongPress={onPick} disabled={uploadingImage} hitSlop={8}
           style={{ marginTop: -44, zIndex: 1 }}>
           <Image
@@ -91,9 +91,9 @@ export function GroupNameEditor({ name, draft, setDraft, editing, setEditing, sa
 }): React.ReactElement {
   const { fg, head, sub, border, inputBg } = p;
   return (
-    <Box px={16} pb={16}>
+    <Box padding={{ x: 16, bottom: 16 }}>
       {editing ? (
-        <Row align="center" gap={8} mt={6}>
+        <Row margin={{ top: 6 }} align="center" gap={8}>
           <Input
             value={draft}
             onChangeText={setDraft}
@@ -128,10 +128,10 @@ export function GroupDescriptionEditor({ description, descriptionDraft, setDescr
 }): React.ReactElement {
   const { fg, sub, border, inputBg } = p;
   return (
-    <Box px={16} pb={16}>
+    <Box padding={{ x: 16, bottom: 16 }}>
       <Text size="xs" color={sub}>DESCRIPTION</Text>
       {editing ? (
-        <Row align="start" gap={8} mt={6}>
+        <Row margin={{ top: 6 }} align="start" gap={8}>
           <Textarea
             value={descriptionDraft}
             onChangeText={setDescriptionDraft}

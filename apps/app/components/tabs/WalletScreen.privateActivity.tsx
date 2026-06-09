@@ -69,7 +69,7 @@ export function PrivateActivitySection({ head, sub, border, bg }: {
 
   return (
     <Col>
-      <Row align="center" gap={6} pt={14} pb={4}>
+      <Row padding={{ top: 14, bottom: 4 }} align="center" gap={6}>
         <Icon name="lockClosed" size={13} color={sub} />
         <Text weight="semibold" size="xs" color={sub} style={{ letterSpacing: 0.5, textTransform: 'uppercase' }}>
           Private activity
@@ -109,7 +109,7 @@ function PrivateTxRow({ r, head, sub, border, bg }: {
   const prefix = r.direction === 'in' ? '+' : '−';
   const valueColor = r.direction === 'in' ? PRIVATE_GREEN : head;
   return (
-    <Row align="center" gap={12} py={14}
+    <Row padding={{ y: 14 }} align="center" gap={12} 
       style={{ borderBottomWidth: 1, borderBottomColor: border }}>
       {/* Token + network image, identical to the wallet token rows, with the
           Railgun shield glyph overlaid so the tx is unmistakably private. */}
@@ -125,21 +125,21 @@ function PrivateTxRow({ r, head, sub, border, bg }: {
           <Text weight="semibold" size="xl" color={head} numberOfLines={1}>
             {rowTitle(r)}
           </Text>
-          <Row align="center" gap={3} px={6} py={1} style={{ borderRadius: 4, backgroundColor: border }}>
+          <Row padding={{ x: 6, y: 1 }} align="center" gap={3} style={{ borderRadius: 4, backgroundColor: border }}>
             <Icon name={SHIELD_ICON} size={10} color={sub} />
             <Text weight="semibold" size="3xs" color={sub}>
               Private
             </Text>
           </Row>
         </Row>
-        <Row align="center" gap={6} mt={2}>
-          <Box px={6} py={1} style={{ borderRadius: 4, backgroundColor: border }}>
+        <Row margin={{ top: 2 }} align="center" gap={6}>
+          <Box padding={{ x: 6, y: 1 }} style={{ borderRadius: 4, backgroundColor: border }}>
             <Text size="xs" color={sub} numberOfLines={1}>
               {r.chainLabel}
             </Text>
           </Box>
           <Text size="md" color={sub} style={{ flex: 1 }} numberOfLines={1}>
-            {r.timestamp > 0 ? relTime(r.timestamp) : 'Confirmed'}
+            {r.timestamp> 0 ? relTime(r.timestamp) : 'Confirmed'}
           </Text>
         </Row>
       </Col>

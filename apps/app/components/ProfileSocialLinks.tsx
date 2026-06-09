@@ -49,7 +49,7 @@ export function ProfileSocialLinks({ profile, c }: {
   if (present.length === 0) return null;
 
   return (
-    <Box gap={10} mx={16} mt={16}>
+    <Box margin={{ x: 16, top: 16 }} gap={10}>
       {present.map(k => (
         <Pressable
           key={k}

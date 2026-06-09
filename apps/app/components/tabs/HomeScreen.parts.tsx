@@ -85,7 +85,7 @@ export function useChannelRowRenderer(
           setRowMenu({
             convId: item.convId,
             title: item.peerAddress ? (getPeerName(item.peerAddress) ?? item.title) : item.title,
-            isUnread: item.unreadCount > 0 || !!item.markedUnread,
+            isUnread: item.unreadCount> 0 || !!item.markedUnread,
             isGroup: !item.peerAddress,
             peerAddress: item.peerAddress,
           });
@@ -100,7 +100,7 @@ export function HomeError({ error, dark, fg, bg }: {
   error: string; dark: boolean; fg: string; bg: string;
 }): React.ReactElement {
   return (
-    <Col flex={1} align="center" justify="center" p={24} bg={bg}>
+    <Col padding={24} flex={1} align="center" justify="center" bg={bg}>
       <Text size="md" color={fg} style={{ textAlign: 'center', marginBottom: 16 }}>{error}</Text>
       <Pressable
         onPress={() => {
@@ -137,7 +137,7 @@ export function HomeSpinner({ head, bg }: { head: string; bg: string }): React.R
  *  message (e.g. the search "No matches" state) to override it. */
 export function HomeEmpty({ sub, message }: { sub: string; message?: string }): React.ReactElement {
   return (
-    <Col p={32} align="center">
+    <Col padding={32} align="center">
       <Text color={sub} style={{ textAlign: 'center' }}>
         {message ?? 'No conversations yet. Share your address from Settings to start one.'}
       </Text>

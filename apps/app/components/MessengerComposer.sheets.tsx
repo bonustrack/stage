@@ -31,7 +31,7 @@ export function PollSheet({
   const r = useBlockRadius();
   return (
     <AppModal visible={open} onClose={onClose}>
-      <Col gap={12} pb={8}>
+      <Col padding={{ bottom: 8 }} gap={12}>
         <Input
           value={question}
           onChangeText={setQuestion}
@@ -59,7 +59,7 @@ export function PollSheet({
               dark={dark}
               style={{ flex: 1, color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: fontSize('lg'), minHeight: 0 }}
             />
-            {options.length > 2 ? (
+            {options.length> 2 ? (
               <Pressable onPress={() => setOptions(prev => prev.filter((_, j) => j !== i))} hitSlop={8}>
                 <Icon name="x" size={18} color={sub} />
               </Pressable>
@@ -79,7 +79,7 @@ export function PollSheet({
           style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 }}
         >
           <Text size="md" color={fg}>Allow multiple choices</Text>
-          <Box p={3} align={multi ? 'end' : 'start'} style={{ width: 44, height: 26, borderRadius: 999, backgroundColor: multi ? '#c0a06e' : inputBg }}>
+          <Box padding={3} align={multi ? 'end' : 'start'} style={{ width: 44, height: 26, borderRadius: 999, backgroundColor: multi ? '#c0a06e' : inputBg }}>
             <Box style={{ width: 20, height: 20, borderRadius: 999, backgroundColor: '#ffffff' }} />
           </Box>
         </Pressable>
@@ -115,7 +115,7 @@ export function SignatureSheet({
   const r = useBlockRadius();
   return (
     <AppModal visible={open} onClose={onClose}>
-      <Col gap={12} pb={8}>
+      <Col padding={{ bottom: 8 }} gap={12}>
         <Row gap={8}>
           {([['personal', 'Message'], ['eip712', 'Typed data']] as const).map(([k, label]) => (
             <Pressable
@@ -189,7 +189,7 @@ export function PaymentSheet({
   const r = useBlockRadius();
   return (
     <AppModal visible={open} onClose={onClose}>
-      <Col gap={12} pb={8}>
+      <Col padding={{ bottom: 8 }} gap={12}>
         <Input
           value={to}
           onChangeText={setTo}

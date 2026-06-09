@@ -55,7 +55,7 @@ export function WalletTabs({ tab, setTab, head, sub, border }: {
   tab: WalletTab; setTab: (t: WalletTab) => void; head: string; sub: string; border: string;
 }): React.ReactElement {
   return (
-    <Row justify="start" gap={24} mx={16} mt={22} mb={6}
+    <Row margin={{ x: 16, top: 22, bottom: 6 }} justify="start" gap={24} 
       style={{ borderBottomWidth: 1, borderBottomColor: border }}>
       {(['tokens', 'nfts', 'activity', 'private'] as const).map(t => {
         const active = tab === t;
@@ -100,8 +100,8 @@ export function TokenRow({ r, head, sub, border, bg, onPress }: { r: AssetRow; o
     `${r.change24h >= 0 ? '+' : ''}${r.change24h.toFixed(2)}%`;
   return (
     <Pressable onPress={onPress} disabled={!onPress} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
-    <Row
-      align="center" gap={12} py={14}
+    <Row padding={{ y: 14 }}
+      align="center" gap={12} 
     >
       {/* Token avatar + network badge - shared TokenAvatar (Snapshot-treasury
           style), reused by the private Activity rows so both read identically. */}
@@ -113,7 +113,7 @@ export function TokenRow({ r, head, sub, border, bg, onPress }: { r: AssetRow; o
           {r.isPrivate ? <PrivateBadge sub={sub} /> : null}
           <Text weight="semibold" size="4xl" color={head} numberOfLines={1}>{r.name}</Text>
         </Row>
-        <Row align="center" gap={6} mt={2}>
+        <Row margin={{ top: 2 }} align="center" gap={6}>
           <Text size="md" color={sub}>
             {r.priceUsd === null ? r.symbol : fmtUsd(r.priceUsd, r.priceUsd < 1 ? 4 : 2)}
           </Text>

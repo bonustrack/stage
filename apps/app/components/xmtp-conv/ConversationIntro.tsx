@@ -27,11 +27,11 @@ function IntroLabelChips({ labels, fg, rowBg }: {
 }): React.ReactElement | null {
   if (labels.length === 0) return null;
   return (
-    <Row align="center" gap={6} mt={8} justify="start" style={{ flexWrap: 'wrap' }}>
+    <Row margin={{ top: 8 }} align="center" gap={6} justify="start" style={{ flexWrap: 'wrap' }}>
       {labels.map(label => (
-        <Box
+        <Box padding={{ x: 8, y: 2 }}
           key={label.toLowerCase()}
-          px={8} py={2} style={{ borderRadius: 999, backgroundColor: rowBg }}
+          style={{ borderRadius: 999, backgroundColor: rowBg }}
         >
           <Text size="md" color={fg}>{label}</Text>
         </Box>
@@ -58,7 +58,7 @@ export function ConversationIntro({
     const name = groupName === null ? '' : (groupName || 'Untitled group');
     const desc = groupDescription.trim();
     return (
-      <Box align="start" py={24} px={12}>
+      <Box padding={{ x: 12, y: 24 }} align="start">
         <Avatar
           imageUri={groupImage || undefined}
           address={!groupImage && convId ? channelStampSeed(convId) : null}

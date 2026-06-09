@@ -84,7 +84,7 @@ export function InfoRow({ label, value, onCopy, c }: {
 }): React.ReactElement {
   const blockRadius = useBlockRadius();
   return (
-    <Row mx={16} mt={12} p={12} align="center" gap={8} style={{ borderRadius: blockRadius, backgroundColor: c.border, borderWidth: 1, borderColor: c.border }}>
+    <Row padding={12} margin={{ x: 16, top: 12 }} align="center" gap={8} style={{ borderRadius: blockRadius, backgroundColor: c.border, borderWidth: 1, borderColor: c.border }}>
       <Col flex={1}>
         <Text size="3xs" color={c.text}>{label.toUpperCase()}</Text>
         <Text size="md" color={c.text} style={{ marginTop: 4 }} selectable>{value}</Text>
@@ -126,7 +126,7 @@ export function ProfileActions({ dark, opening, onMessage, onSend, c }: {
     </Box>
   );
   return (
-    <Row gap={12} mt={18} justify="start">
+    <Row margin={{ top: 18 }} gap={12} justify="start">
       <Btn icon="chatRect" label={opening ? 'Opening…' : 'Message'} onPress={onMessage} disabled={opening} />
       <Btn icon="send" label="Send" onPress={onSend} />
     </Row>

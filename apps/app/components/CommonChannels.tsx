@@ -52,11 +52,11 @@ export function CommonChannels({ peerAddress, enabled, c }: {
   if (channels.length === 0 && !loading) return null;
 
   return (
-    <Box mt={20}>
+    <Box margin={{ top: 20 }}>
       {/* Underline-tab header — mirrors the Wallet page's WalletTabs visual
           treatment (active bottom-border, 18px Calibre-Semibold, head colour),
           rendered as a single tab. */}
-      <Row justify="start" align="center" gap={24} mx={16} mb={6}
+      <Row margin={{ x: 16, bottom: 6 }} justify="start" align="center" gap={24} 
         style={{ borderBottomWidth: 1, borderBottomColor: c.border }}>
         <Pressable style={{ paddingVertical: 10, marginBottom: -1, borderBottomWidth: 2, borderBottomColor: c.link }}>
           <Text weight="semibold" size="xl" color={c.link}>
@@ -72,7 +72,7 @@ export function CommonChannels({ peerAddress, enabled, c }: {
           cache (see useCommonChannels). When there's no cached last message we
           fall back to the member-count subtitle, exactly as before. */}
       {channels.map(ch => {
-        const hasMsg = ch.lastPreview.length > 0;
+        const hasMsg = ch.lastPreview.length> 0;
         /** Mirror index.tsx renderRow: always show the sender's name prefix
          *  (self-sent included — the daemon/agent shares the inbox, so "You:"
          *  would hide a legitimate agent reply; show its profile name instead). */

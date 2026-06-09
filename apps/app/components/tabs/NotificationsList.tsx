@@ -56,7 +56,7 @@ export function NotificationsList({
             borderColor: border,
           })}
         >
-          <Row align="center" gap={12} px={12} py={12}>
+          <Row padding={{ x: 12, y: 12 }} align="center" gap={12}>
             <Avatar
               imageUri={p.avatarUri}
               address={!p.avatarUri ? p.avatarAddress : null}

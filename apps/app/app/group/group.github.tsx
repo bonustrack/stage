@@ -52,14 +52,14 @@ export function GroupGithubSection({ line, p }: { line: string; p: Pal }): React
   };
 
   return (
-    <Box px={16} pb={16}>
+    <Box padding={{ x: 16, bottom: 16 }}>
       <Row align="center" gap={6}>
         <Icon name="code" size={13} color={sub} />
         <Text size="xs" color={sub}>GITHUB</Text>
       </Row>
 
       {url && !editing ? (
-        <Row align="center" gap={8} mt={10}>
+        <Row margin={{ top: 10 }} align="center" gap={8}>
           <Pressable
             onPress={() => { void Linking.openURL(url); }}
             style={({ pressed }) => ({ flex: 1, opacity: pressed ? 0.6 : 1 })}
@@ -73,7 +73,7 @@ export function GroupGithubSection({ line, p }: { line: string; p: Pal }): React
           </Pressable>
         </Row>
       ) : (
-        <Row align="center" gap={8} mt={10}>
+        <Row margin={{ top: 10 }} align="center" gap={8}>
           <Input
             value={draft}
             onChangeText={setDraft}

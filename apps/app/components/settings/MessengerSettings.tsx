@@ -74,7 +74,7 @@ export function MessengerSettings(): React.ReactElement {
         {inbox ? <CopyRow label="Inbox id" value={inbox} display={inbox} c={c} /> : null}
         {install ? <CopyRow label="Installation id" value={install} display={shortAddress(install)} c={c} /> : null}
 
-        <Col mt={28} px={16}>
+        <Col padding={{ x: 16 }} margin={{ top: 28 }}>
           <Pressable
             onPress={() => {
               Alert.alert(

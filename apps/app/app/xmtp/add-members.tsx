@@ -57,7 +57,7 @@ export default function AddMembers(): React.ReactElement {
   return (
     <Col flex={1} style={{ backgroundColor: bg }}>
       {/* Header — back button + title, consistent with other pushed screens. */}
-      <Row align="center" gap={8} px={12} pt={8 + insets.top} pb={10} style={{ borderBottomWidth: 1, borderBottomColor: border, backgroundColor: toolbarBg }}>
+      <Row padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border, backgroundColor: toolbarBg }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg} />
         </Pressable>
@@ -74,7 +74,7 @@ export default function AddMembers(): React.ReactElement {
       </ScrollView>
 
       {/* Add */}
-      <Box p={16} pb={16 + insets.bottom} style={{ borderTopWidth: 1, borderTopColor: border }}>
+      <Box padding={{ top: 16, right: 16, bottom: 16 + insets.bottom, left: 16 }} style={{ borderTopWidth: 1, borderTopColor: border }}>
         <Button
           variant="primary"
           size="lg"
@@ -86,7 +86,7 @@ export default function AddMembers(): React.ReactElement {
           onPress={() => { void onSubmit(); }}
           tintBg={primary}
           tintFg={bg}
-          label={members.length > 0 ? `Add to group (${members.length})` : 'Add to group'}
+          label={members.length> 0 ? `Add to group (${members.length})` : 'Add to group'}
         />
       </Box>
     </Col>

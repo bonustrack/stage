@@ -25,7 +25,7 @@ export function OpenAnswerBlock({ qi, sub, dark, answers, mine, onSubmit }: {
   // input, but no visible outline. Body text in the palette text token.
   const inputBg = pal.inputBg;
   return (
-    <Box gap={6} mt={2} style={{ alignSelf: 'stretch' }}>
+    <Box margin={{ top: 2 }} gap={6} style={{ alignSelf: 'stretch' }}>
       <Row align="center" gap={8} style={{ alignSelf: 'stretch' }}>
         <Input
           value={draft}
@@ -51,9 +51,9 @@ export function OpenAnswerBlock({ qi, sub, dark, answers, mine, onSubmit }: {
         />
       </Row>
       {list.map(([voter, a]) => (
-        <Box
+        <Box padding={{ x: 12, y: 7 }}
           key={`${qi}-${voter}`}
-          px={12} py={7} style={{ alignSelf: 'stretch', borderRadius: radius, backgroundColor: voter === mine
+          style={{ alignSelf: 'stretch', borderRadius: radius, backgroundColor: voter === mine
               ? withAlpha(pal.link, dark ? 0.18 : 0.14)
               : (dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)') }}
         >

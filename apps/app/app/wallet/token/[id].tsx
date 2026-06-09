@@ -53,7 +53,7 @@ export default function TokenDetail(): React.ReactElement {
     return (
       <Col flex={1} style={{ backgroundColor: bg }}>
         <Header head={head} border={border} onBack={() => router.back()} title="Token" />
-        <Col mx={16} py={40} align="center">
+        <Col padding={{ y: 40 }} margin={{ x: 16 }} align="center">
           <Text size="md" color={sub}>Token not found</Text>
         </Col>
       </Col>
@@ -75,7 +75,7 @@ export default function TokenDetail(): React.ReactElement {
       {/* Token identity card — large logo with network badge, name + symbol,
           balance and its USD value. Mirrors the list row's data, scaled up.
           LEFT-aligned to match the Wallet page's left-aligned value card. */}
-      <Col mx={16} pt={28} align="start" gap={6}>
+      <Col padding={{ top: 28 }} margin={{ x: 16 }} align="start" gap={6}>
         <Box style={{ width: 72, height: 72 }}>
           {/* r.logoUrl is cached at the 32px LIST size (s=64); re-request it at
               2× the 72px detail size (s=144) so the big logo stays crisp. */}
@@ -91,13 +91,13 @@ export default function TokenDetail(): React.ReactElement {
           </Box>
         </Box>
 
-        <Row align="center" gap={6} mt={10}>
+        <Row margin={{ top: 10 }} align="center" gap={6}>
           {r.isPrivate ? <Icon name="eyeOff" size={18} color={sub} /> : null}
           <Text weight="semibold" size="5xl" color={head}>{r.name}</Text>
         </Row>
 
         {/* Network badge pill */}
-        <Box px={10} py={3} style={{ borderRadius: 999, borderWidth: 1, borderColor: border }}>
+        <Box padding={{ x: 10, y: 3 }} style={{ borderRadius: 999, borderWidth: 1, borderColor: border }}>
           <Text size="xs" color={sub}>
             {NETWORK_LABEL[r.chainId] ?? `Chain ${r.chainId}`}
           </Text>
@@ -115,7 +115,7 @@ export default function TokenDetail(): React.ReactElement {
           page's Send/Receive/Swap/Buy circles. Send opens the public send
           flow pre-selected to this token; Shield opens send.tsx in shield
           mode pre-selected to this token. */}
-      <Row justify="start" gap={36} mt={32} mx={16}>
+      <Row margin={{ x: 16, top: 32 }} justify="start" gap={36}>
         {r.isPrivate ? (
           <>
             {/* Shielded holding → unified Send page, pre-selected to this
@@ -157,8 +157,8 @@ function Header({ head, border, onBack, title }: {
   const insets = useSafeAreaInsets();
   const { toolbarBg } = usePalette();
   return (
-    <Row align="center" gap={8} px={12}
-      pt={8 + insets.top} pb={8} style={{ borderBottomWidth: 1, borderBottomColor: border, backgroundColor: toolbarBg }}>
+    <Row padding={{ x: 12, top: 8 + insets.top, bottom: 8 }} align="center" gap={8} 
+      style={{ borderBottomWidth: 1, borderBottomColor: border, backgroundColor: toolbarBg }}>
       <Pressable onPress={onBack} hitSlop={8} style={{ padding: 4 }}>
         <Icon name="arrowLeft" size={22} color={head} />
       </Pressable>

@@ -51,7 +51,7 @@ function LabelChip({ label, busy, onRemove, p }: {
   label: string; busy: boolean; onRemove: () => void; p: Pal;
 }): React.ReactElement {
   return (
-    <Row align="center" gap={6} pl={12} pr={8} py={6} style={{ borderRadius: 999, backgroundColor: p.rowBg, opacity: busy ? 0.5 : 1 }}>
+    <Row padding={{ y: 6, right: 8, left: 12 }} align="center" gap={6} style={{ borderRadius: 999, backgroundColor: p.rowBg, opacity: busy ? 0.5 : 1 }}>
       <Text size="xs" color={p.fg}>{label}</Text>
       <Pressable onPress={onRemove} disabled={busy} hitSlop={8} style={{ padding: 2 }}>
         <Icon name="x" size={14} color={p.sub} />
@@ -111,14 +111,14 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
   );
 
   return (
-    <Box px={16} pb={16}>
+    <Box padding={{ x: 16, bottom: 16 }}>
       <Row align="center" gap={6}>
         <Icon name="tag" size={13} color={sub} />
         <Text size="xs" color={sub}>LABELS</Text>
       </Row>
 
-      {labels.length > 0 ? (
-        <Row gap={8} mt={10} style={{ flexWrap: 'wrap' }}>
+      {labels.length> 0 ? (
+        <Row margin={{ top: 10 }} gap={8} style={{ flexWrap: 'wrap' }}>
           {labels.map((label) => (
             <LabelChip
               key={label.toLowerCase()}
@@ -132,7 +132,7 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
       ) : null}
 
       {!atCap ? (
-        <Row align="center" gap={8} mt={10}>
+        <Row margin={{ top: 10 }} align="center" gap={8}>
           <Input
             value={draft}
             onChangeText={setDraft}
@@ -169,8 +169,8 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
         </Text>
       )}
 
-      {!atCap && suggestions.length > 0 ? (
-        <Row gap={8} mt={10} style={{ flexWrap: 'wrap' }}>
+      {!atCap && suggestions.length> 0 ? (
+        <Row margin={{ top: 10 }} gap={8} style={{ flexWrap: 'wrap' }}>
           {suggestions.map((label) => (
             <SuggestionChip
               key={label.toLowerCase()}

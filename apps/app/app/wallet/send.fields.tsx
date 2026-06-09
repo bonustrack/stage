@@ -37,7 +37,7 @@ export function RecipientField(props: {
     <Box gap={6}>
       <Text size="xs" color={sub}>RECIPIENT</Text>
       {/* Input + a contacts-picker icon button on the right. */}
-      <Row align="center" gap={4} px={6} pl={14} style={{ backgroundColor: inputBg, borderRadius: 12 }}>
+      <Row padding={{ x: 6, left: 14 }} align="center" gap={4} style={{ backgroundColor: inputBg, borderRadius: 12 }}>
         <Input
           value={props.to}
           onChangeText={props.setTo}
@@ -57,7 +57,7 @@ export function RecipientField(props: {
           (avatar + name + truncated address) — same row the rest of the app
           uses. While resolving / on error, show the inline status line. */}
       {props.resolving ? (
-        <Row align="center" gap={8} px={4}>
+        <Row padding={{ x: 4 }} align="center" gap={8}>
           <Spinner size={20} color={fg} />
           <Text size="xs" color={sub}>Resolving…</Text>
         </Row>
@@ -112,7 +112,7 @@ export function AmountField(props: {
         />
       </Row>
 
-      <Row align="center" px={14} py={12} gap={8} style={{ backgroundColor: inputBg, borderRadius: 12 }}>
+      <Row padding={{ x: 14, y: 12 }} align="center" gap={8} style={{ backgroundColor: inputBg, borderRadius: 12 }}>
         <Input
           value={amount}
           onChangeText={setAmount}
@@ -180,7 +180,7 @@ export function SendHeader(props: {
   const insets = useSafeAreaInsets();
   const { toolbarBg } = usePalette();
   return (
-    <Row align="center" gap={8} px={12} pt={8 + insets.top} pb={10} style={{ borderBottomWidth: 1, borderBottomColor: props.border, backgroundColor: toolbarBg }}>
+    <Row padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: props.border, backgroundColor: toolbarBg }}>
       <Pressable onPress={props.onBack} hitSlop={8} style={{ padding: 4 }}>
         <Icon name="arrowLeft" size={22} color={props.fg} />
       </Pressable>
@@ -221,7 +221,7 @@ export function TxStatus(props: {
     <>
       {/* Tx status: hash link once broadcast, plus errors. */}
       {txHash ? (
-        <Box gap={4} px={4}>
+        <Box padding={{ x: 4 }} gap={4}>
           <Text size="xs" color={sub}>
             {txState === 'confirmed' ? 'Confirmed' : 'Pending'}
           </Text>

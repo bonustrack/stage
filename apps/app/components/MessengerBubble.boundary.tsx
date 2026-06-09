@@ -37,7 +37,7 @@ export class BubbleErrorBoundary extends Component<Props, State> {
   render(): ReactNode {
     if (this.state.failed) {
       return (
-        <Box px={16} py={6}>
+        <Box padding={{ x: 16, y: 6 }}>
           <Text size="xs" color={this.props.sub} style={{ fontStyle: 'italic' }}>
             (this message could not be displayed)
           </Text>

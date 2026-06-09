@@ -42,11 +42,11 @@ export const ChannelsSearchBar = forwardRef<React.ComponentRef<typeof Input>, {
   const { head, sub, inputBg, toolbarBg } = props;
   const blockRadius = useBlockRadius();
   return (
-    <Row align="center" gap={8} px={12} pt={12} pb={10} bg={toolbarBg}>
+    <Row padding={{ x: 12, top: 12, bottom: 10 }} align="center" gap={8} bg={toolbarBg}>
       <Pressable onPress={props.onClose} hitSlop={8}>
         <Icon name="arrowLeft" size={22} color={head} />
       </Pressable>
-      <Row flex={1} align="center" gap={8} px={14} py={8} style={{ backgroundColor: inputBg, borderRadius: blockRadius }}>
+      <Row padding={{ x: 14, y: 8 }} flex={1} align="center" gap={8} style={{ backgroundColor: inputBg, borderRadius: blockRadius }}>
         <Icon name="search" size={22} color={sub} />
         <Input
           ref={ref}
@@ -59,7 +59,7 @@ export const ChannelsSearchBar = forwardRef<React.ComponentRef<typeof Input>, {
           style={{ flex: 1, color: head, fontSize: fontSize('4xl'), lineHeight: 23, fontFamily: 'Calibre-Medium', padding: 0,
             backgroundColor: 'transparent', minHeight: 0, borderWidth: 0 }}
         />
-        {props.query.length > 0 ? (
+        {props.query.length> 0 ? (
           <Pressable onPress={() => props.setQuery('')} hitSlop={8}>
             <Icon name="x" size={16} color={sub} />
           </Pressable>

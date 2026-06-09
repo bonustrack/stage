@@ -46,8 +46,8 @@ export function DeveloperSettings(): React.ReactElement {
         <Text size="xs" color={sub} style={{ paddingHorizontal: 16, paddingTop: 20 }}>
           DIAGNOSTICS
         </Text>
-        <Box
-          mx={16} mt={8} p={14} style={{ borderRadius: blockRadius, backgroundColor: rowBg, borderWidth: 1, borderColor: border }}
+        <Box padding={14} margin={{ x: 16, top: 8 }}
+          style={{ borderRadius: blockRadius, backgroundColor: rowBg, borderWidth: 1, borderColor: border }}
         >
           <Row align="center" gap={12}>
             <Col flex={1} style={{ minWidth: 0 }}>

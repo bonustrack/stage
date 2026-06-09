@@ -58,17 +58,17 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
           <Button dark={dark} color="primary" variant="ghost" label="Ghost" />
           <Button dark={dark} color="danger" label="Danger" />
         </Row>
-        <Row gap={8} mt={10} style={{ flexWrap: 'wrap' }}>
+        <Row margin={{ top: 10 }} gap={8} style={{ flexWrap: 'wrap' }}>
           <Button dark={dark} color="info" variant="soft" label="Soft" />
           <Button dark={dark} color="success" variant="outline" label="Outline" />
           <Button dark={dark} color="warning" label="Warning" />
         </Row>
-        <Row gap={8} mt={10} align="center" style={{ flexWrap: 'wrap' }}>
+        <Row margin={{ top: 10 }} gap={8} align="center" style={{ flexWrap: 'wrap' }}>
           <Button dark={dark} size="sm" label="Small" />
           <Button dark={dark} size="lg" label="Large" />
           <Button dark={dark} block label="Block" />
         </Row>
-        <Row gap={8} mt={10} align="center" style={{ flexWrap: 'wrap' }}>
+        <Row margin={{ top: 10 }} gap={8} align="center" style={{ flexWrap: 'wrap' }}>
           <Button
             dark={dark} color="primary"
             label="iconStart" iconStart={<Icon name="check" size={18} color={dark ? '#000' : '#fff'} />}
@@ -257,7 +257,7 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
       <GallerySection name="Scroll" note="Kit ScrollView wrapper - padding / gap shorthands" {...sec} innerPadH={14} innerPadV={12}>
         <Scroll horizontal gap={8} style={{ maxHeight: 48 }} showsHorizontalScrollIndicator={false}>
           {['One', 'Two', 'Three', 'Four', 'Five'].map((n) => (
-            <Box key={n} px={12} py={8} radius={8} bg={dark ? '#1c1c1e' : '#f0f0f2'}>
+            <Box padding={{ x: 12, y: 8 }} key={n} radius={8} bg={dark ? '#1c1c1e' : '#f0f0f2'}>
               <Text dark={dark}>{n}</Text>
             </Box>
           ))}
@@ -266,7 +266,7 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
 
       <GallerySection name="Pressable" note="Kit Pressable wrapper - pressedOpacity feedback" {...sec} innerPadH={14} innerPadV={12}>
         <Pressable pressedOpacity={0.5} onPress={() => {}}>
-          <Box px={12} py={10} radius={8} bg={dark ? '#1c1c1e' : '#f0f0f2'}>
+          <Box padding={{ x: 12, y: 10 }} radius={8} bg={dark ? '#1c1c1e' : '#f0f0f2'}>
             <Text dark={dark}>Tap me - dims on press</Text>
           </Box>
         </Pressable>

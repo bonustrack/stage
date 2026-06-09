@@ -39,7 +39,7 @@ export function ReceiveModeToggle({ mode, onChange, privateReady }: {
   };
 
   return (
-    <Row p={3} gap={3} style={{ width: '100%', borderRadius: 12, borderWidth: 1, borderColor: border }}>
+    <Row padding={3} gap={3} style={{ width: '100%', borderRadius: 12, borderWidth: 1, borderColor: border }}>
       {segment('public', 'Public', false)}
       {segment('private', privateReady ? 'Private' : 'Private (loading…)', !privateReady)}
     </Row>

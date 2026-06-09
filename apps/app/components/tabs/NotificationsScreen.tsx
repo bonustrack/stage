@@ -29,31 +29,31 @@ export function NotificationsScreen({ panRef }: { panRef?: SimultaneousRefs } = 
   // Mark everything currently visible as read whenever the tab gains focus.
   useFocusEffect(
     useCallback(() => {
-      if (previews.length > 0) void markNotifsRead(previews.map(p => p.convId));
+      if (previews.length> 0) void markNotifsRead(previews.map(p => p.convId));
     }, [previews]),
   );
 
   return (
     <ScrollView simultaneousHandlers={panRef} style={{ flex: 1, backgroundColor: bg }} contentContainerStyle={{ flexGrow: 1 }}>
       {/* Topnav identity (avatar + name → Menu), left-aligned to match Home. */}
-      <Row align="center" px={16} pt={12} pb={4} bg={toolbarBg}>
+      <Row padding={{ x: 16, top: 12, bottom: 4 }} align="center" bg={toolbarBg}>
         <TopnavIdentity />
       </Row>
-      <Col px={16} pt={4} pb={8}>
+      <Col padding={{ x: 16, top: 4, bottom: 8 }}>
         <Row align="center" gap={10}>
           <Title size="md" dark={dark} color={head}>Notifications</Title>
-          {unread > 0 ? (
-            <Box px={7} align="center" justify="center" style={{ minWidth: 22, height: 22, borderRadius: 999, backgroundColor: head }}>
+          {unread> 0 ? (
+            <Box padding={{ x: 7 }} align="center" justify="center" style={{ minWidth: 22, height: 22, borderRadius: 999, backgroundColor: head }}>
               <Text weight="semibold" size="xs" color={bg}>{unread}</Text>
             </Box>
           ) : null}
         </Row>
       </Col>
-      <Col px={16} pt={8} gap={12}>
+      <Col padding={{ x: 16, top: 8 }} gap={12}>
         <NotificationsList previews={previews} onPress={() => router.push('/xmtp/requests')} />
       </Col>
       {previews.length === 0 ? (
-        <Col flex={1} px={16} align="center" justify="center">
+        <Col padding={{ x: 16 }} flex={1} align="center" justify="center">
           <Text size="md" color={sub}>Nothing yet</Text>
         </Col>
       ) : null}

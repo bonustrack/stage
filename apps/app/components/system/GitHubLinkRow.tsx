@@ -19,8 +19,8 @@ export function GitHubLinkRow({ dark, head, sub, border, rowBg, url, title, subt
       onPress={() => { void Linking.openURL(url); }}
       style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
     >
-      <Box
-        mx={16} mt={16} py={14} px={14} style={{ borderRadius: 12, borderWidth: 1, borderColor: border, backgroundColor: rowBg }}
+      <Box padding={{ x: 14, y: 14 }} margin={{ x: 16, top: 16 }}
+        style={{ borderRadius: 12, borderWidth: 1, borderColor: border, backgroundColor: rowBg }}
       >
         <Row gap={12} align="center">
           <GithubLogo size={22} color={head} />

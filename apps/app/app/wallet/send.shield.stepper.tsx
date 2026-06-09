@@ -65,7 +65,7 @@ export function ShieldStepper({ stage, pal, errorAt = 0 }: {
   if (stage === 'idle') return null;
   const cur = stageIndex(stage);
   return (
-    <Col gap={12} px={4} pt={4}>
+    <Col padding={{ x: 4, top: 4 }} gap={12}>
       {STEPS.map(([id, label]) => {
         const idx = ORDER.indexOf(id);
         let state: 'done' | 'active' | 'pending' | 'error';

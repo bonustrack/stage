@@ -95,7 +95,7 @@ export function ProfileScreen({ address, variant, panRef }: {
             rounded TOP corners so the black curves over the gray banner (bottom-sheet
             look). overflow:'visible' + avatar zIndex keep the avatar from being
             clipped by the rounding. */}
-        <Box align="start" px={16} pb={8} mt={-18} style={{ backgroundColor: c.bg, borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'visible' }}>
+        <Box padding={{ x: 16, bottom: 8 }} margin={{ top: -18 }} align="start" style={{ backgroundColor: c.bg, borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'visible' }}>
           {/* Wait for the profile so we render the real avatar directly (no
               blockie→real flash); custom avatars resolve via IPFS, not stamp.
               marginTop -88*0.8 pulls the avatar UP by 80% of its height: ~80%

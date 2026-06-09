@@ -70,7 +70,7 @@ export function ActionHeader({ title, head, border, onBack }: {
   const insets = useSafeAreaInsets();
   const { toolbarBg } = usePalette();
   return (
-    <Row align="center" gap={8} px={12} pt={8 + insets.top} pb={8} style={{ borderBottomWidth: 1, borderBottomColor: border, backgroundColor: toolbarBg }}>
+    <Row padding={{ x: 12, top: 8 + insets.top, bottom: 8 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border, backgroundColor: toolbarBg }}>
       <Pressable onPress={onBack} hitSlop={8} style={{ padding: 4 }}>
         <Icon name="arrowLeft" size={22} color={head} />
       </Pressable>
@@ -122,7 +122,7 @@ export function AmountBox({ pal, amount, setAmount, busy, balance, symbol, dark 
             style={{ height: 24, paddingHorizontal: 8 }} />
         ) : null}
       </Row>
-      <Box px={14} py={12} style={{ backgroundColor: inputBg, borderRadius: 12 }}>
+      <Box padding={{ x: 14, y: 12 }} style={{ backgroundColor: inputBg, borderRadius: 12 }}>
         <Input value={amount} onChangeText={setAmount} placeholder="0.0" placeholderTextColor={sub}
           inputType="number" disabled={busy} dark={!!dark}
           inputProps={{ keyboardType: 'decimal-pad' }}
@@ -146,7 +146,7 @@ export function LockedRecipient({ pal, label, value, hint }: {
   return (
     <Box gap={6}>
       <Text size="xs" color={sub}>{label}</Text>
-      <Box px={14} py={12} style={{ backgroundColor: inputBg, borderRadius: 12, borderWidth: 1, borderColor: border }}>
+      <Box padding={{ x: 14, y: 12 }} style={{ backgroundColor: inputBg, borderRadius: 12, borderWidth: 1, borderColor: border }}>
         <Text weight="semibold" size="md" color={head}>{value}</Text>
         <Text size="xs" color={sub} style={{ marginTop: 2 }}>{hint}</Text>
       </Box>
@@ -168,8 +168,8 @@ export function WalletFooter({
 }): React.ReactElement {
   const insets = useSafeAreaInsets();
   return (
-    <Row gap={12} px={16}
-      pt={12} pb={Math.max(insets.bottom, 12)} style={{ borderTopWidth: 1, borderTopColor: border, backgroundColor: bg }}>
+    <Row padding={{ x: 16, top: 12, bottom: Math.max(insets.bottom, 12) }} gap={12} 
+      style={{ borderTopWidth: 1, borderTopColor: border, backgroundColor: bg }}>
       <Button variant="secondary" size="lg" pill dark={dark} style={{ flex: 1 }}
         onPress={onCancel} label="Cancel" />
       <Button variant="primary" size="lg" pill dark={dark} style={{ flex: 1 }}

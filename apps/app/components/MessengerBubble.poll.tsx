@@ -54,7 +54,7 @@ function PollQuestionBlock({ q, qi, sub, dark, votes, own, onVote, openAnswers, 
       {options.map((opt, i) => {
         const count = votes?.get(i)?.size ?? 0;
         const isOn = own?.has(i) ?? false;
-        const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+        const pct = total> 0 ? Math.round((count / total) * 100) : 0;
         return (
           <Pressable
             key={`${i}-${opt.label}`}
@@ -92,7 +92,7 @@ function PollQuestionBlock({ q, qi, sub, dark, votes, own, onVote, openAnswers, 
           </Pressable>
         );
       })}
-      {options.length > 0 ? (
+      {options.length> 0 ? (
         <Text size="xs" color={sub} style={{ marginTop: 2 }}>
           {total} vote{total === 1 ? '' : 's'}{q.open ? ' · or type your own' : ''}
         </Text>
@@ -118,12 +118,12 @@ export function PollView({ poll, dark, sub, votes, ownVotes, onVote, openAnswers
 }): React.ReactElement {
   const pal = usePalette();
   const fg = pal.link;
-  const multiQuestion = poll.questions.length > 1;
+  const multiQuestion = poll.questions.length> 1;
   return (
-    <Box gap={12} mt={8} style={{ alignSelf: 'stretch' }}>
+    <Box margin={{ top: 8 }} gap={12} style={{ alignSelf: 'stretch' }}>
       {poll.questions.map((q, qi) => (
         <Box key={`q-${qi}`} gap={6} style={{ alignSelf: 'stretch' }}>
-          {multiQuestion && qi > 0 ? (
+          {multiQuestion && qi> 0 ? (
             <Text weight="semibold" size="3xl" color={fg}>{q.question}</Text>
           ) : null}
           <PollQuestionBlock

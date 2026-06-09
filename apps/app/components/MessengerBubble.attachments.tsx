@@ -103,7 +103,7 @@ export function RemoteAttachmentResolver({ att, fg, sub, dark, msgId, index }: {
   }
   if (!uri) {
     return (
-      <Row align="center" gap={8} px={10} py={8} radius={8} bg="rgba(0,0,0,0.12)" mb={6}>
+      <Row padding={{ x: 10, y: 8 }} margin={{ bottom: 6 }} align="center" gap={8} radius={8} bg="rgba(0,0,0,0.12)">
         <Spinner size={20} color={fg} />
         <Text size="xs" color={sub} numberOfLines={1}>
           {att.name ?? 'attachment'}

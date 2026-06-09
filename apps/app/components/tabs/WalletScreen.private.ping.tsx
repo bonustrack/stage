@@ -71,8 +71,8 @@ function PingLog({ lines, sub, head, border }: {
 }): React.ReactElement | null {
   if (lines.length === 0) return null;
   return (
-    <Col gap={2} mt={4}>
-      <Row mt={2} mb={2} justify="end">
+    <Col margin={{ top: 4 }} gap={2}>
+      <Row margin={{ top: 2, bottom: 2 }} justify="end">
         <Pressable
           onPress={() => copyAll(lines)}
           hitSlop={8}
@@ -160,7 +160,7 @@ function useBatchedLog(): BatchedLog {
   const append = useCallback((line: LogLine) => {
     const next = buf.current;
     next.push(line);
-    if (next.length > CAP) next.splice(0, next.length - CAP);
+    if (next.length> CAP) next.splice(0, next.length - CAP);
     dirty.current = true;
   }, []);
 
@@ -349,7 +349,7 @@ export function BridgePingProbe({ sub, border }: {
         : engine.text;
 
   return (
-    <Col mt={20} pt={16} gap={8} style={{ borderTopWidth: 1, borderTopColor: border }}>
+    <Col padding={{ top: 16 }} margin={{ top: 20 }} gap={8} style={{ borderTopWidth: 1, borderTopColor: border }}>
       <Text size="xs" color={sub}>
         DEV · NODE BRIDGE FEASIBILITY
       </Text>

@@ -8,7 +8,7 @@ import { Box } from './layout';
 
 export function MessengerVideoAttachment({ uri }: { uri: string }): React.ReactElement {
   return (
-    <Box mb={6} style={{ width: 220, borderRadius: 10, overflow: 'hidden', backgroundColor: '#000' }}>
+    <Box margin={{ bottom: 6 }} style={{ width: 220, borderRadius: 10, overflow: 'hidden', backgroundColor: '#000' }}>
       <Video
         source={{ uri }}
         style={{ width: '100%', height: 280 }}

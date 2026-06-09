@@ -66,7 +66,7 @@ export function RecipientRow({ address, pal, right, onPress }: {
 
   if (!onPress) {
     return (
-      <Row align="center" gap={12} px={14} py={10} style={{ backgroundColor: border, borderRadius: 12 }}>
+      <Row padding={{ x: 14, y: 10 }} align="center" gap={12} style={{ backgroundColor: border, borderRadius: 12 }}>
         {inner}
       </Row>
     );

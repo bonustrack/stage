@@ -89,7 +89,8 @@ export default tseslint.config(
           // top-level `style={{...}}` - pass the prop so layout stays
           // declarative and the single mapper owns the prop->style translation:
           //   alignItems -> align, justifyContent -> justify, gap -> gap,
-          //   padding* -> p/px/py/pt/pr/pb/pl, margin* -> m/mx/my/mt/mr/mb/ml.
+          //   padding* -> padding (scalar or {x,y,top,right,bottom,left}),
+          //   margin* -> margin (same ChatKit Spacing shape).
           // Scoped to the DIRECT-child style object literal of Box/Row/Col only
           // (same chain as the Box flex rule above), so nested objects and child
           // elements are never matched. Overlapping-side combos that one prop
@@ -97,7 +98,7 @@ export default tseslint.config(
           selector:
             "JSXOpeningElement[name.name=/^(Box|Row|Col)$/] > JSXAttribute[name.name='style'] > JSXExpressionContainer ObjectExpression > Property[key.name=/^(alignItems|justifyContent|gap|padding|paddingHorizontal|paddingVertical|paddingTop|paddingRight|paddingBottom|paddingLeft|margin|marginHorizontal|marginVertical|marginTop|marginRight|marginBottom|marginLeft)$/]",
           message:
-            "Box/Row/Col: use the layout prop instead of a style entry - alignItems->align, justifyContent->justify, gap->gap, padding*->p/px/py/pt/pr/pb/pl, margin*->m/mx/my/mt/mr/mb/ml (see kit/src/layout.ts).",
+            "Box/Row/Col: use the layout prop instead of a style entry - alignItems->align, justifyContent->justify, gap->gap, padding*->padding (scalar or {x,y,top,right,bottom,left}), margin*->margin (same Spacing shape) (see kit/src/layout.ts).",
         },
       ],
       // `error`: cap files at 400 lines. Split a file rather than crossing it.

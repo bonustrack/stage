@@ -68,7 +68,7 @@ export default function Requests(): React.ReactElement {
       /* Same channel card as the channels list, with an approve/reject cluster
          pinned on the right. ChannelRow flexes to fill; the actions sit beside
          it (paddingRight on the row keeps the buttons off the screen edge). */
-      <Row align="center" pr={12}>
+      <Row padding={{ right: 12 }} align="center">
         <Col flex={1} style={{ minWidth: 0 }}>
           <ChannelRow
             title={displayTitle}
@@ -102,7 +102,7 @@ export default function Requests(): React.ReactElement {
 
   return (
     <Col flex={1} style={{ backgroundColor: bg }}>
-      <Row align="center" gap={8} px={12} pt={8 + insets.top} pb={10} style={{ borderBottomWidth: 1, borderBottomColor: border, backgroundColor: toolbarBg }}>
+      <Row padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border, backgroundColor: toolbarBg }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg} />
         </Pressable>
@@ -122,7 +122,7 @@ export default function Requests(): React.ReactElement {
           renderItem={renderRow}
           contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}
           ListEmptyComponent={
-            <Col p={32} align="center">
+            <Col padding={32} align="center">
               <Text color={sub} style={{ textAlign: 'center' }}>
                 No message requests.
               </Text>

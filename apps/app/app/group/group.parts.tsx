@@ -54,7 +54,7 @@ export function MemberRow({
         ) : null}
       </Col>
       {role && role !== 'member' ? (
-        <Box px={8} py={2} style={{ borderRadius: 999, backgroundColor: role === 'owner'
+        <Box padding={{ x: 8, y: 2 }} style={{ borderRadius: 999, backgroundColor: role === 'owner'
             ? (dark ? 'rgba(45,212,191,0.18)' : 'rgba(13,148,136,0.12)')
             : border }}>
           <Text size="3xs" color={role === 'owner' ? (dark ? '#2dd4bf' : '#0d9488') : sub}>{role === 'owner' ? 'Owner' : 'Admin'}</Text>

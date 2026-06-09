@@ -32,7 +32,7 @@ export function TokensList({
 }): React.ReactElement {
   const router = useRouter();
   return (
-    <Col mx={16}>
+    <Col margin={{ x: 16 }}>
       <PendingShieldRows pending={pending} pal={{ head, sub, border }} />
       {[...rows, ...privateRows]
         .filter(r => Number(r.balance) > 0)

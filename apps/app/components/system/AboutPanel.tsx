@@ -24,7 +24,7 @@ interface AboutRowProps {
 function AboutRow({ label, value, mono, dark, border, href, head }: AboutRowProps): React.ReactElement {
   const valueColor = href ? head : undefined;
   const row = (
-    <Row align="center" justify="between" py={14} gap={16} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
+    <Row padding={{ y: 14 }} align="center" justify="between" gap={16} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
       <Text dark={dark} variant="secondary" weight="medium" size="md">{label}</Text>
       <Text
         dark={dark}
@@ -55,9 +55,9 @@ export function AboutPanel({ dark, head, sub, border, rowBg }: {
   const cfg = Constants.expoConfig;
   const version = cfg?.version ?? 'unknown';
   const extra = (cfg?.extra ?? {}) as { gitHash?: unknown; buildProfile?: unknown };
-  const gitHash = typeof extra.gitHash === 'string' && extra.gitHash.length > 0 ? extra.gitHash : 'dev';
+  const gitHash = typeof extra.gitHash === 'string' && extra.gitHash.length> 0 ? extra.gitHash : 'dev';
   const shortHash = gitHash === 'dev' ? 'dev' : gitHash.slice(0, 12);
-  const buildProfile = typeof extra.buildProfile === 'string' && extra.buildProfile.length > 0
+  const buildProfile = typeof extra.buildProfile === 'string' && extra.buildProfile.length> 0
     ? extra.buildProfile : 'dev';
   const pkgName = cfg?.name ?? 'Metro';
   const nativeBuild = Application.nativeBuildVersion
@@ -66,8 +66,8 @@ export function AboutPanel({ dark, head, sub, border, rowBg }: {
   const versionLabel = nativeBuild ? `${version} (build ${nativeBuild})` : version;
 
   return (
-    <Box pt={18}>
-      <Box px={16}>
+    <Box padding={{ top: 18 }}>
+      <Box padding={{ x: 16 }}>
       <Title dark={dark} level={2} color={head}>About</Title>
       <Text dark={dark} variant="secondary" weight="medium" size="xs" style={{ marginTop: 4, marginBottom: 8 }}>
         Build + runtime metadata for this install.

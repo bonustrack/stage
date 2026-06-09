@@ -61,7 +61,7 @@ export function SheetModal({ visible, onClose, children, bg, border }: {
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>
         <Pressable onPress={(e) => e.stopPropagation()} style={{ backgroundColor: bg, borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 16, paddingBottom: 28 + insets.bottom, borderTopWidth: 1, borderColor: border }}>
-          <Box mb={12} style={{ alignSelf: 'center', width: 36, height: 4, borderRadius: 2, backgroundColor: border }} />
+          <Box margin={{ bottom: 12 }} style={{ alignSelf: 'center', width: 36, height: 4, borderRadius: 2, backgroundColor: border }} />
           {children}
         </Pressable>
       </Pressable>

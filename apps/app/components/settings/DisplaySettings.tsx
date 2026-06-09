@@ -42,7 +42,7 @@ export function DisplaySettings(): React.ReactElement {
         <Text size="xs" color={sub} style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
           THEME
         </Text>
-        <Box mx={16} style={{ overflow: 'hidden' }}>
+        <Box margin={{ x: 16 }} style={{ overflow: 'hidden' }}>
           <Card dark={dark} background={rowBg} padding={0}>
             <ListView dark={dark}>
               {THEME_OPTIONS.map((opt) => {
@@ -75,7 +75,7 @@ export function DisplaySettings(): React.ReactElement {
         </Box>
 
         {custom ? (
-          <Box px={16} pt={24}>
+          <Box padding={{ x: 16, top: 24 }}>
             <Text size="xs" color={sub} style={{ paddingBottom: 4 }}>
               CUSTOM COLORS
             </Text>

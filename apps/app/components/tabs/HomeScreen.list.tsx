@@ -92,12 +92,12 @@ export function ChannelsList({
           />
         </Box>
       ) : (
-        <Row
+        <Row padding={{ x: 16, top: 12, bottom: 10 }}
           align="center"
           justify="between"
-          px={16}
-          pt={12}
-          pb={10}
+          
+          
+          
           bg={toolbarBg}
           style={{ borderBottomWidth: 1, borderBottomColor: border }}
         >
@@ -116,9 +116,9 @@ export function ChannelsList({
              *  consent convs). Badge hidden when 0; tap opens the requests list. */}
             <Pressable onPress={() => router.push('/xmtp/requests')} hitSlop={8} style={{ position: 'relative' }}>
               <Icon name="inbox" size={24} color={head} />
-              {requestCount > 0 ? (
-                <Box
-                  px={5}
+              {requestCount> 0 ? (
+                <Box padding={{ x: 5 }}
+                  
                   radius={999}
                   bg={badgeBg}
                   align="center"
@@ -126,7 +126,7 @@ export function ChannelsList({
                   style={{ position: 'absolute', top: -6, right: -8, minWidth: 16, height: 16 }}
                 >
                   <Text weight="semibold" size="3xs" color={badgeFg}>
-                    {requestCount > 99 ? '99+' : requestCount}
+                    {requestCount> 99 ? '99+' : requestCount}
                   </Text>
                 </Box>
               ) : null}

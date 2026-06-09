@@ -15,15 +15,15 @@ export function GallerySection({ name, note, head, sub, border, framed = true, i
 }): React.ReactElement {
   const blockRadius = useBlockRadius();
   return (
-    <Box px={16} pt={22}>
+    <Box padding={{ x: 16, top: 22 }}>
       <Text weight="semibold" size="xl" color={head}>{name}</Text>
       {note ? (
         <Text size="xs" color={sub} style={{ marginTop: 1 }}>{note}</Text>
       ) : null}
-      <Box
-        mt={12}
+      <Box padding={{ x: innerPadH, y: innerPadV }} margin={{ top: 12 }}
+        
         radius={framed ? blockRadius : 0}
-        px={innerPadH} py={innerPadV} style={{ ...(framed ? { borderWidth: 1, borderColor: border, overflow: 'hidden' as const } : {}) }}
+        style={{ ...(framed ? { borderWidth: 1, borderColor: border, overflow: 'hidden' as const } : {}) }}
       >
         {children}
       </Box>

@@ -57,9 +57,9 @@ export function ActivityView({ address, head, sub, border, bg }: {
 
   if (status === 'error') {
     return (
-      <Col mx={16}>
+      <Col margin={{ x: 16 }}>
         {priv}
-        <Col py={40} align="center">
+        <Col padding={{ y: 40 }} align="center">
           <Text size="md" color={DANGER}>
             Couldn’t load activity
           </Text>
@@ -69,9 +69,9 @@ export function ActivityView({ address, head, sub, border, bg }: {
   }
   if (status === 'loading' || status === 'idle') {
     return (
-      <Col mx={16}>
+      <Col margin={{ x: 16 }}>
         {priv}
-        <Col py={40} align="center">
+        <Col padding={{ y: 40 }} align="center">
           <Spinner size={28} color={head} />
         </Col>
       </Col>
@@ -79,9 +79,9 @@ export function ActivityView({ address, head, sub, border, bg }: {
   }
   if (rows.length === 0) {
     return (
-      <Col mx={16}>
+      <Col margin={{ x: 16 }}>
         {priv}
-        <Col py={40} align="center">
+        <Col padding={{ y: 40 }} align="center">
           <Text size="md" color={sub}>
             No transactions yet
           </Text>
@@ -90,7 +90,7 @@ export function ActivityView({ address, head, sub, border, bg }: {
     );
   }
   return (
-    <Col mx={16}>
+    <Col margin={{ x: 16 }}>
       {priv}
       {rows.map(r => (
         <TxRow key={r.hash} r={r} head={head} sub={sub} border={border} bg={bg} />
@@ -118,7 +118,7 @@ function TxRow({ r, head, sub, border, bg }: {
   const valueColor = r.failed ? DANGER : r.direction === 'receive' ? '#22c55e' : head;
   const partyLabel = r.direction === 'receive' ? `From ${name}` : `To ${name}`;
   return (
-    <Row align="center" gap={12} py={14}
+    <Row padding={{ y: 14 }} align="center" gap={12} 
       style={{ borderBottomWidth: 1, borderBottomColor: border }}>
       <Box align="center" justify="center" style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: border }}>
         <Icon name={DIR_ICON[r.direction]} size={18} color={r.failed ? DANGER : head} />
@@ -127,8 +127,8 @@ function TxRow({ r, head, sub, border, bg }: {
         <Text weight="semibold" size="xl" color={head} numberOfLines={1}>
           {title}
         </Text>
-        <Row align="center" gap={6} mt={2}>
-          <Box px={6} py={1} style={{ borderRadius: 4, backgroundColor: border }}>
+        <Row margin={{ top: 2 }} align="center" gap={6}>
+          <Box padding={{ x: 6, y: 1 }} style={{ borderRadius: 4, backgroundColor: border }}>
             <Text size="xs" color={sub} numberOfLines={1}>
               {r.chainLabel}
             </Text>

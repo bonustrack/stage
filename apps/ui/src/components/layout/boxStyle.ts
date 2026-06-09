@@ -19,27 +19,24 @@ export type Justify =
   | 'evenly';
 
 /** Prop API shared by Box/Row/Col. Row/Col omit `direction`. */
+/** Per-side / per-axis spacing object, mirroring OpenAI ChatKit's `Spacing`.
+ *  `x` -> left+right, `y` -> top+bottom; per-side keys override the axis. */
+export interface Spacing {
+  top?: number | string;
+  right?: number | string;
+  bottom?: number | string;
+  left?: number | string;
+  x?: number | string;
+  y?: number | string;
+}
+
 export interface BoxProps {
   direction?: Direction;
   gap?: number;
-  /** all-sides padding */
-  padding?: number;
-  p?: number;
-  px?: number;
-  py?: number;
-  pt?: number;
-  pr?: number;
-  pb?: number;
-  pl?: number;
-  /** all-sides margin */
-  margin?: number;
-  m?: number;
-  mx?: number;
-  my?: number;
-  mt?: number;
-  mr?: number;
-  mb?: number;
-  ml?: number;
+  /** padding: scalar (all sides) or per-side/axis `Spacing` object. */
+  padding?: number | string | Spacing;
+  /** margin: scalar (all sides) or per-side/axis `Spacing` object. */
+  margin?: number | string | Spacing;
   align?: Align;
   justify?: Justify;
   flex?: number;
@@ -71,6 +68,42 @@ function resolveBg(bg: string): string {
   return (colors as Record<string, string>)[bg] ?? bg;
 }
 
+/** Expand a `padding`/`margin` prop into per-side entries. A scalar sets all
+ *  four sides; a `Spacing` object resolves x -> left+right, y -> top+bottom,
+ *  then per-side keys (top/right/bottom/left) override the axis. */
+function applySpacing(
+  out: Record<string, string | number>,
+  prefix: 'padding' | 'margin',
+  value: number | string | Spacing | undefined,
+): void {
+  if (value === undefined) return;
+  const Top = `${prefix}Top`;
+  const Right = `${prefix}Right`;
+  const Bottom = `${prefix}Bottom`;
+  const Left = `${prefix}Left`;
+
+  if (typeof value === 'number' || typeof value === 'string') {
+    out[Top] = value;
+    out[Right] = value;
+    out[Bottom] = value;
+    out[Left] = value;
+    return;
+  }
+
+  if (value.x !== undefined) {
+    out[Left] = value.x;
+    out[Right] = value.x;
+  }
+  if (value.y !== undefined) {
+    out[Top] = value.y;
+    out[Bottom] = value.y;
+  }
+  if (value.top !== undefined) out[Top] = value.top;
+  if (value.right !== undefined) out[Right] = value.right;
+  if (value.bottom !== undefined) out[Bottom] = value.bottom;
+  if (value.left !== undefined) out[Left] = value.left;
+}
+
 /** Pure mapper: BoxProps -> neutral CSS-ish record. Numbers stay numbers;
  *  string values (flexDirection, alignItems, colors...) stay strings.
  *  Any undefined prop is omitted so it never overrides a default or a
@@ -85,38 +118,8 @@ export function boxStyleEntries(
 
   if (props.gap !== undefined) out.gap = props.gap;
 
-  // Padding: shorthand first, per-side/axis override after (precedence:
-  // per-side > axis (px/py) > all-sides (p/padding)).
-  const pAll = props.padding ?? props.p;
-  if (pAll !== undefined) out.padding = pAll;
-  if (props.px !== undefined) {
-    out.paddingLeft = props.px;
-    out.paddingRight = props.px;
-  }
-  if (props.py !== undefined) {
-    out.paddingTop = props.py;
-    out.paddingBottom = props.py;
-  }
-  if (props.pt !== undefined) out.paddingTop = props.pt;
-  if (props.pr !== undefined) out.paddingRight = props.pr;
-  if (props.pb !== undefined) out.paddingBottom = props.pb;
-  if (props.pl !== undefined) out.paddingLeft = props.pl;
-
-  // Margin: same precedence model.
-  const mAll = props.margin ?? props.m;
-  if (mAll !== undefined) out.margin = mAll;
-  if (props.mx !== undefined) {
-    out.marginLeft = props.mx;
-    out.marginRight = props.mx;
-  }
-  if (props.my !== undefined) {
-    out.marginTop = props.my;
-    out.marginBottom = props.my;
-  }
-  if (props.mt !== undefined) out.marginTop = props.mt;
-  if (props.mr !== undefined) out.marginRight = props.mr;
-  if (props.mb !== undefined) out.marginBottom = props.mb;
-  if (props.ml !== undefined) out.marginLeft = props.ml;
+  applySpacing(out, 'padding', props.padding);
+  applySpacing(out, 'margin', props.margin);
 
   if (props.align !== undefined) out.alignItems = ALIGN_MAP[props.align];
   if (props.justify !== undefined)

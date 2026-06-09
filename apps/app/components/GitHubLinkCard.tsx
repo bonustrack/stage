@@ -47,8 +47,8 @@ export function GitHubLinkCard({ url }: {
 
   return (
     <Pressable onPress={() => void Linking.openURL(url)}>
-      <Box radius={blockRadius} px={12} py={10} style={{ borderWidth: 1, borderColor: border, backgroundColor: 'transparent' }}>
-        <Row align="center" justify="start" mb={4}>
+      <Box padding={{ x: 12, y: 10 }} radius={blockRadius} style={{ borderWidth: 1, borderColor: border, backgroundColor: 'transparent' }}>
+        <Row margin={{ bottom: 4 }} align="center" justify="start">
           <GithubLogo size={16} color={fg} />
           <Text size="3xs" color={subColor} style={{ marginLeft: 6 }}>
             {meta.repo}{numLabel ? ` · ${numLabel}` : ''}
@@ -64,9 +64,9 @@ export function GitHubLinkCard({ url }: {
             {meta.description}
           </Text>
         ) : null}
-        <Row align="center" justify="start" mt={6}>
+        <Row margin={{ top: 6 }} align="center" justify="start">
           {dot ? (
-            <Box mr={6} style={{ width: 8, height: 8, borderRadius: 999, backgroundColor: dot }} />
+            <Box margin={{ right: 6 }} style={{ width: 8, height: 8, borderRadius: 999, backgroundColor: dot }} />
           ) : null}
           {meta.state ? (
             <Text size="3xs" color={subColor} style={{ textTransform: 'capitalize' }}>

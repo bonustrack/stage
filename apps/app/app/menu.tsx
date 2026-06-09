@@ -72,7 +72,7 @@ export default function Menu(): React.ReactElement {
     <Col flex={1} style={{ backgroundColor: bg }}>
       {/* Topnav: back + title, mirroring the Accounts / Search pages.
           Paints toolbarBg + absorbs the top inset so the bar reaches the edge. */}
-      <Row align="center" gap={8} px={12} pt={8 + insets.top} pb={10} style={{ borderBottomWidth: 1, borderBottomColor: border, backgroundColor: toolbarBg }}>
+      <Row padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border, backgroundColor: toolbarBg }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={head} />
         </Pressable>

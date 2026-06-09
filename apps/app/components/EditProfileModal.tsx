@@ -97,13 +97,13 @@ export default function EditProfileModal({
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {/** No title / Cancel chrome — a single close X is the dismiss affordance
          *  (this is a full-screen modal with no backdrop tap). */}
-        <Row align="center" justify="end" px={16} pt={insets.top + 12} pb={12}>
+        <Row padding={{ x: 16, top: insets.top + 12, bottom: 12 }} align="center" justify="end">
           <Pressable onPress={onClose} disabled={saving} hitSlop={10}>
             <Icon name="x" size={24} color={head} />
           </Pressable>
         </Row>
         <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
-          <Box align="center" mb={20}>
+          <Box margin={{ bottom: 20 }} align="center">
             <Pressable onPress={pickAvatar} disabled={uploading}>
               <Avatar
                 address={address}
@@ -121,7 +121,7 @@ export default function EditProfileModal({
           </Box>
 
           {FIELDS.map(f => (
-            <Box key={f.key} mb={14}>
+            <Box margin={{ bottom: 14 }} key={f.key}>
               <Text size="3xs" color={sub} style={{ marginBottom: 4 }}>{f.label.toUpperCase()}</Text>
               {f.multiline ? (
                 <Textarea

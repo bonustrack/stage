@@ -137,7 +137,7 @@ export function BubbleActionMenu({
           pointerEvents="box-none"
         >
           {/** Emoji reaction strip — rounded pill floating above the message. */}
-          <Row align="center" gap={4} px={10} py={6} style={{ backgroundColor: stripBg, borderRadius: 999, shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 6, maxWidth: '100%' }}>
+          <Row padding={{ x: 10, y: 6 }} align="center" gap={4} style={{ backgroundColor: stripBg, borderRadius: 999, shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 6, maxWidth: '100%' }}>
             {expanded ? (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingRight: 4 }}>
                 {[...REACT_PRESETS, ...MORE_EMOJIS].map(e => (
@@ -172,8 +172,8 @@ export function BubbleActionMenu({
           <Box style={{ height: GAP }} pointerEvents="none" />
 
           {/** Action dropdown — rounded card directly below the strip. */}
-          <Box
-            py={4} style={{ minWidth: 220, maxWidth: 320, backgroundColor: cardBg, borderRadius: blockRadius, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 8 }}
+          <Box padding={{ y: 4 }}
+            style={{ minWidth: 220, maxWidth: 320, backgroundColor: cardBg, borderRadius: blockRadius, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 8 }}
           >
             <ActionRow icon="reply" label="Reply" onPress={onReply} />
             {target?.text ? <Divider dark={dark} color={divider} style={{ marginLeft: 16 }} /> : null}

@@ -47,7 +47,7 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
     </Pressable>
   );
   return (
-    <Col bg={inputBg} radius={0} p={10}>
+    <Col padding={10} bg={inputBg} radius={0}>
       {/** Top slot: live waveform + timer while recording, else the textarea. The
        *   button row below stays mounted across both states. */}
       {recording ? (

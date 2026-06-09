@@ -162,14 +162,14 @@ export function MemberPicker({ state, dark, exclude = [] }: {
       />
 
       {/* Member chips */}
-      {members.length > 0 && (
+      {members.length> 0 && (
         <Col gap={8}>
           {members.map(m => (
-            <Row
+            <Row padding={8}
               key={m.address}
               align="center"
               gap={10}
-              p={8} style={{ backgroundColor: rowBg, borderRadius: 12, borderWidth: 1, borderColor: border }}
+              style={{ backgroundColor: rowBg, borderRadius: 12, borderWidth: 1, borderColor: border }}
             >
               <Avatar address={m.address} size={32} style={{ backgroundColor: border }} />
               <Col flex={1} gap={1}>
