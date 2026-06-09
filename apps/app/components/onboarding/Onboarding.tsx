@@ -30,6 +30,7 @@ import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';
 import { Box, Row, Col } from '../layout';
 import { useEffectiveColorScheme, usePalette, withAlpha } from '../../lib/theme';
+import { AnimatedBackground } from './AnimatedBackground';
 
 interface Slide {
   icon: HeroIconName;
@@ -91,6 +92,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
+      <AnimatedBackground dark={dark} />
       <FlatList
         ref={listRef}
         data={SLIDES}
