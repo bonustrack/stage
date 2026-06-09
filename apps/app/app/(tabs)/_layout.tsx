@@ -10,6 +10,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { usePalette } from '../../lib/theme';
 import { TabsPager } from '../../components/SwipeTabs';
+import { HoistedTopnav } from '../../components/tabs/HoistedTopnav';
+import { TAB_ORDER, indexOfPathname } from '../../components/SwipeTabs.config';
 import { useTotalUnread } from '../../lib/useTotalUnread';
 
 export default function TabsLayout(): React.ReactElement {
@@ -22,6 +24,11 @@ export default function TabsLayout(): React.ReactElement {
    *  Settings is a non-pager route now → hide the pager overlay there so the real
    *  SettingsScreen rendered by the route shows through. */
   const pagerVisible = !pathname.startsWith('/settings');
+  /** Active tab name drives which tab's contextual right-slot the single hoisted
+   *  Topnav renders. Derived from the focused route (the pager fires
+   *  router.navigate on a swipe settle), so it follows both tab-bar taps and
+   *  swipes. The bar itself never moves; it's a fixed sibling above the pager. */
+  const activeTab = TAB_ORDER[indexOfPathname(pathname)] ?? 'index';
   const insets = useSafeAreaInsets();
   const pal = usePalette();
   const active = pal.link; // #ffffff / #000000
@@ -111,7 +118,7 @@ export default function TabsLayout(): React.ReactElement {
       {/* Pager overlay — covers the scene area (status-bar inset at top, stops
           above the tab bar at the bottom) so the tab bar keeps its taps. */}
       {pagerVisible ? (
-        <Box
+        <Col
           pointerEvents="box-none"
           style={{
             position: 'absolute',
@@ -121,8 +128,17 @@ export default function TabsLayout(): React.ReactElement {
             bottom: tabBarHeight,
           }}
 >
-          <TabsPager/>
-        </Box>
+          {/* ONE fixed Topnav, ABOVE the pager. A sibling of the pager strip, so
+              a horizontal tab-swipe (which translates the strip) and a vertical
+              scroll inside a tab both leave it pinned. Its right-slot reflects the
+              active tab; the identity left stays constant (the same Home bar). */}
+          <HoistedTopnav active={activeTab}/>
+          {/* Pager below the bar as the flex:1 scroll region. It now mounts only
+              the scrollable BODIES of each tab (no per-tab header). */}
+          <Box flex={1}>
+            <TabsPager/>
+          </Box>
+        </Col>
       ) : null}
     </Col>
   );

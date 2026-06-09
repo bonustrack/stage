@@ -12,7 +12,6 @@ import { usePalette, useBlockRadius, type Palette } from '../lib/theme';
 import { getCachedXmtpClient, getOrCreateXmtpClient } from '../modules/messaging';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';
-import { Topnav } from './Topnav';
 
 export type ProfileColors = Palette;
 
@@ -47,21 +46,12 @@ export function useSelfAddress(): string {
 export function ProfileHeader({ variant, insetTop, isSelf, onBack, onMenu, c }: {
   variant: 'tab' | 'route'; insetTop: number; isSelf: boolean;
   onBack: () => void; onMenu: () => void; c: ProfileColors;
-}): React.ReactElement {
-  /** Tab variant uses the shared Topnav (identity left, edit-menu kebab right) so
-   *  its bar/structure/height/border match Home and the other tabs exactly. The
-   *  route variant stays a floating absolute header over the full-bleed cover. */
-  if (variant === 'tab') {
-    return (
-      <Topnav
-        right={isSelf ? (
-          <Pressable onPress={onMenu} hitSlop={8}>
-            <Icon name="dotsHorizontal" size={24} color={c.link}/>
-          </Pressable>
-        ) : undefined}
-/>
-    );
-  }
+}): React.ReactElement | null {
+  /** Tab variant renders NO header here: its bar is the single Topnav hoisted
+   *  ABOVE the pager in (tabs)/_layout.tsx (the edit kebab is published to it by
+   *  ProfileScreen). Rendering one here too would put it inside the moving pager.
+   *  The route variant keeps its floating absolute header over the cover. */
+  if (variant === 'tab') return null;
   return (
     <Row
       align="center"

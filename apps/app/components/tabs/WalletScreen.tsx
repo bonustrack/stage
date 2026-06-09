@@ -3,7 +3,7 @@
  *  single Multicall3 round-trip via the brovider RPC. Each row is 4-corner: name
  *  + price/24h-change left, USD value + amount/symbol right. */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { ScrollView } from 'react-native-gesture-handler';
 import { usePullToRefresh } from './PullToRefresh';
@@ -17,7 +17,7 @@ import { flash } from '../../lib/toast';
 import { usePeerProfiles } from '../../lib/peerProfiles';
 import { DANGER, useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { Col, Row } from '../layout';
-import { Topnav } from '../Topnav';
+import { usePublishTopnavSlot } from './topnavSlots';
 import { getNftsAcrossChains, type Nft } from '../../lib/opensea';
 import { Btn, WalletTabs, NftsView, fmtUsd, splitUsd, type WalletTab } from './WalletScreen.parts';
 import { PrivateView } from './WalletScreen.private';
@@ -108,6 +108,20 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
     ? rows.reduce((s, r) => s + (r.priceUsd ?? 0) * Number(r.balance), 0)
     : null;
 
+  /** Publish the Wallet right-slot (copy address / refresh) to the single
+   *  hoisted Topnav above the pager. Memoised so it only re-publishes when the
+   *  address or refreshing state actually changes. */
+  const right = useMemo(
+    () => (
+      <>
+        <CopyButton address={address} color={head}/>
+        <RefreshButton refreshing={refreshing} onRefresh={onRefresh} color={head}/>
+      </>
+    ),
+    [address, head, refreshing, onRefresh],
+  );
+  usePublishTopnavSlot('wallet', { right });
+
   return (
     /** RNGH ScrollView, simultaneous with the pager Pan (panRef). Pull-to-refresh
      *  is a pure-JS onScroll gesture (usePullToRefresh) — RN's native
@@ -115,16 +129,9 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
      *  Wrapped in a flex:1 Col so the tap-to-refresh icon button can anchor to
      *  the screen top-right (absolute), independent of scroll content. */
     <Col surface="surface" flex={1}>
-    {/* Sticky shared Topnav: identity left, wallet actions (copy / refresh) right.
-        Lives OUTSIDE the ScrollView so it stays pinned while balances scroll. */}
-    <Topnav
-      right={
-        <>
-          <CopyButton address={address} color={head}/>
-          <RefreshButton refreshing={refreshing} onRefresh={onRefresh} color={head}/>
-        </>
-      }
-/>
+    {/* The shared Topnav (identity left, copy/refresh right) is hoisted ABOVE the
+        pager in (tabs)/_layout.tsx via the published slot above, so it stays
+        pinned on swipe AND scroll. This body renders only the scroll content. */}
     <ScrollView
       simultaneousHandlers={panRef}
       style={{ flex: 1, backgroundColor: bg }}

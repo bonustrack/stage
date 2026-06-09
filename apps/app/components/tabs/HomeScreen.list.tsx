@@ -3,11 +3,10 @@
  *  HomeScreen.tsx (phase-2 lint, rendering identical). */
 
 import type { MutableRefObject, RefObject } from 'react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { FlatList } from 'react-native-gesture-handler';
 import { Icon } from '@metro-labs/kit/icon';
-import { Topnav } from '../Topnav';
 import { Box } from '../layout';
 import { Text } from '@metro-labs/kit/text';
 import { CHANNELS_SCROLL_KEY, saveScrollOffset } from '../../lib/scrollPos';
@@ -19,6 +18,7 @@ import { LabelFilterBar } from './HomeScreen.labelbar';
 import { ChannelsSearchBar } from './HomeScreen.search';
 import { HomeContactResults } from './HomeScreen.contacts';
 import { HomeOverflowMenu } from './HomeScreen.overflow';
+import { usePublishTopnavSlot } from './topnavSlots';
 
 interface ChannelsListProps {
   panRef?: import('../SwipeTabs.types').SimultaneousRefs;
@@ -73,66 +73,75 @@ export function ChannelsList({
   // clears the query so the list returns to its full state.
   const [searchOpen, setSearchOpen] = useState(false);
   const closeSearch = () => { setSearchOpen(false); setQuery(''); };
+
+  /** Home's contextual right-slot (search / requests / overflow), published to
+   *  the single Topnav hoisted ABOVE the pager in (tabs)/_layout.tsx. The bar is
+   *  no longer rendered inside this page, so a tab-swipe or vertical scroll can't
+   *  move it. Memoised on the values it actually depends on. */
+  const right = useMemo(
+    () => (
+      <>
+        {/* Search opens the full-width search field over the topnav. */}
+        <Pressable onPress={() => setSearchOpen(true)} hitSlop={8}>
+          <Icon name="search" size={24} color={head}/>
+        </Pressable>
+        {/* Message requests: inbox icon + count badge (pending 'unknown' consent
+         *  convs). Badge hidden when 0; tap opens the requests list. */}
+        <Pressable onPress={() => router.push('/xmtp/requests')} hitSlop={8} style={{ position: 'relative' }}>
+          <Icon name="inbox" size={24} color={head}/>
+          {requestCount> 0 ? (
+            <Box minWidth={16} height={16} padding={{ x: 5 }}
+              radius="full"
+              background={badgeBg}
+              align="center"
+              justify="center"
+              style={{ position: 'absolute', top: -6, right: -8 }}
+>
+              <Text weight="semibold" size="3xs" color={badgeFg}>
+                {requestCount> 99 ? '99+' : requestCount}
+              </Text>
+            </Box>
+          ) : null}
+        </Pressable>
+        {/* Overflow (3-dot) menu: Archived + New-group + Edit profile + Settings. */}
+        <HomeOverflowMenu
+          color={head}
+          onArchived={() => router.push('/xmtp/archived')}
+          onNewGroup={() => router.push('/xmtp/new-group')}
+          onEditProfile={() => router.push('/profile')}
+          onSettings={() => router.push('/settings')}
+/>
+      </>
+    ),
+    [head, requestCount, badgeBg, badgeFg, router],
+  );
+
+  /** When search is open the whole bar becomes a full-width search field (a
+   *  full-bar override that replaces identity+right). Otherwise just the right
+   *  slot above is published. */
+  const override = useMemo(
+    () => (searchOpen ? (
+      <Box style={{ borderBottomWidth: 1, borderBottomColor: border }}>
+        <ChannelsSearchBar
+          query={query}
+          setQuery={setQuery}
+          onClose={closeSearch}
+          head={head}
+          sub={sub}
+          inputBg={inputBg}
+          toolbarBg={toolbarBg}
+/>
+      </Box>
+    ) : undefined),
+    // closeSearch/setQuery are stable enough; re-derive when search opens, the
+    // query changes, or theming colours change.
+    [searchOpen, query, head, sub, inputBg, toolbarBg, border],
+  );
+
+  usePublishTopnavSlot('index', { right, override });
+
   return (
     <>
-      {/* Home topnav: collapsed shows avatar + search/requests/overflow icons;
-       *  expanded (search open) the whole bar becomes a full-width search field
-       *  with a back chevron. A bottom border separates it from the feed. The
-       *  label filter rides in a chip bar that scrolls with the feed. */}
-      {searchOpen ? (
-        <Box style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-          <ChannelsSearchBar
-            query={query}
-            setQuery={setQuery}
-            onClose={closeSearch}
-            head={head}
-            sub={sub}
-            inputBg={inputBg}
-            toolbarBg={toolbarBg}
-/>
-        </Box>
-      ) : (
-        // Shared Topnav bar (identity left) with Home's contextual actions right.
-        <Topnav
-          right={
-            <>
-              {/* Search sits just before the requests icon: opens the full-width
-               *  search field over the topnav (tap-to-expand + back chevron
-               *  behavior unchanged). */}
-              <Pressable onPress={() => setSearchOpen(true)} hitSlop={8}>
-                <Icon name="search" size={24} color={head}/>
-              </Pressable>
-              {/* Message requests: inbox icon + count badge (pending 'unknown'
-               *  consent convs). Badge hidden when 0; tap opens the requests list. */}
-              <Pressable onPress={() => router.push('/xmtp/requests')} hitSlop={8} style={{ position: 'relative' }}>
-                <Icon name="inbox" size={24} color={head}/>
-                {requestCount> 0 ? (
-                  <Box minWidth={16} height={16} padding={{ x: 5 }}
-                    radius="full"
-                    background={badgeBg}
-                    align="center"
-                    justify="center"
-                    style={{ position: 'absolute', top: -6, right: -8 }}
->
-                    <Text weight="semibold" size="3xs" color={badgeFg}>
-                      {requestCount> 99 ? '99+' : requestCount}
-                    </Text>
-                  </Box>
-                ) : null}
-              </Pressable>
-              {/* Overflow (3-dot) menu: folds the former Archived + New-group icons
-               *  into a single kebab to declutter the topnav. */}
-              <HomeOverflowMenu
-                color={head}
-                onArchived={() => router.push('/xmtp/archived')}
-                onNewGroup={() => router.push('/xmtp/new-group')}
-                onEditProfile={() => router.push('/profile')}
-                onSettings={() => router.push('/settings')}
-/>
-            </>
-          }
-/>
-      )}
       <FlatList
         ref={listRef}
         simultaneousHandlers={panRef}

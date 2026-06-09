@@ -12,7 +12,6 @@ import type { SimultaneousRefs } from '../SwipeTabs.types';
 import { Text } from '@metro-labs/kit/text';
 import { Title } from '@metro-labs/kit/title';
 import { Box, Col, Row } from '../layout';
-import { Topnav } from '../Topnav';
 import { usePalette } from '../../lib/theme';
 import { NotificationsList } from './NotificationsList';
 import { useRequestPreviews } from './useRequestPreviews';
@@ -33,10 +32,10 @@ export function NotificationsScreen({ panRef }: { panRef?: SimultaneousRefs } = 
   );
 
   return (
+    // The shared Topnav (identity → Menu, no right-slot for Notifications) is
+    // hoisted ABOVE the pager in (tabs)/_layout.tsx, so it stays fixed on swipe
+    // AND scroll. This body renders only the scrollable list.
     <Col surface="surface" flex={1}>
-    {/* Sticky shared Topnav (identity → Menu). Outside the ScrollView so it
-        stays pinned while the notifications list scrolls underneath. */}
-    <Topnav/>
     <ScrollView simultaneousHandlers={panRef} style={{ flex: 1, backgroundColor: bg }} contentContainerStyle={{ flexGrow: 1 }}>
       <Col padding={{ x: 16, top: 12, bottom: 8 }}>
         <Row align="center" gap={10}>
