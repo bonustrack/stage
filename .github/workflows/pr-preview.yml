@@ -39,6 +39,9 @@ name: App preview
 on:
   push:
     branches: ['**']
+  # GitHub fires `delete` when a branch or tag is deleted. We use it to tear down
+  # that branch's per-branch EAS preview so stale channels/branches don't pile up.
+  delete:
 
 concurrency:
   # One preview build per branch at a time; a newer push cancels the in-flight
@@ -49,6 +52,8 @@ concurrency:
 
 jobs:
   build:
+    # Only publish on push. The `delete` event handled below must not build.
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -271,3 +276,39 @@ jobs:
               target_url: target,
               description,
             });
+
+  # When a git branch is deleted, tear down its per-branch EAS preview so stale
+  # channels/branches don't accumulate forever. Gated on the `delete` event and
+  # ref_type == 'branch' (a tag delete fires the same event and must be ignored).
+  cleanup:
+    if: github.event_name == 'delete' && github.event.ref_type == 'branch'
+    runs-on: ubuntu-latest
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      EXPO_NO_TELEMETRY: '1'
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.9
+
+      - name: Delete this branch's EAS preview channel + branch
+        working-directory: apps/app
+        run: |
+          set -euo pipefail
+          # Sanitise the deleted ref the SAME way the publish job does
+          # (github.event.ref is the deleted branch name on a delete event), so we
+          # target the exact channel/branch that was created on push.
+          RAW_BRANCH='${{ github.event.ref }}'
+          BRANCH="$(echo "$RAW_BRANCH" | tr '/' '-' | tr -cd 'a-zA-Z0-9._-')"
+          echo "Tearing down EAS preview for branch '$RAW_BRANCH' -> '$BRANCH'"
+          # Idempotent: a branch that never got a preview has no EAS channel/branch.
+          # `|| true` so a missing channel/branch (or a tag-like ref) never fails
+          # the job. --non-interactive needs EXPO_TOKEN (set above).
+          #
+          # Delete the channel first (it points at the branch), then the branch.
+          bunx eas-cli@20.1.0 channel:delete "$BRANCH" --non-interactive || \
+            echo "No EAS channel '$BRANCH' to delete (or already gone)."
+          bunx eas-cli@20.1.0 branch:delete "$BRANCH" --non-interactive || \
+            echo "No EAS branch '$BRANCH' to delete (or already gone)."
