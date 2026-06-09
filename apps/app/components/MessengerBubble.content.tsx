@@ -18,7 +18,7 @@ import { metroConvIdOf, metroDmPeerOf } from '../modules/messaging';
 import { Box, Row } from './layout';
 import type { HistoryEntry } from '../lib/types';
 import {
-  hasMention, fmtTs, attachmentsOf, mdParser, markdownStyles,
+  hasMention, fmtTs, attachmentsOf, mdParser, markdownStyles, unescapeBody,
   questionOf, pollOf, sigRequestOf, sigReferenceOf, txRequestOf, txReceiptOf,
 } from './MessengerBubble.helpers';
 import { AttachmentView, RemoteAttachmentResolver } from './MessengerBubble.attachments';
@@ -118,13 +118,21 @@ export function BubbleContent({
             || (preview != null && t === preview.url);
           return isBareLink;
         })() ? null : (
-          <Box style={{ alignSelf: 'stretch' }}>
-            {selectable
-              ? <Text size="3xl" selectable color={fg} style={{ lineHeight: 23 }}>{entry.text}</Text>
-              : hasMention(entry.text)
-                ? <MentionBody text={entry.text} fg={fg} dark={dark} />
-                : <Markdown {...markdownProps}>{entry.text}</Markdown>}
-          </Box>
+          (() => {
+            /** Repair line breaks delivered as the literal 2-char `\n` (escaped by
+             *  a sender that JSON-stringified the body) so they render as real
+             *  breaks. Lossless for normal messages (no-op fast path). */
+            const body = unescapeBody(entry.text);
+            return (
+              <Box style={{ alignSelf: 'stretch' }}>
+                {selectable
+                  ? <Text size="3xl" selectable color={fg} style={{ lineHeight: 23 }}>{body}</Text>
+                  : hasMention(body)
+                    ? <MentionBody text={body} fg={fg} dark={dark} />
+                    : <Markdown {...markdownProps}>{body}</Markdown>}
+              </Box>
+            );
+          })()
         )
       ) : null}
       {/** Inline embeds — metro channel card + YouTube + location, below the text so a URL stays tappable. */}
