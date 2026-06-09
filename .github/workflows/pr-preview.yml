@@ -1,56 +1,54 @@
 name: App preview
 
-# Per-PR JS-bundle preview for the Metro dev-client (#236, #256).
+# Per-branch JS-bundle preview for the Metro dev-client (#236, #256).
 #
-# What it does: publishes the app's JS bundle as an EAS Update on a per-PR branch
-# and surfaces a clickable "Preview" row on the PR whose Details opens an https
-# launcher page (metro.box/preview-launcher.html — a tracked static file in
-# apps/ui/public, deployed durably via Netlify) that builds the dev-client deep
-# link + QR. Less taps it on a device that has the dev-client APK; the installed
-# app swaps its JS for that PR's bundle — no new APK per PR. No PR comment.
+# What it does: on EVERY push to ANY branch it publishes the app's JS bundle as
+# an EAS Update on a per-branch channel and surfaces a clickable dev-client deep
+# link. Less taps it on a device that has the dev-client APK; the installed app
+# swaps its JS for that branch's bundle — no new APK per push.
 #
-# CHECKS RENDERING (#256) — what GitHub actually allows:
-#   • A GitHub Actions job ALWAYS emits its own check whose Details points at the
-#     Actions run; that target can't be customised.
-#   • Only a commit status (target_url) or a Check Run (details_url) can carry a
-#     custom link. BUT a Check Run created by the github-actions[bot] app has its
-#     details_url OVERRIDDEN to the internal /runs/<id> page — verified empirically
-#     on a throwaway PR — so it can't link straight to the launcher.
-#   • Therefore the clickable "Preview" row is a COMMIT STATUS (target_url is
-#     honored → Details opens the launcher directly). There's no way to render
-#     literally one row: the Actions job check always exists too. We minimise it
-#     by naming the workflow just "App preview" and the job "build", so its row
-#     reads "App preview / build" → run logs (useful when a preview fails), while
-#     "Preview" is the clean clickable one. (b) name is now simply "App preview".
+# TRIGGER (changed): runs on `push` to any branch (branches: ['**']), not just
+# PRs. Every commit to every branch auto-publishes a preview — no /preview
+# comment, no PR required. Branch maps 1:1 to its own EAS channel so each branch
+# gets an independent preview + deep link.
 #
-# TRIGGER: fully automatic — deploys on every PR open/reopen and re-deploys on
-# every new commit pushed to the PR branch (synchronize). No comment, no label.
+# HOW THE DEEP LINK IS SURFACED (no PR context on a push):
+#   • ALWAYS: written to the GitHub Actions job SUMMARY ($GITHUB_STEP_SUMMARY)
+#     with the launcher URL, raw deep link and QR — open the run to grab it.
+#   • WHEN A PR EXISTS for the pushed branch: also publishes the clickable
+#     "Preview" commit status on the head SHA (target_url -> launcher), so the
+#     existing PR "Preview" check keeps working exactly as before (#256). A
+#     commit status is the only mechanism GitHub honors for a custom link target
+#     (a github-actions[bot] Check Run has its details_url overridden).
 #
-# NOTE: this ships JS ONLY. A PR that changes native code (new native modules,
-# app.config native keys, android/ios dirs) needs a fresh APK. We do NOT
-# gate/skip on native changes; the preview always deploys.
+# NATIVE-CHANGE GUARD: a JS OTA preview does NOT reflect native changes (native
+# deps in package.json, app.config.js plugins, android/ ios/ dirs). We detect
+# those in the push diff and WARN loudly in the summary that a fresh APK is
+# needed — but still publish the JS update (never silently mislead).
 #
-# SAFETY:
-#   • concurrency cancels in-flight runs on rapid pushes (one preview per PR).
-#   • fork PRs are skipped — they have no access to EXPO_TOKEN, so the publish
-#     would hard-fail; the job guard short-circuits before any work.
+# CONCURRENCY: keyed on the branch ref so rapid pushes cancel the in-flight
+# superseded run (one live preview per branch) — saves Actions + EAS minutes.
+#
+# USAGE TRADEOFF: every push now builds + publishes, which increases Actions +
+# EAS usage. The concurrency-cancel above mitigates rapid-push bursts. Branches
+# that change native code still need an APK (see native guard).
 #
 # REQUIRES (native, one-time): the dev-client APK must include `expo-updates`.
 # Until that APK is installed, the deep link has no updates client to load it.
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  push:
+    branches: ['**']
 
 concurrency:
-  # One preview build per PR at a time; newer trigger cancels the in-flight one.
-  group: pr-preview-${{ github.event.pull_request.number }}
+  # One preview build per branch at a time; a newer push cancels the in-flight
+  # superseded run. Keyed on the ref so different branches never cancel each
+  # other.
+  group: app-preview-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build:
-    # Forks can't read EXPO_TOKEN → skip rather than hard-fail.
-    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -58,7 +56,6 @@ jobs:
       statuses: write
     env:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-      PR: ${{ github.event.pull_request.number }}
       # Kill Expo/EAS telemetry network round-trips (saves a few seconds + avoids
       # flakey analytics calls). Pin the Metro transform cache to a workspace path
       # (default is $TMPDIR/metro-cache, an ephemeral runner temp dir that never
@@ -68,7 +65,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          # Need at least the previous commit so we can diff for native changes.
+          fetch-depth: 2
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -79,6 +77,34 @@ jobs:
       # real dir from the first step on.
       - name: Prepare temp dir
         run: mkdir -p "$TMPDIR"
+
+      # Detect native changes in this push. A JS OTA preview can't reflect them,
+      # so we set an output the publish + summary steps use to WARN (we still
+      # publish the JS update). Tolerates the first push to a branch (no parent).
+      - name: Detect native changes
+        id: native
+        run: |
+          set -euo pipefail
+          BEFORE='${{ github.event.before }}'
+          # All-zeros = branch creation / no parent -> compare against the parent
+          # of HEAD if present, else treat as no detectable native diff.
+          if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            if git rev-parse HEAD~1 >/dev/null 2>&1; then
+              RANGE="HEAD~1 HEAD"
+            else
+              RANGE=""
+            fi
+          else
+            RANGE="$BEFORE ${{ github.sha }}"
+          fi
+          NATIVE=false
+          if [ -n "$RANGE" ]; then
+            CHANGED="$(git diff --name-only $RANGE || true)"
+            if echo "$CHANGED" | grep -Eq '^(android/|ios/|apps/app/app\.config\.js$|apps/app/package\.json$|package\.json$)'; then
+              NATIVE=true
+            fi
+          fi
+          echo "native=$NATIVE" >> "$GITHUB_OUTPUT"
 
       # Warm the bun install: the global module cache (~/.bun/install/cache) AND
       # the materialised node_modules trees (root + every workspace). bun.lock is
@@ -102,13 +128,13 @@ jobs:
 
       # Warm the Metro transform cache. Cold-bundling ~7500 modules is the bulk of
       # the export time (the Android bundle alone was ~91s); restoring this dir
-      # lets `expo export` reuse already-transformed modules across PR runs, so
-      # only the files that actually changed get re-transformed.
+      # lets `expo export` reuse already-transformed modules across runs, so only
+      # the files that actually changed get re-transformed.
       #
       # STABLE KEY (the whole point): the key is the lockfile hash PLUS a constant
       # epoch only — it deliberately does NOT embed a source-file hash. The old
-      # source-hashed key changed on every PR (different diff = different hash), so
-      # actions/cache never found an exact match and every run was a cold cache
+      # source-hashed key changed on every run (different diff = different hash),
+      # so actions/cache never found an exact match and every run was a cold cache
       # MISS that re-transformed all ~7500 modules. With a stable key the dir is
       # reused run-to-run; Metro's own per-file content hashing inside the cache
       # then re-transforms only the handful of files that changed. Bump the epoch
@@ -122,17 +148,21 @@ jobs:
           restore-keys: |
             metro-cache-v1-${{ runner.os }}-
 
-      - name: Publish EAS Update for this PR
+      - name: Publish EAS Update for this branch
         id: update
         working-directory: apps/app
-        # Stamp the preview bundle with the PR head commit so the About page shows
+        # Stamp the preview bundle with the pushed commit so the About page shows
         # the exact previewed SHA. app.config.js (resolveGitHash) reads GIT_COMMIT.
         env:
-          GIT_COMMIT: ${{ github.event.pull_request.head.sha }}
+          GIT_COMMIT: ${{ github.sha }}
         run: |
           set -euo pipefail
           mkdir -p "$TMPDIR"
-          BRANCH="pr-${PR}"
+          # EAS channel/branch names allow [a-zA-Z0-9._-]; git refs can contain
+          # '/' (e.g. feat/foo). Sanitise to a safe, stable per-branch channel.
+          RAW_BRANCH='${{ github.ref_name }}'
+          BRANCH="$(echo "$RAW_BRANCH" | tr '/' '-' | tr -cd 'a-zA-Z0-9._-')"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
           # Two-step export instead of letting `eas update` bundle implicitly, so
           # we can pass preview-only Metro flags that `eas update` does NOT expose:
           #
@@ -171,30 +201,60 @@ jobs:
             --platform android \
             --skip-bundler \
             --input-dir dist \
-            --message "PR #${PR} @ ${{ github.event.pull_request.head.sha }}" \
+            --message "${RAW_BRANCH} @ ${{ github.sha }}" \
             --non-interactive --json > eas-update.json
           node ../../scripts/pr-preview/eas-deeplink.mjs eas-update.json >> "$GITHUB_OUTPUT"
 
-      - name: Publish clickable "Preview" status on PR head
+      - name: Write preview deep link to job summary
+        run: |
+          set -euo pipefail
+          MANIFEST='${{ steps.update.outputs.manifest }}'
+          DEEPLINK='${{ steps.update.outputs.deeplink }}'
+          BRANCH='${{ steps.update.outputs.branch }}'
+          LAUNCHER="https://metro.box/preview-launcher.html?u=$(node -e "process.stdout.write(encodeURIComponent(process.argv[1]))" "$MANIFEST")"
+          QR="https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=$(node -e "process.stdout.write(encodeURIComponent(process.argv[1]))" "$DEEPLINK")"
+          {
+            echo "## App preview — \`${{ github.ref_name }}\`"
+            echo ""
+            if [ '${{ steps.native.outputs.native }}' = 'true' ]; then
+              echo "> [!WARNING]"
+              echo "> This push changed NATIVE code (android/ ios/, app.config.js, or package.json)."
+              echo "> A JS OTA preview will NOT reflect native changes — a fresh dev-client APK is needed."
+              echo "> The JS update below is still published (it just won't include the native delta)."
+              echo ""
+            fi
+            echo "**Channel:** \`$BRANCH\`"
+            echo ""
+            echo "[Open dev-client preview]($LAUNCHER)"
+            echo ""
+            echo "Raw deep link (tap on device):"
+            echo ""
+            echo "\`$DEEPLINK\`"
+            echo ""
+            echo "![QR]($QR)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # When a PR exists for this branch, the clickable "Preview" commit status on
+      # the head SHA satisfies the existing PR check (#256). On a plain push with
+      # no PR this is harmless (the summary already carries the link). A commit
+      # status is the only mechanism GitHub honors for a custom link target.
+      - name: Publish clickable "Preview" status
         uses: actions/github-script@v7
         with:
           script: |
-            // The launcher page builds the dev-client deep link + QR from the EAS
-            // update manifest URL passed as ?u=. A commit status with a target_url
-            // renders as a clickable "Preview" row whose Details opens the launcher
-            // DIRECTLY — verified the only mechanism GitHub honors for a custom
-            // link target (#256): a Check Run created by the github-actions[bot]
-            // app has its details_url overridden to the internal /runs/<id> page,
-            // so it can't link straight to the launcher; a commit status can.
             const manifest = `${{ steps.update.outputs.manifest }}`;
             const target =
               'https://metro.box/preview-launcher.html?u=' + encodeURIComponent(manifest);
+            const native = `${{ steps.native.outputs.native }}` === 'true';
+            const description = native
+              ? 'Open preview (native changed — APK needed)'
+              : 'Open dev-client preview';
             await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              sha: context.payload.pull_request.head.sha,
+              sha: context.sha,
               state: 'success',
               context: 'Preview',
               target_url: target,
-              description: 'Open dev-client preview',
+              description,
             });
