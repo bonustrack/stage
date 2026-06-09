@@ -5,7 +5,7 @@ import { Pressable } from '@metro-labs/kit/pressable';
 import { fontSize } from '@metro-labs/kit/tokens';
 import { Input } from '@metro-labs/kit/input';
 import { Text } from '@metro-labs/kit/text';
-import { Box } from '../../components/layout';
+import { Box, Col } from '../../components/layout';
 import { shortAddress } from '../../modules/messaging';
 import { getPeerAvatar, getPeerAvatarCb } from '../../lib/peerProfiles';
 import { Icon } from '@metro-labs/kit/icon';
@@ -43,7 +43,7 @@ export function MemberRow({
         size="md"
         style={{ backgroundColor: border }}
       />
-      <Box style={{ flex: 1, minWidth: 0 }}>
+      <Col flex={1} style={{ minWidth: 0 }}>
         <Text weight="semibold" size="md" color={head} numberOfLines={1}>
           {name || shortAddress(item)}{isSelf ? ' (you)' : ''}
         </Text>
@@ -52,7 +52,7 @@ export function MemberRow({
             {shortAddress(item)}
           </Text>
         ) : null}
-      </Box>
+      </Col>
       {role && role !== 'member' ? (
         <Box style={{
           paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999,

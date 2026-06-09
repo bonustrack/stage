@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { Modal } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
-import { Box } from './layout';
+import { Box, Row, Col } from './layout';
 import { usePalette, useBlockRadius, type Palette } from '../lib/theme';
 import { getCachedXmtpClient, getOrCreateXmtpClient } from '../modules/messaging';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
@@ -49,15 +49,13 @@ export function ProfileHeader({ variant, insetTop, isSelf, onBack, onMenu, c }: 
   onBack: () => void; onMenu: () => void; c: ProfileColors;
 }): React.ReactElement {
   return (
-    <Box style={{
-      ...(variant === 'route'
+    <Row style={{ ...(variant === 'route'
         ? {
           position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
           height: 44 + insetTop, paddingTop: insetTop, paddingHorizontal: 14,
         }
         : { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8, backgroundColor: c.toolbarBg }),
-      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    }}>
+      alignItems: 'center', justifyContent: 'space-between', }}>
       {variant === 'route' ? (
         <Pressable onPress={onBack} hitSlop={10} style={{ padding: 6 }}>
           <Icon name="arrowLeft" size={22} color={c.link} />
@@ -71,7 +69,7 @@ export function ProfileHeader({ variant, insetTop, isSelf, onBack, onMenu, c }: 
           <Icon name="dotsHorizontal" size={22} color={c.link} />
         </Pressable>
       ) : null}
-    </Box>
+    </Row>
   );
 }
 
@@ -81,21 +79,19 @@ export function InfoRow({ label, value, onCopy, c }: {
 }): React.ReactElement {
   const blockRadius = useBlockRadius();
   return (
-    <Box style={{
-      marginHorizontal: 16, marginTop: 12, padding: 12,
+    <Row style={{ marginHorizontal: 16, marginTop: 12, padding: 12,
       borderRadius: blockRadius, backgroundColor: c.border, borderWidth: 1, borderColor: c.border,
-      flexDirection: 'row', alignItems: 'center', gap: 8,
-    }}>
-      <Box style={{ flex: 1 }}>
+      alignItems: 'center', gap: 8, }}>
+      <Col flex={1}>
         <Text size="3xs" color={c.text}>{label.toUpperCase()}</Text>
         <Text size="md" color={c.text} style={{ marginTop: 4 }} selectable>{value}</Text>
-      </Box>
+      </Col>
       {onCopy ? (
         <Pressable onPress={onCopy} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="copy" size={18} color={c.text} />
         </Pressable>
       ) : null}
-    </Box>
+    </Row>
   );
 }
 
@@ -127,10 +123,10 @@ export function ProfileActions({ dark, opening, onMessage, onSend, c }: {
     </Box>
   );
   return (
-    <Box style={{ flexDirection: 'row', gap: 12, marginTop: 18, justifyContent: 'flex-start' }}>
+    <Row style={{ gap: 12, marginTop: 18, justifyContent: 'flex-start' }}>
       <Btn icon="chatRect" label={opening ? 'Opening…' : 'Message'} onPress={onMessage} disabled={opening} />
       <Btn icon="send" label="Send" onPress={onSend} />
-    </Box>
+    </Row>
   );
 }
 

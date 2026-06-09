@@ -9,7 +9,7 @@ import { Pressable } from '@metro-labs/kit/pressable';
 import { Input } from '@metro-labs/kit/input';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
-import { Box } from '../../components/layout';
+import { Box, Row } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
 import { flash } from '../../lib/toast';
 import {
@@ -51,17 +51,15 @@ function LabelChip({ label, busy, onRemove, p }: {
   label: string; busy: boolean; onRemove: () => void; p: Pal;
 }): React.ReactElement {
   return (
-    <Box style={{
-      flexDirection: 'row', alignItems: 'center', gap: 6,
+    <Row style={{ alignItems: 'center', gap: 6,
       paddingLeft: 12, paddingRight: 8, paddingVertical: 6, borderRadius: 999,
       backgroundColor: p.rowBg,
-      opacity: busy ? 0.5 : 1,
-    }}>
+      opacity: busy ? 0.5 : 1, }}>
       <Text size="xs" color={p.fg}>{label}</Text>
       <Pressable onPress={onRemove} disabled={busy} hitSlop={8} style={{ padding: 2 }}>
         <Icon name="x" size={14} color={p.sub} />
       </Pressable>
-    </Box>
+    </Row>
   );
 }
 
@@ -117,13 +115,13 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
 
   return (
     <Box style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
-      <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+      <Row style={{ alignItems: 'center', gap: 6 }}>
         <Icon name="tag" size={13} color={sub} />
         <Text size="xs" color={sub}>LABELS</Text>
-      </Box>
+      </Row>
 
       {labels.length > 0 ? (
-        <Box style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+        <Row style={{ flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
           {labels.map((label) => (
             <LabelChip
               key={label.toLowerCase()}
@@ -133,11 +131,11 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
               p={p}
             />
           ))}
-        </Box>
+        </Row>
       ) : null}
 
       {!atCap ? (
-        <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 }}>
+        <Row style={{ alignItems: 'center', gap: 8, marginTop: 10 }}>
           <Input
             value={draft}
             onChangeText={setDraft}
@@ -167,7 +165,7 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
             {busy ? <Spinner size={14} color={fg} /> : <Icon name="plus" size={14} color={fg} />}
             <Text size="xs" color={fg}>Add</Text>
           </Pressable>
-        </Box>
+        </Row>
       ) : (
         <Text size="xs" color={sub} style={{ marginTop: 8 }}>
           Label limit reached ({MAX_LABELS}).
@@ -175,7 +173,7 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
       )}
 
       {!atCap && suggestions.length > 0 ? (
-        <Box style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+        <Row style={{ flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
           {suggestions.map((label) => (
             <SuggestionChip
               key={label.toLowerCase()}
@@ -185,7 +183,7 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
               p={p}
             />
           ))}
-        </Box>
+        </Row>
       ) : null}
     </Box>
   );

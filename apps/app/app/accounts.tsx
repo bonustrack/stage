@@ -8,7 +8,7 @@ import { Pressable } from '@metro-labs/kit/pressable';
 
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { Title } from '@metro-labs/kit/title';
-import { Box } from '../components/layout';
+import { Row, Col } from '../components/layout';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
@@ -22,26 +22,24 @@ export default function Accounts(): React.ReactElement {
   const insets = useSafeAreaInsets();
 
   return (
-    <Box style={{ flex: 1, backgroundColor: bg }}>
+    <Col flex={1} style={{ backgroundColor: bg }}>
       {/* Topnav: back + title, mirroring the search page. Paints toolbarBg +
           absorbs the top inset so the bar reaches the screen edge. */}
-      <Box style={{
-        flexDirection: 'row', alignItems: 'center', gap: 8,
+      <Row style={{ alignItems: 'center', gap: 8,
         paddingHorizontal: 12, paddingTop: 8 + insets.top, paddingBottom: 10,
         borderBottomWidth: 1, borderBottomColor: border,
-        backgroundColor: toolbarBg,
-      }}>
+        backgroundColor: toolbarBg, }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg} />
         </Pressable>
         <Title size="sm" dark={dark} color={head}>
           Accounts
         </Title>
-      </Box>
+      </Row>
 
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}>
         <AccountsManager dark={dark} flat onSwitched={() => router.back()} />
       </ScrollView>
-    </Box>
+    </Col>
   );
 }

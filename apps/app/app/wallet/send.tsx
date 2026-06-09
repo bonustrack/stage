@@ -14,7 +14,7 @@
  *  a token (e.g. from a token detail page's Send button). */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
-import { Box } from '../../components/layout';
+import { Col } from '../../components/layout';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { SendHeader } from './send.fields';
@@ -68,7 +68,7 @@ export default function WalletSend(): React.ReactElement {
   const { footer, report: reportFooter, onSubmit: footerSubmit } = useFooterReporter();
 
   return (
-    <Box style={{ flex: 1, backgroundColor: bg }}>
+    <Col flex={1} style={{ backgroundColor: bg }}>
       <SendHeader fg={fg} head={head} border={border} onBack={() => router.back()} />
 
       <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled"
@@ -89,6 +89,6 @@ export default function WalletSend(): React.ReactElement {
           submitLabel={footer.submitLabel} onSubmit={footerSubmit}
           submitDisabled={footer.submitDisabled} submitLoading={footer.submitLoading} />
       ) : null}
-    </Box>
+    </Col>
   );
 }

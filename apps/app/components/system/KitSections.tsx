@@ -2,7 +2,7 @@
  *  primitive shows a couple representative variants inline with sample props -
  *  no controls, no story indirection. */
 
-import { Box, Row } from '../layout';
+import { Box, Row, Col } from '../layout';
 import { Title } from '@metro-labs/kit/title';
 import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';
@@ -103,9 +103,9 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
           {LIST_ROWS.map((label) => (
             <ListViewItem key={label} dark={dark} onPress={() => {}}>
               <Icon name="cog" size={22} color={head} />
-              <Box style={{ flex: 1 }}>
+              <Col flex={1}>
                 <Text dark={dark} color={head} weight="medium" size="xl">{label}</Text>
-              </Box>
+              </Col>
               <Icon name="chevronRight" size={18} color={sub} />
             </ListViewItem>
           ))}

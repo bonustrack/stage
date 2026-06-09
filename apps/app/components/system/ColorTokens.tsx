@@ -9,7 +9,7 @@
 import { useState } from 'react';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Input } from '@metro-labs/kit/input';
-import { Box, Row } from '../layout';
+import { Box, Row, Col } from '../layout';
 import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';
 import { usePalette, useEffectiveColorScheme, type Palette } from '../../lib/theme';
@@ -56,7 +56,7 @@ function EditableSwatch({ name, tokenKey, value, scheme, p }: {
           borderWidth: 1, borderColor: p.border,
         }}
       />
-      <Box style={{ flex: 1, minWidth: 0 }}>
+      <Col flex={1} style={{ minWidth: 0 }}>
         <Text weight="semibold" size="md" color={p.head}>{name}</Text>
         <Input
           value={shown}
@@ -70,7 +70,7 @@ function EditableSwatch({ name, tokenKey, value, scheme, p }: {
             color: invalid ? '#eb4c5b' : p.sub, fontSize: fontSize('xs'), fontFamily: 'Calibre-Medium',
           }}
         />
-      </Box>
+      </Col>
       <AppModal visible={picking} onClose={closePicker}>
         <ColorPicker value={pending ?? value} onChange={setPending} p={p} />
         <Row gap={12} mt={20} style={{ alignItems: 'center' }}>
@@ -101,7 +101,7 @@ function RadiusRow({ p, name, value, onSet }: {
         width: 40, height: 40, borderRadius: Math.min(value, 20),
         backgroundColor: p.rowBg, borderWidth: 1, borderColor: p.head,
       }} />
-      <Box style={{ flex: 1, minWidth: 0 }}>
+      <Col flex={1} style={{ minWidth: 0 }}>
         <Text weight="semibold" size="md" color={p.head}>{name}</Text>
         <Input
           value={shown}
@@ -120,7 +120,7 @@ function RadiusRow({ p, name, value, onSet }: {
             color: p.sub, fontSize: fontSize('xs'), fontFamily: 'Calibre-Medium',
           }}
         />
-      </Box>
+      </Col>
     </Row>
   );
 }

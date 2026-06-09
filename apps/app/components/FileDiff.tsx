@@ -12,7 +12,7 @@ import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import { ListViewItem } from '@metro-labs/kit/list-view';
-import { Box } from './layout';
+import { Box, Row } from './layout';
 import type { Palette } from '../lib/theme';
 import type { DiffFile, DiffLine } from '../lib/diffParse';
 
@@ -66,16 +66,16 @@ export function FileDiff({ file, p, dark }: {
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <Box>
               {file.lines.map((ln, i) => (
-                <Box key={i} style={{ flexDirection: 'row', backgroundColor: lineBg(ln.kind, dark), minWidth: '100%' }}>
+                <Row key={i} style={{ backgroundColor: lineBg(ln.kind, dark), minWidth: '100%' }}>
                   {ln.kind === 'hunk' ? null : (
-                    <Box style={{ flexDirection: 'row', borderRightWidth: 1, borderRightColor: p.border }}>
+                    <Row style={{ borderRightWidth: 1, borderRightColor: p.border }}>
                       <Text size="3xs" color={p.text} style={{ width: 36, textAlign: 'right', opacity: 0.4, lineHeight: 18, paddingRight: 4 }}>
                         {gutter(ln.oldLine)}
                       </Text>
                       <Text size="3xs" color={p.text} style={{ width: 36, textAlign: 'right', opacity: 0.4, lineHeight: 18, paddingRight: 4 }}>
                         {gutter(ln.newLine)}
                       </Text>
-                    </Box>
+                    </Row>
                   )}
                   <Text size="xs" color={lineColor(ln.kind, p)} style={{ width: 12, marginLeft: 6, lineHeight: 18 }}>
                     {marker(ln.kind)}
@@ -83,7 +83,7 @@ export function FileDiff({ file, p, dark }: {
                   <Text size="xs" color={lineColor(ln.kind, p)} style={{ lineHeight: 18, paddingRight: 12 }}>
                     {ln.text || ' '}
                   </Text>
-                </Box>
+                </Row>
               ))}
             </Box>
           </ScrollView>

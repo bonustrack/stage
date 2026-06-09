@@ -40,7 +40,7 @@ export function DeveloperSettings(): React.ReactElement {
   };
 
   return (
-    <Box style={{ flex: 1, backgroundColor: bg }}>
+    <Col flex={1} style={{ backgroundColor: bg }}>
       <SystemHeader title="Developer" dark={dark} fg={fg} head={head} border={border} />
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <Text size="xs" color={sub} style={{ paddingHorizontal: 16, paddingTop: 20 }}>
@@ -63,6 +63,6 @@ export function DeveloperSettings(): React.ReactElement {
           </Row>
         </Box>
       </ScrollView>
-    </Box>
+    </Col>
   );
 }

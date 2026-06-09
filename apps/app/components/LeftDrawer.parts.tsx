@@ -2,7 +2,7 @@
  *  the line cap: the avatar header, the tap-to-switch accounts list, and the
  *  Profile/Settings nav row. Behaviour is identical to the inlined version. */
 
-import { Box } from './layout';
+import { Box, Col } from './layout';
 
 import { Avatar } from './Avatar';
 import { Text } from '@metro-labs/kit/text';
@@ -45,14 +45,14 @@ export function drawerAccountRows({ accounts, activeId, onSwitch, c, dark }: {
   return accounts.map((a) => (
     <ListViewItem key={a.id} dark={dark} onPress={() => onSwitch(a.id)}>
       <Avatar address={a.address} size={30} style={{ backgroundColor: c.border }} />
-      <Box style={{ flex: 1, minWidth: 0 }}>
+      <Col flex={1} style={{ minWidth: 0 }}>
         <Text weight="semibold" size="md" numberOfLines={1} color={c.head}>
           {getPeerName(a.address) ?? a.label ?? shortAddress(a.address)}
         </Text>
         <Text size="xs" numberOfLines={1} color={c.sub} style={{ marginTop: 1 }}>
           {shortAddress(a.address)}
         </Text>
-      </Box>
+      </Col>
       {a.id === activeId ? <Icon name="check" size={20} color={c.head} /> : null}
     </ListViewItem>
   ));
@@ -68,9 +68,9 @@ export function DrawerRow({ rowKey, icon, label, onPress, head, sub, dark }: {
   return (
     <ListViewItem key={rowKey} dark={dark} onPress={onPress}>
       <Icon name={icon} size={22} color={head} />
-      <Box style={{ flex: 1 }}>
+      <Col flex={1}>
         <Text size="xl" color={head}>{label}</Text>
-      </Box>
+      </Col>
       <Icon name="chevronRight" size={18} color={sub} />
     </ListViewItem>
   );

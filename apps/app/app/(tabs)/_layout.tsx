@@ -3,7 +3,7 @@
  *  active theme, no labels, status-bar inset baked into `sceneStyle.paddingTop`
  *  so individual screens don't have to reach for `useSafeAreaInsets` themselves. */
 
-import { Box } from '../../components/layout';
+import { Box, Col } from '../../components/layout';
 import { fontSize } from '@metro-labs/kit/tokens';
 import { Tabs, usePathname } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -47,7 +47,7 @@ export default function TabsLayout(): React.ReactElement {
   const tabBarHeight = 60 + insets.bottom;
 
   return (
-    <Box style={{ flex: 1, backgroundColor: bg }}>
+    <Col flex={1} style={{ backgroundColor: bg }}>
       {/* Status-bar inset filler: paint the top safe-area (behind the Android
           system icons) with toolbarBg so the tab topnavs - which start below
           insets.top - extend seamlessly to the very top edge. Sits under the
@@ -128,6 +128,6 @@ export default function TabsLayout(): React.ReactElement {
           <TabsPager />
         </Box>
       ) : null}
-    </Box>
+    </Col>
   );
 }

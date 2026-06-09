@@ -11,7 +11,7 @@ import { useEffect, useState } from 'react';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { Text } from '@metro-labs/kit/text';
-import { Box } from '../../components/layout';
+import { Box, Row, Col } from '../../components/layout';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -62,18 +62,16 @@ export default function WalletReceive(): React.ReactElement {
     : 'Scan or share this address to receive ETH or tokens on Ethereum mainnet.';
 
   return (
-    <Box style={{ flex: 1, backgroundColor: bg }}>
-      <Box style={{
-        flexDirection: 'row', alignItems: 'center', gap: 8,
+    <Col flex={1} style={{ backgroundColor: bg }}>
+      <Row style={{ alignItems: 'center', gap: 8,
         paddingHorizontal: 12, paddingTop: 8 + insets.top, paddingBottom: 10,
         borderBottomWidth: 1, borderBottomColor: border,
-        backgroundColor: toolbarBg,
-      }}>
+        backgroundColor: toolbarBg, }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg} />
         </Pressable>
         <Text weight="semibold" size="xl" color={head} style={{ flex: 1 }}>Receive</Text>
-      </Box>
+      </Row>
 
       <ScrollView contentContainerStyle={{ padding: 16, alignItems: 'center', gap: 16 }}>
         <ReceiveModeToggle
@@ -120,6 +118,6 @@ export default function WalletReceive(): React.ReactElement {
           {hint}
         </Text>
       </ScrollView>
-    </Box>
+    </Col>
   );
 }

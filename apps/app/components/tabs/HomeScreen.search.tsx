@@ -8,7 +8,7 @@ import { fontSize } from '@metro-labs/kit/tokens';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Icon } from '@metro-labs/kit/icon';
 import { Input } from '@metro-labs/kit/input';
-import { Box, Row } from '../layout';
+import { Row } from '../layout';
 import { useBlockRadius } from '../../lib/theme';
 import type { Row as RowT } from './HomeScreen.helpers';
 
@@ -46,11 +46,9 @@ export const ChannelsSearchBar = forwardRef<React.ComponentRef<typeof Input>, {
       <Pressable onPress={props.onClose} hitSlop={8}>
         <Icon name="arrowLeft" size={22} color={head} />
       </Pressable>
-      <Box style={{
-        flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8,
+      <Row flex={1} style={{ alignItems: 'center', gap: 8,
         backgroundColor: inputBg, borderRadius: blockRadius,
-        paddingHorizontal: 14, paddingVertical: 8,
-      }}>
+        paddingHorizontal: 14, paddingVertical: 8, }}>
         <Icon name="search" size={22} color={sub} />
         <Input
           ref={ref}
@@ -68,7 +66,7 @@ export const ChannelsSearchBar = forwardRef<React.ComponentRef<typeof Input>, {
             <Icon name="x" size={16} color={sub} />
           </Pressable>
         ) : null}
-      </Box>
+      </Row>
     </Row>
   );
 });

@@ -123,7 +123,7 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
          *  regardless of `fullWidth`. We want full-width rounded buttons, so we
          *  rely on `fullWidth` (alignSelf:'stretch' + width:'100%') instead. */}
         <Row gap={10} style={{ width: '100%', alignSelf: 'stretch' }}>
-          <Box style={{ flex: 1, alignSelf: 'stretch' }}>
+          <Col flex={1} style={{ alignSelf: 'stretch' }}>
             <Button
               variant="danger"
               size="lg"
@@ -136,8 +136,8 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
               tintFg={bg}
               onPress={onReject}
             />
-          </Box>
-          <Box style={{ flex: 1, alignSelf: 'stretch' }}>
+          </Col>
+          <Col flex={1} style={{ alignSelf: 'stretch' }}>
             <Button
               variant="primary"
               size="lg"
@@ -150,7 +150,7 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
               tintFg={bg}
               onPress={onApprove}
             />
-          </Box>
+          </Col>
         </Row>
       </Col>
     </Box>

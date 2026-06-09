@@ -12,7 +12,7 @@ import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import { ListView, ListViewItem } from '@metro-labs/kit/list-view';
-import { Box } from '../layout';
+import { Col } from '../layout';
 import { AppModal } from '../AppModal';
 import { useEffectiveColorScheme } from '../../lib/theme';
 
@@ -66,9 +66,9 @@ function OverflowRow({ icon, label, color, dark, onPress }: {
   return (
     <ListViewItem dark={dark} onPress={onPress}>
       <Icon name={icon} size={20} color={color} />
-      <Box style={{ flex: 1 }}>
+      <Col flex={1}>
         <Text size="xl" color={color}>{label}</Text>
-      </Box>
+      </Col>
     </ListViewItem>
   );
 }

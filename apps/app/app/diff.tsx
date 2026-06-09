@@ -13,7 +13,7 @@ import { Title } from '@metro-labs/kit/title';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import { ListView } from '@metro-labs/kit/list-view';
-import { Box } from '../components/layout';
+import { Box, Row, Col } from '../components/layout';
 import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import { useLayoutEffect } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -55,13 +55,11 @@ export default function Diff(): React.ReactElement {
     : (url ?? '');
 
   return (
-    <Box style={{ flex: 1, backgroundColor: p.bg }}>
-      <Box style={{
-        flexDirection: 'row', alignItems: 'center', gap: 8,
+    <Col flex={1} style={{ backgroundColor: p.bg }}>
+      <Row style={{ alignItems: 'center', gap: 8,
         paddingHorizontal: 12, paddingTop: 8 + insets.top, paddingBottom: 10,
         borderBottomWidth: 1, borderBottomColor: p.border,
-        backgroundColor: p.toolbarBg,
-      }}>
+        backgroundColor: p.toolbarBg, }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={p.text} />
         </Pressable>
@@ -73,7 +71,7 @@ export default function Diff(): React.ReactElement {
             <Icon name="link" size={20} color={p.link} />
           </Pressable>
         ) : null}
-      </Box>
+      </Row>
 
       <ScrollView contentContainerStyle={{ paddingTop: 12, paddingBottom: 24 + insets.bottom }}>
         {!ref ? (
@@ -111,13 +109,13 @@ export default function Diff(): React.ReactElement {
                   <Markdown {...mdProps}>{diff.body.trim()}</Markdown>
                 </Box>
               ) : null}
-              <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12, paddingHorizontal: 2 }}>
+              <Row style={{ alignItems: 'center', gap: 12, marginBottom: 12, paddingHorizontal: 2 }}>
                 <Text size="xs" color={p.text} style={{ opacity: 0.6 }}>
                   {diff?.files.length} {diff?.files.length === 1 ? 'file' : 'files'} changed
                 </Text>
                 <Text weight="semibold" size="md" color={p.success}>+{diff?.additions ?? 0}</Text>
                 <Text weight="semibold" size="md" color={p.danger}>-{diff?.deletions ?? 0}</Text>
-              </Box>
+              </Row>
             </Box>
             <ListView dark={dark} style={{ borderTopWidth: 1, borderTopColor: p.border }}>
               {(diff?.files ?? []).map(f => <FileDiff key={f.filename} file={f} p={p} dark={dark} />)}
@@ -125,6 +123,6 @@ export default function Diff(): React.ReactElement {
           </>
         )}
       </ScrollView>
-    </Box>
+    </Col>
   );
 }

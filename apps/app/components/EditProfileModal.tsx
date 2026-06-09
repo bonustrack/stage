@@ -12,7 +12,7 @@ import { Input } from '@metro-labs/kit/input';
 import { Textarea } from '@metro-labs/kit/textarea';
 import { Avatar } from './Avatar';
 import { Text } from '@metro-labs/kit/text';
-import { Box } from './layout';
+import { Box, Row } from './layout';
 import { Button } from '@metro-labs/kit/button';
 import { Spinner } from './Spinner';
 import { Icon } from '@metro-labs/kit/icon';
@@ -97,14 +97,12 @@ export default function EditProfileModal({
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {/** No title / Cancel chrome — a single close X is the dismiss affordance
          *  (this is a full-screen modal with no backdrop tap). */}
-        <Box style={{
-          flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end',
-          paddingHorizontal: 16, paddingTop: insets.top + 12, paddingBottom: 12,
-        }}>
+        <Row style={{ alignItems: 'center', justifyContent: 'flex-end',
+          paddingHorizontal: 16, paddingTop: insets.top + 12, paddingBottom: 12, }}>
           <Pressable onPress={onClose} disabled={saving} hitSlop={10}>
             <Icon name="x" size={24} color={head} />
           </Pressable>
-        </Box>
+        </Row>
         <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
           <Box style={{ alignItems: 'center', marginBottom: 20 }}>
             <Pressable onPress={pickAvatar} disabled={uploading}>

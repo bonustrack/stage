@@ -6,7 +6,7 @@ import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Box } from '../layout';
+import { Col } from '../layout';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Text } from '@metro-labs/kit/text';
 import { ListView, ListViewItem } from '@metro-labs/kit/list-view';
@@ -37,21 +37,21 @@ export function SettingsMenu(): React.ReactElement {
   const insets = useSafeAreaInsets();
 
   return (
-    <Box style={{ flex: 1, backgroundColor: bg }}>
+    <Col flex={1} style={{ backgroundColor: bg }}>
       <SystemHeader title="Settings" dark={dark} fg={fg} head={head} border={border} />
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <ListView dark={dark}>
           {ROWS.map((row) => (
             <ListViewItem key={row.href} dark={dark} onPress={() => router.push(row.href)}>
               <Icon name={row.icon} size={22} color={head} />
-              <Box style={{ flex: 1 }}>
+              <Col flex={1}>
                 <Text size="xl" color={head}>{row.label}</Text>
-              </Box>
+              </Col>
               <Icon name="chevronRight" size={18} color={sub} />
             </ListViewItem>
           ))}
         </ListView>
       </ScrollView>
-    </Box>
+    </Col>
   );
 }

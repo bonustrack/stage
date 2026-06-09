@@ -14,7 +14,7 @@
 import { useState } from 'react';
 import { fontSize } from '@metro-labs/kit/tokens';
 import { Textarea } from '@metro-labs/kit/textarea';
-import { Box } from './layout';
+import { Row } from './layout';
 import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';
 import * as Clipboard from 'expo-clipboard';
@@ -124,7 +124,7 @@ export function useDrawerAccountActions({ head, sub, border, dark, onChanged }: 
         {err ? (
           <Text size="xs" color={DANGER} style={{ marginBottom: 8 }}>{err}</Text>
         ) : null}
-        <Box style={{ flexDirection: 'row', gap: 8 }}>
+        <Row style={{ gap: 8 }}>
           <Button
             variant="secondary" size="md" fullWidth dark={dark} label="Paste" style={{ flex: 1 }}
             onPress={() => void (async () => {
@@ -138,7 +138,7 @@ export function useDrawerAccountActions({ head, sub, border, dark, onChanged }: 
             disabled={!text.trim() || busy}
             onPress={onImport}
           />
-        </Box>
+        </Row>
       </AppModal>
   );
 

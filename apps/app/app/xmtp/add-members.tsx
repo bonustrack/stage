@@ -23,7 +23,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { addGroupMembers } from '../../modules/messaging';
 import { flash } from '../../lib/toast';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { Box } from '../../components/layout';
+import { Box, Row, Col } from '../../components/layout';
 import { useConvMeta } from '../../lib/useConvMeta';
 import { MemberPicker, useMemberPicker } from './MemberPicker';
 
@@ -55,21 +55,19 @@ export default function AddMembers(): React.ReactElement {
   }, [members, submitting, convId, router]);
 
   return (
-    <Box style={{ flex: 1, backgroundColor: bg }}>
+    <Col flex={1} style={{ backgroundColor: bg }}>
       {/* Header — back button + title, consistent with other pushed screens. */}
-      <Box style={{
-        flexDirection: 'row', alignItems: 'center', gap: 8,
+      <Row style={{ alignItems: 'center', gap: 8,
         paddingHorizontal: 12, paddingTop: 8 + insets.top, paddingBottom: 10,
         borderBottomWidth: 1, borderBottomColor: border,
-        backgroundColor: toolbarBg,
-      }}>
+        backgroundColor: toolbarBg, }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg} />
         </Pressable>
         <Title size="sm" dark={dark} color={head}>
           Add members
         </Title>
-      </Box>
+      </Row>
 
       <ScrollView
         contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 24 + insets.bottom }}
@@ -94,6 +92,6 @@ export default function AddMembers(): React.ReactElement {
           label={members.length > 0 ? `Add to group (${members.length})` : 'Add to group'}
         />
       </Box>
-    </Box>
+    </Col>
   );
 }

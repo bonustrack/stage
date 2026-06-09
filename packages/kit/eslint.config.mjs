@@ -13,6 +13,20 @@ export default tseslint.config(
       "@typescript-eslint/no-explicit-any": "error",
       // `error`: cap hand-written files at 400 lines. Split rather than cross it.
       "max-lines": ["error", { max: 400, skipBlankLines: false, skipComments: false }],
+      // Layout: a `<Box>` is direction-neutral - it must NOT set `flex` or
+      // `flexDirection` in its style. Use Row (flexDirection 'row') or Col
+      // (column, the default View axis), and pass flex-grow via the `flex` PROP
+      // (<Col flex={1}>), never a style flex. Only `<Box>` is matched - Row/Col
+      // set flexDirection internally (via the `direction` prop) and are exempt.
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "JSXOpeningElement[name.name='Box'] > JSXAttribute[name.name='style'] > JSXExpressionContainer ObjectExpression > Property[key.name=/^(flex|flexDirection)$/]",
+          message:
+            "Box must not set flex/flexDirection in style. Use Row (flexDirection:'row') or Col (column, the default), and pass flex-grow via the `flex` prop (<Col flex={1}>) instead of a style flex.",
+        },
+      ],
     },
   },
   // Token discipline (extends #394's apps/app rules into the Kit package itself,

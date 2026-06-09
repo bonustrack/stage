@@ -7,7 +7,7 @@ import { Input } from '@metro-labs/kit/input';
 import { Textarea } from '@metro-labs/kit/textarea';
 import { Image } from '@metro-labs/kit/image';
 import { Text } from '@metro-labs/kit/text';
-import { Box } from '../../components/layout';
+import { Box, Row } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
 import { Button } from '@metro-labs/kit/button';
 import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
@@ -97,7 +97,7 @@ export function GroupNameEditor({ name, draft, setDraft, editing, setEditing, sa
   return (
     <Box style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
       {editing ? (
-        <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 }}>
+        <Row style={{ alignItems: 'center', gap: 8, marginTop: 6 }}>
           <Input
             value={draft}
             onChangeText={setDraft}
@@ -112,7 +112,7 @@ export function GroupNameEditor({ name, draft, setDraft, editing, setEditing, sa
             }}
           />
           <SaveButton saving={saving} disabled={saving || !draft.trim()} onSave={onSave} dark={dark} />
-        </Box>
+        </Row>
       ) : (
         <Pressable onPress={() => setEditing(true)} hitSlop={6} style={{ marginTop: 6, alignItems: 'flex-start' }}>
           <Text weight="semibold" size="5xl" color={head} style={{ textAlign: 'left' }}>
@@ -135,7 +135,7 @@ export function GroupDescriptionEditor({ description, descriptionDraft, setDescr
     <Box style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
       <Text size="xs" color={sub}>DESCRIPTION</Text>
       {editing ? (
-        <Box style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 6 }}>
+        <Row style={{ alignItems: 'flex-start', gap: 8, marginTop: 6 }}>
           <Textarea
             value={descriptionDraft}
             onChangeText={setDescriptionDraft}
@@ -151,7 +151,7 @@ export function GroupDescriptionEditor({ description, descriptionDraft, setDescr
             }}
           />
           <SaveButton saving={saving} disabled={saving} onSave={onSave} dark={dark} />
-        </Box>
+        </Row>
       ) : (
         <Pressable onPress={() => setEditing(true)} hitSlop={6} style={{ marginTop: 6 }}>
           <Text size="md" color={description.trim() ? fg : sub}>

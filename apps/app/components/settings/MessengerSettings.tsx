@@ -10,7 +10,7 @@ import { Pressable } from '@metro-labs/kit/pressable';
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Box, Col } from '../layout';
+import { Col } from '../layout';
 import { Text } from '@metro-labs/kit/text';
 import { getOrCreateXmtpClient, resetXmtpClient, shortAddress, useActiveAccount } from '../../modules/messaging';
 import { resetAccount } from '../../lib/wallet';
@@ -64,7 +64,7 @@ export function MessengerSettings(): React.ReactElement {
 
   const c = { fg, sub, border, rowBg };
   return (
-    <Box style={{ flex: 1, backgroundColor: bg }}>
+    <Col flex={1} style={{ backgroundColor: bg }}>
       <SystemHeader title="Messenger" dark={dark} fg={fg} head={head} border={border} />
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <Text size="xs" color={sub} style={{ paddingHorizontal: 16, paddingTop: 20 }}>
@@ -104,6 +104,6 @@ export function MessengerSettings(): React.ReactElement {
           </Pressable>
         </Col>
       </ScrollView>
-    </Box>
+    </Col>
   );
 }

@@ -22,7 +22,7 @@ import { Alert, Modal, Platform } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Image } from '@metro-labs/kit/image';
 import { Text } from '@metro-labs/kit/text';
-import { Box } from './layout';
+import { Box, Col } from './layout';
 import { Spinner } from './Spinner';
 import * as MediaLibrary from 'expo-media-library';
 import { Directory, File, Paths } from 'expo-file-system';
@@ -101,7 +101,7 @@ export function ImageViewer({ uri, visible, onClose }: {
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Box style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.97)' }}>
+      <Col flex={1} style={{ backgroundColor: 'rgba(0,0,0,0.97)' }}>
         {/* Tap the backdrop (anywhere not on a control) to dismiss. */}
         <Pressable
           onPress={onClose}
@@ -141,7 +141,7 @@ export function ImageViewer({ uri, visible, onClose }: {
             </Text>
           </Pressable>
         </Box>
-      </Box>
+      </Col>
     </Modal>
   );
 }

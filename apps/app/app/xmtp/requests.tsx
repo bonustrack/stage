@@ -24,7 +24,7 @@ import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { usePeerProfiles, getPeerName, getPeerAvatarCb } from '../../lib/peerProfiles';
 import { Icon } from '@metro-labs/kit/icon';
 import { ChannelRow } from '../../components/ChannelRow';
-import { Box, Col, Row } from '../../components/layout';
+import { Col, Row } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
 
 /** Message-request row view-model. The shape lives on the facade's
@@ -69,7 +69,7 @@ export default function Requests(): React.ReactElement {
          pinned on the right. ChannelRow flexes to fill; the actions sit beside
          it (paddingRight on the row keeps the buttons off the screen edge). */
       <Row align="center" style={{ paddingRight: 12 }}>
-        <Box style={{ flex: 1, minWidth: 0 }}>
+        <Col flex={1} style={{ minWidth: 0 }}>
           <ChannelRow
             title={displayTitle}
             avatarAddress={item.avatarAddress}
@@ -79,7 +79,7 @@ export default function Requests(): React.ReactElement {
             lastPreview={item.preview || '(no messages yet)'}
             onPress={() => router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } })}
           />
-        </Box>
+        </Col>
         <Row gap={8} style={{ flexShrink: 0 }}>
           <Pressable
             onPress={() => act(item.convId, false)}
@@ -101,20 +101,18 @@ export default function Requests(): React.ReactElement {
   }, [router, act, border, danger, dark]);
 
   return (
-    <Box style={{ flex: 1, backgroundColor: bg }}>
-      <Box style={{
-        flexDirection: 'row', alignItems: 'center', gap: 8,
+    <Col flex={1} style={{ backgroundColor: bg }}>
+      <Row style={{ alignItems: 'center', gap: 8,
         paddingHorizontal: 12, paddingTop: 8 + insets.top, paddingBottom: 10,
         borderBottomWidth: 1, borderBottomColor: border,
-        backgroundColor: toolbarBg,
-      }}>
+        backgroundColor: toolbarBg, }}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg} />
         </Pressable>
         <Title size="sm" dark={dark} color={head}>
           Message requests
         </Title>
-      </Box>
+      </Row>
 
       {!rows ? (
         <Col flex={1} align="center" justify="center">
@@ -135,6 +133,6 @@ export default function Requests(): React.ReactElement {
           }
         />
       )}
-    </Box>
+    </Col>
   );
 }
