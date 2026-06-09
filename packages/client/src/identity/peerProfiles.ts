@@ -10,7 +10,7 @@
  *  This is the framework-agnostic core. The React `usePeerProfiles` hook stays
  *  in apps/app and subscribes via {@link subscribePeerProfiles}. */
 
-import { SNAPSHOT_HUB_GRAPHQL, getCacheHash } from '../profile/snapshot';
+import { SNAPSHOT_HUB_GRAPHQL, STAMP_URL, getCacheHash } from '../profile/snapshot';
 
 export interface PeerProfile {
   name?: string;
@@ -26,34 +26,60 @@ function notify(): void {
   listeners.forEach(l => l());
 }
 
-async function fetchBatch(addrs: string[]): Promise<void> {
-  const query =
-    'query($ids:[String]!){ users(where:{id_in:$ids}){ id name avatar about } }';
+/** Resolve display names from stamp.fyi (`lookup_addresses` → ENS), the same
+ *  source Snapshot's own UI uses. The hub `users.name` field stopped being
+ *  populated, so names MUST come from here now. Returns a lower-cased
+ *  `{ address → name }` map; addresses with no ENS are simply absent. */
+async function lookupNames(addrs: string[]): Promise<Record<string, string>> {
   try {
-    const res = await fetch(SNAPSHOT_HUB_GRAPHQL, {
+    const res = await fetch(STAMP_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ query, variables: { ids: addrs } }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ method: 'lookup_addresses', params: addrs }),
     });
     const json = await res.json();
+    const result: Record<string, string> = json?.result ?? {};
+    const out: Record<string, string> = {};
+    for (const [addr, name] of Object.entries(result)) {
+      if (name && name.trim()) out[addr.toLowerCase()] = name.trim();
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+async function fetchBatch(addrs: string[]): Promise<void> {
+  /** Names come from stamp/ENS; avatar + about still come from the Snapshot hub
+   *  profile. Run both in parallel and merge per address. */
+  const query =
+    'query($ids:[String]!){ users(where:{id_in:$ids}){ id avatar about } }';
+  try {
+    const [names, json] = await Promise.all([
+      lookupNames(addrs),
+      fetch(SNAPSHOT_HUB_GRAPHQL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ query, variables: { ids: addrs } }),
+      }).then(r => r.json()).catch(() => null),
+    ]);
     const users: {
       id: string;
-      name?: string | null;
       avatar?: string | null;
       about?: string | null;
     }[] = json?.data?.users ?? [];
-    const seen = new Set<string>();
-    for (const u of users) {
-      const id = (u.id ?? '').toLowerCase();
-      store.set(id, {
-        name: u.name ?? undefined,
-        avatar: u.avatar ?? undefined,
-        about: u.about ?? undefined,
+    const hub = new Map<string, { avatar?: string | null; about?: string | null }>();
+    for (const u of users) hub.set((u.id ?? '').toLowerCase(), u);
+    /** Merge name (stamp) + avatar/about (hub) for every requested address, so
+     *  every address resolves to a cached entry (empty {} when nothing found). */
+    for (const a of addrs) {
+      const u = hub.get(a);
+      store.set(a, {
+        name: names[a],
+        avatar: u?.avatar ?? undefined,
+        about: u?.about ?? undefined,
       });
-      seen.add(id);
     }
-    /** Cache misses as empty so we don't refetch them every render. */
-    for (const a of addrs) if (!seen.has(a)) store.set(a, {});
   } catch {
     /* leave unresolved — a later ensure() retries */
   } finally {

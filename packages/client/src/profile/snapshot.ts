@@ -6,6 +6,11 @@
 /** GraphQL endpoint for read queries (profile, spaces, …). */
 export const SNAPSHOT_HUB_GRAPHQL = 'https://hub.snapshot.org/graphql';
 
+/** stamp.fyi JSON-RPC endpoint. Snapshot's own UI resolves display names from
+ *  here (`lookup_addresses` → ENS); the hub `users.name` field is no longer
+ *  populated, so display names must come from stamp now. */
+export const STAMP_URL = 'https://stamp.fyi';
+
 /** Sequencer accepts user-signed EIP-712 envelopes (vote, follow, updateUser…). */
 export const SNAPSHOT_SEQUENCER_URL = 'https://seq.snapshot.org';
 
