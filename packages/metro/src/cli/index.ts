@@ -10,6 +10,7 @@ import { readHistory } from '../history.js';
 import { cmdDoctor, cmdSetup, cmdUpdate } from './config.js';
 import { cmdClaim, cmdClaims, cmdRelease, cmdTail } from './tail.js';
 import { cmdCall, cmdTrains, cmdTunnel, cmdWebhook } from './webhook.js';
+import { cmdSchema } from './schema-cmd.js';
 import {
   cmdDelete, cmdEdit, cmdRead, cmdReact, cmdReply, cmdSend, cmdUnreact,
 } from './messaging.js';
@@ -68,6 +69,8 @@ Usage:
   metro group add | remove <line> <0xaddr…>   Add/remove group members.
   metro dm <0xaddress> [--account <id>]       Open (or reuse) a DM; prints its line.
   metro board [tail flags]                    Alias of \`metro tail\` (Metro-transit naming).
+  metro schema [station] [--json]             Dump the verb registry (human table or JSON). Alias: verbs.
+  metro verbs  [station]                       List all registered station/core verbs.
   metro call <train> <action> [args]          Low-level escape hatch: forward an action to a train.
                                               [args] is JSON, '@file', '-' (stdin), or a bare string.
   metro history [--limit=N] [--line=…] [--station=…] [--from=…] [--text=…] [--since=…]
@@ -191,6 +194,7 @@ const COMMANDS: Record<string, (positional: string[], flags: Flags) => Promise<v
   channel: cmdChannel, group: cmdGroup, dm: cmdDm,
   // Metro-transit naming alias: `board` reads the same feed as `tail`.
   board: cmdTail,
+  schema: cmdSchema, verbs: cmdSchema,
 };
 
 async function main(): Promise<void> {
