@@ -3,6 +3,7 @@
  *  (export / remove account). Reached from the LeftDrawer's "Settings" row. */
 
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
+
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box } from '../layout';
@@ -44,7 +45,7 @@ export function SettingsMenu(): React.ReactElement {
             <ListViewItem key={row.href} dark={dark} onPress={() => router.push(row.href)}>
               <Icon name={row.icon} size={22} color={head} />
               <Box style={{ flex: 1 }}>
-                <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Medium' }}>{row.label}</Text>
+                <Text size="xl" color={head}>{row.label}</Text>
               </Box>
               <Icon name="chevronRight" size={18} color={sub} />
             </ListViewItem>

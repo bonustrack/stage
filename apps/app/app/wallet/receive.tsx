@@ -7,6 +7,7 @@
  *  needed) layered on react-native-svg which the app already depends on. */
 
 import { useEffect, useState } from 'react';
+
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { Text } from '@metro-labs/kit/text';
@@ -71,7 +72,7 @@ export default function WalletReceive(): React.ReactElement {
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg} />
         </Pressable>
-        <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', flex: 1 }}>Receive</Text>
+        <Text weight="semibold" size="xl" color={head} style={{ flex: 1 }}>Receive</Text>
       </Box>
 
       <ScrollView contentContainerStyle={{ padding: 16, alignItems: 'center', gap: 16 }}>
@@ -99,7 +100,7 @@ export default function WalletReceive(): React.ReactElement {
           )}
         </Box>
 
-        <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', marginTop: 4 }}>
+        <Text size="xs" color={sub} style={{ marginTop: 4 }}>
           {activeMode === 'private' ? 'SHIELDED 0ZK ADDRESS (tap to copy)' : 'WALLET ADDRESS (tap to copy)'}
         </Text>
         <Pressable
@@ -110,12 +111,12 @@ export default function WalletReceive(): React.ReactElement {
             borderWidth: 1, borderColor: border,
           })}
         >
-          <Text style={{ color: head, fontSize: 14, fontFamily: 'Calibre-Medium', textAlign: 'center' }} selectable>
+          <Text size="md" color={head} style={{ textAlign: 'center' }} selectable>
             {address || '—'}
           </Text>
         </Pressable>
 
-        <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', textAlign: 'center', paddingHorizontal: 16, marginTop: 8 }}>
+        <Text size="xs" color={sub} style={{ textAlign: 'center', paddingHorizontal: 16, marginTop: 8 }}>
           {hint}
         </Text>
       </ScrollView>

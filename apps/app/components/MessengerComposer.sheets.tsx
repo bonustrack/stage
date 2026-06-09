@@ -4,6 +4,7 @@
  *  props. */
 
 import { Pressable } from '@metro-labs/kit/pressable';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Input } from '@metro-labs/kit/input';
 import { Textarea } from '@metro-labs/kit/textarea';
 import { Text } from '@metro-labs/kit/text';
@@ -37,7 +38,7 @@ export function PollSheet({
           placeholder="Question"
           placeholderTextColor={sub}
           dark={dark}
-          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 16, minHeight: 0 }}
+          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: fontSize('lg'), minHeight: 0 }}
         />
         <Input
           value={header}
@@ -46,7 +47,7 @@ export function PollSheet({
           placeholderTextColor={sub}
           dark={dark}
           inputProps={{ maxLength: 12, autoCapitalize: 'characters' }}
-          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 14, minHeight: 0 }}
+          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: fontSize('sm'), minHeight: 0 }}
         />
         {options.map((opt, i) => (
           <Row key={i} align="center" gap={8}>
@@ -56,7 +57,7 @@ export function PollSheet({
               placeholder={`Option ${i + 1}`}
               placeholderTextColor={sub}
               dark={dark}
-              style={{ flex: 1, color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 16, minHeight: 0 }}
+              style={{ flex: 1, color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: fontSize('lg'), minHeight: 0 }}
             />
             {options.length > 2 ? (
               <Pressable onPress={() => setOptions(prev => prev.filter((_, j) => j !== i))} hitSlop={8}>
@@ -77,7 +78,7 @@ export function PollSheet({
           onPress={() => setMulti(m => !m)}
           style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 }}
         >
-          <Text style={{ color: fg, fontSize: 15, fontFamily: 'Calibre-Medium' }}>Allow multiple choices</Text>
+          <Text size="md" color={fg}>Allow multiple choices</Text>
           <Box style={{
             width: 44, height: 26, borderRadius: 999, padding: 3,
             backgroundColor: multi ? '#c0a06e' : inputBg,
@@ -130,7 +131,7 @@ export function SignatureSheet({
                 backgroundColor: kind === k ? 'rgba(192,160,110,0.15)' : inputBg,
               }}
             >
-              <Text style={{ color: kind === k ? '#c0a06e' : fg, fontSize: 14, fontFamily: 'Calibre-Semibold' }}>{label}</Text>
+              <Text weight="semibold" size="sm" color={kind === k ? '#c0a06e' : fg}>{label}</Text>
             </Pressable>
           ))}
         </Row>
@@ -140,7 +141,7 @@ export function SignatureSheet({
           placeholder="Description (e.g. Sign in to dapp)"
           placeholderTextColor={sub}
           dark={dark}
-          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 15, minHeight: 0 }}
+          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: fontSize('md'), minHeight: 0 }}
         />
         {kind === 'personal' ? (
           <Textarea
@@ -149,7 +150,7 @@ export function SignatureSheet({
             placeholder="Message to sign"
             placeholderTextColor={sub}
             dark={dark}
-            style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, minHeight: 80, height: undefined, fontFamily: 'Calibre-Medium', fontSize: 15, textAlignVertical: 'top' }}
+            style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, minHeight: 80, height: undefined, fontFamily: 'Calibre-Medium', fontSize: fontSize('md'), textAlignVertical: 'top' }}
           />
         ) : (
           <Textarea
@@ -159,7 +160,7 @@ export function SignatureSheet({
             placeholderTextColor={sub}
             dark={dark}
             inputProps={{ autoCapitalize: 'none', autoCorrect: false }}
-            style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, minHeight: 160, height: undefined, fontFamily: 'Calibre-Medium', fontSize: 13, textAlignVertical: 'top' }}
+            style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, minHeight: 160, height: undefined, fontFamily: 'Calibre-Medium', fontSize: fontSize('xs'), textAlignVertical: 'top' }}
           />
         )}
         <Button
@@ -200,7 +201,7 @@ export function PaymentSheet({
           placeholderTextColor={sub}
           dark={dark}
           inputProps={{ autoCapitalize: 'none', autoCorrect: false }}
-          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 14, minHeight: 0 }}
+          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: fontSize('sm'), minHeight: 0 }}
         />
         <Input
           value={amount}
@@ -210,7 +211,7 @@ export function PaymentSheet({
           inputType="number"
           dark={dark}
           inputProps={{ keyboardType: 'decimal-pad' }}
-          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 16, minHeight: 0 }}
+          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: fontSize('lg'), minHeight: 0 }}
         />
         <Input
           value={note}
@@ -218,7 +219,7 @@ export function PaymentSheet({
           placeholder="Note (optional)"
           placeholderTextColor={sub}
           dark={dark}
-          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: 16, minHeight: 0 }}
+          style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: fontSize('lg'), minHeight: 0 }}
         />
         <Button
           variant="primary"

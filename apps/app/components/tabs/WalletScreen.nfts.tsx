@@ -2,6 +2,7 @@
  *  line-budget. Rendering identical. */
 
 import { Linking } from 'react-native';
+
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Image } from '@metro-labs/kit/image';
 import { Spinner } from '../Spinner';
@@ -32,7 +33,7 @@ export function NftsView({
   if (status === 'error') {
     return (
       <Col mx={16} py={40} align="center">
-        <Text style={{ color: DANGER, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
+        <Text size="md" color={DANGER}>
           Failed to load NFTs.
         </Text>
       </Col>
@@ -41,7 +42,7 @@ export function NftsView({
   if (!nfts || nfts.length === 0) {
     return (
       <Col mx={16} py={40} align="center">
-        <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
+        <Text size="md" color={sub}>
           There are no NFTs in this wallet.
         </Text>
       </Col>
@@ -71,14 +72,12 @@ export function NftsView({
                 <Icon name="photo" size={28} color={sub} />
               </Box>
             )}
-            <Text
-              numberOfLines={1}
-              style={{ color: head, fontSize: 15, fontFamily: 'Calibre-Semibold', marginTop: 6 }}
-            >
+            <Text weight="semibold" size="md"
+              numberOfLines={1} color={head} style={{ marginTop: 6 }}>
               {nft.title}
             </Text>
             {nft.collection ? (
-              <Text numberOfLines={1} style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+              <Text size="xs" numberOfLines={1} color={sub}>
                 {nft.collection}
               </Text>
             ) : null}

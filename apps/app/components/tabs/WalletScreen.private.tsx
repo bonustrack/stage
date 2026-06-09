@@ -9,6 +9,7 @@
  *  tab reads. On a build with neither the native prover nor the Node bridge it
  *  shows a friendly "coming soon" rather than erroring. */
 import { Pressable } from '@metro-labs/kit/pressable';
+
 import * as Clipboard from 'expo-clipboard';
 import { Text } from '@metro-labs/kit/text';
 import { Col, Row } from '../layout';
@@ -42,8 +43,8 @@ export function PrivateView({ head, sub, border }: {
   if (!isRailgunAvailable() && !isBridgeAvailable()) {
     return (
       <Col mx={16} py={40} align="center" gap={6}>
-        <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>Private balances</Text>
-        <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium', textAlign: 'center' }}>
+        <Text weight="semibold" size="md" color={head}>Private balances</Text>
+        <Text size="md" color={sub} style={{ textAlign: 'center' }}>
           Shielded transfers arrive in the next app build.
         </Text>
         {/* Bridge ping works without the native prover - let Less test the
@@ -63,8 +64,8 @@ export function PrivateView({ head, sub, border }: {
         }}
         style={{ paddingVertical: 10 }}
       >
-        <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>PRIVATE ADDRESS</Text>
-        <Text style={{ color: head, fontSize: 15, fontFamily: 'Calibre-Semibold', marginTop: 2 }}>
+        <Text size="xs" color={sub}>PRIVATE ADDRESS</Text>
+        <Text weight="semibold" size="md" color={head} style={{ marginTop: 2 }}>
           {snapshot?.zkAddress ? short0zk(snapshot.zkAddress) : '…'}
         </Text>
       </Pressable>
@@ -73,10 +74,10 @@ export function PrivateView({ head, sub, border }: {
           ~20-30s proof; each in-flight action shows its phase here. */}
       {live.map(p => (
         <Row key={p.id} align="center" gap={8} py={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-          <Text style={{ color: head, fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
+          <Text weight="semibold" size="md" color={head}>
             {p.kind === 'shield' ? 'Shielding' : p.kind === 'unshield' ? 'Unshielding' : 'Sending'} {p.symbol}
           </Text>
-          <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+          <Text size="xs" color={sub}>
             {p.phase === 'proving' ? 'generating proof…' : 'broadcasting…'}
           </Text>
         </Row>

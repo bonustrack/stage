@@ -7,6 +7,7 @@
  *  that otherwise live behind the avatar Menu page. */
 
 import { useState } from 'react';
+
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
@@ -66,7 +67,7 @@ function OverflowRow({ icon, label, color, dark, onPress }: {
     <ListViewItem dark={dark} onPress={onPress}>
       <Icon name={icon} size={20} color={color} />
       <Box style={{ flex: 1 }}>
-        <Text style={{ color, fontSize: 18, fontFamily: 'Calibre-Medium' }}>{label}</Text>
+        <Text size="xl" color={color}>{label}</Text>
       </Box>
     </ListViewItem>
   );

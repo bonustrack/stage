@@ -8,6 +8,7 @@
  *  Styled to match TokenRow but muted: dimmed text, a small spinner in place of
  *  the avatar, and an "arriving" sub-line. Tapping does nothing (no detail yet). */
 import { Text } from '@metro-labs/kit/text';
+
 import { Col, Row, Box } from '../layout';
 import { Spinner } from '../Spinner';
 import type { PendingAction } from '../../lib/railgun/types';
@@ -32,15 +33,15 @@ export function PendingShieldRow({ p, pal }: { p: PendingAction; pal: Pal }): Re
         <Spinner size={16} color={sub} />
       </Box>
       <Col flex={1} style={{ minWidth: 0 }}>
-        <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
+        <Text weight="semibold" size="xl" color={head} numberOfLines={1}>
           {p.symbol}
         </Text>
-        <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
+        <Text size="md" color={sub} style={{ marginTop: 2 }}>
           Pending shield · {phaseLabel(p.phase)}
         </Text>
       </Col>
       <Col align="end">
-        <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
+        <Text size="md" color={sub}>
           +{p.delta} {p.symbol}
         </Text>
       </Col>

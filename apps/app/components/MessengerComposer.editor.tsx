@@ -3,6 +3,7 @@
  *  lint line-budget. JSX + behavior identical — state owned by the parent. */
 
 import type { RefObject } from 'react';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Animated, type PanResponderInstance } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
@@ -65,7 +66,7 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
               selection: p.selection,
               onSelectionChange: (e) => p.setSelection(e.nativeEvent.selection),
             }}
-            style={{ color: head, fontFamily: 'Calibre-Medium', fontSize: 19, lineHeight: 23, minHeight: 24, maxHeight: 210, height: undefined, paddingHorizontal: 8, paddingTop: 4, paddingBottom: 8, textAlignVertical: 'top', backgroundColor: 'transparent', borderWidth: 0 }}
+            style={{ color: head, fontFamily: 'Calibre-Medium', fontSize: fontSize('3xl'), lineHeight: 23, minHeight: 24, maxHeight: 210, height: undefined, paddingHorizontal: 8, paddingTop: 4, paddingBottom: 8, textAlignVertical: 'top', backgroundColor: 'transparent', borderWidth: 0 }}
           />
         </Box>
       )}
@@ -186,7 +187,7 @@ export function AttachMenu({
           >
             <Icon name={icon} size={26} color={head} />
           </Pressable>
-          <Text style={{ color: head, fontSize: 14, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>{label}</Text>
+          <Text weight="semibold" size="sm" color={head} numberOfLines={1}>{label}</Text>
         </Col>
       ))}
     </ScrollView>

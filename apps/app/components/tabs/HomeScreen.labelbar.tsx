@@ -14,6 +14,7 @@
  *  HomeScreen and passed down. */
 
 import { useState } from 'react';
+
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { Text } from '@metro-labs/kit/text';
@@ -76,14 +77,8 @@ function Chip({ label, selected, onPress, link, fg, bg, rowBg }: {
         opacity: pressed ? 0.7 : 1, flexShrink: 0,
       })}
     >
-      <Text
-        numberOfLines={1}
-        style={{
-          color: selected ? bg : fg,
-          fontSize: 15,
-          fontFamily: 'Calibre-Medium',
-        }}
-      >
+      <Text size="md"
+        numberOfLines={1} color={selected ? bg : fg}>
         {label}
       </Text>
     </Pressable>

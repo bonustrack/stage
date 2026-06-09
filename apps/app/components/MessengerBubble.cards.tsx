@@ -1,5 +1,6 @@
 /** In-chat signature + transaction cards for MessengerBubble (phase-2 split). */
 import { Linking } from 'react-native';
+
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
@@ -33,7 +34,7 @@ export function SigRequestCard({ req, dark, sub, signing, onSign }: {
     }}>
       <Row align="center" gap={8}>
         <Icon name="pencil" size={18} color={head} />
-        <Text style={{ color: head, fontSize: 15, fontFamily: 'Calibre-Semibold', flexShrink: 1 }}>
+        <Text weight="semibold" size="md" color={head} style={{ flexShrink: 1 }}>
           {desc}
         </Text>
       </Row>
@@ -43,21 +44,21 @@ export function SigRequestCard({ req, dark, sub, signing, onSign }: {
           borderColor: detailBorder, backgroundColor: detailBg,
         }}>
           {(domainName || chainId) ? (
-            <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>
+            <Text size="xs" color={sub}>
               {domainName ?? 'Domain'}{chainId ? ` · chain ${chainId}` : ''}
             </Text>
           ) : null}
           {req.eip712?.primaryType ? (
-            <Text style={{ color: head, fontSize: 13, fontFamily: 'Calibre-Semibold' }}>
+            <Text weight="semibold" size="xs" color={head}>
               {req.eip712.primaryType}
             </Text>
           ) : null}
           {fields.map(([k, v]) => (
             <Row key={k} align="start" gap={8}>
-              <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', minWidth: 80, flexShrink: 0 }}>
+              <Text size="xs" color={sub} style={{ minWidth: 80, flexShrink: 0 }}>
                 {k}
               </Text>
-              <Text numberOfLines={4} style={{ color: head, fontSize: 12, fontFamily: 'Menlo', flexShrink: 1, flex: 1 }}>
+              <Text variant="mono" size="xs" numberOfLines={4} color={head} style={{ flexShrink: 1, flex: 1 }}>
                 {fmtSigValue(v)}
               </Text>
             </Row>
@@ -68,7 +69,7 @@ export function SigRequestCard({ req, dark, sub, signing, onSign }: {
           padding: 10, borderRadius: 10, borderWidth: 1,
           borderColor: detailBorder, backgroundColor: detailBg,
         }}>
-          <Text numberOfLines={20} style={{ color: head, fontSize: 12, fontFamily: 'Menlo', lineHeight: 18 }}>
+          <Text variant="mono" size="xs" numberOfLines={20} color={head} style={{ lineHeight: 18 }}>
             {req.message}
           </Text>
         </Box>
@@ -104,16 +105,16 @@ export function SigReferenceCard({ ref, dark, sub }: {
     }}>
       <Row align="center" gap={8}>
         <Icon name="check" size={18} color={dark ? '#7fd07f' : '#2f9e44'} />
-        <Text style={{ color: dark ? '#ffffff' : '#000000', fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
+        <Text weight="semibold" size="md" color={dark ? '#ffffff' : '#000000'}>
           Signed ✓
         </Text>
       </Row>
       {ref.signer ? (
-        <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>
+        <Text size="xs" color={sub}>
           by {shortAddress(ref.signer)}
         </Text>
       ) : null}
-      <Text style={{ color: '#c0a06e', fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+      <Text size="xs" color={'#c0a06e'}>
         {short(ref.signature)}
       </Text>
     </Box>
@@ -139,17 +140,17 @@ export function TxRequestCard({ req, dark, sub, paying, onPay }: {
     }}>
       <Row align="center" gap={8}>
         <Icon name="wallet" size={18} color="#c0a06e" />
-        <Text style={{ color: dark ? '#ffffff' : '#000000', fontSize: 15, fontFamily: 'Calibre-Semibold', flexShrink: 1 }}>
+        <Text weight="semibold" size="md" color={dark ? '#ffffff' : '#000000'} style={{ flexShrink: 1 }}>
           {desc}
         </Text>
       </Row>
       {amountLabel ? (
-        <Text style={{ color: dark ? '#ffffff' : '#000000', fontSize: 22, fontFamily: 'Calibre-Semibold' }}>
+        <Text weight="semibold" size="5xl" color={dark ? '#ffffff' : '#000000'}>
           {amountLabel}
         </Text>
       ) : null}
       {call?.to ? (
-        <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>
+        <Text size="xs" color={sub}>
           To {shortAddress(call.to)}
         </Text>
       ) : null}
@@ -187,12 +188,12 @@ export function TxReceiptCard({ receipt, dark }: {
     }}>
       <Row align="center" gap={8}>
         <Icon name="check" size={18} color={dark ? '#7fd07f' : '#2f9e44'} />
-        <Text style={{ color: dark ? '#ffffff' : '#000000', fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
+        <Text weight="semibold" size="md" color={dark ? '#ffffff' : '#000000'}>
           Payment sent{amountLabel ? ` · ${amountLabel}` : ''}
         </Text>
       </Row>
       <Pressable onPress={() => void Linking.openURL(url)}>
-        <Text style={{ color: '#c0a06e', fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+        <Text size="xs" color={'#c0a06e'}>
           {shortAddress(receipt.reference)} · View on explorer
         </Text>
       </Pressable>

@@ -14,6 +14,7 @@
  *  Pre-fill is via query params (symbol/chainId) read by each page. */
 
 import { Pressable } from '@metro-labs/kit/pressable';
+
 import { Image } from '@metro-labs/kit/image';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
@@ -53,7 +54,7 @@ export default function TokenDetail(): React.ReactElement {
       <Box style={{ flex: 1, backgroundColor: bg }}>
         <Header head={head} border={border} onBack={() => router.back()} title="Token" />
         <Col mx={16} py={40} align="center">
-          <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>Token not found</Text>
+          <Text size="md" color={sub}>Token not found</Text>
         </Col>
       </Box>
     );
@@ -92,7 +93,7 @@ export default function TokenDetail(): React.ReactElement {
 
         <Row align="center" gap={6} mt={10}>
           {r.isPrivate ? <Icon name="eyeOff" size={18} color={sub} /> : null}
-          <Text style={{ color: head, fontSize: 24, fontFamily: 'Calibre-Semibold' }}>{r.name}</Text>
+          <Text weight="semibold" size="5xl" color={head}>{r.name}</Text>
         </Row>
 
         {/* Network badge pill */}
@@ -100,15 +101,15 @@ export default function TokenDetail(): React.ReactElement {
           paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999,
           borderWidth: 1, borderColor: border,
         }}>
-          <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+          <Text size="xs" color={sub}>
             {NETWORK_LABEL[r.chainId] ?? `Chain ${r.chainId}`}
           </Text>
         </Box>
 
-        <Text style={{ color: head, fontSize: 34, fontFamily: 'Calibre-Semibold', marginTop: 14 }}>
+        <Text weight="semibold" size="6xl" color={head} style={{ marginTop: 14 }}>
           {`${fmtBalance(r.balance)} ${r.symbol}`}
         </Text>
-        <Text style={{ color: sub, fontSize: 16, fontFamily: 'Calibre-Medium' }}>
+        <Text size="md" color={sub}>
           {valueUsd === null ? '—' : fmtUsd(valueUsd)}
         </Text>
       </Col>
@@ -167,7 +168,7 @@ function Header({ head, border, onBack, title }: {
       <Pressable onPress={onBack} hitSlop={8} style={{ padding: 4 }}>
         <Icon name="arrowLeft" size={22} color={head} />
       </Pressable>
-      <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', flex: 1 }} numberOfLines={1}>
+      <Text weight="semibold" size="xl" color={head} style={{ flex: 1 }} numberOfLines={1}>
         {title}
       </Text>
     </Row>

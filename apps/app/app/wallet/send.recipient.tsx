@@ -12,6 +12,7 @@
  *
  *  No bespoke/gold styling — Kit `Text`/`Icon` + palette tokens only. */
 import { Pressable } from '@metro-labs/kit/pressable';
+
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import { Avatar } from '../../components/Avatar';
@@ -50,11 +51,11 @@ export function RecipientRow({ address, pal, right, onPress }: {
         style={{ backgroundColor: border }}
       />
       <Box style={{ flex: 1, minWidth: 0 }}>
-        <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
+        <Text weight="semibold" size="md" color={head} numberOfLines={1}>
           {name}
         </Text>
         {showAddrLine ? (
-          <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', marginTop: 2 }} numberOfLines={1}>
+          <Text size="xs" color={sub} style={{ marginTop: 2 }} numberOfLines={1}>
             {shortAddress(address)}
           </Text>
         ) : null}
@@ -101,11 +102,11 @@ export function ContactsModal({ visible, onClose, onPick, pal }: {
 
   return (
     <AppModal visible={visible} onClose={onClose}>
-      <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', marginBottom: 8 }}>
+      <Text weight="semibold" size="xl" color={head} style={{ marginBottom: 8 }}>
         Contacts
       </Text>
       {contacts.length === 0 ? (
-        <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium', paddingVertical: 16 }}>
+        <Text size="md" color={sub} style={{ paddingVertical: 16 }}>
           No contacts yet — start a DM to build your list.
         </Text>
       ) : (

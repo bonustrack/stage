@@ -13,6 +13,64 @@ export default tseslint.config(
       // Strong typing: ban `any`. Use `unknown` + narrowing, real interfaces,
       // generics, or library types instead.
       "@typescript-eslint/no-explicit-any": "error",
+      // Typography: three ERRORs keep text sizing on the named Kit scale and
+      // the font family inside the Kit content components.
+      // (1) No raw numeric `fontSize` anywhere - use a named step
+      //     (fontSize('md')/FONT_SIZE.md), or the Kit `size` prop.
+      // (2) No `fontSize` in a style/textStyle on the Kit CONTENT components
+      //     (Text/Title/Caption) - those MUST size via their `size` prop so the
+      //     prop stays authoritative (a style fontSize would override it).
+      //     Non-content surfaces (Input/Textarea/markdown) have no size prop and
+      //     keep fontSize('name') from the scale.
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "Property[key.name='fontSize'] > Literal[value=type(number)]",
+          message:
+            "use a named Kit size token (Text size=\"sm|md|lg|...\" prop, or fontSize('md')/FONT_SIZE.md from '@metro-labs/kit/tokens') instead of a raw fontSize number.",
+        },
+        {
+          // Kit CONTENT components (Text/Title/Caption) must size via their named
+          // `size` PROP (size="md"), never a fontSize in the style/textStyle
+          // escape-hatch. A style fontSize would silently override the prop and
+          // re-introduce magic sizing, so it is banned outright on these tags.
+          // Non-content surfaces (Input/Textarea text style, markdown style maps)
+          // have no size prop and keep using fontSize('name') from the scale -
+          // they are not matched here.
+          selector:
+            "JSXElement[openingElement.name.name=/^(Text|Title|Caption)$/] JSXAttribute[name.name=/^(style|textStyle)$/] Property[key.name='fontSize']",
+          message:
+            "Kit Text/Title/Caption must size via the `size` prop (size=\"sm|md|lg|...\"), not a fontSize in style. Remove fontSize from the style and pass size= instead.",
+        },
+        {
+          // (3) Kit CONTENT components apply the Calibre font family INTERNALLY
+          //     (chosen by the `weight` prop: normal/medium -> Calibre-Medium,
+          //     semibold/bold -> Calibre-Semibold; only those two faces are
+          //     bundled). Callers must NOT set fontFamily in the style/textStyle
+          //     escape-hatch - it is redundant and re-introduces magic styling.
+          //     Use weight= for the face, or variant="mono" for monospace.
+          //     Non-content surfaces (Input/Textarea text style, markdown style
+          //     maps) have no weight prop and keep an explicit fontFamily - they
+          //     are not matched here.
+          selector:
+            "JSXElement[openingElement.name.name=/^(Text|Title|Caption)$/] JSXAttribute[name.name=/^(style|textStyle)$/] Property[key.name='fontFamily']",
+          message:
+            "Kit Text/Title/Caption apply Calibre internally - do not set fontFamily in style. Use the `weight` prop (normal/medium/semibold/bold) for the face, or variant=\"mono\" for monospace.",
+        },
+        {
+          // (4) Kit CONTENT components take their text colour via the `color`
+          //     PROP (color={pal.text}), never a `color` in the style/textStyle
+          //     escape-hatch. A style color would bury the colour decision in
+          //     styling instead of the component params, so it is banned on
+          //     these tags. Non-content surfaces have no color prop and keep an
+          //     explicit style color - they are not matched here.
+          selector:
+            "JSXElement[openingElement.name.name=/^(Text|Title|Caption)$/] JSXAttribute[name.name=/^(style|textStyle)$/] Property[key.name='color']",
+          message:
+            "Kit Text/Title/Caption must take their colour via the `color` prop (color={pal.text}), not a color in style. Remove color from the style and pass color= instead.",
+        },
+      ],
       // `error`: cap files at 400 lines. Split a file rather than crossing it.
       "max-lines": ["error", { max: 400, skipBlankLines: false, skipComments: false }],
       /** React Native bundles assets via require() — exempt. */

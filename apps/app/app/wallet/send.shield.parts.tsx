@@ -1,6 +1,7 @@
 /** Presentational sub-parts for the Shield form (locked 0zk recipient + the
  *  phase/result line) — split out of send.shield.tsx for the <200-line cap. */
 import { Linking } from 'react-native';
+
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from '../../components/layout';
@@ -19,15 +20,15 @@ export function ShieldRecipient({ pal, zkAddress }: {
   const { head, sub, border, inputBg } = pal;
   return (
     <Box style={{ gap: 6 }}>
-      <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>TO YOUR PRIVATE WALLET</Text>
+      <Text size="xs" color={sub}>TO YOUR PRIVATE WALLET</Text>
       <Box style={{
         backgroundColor: inputBg, borderRadius: 12, borderWidth: 1, borderColor: border,
         paddingHorizontal: 14, paddingVertical: 12,
       }}>
-        <Text style={{ color: head, fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
+        <Text weight="semibold" size="md" color={head}>
           {zkAddress ? short0zk(zkAddress) : 'Loading 0zk address…'}
         </Text>
-        <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
+        <Text size="xs" color={sub} style={{ marginTop: 2 }}>
           Locked — shields deposit to your own shielded balance.
         </Text>
       </Box>
@@ -46,7 +47,7 @@ export function ShieldPhaseLine({ pal, txHash, err, errPhase, bridgeOk, chainId 
   const { sub, link } = pal;
   if (!bridgeOk) {
     return (
-      <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', paddingHorizontal: 4 }}>
+      <Text size="xs" color={sub} style={{ paddingHorizontal: 4 }}>
         Shielding needs the latest app build.
       </Text>
     );
@@ -56,16 +57,16 @@ export function ShieldPhaseLine({ pal, txHash, err, errPhase, bridgeOk, chainId 
     <Box style={{ gap: 4, paddingHorizontal: 4 }}>
       {txHash ? (
         <Pressable onPress={() => Linking.openURL(txExplorerUrl(chainId, txHash))} hitSlop={6}>
-          <Text style={{ color: link, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+          <Text size="xs" color={link}>
             {txHash.slice(0, 10)}…{txHash.slice(-8)}
           </Text>
         </Pressable>
       ) : null}
       {err ? (
         <>
-          <Text style={{ color: DANGER, fontSize: 13, fontFamily: 'Calibre-Medium' }} selectable>{err}</Text>
+          <Text size="xs" color={DANGER} selectable>{err}</Text>
           {errPhase ? (
-            <Text style={{ color: sub, fontSize: 11, fontFamily: 'Calibre-Medium' }}>Failed at: {errPhase}</Text>
+            <Text size="3xs" color={sub}>Failed at: {errPhase}</Text>
           ) : null}
         </>
       ) : null}

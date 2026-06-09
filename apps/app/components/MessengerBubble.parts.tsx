@@ -2,6 +2,7 @@
  *  Extracted to keep the bubble file under the phase-2 lint cap. */
 
 import { useState } from 'react';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Textarea } from '@metro-labs/kit/textarea';
 import { Text } from '@metro-labs/kit/text';
@@ -24,11 +25,9 @@ function MentionLink({ address, dark }: { address: string; dark: boolean }): Rea
   const display = profile?.name?.trim() || shortAddress(address);
   const linkColor = dark ? '#7aa2ff' : '#2f6feb';
   return (
-    <Text
-      onPress={() => router.push({ pathname: '/user/[address]', params: { address } })}
-      style={{ color: linkColor, fontFamily: 'Calibre-Semibold' }}
-      suppressHighlighting
-    >
+    <Text weight="semibold"
+      onPress={() => router.push({ pathname: '/user/[address]', params: { address } })} color={linkColor}
+      suppressHighlighting>
       @{display}
     </Text>
   );
@@ -54,7 +53,7 @@ export function MentionBody({ text, fg, dark, selectable }: { text: string; fg: 
   }
   if (last < text.length) runs.push(text.slice(last));
   return (
-    <Text selectable={selectable} style={{ color: fg, fontSize: 19, lineHeight: 23, fontFamily: 'Calibre-Medium' }}>
+    <Text size="3xl" selectable={selectable} color={fg} style={{ lineHeight: 23 }}>
       {runs}
     </Text>
   );
@@ -98,7 +97,7 @@ export function QuestionView({ question, dark, sub, onAnswer }: {
   return (
     <Box style={{ alignSelf: 'stretch', gap: 6, marginTop: 8 }}>
       {question.header ? (
-        <Text style={{ color: sub, fontSize: 11, fontFamily: 'Calibre-Semibold', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+        <Text weight="semibold" size="3xs" color={sub} style={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
           {question.header}{multi ? ' · multi-select' : ''}
         </Text>
       ) : null}
@@ -121,11 +120,11 @@ export function QuestionView({ question, dark, sub, onAnswer }: {
                 : (dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.10)'),
             })}
           >
-            <Text style={{ color: fg, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
+            <Text size="md" color={fg}>
               {multi ? (isOn ? '☑︎  ' : '☐  ') : ''}{opt.label}
             </Text>
             {opt.description ? (
-              <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
+              <Text size="2xs" color={sub} style={{ marginTop: 2 }}>
                 {opt.description}
               </Text>
             ) : null}
@@ -144,7 +143,7 @@ export function QuestionView({ question, dark, sub, onAnswer }: {
             borderColor: dark ? 'rgba(255,255,255,0.20)' : 'rgba(0,0,0,0.18)',
           })}
         >
-          <Text style={{ color: sub, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
+          <Text size="md" color={sub}>
             Other…
           </Text>
         </Pressable>
@@ -165,7 +164,7 @@ export function QuestionView({ question, dark, sub, onAnswer }: {
             inputProps={{ onSubmitEditing: submit, blurOnSubmit: true }}
             style={{
               color: fg,
-              fontFamily: 'Calibre-Medium', fontSize: 15, lineHeight: 22,
+              fontFamily: 'Calibre-Medium', fontSize: fontSize('md'), lineHeight: 22,
               minHeight: 22, padding: 0, backgroundColor: 'transparent', borderWidth: 0, height: undefined,
             }}
           />
@@ -189,7 +188,7 @@ export function QuestionView({ question, dark, sub, onAnswer }: {
             };
           }}
         >
-          <Text style={{ color: '#000', fontSize: 14, fontFamily: 'Calibre-Semibold' }}>
+          <Text weight="semibold" size="sm" color={'#000'}>
             Submit{multi && selected.size > 0 ? ` (${selected.size}${otherText.trim() ? '+1' : ''})` : ''}
           </Text>
         </Pressable>

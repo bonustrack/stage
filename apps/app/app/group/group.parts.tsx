@@ -2,6 +2,7 @@
  *  Extracted from group/[convId] for lint line-budget. Rendering identical. */
 
 import { Pressable } from '@metro-labs/kit/pressable';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Input } from '@metro-labs/kit/input';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from '../../components/layout';
@@ -43,11 +44,11 @@ export function MemberRow({
         style={{ backgroundColor: border }}
       />
       <Box style={{ flex: 1, minWidth: 0 }}>
-        <Text style={{ color: head, fontSize: 15, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
+        <Text weight="semibold" size="md" color={head} numberOfLines={1}>
           {name || shortAddress(item)}{isSelf ? ' (you)' : ''}
         </Text>
         {name ? (
-          <Text style={{ color: sub, fontSize: 12, marginTop: 2, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
+          <Text size="xs" color={sub} style={{ marginTop: 2 }} numberOfLines={1}>
             {shortAddress(item)}
           </Text>
         ) : null}
@@ -59,10 +60,7 @@ export function MemberRow({
             ? (dark ? 'rgba(45,212,191,0.18)' : 'rgba(13,148,136,0.12)')
             : border, // #282a2d / #e4e4e5
         }}>
-          <Text style={{
-            fontSize: 11, fontFamily: 'Calibre-Medium',
-            color: role === 'owner' ? (dark ? '#2dd4bf' : '#0d9488') : sub,
-          }}>{role === 'owner' ? 'Owner' : 'Admin'}</Text>
+          <Text size="3xs" color={role === 'owner' ? (dark ? '#2dd4bf' : '#0d9488') : sub}>{role === 'owner' ? 'Owner' : 'Admin'}</Text>
         </Box>
       ) : null}
       {isSelf ? null : (
@@ -105,7 +103,7 @@ export function AddMemberModal({
           style={{
             color: fg, backgroundColor: inputBg,
             borderWidth: 1, borderColor: border, borderRadius: 10,
-            paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, marginBottom: 10,
+            paddingHorizontal: 12, paddingVertical: 10, fontSize: fontSize('md'), marginBottom: 10,
           }}
         />
         <Button
@@ -138,7 +136,7 @@ export function OverflowModal({
           style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, opacity: leaving ? 0.5 : 1 }}
         >
           <Icon name="arrowLeft" size={20} color={DANGER} />
-          <Text style={{ color: DANGER, fontSize: 16, fontFamily: 'Calibre-Medium' }}>
+          <Text size="md" color={DANGER}>
             {leaving ? 'Leaving…' : 'Leave group'}
           </Text>
         </Pressable>

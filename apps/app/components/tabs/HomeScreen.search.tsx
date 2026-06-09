@@ -4,6 +4,7 @@
  *  and collapses back to the normal topnav. */
 
 import { forwardRef } from 'react';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Icon } from '@metro-labs/kit/icon';
 import { Input } from '@metro-labs/kit/input';
@@ -59,7 +60,7 @@ export const ChannelsSearchBar = forwardRef<React.ComponentRef<typeof Input>, {
           placeholder="Search"
           placeholderTextColor={sub}
           inputProps={{ autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'search' }}
-          style={{ flex: 1, color: head, fontSize: 19, lineHeight: 23, fontFamily: 'Calibre-Medium', padding: 0,
+          style={{ flex: 1, color: head, fontSize: fontSize('4xl'), lineHeight: 23, fontFamily: 'Calibre-Medium', padding: 0,
             backgroundColor: 'transparent', minHeight: 0, borderWidth: 0 }}
         />
         {props.query.length > 0 ? (

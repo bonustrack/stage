@@ -125,7 +125,7 @@ export function ChannelsList({
                   justify="center"
                   style={{ position: 'absolute', top: -6, right: -8, minWidth: 16, height: 16 }}
                 >
-                  <Text style={{ color: badgeFg, fontSize: 10, fontFamily: 'Calibre-Semibold' }}>
+                  <Text weight="semibold" size="3xs" color={badgeFg}>
                     {requestCount > 99 ? '99+' : requestCount}
                   </Text>
                 </Box>

@@ -11,6 +11,7 @@
  *  if the system has blocked notifications regardless of the in-app preference. */
 
 import { useEffect, useState } from 'react';
+
 import { Switch } from 'react-native';
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import * as Notifications from 'expo-notifications';
@@ -74,7 +75,7 @@ export function NotificationsSettings(): React.ReactElement {
         >
           <Row align="center" gap={12}>
             <Col flex={1} style={{ minWidth: 0 }}>
-              <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>Push notifications</Text>
+              <Text weight="semibold" size="md" color={head}>Push notifications</Text>
               <Caption dark={dark} color={sub} style={{ marginTop: 2 }}>
                 Get notified about new messages even when Metro is closed.
               </Caption>

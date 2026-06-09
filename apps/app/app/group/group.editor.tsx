@@ -2,6 +2,7 @@
  *  Extracted from group/[convId] for lint line-budget. Rendering identical. */
 
 import { Pressable } from '@metro-labs/kit/pressable';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Input } from '@metro-labs/kit/input';
 import { Textarea } from '@metro-labs/kit/textarea';
 import { Image } from '@metro-labs/kit/image';
@@ -31,7 +32,7 @@ function SaveButton({ saving, disabled, onSave, dark }: {
       tintBg={primary}
       tintFg={bg}
       style={{ paddingHorizontal: 14 }}
-      textStyle={{ fontSize: 13, fontFamily: 'Calibre-Medium' }}
+      textStyle={{ fontSize: fontSize('xs'), fontFamily: 'Calibre-Medium' }}
     />
   );
 }
@@ -79,7 +80,7 @@ export function GroupProfileHeader({ imageUrl, channelId, uploadingImage, insetT
             </Box>
           ) : null}
         </Pressable>
-        <Text style={{ color: sub, fontSize: 12, marginTop: 6, fontFamily: 'Calibre-Medium' }}>
+        <Text size="xs" color={sub} style={{ marginTop: 6 }}>
           {uploadingImage ? 'Uploading…' : imageUrl ? 'Tap to view · hold to change' : 'Tap to add image'}
         </Text>
       </Box>
@@ -107,17 +108,17 @@ export function GroupNameEditor({ name, draft, setDraft, editing, setEditing, sa
             style={{
               flex: 1, color: fg, backgroundColor: inputBg,
               borderWidth: 1, borderColor: border, borderRadius: 10,
-              paddingHorizontal: 10, paddingVertical: 8, fontSize: 16,
+              paddingHorizontal: 10, paddingVertical: 8, fontSize: fontSize('md'),
             }}
           />
           <SaveButton saving={saving} disabled={saving || !draft.trim()} onSave={onSave} dark={dark} />
         </Box>
       ) : (
         <Pressable onPress={() => setEditing(true)} hitSlop={6} style={{ marginTop: 6, alignItems: 'flex-start' }}>
-          <Text style={{ color: head, fontSize: 22, fontFamily: 'Calibre-Semibold', textAlign: 'left' }}>
+          <Text weight="semibold" size="5xl" color={head} style={{ textAlign: 'left' }}>
             {name && name.trim() ? name : 'Untitled group'}
           </Text>
-          <Text style={{ color: sub, fontSize: 12, marginTop: 4, fontFamily: 'Calibre-Medium' }}>Tap to rename</Text>
+          <Text size="xs" color={sub} style={{ marginTop: 4 }}>Tap to rename</Text>
         </Pressable>
       )}
     </Box>
@@ -132,7 +133,7 @@ export function GroupDescriptionEditor({ description, descriptionDraft, setDescr
   const { fg, sub, border, inputBg } = p;
   return (
     <Box style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
-      <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>DESCRIPTION</Text>
+      <Text size="xs" color={sub}>DESCRIPTION</Text>
       {editing ? (
         <Box style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 6 }}>
           <Textarea
@@ -145,7 +146,7 @@ export function GroupDescriptionEditor({ description, descriptionDraft, setDescr
             style={{
               flex: 1, color: fg, backgroundColor: inputBg,
               borderWidth: 1, borderColor: border, borderRadius: 10,
-              paddingHorizontal: 10, paddingVertical: 8, fontSize: 14,
+              paddingHorizontal: 10, paddingVertical: 8, fontSize: fontSize('md'),
               minHeight: 60, textAlignVertical: 'top',
             }}
           />
@@ -153,7 +154,7 @@ export function GroupDescriptionEditor({ description, descriptionDraft, setDescr
         </Box>
       ) : (
         <Pressable onPress={() => setEditing(true)} hitSlop={6} style={{ marginTop: 6 }}>
-          <Text style={{ color: description.trim() ? fg : sub, fontSize: 14, fontFamily: 'Calibre-Medium' }}>
+          <Text size="md" color={description.trim() ? fg : sub}>
             {description.trim() || 'Tap to add a description'}
           </Text>
         </Pressable>

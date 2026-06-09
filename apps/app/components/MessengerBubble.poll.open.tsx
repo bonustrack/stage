@@ -4,6 +4,7 @@
  *  MessengerBubble.poll.tsx to keep each file under the lint line cap. */
 
 import { useState } from 'react';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Input } from '@metro-labs/kit/input';
 import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';
@@ -35,7 +36,7 @@ export function OpenAnswerBlock({ qi, sub, dark, answers, mine, onSubmit }: {
           dark={dark}
           inputProps={{ returnKeyType: 'send' }}
           style={{
-            flex: 1, color: pal.text, fontSize: 17, fontFamily: 'Calibre-Medium',
+            flex: 1, color: pal.text, fontSize: fontSize('xl'), fontFamily: 'Calibre-Medium',
             paddingHorizontal: 12, paddingVertical: 9, borderRadius: radius,
             borderWidth: 0, backgroundColor: inputBg, minHeight: 0,
           }}
@@ -59,7 +60,7 @@ export function OpenAnswerBlock({ qi, sub, dark, answers, mine, onSubmit }: {
               : (dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'),
           }}
         >
-          <Text style={{ color: pal.text, fontSize: 16, fontFamily: 'Calibre-Medium' }}>
+          <Text size="lg" color={pal.text}>
             {voter === mine ? 'You: ' : ''}{a.text}
           </Text>
         </Box>

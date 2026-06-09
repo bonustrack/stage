@@ -72,7 +72,7 @@ export function AboutPanel({ dark, head, sub, border, rowBg }: {
     <Box style={{ paddingTop: 18 }}>
       <Box style={{ paddingHorizontal: 16 }}>
       <Title dark={dark} level={2} color={head}>About</Title>
-      <Text dark={dark} variant="secondary" weight="medium" size="sm" style={{ marginTop: 4, marginBottom: 8 }}>
+      <Text dark={dark} variant="secondary" weight="medium" size="xs" style={{ marginTop: 4, marginBottom: 8 }}>
         Build + runtime metadata for this install.
       </Text>
       <AboutRow label="App" value={pkgName} dark={dark} border={border} />

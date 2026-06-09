@@ -2,6 +2,7 @@
  *  card + the phase/result line) — split out for the <200-line cap. Mirrors
  *  send.shield.parts.tsx. */
 import { Linking } from 'react-native';
+
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from '../../components/layout';
@@ -21,15 +22,15 @@ export function UnshieldRecipient({ pal, eoa, network }: {
   const { head, sub, border, inputBg } = pal;
   return (
     <Box style={{ gap: 6 }}>
-      <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>TO YOUR PUBLIC WALLET</Text>
+      <Text size="xs" color={sub}>TO YOUR PUBLIC WALLET</Text>
       <Box style={{
         backgroundColor: inputBg, borderRadius: 12, borderWidth: 1, borderColor: border,
         paddingHorizontal: 14, paddingVertical: 12,
       }}>
-        <Text style={{ color: head, fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
+        <Text weight="semibold" size="md" color={head}>
           {eoa ? shortAddr(eoa) : 'Loading address…'}
         </Text>
-        <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium', marginTop: 2 }}>
+        <Text size="xs" color={sub} style={{ marginTop: 2 }}>
           {`Unshields to your own ${network} address.`}
         </Text>
       </Box>
@@ -45,7 +46,7 @@ export function UnshieldPhaseLine({ pal, phase, txHash, err, bridgeOk, chainId }
   const { sub, link } = pal;
   if (!bridgeOk) {
     return (
-      <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium', paddingHorizontal: 4 }}>
+      <Text size="xs" color={sub} style={{ paddingHorizontal: 4 }}>
         Unshielding needs the latest app build.
       </Text>
     );
@@ -53,19 +54,19 @@ export function UnshieldPhaseLine({ pal, phase, txHash, err, bridgeOk, chainId }
   return (
     <Box style={{ gap: 4, paddingHorizontal: 4 }}>
       {phase === 'proving' ? (
-        <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>Generating proof… (this can take ~10-30s)</Text>
+        <Text size="xs" color={sub}>Generating proof… (this can take ~10-30s)</Text>
       ) : phase === 'broadcasting' ? (
-        <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>Broadcasting…</Text>
+        <Text size="xs" color={sub}>Broadcasting…</Text>
       ) : null}
       {txHash ? (
         <Pressable onPress={() => Linking.openURL(explorerTxUrl(chainId, txHash))} hitSlop={6}>
-          <Text style={{ color: link, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+          <Text size="xs" color={link}>
             {txHash.slice(0, 10)}…{txHash.slice(-8)}
           </Text>
         </Pressable>
       ) : null}
       {err ? (
-        <Text style={{ color: DANGER, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{err}</Text>
+        <Text size="xs" color={DANGER}>{err}</Text>
       ) : null}
     </Box>
   );

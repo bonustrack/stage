@@ -4,6 +4,7 @@
  *  + price/24h-change left, USD value + amount/symbol right. */
 
 import { useEffect, useRef, useState } from 'react';
+
 import { ScrollView } from 'react-native-gesture-handler';
 import { usePullToRefresh } from './PullToRefresh';
 import { RefreshButton } from './WalletScreen.refreshButton';
@@ -52,7 +53,6 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
     if (!privAccountId || !address || !isBridgeAvailable()) return;
     return startEoaShieldWatch(privAccountId, address);
   }, [privAccountId, address]);
-
 
   /** Shielded (Railgun) balances — reuses the Private tab's instant-paint hook
    *  (cached snapshot + pending overlay, no refetch), merged into the public
@@ -144,15 +144,15 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
           Decimals render in the dim `sub` colour to keep the dollars prominent. */}
       <Col mx={16} pt={20} pb={16} align="start">
         {err ? (
-          <Text style={{ color: DANGER, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+          <Text size="xs" color={DANGER}>
             Couldn’t load balances
           </Text>
         ) : totalUsd === null ? (
-          <Text style={{ color: head, fontSize: 38, fontFamily: 'Calibre-Semibold' }}>…</Text>
+          <Text weight="semibold" size="6xl" color={head}>…</Text>
         ) : (
-          <Text style={{ color: head, fontSize: 38, fontFamily: 'Calibre-Semibold' }}>
+          <Text weight="semibold" size="6xl" color={head}>
             {splitUsd(fmtUsd(totalUsd)).int}
-            <Text style={{ color: sub, fontSize: 38, fontFamily: 'Calibre-Semibold' }}>{splitUsd(fmtUsd(totalUsd)).dec}</Text>
+            <Text weight="semibold" size="6xl" color={sub}>{splitUsd(fmtUsd(totalUsd)).dec}</Text>
           </Text>
         )}
       </Col>
@@ -177,7 +177,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
         <ActivityView address={address} head={head} sub={sub} border={border} bg={bg} />
       ) : err ? (
         <Col mx={16} py={40} align="center">
-          <Text style={{ color: DANGER, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
+          <Text size="md" color={DANGER}>
             Couldn’t load tokens
           </Text>
         </Col>

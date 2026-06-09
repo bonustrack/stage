@@ -8,6 +8,7 @@
  *  unread props are optional so callers without context can omit them. */
 
 import { memo } from 'react';
+
 // eslint-disable-next-line no-restricted-imports -- raw View is required as an INLINE element inside <Text> (Box/Row/Col carry layout flex and don't embed inline in text flow)
 import { View } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
@@ -95,10 +96,10 @@ function buildLabelChips({ labels, fg, rowBg }: {
         transform: [{ translateY: 5 }],
       }}
     >
-      <Text style={{ color: fg, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{label}</Text>
+      <Text size="xs" color={fg}>{label}</Text>
     </View>,
     // Real, rendered gap (inline-View margin is NOT honored by RN).
-    <Text key={`gap-${i}`} style={{ fontSize: 13 }}>{'  '}</Text>,
+    <Text size="xs" key={`gap-${i}`}>{'  '}</Text>,
   ]);
 }
 
@@ -143,17 +144,15 @@ function ChannelRowBase({
             {pinned ? <Icon name="mapPin" size={13} color={sub} /> : null}
             {/* Name + labels hug each other on the left; name shrinks (and
                 ellipsizes) first, the label chip stays right beside it. */}
-            <Text
-              style={{ color: head, fontSize: 19, fontFamily: 'Calibre-Semibold', flexShrink: 1, minWidth: 0 }}
+            <Text weight="semibold" size="3xl" color={head} style={{ flexShrink: 1, minWidth: 0 }}
               numberOfLines={1}
-              ellipsizeMode="tail"
-            >
+              ellipsizeMode="tail">
               {title}
             </Text>
             {/* Flexible spacer pushes the timestamp to the far right edge. */}
             <Spacer />
             {timestamp ? (
-              <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium' }}>{timestamp}</Text>
+              <Text size="sm" color={sub}>{timestamp}</Text>
             ) : null}
           </Row>
           {/* No internal height reservation: the preview block is only as tall
@@ -168,11 +167,9 @@ function ChannelRowBase({
                 <Icon name="pencil" size={14} color={sub} />
               </Box>
             ) : null}
-            <Text
-              style={{ color: sub, fontSize: 16, lineHeight: 21, fontFamily: 'Calibre-Medium', flex: 1 }}
+            <Text size="lg" color={sub} style={{ lineHeight: 21, flex: 1 }}
               numberOfLines={2}
-              ellipsizeMode="tail"
-            >
+              ellipsizeMode="tail">
               {!draft && labels && labels.length > 0
                 ? buildLabelChips({ labels, fg, rowBg })
                 : null}
@@ -182,14 +179,14 @@ function ChannelRowBase({
               <Row align="center" justify="center" px={7} radius={999} bg={head} style={{
                 minWidth: 22, height: 22,
               }}>
-                <Text style={{ color: bg, fontSize: 12, fontFamily: 'Calibre-Semibold' }}>
+                <Text weight="semibold" size="2xs" color={bg}>
                   {unreadCount > 99 ? '99+' : unreadCount}
                 </Text>
               </Row>
             ) : markedUnread ? (
               <Box style={{ width: 12, height: 12, borderRadius: 999, backgroundColor: head }} />
             ) : showChevron ? (
-              <Text style={{ color: sub, fontSize: 18 }}>›</Text>
+              <Text size="2xl" color={sub}>›</Text>
             ) : null}
           </Row>
         </Col>

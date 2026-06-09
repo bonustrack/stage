@@ -4,6 +4,7 @@
  *  "loading…" label and is disabled so the screen never lands on a blank QR. */
 
 import { Pressable } from '@metro-labs/kit/pressable';
+
 import { Text } from '@metro-labs/kit/text';
 import { Box } from '../layout';
 import { usePalette } from '../../lib/theme';
@@ -30,10 +31,7 @@ export function ReceiveModeToggle({ mode, onChange, privateReady }: {
           opacity: disabled ? 0.45 : 1,
         }}
       >
-        <Text style={{
-          color: active ? head : sub, fontSize: 14,
-          fontFamily: active ? 'Calibre-Semibold' : 'Calibre-Medium',
-        }}>
+        <Text size="md" weight={active ? 'semibold' : 'normal'} color={active ? head : sub}>
           {label}
         </Text>
       </Pressable>

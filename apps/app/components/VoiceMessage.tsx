@@ -5,6 +5,7 @@
  *  recorder uses). Any audio attachment renders through this. */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
@@ -121,10 +122,7 @@ export function VoiceMessage({ uri }: Props): React.ReactElement {
           })}
         </Box>
       </Pressable>
-      <Text style={{
-        color: ON_ACCENT, fontSize: 12, minWidth: 34, textAlign: 'right',
-        fontFamily: 'Calibre-Medium',
-      }}>{label}</Text>
+      <Text size="xs" color={ON_ACCENT} style={{ minWidth: 34, textAlign: 'right' }}>{label}</Text>
     </Box>
   );
 }

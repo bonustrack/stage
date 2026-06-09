@@ -1,6 +1,7 @@
 /** Floating two-line composer (Claude-mobile-style): textarea on top, [+ / mic / send] below. */
 
 import { useRef, useState, type ComponentRef } from 'react';
+
 import { Text } from '@metro-labs/kit/text';
 import { Textarea } from '@metro-labs/kit/textarea';
 import { ComposerGradient } from './ComposerGradient';
@@ -143,7 +144,7 @@ export function MessengerComposer({
         />
       ) : null}
       {uploading || err ? (
-        <Text style={{ color: err ? DANGER : sub, fontSize: 12, paddingHorizontal: 14, paddingBottom: 4 }}>
+        <Text size="2xs" color={err ? DANGER : sub} style={{ paddingHorizontal: 14, paddingBottom: 4 }}>
           {err ?? 'Uploading…'}
         </Text>
       ) : null}

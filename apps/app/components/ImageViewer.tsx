@@ -17,6 +17,7 @@
  *  patterns — there's no iOS toast primitive). */
 
 import { useState } from 'react';
+
 import { Alert, Modal, Platform } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Image } from '@metro-labs/kit/image';
@@ -135,7 +136,7 @@ export function ImageViewer({ uri, visible, onClose }: {
             {saving
               ? <Spinner size={20} color="#ffffff" />
               : <Icon name="arrowDownTray" size={18} color="#ffffff" />}
-            <Text style={{ color: '#ffffff', fontSize: 15, fontFamily: 'Calibre-Semibold' }}>
+            <Text weight="semibold" size="md" color={'#ffffff'}>
               {saving ? 'Saving…' : 'Download'}
             </Text>
           </Pressable>

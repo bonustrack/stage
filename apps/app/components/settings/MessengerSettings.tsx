@@ -4,6 +4,7 @@
  *  Settings tab; no invented toggles. */
 
 import { useEffect, useState } from 'react';
+
 import { Alert, DevSettings } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
@@ -30,8 +31,8 @@ function CopyRow({ label, value, display, c }: {
         backgroundColor: c.rowBg, borderWidth: 1, borderColor: c.border,
       }}
     >
-      <Text style={{ color: c.sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>{label.toUpperCase()} (tap to copy)</Text>
-      <Text style={{ color: c.fg, fontSize: 16, marginTop: 2, fontFamily: 'Calibre-Medium' }}>{display}</Text>
+      <Text size="xs" color={c.sub}>{label.toUpperCase()} (tap to copy)</Text>
+      <Text size="md" color={c.fg} style={{ marginTop: 2 }}>{display}</Text>
     </Pressable>
   );
 }
@@ -66,7 +67,7 @@ export function MessengerSettings(): React.ReactElement {
     <Box style={{ flex: 1, backgroundColor: bg }}>
       <SystemHeader title="Messenger" dark={dark} fg={fg} head={head} border={border} />
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
-        <Text style={{ color: sub, fontSize: 13, paddingHorizontal: 16, paddingTop: 20, fontFamily: 'Calibre-Medium' }}>
+        <Text size="xs" color={sub} style={{ paddingHorizontal: 16, paddingTop: 20 }}>
           XMTP ACCOUNT
         </Text>
         {addr ? <CopyRow label="Your XMTP address" value={addr} display={shortAddress(addr)} c={c} /> : null}
@@ -97,7 +98,7 @@ export function MessengerSettings(): React.ReactElement {
               borderWidth: 1, borderColor: dark ? '#5c2231' : '#e9bbc4',
             })}
           >
-            <Text style={{ color: DANGER, fontSize: 16, fontFamily: 'Calibre-Medium' }}>
+            <Text size="md" color={DANGER}>
               Reset XMTP identity
             </Text>
           </Pressable>

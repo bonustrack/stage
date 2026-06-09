@@ -8,6 +8,7 @@
  *  0x / .eth entry still works for peers not in the contact list. */
 
 import { useCallback, useMemo, useState } from 'react';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Input } from '@metro-labs/kit/input';
 import { Text } from '@metro-labs/kit/text';
@@ -123,7 +124,7 @@ export function MemberPicker({ state, dark, exclude = [] }: {
     <>
       {/* Member entry */}
       <Col gap={6}>
-        <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+        <Text size="xs" color={sub}>
           Add members
         </Text>
         <Row gap={8} align="center">
@@ -136,7 +137,7 @@ export function MemberPicker({ state, dark, exclude = [] }: {
             dark={dark}
             inputProps={{ autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'done' }}
             style={{
-              flex: 1, color: head, fontSize: 16, fontFamily: 'Calibre-Medium',
+              flex: 1, color: head, fontSize: fontSize('md'), fontFamily: 'Calibre-Medium',
               backgroundColor: inputBg, borderRadius: 12, paddingHorizontal: 14,
               paddingVertical: 12, borderWidth: 1, borderColor: border, minHeight: 0,
             }}
@@ -175,11 +176,11 @@ export function MemberPicker({ state, dark, exclude = [] }: {
             >
               <Avatar address={m.address} size={32} style={{ backgroundColor: border }} />
               <Col flex={1} gap={1}>
-                <Text numberOfLines={1} style={{ color: head, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
+                <Text size="md" numberOfLines={1} color={head}>
                   {m.label}
                 </Text>
                 {m.label !== shortAddress(m.address) && (
-                  <Text numberOfLines={1} style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>
+                  <Text size="xs" numberOfLines={1} color={sub}>
                     {shortAddress(m.address)}
                   </Text>
                 )}

@@ -2,6 +2,7 @@
  *  live in useConversationState; presentational pieces in components/xmtp-conv. */
 
 import { useCallback, useEffect, useState } from 'react';
+
 import { Animated as RNAnimated, Share } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
@@ -72,7 +73,7 @@ export default function XmtpConversation(): React.ReactElement {
   if (!convId) {
     return (
       <Box style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: bg }}>
-        <Text style={{ color: sub }}>Missing conversation id.</Text>
+        <Text color={sub}>Missing conversation id.</Text>
       </Box>
     );
   }
@@ -124,7 +125,7 @@ export default function XmtpConversation(): React.ReactElement {
           style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 14 }}
         >
           <HeaderAvatar peerAddr={peerAddr} groupImage={groupImage} channelId={convId} isGroup={isGroup} border={border} />
-          <Text style={{ color: head, fontSize: 20, fontFamily: 'Calibre-Semibold', flex: 1 }} numberOfLines={1}>
+          <Text weight="semibold" size="4xl" color={head} style={{ flex: 1 }} numberOfLines={1}>
             {isGroup ? (groupName === null ? '' : (groupName || 'Untitled group'))
               : peerAddr ? (getPeerName(peerAddr) ?? shortAddress(peerAddr)) : ''}
           </Text>

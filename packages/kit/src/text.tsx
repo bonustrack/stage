@@ -4,7 +4,7 @@
  *
  *  CANONICAL API (mirrors ChatKit's Text widget / BaseTextProps 1:1):
  *    value          string (or `children`)
- *    size           xs|sm|md|lg|xl  (ChatKit TextSize) - or a numeric px
+ *    size           3xs..6xl  (named t-shirt step from the kit FONT_SIZE scale)
  *    weight         normal|medium|semibold|bold
  *    color          override colour
  *    textAlign      start|center|end
@@ -20,6 +20,7 @@ import {
   type TextProps as RNTextProps,
   type TextStyle,
 } from 'react-native';
+import { FONT_SIZE, type FontSizeName, resolveColorToken, type ColorToken } from './tokens';
 
 /** @deprecated Legacy role-name `variant`. Mapped onto colour + font family. */
 export type TextVariant = 'body' | 'secondary' | 'caption' | 'mono';
@@ -27,8 +28,8 @@ export type TextVariant = 'body' | 'secondary' | 'caption' | 'mono';
 /** ChatKit font weight, plus the legacy `regular` alias of `normal`. */
 export type TextWeight = 'normal' | 'medium' | 'semibold' | 'bold' | 'regular';
 
-/** ChatKit TextSize scale. Legacy `sm|md|lg` overlap and keep their px values. */
-export type TextSizeToken = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+/** Named TextSize scale (3xs..6xl). Single source of truth in tokens.ts. */
+export type TextSizeToken = FontSizeName;
 
 /** ChatKit text alignment. */
 export type TextAlign = 'start' | 'center' | 'end';
@@ -38,13 +39,16 @@ export interface TextProps extends Omit<RNTextProps, 'style'> {
   value?: string;
   /** @deprecated Legacy role variant (body/secondary/caption/mono). */
   variant?: TextVariant;
-  /** ChatKit TextSize token (xs..xl) or a numeric px. Default 15 (md), or 13
-   *  when the legacy `caption` variant is used. */
-  size?: number | TextSizeToken;
+  /** Named TextSize token (3xs..6xl). Default md (15), or sm (13) when the
+   *  legacy `caption` variant is used. Raw px is no longer accepted - use a
+   *  named step from the kit FONT_SIZE scale. */
+  size?: TextSizeToken;
   /** ChatKit font weight. `regular` is a deprecated alias of `normal`. */
   weight?: TextWeight;
-  /** Override colour; wins over the variant/palette colour. */
-  color?: string;
+  /** Text colour. A semantic ColorToken name (text/link/primary/danger/
+   *  success/border) resolves scheme-aware via the kit palette; any other
+   *  string is used as a raw colour (escape hatch). Wins over the variant. */
+  color?: ColorToken | (string & {});
   /** ChatKit `textAlign` (start/center/end). */
   textAlign?: TextAlign;
   /** ChatKit `italic`. */
@@ -61,20 +65,19 @@ export interface TextProps extends Omit<RNTextProps, 'style'> {
   style?: TextStyle | TextStyle[];
 }
 
-/** ChatKit TextSize px values; legacy sm/md/lg keep their original px. */
-const SIZE_TOKENS: Record<TextSizeToken, number> = {
-  xs: 11,
-  sm: 13,
-  md: 15,
-  lg: 17,
-  xl: 20,
-};
+/** Named TextSize px values - the kit FONT_SIZE scale. */
+const SIZE_TOKENS = FONT_SIZE;
 
+// Only two Calibre faces are bundled in apps/app: Calibre-Medium and
+// Calibre-Semibold. 'Calibre-Regular' is NOT loaded and silently falls back to
+// the system font, so it must never be emitted. Weight -> face:
+//   normal / medium -> Calibre-Medium
+//   semibold / bold -> Calibre-Semibold
+// Every Kit Text therefore renders in Calibre with no caller styling.
 const FONTS: Record<'normal' | 'medium' | 'semibold' | 'bold', string> = {
-  normal: 'Calibre-Regular',
+  normal: 'Calibre-Medium',
   medium: 'Calibre-Medium',
   semibold: 'Calibre-Semibold',
-  // Only Calibre-Medium/Semibold are loaded; map ChatKit `bold` to Semibold.
   bold: 'Calibre-Semibold',
 };
 
@@ -83,12 +86,11 @@ function normalizeWeight(w: TextWeight): keyof typeof FONTS {
 }
 
 function resolveSize(
-  size: number | TextSizeToken | undefined,
+  size: TextSizeToken | undefined,
   variant: TextVariant,
 ): number {
-  if (typeof size === 'number') return size;
   if (size) return SIZE_TOKENS[size];
-  return variant === 'caption' ? 13 : 15;
+  return variant === 'caption' ? SIZE_TOKENS.xs : SIZE_TOKENS.md;
 }
 
 function variantColor(variant: TextVariant, dark: boolean): string {
@@ -123,7 +125,9 @@ export function Text(props: TextProps): React.ReactElement {
   } = props;
 
   const base: TextStyle = {
-    color: color ?? variantColor(variant, dark),
+    color: color != null
+      ? resolveColorToken(color, dark ? 'dark' : 'light')
+      : variantColor(variant, dark),
     fontSize: resolveSize(size, variant),
     fontFamily: variant === 'mono' ? 'Menlo' : FONTS[normalizeWeight(weight)],
   };

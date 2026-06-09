@@ -12,6 +12,7 @@
  */
 
 import { useCallback, useState } from 'react';
+import { fontSize } from '@metro-labs/kit/tokens';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { Input } from '@metro-labs/kit/input';
@@ -97,7 +98,7 @@ export default function NewGroup(): React.ReactElement {
         <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg} />
         </Pressable>
-        <Title dark={dark} style={{ color: head, fontSize: 20 }}>
+        <Title size="sm" dark={dark} color={head}>
           New group
         </Title>
       </Box>
@@ -122,7 +123,7 @@ export default function NewGroup(): React.ReactElement {
                 width: 88, height: 88, borderRadius: Math.round(88 * 0.12), backgroundColor: rowBg,
                 borderWidth: 1, borderColor: border, alignItems: 'center', justifyContent: 'center',
               }}>
-                <Text style={{ color: sub, fontSize: 28 }}>＋</Text>
+                <Text size="6xl" color={sub}>＋</Text>
               </Box>
             )}
             {creating && image ? (
@@ -131,14 +132,14 @@ export default function NewGroup(): React.ReactElement {
               </Box>
             ) : null}
           </Pressable>
-          <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>
+          <Text size="xs" color={sub}>
             {image ? 'Tap to change image' : 'Tap to add a group image'}
           </Text>
         </Box>
 
         {/* Group name (optional) */}
         <Col gap={6}>
-          <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+          <Text size="xs" color={sub}>
             Group name (optional)
           </Text>
           <Input
@@ -148,7 +149,7 @@ export default function NewGroup(): React.ReactElement {
             placeholderTextColor={sub}
             dark={dark}
             style={{
-              color: head, fontSize: 16, fontFamily: 'Calibre-Medium',
+              color: head, fontSize: fontSize('md'), fontFamily: 'Calibre-Medium',
               backgroundColor: inputBg, borderRadius: 12, paddingHorizontal: 14,
               paddingVertical: 12, borderWidth: 1, borderColor: border, minHeight: 0,
             }}

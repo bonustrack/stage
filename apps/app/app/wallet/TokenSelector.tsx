@@ -14,6 +14,7 @@
  *
  *  No bespoke/gold styling — Kit `Text`/`Icon` + the palette tokens only. */
 import { useEffect, useMemo, useState } from 'react';
+
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Image } from '@metro-labs/kit/image';
 import { Text } from '@metro-labs/kit/text';
@@ -122,7 +123,7 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
 
   return (
     <Box style={{ gap: 6 }}>
-      <Text style={{ color: sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>{label}</Text>
+      <Text size="xs" color={sub}>{label}</Text>
       <Pressable
         onPress={() => setOpen(true)}
         style={({ pressed }) => ({
@@ -151,11 +152,11 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
         <Col flex={1} style={{ minWidth: 0 }}>
           <Row align="center" gap={6} style={{ minWidth: 0 }}>
             {value.isPrivate ? <Icon name="shieldCheck" size={14} color={sub} /> : null}
-            <Text style={{ color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
+            <Text weight="semibold" size="md" color={head} numberOfLines={1}>
               {value.symbol}
             </Text>
           </Row>
-          <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
+          <Text size="xs" color={sub} numberOfLines={1}>
             {selected ? `Balance: ${selected.balance}` : '—'}
           </Text>
         </Col>
@@ -163,7 +164,7 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
       </Pressable>
 
       <AppModal visible={open} onClose={() => setOpen(false)}>
-        <Text style={{ color: head, fontSize: 18, fontFamily: 'Calibre-Semibold', marginBottom: 8 }}>
+        <Text weight="semibold" size="xl" color={head} style={{ marginBottom: 8 }}>
           Select token
         </Text>
         {loading ? (
@@ -171,7 +172,7 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
             <Spinner size={28} color={fg} />
           </Row>
         ) : rows.length === 0 ? (
-          <Text style={{ color: sub, fontSize: 14, fontFamily: 'Calibre-Medium', paddingVertical: 16 }}>
+          <Text size="md" color={sub} style={{ paddingVertical: 16 }}>
             No tokens.
           </Text>
         ) : (

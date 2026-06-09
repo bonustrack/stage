@@ -7,6 +7,7 @@
  *  lib/notifReadState (the page marks all visible rows read on open). */
 
 import { useEffect, useState } from 'react';
+
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Avatar } from '../Avatar';
@@ -65,10 +66,10 @@ export function NotificationsList({
               style={{ backgroundColor: border }}
             />
             <Col flex={1} style={{ minWidth: 0 }}>
-              <Text style={{ color: head, fontSize: 15, fontFamily: 'Calibre-Semibold' }} numberOfLines={1}>
+              <Text weight="semibold" size="md" color={head} numberOfLines={1}>
                 {labelFor(p)}
               </Text>
-              <Text style={{ color: sub, fontSize: 13, fontFamily: 'Calibre-Medium' }} numberOfLines={1}>
+              <Text size="xs" color={sub} numberOfLines={1}>
                 Tap to review the request
               </Text>
             </Col>

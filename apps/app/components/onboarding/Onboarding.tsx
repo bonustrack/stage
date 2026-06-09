@@ -16,6 +16,7 @@
  *  resets the flag so this shows again for testing. */
 
 import { useCallback, useRef, useState } from 'react';
+
 import {
   FlatList,
   Pressable,
@@ -122,26 +123,10 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
             >
               <Icon name={item.icon} size={56} color={accent} />
             </Box>
-            <Text
-              style={{
-                color: fg,
-                fontSize: 28,
-                fontFamily: 'Calibre-Semibold',
-                textAlign: 'center',
-                marginBottom: 14,
-              }}
-            >
+            <Text weight="semibold" size="6xl" color={fg} style={{ textAlign: 'center', marginBottom: 14 }}>
               {item.title}
             </Text>
-            <Text
-              style={{
-                color: withAlpha(fg, 0.7),
-                fontSize: 17,
-                lineHeight: 24,
-                fontFamily: 'Calibre-Medium',
-                textAlign: 'center',
-              }}
-            >
+            <Text size="xl" color={withAlpha(fg, 0.7)} style={{ lineHeight: 24, textAlign: 'center' }}>
               {item.body}
             </Text>
           </Box>
@@ -188,7 +173,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
           style={{ alignItems: 'center', paddingVertical: 8, opacity: isLast ? 0 : 1 }}
           disabled={isLast}
         >
-          <Text style={{ color: withAlpha(fg, 0.6), fontSize: 16, fontFamily: 'Calibre-Medium' }}>
+          <Text size="md" color={withAlpha(fg, 0.6)}>
             Skip
           </Text>
         </Pressable>
