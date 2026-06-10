@@ -93,7 +93,7 @@ export default function XmtpConversation(): React.ReactElement {
   return (
     <RNAnimated.View
       style={{
-        flex: 1, backgroundColor: bg, paddingBottom: insets.bottom,
+        flex: 1, backgroundColor: bg,
       }}
 >
       {/** Swipe-back handled by the @react-navigation/stack JS card stack
@@ -187,6 +187,12 @@ export default function XmtpConversation(): React.ReactElement {
           onSent={onSent}
 />
       ) : null}
+      {/** Bottom safe-area strip painted with the composer's visible surface
+       *   (`raised` == the editor pill fill) instead of the page `bg`, so the area
+       *   under the Android nav bar reads as one continuous surface with the
+       *   composer above it. Lives inside the sticky view so it tracks the
+       *   composer; only this screen (composer present) is affected. */}
+      <Box height={insets.bottom} surface="raised"/>
       </Box>
       </KeyboardStickyView>
       {/** Overlays — portals/bottom-sheets render here, outside the feed column. */}
