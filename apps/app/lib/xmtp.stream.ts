@@ -23,7 +23,7 @@ import { setAppForeground } from '../modules/metro-pill';
 import { isMetroControlBody } from './push';
 import { getCachedXmtpClient, getOrCreateXmtpClient } from './xmtp.client';
 import { envelopeOfXmtpMessage } from './xmtp.messages';
-import { registerGlobalStreamTeardown } from './xmtp.state';
+import { activeFeedLines, registerGlobalStreamTeardown } from './xmtp.state';
 import {
   STREAM_CONSENT_STATES, pushToFeedSlice, resyncActiveFeeds,
 } from './xmtp.resync';
@@ -86,11 +86,26 @@ async function startStream(client: Awaited<ReturnType<typeof getOrCreateXmtpClie
       if (streamSubscribers.size > 0) {
         for (const cb of streamSubscribers) { try { cb({ convId: convId ?? null, msg }); } catch { /* ignore */ } }
       }
-      if (!convId) return;
+      if (!convId) {
+        /** Couldn't derive a conv id from this message → can't key it into a
+         *  feedCache slice. If a feed is open, resync it so the message isn't
+         *  stranded until the 7s backstop (mirrors the channels-list refresh
+         *  fallback on a convId miss). */
+        if (activeFeedLines.size > 0) void resyncActiveFeeds();
+        return;
+      }
       const line = lineOfConv(convId);
       const env = envelopeOfXmtpMessage(msg, line);
       if (isMetroControlBody(env.text)) return;
       pushToFeedSlice(line, env);
+      /** DESYNC GUARD (Home updates, open feed doesn't): the topic-derived
+       *  `convId` here can differ from the route's convId the open feed
+       *  subscribed under (`lineOfConv(routeConvId)`), so this slice write lands
+       *  on a key nothing is listening to. When the pushed line isn't an active
+       *  feed but SOME feed is open, resync the active feed(s) immediately via
+       *  the canonical `convOfLine` handle so the open conversation shows the
+       *  message live instead of only after reopen/refresh. */
+      if (activeFeedLines.size > 0 && !activeFeedLines.has(line)) void resyncActiveFeeds();
     },
     'all',
     STREAM_CONSENT_STATES,
