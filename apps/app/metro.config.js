@@ -1,3 +1,30 @@
+// Node 18 lacks the ES2023 Array change-array-by-copy methods that metro-config
+// 0.83 calls during loadConfig/getDefaultConfig (configs.toReversed() at
+// loadConfig.js:179). The EAS build host is pinned to node 18 for the
+// nodejs-mobile gradle gate (exact-18 check), so the eager JS bundle phase would
+// otherwise crash before gradle even runs. metro.config.js is require()d by the
+// same Node process that runs getDefaultConfig (called from this file below), so
+// this top-of-file guarded polyfill executes first and makes node 18 work for the
+// bundle phase. Harmless/no-op on node 20+ where these already exist.
+if (!Array.prototype.toReversed) {
+  Object.defineProperty(Array.prototype, 'toReversed', {
+    value: function () {
+      return [...this].reverse();
+    },
+    writable: true,
+    configurable: true,
+  });
+}
+if (!Array.prototype.toSorted) {
+  Object.defineProperty(Array.prototype, 'toSorted', {
+    value: function (compareFn) {
+      return [...this].sort(compareFn);
+    },
+    writable: true,
+    configurable: true,
+  });
+}
+
 /**
  * Extends Expo's Metro config for the bun monorepo:
  * - watch the repo root so the workspace packages (@stage-labs/client,
