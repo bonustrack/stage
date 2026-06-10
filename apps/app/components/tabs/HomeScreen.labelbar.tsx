@@ -13,12 +13,14 @@
  *  the tinted-border style. Presentation only - the filter state is owned by
  *  HomeScreen and passed down. */
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { Text } from '@metro-labs/kit/text';
 import { usePalette } from '../../lib/theme';
+import type { SimultaneousRefs } from '../SwipeTabs.types';
 
 /** Home filter state: the enabled label set (OR-filter), the built-in Unread
  *  toggle, and their handlers. "All" = clearAll back to the empty/default
@@ -88,17 +90,32 @@ function Chip({ label, selected, onPress, link, fg, bg, rowBg }: {
 /** The horizontal filter bar. Always rendered (All + Unread are built-in even
  *  with no labels). `unreadOnly` drives the Unread chip; `enabled` drives the
  *  label chips. "All" is selected when neither filter is active. */
-export function LabelFilterBar({ labels, enabled, unreadOnly, onToggle, onToggleUnread, onClearAll }: {
+export function LabelFilterBar({ labels, enabled, unreadOnly, onToggle, onToggleUnread, onClearAll, panRef }: {
   labels: string[];
   enabled: Set<string>;
   unreadOnly: boolean;
   onToggle: (label: string) => void;
   onToggleUnread: () => void;
   onClearAll: () => void;
+  /** The tabs pager's Pan ref. The chip row's own native scroll BLOCKS it, so a
+   *  horizontal drag over the chips scrolls the chips instead of flipping the
+   *  page. (Opposite of the vertical FlatList, which runs SIMULTANEOUSLY with the
+   *  pager - a vertical-or-horizontal coexistence vs. this strict capture.) */
+  panRef?: SimultaneousRefs;
 }): React.ReactElement {
   const { link, text: fg, bg, border: rowBg } = usePalette();
   const allSelected = !unreadOnly && enabled.size === 0;
-  return (
+  /** Native scroll gesture for the chip row. `blocksExternalGesture(panRef)`
+   *  makes the pager Pan WAIT for this scroll to fail before it can arm, so while
+   *  the finger is dragging the chips the page never swipes. When the chips reach
+   *  an end the native scroll simply stops consuming and the gesture is free - the
+   *  pager isn't permanently dead-zoned, a fresh drag from the end can still page.
+   *  Rebuilt only when panRef identity changes (it's a stable ref -> once). */
+  const chipScroll = useMemo(
+    () => (panRef ? Gesture.Native().blocksExternalGesture(panRef) : Gesture.Native()),
+    [panRef],
+  );
+  const bar = (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
@@ -125,4 +142,5 @@ export function LabelFilterBar({ labels, enabled, unreadOnly, onToggle, onToggle
       ))}
     </ScrollView>
   );
+  return <GestureDetector gesture={chipScroll}>{bar}</GestureDetector>;
 }
