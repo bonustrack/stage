@@ -19,6 +19,7 @@ import { ChannelsSearchBar } from './HomeScreen.search';
 import { HomeContactResults } from './HomeScreen.contacts';
 import { HomeOverflowMenu } from './HomeScreen.overflow';
 import { usePublishTopnavSlot } from './topnavSlots';
+import { getActiveAccount } from '../../lib/accounts';
 
 interface ChannelsListProps {
   panRef?: import('../SwipeTabs.types').SimultaneousRefs;
@@ -103,12 +104,18 @@ export function ChannelsList({
             </Box>
           ) : null}
         </Pressable>
-        {/* Overflow (3-dot) menu: Archived + New-group + Edit profile + Settings. */}
+        {/* Overflow (3-dot) menu: Archived + New-group + Profile + Settings. */}
         <HomeOverflowMenu
           color={head}
           onArchived={() => router.push('/xmtp/archived')}
           onNewGroup={() => router.push('/xmtp/new-group')}
-          onEditProfile={() => router.push('/profile')}
+          onProfile={() => {
+            // Own-profile tab was removed → view yourself via the shared peer
+            // profile route (/user/[address]) for the active account.
+            void getActiveAccount().then(acct => {
+              if (acct?.address) router.push(`/user/${acct.address}`);
+            });
+          }}
           onSettings={() => router.push('/settings')}
 />
       </>

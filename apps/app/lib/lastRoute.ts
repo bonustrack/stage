@@ -54,7 +54,7 @@ function isRestorable(path: string): boolean {
   if (!path || path === '/') return false;
   if (path === '/accounts') return false;
   if (/^\/\(tabs\)/.test(path)) return false;
-  const TAB_ROOTS = ['/wallet', '/notifications', '/profile', '/settings'];
+  const TAB_ROOTS = ['/wallet', '/settings'];
   if (TAB_ROOTS.includes(path)) return false;
   return true;
 }
