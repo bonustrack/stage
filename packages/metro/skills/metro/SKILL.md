@@ -111,6 +111,92 @@ accidentally send from the Claude
 account. Ownership is read from `~/.metro/xmtp-accounts.json`; it allows when
 ownership can't be attributed. Override with `METRO_ALLOW_CROSS_ACCOUNT=1`.
 
+## Themed verbs (porcelain over `metro call`)
+
+Noun-verb wrappers for the common XMTP conversation actions. They forward to the
+same underlying xmtp train actions but add a uniform JSON envelope, `--quiet`, and
+the full exit-code set. Additive - `metro call` and the messaging verbs are unchanged.
+
+```
+metro channel set-github <line> <url|->          # set/clear the channel's GitHub URL
+metro channel set-labels <line> <a,b,c>          # set the channel's labels
+metro channel meta <line> [--name N] [--description D] [--github U] [--labels a,b]
+metro channel info <line>                         # print group info
+metro group new <0xaddr…> [--name N] [--admin-only]   # create a group
+metro group close <line>                          # archive a group (remove members)
+metro group add | remove <line> <0xaddr…>         # add/remove members
+metro dm <0xaddress> [--account <id>]             # open (or reuse) a DM, prints its line
+metro board [tail flags]                          # alias of `metro tail`
+```
+
+**`--json` envelope.** With `--json`, themed verbs wrap output uniformly:
+`{"ok":true,"command":"channel.meta","result":…}` on success, or
+`{"ok":false,"command":…,"error":…,"code":…}` on failure. `--quiet` prints only
+the result id (e.g. the new group/dm line). Legacy commands keep their original
+`{ok,error,code}` shape.
+
+**Exit codes:** `0` ok · `1` usage · `2` config · `3` upstream · `4` daemon not
+running · `7` rate-limited.
+
+## The verb registry & `metro schema`
+
+Every station/core verb is declared once in a registry as
+`{name, owner, kind:read|mutate, idempotent, inputSchema?, description, example}`.
+That single declaration feeds `metro schema` introspection, the send-guard's
+mutation set (a parity test asserts the guard ⊆ the registry's xmtp mutate set),
+and CLI help. Introspect it:
+
+```
+metro schema [station] [--json]     # the "timetable": human table, or full registry as JSON
+metro verbs  [station]              # alias of schema
+```
+
+`--json` emits `{"verbs":[{name,owner,kind,idempotent,description,example,hasInputSchema}]}`.
+
+## Identity: accounts, sessions, `--from`
+
+**Accounts** are the per-station credential entries in `~/.metro/<station>-accounts.json`
+(xmtp/discord/telegram). Inspect and import them without hand-editing files:
+
+```
+metro account list [<station>]                   # id, station, eth address, key source, owner
+metro account address [<id>]                     # an account's fundable eth address
+metro account import xmtp <privkey> --id <name>  # import a raw-key xmtp account, written 0600
+```
+
+`account import` is xmtp-only, writes atomically at mode `0600`, refuses duplicate
+ids/keys, and never restarts the daemon - run `metro trains restart xmtp` to load
+it, then `metro account address <id>` for its address. Key/mnemonic files are kept
+`0600` (dir `0700`) via secure-fs.
+
+**Sessions** are an opt-in binding layer: `~/.metro/sessions.json` shaped
+`{"<id>": {xmtp, discord, telegram, default}}` maps a named session to a per-station
+account id. Each session gets owner URI `metro://session/<id>`. When the file is
+absent (the default), identity falls back to the env / per-account owner - behavior
+is byte-for-byte unchanged. Inspect:
+
+```
+metro whoami [--json]              # resolved owner URI, per-station accounts, the --strict tail cmd
+metro session list [--json]        # read-only dump of sessions.json bindings
+```
+
+**`--from <session|account>`** routes an outbound message through a specific xmtp
+account. It works on `send|reply|react|unreact|edit|delete|read`. A `--from` name
+that matches a session id resolves via its binding; otherwise it is a literal
+account id. Only xmtp is multi-account, so `--from` is inert on discord/telegram.
+With no flag and no sessions.json, routing is unchanged.
+
+```
+metro send metro://xmtp/<account>/<conv> "hi" --from codex
+```
+
+**Webhook → session binding.** Bind a webhook endpoint to a session so its inbound
+events are attributed to that session's owner:
+
+```
+metro webhook add <label> --session=<id> [--secret=…]
+```
+
 ## Writing a new train
 
 1. Start from `node_modules/@metro-labs/metro/examples/telegram.ts`.
@@ -168,7 +254,17 @@ metro history [--limit=N] [--line=…] [--station=…] [--from=…] [--text=…]
 metro claim <line> [--as=<user-uri>]        # take exclusive ownership of a line
 metro release <line>                        # release a line back to broadcast
 metro claims                                # print the current claims map
-metro webhook add <label> [--secret=…]      # register an HTTP receive endpoint
+metro whoami [--json]                       # resolved identity: owner, accounts, strict tail cmd
+metro session list [--json]                 # read-only sessions.json bindings
+metro account list [<station>]              # list accounts (id, address, key source, owner)
+metro account address [<id>]                # an account's fundable eth address
+metro account import xmtp <privkey> --id <name>   # import a raw-key xmtp account (0600)
+metro schema [station] [--json]             # the verb registry / "timetable" (alias: verbs)
+metro channel set-github|set-labels|meta|info <line> [flags]   # themed channel verbs
+metro group new|close|add|remove [args]     # themed group verbs
+metro dm <0xaddress> [--account <id>]       # open/reuse a DM, prints its line
+metro board [tail flags]                    # alias of `metro tail`
+metro webhook add <label> [--secret=…] [--session=<id>]   # register an HTTP receive endpoint
 metro webhook list | remove <id>            # list/remove endpoints
 metro tunnel setup <name> <hostname>        # configure a Cloudflare named tunnel
 metro tunnel status                         # show tunnel config
@@ -178,7 +274,8 @@ metro update                                # upgrade in place
 metro --version | --help
 
 # Global: --json (machine-readable output, and {"ok":false,…} on errors).
-# Exit codes: 0 ok · 1 usage · 2 config · 3 upstream · 4 daemon not running.
+#         --quiet (themed verbs: print only the result id).
+# Exit codes: 0 ok · 1 usage · 2 config · 3 upstream · 4 daemon not running · 7 rate-limited.
 ```
 
 ## Webhooks (builtin source)

@@ -34,6 +34,36 @@ metro react "metro://xmtp/<account>/<conversation>" <messageId> 👍
 metro call xmtp newGroup '{"addresses":["0x..."],"name":"my group"}'
 ```
 
+### CLI surface
+
+Beyond the low-level `send`/`react`/`call` verbs, the CLI exposes themed porcelain
+and identity commands. Lines are account-scoped: `metro://xmtp/<account>/<conversation>`
+(the legacy single-segment form maps to the `default` account).
+
+```sh
+# Themed conversation verbs (porcelain over the xmtp train actions)
+metro channel set-github <line> <url|->          # also: set-labels, meta, info
+metro group new <0xaddr…> [--name N] [--admin-only]   # also: close, add, remove
+metro dm <0xaddress> [--account <id>]            # open/reuse a DM, prints its line
+
+# Verb registry introspection ("timetable")
+metro schema [station] [--json]                  # alias: metro verbs
+
+# Identity: accounts + sessions
+metro account list | address [<id>] | import xmtp <privkey> --id <name>
+metro whoami [--json]                             # resolved owner, accounts, tail cmd
+metro session list [--json]                       # read-only sessions.json bindings
+metro send <line> "hi" --from <session|account>  # route outbound via a specific account
+metro webhook add <label> --session=<id>          # attribute a webhook to a session
+```
+
+Themed verbs share a uniform `--json` envelope - `{ok,command,result}` on success,
+`{ok,command,error,code}` on failure - plus `--quiet` (print only the result id).
+Exit codes: `0` ok · `1` usage · `2` config · `3` upstream · `4` daemon not running
+· `7` rate-limited. Accounts live in `~/.metro/<station>-accounts.json`; key/mnemonic
+files are kept `0600`. Sessions are an opt-in `~/.metro/sessions.json` binding layer
+`{<id>:{xmtp,discord,telegram,default}}` with owner URI `metro://session/<id>`.
+
 Define a train with the helper:
 
 ```ts
