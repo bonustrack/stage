@@ -161,7 +161,7 @@ export class TrainSupervisor {
       if (!pending) { log.debug({ name: state.name, id: msg.id }, 'train: stale response'); return; }
       state.pending.delete(msg.id);
       clearTimeout(pending.timer);
-      pending.resolve({ result: msg.result, error: msg.error });
+      pending.resolve({ result: msg.result, error: msg.error, errorInfo: msg.errorInfo });
       return;
     }
     if (msg.op === 'log') { log.info({ name: state.name, msg: msg.text }, 'train log'); return; }

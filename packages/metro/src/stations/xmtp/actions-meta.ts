@@ -5,6 +5,7 @@ import { accountForCall, convOf, lineOf } from './accounts.js';
 import { respond } from './wire.js';
 import { warmGroupName } from './conv-name.js';
 import { mergeAppData, readAppData, type GroupLike } from './labels.js';
+import { TrainError } from '../../train-error.js';
 
 type Args = Record<string, unknown>;
 
@@ -17,7 +18,7 @@ export function resolveLine(args: Args, verb: string): string {
     const acct = accountForCall(args as { account?: string });
     return lineOf(acct.cfg.id, groupId);
   }
-  throw new Error(`${verb} requires \`line\` or \`groupId\``);
+  throw new TrainError('INVALID_ARGS', `${verb} requires \`line\` or \`groupId\``);
 }
 
 /** Core mutation shared by updateChannelMeta + the setLabels/setGithub wrappers.
@@ -29,10 +30,10 @@ export async function applyChannelMeta(
 ): Promise<Record<string, unknown>> {
   const { line, name, description, appData } = args;
   const { acct, conv } = await convOf(line);
-  if (!conv) throw new Error(`conversation not found for ${line}`);
+  if (!conv) throw new TrainError('NOT_FOUND', `conversation not found for ${line}`);
   const group = conv as unknown as GroupLike;
   if (typeof group.updateAppData !== 'function') {
-    throw new Error(`${verb} target is not a group (no updateAppData)`);
+    throw new TrainError('INVALID_ARGS', `${verb} target is not a group (no updateAppData)`);
   }
   await group.sync?.().catch(() => undefined);
 

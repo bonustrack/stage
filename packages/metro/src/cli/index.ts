@@ -231,13 +231,16 @@ async function main(): Promise<void> {
   catch (err) {
     const code = (err as ExitErr).code;
     const command = (err as ExitErr).command;
+    const errorInfo = (err as ExitErr).errorInfo;
     if (isJson(flags)) {
       // Themed verbs carry their `command` tag → uniform {ok,command,error,code}
       // envelope. Legacy commands keep the original {ok,error,code} shape so
-      // existing scripts parsing them are unaffected.
+      // existing scripts parsing them are unaffected. `errorInfo` is an additive
+      // passthrough (#3) — only present when the train emitted structured detail.
+      const extra = errorInfo ? { errorInfo } : {};
       writeJson(command
-        ? { ok: false, command, error: errMsg(err), code: code ?? 1 }
-        : { ok: false, error: errMsg(err), code: code ?? 1 });
+        ? { ok: false, command, error: errMsg(err), code: code ?? 1, ...extra }
+        : { ok: false, error: errMsg(err), code: code ?? 1, ...extra });
     } else process.stderr.write(`error: ${errMsg(err)}\n`);
     process.exit(typeof code === 'number' ? code : 1);
   }

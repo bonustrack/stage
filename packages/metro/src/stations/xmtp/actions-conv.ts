@@ -3,6 +3,7 @@
 import { IdentifierKind } from '@xmtp/node-sdk';
 import { accounts, accountForCall, convOf, lineOf, parseLine, type Account } from './accounts.js';
 import { inboxEthCache, respond } from './wire.js';
+import { TrainError } from '../../train-error.js';
 import { warmGroupName } from './conv-name.js';
 import { pushHandlers } from './actions-push.js';
 import { cleanLabels, labelsBlob, readAppData, type GroupLike } from './labels.js';
@@ -43,11 +44,11 @@ async function createRequestGroup(id: string, args: Args): Promise<void> {
     memberAddresses?: string[]; memberInboxIds?: string[];
     name: string; description?: string; labels?: string[] };
   const acct = accountForCall(args as { account?: string });
-  if (!name || typeof name !== 'string') throw new Error('createRequestGroup requires a `name`');
+  if (!name || typeof name !== 'string') throw new TrainError('INVALID_ARGS', 'createRequestGroup requires a `name`');
   const addrs = (memberAddresses ?? []).filter(a => typeof a === 'string' && a.length > 0);
   const inboxes = (memberInboxIds ?? []).filter(a => typeof a === 'string' && a.length > 0);
   if (addrs.length === 0 && inboxes.length === 0) {
-    throw new Error('createRequestGroup requires memberAddresses[] or memberInboxIds[]');
+    throw new TrainError('INVALID_ARGS', 'createRequestGroup requires memberAddresses[] or memberInboxIds[]');
   }
   const opts: { groupName: string; groupDescription?: string; appData?: string } = { groupName: name };
   if (description) opts.groupDescription = description;
@@ -84,7 +85,7 @@ async function setLabels(id: string, args: Args): Promise<void> {
     line?: string; groupId?: string; labels: string[];
     setName?: string; setDescription?: string; setGithub?: string };
   const resolvedLine = resolveLine(args, 'setLabels');
-  if (!Array.isArray(labels)) throw new Error('setLabels requires a `labels` array');
+  if (!Array.isArray(labels)) throw new TrainError('INVALID_ARGS', 'setLabels requires a `labels` array');
   const appData: Record<string, unknown> = { labels };
   if (typeof setGithub === 'string') appData['github'] = setGithub;
   const result = await applyChannelMeta(
@@ -96,7 +97,7 @@ async function setLabels(id: string, args: Args): Promise<void> {
 async function query(id: string, args: Args): Promise<void> {
   const { line, limit } = args as { line: string; limit?: number };
   const { conv } = await convOf(line);
-  if (!conv) throw new Error(`conversation not found for ${line}`);
+  if (!conv) throw new TrainError('NOT_FOUND', `conversation not found for ${line}`);
   const lim = Math.min(Math.max(1, limit ?? 20), 200);
   await conv.sync().catch(() => undefined);
   const all = await conv.messages();
@@ -115,7 +116,7 @@ async function query(id: string, args: Args): Promise<void> {
 async function groupInfo(id: string, args: Args): Promise<void> {
   const { line } = args as { line: string };
   const { acct, conv } = await convOf(line);
-  if (!conv) throw new Error(`conversation not found for ${line}`);
+  if (!conv) throw new TrainError('NOT_FOUND', `conversation not found for ${line}`);
   const inboxIds = (await conv.members()).map(m => m.inboxId);
   const addresses: Record<string, string> = {};
   /** #9: serve cached inbox→eth first; only fetch states for the misses. */

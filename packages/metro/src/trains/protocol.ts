@@ -3,7 +3,10 @@
 import { readdirSync, statSync } from 'node:fs';
 import { join, parse as parsePath } from 'node:path';
 import { errMsg, log } from '../log.js';
+import { coerceErrorInfo, type TrainErrorInfo } from '../train-error.js';
 import type { WireEvent } from '../history-types.js';
+
+export { TrainError, serializeTrainError, type TrainErrorInfo } from '../train-error.js';
 
 export const CALL_TIMEOUT_MS = 60_000;
 
@@ -30,17 +33,19 @@ export type TrainEvent = {
   event?: WireEvent;
 } & Record<string, unknown>;
 
-export type TrainCallResponse = { result?: unknown; error?: string };
+export type TrainCallResponse = { result?: unknown; error?: string; errorInfo?: TrainErrorInfo };
 
 export type TrainMessage =
-  | { op: 'response'; id: string; result?: unknown; error?: string }
+  | { op: 'response'; id: string; result?: unknown; error?: string; errorInfo?: TrainErrorInfo }
   | { op: 'log'; text?: string }
   | { op: 'event'; event: TrainEvent }
   | { op: 'ignore' };
 
 /** Classify a single parsed stdout line from a train. */
 export function parseTrainLine(name: string, line: string): TrainMessage | null {
-  let msg: { op?: string; id?: string; result?: unknown; error?: string; text?: string } & Record<string, unknown>;
+  let msg: {
+    op?: string; id?: string; result?: unknown; error?: string; errorInfo?: unknown; text?: string;
+  } & Record<string, unknown>;
   try { msg = JSON.parse(line); }
   catch (err) {
     log.warn({ name, err: errMsg(err), line: line.slice(0, 200) }, 'train: bad JSON');
@@ -48,7 +53,7 @@ export function parseTrainLine(name: string, line: string): TrainMessage | null 
   }
   if (msg.op === 'response') {
     if (typeof msg.id !== 'string') return { op: 'ignore' };
-    return { op: 'response', id: msg.id, result: msg.result, error: msg.error };
+    return { op: 'response', id: msg.id, result: msg.result, error: msg.error, errorInfo: coerceErrorInfo(msg.errorInfo) };
   }
   if (msg.op === 'log') return { op: 'log', text: msg.text };
   /** Anything without an `op` (or with `op:"event"`) is an inbound event. */

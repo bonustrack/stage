@@ -21,11 +21,13 @@ export const EXIT = {
 /** A forward-call result, narrowed to the daemon's success/error union. */
 type CallResult = Record<string, unknown> | null;
 
-/** Map a thrown error to an exit code, detecting rate-limit upstream errors so
- *  they surface as code 7 rather than a generic upstream 3. */
+/** Map a thrown error to an exit code. Prefer the structured `errorInfo.code`
+ *  (#3) — `RATE_LIMITED` → code 7 — and fall back to the legacy prose regex so
+ *  trains that don't yet emit `errorInfo` keep surfacing rate limits as code 7. */
 function codeFor(err: unknown): number {
   const explicit = (err as ExitErr).code;
   if (typeof explicit === 'number') return explicit;
+  if ((err as ExitErr).errorInfo?.code === 'RATE_LIMITED') return EXIT.rateLimited;
   if (/rate.?limit|429|too many requests/i.test(errMsg(err))) return EXIT.rateLimited;
   return EXIT.upstream;
 }
@@ -43,7 +45,11 @@ export async function forwardCall(
   if (!('response' in resp)) throw exitErr('daemon returned malformed forward-call response', EXIT.upstream);
   if (resp.response.error) {
     const e = exitErr(`${train}: ${resp.response.error}`, EXIT.upstream);
-    e.code = /rate.?limit|429|too many requests/i.test(resp.response.error)
+    // Prefer the structured code (#3); regex stays as the fallback for trains
+    // that don't yet emit `errorInfo`. Carry `errorInfo` for --json passthrough.
+    e.errorInfo = resp.response.errorInfo;
+    e.code = resp.response.errorInfo?.code === 'RATE_LIMITED'
+      || /rate.?limit|429|too many requests/i.test(resp.response.error)
       ? EXIT.rateLimited : EXIT.upstream;
     throw e;
   }
@@ -79,6 +85,7 @@ export async function runVerb(
     // envelope. We never write here, to avoid double output.
     const e = exitErr(errMsg(err), codeFor(err));
     e.command = command;
+    e.errorInfo = (err as ExitErr).errorInfo; // carry structured detail through (#3)
     throw e;
   }
   if (isJson(f)) return writeJson({ ok: true, command, result });
