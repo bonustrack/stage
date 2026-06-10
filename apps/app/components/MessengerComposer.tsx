@@ -4,7 +4,6 @@ import { useRef, useState, type ComponentRef } from 'react';
 
 import { Text } from '@metro-labs/kit/text';
 import { Textarea } from '@metro-labs/kit/textarea';
-import { ComposerGradient } from './ComposerGradient';
 import { Col } from './layout';
 import { type Attachment } from './MessengerComposer.helpers';
 import { useComposerActions } from './MessengerComposer.actions';
@@ -124,9 +123,6 @@ export function MessengerComposer({
   const bg = pal.bg; // #0e0f10 / #ffffff
   return (
     <Col padding={{ x: 0, top: 0, bottom: 0 }} surface="surface">
-      {/** 24px fade sits directly above the composer; bleeds full-width to the
-       *   screen edges (composer is edge-to-edge, no horizontal inset). */}
-      <ComposerGradient bg={bg} direction="down" top={-24} height={24} left={0} right={0}/>
       {replyingTo ? (
         <ReplyBanner
           dark={dark} sub={sub} sender={replyingTo.sender} onClear={onClearReply}
