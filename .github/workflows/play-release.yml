@@ -9,9 +9,13 @@ name: Play release
 #   runner just kicks it off and submits. No self-hosted runner.
 #
 # TRIGGERS:
-#   - push to main      : the primary path. Every merge ships a release.
-#   - workflow_dispatch : manual, pick a single track.
-#   - push tags v*      : optional; a tagged release ships all tracks.
+#   - push to main      : the primary path, BUT only when the app version
+#       actually changes. The push is filtered to apps/app/app.config.js, and a
+#       `guard` job then diffs the `version` VALUE (HEAD vs HEAD^) and only lets
+#       the build run if it really changed. So a release = a version bump landing
+#       on main, not every merge (merges are frequent + EAS builds cost money).
+#   - workflow_dispatch : manual, any-time release, pick a single track.
+#   - push tags v*      : optional escape hatch; a tagged release ships tracks.
 #
 # CONCURRENCY:
 #   Latest-wins. A newer merge cancels a queued/in-flight release so we never
@@ -31,6 +35,11 @@ name: Play release
 on:
   push:
     branches: [main]
+    # Only consider main pushes that touch the file carrying the app version.
+    # This is a first-pass filter; the `guard` job below confirms the version
+    # VALUE actually changed (an unrelated edit to this file should not ship).
+    paths:
+      - 'apps/app/app.config.js'
     tags: ['v*']
   workflow_dispatch:
     inputs:
@@ -50,7 +59,58 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Decide whether this push to main should actually release. The paths filter
+  # only guarantees app.config.js was touched; here we diff the `version` VALUE
+  # between HEAD and HEAD^ and only proceed if it changed. workflow_dispatch and
+  # v* tags skip the diff and always release (manual/tag = intentional).
+  guard:
+    runs-on: ubuntu-latest
+    outputs:
+      release: ${{ steps.check.outputs.release }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Need HEAD^ to diff the previous version value.
+          fetch-depth: 2
+
+      - name: Decide whether to release
+        id: check
+        run: |
+          set -euo pipefail
+          FILE="apps/app/app.config.js"
+          extract() {
+            # Print the version string value, or empty if absent. Reads from a
+            # git blob ($1 = ref) so we can compare HEAD vs HEAD^ without checkout.
+            git show "$1:$FILE" 2>/dev/null \
+              | grep -oE "version:[[:space:]]*['\"][^'\"]+['\"]" \
+              | head -n1 \
+              | sed -E "s/version:[[:space:]]*['\"]([^'\"]+)['\"]/\1/" || true
+          }
+
+          if [ "${{ github.event_name }}" != "push" ] || [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "Trigger is ${{ github.event_name }} (ref ${{ github.ref }}); releasing without version diff."
+            echo "release=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          NEW=$(extract HEAD)
+          OLD=$(extract HEAD^)
+          echo "version: '$OLD' (HEAD^) -> '$NEW' (HEAD)"
+
+          if [ -z "$NEW" ]; then
+            echo "::warning::Could not read version from $FILE at HEAD; skipping release."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          elif [ "$NEW" != "$OLD" ]; then
+            echo "Version changed -> releasing."
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Version unchanged ('$NEW') -> skipping release."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          fi
+
   release:
+    needs: guard
+    if: needs.guard.outputs.release == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     defaults:

@@ -3,11 +3,23 @@
 Ships the **Stage** app (`applicationId box.stage`) to Google Play, paid and
 automatic.
 
+## Release recipe
+
+**A release = a version bump landing on `main`.** Not every merge.
+
+1. Bump `version` in `apps/app/app.config.js` (e.g. `'0.1.0'` -> `'0.1.1'`).
+2. Merge to `main`.
+3. The workflow auto-releases to **internal + closed** (+ **production** once
+   the Play production track is unlocked).
+
+Merges that do not change the version do not release - merges are frequent and
+each EAS cloud build costs money, so only an intentional version bump ships.
+
 ## Design
 
 ```
-push to main  ->  GitHub Action  ->  EAS CLOUD build  ->  eas submit x3 tracks
-(every merge)     (ubuntu-latest)    (production-prod)     internal / closed / production
+version bump on main  ->  GitHub Action  ->  EAS CLOUD build  ->  eas submit x3 tracks
+(app.config.js)           (ubuntu-latest)    (production-prod)     internal / closed / production
 ```
 
 `.github/workflows/play-release.yml` runs on a GitHub-hosted runner. It kicks
@@ -21,9 +33,18 @@ No self-hosted runner. The Mac is not involved.
 
 | Trigger | Effect |
 |---------|--------|
-| **push to `main`** | primary path - every merge builds + submits to internal + closed (+ production if the gate allows). |
-| **workflow_dispatch** | manual run; pick one track (`internal` / `closed` / `production`). |
-| **push tag `v*`** | optional; same as a main push. |
+| **push to `main`** | primary path, but only when the **app version changes**. The push is filtered to `apps/app/app.config.js` (`paths:`), then a `guard` job diffs the `version` VALUE (HEAD vs HEAD^) and only proceeds if it actually changed. A version bump merging to main builds + submits to internal + closed (+ production if the gate allows). |
+| **workflow_dispatch** | manual, any-time release; pick one track (`internal` / `closed` / `production`). Skips the version diff. |
+| **push tag `v*`** | optional escape hatch; releases without the version diff. |
+
+### Version-change guard
+
+The `paths:` filter alone fires on **any** edit to `app.config.js`, so it is
+only a first pass. The `guard` job is the real gate: it checks out with
+`fetch-depth: 2` and compares the `version` string in `app.config.js` at `HEAD`
+vs `HEAD^`. The `release` job runs only when `guard` outputs `release == 'true'`
+(version actually changed). `workflow_dispatch` and `v*` tags bypass the diff
+and always release.
 
 ### Concurrency
 
