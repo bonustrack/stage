@@ -12,7 +12,7 @@ import { createAppKit, defaultWagmiConfig } from '@reown/appkit-wagmi-react-nati
 
 /** Reused from the Snapshot UI (Less OK'd). A WalletConnect Cloud projectId is
  *  a public client identifier, not a secret. */
-export const WC_PROJECT_ID = 'e6454bd61aba40b786e866a69bd4c5c6';
+const WC_PROJECT_ID = 'e6454bd61aba40b786e866a69bd4c5c6';
 
 const metadata = {
   name: 'Metro',

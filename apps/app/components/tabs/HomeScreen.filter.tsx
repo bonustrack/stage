@@ -16,9 +16,6 @@ import {
 import { UNLABELED } from './HomeScreen.filter.types';
 import type { LabelFilterValue } from './HomeScreen.filter.types';
 
-export { UNLABELED } from './HomeScreen.filter.types';
-export type { LabelFilterValue } from './HomeScreen.filter.types';
-
 /** A cross-screen request only ever carries a concrete label string (a tapped
  *  chip). The null / UNLABELED sentinels have no chip in the bar, so ignore
  *  them rather than toggling a non-existent filter. */

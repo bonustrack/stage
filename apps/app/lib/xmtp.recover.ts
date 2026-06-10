@@ -30,7 +30,7 @@ const ENV_KEY = 'xmtp.env';
 
 /** Surfaced (non-fatal) when an imported wallet's inbox can't register another
  *  installation. The account still works for wallet / Railgun. */
-export const INSTALLATION_LIMIT_MESSAGE =
+const INSTALLATION_LIMIT_MESSAGE =
   'This wallet already has XMTP set up on too many devices (installation limit reached). ' +
   'Messaging is unavailable for this account — wallet features still work.';
 
@@ -44,7 +44,7 @@ export interface CreateOpts {
 /** Thrown by createClientForAccount when an imported inbox can't register a new
  *  installation. Callers treat it as a clear, NON-FATAL surface (no wipe, no
  *  loop) — onboarding still completes, wallet/Railgun still work. */
-export class XmtpInstallationLimitError extends Error {
+class XmtpInstallationLimitError extends Error {
   constructor() { super(INSTALLATION_LIMIT_MESSAGE); this.name = 'XmtpInstallationLimitError'; }
 }
 

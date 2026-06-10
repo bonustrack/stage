@@ -49,7 +49,7 @@ export function rememberLocalAttachments(messageId: string, uris: ReadonlyArray<
 
 /** Local `file://` URI for the attachment at `index` of `messageId`, if one was
  *  cached for a send made this session. */
-export function getLocalAttachment(messageId: string, index: number): string | undefined {
+function getLocalAttachment(messageId: string, index: number): string | undefined {
   const uri = byMessageId.get(messageId)?.[index];
   return uri ? uri : undefined;
 }

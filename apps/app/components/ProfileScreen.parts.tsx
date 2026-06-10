@@ -5,8 +5,8 @@
 import { useEffect, useState } from 'react';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
-import { Box, Row, Col } from './layout';
-import { usePalette, useBlockRadius, type Palette } from '../lib/theme';
+import { Box, Row } from './layout';
+import { usePalette, type Palette } from '../lib/theme';
 import { getCachedXmtpClient, getOrCreateXmtpClient } from '../modules/messaging';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';
@@ -65,26 +65,6 @@ export function ProfileHeader({ variant, insetTop, onBack, c }: {
         // Tab variant: avatar + name → Menu, matching the Home topnav identity.
         <TopnavIdentity/>
       )}
-    </Row>
-  );
-}
-
-/** Boxed read-only field with an optional copy affordance. */
-export function InfoRow({ label, value, onCopy, c }: {
-  label: string; value: string; onCopy?: () => void; c: ProfileColors;
-}): React.ReactElement {
-  const blockRadius = useBlockRadius();
-  return (
-    <Row radius={blockRadius} background={c.border} padding={12} margin={{ x: 16, top: 12 }} align="center" gap={8} style={{ borderWidth: 1, borderColor: c.border }}>
-      <Col flex={1}>
-        <Text size="3xs" color={c.text}>{label.toUpperCase()}</Text>
-        <Text size="md" color={c.text} style={{ marginTop: 4 }} selectable>{value}</Text>
-      </Col>
-      {onCopy ? (
-        <Pressable onPress={onCopy} hitSlop={8} style={{ padding: 4 }}>
-          <Icon name="copy" size={18} color={c.text}/>
-        </Pressable>
-      ) : null}
     </Row>
   );
 }
