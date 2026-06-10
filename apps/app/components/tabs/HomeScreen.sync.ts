@@ -137,6 +137,7 @@ export function useChannelsSync({
             isCancelled: () => cancelled,
             setRows,
             refresh,
+            refreshRequestCount,
           }));
         } catch { /* message stream init failed — preview will lag */ }
 

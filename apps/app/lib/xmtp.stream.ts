@@ -64,16 +64,76 @@ let globalPushSub: (() => void) | null = null;
 /** Coalesce a burst of pushes (e.g. several messages arriving at once) into a
  *  single forced resync. */
 let pushResyncTimer: number | null = null;
+/** When the last FORCED (maxAge 0) push-driven inbox sync ran. Enforces a
+ *  minimum spacing so a push burst can't run back-to-back 3-8s inbox syncs. */
+let lastForcedPushSyncAt = 0;
+/** When the live MLS stream last delivered a message (set in `startStream`).
+ *  A push that arrives right after a live delivery is redundant — the stream
+ *  already brought the message — so we can skip the forced inbox sync. */
+let lastStreamMsgAt = 0;
+/** When the global stream last closed (set in `startStream`'s onClose). While
+ *  the stream is dead / re-arming a push MUST always force-sync (the point of
+ *  #454: a push is the only signal that reaches a device with a dead stream). */
+let lastStreamCloseAt = 0;
+/** Minimum spacing between forced push-driven inbox syncs (full passes are
+ *  3-8s; back-to-back ones starve the JS thread + hammer the read-rate limit). */
+const MIN_FORCED_SYNC_SPACING_MS = 4_000;
+/** If the live stream delivered within this window, a push is redundant. */
+const STREAM_FRESH_MS = 3_000;
+/** Treat the stream as "recently dead / re-arming" within this window of an
+ *  onClose, so a push during the gap still force-syncs unconditionally. */
+const STREAM_DEAD_GRACE_MS = 5_000;
 
-/** Push-driven resync: the FCM `onXmtpPush` event is the real-time wake. Force
- *  an inbox sync (maxAge 0 — bypass the syncInboxOnce coalesce window so a push
- *  always pulls) then reload the open feed(s). Debounced ~300ms to coalesce a
- *  burst into one sync. */
+/** Called from the live stream callback so push handling can tell whether the
+ *  stream just delivered (making a subsequent push redundant). */
+function noteStreamDelivery(): void { lastStreamMsgAt = Date.now(); }
+
+/** Push-driven resync: the FCM `onXmtpPush` event is the real-time wake.
+ *
+ *  TRAILING-edge debounce (was leading): coalesce a push burst into ONE sync
+ *  that runs ~300ms after the LAST push, so several messages landing together
+ *  trigger a single pass instead of one-per-push.
+ *
+ *  When the timer fires we decide whether to FORCE (maxAge 0) the inbox sync:
+ *    - Stream dead / re-arming (onClose fired recently OR no live cancel) →
+ *      ALWAYS force. This is the #454 guarantee: a push is the only signal that
+ *      reaches a device whose stream silently died, so it must resync promptly.
+ *    - Stream alive AND it delivered a message within STREAM_FRESH_MS → the push
+ *      is redundant (the stream already brought it); SKIP the forced sync. We
+ *      still run a coalesced non-forced resync of open feeds (cheap, respects
+ *      the syncInboxOnce freshness window) so nothing regresses.
+ *    - Otherwise (stream alive but quiet) → force, but throttled to one forced
+ *      sync per MIN_FORCED_SYNC_SPACING_MS so a burst can't run back-to-back
+ *      full inbox passes. */
 function onXmtpPush(): void {
-  if (pushResyncTimer) return;
+  if (pushResyncTimer) clearTimeout(pushResyncTimer);
   pushResyncTimer = setTimeout(() => {
     pushResyncTimer = null;
-    void (async () => { await syncInboxOnce(0); await resyncActiveFeeds(); })();
+    const now = Date.now();
+    const streamDead = !globalStreamCancel
+      || (now - lastStreamCloseAt) < STREAM_DEAD_GRACE_MS;
+    const streamFresh = (now - lastStreamMsgAt) < STREAM_FRESH_MS;
+    void (async () => {
+      if (streamDead) {
+        /** Stream is down — the push is the catch-up signal; always force. */
+        lastForcedPushSyncAt = now;
+        await syncInboxOnce(0);
+        await resyncActiveFeeds();
+        return;
+      }
+      if (streamFresh) {
+        /** Live stream just delivered — push is redundant. Cheap non-forced
+         *  resync only (coalesced; no extra full inbox pass). */
+        await resyncActiveFeeds();
+        return;
+      }
+      /** Stream alive but quiet — force, throttled to the min spacing. */
+      if (now - lastForcedPushSyncAt >= MIN_FORCED_SYNC_SPACING_MS) {
+        lastForcedPushSyncAt = now;
+        await syncInboxOnce(0);
+      }
+      await resyncActiveFeeds();
+    })();
   }, 300) as unknown as number;
 }
 
@@ -95,6 +155,9 @@ async function startStream(client: Awaited<ReturnType<typeof getOrCreateXmtpClie
   await client.conversations.streamAllMessages(
     async (msg) => {
       if (!msg) return;
+      /** Mark a live delivery so a push arriving right after is treated as
+       *  redundant (see onXmtpPush's STREAM_FRESH_MS skip). */
+      noteStreamDelivery();
       /** Derive the conv id TOPIC-FIRST (the `g-<hex>` group id), `conversationId`
        *  only as fallback. MUST match the channels list (HomeScreen.stream's
        *  topic-first `convIdFromTopic`) + the open feed (`lineOfConv(convId)`).
@@ -137,8 +200,10 @@ async function startStream(client: Awaited<ReturnType<typeof getOrCreateXmtpClie
     STREAM_CONSENT_STATES,
     () => {
       /** Native stream closed (backgrounding/blip). Drop the stale cancel,
-       *  resync the active feed once to cover the gap, then re-arm. */
+       *  resync the active feed once to cover the gap, then re-arm. Stamp the
+       *  close time so a push during the dead/re-arming window force-syncs. */
       globalStreamCancel = null;
+      lastStreamCloseAt = Date.now();
       void resyncActiveFeeds();
       rearmGlobalStream();
     },
@@ -192,6 +257,9 @@ function teardownGlobalStream(): void {
   if (globalStreamCancel) { globalStreamCancel(); globalStreamCancel = null; }
   if (globalStreamRearmTimer) { clearTimeout(globalStreamRearmTimer); globalStreamRearmTimer = null; }
   if (pushResyncTimer) { clearTimeout(pushResyncTimer); pushResyncTimer = null; }
+  /** Reset push/stream timing so the next account doesn't inherit stale spacing
+   *  (e.g. a "stream fresh" skip keyed off the previous inbox's delivery). */
+  lastForcedPushSyncAt = 0; lastStreamMsgAt = 0; lastStreamCloseAt = 0;
   if (globalPushSub) { try { globalPushSub(); } catch { /* ignore */ } globalPushSub = null; }
   if (globalAppStateSub) { try { globalAppStateSub.remove(); } catch { /* ignore */ } globalAppStateSub = null; }
   /** Clear the foreground flag so a torn-down (account-switch) stream doesn't
