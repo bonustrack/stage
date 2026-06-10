@@ -11,11 +11,14 @@
  *  boot is ALWAYS gated behind `waitForXmtpReady()` — it only ever starts AFTER
  *  the XMTP client is ready, so nodejs-mobile is serialized after Client.create
  *  and never races it on boot:
- *    - `autoStart:true` consumers (both the always-mounted Tokens tab in
- *      WalletScreen.tsx AND the Private tab) await waitForXmtpReady() THEN boot
- *      the engine + background-refresh. The bridge's own `started`/readyPromise
- *      guard makes this single-flight, so whichever tab triggers it first wins
- *      and the other is a no-op (no double-start, one engine boot total).
+ *    - `autoStart:true` consumers (WalletScreen's Tokens tab — but only ONCE the
+ *      Wallet tab is focused, see useWalletFocused — AND the Private tab) await
+ *      waitForXmtpReady() THEN boot the engine + background-refresh. The bridge's
+ *      own `started`/readyPromise guard makes this single-flight, so whichever
+ *      tab triggers it first wins and the other is a no-op (no double-start, one
+ *      engine boot total). NB: WalletScreen passes autoStart=false until the
+ *      Wallet tab is focused, so an app open that never visits Wallet never boots
+ *      nodejs-mobile.
  *    - `autoStart:false` (default) reads the warm cache only and never boots. */
 import { useEffect, useState } from 'react';
 import { getActiveAccountId } from '../accounts';
