@@ -82,6 +82,37 @@ Share data and contracts instead.
   matching APK/dev client is installed.
 - Verify deployed URLs with `curl` after Netlify or tunnel changes.
 
+## Publishing a preview from a worktree
+
+Background workers run in throwaway git worktrees under
+`.claude/worktrees/`. A fresh worktree has no `node_modules` (it is
+gitignored), and naively sharing main's tree breaks two ways: the relative
+`apps/app/node_modules/@stage-labs/client -> ../../../../packages/client`
+symlink escapes the worktree and resolves to **main's** package source (so a
+branch preview silently bundles main), and bun's non-hoisted `.bun` store is
+absent so `expo export` cannot resolve `react/jsx-runtime` or
+`@babel/runtime`.
+
+`scripts/worktree-export.sh` fixes both without a `bun install` in the
+worktree (which would copy the Railgun `libnode.so` and fill the disk). It
+points the worktree's root and per-package `node_modules` at main's store, then
+rebuilds `apps/app/node_modules` as real symlinks to main **except** the
+workspace packages (`@stage-labs/*`, `@metro-labs/*`), which it overrides with
+absolute symlinks into the worktree's own `packages/*`. Metro then resolves
+every node dep from main's store but every workspace import from the worktree's
+edited source. It runs the same `expo export --platform android --no-minify
+--no-bytecode` the CI preview uses and `node --check`s the bundle as a
+parse-gate.
+
+```bash
+# from inside the worktree (or pass its path):
+bash scripts/worktree-export.sh
+# publish an OTA update after a clean export + parse-gate:
+bash scripts/worktree-export.sh /path/to/worktree --update "preview message"
+```
+
+This replaces the old detached-checkout-in-the-real-repo dance.
+
 ## Documentation Policy
 
 Root docs in `/docs` are the entry point for people and agents. Package docs
