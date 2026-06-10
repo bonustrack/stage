@@ -19,9 +19,10 @@ export default function TabsLayout(): React.ReactElement {
    *  Messenger (index) tab. Live: updates as messages arrive / are read. */
   const unread = useTotalUnread();
   const unreadBadge = unread > 0 ? (unread > 99 ? '99+' : String(unread)) : undefined;
-  /** The pager only mounts the four tab bodies (Home/Wallet/Notifications/Profile).
-   *  Settings is a non-pager route now → hide the pager overlay there so the real
-   *  SettingsScreen rendered by the route shows through. */
+  /** The pager mounts the five swipe-tab bodies (Channels/Contacts/Wallet/
+   *  Notifications/Profile). Settings is the only non-pager tab route → hide the
+   *  pager overlay there so the real SettingsScreen rendered by the route shows
+   *  through. */
   const pagerVisible = !pathname.startsWith('/settings');
   const insets = useSafeAreaInsets();
   const pal = usePalette();
@@ -60,7 +61,7 @@ export default function TabsLayout(): React.ReactElement {
           links to /wallet etc. resolve, the URL is correct, and the active
           highlight is router-driven. The route scenes themselves render
           nothing (placeholders) — the real content is the single `TabsPager`
-          overlaid below, which mounts all four bodies side-by-side and follows
+          overlaid below, which mounts all five bodies side-by-side and follows
           the finger on a horizontal swipe. */}
       <Tabs
         screenOptions={{
@@ -75,6 +76,7 @@ export default function TabsLayout(): React.ReactElement {
         {(
           [
             ['index', 'chatBubble'],
+            ['contacts', 'users'],
             ['wallet', 'wallet'],
             ['notifications', 'bell'],
             ['profile', 'user'],

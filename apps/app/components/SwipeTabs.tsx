@@ -1,8 +1,8 @@
-/** Horizontal pager for the four first-level `(tabs)` pages
- *  (Home → Wallet → Notifications → Profile).
+/** Horizontal pager for the five first-level `(tabs)` pages
+ *  (Channels → Contacts → Wallet → Notifications → Profile).
  *
- *  TRUE finger-follow paging: all four tab bodies are mounted ONCE, side-by-side
- *  in a row of width `4 × screenWidth`. A reanimated shared value `tx` holds the
+ *  TRUE finger-follow paging: all five tab bodies are mounted ONCE, side-by-side
+ *  in a row of width `5 × screenWidth`. A reanimated shared value `tx` holds the
  *  strip's translateX = `-index*W + drag`, so during a horizontal drag the
  *  neighbour page slides in tracking the finger (like swipe-back). On release the
  *  strip springs to the nearest page; if the page changed we tell expo-router via
