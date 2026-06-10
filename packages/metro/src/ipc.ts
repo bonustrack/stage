@@ -19,6 +19,9 @@ export type IpcRequest =
   | { op: 'forward-call'; train: string; action: string; args: unknown; idempotencyKey?: string }
   | { op: 'trains-list' }
   | { op: 'train-restart'; name: string }
+  /** Read-only liveness probe: the running daemon reports its package version so */
+  /** `metro doctor` can flag a restart-pending mismatch vs the installed code. */
+  | { op: 'version' }
   | { op: 'outbox-list'; state?: OutboxState; limit?: number }
   | { op: 'outbox-retry'; outboxId: string };
 
@@ -26,6 +29,7 @@ export type IpcResponse =
   | { ok: true }
   | { ok: true; response: TrainCallResponse }
   | { ok: true; trains: TrainInfo[] }
+  | { ok: true; version: string }
   | { ok: true; entries: OutboxEntry[] }
   | { ok: false; error: string };
 

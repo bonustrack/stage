@@ -12,11 +12,19 @@ mkdirSync(STATE_DIR, { recursive: true });
 /** Append-only JSONL message log. Single source of truth — import everywhere, never re-derive. */
 export const HISTORY_FILE = join(STATE_DIR, 'history.jsonl');
 
-const CONFIG_DIR = process.env.METRO_CONFIG_DIR ?? join(process.env.XDG_CONFIG_HOME || join(homedir(), '.config'), 'metro');
+export const CONFIG_DIR = process.env.METRO_CONFIG_DIR ?? join(process.env.XDG_CONFIG_HOME || join(homedir(), '.config'), 'metro');
 export const CONFIG_ENV_FILE = join(CONFIG_DIR, '.env');
 
 /** Train-owned env file. Trains read their tokens from here (passed through via process.env). */
-const TRAINS_ENV_FILE = join(homedir(), '.metro', '.env');
+export const TRAINS_ENV_FILE = join(homedir(), '.metro', '.env');
+
+/** Ordered env sources, lowest index = highest precedence (first-set wins in loadMetroEnv). */
+/** Mirrors the loadMetroEnv loop so `metro doctor` can report WHICH file defines each key. */
+export const envSources = (): ReadonlyArray<{ label: string; path: string }> => [
+  { label: 'cwd/.env', path: join(process.cwd(), '.env') },
+  { label: '~/.metro/.env', path: TRAINS_ENV_FILE },
+  { label: '$CONFIG/.env', path: CONFIG_ENV_FILE },
+];
 
 const LINE_RE = /^\s*([A-Za-z_]\w*)\s*=\s*(.*?)\s*$/;
 const QUOTED_RE = /^(['"])(.*)\1$/;
@@ -34,7 +42,7 @@ export function readDotenv(path: string): Record<string, string> {
 /** Precedence: process.env > cwd/.env > ~/.metro/.env > $METRO_CONFIG_DIR/.env. First-set wins. */
 /** ~/.metro/.env is the canonical location for train credentials. */
 export function loadMetroEnv(): void {
-  for (const path of [join(process.cwd(), '.env'), TRAINS_ENV_FILE, CONFIG_ENV_FILE]) {
+  for (const { path } of envSources()) {
     for (const [k, v] of Object.entries(readDotenv(path))) {
       if (process.env[k] === undefined) process.env[k] = v;
     }

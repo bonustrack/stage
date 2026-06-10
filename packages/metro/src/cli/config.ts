@@ -8,8 +8,10 @@ import { fileURLToPath } from 'node:url';
 import pkg from '../../package.json' with { type: 'json' };
 import { errMsg } from '../log.js';
 import { CONFIG_ENV_FILE, loadMetroEnv, STATE_DIR } from '../paths.js';
+import { ipcCall } from '../ipc.js';
 import { TRAINS_DIR } from '../trains/supervisor.js';
 import { listEndpoints, loadTunnelConfig, webhookPort } from '../tunnel.js';
+import { runFailureChecks, type Check as FailureCheck, type Status } from './doctor-checks.js';
 import { emit, exitErr, isJson, writeJson, type Flags } from './util.js';
 
 /* ──────────── setup skill: install/clear SKILL.md into ~/.claude or ~/.codex ──────────── */
@@ -134,14 +136,37 @@ export async function cmdDoctor(_: string[], f: Flags): Promise<void> {
   const installed = Object.entries(skillStatus()).filter(([, ok]) => ok).map(([r]) => r);
   checks.push({ name: 'skill', ok: installed.length ? true : null,
     detail: installed.length ? `installed for ${installed.join(', ')}` : 'not installed (run `metro setup skill`)' });
-  if (isJson(f)) return writeJson({ checks });
-  process.stdout.write('metro doctor\n\n');
-  for (const c of checks) {
-    const mark = c.ok === true ? '✓' : c.ok === false ? '✗' : '–';
-    process.stdout.write(`  ${mark} ${c.name.padEnd(15)} ${c.detail}\n`);
+
+  /** Map the legacy ok-tri-state checks into the unified status shape. */
+  const basic: FailureCheck[] = checks.map(c => ({
+    name: c.name, detail: c.detail,
+    status: (c.ok === true ? 'pass' : c.ok === false ? 'fail' : 'warn') as Status,
+  }));
+  /** Real-world failure-mode checks (tunnels, FCM, creds, state, perms). */
+  const failure = await runFailureChecks({
+    installedVersion: pkg.version,
+    daemonVersion: async () => {
+      try {
+        const r = await ipcCall({ op: 'version' }, 2000);
+        return r.ok && 'version' in r ? r.version : null;
+      } catch { return null; }
+    },
+  });
+  const all = [...basic, ...failure];
+
+  if (isJson(f)) {
+    return writeJson({ version: pkg.version, checks: all,
+      summary: { fail: all.filter(c => c.status === 'fail').length, warn: all.filter(c => c.status === 'warn').length } });
   }
+  process.stdout.write('metro doctor\n\n');
+  for (const c of all) {
+    const mark = c.status === 'pass' ? '✓' : c.status === 'fail' ? '✗' : '–';
+    process.stdout.write(`  ${mark} ${c.name.padEnd(22)} ${c.detail}\n`);
+    if (c.status !== 'pass' && c.fix) process.stdout.write(`      ↳ fix: ${c.fix}\n`);
+  }
+  const failed = all.filter(c => c.status === 'fail');
   process.stdout.write('\n');
-  if (checks.some(c => c.ok === false)) throw exitErr('one or more checks failed', 3);
+  if (failed.length) throw exitErr(`${failed.length} check${failed.length === 1 ? '' : 's'} failed`, 3);
 }
 
 export async function cmdUpdate(_: string[], f: Flags): Promise<void> {

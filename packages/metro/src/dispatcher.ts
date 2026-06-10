@@ -72,6 +72,9 @@ const ipc = startIpcServer(async (req: IpcRequest): Promise<IpcResponse> => {
     try { await supervisor.restart(req.name); return { ok: true }; }
     catch (err) { return { ok: false, error: errMsg(err) }; }
   }
+  if (req.op === 'version') {
+    return { ok: true, version: pkg.version };
+  }
   if (req.op === 'outbox-list') {
     return { ok: true, entries: outbox.list({ state: req.state, limit: req.limit }) };
   }
