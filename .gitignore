@@ -11,3 +11,5 @@ dist
 telegram-attachments.json
 .typing-stop/
 .tail-lock
+# stray eas/expo artifact: a root app.json shadows apps/app/app.config.js and breaks exports
+/app.json
