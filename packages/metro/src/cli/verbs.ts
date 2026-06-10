@@ -4,6 +4,8 @@
 
 import { errMsg } from '../log.js';
 import { ipcCall } from '../ipc.js';
+import { mintIdempotencyKey } from '../outbox.js';
+import { isMutateCall } from '../outbox-driver.js';
 import { enforceSendGuard } from './send-guard.js';
 import { exitErr, isJson, writeJson, type ExitErr, type Flags } from './util.js';
 
@@ -38,8 +40,11 @@ export async function forwardCall(
   train: string, action: string, args: Record<string, unknown>,
 ): Promise<CallResult> {
   enforceSendGuard(train, action, args);
+  /** Mint an idempotency key for MUTATE verbs so the daemon's outbox can journal +
+   *  dedup the send; READ verbs leave it unset (no journal entry). Additive. */
+  const idempotencyKey = isMutateCall(train, action) ? mintIdempotencyKey() : undefined;
   let resp;
-  try { resp = await ipcCall({ op: 'forward-call', train, action, args }); }
+  try { resp = await ipcCall({ op: 'forward-call', train, action, args, idempotencyKey }); }
   catch (err) { throw exitErr(errMsg(err), EXIT.daemonDown); }
   if (!resp.ok) throw exitErr(resp.error, EXIT.upstream);
   if (!('response' in resp)) throw exitErr('daemon returned malformed forward-call response', EXIT.upstream);

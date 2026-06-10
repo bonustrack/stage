@@ -13,6 +13,8 @@ import { emit, exitErr, flagOne, isJson, need, writeJson, type Flags } from './u
 import { enforceSendGuard } from './send-guard.js';
 import { isKnownCtrlVerb, validateCtrl, SchemaError } from '../schema.js';
 import { validateCallArgs, type VerbOwner } from '../registry.js';
+import { mintIdempotencyKey, type OutboxEntry, type OutboxState } from '../outbox.js';
+import { isMutateCall } from '../outbox-driver.js';
 import { cmdTunnel, urlFor } from './webhook-tunnel.js';
 
 export { cmdTunnel };
@@ -103,7 +105,10 @@ export async function cmdCall(p: string[], f: Flags): Promise<void> {
   /** Per-session identity guard: refuse to send XMTP on an account owned by a */
   /** different CLI (e.g. a codex session sending on tony's account). */
   enforceSendGuard(train, action, args);
-  const resp = await ipc({ op: 'forward-call', train, action, args });
+  /** Mint an idempotency key for MUTATE verbs (outbox journal + dedup); READ verbs
+   *  leave it unset so they are never journaled. Additive — wire path unchanged. */
+  const idempotencyKey = isMutateCall(train, action) ? mintIdempotencyKey() : undefined;
+  const resp = await ipc({ op: 'forward-call', train, action, args, idempotencyKey });
   /** `resp.error` here is the daemon rejecting the request (e.g. unknown train) — code 3 (upstream). */
   if (!resp.ok) throw exitErr(resp.error, 3);
   if (!('response' in resp)) throw exitErr('daemon returned malformed forward-call response', 3);
@@ -165,4 +170,45 @@ async function cmdTrainsNew(p: string[], f: Flags): Promise<void> {
   emit(f,
     `created ${dest}${pkgHint}\n  next: edit the file, then \`metro trains restart ${name}\``,
     { ok: true, path: dest, pkgInitialized: existsSync(metroPkg) });
+}
+
+/* ──────────── metro outbox [list] [--state …] [--limit N]  +  retry <id> ──────────── */
+
+const OUTBOX_STATES: readonly OutboxState[] = ['pending', 'sent', 'failed', 'dead'];
+
+export async function cmdOutbox(p: string[], f: Flags): Promise<void> {
+  const sub = p[0] ?? 'list';
+  if (sub === 'retry') return cmdOutboxRetry(p.slice(1), f);
+  if (sub !== 'list') throw exitErr('usage: metro outbox [list [--state pending|sent|failed|dead] [--limit N] | retry <id>]', 1);
+  loadMetroEnv();
+  const stateFlag = flagOne(f, 'state');
+  if (stateFlag && !(OUTBOX_STATES as readonly string[]).includes(stateFlag)) {
+    throw exitErr(`bad --state '${stateFlag}' (use one of: ${OUTBOX_STATES.join(', ')})`, 1);
+  }
+  const limit = Number(flagOne(f, 'limit')) || undefined;
+  const resp = await ipc({ op: 'outbox-list', state: stateFlag as OutboxState | undefined, limit });
+  if (!resp.ok) throw exitErr(resp.error, 3);
+  if (!('entries' in resp)) throw exitErr('daemon returned malformed outbox-list response', 3);
+  if (isJson(f)) return writeJson({ entries: resp.entries });
+  renderOutbox(resp.entries);
+}
+
+function renderOutbox(entries: OutboxEntry[]): void {
+  if (!entries.length) { process.stdout.write('metro outbox\n\n  (empty — no journaled sends)\n\n'); return; }
+  process.stdout.write('metro outbox\n\n');
+  for (const e of entries) {
+    const when = e.ts.slice(11, 19);
+    const err = e.lastError ? `  ⚠ ${e.lastError.slice(0, 60)}` : '';
+    process.stdout.write(
+      `  ${e.state.padEnd(7)} ${e.outboxId}  ${e.train}/${e.action}  att ${e.attempts}  ${when}${err}\n`);
+  }
+  process.stdout.write('\n');
+}
+
+async function cmdOutboxRetry(p: string[], f: Flags): Promise<void> {
+  need(p, 1, 'metro outbox retry <outboxId>');
+  loadMetroEnv();
+  const resp = await ipc({ op: 'outbox-retry', outboxId: p[0] });
+  if (!resp.ok) throw exitErr(resp.error, 3);
+  emit(f, `requeued outbox entry '${p[0]}'`, { ok: true, outboxId: p[0] });
 }

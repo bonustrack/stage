@@ -44,6 +44,8 @@ const CORE_VERBS: VerbDecl[] = [
     description: 'Manage HTTP receive endpoints (add/list/remove).', example: 'metro webhook add github' },
   { name: 'tunnel', owner: 'core', kind: 'mutate', idempotent: true,
     description: 'Configure / inspect a Cloudflare named tunnel.', example: 'metro tunnel status' },
+  { name: 'outbox', owner: 'core', kind: 'read', idempotent: true,
+    description: 'Inspect / requeue the durable outbox journal of MUTATE sends.', example: 'metro outbox --state dead' },
   { name: 'schema', owner: 'core', kind: 'read', idempotent: true,
     description: 'Dump the verb registry (human table or --json).', example: 'metro schema --json' },
   { name: 'verbs', owner: 'core', kind: 'read', idempotent: true,
