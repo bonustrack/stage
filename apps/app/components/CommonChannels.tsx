@@ -59,7 +59,7 @@ export function CommonChannels({ peerAddress, enabled, c }: {
       <Row margin={{ x: 16, bottom: 6 }} justify="start" align="center" gap={24} 
         style={{ borderBottomWidth: 1, borderBottomColor: c.border }}>
         <Pressable style={{ paddingVertical: 10, marginBottom: -1, borderBottomWidth: 2, borderBottomColor: c.link }}>
-          <Text weight="semibold" size="xl" color={c.link}>
+          <Text weight="semibold" size="3xl" color={c.link}>
             Channels
           </Text>
         </Pressable>
