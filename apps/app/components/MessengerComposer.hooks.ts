@@ -3,6 +3,7 @@
  *  Behavior identical. */
 
 import { useEffect, useRef, useState, type ComponentRef, type RefObject } from 'react';
+import { AppState } from 'react-native';
 import type { Textarea } from '@metro-labs/kit/textarea';
 import { loadDrafts, getDraft, setDraft } from '../lib/drafts';
 import { loadLastAttachment, getLastAttachment, subscribeLastAttachment } from '../lib/lastAttachment';
@@ -63,6 +64,17 @@ export function useComposerFocus(
     const t = setTimeout(() => inputRef.current?.focus(), 0);
     return () => clearTimeout(t);
   }, [autoFocusNonce]);
+  /** Blur the input whenever the app leaves the foreground. Android otherwise
+   *  restores the still-focused TextInput on resume and re-raises the IME even
+   *  when the keyboard was closed before backgrounding. Intentional focus (input
+   *  tap, reply-swipe, autoFocusNonce) is untouched — it only re-fires on those
+   *  explicit signals, never on resume. */
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (s) => {
+      if (s !== 'active') inputRef.current?.blur();
+    });
+    return () => sub.remove();
+  }, []);
 }
 
 interface MentionCandidate { address: string; name: string; cacheBuster?: number }
