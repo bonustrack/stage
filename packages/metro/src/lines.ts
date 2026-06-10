@@ -56,21 +56,8 @@ export const Line = {
     return path.length ? { station: rest.slice(0, slash), path } : null;
   },
   station: (line: Line | string): string | null => Line.parse(line)?.station ?? null,
-  parseTelegram(line: Line): { chatId: number; topicId?: number } | null {
-    const p = Line.parse(line);
-    if (p?.station !== 'telegram') return null;
-    const chatId = Number(p.path[0]);
-    if (!Number.isFinite(chatId)) return null;
-    if (p.path.length === 1) return { chatId };
-    const topicId = Number(p.path[1]);
-    return Number.isFinite(topicId) ? { chatId, topicId } : null;
-  },
   parseClaude: (line: Line | string) => parseLocalSession(line, 'claude'),
   parseCodex: (line: Line | string) => parseLocalSession(line, 'codex'),
-  parseWebhook(line: Line | string): string | null {
-    const p = Line.parse(line);
-    return p?.station === 'webhook' && p.path.length === 1 ? p.path[0] : null;
-  },
   isLocal: (line: Line | string): boolean => {
     const s = Line.station(line);
     return s === 'claude' || s === 'codex';
@@ -83,7 +70,4 @@ export const Line = {
   /** Split a discord line → `{accountId, resource}` (resource = channel */
   /** snowflake). New `metro://discord/<account>/<chan>`; legacy → `default`. */
   parseDiscord: (line: Line | string) => parseAccountScoped(line, 'discord', isSnowflake),
-
-  /** True for a participant URI — `metro://<station>/[…/]user/<id>`. */
-  isUser: (line: Line | string): boolean => Line.parse(line)?.path.includes('user') ?? false,
 };

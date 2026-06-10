@@ -46,19 +46,9 @@ describe('round-trips: build → parse', () => {
     expect(Line.station(l)).toBe('discord');
   });
 
-  test('telegram chat+topic round-trips through parseTelegram', () => {
-    const l = Line.telegram(-555, 7);
-    expect(Line.parseTelegram(l)).toEqual({ chatId: -555, topicId: 7 });
-  });
-
   test('claude full-session round-trips through parseClaude', () => {
     const l = Line.claude('org-x', 'sess-y');
     expect(Line.parseClaude(l)).toEqual({ userId: 'org-x', sessionId: 'sess-y' });
     expect(Line.isLocal(l)).toBe(true);
-  });
-
-  test('webhook round-trips through parseWebhook', () => {
-    const l = Line.webhook('ep-1');
-    expect(Line.parseWebhook(l)).toBe('ep-1');
   });
 });

@@ -1,6 +1,6 @@
 /**
  * `src/lines.ts` — canonical account-scoped parsers `Line.parseXmtp` /
- * `Line.parseDiscord` + `Line.isUser`. These are the single source of truth the
+ * `Line.parseDiscord`. These are the single source of truth the
  * per-station `parseLine()` helpers (stations/xmtp/accounts.ts,
  * stations/discord/accounts.ts) and cli/send-guard.ts now delegate to, so the
  * cases here pin the exact behavior the old anchored regexes had.
@@ -59,19 +59,5 @@ describe('Line.parseDiscord', () => {
   test('wrong station / malformed → null', () => {
     expect(Line.parseDiscord('metro://xmtp/123')).toBeNull();
     expect(Line.parseDiscord('garbage')).toBeNull();
-  });
-});
-
-describe('Line.isUser — participant URIs', () => {
-  test('true for /user/ participant lines (with + without account)', () => {
-    expect(Line.isUser('metro://discord/user/alice')).toBe(true);
-    expect(Line.isUser('metro://discord/acct1/user/123')).toBe(true);
-    expect(Line.isUser('metro://xmtp/tony/user/0xinbox')).toBe(true);
-  });
-
-  test('false for non-participant lines', () => {
-    expect(Line.isUser('metro://discord/123456')).toBe(false);
-    expect(Line.isUser('metro://xmtp/tony/0xconv')).toBe(false);
-    expect(Line.isUser('garbage')).toBe(false);
   });
 });
