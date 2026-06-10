@@ -32,11 +32,6 @@ describe('owner derivation', () => {
     const { sessionOwner } = await mod();
     expect(sessionOwner('alpha')).toBe('metro://session/alpha');
   });
-  test('parseSessionOwner round-trips', async () => {
-    const { sessionOwner, parseSessionOwner } = await mod();
-    expect(parseSessionOwner(sessionOwner('alpha'))).toBe('alpha');
-    expect(parseSessionOwner('metro://xmtp/foo/bar')).toBeNull();
-  });
 });
 
 describe('absent-file fallback (SAFETY INVARIANT)', () => {

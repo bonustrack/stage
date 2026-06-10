@@ -4,7 +4,7 @@
  * Covers builders (discord/telegram/claude/codex/webhook/user), the generic
  * `parse`/`station` split, the local-session parsers (`parseClaude`/`parseCodex`
  * — participant `/user/<id>` URIs vs full `<userId>/<sessionId>` sessions),
- * `parseTelegram`, `parseWebhook`, `isLocal`, round-trips, and malformed input.
+ * `isLocal`, round-trips, and malformed input.
  *
  * Pure in-process; no fs / network.
  */
@@ -112,39 +112,6 @@ describe('parseClaude / parseCodex — participant vs full-session URIs', () => 
   test('extra trailing segments still parse to first two', () => {
     /** path[0]=userId, path[1]=sessionId; anything after is ignored. */
     expect(Line.parseClaude('metro://claude/org1/sess1/extra')).toEqual({ userId: 'org1', sessionId: 'sess1' });
-  });
-});
-
-describe('parseTelegram', () => {
-  test('chatId only', () => {
-    expect(Line.parseTelegram(asLine('metro://telegram/123'))).toEqual({ chatId: 123 });
-  });
-  test('negative chatId', () => {
-    expect(Line.parseTelegram(asLine('metro://telegram/-1003950444088'))).toEqual({ chatId: -1003950444088 });
-  });
-  test('chatId + topicId', () => {
-    expect(Line.parseTelegram(asLine('metro://telegram/-100/42'))).toEqual({ chatId: -100, topicId: 42 });
-  });
-  test('non-numeric chatId returns null', () => {
-    expect(Line.parseTelegram(asLine('metro://telegram/abc'))).toBeNull();
-  });
-  test('non-numeric topicId falls back to null (whole parse fails)', () => {
-    expect(Line.parseTelegram(asLine('metro://telegram/100/notanum'))).toBeNull();
-  });
-  test('wrong station returns null', () => {
-    expect(Line.parseTelegram(asLine('metro://discord/123'))).toBeNull();
-  });
-});
-
-describe('parseWebhook', () => {
-  test('single-segment endpoint parses', () => {
-    expect(Line.parseWebhook('metro://webhook/gh-main')).toBe('gh-main');
-  });
-  test('multi-segment webhook returns null (must be exactly one segment)', () => {
-    expect(Line.parseWebhook('metro://webhook/gh/main')).toBeNull();
-  });
-  test('wrong station returns null', () => {
-    expect(Line.parseWebhook('metro://discord/gh-main')).toBeNull();
   });
 });
 

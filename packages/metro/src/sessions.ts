@@ -38,12 +38,6 @@ export function sessionOwner(sessionId: string): Line {
   return asLine(`metro://session/${sessionId}`);
 }
 
-/** Parse `metro://session/<id>` back to its session id, else null. */
-export function parseSessionOwner(uri: string): string | null {
-  const m = uri.match(/^metro:\/\/session\/([^/]+)$/);
-  return m ? m[1] : null;
-}
-
 /** True iff a sessions.json file is present (the opt-in switch for this layer). */
 export function sessionsPresent(): boolean {
   return existsSync(sessionsFile());
