@@ -1,7 +1,7 @@
 {
   "cli": {
     "version": ">= 14.0.0",
-    "appVersionSource": "local"
+    "appVersionSource": "remote"
   },
   "build": {
     "development": {
@@ -38,22 +38,31 @@
     },
     "production-prod": {
       "extends": "production",
-      "autoIncrement": false,
+      "autoIncrement": true,
+      "node": "20.18.0",
       "env": { "APP_VARIANT": "prod" }
     }
   },
   "submit": {
-    "production": {
+    "internal": {
       "android": {
-        "track": "production",
+        "track": "internal",
         "releaseStatus": "completed",
         "applicationId": "box.stage",
         "serviceAccountKeyPath": "./play-service-account.json"
       }
     },
-    "internal": {
+    "closed": {
       "android": {
-        "track": "internal",
+        "track": "alpha",
+        "releaseStatus": "completed",
+        "applicationId": "box.stage",
+        "serviceAccountKeyPath": "./play-service-account.json"
+      }
+    },
+    "production": {
+      "android": {
+        "track": "production",
         "releaseStatus": "completed",
         "applicationId": "box.stage",
         "serviceAccountKeyPath": "./play-service-account.json"

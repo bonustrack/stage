@@ -4,6 +4,9 @@
  *  critical path depend on them, so they stay eager. The expensive part of the
  *  WalletConnect stack (@reown/appkit + wagmi + viem provider + createAppKit) is
  *  deferred off the first-paint path — see components/WalletConnectProvider. */
+/** ES2023 Array polyfills (toReversed/toSorted) for the release Hermes engine —
+ *  must run before any dependency that calls them. See lib/jsPolyfills. */
+import '../lib/jsPolyfills';
 import '@walletconnect/react-native-compat';
 /** Hoisted side-effect import — installs the crypto.getRandomValues shim
  *  BEFORE any viem (and transitively any wallet/profile) module loads. */

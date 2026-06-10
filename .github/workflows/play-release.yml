@@ -1,93 +1,160 @@
-name: Play production release
+name: Play release
 
-# FULLY-AUTOMATED Google Play release for the Stage app (applicationId box.stage).
+# Fully-automated Google Play release for the Stage app (applicationId box.stage).
 #
-# WHY SELF-HOSTED:
-#   EAS CLOUD builds of the `production` profile are BROKEN (the Railgun /
-#   nodejs-mobile bundle-JS phase fails in the EAS cloud builder), so the signed
-#   AAB MUST be built LOCALLY on a Mac with the full native toolchain. GitHub's
-#   hosted runners cannot do that, so this workflow targets a SELF-HOSTED runner
-#   registered on Less's Mac (see docs/play-release.md for the one-time setup).
-#
-#   The actual work is delegated to scripts/release-production.sh — the same
-#   script you can run by hand on the Mac with zero Actions dependency. This
-#   workflow is just a triggerable, secret-injecting wrapper around it.
+# DESIGN (one line):
+#   GitHub-hosted runner -> EAS CLOUD build (production-prod profile) -> auto
+#   `eas submit` of that ONE build to three Play tracks (internal, closed/alpha,
+#   production). EAS does the heavy lifting in the cloud (~$1-2/build); the
+#   runner just kicks it off and submits. No self-hosted runner.
 #
 # TRIGGERS:
-#   - workflow_dispatch: manual, with a `track` input (default: production).
-#   - push tags v*: tagging a release (e.g. `git tag v0.2.0 && git push --tags`)
-#     ships to the production track automatically.
+#   - push to main      : the primary path. Every merge ships a release.
+#   - workflow_dispatch : manual, pick a single track.
+#   - push tags v*      : optional; a tagged release ships all tracks.
 #
-# SECRETS REQUIRED (repo Settings -> Secrets -> Actions):
-#   - PLAY_SERVICE_ACCOUNT_JSON : full JSON of a Google Play service account
-#       granted "Release to production / testing tracks".
-#   - EXPO_TOKEN                : EAS access token (already in the repo).
+# CONCURRENCY:
+#   Latest-wins. A newer merge cancels a queued/in-flight release so we never
+#   ship a stale commit behind a fresher one.
+#
+# SECRETS (repo Settings -> Secrets -> Actions):
+#   - EXPO_TOKEN               : EAS access token (already in the repo).
+#   - PLAY_SERVICE_ACCOUNT_JSON: full JSON of a Google Play service account with
+#       "Release to testing/production tracks". Written to disk at runtime for
+#       `eas submit` (serviceAccountKeyPath in eas.json), scrubbed on exit.
+#
+# VERSION CODE:
+#   eas.json uses appVersionSource: remote and production-prod autoIncrement:
+#   true, so EAS bumps the versionCode in the cloud on every build. No local
+#   counter sync needed.
 
 on:
+  push:
+    branches: [main]
+    tags: ['v*']
   workflow_dispatch:
     inputs:
       track:
-        description: 'Play track to release to'
+        description: 'Single Play track to release to'
         type: choice
         required: true
-        default: production
+        default: internal
         options:
-          - production
           - internal
-          - alpha
-          - beta
-  push:
-    tags:
-      - 'v*'
+          - closed
+          - production
 
-# Never let two releases submit overlapping builds to the same app. Queue them.
+# Latest-wins: a newer release supersedes a queued/running one.
 concurrency:
   group: play-release
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   release:
-    # Registered on Less's Mac (one-time `./config.sh` + `./run.sh`). Uses the
-    # build host's toolchain — node 18, JDK 17, Android SDK.
-    runs-on: self-hosted
-    timeout-minutes: 90
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: apps/app
     env:
       APP_VARIANT: prod
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-      # Tag pushes always go to production; manual runs use the chosen track.
-      TRACK: ${{ github.event_name == 'push' && 'production' || inputs.track }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
-      - name: Guard — require Play service-account secret
+      - name: Guard - require secrets
         env:
           SA_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
         run: |
+          if [ -z "${EXPO_TOKEN:-}" ]; then
+            echo "::error::EXPO_TOKEN secret is not set."
+            exit 1
+          fi
           if [ -z "${SA_JSON:-}" ]; then
             echo "::error::PLAY_SERVICE_ACCOUNT_JSON secret is not set."
             echo "::error::Add it in repo Settings -> Secrets -> Actions (see docs/play-release.md)."
             exit 1
           fi
-          if [ -z "${EXPO_TOKEN:-}" ]; then
-            echo "::error::EXPO_TOKEN secret is not set."
-            exit 1
-          fi
 
-      - name: Build + submit (local AAB -> Play)
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.18.0
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install deps
+        working-directory: .
+        run: bun install --frozen-lockfile
+
+      - name: Write Play service-account key
         env:
           PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
         run: |
-          chmod +x scripts/release-production.sh
-          ./scripts/release-production.sh "$TRACK"
+          printf '%s' "$PLAY_SERVICE_ACCOUNT_JSON" > play-service-account.json
+          node -e "JSON.parse(require('fs').readFileSync('play-service-account.json','utf8'))" \
+            || { echo "::error::PLAY_SERVICE_ACCOUNT_JSON is not valid JSON"; exit 1; }
+
+      - name: Cloud build (EAS, production-prod)
+        id: build
+        run: |
+          OUT=$(eas build \
+            --platform android \
+            --profile production-prod \
+            --non-interactive \
+            --no-wait=false \
+            --json)
+          echo "$OUT"
+          BUILD_ID=$(echo "$OUT" | node -e \
+            "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const a=JSON.parse(s);console.log((Array.isArray(a)?a[0]:a).id)})")
+          echo "build_id=$BUILD_ID" >> "$GITHUB_OUTPUT"
+          echo "Built EAS build id: $BUILD_ID"
+
+      # ---- Submit the SAME build to each track ----
+      # internal + closed must succeed. production may fail while the Play
+      # production track is account-gated; that step is allowed to fail without
+      # failing the release (see Summary note).
+
+      - name: Submit -> internal
+        if: github.event_name != 'workflow_dispatch' || inputs.track == 'internal'
+        run: eas submit -p android --profile internal --id "${{ steps.build.outputs.build_id }}" --non-interactive
+
+      - name: Submit -> closed (alpha)
+        if: github.event_name != 'workflow_dispatch' || inputs.track == 'closed'
+        run: eas submit -p android --profile closed --id "${{ steps.build.outputs.build_id }}" --non-interactive
+
+      - name: Submit -> production
+        id: prod
+        if: github.event_name != 'workflow_dispatch' || inputs.track == 'production'
+        continue-on-error: true
+        run: eas submit -p android --profile production --id "${{ steps.build.outputs.build_id }}" --non-interactive
+
+      - name: Scrub service-account key
+        if: always()
+        run: rm -f play-service-account.json
 
       - name: Summary
         if: always()
         run: |
           {
-            echo "### Play production release"
+            echo "### Play release"
             echo ""
-            echo "- Track: \`$TRACK\`"
             echo "- Trigger: \`${{ github.event_name }}\`"
-            echo "- Ref: \`${{ github.ref_name }}\`"
-            echo "- Commit: \`${{ github.sha }}\`"
+            echo "- Ref: \`${{ github.ref_name }}\` @ \`${{ github.sha }}\`"
+            echo "- EAS build: \`${{ steps.build.outputs.build_id }}\`"
+            echo ""
+            echo "Tracks: internal + closed (alpha) submitted."
+            if [ "${{ steps.prod.outcome }}" = "failure" ]; then
+              echo ""
+              echo "NOTE: production submit FAILED (expected while the Play production"
+              echo "track is account-gated). internal/closed shipped. Re-run the"
+              echo "\`Submit -> production\` step once the gate is lifted, or submit by"
+              echo "hand: \`eas submit -p android --profile production --id ${{ steps.build.outputs.build_id }}\`."
+            fi
           } >> "$GITHUB_STEP_SUMMARY"

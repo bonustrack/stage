@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 #
-# release-production.sh — fully-local Play Store release for the Stage app
+# release-production.sh — MANUAL FALLBACK: local Play release for the Stage app
 # (applicationId box.stage), runnable on the Mac with ZERO CI infrastructure.
 #
-# WHY THIS EXISTS:
-#   EAS CLOUD builds of the `production` profile are BROKEN: the Railgun /
-#   nodejs-mobile bundle-JS phase fails in the EAS cloud builder. The signed AAB
-#   therefore MUST be produced with a LOCAL build on a Mac that has the full
-#   native toolchain (Android SDK, JDK 17, node 18). This script does exactly
-#   that, then submits the resulting AAB to Google Play via `eas submit`.
+# The primary release path is the cloud GitHub Action
+# (.github/workflows/play-release.yml): every merge to main triggers an EAS
+# CLOUD build that auto-submits to Play. Use THIS script only when you need to
+# release by hand (e.g. the cloud build is wedged) — it builds the signed AAB
+# LOCALLY (eas build --local) and submits it via eas submit. See
+# docs/play-release.md.
 #
 # WHAT IT DOES (end to end):
 #   1. Writes the Play service-account JSON to apps/app/play-service-account.json

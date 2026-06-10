@@ -1,87 +1,84 @@
-# Play production release (fully automated)
+# Play release (automated)
 
-Ships the **Stage** app (`applicationId box.stage`) to Google Play.
+Ships the **Stage** app (`applicationId box.stage`) to Google Play, paid and
+automatic.
 
-## Why it works the way it does
+## Design
 
-EAS **cloud** builds of the `production` profile are **broken** — the Railgun /
-nodejs-mobile bundle-JS phase fails in the EAS cloud builder. So the signed AAB
-must be built **locally on the Mac** (full native toolchain: node 18, JDK 17,
-Android SDK). GitHub-hosted runners can't do that, so the automation runs on a
-**self-hosted runner on the Mac**.
+```
+push to main  ->  GitHub Action  ->  EAS CLOUD build  ->  eas submit x3 tracks
+(every merge)     (ubuntu-latest)    (production-prod)     internal / closed / production
+```
 
-There is one piece of logic — `scripts/release-production.sh` — and two ways to
-invoke it:
+`.github/workflows/play-release.yml` runs on a GitHub-hosted runner. It kicks
+off an **EAS cloud build** of the `production-prod` profile (EAS does the heavy
+native build in its cloud, ~$1-2 per build) and then `eas submit`s that **same
+build id** to three Play tracks: `internal`, `closed` (alpha), `production`.
 
-| Path | How | Infra needed |
-|------|-----|--------------|
-| **Primary: GitHub Actions** | `.github/workflows/play-release.yml`, `runs-on: self-hosted` | self-hosted runner on the Mac (one-time setup) |
-| **Fallback: run by hand** | `scripts/release-production.sh [track]` on the Mac | none — works today |
+No self-hosted runner. The Mac is not involved.
 
-Both produce the AAB with `eas build --local` and submit it with `eas submit`.
+### Triggers
 
-## What the script does
+| Trigger | Effect |
+|---------|--------|
+| **push to `main`** | primary path - every merge builds + submits to internal + closed (+ production if the gate allows). |
+| **workflow_dispatch** | manual run; pick one track (`internal` / `closed` / `production`). |
+| **push tag `v*`** | optional; same as a main push. |
 
-1. Writes the Play service-account JSON to `apps/app/play-service-account.json`
-   (from `$PLAY_SERVICE_ACCOUNT_JSON`), validates it, and scrubs it on exit.
-2. **Syncs the versionCode.** `eas.json` uses `appVersionSource: local`, so a
-   stale counter would bake a duplicate versionCode and Play would reject it.
-   The script reads the counter (`eas build:version:get`), increments it, and
-   pushes it back (`eas build:version:set`).
-3. Builds a signed AAB locally: `eas build --local -p android --profile production`
-   with `APP_VARIANT=prod` (the Stage variant).
-4. Submits to the chosen Play track via `eas submit`.
+### Concurrency
+
+`group: play-release`, `cancel-in-progress: true` - **latest wins**. A newer
+merge cancels a queued or in-flight release so a stale commit never ships behind
+a fresher one.
+
+### Production gate
+
+The `Submit -> production` step is `continue-on-error: true`. While the Play
+**production** track is account-gated (new app), that submit fails but the run
+stays green: internal + closed still ship. The job Summary prints a note with
+the build id and the exact `eas submit ... --profile production --id <id>`
+command to re-run by hand once the gate lifts.
+
+### versionCode
+
+`apps/app/eas.json` uses `appVersionSource: remote` and the `production-prod`
+profile sets `autoIncrement: true`, so **EAS bumps the versionCode in the cloud
+on every build**. No local counter sync, no hand-edited `versionCode`.
+
+## Secrets
+
+Repo Settings -> Secrets and variables -> Actions:
+
+| Secret | Status | Purpose |
+|--------|--------|---------|
+| `EXPO_TOKEN` | already set | authenticates the EAS CLI for build + submit. |
+| `PLAY_SERVICE_ACCOUNT_JSON` | **needed from Less** | full JSON of a Google Play service account with "Release to testing/production tracks". Written to `apps/app/play-service-account.json` at runtime (referenced by `serviceAccountKeyPath` in `eas.json`) and scrubbed on exit. |
+
+That is the only thing gating the automation: paste the service-account JSON
+into `PLAY_SERVICE_ACCOUNT_JSON` once.
 
 ## eas.json submit profiles
 
-`apps/app/eas.json` has two submit profiles, both keyed to `box.stage` +
+`apps/app/eas.json` has three submit profiles, all keyed to `box.stage` +
 `./play-service-account.json`:
 
-- `production` → track `production`, `releaseStatus: completed`
-- `internal` → track `internal`, `releaseStatus: completed`
+- `internal`  -> track `internal`
+- `closed`    -> track `alpha` (Google's API name for the closed track)
+- `production`-> track `production`
 
-The script maps `track` to a profile: `production`/`internal` use the matching
-profile; `alpha`/`beta` reuse the `production` profile and override `--track`.
+## Watching a release
 
-## Triggers (Actions)
+1. Actions tab -> **Play release** -> the run for your merge.
+2. The `Cloud build` step prints the EAS build id and a build URL
+   (`expo.dev/.../builds/<id>`) where you can watch the cloud build live.
+3. The `Submit -> *` steps stream `eas submit` progress per track.
+4. The run **Summary** lists the build id, the submitted tracks, and (if
+   production was gated) the re-run command.
 
-- **Manual:** Actions → "Play production release" → Run workflow → pick a
-  `track` (default `production`).
-- **Tag:** `git tag v0.2.0 && git push origin v0.2.0` → releases to
-  `production`.
+## Manual fallback
 
-## Secrets needed (repo Settings → Secrets → Actions)
-
-- `PLAY_SERVICE_ACCOUNT_JSON` — full JSON of a Google Play service account with
-  "Release to production / testing tracks" permission. **Not yet set.**
-- `EXPO_TOKEN` — EAS access token. Already present in the repo.
-
-## One-time self-hosted runner setup (on the Mac)
-
-From repo Settings → Actions → Runners → New self-hosted runner (macOS), copy
-the token, then run the three commands it shows — they look like:
-
-```sh
-# 1. Download + unpack the runner (into e.g. ~/actions-runner)
-mkdir -p ~/actions-runner && cd ~/actions-runner && \
-  curl -fsSL -o r.tar.gz <url-from-github> && tar xzf r.tar.gz
-
-# 2. Configure against the repo (token is shown on the New-runner page)
-./config.sh --url https://github.com/bonustrack/metro --token <RUNNER_TOKEN>
-
-# 3. Run it (foreground; or `./svc.sh install && ./svc.sh start` for a service)
-./run.sh
-```
-
-The runner inherits the Mac's environment, so make sure node 18, JDK 17, and
-`ANDROID_HOME` (`~/Library/Android/sdk`) are available to its shell. The script
-defaults `ANDROID_HOME` and warns on a non-18 node, but the toolchain itself
-must already be installed.
-
-## Run by hand (no Actions)
-
-```sh
-PLAY_SERVICE_ACCOUNT_JSON="$(cat ~/secrets/play-sa.json)" \
-EXPO_TOKEN="$(grep EXPO_TOKEN ~/.config/metro/.env | cut -d= -f2)" \
-scripts/release-production.sh production
-```
+`scripts/release-production.sh [internal|closed|production|alpha|beta]` does a
+**local** `eas build --local` + `eas submit` on the Mac (full native toolchain:
+node 18, JDK 17, Android SDK). Use it only if the cloud build is wedged. It
+writes the service-account key from `$PLAY_SERVICE_ACCOUNT_JSON`, syncs the
+versionCode, builds the AAB locally, submits, and scrubs the key.
