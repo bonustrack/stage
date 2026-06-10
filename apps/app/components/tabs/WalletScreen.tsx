@@ -150,11 +150,11 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
             Couldn’t load balances
           </Text>
         ) : totalUsd === null ? (
-          <Text weight="semibold" size="6xl" color={head}>…</Text>
+          <Text weight="semibold" size="7xl" color={head}>…</Text>
         ) : (
-          <Text weight="semibold" size="6xl" color={head}>
+          <Text weight="semibold" size="7xl" color={head}>
             {splitUsd(fmtUsd(totalUsd)).int}
-            <Text weight="semibold" size="6xl" color={sub}>{splitUsd(fmtUsd(totalUsd)).dec}</Text>
+            <Text weight="semibold" size="7xl" color={sub}>{splitUsd(fmtUsd(totalUsd)).dec}</Text>
           </Text>
         )}
       </Col>
