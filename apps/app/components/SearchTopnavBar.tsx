@@ -14,6 +14,7 @@ import { Pressable } from '@metro-labs/kit/pressable';
 import { Icon } from '@metro-labs/kit/icon';
 import { Input } from '@metro-labs/kit/input';
 import { Row } from './layout';
+import { TOPNAV_HEIGHT } from './Topnav';
 
 export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
   query: string;
@@ -28,20 +29,14 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
   /** Optional extra top inset (e.g. status-bar height on the conversation view
    *  whose topnav extends under the status bar). Defaults to 0. */
   topInset?: number;
-  /** Fixed content height (below topInset) when the topnav it replaces uses a
-   *  fixed height (the conversation view's 52px bar). Omitted → the bar matches
-   *  the main-tab Topnav's padding-driven height instead. */
-  height?: number;
 }>(function SearchTopnavBar(props, ref): React.ReactElement {
   const { head, sub } = props;
   const topInset = props.topInset ?? 0;
-  // Match the topnav being replaced: either a fixed content height (conversation
-  // view) or the main-tab Topnav padding (x:16, top:12, bottom:10).
-  const layout = props.height != null
-    ? { height: props.height + topInset, padding: { x: 16, top: topInset } as const }
-    : { padding: { x: 16, top: 12 + topInset, bottom: 10 } as const };
   return (
-    <Row {...layout} align="center" gap={10} surface="toolbar"
+    <Row
+      height={TOPNAV_HEIGHT + topInset}
+      padding={{ x: 16, top: topInset }}
+      align="center" gap={10} surface="toolbar"
       style={{ borderBottomWidth: 1, borderBottomColor: props.border }}>
       <Pressable onPress={props.onClose} hitSlop={8}>
         <Icon name="arrowLeft" size={22} color={head}/>

@@ -28,6 +28,7 @@ import { previewOf } from '../../components/xmtp-conv/feed-helpers';
 import { ConversationFeed } from '../../components/xmtp-conv/ConversationFeed';
 import { ConversationSearch } from '../../components/xmtp-conv/ConversationSearch';
 import { SearchTopnavBar } from '../../components/SearchTopnavBar';
+import { TOPNAV_HEIGHT } from '../../components/Topnav';
 import { useConversationState } from '../../components/xmtp-conv/useConversationState';
 import { RequestActionBar } from '../../components/RequestActionBar';
 
@@ -146,11 +147,10 @@ export default function XmtpConversation(): React.ReactElement {
             sub={sub}
             placeholder="Search this conversation"
             topInset={insets.top}
-            height={52}
 />
         </Box>
       ) : (
-      <Row height={52 + insets.top} surface="toolbar" padding={{ top: insets.top }} align="stretch" style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2, borderBottomWidth: 1, borderBottomColor: border }}>
+      <Row height={TOPNAV_HEIGHT + insets.top} surface="toolbar" padding={{ top: insets.top }} align="stretch" style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2, borderBottomWidth: 1, borderBottomColor: border }}>
         <Pressable
           onPress={() => router.replace('/')}
           style={{ paddingLeft: 14, paddingRight: 8, justifyContent: 'center' }}
@@ -187,7 +187,7 @@ export default function XmtpConversation(): React.ReactElement {
       {/** In-conversation search results panel — anchored directly below the search
        *   topnav. Local-only history scan + jump-to-match; see ConversationSearch. */}
       {searchOpen ? (
-        <Box style={{ position: 'absolute', top: 52 + insets.top, left: 0, right: 0, zIndex: 3 }}>
+        <Box style={{ position: 'absolute', top: TOPNAV_HEIGHT + insets.top, left: 0, right: 0, zIndex: 3 }}>
           <ConversationSearch
             line={activeLine}
             query={searchQuery}
@@ -208,7 +208,7 @@ export default function XmtpConversation(): React.ReactElement {
       {/** Fade strip below the top nav — mirrors the composer's top fade. Start it 1px
        *  higher so its solid-bg top edge overlaps the nav bottom, closing the hairline
        *  seam between the two absolute bg layers, then ramps to transparent. */}
-      <ComposerGradient bg={bg} direction="up" top={52 + insets.top - 1} height={24}/>
+      <ComposerGradient bg={bg} direction="up" top={TOPNAV_HEIGHT + insets.top - 1} height={24}/>
       <KeyboardStickyView offset={{ opened: insets.bottom }}>
       <Box>
       {/** Jump-to-bottom: anchored above the composer (bottom:'100%') inside the
