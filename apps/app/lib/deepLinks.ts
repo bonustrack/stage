@@ -32,8 +32,7 @@ type ParsedRoute =
   | { pathname: '/user/[address]'; params: { address: string } }
   | { pathname: '/(tabs)'; params?: undefined }
   | { pathname: '/(tabs)/settings'; params?: undefined }
-  | { pathname: '/(tabs)/contacts'; params?: undefined }
-  | { pathname: '/(tabs)/profile'; params?: undefined };
+  | { pathname: '/(tabs)/contacts'; params?: undefined };
 
 /** Pull `{ path, query }` out of any inbound link, preferring the hash fragment
  *  (where the web client keeps its route) and falling back to the URL path.
@@ -110,8 +109,6 @@ function routeForUrl(url: string): ParsedRoute | null {
       return { pathname: '/(tabs)/settings' };
     case 'contacts':
       return { pathname: '/(tabs)/contacts' };
-    case 'profile':
-      return { pathname: '/(tabs)/profile' };
     default:
       return null;
   }

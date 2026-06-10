@@ -54,8 +54,16 @@ export default function Menu(): React.ReactElement {
     head, sub, border, dark, onChanged: () => { void refresh(); },
   });
 
-  function go(href: '/profile' | '/settings'): void {
+  function go(href: '/settings'): void {
     router.navigate(href);
+  }
+
+  /** "Profile" opens the active account's own profile through the shared peer
+   *  profile route (/user/[address]) — the dedicated own-profile tab was
+   *  removed; viewing yourself reuses the same read-only ProfileScreen. */
+  function goProfile(): void {
+    const addr = activeRec?.address;
+    if (addr) router.navigate(`/user/${addr}`);
   }
 
   function onSwitch(id: string): void {
@@ -87,7 +95,7 @@ export default function Menu(): React.ReactElement {
         <ListView dark={dark}>
           {drawerAccountRows({ accounts, activeId, onSwitch, c: { head, sub, border }, dark })}
           {actions.rows}
-          <DrawerRow rowKey="profile" icon="user" label="Profile" head={head} sub={sub} border={border} dark={dark} onPress={() => go('/profile')}/>
+          <DrawerRow rowKey="profile" icon="user" label="Profile" head={head} sub={sub} border={border} dark={dark} onPress={goProfile}/>
           <DrawerRow rowKey="settings" icon="cog" label="Settings" head={head} sub={sub} border={border} dark={dark} onPress={() => go('/settings')}/>
         </ListView>
       </ScrollView>
