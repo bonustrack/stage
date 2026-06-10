@@ -23,7 +23,9 @@ onMounted(async () => {
     const client = await getOrCreateXmtpClient('production');
     address.value = client.accountIdentifier?.identifier ?? '';
     inboxId.value = client.inboxId ?? '';
-    const cached = loadCachedProfile();
+    // Seed from THIS address's cached profile (per-address key) so a prior
+    // peer lookup can't clobber/blank the user's own name.
+    const cached = address.value ? loadCachedProfile(address.value) : null;
     if (cached) profile.value = cached;
     loaded.value = true;
     if (address.value) {

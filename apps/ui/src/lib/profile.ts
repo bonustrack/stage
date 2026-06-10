@@ -20,31 +20,41 @@ export interface SnapshotProfile {
   farcaster?: string;
 }
 
-const PROFILE_CACHE_KEY = 'profile.cache';
+/** Per-address cache key. A single shared key would let every peer lookup
+ *  (incl. peers with no ENS, cached as `{}`) clobber the SELF profile, blanking
+ *  the user's own name on the Profile tab — so the cache is keyed by address,
+ *  exactly like the mobile peerProfiles store. */
+const PROFILE_CACHE_PREFIX = 'profile.cache.';
 
-export function loadCachedProfile(): SnapshotProfile | null {
+function cacheKey(address: string): string {
+  return PROFILE_CACHE_PREFIX + address.toLowerCase();
+}
+
+export function loadCachedProfile(address: string): SnapshotProfile | null {
+  if (!address) return null;
   try {
-    const raw = localStorage.getItem(PROFILE_CACHE_KEY);
+    const raw = localStorage.getItem(cacheKey(address));
     return raw ? JSON.parse(raw) as SnapshotProfile : null;
   } catch { return null; }
 }
 
-function storeCachedProfile(profile: SnapshotProfile): void {
-  try { localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(profile)); }
+function storeCachedProfile(address: string, profile: SnapshotProfile): void {
+  if (!address) return;
+  try { localStorage.setItem(cacheKey(address), JSON.stringify(profile)); }
   catch { /* quota — ignore */ }
 }
 
 /** Resolve a display profile for an address from stamp.fyi (ENS name). Misses
  *  resolve to an empty profile; consumers fall back to the truncated address
- *  and the stamp identicon avatar. */
+ *  and the stamp identicon avatar. Self + peers share this one path. */
 export async function readProfile(address: string): Promise<SnapshotProfile | null> {
   try {
     const name = await lookupName(address);
     const profile: SnapshotProfile = name ? { name } : {};
-    storeCachedProfile(profile);
+    storeCachedProfile(address, profile);
     return profile;
   } catch {
-    return loadCachedProfile();
+    return loadCachedProfile(address);
   }
 }
 

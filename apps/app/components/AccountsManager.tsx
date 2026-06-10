@@ -14,6 +14,7 @@ import { useAccountsManager } from './AccountsManager.hook';
 import { AccountList } from './AccountsManager.list';
 import { AddSheet, ImportSheet, ManageSheet, ExportSheet } from './AccountsManager.sheets';
 import { usePalette } from '../lib/theme';
+import { usePeerProfiles } from '../lib/peerProfiles';
 
 export function AccountsManager({ dark, flat = false, onSwitched }: { dark: boolean; flat?: boolean; onSwitched?: () => void }): React.ReactElement {
   const tokens = usePalette();
@@ -25,6 +26,12 @@ export function AccountsManager({ dark, flat = false, onSwitched }: { dark: bool
   const pal = { head, sub, border, sheetBg };
 
   const m = useAccountsManager(onSwitched);
+
+  /** Resolve every account's display name via the SAME stamp.fyi resolver the
+   *  peers use, so the user's OWN account(s) show their ENS/stamp name (e.g.
+   *  "less") instead of just the truncated address. The rows read getPeerName;
+   *  without this ensure() nothing ever fetches the self addresses. */
+  usePeerProfiles(m.accounts.map(a => a.address));
 
   return (
     <Box>
