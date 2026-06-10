@@ -45,6 +45,14 @@
   "submit": {
     "production": {
       "android": {
+        "track": "production",
+        "releaseStatus": "completed",
+        "applicationId": "box.stage",
+        "serviceAccountKeyPath": "./play-service-account.json"
+      }
+    },
+    "internal": {
+      "android": {
         "track": "internal",
         "releaseStatus": "completed",
         "applicationId": "box.stage",
