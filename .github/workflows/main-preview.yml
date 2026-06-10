@@ -18,9 +18,13 @@ on:
     branches: [main]
 
 concurrency:
-  # One main-preview publish at a time; a newer push cancels the in-flight one.
+  # One main-preview publish at a time, keyed on the ref.
   group: main-preview
-  cancel-in-progress: true
+  # NEVER cancel an in-flight main preview (#437): rapid merges to main used to
+  # cancel the in-flight preview for earlier main commits, leaving main commits
+  # (incl. the tip) with NO published preview at all. Every push to main must
+  # publish a preview for its exact sha, so cancellation is forced false here.
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -55,13 +59,15 @@ jobs:
 
       - run: bun install --frozen-lockfile
 
-      - name: Cache Metro transform cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ github.workspace }}/.metro-tmp/metro-cache
-          key: metro-cache-v1-${{ runner.os }}-${{ hashFiles('bun.lock') }}
-          restore-keys: |
-            metro-cache-v1-${{ runner.os }}-
+      # NOTE (#437): we deliberately do NOT persist/restore the Metro transform
+      # cache across runs. A stable cross-commit cache key once carried a
+      # truncated/corrupt cache entry forward: it was emitted into the bundle as a
+      # malformed JS array literal, which Hermes then failed to compile on-device
+      # ("']' expected at end of array literal") = red-box crash on launch. The
+      # source was fine; the persisted cache was poisoned and the stable key made
+      # it sticky across every later commit. Correctness > the marginal export
+      # speed-up: each run cold-bundles into the ephemeral TMPDIR, so a poisoned
+      # entry can never survive a run or ship to a device.
 
       - name: Publish EAS Update to main-preview
         id: update
@@ -77,6 +83,16 @@ jobs:
             --no-minify \
             --no-bytecode \
             --output-dir dist
+          # Sanity-check the exported bundle is non-truncated before publishing
+          # (#437): a poisoned/truncated bundle previously shipped a malformed JS
+          # array literal that crashed Hermes on-device. node --check parse-checks
+          # the bundle; a truncated file fails here and the run stops BEFORE the
+          # broken update is published.
+          BUNDLE="$(find dist -name '*.hbc' -o -name '*.js' | grep -E '/(_expo/static/js/android|bundles)/' | head -n1)"
+          if [ -z "$BUNDLE" ]; then
+            echo "::error::expo export produced no Android JS bundle" && exit 1
+          fi
+          node --check "$BUNDLE"
           bunx eas-cli@20.1.0 update \
             --branch main-preview \
             --platform android \
@@ -94,4 +110,6 @@ jobs:
             echo "EAS branch: \`main-preview\`"
             echo "Commit: \`${{ github.sha }}\`"
             echo "Manifest: ${{ steps.update.outputs.manifest }}"
+            echo ""
+            echo "_Fully close and relaunch the app - the OTA update applies on the next cold start._"
           } >> "$GITHUB_STEP_SUMMARY"
