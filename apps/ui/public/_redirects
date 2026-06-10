@@ -1,0 +1,5 @@
+# Clean, bookmarkable URLs for the dev-client preview launchers (#434).
+# Netlify serves the .html file at the extensionless path (rewrite, not 301)
+# so https://metro.box/preview?branch=main keeps its query string.
+/preview            /preview.html            200
+/preview-launcher   /preview-launcher.html   200
