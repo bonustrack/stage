@@ -22,9 +22,9 @@ keep the SOURCE's exact aspect ratio (no center-crop to a different ratio). So:
     704x1264 - aspect 0.5570, essentially the source aspect, just scaled up. No
     distortion, no crop.
   - The grid is GRID_W x GRID_H cells, and each cell is upscaled by a DIFFERENT
-    horizontal vs vertical factor (CELL_W x CELL_H = 8x16 px), so every cell is
-    a visible RECTANGLE (taller than wide), not a square. 88x79 cells *
-    8x16 px = 704x1264 output, which keeps the source aspect.
+    horizontal vs vertical factor (CELL_W x CELL_H = 4x14 px), so every cell is
+    a visible RECTANGLE (taller than wide), not a square. 176x90 cells *
+    4x14 px = 704x1260 output, which keeps the source aspect.
 
 To use a DIFFERENT portrait later: drop a crisp animated source at SRC (any
 mp4/gif ffmpeg can read). The output auto-tracks the source aspect: GRID_H is
@@ -54,10 +54,10 @@ OUT_DIR = os.path.abspath(os.path.join(HERE, "..", "..", "assets", "onboarding-d
 # --- Cell geometry. Cells are RECTANGLES (taller than wide, 3:4): CELL_W != CELL_H.
 #     GRID_W is the column count; GRID_H (rows) is derived from the SOURCE's exact
 #     aspect ratio so the output keeps the source proportions with NO crop/distort.
-#     For the 464x832 Midjourney source this yields 88x79 cells -> 704x1264. ---
-GRID_W = 88                    # columns (raised to keep frame width as cells narrowed)
-CELL_W = 8                     # per-cell horizontal upscale (px) -> slightly narrower
-CELL_H = 16                    # per-cell vertical upscale (px) -> taller rectangles
+#     For the 464x832 Midjourney source this yields 176x90 cells -> 704x1260. ---
+GRID_W = 176                   # columns (raised to keep frame width as cells narrowed)
+CELL_W = 4                     # per-cell horizontal upscale (px) -> narrower
+CELL_H = 14                    # per-cell vertical upscale (px) -> taller rectangles
 
 N_FRAMES = 36                  # flipbook length (one full source loop, evenly sampled)
 
