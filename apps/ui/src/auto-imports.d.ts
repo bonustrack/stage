@@ -107,7 +107,6 @@ declare global {
   const toValue: typeof import('vue').toValue
   const triggerRef: typeof import('vue').triggerRef
   const unref: typeof import('vue').unref
-  const updateProfile: typeof import('./lib/profile').updateProfile
   const uploadAvatar: typeof import('./lib/profile').uploadAvatar
   const useAttrs: typeof import('vue').useAttrs
   const useBubbleActions: typeof import('./lib/useBubbleActions').useBubbleActions
@@ -289,7 +288,6 @@ declare module 'vue' {
     readonly toValue: UnwrapRef<typeof import('vue')['toValue']>
     readonly triggerRef: UnwrapRef<typeof import('vue')['triggerRef']>
     readonly unref: UnwrapRef<typeof import('vue')['unref']>
-    readonly updateProfile: UnwrapRef<typeof import('./lib/profile')['updateProfile']>
     readonly uploadAvatar: UnwrapRef<typeof import('./lib/profile')['uploadAvatar']>
     readonly useAttrs: UnwrapRef<typeof import('vue')['useAttrs']>
     readonly useBubbleActions: UnwrapRef<typeof import('./lib/useBubbleActions')['useBubbleActions']>

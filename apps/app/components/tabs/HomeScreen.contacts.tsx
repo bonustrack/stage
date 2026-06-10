@@ -20,7 +20,7 @@ import { Box } from '../layout';
 import { ChannelRow } from '../ChannelRow';
 import { openDmWithAddress, shortAddress } from '../../modules/messaging';
 import { resolveEnsName } from '../../lib/ens';
-import { usePeerProfiles, getPeerName, getPeerAvatarCb } from '../../lib/peerProfiles';
+import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { getCachedRows } from '../../modules/messaging';
 
 /** Cheap pre-flight - accept any `*.eth` (single or multi-label) as resolvable. */
@@ -124,7 +124,6 @@ export function HomeContactResults(
         <ChannelRow
           title={getPeerName(resolved.address) ?? (resolved.source === 'ens' ? q : shortAddress(resolved.address))}
           avatarAddress={resolved.address}
-          cacheBuster={getPeerAvatarCb(resolved.address)}
           square={false}
           subtitle="Start chat"
           onPress={() => open(resolved.address)}
@@ -135,7 +134,6 @@ export function HomeContactResults(
           key={p.address.toLowerCase()}
           title={getPeerName(p.address) ?? shortAddress(p.address)}
           avatarAddress={p.address}
-          cacheBuster={getPeerAvatarCb(p.address)}
           square={false}
           subtitle={getPeerName(p.address) ? shortAddress(p.address) : null}
           onPress={() => open(p.address, p.convId)}

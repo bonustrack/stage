@@ -1,68 +1,71 @@
-/** Snapshot profile read/write on web. Reuses the local viem account minted
- *  for the XMTP signer (see `./xmtp.ts`'s `loadOrCreateAccount`). Same wire
- *  format as the mobile counterpart in `apps/app/lib/profile.ts`. */
+/** Read-only identity for the web app. Identity is resolved ENTIRELY from
+ *  stamp.fyi (the same source Snapshot's own UI uses): display names via ENS
+ *  lookup, avatars via the stamp.fyi identicon (handled at the render site by
+ *  `avatarRenderUrl`). There is no in-app profile editing and no Snapshot hub
+ *  usage — identity is read-only for the local user and every peer alike, the
+ *  same model as the mobile app (`@stage-labs/client/identity/peerProfiles`). */
 
-import { privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts';
-import type { Hex } from 'viem';
-import {
-  SNAPSHOT_DOMAIN, UPDATE_USER_TYPES, PINEAPPLE_UPLOAD_URL,
-  buildUpdateUserMessage, postSignedEnvelope, fetchSnapshotProfile,
-  type SnapshotProfile,
-} from '@stage-labs/client/profile/snapshot';
+import { lookupName } from '@stage-labs/client/stamp/resolve';
 
-/** Mirrors `xmtp.ts`'s storage key. Read-only here — the XMTP boot creates it
- *  first; if it's missing we throw rather than silently mint a divergent EOA. */
-const PRIVATE_KEY_KEY = 'xmtp.privateKey';
-const PROFILE_CACHE_KEY = 'profile.cache';
-
-function loadAccount(): PrivateKeyAccount {
-  const stored = localStorage.getItem(PRIVATE_KEY_KEY);
-  if (!stored || !/^0x[0-9a-fA-F]{64}$/.test(stored)) {
-    throw new Error('No local wallet — open the Channels tab first to bootstrap XMTP.');
-  }
-  return privateKeyToAccount(stored as Hex);
+/** Minimal display profile. Only `name` is populated (from ENS); the remaining
+ *  fields are retained so existing templates can keep their optional guards,
+ *  but are never set in the stamp-only model. */
+export interface SnapshotProfile {
+  name?: string;
+  about?: string;
+  avatar?: string;
+  github?: string;
+  twitter?: string;
+  lens?: string;
+  farcaster?: string;
 }
 
-export function loadCachedProfile(): SnapshotProfile | null {
+/** Per-address cache key. A single shared key would let every peer lookup
+ *  (incl. peers with no ENS, cached as `{}`) clobber the SELF profile, blanking
+ *  the user's own name on the Profile tab — so the cache is keyed by address,
+ *  exactly like the mobile peerProfiles store. */
+const PROFILE_CACHE_PREFIX = 'profile.cache.';
+
+function cacheKey(address: string): string {
+  return PROFILE_CACHE_PREFIX + address.toLowerCase();
+}
+
+export function loadCachedProfile(address: string): SnapshotProfile | null {
+  if (!address) return null;
   try {
-    const raw = localStorage.getItem(PROFILE_CACHE_KEY);
+    const raw = localStorage.getItem(cacheKey(address));
     return raw ? JSON.parse(raw) as SnapshotProfile : null;
   } catch { return null; }
 }
 
-function storeCachedProfile(profile: SnapshotProfile): void {
-  try { localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(profile)); }
+function storeCachedProfile(address: string, profile: SnapshotProfile): void {
+  if (!address) return;
+  try { localStorage.setItem(cacheKey(address), JSON.stringify(profile)); }
   catch { /* quota — ignore */ }
 }
 
+/** Resolve a display profile for an address from stamp.fyi (ENS name). Misses
+ *  resolve to an empty profile; consumers fall back to the truncated address
+ *  and the stamp identicon avatar. Self + peers share this one path. */
 export async function readProfile(address: string): Promise<SnapshotProfile | null> {
-  const remote = await fetchSnapshotProfile(address);
-  if (remote) { storeCachedProfile(remote); return remote; }
-  return loadCachedProfile();
+  try {
+    const name = await lookupName(address);
+    const profile: SnapshotProfile = name ? { name } : {};
+    storeCachedProfile(address, profile);
+    return profile;
+  } catch {
+    return loadCachedProfile(address);
+  }
 }
 
-export async function updateProfile(profile: SnapshotProfile): Promise<unknown> {
-  const account = loadAccount();
-  const message = buildUpdateUserMessage(account.address, profile);
-  /** viem types these as `as const`; the underlying signature accepts the
-   *  literal shape so cast through unknown. */
-  const sig = await account.signTypedData({
-    domain: SNAPSHOT_DOMAIN as { name: string; version: string },
-    types: UPDATE_USER_TYPES as unknown as Record<string, { name: string; type: string }[]>,
-    primaryType: 'Profile',
-    message,
-  });
-  const result = await postSignedEnvelope({
-    address: account.address, sig,
-    data: { domain: SNAPSHOT_DOMAIN, types: UPDATE_USER_TYPES, message },
-  });
-  storeCachedProfile(profile);
-  return result;
-}
+/** Pineapple image-pinning service (IPFS upload). Returns `{result:{cid}}`.
+ *  This is the only profile-related write left in the web app: it backs the
+ *  GROUP avatar upload (not user identity, which is read-only from stamp.fyi). */
+const PINEAPPLE_UPLOAD_URL = 'https://pineapple.fyi/upload';
+const MAX_AVATAR_BYTES = 1024 * 1024;
 
 /** Upload a File via pineapple → returns `ipfs://<cid>`. Validates JPEG/PNG
  *  and the 1 MB limit sx-monorepo enforces. */
-const MAX_AVATAR_BYTES = 1024 * 1024;
 export async function uploadAvatar(file: File): Promise<string> {
   if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
     throw new Error('Only JPEG and PNG images are supported.');
@@ -81,5 +84,3 @@ export async function uploadAvatar(file: File): Promise<string> {
   if (!cid) throw new Error('Pineapple returned no CID');
   return `ipfs://${cid}`;
 }
-
-export type { SnapshotProfile };

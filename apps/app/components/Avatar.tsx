@@ -40,8 +40,7 @@ interface Props {
   /** Either a canonical preset (`sm`/`md`/`lg`) or an explicit pixel size for
    *  one-off larger/smaller call sites that don't map onto a preset. */
   size?: AvatarSize | number;
-  /** Cache-buster appended to the stamp URL. Pass `getPeerAvatarCb(address)`
-   *  for peer rows so an avatar update invalidates the cached image. */
+  /** Optional cache-buster appended to the stamp URL to force a refetch. */
   cacheBuster?: number | string;
   /** Render as a rounded SQUARE instead of a circle. Used for group/channel
    *  avatars so they read as distinct from circular user avatars at a glance. */

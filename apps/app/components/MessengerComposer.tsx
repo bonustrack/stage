@@ -23,7 +23,7 @@ interface Props {
   /** Candidates surfaced in the `@`-mention popup — channel members for
    *  groups, or contact list for DMs. Parent owns the source-of-truth list;
    *  composer just filters/renders. Empty array disables the popup. */
-  mentionCandidates?: { address: string; name: string; cacheBuster?: number }[];
+  mentionCandidates?: { address: string; name: string }[];
   /** `nonce` (optional) changes on every reply action — even re-replying to the
    *  same message — so the composer re-focuses + re-opens the keyboard each time. */
   replyingTo?: { id: string; preview: string; sender?: string | null; nonce?: number };

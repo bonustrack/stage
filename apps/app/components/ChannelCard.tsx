@@ -12,7 +12,7 @@ import { ChannelRow } from './ChannelRow';
 import { DmPeerCard } from './ChannelCard.dm';
 import { Box } from './layout';
 import { useConvMeta } from '../lib/useConvMeta';
-import { usePeerProfiles, getPeerName, getPeerAvatar, getPeerAvatarCb, isPeerResolved } from '../lib/peerProfiles';
+import { usePeerProfiles, getPeerName, isPeerResolved } from '../lib/peerProfiles';
 import { channelStampSeed } from '@metro-labs/kit/avatar';
 import { usePalette, useBlockRadius } from '../lib/theme';
 import { shortAddress } from '../modules/messaging';
@@ -50,7 +50,7 @@ function ConvIdCard({ convId }: { convId: string }): React.ReactElement {
    *   - DM: peer's stamp (real eth address) + peer profile image if present.
    *   - Group WITH uploaded image: that image via avatarUri (address ignored).
    *   - Group WITHOUT image: a deterministic stamp seeded by the channel id. */
-  const avatarUri = isGroup ? (meta.groupImage?.trim() || null) : (getPeerAvatar(peer) || null);
+  const avatarUri = isGroup ? (meta.groupImage?.trim() || null) : null;
   const avatarSeed = isGroup
     ? (avatarUri ? null : channelStampSeed(convId))
     : peer;
@@ -74,7 +74,6 @@ function ConvIdCard({ convId }: { convId: string }): React.ReactElement {
         subtitle={subtitle}
         avatarUri={avatarUri}
         avatarAddress={avatarAddress}
-        cacheBuster={avatarSeed ? getPeerAvatarCb(avatarSeed) : undefined}
         square={isGroup}
         onPress={open}
         noBorder

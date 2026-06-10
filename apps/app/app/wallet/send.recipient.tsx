@@ -2,7 +2,7 @@
  *
  *  - `RecipientRow` renders a resolved recipient as the same avatar + name +
  *    short-address row the app uses everywhere else (Search results, member
- *    picker): `Avatar` + `getPeerName`/`getPeerAvatarCb` + `shortAddress`. It
+ *    picker): `Avatar` + `getPeerName` + `shortAddress`. It
  *    fetches the peer's Snapshot profile (name/avatar) via the shared
  *    `peerProfiles` cache so a known contact shows their display name.
  *
@@ -19,9 +19,7 @@ import { Avatar } from '../../components/Avatar';
 import { AppModal } from '../../components/AppModal';
 import { Row, Col } from '../../components/layout';
 import { shortAddress } from '../../modules/messaging';
-import {
-  usePeerProfiles, getPeerName, getPeerAvatar, getPeerAvatarCb,
-} from '../../lib/peerProfiles';
+import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { useContacts } from '../../lib/useContacts';
 
 interface RowPalette { head: string; sub: string; border: string }
@@ -46,8 +44,6 @@ export function RecipientRow({ address, pal, right, onPress }: {
       <Avatar
         address={address}
         size="md"
-        imageUri={getPeerAvatar(address)}
-        cacheBuster={getPeerAvatarCb(address)}
         style={{ backgroundColor: border }}
 />
       <Col minWidth={0} flex={1}>

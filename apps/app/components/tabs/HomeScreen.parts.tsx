@@ -12,7 +12,7 @@ import { Spinner } from '../Spinner';
 import { ChannelRow } from '../ChannelRow';
 import { resetXmtpClient, shortAddress } from '../../modules/messaging';
 import { resetAccount } from '../../lib/wallet';
-import { getPeerAvatarCb, getPeerName, isPeerResolved } from '../../lib/peerProfiles';
+import { getPeerName, isPeerResolved } from '../../lib/peerProfiles';
 import { hasDraft, getDraft } from '../../lib/drafts';
 import { isPinned } from '../../lib/pins';
 import { requestLabelFilter } from '../../lib/labelFilterRequest';
@@ -36,8 +36,10 @@ export function useChannelRowRenderer(
    *  (deps intentionally partial — react-hooks/exhaustive-deps not enabled.) */
   return useCallback(({ item }: { item: RowT }): React.ReactElement => {
     const displayTitle = item.peerAddress ? (getPeerName(item.peerAddress) ?? item.title) : item.title;
+    /** Self prefix resolves our own stamp name (lastSenderAddress is set for self
+     *  too); falls back to "You" only until the profile lands. */
     const senderPrefix = item.lastFromSelf
-      ? 'You: '
+      ? `${(item.lastSenderAddress && getPeerName(item.lastSenderAddress)) ?? 'You'}: `
       : item.lastSenderAddress
         ? `${getPeerName(item.lastSenderAddress) ?? shortAddress(item.lastSenderAddress)}: `
         : '';
@@ -62,7 +64,6 @@ export function useChannelRowRenderer(
         title={displayTitle}
         avatarUri={item.avatarUri}
         avatarAddress={showAddr}
-        cacheBuster={item.avatarAddress ? getPeerAvatarCb(item.avatarAddress) : undefined}
         square={!item.peerAddress}
         lastPreview={preview}
         timestamp={fmtTs(item.lastTs)}

@@ -13,7 +13,6 @@ import { Icon } from '@metro-labs/kit/icon';
 import { Divider } from '@metro-labs/kit/divider';
 import { GithubLogo } from '../GithubLogo';
 import { Avatar } from '../Avatar';
-import { getPeerAvatar } from '../../lib/peerProfiles';
 import { channelStampSeed } from '@metro-labs/kit/avatar';
 import { REACT_PRESETS } from '../MessengerBubble';
 import { usePalette } from '../../lib/theme';
@@ -43,7 +42,7 @@ export function HeaderAvatar({ peerAddr, groupImage, channelId, isGroup, border 
   peerAddr: string | null; groupImage: string; channelId: string; isGroup: boolean; border: string;
 }): React.ReactElement | null {
   if (peerAddr) {
-    return <Avatar address={peerAddr} imageUri={getPeerAvatar(peerAddr)} size="sm" style={{ backgroundColor: border }} />;
+    return <Avatar address={peerAddr} size="sm" style={{ backgroundColor: border }} />;
   }
   if (groupImage) {
     return <Avatar imageUri={groupImage} size="sm" square style={{ backgroundColor: border }} />;

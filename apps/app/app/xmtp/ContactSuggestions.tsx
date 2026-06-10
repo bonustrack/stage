@@ -47,9 +47,7 @@ export function ContactSuggestions({
 >
               <Avatar
                 address={c.address}
-                imageUri={c.avatar}
                 size="md"
-                cacheBuster={c.cacheBuster}
                 style={{ backgroundColor: border }}
 />
               <Col flex={1} gap={1}>

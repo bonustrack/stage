@@ -17,20 +17,14 @@ import {
   getCachedRows, subscribeCachedRows, getActiveAccountIdSync,
   type CachedRow,
 } from './channelsCache';
-import {
-  usePeerProfiles, getPeerName, getPeerAvatar, getPeerAvatarCb,
-} from './peerProfiles';
+import { usePeerProfiles, getPeerName } from './peerProfiles';
 import { shortAddress } from './xmtp';
 
 export interface Contact {
   /** Lowercased peer address — the dedupe + exclude key. */
   address: string;
-  /** Display name (Snapshot profile name, else shortened address). */
+  /** Display name (ENS name from stamp.fyi, else shortened address). */
   name: string;
-  /** Raw avatar value (ipfs://… or URL) if the peer set one, else undefined. */
-  avatar?: string;
-  /** Cache-buster for the stamp.fyi identicon fallback. */
-  cacheBuster?: string;
 }
 
 /** Pull the DM-peer addresses out of the cached channel rows. */
@@ -76,8 +70,6 @@ export function useContacts(exclude: string[], query: string): Contact[] {
       .map(addr => ({
         address: addr,
         name: getPeerName(addr) ?? shortAddress(addr),
-        avatar: getPeerAvatar(addr),
-        cacheBuster: getPeerAvatarCb(addr),
       }));
     const filtered = q
       ? contacts.filter(c =>

@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import { useFocusEffect } from 'expo-router';
-import { usePeerProfiles, getPeerName, getPeerAvatar } from '../../lib/peerProfiles';
+import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { useConvMeta } from '../../lib/useConvMeta';
 import {
   XMTP_USER_PREFIX, lineOfConv, useXmtpFeed, xmtpReply, shortAddress,
@@ -97,14 +97,19 @@ export function useConversationState(convId: string | undefined, focus: string |
     return inboxToAddr[inboxId] ?? null;
   }, [inboxToAddr]);
 
-  /** Resolve peer + member profiles → DM display name + avatar cache-busters. */
-  const profilesVersion = usePeerProfiles([peerAddr, ...memberAddrs]);
+  /** Our own eth address (via the inbox→addr map), so our OWN message bubbles +
+   *  reply previews resolve our stamp name/avatar — a DM's memberAddrs is empty,
+   *  so without this self is never fetched and renders blank. */
+  const selfAddr = xmtpFeed.inboxId ? (inboxToAddr[xmtpFeed.inboxId] ?? null) : null;
+
+  /** Resolve peer + member + self profiles → display names + avatar cache-busters. */
+  const profilesVersion = usePeerProfiles([peerAddr, selfAddr, ...memberAddrs]);
 
   /** @-mention candidates for the composer popup — group members (sans self) or
    *  the lone DM peer, from the resolved peerProfiles cache. */
   const mentionCandidates = useMemo(() => {
     const seen = new Set<string>();
-    const out: { address: string; name: string; cacheBuster: number }[] = [];
+    const out: { address: string; name: string }[] = [];
     const add = (addr: string | null): void => {
       if (!addr) return;
       const k = addr.toLowerCase();
@@ -113,7 +118,6 @@ export function useConversationState(convId: string | undefined, focus: string |
       out.push({
         address: addr,
         name: getPeerName(addr) ?? shortAddress(addr),
-        cacheBuster: getPeerAvatar(addr) ? 1 : 0,
       });
     };
     if (isGroup) memberAddrs.forEach(add);

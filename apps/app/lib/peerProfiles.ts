@@ -11,13 +11,9 @@ import {
 } from '@stage-labs/client/identity/peerProfiles';
 
 export {
-  setPeerProfile,
   ensurePeerProfiles,
   isPeerResolved,
   getPeerName,
-  getPeerAbout,
-  getPeerAvatarCb,
-  getPeerAvatar,
   type PeerProfile,
 } from '@stage-labs/client/identity/peerProfiles';
 

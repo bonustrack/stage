@@ -14,7 +14,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getCachedXmtpClient, getOrCreateXmtpClient, lineOfConv } from '../../modules/messaging';
 import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
-import { usePeerProfiles } from '../../lib/peerProfiles';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { Icon } from '@metro-labs/kit/icon';
 import { ImageViewer } from '../../components/ImageViewer';
@@ -64,9 +63,6 @@ export default function GroupDetail(): React.ReactElement {
   const [viewerOpen, setViewerOpen] = useState(false);
   /** Overflow (3-dot) menu in the group-info topnav. */
   const [overflowOpen, setOverflowOpen] = useState(false);
-
-  /** Resolve each member's Snapshot profile so the rows pick up custom avatars. */
-  const profilesVersion = usePeerProfiles(members);
 
   useEffect(() => {
     const c = getCachedXmtpClient();
@@ -130,7 +126,7 @@ export default function GroupDetail(): React.ReactElement {
       </Row>
       <FlatList
         data={members}
-        extraData={profilesVersion}
+        extraData={memberNames}
         keyExtractor={addr => addr.toLowerCase()}
         renderItem={({ item }) => (
           <MemberRow

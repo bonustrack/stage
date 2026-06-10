@@ -3,8 +3,6 @@
  *  state of their own beyond what the parent passes down. */
 
 import { useEffect, useState } from 'react';
-
-import { Modal } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Box, Row, Col } from './layout';
@@ -12,6 +10,7 @@ import { usePalette, useBlockRadius, type Palette } from '../lib/theme';
 import { getCachedXmtpClient, getOrCreateXmtpClient } from '../modules/messaging';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';
+import { TopnavIdentity } from './TopnavIdentity';
 
 export type ProfileColors = Palette;
 
@@ -39,28 +38,14 @@ export function useSelfAddress(): string {
   return self;
 }
 
-/** Top header bar — variant-specific. Both expose the own-profile overflow
- *  menu (edit) on the right; the route variant adds a back button on the left.
- *  For `route` the header is absolutely positioned so it floats over the
- *  full-bleed cover; for `tab` it is an in-flow right-aligned kebab strip that
- *  lives INSIDE the page body (the shared hoisted Topnav is now the uniform Home
- *  bar, so the per-tab edit action moved here). */
-export function ProfileHeader({ variant, insetTop, isSelf, onBack, onMenu, c }: {
-  variant: 'tab' | 'route'; insetTop: number; isSelf: boolean;
-  onBack: () => void; onMenu: () => void; c: ProfileColors;
-}): React.ReactElement | null {
-  /** Tab variant: in-flow right-aligned kebab strip in the page body (not the
-   *  topnav, which is the uniform Home bar). Only for own profile. */
-  if (variant === 'tab') {
-    if (!isSelf) return null;
-    return (
-      <Row justify="end" align="center" padding={{ x: 16, top: 8 }}>
-        <Pressable onPress={onMenu} hitSlop={8} style={{ padding: 6 }}>
-          <Icon name="dotsHorizontal" size={24} color={c.link}/>
-        </Pressable>
-      </Row>
-    );
-  }
+/** Top header bar — variant-specific. The route variant adds a back button on
+ *  the left and floats over the full-bleed cover; the tab variant shows the
+ *  Home-style identity (avatar + name → Menu). Identity is read-only, so there
+ *  is no edit/overflow affordance. */
+export function ProfileHeader({ variant, insetTop, onBack, c }: {
+  variant: 'tab' | 'route'; insetTop: number;
+  onBack: () => void; c: ProfileColors;
+}): React.ReactElement {
   return (
     <Row
       align="center"
@@ -72,14 +57,14 @@ export function ProfileHeader({ variant, insetTop, isSelf, onBack, onMenu, c }: 
       }}
       /* eslint-enable no-restricted-syntax */
 >
-      <Pressable onPress={onBack} hitSlop={10} style={{ padding: 6 }}>
-        <Icon name="arrowLeft" size={22} color={c.link}/>
-      </Pressable>
-      {isSelf ? (
-        <Pressable onPress={onMenu} hitSlop={8} style={{ padding: 6 }}>
-          <Icon name="dotsHorizontal" size={22} color={c.link}/>
+      {variant === 'route' ? (
+        <Pressable onPress={onBack} hitSlop={10} style={{ padding: 6 }}>
+          <Icon name="arrowLeft" size={22} color={c.link}/>
         </Pressable>
-      ) : null}
+      ) : (
+        // Tab variant: avatar + name → Menu, matching the Home topnav identity.
+        <TopnavIdentity/>
+      )}
     </Row>
   );
 }
@@ -136,32 +121,5 @@ export function ProfileActions({ dark, opening, onMessage, onSend, c }: {
       <Btn icon="chatRect" label={opening ? 'Opening…' : 'Message'} onPress={onMessage} disabled={opening}/>
       <Btn icon="send" label="Send" onPress={onSend}/>
     </Row>
-  );
-}
-
-/** Own-profile overflow menu — backdrop-dismiss sheet pinned top-right under the
- *  header, with a single "Edit profile" action. */
-export function EditMenu({ visible, top, onClose, onEdit, c }: {
-  visible: boolean; top: number; onClose: () => void; onEdit: () => void; c: ProfileColors;
-}): React.ReactElement {
-  const blockRadius = useBlockRadius();
-  return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={{ flex: 1 }} onPress={onClose}>
-        <Box minWidth={168} radius={blockRadius} surface="surface" style={{ position: 'absolute', right: 12, top, overflow: 'hidden', borderWidth: 1, borderColor: c.border }}>
-          <Pressable
-            onPress={onEdit}
-            style={({ pressed }) => ({
-              flexDirection: 'row', alignItems: 'center', gap: 10,
-              paddingHorizontal: 14, paddingVertical: 12,
-              backgroundColor: pressed ? c.border : 'transparent',
-            })}
->
-            <Icon name="pencil" size={18} color={c.link}/>
-            <Text size="md" color={c.link}>Edit profile</Text>
-          </Pressable>
-        </Box>
-      </Pressable>
-    </Modal>
   );
 }

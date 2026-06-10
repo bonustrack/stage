@@ -26,7 +26,7 @@ export interface ChannelRowProps {
   avatarAddress?: string | null;
   /** Custom/group-uploaded image - takes precedence over avatarAddress. */
   avatarUri?: string | null;
-  /** Stamp cache-buster (pass getPeerAvatarCb(avatarAddress)). */
+  /** Optional stamp cache-buster to force a refetch. */
   cacheBuster?: number | string;
   /** Square avatar (groups/channels) vs circle (DMs). */
   square?: boolean;

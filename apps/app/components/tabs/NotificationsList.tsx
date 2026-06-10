@@ -13,7 +13,7 @@ import { Text } from '@metro-labs/kit/text';
 import { Avatar } from '../Avatar';
 import { Box, Col, Row } from '../layout';
 import { usePalette, useBlockRadius } from '../../lib/theme';
-import { usePeerProfiles, getPeerAvatarCb, getPeerName } from '../../lib/peerProfiles';
+import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { shortAddress } from '../../modules/messaging';
 import { loadNotifReadState, subscribeNotifReadState } from '../../lib/notifReadState';
 import type { RequestPreview } from './useRequestPreviews';
@@ -62,7 +62,6 @@ export function NotificationsList({
               address={!p.avatarUri ? p.avatarAddress : null}
               size={40}
               square={p.isGroup}
-              cacheBuster={p.avatarAddress ? getPeerAvatarCb(p.avatarAddress) : undefined}
               style={{ backgroundColor: border }}
 />
             <Col minWidth={0} flex={1}>
