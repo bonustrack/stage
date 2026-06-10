@@ -1,11 +1,10 @@
-/** Contacts route — a 5th bottom-tab entry. Unlike the four pager tabs
- *  (index/wallet/notifications/profile) it is NOT part of the swipe pager: it
- *  renders its own full screen (the pager overlay is hidden on /contacts, same
- *  as /settings), so the 4-page swipe strip stays untouched. Lists every user
- *  the account has access to — DM peers + group members. */
+/** Route placeholder — the Contacts body is now the 2nd page of the shared
+ *  horizontal pager in `_layout.tsx` (mounted side-by-side with the other tab
+ *  bodies so swiping reveals it as it follows the finger). This file exists only
+ *  so expo-router keeps a real `/contacts` route — deep links resolve, the URL
+ *  stays correct, and the bottom tab-bar highlight is router-driven. It renders
+ *  nothing (the pager overlays the scene). */
 
-import { ContactsScreen } from '../../components/ContactsScreen';
-
-export default function ContactsRoute(): React.ReactElement {
-  return <ContactsScreen />;
+export default function TabRoutePlaceholder(): null {
+  return null;
 }
