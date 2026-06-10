@@ -26,9 +26,6 @@ import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
  *  the displayed size so the fullscreen viewer gets a crisp image. */
 const FULLSCREEN_FETCH_PX = 512;
 
-export type { AvatarSize };
-export { AVATAR_SIZES };
-
 const SIZE_PX = AVATAR_SIZES;
 
 interface Props {

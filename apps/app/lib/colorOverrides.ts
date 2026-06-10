@@ -43,7 +43,7 @@ const HEX_RE = /^#([0-9a-fA-F]{6})$/;
 export function isHex(v: string): boolean { return HEX_RE.test(v.trim()); }
 
 /** The clean default seeds (lossless: reproduces today's palette exactly). */
-export function defaultSeeds(): ThemeSeeds {
+function defaultSeeds(): ThemeSeeds {
   return {
     light: { ...DEFAULT_SEED.light, surface: { ...DEFAULT_SEED.light.surface } },
     dark: { ...DEFAULT_SEED.dark, surface: { ...DEFAULT_SEED.dark.surface } },

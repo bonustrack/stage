@@ -37,10 +37,6 @@ const listeners = new Set<() => void>();
 
 function emit(): void { for (const l of listeners) l(); }
 
-function persist(key: string, v: number | null): void {
-  void AsyncStorage.setItem(key, v == null ? '' : String(v)).catch(() => { /* best-effort */ });
-}
-
 /** Kick off the one-time load from storage; notify subscribers when it lands. */
 export function loadRadius(): void {
   if (loaded) return;
@@ -65,27 +61,6 @@ export function getRadius(): number { return buttonCache ?? BUTTON_RADIUS_DEFAUL
 /** Synchronous snapshot of the effective block radius (override or default). */
 export function getBlockRadius(): number { return blockCache ?? BLOCK_RADIUS_DEFAULT; }
 
-/** Set the button radius override (clamped), then persist + notify. */
-export function setRadius(n: number): void {
-  buttonCache = clampRadius(n);
-  emit();
-  persist(BUTTON_KEY, buttonCache);
-}
-/** Set the block radius override (clamped), then persist + notify. */
-export function setBlockRadius(n: number): void {
-  blockCache = clampBlockRadius(n);
-  emit();
-  persist(BLOCK_KEY, blockCache);
-}
-
-/** Clear BOTH overrides → back to the kit defaults. */
-export function resetRadius(): void {
-  buttonCache = null;
-  blockCache = null;
-  emit();
-  persist(BUTTON_KEY, null);
-  persist(BLOCK_KEY, null);
-}
 
 /** Subscribe to radius changes (load/edit/reset). Returns an unsubscribe fn. */
 export function subscribe(fn: () => void): () => void {

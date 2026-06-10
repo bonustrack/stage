@@ -13,7 +13,7 @@ export interface Palette { fg: string; sub: string; inputBg: string; chipBg: str
 /** Map a file extension → MIME type for the formats the composer can stage. The
  *  voice recorder writes `.m4a` (AAC) and image pickers can hand back HEIC/PNG
  *  etc. with a missing `mimeType`, so we need a deterministic fallback. */
-export const EXT_MIME: Record<string, string> = {
+const EXT_MIME: Record<string, string> = {
   jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif',
   webp: 'image/webp', heic: 'image/heic', heif: 'image/heif', bmp: 'image/bmp',
   m4a: 'audio/m4a', mp3: 'audio/mpeg', wav: 'audio/wav', aac: 'audio/aac',

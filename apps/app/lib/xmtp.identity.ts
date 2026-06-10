@@ -45,7 +45,7 @@ export async function primeInboxEthCache(
 
 /** Resolve inbox ids → ETH address, cache-first (SDK rule). Only ids not already
  *  cached hit the network (`inboxStates(true)`); cached ids cost zero reads. */
-export async function resolveInboxEth(
+async function resolveInboxEth(
   client: Awaited<ReturnType<typeof getOrCreateXmtpClient>>,
   ids: string[],
 ): Promise<Record<string, string>> {

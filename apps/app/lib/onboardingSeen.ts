@@ -43,10 +43,10 @@ function notifyReady(): void {
 }
 
 /** Synchronous read: has the persisted flag finished loading at least once. */
-export const isOnboardingLoadedSync = (): boolean => hasLoaded;
+const isOnboardingLoadedSync = (): boolean => hasLoaded;
 
 /** Subscribe to BOTH the load-resolved transition and flag changes. */
-export const subscribeOnboarding = (cb: () => void): () => void => {
+const subscribeOnboarding = (cb: () => void): () => void => {
   readyListeners.add(cb);
   const unsubValue = store.subscribe(cb);
   return () => { readyListeners.delete(cb); unsubValue(); };
@@ -54,7 +54,7 @@ export const subscribeOnboarding = (cb: () => void): () => void => {
 
 /** Await the one-time load and get whether onboarding has been seen. Flips the
  *  load-resolved flag + notifies ready subscribers when it lands. */
-export const loadOnboardingSeen = async (): Promise<boolean> => {
+const loadOnboardingSeen = async (): Promise<boolean> => {
   const v = await store.load();
   if (!hasLoaded) { hasLoaded = true; notifyReady(); }
   return v;
@@ -62,16 +62,13 @@ export const loadOnboardingSeen = async (): Promise<boolean> => {
 
 /** Fire-and-forget the one-time load; notifies subscribers (value + ready) when
  *  it lands. */
-export const loadOnboardingSeenAsync = (): void => { void loadOnboardingSeen(); };
+const loadOnboardingSeenAsync = (): void => { void loadOnboardingSeen(); };
 
 /** Synchronous read from the in-memory cache (false until loaded). */
-export const isOnboardingSeenSync = (): boolean => store.get();
+const isOnboardingSeenSync = (): boolean => store.get();
 
 /** Persist that onboarding has been seen and notify subscribers. */
 export const setOnboardingSeen = (seen: boolean): Promise<void> => store.setAsync(seen);
-
-/** Subscribe to changes. Returns an unsubscribe fn. */
-export const subscribeOnboardingSeen = (cb: () => void): () => void => store.subscribe(cb);
 
 export interface OnboardingGate {
   /** False until the persisted flag's one-time load has resolved - the gate

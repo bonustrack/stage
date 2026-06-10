@@ -20,7 +20,7 @@ export function hasAttachments(e: HistoryEntry): boolean {
  *  that drop the schema — a reaction on a poll bubble whose content is a pure
  *  non-negative integer that is a valid option index for that poll. A genuine
  *  emoji reaction on a poll (❤️, 👍, …) is NOT an integer, so it stays a pill. */
-export function isPollVote(
+function isPollVote(
   p: { reactTo?: string; emoji?: string; schema?: string } | undefined,
   pollOptionCounts: Map<string, number>,
 ): boolean {
@@ -91,7 +91,7 @@ export function isReaction(e: HistoryEntry): boolean {
 
 /** Adapt the conversation's reaction events into the shared `VoteEvent` shape
  *  the pure tally helpers consume. Only schema:'custom' reactions are votes. */
-export function voteEventsOf(events: HistoryEntry[]): VoteEvent[] {
+function voteEventsOf(events: HistoryEntry[]): VoteEvent[] {
   const out: VoteEvent[] = [];
   for (const e of events) {
     const p = e.payload as { reactTo?: string; emoji?: string; removed?: boolean; schema?: string } | undefined;

@@ -105,26 +105,6 @@ export async function registerPushWithDaemon(client: PushClient): Promise<void> 
   }
 }
 
-/** True when `account` (lowercased address) has a live push registration with
- *  the daemon — i.e. `registerPushWithDaemon` succeeded for it within the TTL.
- *
- *  Used to gate the foreground JS local notification: if the daemon is pushing
- *  for this account, its data-push is rendered NATIVELY by MetroFcmService (the
- *  Telegram-style avatar card) in BOTH foreground and background. That native
- *  `notify()` does NOT pass through expo-notifications' setNotificationHandler,
- *  so it can't be suppressed JS-side — meaning if we ALSO post the JS local
- *  notif we get two cards (the duplicate the user saw). So when the daemon
- *  covers this account we skip the JS local notif entirely; phone-only accounts
- *  the daemon has no key for keep getting the JS local notif as their only path. */
-export async function isDaemonPushRegistered(account: string): Promise<boolean> {
-  try {
-    const prev = await AsyncStorage.getItem(lastRegisterKey(account.toLowerCase()));
-    if (!prev) return false;
-    const { token, at } = JSON.parse(prev) as { token?: string; at?: number };
-    return !!token && typeof at === 'number' && Date.now() - at < REGISTER_TTL_MS;
-  } catch { return false; }
-}
-
 /** Tell the daemon to STOP pushing to this device and clear the local
  *  registration state so the TTL gate treats the device as unregistered. Called
  *  when the user turns push OFF in Settings → Notifications. Best-effort: even if

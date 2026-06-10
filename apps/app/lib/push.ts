@@ -36,5 +36,4 @@ export {
   unregisterPushFromDaemon,
   presentInboundNotification,
   usePushDeepLinks,
-  isDaemonPushRegistered,
 } from './pushRegister';
