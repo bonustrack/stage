@@ -6,8 +6,8 @@ direction ("source = an animated gif/video, code turns each frame into those
 rectangles"):
 
     load an ANIMATED source (mp4 / gif) -> for each sampled frame, step it on a
-    fixed GRID -> per cell sample the source luminance -> quantize to 1-bit
-    (pure #000 / #fff) via ordered (Bayer) dither -> nearest-neighbor upscale so
+    fixed GRID -> per cell sample the source luminance -> quantize to 2 levels
+    (pure #000 / a light gray #B0B0B0) via ordered (Bayer) dither -> upscale so
     the cells stay hard-edged RECTANGLES.
 
 The MOTION (the face growing, the horizontal smear/stretch bands sweeping, the
@@ -60,6 +60,10 @@ CELL_W = 6                     # per-cell horizontal upscale (px) -> 6px wide ce
 CELL_H = 16                    # per-cell vertical upscale (px) -> 16px tall rectangles
 
 N_FRAMES = 36                  # flipbook length (one full source loop, evenly sampled)
+
+# --- Lit ("on") cell color. The dither is black + this gray (NOT black + white):
+#     Less asked to soften the white to a tasteful light/mid gray. Black stays 0. ---
+LIT_GRAY = 176                 # RGB ~#B0B0B0 for the "on" cells (off cells stay 0)
 
 # --- Contrast curve: lift the face off pure black, keep it punchy/crisp. ---
 GAMMA = 0.85
@@ -152,11 +156,12 @@ def detect_period(frames: list[np.ndarray], total: int) -> int | None:
 
 
 def dither_to_1bit(gray: np.ndarray) -> np.ndarray:
-    """Ordered (Bayer) 1-bit quantization -> uint8 {0,255} at GRID resolution."""
+    """Ordered (Bayer) 1-bit quantization -> uint8 {0, LIT_GRAY} at GRID resolution.
+    "On" cells are LIT_GRAY (light/mid gray), "off" cells are pure black."""
     h, w = gray.shape
     tile = np.tile(BAYER4, (h // 4 + 1, w // 4 + 1))[:h, :w]
     thresh = 0.5 + (tile - 0.5) * DITHER_AMOUNT
-    return np.where(gray >= thresh, 255, 0).astype(np.uint8)
+    return np.where(gray >= thresh, LIT_GRAY, 0).astype(np.uint8)
 
 
 def main() -> None:
@@ -192,9 +197,12 @@ def main() -> None:
         bits = dither_to_1bit(g)
         # nearest-neighbor upscale with DISTINCT x/y factors -> rectangular cells
         img = Image.fromarray(bits, mode="L").resize((out_w, out_h), Image.NEAREST)
-        img.convert("1").save(os.path.join(OUT_DIR, f"f{i:03d}.png"))
+        # keep grayscale "L" mode so the lit cells can hold the gray value (a
+        # 1-bit "1" image could only be pure black/white). Only two levels are
+        # ever present (0 / LIT_GRAY) so the PNG stays small.
+        img.save(os.path.join(OUT_DIR, f"f{i:03d}.png"))
 
-    print(f"wrote {N_FRAMES} frames to {OUT_DIR} ({out_w}x{out_h}, 1-bit, rectangular cells)")
+    print(f"wrote {N_FRAMES} frames to {OUT_DIR} ({out_w}x{out_h}, grayscale, rectangular cells)")
 
 
 if __name__ == "__main__":
