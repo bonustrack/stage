@@ -8,19 +8,25 @@ import { errMsg, log } from './log.js';
 import { STATE_DIR } from './paths.js';
 import type { TrainCallResponse } from './trains/protocol.js';
 import type { TrainInfo } from './trains/supervisor.js';
+import type { OutboxEntry, OutboxState } from './outbox.js';
 
 const SOCKET_PATH = join(STATE_DIR, 'metro.sock');
 
 export type IpcRequest =
   | { op: 'notify'; line: string; from?: string; text: string }
-  | { op: 'forward-call'; train: string; action: string; args: unknown }
+  /** `idempotencyKey` is optional + additive: minted CLI-side per logical send and
+   *  threaded into the outbox journal so a daemon restart can't double-dispatch. */
+  | { op: 'forward-call'; train: string; action: string; args: unknown; idempotencyKey?: string }
   | { op: 'trains-list' }
-  | { op: 'train-restart'; name: string };
+  | { op: 'train-restart'; name: string }
+  | { op: 'outbox-list'; state?: OutboxState; limit?: number }
+  | { op: 'outbox-retry'; outboxId: string };
 
 export type IpcResponse =
   | { ok: true }
   | { ok: true; response: TrainCallResponse }
   | { ok: true; trains: TrainInfo[] }
+  | { ok: true; entries: OutboxEntry[] }
   | { ok: false; error: string };
 
 type Handler = (req: IpcRequest) => Promise<IpcResponse> | IpcResponse;
