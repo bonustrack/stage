@@ -3,7 +3,7 @@
  *  single Multicall3 round-trip via the brovider RPC. Each row is 4-corner: name
  *  + price/24h-change left, USD value + amount/symbol right. */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { ScrollView } from 'react-native-gesture-handler';
 import { usePullToRefresh } from './PullToRefresh';
@@ -17,7 +17,6 @@ import { flash } from '../../lib/toast';
 import { usePeerProfiles } from '../../lib/peerProfiles';
 import { DANGER, useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { Col, Row } from '../layout';
-import { usePublishTopnavSlot } from './topnavSlots';
 import { getNftsAcrossChains, type Nft } from '../../lib/opensea';
 import { Btn, WalletTabs, NftsView, fmtUsd, splitUsd, type WalletTab } from './WalletScreen.parts';
 import { PrivateView } from './WalletScreen.private';
@@ -108,20 +107,6 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
     ? rows.reduce((s, r) => s + (r.priceUsd ?? 0) * Number(r.balance), 0)
     : null;
 
-  /** Publish the Wallet right-slot (copy address / refresh) to the single
-   *  hoisted Topnav above the pager. Memoised so it only re-publishes when the
-   *  address or refreshing state actually changes. */
-  const right = useMemo(
-    () => (
-      <>
-        <CopyButton address={address} color={head}/>
-        <RefreshButton refreshing={refreshing} onRefresh={onRefresh} color={head}/>
-      </>
-    ),
-    [address, head, refreshing, onRefresh],
-  );
-  usePublishTopnavSlot('wallet', { right });
-
   return (
     /** RNGH ScrollView, simultaneous with the pager Pan (panRef). Pull-to-refresh
      *  is a pure-JS onScroll gesture (usePullToRefresh) — RN's native
@@ -153,9 +138,16 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
       scrollEventThrottle={pull.scrollEventThrottle}
 >
       {pull.indicator}
+      {/* Copy-address + refresh — relocated out of the (now uniform Home) topnav
+          into the page body, anchored top-right of the balance area. Order
+          left→right: [copy][refresh]. Fully functional (same handlers). */}
+      <Row margin={{ x: 16, top: 8 }} justify="end" align="center" gap={18}>
+        <CopyButton address={address} color={head}/>
+        <RefreshButton refreshing={refreshing} onRefresh={onRefresh} color={head}/>
+      </Row>
       {/* Value card — compact, left-aligned: just the big total USD value.
           Decimals render in the dim `sub` colour to keep the dollars prominent. */}
-      <Col padding={{ top: 20, bottom: 16 }} margin={{ x: 16 }} align="start">
+      <Col padding={{ top: 4, bottom: 16 }} margin={{ x: 16 }} align="start">
         {err ? (
           <Text size="xs" color={DANGER}>
             Couldn’t load balances

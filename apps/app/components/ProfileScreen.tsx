@@ -6,13 +6,11 @@
  *  into the tab scene) vs `route` (/user/[address], own back button + inset).
  *  Presentational pieces live in ./ProfileScreen.parts to keep this under cap. */
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 import { Pressable } from '@metro-labs/kit/pressable';
-import { Icon } from '@metro-labs/kit/icon';
 import { ScrollView } from 'react-native-gesture-handler';
 import type { SimultaneousRefs } from './SwipeTabs.types';
-import { usePublishTopnavSlot } from './tabs/topnavSlots';
 import { Text } from '@metro-labs/kit/text';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -76,20 +74,6 @@ export function ProfileScreen({ address, variant, panRef }: {
 
   const displayName = profile?.name?.trim() || (addr ? shortAddress(addr) : 'Loading…');
   const headerTop = variant === 'route' ? 44 + insets.top : 56;
-
-  /** Profile TAB right-slot (edit kebab for own profile) → the single hoisted
-   *  Topnav above the pager. Only the tab variant feeds the shared bar; the route
-   *  variant keeps its own floating header (ProfileHeader below). Published as
-   *  `undefined` when not self so the bar shows identity-only. */
-  const tabRight = useMemo(
-    () => (isSelf ? (
-      <Pressable onPress={() => setMenuOpen(true)} hitSlop={8}>
-        <Icon name="dotsHorizontal" size={24} color={c.link}/>
-      </Pressable>
-    ) : undefined),
-    [isSelf, c.link],
-  );
-  usePublishTopnavSlot('profile', { right: tabRight }, variant === 'tab');
 
   return (
     <Col flex={1} surface="surface">

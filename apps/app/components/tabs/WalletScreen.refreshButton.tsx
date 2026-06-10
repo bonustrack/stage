@@ -2,7 +2,7 @@
  *  fallback to the pull-to-refresh gesture: a single tap fires the same
  *  `onRefresh` from useWalletBalances. While `refreshing` is true the glyph
  *  spins (JS-driven Animated loop) and the button is disabled so taps can't
- *  stack. Rendered inline as a right-slot action of the shared Topnav bar. */
+ *  stack. Rendered in the Wallet page body, top-right of the balance area. */
 
 import { useEffect, useRef } from 'react';
 import { Animated, Easing } from 'react-native';

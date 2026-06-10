@@ -2,8 +2,8 @@
  *  LEFT of the RefreshButton (order left→right: [copy][refresh]). A single tap
  *  copies the active public wallet address to the clipboard and flashes a brief
  *  "Address copied" toast (Android; iOS no-op per lib/toast). Matches the
- *  refresh button's size / hit-target. Rendered inline as a right-slot action of
- *  the shared Topnav bar, just to the LEFT of the RefreshButton. */
+ *  refresh button's size / hit-target. Rendered in the Wallet page body (the
+ *  topnav is the uniform Home bar), top-right of the balance area. */
 
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Icon } from '@metro-labs/kit/icon';

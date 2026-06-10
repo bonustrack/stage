@@ -42,16 +42,25 @@ export function useSelfAddress(): string {
 /** Top header bar — variant-specific. Both expose the own-profile overflow
  *  menu (edit) on the right; the route variant adds a back button on the left.
  *  For `route` the header is absolutely positioned so it floats over the
- *  full-bleed cover; for `tab` it stays an in-flow opaque strip. */
+ *  full-bleed cover; for `tab` it is an in-flow right-aligned kebab strip that
+ *  lives INSIDE the page body (the shared hoisted Topnav is now the uniform Home
+ *  bar, so the per-tab edit action moved here). */
 export function ProfileHeader({ variant, insetTop, isSelf, onBack, onMenu, c }: {
   variant: 'tab' | 'route'; insetTop: number; isSelf: boolean;
   onBack: () => void; onMenu: () => void; c: ProfileColors;
 }): React.ReactElement | null {
-  /** Tab variant renders NO header here: its bar is the single Topnav hoisted
-   *  ABOVE the pager in (tabs)/_layout.tsx (the edit kebab is published to it by
-   *  ProfileScreen). Rendering one here too would put it inside the moving pager.
-   *  The route variant keeps its floating absolute header over the cover. */
-  if (variant === 'tab') return null;
+  /** Tab variant: in-flow right-aligned kebab strip in the page body (not the
+   *  topnav, which is the uniform Home bar). Only for own profile. */
+  if (variant === 'tab') {
+    if (!isSelf) return null;
+    return (
+      <Row justify="end" align="center" padding={{ x: 16, top: 8 }}>
+        <Pressable onPress={onMenu} hitSlop={8} style={{ padding: 6 }}>
+          <Icon name="dotsHorizontal" size={24} color={c.link}/>
+        </Pressable>
+      </Row>
+    );
+  }
   return (
     <Row
       align="center"

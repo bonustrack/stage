@@ -138,7 +138,7 @@ export function ChannelsList({
     [searchOpen, query, head, sub, inputBg, toolbarBg, border],
   );
 
-  usePublishTopnavSlot('index', { right, override });
+  usePublishTopnavSlot({ right, override });
 
   return (
     <>

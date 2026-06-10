@@ -2,32 +2,29 @@
  *
  *  The Topnav is rendered ONCE, as a fixed sibling ABOVE the SwipeTabs pager, so
  *  neither a horizontal tab-swipe (which translates the pager strip) nor a
- *  vertical scroll inside a tab can move it. Because the bar lives outside the
- *  pages, each tab can no longer render its own contextual right-slot inline.
+ *  vertical scroll inside a tab can move it.
  *
- *  Instead every tab body PUBLISHES its current right-slot (and, for Home, an
- *  optional full-width override that replaces the whole bar while search is open)
- *  into this tiny store, keyed by tab index. The hoisted Topnav subscribes and
- *  renders ONLY the active tab's slot, so the left identity stays constant and
- *  the right actions swap to match the visible tab.
+ *  The bar is UNIFORM across all four tabs: it is always the HOME bar (identity +
+ *  search / requests / overflow). Only the Home screen publishes its slot here;
+ *  every tab shows it identically. Home also publishes an optional full-width
+ *  override that replaces the whole bar while its search field is open.
  *
  *  A plain module-level store + useSyncExternalStore keeps this dependency-free
  *  (no extra provider in the tree) and renders the bar synchronously with the
  *  publishing screen. */
 
 import { useEffect, useSyncExternalStore } from 'react';
-import type { TabName } from '../SwipeTabs.config';
 
-/** What a tab contributes to the shared bar. */
+/** What Home contributes to the shared bar. */
 export interface TopnavSlot {
-  /** Contextual right-slot actions for this tab (icons). Omitted = none. */
+  /** Right-slot actions (search / requests / overflow icons). */
   right?: React.ReactNode;
   /** Full-bar override: when set, the hoisted Topnav renders THIS instead of the
    *  identity+right bar (Home uses it for the expanded search field). */
   override?: React.ReactNode;
 }
 
-const slots: Partial<Record<TabName, TopnavSlot>> = {};
+let slot: TopnavSlot | undefined;
 const listeners = new Set<() => void>();
 
 function emit(): void {
@@ -39,42 +36,19 @@ function subscribe(cb: () => void): () => void {
   return () => { listeners.delete(cb); };
 }
 
-/** Publish (or clear) the active slot for a tab. Called by each tab body via the
- *  `usePublishTopnavSlot` hook below; the hoisted bar reads it with
- *  `useTopnavSlot`. Identity comparison avoids redundant emits. */
-export function setTopnavSlot(tab: TabName, slot: TopnavSlot | null): void {
-  if (slot === null) {
-    if (slots[tab] === undefined) return;
-    delete slots[tab];
-  } else {
-    slots[tab] = slot;
-  }
-  emit();
+/** Read the shared (Home) slot. The hoisted Topnav calls this so every tab shows
+ *  the same Home bar (identity + actions), never a per-tab variant. */
+export function useTopnavSlot(): TopnavSlot | undefined {
+  return useSyncExternalStore(subscribe, () => slot, () => slot);
 }
 
-/** Subscribe to a single tab's slot. The hoisted Topnav calls this with the
- *  ACTIVE tab so it always reflects the visible page's contextual actions. */
-export function useTopnavSlot(tab: TabName): TopnavSlot | undefined {
-  return useSyncExternalStore(
-    subscribe,
-    () => slots[tab],
-    () => slots[tab],
-  );
-}
-
-/** Tab-body helper: publish this tab's right-slot / override for as long as the
- *  body is mounted, and clear it on unmount. Re-publishes whenever the node
- *  identity changes (e.g. requestCount badge updates, search opens).
- *
- *  `enabled` (default true) lets a component that is shared between a pager tab
- *  and a non-tab route (ProfileScreen) opt OUT of touching the shared slot when
- *  it is the route variant, so a pushed /user/[address] screen never clobbers
- *  the Profile tab's published kebab. */
-export function usePublishTopnavSlot(tab: TabName, slot: TopnavSlot, enabled = true): void {
+/** Home-body helper: publish the shared right-slot / override for as long as the
+ *  Home body is mounted, and clear it on unmount. Re-publishes whenever the node
+ *  identity changes (e.g. requestCount badge updates, search opens). */
+export function usePublishTopnavSlot(next: TopnavSlot): void {
   useEffect(() => {
-    if (!enabled) return;
-    setTopnavSlot(tab, slot);
-    return () => { setTopnavSlot(tab, null); };
-    // `right`/`override` are the meaningful identities to react to.
-  }, [tab, enabled, slot.right, slot.override]);
+    slot = next;
+    emit();
+    return () => { slot = undefined; emit(); };
+  }, [next.right, next.override]);
 }
