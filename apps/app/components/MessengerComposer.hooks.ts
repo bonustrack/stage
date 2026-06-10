@@ -3,7 +3,7 @@
  *  Behavior identical. */
 
 import { useEffect, useRef, useState, type ComponentRef, type RefObject } from 'react';
-import { AppState } from 'react-native';
+import { AppState, Keyboard } from 'react-native';
 import type { Textarea } from '@metro-labs/kit/textarea';
 import { loadDrafts, getDraft, setDraft } from '../lib/drafts';
 import { loadLastAttachment, getLastAttachment, subscribeLastAttachment } from '../lib/lastAttachment';
@@ -64,16 +64,22 @@ export function useComposerFocus(
     const t = setTimeout(() => inputRef.current?.focus(), 0);
     return () => clearTimeout(t);
   }, [autoFocusNonce]);
-  /** Blur the input whenever the app leaves the foreground. Android otherwise
-   *  restores the still-focused TextInput on resume and re-raises the IME even
-   *  when the keyboard was closed before backgrounding. Intentional focus (input
-   *  tap, reply-swipe, autoFocusNonce) is untouched — it only re-fires on those
-   *  explicit signals, never on resume. */
+  /** On background, blur the input ONLY if the keyboard was already closed.
+   *  The bug: a focused-but-keyboard-closed input gets its IME re-raised by
+   *  Android on resume; blurring kills that. But blurring while the keyboard
+   *  IS up desyncs react-native-keyboard-controller (on resume the IME is gone
+   *  yet the sticky-view/feed offset stays raised -> floating composer / blank
+   *  gap). So when the keyboard is visible we leave focus alone: Android
+   *  restores both focus and IME cleanly, no stale offset. Intentional focus
+   *  (input tap, reply-swipe, autoFocusNonce) is untouched. */
   useEffect(() => {
-    const sub = AppState.addEventListener('change', (s) => {
-      if (s !== 'active') inputRef.current?.blur();
+    let keyboardVisible = false;
+    const showSub = Keyboard.addListener('keyboardDidShow', () => { keyboardVisible = true; });
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => { keyboardVisible = false; });
+    const appSub = AppState.addEventListener('change', (s) => {
+      if (s !== 'active' && !keyboardVisible) inputRef.current?.blur();
     });
-    return () => sub.remove();
+    return () => { showSub.remove(); hideSub.remove(); appSub.remove(); };
   }, []);
 }
 
