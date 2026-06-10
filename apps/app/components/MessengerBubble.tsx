@@ -10,7 +10,6 @@ import type { View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useGestureHandlerRef } from '@react-navigation/stack';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, runOnJS, interpolate, Extrapolation } from 'react-native-reanimated';
-import { getPeerAvatarCb } from '../lib/peerProfiles';
 import { Avatar } from './Avatar';
 import { Col } from './layout';
 import { REACT_PRESETS } from './MessengerBubble.helpers';
