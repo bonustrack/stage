@@ -10,6 +10,7 @@ import {
   isMessagingStation, stationOf, type Attachment, type MessagingEnvelope,
 } from '../messaging.js';
 import { enforceSendGuard } from './send-guard.js';
+import { resolveFrom } from './from.js';
 import { emit, exitErr, flagOne, isJson, need, writeJson, type Flags } from './util.js';
 
 /** Resolve a <text> arg: inline string, `@file`, or `-` (stdin). */
@@ -45,6 +46,12 @@ const route = (line: string): string => {
 async function forward(
   station: string, action: string, env: MessagingEnvelope, f: Flags,
 ): Promise<void> {
+  // Route through the originating session/account when `--from` is given or a
+  // sessions.json binding applies. Absent both => account stays unset (unchanged).
+  if (env.account === undefined) {
+    const from = resolveFrom(env.line, f);
+    if (from !== undefined) env.account = from;
+  }
   enforceSendGuard(station, action, env);
   let resp;
   try { resp = await ipcCall({ op: 'forward-call', train: station, action, args: env }); }
@@ -58,7 +65,7 @@ async function forward(
 }
 
 export async function cmdSend(p: string[], f: Flags): Promise<void> {
-  need(p, 2, 'metro send <line> <text> [--reply <msgId>] [--attach <path|url> ...]');
+  need(p, 2, 'metro send <line> <text> [--reply <msgId>] [--attach <path|url> ...] [--from <session|account>]');
   loadMetroEnv();
   const [line, rawText] = p;
   const station = route(line);

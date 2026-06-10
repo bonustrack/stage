@@ -26,6 +26,8 @@ The URI parses cleanly with the WHATWG `URL` parser: `new URL(line)` gives `prot
 
 The `session` owner URI is **derived** (not a wire line): an optional `~/.metro/sessions.json` binding layer maps a named session to a per-station account (`{ "<id>": { xmtp, discord, telegram, default } }`), with owner `metro://session/<id>`. It is OPT-IN — when the file is absent (the default) identity falls back to the env / per-account-owner behavior, unchanged. `metro whoami` reports the resolved identity; `metro session list` lists the bindings.
 
+Write verbs accept `--from <session|account>` to route an outbound through a specific identity: a `<session>` id resolves through `sessions.json` (its `xmtp` binding, else `default`) to an account; anything else is passed through as a literal account id. The daemon already honors the resulting account (`accountForCall`: explicit account > line's account segment > default), so this only fills that field. With no `--from` flag and no `sessions.json`, nothing is set and routing is byte-for-byte unchanged. Today only `xmtp` is multi-account; on `discord`/`telegram` the binding is inert and `--from` is a literal pass-through.
+
 Claude / Codex lines mirror the `<root>/<sub>` structure of `metro://telegram/<chat-id>/<topic-id>`: `<user-id>` (the stable account id — same across devices) plays the role of `<chat-id>`, and `<session-id>` (one conversation) plays the role of `<topic-id>`. Both segments are derived per station (see [participants](#participants) below).
 
 ## Participants
