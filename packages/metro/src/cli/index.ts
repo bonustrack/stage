@@ -49,8 +49,9 @@ Usage:
   metro trains [list]                         List supervised trains (running, pid, fail count).
   metro trains restart <name>                 Kill + respawn a train (resets backoff).
   metro trains new <name>                     Scaffold ~/.metro/trains/<name>.ts from the example.
-  metro send <line> <text> [--reply <id>] [--attach <path|url> ...]
+  metro send <line> <text> [--reply <id>] [--attach <path|url> ...] [--from <session|account>]
                                               Send a message. <text> is inline, '@file', or '-' (stdin).
+                                              --from routes outbound via a sessions.json session id or a literal account.
   metro reply <line> <msgId> <text>           Reply to a message (sugar for send --reply).
   metro react <line> <msgId> <emoji>          Add an emoji reaction.
   metro unreact <line> <msgId> <emoji>        Remove an emoji reaction.

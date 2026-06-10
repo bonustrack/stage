@@ -7,22 +7,12 @@
 
 import { userSelf, selfLine } from '../history.js';
 import {
-  accountForSession, listSessions, sessionOwner, sessionsPresent,
+  accountForSession, activeSessionId, listSessions, sessionOwner, sessionsPresent,
   SESSION_STATIONS, type SessionStation,
 } from '../sessions.js';
 import { type Line } from '../lines.js';
 import { loadMetroEnv } from '../paths.js';
-import { claudeSessionId, codexSessionId } from '../local-identity.js';
 import { emit, type Flags } from './util.js';
-
-/** Resolve the active session id for binding lookup: CLI session id (claude/codex) */
-/** or an explicit METRO_SESSION override. Null when none is known. */
-function activeSessionId(): string | null {
-  if (process.env.METRO_SESSION) return process.env.METRO_SESSION;
-  if (process.env.CLAUDECODE) return claudeSessionId();
-  if (process.env.METRO_CODEX_RC || process.env.CODEX_HOME) return codexSessionId();
-  return null;
-}
 
 interface WhoAmI {
   /** 'session' when a sessions.json binding applies, else 'env' (today's reality). */

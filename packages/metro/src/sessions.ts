@@ -10,6 +10,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { errMsg, log } from './log.js';
 import { asLine, type Line } from './lines.js';
+import { claudeSessionId, codexSessionId } from './local-identity.js';
 
 /** Stations a session can bind to an account. */
 export type SessionStation = 'xmtp' | 'discord' | 'telegram';
@@ -94,6 +95,16 @@ export function accountForSession(sessionId: string, station: SessionStation): s
   const binding = loadSessions()[sessionId];
   if (!binding) return null;
   return binding[station] ?? binding.default ?? null;
+}
+
+/** The session id active for this process, for binding lookup. Precedence: */
+/** explicit `METRO_SESSION` override > the CLI's own claude/codex session id. */
+/** Null when none is known — callers then keep today's env-derived behavior. */
+export function activeSessionId(): string | null {
+  if (process.env.METRO_SESSION) return process.env.METRO_SESSION;
+  if (process.env.CLAUDECODE) return claudeSessionId();
+  if (process.env.METRO_CODEX_RC || process.env.CODEX_HOME) return codexSessionId();
+  return null;
 }
 
 /** List session ids present in sessions.json (empty when absent). */
