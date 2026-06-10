@@ -12,7 +12,6 @@ import { usePalette, useBlockRadius, type Palette } from '../lib/theme';
 import { getCachedXmtpClient, getOrCreateXmtpClient } from '../modules/messaging';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';
-import { TopnavIdentity } from './TopnavIdentity';
 
 export type ProfileColors = Palette;
 
@@ -43,32 +42,39 @@ export function useSelfAddress(): string {
 /** Top header bar — variant-specific. Both expose the own-profile overflow
  *  menu (edit) on the right; the route variant adds a back button on the left.
  *  For `route` the header is absolutely positioned so it floats over the
- *  full-bleed cover; for `tab` it stays an in-flow opaque strip. */
+ *  full-bleed cover; for `tab` it is an in-flow right-aligned kebab strip that
+ *  lives INSIDE the page body (the shared hoisted Topnav is now the uniform Home
+ *  bar, so the per-tab edit action moved here). */
 export function ProfileHeader({ variant, insetTop, isSelf, onBack, onMenu, c }: {
   variant: 'tab' | 'route'; insetTop: number; isSelf: boolean;
   onBack: () => void; onMenu: () => void; c: ProfileColors;
-}): React.ReactElement {
+}): React.ReactElement | null {
+  /** Tab variant: in-flow right-aligned kebab strip in the page body (not the
+   *  topnav, which is the uniform Home bar). Only for own profile. */
+  if (variant === 'tab') {
+    if (!isSelf) return null;
+    return (
+      <Row justify="end" align="center" padding={{ x: 16, top: 8 }}>
+        <Pressable onPress={onMenu} hitSlop={8} style={{ padding: 6 }}>
+          <Icon name="dotsHorizontal" size={24} color={c.link}/>
+        </Pressable>
+      </Row>
+    );
+  }
   return (
     <Row
       align="center"
       justify="between"
-      /* eslint-disable no-restricted-syntax -- spread of a variant-conditional style branch; padding can't be a static layout prop here. */
-      style={{ ...(variant === 'route'
-        ? {
-          position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
-          height: 44 + insetTop, paddingTop: insetTop, paddingHorizontal: 14,
-        }
-        : { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8, backgroundColor: c.toolbarBg }) }}
+      /* eslint-disable no-restricted-syntax -- absolute floating header over the cover; offsets can't be static layout props. */
+      style={{
+        position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
+        height: 44 + insetTop, paddingTop: insetTop, paddingHorizontal: 14,
+      }}
       /* eslint-enable no-restricted-syntax */
 >
-      {variant === 'route' ? (
-        <Pressable onPress={onBack} hitSlop={10} style={{ padding: 6 }}>
-          <Icon name="arrowLeft" size={22} color={c.link}/>
-        </Pressable>
-      ) : (
-        // Tab variant: avatar + name → Menu, matching the Home topnav identity.
-        <TopnavIdentity/>
-      )}
+      <Pressable onPress={onBack} hitSlop={10} style={{ padding: 6 }}>
+        <Icon name="arrowLeft" size={22} color={c.link}/>
+      </Pressable>
       {isSelf ? (
         <Pressable onPress={onMenu} hitSlop={8} style={{ padding: 6 }}>
           <Icon name="dotsHorizontal" size={22} color={c.link}/>
