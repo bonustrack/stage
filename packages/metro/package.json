@@ -39,7 +39,7 @@
     "lint": "eslint src/ examples/",
     "lint:fix": "eslint src/ examples/ --fix",
     "typecheck": "tsc --noEmit",
-    "test": "METRO_STATE_DIR=\"$(mktemp -d /tmp/metro-test.XXXXXX)\" bun test test/"
+    "test": "tsc && METRO_STATE_DIR=\"$(mktemp -d /tmp/metro-test.XXXXXX)\" bun test test/"
   },
   "dependencies": {
     "pino": "^9.5.0",

@@ -3,10 +3,16 @@
  * 0600 write, duplicate refusal, and the on-disk list fallback (daemon down).
  */
 
-import { describe, expect, test, beforeEach, afterEach } from 'bun:test';
+import { describe, expect, test, beforeEach, afterEach, mock } from 'bun:test';
 import { mkdtempSync, statSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+// Isolate from any live daemon: force the on-disk fallback path so `account
+// list` reads only the tmp accounts files (otherwise ipcCall reaches the host
+// metro.sock and the test passes/fails depending on whether a daemon is up).
+mock.module('../src/ipc.js', () => ({
+  ipcCall: () => Promise.reject(new Error('daemon down (test)')),
+}));
 import { cmdAccount } from '../src/cli/account.js';
 
 const mode = (p: string): number => statSync(p).mode & 0o777;
