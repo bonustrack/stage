@@ -1,0 +1,3 @@
+# Clean interstitial URLs: /user/<addr> -> the static interstitial page,
+# which reads the address from location.pathname. 200 = rewrite (URL stays).
+/user/*   /user/index.html   200

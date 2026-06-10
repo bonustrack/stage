@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Stage — privacy-first messenger</title>
+<meta name="description" content="Stage is a privacy-first messenger with a built-in wallet and agents. End-to-end encrypted, no telemetry." />
+
+<!-- Open Graph / Twitter unfurl -->
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Stage" />
+<meta property="og:title" content="Stage — privacy-first messenger" />
+<meta property="og:description" content="A privacy-first messenger with a built-in wallet and agents. End-to-end encrypted, no telemetry." />
+<meta property="og:url" content="https://stage.box/" />
+<meta property="og:image" content="https://stage.box/og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Stage — privacy-first messenger" />
+<meta name="twitter:description" content="A privacy-first messenger with a built-in wallet and agents. End-to-end encrypted, no telemetry." />
+<meta name="twitter:image" content="https://stage.box/og.png" />
+
+<link rel="icon" href="/favicon.png" />
+<style>
+  /* 1-bit black/white dither aesthetic. No shadows, no gradients. */
+  :root {
+    --fg: #ffffff;
+    --bg: #000000;
+    --dim: #9a9a9a;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+  }
+
+  /* Ordered-dither background built from a repeating 4x4 Bayer-ish tile, so the
+     page carries the onboarding 1-bit texture with zero binary assets. */
+  .dither {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    opacity: 0.22;
+    pointer-events: none;
+    background-color: #000;
+    background-image:
+      radial-gradient(circle, #fff 0.6px, transparent 0.7px),
+      radial-gradient(circle, #fff 0.6px, transparent 0.7px);
+    background-size: 6px 6px, 6px 6px;
+    background-position: 0 0, 3px 3px;
+  }
+
+  main {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 32px 24px;
+    gap: 20px;
+  }
+
+  .wordmark {
+    font-size: clamp(48px, 14vw, 96px);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin: 0;
+  }
+
+  .pitch {
+    font-size: clamp(16px, 4.5vw, 20px);
+    color: var(--fg);
+    max-width: 30ch;
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  .features {
+    list-style: none;
+    padding: 0;
+    margin: 4px 0 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    justify-content: center;
+    font-size: 13px;
+    color: var(--dim);
+    text-transform: lowercase;
+    letter-spacing: 0.04em;
+  }
+  .features li::before { content: "// "; color: var(--fg); }
+
+  .cta {
+    display: inline-block;
+    margin-top: 8px;
+    background: var(--fg);
+    color: var(--bg);
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 16px;
+    padding: 14px 28px;
+    border: 2px solid var(--fg);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .cta:active { background: var(--bg); color: var(--fg); }
+
+  footer {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    font-size: 12px;
+    color: var(--dim);
+    padding: 20px;
+  }
+  footer a { color: var(--dim); }
+</style>
+</head>
+<body>
+  <div class="dither" aria-hidden="true"></div>
+  <main>
+    <h1 class="wordmark">Stage</h1>
+    <p class="pitch">A privacy-first messenger with a wallet and agents.</p>
+    <ul class="features">
+      <li>end-to-end encrypted</li>
+      <li>built-in wallet</li>
+      <li>agents</li>
+      <li>no telemetry</li>
+    </ul>
+    <!-- GET_APP_URL is the single parameter to update when the public listing
+         (Play closed test / APK) changes. -->
+    <a class="cta" id="get-app" href="https://stage.box/get">Get the app</a>
+  </main>
+  <footer>
+    <a href="https://github.com/bonustrack/metro">open source</a> · MIT
+  </footer>
+</body>
+</html>

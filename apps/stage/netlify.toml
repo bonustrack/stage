@@ -1,0 +1,19 @@
+# Dedicated Netlify site for stage.box — the Stage product landing page.
+# This is a separate site from apps/ui (metro.box); it has no build step,
+# it just publishes this static directory as-is.
+#
+# Netlify setup (one-time, needs Less / dashboard access):
+#   - New site from the bonustrack/metro repo
+#   - Base directory:    apps/stage
+#   - Build command:     (leave empty — static, no build)
+#   - Publish directory: apps/stage   (or "." relative to base)
+#   - Add custom domain: stage.box  (DNS: point stage.box to this Netlify site;
+#     CNAME apex via Netlify DNS or an ALIAS/ANAME at the registrar)
+[build]
+  publish = "."
+  command = ""
+
+[[headers]]
+  for = "/og.png"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"

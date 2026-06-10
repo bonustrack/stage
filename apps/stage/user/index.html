@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Open in Stage</title>
+<meta name="description" content="Open this profile in Stage, the privacy-first messenger." />
+<meta property="og:type" content="profile" />
+<meta property="og:site_name" content="Stage" />
+<meta property="og:title" content="Open in Stage" />
+<meta property="og:description" content="Open this profile in Stage, the privacy-first messenger." />
+<meta property="og:image" content="https://stage.box/og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="https://stage.box/og.png" />
+<link rel="icon" href="/favicon.png" />
+<style>
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: #000; color: #fff;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    display: flex; align-items: center; justify-content: center; padding: 24px;
+  }
+  .dither {
+    position: fixed; inset: 0; z-index: 0; opacity: 0.22; pointer-events: none;
+    background-color: #000;
+    background-image:
+      radial-gradient(circle, #fff 0.6px, transparent 0.7px),
+      radial-gradient(circle, #fff 0.6px, transparent 0.7px);
+    background-size: 6px 6px, 6px 6px; background-position: 0 0, 3px 3px;
+  }
+  .card { position: relative; z-index: 1; text-align: center; max-width: 340px; width: 100%; }
+  h1 { font-size: 40px; font-weight: 700; letter-spacing: -0.03em; margin: 0 0 4px; }
+  p.sub { font-size: 14px; color: #9a9a9a; margin: 0 0 24px; line-height: 1.4; }
+  .addr { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; color: #fff; word-break: break-all; }
+  a.btn {
+    display: block; background: #fff; color: #000; text-decoration: none;
+    font-weight: 700; font-size: 15px; padding: 14px 20px; margin-bottom: 12px;
+    border: 2px solid #fff; text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  a.btn.ghost { background: #000; color: #fff; }
+  a.btn:active { opacity: .8; }
+</style>
+</head>
+<body>
+  <div class="dither" aria-hidden="true"></div>
+  <div class="card" id="card">
+    <h1>Stage</h1>
+    <p class="sub">Opening this profile…</p>
+  </div>
+<script>
+  (function () {
+    var card = document.getElementById('card');
+
+    // Address from the clean path (/user/<addr>) or the ?a= fallback.
+    var addr = '';
+    var m = location.pathname.match(/\/user\/([^/?#]+)/i);
+    if (m) addr = decodeURIComponent(m[1]);
+    if (!addr) addr = new URLSearchParams(location.search).get('a') || '';
+    addr = addr.trim();
+
+    // Deep-link target. The app's parser (lib/deepLinks.ts) maps
+    // stage://user/<addr> -> the /user/[address] screen.
+    var deeplink = addr ? 'stage://user/' + encodeURIComponent(addr) : 'stage://';
+
+    function shortAddr(a) {
+      return a.length > 14 ? a.slice(0, 8) + '…' + a.slice(-6) : a;
+    }
+
+    card.innerHTML =
+      '<h1>Stage</h1>' +
+      '<p class="sub">Open this profile in Stage' +
+        (addr ? '<br/><span class="addr">' + shortAddr(addr).replace(/</g, '&lt;') + '</span>' : '') +
+      '</p>' +
+      '<a class="btn" id="open" href="' + deeplink + '">Open in Stage</a>' +
+      '<a class="btn ghost" href="/">Get the app</a>';
+
+    // Auto-open the deep link. Custom-scheme navigation may be blocked without a
+    // user gesture on some mobile browsers; the button is the fallback. If the
+    // app isn't installed nothing visible happens, and the "Get the app" button
+    // routes to the landing page.
+    try { window.location.href = deeplink; } catch (e) {}
+  })();
+</script>
+</body>
+</html>
