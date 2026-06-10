@@ -39,7 +39,7 @@
     "production-prod": {
       "extends": "production",
       "autoIncrement": true,
-      "node": "20.18.0",
+      "node": "18.20.4",
       "env": { "APP_VARIANT": "prod" }
     }
   },
