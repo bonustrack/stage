@@ -146,6 +146,25 @@ function pruneForAssetBundling() {
           try { fs.rmSync(full, { recursive: true, force: true }); removed++; } catch {}
           continue;
         }
+        // bundletool-UNTOKENIZABLE DIRECTORY names: when packaging the AAB,
+        // bundletool parses every asset directory as a "targeted directory" and
+        // rejects names it can't tokenize:
+        //   "Cannot tokenize targeted directory '#'"  (:app:packageReleaseBundle)
+        // es5-ext@0.10.64 ships source dirs literally named `#` (array/#, string/#,
+        // …) with `@@iterator` children under them. They are property-key require
+        // paths used ONLY by web3-providers-ws → websocket → es5-ext, reached
+        // exclusively via the full `web3` meta-package that @railgun-community/
+        // circomlibjs *declares* but never require()s (circomlibjs only pulls
+        // `web3-utils`, which has no es5-ext dependency). So this whole subtree is
+        // dead weight in the embedded Node host — never loaded at runtime — and
+        // deleting it is the lowest-risk way to unblock the AAB. APKs are
+        // unaffected (only bundletool/AAB tokenizes targeted dirs). Match `#` and
+        // any `@`-prefixed dir name (covers `@@iterator` even if it ever appears as
+        // a top-level dir) at every depth. Idempotent.
+        if (ent.name === '#' || ent.name.startsWith('@@') || ent.name === '@') {
+          try { fs.rmSync(full, { recursive: true, force: true }); removed++; } catch {}
+          continue;
+        }
         walk(full);
       }
     }
