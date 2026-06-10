@@ -6,24 +6,26 @@
  *  starts) a DM with that user.
  *
  *  This screen is a 5th bottom-tab destination but is NOT in the swipe pager, so
- *  it renders its own title header + absorbs the top safe-area inset itself
- *  (the hoisted topnav/pager are hidden on /contacts). */
+ *  the hoisted topnav/pager are hidden on /contacts. To stay visually consistent
+ *  with the four pager tabs it renders the SAME unified bar (`HoistedTopnav`) and
+ *  absorbs the top safe-area inset itself (the way (tabs)/_layout does for the
+ *  pager), instead of a separate per-page title. */
 
 import { useCallback, useState } from 'react';
 import { FlatList } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Text } from '@metro-labs/kit/text';
-import { Title } from '@metro-labs/kit/title';
 import { Box, Col } from './layout';
 import { ChannelRow } from './ChannelRow';
+import { HoistedTopnav } from './tabs/HoistedTopnav';
 import { usePalette } from '../lib/theme';
 import { useAllContacts, type Contact } from '../lib/useAllContacts';
 import { getPeerName } from '../lib/peerProfiles';
 import { openDmWithAddress, shortAddress } from '../modules/messaging';
 
 export function ContactsScreen(): React.ReactElement {
-  const { link: head, bg, border } = usePalette();
+  const { bg } = usePalette();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { contacts, loading } = useAllContacts();
@@ -56,13 +58,12 @@ export function ContactsScreen(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      {/* Own header: pager/topnav are hidden on this route, so absorb the top
-          inset here and paint it with the toolbar fill. */}
-      <Box surface="toolbar" padding={{ top: insets.top }}>
-        <Col padding={{ x: 16, top: 8, bottom: 10 }} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-          <Title size="sm" color={head}>Contacts</Title>
-        </Col>
-      </Box>
+      {/* Same unified bar as the four pager tabs. The pager/topnav are hidden on
+          this route, so absorb the top safe-area inset here (the way
+          (tabs)/_layout does for the pager) and render the shared HoistedTopnav
+          under it, instead of a separate per-page title. */}
+      <Box surface="toolbar" padding={{ top: insets.top }}/>
+      <HoistedTopnav/>
       <FlatList
         data={contacts}
         keyExtractor={c => c.address}
