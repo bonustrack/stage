@@ -36,8 +36,10 @@ export function useChannelRowRenderer(
    *  (deps intentionally partial — react-hooks/exhaustive-deps not enabled.) */
   return useCallback(({ item }: { item: RowT }): React.ReactElement => {
     const displayTitle = item.peerAddress ? (getPeerName(item.peerAddress) ?? item.title) : item.title;
+    /** Self prefix resolves our own stamp name (lastSenderAddress is set for self
+     *  too); falls back to "You" only until the profile lands. */
     const senderPrefix = item.lastFromSelf
-      ? 'You: '
+      ? `${(item.lastSenderAddress && getPeerName(item.lastSenderAddress)) ?? 'You'}: `
       : item.lastSenderAddress
         ? `${getPeerName(item.lastSenderAddress) ?? shortAddress(item.lastSenderAddress)}: `
         : '';

@@ -97,8 +97,13 @@ export function useConversationState(convId: string | undefined, focus: string |
     return inboxToAddr[inboxId] ?? null;
   }, [inboxToAddr]);
 
-  /** Resolve peer + member profiles → DM display name + avatar cache-busters. */
-  const profilesVersion = usePeerProfiles([peerAddr, ...memberAddrs]);
+  /** Our own eth address (via the inbox→addr map), so our OWN message bubbles +
+   *  reply previews resolve our stamp name/avatar — a DM's memberAddrs is empty,
+   *  so without this self is never fetched and renders blank. */
+  const selfAddr = xmtpFeed.inboxId ? (inboxToAddr[xmtpFeed.inboxId] ?? null) : null;
+
+  /** Resolve peer + member + self profiles → display names + avatar cache-busters. */
+  const profilesVersion = usePeerProfiles([peerAddr, selfAddr, ...memberAddrs]);
 
   /** @-mention candidates for the composer popup — group members (sans self) or
    *  the lone DM peer, from the resolved peerProfiles cache. */
