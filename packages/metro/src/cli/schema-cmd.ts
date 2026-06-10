@@ -10,7 +10,7 @@ const OWNER_ORDER: VerbOwner[] = ['core', 'xmtp', 'discord', 'telegram'];
 /** Serialize one verb for `--json` (inputSchema is a function — surface a flag). */
 function toJson(d: VerbDecl): Record<string, unknown> {
   return {
-    name: d.name, owner: d.owner, kind: d.kind,
+    name: d.name, owner: d.owner, kind: d.kind, guarded: d.guarded === true,
     idempotent: d.idempotent, description: d.description, example: d.example,
     hasInputSchema: d.inputSchema !== undefined,
   };
