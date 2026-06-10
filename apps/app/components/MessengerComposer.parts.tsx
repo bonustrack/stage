@@ -33,32 +33,30 @@ export function ReplyBanner({
   /** TopNav border value — matches the conversation header hairline exactly. */
   const borderColor = usePalette().border; // #282a2d / #e4e4e5
   return (
-    /** Outer container breaks out of the composer's `px={10}` with a -10 margin so
-     *  the top border spans the full screen width edge-to-edge; the matching 10px
-     *  paddingHorizontal keeps the inner content at its original inset. */
-    <Box padding={{ x: 10 }} margin={{ x: -10 }} style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: borderColor }}>
+    /** The parent composer Col is already edge-to-edge (padding x:0), so the Box
+     *  itself spans the full screen width — its `surface` bg and top hairline run
+     *  edge-to-edge automatically. The px:22 here is a REAL inset (no negative
+     *  margin breakout), pushing the content 22px in from each screen edge to line
+     *  up with the composer input (Col padding 10 + Textarea `md` paddingHorizontal
+     *  12 = 22px). Both the reply glyph (left) and the ✕ (right) sit at this 22px
+     *  inset, symmetric. The bg uses the same `surface` token as the composer. */
+    <Box padding={{ x: 22 }} surface="surface" style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: borderColor }}>
       <Pressable onPress={onPress} disabled={!onPress}>
-        {/** No extra left inset → the outer Box paddingHorizontal:10 alone places the
-         *   ✕ at x≈10, flush with the composer's own left content edge (Col px:10),
-         *   rather than the text glyph origin (x≈28). */}
-        <Row padding={{ y: 8, right: 14, left: 0 }} align="center" gap={10}>
-          <Pressable
-            onPress={onClear}
-            hitSlop={8}
-            style={{
-              width: 22, height: 22, borderRadius: 11,
-              alignItems: 'center', justifyContent: 'center',
-              backgroundColor: '#ffffff',
-            }}
->
-            <Icon name="x" size={14} color="#000000"/>
-          </Pressable>
-          <Text size="lg" numberOfLines={1}>
-            <Text size="lg" color={sub}>Replying to </Text>
-            <Text size="lg" color={nameColor}>
+        {/** No extra inset → the outer Box px:22 alone supplies the full composer-
+         *   matched inset on both sides. */}
+        <Row padding={{ y: 11, x: 0 }} align="center" gap={10}>
+          {/** Reply glyph leading the label (the swipe-to-reply icon). */}
+          <Icon name="reply" size={16} color={sub}/>
+          <Text size="xl" numberOfLines={1} style={{ flex: 1 }}>
+            <Text size="xl" color={sub}>Replying to </Text>
+            <Text size="xl" color={nameColor}>
               {(sender ? getPeerName(sender) : undefined) ?? (sender ? shortAddress(sender) : 'message')}
             </Text>
           </Text>
+          {/** Plain ✕ on the right edge — no chip/circle bg, still tappable. */}
+          <Pressable onPress={onClear} hitSlop={8}>
+            <Icon name="x" size={18} color={sub}/>
+          </Pressable>
         </Row>
       </Pressable>
     </Box>
