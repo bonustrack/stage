@@ -37,7 +37,10 @@ class MetroPillModule : Module() {
   override fun definition() = ModuleDefinition {
     Name("MetroPill")
 
-    Events("onRecorded", "onPillTapped", "onOpenChat", "onError")
+    // `onXmtpPush` is fired by MetroFcmService (via the companion `emit`) on every
+    // contentless xmtp push so JS can force a sync + reload the open feed — the
+    // real-time delivery signal that replaces the removed periodic poll.
+    Events("onRecorded", "onPillTapped", "onOpenChat", "onError", "onXmtpPush")
 
     OnCreate {
       instanceRef = WeakReference(this@MetroPillModule)

@@ -13,19 +13,30 @@
  *
  *  Now there is exactly ONE module-level `streamAllMessages` fan-out for the
  *  whole app. Each inbound message is decoded once, routed into the relevant
- *  conv's `feedCache` slice, and pushed to that slice's subscribers. A single
- *  low-frequency (30s) global resync + an AppState-resume resync act as the only
- *  backstops (the RN native stream can silently die on backgrounding/blips).
+ *  conv's `feedCache` slice, and pushed to that slice's subscribers.
+ *
+ *  DELIVERY SIGNALS (fully event-driven — NO periodic poll):
+ *    1. MLS `streamAllMessages` — the live stream; re-armed via `onClose` on a
+ *       native drop (backgrounding/blip).
+ *    2. FCM push (`onXmtpPush` from MetroFcmService) — the reliable real-time
+ *       wake. The contentless push is the ONE signal that always reaches the
+ *       device when a message lands, so on it we force a `syncInboxOnce(0)` +
+ *       `resyncActiveFeeds()`. This covers the stream silently dying AND
+ *       foreground (the native fires it before its card-suppression returns).
+ *    3. AppState 'active' resume — coarse safety net for long backgrounds where
+ *       FCM may have been throttled/dropped.
+ *  The old 7s `setInterval` poll was REMOVED: stream + push are the real-time
+ *  signals, AppState-resume is the backstop.
  *  ─────────────────────────────────────────────────────────────────────────── */
 
 import { AppState } from 'react-native';
-import { setAppForeground } from '../modules/metro-pill';
+import { setAppForeground, subscribeXmtpPush } from '../modules/metro-pill';
 import { isMetroControlBody } from './push';
 import { getCachedXmtpClient, getOrCreateXmtpClient } from './xmtp.client';
 import { envelopeOfXmtpMessage } from './xmtp.messages';
 import { activeFeedLines, registerGlobalStreamTeardown } from './xmtp.state';
 import {
-  STREAM_CONSENT_STATES, pushToFeedSlice, resyncActiveFeeds,
+  STREAM_CONSENT_STATES, pushToFeedSlice, resyncActiveFeeds, syncInboxOnce,
 } from './xmtp.resync';
 import { lineOfConv, type StreamMsg } from './xmtp.types';
 
@@ -48,8 +59,23 @@ let globalStreamStarting = false;
 // `number` (RN timer id): the Railgun SDK pulls @types/node into the app's type
 // program, whose Timeout return type collides with the DOM lib at clear*().
 let globalStreamRearmTimer: number | null = null;
-let globalResyncTimer: number | null = null;
 let globalAppStateSub: { remove: () => void } | null = null;
+let globalPushSub: (() => void) | null = null;
+/** Coalesce a burst of pushes (e.g. several messages arriving at once) into a
+ *  single forced resync. */
+let pushResyncTimer: number | null = null;
+
+/** Push-driven resync: the FCM `onXmtpPush` event is the real-time wake. Force
+ *  an inbox sync (maxAge 0 — bypass the syncInboxOnce coalesce window so a push
+ *  always pulls) then reload the open feed(s). Debounced ~300ms to coalesce a
+ *  burst into one sync. */
+function onXmtpPush(): void {
+  if (pushResyncTimer) return;
+  pushResyncTimer = setTimeout(() => {
+    pushResyncTimer = null;
+    void (async () => { await syncInboxOnce(0); await resyncActiveFeeds(); })();
+  }, 300) as unknown as number;
+}
 
 /** Re-arm the global stream after a short debounce. Used by `onClose` so a
  *  dropped native stream auto-restarts instead of silently degrading to the
@@ -89,7 +115,7 @@ async function startStream(client: Awaited<ReturnType<typeof getOrCreateXmtpClie
       if (!convId) {
         /** Couldn't derive a conv id from this message → can't key it into a
          *  feedCache slice. If a feed is open, resync it so the message isn't
-         *  stranded until the 7s backstop (mirrors the channels-list refresh
+         *  stranded until the next push/resume backstop (mirrors the channels-list refresh
          *  fallback on a convId miss). */
         if (activeFeedLines.size > 0) void resyncActiveFeeds();
         return;
@@ -132,9 +158,12 @@ export async function ensureGlobalStream(): Promise<void> {
     globalStreamCancel = () => {
       try { client.conversations.cancelStreamAllMessages(); } catch { /* ignore */ }
     };
-    /** Low-frequency global resync backstop — only touches the active/open conv
-     *  (1 conv, PAGE_SIZE 20) so the rate-limit blast radius stays tiny. */
-    if (!globalResyncTimer) globalResyncTimer = setInterval(() => { void resyncActiveFeeds(); }, 7_000) as unknown as number;
+    /** PUSH-DRIVEN RESYNC (replaces the periodic poll): subscribe once to the
+     *  native `onXmtpPush` event. The contentless FCM push is the reliable
+     *  real-time wake — it fires even when foregrounded / already viewing the
+     *  conv (MetroFcmService emits before its card suppression), so it covers
+     *  both a silently-dead stream and the live-but-missed case. */
+    if (!globalPushSub) globalPushSub = subscribeXmtpPush(() => onXmtpPush());
     /** FOREGROUND FLAG: the app is foregrounded right now (the stream just
      *  started from a live mount), so tell native to skip its generic push card —
      *  the rich JS local notif (presentInboundNotification, fired from the
@@ -162,7 +191,8 @@ export async function ensureGlobalStream(): Promise<void> {
 function teardownGlobalStream(): void {
   if (globalStreamCancel) { globalStreamCancel(); globalStreamCancel = null; }
   if (globalStreamRearmTimer) { clearTimeout(globalStreamRearmTimer); globalStreamRearmTimer = null; }
-  if (globalResyncTimer) { clearInterval(globalResyncTimer); globalResyncTimer = null; }
+  if (pushResyncTimer) { clearTimeout(pushResyncTimer); pushResyncTimer = null; }
+  if (globalPushSub) { try { globalPushSub(); } catch { /* ignore */ } globalPushSub = null; }
   if (globalAppStateSub) { try { globalAppStateSub.remove(); } catch { /* ignore */ } globalAppStateSub = null; }
   /** Clear the foreground flag so a torn-down (account-switch) stream doesn't
    *  leave native thinking the app is foreground and suppressing generic cards. */

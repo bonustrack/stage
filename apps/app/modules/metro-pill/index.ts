@@ -37,3 +37,23 @@ export function setActiveConversation(convId: string | null): boolean {
 export function setAppForeground(foreground: boolean): boolean {
   return native?.setAppForeground?.(foreground) ?? false;
 }
+
+/** Routing-only payload carried by the native `onXmtpPush` event. All fields are
+ *  optional (the daemon's contentless push may omit any of them); they're used
+ *  only to target the resync, never rendered. */
+export type XmtpPushEvent = {
+  line?: string | null;
+  convId?: string | null;
+  messageId?: string | null;
+};
+
+/** Subscribe to the native `onXmtpPush` event, fired by MetroFcmService on every
+ *  contentless xmtp push BEFORE its card-suppression early-returns — so it wakes
+ *  JS even when foregrounded / already viewing the conv. This is the real-time
+ *  delivery signal that replaces the removed periodic poll: the FCM push is the
+ *  one wake that reliably reaches the device when the MLS stream has silently
+ *  died. No-op (returns a noop unsubscribe) when the module isn't linked. */
+export function subscribeXmtpPush(cb: (e: XmtpPushEvent) => void): () => void {
+  const sub = native?.addListener?.('onXmtpPush', cb);
+  return () => { try { sub?.remove?.(); } catch { /* ignore */ } };
+}

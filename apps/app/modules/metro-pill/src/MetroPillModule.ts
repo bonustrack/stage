@@ -5,7 +5,13 @@ import { NativeModule, requireNativeModule } from 'expo-modules-core';
  *  Scoped to the push-notification plumbing the custom FCM service reads. (The
  *  native binary may still expose the legacy floating-pill methods from an older
  *  build; the JS layer no longer declares or calls them.) */
-declare class MetroPillModule extends NativeModule {
+/** Event map for the native module's `addListener`. `onXmtpPush` carries the
+ *  contentless push's routing metadata so JS can target the resync. */
+type MetroPillEvents = {
+  onXmtpPush: (e: { line?: string | null; convId?: string | null; messageId?: string | null }) => void;
+};
+
+declare class MetroPillModule extends NativeModule<MetroPillEvents> {
   /** Report the conversation the user is currently viewing (bare convId) so the
    *  FCM service can suppress a push for it. Pass null to clear (on blur /
    *  background). Persisted to SharedPreferences so the FCM process can read it. */
