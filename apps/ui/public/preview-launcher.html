@@ -36,7 +36,7 @@
 <body>
   <div class="card">
     <h1>Metro PR Preview</h1>
-    <p class="sub">Open this PR's JS bundle in the Metro dev-client</p>
+    <p class="sub">Opening this PR's JS bundle in the Metro dev-client…</p>
     <div id="content">
       <p class="err">Loading…</p>
     </div>
@@ -62,6 +62,10 @@
       '<a class="btn" href="' + deeplink + '">Open in Metro</a>' +
       '<div id="qr"></div>' +
       '<code>' + deeplink.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</code>';
+
+    // Auto-open the deep link on load. Some mobile browsers block custom-scheme
+    // navigation without a user gesture; the button above is the fallback.
+    try { window.location.href = deeplink; } catch (e) {}
 
     try {
       new QRCode(document.getElementById('qr'), {
