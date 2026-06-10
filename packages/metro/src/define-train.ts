@@ -6,6 +6,11 @@
 
 /* ──────────── wire shapes (mirror src/trains/protocol.ts) ──────────── */
 
+import { serializeTrainError } from './train-error.js';
+
+/** Typed errors handlers may throw → structured `op:response` errorInfo (#3). */
+export { TrainError, serializeTrainError, type TrainErrorInfo } from './train-error.js';
+
 export type Envelope = {
   kind?: 'inbound' | 'outbound';
   id?: string;
@@ -111,7 +116,7 @@ export function buildTrain<Client>(
     log: text => write(JSON.stringify({ op: 'log', text }) + '\n'),
   };
 
-  const respond = (id: string, body: { result?: unknown; error?: string }): void =>
+  const respond = (id: string, body: { result?: unknown; error?: string; errorInfo?: unknown }): void =>
     write(JSON.stringify({ op: 'response', id, ...body }) + '\n');
 
   const dispatch = async (msg: CallMsg): Promise<void> => {
@@ -124,7 +129,9 @@ export function buildTrain<Client>(
       const result = await handler(msg.args ?? {}, ctx);
       respond(msg.id, { result: result ?? null });
     } catch (err) {
-      respond(msg.id, { error: err instanceof Error ? err.message : String(err) });
+      // TrainError → { error (legacy string), errorInfo (structured) };
+      // plain Error → { error } only — byte-identical to pre-#3 behaviour.
+      respond(msg.id, serializeTrainError(err));
     }
   };
 

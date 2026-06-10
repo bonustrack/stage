@@ -14,13 +14,20 @@ import {
 import { convHandlers } from './actions-conv.js';
 import { normalizeXmtp } from '../messaging-normalize.js';
 import { unsupported } from '../../messaging.js';
+import { TrainError, serializeTrainError } from '../../train-error.js';
 
 type Args = Record<string, unknown>;
+
+/** Structured "conversation not found" (#3): callers branch on NOT_FOUND. */
+const noConv = (line: string): TrainError =>
+  new TrainError('NOT_FOUND', `conversation not found for ${line}`);
+/** Structured bad-args (#3): callers branch on INVALID_ARGS. */
+const badArgs = (message: string): TrainError => new TrainError('INVALID_ARGS', message);
 
 async function send(id: string, args: Args): Promise<void> {
   const { line, text } = args as { line: string; text: string };
   const { acct, conv } = await convOf(line);
-  if (!conv) throw new Error(`conversation not found for ${line}`);
+  if (!conv) throw noConv(line);
   const messageId = await conv.sendText(text);
   emitOutbound(acct.cfg.id, line, messageId, text);
   respond(id, { result: { messageId } });
@@ -32,7 +39,7 @@ async function send(id: string, args: Args): Promise<void> {
 async function ask(id: string, args: Args): Promise<void> {
   const { line, pollId } = args as { line: string; pollId?: string };
   const { acct, conv } = await convOf(line);
-  if (!conv) throw new Error(`conversation not found for ${line}`);
+  if (!conv) throw noConv(line);
   const fallbackId = `poll_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
   const mintedId = pollId ?? (typeof crypto?.randomUUID === 'function' ? crypto.randomUUID() : fallbackId);
   const { poll, title } = buildPollContent(args, mintedId);
@@ -46,14 +53,14 @@ async function react(id: string, args: Args): Promise<void> {
     line: string; messageId: string; emoji: string;
     action?: 'added' | 'removed'; schema?: string; referenceInboxId?: string };
   const { acct, conv } = await convOf(line);
-  if (!conv) throw new Error(`conversation not found for ${line}`);
+  if (!conv) throw noConv(line);
   const xmtpMsgId = resolveMsgId(messageId); // #2: accept universal msg_* or raw id
   let refInbox = (args as { referenceInboxId?: string }).referenceInboxId;
   if (!refInbox) {
     /** #9: bounded — search recent messages (newest first), not the whole history. */
     const recent = await conv.messages({ limit: 200, direction: 1 } as Parameters<typeof conv.messages>[0]);
     refInbox = recent.find(m => m.id === xmtpMsgId)?.senderInboxId;
-    if (!refInbox) throw new Error(`could not resolve referenceInboxId for ${xmtpMsgId}`);
+    if (!refInbox) throw new TrainError('NOT_FOUND', `could not resolve referenceInboxId for ${xmtpMsgId}`);
   }
   // A poll vote is a custom-schema reaction whose content is the option index;
   // default (no schema) is a plain unicode emoji reaction.
@@ -70,7 +77,7 @@ async function react(id: string, args: Args): Promise<void> {
 async function reply(id: string, args: Args): Promise<void> {
   const { line, replyTo, text } = args as { line: string; replyTo: string; text: string };
   const { acct, conv } = await convOf(line);
-  if (!conv) throw new Error(`conversation not found for ${line}`);
+  if (!conv) throw noConv(line);
   const { encodeText } = await import('@xmtp/node-bindings');
   const xmtpReplyTo = resolveMsgId(replyTo); // #2: universal or raw id
   const sentId = await conv.sendReply({
@@ -84,7 +91,7 @@ async function reply(id: string, args: Args): Promise<void> {
 async function sendAttachment(id: string, args: Args): Promise<void> {
   const { line, name, mime, dataB64 } = args as { line: string; name: string; mime: string; dataB64: string };
   const { acct, conv } = await convOf(line);
-  if (!conv) throw new Error(`conversation not found for ${line}`);
+  if (!conv) throw noConv(line);
   const sentId = await conv.sendAttachment({
     filename: name, mimeType: mime, content: new Uint8Array(Buffer.from(dataB64, 'base64')),
   } as unknown as Attachment);
@@ -96,11 +103,11 @@ async function sendImage(id: string, args: Args): Promise<void> {
   const { line, path, dataB64, filename, mimeType } = args as {
     line: string; path?: string; dataB64?: string; filename?: string; mimeType?: string };
   const { acct, conv } = await convOf(line);
-  if (!conv) throw new Error(`conversation not found for ${line}`);
+  if (!conv) throw noConv(line);
   let bytes: Uint8Array;
   if (path) { const { readFileSync } = await import('node:fs'); bytes = new Uint8Array(readFileSync(path)); }
   else if (dataB64) bytes = new Uint8Array(Buffer.from(dataB64, 'base64'));
-  else throw new Error('sendImage requires path or dataB64');
+  else throw badArgs('sendImage requires path or dataB64');
   const ext = (filename ?? path ?? '').toLowerCase().split('.').pop() ?? '';
   const mime = mimeType ?? (
     ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : ext === 'gif' ? 'image/gif'
@@ -116,11 +123,11 @@ async function sendTxRequest(id: string, args: Args): Promise<void> {
   const { line, to, amountEth, note, chainId } = args as {
     line: string; to: string; amountEth: number; note?: string; chainId?: number };
   const { acct, conv } = await convOf(line);
-  if (!conv) throw new Error(`conversation not found for ${line}`);
+  if (!conv) throw noConv(line);
   if (!to || typeof to !== 'string' || !/^0x[0-9a-fA-F]{40}$/.test(to)) {
-    throw new Error('sendTxRequest requires a valid 0x `to` address');
+    throw badArgs('sendTxRequest requires a valid 0x `to` address');
   }
-  if (typeof amountEth !== 'number' || !(amountEth > 0)) throw new Error('sendTxRequest requires a positive `amountEth`');
+  if (typeof amountEth !== 'number' || !(amountEth > 0)) throw badArgs('sendTxRequest requires a positive `amountEth`');
   const weiHex = '0x' + BigInt(Math.round(amountEth * 1e18)).toString(16);
   const content: WalletSendCallsParams = {
     version: '1.0', chainId: toHex(chainId ?? 1), from: acct.address as `0x${string}`,
@@ -138,11 +145,11 @@ async function sendSignatureRequest(id: string, args: Args): Promise<void> {
   const { line, kind, eip712, message, description } = args as {
     line: string; kind?: 'eip712' | 'personal'; eip712?: unknown; message?: string; description?: string };
   const { acct, conv } = await convOf(line);
-  if (!conv) throw new Error(`conversation not found for ${line}`);
+  if (!conv) throw noConv(line);
   const k: 'eip712' | 'personal' = kind === 'eip712' ? 'eip712' : 'personal';
-  if (k === 'eip712' && !eip712) throw new Error('sendSignatureRequest eip712 requires an `eip712` typed-data object');
+  if (k === 'eip712' && !eip712) throw badArgs('sendSignatureRequest eip712 requires an `eip712` typed-data object');
   if (k === 'personal' && (!message || typeof message !== 'string')) {
-    throw new Error('sendSignatureRequest personal requires a `message` string');
+    throw badArgs('sendSignatureRequest personal requires a `message` string');
   }
   const content: SignatureRequestContent = {
     id: 'sig_' + Date.now().toString(36), kind: k, ...(k === 'eip712' ? { eip712 } : { message }), description };
@@ -186,5 +193,9 @@ export async function handleCall(msg: CallMsg): Promise<void> {
     const h = handlers[action];
     if (h) await h(id, args);
     else respond(id, { error: `unknown action '${action}' (have: ${KNOWN})` });
-  } catch (err) { respond(id, { error: (err as Error).message }); }
+  } catch (err) {
+    // TrainError → legacy string + structured errorInfo (#3); plain Error →
+    // legacy string only, byte-identical to pre-#3 behaviour.
+    respond(id, serializeTrainError(err));
+  }
 }
