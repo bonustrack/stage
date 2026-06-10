@@ -39,8 +39,20 @@ import { ShieldRecipient, ShieldPhaseLine } from './send.shield.parts';
 import { ShieldStepper, type ShieldStage } from './send.shield.stepper';
 import { AmountBox, type FormPal, type FooterState } from './wallet.form';
 import { TokenSelector, useSelectedBalance } from './TokenSelector';
+import { useConfirmSheet } from '../../components/security/ConfirmSheet';
 
 type Pal = FormPal;
+
+/** Human network label for the confirm sheet. */
+function chainName(id: number): string {
+  switch (id) {
+    case 1: return 'Ethereum';
+    case 11155111: return 'Sepolia';
+    case 137: return 'Polygon';
+    case 42161: return 'Arbitrum';
+    default: return `Chain ${id}`;
+  }
+}
 
 /** Map a pending-action phase to a stepper stage. `proving`/`broadcasting` are
  *  the two on-chain stages; `scanning` is the merkle-scan tail; `confirmed`/
@@ -86,6 +98,7 @@ function ShieldBody({ pal, dark, zkAddress, initialSymbol, initialChainId, onFoo
   const [submittedAt, setSubmittedAt] = useState<number | null>(null);
   const [action, setAction] = useState<PendingAction | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const { confirm, element: confirmSheet } = useConfirmSheet();
 
   // Subscribe to the pending store and track this shield's row (newest `shield`
   // action at/after submit) so the stepper reflects every phase - including the
@@ -117,8 +130,18 @@ function ShieldBody({ pal, dark, zkAddress, initialSymbol, initialChainId, onFoo
 
   const onSubmit = (): void => {
     if (!canSubmit) return;
-    setErr(null); setAction(null); setSubmittedAt(Date.now());
     void (async (): Promise<void> => {
+      // Confirm before broadcasting — this path signs with the local Railgun key
+      // (no external wallet prompt), so the sheet is the only review step.
+      const ok = await confirm({
+        title: 'Confirm shield',
+        amount: `${amount.trim()} ${symbol}`,
+        to: 'Your shielded balance',
+        network: chainName(chainId),
+        confirmLabel: 'Shield',
+      });
+      if (!ok) return;
+      setErr(null); setAction(null); setSubmittedAt(Date.now());
       try {
         await shieldToPrivate({ chainId, symbol, amount: amount.trim() });
       } catch (e) {
@@ -146,6 +169,7 @@ function ShieldBody({ pal, dark, zkAddress, initialSymbol, initialChainId, onFoo
 
       <ShieldStepper stage={stage} pal={pal} />
       <ShieldPhaseLine pal={pal} txHash={txHash} err={err} bridgeOk={isBridgeAvailable()} chainId={chainId} />
+      {confirmSheet}
     </Box>
   );
 }
@@ -160,6 +184,7 @@ function SendBody({ pal, dark, symbol = 'ETH', chainId = 1, balance = null, onFo
   const [txHash, setTxHash] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [errPhase, setErrPhase] = useState<string | null>(null);
+  const { confirm, element: confirmSheet } = useConfirmSheet();
 
   const n = Number(amount);
   const busy = stage === 'submitting' || stage === 'confirming' || stage === 'scanning';
@@ -168,8 +193,17 @@ function SendBody({ pal, dark, symbol = 'ETH', chainId = 1, balance = null, onFo
 
   const onSubmit = (): void => {
     if (!canSubmit) return;
-    setErr(null); setErrPhase(null); setTxHash(null); setStage('submitting');
     void (async (): Promise<void> => {
+      // Confirm before broadcasting — local-key signed, no external wallet prompt.
+      const ok = await confirm({
+        title: 'Confirm send',
+        amount: `${amount.trim()} ${symbol}`,
+        to: to.trim(),
+        network: chainName(chainId),
+        confirmLabel: 'Send',
+      });
+      if (!ok) return;
+      setErr(null); setErrPhase(null); setTxHash(null); setStage('submitting');
       try {
         // proving runs first; flip to confirming once it broadcasts.
         const res = await sendShielded({ chainId, symbol, amount: amount.trim(), recipient: to.trim() });
@@ -213,6 +247,7 @@ function SendBody({ pal, dark, symbol = 'ETH', chainId = 1, balance = null, onFo
       <ShieldStepper stage={stage} pal={pal} />
       <ShieldPhaseLine pal={pal} txHash={txHash} err={err} errPhase={errPhase}
         bridgeOk={isBridgeAvailable()} chainId={chainId} />
+      {confirmSheet}
     </Box>
   );
 }

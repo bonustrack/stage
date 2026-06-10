@@ -170,6 +170,13 @@ const config = {
     'expo-router',
     'expo-secure-store',
     'expo-font',
+    // App Lock + key-backup re-auth (Settings → Security). Adds the Android
+    // USE_BIOMETRIC permission + the iOS Face ID usage string. NATIVE module —
+    // only present after a NEW native build (EAS/local), not in a JS-only OTA.
+    [
+      'expo-local-authentication',
+      { faceIDPermission: 'Use Face ID to unlock Metro and reveal your private key.' },
+    ],
     // Native cold-launch splash so the app shows the Metro logo on the themed
     // dark background instead of a blank gray screen. The legacy top-level
     // `splash` key above is deprecated under the new architecture; the

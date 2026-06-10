@@ -25,6 +25,8 @@ import { useEffectiveColorScheme, usePalette, useRadius } from '../lib/theme';
 import { KitThemeProvider } from '@metro-labs/kit/theme-context';
 import { useDeepLinks } from '../lib/deepLinks';
 import { useRestoreGate } from '../lib/lastRoute';
+import { useAppLockController } from '../lib/useAppLockController';
+import { LockScreen } from '../components/security/LockScreen';
 import { usePushDeepLinks } from '../lib/push';
 import { ensureActiveAccount, ensureMessagingStreamSync } from '../modules/messaging';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -141,7 +143,13 @@ function RootLayoutInner(): React.ReactElement {
    *  `onboarding.seen` flag is true; `ready` gates on its load so a returning
    *  user never flashes onboarding (see lib/onboardingSeen). */
   const onboarding = useOnboardingGate();
-  if (!loaded || !onboarding.ready || !restore.ready) {
+
+  /** APP LOCK: when enabled, render the LockScreen OVER the app on cold start +
+   *  on a foreground resume after > 30s in background. `lock.ready` joins the
+   *  boot-gate so we never flash the app before the lock decision is known. */
+  const lock = useAppLockController();
+
+  if (!loaded || !onboarding.ready || !restore.ready || !lock.ready) {
     return (
       <Col surface="surface" flex={1} align="center" justify="center">
         <Spinner size={28} color={dark ? '#ffffff' : '#000000'}/>
@@ -149,6 +157,8 @@ function RootLayoutInner(): React.ReactElement {
     );
   }
   if (!onboarding.seen) return <Onboarding onDone={onboarding.finish} />;
+
+  if (lock.locked) return <LockScreen onUnlock={lock.unlock} />;
 
   return (
     <QueryClientProvider client={queryClient}>

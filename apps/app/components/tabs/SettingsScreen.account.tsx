@@ -19,6 +19,7 @@ import {
 } from '../../lib/accounts';
 import { deleteAccount, shortAddress, useActiveAccount } from '../../modules/messaging';
 import { reloadApp } from '../AccountsManager.helpers';
+import { canAuthenticate, authenticate } from '../../lib/appLock';
 
 interface SectionColors { fg: string; head: string; sub: string; border: string; rowBg: string }
 
@@ -51,6 +52,13 @@ export function AccountSecuritySection(
             void (async (): Promise<void> => {
               const id = rec?.id;
               if (!id) return;
+              // Re-auth before revealing the key when the device supports it
+              // (reuses the App Lock auth). Devices that can't authenticate fall
+              // through to the existing warning-Alert gate above.
+              if (await canAuthenticate()) {
+                const res = await authenticate('Reveal private key');
+                if (!res.ok && res.reason === 'cancelled') return;
+              }
               const pk = await getPrivateKey(id);
               if (!pk) { Alert.alert('No key', 'This account has no exportable private key.'); return; }
               setRevealed(pk);

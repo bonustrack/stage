@@ -18,6 +18,7 @@ import { isBridgeAvailable } from '../../lib/railgun/bridge';
 import { UnshieldRecipient, UnshieldPhaseLine } from './unshield.parts';
 import { ActionPage, AmountBox, WalletFooter, useFormPal } from './wallet.form';
 import { TokenSelector, useSelectedBalance } from './TokenSelector';
+import { useConfirmSheet } from '../../components/security/ConfirmSheet';
 
 type Phase = 'idle' | 'proving' | 'broadcasting' | 'done' | 'error';
 const NET_LABEL: Record<number, string> = { 1: 'Ethereum', 11155111: 'Sepolia' };
@@ -42,6 +43,7 @@ export default function WalletUnshield(): React.ReactElement {
   const [phase, setPhase] = useState<Phase>('idle');
   const [txHash, setTxHash] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const { confirm, element: confirmSheet } = useConfirmSheet();
 
   const n = Number(amount);
   const busy = phase === 'proving' || phase === 'broadcasting';
@@ -49,8 +51,17 @@ export default function WalletUnshield(): React.ReactElement {
 
   const onSubmit = (): void => {
     if (!canSubmit) return;
-    setErr(null); setTxHash(null); setPhase('proving');
     void (async (): Promise<void> => {
+      // Confirm before broadcasting — local-key signed, no external wallet prompt.
+      const ok = await confirm({
+        title: 'Confirm unshield',
+        amount: `${amount.trim()} ${symbol}`,
+        to: eoa ?? 'Your wallet',
+        network: NET_LABEL[chainId] ?? `Chain ${chainId}`,
+        confirmLabel: 'Unshield',
+      });
+      if (!ok) return;
+      setErr(null); setTxHash(null); setPhase('proving');
       try {
         const res = await unshieldToPublic({ chainId, symbol, amount: amount.trim() });
         setTxHash(res.txHash); setPhase('done');
@@ -77,6 +88,7 @@ export default function WalletUnshield(): React.ReactElement {
         balance={balance} symbol={symbol} dark={dark} />
 
       <UnshieldPhaseLine pal={pal} phase={phase} txHash={txHash} err={err} bridgeOk={isBridgeAvailable()} chainId={chainId} />
+      {confirmSheet}
     </ActionPage>
   );
 }
