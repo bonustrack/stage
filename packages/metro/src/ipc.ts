@@ -15,12 +15,16 @@ export type IpcRequest =
   | { op: 'notify'; line: string; from?: string; text: string }
   | { op: 'forward-call'; train: string; action: string; args: unknown }
   | { op: 'trains-list' }
-  | { op: 'train-restart'; name: string };
+  | { op: 'train-restart'; name: string }
+  /** Read-only liveness probe: the running daemon reports its package version so */
+  /** `metro doctor` can flag a restart-pending mismatch vs the installed code. */
+  | { op: 'version' };
 
 export type IpcResponse =
   | { ok: true }
   | { ok: true; response: TrainCallResponse }
   | { ok: true; trains: TrainInfo[] }
+  | { ok: true; version: string }
   | { ok: false; error: string };
 
 type Handler = (req: IpcRequest) => Promise<IpcResponse> | IpcResponse;

@@ -68,6 +68,9 @@ const ipc = startIpcServer(async (req: IpcRequest): Promise<IpcResponse> => {
     try { await supervisor.restart(req.name); return { ok: true }; }
     catch (err) { return { ok: false, error: errMsg(err) }; }
   }
+  if (req.op === 'version') {
+    return { ok: true, version: pkg.version };
+  }
   return { ok: false, error: `unknown op: ${(req as { op?: string }).op ?? '(none)'}` };
 });
 
