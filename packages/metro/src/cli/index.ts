@@ -10,12 +10,16 @@ import { readHistory } from '../history.js';
 import { cmdDoctor, cmdSetup, cmdUpdate } from './config.js';
 import { cmdClaim, cmdClaims, cmdRelease, cmdTail } from './tail.js';
 import { cmdCall, cmdTrains, cmdTunnel, cmdWebhook } from './webhook.js';
+import { cmdSchema } from './schema-cmd.js';
 import {
   cmdDelete, cmdEdit, cmdRead, cmdReact, cmdReply, cmdSend, cmdUnreact,
 } from './messaging.js';
+import { cmdSessions, cmdWhoami } from './whoami.js';
+import { cmdChannel, cmdGroup, cmdDm } from './channels.js';
 import {
   flagOne, isJson, parseArgs, writeJson, type ExitErr, type Flags,
 } from './util.js';
+import { cmdAccount } from './account.js';
 
 /** True if another live process owns the dispatcher lockfile. Mirrors */
 /** paths.acquireLock's detection but as a peek — no claim, no exit. */
@@ -39,6 +43,9 @@ Usage:
   metro setup skill [clear]                   Install/remove the metro skill into ~/.claude / ~/.codex.
   metro doctor                                Health check.
   metro lines                                 List recently-seen conversations.
+  metro whoami [--json]                       Show the resolved identity: owner URI, account
+                                              per station, and the --strict tail command.
+  metro session list [--json]                 List sessions.json bindings (read-only).
   metro trains [list]                         List supervised trains (running, pid, fail count).
   metro trains restart <name>                 Kill + respawn a train (resets backoff).
   metro trains new <name>                     Scaffold ~/.metro/trains/<name>.ts from the example.
@@ -51,6 +58,19 @@ Usage:
   metro delete <line> <msgId>                 Delete a message.
   metro read <line> [--limit N] [--before <id>] [--since <ts>]
                                               Read recent messages for a line (live or daemon log).
+  metro channel set-github <line> <url|->     Set/clear a channel's linked GitHub URL.
+  metro channel set-labels <line> <a,b,c>     Set a channel's labels.
+  metro channel meta <line> [--name N] [--description D] [--github U] [--labels a,b]
+                                              Update channel name/description/appData.
+  metro channel info <line>                   Print group info for a channel.
+  metro group new <0xaddr…> [--name N] [--admin-only]
+                                              Create a group (themed wrapper for xmtp newGroup).
+  metro group close <line>                    Archive a group (remove members).
+  metro group add | remove <line> <0xaddr…>   Add/remove group members.
+  metro dm <0xaddress> [--account <id>]       Open (or reuse) a DM; prints its line.
+  metro board [tail flags]                    Alias of \`metro tail\` (Metro-transit naming).
+  metro schema [station] [--json]             Dump the verb registry (human table or JSON). Alias: verbs.
+  metro verbs  [station]                       List all registered station/core verbs.
   metro call <train> <action> [args]          Low-level escape hatch: forward an action to a train.
                                               [args] is JSON, '@file', '-' (stdin), or a bare string.
   metro history [--limit=N] [--line=…] [--station=…] [--from=…] [--text=…] [--since=…]
@@ -65,6 +85,11 @@ Usage:
   metro claim <line> [--as=<user-uri>]        Take exclusive ownership of a line.
   metro release <line>                        Release a line (it returns to broadcast).
   metro claims                                Print the current claims map.
+  metro account list [<station>]              List configured accounts (id, eth address, key source).
+  metro account address [<id>]               Print an account's fundable eth address.
+  metro account import <station> <privkey> --id <name>
+                                              Import a raw-key account (xmtp), written 0600.
+                                              Needs \`metro trains restart <station>\` to take effect.
   metro webhook add <label> [--secret=…]      Register an HTTP receive endpoint (GitHub, Intercom, …).
   metro webhook list | remove <id>            List or remove webhook endpoints.
   metro tunnel setup <name> <hostname>        Configure a Cloudflare named tunnel.
@@ -75,10 +100,13 @@ Usage:
 Global flags:
   --json                                      Machine-readable output on any command (and on
                                               errors: {"ok":false,"error":…,"code":…}).
+                                              Themed verbs (channel/group/dm) wrap success in a
+                                              uniform envelope: {"ok":true,"command":…,"result":…}.
+  --quiet                                     (themed verbs) print only the result id.
 
 Trains: place \`<name>.ts\` files in ~/.metro/trains/. See \`@metro-labs/metro/examples\`.
 Lines: metro://<station>/<path>. Multi-line args: pipe on stdin where supported.
-Exit codes: 0 success · 1 usage · 2 config · 3 upstream · 4 daemon not running
+Exit codes: 0 success · 1 usage · 2 config · 3 upstream · 4 daemon not running · 7 rate-limited
 `;
 
 async function cmdLines(_: string[], f: Flags): Promise<void> {
@@ -142,15 +170,31 @@ function fmtActor(uri: string, name?: string): string {
 const shortId = (s: string): string => s.length <= 12 ? s : `${s.slice(0, 5)}…${s.slice(-4)}`;
 const pad = (s: string, n: number): string => (s.length > n ? `${s.slice(0, n - 1)}…` : s.padEnd(n));
 
+/** `metro session list` (read-only). Only `list` is supported in this layer — no */
+/** mutation commands, so live routing can't change. */
+async function cmdSession(p: string[], f: Flags): Promise<void> {
+  const sub = p[0] ?? 'list';
+  if (sub !== 'list') { process.stderr.write(`unknown 'metro session ${sub}' — only 'list' is supported\n`); process.exit(1); }
+  await cmdSessions(p.slice(1), f);
+}
+
 const COMMANDS: Record<string, (positional: string[], flags: Flags) => Promise<void>> = {
   setup: cmdSetup, doctor: cmdDoctor, lines: cmdLines,
+  whoami: cmdWhoami, session: cmdSession,
   call: cmdCall, trains: cmdTrains,
   send: cmdSend, reply: cmdReply, react: cmdReact, unreact: cmdUnreact,
   edit: cmdEdit, delete: cmdDelete, read: cmdRead,
   webhook: cmdWebhook, tunnel: cmdTunnel,
   history: cmdHistory, tail: cmdTail,
   claim: cmdClaim, release: cmdRelease, claims: cmdClaims,
+  account: cmdAccount,
   update: cmdUpdate,
+  // Themed porcelain verbs (migration step 5): first-class noun-verb commands,
+  // thin wrappers over the existing xmtp actions. Additive — `metro call` stays.
+  channel: cmdChannel, group: cmdGroup, dm: cmdDm,
+  // Metro-transit naming alias: `board` reads the same feed as `tail`.
+  board: cmdTail,
+  schema: cmdSchema, verbs: cmdSchema,
 };
 
 async function main(): Promise<void> {
@@ -185,8 +229,15 @@ async function main(): Promise<void> {
   try { await handler(positional, flags); }
   catch (err) {
     const code = (err as ExitErr).code;
-    if (isJson(flags)) writeJson({ ok: false, error: errMsg(err), code: code ?? 1 });
-    else process.stderr.write(`error: ${errMsg(err)}\n`);
+    const command = (err as ExitErr).command;
+    if (isJson(flags)) {
+      // Themed verbs carry their `command` tag → uniform {ok,command,error,code}
+      // envelope. Legacy commands keep the original {ok,error,code} shape so
+      // existing scripts parsing them are unaffected.
+      writeJson(command
+        ? { ok: false, command, error: errMsg(err), code: code ?? 1 }
+        : { ok: false, error: errMsg(err), code: code ?? 1 });
+    } else process.stderr.write(`error: ${errMsg(err)}\n`);
     process.exit(typeof code === 'number' ? code : 1);
   }
 }

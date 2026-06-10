@@ -8,6 +8,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { CODECS } from './codecs.js';
 import { makeAccountStore } from '../account-store.js';
+import { chmodIfExists } from '../../secure-fs.js';
 
 const ACCOUNTS_FILE = process.env.XMTP_ACCOUNTS_FILE ?? join(homedir(), '.metro', 'xmtp-accounts.json');
 
@@ -61,6 +62,7 @@ function loadMnemonic(): string {
   if (!existsSync(MNEMONIC_FILE)) {
     die(`an account uses "derive" but no mnemonic found (set XMTP_MNEMONIC or place ${MNEMONIC_FILE})`);
   }
+  chmodIfExists(MNEMONIC_FILE); // harden perms on load (MODE only, content untouched)
   const m = readFileSync(MNEMONIC_FILE, 'utf8').trim();
   if (!m) die(`${MNEMONIC_FILE} is empty`);
   cachedMnemonic = m;

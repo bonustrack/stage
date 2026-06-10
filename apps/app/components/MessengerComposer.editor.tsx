@@ -70,7 +70,12 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
 />
         </Box>
       )}
-      <Row align="center" gap={4}>
+      {/** Fixed 40px row height = the tallest possible child (the md send/confirm
+       *   Button is 40, the +/mic icon buttons are 38). Pinning it keeps the
+       *   composer the SAME height whether or not the send button is mounted, so
+       *   typing the first letter no longer grows the composer. Children stay
+       *   vertically centered via align="center". */}
+      <Row align="center" gap={4} height={40}>
         {/** Left: cancel (✕) while recording, else the attach (+) menu toggle. */}
         {recording
           ? <Btn icon="x" onPress={p.onCancelRec}/>

@@ -31,6 +31,18 @@ import { RequestActionBar } from '../../components/RequestActionBar';
 
 export default function XmtpConversation(): React.ReactElement {
   const router = useRouter();
+  /** FULL-SCREEN swipe-back coexists with the bubble's swipe-to-reply by
+   *  DIRECTION, not by a thin edge band. The app-wide JS card-stack back-gesture
+   *  (app/_layout, `gestureResponseDistance: 9999`) arms only on a RIGHTWARD drag
+   *  (@react-navigation/stack's horizontal criteria use `minOffsetX: 5`), while
+   *  the bubble's reply pan arms only on a LEFTWARD drag (`activeOffsetX(-15)` +
+   *  `failOffsetX(15)` so a rightward drag immediately fails it and falls through
+   *  to the back gesture). Opposite signs = mutually exclusive, so back works
+   *  across the whole screen on rightward + reply works across the whole row on
+   *  leftward. A previous `gestureResponseDistance: 40` override narrowed back to
+   *  a thin left-edge band to dodge an activation race; the direction-exclusive
+   *  arming makes that band unnecessary, so we inherit the global full-screen
+   *  distance here (no per-screen override). */
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head, bg, border } = usePalette();
   const sub = fg, rowBg = border;

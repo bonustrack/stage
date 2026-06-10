@@ -26,7 +26,7 @@ import { useEffect } from 'react';
 import { router } from 'expo-router';
 
 /** An expo-router navigation target derived from an incoming link. */
-export type ParsedRoute =
+type ParsedRoute =
   | { pathname: '/xmtp/[convId]'; params: { convId: string; m?: string; focus?: string } }
   | { pathname: '/group/[convId]'; params: { convId: string } }
   | { pathname: '/user/[address]'; params: { address: string } }
@@ -39,7 +39,7 @@ export type ParsedRoute =
  *  (where the web client keeps its route) and falling back to the URL path.
  *  Handles `metro://xmtp/x`, `https://metro.box/#/xmtp/x?m=y`,
  *  `https://metro.box/xmtp/x`, and bare `xmtp/x`. */
-export function extractRoute(url: string): { segments: string[]; query: URLSearchParams } {
+function extractRoute(url: string): { segments: string[]; query: URLSearchParams } {
   let work = url.trim();
 
   // Prefer the hash fragment if present: "....#/xmtp/abc?m=1" -> "/xmtp/abc?m=1".
@@ -82,7 +82,7 @@ export function extractRoute(url: string): { segments: string[]; query: URLSearc
 /** Map a parsed link to an expo-router target, or null when it doesn't address
  *  a known screen (in which case the deep link is ignored and the app opens
  *  to its default tab). */
-export function routeForUrl(url: string): ParsedRoute | null {
+function routeForUrl(url: string): ParsedRoute | null {
   const { segments, query } = extractRoute(url);
   if (segments.length === 0) return { pathname: '/(tabs)' };
 
@@ -119,7 +119,7 @@ export function routeForUrl(url: string): ParsedRoute | null {
 
 /** Navigate to the screen a link addresses. Returns true when it matched a
  *  known route. */
-export function navigateToUrl(url: string): boolean {
+function navigateToUrl(url: string): boolean {
   const target = routeForUrl(url);
   if (!target) return false;
   // `router.push` is overloaded; the discriminated union above keeps each

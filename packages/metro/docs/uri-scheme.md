@@ -22,6 +22,9 @@ The URI parses cleanly with the WHATWG `URL` parser: `new URL(line)` gives `prot
 | `codex`    | `metro://codex/<user-id>/<session-id>`       | `metro://codex/8119ecb1-…/01997d4b-…`                                  |
 | `webhook`  | `metro://webhook/<endpoint-id>`              | `metro://webhook/fwaCgTKJuLAjS2K0`                                     |
 | `xmtp`     | `metro://xmtp/<conversation-id>`             | `metro://xmtp/abc123def456…`                                           |
+| `session`  | `metro://session/<session-id>`               | `metro://session/alpha`                                                |
+
+The `session` owner URI is **derived** (not a wire line): an optional `~/.metro/sessions.json` binding layer maps a named session to a per-station account (`{ "<id>": { xmtp, discord, telegram, default } }`), with owner `metro://session/<id>`. It is OPT-IN — when the file is absent (the default) identity falls back to the env / per-account-owner behavior, unchanged. `metro whoami` reports the resolved identity; `metro session list` lists the bindings.
 
 Claude / Codex lines mirror the `<root>/<sub>` structure of `metro://telegram/<chat-id>/<topic-id>`: `<user-id>` (the stable account id — same across devices) plays the role of `<chat-id>`, and `<session-id>` (one conversation) plays the role of `<topic-id>`. Both segments are derived per station (see [participants](#participants) below).
 

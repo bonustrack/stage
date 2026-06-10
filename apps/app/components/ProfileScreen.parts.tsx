@@ -39,9 +39,9 @@ export function useSelfAddress(): string {
 }
 
 /** Top header bar — variant-specific. The route variant adds a back button on
- *  the left and floats over the full-bleed cover; the tab variant is an in-flow
- *  opaque strip with a "Profile" title. Identity is read-only, so there is no
- *  edit/overflow affordance. */
+ *  the left and floats over the full-bleed cover; the tab variant shows the
+ *  Home-style identity (avatar + name → Menu). Identity is read-only, so there
+ *  is no edit/overflow affordance. */
 export function ProfileHeader({ variant, insetTop, onBack, c }: {
   variant: 'tab' | 'route'; insetTop: number;
   onBack: () => void; c: ProfileColors;
@@ -50,13 +50,11 @@ export function ProfileHeader({ variant, insetTop, onBack, c }: {
     <Row
       align="center"
       justify="between"
-      /* eslint-disable no-restricted-syntax -- spread of a variant-conditional style branch; padding can't be a static layout prop here. */
-      style={{ ...(variant === 'route'
-        ? {
-          position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
-          height: 44 + insetTop, paddingTop: insetTop, paddingHorizontal: 14,
-        }
-        : { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8, backgroundColor: c.toolbarBg }) }}
+      /* eslint-disable no-restricted-syntax -- absolute floating header over the cover; offsets can't be static layout props. */
+      style={{
+        position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
+        height: 44 + insetTop, paddingTop: insetTop, paddingHorizontal: 14,
+      }}
       /* eslint-enable no-restricted-syntax */
 >
       {variant === 'route' ? (

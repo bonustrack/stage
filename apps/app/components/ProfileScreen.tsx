@@ -79,7 +79,7 @@ export function ProfileScreen({ address, variant, panRef }: {
         onBack={() => router.back()}
       />
 
-      <ScrollView simultaneousHandlers={panRef} contentContainerStyle={{ paddingBottom: 32 }}>
+      <ScrollView simultaneousHandlers={panRef} style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 32 }}>
         {/* Full-bleed cover banner (input-bg). For the `route` variant the cover
             extends up behind the floating header/status bar (height += insets.top)
             so the colour bleeds to y=0. Its bottom edge is FLAT — the black content

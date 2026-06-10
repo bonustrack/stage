@@ -17,7 +17,6 @@ import { flash } from '../../lib/toast';
 import { usePeerProfiles } from '../../lib/peerProfiles';
 import { DANGER, useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { Col, Row } from '../layout';
-import { TopnavIdentity } from '../TopnavIdentity';
 import { getNftsAcrossChains, type Nft } from '../../lib/opensea';
 import { Btn, WalletTabs, NftsView, fmtUsd, splitUsd, type WalletTab } from './WalletScreen.parts';
 import { PrivateView } from './WalletScreen.private';
@@ -115,8 +114,9 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
      *  Wrapped in a flex:1 Col so the tap-to-refresh icon button can anchor to
      *  the screen top-right (absolute), independent of scroll content. */
     <Col surface="surface" flex={1}>
-    <CopyButton address={address} color={head}/>
-    <RefreshButton refreshing={refreshing} onRefresh={onRefresh} color={head}/>
+    {/* The shared Topnav (identity left, copy/refresh right) is hoisted ABOVE the
+        pager in (tabs)/_layout.tsx via the published slot above, so it stays
+        pinned on swipe AND scroll. This body renders only the scroll content. */}
     <ScrollView
       simultaneousHandlers={panRef}
       style={{ flex: 1, backgroundColor: bg }}
@@ -138,11 +138,16 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
       scrollEventThrottle={pull.scrollEventThrottle}
 >
       {pull.indicator}
-      {/* Topnav identity (avatar + name → Menu), left-aligned to match Home. */}
-      <Row padding={{ x: 16, top: 12, bottom: 4 }} align="center" surface="toolbar"><TopnavIdentity /></Row>
+      {/* Copy-address + refresh — relocated out of the (now uniform Home) topnav
+          into the page body, anchored top-right of the balance area. Order
+          left→right: [copy][refresh]. Fully functional (same handlers). */}
+      <Row margin={{ x: 16, top: 8 }} justify="end" align="center" gap={18}>
+        <CopyButton address={address} color={head}/>
+        <RefreshButton refreshing={refreshing} onRefresh={onRefresh} color={head}/>
+      </Row>
       {/* Value card — compact, left-aligned: just the big total USD value.
           Decimals render in the dim `sub` colour to keep the dollars prominent. */}
-      <Col padding={{ top: 20, bottom: 16 }} margin={{ x: 16 }} align="start">
+      <Col padding={{ top: 4, bottom: 16 }} margin={{ x: 16 }} align="start">
         {err ? (
           <Text size="xs" color={DANGER}>
             Couldn’t load balances

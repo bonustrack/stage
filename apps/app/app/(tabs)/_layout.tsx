@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
 import { usePalette } from '../../lib/theme';
 import { TabsPager } from '../../components/SwipeTabs';
+import { HoistedTopnav } from '../../components/tabs/HoistedTopnav';
 import { useTotalUnread } from '../../lib/useTotalUnread';
 
 export default function TabsLayout(): React.ReactElement {
@@ -111,7 +112,7 @@ export default function TabsLayout(): React.ReactElement {
       {/* Pager overlay — covers the scene area (status-bar inset at top, stops
           above the tab bar at the bottom) so the tab bar keeps its taps. */}
       {pagerVisible ? (
-        <Box
+        <Col
           pointerEvents="box-none"
           style={{
             position: 'absolute',
@@ -121,8 +122,17 @@ export default function TabsLayout(): React.ReactElement {
             bottom: tabBarHeight,
           }}
 >
-          <TabsPager/>
-        </Box>
+          {/* ONE fixed Topnav, ABOVE the pager. A sibling of the pager strip, so
+              a horizontal tab-swipe (which translates the strip) and a vertical
+              scroll inside a tab both leave it pinned. It is UNIFORM: always the
+              Home bar (identity + search/requests/overflow) on every tab. */}
+          <HoistedTopnav/>
+          {/* Pager below the bar as the flex:1 scroll region. It now mounts only
+              the scrollable BODIES of each tab (no per-tab header). */}
+          <Box flex={1}>
+            <TabsPager/>
+          </Box>
+        </Col>
       ) : null}
     </Col>
   );

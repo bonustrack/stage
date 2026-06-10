@@ -2,8 +2,7 @@
  *  fallback to the pull-to-refresh gesture: a single tap fires the same
  *  `onRefresh` from useWalletBalances. While `refreshing` is true the glyph
  *  spins (JS-driven Animated loop) and the button is disabled so taps can't
- *  stack. Rendered as an absolute top-right element by WalletScreen so it never
- *  needs a dedicated header row. */
+ *  stack. Rendered in the Wallet page body, top-right of the balance area. */
 
 import { useEffect, useRef } from 'react';
 import { Animated, Easing } from 'react-native';
@@ -14,12 +13,10 @@ export function RefreshButton({
   refreshing,
   onRefresh,
   color,
-  top = 0,
 }: {
   refreshing: boolean;
   onRefresh: () => void;
   color: string;
-  top?: number;
 }): React.ReactElement {
   const spin = useRef(new Animated.Value(0)).current;
 
@@ -49,12 +46,7 @@ export function RefreshButton({
       disabled={refreshing}
       hitSlop={10}
       style={({ pressed }) => ({
-        position: 'absolute',
-        top: top + 18,
-        right: 16,
-        zIndex: 20,
         opacity: refreshing ? 0.5 : pressed ? 0.5 : 1,
-        padding: 4,
       })}
     >
       <Animated.View style={{ transform: [{ rotate }] }}>
