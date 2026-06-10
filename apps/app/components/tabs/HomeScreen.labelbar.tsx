@@ -107,75 +107,46 @@ export function LabelFilterBar({ labels, enabled, unreadOnly, onToggle, onToggle
   const { link, text: fg, bg, border: rowBg } = usePalette();
   const allSelected = !unreadOnly && enabled.size === 0;
 
-  /** Live scroll-edge state, kept in refs (no re-render). `atStart` once the row
-   *  is scrolled all the way left, `atEnd` once all the way right. Both true when
-   *  the content fits without scrolling (every drag should then page). Seeded
-   *  atStart=true because a fresh ScrollView sits at offset 0; atEnd flips true on
-   *  the first onScroll/onContentSizeChange if the row is short enough to fit. */
-  const atStart = useRef(true);
-  const atEnd = useRef(false);
-  const recomputeEnd = (): void => {
-    const max = contentW.current - layoutW.current;
-    if (max <= 0.5) atEnd.current = true; // content fits: every drag can page
-  };
+  /** Edge-release blocker (worklet-free). A single `Gesture.Native()` over the
+   *  chip row that `blocksExternalGesture(panRef)` - so while it is ENABLED the
+   *  pager Pan must wait for the chip scroll to fail, and a horizontal drag over
+   *  the chips scrolls the chips instead of flipping the page. We toggle it OFF
+   *  when the row is parked AT AN EDGE (or its content fits with nothing to
+   *  scroll); then the pager is no longer blocked and the swipe pages the screen.
+   *
+   *  All toggling is driven from the ScrollView's `onScroll`/`onLayout`/
+   *  `onContentSizeChange` - plain JS-thread callbacks, NOT gesture worklets - so
+   *  there is no UI-thread/worklet boundary to cross. (The earlier direction probe
+   *  ran its onBegin/onTouchesMove as worklets and synchronously called JS, which
+   *  threw "[Worklets] Tried to synchronously call a non-worklet function".)
+   *
+   *  Tradeoff vs. the direction-aware probe: at an edge BOTH directions page, so a
+   *  drag back into the still-scrollable range pages instead of scrolling. Once
+   *  any scroll moves the row off the edge the blocker re-arms and chips scroll
+   *  again. Stability over precision - this row is scrolled constantly. */
+  const [atEdge, setAtEdge] = useState(true); // fresh ScrollView sits at offset 0 (left edge)
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>): void => {
     const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
     const max = contentSize.width - layoutMeasurement.width;
-    atStart.current = contentOffset.x <= 0.5;
-    atEnd.current = max <= 0.5 || contentOffset.x >= max - 0.5;
+    const edge = max <= 0.5 || contentOffset.x <= 0.5 || contentOffset.x >= max - 0.5;
+    setAtEdge(prev => (prev === edge ? prev : edge));
   };
-  const contentW = useRef(0);
-  const layoutW = useRef(0);
+  /** When content fits (no overflow) there is nothing to scroll, so always page.
+   *  layoutWRef caches the last measured viewport width so onContentSizeChange can
+   *  compare against it without an onScroll having fired yet. */
+  const layoutWRef = useRef(0);
+  const onMeasure = (contentW: number, layoutW: number): void => {
+    if (layoutW <= 0) return;
+    if (contentW - layoutW <= 0.5) setAtEdge(true);
+  };
 
-  /** Native scroll gesture for the chip row. `blocksExternalGesture(panRef)`
-   *  makes the pager Pan WAIT for this scroll to fail before it can arm, so while
-   *  the finger is dragging the chips the page never swipes. The blocking is made
-   *  DIRECTION-AWARE via the companion probe Pan below: while the native scroll is
-   *  still in its BEGAN (not-yet-scrolling) phase, the probe inspects the first
-   *  few px of finger movement; if the row is parked at the edge it CANNOT scroll
-   *  toward (left edge + rightward drag, or right edge + leftward drag) it flips
-   *  `blockerOn` false. That disables THIS gesture before it activates, so the
-   *  pager - which was only waiting on it - is released and the screen pages. Any
-   *  drag the row can still consume leaves `blockerOn` true and the chips scroll.
-   *  Reset to true on every touch end so the next drag starts capturing again. */
-  const [blockerOn, setBlockerOn] = useState(true);
+  const blockerOn = !atEdge;
   const chipScroll = useMemo(
     () => {
       const g = panRef ? Gesture.Native().blocksExternalGesture(panRef) : Gesture.Native();
       return g.enabled(blockerOn);
     },
     [panRef, blockerOn],
-  );
-  /** Direction probe. A manual Pan that NEVER activates (manualActivation + never
-   *  calling activate), so it cannot steal the touch from the native scroll or the
-   *  pager; it only observes. It records the first touch point, then on the first
-   *  movement past an 8px intent threshold decides whether to release the blocker.
-   *  Runs simultaneously with everything. */
-  const probeOrigin = useRef<{ x: number; y: number } | null>(null);
-  const decided = useRef(false);
-  const probe = useMemo(
-    () =>
-      Gesture.Pan()
-        .manualActivation(true)
-        .onBegin(() => { decided.current = false; probeOrigin.current = null; recomputeEnd(); })
-        .onTouchesMove((e) => {
-          if (decided.current) return;
-          const t = e.allTouches[0];
-          if (!t) return;
-          if (!probeOrigin.current) { probeOrigin.current = { x: t.x, y: t.y }; return; }
-          const moveX = t.x - probeOrigin.current.x;
-          const moveY = t.y - probeOrigin.current.y;
-          if (Math.abs(moveX) < 8 && Math.abs(moveY) < 8) return; // wait for clear intent
-          decided.current = true;
-          // Vertical-first drag never pages; keep the blocker on (vertical scroll
-          // of the parent list is handled by its own simultaneous relation).
-          if (Math.abs(moveY) >= Math.abs(moveX)) return;
-          const cannotScroll =
-            (moveX > 0 && atStart.current) || (moveX < 0 && atEnd.current);
-          if (cannotScroll) setBlockerOn(false);
-        })
-        .onFinalize(() => { probeOrigin.current = null; decided.current = false; setBlockerOn(true); }),
-    [],
   );
 
   const bar = (
@@ -185,8 +156,8 @@ export function LabelFilterBar({ labels, enabled, unreadOnly, onToggle, onToggle
       keyboardShouldPersistTaps="handled"
       scrollEventThrottle={16}
       onScroll={onScroll}
-      onContentSizeChange={(w) => { contentW.current = w; recomputeEnd(); }}
-      onLayout={(e) => { layoutW.current = e.nativeEvent.layout.width; recomputeEnd(); }}
+      onContentSizeChange={(w) => onMeasure(w, layoutWRef.current)}
+      onLayout={(e) => { layoutWRef.current = e.nativeEvent.layout.width; }}
       /** flexGrow:0 + alignSelf:stretch keep the bar hugging its single chip
        *  row; without them the horizontal ScrollView stretches to fill the column
        *  and the chips drift to the vertical middle of the empty list area. */
@@ -209,8 +180,5 @@ export function LabelFilterBar({ labels, enabled, unreadOnly, onToggle, onToggle
       ))}
     </ScrollView>
   );
-  /** Native scroll + the observe-only probe run simultaneously: the probe must
-   *  see touches without competing with the scroll. */
-  const composed = useMemo(() => Gesture.Simultaneous(chipScroll, probe), [chipScroll, probe]);
-  return <GestureDetector gesture={composed}>{bar}</GestureDetector>;
+  return <GestureDetector gesture={chipScroll}>{bar}</GestureDetector>;
 }
