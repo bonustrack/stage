@@ -58,6 +58,25 @@ class MetroFcmService : FirebaseMessagingService() {
       return
     }
 
+    // EVENT-DRIVEN RESYNC (the reliable real-time wake): the contentless FCM push
+    // is the ONE signal that reliably reaches the device when a new message lands
+    // (the MLS stream can silently die; there is no poll). So BEFORE any early
+    // return below — including the foreground and viewing-this-conv suppressions,
+    // which only suppress the visible CARD, not the data signal — nudge JS to
+    // force a sync + reload the open feed. When the JS module is attached (warm /
+    // foreground) this turns the push into an instant feed refresh; when it isn't
+    // (cold / killed) the emit no-ops and the generic card below still posts.
+    runCatching {
+      MetroPillModule.emit(
+        "onXmtpPush",
+        mapOf(
+          "line" to data["line"],
+          "convId" to (data["convId"]?.takeIf { it.isNotBlank() } ?: convIdOfLine(data["line"])),
+          "messageId" to data["messageId"],
+        ),
+      )
+    }
+
     // FOREGROUND HANDOFF: when the app is warm/foregrounded the live XMTP stream
     // already holds the DECRYPTED message, so the JS layer posts a RICH local
     // notification (real sender + preview) for conversations the user isn't
