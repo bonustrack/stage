@@ -57,6 +57,9 @@ export interface ChannelRowProps {
   showChevron?: boolean;
   avatarSize?: number;
   onPress?: () => void;
+  /** Fires on touch-down (before onPress) - used to warm the feed cache the
+   *  instant a row is touched so the conversation opens from cache. */
+  onPressIn?: () => void;
   onLongPress?: () => void;
   /** Pressable style override (the channels tab insets the separator itself). */
   containerStyle?: StyleProp<ViewStyle>;
@@ -110,7 +113,7 @@ function ChannelRowBase({
   title, avatarAddress, avatarUri, cacheBuster, square,
   lastPreview, timestamp, subtitle, unreadCount = 0, markedUnread,
   pinned, hasDraft, draftText, showChevron, avatarSize = 44,
-  onPress, onLongPress, containerStyle, labels,
+  onPress, onPressIn, onLongPress, containerStyle, labels,
 }: ChannelRowProps): React.ReactElement {
   const { link: head, text: sub, bg, border } = usePalette();
   const fg = sub, rowBg = border;
@@ -120,6 +123,7 @@ function ChannelRowBase({
   return (
     <Pressable
       onPress={onPress}
+      onPressIn={onPressIn}
       onLongPress={onLongPress}
       delayLongPress={onLongPress ? 300 : undefined}
       style={containerStyle ?? (({ pressed }) => ({
