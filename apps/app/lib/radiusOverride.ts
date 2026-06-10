@@ -25,8 +25,8 @@ function clamp(n: number, def: number): number {
   if (!Number.isFinite(n)) return def;
   return Math.max(RADIUS_MIN, Math.min(RADIUS_MAX, Math.round(n)));
 }
-export function clampRadius(n: number): number { return clamp(n, BUTTON_RADIUS_DEFAULT); }
-export function clampBlockRadius(n: number): number { return clamp(n, BLOCK_RADIUS_DEFAULT); }
+function clampRadius(n: number): number { return clamp(n, BUTTON_RADIUS_DEFAULT); }
+function clampBlockRadius(n: number): number { return clamp(n, BLOCK_RADIUS_DEFAULT); }
 
 /** In-memory mirrors so the hooks can read synchronously after the one-time
  *  load, and edits repaint instantly. `null` = no override → use the default. */
