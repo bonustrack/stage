@@ -1,7 +1,7 @@
 /** XMTP conversation view — opened from the messenger tab list. State + handlers
  *  live in useConversationState; presentational pieces in components/xmtp-conv. */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Animated as RNAnimated, Share } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
@@ -26,6 +26,7 @@ import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { HeaderAvatar, BubbleActionMenu, GithubNavButton } from '../../components/xmtp-conv/parts';
 import { previewOf } from '../../components/xmtp-conv/feed-helpers';
 import { ConversationFeed } from '../../components/xmtp-conv/ConversationFeed';
+import { ConversationSearch } from '../../components/xmtp-conv/ConversationSearch';
 import { useConversationState } from '../../components/xmtp-conv/useConversationState';
 import { RequestActionBar } from '../../components/RequestActionBar';
 
@@ -55,7 +56,18 @@ export default function XmtpConversation(): React.ReactElement {
     menuFor, setMenuFor, menuAnchor, overflowOpen, setOverflowOpen, setSelectedForCopy,
     peerAddr, groupName, groupImage, isGroup, github, senderEthOf,
     mentionCandidates, onReact, onOptimistic, onSent, jumpToMessage, markAtBottom,
+    allBubbles, hasMore, loadOlder,
   } = c;
+
+  /** In-conversation local message search (Stage #6) — toggled from the header
+   *  search action; renders a search bar + results panel under the top-nav. */
+  const [searchOpen, setSearchOpen] = useState(false);
+  /** Live getters for the search overlay's deep-jump loop so it reads the freshly
+   *  paged feed (closure over `allBubbles`/`hasMore` would go stale mid-loop). */
+  const allBubblesRef = useRef(allBubbles);
+  allBubblesRef.current = allBubbles;
+  const hasMoreRef = useRef(hasMore);
+  hasMoreRef.current = hasMore;
 
   /** Message-request gate. The overwhelmingly common case is an already-accepted
    *  channel, so we DEFAULT to showing the composer immediately on open (no
@@ -137,8 +149,15 @@ export default function XmtpConversation(): React.ReactElement {
               : peerAddr ? (getPeerName(peerAddr) ?? shortAddress(peerAddr)) : ''}
           </Text>
         </Pressable>
-        {/** Topnav links (groups only): GitHub issue/PR, then overflow. */}
+        {/** Topnav links (groups only): GitHub issue/PR, then search, then overflow. */}
         {isGroup && github ? <GithubNavButton url={github} color={fg} /> : null}
+        <Pressable
+          onPress={() => setSearchOpen(o => !o)}
+          hitSlop={8}
+          style={{ paddingHorizontal: 8, justifyContent: 'center' }}
+>
+          <Icon name="search" size={20} color={fg}/>
+        </Pressable>
         <Pressable
           onPress={() => setOverflowOpen(true)}
           hitSlop={8}
@@ -147,6 +166,27 @@ export default function XmtpConversation(): React.ReactElement {
           <Icon name="dotsVertical" size={22} color={fg}/>
         </Pressable>
       </Row>
+      {/** In-conversation search panel — anchored directly below the top-nav strip.
+       *   Local-only history scan + jump-to-match; see ConversationSearch. */}
+      {searchOpen ? (
+        <Box style={{ position: 'absolute', top: 52 + insets.top, left: 0, right: 0, zIndex: 3 }}>
+          <ConversationSearch
+            line={activeLine}
+            dark={dark}
+            fg={fg}
+            sub={sub}
+            bg={bg}
+            border={border}
+            head={head}
+            senderEthOf={senderEthOf}
+            getBubbles={() => allBubblesRef.current}
+            hasMore={() => hasMoreRef.current}
+            loadOlder={loadOlder}
+            jumpToMessage={jumpToMessage}
+            onClose={() => setSearchOpen(false)}
+/>
+        </Box>
+      ) : null}
       {/** Fade strip below the top nav — mirrors the composer's top fade. Start it 1px
        *  higher so its solid-bg top edge overlaps the nav bottom, closing the hairline
        *  seam between the two absolute bg layers, then ramps to transparent. */}
