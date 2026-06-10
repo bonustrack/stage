@@ -71,13 +71,13 @@ function Chip({ label, selected, onPress, link, fg, bg, rowBg }: {
       onPress={onPress}
       hitSlop={6}
       style={({ pressed }) => ({
-        height: 26, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 2,
+        height: 30, borderRadius: 999, paddingHorizontal: 11, paddingVertical: 2,
         justifyContent: 'center',
         backgroundColor: selected ? link : rowBg,
         opacity: pressed ? 0.7 : 1, flexShrink: 0,
       })}
     >
-      <Text size="md"
+      <Text size="3xl"
         numberOfLines={1} color={selected ? bg : fg}>
         {label}
       </Text>
