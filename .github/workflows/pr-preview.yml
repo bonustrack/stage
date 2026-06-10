@@ -217,6 +217,20 @@ jobs:
             --input-dir dist \
             --message "${RAW_BRANCH}@${SHORT_SHA} (${{ github.sha }})" \
             --non-interactive --json > eas-update.json
+          # Ensure an EAS CHANNEL named after the branch exists and points at the
+          # same-named branch. This is what makes the stable per-branch launcher
+          # (preview.html?branch=<b> -> u.expo.dev/<id>?channel-name=<b>) resolve:
+          # the manifest endpoint resolves "latest update for a CHANNEL", and in
+          # EAS a channel is NOT a branch - `eas update --branch X` publishes to
+          # branch X but does not create channel X. Without this step the launcher
+          # 404s ("There is no channel named X").
+          #
+          # Idempotent: `channel:create` succeeds on first push (it auto-links the
+          # existing same-named branch). On every later push the channel already
+          # exists, so `channel:create` errors - we fall back to `channel:edit` to
+          # (re)point it at the branch. Either path leaves channel X -> branch X.
+          bunx eas-cli@20.1.0 channel:create "$BRANCH" --non-interactive \
+            || bunx eas-cli@20.1.0 channel:edit "$BRANCH" --branch "$BRANCH" --non-interactive
           node ../../scripts/pr-preview/eas-deeplink.mjs eas-update.json >> "$GITHUB_OUTPUT"
 
       - name: Write preview deep link to job summary
