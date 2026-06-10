@@ -69,11 +69,13 @@ export class Tunnel {
   }
 }
 
-/* ──────────── webhook endpoint registry (id, label, optional secret) ──────────── */
+/* ──────────── webhook endpoint registry (id, label, optional secret/session) ──────────── */
 
 const WEBHOOKS_FILE = join(STATE_DIR, 'webhooks.json');
 
-export type Endpoint = { id: string; label: string; secret?: string; createdAt: string };
+/** `session`, when set, binds this endpoint to a sessions.json id so its inbound */
+/** events are attributed to that session's owner. Absent ⇒ today's behavior. */
+export type Endpoint = { id: string; label: string; secret?: string; session?: string; createdAt: string };
 type Store = { endpoints: Endpoint[] };
 
 /** Local listener port — `127.0.0.1` only; expose publicly via Cloudflare tunnel. */
@@ -90,12 +92,13 @@ export const listEndpoints = (): Endpoint[] => readWebhooks().endpoints;
 export const findEndpoint = (id: string): Endpoint | undefined =>
   readWebhooks().endpoints.find(e => e.id === id);
 
-export function addEndpoint(label: string, secret?: string): Endpoint {
+export function addEndpoint(label: string, secret?: string, session?: string): Endpoint {
   const s = readWebhooks();
   /** 16-char URL-safe id (~96 bits — collision-proof for any reasonable count). */
   const ep: Endpoint = {
     id: randomBytes(12).toString('base64url'), label, createdAt: new Date().toISOString(),
     ...(secret ? { secret } : {}),
+    ...(session ? { session } : {}),
   };
   s.endpoints.push(ep);
   writeWebhooks(s);

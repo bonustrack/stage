@@ -37,10 +37,11 @@ export async function cmdWebhook(p: string[], f: Flags): Promise<void> {
 }
 
 async function cmdWebhookAdd(p: string[], f: Flags): Promise<void> {
-  need(p, 1, 'metro webhook add <label> [--secret=<shared-secret>]');
-  const ep = addEndpoint(p[0], flagOne(f, 'secret'));
+  need(p, 1, 'metro webhook add <label> [--secret=<shared-secret>] [--session=<id>]');
+  const ep = addEndpoint(p[0], flagOne(f, 'secret'), flagOne(f, 'session'));
   const url = urlFor(ep.id);
-  emit(f, `webhook ${ep.id} (${ep.label}) → ${url}${ep.secret ? `\nshared secret: ${ep.secret}` : ''}`,
+  const sessionLine = ep.session ? `\nbound to session: ${ep.session}` : '';
+  emit(f, `webhook ${ep.id} (${ep.label}) → ${url}${ep.secret ? `\nshared secret: ${ep.secret}` : ''}${sessionLine}`,
     { ok: true, endpoint: ep, url });
 }
 
@@ -50,7 +51,8 @@ async function cmdWebhookList(f: Flags): Promise<void> {
   if (!eps.length) return void process.stdout.write('metro webhooks\n\n  (none — run `metro webhook add <label>`)\n\n');
   process.stdout.write('metro webhooks\n\n');
   for (const ep of eps) {
-    process.stdout.write(`  ${ep.id}  ${ep.label}${ep.secret ? '  (signed)' : ''}\n        ${ep.url}\n`);
+    const tags = `${ep.secret ? '  (signed)' : ''}${ep.session ? `  → session ${ep.session}` : ''}`;
+    process.stdout.write(`  ${ep.id}  ${ep.label}${tags}\n        ${ep.url}\n`);
   }
   process.stdout.write('\n');
 }
