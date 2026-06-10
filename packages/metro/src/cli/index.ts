@@ -13,6 +13,7 @@ import { cmdCall, cmdTrains, cmdTunnel, cmdWebhook } from './webhook.js';
 import {
   cmdDelete, cmdEdit, cmdRead, cmdReact, cmdReply, cmdSend, cmdUnreact,
 } from './messaging.js';
+import { cmdChannel, cmdGroup, cmdDm } from './channels.js';
 import {
   flagOne, isJson, parseArgs, writeJson, type ExitErr, type Flags,
 } from './util.js';
@@ -51,6 +52,17 @@ Usage:
   metro delete <line> <msgId>                 Delete a message.
   metro read <line> [--limit N] [--before <id>] [--since <ts>]
                                               Read recent messages for a line (live or daemon log).
+  metro channel set-github <line> <url|->     Set/clear a channel's linked GitHub URL.
+  metro channel set-labels <line> <a,b,c>     Set a channel's labels.
+  metro channel meta <line> [--name N] [--description D] [--github U] [--labels a,b]
+                                              Update channel name/description/appData.
+  metro channel info <line>                   Print group info for a channel.
+  metro group new <0xaddr…> [--name N] [--admin-only]
+                                              Create a group (themed wrapper for xmtp newGroup).
+  metro group close <line>                    Archive a group (remove members).
+  metro group add | remove <line> <0xaddr…>   Add/remove group members.
+  metro dm <0xaddress> [--account <id>]       Open (or reuse) a DM; prints its line.
+  metro board [tail flags]                    Alias of \`metro tail\` (Metro-transit naming).
   metro call <train> <action> [args]          Low-level escape hatch: forward an action to a train.
                                               [args] is JSON, '@file', '-' (stdin), or a bare string.
   metro history [--limit=N] [--line=…] [--station=…] [--from=…] [--text=…] [--since=…]
@@ -75,10 +87,13 @@ Usage:
 Global flags:
   --json                                      Machine-readable output on any command (and on
                                               errors: {"ok":false,"error":…,"code":…}).
+                                              Themed verbs (channel/group/dm) wrap success in a
+                                              uniform envelope: {"ok":true,"command":…,"result":…}.
+  --quiet                                     (themed verbs) print only the result id.
 
 Trains: place \`<name>.ts\` files in ~/.metro/trains/. See \`@metro-labs/metro/examples\`.
 Lines: metro://<station>/<path>. Multi-line args: pipe on stdin where supported.
-Exit codes: 0 success · 1 usage · 2 config · 3 upstream · 4 daemon not running
+Exit codes: 0 success · 1 usage · 2 config · 3 upstream · 4 daemon not running · 7 rate-limited
 `;
 
 async function cmdLines(_: string[], f: Flags): Promise<void> {
@@ -151,6 +166,11 @@ const COMMANDS: Record<string, (positional: string[], flags: Flags) => Promise<v
   history: cmdHistory, tail: cmdTail,
   claim: cmdClaim, release: cmdRelease, claims: cmdClaims,
   update: cmdUpdate,
+  // Themed porcelain verbs (migration step 5): first-class noun-verb commands,
+  // thin wrappers over the existing xmtp actions. Additive — `metro call` stays.
+  channel: cmdChannel, group: cmdGroup, dm: cmdDm,
+  // Metro-transit naming alias: `board` reads the same feed as `tail`.
+  board: cmdTail,
 };
 
 async function main(): Promise<void> {
@@ -185,8 +205,15 @@ async function main(): Promise<void> {
   try { await handler(positional, flags); }
   catch (err) {
     const code = (err as ExitErr).code;
-    if (isJson(flags)) writeJson({ ok: false, error: errMsg(err), code: code ?? 1 });
-    else process.stderr.write(`error: ${errMsg(err)}\n`);
+    const command = (err as ExitErr).command;
+    if (isJson(flags)) {
+      // Themed verbs carry their `command` tag → uniform {ok,command,error,code}
+      // envelope. Legacy commands keep the original {ok,error,code} shape so
+      // existing scripts parsing them are unaffected.
+      writeJson(command
+        ? { ok: false, command, error: errMsg(err), code: code ?? 1 }
+        : { ok: false, error: errMsg(err), code: code ?? 1 });
+    } else process.stderr.write(`error: ${errMsg(err)}\n`);
     process.exit(typeof code === 'number' ? code : 1);
   }
 }

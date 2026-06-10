@@ -2,7 +2,7 @@
 
 export type FlagValue = string | boolean | string[];
 export type Flags = Record<string, FlagValue>;
-export type ExitErr = Error & { code?: number };
+export type ExitErr = Error & { code?: number; command?: string };
 
 export const exitErr = (msg: string, code: number): ExitErr => Object.assign(new Error(msg), { code });
 export const isJson = (f: Flags): boolean => f.json === true;
