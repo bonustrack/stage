@@ -7,11 +7,11 @@
  *  live-write source of truth (the single app-wide stream + resync backstop +
  *  pagination all write it - see xmtp.stream.ts) and a global mirror
  *  (feedQuery.ts `ensureFeedQueryBridge`) copies every slice write into the
- *  shared query cache, so:
- *    - live appends from the stream update this query for free,
- *    - the channels-list preview can read the SAME cached source
- *      (`latestFeedMessage`), eliminating the feed/list desync class #375 patched.
- *  The query's `queryFn` folds in #375's sync-on-open logic (see
+ *  shared query cache, so live appends from the stream update this query for
+ *  free. The bridge mirrors feedCache to the OPEN feed only; the channels-list
+ *  preview comes from HomeScreen.stream.ts via channelsCache. The feed/list
+ *  desync (#375) is prevented by the topic-first convId + `resyncActiveFeeds`
+ *  path. The query's `queryFn` folds in a sync-on-open step (see
  *  `loadFeedFirstPage`).
  *
  *  The hook's PUBLIC API (events / status / error / inboxId / loadOlder /

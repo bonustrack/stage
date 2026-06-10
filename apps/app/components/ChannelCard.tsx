@@ -11,7 +11,7 @@ import { router } from 'expo-router';
 import { ChannelRow } from './ChannelRow';
 import { DmPeerCard } from './ChannelCard.dm';
 import { Box } from './layout';
-import { useConvMeta } from '../lib/useConvMeta';
+import { useConvMeta } from '../modules/messaging';
 import { usePeerProfiles, getPeerName, isPeerResolved } from '../lib/peerProfiles';
 import { channelStampSeed } from '@metro-labs/kit/avatar';
 import { usePalette, useBlockRadius } from '../lib/theme';
