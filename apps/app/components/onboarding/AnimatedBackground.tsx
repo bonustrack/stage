@@ -14,12 +14,12 @@
  *  source stays crisp and the animation is genuine.
  *
  *  MECHANISM (offline, see gen_dither.py):
- *   - source animation -> per sampled frame -> downsample onto a 176x90 grid
+ *   - source animation -> per sampled frame -> downsample onto a 117x79 grid
  *     (area-average per cell, NO crop: the grid keeps the source's exact aspect)
  *     -> global autocontrast + gamma so the face stays punchy -> 1-bit Bayer
  *     (4x4) ordered dither (strictly #000/#fff) -> nearest-neighbor upscale with
- *     DISTINCT x/y factors (4x14 px per cell) so the cells are hard-edged
- *     RECTANGLES (taller than wide), giving a 704x1260 frame that matches the
+ *     DISTINCT x/y factors (6x16 px per cell) so the cells are hard-edged
+ *     RECTANGLES (taller than wide), giving a 702x1264 frame that matches the
  *     source's exact 464x832 (0.5577) proportions - no square cells, no crop.
  *   - SEAMLESS LOOP: the generator detects the source's true loop period and
  *     samples the 36 frames evenly across exactly ONE loop, so frame 35 -> 0
