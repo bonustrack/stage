@@ -8,7 +8,6 @@ import { useEffect, useRef, useState } from 'react';
 import { ScrollView } from 'react-native-gesture-handler';
 import { usePullToRefresh } from './PullToRefresh';
 import { RefreshButton } from './WalletScreen.refreshButton';
-import { CopyButton } from './WalletScreen.copyButton';
 import { Spinner } from '../Spinner';
 import type { SimultaneousRefs } from '../SwipeTabs.types';
 import { Text } from '@metro-labs/kit/text';
@@ -138,11 +137,9 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
       scrollEventThrottle={pull.scrollEventThrottle}
 >
       {pull.indicator}
-      {/* Copy-address + refresh — relocated out of the (now uniform Home) topnav
-          into the page body, anchored top-right of the balance area. Order
-          left→right: [copy][refresh]. Fully functional (same handlers). */}
+      {/* Refresh — anchored top-right of the balance area. Copy-address now
+          lives in the Home topnav 3-dots menu, so it's dropped from here. */}
       <Row margin={{ x: 16, top: 8 }} justify="end" align="center" gap={18}>
-        <CopyButton address={address} color={head}/>
         <RefreshButton refreshing={refreshing} onRefresh={onRefresh} color={head}/>
       </Row>
       {/* Value card — compact, left-aligned: just the big total USD value.

@@ -12,9 +12,12 @@ import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import { ListView, ListViewItem } from '@metro-labs/kit/list-view';
+import * as Clipboard from 'expo-clipboard';
 import { Col } from '../layout';
 import { AppModal } from '../AppModal';
 import { useEffectiveColorScheme } from '../../lib/theme';
+import { getActiveAccount } from '../../lib/accounts';
+import { flash } from '../../lib/toast';
 
 interface HomeOverflowMenuProps {
   /** Topnav glyph color (matches the sibling requests icon). */
@@ -36,6 +39,13 @@ export function HomeOverflowMenu({ color, onArchived, onNewGroup, onEditProfile,
   const dark = useEffectiveColorScheme() === 'dark';
   const close = (): void => setOpen(false);
   const run = (fn: () => void): void => { close(); fn(); };
+  const onCopyAddress = (): void => run(() => {
+    void getActiveAccount().then(acct => {
+      if (!acct?.address) return;
+      void Clipboard.setStringAsync(acct.address);
+      flash('Address copied');
+    });
+  });
 
   return (
     <>
@@ -48,6 +58,7 @@ export function HomeOverflowMenu({ color, onArchived, onNewGroup, onEditProfile,
         <ListView dark={dark} style={{ marginHorizontal: -16 }}>
           <OverflowRow icon="plus" label="New group" color={color} dark={dark} onPress={() => run(onNewGroup)} />
           <OverflowRow icon="archive" label="Archived" color={color} dark={dark} onPress={() => run(onArchived)} />
+          <OverflowRow icon="copy" label="Copy address" color={color} dark={dark} onPress={onCopyAddress} />
           <OverflowRow icon="pencil" label="Edit profile" color={color} dark={dark} onPress={() => run(onEditProfile)} />
           <OverflowRow icon="cog" label="Settings" color={color} dark={dark} onPress={() => run(onSettings)} />
         </ListView>
