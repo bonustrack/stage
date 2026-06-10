@@ -26,7 +26,10 @@
     "production": {
       "autoIncrement": true,
       "node": "18.20.4",
-      "env": { "APP_VARIANT": "prod" }
+      "env": { "APP_VARIANT": "prod" },
+      "android": {
+        "gradleCommand": ":app:bundleRelease -PreactNativeArchitectures=armeabi-v7a,arm64-v8a,x86_64"
+      }
     },
     "development-prod": {
       "extends": "development",
