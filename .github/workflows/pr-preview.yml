@@ -27,7 +27,12 @@ name: App preview
 # needed — but still publish the JS update (never silently mislead).
 #
 # CONCURRENCY: keyed on the branch ref so rapid pushes cancel the in-flight
-# superseded run (one live preview per branch) — saves Actions + EAS minutes.
+# superseded run (one live preview per branch) on PR branches only.
+# EXCEPTION (#437): main is NEVER cancelled. Rapid merges to main used to cancel
+# the in-flight preview for earlier main commits, leaving main commits (incl. the
+# tip) with NO published preview at all. For main every push must publish its
+# exact sha, so cancel-in-progress is forced false there; PR branches keep the
+# "latest commit wins" cancellation.
 #
 # USAGE TRADEOFF: every push now builds + publishes, which increases Actions +
 # EAS usage. The concurrency-cancel above mitigates rapid-push bursts. Branches
@@ -48,7 +53,9 @@ concurrency:
   # superseded run. Keyed on the ref so different branches never cancel each
   # other.
   group: app-preview-${{ github.ref }}
-  cancel-in-progress: true
+  # Cancel superseded runs on PR branches (latest commit wins), but NEVER on main
+  # (#437): every push to main must publish a preview for its exact sha.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   build:
@@ -62,9 +69,7 @@ jobs:
     env:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
       # Kill Expo/EAS telemetry network round-trips (saves a few seconds + avoids
-      # flakey analytics calls). Pin the Metro transform cache to a workspace path
-      # (default is $TMPDIR/metro-cache, an ephemeral runner temp dir that never
-      # survives a run) so actions/cache below can persist + restore it.
+      # flakey analytics calls).
       EXPO_NO_TELEMETRY: '1'
       TMPDIR: ${{ github.workspace }}/.metro-tmp
     steps:
@@ -131,27 +136,15 @@ jobs:
 
       - run: bun install --frozen-lockfile
 
-      # Warm the Metro transform cache. Cold-bundling ~7500 modules is the bulk of
-      # the export time (the Android bundle alone was ~91s); restoring this dir
-      # lets `expo export` reuse already-transformed modules across runs, so only
-      # the files that actually changed get re-transformed.
-      #
-      # STABLE KEY (the whole point): the key is the lockfile hash PLUS a constant
-      # epoch only — it deliberately does NOT embed a source-file hash. The old
-      # source-hashed key changed on every run (different diff = different hash),
-      # so actions/cache never found an exact match and every run was a cold cache
-      # MISS that re-transformed all ~7500 modules. With a stable key the dir is
-      # reused run-to-run; Metro's own per-file content hashing inside the cache
-      # then re-transforms only the handful of files that changed. Bump the epoch
-      # to force a clean rebuild if the cache ever goes bad. restore-keys gives a
-      # lockfile-independent fallback so even a dep bump still seeds most modules.
-      - name: Cache Metro transform cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ github.workspace }}/.metro-tmp/metro-cache
-          key: metro-cache-v1-${{ runner.os }}-${{ hashFiles('bun.lock') }}
-          restore-keys: |
-            metro-cache-v1-${{ runner.os }}-
+      # NOTE (#437): we deliberately do NOT persist/restore the Metro transform
+      # cache across runs. A stable cross-commit cache key once carried a
+      # truncated/corrupt cache entry forward: it was emitted into the bundle as a
+      # malformed JS array literal, which Hermes then failed to compile on-device
+      # ("']' expected at end of array literal") = red-box crash on launch. The
+      # source was fine; the persisted cache was poisoned and the stable key made
+      # it sticky across every later commit. Correctness > the marginal export
+      # speed-up: each run cold-bundles into the ephemeral TMPDIR, so a poisoned
+      # entry can never survive a run or ship to a device.
 
       - name: Publish EAS Update for this branch
         id: update
@@ -210,6 +203,16 @@ jobs:
             --no-minify \
             --no-bytecode \
             --output-dir dist
+          # Sanity-check the exported bundle is non-truncated before publishing
+          # (#437): a poisoned/truncated bundle previously shipped a malformed JS
+          # array literal that crashed Hermes on-device. node --check parse-checks
+          # the bundle; a truncated file fails here and the run stops BEFORE the
+          # broken update is published.
+          BUNDLE="$(find dist -name '*.hbc' -o -name '*.js' | grep -E '/(_expo/static/js/android|bundles)/' | head -n1)"
+          if [ -z "$BUNDLE" ]; then
+            echo "::error::expo export produced no Android JS bundle" && exit 1
+          fi
+          node --check "$BUNDLE"
           bunx eas-cli@20.1.0 update \
             --branch "$BRANCH" \
             --platform android \
