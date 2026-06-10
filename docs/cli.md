@@ -26,6 +26,7 @@ metro <command> [args] [flags]
 | `2`  | config error         |
 | `3`  | upstream/train error |
 | `4`  | daemon not running (also: send-guard refusal) |
+| `7`  | rate-limited (themed verbs detect 429 / "rate limit" upstream errors) |
 
 ## Running the dispatcher
 
@@ -116,6 +117,44 @@ translates the canonical envelope into each station's native `(action, args)`
 before the train's own dispatch runs — e.g. `unreact` → `react` with an empty
 emoji / `removed`, and `read` → the station's `fetch`/`query`. So the standardized
 verbs work without rewriting each station's native handlers.
+
+### Themed verbs: `channel` / `group` / `dm` (+ `board`)
+
+First-class noun-verb commands that are thin, additive wrappers over the existing
+xmtp train actions (routing unchanged — `metro call` and the messaging verbs keep
+working exactly as before). Source:
+[`src/cli/channels.ts`](../packages/metro/src/cli/channels.ts).
+
+```sh
+metro channel set-github <line> <url|->            # set/clear linked GitHub URL  → xmtp setGithub
+metro channel set-labels <line> <a,b,c>           # set labels                    → xmtp setLabels
+metro channel meta <line> [--name N] [--description D] [--github U] [--labels a,b]
+                                                  # update name/description/appData → xmtp updateChannelMeta
+metro channel info <line>                          # group info                    → xmtp groupInfo
+metro group new <0xaddr…> [--name N] [--admin-only] # create a group              → xmtp newGroup
+metro group close <line>                           # archive a group              → xmtp closeGroup
+metro group add | remove <line> <0xaddr…>          # membership                   → xmtp addMembers/removeMembers
+metro dm <0xaddress> [--account <id>]              # open (or reuse) a DM          → xmtp newDm
+metro board [tail flags]                           # Metro-transit alias of `metro tail`
+```
+
+#### Uniform `--json` envelope + `--quiet`
+
+The themed verbs share one machine-readable envelope (the legacy commands keep
+their original output shape, so existing scripts are unaffected):
+
+```jsonc
+// success
+{ "ok": true,  "command": "dm", "result": { "line": "metro://xmtp/…", "id": "…" } }
+// failure
+{ "ok": false, "command": "dm", "error": "…", "code": 4 }
+```
+
+- Human-readable output is the default; JSON is emitted only with `--json` (never
+  auto-selected on a pipe).
+- `--quiet` prints just the result id (e.g. the new line/thread/message id).
+- Exit codes follow the table above; `7` is returned when the upstream error looks
+  rate-limited (429 / "rate limit").
 
 ### `metro call <train> <action> [args]`
 
