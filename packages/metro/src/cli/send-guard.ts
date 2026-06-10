@@ -18,14 +18,16 @@ import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { Line } from '../lines.js';
+import { guardedVerbs } from '../registry.js';
 import { exitErr } from './util.js';
 
 /** Outbound xmtp actions that target a conversation/account and therefore send */
-/** under some account's identity. Read-only actions (accounts, query, */
-/** listConvs, groupInfo, *-push) are intentionally NOT guarded. */
-const GUARDED_XMTP_ACTIONS = new Set([
-  'send', 'reply', 'react', 'sendAttachment', 'newDm', 'newGroup',
-]);
+/** under some account's identity. Derived from the verb registry's `guarded` */
+/** flag (the single source of truth) — currently {send, reply, react, */
+/** sendAttachment, newDm, newGroup}. Read-only actions (accounts, query, */
+/** listConvs, groupInfo, *-push) and non-identity mutates (channel-meta, */
+/** closeGroup) are intentionally NOT marked `guarded`, so not in this set. */
+export const GUARDED_XMTP_ACTIONS = guardedVerbs('xmtp');
 
 /** Stations we can attribute a CLI session to. Mirrors history.userSelf()/selfLine(). */
 type Station = 'claude' | 'codex';

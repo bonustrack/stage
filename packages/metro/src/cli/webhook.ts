@@ -12,6 +12,7 @@ import { errMsg } from '../log.js';
 import { emit, exitErr, flagOne, isJson, need, writeJson, type Flags } from './util.js';
 import { enforceSendGuard } from './send-guard.js';
 import { isKnownCtrlVerb, validateCtrl, SchemaError } from '../schema.js';
+import { validateCallArgs, type VerbOwner } from '../registry.js';
 import { cmdTunnel, urlFor } from './webhook-tunnel.js';
 
 export { cmdTunnel };
@@ -79,6 +80,9 @@ async function readArgs(raw: string | undefined): Promise<unknown> {
   try { return JSON.parse(raw); } catch { return raw; }
 }
 
+const VERB_OWNERS: readonly VerbOwner[] = ['xmtp', 'discord', 'telegram', 'core'];
+const isVerbOwner = (t: string): t is VerbOwner => (VERB_OWNERS as readonly string[]).includes(t);
+
 export async function cmdCall(p: string[], f: Flags): Promise<void> {
   need(p, 2, 'metro call <train> <action> [args-json | @file | -]');
   loadMetroEnv();
@@ -87,6 +91,13 @@ export async function cmdCall(p: string[], f: Flags): Promise<void> {
   // Typed control-verb schema (#16): validate CLI-side so malformed args fail fast.
   if (isKnownCtrlVerb(action) && typeof args === 'object' && args !== null) {
     try { validateCtrl(action, args); }
+    catch (err) { throw exitErr(err instanceof SchemaError ? `invalid ${action} args — ${err.message}` : errMsg(err), 1); }
+  }
+  // Registry-driven validation: when the verb declares an `inputSchema`, validate
+  // object args against it so the registry IS the validation path. Only objects
+  // are checked (bare-string args pass through to the train unchanged, as today).
+  if (isVerbOwner(train) && typeof args === 'object' && args !== null) {
+    try { validateCallArgs(train, action, args); }
     catch (err) { throw exitErr(err instanceof SchemaError ? `invalid ${action} args — ${err.message}` : errMsg(err), 1); }
   }
   /** Per-session identity guard: refuse to send XMTP on an account owned by a */

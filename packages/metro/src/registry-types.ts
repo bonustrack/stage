@@ -21,6 +21,10 @@ export type VerbDecl = {
   readonly owner: VerbOwner;
   /** read = no remote write; mutate = writes/sends under an account identity. */
   readonly kind: VerbKind;
+  /** Identity send-guard flag (xmtp only): true for send-bearing verbs that emit
+   *  under an account's identity. NARROWER than `mutate` (channel-meta/push are
+   *  mutate but not guarded). cli/send-guard.ts derives its set from this flag. */
+  readonly guarded?: boolean;
   /** Optional arg validator. Omitted where args are free-form / not yet typed. */
   readonly inputSchema?: Validator<unknown>;
   /** One-line human description. */

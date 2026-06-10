@@ -4,17 +4,19 @@
 // with {name, owner, kind:read|mutate, inputSchema, description, example,
 // idempotent}. That ONE declaration feeds:
 //   - `metro schema` / `metro verbs` introspection (human table + --json),
-//   - the send-guard's mutation notion (MIRRORED here; a parity test in
-//     test/registry.test.ts asserts the guard's set ⊆ the registry's xmtp
-//     mutate set, so the registry can never silently un-guard an action),
-//   - CLI help/validation (read-only consultation; routing is unchanged).
+//   - the send-guard's guarded-action set (DERIVED here via guardedVerbs() — the
+//     send-guard imports it, so the registry's `guarded` flag is the single
+//     source of truth; a parity test in test/registry.test.ts pins the set),
+//   - `metro call` arg validation: cmdCall validates against a verb's
+//     `inputSchema` when present (validateCallArgs), so inputSchema is
+//     load-bearing — not documentation.
 //
-// ADDITIVE + behavior-preserving: this describes today's behavior, it does not
-// change any runtime path. The `kind` classification mirrors the live send-guard
-// EXACTLY for the verbs it guards (GUARDED_XMTP_ACTIONS in cli/send-guard.ts).
+// ADDITIVE + behavior-preserving: the registry now drives the guard set and call
+// validation, but the guarded set and accepted/rejected args are unchanged.
 
 import { XMTP_VERBS } from './registry-xmtp.js';
 import { DISCORD_VERBS, TELEGRAM_VERBS } from './registry-chat.js';
+import { SchemaError } from './schema.js';
 import type { VerbDecl, VerbOwner } from './registry-types.js';
 
 export type { VerbDecl, VerbKind, VerbOwner } from './registry-types.js';
@@ -69,3 +71,20 @@ export function lookupVerb(owner: VerbOwner, name: string): VerbDecl | undefined
 export function mutateVerbs(owner: VerbOwner): Set<string> {
   return new Set(verbsFor(owner).filter(d => d.kind === 'mutate').map(d => d.name));
 }
+
+/** Identity-send-guarded verb names for a station — the single source of truth
+ *  for cli/send-guard.ts (a subset of `mutateVerbs`; every guarded is mutate). */
+export function guardedVerbs(owner: VerbOwner): Set<string> {
+  return new Set(verbsFor(owner).filter(d => d.guarded).map(d => d.name));
+}
+
+/** Validate `metro call <owner> <name>` args against the verb's `inputSchema`.
+ *  No-op pass-through when the verb is unknown or has no `inputSchema` (keeps
+ *  today's behavior); throws SchemaError when a declared schema rejects args. */
+export function validateCallArgs(owner: VerbOwner, name: string, args: unknown): unknown {
+  const decl = lookupVerb(owner, name);
+  if (!decl?.inputSchema) return args;
+  return decl.inputSchema(args, name);
+}
+
+export { SchemaError };

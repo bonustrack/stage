@@ -1,10 +1,11 @@
 // XMTP station verb declarations (data only). Mirrors the handlers in
-// stations/xmtp/actions.ts (+ actions-conv / actions-push). The MUTATE entries
-// here are a superset-consistent with the send-guard's GUARDED_XMTP_ACTIONS
-// ({send, reply, react, sendAttachment, newDm, newGroup}); every one of those is
-// kind:'mutate' below (asserted by test/registry.test.ts). The remaining mutates
-// (ask, sendImage, tx/sig requests, channel-meta writes, closeGroup, push) also
-// change remote state but are not identity-send-guarded today.
+// stations/xmtp/actions.ts (+ actions-conv / actions-push). The `guarded: true`
+// entries ({send, reply, react, sendAttachment, newDm, newGroup}) are the
+// identity-send-guarded verbs: cli/send-guard.ts derives its action set from
+// this flag (registry = single source of truth). Every guarded verb is also
+// kind:'mutate'. The remaining mutates (ask, sendImage, tx/sig requests,
+// channel-meta writes, closeGroup, push) also change remote state but are not
+// identity-send-guarded.
 
 import { v } from './schema.js';
 import { line, type VerbDecl } from './registry-types.js';
@@ -15,19 +16,19 @@ export const XMTP_VERBS: VerbDecl[] = [
   { name: 'accounts', owner: 'xmtp', kind: 'read', idempotent: true,
     description: 'List booted XMTP accounts (id, address, inboxId, owner).',
     example: 'metro call xmtp accounts' },
-  { name: 'send', owner: 'xmtp', kind: 'mutate', idempotent: false,
+  { name: 'send', owner: 'xmtp', kind: 'mutate', idempotent: false, guarded: true,
     inputSchema: v.object({ line, text: v.string(), account: acct }),
     description: 'Send a text message to a conversation.',
     example: 'metro send metro://xmtp/<acct>/<conv> "hello"' },
-  { name: 'reply', owner: 'xmtp', kind: 'mutate', idempotent: false,
+  { name: 'reply', owner: 'xmtp', kind: 'mutate', idempotent: false, guarded: true,
     inputSchema: v.object({ line, replyTo: v.string(), text: v.string(), account: acct }),
     description: 'Reply to a specific message.',
     example: 'metro reply metro://xmtp/<acct>/<conv> <msgId> "thanks"' },
-  { name: 'react', owner: 'xmtp', kind: 'mutate', idempotent: true,
+  { name: 'react', owner: 'xmtp', kind: 'mutate', idempotent: true, guarded: true,
     inputSchema: v.object({ line, messageId: v.string(), emoji: v.string(), account: acct }),
     description: 'Add (or remove) an emoji reaction to a message.',
     example: 'metro react metro://xmtp/<acct>/<conv> <msgId> 👍' },
-  { name: 'sendAttachment', owner: 'xmtp', kind: 'mutate', idempotent: false,
+  { name: 'sendAttachment', owner: 'xmtp', kind: 'mutate', idempotent: false, guarded: true,
     inputSchema: v.object({ line, account: acct }),
     description: 'Send a file/attachment (path or base64) to a conversation.',
     example: 'metro send metro://xmtp/<acct>/<conv> --attach ./pic.png' },
@@ -57,10 +58,10 @@ export const XMTP_VERBS: VerbDecl[] = [
   { name: 'delete', owner: 'xmtp', kind: 'mutate', idempotent: true,
     description: 'Unsupported on XMTP (immutable log) — returns a uniform error.',
     example: 'metro delete metro://xmtp/<acct>/<conv> <msgId>' },
-  { name: 'newDm', owner: 'xmtp', kind: 'mutate', idempotent: false,
+  { name: 'newDm', owner: 'xmtp', kind: 'mutate', idempotent: false, guarded: true,
     description: 'Create a new direct-message conversation with a peer.',
     example: 'metro call xmtp newDm \'{"address":"0x…"}\'' },
-  { name: 'newGroup', owner: 'xmtp', kind: 'mutate', idempotent: false,
+  { name: 'newGroup', owner: 'xmtp', kind: 'mutate', idempotent: false, guarded: true,
     description: 'Create a new group conversation.',
     example: 'metro call xmtp newGroup \'{"members":["0x…"]}\'' },
   { name: 'createRequestGroup', owner: 'xmtp', kind: 'mutate', idempotent: false,

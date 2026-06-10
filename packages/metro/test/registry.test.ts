@@ -12,8 +12,10 @@
 
 import { describe, expect, test } from 'bun:test';
 import {
-  VERB_REGISTRY, verbsFor, lookupVerb, mutateVerbs, type VerbOwner,
+  VERB_REGISTRY, verbsFor, lookupVerb, mutateVerbs, guardedVerbs,
+  validateCallArgs, SchemaError, type VerbOwner,
 } from '../src/registry.ts';
+import { GUARDED_XMTP_ACTIONS } from '../src/cli/send-guard.ts';
 
 /* Live verb names, mirrored from the station dispatchers. If a station adds or
  * removes a handler, these lists must change too — that is the completeness
@@ -85,15 +87,30 @@ describe('registry — completeness', () => {
 });
 
 describe('registry — send-guard parity', () => {
-  /* The guarded XMTP actions, copied from cli/send-guard.ts. The guard's job is
-   * IDENTITY: every action it guards must be classified `mutate` in the registry
-   * (else the registry would describe a send-bearing action as a harmless read).
-   * This is the mirror+parity contract: registry-mutate ⊇ guarded-actions. */
-  const GUARDED = ['send', 'reply', 'react', 'sendAttachment', 'newDm', 'newGroup'];
+  /* The historical hand-maintained guard set (was cli/send-guard.ts's literal
+   * GUARDED_XMTP_ACTIONS before the registry became the single source of truth).
+   * Behavior must be IDENTICAL after deriving the set from the registry, so the
+   * registry-derived set must equal this exact set — no more, no fewer. */
+  const HISTORICAL_GUARDED = ['send', 'reply', 'react', 'sendAttachment', 'newDm', 'newGroup'];
 
-  test('every guarded xmtp action is mutate in the registry', () => {
+  test('registry guardedVerbs("xmtp") == the historical hand-maintained set', () => {
+    const g = guardedVerbs('xmtp');
+    expect(g.size).toBe(HISTORICAL_GUARDED.length);
+    for (const a of HISTORICAL_GUARDED) {
+      expect(g.has(a), `registry missing guarded action: ${a}`).toBe(true);
+    }
+  });
+
+  test('send-guard derives its set from the registry (no drift)', () => {
+    // GUARDED_XMTP_ACTIONS is now `guardedVerbs("xmtp")` by construction — assert
+    // the live export equals the registry derivation and the historical set.
+    expect([...GUARDED_XMTP_ACTIONS].sort()).toEqual([...HISTORICAL_GUARDED].sort());
+    expect([...GUARDED_XMTP_ACTIONS].sort()).toEqual([...guardedVerbs('xmtp')].sort());
+  });
+
+  test('every guarded xmtp action is also mutate in the registry', () => {
     const mut = mutateVerbs('xmtp');
-    for (const a of GUARDED) {
+    for (const a of guardedVerbs('xmtp')) {
       expect(mut.has(a), `guarded action not registry-mutate: ${a}`).toBe(true);
     }
   });
@@ -103,8 +120,46 @@ describe('registry — send-guard parity', () => {
     // The registry classifies MORE actions as mutate than the identity guard
     // covers (e.g. channel-meta writes) — the guard intentionally only protects
     // send-bearing identity verbs. The registry must never be SMALLER.
-    expect(GUARDED.every(a => mut.has(a))).toBe(true);
-    expect(mut.size).toBeGreaterThanOrEqual(GUARDED.length);
+    expect([...guardedVerbs('xmtp')].every(a => mut.has(a))).toBe(true);
+    expect(mut.size).toBeGreaterThan(guardedVerbs('xmtp').size);
+  });
+});
+
+describe('registry — inputSchema-driven call validation', () => {
+  test('validateCallArgs accepts a well-formed send', () => {
+    const ok = { line: 'metro://xmtp/tony/abc', text: 'hi', account: 'tony' };
+    expect(validateCallArgs('xmtp', 'send', ok)).toBeDefined();
+  });
+
+  test('validateCallArgs rejects a send missing required text', () => {
+    expect(() => validateCallArgs('xmtp', 'send', { line: 'metro://xmtp/tony/abc' }))
+      .toThrow(SchemaError);
+  });
+
+  test('validateCallArgs rejects an empty line (min:1)', () => {
+    expect(() => validateCallArgs('xmtp', 'send', { line: '', text: 'hi' }))
+      .toThrow(SchemaError);
+  });
+
+  test('validateCallArgs rejects wrong-typed react emoji', () => {
+    expect(() => validateCallArgs('xmtp', 'react', { line: 'l', messageId: 'm', emoji: 5 }))
+      .toThrow(SchemaError);
+  });
+
+  test('validateCallArgs rejects a non-number amountEth on sendTxRequest', () => {
+    expect(() => validateCallArgs('xmtp', 'sendTxRequest', { line: 'l', to: '0x', amountEth: 'lots' }))
+      .toThrow(SchemaError);
+  });
+
+  test('verbs without an inputSchema pass through unchanged', () => {
+    const args = { anything: true };
+    expect(validateCallArgs('xmtp', 'newDm', args)).toBe(args);
+    expect(validateCallArgs('xmtp', 'listConvs', args)).toBe(args);
+  });
+
+  test('unknown verb is a no-op pass-through (routing unchanged)', () => {
+    const args = { x: 1 };
+    expect(validateCallArgs('xmtp', 'nope', args)).toBe(args);
   });
 });
 
