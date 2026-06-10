@@ -3,6 +3,7 @@
 import { readdirSync, statSync } from 'node:fs';
 import { join, parse as parsePath } from 'node:path';
 import { errMsg, log } from '../log.js';
+import type { WireEvent } from '../history-types.js';
 
 export const CALL_TIMEOUT_MS = 60_000;
 
@@ -23,6 +24,10 @@ export type TrainEvent = {
   from?: string; from_name?: string; to?: string;
   message_id?: string; reply_to?: string; is_private?: boolean;
   text?: string; emoji?: string; payload?: unknown; ts?: string; id?: string;
+  /** Canonical content-type discriminator (see {@link WireEvent}). When present, the */
+  /** dispatcher carries it verbatim to `HistoryEntry.event`; additive (absent ⇒ */
+  /** byte-identical). Trains keep the legacy text (e.g. `[react 👍]`) alongside it. */
+  event?: WireEvent;
 } & Record<string, unknown>;
 
 export type TrainCallResponse = { result?: unknown; error?: string };

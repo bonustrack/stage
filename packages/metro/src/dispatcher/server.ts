@@ -91,6 +91,9 @@ export function trainEventToHistoryEntry(env: TrainEvent, trainName: string): Hi
   /** Trains may still emit `emoji` for reactions — fold it into text so the new envelope stays minimal. */
   const text = env.text ?? (env.emoji ? `[react ${env.emoji}]` : undefined);
   return {
+    /** Carry the typed content-type verbatim when the train sets it (canonical path); */
+    /** the emit wrapper falls back to `classifyEvent` only when absent (legacy parity). */
+    event: env.event,
     id: env.id ?? mintId(),
     ts: env.ts ?? new Date().toISOString(),
     station,

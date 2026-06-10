@@ -6,6 +6,10 @@
 
 /* ──────────── wire shapes (mirror src/trains/protocol.ts) ──────────── */
 
+import type { WireEvent } from './history-types.js';
+
+export type { WireEvent } from './history-types.js';
+
 export type Envelope = {
   kind?: 'inbound' | 'outbound';
   id?: string;
@@ -23,6 +27,10 @@ export type Envelope = {
   emoji?: string;
   payload?: unknown;
   account?: string;
+  /** Canonical content-type discriminator (see {@link WireEvent}). When set, the */
+  /** dispatcher carries it verbatim to `HistoryEntry.event`; additive (omit ⇒ */
+  /** byte-identical). Keep the legacy text (e.g. `[react 👍]`) alongside it. */
+  event?: WireEvent;
 } & Record<string, unknown>;
 
 export type CallMsg = { op: 'call'; id: string; action: string; args: Record<string, unknown> };

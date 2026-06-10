@@ -54,7 +54,8 @@ function onEdit(accountId: string, m: Message): void {
     kind: 'edit', id: mintId(), ts: new Date(m.editedTimestamp ?? Date.now()).toISOString(),
     station: 'discord', line: lineOf(accountId, m.channelId),
     from: `metro://discord/${accountId}/user/${m.author.id}`, from_name: m.author.username,
-    message_id: m.id, text: m.content, is_private: m.guildId == null, payload: m.toJSON(),
+    message_id: m.id, text: m.content, is_private: m.guildId == null,
+    event: { type: 'edit', targetId: m.id }, payload: m.toJSON(),
   });
 }
 
