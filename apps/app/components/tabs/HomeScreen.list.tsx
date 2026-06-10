@@ -43,8 +43,6 @@ interface ChannelsListProps {
   head: string;
   sub: string;
   border: string;
-  inputBg: string;
-  toolbarBg: string;
   listExtraData: readonly unknown[];
   listRef: RefObject<FlatList<RowT> | null>;
   savedOffsetRef: MutableRefObject<number | undefined>;
@@ -58,7 +56,7 @@ export function ChannelsList({
   panRef, router, sortedRows, requestCount, barLabels, enabledLabels, onToggleLabel,
   unreadOnly, onToggleUnread, onClearAll,
   query, setQuery,
-  fg, head, sub, border, inputBg, toolbarBg,
+  fg, head, sub, border,
   listExtraData, listRef, savedOffsetRef, didRestoreRef, contentHeightRef,
   renderRow, getRowLayout,
 }: ChannelsListProps): React.ReactElement {
@@ -128,14 +126,12 @@ export function ChannelsList({
           onClose={closeSearch}
           head={head}
           sub={sub}
-          inputBg={inputBg}
-          toolbarBg={toolbarBg}
 />
       </Box>
     ) : undefined),
     // closeSearch/setQuery are stable enough; re-derive when search opens, the
     // query changes, or theming colours change.
-    [searchOpen, query, head, sub, inputBg, toolbarBg, border],
+    [searchOpen, query, head, sub, border],
   );
 
   usePublishTopnavSlot({ right, override });

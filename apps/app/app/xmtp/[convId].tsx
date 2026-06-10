@@ -27,6 +27,7 @@ import { HeaderAvatar, BubbleActionMenu, GithubNavButton } from '../../component
 import { previewOf } from '../../components/xmtp-conv/feed-helpers';
 import { ConversationFeed } from '../../components/xmtp-conv/ConversationFeed';
 import { ConversationSearch } from '../../components/xmtp-conv/ConversationSearch';
+import { SearchTopnavBar } from '../../components/SearchTopnavBar';
 import { useConversationState } from '../../components/xmtp-conv/useConversationState';
 import { RequestActionBar } from '../../components/RequestActionBar';
 
@@ -59,9 +60,13 @@ export default function XmtpConversation(): React.ReactElement {
     allBubbles, hasMore, loadOlder,
   } = c;
 
-  /** In-conversation local message search (Stage #6) — toggled from the header
-   *  search action; renders a search bar + results panel under the top-nav. */
+  /** In-conversation local message search (Stage #6) — opened from the 3-dot
+   *  overflow menu. When open the topnav swaps to the shared SearchTopnavBar
+   *  (the same expanding input Home uses) and a results panel renders under it.
+   *  The query lives here so the topnav bar drives the results panel. */
   const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const closeSearch = useCallback(() => { setSearchOpen(false); setSearchQuery(''); }, []);
   /** Live getters for the search overlay's deep-jump loop so it reads the freshly
    *  paged feed (closure over `allBubbles`/`hasMore` would go stale mid-loop). */
   const allBubblesRef = useRef(allBubbles);
@@ -126,7 +131,23 @@ export default function XmtpConversation(): React.ReactElement {
 />
       </Reanimated.View>
       {/** Top nav: solid bg strip mirrors the composer footer + extends UP over the
-       *  status-bar area so content sliding under the keyboard doesn't show through. */}
+       *  status-bar area so content sliding under the keyboard doesn't show through.
+       *  When search is open the whole strip swaps to the shared SearchTopnavBar
+       *  (the exact expanding search input Home uses); the results panel renders
+       *  directly underneath it. */}
+      {searchOpen ? (
+        <Box style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2, borderBottomWidth: 1, borderBottomColor: border }}>
+          <SearchTopnavBar
+            query={searchQuery}
+            setQuery={setSearchQuery}
+            onClose={closeSearch}
+            head={head}
+            sub={sub}
+            placeholder="Search this conversation"
+            topInset={insets.top}
+/>
+        </Box>
+      ) : (
       <Row height={52 + insets.top} surface="toolbar" padding={{ top: insets.top }} align="stretch" style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2, borderBottomWidth: 1, borderBottomColor: border }}>
         <Pressable
           onPress={() => router.replace('/')}
@@ -149,15 +170,9 @@ export default function XmtpConversation(): React.ReactElement {
               : peerAddr ? (getPeerName(peerAddr) ?? shortAddress(peerAddr)) : ''}
           </Text>
         </Pressable>
-        {/** Topnav links (groups only): GitHub issue/PR, then search, then overflow. */}
+        {/** Topnav links (groups only): GitHub issue/PR, then overflow (search lives
+         *   in the overflow menu now). */}
         {isGroup && github ? <GithubNavButton url={github} color={fg} /> : null}
-        <Pressable
-          onPress={() => setSearchOpen(o => !o)}
-          hitSlop={8}
-          style={{ paddingHorizontal: 8, justifyContent: 'center' }}
->
-          <Icon name="search" size={20} color={fg}/>
-        </Pressable>
         <Pressable
           onPress={() => setOverflowOpen(true)}
           hitSlop={8}
@@ -166,13 +181,14 @@ export default function XmtpConversation(): React.ReactElement {
           <Icon name="dotsVertical" size={22} color={fg}/>
         </Pressable>
       </Row>
-      {/** In-conversation search panel — anchored directly below the top-nav strip.
-       *   Local-only history scan + jump-to-match; see ConversationSearch. */}
+      )}
+      {/** In-conversation search results panel — anchored directly below the search
+       *   topnav. Local-only history scan + jump-to-match; see ConversationSearch. */}
       {searchOpen ? (
-        <Box style={{ position: 'absolute', top: 52 + insets.top, left: 0, right: 0, zIndex: 3 }}>
+        <Box style={{ position: 'absolute', top: 60 + insets.top, left: 0, right: 0, zIndex: 3 }}>
           <ConversationSearch
             line={activeLine}
-            dark={dark}
+            query={searchQuery}
             fg={fg}
             sub={sub}
             bg={bg}
@@ -183,7 +199,7 @@ export default function XmtpConversation(): React.ReactElement {
             hasMore={() => hasMoreRef.current}
             loadOlder={loadOlder}
             jumpToMessage={jumpToMessage}
-            onClose={() => setSearchOpen(false)}
+            onClose={closeSearch}
 />
         </Box>
       ) : null}
@@ -247,6 +263,7 @@ export default function XmtpConversation(): React.ReactElement {
         isArchived={archived}
         onClose={() => setOverflowOpen(false)}
         context="view"
+        onSearch={() => { setSearchQuery(''); setSearchOpen(true); }}
         onAfterLeave={result => flash(result === 'left' ? 'Left group' : 'Group hidden')}
 />
       <BubbleActionMenu

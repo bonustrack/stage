@@ -1,9 +1,10 @@
-/** In-conversation message search overlay (Stage improvement #6).
+/** In-conversation message search panel (Stage improvement #6).
  *
- *  A minimal search bar (Kit Input) + results list that scans the LOCAL XMTP
- *  history of the current conversation (no inbox-wide sync) and jumps the feed to
- *  a tapped match. Mounted by the conversation screen below the top-nav when the
- *  header search action is toggled on.
+ *  Results-only list that scans the LOCAL XMTP history of the current
+ *  conversation (no inbox-wide sync) and jumps the feed to a tapped match. The
+ *  query input itself lives in the topnav (SearchTopnavBar, opened from the
+ *  3-dot overflow menu); this panel is mounted by the conversation screen
+ *  directly below that topnav and receives the live `query`.
  *
  *  Local-only + chunked: the scan (searchLocalHistory) pages the local MLS db in
  *  PAGE_SIZE chunks, yields between pages, and streams partial results so matches
@@ -15,8 +16,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
-import { Input } from '@metro-labs/kit/input';
-import { Icon } from '@metro-labs/kit/icon';
 import { ScrollView } from 'react-native-gesture-handler';
 import { Box, Row, Col } from '../layout';
 import { getPeerName } from '../../lib/peerProfiles';
@@ -44,7 +43,8 @@ function timeOf(ts: string): string {
 
 export interface ConversationSearchProps {
   line: string;
-  dark: boolean;
+  /** Live query string — owned by the conversation screen's topnav search bar. */
+  query: string;
   fg: string; sub: string; bg: string; border: string; head: string;
   senderEthOf: (from: string) => string | null;
   /** Current loaded feed (newest-first); used to detect when a target landed. */
@@ -56,10 +56,9 @@ export interface ConversationSearchProps {
 }
 
 export function ConversationSearch({
-  line, dark, fg, sub, bg, border, head,
+  line, query, fg, sub, bg, border, head,
   senderEthOf, getBubbles, hasMore, loadOlder, jumpToMessage, onClose,
 }: ConversationSearchProps): React.ReactElement {
-  const [query, setQuery] = useState('');
   const [result, setResult] = useState<SearchScanResult>({ hits: [], truncated: false });
   const [scanning, setScanning] = useState(false);
   const [jumping, setJumping] = useState(false);
@@ -108,24 +107,6 @@ export function ConversationSearch({
 
   return (
     <Col background={bg} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-      <Row align="center" gap={8} padding={{ x: 14, y: 8 }}>
-        <Icon name="search" size={18} color={sub} />
-        <Box flex={1}>
-          <Input
-            dark={dark}
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search this conversation"
-            autoFocus
-            variant="soft"
-            size="md"
-            inputProps={{ returnKeyType: 'search', autoCorrect: false }}
-          />
-        </Box>
-        <Pressable onPress={onClose} hitSlop={8} style={{ padding: 4 }}>
-          <Icon name="x" size={20} color={fg} />
-        </Pressable>
-      </Row>
       {q.length >= 2 ? (
         <ScrollView keyboardShouldPersistTaps="handled" style={{ maxHeight: 320 }}>
           {result.hits.map(hit => {

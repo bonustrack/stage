@@ -57,11 +57,14 @@ export interface ChannelMenuProps {
   /** Optional hook fired after toggling archive (carries the new state). The
    *  conversation view uses this to pop back to the list when archiving. */
   onAfterArchive?: (archived: boolean) => void;
+  /** Optional in-conversation search action — when provided (conversation view),
+   *  a "Search" row is shown that closes the sheet and opens the search topnav. */
+  onSearch?: () => void;
 }
 
 export function ChannelMenu({
   convId, isGroup, peerAddress, isUnread, isPinned, isArchived,
-  visible, onClose, context = 'list', onAfterLeave, onAfterArchive,
+  visible, onClose, context = 'list', onAfterLeave, onAfterArchive, onSearch,
 }: ChannelMenuProps): React.ReactElement {
   const router = useRouter();
   const pal = usePalette();
@@ -102,6 +105,16 @@ export function ChannelMenu({
       {/* Cancel AppModal's 16px ScrollView padding so the list spans edge-to-edge
           and the row content inset (ROW_INSET 16) matches the Settings page. */}
       <ListView dark={dark} style={{ marginHorizontal: -16 }}>
+        {onSearch ? (
+          <MenuRow
+            icon="search"
+            label="Search"
+            color={head}
+            dark={dark}
+            onPress={() => run(onSearch)}
+          />
+        ) : null}
+
         {isGroup ? (
           <MenuRow
             icon="plus"
