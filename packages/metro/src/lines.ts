@@ -14,6 +14,28 @@ function parseLocalSession(line: Line | string, station: 'claude' | 'codex'): { 
   return { userId: p.path[0], sessionId: p.path[1] };
 }
 
+/** Canonical splitter for account-scoped station lines (xmtp, discord): */
+/** `metro://<station>/<account>/<resource>` with legacy single-segment */
+/** `metro://<station>/<resource>` → the `default` account. Two segments → new; */
+/** one → legacy; anything else → null (matches the old anchored `^…/<a>/<b>$` / */
+/** `^…/<b>$` regexes). `validate(resource)` lets discord require a snowflake. */
+function parseAccountScoped(
+  line: Line | string,
+  station: string,
+  validate?: (resource: string) => boolean,
+): { accountId: string; resource: string } | null {
+  const p = Line.parse(line);
+  if (p?.station !== station) return null;
+  let accountId: string, resource: string;
+  if (p.path.length === 2) { accountId = p.path[0]; resource = p.path[1]; }
+  else if (p.path.length === 1) { accountId = 'default'; resource = p.path[0]; }
+  else return null;
+  if (validate && !validate(resource)) return null;
+  return { accountId, resource };
+}
+
+const isSnowflake = (s: string): boolean => /^\d+$/.test(s);
+
 /** URI helpers. Lives on a const that doubles as the `Line` type's value-side namespace. */
 export const Line = {
   discord: (channelId: string): Line => build('discord', channelId),
@@ -53,4 +75,15 @@ export const Line = {
     const s = Line.station(line);
     return s === 'claude' || s === 'codex';
   },
+
+  /** Split an xmtp line → `{accountId, resource}` (resource = conv id). New */
+  /** `metro://xmtp/<account>/<conv>`; legacy `metro://xmtp/<conv>` → `default`. */
+  parseXmtp: (line: Line | string) => parseAccountScoped(line, 'xmtp'),
+
+  /** Split a discord line → `{accountId, resource}` (resource = channel */
+  /** snowflake). New `metro://discord/<account>/<chan>`; legacy → `default`. */
+  parseDiscord: (line: Line | string) => parseAccountScoped(line, 'discord', isSnowflake),
+
+  /** True for a participant URI — `metro://<station>/[…/]user/<id>`. */
+  isUser: (line: Line | string): boolean => Line.parse(line)?.path.includes('user') ?? false,
 };
