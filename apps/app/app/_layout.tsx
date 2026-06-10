@@ -16,7 +16,9 @@ import { LogBox, Text, TextInput } from 'react-native';
 import { Col } from '../components/layout';
 import { Spinner } from '../components/Spinner';
 import { Onboarding } from '../components/onboarding/Onboarding';
+import { Activation } from '../components/onboarding/Activation';
 import { useOnboardingGate } from '../lib/onboardingSeen';
+import { useActivationGate, useStarterDmOpen } from '../lib/activationSeen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { TransitionPresets, TransitionSpecs } from '@react-navigation/stack';
@@ -74,6 +76,14 @@ function isDarkBg(hex: string): boolean {
  *  existing useRadius/useOverridesVersion wiring) so every Kit primitive below
  *  resolves its colours by role from the live palette. Reuses the SAME
  *  usePalette() global-variable source (overrides included) - no fork. */
+/** Mounted INSIDE the navigation Stack (so it's live before it runs): consumes
+ *  the one-shot starter-DM signal set by the activation gate and navigates into
+ *  the Tony DM. Renders nothing. No-op for returning users. */
+function StarterDmBridge(): null {
+  useStarterDmOpen();
+  return null;
+}
+
 export default function RootLayout(): React.ReactElement {
   const scheme = useEffectiveColorScheme();
   const palette = usePalette();
@@ -144,12 +154,18 @@ function RootLayoutInner(): React.ReactElement {
    *  user never flashes onboarding (see lib/onboardingSeen). */
   const onboarding = useOnboardingGate();
 
+  /** ACTIVATION MOMENT: right after onboarding (Stage #9), show the identity
+   *  screen once, then drop the user into a starter DM with the Tony agent.
+   *  `ready` joins the boot gate so returning users (flag persisted true) never
+   *  flash it. See lib/activationSeen. */
+  const activation = useActivationGate();
+
   /** APP LOCK: when enabled, render the LockScreen OVER the app on cold start +
    *  on a foreground resume after > 30s in background. `lock.ready` joins the
    *  boot-gate so we never flash the app before the lock decision is known. */
   const lock = useAppLockController();
 
-  if (!loaded || !onboarding.ready || !restore.ready || !lock.ready) {
+  if (!loaded || !onboarding.ready || !activation.ready || !restore.ready || !lock.ready) {
     return (
       <Col surface="surface" flex={1} align="center" justify="center">
         <Spinner size={28} color={dark ? '#ffffff' : '#000000'}/>
@@ -158,6 +174,8 @@ function RootLayoutInner(): React.ReactElement {
   }
   if (!onboarding.seen) return <Onboarding onDone={onboarding.finish} />;
 
+  if (!activation.seen) return <Activation onDone={activation.finish} />;
+
   if (lock.locked) return <LockScreen onUnlock={lock.unlock} />;
 
   return (
@@ -165,6 +183,7 @@ function RootLayoutInner(): React.ReactElement {
     <WalletConnectProvider>
     <GestureHandlerRootView style={{ flex: 1 }}>
       <KeyboardProvider>
+      <StarterDmBridge/>
       <StatusBar style={barStyle} translucent backgroundColor="transparent"/>
       {/** @react-navigation/stack JS card stack (via NativeSwipeStack /
        *   withLayoutContext). SWIPE-BACK: the JS stack's `gestureEnabled` pan +

@@ -13,6 +13,7 @@ import { Text } from '@metro-labs/kit/text';
 import { ListView, ListViewItem } from '@metro-labs/kit/list-view';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { setOnboardingSeen } from '../../lib/onboardingSeen';
+import { setActivationSeen } from '../../lib/activationSeen';
 import { SystemHeader } from '../system/SystemHeader';
 
 type Href = '/settings/kit' | '/settings/components' | '/settings/developer';
@@ -46,8 +47,10 @@ export function ExperimentalSettings(): React.ReactElement {
           {/** Reset the first-launch onboarding flag so the carousel shows again on
             *  the next render of the root layout - the gate (app/_layout.tsx)
             *  re-evaluates `onboarding.seen` reactively, so flipping it here
-            *  immediately swaps the app for the Onboarding flow. */}
-          <ListViewItem dark={dark} onPress={() => { void setOnboardingSeen(false); }}>
+            *  immediately swaps the app for the Onboarding flow. Also clears the
+            *  post-onboarding activation flag so the identity + starter-DM moment
+            *  replays too. */}
+          <ListViewItem dark={dark} onPress={() => { void setOnboardingSeen(false); void setActivationSeen(false); }}>
             <Icon name="sparkles" size={22} color={head}/>
             <Col flex={1}>
               <Text size="xl" color={head}>Replay onboarding</Text>
