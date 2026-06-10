@@ -77,7 +77,10 @@ function fileNameFor(id: string): string {
 
 function storeFor(id: string): PersistentStore<CachedRow[]> {
   let s = stores.get(id);
-  if (!s) { s = new PersistentStore<CachedRow[]>(fileNameFor(id)); stores.set(id, s); }
+  /** Debounced: this store is written per streamed message (setRows write-through)
+   *  with a 100s-of-KB payload; the trailing-flush + AppState-background flush in
+   *  PersistentStore keeps those off the JS thread without losing data on kill. */
+  if (!s) { s = new PersistentStore<CachedRow[]>(fileNameFor(id), true); stores.set(id, s); }
   return s;
 }
 
