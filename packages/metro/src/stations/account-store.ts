@@ -3,6 +3,7 @@
  *  near-identical discord/telegram/xmtp loadAccounts (validate/fallback injected). */
 
 import { existsSync, readFileSync } from 'node:fs';
+import { chmodIfExists } from '../secure-fs.js';
 
 /** `die(msg)` - write `<prefix>: <msg>` to stderr and exit(2). */
 export type Die = (msg: string) => never;
@@ -44,6 +45,9 @@ export function makeAccountStore<T extends { id: string }>(opts: MakeLoaderOpts<
 
   function loadAccounts(): T[] {
     if (existsSync(opts.file)) {
+      // Harden perms on load: existing creds may predate the 0600 policy
+      // (known 0644 leak). MODE only — content is untouched.
+      chmodIfExists(opts.file);
       let raw: T[];
       try { raw = JSON.parse(readFileSync(opts.file, 'utf8')) as T[]; }
       catch (e) { return die(`bad ${opts.file}: ${(e as Error).message}`); }
