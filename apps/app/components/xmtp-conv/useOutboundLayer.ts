@@ -8,7 +8,7 @@ import { attachmentEmojiPreview } from '@stage-labs/client/xmtp/humanize';
 import { patchRowSent } from '../../modules/messaging';
 import type { HistoryEntry } from '../../lib/types';
 import type { FlatList } from 'react-native-gesture-handler';
-import { hasAttachments, isReaction } from './feed-helpers';
+import { hasAttachments, isReaction, isEditOrUnsend, resolveEdits } from './feed-helpers';
 
 export function useOutboundLayer(
   events: HistoryEntry[],
@@ -38,8 +38,11 @@ export function useOutboundLayer(
    *  without an id (or before the map updates). */
   const [confirmedIds, setConfirmedIds] = useState<Map<string, string>>(new Map());
 
+  /** Visible bubbles = real messages (drop reaction + edit/unsend control
+   *  events), with edits/unsends folded into the messages they target so the
+   *  latest edit text + "deleted" tombstone render in place. */
   const liveBubbles = useMemo(
-    () => events.filter(e => !isReaction(e)),
+    () => resolveEdits(events.filter(e => !isReaction(e) && !isEditOrUnsend(e)), events),
     [events],
   );
   /** Match optimistic entries to their confirmed live twins.

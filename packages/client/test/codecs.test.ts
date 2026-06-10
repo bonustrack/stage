@@ -3,7 +3,13 @@
  *  a regression here silently corrupts every poll / signature / tx bubble. */
 
 import { describe, expect, test } from 'bun:test';
-import { encodeJsonContent, decodeJsonContent, POLL_CONTENT_TYPE } from '../src/xmtp/codecs';
+import {
+  encodeJsonContent, decodeJsonContent, POLL_CONTENT_TYPE,
+  EDIT_CONTENT_TYPE, UNSEND_CONTENT_TYPE,
+} from '../src/xmtp/codecs';
+import {
+  type EditContent, type UnsendContent, editFallbackText, unsendFallbackText,
+} from '../src/xmtp/edit';
 import { pollContentSchema } from '../src/xmtp/poll.schema';
 import {
   normalizeQuestions, openVoteKey, parseOpenVote, openAnswersByPoll,
@@ -92,5 +98,21 @@ describe('open (free-text) question type', () => {
     const out = openAnswersByPoll(evs, 'm', 0);
     expect(out.get('a')?.text).toBe('second');
     expect(out.has('b')).toBe(false);
+  });
+});
+
+describe('edit / unsend content types', () => {
+  test('edit body round-trips + fallback is the new text', () => {
+    const edit: EditContent = { messageId: 'orig-1', text: 'fixed typo 🚀' };
+    const enc = encodeJsonContent(EDIT_CONTENT_TYPE, edit, editFallbackText(edit));
+    expect(decodeJsonContent<EditContent>(enc.content)).toEqual(edit);
+    expect(enc.fallback).toBe('fixed typo 🚀');
+  });
+
+  test('unsend body round-trips + fallback is the tombstone string', () => {
+    const un: UnsendContent = { messageId: 'orig-2' };
+    const enc = encodeJsonContent(UNSEND_CONTENT_TYPE, un, unsendFallbackText(un));
+    expect(decodeJsonContent<UnsendContent>(enc.content)).toEqual(un);
+    expect(enc.fallback).toBe('Message deleted');
   });
 });

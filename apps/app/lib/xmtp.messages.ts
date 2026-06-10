@@ -16,6 +16,7 @@ import { convOfLine } from './xmtp.client';
 import {
   POLL_CODEC, SIGNATURE_REQUEST_CODEC, SIGNATURE_REFERENCE_CODEC,
   WALLET_SEND_CALLS_CODEC, TRANSACTION_REFERENCE_CODEC,
+  EDIT_CODEC, UNSEND_CODEC,
 } from './xmtp.codecs';
 
 export { envelopeOfXmtpMessage } from './xmtp.envelope';
@@ -110,6 +111,26 @@ export async function xmtpOpenAnswer(
   const action = trimmed ? 'added' : 'removed';
   const content = openVoteKey(questionIndex, trimmed);
   return await conv.send({ reaction: buildOpenAnswer(pollMessageId, content, action) });
+}
+
+/** Edit a previously-sent message: post a `metro.box/edit:1.0` referencing the
+ *  original message id with the new full text. The feed folds the latest edit
+ *  over the original bubble (only the original author's edit is honored). Returns
+ *  the edit message's id. Mirrors xmtpSendPoll. */
+export async function xmtpEditMessage(line: string, messageId: string, text: string): Promise<string> {
+  const conv = await convOfLine(line);
+  if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
+  return await conv.send({ messageId, text }, { contentType: EDIT_CODEC.contentType });
+}
+
+/** Unsend (delete) a previously-sent message: post a `metro.box/unsend:1.0`
+ *  referencing the original message id. The feed tombstones the original bubble
+ *  (only the original author's unsend is honored). Returns the unsend message's
+ *  id. Mirrors xmtpSendPoll. */
+export async function xmtpUnsendMessage(line: string, messageId: string): Promise<string> {
+  const conv = await convOfLine(line);
+  if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
+  return await conv.send({ messageId }, { contentType: UNSEND_CODEC.contentType });
 }
 
 /** Send an XMTP reply (text body referencing an earlier message id). */

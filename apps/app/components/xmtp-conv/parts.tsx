@@ -15,7 +15,7 @@ import { GithubLogo } from '../GithubLogo';
 import { Avatar } from '../Avatar';
 import { channelStampSeed } from '@metro-labs/kit/avatar';
 import { REACT_PRESETS } from '../MessengerBubble';
-import { usePalette } from '../../lib/theme';
+import { usePalette, DANGER } from '../../lib/theme';
 import type { HistoryEntry } from '../../lib/types';
 import { useBlockRadius } from '../../lib/theme';
 
@@ -64,7 +64,7 @@ const MORE_EMOJIS = ['❤️', '😂', '😮', '😢', '🎉', '🤯', '🥳', '
  *  bottom edge. Tapping a strip emoji reacts + closes; the chevron reveals more
  *  emojis; any action or an outside tap dismisses. */
 export function BubbleActionMenu({
-  target, anchor, dark, onClose, onReact, onReply, onCopy, onSelect, onShareLink,
+  target, anchor, dark, onClose, onReact, onReply, onCopy, onSelect, onShareLink, onEdit, onUnsend,
 }: {
   target: HistoryEntry | null; anchor: { y: number; height: number };
   dark: boolean; onClose: () => void;
@@ -72,6 +72,10 @@ export function BubbleActionMenu({
   /** Enable OS text selection on the target message for partial copy. */
   onSelect: () => void;
   onShareLink: () => void;
+  /** Edit / Unsend — only supplied for the local user's OWN messages (parent
+   *  gates on authorship), so they render only when present. Edit is text-only. */
+  onEdit?: () => void;
+  onUnsend?: () => void;
 }): React.ReactElement {
   const [expanded, setExpanded] = useState(false);
   const blockRadius = useBlockRadius();
@@ -179,6 +183,11 @@ export function BubbleActionMenu({
             {target?.text ? <ActionRow icon="copy" label="Copy" onPress={onCopy} /> : null}
             {target?.text ? <Divider dark={dark} color={divider} style={{ marginLeft: 16 }} /> : null}
             {target?.text ? <ActionRow icon="document" label="Select" onPress={onSelect} /> : null}
+            {/** Edit / Unsend — own messages only (parent passes the handlers). */}
+            {onEdit && target?.text ? <Divider dark={dark} color={divider} style={{ marginLeft: 16 }} /> : null}
+            {onEdit && target?.text ? <ActionRow icon="pencil" label="Edit" onPress={onEdit} /> : null}
+            {onUnsend ? <Divider dark={dark} color={divider} style={{ marginLeft: 16 }} /> : null}
+            {onUnsend ? <ActionRow icon="trash" label="Unsend" color={DANGER} onPress={onUnsend} /> : null}
             <Divider dark={dark} color={divider} style={{ marginLeft: 16 }}/>
             <ActionRow icon="send" label="Share link" onPress={onShareLink}/>
           </Box>

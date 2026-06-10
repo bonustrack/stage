@@ -11,6 +11,7 @@ import { describe, expect, test } from 'bun:test';
 import { mapDecodedToEnvelope } from '../src/xmtp/envelope';
 import {
   textMessage, reactionMessage, voteReaction, throwingCodec,
+  editMessage, unsendMessage,
 } from './fixtures/decoded-messages';
 
 const LINE = 'metro://xmtp/tony/conv1';
@@ -48,5 +49,19 @@ describe('mapDecodedToEnvelope', () => {
     // It must surface the typed-payload fallback the renderer can show.
     expect(e?.text).toContain('somethingNew');
     expect(e?.payload?.contentType).toBe('somethingNew');
+  });
+
+  test('edit surfaces editOf + the new text', () => {
+    const e = mapDecodedToEnvelope(editMessage, LINE);
+    expect(e.payload?.contentType).toBe('edit');
+    expect(e.payload?.editOf).toBe('msg-text-1');
+    expect(e.text).toBe('hello, edited world');
+  });
+
+  test('unsend surfaces unsendOf + the tombstone text', () => {
+    const e = mapDecodedToEnvelope(unsendMessage, LINE);
+    expect(e.payload?.contentType).toBe('unsend');
+    expect(e.payload?.unsendOf).toBe('msg-text-1');
+    expect(e.text).toBe('Message deleted');
   });
 });

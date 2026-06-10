@@ -89,6 +89,56 @@ export function isReaction(e: HistoryEntry): boolean {
   return Boolean(p?.reactTo);
 }
 
+/** An edit (`metro.box/edit`) or unsend (`metro.box/unsend`) control event — it
+ *  decorates / supersedes another message rather than rendering as its own
+ *  bubble. Filtered out of the visible feed (like reactions) and applied to the
+ *  target by `resolveEdits`. */
+export function isEditOrUnsend(e: HistoryEntry): boolean {
+  const p = e.payload as { editOf?: string; unsendOf?: string } | undefined;
+  return Boolean(p?.editOf || p?.unsendOf);
+}
+
+/** Fold edit + unsend control events into the messages they target.
+ *
+ *  An edit (`payload.editOf`) supersedes the target's `text` with the edit's new
+ *  body (latest edit wins, by ts); the result carries `payload.edited:true` so
+ *  the bubble shows an "edited" marker. An unsend (`payload.unsendOf`) tombstones
+ *  the target (`payload.deleted:true`, body cleared) so it renders a "Message
+ *  deleted" placeholder.
+ *
+ *  AUTHORSHIP: only the ORIGINAL sender's edit/unsend is honored — a control
+ *  event from anyone else is ignored, so a forged edit can't rewrite another
+ *  member's message. The fold operates on the already-folded bubble list (edits
+ *  themselves are not bubbles), so it never mutates the source events. */
+export function resolveEdits(bubbles: HistoryEntry[], allEvents: HistoryEntry[]): HistoryEntry[] {
+  /** targetId -> latest edit (by ts); targetId -> latest delete. Authorship is
+   *  checked against the target bubble's `from` once we know it. */
+  const edits = new Map<string, { text: string; ts: string; from: string }>();
+  const deletes = new Map<string, { ts: string; from: string }>();
+  for (const e of allEvents) {
+    const p = e.payload as { editOf?: string; unsendOf?: string } | undefined;
+    if (p?.editOf) {
+      const cur = edits.get(p.editOf);
+      if (!cur || cur.ts < e.ts) edits.set(p.editOf, { text: e.text ?? '', ts: e.ts, from: e.from });
+    } else if (p?.unsendOf) {
+      const cur = deletes.get(p.unsendOf);
+      if (!cur || cur.ts < e.ts) deletes.set(p.unsendOf, { ts: e.ts, from: e.from });
+    }
+  }
+  if (edits.size === 0 && deletes.size === 0) return bubbles;
+  return bubbles.map(b => {
+    const del = deletes.get(b.id);
+    if (del && del.from === b.from) {
+      return { ...b, text: undefined, replyTo: undefined, payload: { ...(b.payload as object), deleted: true } };
+    }
+    const ed = edits.get(b.id);
+    if (ed && ed.from === b.from) {
+      return { ...b, text: ed.text, payload: { ...(b.payload as object), edited: true } };
+    }
+    return b;
+  });
+}
+
 /** Adapt the conversation's reaction events into the shared `VoteEvent` shape
  *  the pure tally helpers consume. Only schema:'custom' reactions are votes. */
 function voteEventsOf(events: HistoryEntry[]): VoteEvent[] {

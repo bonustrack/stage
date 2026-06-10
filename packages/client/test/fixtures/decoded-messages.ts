@@ -33,6 +33,24 @@ export const voteReaction: DecodedMessageView = {
   content: () => ({ reference: 'poll-msg-1', action: 'added', content: '1', schema: 'custom' }),
 };
 
+/** An EDIT of `msg-text-1` carrying the new body. */
+export const editMessage: DecodedMessageView = {
+  id: 'msg-edit-1',
+  senderInboxId: 'inbox-alice',
+  sentNs: NS,
+  contentTypeId: 'metro.box/edit:1.0',
+  content: () => ({ messageId: 'msg-text-1', text: 'hello, edited world' }),
+};
+
+/** An UNSEND of `msg-text-1`. */
+export const unsendMessage: DecodedMessageView = {
+  id: 'msg-unsend-1',
+  senderInboxId: 'inbox-alice',
+  sentNs: NS,
+  contentTypeId: 'metro.box/unsend:1.0',
+  content: () => ({ messageId: 'msg-text-1' }),
+};
+
 /** A message whose codec is unavailable on this client: `content()` throws.
  *  The mapper must produce a typed-payload fallback, NOT crash. */
 export const throwingCodec: DecodedMessageView = {

@@ -46,6 +46,14 @@ export const WALLET_SEND_CALLS_CONTENT_TYPE: XmtpContentTypeId = {
 export const TRANSACTION_REFERENCE_CONTENT_TYPE: XmtpContentTypeId = {
   authorityId: 'xmtp.org', typeId: 'transactionReference', versionMajor: 1, versionMinor: 0,
 };
+/** Metro message EDIT — `metro.box/edit:1.0` (supersedes a message's text). */
+export const EDIT_CONTENT_TYPE: XmtpContentTypeId = {
+  authorityId: 'metro.box', typeId: 'edit', versionMajor: 1, versionMinor: 0,
+};
+/** Metro message UNSEND — `metro.box/unsend:1.0` (tombstones a message). */
+export const UNSEND_CONTENT_TYPE: XmtpContentTypeId = {
+  authorityId: 'metro.box', typeId: 'unsend', versionMajor: 1, versionMinor: 0,
+};
 
 /** The platform-neutral subset of the RN SDK's `EncodedContent` that every
  *  Metro JSON codec produces. The app casts this to the native EncodedContent

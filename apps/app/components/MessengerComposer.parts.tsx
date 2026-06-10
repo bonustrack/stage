@@ -63,6 +63,27 @@ export function ReplyBanner({
   );
 }
 
+/** Edit-mode banner above the composer (mirrors ReplyBanner). Shows "Editing
+ *  message" with a ✕ to cancel. The pencil glyph signals edit vs reply. */
+export function EditBanner({
+  sub, onCancel,
+}: {
+  sub: string; onCancel?: () => void;
+}): React.ReactElement {
+  const borderColor = usePalette().border;
+  return (
+    <Box padding={{ x: 22 }} surface="surface" style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: borderColor }}>
+      <Row padding={{ y: 11, x: 0 }} align="center" gap={10}>
+        <Icon name="pencil" size={16} color={sub}/>
+        <Text size="xl" color={sub} numberOfLines={1} style={{ flex: 1 }}>Editing message</Text>
+        <Pressable onPress={onCancel} hitSlop={8}>
+          <Icon name="x" size={18} color={sub}/>
+        </Pressable>
+      </Row>
+    </Box>
+  );
+}
+
 export function MentionPopup({
   dark, head, sub, matches, onPick,
 }: {

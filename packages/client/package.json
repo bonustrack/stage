@@ -17,6 +17,7 @@
     "./xmtp/poll": "./src/xmtp/poll.ts",
     "./xmtp/sign": "./src/xmtp/sign.ts",
     "./xmtp/tx": "./src/xmtp/tx.ts",
+    "./xmtp/edit": "./src/xmtp/edit.ts",
     "./xmtp/line": "./src/xmtp/line.ts",
     "./xmtp/envelope": "./src/xmtp/envelope.ts",
     "./xmtp/builders": "./src/xmtp/builders.ts",

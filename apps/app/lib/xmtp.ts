@@ -39,6 +39,7 @@ export {
   envelopeOfXmtpMessage, xmtpSendText, xmtpReact, xmtpSendPoll,
   xmtpSendSignatureRequest, xmtpSendSignatureReference, xmtpSendTxRequest,
   xmtpSendTxReference, xmtpVote, xmtpOpenAnswer, xmtpReply, xmtpSendAttachment,
+  xmtpEditMessage, xmtpUnsendMessage,
 } from './xmtp.messages';
 
 export {

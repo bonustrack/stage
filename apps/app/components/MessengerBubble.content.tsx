@@ -44,6 +44,20 @@ export function BubbleContent({
    *  handles appear for partial copy (Markdown's nested Texts don't select cleanly). */
   selectable?: boolean;
 }): React.ReactElement {
+  /** Edit / unsend folding (feed-helpers.resolveEdits) stamps these on the
+   *  target bubble: `deleted` => render a "Message deleted" tombstone in place of
+   *  the body; `edited` => append a small "edited" marker after the timestamp. */
+  const folded = entry.payload as { deleted?: boolean; edited?: boolean } | undefined;
+  const deleted = folded?.deleted === true;
+  const edited = folded?.edited === true;
+  if (deleted) {
+    return (
+      <Row align="center" justify="start" style={{ alignSelf: 'stretch' }} gap={6}>
+        <Text size="3xs" color={sub}>{fmtTs(entry.ts)}</Text>
+        <Text size="xl" color={sub} style={{ fontStyle: 'italic', opacity: 0.7 }}>Message deleted</Text>
+      </Row>
+    );
+  }
   const atts = attachmentsOf(entry);
   const question = questionOf(entry);
   const poll = pollOf(entry);
@@ -59,9 +73,11 @@ export function BubbleContent({
   };
   return (
     <>
-      {/** Timestamp / "Sending" header above the body. */}
-      <Row align="center" justify="start" style={{ alignSelf: 'stretch' }}>
+      {/** Timestamp / "Sending" header above the body — with an "edited" marker
+        *  when the body was superseded by a later edit (resolveEdits). */}
+      <Row align="center" justify="start" style={{ alignSelf: 'stretch' }} gap={6}>
         <Text size="3xs" color={sub}>{pending ? 'Sending' : fmtTs(entry.ts)}</Text>
+        {edited ? <Text size="3xs" color={sub} style={{ opacity: 0.7 }}>edited</Text> : null}
       </Row>
       {replyPreview ? (
         <Pressable

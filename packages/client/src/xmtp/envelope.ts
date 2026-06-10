@@ -21,6 +21,9 @@ import {
   type WalletSendCallsContent, type TransactionReferenceContent,
   walletSendCallsFallbackText, transactionReferenceFallbackText,
 } from './tx';
+import {
+  type EditContent, type UnsendContent, editFallbackText, unsendFallbackText,
+} from './edit';
 import { XMTP_USER_PREFIX } from './line';
 
 /** The structural subset of the RN SDK's `DecodedMessage` the envelope mapper
@@ -136,6 +139,28 @@ export function mapDecodedToEnvelope(msg: DecodedMessageView, line: string): His
       ...base,
       text: transactionReferenceFallbackText(ref),
       payload: { contentType: typeId, txReference: ref },
+    };
+  }
+  if (typeId === 'edit') {
+    /** An edit references the original message id and carries its new text. The
+     *  feed-fold (feed-helpers.resolveEdits) supersedes the original's body with
+     *  the latest edit (by the original author). Surface `editOf` so the fold can
+     *  pick edits out of history; `text` is the new body (= fallback). */
+    const ed = decoded as EditContent;
+    return {
+      ...base,
+      text: editFallbackText(ed),
+      payload: { contentType: typeId, editOf: ed.messageId },
+    };
+  }
+  if (typeId === 'unsend') {
+    /** An unsend tombstones the referenced message. Surface `unsendOf` so the
+     *  fold can drop / placeholder the original (by the original author). */
+    const un = decoded as UnsendContent;
+    return {
+      ...base,
+      text: unsendFallbackText(un),
+      payload: { contentType: typeId, unsendOf: un.messageId },
     };
   }
   if (typeId === 'reply') {

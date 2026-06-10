@@ -11,6 +11,7 @@ import type { PrivateKeyAccount } from 'viem/accounts';
 import { PollCodec } from './xmtpPollCodec';
 import { SignatureRequestCodec, SignatureReferenceCodec } from './xmtpSignatureCodec';
 import { WalletSendCallsCodec, TransactionReferenceCodec } from './xmtpTxCodec';
+import { EditCodec, UnsendCodec } from './xmtpEditCodec';
 import { getViemAccount, type AccountRecord } from './accounts';
 import { getWcSign } from './wcSigner';
 
@@ -27,6 +28,11 @@ export const SIGNATURE_REFERENCE_CODEC = new SignatureReferenceCodec();
  *  send path (their contentType drives sendEncodedContent). */
 export const WALLET_SEND_CALLS_CODEC = new WalletSendCallsCodec();
 export const TRANSACTION_REFERENCE_CODEC = new TransactionReferenceCodec();
+/** Shared edit/unsend codec instances — registered in XMTP_CODECS and reused by
+ *  xmtpEditMessage / xmtpUnsendMessage to route through the JS-codec send path
+ *  (their contentType drives sendEncodedContent). */
+export const EDIT_CODEC = new EditCodec();
+export const UNSEND_CODEC = new UnsendCodec();
 
 /** Codecs the local XMTP client decodes inbound + uses to encode outbound. Without these
  *  the RN SDK's `msg.content()` throws on reaction/reply/attachment payloads and we fall
@@ -71,6 +77,14 @@ export const XMTP_CODECS = [
    *  placeholder. */
   WALLET_SEND_CALLS_CODEC,
   TRANSACTION_REFERENCE_CODEC,
+  /** Metro message edit/unsend content types `metro.box/edit:1.0` +
+   *  `metro.box/unsend:1.0`. Pure-JS JSContentCodecs (UTF-8 JSON bodies) — no
+   *  native module / dev-client rebuild. Required on both encode
+   *  (xmtpEditMessage/xmtpUnsendMessage) and decode (inbound edit/unsend events
+   *  the feed folds into the original bubble) — without them msg.content() throws
+   *  and we fall back to the "[…payload]" placeholder. */
+  EDIT_CODEC,
+  UNSEND_CODEC,
 ];
 
 /** Build the XMTP-RN `Signer` adapter for a viem `PrivateKeyAccount`.

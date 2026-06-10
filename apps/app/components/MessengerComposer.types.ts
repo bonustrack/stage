@@ -16,6 +16,9 @@ export interface ComposerActionsArgs {
   text: string;
   pending: Attachment[];
   replyingTo?: { id: string };
+  /** When set, the composer is in EDIT mode: send() posts an edit of this
+   *  message id instead of a new message. */
+  editingTo?: { id: string };
   mentionCandidates?: { address: string }[];
   setPending: React.Dispatch<React.SetStateAction<Attachment[]>>;
   setText: (v: string) => void;
@@ -39,4 +42,6 @@ export interface ComposerActionsArgs {
   onOptimistic?: (entry: OptimisticEntry) => void;
   onSent?: (localId: string, error?: string, sentId?: string) => void;
   onClearReply?: () => void;
+  /** Clear edit mode after an edit send completes (or is cancelled). */
+  onClearEdit?: () => void;
 }

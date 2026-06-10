@@ -7,7 +7,7 @@ import { Alert } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
-import { xmtpSendText } from '../modules/messaging';
+import { xmtpSendText, xmtpEditMessage } from '../modules/messaging';
 import { setLastAttachment } from '../lib/lastAttachment';
 import { mimeOf } from './MessengerComposer.helpers';
 import { rememberLocalAttachments, stashLocalAttachment } from '../lib/localAttachmentCache';
@@ -93,6 +93,21 @@ export function useComposerActions(a: ComposerActionsArgs) {
 
   const send = async (): Promise<void> => {
     const body = a.text.trim();
+    /** EDIT mode: route to an edit of the target message instead of a new send.
+     *  No optimistic bubble — the live feed re-folds the edit over the original
+     *  when it echoes (and on resync). Empty edit body is ignored (use Unsend to
+     *  delete). Attachments aren't editable: if the user staged some, fall
+     *  through to a normal send (edit mode requires the pending list be empty). */
+    if (a.editingTo && a.pending.length === 0) {
+      const targetId = a.editingTo.id;
+      a.setText(''); a.onClearEdit?.();
+      if (!body) return;
+      a.setSending(true); a.setErr(null);
+      try { await xmtpEditMessage(a.xmtpLine, targetId, body); }
+      catch (e) { a.setErr((e as Error).message); }
+      finally { a.setSending(false); }
+      return;
+    }
     if (!body && a.pending.length === 0) return;
     /** Snapshot the raw input so a failed send can restore it (see the catch
      *  below). We clear the composer optimistically before any await, so without

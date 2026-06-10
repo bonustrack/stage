@@ -90,6 +90,12 @@ export function previewOfXmtpContent(decoded: unknown, contentTypeId: string | u
     const a = decoded as { filename?: string; mimeType?: string };
     return attachmentEmojiPreview(a.mimeType, a.filename);
   }
+  if (typeId === 'edit') {
+    // An edit's new text becomes the row preview (the latest body wins).
+    const e = decoded as { text?: string };
+    return e.text ? stripMentionMarkup(e.text) : '[edited]';
+  }
+  if (typeId === 'unsend') return 'Message deleted';
   return `[${typeId}]`;
 }
 

@@ -1,6 +1,6 @@
 /** Floating two-line composer (Claude-mobile-style): textarea on top, [+ / mic / send] below. */
 
-import { useRef, useState, type ComponentRef } from 'react';
+import { useEffect, useRef, useState, type ComponentRef } from 'react';
 
 import { Text } from '@metro-labs/kit/text';
 import { Textarea } from '@metro-labs/kit/textarea';
@@ -9,7 +9,7 @@ import { type Attachment } from './MessengerComposer.helpers';
 import { useComposerActions } from './MessengerComposer.actions';
 import { useComposerDrafts, useComposerFocus, computeMentions, applyMention, useLastAttachment } from './MessengerComposer.hooks';
 import { PollSheet, SignatureSheet, PaymentSheet } from './MessengerComposer.sheets';
-import { ReplyBanner, MentionPopup, PendingRow } from './MessengerComposer.parts';
+import { ReplyBanner, EditBanner, MentionPopup, PendingRow } from './MessengerComposer.parts';
 import { ComposerEditor, AttachMenu, buildAttachActions } from './MessengerComposer.editor';
 import { DANGER, usePalette } from '../lib/theme';
 
@@ -26,11 +26,16 @@ interface Props {
   /** `nonce` (optional) changes on every reply action — even re-replying to the
    *  same message — so the composer re-focuses + re-opens the keyboard each time. */
   replyingTo?: { id: string; preview: string; sender?: string | null; nonce?: number };
+  /** Edit mode: when set, the composer prefills the message's text and send()
+   *  posts an edit of it. `nonce` re-fires the prefill+focus effect per Edit tap. */
+  editingTo?: { id: string; text: string; nonce?: number };
   /** Bump to focus the composer + raise the keyboard WITHOUT setting a reply
    *  target (e.g. opening a DM from the floating pill). Each new value re-fires
    *  the focus effect. */
   autoFocusNonce?: number;
   onClearReply?: () => void;
+  /** Clear edit mode (cancel / after send). */
+  onClearEdit?: () => void;
   /** Tap the reply banner → best-effort scroll the feed to the replied-to
    *  message (crash-safe; no-ops if the row isn't currently loaded). */
   onJumpToReply?: (messageId: string) => void;
@@ -43,7 +48,7 @@ interface Props {
 }
 
 export function MessengerComposer({
-  dark, xmtpLine, mentionCandidates, replyingTo, autoFocusNonce, onClearReply, onJumpToReply, onOptimistic, onSent,
+  dark, xmtpLine, mentionCandidates, replyingTo, editingTo, autoFocusNonce, onClearReply, onClearEdit, onJumpToReply, onOptimistic, onSent,
 }: Props): React.ReactElement {
   const pal = usePalette(); // text/primary/border/bg ← tokens
   const fg = pal.text, head = pal.link, inputBg = pal.inputBg, chipBg = pal.border;
@@ -85,7 +90,7 @@ export function MessengerComposer({
   const inputRef = useRef<ComponentRef<typeof Textarea>>(null);
 
   const actions = useComposerActions({
-    xmtpLine, text, pending, replyingTo, mentionCandidates,
+    xmtpLine, text, pending, replyingTo, editingTo, mentionCandidates,
     setPending, setText, setSending, setUploading, setErr,
     setRecording, setRecordSecs, setLevels,
     setPollOpen, pollQuestion, pollHeader, pollOptions, pollMulti,
@@ -93,13 +98,26 @@ export function MessengerComposer({
     setSigOpen, sigKind, sigDesc, sigMessage, sigJson,
     setSigKind, setSigDesc, setSigMessage, setSigJson,
     setTxOpen, txTo, txAmount, txNote, setTxTo, setTxAmount, setTxNote,
-    onOptimistic, onSent, onClearReply,
+    onOptimistic, onSent, onClearReply, onClearEdit,
   });
   const { slideX, micPanResponder, SLIDE_CANCEL_THRESHOLD_PX } = actions;
 
   const convId = xmtpLine.replace('metro://xmtp/', '');
   useComposerDrafts(convId, text, setText);
   useComposerFocus(inputRef, replyingTo?.id, replyingTo?.nonce, autoFocusNonce);
+  /** Entering edit mode prefills the composer with the message's current text and
+   *  focuses it (mirrors the reply focus path). Re-fires per Edit tap via nonce. */
+  /** `editTextRef` lets the effect read the latest prefill text without listing
+   *  the whole `editingTo` object as a dep — the effect re-fires only on a new
+   *  edit target (id) or a re-tap of the same one (nonce). */
+  const editTextRef = useRef('');
+  editTextRef.current = editingTo?.text ?? '';
+  useEffect(() => {
+    if (!editingTo?.id) return;
+    setText(editTextRef.current);
+    const raf = requestAnimationFrame(() => { inputRef.current?.focus(); });
+    return () => cancelAnimationFrame(raf);
+  }, [editingTo?.id, editingTo?.nonce]);
 
   const hasContent = text.trim().length> 0 || pending.length> 0; // text or any pending attachment
 
@@ -123,7 +141,9 @@ export function MessengerComposer({
   const bg = pal.bg; // #0e0f10 / #ffffff
   return (
     <Col padding={{ x: 0, top: 0, bottom: 0 }} surface="surface">
-      {replyingTo ? (
+      {editingTo ? (
+        <EditBanner sub={sub} onCancel={() => { setText(''); onClearEdit?.(); }}/>
+      ) : replyingTo ? (
         <ReplyBanner
           dark={dark} sub={sub} sender={replyingTo.sender} onClear={onClearReply}
           onPress={onJumpToReply ? () => onJumpToReply(replyingTo.id) : undefined}

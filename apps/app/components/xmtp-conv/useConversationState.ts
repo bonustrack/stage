@@ -7,7 +7,7 @@ import { useFocusEffect } from 'expo-router';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { useConvMeta } from '../../modules/messaging';
 import {
-  XMTP_USER_PREFIX, lineOfConv, useXmtpFeed, xmtpReply, shortAddress,
+  XMTP_USER_PREFIX, lineOfConv, useXmtpFeed, xmtpReply, xmtpUnsendMessage, shortAddress,
 } from '../../modules/messaging';
 import { setActiveConversation } from '../../modules/metro-pill';
 import { setActiveConvId } from '../../lib/activeConv';
@@ -62,6 +62,15 @@ export function useConversationState(convId: string | undefined, focus: string |
   const setReplyTarget = useCallback((id: string, preview: string, sender?: string | null) => {
     replyNonceRef.current += 1;
     setReplyingTo({ id, preview, sender, nonce: replyNonceRef.current });
+  }, []);
+  /** Edit mode: the own message being edited. `nonce` re-fires the composer's
+   *  focus/prefill effect on each Edit tap (mirrors the reply banner pattern). */
+  const [editingTo, setEditingTo] = useState<{ id: string; text: string; nonce: number } | null>(null);
+  const editNonceRef = useRef(0);
+  const setEditTarget = useCallback((id: string, text: string) => {
+    editNonceRef.current += 1;
+    setReplyingTo(null);
+    setEditingTo({ id, text, nonce: editNonceRef.current });
   }, []);
   const [menuFor, setMenuFor] = useState<HistoryEntry | null>(null);
   /** Id of the "Select"-tapped message — its body renders selectable for copy. */
@@ -176,11 +185,17 @@ export function useConversationState(convId: string | undefined, focus: string |
     void xmtpReply(activeLine, messageId, label)
       .catch((e: unknown) => { console.warn('xmtp answer failed', e); });
   }, [activeLine]);
+  /** Unsend (delete) an own message — posts a tombstone the feed folds in. */
+  const onUnsend = useCallback((messageId: string) => {
+    void xmtpUnsendMessage(activeLine, messageId)
+      .catch((e: unknown) => { console.warn('xmtp unsend failed', e); });
+  }, [activeLine]);
 
   return {
     activeLine, autoFocusNonce, events, loadOlder, hasMore, loadingOlder, status, myUri,
     showJump, setShowJump, listEpoch, setListEpoch,
     replyingTo, setReplyingTo, setReplyTarget, jumpHighlightId,
+    editingTo, setEditingTo, setEditTarget, onUnsend,
     menuFor, setMenuFor, menuAnchor, setMenuAnchor, overflowOpen, setOverflowOpen,
     selectedForCopy, setSelectedForCopy,
     confirmedIds, optimisticReactions, optimisticRemovals,

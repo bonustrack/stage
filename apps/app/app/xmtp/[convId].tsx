@@ -52,8 +52,9 @@ export default function XmtpConversation(): React.ReactElement {
     activeLine, autoFocusNonce,
     showJump, setShowJump, setListEpoch,
     replyingTo, setReplyingTo, setReplyTarget,
+    editingTo, setEditingTo, setEditTarget, onUnsend,
     menuFor, setMenuFor, menuAnchor, overflowOpen, setOverflowOpen, setSelectedForCopy,
-    peerAddr, groupName, groupImage, isGroup, github, senderEthOf,
+    peerAddr, groupName, groupImage, isGroup, github, senderEthOf, myUri,
     mentionCandidates, onReact, onOptimistic, onSent, jumpToMessage, markAtBottom,
   } = c;
 
@@ -180,8 +181,10 @@ export default function XmtpConversation(): React.ReactElement {
           xmtpLine={activeLine}
           mentionCandidates={mentionCandidates}
           replyingTo={replyingTo ?? undefined}
+          editingTo={editingTo ?? undefined}
           autoFocusNonce={autoFocusNonce}
           onClearReply={() => setReplyingTo(null)}
+          onClearEdit={() => setEditingTo(null)}
           onJumpToReply={jumpToMessage}
           onOptimistic={onOptimistic}
           onSent={onSent}
@@ -234,6 +237,14 @@ export default function XmtpConversation(): React.ReactElement {
           if (menuFor) void Share.share({ message: `https://metro.box/#/xmtp/${convId}?m=${menuFor.id}` });
           setMenuFor(null);
         }}
+        onEdit={menuFor !== null && menuFor.from === myUri && !!menuFor.text
+          && !(menuFor.payload as { deleted?: boolean } | undefined)?.deleted
+          ? () => { setEditTarget(menuFor.id, menuFor.text ?? ''); setMenuFor(null); }
+          : undefined}
+        onUnsend={menuFor !== null && menuFor.from === myUri
+          && !(menuFor.payload as { deleted?: boolean } | undefined)?.deleted
+          ? () => { onUnsend(menuFor.id); setMenuFor(null); }
+          : undefined}
 />
     </RNAnimated.View>
   );
