@@ -16,9 +16,28 @@ import { passesMode } from '../broker/history-stream.js';
 import { readClaims } from '../broker/claims.js';
 import type { TrainEvent } from '../trains/protocol.js';
 import type { CodexRC } from '../codex-rc/client.js';
-import { findEndpoint, listEndpoints, webhookPort } from '../tunnel.js';
+import { findEndpoint, listEndpoints, webhookPort, type Endpoint } from '../tunnel.js';
+import { sessionOwner } from '../sessions.js';
 
 type Emit = (entry: HistoryEntry) => void;
+
+/** Build the HistoryEntry minted for an inbound webhook hit. Pure so the */
+/** session-attribution rule is unit-testable. `to` is the endpoint's bound */
+/** session owner when `endpoint.session` is set, else the webhook line itself */
+/** (today's behavior — ADDITIVE: no binding ⇒ identical event). */
+export function webhookEntry(
+  endpoint: Endpoint, headers: Record<string, string>, body: unknown, method: string, url: string,
+): HistoryEntry {
+  const line = Line.webhook(endpoint.id);
+  return {
+    id: mintId(), ts: new Date().toISOString(), station: 'webhook',
+    line, lineName: endpoint.label, from: line,
+    to: endpoint.session ? sessionOwner(endpoint.session) : line,
+    messageId: headers['x-github-delivery'] || headers['x-request-id'] || randomUUID(),
+    text: `${headers['x-github-event'] ?? headers['x-intercom-topic'] ?? 'event'} ${method} ${url}`,
+    payload: { headers, body },
+  };
+}
 
 export function makeEmit(codexRc: CodexRC | null): Emit {
   /** Resolve the Codex participant URI once. The bridge must only receive the */
@@ -129,14 +148,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse, emit: Em
   let body: unknown = raw.toString('utf8');
   try { body = JSON.parse(body as string); } catch { /* keep as string */ }
 
-  const line = Line.webhook(endpointId);
-  emit({
-    id: mintId(), ts: new Date().toISOString(), station: 'webhook',
-    line, lineName: endpoint.label, from: line, to: line,
-    messageId: headers['x-github-delivery'] || headers['x-request-id'] || randomUUID(),
-    text: `${headers['x-github-event'] ?? headers['x-intercom-topic'] ?? 'event'} ${req.method} ${req.url}`,
-    payload: { headers, body },
-  });
+  emit(webhookEntry(endpoint, headers, body, req.method ?? 'POST', req.url ?? ''));
   res.writeHead(200).end('ok');
 }
 
