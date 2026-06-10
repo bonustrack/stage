@@ -7,9 +7,11 @@
 /* ──────────── wire shapes (mirror src/trains/protocol.ts) ──────────── */
 
 import { serializeTrainError } from './train-error.js';
+import type { WireEvent } from './history-types.js';
 
 /** Typed errors handlers may throw → structured `op:response` errorInfo (#3). */
 export { TrainError, serializeTrainError, type TrainErrorInfo } from './train-error.js';
+export type { WireEvent } from './history-types.js';
 
 export type Envelope = {
   kind?: 'inbound' | 'outbound';
@@ -28,6 +30,10 @@ export type Envelope = {
   emoji?: string;
   payload?: unknown;
   account?: string;
+  /** Canonical content-type discriminator (see {@link WireEvent}). When set, the */
+  /** dispatcher carries it verbatim to `HistoryEntry.event`; additive (omit ⇒ */
+  /** byte-identical). Keep the legacy text (e.g. `[react 👍]`) alongside it. */
+  event?: WireEvent;
 } & Record<string, unknown>;
 
 export type CallMsg = { op: 'call'; id: string; action: string; args: Record<string, unknown> };

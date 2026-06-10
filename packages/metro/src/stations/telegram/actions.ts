@@ -9,6 +9,7 @@ function emitOutbound(accountId: string, line: string, messageId: string, text: 
   emit({
     kind: 'outbound', id: mintId(), ts: new Date().toISOString(),
     station: 'telegram', line, from: SELF_URI, to: line, message_id: messageId, text, reply_to: replyTo,
+    ...(replyTo ? { event: { type: 'reply', replyTo } } : {}),
     account: accountId, payload: { account: accountId },
   });
 }

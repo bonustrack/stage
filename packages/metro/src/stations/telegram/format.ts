@@ -77,6 +77,7 @@ export function reactionEnvelope(accountId: string, r: TgReaction): Record<strin
     from: `metro://telegram/${accountId}/user/${r.user?.id ?? 'unknown'}`,
     from_name: r.user?.username ? `@${r.user.username}` : r.user?.first_name,
     message_id: String(r.message_id), emoji: added[0],
+    event: { type: 'react', emoji: added[0], targetId: String(r.message_id) },
     is_private: r.chat.type === 'private', payload: r,
   };
 }
