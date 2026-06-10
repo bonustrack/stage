@@ -63,7 +63,8 @@ async function react(id: string, args: Args): Promise<void> {
     reference: xmtpMsgId, referenceInboxId: refInbox,
     action: reactAction === 'removed' ? ReactionAction.Removed : ReactionAction.Added,
     content: emoji, schema: schemaEnum });
-  emitOutbound(acct.cfg.id, line, sentId, `[react ${emoji}${reactAction === 'removed' ? ' (removed)' : ''}]`);
+  emitOutbound(acct.cfg.id, line, sentId, `[react ${emoji}${reactAction === 'removed' ? ' (removed)' : ''}]`,
+    { type: 'react', emoji, targetId: xmtpMsgId });
   respond(id, { result: { messageId: sentId } });
 }
 
@@ -77,7 +78,7 @@ async function reply(id: string, args: Args): Promise<void> {
     reference: xmtpReplyTo, content: encodeText(text),
     contentType: { authorityId: 'xmtp.org', typeId: 'text', versionMajor: 1, versionMinor: 0 },
   } as unknown as Reply);
-  emitOutbound(acct.cfg.id, line, sentId, text);
+  emitOutbound(acct.cfg.id, line, sentId, text, { type: 'reply', replyTo: xmtpReplyTo });
   respond(id, { result: { messageId: sentId } });
 }
 
