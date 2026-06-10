@@ -136,8 +136,9 @@ export default function XmtpConversation(): React.ReactElement {
        *  (the exact expanding search input Home uses); the results panel renders
        *  directly underneath it. */}
       {searchOpen ? (
-        <Box style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2, borderBottomWidth: 1, borderBottomColor: border }}>
+        <Box style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2 }}>
           <SearchTopnavBar
+            border={border}
             query={searchQuery}
             setQuery={setSearchQuery}
             onClose={closeSearch}
@@ -145,6 +146,7 @@ export default function XmtpConversation(): React.ReactElement {
             sub={sub}
             placeholder="Search this conversation"
             topInset={insets.top}
+            height={52}
 />
         </Box>
       ) : (
@@ -185,7 +187,7 @@ export default function XmtpConversation(): React.ReactElement {
       {/** In-conversation search results panel — anchored directly below the search
        *   topnav. Local-only history scan + jump-to-match; see ConversationSearch. */}
       {searchOpen ? (
-        <Box style={{ position: 'absolute', top: 60 + insets.top, left: 0, right: 0, zIndex: 3 }}>
+        <Box style={{ position: 'absolute', top: 52 + insets.top, left: 0, right: 0, zIndex: 3 }}>
           <ConversationSearch
             line={activeLine}
             query={searchQuery}

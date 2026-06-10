@@ -119,15 +119,14 @@ export function ChannelsList({
    *  slot above is published. */
   const override = useMemo(
     () => (searchOpen ? (
-      <Box style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-        <ChannelsSearchBar
-          query={query}
-          setQuery={setQuery}
-          onClose={closeSearch}
-          head={head}
-          sub={sub}
+      <ChannelsSearchBar
+        query={query}
+        setQuery={setQuery}
+        onClose={closeSearch}
+        head={head}
+        sub={sub}
+        border={border}
 />
-      </Box>
     ) : undefined),
     // closeSearch/setQuery are stable enough; re-derive when search opens, the
     // query changes, or theming colours change.
