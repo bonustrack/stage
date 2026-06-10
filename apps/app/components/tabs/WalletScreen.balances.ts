@@ -119,12 +119,6 @@ export function useWalletBalances(privAccountId: string | null): WalletBalances 
         stop();
       }
     })();
-
-    /** Fire the shielded (Railgun) re-scan as detached background work. The engine
-     *  path (nodejs-mobile bridge boot / Merkle scan) can be slow or HANG, so the
-     *  spinner is deliberately NEVER gated on it — it updates the cache store,
-     *  which usePrivateWallet picks up reactively if/when it lands. */
-    if (privAccountId) void refreshSnapshot(privAccountId).catch(() => {});
   }, [address, privAccountId]);
 
   return { address, rows, err, refreshing, onRefresh };
