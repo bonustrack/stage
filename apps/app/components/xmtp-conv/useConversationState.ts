@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
-import { useConvMeta } from '../../lib/useConvMeta';
+import { useConvMeta } from '../../modules/messaging';
 import {
   XMTP_USER_PREFIX, lineOfConv, useXmtpFeed, xmtpReply, shortAddress,
 } from '../../modules/messaging';

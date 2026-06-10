@@ -24,7 +24,7 @@ import { addGroupMembers } from '../../modules/messaging';
 import { flash } from '../../lib/toast';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { Box, Row, Col } from '../../components/layout';
-import { useConvMeta } from '../../lib/useConvMeta';
+import { useConvMeta } from '../../modules/messaging';
 import { MemberPicker, useMemberPicker } from './MemberPicker';
 
 export default function AddMembers(): React.ReactElement {

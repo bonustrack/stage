@@ -10,19 +10,19 @@
  *  row off the live stream while the open feed missed the same message (the bug
  *  #375 patched at open-time with a forced inbox sync + handle re-acquire).
  *
- *  This module makes the feed react-query-backed and gives BOTH surfaces ONE
- *  cached source. `feedCache` stays the live-write source of truth (the global
- *  stream / resync backstop / pagination all write it - that plumbing is
- *  battle-tested against the XMTP read-rate limit). A single global subscription
- *  mirrors every `feedCache` slice write into the shared TanStack query cache
- *  under `messagingKeys.messages(epoch, line)`, so:
- *    - the open feed renders from `useQuery` over that key (live append for free
- *      via the mirror),
- *    - any consumer can read the latest cached message for a line off the SAME
- *      cache via `latestFeedMessage`,
- *  and a streamed message lands in both atomically.
+ *  This module makes the OPEN feed react-query-backed. `feedCache` stays the
+ *  live-write source of truth (the global stream / resync backstop / pagination
+ *  all write it - that plumbing is battle-tested against the XMTP read-rate
+ *  limit). A single global subscription mirrors every `feedCache` slice write
+ *  into the shared TanStack query cache under `messagingKeys.messages(epoch,
+ *  line)`, so the open feed renders from `useQuery` over that key and gets live
+ *  appends for free via the mirror. This bridge serves the open feed ONLY; the
+ *  channels-list last-message preview still comes from HomeScreen.stream.ts via
+ *  `channelsCache`.
  *
- *  The query's `queryFn` folds in #375's sync-on-open logic (force `syncInboxOnce(0)`
+ *  The feed/list desync (#375) is prevented elsewhere: the topic-first convId
+ *  resolution + `resyncActiveFeeds` path keeps both surfaces converged. The
+ *  query's `queryFn` also folds in a sync-on-open step (force `syncInboxOnce(0)`
  *  + re-acquire the conversation handle after the inbox-wide sync) so opening a
  *  conv catches up the just-arrived message the channels list rendered straight
  *  off the live stream.
@@ -153,13 +153,5 @@ export async function loadFeedOlderPage(line: string, oldest: HistoryEntry): Pro
   const additions = mapped.filter(e => !seen.has(e.id));
   if (additions.length > 0) feedCache.set(line, [...prev, ...additions]);
   return mapped.filter(e => !prev.some(x => x.id === e.id)).length >= PAGE_SIZE;
-}
-
-/** The latest (newest) non-control message cached for a conversation line, read
- *  from the SAME query-mirrored feedCache the open feed renders. Lets the
- *  channels-list preview derive its last message from the shared source instead
- *  of a divergent path. Returns null when nothing is cached yet. */
-export function latestFeedMessage(line: string): HistoryEntry | null {
-  return feedCache.get(line)?.[0] ?? null;
 }
 
