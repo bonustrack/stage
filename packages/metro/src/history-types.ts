@@ -47,4 +47,7 @@ export interface HistoryEntry {
   display?: string;
   /** Typed, discriminated event shape — lets agents branch on kind instead of regexing `display`/`text`. */
   event?: StructuredEvent;
+  /** Monotonic per-`line` seq (uint from 1), stamped by the dispatcher on append; */
+  /** a gap ⇒ missed/dropped messages. Additive: absent on legacy/pre-field entries. */
+  seq?: number;
 }
