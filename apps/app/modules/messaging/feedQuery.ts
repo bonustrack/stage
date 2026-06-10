@@ -62,36 +62,78 @@ function mergeNewestFirst(prev: HistoryEntry[], additions: HistoryEntry[]): Hist
   return fresh.length === 0 ? prev : [...fresh, ...prev];
 }
 
-/** Load (or refresh) a conversation's first page into `feedCache`, returning the
- *  resulting slice. Local-first: paint the local MLS db immediately, then force
- *  the inbox-wide sync (#375: maxAge 0 - an explicit OPEN must not be
- *  short-circuited by `syncInboxOnce`'s freshness window) and re-acquire the
- *  conversation handle AFTER the sync (the pre-sync handle's `.messages()` can
- *  lag the freshly-synced local DB) before re-reading the true tail.
- *
- *  Writes through `feedCache` (the single live-write source of truth) so the
- *  global mirror keeps the query cache + the channels-list preview consistent. */
+/** Append a fetched page of raw XMTP messages into `feedCache` for `line`
+ *  (newest-first, deduped, control DMs dropped via `mergeNewestFirst`). */
+function applyPage(line: string, msgs: Parameters<typeof envelopeOfXmtpMessage>[0][]): void {
+  const prev = feedCache.get(line) ?? [];
+  const next = mergeNewestFirst(prev, msgs.map(m => envelopeOfXmtpMessage(m, line)));
+  if (next !== prev) feedCache.set(line, next);
+}
+
+/** Coalesce concurrent background-syncs per line so a row-tap prefetch + the
+ *  mount-time query don't fire two inbox-wide syncs for the same conversation. */
+const bgSyncInFlight = new Map<string, Promise<void>>();
+
+/** Background catch-up for an already-painted feed: force the inbox-wide sync
+ *  (#375: maxAge 0 - an explicit OPEN must not be short-circuited by
+ *  `syncInboxOnce`'s freshness window), re-acquire the conversation handle AFTER
+ *  the sync (the pre-sync handle's `.messages()` can lag the freshly-synced
+ *  local DB) and re-read the true tail. Writes through `feedCache` so the global
+ *  mirror updates the query cache + the channels-list preview - i.e. the open
+ *  feed revalidates WITHOUT the screen ever waiting on the network round-trip. */
+function revalidateFeed(line: string): Promise<void> {
+  const existing = bgSyncInFlight.get(line);
+  if (existing) return existing;
+  const run = (async (): Promise<void> => {
+    try {
+      await syncInboxOnce(0);
+      const fresh = await convOfLine(line);
+      if (!fresh) return;
+      await fresh.sync().catch(() => undefined);
+      applyPage(line, await fresh.messages({ limit: PAGE_SIZE }));
+    } catch { /* best-effort - the next open / resync retries */ }
+    finally { bgSyncInFlight.delete(line); }
+  })();
+  bgSyncInFlight.set(line, run);
+  return run;
+}
+
+/** Load a conversation's first page into `feedCache` and return it. LOCAL-FIRST
+ *  and NON-BLOCKING on the network: read the local MLS db, paint it, and return
+ *  immediately so the screen opens from cache instantly (this is what made
+ *  message-request opens slow - the queryFn used to `await syncInboxOnce(0)`
+ *  before returning, and a request has no seeded feedCache slice so the feed sat
+ *  on `loading` for the whole inbox-wide round-trip). The inbox-wide catch-up
+ *  (#375) is kicked off in the BACKGROUND via `revalidateFeed`; its result lands
+ *  through `feedCache` -> the mirror -> this query's cache, so any message that
+ *  arrived while backgrounded streams in a beat later without blocking paint. */
 export async function loadFeedFirstPage(line: string): Promise<HistoryEntry[]> {
   const conv = await convOfLine(line);
-  if (!conv) return feedCache.get(line) ?? [];
-  const apply = (msgs: Awaited<ReturnType<typeof conv.messages>>): void => {
-    const prev = feedCache.get(line) ?? [];
-    const next = mergeNewestFirst(prev, msgs.map(m => envelopeOfXmtpMessage(m, line)));
-    if (next !== prev) feedCache.set(line, next);
-  };
-  const local = await conv.messages({ limit: PAGE_SIZE });
-  apply(local);
-  /** Catch-up: messages delivered while backgrounded / the conv was closed
-   *  arrive via MLS group commits the native stream drops. Only the inbox-wide
-   *  sync lands them (it's why the channels list saw the latest message this
-   *  feed missed). FORCE it (maxAge 0) - see #375. */
-  await syncInboxOnce(0);
-  await conv.sync().catch(() => undefined);
-  /** Re-acquire the handle AFTER the inbox-wide sync so `.messages()` reflects
-   *  the freshly-synced local DB (#375). Fall back to the original handle. */
-  const fresh = (await convOfLine(line)) ?? conv;
-  apply(await fresh.messages({ limit: PAGE_SIZE }));
+  if (!conv) {
+    /** No local handle yet (e.g. a brand-new request not in the local db): the
+     *  inbox-wide sync is the only way to materialise it, so await it once. */
+    await revalidateFeed(line);
+    return feedCache.get(line) ?? [];
+  }
+  applyPage(line, await conv.messages({ limit: PAGE_SIZE }));
+  void revalidateFeed(line);
   return feedCache.get(line) ?? [];
+}
+
+/** Warm a conversation's feed cache ahead of navigation (row tap / row mount).
+ *  By the time the conversation screen mounts, `useXmtpFeed`'s `initialData`
+ *  seeds synchronously from the now-populated `feedCache` -> instant open, no
+ *  loading flash, no queryFn wait. Idempotent + cheap: TanStack dedupes the
+ *  in-flight query by key, and the background revalidate is per-line coalesced.
+ *  Never throws. */
+export function prefetchFeed(line: string): void {
+  void getQueryClient()
+    .prefetchQuery({
+      queryKey: messagingKeys.messages(getAccountEpoch(), line),
+      queryFn: () => loadFeedFirstPage(line),
+      staleTime: 2_000,
+    })
+    .catch(() => undefined);
 }
 
 /** Fetch the next older page (scroll-up). Events are newest-first, so the LAST

@@ -10,7 +10,7 @@ import { Text } from '@metro-labs/kit/text';
 import { Col } from '../layout';
 import { Spinner } from '../Spinner';
 import { ChannelRow } from '../ChannelRow';
-import { resetXmtpClient, shortAddress } from '../../modules/messaging';
+import { resetXmtpClient, shortAddress, prefetchFeed, lineOfConv } from '../../modules/messaging';
 import { resetAccount } from '../../lib/wallet';
 import { getPeerName, isPeerResolved } from '../../lib/peerProfiles';
 import { hasDraft, getDraft } from '../../lib/drafts';
@@ -78,6 +78,9 @@ export function useChannelRowRenderer(
          *  needed; the nested chip Pressable swallows the tap so the row's
          *  onPress (open conversation) doesn't also fire. */
         onLabelPress={isGroup ? requestLabelFilter : undefined}
+        /** Warm the feed cache the instant the row is touched (before the push
+         *  animation finishes) so the conversation screen opens from cache. */
+        onPressIn={() => prefetchFeed(lineOfConv(item.convId))}
         onPress={() => router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } })}
         onLongPress={() => {
           /** Tiny haptic-style buzz when the long-press opens the row menu.

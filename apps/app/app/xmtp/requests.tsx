@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   listRequestConvs, acceptRequestConv, blockRequestConv,
   getCachedXmtpClient, summarizeConversationRequest,
+  prefetchFeed, lineOfConv,
 } from '../../modules/messaging';
 import type { ConversationRequestView } from '../../modules/messaging';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
@@ -76,6 +77,9 @@ export default function Requests(): React.ReactElement {
             avatarUri={item.avatarUri}
             square={item.isGroup}
             lastPreview={item.preview || '(no messages yet)'}
+            /** Warm the feed cache on touch-down so the request conversation
+             *  opens from cache instead of waiting on the inbox-wide sync. */
+            onPressIn={() => prefetchFeed(lineOfConv(item.convId))}
             onPress={() => router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } })}
 />
         </Col>
