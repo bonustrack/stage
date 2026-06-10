@@ -21,8 +21,10 @@ The URI parses cleanly with the WHATWG `URL` parser: `new URL(line)` gives `prot
 | `claude`   | `metro://claude/<user-id>/<session-id>`      | `metro://claude/9bfc7af0-…/50b00d11-…`                                 |
 | `codex`    | `metro://codex/<user-id>/<session-id>`       | `metro://codex/8119ecb1-…/01997d4b-…`                                  |
 | `webhook`  | `metro://webhook/<endpoint-id>`              | `metro://webhook/fwaCgTKJuLAjS2K0`                                     |
-| `xmtp`     | `metro://xmtp/<conversation-id>`             | `metro://xmtp/abc123def456…`                                           |
+| `xmtp`     | `metro://xmtp/<account>/<conversation-id>`   | `metro://xmtp/tony/abc123def456…`                                      |
 | `session`  | `metro://session/<session-id>`               | `metro://session/alpha`                                                |
+
+Account-scoped stations (`xmtp` and `discord`) take an optional leading `<account>` segment: `metro://xmtp/<account>/<conversation>` selects which configured account owns the line. The legacy single-segment form `metro://xmtp/<conversation>` is still accepted and maps to the `default` account. A single typed `Line` parser owns the whole `metro://` scheme - stations never hand-roll their own regexes.
 
 The `session` owner URI is **derived** (not a wire line): an optional `~/.metro/sessions.json` binding layer maps a named session to a per-station account (`{ "<id>": { xmtp, discord, telegram, default } }`), with owner `metro://session/<id>`. It is OPT-IN — when the file is absent (the default) identity falls back to the env / per-account-owner behavior, unchanged. `metro whoami` reports the resolved identity; `metro session list` lists the bindings.
 
