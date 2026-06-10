@@ -9,11 +9,9 @@ import { existsSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { ipcCall } from '../ipc.js';
+import { STATIONS, type Station } from '../messaging.js';
 import { writeSecure, chmodIfExists } from '../secure-fs.js';
 import { emit, exitErr, flagOne, isJson, type Flags } from './util.js';
-
-type Station = 'xmtp' | 'discord' | 'telegram';
-const STATIONS: Station[] = ['xmtp', 'discord', 'telegram'];
 
 interface RawAccount {
   id?: string;

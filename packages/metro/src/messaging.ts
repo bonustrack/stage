@@ -27,9 +27,15 @@ export interface MessagingEnvelope {
   account?: string;
 }
 
-/** Stations that speak the messaging contract (routable by `metro send/reply/…`). */
-export const MESSAGING_STATIONS = ['discord', 'xmtp', 'telegram'] as const;
-export type MessagingStation = (typeof MESSAGING_STATIONS)[number];
+/** The canonical platform stations — single source of truth, imported by the
+ *  account CLI, the sessions binding layer, and the messaging contract below. */
+export const STATIONS = ['xmtp', 'discord', 'telegram'] as const;
+export type Station = (typeof STATIONS)[number];
+
+/** Stations that speak the messaging contract (routable by `metro send/reply/…`).
+ *  Same set as STATIONS; kept as named aliases for the contract's call sites. */
+export const MESSAGING_STATIONS = STATIONS;
+export type MessagingStation = Station;
 export const isMessagingStation = (s: string | null): s is MessagingStation =>
   s !== null && (MESSAGING_STATIONS as readonly string[]).includes(s);
 

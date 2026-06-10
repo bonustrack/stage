@@ -2,14 +2,13 @@
  *  Each routes by <line> (which encodes the station) to that train via forward-call. */
 
 import { readFileSync } from 'node:fs';
-import { ipcCall } from '../ipc.js';
 import { loadMetroEnv } from '../paths.js';
 import { readHistory } from '../history.js';
 import { errMsg } from '../log.js';
 import {
   isMessagingStation, stationOf, type Attachment, type MessagingEnvelope,
 } from '../messaging.js';
-import { enforceSendGuard } from './send-guard.js';
+import { forwardCall } from './verbs.js';
 import { resolveFrom } from './from.js';
 import { emit, exitErr, flagOne, isJson, need, writeJson, type Flags } from './util.js';
 
@@ -52,14 +51,9 @@ async function forward(
     const from = resolveFrom(env.line, f);
     if (from !== undefined) env.account = from;
   }
-  enforceSendGuard(station, action, env);
-  let resp;
-  try { resp = await ipcCall({ op: 'forward-call', train: station, action, args: env }); }
-  catch (err) { throw exitErr(errMsg(err), 4); }
-  if (!resp.ok) throw exitErr(resp.error, 3);
-  if (!('response' in resp)) throw exitErr('daemon returned malformed forward-call response', 3);
-  if (resp.response.error) throw exitErr(`${station}: ${resp.response.error}`, 3);
-  const result = resp.response.result ?? null;
+  // Shared wire path (send-guard + forward-call + exit-code mapping, incl. the
+  // code-7 rate-limit signal). The legacy --json envelope shape is unchanged.
+  const result = await forwardCall(station, action, env as unknown as Record<string, unknown>);
   if (isJson(f)) writeJson(result);
   else process.stdout.write(JSON.stringify(result) + '\n');
 }

@@ -10,11 +10,12 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { errMsg, log } from './log.js';
 import { asLine, type Line } from './lines.js';
+import { STATIONS, type Station } from './messaging.js';
 import { claudeSessionId, codexSessionId } from './local-identity.js';
 
-/** Stations a session can bind to an account. */
-export type SessionStation = 'xmtp' | 'discord' | 'telegram';
-export const SESSION_STATIONS: readonly SessionStation[] = ['xmtp', 'discord', 'telegram'];
+/** Stations a session can bind to an account (the canonical platform set). */
+export type SessionStation = Station;
+export const SESSION_STATIONS: readonly SessionStation[] = STATIONS;
 
 /** One session's binding: an account id per station, plus an optional default. */
 export interface SessionBinding {

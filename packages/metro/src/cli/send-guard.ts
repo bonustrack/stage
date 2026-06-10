@@ -47,10 +47,9 @@ function targetAccount(args: unknown): string | null {
   const a = args as { account?: unknown; line?: unknown };
   if (typeof a.account === 'string' && a.account) return a.account;
   if (typeof a.line === 'string' && a.line) {
-    const p = Line.parse(a.line);
-    if (p?.station !== 'xmtp' || !p.path.length) return null;
-    /** new form: <account>/<conv>; legacy single-segment → the `default` account. */
-    return p.path.length >= 2 ? p.path[0] : 'default';
+    /** Account-segment precedence lives in one place — the canonical parser:
+     *  new form `<account>/<conv>`; legacy single-segment → the `default` account. */
+    return Line.parseXmtp(a.line)?.accountId ?? null;
   }
   return null;
 }
