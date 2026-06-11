@@ -13,6 +13,7 @@ import { fmtSigValue, explorerUrl, ethFromWeiHex } from './MessengerBubble.helpe
 import type { SigRequest, SigReference, TxRequest, TxReceipt } from './MessengerBubble.helpers';
 import { usePalette, useBlockRadius, withAlpha } from '../lib/theme';
 import { usePeerProfiles, getPeerName } from '../lib/peerProfiles';
+import { usePayerBalance } from './MessengerBubble.balance';
 // SigRequestCard — signature-request bubble: description + message detail.
 export function SigRequestCard({ req, dark, sub, signing, onSign }: {
   req: SigRequest; dark: boolean; sub: string; signing?: boolean;
@@ -125,6 +126,10 @@ export function TxRequestCard({ req, dark, paying, onPay }: {
   // For ERC20 requests `call.to` is the token contract; the real recipient is
   // carried in `metadata.toAddress`. Prefer it when present.
   const recipient = call?.metadata?.toAddress ?? call?.to;
+  // ERC20 when the recipient (metadata.toAddress) differs from call.to — then
+  // call.to is the token contract. Native ETH otherwise.
+  const tokenAddr = call?.metadata?.toAddress ? call?.to : undefined;
+  const balance = usePayerBalance(req.chainId, tokenAddr, call?.metadata?.currency, call?.metadata?.amount);
   return (
     <Box radius={blockRadius} background={withAlpha(pal.primary, 0.08)} padding={12} margin={{ top: 8 }} gap={8} style={{ alignSelf: 'stretch' }}>
       <Row align="center" gap={8}>
@@ -139,6 +144,11 @@ export function TxRequestCard({ req, dark, paying, onPay }: {
         </Text>
       ) : null}
       {recipient ? <TxToRow address={recipient} /> : null}
+      {balance ? (
+        <Text size="xs" color={balance.insufficient ? pal.danger : pal.sub}>
+          {balance.text}
+        </Text>
+      ) : null}
       {onPay ? (
         <Button
           variant="primary"
