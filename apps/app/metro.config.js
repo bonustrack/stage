@@ -1,3 +1,8 @@
+// Node 18 lacks Array.prototype.toReversed (metro-config 0.83 calls it during loadConfig).
+if (!Array.prototype.toReversed) {
+  Object.defineProperty(Array.prototype, 'toReversed', { value: function () { return [...this].reverse(); }, writable: true, configurable: true });
+}
+
 /**
  * Extends Expo's Metro config for the bun monorepo:
  * - watch the repo root so the workspace packages (@stage-labs/client,
