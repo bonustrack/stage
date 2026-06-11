@@ -78,8 +78,9 @@ export function ProposalCard({ proposal, onAdvance }: {
   return (
     <Col flex={1} surface="surface">
       <Box flex={1} padding={{ x: 16, top: 16 }} style={{ alignSelf: 'stretch' }}>
-        {/* Channel name → the proposal's source, tappable to open the channel. */}
-        <Text weight="semibold" size="xs" role="secondary" style={{ textTransform: 'uppercase', letterSpacing: 0.5 }} numberOfLines={1}>
+        {/* Channel name → the proposal's source. Same style as the conversation
+         *  topnav title (semibold / 4xl / link color), not an eyebrow. */}
+        <Text weight="semibold" size="4xl" color={pal.link} numberOfLines={1}>
           {title}
         </Text>
         {/* Who posted the poll + when, mirroring chat sender resolution. */}
