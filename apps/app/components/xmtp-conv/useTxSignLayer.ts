@@ -11,7 +11,7 @@ import { VIEM_CHAINS } from '../../components/tabs/WalletScreen.assets';
 import {
   type SignatureRequestContent, type SignatureReferenceContent,
 } from '@stage-labs/client/xmtp/sign';
-import { sendNativeOrToken } from '../../lib/tx';
+import { sendCall } from '../../lib/tx';
 import { flash } from '../../lib/toast';
 import { signTypedData, signMessage, getAccount } from 'wagmi/actions';
 import type { TypedDataDefinition } from 'viem';
@@ -93,11 +93,18 @@ export function useTxSignLayer(activeLine: string) {
     const call = wsc.calls?.[0];
     if (!call?.to) { flash('Malformed payment request'); return; }
     const chainId = chainIdToNumber(wsc.chainId);
-    /** Native transfer: value is hex wei → decimal ETH for the helper.
-     *  (ERC-20 `data` paths aren't built by the composer yet; value-only
-     *  native sends are the supported request shape.) */
+    /** ERC-20 requests carry `data` (encoded `transfer(...)`) with `to` = the
+     *  token contract and the real recipient in `metadata.toAddress`; native
+     *  requests carry only `value` (hex wei) with `to` = the recipient. Detect
+     *  ERC-20 by the presence of `data` so we forward the call verbatim instead
+     *  of rebuilding it as a native send. */
     const wei = BigInt(call.value ?? '0x0');
-    const amount = (Number(wei) / 1e18).toString();
+    /** Human display amount + recipient — prefer the metadata hints (the only
+     *  amount source for ERC-20, since `value` is 0), else decode native wei. */
+    const amount = call.metadata?.amount != null
+      ? String(call.metadata.amount)
+      : (Number(wei) / 1e18).toString();
+    const recipient = (call.metadata?.toAddress as string | undefined) ?? (call.to as string);
     const currency = call.metadata?.currency ?? 'ETH';
     const chainName = VIEM_CHAINS[chainId]?.name ?? `chain ${chainId}`;
     /** Minimal confirm before broadcast — this moves real funds (mainnet) so
@@ -106,7 +113,12 @@ export function useTxSignLayer(activeLine: string) {
     setPayingIds(prev => new Set(prev).add(requestId));
     void (async () => {
       try {
-        const txHash = await sendNativeOrToken({ to: call.to as string, amount, chainId });
+        /** Forward the request's call VERBATIM (`to`/`data`/`value`): for an
+         *  ERC-20 this broadcasts the encoded `transfer(...)` to the token
+         *  contract; for a native send it's a value-only tx. */
+        const txHash = await sendCall({
+          to: call.to as string, data: call.data, value: call.value, chainId,
+        });
         const ref: TransactionReferenceContent = {
           networkId: chainId,
           reference: txHash,
@@ -114,8 +126,8 @@ export function useTxSignLayer(activeLine: string) {
             transactionType: 'transfer',
             currency: call.metadata?.currency ?? 'ETH',
             ...(call.metadata?.amount != null ? { amount: call.metadata.amount } : {}),
-            decimals: 18,
-            toAddress: call.to as string,
+            decimals: call.metadata?.decimals ?? 18,
+            toAddress: recipient,
           },
         };
         await xmtpSendTxReference(activeLine, ref);
@@ -131,7 +143,7 @@ export function useTxSignLayer(activeLine: string) {
       : `${amount} ${currency}`;
     Alert.alert(
       'Confirm payment',
-      `Send ${amountLabel} to ${call.to} on ${chainName}?`,
+      `Send ${amountLabel} to ${recipient} on ${chainName}?`,
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Pay', style: 'default', onPress: broadcast },

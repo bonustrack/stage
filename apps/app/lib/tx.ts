@@ -96,3 +96,41 @@ export async function sendNativeOrToken(params: SendParams): Promise<Hex> {
   const value = parseUnits(amount, 18);
   return sendTransaction(wagmiConfig, { chainId, to: to as Hex, value });
 }
+
+/** Broadcast a raw EIP-5792 call verbatim — `{to, data, value}` as carried by a
+ *  payment request's `WalletSendCall`. Unlike `sendNativeOrToken` this does NOT
+ *  build its own calldata: it forwards the request's `data` untouched, so an
+ *  ERC-20 transfer request (to = token contract, data = `transfer(...)`,
+ *  value = 0x0) actually moves the token instead of a native send. Signs from
+ *  the active in-app account when local; falls back to the WalletConnect
+ *  session otherwise. Returns the broadcast tx hash. */
+export interface RawCall {
+  to: string;
+  data?: string;
+  /** Hex wei. Defaults to 0. */
+  value?: string;
+  chainId?: number;
+}
+
+export async function sendCall(call: RawCall): Promise<Hex> {
+  const { to, data, chainId = 1 } = call;
+  if (!isAddress(to)) throw new Error('Invalid recipient address');
+  const value = BigInt(call.value ?? '0x0');
+
+  const local = await getActiveViemAccount();
+  if (local) {
+    const chain = VIEM_CHAINS[chainId];
+    if (!chain) throw new Error(`Unsupported chain ${chainId}`);
+    const client = createWalletClient({ account: local, chain, transport: http() });
+    return client.sendTransaction({
+      to: to as Hex, value, ...(data ? { data: data as Hex } : {}),
+    });
+  }
+
+  const account = getAccount(wagmiConfig);
+  if (!account.address) throw new Error('No wallet connected');
+  if (account.chainId !== chainId) await switchChain(wagmiConfig, { chainId });
+  return sendTransaction(wagmiConfig, {
+    chainId, to: to as Hex, value, ...(data ? { data: data as Hex } : {}),
+  });
+}

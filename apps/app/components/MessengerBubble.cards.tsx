@@ -14,6 +14,10 @@ import type { SigRequest, SigReference, TxRequest, TxReceipt } from './Messenger
 import { usePalette, useBlockRadius, withAlpha } from '../lib/theme';
 import { usePeerProfiles, getPeerName } from '../lib/peerProfiles';
 import { usePayerBalance } from './MessengerBubble.balance';
+import { TokenAvatar } from './tabs/WalletScreen.tokenAvatar';
+import { NATIVE_TOKEN_SENTINEL } from '@stage-labs/client/wallet/assets';
+import { stampTokenUrl } from '@metro-labs/kit/avatar';
+import { chainIdToNumber } from '@stage-labs/client/xmtp/tx';
 // SigRequestCard — signature-request bubble: description + message detail.
 export function SigRequestCard({ req, dark, sub, signing, onSign }: {
   req: SigRequest; dark: boolean; sub: string; signing?: boolean;
@@ -130,10 +134,15 @@ export function TxRequestCard({ req, dark, paying, onPay }: {
   // call.to is the token contract. Native ETH otherwise.
   const tokenAddr = call?.metadata?.toAddress ? call?.to : undefined;
   const balance = usePayerBalance(req.chainId, tokenAddr, call?.metadata?.currency, call?.metadata?.amount);
+  /** Token logo + network badge, exactly like the wallet token row. ERC20 uses
+   *  the token contract; native ETH uses the stamp native sentinel. STAGE has no
+   *  logo so the URL 404s and TokenAvatar falls back to the border circle. */
+  const chainNum = chainIdToNumber(req.chainId ?? '0x1');
+  const logoUrl = stampTokenUrl(chainNum, tokenAddr ?? NATIVE_TOKEN_SENTINEL, 36);
   return (
     <Box radius={blockRadius} background={withAlpha(pal.primary, 0.08)} padding={12} margin={{ top: 8 }} gap={8} style={{ alignSelf: 'stretch' }}>
-      <Row align="center" gap={8}>
-        <Icon name="wallet" size={18} color={pal.primary}/>
+      <Row align="center" gap={10}>
+        <TokenAvatar logoUrl={logoUrl} chainId={chainNum} bg={withAlpha(pal.primary, 0.08)} border={pal.border}/>
         <Text weight="semibold" size="md" color={pal.text} style={{ flexShrink: 1 }}>
           {desc}
         </Text>
