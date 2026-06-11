@@ -43,7 +43,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
-import { router, usePathname } from 'expo-router';
+import { router, usePathname, useRootNavigationState } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 
 const STORAGE_KEY = 'metro:lastRoute:v1';
@@ -110,6 +110,7 @@ export interface RestoreGate {
  *  non-restorable root for the rest of the session. */
 export function useRestoreGate(): RestoreGate {
   const pathname = usePathname();
+  const navState = useRootNavigationState();
   const [ready, setReady] = useState(false);
   const restoreTried = useRef(false);
   /** Flips true once the restore push has been issued (or skipped). Persisting
@@ -143,30 +144,50 @@ export function useRestoreGate(): RestoreGate {
     return () => { cancelled = true; };
   }, []);
 
-  // Restore once, on the NEXT frame after `ready`: the `(tabs)` root has
-  // committed and the navigator is mounted, so the push lands on top of it (Home
-  // beneath → back/swipe pops cleanly) and is NOT queued + flushed late. The
-  // `restoreTried` ref makes it strictly one-shot.
+  // Restore once the ROOT NAVIGATOR has actually committed its `(tabs)` root.
+  //
+  // The previous double-rAF fired too early: on a cold start the root Stack's
+  // navigation state isn't populated for the first couple of frames, so the
+  // deferred `router.push` landed while the navigator still had ZERO routes
+  // (`router.canGoBack()` === false at push time — confirmed on-device). expo-
+  // router then reconciled `(tabs)` as the configured initial route AFTER the
+  // push, so the hardware/header back still found Home beneath it — but the
+  // @react-navigation/stack INTERACTIVE swipe-back pan is wired per-card at the
+  // moment the card enters a stack that already has a card beneath it. Pushed
+  // onto an empty stack, the restored card never got the gesture responder, so
+  // the edge-swipe did nothing (while back worked). That is the exact split Less
+  // saw.
+  //
+  // FIX: gate the push on the ROOT CARD STACK having committed its `(tabs)`
+  // entry. `useRootNavigationState()` exposes the expo-router `__root` wrapper
+  // first; the actual card stack (where the restored detail screen is pushed and
+  // where the swipe-back gesture lives) is its NESTED navigator. We only push
+  // once that nested stack reports the `(tabs)` route, so the detail card enters
+  // a stack that ALREADY has the tab beneath it → `canGoBack()` true AND the
+  // @react-navigation/stack interactive pan responder is wired (swipe-back
+  // works). Strictly one-shot via `restoreTried`.
   useEffect(() => {
     if (!ready || restoreTried.current) return;
-    restoreTried.current = true;
     const saved = savedRoute.current;
-    if (!saved) { restoreDone.current = true; return; }
-    // Defer across TWO frames, not one. A single rAF can still land inside the
-    // same commit in which the `(tabs)` Stack child first mounts, so the push
-    // races the navigator and can become the de-facto initial route (channel
-    // with NO `(tabs)` beneath → swipe-back has nothing to pop to). Waiting a
-    // second frame guarantees `(tabs)`/Home has committed AND painted, so the
-    // push reliably lands ON TOP of it and the edge-swipe pops cleanly to Home.
-    let inner = 0;
-    const outer = requestAnimationFrame(() => {
-      inner = requestAnimationFrame(() => {
-        router.push(saved as Parameters<typeof router.push>[0]);
-        restoreDone.current = true;
-      });
+    if (!saved) { restoreTried.current = true; restoreDone.current = true; return; }
+    // Find the card stack that holds `(tabs)`: it's either the root state itself
+    // or its nested `state` (expo-router wraps everything under a `__root`).
+    const stackHasTabs = (s?: { routes?: { name: string; state?: unknown }[] }): boolean =>
+      Array.isArray(s?.routes) && s!.routes.some((r) => r.name === '(tabs)');
+    const rootHasTabs =
+      stackHasTabs(navState) ||
+      (Array.isArray(navState?.routes) &&
+        navState!.routes.some((r: { state?: { routes?: { name: string }[] } }) => stackHasTabs(r.state)));
+    if (!rootHasTabs) return;
+    restoreTried.current = true;
+    // One frame of slack so the committed `(tabs)` card has painted before the
+    // push enters the stack on top of it.
+    const raf = requestAnimationFrame(() => {
+      router.push(saved as Parameters<typeof router.push>[0]);
+      restoreDone.current = true;
     });
-    return () => { cancelAnimationFrame(outer); if (inner) cancelAnimationFrame(inner); };
-  }, [ready]);
+    return () => cancelAnimationFrame(raf);
+  }, [ready, navState]);
 
   // Keep the saved route current — but only AFTER the restore push has been
   // issued, so the boot-time root can't overwrite the saved channel, and a
