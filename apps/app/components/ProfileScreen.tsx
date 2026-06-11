@@ -8,7 +8,9 @@
  *  Profile, no back button) vs `route` (/user/[address], own back button +
  *  inset). Presentational pieces live in ./ProfileScreen.parts. */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Alert } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 
 import { Pressable } from '@metro-labs/kit/pressable';
 import { ScrollView } from 'react-native-gesture-handler';
@@ -19,6 +21,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import { openDmWithAddress, shortAddress } from '../modules/messaging';
 import { flash } from '../lib/toast';
+import { uploadAvatar } from '../lib/profile';
+import {
+  getSelfAvatarSync, loadSelfAvatarAsync, setSelfAvatar, subscribeSelfAvatar,
+} from '../lib/selfAvatar';
 import { useEffectiveColorScheme } from '../lib/theme';
 import { usePeerProfiles, getPeerName } from '../lib/peerProfiles';
 import { Avatar } from './Avatar';
@@ -52,6 +58,49 @@ export function ProfileScreen({ address, variant, panRef }: {
 
   const [openingDm, setOpeningDm] = useState(false);
   const [viewerUri, setViewerUri] = useState<string | null>(null);
+
+  /** Device-local custom-avatar override for the logged-in user. Peers still
+   *  see the stamp.fyi identicon (no XMTP-native profile) - this only changes
+   *  what THIS device shows for the user's own avatar. */
+  const [selfAvatar, setSelfAvatarState] = useState<string>(() => getSelfAvatarSync());
+  useEffect(() => {
+    if (!isSelf) return;
+    loadSelfAvatarAsync();
+    const sync = (): void => setSelfAvatarState(getSelfAvatarSync());
+    sync();
+    return subscribeSelfAvatar(sync);
+  }, [isSelf]);
+
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const pickSelfAvatar = async (): Promise<void> => {
+    if (uploadingAvatar) return;
+    const r = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: 'images', quality: 0.85, allowsMultipleSelection: false,
+      allowsEditing: true, aspect: [1, 1],
+    });
+    if (r.canceled || !r.assets?.length) return;
+    const a = r.assets[0]!;
+    setUploadingAvatar(true);
+    try {
+      const url = await uploadAvatar(a.uri, a.mimeType ?? 'image/jpeg', a.fileName ?? 'avatar');
+      await setSelfAvatar(url);
+      flash('Avatar updated');
+    } catch (e) {
+      Alert.alert('Image upload failed', (e as Error).message ?? 'Unknown error');
+    } finally { setUploadingAvatar(false); }
+  };
+
+  /** Self avatar tap → action sheet (change / remove / view). Other users'
+   *  avatars just open the fullscreen viewer. */
+  const onSelfAvatarPress = (fullUri: string | null): void => {
+    const opts: { text: string; style?: 'cancel' | 'destructive'; onPress?: () => void }[] = [
+      { text: uploadingAvatar ? 'Uploading…' : 'Change photo', onPress: () => { void pickSelfAvatar(); } },
+    ];
+    if (selfAvatar) opts.push({ text: 'Remove photo', style: 'destructive', onPress: () => { void setSelfAvatar(''); } });
+    if (fullUri) opts.push({ text: 'View photo', onPress: () => setViewerUri(fullUri) });
+    opts.push({ text: 'Cancel', style: 'cancel' });
+    Alert.alert('Profile photo', undefined, opts);
+  };
 
   const onMessage = async (): Promise<void> => {
     if (!addr || openingDm) return;
@@ -96,12 +145,13 @@ export function ProfileScreen({ address, variant, panRef }: {
               80% of its height; zIndex:1 keeps it above the sheet. */}
           <Avatar
             address={addr || null}
+            imageUri={isSelf ? (selfAvatar || null) : null}
             size={88}
             style={{
               backgroundColor: c.border, marginTop: -88 * 0.8, zIndex: 1,
               borderWidth: 3, borderColor: c.bg,
             }}
-            onPress={uri => { if (uri) setViewerUri(uri); }}
+            onPress={uri => { if (isSelf) onSelfAvatarPress(uri); else if (uri) setViewerUri(uri); }}
 />
           <Text weight="semibold" size="4xl" color={c.link} style={{ marginTop: 14 }}>
             {displayName}

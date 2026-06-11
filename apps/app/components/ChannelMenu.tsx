@@ -27,8 +27,10 @@ import { Col } from './layout';
 import { AppModal } from './AppModal';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { markConvRead, markConvUnread } from '../modules/messaging';
+import { useEffect, useState } from 'react';
 import { togglePin } from '../lib/pins';
 import { toggleArchived } from '../lib/archived';
+import { isMuted as isMutedStore, loadMutedIds, subscribeMuted, toggleMuted } from '../lib/muted';
 import { leaveGroupConv, lineOfConv } from '../modules/messaging';
 
 export interface ChannelMenuProps {
@@ -68,6 +70,18 @@ export function ChannelMenu({
   const dark = useEffectiveColorScheme() === 'dark';
   const head = pal.link;
   const danger = pal.danger;
+
+  /** Mute state lives in a device-local store (not the row data), so the menu
+   *  reads + subscribes to it directly. Hydrate the set on mount, then repaint
+   *  when it changes (e.g. this very toggle). */
+  const [muted, setMuted] = useState(() => isMutedStore(convId));
+  useEffect(() => {
+    const sync = (): void => setMuted(isMutedStore(convId));
+    void loadMutedIds().then(sync);
+    const off = subscribeMuted(sync);
+    sync();
+    return off;
+  }, [convId]);
 
   const run = (fn: () => void): void => { onClose(); fn(); };
 
@@ -126,6 +140,16 @@ export function ChannelMenu({
           color={head}
           dark={dark}
           onPress={() => run(() => { void togglePin(convId); })}
+        />
+
+        {/* Mute / Unmute — device-local: suppresses this conv's foreground rich
+            notification and drops it from the unread badge total. */}
+        <MenuRow
+          icon={muted ? 'volumeOff' : 'bell'}
+          label={muted ? 'Unmute' : 'Mute'}
+          color={head}
+          dark={dark}
+          onPress={() => run(() => { void toggleMuted(convId); })}
         />
 
         {isGroup ? (

@@ -13,14 +13,16 @@
 import { useEffect, useState } from 'react';
 import { getCachedRows, subscribeCachedRows, type CachedRow } from './channelsCache';
 import { isArchived, loadArchivedIds, subscribeArchived } from './archived';
+import { isMuted, loadMutedIds, subscribeMuted } from './muted';
 
-/** Sum unread across non-archived rows. A `markedUnread` row with no counted
- *  messages still contributes 1 so the badge mirrors the per-row indicator. */
+/** Sum unread across non-archived, non-muted rows. A `markedUnread` row with no
+ *  counted messages still contributes 1 so the badge mirrors the per-row
+ *  indicator. Muted convs never contribute (mute hides the badge). */
 function computeTotal(rows: CachedRow[] | null): number {
   if (!rows) return 0;
   let total = 0;
   for (const r of rows) {
-    if (isArchived(r.convId)) continue;
+    if (isArchived(r.convId) || isMuted(r.convId)) continue;
     const count = typeof r.unreadCount === 'number' ? r.unreadCount : 0;
     if (count > 0) total += count;
     else if (r.markedUnread) total += 1;
@@ -36,15 +38,18 @@ export function useTotalUnread(): number {
     const recompute = (): void => {
       if (mounted) setTotal(computeTotal(getCachedRows()));
     };
-    // Ensure the archived set is hydrated, then reconcile once.
+    // Ensure the archived + muted sets are hydrated, then reconcile once.
     void loadArchivedIds().then(recompute);
+    void loadMutedIds().then(recompute);
     const offRows = subscribeCachedRows(recompute);
     const offArchived = subscribeArchived(recompute);
+    const offMuted = subscribeMuted(recompute);
     recompute();
     return () => {
       mounted = false;
       offRows();
       offArchived();
+      offMuted();
     };
   }, []);
 

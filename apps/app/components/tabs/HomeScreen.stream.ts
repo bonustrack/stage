@@ -6,6 +6,7 @@ import { isMetroControlBody, presentInboundNotification } from '../../lib/push';
 import { previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
 import { getPeerName } from '../../lib/peerProfiles';
 import { isActiveConv } from '../../lib/activeConv';
+import { isMuted } from '../../lib/muted';
 import { shortAddress, getConvConsentState } from '../../modules/messaging';
 import type { Row as RowT } from './HomeScreen.helpers';
 import { convIdFromTopic } from './HomeScreen.helpers';
@@ -191,7 +192,7 @@ export function makeMsgStreamHandler({ isCancelled, setRows, refresh, refreshReq
 function maybeNotify(
   n: NotifyCtx | null, convId: string | null, msgId: string | undefined, preview: string,
 ): void {
-  if (!n || n.fromSelf || !convId || isActiveConv(convId)) return;
+  if (!n || n.fromSelf || !convId || isActiveConv(convId) || isMuted(convId)) return;
   if (msgId && alreadyNotified(msgId)) return;
   const senderName = getPeerName(n.senderAddr)
     ?? (n.senderAddr ? shortAddress(n.senderAddr) : 'New message');
