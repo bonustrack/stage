@@ -141,7 +141,7 @@ export function TxRequestCard({ req, dark, paying, onPay }: {
           variant="primary"
           size="lg"
           fullWidth
-          pill
+          radius={blockRadius}
           dark={dark}
           loading={paying}
           onPress={onPay}
@@ -171,7 +171,7 @@ function TxToRow({ address }: { address: string }): React.ReactElement {
         <Image
           src={`https://stamp.fyi/avatar/eth:${address}?s=32`}
           size={16} radius="full"/>
-        <Text role="link" weight="semibold" size="xs" suppressHighlighting>
+        <Text role="link" weight="semibold" size="sm" suppressHighlighting>
           {display}
         </Text>
       </Row>
