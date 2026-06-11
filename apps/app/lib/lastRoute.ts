@@ -83,18 +83,46 @@ export interface RestoreGate {
 }
 
 /** Root-layout gate + restore driver. Mounted ONCE in the root layout. Holds
- *  the boot spinner until the saved route loads, restores it synchronously when
- *  ready (no Home flash, no timer), then keeps the saved route in sync as the
- *  user navigates. Returns `{ ready }` for the boot-spinner gate. */
+ *  the boot spinner until the saved route loads, restores it once when ready
+ *  (Home underneath → swipe-back pops to Home, no late re-fire), then keeps the
+ *  saved route in sync as the user navigates. Returns `{ ready }` for the
+ *  boot-spinner gate.
+ *
+ *  WHY THE PREVIOUS VERSION RE-FIRED + BROKE SWIPE-BACK: it issued
+ *  `router.push(saved)` from a post-mount effect BEFORE the root navigator had
+ *  finished mounting, so expo-router QUEUED the push and flushed it ~0.5s later.
+ *  Two symptoms followed: (a) the pushed card hadn't settled with `(tabs)`
+ *  reliably beneath it on the first frame, so the edge-swipe had nothing to pop
+ *  to; (b) if the user pressed back to Home before the queued push flushed, the
+ *  late push yanked them back to the channel. The `restoreTried` ref guarded
+ *  re-ENTRY of the effect but did nothing about an already-queued navigation,
+ *  and the persisted value was never consumed, so the trigger survived.
+ *
+ *  FIX: (1) CONSUME the saved value at read time (delete the key) so it is a
+ *  strictly one-shot cold-start trigger — backgrounding/foregrounding or any
+ *  remount can never re-arm it. (2) Defer the push to the next frame via
+ *  `requestAnimationFrame` so the `(tabs)` root has committed and the navigator
+ *  is mounted: the push lands ON TOP of `(tabs)` (Home beneath → swipe-back +
+ *  hardware back pop cleanly to Home) and is NOT queued/flushed late. (3) Only
+ *  start persisting the live pathname AFTER the restore push has been issued, so
+ *  the boot-time `/` doesn't clobber the saved channel before we read it, and so
+ *  a user-initiated back-to-Home overwrites the saved route with a
+ *  non-restorable root for the rest of the session. */
 export function useRestoreGate(): RestoreGate {
   const pathname = usePathname();
   const [ready, setReady] = useState(false);
   const restoreTried = useRef(false);
+  /** Flips true once the restore push has been issued (or skipped). Persisting
+   *  the live pathname is gated on this so the boot-time root can't clobber the
+   *  saved channel before we've read + restored it. */
+  const restoreDone = useRef(false);
   /** Resolved on the one-time load; null = nothing to restore. */
   const savedRoute = useRef<string | null>(null);
 
   // One-time load: read the saved route AND the cold-start launch URL, then
   // flip `ready` so the Stack mounts. Done before first Stack mount → no flash.
+  // The saved value is CONSUMED (deleted) here so it can only ever trigger one
+  // cold-start restore — a remount / foreground can't re-arm it.
   useEffect(() => {
     let cancelled = false;
     void (async (): Promise<void> => {
@@ -103,6 +131,8 @@ export function useRestoreGate(): RestoreGate {
           AsyncStorage.getItem(STORAGE_KEY),
           Linking.getInitialURL().catch(() => null),
         ]);
+        // Consume immediately: a one-shot cold-start trigger, never re-armable.
+        if (saved) void AsyncStorage.removeItem(STORAGE_KEY).catch(() => { /* best-effort */ });
         // A recognised cold-start deep link wins → don't restore over it.
         if (saved && isRestorable(saved) && !hasColdStartDeepLink(initialUrl)) {
           savedRoute.current = saved;
@@ -113,21 +143,27 @@ export function useRestoreGate(): RestoreGate {
     return () => { cancelled = true; };
   }, []);
 
-  // Restore synchronously on the first render after `ready`: the Stack has just
-  // mounted at the (tabs) root, so a PUSH lands the detail screen on top with
-  // the tab beneath it (see the back-stack note above). Runs once.
+  // Restore once, on the NEXT frame after `ready`: the `(tabs)` root has
+  // committed and the navigator is mounted, so the push lands on top of it (Home
+  // beneath → back/swipe pops cleanly) and is NOT queued + flushed late. The
+  // `restoreTried` ref makes it strictly one-shot.
   useEffect(() => {
     if (!ready || restoreTried.current) return;
     restoreTried.current = true;
     const saved = savedRoute.current;
-    if (saved) router.push(saved as Parameters<typeof router.push>[0]);
+    if (!saved) { restoreDone.current = true; return; }
+    const handle = requestAnimationFrame(() => {
+      router.push(saved as Parameters<typeof router.push>[0]);
+      restoreDone.current = true;
+    });
+    return () => cancelAnimationFrame(handle);
   }, [ready]);
 
-  // Keep the saved route current. Only persist after the gate is ready so we
-  // don't overwrite the saved value with the boot-time root before we've read +
-  // restored it.
+  // Keep the saved route current — but only AFTER the restore push has been
+  // issued, so the boot-time root can't overwrite the saved channel, and a
+  // user-initiated back-to-Home persists `/` (non-restorable) for next launch.
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || !restoreDone.current) return;
     persist(pathname);
   }, [ready, pathname]);
 
