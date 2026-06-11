@@ -191,7 +191,8 @@ export function ChannelsList({
               onToggle={onToggleLabel}
               onToggleUnread={onToggleUnread}
               onClearAll={onClearAll}
-/>
+              panRef={panRef}
+            />
           </>
         }
         ListEmptyComponent={query.trim() ? null : <HomeEmpty sub={sub} />}
