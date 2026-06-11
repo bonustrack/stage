@@ -34,6 +34,8 @@
     "./api/coingecko": "./src/api/coingecko.ts",
     "./identity/format": "./src/identity/format.ts",
     "./identity/peerProfiles": "./src/identity/peerProfiles.ts",
+    "./identity/username": "./src/identity/username.ts",
+    "./identity/stageUsernames": "./src/identity/stageUsernames.ts",
     "./wallet/format": "./src/wallet/format.ts",
     "./wallet/assets": "./src/wallet/assets.ts",
     "./wallet/balances": "./src/wallet/balances.ts",

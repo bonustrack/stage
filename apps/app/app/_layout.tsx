@@ -30,6 +30,7 @@ import { useDeepLinks } from '../lib/deepLinks';
 import { useRestoreGate } from '../lib/lastRoute';
 import { usePushDeepLinks } from '../lib/push';
 import { ensureActiveAccount, ensureMessagingStreamSync } from '../modules/messaging';
+import { initStageUsernames } from '../lib/stageUsernames';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { getQueryClient } from '../lib/queryClient';
 import { WalletConnectProvider } from '../components/WalletConnectProvider';
@@ -131,6 +132,8 @@ function RootLayoutInner(): React.ReactElement {
   /** Wire streamed group-metadata events into Query (invalidate convMeta) so the
    *  topnav / group screen refresh on rename/image/desc without a reload. */
   useEffect(() => { ensureMessagingStreamSync(); }, []);
+  /** Prefer claimed `<name>.stage.box` usernames over ENS in every name render. */
+  useEffect(() => { initStageUsernames(); }, []);
 
   /** Calibre — matches sx-monorepo's typography. Two weights: medium (default) + semibold (headers/buttons).
    *  TTF (not WOFF2) so Android's native Typeface loader can pick it up — expo-font's WOFF2

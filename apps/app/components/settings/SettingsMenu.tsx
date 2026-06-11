@@ -14,6 +14,7 @@ import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { SystemHeader } from '../system/SystemHeader';
 
 type Href =
+  | '/settings/username'
   | '/settings/display'
   | '/settings/messenger'
   | '/settings/notifications'
@@ -21,6 +22,7 @@ type Href =
   | '/settings/experimental'
   | '/settings/about';
 const ROWS: { href: Href; label: string; icon: HeroIconName }[] = [
+  { href: '/settings/username', label: 'Username', icon: 'user' },
   { href: '/settings/display', label: 'Display', icon: 'sun' },
   { href: '/settings/messenger', label: 'Messenger', icon: 'chat' },
   { href: '/settings/notifications', label: 'Notifications', icon: 'bell' },
