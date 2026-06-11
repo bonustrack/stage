@@ -125,6 +125,52 @@
     padding: 20px;
   }
   footer a { color: var(--dim); }
+
+  /* Privacy page. Plain readable layout, same 1-bit palette, no gold/shadows. */
+  .privacy {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    width: 100%;
+    max-width: 64ch;
+    margin: 0 auto;
+    padding: 48px 24px 24px;
+    text-align: left;
+    line-height: 1.6;
+  }
+  .privacy h1 {
+    font-size: clamp(28px, 8vw, 40px);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 0 0 4px;
+  }
+  .privacy .updated {
+    color: var(--dim);
+    font-size: 13px;
+    margin: 0 0 24px;
+  }
+  .privacy h2 {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 28px 0 6px;
+  }
+  .privacy p { margin: 0 0 12px; color: var(--fg); }
+  .privacy a { color: var(--fg); }
+  .privacy .back {
+    display: inline-block;
+    margin-top: 8px;
+    color: var(--dim);
+    text-decoration: none;
+    font-size: 13px;
+    text-transform: lowercase;
+    letter-spacing: 0.04em;
+  }
+  .privacy .back::before { content: "// "; color: var(--fg); }
+
+  /* Hash router: only one view visible at a time. */
+  body[data-route="privacy"] main,
+  body[data-route="privacy"] > footer { display: none; }
+  body:not([data-route="privacy"]) .privacy { display: none; }
 </style>
 </head>
 <body>
@@ -143,7 +189,54 @@
     <a class="cta" id="get-app" href="https://stage.box/get">Get the app</a>
   </main>
   <footer>
-    <a href="https://github.com/bonustrack/metro">open source</a> · MIT
+    <a href="https://github.com/bonustrack/metro">open source</a> · MIT · <a href="#/privacy">privacy</a>
   </footer>
+
+  <article class="privacy">
+    <h1>Stage Privacy Policy</h1>
+    <p class="updated">Last updated: 11 June 2026.</p>
+
+    <p>Stage is a private, open-source messenger built on the XMTP protocol.</p>
+
+    <h2>What we do not do</h2>
+    <p>No analytics or telemetry, no ads, no selling or sharing of personal data, and we cannot read your messages.</p>
+
+    <h2>Your identity</h2>
+    <p>Your account is an Ethereum wallet. No phone number, email, or sign-up info. Private keys are generated and stored on your device in its secure hardware-backed keystore and never leave it.</p>
+
+    <h2>Your messages</h2>
+    <p>End-to-end encrypted via XMTP (MLS), decryptable only by conversation participants. Attachments are encrypted on your device before upload; only participants hold the keys.</p>
+
+    <h2>Notifications</h2>
+    <p>If enabled, your device notification token, wallet address and XMTP inbox id are registered with our notification service. Notifications are contentless - the service never receives message contents. Turning notifications off removes your token.</p>
+
+    <h2>Data deletion</h2>
+    <p>Account, keys and history live on your device and are removed on uninstall. Turning notifications off (or uninstalling) removes your push token. Other requests: contact below.</p>
+
+    <h2>Blockchain</h2>
+    <p>Crypto transactions are recorded on public blockchains via public RPC providers - public by nature, not collected by Stage.</p>
+
+    <h2>Open source</h2>
+    <p>MIT licensed, full source publicly auditable.</p>
+
+    <h2>Contact</h2>
+    <p><a href="mailto:privacy@stage.box">privacy@stage.box</a></p>
+
+    <a class="back" href="#/">back</a>
+  </article>
+
+  <script>
+    // Minimal hash router: #/privacy shows the policy, anything else the landing.
+    function applyRoute() {
+      var isPrivacy = location.hash === "#/privacy";
+      document.body.setAttribute("data-route", isPrivacy ? "privacy" : "home");
+      document.title = isPrivacy
+        ? "Stage Privacy Policy"
+        : "Stage — privacy-first messenger";
+      if (isPrivacy) window.scrollTo(0, 0);
+    }
+    window.addEventListener("hashchange", applyRoute);
+    applyRoute();
+  </script>
 </body>
 </html>
