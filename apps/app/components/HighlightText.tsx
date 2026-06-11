@@ -5,12 +5,15 @@
  *  the Home channels list so the matched query stands out in channel names and
  *  last-message previews (via the inline `highlightSegments` helper). */
 
+// eslint-disable-next-line @typescript-eslint/no-restricted-imports -- the highlight span MUST be a bare RN Text so it inherits the surrounding text's font family/size/weight/colour and only adds a background; the Kit Text always sets its own fontSize/fontFamily, which would override the row/bubble typography.
+import { Text as RNText } from 'react-native';
 import { Text } from '@metro-labs/kit/text';
 
-/** Bright "fluo" yellow highlight + near-black ink so the match pops on any
- *  bubble background regardless of theme. */
+/** Bright "fluo" yellow highlight. The match span ONLY adds this background -
+ *  font family / size / weight / colour are inherited from the surrounding text
+ *  (it is a bare RN <Text> nested inside the parent), so the highlight never
+ *  changes the typography, just the background colour. */
 const HL_BG = '#FFF200';
-const HL_FG = '#1A1A1A';
 
 /** Split `text` into alternating non-match / match segments for `query`
  *  (case-insensitive). Returns the original text as a single non-match segment
@@ -43,7 +46,7 @@ export function highlightSegments(text: string, query: string): React.ReactNode 
   const parts = splitMatches(text, query);
   return parts.map((p, i) => (
     p.hit
-      ? <Text key={i} color={HL_FG} style={{ backgroundColor: HL_BG }}>{p.text}</Text>
+      ? <RNText key={i} style={{ backgroundColor: HL_BG }}>{p.text}</RNText>
       : p.text
   ));
 }
@@ -58,8 +61,8 @@ export function HighlightText({ text, query, fg }: {
     <Text size="3xl" color={fg} style={{ lineHeight: 23 }}>
       {parts.map((p, i) => (
         p.hit
-          ? <Text key={i} size="3xl" color={HL_FG} style={{ backgroundColor: HL_BG, lineHeight: 23 }}>{p.text}</Text>
-          : <Text key={i} size="3xl" color={fg} style={{ lineHeight: 23 }}>{p.text}</Text>
+          ? <RNText key={i} style={{ backgroundColor: HL_BG }}>{p.text}</RNText>
+          : p.text
       ))}
     </Text>
   );
