@@ -146,6 +146,17 @@ const config = {
     // library's config plugin still injects these READ permissions, so we block
     // them here. Takes effect only in a NEW native build / AAB.
     blockedPermissions: [
+      // Belt-and-suspenders for the media-playback FGS permission. The
+      // react-native-audio-api plugin entry above already disables its
+      // foreground service + this permission at the source (we only use
+      // decodeAudioData), but Google Play flagged it, so we also hard-block it
+      // here in case any transitive AAR re-injects it at gradle manifest-merge.
+      // NOTE: we deliberately do NOT block FOREGROUND_SERVICE_MICROPHONE - the
+      // metro-pill OverlayService starts a real microphone-type foreground
+      // service (modules/metro-pill, foregroundServiceType="microphone"); on
+      // API 34+ that permission is required and blocking it would crash the
+      // overlay pill with a SecurityException.
+      'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK',
       'android.permission.READ_MEDIA_IMAGES',
       'android.permission.READ_MEDIA_VIDEO',
       'android.permission.READ_MEDIA_VISUAL_USER_SELECTED',
@@ -255,8 +266,22 @@ const config = {
     // (bun). Requires a NEW APK before the embedded runtime exists on-device.
     './plugins/withNodejsMobile',
     // Native audio-decode module — powers TRUE voice-message waveforms
-    // (decodeAudioData → PCM). Requires a new dev-client build to take effect.
-    'react-native-audio-api',
+    // (decodeAudioData -> PCM). Requires a new dev-client build to take effect.
+    // We use ONLY decodeAudioData, never the library's background-audio playback
+    // path, so we disable the defaults it would otherwise inject: the
+    // CentralizedForegroundService (mediaPlayback FGS), its
+    // FOREGROUND_SERVICE_MEDIA_PLAYBACK permission, and the iOS `audio`
+    // UIBackgroundMode. Google Play flagged FOREGROUND_SERVICE_MEDIA_PLAYBACK as
+    // an undeclared/unused sensitive permission; this removes it at the source.
+    // We keep only FOREGROUND_SERVICE (also needed by the metro-pill mic FGS).
+    [
+      'react-native-audio-api',
+      {
+        iosBackgroundMode: false,
+        androidForegroundService: false,
+        androidPermissions: ['android.permission.FOREGROUND_SERVICE'],
+      },
+    ],
     // RAILGUN private wallet — the JS SDK (@railgun-community/wallet +
     // shared-models + ethers) is autolinked as a normal JS dep. PROVING needs
     // the C++ Groth16 prover `@railgun-community/native-prover`, a NATIVE
