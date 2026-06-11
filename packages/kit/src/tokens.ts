@@ -219,7 +219,8 @@ export type FontSizeName =
   | '3xl' // 19
   | '4xl' // 20
   | '5xl' // 24
-  | '6xl'; // 32
+  | '6xl' // 32
+  | '7xl'; // 40
 
 /** Named font-size scale -> px. The canonical set of text sizes. Every px the
  *  key surfaces use (11..20) is an exact step so snapping is lossless there. */
@@ -236,6 +237,7 @@ export const FONT_SIZE: Record<FontSizeName, number> = {
   '4xl': 20,
   '5xl': 24,
   '6xl': 32,
+  '7xl': 40,
 } as const;
 
 /** Default body size (matches the Kit Text default of 15 = md). */

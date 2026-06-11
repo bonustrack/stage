@@ -1,5 +1,5 @@
 /** TopnavIdentity — the avatar + display-name element shown in the Home topnav,
- *  reused across the wallet, notifications, and profile tabs for a consistent
+ *  reused across the contacts and wallet tabs for a consistent
  *  identity affordance. Self-contained: resolves the active account address,
  *  resolves its display name (getPeerName ?? shortAddress via usePeerProfiles),
  *  renders a 28px avatar + name, and routes to /menu on tap (account switcher +

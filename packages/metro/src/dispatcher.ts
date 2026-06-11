@@ -15,6 +15,7 @@ import { setCodexSessionId } from './local-identity.js';
 import { loadTunnelConfig, Tunnel, webhookPort } from './tunnel.js';
 import { TrainSupervisor, TRAINS_DIR } from './trains/supervisor.js';
 import { makeEmit, startWebhookServer, trainEventToHistoryEntry } from './dispatcher/server.js';
+import { OutboxDriver } from './outbox-driver.js';
 
 loadMetroEnv();
 acquireLock(join(STATE_DIR, '.tail-lock'));
@@ -34,6 +35,9 @@ codexRc?.onThread(id => { setCodexSessionId(id); seedSelf(); });
 codexRc?.start();
 
 const supervisor = new TrainSupervisor();
+/** Durable outbox: journals MUTATE forward-calls, retries transient failures with
+ *  backoff, dead-letters terminal ones. READ calls pass straight through. */
+const outbox = new OutboxDriver((train, action, args) => supervisor.call(train, action, args));
 const emit = makeEmit(codexRc);
 
 supervisor.onTrainEvent((env, train) => {
@@ -57,7 +61,7 @@ const ipc = startIpcServer(async (req: IpcRequest): Promise<IpcResponse> => {
   }
   if (req.op === 'forward-call') {
     try {
-      const r = await supervisor.call(req.train, req.action, req.args);
+      const r = await outbox.forward(req.train, req.action, req.args, req.idempotencyKey);
       return { ok: true, response: r };
     } catch (err) { return { ok: false, error: errMsg(err) }; }
   }
@@ -68,6 +72,17 @@ const ipc = startIpcServer(async (req: IpcRequest): Promise<IpcResponse> => {
     try { await supervisor.restart(req.name); return { ok: true }; }
     catch (err) { return { ok: false, error: errMsg(err) }; }
   }
+  if (req.op === 'version') {
+    return { ok: true, version: pkg.version };
+  }
+  if (req.op === 'outbox-list') {
+    return { ok: true, entries: outbox.list({ state: req.state, limit: req.limit }) };
+  }
+  if (req.op === 'outbox-retry') {
+    return outbox.retry(req.outboxId)
+      ? { ok: true }
+      : { ok: false, error: `no outbox entry with id '${req.outboxId}'` };
+  }
   return { ok: false, error: `unknown op: ${(req as { op?: string }).op ?? '(none)'}` };
 });
 
@@ -75,6 +90,9 @@ async function main(): Promise<void> {
   supervisor.start();
   webhookServer = await startWebhookServer(emit);
   tunnel?.start();
+  /** Restart recovery: re-dispatch only never-sent entries (conservative — see */
+  /** outbox.ts). Trains must be up first, so this runs after supervisor.start(). */
+  outbox.recover();
   log.info({ codexRc: !!codexRc, tunnel: !!tunnel, trainsDir: TRAINS_DIR }, 'dispatcher ready');
 }
 
@@ -85,6 +103,7 @@ async function shutdown(): Promise<void> {
   log.info('dispatcher shutting down');
   codexRc?.stop();
   tunnel?.stop();
+  outbox.stop();
   await stopIpcServer(ipc).catch(() => {});
   if (webhookServer) await new Promise<void>(r => webhookServer!.close(() => r()));
   await supervisor.stop();

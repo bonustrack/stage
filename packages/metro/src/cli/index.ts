@@ -9,7 +9,7 @@ import { listLines, loadMetroEnv, STATE_DIR } from '../paths.js';
 import { readHistory } from '../history.js';
 import { cmdDoctor, cmdSetup, cmdUpdate } from './config.js';
 import { cmdClaim, cmdClaims, cmdRelease, cmdTail } from './tail.js';
-import { cmdCall, cmdTrains, cmdTunnel, cmdWebhook } from './webhook.js';
+import { cmdCall, cmdOutbox, cmdTrains, cmdTunnel, cmdWebhook } from './webhook.js';
 import { cmdSchema } from './schema-cmd.js';
 import {
   cmdDelete, cmdEdit, cmdRead, cmdReact, cmdReply, cmdSend, cmdUnreact,
@@ -74,6 +74,9 @@ Usage:
   metro verbs  [station]                       List all registered station/core verbs.
   metro call <train> <action> [args]          Low-level escape hatch: forward an action to a train.
                                               [args] is JSON, '@file', '-' (stdin), or a bare string.
+  metro outbox [list] [--state pending|sent|failed|dead] [--limit N]
+                                              Inspect the durable outbox journal of MUTATE sends.
+  metro outbox retry <id>                      Requeue a dead/failed outbox entry for another attempt.
   metro history [--limit=N] [--line=…] [--station=…] [--from=…] [--text=…] [--since=…]
                                               Read the universal message log (newest first).
   metro tail [--as=<user-uri>] [--follow] [--strict | --unclaimed | --all] [--include-webhooks]
@@ -182,7 +185,7 @@ async function cmdSession(p: string[], f: Flags): Promise<void> {
 const COMMANDS: Record<string, (positional: string[], flags: Flags) => Promise<void>> = {
   setup: cmdSetup, doctor: cmdDoctor, lines: cmdLines,
   whoami: cmdWhoami, session: cmdSession,
-  call: cmdCall, trains: cmdTrains,
+  call: cmdCall, trains: cmdTrains, outbox: cmdOutbox,
   send: cmdSend, reply: cmdReply, react: cmdReact, unreact: cmdUnreact,
   edit: cmdEdit, delete: cmdDelete, read: cmdRead,
   webhook: cmdWebhook, tunnel: cmdTunnel,
@@ -231,13 +234,16 @@ async function main(): Promise<void> {
   catch (err) {
     const code = (err as ExitErr).code;
     const command = (err as ExitErr).command;
+    const errorInfo = (err as ExitErr).errorInfo;
     if (isJson(flags)) {
       // Themed verbs carry their `command` tag → uniform {ok,command,error,code}
       // envelope. Legacy commands keep the original {ok,error,code} shape so
-      // existing scripts parsing them are unaffected.
+      // existing scripts parsing them are unaffected. `errorInfo` is an additive
+      // passthrough (#3) — only present when the train emitted structured detail.
+      const extra = errorInfo ? { errorInfo } : {};
       writeJson(command
-        ? { ok: false, command, error: errMsg(err), code: code ?? 1 }
-        : { ok: false, error: errMsg(err), code: code ?? 1 });
+        ? { ok: false, command, error: errMsg(err), code: code ?? 1, ...extra }
+        : { ok: false, error: errMsg(err), code: code ?? 1, ...extra });
     } else process.stderr.write(`error: ${errMsg(err)}\n`);
     process.exit(typeof code === 'number' ? code : 1);
   }

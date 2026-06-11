@@ -6,7 +6,7 @@ import { isMetroControlBody, presentInboundNotification } from '../../lib/push';
 import { previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
 import { getPeerName } from '../../lib/peerProfiles';
 import { isActiveConv } from '../../lib/activeConv';
-import { shortAddress } from '../../modules/messaging';
+import { shortAddress, getConvConsentState } from '../../modules/messaging';
 import type { Row as RowT } from './HomeScreen.helpers';
 import { convIdFromTopic } from './HomeScreen.helpers';
 
@@ -46,6 +46,59 @@ interface MsgHandlerDeps {
   isCancelled: () => boolean;
   setRows: (next: (p: RowT[] | null) => RowT[] | null) => void;
   refresh: () => Promise<void>;
+  /** Recount pending requests ('unknown' consent) without a full inbox
+   *  refresh — used for messages in not-yet-accepted convs. */
+  refreshRequestCount: () => Promise<void>;
+}
+
+/** STREAM-MISS REFRESH COALESCER. A streamed message whose convId isn't in the
+ *  current rows triggers a refresh. Messages in PENDING-REQUEST convs (consent
+ *  'unknown') ALWAYS miss — rows only hold 'allowed' convs — so without this
+ *  every such message fired a full N+1 inbox refresh forever.
+ *
+ *  - Single-flight + ~1s trailing debounce so a miss burst coalesces into ONE
+ *    full refresh instead of one-per-message.
+ *  - For 'unknown' convs, skip the full refresh entirely: just bump the request
+ *    count/preview (cheap local recount).
+ *
+ *  Build a per-subscription coalescer so it resets on account switch (the
+ *  handler is rebuilt then). */
+function makeMissRefresher(
+  isCancelled: () => boolean,
+  refresh: () => Promise<void>,
+  refreshRequestCount: () => Promise<void>,
+) {
+  // `number` (RN timer id): @types/node's Timeout collides with DOM at clear*().
+  let missTimer: number | null = null;
+  let refreshInFlight = false;
+
+  /** Run the full refresh single-flight: if one is already running, the trailing
+   *  timer re-fires after it, so a miss during the refresh isn't dropped. */
+  const runRefresh = (): void => {
+    if (refreshInFlight) { armFullRefresh(); return; }
+    refreshInFlight = true;
+    void refresh().finally(() => { refreshInFlight = false; });
+  };
+  function armFullRefresh(): void {
+    if (missTimer) clearTimeout(missTimer);
+    missTimer = setTimeout(() => {
+      missTimer = null;
+      if (!isCancelled()) runRefresh();
+    }, 1_000) as unknown as number;
+  }
+
+  /** Handle a convId miss. For 'unknown'-consent convs (pending requests) only
+   *  recount requests; otherwise debounce a full refresh. Consent is read from
+   *  the LOCAL conv handle (no network) so the check is cheap. */
+  return (convId: string | null): void => {
+    void (async (): Promise<void> => {
+      if (convId) {
+        const consent = await getConvConsentState(convId).catch(() => null);
+        if (consent === 'unknown') { void refreshRequestCount(); return; }
+      }
+      if (!isCancelled()) armFullRefresh();
+    })();
+  };
 }
 
 /** Build the subscribeAllMessages callback. Owns all the channel-row /
@@ -56,7 +109,8 @@ interface MsgHandlerDeps {
  *  (one merged MessagingStyle card per conversation). This handler only updates
  *  the list. An account with no daemon push registration gets no notifications,
  *  which is acceptable (the daemon pushes for the active account). */
-export function makeMsgStreamHandler({ isCancelled, setRows, refresh }: MsgHandlerDeps) {
+export function makeMsgStreamHandler({ isCancelled, setRows, refresh, refreshRequestCount }: MsgHandlerDeps) {
+  const onMiss = makeMissRefresher(isCancelled, refresh, refreshRequestCount);
   return ({ convId: streamConvId, msg }: { convId: string | null; msg: StreamedMsg | null }): void => {
     if (isCancelled() || !msg) return;
     void (async (): Promise<void> => {
@@ -87,6 +141,8 @@ export function makeMsgStreamHandler({ isCancelled, setRows, refresh }: MsgHandl
       setRows(prev => {
         if (!prev) return prev;
         const idx = msgConvId ? prev.findIndex(r => r.convId === msgConvId) : -1;
+        /** Miss: convId not in rows. Coalesced + consent-aware handling lives in
+         *  onMiss (pending-request convs only recount; others debounce refresh). */
         if (idx === -1) { needsRefresh = true; return prev; }
         const cur = prev[idx]!;
         const senderAddr = cur.inboxToAddr[msg.senderInboxId ?? ''] ?? null;
@@ -119,7 +175,7 @@ export function makeMsgStreamHandler({ isCancelled, setRows, refresh }: MsgHandl
         if (isUnread) updated.markedUnread = false;
         return [updated, ...prev.slice(0, idx), ...prev.slice(idx + 1)];
       });
-      if (needsRefresh) void refresh();
+      if (needsRefresh) onMiss(msgConvId);
       maybeNotify(notify, msgConvId, msg.id, lastPreview);
     })();
   };

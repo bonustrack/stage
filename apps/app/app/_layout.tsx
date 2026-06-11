@@ -4,6 +4,9 @@
  *  critical path depend on them, so they stay eager. The expensive part of the
  *  WalletConnect stack (@reown/appkit + wagmi + viem provider + createAppKit) is
  *  deferred off the first-paint path — see components/WalletConnectProvider. */
+/** ES2023 Array polyfills (toReversed/toSorted) for the release Hermes engine —
+ *  must run before any dependency that calls them. See lib/jsPolyfills. */
+import '../lib/jsPolyfills';
 import '@walletconnect/react-native-compat';
 /** Hoisted side-effect import — installs the crypto.getRandomValues shim
  *  BEFORE any viem (and transitively any wallet/profile) module loads. */
@@ -24,7 +27,7 @@ import { NativeSwipeStack } from '../components/NativeSwipeStack';
 import { useEffectiveColorScheme, usePalette, useRadius } from '../lib/theme';
 import { KitThemeProvider } from '@metro-labs/kit/theme-context';
 import { useDeepLinks } from '../lib/deepLinks';
-import { useRestoreLastRoute } from '../lib/lastRoute';
+import { useRestoreGate } from '../lib/lastRoute';
 import { usePushDeepLinks } from '../lib/push';
 import { ensureActiveAccount, ensureMessagingStreamSync } from '../modules/messaging';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -108,9 +111,12 @@ function RootLayoutInner(): React.ReactElement {
   useDeepLinks();
 
   /** Persist the active route on every navigation + restore it on a cold launch
-   *  (return the user to the last screen). Coordinates with useDeepLinks: a
-   *  cold-start deep link navigates first and the restore yields to it. */
-  useRestoreLastRoute();
+   *  (return the user to the last screen) WITHOUT flashing Home: `restore.ready`
+   *  gates the boot spinner below until the saved-route load resolves, so the
+   *  Stack (and Home) never mount before the restore decision is known.
+   *  Coordinates with useDeepLinks: a recognised cold-start deep link wins and
+   *  the restore yields to it. */
+  const restore = useRestoreGate();
 
   /** Notification taps → open that conversation + clear its unread badge.
    *  Handles both cold-start (app launched by the tap) and warm/background
@@ -138,7 +144,7 @@ function RootLayoutInner(): React.ReactElement {
    *  `onboarding.seen` flag is true; `ready` gates on its load so a returning
    *  user never flashes onboarding (see lib/onboardingSeen). */
   const onboarding = useOnboardingGate();
-  if (!loaded || !onboarding.ready) {
+  if (!loaded || !onboarding.ready || !restore.ready) {
     return (
       <Col surface="surface" flex={1} align="center" justify="center">
         <Spinner size={28} color={dark ? '#ffffff' : '#000000'}/>

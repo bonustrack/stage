@@ -15,10 +15,12 @@ import { CHANNEL_ROW_HEIGHT } from './HomeScreen.helpers';
 import type { Row as RowT } from './HomeScreen.helpers';
 import { HomeEmpty } from './HomeScreen.parts';
 import { LabelFilterBar } from './HomeScreen.labelbar';
+import { ProposalsBanner } from './Proposals.banner';
 import { ChannelsSearchBar } from './HomeScreen.search';
 import { HomeContactResults } from './HomeScreen.contacts';
 import { HomeOverflowMenu } from './HomeScreen.overflow';
 import { usePublishTopnavSlot } from './topnavSlots';
+import { getActiveAccount } from '../../lib/accounts';
 
 interface ChannelsListProps {
   panRef?: import('../SwipeTabs.types').SimultaneousRefs;
@@ -43,8 +45,6 @@ interface ChannelsListProps {
   head: string;
   sub: string;
   border: string;
-  inputBg: string;
-  toolbarBg: string;
   listExtraData: readonly unknown[];
   listRef: RefObject<FlatList<RowT> | null>;
   savedOffsetRef: MutableRefObject<number | undefined>;
@@ -58,7 +58,7 @@ export function ChannelsList({
   panRef, router, sortedRows, requestCount, barLabels, enabledLabels, onToggleLabel,
   unreadOnly, onToggleUnread, onClearAll,
   query, setQuery,
-  fg, head, sub, border, inputBg, toolbarBg,
+  fg, head, sub, border,
   listExtraData, listRef, savedOffsetRef, didRestoreRef, contentHeightRef,
   renderRow, getRowLayout,
 }: ChannelsListProps): React.ReactElement {
@@ -103,12 +103,18 @@ export function ChannelsList({
             </Box>
           ) : null}
         </Pressable>
-        {/* Overflow (3-dot) menu: Archived + New-group + Edit profile + Settings. */}
+        {/* Overflow (3-dot) menu: Archived + New-group + Profile + Settings. */}
         <HomeOverflowMenu
           color={head}
           onArchived={() => router.push('/xmtp/archived')}
           onNewGroup={() => router.push('/xmtp/new-group')}
-          onEditProfile={() => router.push('/profile')}
+          onProfile={() => {
+            // Own-profile tab was removed → view yourself via the shared peer
+            // profile route (/user/[address]) for the active account.
+            void getActiveAccount().then(acct => {
+              if (acct?.address) router.push(`/user/${acct.address}`);
+            });
+          }}
           onSettings={() => router.push('/settings')}
 />
       </>
@@ -121,21 +127,18 @@ export function ChannelsList({
    *  slot above is published. */
   const override = useMemo(
     () => (searchOpen ? (
-      <Box style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-        <ChannelsSearchBar
-          query={query}
-          setQuery={setQuery}
-          onClose={closeSearch}
-          head={head}
-          sub={sub}
-          inputBg={inputBg}
-          toolbarBg={toolbarBg}
+      <ChannelsSearchBar
+        query={query}
+        setQuery={setQuery}
+        onClose={closeSearch}
+        head={head}
+        sub={sub}
+        border={border}
 />
-      </Box>
     ) : undefined),
     // closeSearch/setQuery are stable enough; re-derive when search opens, the
     // query changes, or theming colours change.
-    [searchOpen, query, head, sub, inputBg, toolbarBg, border],
+    [searchOpen, query, head, sub, border],
   );
 
   usePublishTopnavSlot({ right, override });
@@ -177,15 +180,20 @@ export function ChannelsList({
          *  toggle chip per unique label across non-archived channels; hidden
          *  when there are no labels. */
         ListHeaderComponent={
-          <LabelFilterBar
-            labels={barLabels}
-            enabled={enabledLabels}
-            unreadOnly={unreadOnly}
-            onToggle={onToggleLabel}
-            onToggleUnread={onToggleUnread}
-            onClearAll={onClearAll}
-            panRef={panRef}
-/>
+          <>
+            {/* Pending-polls banner: under the (fixed) topnav, before the label
+             *  bar. Hidden when there are 0 pending / all skipped this session. */}
+            <ProposalsBanner/>
+            <LabelFilterBar
+              labels={barLabels}
+              enabled={enabledLabels}
+              unreadOnly={unreadOnly}
+              onToggle={onToggleLabel}
+              onToggleUnread={onToggleUnread}
+              onClearAll={onClearAll}
+              panRef={panRef}
+            />
+          </>
         }
         ListEmptyComponent={query.trim() ? null : <HomeEmpty sub={sub} />}
         ListFooterComponent={

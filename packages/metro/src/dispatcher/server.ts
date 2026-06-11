@@ -18,6 +18,8 @@ import type { TrainEvent } from '../trains/protocol.js';
 import type { CodexRC } from '../codex-rc/client.js';
 import { findEndpoint, listEndpoints, webhookPort, type Endpoint } from '../tunnel.js';
 import { sessionOwner } from '../sessions.js';
+import { makeDedupSeq, type DedupSeq } from './dedup-seq.js';
+import { HISTORY_FILE } from '../paths.js';
 
 type Emit = (entry: HistoryEntry) => void;
 
@@ -39,7 +41,10 @@ export function webhookEntry(
   };
 }
 
-export function makeEmit(codexRc: CodexRC | null): Emit {
+export function makeEmit(codexRc: CodexRC | null, dedupSeq?: DedupSeq): Emit {
+  /** Inbound dedup + per-line seq. Seeded from the history tail (warm-start) so a */
+  /** daemon restart doesn't re-admit train replays. Injectable for tests. */
+  const tracker = dedupSeq ?? makeDedupSeq(HISTORY_FILE);
   /** Resolve the Codex participant URI once. The bridge must only receive the */
   /** Codex CLI's own feed — NOT every event (the historical "combined" bug: */
   /** `codexRc.push` was unconditional, so Codex also saw tony's events). */
@@ -58,9 +63,14 @@ export function makeEmit(codexRc: CodexRC | null): Emit {
     return claimsCache;
   };
   return function emit(entry: HistoryEntry): void {
+    /** Dedup inbound train replays + assign this line's next seq. A duplicate (same */
+    /** platform messageId within the LRU window) returns null ⇒ drop before any I/O. */
+    const seq = tracker.admit(entry);
+    if (seq === null) return;
     /** Spread first, then `display`, so the computed bubble wins (old order let a stale one clobber it). */
     const enriched: HistoryEntry = {
       ...entry,
+      seq,
       display: entry.display ?? formatDisplay(entry),
       event: entry.event ?? classifyEvent(entry),
     };
@@ -91,6 +101,9 @@ export function trainEventToHistoryEntry(env: TrainEvent, trainName: string): Hi
   /** Trains may still emit `emoji` for reactions — fold it into text so the new envelope stays minimal. */
   const text = env.text ?? (env.emoji ? `[react ${env.emoji}]` : undefined);
   return {
+    /** Carry the typed content-type verbatim when the train sets it (canonical path); */
+    /** the emit wrapper falls back to `classifyEvent` only when absent (legacy parity). */
+    event: env.event,
     id: env.id ?? mintId(),
     ts: env.ts ?? new Date().toISOString(),
     station,

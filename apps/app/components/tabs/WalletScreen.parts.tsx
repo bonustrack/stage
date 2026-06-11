@@ -70,7 +70,7 @@ export function WalletTabs({ tab, setTab, head, sub, border }: {
               borderBottomColor: active ? head : 'transparent',
             }}
 >
-            <Text weight="semibold" size="xl" color={active ? head : sub}>
+            <Text weight="semibold" size="3xl" color={active ? head : sub}>
               {TAB_LABEL[t]}
             </Text>
           </Pressable>

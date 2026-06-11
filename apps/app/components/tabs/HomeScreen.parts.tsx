@@ -29,9 +29,9 @@ type RowMenu = { convId: string; title: string; isUnread: boolean; isGroup: bool
 export function useChannelRowRenderer(
   router: { push: (to: { pathname: string; params: { convId: string } }) => void },
   setRowMenu: (m: RowMenu) => void,
-  deps: { channelProfilesVersion: number; draftsVersion: number; pinned: Set<string> },
+  deps: { channelProfilesVersion: number; draftsVersion: number; pinned: Set<string>; query?: string },
 ): ({ item }: { item: RowT }) => React.ReactElement {
-  const { channelProfilesVersion, draftsVersion, pinned } = deps;
+  const { channelProfilesVersion, draftsVersion, pinned, query } = deps;
   /** Versions drive re-creation so name/avatar/pin/draft resolutions repaint.
    *  (deps intentionally partial — react-hooks/exhaustive-deps not enabled.) */
   return useCallback(({ item }: { item: RowT }): React.ReactElement => {
@@ -62,6 +62,7 @@ export function useChannelRowRenderer(
     return (
       <ChannelRow
         title={displayTitle}
+        highlightQuery={query}
         avatarUri={item.avatarUri}
         avatarAddress={showAddr}
         square={!item.peerAddress}
@@ -96,7 +97,7 @@ export function useChannelRowRenderer(
         }}
 />
     );
-  }, [router, setRowMenu, channelProfilesVersion, draftsVersion, pinned]);
+  }, [router, setRowMenu, channelProfilesVersion, draftsVersion, pinned, query]);
 }
 
 /** XMTP-init failure recovery screen — message + "Reset XMTP identity" button. */

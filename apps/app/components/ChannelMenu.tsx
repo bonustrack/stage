@@ -57,11 +57,14 @@ export interface ChannelMenuProps {
   /** Optional hook fired after toggling archive (carries the new state). The
    *  conversation view uses this to pop back to the list when archiving. */
   onAfterArchive?: (archived: boolean) => void;
+  /** Optional in-conversation search action — when provided (conversation view),
+   *  a "Search" row is shown that closes the sheet and opens the search topnav. */
+  onSearch?: () => void;
 }
 
 export function ChannelMenu({
   convId, isGroup, peerAddress, isUnread, isPinned, isArchived,
-  visible, onClose, context = 'list', onAfterLeave, onAfterArchive,
+  visible, onClose, context = 'list', onAfterLeave, onAfterArchive, onSearch,
 }: ChannelMenuProps): React.ReactElement {
   const router = useRouter();
   const pal = usePalette();
@@ -70,6 +73,18 @@ export function ChannelMenu({
   const danger = pal.danger;
 
   const run = (fn: () => void): void => { onClose(); fn(); };
+
+  /** Search needs the sheet to be GONE first: this AppModal is a native RN
+   *  <Modal> (its own Android window that owns IME focus). If we open search in
+   *  the same tick as closing the sheet, the search input autofocuses while the
+   *  modal window is still mounted/animating out and the keyboard never attaches.
+   *  So close the sheet, then fire onSearch on the next macrotask once `visible`
+   *  has flipped false and the dismiss has started. The conversation view pairs
+   *  this with a verified blur/focus retry once the dismiss interaction settles. */
+  const runSearch = (fn: () => void): void => {
+    onClose();
+    setTimeout(fn, 0);
+  };
 
   /** Built-in Leave-group flow — confirm, leave via XMTP, then navigate
    *  context-aware: pop back from the channel view; let the list reconcile. */
@@ -102,6 +117,16 @@ export function ChannelMenu({
       {/* Cancel AppModal's 16px ScrollView padding so the list spans edge-to-edge
           and the row content inset (ROW_INSET 16) matches the Settings page. */}
       <ListView dark={dark} style={{ marginHorizontal: -16 }}>
+        {onSearch ? (
+          <MenuRow
+            icon="search"
+            label="Search"
+            color={head}
+            dark={dark}
+            onPress={() => runSearch(onSearch)}
+          />
+        ) : null}
+
         {isGroup ? (
           <MenuRow
             icon="plus"

@@ -1,8 +1,10 @@
 /** Shared CLI primitives consumed by index.ts + config.ts. */
 
+import type { TrainErrorInfo } from '../train-error.js';
+
 export type FlagValue = string | boolean | string[];
 export type Flags = Record<string, FlagValue>;
-export type ExitErr = Error & { code?: number; command?: string };
+export type ExitErr = Error & { code?: number; command?: string; errorInfo?: TrainErrorInfo };
 
 export const exitErr = (msg: string, code: number): ExitErr => Object.assign(new Error(msg), { code });
 export const isJson = (f: Flags): boolean => f.json === true;

@@ -19,10 +19,9 @@ export default function TabsLayout(): React.ReactElement {
    *  Messenger (index) tab. Live: updates as messages arrive / are read. */
   const unread = useTotalUnread();
   const unreadBadge = unread > 0 ? (unread > 99 ? '99+' : String(unread)) : undefined;
-  /** The pager mounts the five swipe-tab bodies (Channels/Contacts/Wallet/
-   *  Notifications/Profile). Settings is the only non-pager tab route → hide the
-   *  pager overlay there so the real SettingsScreen rendered by the route shows
-   *  through. */
+  /** The pager mounts the three swipe-tab bodies (Channels/Contacts/Wallet).
+   *  Settings is the only non-pager tab route → hide the pager overlay there so
+   *  the real SettingsScreen rendered by the route shows through. */
   const pagerVisible = !pathname.startsWith('/settings');
   const insets = useSafeAreaInsets();
   const pal = usePalette();
@@ -78,8 +77,6 @@ export default function TabsLayout(): React.ReactElement {
             ['index', 'chatBubble'],
             ['contacts', 'users'],
             ['wallet', 'wallet'],
-            ['notifications', 'bell'],
-            ['profile', 'user'],
           ] as const satisfies ReadonlyArray<readonly [string, HeroIconName]>
         ).map(([name, icon]) => (
           <Tabs.Screen

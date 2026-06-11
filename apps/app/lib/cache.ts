@@ -7,8 +7,30 @@
  *    - SecureStore helpers   `getSecure / setSecure` for small string keys that
  *                            must live in the device keystore. */
 
+import { AppState } from 'react-native';
 import { Directory, File, Paths } from 'expo-file-system';
 import * as SecureStore from 'expo-secure-store';
+
+/** Trailing flush window for debounced PersistentStores. A streamed message can
+ *  fire set() many times a second with a 100s-of-KB payload; coalescing the
+ *  SYNCHRONOUS disk write to one pass per window keeps the JS thread free. */
+const FLUSH_DEBOUNCE_MS = 1_500;
+
+/** Every debounced store with a pending in-memory change, so a single AppState
+ *  background/inactive transition can flush them ALL synchronously (nothing is
+ *  lost on kill). WeakRef-free on purpose: stores are app-lived singletons. */
+const dirtyStores = new Set<{ flushNow: () => void }>();
+let appStateFlushWired = false;
+function wireAppStateFlush(): void {
+  if (appStateFlushWired) return;
+  appStateFlushWired = true;
+  /** On the way to background/inactive, flush every dirty debounced store NOW so
+   *  a process kill can't drop the last in-memory writes. */
+  AppState.addEventListener('change', (state) => {
+    if (state === 'active') return;
+    for (const s of dirtyStores) { try { s.flushNow(); } catch { /* best-effort */ } }
+  });
+}
 
 /** Shared document-dir folder for every JSON-file-backed store. */
 function metroDir(): Directory {
@@ -23,10 +45,42 @@ export class PersistentStore<T> {
   private value: T | null = null;
   private hydrated = false;
   private readonly listeners = new Set<(v: T | null) => void>();
+  /** Pending trailing-flush timer (debounced stores only). `number` RN timer id
+   *  — the Railgun SDK pulls @types/node in, whose Timeout collides with DOM. */
+  private flushTimer: number | null = null;
+  /** True when in-memory `value` differs from what's on disk (a debounced set()
+   *  ran but the flush hasn't landed yet). */
+  private dirty = false;
 
-  constructor(private readonly fileName: string) {}
+  /** @param fileName  JSON file under the metro document dir.
+   *  @param debounced When true, set() updates memory + notifies subscribers
+   *    immediately but defers the SYNCHRONOUS disk write to a trailing timer
+   *    (and an AppState background flush), instead of writing on every call.
+   *    Opt-in so other stores keep their write-through behaviour. */
+  constructor(private readonly fileName: string, private readonly debounced = false) {
+    if (debounced) wireAppStateFlush();
+  }
 
   private file(): File { return new File(metroDir(), this.fileName); }
+
+  /** Write the current in-memory value to disk synchronously (or delete the file
+   *  when null). Clears the dirty flag + dirty-set membership. */
+  private writeToDisk(): void {
+    try {
+      const f = this.file();
+      if (this.value === null) { if (f.exists) f.delete(); }
+      else f.write(JSON.stringify(this.value));
+    } catch { /* best-effort */ }
+    this.dirty = false;
+    dirtyStores.delete(this);
+  }
+
+  /** Flush any pending debounced write immediately (timer + AppState background).
+   *  No-op when nothing is pending. */
+  flushNow(): void {
+    if (this.flushTimer) { clearTimeout(this.flushTimer); this.flushTimer = null; }
+    if (this.dirty) this.writeToDisk();
+  }
 
   /** Read the persisted value off disk into memory once. Idempotent; the file
    *  read only happens on the first call. Subsequent calls return the cached
@@ -48,17 +102,30 @@ export class PersistentStore<T> {
 
   set(next: T | null): void {
     this.value = next;
-    try {
-      const f = this.file();
-      if (next === null) { if (f.exists) f.delete(); }
-      else f.write(JSON.stringify(next));
-    } catch { /* best-effort */ }
+    /** Notify subscribers immediately so the UI reflects the change without
+     *  waiting on disk. */
     for (const l of this.listeners) l(this.value);
+    if (!this.debounced) { this.writeToDisk(); return; }
+    /** Debounced: mark dirty + (re)arm the trailing flush. A burst of streamed
+     *  set()s collapses to ONE synchronous write per FLUSH_DEBOUNCE_MS; the
+     *  AppState background handler flushes early so a kill loses nothing. */
+    this.dirty = true;
+    dirtyStores.add(this);
+    if (this.flushTimer) clearTimeout(this.flushTimer);
+    this.flushTimer = setTimeout(() => {
+      this.flushTimer = null;
+      this.writeToDisk();
+    }, FLUSH_DEBOUNCE_MS) as unknown as number;
   }
 
   /** Clear in-memory + on-disk and reset hydration so a fresh account hydrates
    *  from a clean slate. */
   clear(): void {
+    /** Cancel any pending debounced flush so it can't resurrect the file we're
+     *  about to delete. */
+    if (this.flushTimer) { clearTimeout(this.flushTimer); this.flushTimer = null; }
+    this.dirty = false;
+    dirtyStores.delete(this);
     this.value = null;
     this.hydrated = false;
     try { const f = this.file(); if (f.exists) f.delete(); } catch { /* best-effort */ }

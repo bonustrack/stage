@@ -26,7 +26,10 @@
     "production": {
       "autoIncrement": true,
       "node": "18.20.4",
-      "env": { "APP_VARIANT": "prod" }
+      "env": { "APP_VARIANT": "prod" },
+      "android": {
+        "gradleCommand": ":app:bundleRelease -PreactNativeArchitectures=armeabi-v7a,arm64-v8a,x86_64"
+      }
     },
     "development-prod": {
       "extends": "development",
@@ -38,13 +41,31 @@
     },
     "production-prod": {
       "extends": "production",
+      "autoIncrement": true,
+      "node": "18.20.4",
       "env": { "APP_VARIANT": "prod" }
     }
   },
   "submit": {
-    "production": {
+    "internal": {
       "android": {
         "track": "internal",
+        "releaseStatus": "completed",
+        "applicationId": "box.stage",
+        "serviceAccountKeyPath": "./play-service-account.json"
+      }
+    },
+    "closed": {
+      "android": {
+        "track": "alpha",
+        "releaseStatus": "completed",
+        "applicationId": "box.stage",
+        "serviceAccountKeyPath": "./play-service-account.json"
+      }
+    },
+    "production": {
+      "android": {
+        "track": "production",
         "releaseStatus": "completed",
         "applicationId": "box.stage",
         "serviceAccountKeyPath": "./play-service-account.json"

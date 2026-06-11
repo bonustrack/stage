@@ -10,6 +10,7 @@ import { emit, mintId, rememberUid, SELF_URI } from './wire.js';
 import { fcmPushToAll } from './push.js';
 import { transcribeAndEmit } from './transcribe.js';
 import { saveInlineAttachment, saveRemoteAttachment, type RemoteEntry } from './attachments.js';
+import type { WireEvent } from '../../history-types.js';
 
 /** Stamp account into payload and (if configured) owner-route inbound `to`. */
 export function emitInbound(accountId: string, e: Record<string, unknown>): void {
@@ -56,6 +57,7 @@ function reactionPayload(base: Record<string, unknown>, r: Reaction): Record<str
   const removed = actionStr === 'removed';
   return {
     ...base, text: `[react ${r.content ?? ''}${removed ? ' (removed)' : ''}]`,
+    event: { type: 'react', emoji: r.content, targetId: r.reference },
     payload: {
       contentType: 'reaction', reactTo: r.reference, emoji: r.content, content: r.content,
       schema: schemaStr, action: actionStr, removed,
@@ -118,6 +120,7 @@ export function envelope(
     return {
       ...base, text: typeof r.content === 'string' ? r.content
         : `[reply with ${r.contentType?.typeId ?? 'unknown'}]`,
+      event: { type: 'reply', replyTo: r.reference },
       payload: { contentType: typeId, replyTo: r.reference, replyContentType: r.contentType?.typeId },
     };
   }
@@ -170,12 +173,15 @@ export function envelope(
   return { ...base, text: `[${typeId ?? 'unknown'} payload]`, payload: { contentType: typeId } };
 }
 
-export function emitOutbound(accountId: string, line: string, messageId: string, text: string): void {
+export function emitOutbound(
+  accountId: string, line: string, messageId: string, text: string, event?: WireEvent,
+): void {
   const uid = mintId();
   rememberUid(uid, messageId);
   emit({
     kind: 'outbound', id: uid, ts: new Date().toISOString(), station: 'xmtp',
     line, from: SELF_URI, to: line, message_id: messageId, text, account: accountId,
+    ...(event ? { event } : {}),
     payload: { account: accountId },
   });
   // CONTENTLESS push: notify the recipient device(s) of a daemon-sent message

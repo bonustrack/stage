@@ -23,13 +23,14 @@ import {
 } from './MessengerBubble.helpers';
 import { AttachmentView, RemoteAttachmentResolver } from './MessengerBubble.attachments';
 import { MentionBody, QuestionView } from './MessengerBubble.parts';
+import { HighlightText } from './HighlightText';
 import { PollView } from './MessengerBubble.poll';
 import { SigRequestCard, SigReferenceCard, TxRequestCard, TxReceiptCard } from './MessengerBubble.cards';
 
 export function BubbleContent({
   entry, dark, pending, fg, sub, replyPreview, onReplyPreviewPress, transcript,
   onAnswer, votes, ownVotes, onVote, openAnswers, onOpenAnswer, myUri,
-  onPay, paying, onSign, signing, selectable,
+  onPay, paying, onSign, signing, selectable, highlight,
 }: {
   entry: HistoryEntry; dark: boolean; pending?: boolean; fg: string; sub: string;
   replyPreview?: string; onReplyPreviewPress?: () => void; transcript?: string;
@@ -43,6 +44,10 @@ export function BubbleContent({
   /** When true, render the body in a plain selectable <Text> so OS text-selection
    *  handles appear for partial copy (Markdown's nested Texts don't select cleanly). */
   selectable?: boolean;
+  /** Search mode: case-insensitive occurrences of this query in the body get a
+   *  fluo-yellow highlight (renders the body via HighlightText instead of
+   *  Markdown). Undefined/empty in the normal feed. */
+  highlight?: string;
 }): React.ReactElement {
   const atts = attachmentsOf(entry);
   const question = questionOf(entry);
@@ -125,11 +130,13 @@ export function BubbleContent({
             const body = unescapeBody(entry.text);
             return (
               <Box style={{ alignSelf: 'stretch' }}>
-                {selectable
-                  ? <Text size="3xl" selectable color={fg} style={{ lineHeight: 23 }}>{body}</Text>
-                  : hasMention(body)
-                    ? <MentionBody text={body} fg={fg} dark={dark} />
-                    : <Markdown {...markdownProps}>{body}</Markdown>}
+                {highlight && highlight.trim()
+                  ? <HighlightText text={body} query={highlight} fg={fg} />
+                  : selectable
+                    ? <Text size="3xl" selectable color={fg} style={{ lineHeight: 23 }}>{body}</Text>
+                    : hasMention(body)
+                      ? <MentionBody text={body} fg={fg} dark={dark} />
+                      : <Markdown {...markdownProps}>{body}</Markdown>}
               </Box>
             );
           })()

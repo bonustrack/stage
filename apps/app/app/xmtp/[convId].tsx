@@ -1,10 +1,11 @@
 /** XMTP conversation view — opened from the messenger tab list. State + handlers
  *  live in useConversationState; presentational pieces in components/xmtp-conv. */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { Animated as RNAnimated, Share } from 'react-native';
+import { Animated as RNAnimated, InteractionManager, Keyboard, Share } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
+import { Input } from '@metro-labs/kit/input';
 import { Text } from '@metro-labs/kit/text';
 import { Box, Row, Col } from '../../components/layout';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
@@ -26,6 +27,9 @@ import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { HeaderAvatar, BubbleActionMenu, GithubNavButton } from '../../components/xmtp-conv/parts';
 import { previewOf } from '../../components/xmtp-conv/feed-helpers';
 import { ConversationFeed } from '../../components/xmtp-conv/ConversationFeed';
+import { ConversationSearch } from '../../components/xmtp-conv/ConversationSearch';
+import { SearchTopnavBar } from '../../components/SearchTopnavBar';
+import { TOPNAV_HEIGHT } from '../../components/Topnav';
 import { useConversationState } from '../../components/xmtp-conv/useConversationState';
 import { RequestActionBar } from '../../components/RequestActionBar';
 
@@ -56,6 +60,50 @@ export default function XmtpConversation(): React.ReactElement {
     peerAddr, groupName, groupImage, isGroup, github, senderEthOf,
     mentionCandidates, onReact, onOptimistic, onSent, jumpToMessage, markAtBottom,
   } = c;
+
+  /** In-conversation local message search (Stage #6) — opened from the 3-dot
+   *  overflow menu. When open the topnav swaps to the shared SearchTopnavBar
+   *  (the same expanding input Home uses) and a results panel renders under it.
+   *  The query lives here so the topnav bar drives the results panel. */
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const closeSearch = useCallback(() => { setSearchOpen(false); setSearchQuery(''); }, []);
+  /** Keyboard-on-search, the real root cause: search opens from the ChannelMenu
+   *  bottom sheet, which is a native RN <Modal> (its OWN Android window). While
+   *  that window is up / sliding out it OWNS the input-method focus, so the
+   *  SearchTopnavBar's autoFocus binds to a window that no longer has IME focus
+   *  and the soft keyboard never attaches to the app window. Android also won't
+   *  re-show the keyboard for a focus() on an input it already considers focused.
+   *
+   *  Fix = sequence + verified retry: wait for the modal's dismiss interaction to
+   *  finish (runAfterInteractions), then blur()+focus() and confirm the keyboard
+   *  actually showed via keyboardDidShow; if it didn't, retry every 150ms up to
+   *  ~1.2s. The blur() first is what makes the second focus() re-open the IME on
+   *  Android. Cancels the moment the keyboard shows or search closes. */
+  const searchInputRef = useRef<React.ComponentRef<typeof Input>>(null);
+  useEffect(() => {
+    if (!searchOpen) return;
+    let shown = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let attempts = 0;
+    const sub = Keyboard.addListener('keyboardDidShow', () => { shown = true; });
+    const poke = (): void => {
+      if (shown || attempts >= 8) return;
+      attempts += 1;
+      const input = searchInputRef.current;
+      input?.blur();
+      // Next frame so the blur lands before the re-focus (Android needs the
+      // focus state to actually toggle for the IME to re-open).
+      requestAnimationFrame(() => { searchInputRef.current?.focus(); });
+      timer = setTimeout(poke, 150);
+    };
+    const task = InteractionManager.runAfterInteractions(poke);
+    return () => {
+      sub.remove();
+      task.cancel();
+      if (timer) clearTimeout(timer);
+    };
+  }, [searchOpen]);
 
   /** Message-request gate. The overwhelmingly common case is an already-accepted
    *  channel, so we DEFAULT to showing the composer immediately on open (no
@@ -93,7 +141,7 @@ export default function XmtpConversation(): React.ReactElement {
   return (
     <RNAnimated.View
       style={{
-        flex: 1, backgroundColor: bg, paddingBottom: insets.bottom,
+        flex: 1, backgroundColor: bg,
       }}
 >
       {/** Swipe-back handled by the @react-navigation/stack JS card stack
@@ -111,11 +159,40 @@ export default function XmtpConversation(): React.ReactElement {
         rowBg={rowBg}
         insets={insets}
         router={router}
+        searchSlot={searchOpen && searchQuery.trim().length >= 2 ? (
+          <ConversationSearch
+            line={activeLine}
+            query={searchQuery}
+            sub={sub}
+            bg={bg}
+            c={c}
+            dark={dark}
+            router={router}
+/>
+        ) : undefined}
 />
       </Reanimated.View>
       {/** Top nav: solid bg strip mirrors the composer footer + extends UP over the
-       *  status-bar area so content sliding under the keyboard doesn't show through. */}
-      <Row height={52 + insets.top} surface="toolbar" padding={{ top: insets.top }} align="stretch" style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2, borderBottomWidth: 1, borderBottomColor: border }}>
+       *  status-bar area so content sliding under the keyboard doesn't show through.
+       *  When search is open the whole strip swaps to the shared SearchTopnavBar
+       *  (the exact expanding search input Home uses); the results panel renders
+       *  directly underneath it. */}
+      {searchOpen ? (
+        <Box style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2 }}>
+          <SearchTopnavBar
+            ref={searchInputRef}
+            border={border}
+            query={searchQuery}
+            setQuery={setSearchQuery}
+            onClose={closeSearch}
+            head={head}
+            sub={sub}
+            placeholder="Search this conversation"
+            topInset={insets.top}
+/>
+        </Box>
+      ) : (
+      <Row height={TOPNAV_HEIGHT + insets.top} surface="toolbar" padding={{ top: insets.top }} align="stretch" style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2, borderBottomWidth: 1, borderBottomColor: border }}>
         <Pressable
           onPress={() => router.replace('/')}
           style={{ paddingLeft: 14, paddingRight: 8, justifyContent: 'center' }}
@@ -137,7 +214,8 @@ export default function XmtpConversation(): React.ReactElement {
               : peerAddr ? (getPeerName(peerAddr) ?? shortAddress(peerAddr)) : ''}
           </Text>
         </Pressable>
-        {/** Topnav links (groups only): GitHub issue/PR, then overflow. */}
+        {/** Topnav links (groups only): GitHub issue/PR, then overflow (search lives
+         *   in the overflow menu now). */}
         {isGroup && github ? <GithubNavButton url={github} color={fg} /> : null}
         <Pressable
           onPress={() => setOverflowOpen(true)}
@@ -147,10 +225,13 @@ export default function XmtpConversation(): React.ReactElement {
           <Icon name="dotsVertical" size={22} color={fg}/>
         </Pressable>
       </Row>
+      )}
       {/** Fade strip below the top nav — mirrors the composer's top fade. Start it 1px
        *  higher so its solid-bg top edge overlaps the nav bottom, closing the hairline
        *  seam between the two absolute bg layers, then ramps to transparent. */}
-      <ComposerGradient bg={bg} direction="up" top={52 + insets.top - 1} height={24}/>
+      {searchOpen ? null : (
+        <ComposerGradient bg={bg} direction="up" top={TOPNAV_HEIGHT + insets.top - 1} height={24}/>
+      )}
       <KeyboardStickyView offset={{ opened: insets.bottom }}>
       <Box>
       {/** Jump-to-bottom: anchored above the composer (bottom:'100%') inside the
@@ -187,6 +268,12 @@ export default function XmtpConversation(): React.ReactElement {
           onSent={onSent}
 />
       ) : null}
+      {/** Bottom safe-area strip painted with the composer's visible surface
+       *   (`raised` == the editor pill fill) instead of the page `bg`, so the area
+       *   under the Android nav bar reads as one continuous surface with the
+       *   composer above it. Lives inside the sticky view so it tracks the
+       *   composer; only this screen (composer present) is affected. */}
+      <Box height={insets.bottom} surface="raised"/>
       </Box>
       </KeyboardStickyView>
       {/** Overlays — portals/bottom-sheets render here, outside the feed column. */}
@@ -201,6 +288,7 @@ export default function XmtpConversation(): React.ReactElement {
         isArchived={archived}
         onClose={() => setOverflowOpen(false)}
         context="view"
+        onSearch={() => { setSearchQuery(''); setSearchOpen(true); }}
         onAfterLeave={result => flash(result === 'left' ? 'Left group' : 'Group hidden')}
 />
       <BubbleActionMenu

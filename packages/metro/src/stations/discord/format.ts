@@ -61,6 +61,7 @@ export function messageEnvelope(accountId: string, m: Message): Record<string, u
     from: `metro://discord/${accountId}/user/${m.author.id}`, from_name: m.author.username,
     message_id: m.id, text, is_private: m.guildId == null,
     reply_to: m.reference?.messageId ?? undefined,
+    ...(m.reference?.messageId ? { event: { type: 'reply', replyTo: m.reference.messageId } } : {}),
     payload: { ...m.toJSON(), attachments },
   };
 }
@@ -75,6 +76,7 @@ export function reactionEnvelope(
     from: `metro://discord/${accountId}/user/${u.id}`, from_name: u.username,
     message_id: r.message.id, emoji: r.emoji.name ?? r.emoji.id ?? '?',
     is_private: r.message.guildId == null,
+    event: { type: 'react', emoji: r.emoji.name ?? r.emoji.id ?? '?', targetId: r.message.id },
     payload: {
       channel_id: r.message.channelId, guild_id: r.message.guildId,
       emoji: r.emoji.toJSON(), user_id: u.id,
@@ -94,11 +96,18 @@ function outbound(kind: string, accountId: string, line: string, messageId: stri
 export function emitOutbound(
   accountId: string, line: string, messageId: string, text: string, replyTo?: string,
 ): void {
-  outbound('outbound', accountId, line, messageId, { text, reply_to: replyTo });
+  outbound('outbound', accountId, line, messageId, {
+    text, reply_to: replyTo,
+    ...(replyTo ? { event: { type: 'reply', replyTo } } : {}),
+  });
 }
 export function emitOutboundReact(accountId: string, line: string, messageId: string, emoji: string): void {
-  outbound('react', accountId, line, messageId, { emoji });
+  outbound('react', accountId, line, messageId, {
+    emoji, event: { type: 'react', emoji, targetId: messageId },
+  });
 }
 export function emitOutboundEdit(accountId: string, line: string, messageId: string, text: string): void {
-  outbound('edit', accountId, line, messageId, { text });
+  outbound('edit', accountId, line, messageId, {
+    text, event: { type: 'edit', targetId: messageId },
+  });
 }

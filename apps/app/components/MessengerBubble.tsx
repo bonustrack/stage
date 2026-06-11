@@ -23,7 +23,7 @@ export { REACT_PRESETS };
 function MessengerBubbleBase({
   entry, dark, unread, pending, replyTarget, onReact, onReply, onLongPress, onOpenMenu, onAnswer,
   replyPreview, onReplyPreviewPress, reactions, pendingReactions, pendingRemovals, ownEmojis, transcript, myUri, senderEthAddress, onAvatarPress,
-  votes, ownVotes, onVote, openAnswers, onOpenAnswer, onPay, paying, onSign, signing, selectable,
+  votes, ownVotes, onVote, openAnswers, onOpenAnswer, onPay, paying, onSign, signing, selectable, highlight,
 }: MessengerBubbleProps): React.ReactElement {
   /** Discord-style layout doesn't visually distinguish own messages — myUri is
    *  accepted for forward compatibility (e.g. read-receipts) but not styled-on. */
@@ -212,6 +212,7 @@ function MessengerBubbleBase({
           onSign={onSign}
           signing={signing}
           selectable={selectable}
+          highlight={highlight}
 />
       </Col>
       {pending ? null : (
