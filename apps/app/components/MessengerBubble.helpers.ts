@@ -181,7 +181,7 @@ export interface TxRequest {
   version?: string;
   chainId?: string;
   from?: string;
-  calls: Array<{ to?: string; data?: string; value?: string; metadata?: { description?: string; currency?: string; amount?: number } }>;
+  calls: Array<{ to?: string; data?: string; value?: string; metadata?: { description?: string; currency?: string; amount?: number; toAddress?: string } }>;
 }
 export interface TxReceipt {
   networkId: number | string;
