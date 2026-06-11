@@ -15,6 +15,7 @@ import { CHANNEL_ROW_HEIGHT } from './HomeScreen.helpers';
 import type { Row as RowT } from './HomeScreen.helpers';
 import { HomeEmpty } from './HomeScreen.parts';
 import { LabelFilterBar } from './HomeScreen.labelbar';
+import { ProposalsBanner } from './Proposals.banner';
 import { ChannelsSearchBar } from './HomeScreen.search';
 import { HomeContactResults } from './HomeScreen.contacts';
 import { HomeOverflowMenu } from './HomeScreen.overflow';
@@ -184,14 +185,19 @@ export function ChannelsList({
          *  toggle chip per unique label across non-archived channels; hidden
          *  when there are no labels. */
         ListHeaderComponent={
-          <LabelFilterBar
-            labels={barLabels}
-            enabled={enabledLabels}
-            unreadOnly={unreadOnly}
-            onToggle={onToggleLabel}
-            onToggleUnread={onToggleUnread}
-            onClearAll={onClearAll}
+          <>
+            {/* Pending-polls banner: under the (fixed) topnav, before the label
+             *  bar. Hidden when there are 0 pending / all skipped this session. */}
+            <ProposalsBanner/>
+            <LabelFilterBar
+              labels={barLabels}
+              enabled={enabledLabels}
+              unreadOnly={unreadOnly}
+              onToggle={onToggleLabel}
+              onToggleUnread={onToggleUnread}
+              onClearAll={onClearAll}
 />
+          </>
         }
         ListEmptyComponent={query.trim() ? null : <HomeEmpty sub={sub} />}
         ListFooterComponent={
