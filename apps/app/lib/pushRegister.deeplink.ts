@@ -5,6 +5,8 @@
 import * as Notifications from 'expo-notifications';
 import { useEffect } from 'react';
 import { router } from 'expo-router';
+// TEMPORARY nav-restore instrumentation — see lib/navTrace. Remove with it.
+import { record as navTrace, shortId } from './navTrace';
 /** Deferred to break the deeplink → channelsCache → xmtp.client → push → … cycle.
  *  The unread-clear is already async + best-effort, so the lazy import is invisible. */
 const markConvRead = async (convId: string): Promise<void> => {
@@ -37,6 +39,7 @@ function convIdFromNotificationData(data: unknown): string | null {
 function openConvFromResponse(response: Notifications.NotificationResponse | null): void {
   if (!response) return;
   const convId = convIdFromNotificationData(response.notification?.request?.content?.data);
+  navTrace('push.response.push', { convId: shortId(convId) });
   if (!convId) return;
   router.push({ pathname: '/xmtp/[convId]', params: { convId } });
   // Clearing unread is async + best-effort; the nav already happened.
@@ -74,6 +77,7 @@ export function usePushDeepLinks(): void {
     // it, then CLEAR it so the native layer can't replay it on the next launch.
     void Notifications.getLastNotificationResponseAsync()
       .then((resp) => {
+        navTrace('push.lastResponse', { hasResponse: !!resp });
         if (cancelled || !resp) return;
         // Consume: clear before navigating so a relaunch never sees this again.
         try { Notifications.clearLastNotificationResponse(); } catch { /* older runtime / unavailable — best-effort */ }

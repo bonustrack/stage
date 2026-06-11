@@ -45,6 +45,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
 import { router, usePathname, useRootNavigationState } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
+// TEMPORARY nav-restore instrumentation — see lib/navTrace. Remove with it.
+import { record as navTrace, markRestoreActive, shortId } from './navTrace';
 
 const STORAGE_KEY = 'metro:lastRoute:v1';
 
@@ -135,10 +137,19 @@ export function useRestoreGate(): RestoreGate {
         // Consume immediately: a one-shot cold-start trigger, never re-armable.
         if (saved) void AsyncStorage.removeItem(STORAGE_KEY).catch(() => { /* best-effort */ });
         // A recognised cold-start deep link wins → don't restore over it.
-        if (saved && isRestorable(saved) && !hasColdStartDeepLink(initialUrl)) {
+        const deepLink = hasColdStartDeepLink(initialUrl);
+        const restorable = !!saved && isRestorable(saved);
+        navTrace('gate.read', {
+          hasSaved: !!saved,
+          savedHead: saved ? '/' + (saved.split('/').filter(Boolean)[0] ?? '') : null,
+          restorable,
+          coldDeepLink: deepLink,
+          willRestore: restorable && !deepLink,
+        });
+        if (saved && restorable && !deepLink) {
           savedRoute.current = saved;
         }
-      } catch { /* fall back to the default route on any failure */ }
+      } catch (e) { navTrace('gate.read.error', { err: String(e).slice(0, 80) }); }
       if (!cancelled) setReady(true);
     })();
     return () => { cancelled = true; };
@@ -178,13 +189,34 @@ export function useRestoreGate(): RestoreGate {
       stackHasTabs(navState) ||
       (Array.isArray(navState?.routes) &&
         navState!.routes.some((r: { state?: { routes?: { name: string }[] } }) => stackHasTabs(r.state)));
+    // Snapshot every nav-state transition we see while waiting to push: which
+    // route names the root + nested stacks carry, the active index, and
+    // canGoBack. This is the ground truth for "did (tabs) commit before push".
+    navTrace('navstate', {
+      rootRoutes: Array.isArray(navState?.routes) ? navState!.routes.map((r) => r.name) : null,
+      rootIndex: (navState as { index?: number } | undefined)?.index ?? null,
+      nestedRoutes: Array.isArray(navState?.routes)
+        ? navState!.routes
+            .map((r: { state?: { routes?: { name: string }[] } }) =>
+              Array.isArray(r.state?.routes) ? r.state!.routes!.map((n) => n.name) : null)
+            .filter(Boolean)
+        : null,
+      rootHasTabs,
+      canGoBack: router.canGoBack(),
+      ready,
+    });
     if (!rootHasTabs) return;
     restoreTried.current = true;
+    markRestoreActive();
+    navTrace('restore.gated', { target: '/' + (saved.split('/').filter(Boolean)[0] ?? ''), convId: shortId(saved.split('/').filter(Boolean)[1]) });
     // One frame of slack so the committed `(tabs)` card has painted before the
     // push enters the stack on top of it.
     const raf = requestAnimationFrame(() => {
+      navTrace('restore.push', { canGoBackBefore: router.canGoBack() });
       router.push(saved as Parameters<typeof router.push>[0]);
       restoreDone.current = true;
+      // Re-check on the next frame: did the push land with (tabs) beneath it?
+      requestAnimationFrame(() => navTrace('restore.pushed', { canGoBackAfter: router.canGoBack() }));
     });
     return () => cancelAnimationFrame(raf);
   }, [ready, navState]);

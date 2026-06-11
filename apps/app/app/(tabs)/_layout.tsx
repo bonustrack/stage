@@ -3,8 +3,11 @@
  *  active theme, no labels, status-bar inset baked into `sceneStyle.paddingTop`
  *  so individual screens don't have to reach for `useSafeAreaInsets` themselves. */
 
+import { useEffect } from 'react';
 import { Box, Col } from '../../components/layout';
 import { fontSize } from '@metro-labs/kit/tokens';
+// TEMPORARY nav-restore instrumentation — see lib/navTrace. Remove with it.
+import { record as navTrace } from '../../lib/navTrace';
 import { Tabs, usePathname } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
@@ -17,6 +20,7 @@ export default function TabsLayout(): React.ReactElement {
   const pathname = usePathname();
   /** Total unread across all non-archived convs - drives the badge on the
    *  Messenger (index) tab. Live: updates as messages arrive / are read. */
+  useEffect(() => { navTrace('tabs.mount'); }, []);
   const unread = useTotalUnread();
   const unreadBadge = unread > 0 ? (unread > 99 ? '99+' : String(unread)) : undefined;
   /** The pager mounts the three swipe-tab bodies (Channels/Contacts/Wallet).

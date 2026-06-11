@@ -28,6 +28,8 @@ import { useEffectiveColorScheme, usePalette, useRadius } from '../lib/theme';
 import { KitThemeProvider } from '@metro-labs/kit/theme-context';
 import { useDeepLinks } from '../lib/deepLinks';
 import { useRestoreGate } from '../lib/lastRoute';
+// TEMPORARY nav-restore instrumentation — see lib/navTrace. Remove with it.
+import { record as navTrace, armTraceDelivery } from '../lib/navTrace';
 import { usePushDeepLinks } from '../lib/push';
 import { ensureActiveAccount, ensureMessagingStreamSync } from '../modules/messaging';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -104,6 +106,11 @@ function RootLayoutInner(): React.ReactElement {
    *  paint. */
   const barStyle: 'light' | 'dark' = isDarkBg(toolbarBg) ? 'light' : 'dark';
   useEffect(() => { setStatusBarStyle(barStyle, true); }, [barStyle]);
+
+  /** TEMPORARY nav-restore instrumentation: record app-root mount + arm the
+   *  one-shot ~12s trace delivery (sends only if a saved-route restore fired).
+   *  Remove with lib/navTrace once the on-device cause is found. */
+  useEffect(() => { navTrace('app.mount'); armTraceDelivery(); }, []);
 
   /** Universal/deep links → screen navigation. `getInitialURL` resolves async
    *  (after the Stack below has mounted) so cold-start taps land correctly; warm
