@@ -11,10 +11,9 @@ import { YouTubeEmbed, LocationEmbed } from './MediaEmbeds';
 import { ChannelCard } from './ChannelCard';
 import { GitHubLinkCard } from './GitHubLinkCard';
 import { PreviewLinkCard } from './PreviewLinkCard';
-import { mapCoordsOf, youtubeIdOf } from '../lib/embedDetect';
-import { githubLinkOf } from '../lib/githubDetect';
 import { previewLinkOf } from '../lib/previewLinkDetect';
 import { metroConvIdOf, metroDmPeerOf } from '../modules/messaging';
+import { cardLinksOf } from '../lib/cardLinks';
 import { Box, Row } from './layout';
 import type { HistoryEntry } from '../lib/types';
 import {
@@ -142,22 +141,22 @@ export function BubbleContent({
           })()
         )
       ) : null}
-      {/** Inline embeds — metro channel card + YouTube + location, below the text so a URL stays tappable. */}
-      {(() => {
-        const dmPeer = metroDmPeerOf(entry.text);
-        if (dmPeer) return <Box margin={{ top: 6 }} style={{ alignSelf: 'stretch' }}><ChannelCard peerAddress={dmPeer} dark={dark} /></Box>;
-        const convId = metroConvIdOf(entry.text);
-        if (convId) return <Box margin={{ top: 6 }} style={{ alignSelf: 'stretch' }}><ChannelCard convId={convId} dark={dark} /></Box>;
-        const ytId = youtubeIdOf(entry.text);
-        if (ytId) return <Box margin={{ top: 6 }} style={{ alignSelf: 'stretch' }}><YouTubeEmbed videoId={ytId} dark={dark} /></Box>;
-        const coords = mapCoordsOf(entry.text);
-        if (coords) return <Box margin={{ top: 6 }} style={{ alignSelf: 'stretch' }}><LocationEmbed lat={coords.lat} lng={coords.lng} sourceUrl={coords.sourceUrl} dark={dark} /></Box>;
-        const gh = githubLinkOf(entry.text);
-        if (gh) return <Box margin={{ top: 6 }} style={{ alignSelf: 'stretch' }}><GitHubLinkCard url={gh.url} dark={dark} /></Box>;
-        const preview = previewLinkOf(entry.text);
-        if (preview) return <Box margin={{ top: 6 }} style={{ alignSelf: 'stretch' }}><PreviewLinkCard url={preview.url} dark={dark} /></Box>;
-        return null;
-      })()}
+      {/** Inline embeds — one card per card-generating link in the body, stacked
+       *  below the text (in appearance order, deduped) so each URL stays tappable.
+       *  Capped at MAX_CARDS; extra links remain plain text. */}
+      {cardLinksOf(entry.text).map(card => {
+        const node = card.kind === 'dm' ? <ChannelCard peerAddress={card.peerAddress} dark={dark} />
+          : card.kind === 'channel' ? <ChannelCard convId={card.convId} dark={dark} />
+          : card.kind === 'youtube' ? <YouTubeEmbed videoId={card.videoId} dark={dark} />
+          : card.kind === 'map' ? <LocationEmbed lat={card.lat} lng={card.lng} sourceUrl={card.sourceUrl} dark={dark} />
+          : card.kind === 'github' ? <GitHubLinkCard url={card.url} dark={dark} />
+          : <PreviewLinkCard url={card.url} dark={dark} />;
+        return (
+          <Box key={`${card.kind}:${card.url}`} margin={{ top: 6 }} style={{ alignSelf: 'stretch' }}>
+            {node}
+          </Box>
+        );
+      })}
       {question && onAnswer ? (
         <QuestionView question={question} dark={dark} sub={sub} onAnswer={onAnswer} />
       ) : null}
