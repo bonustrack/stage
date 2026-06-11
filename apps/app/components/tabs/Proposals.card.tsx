@@ -1,15 +1,25 @@
-/** The single active proposal card on the Proposals tab.
+/** The single active pending-request card on the Pending requests page.
  *
- *  Mounts the FULL conversation machinery for ONE channel via
- *  `useConversationState`, so the poll's vote tally + casting reuse the exact
- *  same path as the chat view (optimistic `useVotesLayer` -> `xmtpVote`
- *  reactions). The card surfaces just the poll: title + `PollView` options
- *  (tap = cast vote), with Skip / Open-channel controls and the standard
- *  `MessengerComposer` underneath so Less can send a custom message instead.
- *  Voting or sending advances to the next proposal.
+ *  Dispatches on the queued request's `kind`:
+ *   - poll     → PollRequestCard: the live poll tally + vote, reusing the chat
+ *                view's vote pipeline (useConversationState → useVotesLayer).
+ *   - payment  → TxPayCard: the SAME TxRequestCard the chat renders, wired to the
+ *                conversation's Pay flow (confirm + own-balance via useTxSignLayer).
+ *   - signing  → SigSignCard: the SAME SigRequestCard with its native Sign action.
+ *   - message  → MessageRequestCard: a compact channel preview (name + last
+ *                message) with Accept / Block (reusing the requests-list consent
+ *                handlers) + Open.
  *
- *  Keyed by convId at the call site so switching proposals remounts the hook
- *  cleanly (fresh feed for the next channel). */
+ *  The message-level kinds (poll/payment/signing) mount the FULL conversation
+ *  machinery for ONE channel via `useConversationState`, so voting / paying /
+ *  signing reuse the exact same path (and receipts) as the chat view. The message
+ *  kind is channel-level (consent-unknown), so it needs no conversation mount.
+ *
+ *  Common controls per card: Skip (session) + Open channel. Acting on a request
+ *  (vote / pay / sign / accept / block) advances to the next.
+ *
+ *  Keyed by the request key at the call site so switching requests remounts the
+ *  hook cleanly (fresh feed for the next channel). */
 
 import { useCallback, useMemo } from 'react';
 import { useRouter } from 'expo-router';
@@ -17,53 +27,113 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { Button } from '@metro-labs/kit/button';
 import { Text } from '@metro-labs/kit/text';
+import type { SignatureRequestContent } from '@stage-labs/client/xmtp/sign';
+import type { WalletSendCallsContent } from '@stage-labs/client/xmtp/tx';
 import { Box, Row, Col } from '../layout';
 import { Avatar } from '../Avatar';
+import { ChannelRow } from '../ChannelRow';
 import { MessengerComposer } from '../MessengerComposer';
 import { useConversationState } from '../xmtp-conv/useConversationState';
-import { pollOf, fmtTs } from '../MessengerBubble.helpers';
+import { pollOf, txRequestOf, sigRequestOf, fmtTs } from '../MessengerBubble.helpers';
 import { PollView } from '../MessengerBubble.poll';
+import { TxRequestCard, SigRequestCard } from '../MessengerBubble.cards';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { getPeerName } from '../../lib/peerProfiles';
-import { shortAddress } from '../../modules/messaging';
-import type { QueuedProposal } from './Proposals.queue';
+import { shortAddress, acceptRequestConv, blockRequestConv, getCachedXmtpClient } from '../../modules/messaging';
+import type { QueuedRequest } from './Proposals.queue';
 
+/** Top-level dispatcher: route to the right card by request kind. */
 export function ProposalCard({ proposal, onAdvance }: {
-  proposal: QueuedProposal;
-  /** Advance to the next proposal (Skip, or after a vote / custom send). */
+  proposal: QueuedRequest;
+  /** Advance to the next request (Skip, or after acting on this one). */
   onAdvance: () => void;
+}): React.ReactElement {
+  if (proposal.kind === 'message') return <MessageRequestCard request={proposal} onAdvance={onAdvance}/>;
+  return <ConversationRequestCard proposal={proposal} onAdvance={onAdvance}/>;
+}
+
+/** Header shared by the conversation-backed cards: channel title + (for the
+ *  source message) author + posted-at, matching the chat sender resolution. */
+function CardHeader({ title, authorAddr, authorName, postedAt, fg }: {
+  title: string; authorAddr: string | null; authorName: string | null;
+  postedAt: string | null; fg: string;
+}): React.ReactElement {
+  const pal = usePalette();
+  return (
+    <>
+      <Text weight="semibold" size="4xl" color={pal.link} numberOfLines={1}>
+        {title}
+      </Text>
+      {authorName ? (
+        <Row gap={6} align="center" margin={{ top: 8 }}>
+          <Avatar address={authorAddr} size="sm"/>
+          <Text weight="medium" size="sm" color={fg} numberOfLines={1}>{authorName}</Text>
+          {postedAt ? <Text size="xs" role="secondary">· {postedAt}</Text> : null}
+        </Row>
+      ) : null}
+    </>
+  );
+}
+
+/** Skip / Open-channel control row, shared by every card. */
+function ControlRow({ onSkip, onOpen, dark, hint }: {
+  onSkip: () => void; onOpen: () => void; dark: boolean; hint?: string;
+}): React.ReactElement {
+  return (
+    <>
+      <Row gap={10} margin={{ top: 16 }} style={{ alignSelf: 'stretch' }}>
+        <Box flex={1}>
+          <Button block variant="secondary" size="md" dark={dark} onPress={onSkip} label="Skip"/>
+        </Box>
+        <Box flex={1}>
+          <Button block variant="ghost" size="md" dark={dark} onPress={onOpen} label="Open channel"/>
+        </Box>
+      </Row>
+      {hint ? (
+        <Text size="xs" role="secondary" style={{ marginTop: 10, opacity: 0.7 }}>
+          {hint}
+        </Text>
+      ) : null}
+    </>
+  );
+}
+
+/** Poll / payment / signing card: mounts the conversation for one channel and
+ *  renders the request body (PollView / TxRequestCard / SigRequestCard) wired to
+ *  the same vote/pay/sign pipeline the chat uses. */
+function ConversationRequestCard({ proposal, onAdvance }: {
+  proposal: QueuedRequest; onAdvance: () => void;
 }): React.ReactElement {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const dark = useEffectiveColorScheme() === 'dark';
   const pal = usePalette();
   const fg = pal.text, sub = pal.text;
+  const msgId = proposal.msgId ?? '';
 
   const c = useConversationState(proposal.convId, undefined);
   const {
     activeLine, events, myUri, isGroup, groupName, peerAddr,
     mentionCandidates, displayVotes, displayOwnVotes, onVote,
     displayOpenAnswers, onOpenAnswer, onOptimistic, onSent,
-    senderEthOf,
+    senderEthOf, onPay, payingIds, onSign, signingIds,
   } = c;
 
-  /** The poll message itself — re-find it in the live feed by the queued id so
-   *  the tally stays live as votes stream in. */
-  const entry = useMemo(() => events.find(e => e.id === proposal.pollMsgId), [events, proposal.pollMsgId]);
+  /** The source message itself - re-found in the live feed by the queued id so
+   *  the poll tally / pay+sign spinners stay live. */
+  const entry = useMemo(() => events.find(e => e.id === msgId), [events, msgId]);
   const poll = entry ? pollOf(entry) : undefined;
+  const tx = entry ? txRequestOf(entry) : undefined;
+  const sig = entry ? sigRequestOf(entry) : undefined;
 
   const title = isGroup
     ? (groupName?.trim() || 'Untitled group')
     : (peerAddr ? (getPeerName(peerAddr) ?? shortAddress(peerAddr)) : '');
 
-  /** Poll author: resolve eth address from the message sender the same way chat
-   *  bubbles do (`senderEthOf`), then its display name + stamp avatar. */
   const authorAddr = useMemo(
     () => (entry ? senderEthOf(entry.from) : null),
     [entry, senderEthOf],
   );
-  /** Name resolves from the peerProfiles cache; the card re-renders when the
-   *  hook's profile version bumps, so this picks up the resolved name/avatar. */
   const authorName = authorAddr ? (getPeerName(authorAddr) ?? shortAddress(authorAddr)) : null;
   const postedAt = entry?.ts ? fmtTs(entry.ts) : null;
 
@@ -71,71 +141,76 @@ export function ProposalCard({ proposal, onAdvance }: {
     router.push({ pathname: '/xmtp/[convId]', params: { convId: proposal.convId } });
   }, [router, proposal.convId]);
 
-  /** A custom message send counts as acting on this proposal → advance after the
-   *  optimistic add fires (the send itself rides the composer's own pipeline). */
+  /** Pay / sign reuse the chat handlers verbatim, then advance to the next item
+   *  (the receipt posts back into the channel via the shared pipeline). */
+  const wsc = entry ? (entry.payload as { walletSendCalls?: WalletSendCallsContent } | undefined)?.walletSendCalls : undefined;
+  const sigReq = entry ? (entry.payload as { signatureRequest?: SignatureRequestContent } | undefined)?.signatureRequest : undefined;
+  const onPayPress = useCallback(() => { if (wsc) { onPay(msgId, wsc); onAdvance(); } }, [wsc, onPay, msgId, onAdvance]);
+  const onSignPress = useCallback(() => { if (sigReq) { onSign(msgId, sigReq); onAdvance(); } }, [sigReq, onSign, msgId, onAdvance]);
+
   const onComposerOptimistic = useCallback((entryArg: Parameters<NonNullable<typeof onOptimistic>>[0]) => {
     onOptimistic?.(entryArg);
     onAdvance();
   }, [onOptimistic, onAdvance]);
 
+  const loading = !entry;
+  const kindLabel = proposal.kind === 'payment' ? 'payment request'
+    : proposal.kind === 'signing' ? 'signature request' : 'proposal';
+
   return (
     <Col flex={1} surface="surface">
       <Box flex={1} padding={{ x: 16, top: 16 }} style={{ alignSelf: 'stretch' }}>
-        {/* Channel name → the proposal's source. Same style as the conversation
-         *  topnav title (semibold / 4xl / link color), not an eyebrow. */}
-        <Text weight="semibold" size="4xl" color={pal.link} numberOfLines={1}>
-          {title}
-        </Text>
-        {/* Who posted the poll + when, mirroring chat sender resolution. */}
-        {authorName ? (
-          <Row gap={6} align="center" margin={{ top: 8 }}>
-            <Avatar address={authorAddr} size="sm"/>
-            <Text weight="medium" size="sm" color={fg} numberOfLines={1}>{authorName}</Text>
-            {postedAt ? <Text size="xs" role="secondary">· {postedAt}</Text> : null}
-          </Row>
-        ) : null}
+        <CardHeader title={title} authorAddr={authorAddr} authorName={authorName} postedAt={postedAt} fg={fg}/>
+
         {poll?.question ? (
           <Text weight="semibold" size="4xl" color={fg} style={{ marginTop: 6 }}>
             {poll.question}
           </Text>
         ) : null}
+
         {poll ? (
           <PollView
             poll={poll}
             dark={dark}
             sub={sub}
-            votes={displayVotes.get(proposal.pollMsgId)}
-            ownVotes={displayOwnVotes.get(proposal.pollMsgId)}
-            onVote={(q, o, action) => { onVote(proposal.pollMsgId, q, o, action); }}
-            openAnswers={displayOpenAnswers.get(proposal.pollMsgId)}
-            onOpenAnswer={(q, text) => { onOpenAnswer(proposal.pollMsgId, q, text); }}
+            votes={displayVotes.get(msgId)}
+            ownVotes={displayOwnVotes.get(msgId)}
+            onVote={(q, o, action) => { onVote(msgId, q, o, action); }}
+            openAnswers={displayOpenAnswers.get(msgId)}
+            onOpenAnswer={(q, text) => { onOpenAnswer(msgId, q, text); }}
             myUri={myUri}
           />
+        ) : tx ? (
+          <TxRequestCard
+            req={tx}
+            dark={dark}
+            sub={sub}
+            paying={payingIds.has(msgId)}
+            onPay={onPayPress}
+          />
+        ) : sig ? (
+          <SigRequestCard
+            req={sig}
+            dark={dark}
+            sub={sub}
+            signing={signingIds.has(msgId)}
+            onSign={onSignPress}
+          />
         ) : (
-          <Text role="secondary" style={{ marginTop: 12 }}>Loading proposal…</Text>
+          <Text role="secondary" style={{ marginTop: 12 }}>Loading {kindLabel}…</Text>
         )}
-        {/* Controls: full-width 50/50 row - Skip advances without voting; Open
-         *  jumps into the channel. Each Button gets `block` so it stretches to
-         *  fill its flex:1 half (without it the kit Button is alignSelf:
-         *  flex-start and only takes content width). */}
-        <Row gap={10} margin={{ top: 16 }} style={{ alignSelf: 'stretch' }}>
-          <Box flex={1}>
-            <Button block variant="secondary" size="md" dark={dark} onPress={onAdvance} label="Skip"/>
-          </Box>
-          <Box flex={1}>
-            <Button block variant="ghost" size="md" dark={dark} onPress={openChannel} label="Open channel"/>
-          </Box>
-        </Row>
-        <Text size="xs" role="secondary" style={{ marginTop: 10, opacity: 0.7 }}>
-          Tap an option to vote, or send a custom message below.
-        </Text>
+
+        <ControlRow
+          onSkip={onAdvance}
+          onOpen={openChannel}
+          dark={dark}
+          hint={loading ? undefined : proposal.kind === 'poll'
+            ? 'Tap an option to vote, or send a custom message below.'
+            : proposal.kind === 'payment'
+              ? 'Tap Pay to confirm, or send a custom message below.'
+              : 'Tap Sign to confirm, or send a custom message below.'}
+        />
       </Box>
-      {/* Composer wired to this proposal's channel — a custom send advances too.
-       *  Mirrors the conversation view (app/xmtp/[convId]): the composer rides a
-       *  KeyboardStickyView (offset by the bottom safe-area inset so it sits
-       *  flush above the keyboard), and a bottom strip painted with the
-       *  composer's `raised` surface fills the area under the Android system nav
-       *  bar so the composer never renders under the global footer. */}
       <KeyboardStickyView offset={{ opened: insets.bottom }}>
         <MessengerComposer
           dark={dark}
@@ -146,6 +221,70 @@ export function ProposalCard({ proposal, onAdvance }: {
         />
         <Box height={insets.bottom} surface="raised"/>
       </KeyboardStickyView>
+    </Col>
+  );
+}
+
+/** Message-request card: a compact channel preview with Accept / Block (reusing
+ *  the requests-list consent handlers) + Open. Channel-level, no conversation
+ *  mount; acting advances to the next item. */
+function MessageRequestCard({ request, onAdvance }: {
+  request: QueuedRequest; onAdvance: () => void;
+}): React.ReactElement {
+  const router = useRouter();
+  const dark = useEffectiveColorScheme() === 'dark';
+  const pal = usePalette();
+  const view = request.request;
+  const displayTitle = view
+    ? (view.peerAddress ? (getPeerName(view.peerAddress) ?? view.title) : view.title)
+    : '';
+
+  const openChannel = useCallback(() => {
+    router.push({ pathname: '/xmtp/[convId]', params: { convId: request.convId } });
+  }, [router, request.convId]);
+
+  /** Accept / Block reuse the exact requests-list handlers; either resolves the
+   *  request, so advance optimistically (the consent write + sync reconcile the
+   *  channels list + other devices). */
+  const act = useCallback((accept: boolean) => {
+    void (accept ? acceptRequestConv(request.convId) : blockRequestConv(request.convId))
+      .then(() => {
+        void (getCachedXmtpClient() as unknown as { preferences?: { syncConsent?: () => Promise<unknown> } })
+          ?.preferences?.syncConsent?.();
+      })
+      .catch(() => { /* best-effort; a failed write just leaves it for next rescan */ });
+    onAdvance();
+  }, [request.convId, onAdvance]);
+
+  return (
+    <Col flex={1} surface="surface">
+      <Box flex={1} padding={{ x: 16, top: 16 }} style={{ alignSelf: 'stretch' }}>
+        <Text weight="semibold" size="4xl" color={pal.link} numberOfLines={1}>
+          Message request
+        </Text>
+        <Box margin={{ top: 12 }} style={{ alignSelf: 'stretch' }}>
+          <ChannelRow
+            title={displayTitle}
+            avatarAddress={view?.avatarAddress ?? null}
+            avatarUri={view?.avatarUri ?? null}
+            square={view?.isGroup}
+            lastPreview={view?.preview || '(no messages yet)'}
+            onPress={openChannel}
+          />
+        </Box>
+
+        <Row gap={10} margin={{ top: 16 }} style={{ alignSelf: 'stretch' }}>
+          <Box flex={1}>
+            <Button block variant="danger" size="md" dark={dark} onPress={() => act(false)} label="Block"
+              tintBg={pal.danger} tintFg={pal.bg}/>
+          </Box>
+          <Box flex={1}>
+            <Button block variant="primary" size="md" dark={dark} onPress={() => act(true)} label="Accept"
+              tintBg={pal.link} tintFg={pal.bg}/>
+          </Box>
+        </Row>
+        <ControlRow onSkip={onAdvance} onOpen={openChannel} dark={dark}/>
+      </Box>
     </Col>
   );
 }

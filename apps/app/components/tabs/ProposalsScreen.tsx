@@ -40,7 +40,7 @@ export function ProposalsScreen(): React.ReactElement {
           <Icon name="arrowLeft" size={22} color={head}/>
         </Pressable>
         <Title size="sm">
-          Pending questions
+          Pending requests
         </Title>
       </Row>
 
@@ -52,13 +52,13 @@ export function ProposalsScreen(): React.ReactElement {
               {position} of {total}
             </Text>
           </Box>
-          <ProposalCard key={current.convId} proposal={current} onAdvance={advance}/>
+          <ProposalCard key={current.key} proposal={current} onAdvance={advance}/>
         </Col>
       ) : (
         <Col flex={1} surface="surface" align="center" justify="center" padding={{ x: 24 }}>
           <Box align="center" gap={12}>
             <Text size="3xl" color={pal.text} style={{ opacity: 0.85 }}>
-              {loading ? 'Loading proposals…' : 'No pending proposals'}
+              {loading ? 'Loading requests…' : 'No pending requests'}
             </Text>
             {!loading ? (
               <Button variant="secondary" size="md" dark={dark} onPress={refresh} label="Refresh"/>
