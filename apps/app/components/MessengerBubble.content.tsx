@@ -11,8 +11,6 @@ import { YouTubeEmbed, LocationEmbed } from './MediaEmbeds';
 import { ChannelCard } from './ChannelCard';
 import { GitHubLinkCard } from './GitHubLinkCard';
 import { PreviewLinkCard } from './PreviewLinkCard';
-import { previewLinkOf } from '../lib/previewLinkDetect';
-import { metroConvIdOf, metroDmPeerOf } from '../modules/messaging';
 import { cardLinksOf } from '../lib/cardLinks';
 import { Box, Row } from './layout';
 import type { HistoryEntry } from '../lib/types';
@@ -109,37 +107,27 @@ export function BubbleContent({
         /** Transaction bubbles render an interactive card instead of raw fallback text. */
         null
       ) : entry.text ? (
-        /** A message whose entire body is a metro channel link renders as the card
-         *  alone (no raw URL); links mixed into other text keep the text + card. */
+        /** Always render the body text, even when the whole message is a single
+         *  shared link: the cards below are an ADDITION, not a replacement, so a
+         *  lone-link share still shows the url it shared (then its card stacks
+         *  beneath). Mixed text + links already kept both. */
         (() => {
-          const t = entry.text.trim();
-          const dmPeer = metroDmPeerOf(t);
-          const cid = metroConvIdOf(t);
-          // Whole-body channel/DM link → render the card alone (no raw URL).
-          const preview = previewLinkOf(t);
-          const isBareLink = (dmPeer && t === `metro://xmtp/user/${dmPeer}`)
-            || (cid && t === `metro://xmtp/${cid}`)
-            || (preview != null && t === preview.url);
-          return isBareLink;
-        })() ? null : (
-          (() => {
-            /** Repair line breaks delivered as the literal 2-char `\n` (escaped by
-             *  a sender that JSON-stringified the body) so they render as real
-             *  breaks. Lossless for normal messages (no-op fast path). */
-            const body = unescapeBody(entry.text);
-            return (
-              <Box style={{ alignSelf: 'stretch' }}>
-                {highlight && highlight.trim()
-                  ? <HighlightText text={body} query={highlight} fg={fg} />
-                  : selectable
-                    ? <Text size="3xl" selectable color={fg} style={{ lineHeight: 23 }}>{body}</Text>
-                    : hasMention(body)
-                      ? <MentionBody text={body} fg={fg} dark={dark} />
-                      : <Markdown {...markdownProps}>{body}</Markdown>}
-              </Box>
-            );
-          })()
-        )
+          /** Repair line breaks delivered as the literal 2-char `\n` (escaped by
+           *  a sender that JSON-stringified the body) so they render as real
+           *  breaks. Lossless for normal messages (no-op fast path). */
+          const body = unescapeBody(entry.text);
+          return (
+            <Box style={{ alignSelf: 'stretch' }}>
+              {highlight && highlight.trim()
+                ? <HighlightText text={body} query={highlight} fg={fg} />
+                : selectable
+                  ? <Text size="3xl" selectable color={fg} style={{ lineHeight: 23 }}>{body}</Text>
+                  : hasMention(body)
+                    ? <MentionBody text={body} fg={fg} dark={dark} />
+                    : <Markdown {...markdownProps}>{body}</Markdown>}
+            </Box>
+          );
+        })()
       ) : null}
       {/** Inline embeds — one card per card-generating link in the body, stacked
        *  below the text (in appearance order, deduped) so each URL stays tappable.

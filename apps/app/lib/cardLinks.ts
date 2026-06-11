@@ -27,9 +27,10 @@ export type CardLink =
   | { kind: 'github'; url: string }
   | { kind: 'preview'; url: string };
 
-/** A URL-shaped token: an http(s) link or a `metro://` deep link, terminated by
- *  whitespace. Matched globally so we can walk every link in appearance order. */
-const TOKEN_RE = /(?:https?:\/\/|metro:\/\/)\S+/gi;
+/** A URL-shaped token: an http(s) link or a `metro://` / `stage://` deep link
+ *  (the app ships under both brands), terminated by whitespace. Matched globally
+ *  so we can walk every link in appearance order. */
+const TOKEN_RE = /(?:https?:\/\/|metro:\/\/|stage:\/\/)\S+/gi;
 
 /** Classify a single URL token into a card descriptor, or null if it isn't a
  *  card-generating link. The detectors are run against the lone token (not the
