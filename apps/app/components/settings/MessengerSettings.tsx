@@ -1,5 +1,5 @@
 /** Settings → Messenger — XMTP account info (address, inbox id, installation
- *  id — tap to copy) + the floating-voice-pill grant + the "Reset XMTP
+ *  id — tap to copy) + the "Reset XMTP
  *  identity" flow. All real, existing data/behaviour pulled out of the old flat
  *  Settings tab; no invented toggles. */
 

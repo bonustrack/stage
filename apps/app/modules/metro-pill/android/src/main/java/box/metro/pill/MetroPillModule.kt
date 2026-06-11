@@ -5,11 +5,9 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
-import android.provider.Settings
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.Person
-import androidx.core.content.ContextCompat
 import androidx.core.content.LocusIdCompat
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
@@ -20,15 +18,11 @@ import java.lang.ref.WeakReference
 
 /**
  * MetroPill — native Android support for:
- *   (1) a draggable always-on overlay "chat-head" pill (SYSTEM_ALERT_WINDOW)
- *       that records audio on tap and emits the file uri to JS;
- *   (2) the runtime overlay-permission request flow; and
- *   (3) Android Bubbles (conversation shortcut + bubble notification) for a
- *       1-1 DM.
- *
- * The XMTP client is JS-bound, so this module NEVER sends the clip itself: it
- * records to disk and fires `onRecorded` with the file uri; the JS layer does
- * the XMTP send via the existing attachment pipeline.
+ *   (1) Android Bubbles (conversation shortcut + bubble notification) for a
+ *       1-1 DM; and
+ *   (2) the push-notification plumbing the custom FCM service reads
+ *       (active-conversation + app-foreground suppression flags, and the
+ *       `onXmtpPush` event MetroFcmService emits on every contentless push).
  */
 class MetroPillModule : Module() {
   private val context: Context
@@ -40,72 +34,13 @@ class MetroPillModule : Module() {
     // `onXmtpPush` is fired by MetroFcmService (via the companion `emit`) on every
     // contentless xmtp push so JS can force a sync + reload the open feed — the
     // real-time delivery signal that replaces the removed periodic poll.
-    Events("onRecorded", "onPillTapped", "onOpenChat", "onError", "onXmtpPush")
+    Events("onError", "onXmtpPush")
 
     OnCreate {
       instanceRef = WeakReference(this@MetroPillModule)
     }
     OnDestroy {
       if (instanceRef?.get() === this@MetroPillModule) instanceRef = null
-    }
-
-    // ---- Overlay permission (SYSTEM_ALERT_WINDOW is a special permission;
-    //      it can only be granted from the system Settings screen, no dialog) ----
-
-    Function("hasOverlayPermission") {
-      Settings.canDrawOverlays(context)
-    }
-
-    AsyncFunction("requestOverlayPermission") {
-      val intent = Intent(
-        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-        Uri.parse("package:" + context.packageName),
-      ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-      // Prefer the foreground Activity so the user lands back in-app on return;
-      // fall back to an application-context launch if none is attached.
-      (appContext.currentActivity ?: context).startActivity(intent)
-      // Can't get a result callback from this Settings screen — JS re-polls
-      // hasOverlayPermission() on AppState 'active'.
-    }
-
-    // ---- Floating pill ----
-
-    Function("isPillVisible") {
-      OverlayService.isRunning
-    }
-
-    Function("showPill") { avatarPath: String?, badge: Int ->
-      if (!Settings.canDrawOverlays(context)) {
-        sendEvent("onError", mapOf("message" to "overlay-permission-missing"))
-        return@Function false
-      }
-      val intent = Intent(context, OverlayService::class.java)
-        .putExtra(OverlayService.EXTRA_ACTION, OverlayService.ACTION_SHOW)
-        .putExtra(OverlayService.EXTRA_AVATAR_PATH, avatarPath)
-        .putExtra(OverlayService.EXTRA_BADGE, badge)
-      ContextCompat.startForegroundService(context, intent)
-      true
-    }
-
-    /** Update the unread-count badge on the live pill (no-op if not showing). */
-    Function("setBadge") { count: Int ->
-      val intent = Intent(context, OverlayService::class.java)
-        .putExtra(OverlayService.EXTRA_ACTION, OverlayService.ACTION_BADGE)
-        .putExtra(OverlayService.EXTRA_BADGE, count)
-      try {
-        context.startService(intent)
-      } catch (_: Throwable) { /* service may not be running */ }
-      true
-    }
-
-    Function("hidePill") {
-      val intent = Intent(context, OverlayService::class.java)
-        .putExtra(OverlayService.EXTRA_ACTION, OverlayService.ACTION_HIDE)
-      // Best-effort: if the service isn't running this is a no-op.
-      try {
-        context.startService(intent)
-      } catch (_: Throwable) { /* service may already be stopped */ }
-      true
     }
 
     // ---- Android Bubbles ----
@@ -296,13 +231,15 @@ class MetroPillModule : Module() {
      *  skips its generic card so the JS layer posts the rich one (no dupes). */
     const val KEY_APP_FOREGROUND = "app_foreground"
 
-    /** Weak ref so the OverlayService can deliver recorder results back into JS
-     *  without leaking the module across JS reloads. Cleared in OnDestroy. */
+    /** Weak ref so MetroFcmService (a separate FCM-dispatch context) can deliver
+     *  the `onXmtpPush` event back into JS without leaking the module across JS
+     *  reloads. Cleared in OnDestroy. */
     @Volatile
     var instanceRef: WeakReference<MetroPillModule>? = null
 
-    /** Called from OverlayService — no-ops if no module is currently attached
-     *  (the clip is still durable on disk + queued JS-side). */
+    /** Called from MetroFcmService — no-ops if no module is currently attached
+     *  (the FCM card still posts and the contentless push still wakes a cold JS
+     *  on next launch). */
     fun emit(name: String, payload: Map<String, Any?>) {
       instanceRef?.get()?.sendEvent(name, payload)
     }

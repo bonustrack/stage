@@ -8,11 +8,8 @@
  * supplies the manifest bits the module needs.
  *
  * Adds:
- *   - SYSTEM_ALERT_WINDOW   (floating overlay pill; the one nothing else grants)
- *   - RECORD_AUDIO          (mic; also covered by expo-av, declared for clarity)
- *   - FOREGROUND_SERVICE    + FOREGROUND_SERVICE_MICROPHONE (API 34+ mic FGS)
- *   - POST_NOTIFICATIONS    (API 33+, for the FGS + bubble notifications)
- *   - <service> OverlayService with foregroundServiceType="microphone"
+ *   - POST_NOTIFICATIONS    (API 33+, for the bubble + FCM notifications)
+ *   - <service> MetroFcmService (the single FirebaseMessagingService receiver)
  *   - android:resizeableActivity="true" on MainActivity — REQUIRED for Android
  *     Bubbles. The activity launched inside a bubble must be resizeable or the
  *     system silently refuses to float it (isBubblesSupported() can be true yet
@@ -21,14 +18,9 @@
 const { withAndroidManifest, AndroidConfig } = require('expo/config-plugins');
 
 const PERMISSIONS = [
-  'android.permission.SYSTEM_ALERT_WINDOW',
-  'android.permission.RECORD_AUDIO',
-  'android.permission.FOREGROUND_SERVICE',
-  'android.permission.FOREGROUND_SERVICE_MICROPHONE',
   'android.permission.POST_NOTIFICATIONS',
 ];
 
-const SERVICE_NAME = 'box.metro.pill.OverlayService';
 const FCM_SERVICE_NAME = 'box.metro.pill.MetroFcmService';
 
 /** @param {import('@expo/config-plugins').ExportedConfig} config */
@@ -56,21 +48,8 @@ function withMetroPill(config) {
       }
     }
 
-    // --- foreground service declaration ---
     const app = AndroidConfig.Manifest.getMainApplicationOrThrow(cfg.modResults);
     app.service = app.service || [];
-    const hasService = app.service.some(
-      (s) => s.$ && s.$['android:name'] === SERVICE_NAME,
-    );
-    if (!hasService) {
-      app.service.push({
-        $: {
-          'android:name': SERVICE_NAME,
-          'android:exported': 'false',
-          'android:foregroundServiceType': 'microphone',
-        },
-      });
-    }
 
     // --- custom FCM service (the ONLY MESSAGING_EVENT receiver) ---
     // MetroFcmService is the single FirebaseMessagingService that receives FCM
