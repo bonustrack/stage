@@ -45,8 +45,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
 import { router, usePathname, useRootNavigationState } from 'expo-router';
 import { useEffect, useState } from 'react';
-// TEMPORARY nav-restore instrumentation — see lib/navTrace. Remove with it.
-import { record as navTrace, markRestoreActive, shortId } from './navTrace';
 
 const STORAGE_KEY = 'metro:lastRoute:v1';
 
@@ -163,9 +161,8 @@ export function useRestoreGate(): RestoreGate {
   useEffect(() => {
     let cancelled = false;
     // Remount after the gate already ran: do NOT re-read or re-arm. Just unblock
-    // the Stack and leave a trace breadcrumb so we can SEE the remount.
+    // the Stack.
     if (restoreState !== 'idle') {
-      navTrace('gate.read', { blockedBy: 'process-guard', restoreState });
       setReady(true);
       return;
     }
@@ -181,13 +178,6 @@ export function useRestoreGate(): RestoreGate {
         const deepLink = hasColdStartDeepLink(initialUrl);
         const restorable = !!saved && isRestorable(saved);
         const willRestore = !!saved && restorable && !deepLink;
-        navTrace('gate.read', {
-          hasSaved: !!saved,
-          savedHead: saved ? '/' + (saved.split('/').filter(Boolean)[0] ?? '') : null,
-          restorable,
-          coldDeepLink: deepLink,
-          willRestore,
-        });
         if (willRestore) {
           processSavedRoute = saved;
           restoredTarget = saved;
@@ -199,8 +189,7 @@ export function useRestoreGate(): RestoreGate {
           persistResumed = true;
           restoreState = 'done';
         }
-      } catch (e) {
-        navTrace('gate.read.error', { err: String(e).slice(0, 80) });
+      } catch {
         persistResumed = true;
         restoreState = 'done';
       }
@@ -243,38 +232,14 @@ export function useRestoreGate(): RestoreGate {
       stackHasTabs(navState) ||
       (Array.isArray(navState?.routes) &&
         navState!.routes.some((r: { state?: { routes?: { name: string }[] } }) => stackHasTabs(r.state)));
-    // Snapshot every nav-state transition we see while waiting to push: which
-    // route names the root + nested stacks carry, the active index, and
-    // canGoBack. This is the ground truth for "did (tabs) commit before push".
-    navTrace('navstate', {
-      rootRoutes: Array.isArray(navState?.routes) ? navState!.routes.map((r) => r.name) : null,
-      rootIndex: (navState as { index?: number } | undefined)?.index ?? null,
-      nestedRoutes: Array.isArray(navState?.routes)
-        ? navState!.routes
-            .map((r: { state?: { routes?: { name: string }[] } }) =>
-              Array.isArray(r.state?.routes) ? r.state!.routes!.map((n) => n.name) : null)
-            .filter(Boolean)
-        : null,
-      rootHasTabs,
-      canGoBack: router.canGoBack(),
-      ready,
-    });
     if (!rootHasTabs) return;
     // Claim the restore for this process BEFORE the async push so a concurrent
     // remount's effect can't also pass the guard and double-push.
     restoreState = 'done';
-    markRestoreActive();
-    navTrace('restore.gated', { target: '/' + (saved.split('/').filter(Boolean)[0] ?? ''), convId: shortId(saved.split('/').filter(Boolean)[1]) });
     // One frame of slack so the committed `(tabs)` card has painted before the
     // push enters the stack on top of it.
     const raf = requestAnimationFrame(() => {
-      navTrace('restore.push', { canGoBackBefore: router.canGoBack() });
       router.push(saved as Parameters<typeof router.push>[0]);
-      // Re-check on the next frame: did the push land with (tabs) beneath it?
-      requestAnimationFrame(() => navTrace('restore.pushed', { canGoBackAfter: router.canGoBack() }));
-      // And once more after settle (500ms) so we SEE the FINAL stack + canGoBack
-      // on Less's device — confirms the gesture-armed single restore.
-      setTimeout(() => navTrace('restore.settled', { canGoBack: router.canGoBack() }), 500);
     });
     return () => cancelAnimationFrame(raf);
   }, [ready, navState]);
@@ -303,7 +268,6 @@ export function useRestoreGate(): RestoreGate {
       if (!reachedTarget) return;
       // Target was reached and the user has now navigated AWAY → resume.
       persistResumed = true;
-      navTrace('persist.resumed', { head: '/' + (pathname.split('/').filter(Boolean)[0] ?? '') });
     }
     persist(pathname);
   }, [ready, pathname]);

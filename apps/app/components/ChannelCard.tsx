@@ -8,8 +8,6 @@
  *  a sync on arrival). */
 
 import { router } from 'expo-router';
-// TEMPORARY nav-restore instrumentation — see lib/navTrace. Remove with it.
-import { record as navTrace, shortId } from '../lib/navTrace';
 import { ChannelRow } from './ChannelRow';
 import { DmPeerCard } from './ChannelCard.dm';
 import { Box } from './layout';
@@ -66,7 +64,6 @@ function ConvIdCard({ convId }: { convId: string }): React.ReactElement {
       : null;
 
   const open = (): void => {
-    navTrace('channelcard.open', { convId: shortId(convId), canGoBack: router.canGoBack() });
     router.push({ pathname: '/xmtp/[convId]', params: { convId } });
   };
 

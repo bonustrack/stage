@@ -24,8 +24,6 @@
 import * as Linking from 'expo-linking';
 import { useEffect } from 'react';
 import { router } from 'expo-router';
-// TEMPORARY nav-restore instrumentation — see lib/navTrace. Remove with it.
-import { record as navTrace } from './navTrace';
 
 /** An expo-router navigation target derived from an incoming link. */
 type ParsedRoute =
@@ -121,7 +119,6 @@ function routeForUrl(url: string): ParsedRoute | null {
 function navigateToUrl(url: string): boolean {
   const target = routeForUrl(url);
   if (!target) return false;
-  navTrace('deeplink.push', { pathname: target.pathname, hash: url.includes('#') });
   // `router.push` is overloaded; the discriminated union above keeps each
   // pathname paired with the params its route declares.
   router.push(target as Parameters<typeof router.push>[0]);
@@ -146,7 +143,6 @@ export function useDeepLinks(): void {
 
     // Cold start: the URL the app was opened with, if any.
     void Linking.getInitialURL().then(url => {
-      navTrace('deeplink.initialUrl', { hasUrl: !!url, handled: !!(url && shouldHandle(url)) });
       if (!cancelled && url && shouldHandle(url)) navigateToUrl(url);
     });
 

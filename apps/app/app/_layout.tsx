@@ -28,8 +28,6 @@ import { useEffectiveColorScheme, usePalette, useRadius } from '../lib/theme';
 import { KitThemeProvider } from '@metro-labs/kit/theme-context';
 import { useDeepLinks } from '../lib/deepLinks';
 import { useRestoreGate } from '../lib/lastRoute';
-// TEMPORARY nav-restore instrumentation — see lib/navTrace. Remove with it.
-import { record as navTrace, armTraceDelivery, nextRootMount, recordRootDeps } from '../lib/navTrace';
 import { usePushDeepLinks } from '../lib/push';
 import { ensureActiveAccount, ensureMessagingStreamSync } from '../modules/messaging';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -106,17 +104,6 @@ function RootLayoutInner(): React.ReactElement {
    *  paint. */
   const barStyle: 'light' | 'dark' = isDarkBg(toolbarBg) ? 'light' : 'dark';
   useEffect(() => { setStatusBarStyle(barStyle, true); }, [barStyle]);
-
-  /** TEMPORARY nav-restore instrumentation: record app-root mount (with a
-   *  process-stable mount # so a REMOUNT is unambiguous — >1 = the root subtree
-   *  was torn down + rebuilt) + arm the one-shot ~12s trace delivery (sends only
-   *  if a saved-route restore fired). Remove with lib/navTrace once resolved. */
-  useEffect(() => { navTrace('app.mount', { mount: nextRootMount() }); armTraceDelivery(); }, []);
-
-  /** TEMPORARY: name WHICH root-render input flipped between commits, so any
-   *  residual remount is self-explaining on the next device run. Plain
-   *  primitives only. Remove with lib/navTrace. */
-  recordRootDeps({ scheme: dark ? 'dark' : 'light', barStyle, bg, toolbarBg });
 
   /** Universal/deep links → screen navigation. `getInitialURL` resolves async
    *  (after the Stack below has mounted) so cold-start taps land correctly; warm
