@@ -151,11 +151,13 @@ const config = {
       // foreground service + this permission at the source (we only use
       // decodeAudioData), but Google Play flagged it, so we also hard-block it
       // here in case any transitive AAR re-injects it at gradle manifest-merge.
-      // NOTE: we deliberately do NOT block FOREGROUND_SERVICE_MICROPHONE - the
-      // metro-pill OverlayService starts a real microphone-type foreground
-      // service (modules/metro-pill, foregroundServiceType="microphone"); on
-      // API 34+ that permission is required and blocking it would crash the
-      // overlay pill with a SecurityException.
+      // The floating-overlay pill feature was removed, so the app no longer
+      // needs a microphone foreground service or the draw-over-other-apps
+      // permission. Hard-block both here so no transitive AAR can re-inject them
+      // at gradle manifest-merge and re-trigger Google Play's sensitive-
+      // permission review.
+      'android.permission.FOREGROUND_SERVICE_MICROPHONE',
+      'android.permission.SYSTEM_ALERT_WINDOW',
       'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK',
       'android.permission.READ_MEDIA_IMAGES',
       'android.permission.READ_MEDIA_VIDEO',
