@@ -40,6 +40,10 @@ export const ASSETS: Asset[] = [
   { symbol: 'USDC', name: 'USD Coin',  decimals: 6,  chainId: 1,        address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', logoAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', cgPlatform: 'ethereum' },
   { symbol: 'ETH',  name: 'Ethereum',  decimals: 18, chainId: 11155111, address: null, logoAddress: NATIVE_TOKEN_SENTINEL, cgId: 'ethereum' },
   { symbol: 'USDC', name: 'USD Coin',  decimals: 6,  chainId: 11155111, address: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238', logoAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', cgPlatform: 'ethereum', priceAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' },
+  // STAGE (ERC-20 Votes) — Sepolia governance token. No CoinGecko listing, so no
+  // price row (the $ column stays blank); the logo falls back to the stamp.fyi
+  // identicon for its own contract address.
+  { symbol: 'STAGE', name: 'Stage', decimals: 18, chainId: 11155111, address: '0x7a49F33AD000220a764ED303f9911cB08422d138', logoAddress: '0x7a49F33AD000220a764ED303f9911cB08422d138' },
 ];
 
 /** Network bullets — Ethereum is Snapshot's IPFS-hosted logo; Sepolia is the
