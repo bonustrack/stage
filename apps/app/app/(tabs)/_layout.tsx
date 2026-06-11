@@ -75,6 +75,7 @@ export default function TabsLayout(): React.ReactElement {
         {(
           [
             ['index', 'chatBubble'],
+            ['proposals', 'chartBar'],
             ['contacts', 'users'],
             ['wallet', 'wallet'],
           ] as const satisfies ReadonlyArray<readonly [string, HeroIconName]>

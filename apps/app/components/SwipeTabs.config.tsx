@@ -5,6 +5,7 @@
 import type { Href } from 'expo-router';
 
 import { HomeScreen } from './tabs/HomeScreen';
+import { ProposalsScreen } from './tabs/ProposalsScreen';
 import { ContactsScreen } from './ContactsScreen';
 import { WalletScreen } from './tabs/WalletScreen';
 
@@ -15,26 +16,28 @@ import { WalletScreen } from './tabs/WalletScreen';
 export type { SimultaneousRefs } from './SwipeTabs.types';
 import type { SimultaneousRefs } from './SwipeTabs.types';
 
-/** Tab order = the order declared in `app/(tabs)/_layout.tsx`. Index 0..2.
- *  (Channels / Contacts / Wallet — search is unified into the Home bar.)
- *  Matches the footer order so swipe and tap agree. */
-export const TAB_ORDER = ['index', 'contacts', 'wallet'] as const;
+/** Tab order = the order declared in `app/(tabs)/_layout.tsx`. Index 0..3.
+ *  (Channels / Proposals / Contacts / Wallet — search is unified into the Home
+ *  bar.) Matches the footer order so swipe and tap agree. */
+export const TAB_ORDER = ['index', 'proposals', 'contacts', 'wallet'] as const;
 export type TabName = (typeof TAB_ORDER)[number];
 
 /** expo-router pathnames for each tab (the `(tabs)` group is path-transparent;
  *  `index` is the group root `/`). */
 export const TAB_HREF: Record<TabName, Href> = {
   index: '/',
+  proposals: '/proposals',
   contacts: '/contacts',
   wallet: '/wallet',
 };
 
-/** The three tab bodies, mounted side-by-side in pager order. Mounting them all
- *  at once is fine (only three screens) and lets each keep its own scroll/state
+/** The tab bodies, mounted side-by-side in pager order. Mounting them all at
+ *  once is fine (a handful of screens) and lets each keep its own scroll/state
  *  while the neighbour is already rendered during the drag — so it's visible the
  *  instant the finger moves. */
 export const PAGES: Record<TabName, (props: { panRef?: SimultaneousRefs }) => React.ReactElement> = {
   index: HomeScreen,
+  proposals: ProposalsScreen,
   contacts: ContactsScreen,
   wallet: WalletScreen,
 };
@@ -43,8 +46,9 @@ export const PAGES: Record<TabName, (props: { panRef?: SimultaneousRefs }) => Re
  *  current index (the pager isn't mounted off the tabs group anyway). */
 export function indexOfPathname(pathname: string): number {
   if (pathname === '/' || pathname === '') return 0;
-  if (pathname.startsWith('/contacts')) return 1;
-  if (pathname.startsWith('/wallet')) return 2;
+  if (pathname.startsWith('/proposals')) return 1;
+  if (pathname.startsWith('/contacts')) return 2;
+  if (pathname.startsWith('/wallet')) return 3;
   return 0;
 }
 
