@@ -161,20 +161,73 @@ jobs:
           node -e "JSON.parse(require('fs').readFileSync('play-service-account.json','utf8'))" \
             || { echo "::error::PLAY_SERVICE_ACCOUNT_JSON is not valid JSON"; exit 1; }
 
+      # Kick off the cloud build with --no-wait and capture its id, THEN poll the
+      # build status ourselves. We do NOT let `eas build` wait inline: the CLI's
+      # wait phase hits a cache service that intermittently 400s and makes the CLI
+      # exit 1 even though the cloud build is fine (run 27374553352 shipped a good
+      # build but skipped every submit). Polling decouples "did the build succeed"
+      # from "did a status request flake".
       - name: Cloud build (EAS, production-prod)
         id: build
+        timeout-minutes: 50
         run: |
+          set -uo pipefail
+
+          # Start the build without waiting; parse the build id from the JSON.
           OUT=$(eas build \
             --platform android \
             --profile production-prod \
             --non-interactive \
-            --no-wait=false \
+            --no-wait \
             --json)
           echo "$OUT"
           BUILD_ID=$(echo "$OUT" | node -e \
             "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const a=JSON.parse(s);console.log((Array.isArray(a)?a[0]:a).id)})")
+          if [ -z "$BUILD_ID" ] || [ "$BUILD_ID" = "undefined" ]; then
+            echo "::error::Could not parse a build id from the eas build output."
+            exit 1
+          fi
           echo "build_id=$BUILD_ID" >> "$GITHUB_OUTPUT"
-          echo "Built EAS build id: $BUILD_ID"
+          echo "Started EAS build id: $BUILD_ID"
+
+          # Poll until the build reaches a terminal state. A single status request
+          # failing (network/cache flake) is NOT fatal: we tolerate up to 3 such
+          # flakes in a row before giving up. The step timeout-minutes above is the
+          # hard wall-clock ceiling.
+          flakes=0
+          while true; do
+            VIEW=$(eas build:view "$BUILD_ID" --json 2>/dev/null) || VIEW=""
+            STATUS=$(echo "$VIEW" | node -e \
+              "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{const a=JSON.parse(s);console.log((Array.isArray(a)?a[0]:a).status||'')}catch{console.log('')}})")
+
+            if [ -z "$STATUS" ]; then
+              flakes=$((flakes + 1))
+              echo "status request flaked ($flakes/3); retrying in 60s..."
+              if [ "$flakes" -ge 3 ]; then
+                echo "::error::eas build:view failed 3 times in a row; aborting."
+                exit 1
+              fi
+              sleep 60
+              continue
+            fi
+            flakes=0
+            echo "build $BUILD_ID status: $STATUS"
+
+            case "$STATUS" in
+              finished)
+                echo "Build finished."
+                break
+                ;;
+              errored|canceled)
+                echo "::error::EAS build $BUILD_ID ended with status: $STATUS"
+                exit 1
+                ;;
+              *)
+                # new / in-queue / in-progress
+                sleep 90
+                ;;
+            esac
+          done
 
       # ---- Submit the SAME build to each track ----
       # internal + closed must succeed. production may fail while the Play
