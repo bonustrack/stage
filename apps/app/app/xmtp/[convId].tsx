@@ -129,6 +129,23 @@ export default function XmtpConversation(): React.ReactElement {
         rowBg={rowBg}
         insets={insets}
         router={router}
+        searchSlot={searchOpen && searchQuery.trim().length >= 2 ? (
+          <ConversationSearch
+            line={activeLine}
+            query={searchQuery}
+            fg={fg}
+            sub={sub}
+            bg={bg}
+            border={border}
+            head={head}
+            senderEthOf={senderEthOf}
+            getBubbles={() => allBubblesRef.current}
+            hasMore={() => hasMoreRef.current}
+            loadOlder={loadOlder}
+            jumpToMessage={jumpToMessage}
+            onClose={closeSearch}
+/>
+        ) : undefined}
 />
       </Reanimated.View>
       {/** Top nav: solid bg strip mirrors the composer footer + extends UP over the
@@ -184,31 +201,12 @@ export default function XmtpConversation(): React.ReactElement {
         </Pressable>
       </Row>
       )}
-      {/** In-conversation search results panel — anchored directly below the search
-       *   topnav. Local-only history scan + jump-to-match; see ConversationSearch. */}
-      {searchOpen ? (
-        <Box style={{ position: 'absolute', top: TOPNAV_HEIGHT + insets.top, left: 0, right: 0, zIndex: 3 }}>
-          <ConversationSearch
-            line={activeLine}
-            query={searchQuery}
-            fg={fg}
-            sub={sub}
-            bg={bg}
-            border={border}
-            head={head}
-            senderEthOf={senderEthOf}
-            getBubbles={() => allBubblesRef.current}
-            hasMore={() => hasMoreRef.current}
-            loadOlder={loadOlder}
-            jumpToMessage={jumpToMessage}
-            onClose={closeSearch}
-/>
-        </Box>
-      ) : null}
       {/** Fade strip below the top nav — mirrors the composer's top fade. Start it 1px
        *  higher so its solid-bg top edge overlaps the nav bottom, closing the hairline
        *  seam between the two absolute bg layers, then ramps to transparent. */}
-      <ComposerGradient bg={bg} direction="up" top={TOPNAV_HEIGHT + insets.top - 1} height={24}/>
+      {searchOpen ? null : (
+        <ComposerGradient bg={bg} direction="up" top={TOPNAV_HEIGHT + insets.top - 1} height={24}/>
+      )}
       <KeyboardStickyView offset={{ opened: insets.bottom }}>
       <Box>
       {/** Jump-to-bottom: anchored above the composer (bottom:'100%') inside the
