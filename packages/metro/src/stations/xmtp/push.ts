@@ -78,27 +78,59 @@ async function fcmAccessToken(): Promise<string | null> {
   return cachedAccessToken.token;
 }
 
-async function fcmPushTo(
+/** Result of one delivery attempt: ok=delivered; dead=stale token (pruned, don't
+ *  retry); transient=worth a retry (5xx, network, auth blip). */
+type PushOutcome = 'ok' | 'dead' | 'transient';
+
+async function fcmPushOnce(
   deviceToken: string, data: Record<string, string> = {},
-): Promise<void> {
-  const svc = loadFcmSvc(); if (!svc) return;
-  const at = await fcmAccessToken(); if (!at) return;
+): Promise<PushOutcome> {
+  const svc = loadFcmSvc(); if (!svc) return 'transient';
+  const at = await fcmAccessToken(); if (!at) return 'transient';
   const url = `https://fcm.googleapis.com/v1/projects/${svc.project_id}/messages:send`;
   // CONTENTLESS DATA-ONLY message — no `notification` block, no plaintext; device builds the card.
   const payloadData: Record<string, string> = { channelId: 'xmtp', ...data };
-  const res = await fetch(url, {
-    method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${at}` },
-    body: JSON.stringify({ message: { token: deviceToken, android: { priority: 'HIGH' }, data: payloadData } }),
-  });
-  if (!res.ok) {
-    const txt = await res.text().catch(() => '');
-    // Dead token (uninstalled/rotated) → prune. (INVALID_ARGUMENT = bad payload, NOT stale.)
-    const dead = res.status === 404 || txt.includes('UNREGISTERED')
-      || txt.includes('NOT_FOUND') || txt.includes('registration-token-not-registered')
-      || txt.includes('NotRegistered');
-    if (dead) { removePushToken(deviceToken);
-      process.stderr.write(`fcm: pruned stale token ${deviceToken.slice(0, 12)}…\n`); return; }
-    process.stderr.write(`fcm push ${res.status}: ${txt}\n`);
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${at}` },
+      body: JSON.stringify({ message: { token: deviceToken, android: { priority: 'HIGH' }, data: payloadData } }),
+    });
+  } catch (err) {
+    // Network failure (DNS/TLS/timeout) — transient, retry once.
+    process.stderr.write(`fcm push network error for ${deviceToken.slice(0, 12)}…: ${(err as Error).message}\n`);
+    return 'transient';
+  }
+  if (res.ok) return 'ok';
+  const txt = await res.text().catch(() => '');
+  // Dead token (uninstalled/rotated) → prune. (INVALID_ARGUMENT = bad payload, NOT stale.)
+  const dead = res.status === 404 || txt.includes('UNREGISTERED')
+    || txt.includes('NOT_FOUND') || txt.includes('registration-token-not-registered')
+    || txt.includes('NotRegistered');
+  if (dead) {
+    removePushToken(deviceToken);
+    process.stderr.write(`fcm: pruned stale token ${deviceToken.slice(0, 12)}…\n`); return 'dead';
+  }
+  process.stderr.write(`fcm push ${res.status} for ${deviceToken.slice(0, 12)}…: ${txt}\n`);
+  // 5xx / 429 are server-side and retryable; 4xx (bad payload/auth) are not.
+  return (res.status >= 500 || res.status === 429) ? 'transient' : 'ok';
+}
+
+const sleep = (ms: number): Promise<void> => new Promise(r => setTimeout(r, ms));
+
+/** Send one contentless push, with ONE retry after 2s on a transient failure.
+ *  Every failure is logged to stderr (the live daemon's only push observability). */
+async function fcmPushTo(
+  deviceToken: string, data: Record<string, string> = {},
+): Promise<void> {
+  const first = await fcmPushOnce(deviceToken, data);
+  if (first !== 'transient') return;
+  await sleep(2000);
+  const retry = await fcmPushOnce(deviceToken, data);
+  if (retry === 'transient') {
+    process.stderr.write(`fcm push gave up after retry for ${deviceToken.slice(0, 12)}…\n`);
+  } else if (retry === 'ok') {
+    process.stderr.write(`fcm push recovered on retry for ${deviceToken.slice(0, 12)}…\n`);
   }
 }
 
@@ -129,7 +161,12 @@ export async function fcmPushToAll(
     return true;
   });
   const deduped = freshestPerAccount(tokens); // exactly ONE notification per device
-  if (deduped.length === 0) return;
+  if (deduped.length === 0) {
+    // No registered device → nothing wakes the app until a foreground resync.
+    // Surface it: a silent empty store is exactly how a stale-prune outage hides.
+    process.stderr.write(`fcm: no push tokens for account ${accountId} — push skipped\n`);
+    return;
+  }
   await Promise.all(deduped.map(
     t => fcmPushTo(t.token, { ...data, account: accountId }).catch(() => undefined)));
 }
