@@ -1,4 +1,4 @@
-/** Floating "Syncing" pill, bottom-left above the tab bar.
+/** Bottom-left sync indicator: a single small pulsing blue dot.
  *
  *  Appears + pulses while background sync work is in flight (app-open inbox
  *  sync, conversation revalidation, channels-list miss-refresher) so the user
@@ -6,23 +6,22 @@
  *  an apparently-idle screen. Hidden the instant work settles; shown only after
  *  work has been pending ~300ms (see `useSyncActive`) to avoid flicker.
  *
- *  Minimalist per the app's design language: a small rounded pill (toolbar
- *  surface + hairline border, no shadow/gradient), a pulsing dot + "Syncing"
- *  label. Non-interactive (pointerEvents none) so it never eats taps destined
- *  for the content beneath it. Plain `Animated` opacity loop — no reanimated,
- *  no cross-file worklets. */
+ *  Minimalist per the app's design language: NO label, NO frame/surface/border
+ *  - just a small blue dot that breathes. Non-interactive (pointerEvents none)
+ *  so it never eats taps destined for the content beneath it. Plain `Animated`
+ *  opacity loop - no reanimated, no cross-file worklets. */
 
 import { useEffect, useRef } from 'react';
 import { Animated, Easing, StyleSheet } from 'react-native';
-import { Text } from '@metro-labs/kit/text';
-import { usePalette } from '../lib/theme';
 import { useSyncActive } from '../lib/useSyncActive';
+
+/** Tasteful blue accent. The palette `link` token is high-contrast white/black,
+ *  not blue, so we use a literal blue here (same hue family as iOS/system blue,
+ *  reads as "working" on both light + dark surfaces). */
+const SYNC_BLUE = '#2f80ed';
 
 export function SyncPill(): React.ReactElement | null {
   const active = useSyncActive();
-  const pal = usePalette();
-  /** Pulse drives BOTH the dot opacity (strong pulse) and a subtle whole-pill
-   *  breathe, so it reads as "working" without being loud. */
   const pulse = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -39,41 +38,21 @@ export function SyncPill(): React.ReactElement | null {
 
   if (!active) return null;
 
-  const pillOpacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.82, 1] });
-  const dotOpacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] });
+  const dotOpacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.35, 1] });
+  const dotScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1] });
 
   return (
     <Animated.View
       pointerEvents="none"
-      style={[
-        styles.pill,
-        {
-          backgroundColor: pal.toolbarBg,
-          borderColor: pal.border,
-          opacity: pillOpacity,
-        },
-      ]}
->
-      <Animated.View style={[styles.dot, { backgroundColor: pal.link, opacity: dotOpacity }]} />
-      <Text role="secondary" size="2xs" weight="medium">Syncing</Text>
-    </Animated.View>
+      style={[styles.dot, { backgroundColor: SYNC_BLUE, opacity: dotOpacity, transform: [{ scale: dotScale }] }]}
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 999,
-    borderWidth: 1,
-    gap: 6,
-  },
   dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 9,
+    height: 9,
+    borderRadius: 999,
   },
 });

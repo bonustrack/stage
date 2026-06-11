@@ -32,6 +32,7 @@ import { SearchTopnavBar } from '../../components/SearchTopnavBar';
 import { TOPNAV_HEIGHT } from '../../components/Topnav';
 import { useConversationState } from '../../components/xmtp-conv/useConversationState';
 import { RequestActionBar } from '../../components/RequestActionBar';
+import { SyncPill } from '../../components/SyncPill';
 
 export default function XmtpConversation(): React.ReactElement {
   const router = useRouter();
@@ -276,6 +277,17 @@ export default function XmtpConversation(): React.ReactElement {
       <Box height={insets.bottom} surface="raised"/>
       </Box>
       </KeyboardStickyView>
+      {/** Sync indicator - same small pulsing blue dot as the tab bar, mounted
+       *   bottom-left so it ALSO shows while THIS conversation is loading /
+       *   revalidating (the open-effect + foreground resync feed the same global
+       *   syncStatus counter). Sits above the composer/keyboard area, clear of
+       *   the back arrow; non-interactive (pointerEvents none). */}
+      <Box
+        pointerEvents="none"
+        style={{ position: 'absolute', left: 14, bottom: insets.bottom + 70, zIndex: 3 }}
+>
+        <SyncPill/>
+      </Box>
       {/** Overlays — portals/bottom-sheets render here, outside the feed column. */}
       <ChannelMenu
         visible={overflowOpen}

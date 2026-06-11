@@ -134,13 +134,23 @@ export default function TabsLayout(): React.ReactElement {
           </Box>
         </Col>
       ) : null}
-      {/* Sync pill — floats bottom-left, just above the tab bar. Pulses while
-          background sync work is in flight so the user sees that new messages
-          are loading instead of waiting on an apparently-idle screen. Renders
-          nothing when idle; non-interactive (pointerEvents none on the pill). */}
+      {/* Sync indicator - a small pulsing blue dot at footer-nav level, in the
+          bottom-left corner vertically aligned with the tab bar icons (NOT
+          floating above the bar). Pulses while background sync work is in flight
+          so the user sees new messages are loading instead of waiting on an
+          apparently-idle screen. Renders nothing when idle; non-interactive
+          (pointerEvents none) so it never collides with the first tab icon's
+          touch target. Sits in the left gutter, clear of the icon row. */}
       <Box
-        pointerEvents="box-none"
-        style={{ position: 'absolute', left: 12, bottom: tabBarHeight + 12, zIndex: 2 }}
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          left: 14,
+          // Center the dot on the tab bar icon row: icons sit in the 60px
+          // content band above the safe-area inset (paddingTop:6 in tabBarStyle).
+          bottom: insets.bottom + 26,
+          zIndex: 2,
+        }}
 >
         <SyncPill/>
       </Box>

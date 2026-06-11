@@ -36,6 +36,7 @@ import { convOfLine } from '../../lib/xmtp.client';
 import { envelopeOfXmtpMessage } from '../../lib/xmtp.messages';
 import { feedCache } from '../../lib/xmtp.state';
 import { syncInboxOnce, PAGE_SIZE } from '../../lib/xmtp.stream';
+import { beginSync } from '../../lib/syncStatus';
 import { messagingKeys } from './queries';
 
 /** Mirror a feedCache slice into the query cache for `line` at the CURRENT
@@ -84,6 +85,12 @@ const bgSyncInFlight = new Map<string, Promise<void>>();
 function revalidateFeed(line: string): Promise<void> {
   const existing = bgSyncInFlight.get(line);
   if (existing) return existing;
+  /** Count the whole per-conv revalidation for the sync dot - the inbox sync
+   *  inside is coalesced/freshness-windowed so on its own it may end instantly,
+   *  but the per-conv `fresh.sync()` + tail re-read is the part the user is
+   *  waiting on when they open a channel. One begin per revalidation pass,
+   *  ended in `finally` the instant it settles. */
+  const endSyncTrack = beginSync();
   const run = (async (): Promise<void> => {
     try {
       await syncInboxOnce(0);
@@ -92,7 +99,7 @@ function revalidateFeed(line: string): Promise<void> {
       await fresh.sync().catch(() => undefined);
       applyPage(line, await fresh.messages({ limit: PAGE_SIZE }));
     } catch { /* best-effort - the next open / resync retries */ }
-    finally { bgSyncInFlight.delete(line); }
+    finally { bgSyncInFlight.delete(line); endSyncTrack(); }
   })();
   bgSyncInFlight.set(line, run);
   return run;
