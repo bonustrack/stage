@@ -18,6 +18,7 @@ import { Avatar } from './Avatar';
 import { Icon } from '@metro-labs/kit/icon';
 import { Spacer } from '@metro-labs/kit/spacer';
 import { Row, Col, Box } from './layout';
+import { highlightSegments } from './HighlightText';
 import { usePalette } from '../lib/theme';
 
 export interface ChannelRowProps {
@@ -65,6 +66,10 @@ export interface ChannelRowProps {
   containerStyle?: StyleProp<ViewStyle>;
   /** No-op: rows no longer render a bottom separator. Kept for caller compat. */
   noBorder?: boolean;
+  /** Active search query — when set, its case-insensitive occurrences in the
+   *  title and last-message preview are highlighted (fluo yellow), matching the
+   *  in-conversation search highlight. Empty/absent leaves text untouched. */
+  highlightQuery?: string;
 }
 
 /** Max label chips shown inline before collapsing the rest into "+N". Kept low
@@ -113,7 +118,7 @@ function ChannelRowBase({
   title, avatarAddress, avatarUri, cacheBuster, square,
   lastPreview, timestamp, subtitle, unreadCount = 0, markedUnread,
   pinned, hasDraft, draftText, showChevron, avatarSize = 44,
-  onPress, onPressIn, onLongPress, containerStyle, labels,
+  onPress, onPressIn, onLongPress, containerStyle, labels, highlightQuery,
 }: ChannelRowProps): React.ReactElement {
   const { link: head, text: sub, bg, border } = usePalette();
   const fg = sub, rowBg = border;
@@ -151,7 +156,7 @@ function ChannelRowBase({
             <Text weight="semibold" size="3xl" color={head} style={{ flexShrink: 1, minWidth: 0 }}
               numberOfLines={1}
               ellipsizeMode="tail">
-              {title}
+              {highlightQuery ? highlightSegments(title, highlightQuery) : title}
             </Text>
             {/* Flexible spacer pushes the timestamp to the far right edge. */}
             <Spacer/>
@@ -177,7 +182,7 @@ function ChannelRowBase({
               {!draft && labels && labels.length> 0
                 ? buildLabelChips({ labels, fg, rowBg })
                 : null}
-              {previewText}
+              {highlightQuery && !draft ? highlightSegments(previewText, highlightQuery) : previewText}
             </Text>
             {unreadCount> 0 ? (
               <Row minWidth={22} height={22} padding={{ x: 7 }} align="center" justify="center" radius="full" background={head}>

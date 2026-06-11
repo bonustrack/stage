@@ -3,7 +3,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { Animated as RNAnimated, Share } from 'react-native';
+import { Animated as RNAnimated, InteractionManager, Keyboard, Share } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Input } from '@metro-labs/kit/input';
 import { Text } from '@metro-labs/kit/text';
@@ -68,17 +68,41 @@ export default function XmtpConversation(): React.ReactElement {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const closeSearch = useCallback(() => { setSearchOpen(false); setSearchQuery(''); }, []);
-  /** Search opens from the ChannelMenu bottom sheet, which dismisses (animating)
-   *  as `searchOpen` flips true. That dismissal blurs the SearchTopnavBar's
-   *  just-autofocused input, so the keyboard never appears (unlike Home, where
-   *  search opens straight from the topnav with no sheet teardown). Imperatively
-   *  re-focus the input once the sheet animation has settled so the keyboard
-   *  reliably opens on the channel page too. */
+  /** Keyboard-on-search, the real root cause: search opens from the ChannelMenu
+   *  bottom sheet, which is a native RN <Modal> (its OWN Android window). While
+   *  that window is up / sliding out it OWNS the input-method focus, so the
+   *  SearchTopnavBar's autoFocus binds to a window that no longer has IME focus
+   *  and the soft keyboard never attaches to the app window. Android also won't
+   *  re-show the keyboard for a focus() on an input it already considers focused.
+   *
+   *  Fix = sequence + verified retry: wait for the modal's dismiss interaction to
+   *  finish (runAfterInteractions), then blur()+focus() and confirm the keyboard
+   *  actually showed via keyboardDidShow; if it didn't, retry every 150ms up to
+   *  ~1.2s. The blur() first is what makes the second focus() re-open the IME on
+   *  Android. Cancels the moment the keyboard shows or search closes. */
   const searchInputRef = useRef<React.ComponentRef<typeof Input>>(null);
   useEffect(() => {
     if (!searchOpen) return;
-    const t = setTimeout(() => searchInputRef.current?.focus(), 250);
-    return () => clearTimeout(t);
+    let shown = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let attempts = 0;
+    const sub = Keyboard.addListener('keyboardDidShow', () => { shown = true; });
+    const poke = (): void => {
+      if (shown || attempts >= 8) return;
+      attempts += 1;
+      const input = searchInputRef.current;
+      input?.blur();
+      // Next frame so the blur lands before the re-focus (Android needs the
+      // focus state to actually toggle for the IME to re-open).
+      requestAnimationFrame(() => { searchInputRef.current?.focus(); });
+      timer = setTimeout(poke, 150);
+    };
+    const task = InteractionManager.runAfterInteractions(poke);
+    return () => {
+      sub.remove();
+      task.cancel();
+      if (timer) clearTimeout(timer);
+    };
   }, [searchOpen]);
 
   /** Message-request gate. The overwhelmingly common case is an already-accepted

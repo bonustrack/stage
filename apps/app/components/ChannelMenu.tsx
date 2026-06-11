@@ -74,6 +74,18 @@ export function ChannelMenu({
 
   const run = (fn: () => void): void => { onClose(); fn(); };
 
+  /** Search needs the sheet to be GONE first: this AppModal is a native RN
+   *  <Modal> (its own Android window that owns IME focus). If we open search in
+   *  the same tick as closing the sheet, the search input autofocuses while the
+   *  modal window is still mounted/animating out and the keyboard never attaches.
+   *  So close the sheet, then fire onSearch on the next macrotask once `visible`
+   *  has flipped false and the dismiss has started. The conversation view pairs
+   *  this with a verified blur/focus retry once the dismiss interaction settles. */
+  const runSearch = (fn: () => void): void => {
+    onClose();
+    setTimeout(fn, 0);
+  };
+
   /** Built-in Leave-group flow — confirm, leave via XMTP, then navigate
    *  context-aware: pop back from the channel view; let the list reconcile. */
   const onLeaveGroup = (): void => {
@@ -111,7 +123,7 @@ export function ChannelMenu({
             label="Search"
             color={head}
             dark={dark}
-            onPress={() => run(onSearch)}
+            onPress={() => runSearch(onSearch)}
           />
         ) : null}
 

@@ -141,11 +141,11 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
   /** Stable extraData array (identity only changes when a version does) so the
    *  FlatList doesn't re-render the whole window each stream tick. */
   const listExtraData = useMemo(
-    () => [channelProfilesVersion, draftsVersion, pinned] as const,
-    [channelProfilesVersion, draftsVersion, pinned],
+    () => [channelProfilesVersion, draftsVersion, pinned, query] as const,
+    [channelProfilesVersion, draftsVersion, pinned, query],
   );
   const renderRow = useChannelRowRenderer(router, setRowMenu, {
-    channelProfilesVersion, draftsVersion, pinned,
+    channelProfilesVersion, draftsVersion, pinned, query,
   });
 
   if (error) return <HomeError error={error} dark={dark} fg={fg} bg={bg} />;

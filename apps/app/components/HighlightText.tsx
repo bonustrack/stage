@@ -1,7 +1,9 @@
 /** HighlightText — renders a body string with every case-insensitive occurrence
  *  of `query` wrapped in a fluo-yellow background (dark text), leaving the rest
- *  in the normal body color. Used only in conversation-search mode so matching
- *  messages render in the real feed with the keyword visually picked out. */
+ *  in the normal body color. Used in conversation-search mode so matching
+ *  messages render in the real feed with the keyword visually picked out, and on
+ *  the Home channels list so the matched query stands out in channel names and
+ *  last-message previews (via the inline `highlightSegments` helper). */
 
 import { Text } from '@metro-labs/kit/text';
 
@@ -28,6 +30,22 @@ function splitMatches(text: string, query: string): { text: string; hit: boolean
     from = i + needle.length;
   }
   return out;
+}
+
+/** Inline highlight segments — returns `<Text>` children (NOT a wrapper) so the
+ *  caller can embed them inside its own `<Text>` and keep that text's sizing,
+ *  weight, numberOfLines and ellipsize. Non-match segments inherit the parent
+ *  `<Text>` style (no color/size override) so the row's title/preview styling is
+ *  preserved; only the matched runs get the fluo background + dark ink. When the
+ *  query is empty the original text is returned untouched (a bare string). */
+export function highlightSegments(text: string, query: string): React.ReactNode {
+  if (!query.trim()) return text;
+  const parts = splitMatches(text, query);
+  return parts.map((p, i) => (
+    p.hit
+      ? <Text key={i} color={HL_FG} style={{ backgroundColor: HL_BG }}>{p.text}</Text>
+      : p.text
+  ));
 }
 
 export function HighlightText({ text, query, fg }: {
