@@ -12,8 +12,13 @@
  *  transparently switches the wallet to `chainId` when it's on the wrong chain. */
 
 import { getAccount, sendTransaction, writeContract, switchChain } from 'wagmi/actions';
-import { isAddress, parseUnits, erc20Abi, type Hex } from 'viem';
+import {
+  isAddress, parseUnits, erc20Abi, encodeFunctionData,
+  createWalletClient, http, type Hex,
+} from 'viem';
 import { wagmiConfig } from './walletconnect';
+import { getActiveViemAccount } from './accounts';
+import { VIEM_CHAINS } from '../components/tabs/WalletScreen.assets';
 
 /** A token to transfer. Omit (or pass `undefined`) to send the chain's native
  *  asset (ETH on mainnet). `decimals` defaults to 18 when not supplied. */
@@ -44,6 +49,29 @@ export async function sendNativeOrToken(params: SendParams): Promise<Hex> {
   if (!isAddress(to)) throw new Error('Invalid recipient address');
   const n = Number(amount);
   if (!isFinite(n) || n <= 0) throw new Error('Invalid amount');
+
+  /** Prefer the app's OWN in-app wallet: when the active account is a local EOA
+   *  (generated/imported/migrated) we sign + broadcast through a viem wallet
+   *  client keyed to that account, no WalletConnect session required. This is
+   *  the common case — the app always ships a built-in wallet. We only fall back
+   *  to the wagmi/Reown path when the active account is a WalletConnect address
+   *  (no local key). */
+  const local = await getActiveViemAccount();
+  if (local) {
+    const chain = VIEM_CHAINS[chainId];
+    if (!chain) throw new Error(`Unsupported chain ${chainId}`);
+    const client = createWalletClient({ account: local, chain, transport: http() });
+    if (token) {
+      const value = parseUnits(amount, token.decimals ?? 18);
+      return client.sendTransaction({
+        to: token.address,
+        data: encodeFunctionData({
+          abi: erc20Abi, functionName: 'transfer', args: [to as Hex, value],
+        }),
+      });
+    }
+    return client.sendTransaction({ to: to as Hex, value: parseUnits(amount, 18) });
+  }
 
   const account = getAccount(wagmiConfig);
   if (!account.address) throw new Error('No wallet connected');

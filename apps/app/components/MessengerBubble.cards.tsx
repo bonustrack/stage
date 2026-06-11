@@ -1,7 +1,9 @@
 /** In-chat signature + transaction cards for MessengerBubble (phase-2 split). */
 import { Linking } from 'react-native';
+import { useRouter } from 'expo-router';
 
 import { Pressable } from '@metro-labs/kit/pressable';
+import { Image } from '@metro-labs/kit/image';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';
@@ -9,7 +11,8 @@ import { Row, Col, Box } from './layout';
 import { shortAddress } from '../modules/messaging';
 import { fmtSigValue, explorerUrl, ethFromWeiHex } from './MessengerBubble.helpers';
 import type { SigRequest, SigReference, TxRequest, TxReceipt } from './MessengerBubble.helpers';
-import { usePalette, useBlockRadius } from '../lib/theme';
+import { usePalette, useBlockRadius, withAlpha } from '../lib/theme';
+import { usePeerProfiles, getPeerName } from '../lib/peerProfiles';
 // SigRequestCard — signature-request bubble: description + message detail.
 export function SigRequestCard({ req, dark, sub, signing, onSign }: {
   req: SigRequest; dark: boolean; sub: string; signing?: boolean;
@@ -101,14 +104,14 @@ export function SigReferenceCard({ ref, dark, sub }: {
           by {shortAddress(ref.signer)}
         </Text>
       ) : null}
-      <Text size="xs" color={'#c0a06e'}>
+      <Text size="xs" color={sub}>
         {short(ref.signature)}
       </Text>
     </Box>
   );
 }
 /** TxRequestCard — payment request bubble: description + amount + "Pay" button. */
-export function TxRequestCard({ req, dark, sub, paying, onPay }: {
+export function TxRequestCard({ req, dark, paying, onPay }: {
   req: TxRequest; dark: boolean; sub: string; paying?: boolean;
   onPay?: () => void;
 }): React.ReactElement {
@@ -120,23 +123,19 @@ export function TxRequestCard({ req, dark, sub, paying, onPay }: {
     ? `${call.metadata.amount} ${call.metadata.currency ?? 'ETH'}`
     : eth ? `${eth} ETH` : undefined;
   return (
-    <Box radius={blockRadius} background={dark ? 'rgba(192,160,110,0.10)' : 'rgba(192,160,110,0.10)'} padding={12} margin={{ top: 8 }} gap={8} style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: '#c0a06e' }}>
+    <Box radius={blockRadius} background={withAlpha(pal.primary, 0.08)} padding={12} margin={{ top: 8 }} gap={8} style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: withAlpha(pal.primary, 0.35) }}>
       <Row align="center" gap={8}>
-        <Icon name="wallet" size={18} color="#c0a06e"/>
-        <Text weight="semibold" size="md" color={dark ? '#ffffff' : '#000000'} style={{ flexShrink: 1 }}>
+        <Icon name="wallet" size={18} color={pal.primary}/>
+        <Text weight="semibold" size="md" color={pal.text} style={{ flexShrink: 1 }}>
           {desc}
         </Text>
       </Row>
       {amountLabel ? (
-        <Text weight="semibold" size="5xl" color={dark ? '#ffffff' : '#000000'}>
+        <Text weight="semibold" size="5xl" color={pal.text}>
           {amountLabel}
         </Text>
       ) : null}
-      {call?.to ? (
-        <Text size="xs" color={sub}>
-          To {shortAddress(call.to)}
-        </Text>
-      ) : null}
+      {call?.to ? <TxToRow address={call.to} /> : null}
       {onPay ? (
         <Button
           variant="primary"
@@ -147,12 +146,36 @@ export function TxRequestCard({ req, dark, sub, paying, onPay }: {
           loading={paying}
           onPress={onPay}
           label="Pay"
+          iconStart={<Icon name="paperAirplane" size={18} color={pal.bg}/>}
           tintBg={pal.primary}
           tintFg={pal.bg}
           style={{ marginTop: 2 }}
 />
       ) : null}
     </Box>
+  );
+}
+/** TxToRow — the payment "To" line: a tappable link to the recipient's profile,
+ *  with the stamp-resolved username (falls back to the short address while it
+ *  loads) + a stamp.fyi avatar. Its own component so `usePeerProfiles` runs once
+ *  per address (the shared cache dedupes the lookup). */
+function TxToRow({ address }: { address: string }): React.ReactElement {
+  const router = useRouter();
+  usePeerProfiles([address]);
+  const display = getPeerName(address) ?? shortAddress(address);
+  return (
+    <Pressable
+      onPress={() => router.push({ pathname: '/user/[address]', params: { address } })}>
+      <Row align="center" gap={6}>
+        <Text role="secondary" size="xs">To</Text>
+        <Image
+          src={`https://stamp.fyi/avatar/eth:${address}?s=32`}
+          size={16} radius="full"/>
+        <Text role="link" weight="semibold" size="xs" suppressHighlighting>
+          {display}
+        </Text>
+      </Row>
+    </Pressable>
   );
 }
 /** TxReceiptCard — a confirmed payment: amount + tappable explorer link. */
@@ -162,7 +185,8 @@ export function TxReceiptCard({ receipt, dark }: {
   const amountLabel = receipt.metadata?.amount != null
     ? `${receipt.metadata.amount} ${receipt.metadata.currency ?? 'ETH'}`
     : undefined;
-  const url = explorerUrl(receipt.networkId, receipt.reference); const blockRadius = useBlockRadius();
+  const url = explorerUrl(receipt.networkId, receipt.reference);
+  const blockRadius = useBlockRadius(); const pal = usePalette();
   return (
     <Box radius={blockRadius} background={dark ? 'rgba(120,200,120,0.08)' : 'rgba(60,160,60,0.06)'} padding={12} margin={{ top: 8 }} gap={6} style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: dark ? 'rgba(120,200,120,0.4)' : 'rgba(60,160,60,0.35)' }}>
       <Row align="center" gap={8}>
@@ -172,7 +196,7 @@ export function TxReceiptCard({ receipt, dark }: {
         </Text>
       </Row>
       <Pressable onPress={() => void Linking.openURL(url)}>
-        <Text size="xs" color={'#c0a06e'}>
+        <Text size="xs" color={pal.link}>
           {shortAddress(receipt.reference)} · View on explorer
         </Text>
       </Pressable>

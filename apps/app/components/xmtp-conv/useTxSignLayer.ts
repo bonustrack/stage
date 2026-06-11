@@ -2,10 +2,12 @@
  *  — extracted from app/xmtp/[convId].tsx verbatim (phase-2 lint split). */
 
 import { useCallback, useState } from 'react';
+import { Alert } from 'react-native';
 import { xmtpSendTxReference, xmtpSendSignatureReference } from '../../modules/messaging';
 import {
   type WalletSendCallsContent, type TransactionReferenceContent, chainIdToNumber,
 } from '@stage-labs/client/xmtp/tx';
+import { VIEM_CHAINS } from '../../components/tabs/WalletScreen.assets';
 import {
   type SignatureRequestContent, type SignatureReferenceContent,
 } from '@stage-labs/client/xmtp/sign';
@@ -91,14 +93,19 @@ export function useTxSignLayer(activeLine: string) {
     const call = wsc.calls?.[0];
     if (!call?.to) { flash('Malformed payment request'); return; }
     const chainId = chainIdToNumber(wsc.chainId);
+    /** Native transfer: value is hex wei → decimal ETH for the helper.
+     *  (ERC-20 `data` paths aren't built by the composer yet; value-only
+     *  native sends are the supported request shape.) */
+    const wei = BigInt(call.value ?? '0x0');
+    const amount = (Number(wei) / 1e18).toString();
+    const currency = call.metadata?.currency ?? 'ETH';
+    const chainName = VIEM_CHAINS[chainId]?.name ?? `chain ${chainId}`;
+    /** Minimal confirm before broadcast — this moves real funds (mainnet) so
+     *  show amount / recipient / network and require an explicit tap. */
+    const broadcast = (): void => {
     setPayingIds(prev => new Set(prev).add(requestId));
     void (async () => {
       try {
-        /** Native transfer: value is hex wei → decimal ETH for the helper.
-         *  (ERC-20 `data` paths aren't built by the composer yet; value-only
-         *  native sends are the supported request shape.) */
-        const wei = BigInt(call.value ?? '0x0');
-        const amount = (Number(wei) / 1e18).toString();
         const txHash = await sendNativeOrToken({ to: call.to as string, amount, chainId });
         const ref: TransactionReferenceContent = {
           networkId: chainId,
@@ -118,6 +125,18 @@ export function useTxSignLayer(activeLine: string) {
         setPayingIds(prev => { const n = new Set(prev); n.delete(requestId); return n; });
       }
     })();
+    };
+    const amountLabel = call.metadata?.amount != null
+      ? `${call.metadata.amount} ${currency}`
+      : `${amount} ${currency}`;
+    Alert.alert(
+      'Confirm payment',
+      `Send ${amountLabel} to ${call.to} on ${chainName}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Pay', style: 'default', onPress: broadcast },
+      ],
+    );
   }, [activeLine]);
 
   return { signingIds, onSign, payingIds, onPay };
