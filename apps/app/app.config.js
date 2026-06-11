@@ -136,6 +136,22 @@ const config = {
   android: {
     package: variant.androidPackage,
     versionCode: 26,
+    // Google Play flagged READ_MEDIA_IMAGES as an undeclared/unjustified
+    // sensitive permission. We never READ the user's media library: photo
+    // attachments and avatar selection go through expo-image-picker's
+    // `launchImageLibraryAsync`, which on Android 13+ uses the system photo
+    // picker and needs NO permission. The only expo-media-library call we make
+    // is `saveToLibraryAsync` (ImageViewer "save to gallery"), which writes via
+    // MediaStore and needs no READ permission on our minSdk 30. expo-media-
+    // library's config plugin still injects these READ permissions, so we block
+    // them here. Takes effect only in a NEW native build / AAB.
+    blockedPermissions: [
+      'android.permission.READ_MEDIA_IMAGES',
+      'android.permission.READ_MEDIA_VIDEO',
+      'android.permission.READ_MEDIA_VISUAL_USER_SELECTED',
+      'android.permission.READ_EXTERNAL_STORAGE',
+      'android.permission.WRITE_EXTERNAL_STORAGE',
+    ],
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
       backgroundColor: '#0f1115',
