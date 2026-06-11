@@ -13,6 +13,8 @@
 
 import { useCallback, useMemo } from 'react';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { Button } from '@metro-labs/kit/button';
 import { Text } from '@metro-labs/kit/text';
 import { Box, Row, Col } from '../layout';
@@ -32,6 +34,7 @@ export function ProposalCard({ proposal, onAdvance }: {
   onAdvance: () => void;
 }): React.ReactElement {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const dark = useEffectiveColorScheme() === 'dark';
   const pal = usePalette();
   const fg = pal.text, sub = pal.text;
@@ -124,14 +127,22 @@ export function ProposalCard({ proposal, onAdvance }: {
           Tap an option to vote, or send a custom message below.
         </Text>
       </Box>
-      {/* Composer wired to this proposal's channel — a custom send advances too. */}
-      <MessengerComposer
-        dark={dark}
-        xmtpLine={activeLine}
-        mentionCandidates={mentionCandidates}
-        onOptimistic={onComposerOptimistic}
-        onSent={onSent}
-      />
+      {/* Composer wired to this proposal's channel — a custom send advances too.
+       *  Mirrors the conversation view (app/xmtp/[convId]): the composer rides a
+       *  KeyboardStickyView (offset by the bottom safe-area inset so it sits
+       *  flush above the keyboard), and a bottom strip painted with the
+       *  composer's `raised` surface fills the area under the Android system nav
+       *  bar so the composer never renders under the global footer. */}
+      <KeyboardStickyView offset={{ opened: insets.bottom }}>
+        <MessengerComposer
+          dark={dark}
+          xmtpLine={activeLine}
+          mentionCandidates={mentionCandidates}
+          onOptimistic={onComposerOptimistic}
+          onSent={onSent}
+        />
+        <Box height={insets.bottom} surface="raised"/>
+      </KeyboardStickyView>
     </Col>
   );
 }
