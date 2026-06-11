@@ -40,7 +40,7 @@ export function ProposalsScreen(): React.ReactElement {
           <Icon name="arrowLeft" size={22} color={head}/>
         </Pressable>
         <Title size="sm">
-          Proposals
+          Pending questions
         </Title>
       </Row>
 
