@@ -40,7 +40,27 @@ import { TxRequestCard, SigRequestCard } from '../MessengerBubble.cards';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { getPeerName } from '../../lib/peerProfiles';
 import { shortAddress, acceptRequestConv, blockRequestConv, getCachedXmtpClient } from '../../modules/messaging';
-import type { QueuedRequest } from './Proposals.queue';
+import type { QueuedRequest, RequestKind } from './Proposals.queue';
+
+/** Human label for each request kind, shown as the card-header eyebrow so the
+ *  type is clear at a glance ("Poll" / "Payment request" / …). */
+const KIND_LABEL: Record<RequestKind, string> = {
+  poll: 'Poll',
+  payment: 'Payment request',
+  signing: 'Signing request',
+  message: 'Message request',
+};
+
+/** Small uppercase type eyebrow above the card title. Uses kit text tokens
+ *  (secondary role, smallest step) so it stays minimal and theme-aware. */
+function KindEyebrow({ kind }: { kind: RequestKind }): React.ReactElement {
+  return (
+    <Text role="secondary" size="2xs" weight="semibold"
+      style={{ textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 4 }}>
+      {KIND_LABEL[kind]}
+    </Text>
+  );
+}
 
 /** Top-level dispatcher: route to the right card by request kind. */
 export function ProposalCard({ proposal, onAdvance }: {
@@ -54,13 +74,14 @@ export function ProposalCard({ proposal, onAdvance }: {
 
 /** Header shared by the conversation-backed cards: channel title + (for the
  *  source message) author + posted-at, matching the chat sender resolution. */
-function CardHeader({ title, authorAddr, authorName, postedAt, fg }: {
-  title: string; authorAddr: string | null; authorName: string | null;
+function CardHeader({ kind, title, authorAddr, authorName, postedAt, fg }: {
+  kind: RequestKind; title: string; authorAddr: string | null; authorName: string | null;
   postedAt: string | null; fg: string;
 }): React.ReactElement {
   const pal = usePalette();
   return (
     <>
+      <KindEyebrow kind={kind}/>
       <Text weight="semibold" size="4xl" color={pal.link} numberOfLines={1}>
         {title}
       </Text>
@@ -160,7 +181,7 @@ function ConversationRequestCard({ proposal, onAdvance }: {
   return (
     <Col flex={1} surface="surface">
       <Box flex={1} padding={{ x: 16, top: 16 }} style={{ alignSelf: 'stretch' }}>
-        <CardHeader title={title} authorAddr={authorAddr} authorName={authorName} postedAt={postedAt} fg={fg}/>
+        <CardHeader kind={proposal.kind} title={title} authorAddr={authorAddr} authorName={authorName} postedAt={postedAt} fg={fg}/>
 
         {poll?.question ? (
           <Text weight="semibold" size="4xl" color={fg} style={{ marginTop: 6 }}>
@@ -259,6 +280,7 @@ function MessageRequestCard({ request, onAdvance }: {
   return (
     <Col flex={1} surface="surface">
       <Box flex={1} padding={{ x: 16, top: 16 }} style={{ alignSelf: 'stretch' }}>
+        <KindEyebrow kind="message"/>
         <Text weight="semibold" size="4xl" color={pal.link} numberOfLines={1}>
           Message request
         </Text>

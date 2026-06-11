@@ -1,7 +1,7 @@
 /** Pending-request detection for the Pending requests page.
  *
- *  Scans for FOUR kinds of pending request and folds them into one oldest-first
- *  queue (Less works through them chronologically):
+ *  Scans for FOUR kinds of pending request and folds them into one newest-first
+ *  queue (most recent requests surface at the top of the queue):
  *
  *   1. POLLS    - a non-archived channel whose LATEST message is a poll
  *                 (`pollOf`). Latest-message rule, as the original tab shipped.
@@ -50,7 +50,7 @@ export interface QueuedRequest {
   msgId?: string;
   /** Summarized request channel (name + preview + avatar) for `message` kind. */
   request?: ConversationRequestView;
-  /** Sort key (ms epoch), oldest-first. */
+  /** Sort key (ms epoch), newest-first. */
   ts: number;
 }
 
@@ -111,8 +111,8 @@ async function detectMessageRequests(): Promise<QueuedRequest[]> {
 }
 
 /** Best-effort latest-activity time (ms) for a request conversation, used only to
- *  position it in the oldest-first queue. Falls back to 0 (oldest) so a request
- *  with no resolvable time sorts to the front rather than getting lost. */
+ *  position it in the newest-first queue. Falls back to 0 (oldest) so a request
+ *  with no resolvable time sorts to the back rather than crowding the front. */
 async function requestTs(conv: unknown): Promise<number> {
   try {
     const last = await (conv as { lastMessage?: () => Promise<{ sentAtNs?: number } | null> }).lastMessage?.();
@@ -122,7 +122,7 @@ async function requestTs(conv: unknown): Promise<number> {
   return 0;
 }
 
-/** Build the oldest-first pending-request queue. Message-level kinds come from
+/** Build the newest-first pending-request queue. Message-level kinds come from
  *  the channels-list rows (archived ones skipped per "all my non-archived chat");
  *  message requests come from the consent-unknown inbox. The two sources never
  *  overlap (allowed-only cache vs unknown-only requests). */
@@ -133,7 +133,7 @@ export async function buildProposalQueue(rows: CachedRow[]): Promise<QueuedReque
     detectMessageRequests(),
   ]);
   return [...detected.filter((p): p is QueuedRequest => p !== null), ...messageReqs]
-    .sort((a, b) => a.ts - b.ts);
+    .sort((a, b) => b.ts - a.ts);
 }
 
 /** Back-compat alias: the original queue type name. */
