@@ -87,7 +87,7 @@ const config = {
   name: variant.name,
   slug: variant.slug,
   scheme: variant.scheme,
-  version: '0.1.1',
+  version: '0.1.2',
   orientation: 'portrait',
   icon: './assets/icon.png',
   userInterfaceStyle: 'automatic',
@@ -135,7 +135,7 @@ const config = {
   },
   android: {
     package: variant.androidPackage,
-    versionCode: 26,
+    versionCode: 27,
     // Google Play flagged READ_MEDIA_IMAGES as an undeclared/unjustified
     // sensitive permission. We never READ the user's media library: photo
     // attachments and avatar selection go through expo-image-picker's
