@@ -29,7 +29,7 @@ import { KitThemeProvider } from '@metro-labs/kit/theme-context';
 import { useDeepLinks } from '../lib/deepLinks';
 import { useRestoreGate } from '../lib/lastRoute';
 // TEMPORARY nav-restore instrumentation — see lib/navTrace. Remove with it.
-import { record as navTrace, armTraceDelivery } from '../lib/navTrace';
+import { record as navTrace, armTraceDelivery, nextRootMount, recordRootDeps } from '../lib/navTrace';
 import { usePushDeepLinks } from '../lib/push';
 import { ensureActiveAccount, ensureMessagingStreamSync } from '../modules/messaging';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -107,10 +107,16 @@ function RootLayoutInner(): React.ReactElement {
   const barStyle: 'light' | 'dark' = isDarkBg(toolbarBg) ? 'light' : 'dark';
   useEffect(() => { setStatusBarStyle(barStyle, true); }, [barStyle]);
 
-  /** TEMPORARY nav-restore instrumentation: record app-root mount + arm the
-   *  one-shot ~12s trace delivery (sends only if a saved-route restore fired).
-   *  Remove with lib/navTrace once the on-device cause is found. */
-  useEffect(() => { navTrace('app.mount'); armTraceDelivery(); }, []);
+  /** TEMPORARY nav-restore instrumentation: record app-root mount (with a
+   *  process-stable mount # so a REMOUNT is unambiguous — >1 = the root subtree
+   *  was torn down + rebuilt) + arm the one-shot ~12s trace delivery (sends only
+   *  if a saved-route restore fired). Remove with lib/navTrace once resolved. */
+  useEffect(() => { navTrace('app.mount', { mount: nextRootMount() }); armTraceDelivery(); }, []);
+
+  /** TEMPORARY: name WHICH root-render input flipped between commits, so any
+   *  residual remount is self-explaining on the next device run. Plain
+   *  primitives only. Remove with lib/navTrace. */
+  recordRootDeps({ scheme: dark ? 'dark' : 'light', barStyle, bg, toolbarBg });
 
   /** Universal/deep links → screen navigation. `getInitialURL` resolves async
    *  (after the Stack below has mounted) so cold-start taps land correctly; warm
@@ -151,15 +157,24 @@ function RootLayoutInner(): React.ReactElement {
    *  `onboarding.seen` flag is true; `ready` gates on its load so a returning
    *  user never flashes onboarding (see lib/onboardingSeen). */
   const onboarding = useOnboardingGate();
-  if (!loaded || !onboarding.ready || !restore.ready) {
-    return (
-      <Col surface="surface" flex={1} align="center" justify="center">
-        <Spinner size={28} color={dark ? '#ffffff' : '#000000'}/>
-      </Col>
-    );
-  }
-  if (!onboarding.seen) return <Onboarding onDone={onboarding.finish} />;
+  const gatesOpen = loaded && onboarding.ready && restore.ready;
 
+  /** IDENTITY-STABLE ROOT: the providers + navigator subtree below renders on
+   *  EVERY commit (no conditional early-return that swaps the root element type),
+   *  so `NativeSwipeStack` — and the whole @react-navigation card stack inside it
+   *  — mounts EXACTLY ONCE per process and is never torn down + rebuilt as the
+   *  boot gates flip or readiness signals (XMTP ~2.4s, Railgun ~9s) land. A
+   *  remount mid-restore is what left the restored card's swipe-back pan
+   *  unarmed (the pan handler was bound to the pre-remount card instance), and a
+   *  later remount reset the stack to Home. We instead gate VISIBILITY: the boot
+   *  spinner / onboarding render as an OPAQUE overlay ON TOP of the live tree
+   *  until `gatesOpen`, so Home never flashes and the navigator identity holds.
+   *
+   *  Why the navigator can mount before `restore.ready`: the restore push is
+   *  itself gated on `restore.ready` (lib/lastRoute), and the overlay fully
+   *  covers the tab root until then, so the user never SEES Home — the original
+   *  no-flash guarantee is preserved without coupling it to the navigator's
+   *  mount lifecycle. */
   return (
     <QueryClientProvider client={queryClient}>
     <WalletConnectProvider>
@@ -219,6 +234,27 @@ function RootLayoutInner(): React.ReactElement {
           options={{ animationEnabled: false, gestureEnabled: false }}
 />
       </NativeSwipeStack>
+      {/** BOOT / ONBOARDING OVERLAY — an OPAQUE layer over the live navigator,
+       *   not a replacement for it (the old code early-returned a different root
+       *   element, which forced the navigator to mount only after the gates flip
+       *   and made it vulnerable to teardown). Absolute-fills the screen so the
+       *   tab root underneath is never visible until everything is ready: no Home
+       *   flash, and the @react-navigation card stack keeps its single mount. */}
+      {!gatesOpen ? (
+        <Col
+          surface="surface" align="center" justify="center"
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+>
+          <Spinner size={28} color={dark ? '#ffffff' : '#000000'}/>
+        </Col>
+      ) : !onboarding.seen ? (
+        <Col
+          surface="surface"
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+>
+          <Onboarding onDone={onboarding.finish} />
+        </Col>
+      ) : null}
       </KeyboardProvider>
     </GestureHandlerRootView>
     </WalletConnectProvider>

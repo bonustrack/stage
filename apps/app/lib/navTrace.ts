@@ -65,6 +65,34 @@ export function markRestoreActive(): void {
   restoreActive = true;
 }
 
+/** Module-level mount counter for the app root. Survives a remount (module
+ *  identity is stable for the process), so each fresh mount of the root
+ *  component increments it. >1 means the root subtree was torn down + rebuilt —
+ *  the disease we are hunting. Exported so the layout can record it. */
+let rootMountCount = 0;
+export function nextRootMount(): number {
+  rootMountCount += 1;
+  return rootMountCount;
+}
+
+/** Snapshot of the root-render inputs from the previous commit so a remount can
+ *  name WHICH dep flipped between mounts (fonts/onboarding/restore/scheme).
+ *  Plain primitives only — no objects retained. */
+let prevRootDeps: Record<string, unknown> | null = null;
+/** Diff the current root-render deps against the previous commit and record the
+ *  changed keys. Call on every root render; on a remount the `mount` count plus
+ *  the changed-deps list pinpoints the trigger. */
+export function recordRootDeps(deps: Record<string, unknown>): void {
+  const changed: Record<string, unknown> = {};
+  if (prevRootDeps) {
+    for (const k of Object.keys(deps)) {
+      if (prevRootDeps[k] !== deps[k]) changed[k] = deps[k];
+    }
+  }
+  prevRootDeps = deps;
+  if (Object.keys(changed).length > 0) record('root.deps.changed', changed);
+}
+
 /** Truncate a convId/route for compactness + privacy (keep enough to correlate
  *  but not the full id). Safe on undefined. */
 export function shortId(id?: string | null): string | undefined {
