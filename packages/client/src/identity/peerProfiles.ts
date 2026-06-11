@@ -15,6 +15,8 @@
  *  in apps/app and subscribes via {@link subscribePeerProfiles}. */
 
 import { STAMP_URL } from '../profile/snapshot';
+import { lookupAddress } from './stageUsernames';
+import { fullName } from './username';
 
 export interface PeerProfile {
   name?: string;
@@ -23,6 +25,17 @@ export interface PeerProfile {
 const store = new Map<string, PeerProfile>();
 const pending = new Set<string>();
 const listeners = new Set<() => void>();
+
+/** Optional Stage-username gateway base URL. When set, batches also reverse-look
+ *  up each address's claimed `<name>.stage.box` and PREFER it over the ENS name
+ *  from stamp.fyi. Hosts wire this once at boot via {@link configureStageUsernames};
+ *  unset ⇒ behaviour is byte-identical to ENS-only resolution. */
+let stageGatewayUrl: string | undefined;
+
+/** Point peer-profile resolution at the Stage username gateway. Call once. */
+export function configureStageUsernames(gatewayUrl: string | undefined): void {
+  stageGatewayUrl = gatewayUrl && gatewayUrl.trim() ? gatewayUrl.trim() : undefined;
+}
 
 function notify(): void {
   listeners.forEach(l => l());
@@ -58,6 +71,21 @@ async function lookupNamesChunk(addrs: string[]): Promise<Record<string, string>
   }
 }
 
+/** Reverse-lookup each address's claimed Stage username (if any) against the
+ *  configured gateway. Returns a lower-cased `{ address → "<name>.stage.box" }`
+ *  map; absent ⇒ no claim (or no gateway / request failed). Never throws. */
+async function resolveStageNames(addrs: string[]): Promise<Record<string, string>> {
+  if (!stageGatewayUrl) return {};
+  const out: Record<string, string> = {};
+  await Promise.all(addrs.map(async a => {
+    try {
+      const rec = await lookupAddress(stageGatewayUrl!, a);
+      if (rec) out[a] = fullName(rec.name);
+    } catch { /* fall through to ENS */ }
+  }));
+  return out;
+}
+
 async function fetchBatch(addrs: string[]): Promise<void> {
   try {
     for (let i = 0; i < addrs.length; i += STAMP_LOOKUP_CHUNK) {
@@ -69,11 +97,16 @@ async function fetchBatch(addrs: string[]): Promise<void> {
         chunk.forEach(a => pending.delete(a));
         continue;
       }
+      /** Stage usernames take precedence over ENS: if an address has claimed a
+       *  `<name>.stage.box`, show that instead of the stamp/ENS name. One reverse
+       *  lookup per address, only when a gateway is configured; failures fall
+       *  through to the ENS name. */
+      const stage = await resolveStageNames(chunk);
       /** Cache an entry for every requested address (name undefined when no
        *  ENS) so each address resolves once; consumers fall back to the
        *  truncated address, and avatars to the stamp identicon. */
       for (const a of chunk) {
-        store.set(a, { name: names[a] });
+        store.set(a, { name: stage[a] ?? names[a] });
         pending.delete(a);
       }
     }
