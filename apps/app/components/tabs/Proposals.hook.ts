@@ -1,16 +1,28 @@
-/** State hook for the Proposals tab: holds the oldest-first proposal queue, the
- *  cursor into it, and the skip/advance/refresh actions.
+/** React bindings over the shared proposalsStore (Proposals.store).
  *
- *  The queue is rebuilt from the channels-list cache (the same rows the Home tab
- *  renders) whenever the tab gains focus or the cache changes. Skipping/voting
- *  advances the cursor; "skipped" ids are remembered for the session so a skipped
- *  poll doesn't reappear when the queue is rebuilt (e.g. after a vote elsewhere),
- *  but they DO return on a manual refresh / next app run. */
+ *  `useProposals` drives the Proposals screen: the current card, the cursor into
+ *  the session-visible queue, and skip/advance/refresh. `useProposalCount` is the
+ *  cheap read used by the Home banner - it only re-renders when the pending count
+ *  changes (no queue scan on Home's frequent re-renders; the scan lives in the
+ *  store and is cache-driven + debounced).
+ *
+ *  Skipping/voting marks the proposal skipped in the store (shared session set),
+ *  so it drops out of BOTH the screen and the banner. "Skipped" ids return on a
+ *  manual refresh / next app run. */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useFocusEffect } from 'expo-router';
-import { getCachedRows, subscribeCachedRows, type CachedRow } from '../../modules/messaging';
-import { buildProposalQueue, type QueuedProposal } from './Proposals.queue';
+import { useCallback, useState, useSyncExternalStore } from 'react';
+import { proposalsStore } from './Proposals.store';
+import type { QueuedProposal } from './Proposals.queue';
+
+/** Cheap pending-poll count for the Home banner. Re-renders only when the count
+ *  changes. The store does the (cache-driven, debounced) scanning. */
+export function useProposalCount(): number {
+  return useSyncExternalStore(
+    proposalsStore.subscribe,
+    proposalsStore.getCount,
+    proposalsStore.getCount,
+  );
+}
 
 export interface ProposalsState {
   /** The proposal currently shown, or null when the queue is exhausted/empty. */
@@ -27,55 +39,44 @@ export interface ProposalsState {
 }
 
 export function useProposals(): ProposalsState {
-  const [queue, setQueue] = useState<QueuedProposal[]>([]);
-  const [cursor, setCursor] = useState(0);
-  const [loading, setLoading] = useState(true);
-  /** Conv ids skipped this session — filtered out of every rebuilt queue so a
-   *  skipped poll never jumps back in front of the cursor. */
-  const skipped = useRef<Set<string>>(new Set());
-  /** Guards against a stale async build landing after a newer one (focus + cache
-   *  change can race). Only the latest build's result is applied. */
-  const buildId = useRef(0);
+  /** Subscribe to the shared store; re-renders when the visible queue changes. */
+  const queue = useSyncExternalStore(
+    proposalsStore.subscribe,
+    proposalsStore.getQueue,
+    proposalsStore.getQueue,
+  );
+  const ready = useSyncExternalStore(
+    proposalsStore.subscribe,
+    proposalsStore.isReady,
+    proposalsStore.isReady,
+  );
 
-  const rebuild = useCallback((rows: CachedRow[] | null, clearSkips: boolean) => {
-    if (clearSkips) skipped.current = new Set();
-    const id = ++buildId.current;
-    void buildProposalQueue(rows ?? []).then(q => {
-      if (id !== buildId.current) return;
-      const visible = q.filter(p => !skipped.current.has(p.convId));
-      setQueue(visible);
-      setCursor(0);
-      setLoading(false);
-    });
-  }, []);
-
-  /** Rebuild on focus (cheap, local-first) so a poll voted/closed elsewhere is
-   *  reflected when Less swipes back to this tab. */
-  useFocusEffect(useCallback(() => {
-    setLoading(true);
-    rebuild(getCachedRows(), false);
-  }, [rebuild]));
-
-  /** Live: rebuild when the channels cache changes (new poll arrives / channel
-   *  archived). Keeps the cursor at 0 — the new oldest pending poll leads. */
-  useEffect(() => subscribeCachedRows(rows => rebuild(rows, false)), [rebuild]);
+  /** Local cursor into the visible queue. The store filters skipped ids out of
+   *  the queue, so advancing = skip the current id (store re-emits a shorter
+   *  queue) and the cursor naturally lands on the next still-present entry. We
+   *  keep a cursor only to show "N of M" while the head stays at index 0. */
+  const [seen, setSeen] = useState(0);
 
   const advance = useCallback(() => {
-    const cur = queue[cursor];
-    if (cur) skipped.current.add(cur.convId);
-    setCursor(c => c + 1);
-  }, [queue, cursor]);
+    const cur = proposalsStore.getQueue()[0];
+    if (cur) {
+      proposalsStore.skip(cur.convId); // store drops it -> next becomes head
+      setSeen(s => s + 1);
+    }
+  }, []);
 
   const refresh = useCallback(() => {
-    setLoading(true);
-    rebuild(getCachedRows(), true);
-  }, [rebuild]);
+    setSeen(0);
+    proposalsStore.refresh();
+  }, []);
 
+  const remaining = queue.length;
+  const total = seen + remaining;
   return {
-    current: queue[cursor] ?? null,
-    loading,
-    position: queue.length === 0 ? 0 : Math.min(cursor + 1, queue.length),
-    total: queue.length,
+    current: queue[0] ?? null,
+    loading: !ready,
+    position: remaining === 0 ? 0 : seen + 1,
+    total,
     advance,
     refresh,
   };
