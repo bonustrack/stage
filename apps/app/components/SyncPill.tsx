@@ -39,12 +39,11 @@ export function SyncPill(): React.ReactElement | null {
   if (!active) return null;
 
   const dotOpacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.35, 1] });
-  const dotScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1] });
 
   return (
     <Animated.View
       pointerEvents="none"
-      style={[styles.dot, { backgroundColor: SYNC_BLUE, opacity: dotOpacity, transform: [{ scale: dotScale }] }]}
+      style={[styles.dot, { backgroundColor: SYNC_BLUE, opacity: dotOpacity }]}
     />
   );
 }
