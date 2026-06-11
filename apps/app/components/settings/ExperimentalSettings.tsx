@@ -15,11 +15,12 @@ import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { setOnboardingSeen } from '../../lib/onboardingSeen';
 import { SystemHeader } from '../system/SystemHeader';
 
-type Href = '/settings/kit' | '/settings/components' | '/settings/developer';
+type Href = '/settings/kit' | '/settings/components' | '/settings/developer' | '/settings/spike7702';
 const ROWS: { href: Href; label: string; icon: HeroIconName }[] = [
   { href: '/settings/kit', label: 'Kit', icon: 'colorSwatch' },
   { href: '/settings/components', label: 'Components', icon: 'viewGrid' },
   { href: '/settings/developer', label: 'Developer', icon: 'beaker' },
+  { href: '/settings/spike7702', label: '7702 spike', icon: 'beaker' },
 ];
 
 export function ExperimentalSettings(): React.ReactElement {

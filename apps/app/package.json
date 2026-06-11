@@ -16,6 +16,10 @@
   "dependencies": {
     "@stage-labs/client": "workspace:*",
     "@metro-labs/kit": "workspace:*",
+    "@zerodev/ecdsa-validator": "5.4.9",
+    "@zerodev/permissions": "5.6.3",
+    "@zerodev/sdk": "5.5.10",
+    "@zerodev/weighted-ecdsa-validator": "5.4.4",
     "@railgun-community/shared-models": "7.6.1",
     "@railgun-community/wallet": "10.4.0",
     "@react-native-async-storage/async-storage": "2.2.0",
