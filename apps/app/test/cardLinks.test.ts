@@ -91,4 +91,30 @@ describe('cardLinksOf', () => {
     ].join('\n');
     expect(cardLinksOf(text).map(c => c.kind)).toEqual(['preview', 'channel', 'github']);
   });
+
+  /** A plain http(s) link with no special detector match becomes a generic
+   *  OpenGraph preview card (metadata fetched client-side via the proxy). */
+  test('a plain web link is a generic preview card', () => {
+    const cards = cardLinksOf('read this https://www.bbc.com/news/article-123 great piece');
+    expect(cards).toHaveLength(1);
+    expect(cards[0]).toMatchObject({ kind: 'generic', url: 'https://www.bbc.com/news/article-123' });
+  });
+
+  /** Trailing sentence punctuation the greedy token match swallows is stripped
+   *  from the generic card url so the preview fetch + tap target are clean. */
+  test('strips trailing punctuation from a generic link url', () => {
+    const cards = cardLinksOf('see (https://example.com/page).');
+    expect(cards[0]).toMatchObject({ kind: 'generic', url: 'https://example.com/page' });
+  });
+
+  /** Generic cards coexist with special cards under the same MAX_CARDS cap and
+   *  appearance order. */
+  test('generic + special links stack in order', () => {
+    const text = [
+      'https://github.com/bonustrack/metro',
+      'https://news.ycombinator.com/item?id=1',
+      'metro://xmtp/47bf58a8f56cad829b2263797a7e25e4',
+    ].join(' ');
+    expect(cardLinksOf(text).map(c => c.kind)).toEqual(['github', 'generic', 'channel']);
+  });
 });

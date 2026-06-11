@@ -13,6 +13,7 @@
 import { youtubeIdOf, mapCoordsOf } from './embedDetect';
 import { githubLinkOf } from './githubDetect';
 import { previewLinkOf } from './previewLinkDetect';
+import { isGenericLink } from './genericLinkDetect';
 import { metroConvIdOf, metroDmPeerOf } from '@stage-labs/client/xmtp/line';
 
 /** Maximum number of cards rendered per message. Extra links beyond this stay as
@@ -25,7 +26,8 @@ export type CardLink =
   | { kind: 'youtube'; url: string; videoId: string }
   | { kind: 'map'; url: string; lat: number; lng: number; sourceUrl: string }
   | { kind: 'github'; url: string }
-  | { kind: 'preview'; url: string };
+  | { kind: 'preview'; url: string }
+  | { kind: 'generic'; url: string };
 
 /** A URL-shaped token: an http(s) link or a `metro://` / `stage://` deep link
  *  (the app ships under both brands), terminated by whitespace. Matched globally
@@ -59,6 +61,11 @@ function classify(token: string): CardLink | null {
 
   const preview = previewLinkOf(token);
   if (preview) return { kind: 'preview', url: preview.url };
+
+  // Any other plain http(s) link gets a generic OpenGraph preview card. Strip
+  // trailing sentence punctuation the greedy token match may have swallowed.
+  const clean = token.replace(/[.,;:!?)\]}'"]+$/, '');
+  if (isGenericLink(clean)) return { kind: 'generic', url: clean };
 
   return null;
 }
