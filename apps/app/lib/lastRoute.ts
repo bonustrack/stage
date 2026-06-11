@@ -152,11 +152,20 @@ export function useRestoreGate(): RestoreGate {
     restoreTried.current = true;
     const saved = savedRoute.current;
     if (!saved) { restoreDone.current = true; return; }
-    const handle = requestAnimationFrame(() => {
-      router.push(saved as Parameters<typeof router.push>[0]);
-      restoreDone.current = true;
+    // Defer across TWO frames, not one. A single rAF can still land inside the
+    // same commit in which the `(tabs)` Stack child first mounts, so the push
+    // races the navigator and can become the de-facto initial route (channel
+    // with NO `(tabs)` beneath → swipe-back has nothing to pop to). Waiting a
+    // second frame guarantees `(tabs)`/Home has committed AND painted, so the
+    // push reliably lands ON TOP of it and the edge-swipe pops cleanly to Home.
+    let inner = 0;
+    const outer = requestAnimationFrame(() => {
+      inner = requestAnimationFrame(() => {
+        router.push(saved as Parameters<typeof router.push>[0]);
+        restoreDone.current = true;
+      });
     });
-    return () => cancelAnimationFrame(handle);
+    return () => { cancelAnimationFrame(outer); if (inner) cancelAnimationFrame(inner); };
   }, [ready]);
 
   // Keep the saved route current — but only AFTER the restore push has been
