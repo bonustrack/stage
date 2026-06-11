@@ -87,7 +87,7 @@ const config = {
   name: variant.name,
   slug: variant.slug,
   scheme: variant.scheme,
-  version: '0.1.0',
+  version: '0.1.2',
   orientation: 'portrait',
   icon: './assets/icon.png',
   userInterfaceStyle: 'automatic',
@@ -135,7 +135,36 @@ const config = {
   },
   android: {
     package: variant.androidPackage,
-    versionCode: 26,
+    versionCode: 27,
+    // Google Play flagged READ_MEDIA_IMAGES as an undeclared/unjustified
+    // sensitive permission. We never READ the user's media library: photo
+    // attachments and avatar selection go through expo-image-picker's
+    // `launchImageLibraryAsync`, which on Android 13+ uses the system photo
+    // picker and needs NO permission. The only expo-media-library call we make
+    // is `saveToLibraryAsync` (ImageViewer "save to gallery"), which writes via
+    // MediaStore and needs no READ permission on our minSdk 30. expo-media-
+    // library's config plugin still injects these READ permissions, so we block
+    // them here. Takes effect only in a NEW native build / AAB.
+    blockedPermissions: [
+      // Belt-and-suspenders for the media-playback FGS permission. The
+      // react-native-audio-api plugin entry above already disables its
+      // foreground service + this permission at the source (we only use
+      // decodeAudioData), but Google Play flagged it, so we also hard-block it
+      // here in case any transitive AAR re-injects it at gradle manifest-merge.
+      // The floating-overlay pill feature was removed, so the app no longer
+      // needs a microphone foreground service or the draw-over-other-apps
+      // permission. Hard-block both here so no transitive AAR can re-inject them
+      // at gradle manifest-merge and re-trigger Google Play's sensitive-
+      // permission review.
+      'android.permission.FOREGROUND_SERVICE_MICROPHONE',
+      'android.permission.SYSTEM_ALERT_WINDOW',
+      'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK',
+      'android.permission.READ_MEDIA_IMAGES',
+      'android.permission.READ_MEDIA_VIDEO',
+      'android.permission.READ_MEDIA_VISUAL_USER_SELECTED',
+      'android.permission.READ_EXTERNAL_STORAGE',
+      'android.permission.WRITE_EXTERNAL_STORAGE',
+    ],
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
       backgroundColor: '#0f1115',
@@ -239,8 +268,22 @@ const config = {
     // (bun). Requires a NEW APK before the embedded runtime exists on-device.
     './plugins/withNodejsMobile',
     // Native audio-decode module — powers TRUE voice-message waveforms
-    // (decodeAudioData → PCM). Requires a new dev-client build to take effect.
-    'react-native-audio-api',
+    // (decodeAudioData -> PCM). Requires a new dev-client build to take effect.
+    // We use ONLY decodeAudioData, never the library's background-audio playback
+    // path, so we disable the defaults it would otherwise inject: the
+    // CentralizedForegroundService (mediaPlayback FGS), its
+    // FOREGROUND_SERVICE_MEDIA_PLAYBACK permission, and the iOS `audio`
+    // UIBackgroundMode. Google Play flagged FOREGROUND_SERVICE_MEDIA_PLAYBACK as
+    // an undeclared/unused sensitive permission; this removes it at the source.
+    // We keep only FOREGROUND_SERVICE (also needed by the metro-pill mic FGS).
+    [
+      'react-native-audio-api',
+      {
+        iosBackgroundMode: false,
+        androidForegroundService: false,
+        androidPermissions: ['android.permission.FOREGROUND_SERVICE'],
+      },
+    ],
     // RAILGUN private wallet — the JS SDK (@railgun-community/wallet +
     // shared-models + ethers) is autolinked as a normal JS dep. PROVING needs
     // the C++ Groth16 prover `@railgun-community/native-prover`, a NATIVE

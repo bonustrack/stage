@@ -1,6 +1,6 @@
 /** HomeScreen network/sync effect — the XMTP boot, full refresh, conv/message/
- *  consent streams, AppState resume + slow-poll backstops, extracted from
- *  HomeScreen.tsx (phase-2 lint, behaviour identical). */
+ *  consent streams, AppState resume, extracted from HomeScreen.tsx (phase-2
+ *  lint, behaviour identical). */
 
 import { useEffect, type Dispatch, type MutableRefObject, type SetStateAction } from 'react';
 import { AppState } from 'react-native';
@@ -35,9 +35,6 @@ export function useChannelsSync({
     let cancelConvStream: (() => void) | null = null;
     let cancelMsgStream: (() => void) | null = null;
     let cancelConsentStream: (() => void) | null = null;
-    // `number` (RN timer id): the Railgun SDK pulls @types/node into the type
-    // program, whose Timeout collides with the DOM lib at clearInterval().
-    let pollTimer: number | null = null;
     let appStateSub: { remove: () => void } | null = null;
 
     /** Hydrate the persisted cache first — if we have rows from a previous
@@ -73,9 +70,9 @@ export function useChannelsSync({
           } catch { /* swallow */ }
         };
 
-        /** Reusable refresh that any backstop (AppState resume, slow poll,
-         *  pull-to-refresh, unknown-conv stream hit) can call to re-sync +
-         *  re-summarise the full list. */
+        /** Reusable refresh that any event-driven trigger (app-open sync,
+         *  AppState resume, pull-to-refresh, push, unknown-conv stream hit) can
+         *  call to re-sync + re-summarise the full list. */
         const refresh = async (): Promise<void> => {
           if (cancelled) return;
           try {
@@ -101,7 +98,7 @@ export function useChannelsSync({
             summarized.sort((a, b) => (b.lastTs ?? 0) - (a.lastTs ?? 0));
             setRows(summarized);
             clearTimeout(initTimer);
-          } catch { /* swallow — backstops keep firing */ }
+          } catch { /* swallow — event-driven triggers re-run refresh */ }
         };
         refreshFromNetworkRef.current = refresh;
 
@@ -123,7 +120,7 @@ export function useChannelsSync({
               return next;
             });
           }) ?? null;
-        } catch { /* stream init failed — backstops will pick it up */ }
+        } catch { /* stream init failed — AppState resume re-runs refresh */ }
 
         /** Subscribe to every new message across all convs so the per-row
          *  lastTs + lastPreview reflect activity in real time.
@@ -157,7 +154,7 @@ export function useChannelsSync({
               void refreshRequestCount();
             })();
           });
-        } catch { /* stream init failed — AppState resume backstops it */ }
+        } catch { /* stream init failed — AppState resume re-runs refresh */ }
 
         /** Foreground resume — the native streams often die while the app is
          *  backgrounded; re-sync on every active transition. */
@@ -167,11 +164,6 @@ export function useChannelsSync({
             void refresh(); void refreshRequestCount();
           }
         });
-
-        /** Slow poll as a last-resort backstop. Catches anything the stream
-         *  dropped (network blip, push-without-stream, etc.). 30s is gentle
-         *  on battery + bandwidth while still feeling live. */
-        pollTimer = setInterval(() => { void refresh(); }, 30_000) as unknown as number;
       } catch (e) {
         if (!rows || rows.length === 0) setError((e as Error).message);
       }
@@ -185,7 +177,6 @@ export function useChannelsSync({
       if (cancelMsgStream) try { cancelMsgStream(); } catch { /* ignore */ }
       if (cancelConsentStream) try { cancelConsentStream(); } catch { /* ignore */ }
       if (appStateSub) try { appStateSub.remove(); } catch { /* ignore */ }
-      if (pollTimer) clearInterval(pollTimer);
     };
     /** Re-runs only on account switch (deps intentionally partial —
      *  react-hooks/exhaustive-deps not enabled). */

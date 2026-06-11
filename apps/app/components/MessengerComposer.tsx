@@ -27,7 +27,7 @@ interface Props {
    *  same message — so the composer re-focuses + re-opens the keyboard each time. */
   replyingTo?: { id: string; preview: string; sender?: string | null; nonce?: number };
   /** Bump to focus the composer + raise the keyboard WITHOUT setting a reply
-   *  target (e.g. opening a DM from the floating pill). Each new value re-fires
+   *  target (e.g. a focus=1 deep link). Each new value re-fires
    *  the focus effect. */
   autoFocusNonce?: number;
   onClearReply?: () => void;
