@@ -114,13 +114,16 @@ export function ProposalCard({ proposal, onAdvance }: {
         ) : (
           <Text role="secondary" style={{ marginTop: 12 }}>Loading proposal…</Text>
         )}
-        {/* Controls: Skip advances without voting; Open jumps into the channel. */}
+        {/* Controls: full-width 50/50 row - Skip advances without voting; Open
+         *  jumps into the channel. Each Button gets `block` so it stretches to
+         *  fill its flex:1 half (without it the kit Button is alignSelf:
+         *  flex-start and only takes content width). */}
         <Row gap={10} margin={{ top: 16 }} style={{ alignSelf: 'stretch' }}>
           <Box flex={1}>
-            <Button variant="secondary" size="md" dark={dark} onPress={onAdvance} label="Skip"/>
+            <Button block variant="secondary" size="md" dark={dark} onPress={onAdvance} label="Skip"/>
           </Box>
           <Box flex={1}>
-            <Button variant="ghost" size="md" dark={dark} onPress={openChannel} label="Open channel"/>
+            <Button block variant="ghost" size="md" dark={dark} onPress={openChannel} label="Open channel"/>
           </Box>
         </Row>
         <Text size="xs" role="secondary" style={{ marginTop: 10, opacity: 0.7 }}>

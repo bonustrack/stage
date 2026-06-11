@@ -22,6 +22,15 @@ import { buildProposalQueue, type QueuedProposal } from './Proposals.queue';
 const skipped = new Set<string>();
 
 let queue: QueuedProposal[] = [];
+/** Cached visible (non-skipped) view + the (queue, skip-size) it was built from.
+ *  getQueue() is read on EVERY render by useSyncExternalStore, which bails the
+ *  re-render loop only when the snapshot is reference-stable. Recomputing the
+ *  filtered array each call returns a fresh reference every time → React sees an
+ *  ever-changing snapshot → "Maximum update depth exceeded". So memoize it and
+ *  invalidate only when the underlying queue or skip set actually changes. */
+let visibleCache: QueuedProposal[] = [];
+let visibleQueue: QueuedProposal[] | null = null;
+let visibleSkipSize = -1;
 /** True once the first build has settled (lets the screen gate its spinner). */
 let ready = false;
 /** Guards against a stale async build landing after a newer one. */
@@ -33,9 +42,15 @@ let wired = false;
 
 const listeners = new Set<() => void>();
 
-/** Visible queue = built queue minus session-skipped ids. */
+/** Visible queue = built queue minus session-skipped ids. Memoized on the
+ *  (queue, skip-size) pair so repeated reads (every render) return a stable
+ *  reference; see visibleCache note above. */
 function visible(): QueuedProposal[] {
-  return skipped.size === 0 ? queue : queue.filter(p => !skipped.has(p.convId));
+  if (visibleQueue === queue && visibleSkipSize === skipped.size) return visibleCache;
+  visibleCache = skipped.size === 0 ? queue : queue.filter(p => !skipped.has(p.convId));
+  visibleQueue = queue;
+  visibleSkipSize = skipped.size;
+  return visibleCache;
 }
 
 function emit(): void {
