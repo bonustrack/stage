@@ -24,6 +24,9 @@ export function useFeedRenderItem(
   c: ConvState,
   dark: boolean,
   router: { push: (h: { pathname: '/user/[address]'; params: { address: string } }) => void },
+  /** Search mode: when set, every rendered bubble highlights this query in its
+   *  body text (fluo-yellow). Undefined in the normal feed. */
+  highlight?: string,
 ): {
   renderItem: ({ item }: { item: Bubble }) => React.ReactElement;
   extraData: readonly unknown[];
@@ -97,13 +100,14 @@ export function useFeedRenderItem(
       onCloseMenu={() => setMenuFor(null)}
       selectable={selectedForCopy === item.id}
       onAnswer={(label) => onAnswer(item.id, label)}
+      highlight={highlight}
     />
     </BubbleErrorBoundary>
   ), [
     dark, myUri, senderEthOf, router, confirmedIds, replyingTo?.id, jumpHighlightId,
     reactions, optimisticReactions, optimisticRemovals, ownReactions, eventsById, jumpToMessage,
     displayVotes, displayOwnVotes, displayOpenAnswers, onVote, onOpenAnswer, signingIds, onSign, payingIds, onPay, onReact,
-    setReplyTarget, setMenuAnchor, setMenuFor, selectedForCopy, onAnswer, sub,
+    setReplyTarget, setMenuAnchor, setMenuFor, selectedForCopy, onAnswer, sub, highlight,
   ]);
 
   return { renderItem, extraData };

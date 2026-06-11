@@ -11,7 +11,7 @@ import type { useConversationState } from './useConversationState';
 type ConvState = ReturnType<typeof useConversationState>;
 
 export function ConversationFeed({
-  c, convId, dark, head, sub, fg, border, rowBg, insets, router,
+  c, convId, dark, head, sub, fg, border, rowBg, insets, router, searchSlot,
 }: {
   c: ConvState;
   convId: string;
@@ -19,6 +19,10 @@ export function ConversationFeed({
   head: string; sub: string; fg: string; border: string; rowBg: string;
   insets: { top: number };
   router: { push: (h: { pathname: '/user/[address]'; params: { address: string } }) => void };
+  /** When search is open with a query, this results list REPLACES the message
+   *  FlatList in the feed region (same area, below the search topnav). Empty/no
+   *  query → undefined, so the normal feed shows. */
+  searchSlot?: React.ReactNode;
 }): React.ReactElement {
   const {
     loadOlder, hasMore, loadingOlder, status,
@@ -54,6 +58,16 @@ export function ConversationFeed({
       onPressPeer={(address) => router.push({ pathname: '/user/[address]', params: { address } })}
     />
   );
+
+  /** Search active → render the results list in the feed region. Pad the top so
+   *  rows clear the absolute search topnav (height + status-bar inset). */
+  if (searchSlot !== undefined) {
+    return (
+      <Box flex={1} padding={{ top: insets.top + 52 }}>
+        {searchSlot}
+      </Box>
+    );
+  }
 
   return (
     <FlatList

@@ -29,7 +29,7 @@ export type { Row } from './HomeScreen.helpers';
 export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border, inputBg, toolbarBg } = usePalette();
+  const { text: fg, link: head, bg, border } = usePalette();
   const sub = fg;
   const [rows, setRowsState] = useState<RowT[] | null>(getCachedRows() as RowT[] | null);
   /** Wrap setRows so every state update also lands in the shared cache + fans
@@ -141,11 +141,11 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
   /** Stable extraData array (identity only changes when a version does) so the
    *  FlatList doesn't re-render the whole window each stream tick. */
   const listExtraData = useMemo(
-    () => [channelProfilesVersion, draftsVersion, pinned] as const,
-    [channelProfilesVersion, draftsVersion, pinned],
+    () => [channelProfilesVersion, draftsVersion, pinned, query] as const,
+    [channelProfilesVersion, draftsVersion, pinned, query],
   );
   const renderRow = useChannelRowRenderer(router, setRowMenu, {
-    channelProfilesVersion, draftsVersion, pinned,
+    channelProfilesVersion, draftsVersion, pinned, query,
   });
 
   if (error) return <HomeError error={error} dark={dark} fg={fg} bg={bg} />;
@@ -170,8 +170,6 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
         head={head}
         sub={sub}
         border={border}
-        inputBg={inputBg}
-        toolbarBg={toolbarBg}
         listExtraData={listExtraData}
         listRef={listRef}
         savedOffsetRef={savedOffsetRef}

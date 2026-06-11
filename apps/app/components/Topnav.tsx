@@ -14,6 +14,14 @@ import { TopnavIdentity } from './TopnavIdentity';
 import { Row } from './layout';
 import { usePalette } from '../lib/theme';
 
+/** The single canonical topnav height (px), shared by ALL top bars so every one
+ *  is pixel-identical: the four main-tab Topnav, the Home search bar, the
+ *  conversation topnav and the conversation search bar. This is the full OUTER
+ *  height including the 1px hairline bottom border, which is drawn INSIDE the box
+ *  (RN/Yoga border-box) so it never adds to the total. Every path renders a
+ *  fixed-height border-box of exactly this value (+ any top inset). */
+export const TOPNAV_HEIGHT = 52;
+
 export function Topnav({ left, right }: {
   /** Left slot — defaults to the shared identity (avatar + name → Menu). */
   left?: React.ReactNode;
@@ -23,7 +31,8 @@ export function Topnav({ left, right }: {
   const { border } = usePalette();
   return (
     <Row
-      padding={{ x: 16, top: 12, bottom: 10 }}
+      height={TOPNAV_HEIGHT}
+      padding={{ x: 16 }}
       align="center"
       justify="between"
       surface="toolbar"
