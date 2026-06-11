@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Animated as RNAnimated, Share } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
+import { Input } from '@metro-labs/kit/input';
 import { Text } from '@metro-labs/kit/text';
 import { Box, Row, Col } from '../../components/layout';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
@@ -58,7 +59,6 @@ export default function XmtpConversation(): React.ReactElement {
     menuFor, setMenuFor, menuAnchor, overflowOpen, setOverflowOpen, setSelectedForCopy,
     peerAddr, groupName, groupImage, isGroup, github, senderEthOf,
     mentionCandidates, onReact, onOptimistic, onSent, jumpToMessage, markAtBottom,
-    allBubbles, hasMore, loadOlder,
   } = c;
 
   /** In-conversation local message search (Stage #6) — opened from the 3-dot
@@ -68,12 +68,18 @@ export default function XmtpConversation(): React.ReactElement {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const closeSearch = useCallback(() => { setSearchOpen(false); setSearchQuery(''); }, []);
-  /** Live getters for the search overlay's deep-jump loop so it reads the freshly
-   *  paged feed (closure over `allBubbles`/`hasMore` would go stale mid-loop). */
-  const allBubblesRef = useRef(allBubbles);
-  allBubblesRef.current = allBubbles;
-  const hasMoreRef = useRef(hasMore);
-  hasMoreRef.current = hasMore;
+  /** Search opens from the ChannelMenu bottom sheet, which dismisses (animating)
+   *  as `searchOpen` flips true. That dismissal blurs the SearchTopnavBar's
+   *  just-autofocused input, so the keyboard never appears (unlike Home, where
+   *  search opens straight from the topnav with no sheet teardown). Imperatively
+   *  re-focus the input once the sheet animation has settled so the keyboard
+   *  reliably opens on the channel page too. */
+  const searchInputRef = useRef<React.ComponentRef<typeof Input>>(null);
+  useEffect(() => {
+    if (!searchOpen) return;
+    const t = setTimeout(() => searchInputRef.current?.focus(), 250);
+    return () => clearTimeout(t);
+  }, [searchOpen]);
 
   /** Message-request gate. The overwhelmingly common case is an already-accepted
    *  channel, so we DEFAULT to showing the composer immediately on open (no
@@ -133,17 +139,11 @@ export default function XmtpConversation(): React.ReactElement {
           <ConversationSearch
             line={activeLine}
             query={searchQuery}
-            fg={fg}
             sub={sub}
             bg={bg}
-            border={border}
-            head={head}
-            senderEthOf={senderEthOf}
-            getBubbles={() => allBubblesRef.current}
-            hasMore={() => hasMoreRef.current}
-            loadOlder={loadOlder}
-            jumpToMessage={jumpToMessage}
-            onClose={closeSearch}
+            c={c}
+            dark={dark}
+            router={router}
 />
         ) : undefined}
 />
@@ -156,6 +156,7 @@ export default function XmtpConversation(): React.ReactElement {
       {searchOpen ? (
         <Box style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2 }}>
           <SearchTopnavBar
+            ref={searchInputRef}
             border={border}
             query={searchQuery}
             setQuery={setSearchQuery}

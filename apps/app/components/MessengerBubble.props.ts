@@ -71,4 +71,8 @@ export interface MessengerBubbleProps {
    *  text-selection handles appear for partial copy. Set by the "Select"
    *  action in the long-press menu (parent tracks a selected message id). */
   selectable?: boolean;
+  /** Search mode only: a query whose case-insensitive occurrences in the body
+   *  text are wrapped in a fluo-yellow highlight. Undefined/empty in the normal
+   *  feed (no highlighting). */
+  highlight?: string;
 }
