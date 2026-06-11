@@ -31,13 +31,28 @@ export function lineOfDmPeer(address: string): string {
   return `${XMTP_USER_PREFIX}${address}`;
 }
 
-/** Extract the peer Ethereum address from a `metro://xmtp/user/<address>` DM
- *  link found ANYWHERE in a block of text. Returns null when none is present.
- *  Checked BEFORE `metroConvIdOf` so the literal "user" segment is never
- *  mistaken for a conversation id. */
+/** The app ships under two brands that share one codebase: Metro (`metro://`,
+ *  `metro.box`) and Stage (`stage://`, `stage.box`). A link minted by either
+ *  surface must resolve to the same card, so the detectors below accept BOTH
+ *  custom schemes and BOTH https hosts (path- or hash-routed). */
+const LINK_PREFIX =
+  // metro:// | stage://  (custom scheme, authority IS the path)
+  '(?:(?:metro|stage):\\/\\/' +
+  // OR  https://{metro,stage}.box/  optionally hash-routed (#/...)
+  '|https?:\\/\\/(?:metro|stage)\\.box\\/(?:#\\/)?)';
+
+/** Extract the peer Ethereum address from a DM-by-address link found ANYWHERE in
+ *  a block of text, across both brands and link forms:
+ *    metro://xmtp/user/<addr>   stage://xmtp/user/<addr>
+ *    https://metro.box/xmtp/user/<addr>   https://stage.box/#/xmtp/user/<addr>
+ *    https://metro.box/user/<addr>        (web user-profile permalink)
+ *  Returns null when none is present. Checked BEFORE `metroConvIdOf` so the
+ *  literal "user" segment is never mistaken for a conversation id. */
 export function metroDmPeerOf(text?: string | null): string | null {
   if (!text) return null;
-  const m = text.match(/metro:\/\/xmtp\/user\/(0x[a-fA-F0-9]{40})/);
+  const m = text.match(
+    new RegExp(LINK_PREFIX + '(?:xmtp\\/)?user\\/(0x[a-fA-F0-9]{40})'),
+  );
   return m ? m[1]! : null;
 }
 
@@ -58,6 +73,6 @@ export function convIdOfLine(line: string): string | null {
  *  grab the literal "user" and render a card that resolves nothing. */
 export function metroConvIdOf(text?: string | null): string | null {
   if (!text) return null;
-  const m = text.match(/metro:\/\/xmtp\/(?!user\/)([^\s/]+)/);
+  const m = text.match(new RegExp(LINK_PREFIX + 'xmtp\\/(?!user\\/)([^\\s/?#]+)'));
   return m ? m[1]! : null;
 }
