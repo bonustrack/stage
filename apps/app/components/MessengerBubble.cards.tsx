@@ -122,8 +122,11 @@ export function TxRequestCard({ req, dark, paying, onPay }: {
   const amountLabel = call?.metadata?.amount != null
     ? `${call.metadata.amount} ${call.metadata.currency ?? 'ETH'}`
     : eth ? `${eth} ETH` : undefined;
+  // For ERC20 requests `call.to` is the token contract; the real recipient is
+  // carried in `metadata.toAddress`. Prefer it when present.
+  const recipient = call?.metadata?.toAddress ?? call?.to;
   return (
-    <Box radius={blockRadius} background={withAlpha(pal.primary, 0.08)} padding={12} margin={{ top: 8 }} gap={8} style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: withAlpha(pal.primary, 0.35) }}>
+    <Box radius={blockRadius} background={withAlpha(pal.primary, 0.08)} padding={12} margin={{ top: 8 }} gap={8} style={{ alignSelf: 'stretch' }}>
       <Row align="center" gap={8}>
         <Icon name="wallet" size={18} color={pal.primary}/>
         <Text weight="semibold" size="md" color={pal.text} style={{ flexShrink: 1 }}>
@@ -131,17 +134,17 @@ export function TxRequestCard({ req, dark, paying, onPay }: {
         </Text>
       </Row>
       {amountLabel ? (
-        <Text weight="semibold" size="5xl" color={pal.text}>
+        <Text weight="semibold" size="5xl" color={pal.link}>
           {amountLabel}
         </Text>
       ) : null}
-      {call?.to ? <TxToRow address={call.to} /> : null}
+      {recipient ? <TxToRow address={recipient} /> : null}
       {onPay ? (
         <Button
           variant="primary"
           size="lg"
           fullWidth
-          radius={blockRadius}
+          radius={24}
           dark={dark}
           loading={paying}
           onPress={onPay}
@@ -171,7 +174,7 @@ function TxToRow({ address }: { address: string }): React.ReactElement {
         <Image
           src={`https://stamp.fyi/avatar/eth:${address}?s=32`}
           size={16} radius="full"/>
-        <Text role="link" weight="semibold" size="sm" suppressHighlighting>
+        <Text role="link" weight="semibold" size="lg" suppressHighlighting>
           {display}
         </Text>
       </Row>
