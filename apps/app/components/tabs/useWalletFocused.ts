@@ -8,17 +8,26 @@
  *  XMTP became ready, on every launch. The longer the app had been closed, the
  *  bigger the catch-up scan = the post-launch crawl.
  *
- *  This hook derives focus from the router pathname (the SAME source the pager
- *  uses to pick its index, indexOfPathname), and LATCHES once true: the engine
- *  boot is the expensive part, so once it has happened there's no point tearing
- *  it down when the user swipes away — keep it warm. If the user never visits
- *  Wallet, this stays false forever and the engine never boots. */
+ *  This hook derives focus from the router pathname and LATCHES once true: the
+ *  engine boot is the expensive part, so once it has happened there's no point
+ *  tearing it down when the user swipes away — keep it warm. If the user never
+ *  visits Wallet, this stays false forever and the engine never boots.
+ *
+ *  NB: we match the `/wallet` pathname directly rather than importing
+ *  indexOfPathname/TAB_ORDER from SwipeTabs.config. That config imports
+ *  WalletScreen, which imports this hook — pulling the config in here forms an
+ *  import cycle, and at module-eval time TAB_ORDER is still undefined, so a
+ *  top-level `TAB_ORDER.indexOf('wallet')` threw "Cannot read property 'indexOf'
+ *  of undefined" at app launch. Matching the path inline keeps this leaf
+ *  dependency-free. */
 import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'expo-router';
 
-import { indexOfPathname, TAB_ORDER } from '../SwipeTabs.config';
-
-const WALLET_INDEX = TAB_ORDER.indexOf('wallet');
+/** The Wallet tab is the `/wallet` route (the `(tabs)` group is path-transparent)
+ *  and its sub-routes are `/wallet/*` — same rule the pager uses to pick index. */
+function isWalletPath(pathname: string): boolean {
+  return pathname === '/wallet' || pathname.startsWith('/wallet/');
+}
 
 /** True from the first moment the Wallet tab becomes the active pager page (or a
  *  /wallet/* sub-route is open), and stays true for the rest of the session. */
@@ -31,7 +40,7 @@ export function useWalletFocused(): boolean {
 
   useEffect(() => {
     if (latched.current) return;
-    if (indexOfPathname(pathname) === WALLET_INDEX) {
+    if (isWalletPath(pathname)) {
       latched.current = true;
       setEverFocused(true);
     }
