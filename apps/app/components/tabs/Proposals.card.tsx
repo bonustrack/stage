@@ -16,9 +16,10 @@ import { useRouter } from 'expo-router';
 import { Button } from '@metro-labs/kit/button';
 import { Text } from '@metro-labs/kit/text';
 import { Box, Row, Col } from '../layout';
+import { Avatar } from '../Avatar';
 import { MessengerComposer } from '../MessengerComposer';
 import { useConversationState } from '../xmtp-conv/useConversationState';
-import { pollOf } from '../MessengerBubble.helpers';
+import { pollOf, fmtTs } from '../MessengerBubble.helpers';
 import { PollView } from '../MessengerBubble.poll';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { getPeerName } from '../../lib/peerProfiles';
@@ -40,6 +41,7 @@ export function ProposalCard({ proposal, onAdvance }: {
     activeLine, events, myUri, isGroup, groupName, peerAddr,
     mentionCandidates, displayVotes, displayOwnVotes, onVote,
     displayOpenAnswers, onOpenAnswer, onOptimistic, onSent,
+    senderEthOf,
   } = c;
 
   /** The poll message itself — re-find it in the live feed by the queued id so
@@ -50,6 +52,17 @@ export function ProposalCard({ proposal, onAdvance }: {
   const title = isGroup
     ? (groupName?.trim() || 'Untitled group')
     : (peerAddr ? (getPeerName(peerAddr) ?? shortAddress(peerAddr)) : '');
+
+  /** Poll author: resolve eth address from the message sender the same way chat
+   *  bubbles do (`senderEthOf`), then its display name + stamp avatar. */
+  const authorAddr = useMemo(
+    () => (entry ? senderEthOf(entry.from) : null),
+    [entry, senderEthOf],
+  );
+  /** Name resolves from the peerProfiles cache; the card re-renders when the
+   *  hook's profile version bumps, so this picks up the resolved name/avatar. */
+  const authorName = authorAddr ? (getPeerName(authorAddr) ?? shortAddress(authorAddr)) : null;
+  const postedAt = entry?.ts ? fmtTs(entry.ts) : null;
 
   const openChannel = useCallback(() => {
     router.push({ pathname: '/xmtp/[convId]', params: { convId: proposal.convId } });
@@ -69,6 +82,14 @@ export function ProposalCard({ proposal, onAdvance }: {
         <Text weight="semibold" size="xs" role="secondary" style={{ textTransform: 'uppercase', letterSpacing: 0.5 }} numberOfLines={1}>
           {title}
         </Text>
+        {/* Who posted the poll + when, mirroring chat sender resolution. */}
+        {authorName ? (
+          <Row gap={6} align="center" margin={{ top: 8 }}>
+            <Avatar address={authorAddr} size="sm"/>
+            <Text weight="medium" size="sm" color={fg} numberOfLines={1}>{authorName}</Text>
+            {postedAt ? <Text size="xs" role="secondary">· {postedAt}</Text> : null}
+          </Row>
+        ) : null}
         {poll?.question ? (
           <Text weight="semibold" size="4xl" color={fg} style={{ marginTop: 6 }}>
             {poll.question}
