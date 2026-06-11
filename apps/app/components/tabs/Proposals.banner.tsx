@@ -31,8 +31,8 @@ export function ProposalsBanner(): React.ReactElement | null {
         padding={{ x: 16, y: 12 }}
         style={{ borderBottomWidth: 1, borderBottomColor: pal.border }}
 >
-        <Icon name="radar" size={20} color={pal.link}/>
-        <Text size="sm" weight="semibold" color={pal.text} style={{ flex: 1 }}>
+        <Icon name="statusOnline" size={20} color={pal.link}/>
+        <Text size="lg" weight="semibold" color={pal.link} style={{ flex: 1 }}>
           {count === 1 ? '1 proposal' : `${count} proposals`}
         </Text>
         <Icon name="chevronRight" size={18} color={pal.text}/>
