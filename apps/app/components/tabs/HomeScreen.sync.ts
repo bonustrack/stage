@@ -14,6 +14,7 @@ import { hydrateCachedRows } from '../../modules/messaging';
 import type { Row as RowT } from './HomeScreen.helpers';
 import { summarize } from './HomeScreen.helpers';
 import { makeMsgStreamHandler } from './HomeScreen.stream';
+import { beginSync } from '../../lib/syncStatus';
 
 interface SyncArgs {
   accountEpoch: number;
@@ -78,6 +79,10 @@ export function useChannelsSync({
          *  re-summarise the full list. */
         const refresh = async (): Promise<void> => {
           if (cancelled) return;
+          /** Count the channels-list network refresh (app-open sync, foreground
+           *  resume, miss-refresher poll, pull-to-refresh) for the sync pill so
+           *  it pulses while the list is catching up. */
+          const endSyncTrack = beginSync();
           try {
             await client.conversations.syncAllConversations(['allowed', 'unknown']);
             /** Main inbox = only ACCEPTED convs ('allowed'). The 'unknown'
@@ -102,6 +107,7 @@ export function useChannelsSync({
             setRows(summarized);
             clearTimeout(initTimer);
           } catch { /* swallow — backstops keep firing */ }
+          finally { endSyncTrack(); }
         };
         refreshFromNetworkRef.current = refresh;
 

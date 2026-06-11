@@ -10,6 +10,7 @@ import { isMetroControlBody } from './push';
 import { getCachedXmtpClient, convOfLine } from './xmtp.client';
 import { envelopeOfXmtpMessage } from './xmtp.messages';
 import { feedCache, activeFeedLines } from './xmtp.state';
+import { beginSync } from './syncStatus';
 
 /** First-page + per-scroll-up page size. Opening a conversation used to decode
  *  100 messages up front (~150–220ms on-device, on the critical path before first
@@ -46,6 +47,10 @@ let lastInboxSyncAt = 0;
 export async function syncInboxOnce(maxAgeMs = 3_000): Promise<void> {
   if (inboxSyncInFlight) return inboxSyncInFlight;
   if (Date.now() - lastInboxSyncAt < maxAgeMs) return;
+  /** Count this real network pass for the sync pill. One `begin` per actual
+   *  inbox round-trip (coalesced callers await the SAME promise, so they don't
+   *  each bump the counter); ended in `finally` the instant the pass settles. */
+  const endSyncTrack = beginSync();
   inboxSyncInFlight = (async () => {
     try {
       const client = getCachedXmtpClient();
@@ -53,7 +58,7 @@ export async function syncInboxOnce(maxAgeMs = 3_000): Promise<void> {
       await client.conversations.syncAllConversations(STREAM_CONSENT_STATES);
       lastInboxSyncAt = Date.now();
     } catch { /* best-effort — per-conv sync + next pass still retry */ }
-    finally { inboxSyncInFlight = null; }
+    finally { inboxSyncInFlight = null; endSyncTrack(); }
   })();
   return inboxSyncInFlight;
 }
@@ -65,16 +70,22 @@ export async function syncInboxOnce(maxAgeMs = 3_000): Promise<void> {
  *  them. */
 export async function resyncActiveFeeds(): Promise<void> {
   await syncInboxOnce();
-  for (const line of activeFeedLines) {
-    try {
-      const conv = await convOfLine(line);
-      if (!conv) continue;
-      await conv.sync().catch(() => undefined);
-      const msgs = await conv.messages({ limit: PAGE_SIZE });
-      for (const m of msgs.reverse()) {
-        const env = envelopeOfXmtpMessage(m, line);
-        if (!isMetroControlBody(env.text)) pushToFeedSlice(line, env);
-      }
-    } catch { /* best-effort — next tick retries */ }
-  }
+  /** Count the per-feed re-read pass for the sync pill (the inbox sync above is
+   *  already tracked inside `syncInboxOnce`). Skip the bookkeeping entirely when
+   *  no feed is open. */
+  const endSyncTrack = activeFeedLines.size > 0 ? beginSync() : null;
+  try {
+    for (const line of activeFeedLines) {
+      try {
+        const conv = await convOfLine(line);
+        if (!conv) continue;
+        await conv.sync().catch(() => undefined);
+        const msgs = await conv.messages({ limit: PAGE_SIZE });
+        for (const m of msgs.reverse()) {
+          const env = envelopeOfXmtpMessage(m, line);
+          if (!isMetroControlBody(env.text)) pushToFeedSlice(line, env);
+        }
+      } catch { /* best-effort — next tick retries */ }
+    }
+  } finally { endSyncTrack?.(); }
 }

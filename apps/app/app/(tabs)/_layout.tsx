@@ -12,6 +12,7 @@ import { usePalette } from '../../lib/theme';
 import { TabsPager } from '../../components/SwipeTabs';
 import { HoistedTopnav } from '../../components/tabs/HoistedTopnav';
 import { useTotalUnread } from '../../lib/useTotalUnread';
+import { SyncPill } from '../../components/SyncPill';
 
 export default function TabsLayout(): React.ReactElement {
   const pathname = usePathname();
@@ -133,6 +134,16 @@ export default function TabsLayout(): React.ReactElement {
           </Box>
         </Col>
       ) : null}
+      {/* Sync pill — floats bottom-left, just above the tab bar. Pulses while
+          background sync work is in flight so the user sees that new messages
+          are loading instead of waiting on an apparently-idle screen. Renders
+          nothing when idle; non-interactive (pointerEvents none on the pill). */}
+      <Box
+        pointerEvents="box-none"
+        style={{ position: 'absolute', left: 12, bottom: tabBarHeight + 12, zIndex: 2 }}
+>
+        <SyncPill/>
+      </Box>
     </Col>
   );
 }
