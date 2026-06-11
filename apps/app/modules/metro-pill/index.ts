@@ -57,3 +57,15 @@ export function subscribeXmtpPush(cb: (e: XmtpPushEvent) => void): () => void {
   const sub = native?.addListener?.('onXmtpPush', cb);
   return () => { try { sub?.remove?.(); } catch { /* ignore */ } };
 }
+
+/** Subscribe to the native `onNewToken` event, fired by MetroFcmService when FCM
+ *  rotates this device's registration token. The handler should immediately
+ *  re-send register-push to the daemon so a rotated token never silently rots
+ *  (the root cause of the multi-day delivery outage). Requires an APK built with
+ *  the onNewToken forward; on older builds the event never fires and this is a
+ *  harmless no-op (the JS launch/resume re-register path still recovers the
+ *  rotated token on next open). Returns a noop unsubscribe when not linked. */
+export function subscribeNewToken(cb: (e: { token?: string | null }) => void): () => void {
+  const sub = native?.addListener?.('onNewToken', cb);
+  return () => { try { sub?.remove?.(); } catch { /* ignore */ } };
+}

@@ -57,7 +57,11 @@ type PushClient = Pick<Client, 'inboxId' | 'publicIdentity' | 'conversations'>;
  *   - notification permission is denied,
  *   - the same (account, token) was registered within REGISTER_TTL_MS,
  *   - sending the control DM fails (best-effort; foreground notifs still work). */
-export async function registerPushWithDaemon(client: PushClient): Promise<void> {
+export async function registerPushWithDaemon(
+  client: PushClient,
+  opts: { force?: boolean; reason?: string } = {},
+): Promise<void> {
+  const reason = opts.reason ?? 'unknown';
   try {
     const platform = platformTag();
     if (!platform) return;
@@ -66,25 +70,30 @@ export async function registerPushWithDaemon(client: PushClient): Promise<void> 
     // turned OFF we never (re-)register the token, so the daemon stops pushing
     // for this device on next token rotation / TTL expiry.
     await loadPushEnabled();
-    if (!isPushEnabledSync()) return;
+    if (!isPushEnabledSync()) { logPush(`skip(${reason}): push disabled`); return; }
 
     const address = client.publicIdentity?.identifier;
     const inboxId = client.inboxId;
-    if (!address || !inboxId) return;
+    if (!address || !inboxId) { logPush(`skip(${reason}): no address/inbox`); return; }
 
     // Resolve the raw FCM/APNs device token (also ensures channel + permission).
     const token = await getDeviceFcmToken();
-    if (!token) return;
+    if (!token) { logPush(`skip(${reason}): no device token`); return; }
 
     // Debounce by account+token: skip if we already registered this exact
-    // pairing recently.
+    // pairing recently. `force` (a confirmed FCM token rotation) bypasses the
+    // TTL gate so a rotated token is re-sent immediately, never waiting for the
+    // 6h window — token rot is exactly what this whole path defends against.
     const account = address.toLowerCase();
     const stateKey = lastRegisterKey(account);
     const prev = await AsyncStorage.getItem(stateKey).catch(() => null);
-    if (prev) {
+    if (prev && !opts.force) {
       try {
         const { token: prevToken, at } = JSON.parse(prev) as { token: string; at: number };
-        if (prevToken === token && Date.now() - at < REGISTER_TTL_MS) return;
+        if (prevToken === token && Date.now() - at < REGISTER_TTL_MS) {
+          logPush(`skip(${reason}): token unchanged + fresh (<${REGISTER_TTL_MS / 3.6e6}h)`);
+          return;
+        }
       } catch { /* corrupt entry — fall through and re-register */ }
     }
 
@@ -97,12 +106,19 @@ export async function registerPushWithDaemon(client: PushClient): Promise<void> 
 
     await AsyncStorage.setItem(stateKey, JSON.stringify({ token, at: Date.now() }))
       .catch(() => undefined);
+    logPush(`sent(${reason}): ${platform} token …${token.slice(-8)} acct …${account.slice(-6)}`);
   } catch (err) {
     // Best-effort: registration failure must never break app boot or messaging.
-    if (process.env.NODE_ENV !== 'production') {
-      console.warn('registerPushWithDaemon failed', (err as Error).message);
-    }
+    logPush(`FAILED(${reason}): ${(err as Error).message}`);
   }
+}
+
+/** Single logging sink for push-registration outcomes. Always console.log so the
+ *  outcome is visible via the existing debug paths (Metro / adb logcat) in any
+ *  build, not just dev — token rot is a silent, hard-to-reproduce failure and the
+ *  trail of register outcomes is the only forensic record when it recurs. */
+function logPush(msg: string): void {
+  console.log(`[push.register] ${msg}`);
 }
 
 /** Tell the daemon to STOP pushing to this device and clear the local

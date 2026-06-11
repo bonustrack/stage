@@ -9,6 +9,10 @@ import { NativeModule, requireNativeModule } from 'expo-modules-core';
  *  contentless push's routing metadata so JS can target the resync. */
 type MetroPillEvents = {
   onXmtpPush: (e: { line?: string | null; convId?: string | null; messageId?: string | null }) => void;
+  /** Fired by MetroFcmService on FCM token rotation (anti-rot). Carries the new
+   *  registration token so JS can re-send register-push immediately. Only present
+   *  on APKs built with the onNewToken forward; older builds never emit it. */
+  onNewToken: (e: { token?: string | null }) => void;
 };
 
 declare class MetroPillModule extends NativeModule<MetroPillEvents> {

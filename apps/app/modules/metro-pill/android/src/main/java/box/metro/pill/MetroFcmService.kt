@@ -45,7 +45,12 @@ import com.google.firebase.messaging.RemoteMessage
 class MetroFcmService : FirebaseMessagingService() {
 
   override fun onNewToken(token: String) {
-    // Let Expo manage token registration; just forward.
+    // ANTI-ROT: FCM rotated this device's registration token. Emit it to JS so
+    // the app re-sends the register-push control DM to the daemon IMMEDIATELY
+    // (the daemon dedups). When JS is detached (cold/killed) the emit no-ops and
+    // the JS launch/resume re-register path picks the new token up next open. We
+    // also keep delegating to Expo so its own token bookkeeping is preserved.
+    runCatching { MetroPillModule.emit("onNewToken", mapOf("token" to token)) }
     runCatching { delegateNewToken(token) }
   }
 

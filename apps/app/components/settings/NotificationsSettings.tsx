@@ -46,7 +46,7 @@ export function NotificationsSettings(): React.ReactElement {
       await setPushEnabled(next);
       try {
         const client = await getOrCreateXmtpClient('production');
-        if (next) await registerPushWithDaemon(client);
+        if (next) await registerPushWithDaemon(client, { force: true, reason: 'settings-toggle' });
         else await unregisterPushFromDaemon(client);
       } catch { /* best-effort — preference is already persisted */ }
       try { setPerm((await Notifications.getPermissionsAsync()).status); } catch { /* ignore */ }

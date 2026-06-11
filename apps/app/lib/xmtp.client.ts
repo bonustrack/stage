@@ -82,7 +82,7 @@ async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<
         await SecureStore.setItemAsync(ENV_KEY, env);
         /** Auto-register this device's push token with the daemon for the now-active
          *  account. Fire-and-forget + debounced inside — never blocks boot. */
-        void registerPushWithDaemon(built);
+        void registerPushWithDaemon(built, { reason: 'cold-start' });
         return built;
       }
       /** Build timed out — fall through to create() with a fresh registration. */

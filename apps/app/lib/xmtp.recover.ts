@@ -149,7 +149,7 @@ async function finalizeClient(created: Client, rec: AccountRecord, env: XmtpEnv)
   await markRegistered(rec.id);
   await setActiveAccountId(rec.id);
   await SecureStore.setItemAsync(ENV_KEY, env);
-  void registerPushWithDaemon(created);
+  void registerPushWithDaemon(created, { reason: 'recover' });
   return created;
 }
 

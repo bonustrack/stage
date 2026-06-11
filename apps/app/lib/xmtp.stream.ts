@@ -30,8 +30,8 @@
  *  ─────────────────────────────────────────────────────────────────────────── */
 
 import { AppState } from 'react-native';
-import { setAppForeground, subscribeXmtpPush } from '../modules/metro-pill';
-import { isMetroControlBody } from './push';
+import { setAppForeground, subscribeXmtpPush, subscribeNewToken } from '../modules/metro-pill';
+import { isMetroControlBody, registerPushWithDaemon } from './push';
 import { getCachedXmtpClient, getOrCreateXmtpClient } from './xmtp.client';
 import { envelopeOfXmtpMessage } from './xmtp.messages';
 import { activeFeedLines, registerGlobalStreamTeardown } from './xmtp.state';
@@ -61,6 +61,9 @@ let globalStreamStarting = false;
 let globalStreamRearmTimer: number | null = null;
 let globalAppStateSub: { remove: () => void } | null = null;
 let globalPushSub: (() => void) | null = null;
+/** Native FCM token-rotation subscription (anti-rot); null until the stream
+ *  starts, torn down on account switch. No-op on APKs without the native forward. */
+let globalNewTokenSub: (() => void) | null = null;
 /** Coalesce a burst of pushes (e.g. several messages arriving at once) into a
  *  single forced resync. */
 let pushResyncTimer: number | null = null;
@@ -229,6 +232,13 @@ export async function ensureGlobalStream(): Promise<void> {
      *  conv (MetroFcmService emits before its card suppression), so it covers
      *  both a silently-dead stream and the live-but-missed case. */
     if (!globalPushSub) globalPushSub = subscribeXmtpPush(() => onXmtpPush());
+    /** ANTI-ROT (native, APK-gated): when FCM rotates this device's token while
+     *  the app is warm, re-send register-push to the daemon immediately (forced,
+     *  bypassing the TTL gate). On APKs without the native onNewToken forward this
+     *  never fires; the launch/resume re-register is the OTA-able fallback. */
+    if (!globalNewTokenSub) globalNewTokenSub = subscribeNewToken(() => {
+      void registerPushWithDaemon(client, { force: true, reason: 'fcm-rotation' });
+    });
     /** FOREGROUND FLAG: the app is foregrounded right now (the stream just
      *  started from a live mount), so tell native to skip its generic push card —
      *  the rich JS local notif (presentInboundNotification, fired from the
@@ -242,6 +252,13 @@ export async function ensureGlobalStream(): Promise<void> {
         setAppForeground(state === 'active');
         if (state !== 'active') return;
         void resyncActiveFeeds();
+        /** PUSH-TOKEN ANTI-ROT: re-assert this device's FCM token on resume. The
+         *  TTL/token-diff gate inside makes this cheap (a no-op unless the token
+         *  changed or the last successful register is >6h old), but it is the
+         *  backstop that recovers a server-side token wipe / FCM rotation without
+         *  needing a cold start — the root cause of the multi-day delivery outage
+         *  was a long-lived app that never re-registered after FCM invalidated it. */
+        void registerPushWithDaemon(client, { reason: 'appstate-resume' });
         /** Stream may have died while backgrounded (onClose nulled the cancel) —
          *  restart it in addition to the one-off resync. */
         if (!globalStreamCancel) void ensureGlobalStream();
@@ -261,6 +278,7 @@ function teardownGlobalStream(): void {
    *  (e.g. a "stream fresh" skip keyed off the previous inbox's delivery). */
   lastForcedPushSyncAt = 0; lastStreamMsgAt = 0; lastStreamCloseAt = 0;
   if (globalPushSub) { try { globalPushSub(); } catch { /* ignore */ } globalPushSub = null; }
+  if (globalNewTokenSub) { try { globalNewTokenSub(); } catch { /* ignore */ } globalNewTokenSub = null; }
   if (globalAppStateSub) { try { globalAppStateSub.remove(); } catch { /* ignore */ } globalAppStateSub = null; }
   /** Clear the foreground flag so a torn-down (account-switch) stream doesn't
    *  leave native thinking the app is foreground and suppressing generic cards. */

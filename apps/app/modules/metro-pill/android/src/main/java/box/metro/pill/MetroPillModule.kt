@@ -40,7 +40,9 @@ class MetroPillModule : Module() {
     // `onXmtpPush` is fired by MetroFcmService (via the companion `emit`) on every
     // contentless xmtp push so JS can force a sync + reload the open feed — the
     // real-time delivery signal that replaces the removed periodic poll.
-    Events("onRecorded", "onPillTapped", "onOpenChat", "onError", "onXmtpPush")
+    // `onNewToken` is fired by MetroFcmService on FCM token rotation so JS can
+    // re-send the register-push control DM immediately (anti-rot, the daemon dedups).
+    Events("onRecorded", "onPillTapped", "onOpenChat", "onError", "onXmtpPush", "onNewToken")
 
     OnCreate {
       instanceRef = WeakReference(this@MetroPillModule)
