@@ -10,7 +10,13 @@
  *
  *  Endpoints:
  *    GET /health                 -> "ok"
- *    GET /preview?url=<encoded>  -> { url, title, description, image, siteName, favicon }
+ *    GET /preview?url=<encoded>  -> an OpenGraph card
+ *        { url, title, description, image, siteName, favicon }
+ *      OR, when the URL answers HTTP 402 with an x402 payment challenge, the
+ *      normalised challenge so the app can render a payment card:
+ *        { kind:'x402', endpoint, x402Version?, error?,
+ *          accepts:[{ scheme, network, asset?, amount?, payTo?, description?,
+ *                     maxTimeoutSeconds?, extra? }], raw }
  *
  *  Security: see ssrf.ts (DNS-resolved private-range + internal-host blocking,
  *  cookie stripping, no JS execution, timeout, body cap, redirect cap) plus the
@@ -79,6 +85,13 @@ app.get('/preview', async (req: Request, res: Response) => {
     const page = await fetchPage(url);
     if (!page) {
       res.status(422).json({ error: 'no previewable content' });
+      return;
+    }
+    // x402: the URL answered with a payment challenge — surface it as-is so the
+    // app can render an x402 payment card (instead of an OpenGraph preview).
+    if ('kind' in page) {
+      setCached(url, page);
+      res.set('X-Cache', 'MISS').json(page);
       return;
     }
     const meta = parseMeta(page.html, page.finalUrl);

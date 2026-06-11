@@ -11,6 +11,7 @@ import { homedir } from 'node:os';
 import path from 'node:path';
 
 import type { PreviewMeta } from './parse.ts';
+import type { X402Challenge } from './x402.ts';
 
 export const TTL_MS = 24 * 60 * 60 * 1000; // 1 day
 const MAX_ENTRIES = 5000;
@@ -18,7 +19,10 @@ const MAX_ENTRIES = 5000;
 const DIR = path.join(homedir(), '.cache', 'metro');
 const FILE = path.join(DIR, 'linkpreviews.json');
 
-interface Entry { ts: number; data: PreviewMeta }
+/** What the proxy caches per URL: an OpenGraph preview or an x402 challenge. */
+export type CachedResult = PreviewMeta | X402Challenge;
+
+interface Entry { ts: number; data: CachedResult }
 
 const mem = new Map<string, Entry>();
 let loaded = false;
@@ -67,7 +71,7 @@ async function flush(): Promise<void> {
 }
 
 /** Get a fresh cached entry for `url`, or undefined. */
-export function getCached(url: string): PreviewMeta | undefined {
+export function getCached(url: string): CachedResult | undefined {
   const e = mem.get(url);
   if (!e) return undefined;
   if (!fresh(e)) { mem.delete(url); return undefined; }
@@ -75,7 +79,7 @@ export function getCached(url: string): PreviewMeta | undefined {
 }
 
 /** Store a result and schedule a debounced disk flush. */
-export function setCached(url: string, data: PreviewMeta): void {
+export function setCached(url: string, data: CachedResult): void {
   mem.set(url, { ts: Date.now(), data });
   scheduleFlush();
 }

@@ -8,10 +8,12 @@
  *  cookies). HTML-only: non-HTML responses return null. */
 
 import { assertPublicUrl, SsrfError } from './ssrf.ts';
+import { challengeFrom402, type X402Challenge } from './x402.ts';
 
 const TIMEOUT_MS = 5000;
 const MAX_REDIRECTS = 3;
 const MAX_BYTES = 1_500_000; // 1.5 MB cap; the head is far smaller
+const X402_MAX_BYTES = 64_000; // x402 challenge bodies are tiny JSON
 const UA =
   'Mozilla/5.0 (compatible; MetroLinkPreview/1.0; +https://metro.box)';
 
@@ -44,10 +46,34 @@ function concat(chunks: Uint8Array[]): Uint8Array {
   return out;
 }
 
-/** Fetch `rawUrl` safely and return its HTML + the final (post-redirect) URL,
- *  or null when the resource isn't fetchable HTML. Throws {@link SsrfError} if
- *  any URL in the redirect chain is unsafe. */
-export async function fetchPage(rawUrl: string): Promise<FetchResult | null> {
+/** A small JSON body read (capped), for x402 challenge bodies. Returns the
+ *  parsed value or null on bad/oversized/non-JSON. */
+async function readJsonCapped(res: Response): Promise<unknown> {
+  try {
+    const reader = res.body?.getReader();
+    if (!reader) return JSON.parse(await res.text());
+    const chunks: Uint8Array[] = [];
+    let total = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (value) {
+        chunks.push(value);
+        total += value.length;
+        if (total > X402_MAX_BYTES) { void reader.cancel(); return null; }
+      }
+    }
+    return JSON.parse(new TextDecoder('utf-8').decode(concat(chunks)));
+  } catch {
+    return null;
+  }
+}
+
+/** Fetch `rawUrl` safely and return its HTML + final (post-redirect) URL, an
+ *  {@link X402Challenge} when the resource answers HTTP 402 with an x402 payment
+ *  challenge, or null when there's nothing previewable. Throws {@link SsrfError}
+ *  if any URL in the redirect chain is unsafe. */
+export async function fetchPage(rawUrl: string): Promise<FetchResult | X402Challenge | null> {
   let current = (await assertPublicUrl(rawUrl)).toString();
 
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
@@ -63,12 +89,21 @@ export async function fetchPage(rawUrl: string): Promise<FetchResult | null> {
         credentials: 'omit',
         headers: {
           'User-Agent': UA,
-          Accept: 'text/html,application/xhtml+xml',
+          // Advertise that we understand x402 JSON challenges as well as HTML.
+          Accept: 'application/json,text/html,application/xhtml+xml',
           'Accept-Language': 'en-US,en;q=0.9',
         },
       });
     } finally {
       clearTimeout(timer);
+    }
+
+    // x402: a 402 carries a payment challenge (JSON body and/or PAYMENT-REQUIRED
+    // header). Parse it instead of treating 402 as a dead end.
+    if (res.status === 402) {
+      const ct = res.headers.get('content-type') ?? '';
+      const body = /json/i.test(ct) ? await readJsonCapped(res) : null;
+      return challengeFrom402(current, res.headers, body);
     }
 
     // Manual redirect handling: validate the next hop through the SSRF guard.
