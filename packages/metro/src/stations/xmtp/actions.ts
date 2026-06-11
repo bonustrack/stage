@@ -4,7 +4,7 @@ import { ReactionAction, ReactionSchema } from '@xmtp/node-sdk';
 import type { Reply } from '@xmtp/content-type-reply';
 import { AttachmentCodec, type Attachment } from '@xmtp/content-type-remote-attachment';
 import { WalletSendCallsCodec, type WalletSendCallsParams } from '@xmtp/content-type-wallet-send-calls';
-import { toHex } from 'viem';
+import { toHex, parseUnits, encodeFunctionData } from 'viem';
 import { convOf } from './accounts.js';
 import { resolveMsgId, respond } from './wire.js';
 import { emitOutbound } from './emit.js';
@@ -120,25 +120,60 @@ async function sendImage(id: string, args: Args): Promise<void> {
   respond(id, { result: { messageId: sentId } });
 }
 
+const ERC20_TRANSFER_ABI = [{
+  name: 'transfer', type: 'function', stateMutability: 'nonpayable',
+  inputs: [{ name: 'to', type: 'address' }, { name: 'amount', type: 'uint256' }],
+  outputs: [{ name: '', type: 'bool' }],
+}] as const;
+
+/** Payment request as a WalletSendCalls. Native ETH (default) sends `value` to
+ *  `to`; ERC20 (when `token` is given) sets call.to=token contract, value=0x0,
+ *  and data=transfer(to, amount). The card derives its amount/currency from
+ *  metadata, so both carry { amount (human number), currency, decimals, toAddress }. */
 async function sendTxRequest(id: string, args: Args): Promise<void> {
-  const { line, to, amountEth, note, chainId } = args as {
-    line: string; to: string; amountEth: number; note?: string; chainId?: number };
+  const { line, to, amount, amountEth, note, chainId, token, decimals, currency } = args as {
+    line: string; to: string; amount?: number; amountEth?: number; note?: string;
+    chainId?: number | string; token?: string; decimals?: number; currency?: string };
   const { acct, conv } = await convOf(line);
   if (!conv) throw noConv(line);
   if (!to || typeof to !== 'string' || !/^0x[0-9a-fA-F]{40}$/.test(to)) {
     throw badArgs('sendTxRequest requires a valid 0x `to` address');
   }
-  if (typeof amountEth !== 'number' || !(amountEth > 0)) throw badArgs('sendTxRequest requires a positive `amountEth`');
-  const weiHex = '0x' + BigInt(Math.round(amountEth * 1e18)).toString(16);
+  const human = typeof amount === 'number' ? amount : amountEth;
+  if (typeof human !== 'number' || !(human > 0)) throw badArgs('sendTxRequest requires a positive `amount`');
+  const dec = typeof decimals === 'number' ? decimals : 18;
+  const sym = currency ?? 'ETH';
+  let call: WalletSendCallsParams['calls'][number];
+  if (token) {
+    if (!/^0x[0-9a-fA-F]{40}$/.test(token)) throw badArgs('sendTxRequest `token` must be a valid 0x contract address');
+    const data = encodeFunctionData({
+      abi: ERC20_TRANSFER_ABI, functionName: 'transfer',
+      args: [to as `0x${string}`, parseUnits(String(human), dec)],
+    });
+    call = {
+      to: token as `0x${string}`, value: '0x0', data,
+      metadata: {
+        description: note ?? 'Payment request', transactionType: 'transfer',
+        currency: sym, amount: human, decimals: dec, toAddress: to,
+      },
+    };
+  } else {
+    const weiHex = toHex(parseUnits(String(human), dec));
+    call = {
+      to: to as `0x${string}`, value: weiHex,
+      metadata: {
+        description: note ?? 'Payment request', transactionType: 'transfer',
+        currency: sym, amount: human, decimals: dec, toAddress: to,
+      },
+    };
+  }
+  const chainHex = (typeof chainId === 'string' && chainId.startsWith('0x'))
+    ? (chainId as `0x${string}`) : toHex(chainId ?? 1);
   const content: WalletSendCallsParams = {
-    version: '1.0', chainId: toHex(chainId ?? 1), from: acct.address as `0x${string}`,
-    calls: [{
-      to: to as `0x${string}`, value: weiHex as `0x${string}`,
-      metadata: { description: note ?? 'Payment request', transactionType: 'transfer' },
-    }],
+    version: '1.0', chainId: chainHex, from: acct.address as `0x${string}`, calls: [call],
   };
   const sentId = await conv.send(new WalletSendCallsCodec().encode(content));
-  emitOutbound(acct.cfg.id, line, sentId, `💸 ${note ?? 'Payment request'} (${amountEth} ETH)`);
+  emitOutbound(acct.cfg.id, line, sentId, `💸 ${note ?? 'Payment request'} (${human} ${sym})`);
   respond(id, { result: { messageId: sentId } });
 }
 
