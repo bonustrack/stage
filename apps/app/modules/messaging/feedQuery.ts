@@ -37,6 +37,7 @@ import { envelopeOfXmtpMessage } from '../../lib/xmtp.messages';
 import { feedCache } from '../../lib/xmtp.state';
 import { syncInboxOnce, PAGE_SIZE } from '../../lib/xmtp.stream';
 import { messagingKeys } from './queries';
+import { reconcileOnOpen } from './feedReconcile';
 
 /** Mirror a feedCache slice into the query cache for `line` at the CURRENT
  *  account epoch. Called from the global feedCache subscription so the query
@@ -91,6 +92,12 @@ function revalidateFeed(line: string): Promise<void> {
       if (!fresh) return;
       await fresh.sync().catch(() => undefined);
       applyPage(line, await fresh.messages({ limit: PAGE_SIZE }));
+      /** OPEN-TIME EXACTNESS NET: assert the just-painted feed tail matches the
+       *  conv's true latest (the same source the channels-row preview reads).
+       *  On mismatch this busts + reloads the slice - the safety net for the
+       *  "preview shows it, open feed doesn't" desync even if applyPage's read
+       *  lagged the late MLS commit. */
+      await reconcileOnOpen(line);
     } catch { /* best-effort - the next open / resync retries */ }
     finally { bgSyncInFlight.delete(line); }
   })();
