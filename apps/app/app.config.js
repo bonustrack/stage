@@ -87,7 +87,7 @@ const config = {
   name: variant.name,
   slug: variant.slug,
   scheme: variant.scheme,
-  version: '0.1.0',
+  version: '0.1.1',
   orientation: 'portrait',
   icon: './assets/icon.png',
   userInterfaceStyle: 'automatic',
