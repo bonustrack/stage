@@ -44,11 +44,48 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
 import { router, usePathname, useRootNavigationState } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 // TEMPORARY nav-restore instrumentation — see lib/navTrace. Remove with it.
 import { record as navTrace, markRestoreActive, shortId } from './navTrace';
 
 const STORAGE_KEY = 'metro:lastRoute:v1';
+
+/** PROCESS-LEVEL restore state. The root layout (and therefore this hook)
+ *  REMOUNTS several times on a real device during heavy boot (xmtp client +
+ *  Railgun node settling) — Less's on-device trace showed 3 mounts, the last
+ *  ~10s in. Component-scoped refs reset on every remount, so each remount
+ *  re-ran the gate and fired a SECOND restore. Hoisting the decision to module
+ *  scope makes restore strictly once-per-process: remounts read this and bail.
+ *    idle      → no gate has run yet this process
+ *    restoring → gate decided to restore; push in flight / waiting on navstate
+ *    done      → restore issued (or skipped); never run the gate again */
+let restoreState: 'idle' | 'restoring' | 'done' = 'idle';
+
+/** The route resolved by the FIRST gate run this process (null = nothing to
+ *  restore). Held at module scope so a remount mid-restore reuses it instead of
+ *  re-reading (the key is already consumed/deleted by then anyway). */
+let processSavedRoute: string | null = null;
+
+/** The route we restored TO this process. Persistence stays SUSPENDED until the
+ *  live pathname moves AWAY from this at least once (a real user navigation).
+ *  This is the second half of the bug: the post-restore persist effect saw the
+ *  restored channel as the live pathname and wrote it straight back to storage,
+ *  so the next remount's gate read hasSaved=true and restored AGAIN. We must
+ *  NOT re-persist the restored target. */
+let restoredTarget: string | null = null;
+
+/** Flips true once a real navigation has moved the pathname away from
+ *  `restoredTarget`; only then does persistence resume for a restore launch.
+ *  For a NORMAL open (no restore) this starts effectively true (see below). */
+let persistResumed = false;
+
+/** For a restore launch: have we actually OBSERVED the pathname settle ON the
+ *  restored target yet? Persistence may only resume on a move AWAY from the
+ *  target, but during boot the pathname is the transient `/` BEFORE the push
+ *  lands — resuming there would persist `/`, then the subsequent settle on the
+ *  target would re-persist the channel (the exact loop). So we require the
+ *  target to have been reached first; only a move away AFTER that resumes. */
+let reachedTarget = false;
 
 /** Routes we never restore TO — landing on a tab root or the accounts sheet on
  *  cold start is the intended default. */
@@ -114,20 +151,24 @@ export function useRestoreGate(): RestoreGate {
   const pathname = usePathname();
   const navState = useRootNavigationState();
   const [ready, setReady] = useState(false);
-  const restoreTried = useRef(false);
-  /** Flips true once the restore push has been issued (or skipped). Persisting
-   *  the live pathname is gated on this so the boot-time root can't clobber the
-   *  saved channel before we've read + restored it. */
-  const restoreDone = useRef(false);
-  /** Resolved on the one-time load; null = nothing to restore. */
-  const savedRoute = useRef<string | null>(null);
 
-  // One-time load: read the saved route AND the cold-start launch URL, then
-  // flip `ready` so the Stack mounts. Done before first Stack mount → no flash.
-  // The saved value is CONSUMED (deleted) here so it can only ever trigger one
-  // cold-start restore — a remount / foreground can't re-arm it.
+  // One-time-PER-PROCESS load: read the saved route AND the cold-start launch
+  // URL, then flip `ready` so the Stack mounts. Done before first Stack mount →
+  // no flash. The saved value is CONSUMED (deleted) here. Critically, the whole
+  // gate is guarded by the module-level `restoreState`: a layout REMOUNT (which
+  // happens 3x on Less's device as heavy init settles) re-runs this hook, but
+  // the gate body only executes while `restoreState === 'idle'`. On any later
+  // mount it short-circuits to ready and records that the process guard blocked
+  // it — so the restore can NEVER fire twice in one process.
   useEffect(() => {
     let cancelled = false;
+    // Remount after the gate already ran: do NOT re-read or re-arm. Just unblock
+    // the Stack and leave a trace breadcrumb so we can SEE the remount.
+    if (restoreState !== 'idle') {
+      navTrace('gate.read', { blockedBy: 'process-guard', restoreState });
+      setReady(true);
+      return;
+    }
     void (async (): Promise<void> => {
       try {
         const [saved, initialUrl] = await Promise.all([
@@ -139,17 +180,30 @@ export function useRestoreGate(): RestoreGate {
         // A recognised cold-start deep link wins → don't restore over it.
         const deepLink = hasColdStartDeepLink(initialUrl);
         const restorable = !!saved && isRestorable(saved);
+        const willRestore = !!saved && restorable && !deepLink;
         navTrace('gate.read', {
           hasSaved: !!saved,
           savedHead: saved ? '/' + (saved.split('/').filter(Boolean)[0] ?? '') : null,
           restorable,
           coldDeepLink: deepLink,
-          willRestore: restorable && !deepLink,
+          willRestore,
         });
-        if (saved && restorable && !deepLink) {
-          savedRoute.current = saved;
+        if (willRestore) {
+          processSavedRoute = saved;
+          restoredTarget = saved;
+          persistResumed = false; // suspend persistence until user navigates away
+          reachedTarget = false;
+          restoreState = 'restoring';
+        } else {
+          // Nothing to restore → a normal open. Persist as today, immediately.
+          persistResumed = true;
+          restoreState = 'done';
         }
-      } catch (e) { navTrace('gate.read.error', { err: String(e).slice(0, 80) }); }
+      } catch (e) {
+        navTrace('gate.read.error', { err: String(e).slice(0, 80) });
+        persistResumed = true;
+        restoreState = 'done';
+      }
       if (!cancelled) setReady(true);
     })();
     return () => { cancelled = true; };
@@ -178,9 +232,9 @@ export function useRestoreGate(): RestoreGate {
   // @react-navigation/stack interactive pan responder is wired (swipe-back
   // works). Strictly one-shot via `restoreTried`.
   useEffect(() => {
-    if (!ready || restoreTried.current) return;
-    const saved = savedRoute.current;
-    if (!saved) { restoreTried.current = true; restoreDone.current = true; return; }
+    if (!ready || restoreState !== 'restoring') return;
+    const saved = processSavedRoute;
+    if (!saved) { restoreState = 'done'; persistResumed = true; return; }
     // Find the card stack that holds `(tabs)`: it's either the root state itself
     // or its nested `state` (expo-router wraps everything under a `__root`).
     const stackHasTabs = (s?: { routes?: { name: string; state?: unknown }[] }): boolean =>
@@ -206,7 +260,9 @@ export function useRestoreGate(): RestoreGate {
       ready,
     });
     if (!rootHasTabs) return;
-    restoreTried.current = true;
+    // Claim the restore for this process BEFORE the async push so a concurrent
+    // remount's effect can't also pass the guard and double-push.
+    restoreState = 'done';
     markRestoreActive();
     navTrace('restore.gated', { target: '/' + (saved.split('/').filter(Boolean)[0] ?? ''), convId: shortId(saved.split('/').filter(Boolean)[1]) });
     // One frame of slack so the committed `(tabs)` card has painted before the
@@ -214,18 +270,41 @@ export function useRestoreGate(): RestoreGate {
     const raf = requestAnimationFrame(() => {
       navTrace('restore.push', { canGoBackBefore: router.canGoBack() });
       router.push(saved as Parameters<typeof router.push>[0]);
-      restoreDone.current = true;
       // Re-check on the next frame: did the push land with (tabs) beneath it?
       requestAnimationFrame(() => navTrace('restore.pushed', { canGoBackAfter: router.canGoBack() }));
+      // And once more after settle (500ms) so we SEE the FINAL stack + canGoBack
+      // on Less's device — confirms the gesture-armed single restore.
+      setTimeout(() => navTrace('restore.settled', { canGoBack: router.canGoBack() }), 500);
     });
     return () => cancelAnimationFrame(raf);
   }, [ready, navState]);
 
-  // Keep the saved route current — but only AFTER the restore push has been
-  // issued, so the boot-time root can't overwrite the saved channel, and a
-  // user-initiated back-to-Home persists `/` (non-restorable) for next launch.
+  // Keep the saved route current — but NEVER re-persist the route we just
+  // restored TO. The persist effect only resumes once a REAL user navigation has
+  // moved the pathname away from `restoredTarget` (tracked at module scope so it
+  // survives remounts). For a normal open (no restore) `persistResumed` is true
+  // from the gate, so this behaves exactly as before. This is what stops the
+  // restored channel being written straight back to storage and re-restored on
+  // the next layout remount ~10s into boot.
   useEffect(() => {
-    if (!ready || !restoreDone.current) return;
+    if (!ready) return;
+    if (!persistResumed) {
+      const onTarget = !!restoredTarget && pathname === restoredTarget;
+      if (onTarget) {
+        // The restore push landed: remember we reached the target, but do NOT
+        // persist it (that write is what caused the re-restore loop). Wait for a
+        // move away.
+        reachedTarget = true;
+        return;
+      }
+      // Before the target is reached, the pathname is the boot transient `/` —
+      // ignore it entirely (don't resume, don't persist) so we never write `/`
+      // and then re-write the channel once it settles.
+      if (!reachedTarget) return;
+      // Target was reached and the user has now navigated AWAY → resume.
+      persistResumed = true;
+      navTrace('persist.resumed', { head: '/' + (pathname.split('/').filter(Boolean)[0] ?? '') });
+    }
     persist(pathname);
   }, [ready, pathname]);
 
