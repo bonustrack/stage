@@ -50,13 +50,35 @@ function openConvFromResponse(response: Notifications.NotificationResponse | nul
  *   - warm/background: a tap arrives while the app is alive/backgrounded
  *     (`addNotificationResponseReceivedListener`).
  *  On tap it routes to `/xmtp/[convId]` and calls `markConvRead` so the unread
- *  badge clears immediately. */
+ *  badge clears immediately.
+ *
+ *  STALE COLD-START RESPONSE = the ~0.5s auto-redirect bug. expo-notifications'
+ *  `getLastNotificationResponseAsync()` returns the MOST RECENT notification
+ *  interaction and KEEPS returning that same response on EVERY cold start until
+ *  it is explicitly cleared (see the module docs on
+ *  `clearLastNotificationResponse`: "may be used when an app selects a route
+ *  based on the notification response, and it is undesirable to continue
+ *  selecting the route after the response has already been handled"). The
+ *  previous code consumed the response but never cleared it, so once the user
+ *  had EVER tapped a push to open a channel, every subsequent normal launch
+ *  (including a plain kill+reopen from the launcher) re-resolved that stale
+ *  response ~0.5s after boot and `router.push`-ed the channel again — racing
+ *  the lastRoute restore and shoving the user back into the conversation after
+ *  they'd pressed back to Home. We now CLEAR the response the instant we read
+ *  it on cold start, so it can only ever drive a single navigation and a normal
+ *  relaunch no longer re-fires it. */
 export function usePushDeepLinks(): void {
   useEffect(() => {
     let cancelled = false;
-    // Cold-start: a tap that launched the app from killed state.
+    // Cold-start: a tap that launched the app from killed state. Read it, act on
+    // it, then CLEAR it so the native layer can't replay it on the next launch.
     void Notifications.getLastNotificationResponseAsync()
-      .then((resp) => { if (!cancelled) openConvFromResponse(resp); })
+      .then((resp) => {
+        if (cancelled || !resp) return;
+        // Consume: clear before navigating so a relaunch never sees this again.
+        try { Notifications.clearLastNotificationResponse(); } catch { /* older runtime / unavailable — best-effort */ }
+        openConvFromResponse(resp);
+      })
       .catch(() => undefined);
     // Warm/background taps while the app is alive.
     const sub = Notifications.addNotificationResponseReceivedListener(openConvFromResponse);
