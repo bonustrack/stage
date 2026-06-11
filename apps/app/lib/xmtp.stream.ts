@@ -39,6 +39,7 @@ import {
   STREAM_CONSENT_STATES, pushToFeedSlice, resyncActiveFeeds, syncInboxOnce,
 } from './xmtp.resync';
 import { lineOfConv, type StreamMsg } from './xmtp.types';
+import { reconcileOnArrival, feedLatestNs } from '../modules/messaging/feedReconcile';
 
 export { PAGE_SIZE, syncInboxOnce } from './xmtp.resync';
 
@@ -186,7 +187,18 @@ async function startStream(client: Awaited<ReturnType<typeof getOrCreateXmtpClie
       const line = lineOfConv(convId);
       const env = envelopeOfXmtpMessage(msg, line);
       if (isMetroControlBody(env.text)) return;
+      /** Capture the open feed's tail BEFORE the push so arrival-continuity can
+       *  tell whether this message is the direct successor of what the feed had,
+       *  or whether an earlier message is missing locally (a sentNs gap). */
+      const prevLatestNs = activeFeedLines.has(line) ? feedLatestNs(line) : 0;
       pushToFeedSlice(line, env);
+      /** ARRIVAL CONTINUITY: if this conv is open and the arriving message isn't
+       *  contiguous with the feed's prior tail, do ONE targeted conv.sync +
+       *  slice reload so the gap is filled (event-driven, no poll). */
+      if (activeFeedLines.has(line)) {
+        const arrivingNs = (msg as unknown as { sentNs?: number }).sentNs ?? 0;
+        void reconcileOnArrival(line, prevLatestNs, arrivingNs, env.id);
+      }
       /** DESYNC GUARD (Home updates, open feed doesn't): the topic-derived
        *  `convId` here can differ from the route's convId the open feed
        *  subscribed under (`lineOfConv(routeConvId)`), so this slice write lands
