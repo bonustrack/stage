@@ -50,7 +50,7 @@ limit).
 ## Deploy
 
 ```sh
-cd apps/linkproxy-worker
+cd apps/workers/linkproxy
 # auth: either `wrangler login` (interactive) or export CLOUDFLARE_API_TOKEN
 #       (token needs Workers Scripts:Edit + Workers Routes:Edit on the
 #        metro.box zone, and Account: Workers Scripts)

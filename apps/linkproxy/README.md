@@ -1,6 +1,6 @@
 # linkproxy
 
-> **DEPRECATED** - superseded by `apps/linkproxy-worker`, a Cloudflare Worker
+> **DEPRECATED** - superseded by `apps/workers/linkproxy`, a Cloudflare Worker
 > port that serves the same `preview.metro.box` API at the edge with zero laptop
 > dependency. This Node/Express service + its `cloudflared` tunnel remain only as
 > the live backing for `preview.metro.box` until the Worker is deployed and
