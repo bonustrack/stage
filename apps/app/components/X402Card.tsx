@@ -60,12 +60,15 @@ export function X402Card({ challenge, dark }: {
   const canPay = !!accept && x402CanPayInApp(accept);
   const asset = accept ? x402KnownAsset(accept) : undefined;
   const needed = accept ? x402AmountNumber(accept) : undefined;
-  // Balance of the challenge's USDC on the challenge chain (only when payable).
+  // Payer's balance of the challenge asset on the challenge chain. Always shown
+  // when we know the asset (symbol) + chain — mirrors the in-chat payment card
+  // (TxRequestCard) so the user always sees what they hold before paying.
+  const hasKnownAsset = !!asset && !!accept?.asset;
   const bal = usePayerBalance(
-    canPay ? chainNum : undefined,
-    canPay ? accept?.asset : undefined,
-    canPay ? asset?.symbol : undefined,
-    canPay ? needed : undefined,
+    hasKnownAsset ? chainNum : undefined,
+    hasKnownAsset ? accept?.asset : undefined,
+    hasKnownAsset ? asset?.symbol : undefined,
+    hasKnownAsset ? needed : undefined,
   );
   const insufficient = canPay && bal?.insufficient === true;
 
@@ -150,9 +153,12 @@ export function X402Card({ challenge, dark }: {
         <Text role="secondary" size="xs">On</Text>
         <Text size="sm" color={pal.sub} numberOfLines={1}>{network}</Text>
       </Row>
-      {/* Balance line — only when payable; mirrors the in-chat payment card. */}
-      {canPay && bal ? (
-        <Text size="xs" role="secondary" numberOfLines={1}>{bal.text}</Text>
+      {/* Balance line — always shown for a known asset; mirrors the in-chat
+          payment card (danger-tinted when below the requested amount). */}
+      {bal ? (
+        <Text size="xs" color={bal.insufficient ? pal.danger : pal.sub} numberOfLines={1}>
+          {bal.text}
+        </Text>
       ) : null}
       {/* Endpoint URL — what you'd be paying for. Tappable. */}
       <Pressable onPress={openEndpoint}>
