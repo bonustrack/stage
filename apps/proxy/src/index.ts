@@ -1,6 +1,6 @@
 /** Metro link-preview metadata Worker (preview.metro.box).
  *
- *  A Cloudflare Worker port of apps/linkproxy: given an arbitrary http(s) URL it
+ *  The Metro proxy (apps/proxy): given an arbitrary http(s) URL it
  *  fetches the page at the edge, parses OpenGraph / Twitter-card / <title> /
  *  meta description / favicon, and returns a compact JSON card the app renders.
  *  When the URL answers HTTP 402 with an x402 payment challenge it surfaces the

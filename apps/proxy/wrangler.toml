@@ -1,11 +1,11 @@
-name = "linkproxy"
+name = "proxy"
 main = "src/index.ts"
 compatibility_date = "2026-06-01"
 
 # Bind the Worker to preview.metro.box on the metro.box zone. The hostname is
 # already proxied (orange-cloud) through Cloudflare, so a Worker route on it
 # intercepts requests at the edge BEFORE they reach any origin/tunnel - which is
-# how this replaces the legacy `linkproxy` cloudflared tunnel with zero DNS
+# how this replaces the legacy linkproxy cloudflared tunnel with zero DNS
 # change. Deploy the route first, verify x-served-by: worker, THEN decommission
 # the tunnel.
 routes = [

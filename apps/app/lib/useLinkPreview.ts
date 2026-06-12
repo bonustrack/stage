@@ -1,6 +1,6 @@
 /** TanStack Query hook fetching OpenGraph-ish metadata for a plain http(s) link
  *  via the Metro link-preview proxy (an iframely-style service; see
- *  apps/linkproxy). The proxy does the server-side fetch/parse + SSRF guarding,
+ *  apps/proxy). The proxy does the server-side fetch/parse + SSRF guarding,
  *  so the client just GETs `/preview?url=…` and renders the JSON card.
  *
  *  Results are cached HARD (long staleTime, no background refetch) keyed on the
@@ -92,7 +92,7 @@ async function fetchLinkPreview(url: string): Promise<LinkPreviewResult | null> 
   try {
     const res = await fetch(`${LINK_PREVIEW_BASE}/preview?url=${encodeURIComponent(url)}`, {
       // x-stage-client: required abuse speed-bump on /preview + /img; the Worker
-      // rejects requests without it (see linkproxy-worker).
+      // rejects requests without it (see apps/proxy).
       headers: { Accept: 'application/json', 'x-stage-client': '1' },
     });
     if (!res.ok) return null;

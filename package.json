@@ -12,7 +12,7 @@
   "workspaces": [
     "packages/*",
     "apps/*",
-    "!apps/workers/linkproxy"
+    "!apps/proxy"
   ],
   "scripts": {
     "build": "turbo run build",

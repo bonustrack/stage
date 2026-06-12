@@ -91,20 +91,6 @@
         "typescript-eslint": "^8.59.2",
       },
     },
-    "apps/linkproxy": {
-      "name": "linkproxy",
-      "version": "0.1.0",
-      "dependencies": {
-        "express": "^4.21.2",
-      },
-      "devDependencies": {
-        "@types/express": "^4.17.21",
-        "@types/node": "^22.10.0",
-        "eslint": "^10.3.0",
-        "typescript": "^5.7.0",
-        "typescript-eslint": "^8.59.2",
-      },
-    },
     "apps/ui": {
       "name": "ui",
       "version": "0.1.0",
@@ -2522,7 +2508,6 @@
 
     "linkify-it": ["linkify-it@5.0.0", "", { "dependencies": { "uc.micro": "^2.0.0" } }, "sha512-5aHCbzQRADcdP+ATqnDuhhJ/MRIqDkZX5pyjFHRRysS8vZ5AbqGEoFIb6pYHPZ+L/OC2Lc+xT8uHVVR5CAK/wQ=="],
 
-    "linkproxy": ["linkproxy@workspace:apps/linkproxy"],
 
     "lit": ["lit@3.3.0", "", { "dependencies": { "@lit/reactive-element": "^2.1.0", "lit-element": "^4.2.0", "lit-html": "^3.3.0" } }, "sha512-DGVsqsOIHBww2DqnuZzW7QsuCdahp50ojuDaBPC7jUDRpYoH0z7kHBBYZewRzer75FwtrkmkKk7iOAwSaWdBmw=="],
 

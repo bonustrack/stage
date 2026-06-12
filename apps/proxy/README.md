@@ -1,7 +1,7 @@
-# linkproxy-worker
+# proxy
 
-The link-preview metadata proxy as a **Cloudflare Worker** (`preview.metro.box`).
-A faithful port of `apps/linkproxy` to the Workers runtime - no Express, no
+The link-preview / image / x402 proxy as a **Cloudflare Worker**
+(`preview.metro.box`). Runs entirely on the Workers runtime - no Express, no
 origin, no laptop dependency. Given an http(s) URL it fetches the page at the
 edge, parses OpenGraph / Twitter-card / `<title>` / meta description / favicon,
 and returns a compact JSON card. When the URL answers HTTP 402 with an x402
@@ -9,7 +9,7 @@ payment challenge it surfaces the normalised challenge instead.
 
 This replaces the previous Node service + `cloudflared` named tunnel.
 
-## API (identical contract to apps/linkproxy)
+## API
 
 ```
 GET /health                 -> "ok"
@@ -50,7 +50,7 @@ limit).
 ## Deploy
 
 ```sh
-cd apps/workers/linkproxy
+cd apps/proxy
 # auth: either `wrangler login` (interactive) or export CLOUDFLARE_API_TOKEN
 #       (token needs Workers Scripts:Edit + Workers Routes:Edit on the
 #        metro.box zone, and Account: Workers Scripts)
