@@ -15,7 +15,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { getPeerName } from '../../lib/peerProfiles';
 import { MessengerComposer } from '../../components/MessengerComposer';
-import { ComposerGradient } from '../../components/ComposerGradient';
 import { Icon } from '@metro-labs/kit/icon';
 import { ChannelMenu } from '../../components/ChannelMenu';
 import { isPinned } from '../../lib/pins';
@@ -225,12 +224,6 @@ export default function XmtpConversation(): React.ReactElement {
           <Icon name="dotsVertical" size={22} color={fg}/>
         </Pressable>
       </Row>
-      )}
-      {/** Fade strip below the top nav — mirrors the composer's top fade. Start it 1px
-       *  higher so its solid-bg top edge overlaps the nav bottom, closing the hairline
-       *  seam between the two absolute bg layers, then ramps to transparent. */}
-      {searchOpen ? null : (
-        <ComposerGradient bg={bg} direction="up" top={TOPNAV_HEIGHT + insets.top - 1} height={24}/>
       )}
       <KeyboardStickyView offset={{ opened: insets.bottom }}>
       <Box>
