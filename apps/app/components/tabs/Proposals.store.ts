@@ -14,14 +14,24 @@
  *  refresh() / app restart, matching the original hook's semantics. */
 
 import { getCachedRows, subscribeCachedRows, type CachedRow } from '../../modules/messaging';
-import { buildProposalQueue, type QueuedProposal } from './Proposals.queue';
+import { buildProposalQueue, type QueuedRequest } from './Proposals.queue';
 
-/** Conv ids skipped this session - filtered out of every rebuilt queue so a
- *  skipped poll never reappears (in the banner count or the screen) until a
- *  manual refresh / app restart. */
+/** Per-item keys skipped this session - filtered out of every rebuilt queue so a
+ *  skipped request never reappears (in the banner count or the screen) until a
+ *  manual refresh / app restart. Keyed by `QueuedRequest.key` (`kind:convId`) so
+ *  distinct request kinds in the same channel skip independently. */
 const skipped = new Set<string>();
 
-let queue: QueuedProposal[] = [];
+let queue: QueuedRequest[] = [];
+/** Cached visible (non-skipped) view + the (queue, skip-size) it was built from.
+ *  getQueue() is read on EVERY render by useSyncExternalStore, which bails the
+ *  re-render loop only when the snapshot is reference-stable. Recomputing the
+ *  filtered array each call returns a fresh reference every time → React sees an
+ *  ever-changing snapshot → "Maximum update depth exceeded". So memoize it and
+ *  invalidate only when the underlying queue or skip set actually changes. */
+let visibleCache: QueuedRequest[] = [];
+let visibleQueue: QueuedRequest[] | null = null;
+let visibleSkipSize = -1;
 /** True once the first build has settled (lets the screen gate its spinner). */
 let ready = false;
 /** Guards against a stale async build landing after a newer one. */
@@ -33,16 +43,22 @@ let wired = false;
 
 const listeners = new Set<() => void>();
 
-/** Visible queue = built queue minus session-skipped ids. */
-function visible(): QueuedProposal[] {
-  return skipped.size === 0 ? queue : queue.filter(p => !skipped.has(p.convId));
+/** Visible queue = built queue minus session-skipped ids. Memoized on the
+ *  (queue, skip-size) pair so repeated reads (every render) return a stable
+ *  reference; see visibleCache note above. */
+function visible(): QueuedRequest[] {
+  if (visibleQueue === queue && visibleSkipSize === skipped.size) return visibleCache;
+  visibleCache = skipped.size === 0 ? queue : queue.filter(p => !skipped.has(p.key));
+  visibleQueue = queue;
+  visibleSkipSize = skipped.size;
+  return visibleCache;
 }
 
 function emit(): void {
   for (const l of listeners) l();
 }
 
-function applyBuild(id: number, q: QueuedProposal[]): void {
+function applyBuild(id: number, q: QueuedRequest[]): void {
   if (id !== buildId) return; // a newer build superseded this one
   queue = q;
   ready = true;
@@ -88,17 +104,19 @@ export const proposalsStore = {
     return visible().length;
   },
   /** The visible queue (non-skipped), oldest-first. */
-  getQueue(): QueuedProposal[] {
+  getQueue(): QueuedRequest[] {
     return visible();
   },
   /** True once the first scan has settled. */
   isReady(): boolean {
     return ready;
   },
-  /** Mark a proposal skipped for the session (advances both surfaces). */
-  skip(convId: string): void {
-    if (skipped.has(convId)) return;
-    skipped.add(convId);
+  /** Mark a request skipped for the session by its item key (advances both
+   *  surfaces). Also used after a request is acted on (voted / paid / signed /
+   *  accepted / blocked) so it drops out without waiting for a rescan. */
+  skip(key: string): void {
+    if (skipped.has(key)) return;
+    skipped.add(key);
     emit();
   },
   /** Manual refresh: clear session skips + re-scan from the live cache. */
