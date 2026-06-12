@@ -17,13 +17,25 @@ import { PaymentCard } from './PaymentCard';
 import { NATIVE_TOKEN_SENTINEL } from '@stage-labs/client/wallet/assets';
 import { stampTokenUrl } from '@metro-labs/kit/avatar';
 import { chainIdToNumber } from '@stage-labs/client/xmtp/tx';
-// SigRequestCard — signature-request bubble: description + message detail.
-export function SigRequestCard({ req, dark, sub, signing, onSign }: {
+import { isCardActionBlocked } from '../lib/consentGate';
+// SigRequestCard — signature-request bubble: trusted (app-derived) title + the
+// typed-data/message detail. The peer-supplied `description` is rendered
+// SEPARATELY and labelled sender-provided, never as the prominent trusted
+// summary (a phishing request could otherwise mislabel a Permit2 as a benign
+// "Sign in"). `consentAllowed === false` disables the Sign action for an
+// unaccepted (stranger) conversation.
+export function SigRequestCard({ req, dark, sub, signing, onSign, consentAllowed }: {
   req: SigRequest; dark: boolean; sub: string; signing?: boolean;
   onSign?: () => void;
+  /** undefined = unknown/not gated (allowed convs), false = stranger -> block. */
+  consentAllowed?: boolean;
 }): React.ReactElement {
-  const desc = req.description?.trim()
-    || (req.kind === 'eip712' ? `Sign ${req.eip712?.primaryType ?? 'typed data'}` : 'Sign message');
+  /** TRUSTED title derived by the app from the request kind/typedata — NOT the
+   *  peer's free-text description. */
+  const title = req.kind === 'eip712' ? `Sign ${req.eip712?.primaryType ?? 'typed data'}` : 'Sign message';
+  /** Peer-supplied note, shown separately + clearly marked untrusted. */
+  const senderNote = req.description?.trim();
+  const gated = isCardActionBlocked(consentAllowed);
   const detailBg = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
   const detailBorder = dark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)';
   const pal = usePalette(); const blockRadius = useBlockRadius();
@@ -39,9 +51,15 @@ export function SigRequestCard({ req, dark, sub, signing, onSign }: {
       <Row align="center" gap={8}>
         <Icon name="pencil" size={18} color={head}/>
         <Text weight="semibold" size="md" style={{ flexShrink: 1 }}>
-          {desc}
+          {title}
         </Text>
       </Row>
+      {senderNote ? (
+        <Box radius="md" background={detailBg} padding={8} style={{ borderWidth: 1, borderColor: detailBorder }}>
+          <Text size="xs" role="secondary">Sender's note (untrusted)</Text>
+          <Text size="xs" numberOfLines={4}>{senderNote}</Text>
+        </Box>
+      ) : null}
       {req.kind === 'eip712' ? (
         <Col radius="md" background={detailBg} padding={10} gap={6} style={{ borderWidth: 1, borderColor: detailBorder }}>
           {(domainName || chainId) ? (
@@ -73,19 +91,25 @@ export function SigRequestCard({ req, dark, sub, signing, onSign }: {
         </Box>
       ) : null}
       {onSign ? (
-        <Button
-          variant="primary"
-          size="lg"
-          fullWidth
-          pill
-          dark={dark}
-          loading={signing}
-          onPress={onSign}
-          label="Sign"
-          tintBg={pal.primary}
-          tintFg={pal.bg}
-          style={{ marginTop: 2 }}
+        gated ? (
+          <Text size="xs" role="secondary" style={{ marginTop: 2 }}>
+            Accept this conversation to enable signing.
+          </Text>
+        ) : (
+          <Button
+            variant="primary"
+            size="lg"
+            fullWidth
+            pill
+            dark={dark}
+            loading={signing}
+            onPress={onSign}
+            label="Sign"
+            tintBg={pal.primary}
+            tintFg={pal.bg}
+            style={{ marginTop: 2 }}
 />
+        )
       ) : null}
     </Box>
   );
@@ -118,11 +142,14 @@ export function SigReferenceCard({ ref, dark, sub }: {
  *  PaymentCard: it computes the amount/recipient/token from the tx request and
  *  passes its own "Pay" action (the caller's onPay runs walletSendCalls /
  *  sendCall). The recipient line is a tappable profile link (TxToRow). */
-export function TxRequestCard({ req, dark, paying, onPay }: {
+export function TxRequestCard({ req, dark, paying, onPay, consentAllowed }: {
   req: TxRequest; dark: boolean; sub: string; paying?: boolean;
   onPay?: () => void;
+  /** undefined = unknown/not gated (allowed convs), false = stranger -> block. */
+  consentAllowed?: boolean;
 }): React.ReactElement {
   const pal = usePalette();
+  const gated = isCardActionBlocked(consentAllowed);
   const call = req.calls[0];
   const desc = call?.metadata?.description ?? 'Payment request';
   const eth = ethFromWeiHex(call?.value);
@@ -159,12 +186,15 @@ export function TxRequestCard({ req, dark, paying, onPay }: {
         symbol: call?.metadata?.currency ?? (eth ? 'ETH' : undefined),
         needed: call?.metadata?.amount,
       }}
-      action={onPay ? {
+      action={(onPay && !gated) ? {
         label: 'Pay',
         onPress: onPay,
         loading: paying,
         icon: <Icon name="paperAirplane" size={18} color={pal.bg}/>,
       } : undefined}
+      footer={onPay && gated ? (
+        <Text size="xs" role="secondary">Accept this conversation to enable paying.</Text>
+      ) : undefined}
     />
   );
 }

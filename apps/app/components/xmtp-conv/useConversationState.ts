@@ -13,6 +13,7 @@ import { setActiveConversation } from '../../modules/metro-pill';
 import { setActiveConvId } from '../../lib/activeConv';
 import { markConvRead, getCachedRows } from '../../modules/messaging';
 import { getGithubLink } from '../../modules/messaging';
+import { getConvConsentState, streamConvConsent } from '../../modules/messaging';
 import { useCachedGroupString } from './useCachedGroupString';
 import { getGroupLabels } from '../../modules/messaging';
 import { convScrollKey, getScrollOffset, flushScrollOffset, markConvAtBottom } from '../../lib/scrollPos';
@@ -76,6 +77,28 @@ export function useConversationState(convId: string | undefined, focus: string |
   /** Synced-appData string field (github link). Seeds from the cached row, then
    *  refreshes off the group's appData on mount; drives the topnav GitHub icon. */
   const github = useCachedGroupString(convId, activeLine, isGroup, 'github', getGithubLink);
+
+  /** SECURITY (audit HIGH/#2): gate the in-chat Sign/Pay card ACTIONS behind XMTP
+   *  consent. `undefined` = unresolved (leave enabled, the common already-accepted
+   *  case), `true` = allowed (enabled), `false` = an unknown/stranger DM (the
+   *  Sign/Pay buttons are disabled so a single tap can't sign/pay for a sender the
+   *  user never accepted). Reuses the same consent read + stream the request bar
+   *  uses; reconciles if accepted/blocked on another device while open. */
+  const [consentAllowed, setConsentAllowed] = useState<boolean | undefined>(undefined);
+  useEffect(() => {
+    if (!convId) { setConsentAllowed(undefined); return; }
+    let cancelled = false;
+    const resolve = async (): Promise<void> => {
+      try {
+        const state = await getConvConsentState(convId);
+        if (!cancelled) setConsentAllowed(state == null ? undefined : state === 'allowed');
+      } catch { if (!cancelled) setConsentAllowed(undefined); }
+    };
+    void resolve();
+    let cancelConsent: (() => void) | null = null;
+    try { cancelConsent = streamConvConsent(() => { void resolve(); }); } catch { /* best-effort */ }
+    return () => { cancelled = true; cancelConsent?.(); };
+  }, [convId]);
 
   /** Group label chips for the intro header — seed from cache, refresh on mount. */
   const cachedLabels = (cid?: string): string[] => {
@@ -190,6 +213,6 @@ export function useConversationState(convId: string | undefined, focus: string |
     reactions, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers,
     allBubbles, jumpToMessage,
     onReact, onSign, signingIds, onVote, onOpenAnswer, onPay, payingIds, onAnswer,
-    onOptimistic, onSent, markAtBottom,
+    onOptimistic, onSent, markAtBottom, consentAllowed,
   };
 }

@@ -13,6 +13,7 @@ import {
 } from '@stage-labs/client/xmtp/sign';
 import { sendCall } from '../../lib/tx';
 import { deriveConfirmSummary, confirmMessage } from '../../lib/txConfirm';
+import { deriveSignSummary, signConfirmMessage } from '../../lib/signConfirm';
 import { flash } from '../../lib/toast';
 import { signTypedData, signMessage, getAccount } from 'wagmi/actions';
 import type { TypedDataDefinition } from 'viem';
@@ -27,8 +28,18 @@ export function useTxSignLayer(activeLine: string) {
   /** Sign an in-chat signature request. For `eip712` we route the typed data
    *  through wagmi `signTypedData`; for `personal` through `signMessage`. On
    *  success we post a SignatureReference back into the SAME conversation so the
-   *  request card flips to a "Signed ✓" receipt for everyone. */
+   *  request card flips to a "Signed ✓" receipt for everyone.
+   *
+   *  SECURITY: a signature is produced from an UNTRUSTED peer's request and a
+   *  single tap can authorize a Permit/Permit2/EIP-3009/Seaport allowance that
+   *  drains the wallet LATER. So, exactly like onPay, we ALWAYS confirm before
+   *  signing. The confirm summary is derived from the typed-data STRUCTURE
+   *  (deriveSignSummary), never from the peer's free-text `description`, and a
+   *  recognised high-risk primaryType gets an explicit warning + destructive
+   *  button. The actual signing only runs from the confirm sheet's onPress. */
   const onSign = useCallback((requestId: string, req: SignatureRequestContent) => {
+    const summary = deriveSignSummary(req);
+    const doSign = (): void => {
     setSigningIds(prev => new Set(prev).add(requestId));
     void (async () => {
       try {
@@ -80,6 +91,19 @@ export function useTxSignLayer(activeLine: string) {
         setSigningIds(prev => { const n = new Set(prev); n.delete(requestId); return n; });
       }
     })();
+    };
+    Alert.alert(
+      summary.highRisk ? 'High-risk signature' : 'Confirm signature',
+      signConfirmMessage(summary, req.description),
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: summary.highRisk ? 'Sign anyway' : 'Sign',
+          style: summary.highRisk ? 'destructive' : 'default',
+          onPress: doSign,
+        },
+      ],
+    );
   }, [activeLine]);
 
   /** Message ids whose payment is currently broadcasting — drives the Pay
