@@ -109,6 +109,33 @@ describe('cardLinksOf', () => {
 
   /** Generic cards coexist with special cards under the same MAX_CARDS cap and
    *  appearance order. */
+  /** Angle-bracket-wrapped links produce NO card (Discord/Slack convention for
+   *  "linkify but suppress preview"). They stay as plain tappable text. */
+  test('suppresses a card for an angle-bracket-wrapped generic link', () => {
+    expect(cardLinksOf('look at <https://example.com/page> ok')).toEqual([]);
+    expect(cardLinksOf('<https://www.bbc.com/news/article-123>')).toEqual([]);
+  });
+
+  test('suppresses a card for an angle-bracket-wrapped special link', () => {
+    expect(cardLinksOf('<https://github.com/bonustrack/metro/pull/321>')).toEqual([]);
+    expect(cardLinksOf('<metro://xmtp/47bf58a8f56cad829b2263797a7e25e4>')).toEqual([]);
+  });
+
+  /** A bracketed link is skipped but a bare link in the same message still cards. */
+  test('mixed <bracketed> + bare link: only the bare link cards', () => {
+    const text = 'hide <https://example.com/secret> but show https://github.com/bonustrack/metro';
+    const cards = cardLinksOf(text);
+    expect(cards).toHaveLength(1);
+    expect(cards[0]).toMatchObject({ kind: 'github', url: 'https://github.com/bonustrack/metro' });
+  });
+
+  /** Only a fully-wrapped link is suppressed: a leading `<` without a trailing
+   *  `>` (or vice versa) is not the suppression convention, so the card stays. */
+  test('a lone leading or trailing angle bracket does not suppress', () => {
+    expect(cardLinksOf('x <https://example.com/page ok')[0]).toMatchObject({ kind: 'generic' });
+    expect(cardLinksOf('x https://example.com/page> ok')[0]).toMatchObject({ kind: 'generic' });
+  });
+
   test('generic + special links stack in order', () => {
     const text = [
       'https://github.com/bonustrack/metro',

@@ -1,5 +1,12 @@
 # linkproxy
 
+> **DEPRECATED** - superseded by `apps/linkproxy-worker`, a Cloudflare Worker
+> port that serves the same `preview.metro.box` API at the edge with zero laptop
+> dependency. This Node/Express service + its `cloudflared` tunnel remain only as
+> the live backing for `preview.metro.box` until the Worker is deployed and
+> verified (`x-served-by: worker`); remove this directory and decommission the
+> `linkproxy` tunnel in the follow-up once cutover is confirmed.
+
 Link-preview metadata proxy (iframely-style) for the Metro app. Given an
 http(s) URL it fetches the page server-side, parses OpenGraph / Twitter-card /
 `<title>` / meta description / favicon, and returns a compact JSON card.

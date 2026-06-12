@@ -70,14 +70,30 @@ function classify(token: string): CardLink | null {
   return null;
 }
 
+/** True when the matched URL token is wrapped in angle brackets, e.g.
+ *  `<https://example.com>` - the Discord/Slack convention for "linkify but show
+ *  no preview". We suppress every card (special or generic) for such links; the
+ *  bubble still renders them as plain tappable text. The token may have swallowed
+ *  the closing `>` into its greedy `\S+` match, so we accept either a `>`
+ *  immediately after the token or as the token's last char, paired with a `<`
+ *  immediately before it. */
+function isBracketWrapped(text: string, token: string, start: number): boolean {
+  if (text[start - 1] !== '<') return false;
+  const after = text[start + token.length];
+  return token.endsWith('>') || after === '>';
+}
+
 /** Extract every card-generating link from `text`, in order of appearance,
  *  deduped by the canonical card url, capped at {@link MAX_CARDS}. Returns an
- *  empty array when the body has no card links. */
+ *  empty array when the body has no card links. Links wrapped in angle brackets
+ *  (`<https://...>`) are skipped entirely (no card), matching the Discord/Slack
+ *  preview-suppression convention. */
 export function cardLinksOf(text?: string | null): CardLink[] {
   if (!text) return [];
   const out: CardLink[] = [];
   const seen = new Set<string>();
   for (const m of text.matchAll(TOKEN_RE)) {
+    if (isBracketWrapped(text, m[0], m.index)) continue;
     const card = classify(m[0]);
     if (!card) continue;
     if (seen.has(card.url)) continue;
