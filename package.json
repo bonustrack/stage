@@ -11,7 +11,8 @@
   "type": "module",
   "workspaces": [
     "packages/*",
-    "apps/*"
+    "apps/*",
+    "!apps/proxy"
   ],
   "scripts": {
     "build": "turbo run build",

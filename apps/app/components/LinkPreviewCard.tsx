@@ -17,18 +17,22 @@ import { Image } from '@metro-labs/kit/image';
 import { Text } from '@metro-labs/kit/text';
 import { Box, Row } from './layout';
 import { domainOf } from '../lib/genericLinkDetect';
-import { useLinkPreview } from '../lib/useLinkPreview';
+import { useLinkPreview, isX402 } from '../lib/useLinkPreview';
+import { X402Card } from './X402Card';
 import { usePalette, useBlockRadius } from '../lib/theme';
 
-export function LinkPreviewCard({ url }: {
-  /** `dark` is accepted for call-site symmetry but unused — colors come from the
-   *  live palette tokens (same convention as GitHubLinkCard / PreviewLinkCard). */
+export function LinkPreviewCard({ url, dark }: {
+  /** `dark` is forwarded to the x402 payment card (Pay-style button tinting);
+   *  the OG preview path takes colors from the live palette tokens (same
+   *  convention as GitHubLinkCard / PreviewLinkCard). */
   url: string; dark?: boolean;
 }): React.ReactElement | null {
   const meta = useLinkPreview(url);
   const pal = usePalette();
   const blockRadius = useBlockRadius();
   if (!meta) return null;
+  // The proxy probe found an x402 payment challenge — render the payment card.
+  if (isX402(meta)) return <X402Card challenge={meta} dark={dark} />;
 
   const subColor = pal.text;
   const border = pal.border;
