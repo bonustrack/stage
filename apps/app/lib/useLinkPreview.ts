@@ -91,8 +91,9 @@ function parseX402(j: Record<string, unknown>): X402Challenge | null {
 async function fetchLinkPreview(url: string): Promise<LinkPreviewResult | null> {
   try {
     const res = await fetch(`${LINK_PREVIEW_BASE}/preview?url=${encodeURIComponent(url)}`, {
-      // x-stage-client: required abuse speed-bump on /preview + /img; the Worker
-      // rejects requests without it (see apps/proxy).
+      // x-stage-client: abuse speed-bump on /preview; the Worker rejects /preview
+      // without it. /img does NOT require it - RN <Image> GETs can't send custom
+      // headers, so proxied image/favicon loads are header-free (see apps/proxy).
       headers: { Accept: 'application/json', 'x-stage-client': '1' },
     });
     if (!res.ok) return null;

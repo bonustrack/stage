@@ -125,7 +125,11 @@ async function handlePreview(request: Request, ctx: ExecutionContext): Promise<R
 }
 
 async function handleImg(request: Request, ctx: ExecutionContext): Promise<Response> {
-  if (!hasClientHeader(request)) return json({ error: 'forbidden' }, 403);
+  // NOTE: /img intentionally does NOT require the x-stage-client header. React
+  // Native's <Image> can't attach custom headers to its GETs (flaky on Android),
+  // so requiring the header here 403s every proxied image + favicon in the app.
+  // Images are low-risk: still behind SSRF guards + image/* content-type + size
+  // cap (see fetchImage.ts) and the per-IP rate limit below.
   if (rateLimited(clientIp(request))) return json({ error: 'rate limited' }, 429);
 
   const params = new URL(request.url).searchParams;
