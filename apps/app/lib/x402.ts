@@ -92,11 +92,42 @@ export function x402CanPayInApp(accept: X402Accept): boolean {
 }
 
 /** The requested amount in WHOLE units (for the balance comparison), or
- *  undefined when the asset/amount can't be resolved to a number. */
+ *  undefined when the asset/amount can't be resolved to a number.
+ *
+ *  Atomic amounts are integer strings; a non-integer (decimal/garbage) amount is
+ *  a malformed challenge. We reuse `formatAtomic` (exact string math) which
+ *  returns undefined for any non-integer / non-numeric amount, so a malformed
+ *  challenge yields undefined here too — the card then can't show a payable
+ *  state with a broken balance gate. Only the final comparison value is coerced
+ *  to a Number. */
 export function x402AmountNumber(accept: X402Accept): number | undefined {
   const asset = x402KnownAsset(accept);
-  if (!asset || !accept.amount || !/^\d+$/.test(accept.amount)) return undefined;
-  return Number(accept.amount) / 10 ** asset.decimals;
+  if (!asset || !accept.amount) return undefined;
+  const whole = formatAtomic(accept.amount, asset.decimals);
+  if (whole === undefined) return undefined;
+  const n = Number(whole.replace(/,/g, ''));
+  return Number.isFinite(n) ? n : undefined;
+}
+
+/** Sanitise an attacker-controlled token-name hint (`extra.name`) before it goes
+ *  in a user-facing label: strip control + bidi/RTL-override chars (which can
+ *  visually reorder the amount line into a spoof) and clamp the length. */
+export function sanitizeTokenName(name: string): string {
+  let out = "";
+  for (const ch of name) {
+    const c = ch.codePointAt(0)!;
+    // Drop C0/C1 controls, the bidi embedding/override/isolate marks
+    // (U+202A-202E, U+2066-2069), zero-width chars (U+200B-200F) and the BOM
+    // (U+FEFF), any of which can visually reorder or hide the amount line.
+    if (c <= 0x1f) continue;
+    if (c >= 0x7f && c <= 0x9f) continue;
+    if (c >= 0x200b && c <= 0x200f) continue;
+    if (c >= 0x202a && c <= 0x202e) continue;
+    if (c >= 0x2066 && c <= 0x2069) continue;
+    if (c === 0xfeff) continue;
+    out += ch;
+  }
+  return out.trim().slice(0, 16);
 }
 
 /** The amount line for the card: "<amount> <SYMBOL>" when we can resolve the
@@ -105,12 +136,13 @@ export function x402AmountNumber(accept: X402Accept): number | undefined {
 export function x402AmountLabel(accept: X402Accept): string | undefined {
   if (!accept.amount) return undefined;
   const asset = accept.asset ? KNOWN_ASSETS[accept.asset.toLowerCase()] : undefined;
-  // Some servers carry the EIP-712 token name in `extra.name` (e.g. "USDC").
-  const extraName = typeof accept.extra?.name === 'string' ? accept.extra.name : undefined;
   if (asset) {
     const formatted = formatAtomic(accept.amount, asset.decimals);
     return formatted ? `${formatted} ${asset.symbol}` : undefined;
   }
   // Unknown asset: show the raw atomic amount with whatever symbol hint we have.
+  // `extra.name` is attacker-controlled — sanitise + clamp before display.
+  const rawName = typeof accept.extra?.name === 'string' ? accept.extra.name : undefined;
+  const extraName = rawName ? sanitizeTokenName(rawName) : undefined;
   return extraName ? `${accept.amount} ${extraName}` : accept.amount;
 }

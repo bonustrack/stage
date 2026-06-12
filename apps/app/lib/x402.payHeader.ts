@@ -140,13 +140,21 @@ export function buildPaymentHeader(args: {
 }
 
 /** Generate a random 32-byte 0x nonce for the authorization. Uses the RN crypto
- *  polyfill (`crypto.getRandomValues`, already installed app-wide). */
+ *  polyfill (`crypto.getRandomValues`, installed app-wide).
+ *
+ *  The nonce is the only replay protection on an EIP-3009 transfer
+ *  authorization: a predictable nonce lets an attacker collide / replay the
+ *  signed authorization. `Math.random()` is not a CSPRNG, so if
+ *  `crypto.getRandomValues` is somehow absent we THROW rather than sign a
+ *  transfer behind a weak nonce. */
 export function randomNonce(): string {
   const bytes = new Uint8Array(32);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const c: any = (globalThis as any).crypto;
-  if (c?.getRandomValues) c.getRandomValues(bytes);
-  else for (let i = 0; i < 32; i++) bytes[i] = Math.floor(Math.random() * 256);
+  if (!c?.getRandomValues) {
+    throw new Error('Secure random unavailable: refusing to build a payment authorization with a weak nonce');
+  }
+  c.getRandomValues(bytes);
   let hex = '0x';
   for (const b of bytes) hex += b.toString(16).padStart(2, '0');
   return hex;

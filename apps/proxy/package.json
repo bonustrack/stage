@@ -10,6 +10,9 @@
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --test 'test/*.test.ts'"
   },
+  "dependencies": {
+    "@stage-labs/client": "workspace:*"
+  },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250601.0",
     "eslint": "^10.3.0",

@@ -24,6 +24,7 @@
     "./xmtp/inboxCache": "./src/xmtp/inboxCache.ts",
     "./embed/detect": "./src/embed/detect.ts",
     "./stamp/resolve": "./src/stamp/resolve.ts",
+    "./x402": "./src/x402/challenge.ts",
     "./api": "./src/api/index.ts",
     "./api/ens": "./src/api/ens.ts",
     "./api/etherscan": "./src/api/etherscan.ts",

@@ -4,11 +4,12 @@
  *  so a silent drift here breaks every payment. We pin it with a fixture
  *  challenge + fixed nonce/now (everything but the signature is deterministic). */
 
-import { describe, expect, test } from 'bun:test';
+import { afterEach, describe, expect, test } from 'bun:test';
 import {
   buildAuthorization,
   buildTypedData,
   buildPaymentHeader,
+  randomNonce,
 } from '../lib/x402.payHeader';
 import type { X402Accept } from '../lib/useLinkPreview';
 
@@ -115,5 +116,24 @@ describe('buildPaymentHeader', () => {
     const header = buildPaymentHeader({ accept: FIXTURE_ACCEPT, authorization: auth, signature: SIGNATURE, x402Version: 2 });
     const decoded = JSON.parse(Buffer.from(header, 'base64').toString('utf-8'));
     expect(decoded.x402Version).toBe(2);
+  });
+});
+
+describe('randomNonce (SEC8)', () => {
+  const orig = (globalThis as { crypto?: unknown }).crypto;
+  afterEach(() => { (globalThis as { crypto?: unknown }).crypto = orig; });
+
+  test('produces a 32-byte 0x nonce from crypto.getRandomValues', () => {
+    const n = randomNonce();
+    expect(n).toMatch(/^0x[0-9a-f]{64}$/);
+  });
+
+  test('two calls differ (not a constant)', () => {
+    expect(randomNonce()).not.toBe(randomNonce());
+  });
+
+  test('THROWS rather than fall back to Math.random when CSPRNG is absent', () => {
+    (globalThis as { crypto?: unknown }).crypto = undefined;
+    expect(() => randomNonce()).toThrow(/weak nonce|secure random/i);
   });
 });

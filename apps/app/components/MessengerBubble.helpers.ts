@@ -5,6 +5,7 @@ import type { HistoryEntry } from '../lib/types';
 import { fontSize } from '@metro-labs/kit/tokens';
 import type { RemoteAttachmentInfo } from '@xmtp/react-native-sdk';
 import { normalizeQuestions, type PollContent } from '@stage-labs/client/xmtp/poll';
+import { formatEther } from 'viem';
 
 export const REACT_PRESETS = ['👍', '🔥', '👀', '🙏', '😁', '💯', '🫡'];
 
@@ -214,16 +215,13 @@ export function explorerUrl(networkId: number | string, txHash: string): string 
   return `${base[id] ?? 'https://etherscan.io'}/tx/${txHash}`;
 }
 
-/** Format a hex-wei value (from a WalletSendCalls call) as a short ETH string. */
+/** Format a hex-wei value (from a WalletSendCalls call) as an exact ETH string.
+ *  Uses viem `formatEther` (exact bigint -> decimal) rather than float math, then
+ *  trims trailing fractional zeros for a short display. */
 export function ethFromWeiHex(valueHex?: string): string | undefined {
   if (!valueHex) return undefined;
   try {
-    const wei = BigInt(valueHex);
-    /** Trim to a readable decimal — 1e18 wei = 1 ETH. */
-    const whole = wei / 1_000_000_000_000_000_000n;
-    const frac = wei % 1_000_000_000_000_000_000n;
-    if (frac === 0n) return `${whole}`;
-    const fracStr = frac.toString().padStart(18, '0').replace(/0+$/, '');
-    return `${whole}.${fracStr}`;
+    const out = formatEther(BigInt(valueHex));
+    return out.includes('.') ? out.replace(/\.?0+$/, '') : out;
   } catch { return undefined; }
 }
