@@ -2,6 +2,7 @@
  *  attachments, body text / embeds, and the interactive question/poll/sig/tx
  *  cards + transcription line. Extracted to keep the row component under the cap. */
 
+import { useMemo } from 'react';
 import { openInBubbleLink } from '../lib/safeOpenLink';
 
 import { Pressable } from '@metro-labs/kit/pressable';
@@ -49,18 +50,27 @@ export function BubbleContent({
    *  Markdown). Undefined/empty in the normal feed. */
   highlight?: string;
 }): React.ReactElement {
-  const atts = attachmentsOf(entry);
-  const question = questionOf(entry);
-  const poll = pollOf(entry);
-  const sigReq = sigRequestOf(entry);
-  const sigRef = sigReferenceOf(entry);
-  const txReq = txRequestOf(entry);
-  const txReceipt = txReceiptOf(entry);
+  /** Parse the payload descriptors ONCE per entry instead of re-running every
+   *  detector (+ pollOf's normalizeQuestions) on every render. A reaction/vote
+   *  tick elsewhere in the feed used to re-run all of these for every bubble. */
+  const { atts, question, poll, sigReq, sigRef, txReq, txReceipt } = useMemo(() => ({
+    atts: attachmentsOf(entry),
+    question: questionOf(entry),
+    poll: pollOf(entry),
+    sigReq: sigRequestOf(entry),
+    sigRef: sigReferenceOf(entry),
+    txReq: txRequestOf(entry),
+    txReceipt: txReceiptOf(entry),
+  }), [entry]);
+  /** Card links re-parsed only when the body text changes (keyed on entry.text). */
+  const cardLinks = useMemo(() => cardLinksOf(entry.text), [entry.text]);
+  /** markdownStyles builds a fresh nested style object; cache it per [fg,dark]. */
+  const mdStyle = useMemo(() => markdownStyles(fg, dark, false), [fg, dark]);
   const markdownProps = {
     markdownit: mdParser,
     onLinkPress: (url: string): boolean => openInBubbleLink(url),
     /** Discord-style: all messages render with the same typography regardless of sender. */
-    style: markdownStyles(fg, dark, false),
+    style: mdStyle,
   };
   return (
     <>
@@ -135,7 +145,7 @@ export function BubbleContent({
       {/** Inline embeds — one card per card-generating link in the body, stacked
        *  below the text (in appearance order, deduped) so each URL stays tappable.
        *  Capped at MAX_CARDS; extra links remain plain text. */}
-      {cardLinksOf(entry.text).map(card => {
+      {cardLinks.map(card => {
         const node = card.kind === 'dm' ? <ChannelCard peerAddress={card.peerAddress} dark={dark} />
           : card.kind === 'channel' ? <ChannelCard convId={card.convId} dark={dark} />
           : card.kind === 'youtube' ? <YouTubeEmbed videoId={card.videoId} dark={dark} />
