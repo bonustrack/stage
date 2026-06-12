@@ -5,11 +5,12 @@
  *  URL is INJECTED (the app passes kit's stampTokenUrl) so packages/client stays
  *  free of any @metro-labs/kit dependency. */
 
-import { createPublicClient, http, formatEther, formatUnits, type Hex } from 'viem';
+import { formatEther, formatUnits, type Hex } from 'viem';
 import { getErc20UsdPrices, getSimplePrices } from '../api/coingecko';
 import {
-  ASSETS, MULTICALL3, VIEM_CHAINS, erc20Abi, multicall3Abi, type AssetRow,
+  ASSETS, MULTICALL3, erc20Abi, multicall3Abi, type AssetRow,
 } from './assets';
+import { publicClientFor } from './client';
 
 type Price = { usd: number; usd_24h_change?: number };
 
@@ -40,10 +41,7 @@ export async function fetchAssetRows(
   const balancesByChain = new Map<number, bigint[]>();
   await Promise.all(chainIds.map(async cid => {
     const chainAssets = ASSETS.filter(a => a.chainId === cid);
-    const pub = createPublicClient({
-      chain: VIEM_CHAINS[cid]!,
-      transport: http('https://rpc.brovider.xyz/' + cid),
-    });
+    const pub = publicClientFor(cid);
     const calls = chainAssets.map(a => a.address === null
       ? { address: MULTICALL3, abi: multicall3Abi, functionName: 'getEthBalance' as const, args: [addr as Hex] }
       : { address: a.address, abi: erc20Abi, functionName: 'balanceOf' as const, args: [addr as Hex] });

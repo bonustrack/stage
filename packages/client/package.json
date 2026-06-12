@@ -35,6 +35,7 @@
     "./wallet/format": "./src/wallet/format.ts",
     "./wallet/assets": "./src/wallet/assets.ts",
     "./wallet/balances": "./src/wallet/balances.ts",
+    "./wallet/client": "./src/wallet/client.ts",
     "./accounts/types": "./src/accounts/types.ts",
     "./accounts/keys": "./src/accounts/keys.ts",
     "./accounts/registry": "./src/accounts/registry.ts",

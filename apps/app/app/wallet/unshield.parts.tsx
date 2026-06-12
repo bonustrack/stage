@@ -7,7 +7,7 @@ import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from '../../components/layout';
 import { DANGER } from '../../lib/theme';
-import { explorerTxUrl } from '../../lib/railgun/networks';
+import { explorerTxUrl } from '@stage-labs/client/xmtp/tx';
 
 interface Pal { fg: string; head: string; sub: string; border: string; inputBg: string; link: string }
 type Phase = 'idle' | 'proving' | 'broadcasting' | 'done' | 'error';

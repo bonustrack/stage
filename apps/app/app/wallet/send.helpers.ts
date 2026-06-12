@@ -1,10 +1,10 @@
 /** Pure helpers + constants for the Wallet → Send screen.
  *
  *  Extracted from send.tsx (mechanical split, behavior identical). */
-import { createPublicClient, http, formatEther, type Hex } from 'viem';
-import { mainnet } from 'viem/chains';
+import { formatEther, type Hex } from 'viem';
 import { getOrCreateXmtpClient } from '../../modules/messaging';
 import { getSimplePrices } from '../../lib/coingecko';
+import { publicClientFor } from '@stage-labs/client/wallet/client';
 
 export const MULTICALL3 = '0xcA11bde05977b3631167028862bE2a173976CA11' as const;
 export const multicall3Abi = [{
@@ -26,7 +26,7 @@ export async function fetchBalanceAndPrice(): Promise<{
 }> {
   const client = await getOrCreateXmtpClient('production');
   const addr = client.publicIdentity.identifier as Hex;
-  const pub = createPublicClient({ chain: mainnet, transport: http('https://rpc.brovider.xyz/1') });
+  const pub = publicClientFor(1);
   const [bal, prices] = await Promise.all([
     pub.readContract({ address: MULTICALL3, abi: multicall3Abi, functionName: 'getEthBalance', args: [addr] }),
     getSimplePrices(['ethereum']).catch(() => ({} as Record<string, { usd: number }>)),

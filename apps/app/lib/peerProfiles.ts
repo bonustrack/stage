@@ -11,7 +11,6 @@ import {
 } from '@stage-labs/client/identity/peerProfiles';
 
 export {
-  ensurePeerProfiles,
   isPeerResolved,
   getPeerName,
   type PeerProfile,

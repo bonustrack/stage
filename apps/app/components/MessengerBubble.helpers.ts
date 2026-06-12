@@ -201,20 +201,6 @@ export function txReceiptOf(entry: HistoryEntry): TxReceipt | undefined {
   return p.txReference;
 }
 
-/** Block-explorer URL for a chain id (decimal/hex/number) + tx hash. Mirrors
- *  explorerTxUrl in @stage-labs/client/xmtp/tx (re-stated to avoid pulling the
- *  helper through a separate import in the bubble). */
-export function explorerUrl(networkId: number | string, txHash: string): string {
-  const id = typeof networkId === 'number' ? networkId
-    : networkId.startsWith('0x') ? parseInt(networkId, 16) : parseInt(networkId, 10);
-  const base: Record<number, string> = {
-    1: 'https://etherscan.io', 10: 'https://optimistic.etherscan.io',
-    137: 'https://polygonscan.com', 8453: 'https://basescan.org',
-    42161: 'https://arbiscan.io', 11155111: 'https://sepolia.etherscan.io',
-  };
-  return `${base[id] ?? 'https://etherscan.io'}/tx/${txHash}`;
-}
-
 /** Format a hex-wei value (from a WalletSendCalls call) as an exact ETH string.
  *  Uses viem `formatEther` (exact bigint -> decimal) rather than float math, then
  *  trims trailing fractional zeros for a short display. */
