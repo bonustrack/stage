@@ -19,6 +19,8 @@
     "./xmtp/sign.schema": "./src/xmtp/sign.schema.ts",
     "./xmtp/tx": "./src/xmtp/tx.ts",
     "./xmtp/tx.schema": "./src/xmtp/tx.schema.ts",
+    "./xmtp/channelPrefs": "./src/xmtp/channelPrefs.ts",
+    "./xmtp/channelPrefs.schema": "./src/xmtp/channelPrefs.schema.ts",
     "./xmtp/line": "./src/xmtp/line.ts",
     "./xmtp/envelope": "./src/xmtp/envelope.ts",
     "./xmtp/builders": "./src/xmtp/builders.ts",

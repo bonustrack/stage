@@ -47,3 +47,7 @@ export {
 
 export { subscribeAllMessages } from './xmtp.stream';
 export { useXmtpFeed } from './xmtp.feed';
+
+export {
+  syncChannelPrefs, stopChannelPrefsSync, flushChannelPrefsOnBackground,
+} from './channelPrefsSync';

@@ -17,6 +17,7 @@ import {
 import { registerPushWithDaemon } from './push';
 import { getSecure, setSecure } from './cache';
 import { bumpAccountEpoch } from './accountEpoch';
+import { readState } from './readState';
 import { XMTP_CODECS } from './xmtp.codecs';
 import {
   getCachedXmtpClient, setCachedXmtpClient, resetClientScopedState,
@@ -166,12 +167,20 @@ export async function setLastReadNs(convId: string, ns: number): Promise<void> {
   await setSecure(LAST_READ_PREFIX + convId, String(ns));
 }
 
-/** Mark read: bump local `lastReadNs` past every message so the badge clears. */
+/** Mark read: bump local `lastReadNs` past every message so the badge clears,
+ *  and note the cursor in the read-state provider. The provider buffers it (O(1)
+ *  in-memory) and the cursor is published ONCE on the next app-background flush,
+ *  never per-read (see lib/readState.ts + lib/channelPrefsSync.ts). */
 export async function markConvReadSynced(convId: string): Promise<void> {
-  await setLastReadNs(convId, Date.now() * 1_000_000);
+  const ns = Date.now() * 1_000_000;
+  await setLastReadNs(convId, ns);
+  readState().noteRead(convId, ns);
 }
 
-/** Mark unread: rewind `lastReadNs` to 0 so the badge surfaces on next recount. */
+/** Mark unread: rewind the LOCAL `lastReadNs` to 0 so the badge surfaces on next
+ *  recount. We do NOT note this to the provider's fallback cursor — the fallback
+ *  is monotonic (LWW by max ns); a 0 can't win, and an explicit unread is a
+ *  device-local intent, not a cross-device "rewind everyone" signal. */
 export async function markConvUnreadSynced(convId: string): Promise<void> {
   await setLastReadNs(convId, 0);
 }

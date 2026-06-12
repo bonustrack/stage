@@ -11,6 +11,7 @@ import type { PrivateKeyAccount } from 'viem/accounts';
 import { PollCodec } from './xmtpPollCodec';
 import { SignatureRequestCodec, SignatureReferenceCodec } from './xmtpSignatureCodec';
 import { WalletSendCallsCodec, TransactionReferenceCodec } from './xmtpTxCodec';
+import { ChannelPrefsCodec } from './xmtpChannelPrefsCodec';
 import { getViemAccount, type AccountRecord } from './accounts';
 import { getWcSign } from './wcSigner';
 
@@ -27,6 +28,10 @@ export const SIGNATURE_REFERENCE_CODEC = new SignatureReferenceCodec();
  *  send path (their contentType drives sendEncodedContent). */
 export const WALLET_SEND_CALLS_CODEC = new WalletSendCallsCodec();
 export const TRANSACTION_REFERENCE_CODEC = new TransactionReferenceCodec();
+/** Shared channel-prefs codec instance — registered in XMTP_CODECS and reused by
+ *  lib/channelPrefsSync.ts to route delta/snapshot sends through the JS-codec
+ *  send path (its contentType drives conv.send). */
+export const CHANNEL_PREFS_CODEC = new ChannelPrefsCodec();
 
 /** Codecs the local XMTP client decodes inbound + uses to encode outbound. Without these
  *  the RN SDK's `msg.content()` throws on reaction/reply/attachment payloads and we fall
@@ -71,6 +76,11 @@ export const XMTP_CODECS = [
    *  placeholder. */
   WALLET_SEND_CALLS_CODEC,
   TRANSACTION_REFERENCE_CODEC,
+  /** Stage channel-preferences sync `stage.app/channel-prefs:1.0`. Pure-JS
+   *  JSContentCodec (UTF-8 JSON body) — no native module / dev-client rebuild.
+   *  Registered so the self-group's delta/snapshot messages decode on inbound
+   *  (boot fold + live stream) and encode on outbound. */
+  CHANNEL_PREFS_CODEC,
 ];
 
 /** Build the XMTP-RN `Signer` adapter for a viem `PrivateKeyAccount`.

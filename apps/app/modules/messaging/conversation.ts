@@ -9,6 +9,7 @@ import {
   peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap,
   shortAddress, getLastReadNs,
 } from '../../lib/xmtp';
+import { readState } from '../../lib/readState';
 import { labelsOfSyncedGroup } from '../../lib/xmtp.labels';
 import { githubOfSyncedGroup } from '../../lib/xmtp.github';
 import { isMetroControlBody } from '../../lib/push';
@@ -76,12 +77,27 @@ export async function summarizeConversation(
   const avatarAddress = peerAddress
     ?? (avatarUri ? null : channelStampSeed(conv.id));
   const lastReadNs = await getLastReadNs(conv.id);
+  /** Newest message YOU sent in this conv — your own send implies you've read
+   *  everything up to it, and XMTP syncs it across devices for FREE (no extra
+   *  write). The read-state provider folds that piggyback with the device-local
+   *  marker + any synced fallback cursor into the effective read cursor, so the
+   *  unread count agrees across devices without a per-read sync write. */
+  let lastSentNs = 0;
+  for (const m of msgs) {
+    if (m.senderInboxId === selfInboxId && m.sentNs && m.sentNs > lastSentNs) {
+      lastSentNs = m.sentNs;
+      break; // msgs are newest-first, so the first self message is the newest
+    }
+  }
+  const effectiveReadNs = Math.max(lastReadNs, readState().cursorNs(conv.id, lastSentNs));
   let unreadCount = 0;
   for (const m of msgs) {
-    if (!m.sentNs || m.sentNs <= lastReadNs) break;
+    if (!m.sentNs || m.sentNs <= effectiveReadNs) break;
     if (m.senderInboxId === selfInboxId) continue;
     unreadCount += 1;
   }
+  /** Explicit "mark unread" stays device-local: only the local marker being
+   *  rewound to 0 (not the piggyback/fallback) flips this on. */
   const markedUnread = lastReadNs === 0
     && unreadCount === 0 && !!last && !lastFromSelf;
   return {

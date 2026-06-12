@@ -9,6 +9,7 @@ import {
   syncPreferences,
   primeInboxEthCache, subscribeAllMessages,
   listRequestConvs, streamConvConsent, syncConsent,
+  syncChannelPrefs, stopChannelPrefsSync, flushChannelPrefsOnBackground,
 } from '../../modules/messaging';
 import { hydrateCachedRows } from '../../modules/messaging';
 import type { Row as RowT } from './HomeScreen.helpers';
@@ -162,6 +163,13 @@ export function useChannelsSync({
         await syncPreferences();
         await syncConsent();
 
+        /** Cross-device channel-prefs (archived / pinned / read cursor) over the
+         *  self-owned control group: find-or-create + migrate + fold into the
+         *  local stores + attach the live stream. Fire-and-forget — the archived
+         *  / pinned stores notify the list to repaint when folded state lands, so
+         *  this never blocks the first paint. */
+        void syncChannelPrefs();
+
         /** Live-reconcile when a conv is accepted/blocked (here or on another
          *  device): re-pull consent, then re-summarise the inbox + recount
          *  requests so an accepted request appears + the badge drops. */
@@ -180,9 +188,17 @@ export function useChannelsSync({
         appStateSub = AppState.addEventListener('change', (state) => {
           if (state === 'active') {
             void syncPreferences(); void syncConsent();
+            /** Re-fold the control group so prefs changed on another device land
+             *  on resume (the live stream covers the foreground, this covers the
+             *  gap while backgrounded). */
+            void syncChannelPrefs();
             // Throttled: the streams + miss-coalescer already apply deltas while
             // backgrounded, so skip the full re-summarise if one ran <30s ago.
             void refreshThrottled(); void refreshRequestCount();
+          } else if (state === 'background') {
+            /** Flush queued prefs deltas + post a compaction snapshot so a kill
+             *  never strands changes and the next install's replay stays bounded. */
+            void flushChannelPrefsOnBackground();
           }
         });
       } catch (e) {
@@ -194,6 +210,9 @@ export function useChannelsSync({
       cancelled = true;
       clearTimeout(initTimer);
       refreshFromNetworkRef.current = null;
+      /** Tear down the control-group live stream + drop the cached group so the
+       *  next account's sync rebinds against its own inbox. */
+      stopChannelPrefsSync();
       if (cancelConvStream) try { cancelConvStream(); } catch { /* ignore */ }
       if (cancelMsgStream) try { cancelMsgStream(); } catch { /* ignore */ }
       if (cancelConsentStream) try { cancelConsentStream(); } catch { /* ignore */ }
