@@ -60,8 +60,19 @@ function isPrivateV6(ip: string): boolean {
   if (x.startsWith('fe80')) return true; // link-local
   if (x.startsWith('fc') || x.startsWith('fd')) return true; // unique-local fc00::/7
   if (x.startsWith('ff')) return true; // multicast
-  const m = /::ffff:(\d+\.\d+\.\d+\.\d+)$/.exec(x);
-  if (m) return isPrivateV4(m[1]);
+  // IPv4-mapped IPv6, dotted-quad form: ::ffff:127.0.0.1
+  const dotted = /::ffff:(\d+\.\d+\.\d+\.\d+)$/.exec(x);
+  if (dotted) return isPrivateV4(dotted[1]);
+  // IPv4-mapped IPv6, packed hex form: ::ffff:7f00:1 == 127.0.0.1. Two 16-bit
+  // hextets after ::ffff: encode the 4 IPv4 octets, so reassemble + reuse the v4
+  // check. (Without this, ::ffff:7f00:1 would slip past as a "public" address.)
+  const hex = /::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/.exec(x);
+  if (hex) {
+    const hi = parseInt(hex[1], 16);
+    const lo = parseInt(hex[2], 16);
+    const v4 = `${(hi >> 8) & 0xff}.${hi & 0xff}.${(lo >> 8) & 0xff}.${lo & 0xff}`;
+    return isPrivateV4(v4);
+  }
   return false;
 }
 

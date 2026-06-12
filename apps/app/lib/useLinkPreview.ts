@@ -21,6 +21,10 @@ export interface LinkPreview {
   image?: string;
   siteName?: string;
   favicon?: string;
+  /** Original (un-proxied) image/favicon URLs, kept for debugging / fallback.
+   *  The app renders `image`/`favicon` (Worker /img proxy URLs), never these. */
+  imageOrigin?: string;
+  faviconOrigin?: string;
 }
 
 /** A single normalised payment option from an x402 challenge. `amount` is in the
@@ -87,7 +91,9 @@ function parseX402(j: Record<string, unknown>): X402Challenge | null {
 async function fetchLinkPreview(url: string): Promise<LinkPreviewResult | null> {
   try {
     const res = await fetch(`${LINK_PREVIEW_BASE}/preview?url=${encodeURIComponent(url)}`, {
-      headers: { Accept: 'application/json' },
+      // x-stage-client: required abuse speed-bump on /preview + /img; the Worker
+      // rejects requests without it (see linkproxy-worker).
+      headers: { Accept: 'application/json', 'x-stage-client': '1' },
     });
     if (!res.ok) return null;
     const j = (await res.json()) as Record<string, unknown>;
@@ -103,6 +109,8 @@ async function fetchLinkPreview(url: string): Promise<LinkPreviewResult | null> 
       image: typeof j.image === 'string' ? j.image : undefined,
       siteName: typeof j.siteName === 'string' ? j.siteName : undefined,
       favicon: typeof j.favicon === 'string' ? j.favicon : undefined,
+      imageOrigin: typeof j.imageOrigin === 'string' ? j.imageOrigin : undefined,
+      faviconOrigin: typeof j.faviconOrigin === 'string' ? j.faviconOrigin : undefined,
     };
   } catch {
     return null; // proxy unreachable / network — graceful no-op
