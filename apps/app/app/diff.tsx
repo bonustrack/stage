@@ -18,6 +18,7 @@ import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import { useLayoutEffect } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
+import { openInBubbleLink } from '../lib/safeOpenLink';
 import { githubLinkOf } from '../lib/githubDetect';
 import { useGithubDiff } from '../lib/useGithubDiff';
 import { FileDiff } from '../components/FileDiff';
@@ -48,7 +49,7 @@ export default function Diff(): React.ReactElement {
   const mdProps = {
     markdownit: mdParser,
     style: mdStyle,
-    onLinkPress: (href: string) => { void Linking.openURL(href); return false; },
+    onLinkPress: (href: string) => openInBubbleLink(href),
   };
   const prUrl = diff?.kind === 'ok' && diff.prNumber
     ? `https://github.com/${diff.owner}/${diff.repo}/pull/${diff.prNumber}`

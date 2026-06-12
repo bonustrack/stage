@@ -44,6 +44,12 @@ function metroDir(): Directory {
 export class PersistentStore<T> {
   private value: T | null = null;
   private hydrated = false;
+  /** In-flight hydration promise, memoized so concurrent boot callers await the
+   *  SAME disk read instead of racing. Previously `hydrated` flipped true before
+   *  `await f.text()` resolved, so a second caller arriving mid-read returned a
+   *  still-null value. Set on the first call, cleared once the read settles (and
+   *  on clear()). */
+  private hydrating: Promise<T | null> | null = null;
   private readonly listeners = new Set<(v: T | null) => void>();
   /** Pending trailing-flush timer (debounced stores only). `number` RN timer id
    *  — the Railgun SDK pulls @types/node in, whose Timeout collides with DOM. */
@@ -87,15 +93,25 @@ export class PersistentStore<T> {
    *  in-memory value synchronously after the await resolves. */
   async hydrate(): Promise<T | null> {
     if (this.hydrated) return this.value;
-    this.hydrated = true;
-    try {
-      const f = this.file();
-      if (!f.exists) return this.value;
-      const parsed = JSON.parse(await f.text()) as T;
-      this.value = parsed;
-      for (const l of this.listeners) l(this.value);
-    } catch { /* corrupted cache — next set() overwrites it */ }
-    return this.value;
+    // A concurrent caller is already reading disk — await the SAME read so we
+    // don't return a half-populated value or kick off a second read.
+    if (this.hydrating) return this.hydrating;
+    this.hydrating = (async (): Promise<T | null> => {
+      try {
+        const f = this.file();
+        if (f.exists) {
+          const parsed = JSON.parse(await f.text()) as T;
+          this.value = parsed;
+          for (const l of this.listeners) l(this.value);
+        }
+      } catch { /* corrupted cache — next set() overwrites it */ }
+      // Mark hydrated only AFTER the read resolves, so the synchronous fast path
+      // above can never observe `hydrated === true` with a stale/null value.
+      this.hydrated = true;
+      this.hydrating = null;
+      return this.value;
+    })();
+    return this.hydrating;
   }
 
   get(): T | null { return this.value; }
@@ -128,6 +144,8 @@ export class PersistentStore<T> {
     dirtyStores.delete(this);
     this.value = null;
     this.hydrated = false;
+    // Drop any in-flight hydration so a new account re-reads from a clean slate.
+    this.hydrating = null;
     try { const f = this.file(); if (f.exists) f.delete(); } catch { /* best-effort */ }
     for (const l of this.listeners) l(null);
   }
