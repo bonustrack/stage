@@ -73,6 +73,32 @@ export function formatAtomic(amount: string, decimals: number): string | undefin
   return frac ? `${groupedWhole}.${frac}` : groupedWhole;
 }
 
+/** The challenge's asset decimals/symbol, when we recognise the token. Used by
+ *  the pay path to convert the atomic amount to whole units for the balance
+ *  check, and to label the Pay button. */
+export function x402KnownAsset(accept: X402Accept): { symbol: string; decimals: number } | undefined {
+  return accept.asset ? KNOWN_ASSETS[accept.asset.toLowerCase()] : undefined;
+}
+
+/** Whether the in-app pay path can fulfil this challenge: the `exact` scheme on a
+ *  network we know the chain id for, paying a known asset (USDC) we can label and
+ *  balance-check, with a payTo + amount present. Anything else falls back to
+ *  "Open endpoint". */
+export function x402CanPayInApp(accept: X402Accept): boolean {
+  if (accept.scheme !== 'exact') return false;
+  if (!accept.payTo || !accept.amount || !accept.asset) return false;
+  if (!NETWORKS[netKey(accept.network)]) return false;
+  return !!x402KnownAsset(accept);
+}
+
+/** The requested amount in WHOLE units (for the balance comparison), or
+ *  undefined when the asset/amount can't be resolved to a number. */
+export function x402AmountNumber(accept: X402Accept): number | undefined {
+  const asset = x402KnownAsset(accept);
+  if (!asset || !accept.amount || !/^\d+$/.test(accept.amount)) return undefined;
+  return Number(accept.amount) / 10 ** asset.decimals;
+}
+
 /** The amount line for the card: "<amount> <SYMBOL>" when we can resolve the
  *  asset's decimals/symbol, else the raw atomic amount (still informative), else
  *  undefined when there's no amount at all. */

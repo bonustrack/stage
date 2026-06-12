@@ -5,15 +5,16 @@
  *  amount + asset + recipient (mirroring MessengerBubble TxRequestCard), PLUS
  *  the endpoint URL and a small `x402` badge.
  *
- *  v1 pay capability (honest scope): the x402 `exact` scheme is NOT a plain
- *  on-chain transfer we can push through the in-app pay/confirm sheet — it
- *  requires an off-chain EIP-3009 / Permit2 signed payload returned to the
- *  server via the `PAYMENT-SIGNATURE` header and settled by a facilitator. That
- *  full signed-payload + facilitator round-trip isn't wired yet, so the action
- *  is "Open endpoint" (display-only). When/if a challenge is a fulfillable plain
- *  transfer we recognise, we can swap in the in-app pay path here. See the PR. */
+ *  Pay capability: for the `exact` scheme on a known network paying a known asset
+ *  (USDC) we run the full in-app x402 pay path (lib/x402.pay.ts): sign an
+ *  EIP-3009 `transferWithAuthorization` authorization with the in-app wallet,
+ *  base64 it into an X-PAYMENT header, and POST it to the link-proxy
+ *  `/x402-settle` endpoint which replays the resource GET server-side. No gas, no
+ *  on-chain tx from the app. For any other scheme/network/asset we fall back to
+ *  "Open endpoint" (display-only). Insufficient USDC disables Pay with a hint. */
 
-import { Linking } from 'react-native';
+import { useState } from 'react';
+import { Alert, Linking } from 'react-native';
 
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
@@ -22,6 +23,7 @@ import { Button } from '@metro-labs/kit/button';
 import { stampTokenUrl } from '@metro-labs/kit/avatar';
 import { Row, Box } from './layout';
 import { TokenAvatar } from './tabs/WalletScreen.tokenAvatar';
+import { usePayerBalance } from './MessengerBubble.balance';
 import { shortAddress } from '../modules/messaging';
 import { domainOf } from '../lib/genericLinkDetect';
 import {
@@ -29,9 +31,16 @@ import {
   x402NetworkLabel,
   x402ChainNumber,
   x402AssetForAvatar,
+  x402CanPayInApp,
+  x402AmountNumber,
+  x402KnownAsset,
 } from '../lib/x402';
+import { payX402Exact } from '../lib/x402.pay';
+import { flash } from '../lib/toast';
 import type { X402Challenge } from '../lib/useLinkPreview';
 import { usePalette, useBlockRadius, withAlpha } from '../lib/theme';
+
+type PayPhase = 'idle' | 'paying' | 'paid' | 'failed';
 
 export function X402Card({ challenge, dark }: {
   challenge: X402Challenge; dark?: boolean;
@@ -39,14 +48,76 @@ export function X402Card({ challenge, dark }: {
   const pal = usePalette();
   const blockRadius = useBlockRadius();
   const accept = challenge.accepts[0];
-  if (!accept) return null;
+  const [phase, setPhase] = useState<PayPhase>('idle');
 
   const endpoint = challenge.endpoint || '';
-  const desc = accept.description || challenge.error || 'Payment required';
-  const amountLabel = x402AmountLabel(accept);
-  const network = x402NetworkLabel(accept.network);
-  const chainNum = x402ChainNumber(accept.network);
-  const logoUrl = stampTokenUrl(chainNum, x402AssetForAvatar(accept), 36);
+  const desc = accept?.description || challenge.error || 'Payment required';
+  const amountLabel = accept ? x402AmountLabel(accept) : undefined;
+  const network = accept ? x402NetworkLabel(accept.network) : '';
+  const chainNum = accept ? x402ChainNumber(accept.network) : 1;
+  const logoUrl = accept ? stampTokenUrl(chainNum, x402AssetForAvatar(accept), 36) : '';
+
+  const canPay = !!accept && x402CanPayInApp(accept);
+  const asset = accept ? x402KnownAsset(accept) : undefined;
+  const needed = accept ? x402AmountNumber(accept) : undefined;
+  // Balance of the challenge's USDC on the challenge chain (only when payable).
+  const bal = usePayerBalance(
+    canPay ? chainNum : undefined,
+    canPay ? accept?.asset : undefined,
+    canPay ? asset?.symbol : undefined,
+    canPay ? needed : undefined,
+  );
+  const insufficient = canPay && bal?.insufficient === true;
+
+  if (!accept) return null;
+
+  const openEndpoint = (): void => { if (endpoint) void Linking.openURL(endpoint); };
+
+  const runPay = (): void => {
+    setPhase('paying');
+    void (async () => {
+      try {
+        const res = await payX402Exact({
+          resource: endpoint,
+          accept,
+          x402Version: challenge.x402Version,
+        });
+        if (res.ok) {
+          setPhase('paid');
+          flash('Payment sent');
+        } else {
+          setPhase('failed');
+          flash(`Payment failed (${res.status})`);
+        }
+      } catch (e) {
+        setPhase('failed');
+        flash((e as Error).message || 'Payment failed');
+      }
+    })();
+  };
+
+  const confirmPay = (): void => {
+    const payLabel = amountLabel ?? 'this amount';
+    Alert.alert(
+      'Confirm payment',
+      `Pay ${payLabel} to ${accept.payTo ? shortAddress(accept.payTo) : 'recipient'} `
+        + `for ${domainOf(endpoint)} on ${network}?\n\n`
+        + 'Signs a gasless USDC authorization (no gas, no on-chain tx) and settles it through the resource.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Pay', style: 'default', onPress: runPay },
+      ],
+    );
+  };
+
+  // The primary action label/handler depends on capability + phase.
+  const payButtonLabel = (): string => {
+    if (phase === 'paid') return 'Paid';
+    if (phase === 'paying') return 'Paying...';
+    if (phase === 'failed') return 'Retry payment';
+    if (insufficient) return `Insufficient ${asset?.symbol ?? 'balance'}`;
+    return amountLabel ? `Pay ${amountLabel}` : 'Pay';
+  };
 
   return (
     <Box radius={blockRadius} background={withAlpha(pal.primary, 0.08)} padding={12} margin={{ top: 8 }} gap={8} style={{ alignSelf: 'stretch' }}>
@@ -79,8 +150,12 @@ export function X402Card({ challenge, dark }: {
         <Text role="secondary" size="xs">On</Text>
         <Text size="sm" color={pal.sub} numberOfLines={1}>{network}</Text>
       </Row>
+      {/* Balance line — only when payable; mirrors the in-chat payment card. */}
+      {canPay && bal ? (
+        <Text size="xs" role="secondary" numberOfLines={1}>{bal.text}</Text>
+      ) : null}
       {/* Endpoint URL — what you'd be paying for. Tappable. */}
-      <Pressable onPress={() => endpoint && void Linking.openURL(endpoint)}>
+      <Pressable onPress={openEndpoint}>
         <Row align="center" gap={6}>
           <Icon name="link" size={13} color={pal.sub}/>
           <Text size="xs" color={pal.link} numberOfLines={1} style={{ flexShrink: 1 }}>
@@ -88,19 +163,40 @@ export function X402Card({ challenge, dark }: {
           </Text>
         </Row>
       </Pressable>
-      <Button
-        variant="primary"
-        size="lg"
-        fullWidth
-        radius={24}
-        dark={dark}
-        onPress={() => endpoint && void Linking.openURL(endpoint)}
-        label="Open endpoint"
-        iconStart={<Icon name="externalLink" size={18} color={pal.bg}/>}
-        tintBg={pal.primary}
-        tintFg={pal.bg}
-        style={{ marginTop: 2 }}
-      />
+      {canPay ? (
+        <Button
+          variant="primary"
+          size="lg"
+          fullWidth
+          radius={24}
+          dark={dark}
+          disabled={phase === 'paying' || phase === 'paid' || insufficient}
+          onPress={confirmPay}
+          label={payButtonLabel()}
+          iconStart={phase === 'paid'
+            ? <Icon name="check" size={18} color={pal.bg}/>
+            : <Icon name="wallet" size={18} color={pal.bg}/>}
+          tintBg={pal.primary}
+          tintFg={pal.bg}
+          style={{ marginTop: 2 }}
+        />
+      ) : (
+        // Non-`exact` schemes / unsupported networks / unknown assets: fall back
+        // to opening the endpoint in the browser to pay there.
+        <Button
+          variant="primary"
+          size="lg"
+          fullWidth
+          radius={24}
+          dark={dark}
+          onPress={openEndpoint}
+          label="Open endpoint"
+          iconStart={<Icon name="externalLink" size={18} color={pal.bg}/>}
+          tintBg={pal.primary}
+          tintFg={pal.bg}
+          style={{ marginTop: 2 }}
+        />
+      )}
     </Box>
   );
 }
