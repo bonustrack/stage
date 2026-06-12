@@ -24,6 +24,9 @@ import {
   SIGNATURE_REQUEST_CONTENT_TYPE, SIGNATURE_REFERENCE_CONTENT_TYPE,
   encodeJsonContent, decodeJsonContent,
 } from '@stage-labs/client/xmtp/codecs';
+import {
+  signatureRequestSchema, signatureReferenceSchema,
+} from '@stage-labs/client/xmtp/sign.schema';
 
 export class SignatureRequestCodec implements JSContentCodec<SignatureRequestContent> {
   contentType: ContentTypeId = SIGNATURE_REQUEST_CONTENT_TYPE;
@@ -33,7 +36,13 @@ export class SignatureRequestCodec implements JSContentCodec<SignatureRequestCon
   }
 
   decode(encoded: EncodedContent): SignatureRequestContent {
-    return decodeJsonContent<SignatureRequestContent>(encoded.content);
+    /** SECURITY: validate the untrusted wire body against the strict schema so a
+     *  malformed / hostile signature request throws here (rendered as an
+     *  unsupported bubble) and can never reach the signer as a wrong-but-typed
+     *  object. */
+    return decodeJsonContent<SignatureRequestContent>(
+      encoded.content, signatureRequestSchema, 'xmtp.signatureRequest',
+    );
   }
 
   fallback(content: SignatureRequestContent): string | undefined {
@@ -54,7 +63,9 @@ export class SignatureReferenceCodec implements JSContentCodec<SignatureReferenc
   }
 
   decode(encoded: EncodedContent): SignatureReferenceContent {
-    return decodeJsonContent<SignatureReferenceContent>(encoded.content);
+    return decodeJsonContent<SignatureReferenceContent>(
+      encoded.content, signatureReferenceSchema, 'xmtp.signatureReference',
+    );
   }
 
   fallback(content: SignatureReferenceContent): string | undefined {

@@ -24,6 +24,9 @@ import {
   WALLET_SEND_CALLS_CONTENT_TYPE, TRANSACTION_REFERENCE_CONTENT_TYPE,
   encodeJsonContent, decodeJsonContent,
 } from '@stage-labs/client/xmtp/codecs';
+import {
+  walletSendCallsSchema, transactionReferenceSchema,
+} from '@stage-labs/client/xmtp/tx.schema';
 
 export class WalletSendCallsCodec implements JSContentCodec<WalletSendCallsContent> {
   contentType: ContentTypeId = WALLET_SEND_CALLS_CONTENT_TYPE;
@@ -33,7 +36,12 @@ export class WalletSendCallsCodec implements JSContentCodec<WalletSendCallsConte
   }
 
   decode(encoded: EncodedContent): WalletSendCallsContent {
-    return decodeJsonContent<WalletSendCallsContent>(encoded.content);
+    /** SECURITY: validate the untrusted wire body so a malformed / hostile
+     *  payment request throws here (rendered unsupported) instead of reaching the
+     *  pay path as a wrong-but-typed object. */
+    return decodeJsonContent<WalletSendCallsContent>(
+      encoded.content, walletSendCallsSchema, 'xmtp.walletSendCalls',
+    );
   }
 
   fallback(content: WalletSendCallsContent): string | undefined {
@@ -54,7 +62,9 @@ export class TransactionReferenceCodec implements JSContentCodec<TransactionRefe
   }
 
   decode(encoded: EncodedContent): TransactionReferenceContent {
-    return decodeJsonContent<TransactionReferenceContent>(encoded.content);
+    return decodeJsonContent<TransactionReferenceContent>(
+      encoded.content, transactionReferenceSchema, 'xmtp.transactionReference',
+    );
   }
 
   fallback(content: TransactionReferenceContent): string | undefined {
