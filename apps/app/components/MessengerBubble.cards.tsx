@@ -11,10 +11,9 @@ import { Row, Col, Box } from './layout';
 import { shortAddress } from '../modules/messaging';
 import { fmtSigValue, explorerUrl, ethFromWeiHex } from './MessengerBubble.helpers';
 import type { SigRequest, SigReference, TxRequest, TxReceipt } from './MessengerBubble.helpers';
-import { usePalette, useBlockRadius, withAlpha } from '../lib/theme';
+import { usePalette, useBlockRadius } from '../lib/theme';
 import { usePeerProfiles, getPeerName } from '../lib/peerProfiles';
-import { usePayerBalance } from './MessengerBubble.balance';
-import { TokenAvatar } from './tabs/WalletScreen.tokenAvatar';
+import { PaymentCard } from './PaymentCard';
 import { NATIVE_TOKEN_SENTINEL } from '@stage-labs/client/wallet/assets';
 import { stampTokenUrl } from '@metro-labs/kit/avatar';
 import { chainIdToNumber } from '@stage-labs/client/xmtp/tx';
@@ -115,12 +114,15 @@ export function SigReferenceCard({ ref, dark, sub }: {
     </Box>
   );
 }
-/** TxRequestCard — payment request bubble: description + amount + "Pay" button. */
+/** TxRequestCard — in-chat payment request. Thin wrapper over the shared
+ *  PaymentCard: it computes the amount/recipient/token from the tx request and
+ *  passes its own "Pay" action (the caller's onPay runs walletSendCalls /
+ *  sendCall). The recipient line is a tappable profile link (TxToRow). */
 export function TxRequestCard({ req, dark, paying, onPay }: {
   req: TxRequest; dark: boolean; sub: string; paying?: boolean;
   onPay?: () => void;
 }): React.ReactElement {
-  const pal = usePalette(); const blockRadius = useBlockRadius();
+  const pal = usePalette();
   const call = req.calls[0];
   const desc = call?.metadata?.description ?? 'Payment request';
   const eth = ethFromWeiHex(call?.value);
@@ -133,48 +135,35 @@ export function TxRequestCard({ req, dark, paying, onPay }: {
   // ERC20 when the recipient (metadata.toAddress) differs from call.to — then
   // call.to is the token contract. Native ETH otherwise.
   const tokenAddr = call?.metadata?.toAddress ? call?.to : undefined;
-  const balance = usePayerBalance(req.chainId, tokenAddr, call?.metadata?.currency, call?.metadata?.amount);
   /** Token logo + network badge, exactly like the wallet token row. ERC20 uses
    *  the token contract; native ETH uses the stamp native sentinel. STAGE has no
    *  logo so the URL 404s and TokenAvatar falls back to the border circle. */
   const chainNum = chainIdToNumber(req.chainId ?? '0x1');
   const logoUrl = stampTokenUrl(chainNum, tokenAddr ?? NATIVE_TOKEN_SENTINEL, 36);
+  // Balance is meaningful only when we know the currency symbol to look up.
+  const showBalance = !!call?.metadata?.currency || !!eth;
   return (
-    <Box radius={blockRadius} background={withAlpha(pal.primary, 0.08)} padding={12} margin={{ top: 8 }} gap={8} style={{ alignSelf: 'stretch' }}>
-      <Row align="center" gap={10}>
-        <TokenAvatar logoUrl={logoUrl} chainId={chainNum} bg={withAlpha(pal.primary, 0.08)} border={pal.border}/>
-        <Text weight="semibold" size="md" color={pal.text} style={{ flexShrink: 1 }}>
-          {desc}
-        </Text>
-      </Row>
-      {amountLabel ? (
-        <Text weight="semibold" size="5xl" color={pal.link}>
-          {amountLabel}
-        </Text>
-      ) : null}
-      {recipient ? <TxToRow address={recipient} /> : null}
-      {balance ? (
-        <Text size="xs" color={balance.insufficient ? pal.danger : pal.sub}>
-          {balance.text}
-        </Text>
-      ) : null}
-      {onPay ? (
-        <Button
-          variant="primary"
-          size="lg"
-          fullWidth
-          radius={24}
-          dark={dark}
-          loading={paying}
-          onPress={onPay}
-          label="Pay"
-          iconStart={<Icon name="paperAirplane" size={18} color={pal.bg}/>}
-          tintBg={pal.primary}
-          tintFg={pal.bg}
-          style={{ marginTop: 2 }}
-/>
-      ) : null}
-    </Box>
+    <PaymentCard
+      dark={dark}
+      logoUrl={logoUrl}
+      chainNum={chainNum}
+      description={desc}
+      amountLabel={amountLabel}
+      detail={recipient ? <TxToRow address={recipient} /> : undefined}
+      balance={{
+        show: showBalance,
+        chainId: req.chainId,
+        token: tokenAddr,
+        symbol: call?.metadata?.currency ?? (eth ? 'ETH' : undefined),
+        needed: call?.metadata?.amount,
+      }}
+      action={onPay ? {
+        label: 'Pay',
+        onPress: onPay,
+        loading: paying,
+        icon: <Icon name="paperAirplane" size={18} color={pal.bg}/>,
+      } : undefined}
+    />
   );
 }
 /** TxToRow — the payment "To" line: a tappable link to the recipient's profile,

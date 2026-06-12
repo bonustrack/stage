@@ -19,11 +19,9 @@ import { Alert, Linking } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
-import { Button } from '@metro-labs/kit/button';
 import { stampTokenUrl } from '@metro-labs/kit/avatar';
 import { Row, Box } from './layout';
-import { TokenAvatar } from './tabs/WalletScreen.tokenAvatar';
-import { usePayerBalance } from './MessengerBubble.balance';
+import { PaymentCard } from './PaymentCard';
 import { shortAddress } from '../modules/messaging';
 import { domainOf } from '../lib/genericLinkDetect';
 import {
@@ -38,7 +36,7 @@ import {
 import { payX402Exact } from '../lib/x402.pay';
 import { flash } from '../lib/toast';
 import type { X402Challenge } from '../lib/useLinkPreview';
-import { usePalette, useBlockRadius, withAlpha } from '../lib/theme';
+import { usePalette, withAlpha } from '../lib/theme';
 
 type PayPhase = 'idle' | 'paying' | 'paid' | 'failed';
 
@@ -46,7 +44,6 @@ export function X402Card({ challenge, dark }: {
   challenge: X402Challenge; dark?: boolean;
 }): React.ReactElement | null {
   const pal = usePalette();
-  const blockRadius = useBlockRadius();
   const accept = challenge.accepts[0];
   const [phase, setPhase] = useState<PayPhase>('idle');
 
@@ -60,17 +57,10 @@ export function X402Card({ challenge, dark }: {
   const canPay = !!accept && x402CanPayInApp(accept);
   const asset = accept ? x402KnownAsset(accept) : undefined;
   const needed = accept ? x402AmountNumber(accept) : undefined;
-  // Payer's balance of the challenge asset on the challenge chain. Always shown
-  // when we know the asset (symbol) + chain — mirrors the in-chat payment card
-  // (TxRequestCard) so the user always sees what they hold before paying.
+  // We show the balance whenever the asset (symbol) + chain are known — mirrors
+  // the in-chat payment card (TxRequestCard) so the user always sees what they
+  // hold before paying. PaymentCard owns the actual usePayerBalance fetch.
   const hasKnownAsset = !!asset && !!accept?.asset;
-  const bal = usePayerBalance(
-    hasKnownAsset ? chainNum : undefined,
-    hasKnownAsset ? accept?.asset : undefined,
-    hasKnownAsset ? asset?.symbol : undefined,
-    hasKnownAsset ? needed : undefined,
-  );
-  const insufficient = canPay && bal?.insufficient === true;
 
   if (!accept) return null;
 
@@ -113,8 +103,9 @@ export function X402Card({ challenge, dark }: {
     );
   };
 
-  // The primary action label/handler depends on capability + phase.
-  const payButtonLabel = (): string => {
+  // The primary action label depends on capability + phase + affordability
+  // (insufficient is resolved from the balance PaymentCard fetched).
+  const payButtonLabel = (insufficient: boolean): string => {
     if (phase === 'paid') return 'Paid';
     if (phase === 'paying') return 'Paying...';
     if (phase === 'failed') return 'Retry payment';
@@ -122,25 +113,17 @@ export function X402Card({ challenge, dark }: {
     return amountLabel ? `Pay ${amountLabel}` : 'Pay';
   };
 
-  return (
-    <Box radius={blockRadius} background={withAlpha(pal.primary, 0.08)} padding={12} margin={{ top: 8 }} gap={8} style={{ alignSelf: 'stretch' }}>
-      <Row align="center" justify="between" gap={8}>
-        <Row align="center" gap={10} style={{ flexShrink: 1 }}>
-          <TokenAvatar logoUrl={logoUrl} chainId={chainNum} bg={withAlpha(pal.primary, 0.08)} border={pal.border}/>
-          <Text weight="semibold" size="md" color={pal.text} style={{ flexShrink: 1 }} numberOfLines={2}>
-            {desc}
-          </Text>
-        </Row>
-        {/* x402 protocol badge — small primary-tinted pill, no shadow/gradient. */}
-        <Box radius={999} background={withAlpha(pal.primary, 0.16)} padding={{ x: 8, y: 3 }}>
-          <Text weight="semibold" size="3xs" color={pal.primary}>x402</Text>
-        </Box>
-      </Row>
-      {amountLabel ? (
-        <Text weight="semibold" size="5xl" color={pal.link}>
-          {amountLabel}
-        </Text>
-      ) : null}
+  // x402 protocol badge — small primary-tinted pill, no shadow/gradient.
+  const badge = (
+    <Box radius={999} background={withAlpha(pal.primary, 0.16)} padding={{ x: 8, y: 3 }}>
+      <Text weight="semibold" size="3xs" color={pal.primary}>x402</Text>
+    </Box>
+  );
+
+  // Recipient + network + tappable endpoint — the x402 card's distinguishing
+  // detail block (vs the payment-request card's single "To" profile link).
+  const detail = (
+    <>
       {accept.payTo ? (
         <Row align="center" gap={6}>
           <Text role="secondary" size="xs">To</Text>
@@ -153,13 +136,6 @@ export function X402Card({ challenge, dark }: {
         <Text role="secondary" size="xs">On</Text>
         <Text size="sm" color={pal.sub} numberOfLines={1}>{network}</Text>
       </Row>
-      {/* Balance line — always shown for a known asset; mirrors the in-chat
-          payment card (danger-tinted when below the requested amount). */}
-      {bal ? (
-        <Text size="xs" color={bal.insufficient ? pal.danger : pal.sub} numberOfLines={1}>
-          {bal.text}
-        </Text>
-      ) : null}
       {/* Endpoint URL — what you'd be paying for. Tappable. */}
       <Pressable onPress={openEndpoint}>
         <Row align="center" gap={6}>
@@ -169,40 +145,45 @@ export function X402Card({ challenge, dark }: {
           </Text>
         </Row>
       </Pressable>
-      {canPay ? (
-        <Button
-          variant="primary"
-          size="lg"
-          fullWidth
-          radius={24}
-          dark={dark}
-          disabled={phase === 'paying' || phase === 'paid' || insufficient}
-          onPress={confirmPay}
-          label={payButtonLabel()}
-          iconStart={phase === 'paid'
-            ? <Icon name="check" size={18} color={pal.bg}/>
-            : <Icon name="wallet" size={18} color={pal.bg}/>}
-          tintBg={pal.primary}
-          tintFg={pal.bg}
-          style={{ marginTop: 2 }}
-        />
-      ) : (
+    </>
+  );
+
+  return (
+    <PaymentCard
+      dark={dark}
+      logoUrl={logoUrl}
+      chainNum={chainNum}
+      description={desc}
+      badge={badge}
+      amountLabel={amountLabel}
+      detail={detail}
+      balance={{
+        show: hasKnownAsset,
+        chainId: chainNum,
+        token: accept.asset,
+        symbol: asset?.symbol,
+        needed,
+      }}
+      action={(bal) => {
+        const insufficient = canPay && bal?.insufficient === true;
+        if (canPay) {
+          return {
+            label: payButtonLabel(insufficient),
+            onPress: confirmPay,
+            disabled: phase === 'paying' || phase === 'paid' || insufficient,
+            icon: phase === 'paid'
+              ? <Icon name="check" size={18} color={pal.bg}/>
+              : <Icon name="wallet" size={18} color={pal.bg}/>,
+          };
+        }
         // Non-`exact` schemes / unsupported networks / unknown assets: fall back
         // to opening the endpoint in the browser to pay there.
-        <Button
-          variant="primary"
-          size="lg"
-          fullWidth
-          radius={24}
-          dark={dark}
-          onPress={openEndpoint}
-          label="Open endpoint"
-          iconStart={<Icon name="externalLink" size={18} color={pal.bg}/>}
-          tintBg={pal.primary}
-          tintFg={pal.bg}
-          style={{ marginTop: 2 }}
-        />
-      )}
-    </Box>
+        return {
+          label: 'Open endpoint',
+          onPress: openEndpoint,
+          icon: <Icon name="externalLink" size={18} color={pal.bg}/>,
+        };
+      }}
+    />
   );
 }
