@@ -32,6 +32,7 @@
 import { AppState } from 'react-native';
 import { setAppForeground, subscribeXmtpPush } from '../modules/metro-pill';
 import { isMetroControlBody } from './push';
+import { markBackgroundDelivered } from './pushRegister';
 import { getCachedXmtpClient, getOrCreateXmtpClient } from './xmtp.client';
 import { envelopeOfXmtpMessage } from './xmtp.messages';
 import { activeFeedLines, registerGlobalStreamTeardown } from './xmtp.state';
@@ -240,7 +241,14 @@ export async function ensureGlobalStream(): Promise<void> {
      *  real-time wake — it fires even when foregrounded / already viewing the
      *  conv (MetroFcmService emits before its card suppression), so it covers
      *  both a silently-dead stream and the live-but-missed case. */
-    if (!globalPushSub) globalPushSub = subscribeXmtpPush(() => onXmtpPush());
+    if (!globalPushSub) globalPushSub = subscribeXmtpPush((e) => {
+      /** If the push landed while the app wasn't foregrounded, the native FCM
+       *  service already posted a generic card for it (MetroFcmService skips its
+       *  card only when foregrounded). Record the message id so a subsequent
+       *  foreground resync doesn't ALSO post a rich local card for it. */
+      if (AppState.currentState !== 'active') markBackgroundDelivered(e?.messageId);
+      onXmtpPush();
+    });
     /** FOREGROUND FLAG: the app is foregrounded right now (the stream just
      *  started from a live mount), so tell native to skip its generic push card —
      *  the rich JS local notif (presentInboundNotification, fired from the

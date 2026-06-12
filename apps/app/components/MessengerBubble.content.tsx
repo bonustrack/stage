@@ -2,7 +2,7 @@
  *  attachments, body text / embeds, and the interactive question/poll/sig/tx
  *  cards + transcription line. Extracted to keep the row component under the cap. */
 
-import { Linking } from 'react-native';
+import { openInBubbleLink } from '../lib/safeOpenLink';
 
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
@@ -56,7 +56,7 @@ export function BubbleContent({
   const txReceipt = txReceiptOf(entry);
   const markdownProps = {
     markdownit: mdParser,
-    onLinkPress: (url: string): boolean => { void Linking.openURL(url); return false; },
+    onLinkPress: (url: string): boolean => openInBubbleLink(url),
     /** Discord-style: all messages render with the same typography regardless of sender. */
     style: markdownStyles(fg, dark, false),
   };

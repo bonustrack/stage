@@ -134,10 +134,42 @@ export async function unregisterPushFromDaemon(client: PushClient): Promise<void
   }
 }
 
+/** Message ids whose BACKGROUND push card the native FCM service already posted
+ *  (the push arrived while the app was not foregrounded — MetroFcmService posts
+ *  the generic card only when `app_foreground` is false). Tracked so a later
+ *  foreground resync can't ALSO post a rich local card for the same message,
+ *  double-notifying across the foreground/background handoff. Bounded so it
+ *  can't grow unbounded over a long session. */
+const bgDeliveredMsgIds = new Set<string>();
+const BG_DELIVERED_MAX = 200;
+
+/** Record that the native side delivered a background push card for this message
+ *  id. Called from the `onXmtpPush` subscription whenever a push lands while the
+ *  app is NOT foregrounded (i.e. the native generic card was shown). */
+export function markBackgroundDelivered(messageId: string | null | undefined): void {
+  if (!messageId) return;
+  bgDeliveredMsgIds.add(messageId);
+  if (bgDeliveredMsgIds.size > BG_DELIVERED_MAX) {
+    const oldest = bgDeliveredMsgIds.values().next().value;
+    if (oldest !== undefined) bgDeliveredMsgIds.delete(oldest);
+  }
+}
+
+/** True (and consumes the id) when a background push card was already delivered
+ *  for this message — so the foreground local notif must be suppressed. */
+function consumeBackgroundDelivered(messageId: string | undefined): boolean {
+  if (!messageId) return false;
+  return bgDeliveredMsgIds.delete(messageId);
+}
+
 /** Present a foreground local notification for an inbound XMTP message (option
  *  b). Called from the global message stream for messages that are NOT our own,
  *  NOT system/silent types, and NOT our own control DMs (the caller filters
  *  those). Posts on the 'xmtp' channel so it matches the daemon's FCM channel.
+ *
+ *  De-duped against the background FCM path: if the native service already
+ *  posted a background card for this message id (the push landed while
+ *  backgrounded), skip the foreground card so the handoff doesn't double-notify.
  *
  *  `convId` / `messageId` ride in `data` so a future notification-tap handler
  *  can deep-link into the conversation. Best-effort — never throws. */
@@ -148,6 +180,9 @@ export async function presentInboundNotification(args: {
   messageId?: string;
 }): Promise<void> {
   try {
+    // Background push already showed a card for this message — don't add a
+    // second one on foreground resync.
+    if (consumeBackgroundDelivered(args.messageId)) return;
     const ready = await ensureNotificationReady();
     if (!ready) return;
     await Notifications.scheduleNotificationAsync({
