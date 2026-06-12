@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "metro": {
+      "command": "bun",
+      "args": ["./metro-channel.ts"],
+      "env": {
+        "METRO_BASE_URL": "http://127.0.0.1:8420"
+      }
+    }
+  }
+}
