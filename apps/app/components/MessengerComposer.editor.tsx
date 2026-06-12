@@ -177,7 +177,11 @@ export function AttachMenu({
       horizontal
       showsHorizontalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
-      contentContainerStyle={{ gap: 16, paddingHorizontal: 6, paddingTop: 12, paddingBottom: 2 }}
+      /** flexGrow:0 + alignSelf:stretch pin the row to the parent column width so
+       *  the icons overflow and scroll; without them the horizontal ScrollView
+       *  grows to fit its content and never scrolls (the off-edge icons clip). */
+      style={{ flexGrow: 0, alignSelf: 'stretch' }}
+      contentContainerStyle={{ gap: 16, paddingHorizontal: 14, paddingTop: 12, paddingBottom: 2 }}
 >
       {actions.map(([icon, label, action]) => (
         <Col key={label} align="center" gap={6}>
