@@ -260,6 +260,11 @@ const config = {
     ],
     './plugins/withMetroPill',
     './plugins/withGradleMemory',
+    // Embed native debug symbols (SYMBOL_TABLE) in release AABs so Play Console
+    // crash reports show readable native stacks (we ship libnode.so + prover +
+    // worklets). Play extracts the embedded native-debug-symbols.zip on upload,
+    // zero pipeline change. Build-time only; effective on the next release AAB.
+    './plugins/withNativeSymbols',
     './plugins/withBouncyCastleDedup',
     // Embedded Node runtime (nodejs-mobile-react-native) that hosts the RAILGUN
     // engine + native Groth16 prover. Autolinking wires the module; this plugin
