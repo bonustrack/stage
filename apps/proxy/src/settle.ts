@@ -11,7 +11,14 @@
  *  We only forward the single `X-PAYMENT` header (plus our UA); no device headers
  *  leak upstream. The response body is trimmed to a small cap so a hostile/large
  *  upstream can't be used to exfiltrate or amplify. SSRF guards + manual redirect
- *  revalidation mirror fetchPage/fetchImage. */
+ *  revalidation mirror fetchPage/fetchImage.
+ *
+ *  SECURITY: the signed `X-PAYMENT` header is a bearer authorization for ONE
+ *  resource. A hostile/compromised endpoint could 30x-redirect to an attacker
+ *  origin to harvest that header and replay the authorization. So we send the
+ *  header on the FIRST hop only and on same-origin redirects; on any
+ *  cross-origin redirect we drop `X-PAYMENT` (the upstream still gets followed
+ *  for the body echo, but never re-presented the bearer auth). */
 
 import { assertPublicUrl, SsrfError } from './ssrf.ts';
 
@@ -67,21 +74,29 @@ async function readTrimmed(res: Response): Promise<string> {
  *  unsafe URL/redirect. Returns the upstream status + a trimmed body echo. */
 export async function settleX402(req: SettleRequest): Promise<SettleResult> {
   let current = assertPublicUrl(req.url).toString();
+  const initialOrigin = new URL(current).origin;
+  // Only present the bearer X-PAYMENT header to same-origin hosts. The first hop
+  // is the caller's target (same origin by definition); a cross-origin redirect
+  // drops it permanently for the rest of the chain.
+  let sendPaymentHeader = true;
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+    const headers: Record<string, string> = {
+      'User-Agent': UA,
+      Accept: 'application/json,text/html,*/*;q=0.5',
+    };
+    if (sendPaymentHeader) headers['X-PAYMENT'] = req.paymentHeader;
     const res = await fetch(current, {
       method: 'GET',
       redirect: 'manual',
       signal: AbortSignal.timeout(TIMEOUT_MS),
-      headers: {
-        'User-Agent': UA,
-        'X-PAYMENT': req.paymentHeader,
-        Accept: 'application/json,text/html,*/*;q=0.5',
-      },
+      headers,
     });
     if (res.status >= 300 && res.status < 400) {
       const loc = res.headers.get('location');
       if (!loc) return { status: res.status, ok: false };
       current = assertPublicUrl(new URL(loc, current).toString()).toString();
+      // Never replay the signed payment authorization to a different origin.
+      if (new URL(current).origin !== initialOrigin) sendPaymentHeader = false;
       continue;
     }
     const body = await readTrimmed(res);

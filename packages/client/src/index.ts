@@ -18,6 +18,7 @@ export * from './xmtp/codecs';
 export * from './xmtp/inboxCache';
 export * from './embed/detect';
 export * from './stamp/resolve';
+export * from './x402/challenge';
 
 export * from './api';
 

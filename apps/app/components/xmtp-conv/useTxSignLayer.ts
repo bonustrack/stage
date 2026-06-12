@@ -12,6 +12,7 @@ import {
   type SignatureRequestContent, type SignatureReferenceContent,
 } from '@stage-labs/client/xmtp/sign';
 import { sendCall } from '../../lib/tx';
+import { deriveConfirmSummary, confirmMessage } from '../../lib/txConfirm';
 import { flash } from '../../lib/toast';
 import { signTypedData, signMessage, getAccount } from 'wagmi/actions';
 import type { TypedDataDefinition } from 'viem';
@@ -93,22 +94,21 @@ export function useTxSignLayer(activeLine: string) {
     const call = wsc.calls?.[0];
     if (!call?.to) { flash('Malformed payment request'); return; }
     const chainId = chainIdToNumber(wsc.chainId);
-    /** ERC-20 requests carry `data` (encoded `transfer(...)`) with `to` = the
-     *  token contract and the real recipient in `metadata.toAddress`; native
-     *  requests carry only `value` (hex wei) with `to` = the recipient. Detect
-     *  ERC-20 by the presence of `data` so we forward the call verbatim instead
-     *  of rebuilding it as a native send. */
-    const wei = BigInt(call.value ?? '0x0');
-    /** Human display amount + recipient — prefer the metadata hints (the only
-     *  amount source for ERC-20, since `value` is 0), else decode native wei. */
-    const amount = call.metadata?.amount != null
-      ? String(call.metadata.amount)
-      : (Number(wei) / 1e18).toString();
-    const recipient = (call.metadata?.toAddress as string | undefined) ?? (call.to as string);
-    const currency = call.metadata?.currency ?? 'ETH';
     const chainName = VIEM_CHAINS[chainId]?.name ?? `chain ${chainId}`;
-    /** Minimal confirm before broadcast — this moves real funds (mainnet) so
-     *  show amount / recipient / network and require an explicit tap. */
+    const nativeSymbol = VIEM_CHAINS[chainId]?.nativeCurrency?.symbol ?? 'ETH';
+    /** SECURITY: derive the displayed recipient/amount/token from the ACTUAL
+     *  bytes that will be broadcast (`call.to` / `call.data` / `call.value`),
+     *  NOT from the peer-supplied `metadata` (which is unbound to the calldata
+     *  and trivially spoofable). For an ERC-20 this decodes
+     *  `transfer(address,uint256)` from `call.data`; for a native send it reads
+     *  `call.to` + `call.value`. An undecodable / unrecognised call yields an
+     *  unverified summary so the confirm sheet warns instead of lying. */
+    const summary = deriveConfirmSummary(
+      { to: call.to, data: call.data, value: call.value },
+      nativeSymbol,
+    );
+    /** This moves real funds, so confirm before broadcast; the message is built
+     *  from the verified summary, never the spoofable metadata hints. */
     const broadcast = (): void => {
     setPayingIds(prev => new Set(prev).add(requestId));
     void (async () => {
@@ -119,15 +119,17 @@ export function useTxSignLayer(activeLine: string) {
         const txHash = await sendCall({
           to: call.to as string, data: call.data, value: call.value, chainId,
         });
+        /** Receipt metadata is built from the VERIFIED summary (decoded from the
+         *  broadcast bytes), so the on-chain truth, not the request's hints, is
+         *  what the receipt card shows. */
         const ref: TransactionReferenceContent = {
           networkId: chainId,
           reference: txHash,
           metadata: {
             transactionType: 'transfer',
-            currency: call.metadata?.currency ?? 'ETH',
-            ...(call.metadata?.amount != null ? { amount: call.metadata.amount } : {}),
-            decimals: call.metadata?.decimals ?? 18,
-            toAddress: recipient,
+            currency: summary.symbol ?? nativeSymbol,
+            ...(summary.amount != null ? { amount: Number(summary.amount) } : {}),
+            toAddress: summary.recipient,
           },
         };
         await xmtpSendTxReference(activeLine, ref);
@@ -138,15 +140,16 @@ export function useTxSignLayer(activeLine: string) {
       }
     })();
     };
-    const amountLabel = call.metadata?.amount != null
-      ? `${call.metadata.amount} ${currency}`
-      : `${amount} ${currency}`;
     Alert.alert(
-      'Confirm payment',
-      `Send ${amountLabel} to ${recipient} on ${chainName}?`,
+      summary.verified ? 'Confirm payment' : 'Unverified transaction',
+      confirmMessage(summary, chainName),
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Pay', style: 'default', onPress: broadcast },
+        {
+          text: summary.verified ? 'Pay' : 'Continue anyway',
+          style: summary.verified ? 'default' : 'destructive',
+          onPress: broadcast,
+        },
       ],
     );
   }, [activeLine]);
