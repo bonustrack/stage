@@ -28,8 +28,8 @@ describe('validateName', () => {
 describe('normalizeName', () => {
   test('lowercases, trims, strips suffixes', () => {
     expect(normalizeName('  Alice ')).toBe('alice');
-    expect(normalizeName('bob.stage.box')).toBe('bob');
-    expect(normalizeName('carol.box')).toBe('carol');
+    expect(normalizeName('bob.stage.eth')).toBe('bob');
+    expect(normalizeName('carol.eth')).toBe('carol');
   });
 });
 
@@ -37,9 +37,9 @@ describe('claimMessage', () => {
   test('is deterministic + canonical (lowercased address, full name)', () => {
     const m = claimMessage('alice', '0xABCdef0000000000000000000000000000000001', 123);
     expect(m).toBe(
-      'Stage username claim\nname: alice.stage.box\naddress: 0xabcdef0000000000000000000000000000000001\nts: 123',
+      'Stage username claim\nname: alice.stage.eth\naddress: 0xabcdef0000000000000000000000000000000001\nts: 123',
     );
-    expect(fullName('alice')).toBe('alice.stage.box');
+    expect(fullName('alice')).toBe('alice.stage.eth');
   });
 });
 

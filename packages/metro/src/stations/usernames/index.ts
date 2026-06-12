@@ -1,4 +1,4 @@
-// Stage usernames gateway train (`<name>.stage.box`).
+// Stage usernames gateway train (`<name>.stage.eth`).
 //
 // A plain long-running HTTP server supervised by metro (NOT a chat station —
 // emits no inbound/outbound message events, only a startup log line). It serves
@@ -26,7 +26,7 @@
 //   METRO_USERNAMES_FILE       override the JSON store path.
 //
 // Tunnel: front this with a named cloudflared tunnel (blob.metro.box pattern) on
-// a stable HTTPS host, e.g. usernames.stage.box → :8457. That host is BOTH the
+// a stable HTTPS host, e.g. usernames.stage.eth → :8457. That host is BOTH the
 // resolver's gateway URL AND the app's registration base. Do NOT create the
 // tunnel here — Less/orchestrator wires it.
 

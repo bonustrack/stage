@@ -7,7 +7,7 @@
 // stations/xmtp/codecs.ts). Keep this in sync with the SDK module; both are pure
 // TS with no deps, guarded by a parity test in the client package.
 
-export const STAGE_PARENT = 'stage.box';
+export const STAGE_PARENT = 'stage.eth';
 export const NAME_MIN = 3;
 export const NAME_MAX = 32;
 
@@ -15,7 +15,7 @@ const LABEL_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export const RESERVED = new Set<string>([
   'stage', 'admin', 'root', 'www', 'mail', 'ftp', 'api', 'app', 'gateway',
-  'usernames', 'username', 'resolver', 'ens', 'box', 'metro', 'support',
+  'usernames', 'username', 'resolver', 'ens', 'eth', 'metro', 'support',
   'help', 'about', 'team', 'staff', 'official', 'system', 'null', 'undefined',
   'anonymous', 'me', 'you', 'wallet', 'settings', 'register', 'claim',
 ]);
@@ -25,7 +25,7 @@ export type NameError = 'length' | 'charset' | 'reserved';
 export function normalizeName(input: string): string {
   let n = input.trim().toLowerCase();
   if (n.endsWith(`.${STAGE_PARENT}`)) n = n.slice(0, -`.${STAGE_PARENT}`.length);
-  else if (n.endsWith('.box')) n = n.slice(0, -'.box'.length);
+  else if (n.endsWith('.eth')) n = n.slice(0, -'.eth'.length);
   return n;
 }
 

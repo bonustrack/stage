@@ -1,4 +1,4 @@
-/** Settings → Username - claim a `<name>.stage.box` username bound to the active
+/** Settings → Username - claim a `<name>.stage.eth` username bound to the active
  *  account. Availability checks debounce against the gateway; claiming signs the
  *  shared claim message (local key in-process, WalletConnect via the wallet) and
  *  registers it. Once claimed, the name shows everywhere the address is rendered
@@ -58,7 +58,7 @@ export function UsernameSettings(): React.ReactElement {
                 style={{ flex: 1, color: head, fontFamily: 'Calibre-Medium', padding: 0,
                   backgroundColor: 'transparent', minHeight: 0, borderWidth: 0 }}
 />
-              <Text size="lg" color={fg}>.stage.box</Text>
+              <Text size="lg" color={fg}>.stage.eth</Text>
             </Row>
           </Card>
         </Box>
@@ -80,8 +80,8 @@ export function UsernameSettings(): React.ReactElement {
         </Box>
 
         <Text size="sm" color={fg} style={{ paddingHorizontal: 18, paddingTop: 18, lineHeight: 20 }}>
-          Your username is an ENS name on stage.box, owned by your wallet. People
-          can message and find you by {c.input ? `${c.name || 'yourname'}.stage.box` : 'yourname.stage.box'} instead of your address.
+          Your username is an ENS name on stage.eth, owned by your wallet. People
+          can message and find you by {c.input ? `${c.name || 'yourname'}.stage.eth` : 'yourname.stage.eth'} instead of your address.
         </Text>
       </ScrollView>
     </Col>

@@ -12,15 +12,16 @@ interface ISupportsInterface {
 }
 
 /// @title OffchainResolver
-/// @notice ENSIP-10 wildcard + EIP-3668 (CCIP-Read) resolver for *.stage.box.
-///  Set this contract as the resolver of `stage.box` in the ENS/3DNS manager and
-///  EVERY subdomain (`alice.stage.box`, ...) resolves through the gateway. The
-///  apex `stage.box` website (served via DNS A/AAAA/CNAME records) is a SEPARATE
-///  plane and is unaffected: ENS resolver records and DNS records do not collide.
+/// @notice ENSIP-10 wildcard + EIP-3668 (CCIP-Read) resolver for *.stage.eth.
+///  Deployed on Ethereum mainnet. Set this contract as the resolver of
+///  `stage.eth` in the ENS manager (app.ens.domains) and EVERY subdomain
+///  (`alice.stage.eth`, ...) resolves through the gateway via wildcard
+///  resolution. The `stage.eth` parent's own records (addr/text) are unaffected
+///  unless explicitly set; only unset subnames fall through to the gateway.
 ///
 ///  Faithful port of ensdomains/offchain-resolver's OffchainResolver, trimmed to
 ///  what Stage needs. `url` is the gateway endpoint (the cloudflared tunnel host,
-///  e.g. https://usernames.stage.box/{sender}/{data}.json). `signers` are the
+///  e.g. https://usernames.stage.eth/{sender}/{data}.json). `signers` are the
 ///  authorised gateway signing addresses.
 contract OffchainResolver is IExtendedResolver, ISupportsInterface {
     string public url;

@@ -1,4 +1,4 @@
-/** useUsernameClaim — state + handlers for claiming a `<name>.stage.box`
+/** useUsernameClaim — state + handlers for claiming a `<name>.stage.eth`
  *  username. Mirrors the unified sign path used by useTxSignLayer: a local EOA
  *  signs in-process (no popup); a WalletConnect account delegates to the remote
  *  wallet via wagmi. Availability is debounced against the gateway; the claim
@@ -9,7 +9,7 @@ import { getAccount, signMessage } from 'wagmi/actions';
 import { wagmiConfig } from '../../lib/walletconnect';
 import { getActiveViemAccount } from '../../lib/accounts';
 import {
-  validateName, normalizeName, nameErrorMessage,
+  validateName, normalizeName, nameErrorMessage, fullName,
 } from '@stage-labs/client/identity/username';
 import {
   buildClaim, isNameAvailable, lookupAddress, submitClaim,
@@ -22,7 +22,7 @@ export interface UsernameClaim {
   input: string; setInput: (s: string) => void; name: string;
   /** Validation / availability state + a user-facing hint. */
   status: Avail; hint: string;
-  /** The username the active address already owns (full `<name>.stage.box`). */
+  /** The username the active address already owns (full `<name>.stage.eth`). */
   current: string | null;
   /** Claim in flight. */
   claiming: boolean;
@@ -47,7 +47,7 @@ export function useUsernameClaim(): UsernameClaim {
       const addr = getAccount(wagmiConfig).address ?? (await getActiveViemAccount())?.address;
       if (!addr) return;
       const rec = await lookupAddress(addr).catch(() => null);
-      if (alive && rec) setCurrent(`${rec.name}.stage.box`);
+      if (alive && rec) setCurrent(fullName(rec.name));
     })();
     return () => { alive = false; };
   }, []);
@@ -64,7 +64,7 @@ export function useUsernameClaim(): UsernameClaim {
         const free = await isNameAvailable(name);
         if (id !== seq.current) return;
         setStatus(free ? 'free' : 'taken');
-        setHint(free ? `${name}.stage.box is available` : 'Already taken');
+        setHint(free ? `${fullName(name)} is available` : 'Already taken');
       } catch {
         if (id !== seq.current) return;
         setStatus('idle'); setHint("Couldn't reach the gateway");
@@ -86,8 +86,8 @@ export function useUsernameClaim(): UsernameClaim {
         : await signMessage(wagmiConfig, { account: address, message });
       const res = await submitClaim(name, address, sig, ts);
       if (!res.ok) { setHint(res.error); setStatus(res.status === 409 ? 'taken' : 'invalid'); return false; }
-      setCurrent(`${res.record.name}.stage.box`);
-      setHint(`Claimed ${res.record.name}.stage.box`);
+      setCurrent(fullName(res.record.name));
+      setHint(`Claimed ${fullName(res.record.name)}`);
       setInput('');
       return true;
     } catch (e) {

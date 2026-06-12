@@ -1,4 +1,4 @@
-/** Settings → Username route — claim a `<name>.stage.box` username. */
+/** Settings → Username route — claim a `<name>.stage.eth` username. */
 
 import { UsernameSettings } from '../../components/settings/UsernameSettings';
 

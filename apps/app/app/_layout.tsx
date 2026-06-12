@@ -132,7 +132,7 @@ function RootLayoutInner(): React.ReactElement {
   /** Wire streamed group-metadata events into Query (invalidate convMeta) so the
    *  topnav / group screen refresh on rename/image/desc without a reload. */
   useEffect(() => { ensureMessagingStreamSync(); }, []);
-  /** Prefer claimed `<name>.stage.box` usernames over ENS in every name render. */
+  /** Prefer claimed `<name>.stage.eth` usernames over ENS in every name render. */
   useEffect(() => { initStageUsernames(); }, []);
 
   /** Calibre — matches sx-monorepo's typography. Two weights: medium (default) + semibold (headers/buttons).

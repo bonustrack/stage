@@ -1,22 +1,22 @@
 #!/usr/bin/env node
 /**
- * Deploy OffchainResolver for *.stage.box. READY, NOT RUN.
+ * Deploy OffchainResolver for *.stage.eth on ETHEREUM MAINNET. READY, NOT RUN.
  *
  * Compiles OffchainResolver.sol (+ SignatureVerifier.sol) with solc and deploys
- * via viem. Output: the resolver address Less sets on `stage.box` in the
- * ENS/3DNS manager.
+ * via viem to mainnet (chainId 1). Output: the resolver address Less sets as the
+ * resolver of `stage.eth` in the ENS manager (app.ens.domains). Standard ENS
+ * clients then resolve `<name>.stage.eth` via CCIP-Read off our gateway.
  *
  * Usage (from this dir):
  *   npm i solc viem            # one-off
- *   DEPLOYER_KEY=0x... \
- *   GATEWAY_URL=https://usernames.stage.box/{sender}/{data}.json \
+ *   DEPLOYER_KEY=0x...         # funded mainnet deployer (needs gas) \
+ *   GATEWAY_URL=https://usernames.stage.eth/{sender}/{data}.json \
  *   SIGNER_ADDRESS=0x...       # = address of METRO_USERNAMES_SIGNER_KEY \
- *   RPC_URL=https://mainnet.optimism.io   # 3DNS resolver lives on Optimism; \
- *                                          # use the chain stage.box resolves on \
+ *   RPC_URL=https://eth.llamarpc.com   # any Ethereum mainnet RPC \
  *   node deploy.mjs
  *
  * After deploy:
- *   1. Set the printed address as the resolver of stage.box (ENS/3DNS manager).
+ *   1. Set the printed address as the resolver of stage.eth (app.ens.domains).
  *   2. Set METRO_USERNAMES_RESOLVER + METRO_USERNAMES_SIGNER_KEY in the gateway env.
  *   3. Point the cloudflared tunnel host at the gateway and confirm GATEWAY_URL.
  */
@@ -26,6 +26,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createWalletClient, createPublicClient, http } from 'viem';
+import { mainnet } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -61,14 +62,14 @@ const bytecode = `0x${c.evm.bytecode.object}`;
 
 const account = privateKeyToAccount(DEPLOYER_KEY);
 const transport = http(RPC_URL);
-const wallet = createWalletClient({ account, transport });
-const pub = createPublicClient({ transport });
+const wallet = createWalletClient({ account, transport, chain: mainnet });
+const pub = createPublicClient({ transport, chain: mainnet });
 
-console.log('Deploying OffchainResolver from', account.address);
+console.log('Deploying OffchainResolver to Ethereum mainnet from', account.address);
 const hash = await wallet.deployContract({
-  abi, bytecode, args: [GATEWAY_URL, [SIGNER_ADDRESS]], chain: null,
+  abi, bytecode, args: [GATEWAY_URL, [SIGNER_ADDRESS]], chain: mainnet,
 });
 console.log('tx', hash);
 const receipt = await pub.waitForTransactionReceipt({ hash });
 console.log('\nOffchainResolver deployed at:', receipt.contractAddress);
-console.log('→ set this as the resolver of stage.box in the ENS/3DNS manager.');
+console.log('→ set this as the resolver of stage.eth in the ENS manager (app.ens.domains).');

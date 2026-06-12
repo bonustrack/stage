@@ -1,4 +1,4 @@
-/** Shared spec for Stage offchain usernames (`<name>.stage.box`).
+/** Shared spec for Stage offchain usernames (`<name>.stage.eth`).
  *
  *  This module is the SINGLE SOURCE OF TRUTH for the username rules and the
  *  claim-signature message, imported by BOTH the gateway train (server-side
@@ -6,16 +6,16 @@
  *  pre-check + claim signing). Keeping it here means the two sides can never
  *  drift on what a valid name is or what the user actually signs.
  *
- *  Names live DIRECTLY under stage.box (e.g. `alice.stage.box`), resolved by a
- *  single ENSIP-10 wildcard offchain resolver on `stage.box`. There is no
- *  `username.` middle label.
+ *  Names live DIRECTLY under stage.eth (e.g. `alice.stage.eth`), resolved by a
+ *  single ENSIP-10 wildcard offchain resolver set on `stage.eth` (Ethereum
+ *  mainnet). There is no `username.` middle label.
  *
  *  Pure TypeScript, no deps — safe to import anywhere (RN, Node, Bun, browser). */
 
 /** The parent name every username hangs off. */
-export const STAGE_PARENT = 'stage.box';
+export const STAGE_PARENT = 'stage.eth';
 
-/** Min / max label length (the `<name>` part, excluding `.stage.box`). */
+/** Min / max label length (the `<name>` part, excluding `.stage.eth`). */
 export const NAME_MIN = 3;
 export const NAME_MAX = 32;
 
@@ -27,19 +27,19 @@ const LABEL_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
  *  routes). Lower-case. Kept deliberately small + obvious; extend as needed. */
 export const RESERVED = new Set<string>([
   'stage', 'admin', 'root', 'www', 'mail', 'ftp', 'api', 'app', 'gateway',
-  'usernames', 'username', 'resolver', 'ens', 'box', 'metro', 'support',
+  'usernames', 'username', 'resolver', 'ens', 'eth', 'metro', 'support',
   'help', 'about', 'team', 'staff', 'official', 'system', 'null', 'undefined',
   'anonymous', 'me', 'you', 'wallet', 'settings', 'register', 'claim',
 ]);
 
 export type NameError = 'length' | 'charset' | 'reserved';
 
-/** Normalise a user-typed name: trim, lower-case, drop a trailing `.stage.box`
- *  or `.box` if the user pasted the full domain. Does NOT validate. */
+/** Normalise a user-typed name: trim, lower-case, drop a trailing `.stage.eth`
+ *  or `.eth` if the user pasted the full domain. Does NOT validate. */
 export function normalizeName(input: string): string {
   let n = input.trim().toLowerCase();
   if (n.endsWith(`.${STAGE_PARENT}`)) n = n.slice(0, -`.${STAGE_PARENT}`.length);
-  else if (n.endsWith('.box')) n = n.slice(0, -'.box'.length);
+  else if (n.endsWith('.eth')) n = n.slice(0, -'.eth'.length);
   return n;
 }
 
@@ -82,7 +82,7 @@ export function claimMessage(name: string, address: string, ts: number): string 
 
 /** A stored username record (gateway JSON store + app cache). */
 export interface UsernameRecord {
-  /** The label, e.g. `alice` (NOT the full `.stage.box`). */
+  /** The label, e.g. `alice` (NOT the full `.stage.eth`). */
   name: string;
   /** The bound Ethereum address, lower-cased, checksummed-agnostic. */
   address: string;

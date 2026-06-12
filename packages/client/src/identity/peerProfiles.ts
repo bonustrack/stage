@@ -27,7 +27,7 @@ const pending = new Set<string>();
 const listeners = new Set<() => void>();
 
 /** Optional Stage-username gateway base URL. When set, batches also reverse-look
- *  up each address's claimed `<name>.stage.box` and PREFER it over the ENS name
+ *  up each address's claimed `<name>.stage.eth` and PREFER it over the ENS name
  *  from stamp.fyi. Hosts wire this once at boot via {@link configureStageUsernames};
  *  unset ⇒ behaviour is byte-identical to ENS-only resolution. */
 let stageGatewayUrl: string | undefined;
@@ -72,7 +72,7 @@ async function lookupNamesChunk(addrs: string[]): Promise<Record<string, string>
 }
 
 /** Reverse-lookup each address's claimed Stage username (if any) against the
- *  configured gateway. Returns a lower-cased `{ address → "<name>.stage.box" }`
+ *  configured gateway. Returns a lower-cased `{ address → "<name>.stage.eth" }`
  *  map; absent ⇒ no claim (or no gateway / request failed). Never throws. */
 async function resolveStageNames(addrs: string[]): Promise<Record<string, string>> {
   if (!stageGatewayUrl) return {};
@@ -98,7 +98,7 @@ async function fetchBatch(addrs: string[]): Promise<void> {
         continue;
       }
       /** Stage usernames take precedence over ENS: if an address has claimed a
-       *  `<name>.stage.box`, show that instead of the stamp/ENS name. One reverse
+       *  `<name>.stage.eth`, show that instead of the stamp/ENS name. One reverse
        *  lookup per address, only when a gateway is configured; failures fall
        *  through to the ENS name. */
       const stage = await resolveStageNames(chunk);

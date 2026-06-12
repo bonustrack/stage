@@ -3,7 +3,7 @@
  *  so both web + mobile share it.
  *
  *  The gateway base URL is configurable. In production it is the cloudflared
- *  tunnel host that fronts the gateway train (e.g. https://usernames.stage.box);
+ *  tunnel host that fronts the gateway train (e.g. https://usernames.stage.eth);
  *  callers pass it in (the app reads it from config). All endpoints are keyless
  *  and CORS-open; the only auth is the wallet signature inside the claim body.
  *

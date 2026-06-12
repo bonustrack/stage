@@ -6,7 +6,7 @@
 // IResolverService.resolve(bytes dnsName, bytes encodedResolverCall).
 //
 // This module: decodes the outer call → (dnsName, innerCall); decodes the
-// DNS-encoded name → label (strip `.stage.box`); decodes the inner ENS resolver
+// DNS-encoded name → label (strip `.stage.eth`); decodes the inner ENS resolver
 // call (addr / addr(coin) / text(avatar)); looks up the record, ABI-encodes the
 // answer; and signs it per the offchain-resolver scheme so the contract's
 // callback verifies the gateway signer.
@@ -53,8 +53,8 @@ function decodeDnsName(dns: Hex): string {
   return labels.join('.');
 }
 
-/** Extract the label (everything before `.stage.box`). Returns '' if the name
- *  is the apex or not under stage.box. */
+/** Extract the label (everything before `.stage.eth`). Returns '' if the name
+ *  is the apex or not under stage.eth. */
 function labelOf(dotted: string): string {
   const suffix = `.${STAGE_PARENT}`;
   return dotted.endsWith(suffix) ? dotted.slice(0, -suffix.length) : '';

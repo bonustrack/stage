@@ -1,4 +1,4 @@
-/** App-side glue for Stage usernames (`<name>.stage.box`).
+/** App-side glue for Stage usernames (`<name>.stage.eth`).
  *
  *  Wraps the framework-agnostic SDK client (@stage-labs/client/identity/...)
  *  with the app's gateway URL + boot wiring + a tiny "my username" cache. The
@@ -15,9 +15,9 @@ import { claimMessage, type UsernameRecord } from '@stage-labs/client/identity/u
 /** Cloudflared tunnel host for the usernames train. Override via
  *  EXPO_PUBLIC_STAGE_USERNAMES_URL for staging. */
 export const STAGE_USERNAMES_URL =
-  process.env.EXPO_PUBLIC_STAGE_USERNAMES_URL ?? 'https://usernames.stage.box';
+  process.env.EXPO_PUBLIC_STAGE_USERNAMES_URL ?? 'https://usernames.stage.eth';
 
-/** Wire peer-profile resolution to prefer claimed `<name>.stage.box` names over
+/** Wire peer-profile resolution to prefer claimed `<name>.stage.eth` names over
  *  ENS. Call once at boot. */
 export function initStageUsernames(): void {
   configureStageUsernames(STAGE_USERNAMES_URL);
