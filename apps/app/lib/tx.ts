@@ -13,12 +13,19 @@
 
 import { getAccount, sendTransaction, writeContract, switchChain } from 'wagmi/actions';
 import {
-  isAddress, parseUnits, erc20Abi, encodeFunctionData,
+  isAddress, erc20Abi, encodeFunctionData,
   createWalletClient, http, type Hex,
 } from 'viem';
 import { wagmiConfig } from './walletconnect';
 import { getActiveViemAccount } from './accounts';
 import { VIEM_CHAINS } from '../components/tabs/WalletScreen.assets';
+import { parseAmount } from './txAmount';
+
+/** The per-chain RPC the rest of the wallet uses (balances multicall, on-chain
+ *  reads). viem's stock chain definitions point `rpcUrls.default` at flaky
+ *  public endpoints, so the in-app signing client must NOT use a bare `http()`
+ *  default; route through brovider's multichain RPC keyed by chainId instead. */
+const rpcTransport = (chainId: number) => http('https://rpc.brovider.xyz/' + chainId);
 
 /** A token to transfer. Omit (or pass `undefined`) to send the chain's native
  *  asset (ETH on mainnet). `decimals` defaults to 18 when not supplied. */
@@ -47,8 +54,9 @@ export async function sendNativeOrToken(params: SendParams): Promise<Hex> {
   const { to, amount, token, chainId = 1 } = params;
 
   if (!isAddress(to)) throw new Error('Invalid recipient address');
-  const n = Number(amount);
-  if (!isFinite(n) || n <= 0) throw new Error('Invalid amount');
+  /** Validate against the decimal-string form `parseUnits` actually consumes,
+   *  so the guard and the signed value can never disagree (BUG3). */
+  const value = parseAmount(amount, token ? token.decimals ?? 18 : 18);
 
   /** Prefer the app's OWN in-app wallet: when the active account is a local EOA
    *  (generated/imported/migrated) we sign + broadcast through a viem wallet
@@ -60,17 +68,20 @@ export async function sendNativeOrToken(params: SendParams): Promise<Hex> {
   if (local) {
     const chain = VIEM_CHAINS[chainId];
     if (!chain) throw new Error(`Unsupported chain ${chainId}`);
-    const client = createWalletClient({ account: local, chain, transport: http() });
+    /** Build the signing client with the same per-chain RPC the rest of the app
+     *  uses (brovider), and pin the tx to `chain` so it targets the right
+     *  network — matching the WalletConnect branch's chain handling (BUG4). */
+    const client = createWalletClient({ account: local, chain, transport: rpcTransport(chainId) });
     if (token) {
-      const value = parseUnits(amount, token.decimals ?? 18);
       return client.sendTransaction({
+        chain,
         to: token.address,
         data: encodeFunctionData({
           abi: erc20Abi, functionName: 'transfer', args: [to as Hex, value],
         }),
       });
     }
-    return client.sendTransaction({ to: to as Hex, value: parseUnits(amount, 18) });
+    return client.sendTransaction({ chain, to: to as Hex, value });
   }
 
   const account = getAccount(wagmiConfig);
@@ -83,7 +94,6 @@ export async function sendNativeOrToken(params: SendParams): Promise<Hex> {
   }
 
   if (token) {
-    const value = parseUnits(amount, token.decimals ?? 18);
     return writeContract(wagmiConfig, {
       chainId,
       address: token.address,
@@ -93,7 +103,6 @@ export async function sendNativeOrToken(params: SendParams): Promise<Hex> {
     });
   }
 
-  const value = parseUnits(amount, 18);
   return sendTransaction(wagmiConfig, { chainId, to: to as Hex, value });
 }
 
@@ -121,9 +130,9 @@ export async function sendCall(call: RawCall): Promise<Hex> {
   if (local) {
     const chain = VIEM_CHAINS[chainId];
     if (!chain) throw new Error(`Unsupported chain ${chainId}`);
-    const client = createWalletClient({ account: local, chain, transport: http() });
+    const client = createWalletClient({ account: local, chain, transport: rpcTransport(chainId) });
     return client.sendTransaction({
-      to: to as Hex, value, ...(data ? { data: data as Hex } : {}),
+      chain, to: to as Hex, value, ...(data ? { data: data as Hex } : {}),
     });
   }
 
