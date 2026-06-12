@@ -57,10 +57,11 @@ export function X402Card({ challenge, dark }: {
   const canPay = !!accept && x402CanPayInApp(accept);
   const asset = accept ? x402KnownAsset(accept) : undefined;
   const needed = accept ? x402AmountNumber(accept) : undefined;
-  // We show the balance whenever the asset (symbol) + chain are known — mirrors
-  // the in-chat payment card (TxRequestCard) so the user always sees what they
-  // hold before paying. PaymentCard owns the actual usePayerBalance fetch.
-  const hasKnownAsset = !!asset && !!accept?.asset;
+  // Show the balance whenever we have an asset reference + chain, even when the
+  // token/chain isn't in the registry — usePayerBalance reads decimals/symbol
+  // on-chain for unknowns. Mirrors the in-chat payment card so the user always
+  // sees what they hold. PaymentCard owns the actual usePayerBalance fetch.
+  const hasKnownAsset = !!accept?.asset && chainNum > 0;
 
   if (!accept) return null;
 

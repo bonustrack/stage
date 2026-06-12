@@ -140,8 +140,10 @@ export function TxRequestCard({ req, dark, paying, onPay }: {
    *  logo so the URL 404s and TokenAvatar falls back to the border circle. */
   const chainNum = chainIdToNumber(req.chainId ?? '0x1');
   const logoUrl = stampTokenUrl(chainNum, tokenAddr ?? NATIVE_TOKEN_SENTINEL, 36);
-  // Balance is meaningful only when we know the currency symbol to look up.
-  const showBalance = !!call?.metadata?.currency || !!eth;
+  // Show the balance whenever there's something to read: a known currency, a
+  // native ETH transfer, or an ERC-20 token contract (even an unknown one —
+  // usePayerBalance resolves symbol/decimals on-chain for unregistered tokens).
+  const showBalance = !!call?.metadata?.currency || !!eth || !!tokenAddr;
   return (
     <PaymentCard
       dark={dark}

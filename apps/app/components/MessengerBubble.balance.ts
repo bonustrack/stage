@@ -1,12 +1,23 @@
 /** usePayerBalance — fetch the ACTIVE account's balance of the asset a payment
- *  request is asking for, on the request's chain. Native ETH via `getBalance`,
- *  ERC-20 via `balanceOf`. One-shot on mount (no polling). Reuses the same viem
- *  plumbing as the Wallet tab (VIEM_CHAINS + brovider RPC). */
+ *  request is asking for, on the request's chain. Native via `getBalance`,
+ *  ERC-20 via `balanceOf`. One-shot on mount (no polling).
+ *
+ *  Resolution order:
+ *   1. Registry-known asset on a known chain (VIEM_CHAINS + ASSETS) — uses the
+ *      curated decimals/symbol and the wallet's brovider RPC.
+ *   2. Generic on-chain fallback for UNKNOWN tokens/chains: a viem public client
+ *      is built for any chainId (brovider RPC by chainId) and decimals/symbol are
+ *      read straight off the ERC-20 (native falls back to ETH). This is what lets
+ *      the card show "Balance: …" even when the asset/chain isn't in the registry.
+ *
+ *  Per-(chainId, token, account) cached so re-renders don't refetch. Any RPC /
+ *  network error degrades gracefully (the row falls back to a subtle dash via the
+ *  card) — it never throws. */
 import { useEffect, useState } from 'react';
-import { createPublicClient, http, formatUnits, isAddress, erc20Abi, type Hex } from 'viem';
+import { createPublicClient, http, formatUnits, isAddress, erc20Abi, type Hex, type Chain } from 'viem';
 
 import { getActiveAccount } from '../lib/accounts';
-import { ASSETS, VIEM_CHAINS } from '../components/tabs/WalletScreen.assets';
+import { ASSETS, VIEM_CHAINS, NATIVE_TOKEN_SENTINEL } from '../components/tabs/WalletScreen.assets';
 
 export interface PayerBalance {
   /** Decimal-string balance (`formatUnits` output), display-trimmed. */
@@ -31,8 +42,76 @@ function trim(value: string): string {
   return cut ? `${whole}.${cut}` : whole;
 }
 
+/** True for the native-coin sentinel / zero address (treated as native, not ERC-20). */
+function isNativeToken(token?: string): boolean {
+  if (!token) return true;
+  const t = token.toLowerCase();
+  return t === NATIVE_TOKEN_SENTINEL.toLowerCase()
+    || t === '0x0000000000000000000000000000000000000000'
+    || t === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
+}
+
+/** Build (or reuse from the registry) a viem chain for ANY chainId. Unknown
+ *  chains get a minimal generic definition pointed at brovider's per-chain RPC,
+ *  which fronts a public RPC for most EVM networks. */
+function chainFor(cid: number): Chain {
+  const known = VIEM_CHAINS[cid];
+  if (known) return known;
+  const rpc = 'https://rpc.brovider.xyz/' + cid;
+  return {
+    id: cid,
+    name: 'Chain ' + cid,
+    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+    rpcUrls: { default: { http: [rpc] }, public: { http: [rpc] } },
+  } as Chain;
+}
+
+/** Resolved on-chain asset metadata (decimals + symbol) for an unknown ERC-20. */
+interface OnchainMeta {
+  raw: bigint;
+  decimals: number;
+  symbol: string;
+}
+
+/** Cache keyed by chainId:token:account so re-renders / re-mounts don't refetch.
+ *  Stores the in-flight promise so concurrent cards dedupe too. */
+const cache = new Map<string, Promise<OnchainMeta | null>>();
+
+const minimalErc20Abi = [
+  ...erc20Abi.filter(x => x.type === 'function' && (x.name === 'balanceOf' || x.name === 'decimals' || x.name === 'symbol')),
+] as const;
+
+/** One on-chain read of (balance, decimals, symbol) for a token (or native). */
+async function readOnchain(
+  cid: number, token: string | undefined, addr: Hex,
+): Promise<OnchainMeta | null> {
+  const chain = chainFor(cid);
+  const pub = createPublicClient({ chain, transport: http(chain.rpcUrls.default.http[0]) });
+
+  if (isNativeToken(token)) {
+    const raw = await pub.getBalance({ address: addr });
+    return { raw, decimals: chain.nativeCurrency.decimals, symbol: chain.nativeCurrency.symbol };
+  }
+
+  if (!isAddress(token!)) return null;
+  const t = token as Hex;
+  // Balance is required; decimals/symbol are best-effort (some tokens omit them).
+  const raw = await pub.readContract({
+    address: t, abi: erc20Abi, functionName: 'balanceOf', args: [addr],
+  }) as bigint;
+  let decimals = 18;
+  let symbol = 'tokens';
+  try {
+    decimals = Number(await pub.readContract({ address: t, abi: minimalErc20Abi, functionName: 'decimals' }));
+  } catch { /* keep default 18 */ }
+  try {
+    symbol = String(await pub.readContract({ address: t, abi: minimalErc20Abi, functionName: 'symbol' }));
+  } catch { /* keep default 'tokens' */ }
+  return { raw, decimals, symbol };
+}
+
 /** @param chainId   request chain (hex/dec string or number)
- *  @param token     ERC-20 contract address, or null/undefined for native ETH
+ *  @param token     ERC-20 contract address, or null/undefined/sentinel for native
  *  @param symbol    display symbol from the request (e.g. "USDC", "STAGE")
  *  @param needed    requested amount in whole units, used for the insufficient flag */
 export function usePayerBalance(
@@ -48,34 +127,45 @@ export function usePayerBalance(
     void (async () => {
       try {
         const cid = parseChainId(chainId);
-        const chain = VIEM_CHAINS[cid];
-        if (!chain) return;
         const acct = await getActiveAccount();
         const addr = acct?.address;
         if (!addr || !isAddress(addr)) return;
 
-        const isErc20 = !!token && isAddress(token);
-        // Decimals: trust the asset registry for the (chain, symbol) pair, else 18.
+        const native = isNativeToken(token);
+        // Prefer registry metadata (curated decimals/symbol) when the (chain,
+        // symbol) pair is known — keeps display consistent with the wallet tab.
         const known = ASSETS.find(a => a.chainId === cid
           && a.symbol.toLowerCase() === (symbol ?? '').toLowerCase());
-        const decimals = known?.decimals ?? (isErc20 ? 18 : 18);
 
-        const pub = createPublicClient({ chain, transport: http('https://rpc.brovider.xyz/' + cid) });
-        const raw = isErc20
-          ? await pub.readContract({
-              address: token as Hex, abi: erc20Abi, functionName: 'balanceOf', args: [addr as Hex],
-            }) as bigint
-          : await pub.getBalance({ address: addr as Hex });
-
+        const key = `${cid}:${(token ?? 'native').toLowerCase()}:${addr.toLowerCase()}`;
+        let meta = cache.get(key);
+        if (!meta) {
+          meta = readOnchain(cid, token, addr as Hex).catch(() => null);
+          cache.set(key, meta);
+        }
+        const onchain = await meta;
         if (cancelled) return;
-        const human = formatUnits(raw, decimals);
-        const sym = symbol ?? (isErc20 ? 'tokens' : 'ETH');
+        if (!onchain) {
+          // Reading failed (unreachable RPC / unsupported chain) — drop the
+          // cache entry so a later mount can retry, and leave the row hidden.
+          cache.delete(key);
+          return;
+        }
+
+        // Decimals/symbol: prefer the registry, then on-chain reads, then the
+        // request-provided symbol, then sensible defaults.
+        const decimals = known?.decimals ?? onchain.decimals;
+        const human = formatUnits(onchain.raw, decimals);
+        const sym = known?.symbol
+          ?? symbol
+          ?? (native ? onchain.symbol : (onchain.symbol === 'tokens' ? 'tokens' : onchain.symbol));
+
         setBal({
           text: `Balance: ${trim(human)} ${sym}`,
           insufficient: needed != null && Number(human) < needed,
         });
       } catch {
-        // Network/RPC errors leave the line hidden — it's a nice-to-have.
+        // Defensive: never let the balance hook throw into the card.
       }
     })();
     return () => { cancelled = true; };
