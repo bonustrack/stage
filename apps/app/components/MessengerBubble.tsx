@@ -253,7 +253,7 @@ const DATA_KEYS = [
   'entry', 'dark', 'unread', 'pending', 'replyTarget', 'replyPreview',
   'reactions', 'pendingReactions', 'pendingRemovals', 'ownEmojis',
   'votes', 'ownVotes', 'openAnswers', 'signing', 'paying', 'selectable',
-  'highlight', 'senderEthAddress', 'myUri', 'transcript',
+  'highlight', 'senderEthAddress', 'myUri', 'transcript', 'consentAllowed',
 ] as const satisfies readonly (keyof MessengerBubbleProps)[];
 
 function bubblePropsEqual(prev: MessengerBubbleProps, next: MessengerBubbleProps): boolean {
