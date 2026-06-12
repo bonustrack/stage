@@ -11,6 +11,7 @@ import { YouTubeEmbed, LocationEmbed } from './MediaEmbeds';
 import { ChannelCard } from './ChannelCard';
 import { GitHubLinkCard } from './GitHubLinkCard';
 import { PreviewLinkCard } from './PreviewLinkCard';
+import { LinkPreviewCard } from './LinkPreviewCard';
 import { cardLinksOf } from '../lib/cardLinks';
 import { Box, Row } from './layout';
 import type { HistoryEntry } from '../lib/types';
@@ -138,7 +139,8 @@ export function BubbleContent({
           : card.kind === 'youtube' ? <YouTubeEmbed videoId={card.videoId} dark={dark} />
           : card.kind === 'map' ? <LocationEmbed lat={card.lat} lng={card.lng} sourceUrl={card.sourceUrl} dark={dark} />
           : card.kind === 'github' ? <GitHubLinkCard url={card.url} dark={dark} />
-          : <PreviewLinkCard url={card.url} dark={dark} />;
+          : card.kind === 'preview' ? <PreviewLinkCard url={card.url} dark={dark} />
+          : <LinkPreviewCard url={card.url} dark={dark} />;
         return (
           <Box key={`${card.kind}:${card.url}`} margin={{ top: 6 }} style={{ alignSelf: 'stretch' }}>
             {node}
