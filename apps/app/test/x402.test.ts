@@ -13,6 +13,11 @@ import {
   x402AssetForAvatar,
 } from '../lib/x402';
 import type { X402Accept } from '../lib/useLinkPreview';
+import {
+  NETWORK_LOGO,
+  BASE_NETWORK_LOGO,
+  MAINNET_NETWORK_LOGO,
+} from '@stage-labs/client/wallet/assets';
 
 const USDC_BASE = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
 
@@ -65,6 +70,17 @@ describe('network helpers', () => {
     expect(x402ChainNumber('eip155:10')).toBe(10);
     expect(x402ChainNumber('eip155:777')).toBe(777);
     expect(x402ChainNumber('weird')).toBe(1);
+  });
+  test('network badge logo: Base + Base Sepolia use the Base mark, not mainnet', () => {
+    // The x402 card overlays NETWORK_LOGO[chainId] on the token avatar. Base
+    // (8453) and Base Sepolia (84532, where the x402.org/protected demo runs)
+    // must both resolve to the Base logo - regression for the demo showing the
+    // Ethereum mainnet badge when the challenge network was Base Sepolia.
+    expect(NETWORK_LOGO[x402ChainNumber('base')]).toBe(BASE_NETWORK_LOGO);
+    expect(NETWORK_LOGO[x402ChainNumber('eip155:8453')]).toBe(BASE_NETWORK_LOGO);
+    expect(NETWORK_LOGO[x402ChainNumber('base-sepolia')]).toBe(BASE_NETWORK_LOGO);
+    expect(NETWORK_LOGO[x402ChainNumber('eip155:84532')]).toBe(BASE_NETWORK_LOGO);
+    expect(BASE_NETWORK_LOGO).not.toBe(MAINNET_NETWORK_LOGO);
   });
   test('asset-for-avatar falls back to zero sentinel', () => {
     expect(x402AssetForAvatar(accept())).toMatch(/^0x0+$/);

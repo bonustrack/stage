@@ -60,6 +60,7 @@ export const BASE_NETWORK_LOGO = 'https://ipfs.snapshot.box/ipfs/bafkreid4ek4gnj
 export const NETWORK_LOGO: Record<number, string> = {
   1: MAINNET_NETWORK_LOGO,
   8453: BASE_NETWORK_LOGO,
+  84532: BASE_NETWORK_LOGO, // Base Sepolia reuses the Base mark (x402 demo runs here)
   11155111: SEPOLIA_NETWORK_LOGO,
 };
 
