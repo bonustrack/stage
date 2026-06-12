@@ -3,7 +3,7 @@ import { Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { Pressable } from '@metro-labs/kit/pressable';
-import { Image } from '@metro-labs/kit/image';
+import { Avatar } from './Avatar';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';
@@ -181,9 +181,7 @@ function TxToRow({ address }: { address: string }): React.ReactElement {
       onPress={() => router.push({ pathname: '/user/[address]', params: { address } })}>
       <Row align="center" gap={6}>
         <Text role="secondary" size="xs">To</Text>
-        <Image
-          src={`https://stamp.fyi/avatar/eth:${address}?s=32`}
-          size={16} radius="full"/>
+        <Avatar address={address} size={16} />
         <Text role="link" weight="semibold" size="lg" suppressHighlighting>
           {display}
         </Text>

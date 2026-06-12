@@ -72,14 +72,17 @@ export function useComposerActions(a: ComposerActionsArgs) {
     await upload(asset.uri, asset.mimeType ?? 'application/octet-stream', asset.name);
   };
 
-  /** Share current location as a Google Maps URL text message. */
+  /** Share current location as an OpenStreetMap URL text message. Privacy-minded
+   *  default: OSM doesn't profile the recipient the way a maps.google.com link
+   *  does on tap / link-preview probe. */
   const pickLocation = async (): Promise<void> => {
     a.setErr(null);
     const perm = await Location.requestForegroundPermissionsAsync();
     if (!perm.granted) { Alert.alert('Location permission denied'); return; }
     try {
       const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      const url = `https://maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`;
+      const { latitude: lat, longitude: lng } = pos.coords;
+      const url = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=16/${lat}/${lng}`;
       await xmtpSendText(a.xmtpLine, `📍 ${url}`);
       setLastAttachment('Location');
     } catch (e) { a.setErr((e as Error).message); }
