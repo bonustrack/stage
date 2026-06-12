@@ -9,14 +9,14 @@ import { Icon } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';
 import { Row, Col, Box } from './layout';
 import { shortAddress } from '../modules/messaging';
-import { fmtSigValue, explorerUrl, ethFromWeiHex } from './MessengerBubble.helpers';
+import { fmtSigValue, ethFromWeiHex } from './MessengerBubble.helpers';
 import type { SigRequest, SigReference, TxRequest, TxReceipt } from './MessengerBubble.helpers';
 import { usePalette, useBlockRadius } from '../lib/theme';
 import { usePeerProfiles, getPeerName } from '../lib/peerProfiles';
 import { PaymentCard } from './PaymentCard';
 import { NATIVE_TOKEN_SENTINEL } from '@stage-labs/client/wallet/assets';
 import { stampTokenUrl } from '@metro-labs/kit/avatar';
-import { chainIdToNumber } from '@stage-labs/client/xmtp/tx';
+import { chainIdToNumber, explorerTxUrl } from '@stage-labs/client/xmtp/tx';
 import { isCardActionBlocked } from '../lib/consentGate';
 // SigRequestCard — signature-request bubble: trusted (app-derived) title + the
 // typed-data/message detail. The peer-supplied `description` is rendered
@@ -226,7 +226,7 @@ export function TxReceiptCard({ receipt, dark }: {
   const amountLabel = receipt.metadata?.amount != null
     ? `${receipt.metadata.amount} ${receipt.metadata.currency ?? 'ETH'}`
     : undefined;
-  const url = explorerUrl(receipt.networkId, receipt.reference);
+  const url = explorerTxUrl(receipt.networkId, receipt.reference);
   const blockRadius = useBlockRadius(); const pal = usePalette();
   return (
     <Box radius={blockRadius} background={dark ? 'rgba(120,200,120,0.08)' : 'rgba(60,160,60,0.06)'} padding={12} margin={{ top: 8 }} gap={6} style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: dark ? 'rgba(120,200,120,0.4)' : 'rgba(60,160,60,0.35)' }}>

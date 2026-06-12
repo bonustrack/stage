@@ -24,8 +24,8 @@ const phaseLabel = (p: PendingAction['phase']): string => {
   }
 };
 
-/** A single muted pending-shield row. */
-export function PendingShieldRow({ p, pal }: { p: PendingAction; pal: Pal }): React.ReactElement {
+/** A single muted pending-shield row. Internal — rendered by PendingShieldRows. */
+function PendingShieldRow({ p, pal }: { p: PendingAction; pal: Pal }): React.ReactElement {
   const { head, sub, border } = pal;
   return (
     <Row padding={{ y: 14 }} align="center" gap={12} style={{ borderBottomWidth: 1, borderBottomColor: border, opacity: 0.7 }}>

@@ -10,6 +10,7 @@
 import { AppState } from 'react-native';
 import { Directory, File, Paths } from 'expo-file-system';
 import * as SecureStore from 'expo-secure-store';
+import { hydrateOnce, makeListeners } from './storeCore';
 
 /** Trailing flush window for debounced PersistentStores. A streamed message can
  *  fire set() many times a second with a 100s-of-KB payload; coalescing the
@@ -43,14 +44,14 @@ function metroDir(): Directory {
  *  listeners. Used by the channels-list cache. Generic over the stored shape. */
 export class PersistentStore<T> {
   private value: T | null = null;
-  private hydrated = false;
-  /** In-flight hydration promise, memoized so concurrent boot callers await the
-   *  SAME disk read instead of racing. Previously `hydrated` flipped true before
-   *  `await f.text()` resolved, so a second caller arriving mid-read returned a
-   *  still-null value. Set on the first call, cleared once the read settles (and
-   *  on clear()). */
-  private hydrating: Promise<T | null> | null = null;
-  private readonly listeners = new Set<(v: T | null) => void>();
+  /** Hydrate-once guard (shared core): memoizes the in-flight disk read so
+   *  concurrent boot callers await the SAME read instead of racing, and only
+   *  flips "done" AFTER the read resolves (a second caller arriving mid-read can
+   *  never observe done===true with a still-null value). */
+  private readonly hydration = hydrateOnce<T | null>(() => this.readDisk());
+  private readonly pubsub = makeListeners<T | null>();
+  private get listeners(): Set<(v: T | null) => void> { return this.pubsub.listeners; }
+  private notify(v: T | null): void { this.pubsub.notify(v); }
   /** Pending trailing-flush timer (debounced stores only). `number` RN timer id
    *  — the Railgun SDK pulls @types/node in, whose Timeout collides with DOM. */
   private flushTimer: number | null = null;
@@ -88,39 +89,37 @@ export class PersistentStore<T> {
     if (this.dirty) this.writeToDisk();
   }
 
+  /** The one disk read, driven by the hydrateOnce guard. */
+  private async readDisk(): Promise<T | null> {
+    try {
+      const f = this.file();
+      if (f.exists) {
+        const parsed = JSON.parse(await f.text()) as T;
+        this.value = parsed;
+        this.notify(this.value);
+      }
+    } catch { /* corrupted cache — next set() overwrites it */ }
+    return this.value;
+  }
+
   /** Read the persisted value off disk into memory once. Idempotent; the file
-   *  read only happens on the first call. Subsequent calls return the cached
-   *  in-memory value synchronously after the await resolves. */
+   *  read only happens on the first call. Concurrent boot callers await the SAME
+   *  read (hydrateOnce) so none observes a half-populated value. */
   async hydrate(): Promise<T | null> {
-    if (this.hydrated) return this.value;
-    // A concurrent caller is already reading disk — await the SAME read so we
-    // don't return a half-populated value or kick off a second read.
-    if (this.hydrating) return this.hydrating;
-    this.hydrating = (async (): Promise<T | null> => {
-      try {
-        const f = this.file();
-        if (f.exists) {
-          const parsed = JSON.parse(await f.text()) as T;
-          this.value = parsed;
-          for (const l of this.listeners) l(this.value);
-        }
-      } catch { /* corrupted cache — next set() overwrites it */ }
-      // Mark hydrated only AFTER the read resolves, so the synchronous fast path
-      // above can never observe `hydrated === true` with a stale/null value.
-      this.hydrated = true;
-      this.hydrating = null;
-      return this.value;
-    })();
-    return this.hydrating;
+    if (this.hydration.done()) return this.value;
+    return this.hydration.run();
   }
 
   get(): T | null { return this.value; }
 
   set(next: T | null): void {
     this.value = next;
+    /** A set() supplies the authoritative value — short-circuit any pending
+     *  hydration so a later hydrate() can't clobber it with stale disk data. */
+    this.hydration.markDone();
     /** Notify subscribers immediately so the UI reflects the change without
      *  waiting on disk. */
-    for (const l of this.listeners) l(this.value);
+    this.notify(this.value);
     if (!this.debounced) { this.writeToDisk(); return; }
     /** Debounced: mark dirty + (re)arm the trailing flush. A burst of streamed
      *  set()s collapses to ONE synchronous write per FLUSH_DEBOUNCE_MS; the
@@ -143,11 +142,11 @@ export class PersistentStore<T> {
     this.dirty = false;
     dirtyStores.delete(this);
     this.value = null;
-    this.hydrated = false;
-    // Drop any in-flight hydration so a new account re-reads from a clean slate.
-    this.hydrating = null;
+    // Reset hydration (clears the done flag + any in-flight read) so a new
+    // account re-reads from a clean slate.
+    this.hydration.reset();
     try { const f = this.file(); if (f.exists) f.delete(); } catch { /* best-effort */ }
-    for (const l of this.listeners) l(null);
+    this.notify(null);
   }
 
   subscribe(l: (v: T | null) => void): () => void {

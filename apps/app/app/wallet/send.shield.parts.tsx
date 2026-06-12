@@ -6,7 +6,7 @@ import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import { Box } from '../../components/layout';
 import { DANGER } from '../../lib/theme';
-import { txExplorerUrl } from '../../lib/railgun/explorer';
+import { explorerTxUrl } from '@stage-labs/client/xmtp/tx';
 
 interface Pal { fg: string; head: string; sub: string; border: string; inputBg: string; link: string }
 
@@ -53,7 +53,7 @@ export function ShieldPhaseLine({ pal, txHash, err, errPhase, bridgeOk, chainId 
   return (
     <Box padding={{ x: 4 }} gap={4}>
       {txHash ? (
-        <Pressable onPress={() => Linking.openURL(txExplorerUrl(chainId, txHash))} hitSlop={6}>
+        <Pressable onPress={() => Linking.openURL(explorerTxUrl(chainId, txHash))} hitSlop={6}>
           <Text size="xs">
             {txHash.slice(0, 10)}…{txHash.slice(-8)}
           </Text>

@@ -14,10 +14,12 @@
  *  network error degrades gracefully (the row falls back to a subtle dash via the
  *  card) — it never throws. */
 import { useEffect, useState } from 'react';
-import { createPublicClient, http, formatUnits, isAddress, erc20Abi, type Hex, type Chain } from 'viem';
+import { formatUnits, isAddress, erc20Abi, type Hex } from 'viem';
 
 import { getActiveAccount } from '../lib/accounts';
-import { ASSETS, VIEM_CHAINS, NATIVE_TOKEN_SENTINEL } from '../components/tabs/WalletScreen.assets';
+import { ASSETS, NATIVE_TOKEN_SENTINEL } from '../components/tabs/WalletScreen.assets';
+import { chainFor, publicClientFor } from '@stage-labs/client/wallet/client';
+import { chainIdToNumber } from '@stage-labs/client/xmtp/tx';
 
 export interface PayerBalance {
   /** Decimal-string balance (`formatUnits` output), display-trimmed. */
@@ -26,12 +28,10 @@ export interface PayerBalance {
   insufficient: boolean;
 }
 
-/** Parse a request chainId that may be a hex string ("0xaa36a7"), a decimal
- *  string, or already a number. Defaults to mainnet. */
+/** Parse a request chainId (hex/decimal string or number), defaulting to
+ *  mainnet when absent. Delegates the hex/decimal parse to the SDK. */
 function parseChainId(raw?: string | number): number {
-  if (typeof raw === 'number') return raw;
-  if (!raw) return 1;
-  return raw.startsWith('0x') ? parseInt(raw, 16) : parseInt(raw, 10);
+  return raw == null || raw === '' ? 1 : chainIdToNumber(raw);
 }
 
 /** Trim a formatted balance to at most 4 fraction digits without trailing zeros. */
@@ -49,21 +49,6 @@ function isNativeToken(token?: string): boolean {
   return t === NATIVE_TOKEN_SENTINEL.toLowerCase()
     || t === '0x0000000000000000000000000000000000000000'
     || t === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
-}
-
-/** Build (or reuse from the registry) a viem chain for ANY chainId. Unknown
- *  chains get a minimal generic definition pointed at brovider's per-chain RPC,
- *  which fronts a public RPC for most EVM networks. */
-function chainFor(cid: number): Chain {
-  const known = VIEM_CHAINS[cid];
-  if (known) return known;
-  const rpc = 'https://rpc.brovider.xyz/' + cid;
-  return {
-    id: cid,
-    name: 'Chain ' + cid,
-    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-    rpcUrls: { default: { http: [rpc] }, public: { http: [rpc] } },
-  } as Chain;
 }
 
 /** Resolved on-chain asset metadata (decimals + symbol) for an unknown ERC-20. */
@@ -86,7 +71,7 @@ async function readOnchain(
   cid: number, token: string | undefined, addr: Hex,
 ): Promise<OnchainMeta | null> {
   const chain = chainFor(cid);
-  const pub = createPublicClient({ chain, transport: http(chain.rpcUrls.default.http[0]) });
+  const pub = publicClientFor(cid);
 
   if (isNativeToken(token)) {
     const raw = await pub.getBalance({ address: addr });
