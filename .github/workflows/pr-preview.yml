@@ -220,7 +220,14 @@ jobs:
             --input-dir dist \
             --message "${RAW_BRANCH}@${SHORT_SHA} (${{ github.sha }})" \
             --non-interactive --json > eas-update.json
-          node ../../scripts/pr-preview/eas-deeplink.mjs eas-update.json >> "$GITHUB_OUTPUT"
+          # FIXED always-latest deep link (#525): the link must resolve the NEWEST
+          # update on this branch's CHANNEL, not a per-publish group id (which goes
+          # stale every push). `eas update --branch` creates the BRANCH but not a
+          # channel, so ensure a same-named channel mapped to it exists. Idempotent:
+          # channel:create errors if it already exists, so swallow that and carry on.
+          bunx eas-cli@20.1.0 channel:create "$BRANCH" --non-interactive \
+            >/dev/null 2>&1 || true
+          node ../../scripts/pr-preview/eas-deeplink.mjs eas-update.json "$BRANCH" >> "$GITHUB_OUTPUT"
 
       - name: Write preview deep link to job summary
         run: |

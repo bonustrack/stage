@@ -47,10 +47,19 @@
   (function () {
     var content = document.getElementById('content');
     var params = new URLSearchParams(location.search);
+    // Short alias (#525): ?b=<branch> (or ?channel=) builds the always-latest
+    // channel manifest URL so a fixed link like
+    // https://metro.box/preview-launcher.html?b=main never goes stale. ?u=<url>
+    // still works (an explicit/pinned manifest URL takes precedence).
+    var PROJECT_ID = '1707f2db-c2b8-4c91-9341-27b1d57d355f';
     var manifest = params.get('u');
+    var channel = params.get('b') || params.get('channel');
+    if (!manifest && channel) {
+      manifest = 'https://u.expo.dev/' + PROJECT_ID + '?channel-name=' + encodeURIComponent(channel);
+    }
 
     if (!manifest) {
-      content.innerHTML = '<p class="err">Missing ?u= update URL parameter.</p>';
+      content.innerHTML = '<p class="err">Missing ?u= update URL (or ?b=&lt;branch&gt;).</p>';
       return;
     }
 

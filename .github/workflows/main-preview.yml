@@ -84,7 +84,13 @@ jobs:
             --input-dir dist \
             --message "main ${{ github.sha }}" \
             --non-interactive --json > eas-update.json
-          node ../../scripts/pr-preview/eas-deeplink.mjs eas-update.json >> "$GITHUB_OUTPUT"
+          # FIXED always-latest deep link (#525): resolve the NEWEST update on the
+          # main-preview CHANNEL, not a per-publish group id. `eas update --branch`
+          # creates the branch but not a channel; ensure a same-named channel exists
+          # (idempotent: swallow the "already exists" error).
+          bunx eas-cli@20.1.0 channel:create main-preview --non-interactive \
+            >/dev/null 2>&1 || true
+          node ../../scripts/pr-preview/eas-deeplink.mjs eas-update.json main-preview >> "$GITHUB_OUTPUT"
 
       - name: Summarise the preview link
         run: |
