@@ -12,7 +12,7 @@
 
 import { useCallback, useState, useSyncExternalStore } from 'react';
 import { proposalsStore } from './Proposals.store';
-import type { QueuedProposal } from './Proposals.queue';
+import type { QueuedRequest } from './Proposals.queue';
 
 /** Cheap pending-poll count for the Home banner. Re-renders only when the count
  *  changes. The store does the (cache-driven, debounced) scanning. */
@@ -25,8 +25,8 @@ export function useProposalCount(): number {
 }
 
 export interface ProposalsState {
-  /** The proposal currently shown, or null when the queue is exhausted/empty. */
-  current: QueuedProposal | null;
+  /** The request currently shown, or null when the queue is exhausted/empty. */
+  current: QueuedRequest | null;
   /** True until the first queue build settles (initial spinner gate). */
   loading: boolean;
   /** 1-based position + total, for a "2 of 5" style affordance. */
@@ -60,7 +60,7 @@ export function useProposals(): ProposalsState {
   const advance = useCallback(() => {
     const cur = proposalsStore.getQueue()[0];
     if (cur) {
-      proposalsStore.skip(cur.convId); // store drops it -> next becomes head
+      proposalsStore.skip(cur.key); // store drops it -> next becomes head
       setSeen(s => s + 1);
     }
   }, []);

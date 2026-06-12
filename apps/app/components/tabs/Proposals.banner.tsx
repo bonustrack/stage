@@ -33,7 +33,7 @@ export function ProposalsBanner(): React.ReactElement | null {
 >
         <Icon name="statusOnline" size={20} color={pal.link}/>
         <Text size="2xl" weight="semibold" color={pal.link} style={{ flex: 1 }}>
-          {count === 1 ? '1 proposal' : `${count} proposals`}
+          {count === 1 ? '1 pending request' : `${count} pending requests`}
         </Text>
         <Icon name="chevronRight" size={18} color={pal.text}/>
       </Row>
