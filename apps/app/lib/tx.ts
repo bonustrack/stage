@@ -14,18 +14,19 @@
 import { getAccount, sendTransaction, writeContract, switchChain } from 'wagmi/actions';
 import {
   isAddress, erc20Abi, encodeFunctionData,
-  createWalletClient, http, type Hex,
+  createWalletClient, type Hex,
 } from 'viem';
 import { wagmiConfig } from './walletconnect';
 import { getActiveViemAccount } from './accounts';
 import { VIEM_CHAINS } from '../components/tabs/WalletScreen.assets';
+import { broviderTransport } from '@stage-labs/client/wallet/client';
 import { parseAmount } from './txAmount';
 
 /** The per-chain RPC the rest of the wallet uses (balances multicall, on-chain
  *  reads). viem's stock chain definitions point `rpcUrls.default` at flaky
  *  public endpoints, so the in-app signing client must NOT use a bare `http()`
  *  default; route through brovider's multichain RPC keyed by chainId instead. */
-const rpcTransport = (chainId: number) => http('https://rpc.brovider.xyz/' + chainId);
+const rpcTransport = broviderTransport;
 
 /** A token to transfer. Omit (or pass `undefined`) to send the chain's native
  *  asset (ETH on mainnet). `decimals` defaults to 18 when not supplied. */

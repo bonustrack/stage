@@ -45,7 +45,7 @@ export interface PaymentAction {
 
 export function PaymentCard({
   dark, logoUrl, chainNum, description, badge, amountLabel,
-  detail, balance, action,
+  detail, balance, action, footer,
 }: {
   dark?: boolean;
   logoUrl: string;
@@ -66,6 +66,9 @@ export function PaymentCard({
    *  payer can afford it — used by the x402 card). Omit / return undefined to
    *  render the card with no button (read-only pending-requests list). */
   action?: PaymentAction | ((bal: PayerBalance | null) => PaymentAction | undefined);
+  /** Replaces the action button when there is none (e.g. a consent-gated note
+   *  telling the user to accept the conversation before paying). */
+  footer?: React.ReactNode;
 }): React.ReactElement {
   const pal = usePalette();
   const blockRadius = useBlockRadius();
@@ -126,7 +129,7 @@ export function PaymentCard({
           tintFg={pal.bg}
           style={{ marginTop: 2 }}
         />
-      ) : null}
+      ) : footer ?? null}
     </Box>
   );
 }

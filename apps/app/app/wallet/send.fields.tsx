@@ -15,7 +15,7 @@ import { Spinner } from '../../components/Spinner';
 import { Button } from '@metro-labs/kit/button';
 import { Icon } from '@metro-labs/kit/icon';
 import { DANGER, usePalette } from '../../lib/theme';
-import { explorerTxUrl } from '../../lib/railgun/networks';
+import { explorerTxUrl } from '@stage-labs/client/xmtp/tx';
 import { RecipientRow, ContactsModal, ContactsButton } from './send.recipient';
 
 interface Palette {

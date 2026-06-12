@@ -29,7 +29,7 @@ import { SigRequestCard, SigReferenceCard, TxRequestCard, TxReceiptCard } from '
 export function BubbleContent({
   entry, dark, pending, fg, sub, replyPreview, onReplyPreviewPress, transcript,
   onAnswer, votes, ownVotes, onVote, openAnswers, onOpenAnswer, myUri,
-  onPay, paying, onSign, signing, selectable, highlight,
+  onPay, paying, onSign, signing, consentAllowed, selectable, highlight,
 }: {
   entry: HistoryEntry; dark: boolean; pending?: boolean; fg: string; sub: string;
   replyPreview?: string; onReplyPreviewPress?: () => void; transcript?: string;
@@ -40,6 +40,8 @@ export function BubbleContent({
   onOpenAnswer?: (questionIndex: number, text: string) => void;
   myUri?: string;
   onPay?: () => void; paying?: boolean; onSign?: () => void; signing?: boolean;
+  /** XMTP consent of the conv: `false` (stranger) disables Sign/Pay on cards. */
+  consentAllowed?: boolean;
   /** When true, render the body in a plain selectable <Text> so OS text-selection
    *  handles appear for partial copy (Markdown's nested Texts don't select cleanly). */
   selectable?: boolean;
@@ -167,13 +169,13 @@ export function BubbleContent({
         />
       ) : null}
       {sigReq ? (
-        <SigRequestCard req={sigReq} dark={dark} sub={sub} signing={signing} onSign={onSign} />
+        <SigRequestCard req={sigReq} dark={dark} sub={sub} signing={signing} onSign={onSign} consentAllowed={consentAllowed} />
       ) : null}
       {sigRef ? (
         <SigReferenceCard ref={sigRef} dark={dark} sub={sub} />
       ) : null}
       {txReq ? (
-        <TxRequestCard req={txReq} dark={dark} sub={sub} paying={paying} onPay={onPay} />
+        <TxRequestCard req={txReq} dark={dark} sub={sub} paying={paying} onPay={onPay} consentAllowed={consentAllowed} />
       ) : null}
       {txReceipt ? (
         <TxReceiptCard receipt={txReceipt} dark={dark} />

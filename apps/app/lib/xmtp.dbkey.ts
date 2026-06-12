@@ -31,13 +31,17 @@ function encodeKey(key: Uint8Array): string {
 
 function randomKey(): Uint8Array {
   const fresh = new Uint8Array(32);
-  if (typeof globalThis.crypto?.getRandomValues === 'function') {
-    globalThis.crypto.getRandomValues(fresh);
-  } else {
-    /** Fallback — Math.random is non-cryptographic but the alternative is failing to boot.
-     *  In practice RN provides crypto.getRandomValues, so we never hit this. */
-    for (let i = 0; i < fresh.length; i++) fresh[i] = Math.floor(Math.random() * 256);
+  /** This 32-byte key AES-encrypts the on-device XMTP SQLite store. A
+   *  non-CSPRNG (Math.random) key is predictable, so an attacker with disk
+   *  access could derive it and decrypt every message. If crypto.getRandomValues
+   *  is somehow absent we HARD-FAIL rather than mint a weak key (mirrors
+   *  x402.payHeader.ts's randomNonce, which throws for the same reason). RN
+   *  installs crypto.getRandomValues app-wide, so this never fires in a healthy
+   *  runtime. */
+  if (typeof globalThis.crypto?.getRandomValues !== 'function') {
+    throw new Error('Secure random unavailable: refusing to create a weak XMTP store-encryption key');
   }
+  globalThis.crypto.getRandomValues(fresh);
   return fresh;
 }
 

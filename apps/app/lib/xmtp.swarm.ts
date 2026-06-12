@@ -26,12 +26,12 @@ export type SanitizedFileUri = string & { readonly [sanitizedBrand]: true };
  *  The encrypted ciphertext is POSTed here as a raw binary body; the daemon holds
  *  the swarmy API key server-side and returns `{ ref: "<swarmReference>" }`. Not a
  *  secret — just the public host of the proxy endpoint. */
-export const SWARM_UPLOAD_URL = 'https://blob.metro.box/upload';
+const SWARM_UPLOAD_URL = 'https://blob.metro.box/upload';
 /** Public KEYLESS Swarm read gateway. Reads need no daemon and no key — the bytes
  *  are fetched straight from any Swarm gateway by reference. The trailing slash is
  *  required (the `/bzz/<ref>/` form returns the exact original bytes; `/bytes`
  *  returns swarm-framed junk). */
-export const SWARM_GATEWAY = 'https://api.swarmy.cloud/bzz/';
+const SWARM_GATEWAY = 'https://api.swarmy.cloud/bzz/';
 
 /** Resolve a gateway-agnostic `swarm://<ref>` URL to a concrete HTTPS read URL on
  *  the default gateway. Stored messages carry `swarm://<ref>` (no gateway baked
@@ -132,7 +132,7 @@ export async function sanitizeFileUri(
  *  of buffering a huge body. NOTE: swarmy.cloud's nginx still hard-caps
  *  /api/files at ~1MB upstream — files between 1MB and this limit reach the proxy
  *  but currently 413 at swarmy until that cap is lifted (or the store changes). */
-export const SWARM_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
+const SWARM_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 
 export async function uploadEncryptedToIpfs(encryptedFileUri: string, filename: string): Promise<string> {
   /** Read the encrypted bytes off disk; `fetch(file://)` gives us a Blob we can

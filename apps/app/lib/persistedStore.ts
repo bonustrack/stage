@@ -22,18 +22,7 @@
  *  loading after the update. */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-/** Shared pub/sub: a listener set + a notify that never lets one bad
- *  subscriber break the rest (matching the originals' try/catch fan-out). */
-function makeListeners(): { listeners: Set<() => void>; notify: () => void } {
-  const listeners = new Set<() => void>();
-  const notify = (): void => {
-    for (const cb of listeners) {
-      try { cb(); } catch { /* a bad subscriber shouldn't break the rest */ }
-    }
-  };
-  return { listeners, notify };
-}
+import { hydrateOnce, makeListeners } from './storeCore';
 
 export interface SetStore {
   /** Read the persisted set once and cache it; later calls return the cache
@@ -54,8 +43,15 @@ export interface SetStore {
 /** Build a `Set<string>` store persisted as a JSON string array under `key`. */
 export function createSetStore(key: string): SetStore {
   let cache: Set<string> = new Set();
-  let loaded = false;
   const { listeners, notify } = makeListeners();
+  const hydration = hydrateOnce(async (): Promise<Set<string>> => {
+    try {
+      const raw = await AsyncStorage.getItem(key);
+      const ids: string[] = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(ids)) cache = new Set(ids.filter(x => typeof x === 'string'));
+    } catch { /* corrupt/missing → start empty */ }
+    return cache;
+  });
 
   async function persist(): Promise<void> {
     try {
@@ -64,14 +60,8 @@ export function createSetStore(key: string): SetStore {
   }
 
   async function load(): Promise<Set<string>> {
-    if (loaded) return cache;
-    try {
-      const raw = await AsyncStorage.getItem(key);
-      const ids: string[] = raw ? JSON.parse(raw) : [];
-      if (Array.isArray(ids)) cache = new Set(ids.filter(x => typeof x === 'string'));
-    } catch { /* corrupt/missing → start empty */ }
-    loaded = true;
-    return cache;
+    if (hydration.done()) return cache;
+    return hydration.run();
   }
 
   function has(id: string): boolean { return cache.has(id); }
@@ -79,7 +69,7 @@ export function createSetStore(key: string): SetStore {
 
   async function set(next: Set<string>): Promise<Set<string>> {
     cache = next;
-    loaded = true;
+    hydration.markDone();
     notify();
     await persist();
     return cache;
@@ -138,12 +128,7 @@ export interface ValueStore<T> {
 export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
   const serialize = opts.serialize ?? ((v: T): string => String(v));
   let cache: T = opts.default;
-  let loaded = false;
   const { listeners, notify } = makeListeners();
-
-  function persist(): void {
-    void AsyncStorage.setItem(opts.key, serialize(cache)).catch(() => { /* best-effort */ });
-  }
 
   function apply(raw: string | null): boolean {
     if (raw == null) return false;
@@ -153,20 +138,24 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
     return true;
   }
 
+  /** Read once; returns true when it changed `cache` (so loadAsync can notify). */
+  const hydration = hydrateOnce(async (): Promise<boolean> => {
+    try { return apply(await AsyncStorage.getItem(opts.key)); }
+    catch { return false; /* best-effort → keep default */ }
+  });
+
+  function persist(): void {
+    void AsyncStorage.setItem(opts.key, serialize(cache)).catch(() => { /* best-effort */ });
+  }
+
   async function load(): Promise<T> {
-    if (loaded) return cache;
-    try { apply(await AsyncStorage.getItem(opts.key)); }
-    catch { /* best-effort → keep default */ }
-    loaded = true;
+    if (!hydration.done()) await hydration.run();
     return cache;
   }
 
   function loadAsync(): void {
-    if (loaded) return;
-    loaded = true;
-    void AsyncStorage.getItem(opts.key)
-      .then((raw) => { if (apply(raw)) notify(); })
-      .catch(() => { /* best-effort → keep default */ });
+    if (hydration.done()) return;
+    void hydration.run().then((changed) => { if (changed) notify(); });
   }
 
   function get(): T { return cache; }
@@ -174,14 +163,14 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
   function set(value: T): void {
     if (!opts.alwaysNotify && value === cache) return;
     cache = value;
-    loaded = true;
+    hydration.markDone();
     notify();
     persist();
   }
 
   async function setAsync(value: T): Promise<void> {
     cache = value;
-    loaded = true;
+    hydration.markDone();
     notify();
     try { await AsyncStorage.setItem(opts.key, serialize(cache)); }
     catch { /* best-effort, the in-memory cache still reflects the change */ }
