@@ -240,6 +240,28 @@ function MessengerBubbleBase({
   );
 }
 
-/** #6: memoised so a single stream tick only re-renders bubbles whose props
- *  changed, not the whole window. */
-export const MessengerBubble = memo(MessengerBubbleBase);
+/** Custom memo comparator: the feed's renderItem (useFeedRenderItem) builds
+ *  ~10 brand-new arrow-function props for EVERY bubble on every parent render,
+ *  so the default shallow memo (which compares those callbacks by identity) is
+ *  defeated — one reaction/vote re-rendered the entire visible window. We ignore
+ *  callback identity entirely and re-render a bubble only when a render-affecting
+ *  DATA prop for its own id actually changes. The per-id Maps/Sets passed in are
+ *  the result of `map.get(item.id)`, which returns a stable reference while the
+ *  underlying collection is unchanged, so reference equality is correct here. */
+const DATA_KEYS = [
+  'entry', 'dark', 'unread', 'pending', 'replyTarget', 'replyPreview',
+  'reactions', 'pendingReactions', 'pendingRemovals', 'ownEmojis',
+  'votes', 'ownVotes', 'openAnswers', 'signing', 'paying', 'selectable',
+  'highlight', 'senderEthAddress', 'myUri', 'transcript',
+] as const satisfies readonly (keyof MessengerBubbleProps)[];
+
+function bubblePropsEqual(prev: MessengerBubbleProps, next: MessengerBubbleProps): boolean {
+  for (const k of DATA_KEYS) {
+    if (prev[k] !== next[k]) return false;
+  }
+  return true;
+}
+
+/** #6: memoised so a single stream tick only re-renders bubbles whose data props
+ *  changed, not the whole window (callback identity is intentionally ignored). */
+export const MessengerBubble = memo(MessengerBubbleBase, bubblePropsEqual);

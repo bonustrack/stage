@@ -43,7 +43,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
   const focused = useWalletFocused();
 
   const { snapshot: privSnapshot, accountId: privAccountId, pending } = usePrivateWallet(focused);
-  const { address, rows, err, refreshing, onRefresh } = useWalletBalances(privAccountId);
+  const { address, rows, err, refreshing, onRefresh } = useWalletBalances(privAccountId, focused);
   usePeerProfiles([address]);
 
   /** Custom JS-only pull-to-refresh — replaces RN's native RefreshControl, which

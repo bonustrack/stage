@@ -15,6 +15,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { type Conversation } from '@xmtp/react-native-sdk';
+import { useContactsFocused } from '../components/tabs/useWalletFocused';
 import {
   getCachedXmtpClient, getOrCreateXmtpClient,
   peerEthAddressOfDm, groupMemberEthAddresses, primeInboxEthCache,
@@ -77,7 +78,16 @@ export function useAllContacts(): { contacts: Contact[]; loading: boolean } {
   const [addresses, setAddresses] = useState<string[]>(() => seedAddresses());
   const [loading, setLoading] = useState(true);
 
+  /** FOCUS GATE: the Contacts tab body is mounted at app boot (the pager mounts
+   *  all tabs side-by-side), so an unconditional mount effect here ran the full
+   *  conversation walk + primeInboxEthCache network call on EVERY cold start —
+   *  even when the user never opens Contacts — duplicating HomeScreen.sync's
+   *  member walk (so the walk ran TWICE at boot). Latch on first Contacts focus
+   *  so the walk only happens when the page is actually visited. */
+  const focused = useContactsFocused();
+
   useEffect(() => {
+    if (!focused) return;
     let cancelled = false;
     void (async (): Promise<void> => {
       try {
@@ -88,7 +98,7 @@ export function useAllContacts(): { contacts: Contact[]; loading: boolean } {
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [focused]);
 
   /** Re-render as profiles resolve; `version` is the render trigger. */
   const version = usePeerProfiles(addresses);

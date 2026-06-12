@@ -29,7 +29,11 @@ export interface WalletBalances {
 /** @param privAccountId  the active Railgun account id (from usePrivateWallet),
  *  or null when not yet known — its shielded snapshot is refreshed alongside
  *  the public balances on pull-to-refresh. */
-export function useWalletBalances(privAccountId: string | null): WalletBalances {
+/** @param focused  whether the Wallet tab has ever been focused (latched). The
+ *  public multicall + CoinGecko fetch is skipped until first focus so it doesn't
+ *  burst at every cold start behind Home (same gate as the Railgun engine boot
+ *  in WalletScreen). */
+export function useWalletBalances(privAccountId: string | null, focused: boolean): WalletBalances {
   const [address, setAddress] = useState<string>('');
   const [rows, setRows] = useState<AssetRow[] | null>(null);
   const [err, setErr] = useState<string>('');
@@ -51,6 +55,8 @@ export function useWalletBalances(privAccountId: string | null): WalletBalances 
   }, []);
 
   useEffect(() => {
+    // Defer the public balance burst until the Wallet tab is actually focused.
+    if (!focused) return;
     let cancelled = false;
     void (async (): Promise<void> => {
       try {
@@ -75,7 +81,7 @@ export function useWalletBalances(privAccountId: string | null): WalletBalances 
       }
     })();
     return () => { cancelled = true; };
-  }, [accountEpoch]);
+  }, [accountEpoch, focused]);
 
   const onRefresh = useCallback((): void => {
     if (!address) return;

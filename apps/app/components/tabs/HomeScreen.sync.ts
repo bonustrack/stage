@@ -70,6 +70,14 @@ export function useChannelsSync({
           } catch { /* swallow */ }
         };
 
+        /** Timestamp of the last completed full refresh. The live message/conv
+         *  streams + the miss-coalescer already keep the list current with
+         *  incremental deltas, so a full re-summarise (syncAllConversations +
+         *  list + per-conv members()/primeInboxEthCache + summarize) on EVERY
+         *  AppState resume is largely redundant and expensive. We coalesce it. */
+        let lastRefreshAt = 0;
+        const REFRESH_THROTTLE_MS = 30_000;
+
         /** Reusable refresh that any event-driven trigger (app-open sync,
          *  AppState resume, pull-to-refresh, push, unknown-conv stream hit) can
          *  call to re-sync + re-summarise the full list. */
@@ -97,8 +105,19 @@ export function useChannelsSync({
             if (cancelled) return;
             summarized.sort((a, b) => (b.lastTs ?? 0) - (a.lastTs ?? 0));
             setRows(summarized);
+            lastRefreshAt = Date.now();
             clearTimeout(initTimer);
           } catch { /* swallow — event-driven triggers re-run refresh */ }
+        };
+
+        /** Throttled refresh for the noisy resume/consent triggers: skip the full
+         *  re-summarise if one ran within the last ~30s, since the live streams +
+         *  miss-coalescer already cover the deltas. Bounded triggers (cold start,
+         *  pull-to-refresh) call `refresh` directly and bypass this. */
+        const refreshThrottled = async (): Promise<void> => {
+          if (cancelled) return;
+          if (Date.now() - lastRefreshAt < REFRESH_THROTTLE_MS) return;
+          await refresh();
         };
         refreshFromNetworkRef.current = refresh;
 
@@ -161,7 +180,9 @@ export function useChannelsSync({
         appStateSub = AppState.addEventListener('change', (state) => {
           if (state === 'active') {
             void syncPreferences(); void syncConsent();
-            void refresh(); void refreshRequestCount();
+            // Throttled: the streams + miss-coalescer already apply deltas while
+            // backgrounded, so skip the full re-summarise if one ran <30s ago.
+            void refreshThrottled(); void refreshRequestCount();
           }
         });
       } catch (e) {
