@@ -6,12 +6,19 @@
  *    - "Add account"  → opens a sheet to paste an existing wallet's private key
  *                       (0x… 64 hex) or BIP-39 recovery phrase; validates +
  *                       imports it (importWallet) and switches to it.
+ *    - "Create smart wallet" (only when ZeroDev is configured) → derives the
+ *                       next HD owner and builds a gasless counterfactual ZeroDev
+ *                       Kernel on Base (passkey when the native module is
+ *                       present, else ECDSA owner), persists + switches to it,
+ *                       then offers guardian-recovery setup. XMTP cutover OFF.
  *
  *  The private key / phrase is never logged; it is handed straight to the
  *  registry, which stores it in expo-secure-store via the same per-account slot
  *  used by every other local account. */
 
 import { useState } from 'react';
+import { Alert } from 'react-native';
+import { useRouter } from 'expo-router';
 import { fontSize } from '@metro-labs/kit/tokens';
 import { Textarea } from '@metro-labs/kit/textarea';
 import { Row } from './layout';
@@ -21,6 +28,7 @@ import * as Clipboard from 'expo-clipboard';
 import { flash } from '../lib/toast';
 import { AccountManager, shortAddress } from '../modules/messaging';
 import { addGeneratedAccount, importWallet } from '../lib/accounts';
+import { createSmartAccount, zerodevConfigured, zerodevRpId } from '../lib/zerodev';
 import { AppModal } from './AppModal';
 import { DrawerRow } from './LeftDrawer.parts';
 import { DANGER, usePalette } from '../lib/theme';
@@ -50,6 +58,7 @@ export function useDrawerAccountActions({ head, sub, border, dark, onChanged }: 
   onChanged: () => void;
 }): { rows: React.ReactElement[]; modal: React.ReactElement } {
   const { primary, bg } = usePalette();
+  const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [text, setText] = useState('');
@@ -65,6 +74,33 @@ export function useDrawerAccountActions({ head, sub, border, dark, onChanged }: 
         flash(`New account ${shortAddress(rec.address)} created`);
       } catch {
         flash('Could not create account');
+      } finally {
+        setBusy(false);
+      }
+    })();
+  };
+
+  /** Create a ZeroDev smart wallet: derive the next HD owner, build the
+   *  counterfactual Kernel (passkey when the native module is present, ECDSA
+   *  owner otherwise — both gasless + counterfactual on Base), persist + switch
+   *  to it, then offer to set up guardian recovery. XMTP cutover stays OFF. */
+  const onCreateSmart = (): void => {
+    if (busy) return;
+    setBusy(true);
+    void (async () => {
+      try {
+        const rec = await createSmartAccount({ rpId: zerodevRpId(), userName: 'metro' });
+        await activate(rec.id, onChanged);
+        Alert.alert(
+          'Smart wallet created',
+          `${shortAddress(rec.address)}\n\nGasless smart account on Base. Set up guardian recovery so you can recover it if you lose this device.`,
+          [
+            { text: 'Later', style: 'cancel' },
+            { text: 'Set up recovery', onPress: () => router.push('/wallet/recovery') },
+          ],
+        );
+      } catch (e) {
+        flash(e instanceof Error ? e.message : 'Could not create smart wallet');
       } finally {
         setBusy(false);
       }
@@ -100,6 +136,12 @@ export function useDrawerAccountActions({ head, sub, border, dark, onChanged }: 
       head={head} sub={sub} border={border} dark={dark}
       onPress={() => { setErr(''); setText(''); setImportOpen(true); }}
     />,
+    ...(zerodevConfigured() ? [
+      <DrawerRow
+        key="create-smart" rowKey="create-smart" icon="sparkles" label="Create smart wallet"
+        head={head} sub={sub} border={border} dark={dark} onPress={onCreateSmart}
+      />,
+    ] : []),
   ];
 
   const modal = (

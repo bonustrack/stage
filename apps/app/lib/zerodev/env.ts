@@ -27,3 +27,10 @@ export function zerodevRpcUrl(): string | null {
 export function zerodevConfigured(): boolean {
   return zerodevRpcUrl() != null;
 }
+
+/** Passkey relying-party id — the hosted domain that owns the WebAuthn
+ *  credentials (must match the app's associated-domains entitlement). Defaults
+ *  to the public app domain; override with EXPO_PUBLIC_ZERODEV_RP_ID. */
+export function zerodevRpId(): string {
+  return process.env.EXPO_PUBLIC_ZERODEV_RP_ID?.trim() || 'metro.box';
+}

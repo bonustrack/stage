@@ -8,7 +8,7 @@
 
 export { ensureMnemonic, getMnemonic, hasMnemonic, setMnemonic } from './mnemonic';
 export { passkeysAvailable } from './native';
-export { zerodevConfigured, zerodevRpcUrl } from './env';
+export { zerodevConfigured, zerodevRpcUrl, zerodevRpId } from './env';
 export { createSmartAccount, type CreateSmartAccountOpts } from './create';
 export { kernelClientForRecord } from './kernelForRecord';
 export { scwSigner } from './scwSigner';
