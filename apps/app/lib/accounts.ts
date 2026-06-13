@@ -145,6 +145,45 @@ export async function addWalletConnectAccount(address: string): Promise<AccountR
   return rec;
 }
 
+/** Persist a `smart` (ZeroDev Kernel) account record and make it active. The id
+ *  is the counterfactual Kernel address; no private key is stored (the owner is
+ *  re-derived from the single app mnemonic at `hdIndex`). Idempotent on the id —
+ *  re-adding merges the latest fields onto the existing record. */
+export async function addSmartAccount(rec: AccountRecord): Promise<AccountRecord> {
+  const id = rec.id.toLowerCase();
+  const list = await loadAccounts();
+  const existing = list.find(a => a.id === id);
+  if (existing) {
+    Object.assign(existing, rec, { id });
+    await persist(list);
+    await setActiveAccountId(id);
+    return existing;
+  }
+  const next = [...list, { ...rec, id }];
+  await persist(next);
+  await setActiveAccountId(id);
+  return next[next.length - 1];
+}
+
+/** Update mutable bookkeeping fields on a smart account (deployed flag, the
+ *  opt-in SCW XMTP cutover flag, cached passkey id, label). No-op for a missing id. */
+export async function updateSmartAccount(
+  id: string, patch: Partial<Pick<AccountRecord, 'deployed' | 'scwXmtp' | 'passkeyCredId' | 'label'>>,
+): Promise<void> {
+  const list = await loadAccounts();
+  const rec = list.find(a => a.id === id.toLowerCase());
+  if (!rec) return;
+  Object.assign(rec, patch);
+  await persist(list);
+}
+
+/** The next free HD index for a new smart account = count of existing smart
+ *  accounts (indices are dense from 0; same mnemonic powers users AND agents). */
+export async function nextSmartHdIndex(): Promise<number> {
+  const list = await loadAccounts();
+  return list.filter(a => a.type === 'smart').length;
+}
+
 export async function markRegistered(id: string): Promise<void> {
   const list = await loadAccounts();
   const rec = list.find(a => a.id === id);

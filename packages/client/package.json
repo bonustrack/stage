@@ -41,7 +41,9 @@
     "./accounts/types": "./src/accounts/types.ts",
     "./accounts/keys": "./src/accounts/keys.ts",
     "./accounts/registry": "./src/accounts/registry.ts",
-    "./railgun": "./src/railgun/index.ts"
+    "./railgun": "./src/railgun/index.ts",
+    "./zerodev/config": "./src/zerodev/config.ts",
+    "./zerodev/derive": "./src/zerodev/derive.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

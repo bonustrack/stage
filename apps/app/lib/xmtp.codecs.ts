@@ -98,6 +98,7 @@ function signerForAccount(account: PrivateKeyAccount): Signer {
  *  registration (Client.create). Reads + sends afterwards use the on-device
  *  installation key, so a registered account never re-prompts the wallet. */
 export async function signerForRecord(rec: AccountRecord): Promise<Signer> {
+  if (rec.type === 'smart') return signerForSmart(rec);
   if (rec.type === 'walletconnect') {
     const wcSign = getWcSign();
     if (!wcSign) throw new Error('Reconnect your wallet to finish setting up this account.');
@@ -117,4 +118,42 @@ export async function signerForRecord(rec: AccountRecord): Promise<Signer> {
   const acct = await getViemAccount(rec.id);
   if (!acct) throw new Error('No signing key for this account.');
   return signerForAccount(acct);
+}
+
+/** XMTP signer for a `smart` (ZeroDev Kernel) account.
+ *
+ *  OPT-IN cutover (spec review item 5): the SCW XMTP identity is only used when
+ *  `rec.scwXmtp` is explicitly enabled (default OFF until the on-device ERC-6492
+ *  smoke test passes). Until then a smart account messages over its
+ *  mnemonic-derived OWNER EOA — a real key we can sign with — so existing inboxes
+ *  are never disrupted and we never depend on undeployed-6492 registration.
+ *
+ *  When `scwXmtp` is ON: the Kernel address is the XMTP identity, signed via
+ *  ERC-1271 (6492-wrapped while counterfactual), chainId 8453 — built through the
+ *  ONE centralized factory (lib/zerodev/scwSigner) so the chainId can't drift.
+ *
+ *  zerodev modules are imported LAZILY so the XMTP module graph doesn't pull the
+ *  Kernel SDK unless a smart account is actually signed. */
+async function signerForSmart(rec: AccountRecord): Promise<Signer> {
+  if (rec.hdIndex == null) throw new Error('Smart account is missing its HD index.');
+  if (!rec.scwXmtp) {
+    /** Default: derive the owner EOA at hdIndex and sign as an EOA identity. */
+    const { getMnemonic } = await import('./zerodev/mnemonic');
+    const { deriveOwner } = await import('@stage-labs/client/zerodev/derive');
+    const mnemonic = await getMnemonic();
+    if (!mnemonic) throw new Error('Recovery phrase unavailable for this smart account.');
+    const owner = deriveOwner(mnemonic, rec.hdIndex);
+    return {
+      getIdentifier: async () => new PublicIdentity(owner.address, 'ETHEREUM'),
+      getChainId: () => 1,
+      getBlockNumber: () => undefined,
+      signerType: () => 'EOA',
+      signMessage: async (message: string) => ({ signature: await owner.signMessage({ message }) }),
+    };
+  }
+  /** Cutover ON: SCW identity at the Kernel address via the centralized factory. */
+  const { kernelClientForRecord } = await import('./zerodev/kernelForRecord');
+  const { scwSigner } = await import('./zerodev/scwSigner');
+  const kernelClient = await kernelClientForRecord(rec);
+  return scwSigner(kernelClient, rec.address);
 }
