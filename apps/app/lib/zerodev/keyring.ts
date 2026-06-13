@@ -8,6 +8,20 @@
  *      - the per-account raw secp256k1 private keys (generated / imported EOAs).
  *    No other file in the app may read, derive, store, or expose that material.
  *
+ *  AUTH POSTURE (Less's hard requirement — ZERO device-unlock to USE the app):
+ *    Using the wallet — opening the app, viewing accounts, creating a wallet,
+ *    deriving owners, initialising XMTP, signing — triggers NO biometric /
+ *    device-unlock prompt. The secrets stay encrypted at rest by the OS keystore
+ *    (Keychain / Keystore, `WHEN_UNLOCKED_THIS_DEVICE_ONLY`) but are NOT gated by
+ *    `requireAuthentication`, so a normal read/sign never prompts. The real spend
+ *    security boundary is the WebAuthn PASSKEY, asserted at transaction SIGN time
+ *    by the ZeroDev validator — not a read-time biometric on the local key.
+ *
+ *    The ONLY device-auth prompts in the whole wallet are the two explicit
+ *    secret EXPORTS (revealRecoveryPhrase / revealPrivateKey): showing the raw
+ *    backup material genuinely warrants a fresh local-auth check. Everyday use
+ *    never reaches those paths.
+ *
  *  GUARANTEES:
  *    1. Single chokepoint. This is the SOLE module that imports the secret
  *       primitives + storage-key constants:
@@ -21,52 +35,33 @@
  *       asserts the same at CI time.
  *
  *    2. Sign-in-place. Signing happens INSIDE this module. The public API returns
- *       SIGNATURES or an opaque viem/XMTP signer object — it NEVER returns the raw
- *       32-byte key or the mnemonic string (with the two deliberate, guarded
- *       reveal exceptions below). A viem `PrivateKeyAccount` / `HDAccount` is a
- *       signer object: it can sign but exposes no extractor for its key, which is
- *       exactly the "viem-account-or-signer needed for ZeroDev/XMTP" the spec asks
- *       for.
+ *       SIGNATURES or an opaque viem/XMTP signer object (a `PrivateKeyAccount` /
+ *       `HDAccount` signs but exposes no key extractor) — it NEVER returns the raw
+ *       32-byte key or the mnemonic string, save the two guarded reveals below.
  *
- *    3. Address-only everyday path. getAddress / view paths need NO secret read
- *       and NO biometric prompt. A key is read ONLY at an actual sign, and the
- *       mnemonic ONLY when deriving a NEW account or at the two reveals.
+ *    3. Address-only everyday path. getAddress / view paths need NO secret read.
+ *       Reads + signs read the secret but NEVER prompt (no read-time auth gate).
  *
  *    4. Two guarded reveals, nothing else returns secrets:
  *         - revealRecoveryPhrase(): the mnemonic, for the backup screen. Guarded
- *           by device auth — the mnemonic is stored `requireAuthentication: true`
- *           so the OS prompts biometrics/passcode on this (and only this) read.
+ *           by an explicit device-auth check (`requireDeviceAuth`, a hardened
+ *           SecureStore sentinel read — JS-only, no extra native dep) BEFORE the
+ *           read — the one place outside signing where the raw phrase is exposed,
+ *           so a fresh device-auth is warranted.
  *         - revealPrivateKey(id): a single EOA's raw key, for the explicit
- *           "Export private key" action (the UI gates it behind a destructive
- *           warning Alert). Never logged.
+ *           "Export private key" action. Same explicit auth gate, plus the UI's
+ *           destructive-warning Alert. Never logged.
  *
  *    5. No logging. This module never console.logs key material.
  *
- *    6. SESSION UNLOCK (the one-auth create flow — Less's requirement). The
- *       mnemonic is stored HARDENED (`requireAuthentication: true`), so EVERY raw
- *       `SecureStore` read of it prompts device auth. A single create flow touches
- *       the mnemonic on several independent paths (ensureMnemonic existence-check,
- *       owner derivation for the Kernel, then XMTP `Client.create` signing the
- *       owner identity + each MLS installation op). Routing every one of those
- *       through its OWN hardened read surfaced as ~4 back-to-back Face ID prompts
- *       AND the cumulative wait blew the 30s `Client.create` timeout (the "XMTP
- *       failed to initialise (timed out)" screen).
- *
- *       FIX: all mnemonic access goes through `unlockMnemonic()`, which performs
- *       exactly ONE hardened (biometric) read per session, then caches the phrase
- *       in-memory (`sessionMnemonic`) for the process lifetime. Every subsequent
- *       derivation/sign reuses the cached phrase — NO further prompts. So the user
- *       taps Create -> ONE Face ID -> the whole flow (Kernel + XMTP install)
- *       completes silently and fast.
- *
- *       TRADEOFF: between the first unlock and the next `lockSession()`/
- *       `clearMnemonic()`, the decrypted phrase lives in JS memory (an HDAccount
- *       signer already did, this also keeps the string). This is the standard
- *       "unlock once per session" wallet posture. The initial auth is NEVER
- *       skipped — `requireAuthentication` still gates the first read. The phrase
- *       is cleared on reset/nuke (`clearMnemonic`) and can be dropped explicitly
- *       via `lockSession()`. The string never leaves the module except via the two
- *       guarded reveals. */
+ *    6. Single-module lockdown is the at-rest boundary. With no
+ *       `requireAuthentication` gate, extraction is blocked by (a) OS keystore
+ *       encryption at rest (`WHEN_UNLOCKED_THIS_DEVICE_ONLY`, device-bound) and
+ *       (b) the chokepoint invariant — no other module can read the material.
+ *       Spend auth is the passkey at sign-time, not a read-time prompt. A
+ *       best-effort `sessionMnemonic` cache avoids redundant keystore reads; it
+ *       holds no extra power (the reads it replaces also never prompt) and is
+ *       cleared on reset / lock. */
 
 import '../cryptoShim';
 import * as SecureStore from 'expo-secure-store';
@@ -90,59 +85,98 @@ import {
  *  (colons are rejected on Android). */
 const MNEMONIC_KEY = 'wallet.mnemonic';
 
-/** Hardened write options for the mnemonic. A value written with these prompts
- *  device auth (biometrics / passcode) on every READ — that is what makes
- *  revealRecoveryPhrase() biometric-gated WITHOUT a separate native dep, and why
- *  the mnemonic must only be read on a deliberate new-account / reveal path. */
-const HARDENED: SecureStore.SecureStoreOptions = {
-  requireAuthentication: true,
+/** Storage options for ALL secret material (mnemonic + per-account PKs).
+ *
+ *  Encrypted at rest by the OS keystore and bound to THIS device while unlocked
+ *  (`WHEN_UNLOCKED_THIS_DEVICE_ONLY`) — but deliberately NOT
+ *  `requireAuthentication`, so a normal read (derive / sign / XMTP init) NEVER
+ *  triggers a device-unlock / biometric prompt. Using the app is prompt-free;
+ *  the spend boundary is the passkey at sign-time (see AUTH POSTURE above), and
+ *  the only device-auth in the wallet is the explicit reveal/export gate, which
+ *  is enforced separately via `requireDeviceAuth()` (NOT a stored-item flag). */
+const STORE_OPTS: SecureStore.SecureStoreOptions = {
   keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
 };
+
+/** SecureStore key for the device-auth GATE SENTINEL (reveal/export only). Holds
+ *  no secret — an item written `requireAuthentication: true` so reading it forces
+ *  the OS biometric/passcode sheet. JS-only gate (no extra native dep): we reuse
+ *  expo-secure-store's per-item auth flag instead of expo-local-authentication
+ *  (which is NOT in the build). */
+const AUTH_SENTINEL_KEY = 'wallet.authGate';
+
+/** Hardened options for the reveal-gate sentinel: `requireAuthentication: true`
+ *  prompts device auth on every read — the mechanism behind `requireDeviceAuth`. */
+const SENTINEL_OPTS: SecureStore.SecureStoreOptions = {
+  requireAuthentication: true,
+  keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+  authenticationPrompt: 'Verify it is you to reveal this secret',
+};
+
+/** Explicit device-auth gate for the two secret EXPORTS only. Forces the OS
+ *  biometric/passcode sheet by reading a hardened sentinel item (provisioned
+ *  lazily). Returns true on success, false if auth is declined/fails. If the
+ *  device has no secure-lock the hardened write throws and we allow the reveal
+ *  (the secret is already on-device, the UI gates it behind a warning) rather
+ *  than locking the user out of their own backup. */
+async function requireDeviceAuth(): Promise<boolean> {
+  // Reading a hardened item prompts; a missing item returns null with NO prompt;
+  // a cancelled/failed prompt throws (mapped to 'DENIED').
+  const existing = await SecureStore.getItemAsync(AUTH_SENTINEL_KEY, SENTINEL_OPTS).catch(() => 'DENIED');
+  if (existing === 'DENIED') return false;
+  if (existing !== null) return true; // hardened read succeeded => auth passed.
+  // No sentinel yet: provision it hardened (a no-lock device throws => allow),
+  // then read back to force the prompt for this reveal too.
+  try {
+    await SecureStore.setItemAsync(AUTH_SENTINEL_KEY, '1', SENTINEL_OPTS);
+  } catch {
+    return true;
+  }
+  return (await SecureStore.getItemAsync(AUTH_SENTINEL_KEY, SENTINEL_OPTS).catch(() => null)) !== null;
+}
 
 // ===========================================================================
 // Mnemonic provisioning (smart-account root).
 // ===========================================================================
 
-/** SESSION UNLOCK CACHE (see SECURITY note 6). The decrypted, validated mnemonic
- *  for the current process. Populated by the SINGLE hardened read in
- *  `unlockMnemonic()` (or on generate/restore, which already hold the plaintext),
- *  then reused by every derivation/sign so the create flow prompts device auth
- *  exactly ONCE. Cleared on reset/nuke (`clearMnemonic`) and `lockSession()`. */
+/** SESSION CACHE (see SECURITY note 6). The decrypted, validated mnemonic for
+ *  the current process. Populated by `unlockMnemonic()` (or on generate/restore,
+ *  which already hold the plaintext), then reused by every derivation/sign to
+ *  avoid redundant keystore round-trips. NO auth power — the reads it replaces
+ *  also never prompt. Cleared on reset/nuke (`clearMnemonic`) and `lockSession()`. */
 let sessionMnemonic: string | null = null;
 
-/** Raw HARDENED read of the mnemonic (prompts device auth EVERY call). PRIVATE —
- *  only `unlockMnemonic` (one read/session) and the reveal-without-cache paths
- *  call it. */
-async function readMnemonicHardened(): Promise<string | null> {
-  const raw = await SecureStore.getItemAsync(MNEMONIC_KEY, HARDENED).catch(() => null);
+/** Raw keystore read of the mnemonic. Encrypted at rest, but NO device-auth
+ *  prompt (see STORE_OPTS). PRIVATE — `unlockMnemonic` and the reveal paths
+ *  (which add their own explicit auth gate) call it. */
+async function readMnemonic(): Promise<string | null> {
+  const raw = await SecureStore.getItemAsync(MNEMONIC_KEY, STORE_OPTS).catch(() => null);
   if (!raw) return null;
   const phrase = normalizeMnemonic(raw);
   return isValidMnemonic(phrase) ? phrase : null;
 }
 
-/** Get the mnemonic for in-session use, doing AT MOST ONE biometric read per
- *  process. First call performs the hardened read (the single Create-flow prompt)
- *  and caches the phrase in memory; every later call reuses the cache silently.
- *  Returns null when none is stored. PRIVATE — callers use the signer factories;
- *  only the two reveals expose the string. */
+/** Get the mnemonic for in-session use with NO device-auth prompt. Reads the
+ *  keystore once (encrypted-at-rest, no prompt) and caches it in memory; later
+ *  calls reuse the cache. Returns null when none is stored. PRIVATE — callers use
+ *  the signer factories; only the two reveals expose the string. */
 async function unlockMnemonic(): Promise<string | null> {
   if (sessionMnemonic) return sessionMnemonic;
-  const phrase = await readMnemonicHardened();
+  const phrase = await readMnemonic();
   if (phrase) sessionMnemonic = phrase;
   return phrase;
 }
 
 /** Drop the in-memory session mnemonic + derived owners WITHOUT deleting the
- *  stored secret. Use to require a fresh biometric unlock again (e.g. app lock).
- *  The stored mnemonic is untouched, so the next derivation re-prompts once. */
+ *  stored secret. The stored mnemonic is untouched, so the next derivation simply
+ *  re-reads it from the keystore (still no prompt). */
 export function lockSession(): void {
   sessionMnemonic = null;
   ownerCache.clear();
 }
 
-/** Whether a mnemonic exists. Uses the session cache when warm (no prompt); only
- *  the first cold call prompts device auth (the value is the only signal), so
- *  prefer inferring existence from the account registry. Returns false on error. */
+/** Whether a mnemonic exists. No prompt — reads the keystore (or warm cache).
+ *  Returns false on error. */
 export async function hasMnemonic(): Promise<boolean> {
   try {
     return !!(await unlockMnemonic());
@@ -151,14 +185,14 @@ export async function hasMnemonic(): Promise<boolean> {
   }
 }
 
-/** RESTORE: validate + store a user-supplied phrase hardened. Throws on a phrase
- *  that fails BIP-39. Overwrites any existing value — guard call sites. */
+/** RESTORE: validate + store a user-supplied phrase. Throws on a phrase that
+ *  fails BIP-39. Overwrites any existing value — guard call sites. */
 export async function restoreMnemonic(phrase: string): Promise<void> {
   const norm = normalizeMnemonic(phrase);
   if (!isValidMnemonic(norm)) throw new Error('Invalid recovery phrase — failed BIP-39 check.');
-  await SecureStore.setItemAsync(MNEMONIC_KEY, norm, HARDENED);
-  /** We hold the plaintext we just stored — seed the session so the restore flow's
-   *  owner derivation + XMTP create reuse it with NO extra biometric prompt. */
+  await SecureStore.setItemAsync(MNEMONIC_KEY, norm, STORE_OPTS);
+  /** We hold the plaintext we just stored — seed the session cache for the
+   *  restore flow's owner derivation + XMTP create. */
   sessionMnemonic = norm;
   ownerCache.clear();
 }
@@ -172,21 +206,18 @@ export async function clearMnemonic(): Promise<void> {
 }
 
 /** GENERATE-ON-FIRST-USE: idempotently ensure a mnemonic exists, minting a fresh
- *  one on first call. Returns nothing — the secret stays inside the module.
- *  Prompts device auth (it reads to check existence). Call lazily (new-account
- *  path), never on boot. */
+ *  one on first call. Returns nothing — the secret stays inside the module. NO
+ *  device-auth prompt at any point. Call lazily (new-account path), never on boot. */
 export async function ensureMnemonic(): Promise<void> {
-  /** One unlock: reuses the session cache if already warm, else the single
-   *  hardened read. If one exists we're done (it's now cached for the rest of the
-   *  flow). */
+  /** One unlock: reuses the session cache if warm, else a single no-prompt
+   *  keystore read. If one exists we're done (now cached for the rest of the flow). */
   const existing = await unlockMnemonic();
   if (existing) return;
-  /** None stored — mint one. We hold the plaintext, so seed the session directly
-   *  (no read-back) and the owner derivation + XMTP create that follow prompt
-   *  ZERO additional times. The first hardened read above (on a truly fresh
-   *  install) is the ONLY device-auth touch of the create flow. */
+  /** None stored — mint one. We hold the plaintext, so seed the session cache
+   *  directly. The whole create flow (owner derivation + XMTP create) runs with
+   *  ZERO device-unlock prompts. */
   const minted = generateWalletMnemonic();
-  await SecureStore.setItemAsync(MNEMONIC_KEY, minted, HARDENED);
+  await SecureStore.setItemAsync(MNEMONIC_KEY, minted, STORE_OPTS);
   sessionMnemonic = minted;
   ownerCache.clear();
 }
@@ -195,26 +226,17 @@ export async function ensureMnemonic(): Promise<void> {
 // Smart-account (HD) signers — sign-in-place, owner derived from the mnemonic.
 // ===========================================================================
 
-/** In-memory cache of derived owner HDAccounts, keyed by HD index.
- *
- *  WHY: the mnemonic is stored HARDENED (`requireAuthentication: true`), so EVERY
- *  `loadMnemonic()` prompts device biometrics/passcode. XMTP installation
- *  registration (`Client.create`) signs the owner identity SEVERAL times in one
- *  flow — without a cache that surfaced as 5 back-to-back biometric prompts AND,
- *  because each prompt serialises + waits on the user, the cumulative latency
- *  blew the 30s `Client.create` timeout → "XMTP failed to initialise (timed
- *  out)". Caching the derived HDAccount means we read+auth the mnemonic ONCE per
- *  session; subsequent signs reuse the opaque in-RAM signer (no key/mnemonic is
- *  cached as a string, only the viem signer object) — so one prompt, fast create.
- *
- *  Cleared on `clearMnemonic()` (reset/nuke) so a wiped wallet leaves nothing
- *  derivable in memory. The cache lives only for the process lifetime. */
+/** In-memory cache of derived owner HDAccounts, keyed by HD index. XMTP
+ *  `Client.create` signs the owner identity SEVERAL times per flow; caching the
+ *  derived HDAccount avoids re-deriving each sign and keeps create fast. Only the
+ *  opaque viem signer object is cached, never a raw key/mnemonic string. Cleared
+ *  on `clearMnemonic()` so a wiped wallet leaves nothing derivable in memory. */
 const ownerCache = new Map<number, HDAccount>();
 
 /** Internal: derive the owner signer for a smart-account HD index. Reads the
- *  mnemonic (device auth) ONCE then caches the opaque HDAccount in memory (see
- *  ownerCache) so repeat signs in one session don't re-prompt or stack latency.
- *  Throws if none stored. The returned HDAccount signs but exposes no key. */
+ *  mnemonic (no prompt) then caches the opaque HDAccount in memory (see
+ *  ownerCache) so repeat signs in one session don't re-derive. Throws if none
+ *  stored. The returned HDAccount signs but exposes no key. */
 async function ownerFor(hdIndex: number): Promise<HDAccount> {
   const cached = ownerCache.get(hdIndex);
   if (cached) return cached;
@@ -234,7 +256,7 @@ export async function smartOwnerAddress(hdIndex: number): Promise<string> {
 
 /** The owner signer (viem HDAccount) for a smart-account index, used as the
  *  ZeroDev ECDSA validator `signer` and for guardian-recovery signing. Opaque
- *  signer — never the key. Reads the mnemonic (sign-time auth). */
+ *  signer — never the key. Reads the mnemonic (no prompt). */
 export async function smartOwnerSigner(hdIndex: number): Promise<HDAccount> {
   return ownerFor(hdIndex);
 }
@@ -272,9 +294,10 @@ async function loadPrivateKey(id: string): Promise<Hex | null> {
   return null;
 }
 
-/** Internal: store a private key under its per-account slot. */
+/** Internal: store a private key under its per-account slot. Encrypted at rest,
+ *  no device-auth gate (see STORE_OPTS) — reads for signing never prompt. */
 async function storePrivateKey(id: string, pk: Hex): Promise<void> {
-  await SecureStore.setItemAsync(PK_PREFIX + id, pk);
+  await SecureStore.setItemAsync(PK_PREFIX + id, pk, STORE_OPTS);
 }
 
 /** A viem signer for an account id, or null when no key is stored (WalletConnect /
@@ -357,21 +380,21 @@ export async function railgunKeyMaterialFor(id: string): Promise<RailgunKeyMater
 // THE TWO GUARDED REVEALS — the only paths that return raw secrets.
 // ===========================================================================
 
-/** REVEAL the recovery phrase for the backup screen. Guarded by device auth: the
- *  mnemonic is stored `requireAuthentication: true`, so the OS prompts
- *  biometrics/passcode on this read. The ONLY path that returns the mnemonic
- *  string. Never logged. Returns null if none stored / auth fails.
- *
- *  Deliberately bypasses the session cache and does a FRESH hardened read so the
- *  OS always re-prompts on this sensitive reveal — a warm create-flow session must
- *  not let the backup screen show the phrase without a new biometric check. */
+/** REVEAL the recovery phrase for the backup screen. Guarded by an EXPLICIT
+ *  device-auth check (`requireDeviceAuth`) before the read — this is one of the
+ *  only two prompts in the wallet, warranted because it exposes the raw backup
+ *  phrase. The ONLY path that returns the mnemonic string. Never logged. Returns
+ *  null if none stored or if device auth is declined/fails. */
 export async function revealRecoveryPhrase(): Promise<string | null> {
-  return readMnemonicHardened();
+  if (!(await requireDeviceAuth())) return null;
+  return readMnemonic();
 }
 
 /** REVEAL a single account's raw private key for the explicit "Export private
- *  key" action (the UI gates it behind a destructive warning Alert). The ONLY
- *  path that returns an EOA raw key. Never logged. null when none stored. */
+ *  key" action (the UI also gates it behind a destructive warning Alert). Guarded
+ *  by the same EXPLICIT device-auth check. The ONLY path that returns an EOA raw
+ *  key. Never logged. null when none stored or auth declined/fails. */
 export async function revealPrivateKey(id: string): Promise<Hex | null> {
+  if (!(await requireDeviceAuth())) return null;
   return loadPrivateKey(id);
 }

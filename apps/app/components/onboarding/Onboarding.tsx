@@ -8,7 +8,7 @@
  *  STEPS (a tiny internal state machine, no navigator — this is an overlay):
  *    welcome  -> "Create new wallet" | "I have a recovery phrase"
  *    restore  -> paste + validate a BIP-39 phrase
- *    passkey  -> SKIPPABLE "Set up Face ID / fingerprint" (skip = ECDSA-only)
+ *    passkey  -> SKIPPABLE "Add a passkey" (skip = ECDSA-only)
  *
  *  Locked design (Less): NO recovery phrase is shown here (backup is deferred to
  *  a skippable nudge — see SecureWalletNudge), passkey is SKIPPABLE, and the
@@ -158,17 +158,18 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
       {step === 'passkey' ? (
         <Col flex={1} justify="between">
           <Box padding={{ top: 8 }}>
-            <Title level={2} color={pal.text}>Secure with Face ID</Title>
+            <Title level={2} color={pal.text}>Add a passkey</Title>
             <Text size="sm" color={pal.sub} style={{ marginTop: 8 }}>
-              Add Face ID or your fingerprint as a signer so this device can approve
-              transactions without your recovery phrase. You can add this later.
+              Add a passkey so this device can approve transactions without your
+              recovery phrase. You will only be asked for it when you sign. You can
+              add one later.
             </Text>
           </Box>
           <Col gap={10}>
             <Button
               dark={dark} variant="primary" size="lg" fullWidth
               tintBg={pal.primary} tintFg={pal.bg}
-              label="Set up Face ID / fingerprint" disabled={busy}
+              label="Add a passkey" disabled={busy}
               onPress={() => { if (pending) run(pending, true); }}
             />
             <Button
