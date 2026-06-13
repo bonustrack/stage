@@ -2,8 +2,9 @@
  *
  *  See docs/zerodev-wallet-spec.md. Phase 1 = mnemonic + HD-derived owner +
  *  Kernel account creation (ECDSA always; passkey gated behind a new APK) +
- *  the opt-in SCW XMTP identity cutover. Lazy-deploy, guardians, session keys,
- *  recovery and the onboarding UI are phases 2-3. */
+ *  the opt-in SCW XMTP identity cutover. Phase 2 = lazy-deploy + weighted
+ *  guardian recovery (native timelock + veto, recovery over XMTP). Session keys
+ *  / agent provisioning are parked (future). */
 
 export { ensureMnemonic, getMnemonic, hasMnemonic, setMnemonic } from './mnemonic';
 export { passkeysAvailable } from './native';

@@ -19,7 +19,7 @@ import type { PublicClient } from 'viem';
 import type { HDAccount } from 'viem/accounts';
 import { createKernelAccount, type CreateKernelAccountReturnType } from '@zerodev/sdk';
 import { signerToEcdsaValidator } from '@zerodev/ecdsa-validator';
-import { ENTRY_POINT, KERNEL_VERSION } from '@stage-labs/client/zerodev/config';
+import { ENTRY_POINT, KERNEL_VERSION } from './config';
 import { passkeysAvailable } from './native';
 
 /** Build a counterfactual Kernel owned by an ECDSA `sudo` validator derived from

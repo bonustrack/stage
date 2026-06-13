@@ -39,7 +39,7 @@ import { createKernelAccount, type KernelAccountClient } from '@zerodev/sdk';
 import { createWeightedECDSAValidator, getRecoveryAction, getUpdateConfigCall } from '@zerodev/weighted-ecdsa-validator';
 import { getValidatorAddress as getEcdsaValidatorAddress, signerToEcdsaValidator } from '@zerodev/ecdsa-validator';
 import { getValidatorAddress as getWeightedValidatorAddress } from '@zerodev/weighted-ecdsa-validator';
-import { ENTRY_POINT, KERNEL_VERSION } from '@stage-labs/client/zerodev/config';
+import { ENTRY_POINT, KERNEL_VERSION } from './config';
 import {
   weightedConfigFor, type WeightedConfig, type PendingRotation, DEFAULT_RECOVERY_DELAY_SECONDS,
 } from '@stage-labs/client/zerodev/recovery';

@@ -17,7 +17,7 @@ import {
   PublicIdentity, type Signer as XmtpSigner,
 } from '@xmtp/react-native-sdk';
 import type { KernelAccountClient } from '@zerodev/sdk';
-import { SCW_CHAIN_ID } from '@stage-labs/client/zerodev/config';
+import { SCW_CHAIN_ID } from './config';
 
 /** Build the SCW XMTP signer from a Kernel account client. `signMessage` signs
  *  with the Kernel (ERC-1271, 6492-wrapped when undeployed). Used by
