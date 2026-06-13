@@ -24,9 +24,8 @@ import { getActiveAccount, type AccountRecord } from '../../lib/accounts';
 import { DEFAULT_RECOVERY_DELAY_SECONDS } from '@stage-labs/client/zerodev/recovery';
 import {
   zerodevConfigured, installGuardians, updateGuardians, cancelRecovery,
-  signRecoveryApproval, sendRecoveryApproval, getMnemonic,
+  signRecoveryApproval, sendRecoveryApproval, smartOwnerSigner,
 } from '../../lib/zerodev';
-import { deriveOwner } from '@stage-labs/client/zerodev/derive';
 import type { Address, Hex } from 'viem';
 
 export default function WalletRecovery(): React.ReactElement {
@@ -109,9 +108,7 @@ export default function WalletRecovery(): React.ReactElement {
     }
     setApproving(true);
     try {
-      const mnemonic = await getMnemonic();
-      if (!mnemonic) throw new Error('Recovery phrase unavailable.');
-      const signer = deriveOwner(mnemonic, active.hdIndex);
+      const signer = await smartOwnerSigner(active.hdIndex);
       const signature = await signRecoveryApproval(
         signer, params.wallet as Address, params.newOwner as Address, 0n,
       ) as Hex;

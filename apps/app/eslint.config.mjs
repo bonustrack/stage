@@ -50,6 +50,76 @@ const metroThemeNative = {
   },
 };
 
+/** ============================================================================
+ *  KEYRING GUARD — enforces the single private-key/mnemonic chokepoint.
+ *  ============================================================================
+ *  Less's hard requirement: ALL secret access goes through lib/zerodev/keyring.
+ *  This rule FAILS the build if any file OTHER than the keyring imports the
+ *  secret-bearing primitives or the private-key storage-key constants, so a key
+ *  leak cannot even compile. Runs as its OWN rule id (not no-restricted-imports)
+ *  so it never clashes with the View/Image/messaging import bans, and applies to
+ *  every app source file regardless of which flat-config block matched last.
+ *
+ *  Banned outside the keyring:
+ *    - module '@stage-labs/client/zerodev/derive' (mnemonic -> owner signer)
+ *    - names PK_PREFIX / LEGACY_PK_KEY from '@stage-labs/client/accounts/keys'
+ *      (the expo-secure-store private-key storage-key constants)
+ *    - names privateKeyToAccount / generatePrivateKey / mnemonicToAccount /
+ *      hdKeyToAccount from 'viem/accounts' (raw key + mnemonic signers)
+ *  The pure, secret-free helpers (normalizePk / privateKeyFromMnemonic /
+ *  canExportPrivateKey / isValidMnemonic / normalizeMnemonic) stay importable. */
+const SECRET_KEY_CONSTANTS = new Set(["PK_PREFIX", "LEGACY_PK_KEY"]);
+const SECRET_VIEM_NAMES = new Set([
+  "privateKeyToAccount", "generatePrivateKey", "mnemonicToAccount", "hdKeyToAccount",
+]);
+const keyringGuardRule = {
+  "no-keyring-bypass": {
+      meta: {
+        type: "problem",
+        docs: { description: "only lib/zerodev/keyring may import private-key/mnemonic primitives" },
+        schema: [],
+      },
+      create(context) {
+        const file = (context.filename ?? context.getFilename?.() ?? "").replace(/\\/g, "/");
+        // The keyring itself is the ONE allowed importer.
+        if (file.endsWith("/lib/zerodev/keyring.ts")) return {};
+        const fail = (node, what) =>
+          context.report({
+            node,
+            message:
+              `Keyring guard: ${what} must only be imported by lib/zerodev/keyring (the single ` +
+              `private-key/mnemonic chokepoint). Use the keyring's public API instead.`,
+          });
+        return {
+          ImportDeclaration(node) {
+            const src = node.source.value;
+            if (src === "@stage-labs/client/zerodev/derive") {
+              // deriveOwner / generateWalletMnemonic actually derive from the secret.
+              for (const s of node.specifiers) {
+                const name = s.imported?.name;
+                if (name === "deriveOwner" || name === "generateWalletMnemonic" || name === "ownerAddress") {
+                  fail(node, `'${name}' from @stage-labs/client/zerodev/derive`);
+                }
+              }
+            } else if (src === "@stage-labs/client/accounts/keys") {
+              for (const s of node.specifiers) {
+                if (s.imported && SECRET_KEY_CONSTANTS.has(s.imported.name)) {
+                  fail(node, `the private-key storage-key constant '${s.imported.name}'`);
+                }
+              }
+            } else if (src === "viem/accounts") {
+              for (const s of node.specifiers) {
+                if (s.imported && SECRET_VIEM_NAMES.has(s.imported.name)) {
+                  fail(node, `'${s.imported.name}' from viem/accounts`);
+                }
+              }
+            }
+          },
+        };
+      },
+    },
+};
+
 export default tseslint.config(
   // nodejs-assets/ is the embedded-Node host (runs inside nodejs-mobile, not
   // Hermes). It's node-only JS with its own runtime/globals + an N-API prover;
@@ -58,12 +128,15 @@ export default tseslint.config(
   { ignores: ["node_modules/**", ".expo/**", "dist/**", "nodejs-assets/**"] },
   ...tseslint.configs.recommended,
   {
-    files: ["app/**/*.{ts,tsx}", "components/**/*.{ts,tsx}", "lib/**/*.{ts,tsx}"],
-    plugins: { metro: metroThemeNative },
+    files: ["app/**/*.{ts,tsx}", "components/**/*.{ts,tsx}", "lib/**/*.{ts,tsx}", "modules/**/*.{ts,tsx}"],
+    plugins: { metro: { rules: { ...metroThemeNative.rules, ...keyringGuardRule } } },
     rules: {
       // THEME-NATIVE: WARNING nudging per-call color=/background= palette idents
       // toward the semantic role/surface variant (escape-hatch one-offs never fire).
       "metro/prefer-role-variant": "warn",
+      // KEYRING GUARD (ERROR): only lib/zerodev/keyring may import the private-key /
+      // mnemonic primitives + storage-key constants. A bypass fails the build.
+      "metro/no-keyring-bypass": "error",
       // Strong typing: ban `any`. Use `unknown` + narrowing, real interfaces,
       // generics, or library types instead.
       "@typescript-eslint/no-explicit-any": "error",

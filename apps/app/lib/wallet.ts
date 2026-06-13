@@ -8,7 +8,7 @@
 import './cryptoShim';
 import { clearAllAccounts } from './accounts';
 import { resetXmtpClient } from './xmtp.client';
-import { clearMnemonic } from './zerodev/mnemonic';
+import { clearMnemonic } from './zerodev/keyring';
 import { setWalletBackedUp } from './walletBackup';
 import { bumpAccountEpoch } from './accountEpoch';
 

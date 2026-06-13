@@ -137,18 +137,18 @@ export async function signerForRecord(rec: AccountRecord): Promise<Signer> {
 async function signerForSmart(rec: AccountRecord): Promise<Signer> {
   if (rec.hdIndex == null) throw new Error('Smart account is missing its HD index.');
   if (!rec.scwXmtp) {
-    /** Default: derive the owner EOA at hdIndex and sign as an EOA identity. */
-    const { getMnemonic } = await import('./zerodev/mnemonic');
-    const { deriveOwner } = await import('@stage-labs/client/zerodev/derive');
-    const mnemonic = await getMnemonic();
-    if (!mnemonic) throw new Error('Recovery phrase unavailable for this smart account.');
-    const owner = deriveOwner(mnemonic, rec.hdIndex);
+    /** Default: sign as the owner EOA identity at hdIndex. The owner address +
+     *  the signature both come from the keyring (signing in place); no key or
+     *  mnemonic crosses this boundary. */
+    const { smartOwnerAddress, signOwnerMessage } = await import('./zerodev/keyring');
+    const hdIndex = rec.hdIndex;
+    const ownerAddr = await smartOwnerAddress(hdIndex);
     return {
-      getIdentifier: async () => new PublicIdentity(owner.address, 'ETHEREUM'),
+      getIdentifier: async () => new PublicIdentity(ownerAddr, 'ETHEREUM'),
       getChainId: () => 1,
       getBlockNumber: () => undefined,
       signerType: () => 'EOA',
-      signMessage: async (message: string) => ({ signature: await owner.signMessage({ message }) }),
+      signMessage: async (message: string) => ({ signature: await signOwnerMessage(hdIndex, message) }),
     };
   }
   /** Cutover ON: SCW identity at the Kernel address via the centralized factory. */

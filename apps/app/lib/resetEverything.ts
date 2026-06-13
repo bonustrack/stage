@@ -33,7 +33,7 @@ import * as SecureStore from 'expo-secure-store';
 import { Directory, Paths } from 'expo-file-system';
 
 import { resetXmtpClient } from './xmtp.client';
-import { clearMnemonic } from './zerodev/mnemonic';
+import { clearMnemonic } from './zerodev/keyring';
 import { setWalletBackedUp } from './walletBackup';
 import { bumpAccountEpoch } from './accountEpoch';
 import { loadAccounts } from './accounts';

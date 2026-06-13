@@ -14,8 +14,7 @@
  *
  *  XMTP cutover stays OFF (createSmartAccount sets scwXmtp:false). */
 
-import { setMnemonic, createSmartAccount, zerodevRpId } from '../../lib/zerodev';
-import { isValidMnemonic, normalizeMnemonic } from '@stage-labs/client/zerodev/derive';
+import { restoreMnemonic, createSmartAccount, zerodevRpId } from '../../lib/zerodev';
 import { AccountManager } from '../../modules/messaging';
 
 /** Build the account, switch the live XMTP client onto it, and signal the gate.
@@ -41,10 +40,7 @@ export async function createWallet(withPasskey: boolean): Promise<void> {
 /** RESTORE path: validate + store the pasted phrase, then rebuild the smart
  *  account from it. Throws a friendly error on a bad phrase. */
 export async function restoreWallet(phrase: string, withPasskey: boolean): Promise<void> {
-  const norm = normalizeMnemonic(phrase);
-  if (!isValidMnemonic(norm)) {
-    throw new Error('That is not a valid 12-24 word recovery phrase.');
-  }
-  await setMnemonic(norm);
+  /** The keyring validates (BIP-39) + stores hardened; it throws on a bad phrase. */
+  await restoreMnemonic(phrase);
   await finishAccount(withPasskey);
 }

@@ -7,9 +7,8 @@
  *  Kernel deploys lazily on the first sponsored userOp (phase 2). */
 
 import '../cryptoShim';
-import { deriveOwner } from '@stage-labs/client/zerodev/derive';
 import { addSmartAccount, nextSmartHdIndex, type AccountRecord } from '../accounts';
-import { ensureMnemonic } from './mnemonic';
+import { ensureMnemonic, smartOwnerSigner } from './keyring';
 import { makePublicClient } from './client';
 import { createEcdsaKernel, createPasskeyKernel } from './account';
 import { passkeysAvailable } from './native';
@@ -31,10 +30,11 @@ export async function createSmartAccount(opts: CreateSmartAccountOpts = {}): Pro
   if (!zerodevConfigured()) {
     throw new Error('Smart wallet is not configured (missing ZeroDev project).');
   }
-  // Reading the mnemonic prompts device auth — acceptable here (new-account path).
-  const mnemonic = await ensureMnemonic();
+  // Minting/reading the mnemonic prompts device auth — acceptable here
+  // (new-account path). The owner signer is derived inside the keyring.
+  await ensureMnemonic();
   const hdIndex = await nextSmartHdIndex();
-  const owner = deriveOwner(mnemonic, hdIndex);
+  const owner = await smartOwnerSigner(hdIndex);
   const publicClient = makePublicClient();
 
   let account = null as Awaited<ReturnType<typeof createEcdsaKernel>> | null;

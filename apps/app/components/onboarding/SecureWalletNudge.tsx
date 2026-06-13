@@ -13,7 +13,8 @@
  *  Security (see SecuritySettings).
  *
  *  Reveal/confirm UI is intentionally minimal (no screenshots-block etc. — that
- *  can come later); the phrase comes from getMnemonic() which prompts device auth. */
+ *  can come later); the phrase comes from the keyring's revealRecoveryPhrase()
+ *  which prompts device auth (the only guarded path that returns the mnemonic). */
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
@@ -24,7 +25,7 @@ import { Col, Row, Box } from '../layout';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { flash } from '../../lib/toast';
 import { getActiveAccount } from '../../lib/accounts';
-import { getMnemonic } from '../../lib/zerodev';
+import { revealRecoveryPhrase } from '../../lib/zerodev';
 import { isWalletBackedUp, setWalletBackedUp } from '../../lib/walletBackup';
 
 export function SecureWalletNudge(): React.ReactElement | null {
@@ -54,7 +55,7 @@ export function SecureWalletNudge(): React.ReactElement | null {
     setBusy(true);
     void (async () => {
       try {
-        const m = await getMnemonic();
+        const m = await revealRecoveryPhrase();
         if (!m) throw new Error('No recovery phrase on this device.');
         setPhrase(m);
       } catch (e) {

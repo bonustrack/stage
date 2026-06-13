@@ -6,7 +6,10 @@
  *  guardian recovery (native timelock + veto, recovery over XMTP). Session keys
  *  / agent provisioning are parked (future). */
 
-export { ensureMnemonic, getMnemonic, hasMnemonic, setMnemonic } from './mnemonic';
+export {
+  ensureMnemonic, hasMnemonic, restoreMnemonic, clearMnemonic, revealRecoveryPhrase,
+  smartOwnerSigner, smartOwnerAddress, signOwnerMessage,
+} from './keyring';
 export { passkeysAvailable } from './native';
 export { zerodevConfigured, zerodevRpcUrl, zerodevRpId } from './env';
 export { createSmartAccount, type CreateSmartAccountOpts } from './create';

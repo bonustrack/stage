@@ -9,9 +9,8 @@
 
 import '../cryptoShim';
 import type { KernelAccountClient } from '@zerodev/sdk';
-import { deriveOwner } from '@stage-labs/client/zerodev/derive';
 import type { AccountRecord } from '../accounts';
-import { getMnemonic } from './mnemonic';
+import { smartOwnerSigner } from './keyring';
 import { makePublicClient, makeKernelClient } from './client';
 import { createEcdsaKernel } from './account';
 
@@ -23,9 +22,7 @@ export async function kernelClientForRecord(rec: AccountRecord): Promise<KernelA
   if (rec.type !== 'smart' || rec.hdIndex == null) {
     throw new Error('Not a smart account.');
   }
-  const mnemonic = await getMnemonic();
-  if (!mnemonic) throw new Error('Recovery phrase unavailable — cannot rebuild smart account.');
-  const owner = deriveOwner(mnemonic, rec.hdIndex);
+  const owner = await smartOwnerSigner(rec.hdIndex);
   const publicClient = makePublicClient();
   const account = await createEcdsaKernel(publicClient, owner, rec.hdIndex);
   return makeKernelClient(account, publicClient);

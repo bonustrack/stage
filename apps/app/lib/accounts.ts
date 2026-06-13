@@ -11,17 +11,19 @@
 
 import './cryptoShim';
 import * as SecureStore from 'expo-secure-store';
-import { generatePrivateKey, privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts';
-import type { Hex } from 'viem';
+import type { PrivateKeyAccount } from 'viem/accounts';
 /** Deferred to break the accounts ↔ channelsCache module cycle; both call sites are async. */
 const setActiveAccountForCache = async (id: string | null): Promise<void> => {
   const { setActiveAccountForCache: fn } = await import('./channelsCache');
   fn(id);
 };
+import { getViemAccount } from './accounts.keys';
+/** ALL private-key storage goes through the keyring (the single chokepoint). This
+ *  module only owns the non-secret registry rows (list + active pointer). */
 import {
-  LEGACY_DB_DIR, LEGACY_PK_KEY, PK_PREFIX,
-  getViemAccount, normalizePk, privateKeyFromMnemonic,
-} from './accounts.keys';
+  createGeneratedKey, importKey, adoptLegacyKey, deleteKey, clearLegacyKey,
+} from './zerodev/keyring';
+import { LEGACY_DB_DIR } from '@stage-labs/client/accounts/keys';
 import {
   addLocalAccountToList, buildWalletConnectAccount, resolveActiveAccount,
 } from '@stage-labs/client/accounts/registry';
@@ -48,18 +50,16 @@ export async function loadAccounts(): Promise<AccountRecord[]> {
     try { cache = JSON.parse(raw) as AccountRecord[]; return cache; }
     catch { /* corrupted — fall through to rebuild from legacy */ }
   }
-  /** First run on the multi-account build — migrate the legacy single key. */
+  /** First run on the multi-account build — migrate the legacy single key (the
+   *  keyring owns the key I/O; we only record the registry row). */
   const list: AccountRecord[] = [];
-  const legacy = await SecureStore.getItemAsync(LEGACY_PK_KEY).catch(() => null);
-  if (legacy && /^0x[0-9a-fA-F]{64}$/.test(legacy)) {
-    const acct = privateKeyToAccount(legacy as Hex);
-    const id = acct.address.toLowerCase();
-    await SecureStore.setItemAsync(PK_PREFIX + id, '0x' + legacy.slice(2).toLowerCase());
+  const adopted = await adoptLegacyKey();
+  if (adopted) {
     list.push({
-      id, address: acct.address, type: 'generated',
+      id: adopted.id, address: adopted.address, type: 'generated',
       dbDir: LEGACY_DB_DIR, registered: true, createdAt: Date.now(),
     });
-    await SecureStore.setItemAsync(ACTIVE_KEY, id);
+    await SecureStore.setItemAsync(ACTIVE_KEY, adopted.id);
   }
   await persist(list);
   return list;
@@ -102,34 +102,34 @@ export async function getActiveViemAccount(): Promise<PrivateKeyAccount | null> 
   return getViemAccount(rec.id);
 }
 
-async function addLocalAccount(pk: Hex, type: 'generated' | 'privateKey'): Promise<AccountRecord> {
-  const acct = privateKeyToAccount(pk);
-  const id = acct.address.toLowerCase();
+/** Record a freshly-provisioned local key (the keyring already stored it) into
+ *  the registry. The list-mutation RULES (new / upgrade-WC / re-activate) live in
+ *  the Stage SDK; we only persist when the list changed and set active. */
+async function recordLocalAccount(
+  id: string, address: string, type: 'generated' | 'privateKey',
+): Promise<AccountRecord> {
   const list = await loadAccounts();
-  /** The list-mutation RULES (new / upgrade-WC / re-activate-existing) live in
-   *  the Stage SDK; this adapter handles the I/O: the key write is unconditional
-   *  (also UPGRADES a prior WalletConnect address to an in-app signer), and we
-   *  persist only when the list actually changed. */
-  const { list: next, record, upgraded } = addLocalAccountToList(list, id, acct.address, type);
-  await SecureStore.setItemAsync(PK_PREFIX + id, pk);
+  const { list: next, record, upgraded } = addLocalAccountToList(list, id, address, type);
   if (next !== list || upgraded) await persist(next);
   await setActiveAccountId(id);
   return record;
 }
 
 export async function addGeneratedAccount(): Promise<AccountRecord> {
-  return addLocalAccount(generatePrivateKey(), 'generated');
+  const { id, address } = await createGeneratedKey();
+  return recordLocalAccount(id, address, 'generated');
 }
 
 export async function importPrivateKey(input: string): Promise<AccountRecord> {
-  return addLocalAccount(normalizePk(input), 'privateKey');
+  const { id, address } = await importKey(input);
+  return recordLocalAccount(id, address, 'privateKey');
 }
 /** Import an existing wallet from one pasted string — a 0x private key (64 hex)
- *  or a BIP-39 phrase (phrases have spaces, keys don't). A phrase is reduced to
- *  its raw key and stored exactly like a pasted key. Throws on bad input. */
+ *  or a BIP-39 phrase (phrases have spaces, keys don't). The keyring reduces a
+ *  phrase to its raw key and stores it exactly like a pasted key. */
 export async function importWallet(input: string): Promise<AccountRecord> {
-  const pk = input.trim().includes(' ') ? privateKeyFromMnemonic(input) : normalizePk(input);
-  return addLocalAccount(pk, 'privateKey');
+  const { id, address } = await importKey(input);
+  return recordLocalAccount(id, address, 'privateKey');
 }
 
 /** WalletConnect account — no private key stored locally. The address is the
@@ -195,7 +195,7 @@ export async function markRegistered(id: string): Promise<void> {
 export async function removeAccount(id: string): Promise<AccountRecord[]> {
   const list = await loadAccounts();
   const next = list.filter(a => a.id !== id);
-  await SecureStore.deleteItemAsync(PK_PREFIX + id).catch(() => undefined);
+  await deleteKey(id);
   await persist(next);
   const active = await getActiveAccountId();
   if (active === id) {
@@ -209,10 +209,10 @@ export async function removeAccount(id: string): Promise<AccountRecord[]> {
  *  legacy key. Returns the removed records so the caller can delete each db dir. */
 export async function clearAllAccounts(): Promise<AccountRecord[]> {
   const list = await loadAccounts();
-  for (const a of list) await SecureStore.deleteItemAsync(PK_PREFIX + a.id).catch(() => undefined);
+  for (const a of list) await deleteKey(a.id);
   await SecureStore.deleteItemAsync(LIST_KEY).catch(() => undefined);
   await SecureStore.deleteItemAsync(ACTIVE_KEY).catch(() => undefined);
-  await SecureStore.deleteItemAsync(LEGACY_PK_KEY).catch(() => undefined);
+  await clearLegacyKey();
   cache = null;
   return list;
 }
