@@ -477,6 +477,153 @@ Risks / unknowns:
 
 ---
 
+## (h) Session keys for agents (scoped on-chain leash)
+
+Goal: grant an AGENT (a remote signer - including the Metro assistant itself) a tightly-scoped key
+that can act on the user's Kernel, with the leash enforced ON-CHAIN by the EntryPoint/validator, not by
+trusting the agent. The user's passkey sudo and guardian recovery are untouched. Revocable anytime.
+
+This is the ZeroDev permissions system (`@zerodev/permissions`, ERC-7579 permission validator). All
+names below were verified June 2026 against `@zerodev/permissions@5.6.3` (published source: `policies/*`,
+`signers/*`) and `zerodevapp/zerodev-examples/session-keys/{1-click-trading,transaction-automation}.ts`.
+
+### It composes with passkey sudo + guardian recovery
+A Kernel has one `sudo` validator and `regular` validators installed alongside it; a permission
+validator is just another `regular` plugin. So the agent's session key coexists with the passkey
+(`sudo`) and the guardian weighted-ecdsa recovery validator. The session key NEVER gets sudo - it is
+gated by its policies on every userOp. Installing/uninstalling it does not touch the passkey or
+guardian plugins.
+
+Caveat (already flagged in (y) item 2): a Kernel has ONE `regular` slot per action. The guardian
+recovery validator and the agent permission validator both want `regular`. Per (y), the mnemonic owner
+is folded into the recovery path (not a live runtime validator), which frees the design - but the
+guardian validator + the agent permission validator still cannot both occupy the same single `regular`
+action slot simultaneously. Two clean options: (i) the agent session key uses a DEDICATED action
+(install the permission validator against its own selector/action so it does not collide with the
+recovery action), or (ii) per-action permission validators (Kernel v3.1+ supports multiple installed
+permission validators keyed by permissionId). CONFIRM at build time which slotting the installed Kernel
+version allows; the examples install one permission validator as `regular` at a time. Flag: the exact
+multi-`regular` coexistence on our Kernel version is UNVERIFIED in code here - verify on-device before
+relying on guardian + agent + passkey all live at once.
+
+### The build (owner side, signs the grant)
+```ts
+import { toECDSASigner } from '@zerodev/permissions/signers'
+import { toPermissionValidator, serializePermissionAccount } from '@zerodev/permissions'
+import {
+  toCallPolicy, CallPolicyVersion, ParamCondition,
+  toGasPolicy, toRateLimitPolicy, toTimestampPolicy, toSudoPolicy,
+} from '@zerodev/permissions/policies'
+import { addressToEmptyAccount, createKernelAccount } from '@zerodev/sdk'
+
+// The agent generates its own keypair and sends ONLY its address to the user.
+const agentSigner = await toECDSASigner({ signer: addressToEmptyAccount(agentAddress) })
+
+const permissionPlugin = await toPermissionValidator(publicClient, {
+  entryPoint, kernelVersion,
+  signer: agentSigner,
+  policies: [
+    toCallPolicy({                                   // allowed targets + selectors + arg rules
+      policyVersion: CallPolicyVersion.V0_0_5,
+      permissions: [{
+        target: USDC,                                // allowed contract
+        abi: erc20Abi, functionName: 'transfer',     // selector derived from abi+functionName
+        valueLimit: 0n,                              // native ETH cap for this call
+        args: [
+          null,                                       // recipient: any
+          { condition: ParamCondition.LESS_THAN_OR_EQUAL, value: maxPerTx }, // per-tx USDC cap
+        ],
+      }],
+    }),
+    toGasPolicy({ allowed: maxGasWei, enforcePaymaster: true }), // gas ceiling + force paymaster
+    toRateLimitPolicy({ count: 50, interval: 86400 }),          // max 50 ops / day
+    toTimestampPolicy({ validUntil: nowSec + 7 * 86400 }),      // auto-expires in 7 days
+  ],
+  kernelVersion,
+})
+
+const sessionKeyAccount = await createKernelAccount(publicClient, {
+  entryPoint, kernelVersion,
+  plugins: { sudo: passkeyValidator, regular: permissionPlugin },
+})
+const approval = await serializePermissionAccount(sessionKeyAccount) // grant blob -> agent
+```
+
+### Verified API names
+- `toECDSASigner({ signer })` from `@zerodev/permissions/signers` - wraps an EOA (or
+  `addressToEmptyAccount(addr)` when the owner only has the agent's public address).
+- `toPermissionValidator(publicClient, { entryPoint, signer, policies, kernelVersion })` from
+  `@zerodev/permissions` - builds the permission validator from the signer + policy array.
+- Policy builders from `@zerodev/permissions/policies` (all confirmed exported in 5.6.3):
+  - `toCallPolicy({ policyVersion, permissions })` - per-permission `{ target, selector | abi+functionName,
+    valueLimit, args/rules }`. `CallPolicyVersion` enum (V0_0_1..V0_0_5) and `ParamCondition` enum
+    (EQUAL, GREATER_THAN, LESS_THAN, GREATER_THAN_OR_EQUAL, LESS_THAN_OR_EQUAL, NOT_EQUAL, ONE_OF,
+    SLICE_EQUAL) are exported here. This is the allowed-target + function-selector + arg-bound policy
+    AND the per-call value cap (`valueLimit`).
+  - `toGasPolicy({ allowed, enforcePaymaster, allowedPaymaster })` - `allowed` = max gas in wei the key
+    may consume; `enforcePaymaster: true` forces sponsored ops (agent needs no ETH).
+  - `toRateLimitPolicy({ count, interval, startAt })` - max `count` ops per `interval` seconds.
+  - `toTimestampPolicy({ validAfter, validUntil })` - key auto-expires (unix seconds).
+  - `toSudoPolicy({})` - allow-everything (the examples' placeholder; we do NOT use it for the agent).
+  - `toSignatureCallerPolicy(...)` also exported (caller allowlist for 1271 sigs) - not needed here.
+- `createKernelAccount(publicClient, { plugins: { sudo, regular: permissionPlugin } })` from
+  `@zerodev/sdk` - permission validator installed as `regular` alongside the passkey `sudo`.
+- `serializePermissionAccount(sessionKeyAccount [, sessionPrivateKey])` from `@zerodev/permissions` -
+  produces the grant blob. Pass the private key ONLY if the owner generated the key (we do NOT - the
+  agent holds its own key, so we serialize the approval WITHOUT the private key).
+- `deserializePermissionAccount(publicClient, entryPoint, kernelVersion, approval, sessionKeySigner)`
+  from `@zerodev/permissions` - the AGENT side: reconstructs the account from the approval blob + its
+  own `toECDSASigner`, then drives it via a normal `createKernelAccountClient`.
+
+### Spend limits - how to express them (no single `toSpendingLimitPolicy`)
+There is no standalone spend-limit policy export. Spend is bounded two ways, both on-chain:
+- Native ETH: `valueLimit` per permission in `toCallPolicy` (and the gas ceiling via `toGasPolicy`).
+- ERC20 (USDC): bound the `amount` arg of `transfer`/`approve` with `ParamCondition.LESS_THAN_OR_EQUAL`
+  in the call policy `args` (per-tx cap). A running TOTAL cap across many txs is NOT a built-in policy -
+  enforce a total budget either by (a) short expiry + low rate limit + per-tx cap (probabilistic
+  bound), or (b) a custom policy contract, or (c) fund a sub-account the agent drains. Flag: "max total
+  USDC ever" is NOT directly expressible by stock policies - call this out to Less; per-tx + rate +
+  expiry is the stock leash.
+
+### The agent signs its own userOps
+The agent deserializes the approval with ITS key and sends userOps through its own kernel client; the
+validator checks every op against the policies on-chain. The passkey and guardian validators are never
+invoked and never exposed. The agent literally cannot exceed target/selector/value/rate/expiry/gas - a
+compromised agent key is bounded by the chain, not by trust.
+
+### Revoke anytime
+The owner (passkey `sudo`) uninstalls the permission validator in one sponsored userOp:
+```ts
+await sudoKernelClient.uninstallPlugin({ plugin: permissionPlugin })
+```
+(verified in `session-keys/transaction-automation.ts`). After the receipt the session key is dead
+on-chain. Expiry (`toTimestampPolicy`) is the passive fallback - the key dies on its own even if no
+explicit revoke is sent. Either way the user's own access is untouched.
+
+### Metro tie-in
+The assistant (this agent) could hold a tightly-scoped session key to perform specific on-chain
+actions for Less - e.g. "pay this x402 invoice in USDC up to $X", "claim this", "vote on Snapshot" -
+with the leash enforced ON-CHAIN: only whitelisted contracts/selectors, per-tx + rate + expiry caps,
+paymaster-sponsored so the agent needs no ETH, revocable from the wallet UI in one tap. The agent key
+lives wherever the agent runs (daemon secure store); losing it cannot drain the wallet beyond its
+policy envelope, and a revoke or expiry zeroes it.
+
+### Effort delta (additive to (g))
+- `@stage-labs/client/zerodev/session.ts` (pure policy builders: turn a UI grant spec ->
+  `policies[]`) + `lib/zerodev/session.ts` (build/serialize/uninstall, agent-side deserialize):
+  ~1 day.
+- Grant UI: a "Give the assistant a wallet key" sheet (pick actions/contracts, per-tx + total/expiry +
+  rate limits) reusing the existing form styling; a list of active session keys with a one-tap Revoke;
+  surface expiry: ~1 day.
+- Agent runtime: store the agent keypair, accept + persist the approval blob, drive the kernel client,
+  on-chain revoke/expiry handling: ~0.5 day.
+- Verify guardian + agent + passkey `regular`-slot coexistence on-device (see caveat above): ~0.5 day.
+
+Total ~3 days, additive, all JS-only (no new native dep - rides the same APK as the rest). Lands behind
+the same `passkeysAvailable()` gate; ship after the base smart account + recovery are working.
+
+---
+
 ## (z) Serverless verdict (definitive, from SDK source)
 
 Read June 2026 from the published packages: `@zerodev/react-native-passkeys-utils@5.4.2`
