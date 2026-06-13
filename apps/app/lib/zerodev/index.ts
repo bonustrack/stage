@@ -13,3 +13,9 @@ export { kernelClientForRecord } from './kernelForRecord';
 export { scwSigner } from './scwSigner';
 export { makePublicClient, makeKernelClient } from './client';
 export { createEcdsaKernel, createPasskeyKernel } from './account';
+export {
+  installGuardians, updateGuardians, signRecoveryApproval, executeRecovery,
+  readPendingRotation, cancelRecovery, resumeWithNewOwner, recoveryCallData,
+  callDataAndNonceHash, ProposalStatus,
+} from './recovery';
+export { sendRecoveryRequest, sendRecoveryApproval, parseRecovery } from './recovery.comms';

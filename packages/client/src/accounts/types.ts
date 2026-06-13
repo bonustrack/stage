@@ -40,4 +40,12 @@ export interface AccountRecord {
    *  existing inboxes are never disrupted. A fresh inbox at the SCW address (no
    *  migration) once enabled. */
   scwXmtp?: boolean;
+
+  /** Guardian social recovery (phase 2), display only — the source of truth is
+   *  the on-chain weighted-ECDSA validator. Guardian friend addresses (lowercased). */
+  guardians?: string[];
+  /** "M of N" — the integer threshold of guardians required to rotate the owner. */
+  guardianThreshold?: number;
+  /** The on-chain recovery timelock window in seconds (native validator `delay`). */
+  guardianDelay?: number;
 }

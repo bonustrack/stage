@@ -30,7 +30,7 @@ export function scwSigner(kernelClient: KernelAccountClient, scwAddress: string)
     signerType: () => 'SCW',
     signMessage: async (message: string) => {
       /** Kernel ERC-1271 signature; auto 6492-wrapped while counterfactual. */
-      const signature = await kernelClient.signMessage({ message });
+      const signature = await kernelClient.signMessage({ message } as Parameters<typeof kernelClient.signMessage>[0]);
       return { signature };
     },
   };

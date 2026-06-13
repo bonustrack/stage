@@ -43,7 +43,8 @@
     "./accounts/registry": "./src/accounts/registry.ts",
     "./railgun": "./src/railgun/index.ts",
     "./zerodev/config": "./src/zerodev/config.ts",
-    "./zerodev/derive": "./src/zerodev/derive.ts"
+    "./zerodev/derive": "./src/zerodev/derive.ts",
+    "./zerodev/recovery": "./src/zerodev/recovery.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
