@@ -9,6 +9,7 @@
       "developmentClient": true,
       "distribution": "internal",
       "node": "18.20.4",
+      "env": { "BUN_VERSION": "1.3.9" },
       "android": {
         "buildType": "apk",
         "gradleCommand": ":app:assembleDebug -PreactNativeArchitectures=arm64-v8a"
