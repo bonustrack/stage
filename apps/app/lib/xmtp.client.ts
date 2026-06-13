@@ -10,7 +10,7 @@
 import * as SecureStore from 'expo-secure-store';
 import { Client, PublicIdentity, type Conversation } from '@xmtp/react-native-sdk';
 import {
-  getActiveAccount, addGeneratedAccount,
+  getActiveAccount,
   loadAccounts, setActiveAccountId, removeAccount, clearAllAccounts,
   type AccountRecord,
 } from './accounts';
@@ -30,6 +30,17 @@ import { createClientForAccount, isStoreCorruption } from './xmtp.recover';
 
 export { getCachedXmtpClient, waitForXmtpReady } from './xmtp.state';
 export { ensureActiveAccount } from './xmtp.recover';
+
+/** Thrown by getOrCreateXmtpClient when the registry is empty (no completed
+ *  onboarding). We must NOT auto-mint an account here: doing so on a boot-time
+ *  caller (HomeScreen.sync mounts under the onboarding overlay) silently
+ *  persisted a throwaway account, so a second launch saw a non-empty registry
+ *  and skipped onboarding entirely. Callers already swallow client init errors
+ *  (the onboarding overlay covers the UI until the flow creates the real account
+ *  and flips the gate). */
+export class NoAccountError extends Error {
+  constructor() { super('No account — onboarding not completed yet.'); this.name = 'NoAccountError'; }
+}
 
 /** SecureStore keys must match `[A-Za-z0-9._-]+` — colons are rejected on Android, which
  *  surfaced as an `Invalid key provided to SecureStore` runtime crash on Less's device. */
@@ -51,9 +62,15 @@ export async function getOrCreateXmtpClient(env: XmtpEnv = 'production'): Promis
    *  incorrect`). Coalesce all concurrent callers onto ONE in-flight promise. */
   if (inFlightCreate) return inFlightCreate;
   inFlightCreate = (async () => {
-    /** Resolve the active account, minting + activating a generated one on the
-     *  very first launch (or after a full reset). */
-    const account = (await getActiveAccount()) ?? (await addGeneratedAccount());
+    /** Resolve the active account. We NEVER mint one here: an account is created
+     *  ONLY by the onboarding flow (or an explicit in-app "new account" action).
+     *  On a fresh install the registry is empty and boot-time callers (e.g.
+     *  HomeScreen.sync, which mounts under the onboarding overlay) must NOT cause
+     *  a throwaway account to be persisted — that flipped the no-account gate on
+     *  the next launch and skipped onboarding. Throw a recognisable error the
+     *  callers already swallow; the overlay stays until real onboarding runs. */
+    const account = await getActiveAccount();
+    if (!account) throw new NoAccountError();
     return buildClientForAccount(account, env);
   })();
   try { return await inFlightCreate; } finally { inFlightCreate = null; }
