@@ -5,7 +5,8 @@ Status: SPEC / design doc. No app code in this PR. Decision LOCKED: ZeroDev only
 Goal: add an ERC-4337 / ERC-7579 ZeroDev Kernel smart account on Base, gasless via the ZeroDev
 paymaster, with a passkey (Secure Enclave) primary signer + a mnemonic-derived ECDSA backup owner,
 native ZeroDev guardian social recovery, counterfactual lazy deploy, and multi-account HD derivation.
-It sits alongside the existing EOA registry (`lib/accounts.ts`) - it does not replace it.
+It sits alongside the existing EOA registry (`lib/accounts.ts`) - it does not replace it. The smart
+account is ALSO the XMTP identity (SCW via ERC-1271/6492, XMTP RN SDK 5.7) - see 3.3.
 
 All API names below were verified against the real SDK: `@zerodev/sdk` 5.5.x,
 `@zerodev/ecdsa-validator` 5.4.x, `@zerodev/weighted-ecdsa-validator` 5.4.x,
@@ -44,9 +45,11 @@ What is NEW (a smart account is a different kind of account):
 
 - A 4th account type `smart` (a ZeroDev Kernel). Its `id`/`address` is the COUNTERFACTUAL Kernel
   address, not an EOA. It is backed by two underlying signers (passkey + a derived owner key) and a
-  ZeroDev RPC. It cannot sign EIP-191/EIP-712 the way an EOA does for XMTP registration, so XMTP
-  identity keeps using the derived owner EOA (see 3.3) - the smart account is the user-facing wallet,
-  the owner EOA stays the XMTP signer. This keeps XMTP untouched.
+  ZeroDev RPC.
+- DECISION CHANGED: the SMART ACCOUNT IS THE XMTP IDENTITY (it is no longer wallet-only). The XMTP RN
+  SDK (5.7) supports smart-contract-wallet (SCW) identities via ERC-1271 / ERC-6492, so the Kernel
+  address registers the XMTP inbox directly. The smart account is both the user-facing wallet AND the
+  messenger identity. See section 3.3 for the signer change and caveats.
 
 ---
 
@@ -169,7 +172,7 @@ Extend `AccountType` (in `@stage-labs/client/accounts/types`) with `'smart'`. Ne
 type: 'smart'
 address:        <counterfactual Kernel address>      // also the id
 hdIndex:        number                                 // which derived owner backs it
-ownerAddress:   string                                 // the derived ECDSA owner (XMTP signer)
+ownerAddress:   string                                 // the derived ECDSA backup owner
 passkeyCredId:  string                                 // base64url rawId, to re-find the passkey
 deployed:       boolean                                // reuse existing `registered` field
 guardians?:     string[]                               // guardian addresses (display only)
@@ -188,12 +191,62 @@ passkey can be REUSED across accounts (same `webAuthnKey` as `sudo` for several 
 passkey registered per account - user choice on Screen 1; default = reuse the device passkey, vary the
 owner index. Guardians are chosen per account (stored per record).
 
-### 3.3 XMTP / signing interplay
-XMTP registration (EIP-191) keeps using the derived owner EOA, exactly like a `generated` account
-today - the owner key is a normal viem `PrivateKeyAccount`. The smart account is the wallet shown in
-the Wallet tab and used for userOps. This means: zero change to `xmtp.*`; the smart wallet reuses the
-owner EOA's XMTP db (`xmtp-<ownerAddress>`), or gets its own keyed by the Kernel address - decide once,
-recommend keying by `ownerAddress` so a recovered account keeps its inbox.
+### 3.3 XMTP / signing interplay - SCW identity (decision changed)
+The smart account IS the XMTP identity. XMTP RN SDK 5.7 supports SCW identities (ERC-1271, with
+ERC-6492 wrapping while undeployed), so the Kernel address registers an inbox directly.
+
+**Signer change.** The XMTP signer lives in `apps/app/lib/xmtp.codecs.ts`
+(`signerForRecord` / `signerForAccount`). Today it returns an EOA signer:
+`signerType: 'EOA'`, `getChainId: 1`, `signMessage` via the viem key. For a `smart` account it becomes:
+
+```ts
+{
+  getIdentifier: () => new PublicIdentity(scwAddress, 'ETHEREUM'),
+  signerType:    () => 'SCW',
+  getChainId:    () => 8453n,                       // Base - identity is chain-bound here
+  signMessage:   async (msg) => {
+    const signature = await kernelClient.signMessage({ message: msg })  // ERC-1271 blob,
+    return { signature }                                                 // 6492-wrapped when undeployed
+  },
+}
+```
+
+`Client.create` / `Client.build` are UNCHANGED - only the signer object differs. The signature is an
+ERC-1271-verifiable blob (not an EOA ECDSA sig); `kernelClient.signMessage` auto-wraps it in an
+ERC-6492 envelope while the Kernel is still counterfactual (ZeroDev co-authored 6492).
+
+**Undeployed registration (ERC-6492).** libxmtp issue #736 (ERC-6492 support) is closed/done, so an
+UNDEPLOYED Kernel can register an XMTP identity - the counterfactual / lazy-deploy story is preserved.
+No deploy is forced just to get an inbox.
+
+**Multi-account.** Each smart account (per HD index) = its own XMTP inbox, exactly like today. The
+`metro://xmtp/<acct>/<conv>` scoping and per-account sqlite db carry over 1:1; `rec.address` simply
+becomes the SCW (Kernel) address instead of an EOA. No structural change to multi-account.
+
+**CAVEAT 1 - cutover, not migration.** The SCW address != the EOA address, so switching an existing
+user to a smart account mints NEW inboxes at the SCW addresses. Existing EOA inbox history does NOT
+migrate - this is a fresh-identity cutover. Offer a one-time "announce new address" option for existing
+users (message their old contacts from the new SCW inbox) rather than promising history migration.
+
+**CAVEAT 2 - chainId plumbing.** The SCW signer (chainId 8453) must be threaded through EVERY signing
+path, not just `Client.create`. In particular `xmtp.recover.ts` (`revokeInstallations` /
+`tryFreeInstallationSlot`) must use the same SCW signer, or it throws `AssociationError.ChainIdMismatch`.
+The identity is chain-bound to Base 8453; never sign with a different chainId after registration.
+
+**Recovery payoff.** Because the SCW address is stable across owner rotation (Kernel recovery swaps the
+owner validator, not the address), the XMTP inbox + history SURVIVE a recovery. Existing installations
+keep working; only a NEW installation created post-recovery must register via the SCW signer
+(chainId 8453).
+
+**SMOKE TEST before shipping.** Confirm that an undeployed (ERC-6492) Kernel can register against XMTP
+PRODUCTION on Base. This is confirmed in code/issue (#736 closed) but NOT yet runtime-tested - run it
+before relying on it.
+
+**Touch points** (signer cutover, no other app-code change in this spec):
+- `xmtp.codecs.ts` - the signer (main change: EOA -> SCW as above).
+- `xmtp.recover.ts` - `Client.create` + `revokeInstallations` must use the SCW signer (chainId 8453).
+- `xmtp.client.ts` - `Client.build` (unchanged API, same SCW signer).
+- `accounts.ts` - `rec.address` becomes the SCW address.
 
 ### 3.4 Secure storage hardening
 The mnemonic is the only secret stored. Store it with hardened options (NEW - current code uses bare
@@ -316,11 +369,19 @@ domain-association files + entitlements. NONE of this works over OTA / hot-reloa
    - Add the `react-native-passkeys` dep; it autolinks. Android Credential Manager needs
      `compileSdk`/`minSdk` already satisfied (minSdk 30, compileSdk 36 - OK). Confirm no extra config
      plugin is needed (the RN example needs none beyond the associated domains).
-3. **Passkey server**: ZeroDev's RN flow expects a server for `/generate-registration-options`,
-   `/verify-registration`, `/generate-login-options`, `/verify-login` (SimpleWebAuthn server). Stand up
-   a tiny endpoint on the daemon (e.g. `passkey.metro.box`) or reuse the link-proxy worker. Low LOC -
-   it is just SimpleWebAuthn's server helpers + storing credential pubkeys. This is the one new piece
-   of backend.
+3. **Passkey server (RN needs a self-hosted one)**: ZeroDev hosts a passkey server for WEB only
+   (`passkeys.zerodev.app/<projectId>`). React Native has NO hosted option - the native ceremony
+   payload differs from the web one, so the hosted server cannot serve RN. RN needs a small
+   SELF-HOSTED SimpleWebAuthn server: ~4 routes - `generate`/`verify` registration and
+   `generate`/`verify` login - on `@simplewebauthn/server` (~300 LOC, per the `server/` dir of
+   `zerodevapp/react-native-passkey-example`).
+   - RECOMMENDATION: fold these 4 routes into the EXISTING Metro daemon (same as `blob.metro.box`) -
+     one credential store, no new service to operate. This is NOT a third party and NOT the
+     `zerodevapp/passkey-server` repo (that repo is a WEB demo, not for RN).
+   - There is NO fully-serverless RN passkey path. The server is required.
+   - RN CLIENT side uses `@zerodev/react-native-passkeys-utils` (`parsePasskeyCred`,
+     `signMessageWithReactNativePasskeys`) + `react-native-passkeys` - the one true native dep, which
+     forces prebuild + a new dev-client APK.
 4. **Prebuild + NEW dev-client APK**: `expo prebuild` then `eas build --profile development` (local if
    credits are out, per the APK-delivery memo). Install on Less's device BEFORE pointing the bundler at
    this branch (native-dep/APK sequencing rule). Bump `android.versionCode` (currently 27 ->) and
@@ -338,12 +399,15 @@ Effort (one focused worker, assuming ZeroDev project + passkey server provisione
 - ZeroDev client + account + passkey + recovery modules (`lib/zerodev/*` + `@stage-labs/client/zerodev/*`): ~1.5 days
 - AccountsManager "smart" type + onboarding screens (reuse existing sheets/form): ~1 day
 - Guardian setup + recovery UX screens: ~1.5 days
-- Passkey server (SimpleWebAuthn) on the daemon/worker: ~0.5 day
+- Passkey WebAuthn endpoint (4 SimpleWebAuthn routes) folded into the Metro daemon + credential store: ~1 day
+- XMTP SCW signer cutover (`xmtp.codecs.ts` signer + chainId 8453 through `xmtp.recover.ts` /
+  `xmtp.client.ts` + `accounts.ts` address) + undeployed-6492 smoke test on XMTP prod (Base): ~1.5 days
 - Domain association files + app.config + prebuild + APK + on-device verify: ~1 day (mostly waiting on
   builds + entitlement debugging)
 - Wiring the wallet send/x402 path through the kernel client: ~0.5 day
 
-Total ~6 days, gated on the APK turnaround. JS-only parts can land behind the gate first.
+Total ~8 days, gated on the APK turnaround. JS-only parts can land behind the gate first; the SCW
+signer cutover ships with (and is verified against) the same APK as the passkey native dep.
 
 Risks / unknowns:
 - **Passkey associated-domains is finicky**: iOS caches the AASA aggressively; a wrong TEAMID or
@@ -351,16 +415,17 @@ Risks / unknowns:
   real device (passkeys never work in a simulator/dev-client without the entitlement).
 - **react-native-passkeys + new arch**: example uses new arch (we're on it), but verify the lib builds
   clean under our SDK 54 / RN version. Pin a known-good version.
-- **Passkey server dependency**: ZeroDev's RN passkey flow is NOT serverless (needs challenge/options +
-  pubkey storage). This is the biggest new surface vs. the EOA wallet. If we want to avoid a server,
-  the alternative is a passkey-only (no server) flow using stored credential ids - confirm with Less
-  whether a small server is acceptable (recommended: yes, it's tiny).
+- **Passkey server dependency**: ZeroDev's RN passkey flow is NOT serverless and ZeroDev's hosted
+  passkey server is WEB-only. There is no serverless RN alternative - the ~4 SimpleWebAuthn routes must
+  be self-hosted (fold into the Metro daemon, recommended). Plan for it; it is not optional for RN.
 - **Recovery is multi-party + on-chain**: guardians need the Stage app + to sign userOps; the
   cross-device request handoff (how a guardian receives the recovery request) needs a transport - XMTP
   is the natural fit (send the recovery request as a Stage message). Design that handoff explicitly.
-- **Counterfactual address + XMTP**: keep XMTP on the owner EOA to avoid touching the messenger; the
-  smart account is wallet-only. Confirm this is acceptable (alternative: ERC-1271 smart-account XMTP
-  signing, much larger scope).
+- **SCW XMTP identity (decision changed)**: the smart account is now the XMTP identity via ERC-1271 /
+  ERC-6492 (XMTP RN 5.7). Two real caveats: (1) cutover not migration - new SCW inboxes, old EOA inbox
+  history does not carry over; (2) chainId 8453 must be threaded through every signing path incl.
+  `xmtp.recover.ts` or it throws `ChainIdMismatch`. Undeployed (6492) registration is confirmed in
+  code/issue #736 but NOT runtime-tested - smoke-test against XMTP production on Base before shipping.
 - **ZeroDev RPC spend**: paymaster sponsors everything; set a dashboard gas policy / rate limit so a
   griefer can't drain the project. Public RPC key = anyone could submit sponsored ops against our
   policy; scope the policy tightly.
@@ -376,5 +441,7 @@ Risks / unknowns:
 3. Prebuild + dev-client APK, install on device, verify a bare passkey create/get works.
 4. `lib/zerodev/*` + `@stage-labs/client/zerodev/*` behind `passkeysAvailable()` gate.
 5. Onboarding (create + lazy deploy + restore).
-6. Guardian setup + recovery (XMTP handoff).
-7. Route wallet send / x402 through the kernel client.
+6. XMTP SCW signer cutover in `xmtp.codecs.ts` (+ chainId 8453 through `xmtp.recover.ts` /
+   `xmtp.client.ts`); smoke-test undeployed-6492 registration against XMTP prod on Base.
+7. Guardian setup + recovery (XMTP handoff; inbox survives recovery thanks to the stable SCW address).
+8. Route wallet send / x402 through the kernel client.
