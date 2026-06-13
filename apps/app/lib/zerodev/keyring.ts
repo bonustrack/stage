@@ -40,7 +40,33 @@
  *           "Export private key" action (the UI gates it behind a destructive
  *           warning Alert). Never logged.
  *
- *    5. No logging. This module never console.logs key material. */
+ *    5. No logging. This module never console.logs key material.
+ *
+ *    6. SESSION UNLOCK (the one-auth create flow — Less's requirement). The
+ *       mnemonic is stored HARDENED (`requireAuthentication: true`), so EVERY raw
+ *       `SecureStore` read of it prompts device auth. A single create flow touches
+ *       the mnemonic on several independent paths (ensureMnemonic existence-check,
+ *       owner derivation for the Kernel, then XMTP `Client.create` signing the
+ *       owner identity + each MLS installation op). Routing every one of those
+ *       through its OWN hardened read surfaced as ~4 back-to-back Face ID prompts
+ *       AND the cumulative wait blew the 30s `Client.create` timeout (the "XMTP
+ *       failed to initialise (timed out)" screen).
+ *
+ *       FIX: all mnemonic access goes through `unlockMnemonic()`, which performs
+ *       exactly ONE hardened (biometric) read per session, then caches the phrase
+ *       in-memory (`sessionMnemonic`) for the process lifetime. Every subsequent
+ *       derivation/sign reuses the cached phrase — NO further prompts. So the user
+ *       taps Create -> ONE Face ID -> the whole flow (Kernel + XMTP install)
+ *       completes silently and fast.
+ *
+ *       TRADEOFF: between the first unlock and the next `lockSession()`/
+ *       `clearMnemonic()`, the decrypted phrase lives in JS memory (an HDAccount
+ *       signer already did, this also keeps the string). This is the standard
+ *       "unlock once per session" wallet posture. The initial auth is NEVER
+ *       skipped — `requireAuthentication` still gates the first read. The phrase
+ *       is cleared on reset/nuke (`clearMnemonic`) and can be dropped explicitly
+ *       via `lockSession()`. The string never leaves the module except via the two
+ *       guarded reveals. */
 
 import '../cryptoShim';
 import * as SecureStore from 'expo-secure-store';
@@ -77,23 +103,49 @@ const HARDENED: SecureStore.SecureStoreOptions = {
 // Mnemonic provisioning (smart-account root).
 // ===========================================================================
 
-/** Read the mnemonic (prompts device auth). null if none stored. PRIVATE —
- *  callers use the signer factories below; only the two reveals expose the
- *  string, and only generate/restore set it. */
-async function loadMnemonic(): Promise<string | null> {
+/** SESSION UNLOCK CACHE (see SECURITY note 6). The decrypted, validated mnemonic
+ *  for the current process. Populated by the SINGLE hardened read in
+ *  `unlockMnemonic()` (or on generate/restore, which already hold the plaintext),
+ *  then reused by every derivation/sign so the create flow prompts device auth
+ *  exactly ONCE. Cleared on reset/nuke (`clearMnemonic`) and `lockSession()`. */
+let sessionMnemonic: string | null = null;
+
+/** Raw HARDENED read of the mnemonic (prompts device auth EVERY call). PRIVATE —
+ *  only `unlockMnemonic` (one read/session) and the reveal-without-cache paths
+ *  call it. */
+async function readMnemonicHardened(): Promise<string | null> {
   const raw = await SecureStore.getItemAsync(MNEMONIC_KEY, HARDENED).catch(() => null);
   if (!raw) return null;
   const phrase = normalizeMnemonic(raw);
   return isValidMnemonic(phrase) ? phrase : null;
 }
 
-/** Whether a mnemonic exists. Prompts device auth (the value is the only signal),
- *  so prefer inferring existence from the account registry; call this only when
- *  you truly must know. Returns false on any error. */
+/** Get the mnemonic for in-session use, doing AT MOST ONE biometric read per
+ *  process. First call performs the hardened read (the single Create-flow prompt)
+ *  and caches the phrase in memory; every later call reuses the cache silently.
+ *  Returns null when none is stored. PRIVATE — callers use the signer factories;
+ *  only the two reveals expose the string. */
+async function unlockMnemonic(): Promise<string | null> {
+  if (sessionMnemonic) return sessionMnemonic;
+  const phrase = await readMnemonicHardened();
+  if (phrase) sessionMnemonic = phrase;
+  return phrase;
+}
+
+/** Drop the in-memory session mnemonic + derived owners WITHOUT deleting the
+ *  stored secret. Use to require a fresh biometric unlock again (e.g. app lock).
+ *  The stored mnemonic is untouched, so the next derivation re-prompts once. */
+export function lockSession(): void {
+  sessionMnemonic = null;
+  ownerCache.clear();
+}
+
+/** Whether a mnemonic exists. Uses the session cache when warm (no prompt); only
+ *  the first cold call prompts device auth (the value is the only signal), so
+ *  prefer inferring existence from the account registry. Returns false on error. */
 export async function hasMnemonic(): Promise<boolean> {
   try {
-    const v = await SecureStore.getItemAsync(MNEMONIC_KEY, HARDENED);
-    return !!v && isValidMnemonic(v);
+    return !!(await unlockMnemonic());
   } catch {
     return false;
   }
@@ -105,11 +157,16 @@ export async function restoreMnemonic(phrase: string): Promise<void> {
   const norm = normalizeMnemonic(phrase);
   if (!isValidMnemonic(norm)) throw new Error('Invalid recovery phrase — failed BIP-39 check.');
   await SecureStore.setItemAsync(MNEMONIC_KEY, norm, HARDENED);
+  /** We hold the plaintext we just stored — seed the session so the restore flow's
+   *  owner derivation + XMTP create reuse it with NO extra biometric prompt. */
+  sessionMnemonic = norm;
+  ownerCache.clear();
 }
 
 /** Delete the stored mnemonic (dev reset / full nuke). Not hardened — a delete
  *  reads nothing, so it doesn't prompt. Best-effort. */
 export async function clearMnemonic(): Promise<void> {
+  sessionMnemonic = null;
   ownerCache.clear();
   await SecureStore.deleteItemAsync(MNEMONIC_KEY).catch(() => undefined);
 }
@@ -119,9 +176,19 @@ export async function clearMnemonic(): Promise<void> {
  *  Prompts device auth (it reads to check existence). Call lazily (new-account
  *  path), never on boot. */
 export async function ensureMnemonic(): Promise<void> {
-  const existing = await loadMnemonic();
+  /** One unlock: reuses the session cache if already warm, else the single
+   *  hardened read. If one exists we're done (it's now cached for the rest of the
+   *  flow). */
+  const existing = await unlockMnemonic();
   if (existing) return;
-  await SecureStore.setItemAsync(MNEMONIC_KEY, generateWalletMnemonic(), HARDENED);
+  /** None stored — mint one. We hold the plaintext, so seed the session directly
+   *  (no read-back) and the owner derivation + XMTP create that follow prompt
+   *  ZERO additional times. The first hardened read above (on a truly fresh
+   *  install) is the ONLY device-auth touch of the create flow. */
+  const minted = generateWalletMnemonic();
+  await SecureStore.setItemAsync(MNEMONIC_KEY, minted, HARDENED);
+  sessionMnemonic = minted;
+  ownerCache.clear();
 }
 
 // ===========================================================================
@@ -151,7 +218,7 @@ const ownerCache = new Map<number, HDAccount>();
 async function ownerFor(hdIndex: number): Promise<HDAccount> {
   const cached = ownerCache.get(hdIndex);
   if (cached) return cached;
-  const mnemonic = await loadMnemonic();
+  const mnemonic = await unlockMnemonic();
   if (!mnemonic) throw new Error('Recovery phrase unavailable for this smart account.');
   const owner = deriveOwner(mnemonic, hdIndex);
   ownerCache.set(hdIndex, owner);
@@ -293,9 +360,13 @@ export async function railgunKeyMaterialFor(id: string): Promise<RailgunKeyMater
 /** REVEAL the recovery phrase for the backup screen. Guarded by device auth: the
  *  mnemonic is stored `requireAuthentication: true`, so the OS prompts
  *  biometrics/passcode on this read. The ONLY path that returns the mnemonic
- *  string. Never logged. Returns null if none stored / auth fails. */
+ *  string. Never logged. Returns null if none stored / auth fails.
+ *
+ *  Deliberately bypasses the session cache and does a FRESH hardened read so the
+ *  OS always re-prompts on this sensitive reveal — a warm create-flow session must
+ *  not let the backup screen show the phrase without a new biometric check. */
 export async function revealRecoveryPhrase(): Promise<string | null> {
-  return loadMnemonic();
+  return readMnemonicHardened();
 }
 
 /** REVEAL a single account's raw private key for the explicit "Export private
