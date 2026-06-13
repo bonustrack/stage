@@ -21,7 +21,7 @@ export {
 export {
   getOrCreateXmtpClient, ensureActiveAccount, switchToAccount, getCachedXmtpClient, waitForXmtpReady, deleteAccount,
   resetXmtpClient, getLastReadNs, setLastReadNs, markConvReadSynced,
-  markConvUnreadSynced, syncPreferences, convOfLine,
+  markConvUnreadSynced, syncPreferences, convOfLine, NoAccountError,
 } from './xmtp.client';
 
 export {
