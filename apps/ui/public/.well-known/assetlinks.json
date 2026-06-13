@@ -1,11 +1,14 @@
 [
   {
-    "relation": ["delegate_permission/common.handle_all_urls"],
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
     "target": {
       "namespace": "android_app",
       "package_name": "box.metro.monitor",
       "sha256_cert_fingerprints": [
-        "REPLACE_WITH_RELEASE_SHA256_FINGERPRINT"
+        "40:76:99:2F:42:52:06:28:AD:BD:E2:D7:9B:B2:14:35:14:E5:FE:6F:6B:77:67:BB:0E:DB:C7:1A:6C:2C:F0:11"
       ]
     }
   }
