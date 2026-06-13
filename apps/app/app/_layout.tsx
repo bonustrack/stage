@@ -19,7 +19,7 @@ import { LogBox, Text, TextInput } from 'react-native';
 import { Col } from '../components/layout';
 import { Spinner } from '../components/Spinner';
 import { Onboarding } from '../components/onboarding/Onboarding';
-import { useOnboardingGate } from '../lib/onboardingSeen';
+import { useAccountGate } from '../lib/accountGate';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { TransitionPresets, TransitionSpecs } from '@react-navigation/stack';
@@ -123,11 +123,18 @@ function RootLayoutInner(): React.ReactElement {
    *  taps. Installed once for the app's lifetime. */
   usePushDeepLinks();
 
-  /** Mint the local EOA at boot, INDEPENDENT of XMTP. The wallet (Snapshot
-   *  signing) + Railgun (usePrivateWallet → getActiveAccountId) must always have
-   *  an account even when XMTP onboarding fails on a clean reinstall (stale db
-   *  key vs. wiped store). Idempotent — no-ops once an account exists. */
-  useEffect(() => { void ensureActiveAccount(); }, []);
+  /** FIRST-LAUNCH GATE: on a clean install (no account in the registry) the real
+   *  onboarding flow (components/onboarding) is the PRIMARY entry — it creates the
+   *  mnemonic + ZeroDev smart account. So we NO LONGER auto-mint a throwaway EOA
+   *  at boot (that would skip onboarding). `ready` gates on the registry's
+   *  one-time load so a returning user never flashes onboarding (see
+   *  lib/accountGate); the gate flips the instant the flow adds an account. */
+  const onboarding = useAccountGate();
+
+  /** Once an account EXISTS, make sure messaging/wallet are wired (idempotent —
+   *  this no longer creates an account, it only revalidates an existing one so a
+   *  clean reinstall with a stale db key self-heals into the recoverable Home). */
+  useEffect(() => { if (onboarding.hasAccount) void ensureActiveAccount(); }, [onboarding.hasAccount]);
   /** Wire streamed group-metadata events into Query (invalidate convMeta) so the
    *  topnav / group screen refresh on rename/image/desc without a reload. */
   useEffect(() => { ensureMessagingStreamSync(); }, []);
@@ -140,10 +147,6 @@ function RootLayoutInner(): React.ReactElement {
     'Calibre-Semibold': require('../assets/fonts/Calibre-Semibold-Custom.ttf'),
   });
 
-  /** FIRST-LAUNCH GATE: render Onboarding INSTEAD of the app until the persisted
-   *  `onboarding.seen` flag is true; `ready` gates on its load so a returning
-   *  user never flashes onboarding (see lib/onboardingSeen). */
-  const onboarding = useOnboardingGate();
   const gatesOpen = loaded && onboarding.ready && restore.ready;
 
   /** IDENTITY-STABLE ROOT: the providers + navigator subtree below renders on
@@ -234,12 +237,14 @@ function RootLayoutInner(): React.ReactElement {
 >
           <Spinner size={28} color={dark ? '#ffffff' : '#000000'}/>
         </Col>
-      ) : !onboarding.seen ? (
+      ) : !onboarding.hasAccount ? (
         <Col
           surface="surface"
           style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
 >
-          <Onboarding onDone={onboarding.finish} />
+          {/* onDone is a no-op safety net — the flow creates an account which
+              flips the gate (hasAccount) on its own. */}
+          <Onboarding onDone={() => undefined} />
         </Col>
       ) : null}
       </KeyboardProvider>
