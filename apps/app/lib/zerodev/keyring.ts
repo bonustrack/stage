@@ -110,6 +110,7 @@ export async function restoreMnemonic(phrase: string): Promise<void> {
 /** Delete the stored mnemonic (dev reset / full nuke). Not hardened — a delete
  *  reads nothing, so it doesn't prompt. Best-effort. */
 export async function clearMnemonic(): Promise<void> {
+  ownerCache.clear();
   await SecureStore.deleteItemAsync(MNEMONIC_KEY).catch(() => undefined);
 }
 
@@ -127,13 +128,34 @@ export async function ensureMnemonic(): Promise<void> {
 // Smart-account (HD) signers — sign-in-place, owner derived from the mnemonic.
 // ===========================================================================
 
+/** In-memory cache of derived owner HDAccounts, keyed by HD index.
+ *
+ *  WHY: the mnemonic is stored HARDENED (`requireAuthentication: true`), so EVERY
+ *  `loadMnemonic()` prompts device biometrics/passcode. XMTP installation
+ *  registration (`Client.create`) signs the owner identity SEVERAL times in one
+ *  flow — without a cache that surfaced as 5 back-to-back biometric prompts AND,
+ *  because each prompt serialises + waits on the user, the cumulative latency
+ *  blew the 30s `Client.create` timeout → "XMTP failed to initialise (timed
+ *  out)". Caching the derived HDAccount means we read+auth the mnemonic ONCE per
+ *  session; subsequent signs reuse the opaque in-RAM signer (no key/mnemonic is
+ *  cached as a string, only the viem signer object) — so one prompt, fast create.
+ *
+ *  Cleared on `clearMnemonic()` (reset/nuke) so a wiped wallet leaves nothing
+ *  derivable in memory. The cache lives only for the process lifetime. */
+const ownerCache = new Map<number, HDAccount>();
+
 /** Internal: derive the owner signer for a smart-account HD index. Reads the
- *  mnemonic (device auth). Throws if none stored. The returned HDAccount signs
- *  but exposes no key extractor. */
+ *  mnemonic (device auth) ONCE then caches the opaque HDAccount in memory (see
+ *  ownerCache) so repeat signs in one session don't re-prompt or stack latency.
+ *  Throws if none stored. The returned HDAccount signs but exposes no key. */
 async function ownerFor(hdIndex: number): Promise<HDAccount> {
+  const cached = ownerCache.get(hdIndex);
+  if (cached) return cached;
   const mnemonic = await loadMnemonic();
   if (!mnemonic) throw new Error('Recovery phrase unavailable for this smart account.');
-  return deriveOwner(mnemonic, hdIndex);
+  const owner = deriveOwner(mnemonic, hdIndex);
+  ownerCache.set(hdIndex, owner);
+  return owner;
 }
 
 /** The owner ADDRESS for an HD index (public, no auth — derives a throwaway view
