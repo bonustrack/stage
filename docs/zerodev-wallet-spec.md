@@ -14,6 +14,13 @@ All API names below were verified against the real SDK: `@zerodev/sdk` 5.5.x,
 the `zerodevapp/zerodev-examples` repo (create-account, guardians/recovery.ts,
 guardians/recovery_call.ts) and `zerodevapp/react-native-passkey-example` (verified June 2026).
 
+**DESIGN UPDATE (June 2026): NO SERVER.** Earlier drafts called for a self-hosted 4-route
+SimpleWebAuthn passkey server (folded into the Metro daemon). After reading the actual
+`@zerodev/react-native-passkeys-utils`, `@zerodev/webauthn-key` and `react-native-passkeys` source,
+that server is NOT required for a single-user self-custody wallet. The whole passkey flow runs
+on-device + on-chain. See section (z) for the definitive verdict and the exact serverless
+construction; the passkey section below is written for the serverless design.
+
 ---
 
 ## 0. How this maps onto the existing wallet
@@ -88,8 +95,8 @@ Constants used throughout: `entryPoint = getEntryPoint('0.7')` (EntryPoint v0.7)
 
 A small helper module `lib/zerodev/` mirrors the `lib/railgun/` shape:
 - `lib/zerodev/client.ts` - build publicClient + paymasterClient + kernel client for an account.
-- `lib/zerodev/passkey.ts` - register/login passkey -> `WebAuthnKey` (wraps react-native-passkeys +
-  the passkey server calls).
+- `lib/zerodev/passkey.ts` - register/login passkey -> `WebAuthnKey`, fully on-device (wraps
+  react-native-passkeys + `parsePasskeyCred` / `signMessageWithReactNativePasskeys`). NO server calls.
 - `lib/zerodev/account.ts` - createKernelAccount with sudo=passkey, regular=owner-ecdsa; address calc.
 - `lib/zerodev/recovery.ts` - guardian validator + getRecoveryAction install + doRecovery.
 - `lib/zerodev/native.ts` - `passkeysAvailable()` gate (mirrors railgun/native.ts) so the UI degrades
@@ -114,14 +121,27 @@ backup." One primary button "Create with passkey".
    `react-native-passkeys`, show the "needs the new app build" state (same pattern as Private/Railgun).
 2. Derive the BACKUP owner key at the next HD index from the app mnemonic (see 3.2):
    `privateKeyFromMnemonic(mnemonic, index)` -> `ownerSigner = privateKeyToAccount(pk)`.
-3. Register the passkey:
-   - fetch `/generate-registration-options` from the passkey server (challenge + rp + user).
-   - `const cred = await passkey.create({ challenge, pubKeyCredParams, rp, user, authenticatorSelection })`
-     (`react-native-passkeys`). iOS adds `extensions.largeBlob.support='required'`.
-   - POST `cred` to `/verify-registration`.
-   - `const parsed = parsePasskeyCred(cred, rp.id)` (`@zerodev/react-native-passkeys-utils`).
-   - `webAuthnKey = await toWebAuthnKey({ webAuthnKey: { ...parsed, signMessageCallback:
-     signMessageWithReactNativePasskeys }, rpID: rp.id })` (`@zerodev/webauthn-key`).
+3. Register the passkey (NO server - challenge is client-generated, pubkey extracted on-device):
+   ```ts
+   const challenge = bytesToBase64Url(crypto.getRandomValues(new Uint8Array(32)))  // client random
+   const cred = await passkey.create({
+     challenge,
+     pubKeyCredParams: [{ alg: -7, type: 'public-key' }],          // ES256 / P-256
+     rp,                                                            // { id: rp.id, name }
+     user: { id, name, displayName },                              // id = the Kernel-tied user handle
+     authenticatorSelection: { residentKey: 'required', userVerification: 'required' },
+     ...(Platform.OS !== 'android' && { extensions: { largeBlob: { support: 'required' } } }),
+   })
+   // pubkey comes back IN the create() response (cred.response.publicKey, SPKI); no verify roundtrip.
+   const parsed = parsePasskeyCred(cred, rp.id)                    // extracts pubX/pubY client-side
+   const webAuthnKey = await toWebAuthnKey({                       // short-circuits: returns parsed as-is
+     webAuthnKey: { ...parsed, signMessageCallback: signMessageWithReactNativePasskeys },
+     rpID: rp.id,
+   })
+   ```
+   `residentKey: 'required'` makes it a DISCOVERABLE credential so a new device can find it with an
+   empty `allowCredentials`. `toWebAuthnKey` returns its `webAuthnKey` arg unchanged when supplied
+   (verified in source: `if (webAuthnKey) return webAuthnKey`), so `passkeyServerUrl` is never read.
 4. Build the two validators:
    - `passkeyValidator = await toPasskeyValidator(publicClient, { webAuthnKey, entryPoint,
      kernelVersion, validatorContractVersion: PasskeyValidatorContractVersion.V0_0_2 })`.
@@ -154,12 +174,33 @@ await kernelClient.waitForUserOperationReceipt({ hash })
 The Kernel deploys inside this first userOp, paid by the paymaster. Touching the passkey (Face ID /
 fingerprint) is the user-visible step. After the receipt, set `record.registered = true` (= deployed).
 
-### Screen 3 - Restore on a new device / re-login
-"I already have a smart wallet" -> `/generate-login-options` -> `passkey.get({ rpId, challenge,
-allowCredentials, userVerification })` -> `parseLoginCred(resp, xHex, yHex, rp.id)` -> `toWebAuthnKey`
-as above. Rebuild the same Kernel via `createKernelAccount({ address: knownAddress, plugins: { sudo:
-passkeyValidator }, ... })`. (Address comes from a small per-wallet cloud/server record keyed by the
-credential, or is re-derived from the owner key if the backup phrase is entered.)
+### Screen 3 - Restore on a new device / re-login (NO server)
+Two paths, both serverless. The wrinkle: `passkey.get()` returns the credential id + a signature but
+NOT the public key, and `parseLoginCred` needs `xHex`/`yHex` supplied. In the example that pubkey came
+from the server DB. Without a server we get the pubkey from one of:
+
+**Path A - recovery phrase (the portable root, always works).** User enters the backup phrase ->
+`deriveOwner(mnemonic, hdIndex)` -> rebuild the Kernel at the deterministic counterfactual address with
+the OWNER ecdsa validator as `sudo` (no passkey needed at all to restore access). Then optionally
+register a FRESH device passkey and rotate it in via one sponsored userOp. This is the canonical
+new-device story and needs nothing but the phrase the user already backed up.
+
+**Path B - synced passkey alone (no phrase typing), pubkey from largeBlob or on-chain.** The platform
+passkey syncs via iCloud Keychain / Google Password Manager. To rebuild the WebAuthnKey we need the
+pubkey + Kernel address, which are PUBLIC (not secret) and recoverable two ways:
+  - iOS `largeBlob`: at registration we already request `largeBlob.support:'required'`; write the
+    32+32-byte pubkey + the 20-byte Kernel address into the blob. It rides inside the iCloud-synced
+    credential, so on the new device the first `passkey.get()` returns both the assertion AND the blob.
+  - Deployed Kernel: the passkey validator stores pubX/pubY on-chain; read them from the validator for
+    the Kernel address (address itself can be cached in iCloud KV / app group, or recomputed). Only
+    works once the Kernel is deployed; for a still-counterfactual account use Path A or the blob.
+Then: `passkey.get({ rpId, challenge: <client random>, allowCredentials: [], userVerification })` ->
+`parseLoginCred(resp, xHex, yHex, rp.id)` -> `toWebAuthnKey({ webAuthnKey: {...} })` ->
+`createKernelAccount({ address, plugins: { sudo: passkeyValidator } })`. Empty `allowCredentials`
+relies on the discoverable (resident) credential, so no stored credId is required.
+
+Recommendation: ship Path A first (zero new surface, reuses the mnemonic + derivation that already
+exist for the backup owner). Treat the largeBlob convenience as a follow-up. Either way: no server.
 
 ---
 
@@ -173,7 +214,8 @@ type: 'smart'
 address:        <counterfactual Kernel address>      // also the id
 hdIndex:        number                                 // which derived owner backs it
 ownerAddress:   string                                 // the derived ECDSA backup owner
-passkeyCredId:  string                                 // base64url rawId, to re-find the passkey
+passkeyCredId:  string                                 // base64url rawId, CACHE only (resident cred
+                                                       // means restore can pass allowCredentials:[])
 deployed:       boolean                                // reuse existing `registered` field
 guardians?:     string[]                               // guardian addresses (display only)
 guardianThreshold?: number
@@ -369,17 +411,15 @@ domain-association files + entitlements. NONE of this works over OTA / hot-reloa
    - Add the `react-native-passkeys` dep; it autolinks. Android Credential Manager needs
      `compileSdk`/`minSdk` already satisfied (minSdk 30, compileSdk 36 - OK). Confirm no extra config
      plugin is needed (the RN example needs none beyond the associated domains).
-3. **Passkey server (RN needs a self-hosted one)**: ZeroDev hosts a passkey server for WEB only
-   (`passkeys.zerodev.app/<projectId>`). React Native has NO hosted option - the native ceremony
-   payload differs from the web one, so the hosted server cannot serve RN. RN needs a small
-   SELF-HOSTED SimpleWebAuthn server: ~4 routes - `generate`/`verify` registration and
-   `generate`/`verify` login - on `@simplewebauthn/server` (~300 LOC, per the `server/` dir of
-   `zerodevapp/react-native-passkey-example`).
-   - RECOMMENDATION: fold these 4 routes into the EXISTING Metro daemon (same as `blob.metro.box`) -
-     one credential store, no new service to operate. This is NOT a third party and NOT the
-     `zerodevapp/passkey-server` repo (that repo is a WEB demo, not for RN).
-   - There is NO fully-serverless RN passkey path. The server is required.
-   - RN CLIENT side uses `@zerodev/react-native-passkeys-utils` (`parsePasskeyCred`,
+3. **Passkey server: NOT needed (serverless).** The example repo ships a SimpleWebAuthn server, but
+   it exists only because that demo verifies attestation and stores the pubkey for its login flow. A
+   single-user self-custody wallet needs neither (see section (z)): the registration challenge is
+   client-generated, the pubkey is extracted on-device by `parsePasskeyCred`, signing uses the userOp
+   hash as the challenge via `signMessageWithReactNativePasskeys`, and new-device restore uses the
+   recovery phrase (Path A) or a synced-passkey largeBlob / on-chain pubkey read (Path B). The chain
+   is the relying party; there is no backend to phish or verify against. So: zero new service, nothing
+   folded into the Metro daemon, no credential store.
+   - RN CLIENT side uses `@zerodev/react-native-passkeys-utils` (`parsePasskeyCred`, `parseLoginCred`,
      `signMessageWithReactNativePasskeys`) + `react-native-passkeys` - the one true native dep, which
      forces prebuild + a new dev-client APK.
 4. **Prebuild + NEW dev-client APK**: `expo prebuild` then `eas build --profile development` (local if
@@ -399,14 +439,14 @@ Effort (one focused worker, assuming ZeroDev project + passkey server provisione
 - ZeroDev client + account + passkey + recovery modules (`lib/zerodev/*` + `@stage-labs/client/zerodev/*`): ~1.5 days
 - AccountsManager "smart" type + onboarding screens (reuse existing sheets/form): ~1 day
 - Guardian setup + recovery UX screens: ~1.5 days
-- Passkey WebAuthn endpoint (4 SimpleWebAuthn routes) folded into the Metro daemon + credential store: ~1 day
+- (Passkey server: REMOVED - serverless, 0 days. Was ~1 day.)
 - XMTP SCW signer cutover (`xmtp.codecs.ts` signer + chainId 8453 through `xmtp.recover.ts` /
   `xmtp.client.ts` + `accounts.ts` address) + undeployed-6492 smoke test on XMTP prod (Base): ~1.5 days
 - Domain association files + app.config + prebuild + APK + on-device verify: ~1 day (mostly waiting on
   builds + entitlement debugging)
 - Wiring the wallet send/x402 path through the kernel client: ~0.5 day
 
-Total ~8 days, gated on the APK turnaround. JS-only parts can land behind the gate first; the SCW
+Total ~7 days (down from ~8: the passkey server is gone), gated on the APK turnaround. JS-only parts can land behind the gate first; the SCW
 signer cutover ships with (and is verified against) the same APK as the passkey native dep.
 
 Risks / unknowns:
@@ -415,9 +455,12 @@ Risks / unknowns:
   real device (passkeys never work in a simulator/dev-client without the entitlement).
 - **react-native-passkeys + new arch**: example uses new arch (we're on it), but verify the lib builds
   clean under our SDK 54 / RN version. Pin a known-good version.
-- **Passkey server dependency**: ZeroDev's RN passkey flow is NOT serverless and ZeroDev's hosted
-  passkey server is WEB-only. There is no serverless RN alternative - the ~4 SimpleWebAuthn routes must
-  be self-hosted (fold into the Metro daemon, recommended). Plan for it; it is not optional for RN.
+- **Passkey server: eliminated.** Confirmed by reading the SDK source (section (z)): registration
+  challenge is client-generated, pubkey is parsed on-device, signing uses the userOp hash, restore uses
+  the recovery phrase or a synced-passkey blob/on-chain read. No server, no credential store. The one
+  honest residual: the synced-passkey-WITHOUT-phrase restore (Path B) needs the public pubkey from
+  SOMEWHERE because `passkey.get()` omits it - solved on-device via largeBlob or on-chain, never a
+  hosted backend. Phrase-based restore (Path A) needs nothing extra.
 - **Recovery is multi-party + on-chain**: guardians need the Stage app + to sign userOps; the
   cross-device request handoff (how a guardian receives the recovery request) needs a transport - XMTP
   is the natural fit (send the recovery request as a Stage message). Design that handoff explicitly.
@@ -434,8 +477,115 @@ Risks / unknowns:
 
 ---
 
+## (z) Serverless verdict (definitive, from SDK source)
+
+Read June 2026 from the published packages: `@zerodev/react-native-passkeys-utils@5.4.2`
+(`utils.ts`, `signMessageWithReactNativePasskeys.ts`), `@zerodev/webauthn-key@5.4.2`
+(`toWebAuthnKey.ts`), `react-native-passkeys@0.3.1`, and the `zerodevapp/react-native-passkey-example`
+client + `server/src/index.ts`.
+
+**(a) `toWebAuthnKey` / `toPasskeyValidator` WITHOUT a `passkeyServerUrl` - YES.** First statement of
+`toWebAuthnKey`: `if (webAuthnKey) { return webAuthnKey }`. When you pass a `webAuthnKey` built from
+`parsePasskeyCred` it returns it verbatim and the `passkeyServerUrl` branch (the `@simplewebauthn/browser`
+web flow) never executes. `parsePasskeyCred(cred, rpID)` reads `cred.response.publicKey` (the SPKI that
+`passkey.create()` returns on-device), ASN.1-parses it and yields `{ pubX, pubY, authenticatorId,
+authenticatorIdHash, rpID }`. Exact serverless construction:
+```ts
+const cred = await passkey.create({ challenge: clientRandom, pubKeyCredParams: [{alg:-7,type:'public-key'}],
+  rp, user, authenticatorSelection: { residentKey:'required', userVerification:'required' } })
+const webAuthnKey = await toWebAuthnKey({
+  webAuthnKey: { ...parsePasskeyCred(cred, rp.id), signMessageCallback: signMessageWithReactNativePasskeys },
+  rpID: rp.id,
+})                                                    // no passkeyServerUrl passed, none used
+const passkeyValidator = await toPasskeyValidator(publicClient, {
+  webAuthnKey, entryPoint, kernelVersion, validatorContractVersion: PasskeyValidatorContractVersion.V0_0_2 })
+```
+`signMessageWithReactNativePasskeys` is 100% on-device: it base64-encodes the message (the userOp hash)
+as the WebAuthn challenge, calls `passkey.get()`, parses r/s and ABI-encodes the validator signature.
+No server in the signing path either.
+
+**(b) Client-generated registration challenge - YES, acceptable here.** In standard WebAuthn the
+server-issued challenge + attestation verification prove "a fresh ceremony on a genuine authenticator
+authorized by MY backend." A self-custody wallet has NO backend granting access: the account is defined
+solely by the P-256 pubkey written into the on-chain validator, and authority is proven per-userOp by a
+P-256 signature the Kernel contract verifies. We never check attestation. Security analysis:
+  - Replay: irrelevant at registration (registration grants nothing; it just creates a keypair). At
+    signing time the challenge IS the userOp hash, which includes the nonce, so the EntryPoint's nonce
+    handling prevents replay - same guarantee as any 4337 account.
+  - Phishing: classic WebAuthn phishing protection (origin binding in clientDataJSON, RP-id scoping by
+    the OS) still applies because the OS enforces rp.id against the associated-domains entitlement -
+    that is on-device, not server-provided. A client challenge does not weaken it.
+  - The one thing we lose by skipping attestation: we cannot assert the key lives in genuine hardware.
+    For a personal wallet that the user themselves provisions, that is a non-goal.
+Net: no meaningful downside for this model.
+
+**(c) New-device flow with NO server.** `passkey.get()` returns the credential id + assertion but NOT
+the pubkey, and `parseLoginCred` needs `xHex`/`yHex` supplied - that gap is the ONLY thing the example
+server filled (it stored + returned the pubkey on login). It is closeable without a server:
+  - Path A (phrase): the mnemonic-derived owner is already a validator on the Kernel; enter the phrase,
+    re-derive, rebuild at the deterministic address with the owner as `sudo`. Restores access with zero
+    passkey and zero stored state. Then re-register a device passkey and rotate it in (sponsored userOp).
+  - Path B (synced passkey, no typing): the pubkey is PUBLIC, so stash it where it survives reinstall -
+    iOS `largeBlob` inside the iCloud-synced credential (already requesting `largeBlob.support:'required'`)
+    or read pubX/pubY back from the on-chain validator of a deployed Kernel. The credential id comes from
+    the discoverable-credential assertion itself (`allowCredentials: []`), so nothing about the credential
+    needs storing.
+What MUST be stored where for a clean zero-server login: nothing mandatory beyond the mnemonic the user
+already backs up (Path A). For passwordless Path B, store the public {pubX, pubY, kernelAddress} in
+largeBlob and/or rely on the deployed validator; none of it is secret. What breaks with literally no
+server AND no phrase AND a still-counterfactual (never-deployed) Kernel AND no largeBlob: you can't
+recover the pubkey - but that scenario is avoided by either deploying lazily on first use (pubkey then
+on-chain) or writing the blob at registration. So it is not a real gap.
+
+**(d) Final verdict: fully serverless is feasible and SOLID.** No hosted server is required at any step
+(register, sign, deploy, recover, restore). The single residual need - recovering the public key on a
+brand-new device that restores via synced passkey alone - is satisfiable entirely on-device (largeBlob)
+or on-chain (validator storage), never by a hosted backend. Recommended: ship phrase-based restore
+(Path A) first (it reuses the existing mnemonic/derivation and adds zero surface), add the largeBlob
+passwordless path as a follow-up. The earlier "the server is required" claim was wrong; it is removed.
+
+## (y) Spec review - solidity + simplifications
+
+Findings from a critical pass, ordered by importance:
+
+1. **Server removed (biggest simplification).** See (z). Deletes ~1 day of work, a credential store,
+   and an always-on attack surface on the daemon. Net: fewer moving parts, no DB of WebAuthn creds to
+   secure or migrate.
+2. **Two-signer-at-creation adds avoidable complexity.** Spec installs passkey `sudo` + owner-ecdsa
+   `regular` AND later a guardian `regular`. A Kernel has one `regular` slot per action; juggling
+   owner-ecdsa and the guardian recovery validator in the same slot is fiddly. Simpler, still meets all
+   requirements: passkey = `sudo`; the mnemonic owner is the RECOVERY/backup path (it is what Path A
+   restore uses) not a co-installed runtime validator; guardians = the weighted validator + recovery
+   action. The owner key still backs recovery and HD-determinism without occupying a live plugin slot.
+   Fold "mnemonic owner" into the recovery story rather than a second always-on signer.
+3. **Guardian griefing / threshold.** `floor(100/N)` weights + `ceil(100*M/N)` threshold can round so
+   that M honest guardians fall just short (e.g. N=3 -> weight 33, threshold for 2-of-3 = 67 > 66). Fix:
+   give each guardian weight 1 and set `threshold = M` integer - no rounding, no griefing edge. Also
+   note recovery only ROTATES the owner; it cannot move funds mid-flight, so a single malicious guardian
+   below threshold is inert. State that explicitly.
+4. **Paymaster abuse.** Public RPC key means anyone can submit sponsored ops against the policy. The
+   spec already flags this; make the mitigation concrete: ZeroDev gas policy scoped to (a) a per-sender
+   allowlist is not possible for counterfactual addresses, so use (b) a strict global rate cap + max
+   gas per op + a monthly ceiling, and monitor. Acceptable for launch; revisit if abused.
+5. **Cutover (XMTP identity).** Solid but it is a one-way fresh-identity switch losing EOA inbox
+   history. Keep it OPT-IN per account, never auto-migrate the user's existing EOA account. The
+   "announce new address" helper is good. Do not make `smart` the default account type until the
+   undeployed-6492 XMTP smoke test passes on Base prod (already called out - keep it as a hard gate).
+6. **chainId plumbing (8453) is a genuine sharp edge.** Already documented well. Reinforce: centralize
+   the SCW signer construction so `xmtp.codecs.ts`, `xmtp.recover.ts`, `xmtp.client.ts` all import ONE
+   factory - don't hand-thread `8453n` in three places (that is how `ChainIdMismatch` regressions creep
+   in). Single source of truth = separation of concerns + fewer LOC.
+7. **Secure-store: don't gate the mnemonic behind biometrics if the passkey already gates signing.**
+   `requireAuthentication:true` on every mnemonic read is correct, but ensure normal userOps never read
+   the mnemonic (they use the passkey) - the spec says this; make it a lint/test invariant so a future
+   refactor doesn't accidentally read the phrase on the hot path and double-prompt.
+8. **Minor: `passkeyCredId` need not be persisted** (resident credential + `allowCredentials:[]`).
+   Cache it for UX but treat it as disposable; do not build restore on it being present.
+
+None of the above blocks the design; items 2 and 3 are the two worth changing before build.
+
 ## Recommended build order
-1. ZeroDev project (Base) + tiny SimpleWebAuthn passkey server on metro.box/stage.box.
+1. ZeroDev project (Base). (No passkey server - serverless.)
 2. Host AASA + assetlinks credentials sections; add `webcredentials:` to app.config; add
    `react-native-passkeys`.
 3. Prebuild + dev-client APK, install on device, verify a bare passkey create/get works.
