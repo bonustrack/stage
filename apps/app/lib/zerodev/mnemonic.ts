@@ -60,6 +60,13 @@ export async function setMnemonic(phrase: string): Promise<void> {
   await SecureStore.setItemAsync(MNEMONIC_KEY, norm, HARDENED);
 }
 
+/** Delete the stored mnemonic. Used by the dev "reset accounts" flow to wipe the
+ *  smart-wallet root so onboarding mints a fresh phrase. NOT hardened: a delete
+ *  doesn't read the value, so it doesn't prompt device auth. Best-effort. */
+export async function clearMnemonic(): Promise<void> {
+  await SecureStore.deleteItemAsync(MNEMONIC_KEY).catch(() => undefined);
+}
+
 /** Idempotently ensure a mnemonic exists, generating one on first use, and
  *  return it. Prompts device auth (it reads). Call this lazily — only when the
  *  user first creates a smart account, never on boot. */
