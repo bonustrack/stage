@@ -248,7 +248,12 @@ function DecodedCallBlock({ decoded, pending, target, sub, selector }: {
 }): React.ReactElement {
   const pal = usePalette();
   const detailBg = pal.border;
-  const fnLabel = decoded?.signature ?? decoded?.functionName ?? selector ?? 'call';
+  // For a verified-contract selector mismatch, never show a clean-looking
+  // signature as if it were a real call — show the raw selector instead; the red
+  // TxWarning above carries the "looks like X but no such function" detail.
+  const fnLabel = decoded?.source === 'mismatch'
+    ? (selector ?? decoded?.selector ?? 'unknown function')
+    : (decoded?.signature ?? decoded?.functionName ?? selector ?? 'call');
   return (
     <Col radius="md" background={detailBg} padding={10} gap={6} style={{ alignSelf: 'stretch' }}>
       <Row align="center" gap={6}>
@@ -264,7 +269,7 @@ function DecodedCallBlock({ decoded, pending, target, sub, selector }: {
           <Text variant="mono" size="xs" numberOfLines={4} style={{ flexShrink: 1, flex: 1 }}>{a.value}</Text>
         </Row>
       ))}
-      {!pending && decoded?.note ? (
+      {!pending && decoded?.note && decoded.source !== 'mismatch' ? (
         <Text size="xs" color={sub}>{decoded.note}</Text>
       ) : null}
       {target ? (

@@ -45,8 +45,14 @@ export interface DecodedCall {
    *   - 'sourcify' : authentic ABI from the verified source (calm, no caution)
    *   - '4byte'    : function signature only, from the 4byte directory (calm
    *                  decode + a subtle "decoded via function signature" note)
+   *   - 'mismatch' : the contract IS verified on Sourcify but its ABI has NO
+   *                  function with this selector — the tx targets a function the
+   *                  contract does not implement. A RED "do not sign" warning, not
+   *                  a calm decode. (A 4byte name may be attached for display only,
+   *                  always framed as "looks like X but this contract has no such
+   *                  function".)
    *   - 'none'     : nothing matched (genuinely undecodable — a real warning) */
-  source: 'sourcify' | '4byte' | 'none';
+  source: 'sourcify' | '4byte' | 'mismatch' | 'none';
   /** Resolved function name (e.g. "post"), or undefined when nothing matched. */
   functionName?: string;
   /** Full signature when known (e.g. "post(string)"). */
@@ -157,32 +163,61 @@ export async function decodeCall(
   // 1. Sourcify ABI -> exact name + named args.
   const sourcify = await fetchSourcifyAbi(chainId, to);
   if (sourcify) {
-    try {
-      const decoded = decodeFunctionData({ abi: sourcify.abi, data: data as Hex });
-      const fn = sourcify.abi.find(
-        (i): i is Extract<Abi[number], { type: 'function' }> =>
-          i.type === 'function' && i.name === decoded.functionName,
-      );
-      const inputs = fn?.inputs ?? [];
-      const args = (decoded.args ?? []).map((v, i) => ({
-        name: inputs[i]?.name || `arg${i}`,
-        type: inputs[i]?.type || '',
-        value: fmtArg(v),
-      }));
-      const signature = fn
-        ? `${fn.name}(${inputs.map(p => p.type).join(',')})`
-        : decoded.functionName;
-      return {
-        decoded: true,
-        verified: sourcify.verified,
-        source: 'sourcify',
-        functionName: decoded.functionName,
-        signature,
-        args,
-        selector,
-        note: undefined,
-      };
-    } catch { /* ABI present but didn't match this selector — fall to 4byte */ }
+    // Does the verified ABI actually contain this selector? We compute the
+    // selector of every function in the ABI and compare. This is the load-bearing
+    // check: if the contract is verified but NONE of its functions has this
+    // selector, the tx targets a function the contract does not implement — it
+    // will revert / is malformed — and we must NOT silently fall back to 4byte and
+    // render a confident-looking decode.
+    const selectorInAbi = sourcify.abi.some((i) => {
+      if (i.type !== 'function') return false;
+      try { return toFunctionSelector(i).toLowerCase() === selector; }
+      catch { return false; }
+    });
+    if (selectorInAbi) {
+      try {
+        const decoded = decodeFunctionData({ abi: sourcify.abi, data: data as Hex });
+        const fn = sourcify.abi.find(
+          (i): i is Extract<Abi[number], { type: 'function' }> =>
+            i.type === 'function' && i.name === decoded.functionName,
+        );
+        const inputs = fn?.inputs ?? [];
+        const args = (decoded.args ?? []).map((v, i) => ({
+          name: inputs[i]?.name || `arg${i}`,
+          type: inputs[i]?.type || '',
+          value: fmtArg(v),
+        }));
+        const signature = fn
+          ? `${fn.name}(${inputs.map(p => p.type).join(',')})`
+          : decoded.functionName;
+        return {
+          decoded: true,
+          verified: sourcify.verified,
+          source: 'sourcify',
+          functionName: decoded.functionName,
+          signature,
+          args,
+          selector,
+          note: undefined,
+        };
+      } catch { /* selector is in the ABI but args failed to decode — fall through to mismatch */ }
+    }
+    // Verified contract, but this selector is NOT one of its functions (or the
+    // matched function's args wouldn't decode). RED FLAG: do not pretend this is a
+    // valid call. Optionally name the selector via 4byte for display, but frame it
+    // strictly as a warning — never a calm decode.
+    const guessSig = await fetch4byteSig(selector);
+    const guess = guessSig ? `looks like ${guessSig} per 4byte, but ` : '';
+    return {
+      decoded: false,
+      verified: sourcify.verified,
+      source: 'mismatch',
+      functionName: guessSig ? guessSig.split('(')[0] : undefined,
+      signature: guessSig ?? undefined,
+      args: [],
+      selector,
+      note: `This calls a function that does not exist on this verified contract (selector ${selector}). ${guess ? `${guess.charAt(0).toUpperCase()}${guess.slice(1)}` : 'The '}this contract has no such function. The transaction will likely fail or is malformed - do not sign unless you trust it.`,
+    };
   }
 
   // 2. 4byte fallback -> signature + best-effort arg decode (unverified).
@@ -253,14 +288,22 @@ export function useDecodedCall(
  *  decode — see DecodedCallBlock's neutral "decoded via function signature" note).
  *
  *  A warning fires ONLY when:
- *   1. the calldata is genuinely undecodable (no Sourcify, no 4byte match) — we
+ *   1. SELECTOR MISMATCH: the contract is verified on Sourcify but has no function
+ *      with this selector (source:'mismatch') — the tx will revert / is malformed.
+ *      This is the strongest "do not sign" case and uses the decode's own note; or
+ *   2. the calldata is genuinely undecodable (no Sourcify, no 4byte match) — we
  *      truly cannot tell the user what the tx does; or
- *   2. there's a clear mismatch: the sender's description claims a payment/transfer
+ *   3. there's a clear mismatch: the sender's description claims a payment/transfer
  *      but the decoded function is clearly not a transfer.
  *  Otherwise (confident decode, signatures consistent) we show the decode calmly
  *  with no banner at all. */
 export function spoofWarning(call: DecodedCall | null, description?: string): string | undefined {
   if (!call) return undefined; // plain ETH transfer — handled by the simple view
+  // Selector-not-in-ABI on a verified contract: surface the explicit "do not sign"
+  // note from the decode (it names the selector and the 4byte guess if any).
+  if (call.source === 'mismatch') {
+    return call.note ?? 'This calls a function that does not exist on this verified contract. Do not sign unless you trust it.';
+  }
   if (!call.decoded) {
     return 'This call could not be decoded, so the app cannot confirm what it does. Check before signing.';
   }
