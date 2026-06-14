@@ -11,13 +11,14 @@ import { Row, Col, Box } from './layout';
 import { shortAddress } from '../modules/messaging';
 import { fmtSigValue, ethFromWeiHex } from './MessengerBubble.helpers';
 import type { SigRequest, SigReference, TxRequest, TxReceipt } from './MessengerBubble.helpers';
-import { usePalette, useBlockRadius } from '../lib/theme';
+import { usePalette, useBlockRadius, withAlpha } from '../lib/theme';
 import { usePeerProfiles, getPeerName } from '../lib/peerProfiles';
 import { PaymentCard } from './PaymentCard';
-import { NATIVE_TOKEN_SENTINEL } from '@stage-labs/client/wallet/assets';
+import { NATIVE_TOKEN_SENTINEL, VIEM_CHAINS } from '@stage-labs/client/wallet/assets';
 import { stampTokenUrl } from '@metro-labs/kit/avatar';
 import { chainIdToNumber, explorerTxUrl } from '@stage-labs/client/xmtp/tx';
 import { isCardActionBlocked } from '../lib/consentGate';
+import { useDecodedCall, spoofWarning, type DecodedCall } from '../lib/txDecode';
 // SigRequestCard — signature-request bubble: trusted (app-derived) title + the
 // typed-data/message detail. The peer-supplied `description` is rendered
 // SEPARATELY and labelled sender-provided, never as the prominent trusted
@@ -142,7 +143,7 @@ export function SigReferenceCard({ ref, dark, sub }: {
  *  PaymentCard: it computes the amount/recipient/token from the tx request and
  *  passes its own "Pay" action (the caller's onPay runs walletSendCalls /
  *  sendCall). The recipient line is a tappable profile link (TxToRow). */
-export function TxRequestCard({ req, dark, paying, onPay, consentAllowed }: {
+export function TxRequestCard({ req, dark, sub, paying, onPay, consentAllowed }: {
   req: TxRequest; dark: boolean; sub: string; paying?: boolean;
   onPay?: () => void;
   /** undefined = unknown/not gated (allowed convs), false = stranger -> block. */
@@ -167,6 +168,15 @@ export function TxRequestCard({ req, dark, paying, onPay, consentAllowed }: {
    *  logo so the URL 404s and TokenAvatar falls back to the border circle. */
   const chainNum = chainIdToNumber(req.chainId ?? '0x1');
   const logoUrl = stampTokenUrl(chainNum, tokenAddr ?? NATIVE_TOKEN_SENTINEL, 36);
+  // DECODED CALL: resolve what the calldata ACTUALLY does (Sourcify ABI ->
+  // function + named args, 4byte fallback). null for a plain ETH transfer (no
+  // data); for a known ERC-20 transfer we keep the friendly amount view below and
+  // only surface the decode as a warning if it disagrees. Any OTHER contract call
+  // renders the decoded block so the user trusts the decode, not the description.
+  const { call: decoded, pending: decoding } = useDecodedCall(call?.to, call?.data, chainNum);
+  const isErc20Transfer = !!tokenAddr; // metadata.toAddress present => transfer(token)
+  const showDecodedBlock = !!call?.data && call.data !== '0x' && !isErc20Transfer;
+  const warning = spoofWarning(decoded, call?.metadata?.description);
   // Show the balance whenever there's something to read: a known currency, a
   // native ETH transfer, or an ERC-20 token contract (even an unknown one —
   // usePayerBalance resolves symbol/decimals on-chain for unregistered tokens).
@@ -177,8 +187,17 @@ export function TxRequestCard({ req, dark, paying, onPay, consentAllowed }: {
       logoUrl={logoUrl}
       chainNum={chainNum}
       description={desc}
-      amountLabel={amountLabel}
-      detail={recipient ? <TxToRow address={recipient} /> : undefined}
+      amountLabel={showDecodedBlock ? undefined : amountLabel}
+      detail={
+        <Col gap={8} style={{ alignSelf: 'stretch' }}>
+          {warning ? <TxWarning text={warning} /> : null}
+          {showDecodedBlock ? (
+            <DecodedCallBlock decoded={decoded} pending={decoding} target={call?.to} sub={sub} selector={decoded?.selector}/>
+          ) : null}
+          {recipient ? <TxToRow address={recipient} /> : null}
+          <Text size="xs" color={sub}>On {VIEM_CHAINS[chainNum]?.name ?? `chain ${chainNum}`}</Text>
+        </Col>
+      }
       balance={{
         show: showBalance,
         chainId: req.chainId,
@@ -217,6 +236,56 @@ function TxToRow({ address }: { address: string }): React.ReactElement {
         </Text>
       </Row>
     </Pressable>
+  );
+}
+/** DecodedCallBlock — the trusted "what this tx actually does" view for a generic
+ *  contract call: the resolved function signature + each decoded arg (name: value)
+ *  + the target contract. While the ABI fetch is in flight it shows the raw
+ *  selector; a failed decode shows the selector + the "could not decode" note.
+ *  This is derived from the calldata, NOT the sender's description. */
+function DecodedCallBlock({ decoded, pending, target, sub, selector }: {
+  decoded: DecodedCall | null; pending: boolean; target?: string; sub: string; selector?: string;
+}): React.ReactElement {
+  const pal = usePalette();
+  const detailBg = pal.border;
+  const fnLabel = decoded?.signature ?? decoded?.functionName ?? selector ?? 'call';
+  return (
+    <Col radius="md" background={detailBg} padding={10} gap={6} style={{ alignSelf: 'stretch' }}>
+      <Row align="center" gap={6}>
+        <Icon name="code" size={14} color={sub}/>
+        <Text size="xs" color={sub}>This transaction calls</Text>
+      </Row>
+      <Text variant="mono" weight="semibold" size="sm" numberOfLines={2}>
+        {pending ? 'Decoding…' : fnLabel}
+      </Text>
+      {decoded?.args.map((a, i) => (
+        <Row key={`${a.name}-${i}`} align="start" gap={8}>
+          <Text size="xs" color={sub} style={{ minWidth: 80, flexShrink: 0 }}>{a.name}</Text>
+          <Text variant="mono" size="xs" numberOfLines={4} style={{ flexShrink: 1, flex: 1 }}>{a.value}</Text>
+        </Row>
+      ))}
+      {!pending && decoded && !decoded.decoded && decoded.note ? (
+        <Text size="xs" color={sub}>{decoded.note}</Text>
+      ) : null}
+      {target ? (
+        <Text size="xs" color={sub} numberOfLines={1}>Contract: {shortAddress(target)}</Text>
+      ) : null}
+    </Col>
+  );
+}
+/** TxWarning — anti-spoof banner: the app could not verify the contract, could
+ *  not decode the call, or the decode disagrees with the sender's description. */
+function TxWarning({ text }: { text: string }): React.ReactElement {
+  const pal = usePalette();
+  return (
+    <Box radius="md" background={withAlpha(pal.danger, 0.1)} padding={8} gap={4}
+      style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: pal.danger }}>
+      <Row align="center" gap={6}>
+        <Icon name="shieldExclamation" size={14} color={pal.danger}/>
+        <Text size="xs" weight="semibold" color={pal.danger}>Check before signing</Text>
+      </Row>
+      <Text size="xs" color={pal.danger} numberOfLines={4}>{text}</Text>
+    </Box>
   );
 }
 /** TxReceiptCard — a confirmed payment: amount + tappable explorer link. */
