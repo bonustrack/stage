@@ -5,7 +5,7 @@ import { describe, expect, test } from 'bun:test';
 import { spoofWarning, type DecodedCall } from '../lib/txDecode';
 
 const verified = (functionName: string): DecodedCall => ({
-  decoded: true, verified: true, functionName, signature: `${functionName}()`, args: [],
+  decoded: true, verified: true, source: 'sourcify', functionName, signature: `${functionName}()`, args: [],
 });
 
 describe('spoofWarning', () => {
@@ -14,13 +14,13 @@ describe('spoofWarning', () => {
   });
 
   test('undecodable call -> always warns', () => {
-    const c: DecodedCall = { decoded: false, verified: false, args: [], selector: '0xdeadbeef' };
-    expect(spoofWarning(c, 'safe')).toMatch(/Could not decode/i);
+    const c: DecodedCall = { decoded: false, verified: false, source: 'none', args: [], selector: '0xdeadbeef' };
+    expect(spoofWarning(c, 'safe')).toMatch(/could not be decoded/i);
   });
 
-  test('unverified contract -> warns it may differ from the description', () => {
-    const c: DecodedCall = { decoded: true, verified: false, functionName: 'post', args: [] };
-    expect(spoofWarning(c, 'post on Poster')).toMatch(/Unverified contract/i);
+  test('4byte-only decode (not on Sourcify) -> NO scary warning, decode shown calmly', () => {
+    const c: DecodedCall = { decoded: true, verified: false, source: '4byte', functionName: 'post', signature: 'post(string)', args: [] };
+    expect(spoofWarning(c, 'post on Poster')).toBeUndefined();
   });
 
   test('verified contract, description claims a payment but fn is not a transfer -> warns', () => {

@@ -37,9 +37,16 @@ export interface DecodedArg {
 export interface DecodedCall {
   /** True when we resolved a function name + decoded the args (Sourcify or 4byte). */
   decoded: boolean;
-  /** True only when the contract is verified on Sourcify (full match). Drives the
-   *  "unverified contract" anti-spoof warning. */
+  /** True when the contract's SOURCE is verified on Sourcify (full OR partial
+   *  match) — the ABI is authentic. Drives whether we show a calm decode vs any
+   *  caution. False for a 4byte-only / undecodable resolve. */
   verified: boolean;
+  /** How we resolved the ABI:
+   *   - 'sourcify' : authentic ABI from the verified source (calm, no caution)
+   *   - '4byte'    : function signature only, from the 4byte directory (calm
+   *                  decode + a subtle "decoded via function signature" note)
+   *   - 'none'     : nothing matched (genuinely undecodable — a real warning) */
+  source: 'sourcify' | '4byte' | 'none';
   /** Resolved function name (e.g. "post"), or undefined when nothing matched. */
   functionName?: string;
   /** Full signature when known (e.g. "post(string)"). */
@@ -52,7 +59,11 @@ export interface DecodedCall {
   note?: string;
 }
 
-const SOURCIFY_BASE = 'https://repo.sourcify.dev/contracts';
+/** Sourcify v2 contract API: returns the ABI + match status ('match' / 'exact_match'
+ *  for full, 'match' for partial) in ONE call with no redirect. The legacy
+ *  repo.sourcify.dev/contracts host 307-redirects to a deprecated path, which made
+ *  RN fetch unreliable and falsely dropped verified contracts to the 4byte path. */
+const SOURCIFY_BASE = 'https://sourcify.dev/server/v2/contract';
 const FOURBYTE_BASE = 'https://www.4byte.directory/api/v1/signatures/';
 
 /** Per (chainId:address) -> resolved ABI (or null when the contract is not
@@ -78,34 +89,33 @@ function fmtArg(v: unknown): string {
   return String(v);
 }
 
-/** Fetch the verified ABI for `address` on `chainId` from Sourcify. Tries the
- *  full_match dir first (fully verified), then partial_match. Returns null when
- *  the contract isn't on Sourcify or the fetch fails. Cached. */
+/** Fetch the verified ABI for `address` on `chainId` from the Sourcify v2 API.
+ *  A `match` of any kind (full OR partial) means the contract's SOURCE is verified
+ *  and the returned ABI is authentic (partial = same bytecode, metadata hash differs
+ *  only by e.g. a compiler path), so both count as verified. Returns null when the
+ *  contract isn't on Sourcify or the fetch fails. Cached. */
 async function fetchSourcifyAbi(
   chainId: number, address: string,
 ): Promise<{ abi: Abi; verified: boolean } | null> {
   const key = `${chainId}:${address.toLowerCase()}`;
   const hit = abiCache.get(key);
   if (hit !== undefined) return hit;
-  for (const match of ['full_match', 'partial_match'] as const) {
-    try {
-      const url = `${SOURCIFY_BASE}/${match}/${chainId}/${address}/metadata.json`;
-      const res = await fetch(url);
-      if (!res.ok) continue;
-      const meta = (await res.json()) as { output?: { abi?: Abi } };
-      const abi = meta?.output?.abi;
-      if (Array.isArray(abi) && abi.length) {
-        /** Both full AND partial match mean the contract's SOURCE is verified on
-         *  Sourcify and the ABI is authentic (partial = same bytecode, metadata
-         *  hash differs only by e.g. compiler path). So both count as verified for
-         *  the anti-spoof banner — we only warn when the ABI is NOT from a verified
-         *  source (4byte fallback / undecodable). */
+  try {
+    const url = `${SOURCIFY_BASE}/${chainId}/${address}?fields=abi`;
+    const res = await fetch(url);
+    if (res.ok) {
+      const meta = (await res.json()) as {
+        abi?: Abi; match?: string | null;
+      };
+      const abi = meta?.abi;
+      // `match` is 'exact_match' | 'match' (full/partial) when verified, null otherwise.
+      if (Array.isArray(abi) && abi.length && meta.match) {
         const out = { abi, verified: true };
         abiCache.set(key, out);
         return out;
       }
-    } catch { /* try next match / fall through */ }
-  }
+    }
+  } catch { /* fall through to null */ }
   abiCache.set(key, null);
   return null;
 }
@@ -141,7 +151,7 @@ export async function decodeCall(
 ): Promise<DecodedCall> {
   const selector = selectorOf(data);
   if (!selector || !to) {
-    return { decoded: false, verified: false, args: [], selector, note: 'No calldata to decode.' };
+    return { decoded: false, verified: false, source: 'none', args: [], selector, note: 'No calldata to decode.' };
   }
 
   // 1. Sourcify ABI -> exact name + named args.
@@ -165,6 +175,7 @@ export async function decodeCall(
       return {
         decoded: true,
         verified: sourcify.verified,
+        source: 'sourcify',
         functionName: decoded.functionName,
         signature,
         args,
@@ -193,11 +204,12 @@ export async function decodeCall(
     return {
       decoded: true,
       verified: false,
+      source: '4byte',
       functionName: sig.split('(')[0],
       signature: sig,
       args,
       selector,
-      note: 'Unverified contract — function name resolved by signature only.',
+      note: 'Decoded via function signature.',
     };
   }
 
@@ -205,9 +217,10 @@ export async function decodeCall(
   return {
     decoded: false,
     verified: false,
+    source: 'none',
     args: [],
     selector,
-    note: 'Unknown function (unverified contract). Could not decode this call.',
+    note: 'Could not decode this call.',
   };
 }
 
@@ -234,22 +247,31 @@ export function useDecodedCall(
   return { call, pending };
 }
 
-/** Anti-spoof: does the sender's claimed `description` plausibly match what the
- *  call ACTUALLY does? We can't semantically diff free text vs calldata, so we
- *  flag the cases that matter: an unverified/undecoded contract is ALWAYS
- *  suspect; and a description that names a token-transfer ("send"/"pay"/"$") for
- *  a call whose decoded function is clearly not a transfer is inconsistent. The
- *  card shows the warning whenever this returns a string. */
+/** A real, red "check before signing" warning — reserved for genuinely risky
+ *  cases so we inform without crying wolf. We do NOT warn merely because a
+ *  contract resolved via 4byte instead of Sourcify (that's a calm, informative
+ *  decode — see DecodedCallBlock's neutral "decoded via function signature" note).
+ *
+ *  A warning fires ONLY when:
+ *   1. the calldata is genuinely undecodable (no Sourcify, no 4byte match) — we
+ *      truly cannot tell the user what the tx does; or
+ *   2. there's a clear mismatch: the sender's description claims a payment/transfer
+ *      but the decoded function is clearly not a transfer.
+ *  Otherwise (confident decode, signatures consistent) we show the decode calmly
+ *  with no banner at all. */
 export function spoofWarning(call: DecodedCall | null, description?: string): string | undefined {
   if (!call) return undefined; // plain ETH transfer — handled by the simple view
-  if (!call.decoded) return 'Could not decode this call — the app cannot confirm what it does.';
-  if (!call.verified) return 'Unverified contract — this is what the tx actually does; it may differ from the sender\'s description.';
+  if (!call.decoded) {
+    return 'This call could not be decoded, so the app cannot confirm what it does. Check before signing.';
+  }
+  // We HAVE a confident decode (Sourcify or a verified 4byte signature). The only
+  // remaining risk worth a banner is a description that contradicts the action.
   const desc = (description ?? '').toLowerCase();
   const claimsTransfer = /\b(send|sent|pay|paid|payment|transfer)\b|\$|usdc|eth\b/.test(desc);
   const fn = (call.functionName ?? '').toLowerCase();
   const isTransfer = /transfer|send|pay/.test(fn);
   if (desc && claimsTransfer && !isTransfer) {
-    return `The sender describes a payment, but this call runs ${call.functionName}() — it may differ from the description.`;
+    return `The sender describes a payment, but this call runs ${call.functionName}(). Check before signing.`;
   }
   return undefined;
 }

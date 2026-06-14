@@ -264,7 +264,7 @@ function DecodedCallBlock({ decoded, pending, target, sub, selector }: {
           <Text variant="mono" size="xs" numberOfLines={4} style={{ flexShrink: 1, flex: 1 }}>{a.value}</Text>
         </Row>
       ))}
-      {!pending && decoded && !decoded.decoded && decoded.note ? (
+      {!pending && decoded?.note ? (
         <Text size="xs" color={sub}>{decoded.note}</Text>
       ) : null}
       {target ? (
