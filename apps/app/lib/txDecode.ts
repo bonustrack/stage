@@ -95,7 +95,12 @@ async function fetchSourcifyAbi(
       const meta = (await res.json()) as { output?: { abi?: Abi } };
       const abi = meta?.output?.abi;
       if (Array.isArray(abi) && abi.length) {
-        const out = { abi, verified: match === 'full_match' };
+        /** Both full AND partial match mean the contract's SOURCE is verified on
+         *  Sourcify and the ABI is authentic (partial = same bytecode, metadata
+         *  hash differs only by e.g. compiler path). So both count as verified for
+         *  the anti-spoof banner — we only warn when the ABI is NOT from a verified
+         *  source (4byte fallback / undecodable). */
+        const out = { abi, verified: true };
         abiCache.set(key, out);
         return out;
       }
@@ -164,7 +169,7 @@ export async function decodeCall(
         signature,
         args,
         selector,
-        note: sourcify.verified ? undefined : 'Contract is partially verified on Sourcify.',
+        note: undefined,
       };
     } catch { /* ABI present but didn't match this selector — fall to 4byte */ }
   }

@@ -15,6 +15,7 @@ import { sendCall } from '../../lib/tx';
 import { deriveConfirmSummary, confirmMessage } from '../../lib/txConfirm';
 import { deriveSignSummary, signConfirmMessage } from '../../lib/signConfirm';
 import { flash } from '../../lib/toast';
+import { txErrorMessage } from '../../lib/txError';
 import { signTypedData, signMessage, getAccount } from 'wagmi/actions';
 import type { TypedDataDefinition } from 'viem';
 import { base } from 'viem/chains';
@@ -129,7 +130,7 @@ export function useTxSignLayer(activeLine: string) {
         const ref: SignatureReferenceContent = { requestId, signature, signer };
         await xmtpSendSignatureReference(activeLine, ref);
       } catch (e) {
-        flash((e as Error).message || 'Signing failed');
+        flash(txErrorMessage(e, 'Signing failed'));
       } finally {
         setSigningIds(prev => { const n = new Set(prev); n.delete(requestId); return n; });
       }
@@ -229,7 +230,7 @@ export function useTxSignLayer(activeLine: string) {
         };
         await xmtpSendTxReference(activeLine, ref);
       } catch (e) {
-        flash((e as Error).message || 'Payment failed');
+        flash(txErrorMessage(e, 'Payment failed'));
       } finally {
         setPayingIds(prev => { const n = new Set(prev); n.delete(requestId); return n; });
       }
