@@ -26,6 +26,7 @@ type Href =
   | '/settings/display'
   | '/settings/messenger'
   | '/settings/notifications'
+  | '/settings/wallet'
   | '/settings/security'
   | '/settings/experimental'
   | '/settings/about';
@@ -33,7 +34,8 @@ const ROWS: { href: Href; label: string; icon: HeroIconName }[] = [
   { href: '/settings/display', label: 'Display', icon: 'sun' },
   { href: '/settings/messenger', label: 'Messenger', icon: 'chat' },
   { href: '/settings/notifications', label: 'Notifications', icon: 'bell' },
-  { href: '/settings/security', label: 'Security', icon: 'wallet' },
+  { href: '/settings/wallet', label: 'Wallet', icon: 'wallet' },
+  { href: '/settings/security', label: 'Security', icon: 'key' },
   { href: '/settings/experimental', label: 'Experimental', icon: 'beaker' },
   { href: '/settings/about', label: 'About', icon: 'questionMarkCircle' },
 ];
