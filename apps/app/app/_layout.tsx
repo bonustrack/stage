@@ -1,13 +1,6 @@
-/** WalletConnect/AppKit polyfills — must be the very first import in the app
- *  entry (sets up crypto/networking globals: TextEncoder, URL, btoa/atob, Buffer).
- *  These are CHEAP global installs (not the heavy WC SDK) and XMTP/viem on the
- *  critical path depend on them, so they stay eager. The expensive part of the
- *  WalletConnect stack (@reown/appkit + wagmi + viem provider + createAppKit) is
- *  deferred off the first-paint path — see components/WalletConnectProvider. */
 /** ES2023 Array polyfills (toReversed/toSorted) for the release Hermes engine —
  *  must run before any dependency that calls them. See lib/jsPolyfills. */
 import '../lib/jsPolyfills';
-import '@walletconnect/react-native-compat';
 /** Hoisted side-effect import — installs the crypto.getRandomValues shim
  *  BEFORE any viem (and transitively any wallet/profile) module loads. */
 import '../lib/cryptoShim';
@@ -15,7 +8,7 @@ import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import { useEffect } from 'react';
 // eslint-disable-next-line no-restricted-imports -- raw TextInput required: this sets TextInput.defaultProps app-wide for the default font (Kit Input wraps TextInput, so the global default must target the RN primitive itself).
-import { LogBox, Text, TextInput } from 'react-native';
+import { Text, TextInput } from 'react-native';
 import { Col } from '../components/layout';
 import { Spinner } from '../components/Spinner';
 import { Onboarding } from '../components/onboarding/Onboarding';
@@ -32,19 +25,12 @@ import { usePushDeepLinks } from '../lib/push';
 import { ensureActiveAccount, ensureMessagingStreamSync } from '../modules/messaging';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { getQueryClient } from '../lib/queryClient';
-import { WalletConnectProvider } from '../components/WalletConnectProvider';
 
 /** App-wide TanStack Query client: caches request/response data (profiles,
  *  message history) with stale-while-revalidate + dedup. Live XMTP streams stay
  *  outside Query (they're push, not fetch). The instance lives in lib/queryClient
  *  so non-React code (stream wiring) writes the SAME cache. */
 const queryClient = getQueryClient();
-
-/** Silence WalletConnect's benign "emitting session_request … without any
- *  listeners" notice — a stale-session lifecycle log from @walletconnect/sign-client
- *  that surfaces as a red dev error toast but is harmless (and a no-op in release,
- *  where LogBox is disabled). */
-LogBox.ignoreLogs([/emitting session_request/, /without any listeners/]);
 
 /** Set Calibre-Medium as the app-wide default for Text + TextInput via defaultProps.
  *  This is a fallback — call-site `style={{…}}` overrides — but it's the safest path:
@@ -167,7 +153,6 @@ function RootLayoutInner(): React.ReactElement {
    *  mount lifecycle. */
   return (
     <QueryClientProvider client={queryClient}>
-    <WalletConnectProvider>
     <GestureHandlerRootView style={{ flex: 1 }}>
       <KeyboardProvider>
       <StatusBar style={barStyle} translucent backgroundColor="transparent"/>
@@ -249,7 +234,6 @@ function RootLayoutInner(): React.ReactElement {
       ) : null}
       </KeyboardProvider>
     </GestureHandlerRootView>
-    </WalletConnectProvider>
     </QueryClientProvider>
   );
 }

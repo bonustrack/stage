@@ -16,10 +16,8 @@ import { deriveConfirmSummary, confirmMessage } from '../../lib/txConfirm';
 import { deriveSignSummary, signConfirmMessage } from '../../lib/signConfirm';
 import { flash } from '../../lib/toast';
 import { txErrorMessage } from '../../lib/txError';
-import { signTypedData, signMessage, getAccount } from 'wagmi/actions';
 import type { TypedDataDefinition } from 'viem';
 import { base } from 'viem/chains';
-import { wagmiConfig } from '../../lib/walletconnect';
 import { getActiveAccount, getActiveViemAccount } from '../../lib/accounts';
 import { kernelClientForRecord } from '../../lib/zerodev';
 
@@ -46,21 +44,15 @@ export function useTxSignLayer(activeLine: string) {
     setSigningIds(prev => new Set(prev).add(requestId));
     void (async () => {
       try {
-        /** Bind every signature to the wallet the rest of the app uses — the
-         *  active Reown/wagmi account. Passing `account` explicitly stops wagmi
-         *  from falling back to the connector's "current" account (which inside a
-         *  list-rendered bubble may not be the live one). */
         /** Resolve the ACTIVE account and route signing by its kind. The in-app
-         *  wallet is the source of truth — there is no separate "connect a wallet"
-         *  step:
+         *  wallet is the source of truth — there is no "connect a wallet" step:
          *   - `smart` (ZeroDev Kernel): sign with the Kernel via
          *     kernelClientForRecord. signMessage/signTypedData produce an
          *     ERC-1271 signature (6492-wrapped while counterfactual), gated by the
          *     owner unlock (passkey) at sign-time. The signer is the smart-account
          *     address itself.
-         *   - local EOA (`generated`/`privateKey`): sign with its viem account
-         *     directly, no popup.
-         *   - `walletconnect`: delegate to the remote wallet through wagmi. */
+         *   - legacy local EOA (`generated`/`privateKey`): sign with its viem
+         *     account directly, no popup (backward-compat for old records). */
         const active = await getActiveAccount();
         let signature: string;
         let signer: string;
@@ -92,18 +84,16 @@ export function useTxSignLayer(activeLine: string) {
           await xmtpSendSignatureReference(activeLine, ref);
           return;
         }
-        /** Prefer the in-app key: if the active account is a local EOA
-         *  (generated/imported/migrated) we sign with its viem account directly,
-         *  no popup. Only when there's no local key (WalletConnect account) do we
-         *  delegate to the remote wallet through wagmi. */
+        /** Legacy local-EOA record (generated/imported/migrated): sign with its
+         *  viem account directly, no popup. */
         const local = await getActiveViemAccount();
-        const account = local?.address ?? getAccount(wagmiConfig).address;
-        if (!account) throw new Error('No active wallet to sign with');
+        if (!local) throw new Error('No active wallet to sign with');
+        const account = local.address;
         if (req.kind === 'eip712') {
           const td = req.eip712;
           if (!td) throw new Error('Malformed typed-data request');
-          /** viem/wagmi inject the EIP712Domain entry themselves from `domain`;
-           *  a duplicate in `types` makes them reject the request. Strip it. */
+          /** viem injects the EIP712Domain entry itself from `domain`; a duplicate
+           *  in `types` makes it reject the request. Strip it. */
           const types = { ...td.types };
           delete types.EIP712Domain;
           /** The wire payload is arbitrary JSON (any valid eth_signTypedData_v4
@@ -116,15 +106,11 @@ export function useTxSignLayer(activeLine: string) {
             primaryType: td.primaryType,
             message: td.message,
           } as unknown as TypedDataDefinition;
-          signature = local
-            ? await local.signTypedData(typedData)
-            : await signTypedData(wagmiConfig, { account, ...typedData });
+          signature = await local.signTypedData(typedData);
         } else {
           const message = req.message ?? '';
           if (!message) throw new Error('Empty message to sign');
-          signature = local
-            ? await local.signMessage({ message })
-            : await signMessage(wagmiConfig, { account, message });
+          signature = await local.signMessage({ message });
         }
         signer = account;
         const ref: SignatureReferenceContent = { requestId, signature, signer };
@@ -190,8 +176,8 @@ export function useTxSignLayer(activeLine: string) {
          *     counterfactual the first userOp deploys it in the same bundle.
          *     Signed by the owner (passkey/unlock) at send-time. Returns the
          *     settled tx hash.
-         *   - local EOA / WalletConnect: fall through to sendCall, which forwards
-         *     the call verbatim from the in-app key or the remote wallet. */
+         *   - legacy local EOA: fall through to sendCall, which forwards the call
+         *     verbatim from the in-app key (backward-compat for old records). */
         const active = await getActiveAccount();
         let txHash: `0x${string}`;
         /** The chain the tx actually settles on — the smart account is a Base

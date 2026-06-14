@@ -12,7 +12,6 @@ import { PollCodec } from './xmtpPollCodec';
 import { SignatureRequestCodec, SignatureReferenceCodec } from './xmtpSignatureCodec';
 import { WalletSendCallsCodec, TransactionReferenceCodec } from './xmtpTxCodec';
 import { getViemAccount, type AccountRecord } from './accounts';
-import { getWcSign } from './wcSigner';
 
 /** Shared PollCodec instance — used both in XMTP_CODECS (decode/encode) and by
  *  xmtpSendPoll (to pass its contentType to the JS-codec send path). */
@@ -92,29 +91,12 @@ function signerForAccount(account: PrivateKeyAccount): Signer {
   };
 }
 
-/** Build the XMTP Signer for an account record. Local accounts (generated /
- *  imported) sign silently with their viem key; WalletConnect accounts would
- *  delegate to the connected wallet — only ever needed once, at installation
- *  registration (Client.create). Reads + sends afterwards use the on-device
- *  installation key, so a registered account never re-prompts the wallet. */
+/** Build the XMTP Signer for an account record. A `smart` (ZeroDev Kernel)
+ *  account signs via the SCW signer; legacy local-EOA records sign silently with
+ *  their viem key. Only ever needed once, at installation registration
+ *  (Client.create) — reads + sends afterwards use the on-device installation key. */
 export async function signerForRecord(rec: AccountRecord): Promise<Signer> {
   if (rec.type === 'smart') return signerForSmart(rec);
-  if (rec.type === 'walletconnect') {
-    const wcSign = getWcSign();
-    if (!wcSign) throw new Error('Reconnect your wallet to finish setting up this account.');
-    return {
-      getIdentifier: async () => new PublicIdentity(rec.address, 'ETHEREUM'),
-      getChainId: () => 1,
-      getBlockNumber: () => undefined,
-      signerType: () => 'EOA',
-      signMessage: async (message: string) => {
-        /** Routes to the connected wallet via WalletConnect (personal_sign).
-         *  Only invoked once — when registering this account's XMTP installation. */
-        const signature = await wcSign(message);
-        return { signature };
-      },
-    };
-  }
   const acct = await getViemAccount(rec.id);
   if (!acct) throw new Error('No signing key for this account.');
   return signerForAccount(acct);

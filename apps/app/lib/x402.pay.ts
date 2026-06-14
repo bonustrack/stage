@@ -17,11 +17,7 @@
  *  The pure builders (deterministic, unit-tested) live in lib/x402.payHeader; this
  *  module owns the wallet resolution, signing, nonce/now, and the settle call. */
 
-import { signTypedData, getAccount } from 'wagmi/actions';
-import type { Hex } from 'viem';
-
 import { getActiveViemAccount } from './accounts';
-import { wagmiConfig } from './walletconnect';
 import { LINK_PREVIEW_BASE } from './useLinkPreview';
 import type { X402Accept } from './useLinkPreview';
 import { buildAuthorization, buildTypedData, buildPaymentHeader, randomNonce } from './x402.payHeader';
@@ -49,11 +45,10 @@ export async function payX402Exact(args: {
   if (!accept.amount) throw new Error('Challenge missing amount');
   if (!accept.asset) throw new Error('Challenge missing asset');
 
-  // Resolve the signing wallet exactly like useTxSignLayer: prefer the in-app
-  // local EOA (no popup); fall back to the wagmi/WalletConnect account.
+  // Sign with the active account's in-app local key (legacy EOA records).
   const local = await getActiveViemAccount();
-  const from = local?.address ?? getAccount(wagmiConfig).address;
-  if (!from) throw new Error('Connect a wallet to pay');
+  if (!local) throw new Error('No in-app wallet to pay with');
+  const from = local.address;
 
   const authorization = buildAuthorization({
     from,
@@ -63,9 +58,7 @@ export async function payX402Exact(args: {
   });
   const typedData = buildTypedData(accept, authorization);
 
-  const signature = local
-    ? await local.signTypedData(typedData)
-    : await signTypedData(wagmiConfig, { account: from as Hex, ...typedData });
+  const signature = await local.signTypedData(typedData);
 
   const paymentHeader = buildPaymentHeader({
     accept,

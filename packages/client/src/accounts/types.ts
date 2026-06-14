@@ -1,12 +1,19 @@
 /** Shared account-record types for the multi-account registry. The app holds
- *  several wallets at once and switches without a logout; each account is one of
- *  'generated' (a random in-app EOA), 'privateKey' (imported), or
- *  'walletconnect' (remote — no key stored).
+ *  several wallets at once and switches without a logout. Every account is a
+ *  mnemonic-derived ZeroDev Kernel `smart` account (passkey signer when set,
+ *  ECDSA owner fallback) — the ONLY account model.
+ *
+ *  The legacy values ('generated' | 'privateKey' | 'walletconnect') are kept in
+ *  the union ONLY so an old on-device record deserializes without crashing; no
+ *  code path creates them any more. A 'generated'/'privateKey' record is still
+ *  treated as a local EOA (it has a stored key); 'walletconnect' is treated as a
+ *  keyless remote signer. Both are backward-compat only and will be dropped once
+ *  no device holds such a record.
  *
  *  Framework-agnostic — the registry RULES live in ./registry; key STORAGE
  *  stays in the host behind the injected SecureStorage interface. */
 
-export type AccountType = 'generated' | 'privateKey' | 'walletconnect' | 'smart';
+export type AccountType = 'smart' | 'generated' | 'privateKey' | 'walletconnect';
 
 export interface AccountRecord {
   /** Lowercased address — stable, storage-key-safe identifier. For a `smart`

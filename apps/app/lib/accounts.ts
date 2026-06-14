@@ -1,13 +1,13 @@
 /** Multi-account registry for the mobile app. The app holds several wallets at
- *  once and switches without a logout. Each account is one of: 'generated' (a
- *  random EOA minted in-app), 'privateKey' (imported from a pasted key/phrase),
- *  or 'walletconnect' (remote — no key stored, signing delegated).
+ *  once and switches without a logout. Every account is a mnemonic-derived
+ *  ZeroDev Kernel `smart` account — the ONLY account model the app creates.
  *
- *  Keys for the two local types live in expo-secure-store keyed by address
- *  (`wallet.pk.<id>`); each account gets its own XMTP sqlite store (`xmtp-<id>`)
- *  so inboxes stay isolated and switching is just a client rebuild. Migration:
- *  a pre-multi-account single key under `wallet.privateKey` (db in `xmtp/`) is
- *  folded in as a 'generated' account on first load. */
+ *  Each account gets its own XMTP sqlite store (`xmtp-<id>`) so inboxes stay
+ *  isolated and switching is just a client rebuild. A new account is the next HD
+ *  index off the single app mnemonic (createSmartAccount). Legacy on-device
+ *  records (a pre-smart-account 'generated'/'privateKey'/'walletconnect' row, or
+ *  the pre-multi-account single key under `wallet.privateKey`) are still read +
+ *  signed for backward compatibility, but no new such records are ever created. */
 
 import './cryptoShim';
 import * as SecureStore from 'expo-secure-store';
@@ -19,14 +19,11 @@ const setActiveAccountForCache = async (id: string | null): Promise<void> => {
 };
 import { getViemAccount } from './accounts.keys';
 /** ALL private-key storage goes through the keyring (the single chokepoint). This
- *  module only owns the non-secret registry rows (list + active pointer). */
-import {
-  createGeneratedKey, importKey, adoptLegacyKey, deleteKey, clearLegacyKey,
-} from './zerodev/keyring';
+ *  module only owns the non-secret registry rows (list + active pointer). The
+ *  keyring still owns the legacy-key migration + per-account key deletion. */
+import { adoptLegacyKey, deleteKey, clearLegacyKey } from './zerodev/keyring';
 import { LEGACY_DB_DIR } from '@stage-labs/client/accounts/keys';
-import {
-  addLocalAccountToList, buildWalletConnectAccount, resolveActiveAccount,
-} from '@stage-labs/client/accounts/registry';
+import { resolveActiveAccount } from '@stage-labs/client/accounts/registry';
 
 export { canExportPrivateKey, getPrivateKey, getViemAccount } from './accounts.keys';
 
@@ -92,57 +89,15 @@ export async function getActiveAccount(): Promise<AccountRecord | null> {
   return resolveActiveAccount(list, id);
 }
 
-/** The ACTIVE account as a viem signer, or null when it can't sign in-app
- *  (WalletConnect account, or no stored key) — callers then fall back to the
- *  remote/wagmi signing path. Resolves through getPrivateKey, which self-heals
- *  a legacy `wallet.privateKey` into the per-account slot. */
+/** The ACTIVE account as a viem signer, or null when it has no stored in-app key
+ *  — i.e. a `smart` account (signs via the Kernel) or a legacy `walletconnect`
+ *  record. Callers route smart accounts through the Kernel client. Resolves
+ *  through getViemAccount, which self-heals a legacy `wallet.privateKey` into the
+ *  per-account slot for the backward-compat local-EOA records. */
 export async function getActiveViemAccount(): Promise<PrivateKeyAccount | null> {
   const rec = await getActiveAccount();
-  if (!rec || rec.type === 'walletconnect') return null;
+  if (!rec || rec.type === 'smart' || rec.type === 'walletconnect') return null;
   return getViemAccount(rec.id);
-}
-
-/** Record a freshly-provisioned local key (the keyring already stored it) into
- *  the registry. The list-mutation RULES (new / upgrade-WC / re-activate) live in
- *  the Stage SDK; we only persist when the list changed and set active. */
-async function recordLocalAccount(
-  id: string, address: string, type: 'generated' | 'privateKey',
-): Promise<AccountRecord> {
-  const list = await loadAccounts();
-  const { list: next, record, upgraded } = addLocalAccountToList(list, id, address, type);
-  if (next !== list || upgraded) await persist(next);
-  await setActiveAccountId(id);
-  return record;
-}
-
-export async function addGeneratedAccount(): Promise<AccountRecord> {
-  const { id, address } = await createGeneratedKey();
-  return recordLocalAccount(id, address, 'generated');
-}
-
-export async function importPrivateKey(input: string): Promise<AccountRecord> {
-  const { id, address } = await importKey(input);
-  return recordLocalAccount(id, address, 'privateKey');
-}
-/** Import an existing wallet from one pasted string — a 0x private key (64 hex)
- *  or a BIP-39 phrase (phrases have spaces, keys don't). The keyring reduces a
- *  phrase to its raw key and stores it exactly like a pasted key. */
-export async function importWallet(input: string): Promise<AccountRecord> {
-  const { id, address } = await importKey(input);
-  return recordLocalAccount(id, address, 'privateKey');
-}
-
-/** WalletConnect account — no private key stored locally. The address is the
- *  one returned by the connected wallet session; signing is delegated to it. */
-export async function addWalletConnectAccount(address: string): Promise<AccountRecord> {
-  const id = address.toLowerCase();
-  const list = await loadAccounts();
-  const existing = list.find(a => a.id === id);
-  if (existing) { await setActiveAccountId(id); return existing; }
-  const rec = buildWalletConnectAccount(address);
-  await persist([...list, rec]);
-  await setActiveAccountId(id);
-  return rec;
 }
 
 /** Persist a `smart` (ZeroDev Kernel) account record and make it active. The id

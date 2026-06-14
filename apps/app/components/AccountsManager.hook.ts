@@ -1,33 +1,29 @@
 /** useAccountsManager — state, effects + handlers for AccountsManager.
- *  Extracted for lint line-budget. Behaviour identical. */
+ *  Extracted for lint line-budget. Behaviour identical.
+ *
+ *  Every account is a mnemonic-derived ZeroDev smart account; "Add account"
+ *  mints the next HD-index smart account (createSmartAccount). There is no
+ *  key/phrase import or external-wallet connect path. */
 
 import { useCallback, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
-import { useAppKit } from '@reown/appkit-wagmi-react-native';
-import { useAccount, useSignMessage } from 'wagmi';
 import { usePeerProfiles } from '../lib/peerProfiles';
 import { deleteAccount, AccountManager, shortAddress } from '../modules/messaging';
 import {
-  loadAccounts, getActiveAccountId, addGeneratedAccount,
-  importPrivateKey, addWalletConnectAccount, getPrivateKey, canExportPrivateKey,
+  loadAccounts, getActiveAccountId, getPrivateKey, canExportPrivateKey,
   type AccountRecord,
 } from '../lib/accounts';
-import { setWcSign } from '../lib/wcSigner';
+import { createSmartAccount, passkeysAvailable, zerodevRpId } from '../lib/zerodev';
 import { reloadApp } from './AccountsManager.helpers';
 
 export function useAccountsManager(onSwitched?: () => void): {
   accounts: AccountRecord[]; activeId: string | null; busy: boolean;
   expanded: boolean; setExpanded: (fn: (e: boolean) => boolean) => void;
-  addOpen: boolean; setAddOpen: (b: boolean) => void;
-  importOpen: boolean; setImportOpen: (b: boolean) => void;
-  importText: string; setImportText: (s: string) => void;
-  importErr: string; setImportErr: (s: string) => void;
   manageId: string | null; setManageId: (id: string | null) => void;
   revealPk: string | null; setRevealPk: (s: string | null) => void;
-  setWcPending: (b: boolean) => void; open: () => void;
   manageRec: AccountRecord | null; activeRec: AccountRecord | null; otherAccounts: AccountRecord[];
-  onSwitch: (id: string) => Promise<void>; onGenerate: () => Promise<void>;
-  onImport: () => Promise<void>; onExport: (id: string) => Promise<void>;
+  onSwitch: (id: string) => Promise<void>; onAdd: () => Promise<void>;
+  onExport: (id: string) => Promise<void>;
   onRemove: (rec: AccountRecord) => void;
 } {
   const [accounts, setAccounts] = useState<AccountRecord[]>([]);
@@ -37,45 +33,8 @@ export function useAccountsManager(onSwitched?: () => void): {
    *  tapping expands the other accounts + "Add account". Collapses after a switch. */
   const [expanded, setExpanded] = useState(false);
 
-  const [addOpen, setAddOpen] = useState(false);
-  const [importOpen, setImportOpen] = useState(false);
-  const [importText, setImportText] = useState('');
-  const [importErr, setImportErr] = useState('');
   const [manageId, setManageId] = useState<string | null>(null);
   const [revealPk, setRevealPk] = useState<string | null>(null);
-
-  /** WalletConnect (Reown AppKit) — open() shows the wallet picker; the effect
-   *  below reacts once a wallet is connected. */
-  const { open } = useAppKit();
-  const { address: wcAddress, isConnected } = useAccount();
-  const { signMessageAsync } = useSignMessage();
-  const [wcPending, setWcPending] = useState(false);
-
-  useEffect(() => {
-    if (!wcPending || !isConnected || !wcAddress) return;
-    let cancelled = false;
-    void (async (): Promise<void> => {
-      try {
-        setBusy(true);
-        /** Register the sign fn xmtp.ts will call for the one-time installation
-         *  challenge; signMessageAsync routes personal_sign to the wallet. */
-        setWcSign(async (message: string) => signMessageAsync({ message, account: wcAddress }));
-        const rec = await addWalletConnectAccount(wcAddress);
-        /** Build + register this account's XMTP installation now (wallet prompts
-         *  personal_sign once). After the reload it's registered → Client.build,
-         *  no further prompts. */
-        await AccountManager.switch(rec.id);
-        if (!cancelled) { setWcPending(false); reloadApp(); }
-      } catch (e) {
-        if (!cancelled) {
-          setWcPending(false);
-          setBusy(false);
-          Alert.alert('WalletConnect setup failed', (e as Error).message);
-        }
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [wcPending, isConnected, wcAddress, signMessageAsync]);
 
   const refresh = useCallback(async (): Promise<void> => {
     const [list, active] = await Promise.all([loadAccounts(), getActiveAccountId()]);
@@ -117,30 +76,20 @@ export function useAccountsManager(onSwitched?: () => void): {
     } finally { setBusy(false); }
   }
 
-  async function onGenerate(): Promise<void> {
+  /** Add a new account = mint the next HD-index ZeroDev smart account off the
+   *  single app mnemonic, make it active, and reload so XMTP re-inits against the
+   *  new inbox. */
+  async function onAdd(): Promise<void> {
     if (busy) return;
     setBusy(true);
     try {
-      await addGeneratedAccount();
-      setAddOpen(false);
+      const rec = await createSmartAccount(
+        passkeysAvailable() ? { rpId: zerodevRpId(), userName: 'metro' } : {},
+      );
+      await AccountManager.switch(rec.id);
       reloadApp();
     } catch (e) {
       Alert.alert('Could not create account', (e as Error).message);
-      setBusy(false);
-    }
-  }
-
-  async function onImport(): Promise<void> {
-    if (busy) return;
-    setImportErr('');
-    setBusy(true);
-    try {
-      await importPrivateKey(importText);
-      setImportOpen(false);
-      setImportText('');
-      reloadApp();
-    } catch (e) {
-      setImportErr((e as Error).message);
       setBusy(false);
     }
   }
@@ -174,10 +123,8 @@ export function useAccountsManager(onSwitched?: () => void): {
 
   return {
     accounts, activeId, busy, expanded, setExpanded,
-    addOpen, setAddOpen, importOpen, setImportOpen,
-    importText, setImportText, importErr, setImportErr,
-    manageId, setManageId, revealPk, setRevealPk, setWcPending, open,
+    manageId, setManageId, revealPk, setRevealPk,
     manageRec, activeRec, otherAccounts,
-    onSwitch, onGenerate, onImport, onExport, onRemove,
+    onSwitch, onAdd, onExport, onRemove,
   };
 }
