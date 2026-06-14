@@ -168,7 +168,7 @@ export async function addSmartAccount(rec: AccountRecord): Promise<AccountRecord
 /** Update mutable bookkeeping fields on a smart account (deployed flag, the
  *  opt-in SCW XMTP cutover flag, cached passkey id, label). No-op for a missing id. */
 export async function updateSmartAccount(
-  id: string, patch: Partial<Pick<AccountRecord, 'deployed' | 'scwXmtp' | 'passkeyCredId' | 'label' | 'guardians' | 'guardianThreshold' | 'guardianDelay'>>,
+  id: string, patch: Partial<Pick<AccountRecord, 'deployed' | 'scwXmtp' | 'passkeyCredId' | 'passkey' | 'label' | 'guardians' | 'guardianThreshold' | 'guardianDelay'>>,
 ): Promise<void> {
   const list = await loadAccounts();
   const rec = list.find(a => a.id === id.toLowerCase());

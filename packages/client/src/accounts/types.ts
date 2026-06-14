@@ -31,6 +31,26 @@ export interface AccountRecord {
   /** base64url passkey rawId — CACHE only (resident credential means restore can
    *  pass allowCredentials:[]); treat as disposable. */
   passkeyCredId?: string;
+  /** When set, this account HAS a device passkey and the passkey (WebAuthn) is the
+   *  ACTIVE signer for EVERY signing path (tx / userOp / signMessage / signTypedData)
+   *  via the ZeroDev passkey validator (sudo). The mnemonic-derived ECDSA owner is
+   *  only the `regular` backup validator and is NEVER used for signing while this is
+   *  present. Holds exactly the public `WebAuthnKey` material needed to rebuild the
+   *  passkey validator on later launches WITHOUT re-registering (no private key, no
+   *  passkey server) — pubX/pubY are hex strings because bigint is not JSON-safe. The
+   *  WebAuthn assertion itself happens on-device through react-native-passkeys. */
+  passkey?: {
+    /** P-256 public key X coordinate, hex (0x-prefixed). */
+    pubX: string;
+    /** P-256 public key Y coordinate, hex (0x-prefixed). */
+    pubY: string;
+    /** base64url credential id (the resident passkey rawId). */
+    authenticatorId: string;
+    /** keccak256(authenticatorId bytes), hex — the on-chain validator key id. */
+    authenticatorIdHash: string;
+    /** Relying-party id the passkey is scoped to. */
+    rpID: string;
+  };
   /** The Kernel has been deployed on-chain (first sponsored userOp landed). The
    *  account is usable counterfactually before this is true. */
   deployed?: boolean;

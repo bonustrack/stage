@@ -38,11 +38,18 @@ export async function createSmartAccount(opts: CreateSmartAccountOpts = {}): Pro
   const publicClient = makePublicClient();
 
   let account = null as Awaited<ReturnType<typeof createEcdsaKernel>> | null;
+  let passkey: AccountRecord['passkey'];
   if (passkeysAvailable() && opts.rpId) {
-    account = await createPasskeyKernel(publicClient, owner, hdIndex, {
+    const built = await createPasskeyKernel(publicClient, owner, hdIndex, {
       rpId: opts.rpId,
       userName: opts.userName ?? `stage-${hdIndex}`,
     });
+    if (built) {
+      account = built.account;
+      // Persist the public WebAuthn material so the passkey validator (the ACTIVE
+      // signer) can be rebuilt on every later launch without re-registering.
+      passkey = built.passkey;
+    }
   }
   // Fallback (and the only path until the passkey APK ships): ECDSA owner sudo.
   if (!account) account = await createEcdsaKernel(publicClient, owner, hdIndex);
@@ -59,6 +66,10 @@ export async function createSmartAccount(opts: CreateSmartAccountOpts = {}): Pro
     hdIndex,
     ownerAddress: owner.address.toLowerCase(),
     deployed: false,
+    // When a passkey was registered it is the sudo signer; persist the material so
+    // kernelClientForRecord rebuilds with the passkey validator (not the ECDSA key).
+    passkey,
+    passkeyCredId: passkey?.authenticatorId,
     scwXmtp: true, // SCW IS the XMTP identity by default (Less): Kernel address
     //              registers via ERC-1271 / 6492-while-counterfactual, chainId 8453.
 
