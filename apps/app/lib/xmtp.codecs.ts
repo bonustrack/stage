@@ -122,24 +122,26 @@ export async function signerForRecord(rec: AccountRecord): Promise<Signer> {
 
 /** XMTP signer for a `smart` (ZeroDev Kernel) account.
  *
- *  OPT-IN cutover (spec review item 5): the SCW XMTP identity is only used when
- *  `rec.scwXmtp` is explicitly enabled (default OFF until the on-device ERC-6492
- *  smoke test passes). Until then a smart account messages over its
- *  mnemonic-derived OWNER EOA — a real key we can sign with — so existing inboxes
- *  are never disrupted and we never depend on undeployed-6492 registration.
+ *  DEFAULT (Less): the SMART ACCOUNT is the XMTP identity. The Kernel address
+ *  registers its inbox via ERC-1271 (6492-wrapped while the Kernel is still
+ *  counterfactual / undeployed), chainId 8453 — built through the ONE centralized
+ *  factory (lib/zerodev/scwSigner) so the chainId is identical at registration
+ *  and every later sign (else AssociationError.ChainIdMismatch).
  *
- *  When `scwXmtp` is ON: the Kernel address is the XMTP identity, signed via
- *  ERC-1271 (6492-wrapped while counterfactual), chainId 8453 — built through the
- *  ONE centralized factory (lib/zerodev/scwSigner) so the chainId can't drift.
+ *  LEGACY ESCAPE HATCH: only when `rec.scwXmtp === false` is set EXPLICITLY (an
+ *  account minted under the pre-flip default) do we keep messaging over the
+ *  mnemonic-derived OWNER EOA so its existing inbox isn't disrupted. A new account
+ *  (scwXmtp === true) or any record with the flag UNSET defaults to the SCW
+ *  identity — a fresh inbox at the SCW address, which is expected/accepted.
  *
  *  zerodev modules are imported LAZILY so the XMTP module graph doesn't pull the
  *  Kernel SDK unless a smart account is actually signed. */
 async function signerForSmart(rec: AccountRecord): Promise<Signer> {
   if (rec.hdIndex == null) throw new Error('Smart account is missing its HD index.');
-  if (!rec.scwXmtp) {
-    /** Default: sign as the owner EOA identity at hdIndex. The owner address +
-     *  the signature both come from the keyring (signing in place); no key or
-     *  mnemonic crosses this boundary. */
+  if (rec.scwXmtp === false) {
+    /** Legacy account explicitly pinned to the owner EOA identity at hdIndex. The
+     *  owner address + the signature both come from the keyring (signing in
+     *  place); no key or mnemonic crosses this boundary. */
     const { smartOwnerAddress, signOwnerMessage } = await import('./zerodev/keyring');
     const hdIndex = rec.hdIndex;
     const ownerAddr = await smartOwnerAddress(hdIndex);
@@ -151,7 +153,7 @@ async function signerForSmart(rec: AccountRecord): Promise<Signer> {
       signMessage: async (message: string) => ({ signature: await signOwnerMessage(hdIndex, message) }),
     };
   }
-  /** Cutover ON: SCW identity at the Kernel address via the centralized factory. */
+  /** Default: SCW identity at the Kernel address via the centralized factory. */
   const { kernelClientForRecord } = await import('./zerodev/kernelForRecord');
   const { scwSigner } = await import('./zerodev/scwSigner');
   const kernelClient = await kernelClientForRecord(rec);

@@ -59,7 +59,9 @@ export async function createSmartAccount(opts: CreateSmartAccountOpts = {}): Pro
     hdIndex,
     ownerAddress: owner.address.toLowerCase(),
     deployed: false,
-    scwXmtp: false, // opt-in cutover, default OFF (spec review item 5)
+    scwXmtp: true, // SCW IS the XMTP identity by default (Less): Kernel address
+    //              registers via ERC-1271 / 6492-while-counterfactual, chainId 8453.
+
   };
   return addSmartAccount(rec);
 }

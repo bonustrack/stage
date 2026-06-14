@@ -21,7 +21,10 @@
  *  fails we surface it as an XmtpSetupError so the UI can offer a Retry (NOT the
  *  generic wipe/reset), instead of dropping the user into a broken Home.
  *
- *  XMTP cutover stays OFF (createSmartAccount sets scwXmtp:false). */
+ *  The new account's XMTP identity IS the smart account (createSmartAccount sets
+ *  scwXmtp:true): Client.create registers the Kernel address inbox via ERC-1271
+ *  (6492-wrapped while the Kernel is still counterfactual), chainId 8453. The
+ *  ~20s messaging step + progress UI below applies unchanged. */
 
 import { restoreMnemonic, createSmartAccount, zerodevRpId } from '../../lib/zerodev';
 import { AccountManager } from '../../modules/messaging';

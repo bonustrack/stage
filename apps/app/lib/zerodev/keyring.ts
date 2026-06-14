@@ -262,7 +262,7 @@ export async function smartOwnerSigner(hdIndex: number): Promise<HDAccount> {
 }
 
 /** An XMTP-style EOA signMessage for the smart account's owner identity (the
- *  default, scwXmtp-OFF path). Signs in place; returns the hex signature. */
+ *  legacy scwXmtp===false path). Signs in place; returns the hex signature. */
 export async function signOwnerMessage(hdIndex: number, message: string): Promise<Hex> {
   const owner = await ownerFor(hdIndex);
   return owner.signMessage({ message }) as Promise<Hex>;
