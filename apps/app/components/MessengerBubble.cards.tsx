@@ -21,6 +21,7 @@ import { isCardActionBlocked } from '../lib/consentGate';
 import { useDecodedCall, spoofWarning, type DecodedCall } from '../lib/txDecode';
 import { useTxSimulation } from '../lib/txSimulate';
 import { SimulationBlock } from './MessengerBubble.sim';
+import { txActionLabel, isTransferRequest } from './MessengerBubble.txwording';
 // SigRequestCard — signature-request bubble: trusted (app-derived) title + the
 // typed-data/message detail. The peer-supplied `description` is rendered
 // SEPARATELY and labelled sender-provided, never as the prominent trusted
@@ -183,7 +184,16 @@ export function TxRequestCard({ req, dark, sub, paying, onPay, consentAllowed }:
     call?.to, call?.data, call?.value, chainNum,
   );
   const isErc20Transfer = !!tokenAddr; // metadata.toAddress present => transfer(token)
-  const showDecodedBlock = !!call?.data && call.data !== '0x' && !isErc20Transfer;
+  const hasCalldata = !!call?.data && call.data !== '0x';
+  const showDecodedBlock = hasCalldata && !isErc20Transfer;
+  // CALL + VALUE: a contract call (has calldata) that ALSO sends native ETH
+  // (value > 0). The function call would otherwise hide the ETH leaving the
+  // wallet, so surface it prominently. Pure native transfers already show `eth`.
+  const sendsNativeWithCall = showDecodedBlock && !!eth && eth !== '0';
+  // Button + success wording: a plain native/ERC-20 transfer keeps "Pay";
+  // a generic contract call uses the humanized action (fallback "Confirm").
+  const actionLabel = txActionLabel(decoded, isErc20Transfer);
+  const isTransfer = isTransferRequest(decoded, isErc20Transfer);
   const warning = spoofWarning(decoded, call?.metadata?.description);
   // Show the balance whenever there's something to read: a known currency, a
   // native ETH transfer, or an ERC-20 token contract (even an unknown one —
@@ -203,6 +213,7 @@ export function TxRequestCard({ req, dark, sub, paying, onPay, consentAllowed }:
           {showDecodedBlock ? (
             <DecodedCallBlock decoded={decoded} pending={decoding} target={call?.to} sub={sub} selector={decoded?.selector}/>
           ) : null}
+          {sendsNativeWithCall ? <TxNativeValueRow eth={eth as string} /> : null}
           {recipient ? <TxToRow address={recipient} /> : null}
           <Text size="xs" color={sub}>On {VIEM_CHAINS[chainNum]?.name ?? `chain ${chainNum}`}</Text>
         </Col>
@@ -215,10 +226,10 @@ export function TxRequestCard({ req, dark, sub, paying, onPay, consentAllowed }:
         needed: call?.metadata?.amount,
       }}
       action={(onPay && !gated) ? {
-        label: 'Pay',
+        label: actionLabel,
         onPress: onPay,
         loading: paying,
-        icon: <Icon name="paperAirplane" size={18} color={pal.bg}/>,
+        icon: <Icon name={isTransfer ? 'paperAirplane' : 'check'} size={18} color={pal.bg}/>,
       } : undefined}
       footer={onPay && gated ? (
         <Text size="xs" role="secondary">Accept this conversation to enable paying.</Text>
@@ -247,6 +258,24 @@ function TxToRow({ address }: { address: string }): React.ReactElement {
     </Pressable>
   );
 }
+/** TxNativeValueRow — surfaces native ETH that rides along with a contract call
+ *  (calldata + value > 0). Without this the ETH leaving the wallet is hidden
+ *  behind the function call, since the amount header is suppressed for calls. */
+function TxNativeValueRow({ eth }: { eth: string }): React.ReactElement {
+  const pal = usePalette();
+  return (
+    <Row align="center" gap={6}>
+      <Icon name="paperAirplane" size={14} color={pal.link}/>
+      <Text size="sm" weight="semibold">Also sends {eth} ETH with this call</Text>
+    </Row>
+  );
+}
+/** Shorten a decoded arg value for display: 0x-addresses (and address-like 42-char
+ *  hex) are truncated; everything else (strings, big numbers) is shown as-is. */
+function fmtArgValue(v: string): string {
+  if (/^0x[0-9a-fA-F]{40}$/.test(v)) return shortAddress(v);
+  return v;
+}
 /** DecodedCallBlock — the trusted "what this tx actually does" view for a generic
  *  contract call: the resolved function signature + each decoded arg (name: value)
  *  + the target contract. While the ABI fetch is in flight it shows the raw
@@ -274,8 +303,12 @@ function DecodedCallBlock({ decoded, pending, target, sub, selector }: {
       </Text>
       {decoded?.args.map((a, i) => (
         <Row key={`${a.name}-${i}`} align="start" gap={8}>
-          <Text size="xs" color={sub} style={{ minWidth: 80, flexShrink: 0 }}>{a.name}</Text>
-          <Text variant="mono" size="xs" numberOfLines={4} style={{ flexShrink: 1, flex: 1 }}>{a.value}</Text>
+          {/* name (type): the ABI/4byte param type sits next to the name so the
+              user can read the call shape, e.g. "content (string)". */}
+          <Text size="xs" color={sub} style={{ minWidth: 80, flexShrink: 0 }} numberOfLines={2}>
+            {a.name}{a.type ? ` (${a.type})` : ''}
+          </Text>
+          <Text variant="mono" size="xs" numberOfLines={4} style={{ flexShrink: 1, flex: 1 }}>{fmtArgValue(a.value)}</Text>
         </Row>
       ))}
       {!pending && decoded?.note && decoded.source !== 'mismatch' ? (
@@ -309,6 +342,10 @@ export function TxReceiptCard({ receipt, dark }: {
   const amountLabel = receipt.metadata?.amount != null
     ? `${receipt.metadata.amount} ${receipt.metadata.currency ?? 'ETH'}`
     : undefined;
+  // A receipt carrying an amount/currency is a value transfer ("Payment sent");
+  // a bare contract-call receipt (no amount) reads as "Transaction sent" so a
+  // contract interaction is never mislabelled as a payment.
+  const successLabel = amountLabel ? `Payment sent · ${amountLabel}` : 'Transaction sent';
   const url = explorerTxUrl(receipt.networkId, receipt.reference);
   const blockRadius = useBlockRadius(); const pal = usePalette();
   return (
@@ -316,7 +353,7 @@ export function TxReceiptCard({ receipt, dark }: {
       <Row align="center" gap={8}>
         <Icon name="check" size={18} color={dark ? '#7fd07f' : '#2f9e44'}/>
         <Text weight="semibold" size="md" color={dark ? '#ffffff' : '#000000'}>
-          Payment sent{amountLabel ? ` · ${amountLabel}` : ''}
+          {successLabel}
         </Text>
       </Row>
       <Pressable onPress={() => void Linking.openURL(url)}>
