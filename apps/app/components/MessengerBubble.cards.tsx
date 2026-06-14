@@ -99,12 +99,12 @@ export function SigRequestCard({ req, dark, sub, signing, onSign, consentAllowed
           <Button
             variant="primary"
             size="lg"
-            fullWidth
-            pill
+            block
             dark={dark}
             loading={signing}
             onPress={onSign}
             label="Sign"
+            iconStart={<Icon name="pencil" size={18} color={pal.bg}/>}
             tintBg={pal.primary}
             tintFg={pal.bg}
             style={{ marginTop: 2 }}
