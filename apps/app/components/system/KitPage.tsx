@@ -14,7 +14,7 @@ import { ThemeSwitcher } from './ThemeSwitcher';
 import { KitSections } from './KitSections';
 import { GithubLogo } from '../GithubLogo';
 
-const KIT_GITHUB_URL = 'https://github.com/bonustrack/metro/tree/main/packages/kit';
+const KIT_GITHUB_URL = 'https://github.com/bonustrack/stage/tree/main/packages/kit';
 
 export function KitPage(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';

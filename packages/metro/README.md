@@ -2,9 +2,9 @@
 
 > Event-interception wire: supervise train subprocesses, multiplex their JSON event streams, and route outbound actions back in.
 
-[![lines of code](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.codetabs.com%2Fv1%2Floc%2F%3Fgithub%3Dbonustrack%2Fmetro&query=%24%5B%3F(%40.language%3D%3D%27Total%27)%5D.linesOfCode&label=lines%20of%20code&color=blue)](https://github.com/bonustrack/metro)
+[![lines of code](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.codetabs.com%2Fv1%2Floc%2F%3Fgithub%3Dbonustrack%2Fstage&query=%24%5B%3F(%40.language%3D%3D%27Total%27)%5D.linesOfCode&label=lines%20of%20code&color=blue)](https://github.com/bonustrack/stage)
 
-`metro` is the core of the [Metro](https://github.com/bonustrack/metro) monorepo: a small, pure-transport daemon and CLI. This README is the canonical reference for the wire and its CLI. The agent-facing playbook lives in [`skills/metro/SKILL.md`](skills/metro/SKILL.md); the URI scheme is specified in [`docs/uri-scheme.md`](docs/uri-scheme.md); the broker and monitor internals in [`docs/broker.md`](docs/broker.md) and [`docs/monitor.md`](docs/monitor.md); the higher-level CLI architecture in [`../../docs/metro-cli-architecture.md`](../../docs/metro-cli-architecture.md).
+`metro` is the core of the [Metro](https://github.com/bonustrack/stage) monorepo: a small, pure-transport daemon and CLI. This README is the canonical reference for the wire and its CLI. The agent-facing playbook lives in [`skills/metro/SKILL.md`](skills/metro/SKILL.md); the URI scheme is specified in [`docs/uri-scheme.md`](docs/uri-scheme.md); the broker and monitor internals in [`docs/broker.md`](docs/broker.md) and [`docs/monitor.md`](docs/monitor.md); the higher-level CLI architecture in [`../../docs/metro-cli-architecture.md`](../../docs/metro-cli-architecture.md).
 
 ## Table of contents
 
@@ -392,7 +392,7 @@ examples/         # example train scripts
 
 ## Links
 
-- Monorepo: [bonustrack/metro](https://github.com/bonustrack/metro)
+- Monorepo: [bonustrack/stage](https://github.com/bonustrack/stage)
 - Agent playbook: [`skills/metro/SKILL.md`](skills/metro/SKILL.md)
 - URI scheme: [`docs/uri-scheme.md`](docs/uri-scheme.md)
 - CLI architecture: [`../../docs/metro-cli-architecture.md`](../../docs/metro-cli-architecture.md)

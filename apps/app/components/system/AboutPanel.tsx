@@ -14,7 +14,7 @@ import { Title } from '@metro-labs/kit/title';
 import { Text } from '@metro-labs/kit/text';
 import { GitHubLinkRow } from './GitHubLinkRow';
 
-const METRO_GITHUB_URL = 'https://github.com/bonustrack/metro';
+const METRO_GITHUB_URL = 'https://github.com/bonustrack/stage';
 
 interface AboutRowProps {
   label: string; value: string; mono?: boolean; dark: boolean; border: string;
@@ -88,7 +88,7 @@ export function AboutPanel({ dark, head, sub, border, rowBg }: {
         dark={dark} head={head} sub={sub} border={border} rowBg={rowBg}
         url={METRO_GITHUB_URL}
         title="View Metro on GitHub"
-        subtitle="bonustrack/metro"
+        subtitle="bonustrack/stage"
       />
     </Box>
   );

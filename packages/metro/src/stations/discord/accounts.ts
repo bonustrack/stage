@@ -58,7 +58,7 @@ export async function rest<T = unknown>(
   if (!acct) throw new Error(`unknown account '${accountId}'`);
   const headers: Record<string, string> = {
     Authorization: `Bot ${acct.cfg.token}`,
-    'User-Agent': 'metro-discord-train (https://github.com/bonustrack/metro)',
+    'User-Agent': 'metro-discord-train (https://github.com/bonustrack/stage)',
   };
   if (body !== undefined && !isForm) headers['Content-Type'] = 'application/json';
   const res = await fetch(`${API}${path}`, {
