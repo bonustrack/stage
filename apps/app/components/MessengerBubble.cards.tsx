@@ -19,6 +19,8 @@ import { stampTokenUrl } from '@metro-labs/kit/avatar';
 import { chainIdToNumber, explorerTxUrl } from '@stage-labs/client/xmtp/tx';
 import { isCardActionBlocked } from '../lib/consentGate';
 import { useDecodedCall, spoofWarning, type DecodedCall } from '../lib/txDecode';
+import { useTxSimulation } from '../lib/txSimulate';
+import { SimulationBlock } from './MessengerBubble.sim';
 // SigRequestCard — signature-request bubble: trusted (app-derived) title + the
 // typed-data/message detail. The peer-supplied `description` is rendered
 // SEPARATELY and labelled sender-provided, never as the prominent trusted
@@ -174,6 +176,12 @@ export function TxRequestCard({ req, dark, sub, paying, onPay, consentAllowed }:
   // only surface the decode as a warning if it disagrees. Any OTHER contract call
   // renders the decoded block so the user trusts the decode, not the description.
   const { call: decoded, pending: decoding } = useDecodedCall(call?.to, call?.data, chainNum);
+  // SIMULATION: dry-run the call (eth_simulateV1) from the active account to show
+  // success/revert + the actual tokens/ETH moving in & out, BEFORE the passkey.
+  // Complements the decode (decode = what function; simulate = what happens).
+  const { result: sim, pending: simulating } = useTxSimulation(
+    call?.to, call?.data, call?.value, chainNum,
+  );
   const isErc20Transfer = !!tokenAddr; // metadata.toAddress present => transfer(token)
   const showDecodedBlock = !!call?.data && call.data !== '0x' && !isErc20Transfer;
   const warning = spoofWarning(decoded, call?.metadata?.description);
@@ -191,6 +199,7 @@ export function TxRequestCard({ req, dark, sub, paying, onPay, consentAllowed }:
       detail={
         <Col gap={8} style={{ alignSelf: 'stretch' }}>
           {warning ? <TxWarning text={warning} /> : null}
+          <SimulationBlock sim={sim} pending={simulating} sub={sub} />
           {showDecodedBlock ? (
             <DecodedCallBlock decoded={decoded} pending={decoding} target={call?.to} sub={sub} selector={decoded?.selector}/>
           ) : null}
