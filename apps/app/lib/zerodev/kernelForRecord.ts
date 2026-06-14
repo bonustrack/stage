@@ -36,7 +36,14 @@ export async function kernelClientForRecord(rec: AccountRecord): Promise<KernelA
   // every sign triggers a WebAuthn prompt and the private key is unused. Null
   // (no passkey, or native module absent) -> ECDSA owner sudo (current behavior).
   const account =
-    (rec.passkey && (await passkeyKernelFromStored(publicClient, owner, rec.hdIndex, rec.passkey))) ||
+    (rec.passkey &&
+      (await passkeyKernelFromStored(
+        publicClient,
+        owner,
+        rec.hdIndex,
+        rec.passkey,
+        rec.address as `0x${string}`,
+      ))) ||
     (await createEcdsaKernel(publicClient, owner, rec.hdIndex));
   return makeKernelClient(account, publicClient);
 }

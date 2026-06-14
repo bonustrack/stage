@@ -26,6 +26,7 @@ import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { flash } from '../../lib/toast';
 import { getActiveAccount } from '../../lib/accounts';
 import { revealRecoveryPhrase } from '../../lib/zerodev';
+import { useEnablePasskey } from '../../lib/useEnablePasskey';
 import { isWalletBackedUp, setWalletBackedUp } from '../../lib/walletBackup';
 
 export function SecureWalletNudge(): React.ReactElement | null {
@@ -36,6 +37,7 @@ export function SecureWalletNudge(): React.ReactElement | null {
   const [show, setShow] = useState(false);
   const [phrase, setPhrase] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const passkey = useEnablePasskey();
 
   useEffect(() => {
     let alive = true;
@@ -97,6 +99,12 @@ export function SecureWalletNudge(): React.ReactElement | null {
               <Button dark={dark} variant="primary" size="md" fullWidth
                 tintBg={pal.primary} tintFg={pal.bg}
                 label="Back up recovery phrase" disabled={busy} onPress={reveal}/>
+              {passkey.available ? (
+                <Button dark={dark} variant="secondary" size="md" fullWidth
+                  disabled={passkey.busy}
+                  label={passkey.busy ? 'Enabling passkey…' : 'Enable passkey for signing'}
+                  onPress={passkey.run}/>
+              ) : null}
               <Button dark={dark} variant="secondary" size="md" fullWidth
                 label="Add guardians" onPress={() => router.push('/wallet/recovery')}/>
               <Button dark={dark} variant="ghost" size="md" fullWidth

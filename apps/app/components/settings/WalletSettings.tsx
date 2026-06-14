@@ -25,6 +25,7 @@ import { useBlockRadius, useEffectiveColorScheme, usePalette } from '../../lib/t
 import { useActiveAccount } from '../../modules/messaging/account';
 import { flash } from '../../lib/toast';
 import { useWalletModel, type DeployState, type ModuleRole } from './WalletSettings.parts';
+import { useEnablePasskey } from '../../lib/useEnablePasskey';
 
 interface C { fg: string; head: string; sub: string; border: string; rowBg: string }
 
@@ -106,6 +107,7 @@ export function WalletSettings(): React.ReactElement {
   const c: C = { fg, head, sub: fg, border, rowBg: border };
 
   const { model, deploy } = useWalletModel(epoch);
+  const passkey = useEnablePasskey(epoch);
 
   const card = (children: React.ReactNode): React.ReactElement => (
     <Box margin={{ x: 16 }} radius={blockRadius} style={{ overflow: 'hidden' }}>
@@ -186,17 +188,32 @@ export function WalletSettings(): React.ReactElement {
 
                 <SectionLabel c={c}>MANAGE</SectionLabel>
                 {card(
-                  <ListViewItem
-                    dark={dark}
-                    onPress={() => router.push('/wallet/recovery')}
-                    style={{ paddingHorizontal: 14, paddingVertical: 14 }}
-                  >
-                    <Icon name="userGroup" size={22} color={c.head} />
-                    <Text size="md" color={c.fg} style={{ flex: 1 }}>
-                      {model.guardianCount ? 'Guardian recovery & backup phrase' : 'Set up recovery & backup phrase'}
-                    </Text>
-                    <Icon name="chevronRight" size={18} color={c.head} />
-                  </ListViewItem>,
+                  <>
+                    {passkey.available ? (
+                      <ListViewItem
+                        dark={dark}
+                        onPress={() => { if (!passkey.busy) passkey.run(); }}
+                        style={{ paddingHorizontal: 14, paddingVertical: 14 }}
+                      >
+                        <Icon name="fingerPrint" size={22} color={c.head} />
+                        <Text size="md" color={c.fg} style={{ flex: 1 }}>
+                          {passkey.busy ? 'Enabling passkey…' : 'Enable passkey for signing'}
+                        </Text>
+                        <Icon name="chevronRight" size={18} color={c.head} />
+                      </ListViewItem>
+                    ) : null}
+                    <ListViewItem
+                      dark={dark}
+                      onPress={() => router.push('/wallet/recovery')}
+                      style={{ paddingHorizontal: 14, paddingVertical: 14 }}
+                    >
+                      <Icon name="userGroup" size={22} color={c.head} />
+                      <Text size="md" color={c.fg} style={{ flex: 1 }}>
+                        {model.guardianCount ? 'Guardian recovery & backup phrase' : 'Set up recovery & backup phrase'}
+                      </Text>
+                      <Icon name="chevronRight" size={18} color={c.head} />
+                    </ListViewItem>
+                  </>,
                 )}
               </>
             ) : null}

@@ -14,6 +14,7 @@ export { passkeysAvailable } from './native';
 export { zerodevConfigured, zerodevRpcUrl, zerodevRpId } from './env';
 export { createSmartAccount, type CreateSmartAccountOpts } from './create';
 export { kernelClientForRecord } from './kernelForRecord';
+export { enablePasskeyForRecord, type EnablePasskeyResult } from './enablePasskey';
 export { scwSigner } from './scwSigner';
 export { makePublicClient, makeKernelClient } from './client';
 export { createEcdsaKernel, createPasskeyKernel } from './account';

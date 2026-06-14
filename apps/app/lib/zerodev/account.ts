@@ -88,6 +88,11 @@ async function buildPasskeyKernel(
   owner: HDAccount,
   hdIndex: number,
   stored: StoredPasskey,
+  /** When the account ALREADY exists (enable-passkey on an account whose address
+   *  was derived from the ECDSA sudo validator), pin the Kernel to that address so
+   *  swapping sudo to the passkey does NOT change the wallet identity. Omitted on
+   *  the fresh-create path, where the passkey IS the sudo the address derives from. */
+  addressOverride?: `0x${string}`,
 ): Promise<CreateKernelAccountReturnType> {
   const { toPasskeyValidator, PasskeyValidatorContractVersion } = require('@zerodev/passkey-validator');
   const passkeyValidator = await toPasskeyValidator(publicClient, {
@@ -105,8 +110,69 @@ async function buildPasskeyKernel(
     plugins: { sudo: passkeyValidator, regular: ownerValidator },
     entryPoint: ENTRY_POINT,
     kernelVersion: KERNEL_VERSION,
-    index: BigInt(hdIndex),
+    ...(addressOverride ? { address: addressOverride } : { index: BigInt(hdIndex) }),
   });
+}
+
+/** Build JUST the passkey KernelValidator from stored material (no Kernel account).
+ *  Used by the enable-passkey flow to install/swap the validator on an existing,
+ *  deployed Kernel via the SDK's changeSudoValidator. Null when the native module
+ *  is absent. Lazy require keeps this bundling without the passkey deps. */
+export async function passkeyValidatorFromStored(
+  publicClient: PublicClient,
+  stored: StoredPasskey,
+): Promise<unknown | null> {
+  if (!passkeysAvailable()) return null;
+  try {
+    const { toPasskeyValidator, PasskeyValidatorContractVersion } = require('@zerodev/passkey-validator');
+    return await toPasskeyValidator(publicClient, {
+      webAuthnKey: liveWebAuthnKey(stored),
+      entryPoint: ENTRY_POINT,
+      kernelVersion: KERNEL_VERSION,
+      validatorContractVersion: PasskeyValidatorContractVersion.V0_0_2,
+    });
+  } catch {
+    return null;
+  }
+}
+
+/** REGISTER a NEW passkey credential for an EXISTING account WITHOUT building a
+ *  Kernel (the enable-passkey flow). Runs the on-device WebAuthn create() (the
+ *  native prompt) and returns the StoredPasskey to persist + install. Null when
+ *  the native module is absent. Mirrors createPasskeyKernel's registration half. */
+export async function registerPasskeyCredential(
+  hdIndex: number,
+  opts: { rpId: string; userName: string; userDisplayName?: string },
+): Promise<StoredPasskey | null> {
+  if (!passkeysAvailable()) return null;
+  try {
+    const passkey = require('react-native-passkeys');
+    const { parsePasskeyCred } = require('@zerodev/react-native-passkeys-utils');
+    const challengeBytes = new Uint8Array(32);
+    crypto.getRandomValues(challengeBytes);
+    const challenge = bytesToBase64Url(challengeBytes);
+    const cred = await passkey.create({
+      challenge,
+      pubKeyCredParams: [{ alg: -7, type: 'public-key' }],
+      rp: { id: opts.rpId, name: 'Stage' },
+      user: {
+        id: bytesToBase64Url(new TextEncoder().encode(`${opts.userName}:${hdIndex}`)),
+        name: opts.userName,
+        displayName: opts.userDisplayName ?? opts.userName,
+      },
+      authenticatorSelection: { residentKey: 'required', userVerification: 'required' },
+    });
+    const parsed = parsePasskeyCred(cred, opts.rpId);
+    return {
+      pubX: `0x${parsed.pubX.toString(16)}`,
+      pubY: `0x${parsed.pubY.toString(16)}`,
+      authenticatorId: parsed.authenticatorId,
+      authenticatorIdHash: parsed.authenticatorIdHash,
+      rpID: opts.rpId,
+    };
+  } catch {
+    return null;
+  }
 }
 
 /** REBUILD a passkey Kernel for an existing record from its StoredPasskey. Returns
@@ -119,10 +185,15 @@ export async function passkeyKernelFromStored(
   owner: HDAccount,
   hdIndex: number,
   stored: StoredPasskey,
+  /** The account's known address. REQUIRED for accounts whose passkey was added
+   *  AFTER creation (the address was derived from the ECDSA sudo, not the passkey),
+   *  so the rebuilt passkey-sudo Kernel resolves to the SAME identity. Pass the
+   *  record address always; harmless on fresh passkey accounts (same address). */
+  addressOverride?: `0x${string}`,
 ): Promise<CreateKernelAccountReturnType | null> {
   if (!passkeysAvailable()) return null;
   try {
-    return await buildPasskeyKernel(publicClient, owner, hdIndex, stored);
+    return await buildPasskeyKernel(publicClient, owner, hdIndex, stored, addressOverride);
   } catch {
     return null;
   }
