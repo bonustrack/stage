@@ -121,24 +121,41 @@ async function sendImage(id: string, args: Args): Promise<void> {
 }
 
 async function sendTxRequest(id: string, args: Args): Promise<void> {
-  const { line, to, amountEth, note, chainId } = args as {
-    line: string; to: string; amountEth: number; note?: string; chainId?: number };
+  const { line, to, amountEth, data, note, chainId } = args as {
+    line: string; to: string; amountEth?: number; data?: string; note?: string; chainId?: number };
   const { acct, conv } = await convOf(line);
   if (!conv) throw noConv(line);
   if (!to || typeof to !== 'string' || !/^0x[0-9a-fA-F]{40}$/.test(to)) {
     throw badArgs('sendTxRequest requires a valid 0x `to` address');
   }
-  if (typeof amountEth !== 'number' || !(amountEth > 0)) throw badArgs('sendTxRequest requires a positive `amountEth`');
-  const weiHex = '0x' + BigInt(Math.round(amountEth * 1e18)).toString(16);
+  const hasData = data != null;
+  if (hasData && (typeof data !== 'string' || !/^0x([0-9a-fA-F]{2})*$/.test(data))) {
+    throw badArgs('sendTxRequest `data` must be 0x-prefixed hex calldata');
+  }
+  // amountEth is required for native transfers, optional (default 0) for contract calls.
+  if (!hasData && (typeof amountEth !== 'number' || !(amountEth > 0))) {
+    throw badArgs('sendTxRequest requires a positive `amountEth` (or `data` for a contract call)');
+  }
+  if (amountEth != null && (typeof amountEth !== 'number' || amountEth < 0)) {
+    throw badArgs('sendTxRequest `amountEth` must be a non-negative number');
+  }
+  const weiHex = amountEth ? '0x' + BigInt(Math.round(amountEth * 1e18)).toString(16) : '0x0';
   const content: WalletSendCallsParams = {
     version: '1.0', chainId: toHex(chainId ?? 1), from: acct.address as `0x${string}`,
     calls: [{
       to: to as `0x${string}`, value: weiHex as `0x${string}`,
-      metadata: { description: note ?? 'Payment request', transactionType: 'transfer' },
+      ...(hasData ? { data: data as `0x${string}` } : {}),
+      metadata: {
+        description: note ?? (hasData ? 'Contract call' : 'Payment request'),
+        transactionType: 'transfer',
+      },
     }],
   };
   const sentId = await conv.send(new WalletSendCallsCodec().encode(content));
-  emitOutbound(acct.cfg.id, line, sentId, `💸 ${note ?? 'Payment request'} (${amountEth} ETH)`);
+  const label = hasData
+    ? `📝 ${note ?? 'Contract call'}${amountEth ? ` (${amountEth} ETH)` : ''}`
+    : `💸 ${note ?? 'Payment request'} (${amountEth} ETH)`;
+  emitOutbound(acct.cfg.id, line, sentId, label);
   respond(id, { result: { messageId: sentId } });
 }
 
