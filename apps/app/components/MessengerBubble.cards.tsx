@@ -14,8 +14,9 @@ import type { SigRequest, SigReference, TxRequest, TxReceipt } from './Messenger
 import { usePalette, useBlockRadius, withAlpha } from '../lib/theme';
 import { usePeerProfiles, getPeerName } from '../lib/peerProfiles';
 import { PaymentCard } from './PaymentCard';
-import { NATIVE_TOKEN_SENTINEL, VIEM_CHAINS } from '@stage-labs/client/wallet/assets';
-import { stampTokenUrl } from '@metro-labs/kit/avatar';
+import { VIEM_CHAINS } from '@stage-labs/client/wallet/assets';
+import { tokenLogoUrl } from '../lib/txAssets';
+import { useUsdValue } from '../lib/txPrices';
 import { chainIdToNumber, explorerTxUrl } from '@stage-labs/client/xmtp/tx';
 import { isCardActionBlocked } from '../lib/consentGate';
 import { useDecodedCall, spoofWarning, type DecodedCall } from '../lib/txDecode';
@@ -157,20 +158,27 @@ export function TxRequestCard({ req, dark, sub, paying, onPay, consentAllowed }:
   const call = req.calls[0];
   const desc = call?.metadata?.description ?? 'Payment request';
   const eth = ethFromWeiHex(call?.value);
-  const amountLabel = call?.metadata?.amount != null
-    ? `${call.metadata.amount} ${call.metadata.currency ?? 'ETH'}`
-    : eth ? `${eth} ETH` : undefined;
+  const amountValue = call?.metadata?.amount != null ? String(call.metadata.amount) : eth;
+  const amountUnit = call?.metadata?.amount != null ? (call.metadata.currency ?? 'ETH') : (eth ? 'ETH' : undefined);
   // For ERC20 requests `call.to` is the token contract; the real recipient is
   // carried in `metadata.toAddress`. Prefer it when present.
   const recipient = call?.metadata?.toAddress ?? call?.to;
   // ERC20 when the recipient (metadata.toAddress) differs from call.to — then
   // call.to is the token contract. Native ETH otherwise.
   const tokenAddr = call?.metadata?.toAddress ? call?.to : undefined;
-  /** Token logo + network badge, exactly like the wallet token row. ERC20 uses
-   *  the token contract; native ETH uses the stamp native sentinel. STAGE has no
-   *  logo so the URL 404s and TokenAvatar falls back to the border circle. */
+  /** Token logo + network badge, exactly like the wallet token row. Resolved via
+   *  the registry (lib/txAssets): a KNOWN ERC-20 (e.g. STAGE) shows its real
+   *  logo, native ETH shows the ETH logo, and an UNKNOWN token shows a neutral
+   *  identicon — NEVER the ETH logo for a non-ETH token. */
   const chainNum = chainIdToNumber(req.chainId ?? '0x1');
-  const logoUrl = stampTokenUrl(chainNum, tokenAddr ?? NATIVE_TOKEN_SENTINEL, 36);
+  const logoUrl = tokenLogoUrl(chainNum, tokenAddr ?? null, 36);
+  // USD value beside the big amount (FIX 2). Native ETH prices off null; an
+  // ERC-20 off its contract. Unknown/unpriceable token (e.g. STAGE) -> null, so
+  // the amount shows with NO $ (never a fake/zero value).
+  const amountUsd = useUsdValue(chainNum, tokenAddr ?? null, amountValue);
+  const amountLabel = amountValue && amountUnit
+    ? `${amountValue} ${amountUnit}${amountUsd ? ` (${amountUsd})` : ''}`
+    : undefined;
   // DECODED CALL: resolve what the calldata ACTUALLY does (Sourcify ABI ->
   // function + named args, 4byte fallback). null for a plain ETH transfer (no
   // data); for a known ERC-20 transfer we keep the friendly amount view below and
@@ -209,11 +217,11 @@ export function TxRequestCard({ req, dark, sub, paying, onPay, consentAllowed }:
       detail={
         <Col gap={8} style={{ alignSelf: 'stretch' }}>
           {warning ? <TxWarning text={warning} /> : null}
-          <SimulationBlock sim={sim} pending={simulating} sub={sub} />
+          <SimulationBlock sim={sim} pending={simulating} sub={sub} chainId={chainNum} />
           {showDecodedBlock ? (
             <DecodedCallBlock decoded={decoded} pending={decoding} target={call?.to} sub={sub} selector={decoded?.selector}/>
           ) : null}
-          {sendsNativeWithCall ? <TxNativeValueRow eth={eth as string} /> : null}
+          {sendsNativeWithCall ? <TxNativeValueRow eth={eth as string} chainId={chainNum} /> : null}
           {recipient ? <TxToRow address={recipient} /> : null}
           <Text size="xs" color={sub}>On {VIEM_CHAINS[chainNum]?.name ?? `chain ${chainNum}`}</Text>
         </Col>
@@ -261,12 +269,13 @@ function TxToRow({ address }: { address: string }): React.ReactElement {
 /** TxNativeValueRow — surfaces native ETH that rides along with a contract call
  *  (calldata + value > 0). Without this the ETH leaving the wallet is hidden
  *  behind the function call, since the amount header is suppressed for calls. */
-function TxNativeValueRow({ eth }: { eth: string }): React.ReactElement {
+function TxNativeValueRow({ eth, chainId }: { eth: string; chainId: number }): React.ReactElement {
   const pal = usePalette();
+  const usd = useUsdValue(chainId, null, eth);
   return (
     <Row align="center" gap={6}>
       <Icon name="paperAirplane" size={14} color={pal.link}/>
-      <Text size="sm" weight="semibold">Also sends {eth} ETH with this call</Text>
+      <Text size="sm" weight="semibold">Also sends {eth} ETH{usd ? ` (${usd})` : ''} with this call</Text>
     </Row>
   );
 }

@@ -31,18 +31,40 @@ export interface SimCall {
   error?: { message?: string; data?: string };
 }
 
+/** Normalise a raw revert/RPC message into a short, human reason. Recognises the
+ *  common cases the node surfaces as free text (insufficient funds/balance, gas,
+ *  generic "execution reverted") so the card reads "Will fail: insufficient
+ *  funds" instead of a node-specific blob. Returns the input trimmed when no
+ *  pattern matches. */
+export function humanizeRevert(raw: string): string {
+  const s = raw.trim();
+  const lc = s.toLowerCase();
+  if (lc.includes('insufficient funds')) return 'insufficient ETH for value + gas';
+  if (lc.includes('insufficient balance') || lc.includes('transfer amount exceeds balance')) {
+    return 'insufficient token balance';
+  }
+  if (lc.includes('insufficient allowance') || lc.includes('exceeds allowance')) {
+    return 'insufficient token allowance (approve first)';
+  }
+  if (lc.includes('intrinsic gas') || lc.includes('out of gas')) return 'out of gas';
+  if (lc === 'execution reverted' || lc === 'reverted') return 'transaction would revert';
+  return s;
+}
+
 /** Decode a standard `Error(string)` revert payload (0x08c379a0 selector) into
- *  its message; falls back to a generic note for `Panic(uint256)` / opaque data. */
+ *  its message; falls back to a generic note for `Panic(uint256)` / opaque data.
+ *  The decoded/RPC message is run through {@link humanizeRevert} so common
+ *  failures read cleanly. */
 export function decodeRevert(returnData?: string, errMsg?: string): string | undefined {
   const d = returnData && returnData !== '0x' ? returnData : undefined;
   if (d && d.startsWith('0x08c379a0')) {
     try {
       const [msg] = decodeAbiParameters([{ type: 'string' }], ('0x' + d.slice(10)) as Hex);
-      if (msg) return String(msg);
+      if (msg) return humanizeRevert(String(msg));
     } catch { /* fall through */ }
   }
   if (d && d.startsWith('0x4e487b71')) return 'Execution panic (assert/overflow)';
-  if (errMsg) return errMsg;
+  if (errMsg) return humanizeRevert(errMsg);
   return undefined;
 }
 
@@ -71,6 +93,14 @@ export function formatAmount(raw: bigint, decimals: number): string {
   let fs = frac.toString().padStart(decimals, '0').replace(/0+$/, '');
   if (fs.length > 6) fs = fs.slice(0, 6); // cap displayed precision
   return `${whole.toString()}.${fs}`;
+}
+
+/** Build the "insufficient ETH" reason for a native-value transfer whose value
+ *  exceeds the sender's balance: "insufficient ETH (have X, need Y)". Pure (wei
+ *  in, string out) so it's unit-testable without the RPC. */
+export function insufficientEthReason(balanceWei: bigint, valueWei: bigint, chainId: number): string {
+  const { symbol, decimals } = nativeMeta(chainId);
+  return `insufficient ${symbol} (have ${formatAmount(balanceWei, decimals)}, need ${formatAmount(valueWei, decimals)})`;
 }
 
 /** Extract a lowercased 20-byte address from a 32-byte log topic. */

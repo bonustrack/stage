@@ -16,9 +16,11 @@ import { Icon } from '@metro-labs/kit/icon';
 import { Row, Col, Box } from './layout';
 import { usePalette, withAlpha } from '../lib/theme';
 import type { SimulateResult, AssetMove } from '../lib/txSimulate';
+import { NATIVE_TOKEN_SENTINEL } from '@stage-labs/client/wallet/assets';
+import { useUsdValue } from '../lib/txPrices';
 
-export function SimulationBlock({ sim, pending, sub }: {
-  sim: SimulateResult | null; pending: boolean; sub: string;
+export function SimulationBlock({ sim, pending, sub, chainId }: {
+  sim: SimulateResult | null; pending: boolean; sub: string; chainId: number;
 }): React.ReactElement | null {
   const pal = usePalette();
   if (pending) return <SimNote text="Simulating…" sub={sub} bg={pal.border} />;
@@ -43,8 +45,8 @@ export function SimulationBlock({ sim, pending, sub }: {
             : 'Will succeed'}
         </Text>
       </Row>
-      {out.map((m, i) => <AssetMoveRow key={`o-${i}`} move={m} sign="-" color={pal.danger} label="You send" sub={sub} />)}
-      {incoming.map((m, i) => <AssetMoveRow key={`i-${i}`} move={m} sign="+" color={pal.success} label="You receive" sub={sub} />)}
+      {out.map((m, i) => <AssetMoveRow key={`o-${i}`} move={m} sign="-" color={pal.danger} label="You send" sub={sub} chainId={chainId} />)}
+      {incoming.map((m, i) => <AssetMoveRow key={`i-${i}`} move={m} sign="+" color={pal.success} label="You receive" sub={sub} chainId={chainId} />)}
       {!fail && noChange ? <Text size="xs" color={sub}>No balance changes</Text> : null}
     </Box>
   );
@@ -62,16 +64,22 @@ function SimNote({ text, sub, bg }: { text: string; sub: string; bg: string }): 
   );
 }
 
-/** One asset line: a labelled signed amount + symbol. */
-function AssetMoveRow({ move, sign, color, label, sub }: {
-  move: AssetMove; sign: '+' | '-'; color: string; label: string; sub: string;
+/** One asset line: a labelled signed amount + symbol, with a `~$X` USD suffix
+ *  when the token has a known price (amount only otherwise — never a fake $). */
+function AssetMoveRow({ move, sign, color, label, sub, chainId }: {
+  move: AssetMove; sign: '+' | '-'; color: string; label: string; sub: string; chainId: number;
 }): React.ReactElement {
+  const token = move.token.toLowerCase() === NATIVE_TOKEN_SENTINEL.toLowerCase() ? null : move.token;
+  const usd = useUsdValue(chainId, token, move.amount);
   return (
     <Row align="center" justify="between" gap={8}>
       <Text size="xs" color={sub}>{label}</Text>
-      <Text size="sm" weight="semibold" color={color} numberOfLines={1}>
-        {sign}{move.amount} {move.symbol}
-      </Text>
+      <Row align="center" gap={6} style={{ flexShrink: 1 }}>
+        <Text size="sm" weight="semibold" color={color} numberOfLines={1}>
+          {sign}{move.amount} {move.symbol}
+        </Text>
+        {usd ? <Text size="xs" color={sub} numberOfLines={1}>{usd}</Text> : null}
+      </Row>
     </Row>
   );
 }

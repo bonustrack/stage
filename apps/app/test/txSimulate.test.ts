@@ -3,7 +3,9 @@
  *  nets ERC-20 + native Transfer logs relative to the sender into in/out lists. */
 
 import { describe, expect, test } from 'bun:test';
-import { parseAssetChanges, formatAmount } from '../lib/txSimulate.parse';
+import {
+  parseAssetChanges, formatAmount, humanizeRevert, insufficientEthReason, decodeRevert,
+} from '../lib/txSimulate.parse';
 
 const BASE = 8453;
 const USDC = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'; // 6 decimals on Base
@@ -22,6 +24,45 @@ describe('formatAmount', () => {
     expect(formatAmount(1_000_000n, 6)).toBe('1'); // 1 USDC
     expect(formatAmount(1_500_000n, 6)).toBe('1.5');
     expect(formatAmount(0n, 18)).toBe('0');
+  });
+});
+
+describe('humanizeRevert', () => {
+  test('insufficient funds -> ETH for value + gas', () => {
+    expect(humanizeRevert('err: insufficient funds for gas * price + value')).toBe('insufficient ETH for value + gas');
+  });
+  test('ERC-20 transfer exceeds balance -> insufficient token balance', () => {
+    expect(humanizeRevert('ERC20: transfer amount exceeds balance')).toBe('insufficient token balance');
+  });
+  test('allowance -> approve first', () => {
+    expect(humanizeRevert('ERC20: insufficient allowance')).toBe('insufficient token allowance (approve first)');
+  });
+  test('bare execution reverted -> generic', () => {
+    expect(humanizeRevert('execution reverted')).toBe('transaction would revert');
+  });
+  test('custom string reason passes through', () => {
+    expect(humanizeRevert('Sale not active')).toBe('Sale not active');
+  });
+});
+
+describe('decodeRevert', () => {
+  test('Error(string) payload decodes + humanizes', () => {
+    // abi.encode("ERC20: transfer amount exceeds balance") with the Error selector
+    const reason = 'ERC20: transfer amount exceeds balance';
+    const len = reason.length;
+    const hex = Buffer.from(reason, 'utf8').toString('hex').padEnd(64, '0');
+    const data = '0x08c379a0'
+      + (32).toString(16).padStart(64, '0')
+      + len.toString(16).padStart(64, '0')
+      + hex;
+    expect(decodeRevert(data)).toBe('insufficient token balance');
+  });
+});
+
+describe('insufficientEthReason', () => {
+  test('have/need formatted with the native symbol', () => {
+    const r = insufficientEthReason(0n, 10n ** 17n, BASE); // have 0, need 0.1 ETH
+    expect(r).toBe('insufficient ETH (have 0, need 0.1)');
   });
 });
 
