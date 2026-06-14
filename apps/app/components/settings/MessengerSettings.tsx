@@ -17,6 +17,7 @@ import { resetAccount } from '../../lib/wallet';
 import { flash } from '../../lib/toast';
 import { DANGER, useBlockRadius, useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { SystemHeader } from '../system/SystemHeader';
+import { MessengerSessions } from './MessengerSessions';
 
 function CopyRow({ label, value, display, c }: {
   label: string; value: string; display: string;
@@ -66,13 +67,15 @@ export function MessengerSettings(): React.ReactElement {
   return (
     <Col surface="surface" flex={1}>
       <SystemHeader title="Messenger" dark={dark} fg={fg} head={head} border={border}/>
-      <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <Text size="xs" color={sub} style={{ paddingHorizontal: 16, paddingTop: 20 }}>
           XMTP ACCOUNT
         </Text>
         {addr ? <CopyRow label="Your XMTP address" value={addr} display={shortAddress(addr)} c={c} /> : null}
         {inbox ? <CopyRow label="Inbox id" value={inbox} display={inbox} c={c} /> : null}
         {install ? <CopyRow label="Installation id" value={install} display={shortAddress(install)} c={c} /> : null}
+
+        <MessengerSessions />
 
         <Col padding={{ x: 16 }} margin={{ top: 28 }}>
           <Pressable

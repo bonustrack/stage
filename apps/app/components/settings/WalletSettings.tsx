@@ -120,7 +120,7 @@ export function WalletSettings(): React.ReactElement {
   return (
     <Col surface="surface" flex={1}>
       <SystemHeader title="Wallet" dark={dark} fg={fg} head={head} border={border} />
-      <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         {!model ? (
           <Text size="md" color={c.sub} style={{ padding: 24 }}>No active account.</Text>
         ) : (

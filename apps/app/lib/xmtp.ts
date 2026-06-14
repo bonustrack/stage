@@ -22,7 +22,9 @@ export {
   getOrCreateXmtpClient, ensureActiveAccount, switchToAccount, getCachedXmtpClient, waitForXmtpReady, deleteAccount,
   resetXmtpClient, getLastReadNs, setLastReadNs, markConvReadSynced,
   markConvUnreadSynced, syncPreferences, convOfLine, NoAccountError,
+  listXmtpInstallations, revokeXmtpInstallation,
 } from './xmtp.client';
+export type { XmtpInstallation } from './xmtp.client';
 
 export {
   primeInboxEthCache, peerEthAddressOfDm, memberInboxToAddressMap, groupMemberEthAddresses,

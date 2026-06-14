@@ -27,6 +27,7 @@ import {
   ensureDbDir, wipeXmtpStore,
 } from './xmtp.dbkey';
 import { createClientForAccount, isStoreCorruption } from './xmtp.recover';
+import { signerForRecord } from './xmtp.codecs';
 
 export { getCachedXmtpClient, waitForXmtpReady } from './xmtp.state';
 export { ensureActiveAccount } from './xmtp.recover';
@@ -168,6 +169,41 @@ export async function resetXmtpClient(): Promise<void> {
   await deleteLegacyDbKey();
   const dirs = new Set<string>(['xmtp', ...removed.map(a => a.dbDir)]);
   for (const name of dirs) deleteDbFiles(name);
+}
+
+/** One XMTP installation (device session) of the active inbox, flattened for the
+ *  settings UI. `current` marks THIS device — revoking it logs this device out. */
+export interface XmtpInstallation {
+  id: string;
+  createdAt: number | undefined;
+  current: boolean;
+}
+
+/** List the active inbox's installations (devices/sessions), newest first, with
+ *  the current device flagged. Reads the live inbox state from the network so a
+ *  device revoked elsewhere disappears. Throws if no client / no account. */
+export async function listXmtpInstallations(): Promise<XmtpInstallation[]> {
+  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  const state = await client.inboxState(true);
+  const current = client.installationId;
+  return state.installations
+    .map(i => ({ id: i.id, createdAt: i.createdAt, current: i.id === current }))
+    .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
+}
+
+/** Revoke (kill) one installation of the active inbox. Signs via the active
+ *  account's signer (SCW chainId 8453 / passkey for smart accounts, EOA for
+ *  legacy) — the same keyring-backed path as the install-limit recovery. No key
+ *  crosses the JS bridge. Revoking the current installation logs this device out. */
+export async function revokeXmtpInstallation(installationId: string): Promise<void> {
+  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  const account = await getActiveAccount();
+  if (!account) throw new NoAccountError();
+  const signer = await signerForRecord(account);
+  await client.revokeInstallations(
+    signer,
+    [installationId as unknown as Parameters<typeof client.revokeInstallations>[1][number]],
+  );
 }
 
 /** Per-conv "last read at" timestamp (XMTP `sentNs` units) in SecureStore. Drives
