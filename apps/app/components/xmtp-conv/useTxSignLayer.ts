@@ -17,6 +17,7 @@ import { deriveSignSummary, signConfirmMessage } from '../../lib/signConfirm';
 import { flash } from '../../lib/toast';
 import { signTypedData, signMessage, getAccount } from 'wagmi/actions';
 import type { TypedDataDefinition } from 'viem';
+import { base } from 'viem/chains';
 import { wagmiConfig } from '../../lib/walletconnect';
 import { getActiveAccount, getActiveViemAccount } from '../../lib/accounts';
 import { kernelClientForRecord } from '../../lib/zerodev';
@@ -179,17 +180,45 @@ export function useTxSignLayer(activeLine: string) {
     setPayingIds(prev => new Set(prev).add(requestId));
     void (async () => {
       try {
-        /** Forward the request's call VERBATIM (`to`/`data`/`value`): for an
-         *  ERC-20 this broadcasts the encoded `transfer(...)` to the token
-         *  contract; for a native send it's a value-only tx. */
-        const txHash = await sendCall({
-          to: call.to as string, data: call.data, value: call.value, chainId,
-        });
+        /** Resolve the ACTIVE account and route execution by its kind — the
+         *  in-app wallet is the source of truth, there is no "connect a wallet"
+         *  step:
+         *   - `smart` (ZeroDev Kernel): execute the call as a SPONSORED userOp
+         *     through kernelClientForRecord. The ZeroDev paymaster (Base) covers
+         *     gas, so the account needs no native ETH; if the Kernel is still
+         *     counterfactual the first userOp deploys it in the same bundle.
+         *     Signed by the owner (passkey/unlock) at send-time. Returns the
+         *     settled tx hash.
+         *   - local EOA / WalletConnect: fall through to sendCall, which forwards
+         *     the call verbatim from the in-app key or the remote wallet. */
+        const active = await getActiveAccount();
+        let txHash: `0x${string}`;
+        /** The chain the tx actually settles on — the smart account is a Base
+         *  Kernel (paymaster is Base-scoped), so its userOps always land on Base
+         *  regardless of the request's declared chainId; EOA/WC honour the
+         *  request chain. Used for the receipt's networkId + explorer link. */
+        let settledChainId = chainId;
+        if (active?.type === 'smart') {
+          settledChainId = base.id;
+          const kernel = await kernelClientForRecord(active);
+          txHash = await kernel.sendTransaction({
+            to: call.to as `0x${string}`,
+            value: BigInt(call.value ?? '0x0'),
+            ...(call.data ? { data: call.data as `0x${string}` } : {}),
+          } as Parameters<typeof kernel.sendTransaction>[0]);
+        } else {
+          /** Forward the request's call VERBATIM (`to`/`data`/`value`): for an
+           *  ERC-20 this broadcasts the encoded `transfer(...)` to the token
+           *  contract; for a native send it's a value-only tx. */
+          txHash = await sendCall({
+            to: call.to as string, data: call.data, value: call.value, chainId,
+          });
+        }
         /** Receipt metadata is built from the VERIFIED summary (decoded from the
          *  broadcast bytes), so the on-chain truth, not the request's hints, is
          *  what the receipt card shows. */
         const ref: TransactionReferenceContent = {
-          networkId: chainId,
+          networkId: settledChainId,
           reference: txHash,
           metadata: {
             transactionType: 'transfer',
