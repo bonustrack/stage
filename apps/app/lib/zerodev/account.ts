@@ -190,6 +190,42 @@ export async function createPasskeyKernel(
   }
 }
 
+/** REVEAL-GATE passkey assertion. Runs an on-device WebAuthn `get()` over a fresh
+ *  random challenge, scoped to THIS account's stored credential (rpID +
+ *  authenticatorId) with `userVerification: 'required'`, so the OS prompts for the
+ *  passkey + biometric/PIN and the credential must actually be present. We do not
+ *  consume the returned assertion — its mere SUCCESS proves passkey presence +
+ *  user verification, which is the gate for revealing the seed/key.
+ *
+ *  Returns:
+ *    - true  -> assertion succeeded (gate passes).
+ *    - false -> assertion was cancelled / failed / returned no credential (gate
+ *               fails; caller MUST NOT reveal the secret).
+ *    - null  -> the running binary lacks the passkey native module, so we cannot
+ *               assert at all; caller falls back to the device-auth sentinel so an
+ *               old binary still works (it never crashes).
+ *
+ *  Lazy require keeps this bundling/typechecking without react-native-passkeys. */
+export async function assertPasskeyPresence(stored: StoredPasskey): Promise<boolean | null> {
+  if (!passkeysAvailable()) return null;
+  try {
+    const passkey = require('react-native-passkeys');
+    const challengeBytes = new Uint8Array(32);
+    crypto.getRandomValues(challengeBytes);
+    const assertion = await passkey.get({
+      challenge: bytesToBase64Url(challengeBytes),
+      rpId: stored.rpID,
+      allowCredentials: [{ id: stored.authenticatorId, type: 'public-key' }],
+      userVerification: 'required',
+    });
+    // A null result means no credential was returned (treat as a failed gate);
+    // a cancel/error throws and is caught below.
+    return !!assertion;
+  } catch {
+    return false;
+  }
+}
+
 /** base64url (no padding) — for the WebAuthn challenge + user id. */
 function bytesToBase64Url(bytes: Uint8Array): string {
   let bin = '';
