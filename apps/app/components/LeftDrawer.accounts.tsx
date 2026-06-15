@@ -11,7 +11,7 @@
 import { useState } from 'react';
 import { flash } from '../lib/toast';
 import { AccountManager, shortAddress } from '../modules/messaging';
-import { createSmartAccount, passkeysAvailable, zerodevRpId } from '../lib/zerodev';
+import { createSmartAccount, enablePasskeyForRecord, passkeysAvailable } from '../lib/zerodev';
 import { DrawerRow } from './LeftDrawer.parts';
 
 /** Switch the active XMTP client to a freshly added account id. The wallet
@@ -44,10 +44,17 @@ export function useDrawerAccountActions({ head, sub, border, dark, onChanged }: 
     setBusy(true);
     void (async () => {
       try {
-        const rec = await createSmartAccount(
-          passkeysAvailable() ? { rpId: zerodevRpId(), userName: 'metro' } : {},
-        );
+        // ECDSA-owner account first, register its XMTP inbox (activate), THEN add
+        // the passkey - so the first inbox registration signs with the silent ECDSA
+        // owner, not a WebAuthn get() that finds no credential on a fresh install.
+        const rec = await createSmartAccount();
         await activate(rec.id, onChanged);
+        if (passkeysAvailable()) {
+          const res = await enablePasskeyForRecord(rec);
+          if (!res.ok && res.reason !== 'already') {
+            flash(res.message ?? 'Account created, but the passkey could not be set up');
+          }
+        }
         flash(`New account ${shortAddress(rec.address)} created`);
       } catch (e) {
         flash(e instanceof Error ? e.message : 'Could not create account');

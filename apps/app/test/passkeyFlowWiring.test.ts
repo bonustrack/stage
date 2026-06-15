@@ -7,9 +7,12 @@
  *  These are the wiring points that drifted in the iterative patching Less hit.
  *
  *  Covered:
- *    A. create.ts — a requested passkey at CREATE produces a passkey-sudo account:
- *       sets rec.passkey + rec.passkeySudo, derives the address from the passkey
- *       (no override), persists with NO enable step, and never silently downgrades.
+ *    A. create.ts — create is passkey-AGNOSTIC (ECDSA-owner only, no passkey
+ *       registration / on-chain swap inside it), so the FIRST XMTP inbox
+ *       registration signs with the silent ECDSA owner. The passkey is layered on
+ *       AFTER messaging by the create/restore/add callers (regression fix: a passkey
+ *       persisted at create made the first inbox registration pop an on-device
+ *       WebAuthn get() that found no credential -> "No available sign-in for Metro").
  *    B. kernelForRecord.ts — passkeySudo accounts rebuild with NO address override;
  *       enable-upgraded (ECDSA-derived) accounts pin to rec.address.
  *    C. enablePasskey.ts — the upgrade deploys via the ECDSA initCode then swaps
@@ -36,28 +39,57 @@ const kernelSrc = code(read('lib', 'zerodev', 'kernelForRecord.ts'));
 const enableSrc = code(read('lib', 'zerodev', 'enablePasskey.ts'));
 const codecsSrc = code(read('lib', 'xmtp.codecs.ts'));
 const txLayerSrc = code(read('components', 'xmtp-conv', 'useTxSignLayer.ts'));
-const accountSrc = code(read('lib', 'zerodev', 'account.ts'));
+const onboardSrc = code(read('components', 'onboarding', 'flow.ts'));
+const acctMgrSrc = code(read('components', 'AccountsManager.hook.ts'));
+const drawerSrc = code(read('components', 'LeftDrawer.accounts.tsx'));
 
-describe('A. create.ts — passkey-at-create is one-step DEPLOYED passkey-sudo', () => {
-  test('builds the ECDSA (deployable) Kernel first, then runs the passkey branch', () => {
+describe('A. create.ts — create is passkey-AGNOSTIC (ECDSA-owner only)', () => {
+  test('builds the ECDSA (deployable) Kernel and never touches the passkey path', () => {
     expect(createSrc).toContain('const account = await createEcdsaKernel(publicClient, owner, hdIndex)');
-    expect(createSrc).toContain('passkeysAvailable() && opts.rpId');
+    // No passkey registration / on-chain swap happens INSIDE create: those would
+    // make the first XMTP inbox registration sign via a WebAuthn get() (the bug).
+    expect(createSrc).not.toContain('registerPasskeyCredential');
+    expect(createSrc).not.toContain('deployAndSwapToPasskey');
+    expect(createSrc).not.toContain('passkey,');
   });
 
-  test('registers the credential and deploys-and-swaps to passkey in ONE step', () => {
-    expect(createSrc).toContain('registerPasskeyCredential(hdIndex');
-    expect(createSrc).toContain('deployAndSwapToPasskey(publicClient, hdIndex, stored)');
+  test('persists an ECDSA-owner record (deployed:false, no passkey/passkeySudo)', () => {
+    expect(createSrc).toContain('deployed: false');
+    expect(createSrc).not.toContain('passkeySudo');
+  });
+});
+
+describe('A2. callers layer the passkey AFTER messaging is online', () => {
+  // Each create/restore/add path: createSmartAccount() -> bring XMTP online ->
+  // enablePasskeyForRecord (proven Settings path: register credential + deploy-and-
+  // swap). Ordering = the regression fix (inbox registers via the silent ECDSA owner
+  // BEFORE the passkey becomes the active signer).
+  test('onboarding create/restore: createSmartAccount, bringMessagingOnline, THEN enable', () => {
+    const create = onboardSrc.indexOf('createSmartAccount()');
+    const msg = onboardSrc.indexOf('bringMessagingOnline(rec.id');
+    const enable = onboardSrc.indexOf('enablePasskeyForRecord(rec)');
+    expect(create).toBeGreaterThanOrEqual(0);
+    expect(msg).toBeGreaterThan(create);
+    expect(enable).toBeGreaterThan(msg);
+    expect(onboardSrc).toContain('withPasskey && passkeysAvailable()');
   });
 
-  test('fails closed: throws on cancelled registration or failed swap (no silent ECDSA)', () => {
-    expect(createSrc).toContain("if (!stored) throw new Error");
-    expect(createSrc).toContain('if (!swap.ok) throw new Error(swap.message)');
+  test('AccountsManager add: createSmartAccount, switch, THEN enable', () => {
+    const create = acctMgrSrc.indexOf('createSmartAccount()');
+    const sw = acctMgrSrc.indexOf('AccountManager.switch(rec.id)');
+    const enable = acctMgrSrc.indexOf('enablePasskeyForRecord(rec)');
+    expect(create).toBeGreaterThanOrEqual(0);
+    expect(sw).toBeGreaterThan(create);
+    expect(enable).toBeGreaterThan(sw);
   });
 
-  test('persists rec.passkey + deployed:true, leaves passkeySudo UNSET (pins to rec.address)', () => {
-    expect(createSrc).toContain('passkey,');
-    expect(createSrc).toContain('deployed,');
-    expect(createSrc).not.toContain('passkeySudo:');
+  test('LeftDrawer add: createSmartAccount, activate, THEN enable', () => {
+    const create = drawerSrc.indexOf('createSmartAccount()');
+    const act = drawerSrc.indexOf('activate(rec.id, onChanged)');
+    const enable = drawerSrc.indexOf('enablePasskeyForRecord(rec)');
+    expect(create).toBeGreaterThanOrEqual(0);
+    expect(act).toBeGreaterThan(create);
+    expect(enable).toBeGreaterThan(act);
   });
 });
 

@@ -8,9 +8,14 @@
  *    - RESTORE: validate the pasted BIP-39 phrase -> store it hardened -> rebuild
  *      the same deterministic Kernel from the re-derived owner.
  *
- *  Passkey is SKIPPABLE: createSmartAccount uses the passkey path only when the
- *  native module is present AND an rpId is passed. The "skip" path simply omits
- *  rpId so the account is ECDSA-owner-only (a passkey can be added later).
+ *  Passkey is SKIPPABLE and layered on AFTER messaging: the account is ALWAYS
+ *  created ECDSA-owner first (createSmartAccount), its XMTP inbox is registered with
+ *  the silent ECDSA owner, and only THEN — when withPasskey + the native module is
+ *  present — do we register the device passkey and deploy-and-swap the on-chain sudo
+ *  to it (enablePasskeyForRecord, the proven Settings path). The "skip" path leaves
+ *  it ECDSA-owner-only (a passkey can be added later in Settings). Registering the
+ *  passkey AFTER the inbox exists avoids the first inbox registration popping a
+ *  WebAuthn get() that finds no credential ("No available sign-in for Metro").
  *
  *  READINESS GATE (Less): we do NOT flip the account gate / enter the app until
  *  the XMTP client for the new account is actually built + registered + cached.
@@ -26,7 +31,9 @@
  *  (6492-wrapped while the Kernel is still counterfactual), chainId 8453. The
  *  ~20s messaging step + progress UI below applies unchanged. */
 
-import { restoreMnemonic, createSmartAccount, zerodevRpId } from '../../lib/zerodev';
+import {
+  restoreMnemonic, createSmartAccount, enablePasskeyForRecord, passkeysAvailable,
+} from '../../lib/zerodev';
 import { AccountManager } from '../../modules/messaging';
 
 /** Stepwise progress reported to the onboarding UI so the user always sees what
@@ -71,10 +78,22 @@ export async function bringMessagingOnline(
  *  `withPasskey` decides whether we offer the WebAuthn sudo path (skippable). */
 async function finishAccount(withPasskey: boolean, onStage?: (s: Stage) => void): Promise<void> {
   onStage?.('wallet');
-  const rec = await createSmartAccount(
-    withPasskey ? { rpId: zerodevRpId(), userName: 'metro' } : {},
-  );
+  // Always create the ECDSA-owner account first. The passkey (when requested) is
+  // layered on AFTER XMTP so the first inbox registration signs with the ECDSA
+  // owner (silent) rather than an on-device WebAuthn get() that, on a fresh
+  // install, finds no credential and pops "No available sign-in for Metro".
+  const rec = await createSmartAccount();
   await bringMessagingOnline(rec.id, onStage);
+  // Now the inbox exists. Register the device passkey + deploy-and-swap the on-chain
+  // sudo to it (the proven Settings enable path) so all later signing is WebAuthn.
+  // Fail closed: a requested-but-failed passkey must surface, not silently leave an
+  // ECDSA-only account masquerading as passkey-gated.
+  if (withPasskey && passkeysAvailable()) {
+    const res = await enablePasskeyForRecord(rec);
+    if (!res.ok && res.reason !== 'already') {
+      throw new Error(res.message ?? 'Could not set up the passkey for this account.');
+    }
+  }
 }
 
 /** CREATE path: mint a fresh mnemonic (ensureMnemonic, inside createSmartAccount)
