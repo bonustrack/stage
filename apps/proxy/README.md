@@ -64,7 +64,7 @@ verify `x-served-by: worker`, THEN decommission the old tunnel:
 
 ```sh
 curl https://preview.metro.box/health            # -> ok, header x-served-by: worker
-curl "https://preview.metro.box/preview?url=https%3A%2F%2Fgithub.com%2Fbonustrack%2Fmetro"
+curl "https://preview.metro.box/preview?url=https%3A%2F%2Fgithub.com%2Fbonustrack%2Fstage"
 
 # once verified:
 launchctl unload ~/Library/LaunchAgents/box.metro.tunnel-linkproxy.plist

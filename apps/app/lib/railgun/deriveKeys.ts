@@ -19,7 +19,7 @@ import { keccak256, type Hex } from 'viem';
 import { Mnemonic } from 'ethers';
 import { NETWORK_CONFIG } from '@railgun-community/shared-models';
 import { getActiveAccount } from '../accounts';
-import { getPrivateKey } from '../accounts.keys';
+import { railgunKeyMaterialFor } from '../zerodev/keyring';
 import { RAILGUN_NETWORKS } from './networks';
 
 export interface RailgunKeyMaterial {
@@ -61,11 +61,8 @@ export async function deriveRailgunKeyMaterial(): Promise<RailgunKeyMaterial> {
   if (acct.type === 'walletconnect') {
     throw new Error('Private wallet needs an in-app key (not WalletConnect)');
   }
-  const pk = await getPrivateKey(acct.id);
-  if (!pk) throw new Error('Active account has no private key for Railgun');
-  return {
-    mnemonic: mnemonicFromPrivateKey(pk),
-    encryptionKey: encryptionKeyFromPrivateKey(pk),
-    creationBlocks: railgunCreationBlocks(),
-  };
+  /** The raw key never leaves the keyring — it derives the material in place. */
+  const material = await railgunKeyMaterialFor(acct.id);
+  if (!material) throw new Error('Active account has no private key for Railgun');
+  return { ...material, creationBlocks: railgunCreationBlocks() };
 }

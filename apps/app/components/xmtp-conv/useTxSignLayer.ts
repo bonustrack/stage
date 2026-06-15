@@ -15,10 +15,11 @@ import { sendCall } from '../../lib/tx';
 import { deriveConfirmSummary, confirmMessage } from '../../lib/txConfirm';
 import { deriveSignSummary, signConfirmMessage } from '../../lib/signConfirm';
 import { flash } from '../../lib/toast';
-import { signTypedData, signMessage, getAccount } from 'wagmi/actions';
+import { txErrorMessage } from '../../lib/txError';
 import type { TypedDataDefinition } from 'viem';
-import { wagmiConfig } from '../../lib/walletconnect';
-import { getActiveViemAccount } from '../../lib/accounts';
+import { base } from 'viem/chains';
+import { getActiveAccount, getActiveViemAccount } from '../../lib/accounts';
+import { kernelClientForRecord } from '../../lib/zerodev';
 
 export function useTxSignLayer(activeLine: string) {
   /** Message ids whose signature is currently being produced — drives the
@@ -43,23 +44,56 @@ export function useTxSignLayer(activeLine: string) {
     setSigningIds(prev => new Set(prev).add(requestId));
     void (async () => {
       try {
-        /** Bind every signature to the wallet the rest of the app uses — the
-         *  active Reown/wagmi account. Passing `account` explicitly stops wagmi
-         *  from falling back to the connector's "current" account (which inside a
-         *  list-rendered bubble may not be the live one). */
-        /** Prefer the in-app key: if the active account is a local EOA
-         *  (generated/imported/migrated) we sign with its viem account directly,
-         *  no popup. Only when there's no local key (WalletConnect account) do we
-         *  delegate to the remote wallet through wagmi. */
-        const local = await getActiveViemAccount();
-        const account = local?.address ?? getAccount(wagmiConfig).address;
-        if (!account) throw new Error('Connect a wallet to sign');
+        /** Resolve the ACTIVE account and route signing by its kind. The in-app
+         *  wallet is the source of truth — there is no "connect a wallet" step:
+         *   - `smart` (ZeroDev Kernel): sign with the Kernel via
+         *     kernelClientForRecord. signMessage/signTypedData produce an
+         *     ERC-1271 signature (6492-wrapped while counterfactual), gated by the
+         *     owner unlock (passkey) at sign-time. The signer is the smart-account
+         *     address itself.
+         *   - legacy local EOA (`generated`/`privateKey`): sign with its viem
+         *     account directly, no popup (backward-compat for old records). */
+        const active = await getActiveAccount();
         let signature: string;
+        let signer: string;
+        if (active?.type === 'smart') {
+          const kernel = await kernelClientForRecord(active);
+          signer = active.address;
+          if (req.kind === 'eip712') {
+            const td = req.eip712;
+            if (!td) throw new Error('Malformed typed-data request');
+            const types = { ...td.types };
+            delete types.EIP712Domain;
+            const typedData = {
+              domain: td.domain,
+              types,
+              primaryType: td.primaryType,
+              message: td.message,
+            } as unknown as TypedDataDefinition;
+            signature = await kernel.signTypedData(
+              typedData as Parameters<typeof kernel.signTypedData>[0],
+            );
+          } else {
+            const message = req.message ?? '';
+            if (!message) throw new Error('Empty message to sign');
+            signature = await kernel.signMessage(
+              { message } as Parameters<typeof kernel.signMessage>[0],
+            );
+          }
+          const ref: SignatureReferenceContent = { requestId, signature, signer };
+          await xmtpSendSignatureReference(activeLine, ref);
+          return;
+        }
+        /** Legacy local-EOA record (generated/imported/migrated): sign with its
+         *  viem account directly, no popup. */
+        const local = await getActiveViemAccount();
+        if (!local) throw new Error('No active wallet to sign with');
+        const account = local.address;
         if (req.kind === 'eip712') {
           const td = req.eip712;
           if (!td) throw new Error('Malformed typed-data request');
-          /** viem/wagmi inject the EIP712Domain entry themselves from `domain`;
-           *  a duplicate in `types` makes them reject the request. Strip it. */
+          /** viem injects the EIP712Domain entry itself from `domain`; a duplicate
+           *  in `types` makes it reject the request. Strip it. */
           const types = { ...td.types };
           delete types.EIP712Domain;
           /** The wire payload is arbitrary JSON (any valid eth_signTypedData_v4
@@ -72,21 +106,17 @@ export function useTxSignLayer(activeLine: string) {
             primaryType: td.primaryType,
             message: td.message,
           } as unknown as TypedDataDefinition;
-          signature = local
-            ? await local.signTypedData(typedData)
-            : await signTypedData(wagmiConfig, { account, ...typedData });
+          signature = await local.signTypedData(typedData);
         } else {
           const message = req.message ?? '';
           if (!message) throw new Error('Empty message to sign');
-          signature = local
-            ? await local.signMessage({ message })
-            : await signMessage(wagmiConfig, { account, message });
+          signature = await local.signMessage({ message });
         }
-        const signer = account;
+        signer = account;
         const ref: SignatureReferenceContent = { requestId, signature, signer };
         await xmtpSendSignatureReference(activeLine, ref);
       } catch (e) {
-        flash((e as Error).message || 'Signing failed');
+        flash(txErrorMessage(e, 'Signing failed'));
       } finally {
         setSigningIds(prev => { const n = new Set(prev); n.delete(requestId); return n; });
       }
@@ -137,17 +167,45 @@ export function useTxSignLayer(activeLine: string) {
     setPayingIds(prev => new Set(prev).add(requestId));
     void (async () => {
       try {
-        /** Forward the request's call VERBATIM (`to`/`data`/`value`): for an
-         *  ERC-20 this broadcasts the encoded `transfer(...)` to the token
-         *  contract; for a native send it's a value-only tx. */
-        const txHash = await sendCall({
-          to: call.to as string, data: call.data, value: call.value, chainId,
-        });
+        /** Resolve the ACTIVE account and route execution by its kind — the
+         *  in-app wallet is the source of truth, there is no "connect a wallet"
+         *  step:
+         *   - `smart` (ZeroDev Kernel): execute the call as a SPONSORED userOp
+         *     through kernelClientForRecord. The ZeroDev paymaster (Base) covers
+         *     gas, so the account needs no native ETH; if the Kernel is still
+         *     counterfactual the first userOp deploys it in the same bundle.
+         *     Signed by the owner (passkey/unlock) at send-time. Returns the
+         *     settled tx hash.
+         *   - legacy local EOA: fall through to sendCall, which forwards the call
+         *     verbatim from the in-app key (backward-compat for old records). */
+        const active = await getActiveAccount();
+        let txHash: `0x${string}`;
+        /** The chain the tx actually settles on — the smart account is a Base
+         *  Kernel (paymaster is Base-scoped), so its userOps always land on Base
+         *  regardless of the request's declared chainId; EOA/WC honour the
+         *  request chain. Used for the receipt's networkId + explorer link. */
+        let settledChainId = chainId;
+        if (active?.type === 'smart') {
+          settledChainId = base.id;
+          const kernel = await kernelClientForRecord(active);
+          txHash = await kernel.sendTransaction({
+            to: call.to as `0x${string}`,
+            value: BigInt(call.value ?? '0x0'),
+            ...(call.data ? { data: call.data as `0x${string}` } : {}),
+          } as Parameters<typeof kernel.sendTransaction>[0]);
+        } else {
+          /** Forward the request's call VERBATIM (`to`/`data`/`value`): for an
+           *  ERC-20 this broadcasts the encoded `transfer(...)` to the token
+           *  contract; for a native send it's a value-only tx. */
+          txHash = await sendCall({
+            to: call.to as string, data: call.data, value: call.value, chainId,
+          });
+        }
         /** Receipt metadata is built from the VERIFIED summary (decoded from the
          *  broadcast bytes), so the on-chain truth, not the request's hints, is
          *  what the receipt card shows. */
         const ref: TransactionReferenceContent = {
-          networkId: chainId,
+          networkId: settledChainId,
           reference: txHash,
           metadata: {
             transactionType: 'transfer',
@@ -158,7 +216,7 @@ export function useTxSignLayer(activeLine: string) {
         };
         await xmtpSendTxReference(activeLine, ref);
       } catch (e) {
-        flash((e as Error).message || 'Payment failed');
+        flash(txErrorMessage(e, 'Payment failed'));
       } finally {
         setPayingIds(prev => { const n = new Set(prev); n.delete(requestId); return n; });
       }

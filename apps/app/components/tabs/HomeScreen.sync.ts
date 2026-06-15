@@ -5,7 +5,7 @@
 import { useEffect, type Dispatch, type MutableRefObject, type SetStateAction } from 'react';
 import { AppState } from 'react-native';
 import {
-  getOrCreateXmtpClient,
+  getOrCreateXmtpClient, NoAccountError,
   syncPreferences,
   primeInboxEthCache, subscribeAllMessages,
   listRequestConvs, streamConvConsent, syncConsent,
@@ -31,6 +31,15 @@ export function useChannelsSync({
   accountEpoch, rows, setRowsState, setRows, setError, setRequestCount, refreshFromNetworkRef,
 }: SyncArgs): void {
   useEffect(() => {
+    /** Clear any error captured by a PREVIOUS run before re-initialising. The
+     *  channels tab mounts under the onboarding overlay, so the very first run
+     *  fires BEFORE the account exists and getOrCreateXmtpClient throws
+     *  NoAccountError. Once onboarding creates the account it bumps the epoch and
+     *  this effect re-runs against the now-warm client — but without this reset
+     *  the stale boot-time error stuck on screen, surfacing the "No account —
+     *  onboarding not completed yet." HomeError with a Reset button on a freshly
+     *  onboarded user (Less's report). */
+    setError('');
     let cancelled = false;
     let cancelConvStream: (() => void) | null = null;
     let cancelMsgStream: (() => void) | null = null;
@@ -186,6 +195,13 @@ export function useChannelsSync({
           }
         });
       } catch (e) {
+        /** NoAccountError is NOT a failure: it just means this effect ran under
+         *  the onboarding overlay before the account was created. Swallow it and
+         *  wait for the account-epoch bump (onboarding's bringMessagingOnline)
+         *  to re-run this effect against the warm client. Surfacing it would show
+         *  the scary "onboarding not completed" Reset screen to a user who just
+         *  finished onboarding. */
+        if (cancelled || e instanceof NoAccountError) { clearTimeout(initTimer); return; }
         if (!rows || rows.length === 0) setError((e as Error).message);
       }
     })();

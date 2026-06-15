@@ -1,13 +1,6 @@
-/** WalletConnect/AppKit polyfills — must be the very first import in the app
- *  entry (sets up crypto/networking globals: TextEncoder, URL, btoa/atob, Buffer).
- *  These are CHEAP global installs (not the heavy WC SDK) and XMTP/viem on the
- *  critical path depend on them, so they stay eager. The expensive part of the
- *  WalletConnect stack (@reown/appkit + wagmi + viem provider + createAppKit) is
- *  deferred off the first-paint path — see components/WalletConnectProvider. */
 /** ES2023 Array polyfills (toReversed/toSorted) for the release Hermes engine —
  *  must run before any dependency that calls them. See lib/jsPolyfills. */
 import '../lib/jsPolyfills';
-import '@walletconnect/react-native-compat';
 /** Hoisted side-effect import — installs the crypto.getRandomValues shim
  *  BEFORE any viem (and transitively any wallet/profile) module loads. */
 import '../lib/cryptoShim';
@@ -15,11 +8,11 @@ import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import { useEffect } from 'react';
 // eslint-disable-next-line no-restricted-imports -- raw TextInput required: this sets TextInput.defaultProps app-wide for the default font (Kit Input wraps TextInput, so the global default must target the RN primitive itself).
-import { LogBox, Text, TextInput } from 'react-native';
+import { Text, TextInput } from 'react-native';
 import { Col } from '../components/layout';
 import { Spinner } from '../components/Spinner';
 import { Onboarding } from '../components/onboarding/Onboarding';
-import { useOnboardingGate } from '../lib/onboardingSeen';
+import { useAccountGate } from '../lib/accountGate';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { TransitionPresets, TransitionSpecs } from '@react-navigation/stack';
@@ -32,19 +25,12 @@ import { usePushDeepLinks } from '../lib/push';
 import { ensureActiveAccount, ensureMessagingStreamSync } from '../modules/messaging';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { getQueryClient } from '../lib/queryClient';
-import { WalletConnectProvider } from '../components/WalletConnectProvider';
 
 /** App-wide TanStack Query client: caches request/response data (profiles,
  *  message history) with stale-while-revalidate + dedup. Live XMTP streams stay
  *  outside Query (they're push, not fetch). The instance lives in lib/queryClient
  *  so non-React code (stream wiring) writes the SAME cache. */
 const queryClient = getQueryClient();
-
-/** Silence WalletConnect's benign "emitting session_request … without any
- *  listeners" notice — a stale-session lifecycle log from @walletconnect/sign-client
- *  that surfaces as a red dev error toast but is harmless (and a no-op in release,
- *  where LogBox is disabled). */
-LogBox.ignoreLogs([/emitting session_request/, /without any listeners/]);
 
 /** Set Calibre-Medium as the app-wide default for Text + TextInput via defaultProps.
  *  This is a fallback — call-site `style={{…}}` overrides — but it's the safest path:
@@ -123,11 +109,18 @@ function RootLayoutInner(): React.ReactElement {
    *  taps. Installed once for the app's lifetime. */
   usePushDeepLinks();
 
-  /** Mint the local EOA at boot, INDEPENDENT of XMTP. The wallet (Snapshot
-   *  signing) + Railgun (usePrivateWallet → getActiveAccountId) must always have
-   *  an account even when XMTP onboarding fails on a clean reinstall (stale db
-   *  key vs. wiped store). Idempotent — no-ops once an account exists. */
-  useEffect(() => { void ensureActiveAccount(); }, []);
+  /** FIRST-LAUNCH GATE: on a clean install (no account in the registry) the real
+   *  onboarding flow (components/onboarding) is the PRIMARY entry — it creates the
+   *  mnemonic + ZeroDev smart account. So we NO LONGER auto-mint a throwaway EOA
+   *  at boot (that would skip onboarding). `ready` gates on the registry's
+   *  one-time load so a returning user never flashes onboarding (see
+   *  lib/accountGate); the gate flips the instant the flow adds an account. */
+  const onboarding = useAccountGate();
+
+  /** Once an account EXISTS, make sure messaging/wallet are wired (idempotent —
+   *  this no longer creates an account, it only revalidates an existing one so a
+   *  clean reinstall with a stale db key self-heals into the recoverable Home). */
+  useEffect(() => { if (onboarding.hasAccount) void ensureActiveAccount(); }, [onboarding.hasAccount]);
   /** Wire streamed group-metadata events into Query (invalidate convMeta) so the
    *  topnav / group screen refresh on rename/image/desc without a reload. */
   useEffect(() => { ensureMessagingStreamSync(); }, []);
@@ -140,10 +133,6 @@ function RootLayoutInner(): React.ReactElement {
     'Calibre-Semibold': require('../assets/fonts/Calibre-Semibold-Custom.ttf'),
   });
 
-  /** FIRST-LAUNCH GATE: render Onboarding INSTEAD of the app until the persisted
-   *  `onboarding.seen` flag is true; `ready` gates on its load so a returning
-   *  user never flashes onboarding (see lib/onboardingSeen). */
-  const onboarding = useOnboardingGate();
   const gatesOpen = loaded && onboarding.ready && restore.ready;
 
   /** IDENTITY-STABLE ROOT: the providers + navigator subtree below renders on
@@ -164,7 +153,6 @@ function RootLayoutInner(): React.ReactElement {
    *  mount lifecycle. */
   return (
     <QueryClientProvider client={queryClient}>
-    <WalletConnectProvider>
     <GestureHandlerRootView style={{ flex: 1 }}>
       <KeyboardProvider>
       <StatusBar style={barStyle} translucent backgroundColor="transparent"/>
@@ -234,17 +222,18 @@ function RootLayoutInner(): React.ReactElement {
 >
           <Spinner size={28} color={dark ? '#ffffff' : '#000000'}/>
         </Col>
-      ) : !onboarding.seen ? (
+      ) : !onboarding.hasAccount ? (
         <Col
           surface="surface"
           style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
 >
-          <Onboarding onDone={onboarding.finish} />
+          {/* onDone is a no-op safety net — the flow creates an account which
+              flips the gate (hasAccount) on its own. */}
+          <Onboarding onDone={() => undefined} />
         </Col>
       ) : null}
       </KeyboardProvider>
     </GestureHandlerRootView>
-    </WalletConnectProvider>
     </QueryClientProvider>
   );
 }

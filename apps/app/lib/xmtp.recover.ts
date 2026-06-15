@@ -16,7 +16,7 @@
 import * as SecureStore from 'expo-secure-store';
 import { Client, PublicIdentity } from '@xmtp/react-native-sdk';
 import {
-  getActiveAccount, addGeneratedAccount, markRegistered, setActiveAccountId,
+  getActiveAccount, markRegistered, setActiveAccountId,
   type AccountRecord,
 } from './accounts';
 import { registerPushWithDaemon } from './push';
@@ -48,12 +48,14 @@ class XmtpInstallationLimitError extends Error {
   constructor() { super(INSTALLATION_LIMIT_MESSAGE); this.name = 'XmtpInstallationLimitError'; }
 }
 
-/** Mint + activate the local EOA account at app boot, INDEPENDENT of XMTP. The
- *  wallet (Snapshot signing) and Railgun (usePrivateWallet → getActiveAccountId)
- *  must always have an account even when XMTP onboarding fails. Idempotent. */
+/** Revalidate the already-active account at boot (idempotent). This NEVER creates
+ *  an account: a wallet exists ONLY after the user completes onboarding (the flow
+ *  persists the smart account) or an explicit in-app "new account" action. The
+ *  root layout calls this exclusively when the gate already reports hasAccount, so
+ *  on a fresh, un-onboarded install it is a no-op and nothing is persisted — the
+ *  onboarding overlay keeps showing on every launch until create/restore runs. */
 export async function ensureActiveAccount(): Promise<void> {
-  const existing = await getActiveAccount();
-  if (!existing) await addGeneratedAccount();
+  await getActiveAccount();
 }
 
 /** Sentinel message for the create timeout. Treated as a corruption-class signal
