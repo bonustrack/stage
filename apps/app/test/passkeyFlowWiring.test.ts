@@ -8,11 +8,12 @@
  *
  *  Covered:
  *    A. create.ts — create is passkey-AGNOSTIC (ECDSA-owner only, no passkey
- *       registration / on-chain swap inside it), so the FIRST XMTP inbox
- *       registration signs with the silent ECDSA owner. The passkey is layered on
- *       AFTER messaging by the create/restore/add callers (regression fix: a passkey
- *       persisted at create made the first inbox registration pop an on-device
- *       WebAuthn get() that found no credential -> "No available sign-in for Metro").
+ *       registration / on-chain swap inside it). The CALLERS install the passkey
+ *       (WebAuthn CREATE + deploy-and-swap sudo) BEFORE bringing XMTP online, so the
+ *       FIRST inbox registration is signed by the deployed PASSKEY Kernel (ERC-1271),
+ *       not the ECDSA key (Less: the key must never sign the XMTP identity). WebAuthn
+ *       CREATE needs no prior credential, so installing it before the inbox can't pop
+ *       the empty OS picker ("No available sign-in for Metro").
  *    B. kernelForRecord.ts — passkeySudo accounts rebuild with NO address override;
  *       enable-upgraded (ECDSA-derived) accounts pin to rec.address.
  *    C. enablePasskey.ts — the upgrade deploys via the ECDSA initCode then swaps
@@ -59,37 +60,38 @@ describe('A. create.ts — create is passkey-AGNOSTIC (ECDSA-owner only)', () =>
   });
 });
 
-describe('A2. callers layer the passkey AFTER messaging is online', () => {
-  // Each create/restore/add path: createSmartAccount() -> bring XMTP online ->
-  // enablePasskeyForRecord (proven Settings path: register credential + deploy-and-
-  // swap). Ordering = the regression fix (inbox registers via the silent ECDSA owner
-  // BEFORE the passkey becomes the active signer).
-  test('onboarding create/restore: createSmartAccount, bringMessagingOnline, THEN enable', () => {
+describe('A2. callers install the passkey BEFORE messaging (passkey signs the inbox)', () => {
+  // Each create/restore/add path: createSmartAccount() -> enablePasskeyForRecord
+  // (WebAuthn CREATE + deploy-and-swap sudo to passkey) -> bring XMTP online. The
+  // passkey is the active SCW signer BEFORE the first inbox registration, so the
+  // PASSKEY signs the XMTP identity (Less: the ECDSA key must NEVER sign it). The
+  // WebAuthn CREATE needs no prior credential, so it can't pop the empty picker.
+  test('onboarding create/restore: createSmartAccount, enable, THEN bringMessagingOnline', () => {
     const create = onboardSrc.indexOf('createSmartAccount()');
-    const msg = onboardSrc.indexOf('bringMessagingOnline(rec.id');
     const enable = onboardSrc.indexOf('enablePasskeyForRecord(rec)');
+    const msg = onboardSrc.indexOf('bringMessagingOnline(rec.id');
     expect(create).toBeGreaterThanOrEqual(0);
-    expect(msg).toBeGreaterThan(create);
-    expect(enable).toBeGreaterThan(msg);
+    expect(enable).toBeGreaterThan(create);
+    expect(msg).toBeGreaterThan(enable);
     expect(onboardSrc).toContain('withPasskey && passkeysAvailable()');
   });
 
-  test('AccountsManager add: createSmartAccount, switch, THEN enable', () => {
+  test('AccountsManager add: createSmartAccount, enable, THEN switch', () => {
     const create = acctMgrSrc.indexOf('createSmartAccount()');
-    const sw = acctMgrSrc.indexOf('AccountManager.switch(rec.id)');
     const enable = acctMgrSrc.indexOf('enablePasskeyForRecord(rec)');
+    const sw = acctMgrSrc.indexOf('AccountManager.switch(rec.id)');
     expect(create).toBeGreaterThanOrEqual(0);
-    expect(sw).toBeGreaterThan(create);
-    expect(enable).toBeGreaterThan(sw);
+    expect(enable).toBeGreaterThan(create);
+    expect(sw).toBeGreaterThan(enable);
   });
 
-  test('LeftDrawer add: createSmartAccount, activate, THEN enable', () => {
+  test('LeftDrawer add: createSmartAccount, enable, THEN activate', () => {
     const create = drawerSrc.indexOf('createSmartAccount()');
-    const act = drawerSrc.indexOf('activate(rec.id, onChanged)');
     const enable = drawerSrc.indexOf('enablePasskeyForRecord(rec)');
+    const act = drawerSrc.indexOf('activate(rec.id, onChanged)');
     expect(create).toBeGreaterThanOrEqual(0);
-    expect(act).toBeGreaterThan(create);
-    expect(enable).toBeGreaterThan(act);
+    expect(enable).toBeGreaterThan(create);
+    expect(act).toBeGreaterThan(enable);
   });
 });
 

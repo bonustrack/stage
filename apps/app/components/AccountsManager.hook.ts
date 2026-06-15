@@ -83,18 +83,19 @@ export function useAccountsManager(onSwitched?: () => void): {
     if (busy) return;
     setBusy(true);
     try {
-      // Create ECDSA-owner account, register its XMTP inbox (switch), THEN add the
-      // passkey. Doing the passkey last keeps the first inbox registration on the
-      // silent ECDSA owner instead of an on-device WebAuthn get() that finds no
-      // credential ("No available sign-in for Metro") on a fresh install.
+      // Create ECDSA-owner (deployable) account, install the passkey (WebAuthn CREATE
+      // + deploy-and-swap sudo), THEN register its XMTP inbox. Passkey-BEFORE-switch
+      // makes the inbox registration sign with the passkey (the key never signs the
+      // XMTP identity). WebAuthn CREATE needs no prior credential, so it can't pop
+      // the empty "No available sign-in" picker.
       const rec = await createSmartAccount();
-      await AccountManager.switch(rec.id);
       if (passkeysAvailable()) {
         const res = await enablePasskeyForRecord(rec);
         if (!res.ok && res.reason !== 'already') {
           throw new Error(res.message ?? 'Could not set up the passkey for this account.');
         }
       }
+      await AccountManager.switch(rec.id);
       reloadApp();
     } catch (e) {
       Alert.alert('Could not create account', (e as Error).message);

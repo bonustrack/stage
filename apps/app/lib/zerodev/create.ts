@@ -2,20 +2,22 @@
  *  app mnemonic: ensure the mnemonic, derive the owner at the next HD index,
  *  build the counterfactual ECDSA-owner Kernel, and persist the registry record.
  *
- *  PASSKEY IS NOT REGISTERED HERE. The account is ALWAYS created ECDSA-sudo so its
- *  address derives from the ECDSA owner (deployable initCode) and its FIRST XMTP
- *  inbox registration signs with the mnemonic-derived owner (a silent ECDSA sign,
- *  no WebAuthn prompt). A passkey is layered on AFTERWARDS via
- *  enablePasskeyForRecord — only ONCE the XMTP inbox is already registered — which
- *  deploys-and-swaps the on-chain sudo to the passkey in one sponsored userOp.
+ *  PASSKEY IS NOT REGISTERED HERE. createSmartAccount is passkey-AGNOSTIC: the
+ *  account is ALWAYS created ECDSA-sudo so its address derives from the ECDSA owner
+ *  (deployable initCode). The CALLER decides what signs the first XMTP inbox:
+ *    - passkey requested -> the caller (onboarding flow / add-account) runs
+ *      enablePasskeyForRecord FIRST (WebAuthn CREATE + deploy-and-swap the on-chain
+ *      sudo to the passkey), THEN brings XMTP online, so the inbox registration is
+ *      signed by the deployed passkey Kernel (ERC-1271). The key never signs it.
+ *    - skip -> the ECDSA owner signs the inbox (silent, 6492-wrapped counterfactual).
  *
- *  WHY THE SPLIT (the regression fix): if rec.passkey were persisted at create
- *  time, the VERY FIRST XMTP inbox registration (kernelClientForRecord keys off
- *  rec.passkey) would sign via an on-device WebAuthn get(). On a fresh
- *  install/recreate that get() pops the OS credential picker and finds nothing
- *  ("No available sign-in for Metro"), wedging onboarding. The proven Settings
- *  enable path never hits this because it registers the passkey AFTER the inbox
- *  already exists. createSmartAccount now mirrors that ordering for onboarding too.
+ *  WHY ENABLE-THEN-REGISTER (not the reverse): a passkey-signed registration cannot
+ *  validate counterfactually at the ECDSA-derived address (the 6492 envelope embeds
+ *  the ECDSA initCode, so off-chain validation deploys an ECDSA Kernel and rejects a
+ *  passkey signature). Deploying first (ECDSA initCode -> swap sudo to passkey) makes
+ *  the on-chain root validator the passkey, so the registration validates via plain
+ *  ERC-1271. WebAuthn CREATE (registration) needs no pre-existing credential, so doing
+ *  it before the inbox can't pop the empty OS picker ("No available sign-in").
  *
  *  Thin glue over ./mnemonic + ./account + accounts.ts. No tx is sent here — the
  *  Kernel deploys lazily (on the first sponsored userOp, or on the passkey swap). */
@@ -34,8 +36,8 @@ export interface CreateSmartAccountOpts {
 /** Create + persist a new ECDSA-owner smart account (passkey-agnostic). Returns
  *  the new record (active). Throws if ZeroDev is not configured. Callers that want
  *  a passkey-gated signer must call enablePasskeyForRecord on the returned record
- *  AFTER bringing XMTP online (so the first inbox registration signs with the
- *  ECDSA owner, not a not-yet-discoverable passkey). */
+ *  BEFORE bringing XMTP online (so the deployed passkey Kernel signs the first inbox
+ *  registration via ERC-1271 and the ECDSA key never signs the XMTP identity). */
 export async function createSmartAccount(opts: CreateSmartAccountOpts = {}): Promise<AccountRecord> {
   if (!zerodevConfigured()) {
     throw new Error('Smart wallet is not configured (missing ZeroDev project).');

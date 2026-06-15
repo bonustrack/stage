@@ -44,17 +44,18 @@ export function useDrawerAccountActions({ head, sub, border, dark, onChanged }: 
     setBusy(true);
     void (async () => {
       try {
-        // ECDSA-owner account first, register its XMTP inbox (activate), THEN add
-        // the passkey - so the first inbox registration signs with the silent ECDSA
-        // owner, not a WebAuthn get() that finds no credential on a fresh install.
+        // ECDSA-owner (deployable) account first, install the passkey (WebAuthn
+        // CREATE + deploy-and-swap sudo), THEN register its XMTP inbox (activate) -
+        // so the inbox registration signs with the passkey, never the ECDSA key.
+        // WebAuthn CREATE needs no prior credential (no empty-picker modal).
         const rec = await createSmartAccount();
-        await activate(rec.id, onChanged);
         if (passkeysAvailable()) {
           const res = await enablePasskeyForRecord(rec);
           if (!res.ok && res.reason !== 'already') {
             flash(res.message ?? 'Account created, but the passkey could not be set up');
           }
         }
+        await activate(rec.id, onChanged);
         flash(`New account ${shortAddress(rec.address)} created`);
       } catch (e) {
         flash(e instanceof Error ? e.message : 'Could not create account');
