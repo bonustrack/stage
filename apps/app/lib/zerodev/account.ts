@@ -68,19 +68,27 @@ export interface PasskeyKernelResult {
  *  / `V0_0_3_PATCHED` — there is NO `V0_0_2`. Referencing the (untyped, lazy
  *  `require`d) enum with `.V0_0_2` yields `undefined`, so toPasskeyValidator ->
  *  getValidatorAddress cannot find a validator address ("Validator not found for
- *  Kernel version: 0.3.1") and THROWS. That throw was swallowed by the rebuild's
- *  catch, surfacing to the caller as "passkey validator unavailable" even though
- *  the stored passkey is perfectly reconstructable. Resolve the version by VALUE
- *  ("0.0.2") so a future enum-name change can't reintroduce the typo, and so the
- *  counterfactual validator address (baked into the deploy initcode) is unchanged
- *  from the value the create/enable paths always intended. */
+ *  Kernel version: 0.3.1") and THROWS. Resolve the version by VALUE ("0.0.3") so a
+ *  future enum-name change can't reintroduce the typo.
+ *
+ *  WHY 0.0.3 (the gasless-tx fix): ZeroDev's paymaster only SPONSORS the PATCHED
+ *  validator (`V0_0_3_PATCHED`, value "0.0.3"). The unpatched 0.0.2 validator made
+ *  the sponsored deploy userOp 403 ("Unauthorized: wapk" / "HTTP request failed").
+ *  Reproduced off-device deterministically: same project, 0.0.2 = 403, 0.0.3 = 200.
+ *
+ *  ADDRESS NOTE: the validator version is part of the Kernel CREATE2 salt, so the
+ *  counterfactual ADDRESS changes with the version. Fine for NEW accounts (create
+ *  on 0.0.3 -> sponsorable -> deploys). Existing 0.0.2 accounts derive a different
+ *  address now, but they were never sponsorable on 0.0.2 (stuck), so the forward
+ *  path is a fresh create. We deliberately do NOT auto-migrate existing accounts. */
 function passkeyContractVersion(
   PasskeyValidatorContractVersion: Record<string, string>,
 ): string {
   // Match by the string VALUE the protocol uses on-chain (Kernel v3.1 supports
-  // "0.0.1" | "0.0.2" | "0.0.3"); "0.0.2" is the version this wallet was built on.
-  const byValue = Object.values(PasskeyValidatorContractVersion).find((v) => v === '0.0.2');
-  if (!byValue) throw new Error('Passkey validator contract version 0.0.2 not found in installed SDK');
+  // "0.0.1" | "0.0.2" | "0.0.3"); "0.0.3" is the PATCHED validator the ZeroDev
+  // paymaster will sponsor (0.0.2 is unpatched -> sponsored deploy 403s).
+  const byValue = Object.values(PasskeyValidatorContractVersion).find((v) => v === '0.0.3');
+  if (!byValue) throw new Error('Passkey validator contract version 0.0.3 (V0_0_3_PATCHED) not found in installed SDK');
   return byValue;
 }
 

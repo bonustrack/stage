@@ -95,7 +95,10 @@ async function passkeyKernel(index: bigint, address?: `0x${string}`) {
     webAuthnKey: liveWebAuthnKey(STORED),
     entryPoint: ENTRY_POINT,
     kernelVersion: KERNEL_V3_1,
-    validatorContractVersion: PasskeyValidatorContractVersion.V0_0_2_UNPATCHED,
+    // 0.0.3 (V0_0_3_PATCHED) is the PATCHED validator the ZeroDev paymaster will
+    // sponsor; 0.0.2 is unpatched and 403s the sponsored deploy userOp. Mirrors
+    // passkeyContractVersion() in lib/zerodev/account.ts.
+    validatorContractVersion: PasskeyValidatorContractVersion.V0_0_3_PATCHED,
   });
   return createKernelAccount(publicClient, {
     plugins: { sudo: validator },
@@ -216,5 +219,26 @@ describe('ECDSA-sudo Kernel (key-only account, no passkey)', () => {
     if (a == null || b == null) return;
     expect(a).toMatch(/^0x[0-9a-fA-F]{40}$/);
     expect(a).toBe(b);
+  });
+});
+
+describe('passkey validator contract version resolves to the PATCHED 0.0.3 (paymaster-sponsorable)', () => {
+  // Mirrors passkeyContractVersion() in lib/zerodev/account.ts: resolve the
+  // version by VALUE "0.0.3" off the installed enum (no untyped `.V0_0_2` typo).
+  // 0.0.3 is the only validator the ZeroDev paymaster sponsors; 0.0.2 = 403.
+  function resolveVersion(): string {
+    const byValue = Object.values(PasskeyValidatorContractVersion as Record<string, string>).find(
+      (v) => v === '0.0.3',
+    );
+    if (!byValue) throw new Error('0.0.3 not in installed SDK');
+    return byValue;
+  }
+
+  test('the V0_0_3_PATCHED enum member exists and its value is "0.0.3"', () => {
+    expect(PasskeyValidatorContractVersion.V0_0_3_PATCHED).toBe('0.0.3');
+  });
+
+  test('resolve-by-value yields "0.0.3" (the patched, sponsorable validator)', () => {
+    expect(resolveVersion()).toBe('0.0.3');
   });
 });
