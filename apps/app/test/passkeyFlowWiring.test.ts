@@ -38,28 +38,26 @@ const codecsSrc = code(read('lib', 'xmtp.codecs.ts'));
 const txLayerSrc = code(read('components', 'xmtp-conv', 'useTxSignLayer.ts'));
 const accountSrc = code(read('lib', 'zerodev', 'account.ts'));
 
-describe('A. create.ts — passkey-at-create is one-step passkey-sudo', () => {
-  test('builds via createPasskeyKernel when a passkey is requested + available', () => {
-    expect(createSrc).toContain('createPasskeyKernel');
+describe('A. create.ts — passkey-at-create is one-step DEPLOYED passkey-sudo', () => {
+  test('builds the ECDSA (deployable) Kernel first, then runs the passkey branch', () => {
+    expect(createSrc).toContain('const account = await createEcdsaKernel(publicClient, owner, hdIndex)');
     expect(createSrc).toContain('passkeysAvailable() && opts.rpId');
   });
 
-  test('persists rec.passkey and marks passkeySudo (passkey-derived address, no override)', () => {
+  test('registers the credential and deploys-and-swaps to passkey in ONE step', () => {
+    expect(createSrc).toContain('registerPasskeyCredential(hdIndex');
+    expect(createSrc).toContain('deployAndSwapToPasskey(publicClient, hdIndex, stored)');
+  });
+
+  test('fails closed: throws on cancelled registration or failed swap (no silent ECDSA)', () => {
+    expect(createSrc).toContain("if (!stored) throw new Error");
+    expect(createSrc).toContain('if (!swap.ok) throw new Error(swap.message)');
+  });
+
+  test('persists rec.passkey + deployed:true, leaves passkeySudo UNSET (pins to rec.address)', () => {
     expect(createSrc).toContain('passkey,');
-    expect(createSrc).toContain('passkeySudo: passkey ? true : undefined');
-  });
-
-  test('ECDSA fallback only when no passkey was produced (never a silent downgrade)', () => {
-    // createPasskeyKernel returns null ONLY when the binary cannot do passkeys; a
-    // requested-but-failed passkey THROWS inside it. So the ECDSA path is the
-    // guarded `if (!account)` fallback, not a swallow.
-    expect(createSrc).toContain('if (!account) account = await createEcdsaKernel');
-  });
-
-  test('createPasskeyKernel builds with NO address override (passkey IS the sudo the address derives from)', () => {
-    const cps = accountSrc.slice(accountSrc.indexOf('export async function createPasskeyKernel'));
-    // It calls buildPasskeyKernel with exactly 4 args (no addressOverride).
-    expect(cps).toContain('buildPasskeyKernel(publicClient, owner, hdIndex, stored)');
+    expect(createSrc).toContain('deployed,');
+    expect(createSrc).not.toContain('passkeySudo:');
   });
 });
 
@@ -79,7 +77,11 @@ describe('B. kernelForRecord.ts — override only for enable-upgraded accounts',
 
 describe('C. enablePasskey.ts — deploy-via-ECDSA-initcode then swap sudo on-chain', () => {
   test('builds the CURRENT ECDSA Kernel (its initCode deploys to the ECDSA-derived address)', () => {
-    expect(enableSrc).toContain('createEcdsaKernel(publicClient, owner, rec.hdIndex)');
+    expect(enableSrc).toContain('createEcdsaKernel(publicClient, owner, hdIndex)');
+  });
+  test('shares ONE on-chain deploy-and-swap helper with the create path', () => {
+    expect(enableSrc).toContain('export async function deployAndSwapToPasskey');
+    expect(enableSrc).toContain('deployAndSwapToPasskey(publicClient, rec.hdIndex, stored)');
   });
   test('swaps sudo to the passkey via changeSudoValidator (one sponsored userOp)', () => {
     expect(enableSrc).toContain('changeSudoValidator');

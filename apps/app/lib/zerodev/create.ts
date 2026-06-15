@@ -10,7 +10,8 @@ import '../cryptoShim';
 import { addSmartAccount, nextSmartHdIndex, type AccountRecord } from '../accounts';
 import { ensureMnemonic, smartOwnerSigner } from './keyring';
 import { makePublicClient } from './client';
-import { createEcdsaKernel, createPasskeyKernel } from './account';
+import { createEcdsaKernel, registerPasskeyCredential } from './account';
+import { deployAndSwapToPasskey } from './enablePasskey';
 import { passkeysAvailable } from './native';
 import { zerodevConfigured } from './env';
 
@@ -37,33 +38,40 @@ export async function createSmartAccount(opts: CreateSmartAccountOpts = {}): Pro
   const owner = await smartOwnerSigner(hdIndex);
   const publicClient = makePublicClient();
 
-  let account = null as Awaited<ReturnType<typeof createEcdsaKernel>> | null;
+  // ALWAYS build the ECDSA Kernel first: its address derives from the ECDSA owner
+  // (no passkey in the CREATE2 salt) so it is DEPLOYABLE at exactly this address.
+  // The passkey branch below deploys-and-swaps at this same address in one step;
+  // the key-only branch keeps it as the ECDSA-sudo account.
+  const account = await createEcdsaKernel(publicClient, owner, hdIndex);
+  const address = account.address;
+
   let passkey: AccountRecord['passkey'];
+  let deployed = false;
   if (passkeysAvailable() && opts.rpId) {
-    // PASSKEY REQUESTED + the native module is present: the account MUST be
-    // passkey-sudo or creation MUST fail. createPasskeyKernel returns null ONLY
-    // when the binary can't do passkeys (handled above by passkeysAvailable), and
-    // otherwise THROWS on any failure/cancel — so we do NOT swallow it into a
-    // silent ECDSA account. A passkey-sudo Kernel's address derives from the
-    // passkey validator (no override), so rec.address == the deploy address and the
-    // first sponsored userOp deploys correctly — NO separate enable step.
-    const built = await createPasskeyKernel(publicClient, owner, hdIndex, {
+    // PASSKEY REQUESTED + the native module is present: the account MUST end up a
+    // DEPLOYED, passkey-sudo Kernel or creation MUST fail (fail-closed, no silent
+    // ECDSA fallback — matching the old createPasskeyKernel contract). We reuse the
+    // PROVEN enable path: register a device passkey, then deploy-and-swap the sudo
+    // validator to it via ONE sponsored userOp on the ECDSA-derived (deployable)
+    // address. This avoids the unsatisfiable counterfactual passkey-AS-ROOT Kernel
+    // (passkey in the CREATE2 salt) whose deploy half reverted Unauthorized.
+    const stored = await registerPasskeyCredential(hdIndex, {
       rpId: opts.rpId,
       userName: opts.userName ?? `stage-${hdIndex}`,
     });
-    if (built) {
-      account = built.account;
-      // Persist the public WebAuthn material so the passkey validator (the ACTIVE
-      // signer) can be rebuilt on every later launch without re-registering.
-      passkey = built.passkey;
-    }
-  }
-  // ECDSA owner sudo: ONLY when no passkey was requested, or the binary lacks the
-  // passkey native module. Never a silent fallback after a requested passkey failed
-  // (that throws above).
-  if (!account) account = await createEcdsaKernel(publicClient, owner, hdIndex);
+    // null => the user cancelled the OS sheet or the native flow is not exercisable;
+    // fail closed rather than silently create an ECDSA-only account.
+    if (!stored) throw new Error('Passkey registration was cancelled.');
 
-  const address = account.address;
+    const swap = await deployAndSwapToPasskey(publicClient, hdIndex, stored);
+    if (!swap.ok) throw new Error(swap.message);
+
+    // Persist the public WebAuthn material so the passkey validator (the ACTIVE
+    // signer) can be rebuilt on every later launch without re-registering.
+    passkey = stored;
+    deployed = true;
+  }
+
   const rec: AccountRecord = {
     id: address.toLowerCase(),
     address,
@@ -74,15 +82,17 @@ export async function createSmartAccount(opts: CreateSmartAccountOpts = {}): Pro
     createdAt: Date.now(),
     hdIndex,
     ownerAddress: owner.address.toLowerCase(),
-    deployed: false,
+    // The passkey branch deploys-and-swaps on-chain in one step, so the Kernel is
+    // already deployed; the key-only branch stays counterfactual until its first op.
+    deployed,
     // When a passkey was registered it is the sudo signer; persist the material so
     // kernelClientForRecord rebuilds with the passkey validator (not the ECDSA key).
     passkey,
     passkeyCredId: passkey?.authenticatorId,
-    // The address was derived from the passkey validator as sudo (no override), so
-    // kernelForRecord rebuilds WITHOUT pinning and the first userOp deploys at this
-    // exact address. Only set when the passkey path actually produced the account.
-    passkeySudo: passkey ? true : undefined,
+    // passkeySudo is INTENTIONALLY UNSET: the account was deployed at the
+    // ECDSA-DERIVED address (deployable initCode) and the sudo was swapped to the
+    // passkey, exactly like the Settings enable path. So kernelForRecord must PIN to
+    // rec.address (passkeySudo unset) rather than re-derive a passkey-sudo address.
     scwXmtp: true, // SCW IS the XMTP identity by default (Less): Kernel address
     //              registers via ERC-1271 / 6492-while-counterfactual, chainId 8453.
 

@@ -51,6 +51,65 @@ export type EnablePasskeyResult =
   | { ok: true; deployed: boolean; userOpHash?: string }
   | { ok: false; reason: 'unavailable' | 'already' | 'cancelled' | 'error'; message?: string };
 
+/** Result of the shared on-chain deploy-and-swap. `txHash` is the swap userOp hash
+ *  (also used as the diagnostic tx reference). `ok:false` carries a human message. */
+export type DeployAndSwapResult =
+  | { ok: true; txHash: string }
+  | { ok: false; message: string };
+
+/** THE single on-chain place that turns an ECDSA-sudo Kernel into a passkey-sudo
+ *  one. Builds the CURRENT (ECDSA-sudo) Kernel client at `hdIndex` and issues ONE
+ *  sponsored userOp (`changeSudoValidator` -> passkey). For a COUNTERFACTUAL Kernel
+ *  this same userOp first DEPLOYS the Kernel with the ECDSA initCode (so the factory
+ *  deploys to the ECDSA-derived address the record uses) AND swaps the root validator
+ *  to the passkey, in one bundle. Waits for the receipt and requires on-chain
+ *  success before returning ok. Shared by the Settings enable path AND the onboarding
+ *  create path so the proven logic lives in ONE place.
+ *
+ *  ON-DEVICE: the userOp signing (ECDSA owner authorizes the swap) and, for the
+ *  create path, the preceding WebAuthn registration are device-only — not in CI. */
+export async function deployAndSwapToPasskey(
+  publicClient: ReturnType<typeof makePublicClient>,
+  hdIndex: number,
+  stored: StoredPasskey,
+): Promise<DeployAndSwapResult> {
+  try {
+    const owner = await smartOwnerSigner(hdIndex);
+    const ecdsaAccount = await createEcdsaKernel(publicClient, owner, hdIndex);
+    const kernelClient = makeKernelClient(
+      ecdsaAccount as Parameters<typeof makeKernelClient>[0],
+      publicClient,
+    );
+    const passkeyValidator = await passkeyValidatorFromStored(publicClient, stored);
+    if (!passkeyValidator) return { ok: false, message: 'Passkey validator unavailable.' };
+
+    // changeSudoValidator is a kernel-client decorator action (sponsored userOp).
+    const userOpHash = await (
+      kernelClient as unknown as {
+        changeSudoValidator: (a: { sudoValidator: unknown }) => Promise<string>;
+      }
+    ).changeSudoValidator({ sudoValidator: passkeyValidator });
+
+    // The swap is only real once the userOp is MINED and SUCCEEDED on-chain. Wait
+    // for the receipt and require success BEFORE the caller persists rec.passkey; on
+    // failure the account stays a working ECDSA account and the user can retry.
+    const receipt = await (
+      kernelClient as unknown as {
+        waitForUserOperationReceipt: (a: {
+          hash: string;
+          timeout?: number;
+        }) => Promise<{ success: boolean; receipt?: { transactionHash?: string } }>;
+      }
+    ).waitForUserOperationReceipt({ hash: userOpHash, timeout: 120_000 });
+    if (!receipt?.success) {
+      return { ok: false, message: 'Passkey swap userOp did not succeed on-chain; passkey not enabled.' };
+    }
+    return { ok: true, txHash: userOpHash };
+  } catch (e) {
+    return { ok: false, message: e instanceof Error ? e.message : 'Could not install passkey on-chain' };
+  }
+}
+
 /** Register a NEW device passkey for `rec` and make it the Kernel's sudo validator.
  *  Persists rec.passkey only after the on-chain swap userOp succeeds (deploy +
  *  swap for a counterfactual account, swap-only for a deployed one). Idempotent
@@ -105,60 +164,16 @@ export async function enablePasskeyForRecord(rec: AccountRecord): Promise<Enable
     if (!stored) return { ok: false, reason: 'cancelled' };
   }
 
-  // 2) Swap the sudo validator from the ECDSA owner to the passkey via one
-  //    sponsored userOp, authorized by the CURRENT (ECDSA) owner. For a
-  //    counterfactual account this same userOp deploys the Kernel first (ECDSA
-  //    initCode -> the address the record already uses) AND changes the root
-  //    validator to the passkey, so the on-chain sudo really becomes the passkey
-  //    and later passkey userOps validate. (Old counterfactual shortcut removed:
-  //    it pinned a passkey-sudo Kernel to the ECDSA address, which is unsatisfiable
-  //    -> the meta-factory `Unauthorized` revert on the first userOp.)
-  try {
-    const owner = await smartOwnerSigner(rec.hdIndex);
-    const ecdsaAccount = await createEcdsaKernel(publicClient, owner, rec.hdIndex);
-    const kernelClient = makeKernelClient(
-      ecdsaAccount as Parameters<typeof makeKernelClient>[0],
-      publicClient,
-    );
-    const passkeyValidator = await passkeyValidatorFromStored(publicClient, stored);
-    if (!passkeyValidator) return { ok: false, reason: 'unavailable' };
+  // 2) Swap the sudo validator from the ECDSA owner to the passkey via the SHARED
+  //    on-chain deploy-and-swap (one sponsored userOp; deploys the Kernel first with
+  //    the ECDSA initCode for a counterfactual account). Same logic the onboarding
+  //    create path uses, so the proven flow lives in exactly one place.
+  const swap = await deployAndSwapToPasskey(publicClient, rec.hdIndex, stored);
+  if (!swap.ok) return { ok: false, reason: 'error', message: swap.message };
 
-    // changeSudoValidator is a kernel-client decorator action (sponsored userOp).
-    const userOpHash = await (
-      kernelClient as unknown as {
-        changeSudoValidator: (a: { sudoValidator: unknown }) => Promise<string>;
-      }
-    ).changeSudoValidator({ sudoValidator: passkeyValidator });
-
-    // The swap is only real once the userOp is MINED and SUCCEEDED on-chain. If we
-    // persisted on the hash alone and the op then reverted (paymaster/gas/revert),
-    // the record would claim a passkey while on-chain sudo is still the ECDSA key,
-    // so kernelForRecord would rebuild a passkey Kernel the chain does not honor
-    // (signing fails / silently wrong). Wait for the receipt and require success
-    // BEFORE persisting rec.passkey. On failure we do NOT persist -> the account
-    // stays a working ECDSA account and the user can retry the enable.
-    const receipt = await (
-      kernelClient as unknown as {
-        waitForUserOperationReceipt: (a: {
-          hash: string;
-          timeout?: number;
-        }) => Promise<{ success: boolean; receipt?: { transactionHash?: string } }>;
-      }
-    ).waitForUserOperationReceipt({ hash: userOpHash, timeout: 120_000 });
-    if (!receipt?.success) {
-      return {
-        ok: false,
-        reason: 'error',
-        message: 'Passkey swap userOp did not succeed on-chain; passkey not enabled.',
-      };
-    }
-
-    // Swap confirmed on-chain: now safe to persist. The on-chain sudo is the
-    // passkey and (counterfactual or not) the Kernel is now deployed.
-    void deployed; // recorded pre-swap for diagnostics; the op deploys when needed.
-    await updateSmartAccount(rec.id, { passkey: stored, passkeyCredId: stored.authenticatorId, deployed: true });
-    return { ok: true, deployed: true, userOpHash };
-  } catch (e) {
-    return { ok: false, reason: 'error', message: e instanceof Error ? e.message : 'Could not install passkey on-chain' };
-  }
+  // Swap confirmed on-chain: now safe to persist. The on-chain sudo is the passkey
+  // and (counterfactual or not) the Kernel is now deployed.
+  void deployed; // recorded pre-swap for diagnostics; the op deploys when needed.
+  await updateSmartAccount(rec.id, { passkey: stored, passkeyCredId: stored.authenticatorId, deployed: true });
+  return { ok: true, deployed: true, userOpHash: swap.txHash };
 }
