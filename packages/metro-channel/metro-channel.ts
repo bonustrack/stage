@@ -3,12 +3,12 @@
  * Metro Channel - a Claude Code Channel MCP server.
  *
  * Bridges Metro's inbound chat stream into a running Claude Code session as
- * channel push events, exposes a `reply` tool for outbound, and relays
- * tool-approval permission prompts out via Metro so they can be answered
+ * channel push events, exposes a `reply` tool for outbound (text + media), and
+ * relays tool-approval permission prompts out via Metro so they can be answered
  * from a phone.
  *
  * Inbound source : Metro monitor SSE  GET /api/tail   (METRO_MONITOR_TOKEN gated)
- * Outbound sink  : Metro call  POST /api/call/<train>/send
+ * Outbound sink  : Metro call  POST /api/call/<train>/<action>
  *
  * Spec: https://code.claude.com/docs/en/channels-reference
  */
@@ -16,19 +16,94 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js'
 import { z } from 'zod'
+import { readFile, stat } from 'node:fs/promises'
+import { readFileSync, statSync } from 'node:fs'
+import { homedir } from 'node:os'
+import { join } from 'node:path'
 
-// --- Config (all via env) ---------------------------------------------------
-const BASE = (process.env.METRO_BASE_URL ?? 'http://127.0.0.1:8420').replace(/\/$/, '')
-const TOKEN = process.env.METRO_MONITOR_TOKEN ?? ''
+// Read a single KEY=value from ~/.config/metro/.env. This is a fallback for env
+// vars because Claude Code's env injection can race the ~/.claude.json rewrite
+// at launch, transiently leaving METRO_MONITOR_TOKEN unset in process.env.
+const envFileVar = (key: string): string => {
+  try {
+    const text = readFileSync(join(homedir(), '.config/metro/.env'), 'utf8')
+    for (const raw of text.split('\n')) {
+      const line = raw.trim()
+      if (!line || line.startsWith('#')) continue
+      const eq = line.indexOf('=')
+      if (eq < 0) continue
+      if (line.slice(0, eq).trim() !== key) continue
+      let v = line.slice(eq + 1).trim()
+      if (v.length >= 2 && ((v[0] === '"' && v.endsWith('"')) || (v[0] === "'" && v.endsWith("'")))) {
+        v = v.slice(1, -1)
+      }
+      return v
+    }
+  } catch { /* missing file = ignore */ }
+  return ''
+}
+
+// --- Config (all via env, with ~/.config/metro/.env fallback) ----------------
+const BASE = ((process.env.METRO_BASE_URL || envFileVar('METRO_BASE_URL')) || 'http://127.0.0.1:8420').replace(/\/$/, '')
+const TOKEN = process.env.METRO_MONITOR_TOKEN || envFileVar('METRO_MONITOR_TOKEN')
 // Comma-separated sender URIs or bare inbox/user ids that are allowed to drive
 // the session. Default: Less's primary tony-account XMTP inbox. A `*` disables
 // gating (NOT recommended - this is a prompt-injection surface).
-const ALLOWLIST = (process.env.METRO_CHANNEL_ALLOWLIST ??
-  'bee7314f7127ef53b4e3bf5256e54b0a1acdc3698d064fb1029bd8f83ecc1186')
-  .split(',').map(s => s.trim().toLowerCase()).filter(Boolean)
-// Stations to surface. Chat platforms only - EXCLUDE webhook (flood/crash risk).
-const STATIONS = new Set((process.env.METRO_CHANNEL_STATIONS ?? 'xmtp,telegram,discord')
-  .split(',').map(s => s.trim()).filter(Boolean))
+const ALLOWLIST_DEFAULT = 'bee7314f7127ef53b4e3bf5256e54b0a1acdc3698d064fb1029bd8f83ecc1186'
+const STATIONS_DEFAULT = 'xmtp,telegram,discord'
+const parseAllowlist = (raw: string): string[] =>
+  raw.split(',').map(s => s.trim().toLowerCase()).filter(Boolean)
+const parseStations = (raw: string): Set<string> =>
+  new Set(raw.split(',').map(s => s.trim()).filter(Boolean))
+
+// --- Runtime config override -------------------------------------------------
+// IMPORTANT: a running process's `process.env` is FIXED at spawn. Editing
+// ~/.claude.json (where Claude Code injects these vars from) does NOT update an
+// already-running server - so env/defaults below are only re-evaluated at launch.
+// For the CURRENT change to ALLOWLIST/STATIONS you must still relaunch ONCE.
+// AFTERWARDS, to change the allowlist/stations of a running server WITHOUT a
+// relaunch, write ~/.config/metro/metro-channel.json, e.g.
+//   { "allowlist": "*", "stations": "xmtp,telegram,discord" }
+// Keys are optional; a missing key/file falls back to env then the defaults.
+// The file is re-read only when its mtime changes (cheap stat per event).
+const OVERRIDE_PATH = join(homedir(), '.config/metro/metro-channel.json')
+let overrideMtime = -1
+let overrideAllowlist: string[] | null = null
+let overrideStations: Set<string> | null = null
+
+const refreshOverride = (): void => {
+  let mtime: number
+  try {
+    mtime = statSync(OVERRIDE_PATH).mtimeMs
+  } catch {
+    // file absent/inaccessible -> no override, fall back to env/defaults
+    if (overrideMtime !== -1) { overrideMtime = -1; overrideAllowlist = null; overrideStations = null }
+    return
+  }
+  if (mtime === overrideMtime) return
+  overrideMtime = mtime
+  overrideAllowlist = null
+  overrideStations = null
+  try {
+    const cfg = JSON.parse(readFileSync(OVERRIDE_PATH, 'utf8')) as { allowlist?: string; stations?: string }
+    if (typeof cfg.allowlist === 'string') overrideAllowlist = parseAllowlist(cfg.allowlist)
+    if (typeof cfg.stations === 'string') overrideStations = parseStations(cfg.stations)
+  } catch (e) {
+    log('override file parse failed, ignoring', e)
+  }
+}
+
+// Resolve effective config: override file (if present) wins, else env, else default.
+const getAllowlist = (): string[] => {
+  refreshOverride()
+  if (overrideAllowlist) return overrideAllowlist
+  return parseAllowlist(process.env.METRO_CHANNEL_ALLOWLIST ?? ALLOWLIST_DEFAULT)
+}
+const getStations = (): Set<string> => {
+  refreshOverride()
+  if (overrideStations) return overrideStations
+  return parseStations(process.env.METRO_CHANNEL_STATIONS ?? STATIONS_DEFAULT)
+}
 const log = (...a: unknown[]): void => console.error('[metro-channel]', ...a)
 
 if (!TOKEN) { log('FATAL: METRO_MONITOR_TOKEN unset'); process.exit(2) }
@@ -45,46 +120,111 @@ const mcp = new Server(
       'Messages from Metro chat arrive as <channel source="metro" line="..." from="..." ' +
       'station="..." message_id="...">. To respond, call the `reply` tool with the `line` ' +
       'attribute verbatim and your text; it sends back over the same conversation. ' +
+      'To send media, pass `image_path` (an image) or `attachment` ({path,mime?,name?}); ' +
+      'text is optional when sending only media. Inbound attachments are surfaced as a note ' +
+      'with an absolute `local_path` - Read that path to view the file. ' +
       'Tool-approval prompts are relayed to the same chat - answer "yes <id>"/"no <id>" there.',
   },
 )
 
-// --- Outbound: reply tool -> POST /api/call/<train>/send --------------------
+// --- Outbound: reply tool -> POST /api/call/<train>/<action> ----------------
+async function metroCall(train: string, action: string, args: Record<string, unknown>) {
+  const r = await fetch(`${BASE}/api/call/${train}/${action}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${TOKEN}` },
+    body: JSON.stringify({ args }),
+  })
+  if (!r.ok) throw new Error(`metro ${action} ${train} ${r.status}: ${(await r.text()).slice(0, 200)}`)
+}
+
 async function metroSend(line: string, text: string, replyTo?: string) {
   // train is the station: metro://<train>/...
   const train = line.split('/')[2]
   const args: Record<string, string> = { line, text }
   if (replyTo) args.replyTo = replyTo
-  const r = await fetch(`${BASE}/api/call/${train}/send`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', authorization: `Bearer ${TOKEN}` },
-    body: JSON.stringify({ args }),
+  await metroCall(train, 'send', args)
+}
+
+// Best-effort mime from a file extension (for sendAttachment, which needs one).
+const guessMime = (path: string): string => {
+  const ext = (path.split('.').pop() ?? '').toLowerCase()
+  const map: Record<string, string> = {
+    png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif',
+    webp: 'image/webp', heic: 'image/heic', mp4: 'video/mp4', mov: 'video/quicktime',
+    webm: 'video/webm', m4v: 'video/x-m4v', m4a: 'audio/mp4', mp3: 'audio/mpeg',
+    ogg: 'audio/ogg', wav: 'audio/wav', pdf: 'application/pdf',
+  }
+  return map[ext] ?? 'application/octet-stream'
+}
+const isImageMime = (mime: string) => mime.toLowerCase().startsWith('image/')
+
+// Images -> sendImage {line, path}: the daemon reads the file itself (no base64
+// round-trip). Confirmed in packages/metro/src/stations/xmtp/actions.ts:103-121.
+async function metroSendImage(line: string, path: string) {
+  await metroCall(line.split('/')[2], 'sendImage', { line, path })
+}
+// Non-images -> sendAttachment {line, name, mime, dataB64}: read + base64 here.
+// Confirmed in packages/metro/src/stations/xmtp/actions.ts:92-101.
+async function metroSendAttachment(line: string, path: string, mime?: string, name?: string) {
+  const dataB64 = (await readFile(path)).toString('base64')
+  await metroCall(line.split('/')[2], 'sendAttachment', {
+    line, name: name ?? path.split('/').pop() ?? 'attachment',
+    mime: mime ?? guessMime(path), dataB64,
   })
-  if (!r.ok) throw new Error(`metro send ${train} ${r.status}: ${(await r.text()).slice(0, 200)}`)
 }
 
 mcp.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [{
     name: 'reply',
-    description: 'Send a message back to a Metro conversation. Pass the `line` from the inbound <channel> tag.',
+    description: 'Send a message (and/or media) back to a Metro conversation. Pass the `line` from the inbound <channel> tag.',
     inputSchema: {
       type: 'object',
       properties: {
         line: { type: 'string', description: 'The metro:// line to reply on (from the inbound tag)' },
-        text: { type: 'string', description: 'The message to send' },
+        text: { type: 'string', description: 'The message to send (optional if sending only media)' },
         reply_to: { type: 'string', description: 'Optional message_id to reply to' },
+        image_path: {
+          type: 'string',
+          description: 'Optional absolute local path to an image to send as media on this line.',
+        },
+        attachment: {
+          type: 'object',
+          description: 'Optional non-image file to send as media.',
+          properties: {
+            path: { type: 'string', description: 'Absolute local path to the file' },
+            mime: { type: 'string', description: 'MIME type (guessed from extension if omitted)' },
+            name: { type: 'string', description: 'Filename to present (defaults to basename of path)' },
+          },
+          required: ['path'],
+        },
       },
-      required: ['line', 'text'],
+      required: ['line'],
     },
   }],
 }))
 
 mcp.setRequestHandler(CallToolRequestSchema, async req => {
   if (req.params.name === 'reply') {
-    const { line, text, reply_to } = req.params.arguments as
-      { line: string; text: string; reply_to?: string }
-    await metroSend(line, text, reply_to)
-    return { content: [{ type: 'text', text: 'sent' }] }
+    const { line, text, reply_to, image_path, attachment } = req.params.arguments as {
+      line: string; text?: string; reply_to?: string
+      image_path?: string
+      attachment?: { path: string; mime?: string; name?: string }
+    }
+    if (!line) throw new Error('reply requires `line`')
+    const sent: string[] = []
+    // Send text first (if any), then media so the caption precedes the file.
+    if (text) { await metroSend(line, text, reply_to); sent.push('text') }
+    if (image_path) { await metroSendImage(line, image_path); sent.push('image') }
+    if (attachment?.path) {
+      // An image passed via `attachment` still routes through sendImage when its
+      // mime is image/* (daemon reads the path); everything else -> sendAttachment.
+      const mime = attachment.mime ?? guessMime(attachment.path)
+      if (isImageMime(mime)) await metroSendImage(line, attachment.path)
+      else await metroSendAttachment(line, attachment.path, mime, attachment.name)
+      sent.push('attachment')
+    }
+    if (!sent.length) throw new Error('reply requires `text`, `image_path`, or `attachment`')
+    return { content: [{ type: 'text', text: `sent: ${sent.join(', ')}` }] }
   }
   throw new Error(`unknown tool: ${req.params.name}`)
 })
@@ -119,15 +259,16 @@ mcp.setNotificationHandler(PermissionRequestSchema as never, async (n: Permissio
 })
 
 await mcp.connect(new StdioServerTransport())
-log('connected. base=', BASE, 'allowlist=', ALLOWLIST.length, 'stations=', [...STATIONS].join(','))
+log('connected. base=', BASE, 'allowlist=', getAllowlist().length, 'stations=', [...getStations()].join(','))
 
 // --- Inbound: subscribe to Metro SSE ----------------------------------------
 const senderAllowed = (from: string) => {
-  if (ALLOWLIST.includes('*')) return true
+  const allowlist = getAllowlist()
+  if (allowlist.includes('*')) return true
   const f = (from ?? '').toLowerCase()
   // match full URI or trailing id segment against the allowlist
   const id = f.split('/').pop() ?? f
-  return ALLOWLIST.some(a => a === f || a === id)
+  return allowlist.some(a => a === f || a === id)
 }
 
 // verdict format: "yes abcde" / "no abcde" (5 letters, no 'l'); /i for autocorrect
@@ -137,19 +278,44 @@ const PERMISSION_REPLY_RE = /^\s*(y|yes|n|no)\s+([a-km-z]{5})\s*$/i
 const shortId = (id: string) => (id.length > 10 ? `${id.slice(0, 6)}…` : id)
 
 // --- Inbound media -----------------------------------------------------------
-// Lines on which an allowed sender has recently spoken. The daemon fetches +
-// decrypts inbound attachments asynchronously and emits a follow-up
-// `attachmentSaved` event carrying the absolute on-disk path - but that event
-// has no real sender `from` (it originates from the daemon itself), so it can't
-// pass the per-event allowlist. We gate it instead on its line: only surface
-// media whose conversation an allowed sender is already driving.
+// Inbound attachments arrive as TWO events: (1) the msg event carries
+// `payload.attachments[]` (for XMTP the urls are ENCRYPTED bytes, unusable
+// directly); (2) the daemon fetches/decrypts each blob asynchronously and emits
+// a follow-up `attachmentSaved` event (one per index) carrying the absolute
+// on-disk path. That follow-up has no real sender `from` (it originates from the
+// daemon, e.g. SELF_URI), so it can't pass the per-event allowlist.
+//
+// We correlate the two: buffer the (allowlisted) source msg keyed by its
+// top-level event `id` (== attachmentSaved.attachmentFor) so the saved-file
+// surfacing quotes the real sender + caption. `allowedLines` is a fallback gate
+// (a line an allowed sender already drives) for any orphan attachmentSaved.
 const allowedLines = new Set<string>()
 
-// Media payload as projected by the xmtp train (history-types: attachmentSaved).
+const ATTACH_TIMEOUT_MS = 15_000
+// Gate base64/Read inlining at 4MB to stay clear of the ~5MB channels/API cap.
+const MAX_INLINE_BYTES = 4 * 1024 * 1024
+
+type PendingAtt = { kind?: string; name?: string }
+type PendingMsg = {
+  line: string
+  from: string
+  station: string
+  text: string
+  messageId: string
+  lineName: string
+  attachments: PendingAtt[]
+  saved: Set<number>
+  timer: ReturnType<typeof setTimeout>
+}
+const pendingAttachments = new Map<string, PendingMsg>()
+
+// Media payload as projected by the xmtp/telegram/discord trains (attachmentSaved).
 type SavedMedia = {
   contentType?: string
+  attachmentFor?: string
   attachmentPath?: string
   localPath?: string
+  url?: string
   mime?: string
   name?: string
   index?: number
@@ -166,26 +332,40 @@ const mediaKind = (mime?: string, name?: string): string => {
   return 'file'
 }
 
-// Surface a saved inbound attachment to the session. The Channels notification
-// content is plain text, so we hand the session the absolute local path + mime:
-// Claude can then `Read` it (images render visually; other files open by path).
-async function surfaceMedia(line: string, p: SavedMedia) {
+// Surface a saved inbound attachment to the session.
+//
+// CONTENT SHAPE DECISION: the Channels notification `content` field is typed as
+// `string` (channels-reference, "Notification format": content | string | "The
+// event body. Delivered as the body of the <channel> tag."). It does NOT accept
+// a multimodal content-block array, so an {type:'image',source:{base64}} block
+// is not deliverable. We therefore take the documented fallback: a text note +
+// the absolute on-disk path (the daemon already decrypted the bytes there). The
+// session reads images visually and opens other files via the Read tool on that
+// path. We still size-gate at 4MB and steer Claude away from inlining huge files.
+async function surfaceMedia(ctx: { line: string; from: string; station: string }, p: SavedMedia) {
   const path = p.attachmentPath ?? p.localPath
   if (!path) return
   const kind = mediaKind(p.mime, p.name)
   const name = p.name ?? path.split('/').pop() ?? 'attachment'
+  let size = 0
+  try { size = (await stat(path)).size } catch { /* not yet on disk / unreadable */ }
+  const tooBig = size > MAX_INLINE_BYTES
+  const sizeNote = size ? ` (${(size / 1024 / 1024).toFixed(2)} MB)` : ''
   const content =
-    `[${kind} attachment received: ${name}${p.mime ? ` (${p.mime})` : ''}]\n` +
+    `[${kind} attachment received: ${name}${p.mime ? `, ${p.mime}` : ''}${sizeNote}]\n` +
     `Saved locally at: ${path}\n` +
-    `Use the Read tool on that absolute path to view/inspect it.`
+    (p.url ? `Public URL: ${p.url}\n` : '') +
+    (tooBig
+      ? 'Large file - inspect on disk only as needed (do not inline).'
+      : 'Use the Read tool on that absolute path to view/inspect it.')
   await mcp.notification({
     method: 'notifications/claude/channel',
     params: {
       content,
       meta: {
-        line,
-        from: 'metro://xmtp/attachment',
-        station: 'xmtp',
+        line: ctx.line,
+        from: ctx.from,
+        station: ctx.station,
         kind,
         mime: p.mime ?? '',
         name,
@@ -195,14 +375,54 @@ async function surfaceMedia(line: string, p: SavedMedia) {
   })
 }
 
+// Flush a buffered msg whose attachments never produced an attachmentSaved
+// (fetch/decrypt failed or timed out): text-only fallback naming the file(s).
+async function flushPendingFallback(id: string) {
+  const e = pendingAttachments.get(id)
+  if (!e) return
+  pendingAttachments.delete(id)
+  const missing = e.attachments.filter((_, i) => !e.saved.has(i))
+  if (!missing.length) return
+  const names = missing.map(a => a.name ?? a.kind ?? 'attachment').join(', ')
+  await mcp.notification({
+    method: 'notifications/claude/channel',
+    params: {
+      content:
+        (e.text ? `${e.text}\n` : '') +
+        `[attachment(s) could not be fetched in time: ${names}]`,
+      meta: {
+        line: e.line, from: e.from, station: e.station,
+        message_id: e.messageId, line_name: e.lineName,
+      },
+    },
+  })
+}
+
 async function handleEvent(ev: Record<string, unknown>) {
   // Daemon-side follow-up: an inbound attachment was fetched/decrypted and
-  // written to disk. Surface it (gated on a line an allowed sender drives)
-  // before the normal sender/allowlist checks, since it has no real `from`.
+  // written to disk. Handle BEFORE the normal sender/allowlist guard, because
+  // this event's `from` is the daemon self-uri (not the real sender) and would
+  // be dropped. Gate instead via the correlated source msg (allowlisted) or, as
+  // a fallback, the line an allowed sender already drives.
   const payload = ev.payload as SavedMedia | undefined
   if (payload?.contentType === 'attachmentSaved') {
     const line = String(ev.line ?? '')
-    if (line && allowedLines.has(line)) await surfaceMedia(line, payload)
+    const forId = String(payload.attachmentFor ?? '')
+    const buf = forId ? pendingAttachments.get(forId) : undefined
+    if (buf) {
+      const idx = typeof payload.index === 'number' ? payload.index : 0
+      buf.saved.add(idx)
+      await surfaceMedia({ line: buf.line, from: buf.from, station: buf.station }, payload)
+      if (buf.saved.size >= buf.attachments.length) {
+        clearTimeout(buf.timer)
+        pendingAttachments.delete(forId)
+      }
+    } else if (line && allowedLines.has(line)) {
+      await surfaceMedia(
+        { line, from: 'metro://attachment', station: String(ev.station ?? 'xmtp') },
+        payload,
+      )
+    }
     return
   }
 
@@ -211,7 +431,7 @@ async function handleEvent(ev: Record<string, unknown>) {
   if (evType !== 'msg' && evType !== 'react') return
   const isReact = evType === 'react'
   const station = String(ev.station ?? '')
-  if (station === 'webhook' || !STATIONS.has(station)) return
+  if (station === 'webhook' || !getStations().has(station)) return
   const from = String(ev.from ?? '')
   // outbound echoes have a local `from` (metro://claude|user|...); only act on real inbound
   if (from.startsWith('metro://claude') || from === 'metro://user' || !from.startsWith('metro://')) return
@@ -223,6 +443,29 @@ async function handleEvent(ev: Record<string, unknown>) {
   // Remember this conversation so the daemon's follow-up attachmentSaved event
   // (which carries no real sender) can be gated/surfaced on the same line.
   if (line) allowedLines.add(line)
+
+  // If this (allowlisted) msg carries attachments, buffer its context keyed by
+  // the top-level event id so the follow-up attachmentSaved events can correlate
+  // per index and quote the real sender + caption. 15s self-destruct fallback.
+  const atts = (ev.payload as { attachments?: PendingAtt[] } | undefined)?.attachments
+  if (Array.isArray(atts) && atts.length) {
+    const id = String(ev.id ?? '')
+    if (id) {
+      const existing = pendingAttachments.get(id)
+      if (existing) clearTimeout(existing.timer)
+      pendingAttachments.set(id, {
+        line, from, station, text,
+        messageId: String(ev.messageId ?? ''),
+        lineName: String(ev.lineName ?? ''),
+        attachments: atts.map(a => ({ kind: a?.kind, name: a?.name })),
+        saved: new Set<number>(),
+        timer: setTimeout(() => { void flushPendingFallback(id) }, ATTACH_TIMEOUT_MS),
+      })
+    }
+    // Don't also forward the placeholder text ("[image: metro-pending-...]") as a
+    // normal chat turn - the surfaced file (or fallback) carries the content.
+    return
+  }
 
   if (isReact) {
     // react event schema (HistoryEntry.event): { type:'react', emoji?, targetId? }
@@ -288,8 +531,13 @@ async function handleEvent(ev: Record<string, unknown>) {
 async function subscribe() {
   for (;;) {
     try {
+      // Subscribe WITHOUT a station filter: the SSE filter is fixed at connect
+      // time, but the effective station set can change at runtime via the
+      // override file. We pull all stations and let getStations() (in
+      // handleEvent) be the authoritative, dynamic gate. webhook is still
+      // hard-dropped in handleEvent (flood/crash risk).
       const res = await fetch(
-        `${BASE}/api/tail?since=tail&mode=all&station=${[...STATIONS].join(',')}`,
+        `${BASE}/api/tail?since=tail&mode=all`,
         { headers: { authorization: `Bearer ${TOKEN}`, accept: 'text/event-stream' } },
       )
       if (!res.ok || !res.body) throw new Error(`tail ${res.status}`)

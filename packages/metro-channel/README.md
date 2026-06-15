@@ -12,6 +12,25 @@ so you can approve/deny from your phone.
        └── reply ─────────┴────────────── POST /api/call/<train>/send ◀─────────────┘
 ```
 
+## Reactions and attachments
+
+**Inbound reactions** are forwarded as channel pushes. An emoji react surfaces as
+`👍 reacted to message <shortId>`; on xmtp, un-reacting surfaces as
+`👍 removed from message <shortId>`. Other event types (edits/deletes/system) are dropped.
+
+**Inbound attachments** (image/video/audio) ride a two-event flow: the daemon emits the
+`msg` event first, then a follow-up `attachmentSaved` event (one per index) carrying the
+saved file path, correlated by the top-level event `id`. The server buffers the `msg`,
+waits for the `attachmentSaved`, then forwards. Channel content is **string-only** (no
+image content blocks), so an image is forwarded as a readable local file **path** that CC
+can open with Read. Images over the 4MB gate, and any non-image attachment, fall back to
+the path inline in the text.
+
+**Outbound media**: the `reply` tool takes an optional `image_path` (an image) or
+`attachment` (`{path, mime?, name?}`). Images route to the daemon's `sendImage` (the
+daemon reads the file itself, no base64 round-trip); non-images route to `sendAttachment`
+(read + base64 in the server).
+
 ## Requirements
 
 - Claude Code **v2.1.80+** (permission relay needs **v2.1.81+**)
@@ -40,6 +59,30 @@ The allowlist gates on the **sender** (`from`), never the conversation - prompt-
 defense per the Channels spec. Only allowlisted senders can drive tools or answer
 permission prompts.
 
+### Token .env fallback
+
+`METRO_MONITOR_TOKEN` and `METRO_BASE_URL` fall back to reading `~/.config/metro/.env`
+when the env var is unset at launch. Claude Code rewrites `~/.claude.json` on session
+start/exit and can race the env injection, transiently leaving the token unset in
+`process.env`; the `.env` read is the safety net so the server still authenticates.
+
+### Live-reload override file (no restart)
+
+A running process's `process.env` is fixed at spawn, so editing env later does nothing
+for the current process. To change the allowlist or stations of an already-running
+server **without a relaunch**, write `~/.config/metro/metro-channel.json`:
+
+```json
+{ "allowlist": "*", "stations": "xmtp,telegram,discord" }
+```
+
+This file **wins** over env vars and the built-in defaults. It is mtime-cached (re-read
+only when the file changes) and applies on the fly to the SSE gate - no restart needed.
+Delete the file to fall back to env/defaults. Note: the very first change to
+allowlist/stations after a code update still needs one relaunch; the override file only
+avoids restarts thereafter. The SSE subscribe no longer hard-filters `station=` at
+connect time; it uses a dynamic `getStations()` gate so override changes take effect live.
+
 ## Run
 
 The server is registered in this directory's `.mcp.json` as server name `metro`.
@@ -54,6 +97,11 @@ METRO_MONITOR_TOKEN=$(grep METRO_MONITOR_TOKEN ~/.config/metro/.env | cut -d= -f
 
 On first run CC asks to trust the new `.mcp.json` server - choose **Use this MCP server**.
 A dim banner confirms: `Channels (experimental) messages from server:metro inject directly...`.
+
+Registering the server globally in `~/.claude.json` (`mcpServers.metro`) with an absolute
+launch command lets you start the channel from **any directory**, not just
+`packages/metro-channel/`. A `metro-cc` convenience launcher wraps the long
+`claude --dangerously-load-development-channels server:metro` invocation.
 
 ## Live test plan
 
@@ -76,6 +124,15 @@ A dim banner confirms: `Channels (experimental) messages from server:metro injec
   `notifications/claude/channel` (push), `reply` tool, `notifications/claude/channel/permission_request`
   + `notifications/claude/channel/permission` (relay). Meta keys are identifiers only
   (underscores), so the metro line rides as `line` (no scheme issues - it's a value, not a key).
+- **A local `.mcp.json` shadows the global `~/.claude.json` server entry.** When CC is
+  launched from a directory containing `.mcp.json` (e.g. `packages/metro-channel/`), that
+  file's `env` block wins over the global `mcpServers.metro` entry. If the local
+  `.mcp.json` omits `METRO_CHANNEL_ALLOWLIST`/`METRO_CHANNEL_STATIONS`, the server falls
+  back to the hardcoded single-id default allowlist and **drops every message**. Fix: set
+  `METRO_CHANNEL_ALLOWLIST` and `METRO_CHANNEL_STATIONS` in whichever `.mcp.json` actually
+  launches the server (this package's `.mcp.json` now sets `"*"` and
+  `"xmtp,telegram,discord"`). At runtime you can also drop a
+  `~/.config/metro/metro-channel.json` override (see above) which beats both.
 - Permission relay routes to the **last inbound line** seen. With a single active
   conversation that is exact; multi-conversation routing would need per-request line capture
   (CC's `permission_request` doesn't carry a conversation id, so last-line is the documented pattern).
