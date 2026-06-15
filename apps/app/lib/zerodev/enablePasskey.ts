@@ -108,8 +108,30 @@ export async function enablePasskeyForRecord(rec: AccountRecord): Promise<Enable
       }
     ).changeSudoValidator({ sudoValidator: passkeyValidator });
 
-    // Only persist after the swap lands so a failed swap doesn't leave the record
-    // claiming a passkey the on-chain Kernel doesn't honor.
+    // The swap is only real once the userOp is MINED and SUCCEEDED on-chain. If we
+    // persisted on the hash alone and the op then reverted (paymaster/gas/revert),
+    // the record would claim a passkey while on-chain sudo is still the ECDSA key,
+    // so kernelForRecord would rebuild a passkey Kernel the chain does not honor
+    // (signing fails / silently wrong). Wait for the receipt and require success
+    // BEFORE persisting rec.passkey. On failure we do NOT persist -> the account
+    // stays a working ECDSA account and the user can retry the enable.
+    const receipt = await (
+      kernelClient as unknown as {
+        waitForUserOperationReceipt: (a: {
+          hash: string;
+          timeout?: number;
+        }) => Promise<{ success: boolean; receipt?: { transactionHash?: string } }>;
+      }
+    ).waitForUserOperationReceipt({ hash: userOpHash, timeout: 120_000 });
+    if (!receipt?.success) {
+      return {
+        ok: false,
+        reason: 'error',
+        message: 'Passkey swap userOp did not succeed on-chain; passkey not enabled.',
+      };
+    }
+
+    // Swap confirmed on-chain: now safe to persist. The on-chain sudo is the passkey.
     await updateSmartAccount(rec.id, { passkey: stored, passkeyCredId: stored.authenticatorId, deployed: true });
     return { ok: true, deployed: true, userOpHash };
   } catch (e) {

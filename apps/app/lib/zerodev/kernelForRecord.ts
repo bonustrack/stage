@@ -21,6 +21,7 @@ import type { AccountRecord } from '../accounts';
 import { smartOwnerSigner } from './keyring';
 import { makePublicClient, makeKernelClient } from './client';
 import { createEcdsaKernel, passkeyKernelFromStored } from './account';
+import { passkeysAvailable } from './native';
 
 /** Build a Kernel account client for a smart record (re-derives owner at
  *  hdIndex). Throws if the record isn't a smart account or the mnemonic / HD
@@ -30,20 +31,45 @@ export async function kernelClientForRecord(rec: AccountRecord): Promise<KernelA
   if (rec.type !== 'smart' || rec.hdIndex == null) {
     throw new Error('Not a smart account.');
   }
-  const owner = await smartOwnerSigner(rec.hdIndex);
   const publicClient = makePublicClient();
-  // Passkey-when-set: rebuild with the passkey validator as the active signer so
-  // every sign triggers a WebAuthn prompt and the private key is unused. Null
-  // (no passkey, or native module absent) -> ECDSA owner sudo (current behavior).
-  const account =
-    (rec.passkey &&
-      (await passkeyKernelFromStored(
-        publicClient,
-        owner,
-        rec.hdIndex,
-        rec.passkey,
-        rec.address as `0x${string}`,
-      ))) ||
-    (await createEcdsaKernel(publicClient, owner, rec.hdIndex));
-  return makeKernelClient(account, publicClient);
+
+  // PASSKEY-ONLY (Less's hard requirement): when the record has a passkey, build
+  // the Kernel from the PASSKEY validator alone (sudo=passkey, no regular) and
+  // NEVER read the mnemonic. The ECDSA owner is not derived on this path, so the
+  // private key is provably not read for signing — every sign is WebAuthn.
+  // passkeyKernelFromStored ignores its `owner` arg (it builds from stored pubkey
+  // material), so we pass a throwaway placeholder rather than unlock the keyring.
+  if (rec.passkey) {
+    const passkeyAccount = await passkeyKernelFromStored(
+      publicClient,
+      undefined as unknown as Parameters<typeof passkeyKernelFromStored>[1],
+      rec.hdIndex,
+      rec.passkey,
+      rec.address as `0x${string}`,
+    );
+    if (passkeyAccount) return makeKernelClient(passkeyAccount, publicClient);
+    // The passkey validator could not be built. The ONLY legitimate reason is an
+    // old binary lacking the native module (passkeysAvailable() === false); in
+    // that case we degrade to the ECDSA owner so the app still loads. But if the
+    // native module IS present and the rebuild still failed, falling back to the
+    // ECDSA key would silently sign with the mnemonic for a passkey account — the
+    // exact regression we are preventing. Throw in __DEV__ to surface it; in prod
+    // fail closed by throwing too (do NOT silently sign with the key).
+    if (passkeysAvailable()) {
+      throw new Error(
+        'Passkey account: passkey validator unavailable; refusing to sign with the ECDSA key.',
+      );
+    }
+    // Old binary without the passkey native module: degrade so the app still loads.
+    const ownerForOld = await smartOwnerSigner(rec.hdIndex);
+    return makeKernelClient(
+      await createEcdsaKernel(publicClient, ownerForOld, rec.hdIndex),
+      publicClient,
+    );
+  }
+
+  // No passkey on the record: the ECDSA owner (derived from the mnemonic) is the
+  // sudo validator. This is the only path that reads the key for signing.
+  const owner = await smartOwnerSigner(rec.hdIndex);
+  return makeKernelClient(await createEcdsaKernel(publicClient, owner, rec.hdIndex), publicClient);
 }
