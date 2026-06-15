@@ -26,6 +26,7 @@ import { useActiveAccount } from '../../modules/messaging/account';
 import { flash } from '../../lib/toast';
 import { useWalletModel, type DeployState, type ModuleRole } from './WalletSettings.parts';
 import { useEnablePasskey } from '../../lib/useEnablePasskey';
+import { useRemovePasskey } from '../../lib/useRemovePasskey';
 
 interface C { fg: string; head: string; sub: string; border: string; rowBg: string }
 
@@ -108,6 +109,7 @@ export function WalletSettings(): React.ReactElement {
 
   const { model, deploy } = useWalletModel(epoch);
   const passkey = useEnablePasskey(epoch);
+  const removePasskey = useRemovePasskey(epoch);
 
   const card = (children: React.ReactNode): React.ReactElement => (
     <Box margin={{ x: 16 }} radius={blockRadius} style={{ overflow: 'hidden' }}>
@@ -198,6 +200,19 @@ export function WalletSettings(): React.ReactElement {
                         <Icon name="fingerPrint" size={22} color={c.head} />
                         <Text size="md" color={c.fg} style={{ flex: 1 }}>
                           {passkey.busy ? 'Enabling passkey…' : 'Enable passkey for signing'}
+                        </Text>
+                        <Icon name="chevronRight" size={18} color={c.head} />
+                      </ListViewItem>
+                    ) : null}
+                    {removePasskey.available ? (
+                      <ListViewItem
+                        dark={dark}
+                        onPress={() => { if (!removePasskey.busy) removePasskey.run(); }}
+                        style={{ paddingHorizontal: 14, paddingVertical: 14 }}
+                      >
+                        <Icon name="fingerPrint" size={22} color={c.head} />
+                        <Text size="md" color={c.fg} style={{ flex: 1 }}>
+                          {removePasskey.busy ? 'Removing passkey…' : 'Remove passkey'}
                         </Text>
                         <Icon name="chevronRight" size={18} color={c.head} />
                       </ListViewItem>

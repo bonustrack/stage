@@ -43,6 +43,9 @@ const txLayerSrc = code(read('components', 'xmtp-conv', 'useTxSignLayer.ts'));
 const onboardSrc = code(read('components', 'onboarding', 'flow.ts'));
 const acctMgrSrc = code(read('components', 'AccountsManager.hook.ts'));
 const drawerSrc = code(read('components', 'LeftDrawer.accounts.tsx'));
+const disableSrc = code(read('lib', 'zerodev', 'disablePasskey.ts'));
+const walletSettingsSrc = code(read('components', 'settings', 'WalletSettings.tsx'));
+const removeHookSrc = code(read('lib', 'useRemovePasskey.ts'));
 
 describe('A. create.ts — create is passkey-AGNOSTIC (ECDSA-owner only)', () => {
   test('builds the ECDSA (deployable) Kernel and never touches the passkey path', () => {
@@ -153,5 +156,54 @@ describe('E. useTxSignLayer.ts — smart account tx + signatures go through the 
   test('onSign signs message + typedData via the same kernel client', () => {
     expect(txLayerSrc).toContain('kernel.signTypedData');
     expect(txLayerSrc).toContain('kernel.signMessage');
+  });
+});
+
+describe('F. disablePasskey.ts — revert swaps root back to ECDSA, clears state fail-closed', () => {
+  test('builds the CURRENT (passkey-sudo) Kernel as the signer of the revert userOp', () => {
+    // The passkey is the current root; it must sign the swap (proof of possession).
+    expect(disableSrc).toContain('passkeyKernelFromStored');
+    // Same address-override rule as kernelForRecord (ECDSA-derived address pinned).
+    expect(disableSrc).toContain('rec.passkeySudo ? undefined : (rec.address as `0x${string}`)');
+  });
+  test('swaps sudo BACK to the ECDSA validator via changeSudoValidator (one userOp)', () => {
+    expect(disableSrc).toContain('ecdsaValidatorForOwner');
+    expect(disableSrc).toContain('changeSudoValidator');
+    expect(disableSrc).toContain('sudoValidator: ecdsaValidator');
+  });
+  test('clears rec.passkey ONLY AFTER the userOp receipt succeeds (fail-closed)', () => {
+    const swapIdx = disableSrc.indexOf('changeSudoValidator');
+    const waitIdx = disableSrc.indexOf('waitForUserOperationReceipt');
+    const clearIdx = disableSrc.lastIndexOf('updateSmartAccount(');
+    expect(swapIdx).toBeGreaterThanOrEqual(0);
+    expect(waitIdx).toBeGreaterThan(swapIdx);
+    expect(clearIdx).toBeGreaterThan(waitIdx);
+    expect(disableSrc).toContain('if (!receipt?.success)');
+    // The clear sets the passkey fields to undefined (JSON.stringify drops them).
+    expect(disableSrc).toContain('passkey: undefined');
+    expect(disableSrc).toContain('passkeyCredId: undefined');
+    expect(disableSrc).toContain('passkeySudo: undefined');
+  });
+  test('guards: returns ok:false before any swap when the account has no passkey', () => {
+    const guardIdx = disableSrc.indexOf("if (!rec.passkey) return { ok: false, reason: 'none' }");
+    const swapCallIdx = disableSrc.indexOf('swapRootToEcdsa(publicClient, rec)');
+    expect(guardIdx).toBeGreaterThanOrEqual(0);
+    expect(swapCallIdx).toBeGreaterThan(guardIdx);
+  });
+});
+
+describe('G. Settings -> Wallet — Remove passkey affordance is wired + gated', () => {
+  test('WalletSettings renders the Remove passkey row only when available', () => {
+    expect(walletSettingsSrc).toContain('useRemovePasskey');
+    expect(walletSettingsSrc).toContain('removePasskey.available');
+    expect(walletSettingsSrc).toContain('Remove passkey');
+  });
+  test('the hook shows only for a smart account that currently HAS a passkey', () => {
+    expect(removeHookSrc).toContain("acct?.type === 'smart' && !!acct.passkey");
+    expect(removeHookSrc).toContain('removePasskeyFromRecord(acct)');
+  });
+  test('the hook confirms with a destructive Alert before reverting', () => {
+    expect(removeHookSrc).toContain('Alert.alert');
+    expect(removeHookSrc).toContain("style: 'destructive'");
   });
 });

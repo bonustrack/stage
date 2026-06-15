@@ -15,6 +15,7 @@ export { zerodevConfigured, zerodevRpcUrl, zerodevRpId } from './env';
 export { createSmartAccount, type CreateSmartAccountOpts } from './create';
 export { kernelClientForRecord } from './kernelForRecord';
 export { enablePasskeyForRecord, type EnablePasskeyResult } from './enablePasskey';
+export { removePasskeyFromRecord, swapRootToEcdsa, type RemovePasskeyResult } from './disablePasskey';
 export { scwSigner } from './scwSigner';
 export { makePublicClient, makeKernelClient, kernelDeployedOnChain } from './client';
 export { createEcdsaKernel, createPasskeyKernel } from './account';

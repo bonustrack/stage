@@ -22,6 +22,22 @@ import { signerToEcdsaValidator } from '@zerodev/ecdsa-validator';
 import { ENTRY_POINT, KERNEL_VERSION } from './config';
 import { passkeysAvailable } from './native';
 
+/** Build JUST the ECDSA KernelValidator from the mnemonic-derived owner (no Kernel
+ *  account). Used by createEcdsaKernel AND by the remove-passkey flow, which swaps
+ *  the sudo validator back to this ECDSA validator on-chain (changeSudoValidator) —
+ *  the validator is still installed (only demoted at enable time), so promoting it
+ *  to sudo restores ECDSA root signing. One construction shared by both paths. */
+export async function ecdsaValidatorForOwner(
+  publicClient: PublicClient,
+  owner: HDAccount,
+): Promise<Awaited<ReturnType<typeof signerToEcdsaValidator>>> {
+  return signerToEcdsaValidator(publicClient, {
+    signer: owner,
+    entryPoint: ENTRY_POINT,
+    kernelVersion: KERNEL_VERSION,
+  });
+}
+
 /** Build a counterfactual Kernel owned by an ECDSA `sudo` validator derived from
  *  the app mnemonic at `hdIndex`. No tx is sent; `.address` is the identity. */
 export async function createEcdsaKernel(
@@ -29,11 +45,7 @@ export async function createEcdsaKernel(
   owner: HDAccount,
   hdIndex: number,
 ): Promise<CreateKernelAccountReturnType> {
-  const ecdsaValidator = await signerToEcdsaValidator(publicClient, {
-    signer: owner,
-    entryPoint: ENTRY_POINT,
-    kernelVersion: KERNEL_VERSION,
-  });
+  const ecdsaValidator = await ecdsaValidatorForOwner(publicClient, owner);
   return createKernelAccount(publicClient, {
     plugins: { sudo: ecdsaValidator },
     entryPoint: ENTRY_POINT,
