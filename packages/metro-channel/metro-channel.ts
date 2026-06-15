@@ -133,8 +133,14 @@ const senderAllowed = (from: string) => {
 // verdict format: "yes abcde" / "no abcde" (5 letters, no 'l'); /i for autocorrect
 const PERMISSION_REPLY_RE = /^\s*(y|yes|n|no)\s+([a-km-z]{5})\s*$/i
 
+// Short, human-friendly id for the reacted-to message in the note.
+const shortId = (id: string) => (id.length > 10 ? `${id.slice(0, 6)}…` : id)
+
 async function handleEvent(ev: Record<string, unknown>) {
-  if (ev.event && (ev.event as { type?: string }).type !== 'msg') return
+  // Forward chat messages and emoji reactions; drop edits/deletes/system/etc.
+  const evType = ev.event ? (ev.event as { type?: string }).type : 'msg'
+  if (evType !== 'msg' && evType !== 'react') return
+  const isReact = evType === 'react'
   const station = String(ev.station ?? '')
   if (station === 'webhook' || !STATIONS.has(station)) return
   const from = String(ev.from ?? '')
@@ -146,7 +152,38 @@ async function handleEvent(ev: Record<string, unknown>) {
   const text = String(ev.text ?? '')
   lastLine = line
 
-  // intercept permission verdicts before forwarding as chat
+  if (isReact) {
+    // react event schema (HistoryEntry.event): { type:'react', emoji?, targetId? }
+    // confirmed in packages/metro/src/history-types.ts:10 and the station emitters
+    // (xmtp/emit.ts:60, discord/format.ts:79, telegram/format.ts:80).
+    const re = ev.event as { emoji?: string; targetId?: string }
+    const emoji = re.emoji ?? ''
+    const target = re.targetId ?? ''
+    // Only xmtp distinguishes removals (payload.removed / "(removed)" in text).
+    const removed = (ev.payload as { removed?: boolean } | undefined)?.removed === true ||
+      / \(removed\)\]?$/.test(text)
+    const content = removed
+      ? `${emoji || 'reaction'} removed from message ${shortId(target)}`.trim()
+      : `${emoji || 'reacted'} reacted to message ${shortId(target)}`.trim()
+    await mcp.notification({
+      method: 'notifications/claude/channel',
+      params: {
+        content,
+        meta: {
+          line,
+          from,
+          station,
+          message_id: String(ev.messageId ?? ''),
+          line_name: String(ev.lineName ?? ''),
+          reaction: emoji,
+          target_id: target,
+        },
+      },
+    })
+    return
+  }
+
+  // intercept permission verdicts before forwarding as chat (msg text only)
   const m = PERMISSION_REPLY_RE.exec(text)
   if (m && pending.size) {
     const id = m[2].toLowerCase()
