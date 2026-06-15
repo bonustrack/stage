@@ -3,7 +3,8 @@
 Pushes Metro inbound chat (XMTP/Telegram/Discord) into a **running** Claude Code
 session as [channel](https://code.claude.com/docs/en/channels) events, so CC reacts
 to messages while you're away - no more fragile Monitor/`tail` transport. Two-way:
-a `reply` tool sends responses back, and tool-approval prompts are relayed to chat
+the full Metro CLI messaging verb set (send/reply/react/unreact/edit/delete/read) is
+exposed as tools to send responses back, and tool-approval prompts are relayed to chat
 so you can approve/deny from your phone.
 
 ```
@@ -11,6 +12,60 @@ so you can approve/deny from your phone.
        ▲                  ▲                                                          │
        └── reply ─────────┴────────────── POST /api/call/<train>/send ◀─────────────┘
 ```
+
+## CLI parity tools
+
+The server exposes the full Metro CLI messaging verb set as MCP tools (one tool per
+verb). Every tool takes the `line` from the inbound `<channel>` tag; the station is
+derived from the line, so there is no station argument. Each tool POSTs the canonical
+action to `POST /api/call/<train>/<action>`; the daemon's normalize layer translates
+to each station's native action.
+
+| Tool | Args | Action sent |
+| --- | --- | --- |
+| `send` | `line, text?, reply_to?, attachments?` | `send` (xmtp media dispatched natively, see below) |
+| `reply` | `line, message_id, text` | `reply {replyTo: message_id}` |
+| `react` | `line, message_id, emoji` | `react {messageId, emoji}` |
+| `unreact` | `line, message_id, emoji` | `unreact {messageId, emoji}` |
+| `edit` | `line, message_id, text` | `edit {messageId, text}` |
+| `delete` | `line, message_id` | `delete {messageId}` |
+| `read` | `line, limit?, before?, since?` | `read` (returns raw history JSON) |
+
+### Per-station support matrix
+
+| Verb | xmtp | telegram | discord | webhook |
+| --- | --- | --- | --- | --- |
+| send | yes | yes | yes | N/A |
+| reply | yes | yes | yes | N/A |
+| react | yes | yes | yes | N/A |
+| unreact | yes | yes | yes | N/A |
+| edit | no | yes | yes | N/A |
+| delete | no | yes | yes | N/A |
+| read | yes | no | yes | N/A |
+
+- **webhook**: no outbound at all. Every verb is rejected up front with a clear message.
+- **xmtp**: no `edit`/`delete` - the daemon returns `unsupported verb '<verb>' on xmtp`,
+  surfaced verbatim as the tool error.
+- **telegram**: no `read` - the daemon returns an unsupported-verb error, surfaced verbatim.
+
+Unsupported verbs are not pre-blocked (except webhook); the daemon's reason is returned as
+the tool result with `isError` semantics so the model sees why it failed. `read` returns
+the raw history JSON (shapes differ per station and are not normalized).
+
+### File support notes
+
+- **telegram / discord**: `send` attachments are passed as canonical descriptors
+  (`{kind, url: <local path>, name}`); the daemon reads the local path and builds the
+  native multipart upload. Pass `path` (preferred) or `url` per attachment.
+- **xmtp**: the `send` action ignores canonical attachments, so each attachment is
+  dispatched natively - images (by mime or extension) via `sendImage {line, path}` (the
+  daemon reads the file, no base64 round-trip), other files via `sendAttachment` with the
+  bytes base64-encoded in the server. Because the monitor request body is capped at
+  ~256 KiB, an xmtp non-image file over ~190 KiB (which inflates past the cap once
+  base64-encoded) is rejected with a clear error.
+- `reply` carries no attachments (matches the CLI); use `send` for media.
+- MIME is inferred from the file extension when not provided (covers image/*, audio/*,
+  video/*, application/pdf, and others).
 
 ## Reactions and attachments
 
@@ -26,10 +81,11 @@ image content blocks), so an image is forwarded as a readable local file **path*
 can open with Read. Images over the 4MB gate, and any non-image attachment, fall back to
 the path inline in the text.
 
-**Outbound media**: the `reply` tool takes an optional `image_path` (an image) or
-`attachment` (`{path, mime?, name?}`). Images route to the daemon's `sendImage` (the
-daemon reads the file itself, no base64 round-trip); non-images route to `sendAttachment`
-(read + base64 in the server).
+**Outbound media**: the `send` tool takes an optional `attachments` array
+(`[{path|url, mime?, name?}]`). On telegram/discord they ride the canonical `send` action
+(daemon reads the local path); on xmtp images route to `sendImage` (daemon reads the file,
+no base64 round-trip) and other files to `sendAttachment` (read + base64 in the server, with
+the ~190 KiB cap). See **CLI parity tools** above for the full matrix.
 
 ## Requirements
 

@@ -118,32 +118,53 @@ const mcp = new Server(
     },
     instructions:
       'Messages from Metro chat arrive as <channel source="metro" line="..." from="..." ' +
-      'station="..." message_id="...">. To respond, call the `reply` tool with the `line` ' +
-      'attribute verbatim and your text; it sends back over the same conversation. ' +
-      'To send media, pass `image_path` (an image) or `attachment` ({path,mime?,name?}); ' +
-      'text is optional when sending only media. Inbound attachments are surfaced as a note ' +
-      'with an absolute `local_path` - Read that path to view the file. ' +
-      'Tool-approval prompts are relayed to the same chat - answer "yes <id>"/"no <id>" there.',
+      'station="..." message_id="...">. To respond, use the messaging tools, always passing the ' +
+      '`line` attribute verbatim (the station is derived from it): `send` (text and/or media via ' +
+      '`attachments`, optional `reply_to`), `reply` (quote a `message_id` with `text`), `react`/' +
+      '`unreact` (emoji on a `message_id`), `edit`/`delete` (a `message_id`), and `read` (recent ' +
+      'history). Station support varies: webhook lines accept no outbound; xmtp has no edit/delete; ' +
+      'telegram has no read - the tool returns the daemon\'s reason if unsupported. Inbound ' +
+      'attachments are surfaced as a note with an absolute `local_path` - Read that path to view ' +
+      'the file. Tool-approval prompts are relayed to the same chat - answer "yes <id>"/"no <id>".',
   },
 )
 
 // --- Outbound: reply tool -> POST /api/call/<train>/<action> ----------------
-async function metroCall(train: string, action: string, args: Record<string, unknown>) {
+// Raised when the daemon answers non-2xx (e.g. "unsupported verb 'edit' on
+// xmtp"). The verb tools catch this and surface `.detail` as the tool result so
+// the model sees WHY it failed, with isError semantics, rather than an opaque
+// throw. `detail` is the status + body snippet from the daemon.
+class MetroCallError extends Error {
+  detail: string
+  constructor(detail: string) { super(detail); this.name = 'MetroCallError'; this.detail = detail }
+}
+
+// POST to the daemon call endpoint. Returns the parsed JSON body (or raw text)
+// on success; throws MetroCallError carrying the daemon's status + body on
+// failure so callers can relay the reason verbatim.
+async function metroCall(train: string, action: string, args: Record<string, unknown>): Promise<unknown> {
   const r = await fetch(`${BASE}/api/call/${train}/${action}`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', authorization: `Bearer ${TOKEN}` },
     body: JSON.stringify({ args }),
   })
-  if (!r.ok) throw new Error(`metro ${action} ${train} ${r.status}: ${(await r.text()).slice(0, 200)}`)
+  const body = await r.text()
+  if (!r.ok) throw new MetroCallError(`metro ${action} ${train} ${r.status}: ${body.slice(0, 400)}`)
+  try { return body ? JSON.parse(body) : null } catch { return body }
 }
 
+const trainOf = (line: string): string => line.split('/')[2] ?? ''
+
 async function metroSend(line: string, text: string, replyTo?: string) {
-  // train is the station: metro://<train>/...
-  const train = line.split('/')[2]
   const args: Record<string, string> = { line, text }
   if (replyTo) args.replyTo = replyTo
-  await metroCall(train, 'send', args)
+  await metroCall(trainOf(line), 'send', args)
 }
+
+// The monitor request body is capped at ~256KiB; base64 inflates by ~4/3, so a
+// raw file over ~190KiB won't fit once encoded. Used to pre-check xmtp
+// sendAttachment (which must base64 the bytes through this path).
+const XMTP_ATTACH_MAX_BYTES = 190 * 1024
 
 // Best-effort mime from a file extension (for sendAttachment, which needs one).
 const guessMime = (path: string): string => {
@@ -157,76 +178,273 @@ const guessMime = (path: string): string => {
   return map[ext] ?? 'application/octet-stream'
 }
 const isImageMime = (mime: string) => mime.toLowerCase().startsWith('image/')
+const isImageExt = (path: string) => /\.(png|jpe?g|gif|webp|heic|bmp|svg)$/i.test(path)
 
 // Images -> sendImage {line, path}: the daemon reads the file itself (no base64
 // round-trip). Confirmed in packages/metro/src/stations/xmtp/actions.ts:103-121.
 async function metroSendImage(line: string, path: string) {
-  await metroCall(line.split('/')[2], 'sendImage', { line, path })
+  await metroCall(trainOf(line), 'sendImage', { line, path })
 }
 // Non-images -> sendAttachment {line, name, mime, dataB64}: read + base64 here.
 // Confirmed in packages/metro/src/stations/xmtp/actions.ts:92-101.
 async function metroSendAttachment(line: string, path: string, mime?: string, name?: string) {
-  const dataB64 = (await readFile(path)).toString('base64')
-  await metroCall(line.split('/')[2], 'sendAttachment', {
+  const buf = await readFile(path)
+  if (buf.byteLength > XMTP_ATTACH_MAX_BYTES) {
+    throw new MetroCallError(
+      `attachment '${path}' is ${(buf.byteLength / 1024).toFixed(0)} KiB; xmtp non-image files ` +
+      `over ~190 KiB (256 KiB once base64-encoded) cannot be sent via this MCP path. ` +
+      `Send it as an image, host it elsewhere, or use the metro CLI directly.`,
+    )
+  }
+  await metroCall(trainOf(line), 'sendAttachment', {
     line, name: name ?? path.split('/').pop() ?? 'attachment',
-    mime: mime ?? guessMime(path), dataB64,
+    mime: mime ?? guessMime(path), dataB64: buf.toString('base64'),
   })
 }
 
+// Canonical attachment descriptor as accepted by the `send` action for
+// telegram/discord (matches packages/metro/src/messaging.ts Attachment +
+// cli/messaging.ts toAttachments: {kind,url:<path>,name}). The daemon's
+// normalize layer turns these into the station-native multipart inputs.
+type CanonicalAttachment = { path?: string; url?: string; mime?: string; name?: string }
+const toCanonical = (a: CanonicalAttachment) => {
+  const src = a.path ?? a.url ?? ''
+  const mime = a.mime ?? (src ? guessMime(src) : '')
+  return {
+    kind: isImageMime(mime) || isImageExt(src) ? 'image' : 'file',
+    url: src,
+    name: a.name ?? src.split('/').pop() ?? undefined,
+    ...(a.mime ? { mime: a.mime } : {}),
+  }
+}
+
+// XMTP ignores canonical `attachments` on `send`, so dispatch one native action
+// per attachment: images -> sendImage (path), other files -> sendAttachment
+// (base64). Returns the list of kinds dispatched for the confirmation string.
+async function xmtpSendAttachments(line: string, atts: CanonicalAttachment[]): Promise<string[]> {
+  const sent: string[] = []
+  for (const a of atts) {
+    const src = a.path ?? a.url ?? ''
+    if (!src) continue
+    const mime = a.mime ?? guessMime(src)
+    if (isImageMime(mime) || isImageExt(src)) { await metroSendImage(line, src); sent.push('image') }
+    else { await metroSendAttachment(line, src, a.mime, a.name); sent.push('file') }
+  }
+  return sent
+}
+
+// Shared JSON-schema fragment: every verb takes the metro line.
+const lineProp = { type: 'string', description: 'The metro:// line (from the inbound <channel> tag). The station is derived from it.' } as const
+const msgIdProp = { type: 'string', description: 'The target message_id.' } as const
+
+const attachmentItem = {
+  type: 'object',
+  description: 'A file to attach. Provide `path` (preferred, absolute local path) or `url`.',
+  properties: {
+    path: { type: 'string', description: 'Absolute local path to the file (the daemon reads it).' },
+    url: { type: 'string', description: 'http(s) URL (alternative to path).' },
+    mime: { type: 'string', description: 'MIME type (guessed from extension if omitted).' },
+    name: { type: 'string', description: 'Filename to present (defaults to basename).' },
+  },
+} as const
+
 mcp.setRequestHandler(ListToolsRequestSchema, async () => ({
-  tools: [{
-    name: 'reply',
-    description: 'Send a message (and/or media) back to a Metro conversation. Pass the `line` from the inbound <channel> tag.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        line: { type: 'string', description: 'The metro:// line to reply on (from the inbound tag)' },
-        text: { type: 'string', description: 'The message to send (optional if sending only media)' },
-        reply_to: { type: 'string', description: 'Optional message_id to reply to' },
-        image_path: {
-          type: 'string',
-          description: 'Optional absolute local path to an image to send as media on this line.',
-        },
-        attachment: {
-          type: 'object',
-          description: 'Optional non-image file to send as media.',
-          properties: {
-            path: { type: 'string', description: 'Absolute local path to the file' },
-            mime: { type: 'string', description: 'MIME type (guessed from extension if omitted)' },
-            name: { type: 'string', description: 'Filename to present (defaults to basename of path)' },
-          },
-          required: ['path'],
-        },
+  tools: [
+    {
+      name: 'reply',
+      description:
+        'Reply to a specific message in a Metro conversation (text quotes the target). ' +
+        'Args: line, message_id, text. The station is derived from the line. ' +
+        'Not supported on webhook lines (no outbound). On discord/telegram the reply quotes ' +
+        'the target message; attachments are not supported on reply (use `send` for media).',
+      inputSchema: {
+        type: 'object',
+        properties: { line: lineProp, message_id: msgIdProp, text: { type: 'string', description: 'The reply text.' } },
+        required: ['line', 'message_id', 'text'],
       },
-      required: ['line'],
     },
-  }],
+    {
+      name: 'send',
+      description:
+        'Send a message (and/or media) to a Metro conversation. Args: line, text?, reply_to?, ' +
+        'attachments?. The station is derived from the line. Not supported on webhook lines ' +
+        '(no outbound). For telegram/discord, attachments are passed as local paths the daemon ' +
+        'reads. For xmtp, each attachment is dispatched natively: images via sendImage, other ' +
+        'files via sendAttachment (base64; xmtp non-image files over ~190 KiB are rejected with ' +
+        'a clear error). At least one of text/attachments is required.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          line: lineProp,
+          text: { type: 'string', description: 'The message text (optional if sending only media).' },
+          reply_to: { type: 'string', description: 'Optional message_id to quote/reply to.' },
+          attachments: { type: 'array', description: 'Optional files to attach.', items: attachmentItem },
+        },
+        required: ['line'],
+      },
+    },
+    {
+      name: 'react',
+      description:
+        'Add an emoji reaction to a message. Args: line, message_id, emoji. Station derived from ' +
+        'the line. Not supported on webhook lines.',
+      inputSchema: {
+        type: 'object',
+        properties: { line: lineProp, message_id: msgIdProp, emoji: { type: 'string', description: 'The emoji to react with.' } },
+        required: ['line', 'message_id', 'emoji'],
+      },
+    },
+    {
+      name: 'unreact',
+      description:
+        'Remove an emoji reaction from a message. Args: line, message_id, emoji. Station derived ' +
+        'from the line. Not supported on webhook lines.',
+      inputSchema: {
+        type: 'object',
+        properties: { line: lineProp, message_id: msgIdProp, emoji: { type: 'string', description: 'The emoji reaction to remove.' } },
+        required: ['line', 'message_id', 'emoji'],
+      },
+    },
+    {
+      name: 'edit',
+      description:
+        'Edit the text of a message you sent. Args: line, message_id, text. Station derived from ' +
+        'the line. Not supported on webhook lines. Not supported on xmtp (the daemon returns ' +
+        "\"unsupported verb 'edit' on xmtp\"); discord/telegram support it.",
+      inputSchema: {
+        type: 'object',
+        properties: { line: lineProp, message_id: msgIdProp, text: { type: 'string', description: 'The new message text.' } },
+        required: ['line', 'message_id', 'text'],
+      },
+    },
+    {
+      name: 'delete',
+      description:
+        'Delete a message you sent. Args: line, message_id. Station derived from the line. Not ' +
+        'supported on webhook lines. Not supported on xmtp (the daemon returns "unsupported ' +
+        'verb \'delete\' on xmtp"); discord/telegram support it.',
+      inputSchema: {
+        type: 'object',
+        properties: { line: lineProp, message_id: msgIdProp },
+        required: ['line', 'message_id'],
+      },
+    },
+    {
+      name: 'read',
+      description:
+        'Read recent message history for a conversation. Args: line, limit?, before?, since?. ' +
+        'Station derived from the line. Returns the raw history JSON (shapes differ per station). ' +
+        'xmtp maps to a query, discord to a fetch. Not supported on telegram (the daemon returns ' +
+        'an unsupported-verb error). Not supported on webhook lines.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          line: lineProp,
+          limit: { type: 'number', description: 'Max messages to return.' },
+          before: { type: 'string', description: 'Return messages before this message_id.' },
+          since: { type: 'string', description: 'Return messages since this timestamp.' },
+        },
+        required: ['line'],
+      },
+    },
+  ],
 }))
 
+// Tool-result helpers: short text confirmation, JSON payload, and an isError
+// result carrying the daemon's reason (so the model sees WHY, not an opaque throw).
+const ok = (text: string) => ({ content: [{ type: 'text', text }] })
+const okJson = (v: unknown) => ({ content: [{ type: 'text', text: JSON.stringify(v, null, 2) }] })
+const errResult = (text: string) => ({ content: [{ type: 'text', text }], isError: true })
+
+// webhook lines accept no outbound verbs; reject early with a clear message.
+const WEBHOOK_REJECT = 'webhook lines do not support outbound messaging (send/reply/react/unreact/edit/delete/read).'
+
 mcp.setRequestHandler(CallToolRequestSchema, async req => {
-  if (req.params.name === 'reply') {
-    const { line, text, reply_to, image_path, attachment } = req.params.arguments as {
-      line: string; text?: string; reply_to?: string
-      image_path?: string
-      attachment?: { path: string; mime?: string; name?: string }
+  const name = req.params.name
+  const a = (req.params.arguments ?? {}) as Record<string, unknown>
+  const line = String(a.line ?? '')
+  if (!line) return errResult(`${name} requires \`line\``)
+  const train = trainOf(line)
+  if (train === 'webhook') return errResult(WEBHOOK_REJECT)
+
+  try {
+    switch (name) {
+      case 'send': {
+        const text = a.text as string | undefined
+        const replyTo = a.reply_to as string | undefined
+        const atts = (a.attachments as CanonicalAttachment[] | undefined)?.filter(x => x && (x.path || x.url)) ?? []
+        const sent: string[] = []
+        if (train === 'xmtp') {
+          // xmtp `send` ignores canonical attachments -> dispatch natively.
+          if (text) { await metroSend(line, text, replyTo); sent.push('text') }
+          sent.push(...await xmtpSendAttachments(line, atts))
+        } else {
+          // telegram/discord: canonical attachments ride the `send` action; the
+          // daemon normalize layer turns them into native multipart inputs.
+          if (!text && !atts.length) return errResult('send requires `text` or `attachments`')
+          const args: Record<string, unknown> = { line }
+          if (text) args.text = text
+          if (replyTo) args.replyTo = replyTo
+          if (atts.length) args.attachments = atts.map(toCanonical)
+          await metroCall(train, 'send', args)
+          if (text) sent.push('text')
+          if (atts.length) sent.push(`${atts.length} attachment(s)`)
+        }
+        if (!sent.length) return errResult('send requires `text` or `attachments`')
+        return ok(`sent: ${sent.join(', ')}`)
+      }
+      case 'reply': {
+        const messageId = String(a.message_id ?? '')
+        const text = String(a.text ?? '')
+        if (!messageId || !text) return errResult('reply requires `message_id` and `text`')
+        await metroCall(train, 'reply', { line, replyTo: messageId, text })
+        return ok('replied')
+      }
+      case 'react': {
+        const messageId = String(a.message_id ?? '')
+        const emoji = String(a.emoji ?? '')
+        if (!messageId || !emoji) return errResult('react requires `message_id` and `emoji`')
+        await metroCall(train, 'react', { line, messageId, emoji })
+        return ok('reacted')
+      }
+      case 'unreact': {
+        const messageId = String(a.message_id ?? '')
+        const emoji = String(a.emoji ?? '')
+        if (!messageId || !emoji) return errResult('unreact requires `message_id` and `emoji`')
+        await metroCall(train, 'unreact', { line, messageId, emoji })
+        return ok('reaction removed')
+      }
+      case 'edit': {
+        const messageId = String(a.message_id ?? '')
+        const text = String(a.text ?? '')
+        if (!messageId || !text) return errResult('edit requires `message_id` and `text`')
+        await metroCall(train, 'edit', { line, messageId, text })
+        return ok('edited')
+      }
+      case 'delete': {
+        const messageId = String(a.message_id ?? '')
+        if (!messageId) return errResult('delete requires `message_id`')
+        await metroCall(train, 'delete', { line, messageId })
+        return ok('deleted')
+      }
+      case 'read': {
+        const args: Record<string, unknown> = { line }
+        if (typeof a.limit === 'number') args.limit = a.limit
+        if (a.before) args.before = String(a.before)
+        if (a.since) args.since = String(a.since)
+        const result = await metroCall(train, 'read', args)
+        return okJson(result)
+      }
+      default:
+        return errResult(`unknown tool: ${name}`)
     }
-    if (!line) throw new Error('reply requires `line`')
-    const sent: string[] = []
-    // Send text first (if any), then media so the caption precedes the file.
-    if (text) { await metroSend(line, text, reply_to); sent.push('text') }
-    if (image_path) { await metroSendImage(line, image_path); sent.push('image') }
-    if (attachment?.path) {
-      // An image passed via `attachment` still routes through sendImage when its
-      // mime is image/* (daemon reads the path); everything else -> sendAttachment.
-      const mime = attachment.mime ?? guessMime(attachment.path)
-      if (isImageMime(mime)) await metroSendImage(line, attachment.path)
-      else await metroSendAttachment(line, attachment.path, mime, attachment.name)
-      sent.push('attachment')
-    }
-    if (!sent.length) throw new Error('reply requires `text`, `image_path`, or `attachment`')
-    return { content: [{ type: 'text', text: `sent: ${sent.join(', ')}` }] }
+  } catch (e) {
+    // Surface the daemon's reason (e.g. "unsupported verb 'edit' on xmtp",
+    // telegram read unsupported, or the xmtp attachment size cap) as the tool
+    // result with isError semantics so the model can read and explain it.
+    if (e instanceof MetroCallError) return errResult(e.detail)
+    return errResult(`metro ${name} failed: ${String(e)}`)
   }
-  throw new Error(`unknown tool: ${req.params.name}`)
 })
 
 // --- Permission relay -------------------------------------------------------
