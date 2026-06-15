@@ -37,10 +37,15 @@ export function useEnablePasskey(epoch?: number): {
       // No passkey yet -> offer enable. HAS a passkey but the Kernel is NOT deployed
       // on-chain -> the old broken counterfactual shortcut left it un-installed
       // (passkey userOps revert with the meta-factory `Unauthorized`); offer the
-      // REPAIR (re-run enable -> deploy-and-swap). HAS a passkey + deployed -> done.
+      // REPAIR (re-run enable -> deploy-and-swap). HAS a passkey + CONFIRMED deployed
+      // -> done. On an RPC error we CANNOT confirm deployment, so default to
+      // not-confirmed (false) and OFFER the repair: re-running enable on an
+      // already-correct account is idempotent (enablePasskeyForRecord re-checks
+      // on-chain and returns `already`), whereas hiding it would strand a broken,
+      // undeployed passkey account with no way to deploy + swap.
       let ok = !acct.passkey;
       if (acct.passkey) {
-        const deployed = await kernelDeployedOnChain(acct.address).catch(() => true);
+        const deployed = await kernelDeployedOnChain(acct.address).catch(() => false);
         ok = !deployed;
       }
       if (alive) setAvailable(ok);
