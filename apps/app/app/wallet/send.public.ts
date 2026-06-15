@@ -1,17 +1,24 @@
 /** Public-send state + lifecycle hook for the Wallet → Send screen.
  *
  *  Owns recipient resolution (address/ENS), the selected token's balance +
- *  live price bootstrap, the token⇄USD amount conversion, and the wagmi/Reown
- *  submit → broadcast → confirm lifecycle. The selected token (symbol + chain)
- *  is driven by the shared TokenSelector modal; native ETH sends as value, any
- *  ERC-20 routes through sendNativeOrToken with its on-chain address/decimals. */
+ *  live price bootstrap, the token⇄USD amount conversion, and the submit →
+ *  broadcast → confirm lifecycle. The selected token (symbol + chain) is driven
+ *  by the shared TokenSelector modal; native ETH sends as value, any ERC-20
+ *  routes through sendNativeOrToken with its on-chain address/decimals.
+ *
+ *  A `smart` (ZeroDev Kernel) account executes the transfer as a SPONSORED
+ *  userOp through its Kernel client (gasless, Base); a legacy local-EOA record
+ *  broadcasts through sendNativeOrToken. There is no external-wallet connect. */
 import { useEffect, useMemo, useState } from 'react';
-import { isAddress, type Hex } from 'viem';
-import { getAccount, waitForTransactionReceipt } from 'wagmi/actions';
-import { useAppKit } from '@reown/appkit-wagmi-react-native';
+import {
+  isAddress, erc20Abi, encodeFunctionData, parseUnits, createPublicClient, type Hex,
+} from 'viem';
+import { base } from 'viem/chains';
 import { resolveEnsName } from '../../lib/ens';
 import { sendNativeOrToken } from '../../lib/tx';
-import { wagmiConfig } from '../../lib/walletconnect';
+import { getActiveAccount } from '../../lib/accounts';
+import { kernelClientForRecord } from '../../lib/zerodev';
+import { broviderTransport } from '@stage-labs/client/wallet/client';
 import { ASSETS } from '../../components/tabs/WalletScreen.assets';
 import type { TokenChoice } from './TokenSelector';
 import { fetchBalanceAndPrice, looksLikeEns } from './send.helpers';
@@ -32,7 +39,6 @@ export interface PublicSend {
 /** @param token  the currently selected token (symbol + chainId).
  *  @param balance  that token's balance string from the wallet rows, or null. */
 export function usePublicSend(initialTo: string, token: TokenChoice, balance: string | null): PublicSend {
-  const { open } = useAppKit();
   const [to, setTo] = useState<string>(initialTo);
   const [amount, setAmount] = useState('');
   const [mode, setMode] = useState<'eth' | 'usd'>('eth');
@@ -129,19 +135,39 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
     void (async (): Promise<void> => {
       setTxErr(null); setTxHash(null); setTxState('submitting');
       try {
-        if (!getAccount(wagmiConfig).address) {
-          await open();
-          if (!getAccount(wagmiConfig).address) {
-            setTxState('idle'); setTxErr('Connect a wallet to send'); return;
-          }
-        }
         const tokStr = mode === 'eth' ? amount.trim() : String(tokenAmount);
-        const hash = await sendNativeOrToken({
-          to: resolved, amount: tokStr, chainId: token.chainId,
-          token: asset.address ? { address: asset.address, decimals: asset.decimals } : undefined,
-        });
+        const active = await getActiveAccount();
+        if (!active) { setTxState('idle'); setTxErr('No active wallet'); return; }
+
+        let hash: Hex;
+        let receiptChainId = token.chainId;
+        if (active.type === 'smart') {
+          /** Smart account: execute as a SPONSORED userOp on Base through the
+           *  Kernel client (the paymaster covers gas; the userOp deploys the
+           *  Kernel on first send). Settles on Base regardless of the selected
+           *  token's nominal chain, matching the chat-pay smart path. */
+          const kernel = await kernelClientForRecord(active);
+          receiptChainId = base.id;
+          const value = parseUnits(tokStr, asset.address ? asset.decimals : 18);
+          hash = asset.address
+            ? await kernel.sendTransaction({
+                to: asset.address as Hex,
+                data: encodeFunctionData({
+                  abi: erc20Abi, functionName: 'transfer', args: [resolved as Hex, value],
+                }),
+              } as Parameters<typeof kernel.sendTransaction>[0])
+            : await kernel.sendTransaction({
+                to: resolved as Hex, value,
+              } as Parameters<typeof kernel.sendTransaction>[0]);
+        } else {
+          hash = await sendNativeOrToken({
+            to: resolved, amount: tokStr, chainId: token.chainId,
+            token: asset.address ? { address: asset.address, decimals: asset.decimals } : undefined,
+          });
+        }
         setTxHash(hash); setTxState('pending');
-        await waitForTransactionReceipt(wagmiConfig, { hash, chainId: token.chainId });
+        const pub = createPublicClient({ transport: broviderTransport(receiptChainId) });
+        await pub.waitForTransactionReceipt({ hash });
         setTxState('confirmed');
       } catch (e) {
         setTxState('idle'); setTxErr((e as Error).message ?? 'Transaction failed');

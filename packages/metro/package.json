@@ -6,10 +6,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bonustrack/metro.git"
+    "url": "git+https://github.com/bonustrack/stage.git"
   },
-  "homepage": "https://github.com/bonustrack/metro#readme",
-  "bugs": "https://github.com/bonustrack/metro/issues",
+  "homepage": "https://github.com/bonustrack/stage#readme",
+  "bugs": "https://github.com/bonustrack/stage/issues",
   "type": "module",
   "engines": {
     "node": ">=22"

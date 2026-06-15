@@ -1,22 +1,18 @@
 /** Reusable on-chain send helper.
  *
- *  Wraps wagmi's `sendTransaction` (native ETH) and `writeContract` (ERC-20
- *  `transfer`) behind a single `sendNativeOrToken()` that takes human-readable
+ *  Builds an ERC-20 `transfer` / native send and broadcasts it through a viem
+ *  wallet client keyed to the active account's in-app key. Takes human-readable
  *  inputs (decimal `amount` string, optional `token`) and returns the broadcast
- *  tx hash. The connected wallet comes from the Reown AppKit / wagmi session in
- *  lib/walletconnect.ts; this helper makes no UI calls so it can be reused by
- *  the wallet Send screen and (phase 4) chat-pay.
+ *  tx hash. Used by the wallet Send screen and chat-pay.
  *
- *  The signing wallet must already be connected via `useAppKit().open()` —
- *  `sendNativeOrToken` throws a friendly error if no account is connected, and
- *  transparently switches the wallet to `chainId` when it's on the wrong chain. */
+ *  This path is for the legacy local-EOA records only (smart accounts execute
+ *  through the ZeroDev Kernel client, not here). It throws a friendly error when
+ *  the active account has no in-app key. */
 
-import { getAccount, sendTransaction, writeContract, switchChain } from 'wagmi/actions';
 import {
   isAddress, erc20Abi, encodeFunctionData,
   createWalletClient, type Hex,
 } from 'viem';
-import { wagmiConfig } from './walletconnect';
 import { getActiveViemAccount } from './accounts';
 import { VIEM_CHAINS } from '../components/tabs/WalletScreen.assets';
 import { broviderTransport } from '@stage-labs/client/wallet/client';
@@ -59,52 +55,25 @@ export async function sendNativeOrToken(params: SendParams): Promise<Hex> {
    *  so the guard and the signed value can never disagree (BUG3). */
   const value = parseAmount(amount, token ? token.decimals ?? 18 : 18);
 
-  /** Prefer the app's OWN in-app wallet: when the active account is a local EOA
-   *  (generated/imported/migrated) we sign + broadcast through a viem wallet
-   *  client keyed to that account, no WalletConnect session required. This is
-   *  the common case — the app always ships a built-in wallet. We only fall back
-   *  to the wagmi/Reown path when the active account is a WalletConnect address
-   *  (no local key). */
+  /** Sign + broadcast through a viem wallet client keyed to the active account's
+   *  in-app key. */
   const local = await getActiveViemAccount();
-  if (local) {
-    const chain = VIEM_CHAINS[chainId];
-    if (!chain) throw new Error(`Unsupported chain ${chainId}`);
-    /** Build the signing client with the same per-chain RPC the rest of the app
-     *  uses (brovider), and pin the tx to `chain` so it targets the right
-     *  network — matching the WalletConnect branch's chain handling (BUG4). */
-    const client = createWalletClient({ account: local, chain, transport: rpcTransport(chainId) });
-    if (token) {
-      return client.sendTransaction({
-        chain,
-        to: token.address,
-        data: encodeFunctionData({
-          abi: erc20Abi, functionName: 'transfer', args: [to as Hex, value],
-        }),
-      });
-    }
-    return client.sendTransaction({ chain, to: to as Hex, value });
-  }
-
-  const account = getAccount(wagmiConfig);
-  if (!account.address) throw new Error('No wallet connected');
-
-  /** Make sure the wallet is on the chain we're spending on. `switchChain`
-   *  is a no-op (resolves immediately) when already on `chainId`. */
-  if (account.chainId !== chainId) {
-    await switchChain(wagmiConfig, { chainId });
-  }
-
+  if (!local) throw new Error('No in-app wallet to send from');
+  const chain = VIEM_CHAINS[chainId];
+  if (!chain) throw new Error(`Unsupported chain ${chainId}`);
+  /** Build the signing client with the same per-chain RPC the rest of the app
+   *  uses (brovider), and pin the tx to `chain` so it targets the right network. */
+  const client = createWalletClient({ account: local, chain, transport: rpcTransport(chainId) });
   if (token) {
-    return writeContract(wagmiConfig, {
-      chainId,
-      address: token.address,
-      abi: erc20Abi,
-      functionName: 'transfer',
-      args: [to as Hex, value],
+    return client.sendTransaction({
+      chain,
+      to: token.address,
+      data: encodeFunctionData({
+        abi: erc20Abi, functionName: 'transfer', args: [to as Hex, value],
+      }),
     });
   }
-
-  return sendTransaction(wagmiConfig, { chainId, to: to as Hex, value });
+  return client.sendTransaction({ chain, to: to as Hex, value });
 }
 
 /** Broadcast a raw EIP-5792 call verbatim — `{to, data, value}` as carried by a
@@ -112,8 +81,7 @@ export async function sendNativeOrToken(params: SendParams): Promise<Hex> {
  *  build its own calldata: it forwards the request's `data` untouched, so an
  *  ERC-20 transfer request (to = token contract, data = `transfer(...)`,
  *  value = 0x0) actually moves the token instead of a native send. Signs from
- *  the active in-app account when local; falls back to the WalletConnect
- *  session otherwise. Returns the broadcast tx hash. */
+ *  the active in-app account's local key. Returns the broadcast tx hash. */
 export interface RawCall {
   to: string;
   data?: string;
@@ -128,19 +96,11 @@ export async function sendCall(call: RawCall): Promise<Hex> {
   const value = BigInt(call.value ?? '0x0');
 
   const local = await getActiveViemAccount();
-  if (local) {
-    const chain = VIEM_CHAINS[chainId];
-    if (!chain) throw new Error(`Unsupported chain ${chainId}`);
-    const client = createWalletClient({ account: local, chain, transport: rpcTransport(chainId) });
-    return client.sendTransaction({
-      chain, to: to as Hex, value, ...(data ? { data: data as Hex } : {}),
-    });
-  }
-
-  const account = getAccount(wagmiConfig);
-  if (!account.address) throw new Error('No wallet connected');
-  if (account.chainId !== chainId) await switchChain(wagmiConfig, { chainId });
-  return sendTransaction(wagmiConfig, {
-    chainId, to: to as Hex, value, ...(data ? { data: data as Hex } : {}),
+  if (!local) throw new Error('No in-app wallet to send from');
+  const chain = VIEM_CHAINS[chainId];
+  if (!chain) throw new Error(`Unsupported chain ${chainId}`);
+  const client = createWalletClient({ account: local, chain, transport: rpcTransport(chainId) });
+  return client.sendTransaction({
+    chain, to: to as Hex, value, ...(data ? { data: data as Hex } : {}),
   });
 }

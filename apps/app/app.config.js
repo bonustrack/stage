@@ -131,7 +131,11 @@ const config = {
   ios: {
     supportsTablet: true,
     bundleIdentifier: variant.bundleId,
-    associatedDomains: [`applinks:${variant.host}`],
+    // `webcredentials:` enables WebAuthn passkeys (react-native-passkeys) bound
+    // to the hosted domain; requires the AASA at https://<host>/.well-known/
+    // apple-app-site-association to declare a `webcredentials` section (see the
+    // ZeroDev wallet PR). `applinks:` (deep links) stays alongside it.
+    associatedDomains: [`applinks:${variant.host}`, `webcredentials:${variant.host}`],
   },
   android: {
     package: variant.androidPackage,

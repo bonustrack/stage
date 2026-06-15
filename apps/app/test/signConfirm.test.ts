@@ -96,10 +96,11 @@ describe('signConfirmMessage - never trusts description', () => {
     expect(msg.startsWith('Sign in to claim')).toBe(false);
   });
 
-  test('low-risk confirm is neutral + still marks the sender note untrusted', () => {
+  test('low-risk confirm shows the concrete message + marks the sender note untrusted', () => {
     const s = deriveSignSummary({ id: 's', kind: 'personal', message: 'gm' });
     const msg = signConfirmMessage(s, 'totally safe trust me');
-    expect(msg).toMatch(/Sign a message/);
+    expect(msg).toMatch(/Sign this message/);
+    expect(msg).toMatch(/"gm"/); // the literal content being signed, not just a label
     expect(msg).toMatch(/untrusted/i);
   });
 });

@@ -7,6 +7,7 @@
 import { useEffect, useState } from 'react';
 
 import { Alert } from 'react-native';
+import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
@@ -26,6 +27,7 @@ export function AccountSecuritySection(
   { c, danger, dark }: { c: SectionColors; danger: string; dark: boolean },
 ): React.ReactElement | null {
   const epoch = useActiveAccount();
+  const router = useRouter();
   const [rec, setRec] = useState<AccountRecord | null>(null);
   const [revealed, setRevealed] = useState<string | null>(null);
 
@@ -108,6 +110,20 @@ export function AccountSecuritySection(
                   ) : null}
                 </Col>
                 <Icon name={revealed ? 'copy' : 'chevronDown'} size={20} color={c.head} />
+              </ListViewItem>
+            ) : null}
+
+            {rec.type === 'smart' ? (
+              <ListViewItem
+                dark={dark}
+                onPress={() => router.push('/wallet/recovery')}
+                style={{ paddingHorizontal: 14, paddingVertical: 14 }}
+              >
+                <Icon name="userGroup" size={22} color={c.head} />
+                <Text size="xl" color={c.fg} style={{ flex: 1 }}>
+                  {(rec.guardians ?? []).length ? 'Guardian recovery' : 'Set up guardian recovery'}
+                </Text>
+                <Icon name="chevronRight" size={20} color={c.head} />
               </ListViewItem>
             ) : null}
 

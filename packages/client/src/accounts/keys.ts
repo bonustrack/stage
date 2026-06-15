@@ -57,6 +57,9 @@ export function accountIdFromPk(pk: Hex): string {
   return privateKeyToAccount(pk).address.toLowerCase();
 }
 
+/** True only for the legacy local-EOA records ('generated'/'privateKey') that
+ *  hold a raw key in the keyring. A `smart` account signs through its Kernel and
+ *  has no exportable private key; 'walletconnect' is keyless too. */
 export function canExportPrivateKey(rec: AccountRecord): boolean {
-  return rec.type !== 'walletconnect';
+  return rec.type === 'generated' || rec.type === 'privateKey';
 }

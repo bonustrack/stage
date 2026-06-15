@@ -12,13 +12,13 @@ import { AccountRow } from './AccountsManager.parts';
 
 export function AccountList({
   flat, accounts, activeId, activeRec, otherAccounts, expanded, setExpanded,
-  head, sub, border, rowBg, onSwitch, setManageId, setAddOpen,
+  head, sub, border, rowBg, onSwitch, setManageId, onAdd,
 }: {
   flat: boolean; accounts: AccountRecord[]; activeId: string | null;
   activeRec: AccountRecord | null; otherAccounts: AccountRecord[];
   expanded: boolean; setExpanded: (fn: (e: boolean) => boolean) => void;
   head: string; sub: string; border: string; rowBg: string;
-  onSwitch: (id: string) => void; setManageId: (id: string) => void; setAddOpen: (b: boolean) => void;
+  onSwitch: (id: string) => void; setManageId: (id: string) => void; onAdd: () => void;
 }): React.ReactElement {
   const manageTrailing = (id: string): React.ReactElement => (
     <Pressable hitSlop={10} onPress={() => setManageId(id)}>
@@ -103,7 +103,7 @@ export function AccountList({
 />
             )) : null}
             <Pressable
-              onPress={() => setAddOpen(true)}
+              onPress={onAdd}
               style={({ pressed }) => ({
                 paddingHorizontal: 14, paddingVertical: 12,
                 flexDirection: 'row', alignItems: 'center', gap: 12,
