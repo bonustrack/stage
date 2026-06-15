@@ -258,44 +258,51 @@ export async function createPasskeyKernel(
   hdIndex: number,
   opts: { rpId: string; userName: string; userDisplayName?: string },
 ): Promise<PasskeyKernelResult | null> {
+  // NULL means "this binary cannot do passkeys at all" (old APK without the native
+  // module) -> the caller legitimately falls back to ECDSA. Once the native module
+  // IS present, a passkey was REQUESTED at create: any failure below must THROW (not
+  // return null), so createSmartAccount never silently downgrades a passkey account
+  // to an ECDSA-sudo one (the bug where "created with a passkey" still showed
+  // "Enable passkey" and signed with the key). Cancellation throws too -> surfaced
+  // to the onboarding UI rather than silently producing the wrong account.
   if (!passkeysAvailable()) return null;
-  try {
-    const passkey = require('react-native-passkeys');
-    const { parsePasskeyCred } = require('@zerodev/react-native-passkeys-utils');
+  const passkey = require('react-native-passkeys');
+  const { parsePasskeyCred } = require('@zerodev/react-native-passkeys-utils');
 
-    // Client-generated 32-byte random challenge (base64url) — see spec §z(b).
-    const challengeBytes = new Uint8Array(32);
-    crypto.getRandomValues(challengeBytes);
-    const challenge = bytesToBase64Url(challengeBytes);
+  // Client-generated 32-byte random challenge (base64url) — see spec §z(b).
+  const challengeBytes = new Uint8Array(32);
+  crypto.getRandomValues(challengeBytes);
+  const challenge = bytesToBase64Url(challengeBytes);
 
-    const cred = await passkey.create({
-      challenge,
-      pubKeyCredParams: [{ alg: -7, type: 'public-key' }], // ES256 / P-256
-      rp: { id: opts.rpId, name: 'Stage' },
-      user: {
-        id: bytesToBase64Url(new TextEncoder().encode(`${opts.userName}:${hdIndex}`)),
-        name: opts.userName,
-        displayName: opts.userDisplayName ?? opts.userName,
-      },
-      authenticatorSelection: { residentKey: 'required', userVerification: 'required' },
-    });
+  const cred = await passkey.create({
+    challenge,
+    pubKeyCredParams: [{ alg: -7, type: 'public-key' }], // ES256 / P-256
+    rp: { id: opts.rpId, name: 'Stage' },
+    user: {
+      id: bytesToBase64Url(new TextEncoder().encode(`${opts.userName}:${hdIndex}`)),
+      name: opts.userName,
+      displayName: opts.userDisplayName ?? opts.userName,
+    },
+    authenticatorSelection: { residentKey: 'required', userVerification: 'required' },
+  });
+  if (!cred) throw new Error('Passkey creation was cancelled');
 
-    // pubkey comes back in the create() response; parsed on-device (no verify roundtrip).
-    const parsed = parsePasskeyCred(cred, opts.rpId);
-    const stored: StoredPasskey = {
-      pubX: `0x${parsed.pubX.toString(16)}`,
-      pubY: `0x${parsed.pubY.toString(16)}`,
-      authenticatorId: parsed.authenticatorId,
-      authenticatorIdHash: parsed.authenticatorIdHash,
-      rpID: opts.rpId,
-    };
+  // pubkey comes back in the create() response; parsed on-device (no verify roundtrip).
+  const parsed = parsePasskeyCred(cred, opts.rpId);
+  const stored: StoredPasskey = {
+    pubX: `0x${parsed.pubX.toString(16)}`,
+    pubY: `0x${parsed.pubY.toString(16)}`,
+    authenticatorId: parsed.authenticatorId,
+    authenticatorIdHash: parsed.authenticatorIdHash,
+    rpID: opts.rpId,
+  };
 
-    const account = await buildPasskeyKernel(publicClient, owner, hdIndex, stored);
-    return { account, passkey: stored };
-  } catch {
-    // Native passkey flow not exercisable on this binary — caller uses ECDSA.
-    return null;
-  }
+  // Build the Kernel with the PASSKEY as sudo and NO addressOverride: the address
+  // derives from the passkey-sudo validator + index (the CREATE2 salt), so the
+  // deploy initCode and rec.address agree and the first sponsored userOp deploys at
+  // exactly that address (no meta-factory `Unauthorized`, no separate enable step).
+  const account = await buildPasskeyKernel(publicClient, owner, hdIndex, stored);
+  return { account, passkey: stored };
 }
 
 /** REVEAL-GATE passkey assertion. Runs an on-device WebAuthn `get()` over a fresh

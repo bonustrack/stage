@@ -58,6 +58,17 @@ export interface AccountRecord {
     /** Relying-party id the passkey is scoped to. */
     rpID: string;
   };
+  /** TRUE when `address` was derived from the PASSKEY validator as `sudo` (the
+   *  passkey was chosen at CREATE, so the passkey is part of this address's CREATE2
+   *  salt). The Kernel is then rebuilt WITHOUT an address override — the natural
+   *  passkey-sudo address equals `address`, the deploy initCode matches, and the
+   *  first sponsored userOp deploys correctly with NO separate enable step.
+   *
+   *  FALSE/undefined when the address was derived from the ECDSA owner as `sudo`
+   *  (ECDSA create, or a passkey ADDED later via enable). For those, kernelForRecord
+   *  must pin the rebuilt passkey-sudo Kernel to `address` so swapping sudo does not
+   *  change the wallet identity. */
+  passkeySudo?: boolean;
   /** The Kernel has been deployed on-chain (first sponsored userOp landed). The
    *  account is usable counterfactually before this is true. */
   deployed?: boolean;

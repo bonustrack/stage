@@ -40,12 +40,19 @@ export async function kernelClientForRecord(rec: AccountRecord): Promise<KernelA
   // passkeyKernelFromStored ignores its `owner` arg (it builds from stored pubkey
   // material), so we pass a throwaway placeholder rather than unlock the keyring.
   if (rec.passkey) {
+    // ADDRESS OVERRIDE only when the address was NOT derived from the passkey sudo:
+    //   - passkeySudo (passkey chosen at CREATE): the natural passkey-sudo address
+    //     IS rec.address, so DO NOT pin — let it derive, deploy initCode matches,
+    //     first userOp deploys correctly, no enable.
+    //   - else (ECDSA-derived address, passkey added via enable): pin to rec.address
+    //     so the rebuilt passkey-sudo Kernel keeps the wallet identity.
+    const addressOverride = rec.passkeySudo ? undefined : (rec.address as `0x${string}`);
     const passkeyAccount = await passkeyKernelFromStored(
       publicClient,
       undefined as unknown as Parameters<typeof passkeyKernelFromStored>[1],
       rec.hdIndex,
       rec.passkey,
-      rec.address as `0x${string}`,
+      addressOverride,
     );
     if (passkeyAccount) return makeKernelClient(passkeyAccount, publicClient);
     // The passkey validator could not be built. The ONLY legitimate reason is an

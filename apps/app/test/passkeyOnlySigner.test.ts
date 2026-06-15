@@ -68,10 +68,12 @@ describe('passkey-only signer (kernelForRecord chokepoint)', () => {
     expect(body).toMatch(/throw new Error\([^)]*refusing to sign with the ECDSA key/);
   });
 
-  test('passkey kernel is rebuilt address-pinned (counterfactual + deployed)', () => {
-    // rec.address is passed as the addressOverride so the rebuilt passkey-sudo
-    // Kernel resolves to the SAME identity whether counterfactual or deployed.
-    expect(body).toContain('rec.address as `0x${string}`');
+  test('passkey kernel pins the address only for enable-upgraded accounts', () => {
+    // passkeySudo (passkey chosen at CREATE) -> NO override: the natural passkey-sudo
+    // address equals rec.address, deploy initCode matches, first userOp deploys with
+    // no separate enable. Otherwise (ECDSA-derived address, passkey added via enable)
+    // -> pin to rec.address so the swap keeps the wallet identity.
+    expect(body).toContain('rec.passkeySudo ? undefined : (rec.address as `0x${string}`)');
   });
 });
 

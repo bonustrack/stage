@@ -40,6 +40,13 @@ export async function createSmartAccount(opts: CreateSmartAccountOpts = {}): Pro
   let account = null as Awaited<ReturnType<typeof createEcdsaKernel>> | null;
   let passkey: AccountRecord['passkey'];
   if (passkeysAvailable() && opts.rpId) {
+    // PASSKEY REQUESTED + the native module is present: the account MUST be
+    // passkey-sudo or creation MUST fail. createPasskeyKernel returns null ONLY
+    // when the binary can't do passkeys (handled above by passkeysAvailable), and
+    // otherwise THROWS on any failure/cancel — so we do NOT swallow it into a
+    // silent ECDSA account. A passkey-sudo Kernel's address derives from the
+    // passkey validator (no override), so rec.address == the deploy address and the
+    // first sponsored userOp deploys correctly — NO separate enable step.
     const built = await createPasskeyKernel(publicClient, owner, hdIndex, {
       rpId: opts.rpId,
       userName: opts.userName ?? `stage-${hdIndex}`,
@@ -51,7 +58,9 @@ export async function createSmartAccount(opts: CreateSmartAccountOpts = {}): Pro
       passkey = built.passkey;
     }
   }
-  // Fallback (and the only path until the passkey APK ships): ECDSA owner sudo.
+  // ECDSA owner sudo: ONLY when no passkey was requested, or the binary lacks the
+  // passkey native module. Never a silent fallback after a requested passkey failed
+  // (that throws above).
   if (!account) account = await createEcdsaKernel(publicClient, owner, hdIndex);
 
   const address = account.address;
@@ -70,6 +79,10 @@ export async function createSmartAccount(opts: CreateSmartAccountOpts = {}): Pro
     // kernelClientForRecord rebuilds with the passkey validator (not the ECDSA key).
     passkey,
     passkeyCredId: passkey?.authenticatorId,
+    // The address was derived from the passkey validator as sudo (no override), so
+    // kernelForRecord rebuilds WITHOUT pinning and the first userOp deploys at this
+    // exact address. Only set when the passkey path actually produced the account.
+    passkeySudo: passkey ? true : undefined,
     scwXmtp: true, // SCW IS the XMTP identity by default (Less): Kernel address
     //              registers via ERC-1271 / 6492-while-counterfactual, chainId 8453.
 
