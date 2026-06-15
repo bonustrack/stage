@@ -28,6 +28,17 @@ export function makePublicClient(): PublicClient {
   return createPublicClient({ chain: base as Chain, transport: http(rpc) });
 }
 
+/** Whether a Kernel address has on-chain bytecode (i.e. the account is deployed,
+ *  not just counterfactual). A read-only `getCode` over the ZeroDev public client.
+ *  Used to tell a genuinely-installed passkey (deployed) from the old broken
+ *  counterfactual shortcut (passkey persisted but never installed on-chain), which
+ *  must be repaired by a deploy-and-swap. Throws if ZeroDev is not configured. */
+export async function kernelDeployedOnChain(address: string): Promise<boolean> {
+  const publicClient = makePublicClient();
+  const code = await publicClient.getCode({ address: address as `0x${string}` });
+  return !!code && code !== '0x';
+}
+
 /** A Kernel account client that sponsors every userOp through the ZeroDev
  *  paymaster and prices gas via the bundler. `account` comes from ./account
  *  (createKernelAccount). The returned client deploys the Kernel lazily on the

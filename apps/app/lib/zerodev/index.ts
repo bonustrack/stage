@@ -16,7 +16,7 @@ export { createSmartAccount, type CreateSmartAccountOpts } from './create';
 export { kernelClientForRecord } from './kernelForRecord';
 export { enablePasskeyForRecord, type EnablePasskeyResult } from './enablePasskey';
 export { scwSigner } from './scwSigner';
-export { makePublicClient, makeKernelClient } from './client';
+export { makePublicClient, makeKernelClient, kernelDeployedOnChain } from './client';
 export { createEcdsaKernel, createPasskeyKernel } from './account';
 export {
   installGuardians, updateGuardians, signRecoveryApproval, executeRecovery,

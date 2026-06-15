@@ -9,17 +9,25 @@
  *  (the ECDSA owner becomes the `regular` backup). After this, tx/message/userOp
  *  signing all route through the on-device WebAuthn prompt.
  *
- *  COUNTERFACTUAL vs DEPLOYED (the two cases, handled differently):
- *    - DEPLOYED Kernel: the sudo validator lives on-chain, so we must swap it
- *      on-chain. We build the CURRENT (ECDSA-sudo) Kernel client and call the SDK's
- *      `changeSudoValidator` with the new passkey validator -> ONE sponsored userOp
- *      (paymaster pays gas; the current ECDSA owner authorizes the swap). Only after
- *      the userOp lands do we persist rec.passkey.
- *    - COUNTERFACTUAL Kernel (never deployed): there is nothing on-chain to change.
- *      The account address was derived from the ECDSA sudo, so we DO NOT change the
- *      address; we persist rec.passkey and kernelForRecord rebuilds the Kernel
- *      address-pinned (passkey sudo, ECDSA regular). The passkey config is baked
- *      into the deploy initcode on the first userOp, which deploys the Kernel.
+ *  ONE on-chain path for BOTH counterfactual + deployed (Less's root-cause fix):
+ *    We ALWAYS swap the sudo validator on-chain via the SDK's `changeSudoValidator`
+ *    on the CURRENT (ECDSA-sudo) Kernel client -> ONE sponsored userOp (paymaster
+ *    pays gas; the current ECDSA owner authorizes the swap). For a COUNTERFACTUAL
+ *    account this SAME userOp first deploys the Kernel (with the ECDSA initCode, so
+ *    the factory deploys to the ECDSA-derived address that the record already uses)
+ *    AND changes the root validator to the passkey, in one bundle. Only after the
+ *    userOp lands do we persist rec.passkey.
+ *
+ *    WHY NOT the old "counterfactual = persist + address-pin" shortcut: pinning a
+ *    passkey-sudo Kernel to the ECDSA-derived address is UNSATISFIABLE. The sudo
+ *    validator is part of the Kernel's CREATE2 salt, so a passkey-sudo initCode
+ *    deploys to a DIFFERENT address than the ECDSA-derived `rec.address`. The first
+ *    userOp's deploy half then reverts in the meta-factory with `Unauthorized`
+ *    (salt/sender mismatch) -> the on-device "Unauthorized" toast, even though the
+ *    passkey signs fine. signMessage masked it: ERC-6492 validates that initCode
+ *    OFF-CHAIN (eth_call) and never asks the factory to deploy at a pinned address.
+ *    Deploying with the ECDSA initCode (address matches) then swapping sudo avoids
+ *    the mismatch entirely.
  *
  *  ON-DEVICE: the WebAuthn create() prompt (registration) and, for the deployed
  *  case, the userOp signing happen on-device only — this cannot be exercised in CI.
@@ -44,53 +52,67 @@ export type EnablePasskeyResult =
   | { ok: false; reason: 'unavailable' | 'already' | 'cancelled' | 'error'; message?: string };
 
 /** Register a NEW device passkey for `rec` and make it the Kernel's sudo validator.
- *  Persists rec.passkey only after the on-chain swap (deployed) succeeds, or
- *  immediately (counterfactual). Idempotent guards: already-passkey / not-smart /
- *  no native module / not configured all return a typed non-throwing result. */
+ *  Persists rec.passkey only after the on-chain swap userOp succeeds (deploy +
+ *  swap for a counterfactual account, swap-only for a deployed one). Idempotent
+ *  guards: passkey-already-installed-on-chain / not-smart / no native module /
+ *  not configured all return a typed non-throwing result. A record that carries a
+ *  passkey but is NOT deployed (the old broken counterfactual shortcut) is repaired
+ *  by reusing the stored credential and running the deploy-and-swap. */
 export async function enablePasskeyForRecord(rec: AccountRecord): Promise<EnablePasskeyResult> {
   if (rec.type !== 'smart' || rec.hdIndex == null) {
     return { ok: false, reason: 'error', message: 'Not a smart account.' };
   }
-  if (rec.passkey) return { ok: false, reason: 'already' };
   if (!passkeysAvailable()) return { ok: false, reason: 'unavailable' };
   if (!zerodevConfigured()) {
     return { ok: false, reason: 'error', message: 'Smart wallet is not configured.' };
   }
 
-  // 1) Register a NEW passkey credential on-device (the WebAuthn create() prompt).
-  let stored: StoredPasskey | null;
-  try {
-    stored = await registerPasskeyCredential(rec.hdIndex, {
-      rpId: zerodevRpId(),
-      userName: rec.label?.trim() || `stage-${rec.hdIndex}`,
-    });
-  } catch (e) {
-    return { ok: false, reason: 'error', message: e instanceof Error ? e.message : 'Passkey registration failed' };
-  }
-  // null => the user cancelled the OS sheet or the native flow is not exercisable.
-  if (!stored) return { ok: false, reason: 'cancelled' };
-
   const publicClient = makePublicClient();
 
-  // 2) Is the Kernel deployed on-chain? Decides swap-on-chain vs persist-only.
+  // Was the Kernel already deployed on-chain? Reported on success for the UI; also
+  // decides the `already` vs `repair` case for a record that ALREADY has a passkey.
   let deployed = false;
   try {
     const code = await publicClient.getCode({ address: rec.address as `0x${string}` });
     deployed = !!code && code !== '0x';
   } catch {
-    deployed = false; // treat unknown as counterfactual (no on-chain swap attempted).
+    deployed = false;
   }
 
-  if (!deployed) {
-    // COUNTERFACTUAL: nothing on-chain to change. Persist the passkey; the
-    // address-pinned rebuild (kernelForRecord) applies it as sudo and the first
-    // userOp deploys the Kernel with the passkey baked in.
-    await updateSmartAccount(rec.id, { passkey: stored, passkeyCredId: stored.authenticatorId });
-    return { ok: true, deployed: false };
+  // REPAIR vs ALREADY for a record that already carries a passkey:
+  //   - DEPLOYED  -> the on-chain sudo is really the passkey; genuinely done.
+  //   - NOT deployed -> the OLD counterfactual shortcut persisted rec.passkey but
+  //     never installed it on-chain (and address-pinning it is unsatisfiable). Run
+  //     the deploy-and-swap below REUSING the stored credential (no re-register),
+  //     so the Kernel deploys (ECDSA initCode) and the sudo becomes the passkey.
+  if (rec.passkey && deployed) return { ok: false, reason: 'already' };
+
+  // 1) Get the passkey credential to install: reuse the stored one on the repair
+  //    path, else register a NEW credential on-device (the WebAuthn create() prompt).
+  let stored: StoredPasskey | null;
+  if (rec.passkey) {
+    stored = rec.passkey;
+  } else {
+    try {
+      stored = await registerPasskeyCredential(rec.hdIndex, {
+        rpId: zerodevRpId(),
+        userName: rec.label?.trim() || `stage-${rec.hdIndex}`,
+      });
+    } catch (e) {
+      return { ok: false, reason: 'error', message: e instanceof Error ? e.message : 'Passkey registration failed' };
+    }
+    // null => the user cancelled the OS sheet or the native flow is not exercisable.
+    if (!stored) return { ok: false, reason: 'cancelled' };
   }
 
-  // 3) DEPLOYED: swap the on-chain sudo validator from the ECDSA owner to the
-  //    passkey via one sponsored userOp, authorized by the CURRENT (ECDSA) owner.
+  // 2) Swap the sudo validator from the ECDSA owner to the passkey via one
+  //    sponsored userOp, authorized by the CURRENT (ECDSA) owner. For a
+  //    counterfactual account this same userOp deploys the Kernel first (ECDSA
+  //    initCode -> the address the record already uses) AND changes the root
+  //    validator to the passkey, so the on-chain sudo really becomes the passkey
+  //    and later passkey userOps validate. (Old counterfactual shortcut removed:
+  //    it pinned a passkey-sudo Kernel to the ECDSA address, which is unsatisfiable
+  //    -> the meta-factory `Unauthorized` revert on the first userOp.)
   try {
     const owner = await smartOwnerSigner(rec.hdIndex);
     const ecdsaAccount = await createEcdsaKernel(publicClient, owner, rec.hdIndex);
@@ -131,7 +153,9 @@ export async function enablePasskeyForRecord(rec: AccountRecord): Promise<Enable
       };
     }
 
-    // Swap confirmed on-chain: now safe to persist. The on-chain sudo is the passkey.
+    // Swap confirmed on-chain: now safe to persist. The on-chain sudo is the
+    // passkey and (counterfactual or not) the Kernel is now deployed.
+    void deployed; // recorded pre-swap for diagnostics; the op deploys when needed.
     await updateSmartAccount(rec.id, { passkey: stored, passkeyCredId: stored.authenticatorId, deployed: true });
     return { ok: true, deployed: true, userOpHash };
   } catch (e) {

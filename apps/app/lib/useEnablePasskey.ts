@@ -11,7 +11,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 import { getActiveAccount } from './accounts';
-import { enablePasskeyForRecord, passkeysAvailable } from './zerodev';
+import { enablePasskeyForRecord, passkeysAvailable, kernelDeployedOnChain } from './zerodev';
 import { flash } from './toast';
 
 export function useEnablePasskey(epoch?: number): {
@@ -30,8 +30,20 @@ export function useEnablePasskey(epoch?: number): {
     let alive = true;
     void (async () => {
       const acct = await getActiveAccount();
-      const ok = passkeysAvailable() && acct?.type === 'smart' && !acct.passkey;
-      if (alive) setAvailable(!!ok);
+      if (!passkeysAvailable() || acct?.type !== 'smart') {
+        if (alive) setAvailable(false);
+        return;
+      }
+      // No passkey yet -> offer enable. HAS a passkey but the Kernel is NOT deployed
+      // on-chain -> the old broken counterfactual shortcut left it un-installed
+      // (passkey userOps revert with the meta-factory `Unauthorized`); offer the
+      // REPAIR (re-run enable -> deploy-and-swap). HAS a passkey + deployed -> done.
+      let ok = !acct.passkey;
+      if (acct.passkey) {
+        const deployed = await kernelDeployedOnChain(acct.address).catch(() => true);
+        ok = !deployed;
+      }
+      if (alive) setAvailable(ok);
     })();
     return () => { alive = false; };
   }, [epoch]);
@@ -44,11 +56,7 @@ export function useEnablePasskey(epoch?: number): {
         if (!acct) { flash('No active account'); return; }
         const res = await enablePasskeyForRecord(acct);
         if (res.ok) {
-          flash(
-            res.deployed
-              ? 'Passkey enabled — it now signs every transaction'
-              : 'Passkey enabled — it will sign from your next transaction',
-          );
+          flash('Passkey enabled - it now signs every transaction');
           setAvailable(false);
         } else if (res.reason === 'cancelled') {
           flash('Passkey setup cancelled');
