@@ -61,6 +61,29 @@ export interface PasskeyKernelResult {
   passkey: StoredPasskey;
 }
 
+/** The passkey WebAuthnValidator contract version. MUST be a real member of the
+ *  installed @zerodev/passkey-validator `PasskeyValidatorContractVersion` enum.
+ *
+ *  ROOT-CAUSE GUARD: the enum members are `V0_0_1_UNPATCHED` / `V0_0_2_UNPATCHED`
+ *  / `V0_0_3_PATCHED` — there is NO `V0_0_2`. Referencing the (untyped, lazy
+ *  `require`d) enum with `.V0_0_2` yields `undefined`, so toPasskeyValidator ->
+ *  getValidatorAddress cannot find a validator address ("Validator not found for
+ *  Kernel version: 0.3.1") and THROWS. That throw was swallowed by the rebuild's
+ *  catch, surfacing to the caller as "passkey validator unavailable" even though
+ *  the stored passkey is perfectly reconstructable. Resolve the version by VALUE
+ *  ("0.0.2") so a future enum-name change can't reintroduce the typo, and so the
+ *  counterfactual validator address (baked into the deploy initcode) is unchanged
+ *  from the value the create/enable paths always intended. */
+function passkeyContractVersion(
+  PasskeyValidatorContractVersion: Record<string, string>,
+): string {
+  // Match by the string VALUE the protocol uses on-chain (Kernel v3.1 supports
+  // "0.0.1" | "0.0.2" | "0.0.3"); "0.0.2" is the version this wallet was built on.
+  const byValue = Object.values(PasskeyValidatorContractVersion).find((v) => v === '0.0.2');
+  if (!byValue) throw new Error('Passkey validator contract version 0.0.2 not found in installed SDK');
+  return byValue;
+}
+
 /** Reconstruct the live `WebAuthnKey` (with the on-device signing callback) from a
  *  StoredPasskey. PRIVATE — both the create path (after registration) and the
  *  rebuild path go through toPasskeyValidator with one of these. */
@@ -113,7 +136,7 @@ async function buildPasskeyKernel(
     webAuthnKey: liveWebAuthnKey(stored),
     entryPoint: ENTRY_POINT,
     kernelVersion: KERNEL_VERSION,
-    validatorContractVersion: PasskeyValidatorContractVersion.V0_0_2,
+    validatorContractVersion: passkeyContractVersion(PasskeyValidatorContractVersion),
   });
   return createKernelAccount(publicClient, {
     // sudo = passkey, NO regular: the passkey is the sole ACTIVE signer (see above).
@@ -139,7 +162,7 @@ export async function passkeyValidatorFromStored(
       webAuthnKey: liveWebAuthnKey(stored),
       entryPoint: ENTRY_POINT,
       kernelVersion: KERNEL_VERSION,
-      validatorContractVersion: PasskeyValidatorContractVersion.V0_0_2,
+      validatorContractVersion: passkeyContractVersion(PasskeyValidatorContractVersion),
     });
   } catch {
     return null;
@@ -204,7 +227,11 @@ export async function passkeyKernelFromStored(
   if (!passkeysAvailable()) return null;
   try {
     return await buildPasskeyKernel(publicClient, owner, hdIndex, stored, addressOverride);
-  } catch {
+  } catch (e) {
+    // Native module IS present but reconstruction failed: this is a real bug, not
+    // an old binary. Surface it in dev so it can't masquerade as "native absent"
+    // (the regression this whole path guards against). Caller still fails closed.
+    if (__DEV__) console.warn('[zerodev] passkey kernel rebuild failed:', e);
     return null;
   }
 }
