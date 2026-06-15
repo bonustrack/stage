@@ -54,7 +54,8 @@ export interface StoredPasskey {
 }
 
 /** Result of the passkey CREATE path: the counterfactual Kernel (passkey `sudo`,
- *  ECDSA owner `regular`) plus the StoredPasskey to persist on the record. */
+ *  the sole active signer; ECDSA owner is recovery-only, not installed) plus the
+ *  StoredPasskey to persist on the record. */
 export interface PasskeyKernelResult {
   account: CreateKernelAccountReturnType;
   passkey: StoredPasskey;
@@ -79,13 +80,26 @@ function liveWebAuthnKey(stored: StoredPasskey) {
 }
 
 /** Build a Kernel whose `sudo` validator is the PASSKEY (from StoredPasskey) and
- *  whose `regular` backup is the mnemonic-derived ECDSA owner. Used by BOTH the
- *  create path (right after registration) and the rebuild path (later launches),
- *  so every signing client routes signing through the passkey when one is set.
+ *  whose ONLY active validator is that passkey — the mnemonic-derived ECDSA owner
+ *  is NOT installed as a `regular` validator. Used by BOTH the create path (right
+ *  after registration) and the rebuild path (later launches).
+ *
+ *  WHY NO `regular` (the root-cause fix): the ZeroDev plugin manager picks the
+ *  ACTIVE signer as `regular || sudo` (toKernelPluginManager). If we passed the
+ *  ECDSA owner as `regular`, EVERY signature (sendTransaction / userOp /
+ *  signMessage / signTypedData, and so the XMTP SCW signer) would route through
+ *  the ECDSA key and the passkey would NEVER be exercised — exactly the bug where
+ *  a configured passkey still signed with the private key. With sudo=passkey and
+ *  no regular, `regular || sudo` resolves to the passkey, so the passkey is the
+ *  ACTIVE signer for everything and the mnemonic is never read for signing. The
+ *  ECDSA owner stays recovery-only: guardian social recovery (./recovery) rotates
+ *  the `sudo` validator via its own weighted-ECDSA validator on the recovery
+ *  action selector — it does not rely on the `regular` slot.
+ *
  *  Lazy requires keep this file bundling/typechecking without the passkey deps. */
 async function buildPasskeyKernel(
   publicClient: PublicClient,
-  owner: HDAccount,
+  _owner: HDAccount,
   hdIndex: number,
   stored: StoredPasskey,
   /** When the account ALREADY exists (enable-passkey on an account whose address
@@ -101,13 +115,9 @@ async function buildPasskeyKernel(
     kernelVersion: KERNEL_VERSION,
     validatorContractVersion: PasskeyValidatorContractVersion.V0_0_2,
   });
-  const ownerValidator = await signerToEcdsaValidator(publicClient, {
-    signer: owner,
-    entryPoint: ENTRY_POINT,
-    kernelVersion: KERNEL_VERSION,
-  });
   return createKernelAccount(publicClient, {
-    plugins: { sudo: passkeyValidator, regular: ownerValidator },
+    // sudo = passkey, NO regular: the passkey is the sole ACTIVE signer (see above).
+    plugins: { sudo: passkeyValidator },
     entryPoint: ENTRY_POINT,
     kernelVersion: KERNEL_VERSION,
     ...(addressOverride ? { address: addressOverride } : { index: BigInt(hdIndex) }),
