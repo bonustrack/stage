@@ -136,7 +136,76 @@ const PERMISSION_REPLY_RE = /^\s*(y|yes|n|no)\s+([a-km-z]{5})\s*$/i
 // Short, human-friendly id for the reacted-to message in the note.
 const shortId = (id: string) => (id.length > 10 ? `${id.slice(0, 6)}…` : id)
 
+// --- Inbound media -----------------------------------------------------------
+// Lines on which an allowed sender has recently spoken. The daemon fetches +
+// decrypts inbound attachments asynchronously and emits a follow-up
+// `attachmentSaved` event carrying the absolute on-disk path - but that event
+// has no real sender `from` (it originates from the daemon itself), so it can't
+// pass the per-event allowlist. We gate it instead on its line: only surface
+// media whose conversation an allowed sender is already driving.
+const allowedLines = new Set<string>()
+
+// Media payload as projected by the xmtp train (history-types: attachmentSaved).
+type SavedMedia = {
+  contentType?: string
+  attachmentPath?: string
+  localPath?: string
+  mime?: string
+  name?: string
+  index?: number
+}
+
+const mediaKind = (mime?: string, name?: string): string => {
+  const m = (mime ?? '').toLowerCase()
+  if (m.startsWith('image/')) return 'image'
+  if (m.startsWith('video/')) return 'video'
+  if (m.startsWith('audio/')) return 'audio'
+  if (/\.(png|jpe?g|gif|webp|heic)$/i.test(name ?? '')) return 'image'
+  if (/\.(mp4|mov|webm|m4v)$/i.test(name ?? '')) return 'video'
+  if (/\.(m4a|mp3|ogg|wav)$/i.test(name ?? '')) return 'audio'
+  return 'file'
+}
+
+// Surface a saved inbound attachment to the session. The Channels notification
+// content is plain text, so we hand the session the absolute local path + mime:
+// Claude can then `Read` it (images render visually; other files open by path).
+async function surfaceMedia(line: string, p: SavedMedia) {
+  const path = p.attachmentPath ?? p.localPath
+  if (!path) return
+  const kind = mediaKind(p.mime, p.name)
+  const name = p.name ?? path.split('/').pop() ?? 'attachment'
+  const content =
+    `[${kind} attachment received: ${name}${p.mime ? ` (${p.mime})` : ''}]\n` +
+    `Saved locally at: ${path}\n` +
+    `Use the Read tool on that absolute path to view/inspect it.`
+  await mcp.notification({
+    method: 'notifications/claude/channel',
+    params: {
+      content,
+      meta: {
+        line,
+        from: 'metro://xmtp/attachment',
+        station: 'xmtp',
+        kind,
+        mime: p.mime ?? '',
+        name,
+        local_path: path,
+      },
+    },
+  })
+}
+
 async function handleEvent(ev: Record<string, unknown>) {
+  // Daemon-side follow-up: an inbound attachment was fetched/decrypted and
+  // written to disk. Surface it (gated on a line an allowed sender drives)
+  // before the normal sender/allowlist checks, since it has no real `from`.
+  const payload = ev.payload as SavedMedia | undefined
+  if (payload?.contentType === 'attachmentSaved') {
+    const line = String(ev.line ?? '')
+    if (line && allowedLines.has(line)) await surfaceMedia(line, payload)
+    return
+  }
+
   // Forward chat messages and emoji reactions; drop edits/deletes/system/etc.
   const evType = ev.event ? (ev.event as { type?: string }).type : 'msg'
   if (evType !== 'msg' && evType !== 'react') return
@@ -151,6 +220,9 @@ async function handleEvent(ev: Record<string, unknown>) {
   const line = String(ev.line ?? '')
   const text = String(ev.text ?? '')
   lastLine = line
+  // Remember this conversation so the daemon's follow-up attachmentSaved event
+  // (which carries no real sender) can be gated/surfaced on the same line.
+  if (line) allowedLines.add(line)
 
   if (isReact) {
     // react event schema (HistoryEntry.event): { type:'react', emoji?, targetId? }
