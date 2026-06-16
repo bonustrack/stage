@@ -29,7 +29,7 @@ ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 APP="$ROOT/apps/app"
 DIST="$(mktemp -d)/pr-${PR}"
 RUNTIME_VERSION="${RUNTIME_VERSION:-1.0.0}"   # MUST match app.config.js runtimeVersion
-SCHEME="${SCHEME:-metro}"
+SCHEME="${SCHEME:-stage}"
 BASE="${PR_PREVIEW_BASE_URL%/}/pr-${PR}/"
 
 echo "→ expo export (android) for PR #${PR}"

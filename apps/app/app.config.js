@@ -37,7 +37,7 @@ function resolveGitHash() {
  *
  * Variant is selected by the APP_VARIANT env var:
  *   APP_VARIANT=prod   → "Stage"  / stage://  / stage.box  / box.stage  ids
- *   (unset / anything) → "Metro"  / metro://  / metro.box  / box.metro.monitor (dev, default)
+ *   (unset / anything) → "Stage"  / stage://  / metro.box  / box.metro.monitor (dev, default)
  *
  * Only NATIVE config differs between variants (app name, scheme, bundle id /
  * package, associated domains, intent filters, Firebase file). The runtime
@@ -73,9 +73,9 @@ const variant = IS_PROD
       googleServicesFile: './google-services.prod.json',
     }
   : {
-      name: 'Metro',
+      name: 'Stage',
       slug: 'metro',
-      scheme: 'metro',
+      scheme: 'stage',
       host: 'metro.box',
       bundleId: 'box.metro.monitor',
       androidPackage: 'box.metro.monitor',
