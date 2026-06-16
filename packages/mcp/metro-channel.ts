@@ -686,12 +686,20 @@ async function handleEvent(ev: Record<string, unknown>) {
   }
 
   if (isReact) {
-    // react event schema (HistoryEntry.event): { type:'react', emoji?, targetId? }
-    // confirmed in packages/metro/src/history-types.ts:10 and the station emitters
-    // (xmtp/emit.ts:60, discord/format.ts:79, telegram/format.ts:80).
-    const re = ev.event as { emoji?: string; targetId?: string }
-    const emoji = re.emoji ?? ''
-    const target = re.targetId ?? ''
+    // react event schema (HistoryEntry.event): { type:'react', emoji?, targetId? }.
+    // Per-station shape differs (verified against live history.jsonl):
+    //  - xmtp/telegram: emoji is a plain string; targetId is absent.
+    //  - discord: emoji is a discord.js object {name,reaction,identifier,...};
+    //    targetId is absent.
+    // The reacted-to message id is always carried top-level as `messageId` (the
+    // dispatcher does not fold it into `event.targetId`), so prefer that.
+    const re = ev.event as { emoji?: unknown; targetId?: string }
+    const rawEmoji = re.emoji
+    const emoji = typeof rawEmoji === 'string'
+      ? rawEmoji
+      : String((rawEmoji as { name?: string; reaction?: string } | undefined)?.name
+        ?? (rawEmoji as { reaction?: string } | undefined)?.reaction ?? '')
+    const target = re.targetId ?? String(ev.messageId ?? '')
     // Only xmtp distinguishes removals (payload.removed / "(removed)" in text).
     const removed = (ev.payload as { removed?: boolean } | undefined)?.removed === true ||
       / \(removed\)\]?$/.test(text)

@@ -98,7 +98,7 @@ the ~190 KiB cap). See **CLI parity tools** above for the full matrix.
 ## Install
 
 ```bash
-cd packages/metro-channel
+cd packages/mcp
 bun install        # only @modelcontextprotocol/sdk + zod (both in Bun cache; no heavy install)
 ```
 
@@ -142,11 +142,11 @@ connect time; it uses a dynamic `getStations()` gate so override changes take ef
 ## Run
 
 The server is registered in this directory's `.mcp.json` as server name `metro`.
-Start Claude Code from `packages/metro-channel/` with the development-channel flag
+Start Claude Code from `packages/mcp/` with the development-channel flag
 (custom channels aren't on the Anthropic allowlist during the research preview):
 
 ```bash
-cd packages/metro-channel
+cd packages/mcp
 METRO_MONITOR_TOKEN=$(grep METRO_MONITOR_TOKEN ~/.config/metro/.env | cut -d= -f2) \
   claude --dangerously-load-development-channels server:metro
 ```
@@ -156,13 +156,13 @@ A dim banner confirms: `Channels (experimental) messages from server:metro injec
 
 Registering the server globally in `~/.claude.json` (`mcpServers.metro`) with an absolute
 launch command lets you start the channel from **any directory**, not just
-`packages/metro-channel/`. A `metro-cc` convenience launcher wraps the long
+`packages/mcp/`. A `metro-cc` convenience launcher wraps the long
 `claude --dangerously-load-development-channels server:metro` invocation.
 
 ## Live test plan
 
 1. **Daemon up**: `metro doctor` (dispatcher running, xmtp train healthy). Do NOT restart it.
-2. **Start CC as a channel** (command above) from `packages/metro-channel/`.
+2. **Start CC as a channel** (command above) from `packages/mcp/`.
    Run `/mcp` - `metro` should show connected.
 3. **Inbound**: from your phone, send an XMTP message on the channel line. It arrives in
    the CC session as `<channel source="metro" line="metro://xmtp/tony/..." from="..."
@@ -181,7 +181,7 @@ launch command lets you start the channel from **any directory**, not just
   + `notifications/claude/channel/permission` (relay). Meta keys are identifiers only
   (underscores), so the metro line rides as `line` (no scheme issues - it's a value, not a key).
 - **A local `.mcp.json` shadows the global `~/.claude.json` server entry.** When CC is
-  launched from a directory containing `.mcp.json` (e.g. `packages/metro-channel/`), that
+  launched from a directory containing `.mcp.json` (e.g. `packages/mcp/`), that
   file's `env` block wins over the global `mcpServers.metro` entry. If the local
   `.mcp.json` omits `METRO_CHANNEL_ALLOWLIST`/`METRO_CHANNEL_STATIONS`, the server falls
   back to the hardcoded single-id default allowlist and **drops every message**. Fix: set
