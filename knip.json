@@ -38,15 +38,6 @@
     },
     "packages/kit": {
       "project": ["src/**"]
-    },
-    "packages/metro": {
-      "entry": [
-        "src/trains/**/*.ts",
-        "src/stations/**/*.ts",
-        "examples/**/*.ts",
-        "test/**/*.ts"
-      ],
-      "project": ["src/**", "examples/**"]
     }
   }
 }

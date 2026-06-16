@@ -20,7 +20,7 @@
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint:fix",
-    "madge": "madge --circular --extensions ts,tsx apps/app/app apps/app/components apps/app/lib apps/app/modules apps/api/src packages/client/src packages/kit/src packages/metro/src",
+    "madge": "madge --circular --extensions ts,tsx apps/app/app apps/app/components apps/app/lib apps/app/modules apps/api/src packages/client/src packages/kit/src",
     "knip": "knip",
     "check": "turbo run lint typecheck && bun run madge && bun run knip",
     "served:reset": "bash scripts/served-reset.sh",
