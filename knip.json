@@ -39,10 +39,6 @@
     "packages/kit": {
       "project": ["src/**"]
     },
-    "packages/railgun-mobile": {
-      "entry": ["src/index.ts"],
-      "project": ["src/**"]
-    },
     "packages/metro": {
       "entry": [
         "src/trains/**/*.ts",
