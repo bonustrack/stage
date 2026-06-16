@@ -2,7 +2,7 @@
 
 ## System Shape
 
-Metro has one core package, `@metro-labs/metro`, and several clients:
+Stage has one core package, `@metro-labs/metro`, and several clients:
 
 - `packages/metro` — daemon, CLI, dispatcher, broker, monitor API, train supervisor.
 - `apps/app` — Expo mobile companion.

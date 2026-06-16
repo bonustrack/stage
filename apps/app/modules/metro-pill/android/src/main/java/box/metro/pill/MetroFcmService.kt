@@ -95,7 +95,7 @@ class MetroFcmService : FirebaseMessagingService() {
     val channelId = DEFAULT_CHANNEL_ID
     val line = data["line"]
     val isGroup = data["isGroup"] == "true" || data["isGroup"] == "1"
-    val title = "Metro"
+    val title = "Stage"
     val body = if (isGroup) "New message in a group" else "New message"
 
     // SUPPRESSION: if the user is currently viewing this exact conversation

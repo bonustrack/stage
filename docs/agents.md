@@ -1,6 +1,6 @@
 # Multi-Agent Setup
 
-Metro is designed to be driven by autonomous coding agents (Claude Code, Codex)
+Stage is designed to be driven by autonomous coding agents (Claude Code, Codex)
 that watch the event stream and reply via `metro call`. One daemon can serve
 several agents at once, each with its own routed feed and its own chat identity.
 
@@ -13,7 +13,7 @@ invocation does not start a competing daemon — it attaches to the running one:
   claim-aware tail mode (`--follow --json --since=tail`), so the session receives
   only its own routed feed.
 - **Codex** — when `$METRO_CODEX_RC` is set, `metro` attaches the standalone Codex
-  bridge to the existing daemon. Metro pushes each event to the Codex app-server
+  bridge to the existing daemon. Stage pushes each event to the Codex app-server
   over JSON-RPC (`turn/start`). The user must run a Codex daemon + TUI on the same
   WebSocket URL, e.g. `codex app-server --listen ws://127.0.0.1:8421` plus
   `codex --remote ws://127.0.0.1:8421`.
@@ -91,7 +91,7 @@ false reject that blocks a legitimate send is considered worse than a rare bypas
 ## HANDOFF coordination
 
 When multiple agents share one machine, coordinate through a shared local file
-rather than sending from another agent's chat account. In the Metro project this is:
+rather than sending from another agent's chat account. In the Stage project this is:
 
 ```text
 /tmp/metro-agents/HANDOFF.md
@@ -99,7 +99,7 @@ rather than sending from another agent's chat account. In the Metro project this
 
 Each agent should:
 
-- Read it before starting shared Metro work.
+- Read it before starting shared Stage work.
 - Add a claim describing what it is doing.
 - Avoid touching another agent's claimed task.
 - Record decisions that affect daemon state, releases, or user-facing behavior.

@@ -1,8 +1,8 @@
 {
-  "name": "metro-monorepo",
+  "name": "stage-monorepo",
   "private": true,
   "version": "0.0.0",
-  "description": "Monorepo for Metro — live JSON stream of Telegram + Discord messages for local Claude Code / Codex sessions.",
+  "description": "Monorepo for Stage — live JSON stream of Telegram + Discord messages for local Claude Code / Codex sessions.",
   "license": "MIT",
   "repository": {
     "type": "git",

@@ -59,7 +59,7 @@ export function AboutPanel({ dark, head, sub, border, rowBg }: {
   const shortHash = gitHash === 'dev' ? 'dev' : gitHash.slice(0, 12);
   const buildProfile = typeof extra.buildProfile === 'string' && extra.buildProfile.length> 0
     ? extra.buildProfile : 'dev';
-  const pkgName = cfg?.name ?? 'Metro';
+  const pkgName = cfg?.name ?? 'Stage';
   const nativeBuild = Application.nativeBuildVersion
     ?? (Constants.expoConfig?.android?.versionCode != null
       ? String(Constants.expoConfig.android.versionCode) : null);
@@ -87,7 +87,7 @@ export function AboutPanel({ dark, head, sub, border, rowBg }: {
       <GitHubLinkRow
         dark={dark} head={head} sub={sub} border={border} rowBg={rowBg}
         url={METRO_GITHUB_URL}
-        title="View Metro on GitHub"
+        title="View Stage on GitHub"
         subtitle="bonustrack/stage"
       />
     </Box>

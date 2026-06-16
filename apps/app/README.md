@@ -1,12 +1,12 @@
 # app
 
-> Metro for mobile: an Expo + React Native client for XMTP messaging, profiles, and an onchain wallet.
+> Stage for mobile: an Expo + React Native client for XMTP messaging, profiles, and an onchain wallet.
 
 [![lines of code](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.codetabs.com%2Fv1%2Floc%2F%3Fgithub%3Dbonustrack%2Fstage&query=%24%5B%3F(%40.language%3D%3D%27Total%27)%5D.linesOfCode&label=lines%20of%20code&color=blue)](https://github.com/bonustrack/stage)
 
 ## Overview
 
-`app` is the Metro mobile client, built with Expo and React Native. It is an XMTP messenger with multi-account support, Snapshot profiles, group channels, search, and an onchain wallet (assets, balances, and Railgun shielded transfers). It is the mobile counterpart to the Vue web client in [`apps/ui`](../ui).
+`app` is the Stage mobile client, built with Expo and React Native. It is an XMTP messenger with multi-account support, Snapshot profiles, group channels, search, and an onchain wallet (assets, balances, and Railgun shielded transfers). It is the mobile counterpart to the Vue web client in [`apps/ui`](../ui).
 
 All platform-neutral logic comes from [`@stage-labs/client`](../../packages/client) and the visual language from [`@metro-labs/kit`](../../packages/kit), so behaviour and design stay in step with the web app. The Railgun engine runs on-device through a `nodejs-mobile` bridge.
 

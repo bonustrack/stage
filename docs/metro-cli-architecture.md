@@ -1,12 +1,12 @@
-# Metro CLI Architecture
+# Stage CLI Architecture
 
-Final architecture, transit-themed naming, and pros/cons for the unified Metro
+Final architecture, transit-themed naming, and pros/cons for the unified Stage
 CLI. Command-by-command reference lives in
 [metro-cli-reference.md](./metro-cli-reference.md).
 
 ## 1. Executive Summary
 
-Metro becomes a single noun-verb-target CLI
+Stage becomes a single noun-verb-target CLI
 (`metro <noun> <verb> <target> [--flags]`) modeled on `gh` and `stripe`. It
 serves two riders from one command set:
 
@@ -36,7 +36,7 @@ rate-limited so scripts back off to Telegram).
 
 ## 2. Transit-Themed Naming
 
-Metro already speaks transit: a **station** is a platform integration, a
+Stage already speaks transit: a **station** is a platform integration, a
 **train** is the per-platform process, a **line** is a conversation
 `metro://` URI. The scheme below extends that vocabulary where it sharpens the
 mental model, and stays deliberately plain where theming would hurt agent
@@ -53,7 +53,7 @@ plain token.
 | Platform integration | station | `--station <name>` | existing vocab, kept |
 | Per-platform process | train | `metro train ...` | existing vocab, kept |
 | Conversation URI | line | `<line>` positional | existing vocab, kept |
-| Shared daemon / process owning trains | the network (Metro Core) | `metro daemon ...` | "network" in prose; CLI token stays `daemon` for muscle memory |
+| Shared daemon / process owning trains | the network (Stage Core) | `metro daemon ...` | "network" in prose; CLI token stays `daemon` for muscle memory |
 | Account / identity (wallet+creds) | pass (a rider's fare pass) | `metro account ...`, `-a/--account` | "pass" in docs; token stays `account` to match the mobile app's mental model |
 | Logical binding of accounts per station | trip | `metro session ...`, `--session` | a trip rides several lines under one identity set; token stays `session` |
 | Owner identity of a trip | rider | derived `metro://session/<id>` | the rider who owns the trip |

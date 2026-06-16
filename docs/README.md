@@ -1,6 +1,6 @@
-# Metro Docs
+# Stage Docs
 
-Metro is a local event wire for agents and companion apps. One daemon supervises
+Stage is a local event wire for agents and companion apps. One daemon supervises
 train scripts, records every event to an append-only log, exposes claim-aware
 read APIs, and routes outbound action calls back to trains. Per-platform code
 lives in trains under `~/.metro/trains/`, outside this repo, so stations can

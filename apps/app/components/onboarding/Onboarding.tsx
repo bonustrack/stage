@@ -136,7 +136,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
       {step === 'welcome' ? (
         <Col flex={1} justify="between">
           <Box padding={{ top: 48 }}>
-            <Title level={1} color={pal.text}>Metro</Title>
+            <Title level={1} color={pal.text}>Stage</Title>
             <Text size="md" color={pal.sub} style={{ marginTop: 10 }}>
               Your wallet, your messages, your governance. One gasless smart account.
             </Text>

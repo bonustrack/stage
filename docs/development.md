@@ -46,7 +46,7 @@ bun --cwd apps/app typecheck
 bun --cwd apps/app lint
 ```
 
-## Metro Core
+## Stage Core
 
 Core source lives in `packages/metro/src`:
 
