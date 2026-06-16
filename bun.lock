@@ -174,10 +174,6 @@
         "typescript-eslint": "^8.59.2",
       },
     },
-    "packages/railgun-mobile": {
-      "name": "@metro-labs/railgun-mobile",
-      "version": "0.0.0",
-    },
   },
   "patchedDependencies": {
     "nodejs-mobile-react-native@18.20.4": "patches/nodejs-mobile-react-native@18.20.4.patch",
@@ -672,8 +668,6 @@
     "@metro-labs/kit": ["@metro-labs/kit@workspace:packages/kit"],
 
     "@metro-labs/metro": ["@metro-labs/metro@workspace:packages/metro"],
-
-    "@metro-labs/railgun-mobile": ["@metro-labs/railgun-mobile@workspace:packages/railgun-mobile"],
 
     "@msgpack/msgpack": ["@msgpack/msgpack@3.1.3", "", {}, "sha512-47XIizs9XZXvuJgoaJUIE2lFoID8ugvc0jzSHP+Ptfk8nTbnR8g788wv48N03Kx0UkAv559HWRQ3yzOgzlRNUA=="],
 
