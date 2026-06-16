@@ -1,6 +1,6 @@
-# Metro
+# Stage
 
-Monorepo for **Metro** — an event-interception wire. The daemon supervises train
+Monorepo for **Stage** — an event-interception wire. The daemon supervises train
 subprocesses in `~/.metro/trains/`, multiplexes their JSON event streams onto stdout,
 and forwards outbound action calls back into the matching train's stdin. Per-platform
 code lives in train scripts outside this repo, written on demand by the user or agent.

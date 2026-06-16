@@ -1,12 +1,12 @@
 # ui
 
-> Vue 3 web client for Metro: channels, conversations, and profiles in the browser.
+> Vue 3 web client for Stage: channels, conversations, and profiles in the browser.
 
 [![lines of code](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.codetabs.com%2Fv1%2Floc%2F%3Fgithub%3Dbonustrack%2Fstage&query=%24%5B%3F(%40.language%3D%3D%27Total%27)%5D.linesOfCode&label=lines%20of%20code&color=blue)](https://github.com/bonustrack/stage)
 
 ## Overview
 
-`ui` is the web companion to the Metro mobile app. It is a Vue 3 + Vite single-page app that talks to XMTP directly via the browser SDK and renders the same channels, conversations, and Snapshot profiles as [`apps/app`](../app), so the two stay visually and functionally parallel.
+`ui` is the web companion to the Stage mobile app. It is a Vue 3 + Vite single-page app that talks to XMTP directly via the browser SDK and renders the same channels, conversations, and Snapshot profiles as [`apps/app`](../app), so the two stay visually and functionally parallel.
 
 It shares all platform-neutral logic with the mobile client through [`@stage-labs/client`](../../packages/client) and its visual language through [`@metro-labs/kit`](../../packages/kit). The web-specific code is the Vue components, pages, router, and the composable hooks in `src/lib`.
 

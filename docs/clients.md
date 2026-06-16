@@ -83,4 +83,4 @@ See [Monitor endpoints](../packages/metro/docs/monitor.md).
 XMTP V3 fresh installations do not automatically hydrate old message bodies from
 another installation's local database. New messages are the reliable sync test.
 Full historical import requires history sync/export support and should be treated
-as a separate feature from Metro feed isolation.
+as a separate feature from Stage feed isolation.

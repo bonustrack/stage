@@ -1,12 +1,12 @@
 # @stage-labs/client
 
-> Framework-agnostic TypeScript core shared by the Metro web and mobile clients.
+> Framework-agnostic TypeScript core shared by the Stage web and mobile clients.
 
 [![lines of code](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.codetabs.com%2Fv1%2Floc%2F%3Fgithub%3Dbonustrack%2Fstage&query=%24%5B%3F(%40.language%3D%3D%27Total%27)%5D.linesOfCode&label=lines%20of%20code&color=blue)](https://github.com/bonustrack/stage)
 
 ## Overview
 
-`@stage-labs/client` holds the platform-independent logic both Metro clients share: the Vue web app ([`apps/ui`](../../apps/ui)) and the React Native app ([`apps/app`](../../apps/app)). It is pure TypeScript with no Vue, React, or react-native imports, so the same code runs in a browser, in Hermes, and in Node.
+`@stage-labs/client` holds the platform-independent logic both Stage clients share: the Vue web app ([`apps/ui`](../../apps/ui)) and the React Native app ([`apps/app`](../../apps/app)). It is pure TypeScript with no Vue, React, or react-native imports, so the same code runs in a browser, in Hermes, and in Node.
 
 It covers Snapshot profile resolution, XMTP content humanisation and message builders, embed detection, Stamp avatar resolution, wallet formatting and balances, account key derivation, the Railgun wire protocol, read-only API clients (ENS, Etherscan, OpenSea, CoinGecko), and the shared types that tie it all together.
 
