@@ -35,7 +35,7 @@ export function normalizeDiscord(action: string, env: Args): Normalized {
 /** Map a canonical verb+envelope onto Telegram's native action set. */
 export function normalizeTelegram(action: string, env: Args): Normalized {
   if (action === 'reply') {
-    return { action: 'send', args: { line: env.line, text: env.text, replyTo: env.replyTo } };
+    return { action: 'send', args: { line: env.line, text: env.text, replyTo: env.replyTo, attachments: env.attachments } };
   }
   if (action === 'unreact') return { action: 'react', args: { ...env, emoji: '' } };
   return { action, args: env };

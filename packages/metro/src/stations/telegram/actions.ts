@@ -4,6 +4,7 @@ import { accountFor, accounts, tg, tgForm, targetOf } from './accounts.js';
 import { emit, mintId, respond, SELF_URI } from './wire.js';
 import { normalizeTelegram } from '../messaging-normalize.js';
 import { unsupported } from '../../messaging.js';
+import { mediaKindOf } from './attachments.js';
 
 function emitOutbound(accountId: string, line: string, messageId: string, text: string, replyTo?: string): void {
   emit({
@@ -15,13 +16,14 @@ function emitOutbound(accountId: string, line: string, messageId: string, text: 
 }
 
 type MediaArgs = {
-  line: string; path: string; caption?: string; replyTo?: string; parseMode?: string; account?: string;
+  line: string; path: string; caption?: string; replyTo?: string;
+  parseMode?: string; account?: string; name?: string;
 };
 
 async function sendMedia(
   method: string, fieldName: string, args: Record<string, unknown>,
 ): Promise<{ accountId: string; message_id: number }> {
-  const { line, path, caption, replyTo, parseMode, account } = args as MediaArgs;
+  const { line, path, caption, replyTo, parseMode, account, name: fileName } = args as MediaArgs;
   const { accountId, chatId, topicId } = targetOf(line, account);
   const form = new FormData();
   form.append('chat_id', String(chatId));
@@ -30,7 +32,7 @@ async function sendMedia(
   if (parseMode) form.append('parse_mode', parseMode);
   if (replyTo) form.append('reply_parameters', JSON.stringify({ message_id: Number(replyTo) }));
   const data = await Bun.file(path).arrayBuffer();
-  const name = path.split('/').pop() ?? fieldName;
+  const name = fileName ?? path.split('/').pop() ?? fieldName;
   form.append(fieldName, new Blob([data]), name);
   const r = await tgForm<{ message_id: number }>(accountId, method, form);
   return { accountId, message_id: r.message_id };
@@ -56,10 +58,29 @@ async function dispatch({ id, action, args }: CallMsg): Promise<void> {
     respond(id, { result: { accounts: [...accounts.values()].map(a => ({
       id: a.cfg.id, owner: a.cfg.owner ?? null })) } });
   } else if (action === 'send') {
-    const { line, text, replyTo, parseMode, buttons, account } = args as {
+    const { line, text, replyTo, parseMode, buttons, account, attachments } = args as {
       line: string; text: string; replyTo?: string; parseMode?: string;
       buttons?: Array<Array<{ text: string; url: string }>>; account?: string;
+      attachments?: Array<{ kind?: string; url?: string; mime?: string; name?: string }>;
     };
+    if (attachments?.length) {
+      // Fan out per attachment as native media; caption goes on the first item only.
+      let last: { accountId: string; message_id: number } | undefined;
+      for (let i = 0; i < attachments.length; i++) {
+        const a = attachments[i];
+        const kind = mediaKindOf(a.kind, a.mime, a.url ?? a.name);
+        const method = kind === 'image' ? 'sendPhoto' : kind === 'voice' ? 'sendVoice' : 'sendDocument';
+        const field = kind === 'image' ? 'photo' : kind === 'voice' ? 'voice' : 'document';
+        const caption = i === 0 ? text : undefined;
+        last = await sendMedia(method, field, {
+          line, path: a.url, caption, replyTo, parseMode, account, name: a.name,
+        });
+        emitOutbound(last.accountId, line, String(last.message_id),
+          i === 0 ? (text || `[${kind}]`) : `[${kind}]`, replyTo);
+      }
+      respond(id, { result: { messageId: String(last!.message_id), account: last!.accountId } });
+      return;
+    }
     const { accountId, chatId, topicId } = targetOf(line, account);
     const body: Record<string, unknown> = { chat_id: chatId, text };
     if (topicId !== undefined) body.message_thread_id = topicId;

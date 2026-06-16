@@ -22,6 +22,20 @@ function extFromPath(filePath: string | undefined, fileName: string | undefined,
   return 'bin';
 }
 
+/** Classify an outbound attachment into a Telegram media kind. Prefers an
+ *  explicit canonical `kind`, then mime, then file extension. `voice` maps to
+ *  sendVoice; other audio falls back to document (Telegram sendVoice needs OGG). */
+export function mediaKindOf(
+  kind: string | undefined, mime: string | undefined, ref: string | undefined,
+): 'image' | 'voice' | 'document' {
+  if (kind === 'image' || mime?.startsWith('image/')) return 'image';
+  const ext = ref?.split('?')[0]?.split('.').pop()?.toLowerCase();
+  const isOgg = mime === 'audio/ogg' || ext === 'ogg' || ext === 'oga';
+  if (kind === 'voice' || (kind === 'audio' && isOgg)) return 'voice';
+  if (!kind && isOgg) return 'voice';
+  return 'document';
+}
+
 export type SavedAttachment = { path: string; mime?: string; name?: string; bytes: number };
 
 /** A single downloadable media reference extracted from a Telegram message. */
