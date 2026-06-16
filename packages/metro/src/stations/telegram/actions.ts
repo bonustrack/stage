@@ -4,7 +4,6 @@ import { accountFor, accounts, tg, tgForm, targetOf } from './accounts.js';
 import { emit, mintId, respond, SELF_URI } from './wire.js';
 import { normalizeTelegram } from '../messaging-normalize.js';
 import { unsupported } from '../../messaging.js';
-import { mediaKindOf } from './attachments.js';
 
 function emitOutbound(accountId: string, line: string, messageId: string, text: string, replyTo?: string): void {
   emit({
@@ -16,14 +15,13 @@ function emitOutbound(accountId: string, line: string, messageId: string, text: 
 }
 
 type MediaArgs = {
-  line: string; path: string; caption?: string; replyTo?: string;
-  parseMode?: string; account?: string; name?: string;
+  line: string; path: string; caption?: string; replyTo?: string; parseMode?: string; account?: string;
 };
 
 async function sendMedia(
   method: string, fieldName: string, args: Record<string, unknown>,
 ): Promise<{ accountId: string; message_id: number }> {
-  const { line, path, caption, replyTo, parseMode, account, name: fileName } = args as MediaArgs;
+  const { line, path, caption, replyTo, parseMode, account } = args as MediaArgs;
   const { accountId, chatId, topicId } = targetOf(line, account);
   const form = new FormData();
   form.append('chat_id', String(chatId));
@@ -32,7 +30,7 @@ async function sendMedia(
   if (parseMode) form.append('parse_mode', parseMode);
   if (replyTo) form.append('reply_parameters', JSON.stringify({ message_id: Number(replyTo) }));
   const data = await Bun.file(path).arrayBuffer();
-  const name = fileName ?? path.split('/').pop() ?? fieldName;
+  const name = path.split('/').pop() ?? fieldName;
   form.append(fieldName, new Blob([data]), name);
   const r = await tgForm<{ message_id: number }>(accountId, method, form);
   return { accountId, message_id: r.message_id };
@@ -58,38 +56,46 @@ async function dispatch({ id, action, args }: CallMsg): Promise<void> {
     respond(id, { result: { accounts: [...accounts.values()].map(a => ({
       id: a.cfg.id, owner: a.cfg.owner ?? null })) } });
   } else if (action === 'send') {
-    const { line, text, replyTo, parseMode, buttons, account, attachments } = args as {
-      line: string; text: string; replyTo?: string; parseMode?: string;
-      buttons?: Array<Array<{ text: string; url: string }>>; account?: string;
-      attachments?: Array<{ kind?: string; url?: string; mime?: string; name?: string }>;
+    const { line, text, replyTo, parseMode, buttons, attachments, account } = args as {
+      line: string; text?: string; replyTo?: string; parseMode?: string;
+      buttons?: Array<Array<{ text: string; url: string }>>;
+      attachments?: Array<{ kind?: string; url?: string; path?: string; name?: string; mime?: string }>;
+      account?: string;
     };
-    if (attachments?.length) {
-      // Fan out per attachment as native media; caption goes on the first item only.
-      let last: { accountId: string; message_id: number } | undefined;
-      for (let i = 0; i < attachments.length; i++) {
-        const a = attachments[i];
-        const kind = mediaKindOf(a.kind, a.mime, a.url ?? a.name);
-        const method = kind === 'image' ? 'sendPhoto' : kind === 'voice' ? 'sendVoice' : 'sendDocument';
-        const field = kind === 'image' ? 'photo' : kind === 'voice' ? 'voice' : 'document';
-        const caption = i === 0 ? text : undefined;
-        last = await sendMedia(method, field, {
-          line, path: a.url, caption, replyTo, parseMode, account, name: a.name,
-        });
-        emitOutbound(last.accountId, line, String(last.message_id),
-          i === 0 ? (text || `[${kind}]`) : `[${kind}]`, replyTo);
-      }
-      respond(id, { result: { messageId: String(last!.message_id), account: last!.accountId } });
-      return;
-    }
     const { accountId, chatId, topicId } = targetOf(line, account);
-    const body: Record<string, unknown> = { chat_id: chatId, text };
-    if (topicId !== undefined) body.message_thread_id = topicId;
-    if (replyTo) body.reply_parameters = { message_id: Number(replyTo) };
-    if (parseMode) body.parse_mode = parseMode;
-    if (buttons) body.reply_markup = { inline_keyboard: buttons };
-    const sent = await tg<{ message_id: number }>(accountId, 'sendMessage', body);
-    emitOutbound(accountId, line, String(sent.message_id), text, replyTo);
-    respond(id, { result: { messageId: String(sent.message_id), account: accountId } });
+    let lastId: number | undefined;
+    const hasText = text !== undefined && text !== '';
+    if (hasText) {
+      const body: Record<string, unknown> = { chat_id: chatId, text };
+      if (topicId !== undefined) body.message_thread_id = topicId;
+      if (replyTo) body.reply_parameters = { message_id: Number(replyTo) };
+      if (parseMode) body.parse_mode = parseMode;
+      if (buttons) body.reply_markup = { inline_keyboard: buttons };
+      const sent = await tg<{ message_id: number }>(accountId, 'sendMessage', body);
+      lastId = sent.message_id;
+      emitOutbound(accountId, line, String(sent.message_id), text as string, replyTo);
+    }
+    if (Array.isArray(attachments) && attachments.length > 0) {
+      for (let i = 0; i < attachments.length; i++) {
+        const att = attachments[i];
+        const path = att.path ?? att.url ?? '';
+        const lower = (att.name ?? path).toLowerCase();
+        const mime = att.mime ?? '';
+        const isImage = mime.startsWith('image/') || /\.(png|jpe?g|gif|webp)$/.test(lower);
+        const isAudio = mime.startsWith('audio/') || /\.(mp3|m4a|ogg|oga|opus|wav)$/.test(lower);
+        const [method, field, label] = isImage ? ['sendPhoto', 'photo', '[image]']
+          : isAudio ? ['sendVoice', 'voice', '[voice]']
+          : ['sendDocument', 'document', '[file]'];
+        // Caption the first media only when no separate text bubble was sent (avoids dupes).
+        const caption = !hasText && i === 0 ? text : undefined;
+        const mediaArgs: Record<string, unknown> = { line, path, account, replyTo, parseMode };
+        if (caption) mediaArgs.caption = caption;
+        const { message_id } = await sendMedia(method, field, mediaArgs);
+        lastId = message_id;
+        emitOutbound(accountId, line, String(message_id), caption ?? label, replyTo);
+      }
+    }
+    respond(id, { result: { messageId: lastId !== undefined ? String(lastId) : null, account: accountId } });
   } else if (action === 'react') {
     const { line, messageId, emoji, account } = args as {
       line: string; messageId: string; emoji: string; account?: string;
