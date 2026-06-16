@@ -11,7 +11,7 @@
  */
 import { readFileSync } from 'node:fs';
 
-const SCHEME = 'metro'; // dev variant scheme (app.config.js). Prod = 'stage'.
+const SCHEME = 'stage'; // dev variant scheme (app.config.js). Prod = 'stage'.
 
 const raw = JSON.parse(readFileSync(process.argv[2], 'utf8'));
 // `eas update --json` emits an array of per-platform update records (one per
