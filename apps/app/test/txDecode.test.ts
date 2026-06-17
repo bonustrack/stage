@@ -171,3 +171,57 @@ describe('decodeCall ERC-7730 enrichment', () => {
     expect(r.args.every(a => a.label === undefined && a.formatted === undefined)).toBe(true);
   });
 });
+
+// --- PROXY tokens: verified ABI lacks the selector, but a curated 7730 descriptor
+// pins it (USDC FiatTokenProxy / USDT). Sourcify returns the PROXY's ABI (no
+// transfer/approve - those live behind the proxy), so selectorInAbi is false and we
+// hit the 'mismatch' branch. The fix: rescue via the bundled descriptor allowlist
+// and clear-sign, instead of the red "function does not exist" warning. -----------
+// Proxy ABI: a typical FiatTokenProxy surface - no transfer/approve.
+const PROXY_ABI = parseAbi([
+  'function implementation() view returns (address)',
+  'function admin() view returns (address)',
+  'function upgradeTo(address newImplementation)',
+]);
+// Sourcify returns the proxy ABI; 4byte resolves the selector to the canonical sig.
+const proxyHit = (sig: string) => (url: string) => ({
+  ok: true,
+  json: async () => (url.includes('sourcify')
+    ? { abi: PROXY_ABI, match: 'match' }
+    : { results: [{ id: 1, text_signature: sig }] }),
+});
+
+describe('decodeCall PROXY token rescue (verified ABI lacks selector, 7730 descriptor exists)', () => {
+  afterEach(() => { globalThis.fetch = realFetch; });
+
+  test('USDC transfer behind a proxy -> clear-signed (Send), NOT a mismatch warning', async () => {
+    mockFetch(proxyHit('transfer(address,uint256)'));
+    const r = await decodeCall(USDC, transferData, 1);
+    expect(r.source).toBe('sourcify'); // rescued, not 'mismatch'
+    expect(r.decoded).toBe(true);
+    expect(r.intent).toBe('Send');
+    expect(r.functionName).toBe('transfer');
+    expect(r.args.find(a => a.label === 'Amount')?.formatted).toBe('5 USDC');
+    expect(r.args.find(a => a.label === 'To')?.formatted).toMatch(/^0x[0-9a-fA-F]{40}$/);
+    expect(spoofWarning(r, 'send 5 USDC')).toBeUndefined();
+  });
+
+  test('USDC approve behind a proxy -> clear-signed (Approve), no warning', async () => {
+    mockFetch(proxyHit('approve(address,uint256)'));
+    const r = await decodeCall(USDC, approveData, 1);
+    expect(r.source).toBe('sourcify');
+    expect(r.intent).toBe('Approve');
+    expect(r.args.find(a => a.label === 'Spender')).toBeTruthy();
+    expect(r.args.find(a => a.label === 'Amount')?.formatted).toBe('1 USDC');
+    expect(spoofWarning(r, 'approve')).toBeUndefined();
+  });
+
+  test('proxy contract + selector with NO bundled descriptor -> still a mismatch warning (gate intact)', async () => {
+    // Unknown contract address (not in the descriptor allowlist) + a generic 4byte hit.
+    mockFetch(proxyHit('transfer(address,uint256)'));
+    const r = await decodeCall('0x000000000000000000000000000000000000dEAd', transferData, 1);
+    expect(r.source).toBe('mismatch');
+    expect(r.decoded).toBe(false);
+    expect(spoofWarning(r, 'send 5 USDC')).toMatch(/do not sign/i);
+  });
+});

@@ -1,25 +1,19 @@
-/** Async calldata decoder for the tx-request card — turns a raw `call.data`
- *  into a human "function + decoded args" view so the user trusts what the tx
- *  ACTUALLY does, not the sender's self-described `metadata.description`.
+/** Async calldata decoder for the tx-request card — turns a raw `call.data` into
+ *  a human "function + decoded args" view so the user trusts what the tx ACTUALLY
+ *  does, not the sender's self-described `metadata.description`.
  *
- *  Why a separate module from txConfirm.ts: txConfirm is pure + synchronous (no
- *  network) so the security confirm-summary stays unit-testable and can never be
- *  blocked by a slow/failed fetch. This module is the network layer — it resolves
- *  the contract ABI and decodes the call — and is consumed by the card UI via a
- *  hook. It NEVER blocks signing: on any failure it returns a `decoded:false`
- *  result carrying the raw selector + a "could not decode" note.
+ *  Separate from txConfirm.ts (which is pure + synchronous so it never blocks
+ *  signing): this is the network layer that resolves the ABI + decodes the call.
+ *  It NEVER blocks signing — on any failure it returns a `decoded:false` result
+ *  carrying the raw selector + a "could not decode" note.
  *
  *  ABI resolution order:
- *   1. SOURCIFY — the contract's verified metadata.json (full or partial match)
- *      for `to` on the tx chain. Gives the full ABI -> exact functionName + named
- *      args via viem decodeFunctionData. `verified` reflects full-match.
- *   2. 4BYTE DIRECTORY — when Sourcify has no ABI, resolve the 4-byte selector to
- *      a function signature and decode the args against it (no arg names, just
- *      types). The contract is `verified:false` (unknown source).
- *   3. Neither -> raw selector + "unknown function (unverified contract)".
- *
- *  Results are cached per (chainId+address) for ABIs and per selector for 4byte,
- *  so a conversation full of requests to the same contract fetches once. */
+ *   1. SOURCIFY verified metadata for (to, chainId) -> full ABI -> exact name +
+ *      named args via viem. PROXY tokens whose verified ABI lacks the selector are
+ *      rescued via a curated ERC-7730 descriptor allowlist (see the mismatch branch).
+ *   2. 4BYTE DIRECTORY — selector -> signature, decode args by type (verified:false).
+ *   3. Neither -> raw selector + warning.
+ *  Cached per (chainId+address) for ABIs and per selector for 4byte. */
 
 import { useEffect, useState } from 'react';
 import {
@@ -39,8 +33,7 @@ export interface DecodedArg {
   /** ERC-7730 clear-signing label for this arg (e.g. "Amount"), when a bundled
    *  descriptor matched. Additive — the raw name/value still apply on a miss. */
   label?: string;
-  /** ERC-7730 formatted value (e.g. "5 USDC", a named address, a date), when a
-   *  descriptor matched. */
+  /** ERC-7730 formatted value (e.g. "5 USDC", a named address), on a match. */
   formatted?: string;
 }
 
@@ -73,8 +66,8 @@ export interface DecodedCall {
   selector?: string;
   /** Human note when we could not fully decode (shown on the card). */
   note?: string;
-  /** ERC-7730 clear-signing intent (e.g. "Approve", "Swap") when a bundled
-   *  descriptor matched the (chainId,to)+function. Additive. */
+  /** ERC-7730 clear-signing intent (e.g. "Approve") when a bundled descriptor
+   *  matched the (chainId,to)+function. Additive. */
   intent?: string;
 }
 
@@ -205,6 +198,29 @@ function enrich7730(
   }
 }
 
+/** Decode `data` against a 4byte text signature, returning display args + raw
+ *  viem-decoded args (for 7730 enrichment). Empty arrays on a selector collision
+ *  or undecodable args — name-only is still useful. */
+function decode4byte(
+  sig: string, data: string, selector: string,
+): { args: DecodedArg[]; rawArgs: readonly unknown[] } {
+  try {
+    const item = parseAbiItem(`function ${sig}`) as Extract<Abi[number], { type: 'function' }>;
+    // Guard the selector actually matches (4byte can return collisions).
+    if (toFunctionSelector(item).toLowerCase() === selector) {
+      const decoded = decodeFunctionData({ abi: [item] as Abi, data: data as Hex });
+      const rawArgs = decoded.args ?? [];
+      const args = rawArgs.map((v, i) => ({
+        name: item.inputs[i]?.name || `arg${i}`,
+        type: item.inputs[i]?.type || '',
+        value: fmtArg(v),
+      }));
+      return { args, rawArgs };
+    }
+  } catch { /* keep name only */ }
+  return { args: [], rawArgs: [] };
+}
+
 /** Decode `call.data` for `to` on `chainId` into a function + named args.
  *  Network-backed; never throws — every failure path returns a `decoded:false`
  *  result the card renders as "could not decode" with the raw selector. */
@@ -261,10 +277,34 @@ export async function decodeCall(
       } catch { /* selector is in the ABI but args failed to decode — fall through to mismatch */ }
     }
     // Verified contract, but this selector is NOT one of its functions (or the
-    // matched function's args wouldn't decode). RED FLAG: do not pretend this is a
-    // valid call. Optionally name the selector via 4byte for display, but frame it
-    // strictly as a warning — never a calm decode.
+    // matched function's args wouldn't decode). Usually a RED FLAG. BUT proxy tokens
+    // (USDC/USDT/most ERC-20s) verify on Sourcify as the *proxy*, whose ABI lacks
+    // transfer/approve (those live in the implementation behind the proxy). For these
+    // we have a CURATED, canonical ERC-7730 descriptor pinned to the exact
+    // (chainId,address)+signature — a trustworthy allowlist. So before warning, name
+    // the selector via 4byte and check for an exact bundled-descriptor match: if one
+    // exists, clear-sign it (decode args + enrich) instead of crying wolf. We do NOT
+    // blanket-trust 4byte — only our descriptor allowlist relaxes the gate; an
+    // arbitrary unknown selector still gets the full anti-phishing warning.
     const guessSig = await fetch4byteSig(selector);
+    if (guessSig) {
+      const match = lookupDescriptor({ chainId, address: to, signature: guessSig });
+      if (match) {
+        const { args, rawArgs } = decode4byte(guessSig, data as string, selector);
+        const out: DecodedCall = {
+          decoded: true,
+          verified: sourcify.verified,
+          source: 'sourcify',
+          functionName: guessSig.split('(')[0],
+          signature: guessSig,
+          args,
+          selector,
+          note: undefined,
+        };
+        enrich7730(out, match, rawArgs, chainId);
+        return out;
+      }
+    }
     const guess = guessSig ? `looks like ${guessSig} per 4byte, but ` : '';
     return {
       decoded: false,
@@ -281,21 +321,7 @@ export async function decodeCall(
   // 2. 4byte fallback -> signature + best-effort arg decode (unverified).
   const sig = await fetch4byteSig(selector);
   if (sig) {
-    let args: DecodedArg[] = [];
-    let rawArgs: readonly unknown[] = [];
-    try {
-      const item = parseAbiItem(`function ${sig}`) as Extract<Abi[number], { type: 'function' }>;
-      // Guard the selector actually matches (4byte can return collisions).
-      if (toFunctionSelector(item).toLowerCase() === selector) {
-        const decoded = decodeFunctionData({ abi: [item] as Abi, data: data as Hex });
-        rawArgs = decoded.args ?? [];
-        args = rawArgs.map((v, i) => ({
-          name: item.inputs[i]?.name || `arg${i}`,
-          type: item.inputs[i]?.type || '',
-          value: fmtArg(v),
-        }));
-      }
-    } catch { /* keep name only */ }
+    const { args, rawArgs } = decode4byte(sig, data as string, selector);
     const out: DecodedCall = {
       decoded: true,
       verified: false,
@@ -345,20 +371,12 @@ export function useDecodedCall(
 }
 
 /** A real, red "check before signing" warning — reserved for genuinely risky
- *  cases so we inform without crying wolf. We do NOT warn merely because a
- *  contract resolved via 4byte instead of Sourcify (that's a calm, informative
- *  decode — see DecodedCallBlock's neutral "decoded via function signature" note).
+ *  cases so we inform without crying wolf. A 4byte-only decode is calm, not scary.
  *
- *  A warning fires ONLY when:
- *   1. SELECTOR MISMATCH: the contract is verified on Sourcify but has no function
- *      with this selector (source:'mismatch') — the tx will revert / is malformed.
- *      This is the strongest "do not sign" case and uses the decode's own note; or
- *   2. the calldata is genuinely undecodable (no Sourcify, no 4byte match) — we
- *      truly cannot tell the user what the tx does; or
- *   3. there's a clear mismatch: the sender's description claims a payment/transfer
- *      but the decoded function is clearly not a transfer.
- *  Otherwise (confident decode, signatures consistent) we show the decode calmly
- *  with no banner at all. */
+ *  Fires ONLY when: (1) SELECTOR MISMATCH (verified contract, no such function,
+ *  source:'mismatch') — uses the decode's own note; (2) the calldata is genuinely
+ *  undecodable (no Sourcify, no 4byte); or (3) the sender's description claims a
+ *  payment but the decoded function is clearly not a transfer. Otherwise: calm. */
 export function spoofWarning(call: DecodedCall | null, description?: string): string | undefined {
   if (!call) return undefined; // plain ETH transfer — handled by the simple view
   // Selector-not-in-ABI on a verified contract: surface the explicit "do not sign"
