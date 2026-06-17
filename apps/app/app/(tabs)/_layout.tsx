@@ -104,8 +104,8 @@ export default function TabsLayout(): React.ReactElement {
             }}
 />
         ))}
-        {/* Settings is reachable only from the Menu page now - keep the route
-            (so /menu can navigate to /settings) but hide it from the bar. */}
+        {/* Settings is reachable only from the Menu sheet now - keep the route
+            (so the menu can navigate to /settings) but hide it from the bar. */}
         <Tabs.Screen name="settings" options={{ href: null }}/>
       </Tabs>
       {/* Pager overlay — covers the scene area (status-bar inset at top, stops

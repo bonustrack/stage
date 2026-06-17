@@ -2,15 +2,15 @@
  *  reused across the contacts and wallet tabs for a consistent
  *  identity affordance. Self-contained: resolves the active account address,
  *  resolves its display name (getPeerName ?? shortAddress via usePeerProfiles),
- *  renders a 28px avatar + name, and routes to /menu on tap (account switcher +
- *  Profile/Settings), matching the Home topnav exactly. */
+ *  renders a 28px avatar + name, and opens the Menu sheet on tap (account
+ *  switcher + Profile/Settings), matching the Home topnav exactly. */
 
 import { useEffect, useState } from 'react';
 
 import { Pressable } from '@metro-labs/kit/pressable';
-import { useRouter } from 'expo-router';
 import { Text } from '@metro-labs/kit/text';
 import { Avatar } from './Avatar';
+import { MenuSheet } from './MenuSheet';
 import { Row } from './layout';
 import { usePalette } from '../lib/theme';
 import { useActiveAccount } from '../modules/messaging';
@@ -19,8 +19,8 @@ import { usePeerProfiles, getPeerName } from '../lib/peerProfiles';
 import { shortAddress } from '../modules/messaging';
 
 export function TopnavIdentity(): React.ReactElement {
-  const router = useRouter();
   const { link: head, border } = usePalette();
+  const [menuOpen, setMenuOpen] = useState(false);
   /** Active account's own address → topnav avatar; re-resolved on account switch. */
   const [myAddress, setMyAddress] = useState<string | null>(null);
   const accountEpoch = useActiveAccount();
@@ -38,19 +38,22 @@ export function TopnavIdentity(): React.ReactElement {
   usePeerProfiles([myAddress]);
   const myName = myAddress ? (getPeerName(myAddress) ?? shortAddress(myAddress)) : '';
 
-  // Avatar opens the Menu page (account switcher + Profile/Settings), exactly as
+  // Avatar opens the Menu sheet (account switcher + Profile/Settings), exactly as
   // on Home — the single canonical identity tap-target across tabs.
   return (
-    <Pressable onPress={() => router.push('/menu')} hitSlop={8}>
-      <Row align="center" gap={8}>
-        <Avatar address={myAddress} size={28} style={{ backgroundColor: border }} />
-        {myName ? (
-          <Text weight="semibold" size="4xl"
-            numberOfLines={1} color={head} style={{ maxWidth: 200 }}>
-            {myName}
-          </Text>
-        ) : null}
-      </Row>
-    </Pressable>
+    <>
+      <Pressable onPress={() => setMenuOpen(true)} hitSlop={8}>
+        <Row align="center" gap={8}>
+          <Avatar address={myAddress} size={28} style={{ backgroundColor: border }} />
+          {myName ? (
+            <Text weight="semibold" size="4xl"
+              numberOfLines={1} color={head} style={{ maxWidth: 200 }}>
+              {myName}
+            </Text>
+          ) : null}
+        </Row>
+      </Pressable>
+      <MenuSheet visible={menuOpen} onClose={() => setMenuOpen(false)} />
+    </>
   );
 }
