@@ -9,6 +9,7 @@ import { Icon } from '@metro-labs/kit/icon';
 import { Row, Col } from './layout';
 import { shortAddress } from '../modules/messaging';
 import { usePalette, CLEAR_SIGN_TEAL } from '../lib/theme';
+import { intentSentence } from '../lib/intentSentence';
 import type { DecodedCall } from '../lib/txDecode';
 
 /** Shorten a decoded arg value for display: 0x-addresses (and address-like 42-char
@@ -16,25 +17,6 @@ import type { DecodedCall } from '../lib/txDecode';
 function fmtArgValue(v: string): string {
   if (/^0x[0-9a-fA-F]{40}$/.test(v)) return shortAddress(v);
   return v;
-}
-
-/** Build a one-line clear-signed intent sentence from a matched ERC-7730 decode,
- *  e.g. "Approve Permit2 to spend Unlimited USDC". Uses the enriched (labelled +
- *  formatted) args so it reads the same human values shown below. Returns just the
- *  bare intent ("Approve") when the args don't fit a known shape. */
-export function intentSentence(decoded: DecodedCall): string {
-  const intent = decoded.intent ?? '';
-  const byLabel = (label: string): string | undefined =>
-    decoded.args.find((a) => a.label === label)?.formatted;
-  const spender = byLabel('Spender');
-  const amount = byLabel('Amount');
-  // Approve: "Approve <spender> to spend <amount>".
-  if (/^approve$/i.test(intent) && (spender || amount)) {
-    const who = spender ? ` ${spender}` : '';
-    const what = amount ? ` to spend ${amount}` : '';
-    return `Approve${who}${what}`;
-  }
-  return intent;
 }
 
 /** When a bundled ERC-7730 descriptor matched (clear-signed), LEAD with the human

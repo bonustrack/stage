@@ -4,6 +4,13 @@ import { describe, expect, test } from 'bun:test';
 import {
   lookupDescriptor, lookupMessageDescriptor, formatField, knownAddressName,
 } from '../lib/erc7730';
+import { intentSentence } from '../lib/intentSentence';
+import type { DecodedCall } from '../lib/txDecode';
+
+/** Build a minimal enriched DecodedCall for intentSentence tests. */
+function decodedCall(intent: string, args: DecodedCall['args']): DecodedCall {
+  return { decoded: true, verified: true, source: 'sourcify', args, intent };
+}
 
 const MAX_UINT256 = ((1n << 256n) - 1n).toString();
 const USDC = { chainId: 1, address: '0x', symbol: 'USDC', decimals: 6 };
@@ -88,6 +95,26 @@ describe('lookupDescriptor (calldata)', () => {
       chainId: 1, address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
       signature: 'frobnicate(uint256)',
     })).toBeNull();
+  });
+});
+
+describe('intentSentence', () => {
+  test('USDC transfer -> "Send <amount> to <recipient>" (truncated address)', () => {
+    expect(intentSentence(decodedCall('Send', [
+      { name: '_to', type: 'address', value: '0xd8da6bf26964af9d7eed9e03e53415d37aa96045',
+        label: 'To', formatted: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045' },
+      { name: '_value', type: 'uint256', value: '10000000', label: 'Amount', formatted: '10 USDC' },
+    ]))).toBe('Send 10 USDC to 0xd8dA…6045');
+  });
+  test('approve -> "Approve <spender> to spend <amount>"', () => {
+    expect(intentSentence(decodedCall('Approve', [
+      { name: 'spender', type: 'address', value: '0x000000000022d473030f116ddee9f6b43ac78ba3',
+        label: 'Spender', formatted: 'Permit2 (0x0000…8BA3)' },
+      { name: 'value', type: 'uint256', value: '0', label: 'Amount', formatted: 'Unlimited USDC' },
+    ]))).toBe('Approve Permit2 (0x0000…8BA3) to spend Unlimited USDC');
+  });
+  test('no enriched args -> bare intent', () => {
+    expect(intentSentence(decodedCall('Wrap ETH', []))).toBe('Wrap ETH');
   });
 });
 
