@@ -104,3 +104,41 @@ describe('signConfirmMessage - never trusts description', () => {
     expect(msg).toMatch(/untrusted/i);
   });
 });
+
+// --- ERC-7730 clear-signing enrichment (bundled descriptors, offline) --------
+describe('deriveSignSummary ERC-7730 enrichment', () => {
+  test('Permit2 PermitSingle -> intent + labelled, formatted fields', () => {
+    const s = deriveSignSummary({
+      id: 'p', kind: 'eip712',
+      eip712: {
+        domain: { name: 'Permit2', chainId: 1, verifyingContract: '0x000000000022D473030F116dDEE9F6B43aC78BA3' },
+        types: { PermitSingle: [{ name: 'spender', type: 'address' }] },
+        primaryType: 'PermitSingle',
+        message: {
+          spender: '0x000000000000000000000000000000000000bEEF',
+          details: { token: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', amount: '5000000', expiration: '1700000000' },
+          sigDeadline: '1700000000',
+        },
+      },
+    });
+    expect(s.intent).toMatch(/Permit2/);
+    const amount = s.fields?.find(f => f.name === 'Amount allowance');
+    expect(amount?.value).toBe('5 USDC');
+    expect(s.fields?.find(f => f.name === 'Spender')?.value).toMatch(/^0x[0-9a-fA-F]{40}$/);
+    expect(s.fields?.find(f => f.name === 'Approval expires')?.value).toMatch(/UTC/);
+  });
+
+  test('no descriptor (unknown typed data) -> raw flatten, no intent', () => {
+    const s = deriveSignSummary({
+      id: 'u', kind: 'eip712',
+      eip712: {
+        domain: { name: 'MyApp', chainId: 1 },
+        types: { Login: [{ name: 'nonce', type: 'string' }] },
+        primaryType: 'Login',
+        message: { nonce: 'abc123' },
+      },
+    });
+    expect(s.intent).toBeUndefined();
+    expect(s.fields).toEqual([{ name: 'nonce', value: 'abc123' }]);
+  });
+});

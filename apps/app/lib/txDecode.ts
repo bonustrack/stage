@@ -26,12 +26,22 @@ import {
   decodeFunctionData, parseAbiItem, toFunctionSelector, type Abi, type Hex,
 } from 'viem';
 
+import {
+  lookupDescriptor, formatField, tokenForCalldataField, type CalldataMatch,
+} from './erc7730';
+
 /** One decoded argument: a name (from the ABI, or `arg0` when unnamed via 4byte)
  *  and a display-ready string value. */
 export interface DecodedArg {
   name: string;
   type: string;
   value: string;
+  /** ERC-7730 clear-signing label for this arg (e.g. "Amount"), when a bundled
+   *  descriptor matched. Additive — the raw name/value still apply on a miss. */
+  label?: string;
+  /** ERC-7730 formatted value (e.g. "5 USDC", a named address, a date), when a
+   *  descriptor matched. */
+  formatted?: string;
 }
 
 export interface DecodedCall {
@@ -63,6 +73,9 @@ export interface DecodedCall {
   selector?: string;
   /** Human note when we could not fully decode (shown on the card). */
   note?: string;
+  /** ERC-7730 clear-signing intent (e.g. "Approve", "Swap") when a bundled
+   *  descriptor matched the (chainId,to)+function. Additive. */
+  intent?: string;
 }
 
 /** Sourcify v2 contract API: returns the ABI + match status ('match' / 'exact_match'
@@ -149,6 +162,49 @@ async function fetch4byteSig(selector: string): Promise<string | null> {
   return null;
 }
 
+/** Read a decoded arg value by a descriptor `path`: a positional index ("1") or a
+ *  tuple member dot-path ("0.4"). Returns the string value, or undefined on miss.
+ *  Decoded args are stringified already (fmtArg); for tuple members the value is a
+ *  JSON object/array string, so we re-walk via the original viem-decoded args. */
+function argValueByPath(decodedArgs: readonly unknown[], path: string): string | undefined {
+  const parts = path.split('.').map(Number);
+  let cur: unknown = decodedArgs;
+  for (const p of parts) {
+    if (Array.isArray(cur)) cur = cur[p];
+    else if (cur && typeof cur === 'object') cur = (cur as Record<number, unknown>)[p];
+    else return undefined;
+    if (cur === undefined) return undefined;
+  }
+  if (typeof cur === 'bigint') return cur.toString();
+  if (cur == null) return undefined;
+  return String(cur);
+}
+
+/** Apply a matched ERC-7730 descriptor to the decoded call: attach the intent and
+ *  enrich each named arg with a clear-signing label + formatted value. Mutates in
+ *  place on the (already-built) DecodedCall. Pure on a miss (match===null). */
+function enrich7730(
+  result: DecodedCall, match: CalldataMatch | null,
+  rawArgs: readonly unknown[], chainId: number,
+): void {
+  if (!match) return;
+  result.intent = match.intent;
+  for (const f of match.fields) {
+    const idx = Number(f.path.split('.')[0]);
+    const target = result.args[idx];
+    if (!target) continue;
+    const value = argValueByPath(rawArgs, f.path);
+    if (value === undefined) continue;
+    // tokenAmount: the token (decimals/symbol) is the call target itself (@self)
+    // or an address arg named by tokenPath.
+    const tokAddr = f.tokenPath && f.tokenPath !== '@self'
+      ? argValueByPath(rawArgs, f.tokenPath) : undefined;
+    const token = tokenForCalldataField(f, match, chainId, tokAddr);
+    target.label = f.label;
+    target.formatted = formatField(value, f.format, { token });
+  }
+}
+
 /** Decode `call.data` for `to` on `chainId` into a function + named args.
  *  Network-backed; never throws — every failure path returns a `decoded:false`
  *  result the card renders as "could not decode" with the raw selector. */
@@ -190,7 +246,7 @@ export async function decodeCall(
         const signature = fn
           ? `${fn.name}(${inputs.map(p => p.type).join(',')})`
           : decoded.functionName;
-        return {
+        const out: DecodedCall = {
           decoded: true,
           verified: sourcify.verified,
           source: 'sourcify',
@@ -200,6 +256,8 @@ export async function decodeCall(
           selector,
           note: undefined,
         };
+        enrich7730(out, lookupDescriptor({ chainId, address: to, signature }), decoded.args ?? [], chainId);
+        return out;
       } catch { /* selector is in the ABI but args failed to decode — fall through to mismatch */ }
     }
     // Verified contract, but this selector is NOT one of its functions (or the
@@ -224,19 +282,21 @@ export async function decodeCall(
   const sig = await fetch4byteSig(selector);
   if (sig) {
     let args: DecodedArg[] = [];
+    let rawArgs: readonly unknown[] = [];
     try {
       const item = parseAbiItem(`function ${sig}`) as Extract<Abi[number], { type: 'function' }>;
       // Guard the selector actually matches (4byte can return collisions).
       if (toFunctionSelector(item).toLowerCase() === selector) {
         const decoded = decodeFunctionData({ abi: [item] as Abi, data: data as Hex });
-        args = (decoded.args ?? []).map((v, i) => ({
+        rawArgs = decoded.args ?? [];
+        args = rawArgs.map((v, i) => ({
           name: item.inputs[i]?.name || `arg${i}`,
           type: item.inputs[i]?.type || '',
           value: fmtArg(v),
         }));
       }
     } catch { /* keep name only */ }
-    return {
+    const out: DecodedCall = {
       decoded: true,
       verified: false,
       source: '4byte',
@@ -246,6 +306,8 @@ export async function decodeCall(
       selector,
       note: 'Decoded via function signature.',
     };
+    enrich7730(out, lookupDescriptor({ chainId, address: to, signature: sig }), rawArgs, chainId);
+    return out;
   }
 
   // 3. Nothing matched.

@@ -20,6 +20,10 @@
 
 import type { Eip712TypedData, SignatureRequestContent } from '@stage-labs/client/xmtp/sign';
 
+import {
+  lookupMessageDescriptor, formatField, tokenForMessageField,
+} from './erc7730';
+
 /** EIP-712 primaryTypes that grant a standing authorization an attacker can
  *  later use to move assets. A signature for any of these is treated as
  *  high-risk and gets an explicit warning (never a friendly "sign in" line).
@@ -66,6 +70,19 @@ export interface SignConfirmSummary {
   fields?: Array<{ name: string; value: string }>;
   /** For a `personal` request: the literal message text being signed. */
   message?: string;
+  /** ERC-7730 clear-signing intent (e.g. "Authorize spending of token (Permit2)")
+   *  when a bundled message descriptor matched. Additive. */
+  intent?: string;
+}
+
+/** Read a value out of an EIP-712 message by a dot path ("details.amount"). */
+function valueByPath(message: Record<string, unknown> | undefined, path: string): unknown {
+  let cur: unknown = message;
+  for (const p of path.split('.')) {
+    if (cur && typeof cur === 'object') cur = (cur as Record<string, unknown>)[p];
+    else return undefined;
+  }
+  return cur;
 }
 
 /** Pull the first string-valued field from `message` matching any candidate key
@@ -109,18 +126,36 @@ export function deriveSignSummary(req: SignatureRequestContent): SignConfirmSumm
   const token = fieldOf(td.message, ['token']) ?? verifyingContract;
   /** Flatten the top-level message into compact name:value pairs so the sheet
    *  shows the concrete content being signed (capped to keep the alert readable). */
-  const fields = td.message
-    ? Object.entries(td.message).slice(0, 6).map(([name, v]) => ({
-        name,
-        value: ((): string => {
-          if (v == null) return '';
-          if (typeof v === 'object') {
-            try { return JSON.stringify(v).slice(0, 80); } catch { return String(v); }
-          }
-          return String(v).slice(0, 80);
-        })(),
-      }))
-    : undefined;
+  // ERC-7730 enrichment: a bundled message descriptor matched by primaryType
+  // (+ domain) gives an intent + labelled, formatted fields (spender as a checksum
+  // address, amounts with token decimals/symbol, dates). Falls back to the raw
+  // top-level flatten below when there's no descriptor.
+  const desc = lookupMessageDescriptor({ primaryType: primary, domain });
+  const chainNum = domain?.chainId != null ? Number(domain.chainId) : NaN;
+  const enriched = desc?.fields
+    .map((f) => {
+      const v = valueByPath(td.message, f.path);
+      if (v == null) return undefined;
+      const tokAddr = f.tokenPath && f.tokenPath !== '@verifyingContract'
+        ? (valueByPath(td.message, f.tokenPath) as string | undefined) : undefined;
+      const tok = tokenForMessageField(f, chainNum, verifyingContract, tokAddr);
+      return { name: f.label, value: formatField(v, f.format, { token: tok }) };
+    })
+    .filter((x): x is { name: string; value: string } => !!x && x.value !== '');
+  const fields = enriched && enriched.length
+    ? enriched
+    : td.message
+      ? Object.entries(td.message).slice(0, 6).map(([name, v]) => ({
+          name,
+          value: ((): string => {
+            if (v == null) return '';
+            if (typeof v === 'object') {
+              try { return JSON.stringify(v).slice(0, 80); } catch { return String(v); }
+            }
+            return String(v).slice(0, 80);
+          })(),
+        }))
+      : undefined;
   return {
     highRisk: !!risk,
     kindLabel: risk ?? (primary || 'typed data'),
@@ -130,6 +165,7 @@ export function deriveSignSummary(req: SignatureRequestContent): SignConfirmSumm
     token,
     primaryType: primary || undefined,
     fields,
+    intent: desc?.intent,
   };
 }
 
@@ -163,6 +199,7 @@ export function signConfirmMessage(s: SignConfirmSummary, description?: string):
     .map(f => `\n  ${f.name}: ${f.value}`)
     .join('');
   const content = fieldLines ? `\nFields:${fieldLines}` : '';
-  return `Sign typed data (${s.primaryType ?? s.kindLabel})?${dom}${content}\n`
+  const intent = s.intent ? `\n${s.intent}` : '';
+  return `Sign typed data (${s.primaryType ?? s.kindLabel})?${intent}${dom}${content}\n`
     + `Only sign if you trust the sender.${senderNote}`;
 }

@@ -1,0 +1,126 @@
+{
+  "_source": "Normalized + trimmed from LedgerHQ/clear-signing-erc7730-registry (ercs/eip712-erc2612-permit.json, registry/uniswap/eip712-uniswap-permit2.json, registry/circle/eip712-TransferWithAuthorization.json, registry/safe/common-eip712-Safe.json, registry/opensea/eip712-opensea.json). Matched by EIP-712 primaryType (+ domain name/verifyingContract when distinctive).",
+  "descriptors": [
+    {
+      "id": "eip2612-permit",
+      "owner": "ERC-2612 Permit",
+      "primaryType": "Permit",
+      "intent": "Authorize spending of tokens",
+      "fields": [
+        { "path": "spender", "label": "Spender", "format": "addressName" },
+        { "path": "value", "label": "Max spending amount", "format": "tokenAmount", "tokenPath": "@verifyingContract" },
+        { "path": "deadline", "label": "Valid until", "format": "date" }
+      ]
+    },
+    {
+      "id": "permit2-single",
+      "owner": "Uniswap Permit2",
+      "domainName": "Permit2",
+      "verifyingContract": "0x000000000022d473030f116ddee9f6b43ac78ba3",
+      "primaryType": "PermitSingle",
+      "intent": "Authorize spending of token (Permit2)",
+      "fields": [
+        { "path": "spender", "label": "Spender", "format": "addressName" },
+        { "path": "details.amount", "label": "Amount allowance", "format": "tokenAmount", "tokenPath": "details.token" },
+        { "path": "details.expiration", "label": "Approval expires", "format": "date" }
+      ]
+    },
+    {
+      "id": "permit2-batch",
+      "owner": "Uniswap Permit2",
+      "domainName": "Permit2",
+      "verifyingContract": "0x000000000022d473030f116ddee9f6b43ac78ba3",
+      "primaryType": "PermitBatch",
+      "intent": "Authorize spending of tokens (Permit2)",
+      "fields": [
+        { "path": "spender", "label": "Spender", "format": "addressName" },
+        { "path": "sigDeadline", "label": "Valid until", "format": "date" }
+      ]
+    },
+    {
+      "id": "permit2-transferfrom",
+      "owner": "Uniswap Permit2",
+      "domainName": "Permit2",
+      "verifyingContract": "0x000000000022d473030f116ddee9f6b43ac78ba3",
+      "primaryType": "PermitTransferFrom",
+      "intent": "Authorize token transfer (Permit2)",
+      "fields": [
+        { "path": "spender", "label": "Spender", "format": "addressName" },
+        { "path": "permitted.amount", "label": "Amount", "format": "tokenAmount", "tokenPath": "permitted.token" },
+        { "path": "deadline", "label": "Deadline", "format": "date" }
+      ]
+    },
+    {
+      "id": "eip3009-transferwithauthorization",
+      "owner": "Circle (USDC)",
+      "domainName": "USD Coin",
+      "primaryType": "TransferWithAuthorization",
+      "intent": "Authorize USDC transfer (EIP-3009)",
+      "fields": [
+        { "path": "from", "label": "From", "format": "addressName" },
+        { "path": "to", "label": "To", "format": "addressName" },
+        { "path": "value", "label": "Amount", "format": "tokenAmount", "tokenPath": "@verifyingContract" },
+        { "path": "validBefore", "label": "Valid before", "format": "date" }
+      ]
+    },
+    {
+      "id": "eip3009-receivewithauthorization",
+      "owner": "Circle (USDC)",
+      "domainName": "USD Coin",
+      "primaryType": "ReceiveWithAuthorization",
+      "intent": "Authorize USDC receive (EIP-3009)",
+      "fields": [
+        { "path": "from", "label": "From", "format": "addressName" },
+        { "path": "to", "label": "To", "format": "addressName" },
+        { "path": "value", "label": "Amount", "format": "tokenAmount", "tokenPath": "@verifyingContract" },
+        { "path": "validBefore", "label": "Valid before", "format": "date" }
+      ]
+    },
+    {
+      "id": "safe-safetx",
+      "owner": "Safe",
+      "primaryType": "SafeTx",
+      "intent": "Safe transaction",
+      "fields": [
+        { "path": "to", "label": "To", "format": "addressName" },
+        { "path": "value", "label": "Value (wei)", "format": "raw" },
+        { "path": "operation", "label": "Operation type", "format": "raw" },
+        { "path": "refundReceiver", "label": "Gas receiver", "format": "addressName" }
+      ]
+    },
+    {
+      "id": "opensea-wyvern-order",
+      "owner": "OpenSea (Wyvern)",
+      "domainName": "Wyvern Exchange Contract",
+      "primaryType": "Order",
+      "intent": "OpenSea listing/order",
+      "fields": [
+        { "path": "exchange", "label": "Exchange", "format": "addressName" },
+        { "path": "basePrice", "label": "Price (wei)", "format": "raw" },
+        { "path": "expirationTime", "label": "Offer expiration", "format": "date" }
+      ]
+    },
+    {
+      "id": "seaport-order",
+      "owner": "OpenSea (Seaport)",
+      "domainName": "Seaport",
+      "primaryType": "OrderComponents",
+      "intent": "Seaport order",
+      "fields": [
+        { "path": "offerer", "label": "Offerer", "format": "addressName" },
+        { "path": "zone", "label": "Zone", "format": "addressName" },
+        { "path": "startTime", "label": "Start", "format": "date" },
+        { "path": "endTime", "label": "End", "format": "date" }
+      ]
+    }
+  ],
+  "tokens": [
+    { "chainId": 1, "address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", "symbol": "USDC", "decimals": 6 },
+    { "chainId": 1, "address": "0xdac17f958d2ee523a2206206994597c13d831ec7", "symbol": "USDT", "decimals": 6 },
+    { "chainId": 1, "address": "0x6b175474e89094c44da98b954eedeac495271d0f", "symbol": "DAI", "decimals": 18 },
+    { "chainId": 1, "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", "symbol": "WETH", "decimals": 18 },
+    { "chainId": 8453, "address": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913", "symbol": "USDC", "decimals": 6 },
+    { "chainId": 8453, "address": "0x50c5725949a6f0c72e6c4a641f24049a917db0cb", "symbol": "DAI", "decimals": 18 },
+    { "chainId": 8453, "address": "0x4200000000000000000000000000000000000006", "symbol": "WETH", "decimals": 18 }
+  ]
+}

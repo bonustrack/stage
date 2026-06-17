@@ -9,8 +9,10 @@ import { Icon } from '@metro-labs/kit/icon';
 import { Button } from '@metro-labs/kit/button';
 import { Row, Col, Box } from './layout';
 import { shortAddress } from '../modules/messaging';
-import { fmtSigValue, ethFromWeiHex } from './MessengerBubble.helpers';
+import { ethFromWeiHex } from './MessengerBubble.helpers';
 import type { SigRequest, SigReference, TxRequest, TxReceipt } from './MessengerBubble.helpers';
+import { deriveSignSummary } from '../lib/signConfirm';
+import type { SignatureRequestContent } from '@stage-labs/client/xmtp/sign';
 import { usePalette, useBlockRadius, withAlpha } from '../lib/theme';
 import { usePeerProfiles, getPeerName } from '../lib/peerProfiles';
 import { PaymentCard } from './PaymentCard';
@@ -48,8 +50,13 @@ export function SigRequestCard({ req, dark, sub, signing, onSign, consentAllowed
   const domain = req.eip712?.domain as { name?: unknown; chainId?: unknown } | undefined;
   const domainName = domain?.name != null ? String(domain.name) : undefined;
   const chainId = domain?.chainId != null ? String(domain.chainId) : undefined;
-  const fields = req.kind === 'eip712' && req.eip712?.message
-    ? Object.entries(req.eip712.message)
+  // App-derived summary (never the peer's description). When a bundled ERC-7730
+  // descriptor matches, `summary.fields` carry labelled/formatted values and
+  // `summary.intent` a clear-signing one-liner; otherwise it falls back to the raw
+  // top-level message flatten.
+  const summary = deriveSignSummary(req as unknown as SignatureRequestContent);
+  const fields: Array<[string, string]> = req.kind === 'eip712'
+    ? (summary.fields ?? []).map((f) => [f.name, f.value] as [string, string])
     : [];
   return (
     <Box radius={blockRadius} background={pal.border} padding={12} margin={{ top: 8 }} gap={8} style={{ alignSelf: 'stretch' }}>
@@ -77,13 +84,16 @@ export function SigRequestCard({ req, dark, sub, signing, onSign, consentAllowed
               {req.eip712.primaryType}
             </Text>
           ) : null}
+          {summary.intent ? (
+            <Text size="xs" color={sub}>{summary.intent}</Text>
+          ) : null}
           {fields.map(([k, v]) => (
             <Row key={k} align="start" gap={8}>
               <Text size="xs" color={sub} style={{ minWidth: 80, flexShrink: 0 }}>
                 {k}
               </Text>
               <Text variant="mono" size="xs" numberOfLines={4} style={{ flexShrink: 1, flex: 1 }}>
-                {fmtSigValue(v)}
+                {v}
               </Text>
             </Row>
           ))}
@@ -305,19 +315,25 @@ function DecodedCallBlock({ decoded, pending, target, sub, selector }: {
     <Col radius="md" background={detailBg} padding={10} gap={6} style={{ alignSelf: 'stretch' }}>
       <Row align="center" gap={6}>
         <Icon name="code" size={14} color={sub}/>
-        <Text size="xs" color={sub}>This transaction calls</Text>
+        {/* ERC-7730 clear-signing intent ("Approve", "Swap") when a bundled
+            descriptor matched; else the neutral "This transaction calls". */}
+        <Text size="xs" color={sub}>{decoded?.intent ?? 'This transaction calls'}</Text>
       </Row>
       <Text variant="mono" weight="semibold" size="sm" numberOfLines={2}>
         {pending ? 'Decoding…' : fnLabel}
       </Text>
       {decoded?.args.map((a, i) => (
         <Row key={`${a.name}-${i}`} align="start" gap={8}>
-          {/* name (type): the ABI/4byte param type sits next to the name so the
-              user can read the call shape, e.g. "content (string)". */}
+          {/* Prefer the ERC-7730 label ("Amount", "Spender") when present; else the
+              ABI/4byte param name + type, e.g. "content (string)". */}
           <Text size="xs" color={sub} style={{ minWidth: 80, flexShrink: 0 }} numberOfLines={2}>
-            {a.name}{a.type ? ` (${a.type})` : ''}
+            {a.label ?? `${a.name}${a.type ? ` (${a.type})` : ''}`}
           </Text>
-          <Text variant="mono" size="xs" numberOfLines={4} style={{ flexShrink: 1, flex: 1 }}>{fmtArgValue(a.value)}</Text>
+          {/* Prefer the ERC-7730 formatted value ("5 USDC", a checksum address, a
+              date) when present; else the raw decoded value. */}
+          <Text variant="mono" size="xs" numberOfLines={4} style={{ flexShrink: 1, flex: 1 }}>
+            {a.formatted ?? fmtArgValue(a.value)}
+          </Text>
         </Row>
       ))}
       {!pending && decoded?.note && decoded.source !== 'mismatch' ? (

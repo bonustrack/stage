@@ -117,3 +117,57 @@ describe('decodeCall selector mismatch detection', () => {
     expect(spoofWarning(r, 'post a message')).toBeUndefined();
   });
 });
+
+// --- ERC-7730 clear-signing enrichment (bundled descriptors, offline) --------
+const ERC20_ABI = parseAbi([
+  'function transfer(address _to, uint256 _value)',
+  'function approve(address _spender, uint256 _value)',
+]);
+const USDC = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'; // mainnet USDC, in bundle
+const transferData = encodeFunctionData({
+  abi: ERC20_ABI, functionName: 'transfer',
+  args: ['0x000000000000000000000000000000000000bEEF', 5_000_000n], // 5 USDC (6 decimals)
+});
+const approveData = encodeFunctionData({
+  abi: ERC20_ABI, functionName: 'approve',
+  args: ['0x000000000000000000000000000000000000bEEF', 1_000_000n],
+});
+const erc20Hit = (url: string) => ({
+  ok: true,
+  json: async () => (url.includes('sourcify')
+    ? { abi: ERC20_ABI, match: 'match' }
+    : { results: [] }),
+});
+
+describe('decodeCall ERC-7730 enrichment', () => {
+  afterEach(() => { globalThis.fetch = realFetch; });
+
+  test('USDC transfer -> Send intent + Amount formatted in USDC + To label', async () => {
+    mockFetch(erc20Hit);
+    const r = await decodeCall(USDC, transferData, 1);
+    expect(r.decoded).toBe(true);
+    expect(r.intent).toBe('Send');
+    const amount = r.args.find(a => a.label === 'Amount');
+    expect(amount?.formatted).toBe('5 USDC');
+    const to = r.args.find(a => a.label === 'To');
+    expect(to?.formatted).toMatch(/^0x[0-9a-fA-F]{40}$/);
+  });
+
+  test('USDC approve -> Approve intent + Spender/Amount labels', async () => {
+    mockFetch(erc20Hit);
+    const r = await decodeCall(USDC, approveData, 1);
+    expect(r.intent).toBe('Approve');
+    expect(r.args.find(a => a.label === 'Spender')).toBeTruthy();
+    expect(r.args.find(a => a.label === 'Amount')?.formatted).toBe('1 USDC');
+  });
+
+  test('no descriptor (unknown contract) -> no intent/label, raw args intact', async () => {
+    mockFetch((url) => (url.includes('sourcify')
+      ? { ok: true, json: async () => ({ abi: ERC20_ABI, match: 'match' }) }
+      : { ok: true, json: async () => ({ results: [] }) }));
+    const r = await decodeCall('0x000000000000000000000000000000000000c0de', transferData, 1);
+    expect(r.decoded).toBe(true);
+    expect(r.intent).toBeUndefined();
+    expect(r.args.every(a => a.label === undefined && a.formatted === undefined)).toBe(true);
+  });
+});
