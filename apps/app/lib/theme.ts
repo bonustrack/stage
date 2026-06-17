@@ -54,6 +54,12 @@ export type { ThemePreference };
 export const DANGER = semanticColors.dangerColor.dark;
 export const SUCCESS = semanticColors.successColor.dark;
 
+/** Debug-visibility teal for ERC-7730 clear-signed text (intent + enriched arg
+ *  labels/values). Distinct from the body/sub palette so it's instantly obvious
+ *  WHICH text came from a bundled 7730 descriptor vs the raw decode. Not a
+ *  semantic kit token (none is teal) — one place, one literal. */
+export const CLEAR_SIGN_TEAL = '#0e9591';
+
 /** Cached preference — populated on first hook mount from SecureStore. Subsequent reads
  *  return synchronously so screens never flash the wrong theme. */
 let cached: ThemePreference = 'system';

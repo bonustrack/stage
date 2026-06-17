@@ -13,7 +13,7 @@ import { ethFromWeiHex } from './MessengerBubble.helpers';
 import type { SigRequest, SigReference, TxRequest, TxReceipt } from './MessengerBubble.helpers';
 import { deriveSignSummary } from '../lib/signConfirm';
 import type { SignatureRequestContent } from '@stage-labs/client/xmtp/sign';
-import { usePalette, useBlockRadius, withAlpha } from '../lib/theme';
+import { usePalette, useBlockRadius, withAlpha, CLEAR_SIGN_TEAL } from '../lib/theme';
 import { usePeerProfiles, getPeerName } from '../lib/peerProfiles';
 import { PaymentCard } from './PaymentCard';
 import { VIEM_CHAINS } from '@stage-labs/client/wallet/assets';
@@ -58,6 +58,11 @@ export function SigRequestCard({ req, dark, sub, signing, onSign, consentAllowed
   const fields: Array<[string, string]> = req.kind === 'eip712'
     ? (summary.fields ?? []).map((f) => [f.name, f.value] as [string, string])
     : [];
+  // A matched ERC-7730 descriptor sets `summary.intent`; when it does, the
+  // labelled fields above are the descriptor's enriched values too. Render those
+  // 7730-derived pieces in teal so clear-signing is visually distinct from the
+  // raw message flatten.
+  const clearSigned = !!summary.intent;
   return (
     <Box radius={blockRadius} background={pal.border} padding={12} margin={{ top: 8 }} gap={8} style={{ alignSelf: 'stretch' }}>
       <Row align="center" gap={8}>
@@ -85,14 +90,14 @@ export function SigRequestCard({ req, dark, sub, signing, onSign, consentAllowed
             </Text>
           ) : null}
           {summary.intent ? (
-            <Text size="xs" color={sub}>{summary.intent}</Text>
+            <Text size="xs" color={CLEAR_SIGN_TEAL}>{summary.intent}</Text>
           ) : null}
           {fields.map(([k, v]) => (
             <Row key={k} align="start" gap={8}>
-              <Text size="xs" color={sub} style={{ minWidth: 80, flexShrink: 0 }}>
+              <Text size="xs" color={clearSigned ? CLEAR_SIGN_TEAL : sub} style={{ minWidth: 80, flexShrink: 0 }}>
                 {k}
               </Text>
-              <Text variant="mono" size="xs" numberOfLines={4} style={{ flexShrink: 1, flex: 1 }}>
+              <Text variant="mono" size="xs" color={clearSigned ? CLEAR_SIGN_TEAL : undefined} numberOfLines={4} style={{ flexShrink: 1, flex: 1 }}>
                 {v}
               </Text>
             </Row>
@@ -317,7 +322,7 @@ function DecodedCallBlock({ decoded, pending, target, sub, selector }: {
         <Icon name="code" size={14} color={sub}/>
         {/* ERC-7730 clear-signing intent ("Approve", "Swap") when a bundled
             descriptor matched; else the neutral "This transaction calls". */}
-        <Text size="xs" color={sub}>{decoded?.intent ?? 'This transaction calls'}</Text>
+        <Text size="xs" color={decoded?.intent ? CLEAR_SIGN_TEAL : sub}>{decoded?.intent ?? 'This transaction calls'}</Text>
       </Row>
       <Text variant="mono" weight="semibold" size="sm" numberOfLines={2}>
         {pending ? 'Decoding…' : fnLabel}
@@ -326,12 +331,13 @@ function DecodedCallBlock({ decoded, pending, target, sub, selector }: {
         <Row key={`${a.name}-${i}`} align="start" gap={8}>
           {/* Prefer the ERC-7730 label ("Amount", "Spender") when present; else the
               ABI/4byte param name + type, e.g. "content (string)". */}
-          <Text size="xs" color={sub} style={{ minWidth: 80, flexShrink: 0 }} numberOfLines={2}>
+          <Text size="xs" color={a.label ? CLEAR_SIGN_TEAL : sub} style={{ minWidth: 80, flexShrink: 0 }} numberOfLines={2}>
             {a.label ?? `${a.name}${a.type ? ` (${a.type})` : ''}`}
           </Text>
           {/* Prefer the ERC-7730 formatted value ("5 USDC", a checksum address, a
-              date) when present; else the raw decoded value. */}
-          <Text variant="mono" size="xs" numberOfLines={4} style={{ flexShrink: 1, flex: 1 }}>
+              date) when present; else the raw decoded value. The 7730 value is
+              teal so it's distinct from the raw decode. */}
+          <Text variant="mono" size="xs" color={a.formatted ? CLEAR_SIGN_TEAL : undefined} numberOfLines={4} style={{ flexShrink: 1, flex: 1 }}>
             {a.formatted ?? fmtArgValue(a.value)}
           </Text>
         </Row>
