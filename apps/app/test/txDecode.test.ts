@@ -32,6 +32,29 @@ describe('spoofWarning', () => {
     expect(w).toMatch(/post\(\)/);
   });
 
+  test('clear-signed approve (7730 intent) -> payment-vs-approve warning suppressed', () => {
+    // A recognized ERC-7730 approve carries an `intent`. The description says
+    // "payment" + the fn is approve (not a transfer) — without the gate this would
+    // fire the contradictory red banner above the green success. The intent gate
+    // suppresses it.
+    const c: DecodedCall = {
+      decoded: true, verified: true, source: 'sourcify',
+      functionName: 'approve', signature: 'approve(address,uint256)', args: [],
+      intent: 'Approve',
+    };
+    expect(spoofWarning(c, 'I am sending you 5 USDC')).toBeUndefined();
+  });
+
+  test('UNrecognized approve (no 7730 intent) + payment description -> still warns', () => {
+    // No intent = not on the curated allowlist; the genuine anti-phishing warning
+    // must still fire (we only relax for recognized descriptors).
+    const c: DecodedCall = {
+      decoded: true, verified: true, source: 'sourcify',
+      functionName: 'approve', signature: 'approve(address,uint256)', args: [],
+    };
+    expect(spoofWarning(c, 'I am sending you 5 USDC')).toMatch(/approve\(\)/);
+  });
+
   test('verified contract, description matches a transfer -> no warning', () => {
     expect(spoofWarning(verified('transfer'), 'send 5 USDC')).toBeUndefined();
   });

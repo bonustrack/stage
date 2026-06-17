@@ -387,8 +387,8 @@ export function spoofWarning(call: DecodedCall | null, description?: string): st
   if (!call.decoded) {
     return 'This call could not be decoded, so the app cannot confirm what it does. Check before signing.';
   }
-  // We HAVE a confident decode (Sourcify or a verified 4byte signature). The only
-  // remaining risk worth a banner is a description that contradicts the action.
+  // Clear-signed (curated ERC-7730 descriptor matched): suppress the generic payment-vs-action banner so it can't contradict the green success state.
+  if (call.intent) return undefined;
   const desc = (description ?? '').toLowerCase();
   const claimsTransfer = /\b(send|sent|pay|paid|payment|transfer)\b|\$|usdc|eth\b/.test(desc);
   const fn = (call.functionName ?? '').toLowerCase();

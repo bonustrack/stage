@@ -91,6 +91,29 @@ const messages = messageBundle as unknown as {
 
 const norm = (a: string): string => a.trim().toLowerCase();
 
+/** 2^256-1 — the canonical "infinite approval" sentinel. Approvals at (or very
+ *  near) this value mean "no cap", which renders as a misleading 78-digit number;
+ *  we display "Unlimited" instead. */
+const MAX_UINT256 = (1n << 256n) - 1n;
+/** Treat amounts within this margin of max-uint256 as unlimited too (some
+ *  routers use 2^256-2 / a near-max sentinel). 2^255 = "anything above half the
+ *  uint256 range is effectively infinite for any real token supply". */
+const UNLIMITED_THRESHOLD = 1n << 255n;
+
+/** Known protocol addresses (lowercased) -> short human name. Used to label an
+ *  addressName/address field instead of showing the bare 0x… hash. Curated, tiny,
+ *  offline — a miss just falls back to the checksummed address. */
+const KNOWN_ADDRESSES: Record<string, string> = {
+  '0x000000000022d473030f116ddee9f6b43ac78ba3': 'Permit2',
+};
+
+/** Resolve a known protocol name for an address, or undefined. Exported so the
+ *  card can label enriched address args. */
+export function knownAddressName(address?: string): string | undefined {
+  if (!address || !/^0x[0-9a-fA-F]{40}$/.test(address)) return undefined;
+  return KNOWN_ADDRESSES[norm(address)];
+}
+
 /** Index (chainId:address)->descriptor and a token table, built once. */
 let calldataIndex: Map<string, CalldataDescriptor> | null = null;
 let tokenIndex: Map<string, TokenEntry> | null = null;
@@ -217,8 +240,16 @@ export function formatField(
   const raw = stringify(value);
   try {
     switch (format) {
-      case 'addressName':
-        return /^0x[0-9a-fA-F]{40}$/.test(raw) ? getAddress(raw) : raw;
+      case 'addressName': {
+        if (!/^0x[0-9a-fA-F]{40}$/.test(raw)) return raw;
+        const known = knownAddressName(raw);
+        const checksummed = getAddress(raw);
+        // Known protocol: "Permit2 (0x0000…78BA3)" so the name leads but the
+        // address is still verifiable; unknown: the checksummed address as before.
+        return known
+          ? `${known} (${checksummed.slice(0, 6)}…${checksummed.slice(-4)})`
+          : checksummed;
+      }
       case 'date': {
         const secs = Number(BigInt(raw));
         if (!Number.isFinite(secs) || secs <= 0) return raw;
@@ -231,7 +262,13 @@ export function formatField(
       case 'tokenAmount': {
         const dec = ctx?.token?.decimals ?? 18;
         const sym = ctx?.token?.symbol;
-        const amt = formatUnits(BigInt(raw), dec);
+        const val = BigInt(raw);
+        // Infinite-approval sentinel (max-uint256 or near-max): render "Unlimited"
+        // instead of the misleading 78-digit number.
+        if (val >= UNLIMITED_THRESHOLD && val <= MAX_UINT256) {
+          return sym ? `Unlimited ${sym}` : 'Unlimited';
+        }
+        const amt = formatUnits(val, dec);
         return sym ? `${amt} ${sym}` : amt;
       }
       default:

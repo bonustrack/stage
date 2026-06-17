@@ -21,9 +21,10 @@ import { tokenLogoUrl } from '../lib/txAssets';
 import { useUsdValue } from '../lib/txPrices';
 import { chainIdToNumber, explorerTxUrl } from '@stage-labs/client/xmtp/tx';
 import { isCardActionBlocked } from '../lib/consentGate';
-import { useDecodedCall, spoofWarning, type DecodedCall } from '../lib/txDecode';
+import { useDecodedCall, spoofWarning } from '../lib/txDecode';
 import { useTxSimulation } from '../lib/txSimulate';
 import { SimulationBlock } from './MessengerBubble.sim';
+import { DecodedCallBlock } from './MessengerBubble.decoded';
 import { txActionLabel, isTransferRequest } from './MessengerBubble.txwording';
 // SigRequestCard — signature-request bubble: trusted (app-derived) title + the
 // typed-data/message detail. The peer-supplied `description` is rendered
@@ -209,6 +210,10 @@ export function TxRequestCard({ req, dark, sub, paying, onPay, consentAllowed }:
   const isErc20Transfer = !!tokenAddr; // metadata.toAddress present => transfer(token)
   const hasCalldata = !!call?.data && call.data !== '0x';
   const showDecodedBlock = hasCalldata && !isErc20Transfer;
+  // CLEAR-SIGNED: a bundled ERC-7730 descriptor matched (intent present). The card
+  // leads with the human intent + collapses the raw ABI, and drops the redundant
+  // "To <contract>" row (the decoded block already names the contract).
+  const clearSigned = !!decoded?.intent;
   // CALL + VALUE: a contract call (has calldata) that ALSO sends native ETH
   // (value > 0). The function call would otherwise hide the ETH leaving the
   // wallet, so surface it prominently. Pure native transfers already show `eth`.
@@ -237,7 +242,9 @@ export function TxRequestCard({ req, dark, sub, paying, onPay, consentAllowed }:
             <DecodedCallBlock decoded={decoded} pending={decoding} target={call?.to} sub={sub} selector={decoded?.selector}/>
           ) : null}
           {sendsNativeWithCall ? <TxNativeValueRow eth={eth as string} chainId={chainNum} /> : null}
-          {recipient ? <TxToRow address={recipient} /> : null}
+          {/* Drop the redundant "To <contract>" row when clear-signed — the decoded
+              block already names the contract (and the intent names the spender). */}
+          {recipient && !clearSigned ? <TxToRow address={recipient} /> : null}
           <Text size="xs" color={sub}>On {VIEM_CHAINS[chainNum]?.name ?? `chain ${chainNum}`}</Text>
         </Col>
       }
@@ -292,63 +299,6 @@ function TxNativeValueRow({ eth, chainId }: { eth: string; chainId: number }): R
       <Icon name="paperAirplane" size={14} color={pal.link}/>
       <Text size="sm" weight="semibold">Also sends {eth} ETH{usd ? ` (${usd})` : ''} with this call</Text>
     </Row>
-  );
-}
-/** Shorten a decoded arg value for display: 0x-addresses (and address-like 42-char
- *  hex) are truncated; everything else (strings, big numbers) is shown as-is. */
-function fmtArgValue(v: string): string {
-  if (/^0x[0-9a-fA-F]{40}$/.test(v)) return shortAddress(v);
-  return v;
-}
-/** DecodedCallBlock — the trusted "what this tx actually does" view for a generic
- *  contract call: the resolved function signature + each decoded arg (name: value)
- *  + the target contract. While the ABI fetch is in flight it shows the raw
- *  selector; a failed decode shows the selector + the "could not decode" note.
- *  This is derived from the calldata, NOT the sender's description. */
-function DecodedCallBlock({ decoded, pending, target, sub, selector }: {
-  decoded: DecodedCall | null; pending: boolean; target?: string; sub: string; selector?: string;
-}): React.ReactElement {
-  const pal = usePalette();
-  const detailBg = pal.border;
-  // For a verified-contract selector mismatch, never show a clean-looking
-  // signature as if it were a real call — show the raw selector instead; the red
-  // TxWarning above carries the "looks like X but no such function" detail.
-  const fnLabel = decoded?.source === 'mismatch'
-    ? (selector ?? decoded?.selector ?? 'unknown function')
-    : (decoded?.signature ?? decoded?.functionName ?? selector ?? 'call');
-  return (
-    <Col radius="md" background={detailBg} padding={10} gap={6} style={{ alignSelf: 'stretch' }}>
-      <Row align="center" gap={6}>
-        <Icon name="code" size={14} color={sub}/>
-        {/* ERC-7730 clear-signing intent ("Approve", "Swap") when a bundled
-            descriptor matched; else the neutral "This transaction calls". */}
-        <Text size="xs" color={decoded?.intent ? CLEAR_SIGN_TEAL : sub}>{decoded?.intent ?? 'This transaction calls'}</Text>
-      </Row>
-      <Text variant="mono" weight="semibold" size="sm" numberOfLines={2}>
-        {pending ? 'Decoding…' : fnLabel}
-      </Text>
-      {decoded?.args.map((a, i) => (
-        <Row key={`${a.name}-${i}`} align="start" gap={8}>
-          {/* Prefer the ERC-7730 label ("Amount", "Spender") when present; else the
-              ABI/4byte param name + type, e.g. "content (string)". */}
-          <Text size="xs" color={a.label ? CLEAR_SIGN_TEAL : sub} style={{ minWidth: 80, flexShrink: 0 }} numberOfLines={2}>
-            {a.label ?? `${a.name}${a.type ? ` (${a.type})` : ''}`}
-          </Text>
-          {/* Prefer the ERC-7730 formatted value ("5 USDC", a checksum address, a
-              date) when present; else the raw decoded value. The 7730 value is
-              teal so it's distinct from the raw decode. */}
-          <Text variant="mono" size="xs" color={a.formatted ? CLEAR_SIGN_TEAL : undefined} numberOfLines={4} style={{ flexShrink: 1, flex: 1 }}>
-            {a.formatted ?? fmtArgValue(a.value)}
-          </Text>
-        </Row>
-      ))}
-      {!pending && decoded?.note && decoded.source !== 'mismatch' ? (
-        <Text size="xs" color={sub}>{decoded.note}</Text>
-      ) : null}
-      {target ? (
-        <Text size="xs" color={sub} numberOfLines={1}>Contract: {shortAddress(target)}</Text>
-      ) : null}
-    </Col>
   );
 }
 /** TxWarning — anti-spoof banner: the app could not verify the contract, could
