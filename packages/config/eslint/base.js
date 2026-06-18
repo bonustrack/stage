@@ -14,10 +14,48 @@
 // `tseslint` is passed in by the consumer (it is the consumer's own
 // dependency / version) so this package never pins the toolchain version.
 import tseslint from "typescript-eslint";
+import jsdoc from "eslint-plugin-jsdoc";
 
 /** The `max-lines` rule value used everywhere: cap files at 400 lines,
  *  counting blank lines and comments. Split a file rather than crossing it. */
 export const MAX_LINES = ["error", { max: 400, skipBlankLines: false, skipComments: false }];
+
+// REQUIRE_EXPORTED_JSDOC — every EXPORTED function needs a leading
+// JSDoc/description comment. Uses eslint-plugin-jsdoc's `require-jsdoc`, scoped
+// to exported declarations: named exported `function`s + exported class methods
+// (via `require`), and exported arrow/function-expression consts + exported
+// default function/arrow (via `contexts`). `publicOnly` restricts it to things
+// reachable through an `export`. Only a non-empty description is required —
+// `require` does NOT force @param/@returns tags, so a single `/** … */` line
+// satisfies the rule. Trivial accessors/constructors stay exempt.
+export const REQUIRE_EXPORTED_JSDOC = [
+  "error",
+  {
+    publicOnly: true,
+    enableFixer: false,
+    checkConstructors: false,
+    checkGetters: false,
+    checkSetters: false,
+    require: {
+      FunctionDeclaration: true,
+      FunctionExpression: false,
+      ArrowFunctionExpression: false,
+      ClassDeclaration: false,
+      ClassExpression: false,
+      MethodDefinition: true,
+    },
+    contexts: [
+      "ExportNamedDeclaration > VariableDeclaration > VariableDeclarator > ArrowFunctionExpression",
+      "ExportNamedDeclaration > VariableDeclaration > VariableDeclarator > FunctionExpression",
+      "ExportDefaultDeclaration > ArrowFunctionExpression",
+      "ExportDefaultDeclaration > FunctionExpression",
+    ],
+  },
+];
+
+/** The eslint-plugin-jsdoc plugin object, re-exported so the react-native and
+ *  vue presets register the same instance in their own flat-config blocks. */
+export const jsdocPlugin = jsdoc;
 
 /** typescript-eslint's recommended flat config. Re-exported so consumers spread
  *  the exact same preset (`...recommended`) the inline configs used. */
@@ -35,12 +73,15 @@ export function ignores(extra = []) {
 export function strictTsBlock({ files = ["src/**/*.{ts,tsx}"] } = {}) {
   return {
     files,
+    plugins: { jsdoc },
     rules: {
       // Strong typing: ban `any`. Use `unknown` + narrowing, real interfaces,
       // generics, or library types instead.
       "@typescript-eslint/no-explicit-any": "error",
       // `error`: cap files at 400 lines. Split a file rather than crossing it.
       "max-lines": MAX_LINES,
+      // Every exported function/method needs a leading JSDoc description.
+      "jsdoc/require-jsdoc": REQUIRE_EXPORTED_JSDOC,
     },
   };
 }

@@ -7,7 +7,7 @@
 // vue-eslint-parser and eslint-plugin-vue are the consumer's own deps and are
 // passed in, so this package never pins those versions.
 import tseslint from "typescript-eslint";
-import { MAX_LINES } from "./base.js";
+import { MAX_LINES, REQUIRE_EXPORTED_JSDOC, jsdocPlugin } from "./base.js";
 
 /**
  * Build the Vue flat-config array.
@@ -32,8 +32,11 @@ export function vue({ vueParser, vuePlugin }) {
     ...tseslint.configs.recommended,
     {
       files: ["src/**/*.{ts,tsx}"],
+      plugins: { jsdoc: jsdocPlugin },
       rules: {
         "max-lines": MAX_LINES,
+        // Every exported function/method needs a leading JSDoc description.
+        "jsdoc/require-jsdoc": REQUIRE_EXPORTED_JSDOC,
       },
     },
     {

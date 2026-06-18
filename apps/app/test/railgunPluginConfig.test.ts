@@ -18,7 +18,7 @@
  *  CI catches a regression instead of a fresh APK. */
 
 import { describe, expect, test } from 'bun:test';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const cfg = require('../plugins/nodejsMobileConfig.js') as {
   transformAppBuildGradle(src: string): string;
   setExtractNativeLibs(m: { application?: { $?: Record<string, string> }[] }): unknown;

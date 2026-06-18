@@ -15,11 +15,10 @@
 
 import { describe, expect, test } from 'bun:test';
 import { railgunMethodManifest, SDK_METHODS } from '@stage-labs/client/railgun';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 import generated from '../nodejs-assets/nodejs-project/railgun-methods.json';
 // The host whitelist (plain CJS; its requires of the native SDK are lazy, so
 // importing the module here does NOT pull in @railgun-community/wallet).
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const sdkDispatch = require('../nodejs-assets/nodejs-project/sdkDispatch.js') as {
   listMethods(): string[];
   assertWhitelistParity(): { ok: boolean; skipped: boolean; missingInHost: string[]; extraInHost: string[] };

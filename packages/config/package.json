@@ -13,6 +13,9 @@
     "./tsconfig/react-native.json": "./tsconfig/react-native.json",
     "./tsconfig/vue.json": "./tsconfig/vue.json"
   },
+  "dependencies": {
+    "eslint-plugin-jsdoc": "^63.0.6"
+  },
   "peerDependencies": {
     "eslint": "*",
     "typescript-eslint": "*"
