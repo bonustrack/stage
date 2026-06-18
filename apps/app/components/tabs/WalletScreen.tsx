@@ -3,7 +3,7 @@
  *  single Multicall3 round-trip via the brovider RPC. Each row is 4-corner: name
  *  + price/24h-change left, USD value + amount/symbol right. */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { ScrollView } from 'react-native-gesture-handler';
 import { usePullToRefresh } from './PullToRefresh';
@@ -70,9 +70,12 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
   // ALWAYS render the fixed private row set (ETH/USDC × mainnet/Sepolia), even
   // pre-snapshot / pre-scan / at zero — pass the snapshot (may be null) so the
   // mapper seeds zero rows from the token registry then overlays live amounts.
-  const privateRows = privateBalancesToRows(
-    privSnapshot,
-    symbolPricesFromPublic(rows ?? []),
+  // Memoized so the merged Tokens list (TokensList) gets a stable `privateRows`
+  // reference across parent re-renders — without this the child's sort memo
+  // would re-run every render. Pure mapping keyed on the snapshot + public rows.
+  const privateRows = useMemo(
+    () => privateBalancesToRows(privSnapshot, symbolPricesFromPublic(rows ?? [])),
+    [privSnapshot, rows],
   );
 
   /** Tokens | NFTs segmented toggle. NFTs are lazy-loaded: we only fetch on
