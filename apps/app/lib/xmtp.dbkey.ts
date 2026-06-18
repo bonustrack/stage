@@ -5,6 +5,16 @@
 import * as SecureStore from 'expo-secure-store';
 import { Directory, File, Paths } from 'expo-file-system';
 
+/** SECURITY: the XMTP store-encryption key is device-bound at rest
+ *  (WHEN_UNLOCKED_THIS_DEVICE_ONLY), mirroring the keyring's STORE_OPTS. Without
+ *  this, expo-secure-store defaults to AFTER_FIRST_UNLOCK — which on iOS is
+ *  eligible for iCloud Keychain sync / encrypted device backups, so an attacker
+ *  with a backup could recover this AES key and decrypt the entire on-device
+ *  message store off-device. Device-binding keeps the key on this device only. */
+const STORE_OPTS: SecureStore.SecureStoreOptions = {
+  keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+};
+
 /** LEGACY single global key (pre per-account). Kept for graceful migration: the
  *  first account on an upgraded install adopts this key so its existing store
  *  stays readable; everything afterwards is keyed PER ACCOUNT. */
@@ -56,18 +66,20 @@ function randomKey(): Uint8Array {
  *  accounts mint a fresh random key. */
 export async function loadOrCreateDbKey(accountId: string): Promise<Uint8Array> {
   const id = dbKeyId(accountId);
-  const existing = await SecureStore.getItemAsync(id).catch(() => null);
+  const existing = await SecureStore.getItemAsync(id, STORE_OPTS).catch(() => null);
   if (existing) return decodeKey(existing);
 
-  const legacy = await SecureStore.getItemAsync(LEGACY_DB_ENCRYPTION_KEY).catch(() => null);
+  const legacy = await SecureStore.getItemAsync(LEGACY_DB_ENCRYPTION_KEY, STORE_OPTS).catch(() => null);
   if (legacy) {
-    /** Adopt the legacy global key for this (first/existing) account. */
-    await SecureStore.setItemAsync(id, legacy).catch(() => undefined);
+    /** Adopt the legacy global key for this (first/existing) account. Re-persist
+     *  device-bound (STORE_OPTS) even though the legacy original may have been
+     *  written without it, so the per-account copy is correctly device-bound. */
+    await SecureStore.setItemAsync(id, legacy, STORE_OPTS).catch(() => undefined);
     return decodeKey(legacy);
   }
 
   const fresh = randomKey();
-  await SecureStore.setItemAsync(id, encodeKey(fresh));
+  await SecureStore.setItemAsync(id, encodeKey(fresh), STORE_OPTS);
   return fresh;
 }
 
@@ -107,8 +119,8 @@ export async function wipeXmtpStore(accountId: string, dbDirName: string): Promi
    *  what triggers the persistent `PRAGMA key or salt has incorrect value`. */
   deleteDbFiles(dbDirName);
   /** Decide BEFORE deleting the per-account key whether it matched the legacy key. */
-  const accountKey = await SecureStore.getItemAsync(dbKeyId(accountId)).catch(() => null);
-  const legacyKey = await SecureStore.getItemAsync(LEGACY_DB_ENCRYPTION_KEY).catch(() => null);
+  const accountKey = await SecureStore.getItemAsync(dbKeyId(accountId), STORE_OPTS).catch(() => null);
+  const legacyKey = await SecureStore.getItemAsync(LEGACY_DB_ENCRYPTION_KEY, STORE_OPTS).catch(() => null);
   await deleteDbKey(accountId);
   /** Only blow away the legacy global key if THIS account was actually keyed by it
    *  (i.e. it's the legacy-migrated account whose corrupt store we're wiping), or
