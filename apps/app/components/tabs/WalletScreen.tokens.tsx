@@ -19,6 +19,11 @@ import { TokenRow } from './WalletScreen.parts';
 import { PendingShieldRows } from './WalletScreen.pending';
 import type { AssetRow } from './WalletScreen.assets';
 import type { PendingAction } from '../../lib/railgun/types';
+import { buildSortedTokenRows } from './WalletScreen.sort';
+
+// Pure merge/filter/sort/id transform lives in WalletScreen.sort (JSX-free, so
+// it's unit-testable). Re-exported here so existing import sites stay stable.
+export { buildSortedTokenRows, tokenRowId } from './WalletScreen.sort';
 
 export function TokensList({
   rows, privateRows, pending, head, sub, border, bg,
@@ -38,31 +43,36 @@ export function TokensList({
   // re-render (frequent: Railgun snapshot updates, balance refetches, tab
   // switches). `.sort` stays stable (V8/Hermes) so equal-value ordering is
   // preserved, matching the documented behavior exactly.
+  // Each entry carries a STABLE per-row id + onPress closure so the memoized
+  // TokenRow can skip re-rendering when the parent re-renders for unrelated
+  // reasons. Folding id/onPress into this memo (keyed on the data + router)
+  // keeps the closures referentially stable across renders — an inline
+  // `() => router.push(...)` per `.map()` would be a fresh function each render
+  // and defeat TokenRow's memo entirely.
   const sortedRows = useMemo(
-    () => [...rows, ...privateRows]
-      .filter(r => Number(r.balance) > 0)
-      .map(r => ({ r, usdValue: (r.priceUsd ?? 0) * Number(r.balance) }))
-      .sort((a, b) => b.usdValue - a.usdValue)
-      .map(({ r }) => r),
-    [rows, privateRows],
+    () => buildSortedTokenRows(rows, privateRows).map(({ r, id }) => ({
+      r,
+      id,
+      onPress: (): void => {
+        router.push({
+          pathname: '/wallet/token/[id]',
+          params: { id, row: JSON.stringify(r) },
+        });
+      },
+    })),
+    [rows, privateRows, router],
   );
   return (
     <Col margin={{ x: 16 }}>
       <PendingShieldRows pending={pending} pal={{ head, sub, border }} />
       {sortedRows
-        .map(r => {
-          const id = `${r.isPrivate ? 'priv' : 'pub'}:${r.chainId}:${r.symbol}`;
-          return (
-            <TokenRow
-              key={id}
-              r={r} head={head} sub={sub} border={border} bg={bg}
-              onPress={() => router.push({
-                pathname: '/wallet/token/[id]',
-                params: { id, row: JSON.stringify(r) },
-              })}
-            />
-          );
-        })}
+        .map(({ r, id, onPress }) => (
+          <TokenRow
+            key={id}
+            r={r} head={head} sub={sub} border={border} bg={bg}
+            onPress={onPress}
+          />
+        ))}
     </Col>
   );
 }
