@@ -28,6 +28,7 @@ import {
   ProfileActions, ProfileHeader, useProfileColors, useSelfAddress,
 } from './ProfileScreen.parts';
 import { CommonChannels } from './CommonChannels';
+import { ProfileHoldings } from './ProfileScreen.holdings';
 
 export type ProfileScreenVariant = 'tab' | 'route';
 
@@ -131,6 +132,10 @@ export function ProfileScreen({ address, variant, panRef }: {
         {/* Common channels — groups the local user + this peer are BOTH in.
             Only for OTHER users; resolves async so it never blocks the render. */}
         {!isSelf && addr ? <CommonChannels peerAddress={addr} enabled={!isSelf} c={c} /> : null}
+
+        {/* Tokens + NFTs holdings for the VIEWED address — reuses the Wallet
+            tab's TokensList / NftsView (public balances only; no Railgun). */}
+        {addr ? <ProfileHoldings address={addr} /> : null}
       </ScrollView>
 
       <ImageViewer uri={viewerUri ?? ''} visible={viewerUri !== null} onClose={() => setViewerUri(null)}/>
