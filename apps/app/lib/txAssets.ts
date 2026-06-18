@@ -13,11 +13,6 @@
 import { ASSETS, NATIVE_TOKEN_SENTINEL } from '@stage-labs/client/wallet/assets';
 import { stampTokenUrl } from '@metro-labs/kit/avatar';
 
-/** Neutral generic token glyph for an UNKNOWN ERC-20 — a question-mark coin from
- *  stamp.fyi's zero address. NEVER the ETH sentinel, so an unrecognised token can
- *  never be shown wearing the ETH logo. */
-const GENERIC_TOKEN = '0x0000000000000000000000000000000000000000';
-
 /** Find the registry row for `(chainId, token)`. `null`/native sentinel token =>
  *  the chain's native (ETH) row. */
 function assetFor(chainId: number, token: string | null | undefined) {
@@ -51,8 +46,6 @@ export function isUnknownToken(chainId: number, token: string | null | undefined
   if (isNative) return false;
   return !assetFor(chainId, token);
 }
-
-export { GENERIC_TOKEN };
 
 /** How to price an asset via CoinGecko: either a native coin id (`simple/price`)
  *  or an ERC-20 contract on a platform (`token_price/<platform>`). `null` = no
