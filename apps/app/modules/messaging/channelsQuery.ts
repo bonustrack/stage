@@ -29,6 +29,7 @@ function mirrorRows(rows: CachedRow[] | null): void {
 /** Subscribe-once bridge: mirror cache -> Query for the lifetime of the app.
  *  Idempotent guard so multiple hook mounts don't stack subscriptions. */
 let bridged = false;
+/** Wire the cache->Query mirror once for the app's lifetime (idempotent). */
 export function ensureChannelsQueryBridge(): void {
   if (bridged) return;
   bridged = true;

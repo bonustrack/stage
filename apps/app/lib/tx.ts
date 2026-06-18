@@ -90,6 +90,7 @@ export interface RawCall {
   chainId?: number;
 }
 
+/** Send a raw transaction from the active in-app wallet, returning the tx hash. */
 export async function sendCall(call: RawCall): Promise<Hex> {
   const { to, data, chainId = 1 } = call;
   if (!isAddress(to)) throw new Error('Invalid recipient address');

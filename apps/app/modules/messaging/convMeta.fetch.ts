@@ -24,11 +24,13 @@ export interface ConvMeta {
   inboxToAddr: Record<string, string>;
 }
 
+/** Default placeholder metadata for an unresolved or missing conversation. */
 export const EMPTY_CONV_META: ConvMeta = {
   peerAddr: null, isGroup: false, groupName: null, groupImage: '',
   groupDescription: '', memberAddrs: [], inboxToAddr: {},
 };
 
+/** Resolve a conversation's shared metadata (peer/group name, image, members) by line id. */
 export async function fetchConvMeta(convId: string): Promise<ConvMeta> {
   const conv = await convOfLine(lineOfConv(convId));
   if (!conv) return EMPTY_CONV_META;
@@ -57,6 +59,7 @@ export async function fetchConvMeta(convId: string): Promise<ConvMeta> {
 /** The group-info screen's EXTRA, non-shared data: per-member admin roles, keyed
  *  by lower-cased eth address. Derived from the SDK admin lists + the already-
  *  resolved inbox->addr map (passed in so we don't re-fetch members here). */
+/** Resolve each group member's role (owner/admin/member) keyed by lower-cased eth address. */
 export async function fetchGroupRoles(
   convId: string,
   inboxToAddr: Record<string, string>,

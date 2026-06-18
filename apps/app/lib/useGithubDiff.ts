@@ -156,6 +156,7 @@ async function fetchGithubDiff(ref: GithubRef): Promise<GithubDiff> {
   catch { return await fetchDirect(ref); }
 }
 
+/** Hook fetching the diff for a GitHub ref, with loading and error state. */
 export function useGithubDiff(ref: GithubRef | null): {
   diff: GithubDiff | null; isLoading: boolean; isError: boolean;
 } {

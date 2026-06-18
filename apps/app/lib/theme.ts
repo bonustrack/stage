@@ -51,7 +51,9 @@ export type { ThemePreference };
 /** Scheme-independent semantic constants (same hex in dark + light) for the
  *  many sub-components that take a `dark` prop instead of the full palette.
  *  Sourced from the kit tokens — no app-local fork. */
+/** Semantic danger color (same hex in dark + light) for `dark`-prop sub-components. */
 export const DANGER = semanticColors.dangerColor.dark;
+/** Semantic success color (same hex in dark + light) for `dark`-prop sub-components. */
 export const SUCCESS = semanticColors.successColor.dark;
 
 /** Cached preference — populated on first hook mount from SecureStore. Subsequent reads
@@ -180,6 +182,7 @@ export function withAlpha(color: string, alpha: number): string {
   return color;
 }
 
+/** Reactive hook returning the current message-block corner radius, re-rendering on changes. */
 export function useBlockRadius(): number {
   const [r, setR] = useState(getBlockRadius());
   useEffect(() => {

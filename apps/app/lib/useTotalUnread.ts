@@ -28,6 +28,7 @@ function computeTotal(rows: CachedRow[] | null): number {
   return total;
 }
 
+/** Live total unread count across all conversations, reactive to cached rows and archived state. */
 export function useTotalUnread(): number {
   const [total, setTotal] = useState<number>(() => computeTotal(getCachedRows()));
 

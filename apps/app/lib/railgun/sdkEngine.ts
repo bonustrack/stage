@@ -35,6 +35,7 @@ let engineReady = false;
 let initPromise: Promise<boolean> | null = null;
 const loadedNetworks = new Set<RailgunNet>();
 
+/** Whether the engine has finished initialising. */
 export function isEngineReady(): boolean { return engineReady; }
 
 /** Persistent artifact store backed by expo-file-system (the engine downloads

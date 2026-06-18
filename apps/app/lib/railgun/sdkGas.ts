@@ -13,6 +13,7 @@ import { requireWalletApi } from './sdkApi';
 /** ~2 gwei fallback so a dummy estimate never divides by zero. */
 const FALLBACK = 2_000_000_000n;
 
+/** Build TransactionGasDetails for a network from its EVM gas type + live fee data. */
 export async function buildGasDetails(
   networkName: NetworkName,
   gasEstimate: bigint,

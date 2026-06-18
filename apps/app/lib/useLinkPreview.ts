@@ -70,6 +70,7 @@ async function fetchLinkPreview(url: string): Promise<LinkPreviewResult | null> 
   }
 }
 
+/** Fetch + cache OpenGraph link preview metadata for a URL, or null while idle/unavailable. */
 export function useLinkPreview(url: string | null): LinkPreviewResult | null {
   const { data } = useQuery({
     queryKey: ['linkPreview', url ?? ''],

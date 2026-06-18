@@ -26,6 +26,7 @@ let loading: Promise<void> | null = null;
 const listeners = new Set<() => void>();
 const notify = (): void => { listeners.forEach(l => l()); };
 
+/** Hydrate drafts from disk once; concurrent callers await the same read. */
 export async function loadDrafts(): Promise<void> {
   if (loaded) return;
   if (loading) return loading;
@@ -78,10 +79,13 @@ AppState.addEventListener('change', (state) => {
   if (dirty) writeToDisk();
 });
 
+/** Current draft text for a conversation, or '' if none. */
 export function getDraft(convId: string): string { return drafts[convId] ?? ''; }
+/** Whether a conversation has non-empty draft text. */
 export function hasDraft(convId?: string | null): boolean {
   return !!convId && !!(drafts[convId] ?? '').trim();
 }
+/** Store (or clear, if blank) a conversation's draft, then persist + notify. */
 export function setDraft(convId: string, text: string): void {
   const t = text.trim() ? text : '';
   if (t) drafts[convId] = t; else delete drafts[convId];

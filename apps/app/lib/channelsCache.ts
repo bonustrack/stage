@@ -133,8 +133,11 @@ export async function hydrateCachedRows(): Promise<CachedRow[] | null> {
  *  every account's cache and just swaps the active pointer. */
 export function clearCachedRows(): void { activeStore().clear(); }
 
+/** Cached channel rows for the active account, or null if none. */
 export function getCachedRows(): CachedRow[] | null { return activeStore().get(); }
+/** Replace the active account's cached channel rows. */
 export function setCachedRows(next: CachedRow[] | null): void { activeStore().set(next); }
+/** Subscribe to active-account row changes. Returns an unsubscribe fn. */
 export function subscribeCachedRows(l: (rows: CachedRow[] | null) => void): () => void {
   activeListeners.add(l);
   return () => { activeListeners.delete(l); };

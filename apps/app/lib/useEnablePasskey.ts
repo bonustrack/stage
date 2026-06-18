@@ -14,6 +14,7 @@ import { getActiveAccount } from './accounts';
 import { enablePasskeyForRecord, passkeysAvailable, kernelDeployedOnChain } from './zerodev';
 import { flash } from './toast';
 
+/** Hook providing passkey availability and an action to register one for the active account. */
 export function useEnablePasskey(epoch?: number): {
   /** True only when this binary can run passkeys AND the active account is a smart
    *  account WITHOUT a passkey yet (so the affordance is worth showing). */

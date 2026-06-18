@@ -30,6 +30,7 @@ type AttachmentEncryptor = {
     fileUri: string; mimeType?: string; filename?: string;
   }) => Promise<EncryptedLocalAttachment>;
 };
+/** Type-fenced wrapper over `client.encryptAttachment` requiring a sanitized file URI. */
 export async function encryptSanitizedAttachment(
   client: AttachmentEncryptor,
   file: { fileUri: SanitizedFileUri; mimeType?: string; filename?: string },

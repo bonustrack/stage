@@ -18,12 +18,15 @@ interface LabelsBlob {
 }
 
 /** Caps — keep the blob tiny so it stays well inside MLS message limits. */
+/** Max number of labels allowed per group blob. */
 export const MAX_LABELS = 16;
+/** Max character length of a single label after cleaning. */
 export const MAX_LABEL_LEN = 24;
 
 /** Thrown when updateAppData is rejected by group permissions. The UI surfaces
  *  `.message` inline. Shouldn't happen for all-members groups. */
 export class LabelPermissionError extends Error {
+  /** Build the label-permission error with its fixed message and name. */
   constructor() {
     super("You don't have permission to edit labels in this group.");
     this.name = 'LabelPermissionError';
@@ -37,6 +40,7 @@ interface GroupLike {
   updateAppData?: (appData: string) => Promise<void>;
 }
 
+/** Narrow a conversation to a GroupLike if it exposes the appData read/write methods, else null. */
 export function asGroup(conv: unknown): GroupLike | null {
   const g = conv as GroupLike;
   return g && typeof g.appData === 'function' && typeof g.updateAppData === 'function' ? g : null;

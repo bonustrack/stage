@@ -108,6 +108,7 @@ async function resolveCommonChannels(peerAddress: string): Promise<CommonChannel
   return resolved.filter((c): c is CommonChannel => c !== null);
 }
 
+/** Hook providing the channels shared with a peer (cached per active account). */
 export function useCommonChannels(peerAddress: string | null, enabled: boolean): {
   channels: CommonChannel[];
   loading: boolean;

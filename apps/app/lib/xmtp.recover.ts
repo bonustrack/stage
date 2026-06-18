@@ -74,6 +74,7 @@ const CREATE_TIMEOUT_MESSAGE = 'XMTP.create timed out (native handshake hang)';
 const STORE_CORRUPTION = [
   'PRAGMA key', 'StorageError', 'incorrect value', CREATE_TIMEOUT_MESSAGE,
 ];
+/** True when the error matches a local-store corruption signature that warrants a wipe + retry. */
 export function isStoreCorruption(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err);
   return STORE_CORRUPTION.some(sig => msg.includes(sig));

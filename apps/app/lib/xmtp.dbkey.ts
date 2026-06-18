@@ -173,6 +173,7 @@ export function deleteDbFiles(dbDirName: string): void {
  *  app-private + persisted across restarts. */
 export function dbDirObj(name: string): Directory { return new Directory(Paths.document, name); }
 
+/** Ensure the XMTP sqlite/key-store directory exists and is writable, returning its fs path. */
 export async function ensureDbDir(name: string): Promise<string> {
   const dir = dbDirObj(name);
   /** Create the dir (recursively) BEFORE create() so the native SQLCipher open

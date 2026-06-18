@@ -47,10 +47,12 @@ let state: BalanceDebug = {
 
 const subs = new Set<(s: BalanceDebug) => void>();
 
+/** Current balance-debug state snapshot. */
 export function getBalanceDebug(): BalanceDebug {
   return state;
 }
 
+/** Subscribe to balance-debug state changes. Returns an unsubscribe fn. */
 export function subscribeBalanceDebug(cb: (s: BalanceDebug) => void): () => void {
   subs.add(cb);
   return () => subs.delete(cb);

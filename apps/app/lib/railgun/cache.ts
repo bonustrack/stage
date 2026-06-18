@@ -15,6 +15,7 @@ import type { PrivateSnapshot, PendingAction, PrivateBalance } from './types';
 /** Per-account snapshot file. Account-scoped so switching identities never
  *  shows another account's private balances (mirrors xmtp db-key scoping). */
 const stores = new Map<string, PersistentStore<PrivateSnapshot>>();
+/** Lazily-created persistent snapshot store for an account (memoized per id). */
 export function snapshotStore(accountId: string): PersistentStore<PrivateSnapshot> {
   let s = stores.get(accountId);
   if (!s) { s = new PersistentStore<PrivateSnapshot>(`railgun-${accountId}.json`); stores.set(accountId, s); }
@@ -26,9 +27,11 @@ export function snapshotStore(accountId: string): PersistentStore<PrivateSnapsho
  *  reflects whatever actually landed on-chain. */
 export const pendingStore = new MemoryStore<string, PendingAction[]>();
 
+/** Append an optimistic pending action for an account. */
 export function addPending(accountId: string, action: PendingAction): void {
   pendingStore.set(accountId, [...(pendingStore.get(accountId) ?? []), action]);
 }
+/** Patch a single pending action (matched by id) for an account. */
 export function updatePending(accountId: string, id: string, patch: Partial<PendingAction>): void {
   pendingStore.set(accountId, (pendingStore.get(accountId) ?? []).map(a => a.id === id ? { ...a, ...patch } : a));
 }
@@ -37,6 +40,7 @@ export function isLivePending(p: PendingAction): boolean {
   return p.phase === 'proving' || p.phase === 'broadcasting' || p.phase === 'scanning';
 }
 
+/** Drop all settled (no longer in-flight) pending actions for an account. */
 export function clearSettledPending(accountId: string): void {
   pendingStore.set(accountId, (pendingStore.get(accountId) ?? []).filter(isLivePending));
 }

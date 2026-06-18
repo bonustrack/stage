@@ -63,6 +63,7 @@ async function fetchGithubMeta(ref: GithubRef): Promise<GithubMeta | null> {
   }
 }
 
+/** Hook fetching cached metadata (title, stats) for a GitHub ref. */
 export function useGithubMeta(ref: GithubRef | null): GithubMeta | null {
   const { data } = useQuery({
     queryKey: ['githubMeta', ref?.url ?? ''],

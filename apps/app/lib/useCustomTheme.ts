@@ -9,6 +9,7 @@ import {
   isCustomTheme, loadOverrides, subscribe as subscribeOverrides,
 } from './colorOverrides';
 
+/** Reactive hook returning whether the Custom theme flag is currently enabled. */
 export function useCustomTheme(): boolean {
   const [on, setOn] = useState(isCustomTheme());
   useEffect(() => {

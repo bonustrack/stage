@@ -49,6 +49,7 @@ export { PAGE_SIZE, syncInboxOnce } from './xmtp.resync';
  *  inbound is decoded once and routed to BOTH the feedCache slice (conv view)
  *  AND these subscribers (row/preview/unread bookkeeping). */
 const streamSubscribers = new Set<(m: StreamMsg) => void>();
+/** Subscribe to every inbound message on the single global stream; returns an unsubscribe fn. */
 export function subscribeAllMessages(cb: (m: StreamMsg) => void): () => void {
   streamSubscribers.add(cb);
   /** Ensure the one app-wide stream is running once anyone subscribes. */
