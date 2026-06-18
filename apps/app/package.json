@@ -9,7 +9,6 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint app/ components/ lib/ modules/",
     "test": "bun test test/",
     "eas-build-post-install": "node ./scripts/install-nodejs-project.js"
   },
@@ -82,8 +81,6 @@
     "@stage-labs/config": "workspace:*",
     "@types/react": "~19.1.0",
     "babel-preset-expo": "~54.0.10",
-    "eslint": "^10.3.0",
-    "typescript": "~5.9.2",
-    "typescript-eslint": "^8.59.2"
+    "typescript": "~5.9.2"
   }
 }

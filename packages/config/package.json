@@ -9,6 +9,9 @@
     "./eslint/base": "./eslint/base.js",
     "./eslint/react-native": "./eslint/react-native.js",
     "./eslint/vue": "./eslint/vue.js",
+    "./eslint/monorepo": "./eslint/monorepo.js",
+    "./knip": "./knip/index.js",
+    "./madge": "./madge/index.js",
     "./tsconfig/base.json": "./tsconfig/base.json",
     "./tsconfig/react-native.json": "./tsconfig/react-native.json",
     "./tsconfig/vue.json": "./tsconfig/vue.json"

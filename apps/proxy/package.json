@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "lint": "eslint src/",
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --test 'test/*.test.ts'"
   },
@@ -15,10 +14,7 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250601.0",
-    "@stage-labs/config": "workspace:*",
-    "eslint": "^10.3.0",
     "typescript": "^5.7.0",
-    "typescript-eslint": "^8.59.2",
     "wrangler": "^4.100.0"
   }
 }

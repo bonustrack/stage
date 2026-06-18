@@ -4,12 +4,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "bun src/index.ts",
-    "lint": "eslint src/"
-  },
-  "devDependencies": {
-    "@stage-labs/config": "workspace:*",
-    "eslint": "^10.3.0",
-    "typescript-eslint": "^8.59.2"
+    "start": "bun src/index.ts"
   }
 }
