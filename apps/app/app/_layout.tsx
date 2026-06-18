@@ -7,8 +7,12 @@ import '../lib/cryptoShim';
 import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import { useEffect } from 'react';
-// eslint-disable-next-line no-restricted-imports -- raw TextInput required: this sets TextInput.defaultProps app-wide for the default font (Kit Input wraps TextInput, so the global default must target the RN primitive itself).
-import { Text, TextInput } from 'react-native';
+import { Text } from 'react-native';
+// raw TextInput required: this sets TextInput.defaultProps app-wide for the
+// default font (Kit Input wraps TextInput, so the global default must target the
+// RN primitive itself). Imported via the sanctioned layout/native escape hatch
+// (the one place the RN-import ban is turned off).
+import { TextInput } from '../components/layout/native';
 import { Col } from '../components/layout';
 import { Spinner } from '../components/Spinner';
 import { Onboarding } from '../components/onboarding/Onboarding';

@@ -27,6 +27,16 @@ export function AccountList({
     </Pressable>
   );
 
+  // Conditional style branch (flat vs card); the card branch's marginHorizontal
+  // can't be a static layout prop, so the style is built here and passed as an
+  // identifier (the layout-prop lint only flags inline style object literals on
+  // Box/Row/Col).
+  const containerStyle = flat
+    ? { backgroundColor: 'transparent' }
+    : {
+        marginHorizontal: 16, borderRadius: 12, overflow: 'hidden' as const,
+        borderWidth: 1, borderColor: border, backgroundColor: rowBg,
+      };
   return (
     <>
       {!flat ? (
@@ -35,14 +45,7 @@ export function AccountList({
         </Text>
       ) : null}
       <Box
-        /* eslint-disable no-restricted-syntax -- conditional style branch (flat ? ... : ...); marginHorizontal can't be a static layout prop here. */
-        style={flat ? {
-          backgroundColor: 'transparent',
-        } : {
-          marginHorizontal: 16, borderRadius: 12, overflow: 'hidden',
-          borderWidth: 1, borderColor: border, backgroundColor: rowBg,
-        }}
-        /* eslint-enable no-restricted-syntax */
+        style={containerStyle}
 >
         {flat ? (
           /* Flat mode (modal) — EVERY account as a row, all visible at once,

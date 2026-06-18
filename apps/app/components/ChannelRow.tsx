@@ -9,8 +9,10 @@
 
 import { memo } from 'react';
 
-// eslint-disable-next-line no-restricted-imports -- raw View is required as an INLINE element inside <Text> (Box/Row/Col carry layout flex and don't embed inline in text flow)
-import { View } from 'react-native';
+// raw View is required as an INLINE element inside <Text> (Box/Row/Col carry
+// layout flex and don't embed inline in text flow). Imported via the sanctioned
+// layout/native escape hatch instead of an eslint-disable.
+import { View } from './layout/native';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
 import type { StyleProp, ViewStyle } from 'react-native';

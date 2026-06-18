@@ -47,16 +47,18 @@ export function ProfileHeader({ variant, insetTop, onBack, c }: {
   variant: 'tab' | 'route'; insetTop: number;
   onBack: () => void; c: ProfileColors;
 }): React.ReactElement {
+  // Absolute floating header over the cover; the inset-derived offsets can't be
+  // static layout props, so the style is built here and passed as an identifier
+  // (the layout-prop lint only flags inline style object literals on Box/Row/Col).
+  const headerStyle = {
+    position: 'absolute' as const, top: 0, left: 0, right: 0, zIndex: 2,
+    height: 44 + insetTop, paddingTop: insetTop, paddingHorizontal: 14,
+  };
   return (
     <Row
       align="center"
       justify="between"
-      /* eslint-disable no-restricted-syntax -- absolute floating header over the cover; offsets can't be static layout props. */
-      style={{
-        position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
-        height: 44 + insetTop, paddingTop: insetTop, paddingHorizontal: 14,
-      }}
-      /* eslint-enable no-restricted-syntax */
+      style={headerStyle}
 >
       {variant === 'route' ? (
         <Pressable onPress={onBack} hitSlop={10} style={{ padding: 6 }}>

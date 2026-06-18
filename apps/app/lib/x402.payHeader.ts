@@ -112,8 +112,7 @@ export function buildTypedData(
  *  this works under the test runner and any environment. */
 function toBase64(s: string): string {
   if (typeof btoa === 'function') return btoa(unescape(encodeURIComponent(s)));
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const B: any = (globalThis as any).Buffer;
+  const B = (globalThis as { Buffer?: { from(s: string, enc: string): { toString(enc: string): string } } }).Buffer;
   if (B) return B.from(s, 'utf-8').toString('base64');
   throw new Error('no base64 encoder');
 }
@@ -149,8 +148,7 @@ export function buildPaymentHeader(args: {
  *  transfer behind a weak nonce. */
 export function randomNonce(): string {
   const bytes = new Uint8Array(32);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const c: any = (globalThis as any).crypto;
+  const c: Crypto | undefined = globalThis.crypto;
   if (!c?.getRandomValues) {
     throw new Error('Secure random unavailable: refusing to build a payment authorization with a weak nonce');
   }

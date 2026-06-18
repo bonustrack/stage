@@ -5,8 +5,9 @@ import { memo, useMemo, useRef, useState } from 'react';
 import { Vibration } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Icon } from '@metro-labs/kit/icon';
-// eslint-disable-next-line no-restricted-imports -- type-only: rowRef measureInWindow() ref typing
-import type { View } from 'react-native';
+// type-only: rowRef measureInWindow() ref typing. Imported via the sanctioned
+// layout/native escape hatch (ViewType) instead of an eslint-disable.
+import type { ViewType as View } from './layout/native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useGestureHandlerRef } from '@react-navigation/stack';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, runOnJS, interpolate, Extrapolation } from 'react-native-reanimated';

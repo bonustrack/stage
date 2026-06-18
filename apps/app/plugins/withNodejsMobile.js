@@ -117,7 +117,6 @@ function withNodejsAssetsGuard(config) {
       const root = cfg.modRequest.projectRoot;
       const proj = path.join(root, 'nodejs-assets', 'nodejs-project', 'main.js');
       if (!fs.existsSync(proj)) {
-        // eslint-disable-next-line no-console
         console.warn(
           '[withNodejsMobile] nodejs-assets/nodejs-project/main.js is missing — ' +
             'the embedded Node runtime will boot with no host script.',
