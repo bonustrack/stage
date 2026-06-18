@@ -110,7 +110,7 @@ export function markdownStyles(fg: string, dark: boolean, mine: boolean): Record
   };
 }
 
-export interface QuestionOption { label: string; description?: string }
+interface QuestionOption { label: string; description?: string }
 export interface Question {
   header?: string;
   options: QuestionOption[];
@@ -127,7 +127,7 @@ export function questionOf(entry: HistoryEntry): Question | undefined {
   return p.question;
 }
 
-export interface PollOption { label: string; description?: string }
+interface PollOption { label: string; description?: string }
 export interface PollQuestion { question: string; header?: string; options: PollOption[]; multiSelect?: boolean; open?: boolean }
 /** Normalized poll: non-empty `questions[]`; `question` is the bubble title (q0). */
 export interface Poll { pollId?: string; question?: string; questions: PollQuestion[] }

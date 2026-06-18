@@ -25,7 +25,7 @@ export interface X402Authorization {
 }
 
 /** The decoded X-PAYMENT header body (before base64). */
-export interface X402PaymentPayload {
+interface X402PaymentPayload {
   x402Version: number;
   scheme: string;
   network: string;
@@ -37,7 +37,7 @@ export interface X402PaymentPayload {
 
 /** EIP-3009 typed-data `types` block — `TransferWithAuthorization` is the gasless
  *  transfer permit USDC (and other EIP-3009 tokens) implement. */
-export const TRANSFER_WITH_AUTHORIZATION_TYPES = {
+const TRANSFER_WITH_AUTHORIZATION_TYPES = {
   TransferWithAuthorization: [
     { name: 'from', type: 'address' },
     { name: 'to', type: 'address' },
@@ -49,7 +49,7 @@ export const TRANSFER_WITH_AUTHORIZATION_TYPES = {
 } as const;
 
 /** Default authorization window (seconds) when the challenge omits a timeout. */
-export const DEFAULT_TIMEOUT_SECONDS = 600;
+const DEFAULT_TIMEOUT_SECONDS = 600;
 
 /** Inputs needed to build the EIP-3009 authorization for an `exact` challenge. */
 export interface BuildAuthorizationParams {

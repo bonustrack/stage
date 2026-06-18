@@ -41,8 +41,6 @@ import {
   indexOfPathname, type SimultaneousRefs,
 } from './SwipeTabs.config';
 
-export type { SimultaneousRefs };
-
 /** Single pager host. Rendered once from `(tabs)/_layout.tsx` as the scene for
  *  every tab route; the route files themselves are empty placeholders. */
 export function TabsPager(): React.ReactElement {

@@ -14,7 +14,7 @@
 import type { RailgunNet } from './protocol';
 
 /** Per-chain scan policy. `enabled` gates BOTH provider load and scanning. */
-export interface ChainScanConfig {
+interface ChainScanConfig {
   net: RailgunNet;
   chainId: number;
   enabled: boolean;

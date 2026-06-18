@@ -135,6 +135,3 @@ export async function buildProposalQueue(rows: CachedRow[]): Promise<QueuedReque
   return [...detected.filter((p): p is QueuedRequest => p !== null), ...messageReqs]
     .sort((a, b) => b.ts - a.ts);
 }
-
-/** Back-compat alias: the original queue type name. */
-export type QueuedProposal = QueuedRequest;

@@ -3,8 +3,10 @@
 // Madge detects circular dependencies. This preset centralises the madge options
 // (the file extensions to scan + TypeScript-aware detective options) so the root
 // `madge` script just points madge at the source roots with `--circular` and
-// `--config madge.config.cjs`. It is a REPORTING tool: the root script surfaces
-// any cycles it finds but does not fail the build on pre-existing ones.
+// `--config madge.config.cjs`. The root `madge` script exits non-zero when any
+// cycle exists and runs as a BLOCKING step in CI (.github/workflows/ci.yml), so
+// a new circular dependency fails the build. (The non-fatal `report:deps`
+// script is for local pre-flight only.)
 //
 // Consumed from the repo root via a CommonJS shim (madge loads --config with
 // require()):  module.exports = require("@stage-labs/config/madge").madgeConfig;

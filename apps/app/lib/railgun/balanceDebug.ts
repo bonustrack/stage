@@ -9,7 +9,7 @@
  *    - engine emits buckets but the UI shows 0 → RN-side sum/store/decimals bug.
  *
  *  Pure in-memory + a synchronous getter + subscribe (no disk, no deps). */
-export type RefreshPhase = 'idle' | 'scanning' | 'done' | 'error';
+type RefreshPhase = 'idle' | 'scanning' | 'done' | 'error';
 
 export interface BalanceDebug {
   /** isBridgeAvailable() — is the nodejs-mobile runtime in this binary? */

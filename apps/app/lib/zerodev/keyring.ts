@@ -56,7 +56,7 @@
 import '../cryptoShim';
 import * as SecureStore from 'expo-secure-store';
 import {
-  generatePrivateKey, privateKeyToAccount,
+  privateKeyToAccount,
   type PrivateKeyAccount, type HDAccount,
 } from 'viem/accounts';
 import { type Hex } from 'viem';
@@ -64,7 +64,7 @@ import {
   generateWalletMnemonic, normalizeMnemonic, isValidMnemonic, deriveOwner,
 } from '@stage-labs/client/zerodev/derive';
 import {
-  PK_PREFIX, LEGACY_PK_KEY, normalizePk, privateKeyFromMnemonic,
+  PK_PREFIX, LEGACY_PK_KEY,
 } from '@stage-labs/client/accounts/keys';
 
 // ===========================================================================
@@ -176,24 +176,6 @@ async function unlockMnemonic(): Promise<string | null> {
   const phrase = await readMnemonic();
   if (phrase) sessionMnemonic = phrase;
   return phrase;
-}
-
-/** Drop the in-memory session mnemonic + derived owners WITHOUT deleting the
- *  stored secret. The stored mnemonic is untouched, so the next derivation simply
- *  re-reads it from the keystore (still no prompt). */
-export function lockSession(): void {
-  sessionMnemonic = null;
-  ownerCache.clear();
-}
-
-/** Whether a mnemonic exists. No prompt — reads the keystore (or warm cache).
- *  Returns false on error. */
-export async function hasMnemonic(): Promise<boolean> {
-  try {
-    return !!(await unlockMnemonic());
-  } catch {
-    return false;
-  }
 }
 
 /** RESTORE: validate + store a user-supplied phrase. Throws on a phrase that
@@ -309,26 +291,6 @@ async function storePrivateKey(id: string, pk: Hex): Promise<void> {
 export async function getViemAccount(id: string): Promise<PrivateKeyAccount | null> {
   const pk = await loadPrivateKey(id);
   return pk ? privateKeyToAccount(pk) : null;
-}
-
-/** Provision a brand-new generated EOA: mint a random key, store it, and return
- *  its (id, address). The key stays inside the module. */
-export async function createGeneratedKey(): Promise<{ id: string; address: string }> {
-  const pk = generatePrivateKey();
-  const acct = privateKeyToAccount(pk);
-  const id = acct.address.toLowerCase();
-  await storePrivateKey(id, pk);
-  return { id, address: acct.address };
-}
-
-/** Provision an imported EOA from a pasted private key OR BIP-39 phrase (phrases
- *  contain spaces). Stores the key, returns (id, address). The key stays inside. */
-export async function importKey(input: string): Promise<{ id: string; address: string }> {
-  const pk = input.trim().includes(' ') ? privateKeyFromMnemonic(input) : normalizePk(input);
-  const acct = privateKeyToAccount(pk);
-  const id = acct.address.toLowerCase();
-  await storePrivateKey(id, pk);
-  return { id, address: acct.address };
 }
 
 /** Migrate a legacy single `wallet.privateKey` into the per-account slot, used by

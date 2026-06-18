@@ -228,7 +228,6 @@ declare module 'vue' {
     readonly isShallow: UnwrapRef<typeof import('vue')['isShallow']>
     readonly lineOfConv: UnwrapRef<typeof import('./lib/xmtp')['lineOfConv']>
     readonly loadCachedProfile: UnwrapRef<typeof import('./lib/profile')['loadCachedProfile']>
-    readonly lookupName: UnwrapRef<typeof import('./lib/stamp')['lookupName']>
     readonly mapCoordsOf: UnwrapRef<typeof import('./lib/embedDetect')['mapCoordsOf']>
     readonly markConvRead: UnwrapRef<typeof import('./lib/channelsCache')['markConvRead']>
     readonly markConvReadSynced: UnwrapRef<typeof import('./lib/xmtpConsent')['markConvReadSynced']>
@@ -255,7 +254,6 @@ declare module 'vue' {
     readonly onWatcherCleanup: UnwrapRef<typeof import('vue')['onWatcherCleanup']>
     readonly openDmWithAddress: UnwrapRef<typeof import('./lib/xmtpGroups')['openDmWithAddress']>
     readonly osmTileUrl: UnwrapRef<typeof import('./lib/embedDetect')['osmTileUrl']>
-    readonly osmTileXY: UnwrapRef<typeof import('./lib/embedDetect')['osmTileXY']>
     readonly peerEthAddressOfDm: UnwrapRef<typeof import('./lib/xmtpResolve')['peerEthAddressOfDm']>
     readonly postCloseToParent: UnwrapRef<typeof import('./lib/embedBridge')['postCloseToParent']>
     readonly postUnreadToParent: UnwrapRef<typeof import('./lib/embedBridge')['postUnreadToParent']>
@@ -268,7 +266,6 @@ declare module 'vue' {
     readonly renderMarkdown: UnwrapRef<typeof import('./lib/renderMarkdown')['renderMarkdown']>
     readonly resolveComponent: UnwrapRef<typeof import('vue')['resolveComponent']>
     readonly resolveDomain: UnwrapRef<typeof import('./lib/stamp')['resolveDomain']>
-    readonly resolveSearchInputToAddress: UnwrapRef<typeof import('./lib/stamp')['resolveSearchInputToAddress']>
     readonly runningInIframe: UnwrapRef<typeof import('./lib/embedBridge')['runningInIframe']>
     readonly setCachedRows: UnwrapRef<typeof import('./lib/channelsCache')['setCachedRows']>
     readonly setLastReadNs: UnwrapRef<typeof import('./lib/xmtpConsent')['setLastReadNs']>

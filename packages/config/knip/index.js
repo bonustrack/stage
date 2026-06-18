@@ -3,9 +3,10 @@
 // Knip finds unused files, dependencies and exports across the workspaces. This
 // preset centralises the per-workspace entry/project globs and the
 // ignore-dependency lists (polyfills the RN bundler wires in implicitly, etc.)
-// so the root knip.config.js stays a one-line `export default config`. It is a
-// REPORTING tool: the root `knip` script surfaces findings but does not fail the
-// build on pre-existing ones.
+// so the root knip.config.js stays a one-line `export default config`. The root
+// `knip` script exits non-zero on any finding and runs as a BLOCKING step in CI
+// (.github/workflows/ci.yml), so a new unused file/dep/export fails the build.
+// (The non-fatal `report:deps` script is for local pre-flight only.)
 //
 // Consumed from the repo root via:
 //   import config from "@stage-labs/config/knip";
@@ -14,6 +15,12 @@
 /** The shared knip configuration for the monorepo (bun workspaces). */
 const knipConfig = {
   $schema: "https://unpkg.com/knip@6/schema.json",
+  // An export consumed within its OWN defining file is not dead code — it's a
+  // module-internal helper that is ALSO part of the file's public surface (e.g.
+  // a function called in-file but exported so a wiring test can assert it, like
+  // zerodev/enablePasskey.ts `deployAndSwapToPasskey`). Don't flag those; only
+  // exports with no reference anywhere (in-file or cross-file) are reported.
+  ignoreExportsUsedInFile: true,
   workspaces: {
     // Repo root: CI/preview scripts under scripts/ are invoked from shell
     // scripts and GitHub Actions YAML (which knip can't parse), so list them as
@@ -25,9 +32,14 @@ const knipConfig = {
       project: ["scripts/**/*.{mjs,js}"],
     },
     "apps/app": {
+      // app.config.js is picked up by knip's default entry patterns. The
+      // nodejs-assets/nodejs-project tree is a SEPARATE embedded Node package
+      // (metro-railgun-node-host, its own package.json) excluded from the Metro
+      // bundle (metro.config.js resolver.blockList); it is intentionally NOT in
+      // `project` below, so its deps (graphql, leveldown-nodejs-mobile,
+      // rn-bridge, @railgun-privacy/native-prover) are out of scope here.
       entry: [
         "app/**/*.{ts,tsx}",
-        "app.config.js",
         "babel.config.js",
         "modules/**/*.{ts,tsx}",
         "plugins/**/*.{js,ts}",
@@ -35,13 +47,6 @@ const knipConfig = {
         "scripts/**/*.mjs",
       ],
       project: ["app/**", "components/**", "lib/**", "modules/**"],
-      // nodejs-assets/nodejs-project is a SEPARATE embedded Node package
-      // (metro-railgun-node-host) with its own package.json; it is excluded from
-      // the Metro bundle (apps/app/metro.config.js resolver.blockList) and built
-      // into the native binary. Its deps (graphql, leveldown-nodejs-mobile,
-      // rn-bridge, @railgun-privacy/native-prover) are declared there, not in
-      // apps/app, so it must not be scanned as part of this workspace.
-      ignore: ["nodejs-assets/**"],
       ignoreDependencies: [
         "buffer",
         "crypto-browserify",

@@ -28,7 +28,7 @@ import {
 
 /** One decoded argument: a name (from the ABI, or `arg0` when unnamed via 4byte)
  *  and a display-ready string value. */
-export interface DecodedArg {
+interface DecodedArg {
   name: string;
   type: string;
   value: string;

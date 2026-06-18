@@ -1,6 +1,5 @@
 /** Re-export of the shared Stamp helpers. */
 
 export {
-  resolveDomain, lookupName, isAddressLike, isDomainLike,
-  resolveSearchInputToAddress,
+  resolveDomain, isAddressLike, isDomainLike,
 } from '@stage-labs/client/stamp/resolve';

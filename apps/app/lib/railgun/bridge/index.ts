@@ -13,15 +13,12 @@ import type { ScanConfig } from './scanConfig';
 import { DEFAULT_SCAN_CONFIG } from './scanConfig';
 import { rawCall, ENGINE_INIT_TIMEOUT_MS } from './transport';
 
-export { DEFAULT_SCAN_CONFIG, type ScanConfig, type ChainScanConfig } from './scanConfig';
+export { type ScanConfig } from './scanConfig';
 export { setBridgeStatusListener } from './diagnostics';
 export { walletInfo, getBalances } from './wallet';
-export type { WalletInfoResult, BalancesResult, BridgeBalanceRow } from './wallet';
+export type { BridgeBalanceRow } from './wallet';
 export {
-  ENGINE_INIT_TIMEOUT_MS,
   isBridgeAvailable,
-  startBridge,
-  bridgeCall,
   bridgeListen,
 } from './transport';
 
@@ -47,11 +44,6 @@ export interface EngineStatusResult {
   error?: string;
 }
 
-/** Read engine status without forcing init (pollable). */
-export async function engineStatus(): Promise<EngineStatusResult> {
-  return (await rawCall('engineStatus', undefined)) as EngineStatusResult;
-}
-
 /** Init engine + prover + providers (idempotent); overrides the short timeout.
  *  scanConfig (per-chain enable, RPC urls, batch size, stall/attempt timeouts,
  *  heartbeat cadence) is passed IN from RN instead of being hardcoded in
@@ -66,5 +58,3 @@ export async function engineInit(
     ENGINE_INIT_TIMEOUT_MS,
   )) as EngineStatusResult;
 }
-
-export { onHeartbeat, type HeartbeatPayload } from './heartbeat';

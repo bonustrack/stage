@@ -26,7 +26,7 @@ const rpcTransport = broviderTransport;
 
 /** A token to transfer. Omit (or pass `undefined`) to send the chain's native
  *  asset (ETH on mainnet). `decimals` defaults to 18 when not supplied. */
-export interface SendToken {
+interface SendToken {
   address: Hex;
   decimals?: number;
   symbol?: string;

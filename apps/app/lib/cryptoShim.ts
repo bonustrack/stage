@@ -45,7 +45,7 @@ if (typeof G.Buffer === 'undefined') {
 /** Hard invariant: after the native polyfill above, a real CSPRNG must exist.
  *  If it doesn't (native module failed to link, unsupported runtime), refuse
  *  to continue — never silently degrade to a non-cryptographic generator. */
-export function assertSecureRandom(): void {
+function assertSecureRandom(): void {
   const c = (globalThis as { crypto?: Crypto }).crypto;
   if (!c || typeof c.getRandomValues !== 'function') {
     throw new Error(

@@ -8,10 +8,10 @@
 
 import { colors, resolveBoxRadius, type RadiusValue } from '@metro-labs/kit';
 
-export type Direction = 'row' | 'col';
-export type Size = number | string;
-export type Align = 'start' | 'center' | 'end' | 'stretch' | 'baseline';
-export type Justify =
+type Direction = 'row' | 'col';
+type Size = number | string;
+type Align = 'start' | 'center' | 'end' | 'stretch' | 'baseline';
+type Justify =
   | 'start'
   | 'center'
   | 'end'
@@ -22,7 +22,7 @@ export type Justify =
 /** Prop API shared by Box/Row/Col. Row/Col omit `direction`. */
 /** Per-side / per-axis spacing object, mirroring OpenAI ChatKit's `Spacing`.
  *  `x` -> left+right, `y` -> top+bottom; per-side keys override the axis. */
-export interface Spacing {
+interface Spacing {
   top?: number | string;
   right?: number | string;
   bottom?: number | string;
@@ -120,7 +120,7 @@ function applySpacing(
  *  Any undefined prop is omitted so it never overrides a default or a
  *  passthrough style. `display` is NOT emitted here — the web renderer
  *  adds `display:flex` explicitly (RN Views are flex by default). */
-export function boxStyleEntries(
+function boxStyleEntries(
   props: BoxProps,
 ): Record<string, string | number> {
   const out: Record<string, string | number> = {};

@@ -3,6 +3,5 @@
  *  @stage-labs/client for cross-platform reuse. */
 
 export {
-  youtubeIdOf, mapCoordsOf, osmTileXY, osmTileUrl,
-  type MapCoords,
+  youtubeIdOf, mapCoordsOf, osmTileUrl,
 } from '@stage-labs/client/embed/detect';

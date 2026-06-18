@@ -20,6 +20,4 @@ export const getPrivateKey = revealPrivateKey;
  *  (PK_PREFIX / LEGACY_PK_KEY) are deliberately NOT re-exported here — they live
  *  solely inside the keyring, and the eslint guard forbids importing them
  *  elsewhere. */
-export {
-  LEGACY_DB_DIR, normalizePk, privateKeyFromMnemonic, canExportPrivateKey,
-} from '@stage-labs/client/accounts/keys';
+export { canExportPrivateKey } from '@stage-labs/client/accounts/keys';

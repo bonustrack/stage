@@ -12,10 +12,6 @@ import {
   populateShieldErc20 as populateShieldErc20Sdk,
 } from '@stage-labs/client/railgun';
 
-export type {
-  FallbackProviderConfig, PopulatedTx, PopulateResult,
-} from '@stage-labs/client/railgun';
-
 /** The shield-private-key derivation message, signed by the EOA -> keccak -> key. */
 export function shieldPrivateKeyMessage(): Promise<string> {
   return shieldPrivateKeyMessageSdk(sdk);

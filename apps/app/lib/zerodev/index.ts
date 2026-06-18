@@ -6,22 +6,22 @@
  *  guardian recovery (native timelock + veto, recovery over XMTP). Session keys
  *  / agent provisioning are parked (future). */
 
+// This barrel re-exports ONLY the symbols consumed via the `lib/zerodev` path.
+// Many submodule exports are imported directly from their source module (or via
+// a lazy `import('./zerodev/<mod>')`) by callers/tests, so re-exporting them here
+// too is dead surface — knip flags it. Add a name back here only when a caller
+// imports it from `'../lib/zerodev'`.
 export {
-  ensureMnemonic, hasMnemonic, restoreMnemonic, clearMnemonic, revealRecoveryPhrase,
-  smartOwnerSigner, smartOwnerAddress, signOwnerMessage,
+  restoreMnemonic, revealRecoveryPhrase, smartOwnerSigner,
 } from './keyring';
 export { passkeysAvailable } from './native';
-export { zerodevConfigured, zerodevRpcUrl, zerodevRpId } from './env';
-export { createSmartAccount, type CreateSmartAccountOpts } from './create';
+export { zerodevConfigured } from './env';
+export { createSmartAccount } from './create';
 export { kernelClientForRecord } from './kernelForRecord';
-export { enablePasskeyForRecord, type EnablePasskeyResult } from './enablePasskey';
-export { removePasskeyFromRecord, swapRootToEcdsa, type RemovePasskeyResult } from './disablePasskey';
-export { scwSigner } from './scwSigner';
-export { makePublicClient, makeKernelClient, kernelDeployedOnChain } from './client';
-export { createEcdsaKernel, createPasskeyKernel } from './account';
+export { enablePasskeyForRecord } from './enablePasskey';
+export { removePasskeyFromRecord } from './disablePasskey';
+export { kernelDeployedOnChain } from './client';
 export {
-  installGuardians, updateGuardians, signRecoveryApproval, executeRecovery,
-  readPendingRotation, cancelRecovery, resumeWithNewOwner, recoveryCallData,
-  callDataAndNonceHash, ProposalStatus,
+  installGuardians, updateGuardians, signRecoveryApproval, cancelRecovery,
 } from './recovery';
-export { sendRecoveryRequest, sendRecoveryApproval, parseRecovery } from './recovery.comms';
+export { sendRecoveryApproval } from './recovery.comms';

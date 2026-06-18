@@ -14,7 +14,7 @@
  *  on RN (deriveKeys.ts), passed over the in-process channel only (no network);
  *  the EOA private key NEVER leaves RN (txs signed on RN, populated tx passed in). */
 import { isNodejsMobilePresent, loadNodejsMobile, type NodejsChannel } from './nodejsMobile';
-import type { BridgeCall, BridgeEvent, CallParams, CallResult } from './protocol';
+import type { BridgeCall, BridgeEvent } from './protocol';
 import { attachRawProbe, fmtPayload, status } from './diagnostics';
 import { startReadinessHandshake } from './handshake';
 
@@ -52,7 +52,7 @@ function channel(): NodejsChannel | null {
 
 /** Boot the Node process + wire listeners. Idempotent (started guard); no-op
  *  false when absent. Safe per wallet open. */
-export function startBridge(): boolean {
+function startBridge(): boolean {
   if (started) return true;
   const mod = loadNodejsMobile();
   if (!mod) {
@@ -104,11 +104,6 @@ export function startBridge(): boolean {
 }
 
 const RAW_PROBE_EVENTS = ['message', 'event:message', 'event', READY_EVENT, REQUEST_EVENT, REPLY_EVENT];
-
-/** Issue a typed RPC call to the Node process. */
-export async function bridgeCall<K extends BridgeCall>(call: K, params: CallParams<K>): Promise<CallResult<K>> {
-  return rawCall(call, params) as Promise<CallResult<K>>;
-}
 
 /** Send one envelope, await the id-matched reply; rejects on timeout/absent. */
 export function rawCall(call: BridgeCall | ExtraCall, params: unknown, timeoutMs = CALL_TIMEOUT_MS): Promise<unknown> {

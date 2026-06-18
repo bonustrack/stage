@@ -23,9 +23,6 @@ import { useIncomingLabelFilter } from './HomeScreen.filter';
 import { deriveLabels, useHomeFilters } from './HomeScreen.labelbar';
 import { filterRowsByQuery } from './HomeScreen.search';
 
-/** Re-exported so existing import paths (`./HomeScreen`) stay unchanged. */
-export type { Row } from './HomeScreen.helpers';
-
 /** Home tab screen showing the conversation list and primary navigation. */
 export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const router = useRouter();

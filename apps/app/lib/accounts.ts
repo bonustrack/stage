@@ -27,7 +27,7 @@ import { resolveActiveAccount } from '@stage-labs/client/accounts/registry';
 
 export { canExportPrivateKey, getPrivateKey, getViemAccount } from './accounts.keys';
 
-export type { AccountType, AccountRecord } from './accounts.types';
+export type { AccountRecord } from './accounts.types';
 import type { AccountRecord } from './accounts.types';
 
 const LIST_KEY = 'accounts.list';

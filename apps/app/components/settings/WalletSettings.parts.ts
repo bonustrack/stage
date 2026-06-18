@@ -15,7 +15,7 @@ import { getActiveAccount, type AccountRecord } from '../../lib/accounts';
 import { makePublicClient } from '../../lib/zerodev/client';
 
 export type ModuleRole = 'sudo' | 'backup' | 'recovery' | 'session';
-export interface WalletModule {
+interface WalletModule {
   /** Human name of the validator / module. */
   name: string;
   /** Its role on the Kernel. */

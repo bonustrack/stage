@@ -56,7 +56,7 @@ export interface SimulateResult {
   error?: string;
 }
 
-export interface SimulateParams {
+interface SimulateParams {
   /** The sender to simulate from. For the smart account, pass its address. */
   from: string;
   to: string;
@@ -121,7 +121,7 @@ async function callForRevert(
 
 /** Simulate a single call with eth_simulateV1 and return success + asset moves.
  *  Never throws — RPC/parse failures resolve to `{ success: 'unknown', error }`. */
-export async function simulateTx(p: SimulateParams): Promise<SimulateResult> {
+async function simulateTx(p: SimulateParams): Promise<SimulateResult> {
   const empty = { in: [], out: [] };
   let from: string, to: string;
   try {

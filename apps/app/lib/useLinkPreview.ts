@@ -19,7 +19,7 @@ export type { X402Accept, X402Challenge };
 export const LINK_PREVIEW_BASE =
   process.env.EXPO_PUBLIC_LINKPROXY_URL?.replace(/\/$/, '') || 'https://preview.metro.box';
 
-export interface LinkPreview {
+interface LinkPreview {
   url: string;
   title?: string;
   description?: string;

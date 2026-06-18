@@ -47,7 +47,7 @@ import { deriveRailgunKeyMaterial } from '../../lib/railgun/deriveKeys';
 /* ── Status log ─────────────────────────────────────────────────────────── */
 
 /** One timestamped status line: ms elapsed since the run started + the text. */
-export interface LogLine { ms: number; line: string }
+interface LogLine { ms: number; line: string }
 
 /** Render a single log line to the plain text used for selection + clipboard. */
 function fmtLine(l: LogLine): string { return `+${l.ms}ms  ${l.line}`; }
@@ -175,7 +175,7 @@ function useBatchedLog(): BatchedLog {
 
 /* ── Action callbacks ───────────────────────────────────────────────────── */
 
-export type ProbeState =
+type ProbeState =
   | { kind: 'idle' }
   | { kind: 'running' }
   | { kind: 'ok'; text: string }

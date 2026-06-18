@@ -9,7 +9,7 @@ import { decodeAbiParameters, type Hex } from 'viem';
 
 /** keccak256("Transfer(address,address,uint256)") — the ERC-20 / synthetic-ETH
  *  transfer topic that traceTransfers emits. */
-export const TRANSFER_TOPIC =
+const TRANSFER_TOPIC =
   '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 
 /** One side of the asset delta shown on the card. */
@@ -23,7 +23,7 @@ export interface AssetMove {
   decimals: number;
 }
 
-export interface SimLog { address: string; topics: string[]; data: string }
+interface SimLog { address: string; topics: string[]; data: string }
 export interface SimCall {
   status: string;
   returnData?: string;

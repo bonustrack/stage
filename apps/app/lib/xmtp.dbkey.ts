@@ -171,7 +171,7 @@ export function deleteDbFiles(dbDirName: string): void {
 
 /** XMTP needs a writable directory for its sqlite + key store. Document directory is
  *  app-private + persisted across restarts. */
-export function dbDirObj(name: string): Directory { return new Directory(Paths.document, name); }
+function dbDirObj(name: string): Directory { return new Directory(Paths.document, name); }
 
 /** Ensure the XMTP sqlite/key-store directory exists and is writable, returning its fs path. */
 export async function ensureDbDir(name: string): Promise<string> {

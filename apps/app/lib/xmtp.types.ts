@@ -4,7 +4,7 @@
  *  other xmtp modules — safe to import from any of them. */
 
 import type {
-  Conversation, DecodedMessage, ConversationVersion,
+  DecodedMessage, ConversationVersion,
 } from '@xmtp/react-native-sdk';
 
 export type XmtpEnv = 'production' | 'dev' | 'local';
@@ -46,5 +46,3 @@ export {
  *  moved into the framework-agnostic Stage SDK (@stage-labs/client). Re-exported
  *  so existing app imports stay stable. */
 export { shortAddress, stampAvatarUrl } from '@stage-labs/client/identity/format';
-
-export type { Conversation, DecodedMessage };

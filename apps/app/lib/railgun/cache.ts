@@ -36,13 +36,8 @@ export function updatePending(accountId: string, id: string, patch: Partial<Pend
   pendingStore.set(accountId, (pendingStore.get(accountId) ?? []).map(a => a.id === id ? { ...a, ...patch } : a));
 }
 /** Phases that are still in flight (kept in the store + drive optimistic UI). */
-export function isLivePending(p: PendingAction): boolean {
+function isLivePending(p: PendingAction): boolean {
   return p.phase === 'proving' || p.phase === 'broadcasting' || p.phase === 'scanning';
-}
-
-/** Drop all settled (no longer in-flight) pending actions for an account. */
-export function clearSettledPending(accountId: string): void {
-  pendingStore.set(accountId, (pendingStore.get(accountId) ?? []).filter(isLivePending));
 }
 
 /** Drop a single pending action (e.g. once its shielded balance has landed). */

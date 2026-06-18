@@ -13,7 +13,6 @@ import {
 export {
   isPeerResolved,
   getPeerName,
-  type PeerProfile,
 } from '@stage-labs/client/identity/peerProfiles';
 
 /** Subscribe + fetch: re-renders the caller when the batch resolves. Returns a

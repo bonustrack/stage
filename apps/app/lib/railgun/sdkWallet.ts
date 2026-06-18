@@ -48,9 +48,3 @@ export async function deriveRailgunWallet(): Promise<RailgunWalletHandle> {
   cachedForId = acct.id;
   return cached;
 }
-
-/** Drop the memoized handle (e.g. after switching accounts). */
-export function resetRailgunWallet(): void {
-  cached = null;
-  cachedForId = null;
-}

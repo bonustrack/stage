@@ -3,7 +3,7 @@
  *  preview card below the body. Pure string parsing — no network — so it stays
  *  cheap to run on every render and unit-testable. */
 
-export type GithubKind = 'repo' | 'pull' | 'issue';
+type GithubKind = 'repo' | 'pull' | 'issue';
 
 export interface GithubRef {
   /** The matched github.com URL (used as the cache / query key). */

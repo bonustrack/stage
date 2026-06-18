@@ -32,7 +32,7 @@ export interface SnarkJSGroth16Like {
 
 /** The native prover's per-circuit synchronous prove fn (returns a Groth16
  *  Proof). Typed loosely — we only forward it into the engine's setter. */
-export type NativeProveFn = (
+type NativeProveFn = (
   circuitId: number,
   datBuffer: Uint8Array,
   zkeyBuffer: Uint8Array,
@@ -102,16 +102,4 @@ export function isRailgunAvailable(): boolean {
   if (cached !== null) return cached;
   cached = getNativeProverTriple() != null || getNativeGroth16() != null;
   return cached;
-}
-
-/** Resolve the engine JS module behind the guard, or null when unavailable.
- *  Typed loosely (`unknown`) because the heavy surface is only relevant on a
- *  native build; callers narrow what they touch. */
-export function loadRailgunEngine(): unknown | null {
-  if (!isRailgunAvailable()) return null;
-  try {
-    return require('@railgun-community/wallet');
-  } catch {
-    return null;
-  }
 }
